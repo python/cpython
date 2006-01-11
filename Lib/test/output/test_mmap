@@ -31,6 +31,7 @@ test_mmap
   Modifying copy-on-write memory map.
   Ensuring copy-on-write maps cannot be resized.
   Ensuring invalid access parameter raises exception.
+  Try opening a bad file descriptor...
   Ensuring that passing 0 as map length sets map size to current file size.
   Ensuring that passing 0 as map length sets map size to current file size.
  Test passed

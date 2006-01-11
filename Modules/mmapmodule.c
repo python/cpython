@@ -918,6 +918,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 #endif
 	m_obj = PyObject_New (mmap_object, &mmap_object_type);
 	if (m_obj == NULL) {return NULL;}
+	m_obj->data = NULL;
 	m_obj->size = (size_t) map_size;
 	m_obj->pos = (size_t) 0;
 	m_obj->fd = dup(fd);

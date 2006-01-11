@@ -216,6 +216,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1402308, (possible) segfault when using mmap.mmap(-1, ...)
+
 - Bug #1400822, _curses over{lay,write} doesn't work when passing 6 ints.
   Also fix ungetmouse() which did not accept arguments properly.
   The code now conforms to the documented signature.
