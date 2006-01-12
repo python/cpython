@@ -173,7 +173,6 @@ def module_funcs(stdscr):
     curses.qiflush()
     curses.raw() ; curses.raw(1)
     curses.setsyx(5,5)
-    curses.setupterm(fd=sys.__stdout__.fileno())
     curses.tigetflag('hc')
     curses.tigetnum('co')
     curses.tigetstr('cr')
@@ -239,12 +238,14 @@ def main(stdscr):
     finally:
         curses.resetty()
 
-
 if __name__ == '__main__':
     curses.wrapper(main)
     unit_tests()
 else:
     try:
+        # testing setupterm() inside initscr/endwin
+        # causes terminal breakage
+        curses.setupterm(fd=sys.__stdout__.fileno())
         stdscr = curses.initscr()
         main(stdscr)
     finally:
