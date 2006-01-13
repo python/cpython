@@ -63,7 +63,7 @@ def warn(message, category=None, stacklevel=1):
 def warn_explicit(message, category, filename, lineno,
                   module=None, registry=None):
     if module is None:
-        module = filename
+        module = filename or "<unknown>"
         if module[-3:].lower() == ".py":
             module = module[:-3] # XXX What about leading pathname?
     if registry is None:
