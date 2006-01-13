@@ -14,4 +14,3 @@ def test_weakref_in_del():
 
 if __name__ == '__main__':
     test_weakref_in_del()
-
