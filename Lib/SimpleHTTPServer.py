@@ -14,6 +14,7 @@ import os
 import posixpath
 import BaseHTTPServer
 import urllib
+import urlparse
 import cgi
 import shutil
 import mimetypes
@@ -132,6 +133,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         probably be diagnosed.)
 
         """
+        # abandon query parameters
+        path = urlparse.urlparse(path)[2]
         path = posixpath.normpath(urllib.unquote(path))
         words = path.split('/')
         words = filter(None, words)
