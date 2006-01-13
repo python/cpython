@@ -3,13 +3,13 @@ from xml.parsers import expat
 # http://python.org/sf/1296433
 
 def test_parse_only_xml_data():
-    # 
+    #
     xml = "<?xml version='1.0' encoding='iso8859'?><s>%s</s>" % ('a' * 1025)
     # this one doesn't crash
     #xml = "<?xml version='1.0'?><s>%s</s>" % ('a' * 10000)
 
     def handler(text):
-      raise Exception
+        raise Exception
 
     parser = expat.ParserCreate()
     parser.CharacterDataHandler = handler
