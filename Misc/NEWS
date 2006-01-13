@@ -335,6 +335,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1403410: The warnings module now doesn't get confused
+  when it can't find out the module name it generates a warning for.
+  
 - Patch #1177307: Added a new codec utf_8_sig for UTF-8 with a BOM signature.
 
 - Patch #1157027: cookielib mishandles RFC 2109 cookies in Netscape mode
