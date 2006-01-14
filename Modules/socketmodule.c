@@ -7,7 +7,7 @@ This module provides an interface to Berkeley socket IPC.
 Limitations:
 
 - Only AF_INET, AF_INET6 and AF_UNIX address families are supported in a
-  portable manner, though AF_PACKET is supported under Linux.
+  portable manner, though AF_PACKET and AF_NETLINK are supported under Linux.
 - No read/write operations (use sendall/recv or makefile instead).
 - Additional restrictions apply on some non-Unix platforms (compensated
   for by socket.py).
@@ -954,6 +954,14 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen, int proto)
 	}
 #endif /* AF_UNIX */
 
+#if defined(AF_NETLINK)
+       case AF_NETLINK:
+       {
+               struct sockaddr_nl *a = (struct sockaddr_nl *) addr;
+               return Py_BuildValue("ii", a->nl_pid, a->nl_groups);
+       }
+#endif /* AF_NETLINK */
+
 #ifdef ENABLE_IPV6
 	case AF_INET6:
 	{
@@ -1089,6 +1097,31 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		return 1;
 	}
 #endif /* AF_UNIX */
+
+#if defined(AF_NETLINK)
+	case AF_NETLINK:
+	{
+		struct sockaddr_nl* addr;
+		int pid, groups;
+		addr = (struct sockaddr_nl *)&(s->sock_addr).nl;
+		if (!PyTuple_Check(args)) {
+			PyErr_Format(
+				PyExc_TypeError,
+				"getsockaddrarg: "
+				"AF_NETLINK address must be tuple, not %.500s",
+				args->ob_type->tp_name);
+			return 0;
+		}
+		if (!PyArg_ParseTuple(args, "II:getsockaddrarg", &pid, &groups))
+			return 0;
+		addr->nl_family = AF_NETLINK;
+		addr->nl_pid = pid;
+		addr->nl_groups = groups;
+		*addr_ret = (struct sockaddr *) addr;
+		*len_ret = sizeof(*addr);
+		return 1;
+	}
+#endif
 
 	case AF_INET:
 	{
@@ -1286,6 +1319,13 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 		return 1;
 	}
 #endif /* AF_UNIX */
+#if defined(AF_NETLINK)
+       case AF_NETLINK:
+       {
+               *len_ret = sizeof (struct sockaddr_nl);
+               return 1;
+       }
+#endif
 
 	case AF_INET:
 	{
@@ -3947,6 +3987,18 @@ init_socket(void)
 #ifdef AF_NETLINK
 	/*  */
 	PyModule_AddIntConstant(m, "AF_NETLINK", AF_NETLINK);
+	PyModule_AddIntConstant(m, "NETLINK_ROUTE", NETLINK_ROUTE);
+	PyModule_AddIntConstant(m, "NETLINK_SKIP", NETLINK_SKIP);
+	PyModule_AddIntConstant(m, "NETLINK_USERSOCK", NETLINK_USERSOCK);
+	PyModule_AddIntConstant(m, "NETLINK_FIREWALL", NETLINK_FIREWALL);
+	PyModule_AddIntConstant(m, "NETLINK_TCPDIAG", NETLINK_TCPDIAG);
+	PyModule_AddIntConstant(m, "NETLINK_NFLOG", NETLINK_NFLOG);
+	PyModule_AddIntConstant(m, "NETLINK_XFRM", NETLINK_XFRM);
+	PyModule_AddIntConstant(m, "NETLINK_ARPD", NETLINK_ARPD);
+	PyModule_AddIntConstant(m, "NETLINK_ROUTE6", NETLINK_ROUTE6);
+	PyModule_AddIntConstant(m, "NETLINK_IP6_FW", NETLINK_IP6_FW);
+	PyModule_AddIntConstant(m, "NETLINK_DNRTMSG", NETLINK_DNRTMSG);
+	PyModule_AddIntConstant(m, "NETLINK_TAPBASE", NETLINK_TAPBASE);
 #endif
 #ifdef AF_ROUTE
 	/* Alias to emulate 4.4BSD */

@@ -68,6 +68,9 @@ depending on the results from DNS resolution and/or the host
 configuration.  For deterministic behavior use a numeric address in
 \var{host} portion.
 
+\versionadded[2.5]{AF_NETLINK sockets are represented as 
+pairs \code{\var{pid}, \var{groups}}.}
+
 All errors raise exceptions.  The normal exceptions for invalid
 argument types and out-of-memory conditions can be raised; errors
 related to socket or address semantics raise the error
