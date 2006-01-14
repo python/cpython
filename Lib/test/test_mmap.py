@@ -281,6 +281,14 @@ def test_both():
         except OSError:
             pass
 
+    print '  Try opening a bad file descriptor...'
+    try:
+        mmap.mmap(-1, 4096)
+    except mmap.error:
+        pass
+    else:
+        verify(0, 'expected a mmap.error but did not get it')
+
     # Do a tougher .find() test.  SF bug 515943 pointed out that, in 2.2,
     # searching for data with embedded \0 bytes didn't work.
     f = open(TESTFN, 'w+')
