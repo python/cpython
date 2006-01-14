@@ -68,7 +68,7 @@ Extension Modules
 Library
 -------
 
-- Bug #1394565: SimpleHTTPServer now doesn't choke on query paramters
+- Bug #1394565: SimpleHTTPServer now doesn't choke on query parameters
   any more.
   
 - Bug #1403410: The warnings module now doesn't get confused
