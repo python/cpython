@@ -32,6 +32,12 @@
 # undef AF_UNIX
 #endif
 
+#ifdef HAVE_LINUX_NETLINK_H
+# include <linux/netlink.h>
+#else
+#  undef AF_NETLINK
+#endif
+
 #ifdef HAVE_BLUETOOTH_BLUETOOTH_H
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/rfcomm.h>
@@ -77,6 +83,9 @@ typedef union sock_addr {
 	struct sockaddr_in in;
 #ifdef AF_UNIX
 	struct sockaddr_un un;
+#endif
+#ifdef AF_NETLINK
+	struct sockaddr_nl nl;
 #endif
 #ifdef ENABLE_IPV6
 	struct sockaddr_in6 in6;
