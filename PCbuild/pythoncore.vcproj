@@ -451,18 +451,6 @@
 					Name="VCCLCompilerTool"
 					PreprocessorDefinitions="BUILD=\&quot;60\&quot;"/>
 			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					PreprocessorDefinitions="BUILD=\&quot;60\&quot;"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="ReleaseItanium|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					PreprocessorDefinitions="BUILD=\&quot;60\&quot;"/>
-			</FileConfiguration>
 		</File>
 		<File
 			RelativePath="..\Python\getcompiler.c">
