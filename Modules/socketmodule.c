@@ -958,7 +958,7 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen, int proto)
        case AF_NETLINK:
        {
                struct sockaddr_nl *a = (struct sockaddr_nl *) addr;
-               return Py_BuildValue("ii", a->nl_pid, a->nl_groups);
+               return Py_BuildValue("II", a->nl_pid, a->nl_groups);
        }
 #endif /* AF_NETLINK */
 
