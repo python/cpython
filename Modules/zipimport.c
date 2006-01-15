@@ -1132,7 +1132,7 @@ PyDoc_STRVAR(zipimport_doc,
 \n\
 This module exports three objects:\n\
 - zipimporter: a class; its constructor takes a path to a Zip archive.\n\
-- ZipImporterError: exception raised by zipimporter objects. It's a\n\
+- ZipImportError: exception raised by zipimporter objects. It's a\n\
   subclass of ImportError, so it can be caught as ImportError, too.\n\
 - _zip_directory_cache: a dict, mapping archive paths to zip directory\n\
   info dicts, as used in zipimporter._files.\n\
