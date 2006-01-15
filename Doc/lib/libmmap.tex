@@ -164,6 +164,6 @@ Memory-mapped file objects support the following methods:
 \begin{methoddesc}{write_byte}{\var{byte}}
   Write the single-character string \var{byte} into memory at the
   current position of the file pointer; the file position is advanced
-  by \code{1}.If the mmap was created with \constant{ACCESS_READ},
+  by \code{1}. If the mmap was created with \constant{ACCESS_READ},
   then writing to it will throw a \exception{TypeError} exception.
 \end{methoddesc}
