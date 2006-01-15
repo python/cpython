@@ -406,6 +406,14 @@ now has \member{st_gen} and \member{st_birthtime}.
 The \member{st_flags} member is also available, if the platform supports it.
 % XXX patch 1180695, 1212117
 
+\item The \module{socket} module now supports \constant{AF_NETLINK}
+sockets on Linux, thanks to a patch from Philippe Biondi.  
+Netlink sockets are a Linux-specific mechanism for communications
+between a user-space process and kernel code; an introductory 
+article about them is at \url{http://www.linuxjournal.com/article/7356}.
+In Python code, netlink addresses are represented as a tuple of 2 integers, 
+\code{(\var{pid}, \var{group_mask})}.
+
 \item New module: \module{spwd} provides functions for accessing the
 shadow password database on systems that support it.  
 % XXX give example
