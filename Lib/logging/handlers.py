@@ -131,7 +131,7 @@ class RotatingFileHandler(BaseRotatingHandler):
             except (KeyboardInterrupt, SystemExit):
                 raise
             except:
-                pass
+                self.handleError(record)
             #print "%s -> %s" % (self.baseFilename, dfn)
         if self.encoding:
             self.stream = codecs.open(self.baseFilename, 'w', self.encoding)
@@ -280,7 +280,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         except (KeyboardInterrupt, SystemExit):
             raise
         except:
-            pass
+            self.handleError(record)
         if self.backupCount > 0:
             # find the oldest log file and delete it
             s = glob.glob(self.baseFilename + ".20*")
