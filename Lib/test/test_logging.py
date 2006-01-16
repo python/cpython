@@ -26,7 +26,7 @@ Copyright (C) 2001-2002 Vinay Sajip. All Rights Reserved.
 
 import select
 import os, sys, string, struct, types, cPickle, cStringIO
-import socket, threading, time
+import socket, tempfile, threading, time
 import logging, logging.handlers, logging.config
 
 BANNER = "-- %-10s %-6s ---------------------------------------------------\n"
@@ -393,6 +393,102 @@ def test3():
     hand.removeFilter(filt)
 
 #----------------------------------------------------------------------------
+# Test 4
+#----------------------------------------------------------------------------
+
+# config0 is a standard configuratin.
+config0 = """
+[loggers]
+keys=root
+
+[handlers]
+keys=hand1
+
+[formatters]
+keys=form1
+
+[logger_root]
+level=NOTSET
+handlers=hand1
+
+[handler_hand1]
+class=StreamHandler
+level=NOTSET
+formatter=form1
+args=(sys.stdout,)
+
+[formatter_form1]
+format=%(levelname)s:%(name)s:%(message)s
+datefmt=
+"""
+
+# config1 adds a little to the standard configuration.
+config1 = """
+[loggers]
+keys=root,parser
+
+[handlers]
+keys=hand1
+
+[formatters]
+keys=form1
+
+[logger_root]
+level=NOTSET
+handlers=hand1
+
+[logger_parser]
+level=DEBUG
+handlers=hand1
+propagate=1
+qualname=compiler.parser
+
+[handler_hand1]
+class=StreamHandler
+level=NOTSET
+formatter=form1
+args=(sys.stdout,)
+
+[formatter_form1]
+format=%(levelname)s:%(name)s:%(message)s
+datefmt=
+"""
+
+# config2 has a subtle configuration error that should be reported
+config2 = string.replace(config1, "sys.stdout", "sys.stbout")
+
+# config3 has a less subtle configuration error
+config3 = string.replace(
+    config1, "formatter=form1", "formatter=misspelled_name")
+
+def test4():
+    for i in range(4):
+        conf = globals()['config%d' % i]
+        sys.stdout.write('config%d: ' % i)
+        loggerDict = logging.getLogger().manager.loggerDict
+        saved_handlers = logging._handlers.copy()
+        saved_loggers = loggerDict.copy()
+        try:
+            fn = tempfile.mktemp(".ini")
+            f = open(fn, "w")
+            f.write(conf)
+            f.close()
+            try:
+                logging.config.fileConfig(fn)
+            except:
+                t = sys.exc_info()[0]
+                message(str(t))
+            else:
+                message('ok.')
+            os.remove(fn)
+        finally:
+            logging._handlers.clear()
+            logging._handlers.update(saved_handlers)
+            loggerDict = logging.getLogger().manager.loggerDict
+            loggerDict.clear()
+            loggerDict.update(saved_loggers)
+
+#----------------------------------------------------------------------------
 # Test Harness
 #----------------------------------------------------------------------------
 def banner(nm, typ):
@@ -455,6 +551,10 @@ def test_main_inner():
         banner("log_test3", "begin")
         test3()
         banner("log_test3", "end")
+
+        banner("log_test4", "begin")
+        test4()
+        banner("log_test4", "end")
 
     finally:
         #wait for TCP receiver to terminate
