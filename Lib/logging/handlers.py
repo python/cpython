@@ -212,9 +212,12 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             currentMinute = t[4]
             currentSecond = t[5]
             # r is the number of seconds left between now and midnight
-            r = (24 - currentHour) * 60 * 60 # number of hours in seconds
-            r = r + (59 - currentMinute) * 60 # plus the number of minutes (in secs)
-            r = r + (59 - currentSecond) # plus the number of seconds
+            if (currentMinute == 0) and (currentSecond == 0):
+                r = (24 - currentHour) * 60 * 60 # number of hours in seconds
+            else:
+                r = (23 - currentHour) * 60 * 60
+                r = r + (59 - currentMinute) * 60 # plus the number of minutes (in secs)
+                r = r + (60 - currentSecond) # plus the number of seconds
             self.rolloverAt = currentTime + r
             # If we are rolling over on a certain day, add in the number of days until
             # the next rollover, but offset by 1 since we just calculated the time
