@@ -82,7 +82,11 @@ rm -rf $INSTALL_DIR
 
 ## create results file
 TITLE="Automated Python Build Results"
-echo "<html><head><title>$TITLE</title></head>" >> $RESULT_FILE
+echo "<html>" >> $RESULT_FILE
+echo "  <head>" >> $RESULT_FILE
+echo "    <title>$TITLE</title>" >> $RESULT_FILE
+echo "    <meta http-equiv=\"refresh\" content=\"43200\">" >> $RESULT_FILE
+echo "  </head>" >> $RESULT_FILE
 echo "<body>" >> $RESULT_FILE
 echo "<h2>Automated Python Build Results</h2>" >> $RESULT_FILE
 echo "<table>" >> $RESULT_FILE
