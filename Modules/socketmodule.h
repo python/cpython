@@ -33,6 +33,9 @@
 #endif
 
 #ifdef HAVE_LINUX_NETLINK_H
+# ifdef HAVE_ASM_TYPES_H
+#  include <asm/types.h>
+# endif
 # include <linux/netlink.h>
 #else
 #  undef AF_NETLINK
