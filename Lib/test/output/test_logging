@@ -485,6 +485,12 @@ INFO:a.b:Info 2
 INFO:a.b.c:Info 4
 INFO:a.b.c.d:Info 5
 -- log_test3  end    ---------------------------------------------------
+-- log_test4  begin  ---------------------------------------------------
+config0: ok.
+config1: ok.
+config2: exceptions.AttributeError
+config3: exceptions.KeyError
+-- log_test4  end    ---------------------------------------------------
 -- logrecv output begin  ---------------------------------------------------
 ERR -> CRITICAL: Message 0 (via logrecv.tcp.ERR)
 ERR -> ERROR: Message 1 (via logrecv.tcp.ERR)
