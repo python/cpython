@@ -282,7 +282,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             self.stream = codecs.open(self.baseFilename, 'w', self.encoding)
         else:
             self.stream = open(self.baseFilename, 'w')
-        self.rolloverAt = int(time.time()) + self.interval
+        self.rolloverAt = self.rolloverAt + self.interval
 
 class SocketHandler(logging.Handler):
     """
