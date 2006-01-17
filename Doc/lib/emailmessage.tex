@@ -435,10 +435,11 @@ When the \mailheader{Content-Type} header is set a
 
 \begin{methoddesc}[Message]{get_filename}{\optional{failobj}}
 Return the value of the \code{filename} parameter of the
-\mailheader{Content-Disposition} header of the message, or \var{failobj} if
-either the header is missing, or has no \code{filename} parameter.
-The returned string will always be unquoted as per
-\method{Utils.unquote()}.
+\mailheader{Content-Disposition} header of the message.  If the header does
+not have a \code{filename} parameter, this method falls back to looking for
+the \code{name} parameter.  If neither is found, or the header is missing,
+then \var{failobj} is returned.  The returned string will always be unquoted
+as per \method{Utils.unquote()}.
 \end{methoddesc}
 
 \begin{methoddesc}[Message]{get_boundary}{\optional{failobj}}
