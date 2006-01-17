@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2005 Python Software Foundation
+# Copyright (C) 2001-2006 Python Software Foundation
 # Author: barry@python.org (Barry Warsaw)
 
 """Basic message object for the email package object model."""
@@ -718,10 +718,15 @@ class Message:
         """Return the filename associated with the payload if present.
 
         The filename is extracted from the Content-Disposition header's
-        `filename' parameter, and it is unquoted.
+        `filename' parameter, and it is unquoted.  If that header is missing
+        the `filename' parameter, this method falls back to looking for the
+        `name' parameter.
         """
         missing = []
         filename = self.get_param('filename', missing, 'content-disposition')
+        if filename is missing:
+            # Some MUAs use a different parameter name
+            filename = self.get_param('name', missing, 'content-disposition')
         if filename is missing:
             return failobj
         if isinstance(filename, TupleType):

@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2005 Python Software Foundation
+# Copyright (C) 2001-2006 Python Software Foundation
 # email package unit tests
 
 import os
@@ -157,6 +157,13 @@ class TestMessageAPI(TestEmailBase):
         msg = self._msgobj('msg_07.txt')
         subpart = msg.get_payload(1)
         eq(subpart.get_filename(), 'dingusfish.gif')
+
+    def test_get_filename_with_name_parameter(self):
+        eq = self.assertEqual
+
+        msg = self._msgobj('msg_41.txt')
+        filenames = [p.get_filename() for p in msg.get_payload()]
+        eq(filenames, ['msg.txt', 'msg.txt'])
 
     def test_get_boundary(self):
         eq = self.assertEqual
