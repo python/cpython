@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2004 Python Software Foundation
+# Copyright (C) 2001-2006 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -701,10 +701,14 @@ class Message:
         """Return the filename associated with the payload if present.
 
         The filename is extracted from the Content-Disposition header's
-        `filename' parameter, and it is unquoted.
+        `filename' parameter, and it is unquoted.  If that header is missing
+        the `filename' parameter, this method falls back to looking for the
+        `name' parameter.
         """
         missing = object()
         filename = self.get_param('filename', missing, 'content-disposition')
+        if filename is missing:
+            filename = self.get_param('name', missing, 'content-disposition')
         if filename is missing:
             return failobj
         return Utils.collapse_rfc2231_value(filename).strip()
