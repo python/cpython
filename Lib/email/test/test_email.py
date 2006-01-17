@@ -2467,6 +2467,15 @@ Here's the message body
         msg = email.message_from_string(m)
         eq(len(msg.keys()), 0)
 
+    def test_rfc2822_one_character_header(self):
+        eq = self.assertEqual
+        m = 'A: first header\nB: second header\nCC: third header\n\nbody'
+        msg = email.message_from_string(m)
+        headers = msg.keys()
+        headers.sort()
+        eq(headers, ['A', 'B', 'CC'])
+        eq(msg.get_payload(), 'body')
+
 
 
 class TestBase64(unittest.TestCase):
