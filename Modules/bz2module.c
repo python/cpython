@@ -54,7 +54,7 @@ typedef fpos_t Py_off_t;
 	(((PY_LONG_LONG)bzs->total_out_hi32 << 32) + bzs->total_out_lo32)
 #else
 #define BZS_TOTAL_OUT(bzs) \
-	bzs->total_out_lo32;
+	bzs->total_out_lo32
 #endif
 
 #else /* ! BZ_CONFIG_ERROR */
