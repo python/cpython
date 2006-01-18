@@ -31,12 +31,13 @@ int make_buildinfo2()
 	    RegOpenKey(HKEY_CURRENT_USER, "Software\\TortoiseSVN", &hTortoise) != ERROR_SUCCESS)
 		/* Tortoise not installed */
 		return 0;
-	size = sizeof(command);
-	if (RegQueryValueEx(hTortoise, "Directory", 0, &type,  command, &size) != ERROR_SUCCESS ||
+	command[0] = '"';  /* quote the path to the executable */
+	size = sizeof(command) - 1;
+	if (RegQueryValueEx(hTortoise, "Directory", 0, &type, command+1, &size) != ERROR_SUCCESS ||
 	    type != REG_SZ)
 		/* Registry corrupted */
 		return 0;
-	strcat(command, "bin\\subwcrev.exe");
+	strcat(command, "bin\\subwcrev.exe\"");
 	if (_stat(command, &st) < 0)
 		/* subwcrev.exe not part of the release */
 		return 0;
