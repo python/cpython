@@ -48,6 +48,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pythoncore", "pythoncore.vcproj", "{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26}"
 	ProjectSection(ProjectDependencies) = postProject
 		{F0E0541E-F17D-430B-97C4-93ADF0DD284E} = {F0E0541E-F17D-430B-97C4-93ADF0DD284E}
+		{C73F0EC1-358B-4177-940F-0846AC8B04CD} = {C73F0EC1-358B-4177-940F-0846AC8B04CD}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pythonw", "pythonw.vcproj", "{F4229CC3-873C-49AE-9729-DD308ED4CD4A}"
@@ -77,6 +78,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_elementtree", "_elementtree.vcproj", "{1966DDE2-4AB7-4E4E-ACC9-C121E4D37F8E}"
 	ProjectSection(ProjectDependencies) = postProject
 		{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26} = {CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_buildinfo", "make_buildinfo.vcproj", "{C73F0EC1-358B-4177-940F-0846AC8B04CD}"
+	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
 Global
@@ -181,8 +186,15 @@ Global
 		{1966DDE2-4AB7-4E4E-ACC9-C121E4D37F8E}.Release.Build.0 = Release|Win32
 		{1966DDE2-4AB7-4E4E-ACC9-C121E4D37F8E}.ReleaseItanium.ActiveCfg = ReleaseItanium|Win32
 		{1966DDE2-4AB7-4E4E-ACC9-C121E4D37F8E}.ReleaseItanium.Build.0 = ReleaseItanium|Win32
+		{C73F0EC1-358B-4177-940F-0846AC8B04CD}.Debug.ActiveCfg = Debug|Win32
+		{C73F0EC1-358B-4177-940F-0846AC8B04CD}.Debug.Build.0 = Debug|Win32
+		{C73F0EC1-358B-4177-940F-0846AC8B04CD}.Release.ActiveCfg = Release|Win32
+		{C73F0EC1-358B-4177-940F-0846AC8B04CD}.Release.Build.0 = Release|Win32
+		{C73F0EC1-358B-4177-940F-0846AC8B04CD}.ReleaseItanium.ActiveCfg = Release|Win32
+		{C73F0EC1-358B-4177-940F-0846AC8B04CD}.ReleaseItanium.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionItems) = postSolution
+		..\Modules\getbuildinfo.c = ..\Modules\getbuildinfo.c
 		readme.txt = readme.txt
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

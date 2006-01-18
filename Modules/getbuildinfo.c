@@ -20,6 +20,10 @@
 #endif
 #endif
 
+#ifdef SUBWCREV
+#define SVNVERSION "$WCRANGE$$WCMODS?M:$"
+#endif
+
 const char *
 Py_GetBuildInfo(void)
 {
