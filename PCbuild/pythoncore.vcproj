@@ -4,6 +4,7 @@
 	Version="7.10"
 	Name="pythoncore"
 	ProjectGUID="{7AFA1F0B-A8A1-455A-A832-BF263404BBEF}"
+	RootNamespace="pythoncore"
 	SccProjectName="pythoncore"
 	SccLocalPath="..">
 	<Platforms>
@@ -37,6 +38,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="getbuildinfo.o"
 				OutputFile="./python25.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -54,7 +56,9 @@
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCPreLinkEventTool"
+				Description="generate buildinfo"
+				CommandLine="make_buildinfo.exe ${ConfigurationName}"/>
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
@@ -94,6 +98,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="getbuildinfo.o"
 				OutputFile="./python25_d.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -111,7 +116,9 @@
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCPreLinkEventTool"
+				Description="generate buildinfo"
+				CommandLine="make_buildinfo.exe $(ConfigurationName)"/>
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG"
@@ -158,6 +165,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
+				AdditionalDependencies="getbuildinfo.o"
 				OutputFile="./python25.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="FALSE"
@@ -175,7 +183,9 @@
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCPreLinkEventTool"
+				Description="generate buildinfo"
+				CommandLine="make_buildinfo.exe ${ConfigurationName}"/>
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
@@ -442,15 +452,6 @@
 		</File>
 		<File
 			RelativePath="..\Python\getargs.c">
-		</File>
-		<File
-			RelativePath="..\Modules\getbuildinfo.c">
-			<FileConfiguration
-				Name="Release|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					PreprocessorDefinitions="BUILD=\&quot;60\&quot;"/>
-			</FileConfiguration>
 		</File>
 		<File
 			RelativePath="..\Python\getcompiler.c">
