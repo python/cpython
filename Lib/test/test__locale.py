@@ -105,8 +105,10 @@ class _LocaleTests(unittest.TestCase):
                 setlocale(LC_NUMERIC, loc)
             except Error:
                 continue
-            self.assertEquals(int(eval('3.14') * 100), 314)
-            self.assertEquals(int(float('3.14') * 100), 314)
+            self.assertEquals(int(eval('3.14') * 100), 314,
+                                "using eval('3.14') failed for %s" % loc)
+            self.assertEquals(int(float('3.14') * 100), 314,
+                                "using float('3.14') failed for %s" % loc)
 
 
 
