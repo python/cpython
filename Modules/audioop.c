@@ -1374,6 +1374,8 @@ initaudioop(void)
 {
 	PyObject *m, *d;
 	m = Py_InitModule("audioop", audioop_methods);
+	if (m == NULL)
+		return;
 	d = PyModule_GetDict(m);
 	AudioopError = PyErr_NewException("audioop.error", NULL, NULL);
 	if (AudioopError != NULL)

@@ -634,6 +634,8 @@ init_ssl(void)
 	PySSL_Type.ob_type = &PyType_Type;
 
 	m = Py_InitModule3("_ssl", PySSL_methods, module_doc);
+	if (m == NULL)
+		return;
 	d = PyModule_GetDict(m);
 
 	/* Load _socket module and its C API */

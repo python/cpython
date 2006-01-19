@@ -221,6 +221,8 @@ PyMODINIT_FUNC
 initmsvcrt(void)
 {
 	PyObject *m = Py_InitModule("msvcrt", msvcrt_functions);
+	if (m == NULL)
+		return;
 	PyObject *d = PyModule_GetDict(m);
 
 	/* constants for the locking() function's mode argument */

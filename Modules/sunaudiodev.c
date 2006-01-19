@@ -456,6 +456,8 @@ initsunaudiodev(void)
 	PyObject *m, *d;
 
 	m = Py_InitModule("sunaudiodev", sunaudiodev_methods);
+	if (m == NULL)
+		return;
 	d = PyModule_GetDict(m);
 	SunAudioError = PyErr_NewException("sunaudiodev.error", NULL, NULL);
 	if (SunAudioError)

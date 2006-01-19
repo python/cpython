@@ -2481,6 +2481,8 @@ init_curses(void)
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("_curses", PyCurses_methods);
+	if (m == NULL)
+    		return;
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);

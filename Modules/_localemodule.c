@@ -715,6 +715,8 @@ init_locale(void)
 #endif
 
     m = Py_InitModule("_locale", PyLocale_Methods);
+    if (m == NULL)
+    	return;
 
     d = PyModule_GetDict(m);
 

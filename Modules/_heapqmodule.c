@@ -610,6 +610,8 @@ init_heapq(void)
 	PyObject *m;
 
 	m = Py_InitModule3("_heapq", heapq_methods, module_doc);
+	if (m == NULL)
+    		return;
 	PyModule_AddObject(m, "__about__", PyString_FromString(__about__));
 }
 

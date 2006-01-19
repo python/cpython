@@ -772,6 +772,8 @@ init_sha512(void)
     if (PyType_Ready(&SHA512type) < 0)
         return;
     m = Py_InitModule("_sha512", SHA_functions);
+    if (m == NULL)
+	return;
 }
 
 #endif

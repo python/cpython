@@ -3088,6 +3088,8 @@ init_tkinter(void)
 #endif
 
 	m = Py_InitModule("_tkinter", moduleMethods);
+	if (m == NULL)
+		return;
 
 	d = PyModule_GetDict(m);
 	Tkinter_TclError = PyErr_NewException("_tkinter.TclError", NULL, NULL);

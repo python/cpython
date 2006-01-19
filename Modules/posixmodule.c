@@ -7967,6 +7967,8 @@ INITFUNC(void)
 	m = Py_InitModule3(MODNAME,
 			   posix_methods,
 			   posix__doc__);
+	if (m == NULL)
+    		return;
 
 	/* Initialize environ dictionary */
 	v = convertenviron();

@@ -925,6 +925,8 @@ initreadline(void)
 
 	m = Py_InitModule4("readline", readline_methods, doc_module,
 			   (PyObject *)NULL, PYTHON_API_VERSION);
+	if (m == NULL)
+		return;
 
 	PyOS_ReadlineFunctionPointer = call_readline;
 	setup_readline();

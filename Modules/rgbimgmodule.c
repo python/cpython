@@ -756,6 +756,8 @@ initrgbimg(void)
 {
 	PyObject *m, *d;
 	m = Py_InitModule("rgbimg", rgbimg_methods);
+	if (m == NULL)
+		return;
 	d = PyModule_GetDict(m);
 	ImgfileError = PyErr_NewException("rgbimg.error", NULL, NULL);
 	if (ImgfileError != NULL)

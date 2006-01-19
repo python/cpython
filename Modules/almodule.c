@@ -1996,6 +1996,8 @@ inital(void)
 	m = Py_InitModule4("al", al_methods,
 		al_module_documentation,
 		(PyObject*)NULL,PYTHON_API_VERSION);
+	if (m == NULL)
+		return;
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);

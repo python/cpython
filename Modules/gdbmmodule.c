@@ -512,6 +512,8 @@ initgdbm(void) {
     m = Py_InitModule4("gdbm", dbmmodule_methods,
                        gdbmmodule__doc__, (PyObject *)NULL,
                        PYTHON_API_VERSION);
+    if (m == NULL)
+	return;
     d = PyModule_GetDict(m);
     DbmError = PyErr_NewException("gdbm.error", NULL, NULL);
     if (DbmError != NULL) {

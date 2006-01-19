@@ -1027,6 +1027,8 @@ _PySys_Init(void)
 #endif
 
 	m = Py_InitModule3("sys", sys_methods, sys_doc);
+	if (m == NULL)
+		return NULL;
 	sysdict = PyModule_GetDict(m);
 
 	{

@@ -583,6 +583,8 @@ initfcntl(void)
 
 	/* Create the module and add the functions and documentation */
 	m = Py_InitModule3("fcntl", fcntl_methods, module_doc);
+	if (m == NULL)
+		return;
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);

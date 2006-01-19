@@ -265,6 +265,8 @@ PyMODINIT_FUNC initfpectl(void)
 {
     PyObject *m, *d;
     m = Py_InitModule("fpectl", fpectl_methods);
+    if (m == NULL)
+    	return;
     d = PyModule_GetDict(m);
     fpe_error = PyErr_NewException("fpectl.error", NULL, NULL);
     if (fpe_error != NULL)
