@@ -177,6 +177,8 @@ PyMODINIT_FUNC initfpetest(void)
     PyObject *m, *d;
 
     m = Py_InitModule("fpetest", fpetest_methods);
+    if (m == NULL)
+    	return;
     d = PyModule_GetDict(m);
     fpe_error = PyErr_NewException("fpetest.error", NULL, NULL);
     if (fpe_error != NULL)

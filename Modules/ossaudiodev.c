@@ -963,6 +963,8 @@ initossaudiodev(void)
     PyObject *m;
 
     m = Py_InitModule("ossaudiodev", ossaudiodev_methods);
+    if (m == NULL)
+	return;
 
     OSSAudioError = PyErr_NewException("ossaudiodev.OSSAudioError",
 				       NULL, NULL);

@@ -573,6 +573,8 @@ init_random(void)
 	if (PyType_Ready(&Random_Type) < 0)
 		return;
 	m = Py_InitModule3("_random", NULL, module_doc);
+	if (m == NULL)
+		return;
 	Py_INCREF(&Random_Type);
 	PyModule_AddObject(m, "Random", (PyObject *)&Random_Type);
 }

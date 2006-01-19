@@ -163,6 +163,8 @@ initsyslog(void)
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("syslog", syslog_methods);
+	if (m == NULL)
+		return;
 
 	/* Add some symbolic constants to the module */
 

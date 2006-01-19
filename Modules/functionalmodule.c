@@ -263,6 +263,8 @@ initfunctional(void)
 	};
 
 	m = Py_InitModule3("functional", module_methods, module_doc);
+	if (m == NULL)
+		return;
 
 	for (i=0 ; typelist[i] != NULL ; i++) {
 		if (PyType_Ready(typelist[i]) < 0)

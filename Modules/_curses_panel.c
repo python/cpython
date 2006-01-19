@@ -462,6 +462,8 @@ init_curses_panel(void)
 
     /* Create the module and add the functions */
     m = Py_InitModule("_curses_panel", PyCurses_methods);
+    if (m == NULL)
+    	return;
     d = PyModule_GetDict(m);
 
     /* For exception _curses_panel.error */

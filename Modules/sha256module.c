@@ -706,4 +706,6 @@ init_sha256(void)
     if (PyType_Ready(&SHA256type) < 0)
         return;
     m = Py_InitModule("_sha256", SHA_functions);
+    if (m == NULL)
+	return;
 }

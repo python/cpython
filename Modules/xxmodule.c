@@ -352,6 +352,8 @@ initxx(void)
 
 	/* Create the module and add the functions */
 	m = Py_InitModule3("xx", xx_methods, module_doc);
+	if (m == NULL)
+		return;
 
 	/* Add some symbolic constants to the module */
 	if (ErrorObject == NULL) {

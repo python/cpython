@@ -359,6 +359,8 @@ initdbm(void) {
 
 	Dbmtype.ob_type = &PyType_Type;
 	m = Py_InitModule("dbm", dbmmodule_methods);
+	if (m == NULL)
+		return;
 	d = PyModule_GetDict(m);
 	if (DbmError == NULL)
 		DbmError = PyErr_NewException("dbm.error", NULL, NULL);

@@ -491,6 +491,8 @@ initlinuxaudiodev(void)
     PyObject *m;
   
     m = Py_InitModule("linuxaudiodev", linuxaudiodev_methods);
+    if (m == NULL)
+	return;
 
     LinuxAudioError = PyErr_NewException("linuxaudiodev.error", NULL, NULL);
     if (LinuxAudioError)

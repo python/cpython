@@ -258,5 +258,7 @@ void
 initfm(void)
 {
 	Py_InitModule("fm", fm_methods);
+	if (m == NULL)
+		return;
 	fminit();
 }

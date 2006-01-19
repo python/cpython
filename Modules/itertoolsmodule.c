@@ -2460,6 +2460,8 @@ inititertools(void)
 
 	teedataobject_type.ob_type = &PyType_Type;
 	m = Py_InitModule3("itertools", module_methods, module_doc);
+	if (m == NULL)
+		return;
 
 	for (i=0 ; typelist[i] != NULL ; i++) {
 		if (PyType_Ready(typelist[i]) < 0)

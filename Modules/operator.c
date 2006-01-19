@@ -578,6 +578,8 @@ initoperator(void)
 	/* Create the module and add the functions */
         m = Py_InitModule4("operator", operator_methods, operator_doc,
 		       (PyObject*)NULL, PYTHON_API_VERSION);
+	if (m == NULL)
+		return;
 
 	if (PyType_Ready(&itemgetter_type) < 0)
 		return;

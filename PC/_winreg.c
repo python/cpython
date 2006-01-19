@@ -1459,6 +1459,8 @@ PyMODINIT_FUNC init_winreg(void)
 {
 	PyObject *m, *d;
 	m = Py_InitModule3("_winreg", winreg_methods, module_doc);
+	if (m == NULL)
+		return;
 	d = PyModule_GetDict(m);
 	PyHKEY_Type.ob_type = &PyType_Type;
 	PyHKEY_Type.tp_doc = PyHKEY_doc;

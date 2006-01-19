@@ -627,6 +627,8 @@ init_testcapi(void)
 	PyObject *m;
 
 	m = Py_InitModule("_testcapi", TestMethods);
+	if (m == NULL)
+		return;
 
 	PyModule_AddObject(m, "UCHAR_MAX", PyInt_FromLong(UCHAR_MAX));
 	PyModule_AddObject(m, "USHRT_MAX", PyInt_FromLong(USHRT_MAX));

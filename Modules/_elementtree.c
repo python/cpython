@@ -2590,6 +2590,8 @@ init_elementtree(void)
 #endif
 
     m = Py_InitModule("_elementtree", _functions);
+    if (m == NULL)
+    	return;
 
     /* python glue code */
 

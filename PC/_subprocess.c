@@ -553,6 +553,8 @@ init_subprocess()
 	sp_handle_as_number.nb_int = (unaryfunc) sp_handle_as_int;
 
 	m = Py_InitModule("_subprocess", sp_functions);
+	if (m == NULL)
+		return;
 	d = PyModule_GetDict(m);
 
 	/* constants */

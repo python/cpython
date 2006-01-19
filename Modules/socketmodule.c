@@ -3871,6 +3871,8 @@ init_socket(void)
 	m = Py_InitModule3(PySocket_MODULE_NAME,
 			   socket_methods,
 			   socket_doc);
+	if (m == NULL)
+		return;
 
 	socket_error = PyErr_NewException("socket.error", NULL, NULL);
 	if (socket_error == NULL)

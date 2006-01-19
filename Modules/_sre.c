@@ -3389,6 +3389,8 @@ PyMODINIT_FUNC init_sre(void)
         Scanner_Type.ob_type = &PyType_Type;
 
     m = Py_InitModule("_" SRE_MODULE, _functions);
+    if (m == NULL)
+    	return;
     d = PyModule_GetDict(m);
 
     x = PyInt_FromLong(SRE_MAGIC);

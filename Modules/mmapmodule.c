@@ -1092,6 +1092,8 @@ PyMODINIT_FUNC
 	mmap_object_type.ob_type = &PyType_Type;
 
 	module = Py_InitModule ("mmap", mmap_functions);
+	if (module == NULL)
+		return;
 	dict = PyModule_GetDict (module);
 	mmap_module_error = PyExc_EnvironmentError;
 	Py_INCREF(mmap_module_error);

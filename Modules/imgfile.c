@@ -492,6 +492,8 @@ initimgfile(void)
 {
 	PyObject *m, *d;
 	m = Py_InitModule("imgfile", imgfile_methods);
+	if (m == NULL)
+		return;
 	d = PyModule_GetDict(m);
 	ImgfileError = PyErr_NewException("imgfile.error", NULL, NULL);
 	if (ImgfileError != NULL)

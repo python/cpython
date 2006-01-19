@@ -910,6 +910,8 @@ PyInit_termios(void)
 
 	m = Py_InitModule4("termios", termios_methods, termios__doc__,
                            (PyObject *)NULL, PYTHON_API_VERSION);
+	if (m == NULL)
+		return;
 
 	if (TermiosError == NULL) {
 		TermiosError = PyErr_NewException("termios.error", NULL, NULL);
