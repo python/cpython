@@ -201,9 +201,9 @@ class TestCase:
            not have a method with the specified name.
         """
         try:
-            self.__testMethodName = methodName
+            self._testMethodName = methodName
             testMethod = getattr(self, methodName)
-            self.__testMethodDoc = testMethod.__doc__
+            self._testMethodDoc = testMethod.__doc__
         except AttributeError:
             raise ValueError, "no such test method in %s: %s" % \
                   (self.__class__, methodName)
@@ -229,30 +229,30 @@ class TestCase:
         The default implementation of this method returns the first line of
         the specified test method's docstring.
         """
-        doc = self.__testMethodDoc
+        doc = self._testMethodDoc
         return doc and doc.split("\n")[0].strip() or None
 
     def id(self):
-        return "%s.%s" % (_strclass(self.__class__), self.__testMethodName)
+        return "%s.%s" % (_strclass(self.__class__), self._testMethodName)
 
     def __str__(self):
-        return "%s (%s)" % (self.__testMethodName, _strclass(self.__class__))
+        return "%s (%s)" % (self._testMethodName, _strclass(self.__class__))
 
     def __repr__(self):
         return "<%s testMethod=%s>" % \
-               (_strclass(self.__class__), self.__testMethodName)
+               (_strclass(self.__class__), self._testMethodName)
 
     def run(self, result=None):
         if result is None: result = self.defaultTestResult()
         result.startTest(self)
-        testMethod = getattr(self, self.__testMethodName)
+        testMethod = getattr(self, self._testMethodName)
         try:
             try:
                 self.setUp()
             except KeyboardInterrupt:
                 raise
             except:
-                result.addError(self, self.__exc_info())
+                result.addError(self, self._exc_info())
                 return
 
             ok = False
@@ -260,18 +260,18 @@ class TestCase:
                 testMethod()
                 ok = True
             except self.failureException:
-                result.addFailure(self, self.__exc_info())
+                result.addFailure(self, self._exc_info())
             except KeyboardInterrupt:
                 raise
             except:
-                result.addError(self, self.__exc_info())
+                result.addError(self, self._exc_info())
 
             try:
                 self.tearDown()
             except KeyboardInterrupt:
                 raise
             except:
-                result.addError(self, self.__exc_info())
+                result.addError(self, self._exc_info())
                 ok = False
             if ok: result.addSuccess(self)
         finally:
@@ -283,10 +283,10 @@ class TestCase:
     def debug(self):
         """Run the test without collecting errors in a TestResult"""
         self.setUp()
-        getattr(self, self.__testMethodName)()
+        getattr(self, self._testMethodName)()
         self.tearDown()
 
-    def __exc_info(self):
+    def _exc_info(self):
         """Return a version of sys.exc_info() with the traceback frame
            minimised; usually the top level of the traceback frame is not
            needed.
