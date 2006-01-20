@@ -337,6 +337,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1407902: Added support for sftp:// URIs to urlparse.
+
 - Bug #1371247: Update Windows locale identifiers in locale.py.
 
 - Bug #1394565: SimpleHTTPServer now doesn't choke on query parameters
