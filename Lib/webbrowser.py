@@ -132,9 +132,9 @@ def _iscommand(cmd):
 
 class BaseBrowser(object):
     """Parent class for all browsers. Do not use directly."""
-    
+
     args = ['%s']
-    
+
     def __init__(self, name=""):
         self.name = name
         self.basename = name
@@ -163,7 +163,7 @@ class GenericBrowser(BaseBrowser):
         self.basename = os.path.basename(self.name)
 
     def open(self, url, new=0, autoraise=1):
-        cmdline = [self.name] + [arg.replace("%s", url) 
+        cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
         try:
             p = subprocess.Popen(cmdline, close_fds=True)
@@ -209,7 +209,7 @@ class UnixBrowser(BaseBrowser):
             if opt: raise_opt = [opt]
 
         cmdline = [self.name] + raise_opt + args
-        
+
         if remote or self.background:
             inout = file(os.devnull, "r+")
         else:
@@ -220,7 +220,7 @@ class UnixBrowser(BaseBrowser):
         setsid = getattr(os, 'setsid', None)
         if not setsid:
             setsid = getattr(os, 'setpgrp', None)
-        
+
         p = subprocess.Popen(cmdline, close_fds=True, stdin=inout,
                              stdout=(self.redirect_stdout and inout or None),
                              stderr=inout, preexec_fn=setsid)
@@ -257,7 +257,7 @@ class UnixBrowser(BaseBrowser):
         else:
             raise Error("Bad 'new' parameter to open(); " +
                         "expected 0, 1, or 2, got %s" % new)
-        
+
         args = [arg.replace("%s", url).replace("%action", action)
                 for arg in self.remote_args]
         success = self._invoke(args, True, autoraise)
@@ -278,7 +278,7 @@ class Mozilla(UnixBrowser):
     remote_action = ""
     remote_action_newwin = ",new-window"
     remote_action_newtab = ",new-tab"
-    
+
     background = True
 
 Netscape = Mozilla
@@ -334,14 +334,14 @@ class Konqueror(BaseBrowser):
             action = "newTab"
         else:
             action = "openURL"
-        
+
         devnull = file(os.devnull, "r+")
         # if possible, put browser in separate process group, so
         # keyboard interrupts don't affect browser as well as Python
         setsid = getattr(os, 'setsid', None)
         if not setsid:
             setsid = getattr(os, 'setpgrp', None)
- 
+
         try:
             p = subprocess.Popen(["kfmclient", action, url],
                                  close_fds=True, stdin=devnull,
@@ -366,7 +366,7 @@ class Konqueror(BaseBrowser):
             if p.poll() is None:
                 # Should be running now.
                 return True
-        
+
         try:
             p = subprocess.Popen(["kfm", "-d", url],
                                  close_fds=True, stdin=devnull,
@@ -550,7 +550,7 @@ if sys.platform == 'darwin':
             # hack for local urls
             if not ':' in url:
                 url = 'file:'+url
-            
+
             # new must be 0 or 1
             new = int(bool(new))
             if self.name == "default":
