@@ -396,7 +396,7 @@ def test3():
 # Test 4
 #----------------------------------------------------------------------------
 
-# config0 is a standard configuratin.
+# config0 is a standard configuration.
 config0 = """
 [loggers]
 keys=root
@@ -489,6 +489,65 @@ def test4():
             loggerDict.update(saved_loggers)
 
 #----------------------------------------------------------------------------
+# Test 5
+#----------------------------------------------------------------------------
+
+test5_config = """
+[loggers]
+keys=root
+
+[handlers]
+keys=hand1
+
+[formatters]
+keys=form1
+
+[logger_root]
+level=NOTSET
+handlers=hand1
+
+[handler_hand1]
+class=StreamHandler
+level=NOTSET
+formatter=form1
+args=(sys.stdout,)
+
+[formatter_form1]
+class=test.test_logging.FriendlyFormatter
+format=%(levelname)s:%(name)s:%(message)s
+datefmt=
+"""
+
+class FriendlyFormatter (logging.Formatter):
+    def formatException(self, ei):
+        return "%s... Don't panic!" % str(ei[0])
+
+
+def test5():
+    loggerDict = logging.getLogger().manager.loggerDict
+    saved_handlers = logging._handlers.copy()
+    saved_loggers = loggerDict.copy()
+    try:
+        fn = tempfile.mktemp(".ini")
+        f = open(fn, "w")
+        f.write(test5_config)
+        f.close()
+        logging.config.fileConfig(fn)
+        try:
+            raise KeyError
+        except KeyError:
+            logging.exception("just testing")
+        os.remove(fn)
+    finally:
+        logging._handlers.clear()
+        logging._handlers.update(saved_handlers)
+        loggerDict = logging.getLogger().manager.loggerDict
+        loggerDict.clear()
+        loggerDict.update(saved_loggers)
+
+
+
+#----------------------------------------------------------------------------
 # Test Harness
 #----------------------------------------------------------------------------
 def banner(nm, typ):
@@ -540,21 +599,10 @@ def test_main_inner():
 
         banner("log_test0", "end")
 
-        banner("log_test1", "begin")
-        test1()
-        banner("log_test1", "end")
-
-        banner("log_test2", "begin")
-        test2()
-        banner("log_test2", "end")
-
-        banner("log_test3", "begin")
-        test3()
-        banner("log_test3", "end")
-
-        banner("log_test4", "begin")
-        test4()
-        banner("log_test4", "end")
+        for t in range(1,6):
+            banner("log_test%d" % t, "begin")
+            globals()['test%d' % t]()
+            banner("log_test%d" % t, "end")
 
     finally:
         #wait for TCP receiver to terminate
