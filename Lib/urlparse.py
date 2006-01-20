@@ -9,22 +9,22 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
 
 # A classification of schemes ('' means apply by default)
 uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'imap',
-                 'wais', 'file', 'https', 'shttp', 'mms',
-                 'prospero', 'rtsp', 'rtspu', '', 'sftp']
+                               'wais', 'file', 'https', 'shttp', 'mms',
+                               'prospero', 'rtsp', 'rtspu', '']
 uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
-               'imap', 'wais', 'file', 'mms', 'https', 'shttp',
-               'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
-               'svn', 'svn+ssh', 'sftp']
+                             'imap', 'wais', 'file', 'mms', 'https', 'shttp',
+                             'snews', 'prospero', 'rtsp', 'rtspu', 'rsync', '',
+                             'svn', 'svn+ssh']
 non_hierarchical = ['gopher', 'hdl', 'mailto', 'news',
-                    'telnet', 'wais', 'imap', 'snews', 'sip']
+                                  'telnet', 'wais', 'imap', 'snews', 'sip']
 uses_params = ['ftp', 'hdl', 'prospero', 'http', 'imap',
-               'https', 'shttp', 'rtsp', 'rtspu', 'sip',
-               'mms', '', 'sftp']
+                             'https', 'shttp', 'rtsp', 'rtspu', 'sip',
+                             'mms', '']
 uses_query = ['http', 'wais', 'imap', 'https', 'shttp', 'mms',
-              'gopher', 'rtsp', 'rtspu', 'sip', '']
+                            'gopher', 'rtsp', 'rtspu', 'sip', '']
 uses_fragment = ['ftp', 'hdl', 'http', 'gopher', 'news',
-                 'nntp', 'wais', 'https', 'shttp', 'snews',
-                 'file', 'prospero', '']
+                               'nntp', 'wais', 'https', 'shttp', 'snews',
+                               'file', 'prospero', '']
 
 # Characters valid in scheme names
 scheme_chars = ('abcdefghijklmnopqrstuvwxyz'
