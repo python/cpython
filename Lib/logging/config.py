@@ -86,6 +86,21 @@ def fileConfig(fname, defaults=None):
         logging._releaseLock()
 
 
+def _resolve(name):
+    """Resolve a dotted name to a global object."""
+    name = string.split(name, '.')
+    used = name.pop(0)
+    found = __import__(used)
+    for n in name:
+        used = used + '.' + n
+        try:
+            found = getattr(found, n)
+        except AttributeError:
+            __import__(used)
+            found = getattr(found, n)
+    return found
+
+
 def _create_formatters(cp):
     """Create and return formatters"""
     flist = cp.get("formatters", "keys")
@@ -104,7 +119,12 @@ def _create_formatters(cp):
             dfs = cp.get(sectname, "datefmt", 1)
         else:
             dfs = None
-        f = logging.Formatter(fs, dfs)
+        c = logging.Formatter
+        if "class" in opts:
+            class_name = cp.get(sectname, "class")
+            if class_name:
+                c = _resolve(class_name)
+        f = c(fs, dfs)
         formatters[form] = f
     return formatters
 
