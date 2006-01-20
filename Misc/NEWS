@@ -727,6 +727,9 @@ Tests
 Documentation
 -------------
 
+- Bug #1396471: Document that Windows' ftell() can return invalid
+  values for text files with UNIX-style line endings.
+
 - Bug #1274828: Document os.path.splitunc().
 
 - Bug #1190204: Clarify which directories are searched by site.py.
