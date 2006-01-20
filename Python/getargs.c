@@ -1286,7 +1286,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
 	}
 
 	/* required arguments missing from args can be supplied by keyword 
-	   arguments; set len to the number of posiitional arguments, and,
+	   arguments; set len to the number of positional arguments, and,
 	   if that's less than the minimum required, add in the number of
 	   required arguments that are supplied by keywords */
 	len = nargs;
