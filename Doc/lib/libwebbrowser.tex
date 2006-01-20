@@ -19,9 +19,9 @@ process will block until the user exits the browser.
 If the environment variable \envvar{BROWSER} exists, it
 is interpreted to override the platform default list of browsers, as a
 os.pathsep-separated list of browsers to try in order.  When the value of
-a list part contains the string \code{\%s}, then it is interpreted as
-a literal browser command line to be used with the argument URL
-substituted for the \code{\%s}; if the part does not contain
+a list part contains the string \code{\%s}, then it is 
+interpreted as a literal browser command line to be used with the argument URL
+substituted for \code{\%s}; if the part does not contain
 \code{\%s}, it is simply interpreted as the name of the browser to
 launch.
 
@@ -52,7 +52,7 @@ The following functions are defined:
   a new browser page ("tab") is opened if possible.  If \var{autoraise} is
   true, the window is raised if possible (note that under many window
   managers this will occur regardless of the setting of this variable).
-
+\versionchanged[\var{new} can now be 2]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{open_new}{url}
@@ -96,16 +96,17 @@ in this module.
   \lineiii{'netscape'}{\class{Mozilla('netscape')}}{}
   \lineiii{'galeon'}{\class{Galeon('galeon')}}{}
   \lineiii{'epiphany'}{\class{Galeon('epiphany')}}{}
-  \lineiii{'skipstone'}{\class{GenericBrowser('skipstone \%s \&')}}{}
+  \lineiii{'skipstone'}{\class{BackgroundBrowser('skipstone')}}{}
+  \lineiii{'kfmclient'}{\class{Konqueror()}}{(1)}
   \lineiii{'konqueror'}{\class{Konqueror()}}{(1)}
   \lineiii{'kfm'}{\class{Konqueror()}}{(1)}
-  \lineiii{'mosaic'}{\class{GenericBrowser('mosaic \%s \&')}}{}
+  \lineiii{'mosaic'}{\class{BackgroundBrowser('mosaic')}}{}
   \lineiii{'opera'}{\class{Opera()}}{}
   \lineiii{'grail'}{\class{Grail()}}{}
-  \lineiii{'links'}{\class{GenericBrowser('links \%s')}}{}
+  \lineiii{'links'}{\class{GenericBrowser('links')}}{}
   \lineiii{'elinks'}{\class{Elinks('elinks')}}{}
-  \lineiii{'lynx'}{\class{GenericBrowser('lynx \%s')}}{}
-  \lineiii{'w3m'}{\class{GenericBrowser('w3m \%s')}}{}
+  \lineiii{'lynx'}{\class{GenericBrowser('lynx')}}{}
+  \lineiii{'w3m'}{\class{GenericBrowser('w3m')}}{}
   \lineiii{'windows-default'}{\class{WindowsDefault}}{(2)}
   \lineiii{'internet-config'}{\class{InternetConfig}}{(3)}
   \lineiii{'macosx'}{\class{MacOSX('default')}}{(4)}
