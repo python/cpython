@@ -1216,6 +1216,12 @@ locale_alias = {
 # http://msdn.microsoft.com/library/default.asp?url=/library/en-us/intl/nls_238z.asp
 # to include every locale up to Windows XP.
 #
+# NOTE: this mapping is incomplete.  If your language is missing, please
+# submit a bug report to Python bug manager, which you can find via:
+#     http://www.python.org/dev/
+# Make sure you include the missing language identifier and the suggested
+# locale code.
+#
 
 windows_locale = {
     0x0436: "af_ZA", # Afrikaans
