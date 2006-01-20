@@ -346,6 +346,8 @@ Build
 Documentation
 -------------
 
+- Bug #1402224: Add warning to dl docs about crashes.
+
 - Bug #1396471: Document that Windows' ftell() can return invalid
   values for text files with UNIX-style line endings.
 
