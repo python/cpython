@@ -625,7 +625,7 @@ characters is assumed.
 \begin{methoddesc}[string]{find}{sub\optional{, start\optional{, end}}}
 Return the lowest index in the string where substring \var{sub} is
 found, such that \var{sub} is contained in the range [\var{start},
-\var{end}).  Optional arguments \var{start} and \var{end} are
+\var{end}].  Optional arguments \var{start} and \var{end} are
 interpreted as in slice notation.  Return \code{-1} if \var{sub} is
 not found.
 \end{methoddesc}
@@ -1598,6 +1598,10 @@ flush the read-ahead buffer.
 \begin{methoddesc}[file]{tell}{}
   Return the file's current position, like \code{stdio}'s
   \cfunction{ftell()}.
+
+  \note{On Windows, \method{tell()} can return illegal values (after an
+  \cfunction{fgets()}) when reading files with \UNIX{}-style line-endings.
+  Use binary mode (\code{'rb'}) to circumvent this problem.}
 \end{methoddesc}
 
 \begin{methoddesc}[file]{truncate}{\optional{size}}
