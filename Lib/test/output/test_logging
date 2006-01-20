@@ -491,6 +491,10 @@ config1: ok.
 config2: exceptions.AttributeError
 config3: exceptions.KeyError
 -- log_test4  end    ---------------------------------------------------
+-- log_test5  begin  ---------------------------------------------------
+ERROR:root:just testing
+exceptions.KeyError... Don't panic!
+-- log_test5  end    ---------------------------------------------------
 -- logrecv output begin  ---------------------------------------------------
 ERR -> CRITICAL: Message 0 (via logrecv.tcp.ERR)
 ERR -> ERROR: Message 1 (via logrecv.tcp.ERR)
