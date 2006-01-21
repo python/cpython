@@ -579,14 +579,19 @@ class ProxyHandler(BaseHandler):
     def proxy_open(self, req, proxy, type):
         orig_type = req.get_type()
         type, r_type = splittype(proxy)
-        host, XXX = splithost(r_type)
-        if '@' in host:
-            user_pass, host = host.split('@', 1)
-            if ':' in user_pass:
-                user, password = user_pass.split(':', 1)
-                user_pass = base64.encodestring('%s:%s' % (unquote(user),
-                                                unquote(password))).strip()
-                req.add_header('Proxy-authorization', 'Basic ' + user_pass)
+        if not type or r_type.isdigit():
+            # proxy is specified without protocol
+            type = orig_type
+            host = proxy
+        else:
+            host, r_host = splithost(r_type)
+        user_pass, host = splituser(host)
+        user, password = splitpasswd(user_pass)
+        if user and password:
+            user, password = user_pass.split(':', 1)
+            user_pass = base64.encodestring('%s:%s' % (unquote(user),
+                                            unquote(password))).strip()
+            req.add_header('Proxy-authorization', 'Basic ' + user_pass)
         host = unquote(host)
         req.set_proxy(host, type)
         if orig_type == type:

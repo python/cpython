@@ -337,7 +337,9 @@ Extension Modules
 Library
 -------
 
-- Bug #1407902: Added support for sftp:// URIs to urlparse.
+- Bug #902075: urllib2 now supports 'host:port' style proxy specifications.
+
+- Bug #1407902: Add support for sftp:// URIs to urlparse.
 
 - Bug #1371247: Update Windows locale identifiers in locale.py.
 
