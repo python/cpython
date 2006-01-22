@@ -867,10 +867,10 @@ raises a \exception{NotImplementedError}.
 
 \subsubsection{StreamHandler}
 
-The \class{StreamHandler} class sends logging output to streams such as
-\var{sys.stdout}, \var{sys.stderr} or any file-like object (or, more
-precisely, any object which supports \method{write()} and \method{flush()}
-methods).
+The \class{StreamHandler} class, located in the core \module{logging}
+package, sends logging output to streams such as \var{sys.stdout},
+\var{sys.stderr} or any file-like object (or, more precisely, any
+object which supports \method{write()} and \method{flush()} methods).
 
 \begin{classdesc}{StreamHandler}{\optional{strm}}
 Returns a new instance of the \class{StreamHandler} class. If \var{strm} is
@@ -894,8 +894,9 @@ at times.
 
 \subsubsection{FileHandler}
 
-The \class{FileHandler} class sends logging output to a disk file.
-It inherits the output functionality from \class{StreamHandler}.
+The \class{FileHandler} class, located in the core \module{logging}
+package, sends logging output to a disk file.  It inherits the output
+functionality from \class{StreamHandler}.
 
 \begin{classdesc}{FileHandler}{filename\optional{, mode}}
 Returns a new instance of the \class{FileHandler} class. The specified
@@ -914,7 +915,8 @@ Outputs the record to the file.
 
 \subsubsection{RotatingFileHandler}
 
-The \class{RotatingFileHandler} class supports rotation of disk log files.
+The \class{RotatingFileHandler} class, located in the \module{logging.handlers}
+module, supports rotation of disk log files.
 
 \begin{classdesc}{RotatingFileHandler}{filename\optional{, mode\optional{,
                                        maxBytes\optional{, backupCount}}}}
@@ -950,7 +952,8 @@ Outputs the record to the file, catering for rollover as described previously.
 
 \subsubsection{TimedRotatingFileHandler}
 
-The \class{TimedRotatingFileHandler} class supports rotation of disk log files
+The \class{TimedRotatingFileHandler} class, located in the
+\module{logging.handlers} module, supports rotation of disk log files
 at certain timed intervals.
 
 \begin{classdesc}{TimedRotatingFileHandler}{filename
@@ -996,7 +999,8 @@ above.
 
 \subsubsection{SocketHandler}
 
-The \class{SocketHandler} class sends logging output to a network
+The \class{SocketHandler} class, located in the
+\module{logging.handlers} module, sends logging output to a network
 socket. The base class uses a TCP socket.
 
 \begin{classdesc}{SocketHandler}{host, port}
@@ -1044,7 +1048,8 @@ for partial sends which can happen when the network is busy.
 
 \subsubsection{DatagramHandler}
 
-The \class{DatagramHandler} class inherits from \class{SocketHandler}
+The \class{DatagramHandler} class, located in the
+\module{logging.handlers} module, inherits from \class{SocketHandler}
 to support sending logging messages over UDP sockets.
 
 \begin{classdesc}{DatagramHandler}{host, port}
@@ -1072,8 +1077,9 @@ Send a pickled string to a socket.
 
 \subsubsection{SysLogHandler}
 
-The \class{SysLogHandler} class supports sending logging messages to a
-remote or local \UNIX{} syslog.
+The \class{SysLogHandler} class, located in the
+\module{logging.handlers} module, supports sending logging messages to
+a remote or local \UNIX{} syslog.
 
 \begin{classdesc}{SysLogHandler}{\optional{address\optional{, facility}}}
 Returns a new instance of the \class{SysLogHandler} class intended to
@@ -1101,9 +1107,10 @@ to convert them to integers.
 
 \subsubsection{NTEventLogHandler}
 
-The \class{NTEventLogHandler} class supports sending logging messages
-to a local Windows NT, Windows 2000 or Windows XP event log. Before
-you can use it, you need Mark Hammond's Win32 extensions for Python
+The \class{NTEventLogHandler} class, located in the
+\module{logging.handlers} module, supports sending logging messages to
+a local Windows NT, Windows 2000 or Windows XP event log. Before you
+can use it, you need Mark Hammond's Win32 extensions for Python
 installed.
 
 \begin{classdesc}{NTEventLogHandler}{appname\optional{,
@@ -1163,8 +1170,9 @@ version returns 1, which is the base message ID in
 
 \subsubsection{SMTPHandler}
 
-The \class{SMTPHandler} class supports sending logging messages to an email
-address via SMTP.
+The \class{SMTPHandler} class, located in the
+\module{logging.handlers} module, supports sending logging messages to
+an email address via SMTP.
 
 \begin{classdesc}{SMTPHandler}{mailhost, fromaddr, toaddrs, subject}
 Returns a new instance of the \class{SMTPHandler} class. The
@@ -1186,10 +1194,11 @@ override this method.
 
 \subsubsection{MemoryHandler}
 
-The \class{MemoryHandler} supports buffering of logging records in memory,
-periodically flushing them to a \dfn{target} handler. Flushing occurs
-whenever the buffer is full, or when an event of a certain severity or
-greater is seen.
+The \class{MemoryHandler} class, located in the
+\module{logging.handlers} module, supports buffering of logging
+records in memory, periodically flushing them to a \dfn{target}
+handler. Flushing occurs whenever the buffer is full, or when an event
+of a certain severity or greater is seen.
 
 \class{MemoryHandler} is a subclass of the more general
 \class{BufferingHandler}, which is an abstract class. This buffers logging
@@ -1247,8 +1256,9 @@ Checks for buffer full or a record at the \var{flushLevel} or higher.
 
 \subsubsection{HTTPHandler}
 
-The \class{HTTPHandler} class supports sending logging messages to a
-Web server, using either \samp{GET} or \samp{POST} semantics.
+The \class{HTTPHandler} class, located in the
+\module{logging.handlers} module, supports sending logging messages to
+a Web server, using either \samp{GET} or \samp{POST} semantics.
 
 \begin{classdesc}{HTTPHandler}{host, url\optional{, method}}
 Returns a new instance of the \class{HTTPHandler} class. The
@@ -1411,12 +1421,12 @@ I/O.
 \subsubsection{Configuration functions%
                \label{logging-config-api}}
 
-The following functions allow the logging module to be
-configured. Before they can be used, you must import
-\module{logging.config}.  Their use is optional --- you can configure
-the logging module entirely by making calls to the main API (defined
-in \module{logging} itself) and defining handlers which are declared
-either in \module{logging} or \module{logging.handlers}.
+The following functions configure the logging module. They are located in the
+\module{logging.config} module.  Their use is optional --- you can configure
+the logging module using these functions or by making calls to the
+main API (defined in \module{logging} itself) and defining handlers
+which are declared either in \module{logging} or
+\module{logging.handlers}.
 
 \begin{funcdesc}{fileConfig}{fname\optional{, defaults}}
 Reads the logging configuration from a ConfigParser-format file named
@@ -1604,6 +1614,7 @@ Sections which specify formatter configuration are typified by the following.
 [formatter_form01]
 format=F1 %(asctime)s %(levelname)s %(message)s
 datefmt=
+class=logging.Formatter
 \end{verbatim}
 
 The \code{format} entry is the overall format string, and the
@@ -1613,3 +1624,9 @@ is almost equivalent to specifying the date format string "%Y-%m-%d %H:%M:%S".
 The ISO8601 format also specifies milliseconds, which are appended to the
 result of using the above format string, with a comma separator. An example
 time in ISO8601 format is \code{2003-01-23 00:29:50,411}.
+
+The \code{class} entry is optional.  It indicates the name of the
+formatter's class (as a dotted module and class name.)  This option is
+useful for instantiating a \class{Formatter} subclass.  Subclasses of
+\class{Formatter} can present exception tracebacks in an expanded or
+condensed format.
