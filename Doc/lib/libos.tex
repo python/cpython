@@ -418,7 +418,7 @@ Availability: Macintosh, \UNIX, Windows.
 
 (Note that \code{\var{child_stdin}, \var{child_stdout}, and
 \var{child_stderr}} are named from the point of view of the child
-process, i.e. \var{child_stdin} is the child's standard input.)
+process, so \var{child_stdin} is the child's standard input.)
 
 This functionality is also available in the \refmodule{popen2} module
 using functions of the same names, but the return values of those
@@ -978,7 +978,7 @@ the time of creation on Windows).
 \versionchanged [If \function{stat_float_times} returns true, the time
 values are floats, measuring seconds. Fractions of a second may be
 reported if the system supports that. On Mac OS, the times are always
-floats. See \function{stat_float_times} for further discussion. ]{2.3}
+floats. See \function{stat_float_times} for further discussion]{2.3}
 
 On some Unix systems (such as Linux), the following attributes may
 also be available:
@@ -1031,9 +1031,9 @@ Availability: Macintosh, \UNIX, Windows.
 
 \begin{funcdesc}{stat_float_times}{\optional{newvalue}}
 Determine whether \class{stat_result} represents time stamps as float
-objects.  If newval is True, future calls to stat() return floats, if
-it is False, future calls return ints.  If newval is omitted, return
-the current setting.
+objects.  If \var{newvalue} is \code{True}, future calls to \function{stat()}
+return floats, if it is \code{False}, future calls return ints.
+If \var{newvalue} is omitted, return the current setting.
 
 For compatibility with older Python versions, accessing
 \class{stat_result} as a tuple always returns integers. For
@@ -1187,7 +1187,7 @@ false is ineffective, because in bottom-up mode the directories in
 
 By default errors from the \code{os.listdir()} call are ignored.  If
 optional argument \var{onerror} is specified, it should be a function;
-it will be called with one argument, an os.error instance.  It can
+it will be called with one argument, an \exception{OSError} instance.  It can
 report the error to continue with the walk, or raise the exception
 to abort the walk.  Note that the filename is available as the
 \code{filename} attribute of the exception object.
@@ -1796,8 +1796,8 @@ Availability: Macintosh, \UNIX.
 
 \begin{funcdesc}{getloadavg}{}
 Return the number of processes in the system run queue averaged over
-the last 1, 5, and 15 minutes or raises OSError if the load average
-was unobtainable.
+the last 1, 5, and 15 minutes or raises \exception{OSError} if the load 
+average was unobtainable.
 
 \versionadded{2.3}
 \end{funcdesc}
