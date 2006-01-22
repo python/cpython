@@ -1220,7 +1220,7 @@ impose a specific order of visiting, or even to inform \function{walk()}
 about directories the caller creates or renames before it resumes
 \function{walk()} again.  Modifying \var{dirnames} when \var{topdown} is
 false is ineffective, because in bottom-up mode the directories in
-\var{dirnames} are generated before \var{dirnames} itself is generated.
+\var{dirnames} are generated before \var{dirpath} itself is generated.
 
 By default errors from the \code{os.listdir()} call are ignored.  If
 optional argument \var{onerror} is specified, it should be a function;
