@@ -25,9 +25,9 @@ This module offers the following functions:
  Closes a previously opened registry key.
  The hkey argument specifies a previously opened key.
 
- Note that if \var{hkey} is not closed using this method, (or the
- \method{handle.Close()} closed when the \var{hkey} object is 
- destroyed by Python.
+ Note that if \var{hkey} is not closed using this method (or via
+ \method{handle.Close()}), it is closed when the \var{hkey} object
+ is destroyed by Python.
 \end{funcdesc}
 
 
