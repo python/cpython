@@ -30,6 +30,9 @@ def make_pyc(co, mtime):
     pyc = imp.get_magic() + struct.pack("<i", int(mtime)) + data
     return pyc
 
+def module_path_to_dotted_name(path):
+    return path.replace(os.sep, '.')
+
 NOW = time.time()
 test_pyc = make_pyc(test_co, NOW)
 
@@ -206,7 +209,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             self.assertEquals(zi.is_package(packdir2 + TESTMOD), False)
 
             mod_name = packdir2 + TESTMOD
-            mod = __import__(mod_name.replace('/', '.'))
+            mod = __import__(module_path_to_dotted_name(mod_name))
             self.assertEquals(zi.get_source(TESTPACK), None)
             self.assertEquals(zi.get_source(mod_name), None)
         finally:
@@ -276,8 +279,14 @@ class BadFileZipImportTestCase(unittest.TestCase):
     def testFileUnreadable(self):
         test_support.unlink(TESTMOD)
         fd = os.open(TESTMOD, os.O_CREAT, 000)
-        os.close(fd)
-        self.assertZipFailure(TESTMOD)
+        try:
+            os.close(fd)
+            self.assertZipFailure(TESTMOD)
+        finally:
+            # If we leave "the read-only bit" set on Windows, nothing can
+            # delete TESTMOD, and later tests suffer bogus failures.
+            os.chmod(TESTMOD, 0666)
+            test_support.unlink(TESTMOD)
 
     def testNotZipFile(self):
         test_support.unlink(TESTMOD)
