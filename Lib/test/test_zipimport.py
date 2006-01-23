@@ -200,7 +200,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             zi = zipimport.zipimporter(TEMP_ZIP)
             self.assertEquals(zi.is_package(TESTPACK), True)
             zi.load_module(TESTPACK)
-            
+
             self.assertEquals(zi.is_package(packdir + '__init__'), False)
             self.assertEquals(zi.is_package(packdir + TESTPACK2), True)
             self.assertEquals(zi.is_package(packdir2 + TESTMOD), False)
