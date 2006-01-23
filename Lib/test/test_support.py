@@ -49,23 +49,24 @@ def unload(name):
     except KeyError:
         pass
 
+def unlink(filename):
+    import os
+    try:
+        os.unlink(filename)
+    except OSError:
+        pass
+
 def forget(modname):
     '''"Forget" a module was ever imported by removing it from sys.modules and
     deleting any .pyc and .pyo files.'''
     unload(modname)
     import os
     for dirname in sys.path:
-        try:
-            os.unlink(os.path.join(dirname, modname + os.extsep + 'pyc'))
-        except os.error:
-            pass
+        unlink(os.path.join(dirname, modname + os.extsep + 'pyc'))
         # Deleting the .pyo file cannot be within the 'try' for the .pyc since
         # the chance exists that there is no .pyc (and thus the 'try' statement
         # is exited) but there is a .pyo file.
-        try:
-            os.unlink(os.path.join(dirname, modname + os.extsep + 'pyo'))
-        except os.error:
-            pass
+        unlink(os.path.join(dirname, modname + os.extsep + 'pyo'))
 
 def is_resource_enabled(resource):
     """Test whether a resource is enabled.  Known resources are set by
@@ -175,13 +176,8 @@ except IOError:
                 (TESTFN, TMP_TESTFN))
 if fp is not None:
     fp.close()
-    try:
-        os.unlink(TESTFN)
-    except:
-        pass
+    unlink(TESTFN)
 del os, fp
-
-from os import unlink
 
 def findfile(file, here=__file__):
     """Try to find a file on sys.path and the working directory.  If it is not
