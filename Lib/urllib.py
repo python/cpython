@@ -37,7 +37,7 @@ __all__ = ["urlopen", "URLopener", "FancyURLopener", "urlretrieve",
            "splitnport", "splitquery", "splitattr", "splitvalue",
            "splitgophertype", "getproxies"]
 
-__version__ = '1.16'    # XXX This version is not always updated :-(
+__version__ = '1.17'    # XXX This version is not always updated :-(
 
 MAXFTPCACHE = 10        # Trim the ftp cache beyond this size
 
@@ -271,6 +271,7 @@ class URLopener:
         """Use HTTP protocol."""
         import httplib
         user_passwd = None
+        proxy_passwd= None
         if isinstance(url, str):
             host, selector = splithost(url)
             if host:
@@ -279,6 +280,9 @@ class URLopener:
             realhost = host
         else:
             host, selector = url
+            # check whether the proxy contains authorization information
+            proxy_passwd, host = splituser(host)
+            # now we proceed with the url we want to obtain
             urltype, rest = splittype(selector)
             url = rest
             user_passwd = None
@@ -295,6 +299,13 @@ class URLopener:
 
             #print "proxy via http:", host, selector
         if not host: raise IOError, ('http error', 'no host given')
+	
+        if proxy_passwd:
+            import base64
+            proxy_auth = base64.encodestring(proxy_passwd).strip()
+        else:
+            proxy_auth = None
+
         if user_passwd:
             import base64
             auth = base64.encodestring(user_passwd).strip()
@@ -307,6 +318,7 @@ class URLopener:
             h.putheader('Content-length', '%d' % len(data))
         else:
             h.putrequest('GET', selector)
+        if proxy_auth: h.putheader('Proxy-Authorization', 'Basic %s' % proxy_auth)
         if auth: h.putheader('Authorization', 'Basic %s' % auth)
         if realhost: h.putheader('Host', realhost)
         for args in self.addheaders: h.putheader(*args)
@@ -349,6 +361,7 @@ class URLopener:
             """Use HTTPS protocol."""
             import httplib
             user_passwd = None
+            proxy_passwd = None
             if isinstance(url, str):
                 host, selector = splithost(url)
                 if host:
@@ -357,6 +370,8 @@ class URLopener:
                 realhost = host
             else:
                 host, selector = url
+                # here, we determine, whether the proxy contains authorization information
+                proxy_passwd, host = splituser(host)
                 urltype, rest = splittype(selector)
                 url = rest
                 user_passwd = None
@@ -370,6 +385,11 @@ class URLopener:
                         selector = "%s://%s%s" % (urltype, realhost, rest)
                 #print "proxy via https:", host, selector
             if not host: raise IOError, ('https error', 'no host given')
+            if proxy_passwd:
+                import base64
+                proxy_auth = base64.encodestring(proxy_passwd).strip()
+            else:
+                proxy_auth = None
             if user_passwd:
                 import base64
                 auth = base64.encodestring(user_passwd).strip()
@@ -385,7 +405,8 @@ class URLopener:
                 h.putheader('Content-length', '%d' % len(data))
             else:
                 h.putrequest('GET', selector)
-            if auth: h.putheader('Authorization', 'Basic %s' % auth)
+            if proxy_auth: h.putheader('Proxy-Authorization: Basic %s' % proxy_auth)
+            if auth: h.putheader('Authorization: Basic %s' % auth)
             if realhost: h.putheader('Host', realhost)
             for args in self.addheaders: h.putheader(*args)
             h.endheaders()
@@ -404,6 +425,8 @@ class URLopener:
 
     def open_gopher(self, url):
         """Use Gopher protocol."""
+        if not isinstance(url, str):
+            raise IOError, ('gopher error', 'proxy support for gopher protocol currently not implemented')
         import gopherlib
         host, selector = splithost(url)
         if not host: raise IOError, ('gopher error', 'no host given')
@@ -419,6 +442,8 @@ class URLopener:
         return addinfourl(fp, noheaders(), "gopher:" + url)
 
     def open_file(self, url):
+        if not isinstance(url, str):
+            raise IOError, ('file error', 'proxy support for file protocol currently not implemented')
         """Use local file or FTP depending on form of URL."""
         if url[:2] == '//' and url[2:3] != '/' and url[2:12].lower() != 'localhost/':
             return self.open_ftp(url)
@@ -462,6 +487,8 @@ class URLopener:
 
     def open_ftp(self, url):
         """Use FTP protocol."""
+        if not isinstance(url, str):
+            raise IOError, ('ftp error', 'proxy support for ftp protocol currently not implemented')
         import mimetypes, mimetools
         try:
             from cStringIO import StringIO
@@ -522,6 +549,8 @@ class URLopener:
 
     def open_data(self, url, data=None):
         """Use "data" URL."""
+        if not isinstance(url, str):
+            raise IOError, ('data error', 'proxy support for data protocol currently not implemented')
         # ignore POSTed data
         #
         # syntax of data URLs:
@@ -624,8 +653,7 @@ class FancyURLopener(URLopener):
 
     def http_error_401(self, url, fp, errcode, errmsg, headers, data=None):
         """Error 401 -- authentication required.
-        See this URL for a description of the basic authentication scheme:
-        http://www.ics.uci.edu/pub/ietf/http/draft-ietf-http-v10-spec-00.txt"""
+        This function supports Basic authentication only."""
         if not 'www-authenticate' in headers:
             URLopener.http_error_default(self, url, fp,
                                          errcode, errmsg, headers)
@@ -644,7 +672,63 @@ class FancyURLopener(URLopener):
             return getattr(self,name)(url, realm)
         else:
             return getattr(self,name)(url, realm, data)
+    
+    def http_error_407(self, url, fp, errcode, errmsg, headers, data=None):
+        """Error 407 -- proxy authentication required.
+        This function supports Basic authentication only."""
+        if not 'proxy-authenticate' in headers:
+            URLopener.http_error_default(self, url, fp,
+                                         errcode, errmsg, headers)
+        stuff = headers['proxy-authenticate']
+        import re
+        match = re.match('[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', stuff)
+        if not match:
+            URLopener.http_error_default(self, url, fp,
+                                         errcode, errmsg, headers)
+        scheme, realm = match.groups()
+        if scheme.lower() != 'basic':
+            URLopener.http_error_default(self, url, fp,
+                                         errcode, errmsg, headers)
+        name = 'retry_proxy_' + self.type + '_basic_auth'
+        if data is None:
+            return getattr(self,name)(url, realm)
+        else:
+            return getattr(self,name)(url, realm, data)
+    
+    def retry_proxy_http_basic_auth(self, url, realm, data=None):
+        host, selector = splithost(url)
+        newurl = 'http://' + host + selector
+        proxy = self.proxies['http']
+        urltype, proxyhost = splittype(proxy)
+        proxyhost, proxyselector = splithost(proxyhost)
+        i = proxyhost.find('@') + 1
+        proxyhost = proxyhost[i:]
+        user, passwd = self.get_user_passwd(proxyhost, realm, i)
+        if not (user or passwd): return None
+        proxyhost = quote(user, safe='') + ':' + quote(passwd, safe='') + '@' + proxyhost
+        self.proxies['http'] = 'http://' + proxyhost + proxyselector
+        if data is None:
+            return self.open(newurl)
+        else:
+            return self.open(newurl, data)
 
+    def retry_proxy_https_basic_auth(self, url, realm, data=None):
+        host, selector = splithost(url)
+        newurl = 'https://' + host + selector
+        proxy = self.proxies['https']
+        urltype, proxyhost = splittype(proxy)
+        proxyhost, proxyselector = splithost(proxyhost)
+        i = proxyhost.find('@') + 1
+        proxyhost = proxyhost[i:]
+        user, passwd = self.get_user_passwd(proxyhost, realm, i)
+        if not (user or passwd): return None
+        proxyhost = quote(user, safe='') + ':' + quote(passwd, safe='') + '@' + proxyhost
+        self.proxies['https'] = 'https://' + proxyhost + proxyselector
+        if data is None:
+            return self.open(newurl)
+        else:
+            return self.open(newurl, data)
+	    
     def retry_http_basic_auth(self, url, realm, data=None):
         host, selector = splithost(url)
         i = host.find('@') + 1
@@ -665,8 +749,11 @@ class FancyURLopener(URLopener):
         user, passwd = self.get_user_passwd(host, realm, i)
         if not (user or passwd): return None
         host = quote(user, safe='') + ':' + quote(passwd, safe='') + '@' + host
-        newurl = '//' + host + selector
-        return self.open_https(newurl, data)
+        newurl = 'https://' + host + selector
+        if data is None:
+            return self.open(newurl)
+        else:
+            return self.open(newurl, data)
 
     def get_user_passwd(self, host, realm, clear_cache = 0):
         key = realm + '@' + host.lower()
