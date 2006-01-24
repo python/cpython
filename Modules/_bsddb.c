@@ -97,7 +97,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.3.3"
+#define PY_BSDDB_VERSION "4.4.0"
 static char *rcs_id = "$Id$";
 
 
@@ -4308,8 +4308,13 @@ DBEnv_lock_stat(DBEnvObject* self, PyObject* args)
 #endif
     MAKE_ENTRY(nrequests);
     MAKE_ENTRY(nreleases);
-    MAKE_ENTRY(nnowaits);
+#if (DBVER < 44)
+    MAKE_ENTRY(nnowaits);       /* these were renamed in 4.4 */
     MAKE_ENTRY(nconflicts);
+#else
+    MAKE_ENTRY(lock_nowait);
+    MAKE_ENTRY(lock_wait);
+#endif
     MAKE_ENTRY(ndeadlocks);
     MAKE_ENTRY(regsize);
     MAKE_ENTRY(region_wait);
@@ -5153,7 +5158,11 @@ DL_EXPORT(void) init_bsddb(void)
     ADD_INT(d, DB_LOCK_IREAD);
     ADD_INT(d, DB_LOCK_IWR);
 #if (DBVER >= 33)
+#if (DBVER < 44)
     ADD_INT(d, DB_LOCK_DIRTY);
+#else
+    ADD_INT(d, DB_LOCK_READ_UNCOMMITTED);  /* renamed in 4.4 */
+#endif
     ADD_INT(d, DB_LOCK_WWRITE);
 #endif
 
@@ -5253,6 +5262,11 @@ DL_EXPORT(void) init_bsddb(void)
     ADD_INT(d, DB_DIRTY_READ);
     ADD_INT(d, DB_MULTIPLE);
     ADD_INT(d, DB_MULTIPLE_KEY);
+#endif
+
+#if (DBVER >= 44)
+    ADD_INT(d, DB_READ_UNCOMMITTED);    /* replaces DB_DIRTY_READ in 4.4 */
+    ADD_INT(d, DB_READ_COMMITTED);
 #endif
 
 #if (DBVER >= 33)
