@@ -337,6 +337,10 @@ Extension Modules
 Library
 -------
 
+- Patch #1349118: urllib2 now supports user:pass@ style proxy 
+  specifications, raises IOErrors when proxies for unsupported protocols
+  are defined, and uses the https proxy on https redirections.
+
 - Bug #902075: urllib2 now supports 'host:port' style proxy specifications.
 
 - Bug #1407902: Add support for sftp:// URIs to urlparse.
