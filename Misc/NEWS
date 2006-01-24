@@ -243,7 +243,12 @@ Extension Modules
 - Patch #1338314, Bug #1336623: fix tarfile so it can extract
   REGTYPE directories from tarfiles written by old programs.
 
-- Get bsddb module to build with BSD DB version 3.2
+- Patch #1407992, fixes broken bsddb module db associate when using
+  BerkeleyDB 3.3, 4.0 or 4.1.
+
+- Get bsddb module to build with BerkeleyDB version 4.4
+
+- Get bsddb module to build with BerkeleyDB version 3.2
 
 - Patch #1309009, Fix segfault in pyexpat when the XML document is in latin_1,
   but Python incorrectly assumes it is in UTF-8 format
