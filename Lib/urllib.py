@@ -299,7 +299,7 @@ class URLopener:
 
             #print "proxy via http:", host, selector
         if not host: raise IOError, ('http error', 'no host given')
-	
+
         if proxy_passwd:
             import base64
             proxy_auth = base64.encodestring(proxy_passwd).strip()
@@ -672,7 +672,7 @@ class FancyURLopener(URLopener):
             return getattr(self,name)(url, realm)
         else:
             return getattr(self,name)(url, realm, data)
-    
+
     def http_error_407(self, url, fp, errcode, errmsg, headers, data=None):
         """Error 407 -- proxy authentication required.
         This function supports Basic authentication only."""
@@ -694,7 +694,7 @@ class FancyURLopener(URLopener):
             return getattr(self,name)(url, realm)
         else:
             return getattr(self,name)(url, realm, data)
-    
+
     def retry_proxy_http_basic_auth(self, url, realm, data=None):
         host, selector = splithost(url)
         newurl = 'http://' + host + selector
@@ -728,7 +728,7 @@ class FancyURLopener(URLopener):
             return self.open(newurl)
         else:
             return self.open(newurl, data)
-	    
+
     def retry_http_basic_auth(self, url, realm, data=None):
         host, selector = splithost(url)
         i = host.find('@') + 1
