@@ -97,7 +97,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.4.0"
+#define PY_BSDDB_VERSION "4.4.1"
 static char *rcs_id = "$Id$";
 
 
@@ -912,7 +912,7 @@ DBEnv_dealloc(DBEnvObject* self)
     }
 #endif
 
-    if (self->db_env) {
+    if (self->db_env && !self->closed) {
         MYDB_BEGIN_ALLOW_THREADS;
         self->db_env->close(self->db_env, 0);
         MYDB_END_ALLOW_THREADS;
@@ -1534,11 +1534,11 @@ DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
                 keyObj = PyInt_FromLong(*(int *)key.data);
             else
                 keyObj = PyString_FromStringAndSize(key.data, key.size);
-            retval = Py_BuildValue("OOO", keyObj, pkeyObj, dataObj);
+            retval = PyTuple_Pack(3, keyObj, pkeyObj, dataObj);
         }
         else /* return just the pkey and data */
         {
-            retval = Py_BuildValue("OO", pkeyObj, dataObj);
+            retval = PyTuple_Pack(2, pkeyObj, dataObj);
         }
 	FREE_DBT(pkey);
         FREE_DBT(data);
@@ -3176,7 +3176,7 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
         else
             pkeyObj = PyString_FromStringAndSize(pkey.data, pkey.size);
 
-        if (flags & DB_SET_RECNO) /* return key, pkey and data */
+        if (key.data && key.size) /* return key, pkey and data */
         {
             PyObject *keyObj;
             int type = _DB_get_type(self->mydb);
@@ -3184,12 +3184,12 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
                 keyObj = PyInt_FromLong(*(int *)key.data);
             else
                 keyObj = PyString_FromStringAndSize(key.data, key.size);
-            retval = Py_BuildValue("OOO", keyObj, pkeyObj, dataObj);
+            retval = PyTuple_Pack(3, keyObj, pkeyObj, dataObj);
             FREE_DBT(key);
         }
         else /* return just the pkey and data */
         {
-            retval = Py_BuildValue("OO", pkeyObj, dataObj);
+            retval = PyTuple_Pack(2, pkeyObj, dataObj);
         }
         FREE_DBT(pkey);
         FREE_DBT(data);
