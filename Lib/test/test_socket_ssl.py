@@ -35,6 +35,7 @@ def test_rude_shutdown():
     # Some random port to connect to.
     PORT = 9934
 
+    listener_ready = threading.Event()
     listener_gone = threading.Event()
 
     # `listener` runs in a thread.  It opens a socket listening on PORT, and
@@ -45,11 +46,13 @@ def test_rude_shutdown():
         s = socket.socket()
         s.bind(('', PORT))
         s.listen(5)
+        listener_ready.set()
         s.accept()
         s = None # reclaim the socket object, which also closes it
         listener_gone.set()
 
     def connector():
+        listener_ready.wait()
         s = socket.socket()
         s.connect(('localhost', PORT))
         listener_gone.wait()
