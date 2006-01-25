@@ -46,6 +46,12 @@ test_all.verbose = verbose
 
 
 def suite():
+    try:
+        # this is special, it used to segfault the interpreter
+        import test_1413192
+    except:
+        pass
+
     test_modules = [
         'test_associate',
         'test_basics',

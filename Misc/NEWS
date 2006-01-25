@@ -208,6 +208,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1413192, fix seg fault in bsddb if a transaction was deleted
+  before the env.
+
 - Bug #1402308, (possible) segfault when using mmap.mmap(-1, ...)
 
 - Bug #1400822, _curses over{lay,write} doesn't work when passing 6 ints.
