@@ -255,11 +255,10 @@ PyMac_GetFSRef(PyObject *v, FSRef *fsr)
                 char *path = NULL;
                 if (!PyArg_Parse(v, "et", Py_FileSystemDefaultEncoding, &path))
                         return NULL;
-                if ( (err=FSPathMakeRef(path, fsr, NULL)) ) {
+                if ( (err=FSPathMakeRef(path, fsr, NULL)) )
                         PyMac_Error(err);
-                        return 0;
-                }
-                return 1;
+                PyMem_Free(path);
+                return !err;
         }
         /* XXXX Should try unicode here too */
         /* Otherwise we try to go via an FSSpec */
