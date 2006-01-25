@@ -22,6 +22,12 @@ if 'silent' in sys.argv:  # take care of old flag, just in case
 
 
 def suite():
+    try:
+        # this is special, it used to segfault the interpreter
+        import bsddb.test.test_1413192
+    except:
+        pass
+
     test_modules = [
         'test_associate',
         'test_basics',

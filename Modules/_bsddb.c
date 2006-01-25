@@ -266,6 +266,7 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     DB_TXN*         txn;
+    PyObject        *env;
 #ifdef HAVE_WEAKREF
     PyObject        *in_weakreflist; /* List of weak references */
 #endif
@@ -928,6 +929,8 @@ newDBTxnObject(DBEnvObject* myenv, DB_TXN *parent, int flags)
     DBTxnObject* self = PyObject_New(DBTxnObject, &DBTxn_Type);
     if (self == NULL)
         return NULL;
+    Py_INCREF(myenv);
+    self->env = (PyObject*)myenv;
 #ifdef HAVE_WEAKREF
     self->in_weakreflist = NULL;
 #endif
@@ -938,11 +941,10 @@ newDBTxnObject(DBEnvObject* myenv, DB_TXN *parent, int flags)
 #else
     err = txn_begin(myenv->db_env, parent, &(self->txn), flags);
 #endif
-    /* TODO add a weakref(self) to the self->myenvobj->open_child_weakrefs
-     * list so that a DBEnv can refuse to close without aborting any open
-     * open DBTxns and closing any open DBs first. */
     MYDB_END_ALLOW_THREADS;
     if (makeDBError(err)) {
+        Py_DECREF(self->env);
+        PyObject_Del(self);
         self = NULL;
     }
     return self;
@@ -973,6 +975,7 @@ DBTxn_dealloc(DBTxnObject* self)
     }
 #endif
 
+    Py_DECREF(self->env);
     PyObject_Del(self);
 }
 

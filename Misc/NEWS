@@ -216,6 +216,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1413192, fix seg fault in bsddb if a transaction was deleted
+  before the env.
+
 - Patch #1103116: Basic AF_NETLINK support.
 
 - Bug #1402308, (possible) segfault when using mmap.mmap(-1, ...)
