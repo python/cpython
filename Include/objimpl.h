@@ -229,7 +229,7 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, int);
  */
 
 /* C equivalent of gc.collect(). */
-long PyGC_Collect(void);
+PyAPI_FUNC(long) PyGC_Collect(void);
 
 /* Test if a type has a GC head */
 #define PyType_IS_GC(t) PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
