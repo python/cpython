@@ -906,7 +906,7 @@ DBEnv_dealloc(DBEnvObject* self)
     }
 #endif
 
-    if (self->db_env) {
+    if (self->db_env && !self->closed) {
         MYDB_BEGIN_ALLOW_THREADS;
         self->db_env->close(self->db_env, 0);
         MYDB_END_ALLOW_THREADS;
@@ -2996,7 +2996,7 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
         else
             pkeyObj = PyString_FromStringAndSize(pkey.data, pkey.size);
 
-        if (flags & DB_SET_RECNO) /* return key, pkey and data */
+        if (key.data && key.size) /* return key, pkey and data */
         {
             PyObject *keyObj;
             int type = _DB_get_type(self->mydb);
