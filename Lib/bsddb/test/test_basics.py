@@ -11,6 +11,7 @@ import string
 import tempfile
 from pprint import pprint
 import unittest
+import time
 
 try:
     # For Pythons w/distutils pybsddb
@@ -64,6 +65,8 @@ class BasicTestCase(unittest.TestCase):
             try:
                 self.env = db.DBEnv()
                 self.env.set_lg_max(1024*1024)
+                self.env.set_tx_max(30)
+                self.env.set_tx_timestamp(int(time.time()))
                 self.env.set_flags(self.envsetflags, 1)
                 self.env.open(homeDir, self.envflags | db.DB_CREATE)
                 tempfile.tempdir = homeDir

@@ -77,6 +77,8 @@ class DBEnv:
         return apply(self._cobj.txn_stat, args, kwargs)
     def set_tx_max(self, *args, **kwargs):
         return apply(self._cobj.set_tx_max, args, kwargs)
+    def set_tx_timestamp(self, *args, **kwargs):
+        return apply(self._cobj.set_tx_timestamp, args, kwargs)
     def lock_detect(self, *args, **kwargs):
         return apply(self._cobj.lock_detect, args, kwargs)
     def lock_get(self, *args, **kwargs):
