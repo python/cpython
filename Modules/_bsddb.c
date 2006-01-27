@@ -97,7 +97,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.4.1"
+#define PY_BSDDB_VERSION "4.4.2"
 static char *rcs_id = "$Id$";
 
 
@@ -4164,9 +4164,23 @@ DBEnv_set_tx_max(DBEnvObject* self, PyObject* args)
         return NULL;
     CHECK_ENV_NOT_CLOSED(self);
 
-    MYDB_BEGIN_ALLOW_THREADS;
     err = self->db_env->set_tx_max(self->db_env, max);
-    MYDB_END_ALLOW_THREADS;
+    RETURN_IF_ERR();
+    RETURN_NONE();
+}
+
+
+static PyObject*
+DBEnv_set_tx_timestamp(DBEnvObject* self, PyObject* args)
+{
+    int err;
+    time_t stamp;
+
+    if (!PyArg_ParseTuple(args, "i:set_tx_timestamp", &stamp))
+        return NULL;
+    CHECK_ENV_NOT_CLOSED(self);
+
+    err = self->db_env->set_tx_timestamp(self->db_env, &stamp);
     RETURN_IF_ERR();
     RETURN_NONE();
 }
@@ -4723,6 +4737,7 @@ static PyMethodDef DBEnv_methods[] = {
     {"txn_checkpoint",  (PyCFunction)DBEnv_txn_checkpoint,   METH_VARARGS},
     {"txn_stat",        (PyCFunction)DBEnv_txn_stat,         METH_VARARGS},
     {"set_tx_max",      (PyCFunction)DBEnv_set_tx_max,       METH_VARARGS},
+    {"set_tx_timestamp", (PyCFunction)DBEnv_set_tx_timestamp, METH_VARARGS},
     {"lock_detect",     (PyCFunction)DBEnv_lock_detect,      METH_VARARGS},
     {"lock_get",        (PyCFunction)DBEnv_lock_get,         METH_VARARGS},
     {"lock_id",         (PyCFunction)DBEnv_lock_id,          METH_VARARGS},
