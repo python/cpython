@@ -329,6 +329,19 @@ static int
 set_context(expr_ty e, expr_context_ty ctx, const node *n)
 {
     asdl_seq *s = NULL;
+    /* If a particular expression type can't be used for assign / delete,
+       set expr_name to its name and an error message will be generated.
+    */
+    const char* expr_name = NULL;
+
+    /* The ast defines augmented store and load contexts, but the
+       implementation here doesn't actually use them.  The code may be
+       a little more complex than necessary as a result.  It also means
+       that expressions in an augmented assignment have no context.
+       Consider restructuring so that augmented assignment uses
+       set_context(), too
+    */
+    assert(ctx != AugStore && ctx != AugLoad);
 
     switch (e->kind) {
         case Attribute_kind:
@@ -358,30 +371,50 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
 	    e->v.Tuple.ctx = ctx;
 	    s = e->v.Tuple.elts;
 	    break;
+        case Lambda_kind:
+            expr_name = "lambda";
+            break;
         case Call_kind:
-	    if (ctx == Store)
-		return ast_error(n, "can't assign to function call");
-	    else if (ctx == Del)
-		return ast_error(n, "can't delete function call");
-	    else
-		return ast_error(n, "unexpected operation on function call");
+            expr_name = "function call";
 	    break;
+        case BoolOp_kind:
         case BinOp_kind:
-            return ast_error(n, "can't assign to operator");
+        case UnaryOp_kind:
+            expr_name = "operator";
+            break;
         case GeneratorExp_kind:
-            return ast_error(n, "assignment to generator expression "
-                             "not possible");
+            expr_name = "generator expression";
+            break;
+        case ListComp_kind:
+            expr_name = "list comprehension";
+            break;
+        case Dict_kind:
         case Num_kind:
         case Str_kind:
-	    return ast_error(n, "can't assign to literal");
-        default: {
-	   char buf[300];
-	   PyOS_snprintf(buf, sizeof(buf), 
-			 "unexpected expression in assignment %d (line %d)", 
-			 e->kind, e->lineno);
-	   return ast_error(n, buf);
-       }
+            expr_name = "literal";
+            break;
+        case Compare_kind:
+            expr_name = "comparison";
+            break;
+        case Repr_kind:
+            expr_name = "repr";
+            break;
+        default:
+            PyErr_Format(PyExc_SystemError, 
+                         "unexpected expression in assignment %d (line %d)", 
+                         e->kind, e->lineno);
+            return 0;
     }
+    /* Check for error string set by switch */
+    if (expr_name) {
+        char buf[300];
+        PyOS_snprintf(buf, sizeof(buf),
+                      "can't %s %s",
+                      ctx == Store ? "assign to" : "delete",
+                      expr_name);
+        return ast_error(n, buf);
+    }
+
     /* If the LHS is a list or tuple, we need to set the assignment
        context for all the tuple elements.  
     */
@@ -699,12 +732,8 @@ ast_for_decorator(struct compiling *c, const node *n)
     expr_ty name_expr;
     
     REQ(n, decorator);
-    
-    if ((NCH(n) < 3 && NCH(n) != 5 && NCH(n) != 6)
-	|| TYPE(CHILD(n, 0)) != AT || TYPE(RCHILD(n, -1)) != NEWLINE) {
-	ast_error(n, "Invalid decorator node");
-	return NULL;
-    }
+    REQ(CHILD(n, 0), AT);
+    REQ(RCHILD(n, -1), NEWLINE);
     
     name_expr = ast_for_dotted_name(c, CHILD(n, 1));
     if (!name_expr)
@@ -1610,7 +1639,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
 	}
     }
     if (ngens > 1 || (ngens && (nargs || nkeywords))) {
-        ast_error(n, "Generator expression must be parenthesised "
+        ast_error(n, "Generator expression must be parenthesized "
 		  "if not sole argument");
 	return NULL;
     }
@@ -1779,18 +1808,28 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 
         if (!expr1)
             return NULL;
-        if (expr1->kind == GeneratorExp_kind) {
-	    ast_error(ch, "augmented assignment to generator "
-		      "expression not possible");
-	    return NULL;
+        // TODO(jhylton): Figure out why set_context() can't be used here.
+        switch (expr1->kind) {
+            case GeneratorExp_kind:
+                ast_error(ch, "augmented assignment to generator "
+                          "expression not possible");
+                return NULL;
+            case Name_kind: {
+                const char *var_name = PyString_AS_STRING(expr1->v.Name.id);
+                if (var_name[0] == 'N' && !strcmp(var_name, "None")) {
+                    ast_error(ch, "assignment to None");
+                    return NULL;
+                }
+                break;
+            }
+            case Attribute_kind:
+            case Subscript_kind:
+                break;
+            default:
+                ast_error(ch, "illegal expression for augmented "
+                          "assignment");
+                return NULL;
         }
-	if (expr1->kind == Name_kind) {
-		char *var_name = PyString_AS_STRING(expr1->v.Name.id);
-		if (var_name[0] == 'N' && !strcmp(var_name, "None")) {
-			ast_error(ch, "assignment to None");
-			return NULL;
-		}
-	}
 
 	ch = CHILD(n, 2);
 	if (TYPE(ch) == testlist)
