@@ -4,6 +4,13 @@ from test.test_support import verbose, TestFailed, TestSkipped
 TEST_STRING_1 = "I wish to buy a fish license.\n"
 TEST_STRING_2 = "For my pet fish, Eric.\n"
 
+# Solaris (at least 2.9 and 2.10) seem to have a ficke isatty(). The first
+# test below, testing the result of os.openpty() for tty-ness, sometimes
+# (but not always) fails. The second isatty test, in the sub-process, always
+# works. Allow that fickle first test to fail on these platforms, since it
+# doesn't actually affect functionality.
+fickle_isatty = ["sunos5"]
+
 if verbose:
     def debug(msg):
         print msg
@@ -26,7 +33,7 @@ def test_basic_pty():
         # " An optional feature could not be imported " ... ?
         raise TestSkipped, "Pseudo-terminals (seemingly) not functional."
 
-    if not os.isatty(slave_fd):
+    if not os.isatty(slave_fd) and sys.platform not in fickle_isatty:
         raise TestFailed, "slave_fd is not a tty"
 
     # IRIX apparently turns \n into \r\n. Allow that, but avoid allowing other
