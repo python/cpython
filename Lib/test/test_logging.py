@@ -109,6 +109,8 @@ class LogRecordSocketReceiver(ThreadingTCPServer):
             abort = self.abort
         #notify the main thread that we're about to exit
         socketDataProcessed.set()
+        # close the listen socket
+        self.server_close()
 
     def process_request(self, request, client_address):
         #import threading
