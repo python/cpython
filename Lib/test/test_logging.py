@@ -565,11 +565,23 @@ def test_main_inner():
     hdlr.setFormatter(fmt)
     rootLogger.addHandler(hdlr)
 
+    # Find an unused port number
+    port = logging.handlers.DEFAULT_TCP_LOGGING_PORT
+    while port < logging.handlers.DEFAULT_TCP_LOGGING_PORT+100:
+        try:
+            tcpserver = LogRecordSocketReceiver(port=port)
+        except socket.error:
+            port += 1
+        else:
+            break
+    else:
+        raise ImportError, "Could not find unused port"
+                                                        
+
     #Set up a handler such that all events are sent via a socket to the log
     #receiver (logrecv).
     #The handler will only be added to the rootLogger for some of the tests
-    shdlr = logging.handlers.SocketHandler('localhost',
-                                   logging.handlers.DEFAULT_TCP_LOGGING_PORT)
+    shdlr = logging.handlers.SocketHandler('localhost', port)
 
     #Configure the logger for logrecv so events do not propagate beyond it.
     #The sockLogger output is buffered in memory until the end of the test,
@@ -585,7 +597,6 @@ def test_main_inner():
 
     #Set up servers
     threads = []
-    tcpserver = LogRecordSocketReceiver()
     #sys.stdout.write("About to start TCP server...\n")
     threads.append(threading.Thread(target=runTCP, args=(tcpserver,)))
 
