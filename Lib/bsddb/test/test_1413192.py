@@ -4,7 +4,12 @@
 # This test relies on the variable names, see the bug report for details.
 # The problem was that the env was deallocated prior to the txn.
 
-from bsddb import db
+try:
+    # For Pythons w/distutils and add-on pybsddb
+    from bsddb3 import db
+except ImportError:
+    # For Python >= 2.3 builtin bsddb distribution
+    from bsddb import db
 
 env_name = '.'
 
