@@ -216,6 +216,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Add bsddb.db.DBEnv.set_tx_timestamp allowing time based database recovery.
+
 - Bug #1413192, fix seg fault in bsddb if a transaction was deleted
   before the env.
 
