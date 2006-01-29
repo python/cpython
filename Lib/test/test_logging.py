@@ -576,7 +576,7 @@ def test_main_inner():
             break
     else:
         raise ImportError, "Could not find unused port"
-                                                        
+
 
     #Set up a handler such that all events are sent via a socket to the log
     #receiver (logrecv).
