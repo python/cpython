@@ -1537,11 +1537,19 @@ DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
                 keyObj = PyInt_FromLong(*(int *)key.data);
             else
                 keyObj = PyString_FromStringAndSize(key.data, key.size);
+#if (PY_VERSION_HEX >= 0x02040000)
             retval = PyTuple_Pack(3, keyObj, pkeyObj, dataObj);
+#else
+            retval = Py_BuildValue("OOO", keyObj, pkeyObj, dataObj);
+#endif
         }
         else /* return just the pkey and data */
         {
+#if (PY_VERSION_HEX >= 0x02040000)
             retval = PyTuple_Pack(2, pkeyObj, dataObj);
+#else
+            retval = Py_BuildValue("OO", pkeyObj, dataObj);
+#endif
         }
 	FREE_DBT(pkey);
         FREE_DBT(data);
@@ -3187,12 +3195,20 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
                 keyObj = PyInt_FromLong(*(int *)key.data);
             else
                 keyObj = PyString_FromStringAndSize(key.data, key.size);
+#if (PY_VERSION_HEX >= 0x02040000)
             retval = PyTuple_Pack(3, keyObj, pkeyObj, dataObj);
+#else
+            retval = Py_BuildValue("OOO", keyObj, pkeyObj, dataObj);
+#endif
             FREE_DBT(key);
         }
         else /* return just the pkey and data */
         {
+#if (PY_VERSION_HEX >= 0x02040000)
             retval = PyTuple_Pack(2, pkeyObj, dataObj);
+#else
+            retval = Py_BuildValue("OO", pkeyObj, dataObj);
+#endif
         }
         FREE_DBT(pkey);
         FREE_DBT(data);
