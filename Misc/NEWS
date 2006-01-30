@@ -347,7 +347,7 @@ Extension Modules
 Library
 -------
 
-- Patch #1349118: urllib2 now supports user:pass@ style proxy 
+- Patch #1349118: urllib now supports user:pass@ style proxy 
   specifications, raises IOErrors when proxies for unsupported protocols
   are defined, and uses the https proxy on https redirections.
 
