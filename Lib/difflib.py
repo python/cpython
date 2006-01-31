@@ -473,26 +473,31 @@ class SequenceMatcher:
 
         if self.matching_blocks is not None:
             return self.matching_blocks
-        self.matching_blocks = []
         la, lb = len(self.a), len(self.b)
-        self.__helper(0, la, 0, lb, self.matching_blocks)
+
+        indexed_blocks = []
+        queue = [(0, la, 0, lb)]
+        while queue:
+            # builds list of matching blocks covering a[alo:ahi] and
+            # b[blo:bhi], appending them in increasing order to answer
+            alo, ahi, blo, bhi = queue.pop()
+
+            # a[alo:i] vs b[blo:j] unknown
+            # a[i:i+k] same as b[j:j+k]
+            # a[i+k:ahi] vs b[j+k:bhi] unknown
+            i, j, k = x = self.find_longest_match(alo, ahi, blo, bhi)
+
+            if k:
+                if alo < i and blo < j:
+                    queue.append((alo, i, blo, j))
+                indexed_blocks.append((i, x))
+                if i+k < ahi and j+k < bhi:
+                    queue.append((i+k, ahi, j+k, bhi))
+        indexed_blocks.sort()
+
+        self.matching_blocks = [elem[1] for elem in indexed_blocks]
         self.matching_blocks.append( (la, lb, 0) )
         return self.matching_blocks
-
-    # builds list of matching blocks covering a[alo:ahi] and
-    # b[blo:bhi], appending them in increasing order to answer
-
-    def __helper(self, alo, ahi, blo, bhi, answer):
-        i, j, k = x = self.find_longest_match(alo, ahi, blo, bhi)
-        # a[alo:i] vs b[blo:j] unknown
-        # a[i:i+k] same as b[j:j+k]
-        # a[i+k:ahi] vs b[j+k:bhi] unknown
-        if k:
-            if alo < i and blo < j:
-                self.__helper(alo, i, blo, j, answer)
-            answer.append(x)
-            if i+k < ahi and j+k < bhi:
-                self.__helper(i+k, ahi, j+k, bhi, answer)
 
     def get_opcodes(self):
         """Return list of 5-tuples describing how to turn a into b.
