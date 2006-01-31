@@ -676,6 +676,9 @@ Library
 
 - ` uu.encode()`` and ``uu.decode()`` now support unicode filenames.
 
+- Patch #1413711: Certain patterns of differences were making difflib
+  touch the recursion limit.
+
 Build
 -----
 
