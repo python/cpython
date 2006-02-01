@@ -652,7 +652,7 @@ _PyLong_AsScaledDouble(PyObject *vv, int *exponent)
 double
 PyLong_AsDouble(PyObject *vv)
 {
-	int e;
+	int e = -1;
 	double x;
 
 	if (vv == NULL || !PyLong_Check(vv)) {
@@ -662,6 +662,9 @@ PyLong_AsDouble(PyObject *vv)
 	x = _PyLong_AsScaledDouble(vv, &e);
 	if (x == -1.0 && PyErr_Occurred())
 		return -1.0;
+	/* 'e' initialized to -1 to silence gcc-4.0.x, but it should be
+	   set correctly after a successful _PyLong_AsScaledDouble() call */
+	assert(e >= 0);
 	if (e > INT_MAX / SHIFT)
 		goto overflow;
 	errno = 0;
@@ -2260,7 +2263,7 @@ long_true_divide(PyObject *v, PyObject *w)
 {
 	PyLongObject *a, *b;
 	double ad, bd;
-	int aexp, bexp, failed;
+	int failed, aexp = -1, bexp = -1;
 
 	CONVERT_BINOP(v, w, &a, &b);
 	ad = _PyLong_AsScaledDouble((PyObject *)a, &aexp);
@@ -2270,6 +2273,10 @@ long_true_divide(PyObject *v, PyObject *w)
 	Py_DECREF(b);
 	if (failed)
 		return NULL;
+	/* 'aexp' and 'bexp' were initialized to -1 to silence gcc-4.0.x,
+	   but should really be set correctly after sucessful calls to
+	   _PyLong_AsScaledDouble() */
+	assert(aexp >= 0 && bexp >= 0);
 
 	if (bd == 0.0) {
 		PyErr_SetString(PyExc_ZeroDivisionError,
