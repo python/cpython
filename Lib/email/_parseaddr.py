@@ -1,4 +1,4 @@
-# Copyright (C) 2002 Python Software Foundation
+# Copyright (C) 2002-2006 Python Software Foundation
 
 """Email address parsing code.
 
@@ -123,8 +123,7 @@ def parsedate_tz(data):
         else:
             tzsign = 1
         tzoffset = tzsign * ( (tzoffset/100)*3600 + (tzoffset % 100)*60)
-    tuple = (yy, mm, dd, thh, tmm, tss, 0, 0, 0, tzoffset)
-    return tuple
+    return yy, mm, dd, thh, tmm, tss, 0, 1, 0, tzoffset
 
 
 def parsedate(data):
