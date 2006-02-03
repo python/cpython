@@ -2104,6 +2104,15 @@ class TestMiscellaneous(TestEmailBase):
         eq(Utils.parsedate_tz('5 Feb 2003 13:47:26 -0800'),
            (2003, 2, 5, 13, 47, 26, 0, 1, 0, -28800))
 
+    def test_parsedate_acceptable_to_time_functions(self):
+        eq = self.assertEqual
+        timetup = Utils.parsedate('5 Feb 2003 13:47:26 -0800')
+        eq(int(time.mktime(timetup)), 1044470846)
+        eq(int(time.strftime('%Y', timetup)), 2003)
+        timetup = Utils.parsedate_tz('5 Feb 2003 13:47:26 -0800')
+        eq(int(time.mktime(timetup[:9])), 1044470846)
+        eq(int(time.strftime('%Y', timetup[:9])), 2003)
+
     def test_parseaddr_empty(self):
         self.assertEqual(Utils.parseaddr('<>'), ('', ''))
         self.assertEqual(Utils.formataddr(Utils.parseaddr('<>')), '')
