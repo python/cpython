@@ -277,9 +277,9 @@ extern int lstat(const char *, struct stat *);
 /* choose the appropriate stat and fstat functions and return structs */
 #undef STAT
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
-#	define STAT _stati64
-#	define FSTAT _fstati64
-#	define STRUCT_STAT struct _stati64
+#	define STAT win32_stat
+#	define FSTAT win32_fstat
+#	define STRUCT_STAT struct win32_stat
 #else
 #	define STAT stat
 #	define FSTAT fstat
@@ -668,6 +668,188 @@ posix_2str(PyObject *args,
 	return Py_None;
 }
 
+#ifdef MS_WINDOWS
+/* The CRT of Windows has a number of flaws wrt. its stat() implementation:
+   - time stamps are restricted to second resolution
+   - file modification times suffer from forth-and-back conversions between
+     UTC and local time
+   Therefore, we implement our own stat, based on the Win32 API directly.
+*/
+#define HAVE_STAT_NSEC 1 
+
+struct win32_stat{
+    int st_dev;
+    __int64 st_ino;
+    unsigned short st_mode;
+    int st_nlink;
+    int st_uid;
+    int st_gid;
+    int st_rdev;
+    __int64 st_size;
+    int st_atime;
+    int st_atime_nsec;
+    int st_mtime;
+    int st_mtime_nsec;
+    int st_ctime;
+    int st_ctime_nsec;
+};
+
+static __int64 secs_between_epochs = 11644473600; /* Seconds between 1.1.1601 and 1.1.1970 */
+
+static void
+FILE_TIME_to_time_t_nsec(FILETIME *in_ptr, int *time_out, int* nsec_out)
+{
+	/* XXX endianness */
+	__int64 in = *(__int64*)in_ptr;
+	*nsec_out = (int)(in % 10000000) * 100; /* FILETIME is in units of 100 nsec. */
+	/* XXX Win32 supports time stamps past 2038; we currently don't */
+	*time_out = Py_SAFE_DOWNCAST((in / 10000000) - secs_between_epochs, __int64, int);
+}
+
+/* Below, we *know* that ugo+r is 0444 */
+#if _S_IREAD != 0400
+#error Unsupported C library
+#endif
+static int
+attributes_to_mode(DWORD attr)
+{
+	int m = 0;
+	if (attr & FILE_ATTRIBUTE_DIRECTORY)
+		m |= _S_IFDIR | 0111; /* IFEXEC for user,group,other */
+	else
+		m |= _S_IFREG;
+	if (attr & FILE_ATTRIBUTE_READONLY)
+		m |= 0444;
+	else
+		m |= 0666;
+	return m;
+}
+
+static int
+attribute_data_to_stat(WIN32_FILE_ATTRIBUTE_DATA *info, struct win32_stat *result)
+{
+	memset(result, 0, sizeof(*result));
+	result->st_mode = attributes_to_mode(info->dwFileAttributes);
+	result->st_size = (((__int64)info->nFileSizeHigh)<<32) + info->nFileSizeLow;
+	FILE_TIME_to_time_t_nsec(&info->ftCreationTime, &result->st_ctime, &result->st_ctime_nsec);
+	FILE_TIME_to_time_t_nsec(&info->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
+	FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
+
+	return 0;
+}
+
+static int 
+win32_stat(const char* path, struct win32_stat *result)
+{
+	WIN32_FILE_ATTRIBUTE_DATA info;
+	int code;
+	char *dot;
+	/* XXX not supported on Win95 and NT 3.x */
+	if (!GetFileAttributesExA(path, GetFileExInfoStandard, &info)) {
+		/* Protocol violation: we explicitly clear errno, instead of
+		   setting it to a POSIX error. Callers should use GetLastError. */
+		errno = 0;
+		return -1;
+	}
+	code = attribute_data_to_stat(&info, result);
+	if (code != 0)
+		return code;
+	/* Set S_IFEXEC if it is an .exe, .bat, ... */
+	dot = strrchr(path, '.');
+	if (dot) {
+		if (stricmp(dot, ".bat") == 0 ||
+		stricmp(dot, ".cmd") == 0 ||
+		stricmp(dot, ".exe") == 0 ||
+		stricmp(dot, ".com") == 0)
+		result->st_mode |= 0111;
+	}
+	return code;
+}
+
+static int 
+win32_wstat(const wchar_t* path, struct win32_stat *result)
+{
+	int code;
+	const wchar_t *dot;
+	WIN32_FILE_ATTRIBUTE_DATA info;
+	/* XXX not supported on Win95 and NT 3.x */
+	if (!GetFileAttributesExW(path, GetFileExInfoStandard, &info)) {
+		/* Protocol violation: we explicitly clear errno, instead of
+		   setting it to a POSIX error. Callers should use GetLastError. */
+		errno = 0;
+		return -1;
+	}
+	code = attribute_data_to_stat(&info, result);
+	if (code < 0)
+		return code;
+	/* Set IFEXEC if it is an .exe, .bat, ... */
+	dot = wcsrchr(path, '.');
+	if (dot) {
+		if (_wcsicmp(dot, L".bat") == 0 ||
+		    _wcsicmp(dot, L".cmd") == 0 ||
+		    _wcsicmp(dot, L".exe") == 0 ||
+		    _wcsicmp(dot, L".com") == 0)
+			result->st_mode |= 0111;
+	}
+	return code;
+}
+
+static int
+win32_fstat(int file_number, struct win32_stat *result)
+{
+	BY_HANDLE_FILE_INFORMATION info;
+	HANDLE h;
+	int type;
+    
+	h = (HANDLE)_get_osfhandle(file_number);
+    
+	/* Protocol violation: we explicitly clear errno, instead of
+	   setting it to a POSIX error. Callers should use GetLastError. */
+	errno = 0;
+
+	if (h == INVALID_HANDLE_VALUE) {
+    		/* This is really a C library error (invalid file handle).
+		   We set the Win32 error to the closes one matching. */
+		SetLastError(ERROR_INVALID_HANDLE);
+		return -1;
+	}
+	memset(result, 0, sizeof(*result));
+
+	type = GetFileType(h);
+	if (type == FILE_TYPE_UNKNOWN) {
+	    DWORD error = GetLastError();
+	    if (error != 0) {
+		return -1;
+	    }
+	    /* else: valid but unknown file */
+	}
+
+	if (type != FILE_TYPE_DISK) {
+		if (type == FILE_TYPE_CHAR)
+			result->st_mode = _S_IFCHR;
+		else if (type == FILE_TYPE_PIPE)
+			result->st_mode = _S_IFIFO;
+		return 0;
+	}
+
+	if (!GetFileInformationByHandle(h, &info)) {
+		return -1;
+	}
+
+	/* similar to stat() */
+	result->st_mode = attributes_to_mode(info.dwFileAttributes);
+	result->st_size = (((__int64)info.nFileSizeHigh)<<32) + info.nFileSizeLow;
+	FILE_TIME_to_time_t_nsec(&info.ftCreationTime, &result->st_ctime, &result->st_ctime_nsec);
+	FILE_TIME_to_time_t_nsec(&info.ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
+	FILE_TIME_to_time_t_nsec(&info.ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
+	/* specific to fstat() */
+	result->st_nlink = info.nNumberOfLinks;
+	result->st_ino = (((__int64)info.nFileIndexHigh)<<32) + info.nFileIndexLow;
+	return 0;
+}
+
+#endif /* MS_WINDOWS */
+
 PyDoc_STRVAR(stat_result__doc__,
 "stat_result: Result from stat or lstat.\n\n\
 This object may be accessed either as a tuple of\n\
@@ -861,76 +1043,78 @@ fill_time(PyObject *v, int index, time_t sec, unsigned long nsec)
 /* pack a system stat C structure into the Python stat tuple
    (used by posix_stat() and posix_fstat()) */
 static PyObject*
-_pystat_fromstructstat(STRUCT_STAT st)
+_pystat_fromstructstat(STRUCT_STAT *st)
 {
 	unsigned long ansec, mnsec, cnsec;
 	PyObject *v = PyStructSequence_New(&StatResultType);
 	if (v == NULL)
 		return NULL;
 
-        PyStructSequence_SET_ITEM(v, 0, PyInt_FromLong((long)st.st_mode));
+        PyStructSequence_SET_ITEM(v, 0, PyInt_FromLong((long)st->st_mode));
 #ifdef HAVE_LARGEFILE_SUPPORT
         PyStructSequence_SET_ITEM(v, 1,
-				  PyLong_FromLongLong((PY_LONG_LONG)st.st_ino));
+				  PyLong_FromLongLong((PY_LONG_LONG)st->st_ino));
 #else
-        PyStructSequence_SET_ITEM(v, 1, PyInt_FromLong((long)st.st_ino));
+        PyStructSequence_SET_ITEM(v, 1, PyInt_FromLong((long)st->st_ino));
 #endif
 #if defined(HAVE_LONG_LONG) && !defined(MS_WINDOWS)
         PyStructSequence_SET_ITEM(v, 2,
-				  PyLong_FromLongLong((PY_LONG_LONG)st.st_dev));
+				  PyLong_FromLongLong((PY_LONG_LONG)st->st_dev));
 #else
-        PyStructSequence_SET_ITEM(v, 2, PyInt_FromLong((long)st.st_dev));
+        PyStructSequence_SET_ITEM(v, 2, PyInt_FromLong((long)st->st_dev));
 #endif
-        PyStructSequence_SET_ITEM(v, 3, PyInt_FromLong((long)st.st_nlink));
-        PyStructSequence_SET_ITEM(v, 4, PyInt_FromLong((long)st.st_uid));
-        PyStructSequence_SET_ITEM(v, 5, PyInt_FromLong((long)st.st_gid));
+        PyStructSequence_SET_ITEM(v, 3, PyInt_FromLong((long)st->st_nlink));
+        PyStructSequence_SET_ITEM(v, 4, PyInt_FromLong((long)st->st_uid));
+        PyStructSequence_SET_ITEM(v, 5, PyInt_FromLong((long)st->st_gid));
 #ifdef HAVE_LARGEFILE_SUPPORT
         PyStructSequence_SET_ITEM(v, 6,
-				  PyLong_FromLongLong((PY_LONG_LONG)st.st_size));
+				  PyLong_FromLongLong((PY_LONG_LONG)st->st_size));
 #else
-        PyStructSequence_SET_ITEM(v, 6, PyInt_FromLong(st.st_size));
+        PyStructSequence_SET_ITEM(v, 6, PyInt_FromLong(st->st_size));
 #endif
 
-#ifdef HAVE_STAT_TV_NSEC
-	ansec = st.st_atim.tv_nsec;
-	mnsec = st.st_mtim.tv_nsec;
-	cnsec = st.st_ctim.tv_nsec;
-#else
-#ifdef HAVE_STAT_TV_NSEC2
-	ansec = st.st_atimespec.tv_nsec;
-	mnsec = st.st_mtimespec.tv_nsec;
-	cnsec = st.st_ctimespec.tv_nsec;
+#if defined(HAVE_STAT_TV_NSEC)
+	ansec = st->st_atim.tv_nsec;
+	mnsec = st->st_mtim.tv_nsec;
+	cnsec = st->st_ctim.tv_nsec;
+#elif defined(HAVE_STAT_TV_NSEC2)
+	ansec = st->st_atimespec.tv_nsec;
+	mnsec = st->st_mtimespec.tv_nsec;
+	cnsec = st->st_ctimespec.tv_nsec;
+#elif defined(HAVE_STAT_NSEC)
+	ansec = st->st_atime_nsec;
+	mnsec = st->st_mtime_nsec;
+	cnsec = st->st_ctime_nsec;
 #else
 	ansec = mnsec = cnsec = 0;
 #endif
-#endif
-	fill_time(v, 7, st.st_atime, ansec);
-	fill_time(v, 8, st.st_mtime, mnsec);
-	fill_time(v, 9, st.st_ctime, cnsec);
+	fill_time(v, 7, st->st_atime, ansec);
+	fill_time(v, 8, st->st_mtime, mnsec);
+	fill_time(v, 9, st->st_ctime, cnsec);
 
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 	PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
-			 PyInt_FromLong((long)st.st_blksize));
+			 PyInt_FromLong((long)st->st_blksize));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
 	PyStructSequence_SET_ITEM(v, ST_BLOCKS_IDX,
-			 PyInt_FromLong((long)st.st_blocks));
+			 PyInt_FromLong((long)st->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_RDEV
 	PyStructSequence_SET_ITEM(v, ST_RDEV_IDX,
-			 PyInt_FromLong((long)st.st_rdev));
+			 PyInt_FromLong((long)st->st_rdev));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_GEN
 	PyStructSequence_SET_ITEM(v, ST_GEN_IDX,
-			 PyInt_FromLong((long)st.st_gen));
+			 PyInt_FromLong((long)st->st_gen));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BIRTHTIME
 	{
 	  PyObject *val;
 	  unsigned long bsec,bnsec;
-	  bsec = (long)st.st_birthtime;
+	  bsec = (long)st->st_birthtime;
 #ifdef HAVE_STAT_TV_NSEC2
-	  bnsec = st.st_birthtimespec.tv_nsec;
+	  bnsec = st.st_birthtimespec->tv_nsec;
 #else
 	  bnsec = 0;
 #endif
@@ -945,7 +1129,7 @@ _pystat_fromstructstat(STRUCT_STAT st)
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
 	PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX,
-			 PyInt_FromLong((long)st.st_flags));
+			 PyInt_FromLong((long)st->st_flags));
 #endif
 
 	if (PyErr_Occurred()) {
@@ -1031,12 +1215,7 @@ posix_do_stat(PyObject *self, PyObject *args,
 	char *path = NULL;	/* pass this to stat; do not free() it */
 	char *pathfree = NULL;  /* this memory must be free'd */
 	int res;
-
-#ifdef MS_WINDOWS
-	int pathlen;
-	char pathcopy[MAX_PATH];
-#endif /* MS_WINDOWS */
-
+	PyObject *result;
 
 #ifdef Py_WIN_WIDE_FILENAMES
 	/* If on wide-character-capable OS see if argument
@@ -1044,43 +1223,17 @@ posix_do_stat(PyObject *self, PyObject *args,
 	if (unicode_file_names()) {
 		PyUnicodeObject *po;
 		if (PyArg_ParseTuple(args, wformat, &po)) {
-			Py_UNICODE wpath[MAX_PATH+1];
-			pathlen = wcslen(PyUnicode_AS_UNICODE(po));
-			/* the library call can blow up if the file name is too long! */
-			if (pathlen > MAX_PATH) {
-				errno = ENAMETOOLONG;
-				return posix_error();
-			}
-			wcscpy(wpath, PyUnicode_AS_UNICODE(po));
-			/* Remove trailing slash or backslash, unless it's the current
-			   drive root (/ or \) or a specific drive's root (like c:\ or c:/).
-			*/
-			if (pathlen > 0) {
-				if (ISSLASHW(wpath[pathlen-1])) {
-	    				/* It does end with a slash -- exempt the root drive cases. */
-					if (pathlen == 1 || (pathlen == 3 && wpath[1] == L':') ||
-						IsUNCRootW(wpath, pathlen))
-	    					/* leave it alone */;
-					else {
-						/* nuke the trailing backslash */
-						wpath[pathlen-1] = L'\0';
-					}
-				}
-				else if (ISSLASHW(wpath[1]) && pathlen < ARRAYSIZE(wpath)-1 &&
-					IsUNCRootW(wpath, pathlen)) {
-					/* UNC root w/o trailing slash: add one when there's room */
-					wpath[pathlen++] = L'\\';
-					wpath[pathlen] = L'\0';
-				}
-			}
+			Py_UNICODE *wpath = PyUnicode_AS_UNICODE(po);
+
 			Py_BEGIN_ALLOW_THREADS
 				/* PyUnicode_AS_UNICODE result OK without
 				   thread lock as it is a simple dereference. */
 			res = wstatfunc(wpath, &st);
 			Py_END_ALLOW_THREADS
+
 			if (res != 0)
-				return posix_error_with_unicode_filename(wpath);
-			return _pystat_fromstructstat(st);
+				return win32_error_unicode("stat", wpath);
+			return _pystat_fromstructstat(&st);
 		}
 		/* Drop the argument parsing error as narrow strings
 		   are also valid. */
@@ -1093,52 +1246,23 @@ posix_do_stat(PyObject *self, PyObject *args,
 		return NULL;
 	pathfree = path;
 
-#ifdef MS_WINDOWS
-	pathlen = strlen(path);
-	/* the library call can blow up if the file name is too long! */
-	if (pathlen > MAX_PATH) {
-		PyMem_Free(pathfree);
-		errno = ENAMETOOLONG;
-		return posix_error();
-	}
-
-	/* Remove trailing slash or backslash, unless it's the current
-	   drive root (/ or \) or a specific drive's root (like c:\ or c:/).
-	*/
-	if (pathlen > 0) {
-		if (ISSLASHA(path[pathlen-1])) {
-			/* It does end with a slash -- exempt the root drive cases. */
-			if (pathlen == 1 || (pathlen == 3 && path[1] == ':') ||
-				IsUNCRootA(path, pathlen))
-	    			/* leave it alone */;
-			else {
-				/* nuke the trailing backslash */
-				strncpy(pathcopy, path, pathlen);
-				pathcopy[pathlen-1] = '\0';
-				path = pathcopy;
-			}
-		}
-		else if (ISSLASHA(path[1]) && pathlen < ARRAYSIZE(pathcopy)-1 &&
-			IsUNCRootA(path, pathlen)) {
-			/* UNC root w/o trailing slash: add one when there's room */
-			strncpy(pathcopy, path, pathlen);
-			pathcopy[pathlen++] = '\\';
-			pathcopy[pathlen] = '\0';
-			path = pathcopy;
-		}
-	}
-#endif /* MS_WINDOWS */
-
 	Py_BEGIN_ALLOW_THREADS
 	res = (*statfunc)(path, &st);
 	Py_END_ALLOW_THREADS
-	if (res != 0)
-		return posix_error_with_allocated_filename(pathfree);
+
+	if (res != 0) {
+#ifdef MS_WINDOWS
+		result = win32_error("stat", pathfree);
+#else
+		result = posix_error_with_filename(pathfree);
+#endif
+	} 
+	else
+		result = _pystat_fromstructstat(&st);
 
 	PyMem_Free(pathfree);
-	return _pystat_fromstructstat(st);
+	return result;
 }
-
 
 /* POSIX methods */
 
@@ -1940,7 +2064,7 @@ static PyObject *
 posix_stat(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-	return posix_do_stat(self, args, "et:stat", STAT, "U:stat", _wstati64);
+	return posix_do_stat(self, args, "et:stat", STAT, "U:stat", win32_wstat);
 #else
 	return posix_do_stat(self, args, "et:stat", STAT, NULL, NULL);
 #endif
@@ -5051,7 +5175,7 @@ posix_lstat(PyObject *self, PyObject *args)
 	return posix_do_stat(self, args, "et:lstat", lstat, NULL, NULL);
 #else /* !HAVE_LSTAT */
 #ifdef MS_WINDOWS
-	return posix_do_stat(self, args, "et:lstat", STAT, "U:lstat", _wstati64);
+	return posix_do_stat(self, args, "et:lstat", STAT, "U:lstat", win32_wstat);
 #else
 	return posix_do_stat(self, args, "et:lstat", STAT, NULL, NULL);
 #endif
@@ -5497,10 +5621,15 @@ posix_fstat(PyObject *self, PyObject *args)
 	Py_BEGIN_ALLOW_THREADS
 	res = FSTAT(fd, &st);
 	Py_END_ALLOW_THREADS
-	if (res != 0)
+	if (res != 0) {
+#ifdef MS_WINDOWS
+		return win32_error("fstat", NULL);
+#else
 		return posix_error();
+#endif
+	}
 
-	return _pystat_fromstructstat(st);
+	return _pystat_fromstructstat(&st);
 }
 
 
