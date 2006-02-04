@@ -23,6 +23,27 @@
 extern int yp_get_default_domain(char **);
 #endif
 
+PyDoc_STRVAR(get_default_domain__doc__, 
+"get_default_domain() -> str\n\
+Corresponds to the C library yp_get_default_domain() call, returning\n\
+the default NIS domain.\n");
+
+PyDoc_STRVAR(match__doc__,
+"match(key, map, domain = defaultdomain)\n\
+Corresponds to the C library yp_match() call, returning the value of\n\
+key in the given map. Optionally domain can be specified but it\n\
+defaults to the system default domain.\n");
+
+PyDoc_STRVAR(cat__doc__,
+"cat(map, domain = defaultdomain)\n\
+Returns the entire map as a dictionary. Optionally domain can be\n\
+specified but it defaults to the system default domain.\n");
+
+PyDoc_STRVAR(maps__doc__,
+"maps(domain = defaultdomain)\n\
+Returns an array of all available NIS maps within a domain. If domain\n\
+is not specified it defaults to the system default domain.\n");
+
 static PyObject *NisError;
 
 static PyObject *
@@ -116,19 +137,36 @@ nis_foreach (int instatus, char *inkey, int inkeylen, char *inval,
 }
 
 static PyObject *
-nis_match (PyObject *self, PyObject *args)
+nis_get_default_domain (PyObject *self)
+{
+	char *domain;
+	int err;
+	PyObject *res;
+
+	if ((err = yp_get_default_domain(&domain)) != 0)
+		return nis_error(err);
+
+	res = PyString_FromStringAndSize (domain, strlen(domain));
+	return res;
+}
+
+static PyObject *
+nis_match (PyObject *self, PyObject *args, PyObject *kwdict)
 {
 	char *match;
-	char *domain;
+	char *domain = NULL;
 	int keylen, len;
 	char *key, *map;
 	int err;
 	PyObject *res;
 	int fix;
+	static const char *kwlist[] = {"key", "map", "domain", NULL};
 
-	if (!PyArg_ParseTuple(args, "t#s:match", &key, &keylen, &map))
+	if (!PyArg_ParseTupleAndKeywords(args, kwdict,
+					 "t#s|s:match", kwlist,
+					 &key, &keylen, &map, &domain))
 		return NULL;
-	if ((err = yp_get_default_domain(&domain)) != 0)
+	if (!domain && ((err = yp_get_default_domain(&domain)) != 0))
 		return nis_error(err);
 	map = nis_mapname (map, &fix);
 	if (fix)
@@ -146,18 +184,20 @@ nis_match (PyObject *self, PyObject *args)
 }
 
 static PyObject *
-nis_cat (PyObject *self, PyObject *args)
+nis_cat (PyObject *self, PyObject *args, PyObject *kwdict)
 {
-	char *domain;
+	char *domain = NULL;
 	char *map;
 	struct ypall_callback cb;
 	struct ypcallback_data data;
 	PyObject *dict;
 	int err;
+	static const char *kwlist[] = {"map", "domain", NULL};
 
-	if (!PyArg_ParseTuple(args, "s:cat", &map))
+	if (!PyArg_ParseTupleAndKeywords(args, kwdict, "s|s:cat",
+				         kwlist, &map, &domain))
 		return NULL;
-	if ((err = yp_get_default_domain(&domain)) != 0)
+	if (!domain && ((err = yp_get_default_domain(&domain)) != 0))
 		return nis_error(err);
 	dict = PyDict_New ();
 	if (dict == NULL)
@@ -301,19 +341,12 @@ nisproc_maplist_2(domainname *argp, CLIENT *clnt)
 
 static
 nismaplist *
-nis_maplist (void)
+nis_maplist (char *dom)
 {
 	nisresp_maplist *list;
-	char *dom;
 	CLIENT *cl;
 	char *server = NULL;
 	int mapi = 0;
-        int err;
-
-	if ((err = yp_get_default_domain (&dom)) != 0) {
-		nis_error(err);
-		return NULL;
-	}
 
 	while (!server && aliases[mapi].map != 0L) {
 		yp_master (dom, aliases[mapi].map, &server);
@@ -344,12 +377,23 @@ nis_maplist (void)
 }
 
 static PyObject *
-nis_maps (PyObject *self)
+nis_maps (PyObject *self, PyObject *args, PyObject *kwdict)
 {
+	char *domain = NULL;
 	nismaplist *maps;
 	PyObject *list;
+        int err;
+	static const char *kwlist[] = {"domain", NULL};
 
-	if ((maps = nis_maplist ()) == NULL)
+	if (!PyArg_ParseTupleAndKeywords(args, kwdict,
+					 "|s:maps", kwlist, &domain))
+		return NULL;
+	if (!domain && ((err = yp_get_default_domain (&domain)) != 0)) {
+		nis_error(err);
+		return NULL;
+	}
+
+	if ((maps = nis_maplist (domain)) == NULL)
 		return NULL;
 	if ((list = PyList_New(0)) == NULL)
 		return NULL;
@@ -368,17 +412,29 @@ nis_maps (PyObject *self)
 }
 
 static PyMethodDef nis_methods[] = {
-	{"match",	nis_match, METH_VARARGS},
-	{"cat",		nis_cat, METH_VARARGS},
-	{"maps",	(PyCFunction)nis_maps, METH_NOARGS},
-	{NULL,		NULL}		 /* Sentinel */
+	{"match",		(PyCFunction)nis_match,
+					METH_VARARGS | METH_KEYWORDS,
+					match__doc__},
+	{"cat",			(PyCFunction)nis_cat,
+					METH_VARARGS | METH_KEYWORDS,
+					cat__doc__},
+	{"maps",		(PyCFunction)nis_maps,
+					METH_VARARGS | METH_KEYWORDS,
+					maps__doc__},
+	{"get_default_domain",	(PyCFunction)nis_get_default_domain,
+ 					METH_NOARGS,
+					get_default_domain__doc__},
+	{NULL,			NULL}		 /* Sentinel */
 };
+
+PyDoc_STRVAR(nis__doc__,
+"This module contains functions for accessing NIS maps.\n");
 
 void
 initnis (void)
 {
 	PyObject *m, *d;
-	m = Py_InitModule("nis", nis_methods);
+	m = Py_InitModule3("nis", nis_methods, nis__doc__);
 	if (m == NULL)
 		return;
 	d = PyModule_GetDict(m);

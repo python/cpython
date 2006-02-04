@@ -216,6 +216,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1422385: The nis module now supports access to domains other
+  than the system default domain.
+
 - Use Win32 API to implement os.stat/fstat. As a result, subsecond timestamps
   are reported, the limit on path name lengths is removed, and stat reports
   WindowsError now (instead of OSError).
