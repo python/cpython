@@ -4,7 +4,7 @@ from test.test_support import verbose, TestFailed, TestSkipped
 TEST_STRING_1 = "I wish to buy a fish license.\n"
 TEST_STRING_2 = "For my pet fish, Eric.\n"
 
-# Solaris (at least 2.9 and 2.10) seem to have a ficke isatty(). The first
+# Solaris (at least 2.9 and 2.10) seem to have a fickle isatty(). The first
 # test below, testing the result of os.openpty() for tty-ness, sometimes
 # (but not always) fails. The second isatty test, in the sub-process, always
 # works. Allow that fickle first test to fail on these platforms, since it
