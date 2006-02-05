@@ -1808,7 +1808,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 
         if (!expr1)
             return NULL;
-        // TODO(jhylton): Figure out why set_context() can't be used here.
+        /* TODO(jhylton): Figure out why set_context() can't be used here. */
         switch (expr1->kind) {
             case GeneratorExp_kind:
                 ast_error(ch, "augmented assignment to generator "
