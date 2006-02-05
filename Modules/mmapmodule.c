@@ -917,12 +917,17 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	m_obj->data = NULL;
 	m_obj->size = (size_t) map_size;
 	m_obj->pos = (size_t) 0;
-	m_obj->fd = dup(fd);
-	if (m_obj->fd == -1) {
-		Py_DECREF(m_obj);
-		PyErr_SetFromErrno(mmap_module_error);
-		return NULL;
+	if (fd == -1) {
+		m_obj->fd = -1;
+	} else {
+		m_obj->fd = dup(fd);
+		if (m_obj->fd == -1) {
+			Py_DECREF(m_obj);
+			PyErr_SetFromErrno(mmap_module_error);
+			return NULL;
+		}
 	}
+
 	m_obj->data = mmap(NULL, map_size, 
 			   prot, flags,
 			   fd, 0);

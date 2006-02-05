@@ -45,6 +45,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1407135, bug #1424041: mmap.mmap(-1, size, ...) can return
+  anonymous memory again on Unix.
+
 - Bug #1215432: in bsddb DB.associate() would crash when a DBError
   was supposed to be raised.
 
