@@ -37,7 +37,8 @@ taken from the specified file.  Assignment to an
 exception.  Assignment to an \constant{ACCESS_WRITE} memory map
 affects both memory and the underlying file.  Assignment to an
 \constant{ACCESS_COPY} memory map affects memory but does not update
-the underlying file.
+the underlying file.  \versionchanged[To map anonymous memory,
+-1 should be passed as the fileno along with the length]{2.5}
 
 \begin{funcdesc}{mmap}{fileno, length\optional{, tagname\optional{, access}}}
   \strong{(Windows version)} Maps \var{length} bytes from the file
