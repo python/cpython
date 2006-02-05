@@ -877,10 +877,10 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 		return NULL;
 
 	if ((access != (int)ACCESS_DEFAULT) && 
-	    ((flags != MAP_SHARED) || ( prot != (PROT_WRITE | PROT_READ))))
+	    ((flags != MAP_SHARED) || (prot != (PROT_WRITE | PROT_READ))))
 		return PyErr_Format(PyExc_ValueError, 
 				    "mmap can't specify both access and flags, prot.");
-	switch((access_mode)access) {
+	switch ((access_mode)access) {
 	case ACCESS_READ:
 		flags = MAP_SHARED;
 		prot = PROT_READ;
