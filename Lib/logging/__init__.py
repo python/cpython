@@ -671,7 +671,8 @@ class Handler(Filterer):
         #get the module data lock, as we're updating a shared structure.
         _acquireLock()
         try:    #unlikely to raise an exception, but you never know...
-            del _handlers[self]
+            if _handlers.has_key(self):
+                del _handlers[self]
             _handlerList.remove(self)
         finally:
             _releaseLock()
