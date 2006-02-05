@@ -99,14 +99,12 @@ class LogRecordSocketReceiver(ThreadingTCPServer):
         self.timeout = 1
 
     def serve_until_stopped(self):
-        abort = 0
-        while not abort:
+        while not self.abort:
             rd, wr, ex = select.select([self.socket.fileno()],
                                        [], [],
                                        self.timeout)
             if rd:
                 self.handle_request()
-            abort = self.abort
         #notify the main thread that we're about to exit
         socketDataProcessed.set()
         # close the listen socket
@@ -620,8 +618,10 @@ def test_main_inner():
     finally:
         #wait for TCP receiver to terminate
         socketDataProcessed.wait()
+        # ensure the server dies
+        tcpserver.abort = 1
         for thread in threads:
-            thread.join()
+            thread.join(2.0)
         banner("logrecv output", "begin")
         sys.stdout.write(sockOut.getvalue())
         sockOut.close()
