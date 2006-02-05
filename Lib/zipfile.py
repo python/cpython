@@ -1,6 +1,6 @@
 "Read and write ZIP files."
 
-import struct, os, time
+import struct, os, time, sys
 import binascii
 
 try:
@@ -131,7 +131,11 @@ class ZipInfo:
         self.compress_type = ZIP_STORED # Type of compression for the file
         self.comment = ""               # Comment for each file
         self.extra = ""                 # ZIP extra data
-        self.create_system = 0          # System which created ZIP archive
+        if sys.platform == 'win32':
+            self.create_system = 0          # System which created ZIP archive
+        else:
+            # Assume everything else is unix-y
+            self.create_system = 3          # System which created ZIP archive
         self.create_version = 20        # Version which created ZIP archive
         self.extract_version = 20       # Version needed to extract archive
         self.reserved = 0               # Must be zero
