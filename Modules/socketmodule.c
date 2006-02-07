@@ -395,6 +395,16 @@ static int taskwindow;
    there has to be a circular reference. */
 static PyTypeObject sock_type;
 
+/* Can we call select() with this socket without a buffer overrun? */
+#define IS_SELECTABLE(s) ((s)->sock_fd < FD_SETSIZE)
+
+static PyObject*
+select_error(void)
+{
+	PyErr_SetString(socket_error, "unable to select on socket");
+	return NULL;
+}
+
 /* Convenience function to raise an error according to errno
    and return a NULL pointer from a function. */
 
@@ -1408,6 +1418,9 @@ sock_accept(PySocketSockObject *s)
 	newfd = -1;
 #endif
 
+	if (!IS_SELECTABLE(s))
+		return select_error();
+
 	Py_BEGIN_ALLOW_THREADS
 	timeout = internal_select(s, 0);
 	if (!timeout)
@@ -1736,7 +1749,8 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 #ifdef MS_WINDOWS
 
 	if (s->sock_timeout > 0.0) {
-		if (res < 0 && WSAGetLastError() == WSAEWOULDBLOCK) {
+		if (res < 0 && WSAGetLastError() == WSAEWOULDBLOCK &&
+		    IS_SELECTABLE(s)) {
 			/* This is a mess.  Best solution: trust select */
 			fd_set fds;
 			fd_set fds_exc;
@@ -1781,7 +1795,7 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 #else
 
 	if (s->sock_timeout > 0.0) {
-		if (res < 0 && errno == EINPROGRESS) {
+		if (res < 0 && errno == EINPROGRESS && IS_SELECTABLE(s)) {
 			timeout = internal_select(s, 1);
 			res = connect(s->sock_fd, addr, addrlen);
 			if (res < 0 && errno == EISCONN)
@@ -2084,6 +2098,9 @@ sock_recv(PySocketSockObject *s, PyObject *args)
 	if (buf == NULL)
 		return NULL;
 
+	if (!IS_SELECTABLE(s))
+		return select_error();
+
 #ifndef __VMS
 	Py_BEGIN_ALLOW_THREADS
 	timeout = internal_select(s, 0);
@@ -2177,6 +2194,9 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
 	if (buf == NULL)
 		return NULL;
 
+	if (!IS_SELECTABLE(s))
+		return select_error();
+
 	Py_BEGIN_ALLOW_THREADS
 	memset(&addrbuf, 0, addrlen);
 	timeout = internal_select(s, 0);
@@ -2237,6 +2257,9 @@ sock_send(PySocketSockObject *s, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "s#|i:send", &buf, &len, &flags))
 		return NULL;
+
+	if (!IS_SELECTABLE(s))
+		return select_error();
 
 #ifndef __VMS
 	Py_BEGIN_ALLOW_THREADS
@@ -2303,6 +2326,9 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s#|i:sendall", &buf, &len, &flags))
 		return NULL;
 
+	if (!IS_SELECTABLE(s))
+		return select_error();
+
 	Py_BEGIN_ALLOW_THREADS
 	do {
 		timeout = internal_select(s, 1);
@@ -2356,6 +2382,9 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
 
 	if (!getsockaddrarg(s, addro, &addr, &addrlen))
 		return NULL;
+
+	if (!IS_SELECTABLE(s))
+		return select_error();
 
 	Py_BEGIN_ALLOW_THREADS
 	timeout = internal_select(s, 1);
