@@ -225,6 +225,7 @@ data = authobject(response)
 \begin{methoddesc}{getannotation}{mailbox, entry, attribute}
   Retrieve the specified \samp{ANNOTATION}s for \var{mailbox}.
   The method is non-standard, but is supported by the \samp{Cyrus} server.
+\versionadded{2.5}
 \end{methoddesc}
 
 \begin{methoddesc}{getquota}{root}
@@ -364,6 +365,7 @@ typ, msgnums = M.search(None, '(FROM "LDJ")')
 \begin{methoddesc}{setannotation}{mailbox, entry, attribute\optional{, ...}}
   Set \samp{ANNOTATION}s for \var{mailbox}.
   The method is non-standard, but is supported by the \samp{Cyrus} server.
+\versionadded{2.5}
 \end{methoddesc}
 
 \begin{methoddesc}{setquota}{root, limits}
