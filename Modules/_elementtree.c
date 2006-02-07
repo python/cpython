@@ -905,6 +905,9 @@ element_getiterator(ElementObject* self, PyObject* args)
     }
 
     args = PyTuple_New(2);
+    if (args == NULL)
+    	return NULL;
+
     Py_INCREF(self); PyTuple_SET_ITEM(args, 0, (PyObject*) self);
     Py_INCREF(tag);  PyTuple_SET_ITEM(args, 1, (PyObject*) tag);
 
@@ -2596,6 +2599,8 @@ init_elementtree(void)
     /* python glue code */
 
     g = PyDict_New();
+    if (g == NULL)
+    	return;
 
     PyDict_SetItemString(g, "__builtins__", PyEval_GetBuiltins());
 
