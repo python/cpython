@@ -467,6 +467,7 @@ def test4():
         sys.stdout.write('config%d: ' % i)
         loggerDict = logging.getLogger().manager.loggerDict
         saved_handlers = logging._handlers.copy()
+        saved_handler_list = logging._handlerList[:]
         saved_loggers = loggerDict.copy()
         try:
             fn = tempfile.mktemp(".ini")
@@ -484,6 +485,7 @@ def test4():
         finally:
             logging._handlers.clear()
             logging._handlers.update(saved_handlers)
+            logging._handlerList = saved_handler_list
             loggerDict = logging.getLogger().manager.loggerDict
             loggerDict.clear()
             loggerDict.update(saved_loggers)
@@ -526,6 +528,7 @@ class FriendlyFormatter (logging.Formatter):
 def test5():
     loggerDict = logging.getLogger().manager.loggerDict
     saved_handlers = logging._handlers.copy()
+    saved_handler_list = logging._handlerList[:]
     saved_loggers = loggerDict.copy()
     try:
         fn = tempfile.mktemp(".ini")
@@ -541,6 +544,7 @@ def test5():
     finally:
         logging._handlers.clear()
         logging._handlers.update(saved_handlers)
+        logging._handlerList = saved_handler_list
         loggerDict = logging.getLogger().manager.loggerDict
         loggerDict.clear()
         loggerDict.update(saved_loggers)
