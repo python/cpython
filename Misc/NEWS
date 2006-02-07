@@ -216,6 +216,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #876637, prevent stack corruption when socket descriptor
+  is larger than FD_SETSIZE.
+
 - Patch #1407135, bug #1424041: harmonize mmap behavior of anonymous memory.
   mmap.mmap(-1, size) now returns anonymous memory in both Unix and Windows.
   mmap.mmap(0, size) should not be used on Windows for anonymous memory.
