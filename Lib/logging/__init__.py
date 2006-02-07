@@ -41,8 +41,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "beta"
-__version__ = "0.4.9.7"
-__date__    = "07 October 2005"
+__version__ = "0.4.9.9"
+__date__    = "06 February 2006"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -671,8 +671,7 @@ class Handler(Filterer):
         #get the module data lock, as we're updating a shared structure.
         _acquireLock()
         try:    #unlikely to raise an exception, but you never know...
-            if _handlers.has_key(self):
-                del _handlers[self]
+            del _handlers[self]
             _handlerList.remove(self)
         finally:
             _releaseLock()
