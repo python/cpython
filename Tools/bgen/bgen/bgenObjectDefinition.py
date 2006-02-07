@@ -141,7 +141,7 @@ class ObjectDefinition(GeneratorGroup):
         OutLbrace()
         self.outputCleanupStructMembers()
         if self.basetype:
-            Output("self->ob_type->tp_base->tp_dealloc((PyObject *)self);")
+            Output("%s.tp_dealloc((PyObject *)self);", self.basetype)
         elif hasattr(self, 'output_tp_free'):
             # This is a new-style object with tp_free slot
             Output("self->ob_type->tp_free((PyObject *)self);")
@@ -382,12 +382,20 @@ class PEP253Mixin(PEP252Mixin):
     def outputHook_tp_free(self):
         Output("%s_tp_free, /* tp_free */", self.prefix)
 
+    def output_tp_initBody_basecall(self):
+        if self.basetype:
+            Output("if (%s.tp_init)", self.basetype)
+            OutLbrace()
+            Output("if ( (*%s.tp_init)(_self, _args, _kwds) < 0) return -1;", self.basetype)
+            OutRbrace()
+            
     output_tp_initBody = None
 
     def output_tp_init(self):
         if self.output_tp_initBody:
             Output("static int %s_tp_init(PyObject *_self, PyObject *_args, PyObject *_kwds)", self.prefix)
             OutLbrace()
+            self.output_tp_initBody_basecall()
             self.output_tp_initBody()
             OutRbrace()
         else:
@@ -414,7 +422,17 @@ class PEP253Mixin(PEP252Mixin):
         Output()
         Output("if (!PyArg_ParseTupleAndKeywords(_args, _kwds, \"O&\", kw, %s_Convert, &itself)) return NULL;",
             self.prefix);
-        Output("if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;")
+        if self.basetype:
+            Output("if (%s.tp_new)", self.basetype)
+            OutLbrace()
+            Output("if ( (*%s.tp_init)(_self, _args, _kwds) == NULL) return NULL;", self.basetype)
+            Dedent()
+            Output("} else {")
+            Indent()
+            Output("if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;")
+            OutRbrace()
+        else:
+            Output("if ((_self = type->tp_alloc(type, 0)) == NULL) return NULL;")
         Output("((%s *)_self)->ob_itself = itself;", self.objecttype)
         Output("return _self;")
 
