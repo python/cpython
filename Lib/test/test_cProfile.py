@@ -1,6 +1,6 @@
-"""Test suite for the profile module."""
+"""Test suite for the cProfile module."""
 
-import profile, pstats, sys
+import cProfile, pstats, sys
 
 # In order to have reproducible time, we simulate a timer in the global
 # variable 'ticks', which represents simulated time in milliseconds.
@@ -10,13 +10,13 @@ ticks = 0
 
 # IMPORTANT: this is an output test.  *ALL* NUMBERS in the expected
 # output are relevant.  If you change the formatting of pstats,
-# please don't just regenerate output/test_profile without checking
+# please don't just regenerate output/test_cProfile without checking
 # very carefully that not a single number has changed.
 
 def test_main():
     global ticks
     ticks = 42000
-    prof = profile.Profile(timer)
+    prof = cProfile.Profile(timer, 0.001)
     prof.runctx("testfunc()", globals(), locals())
     assert ticks == 43000, ticks
     st = pstats.Stats(prof)
@@ -25,7 +25,7 @@ def test_main():
     st.print_callers()
 
 def timer():
-    return ticks*0.001
+    return ticks
 
 def testfunc():
     # 1 call

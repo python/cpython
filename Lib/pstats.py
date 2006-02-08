@@ -371,27 +371,47 @@ class Stats:
             self.print_call_heading(width, "was called by...")
             for func in list:
                 cc, nc, tt, ct, callers = self.stats[func]
-                self.print_call_line(width, func, callers)
+                self.print_call_line(width, func, callers, "<-")
             print
             print
         return self
 
     def print_call_heading(self, name_size, column_title):
         print "Function ".ljust(name_size) + column_title
+        # print sub-header only if we have new-style callers
+        subheader = False
+        for cc, nc, tt, ct, callers in self.stats.itervalues():
+            if callers:
+                value = callers.itervalues().next()
+                subheader = isinstance(value, tuple)
+                break
+        if subheader:
+            print " "*name_size + "    ncalls  tottime  cumtime"
 
-    def print_call_line(self, name_size, source, call_dict):
-        print func_std_string(source).ljust(name_size),
+    def print_call_line(self, name_size, source, call_dict, arrow="->"):
+        print func_std_string(source).ljust(name_size) + arrow,
         if not call_dict:
-            print "--"
+            print
             return
         clist = call_dict.keys()
         clist.sort()
-        name_size = name_size + 1
         indent = ""
         for func in clist:
             name = func_std_string(func)
-            print indent*name_size + name + '(%r)' % (call_dict[func],), \
-                      f8(self.stats[func][3])
+            value = call_dict[func]
+            if isinstance(value, tuple):
+                nc, cc, tt, ct = value
+                if nc != cc:
+                    substats = '%d/%d' % (nc, cc)
+                else:
+                    substats = '%d' % (nc,)
+                substats = '%s %s %s  %s' % (substats.rjust(7+2*len(indent)),
+                                             f8(tt), f8(ct), name)
+                left_width = name_size + 1
+            else:
+                substats = '%s(%r) %s' % (name, value, f8(self.stats[func][3]))
+                left_width = name_size + 3
+            print indent*left_width + substats
             indent = " "
 
     def print_title(self):
@@ -448,7 +468,15 @@ def func_get_function_name(func):
     return func[2]
 
 def func_std_string(func_name): # match what old profile produced
-    return "%s:%d(%s)" % func_name
+    if func_name[:2] == ('~', 0):
+        # special case for built-in functions
+        name = func_name[2]
+        if name.startswith('<') and name.endswith('>'):
+            return '{%s}' % name[1:-1]
+        else:
+            return name
+    else:
+        return "%s:%d(%s)" % func_name
 
 #**************************************************************************
 # The following functions combine statists for pairs functions.
