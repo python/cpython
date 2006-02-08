@@ -250,11 +250,14 @@ class Message:
                             charset=charset.get_output_charset())
         else:
             self.set_param('charset', charset.get_output_charset())
+        if str(charset) <> charset.get_output_charset():
+            self._payload = charset.body_encode(self._payload)
         if not self.has_key('Content-Transfer-Encoding'):
             cte = charset.get_body_encoding()
             try:
                 cte(self)
             except TypeError:
+                self._payload = charset.body_encode(self._payload)
                 self.add_header('Content-Transfer-Encoding', cte)
 
     def get_charset(self):
