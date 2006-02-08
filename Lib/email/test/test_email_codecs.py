@@ -1,4 +1,5 @@
-# Copyright (C) 2002 Python Software Foundation
+# Copyright (C) 2002-2006 Python Software Foundation
+# Contact: email-sig@python.org
 # email package unit tests for (optional) Asian codecs
 
 import unittest
@@ -7,6 +8,8 @@ from test.test_support import TestSkipped, run_unittest
 from email.test.test_email import TestEmailBase
 from email.Charset import Charset
 from email.Header import Header, decode_header
+from email.Message import Message
+
 
 
 class TestEmailAsianCodecs(TestEmailBase):
@@ -41,6 +44,14 @@ Hello World! =?iso-2022-jp?b?GyRCJU8lbSE8JW8hPCVrJUkhKhsoQg==?=
  =?iso-2022-jp?b?GyRCMnE8VCROPjVHJyRyQlQkQyRGJCQkXiQ5GyhC?=""")
         # TK: full decode comparison
         eq(h.__unicode__().encode('euc-jp'), long)
+
+    def test_payload_encoding(self):
+        jhello = '\xa5\xcf\xa5\xed\xa1\xbc\xa5\xef\xa1\xbc\xa5\xeb\xa5\xc9\xa1\xaa'
+        jcode  = 'euc-jp'
+        msg = Message()
+        msg.set_payload(jhello, jcode)
+        ustr = unicode(msg.get_payload(), msg.get_content_charset())
+        self.assertEqual(jhello, ustr.encode(jcode))
 
 
 

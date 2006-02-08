@@ -2221,7 +2221,8 @@ class TestMiscellaneous(TestEmailBase):
         charset = Charset(charsets[0])
         eq(charset.get_body_encoding(), 'base64')
         msg.set_payload('hello world', charset=charset)
-        eq(msg.get_payload(), 'hello world')
+        eq(msg.get_payload(), 'aGVsbG8gd29ybGQ=\n')
+        eq(msg.get_payload(decode=True), 'hello world')
         eq(msg['content-transfer-encoding'], 'base64')
         # Try another one
         msg = Message()
