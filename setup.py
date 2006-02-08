@@ -328,7 +328,6 @@ class PyBuildExt(build_ext):
         # Some modules that are normally always on:
         exts.append( Extension('regex', ['regexmodule.c', 'regexpr.c']) )
 
-        exts.append( Extension('_hotshot', ['_hotshot.c']) )
         exts.append( Extension('_weakref', ['_weakref.c']) )
 
         # array objects
@@ -363,6 +362,9 @@ class PyBuildExt(build_ext):
         exts.append( Extension("functional", ["functionalmodule.c"]) )
         # Python C API test module
         exts.append( Extension('_testcapi', ['_testcapimodule.c']) )
+        # profilers (_lsprof is for cProfile.py)
+        exts.append( Extension('_hotshot', ['_hotshot.c']) )
+        exts.append( Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']) )
         # static Unicode character database
         if have_unicode:
             exts.append( Extension('unicodedata', ['unicodedata.c']) )

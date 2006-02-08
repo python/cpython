@@ -2019,6 +2019,11 @@ Extension modules
 Library
 -------
 
+- Added a new module: cProfile, a C profiler with the same interface as the
+  profile module.  cProfile avoids some of the drawbacks of the hotshot
+  profiler and provides a bit more information than the other two profilers.
+  Based on "lsprof" (patch #1212837).
+
 - Bug #1266283: The new function "lexists" is now in os.path.__all__.
 
 - Bug #981530: Fix UnboundLocalError in shutil.rmtree().  This affects

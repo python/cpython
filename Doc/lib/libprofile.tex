@@ -1,4 +1,4 @@
-\chapter{The Python Profiler \label{profile}}
+\chapter{The Python Profilers \label{profile}}
 
 \sectionauthor{James Roskind}{}
 
@@ -6,8 +6,9 @@ Copyright \copyright{} 1994, by InfoSeek Corporation, all rights reserved.
 \index{InfoSeek Corporation}
 
 Written by James Roskind.\footnote{
-  Updated and converted to \LaTeX\ by Guido van Rossum.  The references to
-  the old profiler are left in the text, although it no longer exists.}
+  Updated and converted to \LaTeX\ by Guido van Rossum.
+  Further updated by Armin Rigo to integrate the documentation for the new
+  \module{cProfile} module of Python 2.5.}
 
 Permission to use, copy, modify, and distribute this Python software
 and its associated documentation for any purpose (subject to the
@@ -41,7 +42,7 @@ ways at times.  Please send suggestions for improvements to:
 I'd appreciate the feedback.
 
 
-\section{Introduction to the profiler}
+\section{Introduction to the profilers}
 \nodename{Profiler Introduction}
 
 A \dfn{profiler} is a program that describes the run time performance
@@ -54,6 +55,31 @@ examine the results of a profile operation.
 \index{deterministic profiling}
 \index{profiling, deterministic}
 
+The Python standard library provides three different profilers:
+
+\begin{enumerate}
+\item \module{profile}, a pure Python module, described in the sequel.
+  Copyright \copyright{} 1994, by InfoSeek Corporation.
+  \versionchanged[also reports the time spent in calls to built-in
+  functions and methods]{2.4}
+
+\item \module{cProfile}, a module written in C, with a reasonable
+  overhead that makes it suitable for profiling long-running programs.
+  Based on \module{lsprof}, contributed by Brett Rosen and Ted Czotter.
+  \versionadded{2.5}
+
+\item \module{hotshot}, a C module focusing on minimizing the overhead
+  while profiling, at the expense of long data post-processing times.
+  \versionchanged[the results should be more meaningful than in the
+  past: the timing core contained a critical bug]{2.5}
+\end{enumerate}
+
+The \module{profile} and \module{cProfile} modules export the same
+interface, so they are mostly interchangeables; \module{cProfile} has a
+much lower overhead but is not so far as well-tested and might not be
+available on all systems.  \module{cProfile} is really a compatibility
+layer on top of the internal \module{_lsprof} module.  The
+\module{hotshot} module is reserved to specialized usages.
 
 %\section{How Is This Profiler Different From The Old Profiler?}
 %\nodename{Profiler Changes}
@@ -108,9 +134,12 @@ To profile an application with a main entry point of \function{foo()},
 you would add the following to your module:
 
 \begin{verbatim}
-import profile
-profile.run('foo()')
+import cProfile
+cProfile.run('foo()')
 \end{verbatim}
+
+(Use \module{profile} instead of \module{cProfile} if the latter is not
+available on your system.)
 
 The above action would cause \function{foo()} to be run, and a series of
 informative lines (the profile) to be printed.  The above approach is
@@ -120,21 +149,21 @@ can supply a file name as the second argument to the \function{run()}
 function:
 
 \begin{verbatim}
-import profile
-profile.run('foo()', 'fooprof')
+import cProfile
+cProfile.run('foo()', 'fooprof')
 \end{verbatim}
 
-The file \file{profile.py} can also be invoked as
+The file \file{cProfile.py} can also be invoked as
 a script to profile another script.  For example:
 
 \begin{verbatim}
-python -m profile myscript.py
+python -m cProfile myscript.py
 \end{verbatim}
 
-\file{profile.py} accepts two optional arguments on the command line:
+\file{cProfile.py} accepts two optional arguments on the command line:
 
 \begin{verbatim}
-profile.py [-o output_file] [-s sort_order]
+cProfile.py [-o output_file] [-s sort_order]
 \end{verbatim}
 
 \programopt{-s} only applies to standard output (\programopt{-o} is
@@ -153,7 +182,7 @@ p = pstats.Stats('fooprof')
 The class \class{Stats} (the above code just created an instance of
 this class) has a variety of methods for manipulating and printing the
 data that was just read into \code{p}.  When you ran
-\function{profile.run()} above, what was printed was the result of three
+\function{cProfile.run()} above, what was printed was the result of three
 method calls:
 
 \begin{verbatim}
@@ -162,8 +191,9 @@ p.strip_dirs().sort_stats(-1).print_stats()
 
 The first method removed the extraneous path from all the module
 names. The second method sorted all the entries according to the
-standard module/line/name string that is printed (this is to comply
-with the semantics of the old profiler).  The third method printed out
+standard module/line/name string that is printed.
+%(this is to comply with the semantics of the old profiler).
+The third method printed out
 all the statistics.  You might try the following sort calls:
 
 \begin{verbatim}
@@ -268,15 +298,17 @@ times in this profiler allows statistics for recursive implementations
 of algorithms to be directly compared to iterative implementations.
 
 
-\section{Reference Manual}
+\section{Reference Manual -- \module{profile} and \module{cProfile}}
 
 \declaremodule{standard}{profile}
+\declaremodule{standard}{cProfile}
 \modulesynopsis{Python profiler}
 
 
 
 The primary entry point for the profiler is the global function
-\function{profile.run()}.  It is typically used to create any profile
+\function{profile.run()} (resp. \function{cProfile.run()}).
+It is typically used to create any profile
 information.  The reports are formatted and printed using methods of
 the class \class{pstats.Stats}.  The following is a description of all
 of these standard entry points and functions.  For a more in-depth
@@ -296,7 +328,6 @@ standard name string (file/line/function-name) that is presented in
 each line.  The following is a typical output from such a call:
 
 \begin{verbatim}
-      main()
       2706 function calls (2004 primitive calls) in 4.504 CPU seconds
 
 Ordered by: standard name
@@ -307,9 +338,7 @@ ncalls  tottime  percall  cumtime  percall filename:lineno(function)
  ...
 \end{verbatim}
 
-The first line indicates that this profile was generated by the call:\\
-\code{profile.run('main()')}, and hence the exec'ed string is
-\code{'main()'}.  The second line indicates that 2706 calls were
+The first line indicates that 2706 calls were
 monitored.  Of those calls, 2004 were \dfn{primitive}.  We define
 \dfn{primitive} to mean that the call was not induced via recursion.
 The next line: \code{Ordered by:\ standard name}, indicates that
@@ -350,7 +379,7 @@ figure is printed.
 \end{funcdesc}
 
 \begin{funcdesc}{runctx}{command, globals, locals\optional{, filename}}
-This function is similar to \function{profile.run()}, with added
+This function is similar to \function{run()}, with added
 arguments to supply the globals and locals dictionaries for the
 \var{command} string.
 \end{funcdesc}
@@ -368,10 +397,12 @@ from a \var{filename} (or set of filenames).  \class{Stats} objects are
 manipulated by methods, in order to print useful reports.
 
 The file selected by the above constructor must have been created by
-the corresponding version of \module{profile}.  To be specific, there is
+the corresponding version of \module{profile} or \module{cProfile}.
+To be specific, there is
 \emph{no} file compatibility guaranteed with future versions of this
 profiler, and there is no compatibility with files produced by other
-profilers (such as the old system profiler).
+profilers.
+%(such as the old system profiler).
 
 If several files are provided, all the statistics for identical
 functions will be coalesced, so that an overall view of several
@@ -403,7 +434,8 @@ statistics for these two entries are accumulated into a single entry.
 This method of the \class{Stats} class accumulates additional
 profiling information into the current profiling object.  Its
 arguments should refer to filenames created by the corresponding
-version of \function{profile.run()}.  Statistics for identically named
+version of \function{profile.run()} or \function{cProfile.run()}.
+Statistics for identically named
 (re: file, line, name) functions are automatically accumulated into
 single function statistics.
 \end{methoddesc}
@@ -412,7 +444,8 @@ single function statistics.
 Save the data loaded into the \class{Stats} object to a file named
 \var{filename}.  The file is created if it does not exist, and is
 overwritten if it already exists.  This is equivalent to the method of
-the same name on the \class{profile.Profile} class.
+the same name on the \class{profile.Profile} and
+\class{cProfile.Profile} classes.
 \versionadded{2.3}
 \end{methoddesc}
 
@@ -456,7 +489,8 @@ string order 20, 3 and 40.  In contrast, \code{'nfl'} does a numeric
 compare of the line numbers.  In fact, \code{sort_stats('nfl')} is the
 same as \code{sort_stats('name', 'file', 'line')}.
 
-For compatibility with the old profiler, the numeric arguments
+%For compatibility with the old profiler,
+For backward-compatibility reasons, the numeric arguments
 \code{-1}, \code{0}, \code{1}, and \code{2} are permitted.  They are
 interpreted as \code{'stdname'}, \code{'calls'}, \code{'time'}, and
 \code{'cumulative'} respectively.  If this old style format (numeric)
@@ -467,10 +501,10 @@ additional arguments will be silently ignored.
 
 \begin{methoddesc}[Stats]{reverse_order}{}
 This method for the \class{Stats} class reverses the ordering of the basic
-list within the object.  This method is provided primarily for
-compatibility with the old profiler.  Its utility is questionable
-now that ascending vs descending order is properly selected based on
-the sort key of choice.
+list within the object.  %This method is provided primarily for
+%compatibility with the old profiler.
+Note that by default ascending vs descending order is properly selected
+based on the sort key of choice.
 \end{methoddesc}
 
 \begin{methoddesc}[Stats]{print_stats}{\optional{restriction, \moreargs}}
@@ -512,10 +546,21 @@ and then proceed to only print the first 10\% of them.
 This method for the \class{Stats} class prints a list of all functions
 that called each function in the profiled database.  The ordering is
 identical to that provided by \method{print_stats()}, and the definition
-of the restricting argument is also identical.  For convenience, a
-number is shown in parentheses after each caller to show how many
-times this specific call was made.  A second non-parenthesized number
-is the cumulative time spent in the function at the right.
+of the restricting argument is also identical.  Each caller is reported on
+its own line.  The format differs slightly depending on the profiler that
+produced the stats:
+
+\begin{itemize}
+\item With \module{profile}, a number is shown in parentheses after each
+  caller to show how many times this specific call was made.  For
+  convenience, a second non-parenthesized number repeats the cumulative
+  time spent in the function at the right.
+
+\item With \module{cProfile}, each caller is preceeded by three numbers:
+  the number of times this specific call was made, and the total and
+  cumulative times spent in the current function while it was invoked by
+  this specific caller.
+\end{itemize}
 \end{methoddesc}
 
 \begin{methoddesc}[Stats]{print_callees}{\optional{restriction, \moreargs}}
@@ -546,7 +591,10 @@ is once again executing.  As a result, functions that are called many
 times, or call many functions, will typically accumulate this error.
 The error that accumulates in this fashion is typically less than the
 accuracy of the clock (less than one clock tick), but it
-\emph{can} accumulate and become very significant.  This profiler
+\emph{can} accumulate and become very significant.
+
+The problem is more important with \module{profile} than with the
+lower-overhead \module{cProfile}.  For this reason, \module{profile}
 provides a means of calibrating itself for a given platform so that
 this error can be probabilistically (on the average) removed.
 After the profiler is calibrated, it will be more accurate (in a least
@@ -560,7 +608,7 @@ calibration.
 
 \section{Calibration \label{profile-calibration}}
 
-The profiler subtracts a constant from each
+The profiler of the \module{profile} module subtracts a constant from each
 event handling time to compensate for the overhead of calling the time
 function, and socking away the results.  By default, the constant is 0.
 The following procedure can
@@ -614,11 +662,12 @@ statistics.
 \section{Extensions --- Deriving Better Profilers}
 \nodename{Profiler Extensions}
 
-The \class{Profile} class of module \module{profile} was written so that
+The \class{Profile} class of both modules, \module{profile} and
+\module{cProfile}, were written so that
 derived classes could be developed to extend the profiler.  The details
 are not described here, as doing this successfully requires an expert
 understanding of how the \class{Profile} class works internally.  Study
-the source code of module \module{profile} carefully if you want to
+the source code of the module carefully if you want to
 pursue this.
 
 If all you want to do is change how current time is determined (for
@@ -630,8 +679,11 @@ constructor:
 pr = profile.Profile(your_time_func)
 \end{verbatim}
 
-The resulting profiler will then call \code{your_time_func()}.
-The function should return a single number, or a list of
+The resulting profiler will then call \function{your_time_func()}.
+
+\begin{description}
+\item[\class{profile.Profile}]
+\function{your_time_func()} should return a single number, or a list of
 numbers whose sum is the current time (like what \function{os.times()}
 returns).  If the function returns a single time number, or the list of
 returned numbers has length 2, then you will get an especially fast
@@ -646,3 +698,22 @@ you want to substitute a better timer in the cleanest fashion,
 derive a class and hardwire a replacement dispatch method that best
 handles your timer call, along with the appropriate calibration
 constant.
+
+\item[\class{cProfile.Profile}]
+\function{your_time_func()} should return a single number.  If it returns
+plain integers, you can also invoke the class constructor with a second
+argument specifying the real duration of one unit of time.  For example,
+if \function{your_integer_time_func()} returns times measured in thousands
+of seconds, you would constuct the \class{Profile} instance as follows:
+
+\begin{verbatim}
+pr = profile.Profile(your_integer_time_func, 0.001)
+\end{verbatim}
+
+As the \module{cProfile.Profile} class cannot be calibrated, custom
+timer functions should be used with care and should be as fast as
+possible.  For the best results with a custom timer, it might be
+necessary to hard-code it in the C source of the internal
+\module{_lsprof} module.
+
+\end{description}

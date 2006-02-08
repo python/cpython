@@ -1,0 +1,79 @@
+test_cProfile
+         126 function calls (106 primitive calls) in 1.000 CPU seconds
+
+   Ordered by: standard name
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    1.000    1.000 <string>:1(<module>)
+        8    0.064    0.008    0.080    0.010 test_cProfile.py:103(subhelper)
+       28    0.028    0.001    0.028    0.001 test_cProfile.py:115(__getattr__)
+        1    0.270    0.270    1.000    1.000 test_cProfile.py:30(testfunc)
+     23/3    0.150    0.007    0.170    0.057 test_cProfile.py:40(factorial)
+       20    0.020    0.001    0.020    0.001 test_cProfile.py:53(mul)
+        2    0.040    0.020    0.600    0.300 test_cProfile.py:60(helper)
+        4    0.116    0.029    0.120    0.030 test_cProfile.py:78(helper1)
+        2    0.000    0.000    0.140    0.070 test_cProfile.py:89(helper2_indirect)
+        8    0.312    0.039    0.400    0.050 test_cProfile.py:93(helper2)
+       12    0.000    0.000    0.012    0.001 {hasattr}
+        4    0.000    0.000    0.000    0.000 {method 'append' of 'list' objects}
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        8    0.000    0.000    0.000    0.000 {range}
+        4    0.000    0.000    0.000    0.000 {sys.exc_info}
+
+
+   Ordered by: standard name
+
+Function                                          called...
+                                                      ncalls  tottime  cumtime
+<string>:1(<module>)                              ->       1    0.270    1.000  test_cProfile.py:30(testfunc)
+test_cProfile.py:103(subhelper)                   ->      16    0.016    0.016  test_cProfile.py:115(__getattr__)
+                                                           8    0.000    0.000  {range}
+test_cProfile.py:115(__getattr__)                 ->
+test_cProfile.py:30(testfunc)                     ->       1    0.014    0.130  test_cProfile.py:40(factorial)
+                                                           2    0.040    0.600  test_cProfile.py:60(helper)
+test_cProfile.py:40(factorial)                    ->    20/3    0.130    0.147  test_cProfile.py:40(factorial)
+                                                          20    0.020    0.020  test_cProfile.py:53(mul)
+test_cProfile.py:53(mul)                          ->
+test_cProfile.py:60(helper)                       ->       4    0.116    0.120  test_cProfile.py:78(helper1)
+                                                           2    0.000    0.140  test_cProfile.py:89(helper2_indirect)
+                                                           6    0.234    0.300  test_cProfile.py:93(helper2)
+test_cProfile.py:78(helper1)                      ->       4    0.000    0.004  {hasattr}
+                                                           4    0.000    0.000  {method 'append' of 'list' objects}
+                                                           4    0.000    0.000  {sys.exc_info}
+test_cProfile.py:89(helper2_indirect)             ->       2    0.006    0.040  test_cProfile.py:40(factorial)
+                                                           2    0.078    0.100  test_cProfile.py:93(helper2)
+test_cProfile.py:93(helper2)                      ->       8    0.064    0.080  test_cProfile.py:103(subhelper)
+                                                           8    0.000    0.008  {hasattr}
+{hasattr}                                         ->      12    0.012    0.012  test_cProfile.py:115(__getattr__)
+{method 'append' of 'list' objects}               ->
+{method 'disable' of '_lsprof.Profiler' objects}  ->
+{range}                                           ->
+{sys.exc_info}                                    ->
+
+
+   Ordered by: standard name
+
+Function                                          was called by...
+                                                      ncalls  tottime  cumtime
+<string>:1(<module>)                              <-
+test_cProfile.py:103(subhelper)                   <-       8    0.064    0.080  test_cProfile.py:93(helper2)
+test_cProfile.py:115(__getattr__)                 <-      16    0.016    0.016  test_cProfile.py:103(subhelper)
+                                                          12    0.012    0.012  {hasattr}
+test_cProfile.py:30(testfunc)                     <-       1    0.270    1.000  <string>:1(<module>)
+test_cProfile.py:40(factorial)                    <-       1    0.014    0.130  test_cProfile.py:30(testfunc)
+                                                        20/3    0.130    0.147  test_cProfile.py:40(factorial)
+                                                           2    0.006    0.040  test_cProfile.py:89(helper2_indirect)
+test_cProfile.py:53(mul)                          <-      20    0.020    0.020  test_cProfile.py:40(factorial)
+test_cProfile.py:60(helper)                       <-       2    0.040    0.600  test_cProfile.py:30(testfunc)
+test_cProfile.py:78(helper1)                      <-       4    0.116    0.120  test_cProfile.py:60(helper)
+test_cProfile.py:89(helper2_indirect)             <-       2    0.000    0.140  test_cProfile.py:60(helper)
+test_cProfile.py:93(helper2)                      <-       6    0.234    0.300  test_cProfile.py:60(helper)
+                                                           2    0.078    0.100  test_cProfile.py:89(helper2_indirect)
+{hasattr}                                         <-       4    0.000    0.004  test_cProfile.py:78(helper1)
+                                                           8    0.000    0.008  test_cProfile.py:93(helper2)
+{method 'append' of 'list' objects}               <-       4    0.000    0.000  test_cProfile.py:78(helper1)
+{method 'disable' of '_lsprof.Profiler' objects}  <-
+{range}                                           <-       8    0.000    0.000  test_cProfile.py:103(subhelper)
+{sys.exc_info}                                    <-       4    0.000    0.000  test_cProfile.py:78(helper1)
+
+
