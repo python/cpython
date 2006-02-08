@@ -1,8 +1,7 @@
-# Copyright (C) 2001,2002 Python Software Foundation
-# Author: barry@zope.com (Barry Warsaw)
+# Copyright (C) 2001-2006 Python Software Foundation
+# Author: barry@python.org (Barry Warsaw)
 
-"""Classes to generate plain text from a message object tree.
-"""
+"""Classes to generate plain text from a message object tree."""
 
 import re
 import sys
@@ -192,9 +191,6 @@ class Generator:
         payload = msg.get_payload()
         if payload is None:
             return
-        cset = msg.get_charset()
-        if cset is not None:
-            payload = cset.body_encode(payload)
         if not _isstring(payload):
             raise TypeError, 'string payload expected: %s' % type(payload)
         if self._mangle_from_:

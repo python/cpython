@@ -1,5 +1,5 @@
-# Copyright (C) 2001,2002 Python Software Foundation
-# Author: che@debian.org (Ben Gertzfield), barry@zope.com (Barry Warsaw)
+# Copyright (C) 2001-2006 Python Software Foundation
+# Author: che@debian.org (Ben Gertzfield), barry@python.org (Barry Warsaw)
 
 from types import UnicodeType
 from email.Encoders import encode_7or8bit
@@ -99,20 +99,13 @@ ALIASES = {
 # of stability and useability.
 
 CODEC_MAP = {
-    'euc-jp':      'japanese.euc-jp',
-    'iso-2022-jp': 'japanese.iso-2022-jp',
-    'shift_jis':   'japanese.shift_jis',
-    'euc-kr':      'korean.euc-kr',
-    'ks_c_5601-1987': 'korean.cp949',
-    'iso-2022-kr': 'korean.iso-2022-kr',
-    'johab':       'korean.johab',
-    'gb2132':      'eucgb2312_cn',
-    'big5':        'big5_tw',
-    'utf-8':       'utf-8',
+    'gb2132':   'eucgb2312_cn',
+    'big5':     'big5_tw',
+    'utf-8':    'utf-8',
     # Hack: We don't want *any* conversion for stuff marked us-ascii, as all
     # sorts of garbage might be sent to us in the guise of 7-bit us-ascii.
     # Let that stuff pass through without conversion to/from Unicode.
-    'us-ascii':    None,
+    'us-ascii': None,
     }
 
 
@@ -163,6 +156,26 @@ def add_codec(charset, codecname):
     built-in, or to the encode() method of a Unicode string.
     """
     CODEC_MAP[charset] = codecname
+
+
+def _find_asian_codec(charset, language):
+    try:
+        unicode('foo', charset)
+        return charset
+    except LookupError:
+        try:
+            codec = language + '.' + charset
+            unicode('foo', codec)
+            return codec
+        except LookupError:
+            return None
+
+
+for _charset in ('euc-jp', 'iso-2022-jp', 'shift_jis'):
+    add_codec(_charset, _find_asian_codec(_charset, 'japanese') or _charset)
+
+for _charset in ('euc-kr', 'cp949', 'iso-2022-kr', 'johab'):
+    add_codec(_charset, _find_asian_codec(_charset, 'korean') or _charset)
 
 
 
@@ -229,7 +242,7 @@ class Charset:
         self.input_codec = CODEC_MAP.get(self.input_charset,
                                          self.input_charset)
         self.output_codec = CODEC_MAP.get(self.output_charset,
-                                            self.input_codec)
+                                          self.input_codec)
 
     def __str__(self):
         return self.input_charset.lower()
