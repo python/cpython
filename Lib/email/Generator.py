@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2004 Python Software Foundation
+# Copyright (C) 2001-2006 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -175,9 +175,6 @@ class Generator:
         payload = msg.get_payload()
         if payload is None:
             return
-        cset = msg.get_charset()
-        if cset is not None:
-            payload = cset.body_encode(payload)
         if not isinstance(payload, basestring):
             raise TypeError('string payload expected: %s' % type(payload))
         if self._mangle_from_:

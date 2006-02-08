@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2004 Python Software Foundation
+# Copyright (C) 2001-2006 Python Software Foundation
 # Author: Ben Gertzfield, Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -206,7 +206,7 @@ class Charset:
         self.input_codec = CODEC_MAP.get(self.input_charset,
                                          self.input_charset)
         self.output_codec = CODEC_MAP.get(self.output_charset,
-                                            self.output_charset)
+                                          self.output_charset)
 
     def __str__(self):
         return self.input_charset.lower()
