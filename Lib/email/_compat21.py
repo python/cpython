@@ -1,8 +1,10 @@
-# Copyright (C) 2002 Python Software Foundation
-# Author: barry@zope.com
+# Copyright (C) 2002-2006 Python Software Foundation
+# Author: barry@python.org
 
-"""Module containing compatibility functions for Python 2.1.
-"""
+"""Module containing compatibility functions for Python 2.1."""
+
+import uu
+import sys
 
 from cStringIO import StringIO
 from types import StringType, UnicodeType
@@ -67,3 +69,14 @@ def typed_subpart_iterator(msg, maintype='text', subtype=None):
             if subtype is None or subpart.get_content_subtype() == subtype:
                 parts.append(subpart)
     return parts
+
+
+
+def quiet_uu_decode(in_file, out_file, quiet):
+    # In Python 2.1, uu.decode() does not support the quiet flag.  Cheat.
+    old_stderr = sys.stderr
+    try:
+        sys.stderr = StringIO()
+        uu.decode(in_file, out_file)
+    finally:
+        sys.stderr = old_stderr

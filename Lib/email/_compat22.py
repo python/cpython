@@ -1,13 +1,16 @@
-# Copyright (C) 2002 Python Software Foundation
-# Author: barry@zope.com
+# Copyright (C) 2002-2006 Python Software Foundation
+# Author: barry@python.org
 
-"""Module containing compatibility functions for Python 2.2.
+"""Module containing compatibility functions for Python 2.2 (and possibly
+beyond.
 """
 
 from __future__ import generators
 from __future__ import division
 from cStringIO import StringIO
 from types import StringTypes
+
+import uu
 
 # Python 2.2.x where x < 1 lacks True/False
 try:
@@ -68,3 +71,8 @@ def typed_subpart_iterator(msg, maintype='text', subtype=None):
         if subpart.get_content_maintype() == maintype:
             if subtype is None or subpart.get_content_subtype() == subtype:
                 yield subpart
+
+
+
+def quiet_uu_decode(in_file, out_file, quiet):
+    uu.decode(in_file, out_file, quiet=quiet)

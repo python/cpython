@@ -23,6 +23,12 @@ except NameError:
     True = 1
     False = 0
 
+try:
+    from email._compat22 import quiet_uu_decode
+except SyntaxError:
+    from email._compat21 import quiet_uu_decode
+
+
 # Regular expression used to split header parameters.  BAW: this may be too
 # simple.  It isn't strictly RFC 2045 (section 5.1) compliant, but it catches
 # most headers found in the wild.  We may eventually need a full fledged
@@ -220,7 +226,7 @@ class Message:
             elif cte in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
                 sfp = StringIO()
                 try:
-                    uu.decode(StringIO(payload+'\n'), sfp)
+                    quiet_uu_decode(StringIO(payload+'\n'), sfp, quiet=True)
                     payload = sfp.getvalue()
                 except uu.Error:
                     # Some decoding problem
