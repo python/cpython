@@ -144,7 +144,7 @@ if [ $err = 0 ]; then
             F=make-test.out
             start=`current_time`
             make test >& build/$F
-            NUM_FAILURES=`grep -ic fail build/$F`
+            NUM_FAILURES=`grep -ic " test failed:" build/$F`
             update_status "Testing basics ($NUM_FAILURES failures)" "$F" $start
             ## FIXME: should mail since -uall below should find same problems
             mail_on_failure "basics" build/$F
