@@ -1053,14 +1053,20 @@ class Logger(Filterer):
                 continue
             return filename, f.f_lineno, co.co_name
 
-    def makeRecord(self, name, level, fn, lno, msg, args, exc_info):
+    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, extra=None):
         """
         A factory method which can be overridden in subclasses to create
         specialized LogRecords.
         """
-        return LogRecord(name, level, fn, lno, msg, args, exc_info)
+        rv = LogRecord(name, level, fn, lno, msg, args, exc_info)
+        if extra:
+            for key in extra:
+                if (key in ["message", "asctime"]) or (key in rv.__dict__):
+                    raise KeyError("Attempt to overwrite %r in LogRecord" % key)
+                rv.__dict__[key] = extra[key]
+        return rv
 
-    def _log(self, level, msg, args, exc_info=None):
+    def _log(self, level, msg, args, exc_info=None, extra=None):
         """
         Low-level logging routine which creates a LogRecord and then calls
         all the handlers of this logger to handle the record.
@@ -1072,7 +1078,7 @@ class Logger(Filterer):
         if exc_info:
             if type(exc_info) != types.TupleType:
                 exc_info = sys.exc_info()
-        record = self.makeRecord(self.name, level, fn, lno, msg, args, exc_info)
+        record = self.makeRecord(self.name, level, fn, lno, msg, args, exc_info, extra)
         self.handle(record)
 
     def handle(self, record):
@@ -1324,12 +1330,14 @@ def shutdown():
     """
     for h in _handlerList[:]: # was _handlers.keys():
         #errors might occur, for example, if files are locked
-        #we just ignore them
+        #we just ignore them if raiseExceptions is not set
         try:
             h.flush()
             h.close()
         except:
-            pass
+            if raiseExceptions:
+                raise
+            #else, swallow
 
 #Let's try and shutdown automatically on application exit...
 try:
