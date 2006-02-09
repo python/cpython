@@ -203,7 +203,8 @@ class LogRecord:
     the source line where the logging call was made, and any exception
     information to be logged.
     """
-    def __init__(self, name, level, pathname, lineno, msg, args, exc_info):
+    def __init__(self, name, level, pathname, lineno,
+                 msg, args, exc_info, func):
         """
         Initialize a logging record with interesting information.
         """
@@ -238,6 +239,7 @@ class LogRecord:
         self.exc_info = exc_info
         self.exc_text = None      # used to cache the traceback text
         self.lineno = lineno
+        self.funcName = func
         self.created = ct
         self.msecs = (ct - long(ct)) * 1000
         self.relativeCreated = (self.created - _startTime) * 1000
@@ -283,7 +285,7 @@ def makeLogRecord(dict):
     a socket connection (which is sent as a dictionary) into a LogRecord
     instance.
     """
-    rv = LogRecord(None, None, "", 0, "", (), None)
+    rv = LogRecord(None, None, "", 0, "", (), None, None)
     rv.__dict__.update(dict)
     return rv
 
@@ -318,6 +320,7 @@ class Formatter:
     %(module)s          Module (name portion of filename)
     %(lineno)d          Source line number where the logging call was issued
                         (if available)
+    %(funcName)s        Function name
     %(created)f         Time when the LogRecord was created (time.time()
                         return value)
     %(asctime)s         Textual time when the LogRecord was created
@@ -1053,12 +1056,12 @@ class Logger(Filterer):
                 continue
             return filename, f.f_lineno, co.co_name
 
-    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, extra=None):
+    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func=None, extra=None):
         """
         A factory method which can be overridden in subclasses to create
         specialized LogRecords.
         """
-        rv = LogRecord(name, level, fn, lno, msg, args, exc_info)
+        rv = LogRecord(name, level, fn, lno, msg, args, exc_info, func)
         if extra:
             for key in extra:
                 if (key in ["message", "asctime"]) or (key in rv.__dict__):
@@ -1078,7 +1081,7 @@ class Logger(Filterer):
         if exc_info:
             if type(exc_info) != types.TupleType:
                 exc_info = sys.exc_info()
-        record = self.makeRecord(self.name, level, fn, lno, msg, args, exc_info, extra)
+        record = self.makeRecord(self.name, level, fn, lno, msg, args, exc_info, func, extra)
         self.handle(record)
 
     def handle(self, record):
