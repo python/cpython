@@ -198,7 +198,7 @@ class Message:
             elif cte in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
                 sfp = StringIO()
                 try:
-                    uu.decode(StringIO(payload+'\n'), sfp)
+                    uu.decode(StringIO(payload+'\n'), sfp, quiet=True)
                     payload = sfp.getvalue()
                 except uu.Error:
                     # Some decoding problem

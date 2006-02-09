@@ -211,6 +211,19 @@ class TestMessageAPI(TestEmailBase):
         msg.set_payload('foo')
         eq(msg.get_payload(decode=True), 'foo')
 
+    def test_decode_bogus_uu_payload_quietly(self):
+        msg = Message()
+        msg.set_payload('begin 664 foo.txt\n%<W1F=0000H \n \nend\n')
+        msg['Content-Transfer-Encoding'] = 'x-uuencode'
+        old_stderr = sys.stderr
+        try:
+            sys.stderr = sfp = StringIO()
+            # We don't care about the payload
+            msg.get_payload(decode=True)
+        finally:
+            sys.stderr = old_stderr
+        self.assertEqual(sfp.getvalue(), '')
+
     def test_decoded_generator(self):
         eq = self.assertEqual
         msg = self._msgobj('msg_07.txt')
