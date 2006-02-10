@@ -27,9 +27,9 @@ hpTimerUnit(void)
 {
 	LARGE_INTEGER li;
 	if (QueryPerformanceFrequency(&li))
-		return 1000.0 / li.QuadPart;
+		return 1.0 / li.QuadPart;
 	else
-		return 0.001;  /* unlikely */
+		return 0.000001;  /* unlikely */
 }
 
 #else  /* !MS_WINDOWS */
@@ -63,7 +63,7 @@ hpTimer(void)
 static double
 hpTimerUnit(void)
 {
-	return 0.001;
+	return 0.000001;
 }
 
 #endif  /* MS_WINDOWS */
