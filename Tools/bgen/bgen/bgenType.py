@@ -29,7 +29,7 @@ class Type:
         for decl in self.getAuxDeclarations(name):
             Output("%s;", decl)
 
-    def getArgDeclarations(self, name, reference=False, constmode=False):
+    def getArgDeclarations(self, name, reference=False, constmode=False, outmode=False):
         """Return the main part of the declarations for this type: the items
         that will be passed as arguments in the C/C++ function call."""
         if reference:
@@ -40,7 +40,11 @@ class Type:
             const = "const "
         else:
             const = ""
-        return ["%s%s%s %s" % (const, self.typeName, ref, name)]
+        if outmode:
+            out = "*"
+        else:
+            out = ""
+        return ["%s%s%s%s %s" % (const, self.typeName, ref, out, name)]
 
     def getAuxDeclarations(self, name):
         """Return any auxiliary declarations needed for implementing this
@@ -213,7 +217,7 @@ class FakeType(InputOnlyType):
         self.substitute = substitute
         self.typeName = None    # Don't show this argument in __doc__ string
 
-    def getArgDeclarations(self, name, reference=False, constmode=False):
+    def getArgDeclarations(self, name, reference=False, constmode=False, outmode=False):
         return []
 
     def getAuxDeclarations(self, name, reference=False):
