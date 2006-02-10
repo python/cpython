@@ -3590,7 +3590,8 @@ call_function(PyObject ***pp_stack, int oparg
 		Py_DECREF(func);
 	}
 
-	/* What does this do? */
+	/* Clear the stack of the function object and the arguments,
+	   in case they weren't consumed already */
 	while ((*pp_stack) > pfunc) {
 		w = EXT_POP(*pp_stack);
 		Py_DECREF(w);
