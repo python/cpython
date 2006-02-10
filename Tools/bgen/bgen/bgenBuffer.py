@@ -41,7 +41,7 @@ class FixedInputOutputBufferType(InputOnlyType):
     def getArgDeclarations(self, name, reference=False, constmode=False, outmode=False):
         if reference:
             raise RuntimeError, "Cannot pass buffer types by reference"
-        return (self.getBufferDeclarations(name, constmode) +
+        return (self.getBufferDeclarations(name, constmode, outmode) +
                 self.getSizeDeclarations(name, outmode))
 
     def getBufferDeclarations(self, name, constmode=False, outmode=False):
