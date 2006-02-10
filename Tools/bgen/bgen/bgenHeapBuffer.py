@@ -16,10 +16,14 @@ class HeapInputOutputBufferType(FixedInputOutputBufferType):
     def __init__(self, datatype = 'char', sizetype = 'int', sizeformat = None):
         FixedInputOutputBufferType.__init__(self, "0", datatype, sizetype, sizeformat)
 
-    def getOutputBufferDeclarations(self, name, constmode=False):
+    def getOutputBufferDeclarations(self, name, constmode=False, outmode=False):
         if constmode:
             raise RuntimeError, "Cannot use const output buffer"
-        return ["%s *%s__out__" % (self.datatype, name)]
+        if outmode:
+            out = "*"
+        else:
+            out = ""
+        return ["%s%s *%s__out__" % (self.datatype, out, name)]
 
     def getargsCheck(self, name):
         Output("if ((%s__out__ = malloc(%s__in_len__)) == NULL)", name, name)
