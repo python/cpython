@@ -2898,6 +2898,8 @@ then
 fi
 
 # check where readline lives
+# save the value of LIBS so we don't actually link Python with readline
+LIBS_no_readline=$LIBS
 AC_CHECK_LIB(readline, readline)
 if test "$ac_cv_have_readline_readline" = no
 then
@@ -2940,6 +2942,9 @@ then
   AC_DEFINE(HAVE_RL_CATCH_SIGNAL, 1,
   [Define if you can turn off readline's signal handling.]), )
 fi
+
+# End of readline checks: restore LIBS
+LIBS=$LIBS_no_readline
 
 AC_MSG_CHECKING(for broken nice())
 AC_CACHE_VAL(ac_cv_broken_nice, [
