@@ -941,10 +941,10 @@ dequeiter_len(dequeiterobject *it)
 	return PyInt_FromLong(it->counter);
 }
 
-PyDoc_STRVAR(length_cue_doc, "Private method returning an estimate of len(list(it)).");
+PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyMethodDef dequeiter_methods[] = {
-	{"_length_cue", (PyCFunction)dequeiter_len, METH_NOARGS, length_cue_doc},
+	{"__length_hint__", (PyCFunction)dequeiter_len, METH_NOARGS, length_hint_doc},
  	{NULL,		NULL}		/* sentinel */
 };
 

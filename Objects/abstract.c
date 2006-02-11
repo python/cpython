@@ -82,7 +82,7 @@ PyObject_Length(PyObject *o)
 #define PyObject_Length PyObject_Size
 
 int
-_PyObject_LengthCue(PyObject *o)
+_PyObject_LengthHint(PyObject *o)
 {
 	int rv = PyObject_Size(o);
 	if (rv != -1)
@@ -92,7 +92,7 @@ _PyObject_LengthCue(PyObject *o)
 		PyObject *err_type, *err_value, *err_tb, *ro;
 
 		PyErr_Fetch(&err_type, &err_value, &err_tb);
-		ro = PyObject_CallMethod(o, "_length_cue", NULL);
+		ro = PyObject_CallMethod(o, "__length_hint__", NULL);
 		if (ro != NULL) {
 			rv = (int)PyInt_AsLong(ro);
 			Py_DECREF(ro);
@@ -1463,7 +1463,7 @@ PySequence_Tuple(PyObject *v)
 		return NULL;
 
 	/* Guess result size and allocate space. */
-	n = _PyObject_LengthCue(v);
+	n = _PyObject_LengthHint(v);
 	if (n < 0) {
 		if (!PyErr_ExceptionMatches(PyExc_TypeError)  &&
 		    !PyErr_ExceptionMatches(PyExc_AttributeError)) {

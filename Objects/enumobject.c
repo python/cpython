@@ -252,10 +252,10 @@ reversed_len(reversedobject *ro)
 	return PyInt_FromLong((seqsize < position)  ?  0  :  position);
 }
 
-PyDoc_STRVAR(length_cue_doc, "Private method returning an estimate of len(list(it)).");
+PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyMethodDef reversediter_methods[] = {
-	{"_length_cue", (PyCFunction)reversed_len, METH_NOARGS, length_cue_doc},
+	{"__length_hint__", (PyCFunction)reversed_len, METH_NOARGS, length_hint_doc},
  	{NULL,		NULL}		/* sentinel */
 };
 

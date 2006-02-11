@@ -87,10 +87,10 @@ iter_len(seqiterobject *it)
 	return PyInt_FromLong(0);
 }
 
-PyDoc_STRVAR(length_cue_doc, "Private method returning an estimate of len(list(it)).");
+PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyMethodDef seqiter_methods[] = {
-	{"_length_cue", (PyCFunction)iter_len, METH_NOARGS, length_cue_doc},
+	{"__length_hint__", (PyCFunction)iter_len, METH_NOARGS, length_hint_doc},
  	{NULL,		NULL}		/* sentinel */
 };
 

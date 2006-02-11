@@ -775,7 +775,7 @@ listextend(PyListObject *self, PyObject *b)
 	iternext = *it->ob_type->tp_iternext;
 
 	/* Guess a result list size. */
-	n = _PyObject_LengthCue(b);
+	n = _PyObject_LengthHint(b);
 	if (n < 0) {
 		if (!PyErr_ExceptionMatches(PyExc_TypeError)  &&
 		    !PyErr_ExceptionMatches(PyExc_AttributeError)) {
@@ -2776,10 +2776,10 @@ listiter_len(listiterobject *it)
 	return PyInt_FromLong(0);
 }
 
-PyDoc_STRVAR(length_cue_doc, "Private method returning an estimate of len(list(it)).");
+PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyMethodDef listiter_methods[] = {
-	{"_length_cue", (PyCFunction)listiter_len, METH_NOARGS, length_cue_doc},
+	{"__length_hint__", (PyCFunction)listiter_len, METH_NOARGS, length_hint_doc},
  	{NULL,		NULL}		/* sentinel */
 };
 

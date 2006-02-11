@@ -220,7 +220,7 @@ builtin_filter(PyObject *self, PyObject *args)
 		goto Fail_arg;
 
 	/* Guess a result list size. */
-	len = _PyObject_LengthCue(seq);
+	len = _PyObject_LengthHint(seq);
 	if (len < 0) {
 		if (!PyErr_ExceptionMatches(PyExc_TypeError)  &&
 		    !PyErr_ExceptionMatches(PyExc_AttributeError)) {
@@ -875,7 +875,7 @@ builtin_map(PyObject *self, PyObject *args)
 		}
 
 		/* Update len. */
-		curlen = _PyObject_LengthCue(curseq);
+		curlen = _PyObject_LengthHint(curseq);
 		if (curlen < 0) {
 			if (!PyErr_ExceptionMatches(PyExc_TypeError)  &&
 			    !PyErr_ExceptionMatches(PyExc_AttributeError)) {
@@ -2111,7 +2111,7 @@ builtin_zip(PyObject *self, PyObject *args)
 	len = -1;	/* unknown */
 	for (i = 0; i < itemsize; ++i) {
 		PyObject *item = PyTuple_GET_ITEM(args, i);
-		int thislen = _PyObject_LengthCue(item);
+		int thislen = _PyObject_LengthHint(item);
 		if (thislen < 0) {
 			if (!PyErr_ExceptionMatches(PyExc_TypeError)  &&
 			    !PyErr_ExceptionMatches(PyExc_AttributeError)) {
