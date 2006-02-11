@@ -388,7 +388,7 @@ class PEP253Mixin(PEP252Mixin):
             OutLbrace()
             Output("if ( (*%s.tp_init)(_self, _args, _kwds) < 0) return -1;", self.basetype)
             OutRbrace()
-            
+
     output_tp_initBody = None
 
     def output_tp_init(self):
