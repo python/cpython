@@ -699,6 +699,8 @@ Library
 Build
 -----
 
+- Patch #1428494: Prefer linking against ncursesw over ncurses library.
+
 - Patch #881820: look for openpty and forkpty also in libbsd.
 
 - The sources of zlib are now part of the Python distribution (zlib 1.2.3).
