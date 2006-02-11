@@ -27,7 +27,7 @@ Permissions History
   are expected to work primarily in nondist/sandbox and have their work
   reviewed before making updates to active code.
 
-- Reinhold Birkenfeld was given SF tracker permissions on 28 May 2005
+- Georg Brandl was given SF tracker permissions on 28 May 2005
   by RDH.  Since the beginning of 2005, he has been active in discussions
   on python-dev and has submitted a dozen patch reviews.  The permissions
   add the ability to change tracker status and to attach patches.  On
