@@ -55,7 +55,9 @@ def len(obj):
         return _len(obj)
     except TypeError:
         try:
-            return obj._length_cue()
+            # note: this is an internal undocumented API,
+            # don't rely on it in your own programs
+            return obj.__length_hint__()
         except AttributeError:
             raise TypeError
 

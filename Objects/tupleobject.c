@@ -860,10 +860,10 @@ tupleiter_len(tupleiterobject *it)
 	return PyInt_FromLong(len);
 }
 
-PyDoc_STRVAR(length_cue_doc, "Private method returning an estimate of len(list(it)).");
+PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyMethodDef tupleiter_methods[] = {
-	{"_length_cue", (PyCFunction)tupleiter_len, METH_NOARGS, length_cue_doc},
+	{"__length_hint__", (PyCFunction)tupleiter_len, METH_NOARGS, length_hint_doc},
  	{NULL,		NULL}		/* sentinel */
 };
 

@@ -268,10 +268,10 @@ rangeiter_len(rangeiterobject *r)
 	return PyInt_FromLong(r->len - r->index);
 }
 
-PyDoc_STRVAR(length_cue_doc, "Private method returning an estimate of len(list(it)).");
+PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyMethodDef rangeiter_methods[] = {
-	{"_length_cue", (PyCFunction)rangeiter_len, METH_NOARGS, length_cue_doc},
+	{"__length_hint__", (PyCFunction)rangeiter_len, METH_NOARGS, length_hint_doc},
  	{NULL,		NULL}		/* sentinel */
 };
 

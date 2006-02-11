@@ -2063,10 +2063,10 @@ dictiter_len(dictiterobject *di)
 	return PyInt_FromLong(len);
 }
 
-PyDoc_STRVAR(length_cue_doc, "Private method returning an estimate of len(list(it)).");
+PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyMethodDef dictiter_methods[] = {
-	{"_length_cue", (PyCFunction)dictiter_len, METH_NOARGS, length_cue_doc},
+	{"__length_hint__", (PyCFunction)dictiter_len, METH_NOARGS, length_hint_doc},
  	{NULL,		NULL}		/* sentinel */
 };
 
