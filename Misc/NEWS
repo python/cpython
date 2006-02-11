@@ -112,6 +112,11 @@ Tools/Demos
 - Fixed a display glitch in Pynche, which could cause the right arrow to
   wiggle over by a pixel.
 
+Build
+-----
+
+- Patch #1428494: Prefer linking against ncursesw over ncurses library.
+
 What's New in Python 2.4.2 final?
 =================================
 
