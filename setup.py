@@ -450,6 +450,9 @@ class PyBuildExt(build_ext):
         if self.compiler.find_library_file(lib_dirs, 'readline'):
             readline_libs = ['readline']
             if self.compiler.find_library_file(lib_dirs,
+                                                 'ncursesw'):
+                readline_libs.append('ncursesw')
+            elif self.compiler.find_library_file(lib_dirs,
                                                  'ncurses'):
                 readline_libs.append('ncurses')
             elif self.compiler.find_library_file(lib_dirs, 'curses'):
@@ -751,7 +754,11 @@ class PyBuildExt(build_ext):
 
         # Curses support, requiring the System V version of curses, often
         # provided by the ncurses library.
-        if (self.compiler.find_library_file(lib_dirs, 'ncurses')):
+        if (self.compiler.find_library_file(lib_dirs, 'ncursesw')):
+            curses_libs = ['ncursesw']
+            exts.append( Extension('_curses', ['_cursesmodule.c'],
+                                   libraries = curses_libs) )
+        elif (self.compiler.find_library_file(lib_dirs, 'ncurses')):
             curses_libs = ['ncurses']
             exts.append( Extension('_curses', ['_cursesmodule.c'],
                                    libraries = curses_libs) )
