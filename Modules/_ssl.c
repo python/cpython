@@ -377,8 +377,10 @@ check_socket_and_wait_for_timeout(PySocketSockObject *s, int writing)
 		return SOCKET_HAS_BEEN_CLOSED;
 
 	/* Guard against socket too large for select*/
+#ifndef Py_SOCKET_FD_CAN_BE_GE_FD_SETSIZE
 	if (s->sock_fd >= FD_SETSIZE)
 		return SOCKET_INVALID;
+#endif
 
 	/* Construct the arguments to select */
 	tv.tv_sec = (int)s->sock_timeout;
