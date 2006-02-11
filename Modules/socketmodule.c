@@ -396,7 +396,14 @@ static int taskwindow;
 static PyTypeObject sock_type;
 
 /* Can we call select() with this socket without a buffer overrun? */
+#ifdef Py_SOCKET_FD_CAN_BE_GE_FD_SETSIZE
+/* Platform can select file descriptors beyond FD_SETSIZE */
+#define IS_SELECTABLE(s) 1
+#else
+/* POSIX says selecting file descriptors beyond FD_SETSIZE
+   has undefined behaviour. */
 #define IS_SELECTABLE(s) ((s)->sock_fd < FD_SETSIZE)
+#endif
 
 static PyObject*
 select_error(void)

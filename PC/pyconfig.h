@@ -572,4 +572,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if you have the thread library (-lthread).  */
 /* #undef HAVE_LIBTHREAD */
+
+/* WinSock does not use a bitmask in select, and uses
+   socket handles greater than FD_SETSIZE */
+#define Py_SOCKET_FD_CAN_BE_GE_FD_SETSIZE
+
 #endif /* !Py_CONFIG_H */
