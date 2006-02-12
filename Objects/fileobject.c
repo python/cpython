@@ -344,6 +344,17 @@ err_closed(void)
 	return NULL;
 }
 
+/* Refuse regular file I/O if there's data in the iteration-buffer.
+ * Mixing them would cause data to arrive out of order, as the read*
+ * methods don't use the iteration buffer. */
+static PyObject *
+err_iterbuffered(void)
+{
+	PyErr_SetString(PyExc_ValueError,
+		"Mixing iteration and read methods would lose data");
+	return NULL;
+}
+
 static void drop_readahead(PyFileObject *);
 
 /* Methods */
@@ -795,6 +806,11 @@ file_read(PyFileObject *f, PyObject *args)
 
 	if (f->f_fp == NULL)
 		return err_closed();
+	/* refuse to mix with f.next() */
+	if (f->f_buf != NULL &&
+	    (f->f_bufend - f->f_bufptr) > 0 &&
+	    f->f_buf[0] != '\0')
+		return err_iterbuffered();
 	if (!PyArg_ParseTuple(args, "|l:read", &bytesrequested))
 		return NULL;
 	if (bytesrequested < 0)
@@ -858,6 +874,11 @@ file_readinto(PyFileObject *f, PyObject *args)
 
 	if (f->f_fp == NULL)
 		return err_closed();
+	/* refuse to mix with f.next() */
+	if (f->f_buf != NULL &&
+	    (f->f_bufend - f->f_bufptr) > 0 &&
+	    f->f_buf[0] != '\0')
+		return err_iterbuffered();
 	if (!PyArg_ParseTuple(args, "w#", &ptr, &ntodo))
 		return NULL;
 	ndone = 0;
@@ -1211,9 +1232,15 @@ PyFile_GetLine(PyObject *f, int n)
 	}
 
 	if (PyFile_Check(f)) {
-		if (((PyFileObject*)f)->f_fp == NULL)
+		PyFileObject *fo = (PyFileObject *)f;
+		if (fo->f_fp == NULL)
 			return err_closed();
-		result = get_line((PyFileObject *)f, n);
+		/* refuse to mix with f.next() */
+		if (fo->f_buf != NULL &&
+		    (fo->f_bufend - fo->f_bufptr) > 0 &&
+		    fo->f_buf[0] != '\0')
+			return err_iterbuffered();
+		result = get_line(fo, n);
 	}
 	else {
 		PyObject *reader;
@@ -1296,6 +1323,11 @@ file_readline(PyFileObject *f, PyObject *args)
 
 	if (f->f_fp == NULL)
 		return err_closed();
+	/* refuse to mix with f.next() */
+	if (f->f_buf != NULL &&
+	    (f->f_bufend - f->f_bufptr) > 0 &&
+	    f->f_buf[0] != '\0')
+		return err_iterbuffered();
 	if (!PyArg_ParseTuple(args, "|i:readline", &n))
 		return NULL;
 	if (n == 0)
@@ -1324,6 +1356,11 @@ file_readlines(PyFileObject *f, PyObject *args)
 
 	if (f->f_fp == NULL)
 		return err_closed();
+	/* refuse to mix with f.next() */
+	if (f->f_buf != NULL &&
+	    (f->f_bufend - f->f_bufptr) > 0 &&
+	    f->f_buf[0] != '\0')
+		return err_iterbuffered();
 	if (!PyArg_ParseTuple(args, "|l:readlines", &sizehint))
 		return NULL;
 	if ((list = PyList_New(0)) == NULL)
