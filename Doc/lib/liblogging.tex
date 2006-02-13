@@ -526,6 +526,7 @@ as those created locally. Logger-level filtering is applied using
                                func, extra}
 This is a factory method which can be overridden in subclasses to create
 specialized \class{LogRecord} instances.
+\versionchanged[\var{func} and \var{extra} were added]{2.5}
 \end{methoddesc}
 
 \subsection{Basic example \label{minimal-example}}
@@ -1387,7 +1388,7 @@ Currently, the useful mapping keys in a \class{LogRecord} are:
                         call was issued (if available).}
 \lineii{\%(filename)s} {Filename portion of pathname.}
 \lineii{\%(module)s}   {Module (name portion of filename).}
-\lineii{\%(funcName)s}   {Name of function containing the logging call.}
+\lineii{\%(funcName)s} {Name of function containing the logging call.}
 \lineii{\%(lineno)d}   {Source line number where the logging call was issued
                         (if available).}
 \lineii{\%(created)f}  {Time when the \class{LogRecord} was created (as
@@ -1403,6 +1404,8 @@ Currently, the useful mapping keys in a \class{LogRecord} are:
 \lineii{\%(process)d}  {Process ID (if available).}
 \lineii{\%(message)s}  {The logged message, computed as \code{msg \% args}.}
 \end{tableii}
+
+\versionchanged[\var{funcName} was added]{2.5}
 
 \begin{classdesc}{Formatter}{\optional{fmt\optional{, datefmt}}}
 Returns a new instance of the \class{Formatter} class. The
