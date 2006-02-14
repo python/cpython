@@ -180,6 +180,67 @@
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
+		<Configuration
+			Name="ReleaseAMD64|Win32"
+			OutputDirectory="."
+			IntermediateDirectory="amd64-temp-release\pyexpat"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=" /USECL:MS_OPTERON"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="{MSSDKPATH}\include\Win64\atl\amd64;{MSSDKPATH}\include\Win64\crt\amd64;{MSSDKPATH}\include\Win64\crt\amd64\sys;{MSSDKPATH}\include\Win64\mfc\amd64;..\Include,..\PC,..\Modules\expat"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
+				StringPooling="TRUE"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="2"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
+				AdditionalDependencies="odbccp32.lib"
+				OutputFile="./pyexpat.pyd"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\./pyexpat.pdb"
+				SubSystem="2"
+				BaseAddress="0x1D100000"
+				ImportLibrary=".\./pyexpat.lib"
+				TargetMachine="0"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>

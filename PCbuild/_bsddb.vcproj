@@ -183,6 +183,68 @@
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
+		<Configuration
+			Name="ReleaseAMD64|Win32"
+			OutputDirectory="."
+			IntermediateDirectory="amd64-temp-release\_bsddb"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=" /USECL:MS_OPTERON"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="{MSSDKPATH}\include\Win64\atl\amd64;{MSSDKPATH}\include\Win64\crt\amd64;{MSSDKPATH}\include\Win64\crt\amd64\sys;{MSSDKPATH}\include\Win64\mfc\amd64;..\Include;..\PC;&quot;..\..\db-4.2.52\build_win32&quot;"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
+				StringPooling="TRUE"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="2"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
+				AdditionalDependencies="..\..\db-4.2.52\build_win32\Release_static\libdb42s.lib"
+				OutputFile="./_bsddb.pyd"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				IgnoreDefaultLibraryNames="msvcrt"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\./_bsddb.pdb"
+				SubSystem="2"
+				BaseAddress="0x1e180000"
+				ImportLibrary=".\./_bsddb.lib"
+				TargetMachine="0"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>

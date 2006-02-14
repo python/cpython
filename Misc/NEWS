@@ -699,6 +699,8 @@ Library
 Build
 -----
 
+- Build support for Win64-AMD64 was added.
+
 - Patch #1428494: Prefer linking against ncursesw over ncurses library.
 
 - Patch #881820: look for openpty and forkpty also in libbsd.

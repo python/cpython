@@ -58,7 +58,7 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="generate buildinfo"
-				CommandLine="make_buildinfo.exe ${ConfigurationName}"/>
+				CommandLine="make_buildinfo.exe $(ConfigurationName)"/>
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
@@ -185,7 +185,74 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="generate buildinfo"
-				CommandLine="make_buildinfo.exe ${ConfigurationName}"/>
+				CommandLine="make_buildinfo.exe $(ConfigurationName)"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="..\Include"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="ReleaseAMD64|Win32"
+			OutputDirectory="./."
+			IntermediateDirectory=".\amd64-temp-release\pythoncore"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/Zm200  /USECL:MS_OPTERON /VSEXTCOMP_VERBOSE"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="{MSSDKPATH}\include\Win64\atl\amd64;{MSSDKPATH}\include\Win64\crt\amd64;{MSSDKPATH}\include\Win64\crt\amd64\sys;{MSSDKPATH}\include\Win64\mfc\amd64;..\Include,..\PC"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT"
+				StringPooling="TRUE"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="2"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
+				AdditionalDependencies="getbuildinfo.o"
+				OutputFile="./python25.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				IgnoreDefaultLibraryNames="libc"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\./python25.pdb"
+				SubSystem="2"
+				BaseAddress="0x1e000000"
+				ImportLibrary=".\./python25.lib"
+				TargetMachine="0"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				Description="generate buildinfo"
+				CommandLine="make_buildinfo.exe $(ConfigurationName)"/>
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
@@ -258,6 +325,12 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="ReleaseItanium|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\Modules\zlib"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseAMD64|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories="..\Modules\zlib"/>
@@ -505,6 +578,12 @@
 			</FileConfiguration>
 			<FileConfiguration
 				Name="ReleaseItanium|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					AdditionalIncludeDirectories="..\Python"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="ReleaseAMD64|Win32">
 				<Tool
 					Name="VCCLCompilerTool"
 					AdditionalIncludeDirectories="..\Python"/>

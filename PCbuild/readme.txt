@@ -280,6 +280,13 @@ The Itanium build has seen little testing. The SDK compiler reports a lot
 of warnings about conversion from size_t to int, which will be fixed in
 future Python releases.
 
+Building for AMD64
+------------------
+
+The build process for the ReleaseAMD64 configuration is very similar
+to the Itanium configuration; make sure you use the latest version of
+vsextcomp.
+
 YOUR OWN EXTENSION DLLs
 -----------------------
 If you want to create your own extension module DLL, there's an example
