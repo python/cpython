@@ -58,15 +58,16 @@ int main(int argc, char*argv[])
 	}
 	if (strcmp(argv[1], "Release") == 0) {
 		strcat(command, "-MD ");
-		//strcpy(targetdir, "x86-temp-debug");
 	}
 	else if (strcmp(argv[1], "Debug") == 0) {
 		strcat(command, "-D_DEBUG -MDd ");
-		//strcpy(targetdir, "x86-temp-release");
 	}
-	else if (strcmp(argv[1], "ReleaseItanium")) {
+	else if (strcmp(argv[1], "ReleaseItanium") == 0) {
+		strcat(command, "-MD /USECL:MS_ITANIUM ");
+	}
+	else if (strcmp(argv[1], "ReleaseAMD64") == 0) {
 		strcat(command, "-MD ");
-		//strcpy(targetdir, "ia64-temp-release");
+		strcat(command, "-MD /USECL:MS_OPTERON ");
 	}
 	else {
 		fprintf(stderr, "unsupported configuration %s\n", argv[1]);

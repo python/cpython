@@ -8,8 +8,6 @@ from win32com.client import constants
 from distutils.spawn import find_executable
 
 # Settings can be overridden in config.py below
-# 1 for Itanium build
-msilib.Win64 = 0
 # 0 for official python.org releases
 # 1 for intermediate releases by anybody, with
 # a new product code for every package.
@@ -129,7 +127,6 @@ pythondll_uuid = {
     "25":"{2e41b118-38bd-4c1b-a840-6977efd1b911}"
     } [major+minor]
 
-
 # Build the mingw import library, libpythonXY.a
 # This requires 'nm' and 'dlltool' executables on your PATH
 def build_mingw_lib(lib_file, def_file, dll_file, mingw_lib):
@@ -176,6 +173,12 @@ mingw_lib = os.path.join(srcdir, "PCBuild", "libpython%s%s.a" % (major, minor))
 
 have_mingw = build_mingw_lib(lib_file, def_file, dll_file, mingw_lib)
 
+# Determine the target architechture
+dll_path = os.path.join(srcdir, "PCBuild", dll_file)
+msilib.set_arch_from_file(dll_path)
+if msilib.pe_type(dll_path) != msilib.pe_type("msisupport.dll"):
+    raise SystemError, "msisupport.dll for incorrect architecture"
+
 if testpackage:
     ext = 'px'
     testprefix = 'x'
@@ -205,11 +208,7 @@ def build_database():
     # schema represents the installer 2.0 database schema.
     # sequence is the set of standard sequences
     # (ui/execute, admin/advt/install)
-    if msilib.Win64:
-        w64 = ".ia64"
-    else:
-        w64 = ""
-    db = msilib.init_database("python-%s%s.msi" % (full_current_version, w64),
+    db = msilib.init_database("python-%s%s.msi" % (full_current_version, msilib.arch_ext),
                   schema, ProductName="Python "+full_current_version,
                   ProductCode=product_code,
                   ProductVersion=current_version,

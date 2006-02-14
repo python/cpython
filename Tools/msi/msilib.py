@@ -5,14 +5,12 @@ import win32com.client.gencache
 import win32com.client
 import pythoncom, pywintypes
 from win32com.client import constants
-import re, string, os, sets, glob, popen2, sys, _winreg
+import re, string, os, sets, glob, popen2, sys, _winreg, struct
 
 try:
     basestring
 except NameError:
     basestring = (str, unicode)
-
-Win64 = 0
 
 # Partially taken from Wine
 datasizemask=      0x00ff
@@ -311,10 +309,7 @@ def init_database(name, schema,
     si.SetProperty(PID_TITLE, "Installation Database")
     si.SetProperty(PID_SUBJECT, ProductName)
     si.SetProperty(PID_AUTHOR, Manufacturer)
-    if Win64:
-        si.SetProperty(PID_TEMPLATE, "Intel64;1033")
-    else:
-        si.SetProperty(PID_TEMPLATE, "Intel;1033")
+    si.SetProperty(PID_TEMPLATE, msi_type)
     si.SetProperty(PID_REVNUMBER, gen_uuid())
     si.SetProperty(PID_WORDCOUNT, 2) # long file names, compressed, original media
     si.SetProperty(PID_PAGECOUNT, 200)
@@ -647,3 +642,34 @@ class Dialog:
 
     def checkbox(self, name, x, y, w, h, attr, prop, text, next):
         return self.control(name, "CheckBox", x, y, w, h, attr, prop, text, next, None)
+
+def pe_type(path):
+    header = open(path).read(1000)
+    # offset of PE header is at offset 0x3c; 1-based
+    pe_offset = struct.unpack("<i", header[0x3c:0x40])[0]-1
+    assert header[pe_offset:pe_offset+4] == "PE\0\0"
+    machine = struct.unpack("<H", header[pe_offset+4:pe_offset+6])[0]
+    return machine
+
+def set_arch_from_file(path):
+    global msi_type, Win64, arch_ext
+    machine = pe_type(path)
+    if machine == 0x14c:
+        # i386
+        msi_type = "Intel"
+        Win64 = 0
+        arch_ext = ''
+    elif machine == 0x200:
+        # Itanium
+        msi_type = "Intel64"
+        Win64 = 1
+        arch_ext = '.ia64'
+    elif machine == 0x8664:
+        # AMD64
+        msi_type = "x64"
+        Win64 = 1
+        arch_ext = '.amd64'
+    else:
+        raise ValueError, "Unsupported architecture"
+    msi_type += ";1033"
+

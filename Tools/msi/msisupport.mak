@@ -1,3 +1,6 @@
+!IF "$(CPU)" == ""
+# VS environment
+
 # /OPT: REF and ICF are added by VS.NET by default
 # NOWIN98 saves 7k of executable size, at the expense of some
 # slowdown on Win98
@@ -9,4 +12,14 @@ msisupport.dll:	msisupport.obj
 # the DLL entry point.
 msisupport.obj:	msisupport.c
 	cl /O2 /D WIN32 /D NDEBUG /D _WINDOWS /MT /W3 /c msisupport.c
+
+!ELSE
+# SDK environment: assume all options are already correct
+
+msisupport.dll:	msisupport.obj
+	link.exe /OUT:msisupport.dll /INCREMENTAL:NO /NOLOGO /DLL msisupport.obj msi.lib kernel32.lib
+
+msisupport.obj:	msisupport.c
+	cl /O2 /D WIN32 /D NDEBUG /D _WINDOWS /MD /W3 /GS- /c msisupport.c
+!ENDIF
 
