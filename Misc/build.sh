@@ -56,6 +56,8 @@ INSTALL_DIR="/tmp/python-test/local"
 RSYNC_OPTS="-aC -e ssh"
 
 REFLOG="build/reflog.txt.out"
+# Change this flag to "yes" for old releases to just update/build the docs.
+BUILD_DISABLED="no"
 
 ## utility functions
 current_time() {
@@ -107,7 +109,7 @@ start=`current_time`
 svn update >& build/$F
 err=$?
 update_status "Updating" "$F" $start
-if [ $err = 0 ]; then
+if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
     ## FIXME: we should check if this file has changed.
     ##  If it has changed, we should re-run the script to pick up changes.
     if [ "$ORIG_CHECKSUM" != "$ORIG_CHECKSUM" ]; then
@@ -188,7 +190,7 @@ echo "</body>" >> $RESULT_FILE
 echo "</html>" >> $RESULT_FILE
 
 ## copy results
-rsync $RSYNC_OPTS html/ $REMOTE_SYSTEM:$REMOTE_DIR
+rsync $RSYNC_OPTS html/* $REMOTE_SYSTEM:$REMOTE_DIR
 cd ../build
 rsync $RSYNC_OPTS index.html *.out $REMOTE_SYSTEM:$REMOTE_DIR/results/
 
