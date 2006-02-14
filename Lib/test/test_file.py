@@ -323,18 +323,17 @@ try:
                          "failed. Got %r, expected %r" % (line, testline))
     # Reading after iteration hit EOF shouldn't hurt either
     f = open(TESTFN)
-    for line in f:
-        pass
     try:
-        f.readline()
-        f.readinto(buf)
-        f.read()
-        f.readlines()
-    except ValueError:
-        raise TestFailed("read* failed after next() consumed file")
+        for line in f:
+            pass
+        try:
+            f.readline()
+            f.readinto(buf)
+            f.read()
+            f.readlines()
+        except ValueError:
+            raise TestFailed("read* failed after next() consumed file")
+    finally:
+        f.close()
 finally:
-    # Bare 'except' so as not to mask errors in the test
-    try:
-        os.unlink(TESTFN)
-    except:
-        pass
+    os.unlink(TESTFN)
