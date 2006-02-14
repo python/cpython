@@ -66,6 +66,7 @@ extern void init_codecs_jp(void);
 extern void init_codecs_kr(void);
 extern void init_codecs_tw(void);
 extern void init_subprocess(void);
+extern void init_lsprof(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -121,6 +122,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_random", init_random},
         {"_bisect", init_bisect},
         {"_heapq", init_heapq},
+	{"_lsprof", init_lsprof},
 	{"itertools", inititertools},
         {"collections", initcollections},
 	{"_symtable", init_symtable},

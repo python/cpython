@@ -377,6 +377,9 @@
 			RelativePath="..\Modules\_localemodule.c">
 		</File>
 		<File
+			RelativePath="..\Modules\_lsprof.c">
+		</File>
+		<File
 			RelativePath="..\Modules\_randommodule.c">
 		</File>
 		<File
@@ -711,6 +714,9 @@
 		</File>
 		<File
 			RelativePath="..\Modules\rgbimgmodule.c">
+		</File>
+		<File
+			RelativePath="..\Modules\rotatingtree.c">
 		</File>
 		<File
 			RelativePath="..\Objects\setobject.c">
