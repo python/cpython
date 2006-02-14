@@ -214,7 +214,13 @@ gen_throw(PyGenObject *gen, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O|OO:throw", &typ, &val, &tb))
 		return NULL;
 
-	if (tb && !PyTraceBack_Check(tb)) {
+	/* First, check the traceback argument, replacing None with
+	   NULL. */
+	if (tb == Py_None) {
+		Py_DECREF(tb);
+		tb = NULL;
+	}
+	else if (tb != NULL && !PyTraceBack_Check(tb)) {
 		PyErr_SetString(PyExc_TypeError,
 			"throw() third argument must be a traceback object");
 		return NULL;
@@ -237,14 +243,14 @@ gen_throw(PyGenObject *gen, PyObject *args)
 		}
 		else {
 			/* Normalize to raise <class>, <instance> */
+			Py_XDECREF(val);
 			val = typ;
 			typ = (PyObject*) ((PyInstanceObject*)typ)->in_class;
 			Py_INCREF(typ);
 		}
 	}
 	else {
-		/* Not something you can raise.  You get an exception
-		   anyway, just not what you specified :-) */
+		/* Not something you can raise.  throw() fails. */
 		PyErr_Format(PyExc_TypeError,
 			     "exceptions must be classes, or instances, not %s",
 			     typ->ob_type->tp_name);
