@@ -45,9 +45,8 @@ DIR=`dirname $DIR`
 ## Configurable options
 
 FAILURE_SUBJECT="Python Regression Test Failures"
-#FAILURE_MAILTO="python-checkins@python.org"
-#FAILURE_MAILTO="YOUR_ACCOUNT@gmail.com"
-FAILURE_MAILTO="nnorwitz@gmail.com"
+FAILURE_MAILTO="python-checkins@python.org"
+FAILURE_CC="nnorwitz@gmail.com"
 
 REMOTE_SYSTEM="neal@dinsdale.python.org"
 REMOTE_DIR="/data/ftp.python.org/pub/docs.python.org/dev/2.4"
@@ -72,7 +71,7 @@ update_status() {
 
 mail_on_failure() {
     if [ "$NUM_FAILURES" != "0" ]; then
-        mutt -s "$FAILURE_SUBJECT $1 ($NUM_FAILURES)" $FAILURE_MAILTO < $2
+        mutt -s "$FAILURE_SUBJECT $1 ($NUM_FAILURES)" $FAILURE_MAILTO -c $FAILURE_CC < $2
     fi
 }
 
