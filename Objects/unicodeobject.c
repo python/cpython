@@ -6630,7 +6630,6 @@ formatfloat(Py_UNICODE *buf,
        worst case length = 3 + 10 (len of INT_MAX) + 1 = 14 (use 20)*/
     char fmt[20];
     double x;
-    Py_ssize_t result;
 
     x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred())
@@ -6702,7 +6701,6 @@ formatint(Py_UNICODE *buf,
     char fmt[64]; /* plenty big enough! */
     char *sign;
     long x;
-    Py_ssize_t result;
 
     x = PyInt_AsLong(v);
     if (x == -1 && PyErr_Occurred())
