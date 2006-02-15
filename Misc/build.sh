@@ -146,7 +146,7 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             F=make-test.out
             start=`current_time`
             make test >& build/$F
-            NUM_FAILURES=`grep -ic " test failed:" build/$F`
+            NUM_FAILURES=`grep -ic " failed:" build/$F`
             update_status "Testing basics ($NUM_FAILURES failures)" "$F" $start
             ## FIXME: should mail since -uall below should find same problems
             mail_on_failure "basics" build/$F
@@ -165,7 +165,7 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             ## skip curses when running from cron since there's no terminal
             ## skip sound since it's not setup on the PSF box (/dev/dsp)
             ./python -E -tt ./Lib/test/regrtest.py -uall -x test_curses test_linuxaudiodev test_ossaudiodev >& build/$F
-            NUM_FAILURES=`grep -ic fail build/$F`
+            NUM_FAILURES=`grep -ic " failed:" build/$F`
             update_status "Testing all except curses and sound ($NUM_FAILURES failures)" "$F" $start
             mail_on_failure "all" build/$F
         fi
