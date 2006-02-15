@@ -15,7 +15,7 @@ static int
 randombits(int bits)
 {
 	int result;
-	if (random_stream < (1<<bits)) {
+	if (random_stream < (1U << bits)) {
 		random_value *= 1082527;
 		random_stream = random_value;
 	}
