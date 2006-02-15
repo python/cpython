@@ -169,7 +169,8 @@ join(char *buffer, char *stuff)
 static int
 gotlandmark(char *landmark)
 {
-	int n, ok;
+	int ok;
+	Py_ssize_t n;
 
 	n = strlen(prefix);
 	join(prefix, landmark);
@@ -302,10 +303,11 @@ getpythonregpath(HKEY keyBase, int skipcore)
 				dataSize--;
 			}
 			if (ppPaths[index]) {
-				int len = _tcslen(ppPaths[index]);
+				Py_ssize_t len = _tcslen(ppPaths[index]);
 				_tcsncpy(szCur, ppPaths[index], len);
 				szCur += len;
-				dataSize -= len;
+				assert(dataSize > len);
+				dataSize -= (int)len;
 			}
 		}
 		if (skipcore)
@@ -632,7 +634,7 @@ calculate_path(void)
 		char lookBuf[MAXPATHLEN+1];
 		char *look = buf - 1; /* 'buf' is at the end of the buffer */
 		while (1) {
-			int nchars;
+			Py_ssize_t nchars;
 			char *lookEnd = look;
 			/* 'look' will end up one character before the
 			   start of the path in question - even if this

@@ -21,6 +21,11 @@ PyAPI_FUNC(long) PyLong_AsLong(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLong(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLongMask(PyObject *);
 
+/* For use by intobject.c only */
+PyAPI_FUNC(Py_ssize_t) _PyLong_AsSsize_t(PyObject *);
+PyAPI_FUNC(PyObject *) _PyLong_FromSize_t(size_t);
+PyAPI_FUNC(PyObject *) _PyLong_FromSsize_t(Py_ssize_t);
+
 /* _PyLong_AsScaledDouble returns a double x and an exponent e such that
    the true value is approximately equal to x * 2**(SHIFT*e).  e is >= 0.
    x is 0.0 if and only if the input is 0 (in which case, e and x are both
@@ -43,7 +48,7 @@ PyAPI_FUNC(unsigned PY_LONG_LONG) PyLong_AsUnsignedLongLongMask(PyObject *);
 
 PyAPI_FUNC(PyObject *) PyLong_FromString(char *, char **, int);
 #ifdef Py_USING_UNICODE
-PyAPI_FUNC(PyObject *) PyLong_FromUnicode(Py_UNICODE*, int, int);
+PyAPI_FUNC(PyObject *) PyLong_FromUnicode(Py_UNICODE*, Py_ssize_t, int);
 #endif
 
 /* _PyLong_Sign.  Return 0 if v is 0, -1 if v < 0, +1 if v > 0.

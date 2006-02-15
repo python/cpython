@@ -51,8 +51,8 @@ NULL if the rich comparison returns an error.
 static setentry *
 set_lookkey(PySetObject *so, PyObject *key, register long hash)
 {
-	register int i;
-	register unsigned int perturb;
+	register Py_ssize_t i;
+	register size_t perturb;
 	register setentry *freeslot;
 	register unsigned int mask = so->mask;
 	setentry *table = so->table;
@@ -129,8 +129,8 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 static setentry *
 set_lookkey_string(PySetObject *so, PyObject *key, register long hash)
 {
-	register int i;
-	register unsigned int perturb;
+	register Py_ssize_t i;
+	register size_t perturb;
 	register setentry *freeslot;
 	register unsigned int mask = so->mask;
 	setentry *table = so->table;
@@ -468,9 +468,10 @@ set_clear_internal(PySetObject *so)
  * mutates the table.  
  */
 static int
-set_next(PySetObject *so, int *pos_ptr, setentry **entry_ptr)
+set_next(PySetObject *so, Py_ssize_t *pos_ptr, setentry **entry_ptr)
 {
-	register int i, mask;
+	Py_ssize_t i;
+	int mask;
 	register setentry *table;
 
 	assert (PyAnySet_Check(so));
@@ -517,7 +518,7 @@ static int
 set_tp_print(PySetObject *so, FILE *fp, int flags)
 {
 	setentry *entry;
-	int pos=0;
+	Py_ssize_t pos=0;
 	char *emit = "";	/* No separator emitted on first pass */
 	char *separator = ", ";
 
@@ -551,7 +552,7 @@ set_repr(PySetObject *so)
 	return result;
 }
 
-static int
+static Py_ssize_t
 set_len(PyObject *so)
 {
 	return ((PySetObject *)so)->used;
@@ -673,7 +674,7 @@ PyDoc_STRVAR(pop_doc, "Remove and return an arbitrary set element.");
 static int
 set_traverse(PySetObject *so, visitproc visit, void *arg)
 {
-	int pos = 0;
+	Py_ssize_t pos = 0;
 	setentry *entry;
 
 	while (set_next(so, &pos, &entry))
@@ -687,7 +688,7 @@ frozenset_hash(PyObject *self)
 	PySetObject *so = (PySetObject *)self;
 	long h, hash = 1927868237L;
 	setentry *entry;
-	int pos = 0;
+	Py_ssize_t pos = 0;
 
 	if (so->hash != -1)
 		return so->hash;
@@ -752,7 +753,7 @@ setiter_dealloc(setiterobject *si)
 static PyObject *
 setiter_len(setiterobject *si)
 {
-	int len = 0;
+	long len = 0;
 	if (si->si_set != NULL && si->si_used == si->si_set->used)
 		len = si->len;
 	return PyInt_FromLong(len);
@@ -847,7 +848,7 @@ set_update_internal(PySetObject *so, PyObject *other)
 
 	if (PyDict_Check(other)) {
 		PyObject *value;
-		int pos = 0;
+		Py_ssize_t pos = 0;
 		while (PyDict_Next(other, &pos, &key, &value)) {
 			if (set_add_key(so, key) == -1)
 				return -1;
@@ -1121,7 +1122,7 @@ set_intersection(PySetObject *so, PyObject *other)
 		return NULL;
 
 	if (PyAnySet_Check(other)) {		
-		int pos = 0;
+		Py_ssize_t pos = 0;
 		setentry *entry;
 
 		if (PySet_GET_SIZE(other) > PySet_GET_SIZE(so)) {
@@ -1222,7 +1223,7 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
 	
 	if (PyAnySet_Check(other)) {
 		setentry *entry;
-		int pos = 0;
+		Py_ssize_t pos = 0;
 
 		while (set_next((PySetObject *)other, &pos, &entry))
 			set_discard_entry(so, entry);
@@ -1266,7 +1267,7 @@ set_difference(PySetObject *so, PyObject *other)
 {
 	PyObject *result;
 	setentry *entry;
-	int pos = 0;
+	Py_ssize_t pos = 0;
 
 	if (!PyAnySet_Check(other)  && !PyDict_Check(other)) {
 		result = set_copy(so);
@@ -1340,7 +1341,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 {
 	PySetObject *otherset;
 	PyObject *key;
-	int pos = 0;
+	Py_ssize_t pos = 0;
 	setentry *entry;
 
 	if ((PyObject *)so == other)
@@ -1442,7 +1443,7 @@ static PyObject *
 set_issubset(PySetObject *so, PyObject *other)
 {
 	setentry *entry;
-	int pos = 0;
+	Py_ssize_t pos = 0;
 
 	if (!PyAnySet_Check(other)) {
 		PyObject *tmp, *result;
@@ -1687,7 +1688,7 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PySequenceMethods set_as_sequence = {
-	(inquiry)set_len,		/* sq_length */
+	(lenfunc)set_len,		/* sq_length */
 	0,				/* sq_concat */
 	0,				/* sq_repeat */
 	0,				/* sq_item */

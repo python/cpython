@@ -29,7 +29,7 @@ static struct PycStringIO_CAPI {
  /* Read a string from an input object.  If the last argument
     is -1, the remainder will be read.
     */
-  int(*cread)(PyObject *, char **, int);
+  int(*cread)(PyObject *, char **, Py_ssize_t);
 
  /* Read a line from an input object.  Returns the length of the read
     line as an int and a pointer inside the object buffer as char** (so
@@ -38,7 +38,7 @@ static struct PycStringIO_CAPI {
   int(*creadline)(PyObject *, char **);
 
   /* Write a string to an output object*/
-  int(*cwrite)(PyObject *, const char *, int);
+  int(*cwrite)(PyObject *, const char *, Py_ssize_t);
 
   /* Get the output object as a Python string (returns new reference). */
   PyObject *(*cgetvalue)(PyObject *);

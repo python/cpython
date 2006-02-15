@@ -596,7 +596,7 @@ normalize_datetime(int *year, int *month, int *day,
  */
 
 static PyObject *
-time_alloc(PyTypeObject *type, int aware)
+time_alloc(PyTypeObject *type, Py_ssize_t aware)
 {
 	PyObject *self;
 
@@ -611,7 +611,7 @@ time_alloc(PyTypeObject *type, int aware)
 }
 
 static PyObject *
-datetime_alloc(PyTypeObject *type, int aware)
+datetime_alloc(PyTypeObject *type, Py_ssize_t aware)
 {
 	PyObject *self;
 

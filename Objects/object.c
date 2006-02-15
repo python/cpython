@@ -170,7 +170,7 @@ PyObject_Init(PyObject *op, PyTypeObject *tp)
 }
 
 PyVarObject *
-PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, int size)
+PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, Py_ssize_t size)
 {
 	if (op == NULL)
 		return (PyVarObject *) PyErr_NoMemory();
@@ -192,7 +192,7 @@ _PyObject_New(PyTypeObject *tp)
 }
 
 PyVarObject *
-_PyObject_NewVar(PyTypeObject *tp, int nitems)
+_PyObject_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
 {
 	PyVarObject *op;
 	const size_t size = _PyObject_VAR_SIZE(tp, nitems);
@@ -1175,7 +1175,7 @@ _PyObject_GetDictPtr(PyObject *obj)
 	if (dictoffset == 0)
 		return NULL;
 	if (dictoffset < 0) {
-		int tsize;
+		Py_ssize_t tsize;
 		size_t size;
 
 		tsize = ((PyVarObject *)obj)->ob_size;
@@ -1237,7 +1237,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 
 	/* Inline _PyType_Lookup */
 	{
-		int i, n;
+		Py_ssize_t i, n;
 		PyObject *mro, *base, *dict;
 
 		/* Look in tp_dict of types in MRO */
@@ -1278,7 +1278,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 	if (dictoffset != 0) {
 		PyObject *dict;
 		if (dictoffset < 0) {
-			int tsize;
+			Py_ssize_t tsize;
 			size_t size;
 
 			tsize = ((PyVarObject *)obj)->ob_size;
@@ -1414,7 +1414,7 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 int
 PyObject_IsTrue(PyObject *v)
 {
-	int res;
+	Py_ssize_t res;
 	if (v == Py_True)
 		return 1;
 	if (v == Py_False)
@@ -1432,7 +1432,8 @@ PyObject_IsTrue(PyObject *v)
 		res = (*v->ob_type->tp_as_sequence->sq_length)(v);
 	else
 		return 1;
-	return (res > 0) ? 1 : res;
+	/* if it is negative, it should be either -1 or -2 */
+	return (res > 0) ? 1 : Py_SAFE_DOWNCAST(res, Py_ssize_t, int);
 }
 
 /* equivalent of 'not v'
@@ -1556,7 +1557,7 @@ merge_class_dict(PyObject* dict, PyObject* aclass)
 		PyErr_Clear();
 	else {
 		/* We have no guarantee that bases is a real tuple */
-		int i, n;
+		Py_ssize_t i, n;
 		n = PySequence_Size(bases); /* This better be right */
 		if (n < 0)
 			PyErr_Clear();
@@ -1949,7 +1950,7 @@ PyTypeObject *_Py_cobject_hack = &PyCObject_Type;
 
 
 /* Hack to force loading of abstract.o */
-int (*_Py_abstract_hack)(PyObject *) = PyObject_Size;
+Py_ssize_t (*_Py_abstract_hack)(PyObject *) = PyObject_Size;
 
 
 /* Python's malloc wrappers (see pymem.h) */
@@ -1992,7 +1993,7 @@ Py_ReprEnter(PyObject *obj)
 {
 	PyObject *dict;
 	PyObject *list;
-	int i;
+	Py_ssize_t i;
 
 	dict = PyThreadState_GetDict();
 	if (dict == NULL)
@@ -2020,7 +2021,7 @@ Py_ReprLeave(PyObject *obj)
 {
 	PyObject *dict;
 	PyObject *list;
-	int i;
+	Py_ssize_t i;
 
 	dict = PyThreadState_GetDict();
 	if (dict == NULL)

@@ -18,7 +18,7 @@ extern const char *PyWin_DLLVersionString;
 FILE *PyWin_FindRegisteredModule(const char *moduleName,
 				 struct filedescr **ppFileDesc,
 				 char *pathBuf,
-				 int pathLen)
+				 Py_ssize_t pathLen)
 {
 	char *moduleKey;
 	const char keyPrefix[] = "Software\\Python\\PythonCore\\";
@@ -53,13 +53,14 @@ FILE *PyWin_FindRegisteredModule(const char *moduleName,
 		      "Software\\Python\\PythonCore\\%s\\Modules\\%s%s",
 		      PyWin_DLLVersionString, moduleName, debugString);
 
-	modNameSize = pathLen;
+	assert(pathLen < INT_MAX);
+	modNameSize = (int)pathLen;
 	regStat = RegQueryValue(keyBase, moduleKey, pathBuf, &modNameSize);
 	if (regStat != ERROR_SUCCESS) {
 		/* No user setting - lookup in machine settings */
 		keyBase = HKEY_LOCAL_MACHINE;
 		/* be anal - failure may have reset size param */
-		modNameSize = pathLen;
+		modNameSize = (int)pathLen;
 		regStat = RegQueryValue(keyBase, moduleKey, 
 		                        pathBuf, &modNameSize);
 

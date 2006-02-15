@@ -461,6 +461,9 @@
 /* Define if you have the 'socketpair' function. */
 #undef HAVE_SOCKETPAIR
 
+/* Define if your compiler provides ssize_t */
+#undef HAVE_SSIZE_T
+
 /* Define to 1 if you have the `statvfs' function. */
 #undef HAVE_STATVFS
 
@@ -768,6 +771,9 @@
 
 /* The size of a `short', as computed by sizeof. */
 #undef SIZEOF_SHORT
+
+/* The size of a `size_t', as computed by sizeof. */
+#undef SIZEOF_SIZE_T
 
 /* The number of bytes in a time_t. */
 #undef SIZEOF_TIME_T

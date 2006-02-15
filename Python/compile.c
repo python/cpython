@@ -317,7 +317,7 @@ compiler_free(struct compiler *c)
 static PyObject *
 list2dict(PyObject *list)
 {
-	int i, n;
+	Py_ssize_t i, n;
 	PyObject *v, *k, *dict = PyDict_New();
 
 	n = PyList_Size(list);
@@ -352,7 +352,7 @@ list2dict(PyObject *list)
 static PyObject *
 dictbytype(PyObject *src, int scope_type, int flag, int offset)
 {
-	int pos = 0, i = offset, scope;
+	Py_ssize_t pos = 0, i = offset, scope;
 	PyObject *k, *v, *dest = PyDict_New();
 
         assert(offset >= 0);
@@ -407,7 +407,7 @@ static int
 tuple_of_constants(unsigned char *codestr, int n, PyObject *consts)
 {
 	PyObject *newconst, *constant;
-	int i, arg, len_consts;
+	Py_ssize_t i, arg, len_consts;
 
 	/* Pre-conditions */
 	assert(PyList_CheckExact(consts));
@@ -458,7 +458,8 @@ static int
 fold_binops_on_constants(unsigned char *codestr, PyObject *consts)
 {
 	PyObject *newconst, *v, *w;
-	int len_consts, opcode, size;
+	Py_ssize_t len_consts, size;
+	int opcode;
 
 	/* Pre-conditions */
 	assert(PyList_CheckExact(consts));
@@ -551,7 +552,8 @@ static int
 fold_unaryops_on_constants(unsigned char *codestr, PyObject *consts)
 {
 	PyObject *newconst=NULL, *v;
-	int len_consts, opcode;
+	Py_ssize_t len_consts;
+	int opcode;
 
 	/* Pre-conditions */
 	assert(PyList_CheckExact(consts));
@@ -653,7 +655,8 @@ markblocks(unsigned char *code, int len)
 static PyObject *
 optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *lineno_obj)
 {
-	int i, j, codelen, nops, h, adj;
+	Py_ssize_t i, j, codelen;
+	int nops, h, adj;
 	int tgt, tgttgt, opcode;
 	unsigned char *codestr = NULL;
 	unsigned char *lineno;
@@ -989,7 +992,8 @@ static void
 compiler_display_symbols(PyObject *name, PyObject *symbols)
 {
 	PyObject *key, *value;
-	int flags, pos = 0;
+	int flags;
+	Py_ssize_t pos = 0;
 
 	fprintf(stderr, "block %s\n", PyString_AS_STRING(name));
 	while (PyDict_Next(symbols, &pos, &key, &value)) {
@@ -1498,7 +1502,7 @@ static int
 compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 {
 	PyObject *t, *v;
-	int arg;
+	Py_ssize_t arg;
 
         /* necessary to make sure types aren't coerced (e.g., int and long) */
         t = PyTuple_Pack(2, o, o->ob_type);
@@ -4032,7 +4036,7 @@ static PyObject *
 dict_keys_inorder(PyObject *dict, int offset)
 {
 	PyObject *tuple, *k, *v;
-	int i, pos = 0, size = PyDict_Size(dict);
+	Py_ssize_t i, pos = 0, size = PyDict_Size(dict);
 
 	tuple = PyTuple_New(size);
 	if (tuple == NULL)

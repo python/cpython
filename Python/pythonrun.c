@@ -939,7 +939,7 @@ print_error_text(PyObject *f, int offset, const char *text)
 			nl = strchr(text, '\n');
 			if (nl == NULL || nl-text >= offset)
 				break;
-			offset -= (nl+1-text);
+			offset -= (int)(nl+1-text);
 			text = nl+1;
 		}
 		while (*text == ' ' || *text == '\t') {

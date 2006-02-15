@@ -1279,7 +1279,7 @@ PySys_SetArgv(int argc, char **argv)
 	if (path != NULL) {
 		char *argv0 = argv[0];
 		char *p = NULL;
-		int n = 0;
+		Py_ssize_t n = 0;
 		PyObject *a;
 #ifdef HAVE_READLINK
 		char link[MAXPATHLEN+1];

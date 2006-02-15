@@ -520,7 +520,7 @@ proxy_dealloc(PyWeakReference *self)
 /* sequence slots */
 
 static PyObject *
-proxy_slice(PyWeakReference *proxy, int i, int j)
+proxy_slice(PyWeakReference *proxy, Py_ssize_t i, Py_ssize_t j)
 {
     if (!proxy_checkref(proxy))
         return NULL;
@@ -528,7 +528,7 @@ proxy_slice(PyWeakReference *proxy, int i, int j)
 }
 
 static int
-proxy_ass_slice(PyWeakReference *proxy, int i, int j, PyObject *value)
+proxy_ass_slice(PyWeakReference *proxy, Py_ssize_t i, Py_ssize_t j, PyObject *value)
 {
     if (!proxy_checkref(proxy))
         return -1;
@@ -546,7 +546,7 @@ proxy_contains(PyWeakReference *proxy, PyObject *value)
 
 /* mapping slots */
 
-static int
+static Py_ssize_t
 proxy_length(PyWeakReference *proxy)
 {
     if (!proxy_checkref(proxy))
@@ -625,18 +625,18 @@ static PyNumberMethods proxy_as_number = {
 };
 
 static PySequenceMethods proxy_as_sequence = {
-    (inquiry)proxy_length,      /*sq_length*/
+    (lenfunc)proxy_length,      /*sq_length*/
     0,                          /*sq_concat*/
     0,                          /*sq_repeat*/
     0,                          /*sq_item*/
-    (intintargfunc)proxy_slice, /*sq_slice*/
+    (ssizessizeargfunc)proxy_slice, /*sq_slice*/
     0,                          /*sq_ass_item*/
-    (intintobjargproc)proxy_ass_slice, /*sq_ass_slice*/
+    (ssizessizeobjargproc)proxy_ass_slice, /*sq_ass_slice*/
     (objobjproc)proxy_contains, /* sq_contains */
 };
 
 static PyMappingMethods proxy_as_mapping = {
-    (inquiry)proxy_length,      /*mp_length*/
+    (lenfunc)proxy_length,      /*mp_length*/
     (binaryfunc)proxy_getitem,  /*mp_subscript*/
     (objobjargproc)proxy_setitem, /*mp_ass_subscript*/
 };
@@ -886,7 +886,7 @@ PyObject_ClearWeakRefs(PyObject *object)
     }
     if (*list != NULL) {
         PyWeakReference *current = *list;
-        int count = _PyWeakref_GetWeakrefCount(current);
+        Py_ssize_t count = _PyWeakref_GetWeakrefCount(current);
         int restore_error = PyErr_Occurred() ? 1 : 0;
         PyObject *err_type, *err_value, *err_tb;
 
@@ -904,7 +904,7 @@ PyObject_ClearWeakRefs(PyObject *object)
         }
         else {
             PyObject *tuple = PyTuple_New(count * 2);
-            int i = 0;
+            Py_ssize_t i = 0;
 
             for (i = 0; i < count; ++i) {
                 PyWeakReference *next = current->wr_next;

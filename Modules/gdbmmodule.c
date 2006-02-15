@@ -86,7 +86,7 @@ dbm_dealloc(register dbmobject *dp)
     PyObject_Del(dp);
 }
 
-static int
+static Py_ssize_t
 dbm_length(dbmobject *dp)
 {
     if (dp->di_dbm == NULL) {
@@ -178,7 +178,7 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 }
 
 static PyMappingMethods dbm_as_mapping = {
-    (inquiry)dbm_length,		/*mp_length*/
+    (lenfunc)dbm_length,		/*mp_length*/
     (binaryfunc)dbm_subscript,          /*mp_subscript*/
     (objobjargproc)dbm_ass_sub,         /*mp_ass_subscript*/
 };

@@ -159,7 +159,7 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
  **/
 char *
 PyOS_ascii_formatd(char       *buffer, 
-		   int         buf_len, 
+		   size_t      buf_len, 
 		   const char *format, 
 		   double      d)
 {

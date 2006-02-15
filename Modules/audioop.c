@@ -1020,7 +1020,9 @@ audioop_ratecv(PyObject *self, PyObject *args)
 							      cur_i[chan]));
 				if (PyErr_Occurred())
 					goto exit;
-				len = ncp - PyString_AsString(str);
+				/* We have checked before that the length
+				 * of the string fits into int. */
+				len = (int)(ncp - PyString_AsString(str));
 				if (len == 0) {
 					/*don't want to resize to zero length*/
 					rv = PyString_FromStringAndSize("", 0);

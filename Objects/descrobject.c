@@ -209,7 +209,7 @@ getset_set(PyGetSetDescrObject *descr, PyObject *obj, PyObject *value)
 static PyObject *
 methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwds)
 {
-	int argc;
+	Py_ssize_t argc;
 	PyObject *self, *func, *result;
 
 	/* Make sure that the first argument is acceptable as 'self' */
@@ -267,7 +267,7 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
 static PyObject *
 wrapperdescr_call(PyWrapperDescrObject *descr, PyObject *args, PyObject *kwds)
 {
-	int argc;
+	Py_ssize_t argc;
 	PyObject *self, *func, *result;
 
 	/* Make sure that the first argument is acceptable as 'self' */
@@ -669,7 +669,7 @@ typedef struct {
 	PyObject *dict;
 } proxyobject;
 
-static int
+static Py_ssize_t
 proxy_len(proxyobject *pp)
 {
 	return PyObject_Size(pp->dict);
@@ -682,7 +682,7 @@ proxy_getitem(proxyobject *pp, PyObject *key)
 }
 
 static PyMappingMethods proxy_as_mapping = {
-	(inquiry)proxy_len,			/* mp_length */
+	(lenfunc)proxy_len,			/* mp_length */
 	(binaryfunc)proxy_getitem,		/* mp_subscript */
 	0,					/* mp_ass_subscript */
 };

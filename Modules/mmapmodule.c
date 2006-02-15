@@ -583,8 +583,8 @@ static struct PyMethodDef mmap_object_methods[] = {
 
 /* Functions for treating an mmap'ed file as a buffer */
 
-static int
-mmap_buffer_getreadbuf(mmap_object *self, int index, const void **ptr)
+static Py_ssize_t
+mmap_buffer_getreadbuf(mmap_object *self, Py_ssize_t index, const void **ptr)
 {
 	CHECK_VALID(-1);
 	if ( index != 0 ) {
@@ -596,8 +596,8 @@ mmap_buffer_getreadbuf(mmap_object *self, int index, const void **ptr)
 	return self->size;
 }
 
-static int
-mmap_buffer_getwritebuf(mmap_object *self, int index, const void **ptr)
+static Py_ssize_t
+mmap_buffer_getwritebuf(mmap_object *self, Py_ssize_t index, const void **ptr)
 {  
 	CHECK_VALID(-1);
 	if ( index != 0 ) {
@@ -611,8 +611,8 @@ mmap_buffer_getwritebuf(mmap_object *self, int index, const void **ptr)
 	return self->size;
 }
 
-static int
-mmap_buffer_getsegcount(mmap_object *self, int *lenp)
+static Py_ssize_t
+mmap_buffer_getsegcount(mmap_object *self, Py_ssize_t *lenp)
 {
 	CHECK_VALID(-1);
 	if (lenp) 
@@ -620,8 +620,8 @@ mmap_buffer_getsegcount(mmap_object *self, int *lenp)
 	return 1;
 }
 
-static int
-mmap_buffer_getcharbuffer(mmap_object *self, int index, const void **ptr)
+static Py_ssize_t
+mmap_buffer_getcharbuffer(mmap_object *self, Py_ssize_t index, const void **ptr)
 {
 	if ( index != 0 ) {
 		PyErr_SetString(PyExc_SystemError,
@@ -638,7 +638,7 @@ mmap_object_getattr(mmap_object *self, char *name)
 	return Py_FindMethod (mmap_object_methods, (PyObject *)self, name);
 }
 
-static int
+static Py_ssize_t
 mmap_length(mmap_object *self)
 {
 	CHECK_VALID(-1);
@@ -646,7 +646,7 @@ mmap_length(mmap_object *self)
 }
 
 static PyObject *
-mmap_item(mmap_object *self, int i)
+mmap_item(mmap_object *self, Py_ssize_t i)
 {
 	CHECK_VALID(NULL);
 	if (i < 0 || (size_t)i >= self->size) {
@@ -657,7 +657,7 @@ mmap_item(mmap_object *self, int i)
 }
 
 static PyObject *
-mmap_slice(mmap_object *self, int ilow, int ihigh)
+mmap_slice(mmap_object *self, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
 	CHECK_VALID(NULL);
 	if (ilow < 0)
@@ -684,7 +684,7 @@ mmap_concat(mmap_object *self, PyObject *bb)
 }
 
 static PyObject *
-mmap_repeat(mmap_object *self, int n)
+mmap_repeat(mmap_object *self, Py_ssize_t n)
 {
 	CHECK_VALID(NULL);
 	PyErr_SetString(PyExc_SystemError,
@@ -693,7 +693,7 @@ mmap_repeat(mmap_object *self, int n)
 }
 
 static int
-mmap_ass_slice(mmap_object *self, int ilow, int ihigh, PyObject *v)
+mmap_ass_slice(mmap_object *self, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
 {
 	const char *buf;
 
@@ -732,7 +732,7 @@ mmap_ass_slice(mmap_object *self, int ilow, int ihigh, PyObject *v)
 }
 
 static int
-mmap_ass_item(mmap_object *self, int i, PyObject *v)
+mmap_ass_item(mmap_object *self, Py_ssize_t i, PyObject *v)
 {
 	const char *buf;
  
@@ -759,20 +759,20 @@ mmap_ass_item(mmap_object *self, int i, PyObject *v)
 }
 
 static PySequenceMethods mmap_as_sequence = {
-	(inquiry)mmap_length,		       /*sq_length*/
+	(lenfunc)mmap_length,		       /*sq_length*/
 	(binaryfunc)mmap_concat,	       /*sq_concat*/
-	(intargfunc)mmap_repeat,	       /*sq_repeat*/
-	(intargfunc)mmap_item,		       /*sq_item*/
-	(intintargfunc)mmap_slice,	       /*sq_slice*/
-	(intobjargproc)mmap_ass_item,	       /*sq_ass_item*/
-	(intintobjargproc)mmap_ass_slice,      /*sq_ass_slice*/
+	(ssizeargfunc)mmap_repeat,	       /*sq_repeat*/
+	(ssizeargfunc)mmap_item,		       /*sq_item*/
+	(ssizessizeargfunc)mmap_slice,	       /*sq_slice*/
+	(ssizeobjargproc)mmap_ass_item,	       /*sq_ass_item*/
+	(ssizessizeobjargproc)mmap_ass_slice,      /*sq_ass_slice*/
 };
 
 static PyBufferProcs mmap_as_buffer = {
-	(getreadbufferproc)mmap_buffer_getreadbuf,
-	(getwritebufferproc)mmap_buffer_getwritebuf,
-	(getsegcountproc)mmap_buffer_getsegcount,
-	(getcharbufferproc)mmap_buffer_getcharbuffer,
+	(readbufferproc)mmap_buffer_getreadbuf,
+	(writebufferproc)mmap_buffer_getwritebuf,
+	(segcountproc)mmap_buffer_getsegcount,
+	(charbufferproc)mmap_buffer_getcharbuffer,
 };
 
 static PyTypeObject mmap_object_type = {

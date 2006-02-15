@@ -363,10 +363,10 @@ int (*PyMacGluePtr_##routinename)(PyObject *, object *); \
 \
 int routinename(PyObject *pyobj, object *cobj) { \
     if (!PyMacGluePtr_##routinename) { \
-       if (!PyImport_ImportModule(module)) return NULL; \
+       if (!PyImport_ImportModule(module)) return 0; \
        if (!PyMacGluePtr_##routinename) { \
            PyErr_SetString(PyExc_ImportError, "Module did not provide routine: " module ": " #routinename); \
-           return NULL; \
+           return 0; \
        } \
     } \
     return (*PyMacGluePtr_##routinename)(pyobj, cobj); \

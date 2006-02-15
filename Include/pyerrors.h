@@ -156,15 +156,15 @@ PyAPI_FUNC(PyObject *) PyErr_ProgramText(const char *, int);
 
 /* create a UnicodeDecodeError object */
 PyAPI_FUNC(PyObject *) PyUnicodeDecodeError_Create(
-	const char *, const char *, int, int, int, const char *);
+	const char *, const char *, Py_ssize_t, Py_ssize_t, Py_ssize_t, const char *);
 
 /* create a UnicodeEncodeError object */
 PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_Create(
-	const char *, const Py_UNICODE *, int, int, int, const char *);
+	const char *, const Py_UNICODE *, Py_ssize_t, Py_ssize_t, Py_ssize_t, const char *);
 
 /* create a UnicodeTranslateError object */
 PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_Create(
-	const Py_UNICODE *, int, int, int, const char *);
+	const Py_UNICODE *, Py_ssize_t, Py_ssize_t, Py_ssize_t, const char *);
 
 /* get the encoding attribute */
 PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_GetEncoding(PyObject *);
@@ -177,27 +177,27 @@ PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_GetObject(PyObject *);
 
 /* get the value of the start attribute (the int * may not be NULL)
    return 0 on success, -1 on failure */
-PyAPI_FUNC(int) PyUnicodeEncodeError_GetStart(PyObject *, int *);
-PyAPI_FUNC(int) PyUnicodeDecodeError_GetStart(PyObject *, int *);
-PyAPI_FUNC(int) PyUnicodeTranslateError_GetStart(PyObject *, int *);
+PyAPI_FUNC(int) PyUnicodeEncodeError_GetStart(PyObject *, Py_ssize_t *);
+PyAPI_FUNC(int) PyUnicodeDecodeError_GetStart(PyObject *, Py_ssize_t *);
+PyAPI_FUNC(int) PyUnicodeTranslateError_GetStart(PyObject *, Py_ssize_t *);
 
 /* assign a new value to the start attribute
    return 0 on success, -1 on failure */
-PyAPI_FUNC(int) PyUnicodeEncodeError_SetStart(PyObject *, int);
-PyAPI_FUNC(int) PyUnicodeDecodeError_SetStart(PyObject *, int);
-PyAPI_FUNC(int) PyUnicodeTranslateError_SetStart(PyObject *, int);
+PyAPI_FUNC(int) PyUnicodeEncodeError_SetStart(PyObject *, Py_ssize_t);
+PyAPI_FUNC(int) PyUnicodeDecodeError_SetStart(PyObject *, Py_ssize_t);
+PyAPI_FUNC(int) PyUnicodeTranslateError_SetStart(PyObject *, Py_ssize_t);
 
 /* get the value of the end attribute (the int *may not be NULL)
  return 0 on success, -1 on failure */
-PyAPI_FUNC(int) PyUnicodeEncodeError_GetEnd(PyObject *, int *);
-PyAPI_FUNC(int) PyUnicodeDecodeError_GetEnd(PyObject *, int *);
-PyAPI_FUNC(int) PyUnicodeTranslateError_GetEnd(PyObject *, int *);
+PyAPI_FUNC(int) PyUnicodeEncodeError_GetEnd(PyObject *, Py_ssize_t *);
+PyAPI_FUNC(int) PyUnicodeDecodeError_GetEnd(PyObject *, Py_ssize_t *);
+PyAPI_FUNC(int) PyUnicodeTranslateError_GetEnd(PyObject *, Py_ssize_t *);
 
 /* assign a new value to the end attribute
    return 0 on success, -1 on failure */
-PyAPI_FUNC(int) PyUnicodeEncodeError_SetEnd(PyObject *, int);
-PyAPI_FUNC(int) PyUnicodeDecodeError_SetEnd(PyObject *, int);
-PyAPI_FUNC(int) PyUnicodeTranslateError_SetEnd(PyObject *, int);
+PyAPI_FUNC(int) PyUnicodeEncodeError_SetEnd(PyObject *, Py_ssize_t);
+PyAPI_FUNC(int) PyUnicodeDecodeError_SetEnd(PyObject *, Py_ssize_t);
+PyAPI_FUNC(int) PyUnicodeTranslateError_SetEnd(PyObject *, Py_ssize_t);
 
 /* get the value of the reason attribute */
 PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_GetReason(PyObject *);

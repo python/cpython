@@ -9,6 +9,18 @@ extern "C" {
 
 #include <stdarg.h>
 
+/* If PY_SSIZE_T_CLEAN is defined, each functions treats #-specifier
+   to mean Py_ssize_t */
+#ifdef PY_SSIZE_T_CLEAN
+#define PyArg_Parse			_PyArg_Parse_SizeT
+#define PyArg_ParseTuple		_PyArg_ParseTuple_SizeT
+#define PyArg_ParseTupleAndKeywords	_PyArg_ParseTupleAndKeywords_SizeT
+#define PyArg_VaParse			_PyArg_VaParse_SizeT
+#define PyArg_VaParseTupleAndKeywords	_PyArg_VaParseTupleAndKeywords_SizeT
+#define PyArg_BuildValue		_PyArg_BuildValue_SizeT
+#define PyArg_VaBuildValue		_PyArg_VaBuildValue_SizeT
+#endif
+
 PyAPI_FUNC(int) PyArg_Parse(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
@@ -25,6 +37,7 @@ PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);
 PyAPI_FUNC(int) PyModule_AddObject(PyObject *, const char *, PyObject *);
 PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);
 PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char *);
+
 
 #define PYTHON_API_VERSION 1012
 #define PYTHON_API_STRING "1012"
@@ -77,11 +90,22 @@ PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char 
    without actually needing a recompile.  */
 #endif /* MS_WINDOWS */
 
+#if SIZEOF_SIZE_T != SIZEOF_INT
+/* On a 64-bit system, rename the Py_InitModule4 so that 2.4
+   modules cannot get loaded into a 2.5 interpreter */
+#define Py_InitModule4 Py_InitModule4_64
+#endif
+
 #ifdef Py_TRACE_REFS
-/* When we are tracing reference counts, rename Py_InitModule4 so
-   modules compiled with incompatible settings will generate a
-   link-time error. */
-#define Py_InitModule4 Py_InitModule4TraceRefs
+ /* When we are tracing reference counts, rename Py_InitModule4 so
+    modules compiled with incompatible settings will generate a
+    link-time error. */
+ #if SIZEOF_SIZE_T != SIZEOF_INT
+ #undef Py_InitModule4
+ #define Py_InitModule4 Py_InitModule4TraceRefs_64
+ #else
+ #define Py_InitModule4 Py_InitModule4TraceRefs
+ #endif
 #endif
 
 PyAPI_FUNC(PyObject *) Py_InitModule4(const char *name, PyMethodDef *methods,

@@ -55,9 +55,9 @@ PyDoc_STRVAR(parser_doc_string,
 static char parser_version_string[] = "0.5";
 
 
-typedef PyObject* (*SeqMaker) (int length);
+typedef PyObject* (*SeqMaker) (Py_ssize_t length);
 typedef int (*SeqInserter) (PyObject* sequence,
-                            int index,
+                            Py_ssize_t index,
                             PyObject* element);
 
 /*  The function below is copyrighted by Stichting Mathematisch Centrum.  The
@@ -632,8 +632,9 @@ parser_tuple2st(PyST_Object *self, PyObject *args, PyObject *kw)
 static node*
 build_node_children(PyObject *tuple, node *root, int *line_num)
 {
-    int len = PyObject_Size(tuple);
-    int i, err;
+    Py_ssize_t len = PyObject_Size(tuple);
+    Py_ssize_t i;
+    int  err;
 
     for (i = 1; i < len; ++i) {
         /* elem must always be a sequence, however simple */
@@ -663,7 +664,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             return (0);
         }
         if (ISTERMINAL(type)) {
-            int len = PyObject_Size(elem);
+            Py_ssize_t len = PyObject_Size(elem);
             PyObject *temp;
 
             if ((len != 2) && (len != 3)) {

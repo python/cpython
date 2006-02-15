@@ -405,7 +405,7 @@ builtin_compile(PyObject *self, PyObject *args)
 	int supplied_flags = 0;
 	PyCompilerFlags cf;
 	PyObject *result = NULL, *cmd, *tmp = NULL;
-	int length;
+	Py_ssize_t length;
 
 	if (!PyArg_ParseTuple(args, "Oss|ii:compile", &cmd, &filename,
 			      &startstr, &supplied_flags, &dont_inherit))
@@ -824,7 +824,7 @@ builtin_map(PyObject *self, PyObject *args)
 
 	PyObject *func, *result;
 	sequence *seqs = NULL, *sqp;
-	int n, len;
+	Py_ssize_t n, len;
 	register int i, j;
 
 	n = PyTuple_Size(args);
@@ -1163,12 +1163,12 @@ In the second form, the callable is called until it returns the sentinel.");
 static PyObject *
 builtin_len(PyObject *self, PyObject *v)
 {
-	long res;
+	Py_ssize_t res;
 
 	res = PyObject_Size(v);
 	if (res < 0 && PyErr_Occurred())
 		return NULL;
-	return PyInt_FromLong(res);
+	return PyInt_FromSsize_t(res);
 }
 
 PyDoc_STRVAR(len_doc,
@@ -2346,8 +2346,8 @@ static PyObject *
 filtertuple(PyObject *func, PyObject *tuple)
 {
 	PyObject *result;
-	register int i, j;
-	int len = PyTuple_Size(tuple);
+	Py_ssize_t i, j;
+	Py_ssize_t len = PyTuple_Size(tuple);
 
 	if (len == 0) {
 		if (PyTuple_CheckExact(tuple))
@@ -2417,9 +2417,9 @@ static PyObject *
 filterstring(PyObject *func, PyObject *strobj)
 {
 	PyObject *result;
-	register int i, j;
-	int len = PyString_Size(strobj);
-	int outlen = len;
+	Py_ssize_t i, j;
+	Py_ssize_t len = PyString_Size(strobj);
+	Py_ssize_t outlen = len;
 
 	if (func == Py_None) {
 		/* If it's a real string we can return the original,

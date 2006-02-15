@@ -12,6 +12,8 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- PEP 353: Using ssize_t as the index type.
+
 - Patch #1400181, fix unicode string formatting to not use the locale.
   This is how string objects work.  u'%f' could use , instead of .
   for the decimal point.  Now both strings and unicode always use periods.

@@ -340,7 +340,7 @@ static PyTypeObject poll_Type;
 static int
 update_ufd_array(pollObject *self)
 {
-	int i, pos;
+	Py_ssize_t i, pos;
 	PyObject *key, *value;
 
 	self->ufd_len = PyDict_Size(self->dict);

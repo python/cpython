@@ -426,7 +426,8 @@ static int
 analyze_cells(PyObject *scope, PyObject *free)
 {
         PyObject *name, *v, *w;
-	int pos = 0, success = 0;
+	int success = 0;
+	Py_ssize_t pos = 0;
 
 	w = PyInt_FromLong(CELL);
 	if (!w)
@@ -507,7 +508,7 @@ update_symbols(PyObject *symbols, PyObject *scope,
                PyObject *bound, PyObject *free, int class)
 {
 	PyObject *name, *v, *u, *w, *free_value = NULL;
-	int pos = 0;
+	Py_ssize_t pos = 0;
 
 	while (PyDict_Next(symbols, &pos, &name, &v)) {
 		long i, flags;
@@ -583,7 +584,8 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
 {
 	PyObject *name, *v, *local = NULL, *scope = NULL, *newbound = NULL;
 	PyObject *newglobal = NULL, *newfree = NULL;
-	int i, pos = 0, success = 0;
+	int i, success = 0;
+	Py_ssize_t pos = 0;
 
 	local = PyDict_New();
 	if (!local)

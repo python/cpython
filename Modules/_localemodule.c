@@ -382,11 +382,11 @@ PyLocale_getdefaultlocale(PyObject* self)
     if (GetLocaleInfo(LOCALE_USER_DEFAULT,
                       LOCALE_SISO639LANGNAME,
                       locale, sizeof(locale))) {
-        int i = strlen(locale);
+        Py_ssize_t i = strlen(locale);
         locale[i++] = '_';
         if (GetLocaleInfo(LOCALE_USER_DEFAULT,
                           LOCALE_SISO3166CTRYNAME,
-                          locale+i, sizeof(locale)-i))
+                          locale+i, (int)(sizeof(locale)-i)))
             return Py_BuildValue("ss", locale, encoding);
     }
 
