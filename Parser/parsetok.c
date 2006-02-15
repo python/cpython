@@ -186,9 +186,10 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 			err_ret->error = E_EOF;
 		err_ret->lineno = tok->lineno;
 		if (tok->buf != NULL) {
+			size_t len;
 			assert(tok->cur - tok->buf < INT_MAX);
 			err_ret->offset = (int)(tok->cur - tok->buf);
-			size_t len = tok->inp - tok->buf;
+			len = tok->inp - tok->buf;
 			err_ret->text = (char *) PyObject_MALLOC(len + 1);
 			if (err_ret->text != NULL) {
 				if (len > 0)
