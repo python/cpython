@@ -170,7 +170,7 @@ error_ret(struct tok_state *tok) /* XXX */
 }
 
 static char *
-new_string(const char *s, int len)
+new_string(const char *s, Py_ssize_t len)
 {
 	char* result = PyMem_NEW(char, len + 1);
 	if (result != NULL) {
@@ -206,9 +206,9 @@ get_normal_name(char *s)	/* for utf-8 and latin-1 */
 /* Return the coding spec in S, or NULL if none is found.  */
 
 static char *
-get_coding_spec(const char *s, int size)
+get_coding_spec(const char *s, Py_ssize_t size)
 {
-	int i;
+	Py_ssize_t i;
 	/* Coding spec must be in a comment, and that comment must be
          * the only statement on the source code line. */
         for (i = 0; i < size - 6; i++) {
@@ -253,7 +253,7 @@ get_coding_spec(const char *s, int size)
    Return 1 on success, 0 on failure.  */
 
 static int
-check_coding_spec(const char* line, int size, struct tok_state *tok,
+check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
 		  int set_readline(struct tok_state *, const char *))
 {
 	char * cs;
@@ -820,7 +820,7 @@ tok_nextc(register struct tok_state *tok)
 		}
 		else {
 			int done = 0;
-			int cur = 0;
+			Py_ssize_t cur = 0;
 			char *pt;
 			if (tok->start == NULL) {
 				if (tok->buf == NULL) {
@@ -854,10 +854,10 @@ tok_nextc(register struct tok_state *tok)
 			tok->lineno++;
 			/* Read until '\n' or EOF */
 			while (!done) {
-				int curstart = tok->start == NULL ? -1 :
-					       tok->start - tok->buf;
-				int curvalid = tok->inp - tok->buf;
-				int newsize = curvalid + BUFSIZ;
+				Py_ssize_t curstart = tok->start == NULL ? -1 :
+					          tok->start - tok->buf;
+				Py_ssize_t curvalid = tok->inp - tok->buf;
+				Py_ssize_t newsize = curvalid + BUFSIZ;
 				char *newbuf = tok->buf;
 				PyMem_RESIZE(newbuf, char, newsize);
 				if (newbuf == NULL) {
@@ -1390,7 +1390,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
   letter_quote:
 	/* String */
 	if (c == '\'' || c == '"') {
-		int quote2 = tok->cur - tok->start + 1;
+		Py_ssize_t quote2 = tok->cur - tok->start + 1;
 		int quote = c;
 		int triple = 0;
 		int tripcount = 0;

@@ -50,8 +50,8 @@ static PyObject *long_format(PyObject *aa, int base, int addL);
 static PyLongObject *
 long_normalize(register PyLongObject *v)
 {
-	int j = ABS(v->ob_size);
-	register int i = j;
+	Py_ssize_t j = ABS(v->ob_size);
+	Py_ssize_t i = j;
 
 	while (i > 0 && v->ob_digit[i-1] == 0)
 		--i;
@@ -64,8 +64,13 @@ long_normalize(register PyLongObject *v)
    Return NULL and set exception if we run out of memory. */
 
 PyLongObject *
-_PyLong_New(int size)
+_PyLong_New(Py_ssize_t size)
 {
+	if (size > INT_MAX) {
+		/* XXX: Fix this check when ob_size becomes ssize_t */
+		PyErr_NoMemory();
+		return NULL;
+	}
 	return PyObject_NEW_VAR(PyLongObject, &PyLong_Type, size);
 }
 
@@ -73,7 +78,7 @@ PyObject *
 _PyLong_Copy(PyLongObject *src)
 {
 	PyLongObject *result;
-	int i;
+	Py_ssize_t i;
 
 	assert(src != NULL);
 	i = src->ob_size;
@@ -198,7 +203,8 @@ PyLong_AsLong(PyObject *vv)
 	/* This version by Tim Peters */
 	register PyLongObject *v;
 	unsigned long x, prev;
-	int i, sign;
+	Py_ssize_t i;
+	int sign;
 
 	if (vv == NULL || !PyLong_Check(vv)) {
 		if (vv != NULL && PyInt_Check(vv))
@@ -235,6 +241,50 @@ PyLong_AsLong(PyObject *vv)
 	return -1;
 }
 
+/* Get a Py_ssize_t from a long int object.
+   Returns -1 and sets an error condition if overflow occurs. */
+
+Py_ssize_t
+_PyLong_AsSsize_t(PyObject *vv)
+{
+	register PyLongObject *v;
+	size_t x, prev;
+	Py_ssize_t i;
+	int sign;
+
+	if (vv == NULL || !PyLong_Check(vv)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	v = (PyLongObject *)vv;
+	i = v->ob_size;
+	sign = 1;
+	x = 0;
+	if (i < 0) {
+		sign = -1;
+		i = -(i);
+	}
+	while (--i >= 0) {
+		prev = x;
+		x = (x << SHIFT) + v->ob_digit[i];
+		if ((x >> SHIFT) != prev)
+			goto overflow;
+	}
+	/* Haven't lost any bits, but if the sign bit is set we're in
+	 * trouble *unless* this is the min negative number.  So,
+	 * trouble iff sign bit set && (positive || some bit set other
+	 * than the sign bit).
+	 */
+	if ((Py_ssize_t)x < 0 && (sign > 0 || (x << 1) != 0))
+		goto overflow;
+	return (Py_ssize_t)x * sign;
+
+ overflow:
+	PyErr_SetString(PyExc_OverflowError,
+			"long int too large to convert to int");
+	return -1;
+}
+
 /* Get a C unsigned long int from a long int object.
    Returns -1 and sets an error condition if overflow occurs. */
 
@@ -243,7 +293,7 @@ PyLong_AsUnsignedLong(PyObject *vv)
 {
 	register PyLongObject *v;
 	unsigned long x, prev;
-	int i;
+	Py_ssize_t i;
 
 	if (vv == NULL || !PyLong_Check(vv)) {
 		if (vv != NULL && PyInt_Check(vv)) {
@@ -286,7 +336,8 @@ PyLong_AsUnsignedLongMask(PyObject *vv)
 {
 	register PyLongObject *v;
 	unsigned long x;
-	int i, sign;
+	Py_ssize_t i;
+	int sign;
 
 	if (vv == NULL || !PyLong_Check(vv)) {
 		if (vv != NULL && PyInt_Check(vv))
@@ -324,7 +375,7 @@ _PyLong_NumBits(PyObject *vv)
 {
 	PyLongObject *v = (PyLongObject *)vv;
 	size_t result = 0;
-	int ndigits;
+	Py_ssize_t ndigits;
 
 	assert(v != NULL);
 	assert(PyLong_Check(v));
@@ -334,7 +385,7 @@ _PyLong_NumBits(PyObject *vv)
 		digit msd = v->ob_digit[ndigits - 1];
 
 		result = (ndigits - 1) * SHIFT;
-		if (result / SHIFT != (size_t)ndigits - 1)
+		if (result / SHIFT != ndigits - 1)
 			goto Overflow;
 		do {
 			++result;
@@ -464,7 +515,7 @@ _PyLong_AsByteArray(PyLongObject* v,
 		    int little_endian, int is_signed)
 {
 	int i;			/* index into v->ob_digit */
-	int ndigits;		/* |v->ob_size| */
+	Py_ssize_t ndigits;		/* |v->ob_size| */
 	twodigits accum;	/* sliding register */
 	unsigned int accumbits; /* # bits in accum */
 	int do_twos_comp;	/* store 2's-comp?  is_signed and v < 0 */
@@ -612,7 +663,8 @@ _PyLong_AsScaledDouble(PyObject *vv, int *exponent)
 	PyLongObject *v;
 	double x;
 	const double multiplier = (double)(1L << SHIFT);
-	int i, sign;
+	Py_ssize_t i;
+	int sign;
 	int nbitsneeded;
 
 	if (vv == NULL || !PyLong_Check(vv)) {
@@ -772,6 +824,30 @@ PyLong_FromUnsignedLongLong(unsigned PY_LONG_LONG ival)
 			SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 0);
 }
 
+/* Create a new long int object from a C Py_ssize_t. */
+
+PyObject *
+_PyLong_FromSsize_t(Py_ssize_t ival)
+{
+	Py_ssize_t bytes = ival;
+	int one = 1;
+	return _PyLong_FromByteArray(
+			(unsigned char *)&bytes,
+			SIZEOF_SIZE_T, IS_LITTLE_ENDIAN, 0);
+}
+
+/* Create a new long int object from a C size_t. */
+
+PyObject *
+_PyLong_FromSize_t(size_t ival)
+{
+	size_t bytes = ival;
+	int one = 1;
+	return _PyLong_FromByteArray(
+			(unsigned char *)&bytes,
+			SIZEOF_SIZE_T, IS_LITTLE_ENDIAN, 0);
+}
+
 /* Get a C PY_LONG_LONG int from a long int object.
    Return -1 and set an error if overflow occurs. */
 
@@ -859,7 +935,8 @@ PyLong_AsUnsignedLongLongMask(PyObject *vv)
 {
 	register PyLongObject *v;
 	unsigned PY_LONG_LONG x;
-	int i, sign;
+	Py_ssize_t i;
+	int sign;
 
 	if (vv == NULL || !PyLong_Check(vv)) {
 		PyErr_BadInternalCall();
@@ -920,7 +997,7 @@ convert_binop(PyObject *v, PyObject *w, PyLongObject **a, PyLongObject **b) {
  * x[m-1], and the remaining carry (0 or 1) is returned.
  */
 static digit
-v_iadd(digit *x, int m, digit *y, int n)
+v_iadd(digit *x, Py_ssize_t m, digit *y, Py_ssize_t n)
 {
 	int i;
 	digit carry = 0;
@@ -946,7 +1023,7 @@ v_iadd(digit *x, int m, digit *y, int n)
  * far as x[m-1], and the remaining borrow (0 or 1) is returned.
  */
 static digit
-v_isub(digit *x, int m, digit *y, int n)
+v_isub(digit *x, Py_ssize_t m, digit *y, Py_ssize_t n)
 {
 	int i;
 	digit borrow = 0;
@@ -980,10 +1057,10 @@ mul1(PyLongObject *a, wdigit n)
 static PyLongObject *
 muladd1(PyLongObject *a, wdigit n, wdigit extra)
 {
-	int size_a = ABS(a->ob_size);
+	Py_ssize_t size_a = ABS(a->ob_size);
 	PyLongObject *z = _PyLong_New(size_a+1);
 	twodigits carry = extra;
-	int i;
+	Py_ssize_t i;
 
 	if (z == NULL)
 		return NULL;
@@ -1003,7 +1080,7 @@ muladd1(PyLongObject *a, wdigit n, wdigit extra)
    immutable. */
 
 static digit
-inplace_divrem1(digit *pout, digit *pin, int size, digit n)
+inplace_divrem1(digit *pout, digit *pin, Py_ssize_t size, digit n)
 {
 	twodigits rem = 0;
 
@@ -1026,7 +1103,7 @@ inplace_divrem1(digit *pout, digit *pin, int size, digit n)
 static PyLongObject *
 divrem1(PyLongObject *a, digit n, digit *prem)
 {
-	const int size = ABS(a->ob_size);
+	const Py_ssize_t size = ABS(a->ob_size);
 	PyLongObject *z;
 
 	assert(n > 0 && n <= MASK);
@@ -1046,8 +1123,8 @@ long_format(PyObject *aa, int base, int addL)
 {
 	register PyLongObject *a = (PyLongObject *)aa;
 	PyStringObject *str;
-	int i;
-	const int size_a = ABS(a->ob_size);
+	Py_ssize_t i;
+	const Py_ssize_t size_a = ABS(a->ob_size);
 	char *p;
 	int bits;
 	char sign = '\0';
@@ -1107,7 +1184,7 @@ long_format(PyObject *aa, int base, int addL)
 		/* Not 0, and base not a power of 2.  Divide repeatedly by
 		   base, but for speed use the highest power of base that
 		   fits in a digit. */
-		int size = size_a;
+		Py_ssize_t size = size_a;
 		digit *pin = a->ob_digit;
 		PyLongObject *scratch;
 		/* powbasw <- largest power of base that fits in a digit. */
@@ -1200,7 +1277,7 @@ long_from_binary_base(char **str, int base)
 	char *p = *str;
 	char *start = p;
 	int bits_per_char;
-	int n;
+	Py_ssize_t n;
 	PyLongObject *z;
 	twodigits accum;
 	int bits_in_accum;
@@ -1261,7 +1338,7 @@ long_from_binary_base(char **str, int base)
 		bits_in_accum += bits_per_char;
 		if (bits_in_accum >= SHIFT) {
 			*pdigit++ = (digit)(accum & MASK);
-			assert(pdigit - z->ob_digit <= n);
+			assert(pdigit - z->ob_digit <= (int)n);
 			accum >>= SHIFT;
 			bits_in_accum -= SHIFT;
 			assert(bits_in_accum < SHIFT);
@@ -1270,7 +1347,7 @@ long_from_binary_base(char **str, int base)
 	if (bits_in_accum) {
 		assert(bits_in_accum <= SHIFT);
 		*pdigit++ = (digit)accum;
-		assert(pdigit - z->ob_digit <= n);
+		assert(pdigit - z->ob_digit <= (int)n);
 	}
 	while (pdigit - z->ob_digit < n)
 		*pdigit++ = 0;
@@ -1356,7 +1433,7 @@ PyLong_FromString(char *str, char **pend, int base)
 
 #ifdef Py_USING_UNICODE
 PyObject *
-PyLong_FromUnicode(Py_UNICODE *u, int length, int base)
+PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
 {
 	PyObject *result;
 	char *buffer = PyMem_MALLOC(length+1);
@@ -1387,7 +1464,7 @@ static int
 long_divrem(PyLongObject *a, PyLongObject *b,
 	    PyLongObject **pdiv, PyLongObject **prem)
 {
-	int size_a = ABS(a->ob_size), size_b = ABS(b->ob_size);
+	Py_ssize_t size_a = ABS(a->ob_size), size_b = ABS(b->ob_size);
 	PyLongObject *z;
 
 	if (size_b == 0) {
@@ -1433,12 +1510,12 @@ long_divrem(PyLongObject *a, PyLongObject *b,
 static PyLongObject *
 x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 {
-	int size_v = ABS(v1->ob_size), size_w = ABS(w1->ob_size);
+	Py_ssize_t size_v = ABS(v1->ob_size), size_w = ABS(w1->ob_size);
 	digit d = (digit) ((twodigits)BASE / (w1->ob_digit[size_w-1] + 1));
 	PyLongObject *v = mul1(v1, d);
 	PyLongObject *w = mul1(w1, d);
 	PyLongObject *a;
-	int j, k;
+	Py_ssize_t j, k;
 
 	if (v == NULL || w == NULL) {
 		Py_XDECREF(v);
@@ -1550,7 +1627,7 @@ long_str(PyObject *v)
 static int
 long_compare(PyLongObject *a, PyLongObject *b)
 {
-	int sign;
+	Py_ssize_t sign;
 
 	if (a->ob_size != b->ob_size) {
 		if (ABS(a->ob_size) == 0 && ABS(b->ob_size) == 0)
@@ -1559,7 +1636,7 @@ long_compare(PyLongObject *a, PyLongObject *b)
 			sign = a->ob_size - b->ob_size;
 	}
 	else {
-		int i = ABS(a->ob_size);
+		Py_ssize_t i = ABS(a->ob_size);
 		while (--i >= 0 && a->ob_digit[i] == b->ob_digit[i])
 			;
 		if (i < 0)
@@ -1577,7 +1654,8 @@ static long
 long_hash(PyLongObject *v)
 {
 	long x;
-	int i, sign;
+	Py_ssize_t i;
+	int sign;
 
 	/* This is designed so that Python ints and longs with the
 	   same value hash to the same value, otherwise comparisons
@@ -1608,7 +1686,7 @@ long_hash(PyLongObject *v)
 static PyLongObject *
 x_add(PyLongObject *a, PyLongObject *b)
 {
-	int size_a = ABS(a->ob_size), size_b = ABS(b->ob_size);
+	Py_ssize_t size_a = ABS(a->ob_size), size_b = ABS(b->ob_size);
 	PyLongObject *z;
 	int i;
 	digit carry = 0;
@@ -1616,7 +1694,7 @@ x_add(PyLongObject *a, PyLongObject *b)
 	/* Ensure a is the larger of the two: */
 	if (size_a < size_b) {
 		{ PyLongObject *temp = a; a = b; b = temp; }
-		{ int size_temp = size_a;
+		{ Py_ssize_t size_temp = size_a;
 		  size_a = size_b;
 		  size_b = size_temp; }
 	}
@@ -1642,9 +1720,9 @@ x_add(PyLongObject *a, PyLongObject *b)
 static PyLongObject *
 x_sub(PyLongObject *a, PyLongObject *b)
 {
-	int size_a = ABS(a->ob_size), size_b = ABS(b->ob_size);
+	Py_ssize_t size_a = ABS(a->ob_size), size_b = ABS(b->ob_size);
 	PyLongObject *z;
-	int i;
+	Py_ssize_t i;
 	int sign = 1;
 	digit borrow = 0;
 
@@ -1652,7 +1730,7 @@ x_sub(PyLongObject *a, PyLongObject *b)
 	if (size_a < size_b) {
 		sign = -1;
 		{ PyLongObject *temp = a; a = b; b = temp; }
-		{ int size_temp = size_a;
+		{ Py_ssize_t size_temp = size_a;
 		  size_a = size_b;
 		  size_b = size_temp; }
 	}
@@ -1752,9 +1830,9 @@ static PyLongObject *
 x_mul(PyLongObject *a, PyLongObject *b)
 {
 	PyLongObject *z;
-	int size_a = ABS(a->ob_size);
-	int size_b = ABS(b->ob_size);
-	int i;
+	Py_ssize_t size_a = ABS(a->ob_size);
+	Py_ssize_t size_b = ABS(b->ob_size);
+	Py_ssize_t i;
 
      	z = _PyLong_New(size_a + size_b);
 	if (z == NULL)
@@ -1840,11 +1918,11 @@ x_mul(PyLongObject *a, PyLongObject *b)
    Returns 0 on success, -1 on failure.
 */
 static int
-kmul_split(PyLongObject *n, int size, PyLongObject **high, PyLongObject **low)
+kmul_split(PyLongObject *n, Py_ssize_t size, PyLongObject **high, PyLongObject **low)
 {
 	PyLongObject *hi, *lo;
-	int size_lo, size_hi;
-	const int size_n = ABS(n->ob_size);
+	Py_ssize_t size_lo, size_hi;
+	const Py_ssize_t size_n = ABS(n->ob_size);
 
 	size_lo = MIN(size_n, size);
 	size_hi = size_n - size_lo;
@@ -1873,16 +1951,16 @@ static PyLongObject *k_lopsided_mul(PyLongObject *a, PyLongObject *b);
 static PyLongObject *
 k_mul(PyLongObject *a, PyLongObject *b)
 {
-	int asize = ABS(a->ob_size);
-	int bsize = ABS(b->ob_size);
+	Py_ssize_t asize = ABS(a->ob_size);
+	Py_ssize_t bsize = ABS(b->ob_size);
 	PyLongObject *ah = NULL;
 	PyLongObject *al = NULL;
 	PyLongObject *bh = NULL;
 	PyLongObject *bl = NULL;
 	PyLongObject *ret = NULL;
 	PyLongObject *t1, *t2, *t3;
-	int shift;	/* the number of digits we split off */
-	int i;
+	Py_ssize_t shift;	/* the number of digits we split off */
+	Py_ssize_t i;
 
 	/* (ah*X+al)(bh*X+bl) = ah*bh*X*X + (ah*bl + al*bh)*X + al*bl
 	 * Let k = (ah+al)*(bh+bl) = ah*bl + al*bh  + ah*bh + al*bl
@@ -2094,9 +2172,9 @@ ah*bh and al*bl too.
 static PyLongObject *
 k_lopsided_mul(PyLongObject *a, PyLongObject *b)
 {
-	const int asize = ABS(a->ob_size);
-	int bsize = ABS(b->ob_size);
-	int nbdone;	/* # of b digits already multiplied */
+	const Py_ssize_t asize = ABS(a->ob_size);
+	Py_ssize_t bsize = ABS(b->ob_size);
+	Py_ssize_t nbdone;	/* # of b digits already multiplied */
 	PyLongObject *ret;
 	PyLongObject *bslice = NULL;
 
@@ -2117,7 +2195,7 @@ k_lopsided_mul(PyLongObject *a, PyLongObject *b)
 	nbdone = 0;
 	while (bsize > 0) {
 		PyLongObject *product;
-		const int nbtouse = MIN(bsize, asize);
+		const Py_ssize_t nbtouse = MIN(bsize, asize);
 
 		/* Multiply the next slice of b by a. */
 		memcpy(bslice->ob_digit, b->ob_digit + nbdone,
@@ -2353,7 +2431,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 	int negativeOutput = 0;  /* if x<0 return negative output */
 
 	PyLongObject *z = NULL;  /* accumulated result */
-	int i, j, k;             /* counters */
+	Py_ssize_t i, j, k;             /* counters */
 	PyLongObject *temp = NULL;
 
 	/* 5-ary values.  If the exponent is large enough, table is
@@ -2597,7 +2675,7 @@ long_rshift(PyLongObject *v, PyLongObject *w)
 	PyLongObject *a, *b;
 	PyLongObject *z = NULL;
 	long shiftby;
-	int newsize, wordshift, loshift, hishift, i, j;
+	Py_ssize_t newsize, wordshift, loshift, hishift, i, j;
 	digit lomask, himask;
 
 	CONVERT_BINOP((PyObject *)v, (PyObject *)w, &a, &b);
@@ -2664,7 +2742,7 @@ long_lshift(PyObject *v, PyObject *w)
 	PyLongObject *a, *b;
 	PyLongObject *z = NULL;
 	long shiftby;
-	int oldsize, newsize, wordshift, remshift, i, j;
+	Py_ssize_t oldsize, newsize, wordshift, remshift, i, j;
 	twodigits accum;
 
 	CONVERT_BINOP(v, w, &a, &b);
@@ -2723,7 +2801,7 @@ long_bitwise(PyLongObject *a,
 {
 	digit maska, maskb; /* 0 or MASK */
 	int negz;
-	int size_a, size_b, size_z;
+	Py_ssize_t size_a, size_b, size_z;
 	PyLongObject *z;
 	int i;
 	digit diga, digb;
@@ -2965,7 +3043,7 @@ static PyObject *
 long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyLongObject *tmp, *new;
-	int i, n;
+	Py_ssize_t i, n;
 
 	assert(PyType_IsSubtype(type, &PyLong_Type));
 	tmp = (PyLongObject *)long_new(&PyLong_Type, args, kwds);

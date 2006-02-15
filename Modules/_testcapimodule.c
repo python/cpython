@@ -115,7 +115,8 @@ test_list_api(PyObject *self)
 static int
 test_dict_inner(int count)
 {
-	int pos = 0, iterations = 0, i;
+	Py_ssize_t pos = 0, iterations = 0;
+	int i;
 	PyObject *dict = PyDict_New();
 	PyObject *v, *k;
 

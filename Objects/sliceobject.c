@@ -80,9 +80,10 @@ PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
 }
 
 int
-PySlice_GetIndices(PySliceObject *r, int length,
-                   int *start, int *stop, int *step)
+PySlice_GetIndices(PySliceObject *r, Py_ssize_t length,
+                   Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step)
 {
+	/* XXX support long ints */
 	if (r->step == Py_None) {
 		*step = 1;
 	} else {
@@ -110,12 +111,12 @@ PySlice_GetIndices(PySliceObject *r, int length,
 }
 
 int
-PySlice_GetIndicesEx(PySliceObject *r, int length,
-		     int *start, int *stop, int *step, int *slicelength)
+PySlice_GetIndicesEx(PySliceObject *r, Py_ssize_t length,
+		     Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step, Py_ssize_t *slicelength)
 {
 	/* this is harder to get right than you might think */
 
-	int defstart, defstop;
+	Py_ssize_t defstart, defstop;
 
 	if (r->step == Py_None) {
 		*step = 1;
@@ -230,7 +231,7 @@ static PyMemberDef slice_members[] = {
 static PyObject*
 slice_indices(PySliceObject* self, PyObject* len)
 {
-	int ilen, start, stop, step, slicelength;
+	Py_ssize_t ilen, start, stop, step, slicelength;
 
 	ilen = PyInt_AsLong(len);
 

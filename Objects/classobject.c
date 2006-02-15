@@ -68,7 +68,7 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
 			return NULL;
 	}
 	else {
-		int i, n;
+		Py_ssize_t i, n;
 		PyObject *base;
 		if (!PyTuple_Check(bases)) {
 			PyErr_SetString(PyExc_TypeError,
@@ -185,7 +185,7 @@ class_dealloc(PyClassObject *op)
 static PyObject *
 class_lookup(PyClassObject *cp, PyObject *name, PyClassObject **pclass)
 {
-	int i, n;
+	Py_ssize_t i, n;
 	PyObject *value = PyDict_GetItem(cp->cl_dict, name);
 	if (value != NULL) {
 		*pclass = cp;
@@ -281,7 +281,7 @@ set_dict(PyClassObject *c, PyObject *v)
 static char *
 set_bases(PyClassObject *c, PyObject *v)
 {
-	int i, n;
+	Py_ssize_t i, n;
 
 	if (v == NULL || !PyTuple_Check(v))
 		return "__bases__ must be a tuple object";
@@ -483,7 +483,7 @@ PyTypeObject PyClass_Type = {
 int
 PyClass_IsSubclass(PyObject *class, PyObject *base)
 {
-	int i, n;
+	Py_ssize_t i, n;
 	PyClassObject *cp;
 	if (class == base)
 		return 1;
@@ -996,12 +996,12 @@ instance_traverse(PyInstanceObject *o, visitproc visit, void *arg)
 static PyObject *getitemstr, *setitemstr, *delitemstr, *lenstr;
 static PyObject *iterstr, *nextstr;
 
-static int
+static Py_ssize_t
 instance_length(PyInstanceObject *inst)
 {
 	PyObject *func;
 	PyObject *res;
-	int outcome;
+	Py_ssize_t outcome;
 
 	if (lenstr == NULL)
 		lenstr = PyString_InternFromString("__len__");
@@ -1013,9 +1013,13 @@ instance_length(PyInstanceObject *inst)
 	if (res == NULL)
 		return -1;
 	if (PyInt_Check(res)) {
-		long temp = PyInt_AsLong(res);
-		outcome = (int)temp;
-#if SIZEOF_INT < SIZEOF_LONG
+		Py_ssize_t temp = PyInt_AsSsize_t(res);
+		if (temp == -1 && PyErr_Occurred()) {
+			Py_DECREF(res);
+			return -1;
+		}
+		outcome = (Py_ssize_t)temp;
+#if SIZEOF_SIZE_T < SIZEOF_LONG
 		/* Overflow check -- range of PyInt is more than C int */
 		if (outcome != temp) {
 			PyErr_SetString(PyExc_OverflowError,
@@ -1097,13 +1101,13 @@ instance_ass_subscript(PyInstanceObject *inst, PyObject *key, PyObject *value)
 }
 
 static PyMappingMethods instance_as_mapping = {
-	(inquiry)instance_length,		/* mp_length */
+	(lenfunc)instance_length,		/* mp_length */
 	(binaryfunc)instance_subscript,		/* mp_subscript */
 	(objobjargproc)instance_ass_subscript,	/* mp_ass_subscript */
 };
 
 static PyObject *
-instance_item(PyInstanceObject *inst, int i)
+instance_item(PyInstanceObject *inst, Py_ssize_t i)
 {
 	PyObject *func, *arg, *res;
 
@@ -1112,7 +1116,7 @@ instance_item(PyInstanceObject *inst, int i)
 	func = instance_getattr(inst, getitemstr);
 	if (func == NULL)
 		return NULL;
-	arg = Py_BuildValue("(i)", i);
+	arg = Py_BuildValue("(n)", i);
 	if (arg == NULL) {
 		Py_DECREF(func);
 		return NULL;
@@ -1124,7 +1128,7 @@ instance_item(PyInstanceObject *inst, int i)
 }
 
 static PyObject *
-sliceobj_from_intint(int i, int j)
+sliceobj_from_intint(Py_ssize_t i, Py_ssize_t j)
 {
 	PyObject *start, *end, *res;
 
@@ -1145,7 +1149,7 @@ sliceobj_from_intint(int i, int j)
 
 
 static PyObject *
-instance_slice(PyInstanceObject *inst, int i, int j)
+instance_slice(PyInstanceObject *inst, Py_ssize_t i, Py_ssize_t j)
 {
 	PyObject *func, *arg, *res;
 	static PyObject *getslicestr;
@@ -1179,7 +1183,7 @@ instance_slice(PyInstanceObject *inst, int i, int j)
 }
 
 static int
-instance_ass_item(PyInstanceObject *inst, int i, PyObject *item)
+instance_ass_item(PyInstanceObject *inst, Py_ssize_t i, PyObject *item)
 {
 	PyObject *func, *arg, *res;
 
@@ -1213,7 +1217,7 @@ instance_ass_item(PyInstanceObject *inst, int i, PyObject *item)
 }
 
 static int
-instance_ass_slice(PyInstanceObject *inst, int i, int j, PyObject *value)
+instance_ass_slice(PyInstanceObject *inst, Py_ssize_t i, Py_ssize_t j, PyObject *value)
 {
 	PyObject *func, *arg, *res;
 	static PyObject *setslicestr, *delslicestr;
@@ -1322,13 +1326,13 @@ instance_contains(PyInstanceObject *inst, PyObject *member)
 
 static PySequenceMethods
 instance_as_sequence = {
-	(inquiry)instance_length,		/* sq_length */
+	(lenfunc)instance_length,		/* sq_length */
 	0,					/* sq_concat */
 	0,					/* sq_repeat */
-	(intargfunc)instance_item,		/* sq_item */
-	(intintargfunc)instance_slice,		/* sq_slice */
-	(intobjargproc)instance_ass_item,	/* sq_ass_item */
-	(intintobjargproc)instance_ass_slice,	/* sq_ass_slice */
+	(ssizeargfunc)instance_item,		/* sq_item */
+	(ssizessizeargfunc)instance_slice,	/* sq_slice */
+	(ssizeobjargproc)instance_ass_item,	/* sq_ass_item */
+	(ssizessizeobjargproc)instance_ass_slice,/* sq_ass_slice */
 	(objobjproc)instance_contains,		/* sq_contains */
 };
 
@@ -2430,7 +2434,7 @@ instancemethod_call(PyObject *func, PyObject *arg, PyObject *kw)
 		Py_INCREF(arg);
 	}
 	else {
-		int argcount = PyTuple_Size(arg);
+		Py_ssize_t argcount = PyTuple_Size(arg);
 		PyObject *newarg = PyTuple_New(argcount + 1);
 		int i;
 		if (newarg == NULL)

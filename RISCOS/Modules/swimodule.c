@@ -215,12 +215,12 @@ static PyObject *block_concat(PyBlockObject *b,PyBlockObject *c)
   return NULL;
 }
 
-static PyObject *block_repeat(PyBlockObject *b,int i)
+static PyObject *block_repeat(PyBlockObject *b,Py_ssize_t i)
 { PyErr_SetString(PyExc_IndexError,"block repetition not implemented");
   return NULL;
 }
 
-static PyObject *block_item(PyBlockObject *b,int i)
+static PyObject *block_item(PyBlockObject *b,Py_ssize_t i)
 { if(i<0||4*i>=b->length)
   { PyErr_SetString(PyExc_IndexError,"block index out of range");
     return NULL;
@@ -228,8 +228,8 @@ static PyObject *block_item(PyBlockObject *b,int i)
   return PyInt_FromLong(((long*)(b->block))[i]);
 }
 
-static PyObject *block_slice(PyBlockObject *b,int i,int j)
-{ int n,k;
+static PyObject *block_slice(PyBlockObject *b,Py_ssize_t i,Py_ssize_t j)
+{ Py_ssize_t n,k;
   long *p=b->block;
   PyObject *result;
   if(j>b->length/4) j=b->length/4;
@@ -239,11 +239,11 @@ static PyObject *block_slice(PyBlockObject *b,int i,int j)
   }
   n=j-i;
   result=PyList_New(n);
-  for(k=0;k<n;k++) PyList_SetItem(result,k,PyInt_FromLong(p[i+k]));
+  for(k=0;k<n;k++) PyList_SetItem(result,k,PyInt_FromSsize_t(p[i+k]));
   return result;
 }
 
-static int block_ass_item(PyBlockObject *b,int i,PyObject *v)
+static int block_ass_item(PyBlockObject *b,Py_ssize_t i,PyObject *v)
 { if(i<0||i>=b->length/4)
   { PyErr_SetString(PyExc_IndexError,"block index out of range");
     return -1;
@@ -256,8 +256,8 @@ static int block_ass_item(PyBlockObject *b,int i,PyObject *v)
   return 0;
 }
 
-static int block_ass_slice(PyBlockObject *b,int i,int j,PyObject *v)
-{ int n,k;
+static int block_ass_slice(PyBlockObject *b,Py_ssize_t i,Py_ssize_t j,PyObject *v)
+{ Py_ssize_t n,k;
   long *p=b->block;
   if(j>b->length/4) j=b->length/4;
   if(i<0||i>j)
@@ -281,11 +281,11 @@ static int block_ass_slice(PyBlockObject *b,int i,int j,PyObject *v)
 static PySequenceMethods block_as_sequence=
 { (inquiry)block_len,		/*sq_length*/
   (binaryfunc)block_concat,		/*sq_concat*/
-  (intargfunc)block_repeat,		/*sq_repeat*/
-  (intargfunc)block_item,		/*sq_item*/
-  (intintargfunc)block_slice,		/*sq_slice*/
-  (intobjargproc)block_ass_item,	/*sq_ass_item*/
-  (intintobjargproc)block_ass_slice,	/*sq_ass_slice*/
+  (ssizeargfunc)block_repeat,		/*sq_repeat*/
+  (ssizeargfunc)block_item,		/*sq_item*/
+  (ssizessizeargfunc)block_slice,		/*sq_slice*/
+  (ssizeobjargproc)block_ass_item,	/*sq_ass_item*/
+  (ssizessizeobjargproc)block_ass_slice,	/*sq_ass_slice*/
 };
 
 static PyObject *PyBlock_GetAttr(PyBlockObject *s,char *name)

@@ -1100,7 +1100,7 @@ _db_associateCallback(DB* db, const DBT* priKey, const DBT* priData,
         }
         else if (PyString_Check(result)) {
             char* data;
-            int   size;
+            Py_ssize_t size;
 
             CLEAR_DBT(*secKey);
 #if PYTHON_API_VERSION <= 1007
@@ -2614,7 +2614,7 @@ DB_set_encrypt(DBObject* self, PyObject* args, PyObject* kwargs)
 /*-------------------------------------------------------------- */
 /* Mapping and Dictionary-like access routines */
 
-int DB_length(DBObject* self)
+Py_ssize_t DB_length(DBObject* self)
 {
     int err;
     long size = 0;
@@ -4679,7 +4679,7 @@ static PyMethodDef DB_methods[] = {
 
 
 static PyMappingMethods DB_mapping = {
-        (inquiry)DB_length,          /*mp_length*/
+        (lenfunc)DB_length,          /*mp_length*/
         (binaryfunc)DB_subscript,    /*mp_subscript*/
         (objobjargproc)DB_ass_sub,   /*mp_ass_subscript*/
 };

@@ -71,7 +71,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *filemap;
     PyObject *logfilename;
-    int index;
+    Py_ssize_t index;
     unsigned char buffer[BUFFERSIZE];
     FILE *logfp;
     int lineevents;
@@ -526,7 +526,7 @@ logreader_dealloc(LogReaderObject *self)
 }
 
 static PyObject *
-logreader_sq_item(LogReaderObject *self, int index)
+logreader_sq_item(LogReaderObject *self, Py_ssize_t index)
 {
     PyObject *result = logreader_tp_iternext(self);
     if (result == NULL && !PyErr_Occurred()) {
@@ -610,13 +610,14 @@ pack_modified_packed_int(ProfilerObject *self, int value,
 }
 
 static int
-pack_string(ProfilerObject *self, const char *s, int len)
+pack_string(ProfilerObject *self, const char *s, Py_ssize_t len)
 {
     if (len + PISIZE + self->index >= BUFFERSIZE) {
         if (flush_data(self) < 0)
             return -1;
     }
-    if (pack_packed_int(self, len) < 0)
+    assert(len < INT_MAX);
+    if (pack_packed_int(self, (int)len) < 0)
         return -1;
     memcpy(self->buffer + self->index, s, len);
     self->index += len;
@@ -626,8 +627,8 @@ pack_string(ProfilerObject *self, const char *s, int len)
 static int
 pack_add_info(ProfilerObject *self, const char *s1, const char *s2)
 {
-    int len1 = strlen(s1);
-    int len2 = strlen(s2);
+    Py_ssize_t len1 = strlen(s1);
+    Py_ssize_t len2 = strlen(s2);
 
     if (len1 + len2 + PISIZE*2 + 1 + self->index >= BUFFERSIZE) {
         if (flush_data(self) < 0)
@@ -643,7 +644,7 @@ pack_add_info(ProfilerObject *self, const char *s1, const char *s2)
 static int
 pack_define_file(ProfilerObject *self, int fileno, const char *filename)
 {
-    int len = strlen(filename);
+    Py_ssize_t len = strlen(filename);
 
     if (len + PISIZE*2 + 1 + self->index >= BUFFERSIZE) {
         if (flush_data(self) < 0)
@@ -660,7 +661,7 @@ static int
 pack_define_func(ProfilerObject *self, int fileno, int lineno,
                  const char *funcname)
 {
-    int len = strlen(funcname);
+    Py_ssize_t len = strlen(funcname);
 
     if (len + PISIZE*3 + 1 + self->index >= BUFFERSIZE) {
         if (flush_data(self) < 0)
@@ -1269,7 +1270,7 @@ static PySequenceMethods logreader_as_sequence = {
     0,					/* sq_length */
     0,					/* sq_concat */
     0,					/* sq_repeat */
-    (intargfunc)logreader_sq_item,	/* sq_item */
+    (ssizeargfunc)logreader_sq_item,	/* sq_item */
     0,					/* sq_slice */
     0,					/* sq_ass_item */
     0,					/* sq_ass_slice */

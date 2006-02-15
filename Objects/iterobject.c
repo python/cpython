@@ -74,7 +74,7 @@ iter_iternext(PyObject *iterator)
 static PyObject *
 iter_len(seqiterobject *it)
 {
-	int seqsize, len;
+	Py_ssize_t seqsize, len;
 
 	if (it->it_seq) {
 		seqsize = PySequence_Size(it->it_seq);

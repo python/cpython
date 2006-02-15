@@ -314,7 +314,7 @@ PyDoc_STRVAR(extendleft_doc,
 "Extend the left side of the deque with elements from the iterable");
 
 static int
-_deque_rotate(dequeobject *deque, int n)
+_deque_rotate(dequeobject *deque, Py_ssize_t n)
 {
 	int i, len=deque->len, halflen=(len+1)>>1;
 	PyObject *item, *rv;
@@ -365,7 +365,7 @@ deque_rotate(dequeobject *deque, PyObject *args)
 PyDoc_STRVAR(rotate_doc,
 "Rotate the deque n steps to the right (default n=1).  If n is negative, rotates left.");
 
-static int
+static Py_ssize_t
 deque_len(dequeobject *deque)
 {
 	return deque->len;
@@ -374,7 +374,7 @@ deque_len(dequeobject *deque)
 static PyObject *
 deque_remove(dequeobject *deque, PyObject *value)
 {
-	int i, n=deque->len;
+	Py_ssize_t i, n=deque->len;
 
 	for (i=0 ; i<n ; i++) {
 		PyObject *item = deque->leftblock->data[deque->leftindex];
@@ -469,7 +469,7 @@ deque_item(dequeobject *deque, int i)
 */
 
 static int
-deque_del_item(dequeobject *deque, int i)
+deque_del_item(dequeobject *deque, Py_ssize_t i)
 {
 	PyObject *item;
 
@@ -485,7 +485,7 @@ deque_del_item(dequeobject *deque, int i)
 }
 
 static int
-deque_ass_item(dequeobject *deque, int i, PyObject *v)
+deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
 {
 	PyObject *old_value;
 	block *b;
@@ -776,12 +776,12 @@ deque_init(dequeobject *deque, PyObject *args, PyObject *kwds)
 }
 
 static PySequenceMethods deque_as_sequence = {
-	(inquiry)deque_len,		/* sq_length */
+	(lenfunc)deque_len,		/* sq_length */
 	0,				/* sq_concat */
 	0,				/* sq_repeat */
-	(intargfunc)deque_item,		/* sq_item */
+	(ssizeargfunc)deque_item,	/* sq_item */
 	0,				/* sq_slice */
-	(intobjargproc)deque_ass_item,	/* sq_ass_item */
+	(ssizeobjargproc)deque_ass_item,	/* sq_ass_item */
 };
 
 /* deque object ********************************************************/

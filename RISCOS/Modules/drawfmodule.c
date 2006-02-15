@@ -66,7 +66,7 @@ static void countobjs(PyDrawFObject *pd)
   if ((char*)d==end) pd->nobjs=k;
 }
 
-static drawfile_object *findobj(PyDrawFObject *pd,int n)
+static drawfile_object *findobj(PyDrawFObject *pd,Py_ssize_t n)
 { drawfile_diagram *dd=pd->drawf;
   drawfile_object *d=dd->objects;
   for(;n>0;n--) d=NEXT(d);
@@ -520,14 +520,14 @@ static PyObject *drawf_concat(PyDrawFObject *b,PyDrawFObject *c)
   return (PyObject*)p;
 }
 
-static PyObject *drawf_repeat(PyDrawFObject *b,int i)
+static PyObject *drawf_repeat(PyDrawFObject *b,Py_ssize_t i)
 { PyErr_SetString(PyExc_IndexError,"drawf repetition not implemented");
   return NULL;
 }
 
-static PyObject *drawf_item(PyDrawFObject *b,int i)
+static PyObject *drawf_item(PyDrawFObject *b,Py_ssize_t i)
 { PyDrawFObject *c;
-  int size;
+  Py_ssize_t size;
   drawfile_diagram *dd;
   drawfile_object *d;
   if(i<0||i>=b->nobjs)
@@ -546,9 +546,9 @@ static PyObject *drawf_item(PyDrawFObject *b,int i)
   return (PyObject*)c;
 }
 
-static PyObject *drawf_slice(PyDrawFObject *b,int i,int j)
+static PyObject *drawf_slice(PyDrawFObject *b,Py_ssize_t i,Py_ssize_t j)
 { PyDrawFObject *c;
-  int size,n;
+  Py_ssize_t size,n;
   drawfile_diagram *dd;
   drawfile_object *d;
   if(i<0||j>b->nobjs)
@@ -570,7 +570,7 @@ static PyObject *drawf_slice(PyDrawFObject *b,int i,int j)
   return (PyObject*)c;
 }
 
-static int drawf_ass_item(PyDrawFObject *b,int i,PyObject *v)
+static int drawf_ass_item(PyDrawFObject *b,Py_ssize_t i,PyObject *v)
 { PyErr_SetString(PyExc_IndexError,"drawf ass not implemented");
   return NULL;
 }
@@ -587,7 +587,7 @@ static int drawf_ass_item(PyDrawFObject *b,int i,PyObject *v)
 }
 */
 
-static int drawf_ass_slice(PyDrawFObject *b,int i,int j,PyObject *v)
+static int drawf_ass_slice(PyDrawFObject *b,Py_ssize_t i,Py_ssize_t j,PyObject *v)
 { PyErr_SetString(PyExc_IndexError,"drawf ass_slice not implemented");
   return NULL;
 }
@@ -595,11 +595,11 @@ static int drawf_ass_slice(PyDrawFObject *b,int i,int j,PyObject *v)
 static PySequenceMethods drawf_as_sequence=
 { (inquiry)drawf_len,
   (binaryfunc)drawf_concat,
-  (intargfunc)drawf_repeat,
-  (intargfunc)drawf_item,
-  (intintargfunc)drawf_slice,
-  (intobjargproc)drawf_ass_item,
-  (intintobjargproc)drawf_ass_slice,
+  (ssizeargfunc)drawf_repeat,
+  (ssizeargfunc)drawf_item,
+  (ssizessizeargfunc)drawf_slice,
+  (ssizeobjargproc)drawf_ass_item,
+  (ssizessizeobjargproc)drawf_ass_slice,
 };
 
 static PyObject *PyDrawF_GetAttr(PyDrawFObject *s,char *name)

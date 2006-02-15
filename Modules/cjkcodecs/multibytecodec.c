@@ -214,7 +214,7 @@ multibytecodec_encerror(MultibyteCodec *codec,
 	if (buf->excobj == NULL) {
 		buf->excobj = PyUnicodeEncodeError_Create(codec->encoding,
 				buf->inbuf_top,
-				(int)(buf->inbuf_end - buf->inbuf_top),
+				buf->inbuf_end - buf->inbuf_top,
 				start, end, reason);
 		if (buf->excobj == NULL)
 			goto errorexit;

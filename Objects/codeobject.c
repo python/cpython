@@ -28,7 +28,7 @@ all_name_chars(unsigned char *s)
 static void
 intern_strings(PyObject *tuple)
 {
-	int i;
+	Py_ssize_t i;
 
 	for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
 		PyObject *v = PyTuple_GET_ITEM(tuple, i);
@@ -48,7 +48,7 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 	   PyObject *lnotab)
 {
 	PyCodeObject *co;
-	int i;
+	Py_ssize_t i;
 	/* Check argument types */
 	if (argcount < 0 || nlocals < 0 ||
 	    code == NULL ||
@@ -135,7 +135,7 @@ validate_and_copy_tuple(PyObject *tup)
 {
 	PyObject *newtuple;
 	PyObject *item;
-	int i, len;
+	Py_ssize_t i, len;
 
 	len = PyTuple_GET_SIZE(tup);
 	newtuple = PyTuple_New(len);

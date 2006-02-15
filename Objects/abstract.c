@@ -56,7 +56,7 @@ PyObject_Type(PyObject *o)
 	return v;
 }
 
-int
+Py_ssize_t
 PyObject_Size(PyObject *o)
 {
 	PySequenceMethods *m;
@@ -74,17 +74,17 @@ PyObject_Size(PyObject *o)
 }
 
 #undef PyObject_Length
-int
+Py_ssize_t
 PyObject_Length(PyObject *o)
 {
 	return PyObject_Size(o);
 }
 #define PyObject_Length PyObject_Size
 
-int
+Py_ssize_t
 _PyObject_LengthHint(PyObject *o)
 {
-	int rv = PyObject_Size(o);
+	Py_ssize_t rv = PyObject_Size(o);
 	if (rv != -1)
 		return rv;
 	if (PyErr_ExceptionMatches(PyExc_TypeError) ||
@@ -94,7 +94,7 @@ _PyObject_LengthHint(PyObject *o)
 		PyErr_Fetch(&err_type, &err_value, &err_tb);
 		ro = PyObject_CallMethod(o, "__length_hint__", NULL);
 		if (ro != NULL) {
-			rv = (int)PyInt_AsLong(ro);
+			rv = PyInt_AsLong(ro);
 			Py_DECREF(ro);
 			Py_XDECREF(err_type);
 			Py_XDECREF(err_value);
@@ -218,11 +218,11 @@ PyObject_DelItemString(PyObject *o, char *key)
 
 int PyObject_AsCharBuffer(PyObject *obj,
 			  const char **buffer,
-			  int *buffer_len)
+			  Py_ssize_t *buffer_len)
 {
 	PyBufferProcs *pb;
 	const char *pp;
-	int len;
+	Py_ssize_t len;
 
 	if (obj == NULL || buffer == NULL || buffer_len == NULL) {
 		null_error();
@@ -264,11 +264,11 @@ PyObject_CheckReadBuffer(PyObject *obj)
 
 int PyObject_AsReadBuffer(PyObject *obj,
 			  const void **buffer,
-			  int *buffer_len)
+			  Py_ssize_t *buffer_len)
 {
 	PyBufferProcs *pb;
 	void *pp;
-	int len;
+	Py_ssize_t len;
 
 	if (obj == NULL || buffer == NULL || buffer_len == NULL) {
 		null_error();
@@ -297,11 +297,11 @@ int PyObject_AsReadBuffer(PyObject *obj,
 
 int PyObject_AsWriteBuffer(PyObject *obj,
 			   void **buffer,
-			   int *buffer_len)
+			   Py_ssize_t *buffer_len)
 {
 	PyBufferProcs *pb;
 	void*pp;
-	int len;
+	Py_ssize_t len;
 
 	if (obj == NULL || buffer == NULL || buffer_len == NULL) {
 		null_error();
@@ -645,7 +645,7 @@ PyNumber_Add(PyObject *v, PyObject *w)
 }
 
 static PyObject *
-sequence_repeat(intargfunc repeatfunc, PyObject *seq, PyObject *n)
+sequence_repeat(ssizeargfunc repeatfunc, PyObject *seq, PyObject *n)
 {
 	long count;
 	if (PyInt_Check(n)) {
@@ -839,7 +839,7 @@ PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
 	PyObject *result = binary_iop1(v, w, NB_SLOT(nb_inplace_multiply),
 				       NB_SLOT(nb_multiply));
 	if (result == Py_NotImplemented) {
-		intargfunc f = NULL;
+		ssizeargfunc f = NULL;
 		PySequenceMethods *mv = v->ob_type->tp_as_sequence;
 		PySequenceMethods *mw = w->ob_type->tp_as_sequence;
 		Py_DECREF(result);
@@ -943,7 +943,7 @@ PyNumber_Absolute(PyObject *o)
 
 /* Add a check for embedded NULL-bytes in the argument. */
 static PyObject *
-int_from_string(const char *s, int len)
+int_from_string(const char *s, Py_ssize_t len)
 {
 	char *end;
 	PyObject *x;
@@ -965,7 +965,7 @@ PyNumber_Int(PyObject *o)
 {
 	PyNumberMethods *m;
 	const char *buffer;
-	int buffer_len;
+	Py_ssize_t buffer_len;
 
 	if (o == NULL)
 		return null_error();
@@ -1006,7 +1006,7 @@ PyNumber_Int(PyObject *o)
 
 /* Add a check for embedded NULL-bytes in the argument. */
 static PyObject *
-long_from_string(const char *s, int len)
+long_from_string(const char *s, Py_ssize_t len)
 {
 	char *end;
 	PyObject *x;
@@ -1028,7 +1028,7 @@ PyNumber_Long(PyObject *o)
 {
 	PyNumberMethods *m;
 	const char *buffer;
-	int buffer_len;
+	Py_ssize_t buffer_len;
 
 	if (o == NULL)
 		return null_error();
@@ -1103,7 +1103,7 @@ PySequence_Check(PyObject *s)
 		s->ob_type->tp_as_sequence->sq_item != NULL;
 }
 
-int
+Py_ssize_t
 PySequence_Size(PyObject *s)
 {
 	PySequenceMethods *m;
@@ -1122,7 +1122,7 @@ PySequence_Size(PyObject *s)
 }
 
 #undef PySequence_Length
-int
+Py_ssize_t
 PySequence_Length(PyObject *s)
 {
 	return PySequence_Size(s);
@@ -1154,7 +1154,7 @@ PySequence_Concat(PyObject *s, PyObject *o)
 }
 
 PyObject *
-PySequence_Repeat(PyObject *o, int count)
+PySequence_Repeat(PyObject *o, Py_ssize_t count)
 {
 	PySequenceMethods *m;
 
@@ -1207,7 +1207,7 @@ PySequence_InPlaceConcat(PyObject *s, PyObject *o)
 }
 
 PyObject *
-PySequence_InPlaceRepeat(PyObject *o, int count)
+PySequence_InPlaceRepeat(PyObject *o, Py_ssize_t count)
 {
 	PySequenceMethods *m;
 
@@ -1236,7 +1236,7 @@ PySequence_InPlaceRepeat(PyObject *o, int count)
 }
 
 PyObject *
-PySequence_GetItem(PyObject *s, int i)
+PySequence_GetItem(PyObject *s, Py_ssize_t i)
 {
 	PySequenceMethods *m;
 
@@ -1247,7 +1247,7 @@ PySequence_GetItem(PyObject *s, int i)
 	if (m && m->sq_item) {
 		if (i < 0) {
 			if (m->sq_length) {
-				int l = (*m->sq_length)(s);
+				Py_ssize_t l = (*m->sq_length)(s);
 				if (l < 0)
 					return NULL;
 				i += l;
@@ -1260,7 +1260,7 @@ PySequence_GetItem(PyObject *s, int i)
 }
 
 static PyObject *
-sliceobj_from_intint(int i, int j)
+sliceobj_from_intint(Py_ssize_t i, Py_ssize_t j)
 {
 	PyObject *start, *end, *slice;
 	start = PyInt_FromLong((long)i);
@@ -1278,7 +1278,7 @@ sliceobj_from_intint(int i, int j)
 }
 
 PyObject *
-PySequence_GetSlice(PyObject *s, int i1, int i2)
+PySequence_GetSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2)
 {
 	PySequenceMethods *m;
 	PyMappingMethods *mp;
@@ -1289,7 +1289,7 @@ PySequence_GetSlice(PyObject *s, int i1, int i2)
 	if (m && m->sq_slice) {
 		if (i1 < 0 || i2 < 0) {
 			if (m->sq_length) {
-				int l = (*m->sq_length)(s);
+				Py_ssize_t l = (*m->sq_length)(s);
 				if (l < 0)
 					return NULL;
 				if (i1 < 0)
@@ -1313,7 +1313,7 @@ PySequence_GetSlice(PyObject *s, int i1, int i2)
 }
 
 int
-PySequence_SetItem(PyObject *s, int i, PyObject *o)
+PySequence_SetItem(PyObject *s, Py_ssize_t i, PyObject *o)
 {
 	PySequenceMethods *m;
 
@@ -1326,7 +1326,7 @@ PySequence_SetItem(PyObject *s, int i, PyObject *o)
 	if (m && m->sq_ass_item) {
 		if (i < 0) {
 			if (m->sq_length) {
-				int l = (*m->sq_length)(s);
+				Py_ssize_t l = (*m->sq_length)(s);
 				if (l < 0)
 					return -1;
 				i += l;
@@ -1340,7 +1340,7 @@ PySequence_SetItem(PyObject *s, int i, PyObject *o)
 }
 
 int
-PySequence_DelItem(PyObject *s, int i)
+PySequence_DelItem(PyObject *s, Py_ssize_t i)
 {
 	PySequenceMethods *m;
 
@@ -1353,7 +1353,7 @@ PySequence_DelItem(PyObject *s, int i)
 	if (m && m->sq_ass_item) {
 		if (i < 0) {
 			if (m->sq_length) {
-				int l = (*m->sq_length)(s);
+				Py_ssize_t l = (*m->sq_length)(s);
 				if (l < 0)
 					return -1;
 				i += l;
@@ -1367,7 +1367,7 @@ PySequence_DelItem(PyObject *s, int i)
 }
 
 int
-PySequence_SetSlice(PyObject *s, int i1, int i2, PyObject *o)
+PySequence_SetSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2, PyObject *o)
 {
 	PySequenceMethods *m;
 	PyMappingMethods *mp;
@@ -1381,7 +1381,7 @@ PySequence_SetSlice(PyObject *s, int i1, int i2, PyObject *o)
 	if (m && m->sq_ass_slice) {
 		if (i1 < 0 || i2 < 0) {
 			if (m->sq_length) {
-				int l = (*m->sq_length)(s);
+				Py_ssize_t l = (*m->sq_length)(s);
 				if (l < 0)
 					return -1;
 				if (i1 < 0)
@@ -1406,7 +1406,7 @@ PySequence_SetSlice(PyObject *s, int i1, int i2, PyObject *o)
 }
 
 int
-PySequence_DelSlice(PyObject *s, int i1, int i2)
+PySequence_DelSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2)
 {
 	PySequenceMethods *m;
 
@@ -1419,7 +1419,7 @@ PySequence_DelSlice(PyObject *s, int i1, int i2)
 	if (m && m->sq_ass_slice) {
 		if (i1 < 0 || i2 < 0) {
 			if (m->sq_length) {
-				int l = (*m->sq_length)(s);
+				Py_ssize_t l = (*m->sq_length)(s);
 				if (l < 0)
 					return -1;
 				if (i1 < 0)
@@ -1438,9 +1438,9 @@ PyObject *
 PySequence_Tuple(PyObject *v)
 {
 	PyObject *it;  /* iter(v) */
-	int n;         /* guess for result tuple size */
+	Py_ssize_t n;         /* guess for result tuple size */
 	PyObject *result;
-	int j;
+	Py_ssize_t j;
 
 	if (v == NULL)
 		return null_error();
@@ -1486,7 +1486,7 @@ PySequence_Tuple(PyObject *v)
 			break;
 		}
 		if (j >= n) {
-			int oldn = n;
+			Py_ssize_t oldn = n;
 			/* The over-allocation strategy can grow a bit faster
 			   than for lists because unlike lists the 
 			   over-allocation isn't permanent -- we reclaim
@@ -1708,7 +1708,7 @@ PyMapping_Check(PyObject *o)
 		  o->ob_type->tp_as_sequence->sq_slice);
 }
 
-int
+Py_ssize_t
 PyMapping_Size(PyObject *o)
 {
 	PyMappingMethods *m;
@@ -1727,7 +1727,7 @@ PyMapping_Size(PyObject *o)
 }
 
 #undef PyMapping_Length
-int
+Py_ssize_t
 PyMapping_Length(PyObject *o)
 {
 	return PyMapping_Size(o);
@@ -2053,7 +2053,7 @@ static int
 abstract_issubclass(PyObject *derived, PyObject *cls)
 {
 	PyObject *bases;
-	int i, n;
+	Py_ssize_t i, n;
 	int r = 0;
 
 
@@ -2137,7 +2137,7 @@ recursive_isinstance(PyObject *inst, PyObject *cls, int recursion_depth)
 		}
 	}
 	else if (PyTuple_Check(cls)) {
-		int i, n;
+		Py_ssize_t i, n;
 
                 if (!recursion_depth) {
                     PyErr_SetString(PyExc_RuntimeError,
@@ -2191,8 +2191,8 @@ recursive_issubclass(PyObject *derived, PyObject *cls, int recursion_depth)
 			return -1;
 
 		if (PyTuple_Check(cls)) {
-			int i;
-			int n = PyTuple_GET_SIZE(cls);
+			Py_ssize_t i;
+			Py_ssize_t n = PyTuple_GET_SIZE(cls);
 
                         if (!recursion_depth) {
                             PyErr_SetString(PyExc_RuntimeError,

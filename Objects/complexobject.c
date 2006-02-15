@@ -680,7 +680,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 #ifdef Py_USING_UNICODE
 	char s_buffer[256];
 #endif
-	int len;
+	Py_ssize_t len;
 
 	if (PyString_Check(v)) {
 		s = PyString_AS_STRING(v);
@@ -699,7 +699,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 					    NULL))
 			return NULL;
 		s = s_buffer;
-		len = (int)strlen(s);
+		len = strlen(s);
 	}
 #endif
 	else if (PyObject_AsCharBuffer(v, &s, &len)) {

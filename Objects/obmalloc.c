@@ -541,8 +541,8 @@ error:
 /* This is only useful when running memory debuggers such as
  * Purify or Valgrind.  Uncomment to use.
  *
-#define Py_USING_MEMORY_DEBUGGER
  */
+#define Py_USING_MEMORY_DEBUGGER
 
 #ifdef Py_USING_MEMORY_DEBUGGER
 
@@ -816,7 +816,7 @@ PyObject_Realloc(void *p, size_t nbytes)
 {
 	void *bp;
 	poolp pool;
-	uint size;
+	size_t size;
 
 	if (p == NULL)
 		return PyObject_Malloc(nbytes);
@@ -1005,6 +1005,8 @@ _PyObject_DebugMalloc(size_t nbytes)
 
 	bumpserialno();
 	total = nbytes + 16;
+#if SIZEOF_SIZE_T < 8
+	/* XXX do this check only on 32-bit machines */
 	if (total < nbytes || (total >> 31) > 1) {
 		/* overflow, or we can't represent it in 4 bytes */
 		/* Obscure:  can't do (total >> 32) != 0 instead, because
@@ -1013,12 +1015,13 @@ _PyObject_DebugMalloc(size_t nbytes)
 		   size_t is an unsigned type. */
 		return NULL;
 	}
+#endif
 
 	p = (uchar *)PyObject_Malloc(total);
 	if (p == NULL)
 		return NULL;
 
-	write4(p, nbytes);
+	write4(p, (ulong)nbytes);
 	p[4] = p[5] = p[6] = p[7] = FORBIDDENBYTE;
 
 	if (nbytes > 0)
@@ -1081,7 +1084,7 @@ _PyObject_DebugRealloc(void *p, size_t nbytes)
 	if (q == NULL)
 		return NULL;
 
-	write4(q, nbytes);
+	write4(q, (ulong)nbytes);
 	assert(q[4] == FORBIDDENBYTE &&
 	       q[5] == FORBIDDENBYTE &&
 	       q[6] == FORBIDDENBYTE &&

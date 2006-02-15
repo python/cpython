@@ -85,6 +85,15 @@ typedef PY_LONG_LONG		Py_intptr_t;
 #   error "Python needs a typedef for Py_uintptr_t in pyport.h."
 #endif /* HAVE_UINTPTR_T */
 
+#ifdef HAVE_SSIZE_T
+typedef ssize_t		Py_ssize_t;
+#elif SIZEOF_VOID_P == SIZEOF_SIZE_T
+typedef Py_uintptr_t	Py_ssize_t;
+#else
+#   error "Python needs a typedef for Py_ssize_t in pyport.h."
+#endif
+#define PY_SSIZE_T_MAX ((Py_ssize_t)(((size_t)-1)>>1))
+
 #include <stdlib.h>
 
 #include <math.h> /* Moved here from the math section, before extern "C" */

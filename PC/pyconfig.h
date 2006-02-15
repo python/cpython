@@ -117,6 +117,14 @@ MS_CORE_DLL.
 #endif
 #endif /* MS_WIN64 */
 
+/* Define like size_t, omitting the "unsigned" */
+#ifdef MS_WIN64
+typedef __int64 ssize_t;
+#else
+typedef _W64 int ssize_t;
+#endif
+#define HAVE_SSIZE_T 1
+
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #ifdef _M_IX86
 #define COMPILER _Py_PASTE_VERSION("32 bit (Intel)")
@@ -253,6 +261,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #	define SIZEOF_OFF_T 4
 #	define SIZEOF_FPOS_T 8
 #	define SIZEOF_HKEY 8
+#	define SIZEOF_SIZE_T 8
 /* configure.in defines HAVE_LARGEFILE_SUPPORT iff HAVE_LONG_LONG,
    sizeof(off_t) > sizeof(long), and sizeof(PY_LONG_LONG) >= sizeof(off_t).
    On Win64 the second condition is not true, but if fpos_t replaces off_t
@@ -267,6 +276,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #	define SIZEOF_OFF_T 4
 #	define SIZEOF_FPOS_T 8
 #	define SIZEOF_HKEY 4
+#	define SIZEOF_SIZE_T 4
 #endif
 
 #ifdef _DEBUG

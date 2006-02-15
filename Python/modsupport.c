@@ -313,6 +313,11 @@ do_mkvalue(const char **p_format, va_list *p_va)
 				return PyInt_FromLong(n);
 		}
 		
+		case 'n':
+#if SIZEOF_SIZE_T!=SIZEOF_LONG
+			return PyLong_FromSsize_t(va_arg(*p_va, Py_Ssize_t));
+#endif
+			/* Fall through from 'n' to 'l' if Py_ssize_t is long */
 		case 'l':
 			return PyInt_FromLong(va_arg(*p_va, long));
 
@@ -371,7 +376,7 @@ do_mkvalue(const char **p_format, va_list *p_va)
 		case 'c':
 		{
 			char p[1];
-			p[0] = va_arg(*p_va, int);
+			p[0] = (char)va_arg(*p_va, int);
 			return PyString_FromStringAndSize(p, 1);
 		}
 

@@ -407,7 +407,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 equivalent to the Python expression: type(o).
        */
 
-     PyAPI_FUNC(int) PyObject_Size(PyObject *o);
+     PyAPI_FUNC(Py_ssize_t) PyObject_Size(PyObject *o);
 
        /*
          Return the size of object o.  If the object, o, provides
@@ -419,10 +419,10 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        /* For DLL compatibility */
 #undef PyObject_Length
-     PyAPI_FUNC(int) PyObject_Length(PyObject *o);
+     PyAPI_FUNC(Py_ssize_t) PyObject_Length(PyObject *o);
 #define PyObject_Length PyObject_Size
 
-     PyAPI_FUNC(int) _PyObject_LengthHint(PyObject *o);
+     PyAPI_FUNC(Py_ssize_t) _PyObject_LengthHint(PyObject *o);
 
        /*
          Return the size of object o.  If the object, o, provides
@@ -477,7 +477,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      PyAPI_FUNC(int) PyObject_AsCharBuffer(PyObject *obj,
 					  const char **buffer,
-					  int *buffer_len);
+					  Py_ssize_t *buffer_len);
 
        /* 
 	  Takes an arbitrary object which must support the (character,
@@ -502,7 +502,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      PyAPI_FUNC(int) PyObject_AsReadBuffer(PyObject *obj,
 					  const void **buffer,
-					  int *buffer_len);
+					  Py_ssize_t *buffer_len);
 
        /* 
 	  Same as PyObject_AsCharBuffer() except that this API expects
@@ -518,7 +518,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      PyAPI_FUNC(int) PyObject_AsWriteBuffer(PyObject *obj,
 					   void **buffer,
-					   int *buffer_len);
+					   Py_ssize_t *buffer_len);
 
        /* 
 	  Takes an arbitrary object which must support the (writeable,
@@ -911,7 +911,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     PyAPI_FUNC(int) PySequence_Size(PyObject *o);
+     PyAPI_FUNC(Py_ssize_t) PySequence_Size(PyObject *o);
 
        /*
          Return the size of sequence object o, or -1 on failure.
@@ -920,7 +920,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        /* For DLL compatibility */
 #undef PySequence_Length
-     PyAPI_FUNC(int) PySequence_Length(PyObject *o);
+     PyAPI_FUNC(Py_ssize_t) PySequence_Length(PyObject *o);
 #define PySequence_Length PySequence_Size
 
 
@@ -933,7 +933,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     PyAPI_FUNC(PyObject *) PySequence_Repeat(PyObject *o, int count);
+     PyAPI_FUNC(PyObject *) PySequence_Repeat(PyObject *o, Py_ssize_t count);
 
        /*
 	 Return the result of repeating sequence object o count times,
@@ -942,14 +942,14 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     PyAPI_FUNC(PyObject *) PySequence_GetItem(PyObject *o, int i);
+     PyAPI_FUNC(PyObject *) PySequence_GetItem(PyObject *o, Py_ssize_t i);
 
        /*
 	 Return the ith element of o, or NULL on failure. This is the
 	 equivalent of the Python expression: o[i].
        */
 
-     PyAPI_FUNC(PyObject *) PySequence_GetSlice(PyObject *o, int i1, int i2);
+     PyAPI_FUNC(PyObject *) PySequence_GetSlice(PyObject *o, Py_ssize_t i1, Py_ssize_t i2);
 
        /*
 	 Return the slice of sequence object o between i1 and i2, or
@@ -958,7 +958,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     PyAPI_FUNC(int) PySequence_SetItem(PyObject *o, int i, PyObject *v);
+     PyAPI_FUNC(int) PySequence_SetItem(PyObject *o, Py_ssize_t i, PyObject *v);
 
        /*
 	 Assign object v to the ith element of o.  Returns
@@ -967,7 +967,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     PyAPI_FUNC(int) PySequence_DelItem(PyObject *o, int i);
+     PyAPI_FUNC(int) PySequence_DelItem(PyObject *o, Py_ssize_t i);
 
        /*
 	 Delete the ith element of object v.  Returns
@@ -975,7 +975,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 statement: del o[i].
        */
 
-     PyAPI_FUNC(int) PySequence_SetSlice(PyObject *o, int i1, int i2,
+     PyAPI_FUNC(int) PySequence_SetSlice(PyObject *o, Py_ssize_t i1, Py_ssize_t i2,
                                         PyObject *v);
 
        /*
@@ -984,7 +984,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 equivalent of the Python statement: o[i1:i2]=v.
        */
 
-     PyAPI_FUNC(int) PySequence_DelSlice(PyObject *o, int i1, int i2);
+     PyAPI_FUNC(int) PySequence_DelSlice(PyObject *o, Py_ssize_t i1, Py_ssize_t i2);
 
        /*
 	 Delete the slice in sequence object, o, from i1 to i2.
@@ -1105,7 +1105,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     PyAPI_FUNC(PyObject *) PySequence_InPlaceRepeat(PyObject *o, int count);
+     PyAPI_FUNC(PyObject *) PySequence_InPlaceRepeat(PyObject *o, Py_ssize_t count);
 
        /*
 	 Repeat o1 by count, in-place when possible. Return the resulting
@@ -1125,7 +1125,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 This function always succeeds.
        */
 
-     PyAPI_FUNC(int) PyMapping_Size(PyObject *o);
+     PyAPI_FUNC(Py_ssize_t) PyMapping_Size(PyObject *o);
 
        /*
          Returns the number of keys in object o on success, and -1 on
@@ -1135,7 +1135,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        /* For DLL compatibility */
 #undef PyMapping_Length
-     PyAPI_FUNC(int) PyMapping_Length(PyObject *o);
+     PyAPI_FUNC(Py_ssize_t) PyMapping_Length(PyObject *o);
 #define PyMapping_Length PyMapping_Size
 
 

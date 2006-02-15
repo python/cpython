@@ -104,7 +104,7 @@ _PyModule_Clear(PyObject *m)
 	   None, rather than deleting them from the dictionary, to
 	   avoid rehashing the dictionary (to some extent). */
 
-	int pos;
+	Py_ssize_t pos;
 	PyObject *key, *value;
 	PyObject *d;
 

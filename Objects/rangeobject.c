@@ -91,27 +91,27 @@ generates the numbers in the range on demand.  For looping, this is \n\
 slightly faster than range() and more memory efficient.");
 
 static PyObject *
-range_item(rangeobject *r, int i)
+range_item(rangeobject *r, Py_ssize_t i)
 {
 	if (i < 0 || i >= r->len) {
 		PyErr_SetString(PyExc_IndexError,
 				"xrange object index out of range");
 		return NULL;
 	}
-	return PyInt_FromLong(r->start + (i % r->len) * r->step);
+	return PyInt_FromSsize_t(r->start + (i % r->len) * r->step);
 }
 
-static int
+static Py_ssize_t
 range_length(rangeobject *r)
 {
-#if LONG_MAX != INT_MAX
+#if LONG_MAX != INT_MAX /* XXX ssize_t_max */
 	if (r->len > INT_MAX) {
 		PyErr_SetString(PyExc_ValueError,
 				"xrange object size cannot be reported");
 		return -1;
 	}
 #endif
-	return (int)(r->len);
+	return (Py_ssize_t)(r->len);
 }
 
 static PyObject *
@@ -137,10 +137,10 @@ range_repr(rangeobject *r)
 }
 
 static PySequenceMethods range_as_sequence = {
-	(inquiry)range_length,	/* sq_length */
+	(lenfunc)range_length,	/* sq_length */
 	0,			/* sq_concat */
 	0,			/* sq_repeat */
-	(intargfunc)range_item, /* sq_item */
+	(ssizeargfunc)range_item, /* sq_item */
 	0,			/* sq_slice */
 };
 

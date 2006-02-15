@@ -87,7 +87,7 @@ PyFloat_FromString(PyObject *v, char **pend)
 #ifdef Py_USING_UNICODE
 	char s_buffer[256]; /* for objects convertible to a char buffer */
 #endif
-	int len;
+	Py_ssize_t len;
 
 	if (pend)
 		*pend = NULL;
@@ -108,7 +108,7 @@ PyFloat_FromString(PyObject *v, char **pend)
 					    NULL))
 			return NULL;
 		s = s_buffer;
-		len = (int)strlen(s);
+		len = strlen(s);
 	}
 #endif
 	else if (PyObject_AsCharBuffer(v, &s, &len)) {

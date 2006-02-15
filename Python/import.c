@@ -351,7 +351,7 @@ static char* sys_files[] = {
 void
 PyImport_Cleanup(void)
 {
-	int pos, ndone;
+	Py_ssize_t pos, ndone;
 	char *name;
 	PyObject *key, *value, *dict;
 	PyInterpreterState *interp = PyThreadState_GET()->interp;
@@ -689,7 +689,7 @@ make_compiled_pathname(char *pathname, char *buf, size_t buflen)
    Doesn't set an exception. */
 
 static FILE *
-check_compiled_module(char *pathname, long mtime, char *cpathname)
+check_compiled_module(char *pathname, time_t mtime, char *cpathname)
 {
 	FILE *fp;
 	long magic;
@@ -805,10 +805,11 @@ open_exclusive(char *filename)
 				|O_BINARY   /* necessary for Windows */
 #endif
 #ifdef __VMS
-                        , 0666, "ctxt=bin", "shr=nil");
+                        , 0666, "ctxt=bin", "shr=nil"
 #else
-                        , 0666);
+                        , 0666
 #endif
+		  );
 	if (fd < 0)
 		return NULL;
 	return fdopen(fd, "wb");
@@ -825,7 +826,7 @@ open_exclusive(char *filename)
    remove the file. */
 
 static void
-write_compiled_module(PyCodeObject *co, char *cpathname, long mtime)
+write_compiled_module(PyCodeObject *co, char *cpathname, time_t mtime)
 {
 	FILE *fp;
 
@@ -850,6 +851,7 @@ write_compiled_module(PyCodeObject *co, char *cpathname, long mtime)
 	}
 	/* Now write the true mtime */
 	fseek(fp, 4L, 0);
+	assert(mtime < LONG_MAX);
 	PyMarshal_WriteLongToFile(mtime, fp, Py_MARSHAL_VERSION);
 	fflush(fp);
 	fclose(fp);
@@ -1061,10 +1063,10 @@ get_path_importer(PyObject *path_importer_cache, PyObject *path_hooks,
 
 #ifdef MS_COREDLL
 extern FILE *PyWin_FindRegisteredModule(const char *, struct filedescr **,
-					char *, int);
+					char *, Py_ssize_t);
 #endif
 
-static int case_ok(char *, int, int, char *);
+static int case_ok(char *, Py_ssize_t, Py_ssize_t, char *);
 static int find_init_module(char *); /* Forward */
 static struct filedescr importhookdescr = {"", "", IMP_HOOK};
 
@@ -1372,7 +1374,7 @@ PyAPI_FUNC(int) _PyImport_IsScript(struct filedescr * fd)
 	return fd->type == PY_SOURCE || fd->type == PY_COMPILED;
 }
 
-/* case_ok(char* buf, int len, int namelen, char* name)
+/* case_ok(char* buf, Py_ssize_t len, Py_ssize_t namelen, char* name)
  * The arguments here are tricky, best shown by example:
  *    /a/b/c/d/e/f/g/h/i/j/k/some_long_module_name.py\0
  *    ^                      ^                   ^    ^
@@ -1420,7 +1422,7 @@ PyAPI_FUNC(int) _PyImport_IsScript(struct filedescr * fd)
 #endif
 
 static int
-case_ok(char *buf, int len, int namelen, char *name)
+case_ok(char *buf, Py_ssize_t len, Py_ssize_t namelen, char *name)
 {
 /* Pick a platform-specific implementation; the sequence of #if's here should
  * match the sequence just above.
@@ -1891,12 +1893,12 @@ PyImport_ImportModule(const char *name)
 }
 
 /* Forward declarations for helper routines */
-static PyObject *get_parent(PyObject *globals, char *buf, int *p_buflen);
+static PyObject *get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen);
 static PyObject *load_next(PyObject *mod, PyObject *altmod,
-			   char **p_name, char *buf, int *p_buflen);
+			   char **p_name, char *buf, Py_ssize_t *p_buflen);
 static int mark_miss(char *name);
 static int ensure_fromlist(PyObject *mod, PyObject *fromlist,
-			   char *buf, int buflen, int recursive);
+			   char *buf, Py_ssize_t buflen, int recursive);
 static PyObject * import_submodule(PyObject *mod, char *name, char *fullname);
 
 /* The Magnum Opus of dotted-name import :-) */
@@ -1906,7 +1908,7 @@ import_module_ex(char *name, PyObject *globals, PyObject *locals,
 		 PyObject *fromlist)
 {
 	char buf[MAXPATHLEN+1];
-	int buflen = 0;
+	Py_ssize_t buflen = 0;
 	PyObject *parent, *head, *next, *tail;
 
 	parent = get_parent(globals, buf, &buflen);
@@ -1976,7 +1978,7 @@ PyImport_ImportModuleEx(char *name, PyObject *globals, PyObject *locals,
    corresponding entry is not found in sys.modules, Py_None is returned.
 */
 static PyObject *
-get_parent(PyObject *globals, char *buf, int *p_buflen)
+get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen)
 {
 	static PyObject *namestr = NULL;
 	static PyObject *pathstr = NULL;
@@ -2044,7 +2046,7 @@ get_parent(PyObject *globals, char *buf, int *p_buflen)
 /* altmod is either None or same as mod */
 static PyObject *
 load_next(PyObject *mod, PyObject *altmod, char **p_name, char *buf,
-	  int *p_buflen)
+	  Py_ssize_t *p_buflen)
 {
 	char *name = *p_name;
 	char *dot = strchr(name, '.');
@@ -2114,7 +2116,7 @@ mark_miss(char *name)
 }
 
 static int
-ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, int buflen,
+ensure_fromlist(PyObject *mod, PyObject *fromlist, char *buf, Py_ssize_t buflen,
 		int recursive)
 {
 	int i;

@@ -59,7 +59,7 @@ typedef struct {
 static void
 w_more(int c, WFILE *p)
 {
-	int size, newsize;
+	Py_ssize_t size, newsize;
 	if (p->str == NULL)
 		return; /* An error already occurred */
 	size = PyString_Size(p->str);
@@ -117,7 +117,7 @@ w_long64(long x, WFILE *p)
 static void
 w_object(PyObject *v, WFILE *p)
 {
-	int i, n;
+	Py_ssize_t i, n;
 
 	p->depth++;
 
@@ -181,7 +181,7 @@ w_object(PyObject *v, WFILE *p)
 		else {
 			char buf[256]; /* Plenty to format any double */
 			PyFloat_AsReprString(buf, (PyFloatObject *)v);
-			n = strlen(buf);
+			n = (int)strlen(buf);
 			w_byte(TYPE_FLOAT, p);
 			w_byte(n, p);
 			w_string(buf, n, p);
@@ -213,14 +213,14 @@ w_object(PyObject *v, WFILE *p)
 				PyComplex_RealAsDouble(v));
 			PyFloat_AsReprString(buf, temp);
 			Py_DECREF(temp);
-			n = strlen(buf);
+			n = (int)strlen(buf);
 			w_byte(n, p);
 			w_string(buf, n, p);
 			temp = (PyFloatObject*)PyFloat_FromDouble(
 				PyComplex_ImagAsDouble(v));
 			PyFloat_AsReprString(buf, temp);
 			Py_DECREF(temp);
-			n = strlen(buf);
+			n = (int)strlen(buf);
 			w_byte(n, p);
 			w_string(buf, n, p);
 		}
@@ -236,7 +236,7 @@ w_object(PyObject *v, WFILE *p)
 				goto exit;
 			}
 			else {
-				o = PyInt_FromLong(PyDict_Size(p->strings));
+				o = PyInt_FromSsize_t(PyDict_Size(p->strings));
 				PyDict_SetItem(p->strings, v, o);
 				Py_DECREF(o);
 				w_byte(TYPE_INTERNED, p);
@@ -282,7 +282,7 @@ w_object(PyObject *v, WFILE *p)
 		}
 	}
 	else if (PyDict_Check(v)) {
-		int pos;
+		Py_ssize_t pos;
 		PyObject *key, *value;
 		w_byte(TYPE_DICT, p);
 		/* This one is NULL object terminated! */
@@ -395,9 +395,10 @@ static int
 r_string(char *s, int n, RFILE *p)
 {
 	if (p->fp != NULL)
-		return fread(s, 1, n, p->fp);
+		/* The result fits into int because it must be <=n. */
+		return (int)fread(s, 1, n, p->fp);
 	if (p->end - p->ptr < n)
-		n = p->end - p->ptr;
+		n = (int)(p->end - p->ptr);
 	memcpy(s, p->ptr, n);
 	p->ptr += n;
 	return n;
@@ -939,7 +940,10 @@ PyMarshal_ReadLastObjectFromFile(FILE *fp)
 			pBuf = (char *)PyMem_MALLOC(filesize);
 		if (pBuf != NULL) {
 			PyObject* v;
-			size_t n = fread(pBuf, 1, filesize, fp);
+			size_t n;
+			/* filesize must fit into an int, because it
+			   is smaller than REASONABLE_FILE_LIMIT */
+			n = fread(pBuf, 1, (int)filesize, fp);
 			v = PyMarshal_ReadObjectFromString(pBuf, n);
 			if (pBuf != buf)
 				PyMem_FREE(pBuf);
@@ -970,7 +974,7 @@ PyMarshal_ReadObjectFromFile(FILE *fp)
 }
 
 PyObject *
-PyMarshal_ReadObjectFromString(char *str, int len)
+PyMarshal_ReadObjectFromString(char *str, Py_ssize_t len)
 {
 	RFILE rf;
 	PyObject *result;

@@ -8,7 +8,7 @@ extern "C" {
 
 PyAPI_FUNC(double) PyOS_ascii_strtod(const char *str, char **ptr);
 PyAPI_FUNC(double) PyOS_ascii_atof(const char *str);
-PyAPI_FUNC(char *) PyOS_ascii_formatd(char *buffer, int buf_len,  const char *format, double d);
+PyAPI_FUNC(char *) PyOS_ascii_formatd(char *buffer, size_t buf_len,  const char *format, double d);
 
 
 #ifdef __cplusplus

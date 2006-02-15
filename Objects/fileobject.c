@@ -1,5 +1,6 @@
 /* File object implementation */
 
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "structmember.h"
 
@@ -869,8 +870,8 @@ static PyObject *
 file_readinto(PyFileObject *f, PyObject *args)
 {
 	char *ptr;
-	int ntodo;
-	size_t ndone, nnow;
+	Py_ssize_t ntodo;
+	Py_ssize_t ndone, nnow;
 
 	if (f->f_fp == NULL)
 		return err_closed();
@@ -988,7 +989,8 @@ getline_via_fgets(FILE *fp)
 		pvend = buf + total_v_size;
 		nfree = pvend - pvfree;
 		memset(pvfree, '\n', nfree);
-		p = fgets(pvfree, nfree, fp);
+		assert(nfree < INT_MAX); /* Should be atmost MAXBUFSIZE */
+		p = fgets(pvfree, (int)nfree, fp);
 		Py_END_ALLOW_THREADS
 
 		if (p == NULL) {
@@ -1062,7 +1064,8 @@ getline_via_fgets(FILE *fp)
 		pvend = BUF(v) + total_v_size;
 		nfree = pvend - pvfree;
 		memset(pvfree, '\n', nfree);
-		p = fgets(pvfree, nfree, fp);
+		assert(nfree < INT_MAX);
+		p = fgets(pvfree, (int)nfree, fp);
 		Py_END_ALLOW_THREADS
 
 		if (p == NULL) {
@@ -1271,7 +1274,7 @@ PyFile_GetLine(PyObject *f, int n)
 
 	if (n < 0 && result != NULL && PyString_Check(result)) {
 		char *s = PyString_AS_STRING(result);
-		int len = PyString_GET_SIZE(result);
+		Py_ssize_t len = PyString_GET_SIZE(result);
 		if (len == 0) {
 			Py_DECREF(result);
 			result = NULL;
@@ -1292,7 +1295,7 @@ PyFile_GetLine(PyObject *f, int n)
 #ifdef Py_USING_UNICODE
 	if (n < 0 && result != NULL && PyUnicode_Check(result)) {
 		Py_UNICODE *s = PyUnicode_AS_UNICODE(result);
-		int len = PyUnicode_GET_SIZE(result);
+		Py_ssize_t len = PyUnicode_GET_SIZE(result);
 		if (len == 0) {
 			Py_DECREF(result);
 			result = NULL;
@@ -1468,7 +1471,7 @@ static PyObject *
 file_write(PyFileObject *f, PyObject *args)
 {
 	char *s;
-	int n, n2;
+	Py_ssize_t n, n2;
 	if (f->f_fp == NULL)
 		return err_closed();
 	if (!PyArg_ParseTuple(args, f->f_binary ? "s#" : "t#", &s, &n))
@@ -1494,7 +1497,8 @@ file_writelines(PyFileObject *f, PyObject *seq)
 	PyObject *list, *line;
 	PyObject *it;	/* iter(seq) */
 	PyObject *result;
-	int i, j, index, len, nwritten, islist;
+	int index, islist;
+	Py_ssize_t i, j, nwritten, len;
 
 	assert(seq != NULL);
 	if (f->f_fp == NULL)
@@ -1552,7 +1556,6 @@ file_writelines(PyFileObject *f, PyObject *seq)
 			PyObject *v = PyList_GET_ITEM(list, i);
 			if (!PyString_Check(v)) {
 			    	const char *buffer;
-			    	int len;
 				if (((f->f_binary &&
 				      PyObject_AsReadBuffer(v,
 					      (const void**)&buffer,
@@ -1789,7 +1792,7 @@ drop_readahead(PyFileObject *f)
 static int
 readahead(PyFileObject *f, int bufsize)
 {
-	int chunksize;
+	Py_ssize_t chunksize;
 
 	if (f->f_buf != NULL) {
 		if( (f->f_bufend - f->f_bufptr) >= 1)
@@ -1829,7 +1832,7 @@ readahead_get_line_skip(PyFileObject *f, int skip, int bufsize)
 	PyStringObject* s;
 	char *bufptr;
 	char *buf;
-	int len;
+	Py_ssize_t len;
 
 	if (f->f_buf == NULL)
 		if (readahead(f, bufsize) < 0)
@@ -1855,8 +1858,9 @@ readahead_get_line_skip(PyFileObject *f, int skip, int bufsize)
 		bufptr = f->f_bufptr;
 		buf = f->f_buf;
 		f->f_buf = NULL; 	/* Force new readahead buffer */
+		assert(skip+len < INT_MAX);
                 s = readahead_get_line_skip(
-			f, skip+len, bufsize + (bufsize>>2) );
+			f, (int)(skip+len), bufsize + (bufsize>>2) );
 		if (s == NULL) {
 		        PyMem_Free(buf);
 			return NULL;
@@ -2061,7 +2065,7 @@ PyTypeObject PyFile_Type = {
 int
 PyFile_SoftSpace(PyObject *f, int newflag)
 {
-	int oldflag = 0;
+	long oldflag = 0;
 	if (f == NULL) {
 		/* Do nothing */
 	}
@@ -2077,6 +2081,7 @@ PyFile_SoftSpace(PyObject *f, int newflag)
 		else {
 			if (PyInt_Check(v))
 				oldflag = PyInt_AsLong(v);
+			assert(oldflag < INT_MAX);
 			Py_DECREF(v);
 		}
 		v = PyInt_FromLong((long)newflag);
@@ -2088,7 +2093,7 @@ PyFile_SoftSpace(PyObject *f, int newflag)
 			Py_DECREF(v);
 		}
 	}
-	return oldflag;
+	return (int)oldflag;
 }
 
 /* Interfaces to write objects/strings to file-like objects */

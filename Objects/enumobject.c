@@ -241,7 +241,7 @@ PyDoc_STRVAR(reversed_doc,
 static PyObject *
 reversed_len(reversedobject *ro)
 {
-	int position, seqsize;
+	Py_ssize_t position, seqsize;
 
 	if (ro->seq == NULL)
 		return PyInt_FromLong(0);
