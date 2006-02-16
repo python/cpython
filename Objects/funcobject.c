@@ -251,7 +251,7 @@ func_set_code(PyFunctionObject *op, PyObject *value)
 			     "%s() requires a code object with %ld free vars,"
 			     " not %ld",
 			     PyString_AsString(op->func_name),
-			     nclosure, nfree);
+			     (long)nclosure, (long)nfree);
 		return -1;
 	}
 	tmp = op->func_code;
@@ -403,7 +403,7 @@ func_new(PyTypeObject* type, PyObject* args, PyObject* kw)
 		return PyErr_Format(PyExc_ValueError,
 				    "%s requires closure of length %ld, not %ld",
 				    PyString_AS_STRING(code->co_name),
-				    nfree, nclosure);
+				    (long)nfree, (long)nclosure);
 	if (nclosure) {
 		Py_ssize_t i;
 		for (i = 0; i < nclosure; i++) {

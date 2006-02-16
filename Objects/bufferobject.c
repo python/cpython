@@ -246,15 +246,15 @@ buffer_repr(PyBufferObject *self)
 		return PyString_FromFormat("<%s buffer ptr %p, size %ld at %p>",
 					   status,
 					   self->b_ptr,
-					   self->b_size,
+					   (long)self->b_size,
 					   self);
 	else
 		return PyString_FromFormat(
 			"<%s buffer for %p, size %ld, offset %ld at %p>",
 			status,
 			self->b_base,
-			self->b_size,
-			self->b_offset,
+			(long)self->b_size,
+			(long)self->b_offset,
 			self);
 }
 
