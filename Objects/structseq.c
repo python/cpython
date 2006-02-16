@@ -126,7 +126,7 @@ structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		if (len < min_len) {
 			PyErr_Format(PyExc_TypeError, 
 	       "%.500s() takes an at least %ld-sequence (%ld-sequence given)",
-				     type->tp_name, min_len, len);
+				     type->tp_name, (long)min_len, (long)len);
 			Py_DECREF(arg);
 			return NULL;
 		}
@@ -134,7 +134,7 @@ structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		if (len > max_len) {
 			PyErr_Format(PyExc_TypeError, 
 	       "%.500s() takes an at most %ld-sequence (%ld-sequence given)",
-				     type->tp_name, max_len, len);
+				     type->tp_name, (long)max_len, (long)len);
 			Py_DECREF(arg);
 			return NULL;
 		}
@@ -143,7 +143,7 @@ structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		if (len != min_len) {
 			PyErr_Format(PyExc_TypeError, 
 	       "%.500s() takes a %ld-sequence (%ld-sequence given)",
-				     type->tp_name, min_len, len);
+				     type->tp_name, (long)min_len, (long)len);
 			Py_DECREF(arg);
 			return NULL;
 		}

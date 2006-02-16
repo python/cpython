@@ -2601,8 +2601,8 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 				/* XXX can we use %zd here? */
 				PyErr_Format(PyExc_ValueError,
             "attempt to assign sequence of size %ld to extended slice of size %ld",
-					     PySequence_Fast_GET_SIZE(seq),
-					     slicelength);
+					     (long)PySequence_Fast_GET_SIZE(seq),
+					     (long)slicelength);
 				Py_DECREF(seq);
 				return -1;
 			}
