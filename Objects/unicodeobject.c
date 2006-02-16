@@ -791,8 +791,7 @@ int unicode_decode_call_errorhandler(const char *errors, PyObject **errorHandler
     if (newpos<0)
 	newpos = insize+newpos;
     if (newpos<0 || newpos>insize) {
-	/* XXX %zd? */
-	PyErr_Format(PyExc_IndexError, "position %d from error handler out of bounds", (int)newpos);
+	PyErr_Format(PyExc_IndexError, "position %zd from error handler out of bounds", newpos);
 	goto onError;
     }
 
@@ -2473,8 +2472,7 @@ static PyObject *unicode_encode_call_errorhandler(const char *errors,
     if (*newpos<0)
 	*newpos = size+*newpos;
     if (*newpos<0 || *newpos>size) {
-	/* XXX %zd? */
-	PyErr_Format(PyExc_IndexError, "position %d from error handler out of bounds", (int)*newpos);
+	PyErr_Format(PyExc_IndexError, "position %zd from error handler out of bounds", *newpos);
 	Py_DECREF(restuple);
 	return NULL;
     }
@@ -3373,8 +3371,7 @@ static PyObject *unicode_translate_call_errorhandler(const char *errors,
     else
         *newpos = i_newpos;
     if (*newpos<0 || *newpos>size) {
-	/* XXX %zd? */
-	PyErr_Format(PyExc_IndexError, "position %d from error handler out of bounds", (int)*newpos);
+	PyErr_Format(PyExc_IndexError, "position %zd from error handler out of bounds", *newpos);
 	Py_DECREF(restuple);
 	return NULL;
     }

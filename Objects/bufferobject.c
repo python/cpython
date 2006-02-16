@@ -243,14 +243,14 @@ buffer_repr(PyBufferObject *self)
 	const char *status = self->b_readonly ? "read-only" : "read-write";
 
 	if ( self->b_base == NULL )
-		return PyString_FromFormat("<%s buffer ptr %p, size %ld at %p>",
+		return PyString_FromFormat("<%s buffer ptr %p, size %zd at %p>",
 					   status,
 					   self->b_ptr,
 					   (long)self->b_size,
 					   self);
 	else
 		return PyString_FromFormat(
-			"<%s buffer for %p, size %ld, offset %ld at %p>",
+			"<%s buffer for %p, size %zd, offset %zd at %p>",
 			status,
 			self->b_base,
 			(long)self->b_size,
