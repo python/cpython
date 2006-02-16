@@ -181,6 +181,9 @@ PyString_FromFormatV(const char *format, va_list vargs)
 			   added */
 			if (*f == 'l' && *(f+1) == 'd')
 				++f;
+			/* likewise for %zd */
+			if (*f == 'z' && *(f+1) == 'd')
+				++f;			
 
 			switch (*f) {
 			case 'c':
@@ -237,6 +240,7 @@ PyString_FromFormatV(const char *format, va_list vargs)
 			const char* p = f++;
 			Py_ssize_t i;
 			int longflag = 0;
+			int size_tflag = 0;
 			/* parse the width.precision part (we're only
 			   interested in the precision value, if any) */
 			n = 0;
@@ -256,6 +260,11 @@ PyString_FromFormatV(const char *format, va_list vargs)
 				longflag = 1;
 				++f;
 			}
+			/* handle the size_t flag. */
+			if (*f == 'z' && *(f+1) == 'd') {
+				size_tflag = 1;
+				++f;
+			}
 
 			switch (*f) {
 			case 'c':
@@ -264,6 +273,18 @@ PyString_FromFormatV(const char *format, va_list vargs)
 			case 'd':
 				if (longflag)
 					sprintf(s, "%ld", va_arg(vargs, long));
+				else if (size_tflag) {
+					/* Instead of checking whether the C
+					   library supports %zd, handle the
+					   common cases. */
+				        #if SIZEOF_SIZE_T == SIZEOF_LONG
+					sprintf(s, "%ld", va_arg(vargs, long));
+					#elif defined(MS_WINDOWS)
+					sprintf(s, "%Id", va_arg(vargs, size_t));
+					#else
+					#error Cannot print size_t values
+					#endif
+				}
 				else
 					sprintf(s, "%d", va_arg(vargs, int));
 				s += strlen(s);

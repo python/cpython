@@ -1148,7 +1148,7 @@ PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
 		if (n != 2) {
 			PyErr_Format(PyExc_ValueError,
 				     "dictionary update sequence element #%d "
-				     "has length %ld; 2 is required",
+				     "has length %zd; 2 is required",
 				     i, (long)n);
 			goto Fail;
 		}

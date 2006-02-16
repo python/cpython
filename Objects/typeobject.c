@@ -3372,10 +3372,9 @@ check_num_args(PyObject *ob, int n)
 	}
 	if (n == PyTuple_GET_SIZE(ob))
 		return 1;
-	/* XXX %zd? */
 	PyErr_Format(
 	    PyExc_TypeError, 
-	    "expected %d arguments, got %d", n, (int)PyTuple_GET_SIZE(ob));
+	    "expected %d arguments, got %zd", n, PyTuple_GET_SIZE(ob));
 	return 0;
 }
 
