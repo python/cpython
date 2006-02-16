@@ -509,7 +509,7 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 
 	/* Bypass optimization when the lineno table is too complex */
 	assert(PyString_Check(lineno_obj));
-	lineno = PyString_AS_STRING(lineno_obj);
+	lineno = (unsigned char *)PyString_AS_STRING(lineno_obj);
 	tabsiz = PyString_GET_SIZE(lineno_obj);
 	if (memchr(lineno, 255, tabsiz) != NULL)
 		goto exitUnchanged;
