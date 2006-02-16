@@ -258,7 +258,7 @@ typedef PyObject *(*allocfunc)(struct _typeobject *, Py_ssize_t);
 typedef struct _typeobject {
 	PyObject_VAR_HEAD
 	const char *tp_name; /* For printing, in format "<module>.<name>" */
-	int tp_basicsize, tp_itemsize; /* For allocation */
+	Py_ssize_t tp_basicsize, tp_itemsize; /* For allocation */
 
 	/* Methods to implement standard operations */
 
@@ -303,7 +303,7 @@ typedef struct _typeobject {
 	richcmpfunc tp_richcompare;
 
 	/* weak reference enabler */
-	long tp_weaklistoffset;
+	Py_ssize_t tp_weaklistoffset;
 
 	/* Added in release 2.2 */
 	/* Iterators */
@@ -318,7 +318,7 @@ typedef struct _typeobject {
 	PyObject *tp_dict;
 	descrgetfunc tp_descr_get;
 	descrsetfunc tp_descr_set;
-	long tp_dictoffset;
+	Py_ssize_t tp_dictoffset;
 	initproc tp_init;
 	allocfunc tp_alloc;
 	newfunc tp_new;
