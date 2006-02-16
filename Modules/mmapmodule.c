@@ -245,7 +245,7 @@ mmap_find_method(mmap_object *self,
 	int len;
 
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple (args, "s#|l:find", &needle, &len, &start)) {
+	if (!PyArg_ParseTuple (args, "s#|n:find", &needle, &len, &start)) {
 		return NULL;
 	} else {
 		char *p;
