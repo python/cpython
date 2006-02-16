@@ -715,7 +715,7 @@ symtable_warn(struct symtable *st, char *msg, int lineno)
 static int
 symtable_exit_block(struct symtable *st, void *ast)
 {
-	int end;
+	Py_ssize_t end;
 
 	Py_DECREF(st->st_cur);
 	end = PyList_GET_SIZE(st->st_stack) - 1;

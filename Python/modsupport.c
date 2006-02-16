@@ -315,7 +315,7 @@ do_mkvalue(const char **p_format, va_list *p_va)
 		
 		case 'n':
 #if SIZEOF_SIZE_T!=SIZEOF_LONG
-			return PyLong_FromSsize_t(va_arg(*p_va, Py_Ssize_t));
+			return PyInt_FromSsize_t(va_arg(*p_va, Py_ssize_t));
 #endif
 			/* Fall through from 'n' to 'l' if Py_ssize_t is long */
 		case 'l':

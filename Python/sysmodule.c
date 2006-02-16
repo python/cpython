@@ -947,7 +947,8 @@ static void
 svnversion_init(void)
 {
 	const char *python, *br_start, *br_end, *br_end2, *svnversion;
-	int len, istag;
+	Py_ssize_t len;
+	int istag;
 
 	if (svn_initialized)
 		return;

@@ -153,7 +153,7 @@ cleanreturn(int retval, PyObject *freelist)
 {
 	if(freelist) {
 		if((retval) == 0) {
-			int len = PyList_GET_SIZE(freelist), i;
+			Py_ssize_t len = PyList_GET_SIZE(freelist), i;
 			for (i = 0; i < len; i++)
                                 PyMem_FREE(PyCObject_AsVoidPtr(
                                 		PyList_GET_ITEM(freelist, i)));
@@ -176,7 +176,7 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
 	int level = 0;
 	int endfmt = 0;
 	const char *formatsave = format;
-	int i, len;
+	Py_ssize_t i, len;
 	char *msg;
 	PyObject *freelist = NULL;
 	int compat = flags & FLAG_COMPAT;
