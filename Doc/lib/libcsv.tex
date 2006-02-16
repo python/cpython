@@ -421,7 +421,8 @@ easily be done:
 
 \begin{verbatim}
 import csv
-print csv.reader(['one,two,three'])[0]
+for row in csv.reader(['one,two,three']):
+    print row
 \end{verbatim}
 
 The \module{csv} module doesn't directly support reading and writing
