@@ -393,7 +393,7 @@ nsmallest(PyObject *self, PyObject *args)
 	PyObject *heap=NULL, *elem, *iterable, *los, *it, *oldelem;
 	Py_ssize_t i, n;
 
-	if (!PyArg_ParseTuple(args, "iO:nsmallest", &n, &iterable))
+	if (!PyArg_ParseTuple(args, "nO:nsmallest", &n, &iterable))
 		return NULL;
 
 	it = PyObject_GetIter(iterable);
