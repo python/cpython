@@ -54,7 +54,7 @@ my_getpagesize(void)
 #include <string.h>
 #include <sys/types.h>
 
-/* maybe define MAP_ANON in terms of MAP_ANONYMOUS */
+/* Prefer MAP_ANONYMOUS since MAP_ANON is deprecated according to man page. */
 #if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
