@@ -361,7 +361,7 @@ def add_ui(db):
     # See "Custom Action Type 1"
     if msilib.Win64:
         CheckDir = "CheckDir"
-        UpdateEditIdle = "UpdateEditIDLE"
+        UpdateEditIDLE = "UpdateEditIDLE"
     else:
         CheckDir =  "_CheckDir@4"
         UpdateEditIDLE = "_UpdateEditIDLE@4"
