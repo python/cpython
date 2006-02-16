@@ -370,7 +370,7 @@ fp_readl(char *s, int size, struct tok_state *tok)
 	PyObject* utf8 = NULL;
 	PyObject* buf = tok->decoding_buffer;
 	char *str;
-	int utf8len;
+	Py_ssize_t utf8len;
 
 	/* Ask for one less byte so we can terminate it */
 	assert(size > 0);
