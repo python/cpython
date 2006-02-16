@@ -227,9 +227,9 @@ static PyObject *
 nlargest(PyObject *self, PyObject *args)
 {
 	PyObject *heap=NULL, *elem, *iterable, *sol, *it, *oldelem;
-	int i, n;
+	Py_ssize_t i, n;
 
-	if (!PyArg_ParseTuple(args, "iO:nlargest", &n, &iterable))
+	if (!PyArg_ParseTuple(args, "nO:nlargest", &n, &iterable))
 		return NULL;
 
 	it = PyObject_GetIter(iterable);
