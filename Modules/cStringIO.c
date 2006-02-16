@@ -129,7 +129,7 @@ IO_cgetval(PyObject *self) {
 static PyObject *
 IO_getval(IOobject *self, PyObject *args) {
         PyObject *use_pos=Py_None;
-        int s;
+        Py_ssize_t s;
 
         UNLESS (IO__opencheck(self)) return NULL;
         UNLESS (PyArg_UnpackTuple(args,"getval", 0, 1,&use_pos)) return NULL;
@@ -156,7 +156,7 @@ PyDoc_STRVAR(IO_read__doc__,
 
 static int
 IO_cread(PyObject *self, char **output, Py_ssize_t  n) {
-        int l;
+        Py_ssize_t l;
 
         UNLESS (IO__opencheck(IOOOBJECT(self))) return -1;
         l = ((IOobject*)self)->string_size - ((IOobject*)self)->pos;  
@@ -279,7 +279,7 @@ IO_tell(IOobject *self, PyObject *unused) {
 
         UNLESS (IO__opencheck(self)) return NULL;
 
-        return PyInt_FromLong(self->pos);
+        return PyInt_FromSsize_t(self->pos);
 }
 
 PyDoc_STRVAR(IO_truncate__doc__,

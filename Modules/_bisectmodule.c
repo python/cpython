@@ -6,10 +6,10 @@ Converted to C by Dmitry Vasiliev (dima at hlabs.spb.ru).
 #include "Python.h"
 
 static int
-internal_bisect_right(PyObject *list, PyObject *item, int lo, int hi)
+internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi)
 {
 	PyObject *litem;
-	int mid, res;
+	Py_ssize_t mid, res;
 
 	if (hi == -1) {
 		hi = PySequence_Size(list);

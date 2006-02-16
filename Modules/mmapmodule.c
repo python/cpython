@@ -220,11 +220,11 @@ static PyObject *
 mmap_read_method(mmap_object *self,
 		 PyObject *args)
 {
-	long num_bytes;
+	Py_ssize_t num_bytes;
 	PyObject *result;
 
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple(args, "l:read", &num_bytes))
+	if (!PyArg_ParseTuple(args, "n:read", &num_bytes))
 		return(NULL);
 
 	/* silently 'adjust' out-of-range requests */
@@ -240,7 +240,7 @@ static PyObject *
 mmap_find_method(mmap_object *self,
 		 PyObject *args)
 {
-	long start = self->pos;
+	Py_ssize_t start = self->pos;
 	char *needle;
 	int len;
 
@@ -468,10 +468,10 @@ mmap_tell_method(mmap_object *self, PyObject *args)
 static PyObject *
 mmap_flush_method(mmap_object *self, PyObject *args)
 {
-	unsigned long offset = 0;
-	unsigned long size = self->size;
+	Py_ssize_t offset = 0;
+	Py_ssize_t size = self->size;
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple (args, "|kk:flush", &offset, &size)) {
+	if (!PyArg_ParseTuple (args, "|nn:flush", &offset, &size)) {
 		return NULL;
 	} else if ((offset + size) > self->size) {
 		PyErr_SetString (PyExc_ValueError,
@@ -1092,8 +1092,8 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	m_obj->map_handle = CreateFileMapping (m_obj->file_handle,
 					       NULL,
 					       flProtect,
-					       0,
-					       m_obj->size,
+					       (DWORD)(m_obj->size >> 32),
+					       (DWORD)(m_obj->size & 0xFFFFFFFF),
 					       m_obj->tagname);
 	if (m_obj->map_handle != NULL) {
 		m_obj->data = (char *) MapViewOfFile (m_obj->map_handle,

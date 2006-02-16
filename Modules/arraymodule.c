@@ -688,11 +688,11 @@ array_repeat(arrayobject *a, Py_ssize_t n)
 }
 
 static int
-array_ass_slice(arrayobject *a, int ilow, int ihigh, PyObject *v)
+array_ass_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
 {
 	char *item;
-	int n; /* Size of replacement array */
-	int d; /* Change in size */
+	Py_ssize_t n; /* Size of replacement array */
+	Py_ssize_t d; /* Change in size */
 #define b ((arrayobject *)v)
 	if (v == NULL)
 		n = 0;
@@ -907,10 +907,7 @@ array_count(arrayobject *self, PyObject *v)
 		else if (cmp < 0)
 			return NULL;
 	}
-	if (i < LONG_MAX)
-	     return PyInt_FromLong((long)count);
-	else
-	     return PyLong_FromLong(count);
+	return PyInt_FromSsize_t(count);
 }
 
 PyDoc_STRVAR(count_doc,
@@ -987,9 +984,9 @@ Remove the first occurence of x in the array.");
 static PyObject *
 array_pop(arrayobject *self, PyObject *args)
 {
-	int i = -1;
+	Py_ssize_t i = -1;
 	PyObject *v;
-	if (!PyArg_ParseTuple(args, "|i:pop", &i))
+	if (!PyArg_ParseTuple(args, "|n:pop", &i))
 		return NULL;
 	if (self->ob_size == 0) {
 		/* Special-case most common failure cause */
@@ -1196,7 +1193,7 @@ static PyObject *
 array_fromfile(arrayobject *self, PyObject *args)
 {
 	PyObject *f;
-	int n;
+	Py_ssize_t n;
 	FILE *fp;
         if (!PyArg_ParseTuple(args, "Oi:fromfile", &f, &n))
 		return NULL;
@@ -1207,9 +1204,9 @@ array_fromfile(arrayobject *self, PyObject *args)
 	}
 	if (n > 0) {
 		char *item = self->ob_item;
-		int itemsize = self->ob_descr->itemsize;
+		Py_ssize_t itemsize = self->ob_descr->itemsize;
 		size_t nread;
-		int newlength;
+		Py_ssize_t newlength;
 		size_t newbytes;
 		/* Be careful here about overflow */
 		if ((newlength = self->ob_size + n) <= 0 ||
@@ -1577,13 +1574,13 @@ static PyObject*
 array_subscr(arrayobject* self, PyObject* item)
 {
 	if (PyInt_Check(item)) {
-		long i = PyInt_AS_LONG(item);
+		Py_ssize_t i = PyInt_AS_LONG(item);
 		if (i < 0)
 			i += self->ob_size;
 		return array_item(self, i);
 	}
 	else if (PyLong_Check(item)) {
-		long i = PyLong_AsLong(item);
+		Py_ssize_t i = PyInt_AsSsize_t(item);
 		if (i == -1 && PyErr_Occurred())
 			return NULL;
 		if (i < 0)
@@ -1631,13 +1628,13 @@ static int
 array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
 {
 	if (PyInt_Check(item)) {
-		long i = PyInt_AS_LONG(item);
+		Py_ssize_t i = PyInt_AS_LONG(item);
 		if (i < 0)
 			i += self->ob_size;
 		return array_ass_item(self, i, value);
 	}
 	else if (PyLong_Check(item)) {
-		long i = PyLong_AsLong(item);
+		Py_ssize_t i = PyInt_AsSsize_t(item);
 		if (i == -1 && PyErr_Occurred())
 			return -1;
 		if (i < 0)

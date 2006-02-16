@@ -9,10 +9,11 @@ annotated by François Pinard, and converted to C by Raymond Hettinger.
 #include "Python.h"
 
 static int
-_siftdown(PyListObject *heap, int startpos, int pos)
+_siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 {
 	PyObject *newitem, *parent;
-	int cmp, parentpos;
+	int cmp;
+	Py_ssize_t parentpos;
 
 	assert(PyList_Check(heap));
 	if (pos >= PyList_GET_SIZE(heap)) {
@@ -45,9 +46,9 @@ _siftdown(PyListObject *heap, int startpos, int pos)
 }
 
 static int
-_siftup(PyListObject *heap, int pos)
+_siftup(PyListObject *heap, Py_ssize_t pos)
 {
-	int startpos, endpos, childpos, rightpos;
+	Py_ssize_t startpos, endpos, childpos, rightpos;
 	int cmp;
 	PyObject *newitem, *tmp;
 
@@ -123,7 +124,7 @@ static PyObject *
 heappop(PyObject *self, PyObject *heap)
 {
 	PyObject *lastelt, *returnitem;
-	int n;
+	Py_ssize_t n;
 
 	if (!PyList_Check(heap)) {
 		PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
@@ -197,7 +198,7 @@ this routine unless written as part of a conditional replacement:\n\n\
 static PyObject *
 heapify(PyObject *self, PyObject *heap)
 {
-	int i, n;
+	Py_ssize_t i, n;
 
 	if (!PyList_Check(heap)) {
 		PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
@@ -300,10 +301,11 @@ PyDoc_STRVAR(nlargest_doc,
 Equivalent to:  sorted(iterable, reverse=True)[:n]\n");
 
 static int
-_siftdownmax(PyListObject *heap, int startpos, int pos)
+_siftdownmax(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 {
 	PyObject *newitem, *parent;
-	int cmp, parentpos;
+	int cmp;
+	Py_ssize_t parentpos;
 
 	assert(PyList_Check(heap));
 	if (pos >= PyList_GET_SIZE(heap)) {
@@ -336,9 +338,9 @@ _siftdownmax(PyListObject *heap, int startpos, int pos)
 }
 
 static int
-_siftupmax(PyListObject *heap, int pos)
+_siftupmax(PyListObject *heap, Py_ssize_t pos)
 {
-	int startpos, endpos, childpos, rightpos;
+	Py_ssize_t startpos, endpos, childpos, rightpos;
 	int cmp;
 	PyObject *newitem, *tmp;
 
@@ -389,7 +391,7 @@ static PyObject *
 nsmallest(PyObject *self, PyObject *args)
 {
 	PyObject *heap=NULL, *elem, *iterable, *los, *it, *oldelem;
-	int i, n;
+	Py_ssize_t i, n;
 
 	if (!PyArg_ParseTuple(args, "iO:nsmallest", &n, &iterable))
 		return NULL;
