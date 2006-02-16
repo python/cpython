@@ -1195,7 +1195,7 @@ array_fromfile(arrayobject *self, PyObject *args)
 	PyObject *f;
 	Py_ssize_t n;
 	FILE *fp;
-        if (!PyArg_ParseTuple(args, "Oi:fromfile", &f, &n))
+        if (!PyArg_ParseTuple(args, "On:fromfile", &f, &n))
 		return NULL;
 	fp = PyFile_AsFile(f);
 	if (fp == NULL) {
