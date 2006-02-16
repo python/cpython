@@ -4853,7 +4853,7 @@ unicode_center(PyUnicodeObject *self, PyObject *args)
     Py_ssize_t width;
     Py_UNICODE fillchar = ' ';
 
-    if (!PyArg_ParseTuple(args, "i|O&:center", &width, convert_uc, &fillchar))
+    if (!PyArg_ParseTuple(args, "n|O&:center", &width, convert_uc, &fillchar))
         return NULL;
 
     if (self->length >= width && PyUnicode_CheckExact(self)) {
