@@ -1284,7 +1284,7 @@ _PyObject_GC_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
 }
 
 PyVarObject *
-_PyObject_GC_Resize(PyVarObject *op, int nitems)
+_PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
 	const size_t basicsize = _PyObject_VAR_SIZE(op->ob_type, nitems);
 	PyGC_Head *g = AS_GC(op);
