@@ -1134,7 +1134,7 @@ struct_pack(PyObject *self, PyObject *args)
 				if (n > 255)
 					n = 255;
 				/* store the length byte */
-				*res++ = Py_SAFE_DOWNCAST(n, Py_ssize_t, char);
+				*res++ = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
 				res += num;
 				break;
 			}
