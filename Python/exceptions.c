@@ -1238,7 +1238,6 @@ UnicodeEncodeError__str__(PyObject *self, PyObject *arg)
     Py_ssize_t start;
     Py_ssize_t end;
     PyObject *reasonObj = NULL;
-    char buffer[1000];
     PyObject *result = NULL;
 
     self = arg;
@@ -1260,32 +1259,30 @@ UnicodeEncodeError__str__(PyObject *self, PyObject *arg)
 
     if (end==start+1) {
 	int badchar = (int)PyUnicode_AS_UNICODE(objectObj)[start];
-	char *format;
+	char badchar_str[20];
 	if (badchar <= 0xff)
-	   format = "'%.400s' codec can't encode character u'\\x%02x' in position %d: %.400s";
+	    PyOS_snprintf(badchar_str, sizeof(badchar_str), "x%02x", badchar);
 	else if (badchar <= 0xffff)
-	   format = "'%.400s' codec can't encode character u'\\u%04x' in position %d: %.400s";
+	    PyOS_snprintf(badchar_str, sizeof(badchar_str), "u%04x", badchar);
 	else
-	   format = "'%.400s' codec can't encode character u'\\U%08x' in position %d: %.400s";
-	PyOS_snprintf(buffer, sizeof(buffer),
-	    format,
+	    PyOS_snprintf(badchar_str, sizeof(badchar_str), "U%08x", badchar);
+	result = PyString_FromFormat(
+	    "'%.400s' codec can't encode character u'\\%s' in position %zd: %.400s",
 	    PyString_AS_STRING(encodingObj),
-	    badchar,
+	    badchar_str,
 	    start,
 	    PyString_AS_STRING(reasonObj)
 	);
     }
     else {
-	/* XXX %zd? */
-	PyOS_snprintf(buffer, sizeof(buffer),
-	    "'%.400s' codec can't encode characters in position %d-%d: %.400s",
+	result = PyString_FromFormat(
+	    "'%.400s' codec can't encode characters in position %zd-%zd: %.400s",
 	    PyString_AS_STRING(encodingObj),
-	    (int)start,
-	    (int)(end-1),
+	    start,
+	    (end-1),
 	    PyString_AS_STRING(reasonObj)
 	);
     }
-    result = PyString_FromString(buffer);
 
 error:
     Py_XDECREF(reasonObj);
@@ -1324,7 +1321,6 @@ UnicodeDecodeError__str__(PyObject *self, PyObject *arg)
     Py_ssize_t start;
     Py_ssize_t end;
     PyObject *reasonObj = NULL;
-    char buffer[1000];
     PyObject *result = NULL;
 
     self = arg;
@@ -1345,26 +1341,28 @@ UnicodeDecodeError__str__(PyObject *self, PyObject *arg)
 	goto error;
 
     if (end==start+1) {
-	/* XXX %zd? */
-	PyOS_snprintf(buffer, sizeof(buffer),
-	    "'%.400s' codec can't decode byte 0x%02x in position %d: %.400s",
+	/* FromFormat does not support %02x, so format that separately */
+	char byte[4];
+	PyOS_snprintf(byte, sizeof(byte), "%02x", 
+		      ((int)PyString_AS_STRING(objectObj)[start])&0xff);
+	result = PyString_FromFormat(				     
+	    "'%.400s' codec can't decode byte 0x%s in position %zd: %.400s",
 	    PyString_AS_STRING(encodingObj),
-	    ((int)PyString_AS_STRING(objectObj)[start])&0xff,
-	    (int)start,
+	    byte,
+	    start,
 	    PyString_AS_STRING(reasonObj)
 	);
     }
     else {
-	/* XXX %zd? */
-	PyOS_snprintf(buffer, sizeof(buffer),
-	    "'%.400s' codec can't decode bytes in position %d-%d: %.400s",
+	result = PyString_FromFormat(
+	    "'%.400s' codec can't decode bytes in position %zd-%zd: %.400s",
 	    PyString_AS_STRING(encodingObj),
-	    (int)start,
-	    (int)(end-1),
+	    start,
+	    (end-1),
 	    PyString_AS_STRING(reasonObj)
 	);
     }
-    result = PyString_FromString(buffer);
+
 
 error:
     Py_XDECREF(reasonObj);
@@ -1442,7 +1440,6 @@ UnicodeTranslateError__str__(PyObject *self, PyObject *arg)
     Py_ssize_t start;
     Py_ssize_t end;
     PyObject *reasonObj = NULL;
-    char buffer[1000];
     PyObject *result = NULL;
 
     self = arg;
@@ -1461,31 +1458,28 @@ UnicodeTranslateError__str__(PyObject *self, PyObject *arg)
 
     if (end==start+1) {
 	int badchar = (int)PyUnicode_AS_UNICODE(objectObj)[start];
-	char *format;
-	/* XXX %zd? */
+	char badchar_str[20];
 	if (badchar <= 0xff)
-	   format = "can't translate character u'\\x%02x' in position %d: %.400s";
+	    PyOS_snprintf(badchar_str, sizeof(badchar_str), "x%02x", badchar);
 	else if (badchar <= 0xffff)
-	   format = "can't translate character u'\\u%04x' in position %d: %.400s";
+	    PyOS_snprintf(badchar_str, sizeof(badchar_str), "u%04x", badchar);
 	else
-	   format = "can't translate character u'\\U%08x' in position %d: %.400s";
-	PyOS_snprintf(buffer, sizeof(buffer),
-	    format,
-	    badchar,
-	    (int)start,
+	    PyOS_snprintf(badchar_str, sizeof(badchar_str), "U%08x", badchar);
+	result = PyString_FromFormat(
+            "can't translate character u'\\%s' in position %zd: %.400s",
+	    badchar_str,
+	    start,
 	    PyString_AS_STRING(reasonObj)
 	);
     }
     else {
-	/* XXX %zd? */
-	PyOS_snprintf(buffer, sizeof(buffer),
-	    "can't translate characters in position %d-%d: %.400s",
-	    (int)start,
-	    (int)(end-1),
+	result = PyString_FromFormat(
+	    "can't translate characters in position %zd-%zd: %.400s",
+	    start,
+	    (end-1),
 	    PyString_AS_STRING(reasonObj)
 	);
     }
-    result = PyString_FromString(buffer);
 
 error:
     Py_XDECREF(reasonObj);
