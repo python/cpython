@@ -3575,9 +3575,9 @@ _PyString_Resize(PyObject **pv, Py_ssize_t newsize)
 /* Helpers for formatstring */
 
 static PyObject *
-getnextarg(PyObject *args, int arglen, int *p_argidx)
+getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
 {
-	int argidx = *p_argidx;
+	Py_ssize_t argidx = *p_argidx;
 	if (argidx < arglen) {
 		(*p_argidx)++;
 		if (arglen < 0)
