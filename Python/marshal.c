@@ -181,9 +181,9 @@ w_object(PyObject *v, WFILE *p)
 		else {
 			char buf[256]; /* Plenty to format any double */
 			PyFloat_AsReprString(buf, (PyFloatObject *)v);
-			n = (int)strlen(buf);
+			n = strlen(buf);
 			w_byte(TYPE_FLOAT, p);
-			w_byte(n, p);
+			w_byte((int)n, p);
 			w_string(buf, n, p);
 		}
 	}
