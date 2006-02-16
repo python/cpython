@@ -82,7 +82,7 @@ iter_len(seqiterobject *it)
 			return NULL;
 		len = seqsize - it->it_index;
 		if (len >= 0)
-			return PyInt_FromLong(len);
+			return PyInt_FromSsize_t(len);
 	}
 	return PyInt_FromLong(0);
 }

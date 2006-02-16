@@ -278,7 +278,8 @@ tuplehash(PyTupleObject *v)
 		if (y == -1)
 			return -1;
 		x = (x ^ y) * mult;
-		mult += 82520L + len + len;
+		/* the cast might truncate len; that doesn't change hash stability */
+		mult += (long)(82520L + len + len);
 	}
 	x += 97531L;
 	if (x == -1)
@@ -850,10 +851,10 @@ tupleiter_next(tupleiterobject *it)
 static PyObject *
 tupleiter_len(tupleiterobject *it)
 {
-	long len = 0;
+	Py_ssize_t len = 0;
 	if (it->it_seq)
 		len = PyTuple_GET_SIZE(it->it_seq) - it->it_index;
-	return PyInt_FromLong(len);
+	return PyInt_FromSsize_t(len);
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");

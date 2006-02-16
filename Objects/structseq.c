@@ -247,7 +247,7 @@ structseq_reduce(PyStructSequence* self)
 	PyObject* tup;
 	PyObject* dict;
 	PyObject* result;
-	long n_fields, n_visible_fields, n_unnamed_fields;
+	Py_ssize_t n_fields, n_visible_fields, n_unnamed_fields;
 	int i;
 	
 	n_fields = REAL_SIZE(self);

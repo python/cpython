@@ -65,7 +65,7 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 	PyCFunctionObject* f = (PyCFunctionObject*)func;
 	PyCFunction meth = PyCFunction_GET_FUNCTION(func);
 	PyObject *self = PyCFunction_GET_SELF(func);
-	long size;
+	Py_ssize_t size;
 
 	switch (PyCFunction_GET_FLAGS(func) & ~(METH_CLASS | METH_STATIC | METH_COEXIST)) {
 	case METH_VARARGS:
@@ -81,7 +81,7 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 			if (size == 0)
 				return (*meth)(self, NULL);
 			PyErr_Format(PyExc_TypeError,
-			    "%.200s() takes no arguments (%ld given)",
+			    "%.200s() takes no arguments (%zd given)",
 			    f->m_ml->ml_name, size);
 			return NULL;
 		}
@@ -92,7 +92,7 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 			if (size == 1)
 				return (*meth)(self, PyTuple_GET_ITEM(arg, 0));
 			PyErr_Format(PyExc_TypeError,
-			    "%.200s() takes exactly one argument (%ld given)",
+			    "%.200s() takes exactly one argument (%zd given)",
 			    f->m_ml->ml_name, size);
 			return NULL;
 		}

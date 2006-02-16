@@ -1170,7 +1170,7 @@ PySequence_Repeat(PyObject *o, Py_ssize_t count)
 	   to nb_multiply if o appears to be a sequence. */
 	if (PySequence_Check(o)) {
 		PyObject *n, *result;
-		n = PyInt_FromLong(count);
+		n = PyInt_FromSsize_t(count);
 		if (n == NULL)
 			return NULL;
 		result = binary_op1(o, n, NB_SLOT(nb_multiply));
@@ -1222,7 +1222,7 @@ PySequence_InPlaceRepeat(PyObject *o, Py_ssize_t count)
 
 	if (PySequence_Check(o)) {
 		PyObject *n, *result;
-		n = PyInt_FromLong(count);
+		n = PyInt_FromSsize_t(count);
 		if (n == NULL)
 			return NULL;
 		result = binary_iop1(o, n, NB_SLOT(nb_inplace_multiply),
