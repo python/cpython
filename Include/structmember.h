@@ -37,7 +37,7 @@ typedef struct PyMemberDef {
 	/* Current version, use this */
 	char *name;
 	int type;
-	int offset;
+	Py_ssize_t offset;
 	int flags;
 	char *doc;
 } PyMemberDef;
