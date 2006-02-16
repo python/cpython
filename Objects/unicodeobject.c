@@ -6601,17 +6601,21 @@ strtounicode(Py_UNICODE *buffer, const char *charbuffer)
 static int
 doubletounicode(Py_UNICODE *buffer, size_t len, const char *format, double x)
 {
+    Py_ssize_t result;
+
     PyOS_ascii_formatd((char *)buffer, len, format, x);
-    return Py_SAFE_DOWNCAST(strtounicode(buffer, (char *)buffer),
-                            Py_ssize_t, int);
+    result = strtounicode(buffer, (char *)buffer);
+    return Py_SAFE_DOWNCAST(result, Py_ssize_t, int);
 }
 
 static int
 longtounicode(Py_UNICODE *buffer, size_t len, const char *format, long x)
 {
+    Py_ssize_t result;
+
     PyOS_snprintf((char *)buffer, len, format, x);
-    return Py_SAFE_DOWNCAST(strtounicode(buffer, (char *)buffer),
-                            Py_ssize_t, int);
+    result = strtounicode(buffer, (char *)buffer);
+    return Py_SAFE_DOWNCAST(result, Py_ssize_t, int);
 }
 
 /* XXX To save some code duplication, formatfloat/long/int could have been
