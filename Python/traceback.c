@@ -153,7 +153,8 @@ tb_displayline(PyObject *f, char *filename, int lineno, char *name)
 			tail++;
 		path = PySys_GetObject("path");
 		if (path != NULL && PyList_Check(path)) {
-			int npath = PyList_Size(path);
+			Py_ssize_t _npath = PyList_Size(path);
+			int npath = Py_SAFE_DOWNCAST(_npath, Py_ssize_t, int);
 			size_t taillen = strlen(tail);
 			char namebuf[MAXPATHLEN+1];
 			for (i = 0; i < npath; i++) {

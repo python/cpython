@@ -193,8 +193,8 @@ static PyObject *
 builtin_filter(PyObject *self, PyObject *args)
 {
 	PyObject *func, *seq, *result, *it, *arg;
-	int len;   /* guess for result list size */
-	register int j;
+	Py_ssize_t len;   /* guess for result list size */
+	register Py_ssize_t j;
 
 	if (!PyArg_UnpackTuple(args, "filter", 2, 2, &func, &seq))
 		return NULL;
@@ -860,7 +860,7 @@ builtin_map(PyObject *self, PyObject *args)
 	len = 0;
 	for (i = 0, sqp = seqs; i < n; ++i, ++sqp) {
 		PyObject *curseq;
-		int curlen;
+		Py_ssize_t curlen;
 
 		/* Get iterator. */
 		curseq = PyTuple_GetItem(args, i+1);
@@ -1338,7 +1338,7 @@ static PyObject *
 builtin_ord(PyObject *self, PyObject* obj)
 {
 	long ord;
-	int size;
+	Py_ssize_t size;
 
 	if (PyString_Check(obj)) {
 		size = PyString_GET_SIZE(obj);
@@ -1363,7 +1363,7 @@ builtin_ord(PyObject *self, PyObject* obj)
 
 	PyErr_Format(PyExc_TypeError,
 		     "ord() expected a character, "
-		     "but string of length %d found",
+		     "but string of length %zd found",
 		     size);
 	return NULL;
 }
@@ -2094,10 +2094,10 @@ static PyObject*
 builtin_zip(PyObject *self, PyObject *args)
 {
 	PyObject *ret;
-	const int itemsize = PySequence_Length(args);
-	int i;
+	const Py_ssize_t itemsize = PySequence_Length(args);
+	Py_ssize_t i;
 	PyObject *itlist;  /* tuple of iterators */
-	int len;	   /* guess at result length */
+	Py_ssize_t len;	   /* guess at result length */
 
 	if (itemsize == 0)
 		return PyList_New(0);
@@ -2111,7 +2111,7 @@ builtin_zip(PyObject *self, PyObject *args)
 	len = -1;	/* unknown */
 	for (i = 0; i < itemsize; ++i) {
 		PyObject *item = PyTuple_GET_ITEM(args, i);
-		int thislen = _PyObject_LengthHint(item);
+		Py_ssize_t thislen = _PyObject_LengthHint(item);
 		if (thislen < 0) {
 			if (!PyErr_ExceptionMatches(PyExc_TypeError)  &&
 			    !PyErr_ExceptionMatches(PyExc_AttributeError)) {
@@ -2460,7 +2460,7 @@ filterstring(PyObject *func, PyObject *strobj)
 			Py_DECREF(good);
 		}
 		if (ok) {
-			int reslen;
+			Py_ssize_t reslen;
 			if (!PyString_Check(item)) {
 				PyErr_SetString(PyExc_TypeError, "can't filter str to str:"
 					" __getitem__ returned different type");
@@ -2473,7 +2473,7 @@ filterstring(PyObject *func, PyObject *strobj)
 					PyString_AS_STRING(item)[0];
 			} else {
 				/* do we need more space? */
-				int need = j + reslen + len-i-1;
+				Py_ssize_t need = j + reslen + len-i-1;
 				if (need > outlen) {
 					/* overallocate, to avoid reallocations */
 					if (need<2*outlen)
@@ -2513,8 +2513,8 @@ filterunicode(PyObject *func, PyObject *strobj)
 {
 	PyObject *result;
 	register int i, j;
-	int len = PyUnicode_GetSize(strobj);
-	int outlen = len;
+	Py_ssize_t len = PyUnicode_GetSize(strobj);
+	Py_ssize_t outlen = len;
 
 	if (func == Py_None) {
 		/* If it's a real string we can return the original,
@@ -2554,7 +2554,7 @@ filterunicode(PyObject *func, PyObject *strobj)
 			Py_DECREF(good);
 		}
 		if (ok) {
-			int reslen;
+			Py_ssize_t reslen;
 			if (!PyUnicode_Check(item)) {
 				PyErr_SetString(PyExc_TypeError,
 				"can't filter unicode to unicode:"
@@ -2568,7 +2568,7 @@ filterunicode(PyObject *func, PyObject *strobj)
 					PyUnicode_AS_UNICODE(item)[0];
 			else {
 				/* do we need more space? */
-				int need = j + reslen + len - i - 1;
+				Py_ssize_t need = j + reslen + len - i - 1;
 				if (need > outlen) {
 					/* overallocate,
 					   to avoid reallocations */

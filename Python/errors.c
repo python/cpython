@@ -83,7 +83,7 @@ PyErr_GivenExceptionMatches(PyObject *err, PyObject *exc)
 		return 0;
 	}
 	if (PyTuple_Check(exc)) {
-		int i, n;
+		Py_ssize_t i, n;
 		n = PyTuple_Size(exc);
 		for (i = 0; i < n; i++) {
 			/* Test recursively */
