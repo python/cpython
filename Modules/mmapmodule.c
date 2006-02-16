@@ -980,6 +980,8 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	mmap_object *m_obj;
 	PyObject *map_size_obj = NULL;
 	int map_size;
+	DWORD size_hi;	/* upper 32 bits of m_obj->size */
+	DWORD size_lo;	/* lower 32 bits of m_obj->size */
 	char *tagname = "";
 	DWORD dwErr = 0;
 	int fileno;
@@ -1089,11 +1091,23 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 		m_obj->tagname = NULL;
 
 	m_obj->access = (access_mode)access;
+	/* DWORD is a 4-byte int.  If we're on a box where size_t consumes
+	 * more then 4 bytes, we need to break it apart.  Else (size_t
+	 * consumes 4 bytes), C doesn't define what happens if we shift
+	 * right by 32, so we need different code.
+	 */
+#if SIZEOF_SIZE_T > 4
+	size_hi = (DWORD)(m_obj->size >> 32);
+	size_lo = (DWORD)(m_obj->size & 0xFFFFFFFF);
+#else
+	size_hi = 0;
+	size_lo = (DWORD)m_obj->size;
+#endif
 	m_obj->map_handle = CreateFileMapping (m_obj->file_handle,
 					       NULL,
 					       flProtect,
-					       (DWORD)(m_obj->size >> 32),
-					       (DWORD)(m_obj->size & 0xFFFFFFFF),
+					       size_hi,
+					       size_lo,
 					       m_obj->tagname);
 	if (m_obj->map_handle != NULL) {
 		m_obj->data = (char *) MapViewOfFile (m_obj->map_handle,
