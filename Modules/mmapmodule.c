@@ -122,7 +122,7 @@ mmap_close_method(mmap_object *self, PyObject *args)
 		return NULL;
 #ifdef MS_WINDOWS
 	/* For each resource we maintain, we need to check
-	   the value is valid, and if so, free the resource 
+	   the value is valid, and if so, free the resource
 	   and set the member value to an invalid value so
 	   the dealloc does not attempt to resource clearing
 	   again.
@@ -232,7 +232,7 @@ mmap_read_method(mmap_object *self,
 		num_bytes -= (self->pos+num_bytes) - self->size;
 	}
 	result = Py_BuildValue("s#", self->data+self->pos, num_bytes);
-	self->pos += num_bytes;	 
+	self->pos += num_bytes;
 	return (result);
 }
 
@@ -272,21 +272,21 @@ mmap_find_method(mmap_object *self,
 	}
 }
 
-static int 
+static int
 is_writeable(mmap_object *self)
 {
 	if (self->access != ACCESS_READ)
-		return 1; 
+		return 1;
 	PyErr_Format(PyExc_TypeError, "mmap can't modify a readonly memory map.");
 	return 0;
 }
 
-static int 
+static int
 is_resizeable(mmap_object *self)
 {
 	if ((self->access == ACCESS_WRITE) || (self->access == ACCESS_DEFAULT))
-		return 1; 
-	PyErr_Format(PyExc_TypeError, 
+		return 1;
+	PyErr_Format(PyExc_TypeError,
 		     "mmap can't resize a readonly or copy-on-write memory map.");
 	return 0;
 }
@@ -333,7 +333,7 @@ mmap_write_byte_method(mmap_object *self,
 	Py_INCREF (Py_None);
 	return (Py_None);
 }
- 
+
 static PyObject *
 mmap_size_method(mmap_object *self,
 		 PyObject *args)
@@ -379,11 +379,11 @@ mmap_resize_method(mmap_object *self,
 {
 	unsigned long new_size;
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple (args, "k:resize", &new_size) || 
+	if (!PyArg_ParseTuple (args, "k:resize", &new_size) ||
 	    !is_resizeable(self)) {
 		return NULL;
 #ifdef MS_WINDOWS
-	} else { 
+	} else {
 		DWORD dwErrCode = 0;
 		/* First, unmap the file view */
 		UnmapViewOfFile (self->data);
@@ -423,7 +423,7 @@ mmap_resize_method(mmap_object *self,
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
-#ifndef HAVE_MREMAP 
+#ifndef HAVE_MREMAP
 	} else {
 		PyErr_SetString(PyExc_SystemError,
 				"mmap: resizing not available--no mremap()");
@@ -442,7 +442,7 @@ mmap_resize_method(mmap_object *self,
 #else
 		newmap = mremap(self->data, self->size, new_size, 0);
 #endif
-		if (newmap == (void *)-1) 
+		if (newmap == (void *)-1)
 		{
 			PyErr_SetFromErrno(mmap_module_error);
 			return NULL;
@@ -491,8 +491,8 @@ mmap_flush_method(mmap_object *self, PyObject *args)
 			PyErr_SetFromErrno(mmap_module_error);
 			return NULL;
 		}
-		return Py_BuildValue ("l", (long) 0);	
-#endif /* UNIX */   
+		return Py_BuildValue ("l", (long) 0);
+#endif /* UNIX */
 	}
 }
 
@@ -598,7 +598,7 @@ mmap_buffer_getreadbuf(mmap_object *self, Py_ssize_t index, const void **ptr)
 
 static Py_ssize_t
 mmap_buffer_getwritebuf(mmap_object *self, Py_ssize_t index, const void **ptr)
-{  
+{
 	CHECK_VALID(-1);
 	if ( index != 0 ) {
 		PyErr_SetString(PyExc_SystemError,
@@ -615,7 +615,7 @@ static Py_ssize_t
 mmap_buffer_getsegcount(mmap_object *self, Py_ssize_t *lenp)
 {
 	CHECK_VALID(-1);
-	if (lenp) 
+	if (lenp)
 		*lenp = self->size;
 	return 1;
 }
@@ -670,7 +670,7 @@ mmap_slice(mmap_object *self, Py_ssize_t ilow, Py_ssize_t ihigh)
 		ihigh = ilow;
 	else if ((size_t)ihigh > self->size)
 		ihigh = self->size;
-    
+
 	return PyString_FromStringAndSize(self->data + ilow, ihigh-ilow);
 }
 
@@ -708,19 +708,19 @@ mmap_ass_slice(mmap_object *self, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v
 		ihigh = ilow;
 	else if ((size_t)ihigh > self->size)
 		ihigh = self->size;
-    
+
 	if (v == NULL) {
 		PyErr_SetString(PyExc_TypeError,
 				"mmap object doesn't support slice deletion");
 		return -1;
 	}
 	if (! (PyString_Check(v)) ) {
-		PyErr_SetString(PyExc_IndexError, 
+		PyErr_SetString(PyExc_IndexError,
 				"mmap slice assignment must be a string");
 		return -1;
 	}
 	if ( PyString_Size(v) != (ihigh - ilow) ) {
-		PyErr_SetString(PyExc_IndexError, 
+		PyErr_SetString(PyExc_IndexError,
 				"mmap slice assignment is wrong size");
 		return -1;
 	}
@@ -735,7 +735,7 @@ static int
 mmap_ass_item(mmap_object *self, Py_ssize_t i, PyObject *v)
 {
 	const char *buf;
- 
+
 	CHECK_VALID(-1);
 	if (i < 0 || (size_t)i >= self->size) {
 		PyErr_SetString(PyExc_IndexError, "mmap index out of range");
@@ -747,7 +747,7 @@ mmap_ass_item(mmap_object *self, Py_ssize_t i, PyObject *v)
 		return -1;
 	}
 	if (! (PyString_Check(v) && PyString_Size(v)==1) ) {
-		PyErr_SetString(PyExc_IndexError, 
+		PyErr_SetString(PyExc_IndexError,
 				"mmap assignment must be single-character string");
 		return -1;
 	}
@@ -857,7 +857,7 @@ _GetMapSize(PyObject *o)
 	return -1;
 }
 
-#ifdef UNIX 
+#ifdef UNIX
 static PyObject *
 new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 {
@@ -870,11 +870,11 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	int fd, flags = MAP_SHARED, prot = PROT_WRITE | PROT_READ;
 	int devzero = -1;
 	int access = (int)ACCESS_DEFAULT;
-	static const char *keywords[] = {"fileno", "length", 
-                                         "flags", "prot", 
+	static const char *keywords[] = {"fileno", "length",
+                                         "flags", "prot",
                                          "access", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iO|iii", keywords, 
+	if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iO|iii", keywords,
 					 &fd, &map_size_obj, &flags, &prot,
                                          &access))
 		return NULL;
@@ -882,9 +882,9 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	if (map_size < 0)
 		return NULL;
 
-	if ((access != (int)ACCESS_DEFAULT) && 
+	if ((access != (int)ACCESS_DEFAULT) &&
 	    ((flags != MAP_SHARED) || (prot != (PROT_WRITE | PROT_READ))))
-		return PyErr_Format(PyExc_ValueError, 
+		return PyErr_Format(PyExc_ValueError,
 				    "mmap can't specify both access and flags, prot.");
 	switch ((access_mode)access) {
 	case ACCESS_READ:
@@ -899,11 +899,11 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 		flags = MAP_PRIVATE;
 		prot = PROT_READ | PROT_WRITE;
 		break;
-	case ACCESS_DEFAULT: 
+	case ACCESS_DEFAULT:
 		/* use the specified or default values of flags and prot */
 		break;
 	default:
-		return PyErr_Format(PyExc_ValueError, 
+		return PyErr_Format(PyExc_ValueError,
 				    "mmap invalid access parameter.");
 	}
 
@@ -916,7 +916,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 		if (map_size == 0) {
 			map_size = (int)st.st_size;
 		} else if ((size_t)map_size > st.st_size) {
-			PyErr_SetString(PyExc_ValueError, 
+			PyErr_SetString(PyExc_ValueError,
 					"mmap length is greater than file size");
 			return NULL;
 		}
@@ -954,7 +954,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 		}
 	}
 
-	m_obj->data = mmap(NULL, map_size, 
+	m_obj->data = mmap(NULL, map_size,
 			   prot, flags,
 			   fd, 0);
 
@@ -988,12 +988,12 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	HANDLE fh = 0;
 	int access = (access_mode)ACCESS_DEFAULT;
 	DWORD flProtect, dwDesiredAccess;
-	static const char *keywords[] = { "fileno", "length", 
-                                          "tagname", 
+	static const char *keywords[] = { "fileno", "length",
+                                          "tagname",
                                           "access", NULL };
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iO|zi", keywords,
-					 &fileno, &map_size_obj, 
+					 &fileno, &map_size_obj,
 					 &tagname, &access)) {
 		return NULL;
 	}
@@ -1012,14 +1012,14 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 		dwDesiredAccess = FILE_MAP_COPY;
 		break;
 	default:
-		return PyErr_Format(PyExc_ValueError, 
+		return PyErr_Format(PyExc_ValueError,
 				    "mmap invalid access parameter.");
 	}
 
 	map_size = _GetMapSize(map_size_obj);
 	if (map_size < 0)
 		return NULL;
-	
+
 	/* assume -1 and 0 both mean invalid filedescriptor
 	   to 'anonymously' map memory.
 	   XXX: fileno == 0 is a valid fd, but was accepted prior to 2.5.
@@ -1131,7 +1131,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 
 /* List of functions exported by this module */
 static struct PyMethodDef mmap_functions[] = {
-	{"mmap",	(PyCFunction) new_mmap_object, 
+	{"mmap",	(PyCFunction) new_mmap_object,
 	 METH_VARARGS|METH_KEYWORDS},
 	{NULL,		NULL}	     /* Sentinel */
 };
@@ -1185,10 +1185,10 @@ PyMODINIT_FUNC
 	PyDict_SetItemString (dict, "PAGESIZE",
 			      PyInt_FromLong( (long)my_getpagesize() ) );
 
-	PyDict_SetItemString (dict, "ACCESS_READ",	
+	PyDict_SetItemString (dict, "ACCESS_READ",
 			      PyInt_FromLong(ACCESS_READ));
-	PyDict_SetItemString (dict, "ACCESS_WRITE", 
+	PyDict_SetItemString (dict, "ACCESS_WRITE",
 			      PyInt_FromLong(ACCESS_WRITE));
-	PyDict_SetItemString (dict, "ACCESS_COPY",	
+	PyDict_SetItemString (dict, "ACCESS_COPY",
 			      PyInt_FromLong(ACCESS_COPY));
 }
