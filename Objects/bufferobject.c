@@ -196,7 +196,7 @@ buffer_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	if (!_PyArg_NoKeywords("buffer()", kw))
 		return NULL;
 
-	if (!PyArg_ParseTuple(args, "O|ll:buffer", &ob, &offset, &size))
+	if (!PyArg_ParseTuple(args, "O|nn:buffer", &ob, &offset, &size))
 	    return NULL;
 	return PyBuffer_FromObject(ob, offset, size);
 }
