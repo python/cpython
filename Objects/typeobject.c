@@ -1561,11 +1561,11 @@ valid_identifier(PyObject *s)
 /* Replace Unicode objects in slots.  */
 
 static PyObject *
-_unicode_to_string(PyObject *slots, int nslots)
+_unicode_to_string(PyObject *slots, Py_ssize_t nslots)
 {
 	PyObject *tmp = slots;
 	PyObject *o, *o1;
-	int i;
+	Py_ssize_t i;
 	ssizessizeargfunc copy = slots->ob_type->tp_as_sequence->sq_slice;
 	for (i = 0; i < nslots; i++) {
 		if (PyUnicode_Check(o = PyTuple_GET_ITEM(tmp, i))) {
@@ -2428,7 +2428,7 @@ static int
 same_slots_added(PyTypeObject *a, PyTypeObject *b)
 {
 	PyTypeObject *base = a->tp_base;
-	int size;
+	Py_ssize_t size;
 
 	if (base != b->tp_base)
 		return 0;
@@ -2904,7 +2904,7 @@ add_getset(PyTypeObject *type, PyGetSetDef *gsp)
 static void
 inherit_special(PyTypeObject *type, PyTypeObject *base)
 {
-	int oldsize, newsize;
+	Py_ssize_t oldsize, newsize;
 
 	/* Special flag magic */
 	if (!type->tp_as_buffer && base->tp_as_buffer) {
@@ -3316,7 +3316,8 @@ PyType_Ready(PyTypeObject *type)
 static int
 add_subclass(PyTypeObject *base, PyTypeObject *type)
 {
-	int i;
+	Py_ssize_t i;
+	int result;
 	PyObject *list, *ref, *new;
 
 	list = base->tp_subclasses;
@@ -3334,9 +3335,9 @@ add_subclass(PyTypeObject *base, PyTypeObject *type)
 		if (PyWeakref_GET_OBJECT(ref) == Py_None)
 			return PyList_SetItem(list, i, new);
 	}
-	i = PyList_Append(list, new);
+	result = PyList_Append(list, new);
 	Py_DECREF(new);
-	return i;
+	return result;
 }
 
 static void
@@ -4160,7 +4161,7 @@ slot_sq_item(PyObject *self, Py_ssize_t i)
 				return NULL;
 			}
 		}
-		ival = PyInt_FromLong(i);
+		ival = PyInt_FromSsize_t(i);
 		if (ival != NULL) {
 			args = PyTuple_New(1);
 			if (args != NULL) {

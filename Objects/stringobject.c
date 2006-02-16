@@ -1030,7 +1030,7 @@ string_contains(PyObject *a, PyObject *el)
 	const char *sub = PyString_AS_STRING(el);
 	char *last;
 	Py_ssize_t len_sub = PyString_GET_SIZE(el);
-	int shortsub;
+	Py_ssize_t shortsub;
 	char firstchar, lastchar;
 
 	if (!PyString_CheckExact(el)) {
@@ -2942,11 +2942,11 @@ PyDoc_STRVAR(zfill__doc__,
 static PyObject *
 string_zfill(PyStringObject *self, PyObject *args)
 {
-    long fill;
+    Py_ssize_t fill;
     PyObject *s;
     char *p;
 
-    int width;
+    long width;
     if (!PyArg_ParseTuple(args, "l:zfill", &width))
         return NULL;
 
@@ -3886,7 +3886,7 @@ PyObject *
 PyString_Format(PyObject *format, PyObject *args)
 {
 	char *fmt, *res;
-	int arglen, argidx;
+	Py_ssize_t arglen, argidx;
 	Py_ssize_t reslen, rescnt, fmtcnt;
 	int args_owned = 0;
 	PyObject *result, *orig_args;
@@ -4294,7 +4294,7 @@ PyString_Format(PyObject *format, PyObject *args)
 	/* Fiddle args right (remove the first argidx arguments) */
 	if (PyTuple_Check(orig_args) && argidx > 0) {
 		PyObject *v;
-		int n = PyTuple_GET_SIZE(orig_args) - argidx;
+		Py_ssize_t n = PyTuple_GET_SIZE(orig_args) - argidx;
 		v = PyTuple_New(n);
 		if (v == NULL)
 			goto error;

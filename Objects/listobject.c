@@ -2504,13 +2504,13 @@ static int
 list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 {
 	if (PyInt_Check(item)) {
-		long i = PyInt_AS_LONG(item);
+		Py_ssize_t i = PyInt_AS_LONG(item);
 		if (i < 0)
 			i += PyList_GET_SIZE(self);
 		return list_ass_item(self, i, value);
 	}
 	else if (PyLong_Check(item)) {
-		long i = PyLong_AsLong(item);
+		Py_ssize_t i = PyInt_AsSsize_t(item);
 		if (i == -1 && PyErr_Occurred())
 			return -1;
 		if (i < 0)
@@ -2818,7 +2818,7 @@ PyTypeObject PyListIter_Type = {
 
 typedef struct {
 	PyObject_HEAD
-	long it_index;
+	Py_ssize_t it_index;
 	PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
 } listreviterobject;
 
@@ -2860,7 +2860,7 @@ static PyObject *
 listreviter_next(listreviterobject *it)
 {
 	PyObject *item;
-	long index = it->it_index;
+	Py_ssize_t index = it->it_index;
 	PyListObject *seq = it->it_seq;
 
 	if (index>=0 && index < PyList_GET_SIZE(seq)) {

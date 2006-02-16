@@ -159,14 +159,14 @@ PyTypeObject PyEnum_Type = {
 
 typedef struct {
 	PyObject_HEAD
-	long      index;
+	Py_ssize_t      index;
 	PyObject* seq;
 } reversedobject;
 
 static PyObject *
 reversed_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	long n;
+	Py_ssize_t n;
 	PyObject *seq;
 	reversedobject *ro;
 
@@ -249,7 +249,7 @@ reversed_len(reversedobject *ro)
 	if (seqsize == -1)
 		return NULL;
 	position = ro->index + 1;
-	return PyInt_FromLong((seqsize < position)  ?  0  :  position);
+	return PyInt_FromSsize_t((seqsize < position)  ?  0  :  position);
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
