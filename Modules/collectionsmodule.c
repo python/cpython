@@ -489,7 +489,7 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
 {
 	PyObject *old_value;
 	block *b;
-	int n, len=deque->len, halflen=(len+1)>>1, index=i;
+	Py_ssize_t n, len=deque->len, halflen=(len+1)>>1, index=i;
 
 	if (i < 0 || i >= len) {
 		PyErr_SetString(PyExc_IndexError,

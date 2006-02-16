@@ -296,7 +296,7 @@ spam2(ge,__ge__, "ge(a, b) -- Same as a>=b.")
 
 typedef struct {
 	PyObject_HEAD
-	int nitems;
+	Py_ssize_t nitems;
 	PyObject *item;
 } itemgetterobject;
 
@@ -307,7 +307,7 @@ itemgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	itemgetterobject *ig;
 	PyObject *item;
-	int nitems;
+	Py_ssize_t nitems;
 
 	if (!_PyArg_NoKeywords("itemgetter()", kwds))
 		return NULL;
@@ -352,7 +352,7 @@ static PyObject *
 itemgetter_call(itemgetterobject *ig, PyObject *args, PyObject *kw)
 {
 	PyObject *obj, *result;
-	int i, nitems=ig->nitems;
+	Py_ssize_t i, nitems=ig->nitems;
 
 	if (!PyArg_UnpackTuple(args, "itemgetter", 1, 1, &obj))
 		return NULL;
@@ -435,7 +435,7 @@ static PyTypeObject itemgetter_type = {
 
 typedef struct {
 	PyObject_HEAD
-	int nattrs;
+	Py_ssize_t nattrs;
 	PyObject *attr;
 } attrgetterobject;
 
@@ -446,7 +446,7 @@ attrgetter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	attrgetterobject *ag;
 	PyObject *attr;
-	int nattrs;
+	Py_ssize_t nattrs;
 
 	if (!_PyArg_NoKeywords("attrgetter()", kwds))
 		return NULL;
@@ -491,7 +491,7 @@ static PyObject *
 attrgetter_call(attrgetterobject *ag, PyObject *args, PyObject *kw)
 {
 	PyObject *obj, *result;
-	int i, nattrs=ag->nattrs;
+	Py_ssize_t i, nattrs=ag->nattrs;
 
 	if (!PyArg_UnpackTuple(args, "attrgetter", 1, 1, &obj))
 		return NULL;

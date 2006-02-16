@@ -1054,7 +1054,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *seq;
 	long start=0, stop=-1, step=1;
 	PyObject *it, *a1=NULL, *a2=NULL, *a3=NULL;
-	int numargs;
+	Py_ssize_t numargs;
 	isliceobject *lz;
 
 	if (!_PyArg_NoKeywords("islice()", kwds))
@@ -1378,7 +1378,7 @@ imap_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *it, *iters, *func;
 	imapobject *lz;
-	int numargs, i;
+	Py_ssize_t numargs, i;
 
 	if (!_PyArg_NoKeywords("imap()", kwds))
 		return NULL;
@@ -1466,7 +1466,7 @@ imap_next(imapobject *lz)
 	PyObject *val;
 	PyObject *argtuple;
 	PyObject *result;
-	int numargs, i;
+	Py_ssize_t numargs, i;
 
 	numargs = PyTuple_Size(lz->iters);
 	argtuple = PyTuple_New(numargs);
@@ -1547,7 +1547,7 @@ static PyTypeObject imap_type = {
 
 typedef struct {
 	PyObject_HEAD
-	long	tuplesize;
+	Py_ssize_t	tuplesize;
 	long	iternum;		/* which iterator is active */
 	PyObject *ittuple;		/* tuple of iterators */
 } chainobject;
@@ -1558,7 +1558,7 @@ static PyObject *
 chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	chainobject *lz;
-	int tuplesize = PySequence_Length(args);
+	Py_ssize_t tuplesize = PySequence_Length(args);
 	int i;
 	PyObject *ittuple;
 
@@ -2074,7 +2074,7 @@ static PyTypeObject count_type = {
 
 typedef struct {
 	PyObject_HEAD
-	long	tuplesize;
+	Py_ssize_t	tuplesize;
 	PyObject *ittuple;		/* tuple of iterators */
 	PyObject *result;
 } izipobject;
@@ -2088,7 +2088,7 @@ izip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	int i;
 	PyObject *ittuple;  /* tuple of iterators */
 	PyObject *result;
-	int tuplesize = PySequence_Length(args);
+	Py_ssize_t tuplesize = PySequence_Length(args);
 
 	if (!_PyArg_NoKeywords("izip()", kwds))
 		return NULL;
@@ -2160,7 +2160,7 @@ static PyObject *
 izip_next(izipobject *lz)
 {
 	int i;
-	long tuplesize = lz->tuplesize;
+	Py_ssize_t tuplesize = lz->tuplesize;
 	PyObject *result = lz->result;
 	PyObject *it;
 	PyObject *item;

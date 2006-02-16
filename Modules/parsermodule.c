@@ -782,7 +782,7 @@ build_node_tree(PyObject *tuple)
                 res = NULL;
             }
             if (res && encoding) {
-                int len;
+                Py_ssize_t len;
                 len = PyString_GET_SIZE(encoding) + 1;
                 res->n_str = (char *)PyMem_MALLOC(len);
                 if (res->n_str != NULL)

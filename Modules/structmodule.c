@@ -1031,7 +1031,7 @@ struct_pack(PyObject *self, PyObject *args)
 	PyObject *format, *result, *v;
 	char *fmt;
 	int size, num;
-	int i, n;
+	Py_ssize_t i, n;
 	char *s, *res, *restart, *nres;
 	char c;
 
@@ -1097,7 +1097,7 @@ struct_pack(PyObject *self, PyObject *args)
 				goto fail;
 			if (c == 's') {
 				/* num is string size, not repeat count */
-				int n;
+				Py_ssize_t n;
 				if (!PyString_Check(v)) {
 					PyErr_SetString(StructError,
 					  "argument for 's' must be a string");
@@ -1116,7 +1116,7 @@ struct_pack(PyObject *self, PyObject *args)
 			else if (c == 'p') {
 				/* num is string size + 1,
 				   to fit in the count byte */
-				int n;
+				Py_ssize_t n;
 				num--; /* now num is max string size */
 				if (!PyString_Check(v)) {
 					PyErr_SetString(StructError,
@@ -1133,7 +1133,8 @@ struct_pack(PyObject *self, PyObject *args)
 					memset(res+1+n, '\0', num-n);
 				if (n > 255)
 					n = 255;
-				*res++ = n; /* store the length byte */
+				/* store the length byte */
+				*res++ = Py_SAFE_DOWNCAST(n, Py_ssize_t, char);
 				res += num;
 				break;
 			}

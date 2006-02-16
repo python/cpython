@@ -166,8 +166,8 @@ strop_joinfields(PyObject *self, PyObject *args)
 {
 	PyObject *seq;
 	char *sep = NULL;
-	int seqlen, seplen = 0;
-	int i, reslen = 0, slen = 0, sz = 100;
+	Py_ssize_t seqlen, seplen = 0;
+	Py_ssize_t i, reslen = 0, slen = 0, sz = 100;
 	PyObject *res = NULL;
 	char* p = NULL;
 	ssizeargfunc getitemfunc;
@@ -921,10 +921,11 @@ static PyObject *
 strop_translate(PyObject *self, PyObject *args)
 {
 	register char *input, *table, *output;
-	register int i, c, changed = 0;
+	Py_ssize_t i; 
+	int c, changed = 0;
 	PyObject *input_obj;
 	char *table1, *output_start, *del_table=NULL;
-	int inlen, tablen, dellen = 0;
+	Py_ssize_t inlen, tablen, dellen = 0;
 	PyObject *result;
 	int trans_table[256];
 

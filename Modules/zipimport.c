@@ -408,7 +408,7 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
 	char *p, buf[MAXPATHLEN + 1];
 #endif
 	PyObject *toc_entry;
-	int len;
+	Py_ssize_t len;
 
 	if (!PyArg_ParseTuple(args, "s:zipimporter.get_data", &path))
 		return NULL;
@@ -910,7 +910,7 @@ unmarshal_code(char *pathname, PyObject *data, time_t mtime)
 {
 	PyObject *code;
 	char *buf = PyString_AsString(data);
-	int size = PyString_Size(data);
+	Py_ssize_t size = PyString_Size(data);
 
 	if (size <= 9) {
 		PyErr_SetString(ZipImportError,
