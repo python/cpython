@@ -306,8 +306,8 @@ getpythonregpath(HKEY keyBase, int skipcore)
 				Py_ssize_t len = _tcslen(ppPaths[index]);
 				_tcsncpy(szCur, ppPaths[index], len);
 				szCur += len;
-				assert(dataSize > len);
-				dataSize -= (int)len;
+				assert(dataSize > (DWORD)len);
+				dataSize -= (DWORD)len;
 			}
 		}
 		if (skipcore)
