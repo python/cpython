@@ -161,8 +161,12 @@ def _test():
     resp.close()
 
 
+class OfflineTest(TestCase):
+    def test_responses(self):
+        self.assertEquals(httplib.responses[httplib.NOT_FOUND], "Not Found")
+
 def test_main(verbose=None):
-    tests = [HeaderTests,]
+    tests = [HeaderTests,OfflineTest]
     test_support.run_unittest(*tests)
 
 test()

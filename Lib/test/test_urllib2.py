@@ -41,10 +41,6 @@ class TrivialTests(unittest.TestCase):
         buf = f.read()
         f.close()
 
-    def test_statudict(self):
-        # test the new-in-2.5 httpresponses dictionary
-        self.assertEquals(urllib2.httpresponses[404], "Not Found")
-
     def test_parse_http_list(self):
         tests = [('a,b,c', ['a', 'b', 'c']),
                  ('path"o,l"og"i"cal, example', ['path"o,l"og"i"cal', 'example']),
