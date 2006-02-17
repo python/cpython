@@ -217,11 +217,16 @@ Returns the server software's version string. This is a combination
 of the \member{server_version} and \member{sys_version} class variables.
 \end{methoddesc}
 
-\begin{methoddesc}{date_time_string}{}
-Returns the current date and time, formatted for a message header.
+\begin{methoddesc}{date_time_string}{\optional{timestamp}}
+Returns the date and time given by \var{timestamp} (which must be in the
+format returned by \function{time.time()}), formatted for a message header.
+If \var{timestamp} is omitted, it uses the current date and time.
+
+The result looks like \code{'Sun, 06 Nov 1994 08:49:37 GMT'}.
+\versionadded[The \var{timestamp} parameter]{2.5}
 \end{methoddesc}
 
-\begin{methoddesc}{log_data_time_string}{}
+\begin{methoddesc}{log_date_time_string}{}
 Returns the current date and time, formatted for logging.
 \end{methoddesc}
 

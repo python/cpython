@@ -436,10 +436,11 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
         """Return the server software version string."""
         return self.server_version + ' ' + self.sys_version
 
-    def date_time_string(self):
+    def date_time_string(self, timestamp=None):
         """Return the current date and time formatted for a message header."""
-        now = time.time()
-        year, month, day, hh, mm, ss, wd, y, z = time.gmtime(now)
+        if timestamp is None:
+            timestamp = time.time()
+        year, month, day, hh, mm, ss, wd, y, z = time.gmtime(timestamp)
         s = "%s, %02d %3s %4d %02d:%02d:%02d GMT" % (
                 self.weekdayname[wd],
                 day, self.monthname[month], year,
