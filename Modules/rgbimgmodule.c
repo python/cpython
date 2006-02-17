@@ -759,6 +759,11 @@ initrgbimg(void)
 	m = Py_InitModule("rgbimg", rgbimg_methods);
 	if (m == NULL)
 		return;
+
+	if (PyErr_Warn(PyExc_DeprecationWarning, 
+				"the rgbimg module is deprecated"))
+		return;
+	
 	d = PyModule_GetDict(m);
 	ImgfileError = PyErr_NewException("rgbimg.error", NULL, NULL);
 	if (ImgfileError != NULL)
