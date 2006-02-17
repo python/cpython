@@ -65,13 +65,18 @@ error. Otherwise, the content type is guessed by calling the
 \var{extensions_map} variable.
 
 A \code{'Content-type:'} header with the guessed content type is
-output, followed by a blank line signifying the end of the headers,
+output, followed by a \code{'Content-Length:'} header with the file's
+size and a \code{'Last-Modified:'} header with the file's modification
+time.
+
+Then follows a blank line signifying the end of the headers,
 and then the contents of the file are output. If the file's MIME type
 starts with \code{text/} the file is opened in text mode; otherwise
 binary mode is used.
 
 For example usage, see the implementation of the \function{test()}
 function.
+\versionadded[The \code{'Last-Modified'} header]{2.5}
 \end{methoddesc}
 
 
