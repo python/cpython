@@ -29,8 +29,7 @@ struct arraydescr {
 };
 
 typedef struct arrayobject {
-	PyObject_HEAD
-	Py_ssize_t ob_size;
+	PyObject_VAR_HEAD
 	char *ob_item;
 	Py_ssize_t allocated;
 	struct arraydescr *ob_descr;
