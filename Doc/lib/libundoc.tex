@@ -134,6 +134,9 @@ now just as good).
 \item[\module{poly}]
 --- Polynomials.
 
+\item[\module{rand}]
+--- Old interface to the random number generator.
+
 \item[\module{regex}]
 --- Emacs-style regular expression support; may still be used in some
 old code (extension module).  Refer to the
@@ -145,6 +148,10 @@ old code (extension module).  Refer to the
 with \module{regex} (extension module).  Refer to the
 \citetitle[http://www.python.org/doc/1.6/lib/module-regsub.html]{Python
 1.6 Documentation} for documentation.
+
+\item[\module{statcache}]
+--- Caches the results of os.stat().  Using the cache can be fragile
+and error-prone, just use \code{os.stat()} directly.
 
 \item[\module{tb}]
 --- Print tracebacks, with a dump of local variables (use
@@ -164,6 +171,9 @@ not set).
 
 \item[\module{whatsound}]
 --- Recognize sound files; use \refmodule{sndhdr} instead.
+
+\item[\module{whrandom}]
+--- Old random number generator.  Use \module{random} instead.
 
 \item[\module{zmod}]
 --- Compute properties of mathematical ``fields.''
@@ -195,14 +205,6 @@ archive.
 --- Import modules in ``packages.''  Basic package support is now
 built in.  The built-in support is very similar to what is provided in
 this module.
-
-\item[\module{rand}]
---- Old interface to the random number generator.
-
-\item[\module{soundex}]
---- Algorithm for collapsing names which sound similar to a shared
-key.  The specific algorithm doesn't seem to match any published
-algorithm.  (This is an extension module.)
 \end{description}
 
 
