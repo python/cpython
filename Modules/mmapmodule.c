@@ -18,6 +18,7 @@
  / ftp://squirl.nightmare.com/pub/python/python-ext.
 */
 
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
 #ifndef MS_WINDOWS
@@ -242,7 +243,7 @@ mmap_find_method(mmap_object *self,
 {
 	Py_ssize_t start = self->pos;
 	char *needle;
-	int len;
+	Py_ssize_t len;
 
 	CHECK_VALID(NULL);
 	if (!PyArg_ParseTuple(args, "s#|n:find", &needle, &len, &start)) {
@@ -259,16 +260,14 @@ mmap_find_method(mmap_object *self,
 			start = self->size;
 
 		for (p = self->data + start; p + len <= e; ++p) {
-			int i;
+			Py_ssize_t i;
 			for (i = 0; i < len && needle[i] == p[i]; ++i)
 				/* nothing */;
 			if (i == len) {
-				return Py_BuildValue(
-					"l",
-					(long) (p - self->data));
+				return PyInt_FromSsize_t(p - self->data);
 			}
 		}
-		return Py_BuildValue("l", (long) -1);
+		return PyInt_FromLong(-1);
 	}
 }
 
@@ -296,7 +295,7 @@ static PyObject *
 mmap_write_method(mmap_object *self,
 		  PyObject *args)
 {
-	int length;
+	Py_ssize_t length;
 	char *data;
 
 	CHECK_VALID(NULL);
@@ -377,9 +376,9 @@ static PyObject *
 mmap_resize_method(mmap_object *self,
 		   PyObject *args)
 {
-	unsigned long new_size;
+	Py_ssize_t new_size;
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple(args, "k:resize", &new_size) ||
+	if (!PyArg_ParseTuple(args, "n:resize", &new_size) ||
 	    !is_resizeable(self)) {
 		return NULL;
 #ifdef MS_WINDOWS
@@ -498,10 +497,10 @@ mmap_flush_method(mmap_object *self, PyObject *args)
 static PyObject *
 mmap_seek_method(mmap_object *self, PyObject *args)
 {
-	int dist;
+	Py_ssize_t dist;
 	int how=0;
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple(args, "i|i:seek", &dist, &how))
+	if (!PyArg_ParseTuple(args, "n|i:seek", &dist, &how))
 		return NULL;
 	else {
 		size_t where;
@@ -512,12 +511,12 @@ mmap_seek_method(mmap_object *self, PyObject *args)
 			where = dist;
 			break;
 		case 1: /* relative to current position */
-			if ((int)self->pos + dist < 0)
+			if ((Py_ssize_t)self->pos + dist < 0)
 				goto onoutofrange;
 			where = self->pos + dist;
 			break;
 		case 2: /* relative to end */
-			if ((int)self->size + dist < 0)
+			if ((Py_ssize_t)self->size + dist < 0)
 				goto onoutofrange;
 			where = self->size + dist;
 			break;
@@ -802,14 +801,9 @@ static PyTypeObject mmap_object_type = {
 
 /* extract the map size from the given PyObject
 
-   The map size is restricted to [0, INT_MAX] because this is the current
-   Python limitation on object sizes. Although the mmap object *could* handle
-   a larger map size, there is no point because all the useful operations
-   (len(), slicing(), sequence indexing) are limited by a C int.
-
    Returns -1 on error, with an appropriate Python exception raised. On
    success, the map size is returned. */
-static int
+static Py_ssize_t
 _GetMapSize(PyObject *o)
 {
 	if (PyInt_Check(o)) {
@@ -818,12 +812,10 @@ _GetMapSize(PyObject *o)
 			return -1;
 		if (i < 0)
 			goto onnegoverflow;
-		if (i > INT_MAX)
-			goto onposoverflow;
-		return (int)i;
+		return i;
 	}
 	else if (PyLong_Check(o)) {
-		long i = PyLong_AsLong(o);
+		Py_ssize_t i = PyInt_AsSsize_t(o);
 		if (PyErr_Occurred()) {
 			/* yes negative overflow is mistaken for positive overflow
 			   but not worth the trouble to check sign of 'i' */
@@ -834,9 +826,7 @@ _GetMapSize(PyObject *o)
 		}
 		if (i < 0)
 			goto onnegoverflow;
-		if (i > INT_MAX)
-			goto onposoverflow;
-		return (int)i;
+		return i;
 	}
 	else {
 		PyErr_SetString(PyExc_TypeError,
@@ -864,7 +854,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 #endif
 	mmap_object *m_obj;
 	PyObject *map_size_obj = NULL;
-	int map_size;
+	Py_ssize_t map_size;
 	int fd, flags = MAP_SHARED, prot = PROT_WRITE | PROT_READ;
 	int devzero = -1;
 	int access = (int)ACCESS_DEFAULT;
@@ -912,7 +902,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 #  endif
 	if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
 		if (map_size == 0) {
-			map_size = (int)st.st_size;
+			map_size = st.st_size;
 		} else if ((size_t)map_size > st.st_size) {
 			PyErr_SetString(PyExc_ValueError,
 					"mmap length is greater than file size");
@@ -977,7 +967,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 {
 	mmap_object *m_obj;
 	PyObject *map_size_obj = NULL;
-	int map_size;
+	Py_ssize_t map_size;
 	DWORD size_hi;	/* upper 32 bits of m_obj->size */
 	DWORD size_lo;	/* lower 32 bits of m_obj->size */
 	char *tagname = "";
