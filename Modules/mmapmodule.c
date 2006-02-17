@@ -471,9 +471,9 @@ mmap_flush_method(mmap_object *self, PyObject *args)
 	Py_ssize_t offset = 0;
 	Py_ssize_t size = self->size;
 	CHECK_VALID(NULL);
-	if (!PyArg_ParseTuple(args, "|nn:flush", &offset, &size)) {
+	if (!PyArg_ParseTuple(args, "|nn:flush", &offset, &size))
 		return NULL;
-	} else if ((offset + size) > self->size) {
+	if ((size_t)(offset + size) > self->size) {
 		PyErr_SetString(PyExc_ValueError, "flush values out of range");
 		return NULL;
 	} else {
