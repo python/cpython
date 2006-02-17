@@ -363,6 +363,8 @@ Extension Modules
 Library
 -------
 
+- The names of lambda functions are now properly displayed in pydoc.
+
 - Patch #1412872: zipfile now sets the creator system to 3 (Unix)
   unless the system is Win32.
 
