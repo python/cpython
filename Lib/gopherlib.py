@@ -2,6 +2,9 @@
 
 __all__ = ["send_selector","send_query"]
 
+import warnings
+warnings.warn("the gopherlib module is deprecated", DeprecationWarning)
+
 # Default selector, host and port
 DEF_SELECTOR = '1/'
 DEF_HOST     = 'gopher.micro.umn.edu'
