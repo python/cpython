@@ -3851,8 +3851,9 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 }
 
 /* Extract a slice index from a PyInt or PyLong, and store in *pi.
-   Silently reduce values larger than INT_MAX to INT_MAX, and silently
-   boost values less than -INT_MAX to 0.  Return 0 on error, 1 on success.
+   Silently reduce values larger than PY_SSIZE_T_MAX to PY_SSIZE_T_MAX, 
+   and silently boost values less than -PY_SSIZE_T_MAX to 0.  
+   Return 0 on error, 1 on success.
 */
 /* Note:  If v is NULL, return success without storing into *pi.  This
    is because_PyEval_SliceIndex() is called by apply_slice(), which can be
@@ -3862,11 +3863,11 @@ int
 _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 {
 	if (v != NULL) {
-		long x;
+		Py_ssize_t x;
 		if (PyInt_Check(v)) {
 			x = PyInt_AsLong(v);
 		} else if (PyLong_Check(v)) {
-			x = PyLong_AsLong(v);
+			x = PyInt_AsSsize_t(v);
 			if (x==-1 && PyErr_Occurred()) {
 				PyObject *long_zero;
 				int cmp;
@@ -3883,8 +3884,8 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 
 				/* It's an overflow error, so we need to
 				   check the sign of the long integer,
-				   set the value to INT_MAX or -INT_MAX,
-				   and clear the error. */
+				   set the value to PY_SSIZE_T_MAX or 
+				   -PY_SSIZE_T_MAX, and clear the error. */
 
 				/* Create a long integer with a value of 0 */
 				long_zero = PyLong_FromLong(0L);
@@ -3898,21 +3899,15 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 				if (cmp < 0)
 					return 0;
 				else if (cmp)
-					x = INT_MAX;
+					x = PY_SSIZE_T_MAX;
 				else
-					x = -INT_MAX;
+					x = -PY_SSIZE_T_MAX;
 			}
 		} else {
 			PyErr_SetString(PyExc_TypeError,
 					"slice indices must be integers");
 			return 0;
 		}
-		/* Truncate -- very long indices are truncated anyway */
-		/* XXX truncate by ssize maximum */
-		if (x > INT_MAX)
-			x = INT_MAX;
-		else if (x < -INT_MAX)
-			x = -INT_MAX;
 		*pi = x;
 	}
 	return 1;
@@ -3928,7 +3923,7 @@ apply_slice(PyObject *u, PyObject *v, PyObject *w) /* return u[v:w] */
 	PySequenceMethods *sq = tp->tp_as_sequence;
 
 	if (sq && sq->sq_slice && ISINT(v) && ISINT(w)) {
-		Py_ssize_t ilow = 0, ihigh = INT_MAX;
+		Py_ssize_t ilow = 0, ihigh = PY_SSIZE_T_MAX;
 		if (!_PyEval_SliceIndex(v, &ilow))
 			return NULL;
 		if (!_PyEval_SliceIndex(w, &ihigh))
@@ -3955,7 +3950,7 @@ assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x)
 	PySequenceMethods *sq = tp->tp_as_sequence;
 
 	if (sq && sq->sq_slice && ISINT(v) && ISINT(w)) {
-		Py_ssize_t ilow = 0, ihigh = INT_MAX;
+		Py_ssize_t ilow = 0, ihigh = PY_SSIZE_T_MAX;
 		if (!_PyEval_SliceIndex(v, &ilow))
 			return -1;
 		if (!_PyEval_SliceIndex(w, &ihigh))
