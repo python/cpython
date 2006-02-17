@@ -1080,7 +1080,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 
 	m_obj->access = (access_mode)access;
 	/* DWORD is a 4-byte int.  If we're on a box where size_t consumes
-	 * more then 4 bytes, we need to break it apart.  Else (size_t
+	 * more than 4 bytes, we need to break it apart.  Else (size_t
 	 * consumes 4 bytes), C doesn't define what happens if we shift
 	 * right by 32, so we need different code.
 	 */
