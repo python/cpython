@@ -576,7 +576,7 @@ if test $enable_shared = "yes"; then
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
 	  INSTSONAME="$LDLIBRARY".$SOVERSION
           ;;
-    Linux*|GNU*|NetBSD*|FreeBSD*)
+    Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*)
 	  LDLIBRARY='libpython$(VERSION).so'
 	  BLDLIBRARY='-L. -lpython$(VERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
@@ -1387,7 +1387,7 @@ then
 		else
 			LDSHARED="ld -Bshareable ${LDFLAGS}"
 		fi;;
-	NetBSD*) LDSHARED="cc -shared ${LDFLAGS}";;
+	NetBSD*|DragonFly*) LDSHARED="cc -shared ${LDFLAGS}";;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
 		then LDSHARED='$(CC) -shared'
@@ -1418,7 +1418,7 @@ then
 		 fi;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
 	BSD/OS*/4*) CCSHARED="-fpic";;
-	FreeBSD*|NetBSD*|OpenBSD*) CCSHARED="-fPIC";;
+	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
 		then CCSHARED="-fPIC"
@@ -1469,7 +1469,7 @@ then
 	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
 	SCO_SV*) LINKFORSHARED="-Wl,-Bexport";;
 	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
-	FreeBSD*|NetBSD*|OpenBSD*) 
+	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) 
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
 			LINKFORSHARED="-Wl,--export-dynamic"
@@ -2219,6 +2219,7 @@ AC_TRY_LINK([
 AC_MSG_CHECKING(for inet_aton)
 AC_TRY_LINK([
 #include "confdefs.h" 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

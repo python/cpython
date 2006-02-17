@@ -115,6 +115,8 @@ Tools/Demos
 Build
 -----
 
+- Patch #1432345: Make python compile on DragonFly.
+
 - Patch #1428494: Prefer linking against ncursesw over ncurses library.
 
 What's New in Python 2.4.2 final?
