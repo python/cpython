@@ -74,6 +74,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1430298: It is now possible to send a mail with an empty
+  return address using smtplib.
+
 - Bug #1432260: The names of lambda functions are now properly displayed 
   in pydoc.
 
