@@ -188,7 +188,7 @@ These macros are used in the definition of \ctype{PyObject} and
   instance.  This macro always expands to:
   \begin{verbatim}
     PyObject_HEAD
-    int ob_size;
+    Py_ssize_t ob_size;
   \end{verbatim}
   Note that \csimplemacro{PyObject_HEAD} is part of the expansion, and
   that its own expansion varies depending on the definition of
