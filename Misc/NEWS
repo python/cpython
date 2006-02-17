@@ -363,6 +363,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1417555: SimpleHTTPServer now returns Last-Modified headers.
+
 - Bug #1430298: It is now possible to send a mail with an empty
   return address using smtplib.
 
