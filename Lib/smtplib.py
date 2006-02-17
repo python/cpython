@@ -175,8 +175,11 @@ def quoteaddr(addr):
     except AttributeError:
         pass
     if m == (None, None): # Indicates parse failure or AttributeError
-        #something weird here.. punt -ddm
+        # something weird here.. punt -ddm
         return "<%s>" % addr
+    elif m is None:
+        # the sender wants an empty return address
+        return "<>"
     else:
         return "<%s>" % m
 
