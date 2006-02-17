@@ -701,6 +701,8 @@ Library
 Build
 -----
 
+- Patch #1432345: Make python compile on DragonFly.
+
 - Build support for Win64-AMD64 was added.
 
 - Patch #1428494: Prefer linking against ncursesw over ncurses library.
