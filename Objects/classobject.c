@@ -1170,7 +1170,7 @@ instance_slice(PyInstanceObject *inst, Py_ssize_t i, Py_ssize_t j)
 			return NULL;
 		arg = Py_BuildValue("(N)", sliceobj_from_intint(i, j));
 	} else
-		arg = Py_BuildValue("(ii)", i, j);
+		arg = Py_BuildValue("(nn)", i, j);
 
 	if (arg == NULL) {
 		Py_DECREF(func);
@@ -1241,7 +1241,7 @@ instance_ass_slice(PyInstanceObject *inst, Py_ssize_t i, Py_ssize_t j, PyObject 
 			arg = Py_BuildValue("(N)",
 					    sliceobj_from_intint(i, j));
 		} else
-			arg = Py_BuildValue("(ii)", i, j);
+			arg = Py_BuildValue("(nn)", i, j);
 	}
 	else {
 		if (setslicestr == NULL)
@@ -1262,7 +1262,7 @@ instance_ass_slice(PyInstanceObject *inst, Py_ssize_t i, Py_ssize_t j, PyObject 
 			arg = Py_BuildValue("(NO)",
 					    sliceobj_from_intint(i, j), value);
 		} else
-			arg = Py_BuildValue("(iiO)", i, j, value);
+			arg = Py_BuildValue("(nnO)", i, j, value);
 	}
 	if (arg == NULL) {
 		Py_DECREF(func);
