@@ -74,6 +74,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1432260: The names of lambda functions are now properly displayed 
+  in pydoc.
+
 - Bug #1371247: Update Windows locale identifiers in locale.py.
 
 - Bug #1394565: SimpleHTTPServer now doesn't choke on query parameters

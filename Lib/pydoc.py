@@ -1242,7 +1242,7 @@ class TextDoc(Doc):
             argspec = inspect.formatargspec(
                 args, varargs, varkw, defaults, formatvalue=self.formatvalue)
             if realname == '<lambda>':
-                title = 'lambda'
+                title = self.bold(name) + ' lambda '
                 argspec = argspec[1:-1] # remove parentheses
         else:
             argspec = '(...)'
