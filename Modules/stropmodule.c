@@ -1,5 +1,6 @@
 /* strop module */
 
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include <ctype.h>
 
@@ -26,10 +27,11 @@ PyDoc_STRVAR(strop_module__doc__,
 
 
 static PyObject *
-split_whitespace(char *s, int len, int maxsplit)
+split_whitespace(char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 {
-	int i = 0, j, err;
-	int countsplit = 0;
+	Py_ssize_t i = 0, j;
+	int err;
+	Py_ssize_t countsplit = 0;
 	PyObject* item;
 	PyObject *list = PyList_New(0);
 
@@ -45,7 +47,7 @@ split_whitespace(char *s, int len, int maxsplit)
 			i = i+1;
 		}
 		if (j < i) {
-			item = PyString_FromStringAndSize(s+j, (int)(i-j));
+			item = PyString_FromStringAndSize(s+j, i-j);
 			if (item == NULL)
 				goto finally;
 
@@ -60,7 +62,7 @@ split_whitespace(char *s, int len, int maxsplit)
 			}
 			if (maxsplit && (countsplit >= maxsplit) && i < len) {
 				item = PyString_FromStringAndSize(
-                                        s+i, (int)(len - i));
+                                        s+i, len - i);
 				if (item == NULL)
 					goto finally;
 
@@ -94,8 +96,8 @@ PyDoc_STRVAR(splitfields__doc__,
 static PyObject *
 strop_splitfields(PyObject *self, PyObject *args)
 {
-	int len, n, i, j, err;
-	int splitcount, maxsplit;
+	Py_ssize_t len, n, i, j, err;
+	Py_ssize_t splitcount, maxsplit;
 	char *s, *sub;
 	PyObject *list, *item;
 
@@ -104,7 +106,7 @@ strop_splitfields(PyObject *self, PyObject *args)
 	n = 0;
 	splitcount = 0;
 	maxsplit = 0;
-	if (!PyArg_ParseTuple(args, "t#|z#i:split", &s, &len, &sub, &n, &maxsplit))
+	if (!PyArg_ParseTuple(args, "t#|z#n:split", &s, &len, &sub, &n, &maxsplit))
 		return NULL;
 	if (sub == NULL)
 		return split_whitespace(s, len, maxsplit);
@@ -120,7 +122,7 @@ strop_splitfields(PyObject *self, PyObject *args)
 	i = j = 0;
 	while (i+n <= len) {
 		if (s[i] == sub[0] && (n == 1 || memcmp(s+i, sub, n) == 0)) {
-			item = PyString_FromStringAndSize(s+j, (int)(i-j));
+			item = PyString_FromStringAndSize(s+j, i-j);
 			if (item == NULL)
 				goto fail;
 			err = PyList_Append(list, item);
@@ -135,7 +137,7 @@ strop_splitfields(PyObject *self, PyObject *args)
 		else
 			i++;
 	}
-	item = PyString_FromStringAndSize(s+j, (int)(len-j));
+	item = PyString_FromStringAndSize(s+j, len-j);
 	if (item == NULL)
 		goto fail;
 	err = PyList_Append(list, item);
@@ -287,10 +289,10 @@ static PyObject *
 strop_find(PyObject *self, PyObject *args)
 {
 	char *s, *sub;
-	int len, n, i = 0, last = INT_MAX;
+	Py_ssize_t len, n, i = 0, last = PY_SSIZE_T_MAX;
 
 	WARN;
-	if (!PyArg_ParseTuple(args, "t#t#|ii:find", &s, &len, &sub, &n, &i, &last))
+	if (!PyArg_ParseTuple(args, "t#t#|nn:find", &s, &len, &sub, &n, &i, &last))
 		return NULL;
 
 	if (last > len)
@@ -330,11 +332,11 @@ static PyObject *
 strop_rfind(PyObject *self, PyObject *args)
 {
 	char *s, *sub;
-	int len, n, j;
-	int i = 0, last = INT_MAX;
+	Py_ssize_t len, n, j;
+	Py_ssize_t i = 0, last = INT_MAX;
 
 	WARN;
-	if (!PyArg_ParseTuple(args, "t#t#|ii:rfind", &s, &len, &sub, &n, &i, &last))
+	if (!PyArg_ParseTuple(args, "t#t#|nn:rfind", &s, &len, &sub, &n, &i, &last))
 		return NULL;
 
 	if (last > len)
@@ -576,10 +578,10 @@ strop_expandtabs(PyObject *self, PyObject *args)
 	char* e;
 	char* p;
 	char* q;
-	int i, j;
+	Py_ssize_t i, j;
 	PyObject* out;
 	char* string;
-	int stringlen;
+	Py_ssize_t stringlen;
 	int tabsize = 8;
 
 	WARN;
@@ -644,12 +646,12 @@ static PyObject *
 strop_count(PyObject *self, PyObject *args)
 {
 	char *s, *sub;
-	int len, n;
-	int i = 0, last = INT_MAX;
-	int m, r;
+	Py_ssize_t len, n;
+	Py_ssize_t i = 0, last = INT_MAX;
+	Py_ssize_t m, r;
 
 	WARN;
-	if (!PyArg_ParseTuple(args, "t#t#|ii:count", &s, &len, &sub, &n, &i, &last))
+	if (!PyArg_ParseTuple(args, "t#t#|nn:count", &s, &len, &sub, &n, &i, &last))
 		return NULL;
 	if (last > len)
 		last = len;
@@ -884,7 +886,7 @@ static PyObject *
 strop_maketrans(PyObject *self, PyObject *args)
 {
 	unsigned char *c, *from=NULL, *to=NULL;
-	int i, fromlen=0, tolen=0;
+	Py_ssize_t i, fromlen=0, tolen=0;
 	PyObject *result;
 
 	if (!PyArg_ParseTuple(args, "t#t#:maketrans", &from, &fromlen, &to, &tolen))
@@ -998,10 +1000,10 @@ strop_translate(PyObject *self, PyObject *args)
   found, or -1 if not found.  If len of PAT is greater than length of
   MEM, the function returns -1.
 */
-static int 
-mymemfind(const char *mem, int len, const char *pat, int pat_len)
+static Py_ssize_t 
+mymemfind(const char *mem, Py_ssize_t len, const char *pat, Py_ssize_t pat_len)
 {
-	register int ii;
+	register Py_ssize_t ii;
 
 	/* pattern can not occur in the last pat_len-1 chars */
 	len -= pat_len;
@@ -1023,11 +1025,11 @@ mymemfind(const char *mem, int len, const char *pat, int pat_len)
    meaning mem=1111 and pat==11 returns 2.
            mem=11111 and pat==11 also return 2.
  */
-static int 
-mymemcnt(const char *mem, int len, const char *pat, int pat_len)
+static Py_ssize_t 
+mymemcnt(const char *mem, Py_ssize_t len, const char *pat, Py_ssize_t pat_len)
 {
-	register int offset = 0;
-	int nfound = 0;
+	register Py_ssize_t offset = 0;
+	Py_ssize_t nfound = 0;
 
 	while (len >= 0) {
 		offset = mymemfind(mem, len, pat, pat_len);
@@ -1060,15 +1062,15 @@ mymemcnt(const char *mem, int len, const char *pat, int pat_len)
        NULL if an error occurred.
 */
 static char *
-mymemreplace(const char *str, int len,		/* input string */
-             const char *pat, int pat_len,	/* pattern string to find */
-             const char *sub, int sub_len,	/* substitution string */
-             int count,				/* number of replacements */
-	     int *out_len)
+mymemreplace(const char *str, Py_ssize_t len,		/* input string */
+             const char *pat, Py_ssize_t pat_len,	/* pattern string to find */
+             const char *sub, Py_ssize_t sub_len,	/* substitution string */
+             Py_ssize_t count,				/* number of replacements */
+	     Py_ssize_t *out_len)
 {
 	char *out_s;
 	char *new_s;
-	int nfound, offset, new_len;
+	Py_ssize_t nfound, offset, new_len;
 
 	if (len == 0 || pat_len > len)
 		goto return_same;
@@ -1137,12 +1139,12 @@ static PyObject *
 strop_replace(PyObject *self, PyObject *args)
 {
 	char *str, *pat,*sub,*new_s;
-	int len,pat_len,sub_len,out_len;
-	int count = -1;
+	Py_ssize_t len,pat_len,sub_len,out_len;
+	Py_ssize_t count = -1;
 	PyObject *new;
 
 	WARN;
-	if (!PyArg_ParseTuple(args, "t#t#t#|i:replace",
+	if (!PyArg_ParseTuple(args, "t#t#t#|n:replace",
 			      &str, &len, &pat, &pat_len, &sub, &sub_len,
 			      &count))
 		return NULL;
