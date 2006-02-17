@@ -288,6 +288,14 @@ and also the following constants for integer status codes:
     {An HTTP Extension Framework, \rfc{2774}, Section 7}
 \end{tableiii}
 
+\begin{datadesc}{responses}
+This dictionary maps the HTTP 1.1 status codes to the W3C names.
+
+Example: \code{httplib.responses[httplib.NOT_FOUND]} is \code{'Not Found'}.
+\versionadded{2.5}
+\end{datadesc}
+
+
 \subsection{HTTPConnection Objects \label{httpconnection-objects}}
 
 \class{HTTPConnection} instances have the following methods:
