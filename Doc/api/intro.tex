@@ -179,7 +179,7 @@ calling Py_DECREF on it when the reference is no longer needed.
 Ownership can also be transferred, meaning that the code that receives
 ownership of the reference then becomes responsible for eventually
 decref'ing it by calling \cfunction{Py_DECREF()} or
-\cfunction{Py_XDECREF()} when it's no longer needed --or passing on
+\cfunction{Py_XDECREF()} when it's no longer needed---or passing on
 this responsibility (usually to its caller).
 When a function passes ownership of a reference on to its caller, the
 caller is said to receive a \emph{new} reference.  When no ownership
@@ -188,8 +188,12 @@ Nothing needs to be done for a borrowed reference.
 
 Conversely, when a calling function passes it a reference to an 
 object, there are two possibilities: the function \emph{steals} a 
-reference to the object, or it does not.  Few functions steal 
-references; the two notable exceptions are
+reference to the object, or it does not.  \emph{Stealing a reference}
+means that when you pass a reference to a function, that function
+assumes that it now owns that reference, and you are not responsible
+for it any longer.
+
+Few functions steal references; the two notable exceptions are
 \cfunction{PyList_SetItem()}\ttindex{PyList_SetItem()} and
 \cfunction{PyTuple_SetItem()}\ttindex{PyTuple_SetItem()}, which 
 steal a reference to the item (but not to the tuple or list into which
@@ -207,6 +211,12 @@ PyTuple_SetItem(t, 0, PyInt_FromLong(1L));
 PyTuple_SetItem(t, 1, PyInt_FromLong(2L));
 PyTuple_SetItem(t, 2, PyString_FromString("three"));
 \end{verbatim}
+
+Here, \cfunction{PyInt_FromLong()} returns a new reference which is
+immediately stolen by \cfunction{PyTuple_SetItem()}.  When you want to
+keep using an object although the reference to it will be stolen,
+use \cfunction{Py_INCREF()} to grab another reference before calling the
+reference-stealing function.
 
 Incidentally, \cfunction{PyTuple_SetItem()} is the \emph{only} way to
 set tuple items; \cfunction{PySequence_SetItem()} and
