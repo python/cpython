@@ -3,7 +3,8 @@
 __all__ = ["send_selector","send_query"]
 
 import warnings
-warnings.warn("the gopherlib module is deprecated", DeprecationWarning)
+warnings.warn("the gopherlib module is deprecated", DeprecationWarning,
+              stacklevel=2)
 
 # Default selector, host and port
 DEF_SELECTOR = '1/'
