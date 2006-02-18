@@ -9,9 +9,6 @@
  /   not all functions check range yet!!!
  /
  /
- / Note: This module currently only deals with 32-bit file
- /   sizes.
- /
  / This version of mmapmodule.c has been changed significantly
  / from the original mmapfile.c on which it was based.
  / The original version of mmapfile is maintained by Sam at
@@ -343,11 +340,22 @@ mmap_size_method(mmap_object *self,
 
 #ifdef MS_WINDOWS
 	if (self->file_handle != INVALID_HANDLE_VALUE) {
-		return Py_BuildValue(
-		        "l", (long)
-			GetFileSize(self->file_handle, NULL));
+		DWORD low,high;
+		PY_LONG_LONG size;
+		low = GetFileSize(self->file_handle, &high);
+		if (low == INVALID_FILE_SIZE) {
+			/* It might be that the function appears to have failed,
+			   when indeed its size equals INVALID_FILE_SIZE */
+			DWORD error = GetLastError();
+			if (error != NO_ERROR)
+				return PyErr_SetFromWindowsErr(error);
+		}
+		if (!high && low < LONG_MAX)
+			return PyInt_FromLong((long)low);
+		size = (((PY_LONG_LONG)high)<<32) + low;
+		return PyLong_FromLongLong(size);
 	} else {
-		return Py_BuildValue("l", (long) self->size);
+		return PyInt_FromSsize_t(self->size);
 	}
 #endif /* MS_WINDOWS */
 
@@ -358,7 +366,7 @@ mmap_size_method(mmap_object *self,
 			PyErr_SetFromErrno(mmap_module_error);
 			return NULL;
 		}
-		return Py_BuildValue("l", (long) buf.st_size);
+		return PyInt_FromSsize_t(buf.st_size);
 	}
 #endif /* UNIX */
 }
@@ -384,13 +392,21 @@ mmap_resize_method(mmap_object *self,
 #ifdef MS_WINDOWS
 	} else {
 		DWORD dwErrCode = 0;
+		DWORD newSizeLow, newSizeHigh;
 		/* First, unmap the file view */
 		UnmapViewOfFile(self->data);
 		/* Close the mapping object */
 		CloseHandle(self->map_handle);
 		/* Move to the desired EOF position */
+#if SIZEOF_SIZE_T > 4
+		newSizeHigh = (DWORD)(new_size >> 32);
+		newSizeLow = (DWORD)(new_size & 0xFFFFFFFF);
+#else
+		newSizeHigh = 0;
+		newSizeLow = (DWORD)newSize;
+#endif
 		SetFilePointer(self->file_handle,
-			       new_size, NULL, FILE_BEGIN);
+			       newSizeLow, &newSizeHigh, FILE_BEGIN);
 		/* Change the size of the file */
 		SetEndOfFile(self->file_handle);
 		/* Create another mapping object and remap the file view */
@@ -398,8 +414,8 @@ mmap_resize_method(mmap_object *self,
 			self->file_handle,
 			NULL,
 			PAGE_READWRITE,
-			0,
-			new_size,
+			newSizeHigh,
+			newSizeLow,
 			self->tagname);
 		if (self->map_handle != NULL) {
 			self->data = (char *) MapViewOfFile(self->map_handle,
@@ -1053,7 +1069,25 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 			return NULL;
 		}
 		if (!map_size) {
-			m_obj->size = GetFileSize(fh, NULL);
+			DWORD low,high;
+			low = GetFileSize(fh, &high);
+			/* low might just happen to have the value INVALID_FILE_SIZE;
+    			   so we need to check the last error also. */
+			if (low == INVALID_FILE_SIZE &&
+			    (dwErr = GetLastError()) != NO_ERROR) {
+				Py_DECREF(m_obj);
+				return PyErr_SetFromWindowsErr(dwErr);
+			}	
+				    
+#if SIZEOF_SIZE_T > 4
+			m_obj->size = (((size_t)high)<<32) + low;
+#else
+			if (high)
+				/* File is too large to map completely */
+				m_obj->size = (size_t)-1;
+			else
+				m_obj->size = low;
+#endif
 		} else {
 			m_obj->size = map_size;
 		}
