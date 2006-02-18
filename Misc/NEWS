@@ -218,6 +218,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1393157: os.startfile() now has an optional argument to specify
+  a "command verb" to invoke on the file.
+
 - Bug #876637, prevent stack corruption when socket descriptor
   is larger than FD_SETSIZE.
 
