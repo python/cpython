@@ -1295,5 +1295,3 @@ class OpenerFactory:
             if inspect.isclass(ph):
                 ph = ph()
             opener.add_handler(ph)
-
-
