@@ -9,6 +9,10 @@ warnings.filterwarnings("ignore", ".* 'pre' .*", DeprecationWarning,
                         r'pre$')
 warnings.filterwarnings("ignore", ".* regsub .*", DeprecationWarning,
                         r'^regsub$')
+warnings.filterwarnings("ignore",
+                        "the gopherlib module is deprecated",
+                        DeprecationWarning,
+                        "<string>")
 
 class AllTest(unittest.TestCase):
 
