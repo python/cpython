@@ -1403,11 +1403,18 @@ elif os.name == 'nt':
         if not proxyEnable or not proxyOverride:
             return 0
         # try to make a host list from name and IP address.
-        host = [host]
+        rawHost, port = splitport(host)
+        host = [rawHost]
         try:
-            addr = socket.gethostbyname(host[0])
-            if addr != host:
+            addr = socket.gethostbyname(rawHost)
+            if addr != rawHost:
                 host.append(addr)
+        except socket.error:
+            pass
+        try:
+            fqdn = socket.getfqdn(rawHost)
+            if fqdn != rawHost:
+                host.append(fqdn)
         except socket.error:
             pass
         # make a check value list from the registry entry: replace the
