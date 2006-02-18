@@ -7385,11 +7385,15 @@ posix_abort(PyObject *self, PyObject *noargs)
 
 #ifdef MS_WINDOWS
 PyDoc_STRVAR(win32_startfile__doc__,
-"startfile(filepath) - Start a file with its associated application.\n\
+"startfile(filepath [, operation]) - Start a file with its associated\n\
+application.\n\
 \n\
-This acts like double-clicking the file in Explorer, or giving the file\n\
-name as an argument to the DOS \"start\" command:  the file is opened\n\
-with whatever application (if any) its extension is associated.\n\
+When \"operation\" is not specified or \"open\", this acts like\n\
+double-clicking the file in Explorer, or giving the file name as an\n\
+argument to the DOS \"start\" command: the file is opened with whatever\n\
+application (if any) its extension is associated.\n\
+When another \"operation\" is given, it specifies what should be done with\n\
+the file.  A typical operation is \"print\".\n\
 \n\
 startfile returns as soon as the associated application is launched.\n\
 There is no option to wait for the application to close, and no way\n\
@@ -7403,12 +7407,15 @@ static PyObject *
 win32_startfile(PyObject *self, PyObject *args)
 {
 	char *filepath;
+	char *operation = NULL;
 	HINSTANCE rc;
-	if (!PyArg_ParseTuple(args, "et:startfile", 
-				Py_FileSystemDefaultEncoding, &filepath))
+	if (!PyArg_ParseTuple(args, "et|s:startfile", 
+			      Py_FileSystemDefaultEncoding, &filepath, 
+			      &operation))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	rc = ShellExecute((HWND)0, NULL, filepath, NULL, NULL, SW_SHOWNORMAL);
+	rc = ShellExecute((HWND)0, operation, filepath, 
+			  NULL, NULL, SW_SHOWNORMAL);
 	Py_END_ALLOW_THREADS
 	if (rc <= (HINSTANCE)32) {
 		PyObject *errval = win32_error("startfile", filepath);

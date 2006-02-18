@@ -1629,12 +1629,20 @@ Availability: Windows.
 \versionadded{1.6}
 \end{datadesc}
 
-\begin{funcdesc}{startfile}{path}
-Start a file with its associated application.  This acts like
+\begin{funcdesc}{startfile}{path\optional{, operation}}
+Start a file with its associated application.
+
+When \var{operation} is not specified or \code{'open'}, this acts like
 double-clicking the file in Windows Explorer, or giving the file name
 as an argument to the \program{start} command from the interactive
 command shell: the file is opened with whatever application (if any)
 its extension is associated.
+
+When another \var{operation} is given, it must be a ``command verb''
+that specifies what should be done with the file.
+Common verbs documented by Microsoft are \code{'print'} and 
+\code{'edit'} (to be used on files) as well as \code{'explore'} and
+\code{'find'} (to be used on directories).
 
 \function{startfile()} returns as soon as the associated application
 is launched.  There is no option to wait for the application to close,
@@ -1646,6 +1654,7 @@ function doesn't work if it is.  Use the \function{os.path.normpath()}
 function to ensure that the path is properly encoded for Win32.
 Availability: Windows.
 \versionadded{2.0}
+\versionadded[The \var{operation} parameter]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{system}{command}
