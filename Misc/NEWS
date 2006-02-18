@@ -74,6 +74,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1373643: The chunk module can now read chunks larger than
+  two gigabytes.
+
 - Bug #1430298: It is now possible to send a mail with an empty
   return address using smtplib.
 
