@@ -403,7 +403,7 @@ mmap_resize_method(mmap_object *self,
 		newSizeLow = (DWORD)(new_size & 0xFFFFFFFF);
 #else
 		newSizeHigh = 0;
-		newSizeLow = (DWORD)newSize;
+		newSizeLow = (DWORD)new_size;
 #endif
 		SetFilePointer(self->file_handle,
 			       newSizeLow, &newSizeHigh, FILE_BEGIN);
