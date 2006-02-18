@@ -1033,8 +1033,8 @@ PyEnumKey(PyObject *self, PyObject *args)
 	long rc;
 	PyObject *retStr;
 	char *retBuf;
-	DWORD len = 256;  /* includes NULL terminator */
 	char tmpbuf[256]; /* max key name length is 255 */
+	DWORD len = sizeof(tmpbuf); /* includes NULL terminator */
 
 	if (!PyArg_ParseTuple(args, "Oi:EnumKey", &obKey, &index))
 		return NULL;
