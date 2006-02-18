@@ -1017,50 +1017,43 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 			goto cleanup;;
 	}
 
-	if (offset < 0) {
-		if (where == 1) {
-			offset = self->pos + offset;
-			rewind = 1;
-		} else if (where == 2) {
-			if (self->size == -1) {
-				assert(self->mode != MODE_READ_EOF);
-				for (;;) {
-					Py_BEGIN_ALLOW_THREADS
-					chunksize = Util_UnivNewlineRead(
-							&bzerror, self->fp,
-							buffer, buffersize,
-							self);
-					self->pos += chunksize;
-					Py_END_ALLOW_THREADS
+	if (where == 2) {
+		if (self->size == -1) {
+			assert(self->mode != MODE_READ_EOF);
+			for (;;) {
+				Py_BEGIN_ALLOW_THREADS
+				chunksize = Util_UnivNewlineRead(
+						&bzerror, self->fp,
+						buffer, buffersize,
+						self);
+				self->pos += chunksize;
+				Py_END_ALLOW_THREADS
 
-					bytesread += chunksize;
-					if (bzerror == BZ_STREAM_END) {
-						break;
-					} else if (bzerror != BZ_OK) {
-						Util_CatchBZ2Error(bzerror);
-						goto cleanup;
-					}
+				bytesread += chunksize;
+				if (bzerror == BZ_STREAM_END) {
+					break;
+				} else if (bzerror != BZ_OK) {
+					Util_CatchBZ2Error(bzerror);
+					goto cleanup;
 				}
-				self->mode = MODE_READ_EOF;
-				self->size = self->pos;
-				bytesread = 0;
 			}
-			offset = self->size + offset;
-			if (offset >= self->pos)
-				offset -= self->pos;
-			else
-				rewind = 1;
+			self->mode = MODE_READ_EOF;
+			self->size = self->pos;
+			bytesread = 0;
 		}
-		if (offset < 0)
-			offset = 0;
-	} else if (where == 0) {
-		if (offset >= self->pos)
-			offset -= self->pos;
-		else
-			rewind = 1;
+		offset = self->size + offset;
+	} else if (where == 1) {
+		offset = self->pos + offset;
 	}
 
-	if (rewind) {
+	/* Before getting here, offset must be the absolute position the file 
+	 * pointer should be set to. */
+
+	if (offset >= self->pos) {
+		/* we can move forward */
+		offset -= self->pos;
+	} else {
+		/* we cannot move back, so rewind the stream */
 		BZ2_bzReadClose(&bzerror, self->fp);
 		if (bzerror != BZ_OK) {
 			Util_CatchBZ2Error(bzerror);
@@ -1079,11 +1072,9 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 			goto cleanup;
 		}
 		self->mode = MODE_READ;
-	} else if (self->mode == MODE_READ_EOF) {
-		goto exit;
 	}
 
-	if (offset == 0)
+	if (offset <= 0 || self->mode == MODE_READ_EOF)
 		goto exit;
 
 	/* Before getting here, offset must be set to the number of bytes
