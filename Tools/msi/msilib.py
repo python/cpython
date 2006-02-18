@@ -672,4 +672,3 @@ def set_arch_from_file(path):
     else:
         raise ValueError, "Unsupported architecture"
     msi_type += ";1033"
-
