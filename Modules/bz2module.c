@@ -985,7 +985,6 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 	size_t readsize;
 	int chunksize;
 	int bzerror;
-	int rewind = 0;
 	PyObject *ret = NULL;
 
 	if (!PyArg_ParseTuple(args, "O|i:seek", &offobj, &where))
