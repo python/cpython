@@ -9,6 +9,12 @@ from test.test_support import verbose, unlink
 
 import imageop, uu, os
 
+import warnings
+warnings.filterwarnings("ignore",
+                        "the rgbimg module is deprecated",
+                        DeprecationWarning,
+                        ".*test_imageop")
+
 def main(use_rgbimg=1):
 
     # Create binary test files

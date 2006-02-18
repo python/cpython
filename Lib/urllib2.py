@@ -89,7 +89,6 @@ f = urllib2.urlopen('http://www.python.org/')
 
 import base64
 import ftplib
-import gopherlib
 import httplib
 import inspect
 import md5
@@ -1259,6 +1258,7 @@ class CacheFTPHandler(FTPHandler):
 
 class GopherHandler(BaseHandler):
     def gopher_open(self, req):
+        import gopherlib  # this raises DeprecationWarning in 2.5
         host = req.get_host()
         if not host:
             raise GopherError('no host given')
