@@ -111,6 +111,11 @@ class TimeoutTestCase(unittest.TestCase):
         _timeout = 0.001
         self.sock.settimeout(_timeout)
 
+        # If we are too close to www.python.org, this test will fail.
+        # Pick a host that should be farther away.
+        if socket.getfqdn().split('.')[-2:] == ['python', 'org']:
+            self.addr_remote = ('python.net', 80)
+
         _t1 = time.time()
         self.failUnlessRaises(socket.error, self.sock.connect,
                 self.addr_remote)
