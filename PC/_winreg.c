@@ -1033,30 +1033,23 @@ PyEnumKey(PyObject *self, PyObject *args)
 	long rc;
 	PyObject *retStr;
 	char *retBuf;
-	DWORD len;
+	DWORD len = 256;  /* includes NULL terminator */
+	char tmpbuf[256]; /* max key name length is 255 */
 
 	if (!PyArg_ParseTuple(args, "Oi:EnumKey", &obKey, &index))
 		return NULL;
 	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
 		return NULL;
-
-	if ((rc = RegQueryInfoKey(hKey, NULL, NULL, NULL, NULL, &len,
-				  NULL, NULL, NULL, NULL, NULL, NULL))
-	    != ERROR_SUCCESS)
-		return PyErr_SetFromWindowsErrWithFunction(rc,
-							   "RegQueryInfoKey");
-	++len;    /* include null terminator */
-	retStr = PyString_FromStringAndSize(NULL, len);
-	if (retStr == NULL)
-		return NULL;
-	retBuf = PyString_AS_STRING(retStr);
-
-	if ((rc = RegEnumKey(hKey, index, retBuf, len)) != ERROR_SUCCESS) {
-		Py_DECREF(retStr);
-		return PyErr_SetFromWindowsErrWithFunction(rc, "RegEnumKey");
-	}
-	_PyString_Resize(&retStr, strlen(retBuf));
-	return retStr;
+	
+	Py_BEGIN_ALLOW_THREADS
+	rc = RegEnumKeyEx(hKey, index, tmpbuf, &len, NULL, NULL, NULL, NULL);
+	Py_END_ALLOW_THREADS
+	if (rc != ERROR_SUCCESS)
+		return PyErr_SetFromWindowsErrWithFunction(rc, "RegEnumKeyEx");
+	
+	++len;  /* include null terminator */
+	retStr = PyString_FromStringAndSize(tmpbuf, len);
+	return retStr;  /* can be NULL */
 }
 
 static PyObject *
