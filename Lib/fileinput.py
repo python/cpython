@@ -88,7 +88,7 @@ _state = None
 
 DEFAULT_BUFSIZE = 8*1024
 
-def input(files=None, inplace=0, backup="", bufsize=0, 
+def input(files=None, inplace=0, backup="", bufsize=0,
           mode="r", openhook=None):
     """input([files[, inplace[, backup[, mode[, openhook]]]]])
 
@@ -194,7 +194,7 @@ class FileInput:
     sequential order; random access and readline() cannot be mixed.
     """
 
-    def __init__(self, files=None, inplace=0, backup="", bufsize=0, 
+    def __init__(self, files=None, inplace=0, backup="", bufsize=0,
                  mode="r", openhook=None):
         if isinstance(files, basestring):
             files = (files,)
