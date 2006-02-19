@@ -277,14 +277,14 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
 		if (message == NULL) {
 			PyOS_snprintf(msgbuf, sizeof(msgbuf),
 				      "%.150s%s takes %s %d argument%s "
-				      "(%d given)",
+				      "(%ld given)",
 				      fname==NULL ? "function" : fname,
 				      fname==NULL ? "" : "()",
 				      min==max ? "exactly"
 				      : len < min ? "at least" : "at most",
 				      len < min ? min : max,
 				      (len < min ? min : max) == 1 ? "" : "s",
-				      len);
+				      (long)len);
 			message = msgbuf;
 		}
 		PyErr_SetString(PyExc_TypeError, message);
