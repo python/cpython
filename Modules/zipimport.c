@@ -434,8 +434,7 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
 
 	toc_entry = PyDict_GetItemString(self->files, path);
 	if (toc_entry == NULL) {
-		PyErr_Format(PyExc_IOError, "file not found [%.200s]",
-			     path);
+		PyErr_SetFromErrnoWithFilename(PyExc_IOError, path);
 		return NULL;
 	}
 	return get_data(PyString_AsString(self->archive), toc_entry);
