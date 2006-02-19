@@ -532,9 +532,10 @@ In Python 2.3 and beyond, \var{x} may be a string of any length.
 \item[(4)] The slice of \var{s} from \var{i} to \var{j} is defined as
   the sequence of items with index \var{k} such that \code{\var{i} <=
   \var{k} < \var{j}}.  If \var{i} or \var{j} is greater than
-  \code{len(\var{s})}, use \code{len(\var{s})}.  If \var{i} is omitted,
-  use \code{0}.  If \var{j} is omitted, use \code{len(\var{s})}.  If
-  \var{i} is greater than or equal to \var{j}, the slice is empty.
+  \code{len(\var{s})}, use \code{len(\var{s})}.  If \var{i} is omitted
+  or \code{None}, use \code{0}.  If \var{j} is omitted or \code{None},
+  use \code{len(\var{s})}.  If \var{i} is greater than or equal to \var{j},
+  the slice is empty.
 
 \item[(5)] The slice of \var{s} from \var{i} to \var{j} with step
   \var{k} is defined as the sequence of items with index 
@@ -543,9 +544,9 @@ In Python 2.3 and beyond, \var{x} may be a string of any length.
   are \code{i}, \code{i+k}, \code{i+2*k}, \code{i+3*k} and so on, stopping when
   \var{j} is reached (but never including \var{j}).  If \var{i} or \var{j}
   is greater than \code{len(\var{s})}, use \code{len(\var{s})}.  If
-  \var{i} or \var{j} are omitted then they become ``end'' values
+  \var{i} or \var{j} are omitted or \code{None}, they become ``end'' values
   (which end depends on the sign of \var{k}).  Note, \var{k} cannot
-  be zero.
+  be zero. If \var{k} is \code{None}, it is treated like \code{1}.
 
 \item[(6)] If \var{s} and \var{t} are both strings, some Python
 implementations such as CPython can usually perform an in-place optimization
