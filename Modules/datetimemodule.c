@@ -971,7 +971,7 @@ typedef enum {
 	      OFFSET_NAIVE,
 
 	      /* time or datetime where utcoffset() doesn't return None */
-	      OFFSET_AWARE,
+	      OFFSET_AWARE
 } naivety;
 
 /* Classify an object as to whether it's naive or offset-aware.  See
