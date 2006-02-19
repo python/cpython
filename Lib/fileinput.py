@@ -184,7 +184,7 @@ class FileInput:
     """
 
     def __init__(self, files=None, inplace=0, backup="", bufsize=0):
-        if type(files) == type(''):
+        if isinstance(files, basestring):
             files = (files,)
         else:
             if files is None:
