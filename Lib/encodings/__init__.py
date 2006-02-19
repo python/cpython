@@ -91,7 +91,7 @@ def search_function(encoding):
         if not modname:
             continue
         try:
-            mod = __import__(modname,
+            mod = __import__('encodings.' + modname,
                              globals(), locals(), _import_tail)
         except ImportError:
             pass
