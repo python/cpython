@@ -832,9 +832,9 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
 				void *src_buf;
 				PyBufferProcs *pb = value->ob_type->tp_as_buffer;
 				if (pb==NULL) {
-					PyErr_Format(PyExc_TypeError, 
+					PyErr_Format(PyExc_TypeError,
 						"Objects of type '%s' can not "
-						"be used as binary registry values", 
+						"be used as binary registry values",
 						value->ob_type->tp_name);
 					return FALSE;
 				}
@@ -1039,14 +1039,13 @@ PyEnumKey(PyObject *self, PyObject *args)
 		return NULL;
 	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
 		return NULL;
-	
+
 	Py_BEGIN_ALLOW_THREADS
 	rc = RegEnumKeyEx(hKey, index, tmpbuf, &len, NULL, NULL, NULL, NULL);
 	Py_END_ALLOW_THREADS
 	if (rc != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc, "RegEnumKeyEx");
-	
-	++len;  /* include null terminator */
+
 	retStr = PyString_FromStringAndSize(tmpbuf, len);
 	return retStr;  /* can be NULL */
 }
