@@ -2141,7 +2141,7 @@ builtin_zip(PyObject *self, PyObject *args)
 		if (it == NULL) {
 			if (PyErr_ExceptionMatches(PyExc_TypeError))
 				PyErr_Format(PyExc_TypeError,
-				    "zip argument #%d must support iteration",
+				    "zip argument #%zd must support iteration",
 				    i+1);
 			goto Fail_ret_itlist;
 		}
