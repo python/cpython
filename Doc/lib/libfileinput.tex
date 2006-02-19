@@ -43,17 +43,23 @@ It is possible that the last line of a file does not end in a newline
 character; lines are returned including the trailing newline when it
 is present.
 
+You can control how files are opened by providing an opening hook via the
+\var{openhook} parameter to \function{input()} or \class{FileInput()}.
+The hook must be a function that takes two arguments, \var{filename}
+and \var{mode}, and returns an accordingly opened file-like object.
+Two useful hooks are already provided by this module.
+
 The following function is the primary interface of this module:
 
-\begin{funcdesc}{input}{\optional{files\optional{,
-                       inplace\optional{, backup\optional{, mode}}}}}
+\begin{funcdesc}{input}{\optional{files\optional{, inplace\optional{,
+                        backup\optional{, mode\optional{, openhook}}}}}}
   Create an instance of the \class{FileInput} class.  The instance
   will be used as global state for the functions of this module, and
   is also returned to use during iteration.  The parameters to this
   function will be passed along to the constructor of the
   \class{FileInput} class.
 
-  \versionchanged[Added the \var{mode} parameter]{2.5}
+  \versionchanged[Added the \var{mode} and \var{openhook} parameters]{2.5}
 \end{funcdesc}
 
 
@@ -115,7 +121,8 @@ The class which implements the sequence behavior provided by the
 module is available for subclassing as well:
 
 \begin{classdesc}{FileInput}{\optional{files\optional{,
-                             inplace\optional{, backup\optional{, mode}}}}}
+                             inplace\optional{, backup\optional{,
+                             mode\optional{, openhook}}}}}}
   Class \class{FileInput} is the implementation; its methods
   \method{filename()}, \method{fileno()}, \method{lineno()},
   \method{fileline()}, \method{isfirstline()}, \method{isstdin()},
@@ -131,7 +138,12 @@ module is available for subclassing as well:
   \function{open()}. It must be one of \code{'r'}, \code{'rU'},
   \code{'U'} and \code{'rb'}.
 
-  \versionchanged[Added the \var{mode} parameter]{2.5}
+  The \var{openhook}, when given, must be a function that takes two arguments,
+  \var{filename} and \var{mode}, and returns an accordingly opened
+  file-like object.
+  You cannot use \var{inplace} and \var{openhook} together.
+
+  \versionchanged[Added the \var{mode} and \var{openhook} parameters]{2.5}
 \end{classdesc}
 
 \strong{Optional in-place filtering:} if the keyword argument
@@ -148,3 +160,29 @@ filtering is disabled when standard input is read.
 
 \strong{Caveat:} The current implementation does not work for MS-DOS
 8+3 filesystems.
+
+
+The two following opening hooks are provided by this module:
+
+\begin{funcdesc}{hook_compressed}{filename, mode}
+  Transparently opens files compressed with gzip and bzip2 using
+  the \module{gzip} and \module{bz2} modules.
+
+  Usage example: 
+  \samp{fi = fileinput.FileInput(openhook=fileinput.hook_compressed)}
+
+  \versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{hook_encoded}{encoding}
+  Returns a hook which opens each file with \function{codecs.open()},
+  using the given \var{encoding} to read the file.
+
+  Usage example:
+  \samp{fi = fileinput.FileInput(openhook=fileinput.hook_encoded("iso-8859-1"))}
+
+  \note{With this hook, \class{FileInput} might return Unicode strings
+        depending on the specified \var{encoding}.}
+  \versionadded{2.5}
+\end{funcdesc}
+
