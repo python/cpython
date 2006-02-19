@@ -28,8 +28,10 @@ numbers are zero; nextfile() has no effect.  After all lines have been
 read, filename() and the line number functions return the values
 pertaining to the last line read; nextfile() has no effect.
 
-All files are opened in text mode.  If an I/O error occurs during
-opening or reading a file, the IOError exception is raised.
+All files are opened in text mode by default, you can override this by
+setting the mode parameter to input() or FileInput.__init__().
+If an I/O error occurs during opening or reading a file, the IOError
+exception is raised.
 
 If sys.stdin is used more than once, the second and further use will
 return no lines, except perhaps for interactive use, or if it has been
@@ -72,7 +74,6 @@ buffer size.
 XXX Possible additions:
 
 - optional getopt argument processing
-- specify open mode ('r' or 'rb')
 - isatty()
 - read(), read(size), even readlines()
 
@@ -87,8 +88,8 @@ _state = None
 
 DEFAULT_BUFSIZE = 8*1024
 
-def input(files=None, inplace=0, backup="", bufsize=0):
-    """input([files[, inplace[, backup]]])
+def input(files=None, inplace=0, backup="", bufsize=0, mode="r"):
+    """input([files[, inplace[, backup[, mode]]]])
 
     Create an instance of the FileInput class. The instance will be used
     as global state for the functions of this module, and is also returned
@@ -98,7 +99,7 @@ def input(files=None, inplace=0, backup="", bufsize=0):
     global _state
     if _state and _state._file:
         raise RuntimeError, "input() already active"
-    _state = FileInput(files, inplace, backup, bufsize)
+    _state = FileInput(files, inplace, backup, bufsize, mode)
     return _state
 
 def close():
@@ -180,7 +181,7 @@ def isstdin():
     return _state.isstdin()
 
 class FileInput:
-    """class FileInput([files[, inplace[, backup]]])
+    """class FileInput([files[, inplace[, backup[, mode]]]])
 
     Class FileInput is the implementation of the module; its methods
     filename(), lineno(), fileline(), isfirstline(), isstdin(), fileno(),
@@ -192,7 +193,7 @@ class FileInput:
     sequential order; random access and readline() cannot be mixed.
     """
 
-    def __init__(self, files=None, inplace=0, backup="", bufsize=0):
+    def __init__(self, files=None, inplace=0, backup="", bufsize=0, mode="r"):
         if isinstance(files, basestring):
             files = (files,)
         else:
@@ -216,6 +217,11 @@ class FileInput:
         self._backupfilename = None
         self._buffer = []
         self._bufindex = 0
+        # restrict mode argument to reading modes
+        if mode not in ('r', 'rU', 'U', 'rb'):
+            raise ValueError("FileInput opening mode must be one of "
+                             "'r', 'rU', 'U' and 'rb'")
+        self._mode = mode
 
     def __del__(self):
         self.close()
@@ -307,7 +313,7 @@ class FileInput:
                     except os.error: pass
                     # The next few lines may raise IOError
                     os.rename(self._filename, self._backupfilename)
-                    self._file = open(self._backupfilename, "r")
+                    self._file = open(self._backupfilename, self._mode)
                     try:
                         perm = os.fstat(self._file.fileno()).st_mode
                     except OSError:
@@ -326,7 +332,7 @@ class FileInput:
                     sys.stdout = self._output
                 else:
                     # This may raise IOError
-                    self._file = open(self._filename, "r")
+                    self._file = open(self._filename, self._mode)
         self._buffer = self._file.readlines(self._bufsize)
         self._bufindex = 0
         if not self._buffer:
