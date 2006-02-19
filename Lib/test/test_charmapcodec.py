@@ -11,8 +11,19 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 import test.test_support, unittest
 
-# test codec's full path name (see test/testcodec.py)
-codecname = 'test.testcodec'
+import codecs
+
+# Register a search function which knows about our codec
+def codec_search_function(encoding):
+    if encoding == 'testcodec':
+        from test import testcodec
+        return tuple(testcodec.getregentry())
+    return None
+
+codecs.register(codec_search_function)
+
+# test codec's name (see test/testcodec.py)
+codecname = 'testcodec'
 
 class CharmapCodecTest(unittest.TestCase):
     def test_constructorx(self):

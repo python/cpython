@@ -12,6 +12,12 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Fix the encodings package codec search function to only search
+  inside its own package. Fixes problem reported in patch #1433198.
+
+  Note: Codec packages should implement and register their own
+  codec search function. PEP 100 has the details.
+
 - PEP 353: Using ssize_t as the index type.
 
 - Patch #1400181, fix unicode string formatting to not use the locale.
