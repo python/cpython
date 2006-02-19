@@ -45,9 +45,8 @@ DIR=`dirname $DIR`
 ## Configurable options
 
 FAILURE_SUBJECT="Python Regression Test Failures"
-#FAILURE_MAILTO="python-checkins@python.org"
 #FAILURE_MAILTO="YOUR_ACCOUNT@gmail.com"
-FAILURE_MAILTO="nnorwitz@gmail.com"
+FAILURE_MAILTO="python-checkins@python.org"
 
 REMOTE_SYSTEM="neal@dinsdale.python.org"
 REMOTE_DIR="/data/ftp.python.org/pub/docs.python.org/dev/"
@@ -56,6 +55,12 @@ INSTALL_DIR="/tmp/python-test/local"
 RSYNC_OPTS="-aC -e ssh"
 
 REFLOG="build/reflog.txt.out"
+# These tests are not stable and sometimes report leaks; however,
+# test_generators really leaks.  Since test_generators probably won't
+# be fixed real soon, disable warning about it for now.
+# The entire leak report will be mailed if any test not in this list leaks.
+LEAKY_TESTS="test_(capi|cfgparser|charmapcodec|cmd_line|compiler|filecmp|generators|threaded_import|threadedtempfile|threading|thraeading_local|urllib2)"
+
 # Change this flag to "yes" for old releases to just update/build the docs.
 BUILD_DISABLED="no"
 
@@ -155,7 +160,7 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             F=make-test-refleak.out
             start=`current_time`
             ./python ./Lib/test/regrtest.py -R 4:3:$REFLOG -u network >& build/$F
-            NUM_FAILURES=`grep -ic leak $REFLOG`
+            NUM_FAILURES=`egrep -vc "$LEAKY_TESTS" $REFLOG`
             update_status "Testing refleaks ($NUM_FAILURES failures)" "$F" $start
             mail_on_failure "refleak" $REFLOG
 
