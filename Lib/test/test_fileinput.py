@@ -3,7 +3,7 @@ Tests for fileinput module.
 Nick Mathewson
 '''
 
-from test.test_support import verify, verbose, TESTFN
+from test.test_support import verify, verbose, TESTFN, TestFailed
 import sys, os, re
 from StringIO import StringIO
 from fileinput import FileInput
@@ -183,3 +183,20 @@ try:
     verify(fi.fileno() == -1)
 finally:
     remove_tempfiles(t1, t2)
+
+if verbose:
+    print "17. Specify opening mode"
+try:
+    # invalid mode, should raise ValueError
+    fi = FileInput(mode="w")
+    raise TestFailed("FileInput should reject invalid mode argument")
+except ValueError:
+    pass
+try:
+    # try opening in universal newline mode
+    t1 = writeTmp(1, ["A\nB\r\nC\rD"])
+    fi = FileInput(files=t1, mode="U")
+    lines = list(fi)
+    verify(lines == ["A\n", "B\n", "C\n", "D"])
+finally:
+    remove_tempfiles(t1)

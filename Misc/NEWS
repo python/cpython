@@ -366,6 +366,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1212287: fileinput.input() now has a mode parameter for
+  specifying the file mode input files should be opened with.
+
 - Patch #1215184: fileinput now has a fileno() function for getting the
   current file number.
 
