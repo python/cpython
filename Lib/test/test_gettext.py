@@ -145,6 +145,14 @@ trggrkg zrffntr pngnybt yvoenel.''')
         # Try unicode return type
         t.install(unicode=True)
         eq(_('mullusk'), 'bacon')
+        # Test installation of other methods
+        import __builtin__
+        t.install(unicode=True, names=["gettext", "lgettext"])
+        eq(_, t.ugettext)
+        eq(__builtin__.gettext, t.ugettext)
+        eq(lgettext, t.lgettext)
+        del __builtin__.gettext
+        del __builtin__.lgettext
 
 
 class GettextTestCase2(GettextBaseTest):
