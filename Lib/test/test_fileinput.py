@@ -15,9 +15,9 @@ from fileinput import FileInput, hook_encoded
 
 # Write lines (a list of lines) to temp file number i, and return the
 # temp file's name.
-def writeTmp(i, lines):
+def writeTmp(i, lines, mode='w'):  # opening in text mode is the default
     name = TESTFN + str(i)
-    f = open(name, 'w')
+    f = open(name, mode)
     f.writelines(lines)
     f.close()
     return name
@@ -194,7 +194,7 @@ except ValueError:
     pass
 try:
     # try opening in universal newline mode
-    t1 = writeTmp(1, ["A\nB\r\nC\rD"])
+    t1 = writeTmp(1, ["A\nB\r\nC\rD"], mode="wb")
     fi = FileInput(files=t1, mode="U")
     lines = list(fi)
     verify(lines == ["A\n", "B\n", "C\n", "D"])
@@ -216,7 +216,7 @@ try:
 except ValueError:
     pass
 try:
-    t1 = writeTmp(1, ["A\nB"])
+    t1 = writeTmp(1, ["A\nB"], mode="wb")
     fi = FileInput(files=t1, openhook=hook_encoded("rot13"))
     lines = list(fi)
     verify(lines == ["N\n", "O"])
