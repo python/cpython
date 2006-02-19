@@ -76,6 +76,7 @@ The following functions use the global state created by
   Return the integer ``file descriptor'' for the current file. When no
   file is opened (before the first line and between files), returns
   \code{-1}.
+\versionadded{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{lineno}{}
@@ -167,7 +168,9 @@ The two following opening hooks are provided by this module:
 \begin{funcdesc}{hook_compressed}{filename, mode}
   Transparently opens files compressed with gzip and bzip2 (recognized
   by the extensions \code{'.gz'} and \code{'.bz2'}) using the \module{gzip}
-  and \module{bz2} modules as well as normal files.
+  and \module{bz2} modules.  If the filename extension is not \code{'.gz'}
+  or \code{'.bz2'}, the file is openned normally (ie,
+  using \function{open()} without any decompression).
 
   Usage example: 
   \samp{fi = fileinput.FileInput(openhook=fileinput.hook_compressed)}
