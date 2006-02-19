@@ -1114,7 +1114,7 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 	  unsigned long bsec,bnsec;
 	  bsec = (long)st->st_birthtime;
 #ifdef HAVE_STAT_TV_NSEC2
-	  bnsec = st.st_birthtimespec->tv_nsec;
+	  bnsec = st->st_birthtimespec.tv_nsec;
 #else
 	  bnsec = 0;
 #endif
