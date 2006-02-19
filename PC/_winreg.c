@@ -1032,7 +1032,6 @@ PyEnumKey(PyObject *self, PyObject *args)
 	int index;
 	long rc;
 	PyObject *retStr;
-	char *retBuf;
 	char tmpbuf[256]; /* max key name length is 255 */
 	DWORD len = sizeof(tmpbuf); /* includes NULL terminator */
 
