@@ -73,7 +73,6 @@ XXX Possible additions:
 
 - optional getopt argument processing
 - specify open mode ('r' or 'rb')
-- fileno()
 - isatty()
 - read(), read(size), even readlines()
 
@@ -153,6 +152,15 @@ def filelineno():
         raise RuntimeError, "no active input()"
     return _state.filelineno()
 
+def fileno():
+    """
+    Return the file number of the current file. When no file is currently
+    opened, returns -1.
+    """
+    if not _state:
+        raise RuntimeError, "no active input()"
+    return _state.fileno()
+
 def isfirstline():
     """
     Returns true the line just read is the first line of its file,
@@ -175,8 +183,9 @@ class FileInput:
     """class FileInput([files[, inplace[, backup]]])
 
     Class FileInput is the implementation of the module; its methods
-    filename(), lineno(), fileline(), isfirstline(), isstdin(), nextfile()
-    and close() correspond to the functions of the same name in the module.
+    filename(), lineno(), fileline(), isfirstline(), isstdin(), fileno(),
+    nextfile() and close() correspond to the functions of the same name
+    in the module.
     In addition it has a readline() method which returns the next
     input line, and a __getitem__() method which implements the
     sequence behavior. The sequence must be accessed in strictly
@@ -333,6 +342,15 @@ class FileInput:
 
     def filelineno(self):
         return self._filelineno
+
+    def fileno(self):
+        if self._file:
+            try:
+                return self._file.fileno()
+            except ValueError:
+                return -1
+        else:
+            return -1
 
     def isfirstline(self):
         return self._filelineno == 1

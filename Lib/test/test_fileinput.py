@@ -167,3 +167,19 @@ try:
     verify(lines == ["A\n", "B"])
 finally:
     remove_tempfiles(t1)
+
+if verbose:
+    print "16. fileno()"
+try:
+    t1 = writeTmp(1, ["A\nB"])
+    t2 = writeTmp(2, ["C\nD"])
+    fi = FileInput(files=(t1, t2))
+    verify(fi.fileno() == -1)
+    line = fi.next()
+    verify(fi.fileno() != -1)
+    fi.nextfile()
+    verify(fi.fileno() == -1)
+    line = list(fi)
+    verify(fi.fileno() == -1)
+finally:
+    remove_tempfiles(t1, t2)

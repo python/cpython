@@ -366,6 +366,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1215184: fileinput now has a fileno() function for getting the
+  current file number.
+
 - Patch #1349274: gettext.install() now optionally installs additional
   translation functions other than _() in the builtin namespace.
 
