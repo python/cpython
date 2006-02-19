@@ -88,8 +88,9 @@ _state = None
 
 DEFAULT_BUFSIZE = 8*1024
 
-def input(files=None, inplace=0, backup="", bufsize=0, mode="r"):
-    """input([files[, inplace[, backup[, mode]]]])
+def input(files=None, inplace=0, backup="", bufsize=0, 
+          mode="r", openhook=None):
+    """input([files[, inplace[, backup[, mode[, openhook]]]]])
 
     Create an instance of the FileInput class. The instance will be used
     as global state for the functions of this module, and is also returned
@@ -99,7 +100,7 @@ def input(files=None, inplace=0, backup="", bufsize=0, mode="r"):
     global _state
     if _state and _state._file:
         raise RuntimeError, "input() already active"
-    _state = FileInput(files, inplace, backup, bufsize, mode)
+    _state = FileInput(files, inplace, backup, bufsize, mode, openhook)
     return _state
 
 def close():
@@ -181,7 +182,7 @@ def isstdin():
     return _state.isstdin()
 
 class FileInput:
-    """class FileInput([files[, inplace[, backup[, mode]]]])
+    """class FileInput([files[, inplace[, backup[, mode[, openhook]]]]])
 
     Class FileInput is the implementation of the module; its methods
     filename(), lineno(), fileline(), isfirstline(), isstdin(), fileno(),
@@ -193,7 +194,8 @@ class FileInput:
     sequential order; random access and readline() cannot be mixed.
     """
 
-    def __init__(self, files=None, inplace=0, backup="", bufsize=0, mode="r"):
+    def __init__(self, files=None, inplace=0, backup="", bufsize=0, 
+                 mode="r", openhook=None):
         if isinstance(files, basestring):
             files = (files,)
         else:
@@ -222,6 +224,11 @@ class FileInput:
             raise ValueError("FileInput opening mode must be one of "
                              "'r', 'rU', 'U' and 'rb'")
         self._mode = mode
+        if inplace and openhook:
+            raise ValueError("FileInput cannot use an opening hook in inplace mode")
+        elif openhook and not callable(openhook):
+            raise ValueError("FileInput openhook must be callable")
+        self._openhook = openhook
 
     def __del__(self):
         self.close()
@@ -332,7 +339,10 @@ class FileInput:
                     sys.stdout = self._output
                 else:
                     # This may raise IOError
-                    self._file = open(self._filename, self._mode)
+                    if self._openhook:
+                        self._file = self._openhook(self._filename, self._mode)
+                    else:
+                        self._file = open(self._filename, self._mode)
         self._buffer = self._file.readlines(self._bufsize)
         self._bufindex = 0
         if not self._buffer:
@@ -363,6 +373,26 @@ class FileInput:
 
     def isstdin(self):
         return self._isstdin
+
+
+def hook_compressed(filename, mode):
+    ext = os.path.splitext(filename)[1]
+    if ext == '.gz':
+        import gzip
+        return gzip.open(filename, mode)
+    elif ext == '.bz2':
+        import bz2
+        return bz2.BZ2File(filename, mode)
+    else:
+        return open(filename, mode)
+
+
+def hook_encoded(encoding):
+    import codecs
+    def openhook(filename, mode):
+        return codecs.open(filename, mode, encoding)
+    return openhook
+
 
 def _test():
     import getopt

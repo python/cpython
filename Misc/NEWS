@@ -366,6 +366,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1215184: FileInput now can be given an opening hook which can
+  be used to control how files are opened.
+
 - Patch #1212287: fileinput.input() now has a mode parameter for
   specifying the file mode input files should be opened with.
 

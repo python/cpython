@@ -6,7 +6,7 @@ Nick Mathewson
 from test.test_support import verify, verbose, TESTFN, TestFailed
 import sys, os, re
 from StringIO import StringIO
-from fileinput import FileInput
+from fileinput import FileInput, hook_encoded
 
 # The fileinput module has 2 interfaces: the FileInput class which does
 # all the work, and a few functions (input, etc.) that use a global _state
@@ -198,5 +198,27 @@ try:
     fi = FileInput(files=t1, mode="U")
     lines = list(fi)
     verify(lines == ["A\n", "B\n", "C\n", "D"])
+finally:
+    remove_tempfiles(t1)
+
+if verbose:
+    print "18. Test file opening hook"
+try:
+    # cannot use openhook and inplace mode
+    fi = FileInput(inplace=1, openhook=lambda f,m: None)
+    raise TestFailed("FileInput should raise if both inplace "
+                     "and openhook arguments are given")
+except ValueError:
+    pass
+try:
+    fi = FileInput(openhook=1)
+    raise TestFailed("FileInput should check openhook for being callable")
+except ValueError:
+    pass
+try:
+    t1 = writeTmp(1, ["A\nB"])
+    fi = FileInput(files=t1, openhook=hook_encoded("rot13"))
+    lines = list(fi)
+    verify(lines == ["N\n", "O"])
 finally:
     remove_tempfiles(t1)
