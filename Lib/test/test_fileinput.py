@@ -157,3 +157,13 @@ try:
     verify(fi.lineno() == 6)
 finally:
     remove_tempfiles(t1, t2)
+
+if verbose:
+    print "15. Unicode filenames"
+try:
+    t1 = writeTmp(1, ["A\nB"])
+    fi = FileInput(files=unicode(t1, sys.getfilesystemencoding()))
+    lines = list(fi)
+    verify(lines == ["A\n", "B"])
+finally:
+    remove_tempfiles(t1)
