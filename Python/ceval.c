@@ -3905,7 +3905,7 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 			}
 		} else {
 			PyErr_SetString(PyExc_TypeError,
-					"slice indices must be integers");
+					"slice indices must be integers or None");
 			return 0;
 		}
 		*pi = x;
