@@ -74,7 +74,7 @@ Extension Modules
 Library
 -------
 
-- Patch #1337756: fileinput now accepts Unicode filenames.
+- Patch #1337756: fileinput now handles Unicode filenames correctly.
 
 - Patch #1373643: The chunk module can now read chunks larger than
   two gigabytes.
