@@ -39,12 +39,7 @@ typedef struct {
    call frame it setup.
 */
 #define CO_NOFREE       0x0040
-/* XXX Temporary hack.  Until generators are a permanent part of the
-   language, we need a way for a code object to record that generators
-   were *possible* when it was compiled.  This is so code dynamically
-   compiled *by* a code object knows whether to allow yield stmts.  In
-   effect, this passes on the "from __future__ import generators" state
-   in effect when the code block was compiled. */
+
 #define CO_GENERATOR_ALLOWED    0x1000 /* no longer used in an essential way */
 #define CO_FUTURE_DIVISION    	0x2000
 
