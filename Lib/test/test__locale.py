@@ -96,7 +96,6 @@ class _LocaleTests(unittest.TestCase):
                                                 nl_radixchar, li_radixchar,
                                                 loc, set_locale))
 
-
     def test_float_parsing(self):
         # Bug #1391872: Test whether float parsing is okay on European
         # locales.
@@ -105,12 +104,15 @@ class _LocaleTests(unittest.TestCase):
                 setlocale(LC_NUMERIC, loc)
             except Error:
                 continue
+
+            # Ignore buggy locale databases. (Mac OS 10.4 and some other BSDs)
+            if loc == 'eu_ES' and localeconv()['decimal_point'] == "' ":
+                continue
+
             self.assertEquals(int(eval('3.14') * 100), 314,
                                 "using eval('3.14') failed for %s" % loc)
             self.assertEquals(int(float('3.14') * 100), 314,
                                 "using float('3.14') failed for %s" % loc)
-
-
 
 def test_main():
     run_unittest(_LocaleTests)
