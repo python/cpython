@@ -140,10 +140,13 @@ cat myzip.zip >> python.exe
                           compress_type}}}
   Write the file named \var{filename} to the archive, giving it the
   archive name \var{arcname} (by default, this will be the same as
-  \var{filename}).  If given, \var{compress_type} overrides the value
+  \var{filename}, but without a drive letter and with leading path
+  separators removed).  If given, \var{compress_type} overrides the value
   given for the \var{compression} parameter to the constructor for
   the new entry.  The archive must be open with mode \code{'w'} or
-  \code{'a'}. 
+  \code{'a'}.
+  \note{Archive names should be relative to the archive root, that is,
+        they should not start with a path separator.}
 \end{methoddesc}
 
 \begin{methoddesc}{writestr}{zinfo_or_arcname, bytes}

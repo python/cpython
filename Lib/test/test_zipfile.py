@@ -45,6 +45,16 @@ class TestsWithSourceFile(unittest.TestCase):
             for f in (TESTFN2, TemporaryFile(), StringIO()):
                 self.zipTest(f, zipfile.ZIP_DEFLATED)
 
+    def testAbsoluteArcnames(self):
+        zipfp = zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED)
+        zipfp.write(TESTFN, "/absolute")
+        zipfp.close()
+
+        zipfp = zipfile.ZipFile(TESTFN2, "r", zipfile.ZIP_STORED)
+        self.assertEqual(zipfp.namelist(), ["absolute"])
+        zipfp.close()
+        
+
     def tearDown(self):
         os.remove(TESTFN)
         os.remove(TESTFN2)
