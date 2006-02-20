@@ -167,8 +167,17 @@ as a \var{protocol} value.
 \versionadded{2.3}
 \end{datadesc}
 
+\note{Be sure to always open pickle files created with protocols >= 1 in
+      binary mode. For the old ASCII-based pickle protocol 0 you can use
+      either text mode or binary mode as long as you stay consistent.
+      
+      A pickle file written with protocol 0 in binary mode will contain
+      lone linefeeds as line terminators and therefore will look ``funny''
+      when viewed in Notepad or other editors which do not support this
+      format.}
+
 The \module{pickle} module provides the
-following functions to make this process more convenient:
+following functions to make the pickling process more convenient:
 
 \begin{funcdesc}{dump}{obj, file\optional{, protocol\optional{, bin}}}
 Write a pickled representation of \var{obj} to the open file object
