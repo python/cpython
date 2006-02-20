@@ -26,8 +26,8 @@ type_name(PyTypeObject *type, void *context)
 	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
 		PyHeapTypeObject* et = (PyHeapTypeObject*)type;
 
-		Py_INCREF(et->name);
-		return et->name;
+		Py_INCREF(et->ht_name);
+		return et->ht_name;
 	}
 	else {
 		s = strrchr(type->tp_name, '.');
@@ -71,8 +71,8 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 
 	Py_INCREF(value);
 
-	Py_DECREF(et->name);
-	et->name = value;
+	Py_DECREF(et->ht_name);
+	et->ht_name = value;
 
 	type->tp_name = PyString_AS_STRING(value);
 
@@ -1838,8 +1838,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	/* Keep name and slots alive in the extended type object */
 	et = (PyHeapTypeObject *)type;
 	Py_INCREF(name);
-	et->name = name;
-	et->slots = slots;
+	et->ht_name = name;
+	et->ht_slots = slots;
 
 	/* Initialize tp_flags */
 	type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE |
@@ -2147,8 +2147,8 @@ type_dealloc(PyTypeObject *type)
          * of most other objects.  It's okay to cast it to char *.
          */
 	PyObject_Free((char *)type->tp_doc);
-	Py_XDECREF(et->name);
-	Py_XDECREF(et->slots);
+	Py_XDECREF(et->ht_name);
+	Py_XDECREF(et->ht_slots);
 	type->ob_type->tp_free((PyObject *)type);
 }
 
@@ -2215,7 +2215,7 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 	VISIT(type->tp_base);
 
 	/* There's no need to visit type->tp_subclasses or
-	   ((PyHeapTypeObject *)type)->slots, because they can't be involved
+	   ((PyHeapTypeObject *)type)->ht_slots, because they can't be involved
 	   in cycles; tp_subclasses is a list of weak references,
 	   and slots is a tuple of strings. */
 
