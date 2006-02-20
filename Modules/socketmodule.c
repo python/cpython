@@ -210,8 +210,8 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 
 /* Irix 6.5 fails to define this variable at all. This is needed 
    for both GCC and SGI's compiler. I'd say that the SGI headers 
-   are just busted. */
-#if defined(__sgi) && !defined(INET_ADDRSTRLEN)
+   are just busted. Same thing for Solaris. */
+#if (defined(__sgi) || defined(sun)) && !defined(INET_ADDRSTRLEN)
 #define INET_ADDRSTRLEN 16
 #endif
 

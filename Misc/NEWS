@@ -45,6 +45,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #854823: socketmodule now builds on Sun platforms even when
+  INET_ADDRSTRLEN is not defined.
+
 - Bug #876637, prevent stack corruption when socket descriptor
   is larger than FD_SETSIZE.
 
