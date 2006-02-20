@@ -53,7 +53,7 @@ class TestsWithSourceFile(unittest.TestCase):
         zipfp = zipfile.ZipFile(TESTFN2, "r", zipfile.ZIP_STORED)
         self.assertEqual(zipfp.namelist(), ["absolute"])
         zipfp.close()
-        
+
 
     def tearDown(self):
         os.remove(TESTFN)

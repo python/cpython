@@ -184,7 +184,7 @@ def get_build_architecture():
         return "Intel"
     j = string.find(sys.version, ")", i)
     return sys.version[i+len(prefix):j]
-    
+
 
 
 class MSVCCompiler (CCompiler) :
@@ -232,7 +232,7 @@ class MSVCCompiler (CCompiler) :
         else:
             # Win64. Assume this was built with the platform SDK
             self.__product = "Microsoft SDK compiler %s" % (self.__version + 6)
-            
+
         self.initialized = False
 
     def initialize(self):
@@ -281,7 +281,7 @@ class MSVCCompiler (CCompiler) :
             self.compile_options = [ '/nologo', '/Ox', '/MD', '/W3', '/GS-' ,
                                      '/DNDEBUG']
             self.compile_options_debug = ['/nologo', '/Od', '/MDd', '/W3', '/GS-',
-                                          '/Z7', '/D_DEBUG']            
+                                          '/Z7', '/D_DEBUG']
 
         self.ldflags_shared = ['/DLL', '/nologo', '/INCREMENTAL:NO']
         if self.__version >= 7:
