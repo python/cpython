@@ -224,6 +224,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #854823: socketmodule now builds on Sun platforms even when
+  INET_ADDRSTRLEN is not defined.
+
 - Patch #1393157: os.startfile() now has an optional argument to specify
   a "command verb" to invoke on the file.
 
