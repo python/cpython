@@ -345,7 +345,7 @@ typedef struct _typeobject {
 typedef struct _heaptypeobject {
 	/* Note: there's a dependency on the order of these members
 	   in slotptr() in typeobject.c . */
-	PyTypeObject type;
+	PyTypeObject ht_type;
 	PyNumberMethods as_number;
 	PyMappingMethods as_mapping;
 	PySequenceMethods as_sequence; /* as_sequence comes after as_mapping,
@@ -354,13 +354,13 @@ typedef struct _heaptypeobject {
 					  a given operator (e.g. __getitem__).
 					  see add_operators() in typeobject.c . */
 	PyBufferProcs as_buffer;
-	PyObject *name, *slots;
+	PyObject *ht_name, *ht_slots;
 	/* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;
 
 /* access macro to the members which are floating "behind" the object */
 #define PyHeapType_GET_MEMBERS(etype) \
-    ((PyMemberDef *)(((char *)etype) + (etype)->type.ob_type->tp_basicsize))
+    ((PyMemberDef *)(((char *)etype) + (etype)->ht_type.ob_type->tp_basicsize))
 
 
 /* Generic type check */
