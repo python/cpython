@@ -23,7 +23,7 @@ Open a network object denoted by a URL for reading.  If the URL does
 not have a scheme identifier, or if it has \file{file:} as its scheme
 identifier, this opens a local file (without universal newlines);
 otherwise it opens a socket to a server somewhere on the network.  If
-the connection cannot be made, or if the server returns an error code,
+the connection cannot be made
 the \exception{IOError} exception is raised.  If all went well, a
 file-like object is returned.  This supports the following methods:
 \method{read()}, \method{readline()}, \method{readlines()}, \method{fileno()},
@@ -274,6 +274,9 @@ Additional keyword parameters, collected in \var{x509}, are used for
 authentication with the \file{https:} scheme.  The keywords
 \var{key_file} and \var{cert_file} are supported; both are needed to
 actually retrieve a resource at an \file{https:} URL.
+
+\class{URLopener} objects will raise an \exception{IOError} exception
+if the server returns an error code.
 \end{classdesc}
 
 \begin{classdesc}{FancyURLopener}{...}
@@ -284,6 +287,10 @@ handling for the following HTTP response codes: 301, 302, 303, 307 and
 response codes (authentication required), basic HTTP authentication is
 performed.  For the 30x response codes, recursion is bounded by the
 value of the \var{maxtries} attribute, which defaults to 10.
+
+For all other response codes, the method \method{http_error_default()}
+is called which you can override in subclasses to handle the error
+appropriately.
 
 \note{According to the letter of \rfc{2616}, 301 and 302 responses to
   POST requests must not be automatically redirected without
