@@ -214,21 +214,31 @@ class MSVCCompiler (CCompiler) :
         self.initialized = False
 
     def initialize(self):
-        self.__paths = self.get_msvc_paths("path")
+        self.__paths = []
+        if os.environ.has_key("MSSdk") and self.find_exe("cl.exe"):
+            # Assume that the SDK set up everything alright; don't try to be
+            # smarter
+            self.cc = "cl.exe"
+            self.linker = "link.exe"
+            self.lib = "lib.exe"
+            self.rc = "rc.exe"
+            self.mc = "mc.exe"
+        else:
+            self.__paths = self.get_msvc_paths("path")
 
-        if len (self.__paths) == 0:
-            raise DistutilsPlatformError, \
-                  ("Python was built with version %s of Visual Studio, "
-                   "and extensions need to be built with the same "
-                   "version of the compiler, but it isn't installed." % self.__version)
+            if len (self.__paths) == 0:
+                raise DistutilsPlatformError, \
+                      ("Python was built with version %s of Visual Studio, "
+                       "and extensions need to be built with the same "
+                       "version of the compiler, but it isn't installed." % self.__version)
 
-        self.cc = self.find_exe("cl.exe")
-        self.linker = self.find_exe("link.exe")
-        self.lib = self.find_exe("lib.exe")
-        self.rc = self.find_exe("rc.exe")   # resource compiler
-        self.mc = self.find_exe("mc.exe")   # message compiler
-        self.set_path_env_var('lib')
-        self.set_path_env_var('include')
+            self.cc = self.find_exe("cl.exe")
+            self.linker = self.find_exe("link.exe")
+            self.lib = self.find_exe("lib.exe")
+            self.rc = self.find_exe("rc.exe")   # resource compiler
+            self.mc = self.find_exe("mc.exe")   # message compiler
+            self.set_path_env_var('lib')
+            self.set_path_env_var('include')
 
         # extend the MSVC path with the current path
         try:
