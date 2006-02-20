@@ -628,6 +628,10 @@ calculate_path(void)
     if (pfound > 0) {
         reduce(prefix);
         reduce(prefix);
+	/* The prefix is the root directory, but reduce() chopped
+	 * off the "/". */
+	if (!prefix[0])
+		strcpy(prefix, separator);
     }
     else
         strncpy(prefix, PREFIX, MAXPATHLEN);
@@ -636,6 +640,8 @@ calculate_path(void)
         reduce(exec_prefix);
         reduce(exec_prefix);
         reduce(exec_prefix);
+	if (!exec_prefix[0])
+		strcpy(exec_prefix, separator);
     }
     else
         strncpy(exec_prefix, EXEC_PREFIX, MAXPATHLEN);
