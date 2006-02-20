@@ -4097,9 +4097,6 @@ slot_sq_length(PyObject *self)
 	return len;
 }
 
-SLOT1(slot_sq_concat, "__add__", PyObject *, "O")
-SLOT1(slot_sq_repeat, "__mul__", int, "i")
-
 /* Super-optimized version of slot_sq_item.
    Other slots could do the same... */
 static PyObject *
@@ -4212,9 +4209,6 @@ slot_sq_contains(PyObject *self, PyObject *value)
 	}
 	return result;
 }
-
-SLOT1(slot_sq_inplace_concat, "__iadd__", PyObject *, "O")
-SLOT1(slot_sq_inplace_repeat, "__imul__", int, "i")
 
 #define slot_mp_length slot_sq_length
 
@@ -4929,12 +4923,17 @@ typedef struct wrapperbase slotdef;
 static slotdef slotdefs[] = {
 	SQSLOT("__len__", sq_length, slot_sq_length, wrap_inquiry,
 	       "x.__len__() <==> len(x)"),
-	SQSLOT("__add__", sq_concat, slot_sq_concat, wrap_binaryfunc,
-	       "x.__add__(y) <==> x+y"),
-	SQSLOT("__mul__", sq_repeat, slot_sq_repeat, wrap_intargfunc,
-	       "x.__mul__(n) <==> x*n"),
-	SQSLOT("__rmul__", sq_repeat, slot_sq_repeat, wrap_intargfunc,
-	       "x.__rmul__(n) <==> n*x"),
+	/* Heap types defining __add__/__mul__ have sq_concat/sq_repeat == NULL.
+	   The logic in abstract.c always falls back to nb_add/nb_multiply in
+	   this case.  Defining both the nb_* and the sq_* slots to call the
+	   user-defined methods has unexpected side-effects, as shown by
+	   test_descr.notimplemented() */
+	SQSLOT("__add__", sq_concat, NULL, wrap_binaryfunc,
+          "x.__add__(y) <==> x+y"),
+	SQSLOT("__mul__", sq_repeat, NULL, wrap_intargfunc,
+          "x.__mul__(n) <==> x*n"),
+	SQSLOT("__rmul__", sq_repeat, NULL, wrap_intargfunc,
+          "x.__rmul__(n) <==> n*x"),
 	SQSLOT("__getitem__", sq_item, slot_sq_item, wrap_sq_item,
 	       "x.__getitem__(y) <==> x[y]"),
 	SQSLOT("__getslice__", sq_slice, slot_sq_slice, wrap_intintargfunc,
@@ -4956,10 +4955,10 @@ static slotdef slotdefs[] = {
                Use of negative indices is not supported."),
 	SQSLOT("__contains__", sq_contains, slot_sq_contains, wrap_objobjproc,
 	       "x.__contains__(y) <==> y in x"),
-	SQSLOT("__iadd__", sq_inplace_concat, slot_sq_inplace_concat,
-	       wrap_binaryfunc, "x.__iadd__(y) <==> x+=y"),
-	SQSLOT("__imul__", sq_inplace_repeat, slot_sq_inplace_repeat,
-	       wrap_intargfunc, "x.__imul__(y) <==> x*=y"),
+	SQSLOT("__iadd__", sq_inplace_concat, NULL,
+          wrap_binaryfunc, "x.__iadd__(y) <==> x+=y"),
+	SQSLOT("__imul__", sq_inplace_repeat, NULL,
+          wrap_intargfunc, "x.__imul__(y) <==> x*=y"),
 
 	MPSLOT("__len__", mp_length, slot_mp_length, wrap_inquiry,
 	       "x.__len__() <==> len(x)"),

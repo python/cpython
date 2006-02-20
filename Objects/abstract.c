@@ -610,14 +610,11 @@ PyNumber_Add(PyObject *v, PyObject *w)
 	PyObject *result = binary_op1(v, w, NB_SLOT(nb_add));
 	if (result == Py_NotImplemented) {
 		PySequenceMethods *m = v->ob_type->tp_as_sequence;
+		Py_DECREF(result);
 		if (m && m->sq_concat) {
-			Py_DECREF(result);
-			result = (*m->sq_concat)(v, w);
+			return (*m->sq_concat)(v, w);
 		}
-		if (result == Py_NotImplemented) {
-			Py_DECREF(result);
-			return binop_type_error(v, w, "+");
-                }
+		result = binop_type_error(v, w, "+");
 	}
 	return result;
 }
@@ -1129,6 +1126,15 @@ PySequence_Concat(PyObject *s, PyObject *o)
 	if (m && m->sq_concat)
 		return m->sq_concat(s, o);
 
+	/* Instances of user classes defining an __add__() method only
+	   have an nb_add slot, not an sq_concat slot.  So we fall back
+	   to nb_add if both arguments appear to be sequences. */
+	if (PySequence_Check(s) && PySequence_Check(o)) {
+		PyObject *result = binary_op1(s, o, NB_SLOT(nb_add));
+		if (result != Py_NotImplemented)
+			return result;
+		Py_DECREF(result);
+	}
 	return type_error("object can't be concatenated");
 }
 
@@ -1144,6 +1150,20 @@ PySequence_Repeat(PyObject *o, int count)
 	if (m && m->sq_repeat)
 		return m->sq_repeat(o, count);
 
+	/* Instances of user classes defining a __mul__() method only
+	   have an nb_multiply slot, not an sq_repeat slot. so we fall back
+	   to nb_multiply if o appears to be a sequence. */
+	if (PySequence_Check(o)) {
+		PyObject *n, *result;
+		n = PyInt_FromLong(count);
+		if (n == NULL)
+			return NULL;
+		result = binary_op1(o, n, NB_SLOT(nb_multiply));
+		Py_DECREF(n);
+		if (result != Py_NotImplemented)
+			return result;
+		Py_DECREF(result);
+	}
 	return type_error("object can't be repeated");
 }
 
@@ -1161,6 +1181,13 @@ PySequence_InPlaceConcat(PyObject *s, PyObject *o)
 	if (m && m->sq_concat)
 		return m->sq_concat(s, o);
 
+	if (PySequence_Check(s) && PySequence_Check(o)) {
+		PyObject *result = binary_iop1(s, o, NB_SLOT(nb_inplace_add),
+					       NB_SLOT(nb_add));
+		if (result != Py_NotImplemented)
+			return result;
+		Py_DECREF(result);
+	}
 	return type_error("object can't be concatenated");
 }
 
@@ -1178,6 +1205,18 @@ PySequence_InPlaceRepeat(PyObject *o, int count)
 	if (m && m->sq_repeat)
 		return m->sq_repeat(o, count);
 
+	if (PySequence_Check(o)) {
+		PyObject *n, *result;
+		n = PyInt_FromLong(count);
+		if (n == NULL)
+			return NULL;
+		result = binary_iop1(o, n, NB_SLOT(nb_inplace_multiply),
+				     NB_SLOT(nb_multiply));
+		Py_DECREF(n);
+		if (result != Py_NotImplemented)
+			return result;
+		Py_DECREF(result);
+	}
 	return type_error("object can't be repeated");
 }
 

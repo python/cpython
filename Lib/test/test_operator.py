@@ -3,6 +3,34 @@ import unittest
 
 from test import test_support
 
+class Seq1:
+    def __init__(self, lst):
+        self.lst = lst
+    def __len__(self):
+        return len(self.lst)
+    def __getitem__(self, i):
+        return self.lst[i]
+    def __add__(self, other):
+        return self.lst + other.lst
+    def __mul__(self, other):
+        return self.lst * other
+    def __rmul__(self, other):
+        return other * self.lst
+
+class Seq2(object):
+    def __init__(self, lst):
+        self.lst = lst
+    def __len__(self):
+        return len(self.lst)
+    def __getitem__(self, i):
+        return self.lst[i]
+    def __add__(self, other):
+        return self.lst + other.lst
+    def __mul__(self, other):
+        return self.lst * other
+    def __rmul__(self, other):
+        return other * self.lst
+
 
 class OperatorTestCase(unittest.TestCase):
     def test_lt(self):
@@ -92,6 +120,9 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnlessRaises(TypeError, operator.concat, None, None)
         self.failUnless(operator.concat('py', 'thon') == 'python')
         self.failUnless(operator.concat([1, 2], [3, 4]) == [1, 2, 3, 4])
+        self.failUnless(operator.concat(Seq1([5, 6]), Seq1([7])) == [5, 6, 7])
+        self.failUnless(operator.concat(Seq2([5, 6]), Seq2([7])) == [5, 6, 7])
+        self.failUnlessRaises(TypeError, operator.concat, 13, 29)
 
     def test_countOf(self):
         self.failUnlessRaises(TypeError, operator.countOf)
@@ -246,6 +277,15 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnless(operator.repeat(a, 2) == a+a)
         self.failUnless(operator.repeat(a, 1) == a)
         self.failUnless(operator.repeat(a, 0) == '')
+        a = Seq1([4, 5, 6])
+        self.failUnless(operator.repeat(a, 2) == [4, 5, 6, 4, 5, 6])
+        self.failUnless(operator.repeat(a, 1) == [4, 5, 6])
+        self.failUnless(operator.repeat(a, 0) == [])
+        a = Seq2([4, 5, 6])
+        self.failUnless(operator.repeat(a, 2) == [4, 5, 6, 4, 5, 6])
+        self.failUnless(operator.repeat(a, 1) == [4, 5, 6])
+        self.failUnless(operator.repeat(a, 0) == [])
+        self.failUnlessRaises(TypeError, operator.repeat, 6, 7)
 
     def test_rshift(self):
         self.failUnlessRaises(TypeError, operator.rshift)
