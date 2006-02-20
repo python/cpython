@@ -2222,6 +2222,80 @@ There are very few functions specific to instance objects.
 \end{cfuncdesc}
 
 
+\subsection{Function Objects \label{function-objects}}
+
+\obindex{function}
+There are a few functions specific to Python functions.
+
+\begin{ctypedesc}{PyFunctionObject}
+  The C structure used for functions.
+\end{ctypedesc}
+
+\begin{cvardesc}{PyTypeObject}{PyFunction_Type}
+  This is an instance of \ctype{PyTypeObject} and represents the
+  Python function type.  It is exposed to Python programmers as
+  \code{types.FunctionType}.
+  \withsubitem{(in module types)}{\ttindex{MethodType}}
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PyFunction_Check}{PyObject *o}
+  Return true if \var{o} is a function object (has type
+  \cdata{PyFunction_Type}).  The parameter must not be \NULL{}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyFunction_New}{PyObject *code,
+                                             PyObject *globals}
+  Return a new function object associated with the code object
+  \var{code}. \var{globals} must be a dictionary with the the global
+  varaibles accessible to the function.
+
+  The function's docstring, name and \var{__module__} are retrieved
+  from the code object, the argument defaults and closure are set to
+  \NULL{}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyFunction_GetCode}{PyObject *op}
+  Return the code object associated with the function object \var{op}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyFunction_GetGlobals}{PyObject *op}
+  Return the globals dictionary associated with the function object
+  \var{op}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyFunction_GetModule}{PyObject *op}
+  Return the \var{__module__} attribute of the function object \var{op}.
+  This is normally a string containing the module name, but can be set
+  to any other object by Python code.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyFunction_GetDefaults}{PyObject *op}
+  Return the argument default values of the function object \var{op}.
+  This can be a tuple of arguments or \NULL{}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyFunction_SetDefaults}{PyObject *op,
+                                               PyObject *defaults}
+  Set the argument default values for the function object \var{op}.
+  \var{defaults} must be \var{Py_None} or a tuple.
+
+  Raises \exception{SystemError} and returns \code{-1} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyFunction_GetClosure}{PyObject *op}
+  Return the closure associated with the function object \var{op}.
+  This can be \NULL{} or a tuple of cell objects.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyFunction_SetClosure}{PyObject *op,
+                                              PyObject *closure}
+  Set the closure associated with the function object \var{op}.
+  \var{closure} must be \var{Py_None} or a tuple of cell objects.
+
+  Raises \exception{SystemError} and returns \code{-1} on failure.
+\end{cfuncdesc}
+
+
 \subsection{Method Objects \label{method-objects}}
 
 \obindex{method}
@@ -2655,7 +2729,7 @@ when accessed.  Cell objects are not likely to be useful elsewhere.
 \end{ctypedesc}
 
 \begin{cvardesc}{PyTypeObject}{PyCell_Type}
-  The type object corresponding to cell objects
+  The type object corresponding to cell objects.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyCell_Check}{ob}
