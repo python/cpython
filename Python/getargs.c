@@ -284,7 +284,7 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
 				      : len < min ? "at least" : "at most",
 				      len < min ? min : max,
 				      (len < min ? min : max) == 1 ? "" : "s",
-				      (long)len);
+				      Py_SAFE_DOWNCAST(len, Py_ssize_t, long));
 			message = msgbuf;
 		}
 		PyErr_SetString(PyExc_TypeError, message);
