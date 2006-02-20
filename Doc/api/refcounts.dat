@@ -337,21 +337,48 @@ PyFloat_Check:PyObject*:p:0:
 PyFloat_FromDouble:PyObject*::+1:
 PyFloat_FromDouble:double:v::
 
+PyFunction_GetClosure:PyObject*::0:
+PyFunction_GetClosure:PyObject*:op:0:
+
+PyFunction_GetCode:PyObject*::0:
+PyFunction_GetCode:PyObject*:op:0:
+
+PyFunction_GetDefaults:PyObject*::0:
+PyFunction_GetDefaults:PyObject*:op:0:
+
+PyFunction_GetGlobals:PyObject*::0:
+PyFunction_GetGlobals:PyObject*:op:0:
+
+PyFunction_GetModule:PyObject*::0:
+PyFunction_GetModule:PyObject*:op:0:
+
+PyFunction_New:PyObject*::+1:
+PyFunction_New:PyObject*:code:+1:
+PyFunction_New:PyObject*:globals:+1:
+
+PyFunction_SetClosure:int:::
+PyFunction_SetClosure:PyObject*:op:0:
+PyFunction_SetClosure:PyObject*:closure:+1:
+
+PyFunction_SetDefaults:int:::
+PyFunction_SetDefaults:PyObject*:op:0:
+PyFunction_SetDefaults:PyObject*:defaults:+1:
+
 Py_InitModule:PyObject*::0:
-Py_InitModule:name:char*::
-Py_InitModule:methods:PyMethodDef[]::
+Py_InitModule:char*:name::
+Py_InitModule:PyMethodDef[]:methods::
 
 Py_InitModule3:PyObject*::0:
-Py_InitModule3:name:char*::
-Py_InitModule3:methods:PyMethodDef[]::
-Py_InitModule3:doc:char*::
+Py_InitModule3:char*:name::
+Py_InitModule3:PyMethodDef[]:methods::
+Py_InitModule3:char*:doc::
 
 Py_InitModule4:PyObject*::0:
-Py_InitModule4:name:char*::
-Py_InitModule4:methods:PyMethodDef[]::
-Py_InitModule4:doc:char*::
-Py_InitModule4:self:PyObject*::
-Py_InitModule4:apiver:int::usually provided by Py_InitModule or Py_InitModule3
+Py_InitModule4:char*:name::
+Py_InitModule4:PyMethodDef[]:methods::
+Py_InitModule4:char*:doc::
+Py_InitModule4:PyObject*:self::
+Py_InitModule4:int:apiver::usually provided by Py_InitModule or Py_InitModule3
 
 PyImport_AddModule:PyObject*::0:reference borrowed from sys.modules
 PyImport_AddModule:char*:name::
