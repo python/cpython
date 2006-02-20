@@ -271,10 +271,10 @@ It is always available.
   \var{platform} may be one of the following values:
 
   \begin{tableii}{l|l}{constant}{Constant}{Platform}
-    \lineii{VER_PLATFORM_WIN32s}       {Win32s on Windows 3.1}
-    \lineii{VER_PLATFORM_WIN32_WINDOWS}{Windows 95/98/ME}
-    \lineii{VER_PLATFORM_WIN32_NT}     {Windows NT/2000/XP}
-    \lineii{VER_PLATFORM_WIN32_CE}     {Windows CE}
+    \lineii{0 (VER_PLATFORM_WIN32s)}       {Win32s on Windows 3.1}
+    \lineii{1 (VER_PLATFORM_WIN32_WINDOWS)}{Windows 95/98/ME}
+    \lineii{2 (VER_PLATFORM_WIN32_NT)}     {Windows NT/2000/XP}
+    \lineii{3 (VER_PLATFORM_WIN32_CE)}     {Windows CE}
   \end{tableii}
 
   This function wraps the Win32 \cfunction{GetVersionEx()} function;
