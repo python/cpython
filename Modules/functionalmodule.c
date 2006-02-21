@@ -191,7 +191,7 @@ partial_set_dict(partialobject *pto, PyObject *value)
 	return 0;
 }
 
-static PyGetSetDef partail_getsetlist[] = {
+static PyGetSetDef partial_getsetlist[] = {
 	{"__dict__", (getter)partial_get_dict, (setter)partial_set_dict},
 	{NULL} /* Sentinel */
 };
@@ -229,7 +229,7 @@ static PyTypeObject partial_type = {
 	0,				/* tp_iternext */
 	0,				/* tp_methods */
 	partial_memberlist,		/* tp_members */
-	partail_getsetlist,		/* tp_getset */
+	partial_getsetlist,		/* tp_getset */
 	0,				/* tp_base */
 	0,				/* tp_dict */
 	0,				/* tp_descr_get */
