@@ -1,6 +1,13 @@
 # Testing rgbimg module
 
-import rgbimg, os, uu
+import warnings
+warnings.filterwarnings("ignore",
+                        "the rgbimg module is deprecated",
+                        DeprecationWarning,
+                        ".*test_rgbimg$")
+import rgbimg
+
+import os, uu
 
 from test.test_support import verbose, unlink, findfile
 
