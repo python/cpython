@@ -289,6 +289,12 @@ check_coding_spec(const char* line, int size, struct tok_state *tok,
 			PyMem_DEL(cs);
 		}
 	}
+	if (!r) {
+		cs = tok->encoding;
+		if (!cs)
+			cs = "with BOM";
+		PyErr_Format(PyExc_SyntaxError, "encoding problem: %s", cs);
+	}
 	return r;
 }
 

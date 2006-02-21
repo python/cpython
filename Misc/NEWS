@@ -12,6 +12,8 @@ What's New in Python 2.4.3c1?
 Core and builtins
 -----------------
 
+- Bug #1378022, UTF-8 files with a leading BOM crashed the interpreter.
+
 - Patch #1400181, fix unicode string formatting to not use the locale.
   This is how string objects work.  u'%f' could use , instead of .
   for the decimal point.  Now both strings and unicode always use periods.
