@@ -4029,8 +4029,12 @@ init_socket(void)
 	PyModule_AddIntConstant(m, "NETLINK_SKIP", NETLINK_SKIP);
 	PyModule_AddIntConstant(m, "NETLINK_USERSOCK", NETLINK_USERSOCK);
 	PyModule_AddIntConstant(m, "NETLINK_FIREWALL", NETLINK_FIREWALL);
+#ifdef NETLINK_TCPDIAG
 	PyModule_AddIntConstant(m, "NETLINK_TCPDIAG", NETLINK_TCPDIAG);
+#endif
+#ifdef NETLINK_NFLOG
 	PyModule_AddIntConstant(m, "NETLINK_NFLOG", NETLINK_NFLOG);
+#endif
 #ifdef NETLINK_XFRM
 	PyModule_AddIntConstant(m, "NETLINK_XFRM", NETLINK_XFRM);
 #endif
