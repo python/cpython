@@ -1493,6 +1493,14 @@ def classmethods():
     else:
         raise TestFailed, "classmethod should check for callability"
 
+    # Verify that classmethod() doesn't allow keyword args
+    try:
+        classmethod(f, kw=1)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "classmethod shouldn't accept keyword args"
+
 def classmethods_in_c():
     if verbose: print "Testing C-based class methods..."
     import xxsubtype as spam
