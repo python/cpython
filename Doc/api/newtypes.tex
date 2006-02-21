@@ -525,7 +525,7 @@ Foo_Type.ob_type = &PyType_Type;
   \member{tp_free}.  The object deallocator should be the one used to
   allocate the instance; this is normally \cfunction{PyObject_Del()}
   if the instance was allocated using \cfunction{PyObject_New()} or
-  \cfunction{PyOject_VarNew()}, or \cfunction{PyObject_GC_Del()} if
+  \cfunction{PyObject_VarNew()}, or \cfunction{PyObject_GC_Del()} if
   the instance was allocated using \cfunction{PyObject_GC_New()} or
   \cfunction{PyObject_GC_VarNew()}.
 
