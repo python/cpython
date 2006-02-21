@@ -34,7 +34,7 @@ hidden instance of the \class{random.Random} class.  You can
 instantiate your own instances of \class{Random} to get generators
 that don't share state.  This is especially useful for multi-threaded
 programs, creating a different instance of \class{Random} for each
-thread, and using the \method{jumpahead()} method to ensure that the
+thread, and using the \method{jumpahead()} method to make it likely that the
 generated sequences seen by each thread don't overlap.
 
 Class \class{Random} can also be subclassed if you want to use a
@@ -47,10 +47,14 @@ over an arbitrarily large range.
 \versionadded[the \method{getrandombits()} method]{2.4}
 
 As an example of subclassing, the \module{random} module provides
-the \class{WichmannHill} class which implements an alternative generator
+the \class{WichmannHill} class that implements an alternative generator
 in pure Python.  The class provides a backward compatible way to
-reproduce results from earlier versions of Python which used the
-Wichmann-Hill algorithm as the core generator.
+reproduce results from earlier versions of Python, which used the
+Wichmann-Hill algorithm as the core generator.  Note that this Wichmann-Hill
+generator can no longer be recommended:  its period is too short by
+contemporary standards, and the sequence generated is known to fail some
+stringent randomness tests.  See the references below for a recent
+variant that repairs these flaws.
 \versionchanged[Substituted MersenneTwister for Wichmann-Hill]{2.3}
 
 
@@ -273,4 +277,9 @@ called.
   \seetext{Wichmann, B. A. \& Hill, I. D., ``Algorithm AS 183:
            An efficient and portable pseudo-random number generator'',
            \citetitle{Applied Statistics} 31 (1982) 188-190.}
+
+  \seeurl{http://www.npl.co.uk/ssfm/download/abstracts.html#196}{A modern
+          variation of the Wichmann-Hill generator that greatly increases
+          the period, and passes now-standard statistical tests that the
+          original generator failed.}
 \end{seealso}
