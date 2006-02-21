@@ -23,7 +23,7 @@ Almost all module functions depend on the basic function
 \function{random()}, which generates a random float uniformly in
 the semi-open range [0.0, 1.0).  Python uses the Mersenne Twister as
 the core generator.  It produces 53-bit precision floats and has a
-period of 2**19937-1.  The underlying implementation in C 
+period of 2**19937-1.  The underlying implementation in C
 is both fast and threadsafe.  The Mersenne Twister is one of the most
 extensively tested random number generators in existence.  However, being
 completely deterministic, it is not suitable for all purposes, and is
@@ -106,8 +106,8 @@ Bookkeeping functions:
   other generators may also provide it as an optional part of the API.
   When available, \method{getrandbits()} enables \method{randrange()}
   to handle arbitrarily large ranges.
-  \versionadded{2.4}   
-\end{funcdesc} 
+  \versionadded{2.4}
+\end{funcdesc}
 
 Functions for integers:
 
@@ -269,7 +269,7 @@ called.
 	   number generator'',
 	   \citetitle{ACM Transactions on Modeling and Computer Simulation}
 	   Vol. 8, No. 1, January pp.3-30 1998.}
-		  
+
   \seetext{Wichmann, B. A. \& Hill, I. D., ``Algorithm AS 183:
            An efficient and portable pseudo-random number generator'',
            \citetitle{Applied Statistics} 31 (1982) 188-190.}
