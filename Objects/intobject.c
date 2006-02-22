@@ -62,7 +62,7 @@ fill_free_list(void)
 }
 
 #ifndef NSMALLPOSINTS
-#define NSMALLPOSINTS		100
+#define NSMALLPOSINTS		257
 #endif
 #ifndef NSMALLNEGINTS
 #define NSMALLNEGINTS		5
