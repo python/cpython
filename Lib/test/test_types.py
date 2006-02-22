@@ -90,6 +90,10 @@ else: raise TestFailed, 'long() does not round properly'
 if float(1) == 1.0 and float(-1) == -1.0 and float(0) == 0.0: pass
 else: raise TestFailed, 'float() does not work properly'
 print '6.4.1 32-bit integers'
+# Ensure the first 256 integers are shared
+a = 256
+b = 128*2
+if a is not b: raise TestFailed, '256 is not shared'
 if 12 + 24 != 36: raise TestFailed, 'int op'
 if 12 + (-24) != -12: raise TestFailed, 'int op'
 if (-12) + 24 != 12: raise TestFailed, 'int op'
