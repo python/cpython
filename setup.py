@@ -447,7 +447,14 @@ class PyBuildExt(build_ext):
             exts.append( Extension('rgbimg', ['rgbimgmodule.c']) )
 
         # readline
-        if self.compiler.find_library_file(lib_dirs, 'readline'):
+        do_readline = self.compiler.find_library_file(lib_dirs, 'readline')
+        if platform == 'darwin':
+            # MacOSX 10.4 has a broken readline. Don't try to build
+            # the readline module unless the user has installed a fixed
+            # readline package
+            if not find_file('readline/rlconf.h', inc_dirs, []):
+                do_readline = False
+        if do_readline:
             readline_libs = ['readline']
             if self.compiler.find_library_file(lib_dirs,
                                                  'ncursesw'):
