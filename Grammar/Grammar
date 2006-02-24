@@ -116,7 +116,7 @@ dictmaker: test ':' test (',' test ':' test)* [',']
 classdef: 'class' NAME ['(' [testlist] ')'] ':' suite
 
 arglist: (argument ',')* (argument [',']| '*' test [',' '**' test] | '**' test)
-argument: test [gen_for] | test '=' test ['(' gen_for ')']  # Really [keyword '='] test
+argument: test [gen_for] | test '=' test  # Really [keyword '='] test
 
 list_iter: list_for | list_if
 list_for: 'for' exprlist 'in' testlist_safe [list_iter]
