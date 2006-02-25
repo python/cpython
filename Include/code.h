@@ -40,7 +40,10 @@ typedef struct {
 */
 #define CO_NOFREE       0x0040
 
-#define CO_GENERATOR_ALLOWED    0x1000 /* no longer used in an essential way */
+#if 0
+/* This is no longer used.  Stopped defining in 2.5, do not re-use. */
+#define CO_GENERATOR_ALLOWED    0x1000
+#endif
 #define CO_FUTURE_DIVISION    	0x2000
 
 #define CO_MAXBLOCKS 20 /* Max static block nesting within a function */
