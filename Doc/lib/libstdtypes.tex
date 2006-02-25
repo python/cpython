@@ -1350,7 +1350,7 @@ arbitrary objects):
 
 \begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
   \lineiii{len(\var{a})}{the number of items in \var{a}}{}
-  \lineiii{\var{a}[\var{k}]}{the item of \var{a} with key \var{k}}{(1)}
+  \lineiii{\var{a}[\var{k}]}{the item of \var{a} with key \var{k}}{(1), (10)}
   \lineiii{\var{a}[\var{k}] = \var{v}}
           {set \code{\var{a}[\var{k}]} to \var{v}}
           {}
@@ -1453,6 +1453,17 @@ then is updated with those key/value pairs:
 \samp{d.update(red=1, blue=2)}.
 \versionchanged[Allowed the argument to be an iterable of key/value
                 pairs and allowed keyword arguments]{2.4}
+
+\item[(10)] If a subclass of dict defines a method \method{__missing__},
+if the key \var{k} is not present, the \var{a}[\var{k}] operation calls
+that method with the key \var{k} as argument.  The \var{a}[\var{k}]
+operation then returns or raises whatever is returned or raised by the
+\function{__missing__}(\var{k}) call if the key is not present.
+No other operations or methods invoke \method{__missing__}().
+If \method{__missing__} is not defined, \exception{KeyError} is raised.
+\method{__missing__} must be a method; it cannot be an instance variable.
+For an example, see \module{collections}.\class{defaultdict}.
+\versionadded{2.5}
 
 \end{description}
 

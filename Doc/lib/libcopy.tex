@@ -67,9 +67,12 @@ set of components copied.
 
 \end{itemize}
 
-This version does not copy types like module, class, function, method,
+This module does not copy types like module, method,
 stack trace, stack frame, file, socket, window, array, or any similar
-types.
+types.  It does ``copy'' functions and classes (shallow and deeply),
+by returning the original object unchanged; this is compatible with
+the way these are treated by the \module{pickle} module.
+\versionchanged[Added copying functions]{2.5}
 
 Classes can use the same interfaces to control copying that they use
 to control pickling.  See the description of module

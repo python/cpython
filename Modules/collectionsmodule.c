@@ -1065,10 +1065,269 @@ PyTypeObject dequereviter_type = {
 	0,
 };
 
+/* defaultdict type *********************************************************/
+
+typedef struct {
+	PyDictObject dict;
+	PyObject *default_factory;
+} defdictobject;
+
+static PyTypeObject defdict_type; /* Forward */
+
+PyDoc_STRVAR(defdict_missing_doc,
+"__missing__(key) # Called by __getitem__ for missing key; pseudo-code:\n\
+  if self.default_factory is None: raise KeyError(key)\n\
+  self[key] = value = self.default_factory()\n\
+  return value\n\
+");
+
+static PyObject *
+defdict_missing(defdictobject *dd, PyObject *key)
+{
+	PyObject *factory = dd->default_factory;
+	PyObject *value;
+	if (factory == NULL || factory == Py_None) {
+		/* XXX Call dict.__missing__(key) */
+		PyErr_SetObject(PyExc_KeyError, key);
+		return NULL;
+	}
+	value = PyEval_CallObject(factory, NULL);
+	if (value == NULL)
+		return value;
+	if (PyObject_SetItem((PyObject *)dd, key, value) < 0) {
+		Py_DECREF(value);
+		return NULL;
+	}
+	return value;
+}
+
+PyDoc_STRVAR(defdict_copy_doc, "D.copy() -> a shallow copy of D.");
+
+static PyObject *
+defdict_copy(defdictobject *dd)
+{
+	/* This calls the object's class.  That only works for subclasses
+	   whose class constructor has the same signature.  Subclasses that
+	   define a different constructor signature must override copy().
+	*/
+	return PyObject_CallFunctionObjArgs((PyObject *)dd->dict.ob_type,
+					    dd->default_factory, dd, NULL);
+}
+
+static PyObject *
+defdict_reduce(defdictobject *dd)
+{
+	/* __reduce__ must returns a 5-tuple as follows:
+
+	   - factory function
+	   - tuple of args for the factory function
+	   - additional state (here None)
+	   - sequence iterator (here None)
+	   - dictionary iterator (yielding successive (key, value) pairs
+
+	   This API is used by pickle.py and copy.py.
+
+	   For this to be useful with pickle.py, the default_factory
+	   must be picklable; e.g., None, a built-in, or a global
+	   function in a module or package.
+
+	   Both shallow and deep copying are supported, but for deep
+	   copying, the default_factory must be deep-copyable; e.g. None,
+	   or a built-in (functions are not copyable at this time).
+
+	   This only works for subclasses as long as their constructor
+	   signature is compatible; the first argument must be the
+	   optional default_factory, defaulting to None.
+	*/
+	PyObject *args;
+	PyObject *items;
+	PyObject *result;
+	if (dd->default_factory == NULL || dd->default_factory == Py_None)
+		args = PyTuple_New(0);
+	else
+		args = PyTuple_Pack(1, dd->default_factory);
+	if (args == NULL)
+		return NULL;
+	items = PyObject_CallMethod((PyObject *)dd, "iteritems", "()");
+	if (items == NULL) {
+		Py_DECREF(args);
+		return NULL;
+	}
+	result = PyTuple_Pack(5, dd->dict.ob_type, args,
+			      Py_None, Py_None, items);
+	Py_DECREF(args);
+	return result;
+}
+
+static PyMethodDef defdict_methods[] = {
+	{"__missing__", (PyCFunction)defdict_missing, METH_O,
+	 defdict_missing_doc},
+	{"copy", (PyCFunction)defdict_copy, METH_NOARGS,
+	 defdict_copy_doc},
+	{"__copy__", (PyCFunction)defdict_copy, METH_NOARGS,
+	 defdict_copy_doc},
+	{"__reduce__", (PyCFunction)defdict_reduce, METH_NOARGS,
+	 reduce_doc},
+	{NULL}
+};
+
+static PyMemberDef defdict_members[] = {
+	{"default_factory", T_OBJECT,
+	 offsetof(defdictobject, default_factory), 0,
+	 PyDoc_STR("Factory for default value called by __missing__().")},
+	{NULL}
+};
+
+static void
+defdict_dealloc(defdictobject *dd)
+{
+	Py_CLEAR(dd->default_factory);
+	PyDict_Type.tp_dealloc((PyObject *)dd);
+}
+
+static int
+defdict_print(defdictobject *dd, FILE *fp, int flags)
+{
+	int sts;
+	fprintf(fp, "defaultdict(");
+	if (dd->default_factory == NULL)
+		fprintf(fp, "None");
+	else {
+		PyObject_Print(dd->default_factory, fp, 0);
+	}
+	fprintf(fp, ", ");
+	sts = PyDict_Type.tp_print((PyObject *)dd, fp, 0);
+	fprintf(fp, ")");
+	return sts;
+}
+
+static PyObject *
+defdict_repr(defdictobject *dd)
+{
+	PyObject *defrepr;
+	PyObject *baserepr;
+	PyObject *result;
+	baserepr = PyDict_Type.tp_repr((PyObject *)dd);
+	if (baserepr == NULL)
+		return NULL;
+	if (dd->default_factory == NULL)
+		defrepr = PyString_FromString("None");
+	else
+		defrepr = PyObject_Repr(dd->default_factory);
+	if (defrepr == NULL) {
+		Py_DECREF(baserepr);
+		return NULL;
+	}
+	result = PyString_FromFormat("defaultdict(%s, %s)",
+				     PyString_AS_STRING(defrepr),
+				     PyString_AS_STRING(baserepr));
+	Py_DECREF(defrepr);
+	Py_DECREF(baserepr);
+	return result;
+}
+
+static int
+defdict_traverse(PyObject *self, visitproc visit, void *arg)
+{
+	Py_VISIT(((defdictobject *)self)->default_factory);
+	return PyDict_Type.tp_traverse(self, visit, arg);
+}
+
+static int
+defdict_tp_clear(defdictobject *dd)
+{
+	if (dd->default_factory != NULL) {
+		Py_DECREF(dd->default_factory);
+		dd->default_factory = NULL;
+	}
+	return PyDict_Type.tp_clear((PyObject *)dd);
+}
+
+static int
+defdict_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	defdictobject *dd = (defdictobject *)self;
+	PyObject *olddefault = dd->default_factory;
+	PyObject *newdefault = NULL;
+	PyObject *newargs;
+	int result;
+	if (args == NULL || !PyTuple_Check(args))
+		newargs = PyTuple_New(0);
+	else {
+		Py_ssize_t n = PyTuple_GET_SIZE(args);
+		if (n > 0)
+			newdefault = PyTuple_GET_ITEM(args, 0);
+		newargs = PySequence_GetSlice(args, 1, n);
+	}
+	if (newargs == NULL)
+		return -1;
+	Py_XINCREF(newdefault);
+	dd->default_factory = newdefault;
+	result = PyDict_Type.tp_init(self, newargs, kwds);
+	Py_DECREF(newargs);
+	Py_XDECREF(olddefault);
+	return result;
+}
+
+PyDoc_STRVAR(defdict_doc,
+"defaultdict(default_factory) --> dict with default factory\n\
+\n\
+The default factory is called without arguments to produce\n\
+a new value when a key is not present, in __getitem__ only.\n\
+A defaultdict compares equal to a dict with the same items.\n\
+");
+
+static PyTypeObject defdict_type = {
+	PyObject_HEAD_INIT(NULL)
+	0,				/* ob_size */
+	"collections.defaultdict",	/* tp_name */
+	sizeof(defdictobject),		/* tp_basicsize */
+	0,				/* tp_itemsize */
+	/* methods */
+	(destructor)defdict_dealloc,	/* tp_dealloc */
+	(printfunc)defdict_print,	/* tp_print */
+	0,				/* tp_getattr */
+	0,				/* tp_setattr */
+	0,				/* tp_compare */
+	(reprfunc)defdict_repr,		/* tp_repr */
+	0,				/* tp_as_number */
+	0,				/* tp_as_sequence */
+	0,				/* tp_as_mapping */
+	0,	       			/* tp_hash */
+	0,				/* tp_call */
+	0,				/* tp_str */
+	PyObject_GenericGetAttr,	/* tp_getattro */
+	0,				/* tp_setattro */
+	0,				/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_HAVE_WEAKREFS,	/* tp_flags */
+	defdict_doc,			/* tp_doc */
+	(traverseproc)defdict_traverse,	/* tp_traverse */
+	(inquiry)defdict_tp_clear,	/* tp_clear */
+	0,				/* tp_richcompare */
+	0,				/* tp_weaklistoffset*/
+	0,				/* tp_iter */
+	0,				/* tp_iternext */
+	defdict_methods,		/* tp_methods */
+	defdict_members,		/* tp_members */
+	0,				/* tp_getset */
+	&PyDict_Type,			/* tp_base */
+	0,				/* tp_dict */
+	0,				/* tp_descr_get */
+	0,				/* tp_descr_set */
+	0,				/* tp_dictoffset */
+	(initproc)defdict_init,		/* tp_init */
+	PyType_GenericAlloc,		/* tp_alloc */
+	0,				/* tp_new */
+	PyObject_GC_Del,		/* tp_free */
+};
+
 /* module level code ********************************************************/
 
 PyDoc_STRVAR(module_doc,
-"High performance data structures\n\
+"High performance data structures.\n\
+- deque:        ordered collection accessible from endpoints only\n\
+- defaultdict:  dict subclass with a default value factory\n\
 ");
 
 PyMODINIT_FUNC
@@ -1084,6 +1343,11 @@ initcollections(void)
 		return;
 	Py_INCREF(&deque_type);
 	PyModule_AddObject(m, "deque", (PyObject *)&deque_type);
+
+	if (PyType_Ready(&defdict_type) < 0)
+		return;
+	Py_INCREF(&defdict_type);
+	PyModule_AddObject(m, "defaultdict", (PyObject *)&defdict_type);
 
 	if (PyType_Ready(&dequeiter_type) < 0)
 		return;

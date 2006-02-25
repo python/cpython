@@ -101,7 +101,8 @@ def _copy_immutable(x):
     return x
 for t in (type(None), int, long, float, bool, str, tuple,
           frozenset, type, xrange, types.ClassType,
-          types.BuiltinFunctionType):
+          types.BuiltinFunctionType,
+	  types.FunctionType):
     d[t] = _copy_immutable
 for name in ("ComplexType", "UnicodeType", "CodeType"):
     t = getattr(types, name, None)
@@ -217,6 +218,7 @@ d[type] = _deepcopy_atomic
 d[xrange] = _deepcopy_atomic
 d[types.ClassType] = _deepcopy_atomic
 d[types.BuiltinFunctionType] = _deepcopy_atomic
+d[types.FunctionType] = _deepcopy_atomic
 
 def _deepcopy_list(x, memo):
     y = []
