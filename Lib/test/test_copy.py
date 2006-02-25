@@ -568,6 +568,22 @@ class TestCopy(unittest.TestCase):
                 raise ValueError, "ain't got no stickin' state"
         self.assertRaises(ValueError, copy.copy, EvilState())
 
+    def test_copy_function(self):
+        self.assertEqual(copy.copy(global_foo), global_foo)
+        def foo(x, y): return x+y
+        self.assertEqual(copy.copy(foo), foo)
+        bar = lambda: None
+        self.assertEqual(copy.copy(bar), bar)
+
+    def test_deepcopy_function(self):
+        self.assertEqual(copy.deepcopy(global_foo), global_foo)
+        def foo(x, y): return x+y
+        self.assertEqual(copy.deepcopy(foo), foo)
+        bar = lambda: None
+        self.assertEqual(copy.deepcopy(bar), bar)
+
+def global_foo(x, y): return x+y
+
 def test_main():
     test_support.run_unittest(TestCopy)
 

@@ -882,8 +882,22 @@ dict_subscript(dictobject *mp, register PyObject *key)
 			return NULL;
 	}
 	v = (mp->ma_lookup)(mp, key, hash) -> me_value;
-	if (v == NULL)
+	if (v == NULL) {
+		if (!PyDict_CheckExact(mp)) {
+			/* Look up __missing__ method if we're a subclass. */
+			static PyObject *missing_str = NULL;
+			if (missing_str == NULL)
+				missing_str = 
+				  PyString_InternFromString("__missing__");
+			PyObject *missing = _PyType_Lookup(mp->ob_type,
+							   missing_str);
+			if (missing != NULL)
+				return PyObject_CallFunctionObjArgs(missing,
+					(PyObject *)mp, key, NULL);
+		}
 		PyErr_SetObject(PyExc_KeyError, key);
+		return NULL;
+	}
 	else
 		Py_INCREF(v);
 	return v;

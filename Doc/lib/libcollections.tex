@@ -8,9 +8,10 @@
 \versionadded{2.4}
 
 
-This module implements high-performance container datatypes.  Currently, the
-only datatype is a deque.  Future additions may include B-trees
-and Fibonacci heaps.
+This module implements high-performance container datatypes.  Currently,
+there are two datatypes, deque and defaultdict.
+Future additions may include B-trees and Fibonacci heaps.
+\versionchanged[Added defaultdict]{2.5}
 
 \begin{funcdesc}{deque}{\optional{iterable}}
   Returns a new deque objected initialized left-to-right (using
@@ -211,3 +212,46 @@ def maketree(iterable):
 [[[['a', 'b'], ['c', 'd']], [['e', 'f'], ['g', 'h']]]]
 
 \end{verbatim}
+
+
+
+\begin{funcdesc}{defaultdict}{\optional{default_factory\optional{, ...}}}
+  Returns a new dictionary-like object.  \class{defaultdict} is a subclass
+  of the builtin \class{dict} class.  It overrides one method and adds one
+  writable instance variable.  The remaining functionality is the same as
+  for the \class{dict} class and is not documented here.
+
+  The first argument provides the initial value for the
+  \member{default_factory} attribute; it defaults to \code{None}.
+  All remaining arguments are treated the same as if they were
+  passed to the \class{dict} constructor, including keyword arguments.
+
+ \versionadded{2.5}
+\end{funcdesc}
+
+\class{defaultdict} objects support the following method in addition to
+the standard \class{dict} operations:
+
+\begin{methoddesc}{__missing__}{key}
+  If the \member{default_factory} attribute is \code{None}, this raises
+  an \exception{KeyError} exception with the \var{key} as argument.
+
+  If \member{default_factory} is not \code{None}, it is called without
+  arguments to provide a default value for the given \var{key}, this
+  value is inserted in the dictionary for the \var{key}, and returned.
+
+  If calling \member{default_factory} raises an exception this exception
+  is propagated unchanged.
+
+  This method is called by the \method{__getitem__} method of the
+  \class{dict} class when the requested key is not found; whatever it
+  returns or raises is then returned or raised by \method{__getitem__}.
+\end{methoddesc}
+
+\class{defaultdict} objects support the following instance variable:
+
+\begin{datadesc}{default_factory}
+  This attribute is used by the \method{__missing__} method; it is initialized
+  from the first argument to the constructor, if present, or to \code{None}, 
+  if absent.
+\end{datadesc}

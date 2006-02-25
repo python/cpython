@@ -14,7 +14,12 @@ class UserDict:
         else:
             return cmp(self.data, dict)
     def __len__(self): return len(self.data)
-    def __getitem__(self, key): return self.data[key]
+    def __getitem__(self, key):
+        if key in self.data:
+            return self.data[key]
+        if hasattr(self.__class__, "__missing__"):
+            return self.__class__.__missing__(self, key)
+        raise KeyError(key)
     def __setitem__(self, key, item): self.data[key] = item
     def __delitem__(self, key): del self.data[key]
     def clear(self): self.data.clear()

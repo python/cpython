@@ -12,6 +12,11 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Patch 1433928:
+  - The copy module now "copies" function objects (as atomic objects).
+  - dict.__getitem__ now looks for a __missing__ hook before raising
+    KeyError.
+
 - Fix the encodings package codec search function to only search
   inside its own package. Fixes problem reported in patch #1433198.
 
@@ -223,6 +228,9 @@ Core and builtins
 
 Extension Modules
 -----------------
+
+- Patch 1433928: Added a new type, defaultdict, to the collections module.
+  This uses the new __missing__ hook behavior added to dict (see above).
 
 - Bug #854823: socketmodule now builds on Sun platforms even when
   INET_ADDRSTRLEN is not defined.
