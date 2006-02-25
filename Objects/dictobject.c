@@ -885,12 +885,12 @@ dict_subscript(dictobject *mp, register PyObject *key)
 	if (v == NULL) {
 		if (!PyDict_CheckExact(mp)) {
 			/* Look up __missing__ method if we're a subclass. */
+		    	PyObject *missing;
 			static PyObject *missing_str = NULL;
 			if (missing_str == NULL)
 				missing_str = 
 				  PyString_InternFromString("__missing__");
-			PyObject *missing = _PyType_Lookup(mp->ob_type,
-							   missing_str);
+			missing = _PyType_Lookup(mp->ob_type, missing_str);
 			if (missing != NULL)
 				return PyObject_CallFunctionObjArgs(missing,
 					(PyObject *)mp, key, NULL);
