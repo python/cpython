@@ -609,13 +609,21 @@ class ObjVisitor(PickleVisitor):
 
     def set(self, field, value, depth):
         if field.seq:
+            # XXX should really check for is_simple, but that requires a symbol table
             if field.type.value == "cmpop":
-                # XXX check that this cast is safe, i.e. works independent on whether
-                # sizeof(cmpop_ty) != sizeof(void*)
-                cast = "(PyObject*(*)(void*))"
+                # While the sequence elements are stored as void*,
+                # ast2obj_cmpop expects an enum
+                self.emit("{", depth)
+                self.emit("int i, n = asdl_seq_LEN(%s);" % value, depth+1)
+                self.emit("value = PyList_New(n);", depth+1)
+                self.emit("if (!value) goto failed;", depth+1)
+                self.emit("for(i = 0; i < n; i++)", depth+1)
+                # This cannot fail, so no need for error handling
+                self.emit("PyList_SET_ITEM(value, i, ast2obj_%s((%s_ty)asdl_seq_GET(%s, i)));" %
+                                (field.type, field.type, value), depth+2, reflow=False)
+                self.emit("}", depth)
             else:
-                cast = ""
-            self.emit("value = ast2obj_list(%s, %sast2obj_%s);" % (value, cast, field.type), depth)
+                self.emit("value = ast2obj_list(%s, ast2obj_%s);" % (value, field.type), depth)
         else:
             ctype = get_c_type(field.type)
             self.emit("value = ast2obj_%s(%s);" % (field.type, value), depth, reflow=False)
