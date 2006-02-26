@@ -33,4 +33,4 @@ ur'unicode raw'
 ()  # Uncoloured
 all
 GeneratorExit
-trailing_whitespace = path 
+trailing_whitespace = path
