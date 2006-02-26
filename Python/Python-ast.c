@@ -2216,8 +2216,13 @@ ast2obj_expr(void* _o)
                 if (PyObject_SetAttrString(result, "left", value) == -1)
                         goto failed;
                 Py_DECREF(value);
-                value = ast2obj_list(o->v.Compare.ops,
-                                     (PyObject*(*)(void*))ast2obj_cmpop);
+                {
+                        int i, n = asdl_seq_LEN(o->v.Compare.ops);
+                        value = PyList_New(n);
+                        if (!value) goto failed;
+                        for(i = 0; i < n; i++)
+                                PyList_SET_ITEM(value, i, ast2obj_cmpop((cmpop_ty)asdl_seq_GET(o->v.Compare.ops, i)));
+                }
                 if (!value) goto failed;
                 if (PyObject_SetAttrString(result, "ops", value) == -1)
                         goto failed;
