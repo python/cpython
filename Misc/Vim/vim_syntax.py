@@ -128,7 +128,7 @@ def fill_stmt(iterable, fill_len):
     """Yield a string that fills at most fill_len characters with strings
     returned by 'iterable' and separated by a space"""
     # Deal with trailing char to handle ' '.join() calculation
-    fill_len += 1  
+    fill_len += 1
     overflow = None
     it = iter(iterable)
     while True:

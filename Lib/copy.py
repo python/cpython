@@ -102,7 +102,7 @@ def _copy_immutable(x):
 for t in (type(None), int, long, float, bool, str, tuple,
           frozenset, type, xrange, types.ClassType,
           types.BuiltinFunctionType,
-	  types.FunctionType):
+          types.FunctionType):
     d[t] = _copy_immutable
 for name in ("ComplexType", "UnicodeType", "CodeType"):
     t = getattr(types, name, None)
