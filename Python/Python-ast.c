@@ -3,20 +3,617 @@
 #include "Python.h"
 #include "Python-ast.h"
 
-static int marshal_write_mod(PyObject **, int *, mod_ty);
-static int marshal_write_stmt(PyObject **, int *, stmt_ty);
-static int marshal_write_expr(PyObject **, int *, expr_ty);
-static int marshal_write_expr_context(PyObject **, int *, expr_context_ty);
-static int marshal_write_slice(PyObject **, int *, slice_ty);
-static int marshal_write_boolop(PyObject **, int *, boolop_ty);
-static int marshal_write_operator(PyObject **, int *, operator_ty);
-static int marshal_write_unaryop(PyObject **, int *, unaryop_ty);
-static int marshal_write_cmpop(PyObject **, int *, cmpop_ty);
-static int marshal_write_comprehension(PyObject **, int *, comprehension_ty);
-static int marshal_write_excepthandler(PyObject **, int *, excepthandler_ty);
-static int marshal_write_arguments(PyObject **, int *, arguments_ty);
-static int marshal_write_keyword(PyObject **, int *, keyword_ty);
-static int marshal_write_alias(PyObject **, int *, alias_ty);
+PyTypeObject *mod_type;
+static PyObject* ast2obj_mod(void*);
+PyTypeObject *Module_type;
+char *Module_fields[]={
+        "body",
+};
+PyTypeObject *Interactive_type;
+char *Interactive_fields[]={
+        "body",
+};
+PyTypeObject *Expression_type;
+char *Expression_fields[]={
+        "body",
+};
+PyTypeObject *Suite_type;
+char *Suite_fields[]={
+        "body",
+};
+PyTypeObject *stmt_type;
+static PyObject* ast2obj_stmt(void*);
+PyTypeObject *FunctionDef_type;
+char *FunctionDef_fields[]={
+        "name",
+        "args",
+        "body",
+        "decorators",
+};
+PyTypeObject *ClassDef_type;
+char *ClassDef_fields[]={
+        "name",
+        "bases",
+        "body",
+};
+PyTypeObject *Return_type;
+char *Return_fields[]={
+        "value",
+};
+PyTypeObject *Delete_type;
+char *Delete_fields[]={
+        "targets",
+};
+PyTypeObject *Assign_type;
+char *Assign_fields[]={
+        "targets",
+        "value",
+};
+PyTypeObject *AugAssign_type;
+char *AugAssign_fields[]={
+        "target",
+        "op",
+        "value",
+};
+PyTypeObject *Print_type;
+char *Print_fields[]={
+        "dest",
+        "values",
+        "nl",
+};
+PyTypeObject *For_type;
+char *For_fields[]={
+        "target",
+        "iter",
+        "body",
+        "orelse",
+};
+PyTypeObject *While_type;
+char *While_fields[]={
+        "test",
+        "body",
+        "orelse",
+};
+PyTypeObject *If_type;
+char *If_fields[]={
+        "test",
+        "body",
+        "orelse",
+};
+PyTypeObject *Raise_type;
+char *Raise_fields[]={
+        "type",
+        "inst",
+        "tback",
+};
+PyTypeObject *TryExcept_type;
+char *TryExcept_fields[]={
+        "body",
+        "handlers",
+        "orelse",
+};
+PyTypeObject *TryFinally_type;
+char *TryFinally_fields[]={
+        "body",
+        "finalbody",
+};
+PyTypeObject *Assert_type;
+char *Assert_fields[]={
+        "test",
+        "msg",
+};
+PyTypeObject *Import_type;
+char *Import_fields[]={
+        "names",
+};
+PyTypeObject *ImportFrom_type;
+char *ImportFrom_fields[]={
+        "module",
+        "names",
+};
+PyTypeObject *Exec_type;
+char *Exec_fields[]={
+        "body",
+        "globals",
+        "locals",
+};
+PyTypeObject *Global_type;
+char *Global_fields[]={
+        "names",
+};
+PyTypeObject *Expr_type;
+char *Expr_fields[]={
+        "value",
+};
+PyTypeObject *Pass_type;
+char *Pass_fields[]={
+};
+PyTypeObject *Break_type;
+char *Break_fields[]={
+};
+PyTypeObject *Continue_type;
+char *Continue_fields[]={
+};
+PyTypeObject *expr_type;
+static PyObject* ast2obj_expr(void*);
+PyTypeObject *BoolOp_type;
+char *BoolOp_fields[]={
+        "op",
+        "values",
+};
+PyTypeObject *BinOp_type;
+char *BinOp_fields[]={
+        "left",
+        "op",
+        "right",
+};
+PyTypeObject *UnaryOp_type;
+char *UnaryOp_fields[]={
+        "op",
+        "operand",
+};
+PyTypeObject *Lambda_type;
+char *Lambda_fields[]={
+        "args",
+        "body",
+};
+PyTypeObject *Dict_type;
+char *Dict_fields[]={
+        "keys",
+        "values",
+};
+PyTypeObject *ListComp_type;
+char *ListComp_fields[]={
+        "elt",
+        "generators",
+};
+PyTypeObject *GeneratorExp_type;
+char *GeneratorExp_fields[]={
+        "elt",
+        "generators",
+};
+PyTypeObject *Yield_type;
+char *Yield_fields[]={
+        "value",
+};
+PyTypeObject *Compare_type;
+char *Compare_fields[]={
+        "left",
+        "ops",
+        "comparators",
+};
+PyTypeObject *Call_type;
+char *Call_fields[]={
+        "func",
+        "args",
+        "keywords",
+        "starargs",
+        "kwargs",
+};
+PyTypeObject *Repr_type;
+char *Repr_fields[]={
+        "value",
+};
+PyTypeObject *Num_type;
+char *Num_fields[]={
+        "n",
+};
+PyTypeObject *Str_type;
+char *Str_fields[]={
+        "s",
+};
+PyTypeObject *Attribute_type;
+char *Attribute_fields[]={
+        "value",
+        "attr",
+        "ctx",
+};
+PyTypeObject *Subscript_type;
+char *Subscript_fields[]={
+        "value",
+        "slice",
+        "ctx",
+};
+PyTypeObject *Name_type;
+char *Name_fields[]={
+        "id",
+        "ctx",
+};
+PyTypeObject *List_type;
+char *List_fields[]={
+        "elts",
+        "ctx",
+};
+PyTypeObject *Tuple_type;
+char *Tuple_fields[]={
+        "elts",
+        "ctx",
+};
+PyTypeObject *expr_context_type;
+static PyObject *Load_singleton, *Store_singleton, *Del_singleton,
+*AugLoad_singleton, *AugStore_singleton, *Param_singleton;
+static PyObject* ast2obj_expr_context(expr_context_ty);
+PyTypeObject *Load_type;
+char *Load_fields[]={
+};
+PyTypeObject *Store_type;
+char *Store_fields[]={
+};
+PyTypeObject *Del_type;
+char *Del_fields[]={
+};
+PyTypeObject *AugLoad_type;
+char *AugLoad_fields[]={
+};
+PyTypeObject *AugStore_type;
+char *AugStore_fields[]={
+};
+PyTypeObject *Param_type;
+char *Param_fields[]={
+};
+PyTypeObject *slice_type;
+static PyObject* ast2obj_slice(void*);
+PyTypeObject *Ellipsis_type;
+char *Ellipsis_fields[]={
+};
+PyTypeObject *Slice_type;
+char *Slice_fields[]={
+        "lower",
+        "upper",
+        "step",
+};
+PyTypeObject *ExtSlice_type;
+char *ExtSlice_fields[]={
+        "dims",
+};
+PyTypeObject *Index_type;
+char *Index_fields[]={
+        "value",
+};
+PyTypeObject *boolop_type;
+static PyObject *And_singleton, *Or_singleton;
+static PyObject* ast2obj_boolop(boolop_ty);
+PyTypeObject *And_type;
+char *And_fields[]={
+};
+PyTypeObject *Or_type;
+char *Or_fields[]={
+};
+PyTypeObject *operator_type;
+static PyObject *Add_singleton, *Sub_singleton, *Mult_singleton,
+*Div_singleton, *Mod_singleton, *Pow_singleton, *LShift_singleton,
+*RShift_singleton, *BitOr_singleton, *BitXor_singleton, *BitAnd_singleton,
+*FloorDiv_singleton;
+static PyObject* ast2obj_operator(operator_ty);
+PyTypeObject *Add_type;
+char *Add_fields[]={
+};
+PyTypeObject *Sub_type;
+char *Sub_fields[]={
+};
+PyTypeObject *Mult_type;
+char *Mult_fields[]={
+};
+PyTypeObject *Div_type;
+char *Div_fields[]={
+};
+PyTypeObject *Mod_type;
+char *Mod_fields[]={
+};
+PyTypeObject *Pow_type;
+char *Pow_fields[]={
+};
+PyTypeObject *LShift_type;
+char *LShift_fields[]={
+};
+PyTypeObject *RShift_type;
+char *RShift_fields[]={
+};
+PyTypeObject *BitOr_type;
+char *BitOr_fields[]={
+};
+PyTypeObject *BitXor_type;
+char *BitXor_fields[]={
+};
+PyTypeObject *BitAnd_type;
+char *BitAnd_fields[]={
+};
+PyTypeObject *FloorDiv_type;
+char *FloorDiv_fields[]={
+};
+PyTypeObject *unaryop_type;
+static PyObject *Invert_singleton, *Not_singleton, *UAdd_singleton,
+*USub_singleton;
+static PyObject* ast2obj_unaryop(unaryop_ty);
+PyTypeObject *Invert_type;
+char *Invert_fields[]={
+};
+PyTypeObject *Not_type;
+char *Not_fields[]={
+};
+PyTypeObject *UAdd_type;
+char *UAdd_fields[]={
+};
+PyTypeObject *USub_type;
+char *USub_fields[]={
+};
+PyTypeObject *cmpop_type;
+static PyObject *Eq_singleton, *NotEq_singleton, *Lt_singleton, *LtE_singleton,
+*Gt_singleton, *GtE_singleton, *Is_singleton, *IsNot_singleton, *In_singleton,
+*NotIn_singleton;
+static PyObject* ast2obj_cmpop(cmpop_ty);
+PyTypeObject *Eq_type;
+char *Eq_fields[]={
+};
+PyTypeObject *NotEq_type;
+char *NotEq_fields[]={
+};
+PyTypeObject *Lt_type;
+char *Lt_fields[]={
+};
+PyTypeObject *LtE_type;
+char *LtE_fields[]={
+};
+PyTypeObject *Gt_type;
+char *Gt_fields[]={
+};
+PyTypeObject *GtE_type;
+char *GtE_fields[]={
+};
+PyTypeObject *Is_type;
+char *Is_fields[]={
+};
+PyTypeObject *IsNot_type;
+char *IsNot_fields[]={
+};
+PyTypeObject *In_type;
+char *In_fields[]={
+};
+PyTypeObject *NotIn_type;
+char *NotIn_fields[]={
+};
+PyTypeObject *comprehension_type;
+static PyObject* ast2obj_comprehension(void*);
+char *comprehension_fields[]={
+        "target",
+        "iter",
+        "ifs",
+};
+PyTypeObject *excepthandler_type;
+static PyObject* ast2obj_excepthandler(void*);
+char *excepthandler_fields[]={
+        "type",
+        "name",
+        "body",
+};
+PyTypeObject *arguments_type;
+static PyObject* ast2obj_arguments(void*);
+char *arguments_fields[]={
+        "args",
+        "vararg",
+        "kwarg",
+        "defaults",
+};
+PyTypeObject *keyword_type;
+static PyObject* ast2obj_keyword(void*);
+char *keyword_fields[]={
+        "arg",
+        "value",
+};
+PyTypeObject *alias_type;
+static PyObject* ast2obj_alias(void*);
+char *alias_fields[]={
+        "name",
+        "asname",
+};
+
+
+static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int num_fields)
+{
+    PyObject *fnames, *result;
+    int i;
+    if (num_fields) {
+        fnames = PyTuple_New(num_fields);
+        if (!fnames) return NULL;
+    } else {
+        fnames = Py_None;
+        Py_INCREF(Py_None);
+    }
+    for(i=0; i < num_fields; i++) {
+        PyObject *field = PyString_FromString(fields[i]);
+        if (!field) {
+            Py_DECREF(fnames);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(fnames, i, field);
+    }
+    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){sO}", type, base, "_fields", fnames);
+    Py_DECREF(fnames);
+    return (PyTypeObject*)result;
+}
+
+static PyObject* ast2obj_list(asdl_seq *seq, PyObject* (*func)(void*))
+{
+    int i, n = asdl_seq_LEN(seq);
+    PyObject *result = PyList_New(n);
+    PyObject *value;
+    if (!result)
+        return NULL;
+    for (i = 0; i < n; i++) {
+        value = func(asdl_seq_GET(seq, i));
+        if (!value) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        PyList_SET_ITEM(result, i, value);
+    }
+    return result;
+}
+
+static PyObject* ast2obj_object(void *o)
+{
+    if (!o)
+        o = Py_None;
+    Py_INCREF((PyObject*)o);
+    return (PyObject*)o;
+}
+#define ast2obj_identifier ast2obj_object
+#define ast2obj_string ast2obj_object
+static PyObject* ast2obj_bool(bool b)
+{
+    return PyBool_FromLong(b);
+}
+
+static int initialized;
+static int init_types(void)
+{
+        if (initialized) return 1;
+        mod_type = make_type("mod", &PyBaseObject_Type, NULL, 0);
+        Module_type = make_type("Module", mod_type, Module_fields, 1);
+        Interactive_type = make_type("Interactive", mod_type,
+                                     Interactive_fields, 1);
+        Expression_type = make_type("Expression", mod_type, Expression_fields,
+                                    1);
+        Suite_type = make_type("Suite", mod_type, Suite_fields, 1);
+        stmt_type = make_type("stmt", &PyBaseObject_Type, NULL, 0);
+        FunctionDef_type = make_type("FunctionDef", stmt_type,
+                                     FunctionDef_fields, 4);
+        ClassDef_type = make_type("ClassDef", stmt_type, ClassDef_fields, 3);
+        Return_type = make_type("Return", stmt_type, Return_fields, 1);
+        Delete_type = make_type("Delete", stmt_type, Delete_fields, 1);
+        Assign_type = make_type("Assign", stmt_type, Assign_fields, 2);
+        AugAssign_type = make_type("AugAssign", stmt_type, AugAssign_fields, 3);
+        Print_type = make_type("Print", stmt_type, Print_fields, 3);
+        For_type = make_type("For", stmt_type, For_fields, 4);
+        While_type = make_type("While", stmt_type, While_fields, 3);
+        If_type = make_type("If", stmt_type, If_fields, 3);
+        Raise_type = make_type("Raise", stmt_type, Raise_fields, 3);
+        TryExcept_type = make_type("TryExcept", stmt_type, TryExcept_fields, 3);
+        TryFinally_type = make_type("TryFinally", stmt_type, TryFinally_fields,
+                                    2);
+        Assert_type = make_type("Assert", stmt_type, Assert_fields, 2);
+        Import_type = make_type("Import", stmt_type, Import_fields, 1);
+        ImportFrom_type = make_type("ImportFrom", stmt_type, ImportFrom_fields,
+                                    2);
+        Exec_type = make_type("Exec", stmt_type, Exec_fields, 3);
+        Global_type = make_type("Global", stmt_type, Global_fields, 1);
+        Expr_type = make_type("Expr", stmt_type, Expr_fields, 1);
+        Pass_type = make_type("Pass", stmt_type, Pass_fields, 0);
+        Break_type = make_type("Break", stmt_type, Break_fields, 0);
+        Continue_type = make_type("Continue", stmt_type, Continue_fields, 0);
+        expr_type = make_type("expr", &PyBaseObject_Type, NULL, 0);
+        BoolOp_type = make_type("BoolOp", expr_type, BoolOp_fields, 2);
+        BinOp_type = make_type("BinOp", expr_type, BinOp_fields, 3);
+        UnaryOp_type = make_type("UnaryOp", expr_type, UnaryOp_fields, 2);
+        Lambda_type = make_type("Lambda", expr_type, Lambda_fields, 2);
+        Dict_type = make_type("Dict", expr_type, Dict_fields, 2);
+        ListComp_type = make_type("ListComp", expr_type, ListComp_fields, 2);
+        GeneratorExp_type = make_type("GeneratorExp", expr_type,
+                                      GeneratorExp_fields, 2);
+        Yield_type = make_type("Yield", expr_type, Yield_fields, 1);
+        Compare_type = make_type("Compare", expr_type, Compare_fields, 3);
+        Call_type = make_type("Call", expr_type, Call_fields, 5);
+        Repr_type = make_type("Repr", expr_type, Repr_fields, 1);
+        Num_type = make_type("Num", expr_type, Num_fields, 1);
+        Str_type = make_type("Str", expr_type, Str_fields, 1);
+        Attribute_type = make_type("Attribute", expr_type, Attribute_fields, 3);
+        Subscript_type = make_type("Subscript", expr_type, Subscript_fields, 3);
+        Name_type = make_type("Name", expr_type, Name_fields, 2);
+        List_type = make_type("List", expr_type, List_fields, 2);
+        Tuple_type = make_type("Tuple", expr_type, Tuple_fields, 2);
+        expr_context_type = make_type("expr_context", &PyBaseObject_Type, NULL,
+                                      0);
+        Load_type = make_type("Load", expr_context_type, Load_fields, 0);
+        Load_singleton = PyType_GenericNew(Load_type, NULL, NULL);
+        Store_type = make_type("Store", expr_context_type, Store_fields, 0);
+        Store_singleton = PyType_GenericNew(Store_type, NULL, NULL);
+        Del_type = make_type("Del", expr_context_type, Del_fields, 0);
+        Del_singleton = PyType_GenericNew(Del_type, NULL, NULL);
+        AugLoad_type = make_type("AugLoad", expr_context_type, AugLoad_fields,
+                                 0);
+        AugLoad_singleton = PyType_GenericNew(AugLoad_type, NULL, NULL);
+        AugStore_type = make_type("AugStore", expr_context_type,
+                                  AugStore_fields, 0);
+        AugStore_singleton = PyType_GenericNew(AugStore_type, NULL, NULL);
+        Param_type = make_type("Param", expr_context_type, Param_fields, 0);
+        Param_singleton = PyType_GenericNew(Param_type, NULL, NULL);
+        slice_type = make_type("slice", &PyBaseObject_Type, NULL, 0);
+        Ellipsis_type = make_type("Ellipsis", slice_type, Ellipsis_fields, 0);
+        Slice_type = make_type("Slice", slice_type, Slice_fields, 3);
+        ExtSlice_type = make_type("ExtSlice", slice_type, ExtSlice_fields, 1);
+        Index_type = make_type("Index", slice_type, Index_fields, 1);
+        boolop_type = make_type("boolop", &PyBaseObject_Type, NULL, 0);
+        And_type = make_type("And", boolop_type, And_fields, 0);
+        And_singleton = PyType_GenericNew(And_type, NULL, NULL);
+        Or_type = make_type("Or", boolop_type, Or_fields, 0);
+        Or_singleton = PyType_GenericNew(Or_type, NULL, NULL);
+        operator_type = make_type("operator", &PyBaseObject_Type, NULL, 0);
+        Add_type = make_type("Add", operator_type, Add_fields, 0);
+        Add_singleton = PyType_GenericNew(Add_type, NULL, NULL);
+        Sub_type = make_type("Sub", operator_type, Sub_fields, 0);
+        Sub_singleton = PyType_GenericNew(Sub_type, NULL, NULL);
+        Mult_type = make_type("Mult", operator_type, Mult_fields, 0);
+        Mult_singleton = PyType_GenericNew(Mult_type, NULL, NULL);
+        Div_type = make_type("Div", operator_type, Div_fields, 0);
+        Div_singleton = PyType_GenericNew(Div_type, NULL, NULL);
+        Mod_type = make_type("Mod", operator_type, Mod_fields, 0);
+        Mod_singleton = PyType_GenericNew(Mod_type, NULL, NULL);
+        Pow_type = make_type("Pow", operator_type, Pow_fields, 0);
+        Pow_singleton = PyType_GenericNew(Pow_type, NULL, NULL);
+        LShift_type = make_type("LShift", operator_type, LShift_fields, 0);
+        LShift_singleton = PyType_GenericNew(LShift_type, NULL, NULL);
+        RShift_type = make_type("RShift", operator_type, RShift_fields, 0);
+        RShift_singleton = PyType_GenericNew(RShift_type, NULL, NULL);
+        BitOr_type = make_type("BitOr", operator_type, BitOr_fields, 0);
+        BitOr_singleton = PyType_GenericNew(BitOr_type, NULL, NULL);
+        BitXor_type = make_type("BitXor", operator_type, BitXor_fields, 0);
+        BitXor_singleton = PyType_GenericNew(BitXor_type, NULL, NULL);
+        BitAnd_type = make_type("BitAnd", operator_type, BitAnd_fields, 0);
+        BitAnd_singleton = PyType_GenericNew(BitAnd_type, NULL, NULL);
+        FloorDiv_type = make_type("FloorDiv", operator_type, FloorDiv_fields,
+                                  0);
+        FloorDiv_singleton = PyType_GenericNew(FloorDiv_type, NULL, NULL);
+        unaryop_type = make_type("unaryop", &PyBaseObject_Type, NULL, 0);
+        Invert_type = make_type("Invert", unaryop_type, Invert_fields, 0);
+        Invert_singleton = PyType_GenericNew(Invert_type, NULL, NULL);
+        Not_type = make_type("Not", unaryop_type, Not_fields, 0);
+        Not_singleton = PyType_GenericNew(Not_type, NULL, NULL);
+        UAdd_type = make_type("UAdd", unaryop_type, UAdd_fields, 0);
+        UAdd_singleton = PyType_GenericNew(UAdd_type, NULL, NULL);
+        USub_type = make_type("USub", unaryop_type, USub_fields, 0);
+        USub_singleton = PyType_GenericNew(USub_type, NULL, NULL);
+        cmpop_type = make_type("cmpop", &PyBaseObject_Type, NULL, 0);
+        Eq_type = make_type("Eq", cmpop_type, Eq_fields, 0);
+        Eq_singleton = PyType_GenericNew(Eq_type, NULL, NULL);
+        NotEq_type = make_type("NotEq", cmpop_type, NotEq_fields, 0);
+        NotEq_singleton = PyType_GenericNew(NotEq_type, NULL, NULL);
+        Lt_type = make_type("Lt", cmpop_type, Lt_fields, 0);
+        Lt_singleton = PyType_GenericNew(Lt_type, NULL, NULL);
+        LtE_type = make_type("LtE", cmpop_type, LtE_fields, 0);
+        LtE_singleton = PyType_GenericNew(LtE_type, NULL, NULL);
+        Gt_type = make_type("Gt", cmpop_type, Gt_fields, 0);
+        Gt_singleton = PyType_GenericNew(Gt_type, NULL, NULL);
+        GtE_type = make_type("GtE", cmpop_type, GtE_fields, 0);
+        GtE_singleton = PyType_GenericNew(GtE_type, NULL, NULL);
+        Is_type = make_type("Is", cmpop_type, Is_fields, 0);
+        Is_singleton = PyType_GenericNew(Is_type, NULL, NULL);
+        IsNot_type = make_type("IsNot", cmpop_type, IsNot_fields, 0);
+        IsNot_singleton = PyType_GenericNew(IsNot_type, NULL, NULL);
+        In_type = make_type("In", cmpop_type, In_fields, 0);
+        In_singleton = PyType_GenericNew(In_type, NULL, NULL);
+        NotIn_type = make_type("NotIn", cmpop_type, NotIn_fields, 0);
+        NotIn_singleton = PyType_GenericNew(NotIn_type, NULL, NULL);
+        comprehension_type = make_type("comprehension", &PyBaseObject_Type,
+                                       comprehension_fields, 3);
+        excepthandler_type = make_type("excepthandler", &PyBaseObject_Type,
+                                       excepthandler_fields, 3);
+        arguments_type = make_type("arguments", &PyBaseObject_Type,
+                                   arguments_fields, 4);
+        keyword_type = make_type("keyword", &PyBaseObject_Type, keyword_fields,
+                                 2);
+        alias_type = make_type("alias", &PyBaseObject_Type, alias_fields, 2);
+return 1;
+}
 
 mod_ty
 Module(asdl_seq * body, PyArena *arena)
@@ -1096,826 +1693,1055 @@ alias(identifier name, identifier asname, PyArena *arena)
 }
 
 
-
-#define CHECKSIZE(BUF, OFF, MIN) { \
-        int need = *(OFF) + MIN; \
-        if (need >= PyString_GET_SIZE(*(BUF))) { \
-                int newsize = PyString_GET_SIZE(*(BUF)) * 2; \
-                if (newsize < need) \
-                        newsize = need; \
-                if (_PyString_Resize((BUF), newsize) < 0) \
-                        return 0; \
-        } \
-}
-
-static int
-marshal_write_int(PyObject **buf, int *offset, int x)
+PyObject*
+ast2obj_mod(void* _o)
 {
-        char *s;
+        mod_ty o = (mod_ty)_o;
+        PyObject *result = NULL, *value = NULL;
+        if (!o) {
+                Py_INCREF(Py_None);
+                return Py_None;
+        }
 
-        CHECKSIZE(buf, offset, 4)
-        s = PyString_AS_STRING(*buf) + (*offset);
-        s[0] = (x & 0xff);
-        s[1] = (x >> 8) & 0xff;
-        s[2] = (x >> 16) & 0xff;
-        s[3] = (x >> 24) & 0xff;
-        *offset += 4;
-        return 1;
-}
-
-static int
-marshal_write_bool(PyObject **buf, int *offset, bool b)
-{
-        if (b)
-                marshal_write_int(buf, offset, 1);
-        else
-                marshal_write_int(buf, offset, 0);
-        return 1;
-}
-
-static int
-marshal_write_identifier(PyObject **buf, int *offset, identifier id)
-{
-        int l = PyString_GET_SIZE(id);
-        marshal_write_int(buf, offset, l);
-        CHECKSIZE(buf, offset, l);
-        memcpy(PyString_AS_STRING(*buf) + *offset,
-               PyString_AS_STRING(id), l);
-        *offset += l;
-        return 1;
-}
-
-static int
-marshal_write_string(PyObject **buf, int *offset, string s)
-{
-        int len = PyString_GET_SIZE(s);
-        marshal_write_int(buf, offset, len);
-        CHECKSIZE(buf, offset, len);
-        memcpy(PyString_AS_STRING(*buf) + *offset,
-               PyString_AS_STRING(s), len);
-        *offset += len;
-        return 1;
-}
-
-static int
-marshal_write_object(PyObject **buf, int *offset, object s)
-{
-        /* XXX */
-        return 0;
-}
-
-
-static int
-marshal_write_mod(PyObject **buf, int *off, mod_ty o)
-{
-        int i;
         switch (o->kind) {
         case Module_kind:
-                marshal_write_int(buf, off, 1);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.Module.body));
-                for (i = 0; i < asdl_seq_LEN(o->v.Module.body); i++) {
-                        void *elt = asdl_seq_GET(o->v.Module.body, i);
-                        marshal_write_stmt(buf, off, (stmt_ty)elt);
-                }
+                result = PyType_GenericNew(Module_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.Module.body, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Interactive_kind:
-                marshal_write_int(buf, off, 2);
-                marshal_write_int(buf, off,
-                                  asdl_seq_LEN(o->v.Interactive.body));
-                for (i = 0; i < asdl_seq_LEN(o->v.Interactive.body); i++) {
-                        void *elt = asdl_seq_GET(o->v.Interactive.body, i);
-                        marshal_write_stmt(buf, off, (stmt_ty)elt);
-                }
+                result = PyType_GenericNew(Interactive_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.Interactive.body, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Expression_kind:
-                marshal_write_int(buf, off, 3);
-                marshal_write_expr(buf, off, o->v.Expression.body);
+                result = PyType_GenericNew(Expression_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Expression.body);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Suite_kind:
-                marshal_write_int(buf, off, 4);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.Suite.body));
-                for (i = 0; i < asdl_seq_LEN(o->v.Suite.body); i++) {
-                        void *elt = asdl_seq_GET(o->v.Suite.body, i);
-                        marshal_write_stmt(buf, off, (stmt_ty)elt);
-                }
+                result = PyType_GenericNew(Suite_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.Suite.body, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         }
-        return 1;
+
+        return result;
+failed:
+        Py_XDECREF(value);
+        Py_XDECREF(result);
+        return NULL;
 }
 
-static int
-marshal_write_stmt(PyObject **buf, int *off, stmt_ty o)
+PyObject*
+ast2obj_stmt(void* _o)
 {
-        int i;
+        stmt_ty o = (stmt_ty)_o;
+        PyObject *result = NULL, *value = NULL;
+        if (!o) {
+                Py_INCREF(Py_None);
+                return Py_None;
+        }
+
         switch (o->kind) {
         case FunctionDef_kind:
-                marshal_write_int(buf, off, 1);
-                marshal_write_identifier(buf, off, o->v.FunctionDef.name);
-                marshal_write_arguments(buf, off, o->v.FunctionDef.args);
-                marshal_write_int(buf, off,
-                                  asdl_seq_LEN(o->v.FunctionDef.body));
-                for (i = 0; i < asdl_seq_LEN(o->v.FunctionDef.body); i++) {
-                        void *elt = asdl_seq_GET(o->v.FunctionDef.body, i);
-                        marshal_write_stmt(buf, off, (stmt_ty)elt);
-                }
-                marshal_write_int(buf, off,
-                                  asdl_seq_LEN(o->v.FunctionDef.decorators));
-                for (i = 0; i < asdl_seq_LEN(o->v.FunctionDef.decorators); i++)
-                     {
-                        void *elt = asdl_seq_GET(o->v.FunctionDef.decorators,
-                                                 i);
-                        marshal_write_expr(buf, off, (expr_ty)elt);
-                }
+                result = PyType_GenericNew(FunctionDef_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_identifier(o->v.FunctionDef.name);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "name", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_arguments(o->v.FunctionDef.args);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "args", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.FunctionDef.body, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.FunctionDef.decorators, ast2obj_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "decorators", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case ClassDef_kind:
-                marshal_write_int(buf, off, 2);
-                marshal_write_identifier(buf, off, o->v.ClassDef.name);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.ClassDef.bases));
-                for (i = 0; i < asdl_seq_LEN(o->v.ClassDef.bases); i++) {
-                        void *elt = asdl_seq_GET(o->v.ClassDef.bases, i);
-                        marshal_write_expr(buf, off, (expr_ty)elt);
-                }
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.ClassDef.body));
-                for (i = 0; i < asdl_seq_LEN(o->v.ClassDef.body); i++) {
-                        void *elt = asdl_seq_GET(o->v.ClassDef.body, i);
-                        marshal_write_stmt(buf, off, (stmt_ty)elt);
-                }
+                result = PyType_GenericNew(ClassDef_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_identifier(o->v.ClassDef.name);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "name", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.ClassDef.bases, ast2obj_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "bases", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.ClassDef.body, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Return_kind:
-                marshal_write_int(buf, off, 3);
-                if (o->v.Return.value) {
-                        marshal_write_int(buf, off, 1);
-                        marshal_write_expr(buf, off, o->v.Return.value);
-                }
-                else {
-                        marshal_write_int(buf, off, 0);
-                }
+                result = PyType_GenericNew(Return_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Return.value);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "value", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Delete_kind:
-                marshal_write_int(buf, off, 4);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.Delete.targets));
-                for (i = 0; i < asdl_seq_LEN(o->v.Delete.targets); i++) {
-                        void *elt = asdl_seq_GET(o->v.Delete.targets, i);
-                        marshal_write_expr(buf, off, (expr_ty)elt);
-                }
+                result = PyType_GenericNew(Delete_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.Delete.targets, ast2obj_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "targets", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Assign_kind:
-                marshal_write_int(buf, off, 5);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.Assign.targets));
-                for (i = 0; i < asdl_seq_LEN(o->v.Assign.targets); i++) {
-                        void *elt = asdl_seq_GET(o->v.Assign.targets, i);
-                        marshal_write_expr(buf, off, (expr_ty)elt);
-                }
-                marshal_write_expr(buf, off, o->v.Assign.value);
+                result = PyType_GenericNew(Assign_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.Assign.targets, ast2obj_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "targets", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.Assign.value);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "value", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case AugAssign_kind:
-                marshal_write_int(buf, off, 6);
-                marshal_write_expr(buf, off, o->v.AugAssign.target);
-                marshal_write_operator(buf, off, o->v.AugAssign.op);
-                marshal_write_expr(buf, off, o->v.AugAssign.value);
+                result = PyType_GenericNew(AugAssign_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.AugAssign.target);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "target", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_operator(o->v.AugAssign.op);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "op", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.AugAssign.value);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "value", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Print_kind:
-                marshal_write_int(buf, off, 7);
-                if (o->v.Print.dest) {
-                        marshal_write_int(buf, off, 1);
-                        marshal_write_expr(buf, off, o->v.Print.dest);
-                }
-                else {
-                        marshal_write_int(buf, off, 0);
-                }
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.Print.values));
-                for (i = 0; i < asdl_seq_LEN(o->v.Print.values); i++) {
-                        void *elt = asdl_seq_GET(o->v.Print.values, i);
-                        marshal_write_expr(buf, off, (expr_ty)elt);
-                }
-                marshal_write_bool(buf, off, o->v.Print.nl);
+                result = PyType_GenericNew(Print_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Print.dest);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "dest", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.Print.values, ast2obj_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "values", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_bool(o->v.Print.nl);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "nl", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case For_kind:
-                marshal_write_int(buf, off, 8);
-                marshal_write_expr(buf, off, o->v.For.target);
-                marshal_write_expr(buf, off, o->v.For.iter);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.For.body));
-                for (i = 0; i < asdl_seq_LEN(o->v.For.body); i++) {
-                        void *elt = asdl_seq_GET(o->v.For.body, i);
-                        marshal_write_stmt(buf, off, (stmt_ty)elt);
-                }
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.For.orelse));
-                for (i = 0; i < asdl_seq_LEN(o->v.For.orelse); i++) {
-                        void *elt = asdl_seq_GET(o->v.For.orelse, i);
-                        marshal_write_stmt(buf, off, (stmt_ty)elt);
-                }
+                result = PyType_GenericNew(For_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.For.target);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "target", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.For.iter);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "iter", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.For.body, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.For.orelse, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "orelse", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case While_kind:
-                marshal_write_int(buf, off, 9);
-                marshal_write_expr(buf, off, o->v.While.test);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.While.body));
-                for (i = 0; i < asdl_seq_LEN(o->v.While.body); i++) {
-                        void *elt = asdl_seq_GET(o->v.While.body, i);
-                        marshal_write_stmt(buf, off, (stmt_ty)elt);
-                }
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.While.orelse));
-                for (i = 0; i < asdl_seq_LEN(o->v.While.orelse); i++) {
-                        void *elt = asdl_seq_GET(o->v.While.orelse, i);
-                        marshal_write_stmt(buf, off, (stmt_ty)elt);
-                }
+                result = PyType_GenericNew(While_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.While.test);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "test", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.While.body, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.While.orelse, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "orelse", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case If_kind:
-                marshal_write_int(buf, off, 10);
-                marshal_write_expr(buf, off, o->v.If.test);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.If.body));
-                for (i = 0; i < asdl_seq_LEN(o->v.If.body); i++) {
-                        void *elt = asdl_seq_GET(o->v.If.body, i);
-                        marshal_write_stmt(buf, off, (stmt_ty)elt);
-                }
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.If.orelse));
-                for (i = 0; i < asdl_seq_LEN(o->v.If.orelse); i++) {
-                        void *elt = asdl_seq_GET(o->v.If.orelse, i);
-                        marshal_write_stmt(buf, off, (stmt_ty)elt);
-                }
+                result = PyType_GenericNew(If_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.If.test);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "test", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.If.body, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.If.orelse, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "orelse", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Raise_kind:
-                marshal_write_int(buf, off, 11);
-                if (o->v.Raise.type) {
-                        marshal_write_int(buf, off, 1);
-                        marshal_write_expr(buf, off, o->v.Raise.type);
-                }
-                else {
-                        marshal_write_int(buf, off, 0);
-                }
-                if (o->v.Raise.inst) {
-                        marshal_write_int(buf, off, 1);
-                        marshal_write_expr(buf, off, o->v.Raise.inst);
-                }
-                else {
-                        marshal_write_int(buf, off, 0);
-                }
-                if (o->v.Raise.tback) {
-                        marshal_write_int(buf, off, 1);
-                        marshal_write_expr(buf, off, o->v.Raise.tback);
-                }
-                else {
-                        marshal_write_int(buf, off, 0);
-                }
+                result = PyType_GenericNew(Raise_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Raise.type);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "type", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.Raise.inst);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "inst", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.Raise.tback);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "tback", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case TryExcept_kind:
-                marshal_write_int(buf, off, 12);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.TryExcept.body));
-                for (i = 0; i < asdl_seq_LEN(o->v.TryExcept.body); i++) {
-                        void *elt = asdl_seq_GET(o->v.TryExcept.body, i);
-                        marshal_write_stmt(buf, off, (stmt_ty)elt);
-                }
-                marshal_write_int(buf, off,
-                                  asdl_seq_LEN(o->v.TryExcept.handlers));
-                for (i = 0; i < asdl_seq_LEN(o->v.TryExcept.handlers); i++) {
-                        void *elt = asdl_seq_GET(o->v.TryExcept.handlers, i);
-                        marshal_write_excepthandler(buf, off,
-                                                    (excepthandler_ty)elt);
-                }
-                marshal_write_int(buf, off,
-                                  asdl_seq_LEN(o->v.TryExcept.orelse));
-                for (i = 0; i < asdl_seq_LEN(o->v.TryExcept.orelse); i++) {
-                        void *elt = asdl_seq_GET(o->v.TryExcept.orelse, i);
-                        marshal_write_stmt(buf, off, (stmt_ty)elt);
-                }
+                result = PyType_GenericNew(TryExcept_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.TryExcept.body, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.TryExcept.handlers,
+                                     ast2obj_excepthandler);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "handlers", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.TryExcept.orelse, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "orelse", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case TryFinally_kind:
-                marshal_write_int(buf, off, 13);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.TryFinally.body));
-                for (i = 0; i < asdl_seq_LEN(o->v.TryFinally.body); i++) {
-                        void *elt = asdl_seq_GET(o->v.TryFinally.body, i);
-                        marshal_write_stmt(buf, off, (stmt_ty)elt);
-                }
-                marshal_write_int(buf, off,
-                                  asdl_seq_LEN(o->v.TryFinally.finalbody));
-                for (i = 0; i < asdl_seq_LEN(o->v.TryFinally.finalbody); i++) {
-                        void *elt = asdl_seq_GET(o->v.TryFinally.finalbody, i);
-                        marshal_write_stmt(buf, off, (stmt_ty)elt);
-                }
+                result = PyType_GenericNew(TryFinally_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.TryFinally.body, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.TryFinally.finalbody, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "finalbody", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Assert_kind:
-                marshal_write_int(buf, off, 14);
-                marshal_write_expr(buf, off, o->v.Assert.test);
-                if (o->v.Assert.msg) {
-                        marshal_write_int(buf, off, 1);
-                        marshal_write_expr(buf, off, o->v.Assert.msg);
-                }
-                else {
-                        marshal_write_int(buf, off, 0);
-                }
+                result = PyType_GenericNew(Assert_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Assert.test);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "test", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.Assert.msg);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "msg", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Import_kind:
-                marshal_write_int(buf, off, 15);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.Import.names));
-                for (i = 0; i < asdl_seq_LEN(o->v.Import.names); i++) {
-                        void *elt = asdl_seq_GET(o->v.Import.names, i);
-                        marshal_write_alias(buf, off, (alias_ty)elt);
-                }
+                result = PyType_GenericNew(Import_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.Import.names, ast2obj_alias);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "names", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case ImportFrom_kind:
-                marshal_write_int(buf, off, 16);
-                marshal_write_identifier(buf, off, o->v.ImportFrom.module);
-                marshal_write_int(buf, off,
-                                  asdl_seq_LEN(o->v.ImportFrom.names));
-                for (i = 0; i < asdl_seq_LEN(o->v.ImportFrom.names); i++) {
-                        void *elt = asdl_seq_GET(o->v.ImportFrom.names, i);
-                        marshal_write_alias(buf, off, (alias_ty)elt);
-                }
+                result = PyType_GenericNew(ImportFrom_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_identifier(o->v.ImportFrom.module);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "module", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.ImportFrom.names, ast2obj_alias);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "names", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Exec_kind:
-                marshal_write_int(buf, off, 17);
-                marshal_write_expr(buf, off, o->v.Exec.body);
-                if (o->v.Exec.globals) {
-                        marshal_write_int(buf, off, 1);
-                        marshal_write_expr(buf, off, o->v.Exec.globals);
-                }
-                else {
-                        marshal_write_int(buf, off, 0);
-                }
-                if (o->v.Exec.locals) {
-                        marshal_write_int(buf, off, 1);
-                        marshal_write_expr(buf, off, o->v.Exec.locals);
-                }
-                else {
-                        marshal_write_int(buf, off, 0);
-                }
+                result = PyType_GenericNew(Exec_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Exec.body);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.Exec.globals);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "globals", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.Exec.locals);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "locals", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Global_kind:
-                marshal_write_int(buf, off, 18);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.Global.names));
-                for (i = 0; i < asdl_seq_LEN(o->v.Global.names); i++) {
-                        void *elt = asdl_seq_GET(o->v.Global.names, i);
-                        marshal_write_identifier(buf, off, (identifier)elt);
-                }
+                result = PyType_GenericNew(Global_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.Global.names, ast2obj_identifier);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "names", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Expr_kind:
-                marshal_write_int(buf, off, 19);
-                marshal_write_expr(buf, off, o->v.Expr.value);
+                result = PyType_GenericNew(Expr_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Expr.value);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "value", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Pass_kind:
-                marshal_write_int(buf, off, 20);
+                result = PyType_GenericNew(Pass_type, NULL, NULL);
+                if (!result) goto failed;
                 break;
         case Break_kind:
-                marshal_write_int(buf, off, 21);
+                result = PyType_GenericNew(Break_type, NULL, NULL);
+                if (!result) goto failed;
                 break;
         case Continue_kind:
-                marshal_write_int(buf, off, 22);
+                result = PyType_GenericNew(Continue_type, NULL, NULL);
+                if (!result) goto failed;
                 break;
         }
-        return 1;
+
+        return result;
+failed:
+        Py_XDECREF(value);
+        Py_XDECREF(result);
+        return NULL;
 }
 
-static int
-marshal_write_expr(PyObject **buf, int *off, expr_ty o)
+PyObject*
+ast2obj_expr(void* _o)
 {
-        int i;
+        expr_ty o = (expr_ty)_o;
+        PyObject *result = NULL, *value = NULL;
+        if (!o) {
+                Py_INCREF(Py_None);
+                return Py_None;
+        }
+
         switch (o->kind) {
         case BoolOp_kind:
-                marshal_write_int(buf, off, 1);
-                marshal_write_boolop(buf, off, o->v.BoolOp.op);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.BoolOp.values));
-                for (i = 0; i < asdl_seq_LEN(o->v.BoolOp.values); i++) {
-                        void *elt = asdl_seq_GET(o->v.BoolOp.values, i);
-                        marshal_write_expr(buf, off, (expr_ty)elt);
-                }
+                result = PyType_GenericNew(BoolOp_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_boolop(o->v.BoolOp.op);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "op", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.BoolOp.values, ast2obj_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "values", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case BinOp_kind:
-                marshal_write_int(buf, off, 2);
-                marshal_write_expr(buf, off, o->v.BinOp.left);
-                marshal_write_operator(buf, off, o->v.BinOp.op);
-                marshal_write_expr(buf, off, o->v.BinOp.right);
+                result = PyType_GenericNew(BinOp_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.BinOp.left);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "left", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_operator(o->v.BinOp.op);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "op", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.BinOp.right);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "right", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case UnaryOp_kind:
-                marshal_write_int(buf, off, 3);
-                marshal_write_unaryop(buf, off, o->v.UnaryOp.op);
-                marshal_write_expr(buf, off, o->v.UnaryOp.operand);
+                result = PyType_GenericNew(UnaryOp_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_unaryop(o->v.UnaryOp.op);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "op", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.UnaryOp.operand);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "operand", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Lambda_kind:
-                marshal_write_int(buf, off, 4);
-                marshal_write_arguments(buf, off, o->v.Lambda.args);
-                marshal_write_expr(buf, off, o->v.Lambda.body);
+                result = PyType_GenericNew(Lambda_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_arguments(o->v.Lambda.args);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "args", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.Lambda.body);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Dict_kind:
-                marshal_write_int(buf, off, 5);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.Dict.keys));
-                for (i = 0; i < asdl_seq_LEN(o->v.Dict.keys); i++) {
-                        void *elt = asdl_seq_GET(o->v.Dict.keys, i);
-                        marshal_write_expr(buf, off, (expr_ty)elt);
-                }
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.Dict.values));
-                for (i = 0; i < asdl_seq_LEN(o->v.Dict.values); i++) {
-                        void *elt = asdl_seq_GET(o->v.Dict.values, i);
-                        marshal_write_expr(buf, off, (expr_ty)elt);
-                }
+                result = PyType_GenericNew(Dict_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.Dict.keys, ast2obj_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "keys", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.Dict.values, ast2obj_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "values", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case ListComp_kind:
-                marshal_write_int(buf, off, 6);
-                marshal_write_expr(buf, off, o->v.ListComp.elt);
-                marshal_write_int(buf, off,
-                                  asdl_seq_LEN(o->v.ListComp.generators));
-                for (i = 0; i < asdl_seq_LEN(o->v.ListComp.generators); i++) {
-                        void *elt = asdl_seq_GET(o->v.ListComp.generators, i);
-                        marshal_write_comprehension(buf, off,
-                                                    (comprehension_ty)elt);
-                }
+                result = PyType_GenericNew(ListComp_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.ListComp.elt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "elt", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.ListComp.generators,
+                                     ast2obj_comprehension);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "generators", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case GeneratorExp_kind:
-                marshal_write_int(buf, off, 7);
-                marshal_write_expr(buf, off, o->v.GeneratorExp.elt);
-                marshal_write_int(buf, off,
-                                  asdl_seq_LEN(o->v.GeneratorExp.generators));
-                for (i = 0; i < asdl_seq_LEN(o->v.GeneratorExp.generators);
-                     i++) {
-                        void *elt = asdl_seq_GET(o->v.GeneratorExp.generators,
-                                                 i);
-                        marshal_write_comprehension(buf, off,
-                                                    (comprehension_ty)elt);
-                }
+                result = PyType_GenericNew(GeneratorExp_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.GeneratorExp.elt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "elt", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.GeneratorExp.generators,
+                                     ast2obj_comprehension);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "generators", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Yield_kind:
-                marshal_write_int(buf, off, 8);
-                if (o->v.Yield.value) {
-                        marshal_write_int(buf, off, 1);
-                        marshal_write_expr(buf, off, o->v.Yield.value);
-                }
-                else {
-                        marshal_write_int(buf, off, 0);
-                }
+                result = PyType_GenericNew(Yield_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Yield.value);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "value", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Compare_kind:
-                marshal_write_int(buf, off, 9);
-                marshal_write_expr(buf, off, o->v.Compare.left);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.Compare.ops));
-                for (i = 0; i < asdl_seq_LEN(o->v.Compare.ops); i++) {
-                        void *elt = asdl_seq_GET(o->v.Compare.ops, i);
-                        marshal_write_cmpop(buf, off, (cmpop_ty)elt);
-                }
-                marshal_write_int(buf, off,
-                                  asdl_seq_LEN(o->v.Compare.comparators));
-                for (i = 0; i < asdl_seq_LEN(o->v.Compare.comparators); i++) {
-                        void *elt = asdl_seq_GET(o->v.Compare.comparators, i);
-                        marshal_write_expr(buf, off, (expr_ty)elt);
-                }
+                result = PyType_GenericNew(Compare_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Compare.left);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "left", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.Compare.ops,
+                                     (PyObject*(*)(void*))ast2obj_cmpop);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "ops", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.Compare.comparators, ast2obj_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "comparators", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Call_kind:
-                marshal_write_int(buf, off, 10);
-                marshal_write_expr(buf, off, o->v.Call.func);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.Call.args));
-                for (i = 0; i < asdl_seq_LEN(o->v.Call.args); i++) {
-                        void *elt = asdl_seq_GET(o->v.Call.args, i);
-                        marshal_write_expr(buf, off, (expr_ty)elt);
-                }
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.Call.keywords));
-                for (i = 0; i < asdl_seq_LEN(o->v.Call.keywords); i++) {
-                        void *elt = asdl_seq_GET(o->v.Call.keywords, i);
-                        marshal_write_keyword(buf, off, (keyword_ty)elt);
-                }
-                if (o->v.Call.starargs) {
-                        marshal_write_int(buf, off, 1);
-                        marshal_write_expr(buf, off, o->v.Call.starargs);
-                }
-                else {
-                        marshal_write_int(buf, off, 0);
-                }
-                if (o->v.Call.kwargs) {
-                        marshal_write_int(buf, off, 1);
-                        marshal_write_expr(buf, off, o->v.Call.kwargs);
-                }
-                else {
-                        marshal_write_int(buf, off, 0);
-                }
+                result = PyType_GenericNew(Call_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Call.func);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "func", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.Call.args, ast2obj_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "args", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.Call.keywords, ast2obj_keyword);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "keywords", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.Call.starargs);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "starargs", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.Call.kwargs);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "kwargs", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Repr_kind:
-                marshal_write_int(buf, off, 11);
-                marshal_write_expr(buf, off, o->v.Repr.value);
+                result = PyType_GenericNew(Repr_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Repr.value);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "value", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Num_kind:
-                marshal_write_int(buf, off, 12);
-                marshal_write_object(buf, off, o->v.Num.n);
+                result = PyType_GenericNew(Num_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_object(o->v.Num.n);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "n", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Str_kind:
-                marshal_write_int(buf, off, 13);
-                marshal_write_string(buf, off, o->v.Str.s);
+                result = PyType_GenericNew(Str_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_string(o->v.Str.s);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "s", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Attribute_kind:
-                marshal_write_int(buf, off, 14);
-                marshal_write_expr(buf, off, o->v.Attribute.value);
-                marshal_write_identifier(buf, off, o->v.Attribute.attr);
-                marshal_write_expr_context(buf, off, o->v.Attribute.ctx);
+                result = PyType_GenericNew(Attribute_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Attribute.value);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "value", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_identifier(o->v.Attribute.attr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "attr", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr_context(o->v.Attribute.ctx);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "ctx", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Subscript_kind:
-                marshal_write_int(buf, off, 15);
-                marshal_write_expr(buf, off, o->v.Subscript.value);
-                marshal_write_slice(buf, off, o->v.Subscript.slice);
-                marshal_write_expr_context(buf, off, o->v.Subscript.ctx);
+                result = PyType_GenericNew(Subscript_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Subscript.value);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "value", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_slice(o->v.Subscript.slice);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "slice", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr_context(o->v.Subscript.ctx);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "ctx", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Name_kind:
-                marshal_write_int(buf, off, 16);
-                marshal_write_identifier(buf, off, o->v.Name.id);
-                marshal_write_expr_context(buf, off, o->v.Name.ctx);
+                result = PyType_GenericNew(Name_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_identifier(o->v.Name.id);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "id", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr_context(o->v.Name.ctx);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "ctx", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case List_kind:
-                marshal_write_int(buf, off, 17);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.List.elts));
-                for (i = 0; i < asdl_seq_LEN(o->v.List.elts); i++) {
-                        void *elt = asdl_seq_GET(o->v.List.elts, i);
-                        marshal_write_expr(buf, off, (expr_ty)elt);
-                }
-                marshal_write_expr_context(buf, off, o->v.List.ctx);
+                result = PyType_GenericNew(List_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.List.elts, ast2obj_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "elts", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr_context(o->v.List.ctx);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "ctx", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Tuple_kind:
-                marshal_write_int(buf, off, 18);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.Tuple.elts));
-                for (i = 0; i < asdl_seq_LEN(o->v.Tuple.elts); i++) {
-                        void *elt = asdl_seq_GET(o->v.Tuple.elts, i);
-                        marshal_write_expr(buf, off, (expr_ty)elt);
-                }
-                marshal_write_expr_context(buf, off, o->v.Tuple.ctx);
+                result = PyType_GenericNew(Tuple_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.Tuple.elts, ast2obj_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "elts", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr_context(o->v.Tuple.ctx);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "ctx", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         }
-        return 1;
+
+        return result;
+failed:
+        Py_XDECREF(value);
+        Py_XDECREF(result);
+        return NULL;
 }
 
-static int
-marshal_write_expr_context(PyObject **buf, int *off, expr_context_ty o)
+PyObject* ast2obj_expr_context(expr_context_ty o)
 {
-        switch (o) {
-        case Load:
-                marshal_write_int(buf, off, 1);
-                break;
-        case Store:
-                marshal_write_int(buf, off, 2);
-                break;
-        case Del:
-                marshal_write_int(buf, off, 3);
-                break;
-        case AugLoad:
-                marshal_write_int(buf, off, 4);
-                break;
-        case AugStore:
-                marshal_write_int(buf, off, 5);
-                break;
-        case Param:
-                marshal_write_int(buf, off, 6);
-                break;
+        switch(o) {
+                case Load:
+                        Py_INCREF(Load_singleton);
+                        return Load_singleton;
+                case Store:
+                        Py_INCREF(Store_singleton);
+                        return Store_singleton;
+                case Del:
+                        Py_INCREF(Del_singleton);
+                        return Del_singleton;
+                case AugLoad:
+                        Py_INCREF(AugLoad_singleton);
+                        return AugLoad_singleton;
+                case AugStore:
+                        Py_INCREF(AugStore_singleton);
+                        return AugStore_singleton;
+                case Param:
+                        Py_INCREF(Param_singleton);
+                        return Param_singleton;
         }
-        return 1;
+        return NULL; /* cannot happen */
 }
-
-static int
-marshal_write_slice(PyObject **buf, int *off, slice_ty o)
+PyObject*
+ast2obj_slice(void* _o)
 {
-        int i;
+        slice_ty o = (slice_ty)_o;
+        PyObject *result = NULL, *value = NULL;
+        if (!o) {
+                Py_INCREF(Py_None);
+                return Py_None;
+        }
+
         switch (o->kind) {
         case Ellipsis_kind:
-                marshal_write_int(buf, off, 1);
+                result = PyType_GenericNew(Ellipsis_type, NULL, NULL);
+                if (!result) goto failed;
                 break;
         case Slice_kind:
-                marshal_write_int(buf, off, 2);
-                if (o->v.Slice.lower) {
-                        marshal_write_int(buf, off, 1);
-                        marshal_write_expr(buf, off, o->v.Slice.lower);
-                }
-                else {
-                        marshal_write_int(buf, off, 0);
-                }
-                if (o->v.Slice.upper) {
-                        marshal_write_int(buf, off, 1);
-                        marshal_write_expr(buf, off, o->v.Slice.upper);
-                }
-                else {
-                        marshal_write_int(buf, off, 0);
-                }
-                if (o->v.Slice.step) {
-                        marshal_write_int(buf, off, 1);
-                        marshal_write_expr(buf, off, o->v.Slice.step);
-                }
-                else {
-                        marshal_write_int(buf, off, 0);
-                }
+                result = PyType_GenericNew(Slice_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Slice.lower);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "lower", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.Slice.upper);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "upper", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.Slice.step);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "step", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case ExtSlice_kind:
-                marshal_write_int(buf, off, 3);
-                marshal_write_int(buf, off, asdl_seq_LEN(o->v.ExtSlice.dims));
-                for (i = 0; i < asdl_seq_LEN(o->v.ExtSlice.dims); i++) {
-                        void *elt = asdl_seq_GET(o->v.ExtSlice.dims, i);
-                        marshal_write_slice(buf, off, (slice_ty)elt);
-                }
+                result = PyType_GenericNew(ExtSlice_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.ExtSlice.dims, ast2obj_slice);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "dims", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         case Index_kind:
-                marshal_write_int(buf, off, 4);
-                marshal_write_expr(buf, off, o->v.Index.value);
+                result = PyType_GenericNew(Index_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.Index.value);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "value", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
                 break;
         }
-        return 1;
+
+        return result;
+failed:
+        Py_XDECREF(value);
+        Py_XDECREF(result);
+        return NULL;
 }
 
-static int
-marshal_write_boolop(PyObject **buf, int *off, boolop_ty o)
+PyObject* ast2obj_boolop(boolop_ty o)
 {
-        switch (o) {
-        case And:
-                marshal_write_int(buf, off, 1);
-                break;
-        case Or:
-                marshal_write_int(buf, off, 2);
-                break;
+        switch(o) {
+                case And:
+                        Py_INCREF(And_singleton);
+                        return And_singleton;
+                case Or:
+                        Py_INCREF(Or_singleton);
+                        return Or_singleton;
         }
-        return 1;
+        return NULL; /* cannot happen */
+}
+PyObject* ast2obj_operator(operator_ty o)
+{
+        switch(o) {
+                case Add:
+                        Py_INCREF(Add_singleton);
+                        return Add_singleton;
+                case Sub:
+                        Py_INCREF(Sub_singleton);
+                        return Sub_singleton;
+                case Mult:
+                        Py_INCREF(Mult_singleton);
+                        return Mult_singleton;
+                case Div:
+                        Py_INCREF(Div_singleton);
+                        return Div_singleton;
+                case Mod:
+                        Py_INCREF(Mod_singleton);
+                        return Mod_singleton;
+                case Pow:
+                        Py_INCREF(Pow_singleton);
+                        return Pow_singleton;
+                case LShift:
+                        Py_INCREF(LShift_singleton);
+                        return LShift_singleton;
+                case RShift:
+                        Py_INCREF(RShift_singleton);
+                        return RShift_singleton;
+                case BitOr:
+                        Py_INCREF(BitOr_singleton);
+                        return BitOr_singleton;
+                case BitXor:
+                        Py_INCREF(BitXor_singleton);
+                        return BitXor_singleton;
+                case BitAnd:
+                        Py_INCREF(BitAnd_singleton);
+                        return BitAnd_singleton;
+                case FloorDiv:
+                        Py_INCREF(FloorDiv_singleton);
+                        return FloorDiv_singleton;
+        }
+        return NULL; /* cannot happen */
+}
+PyObject* ast2obj_unaryop(unaryop_ty o)
+{
+        switch(o) {
+                case Invert:
+                        Py_INCREF(Invert_singleton);
+                        return Invert_singleton;
+                case Not:
+                        Py_INCREF(Not_singleton);
+                        return Not_singleton;
+                case UAdd:
+                        Py_INCREF(UAdd_singleton);
+                        return UAdd_singleton;
+                case USub:
+                        Py_INCREF(USub_singleton);
+                        return USub_singleton;
+        }
+        return NULL; /* cannot happen */
+}
+PyObject* ast2obj_cmpop(cmpop_ty o)
+{
+        switch(o) {
+                case Eq:
+                        Py_INCREF(Eq_singleton);
+                        return Eq_singleton;
+                case NotEq:
+                        Py_INCREF(NotEq_singleton);
+                        return NotEq_singleton;
+                case Lt:
+                        Py_INCREF(Lt_singleton);
+                        return Lt_singleton;
+                case LtE:
+                        Py_INCREF(LtE_singleton);
+                        return LtE_singleton;
+                case Gt:
+                        Py_INCREF(Gt_singleton);
+                        return Gt_singleton;
+                case GtE:
+                        Py_INCREF(GtE_singleton);
+                        return GtE_singleton;
+                case Is:
+                        Py_INCREF(Is_singleton);
+                        return Is_singleton;
+                case IsNot:
+                        Py_INCREF(IsNot_singleton);
+                        return IsNot_singleton;
+                case In:
+                        Py_INCREF(In_singleton);
+                        return In_singleton;
+                case NotIn:
+                        Py_INCREF(NotIn_singleton);
+                        return NotIn_singleton;
+        }
+        return NULL; /* cannot happen */
+}
+PyObject*
+ast2obj_comprehension(void* _o)
+{
+        comprehension_ty o = (comprehension_ty)_o;
+        PyObject *result = NULL, *value = NULL;
+        if (!o) {
+                Py_INCREF(Py_None);
+                return Py_None;
+        }
+
+        result = PyType_GenericNew(comprehension_type, NULL, NULL);
+        if (!result) return NULL;
+        value = ast2obj_expr(o->target);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "target", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->iter);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "iter", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_list(o->ifs, ast2obj_expr);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "ifs", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+
+        return result;
+failed:
+        Py_XDECREF(value);
+        Py_XDECREF(result);
+        return NULL;
 }
 
-static int
-marshal_write_operator(PyObject **buf, int *off, operator_ty o)
+PyObject*
+ast2obj_excepthandler(void* _o)
 {
-        switch (o) {
-        case Add:
-                marshal_write_int(buf, off, 1);
-                break;
-        case Sub:
-                marshal_write_int(buf, off, 2);
-                break;
-        case Mult:
-                marshal_write_int(buf, off, 3);
-                break;
-        case Div:
-                marshal_write_int(buf, off, 4);
-                break;
-        case Mod:
-                marshal_write_int(buf, off, 5);
-                break;
-        case Pow:
-                marshal_write_int(buf, off, 6);
-                break;
-        case LShift:
-                marshal_write_int(buf, off, 7);
-                break;
-        case RShift:
-                marshal_write_int(buf, off, 8);
-                break;
-        case BitOr:
-                marshal_write_int(buf, off, 9);
-                break;
-        case BitXor:
-                marshal_write_int(buf, off, 10);
-                break;
-        case BitAnd:
-                marshal_write_int(buf, off, 11);
-                break;
-        case FloorDiv:
-                marshal_write_int(buf, off, 12);
-                break;
+        excepthandler_ty o = (excepthandler_ty)_o;
+        PyObject *result = NULL, *value = NULL;
+        if (!o) {
+                Py_INCREF(Py_None);
+                return Py_None;
         }
-        return 1;
+
+        result = PyType_GenericNew(excepthandler_type, NULL, NULL);
+        if (!result) return NULL;
+        value = ast2obj_expr(o->type);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "type", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->name);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "name", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_list(o->body, ast2obj_stmt);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "body", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+
+        return result;
+failed:
+        Py_XDECREF(value);
+        Py_XDECREF(result);
+        return NULL;
 }
 
-static int
-marshal_write_unaryop(PyObject **buf, int *off, unaryop_ty o)
+PyObject*
+ast2obj_arguments(void* _o)
 {
-        switch (o) {
-        case Invert:
-                marshal_write_int(buf, off, 1);
-                break;
-        case Not:
-                marshal_write_int(buf, off, 2);
-                break;
-        case UAdd:
-                marshal_write_int(buf, off, 3);
-                break;
-        case USub:
-                marshal_write_int(buf, off, 4);
-                break;
+        arguments_ty o = (arguments_ty)_o;
+        PyObject *result = NULL, *value = NULL;
+        if (!o) {
+                Py_INCREF(Py_None);
+                return Py_None;
         }
-        return 1;
+
+        result = PyType_GenericNew(arguments_type, NULL, NULL);
+        if (!result) return NULL;
+        value = ast2obj_list(o->args, ast2obj_expr);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "args", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_identifier(o->vararg);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "vararg", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_identifier(o->kwarg);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "kwarg", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_list(o->defaults, ast2obj_expr);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "defaults", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+
+        return result;
+failed:
+        Py_XDECREF(value);
+        Py_XDECREF(result);
+        return NULL;
 }
 
-static int
-marshal_write_cmpop(PyObject **buf, int *off, cmpop_ty o)
+PyObject*
+ast2obj_keyword(void* _o)
 {
-        switch (o) {
-        case Eq:
-                marshal_write_int(buf, off, 1);
-                break;
-        case NotEq:
-                marshal_write_int(buf, off, 2);
-                break;
-        case Lt:
-                marshal_write_int(buf, off, 3);
-                break;
-        case LtE:
-                marshal_write_int(buf, off, 4);
-                break;
-        case Gt:
-                marshal_write_int(buf, off, 5);
-                break;
-        case GtE:
-                marshal_write_int(buf, off, 6);
-                break;
-        case Is:
-                marshal_write_int(buf, off, 7);
-                break;
-        case IsNot:
-                marshal_write_int(buf, off, 8);
-                break;
-        case In:
-                marshal_write_int(buf, off, 9);
-                break;
-        case NotIn:
-                marshal_write_int(buf, off, 10);
-                break;
+        keyword_ty o = (keyword_ty)_o;
+        PyObject *result = NULL, *value = NULL;
+        if (!o) {
+                Py_INCREF(Py_None);
+                return Py_None;
         }
-        return 1;
+
+        result = PyType_GenericNew(keyword_type, NULL, NULL);
+        if (!result) return NULL;
+        value = ast2obj_identifier(o->arg);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "arg", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->value);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "value", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+
+        return result;
+failed:
+        Py_XDECREF(value);
+        Py_XDECREF(result);
+        return NULL;
 }
 
-static int
-marshal_write_comprehension(PyObject **buf, int *off, comprehension_ty o)
+PyObject*
+ast2obj_alias(void* _o)
 {
-        int i;
-        marshal_write_expr(buf, off, o->target);
-        marshal_write_expr(buf, off, o->iter);
-        marshal_write_int(buf, off, asdl_seq_LEN(o->ifs));
-        for (i = 0; i < asdl_seq_LEN(o->ifs); i++) {
-                void *elt = asdl_seq_GET(o->ifs, i);
-                marshal_write_expr(buf, off, (expr_ty)elt);
+        alias_ty o = (alias_ty)_o;
+        PyObject *result = NULL, *value = NULL;
+        if (!o) {
+                Py_INCREF(Py_None);
+                return Py_None;
         }
-        return 1;
+
+        result = PyType_GenericNew(alias_type, NULL, NULL);
+        if (!result) return NULL;
+        value = ast2obj_identifier(o->name);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "name", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_identifier(o->asname);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "asname", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+
+        return result;
+failed:
+        Py_XDECREF(value);
+        Py_XDECREF(result);
+        return NULL;
 }
 
-static int
-marshal_write_excepthandler(PyObject **buf, int *off, excepthandler_ty o)
-{
-        int i;
-        if (o->type) {
-                marshal_write_int(buf, off, 1);
-                marshal_write_expr(buf, off, o->type);
-        }
-        else {
-                marshal_write_int(buf, off, 0);
-        }
-        if (o->name) {
-                marshal_write_int(buf, off, 1);
-                marshal_write_expr(buf, off, o->name);
-        }
-        else {
-                marshal_write_int(buf, off, 0);
-        }
-        marshal_write_int(buf, off, asdl_seq_LEN(o->body));
-        for (i = 0; i < asdl_seq_LEN(o->body); i++) {
-                void *elt = asdl_seq_GET(o->body, i);
-                marshal_write_stmt(buf, off, (stmt_ty)elt);
-        }
-        return 1;
-}
 
-static int
-marshal_write_arguments(PyObject **buf, int *off, arguments_ty o)
-{
-        int i;
-        marshal_write_int(buf, off, asdl_seq_LEN(o->args));
-        for (i = 0; i < asdl_seq_LEN(o->args); i++) {
-                void *elt = asdl_seq_GET(o->args, i);
-                marshal_write_expr(buf, off, (expr_ty)elt);
-        }
-        if (o->vararg) {
-                marshal_write_int(buf, off, 1);
-                marshal_write_identifier(buf, off, o->vararg);
-        }
-        else {
-                marshal_write_int(buf, off, 0);
-        }
-        if (o->kwarg) {
-                marshal_write_int(buf, off, 1);
-                marshal_write_identifier(buf, off, o->kwarg);
-        }
-        else {
-                marshal_write_int(buf, off, 0);
-        }
-        marshal_write_int(buf, off, asdl_seq_LEN(o->defaults));
-        for (i = 0; i < asdl_seq_LEN(o->defaults); i++) {
-                void *elt = asdl_seq_GET(o->defaults, i);
-                marshal_write_expr(buf, off, (expr_ty)elt);
-        }
-        return 1;
-}
 
-static int
-marshal_write_keyword(PyObject **buf, int *off, keyword_ty o)
+PyObject* PyAST_mod2obj(mod_ty t)
 {
-        marshal_write_identifier(buf, off, o->arg);
-        marshal_write_expr(buf, off, o->value);
-        return 1;
-}
-
-static int
-marshal_write_alias(PyObject **buf, int *off, alias_ty o)
-{
-        marshal_write_identifier(buf, off, o->name);
-        if (o->asname) {
-                marshal_write_int(buf, off, 1);
-                marshal_write_identifier(buf, off, o->asname);
-        }
-        else {
-                marshal_write_int(buf, off, 0);
-        }
-        return 1;
+    init_types();
+    return ast2obj_mod(t);
 }
 
 

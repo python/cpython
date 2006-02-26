@@ -1254,6 +1254,11 @@ Py_CompileStringFlags(const char *str, const char *filename, int start,
                 PyArena_Free(arena);
 		return NULL;
         }
+	if (flags->cf_flags & PyCF_ONLY_AST) {
+		PyObject *result = PyAST_mod2obj(mod);
+		PyArena_Free(arena);
+		return result;
+	}
 	co = PyAST_Compile(mod, filename, flags, arena);
         PyArena_Free(arena);
 	return (PyObject *)co;

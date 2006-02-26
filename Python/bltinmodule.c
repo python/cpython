@@ -443,7 +443,7 @@ builtin_compile(PyObject *self, PyObject *args)
 	}
 
 	if (supplied_flags &
-	    ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_DONT_IMPLY_DEDENT))
+	    ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_DONT_IMPLY_DEDENT | PyCF_ONLY_AST))
 	{
 		PyErr_SetString(PyExc_ValueError,
 				"compile(): unrecognised flags");
