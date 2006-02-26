@@ -353,10 +353,11 @@ class PyTypesDeclareVisitor(PickleVisitor):
     def visitProduct(self, prod, name):
         self.emit("PyTypeObject *%s_type;" % name, 0)
         self.emit("static PyObject* ast2obj_%s(void*);" % name, 0)
-        self.emit("char *%s_fields[]={" % name,0)
-        for f in prod.fields:
-            self.emit('"%s",' % f.name, 1)
-        self.emit("};", 0)
+        if prod.fields:
+            self.emit("char *%s_fields[]={" % name,0)
+            for f in prod.fields:
+                self.emit('"%s",' % f.name, 1)
+            self.emit("};", 0)
         
     def visitSum(self, sum, name):
         self.emit("PyTypeObject *%s_type;" % name, 0)
@@ -374,10 +375,11 @@ class PyTypesDeclareVisitor(PickleVisitor):
             
     def visitConstructor(self, cons, name):
         self.emit("PyTypeObject *%s_type;" % cons.name, 0)
-        self.emit("char *%s_fields[]={" % cons.name, 0)
-        for t in cons.fields:
-            self.emit('"%s",' % t.name, 1)
-        self.emit("};",0)
+        if cons.fields:
+            self.emit("char *%s_fields[]={" % cons.name, 0)
+            for t in cons.fields:
+                self.emit('"%s",' % t.name, 1)
+            self.emit("};",0)
 
 class PyTypesVisitor(PickleVisitor):
 
@@ -450,8 +452,12 @@ static PyObject* ast2obj_bool(bool b)
         self.emit("}", 0)
 
     def visitProduct(self, prod, name):
-        self.emit('%s_type = make_type("%s", &PyBaseObject_Type, %s_fields, %d);' % 
-                        (name, name, name, len(prod.fields)), 1)
+        if prod.fields:
+            fields = name.value+"_fields"
+        else:
+            fields = "NULL"
+        self.emit('%s_type = make_type("%s", &PyBaseObject_Type, %s, %d);' % 
+                        (name, name, fields, len(prod.fields)), 1)
         
     def visitSum(self, sum, name):
         self.emit('%s_type = make_type("%s", &PyBaseObject_Type, NULL, 0);' % (name, name), 1)
@@ -460,8 +466,12 @@ static PyObject* ast2obj_bool(bool b)
             self.visitConstructor(t, name, simple)
             
     def visitConstructor(self, cons, name, simple):
-        self.emit('%s_type = make_type("%s", %s_type, %s_fields, %d);' % 
-                            (cons.name, cons.name, name, cons.name, len(cons.fields)), 1)
+        if cons.fields:
+            fields = cons.name.value+"_fields"
+        else:
+            fields = "NULL"
+        self.emit('%s_type = make_type("%s", %s_type, %s, %d);' % 
+                            (cons.name, cons.name, name, fields, len(cons.fields)), 1)
         if simple:
             self.emit("%s_singleton = PyType_GenericNew(%s_type, NULL, NULL);" %
                              (cons.name, cons.name), 1)

@@ -126,14 +126,8 @@ char *Expr_fields[]={
         "value",
 };
 PyTypeObject *Pass_type;
-char *Pass_fields[]={
-};
 PyTypeObject *Break_type;
-char *Break_fields[]={
-};
 PyTypeObject *Continue_type;
-char *Continue_fields[]={
-};
 PyTypeObject *expr_type;
 static PyObject* ast2obj_expr(void*);
 PyTypeObject *BoolOp_type;
@@ -234,28 +228,14 @@ static PyObject *Load_singleton, *Store_singleton, *Del_singleton,
 *AugLoad_singleton, *AugStore_singleton, *Param_singleton;
 static PyObject* ast2obj_expr_context(expr_context_ty);
 PyTypeObject *Load_type;
-char *Load_fields[]={
-};
 PyTypeObject *Store_type;
-char *Store_fields[]={
-};
 PyTypeObject *Del_type;
-char *Del_fields[]={
-};
 PyTypeObject *AugLoad_type;
-char *AugLoad_fields[]={
-};
 PyTypeObject *AugStore_type;
-char *AugStore_fields[]={
-};
 PyTypeObject *Param_type;
-char *Param_fields[]={
-};
 PyTypeObject *slice_type;
 static PyObject* ast2obj_slice(void*);
 PyTypeObject *Ellipsis_type;
-char *Ellipsis_fields[]={
-};
 PyTypeObject *Slice_type;
 char *Slice_fields[]={
         "lower",
@@ -274,11 +254,7 @@ PyTypeObject *boolop_type;
 static PyObject *And_singleton, *Or_singleton;
 static PyObject* ast2obj_boolop(boolop_ty);
 PyTypeObject *And_type;
-char *And_fields[]={
-};
 PyTypeObject *Or_type;
-char *Or_fields[]={
-};
 PyTypeObject *operator_type;
 static PyObject *Add_singleton, *Sub_singleton, *Mult_singleton,
 *Div_singleton, *Mod_singleton, *Pow_singleton, *LShift_singleton,
@@ -286,92 +262,40 @@ static PyObject *Add_singleton, *Sub_singleton, *Mult_singleton,
 *FloorDiv_singleton;
 static PyObject* ast2obj_operator(operator_ty);
 PyTypeObject *Add_type;
-char *Add_fields[]={
-};
 PyTypeObject *Sub_type;
-char *Sub_fields[]={
-};
 PyTypeObject *Mult_type;
-char *Mult_fields[]={
-};
 PyTypeObject *Div_type;
-char *Div_fields[]={
-};
 PyTypeObject *Mod_type;
-char *Mod_fields[]={
-};
 PyTypeObject *Pow_type;
-char *Pow_fields[]={
-};
 PyTypeObject *LShift_type;
-char *LShift_fields[]={
-};
 PyTypeObject *RShift_type;
-char *RShift_fields[]={
-};
 PyTypeObject *BitOr_type;
-char *BitOr_fields[]={
-};
 PyTypeObject *BitXor_type;
-char *BitXor_fields[]={
-};
 PyTypeObject *BitAnd_type;
-char *BitAnd_fields[]={
-};
 PyTypeObject *FloorDiv_type;
-char *FloorDiv_fields[]={
-};
 PyTypeObject *unaryop_type;
 static PyObject *Invert_singleton, *Not_singleton, *UAdd_singleton,
 *USub_singleton;
 static PyObject* ast2obj_unaryop(unaryop_ty);
 PyTypeObject *Invert_type;
-char *Invert_fields[]={
-};
 PyTypeObject *Not_type;
-char *Not_fields[]={
-};
 PyTypeObject *UAdd_type;
-char *UAdd_fields[]={
-};
 PyTypeObject *USub_type;
-char *USub_fields[]={
-};
 PyTypeObject *cmpop_type;
 static PyObject *Eq_singleton, *NotEq_singleton, *Lt_singleton, *LtE_singleton,
 *Gt_singleton, *GtE_singleton, *Is_singleton, *IsNot_singleton, *In_singleton,
 *NotIn_singleton;
 static PyObject* ast2obj_cmpop(cmpop_ty);
 PyTypeObject *Eq_type;
-char *Eq_fields[]={
-};
 PyTypeObject *NotEq_type;
-char *NotEq_fields[]={
-};
 PyTypeObject *Lt_type;
-char *Lt_fields[]={
-};
 PyTypeObject *LtE_type;
-char *LtE_fields[]={
-};
 PyTypeObject *Gt_type;
-char *Gt_fields[]={
-};
 PyTypeObject *GtE_type;
-char *GtE_fields[]={
-};
 PyTypeObject *Is_type;
-char *Is_fields[]={
-};
 PyTypeObject *IsNot_type;
-char *IsNot_fields[]={
-};
 PyTypeObject *In_type;
-char *In_fields[]={
-};
 PyTypeObject *NotIn_type;
-char *NotIn_fields[]={
-};
 PyTypeObject *comprehension_type;
 static PyObject* ast2obj_comprehension(void*);
 char *comprehension_fields[]={
@@ -498,9 +422,9 @@ static int init_types(void)
         Exec_type = make_type("Exec", stmt_type, Exec_fields, 3);
         Global_type = make_type("Global", stmt_type, Global_fields, 1);
         Expr_type = make_type("Expr", stmt_type, Expr_fields, 1);
-        Pass_type = make_type("Pass", stmt_type, Pass_fields, 0);
-        Break_type = make_type("Break", stmt_type, Break_fields, 0);
-        Continue_type = make_type("Continue", stmt_type, Continue_fields, 0);
+        Pass_type = make_type("Pass", stmt_type, NULL, 0);
+        Break_type = make_type("Break", stmt_type, NULL, 0);
+        Continue_type = make_type("Continue", stmt_type, NULL, 0);
         expr_type = make_type("expr", &PyBaseObject_Type, NULL, 0);
         BoolOp_type = make_type("BoolOp", expr_type, BoolOp_fields, 2);
         BinOp_type = make_type("BinOp", expr_type, BinOp_fields, 3);
@@ -523,85 +447,82 @@ static int init_types(void)
         Tuple_type = make_type("Tuple", expr_type, Tuple_fields, 2);
         expr_context_type = make_type("expr_context", &PyBaseObject_Type, NULL,
                                       0);
-        Load_type = make_type("Load", expr_context_type, Load_fields, 0);
+        Load_type = make_type("Load", expr_context_type, NULL, 0);
         Load_singleton = PyType_GenericNew(Load_type, NULL, NULL);
-        Store_type = make_type("Store", expr_context_type, Store_fields, 0);
+        Store_type = make_type("Store", expr_context_type, NULL, 0);
         Store_singleton = PyType_GenericNew(Store_type, NULL, NULL);
-        Del_type = make_type("Del", expr_context_type, Del_fields, 0);
+        Del_type = make_type("Del", expr_context_type, NULL, 0);
         Del_singleton = PyType_GenericNew(Del_type, NULL, NULL);
-        AugLoad_type = make_type("AugLoad", expr_context_type, AugLoad_fields,
-                                 0);
+        AugLoad_type = make_type("AugLoad", expr_context_type, NULL, 0);
         AugLoad_singleton = PyType_GenericNew(AugLoad_type, NULL, NULL);
-        AugStore_type = make_type("AugStore", expr_context_type,
-                                  AugStore_fields, 0);
+        AugStore_type = make_type("AugStore", expr_context_type, NULL, 0);
         AugStore_singleton = PyType_GenericNew(AugStore_type, NULL, NULL);
-        Param_type = make_type("Param", expr_context_type, Param_fields, 0);
+        Param_type = make_type("Param", expr_context_type, NULL, 0);
         Param_singleton = PyType_GenericNew(Param_type, NULL, NULL);
         slice_type = make_type("slice", &PyBaseObject_Type, NULL, 0);
-        Ellipsis_type = make_type("Ellipsis", slice_type, Ellipsis_fields, 0);
+        Ellipsis_type = make_type("Ellipsis", slice_type, NULL, 0);
         Slice_type = make_type("Slice", slice_type, Slice_fields, 3);
         ExtSlice_type = make_type("ExtSlice", slice_type, ExtSlice_fields, 1);
         Index_type = make_type("Index", slice_type, Index_fields, 1);
         boolop_type = make_type("boolop", &PyBaseObject_Type, NULL, 0);
-        And_type = make_type("And", boolop_type, And_fields, 0);
+        And_type = make_type("And", boolop_type, NULL, 0);
         And_singleton = PyType_GenericNew(And_type, NULL, NULL);
-        Or_type = make_type("Or", boolop_type, Or_fields, 0);
+        Or_type = make_type("Or", boolop_type, NULL, 0);
         Or_singleton = PyType_GenericNew(Or_type, NULL, NULL);
         operator_type = make_type("operator", &PyBaseObject_Type, NULL, 0);
-        Add_type = make_type("Add", operator_type, Add_fields, 0);
+        Add_type = make_type("Add", operator_type, NULL, 0);
         Add_singleton = PyType_GenericNew(Add_type, NULL, NULL);
-        Sub_type = make_type("Sub", operator_type, Sub_fields, 0);
+        Sub_type = make_type("Sub", operator_type, NULL, 0);
         Sub_singleton = PyType_GenericNew(Sub_type, NULL, NULL);
-        Mult_type = make_type("Mult", operator_type, Mult_fields, 0);
+        Mult_type = make_type("Mult", operator_type, NULL, 0);
         Mult_singleton = PyType_GenericNew(Mult_type, NULL, NULL);
-        Div_type = make_type("Div", operator_type, Div_fields, 0);
+        Div_type = make_type("Div", operator_type, NULL, 0);
         Div_singleton = PyType_GenericNew(Div_type, NULL, NULL);
-        Mod_type = make_type("Mod", operator_type, Mod_fields, 0);
+        Mod_type = make_type("Mod", operator_type, NULL, 0);
         Mod_singleton = PyType_GenericNew(Mod_type, NULL, NULL);
-        Pow_type = make_type("Pow", operator_type, Pow_fields, 0);
+        Pow_type = make_type("Pow", operator_type, NULL, 0);
         Pow_singleton = PyType_GenericNew(Pow_type, NULL, NULL);
-        LShift_type = make_type("LShift", operator_type, LShift_fields, 0);
+        LShift_type = make_type("LShift", operator_type, NULL, 0);
         LShift_singleton = PyType_GenericNew(LShift_type, NULL, NULL);
-        RShift_type = make_type("RShift", operator_type, RShift_fields, 0);
+        RShift_type = make_type("RShift", operator_type, NULL, 0);
         RShift_singleton = PyType_GenericNew(RShift_type, NULL, NULL);
-        BitOr_type = make_type("BitOr", operator_type, BitOr_fields, 0);
+        BitOr_type = make_type("BitOr", operator_type, NULL, 0);
         BitOr_singleton = PyType_GenericNew(BitOr_type, NULL, NULL);
-        BitXor_type = make_type("BitXor", operator_type, BitXor_fields, 0);
+        BitXor_type = make_type("BitXor", operator_type, NULL, 0);
         BitXor_singleton = PyType_GenericNew(BitXor_type, NULL, NULL);
-        BitAnd_type = make_type("BitAnd", operator_type, BitAnd_fields, 0);
+        BitAnd_type = make_type("BitAnd", operator_type, NULL, 0);
         BitAnd_singleton = PyType_GenericNew(BitAnd_type, NULL, NULL);
-        FloorDiv_type = make_type("FloorDiv", operator_type, FloorDiv_fields,
-                                  0);
+        FloorDiv_type = make_type("FloorDiv", operator_type, NULL, 0);
         FloorDiv_singleton = PyType_GenericNew(FloorDiv_type, NULL, NULL);
         unaryop_type = make_type("unaryop", &PyBaseObject_Type, NULL, 0);
-        Invert_type = make_type("Invert", unaryop_type, Invert_fields, 0);
+        Invert_type = make_type("Invert", unaryop_type, NULL, 0);
         Invert_singleton = PyType_GenericNew(Invert_type, NULL, NULL);
-        Not_type = make_type("Not", unaryop_type, Not_fields, 0);
+        Not_type = make_type("Not", unaryop_type, NULL, 0);
         Not_singleton = PyType_GenericNew(Not_type, NULL, NULL);
-        UAdd_type = make_type("UAdd", unaryop_type, UAdd_fields, 0);
+        UAdd_type = make_type("UAdd", unaryop_type, NULL, 0);
         UAdd_singleton = PyType_GenericNew(UAdd_type, NULL, NULL);
-        USub_type = make_type("USub", unaryop_type, USub_fields, 0);
+        USub_type = make_type("USub", unaryop_type, NULL, 0);
         USub_singleton = PyType_GenericNew(USub_type, NULL, NULL);
         cmpop_type = make_type("cmpop", &PyBaseObject_Type, NULL, 0);
-        Eq_type = make_type("Eq", cmpop_type, Eq_fields, 0);
+        Eq_type = make_type("Eq", cmpop_type, NULL, 0);
         Eq_singleton = PyType_GenericNew(Eq_type, NULL, NULL);
-        NotEq_type = make_type("NotEq", cmpop_type, NotEq_fields, 0);
+        NotEq_type = make_type("NotEq", cmpop_type, NULL, 0);
         NotEq_singleton = PyType_GenericNew(NotEq_type, NULL, NULL);
-        Lt_type = make_type("Lt", cmpop_type, Lt_fields, 0);
+        Lt_type = make_type("Lt", cmpop_type, NULL, 0);
         Lt_singleton = PyType_GenericNew(Lt_type, NULL, NULL);
-        LtE_type = make_type("LtE", cmpop_type, LtE_fields, 0);
+        LtE_type = make_type("LtE", cmpop_type, NULL, 0);
         LtE_singleton = PyType_GenericNew(LtE_type, NULL, NULL);
-        Gt_type = make_type("Gt", cmpop_type, Gt_fields, 0);
+        Gt_type = make_type("Gt", cmpop_type, NULL, 0);
         Gt_singleton = PyType_GenericNew(Gt_type, NULL, NULL);
-        GtE_type = make_type("GtE", cmpop_type, GtE_fields, 0);
+        GtE_type = make_type("GtE", cmpop_type, NULL, 0);
         GtE_singleton = PyType_GenericNew(GtE_type, NULL, NULL);
-        Is_type = make_type("Is", cmpop_type, Is_fields, 0);
+        Is_type = make_type("Is", cmpop_type, NULL, 0);
         Is_singleton = PyType_GenericNew(Is_type, NULL, NULL);
-        IsNot_type = make_type("IsNot", cmpop_type, IsNot_fields, 0);
+        IsNot_type = make_type("IsNot", cmpop_type, NULL, 0);
         IsNot_singleton = PyType_GenericNew(IsNot_type, NULL, NULL);
-        In_type = make_type("In", cmpop_type, In_fields, 0);
+        In_type = make_type("In", cmpop_type, NULL, 0);
         In_singleton = PyType_GenericNew(In_type, NULL, NULL);
-        NotIn_type = make_type("NotIn", cmpop_type, NotIn_fields, 0);
+        NotIn_type = make_type("NotIn", cmpop_type, NULL, 0);
         NotIn_singleton = PyType_GenericNew(NotIn_type, NULL, NULL);
         comprehension_type = make_type("comprehension", &PyBaseObject_Type,
                                        comprehension_fields, 3);
