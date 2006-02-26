@@ -11,6 +11,7 @@ extern "C" {
 #define PyCF_MASK_OBSOLETE (CO_NESTED)
 #define PyCF_SOURCE_IS_UTF8  0x0100
 #define PyCF_DONT_IMPLY_DEDENT 0x0200
+#define PyCF_ONLY_AST 0x0400
 
 typedef struct {
 	int cf_flags;  /* bitmask of CO_xxx flags relevant to future */

@@ -404,3 +404,4 @@ arguments_ty arguments(asdl_seq * args, identifier vararg, identifier kwarg,
 keyword_ty keyword(identifier arg, expr_ty value, PyArena *arena);
 alias_ty alias(identifier name, identifier asname, PyArena *arena);
 
+PyObject* PyAST_mod2obj(mod_ty t);
