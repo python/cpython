@@ -257,11 +257,11 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
         if (!__doc__) {
             __doc__ = PyString_InternFromString("__doc__");
             if (!__doc__)
-                goto error;
+                return NULL;
         }
 
 	if (!compiler_init(&c))
-		goto error;
+		return NULL;
 	c.c_filename = filename;
         c.c_arena = arena;
 	c.c_future = PyFuture_FromAST(mod, filename);
@@ -291,7 +291,7 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
 
  error:
 	compiler_free(&c);
-	assert(!PyErr_Occurred());
+	assert(co || PyErr_Occurred());
 	return co;
 }
 
