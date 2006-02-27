@@ -798,3 +798,28 @@ verify(len(list(g)) == 10)
 x = 10; t = False; g = ((i,j) for i in range(x) if t for j in range(x))
 x = 5; t = True;
 verify([(i,j) for i in range(10) for j in range(5)] == list(g))
+
+# Test ifelse expressions in various cases
+def _checkeval(msg, ret):
+    "helper to check that evaluation of expressions is done correctly"
+    print x
+    return ret
+
+verify([ x() for x in lambda: True, lambda: False if x() ] == [True])
+verify([ x() for x in (lambda: True, lambda: False) if x() ] == [True])
+verify([ x(False) for x in (lambda x: False if x else True, lambda x: True if x else False) if x(False) ] == [True])
+verify((5 if 1 else _checkeval("check 1", 0)) == 5)
+verify((_checkeval("check 2", 0) if 0 else 5) == 5)
+verify((5 and 6 if 0 else 1) == 1)
+verify(((5 and 6) if 0 else 1) == 1)
+verify((5 and (6 if 1 else 1)) == 6)
+verify((0 or _checkeval("check 3", 2) if 0 else 3) == 3)
+verify((1 or _checkeval("check 4", 2) if 1 else _checkeval("check 5", 3)) == 1)
+verify((0 or 5 if 1 else _checkeval("check 6", 3)) == 5)
+verify((not 5 if 1 else 1) == False)
+verify((not 5 if 0 else 1) == 1)
+verify((6 + 1 if 1 else 2) == 7)
+verify((6 - 1 if 1 else 2) == 5)
+verify((6 * 2 if 1 else 4) == 12)
+verify((6 / 2 if 1 else 3) == 3)
+verify((6 < 4 if 0 else 2) == 2)

@@ -2010,6 +2010,30 @@ compiler_class(struct compiler *c, stmt_ty s)
 }
 
 static int
+compiler_ifexp(struct compiler *c, expr_ty e)
+{
+	basicblock *end, *next;
+	
+	assert(e->kind == IfExp_kind);
+	end = compiler_new_block(c);
+	if (end == NULL)
+		return 0;
+	next = compiler_new_block(c);
+	if (next == NULL)
+		return 0;
+	VISIT(c, expr, e->v.IfExp.test);
+	ADDOP_JREL(c, JUMP_IF_FALSE, next);
+	ADDOP(c, POP_TOP);
+	VISIT(c, expr, e->v.IfExp.body);
+	ADDOP_JREL(c, JUMP_FORWARD, end);
+	compiler_use_next_block(c, next);
+	ADDOP(c, POP_TOP);
+	VISIT(c, expr, e->v.IfExp.orelse);
+	compiler_use_next_block(c, end);
+	return 1;
+}
+
+static int
 compiler_lambda(struct compiler *c, expr_ty e)
 {
 	PyCodeObject *co;
@@ -3290,6 +3314,8 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 		break;
         case Lambda_kind:
 		return compiler_lambda(c, e);
+	case IfExp_kind:
+		return compiler_ifexp(c, e);
         case Dict_kind:
 		/* XXX get rid of arg? */
 		ADDOP_I(c, BUILD_MAP, 0);

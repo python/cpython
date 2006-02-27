@@ -1084,6 +1084,11 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 			return 0;
 		break;
 	}
+	case IfExp_kind:
+		VISIT(st, expr, e->v.IfExp.test);
+		VISIT(st, expr, e->v.IfExp.body);
+		VISIT(st, expr, e->v.IfExp.orelse);
+		break;
         case Dict_kind:
 		VISIT_SEQ(st, expr, e->v.Dict.keys);
 		VISIT_SEQ(st, expr, e->v.Dict.values);

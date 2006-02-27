@@ -151,6 +151,12 @@ char *Lambda_fields[]={
         "args",
         "body",
 };
+PyTypeObject *IfExp_type;
+char *IfExp_fields[]={
+        "test",
+        "body",
+        "orelse",
+};
 PyTypeObject *Dict_type;
 char *Dict_fields[]={
         "keys",
@@ -431,6 +437,7 @@ static int init_types(void)
         BinOp_type = make_type("BinOp", expr_type, BinOp_fields, 3);
         UnaryOp_type = make_type("UnaryOp", expr_type, UnaryOp_fields, 2);
         Lambda_type = make_type("Lambda", expr_type, Lambda_fields, 2);
+        IfExp_type = make_type("IfExp", expr_type, IfExp_fields, 3);
         Dict_type = make_type("Dict", expr_type, Dict_fields, 2);
         ListComp_type = make_type("ListComp", expr_type, ListComp_fields, 2);
         GeneratorExp_type = make_type("GeneratorExp", expr_type,
@@ -1133,6 +1140,38 @@ Lambda(arguments_ty args, expr_ty body, int lineno, PyArena *arena)
         p->kind = Lambda_kind;
         p->v.Lambda.args = args;
         p->v.Lambda.body = body;
+        p->lineno = lineno;
+        return p;
+}
+
+expr_ty
+IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, PyArena *arena)
+{
+        expr_ty p;
+        if (!test) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field test is required for IfExp");
+                return NULL;
+        }
+        if (!body) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field body is required for IfExp");
+                return NULL;
+        }
+        if (!orelse) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field orelse is required for IfExp");
+                return NULL;
+        }
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p) {
+                PyErr_NoMemory();
+                return NULL;
+        }
+        p->kind = IfExp_kind;
+        p->v.IfExp.test = test;
+        p->v.IfExp.body = body;
+        p->v.IfExp.orelse = orelse;
         p->lineno = lineno;
         return p;
 }
@@ -2074,6 +2113,25 @@ ast2obj_expr(void* _o)
                 value = ast2obj_expr(o->v.Lambda.body);
                 if (!value) goto failed;
                 if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                break;
+        case IfExp_kind:
+                result = PyType_GenericNew(IfExp_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.IfExp.test);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "test", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.IfExp.body);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.IfExp.orelse);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "orelse", value) == -1)
                         goto failed;
                 Py_DECREF(value);
                 break;

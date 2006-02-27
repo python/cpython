@@ -83,7 +83,17 @@ try_stmt: ('try' ':' suite
 except_clause: 'except' [test [',' test]]
 suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
 
-test: and_test ('or' and_test)* | lambdef
+# Backward compatibility cruft to support:
+# [ x for x in lambda: True, lambda: False if x() ]
+# even while also allowing:
+# lambda x: 5 if x else 2
+# (But not a mix of the two)
+testlist_safe: old_test [(',' old_test)+ [',']]
+old_test: or_test | old_lambdef
+old_lambdef: 'lambda' [varargslist] ':' old_test
+
+test: or_test ['if' or_test 'else' test] | lambdef
+or_test: and_test ('or' and_test)*
 and_test: not_test ('and' not_test)*
 not_test: 'not' not_test | comparison
 comparison: expr (comp_op expr)*
@@ -110,7 +120,6 @@ subscript: '.' '.' '.' | test | [test] ':' [test] [sliceop]
 sliceop: ':' [test]
 exprlist: expr (',' expr)* [',']
 testlist: test (',' test)* [',']
-testlist_safe: test [(',' test)+ [',']]
 dictmaker: test ':' test (',' test ':' test)* [',']
 
 classdef: 'class' NAME ['(' [testlist] ')'] ':' suite
@@ -123,7 +132,7 @@ list_for: 'for' exprlist 'in' testlist_safe [list_iter]
 list_if: 'if' test [list_iter]
 
 gen_iter: gen_for | gen_if
-gen_for: 'for' exprlist 'in' test [gen_iter]
+gen_for: 'for' exprlist 'in' or_test [gen_iter]
 gen_if: 'if' test [gen_iter]
 
 testlist1: test (',' test)*
