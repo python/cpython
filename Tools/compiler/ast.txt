@@ -20,6 +20,7 @@ Break:
 Continue: 
 For: assign, list, body, else_&
 While: test, body, else_&
+With: expr, vars&, body
 If: tests!, else_&
 Exec: expr, locals&, globals&
 From: modname*, names*
@@ -42,7 +43,7 @@ AssAttr: expr, attrname*, flags*
 ListComp: expr, quals!
 ListCompFor: assign, list, ifs!
 ListCompIf: test
-GenExpr: code 
+GenExpr: code
 GenExprInner: expr, quals!
 GenExprFor: assign, iter, ifs!
 GenExprIf: test

@@ -891,6 +891,21 @@ error:
 }
 
 static int
+symtable_new_tmpname(struct symtable *st)
+{
+	char tmpname[256];
+	identifier tmp;
+
+	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]",
+		      ++st->st_cur->ste_tmpname);
+	tmp = PyString_InternFromString(tmpname);
+	if (!symtable_add_def(st, tmp, DEF_LOCAL))
+		return 0;
+	Py_DECREF(tmp);
+	return 1;
+}
+
+static int
 symtable_visit_stmt(struct symtable *st, stmt_ty s)
 {
 	switch (s->kind) {
@@ -1051,6 +1066,17 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         case Continue_kind:
 		/* nothing to do here */
 		break;
+        case With_kind:
+		if (!symtable_new_tmpname(st))
+			return 0;
+                VISIT(st, expr, s->v.With.context_expr);
+                if (s->v.With.optional_vars) {
+			if (!symtable_new_tmpname(st))
+				return 0;
+                        VISIT(st, expr, s->v.With.optional_vars);
+                }
+                VISIT_SEQ(st, stmt, s->v.With.body);
+                break;
 	}
 	return 1;
 }
@@ -1093,26 +1119,16 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 		VISIT_SEQ(st, expr, e->v.Dict.keys);
 		VISIT_SEQ(st, expr, e->v.Dict.values);
 		break;
-        case ListComp_kind: {
-		char tmpname[256];
-		identifier tmp;
-
-		PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]",
-			      ++st->st_cur->ste_tmpname);
-		tmp = PyString_InternFromString(tmpname);
-		if (!symtable_add_def(st, tmp, DEF_LOCAL))
+        case ListComp_kind:
+		if (!symtable_new_tmpname(st))
 			return 0;
-		Py_DECREF(tmp);
 		VISIT(st, expr, e->v.ListComp.elt);
 		VISIT_SEQ(st, comprehension, e->v.ListComp.generators);
 		break;
-	}
-        case GeneratorExp_kind: {
-		if (!symtable_visit_genexp(st, e)) {
+        case GeneratorExp_kind:
+		if (!symtable_visit_genexp(st, e))
 			return 0;
-		}
 		break;
-	}
         case Yield_kind:
 		if (e->v.Yield.value)
 			VISIT(st, expr, e->v.Yield.value);

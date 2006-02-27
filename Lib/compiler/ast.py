@@ -553,7 +553,7 @@ class Function(Node):
             self.varargs = 1
         if flags & CO_VARKEYWORDS:
             self.kwargs = 1
-
+    
 
 
     def getChildren(self):
@@ -584,7 +584,7 @@ class GenExpr(Node):
         self.lineno = lineno
         self.argnames = ['[outmost-iterable]']
         self.varargs = self.kwargs = None
-
+    
 
 
     def getChildren(self):
@@ -763,7 +763,7 @@ class Lambda(Node):
             self.varargs = 1
         if flags & CO_VARKEYWORDS:
             self.kwargs = 1
-
+    
 
 
     def getChildren(self):
@@ -1296,6 +1296,31 @@ class While(Node):
 
     def __repr__(self):
         return "While(%s, %s, %s)" % (repr(self.test), repr(self.body), repr(self.else_))
+
+class With(Node):
+    def __init__(self, expr, vars, body, lineno=None):
+        self.expr = expr
+        self.vars = vars
+        self.body = body
+        self.lineno = lineno
+
+    def getChildren(self):
+        children = []
+        children.append(self.expr)
+        children.append(self.vars)
+        children.append(self.body)
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodelist = []
+        nodelist.append(self.expr)
+        if self.vars is not None:
+            nodelist.append(self.vars)
+        nodelist.append(self.body)
+        return tuple(nodelist)
+
+    def __repr__(self):
+        return "With(%s, %s, %s)" % (repr(self.expr), repr(self.vars), repr(self.body))
 
 class Yield(Node):
     def __init__(self, value, lineno=None):

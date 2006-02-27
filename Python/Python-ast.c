@@ -84,6 +84,12 @@ char *If_fields[]={
         "body",
         "orelse",
 };
+PyTypeObject *With_type;
+char *With_fields[]={
+        "context_expr",
+        "optional_vars",
+        "body",
+};
 PyTypeObject *Raise_type;
 char *Raise_fields[]={
         "type",
@@ -465,6 +471,8 @@ static int init_types(void)
         if (!While_type) return 0;
         If_type = make_type("If", stmt_type, If_fields, 3);
         if (!If_type) return 0;
+        With_type = make_type("With", stmt_type, With_fields, 3);
+        if (!With_type) return 0;
         Raise_type = make_type("Raise", stmt_type, Raise_fields, 3);
         if (!Raise_type) return 0;
         TryExcept_type = make_type("TryExcept", stmt_type, TryExcept_fields, 3);
@@ -995,6 +1003,29 @@ If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, PyArena *arena)
         p->v.If.test = test;
         p->v.If.body = body;
         p->v.If.orelse = orelse;
+        p->lineno = lineno;
+        return p;
+}
+
+stmt_ty
+With(expr_ty context_expr, expr_ty optional_vars, asdl_seq * body, int lineno,
+     PyArena *arena)
+{
+        stmt_ty p;
+        if (!context_expr) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field context_expr is required for With");
+                return NULL;
+        }
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p) {
+                PyErr_NoMemory();
+                return NULL;
+        }
+        p->kind = With_kind;
+        p->v.With.context_expr = context_expr;
+        p->v.With.optional_vars = optional_vars;
+        p->v.With.body = body;
         p->lineno = lineno;
         return p;
 }
@@ -2062,6 +2093,26 @@ ast2obj_stmt(void* _o)
                         goto failed;
                 Py_DECREF(value);
                 break;
+        case With_kind:
+                result = PyType_GenericNew(With_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_expr(o->v.With.context_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "context_expr", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.With.optional_vars);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "optional_vars", value) ==
+                    -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.With.body, ast2obj_stmt);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "body", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                break;
         case Raise_kind:
                 result = PyType_GenericNew(Raise_type, NULL, NULL);
                 if (!result) goto failed;
@@ -2922,6 +2973,7 @@ init_ast(void)
         if(PyDict_SetItemString(d, "For", (PyObject*)For_type) < 0) return;
         if(PyDict_SetItemString(d, "While", (PyObject*)While_type) < 0) return;
         if(PyDict_SetItemString(d, "If", (PyObject*)If_type) < 0) return;
+        if(PyDict_SetItemString(d, "With", (PyObject*)With_type) < 0) return;
         if(PyDict_SetItemString(d, "Raise", (PyObject*)Raise_type) < 0) return;
         if(PyDict_SetItemString(d, "TryExcept", (PyObject*)TryExcept_type) < 0)
            return;

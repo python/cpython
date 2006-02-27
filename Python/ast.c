@@ -314,7 +314,7 @@ get_operator(const node *n)
     }
 }
 
-/* Set the context ctx for expr_ty e returning 0 on success, -1 on error.
+/* Set the context ctx for expr_ty e returning 1 on success, 0 on error.
 
    Only sets context for expr kinds that "can appear in assignment context"
    (according to ../Parser/Python.asdl).  For other expr kinds, it sets
@@ -339,7 +339,7 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
        a little more complex than necessary as a result.  It also means
        that expressions in an augmented assignment have no context.
        Consider restructuring so that augmented assignment uses
-       set_context(), too
+       set_context(), too.
     */
     assert(ctx != AugStore && ctx != AugLoad);
 
@@ -2713,6 +2713,46 @@ ast_for_try_stmt(struct compiling *c, const node *n)
     return TryFinally(body, finally, LINENO(n), c->c_arena);
 }
 
+static expr_ty
+ast_for_with_var(struct compiling *c, const node *n)
+{
+    REQ(n, with_var);
+    if (strcmp(STR(CHILD(n, 0)), "as") != 0) {
+        ast_error(n, "expected \"with [expr] as [var]\"");
+        return NULL;
+    }
+    return ast_for_expr(c, CHILD(n, 1));
+}
+
+/* with_stmt: 'with' test [ with_var ] ':' suite */
+static stmt_ty
+ast_for_with_stmt(struct compiling *c, const node *n)
+{
+    expr_ty context_expr, optional_vars = NULL;
+    int suite_index = 3;    /* skip 'with', test, and ':' */
+    asdl_seq *suite_seq;
+
+    assert(TYPE(n) == with_stmt);
+    context_expr = ast_for_expr(c, CHILD(n, 1));
+    if (TYPE(CHILD(n, 2)) == with_var) {
+        optional_vars = ast_for_with_var(c, CHILD(n, 2));
+
+        if (!optional_vars) {
+            return NULL;
+        }
+	if (!set_context(optional_vars, Store, n)) {
+	    return NULL;
+	}
+        suite_index = 4;
+    }
+
+    suite_seq = ast_for_suite(c, CHILD(n, suite_index));
+    if (!suite_seq) {
+        return NULL;
+    }
+    return With(context_expr, optional_vars, suite_seq, LINENO(n), c->c_arena);
+}
+
 static stmt_ty
 ast_for_classdef(struct compiling *c, const node *n)
 {
@@ -2813,6 +2853,8 @@ ast_for_stmt(struct compiling *c, const node *n)
                 return ast_for_for_stmt(c, ch);
             case try_stmt:
                 return ast_for_try_stmt(c, ch);
+            case with_stmt:
+                return ast_for_with_stmt(c, ch);
             case funcdef:
                 return ast_for_funcdef(c, ch);
             case classdef:

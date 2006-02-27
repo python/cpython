@@ -19,6 +19,8 @@ Core and builtins
   - dict.__getitem__ now looks for a __missing__ hook before raising
     KeyError.
 
+- PEP 343: with statement implemented.
+
 - Fix the encodings package codec search function to only search
   inside its own package. Fixes problem reported in patch #1433198.
 
