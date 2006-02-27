@@ -2997,13 +2997,14 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 		Py_DECREF(tmp);
 	}
 
-	if (PyString_CheckExact(type))
+	if (PyString_CheckExact(type)) {
 		/* Raising builtin string is deprecated but still allowed --
 		 * do nothing.  Raising an instance of a new-style str
 		 * subclass is right out. */
-		PyErr_Warn(PyExc_PendingDeprecationWarning,
-			   "raising a string exception is deprecated");
-
+		if (-1 == PyErr_Warn(PyExc_PendingDeprecationWarning,
+			   "raising a string exception is deprecated"))
+			goto raise_error;
+	}
 	else if (PyClass_Check(type))
 		PyErr_NormalizeException(&type, &value, &tb);
 
