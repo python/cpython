@@ -12,6 +12,9 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- CO_GENERATOR_ALLOWED is no longer defined, this behavior is the default.
+  The name was removed from Include/code.h.
+
 - PEP 308: conditional expressions were added (x if cond else y).
 
 - Patch 1433928:
