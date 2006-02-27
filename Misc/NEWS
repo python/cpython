@@ -12,6 +12,10 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Properly check if 'warnings' raises an exception (usually when a filter set
+  to "error" is triggered) when raising a warning for raising string
+  exceptions.
+
 - CO_GENERATOR_ALLOWED is no longer defined, this behavior is the default.
   The name was removed from Include/code.h.
 
