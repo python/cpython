@@ -7259,7 +7259,7 @@ static PyObject *
 unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
         PyObject *x = NULL;
-	static const char *kwlist[] = {"string", "encoding", "errors", 0};
+	static char *kwlist[] = {"string", "encoding", "errors", 0};
 	char *encoding = NULL;
 	char *errors = NULL;
 

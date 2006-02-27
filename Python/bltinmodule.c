@@ -1907,7 +1907,7 @@ builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	PyObject *newlist, *v, *seq, *compare=NULL, *keyfunc=NULL, *newargs;
 	PyObject *callable;
-	static const char *kwlist[] = {"iterable", "cmp", "key", "reverse", 0};
+	static char *kwlist[] = {"iterable", "cmp", "key", "reverse", 0};
 	int reverse;
 
 	/* args 1-4 should match listsort in Objects/listobject.c */

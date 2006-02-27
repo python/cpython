@@ -149,7 +149,7 @@ _PyModule_Clear(PyObject *m)
 static int
 module_init(PyModuleObject *m, PyObject *args, PyObject *kwds)
 {
-	static const char *kwlist[] = {"name", "doc", NULL};
+	static char *kwlist[] = {"name", "doc", NULL};
 	PyObject *dict, *name = Py_None, *doc = Py_None;
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "S|O:module.__init__",
                                          kwlist, &name, &doc))

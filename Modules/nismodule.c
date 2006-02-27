@@ -160,7 +160,7 @@ nis_match (PyObject *self, PyObject *args, PyObject *kwdict)
 	int err;
 	PyObject *res;
 	int fix;
-	static const char *kwlist[] = {"key", "map", "domain", NULL};
+	static char *kwlist[] = {"key", "map", "domain", NULL};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwdict,
 					 "t#s|s:match", kwlist,
@@ -192,7 +192,7 @@ nis_cat (PyObject *self, PyObject *args, PyObject *kwdict)
 	struct ypcallback_data data;
 	PyObject *dict;
 	int err;
-	static const char *kwlist[] = {"map", "domain", NULL};
+	static char *kwlist[] = {"map", "domain", NULL};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwdict, "s|s:cat",
 				         kwlist, &map, &domain))
@@ -383,7 +383,7 @@ nis_maps (PyObject *self, PyObject *args, PyObject *kwdict)
 	nismaplist *maps;
 	PyObject *list;
         int err;
-	static const char *kwlist[] = {"domain", NULL};
+	static char *kwlist[] = {"domain", NULL};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwdict,
 					 "|s:maps", kwlist, &domain))

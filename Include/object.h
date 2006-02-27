@@ -144,12 +144,12 @@ typedef int(*objobjargproc)(PyObject *, PyObject *, PyObject *);
 typedef int (*getreadbufferproc)(PyObject *, int, void **);
 typedef int (*getwritebufferproc)(PyObject *, int, void **);
 typedef int (*getsegcountproc)(PyObject *, int *);
-typedef int (*getcharbufferproc)(PyObject *, int, const char **);
+typedef int (*getcharbufferproc)(PyObject *, int, char **);
 /* ssize_t-based buffer interface */
 typedef Py_ssize_t (*readbufferproc)(PyObject *, Py_ssize_t, void **);
 typedef Py_ssize_t (*writebufferproc)(PyObject *, Py_ssize_t, void **);
 typedef Py_ssize_t (*segcountproc)(PyObject *, Py_ssize_t *);
-typedef Py_ssize_t (*charbufferproc)(PyObject *, Py_ssize_t, const char **);
+typedef Py_ssize_t (*charbufferproc)(PyObject *, Py_ssize_t, char **);
 
 typedef int (*objobjproc)(PyObject *, PyObject *);
 typedef int (*visitproc)(PyObject *, void *);
@@ -239,9 +239,9 @@ typedef struct {
 typedef void (*freefunc)(void *);
 typedef void (*destructor)(PyObject *);
 typedef int (*printfunc)(PyObject *, FILE *, int);
-typedef PyObject *(*getattrfunc)(PyObject *, const char *);
+typedef PyObject *(*getattrfunc)(PyObject *, char *);
 typedef PyObject *(*getattrofunc)(PyObject *, PyObject *);
-typedef int (*setattrfunc)(PyObject *, const char *, PyObject *);
+typedef int (*setattrfunc)(PyObject *, char *, PyObject *);
 typedef int (*setattrofunc)(PyObject *, PyObject *, PyObject *);
 typedef int (*cmpfunc)(PyObject *, PyObject *);
 typedef PyObject *(*reprfunc)(PyObject *);

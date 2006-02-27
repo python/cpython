@@ -2868,7 +2868,7 @@ newPicklerobject(PyObject *file, int proto)
 static PyObject *
 get_Pickler(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	static const char *kwlist[] = {"file", "protocol", NULL};
+	static char *kwlist[] = {"file", "protocol", NULL};
 	PyObject *file = NULL;
 	int proto = 0;
 
@@ -5388,7 +5388,7 @@ Unpickler_setattr(Unpicklerobject *self, char *name, PyObject *value)
 static PyObject *
 cpm_dump(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	static const char *kwlist[] = {"obj", "file", "protocol", NULL};
+	static char *kwlist[] = {"obj", "file", "protocol", NULL};
 	PyObject *ob, *file, *res = NULL;
 	Picklerobject *pickler = 0;
 	int proto = 0;
@@ -5417,7 +5417,7 @@ cpm_dump(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 cpm_dumps(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	static const char *kwlist[] = {"obj", "protocol", NULL};
+	static char *kwlist[] = {"obj", "protocol", NULL};
 	PyObject *ob, *file = 0, *res = NULL;
 	Picklerobject *pickler = 0;
 	int proto = 0;
