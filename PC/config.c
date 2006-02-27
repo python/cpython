@@ -67,6 +67,7 @@ extern void init_codecs_kr(void);
 extern void init_codecs_tw(void);
 extern void init_subprocess(void);
 extern void init_lsprof(void);
+extern void init_ast(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -77,6 +78,7 @@ extern void initimp(void);
 struct _inittab _PyImport_Inittab[] = {
 
         {"array", initarray},
+	{"_ast", init_ast},
 #ifdef MS_WINDOWS
 #ifndef MS_WIN64
         {"audioop", initaudioop},
