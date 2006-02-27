@@ -1388,7 +1388,10 @@ ast_for_binop(struct compiling *c, const node *n)
 static expr_ty
 ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
 {
-    /* trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME */
+    /* trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME 
+       subscriptlist: subscript (',' subscript)* [',']
+       subscript: '.' '.' '.' | test | [test] ':' [test] [sliceop]
+     */
     REQ(n, trailer);
     if (TYPE(CHILD(n, 0)) == LPAR) {
         if (NCH(n) == 2)
@@ -1404,25 +1407,48 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
         REQ(CHILD(n, 0), LSQB);
         REQ(CHILD(n, 2), RSQB);
         n = CHILD(n, 1);
-        if (NCH(n) <= 2) {
+        if (NCH(n) == 1) {
             slice_ty slc = ast_for_slice(c, CHILD(n, 0));
             if (!slc)
                 return NULL;
             return Subscript(left_expr, slc, Load, LINENO(n), c->c_arena);
         }
         else {
+            /* The grammar is ambiguous here. The ambiguity is resolved 
+               by treating the sequence as a tuple literal if there are
+               no slice features.
+            */
             int j;
             slice_ty slc;
-            asdl_seq *slices = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
+            expr_ty e;
+            bool simple;
+            asdl_seq *slices, *elts;
+            slices = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
             if (!slices)
                 return NULL;
             for (j = 0; j < NCH(n); j += 2) {
                 slc = ast_for_slice(c, CHILD(n, j));
                 if (!slc)
                     return NULL;
+                if (slc->kind != Index_kind)
+                    simple = false;
                 asdl_seq_SET(slices, j / 2, slc);
             }
-            return Subscript(left_expr, ExtSlice(slices, c->c_arena),
+            if (!simple) {
+                return Subscript(left_expr, ExtSlice(slices, c->c_arena),
+                                 Load, LINENO(n), c->c_arena);
+            }
+            /* extract Index values and put them in a Tuple */
+            elts = asdl_seq_new(asdl_seq_LEN(slices), c->c_arena);
+            for (j = 0; j < asdl_seq_LEN(slices); ++j) {
+                slc = (slice_ty)asdl_seq_GET(slices, j);
+                assert(slc->kind == Index_kind  && slc->v.Index.value);
+                asdl_seq_SET(elts, j, slc->v.Index.value);
+            }
+            e = Tuple(elts, Load, LINENO(n), c->c_arena);
+            if (!e)
+                return NULL;
+            return Subscript(left_expr, Index(e, c->c_arena),
                              Load, LINENO(n), c->c_arena);
         }
     }
