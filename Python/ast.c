@@ -2170,44 +2170,43 @@ ast_for_import_stmt(struct compiling *c, const node *n)
     }
     else if (STR(CHILD(n, 0))[0] == 'f') { /* from */
         int n_children;
-        const char *from_modules;
 	int lineno = LINENO(n);
 	alias_ty mod = alias_for_import_name(c, CHILD(n, 1));
 	if (!mod)
             return NULL;
 
-        /* XXX this needs to be cleaned up */
-
-        from_modules = STR(CHILD(n, 3));
-        if (!from_modules) {
-            n = CHILD(n, 3);                  /* from ... import x, y, z */
-            if (NCH(n) % 2 == 0) {
-                /* it ends with a comma, not valid but the parser allows it */
+        switch (TYPE(CHILD(n, 3))) {
+        case STAR:
+            /* from ... import * */
+	    n = CHILD(n, 3);
+	    n_children = 1;
+	    break;
+	case LPAR:
+	    /* from ... import (x, y, z) */
+	    n = CHILD(n, 4);
+	    n_children = NCH(n);
+	    break;
+	case import_as_names:
+	    /* from ... import x, y, z */
+	    n = CHILD(n, 3);
+	    n_children = NCH(n);
+            if (n_children % 2 == 0) {
                 ast_error(n, "trailing comma not allowed without"
                              " surrounding parentheses");
                 return NULL;
             }
-        }
-        else if (from_modules[0] == '*') {
-            n = CHILD(n, 3); /* from ... import * */
-        }
-        else if (from_modules[0] == '(')
-            n = CHILD(n, 4);                  /* from ... import (x, y, z) */
-        else {
-	    /* XXX: don't we need to call ast_error(n, "..."); */
-            return NULL;
+	    break;
+	default:
+	    ast_error(n, "Unexpected node-type in from-import");
+	    return NULL;
 	}
-
-        n_children = NCH(n);
-        if (from_modules && from_modules[0] == '*')
-            n_children = 1;
 
 	aliases = asdl_seq_new((n_children + 1) / 2, c->c_arena);
 	if (!aliases)
             return NULL;
 
         /* handle "from ... import *" special b/c there's no children */
-        if (from_modules && from_modules[0] == '*') {
+        if (TYPE(n) == STAR) {
             alias_ty import_alias = alias_for_import_name(c, n);
             if (!import_alias)
                 return NULL;
