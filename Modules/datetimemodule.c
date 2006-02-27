@@ -1891,7 +1891,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	PyObject *y = NULL;	/* temp sum of microseconds */
 	double leftover_us = 0.0;
 
-	static const char *keywords[] = {
+	static char *keywords[] = {
 		"days", "seconds", "microseconds", "milliseconds",
 		"minutes", "hours", "weeks", NULL
 	};
@@ -2194,7 +2194,7 @@ static PyGetSetDef date_getset[] = {
 
 /* Constructors. */
 
-static const char *date_kws[] = {"year", "month", "day", NULL};
+static char *date_kws[] = {"year", "month", "day", NULL};
 
 static PyObject *
 date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
@@ -2448,7 +2448,7 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
 	PyObject *result;
 	PyObject *format;
 	PyObject *tuple;
-	static const char *keywords[] = {"format", NULL};
+	static char *keywords[] = {"format", NULL};
 
 	if (! PyArg_ParseTupleAndKeywords(args, kw, "O!:strftime", keywords,
 					  &PyString_Type, &format))
@@ -3028,7 +3028,7 @@ static PyGetSetDef time_getset[] = {
  * Constructors.
  */
 
-static const char *time_kws[] = {"hour", "minute", "second", "microsecond",
+static char *time_kws[] = {"hour", "minute", "second", "microsecond",
 			   "tzinfo", NULL};
 
 static PyObject *
@@ -3196,7 +3196,7 @@ time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 	PyObject *result;
 	PyObject *format;
 	PyObject *tuple;
-	static const char *keywords[] = {"format", NULL};
+	static char *keywords[] = {"format", NULL};
 
 	if (! PyArg_ParseTupleAndKeywords(args, kw, "O!:strftime", keywords,
 					  &PyString_Type, &format))
@@ -3548,7 +3548,7 @@ static PyGetSetDef datetime_getset[] = {
  * Constructors.
  */
 
-static const char *datetime_kws[] = {
+static char *datetime_kws[] = {
 	"year", "month", "day", "hour", "minute", "second",
 	"microsecond", "tzinfo", NULL
 };
@@ -3729,7 +3729,7 @@ datetime_now(PyObject *cls, PyObject *args, PyObject *kw)
 {
 	PyObject *self;
 	PyObject *tzinfo = Py_None;
-	static const char *keywords[] = {"tz", NULL};
+	static char *keywords[] = {"tz", NULL};
 
 	if (! PyArg_ParseTupleAndKeywords(args, kw, "|O:now", keywords,
 					  &tzinfo))
@@ -3765,7 +3765,7 @@ datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
 	PyObject *self;
 	double timestamp;
 	PyObject *tzinfo = Py_None;
-	static const char *keywords[] = {"timestamp", "tz", NULL};
+	static char *keywords[] = {"timestamp", "tz", NULL};
 
 	if (! PyArg_ParseTupleAndKeywords(args, kw, "d|O:fromtimestamp",
 					  keywords, &timestamp, &tzinfo))
@@ -3843,7 +3843,7 @@ datetime_strptime(PyObject *cls, PyObject *args)
 static PyObject *
 datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
 {
- 	static const char *keywords[] = {"date", "time", NULL};
+ 	static char *keywords[] = {"date", "time", NULL};
 	PyObject *date;
 	PyObject *time;
 	PyObject *result = NULL;
@@ -4070,7 +4070,7 @@ static PyObject *
 datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 {
 	char sep = 'T';
-	static const char *keywords[] = {"sep", NULL};
+	static char *keywords[] = {"sep", NULL};
 	char buffer[100];
 	char *cp;
 	PyObject *result;
@@ -4261,7 +4261,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 	int offset, none;
 
 	PyObject *tzinfo;
-	static const char *keywords[] = {"tz", NULL};
+	static char *keywords[] = {"tz", NULL};
 
 	if (! PyArg_ParseTupleAndKeywords(args, kw, "O!:astimezone", keywords,
 					  &PyDateTime_TZInfoType, &tzinfo))

@@ -106,12 +106,6 @@ typedef int Py_ssize_t;
 #endif
 #endif
 
-#if (PY_VERSION_HEX >= 0x02050000)
-#define PY_CONST const /* 2.5 adds const to some API:s */
-#else
-#define PY_CONST
-#endif
-
 #if !defined(Py_RETURN_NONE)
 #define Py_RETURN_NONE return Py_INCREF(Py_None), Py_None
 #endif
@@ -2192,7 +2186,7 @@ xmlparser(PyObject* _self, PyObject* args, PyObject* kw)
 
     PyObject* target = NULL;
     char* encoding = NULL;
-    static PY_CONST char* kwlist[] = { "target", "encoding", NULL };
+    static char* kwlist[] = { "target", "encoding", NULL };
     if (!PyArg_ParseTupleAndKeywords(args, kw, "|Oz:XMLParser", kwlist,
                                      &target, &encoding))
         return NULL;

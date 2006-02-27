@@ -45,8 +45,8 @@ PyDoc_STRVAR(MultibyteCodec_StreamReader__doc__,
 PyDoc_STRVAR(MultibyteCodec_StreamWriter__doc__,
 "I.StreamWriter(stream[, errors]) -> StreamWriter instance");
 
-static const char *codeckwarglist[] = {"input", "errors", NULL};
-static const char *streamkwarglist[] = {"stream", "errors", NULL};
+static char *codeckwarglist[] = {"input", "errors", NULL};
+static char *streamkwarglist[] = {"stream", "errors", NULL};
 
 static PyObject *multibytecodec_encode(MultibyteCodec *,
 		MultibyteCodec_State *, const Py_UNICODE **, size_t,
