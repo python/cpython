@@ -26,7 +26,7 @@ static PyObject *_grouper_create(groupbyobject *, PyObject *);
 static PyObject *
 groupby_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	static const char *kwargs[] = {"iterable", "key", NULL};
+	static char *kwargs[] = {"iterable", "key", NULL};
 	groupbyobject *gbo;
  	PyObject *it, *keyfunc = Py_None;
  

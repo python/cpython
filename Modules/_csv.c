@@ -291,7 +291,7 @@ Dialect_dealloc(DialectObj *self)
         self->ob_type->tp_free((PyObject *)self);
 }
 
-static const char *dialect_kws[] = {
+static char *dialect_kws[] = {
 	"dialect",
 	"delimiter",
 	"doublequote",
