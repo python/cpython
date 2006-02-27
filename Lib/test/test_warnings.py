@@ -44,8 +44,7 @@ class TestModule(unittest.TestCase):
 
     def test_warn_specific_category(self):
         text = 'None'
-        # XXX OverflowWarning should go away for Python 2.5.
-        for category in [DeprecationWarning, FutureWarning, OverflowWarning,
+        for category in [DeprecationWarning, FutureWarning,
                     PendingDeprecationWarning, RuntimeWarning,
                     SyntaxWarning, UserWarning, Warning]:
             if category.__name__ in self.ignored:
