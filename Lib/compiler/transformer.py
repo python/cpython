@@ -945,7 +945,7 @@ class Transformer:
         # loop to avoid trivial recursion
         while 1:
             t = node[0]
-            if t == symbol.exprlist or t == symbol.testlist or t == symbol.testlist_gexp:
+            if t in (symbol.exprlist, symbol.testlist, symbol.testlist_safe, symbol.or_test, symbol.testlist_gexp):
                 if len(node) > 2:
                     return self.com_assign_tuple(node, assigning)
                 node = node[1]
@@ -982,7 +982,7 @@ class Transformer:
                 else:
                     raise SyntaxError, "can't assign to literal"
             else:
-                raise SyntaxError, "bad assignment"
+                raise SyntaxError, "bad assignment (%s)" % t
 
     def com_assign_tuple(self, node, assigning):
         assigns = []
