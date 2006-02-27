@@ -1,6 +1,8 @@
 These files are from the large example of using the `parser' module.  Refer
 to the Python Library Reference for more information.
 
+It also contains examples for the AST parser.
+
 Files:
 ------
 
@@ -21,5 +23,9 @@ Files:
 			and classes in example.py.
 
 	test_parser.py  program to put the parser module through its paces.
+
+	unparse.py	AST (2.5) based example to recreate source code
+			from an AST. This is incomplete; contributions
+			are welcome.
 
 Enjoy!
