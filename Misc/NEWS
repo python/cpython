@@ -12,6 +12,10 @@ What's New in Python 2.4.3c1?
 Core and builtins
 -----------------
 
+- Fix missing check on whether the PendingDeprecationWarning for string
+  exceptions was re-raised as an actual PendingDeprecationWarning when
+  'warnings' is set to a filter action of "error"
+
 - Bug #1378022, UTF-8 files with a leading BOM crashed the interpreter.
 
 - Patch #1400181, fix unicode string formatting to not use the locale.
