@@ -278,6 +278,7 @@ class Transformer:
         code = self.com_node(nodelist[-1])
 
         return Lambda(names, defaults, flags, code, lineno=nodelist[1][2])
+    old_lambdef = lambdef
 
     def classdef(self, nodelist):
         # classdef: 'class' NAME ['(' [testlist] ')'] ':' suite
@@ -572,6 +573,8 @@ class Transformer:
         if len(nodelist) == 1 and nodelist[0][0] == symbol.lambdef:
             return self.lambdef(nodelist[0])
         return self.com_binary(Or, nodelist)
+    or_test = test
+    old_test = test
 
     def and_test(self, nodelist):
         # not_test ('and' not_test)*
