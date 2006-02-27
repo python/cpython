@@ -861,7 +861,8 @@ VALIDATER(listmaker);           VALIDATER(yield_stmt);
 VALIDATER(testlist1);           VALIDATER(gen_for);
 VALIDATER(gen_iter);            VALIDATER(gen_if);
 VALIDATER(testlist_gexp);	VALIDATER(yield_expr);
-VALIDATER(yield_or_testlist);	
+VALIDATER(yield_or_testlist);	VALIDATER(or_test);
+VALIDATER(old_test); 		VALIDATER(old_lambdef);
 
 #undef VALIDATER
 
@@ -1095,7 +1096,7 @@ static int
 validate_testlist_safe(node *tree)
 {
     return (validate_repeating_list(tree, testlist_safe,
-                                    validate_test, "testlist_safe"));
+                                    validate_old_test, "testlist_safe"));
 }
 
 
@@ -1315,7 +1316,7 @@ validate_gen_for(node *tree)
         res = (validate_name(CHILD(tree, 0), "for")
                && validate_exprlist(CHILD(tree, 1))
                && validate_name(CHILD(tree, 2), "in")
-               && validate_test(CHILD(tree, 3)));
+               && validate_or_test(CHILD(tree, 3)));
 
     return res;
 }
@@ -2047,6 +2048,37 @@ validate_test(node *tree)
         res = ((nch == 1)
                && validate_lambdef(CHILD(tree, 0)));
     else if (res) {
+        res = validate_or_test(CHILD(tree, 0));
+        res = (res && (nch == 1 || (nch == 5 &&
+            validate_name(CHILD(tree, 1), "if") &&
+            validate_or_test(CHILD(tree, 2)) &&
+            validate_name(CHILD(tree, 3), "else") &&
+            validate_test(CHILD(tree, 4)))));
+    }
+    return (res);
+}
+
+static int
+validate_old_test(node *tree)
+{
+    int nch = NCH(tree);
+    int res = validate_ntype(tree, old_test) && (nch == 1);
+
+    if (res && (TYPE(CHILD(tree, 0)) == old_lambdef))
+        res = (validate_old_lambdef(CHILD(tree, 0)));
+    else if (res) {
+        res = (validate_or_test(CHILD(tree, 0)));
+    }
+    return (res);
+}
+
+static int
+validate_or_test(node *tree)
+{
+    int nch = NCH(tree);
+    int res = validate_ntype(tree, or_test) && is_odd(nch);
+
+    if (res) {
         int pos;
         res = validate_and_test(CHILD(tree, 0));
         for (pos = 1; res && (pos < nch); pos += 2)
@@ -2528,6 +2560,25 @@ validate_lambdef(node *tree)
         res = validate_varargslist(CHILD(tree, 1));
     else if (!res && !PyErr_Occurred())
         (void) validate_numnodes(tree, 3, "lambdef");
+
+    return (res);
+}
+
+
+static int
+validate_old_lambdef(node *tree)
+{
+    int nch = NCH(tree);
+    int res = (validate_ntype(tree, old_lambdef)
+               && ((nch == 3) || (nch == 4))
+               && validate_name(CHILD(tree, 0), "lambda")
+               && validate_colon(CHILD(tree, nch - 2))
+               && validate_test(CHILD(tree, nch - 1)));
+
+    if (res && (nch == 4))
+        res = validate_varargslist(CHILD(tree, 1));
+    else if (!res && !PyErr_Occurred())
+        (void) validate_numnodes(tree, 3, "old_lambdef");
 
     return (res);
 }
