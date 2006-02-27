@@ -446,6 +446,7 @@ static PyObject* ast2obj_bool(bool b)
         self.emit("static int init_types(void)",0)
         self.emit("{", 0)
         self.emit("if (initialized) return 1;", 1)
+        self.emit("initialized = 1;", 1)
         for dfn in mod.dfns:
             self.visit(dfn)
         self.emit("return 1;", 0);

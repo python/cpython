@@ -392,6 +392,7 @@ static int initialized;
 static int init_types(void)
 {
         if (initialized) return 1;
+        initialized = 1;
         mod_type = make_type("mod", &PyBaseObject_Type, NULL, 0);
         Module_type = make_type("Module", mod_type, Module_fields, 1);
         Interactive_type = make_type("Interactive", mod_type,
