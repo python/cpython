@@ -537,7 +537,7 @@ seq_for_testlist(struct compiling *c, const node *n)
         return NULL;
 
     for (i = 0; i < NCH(n); i += 2) {
-        REQ(CHILD(n, i), test);
+        assert(TYPE(CHILD(n, i)) == test || TYPE(CHILD(n, i)) == old_test);
 
         expression = ast_for_expr(c, CHILD(n, i));
         if (!expression)
