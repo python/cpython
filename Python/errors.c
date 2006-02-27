@@ -738,7 +738,7 @@ PyErr_ProgramText(const char *filename, int lineno)
 	int i;
 	char linebuf[1000];
 
-	if (filename == NULL || lineno <= 0)
+	if (filename == NULL || *filename == '\0' || lineno <= 0)
 		return NULL;
 	fp = fopen(filename, "r" PY_STDIOTEXTMODE);
 	if (fp == NULL)
