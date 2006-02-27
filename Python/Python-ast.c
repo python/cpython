@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "Python-ast.h"
 
+PyTypeObject* AST_type;
 PyTypeObject *mod_type;
 static PyObject* ast2obj_mod(void*);
 PyTypeObject *Module_type;
@@ -22,6 +23,9 @@ char *Suite_fields[]={
         "body",
 };
 PyTypeObject *stmt_type;
+char *stmt_attributes[] = {
+        "lineno",
+};
 static PyObject* ast2obj_stmt(void*);
 PyTypeObject *FunctionDef_type;
 char *FunctionDef_fields[]={
@@ -129,6 +133,9 @@ PyTypeObject *Pass_type;
 PyTypeObject *Break_type;
 PyTypeObject *Continue_type;
 PyTypeObject *expr_type;
+char *expr_attributes[] = {
+        "lineno",
+};
 static PyObject* ast2obj_expr(void*);
 PyTypeObject *BoolOp_type;
 char *BoolOp_fields[]={
@@ -357,9 +364,26 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
         }
         PyTuple_SET_ITEM(fnames, i, field);
     }
-    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){sO}", type, base, "_fields", fnames);
+    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){sOss}", 
+                    type, base, "_fields", fnames, "__module__", "_ast");
     Py_DECREF(fnames);
     return (PyTypeObject*)result;
+}
+
+static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
+{
+    int i;
+    PyObject *s, *l = PyList_New(num_fields);
+    if (!l) return 0;
+    for(i=0; i < num_fields; i++) {
+        s = PyString_FromString(attrs[i]);
+        if (!s) {
+            Py_DECREF(l);
+            return 0;
+        }
+        PyList_SET_ITEM(l, i, s);
+    }
+    return PyObject_SetAttrString((PyObject*)type, "_attributes", l) >=0;
 }
 
 static PyObject* ast2obj_list(asdl_seq *seq, PyObject* (*func)(void*))
@@ -394,154 +418,297 @@ static PyObject* ast2obj_bool(bool b)
     return PyBool_FromLong(b);
 }
 
+static PyObject* ast2obj_int(bool b)
+{
+    return PyInt_FromLong(b);
+}
+
 static int initialized;
 static int init_types(void)
 {
         if (initialized) return 1;
-        initialized = 1;
-        mod_type = make_type("mod", &PyBaseObject_Type, NULL, 0);
+        AST_type = make_type("AST", &PyBaseObject_Type, NULL, 0);
+        mod_type = make_type("mod", AST_type, NULL, 0);
+        if (!mod_type) return 0;
+        if (!add_attributes(mod_type, NULL, 0)) return 0;
         Module_type = make_type("Module", mod_type, Module_fields, 1);
+        if (!Module_type) return 0;
         Interactive_type = make_type("Interactive", mod_type,
                                      Interactive_fields, 1);
+        if (!Interactive_type) return 0;
         Expression_type = make_type("Expression", mod_type, Expression_fields,
                                     1);
+        if (!Expression_type) return 0;
         Suite_type = make_type("Suite", mod_type, Suite_fields, 1);
-        stmt_type = make_type("stmt", &PyBaseObject_Type, NULL, 0);
+        if (!Suite_type) return 0;
+        stmt_type = make_type("stmt", AST_type, NULL, 0);
+        if (!stmt_type) return 0;
+        if (!add_attributes(stmt_type, stmt_attributes, 1)) return 0;
         FunctionDef_type = make_type("FunctionDef", stmt_type,
                                      FunctionDef_fields, 4);
+        if (!FunctionDef_type) return 0;
         ClassDef_type = make_type("ClassDef", stmt_type, ClassDef_fields, 3);
+        if (!ClassDef_type) return 0;
         Return_type = make_type("Return", stmt_type, Return_fields, 1);
+        if (!Return_type) return 0;
         Delete_type = make_type("Delete", stmt_type, Delete_fields, 1);
+        if (!Delete_type) return 0;
         Assign_type = make_type("Assign", stmt_type, Assign_fields, 2);
+        if (!Assign_type) return 0;
         AugAssign_type = make_type("AugAssign", stmt_type, AugAssign_fields, 3);
+        if (!AugAssign_type) return 0;
         Print_type = make_type("Print", stmt_type, Print_fields, 3);
+        if (!Print_type) return 0;
         For_type = make_type("For", stmt_type, For_fields, 4);
+        if (!For_type) return 0;
         While_type = make_type("While", stmt_type, While_fields, 3);
+        if (!While_type) return 0;
         If_type = make_type("If", stmt_type, If_fields, 3);
+        if (!If_type) return 0;
         Raise_type = make_type("Raise", stmt_type, Raise_fields, 3);
+        if (!Raise_type) return 0;
         TryExcept_type = make_type("TryExcept", stmt_type, TryExcept_fields, 3);
+        if (!TryExcept_type) return 0;
         TryFinally_type = make_type("TryFinally", stmt_type, TryFinally_fields,
                                     2);
+        if (!TryFinally_type) return 0;
         Assert_type = make_type("Assert", stmt_type, Assert_fields, 2);
+        if (!Assert_type) return 0;
         Import_type = make_type("Import", stmt_type, Import_fields, 1);
+        if (!Import_type) return 0;
         ImportFrom_type = make_type("ImportFrom", stmt_type, ImportFrom_fields,
                                     2);
+        if (!ImportFrom_type) return 0;
         Exec_type = make_type("Exec", stmt_type, Exec_fields, 3);
+        if (!Exec_type) return 0;
         Global_type = make_type("Global", stmt_type, Global_fields, 1);
+        if (!Global_type) return 0;
         Expr_type = make_type("Expr", stmt_type, Expr_fields, 1);
+        if (!Expr_type) return 0;
         Pass_type = make_type("Pass", stmt_type, NULL, 0);
+        if (!Pass_type) return 0;
         Break_type = make_type("Break", stmt_type, NULL, 0);
+        if (!Break_type) return 0;
         Continue_type = make_type("Continue", stmt_type, NULL, 0);
-        expr_type = make_type("expr", &PyBaseObject_Type, NULL, 0);
+        if (!Continue_type) return 0;
+        expr_type = make_type("expr", AST_type, NULL, 0);
+        if (!expr_type) return 0;
+        if (!add_attributes(expr_type, expr_attributes, 1)) return 0;
         BoolOp_type = make_type("BoolOp", expr_type, BoolOp_fields, 2);
+        if (!BoolOp_type) return 0;
         BinOp_type = make_type("BinOp", expr_type, BinOp_fields, 3);
+        if (!BinOp_type) return 0;
         UnaryOp_type = make_type("UnaryOp", expr_type, UnaryOp_fields, 2);
+        if (!UnaryOp_type) return 0;
         Lambda_type = make_type("Lambda", expr_type, Lambda_fields, 2);
+        if (!Lambda_type) return 0;
         IfExp_type = make_type("IfExp", expr_type, IfExp_fields, 3);
+        if (!IfExp_type) return 0;
         Dict_type = make_type("Dict", expr_type, Dict_fields, 2);
+        if (!Dict_type) return 0;
         ListComp_type = make_type("ListComp", expr_type, ListComp_fields, 2);
+        if (!ListComp_type) return 0;
         GeneratorExp_type = make_type("GeneratorExp", expr_type,
                                       GeneratorExp_fields, 2);
+        if (!GeneratorExp_type) return 0;
         Yield_type = make_type("Yield", expr_type, Yield_fields, 1);
+        if (!Yield_type) return 0;
         Compare_type = make_type("Compare", expr_type, Compare_fields, 3);
+        if (!Compare_type) return 0;
         Call_type = make_type("Call", expr_type, Call_fields, 5);
+        if (!Call_type) return 0;
         Repr_type = make_type("Repr", expr_type, Repr_fields, 1);
+        if (!Repr_type) return 0;
         Num_type = make_type("Num", expr_type, Num_fields, 1);
+        if (!Num_type) return 0;
         Str_type = make_type("Str", expr_type, Str_fields, 1);
+        if (!Str_type) return 0;
         Attribute_type = make_type("Attribute", expr_type, Attribute_fields, 3);
+        if (!Attribute_type) return 0;
         Subscript_type = make_type("Subscript", expr_type, Subscript_fields, 3);
+        if (!Subscript_type) return 0;
         Name_type = make_type("Name", expr_type, Name_fields, 2);
+        if (!Name_type) return 0;
         List_type = make_type("List", expr_type, List_fields, 2);
+        if (!List_type) return 0;
         Tuple_type = make_type("Tuple", expr_type, Tuple_fields, 2);
-        expr_context_type = make_type("expr_context", &PyBaseObject_Type, NULL,
-                                      0);
+        if (!Tuple_type) return 0;
+        expr_context_type = make_type("expr_context", AST_type, NULL, 0);
+        if (!expr_context_type) return 0;
+        if (!add_attributes(expr_context_type, NULL, 0)) return 0;
         Load_type = make_type("Load", expr_context_type, NULL, 0);
+        if (!Load_type) return 0;
         Load_singleton = PyType_GenericNew(Load_type, NULL, NULL);
+        if (!Load_singleton) return 0;
         Store_type = make_type("Store", expr_context_type, NULL, 0);
+        if (!Store_type) return 0;
         Store_singleton = PyType_GenericNew(Store_type, NULL, NULL);
+        if (!Store_singleton) return 0;
         Del_type = make_type("Del", expr_context_type, NULL, 0);
+        if (!Del_type) return 0;
         Del_singleton = PyType_GenericNew(Del_type, NULL, NULL);
+        if (!Del_singleton) return 0;
         AugLoad_type = make_type("AugLoad", expr_context_type, NULL, 0);
+        if (!AugLoad_type) return 0;
         AugLoad_singleton = PyType_GenericNew(AugLoad_type, NULL, NULL);
+        if (!AugLoad_singleton) return 0;
         AugStore_type = make_type("AugStore", expr_context_type, NULL, 0);
+        if (!AugStore_type) return 0;
         AugStore_singleton = PyType_GenericNew(AugStore_type, NULL, NULL);
+        if (!AugStore_singleton) return 0;
         Param_type = make_type("Param", expr_context_type, NULL, 0);
+        if (!Param_type) return 0;
         Param_singleton = PyType_GenericNew(Param_type, NULL, NULL);
-        slice_type = make_type("slice", &PyBaseObject_Type, NULL, 0);
+        if (!Param_singleton) return 0;
+        slice_type = make_type("slice", AST_type, NULL, 0);
+        if (!slice_type) return 0;
+        if (!add_attributes(slice_type, NULL, 0)) return 0;
         Ellipsis_type = make_type("Ellipsis", slice_type, NULL, 0);
+        if (!Ellipsis_type) return 0;
         Slice_type = make_type("Slice", slice_type, Slice_fields, 3);
+        if (!Slice_type) return 0;
         ExtSlice_type = make_type("ExtSlice", slice_type, ExtSlice_fields, 1);
+        if (!ExtSlice_type) return 0;
         Index_type = make_type("Index", slice_type, Index_fields, 1);
-        boolop_type = make_type("boolop", &PyBaseObject_Type, NULL, 0);
+        if (!Index_type) return 0;
+        boolop_type = make_type("boolop", AST_type, NULL, 0);
+        if (!boolop_type) return 0;
+        if (!add_attributes(boolop_type, NULL, 0)) return 0;
         And_type = make_type("And", boolop_type, NULL, 0);
+        if (!And_type) return 0;
         And_singleton = PyType_GenericNew(And_type, NULL, NULL);
+        if (!And_singleton) return 0;
         Or_type = make_type("Or", boolop_type, NULL, 0);
+        if (!Or_type) return 0;
         Or_singleton = PyType_GenericNew(Or_type, NULL, NULL);
-        operator_type = make_type("operator", &PyBaseObject_Type, NULL, 0);
+        if (!Or_singleton) return 0;
+        operator_type = make_type("operator", AST_type, NULL, 0);
+        if (!operator_type) return 0;
+        if (!add_attributes(operator_type, NULL, 0)) return 0;
         Add_type = make_type("Add", operator_type, NULL, 0);
+        if (!Add_type) return 0;
         Add_singleton = PyType_GenericNew(Add_type, NULL, NULL);
+        if (!Add_singleton) return 0;
         Sub_type = make_type("Sub", operator_type, NULL, 0);
+        if (!Sub_type) return 0;
         Sub_singleton = PyType_GenericNew(Sub_type, NULL, NULL);
+        if (!Sub_singleton) return 0;
         Mult_type = make_type("Mult", operator_type, NULL, 0);
+        if (!Mult_type) return 0;
         Mult_singleton = PyType_GenericNew(Mult_type, NULL, NULL);
+        if (!Mult_singleton) return 0;
         Div_type = make_type("Div", operator_type, NULL, 0);
+        if (!Div_type) return 0;
         Div_singleton = PyType_GenericNew(Div_type, NULL, NULL);
+        if (!Div_singleton) return 0;
         Mod_type = make_type("Mod", operator_type, NULL, 0);
+        if (!Mod_type) return 0;
         Mod_singleton = PyType_GenericNew(Mod_type, NULL, NULL);
+        if (!Mod_singleton) return 0;
         Pow_type = make_type("Pow", operator_type, NULL, 0);
+        if (!Pow_type) return 0;
         Pow_singleton = PyType_GenericNew(Pow_type, NULL, NULL);
+        if (!Pow_singleton) return 0;
         LShift_type = make_type("LShift", operator_type, NULL, 0);
+        if (!LShift_type) return 0;
         LShift_singleton = PyType_GenericNew(LShift_type, NULL, NULL);
+        if (!LShift_singleton) return 0;
         RShift_type = make_type("RShift", operator_type, NULL, 0);
+        if (!RShift_type) return 0;
         RShift_singleton = PyType_GenericNew(RShift_type, NULL, NULL);
+        if (!RShift_singleton) return 0;
         BitOr_type = make_type("BitOr", operator_type, NULL, 0);
+        if (!BitOr_type) return 0;
         BitOr_singleton = PyType_GenericNew(BitOr_type, NULL, NULL);
+        if (!BitOr_singleton) return 0;
         BitXor_type = make_type("BitXor", operator_type, NULL, 0);
+        if (!BitXor_type) return 0;
         BitXor_singleton = PyType_GenericNew(BitXor_type, NULL, NULL);
+        if (!BitXor_singleton) return 0;
         BitAnd_type = make_type("BitAnd", operator_type, NULL, 0);
+        if (!BitAnd_type) return 0;
         BitAnd_singleton = PyType_GenericNew(BitAnd_type, NULL, NULL);
+        if (!BitAnd_singleton) return 0;
         FloorDiv_type = make_type("FloorDiv", operator_type, NULL, 0);
+        if (!FloorDiv_type) return 0;
         FloorDiv_singleton = PyType_GenericNew(FloorDiv_type, NULL, NULL);
-        unaryop_type = make_type("unaryop", &PyBaseObject_Type, NULL, 0);
+        if (!FloorDiv_singleton) return 0;
+        unaryop_type = make_type("unaryop", AST_type, NULL, 0);
+        if (!unaryop_type) return 0;
+        if (!add_attributes(unaryop_type, NULL, 0)) return 0;
         Invert_type = make_type("Invert", unaryop_type, NULL, 0);
+        if (!Invert_type) return 0;
         Invert_singleton = PyType_GenericNew(Invert_type, NULL, NULL);
+        if (!Invert_singleton) return 0;
         Not_type = make_type("Not", unaryop_type, NULL, 0);
+        if (!Not_type) return 0;
         Not_singleton = PyType_GenericNew(Not_type, NULL, NULL);
+        if (!Not_singleton) return 0;
         UAdd_type = make_type("UAdd", unaryop_type, NULL, 0);
+        if (!UAdd_type) return 0;
         UAdd_singleton = PyType_GenericNew(UAdd_type, NULL, NULL);
+        if (!UAdd_singleton) return 0;
         USub_type = make_type("USub", unaryop_type, NULL, 0);
+        if (!USub_type) return 0;
         USub_singleton = PyType_GenericNew(USub_type, NULL, NULL);
-        cmpop_type = make_type("cmpop", &PyBaseObject_Type, NULL, 0);
+        if (!USub_singleton) return 0;
+        cmpop_type = make_type("cmpop", AST_type, NULL, 0);
+        if (!cmpop_type) return 0;
+        if (!add_attributes(cmpop_type, NULL, 0)) return 0;
         Eq_type = make_type("Eq", cmpop_type, NULL, 0);
+        if (!Eq_type) return 0;
         Eq_singleton = PyType_GenericNew(Eq_type, NULL, NULL);
+        if (!Eq_singleton) return 0;
         NotEq_type = make_type("NotEq", cmpop_type, NULL, 0);
+        if (!NotEq_type) return 0;
         NotEq_singleton = PyType_GenericNew(NotEq_type, NULL, NULL);
+        if (!NotEq_singleton) return 0;
         Lt_type = make_type("Lt", cmpop_type, NULL, 0);
+        if (!Lt_type) return 0;
         Lt_singleton = PyType_GenericNew(Lt_type, NULL, NULL);
+        if (!Lt_singleton) return 0;
         LtE_type = make_type("LtE", cmpop_type, NULL, 0);
+        if (!LtE_type) return 0;
         LtE_singleton = PyType_GenericNew(LtE_type, NULL, NULL);
+        if (!LtE_singleton) return 0;
         Gt_type = make_type("Gt", cmpop_type, NULL, 0);
+        if (!Gt_type) return 0;
         Gt_singleton = PyType_GenericNew(Gt_type, NULL, NULL);
+        if (!Gt_singleton) return 0;
         GtE_type = make_type("GtE", cmpop_type, NULL, 0);
+        if (!GtE_type) return 0;
         GtE_singleton = PyType_GenericNew(GtE_type, NULL, NULL);
+        if (!GtE_singleton) return 0;
         Is_type = make_type("Is", cmpop_type, NULL, 0);
+        if (!Is_type) return 0;
         Is_singleton = PyType_GenericNew(Is_type, NULL, NULL);
+        if (!Is_singleton) return 0;
         IsNot_type = make_type("IsNot", cmpop_type, NULL, 0);
+        if (!IsNot_type) return 0;
         IsNot_singleton = PyType_GenericNew(IsNot_type, NULL, NULL);
+        if (!IsNot_singleton) return 0;
         In_type = make_type("In", cmpop_type, NULL, 0);
+        if (!In_type) return 0;
         In_singleton = PyType_GenericNew(In_type, NULL, NULL);
+        if (!In_singleton) return 0;
         NotIn_type = make_type("NotIn", cmpop_type, NULL, 0);
+        if (!NotIn_type) return 0;
         NotIn_singleton = PyType_GenericNew(NotIn_type, NULL, NULL);
-        comprehension_type = make_type("comprehension", &PyBaseObject_Type,
+        if (!NotIn_singleton) return 0;
+        comprehension_type = make_type("comprehension", AST_type,
                                        comprehension_fields, 3);
-        excepthandler_type = make_type("excepthandler", &PyBaseObject_Type,
+        if (!comprehension_type) return 0;
+        excepthandler_type = make_type("excepthandler", AST_type,
                                        excepthandler_fields, 3);
-        arguments_type = make_type("arguments", &PyBaseObject_Type,
-                                   arguments_fields, 4);
-        keyword_type = make_type("keyword", &PyBaseObject_Type, keyword_fields,
-                                 2);
-        alias_type = make_type("alias", &PyBaseObject_Type, alias_fields, 2);
-return 1;
+        if (!excepthandler_type) return 0;
+        arguments_type = make_type("arguments", AST_type, arguments_fields, 4);
+        if (!arguments_type) return 0;
+        keyword_type = make_type("keyword", AST_type, keyword_fields, 2);
+        if (!keyword_type) return 0;
+        alias_type = make_type("alias", AST_type, alias_fields, 2);
+        if (!alias_type) return 0;
+        initialized = 1;
+        return 1;
 }
 
 mod_ty
@@ -1702,7 +1869,6 @@ ast2obj_mod(void* _o)
                 Py_DECREF(value);
                 break;
         }
-
         return result;
 failed:
         Py_XDECREF(value);
@@ -2036,7 +2202,9 @@ ast2obj_stmt(void* _o)
                 if (!result) goto failed;
                 break;
         }
-
+        value = ast2obj_int(o->lineno);
+        if (!value) goto failed;
+        PyObject_SetAttrString(result, "lineno", value);
         return result;
 failed:
         Py_XDECREF(value);
@@ -2350,7 +2518,9 @@ ast2obj_expr(void* _o)
                 Py_DECREF(value);
                 break;
         }
-
+        value = ast2obj_int(o->lineno);
+        if (!value) goto failed;
+        PyObject_SetAttrString(result, "lineno", value);
         return result;
 failed:
         Py_XDECREF(value);
@@ -2435,7 +2605,6 @@ ast2obj_slice(void* _o)
                 Py_DECREF(value);
                 break;
         }
-
         return result;
 failed:
         Py_XDECREF(value);
@@ -2578,7 +2747,6 @@ ast2obj_comprehension(void* _o)
         if (PyObject_SetAttrString(result, "ifs", value) == -1)
                 goto failed;
         Py_DECREF(value);
-
         return result;
 failed:
         Py_XDECREF(value);
@@ -2613,7 +2781,6 @@ ast2obj_excepthandler(void* _o)
         if (PyObject_SetAttrString(result, "body", value) == -1)
                 goto failed;
         Py_DECREF(value);
-
         return result;
 failed:
         Py_XDECREF(value);
@@ -2653,7 +2820,6 @@ ast2obj_arguments(void* _o)
         if (PyObject_SetAttrString(result, "defaults", value) == -1)
                 goto failed;
         Py_DECREF(value);
-
         return result;
 failed:
         Py_XDECREF(value);
@@ -2683,7 +2849,6 @@ ast2obj_keyword(void* _o)
         if (PyObject_SetAttrString(result, "value", value) == -1)
                 goto failed;
         Py_DECREF(value);
-
         return result;
 failed:
         Py_XDECREF(value);
@@ -2713,7 +2878,6 @@ ast2obj_alias(void* _o)
         if (PyObject_SetAttrString(result, "asname", value) == -1)
                 goto failed;
         Py_DECREF(value);
-
         return result;
 failed:
         Py_XDECREF(value);
@@ -2721,6 +2885,158 @@ failed:
         return NULL;
 }
 
+
+PyMODINIT_FUNC
+init_ast(void)
+{
+        PyObject *m, *d;
+        if (!init_types()) return;
+        m = Py_InitModule3("_ast", NULL, NULL);
+        if (!m) return;
+        d = PyModule_GetDict(m);
+        if (PyDict_SetItemString(d, "AST", (PyObject*)AST_type) < 0) return;
+        if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
+                return;
+        if(PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return;
+        if(PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Interactive", (PyObject*)Interactive_type)
+           < 0) return;
+        if(PyDict_SetItemString(d, "Expression", (PyObject*)Expression_type) <
+           0) return;
+        if(PyDict_SetItemString(d, "Suite", (PyObject*)Suite_type) < 0) return;
+        if(PyDict_SetItemString(d, "stmt", (PyObject*)stmt_type) < 0) return;
+        if(PyDict_SetItemString(d, "FunctionDef", (PyObject*)FunctionDef_type)
+           < 0) return;
+        if(PyDict_SetItemString(d, "ClassDef", (PyObject*)ClassDef_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Return", (PyObject*)Return_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Delete", (PyObject*)Delete_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Assign", (PyObject*)Assign_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "AugAssign", (PyObject*)AugAssign_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Print", (PyObject*)Print_type) < 0) return;
+        if(PyDict_SetItemString(d, "For", (PyObject*)For_type) < 0) return;
+        if(PyDict_SetItemString(d, "While", (PyObject*)While_type) < 0) return;
+        if(PyDict_SetItemString(d, "If", (PyObject*)If_type) < 0) return;
+        if(PyDict_SetItemString(d, "Raise", (PyObject*)Raise_type) < 0) return;
+        if(PyDict_SetItemString(d, "TryExcept", (PyObject*)TryExcept_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "TryFinally", (PyObject*)TryFinally_type) <
+           0) return;
+        if(PyDict_SetItemString(d, "Assert", (PyObject*)Assert_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Import", (PyObject*)Import_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "ImportFrom", (PyObject*)ImportFrom_type) <
+           0) return;
+        if(PyDict_SetItemString(d, "Exec", (PyObject*)Exec_type) < 0) return;
+        if(PyDict_SetItemString(d, "Global", (PyObject*)Global_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Expr", (PyObject*)Expr_type) < 0) return;
+        if(PyDict_SetItemString(d, "Pass", (PyObject*)Pass_type) < 0) return;
+        if(PyDict_SetItemString(d, "Break", (PyObject*)Break_type) < 0) return;
+        if(PyDict_SetItemString(d, "Continue", (PyObject*)Continue_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "expr", (PyObject*)expr_type) < 0) return;
+        if(PyDict_SetItemString(d, "BoolOp", (PyObject*)BoolOp_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "BinOp", (PyObject*)BinOp_type) < 0) return;
+        if(PyDict_SetItemString(d, "UnaryOp", (PyObject*)UnaryOp_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Lambda", (PyObject*)Lambda_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "IfExp", (PyObject*)IfExp_type) < 0) return;
+        if(PyDict_SetItemString(d, "Dict", (PyObject*)Dict_type) < 0) return;
+        if(PyDict_SetItemString(d, "ListComp", (PyObject*)ListComp_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "GeneratorExp",
+           (PyObject*)GeneratorExp_type) < 0) return;
+        if(PyDict_SetItemString(d, "Yield", (PyObject*)Yield_type) < 0) return;
+        if(PyDict_SetItemString(d, "Compare", (PyObject*)Compare_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Call", (PyObject*)Call_type) < 0) return;
+        if(PyDict_SetItemString(d, "Repr", (PyObject*)Repr_type) < 0) return;
+        if(PyDict_SetItemString(d, "Num", (PyObject*)Num_type) < 0) return;
+        if(PyDict_SetItemString(d, "Str", (PyObject*)Str_type) < 0) return;
+        if(PyDict_SetItemString(d, "Attribute", (PyObject*)Attribute_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Subscript", (PyObject*)Subscript_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Name", (PyObject*)Name_type) < 0) return;
+        if(PyDict_SetItemString(d, "List", (PyObject*)List_type) < 0) return;
+        if(PyDict_SetItemString(d, "Tuple", (PyObject*)Tuple_type) < 0) return;
+        if(PyDict_SetItemString(d, "expr_context",
+           (PyObject*)expr_context_type) < 0) return;
+        if(PyDict_SetItemString(d, "Load", (PyObject*)Load_type) < 0) return;
+        if(PyDict_SetItemString(d, "Store", (PyObject*)Store_type) < 0) return;
+        if(PyDict_SetItemString(d, "Del", (PyObject*)Del_type) < 0) return;
+        if(PyDict_SetItemString(d, "AugLoad", (PyObject*)AugLoad_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "AugStore", (PyObject*)AugStore_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Param", (PyObject*)Param_type) < 0) return;
+        if(PyDict_SetItemString(d, "slice", (PyObject*)slice_type) < 0) return;
+        if(PyDict_SetItemString(d, "Ellipsis", (PyObject*)Ellipsis_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Slice", (PyObject*)Slice_type) < 0) return;
+        if(PyDict_SetItemString(d, "ExtSlice", (PyObject*)ExtSlice_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Index", (PyObject*)Index_type) < 0) return;
+        if(PyDict_SetItemString(d, "boolop", (PyObject*)boolop_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "And", (PyObject*)And_type) < 0) return;
+        if(PyDict_SetItemString(d, "Or", (PyObject*)Or_type) < 0) return;
+        if(PyDict_SetItemString(d, "operator", (PyObject*)operator_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Add", (PyObject*)Add_type) < 0) return;
+        if(PyDict_SetItemString(d, "Sub", (PyObject*)Sub_type) < 0) return;
+        if(PyDict_SetItemString(d, "Mult", (PyObject*)Mult_type) < 0) return;
+        if(PyDict_SetItemString(d, "Div", (PyObject*)Div_type) < 0) return;
+        if(PyDict_SetItemString(d, "Mod", (PyObject*)Mod_type) < 0) return;
+        if(PyDict_SetItemString(d, "Pow", (PyObject*)Pow_type) < 0) return;
+        if(PyDict_SetItemString(d, "LShift", (PyObject*)LShift_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "RShift", (PyObject*)RShift_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "BitOr", (PyObject*)BitOr_type) < 0) return;
+        if(PyDict_SetItemString(d, "BitXor", (PyObject*)BitXor_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "BitAnd", (PyObject*)BitAnd_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "FloorDiv", (PyObject*)FloorDiv_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "unaryop", (PyObject*)unaryop_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Invert", (PyObject*)Invert_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "Not", (PyObject*)Not_type) < 0) return;
+        if(PyDict_SetItemString(d, "UAdd", (PyObject*)UAdd_type) < 0) return;
+        if(PyDict_SetItemString(d, "USub", (PyObject*)USub_type) < 0) return;
+        if(PyDict_SetItemString(d, "cmpop", (PyObject*)cmpop_type) < 0) return;
+        if(PyDict_SetItemString(d, "Eq", (PyObject*)Eq_type) < 0) return;
+        if(PyDict_SetItemString(d, "NotEq", (PyObject*)NotEq_type) < 0) return;
+        if(PyDict_SetItemString(d, "Lt", (PyObject*)Lt_type) < 0) return;
+        if(PyDict_SetItemString(d, "LtE", (PyObject*)LtE_type) < 0) return;
+        if(PyDict_SetItemString(d, "Gt", (PyObject*)Gt_type) < 0) return;
+        if(PyDict_SetItemString(d, "GtE", (PyObject*)GtE_type) < 0) return;
+        if(PyDict_SetItemString(d, "Is", (PyObject*)Is_type) < 0) return;
+        if(PyDict_SetItemString(d, "IsNot", (PyObject*)IsNot_type) < 0) return;
+        if(PyDict_SetItemString(d, "In", (PyObject*)In_type) < 0) return;
+        if(PyDict_SetItemString(d, "NotIn", (PyObject*)NotIn_type) < 0) return;
+        if(PyDict_SetItemString(d, "comprehension",
+           (PyObject*)comprehension_type) < 0) return;
+        if(PyDict_SetItemString(d, "excepthandler",
+           (PyObject*)excepthandler_type) < 0) return;
+        if(PyDict_SetItemString(d, "arguments", (PyObject*)arguments_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "keyword", (PyObject*)keyword_type) < 0)
+           return;
+        if(PyDict_SetItemString(d, "alias", (PyObject*)alias_type) < 0) return;
+}
 
 
 PyObject* PyAST_mod2obj(mod_ty t)

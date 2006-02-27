@@ -76,7 +76,7 @@ Core and builtins
 
 - A new AST parser implementation was completed. The abstract
   syntax tree is available for read-only (non-compile) access
-  to Python code.
+  to Python code; an _ast module was added.
 
 - SF bug #1167751: fix incorrect code being for generator expressions.
   The following code now raises a SyntaxError:  foo(a = i for i in range(10))
