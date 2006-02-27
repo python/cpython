@@ -44,6 +44,12 @@ Core and builtins
 
 - Fix segfault with invalid coding.
 
+- Patch #1413181:  changed ``PyThreadState_Delete()`` to forget about the
+  current thread state when the auto-GIL-state machinery knows about
+  it (since the thread state is being deleted, continuing to remember it
+  can't help, but can hurt if another thread happens to get created with
+  the same thread id).
+
 Extension Modules
 -----------------
 
