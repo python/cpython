@@ -1,7 +1,7 @@
 import sys, itertools
 
 def to_tuple(t):
-    if t is None or isinstance(t, (str, int, long)):
+    if t is None or isinstance(t, (basestring, int, long, complex)):
         return t
     elif isinstance(t, list):
         return [to_tuple(e) for e in t]
@@ -85,8 +85,8 @@ eval_tests = [
   "[a for b in c if d]",
   # GeneratorExp
   "(a for b in c if d)",
-  # Yield
-  #"def f():yield 3",
+  # Yield - yield expressions can't work outside a function
+  #
   # Compare
   "1 < 2 < 3",
   # Call
