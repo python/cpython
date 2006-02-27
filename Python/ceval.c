@@ -97,6 +97,7 @@ static PyObject *load_args(PyObject ***, int);
 #define CALL_FLAG_KW 2
 
 #ifdef LLTRACE
+static int lltrace;
 static int prtrace(PyObject *, char *);
 #endif
 static int call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
@@ -540,9 +541,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 	unsigned char *first_instr;
 	PyObject *names;
 	PyObject *consts;
-#ifdef LLTRACE
-	int lltrace;
-#endif
 #if defined(Py_DEBUG) || defined(LLTRACE)
 	/* Make it easier to find out where we are with a debugger */
 	char *filename;
@@ -661,10 +659,12 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 #define STACKADJ(n)	{ (void)(BASIC_STACKADJ(n), \
                                lltrace && prtrace(TOP(), "stackadj")); \
                                assert(STACK_LEVEL() <= f->f_stacksize); }
+#define EXT_POP(STACK_POINTER) (lltrace && prtrace(*(STACK_POINTER), "ext_pop"), *--(STACK_POINTER))
 #else
 #define PUSH(v)		BASIC_PUSH(v)
 #define POP()		BASIC_POP()
 #define STACKADJ(n)	BASIC_STACKADJ(n)
+#define EXT_POP(STACK_POINTER) (*--(STACK_POINTER))
 #endif
 
 /* Local variable macros */
@@ -2172,6 +2172,43 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 					   STACK_LEVEL());
 			continue;
 
+		case WITH_CLEANUP:
+		{
+			/* TOP is the context.__exit__ bound method.
+			   Below that are 1-3 values indicating how/why
+			   we entered the finally clause:
+			   - SECOND = None
+			   - (SECOND, THIRD) = (WHY_RETURN or WHY_CONTINUE), retval
+			   - SECOND = WHY_*; no retval below it
+			   - (SECOND, THIRD, FOURTH) = exc_info()
+			   In the last case, we must call
+			     TOP(SECOND, THIRD, FOURTH)
+			   otherwise we must call
+			     TOP(None, None, None)
+			   but we must preserve the stack entries below TOP.
+			   The code here just sets the stack up for the call;
+			   separate CALL_FUNCTION(3) and POP_TOP opcodes are
+			   emitted by the compiler.
+			*/
+			
+			x = TOP();
+			u = SECOND();
+			if (PyInt_Check(u) || u == Py_None) {
+				u = v = w = Py_None;
+			}
+			else {
+				v = THIRD();
+				w = FOURTH();
+			}
+			Py_INCREF(u);
+			Py_INCREF(v);
+			Py_INCREF(w);
+			PUSH(u);
+			PUSH(v);
+			PUSH(w);
+			break;
+		}
+
 		case CALL_FUNCTION:
 		{
 			PyObject **sp;
@@ -2511,9 +2548,9 @@ fast_yield:
 	return retval;
 }
 
-/* this is gonna seem *real weird*, but if you put some other code between
+/* This is gonna seem *real weird*, but if you put some other code between
    PyEval_EvalFrame() and PyEval_EvalCodeEx() you will need to adjust
-	the test in the if statement in Misc/gdbinit:pystack* */
+   the test in the if statements in Misc/gdbinit (pystack and pystackv). */
 
 PyObject *
 PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
@@ -3472,8 +3509,6 @@ PyEval_GetFuncDesc(PyObject *func)
 		return " object";
 	}
 }
-
-#define EXT_POP(STACK_POINTER) (*--(STACK_POINTER))
 
 static void
 err_args(PyObject *func, int flags, int nargs)

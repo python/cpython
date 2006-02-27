@@ -191,6 +191,8 @@ static void compiler_pop_fblock(struct compiler *, enum fblocktype,
 static int inplace_binop(struct compiler *, operator_ty);
 static int expr_constant(expr_ty e);
 
+static int compiler_with(struct compiler *, stmt_ty);
+
 static PyCodeObject *assemble(struct compiler *, int addNone);
 static PyObject *__doc__;
 
@@ -289,6 +291,7 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
 
  error:
 	compiler_free(&c);
+	assert(!PyErr_Occurred());
 	return co;
 }
 
@@ -1157,6 +1160,18 @@ compiler_exit_scope(struct compiler *c)
 
 }
 
+/* Allocate a new "anonymous" local variable.
+   Used by list comprehensions and with statements.
+*/
+
+static PyObject *
+compiler_new_tmpname(struct compiler *c)
+{
+	char tmpname[256];
+	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]", ++c->u->u_tmpname);
+	return PyString_FromString(tmpname);
+}
+
 /* Allocate a new block and return a pointer to it.
    Returns NULL on error.
 */
@@ -1360,7 +1375,8 @@ opcode_stack_effect(int opcode, int oparg)
 			return -1;
 		case BREAK_LOOP:
 			return 0;
-
+		case WITH_CLEANUP:
+			return 3;
 		case LOAD_LOCALS:
 			return 1;
 		case RETURN_VALUE:
@@ -2663,6 +2679,8 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 		break;
         case Continue_kind:
 		return compiler_continue(c);
+        case With_kind:
+                return compiler_with(c, s);
 	}
 	return 1;
 }
@@ -3124,7 +3142,6 @@ compiler_listcomp_generator(struct compiler *c, PyObject *tmpname,
 static int
 compiler_listcomp(struct compiler *c, expr_ty e)
 {
-	char tmpname[256];
 	identifier tmp;
         int rc = 0;
 	static identifier append;
@@ -3136,8 +3153,7 @@ compiler_listcomp(struct compiler *c, expr_ty e)
 		if (!append)
 			return 0;
 	}
-	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]", ++c->u->u_tmpname);
-	tmp = PyString_FromString(tmpname);
+	tmp = compiler_new_tmpname(c);
 	if (!tmp)
 		return 0;
 	ADDOP_I(c, BUILD_LIST, 0);
@@ -3289,6 +3305,148 @@ expr_constant(expr_ty e)
 	default:
 		return -1;
 	}
+}
+
+/*
+   Implements the with statement from PEP 343.
+
+   The semantics outlined in that PEP are as follows:  
+
+   with EXPR as VAR:
+       BLOCK
+  
+   It is implemented roughly as:
+  
+   context = (EXPR).__context__()
+   exit = context.__exit__  # not calling it
+   value = context.__enter__()
+   try:
+       VAR = value  # if VAR present in the syntax
+       BLOCK
+   finally:
+       if an exception was raised:
+           exc = copy of (exception, instance, traceback)
+       else:
+           exc = (None, None, None)
+       exit(*exc)
+ */
+static int
+compiler_with(struct compiler *c, stmt_ty s)
+{
+    static identifier context_attr, enter_attr, exit_attr;
+    basicblock *block, *finally;
+    identifier tmpexit, tmpvalue = NULL;
+
+    assert(s->kind == With_kind);
+
+    if (!context_attr) {
+        context_attr = PyString_InternFromString("__context__");
+        if (!context_attr)
+            return 0;
+    }
+    if (!enter_attr) {
+        enter_attr = PyString_InternFromString("__enter__");
+        if (!enter_attr)
+            return 0;
+    }
+    if (!exit_attr) {
+        exit_attr = PyString_InternFromString("__exit__");
+        if (!exit_attr)
+            return 0;
+    }
+
+    block = compiler_new_block(c);
+    finally = compiler_new_block(c);
+    if (!block || !finally)
+        return 0;
+
+    /* Create a temporary variable to hold context.__exit__ */
+    tmpexit = compiler_new_tmpname(c);
+    if (tmpexit == NULL)
+        return 0;
+    PyArena_AddPyObject(c->c_arena, tmpexit);
+
+    if (s->v.With.optional_vars) {
+        /* Create a temporary variable to hold context.__enter__().
+	   We need to do this rather than preserving it on the stack
+	   because SETUP_FINALLY remembers the stack level.
+	   We need to do the assignment *inside* the try/finally
+	   so that context.__exit__() is called when the assignment
+	   fails.  But we need to call context.__enter__() *before*
+	   the try/finally so that if it fails we won't call
+	   context.__exit__().
+	*/
+        tmpvalue = compiler_new_tmpname(c);
+	if (tmpvalue == NULL)
+	    return 0;
+	PyArena_AddPyObject(c->c_arena, tmpvalue);
+    }
+
+    /* Evaluate (EXPR).__context__() */
+    VISIT(c, expr, s->v.With.context_expr);
+    ADDOP_O(c, LOAD_ATTR, context_attr, names);
+    ADDOP_I(c, CALL_FUNCTION, 0);
+
+    /* Squirrel away context.__exit__  */
+    ADDOP(c, DUP_TOP);
+    ADDOP_O(c, LOAD_ATTR, exit_attr, names);
+    if (!compiler_nameop(c, tmpexit, Store))
+	return 0;
+
+    /* Call context.__enter__() */
+    ADDOP_O(c, LOAD_ATTR, enter_attr, names);
+    ADDOP_I(c, CALL_FUNCTION, 0);
+
+    if (s->v.With.optional_vars) {
+        /* Store it in tmpvalue */
+        if (!compiler_nameop(c, tmpvalue, Store))
+	    return 0;
+    }
+    else {
+        /* Discard result from context.__enter__() */
+        ADDOP(c, POP_TOP);
+    }
+
+    /* Start the try block */
+    ADDOP_JREL(c, SETUP_FINALLY, finally);
+
+    compiler_use_next_block(c, block);
+    if (!compiler_push_fblock(c, FINALLY_TRY, block)) {
+        return 0;
+    }
+
+    if (s->v.With.optional_vars) {
+        /* Bind saved result of context.__enter__() to VAR */
+        if (!compiler_nameop(c, tmpvalue, Load) ||
+	    !compiler_nameop(c, tmpvalue, Del))
+	  return 0;
+        VISIT(c, expr, s->v.With.optional_vars);
+    }
+
+    /* BLOCK code */
+    VISIT_SEQ(c, stmt, s->v.With.body);
+
+    /* End of try block; start the finally block */
+    ADDOP(c, POP_BLOCK);
+    compiler_pop_fblock(c, FINALLY_TRY, block);
+
+    ADDOP_O(c, LOAD_CONST, Py_None, consts);
+    compiler_use_next_block(c, finally);
+    if (!compiler_push_fblock(c, FINALLY_END, finally))
+        return 0;
+
+    /* Finally block starts; push tmpexit and issue our magic opcode. */
+    if (!compiler_nameop(c, tmpexit, Load) ||
+	!compiler_nameop(c, tmpexit, Del))
+        return 0;
+    ADDOP(c, WITH_CLEANUP);
+    ADDOP_I(c, CALL_FUNCTION, 3);
+    ADDOP(c, POP_TOP);
+
+    /* Finally block ends. */
+    ADDOP(c, END_FINALLY);
+    compiler_pop_fblock(c, FINALLY_END, finally);
+    return 1;
 }
 
 static int

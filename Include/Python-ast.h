@@ -61,11 +61,11 @@ struct _mod {
 struct _stmt {
         enum { FunctionDef_kind=1, ClassDef_kind=2, Return_kind=3,
                Delete_kind=4, Assign_kind=5, AugAssign_kind=6, Print_kind=7,
-               For_kind=8, While_kind=9, If_kind=10, Raise_kind=11,
-               TryExcept_kind=12, TryFinally_kind=13, Assert_kind=14,
-               Import_kind=15, ImportFrom_kind=16, Exec_kind=17,
-               Global_kind=18, Expr_kind=19, Pass_kind=20, Break_kind=21,
-               Continue_kind=22 } kind;
+               For_kind=8, While_kind=9, If_kind=10, With_kind=11,
+               Raise_kind=12, TryExcept_kind=13, TryFinally_kind=14,
+               Assert_kind=15, Import_kind=16, ImportFrom_kind=17,
+               Exec_kind=18, Global_kind=19, Expr_kind=20, Pass_kind=21,
+               Break_kind=22, Continue_kind=23 } kind;
         union {
                 struct {
                         identifier name;
@@ -123,6 +123,12 @@ struct _stmt {
                         asdl_seq *body;
                         asdl_seq *orelse;
                 } If;
+                
+                struct {
+                        expr_ty context_expr;
+                        expr_ty optional_vars;
+                        asdl_seq *body;
+                } With;
                 
                 struct {
                         expr_ty type;
@@ -355,6 +361,8 @@ stmt_ty While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno,
               PyArena *arena);
 stmt_ty If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno,
            PyArena *arena);
+stmt_ty With(expr_ty context_expr, expr_ty optional_vars, asdl_seq * body, int
+             lineno, PyArena *arena);
 stmt_ty Raise(expr_ty type, expr_ty inst, expr_ty tback, int lineno, PyArena
               *arena);
 stmt_ty TryExcept(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse, int

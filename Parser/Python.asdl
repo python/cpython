@@ -25,6 +25,7 @@ module Python
 	      | For(expr target, expr iter, stmt* body, stmt* orelse)
 	      | While(expr test, stmt* body, stmt* orelse)
 	      | If(expr test, stmt* body, stmt* orelse)
+	      | With(expr context_expr, expr? optional_vars, stmt* body)
 
 	      -- 'type' is a bad name
 	      | Raise(expr? type, expr? inst, expr? tback)

@@ -72,13 +72,12 @@ extern "C" {
 #define INPLACE_XOR	78
 #define INPLACE_OR	79
 #define BREAK_LOOP	80
-
+#define WITH_CLEANUP    81
 #define LOAD_LOCALS	82
 #define RETURN_VALUE	83
 #define IMPORT_STAR	84
 #define EXEC_STMT	85
 #define YIELD_VALUE	86
-
 #define POP_BLOCK	87
 #define END_FINALLY	88
 #define BUILD_CLASS	89
