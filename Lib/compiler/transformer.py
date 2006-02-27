@@ -945,7 +945,7 @@ class Transformer:
         # loop to avoid trivial recursion
         while 1:
             t = node[0]
-            if t in (symbol.exprlist, symbol.testlist, symbol.testlist_safe, symbol.or_test, symbol.testlist_gexp):
+            if t in (symbol.exprlist, symbol.testlist, symbol.testlist_safe, symbol.testlist_gexp):
                 if len(node) > 2:
                     return self.com_assign_tuple(node, assigning)
                 node = node[1]
@@ -1416,6 +1416,7 @@ if hasattr(symbol, 'yield_expr'):
 
 _assign_types = [
     symbol.test,
+    symbol.or_test,
     symbol.and_test,
     symbol.not_test,
     symbol.comparison,
