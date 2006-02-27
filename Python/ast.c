@@ -1389,24 +1389,26 @@ static expr_ty
 ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
 {
     /* trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME */
-    expr_ty e;
     REQ(n, trailer);
     if (TYPE(CHILD(n, 0)) == LPAR) {
         if (NCH(n) == 2)
-            e = Call(left_expr, NULL, NULL, NULL, NULL, LINENO(n), c->c_arena);
+            return Call(left_expr, NULL, NULL, NULL, NULL, LINENO(n), c->c_arena);
         else
-            e = ast_for_call(c, CHILD(n, 1), left_expr);
+            return ast_for_call(c, CHILD(n, 1), left_expr);
     }
-    else if (TYPE(CHILD(n, 0)) == LSQB) {
+    else if (TYPE(CHILD(n, 0)) == DOT ) {
+        return Attribute(left_expr, NEW_IDENTIFIER(CHILD(n, 1)), Load,
+                         LINENO(n), c->c_arena);
+    }
+    else {
+        REQ(CHILD(n, 0), LSQB);
         REQ(CHILD(n, 2), RSQB);
         n = CHILD(n, 1);
         if (NCH(n) <= 2) {
             slice_ty slc = ast_for_slice(c, CHILD(n, 0));
             if (!slc)
                 return NULL;
-            e = Subscript(left_expr, slc, Load, LINENO(n), c->c_arena);
-            if (!e)
-                return NULL;
+            return Subscript(left_expr, slc, Load, LINENO(n), c->c_arena);
         }
         else {
             int j;
@@ -1420,18 +1422,10 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
                     return NULL;
                 asdl_seq_SET(slices, j / 2, slc);
             }
-            e = Subscript(left_expr, ExtSlice(slices, c->c_arena),
-                          Load, LINENO(n), c->c_arena);
-            if (!e)
-                return NULL;
+            return Subscript(left_expr, ExtSlice(slices, c->c_arena),
+                             Load, LINENO(n), c->c_arena);
         }
     }
-    else {
-        assert(TYPE(CHILD(n, 0)) == DOT);
-        e = Attribute(left_expr, NEW_IDENTIFIER(CHILD(n, 1)), Load, LINENO(n),
-                      c->c_arena);
-    }
-    return e;
 }
 
 static expr_ty
