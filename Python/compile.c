@@ -266,7 +266,7 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
         c.c_arena = arena;
 	c.c_future = PyFuture_FromAST(mod, filename);
 	if (c.c_future == NULL)
-		goto error;
+		goto finally;
 	if (!flags) {
             local_flags.cf_flags = 0;
             flags = &local_flags;
@@ -281,7 +281,7 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
 	if (c.c_st == NULL) {
 		if (!PyErr_Occurred())
 			PyErr_SetString(PyExc_SystemError, "no symtable");
-		goto error;
+		goto finally;
 	}
 
 	/* XXX initialize to NULL for now, need to handle */
@@ -289,7 +289,7 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
 
 	co = compiler_mod(&c, mod);
 
- error:
+ finally:
 	compiler_free(&c);
 	assert(co || PyErr_Occurred());
 	return co;
