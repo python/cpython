@@ -87,7 +87,7 @@ Library
 - Bug #1430298: It is now possible to send a mail with an empty
   return address using smtplib.
 
-- Bug #1432260: The names of lambda functions are now properly displayed 
+- Bug #1432260: The names of lambda functions are now properly displayed
   in pydoc.
 
 - Bug #1371247: Update Windows locale identifiers in locale.py.
@@ -163,7 +163,7 @@ Build
 
 - Use -xcode=pic32 for CCSHARED on Solaris with SunPro.
 
-- The Windows .msi files are now compressed using lzx:21. This produces a 
+- The Windows .msi files are now compressed using lzx:21. This produces a
   significantly smaller installer.
 
 
@@ -269,7 +269,7 @@ Extension Modules
 - Bug #728515: mmap.resize() now resizes the file on Unix as it did
   on Windows.
 
-- Bug #1234979: For the argument of thread.Lock.acquire, the Windows 
+- Bug #1234979: For the argument of thread.Lock.acquire, the Windows
   implemented treated all integer values except 1 as false.
 
 - Bug #1194181: bz2.BZ2File didn't handle mode 'U' correctly.
@@ -307,7 +307,7 @@ Library
 
 - Bug #1178484: Return complete lines from codec stream readers
   even if there is an exception in later lines, resulting in
-  correct line numbers for decoding errors in source code. 
+  correct line numbers for decoding errors in source code.
 
 - Bug #1266283: "lexists" is now in os.path.__all__.
 
@@ -415,7 +415,7 @@ What's New in Python 2.4.1 final?
 Core and builtins
 -----------------
 
-- Move exception finalisation later in the shutdown process - this 
+- Move exception finalisation later in the shutdown process - this
   fixes the crash seen in bug #1165761
 
 Tests
@@ -426,8 +426,8 @@ Tests
 Build
 -----
 
-- SF patch 1171767: Darwin 8's headers are anal about POSIX compliance, 
-  and linking has changed (prebinding is now deprecated, and libcc_dynamic 
+- SF patch 1171767: Darwin 8's headers are anal about POSIX compliance,
+  and linking has changed (prebinding is now deprecated, and libcc_dynamic
   no longer exists). This configure patch makes things right.
 
 
@@ -440,7 +440,7 @@ Library
 -------
 
 - Fixed decimal operator and comparison methods to return NotImplemented
-  instead of raising a TypeError when interacting with other types. 
+  instead of raising a TypeError when interacting with other types.
   Allows other classes to successfully implement __radd__ style methods.
 
 - Bug #1163325:  Decimal infinities failed to hash.  Attempting to
