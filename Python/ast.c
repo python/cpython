@@ -2154,7 +2154,7 @@ ast_for_import_stmt(struct compiling *c, const node *n)
 
     REQ(n, import_stmt);
     n = CHILD(n, 0);
-    if (STR(CHILD(n, 0))[0] == 'i') { /* import */
+    if (TYPE(n) == import_name) {
         n = CHILD(n, 1);
 	REQ(n, dotted_as_names);
 	aliases = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
@@ -2168,7 +2168,7 @@ ast_for_import_stmt(struct compiling *c, const node *n)
         }
 	return Import(aliases, LINENO(n), c->c_arena);
     }
-    else if (STR(CHILD(n, 0))[0] == 'f') { /* from */
+    else if (TYPE(n) == import_from) {
         int n_children;
 	int lineno = LINENO(n);
 	alias_ty mod = alias_for_import_name(c, CHILD(n, 1));
