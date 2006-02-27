@@ -690,7 +690,7 @@ PyDoc_STRVAR(SHA512_new__doc__,
 static PyObject *
 SHA512_new(PyObject *self, PyObject *args, PyObject *kwdict)
 {
-    static const char *kwlist[] = {"string", NULL};
+    static char *kwlist[] = {"string", NULL};
     SHAobject *new;
     unsigned char *cp = NULL;
     int len;
@@ -721,7 +721,7 @@ PyDoc_STRVAR(SHA384_new__doc__,
 static PyObject *
 SHA384_new(PyObject *self, PyObject *args, PyObject *kwdict)
 {
-    static const char *kwlist[] = {"string", NULL};
+    static char *kwlist[] = {"string", NULL};
     SHAobject *new;
     unsigned char *cp = NULL;
     int len;

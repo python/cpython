@@ -1023,7 +1023,7 @@ PyObject_GetAttrString(PyObject *v, const char *name)
 	PyObject *w, *res;
 
 	if (v->ob_type->tp_getattr != NULL)
-		return (*v->ob_type->tp_getattr)(v, name);
+		return (*v->ob_type->tp_getattr)(v, (char*)name);
 	w = PyString_InternFromString(name);
 	if (w == NULL)
 		return NULL;
@@ -1051,7 +1051,7 @@ PyObject_SetAttrString(PyObject *v, const char *name, PyObject *w)
 	int res;
 
 	if (v->ob_type->tp_setattr != NULL)
-		return (*v->ob_type->tp_setattr)(v, name, w);
+		return (*v->ob_type->tp_setattr)(v, (char*)name, w);
 	s = PyString_InternFromString(name);
 	if (s == NULL)
 		return -1;

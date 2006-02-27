@@ -97,7 +97,7 @@ structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *ob;
 	PyStructSequence *res = NULL;
 	Py_ssize_t len, min_len, max_len, i, n_unnamed_fields;
-	static const char *kwlist[] = {"sequence", "dict", 0};
+	static char *kwlist[] = {"sequence", "dict", 0};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:structseq", 
 					 kwlist, &arg, &dict))

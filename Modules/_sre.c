@@ -2010,7 +2010,7 @@ pattern_match(PatternObject* self, PyObject* args, PyObject* kw)
     PyObject* string;
     int start = 0;
     int end = INT_MAX;
-    static const char* kwlist[] = { "pattern", "pos", "endpos", NULL };
+    static char* kwlist[] = { "pattern", "pos", "endpos", NULL };
     if (!PyArg_ParseTupleAndKeywords(args, kw, "O|ii:match", kwlist,
                                      &string, &start, &end))
         return NULL;
@@ -2047,7 +2047,7 @@ pattern_search(PatternObject* self, PyObject* args, PyObject* kw)
     PyObject* string;
     int start = 0;
     int end = INT_MAX;
-    static const char* kwlist[] = { "pattern", "pos", "endpos", NULL };
+    static char* kwlist[] = { "pattern", "pos", "endpos", NULL };
     if (!PyArg_ParseTupleAndKeywords(args, kw, "O|ii:search", kwlist,
                                      &string, &start, &end))
         return NULL;
@@ -2188,7 +2188,7 @@ pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
     PyObject* string;
     int start = 0;
     int end = INT_MAX;
-    static const char* kwlist[] = { "source", "pos", "endpos", NULL };
+    static char* kwlist[] = { "source", "pos", "endpos", NULL };
     if (!PyArg_ParseTupleAndKeywords(args, kw, "O|ii:findall", kwlist,
                                      &string, &start, &end))
         return NULL;
@@ -2314,7 +2314,7 @@ pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
 
     PyObject* string;
     int maxsplit = 0;
-    static const char* kwlist[] = { "source", "maxsplit", NULL };
+    static char* kwlist[] = { "source", "maxsplit", NULL };
     if (!PyArg_ParseTupleAndKeywords(args, kw, "O|i:split", kwlist,
                                      &string, &maxsplit))
         return NULL;
@@ -2598,7 +2598,7 @@ pattern_sub(PatternObject* self, PyObject* args, PyObject* kw)
     PyObject* template;
     PyObject* string;
     int count = 0;
-    static const char* kwlist[] = { "repl", "string", "count", NULL };
+    static char* kwlist[] = { "repl", "string", "count", NULL };
     if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|i:sub", kwlist,
                                      &template, &string, &count))
         return NULL;
@@ -2612,7 +2612,7 @@ pattern_subn(PatternObject* self, PyObject* args, PyObject* kw)
     PyObject* template;
     PyObject* string;
     int count = 0;
-    static const char* kwlist[] = { "repl", "string", "count", NULL };
+    static char* kwlist[] = { "repl", "string", "count", NULL };
     if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|i:subn", kwlist,
                                      &template, &string, &count))
         return NULL;
@@ -2919,7 +2919,7 @@ match_groups(MatchObject* self, PyObject* args, PyObject* kw)
     int index;
 
     PyObject* def = Py_None;
-    static const char* kwlist[] = { "default", NULL };
+    static char* kwlist[] = { "default", NULL };
     if (!PyArg_ParseTupleAndKeywords(args, kw, "|O:groups", kwlist, &def))
         return NULL;
 
@@ -2948,7 +2948,7 @@ match_groupdict(MatchObject* self, PyObject* args, PyObject* kw)
     int index;
 
     PyObject* def = Py_None;
-    static const char* kwlist[] = { "default", NULL };
+    static char* kwlist[] = { "default", NULL };
     if (!PyArg_ParseTupleAndKeywords(args, kw, "|O:groupdict", kwlist, &def))
         return NULL;
 

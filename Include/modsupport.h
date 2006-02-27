@@ -24,14 +24,14 @@ extern "C" {
 PyAPI_FUNC(int) PyArg_Parse(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
-                                                  const char *, const char **, ...);
+                                                  const char *, char **, ...);
 PyAPI_FUNC(int) PyArg_UnpackTuple(PyObject *, const char *, int, int, ...);
 PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
 PyAPI_FUNC(int) _PyArg_NoKeywords(const char *funcname, PyObject *kw);
 
 PyAPI_FUNC(int) PyArg_VaParse(PyObject *, const char *, va_list);
 PyAPI_FUNC(int) PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,
-                                                  const char *, const char **, va_list);
+                                                  const char *, char **, va_list);
 PyAPI_FUNC(PyObject *) Py_VaBuildValue(const char *, va_list);
 
 PyAPI_FUNC(int) PyModule_AddObject(PyObject *, const char *, PyObject *);

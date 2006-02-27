@@ -1275,7 +1275,7 @@ static PyMemberDef BZ2File_members[] = {
 static int
 BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 {
-	static const char *kwlist[] = {"filename", "mode", "buffering",
+	static char *kwlist[] = {"filename", "mode", "buffering",
                                        "compresslevel", 0};
 	PyObject *name;
 	char *mode = "r";
@@ -1664,7 +1664,7 @@ BZ2Comp_init(BZ2CompObject *self, PyObject *args, PyObject *kwargs)
 {
 	int compresslevel = 9;
 	int bzerror;
-	static const char *kwlist[] = {"compresslevel", 0};
+	static char *kwlist[] = {"compresslevel", 0};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i:BZ2Compressor",
 					 kwlist, &compresslevel))
@@ -2009,7 +2009,7 @@ bz2_compress(PyObject *self, PyObject *args, PyObject *kwargs)
 	bz_stream _bzs;
 	bz_stream *bzs = &_bzs;
 	int bzerror;
-	static const char *kwlist[] = {"data", "compresslevel", 0};
+	static char *kwlist[] = {"data", "compresslevel", 0};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|i",
 					 kwlist, &data, &datasize,

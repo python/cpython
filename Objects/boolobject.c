@@ -50,7 +50,7 @@ PyObject *PyBool_FromLong(long ok)
 static PyObject *
 bool_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	static const char *kwlist[] = {"x", 0};
+	static char *kwlist[] = {"x", 0};
 	PyObject *x = Py_False;
 	long ok;
 

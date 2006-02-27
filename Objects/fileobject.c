@@ -1925,7 +1925,7 @@ file_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	PyFileObject *foself = (PyFileObject *)self;
 	int ret = 0;
-	static const char *kwlist[] = {"name", "mode", "buffering", 0};
+	static char *kwlist[] = {"name", "mode", "buffering", 0};
 	char *name = NULL;
 	char *mode = "r";
 	int bufsize = -1;

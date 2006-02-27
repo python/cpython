@@ -234,7 +234,7 @@ EVP_repr(PyObject *self)
 static int
 EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
 {
-    static const char *kwlist[] = {"name", "string", NULL};
+    static char *kwlist[] = {"name", "string", NULL};
     PyObject *name_obj = NULL;
     char *nameStr;
     unsigned char *cp = NULL;
@@ -370,7 +370,7 @@ The MD5 and SHA1 algorithms are always supported.\n");
 static PyObject *
 EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
 {
-    static const char *kwlist[] = {"name", "string", NULL};
+    static char *kwlist[] = {"name", "string", NULL};
     PyObject *name_obj = NULL;
     char *name;
     const EVP_MD *digest;

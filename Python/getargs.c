@@ -11,9 +11,9 @@ int PyArg_ParseTuple(PyObject *, const char *, ...);
 int PyArg_VaParse(PyObject *, const char *, va_list);
 
 int PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
-				const char *, const char **, ...);
+				const char *, char **, ...);
 int PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,
-				const char *, const char **, va_list);
+				const char *, char **, va_list);
 
 #define FLAG_COMPAT 1
 #define FLAG_SIZE_T 2
@@ -31,7 +31,7 @@ static char *convertsimple(PyObject *, const char **, va_list *, int, char *,
 static Py_ssize_t convertbuffer(PyObject *, void **p, char **);
 
 static int vgetargskeywords(PyObject *, PyObject *,
-			    const char *, const char **, va_list *, int);
+			    const char *, char **, va_list *, int);
 static char *skipitem(const char **, va_list *, int);
 
 int
@@ -1141,7 +1141,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 	}
 		
 	case 't': { /* 8-bit character buffer, read-only access */
-		const char **p = va_arg(*p_va, const char **);
+		char **p = va_arg(*p_va, char **);
 		PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 		int count;
 		
@@ -1210,7 +1210,7 @@ int
 PyArg_ParseTupleAndKeywords(PyObject *args,
 			    PyObject *keywords,
 			    const char *format, 
-			    const char **kwlist, ...)
+			    char **kwlist, ...)
 {
 	int retval;
 	va_list va;
@@ -1234,7 +1234,7 @@ int
 _PyArg_ParseTupleAndKeywords_SizeT(PyObject *args,
 				  PyObject *keywords,
 				  const char *format, 
-				  const char **kwlist, ...)
+				  char **kwlist, ...)
 {
 	int retval;
 	va_list va;
@@ -1260,7 +1260,7 @@ int
 PyArg_VaParseTupleAndKeywords(PyObject *args,
                               PyObject *keywords,
                               const char *format, 
-                              const char **kwlist, va_list va)
+                              char **kwlist, va_list va)
 {
 	int retval;
 	va_list lva;
@@ -1292,7 +1292,7 @@ int
 _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *args,
 				    PyObject *keywords,
 				    const char *format, 
-				    const char **kwlist, va_list va)
+				    char **kwlist, va_list va)
 {
 	int retval;
 	va_list lva;
@@ -1324,7 +1324,7 @@ _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *args,
 
 static int
 vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
-	         const char **kwlist, va_list *p_va, int flags)
+	         char **kwlist, va_list *p_va, int flags)
 {
 	char msgbuf[512];
 	int levels[32];
@@ -1332,7 +1332,8 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
 	int min, max;
 	const char *formatsave;
 	int i, len, nargs, nkeywords;
-	const char *msg, **p;
+	const char *msg;
+	char **p;
 	PyObject *freelist = NULL;
 
 	assert(args != NULL && PyTuple_Check(args));

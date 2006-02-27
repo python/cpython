@@ -1986,7 +1986,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	PyObject *keyfunc = NULL;
 	Py_ssize_t i;
 	PyObject *key, *value, *kvpair;
-	static const char *kwlist[] = {"cmp", "key", "reverse", 0};
+	static char *kwlist[] = {"cmp", "key", "reverse", 0};
 
 	assert(self != NULL);
 	assert (PyList_Check(self));
@@ -2360,7 +2360,7 @@ static int
 list_init(PyListObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *arg = NULL;
-	static const char *kwlist[] = {"sequence", 0};
+	static char *kwlist[] = {"sequence", 0};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O:list", kwlist, &arg))
 		return -1;

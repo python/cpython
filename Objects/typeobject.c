@@ -1593,7 +1593,7 @@ static PyObject *
 type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 {
 	PyObject *name, *bases, *dict;
-	static const char *kwlist[] = {"name", "bases", "dict", 0};
+	static char *kwlist[] = {"name", "bases", "dict", 0};
 	PyObject *slots, *tmp, *newslots;
 	PyTypeObject *type, *base, *tmptype, *winner;
 	PyHeapTypeObject *et;

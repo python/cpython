@@ -221,7 +221,7 @@ int PyObject_AsCharBuffer(PyObject *obj,
 			  Py_ssize_t *buffer_len)
 {
 	PyBufferProcs *pb;
-	const char *pp;
+	char *pp;
 	Py_ssize_t len;
 
 	if (obj == NULL || buffer == NULL || buffer_len == NULL) {

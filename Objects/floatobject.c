@@ -940,7 +940,7 @@ static PyObject *
 float_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *x = Py_False; /* Integer zero */
-	static const char *kwlist[] = {"x", 0};
+	static char *kwlist[] = {"x", 0};
 
 	if (type != &PyFloat_Type)
 		return float_subtype_new(type, args, kwds); /* Wimp out */
