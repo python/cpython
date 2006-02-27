@@ -1028,9 +1028,9 @@ PyDoc_STRVAR(extend_doc,
 static PyObject *
 array_insert(arrayobject *self, PyObject *args)
 {
-	int i;
+	Py_ssize_t i;
 	PyObject *v;
-        if (!PyArg_ParseTuple(args, "iO:insert", &i, &v))
+        if (!PyArg_ParseTuple(args, "nO:insert", &i, &v))
 		return NULL;
 	return ins(self, i, v);
 }
