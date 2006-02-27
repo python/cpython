@@ -452,7 +452,7 @@ class PyBuildExt(build_ext):
             # MacOSX 10.4 has a broken readline. Don't try to build
             # the readline module unless the user has installed a fixed
             # readline package
-            if not find_file('readline/rlconf.h', inc_dirs, []):
+            if find_file('readline/rlconf.h', inc_dirs, []) is None:
                 do_readline = False
         if do_readline:
             readline_libs = ['readline']
