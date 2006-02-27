@@ -155,8 +155,7 @@ square brackets:
 
 \begin{productionlist}
   \production{test}
-             {\token{and_test} ( "or" \token{and_test} )*
-              | \token{lambda_form}}
+             {\token{or_test} | \token{lambda_form}}
   \production{testlist}
              {\token{test} ( "," \token{test} )* [ "," ]}
   \production{list_display}
@@ -1017,7 +1016,8 @@ Boolean operations have the lowest priority of all Python operations:
 
 \begin{productionlist}
   \production{expression}
-             {\token{or_test} | \token{lambda_form}}
+             {\token{or_test} [\token{if} \token{or_test} \token{else}
+              \token{test}] | \token{lambda_form}}
   \production{or_test}
              {\token{and_test} | \token{or_test} "or" \token{and_test}}
   \production{and_test}
@@ -1035,6 +1035,11 @@ sets and frozensets).  All other values are interpreted as true.
 The operator \keyword{not} yields \code{True} if its argument is false,
 \code{False} otherwise.
 \opindex{not}
+
+The expression \code{\var{x} if \var{C} else \var{y}} first evaluates
+\var{C} (\emph{not} \var{x}); if \var{C} is true, \var{x} is evaluated and
+its value is returned; otherwise, \var{y} is evaluated and its value is
+returned.
 
 The expression \code{\var{x} and \var{y}} first evaluates \var{x}; if
 \var{x} is false, its value is returned; otherwise, \var{y} is

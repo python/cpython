@@ -175,10 +175,10 @@ struct _stmt {
 
 struct _expr {
         enum { BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
-               Dict_kind=5, ListComp_kind=6, GeneratorExp_kind=7, Yield_kind=8,
-               Compare_kind=9, Call_kind=10, Repr_kind=11, Num_kind=12,
-               Str_kind=13, Attribute_kind=14, Subscript_kind=15, Name_kind=16,
-               List_kind=17, Tuple_kind=18 } kind;
+               IfExp_kind=5, Dict_kind=6, ListComp_kind=7, GeneratorExp_kind=8,
+               Yield_kind=9, Compare_kind=10, Call_kind=11, Repr_kind=12,
+               Num_kind=13, Str_kind=14, Attribute_kind=15, Subscript_kind=16,
+               Name_kind=17, List_kind=18, Tuple_kind=19 } kind;
         union {
                 struct {
                         boolop_ty op;
@@ -200,6 +200,12 @@ struct _expr {
                         arguments_ty args;
                         expr_ty body;
                 } Lambda;
+                
+                struct {
+                        expr_ty test;
+                        expr_ty body;
+                        expr_ty orelse;
+                } IfExp;
                 
                 struct {
                         asdl_seq *keys;
@@ -371,6 +377,8 @@ expr_ty BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, PyArena
               *arena);
 expr_ty UnaryOp(unaryop_ty op, expr_ty operand, int lineno, PyArena *arena);
 expr_ty Lambda(arguments_ty args, expr_ty body, int lineno, PyArena *arena);
+expr_ty IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, PyArena
+              *arena);
 expr_ty Dict(asdl_seq * keys, asdl_seq * values, int lineno, PyArena *arena);
 expr_ty ListComp(expr_ty elt, asdl_seq * generators, int lineno, PyArena
                  *arena);

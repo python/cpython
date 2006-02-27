@@ -847,6 +847,25 @@ ast_for_lambdef(struct compiling *c, const node *n)
     return Lambda(args, expression, LINENO(n), c->c_arena);
 }
 
+static expr_ty
+ast_for_ifexpr(struct compiling *c, const node *n)
+{
+    /* test: or_test 'if' or_test 'else' test */ 
+    expr_ty expression, body, orelse;
+
+    assert(NCH(n) >= 3);
+    body = ast_for_expr(c, CHILD(n, 0));
+    if (!body)
+    	return NULL;
+    expression = ast_for_expr(c, CHILD(n, 2));
+    if (!expression)
+    	return NULL;
+    orelse = ast_for_expr(c, CHILD(n, 4));
+    if (!orelse)
+	return NULL;
+    return IfExp(expression, body, orelse, LINENO(n), c->c_arena);
+}
+
 /* Count the number of 'for' loop in a list comprehension.
 
    Helper for ast_for_listcomp().
@@ -1456,7 +1475,8 @@ static expr_ty
 ast_for_expr(struct compiling *c, const node *n)
 {
     /* handle the full range of simple expressions
-       test: and_test ('or' and_test)* | lambdef
+       test: or_test ['if' or_test 'else' test] | lambdef
+       or_test: and_test ('or' and_test)* 
        and_test: not_test ('and' not_test)*
        not_test: 'not' not_test | comparison
        comparison: expr (comp_op expr)*
@@ -1468,6 +1488,15 @@ ast_for_expr(struct compiling *c, const node *n)
        term: factor (('*'|'/'|'%'|'//') factor)*
        factor: ('+'|'-'|'~') factor | power
        power: atom trailer* ('**' factor)*
+
+       As well as modified versions that exist for backward compatibility,
+       to explicitly allow:
+       [ x for x in lambda: 0, lambda: 1 ]
+       (which would be ambiguous without these extra rules)
+       
+       old_test: or_test | old_lambdef
+       old_lambdef: 'lambda' [vararglist] ':' old_test
+
     */
 
     asdl_seq *seq;
@@ -1476,9 +1505,14 @@ ast_for_expr(struct compiling *c, const node *n)
  loop:
     switch (TYPE(n)) {
         case test:
-            if (TYPE(CHILD(n, 0)) == lambdef)
+        case old_test:
+            if (TYPE(CHILD(n, 0)) == lambdef ||
+                TYPE(CHILD(n, 0)) == old_lambdef)
                 return ast_for_lambdef(c, CHILD(n, 0));
-            /* Fall through to and_test */
+            else if (NCH(n) > 1)
+                return ast_for_ifexpr(c, n);
+	    /* Fallthrough */
+	case or_test:
         case and_test:
             if (NCH(n) == 1) {
                 n = CHILD(n, 0);
