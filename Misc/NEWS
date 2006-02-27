@@ -393,6 +393,8 @@ Extension Modules
 Library
 -------
 
+- The compiler package now supports future imports after the module docstring.
+
 - Bug #1413790: zipfile now sanitizes absolute archive names that are
   not allowed by the specs.
 
