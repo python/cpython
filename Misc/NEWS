@@ -12,6 +12,8 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- PEP 308: conditional expressions were added (x if cond else y).
+
 - Patch 1433928:
   - The copy module now "copies" function objects (as atomic objects).
   - dict.__getitem__ now looks for a __missing__ hook before raising
