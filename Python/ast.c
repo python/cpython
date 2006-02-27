@@ -853,7 +853,7 @@ ast_for_ifexpr(struct compiling *c, const node *n)
     /* test: or_test 'if' or_test 'else' test */ 
     expr_ty expression, body, orelse;
 
-    assert(NCH(n) >= 3);
+    assert(NCH(n) == 5);
     body = ast_for_expr(c, CHILD(n, 0));
     if (!body)
     	return NULL;
