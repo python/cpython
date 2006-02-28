@@ -90,6 +90,9 @@ class _RLock(_Verbose):
                 self.__owner and self.__owner.getName(),
                 self.__count)
 
+    def __context__(self):
+        return self
+
     def acquire(self, blocking=1):
         me = currentThread()
         if self.__owner is me:
@@ -108,6 +111,8 @@ class _RLock(_Verbose):
                 self._note("%s.acquire(%s): failure", self, blocking)
         return rc
 
+    __enter__ = acquire
+
     def release(self):
         me = currentThread()
         assert self.__owner is me, "release() of un-acquire()d lock"
@@ -120,6 +125,11 @@ class _RLock(_Verbose):
         else:
             if __debug__:
                 self._note("%s.release(): non-final release", self)
+
+    def __exit__(self, t, v, tb):
+        self.release()
+        if t is not None:
+            raise t, v, tb
 
     # Internal methods used by condition variables
 
@@ -156,6 +166,7 @@ class _Condition(_Verbose):
         self.__lock = lock
         # Export the lock's acquire() and release() methods
         self.acquire = lock.acquire
+        self.__enter__ = self.acquire
         self.release = lock.release
         # If the lock defines _release_save() and/or _acquire_restore(),
         # these override the default implementations (which just call
@@ -173,6 +184,14 @@ class _Condition(_Verbose):
         except AttributeError:
             pass
         self.__waiters = []
+
+    def __context__(self):
+        return self
+
+    def __exit__(self, t, v, tb):
+        self.release()
+        if t is not None:
+            raise t, v, tb
 
     def __repr__(self):
         return "<Condition(%s, %d)>" % (self.__lock, len(self.__waiters))
@@ -267,6 +286,9 @@ class _Semaphore(_Verbose):
         self.__cond = Condition(Lock())
         self.__value = value
 
+    def __context__(self):
+        return self
+
     def acquire(self, blocking=1):
         rc = False
         self.__cond.acquire()
@@ -286,6 +308,8 @@ class _Semaphore(_Verbose):
         self.__cond.release()
         return rc
 
+    __enter__ = acquire
+
     def release(self):
         self.__cond.acquire()
         self.__value = self.__value + 1
@@ -294,6 +318,11 @@ class _Semaphore(_Verbose):
                        self, self.__value)
         self.__cond.notify()
         self.__cond.release()
+
+    def __exit__(self, t, v, tb):
+        self.release()
+        if t is not None:
+            raise t, v, tb
 
 
 def BoundedSemaphore(*args, **kwargs):

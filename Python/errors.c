@@ -24,6 +24,7 @@ PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 
 	if (traceback != NULL && !PyTraceBack_Check(traceback)) {
 		/* XXX Should never happen -- fatal error instead? */
+		/* Well, it could be None. */
 		Py_DECREF(traceback);
 		traceback = NULL;
 	}
