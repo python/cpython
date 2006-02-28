@@ -663,6 +663,17 @@ s = a[:]
 s = a[-5:]
 s = a[:-1]
 s = a[-4:-3]
+# A rough test of SF bug XXX.
+# The testing here is fairly incomplete.
+d = {}
+d[1] = 1
+d[1,] = 2
+d[1,2] = 3
+d[1,2,3] = 4
+L = list(d)
+L.sort()
+print L
+
 
 print 'atoms'
 ### atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | '`' testlist '`' | NAME | NUMBER | STRING
