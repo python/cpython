@@ -1,12 +1,11 @@
-#ifndef Py_CODE_H
-#include "code.h"
-#endif
 
 #ifndef Py_COMPILE_H
 #define Py_COMPILE_H
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "code.h"
 
 /* Public interface */
 struct _node; /* Declare the existence of this type */
