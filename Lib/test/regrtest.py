@@ -334,7 +334,15 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             tracer.runctx('runtest(test, generate, verbose, quiet, testdir)',
                           globals=globals(), locals=vars())
         else:
-            ok = runtest(test, generate, verbose, quiet, testdir, huntrleaks)
+            try:
+                ok = runtest(test, generate, verbose, quiet, testdir,
+                             huntrleaks)
+            except KeyboardInterrupt:
+                # print a newline separate from the ^C
+                print
+                break
+            except:
+                raise
             if ok > 0:
                 good.append(test)
             elif ok == 0:
