@@ -2,7 +2,8 @@ This directory contains test cases that are known to leak references.
 The idea is that you can import these modules while in the interpreter
 and call the leak function repeatedly.  This will only be helpful if
 the interpreter was built in debug mode.  If the total ref count
-doesn't increase, the bug has been fixed.
+doesn't increase, the bug has been fixed and the file should be removed
+from the repository.
 
 Here's an example interpreter session for test_gestalt which still leaks:
 
