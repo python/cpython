@@ -156,6 +156,7 @@ needed.  The exact rules are that a \keyword{yield}-expression must
 always be parenthesized except when it occurs at the top-level
 expression on the right-hand side of an assignment, meaning
 you can to write \code{val = yield i} but \code{val = (yield i) + 12}.
+% XXX ending of last para makes no sense 
 
 Values are sent into a generator by calling its
 \method{send(\var{value})} method.  The generator's code is then
