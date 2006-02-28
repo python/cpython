@@ -1800,7 +1800,7 @@ DB_open(DBObject* self, PyObject* args, PyObject* kwargs)
     static char* kwnames[] = {
         "filename", "dbname", "dbtype", "flags", "mode", "txn", NULL};
     /* without dbname */
-    static const char* kwnames_basic[] = {
+    static char* kwnames_basic[] = {
         "filename", "dbtype", "flags", "mode", "txn", NULL};
 #else
     /* with dbname */
