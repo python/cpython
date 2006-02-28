@@ -31,4 +31,3 @@ def contextmanager(func):
     def helper(*args, **kwds):
         return GeneratorContextManager(func(*args, **kwds))
     return helper
-

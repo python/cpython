@@ -38,7 +38,7 @@ class Id(Token):
 
     def __str__(self):
         return self.value
-        
+
 class String(Token):
     def __init__(self, value, lineno):
         self.type = 'String'
@@ -71,7 +71,7 @@ class ASDLScanner(spark.GenericScanner, object):
         # XXX doesn't distinguish upper vs. lower, which is
         # significant for ASDL.
         self.rv.append(Id(s, self.lineno))
-        
+
     def t_string(self, s):
         r'"[^"]*"'
         self.rv.append(String(s, self.lineno))
@@ -123,7 +123,7 @@ class ASDLParser(spark.GenericParser, object):
             raise ASDLSyntaxError(module.lineno,
                                   msg="expected 'module', found %s" % module)
         return Module(name, definitions, version)
-        
+
     def p_version(self, (version, V)):
         "version ::= Id String"
         if version.value != "version":

@@ -190,7 +190,7 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
         TestImporter.modules['reloadmodule'] = (False, reload_co)
         reload(reloadmodule)
         self.failUnless(hasattr(reloadmodule,'reloaded'))
-        
+
         import hooktestpackage.oldabs
         self.assertEqual(hooktestpackage.oldabs.get_name(),
                          "hooktestpackage.oldabs")
@@ -208,7 +208,7 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
                          "hooktestpackage.futrel")
         self.assertEqual(hooktestpackage.futrel.sub,
                          hooktestpackage.sub)
-        
+
         import sub
         self.assertEqual(sub.get_name(), "sub")
 
