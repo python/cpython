@@ -1,5 +1,6 @@
 #ifndef Py_SYMTABLE_H
 #define Py_SYMTABLE_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,8 +49,6 @@ PyAPI_DATA(PyTypeObject) PySTEntry_Type;
 
 #define PySTEntry_Check(op) ((op)->ob_type == &PySTEntry_Type)
 
-PyAPI_FUNC(PySTEntryObject *) \
-	PySTEntry_New(struct symtable *, identifier, _Py_block_ty, void *, int);
 PyAPI_FUNC(int) PyST_GetScope(PySTEntryObject *, PyObject *);
 
 PyAPI_FUNC(struct symtable *) PySymtable_Build(mod_ty, const char *, 

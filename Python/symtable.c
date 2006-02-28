@@ -14,7 +14,8 @@
 #define IMPORT_STAR_WARNING "import * only allowed at module level"
 
 
-PySTEntryObject *
+/* XXX(nnorwitz): change name since static? */
+static PySTEntryObject *
 PySTEntry_New(struct symtable *st, identifier name, _Py_block_ty block,
 	      void *key, int lineno)
 {
