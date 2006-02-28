@@ -4284,10 +4284,10 @@ compute_code_flags(struct compiler *c)
 		flags |= CO_VARKEYWORDS;
 	if (ste->ste_generator)
 		flags |= CO_GENERATOR;
-        if (c->c_flags->cf_flags & CO_FUTURE_DIVISION)
-                flags |= CO_FUTURE_DIVISION;
-        if (c->c_flags->cf_flags & CO_FUTURE_WITH_STATEMENT)
-                flags |= CO_FUTURE_WITH_STATEMENT;
+
+	/* (Only) inherit compilerflags in PyCF_MASK */
+        flags |= (c->c_flags->cf_flags & PyCF_MASK);
+
 	n = PyDict_Size(c->u->u_freevars);
 	if (n < 0)
 	    return -1;
