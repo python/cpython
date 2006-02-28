@@ -20,7 +20,7 @@ class CompilerTest(unittest.TestCase):
             for basename in os.listdir(dir):
                 if not basename.endswith(".py"):
                     continue
-                if not TEST_ALL and random() < 0.98:
+                if not TEST_ALL and random() < 0.98 and basename != "test_with.py":
                     continue
                 path = os.path.join(dir, basename)
                 if test.test_support.verbose:

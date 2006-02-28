@@ -536,6 +536,12 @@ class Transformer:
 
         return self.com_try_except(nodelist)
 
+    def with_stmt(self, nodelist):
+        return self.com_with(nodelist)
+
+    def with_var(self, nodelist):
+        return self.com_with_var(nodelist)
+
     def suite(self, nodelist):
         # simple_stmt | NEWLINE INDENT NEWLINE* (stmt NEWLINE*)+ DEDENT
         if len(nodelist) == 1:
@@ -925,6 +931,20 @@ class Transformer:
                 elseNode = self.com_node(nodelist[i+2])
         return TryExcept(self.com_node(nodelist[2]), clauses, elseNode,
                          lineno=nodelist[0][2])
+
+    def com_with(self, nodelist):
+        # with_stmt: 'with' expr [with_var] ':' suite
+        expr = self.com_node(nodelist[1])
+        body = self.com_node(nodelist[-1])
+        if nodelist[2][0] == token.COLON:
+            var = None
+        else:
+            var = self.com_node(nodelist[2])
+        return With(expr, var, body, lineno=nodelist[0][2])
+
+    def com_with_var(self, nodelist):
+        # with_var: 'as' expr
+        return self.com_node(nodelist[1])
 
     def com_augassign_op(self, node):
         assert node[0] == symbol.augassign
@@ -1390,6 +1410,7 @@ _legal_node_types = [
     symbol.while_stmt,
     symbol.for_stmt,
     symbol.try_stmt,
+    symbol.with_stmt,
     symbol.suite,
     symbol.testlist,
     symbol.testlist_safe,
