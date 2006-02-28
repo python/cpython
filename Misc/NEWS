@@ -34,6 +34,8 @@ Core and builtins
 
 - PEP 343: with statement implemented. Needs 'from __future__ import
   with_statement'. Use of 'with' as a variable will generate a warning.
+  Use of 'as' as a variable will also generate a warning (unless its
+  part of an import statement).
 
 - Fix the encodings package codec search function to only search
   inside its own package. Fixes problem reported in patch #1433198.
