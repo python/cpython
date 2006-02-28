@@ -524,7 +524,8 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit('if (PyDict_SetItemString(d, "AST", (PyObject*)AST_type) < 0) return;', 1)
         self.emit('if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)', 1)
         self.emit("return;", 2)
-        self.emit("/* %s */" % mod.version.value, 1)
+        # Value of version: "$Revision$"
+        self.emit('if (PyModule_AddStringConstant(m, "__version__", "%s") < 0)' % mod.version.value[12:-3], 1)
         for dfn in mod.dfns:
             self.visit(dfn)
         self.emit("}", 0)
