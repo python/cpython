@@ -6,6 +6,8 @@ http://www.cs.princeton.edu/~danwang/Papers/dsl97/dsl97-abstract.html.
 Only supports top level module decl, not view.  I'm guessing that view
 is intended to support the browser and I'm not interested in the
 browser.
+
+Changes for Python: Add support for module versions
 """
 
 #__metaclass__ = type
@@ -36,6 +38,12 @@ class Id(Token):
 
     def __str__(self):
         return self.value
+        
+class String(Token):
+    def __init__(self, value, lineno):
+        self.type = 'String'
+        self.value = value
+        self.lineno = lineno
 
 class ASDLSyntaxError:
 
@@ -63,6 +71,10 @@ class ASDLScanner(spark.GenericScanner, object):
         # XXX doesn't distinguish upper vs. lower, which is
         # significant for ASDL.
         self.rv.append(Id(s, self.lineno))
+        
+    def t_string(self, s):
+        r'"[^"]*"'
+        self.rv.append(String(s, self.lineno))
 
     def t_xxx(self, s): # not sure what this production means
         r"<="
@@ -98,19 +110,26 @@ class ASDLParser(spark.GenericParser, object):
     def error(self, tok):
         raise ASDLSyntaxError(tok.lineno, tok)
 
-    def p_module_0(self, (module, name, _0, _1)):
-        " module ::= Id Id { } "
+    def p_module_0(self, (module, name, version, _0, _1)):
+        " module ::= Id Id version { } "
         if module.value != "module":
             raise ASDLSyntaxError(module.lineno,
                                   msg="expected 'module', found %s" % module)
-        return Module(name, None)
+        return Module(name, None, version)
 
-    def p_module(self, (module, name, _0, definitions, _1)):
-        " module ::= Id Id { definitions } "
+    def p_module(self, (module, name, version, _0, definitions, _1)):
+        " module ::= Id Id version { definitions } "
         if module.value != "module":
             raise ASDLSyntaxError(module.lineno,
                                   msg="expected 'module', found %s" % module)
-        return Module(name, definitions)
+        return Module(name, definitions, version)
+        
+    def p_version(self, (version, V)):
+        "version ::= Id String"
+        if version.value != "version":
+            raise ASDLSyntaxError(version.lineno,
+                                msg="expected 'version', found %" % version)
+        return V
 
     def p_definition_0(self, (definition,)):
         " definitions ::= definition "
@@ -209,9 +228,10 @@ class AST:
     pass # a marker class
 
 class Module(AST):
-    def __init__(self, name, dfns):
+    def __init__(self, name, dfns, version):
         self.name = name
         self.dfns = dfns
+        self.version = version
         self.types = {} # maps type name to value (from dfns)
         for type in dfns:
             self.types[type.name.value] = type.value
