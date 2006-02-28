@@ -1609,12 +1609,30 @@ file_writelines(PyFileObject *f, PyObject *seq)
 }
 
 static PyObject *
-file_getiter(PyFileObject *f)
+file_self(PyFileObject *f)
 {
 	if (f->f_fp == NULL)
 		return err_closed();
 	Py_INCREF(f);
 	return (PyObject *)f;
+}
+
+static PyObject *
+file_exit(PyFileObject *f, PyObject *args)
+{
+	PyObject *type, *value, *tb, *result;
+	if (!PyArg_ParseTuple(args, "OOO:__exit__", &type, &value, &tb))
+		return NULL;
+	result = file_close(f);
+	if (result != NULL && type != Py_None) {
+		Py_DECREF(result);
+		result = NULL;
+		Py_INCREF(type);
+		Py_INCREF(value);
+		Py_INCREF(tb);
+		PyErr_Restore(type, value, tb);
+	}
+	return result;
 }
 
 PyDoc_STRVAR(readline_doc,
@@ -1701,6 +1719,19 @@ PyDoc_STRVAR(close_doc,
 PyDoc_STRVAR(isatty_doc,
 "isatty() -> true or false.  True if the file is connected to a tty device.");
 
+PyDoc_STRVAR(context_doc,
+	     "__context__() -> self.");
+
+PyDoc_STRVAR(enter_doc,
+	     "__enter__() -> self.");
+
+PyDoc_STRVAR(exit_doc,
+"__exit__(type, value, traceback).\n\
+\n\
+Closes the file; then re-raises the exception if type is not None.\n\
+If no exception is re-raised, the return value is the same as for close().\n\
+");
+
 static PyMethodDef file_methods[] = {
 	{"readline",  (PyCFunction)file_readline, METH_VARARGS, readline_doc},
 	{"read",      (PyCFunction)file_read,     METH_VARARGS, read_doc},
@@ -1713,11 +1744,14 @@ static PyMethodDef file_methods[] = {
 	{"tell",      (PyCFunction)file_tell,     METH_NOARGS,  tell_doc},
 	{"readinto",  (PyCFunction)file_readinto, METH_VARARGS, readinto_doc},
 	{"readlines", (PyCFunction)file_readlines,METH_VARARGS, readlines_doc},
-	{"xreadlines",(PyCFunction)file_getiter,  METH_NOARGS, xreadlines_doc},
+	{"xreadlines",(PyCFunction)file_self,     METH_NOARGS, xreadlines_doc},
 	{"writelines",(PyCFunction)file_writelines, METH_O,    writelines_doc},
 	{"flush",     (PyCFunction)file_flush,    METH_NOARGS,  flush_doc},
 	{"close",     (PyCFunction)file_close,    METH_NOARGS,  close_doc},
 	{"isatty",    (PyCFunction)file_isatty,   METH_NOARGS,  isatty_doc},
+	{"__context__", (PyCFunction)file_self,   METH_NOARGS,  context_doc},
+	{"__enter__", (PyCFunction)file_self,     METH_NOARGS,  enter_doc},
+	{"__exit__",  (PyCFunction)file_exit,     METH_VARARGS, exit_doc},
 	{NULL,	      NULL}		/* sentinel */
 };
 
@@ -2044,7 +2078,7 @@ PyTypeObject PyFile_Type = {
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	offsetof(PyFileObject, weakreflist),	/* tp_weaklistoffset */
-	(getiterfunc)file_getiter,		/* tp_iter */
+	(getiterfunc)file_self,			/* tp_iter */
 	(iternextfunc)file_iternext,		/* tp_iternext */
 	file_methods,				/* tp_methods */
 	file_memberlist,			/* tp_members */

@@ -2200,23 +2200,37 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 			   The code here just sets the stack up for the call;
 			   separate CALL_FUNCTION(3) and POP_TOP opcodes are
 			   emitted by the compiler.
+
+			   In addition, if the stack represents an exception,
+			   we "zap" this information; __exit__() should
+			   re-raise the exception if it wants to, and if
+			   __exit__() returns normally, END_FINALLY should
+			   *not* re-raise the exception.  (But non-local
+			   gotos should still be resumed.)
 			*/
 			
 			x = TOP();
 			u = SECOND();
 			if (PyInt_Check(u) || u == Py_None) {
 				u = v = w = Py_None;
+				Py_INCREF(u);
+				Py_INCREF(v);
+				Py_INCREF(w);
 			}
 			else {
 				v = THIRD();
 				w = FOURTH();
+				/* Zap the exception from the stack,
+				   to fool END_FINALLY. */
+				STACKADJ(-2);
+				SET_TOP(x);
+				Py_INCREF(Py_None);
+				SET_SECOND(Py_None);
 			}
-			Py_INCREF(u);
-			Py_INCREF(v);
-			Py_INCREF(w);
-			PUSH(u);
-			PUSH(v);
-			PUSH(w);
+			STACKADJ(3);
+			SET_THIRD(u);
+			SET_SECOND(v);
+			SET_TOP(w);
 			break;
 		}
 

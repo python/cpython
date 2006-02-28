@@ -36,6 +36,12 @@ Core and builtins
   with_statement``. Use of 'with' as a variable will generate a warning.
   Use of 'as' as a variable will also generate a warning (unless it's
   part of an import statement).
+  The following objects have __context__ methods:
+  - The built-in file type.
+  - The thread.LockType type.
+  - The following types defined by the threading module:
+    Lock, RLock, Condition, Semaphore, BoundedSemaphore.
+  - The decimal.Context class.
 
 - Fix the encodings package codec search function to only search
   inside its own package. Fixes problem reported in patch #1433198.
@@ -410,6 +416,9 @@ Extension Modules
 
 Library
 -------
+
+- PEP 343: new module contextlib.py defines decorator @contextmanager
+  and helpful context managers nested() and closing().
 
 - The compiler package now supports future imports after the module docstring.
 

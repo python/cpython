@@ -2173,6 +2173,32 @@ for name in rounding_functions:
 
 del name, val, globalname, rounding_functions
 
+class ContextManager(object):
+    """Helper class to simplify Context management.
+
+    Sample usage:
+
+    with decimal.ExtendedContext:
+        s = ...
+    return +s # Convert result to normal precision
+
+    with decimal.getcontext() as ctx:
+        ctx.prec += 2
+        s = ...
+    return +s
+
+    """
+    def __init__(self, new_context):
+        self.new_context = new_context
+    def __enter__(self):
+        self.saved_context = getcontext()
+        setcontext(self.new_context)
+        return self.new_context
+    def __exit__(self, t, v, tb):
+        setcontext(self.saved_context)
+        if t is not None:
+            raise t, v, tb
+
 class Context(object):
     """Contains the context for a Decimal instance.
 
@@ -2223,6 +2249,9 @@ class Context(object):
         s.append('flags=[' + ', '.join([f.__name__ for f, v in self.flags.items() if v]) + ']')
         s.append('traps=[' + ', '.join([t.__name__ for t, v in self.traps.items() if v]) + ']')
         return ', '.join(s) + ')'
+
+    def __context__(self):
+        return ContextManager(self.copy())
 
     def clear_flags(self):
         """Reset all flags to zero"""
