@@ -22,6 +22,7 @@ typedef struct {
 #define FUTURE_NESTED_SCOPES "nested_scopes"
 #define FUTURE_GENERATORS "generators"
 #define FUTURE_DIVISION "division"
+#define FUTURE_ABSIMPORT "absolute_import"
 
 struct _mod; /* Declare the existence of this type */
 PyAPI_FUNC(PyCodeObject *) PyAST_Compile(struct _mod *, const char *,

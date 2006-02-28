@@ -57,7 +57,7 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        Python 2.5a0: 62091 (with)
 .
 */
-#define MAGIC (62091 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (62092 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
@@ -1894,7 +1894,8 @@ PyImport_ImportModule(const char *name)
 }
 
 /* Forward declarations for helper routines */
-static PyObject *get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen);
+static PyObject *get_parent(PyObject *globals, char *buf,
+			    Py_ssize_t *p_buflen, int level);
 static PyObject *load_next(PyObject *mod, PyObject *altmod,
 			   char **p_name, char *buf, Py_ssize_t *p_buflen);
 static int mark_miss(char *name);
@@ -1905,14 +1906,14 @@ static PyObject * import_submodule(PyObject *mod, char *name, char *fullname);
 /* The Magnum Opus of dotted-name import :-) */
 
 static PyObject *
-import_module_ex(char *name, PyObject *globals, PyObject *locals,
-		 PyObject *fromlist)
+import_module_level(char *name, PyObject *globals, PyObject *locals,
+		    PyObject *fromlist, int level)
 {
 	char buf[MAXPATHLEN+1];
 	Py_ssize_t buflen = 0;
 	PyObject *parent, *head, *next, *tail;
 
-	parent = get_parent(globals, buf, &buflen);
+	parent = get_parent(globals, buf, &buflen, level);
 	if (parent == NULL)
 		return NULL;
 
@@ -1951,13 +1952,33 @@ import_module_ex(char *name, PyObject *globals, PyObject *locals,
 	return tail;
 }
 
+/* For DLL compatibility */
+#undef PyImport_ImportModuleEx
 PyObject *
 PyImport_ImportModuleEx(char *name, PyObject *globals, PyObject *locals,
 			PyObject *fromlist)
 {
 	PyObject *result;
 	lock_import();
-	result = import_module_ex(name, globals, locals, fromlist);
+	result = import_module_level(name, globals, locals, fromlist, -1);
+	if (unlock_import() < 0) {
+		Py_XDECREF(result);
+		PyErr_SetString(PyExc_RuntimeError,
+				"not holding the import lock");
+		return NULL;
+	}
+	return result;
+}
+#define PyImport_ImportModuleEx(n, g, l, f) \
+	PyImport_ImportModuleLevel(n, g, l, f, -1);
+
+PyObject *
+PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals,
+			 PyObject *fromlist, int level)
+{
+	PyObject *result;
+	lock_import();
+	result = import_module_level(name, globals, locals, fromlist, level);
 	if (unlock_import() < 0) {
 		Py_XDECREF(result);
 		PyErr_SetString(PyExc_RuntimeError,
@@ -1979,13 +2000,13 @@ PyImport_ImportModuleEx(char *name, PyObject *globals, PyObject *locals,
    corresponding entry is not found in sys.modules, Py_None is returned.
 */
 static PyObject *
-get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen)
+get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 {
 	static PyObject *namestr = NULL;
 	static PyObject *pathstr = NULL;
 	PyObject *modname, *modpath, *modules, *parent;
 
-	if (globals == NULL || !PyDict_Check(globals))
+	if (globals == NULL || !PyDict_Check(globals) || !level)
 		return Py_None;
 
 	if (namestr == NULL) {
@@ -2014,12 +2035,16 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen)
 			return NULL;
 		}
 		strcpy(buf, PyString_AS_STRING(modname));
-		*p_buflen = len;
 	}
 	else {
 		char *start = PyString_AS_STRING(modname);
 		char *lastdot = strrchr(start, '.');
 		size_t len;
+		if (lastdot == NULL && level > 0) {
+			PyErr_SetString(PyExc_ValueError,
+					"Relative importpath too deep");
+			return NULL;
+		}
 		if (lastdot == NULL)
 			return Py_None;
 		len = lastdot - start;
@@ -2030,13 +2055,24 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen)
 		}
 		strncpy(buf, start, len);
 		buf[len] = '\0';
-		*p_buflen = len;
 	}
+
+	while (--level > 0) {
+		char *dot = strrchr(buf, '.');
+		if (dot == NULL) {
+			PyErr_SetString(PyExc_ValueError,
+					"Relative importpath too deep");
+			return NULL;
+		}
+		*dot = '\0';
+	}
+	*p_buflen = strlen(buf);
 
 	modules = PyImport_GetModuleDict();
 	parent = PyDict_GetItemString(modules, buf);
 	if (parent == NULL)
-		parent = Py_None;
+		PyErr_Format(PyExc_SystemError,
+				"Parent module '%.200s' not loaded", buf);
 	return parent;
 	/* We expect, but can't guarantee, if parent != None, that:
 	   - parent.__name__ == buf
@@ -2054,6 +2090,13 @@ load_next(PyObject *mod, PyObject *altmod, char **p_name, char *buf,
 	size_t len;
 	char *p;
 	PyObject *result;
+
+	if (strlen(name) == 0) {
+		/* empty module name only happens in 'from . import' */
+		Py_INCREF(mod);
+		*p_name = NULL;
+		return mod;
+	}
 
 	if (dot == NULL) {
 		*p_name = NULL;
@@ -2396,8 +2439,8 @@ PyImport_Import(PyObject *module_name)
 		/* No globals -- use standard builtins, and fake globals */
 		PyErr_Clear();
 
-		builtins = PyImport_ImportModuleEx("__builtin__",
-						   NULL, NULL, NULL);
+		builtins = PyImport_ImportModuleLevel("__builtin__",
+						      NULL, NULL, NULL, 0);
 		if (builtins == NULL)
 			return NULL;
 		globals = Py_BuildValue("{OO}", builtins_str, builtins);

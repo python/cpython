@@ -2171,9 +2171,8 @@ ast_for_import_stmt(struct compiling *c, const node *n)
     /*
       import_stmt: import_name | import_from
       import_name: 'import' dotted_as_names
-      import_from: 'from' dotted_name 'import' ('*' | 
-                                                '(' import_as_names ')' | 
-                                                import_as_names)
+      import_from: 'from' ('.'* dotted_name | '.') 'import'
+                          ('*' | '(' import_as_names ')' | import_as_names)
     */
     int i;
     asdl_seq *aliases;
@@ -2197,24 +2196,41 @@ ast_for_import_stmt(struct compiling *c, const node *n)
     else if (TYPE(n) == import_from) {
         int n_children;
 	int lineno = LINENO(n);
-	alias_ty mod = alias_for_import_name(c, CHILD(n, 1));
-	if (!mod)
-            return NULL;
-
-        switch (TYPE(CHILD(n, 3))) {
+	int idx, ndots = 0;
+	alias_ty mod = NULL;
+	identifier modname;
+	
+       /* Count the number of dots (for relative imports) and check for the
+          optional module name */
+	for (idx = 1; idx < NCH(n); idx++) {
+	    if (TYPE(CHILD(n, idx)) == dotted_name) {
+	    	mod = alias_for_import_name(c, CHILD(n, idx));
+	    	idx++;
+	    	break;
+	    } else if (TYPE(CHILD(n, idx)) != DOT) {
+	        break;
+	    }
+	    ndots++;
+	}
+	idx++; /* skip over the 'import' keyword */
+        switch (TYPE(CHILD(n, idx))) {
         case STAR:
             /* from ... import * */
-	    n = CHILD(n, 3);
+	    n = CHILD(n, idx);
 	    n_children = 1;
+	    if (ndots) {
+	        ast_error(n, "'import *' not allowed with 'from .'");
+	        return NULL;
+	    }
 	    break;
 	case LPAR:
 	    /* from ... import (x, y, z) */
-	    n = CHILD(n, 4);
+	    n = CHILD(n, idx + 1);
 	    n_children = NCH(n);
 	    break;
 	case import_as_names:
 	    /* from ... import x, y, z */
-	    n = CHILD(n, 3);
+	    n = CHILD(n, idx);
 	    n_children = NCH(n);
             if (n_children % 2 == 0) {
                 ast_error(n, "trailing comma not allowed without"
@@ -2245,7 +2261,12 @@ ast_for_import_stmt(struct compiling *c, const node *n)
                 return NULL;
 	    asdl_seq_APPEND(aliases, import_alias);
         }
-	return ImportFrom(mod->name, aliases, lineno, c->c_arena);
+        if (mod != NULL)
+            modname = mod->name;
+        else
+            modname = new_identifier("", c->c_arena);
+        return ImportFrom(modname, aliases, ndots, lineno,
+                          c->c_arena);
     }
     PyErr_Format(PyExc_SystemError,
                  "unknown import statement: starts with command '%s'",

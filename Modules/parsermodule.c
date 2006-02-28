@@ -1792,27 +1792,42 @@ validate_import_name(node *tree)
 		&& validate_dotted_as_names(CHILD(tree, 1)));
 }
 
+/* Helper function to count the number of leading dots in 
+ * 'from ...module import name'
+ */
+static int
+count_from_dots(node *tree)
+{
+        int i;
+        for (i = 0; i < NCH(tree); i++)
+		if (TYPE(CHILD(tree, i)) != DOT)
+			break;
+        return i;
+}
 
-/* 'from' dotted_name 'import' ('*' | '(' import_as_names ')' |
+/* 'from' ('.'* dotted_name | '.') 'import' ('*' | '(' import_as_names ')' |
  *     import_as_names
  */
 static int
 validate_import_from(node *tree)
 {
 	int nch = NCH(tree);
+	int ndots = count_from_dots(tree);
+	int havename = (TYPE(CHILD(tree, ndots + 1)) == dotted_name);
+	int offset = ndots + havename;
 	int res = validate_ntype(tree, import_from)
-		  && (nch >= 4)
-		  && validate_name(CHILD(tree, 0), "from")
-		  && validate_dotted_name(CHILD(tree, 1))
-		  && validate_name(CHILD(tree, 2), "import");
+		&& (nch >= 4 + ndots)
+		&& validate_name(CHILD(tree, 0), "from")
+		&& (!havename || validate_dotted_name(CHILD(tree, ndots + 1)))
+		&& validate_name(CHILD(tree, offset + 1), "import");
 
-	if (res && TYPE(CHILD(tree, 3)) == LPAR)
-	    res = ((nch == 6)
-		   && validate_lparen(CHILD(tree, 3))
-		   && validate_import_as_names(CHILD(tree, 4))
-		   && validate_rparen(CHILD(tree, 5)));
-	else if (res && TYPE(CHILD(tree, 3)) != STAR)
-	    res = validate_import_as_names(CHILD(tree, 3));
+	if (res && TYPE(CHILD(tree, offset + 2)) == LPAR)
+	    res = ((nch == offset + 5)
+		   && validate_lparen(CHILD(tree, offset + 2))
+		   && validate_import_as_names(CHILD(tree, offset + 3))
+		   && validate_rparen(CHILD(tree, offset + 4)));
+	else if (res && TYPE(CHILD(tree, offset + 2)) != STAR)
+	    res = validate_import_as_names(CHILD(tree, offset + 2));
 	return (res);
 }
 

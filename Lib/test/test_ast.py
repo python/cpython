@@ -145,7 +145,7 @@ exec_results = [
 ('Module', [('TryFinally', [('Pass',)], [('Pass',)])]),
 ('Module', [('Assert', ('Name', 'v', ('Load',)), None)]),
 ('Module', [('Import', [('alias', 'sys', None)])]),
-('Module', [('ImportFrom', 'sys', [('alias', 'v', None)])]),
+('Module', [('ImportFrom', 'sys', [('alias', 'v', None)], 0)]),
 ('Module', [('Exec', ('Str', 'v'), None, None)]),
 ('Module', [('Global', ['v'])]),
 ('Module', [('Expr', ('Num', 1))]),
