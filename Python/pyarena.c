@@ -1,8 +1,12 @@
 #include "Python.h"
 #include "pyarena.h"
 
-/* A simple arena block structure */
-/* TODO(jhylton): Measurement to justify block size. */
+/* A simple arena block structure 
+
+   Measurements with standard library modules suggest the average
+   allocation is about 20 bytes and that most compiles use a single
+   block.
+*/
 
 #define DEFAULT_BLOCK_SIZE 8192
 typedef struct _block {
@@ -21,6 +25,14 @@ struct _arena {
 	block *a_head;
 	block *a_cur;
         PyObject *a_objects;
+#if defined(Py_DEBUG)
+        /* Debug output */
+        size_t total_allocs;
+        size_t total_size;
+        size_t total_blocks;
+        size_t total_block_size;
+        size_t total_big_blocks;
+#endif
 };
 
 static block *
@@ -86,12 +98,19 @@ PyArena_New()
                 free((void *)arena);
                 return NULL;
         }
-        arena->a_objects = PyList_New(16);
+        arena->a_objects = PyList_New(0);
         if (!arena->a_objects) {
                 block_free(arena->a_head);
                 free((void *)arena);
                 return NULL;
         }
+#if defined(Py_DEBUG)
+        arena->total_allocs = 0;
+        arena->total_size = 0;
+        arena->total_blocks = 1;
+        arena->total_block_size = DEFAULT_BLOCK_SIZE;
+        arena->total_big_blocks = 0;
+#endif
 	return arena;
 }
 
@@ -99,6 +118,15 @@ void
 PyArena_Free(PyArena *arena)
 {
 	assert(arena);
+#if defined(Py_DEBUG)
+        /*
+        fprintf(stderr, 
+                "alloc=%d size=%d blocks=%d block_size=%d big=%d objects=%d\n",
+                arena->total_allocs, arena->total_size, arena->total_blocks,
+                arena->total_block_size, arena->total_big_blocks,
+                PyList_Size(arena->a_objects));
+        */
+#endif
 	block_free(arena->a_head);
         assert(arena->a_objects->ob_refcnt == 1);
         Py_DECREF(arena->a_objects);
@@ -111,9 +139,19 @@ PyArena_Malloc(PyArena *arena, size_t size)
 	void *p = block_alloc(arena->a_cur, size);
 	if (!p)
 		return NULL;
+#if defined(Py_DEBUG)
+        arena->total_allocs++;
+        arena->total_size += size;
+#endif
 	/* Reset cur if we allocated a new block. */
 	if (arena->a_cur->ab_next) {
 		arena->a_cur = arena->a_cur->ab_next;
+#if defined(Py_DEBUG)
+                arena->total_blocks++;
+                arena->total_block_size += arena->a_cur->ab_size;
+                if (arena->a_cur->ab_size > DEFAULT_BLOCK_SIZE)
+                  arena->total_big_blocks++;
+#endif
 	}
 	return p;
 }
