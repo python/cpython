@@ -2088,8 +2088,8 @@ static alias_ty
 alias_for_import_name(struct compiling *c, const node *n)
 {
     /*
-      import_as_name: NAME [NAME NAME]
-      dotted_as_name: dotted_name [NAME NAME]
+      import_as_name: NAME ['as' NAME]
+      dotted_as_name: dotted_name ['as' NAME]
       dotted_name: NAME ('.' NAME)*
     */
     PyObject *str;
