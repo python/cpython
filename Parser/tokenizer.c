@@ -127,7 +127,6 @@ tok_new(void)
 	tok->decoding_state = 0;
 	tok->decoding_erred = 0;
 	tok->read_coding_spec = 0;
-	tok->issued_encoding_warning = 0;
 	tok->encoding = NULL;
         tok->cont_line = 0;
 #ifndef PGEN
@@ -462,7 +461,7 @@ static char *
 decoding_fgets(char *s, int size, struct tok_state *tok)
 {
 	char *line = NULL;
-	int warn = 0, badchar = 0;
+	int badchar = 0;
 	for (;;) {
 		if (tok->decoding_state < 0) {
 			/* We already have a codec associated with
@@ -473,7 +472,6 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
 			/* We want a 'raw' read. */
 			line = Py_UniversalNewlineFgets(s, size, 
 							tok->fp, NULL);
-			warn = 1;
 			break;
 		} else {
 			/* We have not yet determined the encoding.
@@ -490,7 +488,9 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
 		}
 	}
 #ifndef PGEN
-	if (warn && line && !tok->issued_encoding_warning && !tok->encoding) {
+	/* The default encoding is ASCII, so make sure we don't have any
+           non-ASCII bytes in it. */
+	if (line && !tok->encoding) {
 		unsigned char *c;
 		for (c = (unsigned char *)line; *c; c++)
 			if (*c > 127) {
@@ -508,12 +508,8 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
 			"but no encoding declared; "
 			"see http://www.python.org/peps/pep-0263.html for details", 
 			badchar, tok->filename, tok->lineno + 1);
-		/* We don't use PyErr_WarnExplicit() here because
-		   printing the line in question to e.g. a log file
-		   could result in sensitive information being
-		   exposed. */
-		PyErr_Warn(PyExc_DeprecationWarning, buf);
-		tok->issued_encoding_warning = 1;
+		PyErr_SetString(PyExc_SyntaxError, buf);
+		return error_ret(tok);
 	}
 #endif
 	return line;
