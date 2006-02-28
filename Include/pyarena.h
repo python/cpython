@@ -23,16 +23,10 @@ extern "C" {
 
   PyAPI_FUNC(void *) PyArena_Malloc(PyArena *, size_t);
 
-  /* The next two routines aren't proper arena allocation routines.
-     They exist to experiment with the arena API without making wholesale
-     changes to the implementation.
-
-     The two functions register pointers with the arena id.  These
-     are externally allocated pointers that will be freed when the
-     arena is freed.  One takes a pointer allocated with malloc.  The
-     other takes a PyObject that is DECREFed when the arena is freed.
-  */
-  PyAPI_FUNC(int) PyArena_AddMallocPointer(PyArena *, void *);
+  /* This routines isn't a proper arena allocation routine.  It takes
+     a PyObject* and records it so that it can be DECREFed when the
+     arena is freed.
+   */ 
   PyAPI_FUNC(int) PyArena_AddPyObject(PyArena *, PyObject *);
 
 #ifdef __cplusplus

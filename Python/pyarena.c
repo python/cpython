@@ -1,28 +1,29 @@
 #include "Python.h"
 #include "pyarena.h"
 
-/* An arena list is a linked list that can store either pointers or
-   PyObjects.  The type is clear from context.
- */
+/* An arena list is a linked list that can store PyObjects. */
 
 typedef struct _arena_list {
-  struct _arena_list *al_next;
-  void *al_pointer;
+    struct _arena_list *al_next;
+    void *al_pointer;
 } PyArenaList;
 
-/* There are two linked lists in an arena, one for malloc pointers and
-   one for PyObject.  For each list, there is a pointer to the head
-   and to the tail.  The head is used to free the list.  The tail is
-   used to add a new element to the list.
+/* A simple arena block structure */
+/* TODO(jhylton): Measurement to justify block size. */
 
-   The list always keeps one un-used node at the end of the list.
-*/
+#define DEFAULT_BLOCK_SIZE 8192
+typedef struct _block {
+    size_t ab_size;
+    size_t ab_offset;
+    struct _block *ab_next;
+    void *ab_mem;
+} block;
 
 struct _arena {
-  PyArenaList *a_malloc_head;
-  PyArenaList *a_malloc_tail;
-  PyArenaList *a_object_head;
-  PyArenaList *a_object_tail;
+    block *a_head;
+    block *a_cur;
+    PyArenaList *a_object_head;
+    PyArenaList *a_object_tail;
 };
 
 static PyArenaList*
@@ -40,31 +41,62 @@ PyArenaList_New(void)
 static void
 PyArenaList_FreeObject(PyArenaList *alist) 
 {
-  while (alist) {
-    PyArenaList *prev;
-    Py_XDECREF((PyObject *)alist->al_pointer);
-    alist->al_pointer = NULL;
-    prev = alist;
-    alist = alist->al_next;
-    free(prev);
-  }
+    while (alist) {
+        PyArenaList *prev;
+        Py_XDECREF((PyObject *)alist->al_pointer);
+        alist->al_pointer = NULL;
+        prev = alist;
+        alist = alist->al_next;
+        free(prev);
+    }
+}
+
+static block *
+block_new(size_t size)
+{
+    /* Allocate header and block as one unit.  ab_mem points just past header. */
+    block *b = (block *)malloc(sizeof(block) + size);
+    if (!b)
+        return NULL;
+    b->ab_size = size;
+    b->ab_mem = (void *)(b + 1);
+    b->ab_next = NULL;
+    b->ab_offset = 0;
+    return b;
 }
 
 static void
-PyArenaList_FreeMalloc(PyArenaList *alist)
-{
-  while (alist) {
-    PyArenaList *prev;
-    if (alist->al_pointer) {
-      free(alist->al_pointer);
+block_free(block *b) {
+    while (b) {
+        block *next = b->ab_next;
+        free(b);
+        b = next;
     }
-    alist->al_pointer = NULL;
-    prev = alist;
-    alist = alist->al_next;
-    free(prev);
-  }
 }
 
+static void *
+block_alloc(block *b, size_t size)
+{
+    void *p;
+    assert(b);
+    if (b->ab_offset + size > b->ab_size) {
+        /* If we need to allocate more memory than will fit in the default
+           block, allocate a one-off block that is exactly the right size. */
+        /* TODO(jhylton): Think more about space waste at end of block */
+        block *new = block_new(
+            size < DEFAULT_BLOCK_SIZE ? DEFAULT_BLOCK_SIZE : size);
+        if (!new)
+            return NULL;
+        assert(!b->ab_next);
+        b->ab_next = new;
+        b = new;
+    }
+
+    assert(b->ab_offset + size <= b->ab_size);
+    p = (void *)(((char *)b->ab_mem) + b->ab_offset);
+    b->ab_offset += size;
+    return p;
+}
 
 PyArena *
 PyArena_New()
@@ -73,47 +105,33 @@ PyArena_New()
   if (!arena)
     return NULL;
 
+  arena->a_head = block_new(DEFAULT_BLOCK_SIZE);
+  arena->a_cur = arena->a_head;
   arena->a_object_head = PyArenaList_New();
   arena->a_object_tail = arena->a_object_head;
-  arena->a_malloc_head = PyArenaList_New();
-  arena->a_malloc_tail = arena->a_malloc_head;
   return arena;
 }
 
 void
 PyArena_Free(PyArena *arena)
 {
-  assert(arena);
-  PyArenaList_FreeObject(arena->a_object_head);
-  PyArenaList_FreeMalloc(arena->a_malloc_head);
-  free(arena);
+    assert(arena);
+    block_free(arena->a_head);
+    PyArenaList_FreeObject(arena->a_object_head);
+    free(arena);
 }
 
 void *
 PyArena_Malloc(PyArena *arena, size_t size) 
 {
-  /* A better implementation might actually use an arena.  The current
-     approach is just a trivial implementation of the API that allows
-     it to be tested.
-  */
-  void *p;
-  assert(size != 0);
-  p = malloc(size);
-  if (p)
-    PyArena_AddMallocPointer(arena, p);
-  return p;
-}
-
-int
-PyArena_AddMallocPointer(PyArena *arena, void *pointer) 
-{
-  PyArenaList *tail = arena->a_malloc_tail;
-  assert(pointer);
-  assert(tail->al_pointer != pointer);
-  tail->al_next = PyArenaList_New();
-  tail->al_pointer = pointer;
-  arena->a_malloc_tail = tail->al_next;
-  return 1;
+    void *p = block_alloc(arena->a_cur, size);
+    if (!p)
+        return NULL;
+    /* Reset cur if we allocated a new block. */
+    if (arena->a_cur->ab_next) {
+        arena->a_cur = arena->a_cur->ab_next;
+    }
+    return p;
 }
 
 int
