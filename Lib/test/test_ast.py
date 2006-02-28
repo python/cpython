@@ -11,7 +11,7 @@ def to_tuple(t):
     for f in t._fields:
         result.append(to_tuple(getattr(t, f)))
     return tuple(result)
-    
+
 # These tests are compiled through "exec"
 # There should be atleast one test per statement
 exec_tests = [
@@ -122,13 +122,13 @@ if __name__=='__main__' and sys.argv[1:] == ['-g']:
     raise SystemExit
 
 def run_tests():
-    for input, output, kind in ((exec_tests, exec_results, "exec"), 
-                                        (single_tests, single_results, "single"), 
+    for input, output, kind in ((exec_tests, exec_results, "exec"),
+                                        (single_tests, single_results, "single"),
                                         (eval_tests, eval_results, "eval")):
         for i, o in itertools.izip(input, output):
             assert to_tuple(compile(i, "?", kind, 0x400)) == o
 
-#### EVERYTHING BELOW IS GENERATED ##### 
+#### EVERYTHING BELOW IS GENERATED #####
 exec_results = [
 ('Module', [('FunctionDef', 'f', ('arguments', [], None, None, []), [('Pass',)], [])]),
 ('Module', [('ClassDef', 'C', [], [('Pass',)])]),
@@ -176,4 +176,3 @@ eval_results = [
 ('Expression', ('Tuple', [('Num', 1), ('Num', 2), ('Num', 3)], ('Load',))),
 ]
 run_tests()
-

@@ -38,4 +38,3 @@ class nested(object):
         self.entered = None
         if ex is not exc_info:
             raise ex[0], ex[1], ex[2]
-

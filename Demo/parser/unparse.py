@@ -13,24 +13,24 @@ class Unparser:
         self._indent = 0
         self.dispatch(tree)
         self.f.flush()
-       
+
     def fill(self, text = ""):
         "Indent a piece of text, according to the current indentation level"
         self.f.write("\n"+"    "*self._indent + text)
-        
+
     def write(self, text):
         "Append a piece of text to the current line."
         self.f.write(text)
-        
+
     def enter(self):
         "Print ':', and increase the indentation."
         self.write(":")
         self._indent += 1
-    
+
     def leave(self):
         "Decrease the indentation level."
         self._indent -= 1
-    
+
     def dispatch(self, tree):
         "Dispatcher function, dispatching tree type T to method _T."
         if isinstance(tree, list):
@@ -51,12 +51,12 @@ class Unparser:
     def _Module(self, tree):
         for stmt in tree.body:
             self.dispatch(stmt)
-    
+
     # stmt
     def _Expr(self, tree):
         self.fill()
         self.dispatch(tree.value)
-        
+
     def _Import(self, t):
         self.fill("import ")
         first = True
@@ -68,14 +68,14 @@ class Unparser:
             self.write(a.name)
             if a.asname:
                 self.write(" as "+a.asname)
-                
+
     def _Assign(self, t):
         self.fill()
         for target in t.targets:
             self.dispatch(target)
             self.write(" = ")
         self.dispatch(t.value)
-        
+
     def _ClassDef(self, t):
         self.write("\n")
         self.fill("class "+t.name)
@@ -88,7 +88,7 @@ class Unparser:
         self.enter()
         self.dispatch(t.body)
         self.leave()
-        
+
     def _FunctionDef(self, t):
         self.write("\n")
         self.fill("def "+t.name + "(")
@@ -96,7 +96,7 @@ class Unparser:
         self.enter()
         self.dispatch(t.body)
         self.leave()
-        
+
     def _If(self, t):
         self.fill("if ")
         self.dispatch(t.test)
@@ -109,28 +109,28 @@ class Unparser:
             self.enter()
             self.dispatch(t.orelse)
             self.leave()
-    
-    # expr 
+
+    # expr
     def _Str(self, tree):
         self.write(repr(tree.s))
 
     def _Name(self, t):
         self.write(t.id)
-        
+
     def _List(self, t):
         self.write("[")
         for e in t.elts:
             self.dispatch(e)
             self.write(", ")
         self.write("]")
-        
+
     unop = {"Invert":"~", "Not": "not", "UAdd":"+", "USub":"-"}
     def _UnaryOp(self, t):
         self.write(self.unop[t.op.__class__.__name__])
         self.write("(")
         self.dispatch(t.operand)
         self.write(")")
-        
+
     # others
     def _arguments(self, t):
         first = True
@@ -148,11 +148,11 @@ class Unparser:
             else: self.write(", ")
             self.write("**"+self.kwarg)
         self.write(")")
-    
+
 def roundtrip(filename):
     source = open(filename).read()
     tree = compile(source, filename, "exec", 0x400)
     Unparser(tree)
-    
+
 if __name__=='__main__':
     roundtrip(sys.argv[1])

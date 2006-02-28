@@ -76,7 +76,7 @@ class MockNested(nested):
         self.exit_args = exc_info
         return nested.__exit__(self, *exc_info)
 
- 
+
 class FailureTestCase(unittest.TestCase):
     def testNameError(self):
         def fooNotDeclared():

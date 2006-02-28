@@ -354,7 +354,7 @@ class PyTypesDeclareVisitor(PickleVisitor):
             for f in prod.fields:
                 self.emit('"%s",' % f.name, 1)
             self.emit("};", 0)
-        
+
     def visitSum(self, sum, name):
         self.emit("PyTypeObject *%s_type;" % name, 0)
         if sum.attributes:
@@ -373,7 +373,7 @@ class PyTypesDeclareVisitor(PickleVisitor):
         self.emit("static PyObject* ast2obj_%s(%s);" % (name, ptype), 0)
         for t in sum.types:
             self.visitConstructor(t, name)
-            
+
     def visitConstructor(self, cons, name):
         self.emit("PyTypeObject *%s_type;" % cons.name, 0)
         if cons.fields:
@@ -405,7 +405,7 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
         }
         PyTuple_SET_ITEM(fnames, i, field);
     }
-    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){sOss}", 
+    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){sOss}",
                     type, base, "_fields", fnames, "__module__", "_ast");
     Py_DECREF(fnames);
     return (PyTypeObject*)result;
@@ -481,35 +481,35 @@ static PyObject* ast2obj_int(bool b)
             fields = name.value+"_fields"
         else:
             fields = "NULL"
-        self.emit('%s_type = make_type("%s", AST_type, %s, %d);' % 
+        self.emit('%s_type = make_type("%s", AST_type, %s, %d);' %
                         (name, name, fields, len(prod.fields)), 1)
         self.emit("if (!%s_type) return 0;" % name, 1)
-        
+
     def visitSum(self, sum, name):
         self.emit('%s_type = make_type("%s", AST_type, NULL, 0);' % (name, name), 1)
         self.emit("if (!%s_type) return 0;" % name, 1)
         if sum.attributes:
-            self.emit("if (!add_attributes(%s_type, %s_attributes, %d)) return 0;" % 
+            self.emit("if (!add_attributes(%s_type, %s_attributes, %d)) return 0;" %
                             (name, name, len(sum.attributes)), 1)
         else:
             self.emit("if (!add_attributes(%s_type, NULL, 0)) return 0;" % name, 1)
         simple = is_simple(sum)
         for t in sum.types:
             self.visitConstructor(t, name, simple)
-            
+
     def visitConstructor(self, cons, name, simple):
         if cons.fields:
             fields = cons.name.value+"_fields"
         else:
             fields = "NULL"
-        self.emit('%s_type = make_type("%s", %s_type, %s, %d);' % 
+        self.emit('%s_type = make_type("%s", %s_type, %s, %d);' %
                             (cons.name, cons.name, name, fields, len(cons.fields)), 1)
         self.emit("if (!%s_type) return 0;" % cons.name, 1)
         if simple:
             self.emit("%s_singleton = PyType_GenericNew(%s_type, NULL, NULL);" %
                              (cons.name, cons.name), 1)
             self.emit("if (!%s_singleton) return 0;" % cons.name, 1)
-                             
+
 class ASTModuleVisitor(PickleVisitor):
 
     def visitModule(self, mod):
@@ -533,15 +533,15 @@ class ASTModuleVisitor(PickleVisitor):
 
     def visitProduct(self, prod, name):
         self.addObj(name)
-        
+
     def visitSum(self, sum, name):
         self.addObj(name)
         for t in sum.types:
             self.visitConstructor(t, name)
-            
+
     def visitConstructor(self, cons, name):
         self.addObj(cons.name)
-        
+
     def addObj(self, name):
         self.emit('if(PyDict_SetItemString(d, "%s", (PyObject*)%s_type) < 0) return;' % (name, name), 1)
 
@@ -609,7 +609,7 @@ class ObjVisitor(PickleVisitor):
             self.emit("if (!value) goto failed;", 1)
             self.emit('PyObject_SetAttrString(result, "%s", value);' % a.name, 1)
         self.func_end()
-        
+
     def simpleSum(self, sum, name):
         self.emit("PyObject* ast2obj_%s(%s_ty o)" % (name, name), 0)
         self.emit("{", 0)
