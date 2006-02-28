@@ -12,6 +12,12 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1438387, PEP 328: relative and absolute imports. Imports can now be
+  explicitly relative, using 'from .module import name' to mean 'from the same
+  package as this module is in. Imports without dots still default to the
+  old relative-then-absolute, unless 'from __future__ import
+  absolute_import' is used.
+
 - Properly check if 'warnings' raises an exception (usually when a filter set
   to "error" is triggered) when raising a warning for raising string
   exceptions.
