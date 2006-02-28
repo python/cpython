@@ -526,6 +526,7 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("return;", 2)
         # Value of version: "$Revision$"
         self.emit('if (PyModule_AddStringConstant(m, "__version__", "%s") < 0)' % mod.version.value[12:-3], 1)
+        self.emit("return;", 2)
         for dfn in mod.dfns:
             self.visit(dfn)
         self.emit("}", 0)
