@@ -176,8 +176,8 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 		    if (len == 4 && str[0] == 'w' && strcmp(str, "with") == 0)
 			warn(with_msg, err_ret->filename, tok->lineno);
 		    else if (!(handling_import || handling_with) &&
-			     len == 2 &&
-			     str[0] == 'a' && strcmp(str, "as") == 0)
+		             len == 2 && str[0] == 'a' &&
+			     strcmp(str, "as") == 0)
 			warn(as_msg, err_ret->filename, tok->lineno);
 		}
 		else if (type == NAME &&

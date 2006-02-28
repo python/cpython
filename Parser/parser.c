@@ -144,18 +144,20 @@ classify(parser_state *ps, int type, char *str)
 		register label *l = g->g_ll.ll_label;
 		register int i;
 		for (i = n; i > 0; i--, l++) {
-			if (l->lb_type == NAME && l->lb_str != NULL &&
-					l->lb_str[0] == s[0] &&
-					strcmp(l->lb_str, s) == 0) {
+			if (l->lb_type != NAME || l->lb_str == NULL ||
+			    l->lb_str[0] != s[0] ||
+			    strcmp(l->lb_str, s) != 0)
+				continue;
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
-				if (!(ps->p_flags & CO_FUTURE_WITH_STATEMENT) &&
-				    s[0] == 'w' &&
-				    strcmp(s, "with") == 0)
-					break; /* not a keyword */
-#endif
-				D(printf("It's a keyword\n"));
-				return n - i;
+			if (!(ps->p_flags & CO_FUTURE_WITH_STATEMENT)) {
+				if (s[0] == 'w' && strcmp(s, "with") == 0)
+					break; /* not a keyword yet */
+				else if (s[0] == 'a' && strcmp(s, "as") == 0)
+					break; /* not a keyword yet */
 			}
+#endif
+			D(printf("It's a keyword\n"));
+			return n - i;
 		}
 	}
 	
