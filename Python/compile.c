@@ -4286,6 +4286,8 @@ compute_code_flags(struct compiler *c)
 		flags |= CO_GENERATOR;
         if (c->c_flags->cf_flags & CO_FUTURE_DIVISION)
                 flags |= CO_FUTURE_DIVISION;
+        if (c->c_flags->cf_flags & CO_FUTURE_WITH_STATEMENT)
+                flags |= CO_FUTURE_WITH_STATEMENT;
 	n = PyDict_Size(c->u->u_freevars);
 	if (n < 0)
 	    return -1;

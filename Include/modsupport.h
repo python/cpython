@@ -39,8 +39,8 @@ PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);
 PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char *);
 
 
-#define PYTHON_API_VERSION 1012
-#define PYTHON_API_STRING "1012"
+#define PYTHON_API_VERSION 1013
+#define PYTHON_API_STRING "1013"
 /* The API version is maintained (independently from the Python version)
    so we can detect mismatches between the interpreter and dynamically
    loaded modules.  These are diagnosed by an error message but
@@ -53,6 +53,8 @@ PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char 
 
    Please add a line or two to the top of this log for each API
    version change:
+
+   22-Feb-2006  GvR	1013	PEP 353 - long indices for sequence lengths
 
    19-Aug-2002  GvR	1012	Changes to string object struct for
    				interning changes, saving 3 bytes.
