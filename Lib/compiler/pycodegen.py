@@ -807,6 +807,47 @@ class CodeGenerator:
         self.emit('END_FINALLY')
         self.setups.pop()
 
+    __with_count = 0
+
+    def visitWith(self, node):
+        body = self.newBlock()
+        final = self.newBlock()
+        exitvar = "$exit%d" % self.__with_count
+        valuevar = "$value%d" % self.__with_count
+        self.__with_count += 1
+        self.set_lineno(node)
+        self.visit(node.expr)
+        self.emit('LOAD_ATTR', '__context__')
+        self.emit('CALL_FUNCTION', 0)
+        self.emit('DUP_TOP')
+        self.emit('LOAD_ATTR', '__exit__')
+        self._implicitNameOp('STORE', exitvar)
+        self.emit('LOAD_ATTR', '__enter__')
+        self.emit('CALL_FUNCTION', 0)
+        if node.vars is None:
+            self.emit('POP_TOP')
+        else:
+            self._implicitNameOp('STORE', valuevar)
+        self.emit('SETUP_FINALLY', final)
+        self.nextBlock(body)
+        self.setups.push((TRY_FINALLY, body))
+        if node.vars is not None:
+            self._implicitNameOp('LOAD', valuevar)
+            self._implicitNameOp('DELETE', valuevar)
+            self.visit(node.vars)
+        self.visit(node.body)
+        self.emit('POP_BLOCK')
+        self.setups.pop()
+        self.emit('LOAD_CONST', None)
+        self.nextBlock(final)
+        self.setups.push((END_FINALLY, final))
+        self.emit('WITH_CLEANUP')
+        self.emit('CALL_FUNCTION', 3)
+        self.emit('POP_TOP')
+        self.emit('END_FINALLY')
+        self.setups.pop()
+        self.__with_count -= 1
+
     # misc
 
     def visitDiscard(self, node):
