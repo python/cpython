@@ -15,6 +15,7 @@ __all__ = ["iskeyword", "kwlist"]
 kwlist = [
 #--start keywords--
         'and',
+        'as',
         'assert',
         'break',
         'class',
@@ -42,6 +43,7 @@ kwlist = [
         'return',
         'try',
         'while',
+        'with',
         'yield',
 #--end keywords--
         ]
