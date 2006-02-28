@@ -778,6 +778,7 @@ class StackDepthTracker:
         'SETUP_EXCEPT': 3,
         'SETUP_FINALLY': 3,
         'FOR_ITER': 1,
+        'WITH_CLEANUP': 3,
         }
     # use pattern match
     patterns = [
