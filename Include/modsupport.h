@@ -54,7 +54,7 @@ PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char 
    Please add a line or two to the top of this log for each API
    version change:
 
-   22-Feb-2006  GvR	1013	PEP 353 - long indices for sequence lengths
+   22-Feb-2006  MvL	1013	PEP 353 - long indices for sequence lengths
 
    19-Aug-2002  GvR	1012	Changes to string object struct for
    				interning changes, saving 3 bytes.
