@@ -663,8 +663,9 @@ s = a[:]
 s = a[-5:]
 s = a[:-1]
 s = a[-4:-3]
-# A rough test of SF bug XXX.
+# A rough test of SF bug 1333982.  http://python.org/sf/1333982
 # The testing here is fairly incomplete.
+# Test cases should include: commas with 1 and 2 colons
 d = {}
 d[1] = 1
 d[1,] = 2
