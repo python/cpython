@@ -183,7 +183,7 @@ mod_ty
 PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
                PyArena *arena)
 {
-    int i, j, num;
+    int i, j, k, num;
     asdl_seq *stmts = NULL;
     stmt_ty s;
     node *ch;
@@ -199,6 +199,7 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
     }
     c.c_arena = arena;
 
+    k = 0;
     switch (TYPE(n)) {
         case file_input:
             stmts = asdl_seq_new(num_stmts(n), arena);
@@ -214,7 +215,7 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
                     s = ast_for_stmt(&c, ch);
                     if (!s)
                         goto error;
-                    asdl_seq_APPEND(stmts, s);
+                    asdl_seq_SET(stmts, k++, s);
                 }
                 else {
                     ch = CHILD(ch, 0);
@@ -223,7 +224,7 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
                         s = ast_for_stmt(&c, CHILD(ch, j * 2));
                         if (!s)
                             goto error;
-                        asdl_seq_APPEND(stmts, s);
+                        asdl_seq_SET(stmts, k++, s);
                     }
                 }
             }
@@ -314,15 +315,11 @@ get_operator(const node *n)
     }
 }
 
-/* Set the context ctx for expr_ty e returning 1 on success, 0 on error.
+/* Set the context ctx for expr_ty e, recursively traversing e.
 
    Only sets context for expr kinds that "can appear in assignment context"
    (according to ../Parser/Python.asdl).  For other expr kinds, it sets
    an appropriate syntax error and returns false.
-
-   If e is a sequential type, items in sequence will also have their context
-   set.
-
 */
 
 static int
@@ -346,7 +343,7 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
     switch (e->kind) {
         case Attribute_kind:
 	    if (ctx == Store &&
-		!strcmp(PyString_AS_STRING(e->v.Attribute.attr), "None")) {
+		    !strcmp(PyString_AS_STRING(e->v.Attribute.attr), "None")) {
 		    return ast_error(n, "assignment to None");
 	    }
 	    e->v.Attribute.ctx = ctx;
@@ -416,7 +413,7 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
     }
 
     /* If the LHS is a list or tuple, we need to set the assignment
-       context for all the tuple elements.  
+       context for all the contained elements.  
     */
     if (s) {
 	int i;
@@ -559,34 +556,31 @@ compiler_complex_args(struct compiling *c, const node *n)
         return NULL;
 
     REQ(n, fplist);
-
     for (i = 0; i < len; i++) {
         const node *child = CHILD(CHILD(n, 2*i), 0);
         expr_ty arg;
         if (TYPE(child) == NAME) {
-		if (!strcmp(STR(child), "None")) {
-			ast_error(child, "assignment to None");
-			return NULL;
-		}
+    		if (!strcmp(STR(child), "None")) {
+	    		ast_error(child, "assignment to None");
+		    	return NULL;
+		    }   
             arg = Name(NEW_IDENTIFIER(child), Store, LINENO(child),
                        c->c_arena);
-	}
-        else
+	    }
+        else {
             arg = compiler_complex_args(c, CHILD(CHILD(n, 2*i), 1));
-	set_context(arg, Store, n);
+        }
         asdl_seq_SET(args, i, arg);
     }
 
     result = Tuple(args, Store, LINENO(n), c->c_arena);
-    set_context(result, Store, n);
+    if (!set_context(result, Store, n))
+        return NULL;
     return result;
 }
 
-/* Create AST for argument list.
 
-   XXX TO DO:
-       - check for invalid argument lists like normal after default
-*/
+/* Create AST for argument list. */
 
 static arguments_ty
 ast_for_arguments(struct compiling *c, const node *n)
@@ -595,7 +589,7 @@ ast_for_arguments(struct compiling *c, const node *n)
        varargslist: (fpdef ['=' test] ',')* ('*' NAME [',' '**' NAME]
             | '**' NAME) | fpdef ['=' test] (',' fpdef ['=' test])* [',']
     */
-    int i, n_args = 0, n_defaults = 0, found_default = 0;
+    int i, j, k, n_args = 0, n_defaults = 0, found_default = 0;
     asdl_seq *args, *defaults;
     identifier vararg = NULL, kwarg = NULL;
     node *ch;
@@ -626,6 +620,8 @@ ast_for_arguments(struct compiling *c, const node *n)
        fplist: fpdef (',' fpdef)* [',']
     */
     i = 0;
+    j = 0;  /* index for defaults */
+    k = 0;  /* index for args */
     while (i < NCH(n)) {
 	ch = CHILD(n, i);
 	switch (TYPE(ch)) {
@@ -634,7 +630,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                    anything other than EQUAL or a comma? */
                 /* XXX Should NCH(n) check be made a separate check? */
                 if (i + 1 < NCH(n) && TYPE(CHILD(n, i + 1)) == EQUAL) {
-                    asdl_seq_APPEND(defaults, 
+                    asdl_seq_SET(defaults, j++, 
 				    ast_for_expr(c, CHILD(n, i + 2)));
                     i += 2;
 		    found_default = 1;
@@ -644,9 +640,8 @@ ast_for_arguments(struct compiling *c, const node *n)
 			     "non-default argument follows default argument");
 		    goto error;
 		}
-
                 if (NCH(ch) == 3) {
-                    asdl_seq_APPEND(args, 
+                    asdl_seq_SET(args, k++, 
                                     compiler_complex_args(c, CHILD(ch, 1))); 
 		}
                 else if (TYPE(CHILD(ch, 0)) == NAME) {
@@ -659,7 +654,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                                 Param, LINENO(ch), c->c_arena);
                     if (!name)
                         goto error;
-                    asdl_seq_APPEND(args, name);
+                    asdl_seq_SET(args, k++, name);
 					 
 		}
                 i += 2; /* the name and the comma */
@@ -767,16 +762,15 @@ ast_for_decorators(struct compiling *c, const node *n)
     int i;
     
     REQ(n, decorators);
-
     decorator_seq = asdl_seq_new(NCH(n), c->c_arena);
     if (!decorator_seq)
         return NULL;
 	
     for (i = 0; i < NCH(n); i++) {
-	d = ast_for_decorator(c, CHILD(n, i));
-	if (!d)
-	    return NULL;
-	asdl_seq_APPEND(decorator_seq, d);
+        d = ast_for_decorator(c, CHILD(n, i));
+	    if (!d)
+	        return NULL;
+	    asdl_seq_SET(decorator_seq, i, d);
     }
     return decorator_seq;
 }
@@ -993,21 +987,20 @@ ast_for_listcomp(struct compiling *c, const node *n)
 		return NULL;
 
 	    for (j = 0; j < n_ifs; j++) {
-		REQ(ch, list_iter);
+            REQ(ch, list_iter);
+		    ch = CHILD(ch, 0);
+		    REQ(ch, list_if);
 
-		ch = CHILD(ch, 0);
-		REQ(ch, list_if);
-
-		asdl_seq_APPEND(ifs, ast_for_expr(c, CHILD(ch, 1)));
-		if (NCH(ch) == 3)
-		    ch = CHILD(ch, 2);
-	    }
-	    /* on exit, must guarantee that ch is a list_for */
-	    if (TYPE(ch) == list_iter)
-		ch = CHILD(ch, 0);
+    		asdl_seq_SET(ifs, j, ast_for_expr(c, CHILD(ch, 1)));
+    		if (NCH(ch) == 3)
+	    	    ch = CHILD(ch, 2);
+	        }
+	        /* on exit, must guarantee that ch is a list_for */
+	        if (TYPE(ch) == list_iter)
+		        ch = CHILD(ch, 0);
             lc->ifs = ifs;
-	}
-	asdl_seq_APPEND(listcomps, lc);
+	    }
+	    asdl_seq_SET(listcomps, i, lc);
     }
 
     return ListComp(elt, listcomps, LINENO(n), c->c_arena);
@@ -1075,6 +1068,7 @@ count_gen_ifs(const node *n)
 	}
 }
 
+/* TODO(jhylton): Combine with list comprehension code? */
 static expr_ty
 ast_for_genexp(struct compiling *c, const node *n)
 {
@@ -1146,7 +1140,7 @@ ast_for_genexp(struct compiling *c, const node *n)
                 expression = ast_for_expr(c, CHILD(ch, 1));
                 if (!expression)
                     return NULL;
-                asdl_seq_APPEND(ifs, expression);
+                asdl_seq_SET(ifs, j, expression);
                 if (NCH(ch) == 3)
                     ch = CHILD(ch, 2);
             }
@@ -1155,7 +1149,7 @@ ast_for_genexp(struct compiling *c, const node *n)
                 ch = CHILD(ch, 0);
             ge->ifs = ifs;
         }
-        asdl_seq_APPEND(genexps, ge);
+        asdl_seq_SET(genexps, i, ge);
     }
     
     return GeneratorExp(elt, genexps, LINENO(n), c->c_arena);
@@ -1948,24 +1942,23 @@ ast_for_print_stmt(struct compiling *c, const node *n)
     expr_ty dest = NULL, expression;
     asdl_seq *seq;
     bool nl;
-    int i, start = 1;
+    int i, j, start = 1;
 
     REQ(n, print_stmt);
     if (NCH(n) >= 2 && TYPE(CHILD(n, 1)) == RIGHTSHIFT) {
 	dest = ast_for_expr(c, CHILD(n, 2));
         if (!dest)
             return NULL;
-	start = 4;
+	    start = 4;
     }
     seq = asdl_seq_new((NCH(n) + 1 - start) / 2, c->c_arena);
     if (!seq)
-	return NULL;
-    for (i = start; i < NCH(n); i += 2) {
+    	return NULL;
+    for (i = start, j = 0; i < NCH(n); i += 2, ++j) {
         expression = ast_for_expr(c, CHILD(n, i));
         if (!expression)
             return NULL;
-
-	asdl_seq_APPEND(seq, expression);
+    	asdl_seq_SET(seq, j, expression);
     }
     nl = (TYPE(CHILD(n, NCH(n) - 1)) == COMMA) ? false : true;
     return Print(dest, seq, nl, LINENO(n), c->c_arena);
@@ -2252,14 +2245,15 @@ ast_for_import_stmt(struct compiling *c, const node *n)
             alias_ty import_alias = alias_for_import_name(c, n);
             if (!import_alias)
                 return NULL;
-	    asdl_seq_APPEND(aliases, import_alias);
+	        asdl_seq_SET(aliases, 0, import_alias);
         }
-
-	for (i = 0; i < NCH(n); i += 2) {
-            alias_ty import_alias = alias_for_import_name(c, CHILD(n, i));
-            if (!import_alias)
-                return NULL;
-	    asdl_seq_APPEND(aliases, import_alias);
+        else {
+    	    for (i = 0; i < NCH(n); i += 2) {
+                alias_ty import_alias = alias_for_import_name(c, CHILD(n, i));
+                if (!import_alias)
+                    return NULL;
+	            asdl_seq_SET(aliases, i / 2, import_alias);
+            }
         }
         if (mod != NULL)
             modname = mod->name;

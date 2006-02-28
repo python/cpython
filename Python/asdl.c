@@ -8,18 +8,12 @@ asdl_seq_new(int size, PyArena *arena)
 	size_t n = sizeof(asdl_seq) +
 			(size ? (sizeof(void *) * (size - 1)) : 0);
 
-	seq = (asdl_seq *)malloc(n);
+    seq = (asdl_seq *)PyArena_Malloc(arena, n);
 	if (!seq) {
 		PyErr_NoMemory();
 		return NULL;
 	}
-        PyArena_AddMallocPointer(arena, (void *)seq);
 	memset(seq, 0, n);
 	seq->size = size;
 	return seq;
-}
-
-void
-asdl_seq_free(asdl_seq *seq)
-{
 }
