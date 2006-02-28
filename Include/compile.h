@@ -23,6 +23,7 @@ typedef struct {
 #define FUTURE_GENERATORS "generators"
 #define FUTURE_DIVISION "division"
 #define FUTURE_ABSIMPORT "absolute_import"
+#define FUTURE_WITH_STATEMENT "with_statement"
 
 struct _mod; /* Declare the existence of this type */
 PyAPI_FUNC(PyCodeObject *) PyAST_Compile(struct _mod *, const char *,

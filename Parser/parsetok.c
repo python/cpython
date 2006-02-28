@@ -92,10 +92,19 @@ PyParser_ParseFileFlags(FILE *fp, const char *filename, grammar *g, int start,
 /* Parse input coming from the given tokenizer structure.
    Return error code. */
 
-#if 0 /* future keyword */
-static char yield_msg[] =
-"%s:%d: Warning: 'yield' will become a reserved keyword in the future\n";
-#endif
+static char with_msg[] =
+"%s:%d: Warning: 'with' will become a reserved keyword in Python 2.6\n";
+
+static char as_msg[] =
+"%s:%d: Warning: 'as' will become a reserved keyword in Python 2.6\n";
+
+static void
+warn(const char *msg, const char *filename, int lineno)
+{
+	if (filename == NULL)
+		filename = "<string>";
+	PySys_WriteStderr(msg, filename, lineno);
+}
 
 static node *
 parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
@@ -103,7 +112,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 {
 	parser_state *ps;
 	node *n;
-	int started = 0;
+	int started = 0, handling_import = 0, handling_with = 0;
 
 	if ((ps = PyParser_New(g, start)) == NULL) {
 		fprintf(stderr, "no mem for new parser\n");
@@ -111,9 +120,9 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 		PyTokenizer_Free(tok);
 		return NULL;
 	}
-#if 0 /* future keyword */
-	if (flags & PyPARSE_YIELD_IS_KEYWORD)
-		ps->p_generators = 1;
+#ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
+	if (flags & PyPARSE_WITH_IS_KEYWORD)
+		ps->p_flags |= CO_FUTURE_WITH_STATEMENT;
 #endif
 
 	for (;;) {
@@ -129,6 +138,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 		}
 		if (type == ENDMARKER && started) {
 			type = NEWLINE; /* Add an extra newline */
+			handling_with = handling_import = 0;
 			started = 0;
 			/* Add the right number of dedent tokens,
 			   except if a certain flag is given --
@@ -153,14 +163,27 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 			strncpy(str, a, len);
 		str[len] = '\0';
 
-#if 0 /* future keyword */
-		/* Warn about yield as NAME */
-		if (type == NAME && !ps->p_generators &&
-		    len == 5 && str[0] == 'y' && strcmp(str, "yield") == 0)
-			PySys_WriteStderr(yield_msg,
-					  err_ret->filename==NULL ?
-					  "<string>" : err_ret->filename,
-					  tok->lineno);
+#ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
+		/* This is only necessary to support the "as" warning, but
+		   we don't want to warn about "as" in import statements. */
+		if (type == NAME &&
+		    len == 6 && str[0] == 'i' && strcmp(str, "import") == 0)
+			handling_import = 1;
+
+		/* Warn about with as NAME */
+		if (type == NAME &&
+		    !(ps->p_flags & CO_FUTURE_WITH_STATEMENT)) {
+		    if (len == 4 && str[0] == 'w' && strcmp(str, "with") == 0)
+			warn(with_msg, err_ret->filename, tok->lineno);
+		    else if (!(handling_import || handling_with) &&
+			     len == 2 &&
+			     str[0] == 'a' && strcmp(str, "as") == 0)
+			warn(as_msg, err_ret->filename, tok->lineno);
+		}
+		else if (type == NAME &&
+			 (ps->p_flags & CO_FUTURE_WITH_STATEMENT) &&
+			 len == 4 && str[0] == 'w' && strcmp(str, "with") == 0)
+			handling_with = 1;
 #endif
 
 		if ((err_ret->error =

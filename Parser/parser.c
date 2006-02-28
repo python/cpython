@@ -79,8 +79,8 @@ PyParser_New(grammar *g, int start)
 	if (ps == NULL)
 		return NULL;
 	ps->p_grammar = g;
-#if 0 /* future keyword */
-	ps->p_generators = 0;
+#ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
+	ps->p_flags = 0;
 #endif
 	ps->p_tree = PyNode_New(start);
 	if (ps->p_tree == NULL) {
@@ -147,10 +147,10 @@ classify(parser_state *ps, int type, char *str)
 			if (l->lb_type == NAME && l->lb_str != NULL &&
 					l->lb_str[0] == s[0] &&
 					strcmp(l->lb_str, s) == 0) {
-#if 0 /* future keyword */
-				if (!ps->p_generators &&
-				    s[0] == 'y' &&
-				    strcmp(s, "yield") == 0)
+#ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
+				if (!(ps->p_flags & CO_FUTURE_WITH_STATEMENT) &&
+				    s[0] == 'w' &&
+				    strcmp(s, "with") == 0)
 					break; /* not a keyword */
 #endif
 				D(printf("It's a keyword\n"));
@@ -174,7 +174,7 @@ classify(parser_state *ps, int type, char *str)
 	return -1;
 }
 
-#if 0 /* future keyword */
+#ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
 static void
 future_hack(parser_state *ps)
 {
@@ -182,16 +182,27 @@ future_hack(parser_state *ps)
 	node *ch;
 	int i;
 
-	if (strcmp(STR(CHILD(n, 0)), "from") != 0)
+	/* from __future__ import ..., must have at least 4 children */
+	n = CHILD(n, 0);
+	if (NCH(n) < 4)
+		return;
+	ch = CHILD(n, 0);
+	if (STR(ch) == NULL || strcmp(STR(ch), "from") != 0)
 		return;
 	ch = CHILD(n, 1);
-	if (strcmp(STR(CHILD(ch, 0)), "__future__") != 0)
+	if (NCH(ch) == 1 && STR(CHILD(ch, 0)) &&
+	    strcmp(STR(CHILD(ch, 0)), "__future__") != 0)
 		return;
 	for (i = 3; i < NCH(n); i += 2) {
+		/* XXX: assume we don't have parentheses in import:
+		        from __future__ import (x, y, z)
+		*/
 		ch = CHILD(n, i);
+		if (NCH(ch) == 1)
+			ch = CHILD(ch, 0);
 		if (NCH(ch) >= 1 && TYPE(CHILD(ch, 0)) == NAME &&
-		    strcmp(STR(CHILD(ch, 0)), "generators") == 0) {
-			ps->p_generators = 1;
+		    strcmp(STR(CHILD(ch, 0)), "with_statement") == 0) {
+			ps->p_flags |= CO_FUTURE_WITH_STATEMENT;
 			break;
 		}
 	}
@@ -255,7 +266,7 @@ PyParser_AddToken(register parser_state *ps, register int type, char *str,
 						 "Direct pop.\n",
 						 d->d_name,
 						 ps->p_stack.s_top->s_state));
-#if 0 /* future keyword */
+#ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
 					if (d->d_name[0] == 'i' &&
 					    strcmp(d->d_name,
 						   "import_stmt") == 0)
@@ -273,7 +284,7 @@ PyParser_AddToken(register parser_state *ps, register int type, char *str,
 		}
 		
 		if (s->s_accept) {
-#if 0 /* future keyword */
+#ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
 			if (d->d_name[0] == 'i' &&
 			    strcmp(d->d_name, "import_stmt") == 0)
 				future_hack(ps);
