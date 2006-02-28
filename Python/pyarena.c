@@ -1,13 +1,6 @@
 #include "Python.h"
 #include "pyarena.h"
 
-/* An arena list is a linked list that can store PyObjects. */
-
-typedef struct _arena_list {
-	struct _arena_list *al_next;
-	void *al_pointer;
-} PyArenaList;
-
 /* A simple arena block structure */
 /* TODO(jhylton): Measurement to justify block size. */
 
@@ -19,37 +12,16 @@ typedef struct _block {
 	void *ab_mem;
 } block;
 
+/* The arena manages two kinds of memory, blocks of raw memory
+   and a list of PyObject* pointers.  PyObjects are decrefed
+   when the arena is freed.
+*/
+   
 struct _arena {
 	block *a_head;
 	block *a_cur;
-	PyArenaList *a_object_head;
-	PyArenaList *a_object_tail;
+        PyObject *a_objects;
 };
-
-static PyArenaList*
-PyArenaList_New(void) 
-{
-	PyArenaList *alist = (PyArenaList *)malloc(sizeof(PyArenaList));
-	if (!alist)
-		return NULL;
-
-	alist->al_next = NULL;
-	alist->al_pointer = NULL;
-	return alist;
-}
-
-static void
-PyArenaList_FreeObject(PyArenaList *alist) 
-{
-	while (alist) {
-		PyArenaList *prev;
-		Py_XDECREF((PyObject *)alist->al_pointer);
-		alist->al_pointer = NULL;
-		prev = alist;
-		alist = alist->al_next;
-		free(prev);
-	}
-}
 
 static block *
 block_new(size_t size)
@@ -110,8 +82,16 @@ PyArena_New()
 
 	arena->a_head = block_new(DEFAULT_BLOCK_SIZE);
 	arena->a_cur = arena->a_head;
-	arena->a_object_head = PyArenaList_New();
-	arena->a_object_tail = arena->a_object_head;
+        if (!arena->a_head) {
+                free((void *)arena);
+                return NULL;
+        }
+        arena->a_objects = PyList_New(16);
+        if (!arena->a_objects) {
+                block_free(arena->a_head);
+                free((void *)arena);
+                return NULL;
+        }
 	return arena;
 }
 
@@ -120,7 +100,8 @@ PyArena_Free(PyArena *arena)
 {
 	assert(arena);
 	block_free(arena->a_head);
-	PyArenaList_FreeObject(arena->a_object_head);
+        assert(arena->a_objects->ob_refcnt == 1);
+        Py_DECREF(arena->a_objects);
 	free(arena);
 }
 
@@ -138,12 +119,7 @@ PyArena_Malloc(PyArena *arena, size_t size)
 }
 
 int
-PyArena_AddPyObject(PyArena *arena, PyObject *pointer) 
+PyArena_AddPyObject(PyArena *arena, PyObject *obj) 
 {
-	PyArenaList *tail = arena->a_object_tail;
-	assert(pointer);
-	tail->al_next = PyArenaList_New();
-	tail->al_pointer = pointer;
-	arena->a_object_tail = tail->al_next;
-	return 1;
+        return PyList_Append(arena->a_objects, obj) >= 0;
 }
