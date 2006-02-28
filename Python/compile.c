@@ -2452,10 +2452,22 @@ compiler_import(struct compiler *c, stmt_ty s)
 	   XXX Perhaps change the representation to make this case simpler?
 	 */
 	int i, n = asdl_seq_LEN(s->v.Import.names);
+
 	for (i = 0; i < n; i++) {
 		alias_ty alias = asdl_seq_GET(s->v.Import.names, i);
 		int r;
+		PyObject *level;
 
+		if (c->c_flags && (c->c_flags->cf_flags & CO_FUTURE_ABSIMPORT))
+			level = PyInt_FromLong(0);
+		else
+			level = PyInt_FromLong(-1);
+
+		if (level == NULL)
+			return 0;
+
+		ADDOP_O(c, LOAD_CONST, level, consts);
+		Py_DECREF(level);
 		ADDOP_O(c, LOAD_CONST, Py_None, consts);
 		ADDOP_NAME(c, IMPORT_NAME, alias->name, names);
 
@@ -2488,8 +2500,21 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 	int i, n = asdl_seq_LEN(s->v.ImportFrom.names);
 
 	PyObject *names = PyTuple_New(n);
+	PyObject *level;
+	
 	if (!names)
 		return 0;
+
+	if (s->v.ImportFrom.level == 0 && c->c_flags &&
+	    !(c->c_flags->cf_flags & CO_FUTURE_ABSIMPORT))
+		level = PyInt_FromLong(-1);
+	else
+		level = PyInt_FromLong(s->v.ImportFrom.level);
+
+	if (!level) {
+		Py_DECREF(names);
+		return 0;
+	}
 
 	/* build up the names */
 	for (i = 0; i < n; i++) {
@@ -2509,6 +2534,8 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 		}
 	}
 
+	ADDOP_O(c, LOAD_CONST, level, consts);
+	Py_DECREF(level);
 	ADDOP_O(c, LOAD_CONST, names, consts);
 	Py_DECREF(names);
 	ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);

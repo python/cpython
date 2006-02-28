@@ -120,6 +120,7 @@ PyTypeObject *ImportFrom_type;
 char *ImportFrom_fields[]={
         "module",
         "names",
+        "level",
 };
 PyTypeObject *Exec_type;
 char *Exec_fields[]={
@@ -485,7 +486,7 @@ static int init_types(void)
         Import_type = make_type("Import", stmt_type, Import_fields, 1);
         if (!Import_type) return 0;
         ImportFrom_type = make_type("ImportFrom", stmt_type, ImportFrom_fields,
-                                    2);
+                                    3);
         if (!ImportFrom_type) return 0;
         Exec_type = make_type("Exec", stmt_type, Exec_fields, 3);
         if (!Exec_type) return 0;
@@ -1118,7 +1119,8 @@ Import(asdl_seq * names, int lineno, PyArena *arena)
 }
 
 stmt_ty
-ImportFrom(identifier module, asdl_seq * names, int lineno, PyArena *arena)
+ImportFrom(identifier module, asdl_seq * names, int level, int lineno, PyArena
+           *arena)
 {
         stmt_ty p;
         if (!module) {
@@ -1134,6 +1136,7 @@ ImportFrom(identifier module, asdl_seq * names, int lineno, PyArena *arena)
         p->kind = ImportFrom_kind;
         p->v.ImportFrom.module = module;
         p->v.ImportFrom.names = names;
+        p->v.ImportFrom.level = level;
         p->lineno = lineno;
         return p;
 }
@@ -2200,6 +2203,11 @@ ast2obj_stmt(void* _o)
                 value = ast2obj_list(o->v.ImportFrom.names, ast2obj_alias);
                 if (!value) goto failed;
                 if (PyObject_SetAttrString(result, "names", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_int(o->v.ImportFrom.level);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "level", value) == -1)
                         goto failed;
                 Py_DECREF(value);
                 break;

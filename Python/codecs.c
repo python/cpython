@@ -831,7 +831,7 @@ static int _PyCodecRegistry_Init(void)
 	interp->codec_error_registry == NULL)
 	Py_FatalError("can't initialize codec registry");
 
-    mod = PyImport_ImportModuleEx("encodings", NULL, NULL, NULL);
+    mod = PyImport_ImportModuleLevel("encodings", NULL, NULL, NULL, 0);
     if (mod == NULL) {
 	if (PyErr_ExceptionMatches(PyExc_ImportError)) {
 	    /* Ignore ImportErrors... this is done so that

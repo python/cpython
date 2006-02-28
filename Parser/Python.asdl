@@ -34,7 +34,7 @@ module Python version "$Revision$"
 	      | Assert(expr test, expr? msg)
 
 	      | Import(alias* names)
-	      | ImportFrom(identifier module, alias* names)
+	      | ImportFrom(identifier module, alias* names, int? level)
 
 	      -- Doesn't capture requirement that locals must be
 	      -- defined if globals is

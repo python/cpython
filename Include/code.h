@@ -45,6 +45,7 @@ typedef struct {
 #define CO_GENERATOR_ALLOWED    0x1000
 #endif
 #define CO_FUTURE_DIVISION    	0x2000
+#define CO_FUTURE_ABSIMPORT	0x4000 /* absolute import by default */
 
 #define CO_MAXBLOCKS 20 /* Max static block nesting within a function */
 

@@ -159,6 +159,7 @@ struct _stmt {
                 struct {
                         identifier module;
                         asdl_seq *names;
+                        int level;
                 } ImportFrom;
                 
                 struct {
@@ -371,8 +372,8 @@ stmt_ty TryFinally(asdl_seq * body, asdl_seq * finalbody, int lineno, PyArena
                    *arena);
 stmt_ty Assert(expr_ty test, expr_ty msg, int lineno, PyArena *arena);
 stmt_ty Import(asdl_seq * names, int lineno, PyArena *arena);
-stmt_ty ImportFrom(identifier module, asdl_seq * names, int lineno, PyArena
-                   *arena);
+stmt_ty ImportFrom(identifier module, asdl_seq * names, int level, int lineno,
+                   PyArena *arena);
 stmt_ty Exec(expr_ty body, expr_ty globals, expr_ty locals, int lineno, PyArena
              *arena);
 stmt_ty Global(asdl_seq * names, int lineno, PyArena *arena);

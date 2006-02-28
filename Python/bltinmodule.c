@@ -37,11 +37,13 @@ builtin___import__(PyObject *self, PyObject *args)
 	PyObject *globals = NULL;
 	PyObject *locals = NULL;
 	PyObject *fromlist = NULL;
+	int level = -1;
 
-	if (!PyArg_ParseTuple(args, "s|OOO:__import__",
-			&name, &globals, &locals, &fromlist))
+	if (!PyArg_ParseTuple(args, "s|OOOi:__import__",
+			&name, &globals, &locals, &fromlist, &level))
 		return NULL;
-	return PyImport_ImportModuleEx(name, globals, locals, fromlist);
+	return PyImport_ImportModuleLevel(name, globals, locals,
+					  fromlist, level);
 }
 
 PyDoc_STRVAR(import_doc,

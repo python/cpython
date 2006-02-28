@@ -2023,13 +2023,24 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 						"__import__ not found");
 				break;
 			}
+			v = POP();
 			u = TOP();
-			w = PyTuple_Pack(4,
-				    w,
-				    f->f_globals,
-				    f->f_locals == NULL ?
-					  Py_None : f->f_locals,
-				    u);
+			if (PyInt_AsLong(u) != -1 || PyErr_Occurred())
+				w = PyTuple_Pack(5,
+					    w,
+					    f->f_globals,
+					    f->f_locals == NULL ?
+						  Py_None : f->f_locals,
+					    v,
+					    u);
+			else
+				w = PyTuple_Pack(4,
+					    w,
+					    f->f_globals,
+					    f->f_locals == NULL ?
+						  Py_None : f->f_locals,
+					    v);
+			Py_DECREF(v);
 			Py_DECREF(u);
 			if (w == NULL) {
 				u = POP();
