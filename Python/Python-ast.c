@@ -3,350 +3,350 @@
 #include "Python.h"
 #include "Python-ast.h"
 
-PyTypeObject* AST_type;
-PyTypeObject *mod_type;
+static PyTypeObject* AST_type;
+static PyTypeObject *mod_type;
 static PyObject* ast2obj_mod(void*);
-PyTypeObject *Module_type;
-char *Module_fields[]={
+static PyTypeObject *Module_type;
+static char *Module_fields[]={
         "body",
 };
-PyTypeObject *Interactive_type;
-char *Interactive_fields[]={
+static PyTypeObject *Interactive_type;
+static char *Interactive_fields[]={
         "body",
 };
-PyTypeObject *Expression_type;
-char *Expression_fields[]={
+static PyTypeObject *Expression_type;
+static char *Expression_fields[]={
         "body",
 };
-PyTypeObject *Suite_type;
-char *Suite_fields[]={
+static PyTypeObject *Suite_type;
+static char *Suite_fields[]={
         "body",
 };
-PyTypeObject *stmt_type;
-char *stmt_attributes[] = {
+static PyTypeObject *stmt_type;
+static char *stmt_attributes[] = {
         "lineno",
 };
 static PyObject* ast2obj_stmt(void*);
-PyTypeObject *FunctionDef_type;
-char *FunctionDef_fields[]={
+static PyTypeObject *FunctionDef_type;
+static char *FunctionDef_fields[]={
         "name",
         "args",
         "body",
         "decorators",
 };
-PyTypeObject *ClassDef_type;
-char *ClassDef_fields[]={
+static PyTypeObject *ClassDef_type;
+static char *ClassDef_fields[]={
         "name",
         "bases",
         "body",
 };
-PyTypeObject *Return_type;
-char *Return_fields[]={
+static PyTypeObject *Return_type;
+static char *Return_fields[]={
         "value",
 };
-PyTypeObject *Delete_type;
-char *Delete_fields[]={
+static PyTypeObject *Delete_type;
+static char *Delete_fields[]={
         "targets",
 };
-PyTypeObject *Assign_type;
-char *Assign_fields[]={
+static PyTypeObject *Assign_type;
+static char *Assign_fields[]={
         "targets",
         "value",
 };
-PyTypeObject *AugAssign_type;
-char *AugAssign_fields[]={
+static PyTypeObject *AugAssign_type;
+static char *AugAssign_fields[]={
         "target",
         "op",
         "value",
 };
-PyTypeObject *Print_type;
-char *Print_fields[]={
+static PyTypeObject *Print_type;
+static char *Print_fields[]={
         "dest",
         "values",
         "nl",
 };
-PyTypeObject *For_type;
-char *For_fields[]={
+static PyTypeObject *For_type;
+static char *For_fields[]={
         "target",
         "iter",
         "body",
         "orelse",
 };
-PyTypeObject *While_type;
-char *While_fields[]={
+static PyTypeObject *While_type;
+static char *While_fields[]={
         "test",
         "body",
         "orelse",
 };
-PyTypeObject *If_type;
-char *If_fields[]={
+static PyTypeObject *If_type;
+static char *If_fields[]={
         "test",
         "body",
         "orelse",
 };
-PyTypeObject *With_type;
-char *With_fields[]={
+static PyTypeObject *With_type;
+static char *With_fields[]={
         "context_expr",
         "optional_vars",
         "body",
 };
-PyTypeObject *Raise_type;
-char *Raise_fields[]={
+static PyTypeObject *Raise_type;
+static char *Raise_fields[]={
         "type",
         "inst",
         "tback",
 };
-PyTypeObject *TryExcept_type;
-char *TryExcept_fields[]={
+static PyTypeObject *TryExcept_type;
+static char *TryExcept_fields[]={
         "body",
         "handlers",
         "orelse",
 };
-PyTypeObject *TryFinally_type;
-char *TryFinally_fields[]={
+static PyTypeObject *TryFinally_type;
+static char *TryFinally_fields[]={
         "body",
         "finalbody",
 };
-PyTypeObject *Assert_type;
-char *Assert_fields[]={
+static PyTypeObject *Assert_type;
+static char *Assert_fields[]={
         "test",
         "msg",
 };
-PyTypeObject *Import_type;
-char *Import_fields[]={
+static PyTypeObject *Import_type;
+static char *Import_fields[]={
         "names",
 };
-PyTypeObject *ImportFrom_type;
-char *ImportFrom_fields[]={
+static PyTypeObject *ImportFrom_type;
+static char *ImportFrom_fields[]={
         "module",
         "names",
         "level",
 };
-PyTypeObject *Exec_type;
-char *Exec_fields[]={
+static PyTypeObject *Exec_type;
+static char *Exec_fields[]={
         "body",
         "globals",
         "locals",
 };
-PyTypeObject *Global_type;
-char *Global_fields[]={
+static PyTypeObject *Global_type;
+static char *Global_fields[]={
         "names",
 };
-PyTypeObject *Expr_type;
-char *Expr_fields[]={
+static PyTypeObject *Expr_type;
+static char *Expr_fields[]={
         "value",
 };
-PyTypeObject *Pass_type;
-PyTypeObject *Break_type;
-PyTypeObject *Continue_type;
-PyTypeObject *expr_type;
-char *expr_attributes[] = {
+static PyTypeObject *Pass_type;
+static PyTypeObject *Break_type;
+static PyTypeObject *Continue_type;
+static PyTypeObject *expr_type;
+static char *expr_attributes[] = {
         "lineno",
 };
 static PyObject* ast2obj_expr(void*);
-PyTypeObject *BoolOp_type;
-char *BoolOp_fields[]={
+static PyTypeObject *BoolOp_type;
+static char *BoolOp_fields[]={
         "op",
         "values",
 };
-PyTypeObject *BinOp_type;
-char *BinOp_fields[]={
+static PyTypeObject *BinOp_type;
+static char *BinOp_fields[]={
         "left",
         "op",
         "right",
 };
-PyTypeObject *UnaryOp_type;
-char *UnaryOp_fields[]={
+static PyTypeObject *UnaryOp_type;
+static char *UnaryOp_fields[]={
         "op",
         "operand",
 };
-PyTypeObject *Lambda_type;
-char *Lambda_fields[]={
+static PyTypeObject *Lambda_type;
+static char *Lambda_fields[]={
         "args",
         "body",
 };
-PyTypeObject *IfExp_type;
-char *IfExp_fields[]={
+static PyTypeObject *IfExp_type;
+static char *IfExp_fields[]={
         "test",
         "body",
         "orelse",
 };
-PyTypeObject *Dict_type;
-char *Dict_fields[]={
+static PyTypeObject *Dict_type;
+static char *Dict_fields[]={
         "keys",
         "values",
 };
-PyTypeObject *ListComp_type;
-char *ListComp_fields[]={
+static PyTypeObject *ListComp_type;
+static char *ListComp_fields[]={
         "elt",
         "generators",
 };
-PyTypeObject *GeneratorExp_type;
-char *GeneratorExp_fields[]={
+static PyTypeObject *GeneratorExp_type;
+static char *GeneratorExp_fields[]={
         "elt",
         "generators",
 };
-PyTypeObject *Yield_type;
-char *Yield_fields[]={
+static PyTypeObject *Yield_type;
+static char *Yield_fields[]={
         "value",
 };
-PyTypeObject *Compare_type;
-char *Compare_fields[]={
+static PyTypeObject *Compare_type;
+static char *Compare_fields[]={
         "left",
         "ops",
         "comparators",
 };
-PyTypeObject *Call_type;
-char *Call_fields[]={
+static PyTypeObject *Call_type;
+static char *Call_fields[]={
         "func",
         "args",
         "keywords",
         "starargs",
         "kwargs",
 };
-PyTypeObject *Repr_type;
-char *Repr_fields[]={
+static PyTypeObject *Repr_type;
+static char *Repr_fields[]={
         "value",
 };
-PyTypeObject *Num_type;
-char *Num_fields[]={
+static PyTypeObject *Num_type;
+static char *Num_fields[]={
         "n",
 };
-PyTypeObject *Str_type;
-char *Str_fields[]={
+static PyTypeObject *Str_type;
+static char *Str_fields[]={
         "s",
 };
-PyTypeObject *Attribute_type;
-char *Attribute_fields[]={
+static PyTypeObject *Attribute_type;
+static char *Attribute_fields[]={
         "value",
         "attr",
         "ctx",
 };
-PyTypeObject *Subscript_type;
-char *Subscript_fields[]={
+static PyTypeObject *Subscript_type;
+static char *Subscript_fields[]={
         "value",
         "slice",
         "ctx",
 };
-PyTypeObject *Name_type;
-char *Name_fields[]={
+static PyTypeObject *Name_type;
+static char *Name_fields[]={
         "id",
         "ctx",
 };
-PyTypeObject *List_type;
-char *List_fields[]={
+static PyTypeObject *List_type;
+static char *List_fields[]={
         "elts",
         "ctx",
 };
-PyTypeObject *Tuple_type;
-char *Tuple_fields[]={
+static PyTypeObject *Tuple_type;
+static char *Tuple_fields[]={
         "elts",
         "ctx",
 };
-PyTypeObject *expr_context_type;
+static PyTypeObject *expr_context_type;
 static PyObject *Load_singleton, *Store_singleton, *Del_singleton,
 *AugLoad_singleton, *AugStore_singleton, *Param_singleton;
 static PyObject* ast2obj_expr_context(expr_context_ty);
-PyTypeObject *Load_type;
-PyTypeObject *Store_type;
-PyTypeObject *Del_type;
-PyTypeObject *AugLoad_type;
-PyTypeObject *AugStore_type;
-PyTypeObject *Param_type;
-PyTypeObject *slice_type;
+static PyTypeObject *Load_type;
+static PyTypeObject *Store_type;
+static PyTypeObject *Del_type;
+static PyTypeObject *AugLoad_type;
+static PyTypeObject *AugStore_type;
+static PyTypeObject *Param_type;
+static PyTypeObject *slice_type;
 static PyObject* ast2obj_slice(void*);
-PyTypeObject *Ellipsis_type;
-PyTypeObject *Slice_type;
-char *Slice_fields[]={
+static PyTypeObject *Ellipsis_type;
+static PyTypeObject *Slice_type;
+static char *Slice_fields[]={
         "lower",
         "upper",
         "step",
 };
-PyTypeObject *ExtSlice_type;
-char *ExtSlice_fields[]={
+static PyTypeObject *ExtSlice_type;
+static char *ExtSlice_fields[]={
         "dims",
 };
-PyTypeObject *Index_type;
-char *Index_fields[]={
+static PyTypeObject *Index_type;
+static char *Index_fields[]={
         "value",
 };
-PyTypeObject *boolop_type;
+static PyTypeObject *boolop_type;
 static PyObject *And_singleton, *Or_singleton;
 static PyObject* ast2obj_boolop(boolop_ty);
-PyTypeObject *And_type;
-PyTypeObject *Or_type;
-PyTypeObject *operator_type;
+static PyTypeObject *And_type;
+static PyTypeObject *Or_type;
+static PyTypeObject *operator_type;
 static PyObject *Add_singleton, *Sub_singleton, *Mult_singleton,
 *Div_singleton, *Mod_singleton, *Pow_singleton, *LShift_singleton,
 *RShift_singleton, *BitOr_singleton, *BitXor_singleton, *BitAnd_singleton,
 *FloorDiv_singleton;
 static PyObject* ast2obj_operator(operator_ty);
-PyTypeObject *Add_type;
-PyTypeObject *Sub_type;
-PyTypeObject *Mult_type;
-PyTypeObject *Div_type;
-PyTypeObject *Mod_type;
-PyTypeObject *Pow_type;
-PyTypeObject *LShift_type;
-PyTypeObject *RShift_type;
-PyTypeObject *BitOr_type;
-PyTypeObject *BitXor_type;
-PyTypeObject *BitAnd_type;
-PyTypeObject *FloorDiv_type;
-PyTypeObject *unaryop_type;
+static PyTypeObject *Add_type;
+static PyTypeObject *Sub_type;
+static PyTypeObject *Mult_type;
+static PyTypeObject *Div_type;
+static PyTypeObject *Mod_type;
+static PyTypeObject *Pow_type;
+static PyTypeObject *LShift_type;
+static PyTypeObject *RShift_type;
+static PyTypeObject *BitOr_type;
+static PyTypeObject *BitXor_type;
+static PyTypeObject *BitAnd_type;
+static PyTypeObject *FloorDiv_type;
+static PyTypeObject *unaryop_type;
 static PyObject *Invert_singleton, *Not_singleton, *UAdd_singleton,
 *USub_singleton;
 static PyObject* ast2obj_unaryop(unaryop_ty);
-PyTypeObject *Invert_type;
-PyTypeObject *Not_type;
-PyTypeObject *UAdd_type;
-PyTypeObject *USub_type;
-PyTypeObject *cmpop_type;
+static PyTypeObject *Invert_type;
+static PyTypeObject *Not_type;
+static PyTypeObject *UAdd_type;
+static PyTypeObject *USub_type;
+static PyTypeObject *cmpop_type;
 static PyObject *Eq_singleton, *NotEq_singleton, *Lt_singleton, *LtE_singleton,
 *Gt_singleton, *GtE_singleton, *Is_singleton, *IsNot_singleton, *In_singleton,
 *NotIn_singleton;
 static PyObject* ast2obj_cmpop(cmpop_ty);
-PyTypeObject *Eq_type;
-PyTypeObject *NotEq_type;
-PyTypeObject *Lt_type;
-PyTypeObject *LtE_type;
-PyTypeObject *Gt_type;
-PyTypeObject *GtE_type;
-PyTypeObject *Is_type;
-PyTypeObject *IsNot_type;
-PyTypeObject *In_type;
-PyTypeObject *NotIn_type;
-PyTypeObject *comprehension_type;
+static PyTypeObject *Eq_type;
+static PyTypeObject *NotEq_type;
+static PyTypeObject *Lt_type;
+static PyTypeObject *LtE_type;
+static PyTypeObject *Gt_type;
+static PyTypeObject *GtE_type;
+static PyTypeObject *Is_type;
+static PyTypeObject *IsNot_type;
+static PyTypeObject *In_type;
+static PyTypeObject *NotIn_type;
+static PyTypeObject *comprehension_type;
 static PyObject* ast2obj_comprehension(void*);
-char *comprehension_fields[]={
+static char *comprehension_fields[]={
         "target",
         "iter",
         "ifs",
 };
-PyTypeObject *excepthandler_type;
+static PyTypeObject *excepthandler_type;
 static PyObject* ast2obj_excepthandler(void*);
-char *excepthandler_fields[]={
+static char *excepthandler_fields[]={
         "type",
         "name",
         "body",
 };
-PyTypeObject *arguments_type;
+static PyTypeObject *arguments_type;
 static PyObject* ast2obj_arguments(void*);
-char *arguments_fields[]={
+static char *arguments_fields[]={
         "args",
         "vararg",
         "kwarg",
         "defaults",
 };
-PyTypeObject *keyword_type;
+static PyTypeObject *keyword_type;
 static PyObject* ast2obj_keyword(void*);
-char *keyword_fields[]={
+static char *keyword_fields[]={
         "arg",
         "value",
 };
-PyTypeObject *alias_type;
+static PyTypeObject *alias_type;
 static PyObject* ast2obj_alias(void*);
-char *alias_fields[]={
+static char *alias_fields[]={
         "name",
         "asname",
 };

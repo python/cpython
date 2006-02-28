@@ -347,18 +347,18 @@ class MarshalPrototypeVisitor(PickleVisitor):
 class PyTypesDeclareVisitor(PickleVisitor):
 
     def visitProduct(self, prod, name):
-        self.emit("PyTypeObject *%s_type;" % name, 0)
+        self.emit("static PyTypeObject *%s_type;" % name, 0)
         self.emit("static PyObject* ast2obj_%s(void*);" % name, 0)
         if prod.fields:
-            self.emit("char *%s_fields[]={" % name,0)
+            self.emit("static char *%s_fields[]={" % name,0)
             for f in prod.fields:
                 self.emit('"%s",' % f.name, 1)
             self.emit("};", 0)
 
     def visitSum(self, sum, name):
-        self.emit("PyTypeObject *%s_type;" % name, 0)
+        self.emit("static PyTypeObject *%s_type;" % name, 0)
         if sum.attributes:
-            self.emit("char *%s_attributes[] = {" % name, 0)
+            self.emit("static char *%s_attributes[] = {" % name, 0)
             for a in sum.attributes:
                 self.emit('"%s",' % a.name, 1)
             self.emit("};", 0)
@@ -375,9 +375,9 @@ class PyTypesDeclareVisitor(PickleVisitor):
             self.visitConstructor(t, name)
 
     def visitConstructor(self, cons, name):
-        self.emit("PyTypeObject *%s_type;" % cons.name, 0)
+        self.emit("static PyTypeObject *%s_type;" % cons.name, 0)
         if cons.fields:
-            self.emit("char *%s_fields[]={" % cons.name, 0)
+            self.emit("static char *%s_fields[]={" % cons.name, 0)
             for t in cons.fields:
                 self.emit('"%s",' % t.name, 1)
             self.emit("};",0)
@@ -736,7 +736,7 @@ def main(srcfile):
     print >> f, '#include "Python.h"'
     print >> f, '#include "%s-ast.h"' % mod.name
     print >> f
-    print >>f, "PyTypeObject* AST_type;"
+    print >>f, "static PyTypeObject* AST_type;"
     v = ChainOfVisitors(
                         PyTypesDeclareVisitor(f),
                         PyTypesVisitor(f),
