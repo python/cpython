@@ -31,8 +31,8 @@ PyAPI_FUNC(int) Py_IsInitialized(void);
 PyAPI_FUNC(PyThreadState *) Py_NewInterpreter(void);
 PyAPI_FUNC(void) Py_EndInterpreter(PyThreadState *);
 
-PyAPI_FUNC(int) PyRun_AnyFileFlags(FILE *, char *, PyCompilerFlags *);
-PyAPI_FUNC(int) PyRun_AnyFileExFlags(FILE *, char *, int, PyCompilerFlags *);
+PyAPI_FUNC(int) PyRun_AnyFileFlags(FILE *, const char *, PyCompilerFlags *);
+PyAPI_FUNC(int) PyRun_AnyFileExFlags(FILE *, const char *, int, PyCompilerFlags *);
 PyAPI_FUNC(int) PyRun_SimpleStringFlags(const char *, PyCompilerFlags *);
 PyAPI_FUNC(int) PyRun_SimpleFileExFlags(FILE *, const char *, int, PyCompilerFlags *);
 PyAPI_FUNC(int) PyRun_InteractiveOneFlags(FILE *, const char *, PyCompilerFlags *);
