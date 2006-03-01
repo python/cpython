@@ -250,7 +250,7 @@ typedef union _gc_head {
 	struct {
 		union _gc_head *gc_next;
 		union _gc_head *gc_prev;
-		int gc_refs;
+		Py_ssize_t gc_refs;
 	} gc;
 	long double dummy;  /* force worst-case alignment */
 } PyGC_Head;
