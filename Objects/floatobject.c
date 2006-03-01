@@ -1326,9 +1326,13 @@ PyFloat_Fini(void)
 				    p->ob_refcnt != 0) {
 					char buf[100];
 					PyFloat_AsString(buf, p);
+					/* XXX(twouters) cast refcount to
+					   long until %zd is universally
+					   available
+					 */
 					fprintf(stderr,
-			     "#   <float at %p, refcnt=%d, val=%s>\n",
-						p, p->ob_refcnt, buf);
+			     "#   <float at %p, refcnt=%ld, val=%s>\n",
+						p, (long)p->ob_refcnt, buf);
 				}
 			}
 			list = list->next;

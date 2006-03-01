@@ -1220,9 +1220,14 @@ PyInt_Fini(void)
 			     i < N_INTOBJECTS;
 			     i++, p++) {
 				if (PyInt_CheckExact(p) && p->ob_refcnt != 0)
+					/* XXX(twouters) cast refcount to
+					   long until %zd is universally
+					   available
+					 */
 					fprintf(stderr,
-				"#   <int at %p, refcnt=%d, val=%ld>\n",
-						p, p->ob_refcnt, p->ob_ival);
+				"#   <int at %p, refcnt=%ld, val=%ld>\n",
+						p, (long)p->ob_refcnt,
+						p->ob_ival);
 			}
 			list = list->next;
 		}
