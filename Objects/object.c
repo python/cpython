@@ -138,9 +138,11 @@ _Py_NegativeRefcount(const char *fname, int lineno, PyObject *op)
 {
 	char buf[300];
 
+	/* XXX(twouters) cast refcount to long until %zd is universally
+	   available */
 	PyOS_snprintf(buf, sizeof(buf),
-		      "%s:%i object at %p has negative ref count %i",
-		      fname, lineno, op, op->ob_refcnt);
+		      "%s:%i object at %p has negative ref count %ld",
+		      fname, lineno, op, (long)op->ob_refcnt);
 	Py_FatalError(buf);
 }
 
@@ -233,8 +235,10 @@ internal_print(PyObject *op, FILE *fp, int flags, int nesting)
 	}
 	else {
 		if (op->ob_refcnt <= 0)
-			fprintf(fp, "<refcnt %u at %p>",
-				op->ob_refcnt, op);
+			/* XXX(twouters) cast refcount to long until %zd is
+			   universally available */
+			fprintf(fp, "<refcnt %ld at %p>",
+				(long)op->ob_refcnt, op);
 		else if (op->ob_type->tp_print == NULL) {
 			PyObject *s;
 			if (flags & Py_PRINT_RAW)
@@ -277,12 +281,14 @@ void _PyObject_Dump(PyObject* op)
 	else {
 		fprintf(stderr, "object  : ");
 		(void)PyObject_Print(op, stderr, 0);
+		/* XXX(twouters) cast refcount to long until %zd is
+		   universally available */
 		fprintf(stderr, "\n"
 			"type    : %s\n"
-			"refcount: %d\n"
+			"refcount: %ld\n"
 			"address : %p\n",
 			op->ob_type==NULL ? "NULL" : op->ob_type->tp_name,
-			op->ob_refcnt,
+			(long)op->ob_refcnt,
 			op);
 	}
 }
@@ -1893,7 +1899,9 @@ _Py_PrintReferences(FILE *fp)
 	PyObject *op;
 	fprintf(fp, "Remaining objects:\n");
 	for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
-		fprintf(fp, "%p [%d] ", op, op->ob_refcnt);
+		/* XXX(twouters) cast refcount to long until %zd is
+		   universally available */
+		fprintf(fp, "%p [%ld] ", op, (long)op->ob_refcnt);
 		if (PyObject_Print(op, fp, 0) != 0)
 			PyErr_Clear();
 		putc('\n', fp);
@@ -1909,7 +1917,9 @@ _Py_PrintReferenceAddresses(FILE *fp)
 	PyObject *op;
 	fprintf(fp, "Remaining object addresses:\n");
 	for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
-		fprintf(fp, "%p [%d] %s\n", op, op->ob_refcnt,
+		/* XXX(twouters) cast refcount to long until %zd is
+		   universally available */
+		fprintf(fp, "%p [%ld] %s\n", op, (long)op->ob_refcnt,
 					    op->ob_type->tp_name);
 }
 
