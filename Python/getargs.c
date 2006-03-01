@@ -849,7 +849,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 						  arg, msgbuf, bufsize);
 			if (*format == '#') {
 				FETCH_SIZE;
-				assert(0); // redundant with if-case
+				assert(0); /* XXX redundant with if-case */
 				if (arg == Py_None)
 					*q = 0;
 				else
