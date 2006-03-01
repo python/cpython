@@ -77,7 +77,7 @@ whose size is determined when the object is allocated.
 /* PyObject_HEAD defines the initial segment of every PyObject. */
 #define PyObject_HEAD			\
 	_PyObject_HEAD_EXTRA		\
-	int ob_refcnt;			\
+	Py_ssize_t ob_refcnt;		\
 	struct _typeobject *ob_type;
 
 #define PyObject_HEAD_INIT(type)	\
@@ -333,9 +333,9 @@ typedef struct _typeobject {
 
 #ifdef COUNT_ALLOCS
 	/* these must be last and never explicitly initialized */
-	int tp_allocs;
-	int tp_frees;
-	int tp_maxalloc;
+	Py_ssize_t tp_allocs;
+	Py_ssize_t tp_frees;
+	Py_ssize_t tp_maxalloc;
 	struct _typeobject *tp_next;
 #endif
 } PyTypeObject;
