@@ -799,7 +799,6 @@ find_syllable(const char *str, int *len, int *pos, int count, int column)
     }
     if (*len == -1) {
 	*len = 0;
-	*pos = -1;
     }
 }
 
@@ -812,7 +811,7 @@ _getcode(const char* name, int namelen, Py_UCS4* code)
 
     /* Check for hangul syllables. */
     if (strncmp(name, "HANGUL SYLLABLE ", 16) == 0) {
-	int L, V, T, len;
+	int len, L = -1, V = -1, T = -1;
 	const char *pos = name + 16;
 	find_syllable(pos, &len, &L, LCount, 0);
 	pos += len;
