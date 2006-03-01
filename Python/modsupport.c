@@ -71,13 +71,17 @@ Py_InitModule4(const char *name, PyMethodDef *methods, const char *doc,
 				PyErr_SetString(PyExc_ValueError,
 						"module functions cannot set"
 						" METH_CLASS or METH_STATIC");
+				Py_DECREF(n);
 				return NULL;
 			}
 			v = PyCFunction_NewEx(ml, passthrough, n);
-			if (v == NULL)
+			if (v == NULL) {
+				Py_DECREF(n);
 				return NULL;
+			}
 			if (PyDict_SetItemString(d, ml->ml_name, v) != 0) {
 				Py_DECREF(v);
+				Py_DECREF(n);
 				return NULL;
 			}
 			Py_DECREF(v);
