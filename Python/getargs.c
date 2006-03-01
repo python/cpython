@@ -1662,9 +1662,9 @@ err:
 
 
 int
-PyArg_UnpackTuple(PyObject *args, const char *name, int min, int max, ...)
+PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t max, ...)
 {
-	int i, l;
+	Py_ssize_t i, l;
 	PyObject **o;
 	va_list vargs;
 
