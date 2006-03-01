@@ -130,6 +130,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 		int type;
 		size_t len;
 		char *str;
+		int col_offset;
 
 		type = PyTokenizer_Get(tok, &a, &b);
 		if (type == ERRORTOKEN) {
@@ -185,9 +186,13 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 			 len == 4 && str[0] == 'w' && strcmp(str, "with") == 0)
 			handling_with = 1;
 #endif
-
+		if (a >= tok->line_start)
+			col_offset = a - tok->line_start;
+		else
+			col_offset = -1;
+			
 		if ((err_ret->error =
-		     PyParser_AddToken(ps, (int)type, str, tok->lineno,
+		     PyParser_AddToken(ps, (int)type, str, tok->lineno, col_offset,
 				       &(err_ret->expected))) != E_OK) {
 			if (err_ret->error != E_DONE)
 				PyObject_FREE(str);

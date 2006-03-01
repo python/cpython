@@ -25,6 +25,7 @@ static char *Suite_fields[]={
 static PyTypeObject *stmt_type;
 static char *stmt_attributes[] = {
         "lineno",
+        "col_offset",
 };
 static PyObject* ast2obj_stmt(void*);
 static PyTypeObject *FunctionDef_type;
@@ -142,6 +143,7 @@ static PyTypeObject *Continue_type;
 static PyTypeObject *expr_type;
 static char *expr_attributes[] = {
         "lineno",
+        "col_offset",
 };
 static PyObject* ast2obj_expr(void*);
 static PyTypeObject *BoolOp_type;
@@ -450,7 +452,7 @@ static int init_types(void)
         if (!Suite_type) return 0;
         stmt_type = make_type("stmt", AST_type, NULL, 0);
         if (!stmt_type) return 0;
-        if (!add_attributes(stmt_type, stmt_attributes, 1)) return 0;
+        if (!add_attributes(stmt_type, stmt_attributes, 2)) return 0;
         FunctionDef_type = make_type("FunctionDef", stmt_type,
                                      FunctionDef_fields, 4);
         if (!FunctionDef_type) return 0;
@@ -502,7 +504,7 @@ static int init_types(void)
         if (!Continue_type) return 0;
         expr_type = make_type("expr", AST_type, NULL, 0);
         if (!expr_type) return 0;
-        if (!add_attributes(expr_type, expr_attributes, 1)) return 0;
+        if (!add_attributes(expr_type, expr_attributes, 2)) return 0;
         BoolOp_type = make_type("BoolOp", expr_type, BoolOp_fields, 2);
         if (!BoolOp_type) return 0;
         BinOp_type = make_type("BinOp", expr_type, BinOp_fields, 3);
@@ -783,7 +785,7 @@ Suite(asdl_seq * body, PyArena *arena)
 
 stmt_ty
 FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
-            decorators, int lineno, PyArena *arena)
+            decorators, int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         if (!name) {
@@ -807,12 +809,13 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
         p->v.FunctionDef.body = body;
         p->v.FunctionDef.decorators = decorators;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int lineno,
-         PyArena *arena)
+ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int lineno, int
+         col_offset, PyArena *arena)
 {
         stmt_ty p;
         if (!name) {
@@ -830,11 +833,12 @@ ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int lineno,
         p->v.ClassDef.bases = bases;
         p->v.ClassDef.body = body;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-Return(expr_ty value, int lineno, PyArena *arena)
+Return(expr_ty value, int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -845,11 +849,12 @@ Return(expr_ty value, int lineno, PyArena *arena)
         p->kind = Return_kind;
         p->v.Return.value = value;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-Delete(asdl_seq * targets, int lineno, PyArena *arena)
+Delete(asdl_seq * targets, int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -860,11 +865,13 @@ Delete(asdl_seq * targets, int lineno, PyArena *arena)
         p->kind = Delete_kind;
         p->v.Delete.targets = targets;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-Assign(asdl_seq * targets, expr_ty value, int lineno, PyArena *arena)
+Assign(asdl_seq * targets, expr_ty value, int lineno, int col_offset, PyArena
+       *arena)
 {
         stmt_ty p;
         if (!value) {
@@ -881,12 +888,13 @@ Assign(asdl_seq * targets, expr_ty value, int lineno, PyArena *arena)
         p->v.Assign.targets = targets;
         p->v.Assign.value = value;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno, PyArena
-          *arena)
+AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno, int
+          col_offset, PyArena *arena)
 {
         stmt_ty p;
         if (!target) {
@@ -914,11 +922,13 @@ AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno, PyArena
         p->v.AugAssign.op = op;
         p->v.AugAssign.value = value;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-Print(expr_ty dest, asdl_seq * values, bool nl, int lineno, PyArena *arena)
+Print(expr_ty dest, asdl_seq * values, bool nl, int lineno, int col_offset,
+      PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -931,12 +941,13 @@ Print(expr_ty dest, asdl_seq * values, bool nl, int lineno, PyArena *arena)
         p->v.Print.values = values;
         p->v.Print.nl = nl;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
 For(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse, int
-    lineno, PyArena *arena)
+    lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         if (!target) {
@@ -960,12 +971,13 @@ For(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse, int
         p->v.For.body = body;
         p->v.For.orelse = orelse;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, PyArena
-      *arena)
+While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, int
+      col_offset, PyArena *arena)
 {
         stmt_ty p;
         if (!test) {
@@ -983,11 +995,13 @@ While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, PyArena
         p->v.While.body = body;
         p->v.While.orelse = orelse;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, PyArena *arena)
+If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, int
+   col_offset, PyArena *arena)
 {
         stmt_ty p;
         if (!test) {
@@ -1005,12 +1019,13 @@ If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, PyArena *arena)
         p->v.If.body = body;
         p->v.If.orelse = orelse;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
 With(expr_ty context_expr, expr_ty optional_vars, asdl_seq * body, int lineno,
-     PyArena *arena)
+     int col_offset, PyArena *arena)
 {
         stmt_ty p;
         if (!context_expr) {
@@ -1028,11 +1043,13 @@ With(expr_ty context_expr, expr_ty optional_vars, asdl_seq * body, int lineno,
         p->v.With.optional_vars = optional_vars;
         p->v.With.body = body;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-Raise(expr_ty type, expr_ty inst, expr_ty tback, int lineno, PyArena *arena)
+Raise(expr_ty type, expr_ty inst, expr_ty tback, int lineno, int col_offset,
+      PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1045,12 +1062,13 @@ Raise(expr_ty type, expr_ty inst, expr_ty tback, int lineno, PyArena *arena)
         p->v.Raise.inst = inst;
         p->v.Raise.tback = tback;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
 TryExcept(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse, int lineno,
-          PyArena *arena)
+          int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1063,11 +1081,13 @@ TryExcept(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse, int lineno,
         p->v.TryExcept.handlers = handlers;
         p->v.TryExcept.orelse = orelse;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-TryFinally(asdl_seq * body, asdl_seq * finalbody, int lineno, PyArena *arena)
+TryFinally(asdl_seq * body, asdl_seq * finalbody, int lineno, int col_offset,
+           PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1079,11 +1099,12 @@ TryFinally(asdl_seq * body, asdl_seq * finalbody, int lineno, PyArena *arena)
         p->v.TryFinally.body = body;
         p->v.TryFinally.finalbody = finalbody;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-Assert(expr_ty test, expr_ty msg, int lineno, PyArena *arena)
+Assert(expr_ty test, expr_ty msg, int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         if (!test) {
@@ -1100,11 +1121,12 @@ Assert(expr_ty test, expr_ty msg, int lineno, PyArena *arena)
         p->v.Assert.test = test;
         p->v.Assert.msg = msg;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-Import(asdl_seq * names, int lineno, PyArena *arena)
+Import(asdl_seq * names, int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1115,12 +1137,13 @@ Import(asdl_seq * names, int lineno, PyArena *arena)
         p->kind = Import_kind;
         p->v.Import.names = names;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-ImportFrom(identifier module, asdl_seq * names, int level, int lineno, PyArena
-           *arena)
+ImportFrom(identifier module, asdl_seq * names, int level, int lineno, int
+           col_offset, PyArena *arena)
 {
         stmt_ty p;
         if (!module) {
@@ -1138,11 +1161,13 @@ ImportFrom(identifier module, asdl_seq * names, int level, int lineno, PyArena
         p->v.ImportFrom.names = names;
         p->v.ImportFrom.level = level;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-Exec(expr_ty body, expr_ty globals, expr_ty locals, int lineno, PyArena *arena)
+Exec(expr_ty body, expr_ty globals, expr_ty locals, int lineno, int col_offset,
+     PyArena *arena)
 {
         stmt_ty p;
         if (!body) {
@@ -1160,11 +1185,12 @@ Exec(expr_ty body, expr_ty globals, expr_ty locals, int lineno, PyArena *arena)
         p->v.Exec.globals = globals;
         p->v.Exec.locals = locals;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-Global(asdl_seq * names, int lineno, PyArena *arena)
+Global(asdl_seq * names, int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1175,11 +1201,12 @@ Global(asdl_seq * names, int lineno, PyArena *arena)
         p->kind = Global_kind;
         p->v.Global.names = names;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-Expr(expr_ty value, int lineno, PyArena *arena)
+Expr(expr_ty value, int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         if (!value) {
@@ -1195,11 +1222,12 @@ Expr(expr_ty value, int lineno, PyArena *arena)
         p->kind = Expr_kind;
         p->v.Expr.value = value;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-Pass(int lineno, PyArena *arena)
+Pass(int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1209,11 +1237,12 @@ Pass(int lineno, PyArena *arena)
         }
         p->kind = Pass_kind;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-Break(int lineno, PyArena *arena)
+Break(int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1223,11 +1252,12 @@ Break(int lineno, PyArena *arena)
         }
         p->kind = Break_kind;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 stmt_ty
-Continue(int lineno, PyArena *arena)
+Continue(int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1237,11 +1267,13 @@ Continue(int lineno, PyArena *arena)
         }
         p->kind = Continue_kind;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-BoolOp(boolop_ty op, asdl_seq * values, int lineno, PyArena *arena)
+BoolOp(boolop_ty op, asdl_seq * values, int lineno, int col_offset, PyArena
+       *arena)
 {
         expr_ty p;
         if (!op) {
@@ -1258,11 +1290,13 @@ BoolOp(boolop_ty op, asdl_seq * values, int lineno, PyArena *arena)
         p->v.BoolOp.op = op;
         p->v.BoolOp.values = values;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, PyArena *arena)
+BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, int col_offset,
+      PyArena *arena)
 {
         expr_ty p;
         if (!left) {
@@ -1290,11 +1324,13 @@ BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, PyArena *arena)
         p->v.BinOp.op = op;
         p->v.BinOp.right = right;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-UnaryOp(unaryop_ty op, expr_ty operand, int lineno, PyArena *arena)
+UnaryOp(unaryop_ty op, expr_ty operand, int lineno, int col_offset, PyArena
+        *arena)
 {
         expr_ty p;
         if (!op) {
@@ -1316,11 +1352,13 @@ UnaryOp(unaryop_ty op, expr_ty operand, int lineno, PyArena *arena)
         p->v.UnaryOp.op = op;
         p->v.UnaryOp.operand = operand;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-Lambda(arguments_ty args, expr_ty body, int lineno, PyArena *arena)
+Lambda(arguments_ty args, expr_ty body, int lineno, int col_offset, PyArena
+       *arena)
 {
         expr_ty p;
         if (!args) {
@@ -1342,11 +1380,13 @@ Lambda(arguments_ty args, expr_ty body, int lineno, PyArena *arena)
         p->v.Lambda.args = args;
         p->v.Lambda.body = body;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, PyArena *arena)
+IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, int col_offset,
+      PyArena *arena)
 {
         expr_ty p;
         if (!test) {
@@ -1374,11 +1414,13 @@ IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, PyArena *arena)
         p->v.IfExp.body = body;
         p->v.IfExp.orelse = orelse;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-Dict(asdl_seq * keys, asdl_seq * values, int lineno, PyArena *arena)
+Dict(asdl_seq * keys, asdl_seq * values, int lineno, int col_offset, PyArena
+     *arena)
 {
         expr_ty p;
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1390,11 +1432,13 @@ Dict(asdl_seq * keys, asdl_seq * values, int lineno, PyArena *arena)
         p->v.Dict.keys = keys;
         p->v.Dict.values = values;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-ListComp(expr_ty elt, asdl_seq * generators, int lineno, PyArena *arena)
+ListComp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset,
+         PyArena *arena)
 {
         expr_ty p;
         if (!elt) {
@@ -1411,11 +1455,13 @@ ListComp(expr_ty elt, asdl_seq * generators, int lineno, PyArena *arena)
         p->v.ListComp.elt = elt;
         p->v.ListComp.generators = generators;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, PyArena *arena)
+GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset,
+             PyArena *arena)
 {
         expr_ty p;
         if (!elt) {
@@ -1432,11 +1478,12 @@ GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, PyArena *arena)
         p->v.GeneratorExp.elt = elt;
         p->v.GeneratorExp.generators = generators;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-Yield(expr_ty value, int lineno, PyArena *arena)
+Yield(expr_ty value, int lineno, int col_offset, PyArena *arena)
 {
         expr_ty p;
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1447,12 +1494,13 @@ Yield(expr_ty value, int lineno, PyArena *arena)
         p->kind = Yield_kind;
         p->v.Yield.value = value;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-Compare(expr_ty left, asdl_seq * ops, asdl_seq * comparators, int lineno,
-        PyArena *arena)
+Compare(expr_ty left, asdl_seq * ops, asdl_seq * comparators, int lineno, int
+        col_offset, PyArena *arena)
 {
         expr_ty p;
         if (!left) {
@@ -1470,12 +1518,13 @@ Compare(expr_ty left, asdl_seq * ops, asdl_seq * comparators, int lineno,
         p->v.Compare.ops = ops;
         p->v.Compare.comparators = comparators;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
 Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty starargs,
-     expr_ty kwargs, int lineno, PyArena *arena)
+     expr_ty kwargs, int lineno, int col_offset, PyArena *arena)
 {
         expr_ty p;
         if (!func) {
@@ -1495,11 +1544,12 @@ Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty starargs,
         p->v.Call.starargs = starargs;
         p->v.Call.kwargs = kwargs;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-Repr(expr_ty value, int lineno, PyArena *arena)
+Repr(expr_ty value, int lineno, int col_offset, PyArena *arena)
 {
         expr_ty p;
         if (!value) {
@@ -1515,11 +1565,12 @@ Repr(expr_ty value, int lineno, PyArena *arena)
         p->kind = Repr_kind;
         p->v.Repr.value = value;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-Num(object n, int lineno, PyArena *arena)
+Num(object n, int lineno, int col_offset, PyArena *arena)
 {
         expr_ty p;
         if (!n) {
@@ -1535,11 +1586,12 @@ Num(object n, int lineno, PyArena *arena)
         p->kind = Num_kind;
         p->v.Num.n = n;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-Str(string s, int lineno, PyArena *arena)
+Str(string s, int lineno, int col_offset, PyArena *arena)
 {
         expr_ty p;
         if (!s) {
@@ -1555,12 +1607,13 @@ Str(string s, int lineno, PyArena *arena)
         p->kind = Str_kind;
         p->v.Str.s = s;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno,
-          PyArena *arena)
+Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno, int
+          col_offset, PyArena *arena)
 {
         expr_ty p;
         if (!value) {
@@ -1588,12 +1641,13 @@ Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno,
         p->v.Attribute.attr = attr;
         p->v.Attribute.ctx = ctx;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int lineno,
-          PyArena *arena)
+Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int lineno, int
+          col_offset, PyArena *arena)
 {
         expr_ty p;
         if (!value) {
@@ -1621,11 +1675,13 @@ Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int lineno,
         p->v.Subscript.slice = slice;
         p->v.Subscript.ctx = ctx;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-Name(identifier id, expr_context_ty ctx, int lineno, PyArena *arena)
+Name(identifier id, expr_context_ty ctx, int lineno, int col_offset, PyArena
+     *arena)
 {
         expr_ty p;
         if (!id) {
@@ -1647,11 +1703,13 @@ Name(identifier id, expr_context_ty ctx, int lineno, PyArena *arena)
         p->v.Name.id = id;
         p->v.Name.ctx = ctx;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-List(asdl_seq * elts, expr_context_ty ctx, int lineno, PyArena *arena)
+List(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset, PyArena
+     *arena)
 {
         expr_ty p;
         if (!ctx) {
@@ -1668,11 +1726,13 @@ List(asdl_seq * elts, expr_context_ty ctx, int lineno, PyArena *arena)
         p->v.List.elts = elts;
         p->v.List.ctx = ctx;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
 expr_ty
-Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, PyArena *arena)
+Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset, PyArena
+      *arena)
 {
         expr_ty p;
         if (!ctx) {
@@ -1689,6 +1749,7 @@ Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, PyArena *arena)
         p->v.Tuple.elts = elts;
         p->v.Tuple.ctx = ctx;
         p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
@@ -2264,6 +2325,9 @@ ast2obj_stmt(void* _o)
         value = ast2obj_int(o->lineno);
         if (!value) goto failed;
         PyObject_SetAttrString(result, "lineno", value);
+        value = ast2obj_int(o->col_offset);
+        if (!value) goto failed;
+        PyObject_SetAttrString(result, "col_offset", value);
         return result;
 failed:
         Py_XDECREF(value);
@@ -2580,6 +2644,9 @@ ast2obj_expr(void* _o)
         value = ast2obj_int(o->lineno);
         if (!value) goto failed;
         PyObject_SetAttrString(result, "lineno", value);
+        value = ast2obj_int(o->col_offset);
+        if (!value) goto failed;
+        PyObject_SetAttrString(result, "col_offset", value);
         return result;
 failed:
         Py_XDECREF(value);

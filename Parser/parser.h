@@ -32,7 +32,7 @@ typedef struct {
 
 parser_state *PyParser_New(grammar *g, int start);
 void PyParser_Delete(parser_state *ps);
-int PyParser_AddToken(parser_state *ps, int type, char *str, int lineno,
+int PyParser_AddToken(parser_state *ps, int type, char *str, int lineno, int col_offset,
                       int *expected_ret);
 void PyGrammar_AddAccelerators(grammar *g);
 
