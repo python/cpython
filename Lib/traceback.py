@@ -158,7 +158,7 @@ def format_exception_only(etype, value):
     """
     list = []
     if (type(etype) == types.ClassType
-        or (isinstance(etype, type) and issubclass(etype, Exception))):
+        or issubclass(etype, Exception)):
         stype = etype.__name__
     else:
         stype = etype
