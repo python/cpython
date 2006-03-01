@@ -173,7 +173,7 @@ IO_cread(PyObject *self, char **output, Py_ssize_t  n) {
 static PyObject *
 IO_read(IOobject *self, PyObject *args) {
         Py_ssize_t n = -1;
-        char *output;
+        char *output = NULL;
 
         UNLESS (PyArg_ParseTuple(args, "|n:read", &n)) return NULL;
 
