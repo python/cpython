@@ -35,7 +35,9 @@ class CompilerTest(unittest.TestCase):
                     try:
                         compiler.compile(buf, basename, "exec")
                     except Exception, e:
-                        e.args[0] += "[in file %s]" % basename
+                        args = list(e.args)
+                        args[0] += "[in file %s]" % basename
+                        e.args = tuple(args)
                         raise
 
     def testNewClassSyntax(self):
