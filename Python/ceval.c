@@ -3654,7 +3654,9 @@ call_function(PyObject ***pp_stack, int oparg
 	}
 
 	/* Clear the stack of the function object and the arguments,
-	   in case they weren't consumed already */
+	   in case they weren't consumed already.
+	   XXX(twouters) when are they not consumed already?
+	 */
 	while ((*pp_stack) > pfunc) {
 		w = EXT_POP(*pp_stack);
 		Py_DECREF(w);
