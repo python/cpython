@@ -4,6 +4,8 @@
    a true persistent storage facility would be much harder, since
    it would have to take circular links and sharing into account. */
 
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 #include "longintrepr.h"
 #include "code.h"
@@ -1088,7 +1090,7 @@ marshal_loads(PyObject *self, PyObject *args)
 {
 	RFILE rf;
 	char *s;
-	int n;
+	Py_ssize_t n;
 	PyObject* result;
 	if (!PyArg_ParseTuple(args, "s#:loads", &s, &n))
 		return NULL;
