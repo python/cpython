@@ -128,7 +128,7 @@ if __name__=='__main__' and sys.argv[1:] == ['-g']:
     raise SystemExit
 
 def test_order(ast_node, parent_pos):
-    
+
     if not isinstance(ast_node, _ast.AST) or ast_node._fields == None:
         return
     if isinstance(ast_node, (_ast.expr, _ast.stmt)):
