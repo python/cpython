@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import keyword
 import exceptions
 import __builtin__
@@ -143,11 +145,9 @@ def fill_stmt(iterable, fill_len):
             except StopIteration:
                 if buffer_:
                     break
-                if not buffer_ and overflow:
-                    yield buffer_
-                    return
-                else:
-                    return
+                if overflow:
+                    yield overflow
+                return
         if total_len > fill_len:
             overflow = buffer_.pop()
             total_len -= len(overflow) - 1
@@ -158,8 +158,7 @@ def fill_stmt(iterable, fill_len):
 FILL = 80
 
 def main(file_path):
-    FILE = open(file_path, 'w')
-    try:
+    with open(file_path, 'w') as FILE:
         # Comment for file
         print>>FILE, comment_header
         print>>FILE, ''
@@ -222,8 +221,6 @@ def main(file_path):
                 print>>FILE, ''
         # Statements at the end of the file
         print>>FILE, statement_footer
-    finally:
-        FILE.close()
 
 if __name__ == '__main__':
     main("python.vim")
