@@ -569,7 +569,6 @@ _ssize(oss_audio_t *self, int *nchannels, int *ssize)
     default:
         return -EOPNOTSUPP;
     }
-    *nchannels = 0;
     if (ioctl(self->fd, SNDCTL_DSP_CHANNELS, nchannels) < 0)
         return -errno;
     return 0;
@@ -582,11 +581,11 @@ static PyObject *
 oss_bufsize(oss_audio_t *self, PyObject *args)
 {
     audio_buf_info ai;
-    int nchannels, ssize;
+    int nchannels=0, ssize=0;
 
     if (!PyArg_ParseTuple(args, ":bufsize")) return NULL;
 
-    if (_ssize(self, &nchannels, &ssize) < 0) {
+    if (_ssize(self, &nchannels, &ssize) < 0 || !nchannels || !ssize) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
@@ -603,12 +602,12 @@ static PyObject *
 oss_obufcount(oss_audio_t *self, PyObject *args)
 {
     audio_buf_info ai;
-    int nchannels, ssize;
+    int nchannels=0, ssize=0;
 
     if (!PyArg_ParseTuple(args, ":obufcount"))
         return NULL;
 
-    if (_ssize(self, &nchannels, &ssize) < 0) {
+    if (_ssize(self, &nchannels, &ssize) < 0 || !nchannels || !ssize) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
@@ -626,12 +625,12 @@ static PyObject *
 oss_obuffree(oss_audio_t *self, PyObject *args)
 {
     audio_buf_info ai;
-    int nchannels, ssize;
+    int nchannels=0, ssize=0;
 
     if (!PyArg_ParseTuple(args, ":obuffree"))
         return NULL;
 
-    if (_ssize(self, &nchannels, &ssize) < 0) {
+    if (_ssize(self, &nchannels, &ssize) < 0 || !nchannels || !ssize) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }

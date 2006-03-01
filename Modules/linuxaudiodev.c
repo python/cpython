@@ -332,7 +332,6 @@ _ssize(lad_t *self, int *nchannels, int *ssize)
     default:
         return -EOPNOTSUPP;
     }
-    *nchannels = 0;
     if (ioctl(self->x_fd, SNDCTL_DSP_CHANNELS, nchannels) < 0)
         return -errno;
     return 0;
@@ -345,11 +344,11 @@ static PyObject *
 lad_bufsize(lad_t *self, PyObject *args)
 {
     audio_buf_info ai;
-    int nchannels, ssize;
+    int nchannels=0, ssize=0;
 
     if (!PyArg_ParseTuple(args, ":bufsize")) return NULL;
 
-    if (_ssize(self, &nchannels, &ssize) < 0) {
+    if (_ssize(self, &nchannels, &ssize) < 0 || !ssize || !nchannels) {
         PyErr_SetFromErrno(LinuxAudioError);
         return NULL;
     }
@@ -366,12 +365,12 @@ static PyObject *
 lad_obufcount(lad_t *self, PyObject *args)
 {
     audio_buf_info ai;
-    int nchannels, ssize;
+    int nchannels=0, ssize=0;
 
     if (!PyArg_ParseTuple(args, ":obufcount"))
         return NULL;
 
-    if (_ssize(self, &nchannels, &ssize) < 0) {
+    if (_ssize(self, &nchannels, &ssize) < 0 || !ssize || !nchannels) {
         PyErr_SetFromErrno(LinuxAudioError);
         return NULL;
     }
@@ -389,12 +388,12 @@ static PyObject *
 lad_obuffree(lad_t *self, PyObject *args)
 {
     audio_buf_info ai;
-    int nchannels, ssize;
+    int nchannels=0, ssize=0;
 
     if (!PyArg_ParseTuple(args, ":obuffree"))
         return NULL;
 
-    if (_ssize(self, &nchannels, &ssize) < 0) {
+    if (_ssize(self, &nchannels, &ssize) < 0 || !ssize || !nchannels) {
         PyErr_SetFromErrno(LinuxAudioError);
         return NULL;
     }
