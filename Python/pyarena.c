@@ -159,5 +159,9 @@ PyArena_Malloc(PyArena *arena, size_t size)
 int
 PyArena_AddPyObject(PyArena *arena, PyObject *obj) 
 {
-        return PyList_Append(arena->a_objects, obj) >= 0;
+        int r = PyList_Append(arena->a_objects, obj);
+        if (r >= 0) {
+                Py_DECREF(obj);
+        }
+        return r;
 }
