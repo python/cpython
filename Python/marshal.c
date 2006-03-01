@@ -887,7 +887,8 @@ PyMarshal_ReadShortFromFile(FILE *fp)
 	RFILE rf;
 	assert(fp);
 	rf.fp = fp;
-	rf.strings = rf.end = rf.ptr = NULL;
+	rf.strings = NULL;
+	rf.end = rf.ptr = NULL;
 	return r_short(&rf);
 }
 
