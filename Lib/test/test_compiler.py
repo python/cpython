@@ -32,7 +32,11 @@ class CompilerTest(unittest.TestCase):
                     self.assertRaises(SyntaxError, compiler.compile,
                                       buf, basename, "exec")
                 else:
-                    compiler.compile(buf, basename, "exec")
+                    try:
+                        compiler.compile(buf, basename, "exec")
+                    except Exception, e:
+                        e.args[0] += "[in file %s]" % basename
+                        raise
 
     def testNewClassSyntax(self):
         compiler.compile("class foo():pass\n\n","<string>","exec")
