@@ -638,7 +638,7 @@ initsite(void)
 /* Parse input from a file and execute it */
 
 int
-PyRun_AnyFileExFlags(FILE *fp, char *filename, int closeit, 
+PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit, 
 		     PyCompilerFlags *flags)
 {
 	if (filename == NULL)
