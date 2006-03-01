@@ -7,11 +7,6 @@
  * By moving the exceptions into C and statically linking, we can guarantee
  * that the standard exceptions will always be available.
  *
- * history:
- * 98-08-19    fl   created (for pyexe)
- * 00-02-08    fl   updated for 1.5.2
- * 26-May-2000 baw  vetted for Python 1.6
- * XXX
  *
  * written by Fredrik Lundh
  * modifications, additions, cleanups, and proofreading by Barry Warsaw
@@ -36,11 +31,11 @@ PyDoc_STRVAR(module__doc__,
 \n\
 Exceptions found here are defined both in the exceptions module and the \n\
 built-in namespace.  It is recommended that user-defined exceptions inherit \n\
-from Exception.\n\
+from Exception.  See the documentation for the exception inheritance hierarchy.\n\
 "
 
 	/* keep string pieces "small" */
-/* XXX exception hierarchy from Lib/test/exception_hierarchy.txt */
+/* XXX(bcannon): exception hierarchy in Lib/test/exception_hierarchy.txt */
 );
 
 

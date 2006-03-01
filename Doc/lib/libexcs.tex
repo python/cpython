@@ -14,7 +14,8 @@ module.
 In past versions of Python string exceptions were supported.  In
 Python 1.5 and newer versions, all standard exceptions have been
 converted to class objects and users are encouraged to do the same.
-String exceptions will raise a \code{PendingDeprecationWarning}.
+String exceptions will raise a \code{DeprecationWarning} in Python 2.5 and
+newer.
 In future versions, support for string exceptions will be removed.
 
 Two distinct string objects with the same value are considered different
@@ -43,9 +44,9 @@ associated value itself will be stored in the variable named as the
 second argument of the \keyword{except} clause (if any).  For class
 exceptions, that variable receives the exception instance.  If the
 exception class is derived from the standard root class
-\exception{Exception}, the associated value is present as the
-exception instance's \member{args} attribute, and possibly on other
-attributes as well.
+\exception{BaseException}, the associated value is present as the
+exception instance's \member{args} attribute.  If there is a single argument
+(as is preferred), it is bound to the \member{message} attribute.
 
 User code can raise built-in exceptions.  This can be used to test an
 exception handler or to report an error condition ``just like'' the
@@ -55,7 +56,8 @@ inappropriate error.
 
 The built-in exception classes can be sub-classed to define new
 exceptions; programmers are encouraged to at least derive new
-exceptions from the \exception{Exception} base class.  More
+exceptions from the \exception{Exception} class and not
+\exception{BaseException}.  More
 information on defining exceptions is available in the
 \citetitle[../tut/tut.html]{Python Tutorial} under the heading
 ``User-defined Exceptions.''
@@ -65,23 +67,33 @@ information on defining exceptions is available in the
 The following exceptions are only used as base classes for other
 exceptions.
 
+\begin{excdesc}{BaseException}
+The base class for all built-in exceptions.  It is not meant to be directly
+inherited by user-defined classes (for that use \exception{Exception}).  If
+\function{str()} or \function{unicode()} is called on an instance of this
+class, the representation of the argument(s) to the instance are returned or
+the emptry string when there were no arguments.  If only a single argument is
+passed in, it is stored in the \member{message} attribute.  If more than one
+argument is passed in, \member{message} is set to the empty string.  These
+semantics are meant to reflect the fact that \member{message} is to store a
+text message explaining why the exception had been raised.  If more data needs
+to be attached to the exception, attach it through arbitrary attributes on the
+instance.  All arguments are also stored in \member{args} as a tuple, but it will
+eventually be deprecated and thus its use is discouraged.
+\versionchanged[Changed to inherit from \exception{BaseException}]{2.5}
+\versionadded{2.5}
+
 \begin{excdesc}{Exception}
-The root class for exceptions.  All built-in exceptions are derived
+All built-in, non-system-exiting exceptions are derived
 from this class.  All user-defined exceptions should also be derived
-from this class, but this is not (yet) enforced.  The \function{str()}
-function, when applied to an instance of this class (or most derived
-classes) returns the string value of the argument or arguments, or an
-empty string if no arguments were given to the constructor.  When used
-as a sequence, this accesses the arguments given to the constructor
-(handy for backward compatibility with old code).  The arguments are
-also available on the instance's \member{args} attribute, as a tuple.
+from this class.
 \end{excdesc}
 
 \begin{excdesc}{StandardError}
 The base class for all built-in exceptions except
-\exception{StopIteration} and \exception{SystemExit}.
-\exception{StandardError} itself is derived from the root class
-\exception{Exception}.
+\exception{StopIteration}, \exception{GeneratorExit},
+\exception{KeyboardInterrupt} and \exception{SystemExit}.
+\exception{StandardError} itself is derived from \exception{Exception}.
 \end{excdesc}
 
 \begin{excdesc}{ArithmeticError}
@@ -156,6 +168,12 @@ Raised when an \keyword{assert} statement fails.
   \file{pyconfig.h} file.
 \end{excdesc}
 
+\begin{excdesv}{GeneratorExit}
+  Raise when a generator's \method{close()} method is called.
+  It directly inherits from \exception{Exception} instead of
+  \exception{StandardError} since it is technically not an error.
+  \versionadded{2.5}
+
 \begin{excdesc}{IOError}
 % XXXJH xrefs here
   Raised when an I/O operation (such as a \keyword{print} statement,
@@ -192,10 +210,14 @@ Raised when an \keyword{assert} statement fails.
   Raised when the user hits the interrupt key (normally
   \kbd{Control-C} or \kbd{Delete}).  During execution, a check for
   interrupts is made regularly.
-% XXXJH xrefs here
+% XXX(hylton) xrefs here
   Interrupts typed when a built-in function \function{input()} or
   \function{raw_input()} is waiting for input also raise this
   exception.
+  The exception inherits from \exception{BaseException} so as to not be
+  accidentally caught by code that catches \exception{Exception} and thus
+  prevent the interpreter from exiting.
+  \versionchanged[Changed to inherit from \exception{BaseException}]{2.5}
 \end{excdesc}
 
 \begin{excdesc}{MemoryError}
@@ -270,6 +292,7 @@ Raised when an \keyword{assert} statement fails.
   \versionadded{2.2}
 \end{excdesc}
 
+
 \begin{excdesc}{SyntaxError}
 % XXXJH xref to these functions?
   Raised when the parser encounters a syntax error.  This may occur in
@@ -299,7 +322,7 @@ Raised when an \keyword{assert} statement fails.
 \end{excdesc}
 
 \begin{excdesc}{SystemExit}
-% XXXJH xref to module sys?
+% XXX(hylton) xref to module sys?
   This exception is raised by the \function{sys.exit()} function.  When it
   is not handled, the Python interpreter exits; no stack traceback is
   printed.  If the associated value is a plain integer, it specifies the
@@ -309,7 +332,7 @@ Raised when an \keyword{assert} statement fails.
 
   Instances have an attribute \member{code} which is set to the
   proposed exit status or error message (defaulting to \code{None}).
-  Also, this exception derives directly from \exception{Exception} and
+  Also, this exception derives directly from \exception{BaseException} and
   not \exception{StandardError}, since it is not technically an error.
 
   A call to \function{sys.exit()} is translated into an exception so that
@@ -319,6 +342,12 @@ Raised when an \keyword{assert} statement fails.
   can be used if it is absolutely positively necessary to exit
   immediately (for example, in the child process after a call to
   \function{fork()}).
+
+  The exception inherits from \exception{BaseException} instead of
+  \exception{StandardError} or \exception{Exception} so that it is not
+  accidentally caught by code that catches \exception{Exception}.  This allows
+  the exception to properly propagate up and cause the interpreter to exit.
+  \versionchanged[Changed to inherit from \exception{BaseException}]{2.5}
 \end{excdesc}
 
 \begin{excdesc}{TypeError}
@@ -418,49 +447,4 @@ in the future.
 
 The class hierarchy for built-in exceptions is:
 
-\begin{verbatim}
-    Exception
-     +-- SystemExit
-     +-- StopIteration
-     +-- StandardError
-     |    +-- KeyboardInterrupt
-     |    +-- ImportError
-     |    +-- EnvironmentError
-     |    |    +-- IOError
-     |    |    +-- OSError
-     |    |         +-- WindowsError
-     |    +-- EOFError
-     |    +-- RuntimeError
-     |    |    +-- NotImplementedError
-     |    +-- NameError
-     |    |    +-- UnboundLocalError
-     |    +-- AttributeError
-     |    +-- SyntaxError
-     |    |    +-- IndentationError
-     |    |         +-- TabError
-     |    +-- TypeError
-     |    +-- AssertionError
-     |    +-- LookupError
-     |    |    +-- IndexError
-     |    |    +-- KeyError
-     |    +-- ArithmeticError
-     |    |    +-- OverflowError
-     |    |    +-- ZeroDivisionError
-     |    |    +-- FloatingPointError
-     |    +-- ValueError
-     |    |    +-- UnicodeError
-     |    |        +-- UnicodeEncodeError
-     |    |        +-- UnicodeDecodeError
-     |    |        +-- UnicodeTranslateError
-     |    +-- ReferenceError
-     |    +-- SystemError
-     |    +-- MemoryError
-     +---Warning
-	  +-- UserWarning
-	  +-- DeprecationWarning
-	  +-- PendingDeprecationWarning
-	  +-- SyntaxWarning
-	  +-- OverflowWarning (not generated in 2.4; won't exist in 2.5)
-	  +-- RuntimeWarning
-	  +-- FutureWarning
-\end{verbatim}
+\verbatiminput{../../Lib/test/exception_hierarchy.txt}

@@ -346,6 +346,7 @@ have the type \ctype{PyObject*}; they are all class objects.  For
 completeness, here are all the variables:
 
 \begin{tableiii}{l|l|c}{cdata}{C Name}{Python Name}{Notes}
+  \lineiii{PyExc_BaseException\ttindex{PyExc_BaseException}}{\exception{BaseException}}{(1), (4)}
   \lineiii{PyExc_Exception\ttindex{PyExc_Exception}}{\exception{Exception}}{(1)}
   \lineiii{PyExc_StandardError\ttindex{PyExc_StandardError}}{\exception{StandardError}}{(1)}
   \lineiii{PyExc_ArithmeticError\ttindex{PyExc_ArithmeticError}}{\exception{ArithmeticError}}{(1)}
@@ -388,14 +389,17 @@ Notes:
 \item[(3)]
   Only defined on Windows; protect code that uses this by testing that
   the preprocessor macro \code{MS_WINDOWS} is defined.
+
+\item[(4)]
+  \versionadded{2.5}
 \end{description}
 
 
 \section{Deprecation of String Exceptions}
 
 All exceptions built into Python or provided in the standard library
-are derived from \exception{Exception}.
-\withsubitem{(built-in exception)}{\ttindex{Exception}}
+are derived from \exception{BaseException}.
+\withsubitem{(built-in exception)}{\ttindex{BaseException}}
 
 String exceptions are still supported in the interpreter to allow
 existing code to run unmodified, but this will also change in a future 

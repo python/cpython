@@ -3512,6 +3512,12 @@ in \code{instance.args}.  For convenience, the exception instance
 defines \method{__getitem__} and \method{__str__} so the arguments can
 be accessed or printed directly without having to reference \code{.args}.
 
+But use of \code{.args} is discouraged.  Instead, the preferred use is to pass
+a single argument to an exception (which can be a tuple if multiple arguments
+are needed) and have it bound to the \code{message} attribute.  One my also
+instantiate an exception first before raising it and add any attributes to it
+as desired.
+
 \begin{verbatim}
 >>> try:
 ...    raise Exception('spam', 'eggs')
