@@ -976,7 +976,7 @@ handle_system_exit(void)
 	fflush(stdout);
 	if (value == NULL || value == Py_None)
 		goto done;
-	if (PyInstance_Check(value)) {
+	if (PyExceptionInstance_Check(value)) {
 		/* The error code should be in the `code' attribute. */
 		PyObject *code = PyObject_GetAttrString(value, "code");
 		if (code) {
@@ -1106,11 +1106,10 @@ void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 		if (err) {
 			/* Don't do anything else */
 		}
-		else if (PyClass_Check(exception)) {
-			PyClassObject* exc = (PyClassObject*)exception;
-			PyObject* className = exc->cl_name;
+		else if (PyExceptionClass_Check(exception)) {
+			char* className = PyExceptionClass_Name(exception);
 			PyObject* moduleName =
-			      PyDict_GetItemString(exc->cl_dict, "__module__");
+			      PyObject_GetAttrString(exception, "__module__");
 
 			if (moduleName == NULL)
 				err = PyFile_WriteString("<unknown>", f);
@@ -1126,8 +1125,7 @@ void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 				if (className == NULL)
 				      err = PyFile_WriteString("<unknown>", f);
 				else
-				      err = PyFile_WriteObject(className, f,
-							       Py_PRINT_RAW);
+				      err = PyFile_WriteString(className, f);
 			}
 		}
 		else

@@ -97,11 +97,14 @@ PyErr_GivenExceptionMatches(PyObject *err, PyObject *exc)
 		return 0;
 	}
 	/* err might be an instance, so check its class. */
-	if (PyInstance_Check(err))
-		err = (PyObject*)((PyInstanceObject*)err)->in_class;
+	if (PyExceptionInstance_Check(err))
+		err = PyExceptionInstance_Class(err);
 
-	if (PyClass_Check(err) && PyClass_Check(exc))
-		return PyClass_IsSubclass(err, exc);
+	if (PyExceptionClass_Check(err) && PyExceptionClass_Check(exc)) {
+		/* problems here!?  not sure PyObject_IsSubclass expects to
+		   be called with an exception pending... */
+		return PyObject_IsSubclass(err, exc);
+	}
 
 	return err == exc;
 }
@@ -138,19 +141,19 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 		Py_INCREF(value);
 	}
 
-	if (PyInstance_Check(value))
-		inclass = (PyObject*)((PyInstanceObject*)value)->in_class;
+	if (PyExceptionInstance_Check(value))
+		inclass = PyExceptionInstance_Class(value);
 
 	/* Normalize the exception so that if the type is a class, the
 	   value will be an instance.
 	*/
-	if (PyClass_Check(type)) {
+	if (PyExceptionClass_Check(type)) {
 		/* if the value was not an instance, or is not an instance
 		   whose class is (or is derived from) type, then use the
 		   value as an argument to instantiation of the type
 		   class.
 		*/
-		if (!inclass || !PyClass_IsSubclass(inclass, type)) {
+		if (!inclass || !PyObject_IsSubclass(inclass, type)) {
 			PyObject *args, *res;
 
 			if (value == Py_None)
@@ -282,7 +285,7 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
 	{
 		/* Note that the Win32 errors do not lineup with the
 		   errno error.  So if the error is in the MSVC error
-		   table, we use it, otherwise we assume it really _is_ 
+		   table, we use it, otherwise we assume it really _is_
 		   a Win32 error code
 		*/
 		if (i > 0 && i < _sys_nerr) {
@@ -302,7 +305,7 @@ PyErr_SetFromErrnoWithFilenameObject(PyObject *exc, PyObject *filenameObject)
 				0,	/* size not used */
 				NULL);	/* no args */
 			if (len==0) {
-				/* Only ever seen this in out-of-mem 
+				/* Only ever seen this in out-of-mem
 				   situations */
 				sprintf(s_small_buf, "Windows Error 0x%X", i);
 				s = s_small_buf;
@@ -345,8 +348,8 @@ PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
 PyObject *
 PyErr_SetFromErrnoWithUnicodeFilename(PyObject *exc, Py_UNICODE *filename)
 {
-	PyObject *name = filename ? 
-	                 PyUnicode_FromUnicode(filename, wcslen(filename)) : 
+	PyObject *name = filename ?
+	                 PyUnicode_FromUnicode(filename, wcslen(filename)) :
 	                 NULL;
 	PyObject *result = PyErr_SetFromErrnoWithFilenameObject(exc, name);
 	Py_XDECREF(name);
@@ -360,7 +363,7 @@ PyErr_SetFromErrno(PyObject *exc)
 	return PyErr_SetFromErrnoWithFilenameObject(exc, NULL);
 }
 
-#ifdef MS_WINDOWS 
+#ifdef MS_WINDOWS
 /* Windows specific error code handling */
 PyObject *PyErr_SetExcFromWindowsErrWithFilenameObject(
 	PyObject *exc,
@@ -415,8 +418,8 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilename(
 	const char *filename)
 {
 	PyObject *name = filename ? PyString_FromString(filename) : NULL;
-	PyObject *ret = PyErr_SetExcFromWindowsErrWithFilenameObject(exc, 
-	                                                             ierr, 
+	PyObject *ret = PyErr_SetExcFromWindowsErrWithFilenameObject(exc,
+	                                                             ierr,
 	                                                             name);
 	Py_XDECREF(name);
 	return ret;
@@ -428,11 +431,11 @@ PyObject *PyErr_SetExcFromWindowsErrWithUnicodeFilename(
 	int ierr,
 	const Py_UNICODE *filename)
 {
-	PyObject *name = filename ? 
-	                 PyUnicode_FromUnicode(filename, wcslen(filename)) : 
+	PyObject *name = filename ?
+	                 PyUnicode_FromUnicode(filename, wcslen(filename)) :
 	                 NULL;
-	PyObject *ret = PyErr_SetExcFromWindowsErrWithFilenameObject(exc, 
-	                                                             ierr, 
+	PyObject *ret = PyErr_SetExcFromWindowsErrWithFilenameObject(exc,
+	                                                             ierr,
 	                                                             name);
 	Py_XDECREF(name);
 	return ret;
@@ -466,8 +469,8 @@ PyObject *PyErr_SetFromWindowsErrWithUnicodeFilename(
 	int ierr,
 	const Py_UNICODE *filename)
 {
-	PyObject *name = filename ? 
-	                 PyUnicode_FromUnicode(filename, wcslen(filename)) : 
+	PyObject *name = filename ?
+	                 PyUnicode_FromUnicode(filename, wcslen(filename)) :
 	                 NULL;
 	PyObject *result = PyErr_SetExcFromWindowsErrWithFilenameObject(
 						      PyExc_WindowsError,
@@ -574,7 +577,24 @@ PyErr_WriteUnraisable(PyObject *obj)
 	if (f != NULL) {
 		PyFile_WriteString("Exception ", f);
 		if (t) {
-			PyFile_WriteObject(t, f, Py_PRINT_RAW);
+			char* className = PyExceptionClass_Name(t);
+			PyObject* moduleName =
+			      PyObject_GetAttrString(t, "__module__");
+
+			if (moduleName == NULL)
+				PyFile_WriteString("<unknown>", f);
+			else {
+				char* modstr = PyString_AsString(moduleName);
+				if (modstr)
+				{
+					PyFile_WriteString(modstr, f);
+					PyFile_WriteString(".", f);
+				}
+			}
+			if (className == NULL)
+				PyFile_WriteString("<unknown>", f);
+			else
+				PyFile_WriteString(className, f);
 			if (v && v != Py_None) {
 				PyFile_WriteString(": ", f);
 				PyFile_WriteObject(v, f, 0);
@@ -726,7 +746,7 @@ PyErr_SyntaxLocation(const char *filename, int lineno)
 
 /* com_fetch_program_text will attempt to load the line of text that
    the exception refers to.  If it fails, it will return NULL but will
-   not set an exception. 
+   not set an exception.
 
    XXX The functionality of this function is quite similar to the
    functionality in tb_displayline() in traceback.c.

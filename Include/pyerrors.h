@@ -26,9 +26,32 @@ PyAPI_FUNC(int) PyErr_GivenExceptionMatches(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyErr_ExceptionMatches(PyObject *);
 PyAPI_FUNC(void) PyErr_NormalizeException(PyObject**, PyObject**, PyObject**);
 
+/* */
 
+#define PyExceptionClass_Check(x)					\
+	(PyClass_Check((x))						\
+	 || (PyType_Check((x)) && PyType_IsSubtype(			\
+		     (PyTypeObject*)(x), (PyTypeObject*)PyExc_BaseException)))
+
+
+#define PyExceptionInstance_Check(x)			\
+	(PyInstance_Check((x)) ||			\
+	 (PyType_IsSubtype((x)->ob_type, (PyTypeObject*)PyExc_BaseException)))
+
+#define PyExceptionClass_Name(x)				   \
+	(PyClass_Check((x))					   \
+	 ? PyString_AS_STRING(((PyClassObject*)(x))->cl_name)	   \
+	 : (char *)(((PyTypeObject*)(x))->tp_name))
+
+#define PyExceptionInstance_Class(x)					\
+	((PyInstance_Check((x))						\
+	  ? (PyObject*)((PyInstanceObject*)(x))->in_class		\
+	  : (PyObject*)((x)->ob_type)))
+
+	
 /* Predefined exceptions */
 
+PyAPI_DATA(PyObject *) PyExc_BaseException;
 PyAPI_DATA(PyObject *) PyExc_Exception;
 PyAPI_DATA(PyObject *) PyExc_StopIteration;
 PyAPI_DATA(PyObject *) PyExc_GeneratorExit;

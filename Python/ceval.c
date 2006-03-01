@@ -1685,7 +1685,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 				    why == WHY_CONTINUE)
 					retval = POP();
 			}
-			else if (PyClass_Check(v) || PyString_Check(v)) {
+			else if (PyExceptionClass_Check(v) || PyString_Check(v)) {
 				w = POP();
 				u = POP();
 				PyErr_Restore(v, w, u);
@@ -3026,14 +3026,14 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 		/* Raising builtin string is deprecated but still allowed --
 		 * do nothing.  Raising an instance of a new-style str
 		 * subclass is right out. */
-		if (-1 == PyErr_Warn(PyExc_PendingDeprecationWarning,
+		if (PyErr_Warn(PyExc_DeprecationWarning,
 			   "raising a string exception is deprecated"))
 			goto raise_error;
 	}
-	else if (PyClass_Check(type))
+	else if (PyExceptionClass_Check(type))
 		PyErr_NormalizeException(&type, &value, &tb);
 
-	else if (PyInstance_Check(type)) {
+	else if (PyExceptionInstance_Check(type)) {
 		/* Raising an instance.  The value should be a dummy. */
 		if (value != Py_None) {
 			PyErr_SetString(PyExc_TypeError,
@@ -3044,7 +3044,7 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 			/* Normalize to raise <class>, <instance> */
 			Py_DECREF(value);
 			value = type;
-			type = (PyObject*) ((PyInstanceObject*)type)->in_class;
+			type = PyExceptionInstance_Class(type);
 			Py_INCREF(type);
 		}
 	}

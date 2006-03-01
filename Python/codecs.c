@@ -448,9 +448,8 @@ static void wrong_exception_type(PyObject *exc)
 
 PyObject *PyCodec_StrictErrors(PyObject *exc)
 {
-    if (PyInstance_Check(exc))
-	PyErr_SetObject((PyObject*)((PyInstanceObject*)exc)->in_class,
-	    exc);
+    if (PyExceptionInstance_Check(exc))
+        PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
     else
 	PyErr_SetString(PyExc_TypeError, "codec must pass exception instance");
     return NULL;

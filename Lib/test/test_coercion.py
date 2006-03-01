@@ -96,7 +96,7 @@ def do_infix_binops():
                     x = eval('a %s b' % op)
                 except:
                     error = sys.exc_info()[:2]
-                    print '... %s' % error[0]
+                    print '... %s.%s' % (error[0].__module__, error[0].__name__)
                 else:
                     print '=', format_result(x)
                 try:
@@ -108,7 +108,7 @@ def do_infix_binops():
                     exec('z %s= b' % op)
                 except:
                     error = sys.exc_info()[:2]
-                    print '... %s' % error[0]
+                    print '... %s.%s' % (error[0].__module__, error[0].__name__)
                 else:
                     print '=>', format_result(z)
 
@@ -121,7 +121,7 @@ def do_prefix_binops():
                     x = eval('%s(a, b)' % op)
                 except:
                     error = sys.exc_info()[:2]
-                    print '... %s' % error[0]
+                    print '... %s.%s' % (error[0].__module__, error[0].__name__)
                 else:
                     print '=', format_result(x)
 
