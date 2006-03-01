@@ -1028,7 +1028,7 @@ PyDoc_STRVAR(doc_a2b_qp, "Decode a string of qp-encoded data");
 static PyObject*
 binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-	unsigned int in, out;
+	Py_ssize_t in, out;
 	char ch;
 	unsigned char *data, *odata;
 	Py_ssize_t datalen = 0;
@@ -1129,7 +1129,7 @@ both encoded.  When quotetabs is set, space and tabs are encoded.");
 static PyObject*
 binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 {
-	unsigned int in, out;
+	Py_ssize_t in, out;
 	unsigned char *data, *odata;
 	Py_ssize_t datalen = 0, odatalen = 0;
 	PyObject *rv;
