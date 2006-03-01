@@ -911,6 +911,10 @@ New platforms
 Tools/Demos
 -----------
 
+- Created Misc/Vim/vim_syntax.py to auto-generate a python.vim file in that
+  directory for syntax highlighting in Vim.  Vim directory was added and placed
+  vimrc to it (was previous up a level).
+
 - Added two new files to Tools/scripts: pysource.py, which recursively
   finds Python source files, and findnocoding.py, which finds Python
   source files that need an encoding declaration.

@@ -65,10 +65,7 @@ def str_regexes():
                 skip = skip_regex.substitute(sep=separator)
             else:
                 skip = ''
-            if not raw:
-                contains = 'contains=pythonEscape'
-            else:
-                contains = ''
+            contains = 'contains=pythonEscape' if not raw else ''
             yield regex_template.substitute(raw=raw, sep=separator, skip=skip,
                                             contains = contains)
 
