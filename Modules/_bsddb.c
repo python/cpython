@@ -4190,13 +4190,14 @@ static PyObject*
 DBEnv_set_tx_timestamp(DBEnvObject* self, PyObject* args)
 {
     int err;
-    time_t stamp;
+    long stamp;
+    time_t timestamp;
 
-    if (!PyArg_ParseTuple(args, "i:set_tx_timestamp", &stamp))
+    if (!PyArg_ParseTuple(args, "l:set_tx_timestamp", &stamp))
         return NULL;
     CHECK_ENV_NOT_CLOSED(self);
-
-    err = self->db_env->set_tx_timestamp(self->db_env, &stamp);
+    timestamp = (time_t)stamp;
+    err = self->db_env->set_tx_timestamp(self->db_env, &timestamp);
     RETURN_IF_ERR();
     RETURN_NONE();
 }
