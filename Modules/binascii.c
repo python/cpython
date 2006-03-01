@@ -53,7 +53,7 @@
 ** Brandon Long, September 2001.
 */
 
-#include PY_SSIZE_T_CLEAN
+#define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
 
