@@ -553,6 +553,10 @@ whose address should be passed.
   platforms that support \ctype{unsigned long long} (or
   \ctype{unsigned _int64} on Windows).  \versionadded{2.3}
 
+  \item[\samp{n} (integer) {[Py_ssize_t]}]
+  Convert a Python integer or long integer to a C \ctype{Py_ssize_t}.
+  \versionadded{2.5}
+
   \item[\samp{c} (string of length 1) {[char]}]
   Convert a Python character, represented as a string of length 1, to
   a C \ctype{char}.
@@ -865,6 +869,10 @@ PyArg_ParseTuple(args, "O|O:ref", &object, &callback)
     \item[\samp{K} (long) {[unsigned PY_LONG_LONG]}]
     Convert a C \ctype{unsigned long long} to a Python long integer object.
     Only available on platforms that support \ctype{unsigned long long}.
+
+    \item[\samp{n} (int) {[Py_ssize_t]}]
+    Convert a C \ctype{Py_ssize_t) to a Python integer or long integer.
+    \versionadded{2.5}
 
     \item[\samp{c} (string of length 1) {[char]}]
     Convert a C \ctype{int} representing a character to a Python

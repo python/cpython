@@ -162,9 +162,20 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
   suspect the behaviour of Python in this case is undefined. :-)
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyInt_FromSsize_t}{Py_ssize_t ival}
+  Create a new integer object with a value of \var{ival}.
+  If the value exceeds \code{LONG_MAX}, a long integer object is
+  returned.
+
+ \versionadded{2.5}
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{long}{PyInt_AsLong}{PyObject *io}
   Will first attempt to cast the object to a \ctype{PyIntObject}, if
-  it is not already one, and then return its value.
+  it is not already one, and then return its value. If there is an
+  error, \code{-1} is returned, and the caller should check
+  \code{PyErr_Occurred()} to find out whether there was an error, or
+  whether the value just happened to be -1.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{long}{PyInt_AS_LONG}{PyObject *io}
@@ -184,6 +195,13 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
   \ctype{PyLongObject}, if it is not already one, and then return its
   value as unsigned long long, without checking for overflow.
   \versionadded{2.3}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_ssize_t}{PyInt_AsSsize_t}{PyObject *io}
+  Will first attempt to cast the object to a \ctype{PyIntObject} or
+  \ctype{PyLongObject}, if it is not already one, and then return its
+  value as \ctype{Py_ssize_t}.
+  \versionadded{2.5}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{long}{PyInt_GetMax}{}
