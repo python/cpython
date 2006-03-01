@@ -97,6 +97,7 @@ dbm_length(dbmobject *dp)
         datum key,okey;
         int size;
         okey.dsize=0;
+        okey.dptr=NULL;
 
         size = 0;
         for (key=gdbm_firstkey(dp->di_dbm); key.dptr;
