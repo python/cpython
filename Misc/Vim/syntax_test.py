@@ -13,20 +13,28 @@ repository.
 # OPTIONAL: XXX catch your attention
 
 # Statements
+from __future__ import with_statement  # Import
+from sys import path as thing
 assert True # keyword
 def foo():  # function definition
     return []
 class Bar(object):  # Class definition
-    pass
+    def __context__(self):
+        return self
+    def __enter__(self):
+        pass
+    def __exit__(self, *args):
+        pass
 foo()  # UNCOLOURED: function call
 while False:  # 'while'
     continue
 for x in foo():  # 'for'
     break
+with Bar() as stuff:
+    pass
 if False: pass  # 'if'
 elif False: pass
-else False: pass
-from sys import path as thing  # Import
+else: pass
 
 # Constants
 'single-quote', u'unicode' # Strings of all kinds; prefixes not highlighted

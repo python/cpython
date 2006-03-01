@@ -14,8 +14,9 @@ if exists("python_highlight_all")
   let python_highlight_space_errors = 1
 endif
 
-syn keyword pythonStatement    assert break continue del except exec finally
-syn keyword pythonStatement    global lambda pass print raise return try yield
+syn keyword pythonStatement    as assert break continue del except exec finally
+syn keyword pythonStatement    global lambda pass print raise return try with
+syn keyword pythonStatement    yield
 
 syn keyword pythonStatement    def class nextgroup=pythonFunction skipwhite
 
@@ -82,8 +83,9 @@ if exists("python_highlight_exceptions")
   syn keyword pythonException    UnicodeTranslateError MemoryError StopIteration
   syn keyword pythonException    PendingDeprecationWarning EnvironmentError
   syn keyword pythonException    LookupError OSError DeprecationWarning
-  syn keyword pythonException    UnicodeError FloatingPointError ReferenceError
-  syn keyword pythonException    NameError OverflowWarning IOError SyntaxError
+  syn keyword pythonException    UnicodeError UnicodeEncodeError
+  syn keyword pythonException    FloatingPointError ReferenceError NameError
+  syn keyword pythonException    OverflowWarning IOError SyntaxError
   syn keyword pythonException    FutureWarning SystemExit Exception EOFError
   syn keyword pythonException    StandardError ValueError TabError KeyError
   syn keyword pythonException    ZeroDivisionError SystemError
@@ -92,7 +94,7 @@ if exists("python_highlight_exceptions")
   syn keyword pythonException    RuntimeWarning KeyboardInterrupt UserWarning
   syn keyword pythonException    SyntaxWarning UnboundLocalError ArithmeticError
   syn keyword pythonException    Warning NotImplementedError AttributeError
-  syn keyword pythonException    OverflowError UnicodeEncodeError
+  syn keyword pythonException    OverflowError BaseException
 
 endif
 
