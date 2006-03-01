@@ -1686,13 +1686,13 @@ PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t m
 		if (name != NULL)
 			PyErr_Format(
 			    PyExc_TypeError,
-			    "%s expected %s%d arguments, got %d", 
+			    "%s expected %s%zd arguments, got %zd", 
 			    name, (min == max ? "" : "at least "), min, l);
 		else
 			PyErr_Format(
 			    PyExc_TypeError,
-			    "unpacked tuple should have %s%d elements,"
-			    " but has %d", 
+			    "unpacked tuple should have %s%zd elements,"
+			    " but has %zd", 
 			    (min == max ? "" : "at least "), min, l);
 		va_end(vargs);
 		return 0;
@@ -1701,13 +1701,13 @@ PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t m
 		if (name != NULL)
 			PyErr_Format(
 			    PyExc_TypeError,
-			    "%s expected %s%d arguments, got %d", 
+			    "%s expected %s%zd arguments, got %zd", 
 			    name, (min == max ? "" : "at most "), max, l);
 		else
 			PyErr_Format(
 			    PyExc_TypeError,
-			    "unpacked tuple should have %s%d elements,"
-			    " but has %d", 
+			    "unpacked tuple should have %s%zd elements,"
+			    " but has %zd", 
 			    (min == max ? "" : "at most "), max, l);
 		va_end(vargs);
 		return 0;
