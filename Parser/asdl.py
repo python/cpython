@@ -156,6 +156,8 @@ class ASDLParser(spark.GenericParser, object):
         if id.value != "attributes":
             raise ASDLSyntaxError(id.lineno,
                                   msg="expected attributes, found %s" % id)
+        if attributes:
+            attributes.reverse()
         return Sum(sum, attributes)
 
     def p_product(self, (_0, fields, _1)):

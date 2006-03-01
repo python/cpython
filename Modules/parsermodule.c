@@ -715,7 +715,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             Py_XDECREF(elem);
             return (0);
         }
-        err = PyNode_AddChild(root, type, strn, *line_num);
+        err = PyNode_AddChild(root, type, strn, *line_num, 0);
         if (err == E_NOMEM) {
             PyMem_DEL(strn);
             return (node *) PyErr_NoMemory();

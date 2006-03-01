@@ -46,7 +46,8 @@ module Python version "$Revision$"
 	      | Pass | Break | Continue
 
 	      -- XXX Jython will be different
-	      attributes (int lineno)
+	      -- col_offset is the byte offset in the utf8 string the parser uses
+	      attributes (int lineno, int col_offset)
 
 	      -- BoolOp() can use left & right?
 	expr = BoolOp(boolop op, expr* values)
@@ -76,7 +77,8 @@ module Python version "$Revision$"
 	     | List(expr* elts, expr_context ctx) 
 	     | Tuple(expr *elts, expr_context ctx)
 
-	      attributes (int lineno)
+	      -- col_offset is the byte offset in the utf8 string the parser uses
+	      attributes (int lineno, int col_offset)
 
 	expr_context = Load | Store | Del | AugLoad | AugStore | Param
 

@@ -11,13 +11,14 @@ typedef struct _node {
     short		n_type;
     char		*n_str;
     int			n_lineno;
+    int			n_col_offset;
     int			n_nchildren;
     struct _node	*n_child;
 } node;
 
 PyAPI_FUNC(node *) PyNode_New(int type);
 PyAPI_FUNC(int) PyNode_AddChild(node *n, int type,
-                                      char *str, int lineno);
+                                      char *str, int lineno, int col_offset);
 PyAPI_FUNC(void) PyNode_Free(node *n);
 
 /* Node access functions */

@@ -764,6 +764,7 @@ tok_nextc(register struct tok_state *tok)
 			}
 			if (tok->start == NULL)
 				tok->buf = tok->cur;
+			tok->line_start = tok->cur;
 			tok->lineno++;
 			tok->inp = end;
 			return Py_CHARMASK(*tok->cur++);
@@ -798,6 +799,7 @@ tok_nextc(register struct tok_state *tok)
 				}
 				tok->buf = buf;
 				tok->cur = tok->buf + oldlen;
+				tok->line_start = tok->cur;
 				strcpy(tok->buf + oldlen, new);
 				PyMem_FREE(new);
 				tok->inp = tok->buf + newlen;
@@ -809,7 +811,9 @@ tok_nextc(register struct tok_state *tok)
 				if (tok->buf != NULL)
 					PyMem_DEL(tok->buf);
 				tok->buf = new;
+				tok->line_start = tok->buf;
 				tok->cur = tok->buf;
+				tok->line_start = tok->buf;
 				tok->inp = strchr(tok->buf, '\0');
 				tok->end = tok->inp + 1;
 			}
@@ -877,6 +881,7 @@ tok_nextc(register struct tok_state *tok)
 				done = tok->inp[-1] == '\n';
 			}
 			tok->cur = tok->buf + cur;
+			tok->line_start = tok->cur;
 			/* replace "\r\n" with "\n" */
 			/* For Mac we leave the \r, giving a syntax error */
 			pt = tok->inp - 2;

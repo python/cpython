@@ -76,7 +76,7 @@ fancy_roundup(int n)
 
 
 int
-PyNode_AddChild(register node *n1, int type, char *str, int lineno)
+PyNode_AddChild(register node *n1, int type, char *str, int lineno, int col_offset)
 {
 	const int nch = n1->n_nchildren;
 	int current_capacity;
@@ -103,6 +103,7 @@ PyNode_AddChild(register node *n1, int type, char *str, int lineno)
 	n->n_type = type;
 	n->n_str = str;
 	n->n_lineno = lineno;
+	n->n_col_offset = col_offset;
 	n->n_nchildren = 0;
 	n->n_child = NULL;
 	return 0;

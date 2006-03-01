@@ -34,7 +34,13 @@ names of all child nodes.
 
 Each instance of a concrete class has one attribute for each child node,
 of the type as defined in the grammar. For example, \code{_ast.BinOp}
-instances have an attribute \code{left} of type \code{_ast.expr}.
+instances have an attribute \code{left} of type \code{_ast.expr}.  
+Instances of \code{_ast.expr} and \code{_ast.stmt} subclasses also
+have lineno and col_offset attributes.  The lineno is the line number
+of source text (1 indexed so the first line is line 1) and the
+col_offset is the utf8 byte offset of the first token that generated
+the node.  The utf8 offset is recorded because the parser uses utf8 
+internally.
 
 If these attributes are marked as optional in the grammar (using a
 question mark), the value might be \code{None}. If the attributes

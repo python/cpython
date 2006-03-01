@@ -105,11 +105,11 @@ PyParser_Delete(parser_state *ps)
 /* PARSER STACK OPERATIONS */
 
 static int
-shift(register stack *s, int type, char *str, int newstate, int lineno)
+shift(register stack *s, int type, char *str, int newstate, int lineno, int col_offset)
 {
 	int err;
 	assert(!s_empty(s));
-	err = PyNode_AddChild(s->s_top->s_parent, type, str, lineno);
+	err = PyNode_AddChild(s->s_top->s_parent, type, str, lineno, col_offset);
 	if (err)
 		return err;
 	s->s_top->s_state = newstate;
@@ -117,13 +117,13 @@ shift(register stack *s, int type, char *str, int newstate, int lineno)
 }
 
 static int
-push(register stack *s, int type, dfa *d, int newstate, int lineno)
+push(register stack *s, int type, dfa *d, int newstate, int lineno, int col_offset)
 {
 	int err;
 	register node *n;
 	n = s->s_top->s_parent;
 	assert(!s_empty(s));
-	err = PyNode_AddChild(n, type, (char *)NULL, lineno);
+	err = PyNode_AddChild(n, type, (char *)NULL, lineno, col_offset);
 	if (err)
 		return err;
 	s->s_top->s_state = newstate;
@@ -213,7 +213,7 @@ future_hack(parser_state *ps)
 
 int
 PyParser_AddToken(register parser_state *ps, register int type, char *str,
-	          int lineno, int *expected_ret)
+	          int lineno, int col_offset, int *expected_ret)
 {
 	register int ilabel;
 	int err;
@@ -245,7 +245,7 @@ PyParser_AddToken(register parser_state *ps, register int type, char *str,
 					dfa *d1 = PyGrammar_FindDFA(
 						ps->p_grammar, nt);
 					if ((err = push(&ps->p_stack, nt, d1,
-						arrow, lineno)) > 0) {
+						arrow, lineno, col_offset)) > 0) {
 						D(printf(" MemError: push\n"));
 						return err;
 					}
@@ -255,7 +255,7 @@ PyParser_AddToken(register parser_state *ps, register int type, char *str,
 				
 				/* Shift the token */
 				if ((err = shift(&ps->p_stack, type, str,
-						x, lineno)) > 0) {
+						x, lineno, col_offset)) > 0) {
 					D(printf(" MemError: shift.\n"));
 					return err;
 				}
