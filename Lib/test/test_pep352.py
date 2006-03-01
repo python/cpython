@@ -42,6 +42,7 @@ class ExceptionClassTests(unittest.TestCase):
                 if '(' in exc_name:
                     paren_index = exc_name.index('(')
                     platform_name = exc_name[paren_index+1:-1]
+                    exc_name = exc_name[:paren_index-1]  # Slice off space
                     if platform_system() != platform_name:
                         exc_set.discard(exc_name)
                         continue
