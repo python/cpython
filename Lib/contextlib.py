@@ -91,7 +91,6 @@ def nested(*contexts):
     """
     exits = []
     vars = []
-    exc = (None, None, None)
     try:
         try:
             for context in contexts:
@@ -103,6 +102,8 @@ def nested(*contexts):
             yield vars
         except:
             exc = sys.exc_info()
+        else:
+            exc = (None, None, None)
     finally:
         while exits:
             exit = exits.pop()
@@ -110,6 +111,8 @@ def nested(*contexts):
                 exit(*exc)
             except:
                 exc = sys.exc_info()
+            else:
+                exc = (None, None, None)
         if exc != (None, None, None):
             raise
 

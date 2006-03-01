@@ -107,6 +107,60 @@ class NestedTestCase(unittest.TestCase):
         else:
             self.fail("Didn't raise ZeroDivisionError")
 
+    def test_nested_b_swallows(self):
+        @contextmanager
+        def a():
+            yield
+        @contextmanager
+        def b():
+            try:
+                yield
+            except:
+                # Swallow the exception
+                pass
+        try:
+            with nested(a(), b()):
+                1/0
+        except ZeroDivisionError:
+            self.fail("Didn't swallow ZeroDivisionError")
+
+    def test_nested_break(self):
+        @contextmanager
+        def a():
+            yield
+        state = 0
+        while True:
+            state += 1
+            with nested(a(), a()):
+                break
+            state += 10
+        self.assertEqual(state, 1)
+
+    def test_nested_continue(self):
+        @contextmanager
+        def a():
+            yield
+        state = 0
+        while state < 3:
+            state += 1
+            with nested(a(), a()):
+                continue
+            state += 10
+        self.assertEqual(state, 3)
+
+    def test_nested_return(self):
+        @contextmanager
+        def a():
+            try:
+                yield
+            except:
+                pass
+        def foo():
+            with nested(a(), a()):
+                return 1
+            return 10
+        self.assertEqual(foo(), 1)
+
 class ClosingTestCase(unittest.TestCase):
 
     # XXX This needs more work
