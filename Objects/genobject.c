@@ -230,11 +230,11 @@ gen_throw(PyGenObject *gen, PyObject *args)
 	Py_XINCREF(val);
 	Py_XINCREF(tb);
 
-	if (PyClass_Check(typ)) {
+	if (PyExceptionClass_Check(typ)) {
 		PyErr_NormalizeException(&typ, &val, &tb);
 	}
 
-	else if (PyInstance_Check(typ)) {
+	else if (PyExceptionInstance_Check(typ)) {
 		/* Raising an instance.  The value should be a dummy. */
 		if (val && val != Py_None) {
 			PyErr_SetString(PyExc_TypeError,
@@ -245,7 +245,7 @@ gen_throw(PyGenObject *gen, PyObject *args)
 			/* Normalize to raise <class>, <instance> */
 			Py_XDECREF(val);
 			val = typ;
-			typ = (PyObject*) ((PyInstanceObject*)typ)->in_class;
+			typ = PyExceptionInstance_Class(typ);
 			Py_INCREF(typ);
 		}
 	}

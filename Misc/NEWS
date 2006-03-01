@@ -12,6 +12,11 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- PEP 352, patch #1104669: Make exceptions new-style objects.  Introduced the
+  new exception base class, BaseException, which has a new message attribute.
+  KeyboardInterrupt and SystemExit to directly inherit from BaseException now.
+  Raising a string exception now raises a DeprecationWarning.
+
 - Patch #1438387, PEP 328: relative and absolute imports. Imports can now be
   explicitly relative, using 'from .module import name' to mean 'from the same
   package as this module is in. Imports without dots still default to the
