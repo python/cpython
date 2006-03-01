@@ -303,7 +303,7 @@ visit_reachable(PyObject *op, PyGC_Head *reachable)
 {
 	if (PyObject_IS_GC(op)) {
 		PyGC_Head *gc = AS_GC(op);
-		const int gc_refs = gc->gc.gc_refs;
+		const Py_ssize_t gc_refs = gc->gc.gc_refs;
 
 		if (gc_refs == 0) {
 			/* This is in move_unreachable's 'young' list, but
