@@ -13,6 +13,8 @@
 
 /* See also ../Dos/dosmodule.c */
 
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 #include "structseq.h"
 
@@ -1759,7 +1761,7 @@ posix_listdir(PyObject *self, PyObject *args)
 #define MAX_PATH    CCHMAXPATH
 #endif
     char *name, *pt;
-    int len;
+    Py_ssize_t len;
     PyObject *d, *v;
     char namebuf[MAX_PATH+5];
     HDIR  hdir = 1;
@@ -1899,7 +1901,7 @@ posix__getfullpathname(PyObject *self, PyObject *args)
 	/* assume encoded strings wont more than double no of chars */
 	char inbuf[MAX_PATH*2];
 	char *inbufp = inbuf;
-	int insize = sizeof(inbuf)/sizeof(inbuf[0]);
+	Py_ssize_t insize;
 	char outbuf[MAX_PATH*2];
 	char *temp;
 #ifdef Py_WIN_WIDE_FILENAMES
@@ -1919,6 +1921,7 @@ posix__getfullpathname(PyObject *self, PyObject *args)
 		PyErr_Clear();
 	}
 #endif
+	/* XXX(twouters) Why use 'et#' here at all? insize isn't used */
 	if (!PyArg_ParseTuple (args, "et#:_getfullpathname",
 	                       Py_FileSystemDefaultEncoding, &inbufp,
 	                       &insize))
@@ -5590,16 +5593,18 @@ Write a string to a file descriptor.");
 static PyObject *
 posix_write(PyObject *self, PyObject *args)
 {
-	int fd, size;
+	int fd;
+	Py_ssize_t size;
 	char *buffer;
+
 	if (!PyArg_ParseTuple(args, "is#:write", &fd, &buffer, &size))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	size = write(fd, buffer, size);
+	size = write(fd, buffer, (size_t)size);
 	Py_END_ALLOW_THREADS
 	if (size < 0)
 		return posix_error();
-	return PyInt_FromLong((long)size);
+	return PyInt_FromSsize_t(size);
 }
 
 
