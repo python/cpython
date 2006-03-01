@@ -8,7 +8,7 @@ values from C values.
 
 \section{Operating System Utilities \label{os}}
 
-\begin{cfuncdesc}{int}{Py_FdIsInteractive}{FILE *fp, char *filename}
+\begin{cfuncdesc}{int}{Py_FdIsInteractive}{FILE *fp, const char *filename}
   Return true (nonzero) if the standard I/O file \var{fp} with name
   \var{filename} is deemed interactive.  This is the case for files
   for which \samp{isatty(fileno(\var{fp}))} is true.  If the global
@@ -91,7 +91,7 @@ values from C values.
 
 \section{Importing Modules \label{importing}}
 
-\begin{cfuncdesc}{PyObject*}{PyImport_ImportModule}{char *name}
+\begin{cfuncdesc}{PyObject*}{PyImport_ImportModule}{const char *name}
   This is a simplified interface to
   \cfunction{PyImport_ImportModuleEx()} below, leaving the
   \var{globals} and \var{locals} arguments set to \NULL.  When the
@@ -148,7 +148,7 @@ values from C values.
   case).
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyImport_AddModule}{char *name}
+\begin{cfuncdesc}{PyObject*}{PyImport_AddModule}{const char *name}
   Return the module object corresponding to a module name.  The
   \var{name} argument may be of the form \code{package.module}.
   First check the modules dictionary if there's one there, and if not,
@@ -369,7 +369,7 @@ Should only non-negative values be written using these routines?
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyMarshal_ReadObjectFromString}{char *string,
-                                                             int len}
+                                                             Py_ssize_t len}
   Return a Python object from the data stream in a character buffer
   containing \var{len} bytes pointed to by \var{string}.  On error,
   sets the appropriate exception (\exception{EOFError} or
@@ -687,21 +687,21 @@ format and the format must be exhausted.  On success, the
 \cfunction{PyArg_Parse*()} functions return true, otherwise they
 return false and raise an appropriate exception.
 
-\begin{cfuncdesc}{int}{PyArg_ParseTuple}{PyObject *args, char *format,
+\begin{cfuncdesc}{int}{PyArg_ParseTuple}{PyObject *args, const char *format,
                                          \moreargs}
   Parse the parameters of a function that takes only positional
   parameters into local variables.  Returns true on success; on
   failure, it returns false and raises the appropriate exception.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyArg_VaParse}{PyObject *args, char *format,
+\begin{cfuncdesc}{int}{PyArg_VaParse}{PyObject *args, const char *format,
                                          va_list vargs}
   Identical to \cfunction{PyArg_ParseTuple()}, except that it accepts a
   va_list rather than a variable number of arguments.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyArg_ParseTupleAndKeywords}{PyObject *args,
-                       PyObject *kw, char *format, char *keywords[],
+                       PyObject *kw, const char *format, char *keywords[],
                        \moreargs}
   Parse the parameters of a function that takes both positional and
   keyword parameters into local variables.  Returns true on success;
@@ -709,13 +709,13 @@ return false and raise an appropriate exception.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyArg_VaParseTupleAndKeywords}{PyObject *args,
-                       PyObject *kw, char *format, char *keywords[],
+                       PyObject *kw, const char *format, char *keywords[],
                        va_list vargs}
   Identical to \cfunction{PyArg_ParseTupleAndKeywords()}, except that it
   accepts a va_list rather than a variable number of arguments.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyArg_Parse}{PyObject *args, char *format,
+\begin{cfuncdesc}{int}{PyArg_Parse}{PyObject *args, const char *format,
                                     \moreargs}
   Function used to deconstruct the argument lists of ``old-style''
   functions --- these are functions which use the
@@ -727,8 +727,8 @@ return false and raise an appropriate exception.
   purpose.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyArg_UnpackTuple}{PyObject *args, char *name,
-                                          int min, int max, \moreargs}
+\begin{cfuncdesc}{int}{PyArg_UnpackTuple}{PyObject *args, const char *name,
+                                          Py_ssize_t min, Py_ssize_t max, \moreargs}
   A simpler form of parameter retrieval which does not use a format
   string to specify the types of the arguments.  Functions which use
   this method to retrieve their parameters should be declared as
@@ -774,7 +774,7 @@ PyArg_ParseTuple(args, "O|O:ref", &object, &callback)
   \versionadded{2.2}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{Py_BuildValue}{char *format,
+\begin{cfuncdesc}{PyObject*}{Py_BuildValue}{const char *format,
                                             \moreargs}
   Create a new value based on a format string similar to those
   accepted by the \cfunction{PyArg_Parse*()} family of functions and a
