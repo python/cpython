@@ -1901,7 +1901,7 @@ posix__getfullpathname(PyObject *self, PyObject *args)
 	/* assume encoded strings wont more than double no of chars */
 	char inbuf[MAX_PATH*2];
 	char *inbufp = inbuf;
-	Py_ssize_t insize;
+	Py_ssize_t insize = sizeof(inbuf);
 	char outbuf[MAX_PATH*2];
 	char *temp;
 #ifdef Py_WIN_WIDE_FILENAMES
@@ -1921,7 +1921,6 @@ posix__getfullpathname(PyObject *self, PyObject *args)
 		PyErr_Clear();
 	}
 #endif
-	/* XXX(twouters) Why use 'et#' here at all? insize isn't used */
 	if (!PyArg_ParseTuple (args, "et#:_getfullpathname",
 	                       Py_FileSystemDefaultEncoding, &inbufp,
 	                       &insize))
