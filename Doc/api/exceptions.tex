@@ -113,7 +113,7 @@ for each thread.
   exception state.}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void}{PyErr_SetString}{PyObject *type, char *message}
+\begin{cfuncdesc}{void}{PyErr_SetString}{PyObject *type, const char *message}
   This is the most common way to set the error indicator.  The first
   argument specifies the exception type; it is normally one of the
   standard exceptions, e.g. \cdata{PyExc_RuntimeError}.  You need not
@@ -184,7 +184,7 @@ for each thread.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyErr_SetFromErrnoWithFilename}{PyObject *type,
-                                                             char *filename}
+                                                             const char *filename}
   Similar to \cfunction{PyErr_SetFromErrno()}, with the additional
   behavior that if \var{filename} is not \NULL, it is passed to the
   constructor of \var{type} as a third parameter.  In the case of
@@ -217,7 +217,7 @@ for each thread.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyErr_SetFromWindowsErrWithFilename}{int ierr,
-                                                                char *filename}
+                                                                const char *filename}
   Similar to \cfunction{PyErr_SetFromWindowsErr()}, with the
   additional behavior that if \var{filename} is not \NULL, it is
   passed to the constructor of \exception{WindowsError} as a third
@@ -275,8 +275,9 @@ for each thread.
   command line documentation.  There is no C API for warning control.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyErr_WarnExplicit}{PyObject *category, char *message,
-                char *filename, int lineno, char *module, PyObject *registry}
+\begin{cfuncdesc}{int}{PyErr_WarnExplicit}{PyObject *category, 
+                const char *message, const char *filename, int lineno, 
+                const char *module, PyObject *registry}
   Issue a warning message with explicit control over all warning
   attributes.  This is a straightforward wrapper around the Python
   function \function{warnings.warn_explicit()}, see there for more
