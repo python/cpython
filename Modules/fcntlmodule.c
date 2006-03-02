@@ -1,6 +1,8 @@
 
 /* fcntl module */
 
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 
 #ifdef HAVE_SYS_FILE_H
@@ -35,7 +37,7 @@ fcntl_fcntl(PyObject *self, PyObject *args)
 	int arg;
 	int ret;
 	char *str;
-	int len;
+	Py_ssize_t len;
 	char buf[1024];
 
 	if (PyArg_ParseTuple(args, "O&is#:fcntl",
@@ -98,7 +100,7 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 	int arg;
 	int ret;
 	char *str;
-	int len;
+	Py_ssize_t len;
 	int mutate_arg = 1;
 	char buf[1024];
 
