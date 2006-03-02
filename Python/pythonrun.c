@@ -1115,6 +1115,7 @@ void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 				err = PyFile_WriteString("<unknown>", f);
 			else {
 				char* modstr = PyString_AsString(moduleName);
+				Py_DECREF(moduleName);
 				if (modstr && strcmp(modstr, "exceptions"))
 				{
 					err = PyFile_WriteString(modstr, f);
@@ -1130,21 +1131,19 @@ void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 		}
 		else
 			err = PyFile_WriteObject(exception, f, Py_PRINT_RAW);
-		if (err == 0) {
-			if (value != Py_None) {
-				PyObject *s = PyObject_Str(value);
-				/* only print colon if the str() of the
-				   object is not the empty string
-				*/
-				if (s == NULL)
-					err = -1;
-				else if (!PyString_Check(s) ||
-					 PyString_GET_SIZE(s) != 0)
-					err = PyFile_WriteString(": ", f);
-				if (err == 0)
-				  err = PyFile_WriteObject(s, f, Py_PRINT_RAW);
-				Py_XDECREF(s);
-			}
+		if (err == 0 && (value != Py_None)) {
+			PyObject *s = PyObject_Str(value);
+			/* only print colon if the str() of the
+			   object is not the empty string
+			*/
+			if (s == NULL)
+				err = -1;
+			else if (!PyString_Check(s) ||
+				 PyString_GET_SIZE(s) != 0)
+				err = PyFile_WriteString(": ", f);
+			if (err == 0)
+			  err = PyFile_WriteObject(s, f, Py_PRINT_RAW);
+			Py_XDECREF(s);
 		}
 		if (err == 0)
 			err = PyFile_WriteString("\n", f);
