@@ -35,11 +35,23 @@ extern "C" {
   PyAPI_FUNC(PyArena *) PyArena_New(void);
   PyAPI_FUNC(void) PyArena_Free(PyArena *);
 
-  PyAPI_FUNC(void *) PyArena_Malloc(PyArena *, size_t);
+  /* Mostly like malloc(), return the address of a block of memory spanning
+   * `size` bytes, or return NULL (without setting an exception) if enough
+   * new memory can't be obtained.  Unlike malloc(0), PyArena_Malloc() with
+   * size=0 does not guarantee to return a unique pointer (the pointer
+   * returned may equal one or more other pointers obtained from
+   * PyArena_Malloc()).
+   * Note that pointers obtained via PyArena_Malloc() must never be passed to
+   * the system free() or realloc(), or to any of Python's similar memory-
+   * management functions.  PyArena_Malloc()-obtained pointers remain valid
+   * until PyArena_Free(ar) is called, at which point all pointers obtained
+   * from the arena `ar` become invalid simultaneously.
+   */
+  PyAPI_FUNC(void *) PyArena_Malloc(PyArena *, size_t size);
 
-  /* This routines isn't a proper arena allocation routine.  It takes
-     a PyObject* and records it so that it can be DECREFed when the
-     arena is freed.
+  /* This routine isn't a proper arena allocation routine.  It takes
+   * a PyObject* and records it so that it can be DECREFed when the
+   * arena is freed.
    */
   PyAPI_FUNC(int) PyArena_AddPyObject(PyArena *, PyObject *);
 
