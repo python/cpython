@@ -82,6 +82,7 @@ instance.  All arguments are also stored in \member{args} as a tuple, but it wil
 eventually be deprecated and thus its use is discouraged.
 \versionchanged[Changed to inherit from \exception{BaseException}]{2.5}
 \versionadded{2.5}
+\end{excdesc}
 
 \begin{excdesc}{Exception}
 All built-in, non-system-exiting exceptions are derived
@@ -168,11 +169,12 @@ Raised when an \keyword{assert} statement fails.
   \file{pyconfig.h} file.
 \end{excdesc}
 
-\begin{excdesv}{GeneratorExit}
+\begin{excdesc}{GeneratorExit}
   Raise when a generator's \method{close()} method is called.
   It directly inherits from \exception{Exception} instead of
   \exception{StandardError} since it is technically not an error.
   \versionadded{2.5}
+\end{excdesc}
 
 \begin{excdesc}{IOError}
 % XXXJH xrefs here
