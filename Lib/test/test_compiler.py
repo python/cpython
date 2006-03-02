@@ -20,7 +20,7 @@ class CompilerTest(unittest.TestCase):
             for basename in os.listdir(dir):
                 if not basename.endswith(".py"):
                     continue
-                if not TEST_ALL and random() < 0.98 and basename != "test_with.py":
+                if not TEST_ALL and random() < 0.98:
                     continue
                 path = os.path.join(dir, basename)
                 if test.test_support.verbose:
@@ -42,6 +42,9 @@ class CompilerTest(unittest.TestCase):
 
     def testNewClassSyntax(self):
         compiler.compile("class foo():pass\n\n","<string>","exec")
+
+    def testYieldExpr(self):
+        compiler.compile("def g(): yield\n\n", "<string>", "exec")
 
     def testLineNo(self):
         # Test that all nodes except Module have a correct lineno attribute.
