@@ -2529,6 +2529,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 	if (s->lineno > c->c_future->ff_lineno) {
 		if (!strcmp(PyString_AS_STRING(s->v.ImportFrom.module),
 			    "__future__")) {
+			Py_DECREF(level);
 			Py_DECREF(names);
 			return compiler_error(c, 
 				      "from __future__ imports must occur "
