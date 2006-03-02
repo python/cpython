@@ -607,7 +607,9 @@ class ObjVisitor(PickleVisitor):
         for a in sum.attributes:
             self.emit("value = ast2obj_%s(o->%s);" % (a.type, a.name), 1)
             self.emit("if (!value) goto failed;", 1)
-            self.emit('PyObject_SetAttrString(result, "%s", value);' % a.name, 1)
+            self.emit('if (PyObject_SetAttrString(result, "%s", value) < 0)' % a.name, 1)
+            self.emit('goto failed;', 2)
+            self.emit('Py_DECREF(value);', 1)
         self.func_end()
 
     def simpleSum(self, sum, name):

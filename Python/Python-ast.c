@@ -2324,10 +2324,14 @@ ast2obj_stmt(void* _o)
         }
         value = ast2obj_int(o->lineno);
         if (!value) goto failed;
-        PyObject_SetAttrString(result, "lineno", value);
+        if (PyObject_SetAttrString(result, "lineno", value) < 0)
+                goto failed;
+        Py_DECREF(value);
         value = ast2obj_int(o->col_offset);
         if (!value) goto failed;
-        PyObject_SetAttrString(result, "col_offset", value);
+        if (PyObject_SetAttrString(result, "col_offset", value) < 0)
+                goto failed;
+        Py_DECREF(value);
         return result;
 failed:
         Py_XDECREF(value);
@@ -2643,10 +2647,14 @@ ast2obj_expr(void* _o)
         }
         value = ast2obj_int(o->lineno);
         if (!value) goto failed;
-        PyObject_SetAttrString(result, "lineno", value);
+        if (PyObject_SetAttrString(result, "lineno", value) < 0)
+                goto failed;
+        Py_DECREF(value);
         value = ast2obj_int(o->col_offset);
         if (!value) goto failed;
-        PyObject_SetAttrString(result, "col_offset", value);
+        if (PyObject_SetAttrString(result, "col_offset", value) < 0)
+                goto failed;
+        Py_DECREF(value);
         return result;
 failed:
         Py_XDECREF(value);
@@ -3023,7 +3031,7 @@ init_ast(void)
         if (PyDict_SetItemString(d, "AST", (PyObject*)AST_type) < 0) return;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return;
-        if (PyModule_AddStringConstant(m, "__version__", "42649") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "42753") < 0)
                 return;
         if(PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return;
         if(PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0)
