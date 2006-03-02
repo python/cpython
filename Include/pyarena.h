@@ -12,8 +12,16 @@ extern "C" {
 
   /* PyArena_New() and PyArena_Free() create a new arena and free it,
      respectively.  Once an arena has been created, it can be used
-     to allocate memory.  Once it is freed, all the memory it allocated
-     is freed and none of its pointers are valid.
+     to allocate memory via PyArena_Malloc().  Pointers to PyObject can
+     also be registered with the arena via PyArena_AddPyObject(), and the
+     arena will ensure that the PyObjects stay alive at least until
+     PyArena_Free() is called.  When an arena is freed, all the memory it
+     allocated is freed, the arena releases internal references to registered
+     PyObject*, and none of its pointers are valid.
+     XXX (tim) What does "none of its pointers are valid" mean?  Does it
+     XXX mean that pointers previously obtained via PyArena_Malloc() are
+     XXX no longer valid?  (That's clearly true, but not sure that's what
+     XXX the text is trying to say.)
 
      PyArena_New() returns an arena pointer.  On error, it
      returns a negative number and sets an exception.
