@@ -35,14 +35,11 @@ int Py_OptimizeFlag = 0;
 /*
   ISSUES:
 
-  character encodings aren't handled
-
-  ref leaks in interpreter when press return on empty line
-
   opcode_stack_effect() function should be reviewed since stack depth bugs
   could be really hard to find later.
 
   Dead code is being generated (i.e. after unconditional jumps).
+    XXX(nnorwitz): not sure this is still true
 */
 
 #define DEFAULT_BLOCK_SIZE 16
