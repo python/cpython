@@ -173,7 +173,8 @@ EVP_update(EVPobject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s#:update", &cp, &len))
         return NULL;
 
-    EVP_DigestUpdate(&self->ctx, cp, (unsigned int)len);
+    EVP_DigestUpdate(&self->ctx, cp, Py_SAFE_DOWNCAST(len, Py_ssize_t,
+                                                      unsigned int));
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -240,7 +241,7 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
     PyObject *name_obj = NULL;
     char *nameStr;
     unsigned char *cp = NULL;
-    Py_ssize_t len;
+    Py_ssize_t len = 0;
     const EVP_MD *digest;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|s#:HASH", kwlist,
@@ -264,7 +265,8 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
     Py_INCREF(self->name);
 
     if (cp && len)
-        EVP_DigestUpdate(&self->ctx, cp, (unsigned int)len);
+        EVP_DigestUpdate(&self->ctx, cp, Py_SAFE_DOWNCAST(len, Py_ssize_t,
+                                                          unsigned int));
 
     return 0;
 }
@@ -377,7 +379,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
     char *name;
     const EVP_MD *digest;
     unsigned char *cp = NULL;
-    Py_ssize_t len;
+    Py_ssize_t len = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "O|s#:new", kwlist,
                                      &name_obj, &cp, &len)) {
@@ -391,7 +393,8 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
 
     digest = EVP_get_digestbyname(name);
 
-    return EVPnew(name_obj, digest, NULL, cp, (unsigned int)len);
+    return EVPnew(name_obj, digest, NULL, cp, Py_SAFE_DOWNCAST(len, Py_ssize_t,
+                                                               unsigned int));
 }
 
 /*
@@ -406,7 +409,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
     EVP_new_ ## NAME (PyObject *self, PyObject *args) \
     { \
         unsigned char *cp = NULL; \
-        Py_ssize_t len; \
+        Py_ssize_t len = 0; \
      \
         if (!PyArg_ParseTuple(args, "|s#:" #NAME , &cp, &len)) { \
             return NULL; \
@@ -416,7 +419,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
                 CONST_ ## NAME ## _name_obj, \
                 NULL, \
                 CONST_new_ ## NAME ## _ctx_p, \
-                cp, (unsigned int)len); \
+                cp, Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int)); \
     }
 
 /* a PyMethodDef structure for the constructor */
