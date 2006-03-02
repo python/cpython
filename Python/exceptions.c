@@ -285,16 +285,22 @@ BaseException__unicode__(PyObject *self, PyObject *args)
 	}
 	else if (args_len == 1) {
 		PyObject *temp = PySequence_GetItem(args, 0);
+		PyObject *unicode_obj;
+
 		if (!temp) {
 			Py_DECREF(args);
 			return NULL;
 		}
 		Py_DECREF(args);
-		return PyObject_Unicode(temp);
+		unicode_obj = PyObject_Unicode(temp);
+		Py_DECREF(temp);
+		return unicode_obj;
 	}
 	else {
+		PyObject *unicode_obj = PyObject_Unicode(args);
+
 		Py_DECREF(args);
-		return PyObject_Unicode(args);
+		return unicode_obj;
 	}
 }
 #endif /* Py_USING_UNICODE */
