@@ -1174,7 +1174,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 			v = TOP();
 			if (PyList_CheckExact(v) && PyInt_CheckExact(w)) {
 				/* INLINE: list[int] */
-				long i = PyInt_AsLong(w);
+				Py_ssize_t i = PyInt_AsSsize_t(w);
 				if (i < 0)
 					i += PyList_GET_SIZE(v);
 				if (i >= 0 && i < PyList_GET_SIZE(v)) {
