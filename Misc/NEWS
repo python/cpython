@@ -430,9 +430,6 @@ Library
 - Bug #1413790: zipfile now sanitizes absolute archive names that are
   not allowed by the specs.
 
-- Bug #1413790: zipfile now sanitizes absolute archive names that are
-  not allowed by the specs.
-
 - Patch #1215184: FileInput now can be given an opening hook which can
   be used to control how files are opened.
 
