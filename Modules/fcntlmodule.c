@@ -96,6 +96,10 @@ static PyObject *
 fcntl_ioctl(PyObject *self, PyObject *args)
 {
 	int fd;
+	/* In PyArg_ParseTuple below, use the unsigned int 'I' format for
+	   the signed int 'code' variable, because Python turns 0x8000000
+	   into a large positive number (PyLong, or PyInt on 64-bit
+	   platforms,) whereas C expects it to be a negative int */
 	int code;
 	int arg;
 	int ret;
