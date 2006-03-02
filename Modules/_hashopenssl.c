@@ -173,8 +173,7 @@ EVP_update(EVPobject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s#:update", &cp, &len))
         return NULL;
 
-    EVP_DigestUpdate(&self->ctx, cp, Py_SAFE_DOWNCAST(len, Py_ssize_t,
-                                                      unsigned int));
+    EVP_DigestUpdate(&self->ctx, cp, (unsigned int)len);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -265,8 +264,7 @@ EVP_tp_init(EVPobject *self, PyObject *args, PyObject *kwds)
     Py_INCREF(self->name);
 
     if (cp && len)
-        EVP_DigestUpdate(&self->ctx, cp, Py_SAFE_DOWNCAST(len, Py_ssize_t,
-                                                          unsigned int));
+        EVP_DigestUpdate(&self->ctx, cp, (unsigned int)len);
 
     return 0;
 }
@@ -393,8 +391,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
 
     digest = EVP_get_digestbyname(name);
 
-    return EVPnew(name_obj, digest, NULL, cp, Py_SAFE_DOWNCAST(len, Py_ssize_t,
-                                                               unsigned int));
+    return EVPnew(name_obj, digest, NULL, cp, (unsigned int)len);
 }
 
 /*
@@ -419,7 +416,7 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
                 CONST_ ## NAME ## _name_obj, \
                 NULL, \
                 CONST_new_ ## NAME ## _ctx_p, \
-                cp, Py_SAFE_DOWNCAST(len, Py_ssize_t, unsigned int)); \
+                cp, (unsigned int)len); \
     }
 
 /* a PyMethodDef structure for the constructor */
