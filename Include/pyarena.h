@@ -26,7 +26,7 @@ extern "C" {
   /* This routines isn't a proper arena allocation routine.  It takes
      a PyObject* and records it so that it can be DECREFed when the
      arena is freed.
-   */ 
+   */
   PyAPI_FUNC(int) PyArena_AddPyObject(PyArena *, PyObject *);
 
 #ifdef __cplusplus
