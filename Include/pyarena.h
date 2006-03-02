@@ -17,6 +17,12 @@ extern "C" {
 
      PyArena_New() returns an arena pointer.  On error, it
      returns a negative number and sets an exception.
+     XXX (tim):  Not true.  On error, PyArena_New() actually returns NULL,
+     XXX and looks like it may or may not set an exception (e.g., if the
+     XXX internal PyList_New(0) returns NULL, PyArena_New() passes that on
+     XXX and an exception is set; OTOH, if the internal
+     XXX block_new(DEFAULT_BLOCK_SIZE) returns NULL, that's passed on but
+     XXX an exception is not set in that case).
   */
   PyAPI_FUNC(PyArena *) PyArena_New(void);
   PyAPI_FUNC(void) PyArena_Free(PyArena *);
