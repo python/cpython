@@ -1,7 +1,7 @@
 #include "Python.h"
 #include "pyarena.h"
 
-/* A simple arena block structure
+/* A simple arena block structure.
 
    Measurements with standard library modules suggest the average
    allocation is about 20 bytes and that most compiles use a single
@@ -10,9 +10,26 @@
 
 #define DEFAULT_BLOCK_SIZE 8192
 typedef struct _block {
+	/* Total number of bytes owned by this block available to pass out.
+	 * Read-only after initialization.  The first such byte starts at
+	 * ab_mem.
+	 */
 	size_t ab_size;
+
+	/* Total number of bytes already passed out.  The next byte available
+	 * to pass out starts at ab_mem + ab_offset.
+	 */
 	size_t ab_offset;
+
+	/* An arena maintains a singly-linked, NULL-terminated list of
+	 * all blocks owned by the arena.  These are linked via the
+	 * ab_next member.
+	 */
 	struct _block *ab_next;
+
+	/* Pointer to the first allocatable byte owned by this block.  Read-
+	 * only after initialization.
+	 */
 	void *ab_mem;
 } block;
 
