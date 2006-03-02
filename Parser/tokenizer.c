@@ -873,6 +873,11 @@ tok_nextc(register struct tok_state *tok)
 				if (decoding_fgets(tok->inp,
 					       (int)(tok->end - tok->inp),
 					       tok) == NULL) {
+					/* Break out early on decoding
+					   errors, as tok->buf will be NULL
+					 */
+					if (tok->decoding_erred)
+						return EOF;
 					/* Last line does not end in \n,
 					   fake one */
 					strcpy(tok->inp, "\n");
