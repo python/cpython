@@ -1,7 +1,7 @@
 #include "Python.h"
 #include "pyarena.h"
 
-/* A simple arena block structure 
+/* A simple arena block structure
 
    Measurements with standard library modules suggest the average
    allocation is about 20 bytes and that most compiles use a single
@@ -20,7 +20,7 @@ typedef struct _block {
    and a list of PyObject* pointers.  PyObjects are decrefed
    when the arena is freed.
 */
-   
+
 struct _arena {
 	block *a_head;
 	block *a_cur;
@@ -38,7 +38,7 @@ struct _arena {
 static block *
 block_new(size_t size)
 {
-	/* Allocate header and block as one unit. 
+	/* Allocate header and block as one unit.
 	   ab_mem points just past header. */
 	block *b = (block *)malloc(sizeof(block) + size);
 	if (!b)
@@ -120,7 +120,7 @@ PyArena_Free(PyArena *arena)
 	assert(arena);
 #if defined(Py_DEBUG)
         /*
-        fprintf(stderr, 
+        fprintf(stderr,
                 "alloc=%d size=%d blocks=%d block_size=%d big=%d objects=%d\n",
                 arena->total_allocs, arena->total_size, arena->total_blocks,
                 arena->total_block_size, arena->total_big_blocks,
@@ -134,7 +134,7 @@ PyArena_Free(PyArena *arena)
 }
 
 void *
-PyArena_Malloc(PyArena *arena, size_t size) 
+PyArena_Malloc(PyArena *arena, size_t size)
 {
 	void *p = block_alloc(arena->a_cur, size);
 	if (!p)
@@ -157,7 +157,7 @@ PyArena_Malloc(PyArena *arena, size_t size)
 }
 
 int
-PyArena_AddPyObject(PyArena *arena, PyObject *obj) 
+PyArena_AddPyObject(PyArena *arena, PyObject *obj)
 {
         int r = PyList_Append(arena->a_objects, obj);
         if (r >= 0) {
