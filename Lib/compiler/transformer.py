@@ -408,11 +408,11 @@ class Transformer:
         return Discard(expr, lineno=expr.lineno)
 
     def yield_expr(self, nodelist):
-        if len(nodelist)>1:
-            value = nodelist[1]
+        if len(nodelist) > 1:
+            value = self.com_node(nodelist[1])
         else:
             value = Const(None)
-        return Yield(self.com_node(value), lineno=nodelist[0][2])
+        return Yield(value, lineno=nodelist[0][2])
 
     def raise_stmt(self, nodelist):
         # raise: [test [',' test [',' test]]]
