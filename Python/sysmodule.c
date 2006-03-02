@@ -125,7 +125,7 @@ sys_displayhook(PyObject *self, PyObject *o)
 PyDoc_STRVAR(displayhook_doc,
 "displayhook(object) -> None\n"
 "\n"
-"Print an object to sys.stdout and also save it in __builtin__._\n"
+"Print an object to sys.stdout and also save it in __builtin__.\n"
 );
 
 static PyObject *
