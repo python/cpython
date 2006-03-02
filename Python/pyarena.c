@@ -150,7 +150,7 @@ PyArena_Malloc(PyArena *arena, size_t size)
                 arena->total_blocks++;
                 arena->total_block_size += arena->a_cur->ab_size;
                 if (arena->a_cur->ab_size > DEFAULT_BLOCK_SIZE)
-                  arena->total_big_blocks++;
+                        ++arena->total_big_blocks;
 #endif
 	}
 	return p;
