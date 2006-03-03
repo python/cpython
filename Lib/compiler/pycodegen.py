@@ -9,7 +9,7 @@ from compiler import ast, parse, walk, syntax
 from compiler import pyassem, misc, future, symbols
 from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL
 from compiler.consts import (CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS,
-     CO_NESTED, CO_GENERATOR, CO_GENERATOR_ALLOWED, CO_FUTURE_DIVISION,
+     CO_NESTED, CO_GENERATOR, CO_FUTURE_DIVISION,
      CO_FUTURE_ABSIMPORT, CO_FUTURE_WITH_STATEMENT)
 from compiler.pyassem import TupleArg
 
@@ -214,8 +214,6 @@ class CodeGenerator:
             if feature == "division":
                 self.graph.setFlag(CO_FUTURE_DIVISION)
                 self._div_op = "BINARY_TRUE_DIVIDE"
-            elif feature == "generators":
-                self.graph.setFlag(CO_GENERATOR_ALLOWED)
             elif feature == "absolute_import":
                 self.graph.setFlag(CO_FUTURE_ABSIMPORT)
             elif feature == "with_statement":
