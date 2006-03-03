@@ -441,18 +441,25 @@ class Transformer:
                       lineno=nodelist[0][2])
 
     def import_from(self, nodelist):
-        # import_from: 'from' dotted_name 'import' ('*' |
+        # import_from: 'from' ('.'* dotted_name | '.') 'import' ('*' |
         #    '(' import_as_names ')' | import_as_names)
         assert nodelist[0][1] == 'from'
-        assert nodelist[1][0] == symbol.dotted_name
-        assert nodelist[2][1] == 'import'
-        fromname = self.com_dotted_name(nodelist[1])
-        if nodelist[3][0] == token.STAR:
-            return From(fromname, [('*', None)],
+        idx = 1
+        while nodelist[idx][1] == '.':
+            idx += 1
+        level = idx - 1
+        if nodelist[idx][0] == symbol.dotted_name:
+            fromname = self.com_dotted_name(nodelist[idx])
+            idx += 1
+        else:
+            fromname = ""
+        assert nodelist[idx][1] == 'import'
+        if nodelist[idx + 1][0] == token.STAR:
+            return From(fromname, [('*', None)], level,
                         lineno=nodelist[0][2])
         else:
-            node = nodelist[3 + (nodelist[3][0] == token.LPAR)]
-            return From(fromname, self.com_import_as_names(node),
+            node = nodelist[idx + 1 + (nodelist[idx + 1][0] == token.LPAR)]
+            return From(fromname, self.com_import_as_names(node), level,
                         lineno=nodelist[0][2])
 
     def global_stmt(self, nodelist):
@@ -575,12 +582,25 @@ class Transformer:
         return self.testlist(nodelist)
 
     def test(self, nodelist):
+        # or_test ['if' or_test 'else' test] | lambdef
+        if len(nodelist) == 1 and nodelist[0][0] == symbol.lambdef:
+            return self.lambdef(nodelist[0])
+        then = self.com_node(nodelist[0])
+        if len(nodelist) > 1:
+            assert len(nodelist) == 5
+            assert nodelist[1][1] == 'if'
+            assert nodelist[3][1] == 'else'
+            test = self.com_node(nodelist[2])
+            else_ = self.com_node(nodelist[4])
+            return IfExp(test, then, else_, lineno=nodelist[1][2])
+        return then
+
+    def or_test(self, nodelist):
         # and_test ('or' and_test)* | lambdef
         if len(nodelist) == 1 and nodelist[0][0] == symbol.lambdef:
             return self.lambdef(nodelist[0])
         return self.com_binary(Or, nodelist)
-    or_test = test
-    old_test = test
+    old_test = or_test
 
     def and_test(self, nodelist):
         # not_test ('and' not_test)*

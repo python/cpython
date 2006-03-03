@@ -771,7 +771,7 @@ class StackDepthTracker:
         'COMPARE_OP': -1,
         'STORE_FAST': -1,
         'IMPORT_STAR': -1,
-        'IMPORT_NAME': 0,
+        'IMPORT_NAME': -1,
         'IMPORT_FROM': 1,
         'LOAD_ATTR': 0, # unlike other loads
         # close enough...

@@ -8,8 +8,9 @@ from cStringIO import StringIO
 from compiler import ast, parse, walk, syntax
 from compiler import pyassem, misc, future, symbols
 from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL
-from compiler.consts import CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS,\
-     CO_NESTED, CO_GENERATOR, CO_GENERATOR_ALLOWED, CO_FUTURE_DIVISION
+from compiler.consts import (CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS,
+     CO_NESTED, CO_GENERATOR, CO_GENERATOR_ALLOWED, CO_FUTURE_DIVISION,
+     CO_FUTURE_ABSIMPORT, CO_FUTURE_WITH_STATEMENT)
 from compiler.pyassem import TupleArg
 
 # XXX The version-specific code can go, since this code only works with 2.x.
@@ -215,6 +216,10 @@ class CodeGenerator:
                 self._div_op = "BINARY_TRUE_DIVIDE"
             elif feature == "generators":
                 self.graph.setFlag(CO_GENERATOR_ALLOWED)
+            elif feature == "absolute_import":
+                self.graph.setFlag(CO_FUTURE_ABSIMPORT)
+            elif feature == "with_statement":
+                self.graph.setFlag(CO_FUTURE_WITH_STATEMENT)
 
     def initClass(self):
         """This method is called once for each class"""
@@ -542,6 +547,19 @@ class CodeGenerator:
 
     def visitOr(self, node):
         self.visitTest(node, 'JUMP_IF_TRUE')
+
+    def visitIfExp(self, node):
+        endblock = self.newBlock()
+        elseblock = self.newBlock()
+        self.visit(node.test)
+        self.emit('JUMP_IF_FALSE', elseblock)
+        self.emit('POP_TOP')
+        self.visit(node.then)
+        self.emit('JUMP_FORWARD', endblock)
+        self.nextBlock(elseblock)
+        self.emit('POP_TOP')
+        self.visit(node.else_)
+        self.nextBlock(endblock)
 
     def visitCompare(self, node):
         self.visit(node.expr)
@@ -875,8 +893,10 @@ class CodeGenerator:
 
     def visitImport(self, node):
         self.set_lineno(node)
+        level = 0 if "absolute_import" in self.futures else -1
         for name, alias in node.names:
             if VERSION > 1:
+                self.emit('LOAD_CONST', level)
                 self.emit('LOAD_CONST', None)
             self.emit('IMPORT_NAME', name)
             mod = name.split(".")[0]
@@ -888,8 +908,12 @@ class CodeGenerator:
 
     def visitFrom(self, node):
         self.set_lineno(node)
+        level = node.level
+        if level == 0 and "absolute_import" not in self.futures:
+            level = -1
         fromlist = map(lambda (name, alias): name, node.names)
         if VERSION > 1:
+            self.emit('LOAD_CONST', level)
             self.emit('LOAD_CONST', tuple(fromlist))
         self.emit('IMPORT_NAME', node.modname)
         for name, alias in node.names:
