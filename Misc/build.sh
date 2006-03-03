@@ -59,7 +59,7 @@ REFLOG="build/reflog.txt.out"
 # test_generators really leaks.  Since test_generators probably won't
 # be fixed real soon, disable warning about it for now.
 # The entire leak report will be mailed if any test not in this list leaks.
-LEAKY_TESTS="test_(capi|cfgparser|charmapcodec|cmd_line|compiler|filecmp|generators|threaded_import|threadedtempfile|threading|threading_local|urllib2)"
+LEAKY_TESTS="test_(capi|cfgparser|charmapcodec|cmd_line|compiler|filecmp|generators|quopri|threaded_import|threadedtempfile|threading|threading_local|urllib2)"
 
 # Change this flag to "yes" for old releases to just update/build the docs.
 BUILD_DISABLED="no"
