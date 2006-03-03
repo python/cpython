@@ -333,35 +333,12 @@ BaseException__repr__(PyObject *self, PyObject *args)
 			return NULL;
 	}
 	else {
-		PyObject *args_repr;
-		/*PyObject *right_paren;
-
-		repr_suffix = PyString_FromString("(*");
-		if (!repr_suffix) {
-			Py_DECREF(args_attr);
-			return NULL;
-		}*/
-
-		args_repr = PyObject_Repr(args_attr);
+		PyObject *args_repr = PyObject_Repr(args_attr);
 		Py_DECREF(args_attr);
 		if (!args_repr)
 			return NULL;
 
 		repr_suffix = args_repr;
-
-		/*PyString_ConcatAndDel(&repr_suffix, args_repr);
-		if (!repr_suffix)
-			return NULL;
-
-		right_paren = PyString_FromString(")");
-		if (!right_paren) {
-			Py_DECREF(repr_suffix);
-			return NULL;
-		}
-
-		PyString_ConcatAndDel(&repr_suffix, right_paren);
-		if (!repr_suffix)
-			return NULL;*/
 	}
 
 	repr = PyString_FromString(self->ob_type->tp_name);
