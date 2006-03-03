@@ -891,7 +891,7 @@ class CodeGenerator:
 
     def visitImport(self, node):
         self.set_lineno(node)
-        level = 0 if "absolute_import" in self.futures else -1
+        level = 0 if self.graph.checkFlag(CO_FUTURE_ABSIMPORT) else -1
         for name, alias in node.names:
             if VERSION > 1:
                 self.emit('LOAD_CONST', level)
@@ -907,7 +907,7 @@ class CodeGenerator:
     def visitFrom(self, node):
         self.set_lineno(node)
         level = node.level
-        if level == 0 and "absolute_import" not in self.futures:
+        if level == 0 and not self.graph.checkFlag(CO_FUTURE_ABSIMPORT):
             level = -1
         fromlist = map(lambda (name, alias): name, node.names)
         if VERSION > 1:
