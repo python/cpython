@@ -17,6 +17,12 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Ronald Oussoren was given SVN access on 3 Mar 2006 by NCN, for Mac
+  related work.
+
+- Bob Ippolito was given SVN access on 2 Mar 2006 by NCN, for Mac
+  related work.
+
 - Nick Coghlan requested CVS access so he could update his PEP directly.
   Granted by GvR on 16 Oct 2005.
 
@@ -87,5 +93,6 @@ Initials of Project Admins
 --------------------------
 
 GvR:  Guido van Rossum
+NCN:  Neal Norwitz
 RDH:  Raymond Hettinger
 TGP:  Tim Peters
