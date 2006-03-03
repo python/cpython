@@ -98,13 +98,22 @@ class LogRecordSocketReceiver(ThreadingTCPServer):
         self.abort = 0
         self.timeout = 1
 
+    def _wait_and_process_data(self):
+        rd, wr, ex = select.select([self.socket.fileno()], [], [],
+                                   self.timeout)
+        if rd:
+            self.handle_request()
+
     def serve_until_stopped(self):
         while not self.abort:
-            rd, wr, ex = select.select([self.socket.fileno()],
-                                       [], [],
-                                       self.timeout)
-            if rd:
-                self.handle_request()
+            self._wait_and_process_data()
+
+        # XXX(nnorwitz): Try to fix timing related test failures.
+        # It's possible self.aborted was set before the final message
+        # was received.  By calling _wait_and_process_data(),
+        # it gives us one last chance to read messages.
+        # The test generally only fails on Solaris.
+        self._wait_and_process_data()
         #notify the main thread that we're about to exit
         socketDataProcessed.set()
         # close the listen socket
