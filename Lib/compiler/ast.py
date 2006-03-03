@@ -524,19 +524,20 @@ class For(Node):
         return "For(%s, %s, %s, %s)" % (repr(self.assign), repr(self.list), repr(self.body), repr(self.else_))
 
 class From(Node):
-    def __init__(self, modname, names, lineno=None):
+    def __init__(self, modname, names, level, lineno=None):
         self.modname = modname
         self.names = names
+        self.level = level
         self.lineno = lineno
 
     def getChildren(self):
-        return self.modname, self.names
+        return self.modname, self.names, self.level
 
     def getChildNodes(self):
         return ()
 
     def __repr__(self):
-        return "From(%s, %s)" % (repr(self.modname), repr(self.names))
+        return "From(%s, %s, %s)" % (repr(self.modname), repr(self.names), repr(self.level))
 
 class Function(Node):
     def __init__(self, decorators, name, argnames, defaults, flags, doc, code, lineno=None):
@@ -553,7 +554,7 @@ class Function(Node):
             self.varargs = 1
         if flags & CO_VARKEYWORDS:
             self.kwargs = 1
-
+    
 
 
     def getChildren(self):
@@ -584,7 +585,7 @@ class GenExpr(Node):
         self.lineno = lineno
         self.argnames = ['[outmost-iterable]']
         self.varargs = self.kwargs = None
-
+    
 
 
     def getChildren(self):
@@ -708,6 +709,22 @@ class If(Node):
     def __repr__(self):
         return "If(%s, %s)" % (repr(self.tests), repr(self.else_))
 
+class IfExp(Node):
+    def __init__(self, test, then, else_, lineno=None):
+        self.test = test
+        self.then = then
+        self.else_ = else_
+        self.lineno = lineno
+
+    def getChildren(self):
+        return self.test, self.then, self.else_
+
+    def getChildNodes(self):
+        return self.test, self.then, self.else_
+
+    def __repr__(self):
+        return "IfExp(%s, %s, %s)" % (repr(self.test), repr(self.then), repr(self.else_))
+
 class Import(Node):
     def __init__(self, names, lineno=None):
         self.names = names
@@ -763,7 +780,7 @@ class Lambda(Node):
             self.varargs = 1
         if flags & CO_VARKEYWORDS:
             self.kwargs = 1
-
+    
 
 
     def getChildren(self):
