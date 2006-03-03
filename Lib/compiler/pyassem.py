@@ -744,6 +744,7 @@ class StackDepthTracker:
     effect = {
         'POP_TOP': -1,
         'DUP_TOP': 1,
+        'LIST_APPEND': -2,
         'SLICE+1': -1,
         'SLICE+2': -1,
         'SLICE+3': -2,

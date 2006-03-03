@@ -1297,6 +1297,9 @@ opcode_stack_effect(int opcode, int oparg)
 		case UNARY_INVERT:
 			return 0;
 
+		case LIST_APPEND:
+			return -2;
+
 		case BINARY_POWER:
 		case BINARY_MULTIPLY:
 		case BINARY_DIVIDE:
@@ -3149,8 +3152,7 @@ compiler_listcomp_generator(struct compiler *c, PyObject *tmpname,
 	    if (!compiler_nameop(c, tmpname, Load))
 		return 0;
 	    VISIT(c, expr, elt);
-	    ADDOP_I(c, CALL_FUNCTION, 1);
-	    ADDOP(c, POP_TOP);
+	    ADDOP(c, LIST_APPEND);
 
 	    compiler_use_next_block(c, skip);
 	}
@@ -3189,7 +3191,6 @@ compiler_listcomp(struct compiler *c, expr_ty e)
 		return 0;
 	ADDOP_I(c, BUILD_LIST, 0);
 	ADDOP(c, DUP_TOP);
-	ADDOP_O(c, LOAD_ATTR, append, names);
 	if (compiler_nameop(c, tmp, Store))
 	    rc = compiler_listcomp_generator(c, tmp, generators, 0, 
 					     e->v.ListComp.elt);
