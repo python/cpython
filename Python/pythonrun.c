@@ -29,6 +29,16 @@
 #include "windows.h"
 #endif
 
+#ifndef Py_REF_DEBUG
+#  define PRINT_TOTAL_REFS()
+#else /* Py_REF_DEBUG */
+#  if defined(MS_WIN64)
+#    define PRINT_TOTAL_REFS() fprintf(stderr, "[%zd refs]\n", _Py_RefTotal);
+#  else /* ! MS_WIN64 */
+#    define PRINT_TOTAL_REFS() fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
+#  endif /* MS_WIN64 */
+#endif
+
 extern char *Py_GetPath(void);
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
@@ -382,9 +392,7 @@ Py_Finalize(void)
 	dump_counts();
 #endif
 
-#ifdef Py_REF_DEBUG
-	fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
-#endif
+	PRINT_TOTAL_REFS()
 
 #ifdef Py_TRACE_REFS
 	/* Display all objects still alive -- this can invoke arbitrary
@@ -674,9 +682,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
 	}
 	for (;;) {
 		ret = PyRun_InteractiveOneFlags(fp, filename, flags);
-#ifdef Py_REF_DEBUG
-		fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
-#endif
+		PRINT_TOTAL_REFS()
 		if (ret == E_EOF)
 			return 0;
 		/*
