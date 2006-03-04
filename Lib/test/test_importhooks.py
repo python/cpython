@@ -255,7 +255,10 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
         # Delete urllib from modules because urlparse was imported above.  
         # Without this hack, test_socket_ssl fails if run in this order:
         # regrtest.py test_codecmaps_tw test_importhooks test_socket_ssl
-        del sys.modules['urllib']
+        try:
+            del sys.modules['urllib']
+        except KeyError:
+            pass
 
 def test_main():
     test_support.run_unittest(ImportHooksTestCase)
