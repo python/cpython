@@ -554,7 +554,7 @@ class Function(Node):
             self.varargs = 1
         if flags & CO_VARKEYWORDS:
             self.kwargs = 1
-    
+
 
 
     def getChildren(self):
@@ -585,7 +585,7 @@ class GenExpr(Node):
         self.lineno = lineno
         self.argnames = ['[outmost-iterable]']
         self.varargs = self.kwargs = None
-    
+
 
 
     def getChildren(self):
@@ -780,7 +780,7 @@ class Lambda(Node):
             self.varargs = 1
         if flags & CO_VARKEYWORDS:
             self.kwargs = 1
-    
+
 
 
     def getChildren(self):
