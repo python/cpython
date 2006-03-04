@@ -1958,7 +1958,7 @@ PyFrozenSet_New(PyObject *iterable)
 	return result;
 }
 
-int
+Py_ssize_t
 PySet_Size(PyObject *anyset)
 {
 	if (!PyAnySet_Check(anyset)) {
