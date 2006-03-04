@@ -196,11 +196,11 @@ gc_list_merge(PyGC_Head *from, PyGC_Head *to)
 	gc_list_init(from);
 }
 
-static long
+static Py_ssize_t
 gc_list_size(PyGC_Head *list)
 {
 	PyGC_Head *gc;
-	long n = 0;
+	Py_ssize_t n = 0;
 	for (gc = list->gc.gc_next; gc != list; gc = gc->gc.gc_next) {
 		n++;
 	}
@@ -719,12 +719,12 @@ delete_garbage(PyGC_Head *collectable, PyGC_Head *old)
 
 /* This is the main function.  Read this to understand how the
  * collection process works. */
-static long
+static Py_ssize_t
 collect(int generation)
 {
 	int i;
-	long m = 0;	/* # objects collected */
-	long n = 0;	/* # unreachable objects that couldn't be collected */
+	Py_ssize_t m = 0; /* # objects collected */
+	Py_ssize_t n = 0; /* # unreachable objects that couldn't be collected */
 	PyGC_Head *young; /* the generation we are examining */
 	PyGC_Head *old; /* next older generation */
 	PyGC_Head unreachable; /* non-problematic unreachable trash */
@@ -856,11 +856,11 @@ collect(int generation)
 	return n+m;
 }
 
-static long
+static Py_ssize_t
 collect_generations(void)
 {
 	int i;
-	long n = 0;
+	Py_ssize_t n = 0;
 
 	/* Find the oldest generation (higest numbered) where the count
 	 * exceeds the threshold.  Objects in the that generation and
@@ -919,7 +919,7 @@ PyDoc_STRVAR(gc_collect__doc__,
 static PyObject *
 gc_collect(PyObject *self, PyObject *noargs)
 {
-	long n;
+	Py_ssize_t n;
 
 	if (collecting)
 		n = 0; /* already collecting, don't do anything */
@@ -929,7 +929,7 @@ gc_collect(PyObject *self, PyObject *noargs)
 		collecting = 0;
 	}
 
-	return Py_BuildValue("l", n);
+	return PyInt_FromSsize_t(n);
 }
 
 PyDoc_STRVAR(gc_set_debug__doc__,
@@ -1181,10 +1181,10 @@ initgc(void)
 }
 
 /* API to invoke gc.collect() from C */
-long
+Py_ssize_t
 PyGC_Collect(void)
 {
-	long n;
+	Py_ssize_t n;
 
 	if (collecting)
 		n = 0; /* already collecting, don't do anything */
