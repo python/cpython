@@ -349,7 +349,7 @@ Py_Finalize(void)
 	 * XXX         in <function callback at 0x008F5718> ignored
 	 * XXX but I'm unclear on exactly how that one happens.  In any case,
 	 * XXX I haven't seen a real-life report of either of these.
-         */
+	 */
 	PyGC_Collect();
 
 	/* Destroy all modules */
@@ -690,15 +690,15 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
 #define PARSER_FLAGS(flags) \
 	((flags) ? ((((flags)->cf_flags & PyCF_DONT_IMPLY_DEDENT) ? \
 		      PyPARSE_DONT_IMPLY_DEDENT : 0) \
-	            | ((flags)->cf_flags & CO_FUTURE_WITH_STATEMENT ? \
-	               PyPARSE_WITH_IS_KEYWORD : 0)) : 0)
+		    | ((flags)->cf_flags & CO_FUTURE_WITH_STATEMENT ? \
+		       PyPARSE_WITH_IS_KEYWORD : 0)) : 0)
 
 int
 PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
 {
 	PyObject *m, *d, *v, *w;
 	mod_ty mod;
-        PyArena *arena;
+	PyArena *arena;
 	char *ps1 = "", *ps2 = "";
 	int errcode = 0;
 
@@ -718,14 +718,14 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 		else if (PyString_Check(w))
 			ps2 = PyString_AsString(w);
 	}
-        arena = PyArena_New();
+	arena = PyArena_New();
 	mod = PyParser_ASTFromFile(fp, filename, 
 				   Py_single_input, ps1, ps2,
 				   flags, &errcode, arena);
 	Py_XDECREF(v);
 	Py_XDECREF(w);
 	if (mod == NULL) {
-        	PyArena_Free(arena);
+		PyArena_Free(arena);
 		if (errcode == E_EOF) {
 			PyErr_Clear();
 			return E_EOF;
@@ -735,12 +735,12 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 	}
 	m = PyImport_AddModule("__main__");
 	if (m == NULL) {
-        	PyArena_Free(arena);
+		PyArena_Free(arena);
 		return -1;
 	}
 	d = PyModule_GetDict(m);
 	v = run_mod(mod, filename, d, d, flags, arena);
-        PyArena_Free(arena);
+	PyArena_Free(arena);
 	if (v == NULL) {
 		PyErr_Print();
 		return -1;
@@ -868,7 +868,7 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
 	/* old style errors */
 	if (PyTuple_Check(err))
 		return PyArg_ParseTuple(err, "O(ziiz)", message, filename,
-				        lineno, offset, text);
+					lineno, offset, text);
 
 	/* new style errors.  `err' is an instance */
 
@@ -965,8 +965,8 @@ print_error_text(PyObject *f, int offset, const char *text)
 static void
 handle_system_exit(void)
 {
-        PyObject *exception, *value, *tb;
-        int exitcode = 0;
+	PyObject *exception, *value, *tb;
+	int exitcode = 0;
 
 	PyErr_Fetch(&exception, &value, &tb);
 	if (Py_FlushLine())
@@ -994,11 +994,11 @@ handle_system_exit(void)
 		exitcode = 1;
 	}
  done:
- 	/* Restore and clear the exception info, in order to properly decref
- 	 * the exception, value, and traceback.  If we just exit instead,
- 	 * these leak, which confuses PYTHONDUMPREFS output, and may prevent
- 	 * some finalizers from running.
- 	 */
+	/* Restore and clear the exception info, in order to properly decref
+	 * the exception, value, and traceback.	 If we just exit instead,
+	 * these leak, which confuses PYTHONDUMPREFS output, and may prevent
+	 * some finalizers from running.
+	 */
 	PyErr_Restore(exception, value, tb);
 	PyErr_Clear();
 	Py_Exit(exitcode);
@@ -1027,7 +1027,7 @@ PyErr_PrintEx(int set_sys_last_vars)
 	hook = PySys_GetObject("excepthook");
 	if (hook) {
 		PyObject *args = PyTuple_Pack(3,
-                    exception, v ? v : Py_None, tb ? tb : Py_None);
+		    exception, v ? v : Py_None, tb ? tb : Py_None);
 		PyObject *result = PyEval_CallObject(hook, args);
 		if (result == NULL) {
 			PyObject *exception2, *v2, *tb2;
@@ -1158,12 +1158,12 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
 		  PyObject *locals, PyCompilerFlags *flags)
 {
 	PyObject *ret = NULL;
-        PyArena *arena = PyArena_New();
+	PyArena *arena = PyArena_New();
 	mod_ty mod = PyParser_ASTFromString(str, "<string>", start, flags,
-                                            arena);
+					    arena);
 	if (mod != NULL)
 		ret = run_mod(mod, "<string>", globals, locals, flags, arena);
-        PyArena_Free(arena);
+	PyArena_Free(arena);
 	return ret;
 }
 
@@ -1172,17 +1172,17 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 		  PyObject *locals, int closeit, PyCompilerFlags *flags)
 {
 	PyObject *ret;
-        PyArena *arena = PyArena_New();
+	PyArena *arena = PyArena_New();
 	mod_ty mod = PyParser_ASTFromFile(fp, filename, start, 0, 0,
 					  flags, NULL, arena);
 	if (mod == NULL) {
-                PyArena_Free(arena);
+		PyArena_Free(arena);
 		return NULL;
-        }
+	}
 	if (closeit)
 		fclose(fp);
 	ret = run_mod(mod, filename, globals, locals, flags, arena);
-        PyArena_Free(arena);
+	PyArena_Free(arena);
 	return ret;
 }
 
@@ -1237,19 +1237,19 @@ Py_CompileStringFlags(const char *str, const char *filename, int start,
 		      PyCompilerFlags *flags)
 {
 	PyCodeObject *co;
-        PyArena *arena = PyArena_New();
+	PyArena *arena = PyArena_New();
 	mod_ty mod = PyParser_ASTFromString(str, filename, start, flags, arena);
 	if (mod == NULL) {
-                PyArena_Free(arena);
+		PyArena_Free(arena);
 		return NULL;
-        }
+	}
 	if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
 		PyObject *result = PyAST_mod2obj(mod);
 		PyArena_Free(arena);
 		return result;
 	}
 	co = PyAST_Compile(mod, filename, flags, arena);
-        PyArena_Free(arena);
+	PyArena_Free(arena);
 	return (PyObject *)co;
 }
 
@@ -1257,14 +1257,14 @@ struct symtable *
 Py_SymtableString(const char *str, const char *filename, int start)
 {
 	struct symtable *st;
-        PyArena *arena = PyArena_New();
+	PyArena *arena = PyArena_New();
 	mod_ty mod = PyParser_ASTFromString(str, filename, start, NULL, arena);
 	if (mod == NULL) {
-                PyArena_Free(arena);
+		PyArena_Free(arena);
 		return NULL;
-        }
+	}
 	st = PySymtable_Build(mod, filename, 0);
-        PyArena_Free(arena);
+	PyArena_Free(arena);
 	return st;
 }
 
@@ -1292,7 +1292,7 @@ PyParser_ASTFromString(const char *s, const char *filename, int start,
 mod_ty
 PyParser_ASTFromFile(FILE *fp, const char *filename, int start, char *ps1, 
 		     char *ps2, PyCompilerFlags *flags, int *errcode,
-                     PyArena *arena)
+		     PyArena *arena)
 {
 	mod_ty mod;
 	perrdetail err;
@@ -1448,7 +1448,7 @@ err_input(perrdetail *err)
 	}
 	v = Py_BuildValue("(ziiz)", err->filename,
 			  err->lineno, err->offset, err->text);
- 	if (err->text != NULL) {
+	if (err->text != NULL) {
 		PyMem_DEL(err->text);
 		err->text = NULL;
 	}
