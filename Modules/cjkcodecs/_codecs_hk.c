@@ -2,7 +2,6 @@
  * _codecs_hk.c: Codecs collection for encodings from Hong Kong
  *
  * Written by Hye-Shik Chang <perky@FreeBSD.org>
- * $CJKCodecs: _codecs_hk.c,v 1.4 2004/07/18 04:44:27 perky Exp $
  */
 
 #define USING_IMPORTED_MAPS
@@ -32,7 +31,7 @@ ENCODER(big5hkscs)
 	while (inleft > 0) {
 		ucs4_t c = **inbuf;
 		DBCHAR code;
-		int insize;
+		Py_ssize_t insize;
 
 		if (c < 0x80) {
 			REQUIRE_OUTBUF(1)

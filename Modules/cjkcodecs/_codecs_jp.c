@@ -2,7 +2,6 @@
  * _codecs_jp.c: Codecs collection for Japanese encodings
  *
  * Written by Hye-Shik Chang <perky@FreeBSD.org>
- * $CJKCodecs: _codecs_jp.c,v 1.14 2004/07/07 17:54:47 perky Exp $
  */
 
 #define USING_BINARY_PAIR_SEARCH
@@ -150,7 +149,7 @@ ENCODER(euc_jis_2004)
 	while (inleft > 0) {
 		ucs4_t c = IN1;
 		DBCHAR code;
-		int insize;
+		Py_ssize_t insize;
 
 		if (c < 0x80) {
 			WRITE1(c)
@@ -545,7 +544,7 @@ ENCODER(shift_jis_2004)
 		ucs4_t c = IN1;
 		DBCHAR code = NOCHAR;
 		int c1, c2;
-		size_t insize;
+		Py_ssize_t insize;
 
 		JISX0201_ENCODE(c, code)
 		else DECODE_SURROGATE(c)

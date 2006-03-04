@@ -2,12 +2,12 @@
  * cjkcodecs.h: common header for cjkcodecs
  *
  * Written by Hye-Shik Chang <perky@FreeBSD.org>
- * $CJKCodecs: cjkcodecs.h,v 1.6 2004/07/18 15:22:31 perky Exp $
  */
 
 #ifndef _CJKCODECS_H_
 #define _CJKCODECS_H_
 
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "multibytecodec.h"
 
@@ -70,25 +70,25 @@ static const struct dbcs_map *mapping_list;
 	static int encoding##_encode_init(				\
 		MultibyteCodec_State *state, const void *config)
 #define ENCODER(encoding)						\
-	static int encoding##_encode(					\
+	static Py_ssize_t encoding##_encode(				\
 		MultibyteCodec_State *state, const void *config,	\
-		const Py_UNICODE **inbuf, size_t inleft,		\
-		unsigned char **outbuf, size_t outleft, int flags)
+		const Py_UNICODE **inbuf, Py_ssize_t inleft,		\
+		unsigned char **outbuf, Py_ssize_t outleft, int flags)
 #define ENCODER_RESET(encoding)						\
-	static int encoding##_encode_reset(				\
+	static Py_ssize_t encoding##_encode_reset(			\
 		MultibyteCodec_State *state, const void *config,	\
-		unsigned char **outbuf, size_t outleft)
+		unsigned char **outbuf, Py_ssize_t outleft)
 
 #define DECODER_INIT(encoding)						\
 	static int encoding##_decode_init(				\
 		MultibyteCodec_State *state, const void *config)
 #define DECODER(encoding)						\
-	static int encoding##_decode(					\
+	static Py_ssize_t encoding##_decode(				\
 		MultibyteCodec_State *state, const void *config,	\
-		const unsigned char **inbuf, size_t inleft,		\
-		Py_UNICODE **outbuf, size_t outleft)
+		const unsigned char **inbuf, Py_ssize_t inleft,		\
+		Py_UNICODE **outbuf, Py_ssize_t outleft)
 #define DECODER_RESET(encoding)						\
-	static int encoding##_decode_reset(				\
+	static Py_ssize_t encoding##_decode_reset(			\
 		MultibyteCodec_State *state, const void *config)
 
 #if Py_UNICODE_SIZE == 4

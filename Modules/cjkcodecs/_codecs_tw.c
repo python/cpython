@@ -2,7 +2,6 @@
  * _codecs_tw.c: Codecs collection for Taiwan's encodings
  *
  * Written by Hye-Shik Chang <perky@FreeBSD.org>
- * $CJKCodecs: _codecs_tw.c,v 1.10 2004/07/07 14:59:26 perky Exp $
  */
 
 #include "cjkcodecs.h"

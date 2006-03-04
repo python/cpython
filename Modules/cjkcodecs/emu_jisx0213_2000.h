@@ -1,5 +1,3 @@
-/* $CJKCodecs: emu_jisx0213_2000.h,v 1.3 2004/07/08 02:53:37 perky Exp $ */
-
 /* These routines may be quite inefficient, but it's used only to emulate old
  * standards. */
 

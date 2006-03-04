@@ -1,7 +1,3 @@
-/*
- * $CJKCodecs: mappings_jisx0213_pair.h,v 1.2 2004/07/07 15:28:02 perky Exp $
- */
-
 #define JISX0213_ENCPAIRS 46
 #ifdef EXTERN_JISX0213_PAIR
 static const struct widedbcs_index *jisx0213_pair_decmap;
