@@ -4,7 +4,7 @@
 #include "Python.h"
 
 #ifdef Py_REF_DEBUG
-long _Py_RefTotal;
+Py_ssize_t _Py_RefTotal;
 #endif
 
 int Py_DivisionWarningFlag;
