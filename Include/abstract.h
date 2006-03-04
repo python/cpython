@@ -1042,7 +1042,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	/* Return a pointer to the underlying item array for
            an object retured by PySequence_Fast */
 
-     PyAPI_FUNC(int) PySequence_Count(PyObject *o, PyObject *value);
+     PyAPI_FUNC(Py_ssize_t) PySequence_Count(PyObject *o, PyObject *value);
 
        /*
          Return the number of occurrences on value on o, that is,
@@ -1060,8 +1060,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 #define PY_ITERSEARCH_COUNT    1
 #define PY_ITERSEARCH_INDEX    2
 #define PY_ITERSEARCH_CONTAINS 3
-     PyAPI_FUNC(int) _PySequence_IterSearch(PyObject *seq, PyObject *obj,
-     		    int operation);
+     PyAPI_FUNC(Py_ssize_t) _PySequence_IterSearch(PyObject *seq,
+     					PyObject *obj, int operation);
 	/*
 	  Iterate over seq.  Result depends on the operation:
 	  PY_ITERSEARCH_COUNT:  return # of times obj appears in seq; -1 if
@@ -1086,7 +1086,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 is equivalent to the Python expression: value in o.
        */
 
-     PyAPI_FUNC(int) PySequence_Index(PyObject *o, PyObject *value);
+     PyAPI_FUNC(Py_ssize_t) PySequence_Index(PyObject *o, PyObject *value);
 
        /*
 	 Return the first index for which o[i]=value.  On error,
