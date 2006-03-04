@@ -1,11 +1,3 @@
-Notes on cjkcodecs
--------------------
-This directory contains source files for cjkcodecs extension modules.
-They are based on CJKCodecs (http://cjkpython.i18n.org/#CJKCodecs)
-as of Aug 20 2004 currently.
-
-
-
 To generate or modify mapping headers
 -------------------------------------
 Mapping headers are imported from CJKCodecs as pre-generated form.

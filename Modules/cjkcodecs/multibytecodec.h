@@ -2,7 +2,6 @@
  * multibytecodec.h: Common Multibyte Codec Implementation
  *
  * Written by Hye-Shik Chang <perky@FreeBSD.org>
- * $CJKCodecs: multibytecodec.h,v 1.7 2004/06/27 10:39:28 perky Exp $
  */
 
 #ifndef _PYTHON_MULTIBYTECODEC_H_
@@ -32,23 +31,24 @@ typedef union {
 } MultibyteCodec_State;
 
 typedef int (*mbcodec_init)(const void *config);
-typedef int (*mbencode_func)(MultibyteCodec_State *state, const void *config,
-			     const Py_UNICODE **inbuf, size_t inleft,
-			     unsigned char **outbuf, size_t outleft,
-			     int flags);
+typedef Py_ssize_t (*mbencode_func)(MultibyteCodec_State *state,
+			const void *config,
+			const Py_UNICODE **inbuf, Py_ssize_t inleft,
+			unsigned char **outbuf, Py_ssize_t outleft,
+			int flags);
 typedef int (*mbencodeinit_func)(MultibyteCodec_State *state,
 				 const void *config);
-typedef int (*mbencodereset_func)(MultibyteCodec_State *state,
-				  const void *config,
-				  unsigned char **outbuf, size_t outleft);
-typedef int (*mbdecode_func)(MultibyteCodec_State *state,
-			     const void *config,
-			     const unsigned char **inbuf, size_t inleft,
-			     Py_UNICODE **outbuf, size_t outleft);
+typedef Py_ssize_t (*mbencodereset_func)(MultibyteCodec_State *state,
+			const void *config,
+			unsigned char **outbuf, Py_ssize_t outleft);
+typedef Py_ssize_t (*mbdecode_func)(MultibyteCodec_State *state,
+			const void *config,
+			const unsigned char **inbuf, Py_ssize_t inleft,
+			Py_UNICODE **outbuf, Py_ssize_t outleft);
 typedef int (*mbdecodeinit_func)(MultibyteCodec_State *state,
 				 const void *config);
-typedef int (*mbdecodereset_func)(MultibyteCodec_State *state,
-				  const void *config);
+typedef Py_ssize_t (*mbdecodereset_func)(MultibyteCodec_State *state,
+					 const void *config);
 
 typedef struct {
 	const char *encoding;
@@ -73,7 +73,7 @@ typedef struct {
 	MultibyteCodec *codec;
 	MultibyteCodec_State state;
 	unsigned char pending[MAXDECPENDING];
-	int pendingsize;
+	Py_ssize_t pendingsize;
 	PyObject *stream, *errors;
 } MultibyteStreamReaderObject;
 
@@ -83,7 +83,7 @@ typedef struct {
 	MultibyteCodec *codec;
 	MultibyteCodec_State state;
 	Py_UNICODE pending[MAXENCPENDING];
-	int pendingsize;
+	Py_ssize_t pendingsize;
 	PyObject *stream, *errors;
 } MultibyteStreamWriterObject;
 
