@@ -36,8 +36,6 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 /* Forward */
 static void initmain(void);
 static void initsite(void);
-static PyObject *run_err_mod(mod_ty, const char *, PyObject *, PyObject *,
-			      PyCompilerFlags *, PyArena *arena);
 static PyObject *run_mod(mod_ty, const char *, PyObject *, PyObject *,
 			  PyCompilerFlags *, PyArena *);
 static PyObject *run_pyc_file(FILE *, const char *, PyObject *, PyObject *,
@@ -1159,11 +1157,12 @@ PyObject *
 PyRun_StringFlags(const char *str, int start, PyObject *globals, 
 		  PyObject *locals, PyCompilerFlags *flags)
 {
-	PyObject *ret;
+	PyObject *ret = NULL;
         PyArena *arena = PyArena_New();
 	mod_ty mod = PyParser_ASTFromString(str, "<string>", start, flags,
                                             arena);
-	ret = run_err_mod(mod, "<string>", globals, locals, flags, arena);
+	if (mod != NULL)
+		ret = run_mod(mod, "<string>", globals, locals, flags, arena);
         PyArena_Free(arena);
 	return ret;
 }
@@ -1182,18 +1181,9 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
         }
 	if (closeit)
 		fclose(fp);
-	ret = run_err_mod(mod, filename, globals, locals, flags, arena);
+	ret = run_mod(mod, filename, globals, locals, flags, arena);
         PyArena_Free(arena);
 	return ret;
-}
-
-static PyObject *
-run_err_mod(mod_ty mod, const char *filename, PyObject *globals, 
-	    PyObject *locals, PyCompilerFlags *flags, PyArena *arena)
-{
-	if (mod == NULL)
-		return  NULL;
-	return run_mod(mod, filename, globals, locals, flags, arena);
 }
 
 static PyObject *
