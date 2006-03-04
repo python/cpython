@@ -568,7 +568,7 @@ environment the global variable trick is not safe.)
  * #ifdefs (we used to do that -- it was impenetrable).
  */
 #ifdef Py_REF_DEBUG
-PyAPI_DATA(long) _Py_RefTotal;
+PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 PyAPI_FUNC(void) _Py_NegativeRefcount(const char *fname,
 					    int lineno, PyObject *op);
 #define _Py_INC_REFTOTAL	_Py_RefTotal++
