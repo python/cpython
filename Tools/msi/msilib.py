@@ -644,9 +644,9 @@ class Dialog:
         return self.control(name, "CheckBox", x, y, w, h, attr, prop, text, next, None)
 
 def pe_type(path):
-    header = open(path).read(1000)
-    # offset of PE header is at offset 0x3c; 1-based
-    pe_offset = struct.unpack("<i", header[0x3c:0x40])[0]-1
+    header = open(path, "rb").read(1000)
+    # offset of PE header is at offset 0x3c
+    pe_offset = struct.unpack("<i", header[0x3c:0x40])[0]
     assert header[pe_offset:pe_offset+4] == "PE\0\0"
     machine = struct.unpack("<H", header[pe_offset+4:pe_offset+6])[0]
     return machine
