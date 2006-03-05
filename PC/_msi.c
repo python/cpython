@@ -1,6 +1,6 @@
 /* Helper library for MSI creation with Python.
  * Copyright (C) 2005 Martin v. Löwis
- * Licensed under the Academic Free License version 2.1
+ * Licensed to PSF under a contributor agreement.
  */
 
 #include <Python.h>
