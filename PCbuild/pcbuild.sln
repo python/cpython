@@ -84,6 +84,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_buildinfo", "make_buil
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_msi", "_msi.vcproj", "{2C0BEFB9-70E2-4F80-AC5B-4AB8EE023574}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26} = {CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -226,6 +231,14 @@ Global
 		{C73F0EC1-358B-4177-940F-0846AC8B04CD}.ReleaseAMD64.Build.0 = Release|Win32
 		{C73F0EC1-358B-4177-940F-0846AC8B04CD}.ReleaseItanium.ActiveCfg = Release|Win32
 		{C73F0EC1-358B-4177-940F-0846AC8B04CD}.ReleaseItanium.Build.0 = Release|Win32
+		{2C0BEFB9-70E2-4F80-AC5B-4AB8EE023574}.Debug.ActiveCfg = Debug|Win32
+		{2C0BEFB9-70E2-4F80-AC5B-4AB8EE023574}.Debug.Build.0 = Debug|Win32
+		{2C0BEFB9-70E2-4F80-AC5B-4AB8EE023574}.Release.ActiveCfg = Release|Win32
+		{2C0BEFB9-70E2-4F80-AC5B-4AB8EE023574}.Release.Build.0 = Release|Win32
+		{2C0BEFB9-70E2-4F80-AC5B-4AB8EE023574}.ReleaseAMD64.ActiveCfg = ReleaseAMD64|Win32
+		{2C0BEFB9-70E2-4F80-AC5B-4AB8EE023574}.ReleaseAMD64.Build.0 = ReleaseAMD64|Win32
+		{2C0BEFB9-70E2-4F80-AC5B-4AB8EE023574}.ReleaseItanium.ActiveCfg = ReleaseItanium|Win32
+		{2C0BEFB9-70E2-4F80-AC5B-4AB8EE023574}.ReleaseItanium.Build.0 = ReleaseItanium|Win32
 	EndGlobalSection
 	GlobalSection(SolutionItems) = postSolution
 		..\Modules\getbuildinfo.c = ..\Modules\getbuildinfo.c
