@@ -33,7 +33,7 @@
 #  define PRINT_TOTAL_REFS()
 #else /* Py_REF_DEBUG */
 #  if defined(MS_WIN64)
-#    define PRINT_TOTAL_REFS() fprintf(stderr, "[%zd refs]\n", _Py_RefTotal);
+#    define PRINT_TOTAL_REFS() fprintf(stderr, "[%Id refs]\n", _Py_RefTotal);
 #  else /* ! MS_WIN64 */
 #    define PRINT_TOTAL_REFS() fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
 #  endif /* MS_WIN64 */
