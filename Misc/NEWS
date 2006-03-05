@@ -425,6 +425,9 @@ Extension Modules
 Library
 -------
 
+- A library msilib to generate Windows Installer files, and a distutils
+  command bdist_msi have been added.
+
 - PEP 343: new module contextlib.py defines decorator @contextmanager
   and helpful context managers nested() and closing().
 
