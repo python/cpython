@@ -388,7 +388,8 @@ errorexit:
 	init_codecs_##loc(void)						\
 	{								\
 		PyObject *m = Py_InitModule("_codecs_" #loc, __methods);\
-		(void)register_maps(m);					\
+		if (m != NULL)						\
+			(void)register_maps(m);				\
 	}
 
 #endif
