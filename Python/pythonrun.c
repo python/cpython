@@ -35,7 +35,8 @@
 #  if defined(MS_WIN64)
 #    define PRINT_TOTAL_REFS() fprintf(stderr, "[%Id refs]\n", _Py_RefTotal);
 #  else /* ! MS_WIN64 */
-#    define PRINT_TOTAL_REFS() fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
+#    define PRINT_TOTAL_REFS() fprintf(stderr, "[%ld refs]\n", \
+			Py_SAFE_DOWNCAST(_Py_RefTotal, Py_ssize_t, long));
 #  endif /* MS_WIN64 */
 #endif
 
