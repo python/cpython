@@ -272,11 +272,16 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #	define PLATFORM "win32"
 #	define HAVE_LARGEFILE_SUPPORT
 #	define SIZEOF_VOID_P 4
-#	define SIZEOF_TIME_T 4
 #	define SIZEOF_OFF_T 4
 #	define SIZEOF_FPOS_T 8
 #	define SIZEOF_HKEY 4
 #	define SIZEOF_SIZE_T 4
+	/* MS VS2005 changes TIME_T to an 64-bit type on all platforms */
+#	if defined(_MSC_VER) && _MSC_VER >= 1400
+#	define SIZEOF_TIME_T 8
+#	else
+#	define SIZEOF_TIME_T 4
+#	endif
 #endif
 
 #ifdef _DEBUG
