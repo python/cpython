@@ -206,7 +206,8 @@ do_mklist(const char **p_format, va_list *p_va, int endchar, int n)
 	int itemfailed = 0;
 	if (n < 0)
 		return NULL;
-	if ((v = PyList_New(n)) == NULL)
+	v = PyList_New(n);
+	if (v == NULL)
 		return NULL;
 	/* Note that we can't bail immediately on error as this will leak
 	   refcounts on any 'N' arguments. */
@@ -219,18 +220,21 @@ do_mklist(const char **p_format, va_list *p_va, int endchar, int n)
 		}
 		PyList_SetItem(v, i, w);
 	}
-	if (v != NULL && **p_format != endchar) {
+
+	if (itemfailed) {
+		/* do_mkvalue() should have already set an error */
 		Py_DECREF(v);
-		v = NULL;
+		return NULL;
+	}
+	if (**p_format != endchar) {
+		Py_DECREF(v);
 		PyErr_SetString(PyExc_SystemError,
 				"Unmatched paren in format");
+		return NULL;
 	}
-	else if (endchar)
+
+	if (endchar)
 		++*p_format;
-	if (itemfailed) {
-		Py_DECREF(v);
-		v = NULL;
-	}
 	return v;
 }
 
