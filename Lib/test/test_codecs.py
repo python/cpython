@@ -46,19 +46,23 @@ class ReadTest(unittest.TestCase):
             stream = StringIO.StringIO(input.encode(self.encoding))
             return codecs.getreader(self.encoding)(stream)
 
-        def readalllines(input, keepends=True):
+        def readalllines(input, keepends=True, size=None):
             reader = getreader(input)
             lines = []
             while True:
-                line = reader.readline(keepends=keepends)
+                line = reader.readline(size=size, keepends=keepends)
                 if not line:
                     break
                 lines.append(line)
-            return "".join(lines)
+            return "|".join(lines)
 
         s = u"foo\nbar\r\nbaz\rspam\u2028eggs"
-        self.assertEqual(readalllines(s, True), s)
-        self.assertEqual(readalllines(s, False), u"foobarbazspameggs")
+        sexpected = u"foo\n|bar\r\n|baz\r|spam\u2028|eggs"
+        sexpectednoends = u"foo|bar|baz|spam|eggs"
+        self.assertEqual(readalllines(s, True), sexpected)
+        self.assertEqual(readalllines(s, False), sexpectednoends)
+        self.assertEqual(readalllines(s, True, 10), sexpected)
+        self.assertEqual(readalllines(s, False, 10), sexpectednoends)
 
         # Test long lines (multiple calls to read() in readline())
         vw = []
