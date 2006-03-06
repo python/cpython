@@ -742,7 +742,13 @@ collect(int generation)
 				  generation);
 		PySys_WriteStderr("gc: objects in each generation:");
 		for (i = 0; i < NUM_GENERATIONS; i++) {
-			PySys_WriteStderr(" %ld", gc_list_size(GEN_HEAD(i)));
+#ifdef MS_WIN64
+			PySys_WriteStderr(" %Id", gc_list_size(GEN_HEAD(i)));
+#else
+			PySys_WriteStderr(" %ld",
+				Py_SAFE_DOWNCAST(gc_list_size(GEN_HEAD(i)),
+						 Py_ssize_t, long));
+#endif
 		}
 		PySys_WriteStderr("\n");
 	}
@@ -835,9 +841,16 @@ collect(int generation)
 			PySys_WriteStderr("gc: done.\n");
 		}
 		else {
+#ifdef MS_WIN64
+			PySys_WriteStderr(
+			    "gc: done, %Id unreachable, %Id uncollectable.\n",
+			    n+m, n);
+#else
 			PySys_WriteStderr(
 			    "gc: done, %ld unreachable, %ld uncollectable.\n",
-			    n+m, n);
+			    Py_SAFE_DOWNCAST(n+m, Py_ssize_t, long),
+			    Py_SAFE_DOWNCAST(n, Py_ssize_t, long));
+#endif
 		}
 	}
 
