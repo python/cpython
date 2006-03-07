@@ -2452,11 +2452,14 @@ PyDoc_STRVAR(list_doc,
 "list() -> new list\n"
 "list(sequence) -> new list initialized from sequence's items");
 
+#define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
+
 static PyObject *
 list_subscript(PyListObject* self, PyObject* item)
 {
-	if (PyInt_Check(item) || PyLong_Check(item)) {
-		Py_ssize_t i = PyInt_AsSsize_t(item);
+	PyNumberMethods *nb = item->ob_type->tp_as_number;	
+	if (nb != NULL && HASINDEX(item) && nb->nb_index != NULL) {
+		Py_ssize_t i = nb->nb_index(item);
 		if (i == -1 && PyErr_Occurred())
 			return NULL;
 		if (i < 0)
@@ -2503,14 +2506,9 @@ list_subscript(PyListObject* self, PyObject* item)
 static int
 list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 {
-	if (PyInt_Check(item)) {
-		Py_ssize_t i = PyInt_AS_LONG(item);
-		if (i < 0)
-			i += PyList_GET_SIZE(self);
-		return list_ass_item(self, i, value);
-	}
-	else if (PyLong_Check(item)) {
-		Py_ssize_t i = PyInt_AsSsize_t(item);
+	PyNumberMethods *nb = item->ob_type->tp_as_number;
+	if (nb != NULL && HASINDEX(item) && nb->nb_index != NULL) {
+		Py_ssize_t i = nb->nb_index(item);
 		if (i == -1 && PyErr_Occurred())
 			return -1;
 		if (i < 0)

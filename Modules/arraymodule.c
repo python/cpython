@@ -1569,19 +1569,17 @@ array_repr(arrayobject *a)
 	return s;
 }
 
+#define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
+
 static PyObject*
 array_subscr(arrayobject* self, PyObject* item)
 {
-	if (PyInt_Check(item)) {
-		Py_ssize_t i = PyInt_AS_LONG(item);
-		if (i < 0)
-			i += self->ob_size;
-		return array_item(self, i);
-	}
-	else if (PyLong_Check(item)) {
-		Py_ssize_t i = PyInt_AsSsize_t(item);
-		if (i == -1 && PyErr_Occurred())
+	PyNumberMethods *nb = item->ob_type->tp_as_number;
+	if (nb != NULL && HASINDEX(item) && nb->nb_index != NULL) {
+		Py_ssize_t i = nb->nb_index(item);
+		if (i==-1 && PyErr_Occurred()) {
 			return NULL;
+		}
 		if (i < 0)
 			i += self->ob_size;
 		return array_item(self, i);
@@ -1626,15 +1624,10 @@ array_subscr(arrayobject* self, PyObject* item)
 static int
 array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
 {
-	if (PyInt_Check(item)) {
-		Py_ssize_t i = PyInt_AS_LONG(item);
-		if (i < 0)
-			i += self->ob_size;
-		return array_ass_item(self, i, value);
-	}
-	else if (PyLong_Check(item)) {
-		Py_ssize_t i = PyInt_AsSsize_t(item);
-		if (i == -1 && PyErr_Occurred())
+	PyNumberMethods *nb = item->ob_type->tp_as_number;
+	if (nb != NULL && HASINDEX(item) && nb->nb_index != NULL) {
+		Py_ssize_t i = nb->nb_index(item);
+		if (i==-1 && PyErr_Occurred()) 
 			return -1;
 		if (i < 0)
 			i += self->ob_size;

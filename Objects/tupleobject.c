@@ -584,11 +584,14 @@ static PySequenceMethods tuple_as_sequence = {
 	(objobjproc)tuplecontains,		/* sq_contains */
 };
 
+#define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
+
 static PyObject*
 tuplesubscript(PyTupleObject* self, PyObject* item)
 {
-	if (PyInt_Check(item) || PyLong_Check(item)) {
-		Py_ssize_t i = PyInt_AsSsize_t(item);
+	PyNumberMethods *nb = item->ob_type->tp_as_number;
+	if (nb != NULL && HASINDEX(item) && nb->nb_index != NULL) {
+		Py_ssize_t i = nb->nb_index(item);
 		if (i == -1 && PyErr_Occurred())
 			return NULL;
 		if (i < 0)

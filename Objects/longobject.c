@@ -241,12 +241,8 @@ PyLong_AsLong(PyObject *vv)
 	return -1;
 }
 
-/* Get a Py_ssize_t from a long int object.
-   Returns -1 and sets an error condition if overflow occurs. */
-
-Py_ssize_t
-_PyLong_AsSsize_t(PyObject *vv)
-{
+static Py_ssize_t
+_long_as_ssize_t(PyObject *vv) {
 	register PyLongObject *v;
 	size_t x, prev;
 	Py_ssize_t i;
@@ -282,7 +278,45 @@ _PyLong_AsSsize_t(PyObject *vv)
  overflow:
 	PyErr_SetString(PyExc_OverflowError,
 			"long int too large to convert to int");
-	return -1;
+	if (sign > 0) 
+		return PY_SSIZE_T_MAX;
+	else 
+		return -PY_SSIZE_T_MAX-1;
+}
+
+/* Get a Py_ssize_t from a long int object.
+   Returns -1 and sets an error condition if overflow occurs. */
+
+Py_ssize_t
+_PyLong_AsSsize_t(PyObject *vv)
+{
+	Py_ssize_t x;
+
+	x = _long_as_ssize_t(vv);
+	if (PyErr_Occurred()) return -1;
+	return x;
+}
+
+
+/* Get a Py_ssize_t from a long int object.
+   Silently reduce values larger than PY_SSIZE_T_MAX to PY_SSIZE_T_MAX,
+   and silently boost values less than -PY_SSIZE_T_MAX-1 to -PY_SSIZE_T_MAX-1.
+   Return 0 on error, 1 on success.
+*/
+
+static Py_ssize_t
+long_index(PyObject *vv)
+{
+	Py_ssize_t x;
+
+	x = _long_as_ssize_t(vv);
+	if (PyErr_Occurred()) {
+		/* If overflow error, ignore the error */
+		if (x != -1) {
+			PyErr_Clear();
+		}
+	}
+	return x;
 }
 
 /* Get a C unsigned long int from a long int object.
@@ -3131,6 +3165,7 @@ static PyNumberMethods long_as_number = {
 	long_true_divide,		/* nb_true_divide */
 	0,				/* nb_inplace_floor_divide */
 	0,				/* nb_inplace_true_divide */
+	(lenfunc)long_index,            /* nb_index */
 };
 
 PyTypeObject PyLong_Type = {

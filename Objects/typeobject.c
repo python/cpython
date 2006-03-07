@@ -3051,6 +3051,9 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 			COPYNUM(nb_inplace_true_divide);
 			COPYNUM(nb_inplace_floor_divide);
 		}
+		if (base->tp_flags & Py_TPFLAGS_HAVE_INDEX) {
+			COPYNUM(nb_index);
+		}
 	}
 
 	if (type->tp_as_sequence != NULL && base->tp_as_sequence != NULL) {
@@ -4344,6 +4347,44 @@ slot_nb_nonzero(PyObject *self)
 	return result;
 }
 
+
+static Py_ssize_t 
+slot_nb_index(PyObject *self)
+{
+	PyObject *func, *args;
+	static PyObject *index_str;
+	Py_ssize_t result = -1;
+
+	func = lookup_maybe(self, "__index__", &index_str);
+	if (func == NULL) {
+		if (!PyErr_Occurred()) {
+			PyErr_SetString(PyExc_TypeError, 
+				"object cannot be interpreted as an index");
+		}
+		return -1;
+ 	}
+	args = PyTuple_New(0);
+	if (args != NULL) {
+		PyObject *temp = PyObject_Call(func, args, NULL);
+		Py_DECREF(args);
+		if (temp != NULL) {
+			if (PyInt_Check(temp) || PyLong_Check(temp)) {
+				result =
+                                  temp->ob_type->tp_as_number->nb_index(temp);
+			}
+			else {
+ 				PyErr_SetString(PyExc_TypeError, 
+				    "__index__ must return an int or a long");
+				result = -1;
+			}
+			Py_DECREF(temp);
+		}
+	}
+	Py_DECREF(func);
+	return result;
+}
+
+
 SLOT0(slot_nb_invert, "__invert__")
 SLOT1BIN(slot_nb_lshift, nb_lshift, "__lshift__", "__rlshift__")
 SLOT1BIN(slot_nb_rshift, nb_rshift, "__rshift__", "__rrshift__")
@@ -5069,6 +5110,8 @@ static slotdef slotdefs[] = {
 	       "oct(x)"),
 	UNSLOT("__hex__", nb_hex, slot_nb_hex, wrap_unaryfunc,
 	       "hex(x)"),
+	NBSLOT("__index__", nb_index, slot_nb_index, wrap_lenfunc, 
+	       "x[y:z] <==> x[y.__index__():z.__index__()]"),
 	IBSLOT("__iadd__", nb_inplace_add, slot_nb_inplace_add,
 	       wrap_binaryfunc, "+"),
 	IBSLOT("__isub__", nb_inplace_subtract, slot_nb_inplace_subtract,

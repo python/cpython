@@ -206,6 +206,9 @@ typedef struct {
 	binaryfunc nb_true_divide;
 	binaryfunc nb_inplace_floor_divide;
 	binaryfunc nb_inplace_true_divide;
+
+	/* Added in release 2.5 */
+	lenfunc nb_index;
 } PyNumberMethods;
 
 typedef struct {
@@ -503,12 +506,15 @@ given type object has a specified feature.
 /* Objects support garbage collection (see objimp.h) */
 #define Py_TPFLAGS_HAVE_GC (1L<<14)
 
-/* These two bits are preserved for Stackless Python, next after this is 16 */
+/* These two bits are preserved for Stackless Python, next after this is 17 */
 #ifdef STACKLESS
 #define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION (3L<<15)
 #else
 #define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION 0
 #endif
+
+/* Objects support nb_index in PyNumberMethods */
+#define Py_TPFLAGS_HAVE_INDEX (1L<<17)
 
 #define Py_TPFLAGS_DEFAULT  ( \
                              Py_TPFLAGS_HAVE_GETCHARBUFFER | \
@@ -519,6 +525,7 @@ given type object has a specified feature.
                              Py_TPFLAGS_HAVE_ITER | \
                              Py_TPFLAGS_HAVE_CLASS | \
                              Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | \
+                             Py_TPFLAGS_HAVE_INDEX | \
                             0)
 
 #define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)

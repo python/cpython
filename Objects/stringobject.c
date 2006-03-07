@@ -1187,16 +1187,19 @@ string_hash(PyStringObject *a)
 	return x;
 }
 
+#define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
+
 static PyObject*
 string_subscript(PyStringObject* self, PyObject* item)
 {
-	if (PyInt_Check(item) || PyLong_Check(item)) {
-		Py_ssize_t i = PyInt_AsSsize_t(item);
+	PyNumberMethods *nb = item->ob_type->tp_as_number;
+	if (nb != NULL && HASINDEX(item) && nb->nb_index != NULL) {
+		Py_ssize_t i = nb->nb_index(item);
 		if (i == -1 && PyErr_Occurred())
 			return NULL;
 		if (i < 0)
 			i += PyString_GET_SIZE(self);
-		return string_item(self,i);
+		return string_item(self, i);
 	}
 	else if (PySlice_Check(item)) {
 		Py_ssize_t start, stop, step, slicelength, cur, i;
