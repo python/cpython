@@ -1640,7 +1640,7 @@ posix_listdir(PyObject *self, PyObject *args)
 
 	PyObject *d, *v;
 	HANDLE hFindFile;
-	BOOL result = FALSE;
+	BOOL result;
 	WIN32_FIND_DATA FileData;
 	/* MAX_PATH characters could mean a bigger encoded string */
 	char namebuf[MAX_PATH*2+5];
@@ -1675,25 +1675,23 @@ posix_listdir(PyObject *self, PyObject *args)
 				return win32_error_unicode("FindFirstFileW", wnamebuf);
 			}
 			do {
-				if (wFileData.cFileName[0] == L'.' &&
-					(wFileData.cFileName[1] == L'\0' ||
-					 wFileData.cFileName[1] == L'.' &&
-					 wFileData.cFileName[2] == L'\0'))
-					goto loop_w;
-				v = PyUnicode_FromUnicode(wFileData.cFileName, wcslen(wFileData.cFileName));
-				if (v == NULL) {
-					Py_DECREF(d);
-					d = NULL;
-					break;
-				}
-				if (PyList_Append(d, v) != 0) {
+				/* Skip over . and .. */
+				if (wcscmp(wFileData.cFileName, L".") != 0 &&
+				    wcscmp(wFileData.cFileName, L"..") != 0) {
+					v = PyUnicode_FromUnicode(wFileData.cFileName, wcslen(wFileData.cFileName));
+					if (v == NULL) {
+						Py_DECREF(d);
+						d = NULL;
+						break;
+					}
+					if (PyList_Append(d, v) != 0) {
+						Py_DECREF(v);
+						Py_DECREF(d);
+						d = NULL;
+						break;
+					}
 					Py_DECREF(v);
-					Py_DECREF(d);
-					d = NULL;
-					break;
 				}
-				Py_DECREF(v);
-loop_w:
 				Py_BEGIN_ALLOW_THREADS
 				result = FindNextFileW(hFindFile, &wFileData);
 				Py_END_ALLOW_THREADS
@@ -1733,25 +1731,23 @@ loop_w:
 		return win32_error("FindFirstFile", namebuf);
 	}
 	do {
-		if (FileData.cFileName[0] == '.' &&
-		    (FileData.cFileName[1] == '\0' ||
-		     FileData.cFileName[1] == '.' &&
-		     FileData.cFileName[2] == '\0'))
-			goto loop_a;
-		v = PyString_FromString(FileData.cFileName);
-		if (v == NULL) {
-			Py_DECREF(d);
-			d = NULL;
-			break;
-		}
-		if (PyList_Append(d, v) != 0) {
+		/* Skip over . and .. */
+		if (strcmp(FileData.cFileName, ".") != 0 &&
+		    strcmp(FileData.cFileName, "..") != 0) {
+			v = PyString_FromString(FileData.cFileName);
+			if (v == NULL) {
+				Py_DECREF(d);
+				d = NULL;
+				break;
+			}
+			if (PyList_Append(d, v) != 0) {
+				Py_DECREF(v);
+				Py_DECREF(d);
+				d = NULL;
+				break;
+			}
 			Py_DECREF(v);
-			Py_DECREF(d);
-			d = NULL;
-			break;
 		}
-		Py_DECREF(v);
-loop_a:
 		Py_BEGIN_ALLOW_THREADS
 		result = FindNextFile(hFindFile, &FileData);
 		Py_END_ALLOW_THREADS
