@@ -16,23 +16,29 @@ This article explains the new features in Python 2.5.  No release date
 for Python 2.5 has been set; it will probably be released in the
 autumn of 2006.
 
-% Compare with previous release in 2 - 3 sentences here.
+% XXX Compare with previous release in 2 - 3 sentences here.
 
 This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
 full details, you should refer to the documentation for Python 2.5.
-% add hyperlink when the documentation becomes available online.
+% XXX add hyperlink when the documentation becomes available online.
 If you want to understand the complete implementation and design
 rationale, refer to the PEP for a particular new feature.
+
+
+%======================================================================
+\section{PEP 308: Conditional Expressions}
+
+% XXX write this
 
 
 %======================================================================
 \section{PEP 309: Partial Function Application}
 
 The \module{functional} module is intended to contain tools for
-functional-style programming.  Currently it only contains
-\class{partial}, but new functions will probably be added in future
-versions of Python.
+functional-style programming.  Currently it only contains a
+\class{partial()} function, but new functions will probably be added
+in future versions of Python.
 
 For programs written in a functional style, it can be useful to
 construct variants of existing functions that have some of the
@@ -59,6 +65,7 @@ def log (message, subsystem):
     ...
 
 server_log = functional.partial(log, subsystem='server')
+server_log('Unable to open socket')
 \end{verbatim}
 
 Here's another example, from a program that uses PyGTk.  Here a
@@ -91,15 +98,15 @@ Raymond Hettinger.}
 \section{PEP 314: Metadata for Python Software Packages v1.1}
 
 Some simple dependency support was added to Distutils.  The
-\function{setup()} function now has \code{requires},\code{provides},
-and \code{obsoletes}.  When you build a source distribution using the
-\code{sdist} command, the dependency information will be recorded in
-the \file{PKG-INFO} file.  
+\function{setup()} function now has \code{requires}, \code{provides},
+and \code{obsoletes} keyword parameters.  When you build a source
+distribution using the \code{sdist} command, the dependency
+information will be recorded in the \file{PKG-INFO} file.
 
-Another new keyword is \code{download_url}, which should be set to a
-URL for the package's source code.  This means it's now possible to
-look up an entry in the package index, determine the dependencies for
-a package, and download the required packages.  
+Another new keyword parameter is \code{download_url}, which should be
+set to a URL for the package's source code.  This means it's now
+possible to look up an entry in the package index, determine the
+dependencies for a package, and download the required packages.
 
 % XXX put example here
  
@@ -113,15 +120,27 @@ implemented by Richard Jones and Fred Drake.}
 
 
 %======================================================================
+\section{PEP 328: Absolute and Relative Imports}
+
+% XXX write this
+
+
+%======================================================================
+\section{PEP 341: Unified try/except/finally}
+
+% XXX write this
+
+
+%======================================================================
 \section{PEP 342: New Generator Features}
 
 As introduced in Python 2.3, generators only produce output; once a
-generator's code was invoked to create an iterator, there's no way to
-pass new parameters into the function when its execution is resumed.
-Hackish solutions to this include making the generator's code look at
-a global variable and then changing the global variable's value, or
-passing in some mutable object that callers then modify.  Python
-2.5 adds the ability to pass values \emph{into} a generator.
+generator's code is invoked to create an iterator, there's no way to
+pass any new information into the function when its execution is
+resumed.  Hackish solutions to this include making the generator's
+code look at a global variable and then changing the global variable's
+value, or passing in some mutable object that callers then modify.
+Python 2.5 adds the ability to pass values \emph{into} a generator.
 
 To refresh your memory of basic generators, here's a simple example:
 
@@ -138,7 +157,7 @@ returns the values from 0 up to 9.  On encountering the
 \keyword{yield} statement, the iterator returns the provided value and
 suspends the function's execution, preserving the local variables.
 Execution resumes on the following call to the iterator's 
-\method{next()} method, picking up after the \keyword{yield}.
+\method{next()} method, picking up after the \keyword{yield} statement.
 
 In Python 2.3, \keyword{yield} was a statement; it didn't return any
 value.  In 2.5, \keyword{yield} is now an expression, returning a
@@ -152,17 +171,17 @@ I recommend that you always put parentheses around a \keyword{yield}
 expression when you're doing something with the returned value, as in
 the above example.  The parentheses aren't always necessary, but it's
 easier to always add them instead of having to remember when they're
-needed.  The exact rules are that a \keyword{yield}-expression must
+needed.\footnote{The exact rules are that a \keyword{yield}-expression must
 always be parenthesized except when it occurs at the top-level
-expression on the right-hand side of an assignment, meaning
-you can to write \code{val = yield i} but \code{val = (yield i) + 12}.
-% XXX ending of last para makes no sense 
+expression on the right-hand side of an assignment, meaning you can
+write \code{val = yield i} but have to use parentheses when there's an
+operation, as in \code{val = (yield i) + 12}.}
 
 Values are sent into a generator by calling its
 \method{send(\var{value})} method.  The generator's code is then
-resumed and the \keyword{yield} expression produces \var{value}.
-If the regular \method{next()} method is called, the \keyword{yield} 
-returns \constant{None}.
+resumed and the \keyword{yield} expression returns the specified
+\var{value}.  If the regular \method{next()} method is called, the
+\keyword{yield} returns \constant{None}.
 
 Here's the previous example, modified to allow changing the value of
 the internal counter.
@@ -198,12 +217,13 @@ Traceback (most recent call last):
 StopIteration
 \end{verbatim}
 
-Because \keyword{yield} will often be returning \constant{None}, 
-you shouldn't just use its value in expressions unless you're sure 
-that only the \method{send()} method will be used.
+Because \keyword{yield} will often be returning \constant{None}, you
+should always check for this case.  Don't just use its value in
+expressions unless you're sure that the \method{send()} method
+will be the only method used resume your generator function.
 
-There are two other new methods on generators in addition to 
-\method{send()}:
+In addition to \method{send()}, there are two other new methods on
+generators:
 
 \begin{itemize}
 
@@ -229,13 +249,14 @@ There are two other new methods on generators in addition to
 
 The cumulative effect of these changes is to turn generators from
 one-way producers of information into both producers and consumers.
+
 Generators also become \emph{coroutines}, a more generalized form of
-subroutines; subroutines are entered at one point and exited at
+subroutines.  Subroutines are entered at one point and exited at
 another point (the top of the function, and a \keyword{return
 statement}), but coroutines can be entered, exited, and resumed at
-many different points (the \keyword{yield} statements).science term
+many different points (the \keyword{yield} statements).
 
-  
+
 \begin{seealso}
 
 \seepep{342}{Coroutines via Enhanced Generators}{PEP written by 
@@ -251,6 +272,18 @@ explanation of coroutines from a Perl point of view, written by Dan
 Sugalski.}
 
 \end{seealso}
+
+
+%======================================================================
+\section{PEP 343: The 'with' statement}
+
+% XXX write this
+
+
+%======================================================================
+\section{PEP 357: The '__index__' method}
+
+% XXX write this
 
 
 %======================================================================
