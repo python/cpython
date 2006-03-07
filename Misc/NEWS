@@ -12,6 +12,11 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- PEP 357, patch 1436368: add an __index__ method to int/long and a matching
+  nb_index slot to the PyNumberMethods struct.  The slot is consulted instead
+  of requiring an int or long in slicing and a few other contexts, enabling
+  other objects (e.g. Numeric Python's integers) to be used as slice indices.
+
 - Fixed various bugs reported by Coverity's Prevent tool.
 
 - PEP 352, patch #1104669: Make exceptions new-style objects.  Introduced the
