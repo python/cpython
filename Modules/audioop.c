@@ -1013,6 +1013,8 @@ audioop_ratecv(PyObject *self, PyObject *args)
 		while (d < 0) {
 			if (len == 0) {
 				samps = PyTuple_New(nchannels);
+				if (samps == NULL)
+					goto exit;
 				for (chan = 0; chan < nchannels; chan++)
 					PyTuple_SetItem(samps, chan,
 						Py_BuildValue("(ii)",

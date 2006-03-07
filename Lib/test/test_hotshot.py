@@ -107,6 +107,19 @@ class HotShotTestCase(unittest.TestCase):
         profiler.close()
         os.unlink(self.logfn)
 
+    def test_bad_sys_path(self):
+        import sys
+        orig_path = sys.path
+        coverage = hotshot._hotshot.coverage
+        try:
+            # verify we require a list for sys.path
+            sys.path = 'abc'
+            self.assertRaises(RuntimeError, coverage, test_support.TESTFN)
+            # verify sys.path exists
+            del sys.path
+            self.assertRaises(RuntimeError, coverage, test_support.TESTFN)
+        finally:
+            sys.path = orig_path
 
 def test_main():
     test_support.run_unittest(HotShotTestCase)
