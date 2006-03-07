@@ -850,6 +850,8 @@ init_lsprof(void)
 {
 	PyObject *module, *d;
 	module = Py_InitModule3("_lsprof", moduleMethods, "Fast profiler");
+	if (module == NULL)
+		return;
 	d = PyModule_GetDict(module);
 	if (PyType_Ready(&PyProfiler_Type) < 0)
 		return;
