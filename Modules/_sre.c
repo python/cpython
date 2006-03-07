@@ -2980,7 +2980,7 @@ match_groupdict(MatchObject* self, PyObject* args, PyObject* kw)
     return result;
 
 failed:
-    Py_DECREF(keys);
+    Py_XDECREF(keys);
     Py_DECREF(result);
     return NULL;
 }

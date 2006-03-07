@@ -473,6 +473,8 @@ restart:
     }
     else if (!err) {
         result = PyTuple_New(4);
+        if (result == NULL)
+            return NULL;
         PyTuple_SET_ITEM(result, 0, PyInt_FromLong(what));
         PyTuple_SET_ITEM(result, 2, PyInt_FromLong(fileno));
         if (s1 == NULL)
@@ -1486,6 +1488,10 @@ write_header(ProfilerObject *self)
                   getcwd(cwdbuffer, sizeof cwdbuffer));
 
     temp = PySys_GetObject("path");
+    if (temp == NULL || !PyList_Check(temp)) {
+        PyErr_SetString(PyExc_RuntimeError, "sys.path must be a list");
+        return -1;
+    }
     len = PyList_GET_SIZE(temp);
     for (i = 0; i < len; ++i) {
         PyObject *item = PyList_GET_ITEM(temp, i);
