@@ -1525,9 +1525,11 @@ hotshot_profiler(PyObject *unused, PyObject *args)
             calibrate();
             calibrate();
         }
-        if (write_header(self))
+        if (write_header(self)) {
             /* some error occurred, exception has been set */
+            Py_DECREF(self);
             self = NULL;
+        }
     }
     return (PyObject *) self;
 }
