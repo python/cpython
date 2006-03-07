@@ -389,7 +389,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
     def log_request(self, code='-', size='-'):
         """Log an accepted request.
 
-        This is called by send_reponse().
+        This is called by send_response().
 
         """
 
