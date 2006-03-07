@@ -925,20 +925,33 @@ gc_isenabled(PyObject *self, PyObject *noargs)
 }
 
 PyDoc_STRVAR(gc_collect__doc__,
-"collect() -> n\n"
+"collect([generation]) -> n\n"
 "\n"
-"Run a full collection.  The number of unreachable objects is returned.\n");
+"With no arguments, run a full collection.  The optional argument\n"
+"may be an integer specifying which generation to collect.  A ValueError\n"
+"is raised if the generation number is invalid.\n\n"
+"The number of unreachable objects is returned.\n");
 
 static PyObject *
-gc_collect(PyObject *self, PyObject *noargs)
+gc_collect(PyObject *self, PyObject *args, PyObject *kws)
 {
+	static char *keywords[] = {"generation", NULL};
+	int genarg = NUM_GENERATIONS - 1;
 	Py_ssize_t n;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kws, "|i", keywords, &genarg))
+		return NULL;
+
+	else if (genarg < 0 || genarg >= NUM_GENERATIONS) {
+		PyErr_SetString(PyExc_ValueError, "invalid generation");
+		return NULL;
+	}
 
 	if (collecting)
 		n = 0; /* already collecting, don't do anything */
 	else {
 		collecting = 1;
-		n = collect(NUM_GENERATIONS - 1);
+		n = collect(genarg);
 		collecting = 0;
 	}
 
@@ -1018,6 +1031,20 @@ gc_get_thresh(PyObject *self, PyObject *noargs)
 			     generations[0].threshold,
 			     generations[1].threshold,
 			     generations[2].threshold);
+}
+
+PyDoc_STRVAR(gc_get_count__doc__,
+"get_count() -> (count0, count1, count2)\n"
+"\n"
+"Return the current collection counts\n");
+
+static PyObject *
+gc_get_count(PyObject *self, PyObject *noargs)
+{
+	return Py_BuildValue("(iii)",
+			     generations[0].count,
+			     generations[1].count,
+			     generations[2].count);
 }
 
 static int
@@ -1150,9 +1177,11 @@ static PyMethodDef GcMethods[] = {
 	{"isenabled",	   gc_isenabled,  METH_NOARGS,  gc_isenabled__doc__},
 	{"set_debug",	   gc_set_debug,  METH_VARARGS, gc_set_debug__doc__},
 	{"get_debug",	   gc_get_debug,  METH_NOARGS,  gc_get_debug__doc__},
+	{"get_count",	   gc_get_count,  METH_NOARGS,  gc_get_count__doc__},
 	{"set_threshold",  gc_set_thresh, METH_VARARGS, gc_set_thresh__doc__},
 	{"get_threshold",  gc_get_thresh, METH_NOARGS,  gc_get_thresh__doc__},
-	{"collect",	   gc_collect,	  METH_NOARGS,  gc_collect__doc__},
+	{"collect",	   (PyCFunction)gc_collect,
+         	METH_VARARGS | METH_KEYWORDS,           gc_collect__doc__},
 	{"get_objects",    gc_get_objects,METH_NOARGS,  gc_get_objects__doc__},
 	{"get_referrers",  gc_get_referrers, METH_VARARGS,
 		gc_get_referrers__doc__},

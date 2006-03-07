@@ -78,7 +78,7 @@ Core and builtins
   This was not portable.  float('0x3') now raises a ValueError.
 
 - Patch #1382163: Expose Subversion revision number to Python.  New C API
-  function Py_GetBuildNumber().  New attribute sys.build_number.  Build number
+  function Py_GetBuildNumber().  New attribute sys.subversion.  Build number
   is now displayed in interactive prompt banner.
 
 - Implementation of PEP 341 - Unification of try/except and try/finally.
@@ -426,6 +426,9 @@ Extension Modules
 
 Library
 -------
+
+- The function get_count() has been added to the gc module, and gc.collect()
+  grew an optional 'generation' argument.
 
 - A library msilib to generate Windows Installer files, and a distutils
   command bdist_msi have been added.

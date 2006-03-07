@@ -219,6 +219,22 @@ def test_del_newclass():
     gc.disable()
     gc.set_threshold(*thresholds)
 
+def test_get_count():
+    gc.collect()
+    expect(gc.get_count(), (0, 0, 0), "get_count()")
+    a = dict()
+    expect(gc.get_count(), (1, 0, 0), "get_count()")
+
+def test_collect_generations():
+    gc.collect()
+    a = dict()
+    gc.collect(0)
+    expect(gc.get_count(), (0, 1, 0), "collect(0)")
+    gc.collect(1)
+    expect(gc.get_count(), (0, 0, 1), "collect(1)")
+    gc.collect(2)
+    expect(gc.get_count(), (0, 0, 0), "collect(1)")
+
 class Ouch:
     n = 0
     def __del__(self):
@@ -571,6 +587,8 @@ def test_all():
     run_test("finalizers (new class)", test_finalizer_newclass)
     run_test("__del__", test_del)
     run_test("__del__ (new class)", test_del_newclass)
+    run_test("get_count()", test_get_count)
+    run_test("collect(n)", test_collect_generations)
     run_test("saveall", test_saveall)
     run_test("trashcan", test_trashcan)
     run_test("boom", test_boom)
