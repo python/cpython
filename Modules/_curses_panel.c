@@ -111,10 +111,12 @@ remove_lop(PyCursesPanelObject *po)
 	free(temp);
 	return;
     }
-    while (temp->next->po != po) {
-	if (temp->next == NULL)
+    while (temp->next == NULL || temp->next->po != po) {
+	if (temp->next == NULL) {
 	    PyErr_SetString(PyExc_RuntimeError,
 			    "remove_lop: can't find Panel Object");
+	    return;
+	}
 	temp = temp->next;
     }
     n = temp->next->next;
