@@ -1063,7 +1063,7 @@ _db_associateCallback(DB* db, const DBT* priKey, const DBT* priData,
     PyObject* key;
     PyObject* data;
     PyObject* args;
-    PyObject* result;
+    PyObject* result = NULL;
 
 
     if (callback != NULL) {
@@ -1077,12 +1077,12 @@ _db_associateCallback(DB* db, const DBT* priKey, const DBT* priData,
         }
         data = PyString_FromStringAndSize(priData->data, priData->size);
         args = PyTuple_New(2);
-        PyTuple_SET_ITEM(args, 0, key);  /* steals reference */
-        PyTuple_SET_ITEM(args, 1, data); /* steals reference */
-
-        result = PyEval_CallObject(callback, args);
-
-        if (result == NULL) {
+        if (args != NULL) {
+                PyTuple_SET_ITEM(args, 0, key);  /* steals reference */
+                PyTuple_SET_ITEM(args, 1, data); /* steals reference */
+                result = PyEval_CallObject(callback, args);
+        }
+        if (args == NULL || result == NULL) {
             PyErr_Print();
         }
         else if (result == Py_None) {
