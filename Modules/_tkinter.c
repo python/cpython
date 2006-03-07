@@ -676,8 +676,11 @@ Tkapp_New(char *screenName, char *baseName, char *className,
 		ckfree(args);
 	}
 
-	if (Tcl_AppInit(v->interp) != TCL_OK)
-		return (TkappObject *)Tkinter_Error((PyObject *)v);
+	if (Tcl_AppInit(v->interp) != TCL_OK) {
+		PyObject *result = Tkinter_Error((PyObject *)v);
+		Py_DECREF((PyObject *)v);
+		return (TkappObject *)result;
+	}
 
 	EnableEventHook();
 
