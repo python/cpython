@@ -1986,14 +1986,14 @@ DB_set_bt_minkey(DBObject* self, PyObject* args)
 
 #if (DBVER >= 33)
 static int 
-_default_cmp (const DBT *leftKey,
-	      const DBT *rightKey)
+_default_cmp(const DBT *leftKey,
+	     const DBT *rightKey)
 {
   int res;
   int lsize = leftKey->size, rsize = rightKey->size;
 
-  res = memcmp (leftKey->data, rightKey->data, 
-		lsize < rsize ? lsize : rsize);
+  res = memcmp(leftKey->data, rightKey->data, 
+	       lsize < rsize ? lsize : rsize);
   
   if (res == 0) {
       if (lsize < rsize) {
@@ -2007,58 +2007,56 @@ _default_cmp (const DBT *leftKey,
 }
 
 static int
-_db_compareCallback (DB* db, 
-		     const DBT *leftKey,
-		     const DBT *rightKey)
+_db_compareCallback(DB* db, 
+		    const DBT *leftKey,
+		    const DBT *rightKey)
 {
     int res = 0;
     PyObject *args;
     PyObject *result;
     PyObject *leftObject;
     PyObject *rightObject;
-    DBObject *self = (DBObject *) db->app_private;
+    DBObject *self = (DBObject *)db->app_private;
 
     if (self == NULL || self->btCompareCallback == NULL) {
 	MYDB_BEGIN_BLOCK_THREADS;
-	PyErr_SetString (PyExc_TypeError,
-			 (self == 0
-			  ? "DB_bt_compare db is NULL."
-			  : "DB_bt_compare callback is NULL."));
+	PyErr_SetString(PyExc_TypeError,
+			(self == 0
+			 ? "DB_bt_compare db is NULL."
+			 : "DB_bt_compare callback is NULL."));
 	/* we're in a callback within the DB code, we can't raise */
-	PyErr_Print ();
-	res = _default_cmp (leftKey, rightKey);
+	PyErr_Print();
+	res = _default_cmp(leftKey, rightKey);
 	MYDB_END_BLOCK_THREADS;
-    }
-    else {
+    } else {
 	MYDB_BEGIN_BLOCK_THREADS;
 
-	leftObject  = PyString_FromStringAndSize (leftKey->data, leftKey->size);
-	rightObject = PyString_FromStringAndSize (rightKey->data, rightKey->size);
+	leftObject  = PyString_FromStringAndSize(leftKey->data, leftKey->size);
+	rightObject = PyString_FromStringAndSize(rightKey->data, rightKey->size);
 
-	args = PyTuple_New (2);
-	Py_INCREF (self);
-	PyTuple_SET_ITEM (args, 0, leftObject);  /* steals reference */
-	PyTuple_SET_ITEM (args, 1, rightObject); /* steals reference */
-    
-	result = PyEval_CallObject (self->btCompareCallback, args);
-	if (result == 0) {
+	args = PyTuple_New(2);
+	if (args != NULL) {
+		Py_INCREF(self);
+		PyTuple_SET_ITEM(args, 0, leftObject);  /* steals reference */
+		PyTuple_SET_ITEM(args, 1, rightObject); /* steals reference */
+		result = PyEval_CallObject(self->btCompareCallback, args);
+	}
+	if (args == NULL || result == NULL) {
 	    /* we're in a callback within the DB code, we can't raise */
-	    PyErr_Print ();
-	    res = _default_cmp (leftKey, rightKey);
-	}
-	else if (PyInt_Check (result)) {
-	    res = PyInt_AsLong (result);
-	}
-	else {
-	    PyErr_SetString (PyExc_TypeError,
-			     "DB_bt_compare callback MUST return an int.");
+	    PyErr_Print();
+	    res = _default_cmp(leftKey, rightKey);
+	} else if (PyInt_Check(result)) {
+	    res = PyInt_AsLong(result);
+	} else {
+	    PyErr_SetString(PyExc_TypeError,
+			    "DB_bt_compare callback MUST return an int.");
 	    /* we're in a callback within the DB code, we can't raise */
-	    PyErr_Print ();
-	    res = _default_cmp (leftKey, rightKey);
+	    PyErr_Print();
+	    res = _default_cmp(leftKey, rightKey);
 	}
     
-	Py_DECREF (args);
-	Py_XDECREF (result);
+	Py_DECREF(args);
+	Py_XDECREF(result);
 
 	MYDB_END_BLOCK_THREADS;
     }
@@ -2066,19 +2064,19 @@ _db_compareCallback (DB* db,
 }
 
 static PyObject*
-DB_set_bt_compare (DBObject* self, PyObject* args)
+DB_set_bt_compare(DBObject* self, PyObject* args)
 {
     int err;
     PyObject *comparator;
     PyObject *tuple, *emptyStr, *result;
 
-    if (!PyArg_ParseTuple(args,"O:set_bt_compare", &comparator ))
+    if (!PyArg_ParseTuple(args, "O:set_bt_compare", &comparator))
 	return NULL;
 
-    CHECK_DB_NOT_CLOSED (self);
+    CHECK_DB_NOT_CLOSED(self);
 
-    if (! PyCallable_Check (comparator)) {
-	makeTypeError ("Callable", comparator);
+    if (!PyCallable_Check(comparator)) {
+	makeTypeError("Callable", comparator);
 	return NULL;
     }
 
@@ -2087,22 +2085,23 @@ DB_set_bt_compare (DBObject* self, PyObject* args)
      * string objects here.  verify that it returns an int (0).
      * err if not.
      */
-    tuple = PyTuple_New (2);
+    tuple = PyTuple_New(2);
+    emptyStr = PyString_FromStringAndSize(NULL, 0);
+    if (tuple == NULL || emptyStr == NULL)
+	    return NULL;
 
-    emptyStr = PyString_FromStringAndSize (NULL, 0);
-    Py_INCREF(emptyStr);
-    PyTuple_SET_ITEM (tuple, 0, emptyStr);
-    PyTuple_SET_ITEM (tuple, 1, emptyStr); /* steals reference */
-    result = PyEval_CallObject (comparator, tuple);
-    Py_DECREF (tuple);
-    if (result == 0 || !PyInt_Check(result)) {
-	PyErr_SetString (PyExc_TypeError,
-			 "callback MUST return an int");
+    Py_INCREF(emptyStr); /* now we have two references */
+    PyTuple_SET_ITEM(tuple, 0, emptyStr); /* steals reference */
+    PyTuple_SET_ITEM(tuple, 1, emptyStr); /* steals reference */
+    result = PyEval_CallObject(comparator, tuple);
+    Py_DECREF(tuple);
+    if (result == NULL || !PyInt_Check(result)) {
+	PyErr_SetString(PyExc_TypeError,
+		        "callback MUST return an int");
 	return NULL;
-    }
-    else if (PyInt_AsLong(result) != 0) {
-	PyErr_SetString (PyExc_TypeError,
-			 "callback failed to return 0 on two empty strings");
+    } else if (PyInt_AsLong(result) != 0) {
+	PyErr_SetString(PyExc_TypeError,
+		        "callback failed to return 0 on two empty strings");
 	return NULL;
     }
 
@@ -2110,11 +2109,11 @@ DB_set_bt_compare (DBObject* self, PyObject* args)
      * simplify the code. This would have no real use, as one cannot
      * change the function once the db is opened anyway */
     if (self->btCompareCallback != NULL) {
-	PyErr_SetString (PyExc_RuntimeError, "set_bt_compare () cannot be called more than once");
+	PyErr_SetString(PyExc_RuntimeError, "set_bt_compare() cannot be called more than once");
 	return NULL;
     }
 
-    Py_INCREF (comparator);
+    Py_INCREF(comparator);
     self->btCompareCallback = comparator;
 
     /* This is to workaround a problem with un-initialized threads (see
@@ -2123,18 +2122,18 @@ DB_set_bt_compare (DBObject* self, PyObject* args)
     PyEval_InitThreads();
 #endif
 
-    err = self->db->set_bt_compare (self->db, 
-				    (comparator != NULL ? 
-				     _db_compareCallback : NULL));
+    err = self->db->set_bt_compare(self->db, 
+				   (comparator != NULL ? 
+				    _db_compareCallback : NULL));
 
     if (err) {
 	/* restore the old state in case of error */
-	Py_DECREF (comparator);
+	Py_DECREF(comparator);
 	self->btCompareCallback = NULL;
     }
 
-    RETURN_IF_ERR ();
-    RETURN_NONE ();
+    RETURN_IF_ERR();
+    RETURN_NONE();
 }
 #endif /* DBVER >= 33 */
 
