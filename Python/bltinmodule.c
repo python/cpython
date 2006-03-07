@@ -2514,7 +2514,7 @@ static PyObject *
 filterunicode(PyObject *func, PyObject *strobj)
 {
 	PyObject *result;
-	register int i, j;
+	register Py_ssize_t i, j;
 	Py_ssize_t len = PyUnicode_GetSize(strobj);
 	Py_ssize_t outlen = len;
 

@@ -597,7 +597,7 @@ sys_mdebug(PyObject *self, PyObject *args)
 static PyObject *
 sys_getrefcount(PyObject *self, PyObject *arg)
 {
-	return PyInt_FromLong(arg->ob_refcnt);
+	return PyInt_FromSsize_t(arg->ob_refcnt);
 }
 
 #ifdef Py_REF_DEBUG

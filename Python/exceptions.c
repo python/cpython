@@ -764,7 +764,7 @@ static PyObject *
 SyntaxError__init__(PyObject *self, PyObject *args)
 {
     PyObject *rtnval = NULL;
-    int lenargs;
+    Py_ssize_t lenargs;
 
     if (!(self = get_self(args)))
 	return NULL;
@@ -889,7 +889,7 @@ SyntaxError__str__(PyObject *self, PyObject *args)
 	    PyErr_Clear();
 
 	if (have_filename || have_lineno) {
-	    int bufsize = PyString_GET_SIZE(str) + 64;
+	    Py_ssize_t bufsize = PyString_GET_SIZE(str) + 64;
 	    if (have_filename)
 		bufsize += PyString_GET_SIZE(filename);
 

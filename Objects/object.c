@@ -1172,7 +1172,7 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 PyObject **
 _PyObject_GetDictPtr(PyObject *obj)
 {
-	long dictoffset;
+	Py_ssize_t dictoffset;
 	PyTypeObject *tp = obj->ob_type;
 
 	if (!(tp->tp_flags & Py_TPFLAGS_HAVE_CLASS))
@@ -1212,7 +1212,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 	PyObject *descr = NULL;
 	PyObject *res = NULL;
 	descrgetfunc f;
-	long dictoffset;
+	Py_ssize_t dictoffset;
 	PyObject **dictptr;
 
 	if (!PyString_Check(name)){

@@ -4244,7 +4244,8 @@ slot_sq_contains(PyObject *self, PyObject *value)
 		}
 	}
 	else if (! PyErr_Occurred()) {
-		result = _PySequence_IterSearch(self, value,
+		/* Possible results: -1 and 1 */
+		result = (int)_PySequence_IterSearch(self, value,
 						 PY_ITERSEARCH_CONTAINS);
 	}
 	return result;
@@ -4880,7 +4881,7 @@ slot_tp_del(PyObject *self)
 	 * never happened.
 	 */
 	{
-		int refcnt = self->ob_refcnt;
+		Py_ssize_t refcnt = self->ob_refcnt;
 		_Py_NewReference(self);
 		self->ob_refcnt = refcnt;
 	}

@@ -216,7 +216,7 @@ static PyObject *
 reversed_next(reversedobject *ro)
 {
 	PyObject *item;
-	long index = ro->index;
+	Py_ssize_t index = ro->index;
 
 	if (index >= 0) {
 		item = PySequence_GetItem(ro->seq, index);
