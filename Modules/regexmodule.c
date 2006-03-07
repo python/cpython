@@ -536,7 +536,6 @@ regex_symcomp(PyObject *self, PyObject *args)
 	gdict = PyDict_New();
 	if (gdict == NULL || (npattern = symcomp(pattern, gdict)) == NULL) {
 		Py_XDECREF(gdict);
-		Py_DECREF(pattern);
 		return NULL;
 	}
 	retval = newregexobject(npattern, tran, pattern, gdict);
