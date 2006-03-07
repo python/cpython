@@ -1876,16 +1876,16 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
             message = "malformed \\N character escape";
             if (ucnhash_CAPI == NULL) {
                 /* load the unicode data module */
-                PyObject *m, *v;
+                PyObject *m, *api;
                 m = PyImport_ImportModule("unicodedata");
                 if (m == NULL)
                     goto ucnhashError;
-                v = PyObject_GetAttrString(m, "ucnhash_CAPI");
+                api = PyObject_GetAttrString(m, "ucnhash_CAPI");
                 Py_DECREF(m);
-                if (v == NULL)
+                if (api == NULL)
                     goto ucnhashError;
-                ucnhash_CAPI = PyCObject_AsVoidPtr(v);
-                Py_DECREF(v);
+                ucnhash_CAPI = PyCObject_AsVoidPtr(api);
+                Py_DECREF(api);
                 if (ucnhash_CAPI == NULL)
                     goto ucnhashError;
             }
@@ -1945,6 +1945,7 @@ ucnhashError:
         PyExc_UnicodeError,
         "\\N escapes not supported (can't load unicodedata module)"
         );
+    Py_XDECREF(v);
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
     return NULL;
@@ -3962,7 +3963,7 @@ Py_ssize_t PyUnicode_Tailmatch(PyObject *str,
 	return -1;
     substr = PyUnicode_FromObject(substr);
     if (substr == NULL) {
-	Py_DECREF(substr);
+	Py_DECREF(str);
 	return -1;
     }
 
@@ -4429,7 +4430,7 @@ PyObject *PyUnicode_Splitlines(PyObject *string,
     return list;
 
  onError:
-    Py_DECREF(list);
+    Py_XDECREF(list);
     Py_DECREF(string);
     return NULL;
 }
@@ -6679,6 +6680,10 @@ formatlong(PyObject *val, int flags, int prec, int type)
 	if (!str)
 		return NULL;
 	result = _PyUnicode_New(len);
+	if (!result) {
+		Py_DECREF(str);
+		return NULL;
+	}
 	for (i = 0; i < len; i++)
 		result->str[i] = buf[i];
 	result->str[len] = 0;
@@ -6865,7 +6870,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 		rescnt = fmtcnt + 100;
 		reslen += rescnt;
 		if (_PyUnicode_Resize(&result, reslen) < 0)
-		    return NULL;
+		    goto onError;
 		res = PyUnicode_AS_UNICODE(result) + reslen - rescnt;
 		--rescnt;
 	    }
@@ -7163,6 +7168,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 		rescnt = width + fmtcnt + 100;
 		reslen += rescnt;
 		if (reslen < 0) {
+		    Py_XDECREF(temp);
 		    Py_DECREF(result);
 		    return PyErr_NoMemory();
 		}

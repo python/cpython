@@ -185,8 +185,12 @@ tb_displayline(PyObject *f, char *filename, int lineno, char *name)
 	}
 	PyOS_snprintf(linebuf, sizeof(linebuf), FMT, filename, lineno, name);
 	err = PyFile_WriteString(linebuf, f);
-	if (xfp == NULL || err != 0)
+	if (xfp == NULL)
 		return err;
+	else if (err != 0) {
+		fclose(xfp);
+		return err;
+	}
 	for (i = 0; i < lineno; i++) {
 		char* pLastChar = &linebuf[sizeof(linebuf)-2];
 		do {

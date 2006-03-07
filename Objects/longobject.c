@@ -2809,6 +2809,8 @@ long_bitwise(PyLongObject *a,
 
 	if (a->ob_size < 0) {
 		a = (PyLongObject *) long_invert(a);
+		if (a == NULL)
+			return NULL;
 		maska = MASK;
 	}
 	else {
@@ -2817,6 +2819,10 @@ long_bitwise(PyLongObject *a,
 	}
 	if (b->ob_size < 0) {
 		b = (PyLongObject *) long_invert(b);
+		if (b == NULL) {
+			Py_DECREF(a);
+			return NULL;
+		}
 		maskb = MASK;
 	}
 	else {
@@ -2868,7 +2874,7 @@ long_bitwise(PyLongObject *a,
 		   : (maskb ? size_a : MIN(size_a, size_b)))
 		: MAX(size_a, size_b);
 	z = _PyLong_New(size_z);
-	if (a == NULL || b == NULL || z == NULL) {
+	if (z == NULL) {
 		Py_XDECREF(a);
 		Py_XDECREF(b);
 		Py_XDECREF(z);

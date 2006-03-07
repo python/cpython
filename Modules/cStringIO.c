@@ -544,6 +544,7 @@ newOobject(int  size) {
 	if (!self->buf) {
                   PyErr_SetString(PyExc_MemoryError,"out of memory");
                   self->buf_size = 0;
+                  Py_DECREF(self);
                   return NULL;
           }
 
