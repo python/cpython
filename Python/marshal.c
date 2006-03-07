@@ -186,7 +186,7 @@ w_object(PyObject *v, WFILE *p)
 			n = strlen(buf);
 			w_byte(TYPE_FLOAT, p);
 			w_byte((int)n, p);
-			w_string(buf, n, p);
+			w_string(buf, (int)n, p);
 		}
 	}
 #ifndef WITHOUT_COMPLEX
@@ -215,16 +215,16 @@ w_object(PyObject *v, WFILE *p)
 				PyComplex_RealAsDouble(v));
 			PyFloat_AsReprString(buf, temp);
 			Py_DECREF(temp);
-			n = (int)strlen(buf);
-			w_byte(n, p);
-			w_string(buf, n, p);
+			n = strlen(buf);
+			w_byte((int)n, p);
+			w_string(buf, (int)n, p);
 			temp = (PyFloatObject*)PyFloat_FromDouble(
 				PyComplex_ImagAsDouble(v));
 			PyFloat_AsReprString(buf, temp);
 			Py_DECREF(temp);
-			n = (int)strlen(buf);
-			w_byte(n, p);
-			w_string(buf, n, p);
+			n = strlen(buf);
+			w_byte((int)n, p);
+			w_string(buf, (int)n, p);
 		}
 	}
 #endif
@@ -248,8 +248,14 @@ w_object(PyObject *v, WFILE *p)
 			w_byte(TYPE_STRING, p);
 		}
 		n = PyString_GET_SIZE(v);
+		if (n > INT_MAX) {
+			/* huge strings are not supported */
+			p->depth--;
+			p->error = 1;
+			return;
+		}
 		w_long((long)n, p);
-		w_string(PyString_AS_STRING(v), n, p);
+		w_string(PyString_AS_STRING(v), (int)n, p);
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(v)) {
@@ -262,8 +268,13 @@ w_object(PyObject *v, WFILE *p)
 		}
 		w_byte(TYPE_UNICODE, p);
 		n = PyString_GET_SIZE(utf8);
+		if (n > INT_MAX) {
+			p->depth--;
+			p->error = 1;
+			return;
+		}
 		w_long((long)n, p);
-		w_string(PyString_AS_STRING(utf8), n, p);
+		w_string(PyString_AS_STRING(utf8), (int)n, p);
 		Py_DECREF(utf8);
 	}
 #endif
@@ -350,8 +361,13 @@ w_object(PyObject *v, WFILE *p)
 		PyBufferProcs *pb = v->ob_type->tp_as_buffer;
 		w_byte(TYPE_STRING, p);
 		n = (*pb->bf_getreadbuffer)(v, 0, (void **)&s);
+		if (n > INT_MAX) {
+			p->depth--;
+			p->error = 1;
+			return;
+		}
 		w_long((long)n, p);
-		w_string(s, n, p);
+		w_string(s, (int)n, p);
 	}
 	else {
 		w_byte(TYPE_UNKNOWN, p);

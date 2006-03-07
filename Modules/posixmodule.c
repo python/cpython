@@ -2317,9 +2317,9 @@ posix__exit(PyObject *self, PyObject *args)
 
 #if defined(HAVE_EXECV) || defined(HAVE_SPAWNV)
 static void
-free_string_array(char **array, int count)
+free_string_array(char **array, Py_ssize_t count)
 {
-	int i;
+	Py_ssize_t i;
 	for (i = 0; i < count; i++)
 		PyMem_Free(array[i]);
 	PyMem_DEL(array);
@@ -2341,7 +2341,7 @@ posix_execv(PyObject *self, PyObject *args)
 	char *path;
 	PyObject *argv;
 	char **argvlist;
-	int i, argc;
+	Py_ssize_t i, argc;
 	PyObject *(*getitem)(PyObject *, Py_ssize_t);
 
 	/* execv has two arguments: (path, argv), where
@@ -2410,7 +2410,7 @@ posix_execve(PyObject *self, PyObject *args)
 	char **argvlist;
 	char **envlist;
 	PyObject *key, *val, *keys=NULL, *vals=NULL;
-	int i, pos, argc, envc;
+	Py_ssize_t i, pos, argc, envc;
 	PyObject *(*getitem)(PyObject *, Py_ssize_t);
 	int lastarg = 0;
 

@@ -3679,6 +3679,7 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 	Py_ssize_t i;
 	int sign;	/* 1 if '-', else 0 */
 	int len;	/* number of characters */
+	Py_ssize_t llen;
 	int numdigits;	/* len == numnondigits + numdigits */
 	int numnondigits = 0;
 
@@ -3707,7 +3708,12 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 		return NULL;
 	}
 	buf = PyString_AsString(result);
-	len = PyString_Size(result);
+	llen = PyString_Size(result);
+	if (llen > INT_MAX) {
+		PyErr_SetString(PyExc_ValueError, "string too large in _PyString_FormatLong");
+		return NULL;
+	}
+	len = (int)llen;
 	if (buf[len-1] == 'L') {
 		--len;
 		buf[len] = '\0';
@@ -3941,12 +3947,12 @@ PyString_Format(PyObject *format, PyObject *args)
 			PyObject *temp = NULL;
 			char *pbuf;
 			int sign;
-			int len;
+			Py_ssize_t len;
 			char formatbuf[FORMATBUFLEN];
 			     /* For format{float,int,char}() */
 #ifdef Py_USING_UNICODE
 			char *fmt_start = fmt;
-		        int argidx_start = argidx;
+			Py_ssize_t argidx_start = argidx;
 #endif
 
 			fmt++;
@@ -4139,8 +4145,10 @@ PyString_Format(PyObject *format, PyObject *args)
 				if (c == 'i')
 					c = 'd';
 				if (PyLong_Check(v)) {
+					int ilen;
 					temp = _PyString_FormatLong(v, flags,
-						prec, c, &pbuf, &len);
+						prec, c, &pbuf, &ilen);
+					len = ilen;
 					if (!temp)
 						goto error;
 					sign = 1;

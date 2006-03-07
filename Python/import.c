@@ -853,7 +853,7 @@ write_compiled_module(PyCodeObject *co, char *cpathname, time_t mtime)
 	/* Now write the true mtime */
 	fseek(fp, 4L, 0);
 	assert(mtime < LONG_MAX);
-	PyMarshal_WriteLongToFile(mtime, fp, Py_MARSHAL_VERSION);
+	PyMarshal_WriteLongToFile((long)mtime, fp, Py_MARSHAL_VERSION);
 	fflush(fp);
 	fclose(fp);
 	if (Py_VerboseFlag)
@@ -1016,7 +1016,7 @@ get_path_importer(PyObject *path_importer_cache, PyObject *path_hooks,
 		  PyObject *p)
 {
 	PyObject *importer;
-	int j, nhooks;
+	Py_ssize_t j, nhooks;
 
 	/* These conditions are the caller's responsibility: */
 	assert(PyList_Check(path_hooks));
@@ -1075,7 +1075,7 @@ static struct filedescr *
 find_module(char *fullname, char *subname, PyObject *path, char *buf,
 	    size_t buflen, FILE **p_fp, PyObject **p_loader)
 {
-	int i, npath;
+	Py_ssize_t i, npath;
 	size_t len, namelen;
 	struct filedescr *fdp = NULL;
 	char *filemode;
@@ -2028,7 +2028,7 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 
 	modpath = PyDict_GetItem(globals, pathstr);
 	if (modpath != NULL) {
-		int len = PyString_GET_SIZE(modname);
+		Py_ssize_t len = PyString_GET_SIZE(modname);
 		if (len > MAXPATHLEN) {
 			PyErr_SetString(PyExc_ValueError,
 					"Module name too long");

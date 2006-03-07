@@ -177,7 +177,7 @@ gen_del(PyObject *self)
          * never happened.
          */
         {
-                int refcnt = self->ob_refcnt;
+                Py_ssize_t refcnt = self->ob_refcnt;
                 _Py_NewReference(self);
                 self->ob_refcnt = refcnt;
         }
