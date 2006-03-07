@@ -12,6 +12,8 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Fixed various bugs reported by Coverity's Prevent tool.
+
 - PEP 352, patch #1104669: Make exceptions new-style objects.  Introduced the
   new exception base class, BaseException, which has a new message attribute.
   KeyboardInterrupt and SystemExit to directly inherit from BaseException now.
