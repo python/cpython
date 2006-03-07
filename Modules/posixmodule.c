@@ -1640,6 +1640,7 @@ posix_listdir(PyObject *self, PyObject *args)
 
 	PyObject *d, *v;
 	HANDLE hFindFile;
+	BOOL result;
 	WIN32_FIND_DATA FileData;
 	/* MAX_PATH characters could mean a bigger encoded string */
 	char namebuf[MAX_PATH*2+5];
@@ -1692,7 +1693,10 @@ posix_listdir(PyObject *self, PyObject *args)
 					break;
 				}
 				Py_DECREF(v);
-			} while (FindNextFileW(hFindFile, &wFileData) == TRUE);
+				Py_BEGIN_ALLOW_THREADS
+				result = FindNextFileW(hFindFile, &wFileData);
+				Py_END_ALLOW_THREADS
+			} while (result == TRUE);
 
 			if (FindClose(hFindFile) == FALSE) {
 				Py_DECREF(d);
@@ -1746,7 +1750,10 @@ posix_listdir(PyObject *self, PyObject *args)
 			break;
 		}
 		Py_DECREF(v);
-	} while (FindNextFile(hFindFile, &FileData) == TRUE);
+		Py_BEGIN_ALLOW_THREADS
+		result = FindNextFile(hFindFile, &FileData);
+		Py_END_ALLOW_THREADS
+	} while (result == TRUE);
 
 	if (FindClose(hFindFile) == FALSE) {
 		Py_DECREF(d);
@@ -1848,7 +1855,12 @@ posix_listdir(PyObject *self, PyObject *args)
 		PyMem_Free(name);
 		return NULL;
 	}
-	while ((ep = readdir(dirp)) != NULL) {
+	for (;;) {
+		Py_BEGIN_ALLOW_THREADS
+		ep = readdir(dirp);
+		Py_END_ALLOW_THREADS
+		if (ep == NULL)
+			break;
 		if (ep->d_name[0] == '.' &&
 		    (NAMLEN(ep) == 1 ||
 		     (ep->d_name[1] == '.' && NAMLEN(ep) == 2)))
