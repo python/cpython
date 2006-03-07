@@ -428,7 +428,7 @@ for row in csv.reader(['one,two,three']):
 The \module{csv} module doesn't directly support reading and writing
 Unicode, but it is 8-bit clean save for some problems with \ASCII{} NUL
 characters, so you can write classes that handle the encoding and decoding
-for you as long as you avoid encodings like utf-16 that use NULs.
+for you as long as you avoid encodings like utf-16 that use NULs:
 
 \begin{verbatim}
 import csv
@@ -451,7 +451,7 @@ class UnicodeWriter:
         self.encoding = encoding
 
     def writerow(self, row):
-        self.writer.writerow([s.encode("utf-8") for s in row])
+        self.writer.writerow([s.encode(self.encoding) for s in row])
 
     def writerows(self, rows):
         for row in rows:
