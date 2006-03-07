@@ -32,9 +32,13 @@ Disable automatic garbage collection.
 Returns true if automatic collection is enabled.
 \end{funcdesc}
 
-\begin{funcdesc}{collect}{}
-Run a full collection.  All generations are examined and the
-number of unreachable objects found is returned.
+\begin{funcdesc}{collect}{\optional{generation}}
+With no arguments, run a full collection.  The optional argument
+\var{generation} may be an integer specifying which generation to collect
+(from 0 to 2).  A ValueError is raised if the generation number is invalid.
+The number of unreachable objects found is returned.
+
+\versionchanged[The optional \var{generation} argument was added]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{set_debug}{flags}
@@ -74,6 +78,12 @@ than \var{threshold1} times since generation \code{1} has been
 examined, then generation \code{1} is examined as well.  Similarly,
 \var{threshold2} controls the number of collections of generation
 \code{1} before collecting generation \code{2}.
+\end{funcdesc}
+
+\begin{funcdesc}{get_count}{}
+Return the current collection  counts as a tuple of
+\code{(\var{count0}, \var{count1}, \var{count2})}.
+\versionadded{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{get_threshold}{}
