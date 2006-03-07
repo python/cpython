@@ -1640,7 +1640,7 @@ posix_listdir(PyObject *self, PyObject *args)
 
 	PyObject *d, *v;
 	HANDLE hFindFile;
-	BOOL result;
+	BOOL result = FALSE;
 	WIN32_FIND_DATA FileData;
 	/* MAX_PATH characters could mean a bigger encoded string */
 	char namebuf[MAX_PATH*2+5];
@@ -1679,7 +1679,7 @@ posix_listdir(PyObject *self, PyObject *args)
 					(wFileData.cFileName[1] == L'\0' ||
 					 wFileData.cFileName[1] == L'.' &&
 					 wFileData.cFileName[2] == L'\0'))
-					continue;
+					goto loop_w;
 				v = PyUnicode_FromUnicode(wFileData.cFileName, wcslen(wFileData.cFileName));
 				if (v == NULL) {
 					Py_DECREF(d);
@@ -1693,6 +1693,7 @@ posix_listdir(PyObject *self, PyObject *args)
 					break;
 				}
 				Py_DECREF(v);
+loop_w:
 				Py_BEGIN_ALLOW_THREADS
 				result = FindNextFileW(hFindFile, &wFileData);
 				Py_END_ALLOW_THREADS
@@ -1736,7 +1737,7 @@ posix_listdir(PyObject *self, PyObject *args)
 		    (FileData.cFileName[1] == '\0' ||
 		     FileData.cFileName[1] == '.' &&
 		     FileData.cFileName[2] == '\0'))
-			continue;
+			goto loop_a;
 		v = PyString_FromString(FileData.cFileName);
 		if (v == NULL) {
 			Py_DECREF(d);
@@ -1750,6 +1751,7 @@ posix_listdir(PyObject *self, PyObject *args)
 			break;
 		}
 		Py_DECREF(v);
+loop_a:
 		Py_BEGIN_ALLOW_THREADS
 		result = FindNextFile(hFindFile, &FileData);
 		Py_END_ALLOW_THREADS
