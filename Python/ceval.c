@@ -3916,9 +3916,10 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 	return result;
 }
 
-/* Extract a slice index from a PyInt or PyLong, and store in *pi.
-   Silently reduce values larger than PY_SSIZE_T_MAX to PY_SSIZE_T_MAX, 
-   and silently boost values less than -PY_SSIZE_T_MAX to 0.  
+/* Extract a slice index from a PyInt or PyLong or an object with the
+   nb_index slot defined, and store in *pi.
+   Silently reduce values larger than PY_SSIZE_T_MAX to PY_SSIZE_T_MAX,
+   and silently boost values less than -PY_SSIZE_T_MAX-1 to -PY_SSIZE_T_MAX-1.
    Return 0 on error, 1 on success.
 */
 /* Note:  If v is NULL, return success without storing into *pi.  This
@@ -3932,46 +3933,18 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 		Py_ssize_t x;
 		if (PyInt_Check(v)) {
 			x = PyInt_AsLong(v);
-		} else if (PyLong_Check(v)) {
-			x = PyInt_AsSsize_t(v);
-			if (x==-1 && PyErr_Occurred()) {
-				PyObject *long_zero;
-				int cmp;
-
-				if (!PyErr_ExceptionMatches(
-					PyExc_OverflowError)) {
-					/* It's not an overflow error, so just
-					   signal an error */
-					return 0;
-				}
-
-				/* Clear the OverflowError */
-				PyErr_Clear();
-
-				/* It's an overflow error, so we need to
-				   check the sign of the long integer,
-				   set the value to PY_SSIZE_T_MAX or 
-				   -PY_SSIZE_T_MAX, and clear the error. */
-
-				/* Create a long integer with a value of 0 */
-				long_zero = PyLong_FromLong(0L);
-				if (long_zero == NULL)
-					return 0;
-
-				/* Check sign */
-				cmp = PyObject_RichCompareBool(v, long_zero,
-							       Py_GT);
-				Py_DECREF(long_zero);
-				if (cmp < 0)
-					return 0;
-				else if (cmp)
-					x = PY_SSIZE_T_MAX;
-				else
-					x = -PY_SSIZE_T_MAX;
-			}
-		} else {
+		} 
+		else if (v->ob_type->tp_as_number &&
+			 PyType_HasFeature(v->ob_type, Py_TPFLAGS_HAVE_INDEX)
+			 && v->ob_type->tp_as_number->nb_index) {
+			x = v->ob_type->tp_as_number->nb_index(v);
+			if (x == -1 && PyErr_Occurred())
+				return 0;
+		}
+		else {
 			PyErr_SetString(PyExc_TypeError,
-					"slice indices must be integers or None");
+					"slice indices must be integers or "
+					"None or have an __index__ method");
 			return 0;
 		}
 		*pi = x;
@@ -3979,8 +3952,11 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 	return 1;
 }
 
-#undef ISINT
-#define ISINT(x) ((x) == NULL || PyInt_Check(x) || PyLong_Check(x))
+#undef ISINDEX
+#define ISINDEX(x) ((x) == NULL || PyInt_Check(x) || PyLong_Check(x) || \
+		    ((x)->ob_type->tp_as_number && \
+                     PyType_HasFeature((x)->ob_type, Py_TPFLAGS_HAVE_INDEX) \
+		     && (x)->ob_type->tp_as_number->nb_index))
 
 static PyObject *
 apply_slice(PyObject *u, PyObject *v, PyObject *w) /* return u[v:w] */
@@ -3988,7 +3964,7 @@ apply_slice(PyObject *u, PyObject *v, PyObject *w) /* return u[v:w] */
 	PyTypeObject *tp = u->ob_type;
 	PySequenceMethods *sq = tp->tp_as_sequence;
 
-	if (sq && sq->sq_slice && ISINT(v) && ISINT(w)) {
+	if (sq && sq->sq_slice && ISINDEX(v) && ISINDEX(w)) {
 		Py_ssize_t ilow = 0, ihigh = PY_SSIZE_T_MAX;
 		if (!_PyEval_SliceIndex(v, &ilow))
 			return NULL;
@@ -4015,7 +3991,7 @@ assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x)
 	PyTypeObject *tp = u->ob_type;
 	PySequenceMethods *sq = tp->tp_as_sequence;
 
-	if (sq && sq->sq_slice && ISINT(v) && ISINT(w)) {
+	if (sq && sq->sq_slice && ISINDEX(v) && ISINDEX(w)) {
 		Py_ssize_t ilow = 0, ihigh = PY_SSIZE_T_MAX;
 		if (!_PyEval_SliceIndex(v, &ilow))
 			return -1;

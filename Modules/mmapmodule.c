@@ -815,6 +815,8 @@ static PyTypeObject mmap_object_type = {
 };
 
 
+#define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
+
 /* extract the map size from the given PyObject
 
    Returns -1 on error, with an appropriate Python exception raised. On
@@ -822,26 +824,15 @@ static PyTypeObject mmap_object_type = {
 static Py_ssize_t
 _GetMapSize(PyObject *o)
 {
-	if (PyInt_Check(o)) {
-		long i = PyInt_AsLong(o);
-		if (PyErr_Occurred())
+	PyNumberMethods *nb = o->ob_type->tp_as_number;
+	if (nb != NULL && HASINDEX(o) && nb->nb_index != NULL) {
+		Py_ssize_t i = nb->nb_index(o);
+		if (i==-1 && PyErr_Occurred()) 
 			return -1;
 		if (i < 0)
 			goto onnegoverflow;
-		return i;
-	}
-	else if (PyLong_Check(o)) {
-		Py_ssize_t i = PyInt_AsSsize_t(o);
-		if (PyErr_Occurred()) {
-			/* yes negative overflow is mistaken for positive overflow
-			   but not worth the trouble to check sign of 'i' */
-			if (PyErr_ExceptionMatches(PyExc_OverflowError))
-				goto onposoverflow;
-			else
-				return -1;
-		}
-		if (i < 0)
-			goto onnegoverflow;
+		if (i==PY_SSIZE_T_MAX)
+			goto onposoverflow;
 		return i;
 	}
 	else {

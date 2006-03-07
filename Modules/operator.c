@@ -130,6 +130,20 @@ op_ipow(PyObject *s, PyObject *a)
 	return NULL;
 }
 
+static PyObject *
+op_index(PyObject *s, PyObject *a)
+{
+	Py_ssize_t i;
+	PyObject *a1;
+	if (!PyArg_UnpackTuple(a,"index", 1, 1, &a1))
+		return NULL;		
+	i = PyNumber_Index(a1);
+	if (i == -1 && PyErr_Occurred())
+		return NULL;
+	else
+		return PyInt_FromSsize_t(i);
+}
+
 static PyObject*
 is_(PyObject *s, PyObject *a)
 {
@@ -229,6 +243,7 @@ spam1o(isMappingType,
 
 spam1(is_, "is_(a, b) -- Same as a is b.")
 spam1(is_not, "is_not(a, b) -- Same as a is not b.")
+spam2(index, __index__, "index(a) -- Same as a.__index__()")
 spam2(add,__add__, "add(a, b) -- Same as a + b.")
 spam2(sub,__sub__, "sub(a, b) -- Same as a - b.")
 spam2(mul,__mul__, "mul(a, b) -- Same as a * b.")

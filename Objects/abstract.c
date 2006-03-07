@@ -8,6 +8,8 @@
 #define NEW_STYLE_NUMBER(o) PyType_HasFeature((o)->ob_type, \
 				Py_TPFLAGS_CHECKTYPES)
 
+#define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
+
 /* Shorthands to return certain errors */
 
 static PyObject *
@@ -119,10 +121,9 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 		return m->mp_subscript(o, key);
 
 	if (o->ob_type->tp_as_sequence) {
-		if (PyInt_Check(key))
-			return PySequence_GetItem(o, PyInt_AsLong(key));
-		else if (PyLong_Check(key)) {
-			long key_value = PyLong_AsLong(key);
+		PyNumberMethods *nb = key->ob_type->tp_as_number;
+		if (nb != NULL && HASINDEX(key) && nb->nb_index != NULL) {
+			Py_ssize_t key_value = nb->nb_index(key);
 			if (key_value == -1 && PyErr_Occurred())
 				return NULL;
 			return PySequence_GetItem(o, key_value);
@@ -148,10 +149,9 @@ PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
 		return m->mp_ass_subscript(o, key, value);
 
 	if (o->ob_type->tp_as_sequence) {
-		if (PyInt_Check(key))
-			return PySequence_SetItem(o, PyInt_AsLong(key), value);
-		else if (PyLong_Check(key)) {
-			long key_value = PyLong_AsLong(key);
+		PyNumberMethods *nb = key->ob_type->tp_as_number;
+		if (nb != NULL && HASINDEX(key) && nb->nb_index != NULL) {
+			Py_ssize_t key_value = nb->nb_index(key);
 			if (key_value == -1 && PyErr_Occurred())
 				return -1;
 			return PySequence_SetItem(o, key_value, value);
@@ -180,10 +180,9 @@ PyObject_DelItem(PyObject *o, PyObject *key)
 		return m->mp_ass_subscript(o, key, (PyObject*)NULL);
 
 	if (o->ob_type->tp_as_sequence) {
-		if (PyInt_Check(key))
-			return PySequence_DelItem(o, PyInt_AsLong(key));
-		else if (PyLong_Check(key)) {
-			long key_value = PyLong_AsLong(key);
+		PyNumberMethods *nb = key->ob_type->tp_as_number;
+		if (nb != NULL && HASINDEX(key) && nb->nb_index != NULL) {
+			Py_ssize_t key_value = nb->nb_index(key);
 			if (key_value == -1 && PyErr_Occurred())
 				return -1;
 			return PySequence_DelItem(o, key_value);
@@ -647,12 +646,10 @@ PyNumber_Add(PyObject *v, PyObject *w)
 static PyObject *
 sequence_repeat(ssizeargfunc repeatfunc, PyObject *seq, PyObject *n)
 {
-	long count;
-	if (PyInt_Check(n)) {
-		count  = PyInt_AsLong(n);
-	}
-	else if (PyLong_Check(n)) {
-		count = PyLong_AsLong(n);
+	Py_ssize_t count;
+	PyNumberMethods *nb = n->ob_type->tp_as_number;
+	if (nb != NULL && HASINDEX(n) && nb->nb_index != NULL) {
+		count = nb->nb_index(n);
 		if (count == -1 && PyErr_Occurred())
 			return NULL;
 	}
@@ -660,32 +657,7 @@ sequence_repeat(ssizeargfunc repeatfunc, PyObject *seq, PyObject *n)
 		return type_error(
 			"can't multiply sequence by non-int");
 	}
-#if LONG_MAX != INT_MAX
-	if (count > INT_MAX) {
-		PyErr_SetString(PyExc_ValueError,
-				"sequence repeat count too large");
-		return NULL;
-	}
-	else if (count < INT_MIN)
-		count = INT_MIN;
-	/* XXX Why don't I either
-
-	   - set count to -1 whenever it's negative (after all,
-	     sequence repeat usually treats negative numbers
-	     as zero(); or
-
-	   - raise an exception when it's less than INT_MIN?
-
-	   I'm thinking about a hypothetical use case where some
-	   sequence type might use a negative value as a flag of
-	   some kind.  In those cases I don't want to break the
-	   code by mapping all negative values to -1.  But I also
-	   don't want to break e.g. []*(-sys.maxint), which is
-	   perfectly safe, returning [].  As a compromise, I do
-	   map out-of-range negative values.
-	*/
-#endif
-	return (*repeatfunc)(seq, (int)count);
+	return (*repeatfunc)(seq, count);
 }
 
 PyObject *
@@ -958,6 +930,22 @@ int_from_string(const char *s, Py_ssize_t len)
 		return NULL;
 	}
 	return x;
+}
+
+/* Return a Py_ssize_t integer from the object item */
+Py_ssize_t 
+PyNumber_Index(PyObject *item)
+{
+	Py_ssize_t value = -1;
+	PyNumberMethods *nb = item->ob_type->tp_as_number;
+	if (nb != NULL && HASINDEX(item) && nb->nb_index != NULL) {
+		value = nb->nb_index(item);
+	}
+	else {
+		PyErr_SetString(PyExc_IndexError, 
+				"object cannot be interpreted as an index");
+	}
+	return value;
 }
 
 PyObject *

@@ -748,6 +748,14 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
+     PyAPI_FUNC(Py_ssize_t) PyNumber_Index(PyObject *);
+
+       /*
+	 Returns the object converted to Py_ssize_t on success 
+	 or -1 with an error raised on failure.
+       */
+
+
      PyAPI_FUNC(PyObject *) PyNumber_Int(PyObject *o);
 
        /*
