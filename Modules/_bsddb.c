@@ -1070,7 +1070,7 @@ _db_associateCallback(DB* db, const DBT* priKey, const DBT* priData,
     PyObject* key;
     PyObject* data;
     PyObject* args;
-    PyObject* result;
+    PyObject* result = NULL;
 
 
     if (callback != NULL) {
