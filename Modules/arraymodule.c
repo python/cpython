@@ -1826,10 +1826,13 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 					Py_DECREF(v);
 				}
 			} else if (initial != NULL && PyString_Check(initial)) {
-				PyObject *t_initial = PyTuple_Pack(1,
-								    initial);
-				PyObject *v =
-					array_fromstring((arrayobject *)a,
+				PyObject *t_initial, *v;
+				t_initial = PyTuple_Pack(1, initial);
+				if (t_initial == NULL) {
+					Py_DECREF(a);
+					return NULL;
+				}
+				v = array_fromstring((arrayobject *)a,
 							 t_initial);
 				Py_DECREF(t_initial);
 				if (v == NULL) {

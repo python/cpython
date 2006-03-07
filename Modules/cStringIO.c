@@ -541,6 +541,7 @@ newOobject(int  size) {
         UNLESS (self->buf = (char *)malloc(size)) {
                   PyErr_SetString(PyExc_MemoryError,"out of memory");
                   self->buf_size = 0;
+                  Py_DECREF(self);
                   return NULL;
           }
 
