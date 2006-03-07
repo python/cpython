@@ -1026,6 +1026,7 @@ PyErr_PrintEx(int set_sys_last_vars)
 	PyErr_NormalizeException(&exception, &v, &tb);
 	if (exception == NULL)
 		return;
+        /* Now we know v != NULL too */
 	if (set_sys_last_vars) {
 		PySys_SetObject("last_type", exception);
 		PySys_SetObject("last_value", v);
@@ -1034,7 +1035,7 @@ PyErr_PrintEx(int set_sys_last_vars)
 	hook = PySys_GetObject("excepthook");
 	if (hook) {
 		PyObject *args = PyTuple_Pack(3,
-		    exception, v ? v : Py_None, tb ? tb : Py_None);
+		    exception, v, tb ? tb : Py_None);
 		PyObject *result = PyEval_CallObject(hook, args);
 		if (result == NULL) {
 			PyObject *exception2, *v2, *tb2;
