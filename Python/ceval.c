@@ -3477,8 +3477,11 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
 {
 	PyObject *result;
 
-	if (arg == NULL)
+	if (arg == NULL) {
 		arg = PyTuple_New(0);
+		if (arg == NULL)
+			return NULL;
+	}
 	else if (!PyTuple_Check(arg)) {
 		PyErr_SetString(PyExc_TypeError,
 				"argument list must be a tuple");

@@ -1167,6 +1167,8 @@ initzipimport(void)
 
 	mod = Py_InitModule4("zipimport", NULL, zipimport_doc,
 			     NULL, PYTHON_API_VERSION);
+	if (mod == NULL)
+		return;
 
 	ZipImportError = PyErr_NewException("zipimport.ZipImportError",
 					    PyExc_ImportError, NULL);

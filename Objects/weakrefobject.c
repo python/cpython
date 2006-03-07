@@ -903,8 +903,15 @@ PyObject_ClearWeakRefs(PyObject *object)
             }
         }
         else {
-            PyObject *tuple = PyTuple_New(count * 2);
+            PyObject *tuple;
             Py_ssize_t i = 0;
+    
+            tuple = PyTuple_New(count * 2);
+            if (tuple == NULL) {
+                if (restore_error)
+                    PyErr_Fetch(&err_type, &err_value, &err_tb);
+                return;
+            }
 
             for (i = 0; i < count; ++i) {
                 PyWeakReference *next = current->wr_next;

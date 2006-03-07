@@ -3276,7 +3276,7 @@ string_splitlines(PyStringObject *self, PyObject *args)
     return list;
 
  onError:
-    Py_DECREF(list);
+    Py_XDECREF(list);
     return NULL;
 }
 

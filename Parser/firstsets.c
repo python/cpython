@@ -107,4 +107,6 @@ calcfirstset(grammar *g, dfa *d)
 		}
 		printf(" }\n");
 	}
+
+	PyMem_FREE(sym);
 }

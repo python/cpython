@@ -1438,6 +1438,8 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             }
             /* extract Index values and put them in a Tuple */
             elts = asdl_seq_new(asdl_seq_LEN(slices), c->c_arena);
+            if (!elts)
+                return NULL;
             for (j = 0; j < asdl_seq_LEN(slices); ++j) {
                 slc = (slice_ty)asdl_seq_GET(slices, j);
                 assert(slc->kind == Index_kind  && slc->v.Index.value);
