@@ -309,7 +309,7 @@ _ldict(localobject *self)
 			return NULL;
 		else {
 			int i = PyDict_SetItem(tdict, self->key, ldict);
-			Py_DECREF(ldict); /* now ldict is borowed */
+			Py_DECREF(ldict); /* now ldict is borrowed */
 			if (i < 0) 
 				return NULL;
 		}
