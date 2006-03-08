@@ -888,6 +888,9 @@ class PyBuildExt(build_ext):
             if (dl_inc is not None) and (platform not in ['atheos', 'darwin']):
                 exts.append( Extension('dl', ['dlmodule.c']) )
 
+        # Thomas Heller's _ctypes module
+        self.detect_ctypes()
+
         # Platform-specific libraries
         if platform == 'linux2':
             # Linux-specific modules
@@ -1179,6 +1182,61 @@ class PyBuildExt(build_ext):
         #       -DWITH_TOGL togl.c \
         # *** Uncomment these for TOGL extension only:
         #       -lGL -lGLU -lXext -lXmu \
+
+    def detect_ctypes(self):
+        (srcdir,) = sysconfig.get_config_vars('srcdir')
+        ffi_builddir = os.path.join(self.build_temp, 'libffi')
+        ffi_srcdir = os.path.abspath(os.path.join(srcdir, 'Modules',
+                                     '_ctypes', 'libffi'))
+        ffi_configfile = os.path.join(ffi_builddir, 'fficonfig.py')
+
+        if self.force or not os.path.exists(ffi_configfile):
+            from distutils.dir_util import mkpath
+            mkpath(ffi_builddir)
+            config_args = []
+
+            # Pass empty CFLAGS because we'll just append the resulting CFLAGS
+            # to Python's; -g or -O2 is to be avoided.
+            cmd = "cd %s && env CFLAGS='' '%s/configure' %s" \
+                  % (ffi_builddir, ffi_srcdir, " ".join(config_args))
+
+            res = os.system(cmd)
+            if res or not os.path.exists(ffi_configfile):
+                print "Failed to configure _ctypes module"
+                return
+
+        fficonfig = {}
+        execfile(ffi_configfile, globals(), fficonfig)
+        ffi_srcdir = os.path.join(fficonfig['ffi_srcdir'], 'src')
+
+        # Add .S (preprocessed assembly) to C compiler source extensions.
+        self.compiler.src_extensions.append('.S')
+
+        include_dirs = [os.path.join(ffi_builddir, 'include'),
+                        ffi_builddir, ffi_srcdir]
+        extra_compile_args = fficonfig['ffi_cflags'].split()
+        sources = ['_ctypes/_ctypes.c',
+                   '_ctypes/callbacks.c',
+                   '_ctypes/callproc.c',
+                   '_ctypes/stgdict.c',
+                   '_ctypes/cfield.c',
+                   '_ctypes/malloc_closure.c'] + fficonfig['ffi_sources']
+        depends = ['_ctypes/ctypes.h']
+
+        if sys.platform == 'darwin':
+            sources.append('_ctypes/darwin/dlfcn_simple.c')
+            include_dirs.append('_ctypes/darwin')
+# XXX Is this still needed?
+##            extra_link_args.extend(['-read_only_relocs', 'warning'])
+
+        ext = Extension('_ctypes',
+                        include_dirs=include_dirs,
+                        extra_compile_args=extra_compile_args,
+                        sources=sources,
+                        depends=depends)
+        ext_test = Extension('_ctypes_test',
+                             sources=['_ctypes/_ctypes_test.c'])
+        self.extensions.extend([ext, ext_test])
 
 class PyBuildInstall(install):
     # Suppress the warning about installation into the lib_dynload

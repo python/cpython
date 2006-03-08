@@ -677,7 +677,7 @@ PLATMACPATH=:plat-mac:plat-mac/lib-scriptpackages
 LIBSUBDIRS=	lib-old lib-tk site-packages test test/output test/data \
 		test/decimaltestdata \
 		encodings email email/test email/test/data compiler hotshot \
-		logging bsddb bsddb/test csv idlelib idlelib/Icons \
+		logging bsddb bsddb/test csv ctypes idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
 		curses $(MACHDEPS)
 libinstall:	$(BUILDPYTHON) $(srcdir)/Lib/$(PLATDIR)
