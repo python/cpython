@@ -1,0 +1,11 @@
+The files in this directory are taken from
+http://www.opendarwin.org/cgi-bin/cvsweb.cgi/~checkout~/proj/dlcompat/
+
+The LICENSE in this directory applies to these files.
+
+Thomas Heller, Jan 2003
+
+These files have been modified so they fall back to the system
+dlfcn calls if available in libSystem.
+
+Bob Ippolito, Feb 2006
