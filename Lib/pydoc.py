@@ -179,7 +179,11 @@ def synopsis(filename, cache={}):
     lastupdate, result = cache.get(filename, (0, None))
     if lastupdate < mtime:
         info = inspect.getmoduleinfo(filename)
-        file = open(filename)
+        try:
+            file = open(filename)
+        except IOError:
+            # module can't be opened, so skip it
+            return None
         if info and 'b' in info[2]: # binary modules have to be imported
             try: module = imp.load_module('__temp__', file, filename, info[1:])
             except: return None
