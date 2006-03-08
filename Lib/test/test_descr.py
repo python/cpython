@@ -2008,6 +2008,18 @@ def properties():
     else:
         raise TestFailed, "expected ZeroDivisionError from bad property"
 
+    class E(object):
+        def getter(self):
+            "getter method"
+            return 0
+        def setter(self, value):
+            "setter method"
+            pass
+        prop = property(getter)
+        vereq(prop.__doc__, "getter method")
+        prop2 = property(fset=setter)
+        vereq(prop2.__doc__, None)
+
 def supers():
     if verbose: print "Testing super..."
 

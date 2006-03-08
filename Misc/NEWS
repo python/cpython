@@ -12,6 +12,10 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1434038: property() now uses the getter's docstring if there is
+  no "doc" argument given. This makes it possible to legitimately use
+  property() as a decorator to produce a read-only property.
+
 - PEP 357, patch 1436368: add an __index__ method to int/long and a matching
   nb_index slot to the PyNumberMethods struct.  The slot is consulted instead
   of requiring an int or long in slicing and a few other contexts, enabling

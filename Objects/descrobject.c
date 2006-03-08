@@ -1081,6 +1081,8 @@ PyWrapper_New(PyObject *d, PyObject *self)
     class property(object):
 
         def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+            if doc is None and fget is not None and hasattr(fget, "__doc__"):
+                doc = fget.__doc__
             self.__get = fget
             self.__set = fset
             self.__del = fdel
@@ -1182,6 +1184,7 @@ static int
 property_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	PyObject *get = NULL, *set = NULL, *del = NULL, *doc = NULL;
+	PyObject *get_doc = NULL;
 	static char *kwlist[] = {"fget", "fset", "fdel", "doc", 0};
 	propertyobject *gs = (propertyobject *)self;
 
@@ -1195,6 +1198,15 @@ property_init(PyObject *self, PyObject *args, PyObject *kwds)
 		set = NULL;
 	if (del == Py_None)
 		del = NULL;
+
+	/* if no docstring given and the getter has one, use that one */
+	if ((doc == NULL || doc == Py_None) && get != NULL && 
+	    PyObject_HasAttrString(get, "__doc__")) {
+		if (!(get_doc = PyObject_GetAttrString(get, "__doc__")))
+			return -1;
+		Py_DECREF(get_doc); /* it is INCREF'd again below */
+		doc = get_doc;
+	}
 
 	Py_XINCREF(get);
 	Py_XINCREF(set);
