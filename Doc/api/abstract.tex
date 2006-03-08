@@ -346,7 +346,6 @@ determination.
   either the sequence and mapping protocols, the sequence length is
   returned.  On error, \code{-1} is returned.  This is the equivalent
   to the Python expression \samp{len(\var{o})}.\bifuncindex{len}
-  \versionadded{2.5}
 \end{cfuncdesc}
 
 
@@ -693,6 +692,7 @@ determination.
 \begin{cfuncdesc}{Py_ssize_t}{PyNumber_Index}{PyObject *o}
   Returns the \var{o} converted to a Py_ssize_t integer on success, or
   -1 with an exception raised on failure.
+  \versionadded{2.5}
 \end{cfuncdesc}
 
 \section{Sequence Protocol \label{sequence}}
