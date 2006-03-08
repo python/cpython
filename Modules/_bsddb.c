@@ -779,6 +779,7 @@ newDBObject(DBEnvObject* arg, int flags)
             Py_DECREF(self->myenvobj);
             self->myenvobj = NULL;
         }
+        PyObject_Del(self);
         self = NULL;
     }
     return self;
@@ -895,6 +896,7 @@ newDBEnvObject(int flags)
     err = db_env_create(&self->db_env, flags);
     MYDB_END_ALLOW_THREADS;
     if (makeDBError(err)) {
+        PyObject_Del(self);
         self = NULL;
     }
     else {
@@ -1001,6 +1003,7 @@ newDBLockObject(DBEnvObject* myenv, u_int32_t locker, DBT* obj,
 #endif
     MYDB_END_ALLOW_THREADS;
     if (makeDBError(err)) {
+        PyObject_Del(self);
         self = NULL;
     }
 
@@ -1067,8 +1070,6 @@ _db_associateCallback(DB* db, const DBT* priKey, const DBT* priData,
     DBObject* secondaryDB = (DBObject*)db->app_private;
     PyObject* callback = secondaryDB->associateCallback;
     int       type = secondaryDB->primaryDBType;
-    PyObject* key;
-    PyObject* data;
     PyObject* args;
     PyObject* result = NULL;
 
@@ -1076,17 +1077,13 @@ _db_associateCallback(DB* db, const DBT* priKey, const DBT* priData,
     if (callback != NULL) {
         MYDB_BEGIN_BLOCK_THREADS;
 
-        if (type == DB_RECNO || type == DB_QUEUE) {
-            key = PyInt_FromLong( *((db_recno_t*)priKey->data));
-        }
-        else {
-            key  = PyString_FromStringAndSize(priKey->data, priKey->size);
-        }
-        data = PyString_FromStringAndSize(priData->data, priData->size);
-        args = PyTuple_New(2);
+        if (type == DB_RECNO || type == DB_QUEUE)
+            args = Py_BuildValue("(ls#)", *((db_recno_t*)priKey->data),
+                                 priData->data, priData->size);
+        else
+            args = Py_BuildValue("(s#s#)", priKey->data, priKey->size,
+                                 priData->data, priData->size);
         if (args != NULL) {
-                PyTuple_SET_ITEM(args, 0, key);  /* steals reference */
-                PyTuple_SET_ITEM(args, 1, data); /* steals reference */
                 result = PyEval_CallObject(callback, args);
         }
         if (args == NULL || result == NULL) {
@@ -1130,10 +1127,8 @@ _db_associateCallback(DB* db, const DBT* priKey, const DBT* priData,
             PyErr_Print();
         }
 
-        Py_DECREF(args);
-        if (result) {
-            Py_DECREF(result);
-        }
+        Py_XDECREF(args);
+        Py_XDECREF(result);
 
         MYDB_END_BLOCK_THREADS;
     }
@@ -1187,7 +1182,7 @@ DB_associate(DBObject* self, PyObject* args, PyObject* kwargs)
 
     /* Save a reference to the callback in the secondary DB. */
     Py_XDECREF(secondaryDB->associateCallback);
-    Py_INCREF(callback);
+    Py_XINCREF(callback);
     secondaryDB->associateCallback = callback;
     secondaryDB->primaryDBType = _DB_get_type(self);
 
@@ -1542,6 +1537,7 @@ DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
 #else
             retval = Py_BuildValue("OOO", keyObj, pkeyObj, dataObj);
 #endif
+            Py_DECREF(keyObj);
         }
         else /* return just the pkey and data */
         {
@@ -1551,6 +1547,8 @@ DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
             retval = Py_BuildValue("OO", pkeyObj, dataObj);
 #endif
         }
+        Py_DECREF(dataObj);
+        Py_DECREF(pkeyObj);
 	FREE_DBT(pkey);
         FREE_DBT(data);
     }
@@ -1733,6 +1731,10 @@ DB_join(DBObject* self, PyObject* args)
     cursors[length] = NULL;
     for (x=0; x<length; x++) {
         PyObject* item = PySequence_GetItem(cursorsObj, x);
+        if (item == NULL) {
+            free(cursors);
+            return NULL;
+        }
         if (!DBCursorObject_Check(item)) {
             PyErr_SetString(PyExc_TypeError,
                             "Sequence of DBCursor objects expected");
@@ -1843,8 +1845,10 @@ DB_open(DBObject* self, PyObject* args, PyObject* kwargs)
 #endif
 
     if (NULL == self->db) {
-        PyErr_SetObject(DBError, Py_BuildValue("(is)", 0,
-                                 "Cannot call open() twice for DB object"));
+        PyObject *t = Py_BuildValue("(is)", 0,
+                                "Cannot call open() twice for DB object");
+        PyErr_SetObject(DBError, t);
+        Py_DECREF(t);
         return NULL;
     }
 
@@ -2014,8 +2018,6 @@ _db_compareCallback(DB* db,
     int res = 0;
     PyObject *args;
     PyObject *result;
-    PyObject *leftObject;
-    PyObject *rightObject;
     DBObject *self = (DBObject *)db->app_private;
 
     if (self == NULL || self->btCompareCallback == NULL) {
@@ -2031,14 +2033,11 @@ _db_compareCallback(DB* db,
     } else {
 	MYDB_BEGIN_BLOCK_THREADS;
 
-	leftObject  = PyString_FromStringAndSize(leftKey->data, leftKey->size);
-	rightObject = PyString_FromStringAndSize(rightKey->data, rightKey->size);
-
-	args = PyTuple_New(2);
+	args = Py_BuildValue("s#s#", leftKey->data, leftKey->size,
+			     rightKey->data, rightKey->size);
 	if (args != NULL) {
+		/* XXX(twouters) I highly doubt this INCREF is correct */
 		Py_INCREF(self);
-		PyTuple_SET_ITEM(args, 0, leftObject);  /* steals reference */
-		PyTuple_SET_ITEM(args, 1, rightObject); /* steals reference */
 		result = PyEval_CallObject(self->btCompareCallback, args);
 	}
 	if (args == NULL || result == NULL) {
@@ -2055,7 +2054,7 @@ _db_compareCallback(DB* db,
 	    res = _default_cmp(leftKey, rightKey);
 	}
     
-	Py_DECREF(args);
+	Py_XDECREF(args);
 	Py_XDECREF(result);
 
 	MYDB_END_BLOCK_THREADS;
@@ -2068,7 +2067,7 @@ DB_set_bt_compare(DBObject* self, PyObject* args)
 {
     int err;
     PyObject *comparator;
-    PyObject *tuple, *emptyStr, *result;
+    PyObject *tuple, *result;
 
     if (!PyArg_ParseTuple(args, "O:set_bt_compare", &comparator))
 	return NULL;
@@ -2085,17 +2084,12 @@ DB_set_bt_compare(DBObject* self, PyObject* args)
      * string objects here.  verify that it returns an int (0).
      * err if not.
      */
-    tuple = PyTuple_New(2);
-    emptyStr = PyString_FromStringAndSize(NULL, 0);
-    if (tuple == NULL || emptyStr == NULL)
-	    return NULL;
-
-    Py_INCREF(emptyStr); /* now we have two references */
-    PyTuple_SET_ITEM(tuple, 0, emptyStr); /* steals reference */
-    PyTuple_SET_ITEM(tuple, 1, emptyStr); /* steals reference */
+    tuple = Py_BuildValue("(ss)", "", "");
     result = PyEval_CallObject(comparator, tuple);
     Py_DECREF(tuple);
-    if (result == NULL || !PyInt_Check(result)) {
+    if (result == NULL)
+        return NULL;
+    if (!PyInt_Check(result)) {
 	PyErr_SetString(PyExc_TypeError,
 		        "callback MUST return an int");
 	return NULL;
@@ -2104,6 +2098,7 @@ DB_set_bt_compare(DBObject* self, PyObject* args)
 		        "callback failed to return 0 on two empty strings");
 	return NULL;
     }
+    Py_DECREF(result);
 
     /* We don't accept multiple set_bt_compare operations, in order to
      * simplify the code. This would have no real use, as one cannot
@@ -2122,9 +2117,7 @@ DB_set_bt_compare(DBObject* self, PyObject* args)
     PyEval_InitThreads();
 #endif
 
-    err = self->db->set_bt_compare(self->db, 
-				   (comparator != NULL ? 
-				    _db_compareCallback : NULL));
+    err = self->db->set_bt_compare(self->db, _db_compareCallback);
 
     if (err) {
 	/* restore the old state in case of error */
@@ -2621,8 +2614,9 @@ Py_ssize_t DB_length(DBObject* self)
     void* sp;
 
     if (self->db == NULL) {
-        PyErr_SetObject(DBError,
-                        Py_BuildValue("(is)", 0, "DB object has been closed"));
+        PyObject *t = Py_BuildValue("(is)", 0, "DB object has been closed");
+        PyErr_SetObject(DBError, t);
+        Py_DECREF(t);
         return -1;
     }
 
@@ -2698,8 +2692,9 @@ DB_ass_sub(DBObject* self, PyObject* keyobj, PyObject* dataobj)
     int flags = 0;
 
     if (self->db == NULL) {
-        PyErr_SetObject(DBError,
-                        Py_BuildValue("(is)", 0, "DB object has been closed"));
+        PyObject *t = Py_BuildValue("(is)", 0, "DB object has been closed");
+        PyErr_SetObject(DBError, t);
+        Py_DECREF(t);
         return -1;
     }
 
@@ -2798,16 +2793,17 @@ _DB_make_list(DBObject* self, DB_TXN* txn, int type)
         return NULL;
 
     list = PyList_New(0);
-    if (list == NULL) {
-        PyErr_SetString(PyExc_MemoryError, "PyList_New failed");
+    if (list == NULL)
         return NULL;
-    }
 
     /* get a cursor */
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->db->cursor(self->db, txn, &cursor, 0);
     MYDB_END_ALLOW_THREADS;
-    RETURN_IF_ERR();
+    if (makeDBError(err)) {
+        Py_DECREF(list);
+        return NULL;
+    }
 
     if (CHECK_DBFLAG(self, DB_THREAD)) {
         key.flags = DB_DBT_REALLOC;
@@ -2858,10 +2854,13 @@ _DB_make_list(DBObject* self, DB_TXN* txn, int type)
                 break;
             }
             break;
+        default:
+            PyErr_Format(PyExc_ValueError, "Unknown key type 0x%x", type);
+            item = NULL;
+            break;
         }
         if (item == NULL) {
             Py_DECREF(list);
-            PyErr_SetString(PyExc_MemoryError, "List item creation failed");
             list = NULL;
             goto done;
         }
@@ -3199,6 +3198,7 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
 #else
             retval = Py_BuildValue("OOO", keyObj, pkeyObj, dataObj);
 #endif
+            Py_DECREF(keyObj);
             FREE_DBT(key);
         }
         else /* return just the pkey and data */
@@ -3209,6 +3209,8 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
             retval = Py_BuildValue("OO", pkeyObj, dataObj);
 #endif
         }
+        Py_DECREF(dataObj);
+        Py_DECREF(pkeyObj);
         FREE_DBT(pkey);
         FREE_DBT(data);
     }
@@ -4384,18 +4386,14 @@ DBEnv_log_archive(DBEnvObject* self, PyObject* args)
     RETURN_IF_ERR();
 
     list = PyList_New(0);
-    if (list == NULL) {
-        PyErr_SetString(PyExc_MemoryError, "PyList_New failed");
+    if (list == NULL)
         return NULL;
-    }
 
     if (log_list) {
         for (log_list_start = log_list; *log_list != NULL; ++log_list) {
             item = PyString_FromString (*log_list);
             if (item == NULL) {
                 Py_DECREF(list);
-                PyErr_SetString(PyExc_MemoryError,
-                                "List item creation failed");
                 list = NULL;
                 break;
             }
@@ -4492,8 +4490,10 @@ DBTxn_commit(DBTxnObject* self, PyObject* args)
         return NULL;
 
     if (!self->txn) {
-        PyErr_SetObject(DBError, Py_BuildValue("(is)", 0,
-            "DBTxn must not be used after txn_commit or txn_abort"));
+        PyObject *t =  Py_BuildValue("(is)", 0, "DBTxn must not be used "
+                                     "after txn_commit or txn_abort");
+        PyErr_SetObject(DBError, t);
+        Py_DECREF(t);
         return NULL;
     }
     txn = self->txn;
@@ -4527,8 +4527,10 @@ DBTxn_prepare(DBTxnObject* self, PyObject* args)
     }
 
     if (!self->txn) {
-        PyErr_SetObject(DBError, Py_BuildValue("(is)", 0,
-            "DBTxn must not be used after txn_commit or txn_abort"));
+        PyObject *t = Py_BuildValue("(is)", 0,"DBTxn must not be used "
+                                    "after txn_commit or txn_abort");
+        PyErr_SetObject(DBError, t);
+        Py_DECREF(t);
         return NULL;
     }
     MYDB_BEGIN_ALLOW_THREADS;
@@ -4547,8 +4549,10 @@ DBTxn_prepare(DBTxnObject* self, PyObject* args)
         return NULL;
 
     if (!self->txn) {
-        PyErr_SetObject(DBError, Py_BuildValue("(is)", 0,
-            "DBTxn must not be used after txn_commit or txn_abort"));
+        PyObject *t = Py_BuildValue("(is)", 0, "DBTxn must not be used "
+                                    "after txn_commit or txn_abort");
+        PyErr_SetObject(DBError, t);
+        Py_DECREF(t);
         return NULL;
     }
     MYDB_BEGIN_ALLOW_THREADS;
@@ -4570,8 +4574,10 @@ DBTxn_abort(DBTxnObject* self, PyObject* args)
         return NULL;
 
     if (!self->txn) {
-        PyErr_SetObject(DBError, Py_BuildValue("(is)", 0,
-            "DBTxn must not be used after txn_commit or txn_abort"));
+        PyObject *t = Py_BuildValue("(is)", 0, "DBTxn must not be used "
+                                    "after txn_commit or txn_abort");
+        PyErr_SetObject(DBError, t);
+        Py_DECREF(t);
         return NULL;
     }
     txn = self->txn;
@@ -4597,8 +4603,10 @@ DBTxn_id(DBTxnObject* self, PyObject* args)
         return NULL;
 
     if (!self->txn) {
-        PyErr_SetObject(DBError, Py_BuildValue("(is)", 0,
-            "DBTxn must not be used after txn_commit or txn_abort"));
+        PyObject *t = Py_BuildValue("(is)", 0, "DBTxn must not be used "
+                                    "after txn_commit or txn_abort");
+        PyErr_SetObject(DBError, t);
+        Py_DECREF(t);
         return NULL;
     }
     MYDB_BEGIN_ALLOW_THREADS;
