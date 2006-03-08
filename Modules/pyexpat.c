@@ -105,8 +105,8 @@ set_error_attr(PyObject *err, char *name, int value)
 {
     PyObject *v = PyInt_FromLong(value);
 
-    if (v != NULL && PyObject_SetAttrString(err, name, v) == -1) {
-        Py_DECREF(v);
+    if (v == NULL || PyObject_SetAttrString(err, name, v) == -1) {
+        Py_XDECREF(v);
         return 0;
     }
     Py_DECREF(v);
@@ -136,7 +136,7 @@ set_error(xmlparseobject *self, enum XML_Error code)
           && set_error_attr(err, "lineno", lineno)) {
         PyErr_SetObject(ErrorObject, err);
     }
-    Py_DECREF(err);
+    Py_XDECREF(err);
     return NULL;
 }
 
@@ -993,7 +993,7 @@ xmlparse_ParseFile(xmlparseobject *self, PyObject *args)
     if (PyFile_Check(f)) {
         fp = PyFile_AsFile(f);
     }
-    else{
+    else {
         fp = NULL;
         readmethod = PyObject_GetAttrString(f, "read");
         if (readmethod == NULL) {
