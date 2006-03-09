@@ -1037,7 +1037,10 @@ _PySys_Init(void)
 		struct stat sb;
 		if (fstat(fileno(stdin), &sb) == 0 &&
 		    S_ISDIR(sb.st_mode)) {
-			Py_FatalError("<stdin> is a directory");
+			/* There's nothing more we can do. */
+			/* Py_FatalError() will core dump, so just exit. */
+			PySys_WriteStderr("Python error: <stdin> is a directory, cannot continue\n");
+			exit(EXIT_FAILURE);
 		}
 	}
 
