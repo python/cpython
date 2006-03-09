@@ -113,8 +113,11 @@ class NodeInfo:
             for name in self.argnames:
                 print >> buf, "        self.%s = %s" % (name, name)
         print >> buf, "        self.lineno = lineno"
-        if self.init:
-            print >> buf, "".join(["    " + line for line in self.init])
+        # Copy the lines in self.init, indented four spaces.  The rstrip()
+        # business is to get rid of the four spaces if line happens to be
+        # empty, so that reindent.py is happy with the output.
+        for line in self.init:
+            print >> buf, ("    " + line).rstrip()
 
     def _gen_getChildren(self, buf):
         print >> buf, "    def getChildren(self):"
