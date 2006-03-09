@@ -43,22 +43,22 @@ if sys.platform == "win32":
 
 class Structures(unittest.TestCase):
 
-        def test_struct_by_value(self):
-            class POINT(Structure):
-                _fields_ = [("x", c_long),
-                            ("y", c_long)]
+    def test_struct_by_value(self):
+        class POINT(Structure):
+            _fields_ = [("x", c_long),
+                        ("y", c_long)]
 
-            class RECT(Structure):
-                _fields_ = [("left", c_long),
-                            ("top", c_long),
-                            ("right", c_long),
-                            ("bottom", c_long)]
+        class RECT(Structure):
+            _fields_ = [("left", c_long),
+                        ("top", c_long),
+                        ("right", c_long),
+                        ("bottom", c_long)]
 
-            dll = cdll.load(_ctypes_test.__file__)
+        dll = cdll.load(_ctypes_test.__file__)
 
-            pt = POINT(10, 10)
-            rect = RECT(0, 0, 20, 20)
-            self.failUnlessEqual(1, dll.PointInRect(byref(rect), pt))
+        pt = POINT(10, 10)
+        rect = RECT(0, 0, 20, 20)
+        self.failUnlessEqual(1, dll.PointInRect(byref(rect), pt))
 
 if __name__ == '__main__':
     unittest.main()

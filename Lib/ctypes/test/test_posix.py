@@ -10,7 +10,7 @@ if os.name == "posix" and sys.platform == "linux2":
         def test_GL(self):
             cdll.load('libGL.so', mode=RTLD_GLOBAL)
             cdll.load('libGLU.so')
-            
+
 ##if os.name == "posix" and sys.platform != "darwin":
 
 ##    # On platforms where the default shared library suffix is '.so',

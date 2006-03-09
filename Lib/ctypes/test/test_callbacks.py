@@ -3,7 +3,7 @@ from ctypes import *
 import _ctypes_test
 
 class Callbacks(unittest.TestCase):
-    functype = CFUNCTYPE    
+    functype = CFUNCTYPE
 
 ##    def tearDown(self):
 ##        import gc
@@ -130,7 +130,7 @@ class SampleCallbacksTestCase(unittest.TestCase):
 
         result = integrate(0.0, 1.0, CALLBACK(func), 10)
         diff = abs(result - 1./3.)
-        
+
         self.failUnless(diff < 0.01, "%s not less than 0.01" % diff)
 
 ################################################################

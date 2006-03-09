@@ -46,7 +46,7 @@ class StringArrayTestCase(unittest.TestCase):
         BUF = c_char * 4
         buf = BUF()
 ##        print c_char_p.from_param(buf)
-        
+
     def test_param_2(self):
         BUF = c_char * 4
         buf = BUF()
@@ -103,9 +103,9 @@ class StringTestCase(unittest.TestCase):
 
     def XX_test_sized_strings(self):
 
-        # New in releases later than 0.4.0: 
+        # New in releases later than 0.4.0:
         self.assertRaises(TypeError, c_string, None)
-        
+
         # New in releases later than 0.4.0:
         # c_string(number) returns an empty string of size number
         self.failUnless(len(c_string(32).raw) == 32)
@@ -181,7 +181,7 @@ else:
             # One char too long values:
             self.assertRaises(ValueError, setattr, cs, "value", u"1234567")
 
-        
+
 def run_test(rep, msg, func, arg):
     items = range(rep)
     from time import clock

@@ -48,7 +48,7 @@ class RefcountTestCase(unittest.TestCase):
         # and may release it again
         del f
         self.failUnless(grc(func) >= 2)
-        
+
         # but now it must be gone
         gc.collect()
         self.failUnless(grc(func) == 2)
@@ -57,14 +57,14 @@ class RefcountTestCase(unittest.TestCase):
             _fields_ = [("a", OtherCallback)]
         x = X()
         x.a = OtherCallback(func)
-        
+
         # the CFuncPtr instance holds atr least one refcount on func:
         self.failUnless(grc(func) > 2)
 
         # and may release it again
         del x
         self.failUnless(grc(func) >= 2)
-        
+
         # and now it must be gone again
         gc.collect()
         self.failUnlessEqual(grc(func), 2)
@@ -80,7 +80,7 @@ class RefcountTestCase(unittest.TestCase):
         del f
         gc.collect()
         self.failUnlessEqual(grc(func), 2)
-        
+
 class AnotherLeak(unittest.TestCase):
     def test_callback(self):
         import sys
@@ -89,7 +89,7 @@ class AnotherLeak(unittest.TestCase):
         def func(a, b):
             return a * b * 2
         f = proto(func)
-        
+
         a = sys.getrefcount(ctypes.c_int)
         f(1, 2)
         self.failUnlessEqual(sys.getrefcount(ctypes.c_int), a)

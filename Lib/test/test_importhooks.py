@@ -252,7 +252,7 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
         for mname in mnames:
             m = __import__(mname, globals(), locals(), ["__dummy__"])
             m.__loader__  # to make sure we actually handled the import
-        # Delete urllib from modules because urlparse was imported above.  
+        # Delete urllib from modules because urlparse was imported above.
         # Without this hack, test_socket_ssl fails if run in this order:
         # regrtest.py test_codecmaps_tw test_importhooks test_socket_ssl
         try:

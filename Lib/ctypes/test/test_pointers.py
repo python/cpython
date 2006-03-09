@@ -11,7 +11,7 @@ python_types = [int, int, int, int, int, long,
 class PointersTestCase(unittest.TestCase):
 
     def test_pointer_crash(self):
-        
+
         class A(POINTER(c_ulong)):
             pass
 
@@ -84,7 +84,7 @@ class PointersTestCase(unittest.TestCase):
 ##        print self.result
         doit(callback)
 ##        print self.result
-        
+
     def test_basics(self):
         from operator import delitem
         for ct, pt in zip(ctype_types, python_types):
@@ -132,7 +132,7 @@ class PointersTestCase(unittest.TestCase):
         self.assertRaises(TypeError, len, p)
         self.failUnlessEqual(p[0], 42)
         self.failUnlessEqual(p.contents.value, 42)
-        
+
     def test_incomplete(self):
         lpcell = POINTER("cell")
         class cell(Structure):
@@ -166,6 +166,6 @@ class PointersTestCase(unittest.TestCase):
         result = func( byref(argc), argv )
         assert result == 'world', result
 
-    
+
 if __name__ == '__main__':
     unittest.main()

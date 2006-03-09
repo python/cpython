@@ -28,14 +28,14 @@ class FunctionTestCase(unittest.TestCase):
         # But in early versions of _ctypes.c, the result of tp_new
         # wasn't checked, and it even crashed Python.
         # Found by Greg Chapman.
-        
+
         try:
             class X(object, Array):
                 _length_ = 5
                 _type_ = "i"
         except TypeError:
             pass
-                
+
 
         from _ctypes import _Pointer
         try:
@@ -105,7 +105,7 @@ class FunctionTestCase(unittest.TestCase):
         result = f(1, 2, 3, 4, 5.0, 6.0)
         self.failUnlessEqual(result, 21)
         self.failUnlessEqual(type(result), int)
-        
+
         result = f(1, 2, 3, 0x10004, 5.0, 6.0)
         self.failUnlessEqual(result, 21)
         self.failUnlessEqual(type(result), int)
@@ -124,7 +124,7 @@ class FunctionTestCase(unittest.TestCase):
         result = f(-1, -2, -3, -4, -5.0, -6.0)
         self.failUnlessEqual(result, -21)
         self.failUnlessEqual(type(result), float)
-        
+
     def test_doubleresult(self):
         f = dll._testfunc_d_bhilfd
         f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_double]
@@ -136,7 +136,7 @@ class FunctionTestCase(unittest.TestCase):
         result = f(-1, -2, -3, -4, -5.0, -6.0)
         self.failUnlessEqual(result, -21)
         self.failUnlessEqual(type(result), float)
-        
+
     def test_longlongresult(self):
         try:
             c_longlong
@@ -226,7 +226,7 @@ class FunctionTestCase(unittest.TestCase):
         self.failUnlessEqual(args, expected)
 
     ################################################################
-        
+
 
     def test_callbacks(self):
         f = dll._testfunc_callback_i_if
@@ -237,7 +237,7 @@ class FunctionTestCase(unittest.TestCase):
         def callback(value):
             #print "called back with", value
             return value
-        
+
         cb = MyCallback(callback)
         result = f(-10, cb)
         self.failUnlessEqual(result, -18)
@@ -247,7 +247,7 @@ class FunctionTestCase(unittest.TestCase):
         cb = MyCallback(callback)
         result = f(-10, cb)
         self.failUnlessEqual(result, -18)
-                
+
         AnotherCallback = WINFUNCTYPE(c_int, c_int, c_int, c_int, c_int)
 
         # check that the prototype works: we call f with wrong
@@ -271,7 +271,7 @@ class FunctionTestCase(unittest.TestCase):
             #print "called back with", value
             self.failUnlessEqual(type(value), int)
             return value
-        
+
         cb = MyCallback(callback)
         result = f(-10, cb)
         self.failUnlessEqual(result, -18)

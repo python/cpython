@@ -216,10 +216,10 @@ class bdist_msi (Command):
         # Prefix ProductName with Python x.y, so that
         # it sorts together with the other Python packages
         # in Add-Remove-Programs (APR)
-        product_name = "Python %s %s" % (self.target_version, 
+        product_name = "Python %s %s" % (self.target_version,
                        self.distribution.get_fullname())
         self.db = msilib.init_database(installer_name, schema,
-                product_name, msilib.gen_uuid(), 
+                product_name, msilib.gen_uuid(),
                 sversion, author)
         msilib.add_tables(self.db, sequence)
         props = [('DistVersion', version)]
@@ -238,7 +238,7 @@ class bdist_msi (Command):
         self.db.Commit()
 
         if hasattr(self.distribution, 'dist_files'):
-           self.distribution.dist_files.append(('bdist_msi', self.target_version, fullname))
+            self.distribution.dist_files.append(('bdist_msi', self.target_version, fullname))
 
         if not self.keep_temp:
             remove_tree(self.bdist_dir, dry_run=self.dry_run)
@@ -265,14 +265,14 @@ class bdist_msi (Command):
                         if self.install_script_key:
                             raise DistutilsOptionError, "Multiple files with name %s" % file
                         self.install_script_key = '[#%s]' % key
-                        
+
         cab.commit(db)
 
     def add_find_python(self):
         """Adds code to the installer to compute the location of Python.
         Properties PYTHON.MACHINE, PYTHON.USER, PYTHONDIR and PYTHON will be set
         in both the execute and UI sequences; PYTHONDIR will be set from
-        PYTHON.USER if defined, else from PYTHON.MACHINE. 
+        PYTHON.USER if defined, else from PYTHON.MACHINE.
         PYTHON is PYTHONDIR\python.exe"""
         install_path = r"SOFTWARE\Python\PythonCore\%s\InstallPath" % self.target_version
         add_data(self.db, "RegLocator",
@@ -497,7 +497,7 @@ class bdist_msi (Command):
         seldlg.title("Select Destination Directory")
 
         version = sys.version[:3]+" "
-        seldlg.text("Hint", 15, 30, 300, 40, 3, 
+        seldlg.text("Hint", 15, 30, 300, 40, 3,
                 "The destination directory should contain a Python %sinstallation" % version)
 
         seldlg.back("< Back", None, active=0)

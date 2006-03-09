@@ -34,14 +34,14 @@ except NameError:
 else:
     unsigned_types.append(c_ulonglong)
     signed_types.append(c_longlong)
-    
+
 unsigned_ranges = valid_ranges(*unsigned_types)
 signed_ranges = valid_ranges(*signed_types)
 
 ################################################################
 
 class NumberTestCase(unittest.TestCase):
-    
+
     def test_default_init(self):
         # default values are set to zero
         for t in signed_types + unsigned_types + float_types:
@@ -132,7 +132,7 @@ class NumberTestCase(unittest.TestCase):
             # and alignment of an instance
             self.failUnlessEqual((code, alignment(t())),
                                  (code, align))
-            
+
     def test_int_from_address(self):
         from array import array
         for t in signed_types + unsigned_types:
@@ -152,7 +152,7 @@ class NumberTestCase(unittest.TestCase):
             # changing the value at the memory location changes v's value also
             a[0] = 42
             self.failUnlessEqual(v.value, a[0])
-            
+
 
     def test_float_from_address(self):
         from array import array
@@ -168,7 +168,7 @@ class NumberTestCase(unittest.TestCase):
     def test_char_from_address(self):
         from ctypes import c_char
         from array import array
-        
+
         a = array('c', 'x')
         v = c_char.from_address(a.buffer_info()[0])
         self.failUnlessEqual(v.value, a[0])
@@ -185,7 +185,7 @@ class NumberTestCase(unittest.TestCase):
 
 ##    def test_perf(self):
 ##        check_perf()
-        
+
 from ctypes import _SimpleCData
 class c_int_S(_SimpleCData):
     _type_ = "i"
@@ -227,7 +227,7 @@ def check_perf():
 #        c_int(): 3.35 us
 #     c_int(999): 3.34 us
 #      c_int_S(): 3.23 us
-#   c_int_S(999): 3.24 us    
+#   c_int_S(999): 3.24 us
 
 # Python 2.2 -OO, win2k, P4 700 MHz:
 #

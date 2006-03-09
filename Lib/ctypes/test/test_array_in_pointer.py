@@ -8,7 +8,7 @@ def dump(obj):
     # between the bytes.
     h = hexlify(buffer(obj))
     return re.sub(r"(..)", r"\1-", h)[:-1]
-    
+
 
 class Value(Structure):
     _fields_ = [("val", c_byte)]

@@ -18,7 +18,7 @@ class SimpleTypesTestCase(unittest.TestCase):
             pass
         else:
             set_conversion_mode(*self.prev_conv_mode)
-        
+
 
     def test_subclasses(self):
         from ctypes import c_void_p, c_char_p

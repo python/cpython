@@ -130,7 +130,7 @@ class PointerToStructure(unittest.TestCase):
                         ("b", POINTER(POINT))]
         r = RECT()
         p1 = POINT(1, 2)
-    
+
         r.a = pointer(p1)
         r.b = pointer(p1)
 ##        from pprint import pprint as pp

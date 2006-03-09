@@ -55,4 +55,3 @@ elif sys.byteorder == "big":
 
 else:
     raise RuntimeError("Invalid byteorder")
-

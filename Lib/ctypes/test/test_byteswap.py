@@ -11,7 +11,7 @@ def bin(s):
 # byte order, and a __ctype_le__ attribute that is the same type in
 # LITTLE ENDIAN byte order.
 #
-# For Structures and Unions, these types are created on demand. 
+# For Structures and Unions, these types are created on demand.
 
 class Test(unittest.TestCase):
     def X_test(self):
