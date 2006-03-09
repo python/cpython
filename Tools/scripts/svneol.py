@@ -65,7 +65,7 @@ def proplist(root, fn):
     f.close()
     return result
 
-possible_text_file = re.compile(r"\.([hc]|py|txt)$").search
+possible_text_file = re.compile(r"\.([hc]|py|txt|sln|vcproj)$").search
 
 for root, dirs, files in os.walk('.'):
     if '.svn' in dirs:
