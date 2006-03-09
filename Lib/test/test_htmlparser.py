@@ -115,7 +115,7 @@ comment1b-->
 <Img sRc='Bar' isMAP>sample
 text
 &#x201C;
-<!--comment2a-- --comment2b-->
+<!--comment2a-- --comment2b--><!>
 </Html>
 """, [
     ("data", "\n"),
