@@ -3,8 +3,8 @@
 """
 SVN helper script.
 
-Try to set the svn:eol-style property to "native" on every .py and .txt file
-in the directory tree rooted at the current directory.
+Try to set the svn:eol-style property to "native" on every .py, .txt, .c and
+.h file in the directory tree rooted at the current directory.
 
 Files with the svn:eol-style property already set (to anything) are skipped.
 
@@ -30,16 +30,19 @@ and for a file with a binary mime-type property:
     svn: File 'Lib\test\test_pep263.py' has binary mime type property
 
 TODO:  This is slow, and especially on Windows, because it invokes a new svn
-command-line operation for every .py and .txt file.
+command-line operation for every file with the right extension.
 """
 
+import re
 import os
+
+possible_text_file = re.compile(r"\.([hc]|py|txt)$").search
 
 for root, dirs, files in os.walk('.'):
     if '.svn' in dirs:
         dirs.remove('.svn')
     for fn in files:
-        if fn.endswith('.py') or fn.endswith('.txt'):
+        if possible_text_file(fn):
             path = os.path.join(root, fn)
             p = os.popen('svn proplist "%s"' % path)
             guts = p.read()
