@@ -76,13 +76,16 @@ class ParserBase:
         rawdata = self.rawdata
         j = i + 2
         assert rawdata[i:j] == "<!", "unexpected call to parse_declaration"
+        if rawdata[j:j+1] == ">":
+            # the empty comment <!>
+            return j + 1
         if rawdata[j:j+1] in ("-", ""):
             # Start of comment followed by buffer boundary,
             # or just a buffer boundary.
             return -1
         # A simple, practical version could look like: ((name|stringlit) S*) + '>'
         n = len(rawdata)
-        if rawdata[j:j+1] == '--': #comment
+        if rawdata[j:j+2] == '--': #comment
             # Locate --.*-- as the body of the comment
             return self.parse_comment(i)
         elif rawdata[j] == '[': #marked section
