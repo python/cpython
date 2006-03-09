@@ -16,7 +16,7 @@ encoding = 'utf-8'
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = 'a37276dc2c158bef6dfd908ad34525c97180fad9'
+    expectedchecksum = 'a6555cd209d960dcfa17bfdce0c96d91cfa9a9ba'
 
     def test_method_checksum(self):
         h = sha.sha()
@@ -75,7 +75,7 @@ class UnicodeDatabaseTest(unittest.TestCase):
 class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # update this, if the database changes
-    expectedchecksum = 'cfe20a967a450ebc82ca68c3e4eed344164e11af'
+    expectedchecksum = 'b45b79f3203ee1a896d9b5655484adaff5d4964b'
 
     def test_function_checksum(self):
         data = []
