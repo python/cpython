@@ -1,14 +1,7 @@
 """create and manipulate C data types in Python"""
 
-# special developer support to use ctypes from the CVS sandbox,
-# without installing it
 import os as _os, sys as _sys
 from itertools import chain as _chain
-
-_magicfile = _os.path.join(_os.path.dirname(__file__), ".CTYPES_DEVEL")
-if _os.path.isfile(_magicfile):
-    execfile(_magicfile)
-del _magicfile
 
 __version__ = "0.9.9.4"
 
