@@ -367,7 +367,65 @@ Sugalski.}
 %======================================================================
 \section{PEP 352: Exceptions as New-Style Classes}
 
-% XXX write this
+Exception classes can now be new-style classes, not just classic classes,
+and the built-in \exception{Exception} class and all
+
+The inheritance hierarchy for exceptions has been rearranged a bit.
+In 2.5, the inheritance relationships are:
+
+\begin{verbatim}
+BaseException       # New in Python 2.5
+|- KeyboardInterrupt
+|- SystemExit
+|- Exception
+   |- (all other current built-in exceptions)
+\end{verbatim}
+
+This rearrangement was done because people often want to catch all
+exceptions that indicate program errors.  \exception{KeyboardInterrupt} and
+\exception{SystemExit} aren't errors, though, and usually represent an explicit
+action such as the user hitting Control-C or code calling
+\function{sys.exit()}.  A bare \code{except:} will catch all exceptions,
+so you commonly need to list \exception{KeyboardInterrupt} and
+\exception{SystemExit} in order to re-raise them.  The usual pattern is:
+
+\begin{verbatim}
+try:
+    ...
+except (KeyboardInterrupt, SystemExit):
+    raise
+except: 
+    # Log error...  
+    # Continue running program...
+\end{verbatim}
+
+In Python 2.5, you can now write \code{except Exception} to achieve
+the same result, catching all the exceptions that usually indicate errors 
+but leaving \exception{KeyboardInterrupt} and
+\exception{SystemExit} alone.  As in previous versions,
+a bare \code{except:} still catches all exceptions.
+
+The goal for Python 3.0 is to require any class raised as an exception
+to derive from \exception{BaseException} or some descendant of
+\exception{BaseException}, and future releases in the
+Python 2.x series may begin to enforce this constraint.  Therefore, I
+suggest you begin making all your exception classes derive from
+\exception{Exception} now.  It's been suggested that the bare
+\code{except:} form should be removed in Python 3.0, but Guido van~Rossum
+hasn't decided whether to do this or not.
+
+Raising of strings as exceptions, as in the statement \code{raise
+"Error occurred"}, is deprecated in Python 2.5 and will trigger a
+warning.  The aim is to be able to remove the string-exception feature
+in a few releases.
+
+
+\begin{seealso}
+
+\seepep{352}{}{PEP written by 
+Brett Cannon and Guido van Rossum; implemented by Brett Cannon.}
+
+\end{seealso}
 
 
 %======================================================================
@@ -453,6 +511,8 @@ complete list of changes, or look through the CVS logs for all the
 details.
 
 \begin{itemize}
+
+% ctypes added
 
 % collections.deque now has .remove()
 
