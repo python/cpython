@@ -28,13 +28,42 @@ For a file not under version control:
 and for a file with a binary mime-type property:
 
     svn: File 'Lib\test\test_pep263.py' has binary mime type property
-
-TODO:  This is slow, and especially on Windows, because it invokes a new svn
-command-line operation for every file with the right extension.
 """
 
 import re
 import os
+
+def proplist(root, fn):
+    "Return a list of property names for file fn in directory root"
+    path = os.path.join(root, ".svn", "props", fn+".svn-work")
+    try:
+        f = open(path)
+    except IOError:
+        # no properties file: not under version control
+        return []
+    result = []
+    while 1:
+        # key-value pairs, of the form
+        # K <length>
+        # <keyname>NL
+        # V length
+        # <value>NL
+        # END
+        line = f.readline()
+        if line.startswith("END"):
+            break
+        assert line.startswith("K ")
+        L = int(line.split()[1])
+        key = f.read(L)
+        result.append(key)
+        f.readline()
+        line = f.readline()
+        assert line.startswith("V ")
+        L = int(line.split()[1])
+        value = f.read(L)
+        f.readline()
+    f.close()
+    return result
 
 possible_text_file = re.compile(r"\.([hc]|py|txt)$").search
 
@@ -43,9 +72,6 @@ for root, dirs, files in os.walk('.'):
         dirs.remove('.svn')
     for fn in files:
         if possible_text_file(fn):
-            path = os.path.join(root, fn)
-            p = os.popen('svn proplist "%s"' % path)
-            guts = p.read()
-            p.close()
-            if 'eol-style' not in guts:
+            if 'svn:eol-style' not in proplist(root, fn):
+                path = os.path.join(root, fn)
                 os.system('svn propset svn:eol-style native "%s"' % path)
