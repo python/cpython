@@ -279,6 +279,10 @@ Core and builtins
 Extension Modules
 -----------------
 
+- The unicodedata module was updated to the 4.1 version of the Unicode
+  database. The 3.2 version is still available as unicodedata.db_3_2_0
+  for applications that require this specific version (such as IDNA).
+
 - The timing module is no longer built by default.  It was deprecated
   in PEP 4 in Python 2.0 or earlier.
 

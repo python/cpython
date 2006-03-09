@@ -5,7 +5,7 @@ There are two kinds of tables: sets, for which a member test is provided,
 and mappings, for which a mapping function is provided.
 """
 
-import unicodedata
+from unicodedata import db_3_2_0 as unicodedata
 
 assert unicodedata.unidata_version == '3.2.0'
 

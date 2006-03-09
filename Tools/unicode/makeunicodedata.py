@@ -26,13 +26,15 @@
 import sys
 
 SCRIPT = sys.argv[0]
-VERSION = "2.3"
+VERSION = "2.5"
 
 # The Unicode Database
-UNIDATA_VERSION = "3.2.0"
-UNICODE_DATA = "UnicodeData.txt"
-COMPOSITION_EXCLUSIONS = "CompositionExclusions.txt"
-EASTASIAN_WIDTH = "EastAsianWidth.txt"
+UNIDATA_VERSION = "4.1.0"
+UNICODE_DATA = "UnicodeData%s.txt"
+COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
+EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
+
+old_versions = ["3.2.0"]
 
 CATEGORY_NAMES = [ "Cn", "Lu", "Ll", "Lt", "Mn", "Mc", "Me", "Nd",
     "Nl", "No", "Zs", "Zl", "Zp", "Cc", "Cf", "Cs", "Co", "Cn", "Lm",
@@ -57,12 +59,22 @@ UPPER_MASK = 0x80
 
 def maketables(trace=0):
 
-    print "--- Reading", UNICODE_DATA, "..."
+    print "--- Reading", UNICODE_DATA % "", "..."
 
-    unicode = UnicodeData(UNICODE_DATA, COMPOSITION_EXCLUSIONS,
-                          EASTASIAN_WIDTH)
+    version = ""
+    unicode = UnicodeData(UNICODE_DATA % version,
+                          COMPOSITION_EXCLUSIONS % version,
+                          EASTASIAN_WIDTH % version)
 
     print len(filter(None, unicode.table)), "characters"
+
+    for version in old_versions:
+        print "--- Reading", UNICODE_DATA % ("-"+version), "..."
+        old_unicode = UnicodeData(UNICODE_DATA % ("-"+version),
+                                  COMPOSITION_EXCLUSIONS % ("-"+version),
+                                  EASTASIAN_WIDTH % ("-"+version))
+        print len(filter(None, old_unicode.table)), "characters"
+        merge_old_version(version, unicode, old_unicode)
 
     makeunicodename(unicode, trace)
     makeunicodedata(unicode, trace)
@@ -119,6 +131,8 @@ def makeunicodedata(unicode, trace):
         if record:
             if record[5]:
                 decomp = record[5].split()
+                if len(decomp) > 19:
+                    raise Exception, "character %x has a decomposition too large for nfd_nfkd" % char
                 # prefix
                 if decomp[0][0] == "<":
                     prefix = decomp.pop(0)
@@ -277,6 +291,44 @@ def makeunicodedata(unicode, trace):
     print >>fp, "#define COMP_SHIFT", shift
     Array("comp_index", index).dump(fp, trace)
     Array("comp_data", index2).dump(fp, trace)
+
+    # Generate delta tables for old versions
+    for version, table, normalization in unicode.changed:
+        cversion = version.replace(".","_")
+        records = [table[0]]
+        cache = {table[0]:0}
+        index = [0] * len(table)
+        for i, record in enumerate(table):
+            try:
+                index[i] = cache[record]
+            except KeyError:
+                index[i] = cache[record] = len(records)
+                records.append(record)
+        index1, index2, shift = splitbins(index, trace)
+        print >>fp, "static const change_record change_records_%s[] = {" % cversion
+        for record in records:
+            print >>fp, "\t{ %s }," % ", ".join(map(str,record))
+        print >>fp, "};"
+        Array("changes_%s_index" % cversion, index1).dump(fp, trace)
+        Array("changes_%s_data" % cversion, index2).dump(fp, trace)
+        print >>fp, "static const change_record* get_change_%s(Py_UCS4 n)" % cversion
+        print >>fp, "{"
+        print >>fp, "\tint index;"
+        print >>fp, "\tif (n >= 0x110000) index = 0;"
+        print >>fp, "\telse {"
+        print >>fp, "\t\tindex = changes_%s_index[n>>%d];" % (cversion, shift)
+        print >>fp, "\t\tindex = changes_%s_data[(index<<%d)+(n & %d)];" % \
+              (cversion, shift, ((1<<shift)-1))
+        print >>fp, "\t}"
+        print >>fp, "\treturn change_records_%s+index;" % cversion
+        print >>fp, "}\n"
+        print >>fp, "static Py_UCS4 normalization_%s(Py_UCS4 n)" % cversion
+        print >>fp, "{"
+        print >>fp, "\tswitch(n) {"
+        for k, v in normalization:
+            print >>fp, "\tcase %s: return 0x%s;" % (hex(k), v)
+        print >>fp, "\tdefault: return 0;"
+        print >>fp, "\t}\n}\n"
 
     fp.close()
 
@@ -540,6 +592,82 @@ def makeunicodename(unicode, trace):
 
     fp.close()
 
+
+def merge_old_version(version, new, old):
+    # Changes to exclusion file not implemented yet
+    if old.exclusions != new.exclusions:
+        raise NotImplementedError, "exclusions differ"
+
+    # In these change records, 0xFF means "no change"
+    bidir_changes = [0xFF]*0x110000
+    category_changes = [0xFF]*0x110000
+    decimal_changes = [0xFF]*0x110000
+    # In numeric data, 0 means "no change",
+    # -1 means "did not have a numeric value
+    numeric_changes = [0] * 0x110000
+    # normalization_changes is a list of key-value pairs
+    normalization_changes = []
+    for i in range(0x110000):
+        if new.table[i] is None:
+            # Characters unassigned in the new version ought to
+            # be unassigned in the old one
+            assert old.table[i] is None
+            continue
+        # check characters unassigned in the old version
+        if old.table[i] is None:
+            # category 0 is "unassigned"
+            category_changes[i] = 0
+            continue
+        # check characters that differ
+        if old.table[i] != new.table[i]:
+            for k in range(len(old.table[i])):
+                if old.table[i][k] != new.table[i][k]:
+                    value = old.table[i][k]
+                    if k == 2:
+                        #print "CATEGORY",hex(i), old.table[i][k], new.table[i][k]
+                        category_changes[i] = CATEGORY_NAMES.index(value)
+                    elif k == 4:
+                        #print "BIDIR",hex(i), old.table[i][k], new.table[i][k]
+                        bidir_changes[i] = BIDIRECTIONAL_NAMES.index(value)
+                    elif k == 5:
+                        #print "DECOMP",hex(i), old.table[i][k], new.table[i][k]
+                        # We assume that all normalization changes are in 1:1 mappings
+                        assert " " not in value
+                        normalization_changes.append((i, value))
+                    elif k == 6:
+                        #print "DECIMAL",hex(i), old.table[i][k], new.table[i][k]
+                        # we only support changes where the old value is a single digit
+                        assert value in "0123456789"
+                        decimal_changes[i] = int(value)
+                    elif k == 8:
+                        # print "NUMERIC",hex(i), `old.table[i][k]`, new.table[i][k]
+                        # Since 0 encodes "no change", the old value is better not 0
+                        assert value != "0" and value != "-1"
+                        if not value:
+                            numeric_changes[i] = -1
+                        else:
+                            assert re.match("^[0-9]+$", value)
+                            numeric_changes[i] = int(value)
+                    elif k == 11:
+                        # change to ISO comment, ignore
+                        pass
+                    elif k == 12:
+                        # change to simple uppercase mapping; ignore
+                        pass
+                    elif k == 13:
+                        # change to simple lowercase mapping; ignore
+                        pass
+                    elif k == 14:
+                        # change to simple titlecase mapping; ignore
+                        pass
+                    else:
+                        class Difference(Exception):pass
+                        raise Difference, (hex(i), k, old.table[i], new.table[i])
+    new.changed.append((version, zip(bidir_changes, category_changes,
+                                     decimal_changes, numeric_changes),
+                        normalization_changes))
+    
+
 # --------------------------------------------------------------------
 # the following support code is taken from the unidb utilities
 # Copyright (c) 1999-2000 by Secret Labs AB
@@ -551,6 +679,7 @@ import sys
 class UnicodeData:
 
     def __init__(self, filename, exclusions, eastasianwidth, expand=1):
+        self.changed = []
         file = open(filename)
         table = [None] * 0x110000
         while 1:
@@ -569,13 +698,14 @@ class UnicodeData:
                 if s:
                     if s[1][-6:] == "First>":
                         s[1] = ""
-                        field = s[:]
+                        field = s
                     elif s[1][-5:] == "Last>":
                         s[1] = ""
                         field = None
                 elif field:
-                    field[0] = hex(i)
-                    table[i] = field
+                    f2 = field[:]
+                    f2[0] = "%X" % i
+                    table[i] = f2
 
         # public attributes
         self.filename = filename

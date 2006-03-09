@@ -14,11 +14,11 @@
 This module provides access to the Unicode Character Database which
 defines character properties for all Unicode characters. The data in
 this database is based on the \file{UnicodeData.txt} file version
-3.2.0 which is publically available from \url{ftp://ftp.unicode.org/}.
+4.1.0 which is publically available from \url{ftp://ftp.unicode.org/}.
 
 The module uses the same names and symbols as defined by the
-UnicodeData File Format 3.2.0 (see
-\url{http://www.unicode.org/Public/3.2-Update/UnicodeData-3.2.0.html}).  It
+UnicodeData File Format 4.1.0 (see
+\url{http://www.unicode.org/Public/4.1-Update/UnicodeData-4.1.0.html}).  It
 defines the following functions:
 
 \begin{funcdesc}{lookup}{name}
@@ -129,4 +129,13 @@ In addition, the module exposes the following constant:
 The version of the Unicode database used in this module.
 
 \versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{db_3_2_0}
+This is an object that has the same methods as the entire
+module, but uses the Unicode database version 3.2 instead,
+for applications that require this specific version of
+the Unicode database (such as IDNA).
+
+\versionadded{2.5}
 \end{datadesc}
