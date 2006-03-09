@@ -29,7 +29,91 @@ rationale, refer to the PEP for a particular new feature.
 %======================================================================
 \section{PEP 308: Conditional Expressions}
 
-% XXX write this
+For a long time, people have been requesting a way to write
+conditional expressions, expressions that return value A or value B
+depending on whether a Boolean value is true or false.  A conditional
+expression lets you write a single assignment statement that has the
+same effect as the following:
+
+\begin{verbatim}
+if condition:
+    x = true_value
+else:
+    x = false_value
+\end{verbatim}
+
+There have been endless tedious discussions of syntax on both
+python-dev and comp.lang.python, and even a vote that found the
+majority of voters wanted some way to write conditional expressions,
+but there was no syntax that was clearly preferred by a majority.
+Candidates include C's \code{cond ? true_v : false_v},
+\code{if cond then true_v else false_v}, and 16 other variations.
+
+GvR eventually chose a surprising syntax:
+
+\begin{verbatim}
+x = true_value if condition else false_value
+\end{verbatim}
+
+Evaluation is still lazy as in existing Boolean expression, so the
+evaluation jumps around a bit.  The \var{condition} expression is
+evaluated first, and the \var{true_value} expression is evaluated only
+if the condition was true.  Similarly, the \var{false_value}
+expression is only evaluated when the condition is false.
+
+This syntax may seem strange and backwards; why does the condition go
+in the \emph{middle} of the expression, and not in the front as in C's
+\code{c ? x : y}?  The decision was checked by applying the new syntax
+to the modules in the standard library and seeing how the resulting
+code read.  In many cases where a conditional expression is used, one
+value seems to be the 'common case' and one value is an 'exceptional
+case', used only on rarer occasions when the condition isn't met.  The
+conditional syntax makes this pattern a bit more obvious:
+
+\begin{verbatim}
+contents = ((doc + '\n') if doc else '')
+\end{verbatim}
+
+I read the above statement as meaning ``here \var{contents} is 
+usually assigned a value of \code{doc+'\n'}; sometimes 
+\var{doc} is empty, in which special case an empty string is returned.''  
+I doubt I will use conditional expressions very often where there 
+isn't a clear common and uncommon case.
+
+There was some discussion of whether the language should require
+surrounding conditional expressions with parentheses.  The decision
+was made to \emph{not} require parentheses in the Python language's
+grammar, but as a matter of style I think you should always use them.
+Consider these two statements:
+
+\begin{verbatim}
+# First version -- no parens
+level = 1 if logging else 0
+
+# Second version -- with parens
+level = (1 if logging else 0)
+\end{verbatim}
+
+In the first version, I think a reader's eye might group the statement
+into 'level = 1', 'if logging', 'else 0', and think that the condition
+decides whether the assignment to \var{level} is performed.  The
+second version reads better, in my opinion, because it makes it clear
+that the assignment is always performed and the choice is being made
+between two values.
+
+Another reason for including the brackets: a few odd combinations of
+list comprehensions and lambdas could look like incorrect conditional
+expressions. See \pep{308} for some examples.  If you put parentheses
+around your conditional expressions, you won't run into this case.
+
+
+\begin{seealso}
+
+\seepep{308}{Conditional Expressions}{PEP written by
+Guido van Rossum and Raymond D. Hettinger; implemented by Thomas
+Wouters.}
+
+\end{seealso}
 
 
 %======================================================================
