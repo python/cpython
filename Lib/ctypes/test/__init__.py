@@ -83,7 +83,7 @@ def test_with_refcounts(runner, verbosity, testcase):
     ptc = ctypes._pointer_type_cache.copy()
     cfc = ctypes._c_functype_cache.copy()
     wfc = ctypes._win_functype_cache.copy()
-    
+
     # when searching for refcount leaks, we have to manually reset any
     # caches that ctypes has.
     def cleanup():

@@ -15,7 +15,7 @@ class BITS(Structure):
                 ("G", c_int, 7),
                 ("H", c_int, 8),
                 ("I", c_int, 9),
-                
+
                 ("M", c_short, 1),
                 ("N", c_short, 2),
                 ("O", c_short, 3),
@@ -62,7 +62,7 @@ class BitFieldTest(unittest.TestCase):
         x = X()
         x.a, x.b, x.c = -1, 7, -1
         self.failUnlessEqual((x.a, x.b, x.c), (-1, 7, -1))
-        
+
     def test_ulonglong(self):
         class X(Structure):
             _fields_ = [("a", c_ulonglong, 1),
@@ -79,7 +79,7 @@ class BitFieldTest(unittest.TestCase):
         for c_typ in signed_int_types:
             class X(Structure):
                 _fields_ = [("dummy", c_typ),
-                            ("a", c_typ, 3),                   
+                            ("a", c_typ, 3),
                             ("b", c_typ, 3),
                             ("c", c_typ, 1)]
             self.failUnlessEqual(sizeof(X), sizeof(c_typ)*2)

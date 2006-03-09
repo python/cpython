@@ -151,7 +151,7 @@ class LibraryLoader(object):
             except ValueError:
                 raise OSError("Library %s could not be found" % libname)
             return self.load_library(pathname, mode)
-            
+
     elif os.name == "posix":
         # Posix
         def _plat_load_version(self, name, version, mode):

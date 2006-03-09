@@ -56,7 +56,7 @@ class StructureTestCase(unittest.TestCase):
                "f": c_float,
                "d": c_double,
                }
-    
+
     def test_simple_structs(self):
         for code, tp in self.formats.items():
             class X(Structure):
@@ -90,7 +90,7 @@ class StructureTestCase(unittest.TestCase):
                         ("b", Y)]
         self.failUnlessEqual(alignment(SI), max(alignment(Y), alignment(X)))
         self.failUnlessEqual(sizeof(SI), calcsize("3s0i 3si 0i"))
-        
+
         class IS(Structure):
             _fields_ = [("b", Y),
                         ("a", X)]
@@ -215,7 +215,7 @@ class StructureTestCase(unittest.TestCase):
         # too long
         self.assertRaises(ValueError, Person, "1234567", 5)
 
-    
+
     def test_keyword_initializers(self):
         class POINT(Structure):
             _fields_ = [("x", c_int), ("y", c_int)]
@@ -315,7 +315,7 @@ class StructureTestCase(unittest.TestCase):
             func(*args)
         except Exception, detail:
             return detail.__class__, str(detail)
-                
+
 
 ##    def test_subclass_creation(self):
 ##        meta = type(Structure)
@@ -373,4 +373,3 @@ class PointerMemberTestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

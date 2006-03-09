@@ -122,6 +122,6 @@ class CFuncPtrTestCase(unittest.TestCase):
         self.failUnlessEqual(strtok(None, "\n"), "b")
         self.failUnlessEqual(strtok(None, "\n"), "c")
         self.failUnlessEqual(strtok(None, "\n"), None)
-        
+
 if __name__ == '__main__':
     unittest.main()

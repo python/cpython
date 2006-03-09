@@ -76,13 +76,13 @@ def c_buffer(init, size=None):
 _c_functype_cache = {}
 def CFUNCTYPE(restype, *argtypes):
     """CFUNCTYPE(restype, *argtypes) -> function prototype.
-    
+
     restype: the result type
     argtypes: a sequence specifying the argument types
-    
+
     The function prototype can be called in three ways to create a
     callable object:
-    
+
     prototype(funct) - returns a C callable function calling funct
     prototype(vtbl_index, method_name[, paramflags]) - a Python callable that calls a COM method
     prototype(funct_name, dll[, paramflags]) - a Python callable that calls an exported function in a dll
@@ -139,7 +139,7 @@ class c_long(_SimpleCData):
 
 class c_ulong(_SimpleCData):
     _type_ = "L"
-    
+
 if _calcsize("i") == _calcsize("l"):
     # if int and long have the same size, make c_int an alias for c_long
     c_int = c_long
@@ -153,7 +153,7 @@ else:
 
 class c_float(_SimpleCData):
     _type_ = "f"
-    
+
 class c_double(_SimpleCData):
     _type_ = "d"
 
@@ -327,7 +327,7 @@ class PyDLL(CDLL):
         _restype_ = c_int # default, can be overridden in instances
 
 if _os.name in ("nt", "ce"):
-        
+
     class WinDLL(CDLL):
         """This class represents a dll exporting functions using the
         Windows stdcall calling convention.
@@ -351,7 +351,7 @@ if _os.name in ("nt", "ce"):
         # doesn't have a way to raise an exception in the caller's
         # frame).
         _check_retval_ = _check_HRESULT
-        
+
     class OleDLL(CDLL):
         """This class represents a dll exporting functions using the
         Windows stdcall calling convention, and returning HRESULT.
@@ -424,7 +424,7 @@ else:
 
         Return the string at addr."""
         return _wstring_at(ptr, size)
-    
+
 
 if _os.name == "nt": # COM stuff
     def DllGetClassObject(rclsid, riid, ppv):
