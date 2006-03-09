@@ -227,12 +227,21 @@ def setquit():
 
     """
     if os.sep == ':':
-        exit = 'Use Cmd-Q to quit.'
+        eof = 'Cmd-Q'
     elif os.sep == '\\':
-        exit = 'Use Ctrl-Z plus Return to exit.'
+        eof = 'Ctrl-Z plus Return'
     else:
-        exit = 'Use Ctrl-D (i.e. EOF) to exit.'
-    __builtin__.quit = __builtin__.exit = exit
+        eof = 'Ctrl-D (i.e. EOF)'
+    
+    class Quitter(object):
+        def __init__(self, name):
+            self.name = name
+        def __repr__(self):
+            return 'Use %s() or %s to exit' % (self.name, eof)
+        def __call__(self, code=None):
+            raise SystemExit(code)
+    __builtin__.quit = Quitter('quit')
+    __builtin__.exit = Quitter('exit')
 
 
 class _Printer(object):
