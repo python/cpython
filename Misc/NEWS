@@ -440,6 +440,8 @@ Extension Modules
 Library
 -------
 
+- A regrtest option -w was added to re-run failed tests in verbose mode.
+
 - Patch #1446372: quit and exit can now be called from the interactive
   interpreter to exit.
 
