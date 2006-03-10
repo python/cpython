@@ -3186,6 +3186,10 @@ PyType_Ready(PyTypeObject *type)
 		Py_INCREF(base);
 	}
 
+        /* Now the only way base can still be NULL is if type is
+         * &PyBaseObject_Type.
+         */
+
 	/* Initialize the base class */
 	if (base && base->tp_dict == NULL) {
 		if (PyType_Ready(base) < 0)
@@ -3195,7 +3199,11 @@ PyType_Ready(PyTypeObject *type)
 	/* Initialize ob_type if NULL.  This means extensions that want to be
 	   compilable separately on Windows can call PyType_Ready() instead of
 	   initializing the ob_type field of their type objects. */
-	if (type->ob_type == NULL)
+        /* The test for base != NULL is really unnecessary, since base is only
+           NULL when type is &PyBaseObject_Type, and we know its ob_type is
+           not NULL (it's initialized to &PyType_Type).  But coverity doesn't
+           know that. */
+	if (type->ob_type == NULL && base != NULL)
 		type->ob_type = base->ob_type;
 
 	/* Initialize tp_bases */
@@ -3750,7 +3758,9 @@ hackcheck(PyObject *self, setattrofunc func, char *what)
 	PyTypeObject *type = self->ob_type;
 	while (type && type->tp_flags & Py_TPFLAGS_HEAPTYPE)
 		type = type->tp_base;
-	if (type->tp_setattro != func) {
+        /* If type is NULL now, this is a really weird type.
+           In the same of backwards compatibility (?), just shut up. */
+	if (type && type->tp_setattro != func) {
 		PyErr_Format(PyExc_TypeError,
 			     "can't apply this %s to %s object",
 			     what,
@@ -3965,7 +3975,9 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
 	staticbase = subtype;
 	while (staticbase && (staticbase->tp_flags & Py_TPFLAGS_HEAPTYPE))
 		staticbase = staticbase->tp_base;
-	if (staticbase->tp_new != type->tp_new) {
+        /* If staticbase is NULL now, it is a really weird type.
+           In the same of backwards compatibility (?), just shut up. */
+	if (staticbase && staticbase->tp_new != type->tp_new) {
 		PyErr_Format(PyExc_TypeError,
 			     "%s.__new__(%s) is not safe, use %s.__new__()",
 			     type->tp_name,
