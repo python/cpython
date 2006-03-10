@@ -68,7 +68,7 @@ lock_PyThread_acquire_lock(lockobject *self, PyObject *args)
 
 PyDoc_STRVAR(acquire_doc,
 "acquire([wait]) -> None or bool\n\
-(PyThread_acquire_lock() is an obsolete synonym)\n\
+(acquire_lock() is an obsolete synonym)\n\
 \n\
 Lock the lock.  Without argument, this blocks if the lock is already\n\
 locked (even by the same thread), waiting for another thread to release\n\
@@ -94,7 +94,7 @@ lock_PyThread_release_lock(lockobject *self)
 
 PyDoc_STRVAR(release_doc,
 "release()\n\
-(PyThread_release_lock() is an obsolete synonym)\n\
+(release_lock() is an obsolete synonym)\n\
 \n\
 Release the lock, allowing another thread that is blocked waiting for\n\
 the lock to acquire the lock.  The lock must be in the locked state,\n\
@@ -123,29 +123,6 @@ lock_context(lockobject *self)
 	return (PyObject *)self;
 }
 
-PyDoc_STRVAR(lock_exit_doc,
-"__exit__(type, value, tb)\n\
-\n\
-Releases the lock; then re-raises the exception if type is not None.");
-
-static PyObject *
-lock_exit(lockobject *self, PyObject *args)
-{
-	PyObject *type, *value, *tb, *result;
-	if (!PyArg_ParseTuple(args, "OOO:__exit__", &type, &value, &tb))
-		return NULL;
-	result = lock_PyThread_release_lock(self);
-	if (result != NULL && type != Py_None) {
-		Py_DECREF(result);
-		result = NULL;
-		Py_INCREF(type);
-		Py_INCREF(value);
-		Py_INCREF(tb);
-		PyErr_Restore(type, value, tb);
-	}
-	return result;
-}
-
 static PyMethodDef lock_methods[] = {
 	{"acquire_lock", (PyCFunction)lock_PyThread_acquire_lock, 
 	 METH_VARARGS, acquire_doc},
@@ -163,8 +140,8 @@ static PyMethodDef lock_methods[] = {
 	 METH_NOARGS, PyDoc_STR("__context__() -> self.")},
 	{"__enter__",    (PyCFunction)lock_PyThread_acquire_lock,
 	 METH_VARARGS, acquire_doc},
-	{"__exit__",    (PyCFunction)lock_exit,
-	 METH_VARARGS, lock_exit_doc},
+	{"__exit__",    (PyCFunction)lock_PyThread_release_lock,
+	 METH_VARARGS, release_doc},
 	{NULL,           NULL}		/* sentinel */
 };
 

@@ -2189,48 +2189,51 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 			   Below that are 1-3 values indicating how/why
 			   we entered the finally clause:
 			   - SECOND = None
-			   - (SECOND, THIRD) = (WHY_RETURN or WHY_CONTINUE), retval
+			   - (SECOND, THIRD) = (WHY_{RETURN,CONTINUE}), retval
 			   - SECOND = WHY_*; no retval below it
 			   - (SECOND, THIRD, FOURTH) = exc_info()
 			   In the last case, we must call
 			     TOP(SECOND, THIRD, FOURTH)
 			   otherwise we must call
 			     TOP(None, None, None)
-			   but we must preserve the stack entries below TOP.
-			   The code here just sets the stack up for the call;
-			   separate CALL_FUNCTION(3) and POP_TOP opcodes are
-			   emitted by the compiler.
 
 			   In addition, if the stack represents an exception,
-			   we "zap" this information; __exit__() should
-			   re-raise the exception if it wants to, and if
-			   __exit__() returns normally, END_FINALLY should
-			   *not* re-raise the exception.  (But non-local
-			   gotos should still be resumed.)
+			   *and* the function call returns a 'true' value, we
+			   "zap" this information, to prevent END_FINALLY from
+			   re-raising the exception.  (But non-local gotos
+			   should still be resumed.)
 			*/
 			
 			x = TOP();
 			u = SECOND();
 			if (PyInt_Check(u) || u == Py_None) {
 				u = v = w = Py_None;
-				Py_INCREF(u);
-				Py_INCREF(v);
-				Py_INCREF(w);
 			}
 			else {
 				v = THIRD();
 				w = FOURTH();
-				/* Zap the exception from the stack,
-				   to fool END_FINALLY. */
-				STACKADJ(-2);
-				SET_TOP(x);
-				Py_INCREF(Py_None);
-				SET_SECOND(Py_None);
 			}
-			STACKADJ(3);
-			SET_THIRD(u);
-			SET_SECOND(v);
-			SET_TOP(w);
+			/* XXX Not the fastest way to call it... */
+			x = PyObject_CallFunctionObjArgs(x, u, v, w, NULL);
+			if (x == NULL)
+				break; /* Go to error exit */
+			if (u != Py_None && PyObject_IsTrue(x)) {
+				/* There was an exception and a true return */
+				Py_DECREF(x);
+				x = TOP(); /* Again */
+				STACKADJ(-3);
+				Py_INCREF(Py_None);
+				SET_TOP(Py_None);
+				Py_DECREF(x);
+				Py_DECREF(u);
+				Py_DECREF(v);
+				Py_DECREF(w);
+			} else {
+				/* Let END_FINALLY do its thing */
+				Py_DECREF(x);
+				x = POP();
+				Py_DECREF(x);
+			}
 			break;
 		}
 

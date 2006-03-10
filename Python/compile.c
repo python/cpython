@@ -1382,7 +1382,7 @@ opcode_stack_effect(int opcode, int oparg)
 		case BREAK_LOOP:
 			return 0;
 		case WITH_CLEANUP:
-			return 3;
+			return -1; /* XXX Sometimes more */
 		case LOAD_LOCALS:
 			return 1;
 		case RETURN_VALUE:
@@ -3472,8 +3472,6 @@ compiler_with(struct compiler *c, stmt_ty s)
 	!compiler_nameop(c, tmpexit, Del))
 	return 0;
     ADDOP(c, WITH_CLEANUP);
-    ADDOP_I(c, CALL_FUNCTION, 3);
-    ADDOP(c, POP_TOP);
 
     /* Finally block ends. */
     ADDOP(c, END_FINALLY);

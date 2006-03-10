@@ -1617,24 +1617,6 @@ file_self(PyFileObject *f)
 	return (PyObject *)f;
 }
 
-static PyObject *
-file_exit(PyFileObject *f, PyObject *args)
-{
-	PyObject *type, *value, *tb, *result;
-	if (!PyArg_ParseTuple(args, "OOO:__exit__", &type, &value, &tb))
-		return NULL;
-	result = file_close(f);
-	if (result != NULL && type != Py_None) {
-		Py_DECREF(result);
-		result = NULL;
-		Py_INCREF(type);
-		Py_INCREF(value);
-		Py_INCREF(tb);
-		PyErr_Restore(type, value, tb);
-	}
-	return result;
-}
-
 PyDoc_STRVAR(readline_doc,
 "readline([size]) -> next line from the file, as a string.\n"
 "\n"
@@ -1725,13 +1707,6 @@ PyDoc_STRVAR(context_doc,
 PyDoc_STRVAR(enter_doc,
 	     "__enter__() -> self.");
 
-PyDoc_STRVAR(exit_doc,
-"__exit__(type, value, traceback).\n\
-\n\
-Closes the file; then re-raises the exception if type is not None.\n\
-If no exception is re-raised, the return value is the same as for close().\n\
-");
-
 static PyMethodDef file_methods[] = {
 	{"readline",  (PyCFunction)file_readline, METH_VARARGS, readline_doc},
 	{"read",      (PyCFunction)file_read,     METH_VARARGS, read_doc},
@@ -1751,7 +1726,7 @@ static PyMethodDef file_methods[] = {
 	{"isatty",    (PyCFunction)file_isatty,   METH_NOARGS,  isatty_doc},
 	{"__context__", (PyCFunction)file_self,   METH_NOARGS,  context_doc},
 	{"__enter__", (PyCFunction)file_self,     METH_NOARGS,  enter_doc},
-	{"__exit__",  (PyCFunction)file_exit,     METH_VARARGS, exit_doc},
+	{"__exit__",  (PyCFunction)file_close,    METH_VARARGS, close_doc},
 	{NULL,	      NULL}		/* sentinel */
 };
 

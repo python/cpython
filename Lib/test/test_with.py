@@ -78,8 +78,8 @@ class Nested(object):
                 vars.append(mgr.__enter__())
                 self.entered.appendleft(mgr)
         except:
-            self.__exit__(*sys.exc_info())
-            raise
+            if not self.__exit__(*sys.exc_info()):
+                raise
         return vars
 
     def __exit__(self, *exc_info):
@@ -89,7 +89,8 @@ class Nested(object):
         ex = exc_info
         for mgr in self.entered:
             try:
-                mgr.__exit__(*ex)
+                if mgr.__exit__(*ex):
+                    ex = (None, None, None)
             except:
                 ex = sys.exc_info()
         self.entered = None
@@ -574,9 +575,7 @@ class AssignmentTargetTestCase(unittest.TestCase):
         class C:
             def __context__(self): return self
             def __enter__(self): return 1, 2, 3
-            def __exit__(self, t, v, tb):
-                if t is not None:
-                    raise t, v, tb
+            def __exit__(self, t, v, tb): pass
         targets = {1: [0, 1, 2]}
         with C() as (targets[1][0], targets[1][1], targets[1][2]):
             self.assertEqual(targets, {1: [1, 2, 3]})
@@ -594,16 +593,29 @@ class AssignmentTargetTestCase(unittest.TestCase):
 
 class ExitSwallowsExceptionTestCase(unittest.TestCase):
 
-    def testExitSwallowsException(self):
-        class AfricanOrEuropean:
+    def testExitTrueSwallowsException(self):
+        class AfricanSwallow:
             def __context__(self): return self
             def __enter__(self): pass
-            def __exit__(self, t, v, tb): pass
+            def __exit__(self, t, v, tb): return True
         try:
-            with AfricanOrEuropean():
+            with AfricanSwallow():
                 1/0
         except ZeroDivisionError:
             self.fail("ZeroDivisionError should have been swallowed")
+
+    def testExitFalseDoesntSwallowException(self):
+        class EuropeanSwallow:
+            def __context__(self): return self
+            def __enter__(self): pass
+            def __exit__(self, t, v, tb): return False
+        try:
+            with EuropeanSwallow():
+                1/0
+        except ZeroDivisionError:
+            pass
+        else:
+            self.fail("ZeroDivisionError should have been raised")
 
 
 def test_main():

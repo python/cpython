@@ -858,8 +858,6 @@ class CodeGenerator:
         self.nextBlock(final)
         self.setups.push((END_FINALLY, final))
         self.emit('WITH_CLEANUP')
-        self.emit('CALL_FUNCTION', 3)
-        self.emit('POP_TOP')
         self.emit('END_FINALLY')
         self.setups.pop()
         self.__with_count -= 1
