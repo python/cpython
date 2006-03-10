@@ -666,7 +666,7 @@ def merge_old_version(version, new, old):
     new.changed.append((version, zip(bidir_changes, category_changes,
                                      decimal_changes, numeric_changes),
                         normalization_changes))
-    
+
 
 # --------------------------------------------------------------------
 # the following support code is taken from the unidb utilities
