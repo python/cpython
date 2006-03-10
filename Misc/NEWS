@@ -89,6 +89,8 @@ Extension Modules
 Library
 -------
 
+- A regrtest option -w was added to re-run failed tests in verbose mode.
+
 - Patch #1337756: fileinput now handles Unicode filenames correctly.
 
 - Patch #1373643: The chunk module can now read chunks larger than
