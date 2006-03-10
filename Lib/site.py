@@ -232,7 +232,7 @@ def setquit():
         eof = 'Ctrl-Z plus Return'
     else:
         eof = 'Ctrl-D (i.e. EOF)'
-    
+
     class Quitter(object):
         def __init__(self, name):
             self.name = name
