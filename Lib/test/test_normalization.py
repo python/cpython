@@ -4,8 +4,8 @@ import sys
 import os
 from unicodedata import normalize
 
-TESTDATAFILE = "NormalizationTest-3.2.0" + os.extsep + "txt"
-TESTDATAURL = "http://www.unicode.org/Public/3.2-Update/" + TESTDATAFILE
+TESTDATAFILE = "NormalizationTest" + os.extsep + "txt"
+TESTDATAURL = "http://www.unicode.org/Public/4.1.0/ucd/" + TESTDATAFILE
 
 class RangeError:
     pass
@@ -38,12 +38,23 @@ def test_main():
         if not line:
             continue
         if line.startswith("@Part"):
-            part = line
+            part = line.split()[0]
+            continue
+        if part == "@Part3":
+            # XXX we don't support PRI #29 yet, so skip these tests for now
             continue
         try:
             c1,c2,c3,c4,c5 = [unistr(x) for x in line.split(';')[:-1]]
         except RangeError:
-            # Skip unsupported characters
+            # Skip unsupported characters; 
+            # try atleast adding c1 if we are in part1
+            if part == "@Part1":
+                try: 
+                    c1=unistr(line.split(';')[0])
+                except RangeError:
+                    pass
+                else:
+                    part1_data[c1] = 1
             continue
 
         if verbose:
