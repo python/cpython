@@ -70,67 +70,20 @@ typedef struct previous_version {
 
 #define get_old_record(self, v)    ((((PreviousDBVersion*)self)->getrecord)(v))
 
-/* Forward declaration */
-static PyMethodDef unicodedata_functions[];
-
 static PyMemberDef DB_members[] = {
 	{"unidata_version", T_STRING, offsetof(PreviousDBVersion, name), READONLY},
         {NULL}
 };
 
-static PyTypeObject Xxo_Type = {
-	/* The ob_type field must be initialized in the module init function
-	 * to be portable to Windows without using C++. */
-	PyObject_HEAD_INIT(NULL)
-	0,			/*ob_size*/
-	"unicodedata.DB",		/*tp_name*/
-	sizeof(PreviousDBVersion),	/*tp_basicsize*/
-	0,			/*tp_itemsize*/
-	/* methods */
-	(destructor)PyObject_Del, /*tp_dealloc*/
-	0,			/*tp_print*/
-	0,                      /*tp_getattr*/
-	0,			/*tp_setattr*/
-	0,			/*tp_compare*/
-	0,			/*tp_repr*/
-	0,			/*tp_as_number*/
-	0,			/*tp_as_sequence*/
-	0,			/*tp_as_mapping*/
-	0,			/*tp_hash*/
-        0,                      /*tp_call*/
-        0,                      /*tp_str*/
-        PyObject_GenericGetAttr,/*tp_getattro*/
-        0,                      /*tp_setattro*/
-        0,                      /*tp_as_buffer*/
-        Py_TPFLAGS_DEFAULT,     /*tp_flags*/
-        0,                      /*tp_doc*/
-        0,                      /*tp_traverse*/
-        0,                      /*tp_clear*/
-        0,                      /*tp_richcompare*/
-        0,                      /*tp_weaklistoffset*/
-        0,                      /*tp_iter*/
-        0,                      /*tp_iternext*/
-        unicodedata_functions,  /*tp_methods*/
-        DB_members,             /*tp_members*/
-        0,                      /*tp_getset*/
-        0,                      /*tp_base*/
-        0,                      /*tp_dict*/
-        0,                      /*tp_descr_get*/
-        0,                      /*tp_descr_set*/
-        0,                      /*tp_dictoffset*/
-        0,                      /*tp_init*/
-        0,                      /*tp_alloc*/
-        0,                      /*tp_new*/
-        0,                      /*tp_free*/
-        0,                      /*tp_is_gc*/
-};
+// forward declaration
+static PyTypeObject UCD_Type;
 
 static PyObject*
 new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4),
                      Py_UCS4 (*normalization)(Py_UCS4))
 {
 	PreviousDBVersion *self;
-	self = PyObject_New(PreviousDBVersion, &Xxo_Type);
+	self = PyObject_New(PreviousDBVersion, &UCD_Type);
 	if (self == NULL)
 		return NULL;
 	self->name = name;
@@ -1163,7 +1116,52 @@ static PyMethodDef unicodedata_functions[] = {
     {NULL, NULL}		/* sentinel */
 };
 
-
+static PyTypeObject UCD_Type = {
+	/* The ob_type field must be initialized in the module init function
+	 * to be portable to Windows without using C++. */
+	PyObject_HEAD_INIT(NULL)
+	0,			/*ob_size*/
+	"unicodedata.UCD",		/*tp_name*/
+	sizeof(PreviousDBVersion),	/*tp_basicsize*/
+	0,			/*tp_itemsize*/
+	/* methods */
+	(destructor)PyObject_Del, /*tp_dealloc*/
+	0,			/*tp_print*/
+	0,                      /*tp_getattr*/
+	0,			/*tp_setattr*/
+	0,			/*tp_compare*/
+	0,			/*tp_repr*/
+	0,			/*tp_as_number*/
+	0,			/*tp_as_sequence*/
+	0,			/*tp_as_mapping*/
+	0,			/*tp_hash*/
+        0,                      /*tp_call*/
+        0,                      /*tp_str*/
+        PyObject_GenericGetAttr,/*tp_getattro*/
+        0,                      /*tp_setattro*/
+        0,                      /*tp_as_buffer*/
+        Py_TPFLAGS_DEFAULT,     /*tp_flags*/
+        0,                      /*tp_doc*/
+        0,                      /*tp_traverse*/
+        0,                      /*tp_clear*/
+        0,                      /*tp_richcompare*/
+        0,                      /*tp_weaklistoffset*/
+        0,                      /*tp_iter*/
+        0,                      /*tp_iternext*/
+        unicodedata_functions,  /*tp_methods*/
+        DB_members,             /*tp_members*/
+        0,                      /*tp_getset*/
+        0,                      /*tp_base*/
+        0,                      /*tp_dict*/
+        0,                      /*tp_descr_get*/
+        0,                      /*tp_descr_set*/
+        0,                      /*tp_dictoffset*/
+        0,                      /*tp_init*/
+        0,                      /*tp_alloc*/
+        0,                      /*tp_new*/
+        0,                      /*tp_free*/
+        0,                      /*tp_is_gc*/
+};
 
 PyDoc_STRVAR(unicodedata_docstring,
 "This module provides access to the Unicode Character Database which\n\
@@ -1180,17 +1178,20 @@ initunicodedata(void)
 {
     PyObject *m, *v;
 
+    UCD_Type.ob_type = &PyType_Type;
+
     m = Py_InitModule3(
         "unicodedata", unicodedata_functions, unicodedata_docstring);
     if (!m)
         return;
 
     PyModule_AddStringConstant(m, "unidata_version", UNIDATA_VERSION);
+    PyModule_AddObject(m, "UCD", (PyObject*)&UCD_Type);
 
     /* Previous versions */
     v = new_previous_version("3.2.0", get_change_3_2_0, normalization_3_2_0);
     if (v != NULL)
-        PyModule_AddObject(m, "db_3_2_0", v);
+        PyModule_AddObject(m, "ucd_3_2_0", v);
 
     /* Export C API */
     v = PyCObject_FromVoidPtr((void *) &hashAPI, NULL);
