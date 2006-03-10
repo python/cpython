@@ -9,6 +9,7 @@ additional facilities.
 Command line options:
 
 -v: verbose    -- run tests in verbose mode with output to stdout
+-w: verbose2   -- re-run failed tests in verbose mode
 -q: quiet      -- don't print anything except if a test fails
 -g: generate   -- write the output file for a test instead of comparing it
 -x: exclude    -- arguments are tests to *exclude*
@@ -154,7 +155,7 @@ def usage(code, msg=''):
 def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
          exclude=False, single=False, randomize=False, fromfile=None,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
-         runleaks=False, huntrleaks=False):
+         runleaks=False, huntrleaks=False, verbose2=False):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -179,12 +180,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
 
     test_support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:t:TD:NLR:',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:t:TD:NLR:w',
                                    ['help', 'verbose', 'quiet', 'generate',
                                     'exclude', 'single', 'random', 'fromfile',
                                     'findleaks', 'use=', 'threshold=', 'trace',
                                     'coverdir=', 'nocoverdir', 'runleaks',
-                                    'huntrleaks='
+                                    'huntrleaks=', 'verbose2',
                                     ])
     except getopt.error, msg:
         usage(2, msg)
@@ -197,6 +198,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             usage(0)
         elif o in ('-v', '--verbose'):
             verbose += 1
+        elif o in ('-w', '--verbose2'):
+            verbose2 = True
         elif o in ('-q', '--quiet'):
             quiet = True;
             verbose = 0
@@ -397,6 +400,20 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         else:
             print "Ask someone to teach regrtest.py about which tests are"
             print "expected to get skipped on", plat + "."
+
+    if verbose2 and bad:
+        print "Re-running failed tests in verbose mode"
+        for test in bad:
+            try:
+                test_support.verbose = 1
+                ok = runtest(test, generate, 1, quiet, testdir,
+                             huntrleaks)
+            except KeyboardInterrupt:
+                # print a newline separate from the ^C
+                print
+                break
+            except:
+                raise
 
     if single:
         alltests = findtests(testdir, stdtests, nottests)
