@@ -108,6 +108,8 @@ extensions = [
     '_testcapi.pyd',
     '_tkinter.pyd',
     '_msi.pyd',
+    '_ctypes.pyd',
+    '_ctypes_test.pyd'
 ]
 
 if major+minor <= "24":
