@@ -30,8 +30,9 @@ class GeneratorContextManager(object):
         else:
             try:
                 self.gen.throw(type, value, traceback)
+                return True
             except StopIteration:
-                pass
+                return True
 
 
 def contextmanager(func):
@@ -91,6 +92,7 @@ def nested(*contexts):
     """
     exits = []
     vars = []
+    exc = (None, None, None)
     try:
         try:
             for context in contexts:
@@ -102,17 +104,14 @@ def nested(*contexts):
             yield vars
         except:
             exc = sys.exc_info()
-        else:
-            exc = (None, None, None)
     finally:
         while exits:
             exit = exits.pop()
             try:
-                exit(*exc)
+                if exit(*exc):
+                    exc = (None, None, None)
             except:
                 exc = sys.exc_info()
-            else:
-                exc = (None, None, None)
         if exc != (None, None, None):
             raise
 

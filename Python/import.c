@@ -55,6 +55,7 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        Python 2.5a0: 62071
        Python 2.5a0: 62081 (ast-branch)
        Python 2.5a0: 62091 (with)
+       Python 2.5a0: 62092 (changed WITH_CLEANUP opcode)
 .
 */
 #define MAGIC (62092 | ((long)'\r'<<16) | ((long)'\n'<<24))

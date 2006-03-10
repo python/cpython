@@ -128,8 +128,6 @@ class _RLock(_Verbose):
 
     def __exit__(self, t, v, tb):
         self.release()
-        if t is not None:
-            raise t, v, tb
 
     # Internal methods used by condition variables
 
@@ -190,8 +188,6 @@ class _Condition(_Verbose):
 
     def __exit__(self, t, v, tb):
         self.release()
-        if t is not None:
-            raise t, v, tb
 
     def __repr__(self):
         return "<Condition(%s, %d)>" % (self.__lock, len(self.__waiters))
@@ -321,8 +317,6 @@ class _Semaphore(_Verbose):
 
     def __exit__(self, t, v, tb):
         self.release()
-        if t is not None:
-            raise t, v, tb
 
 
 def BoundedSemaphore(*args, **kwargs):

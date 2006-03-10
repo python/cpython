@@ -2196,8 +2196,6 @@ class ContextManager(object):
         return self.new_context
     def __exit__(self, t, v, tb):
         setcontext(self.saved_context)
-        if t is not None:
-            raise t, v, tb
 
 class Context(object):
     """Contains the context for a Decimal instance.
