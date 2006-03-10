@@ -1,7 +1,7 @@
 # This module implements the RFCs 3490 (IDNA) and 3491 (Nameprep)
 
 import stringprep, re, codecs
-from unicodedata import db_3_2_0 as unicodedata
+from unicodedata import ucd_3_2_0 as unicodedata
 
 # IDNA section 3.1
 dots = re.compile(u"[\u002E\u3002\uFF0E\uFF61]")
