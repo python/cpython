@@ -1186,6 +1186,7 @@ initunicodedata(void)
         return;
 
     PyModule_AddStringConstant(m, "unidata_version", UNIDATA_VERSION);
+    Py_INCREF(&UCD_Type);
     PyModule_AddObject(m, "UCD", (PyObject*)&UCD_Type);
 
     /* Previous versions */
