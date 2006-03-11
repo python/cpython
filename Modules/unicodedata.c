@@ -803,7 +803,7 @@ is_unified_ideograph(Py_UCS4 code)
 {
     return (
         (0x3400 <= code && code <= 0x4DB5) || /* CJK Ideograph Extension A */
-        (0x4E00 <= code && code <= 0x9FA5) || /* CJK Ideograph */
+        (0x4E00 <= code && code <= 0x9FBB) || /* CJK Ideograph */
         (0x20000 <= code && code <= 0x2A6D6));/* CJK Ideograph Extension B */
 }
 
@@ -814,6 +814,17 @@ _getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen)
     int i;
     int word;
     unsigned char* w;
+
+    if (code >= 0x110000)
+        return 0;
+
+    if (self) {
+        const change_record *old = get_old_record(self, code);
+        if (old->category_changed == 0) {
+            /* unassigned */
+            return 0;
+        } 
+    }
 
     if (SBase <= code && code < SBase+SCount) {
 	/* Hangul syllable. */
@@ -844,18 +855,6 @@ _getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen)
         sprintf(buffer, "CJK UNIFIED IDEOGRAPH-%X", code);
         return 1;
     }
-
-    if (code >= 0x110000)
-        return 0;
-
-    if (self) {
-        const change_record *old = get_old_record(self, code);
-        if (old->category_changed == 0) {
-            /* unassigned */
-            return 0;
-        } 
-    }
-
 
     /* get offset into phrasebook */
     offset = phrasebook_offset1[(code>>phrasebook_shift)];
