@@ -109,17 +109,20 @@ class HotShotTestCase(unittest.TestCase):
 
     def test_bad_sys_path(self):
         import sys
+        import os
         orig_path = sys.path
         coverage = hotshot._hotshot.coverage
         try:
             # verify we require a list for sys.path
             sys.path = 'abc'
             self.assertRaises(RuntimeError, coverage, test_support.TESTFN)
-            # verify sys.path exists
+            # verify that we require sys.path exists
             del sys.path
             self.assertRaises(RuntimeError, coverage, test_support.TESTFN)
         finally:
             sys.path = orig_path
+            if os.path.exists(test_support.TESTFN):
+                os.remove(test_support.TESTFN)
 
 def test_main():
     test_support.run_unittest(HotShotTestCase)
