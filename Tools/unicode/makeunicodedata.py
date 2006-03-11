@@ -19,6 +19,7 @@
 # 2002-11-24 mvl  expand all ranges, sort names version-independently
 # 2002-11-25 mvl  add UNIDATA_VERSION
 # 2004-05-29 perky add east asian width information
+# 2006-03-10 mvl  update to Unicode 4.1; add UCD 3.2 delta
 #
 # written by Fredrik Lundh (fredrik@pythonware.com)
 #
