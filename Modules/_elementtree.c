@@ -1,6 +1,6 @@
 /*
  * ElementTree
- * $Id: /work/modules/celementtree/cElementTree.c 1128 2005-12-16T21:57:13.668520Z Fredrik  $
+ * $Id: _elementtree.c 2657 2006-03-12 20:50:32Z fredrik $
  *
  * elementtree accelerator
  *
@@ -33,9 +33,11 @@
  * 2005-08-11 fl  added runtime test for copy workaround (1.0.3)
  * 2005-12-13 fl  added expat_capi support (for xml.etree) (1.0.4)
  * 2005-12-16 fl  added support for non-standard encodings
+ * 2006-03-08 fl  fixed a couple of potential null-refs and leaks
+ * 2006-03-12 fl  merge in 2.5 ssize_t changes
  *
- * Copyright (c) 1999-2005 by Secret Labs AB.  All rights reserved.
- * Copyright (c) 1999-2005 by Fredrik Lundh.
+ * Copyright (c) 1999-2006 by Secret Labs AB.  All rights reserved.
+ * Copyright (c) 1999-2006 by Fredrik Lundh.
  *
  * info@pythonware.com
  * http://www.pythonware.com
@@ -46,7 +48,7 @@
 
 #include "Python.h"
 
-#define VERSION "1.0.5"
+#define VERSION "1.0.6-snapshot"
 
 /* -------------------------------------------------------------------- */
 /* configuration */
@@ -94,7 +96,9 @@ do { memory -= size; printf("%8d - %s\n", memory, comment); } while (0)
 /* compatibility macros */
 #if (PY_VERSION_HEX < 0x02050000)
 typedef int Py_ssize_t;
+#define lenfunc inquiry
 #endif
+
 #if (PY_VERSION_HEX < 0x02040000)
 #define PyDict_CheckExact PyDict_Check
 #if (PY_VERSION_HEX < 0x02020000)
@@ -143,6 +147,9 @@ deepcopy(PyObject* object, PyObject* memo)
     }
 
     args = PyTuple_New(2);
+    if (!args)
+        return NULL;
+
     Py_INCREF(object); PyTuple_SET_ITEM(args, 0, (PyObject*) object);
     Py_INCREF(memo);   PyTuple_SET_ITEM(args, 1, (PyObject*) memo);
 
@@ -188,6 +195,9 @@ list_join(PyObject* list)
     }
 
     args = PyTuple_New(1);
+    if (!args)
+        return NULL;
+
     PyTuple_SET_ITEM(args, 0, list);
 
     result = PyObject_CallObject(function, args);
@@ -513,8 +523,10 @@ subelement(PyObject* self, PyObject* args, PyObject* kw)
 
     Py_DECREF(attrib);
 
-    if (element_add_subelement(parent, elem) < 0)
+    if (element_add_subelement(parent, elem) < 0) {
+        Py_DECREF(elem);
         return NULL;
+    }
 
     return elem;
 }
@@ -598,8 +610,10 @@ element_copy(ElementObject* self, PyObject* args)
 
     if (self->extra) {
         
-        if (element_resize(element, self->extra->length) < 0)
+        if (element_resize(element, self->extra->length) < 0) {
+            Py_DECREF(element);
             return NULL;
+        }
 
         for (i = 0; i < self->extra->length; i++) {
             Py_INCREF(self->extra->children[i]);
@@ -902,8 +916,8 @@ element_getiterator(ElementObject* self, PyObject* args)
     }
 
     args = PyTuple_New(2);
-    if (args == NULL)
-    	return NULL;
+    if (!args)
+        return NULL;
 
     Py_INCREF(self); PyTuple_SET_ITEM(args, 0, (PyObject*) self);
     Py_INCREF(tag);  PyTuple_SET_ITEM(args, 1, (PyObject*) tag);
@@ -916,9 +930,10 @@ element_getiterator(ElementObject* self, PyObject* args)
 }
 
 static PyObject*
-element_getitem(PyObject* _self, Py_ssize_t index)
+element_getitem(PyObject* self_, Py_ssize_t index)
 {
-    ElementObject* self = (ElementObject*)_self;
+    ElementObject* self = (ElementObject*) self_;
+
     if (!self->extra || index < 0 || index >= self->extra->length) {
         PyErr_SetString(
             PyExc_IndexError,
@@ -932,9 +947,9 @@ element_getitem(PyObject* _self, Py_ssize_t index)
 }
 
 static PyObject*
-element_getslice(PyObject* _self, Py_ssize_t start, Py_ssize_t end)
+element_getslice(PyObject* self_, Py_ssize_t start, Py_ssize_t end)
 {
-    ElementObject* self = (ElementObject*)_self;
+    ElementObject* self = (ElementObject*) self_;
     Py_ssize_t i;
     PyObject* list;
 
@@ -1160,9 +1175,9 @@ element_set(ElementObject* self, PyObject* args)
 }
 
 static int
-element_setslice(PyObject* _self, Py_ssize_t start, Py_ssize_t end, PyObject* item)
+element_setslice(PyObject* self_, Py_ssize_t start, Py_ssize_t end, PyObject* item)
 {
-    ElementObject* self = (ElementObject*)_self;
+    ElementObject* self = (ElementObject*) self_;
     int i, new, old;
     PyObject* recycle = NULL;
 
@@ -1231,9 +1246,9 @@ element_setslice(PyObject* _self, Py_ssize_t start, Py_ssize_t end, PyObject* it
 }
 
 static int
-element_setitem(PyObject* _self, Py_ssize_t index, PyObject* item)
+element_setitem(PyObject* self_, Py_ssize_t index, PyObject* item)
 {
-    ElementObject* self = (ElementObject*)_self;
+    ElementObject* self = (ElementObject*) self_;
     int i;
     PyObject* old;
 
@@ -1505,12 +1520,12 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
 
     if (self->data) {
         if (self->this == self->last) {
-            Py_DECREF(self->last->text);
+            Py_DECREF(JOIN_OBJ(self->last->text));
             self->last->text = JOIN_SET(
                 self->data, PyList_CheckExact(self->data)
                 );
         } else {
-            Py_DECREF(self->last->tail);
+            Py_DECREF(JOIN_OBJ(self->last->tail));
             self->last->tail = JOIN_SET(
                 self->data, PyList_CheckExact(self->data)
                 );
@@ -1526,14 +1541,14 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
 
     if (this != Py_None) {
         if (element_add_subelement((ElementObject*) this, node) < 0)
-            return NULL;
+            goto error;
     } else {
         if (self->root) {
             PyErr_SetString(
                 PyExc_SyntaxError,
                 "multiple elements on top level"
                 );
-            return NULL;
+            goto error;
         }
         Py_INCREF(node);
         self->root = node;
@@ -1541,11 +1556,11 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
 
     if (self->index < PyList_GET_SIZE(self->stack)) {
         if (PyList_SetItem(self->stack, self->index, this) < 0)
-            return NULL;
+            goto error;
         Py_INCREF(this);
     } else {
         if (PyList_Append(self->stack, this) < 0)
-            return NULL;
+            goto error;
     }
     self->index++;
 
@@ -1571,6 +1586,10 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
     }
 
     return node;
+
+  error:
+    Py_DECREF(node);
+    return NULL;
 }
 
 LOCAL(PyObject*)
@@ -1612,12 +1631,12 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
 
     if (self->data) {
         if (self->this == self->last) {
-            Py_DECREF(self->last->text);
+            Py_DECREF(JOIN_OBJ(self->last->text));
             self->last->text = JOIN_SET(
                 self->data, PyList_CheckExact(self->data)
                 );
         } else {
-            Py_DECREF(self->last->tail);
+            Py_DECREF(JOIN_OBJ(self->last->tail));
             self->last->tail = JOIN_SET(
                 self->data, PyList_CheckExact(self->data)
                 );
@@ -2042,6 +2061,8 @@ expat_data_handler(XMLParserObject* self, const XML_Char* data_in,
     PyObject* res;
 
     data = makestring(data_in, data_len);
+    if (!data)
+        return; /* parser will look for errors */
 
     if (TreeBuilder_CheckExact(self->target))
         /* shortcut */
@@ -2207,13 +2228,14 @@ xmlparser(PyObject* _self, PyObject* args, PyObject* kw)
     self->entity = PyDict_New();
     if (!self->entity) {
         PyObject_Del(self);
-        return NULL; /* FIXME: cleanup on error */
+        return NULL;
     }
      
     self->names = PyDict_New();
     if (!self->names) {
+        PyObject_Del(self->entity);
         PyObject_Del(self);
-        return NULL; /* FIXME: cleanup on error */
+        return NULL;
     }
 
     memory_handler.malloc_fcn = PyObject_Malloc;
@@ -2222,16 +2244,22 @@ xmlparser(PyObject* _self, PyObject* args, PyObject* kw)
 
     self->parser = EXPAT(ParserCreate_MM)(encoding, &memory_handler, "}");
     if (!self->parser) {
+        PyObject_Del(self->names);
+        PyObject_Del(self->entity);
+        PyObject_Del(self);
         PyErr_NoMemory();
-        return NULL; /* FIXME: cleanup on error */
+        return NULL;
     }
 
     /* setup target handlers */
     if (!target) {
         target = treebuilder_new();
         if (!target) {
+            EXPAT(ParserFree)(self->parser);
+            PyObject_Del(self->names);
+            PyObject_Del(self->entity);
             PyObject_Del(self);
-            return NULL; /* FIXME: cleanup on error */
+            return NULL;
         }
     } else
         Py_INCREF(target);
@@ -2594,14 +2622,14 @@ init_elementtree(void)
 #endif
 
     m = Py_InitModule("_elementtree", _functions);
-    if (m == NULL)
-    	return;
+    if (!m)
+        return;
 
     /* python glue code */
 
     g = PyDict_New();
-    if (g == NULL)
-    	return;
+    if (!g)
+        return;
 
     PyDict_SetItemString(g, "__builtins__", PyEval_GetBuiltins());
 
