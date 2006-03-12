@@ -105,6 +105,7 @@ class AssociateErrorTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.env.close()
+        self.env = None
         import glob
         files = glob.glob(os.path.join(self.homeDir, '*'))
         for file in files:
@@ -166,6 +167,7 @@ class AssociateTestCase(unittest.TestCase):
     def tearDown(self):
         self.closeDB()
         self.env.close()
+        self.env = None
         import glob
         files = glob.glob(os.path.join(self.homeDir, '*'))
         for file in files:
@@ -192,9 +194,12 @@ class AssociateTestCase(unittest.TestCase):
     def closeDB(self):
         if self.cur:
             self.cur.close()
+            self.cur = None
         if self.secDB:
             self.secDB.close()
+            self.secDB = None
         self.primary.close()
+        self.primary = None
 
     def getDB(self):
         return self.primary
