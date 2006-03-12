@@ -22,6 +22,7 @@
 				Name="VCNMakeTool"
 				BuildCommandLine="python build_ssl.py"
 				ReBuildCommandLine="python build_ssl.py -a"
+				CleanCommandLine="echo Nothing to do"
 				Output="_ssl.pyd"/>
 		</Configuration>
 		<Configuration
@@ -35,6 +36,7 @@
 				Name="VCNMakeTool"
 				BuildCommandLine="python_d -u build_ssl.py -d"
 				ReBuildCommandLine="python_d -u build_ssl.py -d -a"
+				CleanCommandLine="echo Nothing to do"
 				Output="_ssl_d.pyd"/>
 		</Configuration>
 		<Configuration
@@ -48,6 +50,7 @@
 				Name="VCNMakeTool"
 				BuildCommandLine="python build_ssl.py"
 				ReBuildCommandLine="python build_ssl.py -a"
+				CleanCommandLine="echo Nothing to do"
 				Output="_ssl.pyd"/>
 		</Configuration>
 	</Configurations>
