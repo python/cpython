@@ -1742,6 +1742,7 @@ DB_join(DBObject* self, PyObject* args)
             return NULL;
         }
         cursors[x] = ((DBCursorObject*)item)->dbc;
+        Py_DECREF(item);
     }
 
     MYDB_BEGIN_ALLOW_THREADS;
@@ -2017,7 +2018,7 @@ _db_compareCallback(DB* db,
 {
     int res = 0;
     PyObject *args;
-    PyObject *result;
+    PyObject *result = NULL;
     DBObject *self = (DBObject *)db->app_private;
 
     if (self == NULL || self->btCompareCallback == NULL) {
