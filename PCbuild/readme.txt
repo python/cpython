@@ -212,6 +212,15 @@ _bsddb
     XXX doesn't cause a test to fail when it happens (exceptions in
     XXX threads are invisible to unittest).
 
+    Building for Win64:
+    - open a VS.NET 2003 command prompt
+    - run the SDK setenv.cmd script, passing /RETAIL and the target
+      architecture (/SRV64 for Itanium, /X64 for AMD64)
+    - build BerkeleyDB with the solution configuration matching the
+      target ("Release IA64" for Itanium, "Release AMD64" for AMD64), e.g.
+    devenv db-4.4.20\build_win32\Berkeley_DB.sln /build "Release AMD64" /project db_static /useenv
+    
+
 _ssl
     Python wrapper for the secure sockets library.
 
@@ -261,10 +270,6 @@ In addition, you need the Visual Studio plugin for external C compilers,
 from http://sf.net/projects/vsextcomp. The plugin will wrap cl.exe, to
 locate the proper target compiler, and convert compiler options
 accordingly.
-
-The Itanium build has seen little testing. The SDK compiler reports a lot
-of warnings about conversion from size_t to int, which will be fixed in
-future Python releases.
 
 Building for AMD64
 ------------------
