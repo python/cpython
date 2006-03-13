@@ -19,6 +19,9 @@ dll = cdll.load(_ctypes_test.__file__)
 if sys.platform == "win32":
     windll = windll.load(_ctypes_test.__file__)
 
+class POINT(Structure):
+    _fields_ = [("x", c_int), ("y", c_int)]
+
 class FunctionTestCase(unittest.TestCase):
 
     def test_mro(self):
@@ -91,6 +94,7 @@ class FunctionTestCase(unittest.TestCase):
     def test_intresult(self):
         f = dll._testfunc_i_bhilfd
         f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_double]
+        f.restype = c_int
         result = f(1, 2, 3, 4, 5.0, 6.0)
         self.failUnlessEqual(result, 21)
         self.failUnlessEqual(type(result), int)
@@ -298,9 +302,6 @@ class FunctionTestCase(unittest.TestCase):
         self.assertRaises(ValueError, c_int.in_dll, dll, "_xxx_yyy")
 
     def test_byval(self):
-
-        class POINT(Structure):
-            _fields_ = [("x", c_int), ("y", c_int)]
 
         # without prototype
         ptin = POINT(1, 2)
