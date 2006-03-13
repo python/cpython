@@ -127,17 +127,15 @@ _tkinter
 bz2
     Python wrapper for the libbz2 compression library.  Homepage
         http://sources.redhat.com/bzip2/
-    Download the source tarball, bzip2-1.0.2.tar.gz.
-    Unpack into dist\bzip2-1.0.2.  WARNING:  If you're using WinZip, you
-    must disable its "TAR file smart CR/LF conversion" feature (under
-    Options -> Configuration -> Miscellaneous -> Other) for the duration.
+    Download the source from the python.org copy:
+    svn export http://svn.python.org/projects/external/bzip2-1.0.3
 
     A custom pre-link step in the bz2 project settings should manage to
     build bzip2-1.0.2\libbz2.lib by magic before bz2.pyd (or bz2_d.pyd) is
     linked in PCbuild\.
     However, the bz2 project is not smart enough to remove anything under
-    bzip2-1.0.2\ when you do a clean, so if you want to rebuild bzip2.lib
-    you need to clean up bzip2-1.0.2\ by hand.
+    bzip2-1.0.3\ when you do a clean, so if you want to rebuild bzip2.lib
+    you need to clean up bzip2-1.0.3\ by hand.
 
     The build step shouldn't yield any warnings or errors, and should end
     by displaying 6 blocks each terminated with
@@ -145,7 +143,7 @@ bz2
     If FC finds differences, see the warning abou WinZip above (when I
     first tried it, sample3.ref failed due to CRLF conversion).
 
-    All of this managed to build bzip2-1.0.2\libbz2.lib, which the Python
+    All of this managed to build bzip2-1.0.3\libbz2.lib, which the Python
     project links in.
 
 
