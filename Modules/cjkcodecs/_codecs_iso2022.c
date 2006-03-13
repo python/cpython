@@ -414,7 +414,7 @@ iso2022processg2(const void *config, MultibyteCodec_State *state,
 	(*inbuf) += 3;
 	*inleft -= 3;
 	(*outbuf) += 1;
-	*outbuf -= 1;
+	*outleft -= 1;
 	return 0;
 }
 
