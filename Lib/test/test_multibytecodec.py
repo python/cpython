@@ -75,9 +75,16 @@ class Test_StreamWriter(unittest.TestCase):
         wr.write('abcd')
         self.assertEqual(s.getvalue(), 'abcd')
 
+class Test_ISO2022(unittest.TestCase):
+    def test_g2(self):
+        iso2022jp2 = '\x1b(B:hu4:unit\x1b.A\x1bNi de famille'
+        uni = u':hu4:unit\xe9 de famille'
+        self.assertEqual(iso2022jp2.decode('iso2022-jp-2'), uni)
+
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(Test_StreamWriter))
+    suite.addTest(unittest.makeSuite(Test_ISO2022))
     test_support.run_suite(suite)
 
 if __name__ == "__main__":
