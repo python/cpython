@@ -89,6 +89,16 @@ _startTime = time.time()
 #
 raiseExceptions = 1
 
+#
+# If you don't want threading information in the log, set this to zero
+#
+logThreads = 1
+
+#
+# If you don't want process information in the log, set this to zero
+#
+logProcesses = 1
+
 #---------------------------------------------------------------------------
 #   Level related stuff
 #---------------------------------------------------------------------------
@@ -243,13 +253,13 @@ class LogRecord:
         self.created = ct
         self.msecs = (ct - long(ct)) * 1000
         self.relativeCreated = (self.created - _startTime) * 1000
-        if thread:
+        if logThreads and thread:
             self.thread = thread.get_ident()
             self.threadName = threading.currentThread().getName()
         else:
             self.thread = None
             self.threadName = None
-        if hasattr(os, 'getpid'):
+        if logProcesses and hasattr(os, 'getpid'):
             self.process = os.getpid()
         else:
             self.process = None
