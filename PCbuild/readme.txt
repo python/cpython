@@ -155,9 +155,13 @@ _bsddb
      svn export http://svn.python.org/projects/external/db-4.4.20
 
 
-    Then open a VS.NET 2003 shell, and invoke
+    Then open a VS.NET 2003 shell, and invoke:
 
-     devenv db-4.4.20\build_win32\Berkeley_DB.sln /build Release /project db_static
+       devenv db-4.4.20\build_win32\Berkeley_DB.sln /build Release /project db_static
+
+    and do that a second time for a Debug build too:
+
+       devenv db-4.4.20\build_win32\Berkeley_DB.sln /build Debug /project db_static
 
     Alternatively, if you want to start with the original sources,
     go to Sleepycat's download page:
