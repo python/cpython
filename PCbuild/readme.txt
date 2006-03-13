@@ -127,7 +127,9 @@ _tkinter
 bz2
     Python wrapper for the libbz2 compression library.  Homepage
         http://sources.redhat.com/bzip2/
-    Download the source from the python.org copy:
+    Download the source from the python.org copy into the dist
+    directory:
+
     svn export http://svn.python.org/projects/external/bzip2-1.0.3
 
     A custom pre-link step in the bz2 project settings should manage to
@@ -148,52 +150,38 @@ bz2
 
 
 _bsddb
-    Go to Sleepycat's download page:
-        http://www.sleepycat.com/download/
+    To use the version of bsddb that Python is built with by default is, invoke
+    (in the dist directory)
 
-    and download version 4.2.52.
+     svn export http://svn.python.org/projects/external/db-4.4.20
+
+
+    Then open a VS.NET 2003 shell, and invoke
+
+     devenv db-4.4.20\build_win32\Berkeley_DB.sln /build Release /project db_static
+
+    Alternatively, if you want to start with the original sources, 
+    go to Sleepycat's download page:
+        http://www.sleepycat.com/downloads/releasehistorybdb.html
+
+    and download version 4.4.20.
 
     With or without strong cryptography? You can choose either with or
     without strong cryptography, as per the instructions below.  By
     default, Python is built and distributed WITHOUT strong crypto.
 
-    Unpack into the dist\. directory, ensuring you expand with folder names.
+    Unpack the sources; if you downloaded the non-crypto version, rename
+    the directory from db-4.4.20.NC to db-4.4.20.
 
-    If you downloaded with strong crypto, this will create a dist\db-4.2.52
-    directory, and is ready to use.
-
-    If you downloaded WITHOUT strong crypto, this will create a
-    dist\db-4.2.52.NC directory - this directory should be renamed to
-    dist\db-4.2.52 before use.
-
-    As of 11-Apr-2004, you also need to download and manually apply two
-    patches before proceeding (and the sleepycat download page tells you
-    about this).  Cygwin patch worked for me.  cd to dist\db-4.2.52 and
-    use "patch -p0 < patchfile" once for each downloaded patchfile.
+    Now apply any patches that apply to your version.
 
     Open
-        dist\db-4.2.52\docs\index.html
+        dist\db-4.4.20\docs\index.html
 
     and follow the "Windows->Building Berkeley DB with Visual C++ .NET"
     instructions for building the Sleepycat
     software.  Note that Berkeley_DB.dsw is in the build_win32 subdirectory.
-    Build the "Release Static" version.
-
-    XXX We're linking against Release_static\libdb42s.lib.
-    XXX This yields the following warnings:
-"""
-Compiling...
-_bsddb.c
-Linking...
-   Creating library ./_bsddb.lib and object ./_bsddb.exp
-_bsddb.obj : warning LNK4217: locally defined symbol _malloc imported in function __db_associateCallback
-_bsddb.obj : warning LNK4217: locally defined symbol _free imported in function __DB_consume
-_bsddb.obj : warning LNK4217: locally defined symbol _fclose imported in function _DB_verify
-_bsddb.obj : warning LNK4217: locally defined symbol _fopen imported in function _DB_verify
-_bsddb.obj : warning LNK4217: locally defined symbol _strncpy imported in function _init_pybsddb
-__bsddb - 0 error(s), 5 warning(s)
-"""
-    XXX This isn't encouraging, but I don't know what to do about it.
+    Build the "db_static" project, for "Release" mode.
 
     To run extensive tests, pass "-u bsddb" to regrtest.py.  test_bsddb3.py
     is then enabled.  Running in verbose mode may be helpful.
