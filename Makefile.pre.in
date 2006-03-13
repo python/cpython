@@ -563,6 +563,10 @@ testall:	all platform
 		-$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
 		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
 
+# Like testall, but with a single pass only
+buildbottest:	all platform
+		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall -rw
+
 QUICKTESTOPTS=	$(TESTOPTS) -x test_thread test_signal test_strftime \
 		test_unicodedata test_re test_sre test_select test_poll \
 		test_linuxaudiodev test_struct test_sunaudiodev test_zlib
