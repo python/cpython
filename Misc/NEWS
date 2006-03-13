@@ -279,6 +279,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1448490: Fixed a bug that ISO-2022 codecs could not handle
+  SS2 (single-shift 2) escape sequences correctly.
+
 - The unicodedata module was updated to the 4.1 version of the Unicode
   database. The 3.2 version is still available as unicodedata.db_3_2_0
   for applications that require this specific version (such as IDNA).
