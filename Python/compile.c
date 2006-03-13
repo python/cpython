@@ -3853,42 +3853,47 @@ compiler_visit_nested_slice(struct compiler *c, slice_ty s,
 static int
 compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 {
+	char * kindname = NULL;
 	switch (s->kind) {
+	case Index_kind:
+		kindname = "index";
+		if (ctx != AugStore) {
+			VISIT(c, expr, s->v.Index.value);
+		}
+		break;
 	case Ellipsis_kind:
-		ADDOP_O(c, LOAD_CONST, Py_Ellipsis, consts);
+		kindname = "ellipsis";
+		if (ctx != AugStore) {
+			ADDOP_O(c, LOAD_CONST, Py_Ellipsis, consts);
+		}
 		break;
 	case Slice_kind:
+		kindname = "slice";
 		if (!s->v.Slice.step) 
 			return compiler_simple_slice(c, s, ctx);
-		if (!compiler_slice(c, s, ctx))
-			return 0;
-		if (ctx == AugLoad) {
-			ADDOP_I(c, DUP_TOPX, 2);
-		}
-		else if (ctx == AugStore) {
-			ADDOP(c, ROT_THREE);
-		}
-		return compiler_handle_subscr(c, "slice", ctx);
-	case ExtSlice_kind: {
-		int i, n = asdl_seq_LEN(s->v.ExtSlice.dims);
-		for (i = 0; i < n; i++) {
-			slice_ty sub = asdl_seq_GET(s->v.ExtSlice.dims, i);
-			if (!compiler_visit_nested_slice(c, sub, ctx))
+		if (ctx != AugStore) {
+			if (!compiler_slice(c, s, ctx))
 				return 0;
 		}
-		ADDOP_I(c, BUILD_TUPLE, n);
-		return compiler_handle_subscr(c, "extended slice", ctx);
-	}
-	case Index_kind:
-		if (ctx != AugStore)
-			VISIT(c, expr, s->v.Index.value);
-		return compiler_handle_subscr(c, "index", ctx);
+		break;
+	case ExtSlice_kind:
+		kindname = "extended slice";
+		if (ctx != AugStore) {
+			int i, n = asdl_seq_LEN(s->v.ExtSlice.dims);
+			for (i = 0; i < n; i++) {
+				slice_ty sub = asdl_seq_GET(s->v.ExtSlice.dims, i);
+				if (!compiler_visit_nested_slice(c, sub, ctx))
+					return 0;
+			}
+			ADDOP_I(c, BUILD_TUPLE, n);
+		}
+		break;
 	default:
 		PyErr_Format(PyExc_SystemError,
-			     "invalid slice %d", s->kind);
+			     "invalid subscript kind %d", s->kind);
 		return 0;
 	}
-	return 1;
+	return compiler_handle_subscr(c, kindname, ctx);
 }
 
 /* do depth-first search of basic block graph, starting with block.

@@ -284,6 +284,78 @@ if 1:
         f1, f2 = f()
         self.assertNotEqual(id(f1.func_code), id(f2.func_code))
 
+    def test_subscripts(self):
+        # SF bug 1448804
+        # Class to make testing subscript results easy
+        class str_map(object):
+            def __init__(self):
+                self.data = {}
+            def __getitem__(self, key):
+                return self.data[str(key)]
+            def __setitem__(self, key, value):
+                self.data[str(key)] = value
+            def __delitem__(self, key):
+                del self.data[str(key)]
+            def __contains__(self, key):
+                return str(key) in self.data
+        d = str_map()
+        # Index
+        d[1] = 1
+        self.assertEqual(d[1], 1)
+        d[1] += 1
+        self.assertEqual(d[1], 2)
+        del d[1]
+        self.assertEqual(1 in d, False)
+        # Tuple of indices
+        d[1, 1] = 1
+        self.assertEqual(d[1, 1], 1)
+        d[1, 1] += 1
+        self.assertEqual(d[1, 1], 2)
+        del d[1, 1]
+        self.assertEqual((1, 1) in d, False)
+        # Simple slice
+        d[1:2] = 1
+        self.assertEqual(d[1:2], 1)
+        d[1:2] += 1
+        self.assertEqual(d[1:2], 2)
+        del d[1:2]
+        self.assertEqual(slice(1, 2) in d, False)
+        # Tuple of simple slices
+        d[1:2, 1:2] = 1
+        self.assertEqual(d[1:2, 1:2], 1)
+        d[1:2, 1:2] += 1
+        self.assertEqual(d[1:2, 1:2], 2)
+        del d[1:2, 1:2]
+        self.assertEqual((slice(1, 2), slice(1, 2)) in d, False)
+        # Extended slice
+        d[1:2:3] = 1
+        self.assertEqual(d[1:2:3], 1)
+        d[1:2:3] += 1
+        self.assertEqual(d[1:2:3], 2)
+        del d[1:2:3]
+        self.assertEqual(slice(1, 2, 3) in d, False)
+        # Tuple of extended slices
+        d[1:2:3, 1:2:3] = 1
+        self.assertEqual(d[1:2:3, 1:2:3], 1)
+        d[1:2:3, 1:2:3] += 1
+        self.assertEqual(d[1:2:3, 1:2:3], 2)
+        del d[1:2:3, 1:2:3]
+        self.assertEqual((slice(1, 2, 3), slice(1, 2, 3)) in d, False)
+        # Ellipsis
+        d[...] = 1
+        self.assertEqual(d[...], 1)
+        d[...] += 1
+        self.assertEqual(d[...], 2)
+        del d[...]
+        self.assertEqual(Ellipsis in d, False)
+        # Tuple of Ellipses
+        d[..., ...] = 1
+        self.assertEqual(d[..., ...], 1)
+        d[..., ...] += 1
+        self.assertEqual(d[..., ...], 2)
+        del d[..., ...]
+        self.assertEqual((Ellipsis, Ellipsis) in d, False)
+
 def test_main():
     test_support.run_unittest(TestSpecifics)
 
