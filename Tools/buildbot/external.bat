@@ -2,6 +2,7 @@
 
 @rem Assume we start inside the Python source directory
 cd ..
+call "%VS71COMNTOOLS%vsvars32.bat"
 
 @rem bzip
 if not exist bzip2-1.0.3 svn export http://svn.python.org/projects/external/bzip2-1.0.3
