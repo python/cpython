@@ -21,7 +21,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\..\bzip2-1.0.2"
+				AdditionalIncludeDirectories="..\Include,..\PC,..\..\bzip2-1.0.3"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
@@ -37,7 +37,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\bzip2-1.0.2\libbz2.lib"
+				AdditionalDependencies="..\..\bzip2-1.0.3\libbz2.lib"
 				OutputFile="./bz2_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -62,7 +62,7 @@
 				Name="VCPreBuildEventTool"/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd ..\..\bzip2-1.0.2
+				CommandLine="cd ..\..\bzip2-1.0.3
 nmake /nologo /f makefile.msc
 "/>
 			<Tool
@@ -91,7 +91,7 @@ nmake /nologo /f makefile.msc
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include,..\PC,..\..\bzip2-1.0.2"
+				AdditionalIncludeDirectories="..\Include,..\PC,..\..\bzip2-1.0.3"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
@@ -109,7 +109,7 @@ nmake /nologo /f makefile.msc
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\bzip2-1.0.2\libbz2.lib"
+				AdditionalDependencies="..\..\bzip2-1.0.3\libbz2.lib"
 				OutputFile="./bz2.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -134,7 +134,7 @@ nmake /nologo /f makefile.msc
 				Name="VCPreBuildEventTool"/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd ..\..\bzip2-1.0.2
+				CommandLine="cd ..\..\bzip2-1.0.3
 nmake /nologo /f makefile.msc lib
 "/>
 			<Tool
@@ -164,7 +164,7 @@ nmake /nologo /f makefile.msc lib
 				AdditionalOptions=" /USECL:MS_ITANIUM"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="{MSSDKPATH}\include\Win64\atl;{MSSDKPATH}\include\Win64\crt;{MSSDKPATH}\include\Win64\crt\sys;{MSSDKPATH}\include\Win64\mfc;..\Include,..\PC,..\..\bzip2-1.0.2"
+				AdditionalIncludeDirectories="{MSSDKPATH}\include\Win64\atl;{MSSDKPATH}\include\Win64\crt;{MSSDKPATH}\include\Win64\crt\sys;{MSSDKPATH}\include\Win64\mfc;..\Include,..\PC,..\..\bzip2-1.0.3"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
@@ -186,7 +186,7 @@ nmake /nologo /f makefile.msc lib
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\bzip2-1.0.2\libbz2.lib"
+				AdditionalDependencies="..\..\bzip2-1.0.3\libbz2.lib"
 				OutputFile="./bz2.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -211,7 +211,7 @@ nmake /nologo /f makefile.msc lib
 				Name="VCPreBuildEventTool"/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				CommandLine="cd ..\..\bzip2-1.0.2
+				CommandLine="cd ..\..\bzip2-1.0.3
 nmake /nologo /f makefile.msc lib
 "/>
 			<Tool
