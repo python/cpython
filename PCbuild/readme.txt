@@ -22,7 +22,8 @@ The proper order to build subprojects:
 3) the other subprojects, as desired or needed (note:  you probably don't
    want to build most of the other subprojects, unless you're building an
    entire Python distribution from scratch, or specifically making changes
-   to the subsystems they implement; see SUBPROJECTS below)
+   to the subsystems they implement, or are running a Python core buildbot
+   test slave; see SUBPROJECTS below)
 
 When using the Debug setting, the output files have a _d added to
 their name:  python25_d.dll, python_d.exe, parser_d.pyd, and so on.
@@ -133,7 +134,7 @@ bz2
     svn export http://svn.python.org/projects/external/bzip2-1.0.3
 
     A custom pre-link step in the bz2 project settings should manage to
-    build bzip2-1.0.2\libbz2.lib by magic before bz2.pyd (or bz2_d.pyd) is
+    build bzip2-1.0.3\libbz2.lib by magic before bz2.pyd (or bz2_d.pyd) is
     linked in PCbuild\.
     However, the bz2 project is not smart enough to remove anything under
     bzip2-1.0.3\ when you do a clean, so if you want to rebuild bzip2.lib
@@ -142,15 +143,13 @@ bz2
     The build step shouldn't yield any warnings or errors, and should end
     by displaying 6 blocks each terminated with
         FC: no differences encountered
-    If FC finds differences, see the warning abou WinZip above (when I
-    first tried it, sample3.ref failed due to CRLF conversion).
 
     All of this managed to build bzip2-1.0.3\libbz2.lib, which the Python
     project links in.
 
 
 _bsddb
-    To use the version of bsddb that Python is built with by default is, invoke
+    To use the version of bsddb that Python is built with by default, invoke
     (in the dist directory)
 
      svn export http://svn.python.org/projects/external/db-4.4.20
