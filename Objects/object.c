@@ -402,9 +402,9 @@ PyObject_Unicode(PyObject *v)
 	PyObject *func;
 	static PyObject *unicodestr;
 
-	if (v == NULL)
+	if (v == NULL) {
 		res = PyString_FromString("<NULL>");
-	if (PyUnicode_CheckExact(v)) {
+	} else if (PyUnicode_CheckExact(v)) {
 		Py_INCREF(v);
 		return v;
 	}
