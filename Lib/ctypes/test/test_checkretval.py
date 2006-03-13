@@ -3,15 +3,15 @@ import sys
 
 from ctypes import *
 
+class CHECKED(c_int):
+    def _check_retval_(value):
+        # Receives a CHECKED instance.
+        return str(value.value)
+    _check_retval_ = staticmethod(_check_retval_)
+
 class Test(unittest.TestCase):
 
     def test_checkretval(self):
-
-        class CHECKED(c_int):
-            def _check_retval_(value):
-                # Receives a CHECKED instance.
-                return str(value.value)
-            _check_retval_ = staticmethod(_check_retval_)
 
         import _ctypes_test
         dll = cdll.load(_ctypes_test.__file__)
