@@ -392,6 +392,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     if verbose2 and bad:
         print "Re-running failed tests in verbose mode"
         for test in bad:
+            print "Re-running test %r in verbose mode" % test
+            sys.stdout.flush()
             try:
                 test_support.verbose = 1
                 ok = runtest(test, generate, 1, quiet, testdir,
