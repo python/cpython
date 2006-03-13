@@ -160,7 +160,7 @@ _bsddb
 
      devenv db-4.4.20\build_win32\Berkeley_DB.sln /build Release /project db_static
 
-    Alternatively, if you want to start with the original sources, 
+    Alternatively, if you want to start with the original sources,
     go to Sleepycat's download page:
         http://www.sleepycat.com/downloads/releasehistorybdb.html
 
@@ -219,7 +219,7 @@ _bsddb
     - build BerkeleyDB with the solution configuration matching the
       target ("Release IA64" for Itanium, "Release AMD64" for AMD64), e.g.
     devenv db-4.4.20\build_win32\Berkeley_DB.sln /build "Release AMD64" /project db_static /useenv
-    
+
 
 _ssl
     Python wrapper for the secure sockets library.
