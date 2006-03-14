@@ -16,14 +16,8 @@ class CmdLineTest(unittest.TestCase):
         return subprocess.call([sys.executable, cmd_line], stderr=subprocess.PIPE)
 
     def test_directories(self):
-         if sys.platform == 'win32':
-             # Exit code for "python .", Error 13: permission denied = 2
-             expected_exit_code = 2
-         else:
-             # Linux has no problem with "python .", Exit code = 0
-             expected_exit_code = 0
-         self.assertEqual(self.exit_code('.'), expected_exit_code)
-         self.assertTrue(self.exit_code('< .') != 0)
+        self.assertNotEqual(self.exit_code('.'), 0)
+        self.assertNotEqual(self.exit_code('< .'), 0)
 
     def verify_valid_flag(self, cmd_line):
         data = self.start_python(cmd_line)
