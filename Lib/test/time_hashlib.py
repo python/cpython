@@ -1,15 +1,14 @@
+# It's intended that this script be run by hand.  It runs speed tests on
+# hashlib functions; it does not test for correctness.
 
 import sys, time
 import hashlib
-from test import test_support
 
 
 def creatorFunc():
     raise RuntimeError, "eek, creatorFunc not overridden"
 
-
 def test_scaled_msg(scale, name):
-
     iterations = 106201/scale * 20
     longStr = 'Z'*scale
 
@@ -38,10 +37,6 @@ def test_zero():
     print ('%2.2f' % (end-start)), "seconds", '[20000 "" digests]'
 
 
-
-### this 'test' is not normally run.  skip it if the test runner finds it
-if __name__ != '__main__':
-    raise test_support.TestSkipped, "not a unit test (stand alone benchmark)"
 
 hName = sys.argv[1]
 
