@@ -50,9 +50,9 @@ struct tagCDataObject {
 	char *b_ptr;		/* pointer to memory block */
 	int  b_needsfree;	/* need _we_ free the memory? */
 	CDataObject *b_base;	/* pointer to base object or NULL */
-	int b_size;		/* size of memory block in bytes */
-	int b_length;		/* number of references we need */
-	int b_index;		/* index of this object into base's
+	Py_ssize_t b_size;	/* size of memory block in bytes */
+	Py_ssize_t b_length;	/* number of references we need */
+	Py_ssize_t b_index;	/* index of this object into base's
 				   b_object list */
 	PyObject *b_objects;	/* list of references we need to keep */
 	union value b_value;
@@ -64,9 +64,9 @@ typedef struct {
 	char *b_ptr;		/* pointer to memory block */
 	int  b_needsfree;	/* need _we_ free the memory? */
 	CDataObject *b_base;	/* pointer to base object or NULL */
-	int b_size;		/* size of memory block in bytes */
-	int b_length;		/* number of references we need */
-	int b_index;		/* index of this object into base's
+	Py_ssize_t b_size;	/* size of memory block in bytes */
+	Py_ssize_t b_length;	/* number of references we need */
+	Py_ssize_t b_index;	/* index of this object into base's
 				   b_object list */
 	PyObject *b_objects;	/* list of references we need to keep */
 	union value b_value;
@@ -94,8 +94,8 @@ extern PyTypeObject StgDict_Type;
 #define StgDict_Check(v)	    PyObject_TypeCheck(v, &StgDict_Type)
 
 extern int StructUnionType_update_stgdict(PyObject *fields, PyObject *type, int isStruct);
-extern int PyType_stginfo(PyTypeObject *self, int *psize, int *palign, int *plength);
-extern int PyObject_stginfo(PyObject *self, int *psize, int *palign, int *plength);
+extern int PyType_stginfo(PyTypeObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
+extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
 
 
 
@@ -118,7 +118,7 @@ CField_FromDesc(PyObject *desc, int index,
 		int pack, int is_big_endian);
 
 extern PyObject *CData_AtAddress(PyObject *type, void *buf);
-extern PyObject *CData_FromBytes(PyObject *type, char *data, int length);
+extern PyObject *CData_FromBytes(PyObject *type, char *data, Py_ssize_t length);
 
 extern PyTypeObject ArrayType_Type;
 extern PyTypeObject Array_Type;
@@ -137,7 +137,7 @@ extern PyTypeObject StructType_Type;
 #define StructTypeObject_Check(v)	PyObject_TypeCheck(v, &StructType_Type)
 
 extern PyObject *
-CreateArrayType(PyObject *itemtype, int length);
+CreateArrayType(PyObject *itemtype, Py_ssize_t length);
 
 extern void init_callbacks_in_module(PyObject *m);
 
@@ -164,9 +164,9 @@ struct fielddesc {
 
 typedef struct {
 	PyObject_HEAD
-	int offset;
-	int size;
-	int index;			/* Index into CDataObject's
+	Py_ssize_t offset;
+	Py_ssize_t size;
+	Py_ssize_t index;		/* Index into CDataObject's
 					   object array */
 	PyObject *proto;		/* a type or NULL */
 	GETFUNC getfunc;		/* getter function if proto is NULL */
@@ -185,9 +185,9 @@ typedef struct {
    too much risk to change that now, and there are other fields which doen't
    belong into this structure anyway.  Maybe in ctypes 2.0... (ctypes 2000?)
 */
-	int size;		/* number of bytes */
-	int align;		/* alignment requirements */
-	int length;		/* number of fields */
+	Py_ssize_t size;	/* number of bytes */
+	Py_ssize_t align;	/* alignment requirements */
+	Py_ssize_t length;	/* number of fields */
 	ffi_type ffi_type;
 	PyObject *proto;	/* Only for Pointer/ArrayObject */
 	SETFUNC setfunc;	/* Only for simple objects */
@@ -298,17 +298,17 @@ extern PyCArgObject *new_CArgObject(void);
 
 extern PyObject *
 CData_get(PyObject *type, GETFUNC getfunc, PyObject *src,
-	  int index, int size, char *ptr);
+	  Py_ssize_t index, Py_ssize_t size, char *ptr);
 
 extern int
 CData_set(PyObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
-	  int index, int size, char *ptr);
+	  Py_ssize_t index, Py_ssize_t size, char *ptr);
 
 extern void Extend_Error_Info(PyObject *exc_class, char *fmt, ...);
 
 struct basespec {
 	CDataObject *base;
-	int index;
+	Py_ssize_t index;
 	char *adr;
 };
 
@@ -374,7 +374,7 @@ extern void *MallocClosure(void);
 
 extern void _AddTraceback(char *, char *, int);
 
-extern PyObject *CData_FromBaseObj(PyObject *type, PyObject *base, int index, char *adr);
+extern PyObject *CData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr);
 
 /* XXX better name needed! */
 extern int IsSimpleSubType(PyObject *obj);

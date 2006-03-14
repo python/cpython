@@ -335,7 +335,7 @@ static PyMethodDef CDataType_methods[] = {
 };
 
 static PyObject *
-CDataType_repeat(PyObject *self, int length)
+CDataType_repeat(PyObject *self, Py_ssize_t length)
 {
 	return CreateArrayType(self, length);
 }
@@ -695,7 +695,7 @@ static int
 CharArray_set_raw(CDataObject *self, PyObject *value)
 {
 	char *ptr;
-	int size;
+	Py_ssize_t size;
 	if (PyBuffer_Check(value)) {
 		size = value->ob_type->tp_as_buffer->bf_getreadbuffer(value, 0, (void *)&ptr);
 		if (size < 0)
@@ -1789,13 +1789,11 @@ unique_key(CDataObject *target, int index)
 {
 	char string[256]; /* XXX is that enough? */
 	char *cp = string;
-	int len;
 	*cp++ = index + '0';
 	while (target->b_base) {
 		*cp++ = target->b_index + '0';
 		target = target->b_base;
 	}
-	len = cp - string;
 	return PyString_FromStringAndSize(string, cp-string);
 }
 /* Keep a reference to 'keep' in the 'target', at index 'index' */
@@ -1806,7 +1804,7 @@ unique_key(CDataObject *target, int index)
  * key int the root object's _objects dict.
  */
 static int
-KeepRef(CDataObject *target, int index, PyObject *keep)
+KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep)
 {
 	int result;
 	CDataObject *ob;
@@ -1875,7 +1873,7 @@ static PyMemberDef CData_members[] = {
 	{ NULL },
 };
 
-static int CData_GetBuffer(CDataObject *self, int seg, void **pptr)
+static Py_ssize_t CData_GetBuffer(CDataObject *self, Py_ssize_t seg, void **pptr)
 {
 	if (seg != 0) {
 		/* Hm. Must this set an exception? */
@@ -1885,7 +1883,7 @@ static int CData_GetBuffer(CDataObject *self, int seg, void **pptr)
 	return self->b_size;
 }
 
-static int CData_GetSegcount(CDataObject *self, int *lenp)
+static Py_ssize_t CData_GetSegcount(CDataObject *self, Py_ssize_t *lenp)
 {
 	if (lenp)
 		*lenp = 1;
@@ -1893,10 +1891,10 @@ static int CData_GetSegcount(CDataObject *self, int *lenp)
 }
 
 static PyBufferProcs CData_as_buffer = {
-	(getreadbufferproc)CData_GetBuffer,
-	(getwritebufferproc)CData_GetBuffer,
-	(getsegcountproc)CData_GetSegcount,
-	(getcharbufferproc)NULL,
+	(readbufferproc)CData_GetBuffer,
+	(writebufferproc)CData_GetBuffer,
+	(segcountproc)CData_GetSegcount,
+	(charbufferproc)NULL,
 };
 
 /*
@@ -1985,7 +1983,7 @@ static void CData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
 }
 
 PyObject *
-CData_FromBaseObj(PyObject *type, PyObject *base, int index, char *adr)
+CData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr)
 {
 	CDataObject *cmem;
 	StgDictObject *dict;
@@ -2064,7 +2062,7 @@ int IsSimpleSubType(PyObject *obj)
 
 PyObject *
 CData_get(PyObject *type, GETFUNC getfunc, PyObject *src,
-	  int index, int size, char *adr)
+	  Py_ssize_t index, Py_ssize_t size, char *adr)
 {
 	StgDictObject *dict;
 	if (getfunc)
@@ -2081,7 +2079,7 @@ CData_get(PyObject *type, GETFUNC getfunc, PyObject *src,
 */
 static PyObject *
 _CData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
-	   int size, char *ptr)
+	   Py_ssize_t size, char *ptr)
 {
 	CDataObject *src;
 
@@ -2177,7 +2175,7 @@ _CData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
  */
 int
 CData_set(PyObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
-	  int index, int size, char *ptr)
+	  Py_ssize_t index, Py_ssize_t size, char *ptr)
 {
 	CDataObject *mem = (CDataObject *)dst;
 	PyObject *result;
@@ -3318,7 +3316,7 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 	if (kwds) {
 		PyObject *key, *value;
-		int pos = 0;
+		Py_ssize_t pos = 0;
 		while(PyDict_Next(kwds, &pos, &key, &value)) {
 			if (-1 == PyObject_SetAttr(self, key, value))
 				return -1;
@@ -3471,12 +3469,12 @@ Array_item(CDataObject *self, int index)
 }
 
 static PyObject *
-Array_slice(CDataObject *self, int ilow, int ihigh)
+Array_slice(CDataObject *self, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
 	StgDictObject *stgdict, *itemdict;
 	PyObject *proto;
 	PyListObject *np;
-	int i, len;
+	Py_ssize_t i, len;
 
 	if (ilow < 0)
 		ilow = 0;
@@ -3587,13 +3585,13 @@ Array_length(CDataObject *self)
 }
 
 static PySequenceMethods Array_as_sequence = {
-	(inquiry)Array_length,			/* sq_length; */
+	(lenfunc)Array_length,			/* sq_length; */
 	0,					/* sq_concat; */
 	0,					/* sq_repeat; */
-	(intargfunc)Array_item,			/* sq_item; */
-	(intintargfunc)Array_slice,		/* sq_slice; */
-	(intobjargproc)Array_ass_item,		/* sq_ass_item; */
-	(intintobjargproc)Array_ass_slice,	/* sq_ass_slice; */
+	(ssizeargfunc)Array_item,		/* sq_item; */
+	(ssizessizeargfunc)Array_slice,		/* sq_slice; */
+	(ssizeobjargproc)Array_ass_item,	/* sq_ass_item; */
+	(ssizessizeobjargproc)Array_ass_slice,	/* sq_ass_slice; */
 	0,					/* sq_contains; */
 	
 	0,					/* sq_inplace_concat; */
@@ -3664,7 +3662,7 @@ PyTypeObject Array_Type = {
 };
 
 PyObject *
-CreateArrayType(PyObject *itemtype, int length)
+CreateArrayType(PyObject *itemtype, Py_ssize_t length)
 {
 	static PyObject *cache;
 	PyObject *key;
@@ -3676,7 +3674,7 @@ CreateArrayType(PyObject *itemtype, int length)
 		if (cache == NULL)
 			return NULL;
 	}
-	key = Py_BuildValue("(Oi)", itemtype, length);
+	key = Py_BuildValue("(On)", itemtype, length);
 	if (!key)
 		return NULL;
 	result = PyDict_GetItem(cache, key);
@@ -3691,11 +3689,16 @@ CreateArrayType(PyObject *itemtype, int length)
 				"Expected a type object");
 		return NULL;
 	}
-	sprintf(name, "%.200s_Array_%d",
+#ifdef MS_WIN64
+	sprintf(name, "%.200s_Array_%Id",
 		((PyTypeObject *)itemtype)->tp_name, length);
+#else
+	sprintf(name, "%.200s_Array_%ld",
+		((PyTypeObject *)itemtype)->tp_name, (long)length);
+#endif
 
 	result = PyObject_CallFunction((PyObject *)&ArrayType_Type,
-				       "s(O){s:i,s:O}",
+				       "s(O){s:n,s:O}",
 				       name,
 				       &Array_Type,
 				       "_length_",
@@ -3869,7 +3872,7 @@ Simple_repr(CDataObject *self)
 
 	name = PyString_FromString(self->ob_type->tp_name);
 	if (name == NULL) {
-		Py_DECREF(name);
+		Py_DECREF(val);
 		return NULL;
 	}
 
@@ -4101,12 +4104,12 @@ Pointer_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-Pointer_slice(CDataObject *self, int ilow, int ihigh)
+Pointer_slice(CDataObject *self, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
 	PyListObject *np;
 	StgDictObject *stgdict, *itemdict;
 	PyObject *proto;
-	int i, len;
+	Py_ssize_t i, len;
 
 	if (ilow < 0)
 		ilow = 0;
@@ -4142,9 +4145,9 @@ static PySequenceMethods Pointer_as_sequence = {
 	0,					/* inquiry sq_length; */
 	0,					/* binaryfunc sq_concat; */
 	0,					/* intargfunc sq_repeat; */
-	(intargfunc)Pointer_item,		/* intargfunc sq_item; */
-	(intintargfunc)Pointer_slice,		/* intintargfunc sq_slice; */
-	(intobjargproc)Pointer_ass_item,	/* intobjargproc sq_ass_item; */
+	(ssizeargfunc)Pointer_item,		/* intargfunc sq_item; */
+	(ssizessizeargfunc)Pointer_slice,	/* intintargfunc sq_slice; */
+	(ssizeobjargproc)Pointer_ass_item,	/* intobjargproc sq_ass_item; */
 	0,					/* intintobjargproc sq_ass_slice; */
 	0,					/* objobjproc sq_contains; */
 	/* Added in release 2.0 */
@@ -4318,7 +4321,7 @@ create_comerror(void)
 #endif
 
 static PyObject *
-string_at(const char *ptr, int size)
+string_at(const char *ptr, Py_ssize_t size)
 {
 	if (size == 0)
 		return PyString_FromString(ptr);
@@ -4336,7 +4339,7 @@ wstring_at(const wchar_t *ptr, int size)
 }
 #endif
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 init_ctypes(void)
 {
 	PyObject *m;
