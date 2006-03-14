@@ -1045,8 +1045,6 @@ class CodeGenerator:
             self.emit('STORE_SLICE+%d' % slice)
 
     def visitAugSubscript(self, node, mode):
-        if len(node.subs) > 1:
-            raise SyntaxError, "augmented assignment to tuple is not possible"
         if mode == "load":
             self.visitSubscript(node, 1)
         elif mode == "store":
@@ -1151,10 +1149,10 @@ class CodeGenerator:
         self.visit(node.expr)
         for sub in node.subs:
             self.visit(sub)
-        if aug_flag:
-            self.emit('DUP_TOPX', 2)
         if len(node.subs) > 1:
             self.emit('BUILD_TUPLE', len(node.subs))
+        if aug_flag:
+            self.emit('DUP_TOPX', 2)
         if node.flags == 'OP_APPLY':
             self.emit('BINARY_SUBSCR')
         elif node.flags == 'OP_ASSIGN':
