@@ -1136,9 +1136,6 @@ class _ExpectedSkips:
             s = _expectations[sys.platform]
             self.expected = set(s.split())
 
-            # this isn't a regularly run unit test, it is always skipped
-            self.expected.add('test_hashlib_speed')
-
             if not os.path.supports_unicode_filenames:
                 self.expected.add('test_pep277')
 
