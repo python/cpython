@@ -400,10 +400,16 @@ PyObject_Unicode(PyObject *v)
 {
 	PyObject *res;
 	PyObject *func;
+	PyObject *str;
 	static PyObject *unicodestr;
 
 	if (v == NULL) {
 		res = PyString_FromString("<NULL>");
+		if (res == NULL)
+			return NULL;
+		str = PyUnicode_FromEncodedObject(res, NULL, "strict");
+		Py_DECREF(res);
+		return str;
 	} else if (PyUnicode_CheckExact(v)) {
 		Py_INCREF(v);
 		return v;
@@ -443,13 +449,9 @@ PyObject_Unicode(PyObject *v)
 	if (res == NULL)
 		return NULL;
 	if (!PyUnicode_Check(res)) {
-		PyObject *str;
 		str = PyUnicode_FromEncodedObject(res, NULL, "strict");
 		Py_DECREF(res);
-		if (str)
-			res = str;
-		else
-			return NULL;
+		res = str;
 	}
 	return res;
 }
