@@ -116,17 +116,30 @@ class RunModuleTest(unittest.TestCase):
         for i in range(depth+1): # Don't forget the module itself
             parts = mod_name.rsplit(".", i)
             entry = parts[0]
-            del sys.modules[entry]
+            try:
+                del sys.modules[entry]
+            except KeyError, ex:
+                if verbose: print ex # Persist with cleaning up
         if verbose: print "  Removed sys.modules entries"
         del sys.path[0]
         if verbose: print "  Removed sys.path entry"
         for root, dirs, files in os.walk(top, topdown=False):
             for name in files:
-                os.remove(os.path.join(root, name))
+                try:
+                    os.remove(os.path.join(root, name))
+                except OSError, ex:
+                    if verbose: print ex # Persist with cleaning up
             for name in dirs:
-                os.rmdir(os.path.join(root, name))
-        os.rmdir(top)
-        if verbose: print "  Removed package tree"
+                fullname = os.path.join(root, name)
+                try:
+                    os.rmdir(fullname)
+                except OSError, ex:
+                    if verbose: print ex # Persist with cleaning up
+        try:
+            os.rmdir(top)
+            if verbose: print "  Removed package tree"
+        except OSError, ex:
+            if verbose: print ex # Persist with cleaning up
 
     def _check_module(self, depth):
         pkg_dir, mod_fname, mod_name = (
