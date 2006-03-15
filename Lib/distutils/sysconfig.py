@@ -16,7 +16,7 @@ import re
 import string
 import sys
 
-from errors import DistutilsPlatformError
+from .errors import DistutilsPlatformError
 
 # These are needed in a couple of spots, so just compute them once.
 PREFIX = os.path.normpath(sys.prefix)
