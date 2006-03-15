@@ -525,4 +525,3 @@ encoding_map = {
     0x05EA: 0x71,       #  HEBREW LETTER TAV
     0x2017: 0x78,       #  DOUBLE LOW LINE
 }
-

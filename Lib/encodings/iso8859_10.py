@@ -563,4 +563,3 @@ encoding_map = {
     0x017E: 0xBC,       #  LATIN SMALL LETTER Z WITH CARON
     0x2015: 0xBD,       #  HORIZONTAL BAR
 }
-

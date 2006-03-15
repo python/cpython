@@ -563,4 +563,3 @@ encoding_map = {
     0x1EF2: 0xAC,       #  LATIN CAPITAL LETTER Y WITH GRAVE
     0x1EF3: 0xBC,       #  LATIN SMALL LETTER Y WITH GRAVE
 }
-

@@ -48,4 +48,3 @@ def getregentry():
         streamreader=StreamReader,
         streamwriter=StreamWriter,
     )
-

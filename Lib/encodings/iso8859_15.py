@@ -563,4 +563,3 @@ encoding_map = {
     0x017E: 0xB8,       #  LATIN SMALL LETTER Z WITH CARON
     0x20AC: 0xA4,       #  EURO SIGN
 }
-

@@ -563,4 +563,3 @@ encoding_map = {
     0x2593: 0x92,       #  DARK SHADE
     0x25A0: 0x94,       #  BLACK SQUARE
 }
-

@@ -563,4 +563,3 @@ encoding_map = {
     0x2026: 0x93,       #  HORIZONTAL ELLIPSIS, right-left
     0x274A: 0xC0,       #  EIGHT TEARDROP-SPOKED PROPELLER ASTERISK, right-left
 }
-

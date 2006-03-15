@@ -527,4 +527,3 @@ encoding_map = {
     0x200F: 0xFE,       #  RIGHT-TO-LEFT MARK
     0x2017: 0xDF,       #  DOUBLE LOW LINE
 }
-

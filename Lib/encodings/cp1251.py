@@ -562,4 +562,3 @@ encoding_map = {
     0x2116: 0xB9,       #  NUMERO SIGN
     0x2122: 0x99,       #  TRADE MARK SIGN
 }
-

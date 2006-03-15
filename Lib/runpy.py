@@ -239,7 +239,7 @@ except AttributeError:
                 importer = _FileSystemImporter(path_item)
             except ImportError:
                 pass
-        return importer 
+        return importer
 
 
     def _get_path_loader(mod_name, path=None):
@@ -283,7 +283,7 @@ except AttributeError:
         If the module or package is accessible via the normal import
         mechanism, a wrapper around the relevant part of that machinery
         is returned.
-        
+
         Non PEP 302 mechanisms (e.g. the Windows registry) used by the
         standard import machinery to find files in alternative locations
         are partially supported, but are searched AFTER sys.path. Normally,
@@ -328,7 +328,7 @@ except AttributeError:
                 else:
                     # Top level module, so stick with default path
                     sub_name = mod_name
-    
+
                 for importer in sys.meta_path:
                     loader = importer.find_module(mod_name, path)
                     if loader is not None:
@@ -406,7 +406,7 @@ def _run_module_code(code, init_globals=None,
 def run_module(mod_name, init_globals=None,
                          run_name=None, alter_sys=False):
     """Execute a module's code without importing it
-   
+
        Returns the resulting top level namespace dictionary
     """
     loader = _get_loader(mod_name)
@@ -418,7 +418,7 @@ def run_module(mod_name, init_globals=None,
     filename = _get_filename(loader, mod_name)
     if run_name is None:
         run_name = mod_name
-    return _run_module_code(code, init_globals, run_name, 
+    return _run_module_code(code, init_globals, run_name,
                             filename, loader, alter_sys)
 
 

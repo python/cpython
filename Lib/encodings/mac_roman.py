@@ -563,4 +563,3 @@ encoding_map = {
     0xFB01: 0xDE,       #  LATIN SMALL LIGATURE FI
     0xFB02: 0xDF,       #  LATIN SMALL LIGATURE FL
 }
-
