@@ -974,6 +974,8 @@ clean:
 	find . -name '*.o' -exec rm -f {} ';'
 	find . -name '*.s[ol]' -exec rm -f {} ';'
 	find $(srcdir) -name '*.py[co]' -exec rm -f {} ';'
+	find $(srcdir) -name 'fficonfig.h' -exec rm -f {} ';'
+	find $(srcdir) -name 'fficonfig.py' -exec rm -f {} ';'
 
 clobber: clean
 	-rm -f $(BUILDPYTHON) $(PGEN) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
