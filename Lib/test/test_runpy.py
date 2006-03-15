@@ -113,13 +113,6 @@ class RunModuleTest(unittest.TestCase):
         return pkg_dir, mod_fname, mod_name
 
     def _del_pkg(self, top, depth, mod_name):
-        for root, dirs, files in os.walk(top, topdown=False):
-            for name in files:
-                os.remove(os.path.join(root, name))
-            for name in dirs:
-                os.rmdir(os.path.join(root, name))
-        os.rmdir(top)
-        if verbose: print "  Removed package tree"
         for i in range(depth+1): # Don't forget the module itself
             parts = mod_name.rsplit(".", i)
             entry = parts[0]
@@ -127,6 +120,13 @@ class RunModuleTest(unittest.TestCase):
         if verbose: print "  Removed sys.modules entries"
         del sys.path[0]
         if verbose: print "  Removed sys.path entry"
+        for root, dirs, files in os.walk(top, topdown=False):
+            for name in files:
+                os.remove(os.path.join(root, name))
+            for name in dirs:
+                os.rmdir(os.path.join(root, name))
+        os.rmdir(top)
+        if verbose: print "  Removed package tree"
 
     def _check_module(self, depth):
         pkg_dir, mod_fname, mod_name = (
@@ -134,13 +134,16 @@ class RunModuleTest(unittest.TestCase):
         try:
             if verbose: print "Running from source:", mod_name
             d1 = run_module(mod_name) # Read from source
+            self.failUnless(d1["x"] == 1)
+            del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
             if verbose: print "Running from compiled:", mod_name
             d2 = run_module(mod_name) # Read from bytecode
+            self.failUnless(d2["x"] == 1)
+            del d2 # Ensure __loader__ entry doesn't keep file open
         finally:
             self._del_pkg(pkg_dir, depth, mod_name)
-        self.failUnless(d1["x"] == d2["x"] == 1)
         if verbose: print "Module executed successfully"
 
     def test_run_module(self):
