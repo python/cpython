@@ -1058,13 +1058,16 @@ class Logger(Filterer):
         file name, line number and function name.
         """
         f = currentframe().f_back
-        while 1:
+        rv = "(unknown file)", 0, "(unknown function)"
+        while hasattr(f, "f_code"):
             co = f.f_code
             filename = os.path.normcase(co.co_filename)
             if filename == _srcfile:
                 f = f.f_back
                 continue
-            return filename, f.f_lineno, co.co_name
+            rv = (filename, f.f_lineno, co.co_name)
+            break
+        return rv
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func=None, extra=None):
         """
