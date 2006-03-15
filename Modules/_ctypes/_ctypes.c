@@ -3674,7 +3674,11 @@ CreateArrayType(PyObject *itemtype, Py_ssize_t length)
 		if (cache == NULL)
 			return NULL;
 	}
+#if (PY_VERSION_HEX < 0x02050000)
+	key = Py_BuildValue("(Oi)", itemtype, length);
+#else
 	key = Py_BuildValue("(On)", itemtype, length);
+#endif
 	if (!key)
 		return NULL;
 	result = PyDict_GetItem(cache, key);
@@ -3698,7 +3702,11 @@ CreateArrayType(PyObject *itemtype, Py_ssize_t length)
 #endif
 
 	result = PyObject_CallFunction((PyObject *)&ArrayType_Type,
+#if (PY_VERSION_HEX < 0x02050000)
+				       "s(O){s:i,s:O}",
+#else
 				       "s(O){s:n,s:O}",
+#endif
 				       name,
 				       &Array_Type,
 				       "_length_",
