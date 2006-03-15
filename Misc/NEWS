@@ -449,8 +449,10 @@ Library
   codecs.getincrementaldecoder() and codecs.getincrementalencoder() have
   been added.
 
-- SF patch #1359365: cStringIO.StringIO.isatty() will raise a ValueError
-  now if close() has been called before (like file and StringIO.StringIO do)
+- Patch #1359365: Calling next() on a closed StringIO.String object raises
+  a ValueError instead of a StopIteration now (like file and cString.String do).
+  cStringIO.StringIO.isatty() will raise a ValueError now if close() has been
+  called before (like file and StringIO.StringIO do).
 
 - A regrtest option -w was added to re-run failed tests in verbose mode.
 
