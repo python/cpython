@@ -250,11 +250,21 @@ CField_repr(CFieldObject *self)
 	name = ((PyTypeObject *)self->proto)->tp_name;
 
 	if (bits)
-		result = PyString_FromFormat("<Field type=%s, ofs=%d:%d, bits=%d>",
-					     name, (int)self->offset, size, bits);
+		result = PyString_FromFormat(
+#if (PY_VERSION_HEX < 0x02050000)
+			"<Field type=%s, ofs=%d:%d, bits=%d>",
+#else
+			"<Field type=%s, ofs=%zd:%d, bits=%d>",
+#endif
+			name, self->offset, size, bits);
 	else
-		result = PyString_FromFormat("<Field type=%s, ofs=%d, size=%d>",
-					     name, (int)self->offset, size);
+		result = PyString_FromFormat(
+#if (PY_VERSION_HEX < 0x02050000)
+			"<Field type=%s, ofs=%d, size=%d>",
+#else
+			"<Field type=%s, ofs=%zd, size=%d>",
+#endif
+			name, self->offset, size);
 	return result;
 }
 
