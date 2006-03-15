@@ -486,15 +486,16 @@ converterr(const char *expected, PyObject *arg, char *msgbuf, size_t bufsize)
 
 #define CONV_UNICODE "(unicode conversion error)"
 
-/* explicitly check for float arguments when integers are expected.  For now
- * signal a warning.  Returns true if an exception was raised. */
+/* Explicitly check for float arguments when integers are expected.
+   Return 1 for error, 0 if ok. */
 static int
 float_argument_error(PyObject *arg)
 {
-	if (PyFloat_Check(arg) &&
-	    PyErr_Warn(PyExc_DeprecationWarning,
-		       "integer argument expected, got float" ))
+	if (PyFloat_Check(arg)) {
+		PyErr_SetString(PyExc_TypeError,
+				"integer argument expected, got float" );
 		return 1;
+	}
 	else
 		return 0;
 }

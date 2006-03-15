@@ -149,6 +149,7 @@ classify(parser_state *ps, int type, char *str)
 			    strcmp(l->lb_str, s) != 0)
 				continue;
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
+                        /* Leaving this in as an example */
 			if (!(ps->p_flags & CO_FUTURE_WITH_STATEMENT)) {
 				if (s[0] == 'w' && strcmp(s, "with") == 0)
 					break; /* not a keyword yet */
@@ -177,6 +178,7 @@ classify(parser_state *ps, int type, char *str)
 }
 
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
+/* Leaving this in as an example */
 static void
 future_hack(parser_state *ps)
 {

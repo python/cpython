@@ -25,9 +25,9 @@ if n != 90:
 
 print '2.2 raise class exceptions'
 
-class AClass: pass
+class AClass(Exception): pass
 class BClass(AClass): pass
-class CClass: pass
+class CClass(Exception): pass
 class DClass(AClass):
     def __init__(self, ignore):
         pass
@@ -58,8 +58,8 @@ except AClass, v:
     if v != b: raise TestFailed, "v!=b AClass"
 
 # not enough arguments
-try:  raise BClass, a
-except TypeError: pass
+##try:  raise BClass, a
+##except TypeError: pass
 
 try:  raise DClass, a
 except DClass, v:

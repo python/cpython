@@ -28,25 +28,18 @@ PyAPI_FUNC(void) PyErr_NormalizeException(PyObject**, PyObject**, PyObject**);
 
 /* */
 
-#define PyExceptionClass_Check(x)					\
-	(PyClass_Check((x))						\
-	 || (PyType_Check((x)) && PyType_IsSubtype(			\
-		     (PyTypeObject*)(x), (PyTypeObject*)PyExc_BaseException)))
+#define PyExceptionClass_Check(x) \
+	    (PyType_Check((x)) && PyType_IsSubtype(			\
+		     (PyTypeObject*)(x), (PyTypeObject*)PyExc_BaseException))
 
 
-#define PyExceptionInstance_Check(x)			\
-	(PyInstance_Check((x)) ||			\
-	 (PyType_IsSubtype((x)->ob_type, (PyTypeObject*)PyExc_BaseException)))
+#define PyExceptionInstance_Check(x) \
+	 (PyType_IsSubtype((x)->ob_type, (PyTypeObject*)PyExc_BaseException))
 
-#define PyExceptionClass_Name(x)				   \
-	(PyClass_Check((x))					   \
-	 ? PyString_AS_STRING(((PyClassObject*)(x))->cl_name)	   \
-	 : (char *)(((PyTypeObject*)(x))->tp_name))
+#define PyExceptionClass_Name(x) \
+	 ((char *)(((PyTypeObject*)(x))->tp_name))
 
-#define PyExceptionInstance_Class(x)					\
-	((PyInstance_Check((x))						\
-	  ? (PyObject*)((PyInstanceObject*)(x))->in_class		\
-	  : (PyObject*)((x)->ob_type)))
+#define PyExceptionInstance_Class(x) ((PyObject*)((x)->ob_type))
 
 	
 /* Predefined exceptions */
