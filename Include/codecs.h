@@ -29,15 +29,15 @@ PyAPI_FUNC(int) PyCodec_Register(
 
 /* Codec register lookup API.
 
-   Looks up the given encoding and returns a tuple (encoder, decoder,
-   stream reader, stream writer) of functions which implement the
-   different aspects of processing the encoding.
+   Looks up the given encoding and returns a CodecInfo object with
+   function attributes which implement the different aspects of
+   processing the encoding.
 
    The encoding string is looked up converted to all lower-case
    characters. This makes encodings looked up through this mechanism
    effectively case-insensitive.
 
-   If no codec is found, a KeyError is set and NULL returned. 
+   If no codec is found, a KeyError is set and NULL returned.
 
    As side effect, this tries to load the encodings package, if not
    yet done. This is part of the lazy load strategy for the encodings
@@ -99,6 +99,20 @@ PyAPI_FUNC(PyObject *) PyCodec_Encoder(
 
 PyAPI_FUNC(PyObject *) PyCodec_Decoder(
        const char *encoding
+       );
+
+/* Get a IncrementalEncoder object for the given encoding. */
+
+PyAPI_FUNC(PyObject *) PyCodec_IncrementalEncoder(
+       const char *encoding,
+       const char *errors
+       );
+
+/* Get a IncrementalDecoder object function for the given encoding. */
+
+PyAPI_FUNC(PyObject *) PyCodec_IncrementalDecoder(
+       const char *encoding,
+       const char *errors
        );
 
 /* Get a StreamReader factory function for the given encoding. */

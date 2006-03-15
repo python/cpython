@@ -24,8 +24,19 @@ It defines the following functions:
 \begin{funcdesc}{register}{search_function}
 Register a codec search function. Search functions are expected to
 take one argument, the encoding name in all lower case letters, and
-return a tuple of functions \code{(\var{encoder}, \var{decoder}, \var{stream_reader},
-\var{stream_writer})} taking the following arguments:
+return a \class{CodecInfo} object having the following attributes:
+
+\begin{itemize}
+  \item \code{name} The name of the encoding;
+  \item \code{encoder} The stateless encoding function;
+  \item \code{decoder} The stateless decoding function;
+  \item \code{incrementalencoder} An incremental encoder class or factory function;
+  \item \code{incrementaldecoder} An incremental decoder class or factory function;
+  \item \code{streamwriter} A stream writer class or factory function;
+  \item \code{streamreader} A stream reader class or factory function.
+\end{itemize}
+
+The various functions or classes take the following arguments:
 
   \var{encoder} and \var{decoder}: These must be functions or methods
   which have the same interface as the
@@ -33,7 +44,17 @@ return a tuple of functions \code{(\var{encoder}, \var{decoder}, \var{stream_rea
   Codec Interface). The functions/methods are expected to work in a
   stateless mode.
 
-  \var{stream_reader} and \var{stream_writer}: These have to be
+  \var{incrementalencoder} and \var{incrementalencoder}: These have to be
+  factory functions providing the following interface:
+
+        \code{factory(\var{errors}='strict')}
+
+  The factory functions must return objects providing the interfaces
+  defined by the base classes \class{IncrementalEncoder} and
+  \class{IncrementalEncoder}, respectively. Incremental codecs can maintain
+  state.
+
+  \var{streamreader} and \var{streamwriter}: These have to be
   factory functions providing the following interface:
 
         \code{factory(\var{stream}, \var{errors}='strict')}
@@ -58,13 +79,13 @@ return \code{None}.
 \end{funcdesc}
 
 \begin{funcdesc}{lookup}{encoding}
-Looks up a codec tuple in the Python codec registry and returns the
-function tuple as defined above.
+Looks up the codec info in the Python codec registry and returns a
+\class{CodecInfo} object as defined above.
 
 Encodings are first looked up in the registry's cache. If not found,
-the list of registered search functions is scanned. If no codecs tuple
-is found, a \exception{LookupError} is raised. Otherwise, the codecs
-tuple is stored in the cache and returned to the caller.
+the list of registered search functions is scanned. If no \class{CodecInfo}
+object is found, a \exception{LookupError} is raised. Otherwise, the
+\class{CodecInfo} object is stored in the cache and returned to the caller.
 \end{funcdesc}
 
 To simplify access to the various codecs, the module provides these
@@ -83,6 +104,22 @@ Lookup up the codec for the given encoding and return its decoder
 function.
 
 Raises a \exception{LookupError} in case the encoding cannot be found.
+\end{funcdesc}
+
+\begin{funcdesc}{getincrementalencoder}{encoding}
+Lookup up the codec for the given encoding and return its incremental encoder
+class or factory function.
+
+Raises a \exception{LookupError} in case the encoding cannot be found or the
+codec doesn't support an incremental encoder.
+\end{funcdesc}
+
+\begin{funcdesc}{getincrementaldecoder}{encoding}
+Lookup up the codec for the given encoding and return its incremental decoder
+class or factory function.
+
+Raises a \exception{LookupError} in case the encoding cannot be found or the
+codec doesn't support an incremental decoder.
 \end{funcdesc}
 
 \begin{funcdesc}{getreader}{encoding}
@@ -188,6 +225,18 @@ If \var{output} is not given, it defaults to \var{input}.
 an encoding error occurs.
 \end{funcdesc}
 
+\begin{funcdesc}{iterencode}{iterable, encoding\optional{, errors}}
+Uses an incremental encoder to iteratively encode the input provided by
+\var{iterable}. This function is a generator. \var{errors} (as well as
+any other keyword argument) is passed through to the incremental encoder.
+\end{funcdesc}
+
+\begin{funcdesc}{iterdecode}{iterable, encoding\optional{, errors}}
+Uses an incremental decoder to iteratively decode the input provided by
+\var{iterable}. This function is a generator. \var{errors} (as well as
+any other keyword argument) is passed through to the incremental encoder.
+\end{funcdesc}
+
 The module also provides the following constants which are useful
 for reading and writing to platform dependent files:
 
@@ -291,6 +340,109 @@ function interfaces of the stateless encoder and decoder:
   The decoder must be able to handle zero length input and return an
   empty object of the output object type in this situation.
 \end{methoddesc}
+
+The \class{IncrementalEncoder} and \class{IncrementalDecoder} classes provide
+the basic interface for incremental encoding and decoding. Encoding/decoding the
+input isn't done with one call to the stateless encoder/decoder function,
+but with multiple calls to the \method{encode}/\method{decode} method of the
+incremental encoder/decoder. The incremental encoder/decoder keeps track of
+the encoding/decoding process during method calls.
+
+The joined output of calls to the \method{encode}/\method{decode} method is the
+same as if the all single inputs where joined into one, and this input was
+encoded/decoded with the stateless encoder/decoder.
+
+
+\subsubsection{IncrementalEncoder Objects \label{incremental-encoder-objects}}
+
+The \class{IncrementalEncoder} class is used for encoding an input in multiple
+steps. It defines the following methods which every incremental encoder must
+define in order to be compatible to the Python codec registry.
+
+\begin{classdesc}{IncrementalEncoder}{\optional{errors}}
+  Constructor for a \class{IncrementalEncoder} instance.
+
+  All incremental encoders must provide this constructor interface. They are
+  free to add additional keyword arguments, but only the ones defined
+  here are used by the Python codec registry.
+
+  The \class{IncrementalEncoder} may implement different error handling
+  schemes by providing the \var{errors} keyword argument. These
+  parameters are predefined:
+
+  \begin{itemize}
+    \item \code{'strict'} Raise \exception{ValueError} (or a subclass);
+                          this is the default.
+    \item \code{'ignore'} Ignore the character and continue with the next.
+    \item \code{'replace'} Replace with a suitable replacement character
+    \item \code{'xmlcharrefreplace'} Replace with the appropriate XML
+                     character reference
+    \item \code{'backslashreplace'} Replace with backslashed escape sequences.
+  \end{itemize}
+
+  The \var{errors} argument will be assigned to an attribute of the
+  same name. Assigning to this attribute makes it possible to switch
+  between different error handling strategies during the lifetime
+  of the \class{IncrementalEncoder} object.
+
+  The set of allowed values for the \var{errors} argument can
+  be extended with \function{register_error()}.
+\end{classdesc}
+
+\begin{methoddesc}{encode}{object\optional{, final}}
+  Encodes \var{object} (taking the current state of the encoder into account)
+  and returns the resulting encoded object. If this is the last call to
+  \method{encode} \var{final} must be true (the default is false).
+\end{methoddesc}
+
+\begin{methoddesc}{reset}{}
+  Reset the encoder to the initial state.
+\end{methoddesc}
+
+
+\subsubsection{IncrementalDecoder Objects \label{incremental-decoder-objects}}
+
+The \class{IncrementalDecoder} class is used for decoding an input in multiple
+steps. It defines the following methods which every incremental decoder must
+define in order to be compatible to the Python codec registry.
+
+\begin{classdesc}{IncrementalDecoder}{\optional{errors}}
+  Constructor for a \class{IncrementalDecoder} instance.
+
+  All incremental decoders must provide this constructor interface. They are
+  free to add additional keyword arguments, but only the ones defined
+  here are used by the Python codec registry.
+
+  The \class{IncrementalDecoder} may implement different error handling
+  schemes by providing the \var{errors} keyword argument. These
+  parameters are predefined:
+
+  \begin{itemize}
+    \item \code{'strict'} Raise \exception{ValueError} (or a subclass);
+                          this is the default.
+    \item \code{'ignore'} Ignore the character and continue with the next.
+    \item \code{'replace'} Replace with a suitable replacement character.
+  \end{itemize}
+
+  The \var{errors} argument will be assigned to an attribute of the
+  same name. Assigning to this attribute makes it possible to switch
+  between different error handling strategies during the lifetime
+  of the \class{IncrementalEncoder} object.
+
+  The set of allowed values for the \var{errors} argument can
+  be extended with \function{register_error()}.
+\end{classdesc}
+
+\begin{methoddesc}{decode}{object\optional{, final}}
+  Decodes \var{object} (taking the current state of the decoder into account)
+  and returns the resulting decoded object. If this is the last call to
+  \method{decode} \var{final} must be true (the default is false).
+\end{methoddesc}
+
+\begin{methoddesc}{reset}{}
+  Reset the decoder to the initial state.
+\end{methoddesc}
+
 
 The \class{StreamWriter} and \class{StreamReader} classes provide
 generic working interfaces which can be used to implement new
