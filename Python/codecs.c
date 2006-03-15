@@ -260,6 +260,56 @@ PyObject *PyCodec_Decoder(const char *encoding)
     return NULL;
 }
 
+PyObject *PyCodec_IncrementalEncoder(const char *encoding,
+				     const char *errors)
+{
+    PyObject *codecs, *ret, *encoder;
+
+    codecs = _PyCodec_Lookup(encoding);
+    if (codecs == NULL)
+	goto onError;
+    encoder = PyObject_GetAttrString(codecs, "incrementalencoder");
+    if (encoder == NULL) {
+	Py_DECREF(codecs);
+	return NULL;
+    }
+    if (errors)
+	ret = PyObject_CallFunction(encoder, "O", errors);
+    else
+	ret = PyObject_CallFunction(encoder, NULL);
+    Py_DECREF(encoder);
+    Py_DECREF(codecs);
+    return ret;
+
+ onError:
+    return NULL;
+}
+
+PyObject *PyCodec_IncrementalDecoder(const char *encoding,
+				     const char *errors)
+{
+    PyObject *codecs, *ret, *decoder;
+
+    codecs = _PyCodec_Lookup(encoding);
+    if (codecs == NULL)
+	goto onError;
+    decoder = PyObject_GetAttrString(codecs, "incrementaldecoder");
+    if (decoder == NULL) {
+	Py_DECREF(codecs);
+	return NULL;
+    }
+    if (errors)
+	ret = PyObject_CallFunction(decoder, "O", errors);
+    else
+	ret = PyObject_CallFunction(decoder, NULL);
+    Py_DECREF(decoder);
+    Py_DECREF(codecs);
+    return ret;
+
+ onError:
+    return NULL;
+}
+
 PyObject *PyCodec_StreamReader(const char *encoding,
 			       PyObject *stream,
 			       const char *errors)

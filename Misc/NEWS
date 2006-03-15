@@ -443,6 +443,12 @@ Extension Modules
 Library
 -------
 
+- Patch #1436130: codecs.lookup() now returns a CodecInfo object (a subclass
+  of tuple) that provides incremental decoders and encoders (a way to use
+  stateful codecs without the stream API). Functions
+  codecs.getincrementaldecoder() and codecs.getincrementalencoder() have
+  been added.
+
 - A regrtest option -w was added to re-run failed tests in verbose mode.
 
 - Patch #1446372: quit and exit can now be called from the interactive

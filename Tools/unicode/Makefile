@@ -44,11 +44,11 @@ windows:	build/
 	$(RM) -f build/readme.*
 
 iso:	build/
-	$(PYTHON) gencodec.py MAPPINGS/ISO8859/ build/iso
+	$(PYTHON) gencodec.py MAPPINGS/ISO8859/ build/ iso
 	$(RM) -f build/isoreadme.*
 
 apple:	build/
-	$(PYTHON) gencodec.py MAPPINGS/VENDORS/APPLE/ build/mac_
+	$(PYTHON) gencodec.py MAPPINGS/VENDORS/APPLE/ build/ mac_
 	$(RM) build/mac_dingbats.*
 	$(RM) build/mac_japanese.*
 	$(RM) build/mac_chin*

@@ -41,6 +41,33 @@ class ReadTest(unittest.TestCase):
         self.assertEqual(r.bytebuffer, "")
         self.assertEqual(r.charbuffer, u"")
 
+        # do the check again, this time using a incremental decoder
+        d = codecs.getincrementaldecoder(self.encoding)()
+        result = u""
+        for (c, partialresult) in zip(input.encode(self.encoding), partialresults):
+            result += d.decode(c)
+            self.assertEqual(result, partialresult)
+        # check that there's nothing left in the buffers
+        self.assertEqual(d.decode("", True), u"")
+        self.assertEqual(d.buffer, "")
+
+        # Check whether the rest method works properly
+        d.reset()
+        result = u""
+        for (c, partialresult) in zip(input.encode(self.encoding), partialresults):
+            result += d.decode(c)
+            self.assertEqual(result, partialresult)
+        # check that there's nothing left in the buffers
+        self.assertEqual(d.decode("", True), u"")
+        self.assertEqual(d.buffer, "")
+
+        # check iterdecode()
+        encoded = input.encode(self.encoding)
+        self.assertEqual(
+            input,
+            u"".join(codecs.iterdecode(encoded, self.encoding))
+        )
+
     def test_readline(self):
         def getreader(input):
             stream = StringIO.StringIO(input.encode(self.encoding))
@@ -977,6 +1004,12 @@ class BasicUnicodeTest(unittest.TestCase):
     def test_basics(self):
         s = u"abc123" # all codecs should be able to encode these
         for encoding in all_unicode_encodings:
+            name = codecs.lookup(encoding).name
+            if encoding.endswith("_codec"):
+                name += "_codec"
+            elif encoding == "latin_1":
+                name = "latin_1"
+            self.assertEqual(encoding.replace("_", "-"), name.replace("_", "-"))
             (bytes, size) = codecs.getencoder(encoding)(s)
             if encoding != "unicode_internal":
                 self.assertEqual(size, len(s), "%r != %r (encoding=%r)" % (size, len(s), encoding))
@@ -998,6 +1031,30 @@ class BasicUnicodeTest(unittest.TestCase):
                     q.write(c)
                     decodedresult += reader.read()
                 self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
+
+                # check incremental decoder/encoder and iterencode()/iterdecode()
+                try:
+                    encoder = codecs.getincrementalencoder(encoding)()
+                except LookupError: # no IncrementalEncoder
+                    pass
+                else:
+                    # check incremental decoder/encoder
+                    encodedresult = ""
+                    for c in s:
+                        encodedresult += encoder.encode(c)
+                    decoder = codecs.getincrementaldecoder(encoding)()
+                    decodedresult = u""
+                    for c in encodedresult:
+                        decodedresult += decoder.decode(c)
+                    self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
+
+                    # check iterencode()/iterdecode()
+                    result = u"".join(codecs.iterdecode(codecs.iterencode(s, encoding), encoding))
+                    self.assertEqual(result, s, "%r != %r (encoding=%r)" % (result, s, encoding))
+
+                    # check iterencode()/iterdecode() with empty string
+                    result = u"".join(codecs.iterdecode(codecs.iterencode(u"", encoding), encoding))
+                    self.assertEqual(result, u"")
 
     def test_seek(self):
         # all codecs should be able to encode these
