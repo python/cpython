@@ -250,11 +250,11 @@ CField_repr(CFieldObject *self)
 	name = ((PyTypeObject *)self->proto)->tp_name;
 
 	if (bits)
-		result = PyString_FromFormat("<Field type=%s, ofs=%zd:%d, bits=%d>",
-					     name, self->offset, size, bits);
+		result = PyString_FromFormat("<Field type=%s, ofs=%d:%d, bits=%d>",
+					     name, (int)self->offset, size, bits);
 	else
-		result = PyString_FromFormat("<Field type=%s, ofs=%zd, size=%d>",
-					     name, self->offset, size);
+		result = PyString_FromFormat("<Field type=%s, ofs=%d, size=%d>",
+					     name, (int)self->offset, size);
 	return result;
 }
 
