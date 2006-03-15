@@ -75,6 +75,13 @@ class TestGenericStringIO(unittest.TestCase):
         f.close()
         self.assertEqual(f.closed, True)
 
+    def test_isatty(self):
+        f = self.MODULE.StringIO()
+        self.assertRaises(TypeError, f.isatty, None)
+        self.assertEqual(f.isatty(), False)
+        f.close()
+        self.assertRaises(ValueError, f.isatty)
+
     def test_iterator(self):
         eq = self.assertEqual
         unless = self.failUnless
