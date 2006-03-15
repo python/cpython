@@ -101,7 +101,6 @@ class RunModuleTest(unittest.TestCase):
             if verbose: print "  Next level in:", sub_dir
             pkg_fname = os.path.join(sub_dir, init_fname)
             pkg_file = open(pkg_fname, "w")
-            pkg_file.write("__path__ = ['%s']\n" % sub_dir)
             pkg_file.close()
             if verbose: print "  Created:", pkg_fname
         mod_fname = os.path.join(sub_dir, test_fname)
