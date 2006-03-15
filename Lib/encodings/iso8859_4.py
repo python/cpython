@@ -563,4 +563,3 @@ encoding_map = {
     0x02D9: 0xFF,       #  DOT ABOVE
     0x02DB: 0xB2,       #  OGONEK
 }
-

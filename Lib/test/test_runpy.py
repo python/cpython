@@ -165,8 +165,8 @@ class RunModuleTest(unittest.TestCase):
 
 
 def test_main():
-   run_unittest(RunModuleCodeTest)
-   run_unittest(RunModuleTest)
+    run_unittest(RunModuleCodeTest)
+    run_unittest(RunModuleTest)
 
 if __name__ == "__main__":
     test_main()

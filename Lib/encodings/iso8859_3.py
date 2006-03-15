@@ -556,4 +556,3 @@ encoding_map = {
     0x02D8: 0xA2,       #  BREVE
     0x02D9: 0xFF,       #  DOT ABOVE
 }
-

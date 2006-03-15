@@ -563,4 +563,3 @@ encoding_map = {
     0x02DB: 0xB2,       #  OGONEK
     0x02DD: 0xBD,       #  DOUBLE ACUTE ACCENT
 }
-

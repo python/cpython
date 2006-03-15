@@ -522,4 +522,3 @@ encoding_map = {
     0x2593: 0xB2,       #  DARK SHADE
     0x25A0: 0xFE,       #  BLACK SQUARE
 }
-

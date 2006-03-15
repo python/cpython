@@ -554,4 +554,3 @@ encoding_map = {
     0x0E5A: 0xFA,       #  THAI CHARACTER ANGKHANKHU
     0x0E5B: 0xFB,       #  THAI CHARACTER KHOMUT
 }
-

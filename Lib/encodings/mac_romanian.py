@@ -563,4 +563,3 @@ encoding_map = {
     0x25CA: 0xD7,       #  LOZENGE
     0xF8FF: 0xF0,       #  Apple logo
 }
-

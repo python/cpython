@@ -563,4 +563,3 @@ encoding_map = {
     0x201D: 0xA1,       #  RIGHT DOUBLE QUOTATION MARK
     0x201E: 0xA5,       #  DOUBLE LOW-9 QUOTATION MARK
 }
-

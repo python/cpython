@@ -557,4 +557,3 @@ encoding_map = {
     0x2018: 0xCE,       #  LEFT SINGLE QUOTATION MARK
     0x2019: 0xDE,       #  RIGHT SINGLE QUOTATION MARK
 }
-

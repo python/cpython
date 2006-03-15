@@ -117,9 +117,9 @@ def search_function(encoding):
     entry = getregentry()
     if not isinstance(entry, codecs.CodecInfo):
         if not 4 <= len(entry) <= 7:
-             raise CodecRegistryError,\
-                  'module "%s" (%s) failed to register' % \
-                   (mod.__name__, mod.__file__)
+            raise CodecRegistryError,\
+                 'module "%s" (%s) failed to register' % \
+                  (mod.__name__, mod.__file__)
         if not callable(entry[0]) or \
            not callable(entry[1]) or \
            (entry[2] is not None and not callable(entry[2])) or \

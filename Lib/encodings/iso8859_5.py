@@ -563,4 +563,3 @@ encoding_map = {
     0x045F: 0xFF,       #  CYRILLIC SMALL LETTER DZHE
     0x2116: 0xF0,       #  NUMERO SIGN
 }
-

@@ -560,4 +560,3 @@ encoding_map = {
     0x20AC: 0xA4,       #  EURO SIGN
     0x20AF: 0xA5,       #  DRACHMA SIGN
 }
-

@@ -563,4 +563,3 @@ encoding_map = {
     0x015E: 0xDE,       #  LATIN CAPITAL LETTER S WITH CEDILLA
     0x015F: 0xFE,       #  LATIN SMALL LETTER S WITH CEDILLA
 }
-

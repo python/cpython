@@ -518,4 +518,3 @@ encoding_map = {
     0x0651: 0xF1,       #  ARABIC SHADDA
     0x0652: 0xF2,       #  ARABIC SUKUN
 }
-

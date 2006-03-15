@@ -563,4 +563,3 @@ encoding_map = {
     0x00FE: 0x8E,       #  LATIN SMALL LETTER THORN (ICELANDIC)
     0x00FF: 0xDF,       #  LATIN SMALL LETTER Y WITH DIAERESIS
 }
-

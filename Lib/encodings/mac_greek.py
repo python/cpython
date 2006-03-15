@@ -563,4 +563,3 @@ encoding_map = {
     0x2264: 0xB2,       #  LESS-THAN OR EQUAL TO
     0x2265: 0xB3,       #  GREATER-THAN OR EQUAL TO
 }
-

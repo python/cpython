@@ -563,4 +563,3 @@ encoding_map = {
     0x00FF: 0xDF,       #  LATIN SMALL LETTER Y WITH DIAERESIS
     0x20AC: 0x9F,       #  EURO SIGN
 }
-

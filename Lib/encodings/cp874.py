@@ -532,4 +532,3 @@ encoding_map = {
     0x2026: 0x85,       #  HORIZONTAL ELLIPSIS
     0x20AC: 0x80,       #  EURO SIGN
 }
-

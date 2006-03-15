@@ -563,4 +563,3 @@ encoding_map = {
     0x201E: 0xA5,       #  DOUBLE LOW-9 QUOTATION MARK
     0x20AC: 0xA4,       #  EURO SIGN
 }
-

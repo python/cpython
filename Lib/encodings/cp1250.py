@@ -558,4 +558,3 @@ encoding_map = {
     0x20AC: 0x80,       #  EURO SIGN
     0x2122: 0x99,       #  TRADE MARK SIGN
 }
-

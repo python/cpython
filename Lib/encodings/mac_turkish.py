@@ -563,4 +563,3 @@ encoding_map = {
     0xF8A0: 0xF5,       #  undefined1
     0xF8FF: 0xF0,       #  Apple logo
 }
-

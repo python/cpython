@@ -562,4 +562,3 @@ encoding_map = {
     0xFEF2: 0xFA,       #  ARABIC LETTER YEH FINAL FORM
     0xFEF3: 0xFB,       #  ARABIC LETTER YEH INITIAL FORM
 }
-
