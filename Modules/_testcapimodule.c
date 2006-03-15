@@ -521,6 +521,18 @@ test_long_numbits(PyObject *self)
 	return Py_None;
 }
 
+/* Example passing NULLs to PyObject_Str(NULL) and PyObject_Unicode(NULL). */
+
+static PyObject *
+test_null_strings(PyObject *self)
+{
+	PyObject *o1 = PyObject_Str(NULL), *o2 = PyObject_Unicode(NULL);
+	PyObject *tuple = PyTuple_Pack(2, o1, o2);
+	Py_XDECREF(o1);
+	Py_XDECREF(o2);
+	return tuple;
+}
+
 static PyObject *
 raise_exception(PyObject *self, PyObject *args)
 {
@@ -759,6 +771,7 @@ static PyMethodDef TestMethods[] = {
 	{"test_long_api",	(PyCFunction)test_long_api,	 METH_NOARGS},
 	{"test_long_numbits",	(PyCFunction)test_long_numbits,	 METH_NOARGS},
 	{"test_k_code",		(PyCFunction)test_k_code,	 METH_NOARGS},
+	{"test_null_strings",	(PyCFunction)test_null_strings,	 METH_NOARGS},
 
 	{"getargs_b",		(PyCFunction)getargs_b,		 METH_VARARGS},
 	{"getargs_B",		(PyCFunction)getargs_B,		 METH_VARARGS},
