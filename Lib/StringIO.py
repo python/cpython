@@ -72,8 +72,7 @@ class StringIO:
         method is called repeatedly. This method returns the next input line,
         or raises StopIteration when EOF is hit.
         """
-        if self.closed:
-            raise StopIteration
+        _complain_ifclosed(self.closed)
         r = self.readline()
         if not r:
             raise StopIteration

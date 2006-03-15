@@ -87,6 +87,8 @@ class TestGenericStringIO(unittest.TestCase):
             eq(line, self._line + '\n')
             i += 1
         eq(i, 5)
+        self._fp.close()
+        self.assertRaises(ValueError, self._fp.next)
 
 class TestStringIO(TestGenericStringIO):
     MODULE = StringIO
