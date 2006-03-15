@@ -23,7 +23,9 @@ typedef struct {
 
 #define PyPARSE_DONT_IMPLY_DEDENT	0x0002
 
+#if 0
 #define PyPARSE_WITH_IS_KEYWORD		0x0003
+#endif
 
 PyAPI_FUNC(node *) PyParser_ParseString(const char *, grammar *, int,
                                               perrdetail *);

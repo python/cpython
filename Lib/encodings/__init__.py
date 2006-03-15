@@ -27,7 +27,8 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """#"
 
-import codecs, types, aliases
+import codecs, types
+from . import aliases
 
 _cache = {}
 _unknown = '--unknown--'

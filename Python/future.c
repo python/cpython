@@ -28,11 +28,11 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, const char *filename)
 		} else if (strcmp(feature, FUTURE_GENERATORS) == 0) {
 			continue;
 		} else if (strcmp(feature, FUTURE_DIVISION) == 0) {
-			ff->ff_features |= CO_FUTURE_DIVISION;
+			continue;
 		} else if (strcmp(feature, FUTURE_ABSIMPORT) == 0) {
-			ff->ff_features |= CO_FUTURE_ABSIMPORT;
+			continue;
 		} else if (strcmp(feature, FUTURE_WITH_STATEMENT) == 0) {
-			ff->ff_features |= CO_FUTURE_WITH_STATEMENT;
+			continue;
 		} else if (strcmp(feature, "braces") == 0) {
 			PyErr_SetString(PyExc_SyntaxError,
 					"not a chance");

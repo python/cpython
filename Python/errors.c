@@ -557,7 +557,8 @@ PyErr_NewException(char *name, PyObject *base, PyObject *dict)
 	bases = PyTuple_Pack(1, base);
 	if (bases == NULL)
 		goto failure;
-	result = PyClass_New(bases, dict, classname);
+	result = PyObject_CallFunction((PyObject *) (base->ob_type),
+				       "OOO", classname, bases, dict);
   failure:
 	Py_XDECREF(bases);
 	Py_XDECREF(mydict);

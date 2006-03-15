@@ -2106,12 +2106,7 @@ recursive_isinstance(PyObject *inst, PyObject *cls, int recursion_depth)
 			return -1;
 	}
 
-	if (PyClass_Check(cls) && PyInstance_Check(inst)) {
-		PyObject *inclass =
-			(PyObject*)((PyInstanceObject*)inst)->in_class;
-		retval = PyClass_IsSubclass(inclass, cls);
-	}
-	else if (PyType_Check(cls)) {
+	if (PyType_Check(cls)) {
 		retval = PyObject_TypeCheck(inst, (PyTypeObject *)cls);
 		if (retval == 0) {
 			PyObject *c = PyObject_GetAttr(inst, __class__);
@@ -2177,7 +2172,7 @@ recursive_issubclass(PyObject *derived, PyObject *cls, int recursion_depth)
 {
 	int retval;
 
-	if (!PyClass_Check(derived) || !PyClass_Check(cls)) {
+        {
 		if (!check_class(derived,
 				 "issubclass() arg 1 must be a class"))
 			return -1;
@@ -2211,11 +2206,6 @@ recursive_issubclass(PyObject *derived, PyObject *cls, int recursion_depth)
 		}
 
 		retval = abstract_issubclass(derived, cls);
-	}
-	else {
-		/* shortcut */
-	  	if (!(retval = (derived == cls)))
-			retval = PyClass_IsSubclass(derived, cls);
 	}
 
 	return retval;

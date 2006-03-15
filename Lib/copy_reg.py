@@ -4,17 +4,12 @@ This is only useful to add pickle support for extension types defined in
 C, not for instances of user-defined classes.
 """
 
-from types import ClassType as _ClassType
-
 __all__ = ["pickle", "constructor",
            "add_extension", "remove_extension", "clear_extension_cache"]
 
 dispatch_table = {}
 
 def pickle(ob_type, pickle_function, constructor_ob=None):
-    if type(ob_type) is _ClassType:
-        raise TypeError("copy_reg is not intended for use with classes")
-
     if not callable(pickle_function):
         raise TypeError("reduction functions must be callable")
     dispatch_table[ob_type] = pickle_function

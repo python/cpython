@@ -41,17 +41,17 @@ typedef struct {
 #define CO_NOFREE       0x0040
 
 #if 0
-/* This is no longer used.  Stopped defining in 2.5, do not re-use. */
+/* These are no longer used. */
 #define CO_GENERATOR_ALLOWED    0x1000
-#endif
 #define CO_FUTURE_DIVISION    	0x2000
 #define CO_FUTURE_ABSIMPORT	0x4000 /* absolute import by default */
 #define CO_FUTURE_WITH_STATEMENT  0x8000
+#endif
 
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.
 */
-#define PY_PARSER_REQUIRES_FUTURE_KEYWORD
+/* #define PY_PARSER_REQUIRES_FUTURE_KEYWORD */
 
 #define CO_MAXBLOCKS 20 /* Max static block nesting within a function */
 

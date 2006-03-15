@@ -2464,11 +2464,7 @@ compiler_import(struct compiler *c, stmt_ty s)
 		int r;
 		PyObject *level;
 
-		if (c->c_flags && (c->c_flags->cf_flags & CO_FUTURE_ABSIMPORT))
-			level = PyInt_FromLong(0);
-		else
-			level = PyInt_FromLong(-1);
-
+                level = PyInt_FromLong(0);
 		if (level == NULL)
 			return 0;
 
@@ -2511,12 +2507,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 	if (!names)
 		return 0;
 
-	if (s->v.ImportFrom.level == 0 && c->c_flags &&
-	    !(c->c_flags->cf_flags & CO_FUTURE_ABSIMPORT))
-		level = PyInt_FromLong(-1);
-	else
-		level = PyInt_FromLong(s->v.ImportFrom.level);
-
+        level = PyInt_FromLong(s->v.ImportFrom.level);
 	if (!level) {
 		Py_DECREF(names);
 		return 0;
@@ -2746,10 +2737,7 @@ binop(struct compiler *c, operator_ty op)
 	case Mult:
 		return BINARY_MULTIPLY;
 	case Div:
-		if (c->c_flags && c->c_flags->cf_flags & CO_FUTURE_DIVISION)
-			return BINARY_TRUE_DIVIDE;
-		else
-			return BINARY_DIVIDE;
+		return BINARY_TRUE_DIVIDE;
 	case Mod:
 		return BINARY_MODULO;
 	case Pow:
@@ -2809,10 +2797,7 @@ inplace_binop(struct compiler *c, operator_ty op)
 	case Mult:
 		return INPLACE_MULTIPLY;
 	case Div:
-		if (c->c_flags && c->c_flags->cf_flags & CO_FUTURE_DIVISION)
-			return INPLACE_TRUE_DIVIDE;
-		else
-			return INPLACE_DIVIDE;
+		return INPLACE_TRUE_DIVIDE;
 	case Mod:
 		return INPLACE_MODULO;
 	case Pow:

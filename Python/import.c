@@ -28,7 +28,7 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
    a .pyc file in text mode the magic number will be wrong; also, the
    Apple MPW compiler swaps their values, botching string constants.
 
-   The magic numbers must be spaced apart atleast 2 values, as the
+   The magic numbers must be spaced apart at least 2 values, as the
    -U interpeter flag will cause MAGIC+1 being used. They have been
    odd numbers for some time now.
 
@@ -56,9 +56,10 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        Python 2.5a0: 62081 (ast-branch)
        Python 2.5a0: 62091 (with)
        Python 2.5a0: 62092 (changed WITH_CLEANUP opcode)
+       Python 3000:   3000
 .
 */
-#define MAGIC (62092 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (3000 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
