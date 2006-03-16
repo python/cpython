@@ -20,7 +20,6 @@ extern void initmath(void);
 extern void init_md5(void);
 extern void initnt(void);
 extern void initoperator(void);
-extern void initregex(void);
 #ifndef MS_WIN64
 extern void initrgbimg(void);
 #endif
@@ -95,7 +94,6 @@ struct _inittab _PyImport_Inittab[] = {
         {"_md5", init_md5},
         {"nt", initnt}, /* Use the NT os functions, not posix */
         {"operator", initoperator},
-        {"regex", initregex},
 #ifndef MS_WIN64
         {"rgbimg", initrgbimg},
 #endif
