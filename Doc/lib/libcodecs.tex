@@ -112,6 +112,7 @@ class or factory function.
 
 Raises a \exception{LookupError} in case the encoding cannot be found or the
 codec doesn't support an incremental encoder.
+\versionadded{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{getincrementaldecoder}{encoding}
@@ -120,6 +121,7 @@ class or factory function.
 
 Raises a \exception{LookupError} in case the encoding cannot be found or the
 codec doesn't support an incremental decoder.
+\versionadded{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{getreader}{encoding}
@@ -229,12 +231,14 @@ an encoding error occurs.
 Uses an incremental encoder to iteratively encode the input provided by
 \var{iterable}. This function is a generator. \var{errors} (as well as
 any other keyword argument) is passed through to the incremental encoder.
+\versionadded{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{iterdecode}{iterable, encoding\optional{, errors}}
 Uses an incremental decoder to iteratively decode the input provided by
 \var{iterable}. This function is a generator. \var{errors} (as well as
 any other keyword argument) is passed through to the incremental encoder.
+\versionadded{2.5}
 \end{funcdesc}
 
 The module also provides the following constants which are useful
@@ -354,6 +358,8 @@ encoded/decoded with the stateless encoder/decoder.
 
 
 \subsubsection{IncrementalEncoder Objects \label{incremental-encoder-objects}}
+
+\versionadded{2.5}
 
 The \class{IncrementalEncoder} class is used for encoding an input in multiple
 steps. It defines the following methods which every incremental encoder must
