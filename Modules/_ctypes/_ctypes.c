@@ -3017,7 +3017,7 @@ CFuncPtr_call(CFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
 
 	int inoutmask;
 	int outmask;
-	int numretvals;
+	unsigned int numretvals;
 
 	assert(dict); /* if not, it's a bug */
 	restype = self->restype ? self->restype : dict->restype;
