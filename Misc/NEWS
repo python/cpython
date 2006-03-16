@@ -291,6 +291,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Swapped re and sre, so help(re) provides full help.  importing sre
+  is deprecated.  The undocumented re.engine variable no longer exists.
+
 - Bug #1448490: Fixed a bug that ISO-2022 codecs could not handle
   SS2 (single-shift 2) escape sequences correctly.
 
