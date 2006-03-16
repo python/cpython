@@ -92,11 +92,13 @@ PyParser_ParseFileFlags(FILE *fp, const char *filename, grammar *g, int start,
 /* Parse input coming from the given tokenizer structure.
    Return error code. */
 
+#ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
 static char with_msg[] =
 "%s:%d: Warning: 'with' will become a reserved keyword in Python 2.6\n";
 
 static char as_msg[] =
 "%s:%d: Warning: 'as' will become a reserved keyword in Python 2.6\n";
+#endif
 
 static void
 warn(const char *msg, const char *filename, int lineno)
