@@ -464,12 +464,6 @@ EXPORTS
 ;               _Py_mergebitset
 ;               _Py_meta_grammar
 ;               _Py_newbitset
-               _Py_re_compile_fastmap
-               _Py_re_compile_initialize
-               _Py_re_compile_pattern
-               _Py_re_match
-               _Py_re_search
-               _Py_re_set_syntax
 ;               _Py_samebitset
                PyBuffer_Type
                PyBuffer_FromObject
