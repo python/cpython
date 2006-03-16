@@ -206,14 +206,12 @@ class CodeGenerator:
         self.setups = misc.Stack()
         self.last_lineno = None
         self._setupGraphDelegation()
-        self._div_op = "BINARY_DIVIDE"
 
         # XXX set flags based on future features
         futures = self.get_module().futures
         for feature in futures:
             if feature == "division":
                 self.graph.setFlag(CO_FUTURE_DIVISION)
-                self._div_op = "BINARY_TRUE_DIVIDE"
             elif feature == "absolute_import":
                 self.graph.setFlag(CO_FUTURE_ABSIMPORT)
             elif feature == "with_statement":
@@ -1177,7 +1175,7 @@ class CodeGenerator:
         return self.binaryOp(node, 'BINARY_MULTIPLY')
 
     def visitDiv(self, node):
-        return self.binaryOp(node, self._div_op)
+        return self.binaryOp(node, 'BINARY_TRUE_DIVIDE')
 
     def visitFloorDiv(self, node):
         return self.binaryOp(node, 'BINARY_FLOOR_DIVIDE')

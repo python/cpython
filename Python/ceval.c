@@ -1073,19 +1073,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 			if (x != NULL) continue;
 			break;
 
-		case BINARY_DIVIDE:
-			if (!_Py_QnewFlag) {
-				w = POP();
-				v = TOP();
-				x = PyNumber_Divide(v, w);
-				Py_DECREF(v);
-				Py_DECREF(w);
-				SET_TOP(x);
-				if (x != NULL) continue;
-				break;
-			}
-			/* -Qnew is in effect:	fall through to
-			   BINARY_TRUE_DIVIDE */
 		case BINARY_TRUE_DIVIDE:
 			w = POP();
 			v = TOP();
