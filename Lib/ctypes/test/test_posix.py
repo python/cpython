@@ -8,8 +8,10 @@ if os.name == "posix" and sys.platform == "linux2":
 
     class TestRTLD_GLOBAL(unittest.TestCase):
         def test_GL(self):
-            cdll.load('libGL.so', mode=RTLD_GLOBAL)
-            cdll.load('libGLU.so')
+            if os.path.exists('/usr/lib/libGL.so'):
+                cdll.load('libGL.so', mode=RTLD_GLOBAL)
+            if os.path.exists('/usr/lib/libGLU.so'):
+                cdll.load('libGLU.so')
 
 ##if os.name == "posix" and sys.platform != "darwin":
 
