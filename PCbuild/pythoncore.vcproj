@@ -707,12 +707,6 @@
 			RelativePath="..\Objects\rangeobject.c">
 		</File>
 		<File
-			RelativePath="..\Modules\regexmodule.c">
-		</File>
-		<File
-			RelativePath="..\Modules\regexpr.c">
-		</File>
-		<File
 			RelativePath="..\Modules\rgbimgmodule.c">
 		</File>
 		<File

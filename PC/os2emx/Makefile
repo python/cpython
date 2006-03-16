@@ -304,8 +304,6 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/md5module.c \
 		Modules/operator.c \
 		Modules/_randommodule.c \
-		Modules/regexmodule.c \
-		Modules/regexpr.c \
 		Modules/rgbimgmodule.c \
 		Modules/shamodule.c \
 		Modules/_sre.c \

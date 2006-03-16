@@ -21,7 +21,7 @@
 
 
 import sys
-import regex
+import re
 import os
 
 
@@ -57,8 +57,8 @@ def main():
 
 # Compiled regular expressions to search for import statements
 #
-m_import = regex.compile('^[ \t]*from[ \t]+\([^ \t]+\)[ \t]+')
-m_from = regex.compile('^[ \t]*import[ \t]+\([^#]+\)')
+m_import = re.compile('^[ \t]*from[ \t]+([^ \t]+)[ \t]+')
+m_from = re.compile('^[ \t]*import[ \t]+([^#]+)')
 
 
 # Collect data from one file

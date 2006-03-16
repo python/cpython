@@ -30,7 +30,7 @@
 # into a program for a different change to Python programs...
 
 import sys
-import regex
+import re
 import os
 from stat import *
 
@@ -53,7 +53,7 @@ def main():
             if fix(arg): bad = 1
     sys.exit(bad)
 
-ispythonprog = regex.compile('^[a-zA-Z0-9_]+\.py$')
+ispythonprog = re.compile('^[a-zA-Z0-9_]+\.py$')
 def ispython(name):
     return ispythonprog.match(name) >= 0
 
@@ -148,12 +148,12 @@ def fix(filename):
 
 # This expression doesn't catch *all* class definition headers,
 # but it's pretty darn close.
-classexpr = '^\([ \t]*class +[a-zA-Z0-9_]+\) *( *) *\(\(=.*\)?\):'
-classprog = regex.compile(classexpr)
+classexpr = '^([ \t]*class +[a-zA-Z0-9_]+) *( *) *((=.*)?):'
+classprog = re.compile(classexpr)
 
 # Expressions for finding base class expressions.
-baseexpr = '^ *\(.*\) *( *) *$'
-baseprog = regex.compile(baseexpr)
+baseexpr = '^ *(.*) *( *) *$'
+baseprog = re.compile(baseexpr)
 
 def fixline(line):
     if classprog.match(line) < 0: # No 'class' keyword -- no change

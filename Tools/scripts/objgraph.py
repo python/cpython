@@ -22,7 +22,7 @@
 import sys
 import os
 import getopt
-import regex
+import re
 
 # Types of symbols.
 #
@@ -32,7 +32,7 @@ ignore = 'Nntrgdsbavuc'
 
 # Regular expression to parse "nm -o" output.
 #
-matcher = regex.compile('\(.*\):\t?........ \(.\) \(.*\)$')
+matcher = re.compile('(.*):\t?........ (.) (.*)$')
 
 # Store "item" in "dict" under "key".
 # The dictionary maps keys to lists of items.

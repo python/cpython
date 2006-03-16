@@ -566,9 +566,6 @@ ignored.
 >>> re.split('\W+', 'Words, words, words.', 1)
 ['Words', 'words, words.']
 \end{verbatim}
-
-  This function combines and extends the functionality of
-  the old \function{regsub.split()} and \function{regsub.splitx()}.
 \end{funcdesc}
 
 \begin{funcdesc}{findall}{pattern, string\optional{, flags}}
@@ -943,7 +940,7 @@ the message \code{maximum recursion limit} exceeded. For example,
 >>> re.match('Begin (\w| )*? end', s).end()
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
-  File "/usr/local/lib/python2.3/sre.py", line 132, in match
+  File "/usr/local/lib/python2.5/re.py", line 132, in match
     return _compile(pattern, flags).match(string)
 RuntimeError: maximum recursion limit exceeded
 \end{verbatim}

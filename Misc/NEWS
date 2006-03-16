@@ -291,7 +291,14 @@ Core and builtins
 Extension Modules
 -----------------
 
-- Swapped re and sre, so help(re) provides full help.  importing sre
+- Everything under lib-old was removed.  This includes the following modules:
+    Para, addpack, cmp, cmpcache, codehack, dircmp, dump, find, fmt, grep,
+    lockfile, newdir, ni, packmail, poly, rand, statcache, tb, tzparse, 
+    util, whatsound, whrandom, zmod
+
+- The following modules were removed:  regsub, reconvert, regex, regex_syntax.
+
+- re and sre were swapped, so help(re) provides full help.  importing sre
   is deprecated.  The undocumented re.engine variable no longer exists.
 
 - Bug #1448490: Fixed a bug that ISO-2022 codecs could not handle
