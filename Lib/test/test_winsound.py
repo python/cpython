@@ -3,6 +3,9 @@
 import unittest
 from test import test_support
 import winsound, time
+import os
+import subprocess
+
 
 class BeepTest(unittest.TestCase):
 
@@ -44,6 +47,7 @@ class MessageBeepTest(unittest.TestCase):
     def test_question(self):
         winsound.MessageBeep(winsound.MB_ICONQUESTION)
 
+
 class PlaySoundTest(unittest.TestCase):
 
     def test_errors(self):
@@ -56,19 +60,54 @@ class PlaySoundTest(unittest.TestCase):
         )
 
     def test_alias_asterisk(self):
-        winsound.PlaySound('SystemAsterisk', winsound.SND_ALIAS)
+        if _have_soundcard():
+            winsound.PlaySound('SystemAsterisk', winsound.SND_ALIAS)
+        else:
+            self.assertRaises(
+                RuntimeError,
+                winsound.PlaySound,
+                'SystemAsterisk', winsound.SND_ALIAS
+            )
 
     def test_alias_exclamation(self):
-        winsound.PlaySound('SystemExclamation', winsound.SND_ALIAS)
+        if _have_soundcard():
+            winsound.PlaySound('SystemExclamation', winsound.SND_ALIAS)
+        else:
+            self.assertRaises(
+                RuntimeError,
+                winsound.PlaySound,
+                'SystemExclamation', winsound.SND_ALIAS
+            )
 
     def test_alias_exit(self):
-        winsound.PlaySound('SystemExit', winsound.SND_ALIAS)
+        if _have_soundcard():
+            winsound.PlaySound('SystemExit', winsound.SND_ALIAS)
+        else:
+            self.assertRaises(
+                RuntimeError,
+                winsound.PlaySound,
+                'SystemExit', winsound.SND_ALIAS
+            )
 
     def test_alias_hand(self):
-        winsound.PlaySound('SystemHand', winsound.SND_ALIAS)
+        if _have_soundcard():
+            winsound.PlaySound('SystemHand', winsound.SND_ALIAS)
+        else:
+            self.assertRaises(
+                RuntimeError,
+                winsound.PlaySound,
+                'SystemHand', winsound.SND_ALIAS
+            )
 
     def test_alias_question(self):
-        winsound.PlaySound('SystemQuestion', winsound.SND_ALIAS)
+        if _have_soundcard():
+            winsound.PlaySound('SystemQuestion', winsound.SND_ALIAS)
+        else:
+            self.assertRaises(
+                RuntimeError,
+                winsound.PlaySound,
+                'SystemQuestion', winsound.SND_ALIAS
+            )
 
     def test_alias_fallback(self):
         # This test can't be expected to work on all systems.  The MS
@@ -85,41 +124,83 @@ class PlaySoundTest(unittest.TestCase):
         return
 
     def test_alias_nofallback(self):
-        # Note that this is not the same as asserting RuntimeError
-        # will get raised:  you cannot convert this to
-        # self.assertRaises(...) form.  The attempt may or may not
-        # raise RuntimeError, but it shouldn't raise anything other
-        # than RuntimeError, and that's all we're trying to test here.
-        # The MS docs aren't clear about whether the SDK PlaySound()
-        # with SND_ALIAS and SND_NODEFAULT will return True or False when
-        # the alias is unknown.  On Tim's WinXP box today, it returns
-        # True (no exception is raised).  What we'd really like to test
-        # is that no sound is played, but that requires first wiring an
-        # eardrum class into unittest <wink>.
-        try:
-            winsound.PlaySound(
-                '!"$%&/(#+*',
-                winsound.SND_ALIAS | winsound.SND_NODEFAULT
+        if _have_soundcard():
+            # Note that this is not the same as asserting RuntimeError
+            # will get raised:  you cannot convert this to
+            # self.assertRaises(...) form.  The attempt may or may not
+            # raise RuntimeError, but it shouldn't raise anything other
+            # than RuntimeError, and that's all we're trying to test
+            # here.  The MS docs aren't clear about whether the SDK
+            # PlaySound() with SND_ALIAS and SND_NODEFAULT will return
+            # True or False when the alias is unknown.  On Tim's WinXP
+            # box today, it returns True (no exception is raised).  What
+            # we'd really like to test is that no sound is played, but
+            # that requires first wiring an eardrum class into unittest
+            # <wink>.
+            try:
+                winsound.PlaySound(
+                    '!"$%&/(#+*',
+                    winsound.SND_ALIAS | winsound.SND_NODEFAULT
+                )
+            except RuntimeError:
+                pass
+        else:
+            self.assertRaises(
+                RuntimeError,
+                winsound.PlaySound,
+                '!"$%&/(#+*', winsound.SND_ALIAS | winsound.SND_NODEFAULT
             )
-        except RuntimeError:
-            pass
 
     def test_stopasync(self):
-        winsound.PlaySound(
-            'SystemQuestion',
-            winsound.SND_ALIAS | winsound.SND_ASYNC | winsound.SND_LOOP
-        )
-        time.sleep(0.5)
-        try:
+        if _have_soundcard():
             winsound.PlaySound(
                 'SystemQuestion',
-                winsound.SND_ALIAS | winsound.SND_NOSTOP
+                winsound.SND_ALIAS | winsound.SND_ASYNC | winsound.SND_LOOP
             )
-        except RuntimeError:
-            pass
-        else: # the first sound might already be finished
-            pass
-        winsound.PlaySound(None, winsound.SND_PURGE)
+            time.sleep(0.5)
+            try:
+                winsound.PlaySound(
+                    'SystemQuestion',
+                    winsound.SND_ALIAS | winsound.SND_NOSTOP
+                )
+            except RuntimeError:
+                pass
+            else: # the first sound might already be finished
+                pass
+            winsound.PlaySound(None, winsound.SND_PURGE)
+        else:
+            self.assertRaises(
+                RuntimeError,
+                winsound.PlaySound,
+                None, winsound.SND_PURGE
+            )
+
+
+def _get_cscript_path():
+    """Return the full path to cscript.exe or None."""
+    for dir in os.environ.get("PATH", "").split(os.pathsep):
+        cscript_path = os.path.join(dir, "cscript.exe")
+        if os.path.exists(cscript_path):
+            return cscript_path
+
+__have_soundcard_cache = None
+def _have_soundcard():
+    """Return True iff this computer has a soundcard."""
+    global __have_soundcard_cache
+    if __have_soundcard_cache is None:
+        cscript_path = _get_cscript_path()
+        if cscript_path is None:
+            # Could not find cscript.exe to run our VBScript helper. Default
+            # to True: most computers these days *do* have a soundcard.
+            return True
+
+        check_script = os.path.join(os.path.dirname(__file__),
+                                    "check_soundcard.vbs")
+        p = subprocess.Popen([cscript_path, check_script],
+                             stdout=subprocess.PIPE)
+        __have_soundcard_cache = not p.wait()
+    return __have_soundcard_cache
+
 
 def test_main():
     test_support.run_unittest(BeepTest, MessageBeepTest, PlaySoundTest)
