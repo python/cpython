@@ -307,19 +307,18 @@ THUNK AllocFunctionCallback(PyObject *callable,
 
 	nArgs = PySequence_Size(converters);
 	p = (ffi_info *)PyMem_Malloc(sizeof(ffi_info) + sizeof(ffi_type) * (nArgs + 1));
-	if (p == NULL) {
-		PyErr_NoMemory();
-		return NULL;
-	}
+	if (p == NULL)
+		return (THUNK)PyErr_NoMemory();
 	p->pcl = MallocClosure();
 	if (p->pcl == NULL) {
-		PyMem_Free(p);
 		PyErr_NoMemory();
-		return NULL;
+		goto error;
 	}
 
 	for (i = 0; i < nArgs; ++i) {
 		PyObject *cnv = PySequence_GetItem(converters, i);
+		if (cnv == NULL)
+			goto error;
 		p->atypes[i] = GetType(cnv);
 		Py_DECREF(cnv);
 	}
@@ -330,10 +329,8 @@ THUNK AllocFunctionCallback(PyObject *callable,
 		p->restype = &ffi_type_void;
 	} else {
 		StgDictObject *dict = PyType_stgdict(restype);
-		if (dict == NULL) {
-			PyMem_Free(p);
-			return NULL;
-		}
+		if (dict == NULL)
+			goto error;
 		p->setfunc = dict->setfunc;
 		p->restype = &dict->ffi_type;
 	}
@@ -349,21 +346,25 @@ THUNK AllocFunctionCallback(PyObject *callable,
 	if (result != FFI_OK) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "ffi_prep_cif failed with %d", result);
-		PyMem_Free(p);
-		return NULL;
+		goto error;
 	}
 	result = ffi_prep_closure(p->pcl, &p->cif, closure_fcn, p);
 	if (result != FFI_OK) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "ffi_prep_closure failed with %d", result);
-		PyMem_Free(p);
-		return NULL;
+		goto error;
 	}
 
 	p->converters = converters;
 	p->callable = callable;
-
 	return (THUNK)p;
+
+  error:
+	if (p) {
+		FreeCallback((THUNK)p);
+		PyMem_Free(p);
+	}
+	return NULL;
 }
 
 /****************************************************************************
