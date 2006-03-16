@@ -51,6 +51,8 @@ static char copyright[] =
 #define SRE_MODULE "sre"
 #endif
 
+#define SRE_PY_MODULE "re"
+
 /* defining this one enables tracing */
 #undef VERBOSE
 
@@ -2455,7 +2457,7 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
         } else {
             /* not a literal; hand it over to the template compiler */
             filter = call(
-                SRE_MODULE, "_subx",
+                SRE_PY_MODULE, "_subx",
                 PyTuple_Pack(2, self, template)
                 );
             if (!filter)
@@ -2872,7 +2874,7 @@ match_expand(MatchObject* self, PyObject* args)
 
     /* delegate to Python code */
     return call(
-        SRE_MODULE, "_expand",
+        SRE_PY_MODULE, "_expand",
         PyTuple_Pack(3, self->pattern, self, template)
         );
 }

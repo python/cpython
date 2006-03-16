@@ -110,7 +110,7 @@ import sys
 import getopt
 import random
 import warnings
-import sre
+import re
 import cStringIO
 import traceback
 
@@ -525,7 +525,7 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
                     _path_created.clear()
                     warnings.filters[:] = fs
                     gc.collect()
-                    sre.purge()
+                    re.purge()
                     _strptime._regex_cache.clear()
                     urlparse.clear_cache()
                     urllib.urlcleanup()
