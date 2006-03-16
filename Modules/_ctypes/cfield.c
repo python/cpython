@@ -1317,6 +1317,7 @@ Z_set(void *ptr, PyObject *value, unsigned size)
 		if (-1 == PyUnicode_AsWideChar((PyUnicodeObject *)value,
 					       buffer, PyUnicode_GET_SIZE(value))) {
 			Py_DECREF(value);
+			Py_DECREF(keep);
 			return NULL;
 		}
 		Py_DECREF(value);
