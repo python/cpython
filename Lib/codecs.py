@@ -156,13 +156,13 @@ class Codec:
 
 class IncrementalEncoder(object):
     """
-    A IncrementalEncoder encodes an input in multiple steps. The input can be
+    An IncrementalEncoder encodes an input in multiple steps. The input can be
     passed piece by piece to the encode() method. The IncrementalEncoder remembers
     the state of the Encoding process between calls to encode().
     """
     def __init__(self, errors='strict'):
         """
-        Creates a IncrementalEncoder instance.
+        Creates an IncrementalEncoder instance.
 
         The IncrementalEncoder may use different error handling schemes by
         providing the errors keyword argument. See the module docstring
