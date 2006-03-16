@@ -1,4 +1,4 @@
-"""This file is only retained for backwards compatability.
+"""This file is only retained for backwards compatibility.
 It will be removed in the future.  sre was moved to re in version 2.5.
 """
 
