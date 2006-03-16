@@ -12,6 +12,18 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1123430: Python's small-object allocator now returns an arena to
+  the system ``free()`` when all memory within an arena becomes unused
+  again.  Prior to Python 2.5, arenas (256KB chunks of memory) were never
+  freed.  Some applications will see a drop in virtual memory size now,
+  especially long-running applications that, from time to time, temporarily
+  use a large number of small objects.  Note that when Python returns an
+  arena to the platform C's ``free()``, there's no guarantee that the
+  platform C will in turn return that memory to the operating system.  The
+  effect of the patch is to stop making that impossible, and in tests it
+  appears to be effective at least on Microsoft C and gcc-based systems.
+  Thanks to Evan Jones for hard work and patience.
+
 - Patch #1434038: property() now uses the getter's docstring if there is
   no "doc" argument given. This makes it possible to legitimately use
   property() as a decorator to produce a read-only property.
