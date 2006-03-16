@@ -479,11 +479,6 @@ fold_binops_on_constants(unsigned char *codestr, PyObject *consts)
 		case BINARY_MULTIPLY:
 			newconst = PyNumber_Multiply(v, w);
 			break;
-		case BINARY_DIVIDE:
-			/* Cannot fold this operation statically since
-                           the result can depend on the run-time presence
-                           of the -Qnew flag */
-			return 0;
 		case BINARY_TRUE_DIVIDE:
 			newconst = PyNumber_TrueDivide(v, w);
 			break;
@@ -1302,7 +1297,6 @@ opcode_stack_effect(int opcode, int oparg)
 
 		case BINARY_POWER:
 		case BINARY_MULTIPLY:
-		case BINARY_DIVIDE:
 		case BINARY_MODULO:
 		case BINARY_ADD:
 		case BINARY_SUBTRACT:
