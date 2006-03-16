@@ -13,12 +13,12 @@
 
 import os
 import sys
-import regex
+import re
 import string
 import getopt
 
-pat = '^\([a-zA-Z0-9 :]*\)!\(.*\)!\(.*\)!\([<>].*\)!\([0-9]+\)!\([0-9]+\)$'
-prog = regex.compile(pat)
+pat = '^([a-zA-Z0-9 :]*)!(.*)!(.*)!([<>].*)!([0-9]+)!([0-9]+)$'
+prog = re.compile(pat)
 
 def main():
     maxitems = 25

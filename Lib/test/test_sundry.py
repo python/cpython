@@ -68,7 +68,6 @@ import posixfile
 import profile
 import pstats
 import py_compile
-#import reconvert
 import repr
 try:
     import rlcompleter   # not available on Windows

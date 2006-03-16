@@ -699,30 +699,6 @@ readline.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
 	 pythonrun.h rangeobject.h sliceobject.h stringobject.h sysmodule.h \
 	 traceback.h tupleobject.h
 
-regexmodule.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
-	 pyconfig.h dictobject.h fileobject.h floatobject.h funcobject.h \
-	 import.h intobject.h intrcheck.h listobject.h longobject.h \
-	 methodobject.h modsupport.h moduleobject.h mymalloc.h myproto.h \
-	 object.h objimpl.h pydebug.h pyerrors.h pyfpe.h pystate.h python.h \
-	 pythonrun.h rangeobject.h regexpr.h sliceobject.h stringobject.h \
-	 sysmodule.h traceback.h tupleobject.h
-
-regexpr.obj: abstract.h ceval.h classobject.h cobject.h \
-	 complexobject.h pyconfig.h dictobject.h fileobject.h floatobject.h \
-	 funcobject.h import.h intobject.h intrcheck.h listobject.h \
-	 longobject.h methodobject.h modsupport.h moduleobject.h mymalloc.h \
-	 myproto.h object.h objimpl.h pydebug.h pyerrors.h pyfpe.h \
-	 pystate.h python.h pythonrun.h rangeobject.h regexpr.h \
-	 sliceobject.h stringobject.h sysmodule.h traceback.h tupleobject.h
-
-reopmodule.obj: abstract.h ceval.h classobject.h cobject.h complexobject.h \
-	 pyconfig.h dictobject.h fileobject.h floatobject.h funcobject.h \
-	 import.h intobject.h intrcheck.h listobject.h longobject.h \
-	 methodobject.h modsupport.h moduleobject.h mymalloc.h myproto.h \
-	 object.h objimpl.h pydebug.h pyerrors.h pyfpe.h pystate.h python.h \
-	 pythonrun.h rangeobject.h regexpr.h sliceobject.h stringobject.h \
-	 sysmodule.h traceback.h tupleobject.h
-
 resource.obj: abstract.h c:\mptn\include\sys\time.h ceval.h classobject.h \
 	 cobject.h complexobject.h pyconfig.h dictobject.h fileobject.h \
 	 floatobject.h funcobject.h import.h intobject.h intrcheck.h \

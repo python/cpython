@@ -6,7 +6,7 @@
 
 import sys
 import string
-import regex
+import re
 import getopt
 import time
 
@@ -35,9 +35,9 @@ def main():
     for rev in allrevs:
         formatrev(rev, prefix)
 
-parsedateprog = regex.compile(
-    '^date: \([0-9]+\)/\([0-9]+\)/\([0-9]+\) ' +
-    '\([0-9]+\):\([0-9]+\):\([0-9]+\);  author: \([^ ;]+\)')
+parsedateprog = re.compile(
+    '^date: ([0-9]+)/([0-9]+)/([0-9]+) ' +
+    '([0-9]+):([0-9]+):([0-9]+);  author: ([^ ;]+)')
 
 authormap = {
     'guido': 'Guido van Rossum  <guido@cnri.reston.va.us>',
@@ -70,7 +70,7 @@ def formatrev(rev, prefix):
         print
         print
 
-startprog = regex.compile("^Working file: \(.*\)$")
+startprog = re.compile("^Working file: (.*)$")
 
 def getnextfile(f):
     while 1:
