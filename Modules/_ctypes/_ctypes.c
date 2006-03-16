@@ -2840,9 +2840,14 @@ _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 
 		switch (flag & (PARAMFLAG_FIN | PARAMFLAG_FOUT | PARAMFLAG_FLCID)) {
 		case PARAMFLAG_FIN | PARAMFLAG_FLCID:
-			/* ['in', 'lcid'] parameter.  Always taken from defval */
-			assert(defval);
-			Py_INCREF(defval);
+			/* ['in', 'lcid'] parameter.  Always taken from defval,
+			 if given, else the integer 0. */
+			if (defval == NULL) {
+				defval = PyInt_FromLong(0);
+				if (defval == NULL)
+					goto error;
+			} else
+				Py_INCREF(defval);
 			PyTuple_SET_ITEM(callargs, i, defval);
 			break;
 		case (PARAMFLAG_FIN | PARAMFLAG_FOUT):
