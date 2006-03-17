@@ -626,7 +626,7 @@ timeouts on socket operations.
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{gettimeout}{}
-Returns the timeout in floating seconds associated with socket
+Return the timeout in floating seconds associated with socket
 operations, or \code{None} if no timeout is set.  This reflects
 the last call to \method{setblocking()} or \method{settimeout()}.
 \versionadded{2.3}
@@ -653,6 +653,21 @@ immediately will fail.
 Note that the \method{connect()} operation is subject to the timeout
 setting, and in general it is recommended to call
 \method{settimeout()} before calling \method{connect()}.
+
+\begin{methoddesc}[socket]{getfamily}{}
+Return the socket family, as given to the \class{socket} constructor.
+\versionadded{2.5}
+\end{methoddesc}
+
+\begin{methoddesc}[socket]{gettype}{}
+Return the socket type, as given to the \class{socket} constructor.
+\versionadded{2.5}
+\end{methoddesc}
+
+\begin{methoddesc}[socket]{getproto}{}
+Return the socket protocol, as given to the \class{socket} constructor.
+\versionadded{2.5}
+\end{methoddesc}
 
 \begin{methoddesc}[socket]{setsockopt}{level, optname, value}
 Set the value of the given socket option (see the \UNIX{} manual page
