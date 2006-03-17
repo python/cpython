@@ -615,6 +615,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
 		}
 		else {
 			result = PyTuple_New(slicelength);
+			if (!result) return NULL;
 
 			src = self->ob_item;
 			dest = ((PyTupleObject *)result)->ob_item;
