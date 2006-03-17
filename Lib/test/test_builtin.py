@@ -1106,7 +1106,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, oct, ())
 
     def write_testfile(self):
-        # NB the first 4 lines are also used to test input, below
         fp = open(TESTFN, 'w')
         try:
             fp.write('1+1\n')
@@ -1264,36 +1263,6 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertRaises(OverflowError, range, -sys.maxint, sys.maxint)
         self.assertRaises(OverflowError, range, 0, 2*sys.maxint)
-
-    def test_input(self):
-        self.write_testfile()
-        fp = open(TESTFN, 'r')
-        savestdin = sys.stdin
-        savestdout = sys.stdout # Eats the echo
-        try:
-            sys.stdin = fp
-            sys.stdout = BitBucket()
-            self.assertEqual(input(), '1+1')
-            self.assertEqual(input('testing\n'), '1+1')
-            self.assertEqual(input(), 'The quick brown fox jumps over the lazy dog.')
-            self.assertEqual(input('testing\n'), 'Dear John')
-            sys.stdin = cStringIO.StringIO("NULL\0")
-            self.assertRaises(TypeError, input, 42, 42)
-            whitespace = "    'whitespace'"
-            sys.stdin = cStringIO.StringIO(whitespace)
-            self.assertEqual(input(), whitespace)
-            sys.stdin = cStringIO.StringIO()
-            self.assertRaises(EOFError, input)
-
-            del sys.stdout
-            self.assertRaises(RuntimeError, input, 'prompt')
-            del sys.stdin
-            self.assertRaises(RuntimeError, input, 'prompt')
-        finally:
-            sys.stdin = savestdin
-            sys.stdout = savestdout
-            fp.close()
-            unlink(TESTFN)
 
     def test_reduce(self):
         self.assertEqual(reduce(lambda x, y: x+y, ['a', 'b', 'c'], ''), 'abc')
