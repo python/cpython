@@ -599,6 +599,8 @@ The \member{st_flags} member is also available, if the platform supports it.
 
 \item The old \module{regex} and \module{regsub} modules, which have been 
 deprecated ever since Python 2.0, have finally been deleted.  
+Other deleted modules: \module{statcache}, \module{tzparse},
+\module{whrandom}.
 
 \item The \file{lib-old} directory,
 which includes ancient modules such as \module{dircmp} and
@@ -743,23 +745,6 @@ This section lists previously described changes that may require
 changes to your code:
 
 \begin{itemize}
-
-\item Some old deprecated modules (\module{statcache}, \module{tzparse},
-      \module{whrandom})  have been moved to \file{Lib/lib-old}.
-You can get access to these modules  again by adding the directory 
-to your \code{sys.path}:
-
-\begin{verbatim}
-import os
-from distutils import sysconfig
-
-lib_dir = sysconfig.get_python_lib(standard_lib=True)
-old_dir = os.path.join(lib_dir, 'lib-old')
-sys.path.append(old_dir)
-\end{verbatim}
-
-Doing so is discouraged, however; it's better to update any code that
-still uses these modules.
 
 % the pickle module no longer uses the deprecated bin parameter.
 
