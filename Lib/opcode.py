@@ -88,7 +88,7 @@ def_op('DELETE_SLICE+3', 53)
 def_op('INPLACE_ADD', 55)
 def_op('INPLACE_SUBTRACT', 56)
 def_op('INPLACE_MULTIPLY', 57)
-def_op('INPLACE_DIVIDE', 58)
+
 def_op('INPLACE_MODULO', 59)
 def_op('STORE_SUBSCR', 60)
 def_op('DELETE_SUBSCR', 61)

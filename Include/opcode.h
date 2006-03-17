@@ -48,7 +48,7 @@ extern "C" {
 #define INPLACE_ADD	55
 #define INPLACE_SUBTRACT	56
 #define INPLACE_MULTIPLY	57
-#define INPLACE_DIVIDE	58
+
 #define INPLACE_MODULO	59
 #define STORE_SUBSCR	60
 #define DELETE_SUBSCR	61

@@ -1338,7 +1338,6 @@ opcode_stack_effect(int opcode, int oparg)
 		case INPLACE_ADD:
 		case INPLACE_SUBTRACT:
 		case INPLACE_MULTIPLY:
-		case INPLACE_DIVIDE:
 		case INPLACE_MODULO:
 			return -1;
 		case STORE_SUBSCR:
