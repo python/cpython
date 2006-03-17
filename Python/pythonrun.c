@@ -71,10 +71,6 @@ int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c: deprecated */
 int Py_FrozenFlag; /* Needed by getpath.c */
 int Py_UnicodeFlag = 0; /* Needed by compile.c */
 int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
-/* _XXX Py_QnewFlag should go away in 2.3.  It's true iff -Qnew is passed,
-  on the command line, and is used in 2.2 by ceval.c to make all "/" divisions
-  true divisions (which they will be in 2.3). */
-int _Py_QnewFlag = 0;
 
 /* Reference to 'warnings' module, to avoid importing it
    on the fly when the import lock may be held.  See 683658/771097
