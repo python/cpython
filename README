@@ -504,9 +504,9 @@ Cray T3E: Mark Hadfield (m.hadfield@niwa.co.nz) writes:
 
 	     _codecs, _locale, _socket, _symtable, _testcapi, _weakref
 	     array, binascii, cmath, cPickle, crypt, cStringIO, dbm
-	     errno, fcntl, grp, math, md5, operator, parser, pcre, pwd
-	     regex, rotor, select, struct, strop, syslog, termios
-	     time, timing, xreadlines
+	     errno, fcntl, grp, math, md5, operator, parser, pwd
+	     rotor, select, struct, strop, syslog, termios,
+	     time, timing
 
 	4) Once the python executable and library have been built, make
 	   will execute setup.py, which will attempt to build remaining

@@ -1675,12 +1675,6 @@ PyDoc_STRVAR(readlines_doc,
 "The optional size argument, if given, is an approximate bound on the\n"
 "total number of bytes in the lines returned.");
 
-PyDoc_STRVAR(xreadlines_doc,
-"xreadlines() -> returns self.\n"
-"\n"
-"For backward compatibility. File objects now include the performance\n"
-"optimizations previously implemented in the xreadlines module.");
-
 PyDoc_STRVAR(writelines_doc,
 "writelines(sequence_of_strings) -> None.  Write the strings to the file.\n"
 "\n"
@@ -1719,7 +1713,6 @@ static PyMethodDef file_methods[] = {
 	{"tell",      (PyCFunction)file_tell,     METH_NOARGS,  tell_doc},
 	{"readinto",  (PyCFunction)file_readinto, METH_VARARGS, readinto_doc},
 	{"readlines", (PyCFunction)file_readlines,METH_VARARGS, readlines_doc},
-	{"xreadlines",(PyCFunction)file_self,     METH_NOARGS, xreadlines_doc},
 	{"writelines",(PyCFunction)file_writelines, METH_O,    writelines_doc},
 	{"flush",     (PyCFunction)file_flush,    METH_NOARGS,  flush_doc},
 	{"close",     (PyCFunction)file_close,    METH_NOARGS,  close_doc},

@@ -79,15 +79,6 @@ Return a list of lines read. The optional \var{size} argument, if given,
 is an approximate bound on the total number of bytes in the lines returned.
 \end{methoddesc}
 
-\begin{methoddesc}[BZ2File]{xreadlines}{}
-For backward compatibility. \class{BZ2File} objects now include the
-performance optimizations previously implemented in the
-\module{xreadlines} module.
-\deprecated{2.3}{This exists only for compatibility with the method by
-                 this name on \class{file} objects, which is
-                 deprecated.  Use \code{for line in file} instead.}
-\end{methoddesc}
-
 \begin{methoddesc}[BZ2File]{seek}{offset\optional{, whence}}
 Move to new file position. Argument \var{offset} is a byte count. Optional
 argument \var{whence} defaults to \code{0} (offset from start of file,

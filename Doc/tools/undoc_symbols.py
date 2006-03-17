@@ -50,7 +50,7 @@ import os, glob, re, sys
 
 def findnames(file, prefixes=()):
     names = {}
-    for line in file.xreadlines():
+    for line in file:
         if line[0] == '!':
             continue
         fields = line.split()

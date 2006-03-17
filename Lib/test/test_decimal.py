@@ -132,7 +132,7 @@ class DecimalTest(unittest.TestCase):
         if skip_expected:
             raise TestSkipped
             return
-        for line in open(file).xreadlines():
+        for line in open(file):
             line = line.replace('\r\n', '').replace('\n', '')
             #print line
             try:

@@ -110,14 +110,6 @@ class BZ2FileTest(BaseTest):
         self.assertEqual(list(iter(bz2f)), sio.readlines())
         bz2f.close()
 
-    def testXReadLines(self):
-        # "Test BZ2File.xreadlines()"
-        self.createTempFile()
-        bz2f = BZ2File(self.filename)
-        sio = StringIO(self.TEXT)
-        self.assertEqual(list(bz2f.xreadlines()), sio.readlines())
-        bz2f.close()
-
     def testUniversalNewlinesLF(self):
         # "Test BZ2File.read() with universal newlines (\\n)"
         self.createTempFile()
@@ -256,7 +248,7 @@ class BZ2FileTest(BaseTest):
         bz2f.close()
         self.assertEqual(lines, ['Test'])
         bz2f = BZ2File(self.filename)
-        xlines = list(bz2f.xreadlines())
+        xlines = list(bz2f.readlines())
         bz2f.close()
         self.assertEqual(lines, ['Test'])
 

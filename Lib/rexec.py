@@ -29,7 +29,7 @@ __all__ = ["RExec"]
 class FileBase:
 
     ok_file_methods = ('fileno', 'flush', 'isatty', 'read', 'readline',
-            'readlines', 'seek', 'tell', 'write', 'writelines', 'xreadlines',
+            'readlines', 'seek', 'tell', 'write', 'writelines', 
             '__iter__')
 
 
