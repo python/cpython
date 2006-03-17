@@ -1073,42 +1073,89 @@ PyDoc_STRVAR(hex_doc,
 Return the hexadecimal representation of an integer or long integer.");
 
 
-static PyObject *builtin_raw_input(PyObject *, PyObject *);
-
 static PyObject *
 builtin_input(PyObject *self, PyObject *args)
 {
-	PyObject *line;
-	char *str;
-	PyObject *res;
-	PyObject *globals, *locals;
-	PyCompilerFlags cf;
+	PyObject *v = NULL;
+	PyObject *fin = PySys_GetObject("stdin");
+	PyObject *fout = PySys_GetObject("stdout");
 
-	line = builtin_raw_input(self, args);
-	if (line == NULL)
-		return line;
-	if (!PyArg_Parse(line, "s;embedded '\\0' in input line", &str))
+	if (!PyArg_UnpackTuple(args, "input", 0, 1, &v))
 		return NULL;
-	while (*str == ' ' || *str == '\t')
-			str++;
-	globals = PyEval_GetGlobals();
-	locals = PyEval_GetLocals();
-	if (PyDict_GetItemString(globals, "__builtins__") == NULL) {
-		if (PyDict_SetItemString(globals, "__builtins__",
-					 PyEval_GetBuiltins()) != 0)
+
+	if (fin == NULL) {
+		PyErr_SetString(PyExc_RuntimeError, "input: lost sys.stdin");
+		return NULL;
+	}
+	if (fout == NULL) {
+		PyErr_SetString(PyExc_RuntimeError, "input: lost sys.stdout");
+		return NULL;
+	}
+	if (PyFile_SoftSpace(fout, 0)) {
+		if (PyFile_WriteString(" ", fout) != 0)
 			return NULL;
 	}
-	cf.cf_flags = 0;
-	PyEval_MergeCompilerFlags(&cf);
-	res = PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
-	Py_DECREF(line);
-	return res;
+	if (PyFile_Check(fin) && PyFile_Check(fout)
+            && isatty(fileno(PyFile_AsFile(fin)))
+            && isatty(fileno(PyFile_AsFile(fout)))) {
+		PyObject *po;
+		char *prompt;
+		char *s;
+		PyObject *result;
+		if (v != NULL) {
+			po = PyObject_Str(v);
+			if (po == NULL)
+				return NULL;
+			prompt = PyString_AsString(po);
+			if (prompt == NULL)
+				return NULL;
+		}
+		else {
+			po = NULL;
+			prompt = "";
+		}
+		s = PyOS_Readline(PyFile_AsFile(fin), PyFile_AsFile(fout),
+                                  prompt);
+		Py_XDECREF(po);
+		if (s == NULL) {
+			if (!PyErr_Occurred())
+				PyErr_SetNone(PyExc_KeyboardInterrupt);
+			return NULL;
+		}
+		if (*s == '\0') {
+			PyErr_SetNone(PyExc_EOFError);
+			result = NULL;
+		}
+		else { /* strip trailing '\n' */
+			size_t len = strlen(s);
+			if (len > INT_MAX) {
+				PyErr_SetString(PyExc_OverflowError,
+						"[raw_]input: input too long");
+				result = NULL;
+			}
+			else {
+				result = PyString_FromStringAndSize(s,
+								(int)(len-1));
+			}
+		}
+		PyMem_FREE(s);
+		return result;
+	}
+	if (v != NULL) {
+		if (PyFile_WriteObject(v, fout, Py_PRINT_RAW) != 0)
+			return NULL;
+	}
+	return PyFile_GetLine(fin, -1);
 }
 
 PyDoc_STRVAR(input_doc,
-"input([prompt]) -> value\n\
+"input([prompt]) -> string\n\
 \n\
-Equivalent to eval(raw_input(prompt)).");
+Read a string from standard input.  The trailing newline is stripped.\n\
+If the user hits EOF (Unix: Ctl-D, Windows: Ctl-Z+Return), raise EOFError.\n\
+On Unix, GNU readline is used if enabled.  The prompt string, if given,\n\
+is printed without a trailing newline before reading.");
+
 
 
 static PyObject *
@@ -1687,90 +1734,6 @@ These are exactly the valid indices for a list of 4 elements.");
 
 
 static PyObject *
-builtin_raw_input(PyObject *self, PyObject *args)
-{
-	PyObject *v = NULL;
-	PyObject *fin = PySys_GetObject("stdin");
-	PyObject *fout = PySys_GetObject("stdout");
-
-	if (!PyArg_UnpackTuple(args, "[raw_]input", 0, 1, &v))
-		return NULL;
-
-	if (fin == NULL) {
-		PyErr_SetString(PyExc_RuntimeError, "[raw_]input: lost sys.stdin");
-		return NULL;
-	}
-	if (fout == NULL) {
-		PyErr_SetString(PyExc_RuntimeError, "[raw_]input: lost sys.stdout");
-		return NULL;
-	}
-	if (PyFile_SoftSpace(fout, 0)) {
-		if (PyFile_WriteString(" ", fout) != 0)
-			return NULL;
-	}
-	if (PyFile_Check(fin) && PyFile_Check(fout)
-            && isatty(fileno(PyFile_AsFile(fin)))
-            && isatty(fileno(PyFile_AsFile(fout)))) {
-		PyObject *po;
-		char *prompt;
-		char *s;
-		PyObject *result;
-		if (v != NULL) {
-			po = PyObject_Str(v);
-			if (po == NULL)
-				return NULL;
-			prompt = PyString_AsString(po);
-			if (prompt == NULL)
-				return NULL;
-		}
-		else {
-			po = NULL;
-			prompt = "";
-		}
-		s = PyOS_Readline(PyFile_AsFile(fin), PyFile_AsFile(fout),
-                                  prompt);
-		Py_XDECREF(po);
-		if (s == NULL) {
-			if (!PyErr_Occurred())
-				PyErr_SetNone(PyExc_KeyboardInterrupt);
-			return NULL;
-		}
-		if (*s == '\0') {
-			PyErr_SetNone(PyExc_EOFError);
-			result = NULL;
-		}
-		else { /* strip trailing '\n' */
-			size_t len = strlen(s);
-			if (len > INT_MAX) {
-				PyErr_SetString(PyExc_OverflowError,
-						"[raw_]input: input too long");
-				result = NULL;
-			}
-			else {
-				result = PyString_FromStringAndSize(s,
-								(int)(len-1));
-			}
-		}
-		PyMem_FREE(s);
-		return result;
-	}
-	if (v != NULL) {
-		if (PyFile_WriteObject(v, fout, Py_PRINT_RAW) != 0)
-			return NULL;
-	}
-	return PyFile_GetLine(fin, -1);
-}
-
-PyDoc_STRVAR(raw_input_doc,
-"raw_input([prompt]) -> string\n\
-\n\
-Read a string from standard input.  The trailing newline is stripped.\n\
-If the user hits EOF (Unix: Ctl-D, Windows: Ctl-Z+Return), raise EOFError.\n\
-On Unix, GNU readline is used if enabled.  The prompt string, if given,\n\
-is printed without a trailing newline before reading.");
-
-
-static PyObject *
 builtin_reduce(PyObject *self, PyObject *args)
 {
 	PyObject *seq, *func, *result = NULL, *it;
@@ -2244,7 +2207,6 @@ static PyMethodDef builtin_methods[] = {
  	{"ord",		builtin_ord,        METH_O, ord_doc},
  	{"pow",		builtin_pow,        METH_VARARGS, pow_doc},
  	{"range",	builtin_range,      METH_VARARGS, range_doc},
- 	{"raw_input",	builtin_raw_input,  METH_VARARGS, raw_input_doc},
  	{"reduce",	builtin_reduce,     METH_VARARGS, reduce_doc},
  	{"reload",	builtin_reload,     METH_O, reload_doc},
  	{"repr",	builtin_repr,       METH_O, repr_doc},
