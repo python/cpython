@@ -55,13 +55,14 @@ INSTALL_DIR="/tmp/python-test/local"
 RSYNC_OPTS="-aC -e ssh"
 
 REFLOG="build/reflog.txt.out"
-# These tests are not stable and sometimes report leaks; however,
-# test_generators really leaks.  Since test_generators probably won't
-# be fixed real soon, disable warning about it for now.
+# These tests are not stable and often falsely report leaks.
 # The entire leak report will be mailed if any test not in this list leaks.
+# Note: test_ctypes and test_generators really leak, but are disabled
+# so we don't send spam.  Any test which really leaks should only 
+# be listed here if there are also test cases under Lib/test/leakers.
 LEAKY_TESTS="test_(capi|cfgparser|charmapcodec|cmd_line|compiler|ctypes|filecmp|generators|quopri|socket|threaded_import|threadedtempfile|threading|threading_local|urllib2)"
 
-# Change this flag to "yes" for old releases to just update/build the docs.
+# Change this flag to "yes" for old releases to only update/build the docs.
 BUILD_DISABLED="no"
 
 ## utility functions

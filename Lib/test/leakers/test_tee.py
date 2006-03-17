@@ -1,6 +1,7 @@
 
 # Test case taken from test_itertools
 # See http://mail.python.org/pipermail/python-dev/2005-November/058339.html
+# When this is fixed remember to remove from LEAKY_TESTS in Misc/build.sh.
 
 from itertools import tee
 
