@@ -1317,16 +1317,20 @@ ast_for_slice(struct compiling *c, const node *n)
 
     ch = CHILD(n, NCH(n) - 1);
     if (TYPE(ch) == sliceop) {
-	if (NCH(ch) == 1)
-            /* XXX: If only 1 child, then should just be a colon.  Should we
-               just skip assigning and just get to the return? */
-	    ch = CHILD(ch, 0);
-	else
-	    ch = CHILD(ch, 1);
-	if (TYPE(ch) == test) {
-	    step = ast_for_expr(c, ch);
+        if (NCH(ch) == 1) {
+            /* No expression, so step is None */
+            ch = CHILD(ch, 0);
+            step = Name(new_identifier("None", c->c_arena), Load,
+                        LINENO(ch), ch->n_col_offset, c->c_arena);
             if (!step)
                 return NULL;
+        } else {
+            ch = CHILD(ch, 1);
+            if (TYPE(ch) == test) {
+                step = ast_for_expr(c, ch);
+                if (!step)
+                    return NULL;
+            }
         }
     }
 
