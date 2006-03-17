@@ -42,15 +42,15 @@ document these.
 \begin{description}
 \item[\module{ntpath}]
 --- Implementation of \module{os.path} on Win32, Win64, WinCE, and
-OS/2 platforms.
+    OS/2 platforms.
 
 \item[\module{posixpath}]
 --- Implementation of \module{os.path} on \POSIX.
 
 \item[\module{bsddb185}]
 --- Backwards compatibility module for systems which still use the Berkeley
-DB 1.85 module.  It is normally only available on certain BSD Unix-based
-systems.  It should never be used directly.
+    DB 1.85 module.  It is normally only available on certain BSD Unix-based
+    systems.  It should never be used directly.
 \end{description}
 
 
@@ -62,14 +62,14 @@ systems.  It should never be used directly.
 
 \item[\module{linuxaudiodev}]
 --- Play audio data on the Linux audio device.  Replaced in Python 2.3
-by the \module{ossaudiodev} module.
+    by the \module{ossaudiodev} module.
 
 \item[\module{sunaudio}]
 --- Interpret Sun audio headers (may become obsolete or a tool/demo).
 
 \item[\module{toaiff}]
 --- Convert "arbitrary" sound files to AIFF files; should probably
-become a tool or demo.  Requires the external program \program{sox}.
+    become a tool or demo.  Requires the external program \program{sox}.
 \end{description}
 
 
@@ -78,12 +78,13 @@ become a tool or demo.  Requires the external program \program{sox}.
 These modules are not normally available for import; additional work
 must be done to make them available.
 
-Those which are written in Python will be installed into the directory 
-\file{lib-old/} installed as part of the standard library.  To use
-these, the directory must be added to \code{sys.path}, possibly using
-\envvar{PYTHONPATH}.
+%%% lib-old is empty as of Python 2.5
+% Those which are written in Python will be installed into the directory 
+% \file{lib-old/} installed as part of the standard library.  To use
+% these, the directory must be added to \code{sys.path}, possibly using
+% \envvar{PYTHONPATH}.
 
-Obsolete extension modules written in C are not built by default.
+These extension modules written in C are not built by default.
 Under \UNIX, these must be enabled by uncommenting the appropriate
 lines in \file{Modules/Setup} in the build tree and either rebuilding
 Python if the modules are statically linked, or building and
@@ -92,109 +93,10 @@ installing the shared object if using dynamically-loaded extensions.
 % XXX need Windows instructions!
 
 \begin{description}
-\item[\module{addpack}]
---- Alternate approach to packages.  Use the built-in package support
-instead.
-
-\item[\module{cmp}]
---- File comparison function.  Use the newer \refmodule{filecmp} instead.
-
-\item[\module{cmpcache}]
---- Caching version of the obsolete \module{cmp} module.  Use the
-newer \refmodule{filecmp} instead.
-
-\item[\module{codehack}]
---- Extract function name or line number from a function
-code object (these are now accessible as attributes:
-\member{co.co_name}, \member{func.func_name},
-\member{co.co_firstlineno}).
-
-\item[\module{dircmp}]
---- Class to build directory diff tools on (may become a demo or tool).
-\deprecated{2.0}{The \refmodule{filecmp} module replaces
-\module{dircmp}.}
-
-\item[\module{dump}]
---- Print python code that reconstructs a variable.
-
-\item[\module{fmt}]
---- Text formatting abstractions (too slow).
-
-\item[\module{lockfile}]
---- Wrapper around FCNTL file locking (use
-\function{fcntl.lockf()}/\function{flock()} instead; see \refmodule{fcntl}).
-
-\item[\module{newdir}]
---- New \function{dir()} function (the standard \function{dir()} is
-now just as good).
-
-\item[\module{Para}]
---- Helper for \module{fmt}.
-
-\item[\module{poly}]
---- Polynomials.
-
-\item[\module{rand}]
---- Old interface to the random number generator.
-
-\item[\module{statcache}]
---- Caches the results of os.stat().  Using the cache can be fragile
-and error-prone, just use \code{os.stat()} directly.
-
-\item[\module{tb}]
---- Print tracebacks, with a dump of local variables (use
-\function{pdb.pm()} or \refmodule{traceback} instead).
-
 \item[\module{timing}]
---- Measure time intervals to high resolution (use
-\function{time.clock()} instead).  (This is an extension module.)
-
-\item[\module{tzparse}]
---- Parse a timezone specification (unfinished; may disappear in the
-future, and does not work when the \envvar{TZ} environment variable is
-not set).
-
-\item[\module{util}]
---- Useful functions that don't fit elsewhere.
-
-\item[\module{whatsound}]
---- Recognize sound files; use \refmodule{sndhdr} instead.
-
-\item[\module{whrandom}]
---- Old random number generator.  Use \module{random} instead.
-
-\item[\module{zmod}]
---- Compute properties of mathematical ``fields.''
+--- Measure time intervals to high resolution (use \function{time.clock()}
+    instead).
 \end{description}
-
-
-The following modules are obsolete, but are likely to re-surface as
-tools or scripts:
-
-\begin{description}
-\item[\module{find}]
---- Find files matching pattern in directory tree.
-
-\item[\module{grep}]
---- \program{grep} implementation in Python.
-
-\item[\module{packmail}]
---- Create a self-unpacking \UNIX{} shell archive.
-\end{description}
-
-
-The following modules were documented in previous versions of this
-manual, but are now considered obsolete.  The source for the
-documentation is still available as part of the documentation source
-archive.
-
-\begin{description}
-\item[\module{ni}]
---- Import modules in ``packages.''  Basic package support is now
-built in.  The built-in support is very similar to what is provided in
-this module.
-\end{description}
-
 
 \section{SGI-specific Extension modules}
 
@@ -207,5 +109,5 @@ current version of reality.
 
 \item[\module{sv}]
 --- Interface to the ``simple video'' board on SGI Indigo
-(obsolete hardware).
+    (obsolete hardware).
 \end{description}
