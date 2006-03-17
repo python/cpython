@@ -79,7 +79,7 @@ static PyObject *canon(char *path)
 }
 
 static PyObject *riscos_getcwd(PyObject *self,PyObject *args)
-{ if(!PyArg_NoArgs(args)) return NULL;
+{ 
   return canon("@");
 }
 
@@ -354,7 +354,7 @@ static PyMethodDef riscos_methods[] = {
 	{"system",	riscos_system},
 	{"rmdir",	riscos_remove},
 	{"chdir",	riscos_chdir},
-	{"getcwd",	riscos_getcwd},
+	{"getcwd",	riscos_getcwd, METH_NOARGS},
 	{"expand",      riscos_expand},
 	{"mkdir",	riscos_mkdir,1},
 	{"listdir",	riscos_listdir},
