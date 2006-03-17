@@ -551,23 +551,6 @@ class C:
   note: this is the address of the object.)
 \end{funcdesc}
 
-\begin{funcdesc}{input}{\optional{prompt}}
-  Equivalent to \code{eval(raw_input(\var{prompt}))}.
-  \warning{This function is not safe from user errors!  It
-  expects a valid Python expression as input; if the input is not
-  syntactically valid, a \exception{SyntaxError} will be raised.
-  Other exceptions may be raised if there is an error during
-  evaluation.  (On the other hand, sometimes this is exactly what you
-  need when writing a quick script for expert use.)}
-
-  If the \refmodule{readline} module was loaded, then
-  \function{input()} will use it to provide elaborate line editing and
-  history features.
-
-  Consider using the \function{raw_input()} function for general input
-  from users.
-\end{funcdesc}
-
 \begin{funcdesc}{int}{\optional{x\optional{, radix}}}
   Convert a string or number to a plain integer.  If the argument is a
   string, it must contain a possibly signed decimal number
@@ -809,24 +792,6 @@ class C(object):
 >>> range(1, 0)
 []
 \end{verbatim}
-\end{funcdesc}
-
-\begin{funcdesc}{raw_input}{\optional{prompt}}
-  If the \var{prompt} argument is present, it is written to standard output
-  without a trailing newline.  The function then reads a line from input,
-  converts it to a string (stripping a trailing newline), and returns that.
-  When \EOF{} is read, \exception{EOFError} is raised. Example:
-
-\begin{verbatim}
->>> s = raw_input('--> ')
---> Monty Python's Flying Circus
->>> s
-"Monty Python's Flying Circus"
-\end{verbatim}
-
-  If the \refmodule{readline} module was loaded, then
-  \function{raw_input()} will use it to provide elaborate
-  line editing and history features.
 \end{funcdesc}
 
 \begin{funcdesc}{reduce}{function, sequence\optional{, initializer}}

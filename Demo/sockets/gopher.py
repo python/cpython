@@ -4,7 +4,6 @@
 #
 # Usage: gopher [ [selector] host [port] ]
 
-import string
 import sys
 import os
 import socket
@@ -42,7 +41,7 @@ def open_socket(host, port):
     if not port:
         port = DEF_PORT
     elif type(port) == type(''):
-        port = string.atoi(port)
+        port = int(port)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, port))
     return s
@@ -73,7 +72,7 @@ def get_menu(selector, host, port):
             print '(Empty line from server)'
             continue
         typechar = line[0]
-        parts = string.splitfields(line[1:], TAB)
+        parts = line[1:].split(TAB)
         if len(parts) < 4:
             print '(Bad line from server: %r)' % (line,)
             continue
@@ -160,7 +159,7 @@ def browse_menu(selector, host, port):
         for i in range(len(list)):
             item = list[i]
             typechar, description = item[0], item[1]
-            print string.rjust(repr(i+1), 3) + ':', description,
+            print repr(i+1).rjust(3) + ':', description,
             if typename.has_key(typechar):
                 print typename[typechar]
             else:
@@ -175,8 +174,8 @@ def browse_menu(selector, host, port):
             if not str:
                 return
             try:
-                choice = string.atoi(str)
-            except string.atoi_error:
+                choice = int(str)
+            except ValueError:
                 print 'Choice must be a number; try again:'
                 continue
             if not 0 < choice <= len(list):
@@ -218,6 +217,11 @@ def browse_textfile(selector, host, port):
         print 'IOError:', msg
     x.close()
 
+def raw_input(prompt):
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
+
 # Browse a search index
 def browse_search(selector, host, port):
     while 1:
@@ -230,7 +234,7 @@ def browse_search(selector, host, port):
         except EOFError:
             print
             break
-        query = string.strip(query)
+        query = query.strip()
         if not query:
             break
         if '\t' in query:
@@ -300,11 +304,11 @@ def open_savefile():
     except EOFError:
         print
         return None
-    savefile = string.strip(savefile)
+    savefile = savefile.strip()
     if not savefile:
         return None
     if savefile[0] == '|':
-        cmd = string.strip(savefile[1:])
+        cmd = savefile[1:].strip()
         try:
             p = os.popen(cmd, 'w')
         except IOError, msg:
@@ -331,10 +335,10 @@ def test():
         browser(sys.argv[1], sys.argv[2], sys.argv[3])
     elif sys.argv[2:]:
         try:
-            port = string.atoi(sys.argv[2])
+            port = int(sys.argv[2])
             selector = ''
             host = sys.argv[1]
-        except string.atoi_error:
+        except ValueError:
             selector = sys.argv[1]
             host = sys.argv[2]
             port = ''

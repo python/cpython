@@ -167,7 +167,7 @@ Remove any unhandled source text from the input buffer.
 \begin{methoddesc}{raw_input}{\optional{prompt}}
 Write a prompt and read a line.  The returned line does not include
 the trailing newline.  When the user enters the \EOF{} key sequence,
-\exception{EOFError} is raised.  The base implementation uses the
-built-in function \function{raw_input()}; a subclass may replace this
+\exception{EOFError} is raised.  The base implementation reads from
+\code{sys.stdin}; a subclass may replace this
 with a different implementation.
 \end{methoddesc}

@@ -1505,6 +1505,11 @@ def writedocs(dir, pkgpath='', done=None):
                     done[modname] = 1
                     writedoc(modname)
 
+def raw_input(prompt):
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
+
 class Helper:
     keywords = {
         'and': 'BOOLEAN',

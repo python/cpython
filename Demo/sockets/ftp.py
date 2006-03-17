@@ -130,6 +130,11 @@ def getdata(r):
         sys.stdout.write(data)
     print '(end of data connection)'
 
+def raw_input(prompt):
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
+
 # Get a command from the user.
 #
 def getcommand():
@@ -143,4 +148,5 @@ def getcommand():
 
 # Call the main program.
 #
-main()
+if __name__ == '__main__':
+    main()

@@ -28,12 +28,6 @@ application (or the user) to enable this feature, I consider this an
 acceptable risk.  More complicated expressions (e.g. function calls or
 indexing operations) are *not* evaluated.
 
-- GNU readline is also used by the built-in functions input() and
-raw_input(), and thus these also benefit/suffer from the completer
-features.  Clearly an interactive application can benefit by
-specifying its own completer function and using raw_input() for all
-its input.
-
 - When the original stdin is not a tty device, GNU readline is never
 used, and this module (and the readline module) are silently inactive.
 

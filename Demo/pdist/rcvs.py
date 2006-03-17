@@ -35,7 +35,6 @@
 from cvslib import CVS, File
 import md5
 import os
-import string
 import sys
 from cmdfw import CommandFrameWork
 
@@ -269,13 +268,13 @@ class RCVS(CVS):
 
     def mailinfo(self, files, message = ""):
         towhom = "sjoerd@cwi.nl, jack@cwi.nl" # XXX
-        mailtext = MAILFORM % (towhom, string.join(files),
-                                string.join(files), message)
+        mailtext = MAILFORM % (towhom, ' '.join(files),
+                                ' '.join(files), message)
         print '-'*70
         print mailtext
         print '-'*70
         ok = raw_input("OK to mail to %s? " % towhom)
-        if string.lower(string.strip(ok)) in ('y', 'ye', 'yes'):
+        if ok.lower().strip() in ('y', 'ye', 'yes'):
             p = os.popen(SENDMAIL, "w")
             p.write(mailtext)
             sts = p.close()

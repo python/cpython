@@ -511,11 +511,8 @@ else:
 \dataline{stderr}
   File objects corresponding to the interpreter's standard input,
   output and error streams.  \code{stdin} is used for all interpreter
-  input except for scripts but including calls to
-  \function{input()}\bifuncindex{input} and
-  \function{raw_input()}\bifuncindex{raw_input}.  \code{stdout} is
-  used for the output of \keyword{print} and expression statements and
-  for the prompts of \function{input()} and \function{raw_input()}.
+  input except for scripts.  \code{stdout} is
+  used for the output of \keyword{print} and expression statements.
   The interpreter's own prompts and (almost all of) its error messages
   go to \code{stderr}.  \code{stdout} and \code{stderr} needn't be
   built-in file objects: any object is acceptable as long as it has a

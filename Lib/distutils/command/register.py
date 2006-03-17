@@ -13,6 +13,11 @@ import StringIO, ConfigParser
 from distutils.core import Command
 from distutils.errors import *
 
+def raw_input(prompt):
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
+
 class register(Command):
 
     description = ("register the distribution with the Python package index")

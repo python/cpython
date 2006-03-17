@@ -40,17 +40,19 @@ The data members `self.doc_header', `self.misc_header', and
 `self.undoc_header' set the headers used for the help function's
 listings of documented functions, miscellaneous topics, and undocumented
 functions respectively.
-
-These interpreters use raw_input; thus, if the readline module is loaded,
-they automatically support Emacs-like command history and editing features.
 """
 
-import string
+import string, sys
 
 __all__ = ["Cmd"]
 
 PROMPT = '(Cmd) '
 IDENTCHARS = string.ascii_letters + string.digits + '_'
+
+def raw_input(prompt):
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
 
 class Cmd:
     """A simple framework for writing line-oriented command interpreters.

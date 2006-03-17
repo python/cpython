@@ -2,6 +2,12 @@
 
 # This Python program sorts and reformats the table of keywords in ref2.tex
 
+def raw_input(prompt):
+    import sys
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
+
 l = []
 try:
     while 1:

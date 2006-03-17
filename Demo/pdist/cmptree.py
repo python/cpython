@@ -6,6 +6,11 @@ import FSProxy
 import time
 import os
 
+def raw_input(prompt):
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
+
 def main():
     pwd = os.getcwd()
     s = raw_input("chdir [%s] " % pwd)

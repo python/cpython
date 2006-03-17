@@ -4,4 +4,6 @@ webchecker.MAXPAGE = 50000
 webchecker.verbose = 2
 sys.argv.append('-x')
 webchecker.main()
-raw_input("\nCR to exit: ")
+sys.stdout.write("\nCR to exit: ")
+sys.stdout.flush()
+sys.stdin.readline()
