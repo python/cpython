@@ -489,6 +489,24 @@ class C():
 
 
 %======================================================================
+\subsection{Interactive Interpreter Changes}
+
+In the interactive interpreter, \code{quit} and \code{exit} 
+have long been strings so that new users get a somewhat helpful message
+when they try to quit:
+
+\begin{verbatim}
+>>> quit
+'Use Ctrl-D (i.e. EOF) to exit.'
+\end{verbatim}
+
+In Python 2.5, \code{quit} and \code{exit} are now objects that still
+produce string representations of themselves, but are also callable.
+Newbies who try \code{quit()} or \code{exit()} will now exit the
+interpreter as they expect.  (Implemented by Georg Brandl.)
+
+
+%======================================================================
 \subsection{Optimizations}
 
 \begin{itemize}
@@ -529,6 +547,14 @@ details.
 
 % datetime.datetime() now has a strptime class method which can be used to
 % create datetime object using a string and format.
+
+\item In the \module{gc} module, the new \function{get_count()} function
+returns a 3-tuple containing the current collection counts for the
+three GC generations.  This is accounting information for the garbage
+collector; when these counts reach a specified threshold, a garbage
+collection sweep will be made.  The existing \function{gc.collect()}
+function now takes an optional \var{generation} argument of 0, 1, or 2
+to specify which generation to collect.
 
 \item A new \module{hashlib} module has been added to replace the
 \module{md5} and \module{sha} modules.  \module{hashlib} adds support
