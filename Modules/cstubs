@@ -472,8 +472,6 @@ endpick_select(args, func)
 {
 	PyObject *v, *w;
 	int i, nhits, n;
-	if (!PyArg_NoArgs(args))
-		return NULL;
 	if (pickbuffer == NULL) {
 		PyErr_SetString(PyExc_RuntimeError,
 			"endpick/endselect: not in pick/select mode");

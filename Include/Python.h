@@ -131,13 +131,6 @@
 /* _Py_Mangle is defined in compile.c */
 PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
 
-/* PyArg_GetInt is deprecated and should not be used, use PyArg_Parse(). */
-#define PyArg_GetInt(v, a)	PyArg_Parse((v), "i", (a))
-
-/* PyArg_NoArgs should not be necessary.
-   Set ml_flags in the PyMethodDef to METH_NOARGS. */
-#define PyArg_NoArgs(v)		PyArg_Parse(v, "")
-
 /* Convert a possibly signed character to a nonnegative int */
 /* XXX This assumes characters are 8 bits wide */
 #ifdef __CHAR_UNSIGNED__
