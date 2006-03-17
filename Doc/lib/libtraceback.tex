@@ -12,9 +12,8 @@ when you want to print stack traces under program control, such as in a
 ``wrapper'' around the interpreter.
 
 The module uses traceback objects --- this is the object type that is
-stored in the variables \code{sys.exc_traceback} (deprecated) and
-\code{sys.last_traceback} and returned as the third item from
-\function{sys.exc_info()}.
+stored in the \code{sys.last_traceback} variable and returned
+as the third item from \function{sys.exc_info()}.
 \obindex{traceback}
 
 The module defines the following functions:
@@ -41,11 +40,7 @@ with a caret indicating the approximate position of the error.
 \end{funcdesc}
 
 \begin{funcdesc}{print_exc}{\optional{limit\optional{, file}}}
-This is a shorthand for \code{print_exception(sys.exc_type,
-sys.exc_value, sys.exc_traceback, \var{limit}, \var{file})}.  (In
-fact, it uses \function{sys.exc_info()} to retrieve the same
-information in a thread-safe way instead of using the deprecated
-variables.)
+This is a shorthand for \code{print_exception(*\function{sys.exc_info()}}.
 \end{funcdesc}
 
 \begin{funcdesc}{format_exc}{\optional{limit}}

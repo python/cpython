@@ -1108,7 +1108,7 @@ class Misc:
     def _report_exception(self):
         """Internal function."""
         import sys
-        exc, val, tb = sys.exc_type, sys.exc_value, sys.exc_traceback
+        exc, val, tb = sys.exc_info()
         root = self._root()
         root.report_callback_exception(exc, val, tb)
     def _configure(self, cmd, cnf, kw):

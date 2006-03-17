@@ -45,8 +45,8 @@ class WindowList:
             try:
                 callback()
             except:
-                print "warning: callback failed in WindowList", \
-                      sys.exc_type, ":", sys.exc_value
+		t, v, tb = sys.exc_info()
+                print "warning: callback failed in WindowList", t, ":", v
 
 registry = WindowList()
 

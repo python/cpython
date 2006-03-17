@@ -250,21 +250,15 @@ occurs in the try clause of the inner handler, the outer handler will
 not handle the exception.)
 
 Before an except clause's suite is executed, details about the
-exception are assigned to three variables in the
-\module{sys}\refbimodindex{sys} module: \code{sys.exc_type} receives
-the object identifying the exception; \code{sys.exc_value} receives
-the exception's parameter; \code{sys.exc_traceback} receives a
+exception are stored in the \module{sys}\refbimodindex{sys} module
+and can be access via \function{sys.exc_info()}. \function{sys.exc_info()}
+returns a 3-tuple consisting of: \code{exc_type} receives
+the object identifying the exception; \code{exc_value} receives
+the exception's parameter; \code{exc_traceback} receives a
 traceback object\obindex{traceback} (see section~\ref{traceback})
 identifying the point in the program where the exception occurred.
-These details are also available through the \function{sys.exc_info()}
-function, which returns a tuple \code{(\var{exc_type}, \var{exc_value},
-\var{exc_traceback})}.  Use of the corresponding variables is
-deprecated in favor of this function, since their use is unsafe in a
-threaded program.  As of Python 1.5, the variables are restored to
-their previous values (before the call) when returning from a function
-that handled an exception.
-\withsubitem{(in module sys)}{\ttindex{exc_type}
-  \ttindex{exc_value}\ttindex{exc_traceback}}
+\function{sys.exc_info()} values are restored to their previous values
+(before the call) when returning from a function that handled an exception.
 
 The optional \keyword{else} clause is executed if and when control
 flows off the end of the \keyword{try} clause.\footnote{

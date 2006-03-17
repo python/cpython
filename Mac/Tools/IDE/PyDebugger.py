@@ -105,7 +105,8 @@ class Debugger(bdb.Bdb):
             raise 'spam'
         except:
             pass
-        frame = sys.exc_traceback.tb_frame
+        tb = sys.exc_info()[2]
+        frame = tb.tb_frame
         while frame is not None:
             del frame.f_trace
             frame = frame.f_back
@@ -527,7 +528,7 @@ class Debugger(bdb.Bdb):
                 raise bdb.BdbQuit
         except:
             print 'XXX Exception during debugger interaction.', \
-                            self.formatexception(sys.exc_type, sys.exc_value)
+                            self.formatexception(sys.exc_info[:2])
             import traceback
             traceback.print_exc()
             return self.trace_dispatch
@@ -855,7 +856,8 @@ def startfromhere():
     try:
         raise 'spam'
     except:
-        frame = sys.exc_traceback.tb_frame.f_back
+        tb = sys.exc_info()[2]
+        frame = tb.tb_frame.f_back
     d.start(frame)
 
 def startfrombottom():
@@ -876,7 +878,8 @@ def _getbottomframe():
         raise 'spam'
     except:
         pass
-    frame = sys.exc_traceback.tb_frame
+    tb = sys.exc_info()[2]
+    frame = tb.tb_frame
     while 1:
         if frame.f_code.co_name == 'mainloop' or frame.f_back is None:
             break

@@ -179,10 +179,6 @@ sys_exc_clear(PyObject *self, PyObject *noargs)
 	Py_XDECREF(tmp_type);
 	Py_XDECREF(tmp_value);
 	Py_XDECREF(tmp_tb);
-	/* For b/w compatibility */
-	PySys_SetObject("exc_type", Py_None);
-	PySys_SetObject("exc_value", Py_None);
-	PySys_SetObject("exc_traceback", Py_None);
 	Py_INCREF(Py_None);
 	return Py_None;
 }

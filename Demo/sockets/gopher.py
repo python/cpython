@@ -191,7 +191,8 @@ def browse_menu(selector, host, port):
             try:
                 browserfunc(i_selector, i_host, i_port)
             except (IOError, socket.error):
-                print '***', sys.exc_type, ':', sys.exc_value
+                t, v, tb = sys.exc_info()
+                print '***', t, ':', v
         else:
             print 'Unsupported object type'
 
