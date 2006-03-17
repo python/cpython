@@ -126,9 +126,6 @@ def join(words, sep = ' '):
     return sep.join(words)
 joinfields = join
 
-# for a little bit of speed
-_apply = apply
-
 # Find substring, raise exception if not found
 def index(s, *args):
     """index(s, sub [,start [,end]]) -> int
@@ -136,7 +133,7 @@ def index(s, *args):
     Like find but raises ValueError when the substring is not found.
 
     """
-    return _apply(s.index, args)
+    return s.index(*args)
 
 # Find last substring, raise exception if not found
 def rindex(s, *args):
@@ -145,7 +142,7 @@ def rindex(s, *args):
     Like rfind but raises ValueError when the substring is not found.
 
     """
-    return _apply(s.rindex, args)
+    return s.rindex(*args)
 
 # Count non-overlapping occurrences of substring
 def count(s, *args):
@@ -156,7 +153,7 @@ def count(s, *args):
     interpreted as in slice notation.
 
     """
-    return _apply(s.count, args)
+    return s.count(*args)
 
 # Find substring, return -1 if not found
 def find(s, *args):
@@ -169,7 +166,7 @@ def find(s, *args):
     Return -1 on failure.
 
     """
-    return _apply(s.find, args)
+    return s.find(*args)
 
 # Find last substring, return -1 if not found
 def rfind(s, *args):
@@ -182,7 +179,7 @@ def rfind(s, *args):
     Return -1 on failure.
 
     """
-    return _apply(s.rfind, args)
+    return s.rfind(*args)
 
 # for a bit of speed
 _float = float
@@ -224,7 +221,7 @@ def atoi(*args):
     # error message isn't compatible but the error type is, and this function
     # is complicated enough already.
     if type(s) == _StringType:
-        return _apply(_int, args)
+        return _int(*args)
     else:
         raise TypeError('argument 1: expected string, %s found' %
                         type(s).__name__)
@@ -252,7 +249,7 @@ def atol(*args):
     # error message isn't compatible but the error type is, and this function
     # is complicated enough already.
     if type(s) == _StringType:
-        return _apply(_long, args)
+        return _long(*args)
     else:
         raise TypeError('argument 1: expected string, %s found' %
                         type(s).__name__)
