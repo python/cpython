@@ -1423,71 +1423,7 @@ set_conversion_mode(PyObject *self, PyObject *args)
 }
 #endif
 
-static char cast_doc[] =
-"cast(cobject, ctype) -> ctype-instance\n\
-\n\
-Create an instance of ctype, and copy the internal memory buffer\n\
-of cobject to the new instance.  Should be used to cast one type\n\
-of pointer to another type of pointer.\n\
-Doesn't work correctly with ctypes integers.\n";
-
-static int cast_check_pointertype(PyObject *arg, PyObject **pobj)
-{
-	StgDictObject *dict;
-
-	if (PointerTypeObject_Check(arg)) {
-		*pobj = arg;
-		return 1;
-	}
-	dict = PyType_stgdict(arg);
-	if (dict) {
-		if (PyString_Check(dict->proto)
-		    && (strchr("sPzUZXO", PyString_AS_STRING(dict->proto)[0]))) {
-			/* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */
-			*pobj = arg;
-			return 1;
-		}
-	}
-	if (PyType_Check(arg)) {
-		PyErr_Format(PyExc_TypeError,
-			     "cast() argument 2 must be a pointer type, not %s",
-			     ((PyTypeObject *)arg)->tp_name);
-	} else {
-		PyErr_Format(PyExc_TypeError,
-			     "cast() argument 2 must be a pointer type, not a %s",
-			     arg->ob_type->tp_name);
-	}
-	return 0;
-}
-
-static PyObject *cast(PyObject *self, PyObject *args)
-{
-	PyObject *obj, *ctype;
-	struct argument a;
-	CDataObject *result;
-
-	/* We could and should allow array types for the second argument
-	   also, but we cannot use the simple memcpy below for them. */
-	if (!PyArg_ParseTuple(args, "OO&:cast", &obj, &cast_check_pointertype, &ctype))
-		return NULL;
-	if (-1 == ConvParam(obj, 1, &a))
-		return NULL;
-	result = (CDataObject *)PyObject_CallFunctionObjArgs(ctype, NULL);
-	if (result == NULL) {
-		Py_XDECREF(a.keep);
-		return NULL;
-	}
-	// result->b_size
-	// a.ffi_type->size
-	memcpy(result->b_ptr, &a.value,
-	       min(result->b_size, (int)a.ffi_type->size));
-	Py_XDECREF(a.keep);
-	return (PyObject *)result;
-}
-
-
 PyMethodDef module_methods[] = {
-	{"cast", cast, METH_VARARGS, cast_doc},
 #ifdef CTYPES_UNICODE
 	{"set_conversion_mode", set_conversion_mode, METH_VARARGS, set_conversion_mode_doc},
 #endif
