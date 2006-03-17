@@ -15,7 +15,7 @@
 					/* Higher for patch releases */
 
 /* Version parsed out into numeric values */
-#define PY_MAJOR_VERSION	0
+#define PY_MAJOR_VERSION	3
 #define PY_MINOR_VERSION	0
 #define PY_MICRO_VERSION	0
 #define PY_RELEASE_LEVEL	PY_RELEASE_LEVEL_ALPHA
