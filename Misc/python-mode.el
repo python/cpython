@@ -378,18 +378,18 @@ support for features needed by `python-mode'.")
 			  "ZeroDivisionError" "__debug__"
 			  "__import__" "__name__" "abs" "apply" "basestring"
 			  "bool" "buffer" "callable" "chr" "classmethod"
-			  "cmp" "coerce" "compile" "complex" "copyright"
+			  "cmp" "compile" "complex" "copyright"
 			  "delattr" "dict" "dir" "divmod"
 			  "enumerate" "eval" "execfile" "exit" "file"
 			  "filter" "float" "getattr" "globals" "hasattr"
-			  "hash" "hex" "id" "input" "int" "intern"
+			  "hash" "hex" "id" "int" "intern"
 			  "isinstance" "issubclass" "iter" "len" "license"
 			  "list" "locals" "long" "map" "max" "min" "object"
 			  "oct" "open" "ord" "pow" "property" "range"
-			  "raw_input" "reduce" "reload" "repr" "round"
+			  "reduce" "reload" "repr" "round"
 			  "setattr" "slice" "staticmethod" "str" "sum"
 			  "super" "tuple" "type" "unichr" "unicode" "vars"
-			  "xrange" "zip")
+			  "zip")
 			"\\|"))
 	)
     (list

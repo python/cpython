@@ -1122,7 +1122,7 @@ class PyShell(OutputWindow):
         self.text.tag_add("stdin", "iomark", "end-1c")
         self.text.update_idletasks()
         if self.reading:
-            self.top.quit() # Break out of recursive mainloop() in raw_input()
+            self.top.quit() # Break out of recursive mainloop()
         else:
             self.runit()
         return "break"

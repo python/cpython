@@ -61,11 +61,10 @@ morsetab = {
 }
 
 def morsecode(s):
-    from string import lower
     m = ''
     for c in s:
-        c = lower(c)
-        if morsetab.has_key(c):
+        c = c.lower()
+        if c in morsetab:
             c = morsetab[c] + ' '
         else:
             c = '? '
@@ -107,9 +106,12 @@ class BaseMorse:
 
     def sendmorse(self, s):
         for c in s:
-            if c == '.': self.dot()
-            elif c == '-': self.dah()
-            else: self.pdah()
+            if c == '.':
+                self.dot()
+            elif c == '-':
+                self.dah()
+            else:
+                self.pdah()
             self.pdot()
 
     def sendascii(self, s):
@@ -122,8 +124,9 @@ class BaseMorse:
 import Audio_mac
 class MyAudio(Audio_mac.Play_Audio_mac):
     def _callback(self, *args):
-        if hasattr(self, 'usercallback'): self.usercallback()
-        apply(Audio_mac.Play_Audio_mac._callback, (self,) + args)
+        if hasattr(self, 'usercallback'):
+            self.usercallback()
+        Audio_mac.Play_Audio_mac._callback(self, args)
 
 
 class MacMorse(BaseMorse):
@@ -169,11 +172,20 @@ class MacMorse(BaseMorse):
     def usercallback(self):
         if self.morsequeue:
             c, self.morsequeue = self.morsequeue[0], self.morsequeue[1:]
-            if c == '.': self.dot()
-            elif c == '-': self.dah()
-            else: self.pdah()
+            if c == '.':
+                self.dot()
+            elif c == '-':
+                self.dah()
+            else:
+                self.pdah()
             self.pdot()
 
+
+def raw_input(prompt):
+    import sys
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
 
 def test():
     m = MacMorse()
@@ -183,6 +195,8 @@ def test():
         except (EOFError, KeyboardInterrupt):
             break
         m.send(line)
-        while m.morsequeue: pass
+        while m.morsequeue:
+            pass
 
-test()
+if __name__ == '__main__':
+    test()

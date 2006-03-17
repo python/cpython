@@ -44,8 +44,8 @@ fp = open(TESTFN, 'r')
 savestdin = sys.stdin
 try:
     try:
-        sys.stdin = fp
-        x = raw_input()
+        import marshal
+        marshal.loads('')
     except EOFError:
         pass
 finally:

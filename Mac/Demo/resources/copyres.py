@@ -6,6 +6,12 @@ READ = 1
 WRITE = 2
 smAllScripts = -3
 
+def raw_input(prompt):
+    import sys
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
+
 def copyres(src, dst):
     """Copy resource from src file to dst file."""
 

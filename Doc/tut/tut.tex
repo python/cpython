@@ -231,7 +231,7 @@ full name on the command line.
 
 Note that there is a difference between \samp{python file} and
 \samp{python <file}.  In the latter case, input requests from the
-program, such as calls to \function{input()} and \function{raw_input()}, are
+program, such as calling \code{sys.stdin.read()}, are
 satisfied from \emph{file}.  Since this file has already been read
 until the end by the parser before the program starts executing, the
 program will encounter end-of-file immediately.  In the former case
@@ -1161,6 +1161,12 @@ Perhaps the most well-known statement type is the
 \keyword{if} statement.  For example:
 
 \begin{verbatim}
+>>> def raw_input(prompt):
+...     import sys
+...     sys.stdout.write(prompt)
+...     sys.stdout.flush()
+...     return sys.stdin.readline()
+... 
 >>> x = int(raw_input("Please enter an integer: "))
 >>> if x < 0:
 ...      x = 0
@@ -1453,6 +1459,12 @@ arguments.  This creates a function that can be called with fewer
 arguments than it is defined to allow.  For example:
 
 \begin{verbatim}
+def raw_input(prompt):
+    import sys
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
+
 def ask_ok(prompt, retries=4, complaint='Yes or no, please!'):
     while True:
         ok = raw_input(prompt)
@@ -2711,15 +2723,15 @@ standard module \module{__builtin__}\refbimodindex{__builtin__}:
  'UnicodeEncodeError', 'UnicodeError', 'UnicodeTranslateError',
  'UserWarning', 'ValueError', 'Warning', 'WindowsError',
  'ZeroDivisionError', '_', '__debug__', '__doc__', '__import__',
- '__name__', 'abs', 'apply', 'basestring', 'bool', 'buffer',
+ '__name__', 'abs', 'basestring', 'bool', 'buffer',
  'callable', 'chr', 'classmethod', 'cmp', 'coerce', 'compile',
  'complex', 'copyright', 'credits', 'delattr', 'dict', 'dir', 'divmod',
  'enumerate', 'eval', 'execfile', 'exit', 'file', 'filter', 'float',
  'frozenset', 'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex',
- 'id', 'input', 'int', 'intern', 'isinstance', 'issubclass', 'iter',
+ 'id', 'int', 'intern', 'isinstance', 'issubclass', 'iter',
  'len', 'license', 'list', 'locals', 'long', 'map', 'max', 'min',
  'object', 'oct', 'open', 'ord', 'pow', 'property', 'quit', 'range',
- 'raw_input', 'reduce', 'reload', 'repr', 'reversed', 'round', 'set',
+ 'reduce', 'reload', 'repr', 'reversed', 'round', 'set',
  'setattr', 'slice', 'sorted', 'staticmethod', 'str', 'sum', 'super',
  'tuple', 'type', 'unichr', 'unicode', 'vars', 'xrange', 'zip']
 \end{verbatim}
@@ -3412,6 +3424,12 @@ supports); note that a user-generated interruption is signalled by
 raising the \exception{KeyboardInterrupt} exception.
 
 \begin{verbatim}
+>>> def raw_input(prompt):
+...     import sys
+...     sys.stdout.write(prompt)
+...     sys.stdout.flush()
+...     return sys.stdin.readline()
+... 
 >>> while True:
 ...     try:
 ...         x = int(raw_input("Please enter a number: "))
@@ -4983,7 +5001,12 @@ renaming utility for a photo browser may elect to use percent signs for
 placeholders such as the current date, image sequence number, or file format:
 
 \begin{verbatim}
->>> import time, os.path
+>>> import time, os.path, sys
+>>> def raw_input(prompt):
+...     sys.stdout.write(prompt)
+...     sys.stdout.flush()
+...     return sys.stdin.readline()
+... 
 >>> photofiles = ['img_1074.jpg', 'img_1076.jpg', 'img_1077.jpg']
 >>> class BatchRename(Template):
 ...     delimiter = '%'

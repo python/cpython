@@ -342,6 +342,11 @@ _application_file._elemdict = {
 # XXXX Should test more, really...
 
 def test():
+    def raw_input(prompt):
+        sys.stdout.write(prompt)
+        sys.stdout.flush()
+        return sys.stdin.readline()
+
     target = AE.AECreateDesc('sign', 'quil')
     ae = AE.AECreateAppleEvent('aevt', 'oapp', target, -1, 0)
     print unpackevent(ae)

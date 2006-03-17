@@ -69,8 +69,7 @@ def default_getpass(prompt='Password: '):
 
 
 def _raw_input(prompt=""):
-    # A raw_input() replacement that doesn't save the string in the
-    # GNU readline history.
+    # This doesn't save the string in the GNU readline history.
     prompt = str(prompt)
     if prompt:
         sys.stdout.write(prompt)

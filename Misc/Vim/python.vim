@@ -63,16 +63,16 @@ endif
 
 if exists("python_highlight_builtins")
   syn keyword pythonBuiltin    unichr all set abs vars int __import__ unicode
-  syn keyword pythonBuiltin    enumerate reduce coerce intern exit issubclass
-  syn keyword pythonBuiltin    divmod file Ellipsis apply isinstance open any
+  syn keyword pythonBuiltin    enumerate reduce exit issubclass
+  syn keyword pythonBuiltin    divmod file Ellipsis isinstance open any
   syn keyword pythonBuiltin    locals help filter basestring slice copyright min
-  syn keyword pythonBuiltin    super sum tuple hex execfile long id xrange chr
+  syn keyword pythonBuiltin    super sum tuple hex execfile long id chr
   syn keyword pythonBuiltin    complex bool zip pow dict True oct NotImplemented
   syn keyword pythonBuiltin    map None float hash getattr buffer max reversed
   syn keyword pythonBuiltin    object quit len repr callable credits setattr
   syn keyword pythonBuiltin    eval frozenset sorted ord __debug__ hasattr
-  syn keyword pythonBuiltin    delattr False input license classmethod type
-  syn keyword pythonBuiltin    raw_input list iter compile reload range globals
+  syn keyword pythonBuiltin    delattr False license classmethod type
+  syn keyword pythonBuiltin    list iter reload range globals
   syn keyword pythonBuiltin    staticmethod str property round dir cmp
 
 endif

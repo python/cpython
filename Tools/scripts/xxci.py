@@ -105,6 +105,11 @@ def showdiffs(file):
     cmd = 'rcsdiff ' + file + ' 2>&1 | ${PAGER-more}'
     sts = os.system(cmd)
 
+def raw_input(prompt):
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
+
 def askyesno(prompt):
     s = raw_input(prompt)
     return s in ['y', 'yes']

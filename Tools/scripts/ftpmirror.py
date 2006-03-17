@@ -352,6 +352,11 @@ class LoggingFile:
     def close(self):
         self.outfp.write('\n')
 
+def raw_input(prompt):
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
+
 # Ask permission to download a file.
 def askabout(filetype, filename, pwd):
     prompt = 'Retrieve %s %s from %s ? [ny] ' % (filetype, filename, pwd)

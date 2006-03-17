@@ -1,6 +1,10 @@
 import sys
-import string
 import rcvs
+
+def raw_input(prompt):
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
 
 def main():
     while 1:
@@ -8,7 +12,7 @@ def main():
             line = raw_input('$ ')
         except EOFError:
             break
-        words = string.split(line)
+        words = line.split()
         if not words:
             continue
         if words[0] != 'rcvs':
@@ -16,4 +20,5 @@ def main():
         sys.argv = words
         rcvs.main()
 
-main()
+if __name__ == '__main__':
+    main()

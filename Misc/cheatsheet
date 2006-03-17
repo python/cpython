@@ -925,8 +925,6 @@ __import__(name[,   Imports module within the given context (see lib ref for
 globals[, locals[,  more details)
 fromlist]]])
 abs(x)              Return the absolute value of number x.
-apply(f, args[,     Calls func/method f with arguments args and optional
-keywords])          keywords.
 bool(x)             Returns True when the argument x is true and False otherwise.
 buffer(obj)         Creates a buffer reference to an object.
 callable(x)         Returns True if x callable, else False.
@@ -934,10 +932,6 @@ chr(i)              Returns one-character string whose ASCII code isinteger i
 classmethod(f)      Converts a function f, into a method with the class as the
                     first argument.  Useful for creating alternative constructors.
 cmp(x,y)            Returns negative, 0, positive if x <, ==, > to y
-coerce(x,y)         Returns a tuple of the two numeric arguments converted to a
-                    common type.
-                    Compiles string into a code object.filename is used in
-                    error message, can be any string. It isusually the file
 compile(string,     from which the code was read, or eg. '<string>'if not read
 filename, kind)     from file.kind can be 'eval' if string is a single stmt, or
                     'single' which prints the output of expression statements
@@ -971,8 +965,6 @@ hash(object)        Returns the hash value of the object (if it has one)
 help(f)             Display documentation on object f.
 hex(x)              Converts a number x to a hexadecimal string.
 id(object)          Returns a unique 'identity' integer for an object.
-input([prompt])     Prints prompt if given. Reads input and evaluates it.
-                    Converts a number or a string to a plain integer. Optional
 int(x[, base])      base paramenter specifies base from which to convert string
                     values.
 intern(aString)     Enters aString in the table of "interned strings"
@@ -1013,8 +1005,6 @@ property()          Created a property with access controlled by functions.
 range(start [,end   Returns list of ints from >= start and < end.With 1 arg,
 [, step]])          list from 0..arg-1With 2 args, list from start..end-1With 3
                     args, list from start up to end by step
-raw_input([prompt]) Prints prompt if given, then reads string from stdinput (no
-                    trailing \n). See also input().
 reduce(f, list [,   Applies the binary function f to the items oflist so as to
 init])              reduce the list to a single value.If init given, it is
                     "prepended" to list.

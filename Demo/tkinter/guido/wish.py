@@ -2,6 +2,7 @@
 
 import _tkinter
 import os
+import sys
 
 tk = _tkinter.create(os.environ['DISPLAY'], 'wish', 'Tk', 1)
 tk.call('update')
@@ -12,7 +13,9 @@ while 1:
     if cmd: prompt = ''
     else: prompt = '% '
     try:
-        line = raw_input(prompt)
+        sys.stdout.write(prompt)
+        sys.stdout.flush()
+        line = sys.stdin.readline()
     except EOFError:
         break
     cmd = cmd + (line + '\n')

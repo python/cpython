@@ -9,6 +9,11 @@ import sys
 import time
 import calendar
 
+def raw_input(prompt):
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
+
 def main():
     # Note that the range checks below also check for bad types,
     # e.g. 3.14 or ().  However syntactically invalid replies

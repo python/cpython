@@ -67,6 +67,11 @@ def run_regrtest(lib_dir):
 def cleanup(dir):
     os.system("rm -rf %s" % dir)
 
+def raw_input(prompt):
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
+
 def main():
     lib_dir = copy_library()
     compile_files(lib_dir)

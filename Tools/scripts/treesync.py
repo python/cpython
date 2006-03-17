@@ -187,6 +187,11 @@ def copy(src, dst, rmode="rb", wmode="wb", answer='ask'):
     f.close()
     g.close()
 
+def raw_input(prompt):
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+    return sys.stdin.readline()
+
 def okay(prompt, answer='ask'):
     answer = answer.strip().lower()
     if not answer or answer[0] not in 'ny':

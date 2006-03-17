@@ -153,9 +153,7 @@ Raised when an \keyword{assert} statement fails.
 
 \begin{excdesc}{EOFError}
 % XXXJH xrefs here
-  Raised when one of the built-in functions (\function{input()} or
-  \function{raw_input()}) hits an end-of-file condition (\EOF) without
-  reading any data.
+  Raised when attempting to read beyond the end of a file.
 % XXXJH xrefs here
   (N.B.: the \method{read()} and \method{readline()} methods of file
   objects return an empty string when they hit \EOF.)
@@ -213,9 +211,6 @@ Raised when an \keyword{assert} statement fails.
   \kbd{Control-C} or \kbd{Delete}).  During execution, a check for
   interrupts is made regularly.
 % XXX(hylton) xrefs here
-  Interrupts typed when a built-in function \function{input()} or
-  \function{raw_input()} is waiting for input also raise this
-  exception.
   The exception inherits from \exception{BaseException} so as to not be
   accidentally caught by code that catches \exception{Exception} and thus
   prevent the interpreter from exiting.
