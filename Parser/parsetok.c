@@ -98,7 +98,6 @@ static char with_msg[] =
 
 static char as_msg[] =
 "%s:%d: Warning: 'as' will become a reserved keyword in Python 2.6\n";
-#endif
 
 static void
 warn(const char *msg, const char *filename, int lineno)
@@ -107,6 +106,7 @@ warn(const char *msg, const char *filename, int lineno)
 		filename = "<string>";
 	PySys_WriteStderr(msg, filename, lineno);
 }
+#endif
 
 static node *
 parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
