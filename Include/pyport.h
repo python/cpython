@@ -85,6 +85,10 @@ typedef PY_LONG_LONG		Py_intptr_t;
 #   error "Python needs a typedef for Py_uintptr_t in pyport.h."
 #endif /* HAVE_UINTPTR_T */
 
+/* Py_ssize_t is a signed integral type such that sizeof(Py_ssize_t) ==
+ * sizeof(size_t).  C99 doesn't define such a thing directly (size_t is an
+ * unsigned integral type).  See PEP 353 for details.
+ */
 #ifdef HAVE_SSIZE_T
 typedef ssize_t		Py_ssize_t;
 #elif SIZEOF_VOID_P == SIZEOF_SIZE_T
@@ -92,7 +96,42 @@ typedef Py_intptr_t	Py_ssize_t;
 #else
 #   error "Python needs a typedef for Py_ssize_t in pyport.h."
 #endif
+
+/* Largest positive value of type Py_ssize_t. */
 #define PY_SSIZE_T_MAX ((Py_ssize_t)(((size_t)-1)>>1))
+
+/* PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
+ * format to convert an argument with the width of a size_t or Py_ssize_t.
+ * C99 introduced "z" for this purpose, but not all platforms support that;
+ * e.g., MS compilers use "I" instead.
+ *
+ * These "high level" Python format functions interpret "z" correctly on
+ * all platforms (Python interprets the format string itself, and does whatever
+ * the platform C requires to convert a size_t/Py_ssize_t argument):
+ *
+ *     PyString_FromFormat
+ *     PyErr_Format
+ *     PyString_FromFormatV
+ *
+ * Lower-level uses require that you interpolate the correct format modifier
+ * yourself (e.g., calling printf, fprintf, sprintf, PyOS_snprintf); for
+ * example,
+ *
+ *     Py_ssize_t index;
+ *     fprintf(stderr, "index %" PY_FORMAT_SIZE_T "d sucks\n", index);
+ *
+ * That will expand to %ld, or %Id, or to something else correct for a
+ * Py_ssize_t on the platform.
+ */
+#ifndef PY_FORMAT_SIZE_T
+#   if SIZEOF_SIZE_T == SIZEOF_LONG
+#       define PY_FORMAT_SIZE_T "l"
+#   elif defined(MS_WINDOWS)
+#       define PY_FORMAT_SIZE_T "I"
+#   else
+#       error "This platform's pyconfig.h needs to define PY_FORMAT_SIZE_T"
+#   endif
+#endif
 
 #include <stdlib.h>
 
