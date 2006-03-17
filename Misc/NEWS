@@ -291,6 +291,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- RFE #567972: Socket objects' family, type and proto properties are
+  now exposed via new get...() methods.
+
 - Everything under lib-old was removed.  This includes the following modules:
     Para, addpack, cmp, cmpcache, codehack, dircmp, dump, find, fmt, grep,
     lockfile, newdir, ni, packmail, poly, rand, statcache, tb, tzparse, 

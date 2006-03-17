@@ -469,6 +469,14 @@ class GeneralModuleTests(unittest.TestCase):
         sock.close()
         self.assertRaises(socket.error, sock.send, "spam")
 
+    def testNewGetMethods(self):
+        # testing getfamily(), gettype() and getprotocol()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.assertEqual(sock.getfamily(), socket.AF_INET)
+        self.assertEqual(sock.gettype(), socket.SOCK_STREAM)
+        self.assertEqual(sock.getproto(), 0)
+        sock.close()
+
 class BasicTCPTest(SocketConnectedTest):
 
     def __init__(self, methodName='runTest'):

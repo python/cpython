@@ -183,6 +183,24 @@ class _socketobject(object):
         and bufsize arguments are as for the built-in open() function."""
         return _fileobject(self._sock, mode, bufsize)
 
+    def getfamily(self):
+        """getfamily() -> socket family
+
+        Return the socket family."""
+        return self._sock.family
+
+    def gettype(self):
+        """gettype() -> socket type
+
+        Return the socket type."""
+        return self._sock.type
+
+    def getproto(self):
+        """getproto() -> socket protocol
+
+        Return the socket protocol."""
+        return self._sock.proto
+
     _s = ("def %s(self, *args): return self._sock.%s(*args)\n\n"
           "%s.__doc__ = _realsocket.%s.__doc__\n")
     for _m in _socketmethods:
