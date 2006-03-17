@@ -68,48 +68,48 @@ flag \var{readermode} is true, then a \samp{mode reader} command is
 sent before authentication is performed.  Reader mode is sometimes
 necessary if you are connecting to an NNTP server on the local machine
 and intend to call reader-specific commands, such as \samp{group}.  If
-you get unexpected \code{NNTPPermanentError}s, you might need to set
+you get unexpected \exception{NNTPPermanentError}s, you might need to set
 \var{readermode}.  \var{readermode} defaults to \code{None}.
 \var{usenetrc} defaults to \code{True}.
 
 \versionchanged[\var{usenetrc} argument added]{2.4}
 \end{classdesc}
 
-\begin{classdesc}{NNTPError}{}
-Derived from the standard exception \code{Exception}, this is the base
-class for all exceptions raised by the \code{nntplib} module.
-\end{classdesc}
+\begin{excdesc}{NNTPError}
+Derived from the standard exception \exception{Exception}, this is the
+base class for all exceptions raised by the \module{nntplib} module.
+\end{excdesc}
 
-\begin{classdesc}{NNTPReplyError}{}
+\begin{excdesc}{NNTPReplyError}
 Exception raised when an unexpected reply is received from the
 server.  For backwards compatibility, the exception \code{error_reply}
 is equivalent to this class.
-\end{classdesc}
+\end{excdesc}
 
-\begin{classdesc}{NNTPTemporaryError}{}
+\begin{excdesc}{NNTPTemporaryError}
 Exception raised when an error code in the range 400--499 is
 received.  For backwards compatibility, the exception
 \code{error_temp} is equivalent to this class.
-\end{classdesc}
+\end{excdesc}
 
-\begin{classdesc}{NNTPPermanentError}{}
+\begin{excdesc}{NNTPPermanentError}
 Exception raised when an error code in the range 500--599 is
 received.  For backwards compatibility, the exception
 \code{error_perm} is equivalent to this class.
-\end{classdesc}
+\end{excdesc}
 
-\begin{classdesc}{NNTPProtocolError}{}
+\begin{excdesc}{NNTPProtocolError}
 Exception raised when a reply is received from the server that does
 not begin with a digit in the range 1--5.  For backwards
 compatibility, the exception \code{error_proto} is equivalent to this
 class.
-\end{classdesc}
+\end{excdesc}
 
-\begin{classdesc}{NNTPDataError}{}
+\begin{excdesc}{NNTPDataError}
 Exception raised when there is some error in the response data.  For
 backwards compatibility, the exception \code{error_data} is
 equivalent to this class.
-\end{classdesc}
+\end{excdesc}
 
 
 \subsection{NNTP Objects \label{nntp-objects}}

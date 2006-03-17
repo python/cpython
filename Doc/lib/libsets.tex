@@ -151,12 +151,13 @@ but not found in \class{ImmutableSet}:
   \lineiii{\var{s}.add(\var{x})}{}
          {add element \var{x} to set \var{s}}
   \lineiii{\var{s}.remove(\var{x})}{}
-         {remove \var{x} from set \var{s}; raises KeyError if not present}
+         {remove \var{x} from set \var{s}; raises \exception{KeyError}
+	  if not present}
   \lineiii{\var{s}.discard(\var{x})}{}
          {removes \var{x} from set \var{s} if present}
   \lineiii{\var{s}.pop()}{}
          {remove and return an arbitrary element from \var{s}; raises
-	  KeyError if empty}
+	  \exception{KeyError} if empty}
   \lineiii{\var{s}.clear()}{}
          {remove all elements from set \var{s}}
 \end{tableiii}

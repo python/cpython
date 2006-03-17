@@ -73,18 +73,18 @@ file type and creator codes will not be correct.
   If \var{symlinks} is true, symbolic links in
   the source tree are represented as symbolic links in the new tree;
   if false or omitted, the contents of the linked files are copied to
-  the new tree.  If exception(s) occur, an Error is raised
+  the new tree.  If exception(s) occur, an \exception{Error} is raised
   with a list of reasons.
 
   The source code for this should be considered an example rather than 
   a tool.
 
-  \versionchanged[Error is raised if any exceptions occur during copying,
-  rather than printing a message]{2.3}
+  \versionchanged[\exception{Error} is raised if any exceptions occur during
+                  copying, rather than printing a message]{2.3}
 
   \versionchanged[Create intermediate directories needed to create \var{dst},
-  rather than raising an error. Copy permissions and times of directories using
-  \function{copystat()}]{2.5}
+                  rather than raising an error. Copy permissions and times of
+		  directories using \function{copystat()}]{2.5}
 
 \end{funcdesc}
 
