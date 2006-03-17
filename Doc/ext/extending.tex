@@ -120,9 +120,8 @@ variable is \NULL{} no exception has occurred.  A second global
 variable stores the ``associated value'' of the exception (the second
 argument to \keyword{raise}).  A third variable contains the stack
 traceback in case the error originated in Python code.  These three
-variables are the C equivalents of the Python variables
-\code{sys.exc_type}, \code{sys.exc_value} and \code{sys.exc_traceback} (see
-the section on module \module{sys} in the
+variables are the C equivalents of the result in Python of 
+\method{sys.exc_info()} (see the section on module \module{sys} in the
 \citetitle[../lib/lib.html]{Python Library Reference}).  It is
 important to know about them to understand how errors are passed
 around.

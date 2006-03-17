@@ -203,9 +203,7 @@ def _some_str(value):
 
 
 def print_exc(limit=None, file=None):
-    """Shorthand for 'print_exception(sys.exc_type, sys.exc_value, sys.exc_traceback, limit, file)'.
-    (In fact, it uses sys.exc_info() to retrieve the same information
-    in a thread-safe way.)"""
+    """Shorthand for 'print_exception(*sys.exc_info(), limit, file)'."""
     if file is None:
         file = sys.stderr
     try:

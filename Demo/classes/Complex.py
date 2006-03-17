@@ -233,7 +233,7 @@ def checkop(expr, a, b, value, fuzz = 1e-6):
     try:
         result = eval(expr)
     except:
-        result = sys.exc_type
+        result = sys.exc_info()[0]
     print '->', result
     if isinstance(result, str) or isinstance(value, str):
         ok = (result == value)

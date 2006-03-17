@@ -1212,7 +1212,7 @@ def execstring(pytext, globals, locals, filename="<string>", debugging=0,
     except:
         if debugging:
             sys.settrace(None)
-            PyDebugger.postmortem(sys.exc_type, sys.exc_value, sys.exc_traceback)
+            PyDebugger.postmortem(*sys.exc_info())
             return
         else:
             tracebackwindow.traceback(1, filename)
@@ -1289,7 +1289,6 @@ class _EditorDefaultSettings:
         settings = FontSettings.FontDialog(self.fontsettings, self.tabsettings)
         if settings:
             self.fontsettings, self.tabsettings = settings
-            sys.exc_traceback = None
             self.w.fonttext.set(self.template % (self.fontsettings[0], self.fontsettings[2]))
 
     def close(self):
@@ -1327,7 +1326,6 @@ def geteditorprefs():
         fontsettings = prefs.pyedit.fontsettings = ("Geneva", 0, 10, (0, 0, 0))
         tabsettings = prefs.pyedit.tabsettings = (8, 1)
         windowsize = prefs.pyedit.windowsize = (500, 250)
-        sys.exc_traceback = None
     return fontsettings, tabsettings, windowsize
 
 def seteditorprefs(fontsettings, tabsettings, windowsize):

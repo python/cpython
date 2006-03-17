@@ -400,15 +400,12 @@ exception state.
 The full exception state consists of three objects (all of which can 
 be \NULL): the exception type, the corresponding exception 
 value, and the traceback.  These have the same meanings as the Python
-\withsubitem{(in module sys)}{
-  \ttindex{exc_type}\ttindex{exc_value}\ttindex{exc_traceback}}
-objects \code{sys.exc_type}, \code{sys.exc_value}, and
-\code{sys.exc_traceback}; however, they are not the same: the Python
+result of \code{sys.exc_info()}; however, they are not the same: the Python
 objects represent the last exception being handled by a Python 
 \keyword{try} \ldots\ \keyword{except} statement, while the C level
 exception state only exists while an exception is being passed on
 between C functions until it reaches the Python bytecode interpreter's 
-main loop, which takes care of transferring it to \code{sys.exc_type}
+main loop, which takes care of transferring it to \code{sys.exc_info()}
 and friends.
 
 Note that starting with Python 1.5, the preferred, thread-safe way to 

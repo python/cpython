@@ -83,7 +83,7 @@ class Server:
                 method = getattr(self, methodname)
                 reply = (None, apply(method, args), id)
         except:
-            reply = (sys.exc_type, sys.exc_value, id)
+            reply = (sys.exc_info()[:2], id)
         if id < 0 and reply[:2] == (None, None):
             if self._verbose > 1: print "Suppress reply"
             return 1

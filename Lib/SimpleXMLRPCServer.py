@@ -261,7 +261,7 @@ class SimpleXMLRPCDispatcher:
         except:
             # report exception back to server
             response = xmlrpclib.dumps(
-                xmlrpclib.Fault(1, "%s:%s" % (sys.exc_type, sys.exc_value)),
+                xmlrpclib.Fault(1, "%s:%s" % sys.exc_info()[:2]),
                 encoding=self.encoding, allow_none=self.allow_none,
                 )
 
@@ -362,7 +362,7 @@ class SimpleXMLRPCDispatcher:
             except:
                 results.append(
                     {'faultCode' : 1,
-                     'faultString' : "%s:%s" % (sys.exc_type, sys.exc_value)}
+                     'faultString' : "%s:%s" % sys.exc_info()[:2]}
                     )
         return results
 
