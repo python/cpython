@@ -1106,14 +1106,17 @@ set_mro_error(PyObject *to_merge, int *remain)
 	char buf[1000];
 	PyObject *k, *v;
 	PyObject *set = PyDict_New();
+	if (!set) return;
 
 	to_merge_size = PyList_GET_SIZE(to_merge);
 	for (i = 0; i < to_merge_size; i++) {
 		PyObject *L = PyList_GET_ITEM(to_merge, i);
 		if (remain[i] < PyList_GET_SIZE(L)) {
 			PyObject *c = PyList_GET_ITEM(L, remain[i]);
-			if (PyDict_SetItem(set, c, Py_None) < 0)
+			if (PyDict_SetItem(set, c, Py_None) < 0) {
+				Py_DECREF(set);
 				return;
+			}
 		}
 	}
 	n = PyDict_Size(set);
