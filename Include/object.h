@@ -130,21 +130,12 @@ typedef PyObject * (*ternaryfunc)(PyObject *, PyObject *, PyObject *);
 typedef int (*inquiry)(PyObject *);
 typedef Py_ssize_t (*lenfunc)(PyObject *);
 typedef int (*coercion)(PyObject **, PyObject **);
-typedef PyObject *(*intargfunc)(PyObject *, int) Py_DEPRECATED(2.5);
-typedef PyObject *(*intintargfunc)(PyObject *, int, int) Py_DEPRECATED(2.5);
 typedef PyObject *(*ssizeargfunc)(PyObject *, Py_ssize_t);
 typedef PyObject *(*ssizessizeargfunc)(PyObject *, Py_ssize_t, Py_ssize_t);
-typedef int(*intobjargproc)(PyObject *, int, PyObject *);
-typedef int(*intintobjargproc)(PyObject *, int, int, PyObject *);
 typedef int(*ssizeobjargproc)(PyObject *, Py_ssize_t, PyObject *);
 typedef int(*ssizessizeobjargproc)(PyObject *, Py_ssize_t, Py_ssize_t, PyObject *);
 typedef int(*objobjargproc)(PyObject *, PyObject *, PyObject *);
 
-/* int-based buffer interface */
-typedef int (*getreadbufferproc)(PyObject *, int, void **);
-typedef int (*getwritebufferproc)(PyObject *, int, void **);
-typedef int (*getsegcountproc)(PyObject *, int *);
-typedef int (*getcharbufferproc)(PyObject *, int, char **);
 /* ssize_t-based buffer interface */
 typedef Py_ssize_t (*readbufferproc)(PyObject *, Py_ssize_t, void **);
 typedef Py_ssize_t (*writebufferproc)(PyObject *, Py_ssize_t, void **);
