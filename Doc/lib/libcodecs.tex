@@ -152,7 +152,7 @@ unencodable part of the input and a position where encoding should
 continue. The encoder will encode the replacement and continue encoding
 the original input at the specified position. Negative position values
 will be treated as being relative to the end of the input string. If the
-resulting position is out of bound an IndexError will be raised.
+resulting position is out of bound an \exception{IndexError} will be raised.
 
 Decoding and translating works similar, except \exception{UnicodeDecodeError}
 or \exception{UnicodeTranslateError} will be passed to the handler and
@@ -696,10 +696,10 @@ transformation can be done (these methods are also called encodings).
 The simplest method is to map the codepoints 0-255 to the bytes
 \code{0x0}-\code{0xff}. This means that a unicode object that contains 
 codepoints above \code{U+00FF} can't be encoded with this method (which 
-is called \code{'latin-1'} or \code{'iso-8859-1'}). unicode.encode() will 
-raise a UnicodeEncodeError that looks like this: \samp{UnicodeEncodeError:
-'latin-1' codec can't encode character u'\e u1234' in position 3: ordinal
-not in range(256)}.
+is called \code{'latin-1'} or \code{'iso-8859-1'}).
+\function{unicode.encode()} will raise a \exception{UnicodeEncodeError}
+that looks like this: \samp{UnicodeEncodeError: 'latin-1' codec can't
+encode character u'\e u1234' in position 3: ordinal not in range(256)}.
 
 There's another group of encodings (the so called charmap encodings)
 that choose a different subset of all unicode code points and how

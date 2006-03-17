@@ -30,9 +30,10 @@ Exception raised when an error occurs while attempting to compile the file.
   \code{+} \code{'c'} (\code{'o'} if optimization is enabled in the
   current interpreter).  If \var{dfile} is specified, it is used as
   the name of the source file in error messages instead of \var{file}. 
-  If \var{doraise} = True, a PyCompileError is raised when an error is 
-  encountered while compiling \var{file}. If \var{doraise} = False (the default), 
-  an error string is written to sys.stderr, but no exception is raised.
+  If \var{doraise} is true, a \exception{PyCompileError} is raised when
+  an error is encountered while compiling \var{file}. If \var{doraise}
+  is false (the default), an error string is written to \code{sys.stderr},
+  but no exception is raised.
 \end{funcdesc}
 
 \begin{funcdesc}{main}{\optional{args}}

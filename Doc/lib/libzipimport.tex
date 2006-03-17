@@ -69,8 +69,8 @@ The available attributes of this module are:
 
 \begin{classdesc}{zipimporter}{archivepath} 
   Create a new zipimporter instance. \var{archivepath} must be a path to
-  a zipfile.  \class{ZipImportError} is raised if \var{archivepath} doesn't
-  point to a valid ZIP archive.
+  a zipfile.  \exception{ZipImportError} is raised if \var{archivepath}
+  doesn't point to a valid ZIP archive.
 \end{classdesc}
 
 \begin{methoddesc}{find_module}{fullname\optional{, path}}
@@ -83,7 +83,7 @@ The available attributes of this module are:
 
 \begin{methoddesc}{get_code}{fullname}
   Return the code object for the specified module. Raise
-  \class{ZipImportError} if the module couldn't be found.
+  \exception{ZipImportError} if the module couldn't be found.
 \end{methoddesc}
 
 \begin{methoddesc}{get_data}{pathname}
@@ -93,20 +93,20 @@ The available attributes of this module are:
 
 \begin{methoddesc}{get_source}{fullname}
   Return the source code for the specified module. Raise
-  \class{ZipImportError} if the module couldn't be found, return
+  \exception{ZipImportError} if the module couldn't be found, return
   \constant{None} if the archive does contain the module, but has
   no source for it.
 \end{methoddesc}
 
 \begin{methoddesc}{is_package}{fullname}
   Return True if the module specified by \var{fullname} is a package.
-  Raise \class{ZipImportError} if the module couldn't be found.
+  Raise \exception{ZipImportError} if the module couldn't be found.
 \end{methoddesc}
 
 \begin{methoddesc}{load_module}{fullname}
   Load the module specified by \var{fullname}. \var{fullname} must be the
   fully qualified (dotted) module name. It returns the imported
-  module, or raises \class{ZipImportError} if it wasn't found.
+  module, or raises \exception{ZipImportError} if it wasn't found.
 \end{methoddesc}
 
 \subsection{Examples}
