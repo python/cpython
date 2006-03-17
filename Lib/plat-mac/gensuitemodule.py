@@ -351,11 +351,11 @@ def alt_generic(what, f, *args):
 
 def generic(what, f, *args):
     if type(what) == types.FunctionType:
-        return apply(what, (f,) + args)
+        return what(f, *args)
     if type(what) == types.ListType:
         record = []
         for thing in what:
-            item = apply(generic, thing[:1] + (f,) + thing[1:])
+            item = generic(thing[:1], f, *thing[1:])
             record.append((thing[1], item))
         return record
     return "BAD GENERIC ARGS: %r" % (what,)

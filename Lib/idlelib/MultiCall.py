@@ -296,7 +296,7 @@ def MultiCallCreator(widget):
         assert issubclass(widget, Tkinter.Misc)
 
         def __init__(self, *args, **kwargs):
-            apply(widget.__init__, (self,)+args, kwargs)
+            widget.__init__(self, *args, **kwargs)
             # a dictionary which maps a virtual event to a tuple with:
             #  0. the function binded
             #  1. a list of triplets - the sequences it is binded to

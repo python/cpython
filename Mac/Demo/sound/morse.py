@@ -78,7 +78,7 @@ mkwave(OCTAVE)
 class BufferedAudioDev:
     def __init__(self, *args):
         import audiodev
-        self._base = apply(audiodev.AudioDev, args)
+        self._base = audiodev.AudioDev(*args)
         self._buffer = []
         self._filled = 0
         self._addmethods(self._base, self._base.__class__)

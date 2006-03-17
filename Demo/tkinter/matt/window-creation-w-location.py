@@ -13,7 +13,7 @@ class QuitButton(Button):
             kwargs["text"] = "QUIT"
         if not kwargs.has_key("command"):
             kwargs["command"] = master.quit
-        apply(Button.__init__, (self, master) + args, kwargs)
+        Button.__init__(self, master, *args, **kwargs)
 
 class Test(Frame):
     def makeWindow(self, *args):

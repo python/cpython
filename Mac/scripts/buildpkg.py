@@ -374,7 +374,7 @@ def buildPackage(*args, **options):
     o = options
     title, version, desc = o["Title"], o["Version"], o["Description"]
     pm = PackageMaker(title, version, desc)
-    apply(pm.build, list(args), options)
+    pm.build(*args, **options)
 
 
 ######################################################################
@@ -468,7 +468,7 @@ def main():
               "Description" in ok):
         print "Missing mandatory option!"
     else:
-        apply(buildPackage, args, optsDict)
+        buildPackage(*args, **optsDict)
         return
 
     printUsage()

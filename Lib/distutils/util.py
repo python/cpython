@@ -95,7 +95,7 @@ def convert_path (pathname):
         paths.remove('.')
     if not paths:
         return os.curdir
-    return apply(os.path.join, paths)
+    return os.path.join(*paths)
 
 # convert_path ()
 
@@ -295,7 +295,7 @@ def execute (func, args, msg=None, verbose=0, dry_run=0):
 
     log.info(msg)
     if not dry_run:
-        apply(func, args)
+        func(*args)
 
 
 def strtobool (val):

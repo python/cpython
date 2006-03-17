@@ -204,7 +204,7 @@ _bsddb
     XXX File "C:\Code\python\lib\threading.py", line 411, in __bootstrap
     XXX    self.run()
     XXX File "C:\Code\python\lib\threading.py", line 399, in run
-    XXX    apply(self.__target, self.__args, self.__kwargs)
+    XXX    self.__target(*self.__args, **self.__kwargs)
     XXX File "C:\Code\python\lib\bsddb\test\test_thread.py", line 268, in
     XXX                  readerThread
     XXX    rec = c.next()

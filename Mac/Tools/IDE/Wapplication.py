@@ -129,7 +129,7 @@ class Application(FrameWork.Application):
             window = self._windows[wid]
             if hasattr(window, attr):
                 handler = getattr(window, attr)
-                apply(handler, args)
+                handler(*args)
                 return 1
 
     def getfrontwindow(self):

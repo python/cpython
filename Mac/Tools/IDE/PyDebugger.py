@@ -652,7 +652,7 @@ class Debugger(bdb.Bdb):
 class SourceViewer(W.PyEditor):
 
     def __init__(self, *args, **kwargs):
-        apply(W.PyEditor.__init__, (self,) + args, kwargs)
+        W.PyEditor.__init__(self, *args, **kwargs)
         self.bind('<click>', self.clickintercept)
 
     def clickintercept(self, point, modifiers):
@@ -815,7 +815,7 @@ class BreakpointsViewer:
 class TracingMonitor(W.Widget):
 
     def __init__(self, *args, **kwargs):
-        apply(W.Widget.__init__, (self,) + args, kwargs)
+        W.Widget.__init__(self, *args, **kwargs)
         self.state = 0
 
     def toggle(self):

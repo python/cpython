@@ -39,7 +39,7 @@ class dbobjTestCase(unittest.TestCase):
             def put(self, key, *args, **kwargs):
                 key = string.upper(key)
                 # call our parent classes put method with an upper case key
-                return apply(dbobj.DB.put, (self, key) + args, kwargs)
+                return dbobj.DB.put(self, key, *args, **kwargs)
         self.env = TestDBEnv()
         self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL)
         self.db = TestDB(self.env)

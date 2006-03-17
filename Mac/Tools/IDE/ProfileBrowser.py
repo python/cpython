@@ -65,7 +65,7 @@ class ProfileBrowser:
 
     def displaystats(self):
         W.SetCursor('watch')
-        apply(self.stats.sort_stats, self.sortkeys)
+        self.stats.sort_stats(*self.sortkeys)
         saveout = sys.stdout
         try:
             s = sys.stdout = StringIO.StringIO()

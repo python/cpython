@@ -133,50 +133,6 @@ PyDoc_STRVAR(any_doc,
 \n\
 Return True if bool(x) is True for any x in the iterable.");
 
-static PyObject *
-builtin_apply(PyObject *self, PyObject *args)
-{
-	PyObject *func, *alist = NULL, *kwdict = NULL;
-	PyObject *t = NULL, *retval = NULL;
-
-	if (!PyArg_UnpackTuple(args, "apply", 1, 3, &func, &alist, &kwdict))
-		return NULL;
-	if (alist != NULL) {
-		if (!PyTuple_Check(alist)) {
-			if (!PySequence_Check(alist)) {
-				PyErr_Format(PyExc_TypeError,
-				     "apply() arg 2 expected sequence, found %s",
-					     alist->ob_type->tp_name);
-				return NULL;
-			}
-			t = PySequence_Tuple(alist);
-			if (t == NULL)
-				return NULL;
-			alist = t;
-		}
-	}
-	if (kwdict != NULL && !PyDict_Check(kwdict)) {
-		PyErr_Format(PyExc_TypeError,
-			     "apply() arg 3 expected dictionary, found %s",
-			     kwdict->ob_type->tp_name);
-		goto finally;
-	}
-	retval = PyEval_CallObjectWithKeywords(func, alist, kwdict);
-  finally:
-	Py_XDECREF(t);
-	return retval;
-}
-
-PyDoc_STRVAR(apply_doc,
-"apply(object[, args[, kwargs]]) -> value\n\
-\n\
-Call a callable object with positional arguments taken from the tuple args,\n\
-and keyword arguments taken from the optional dictionary kwargs.\n\
-Note that classes are callable, as are instances with a __call__() method.\n\
-\n\
-Deprecated since release 2.3. Instead, use the extended call syntax:\n\
-    function(*args, **keywords).");
-
 
 static PyObject *
 builtin_callable(PyObject *self, PyObject *v)
@@ -2090,7 +2046,6 @@ static PyMethodDef builtin_methods[] = {
  	{"abs",		builtin_abs,        METH_O, abs_doc},
  	{"all",		builtin_all,        METH_O, all_doc},
  	{"any",		builtin_any,        METH_O, any_doc},
- 	{"apply",	builtin_apply,      METH_VARARGS, apply_doc},
  	{"callable",	builtin_callable,   METH_O, callable_doc},
  	{"chr",		builtin_chr,        METH_VARARGS, chr_doc},
  	{"cmp",		builtin_cmp,        METH_VARARGS, cmp_doc},

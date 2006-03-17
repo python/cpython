@@ -115,7 +115,7 @@ class Coroutine:
         if not self.killed:
             try:
                 try:
-                    apply(me.f, args)
+                    me.f(*args)
                 except Killed:
                     pass
             finally:

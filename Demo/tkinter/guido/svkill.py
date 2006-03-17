@@ -16,7 +16,7 @@ user = os.environ['LOGNAME']
 
 class BarButton(Menubutton):
     def __init__(self, master=None, **cnf):
-        apply(Menubutton.__init__, (self, master), cnf)
+        Menubutton.__init__(self, master, **cnf)
         self.pack(side=LEFT)
         self.menu = Menu(self, name='menu')
         self['menu'] = self.menu
@@ -61,7 +61,7 @@ class Kill(Frame):
     def do_1(self, e):
         self.kill(e.widget.get(e.widget.nearest(e.y)))
     def __init__(self, master=None, **cnf):
-        apply(Frame.__init__, (self, master), cnf)
+        Frame.__init__(self, master, **cnf)
         self.pack(expand=1, fill=BOTH)
         self.bar = Frame(self, name='bar', relief=RAISED,
                          borderwidth=2)

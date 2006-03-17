@@ -81,7 +81,7 @@ def askcolor(color = None, **options):
     """Ask for a color"""
     global _chooser
     if not _chooser:
-        _chooser = apply(Chooser, (), options)
+        _chooser = Chooser(**options)
     return _chooser.show(color, options)
 
 def save():

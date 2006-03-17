@@ -148,10 +148,10 @@ from Meta import MetaClass, MetaHelper, MetaMethodWrapper
 class LockingMethodWrapper(MetaMethodWrapper):
     def __call__(self, *args, **kw):
         if self.__name__[:1] == '_' and self.__name__[1:] != '_':
-            return apply(self.func, (self.inst,) + args, kw)
+            return self.func(self.inst, *args, **kw)
         self.inst.__lock__.acquire()
         try:
-            return apply(self.func, (self.inst,) + args, kw)
+            return self.func(self.inst, *args, **kw)
         finally:
             self.inst.__lock__.release()
 

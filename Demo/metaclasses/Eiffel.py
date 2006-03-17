@@ -82,10 +82,10 @@ class EiffelMethodWrapper(MetaMethodWrapper):
 
     def __call__(self, *args, **kw):
         if self.pre:
-            apply(self.pre, args, kw)
-        Result = apply(self.func, (self.inst,) + args, kw)
+            self.pre(*args, **kw)
+        Result = self.func(self.inst, *args, **kw)
         if self.post:
-            apply(self.post, (Result,) + args, kw)
+            self.post(Result, *args, **kw)
         return Result
 
 class EiffelHelper(MetaHelper):

@@ -22,7 +22,7 @@ class Generator:
             self.putlock.acquire()
             if not self.killed:
                 try:
-                    apply(self.func, (self,) + self.args)
+                    self.func(self, *self.args)
                 except Killed:
                     pass
         finally:

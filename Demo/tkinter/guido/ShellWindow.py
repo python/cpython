@@ -20,7 +20,7 @@ class ShellWindow(ScrolledText):
         args = string.split(shell)
         shell = args[0]
 
-        apply(ScrolledText.__init__, (self, master), cnf)
+        ScrolledText.__init__(self, master, **cnf)
         self.pos = '1.0'
         self.bind('<Return>', self.inputhandler)
         self.bind('<Control-c>', self.sigint)

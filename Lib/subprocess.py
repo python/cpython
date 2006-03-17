@@ -995,7 +995,7 @@ class Popen(object):
                         os.chdir(cwd)
 
                     if preexec_fn:
-                        apply(preexec_fn)
+                        preexec_fn()
 
                     if env is None:
                         os.execvp(executable, args)
