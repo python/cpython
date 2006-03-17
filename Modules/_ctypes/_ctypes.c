@@ -2388,6 +2388,11 @@ static PPROC FindAddress(void *handle, char *name, PyObject *type)
 	address = (PPROC)GetProcAddress(handle, name);
 	if (address)
 		return address;
+
+	if (((size_t)name & ~0xFFFF) == 0) {
+		return NULL;
+	}
+
 	/* It should not happen that dict is NULL, but better be safe */
 	if (dict==NULL || dict->flags & FUNCFLAG_CDECL)
 		return address;
@@ -2493,6 +2498,28 @@ _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
 	return 1;
 }
 
+static int
+_get_name(PyObject *obj, char **pname)
+{
+#ifdef MS_WIN32
+	if (PyInt_Check(obj) || PyLong_Check(obj)) {
+		/* We have to use MAKEINTRESOURCEA for Windows CE.
+		   Works on Windows as well, of course.
+		*/
+		*pname = MAKEINTRESOURCEA(PyInt_AsUnsignedLongMask(obj) & 0xFFFF);
+		return 1;
+	}
+#endif
+	if (PyString_Check(obj) || PyUnicode_Check(obj)) {
+		*pname = PyString_AsString(obj);
+		return pname ? 1 : 0;
+	}
+	PyErr_SetString(PyExc_TypeError,
+			"function name must be string or integer");
+	return 0;
+}
+
+
 static PyObject *
 CFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -2504,7 +2531,7 @@ CFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	void *handle;
 	PyObject *paramflags = NULL;
 
-	if (!PyArg_ParseTuple(args, "sO|O", &name, &dll, &paramflags))
+	if (!PyArg_ParseTuple(args, "(O&O)|O", _get_name, &name, &dll, &paramflags))
 		return NULL;
 	if (paramflags == Py_None)
 		paramflags = NULL;
@@ -2529,9 +2556,14 @@ CFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #ifdef MS_WIN32
 	address = FindAddress(handle, name, (PyObject *)type);
 	if (!address) {
-		PyErr_Format(PyExc_AttributeError,
-			     "function '%s' not found",
-			     name);
+		if ((size_t)name & ~0xFFFF)
+			PyErr_Format(PyExc_AttributeError,
+				     "function '%s' not found",
+				     name);
+		else
+			PyErr_Format(PyExc_AttributeError,
+				     "function ordinal %d not found",
+				     name);
 		return NULL;
 	}
 #else
@@ -2608,8 +2640,9 @@ CFuncPtr_FromVtblIndex(PyTypeObject *type, PyObject *args, PyObject *kwds)
   "O" - must be a callable, creates a C callable function
 
   two or more argument forms (the third argument is a paramflags tuple)
-  "sO|O" - function name, dll object (with an integer handle)
-  "is|O" - vtable index, method name, creates callable calling COM vtbl
+  "(sO)|..." - (function name, dll object (with an integer handle)), paramflags
+  "(iO)|..." - (function ordinal, dll object (with an integer handle)), paramflags
+  "is|..." - vtable index, method name, creates callable calling COM vtbl
 */
 static PyObject *
 CFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -2622,14 +2655,13 @@ CFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (PyTuple_GET_SIZE(args) == 0)
 		return GenericCData_new(type, args, kwds);
 
-	/* Shouldn't the following better be done in __init__? */
-	if (2 <= PyTuple_GET_SIZE(args)) {
-#ifdef MS_WIN32
-		if (PyInt_Check(PyTuple_GET_ITEM(args, 0)))
-			return CFuncPtr_FromVtblIndex(type, args, kwds);
-#endif
+	if (1 <= PyTuple_GET_SIZE(args) && PyTuple_Check(PyTuple_GET_ITEM(args, 0)))
 		return CFuncPtr_FromDll(type, args, kwds);
-	}
+
+#ifdef MS_WIN32
+	if (2 <= PyTuple_GET_SIZE(args) && PyInt_Check(PyTuple_GET_ITEM(args, 0)))
+		return CFuncPtr_FromVtblIndex(type, args, kwds);
+#endif
 
 	if (1 == PyTuple_GET_SIZE(args)
 	    && (PyInt_Check(PyTuple_GET_ITEM(args, 0))
@@ -4351,6 +4383,42 @@ string_at(const char *ptr, Py_ssize_t size)
 	return PyString_FromStringAndSize(ptr, size);
 }
 
+static int
+cast_check_pointertype(PyObject *arg)
+{
+	StgDictObject *dict;
+
+	if (PointerTypeObject_Check(arg))
+		return 1;
+	dict = PyType_stgdict(arg);
+	if (dict) {
+		if (PyString_Check(dict->proto)
+		    && (strchr("sPzUZXO", PyString_AS_STRING(dict->proto)[0]))) {
+			/* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */
+			return 1;
+		}
+	}
+	PyErr_Format(PyExc_TypeError,
+		     "cast() argument 2 must be a pointer type, not %s",
+		     PyType_Check(arg)
+		     ? ((PyTypeObject *)arg)->tp_name
+		     : arg->ob_type->tp_name);
+	return 0;
+}
+
+static PyObject *
+cast(void *ptr, PyObject *ctype)
+{
+	CDataObject *result;
+	if (0 == cast_check_pointertype(ctype))
+		return NULL;
+	result = (CDataObject *)PyObject_CallFunctionObjArgs(ctype, NULL);
+	if (result == NULL)
+		return NULL;
+	/* Should we assert that result is a pointer type? */
+	memcpy(result->b_ptr, &ptr, sizeof(void *));
+	return (PyObject *)result;
+}
 
 #ifdef CTYPES_UNICODE
 static PyObject *
@@ -4486,6 +4554,7 @@ init_ctypes(void)
 	PyModule_AddObject(m, "_memmove_addr", PyLong_FromVoidPtr(memmove));
 	PyModule_AddObject(m, "_memset_addr", PyLong_FromVoidPtr(memset));
 	PyModule_AddObject(m, "_string_at_addr", PyLong_FromVoidPtr(string_at));
+	PyModule_AddObject(m, "_cast_addr", PyLong_FromVoidPtr(cast));
 #ifdef CTYPES_UNICODE
 	PyModule_AddObject(m, "_wstring_at_addr", PyLong_FromVoidPtr(wstring_at));
 #endif

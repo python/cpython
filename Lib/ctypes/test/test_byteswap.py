@@ -2,6 +2,7 @@ import sys, unittest, struct, math
 from binascii import hexlify
 
 from ctypes import *
+from ctypes.test import is_resource_enabled
 
 def bin(s):
     return hexlify(buffer(s)).upper()
@@ -149,7 +150,7 @@ class Test(unittest.TestCase):
         self.failUnless(c_char.__ctype_le__ is c_char)
         self.failUnless(c_char.__ctype_be__ is c_char)
 
-    def test_struct_fields(self):
+    def test_struct_fields_1(self):
         if sys.byteorder == "little":
             base = BigEndianStructure
         else:
@@ -198,17 +199,20 @@ class Test(unittest.TestCase):
             pass
         self.assertRaises(TypeError, setattr, S, "_fields_", [("s", T)])
 
-    # crashes on solaris with a core dump.
-    def X_test_struct_fields(self):
+    def test_struct_fields_2(self):
+        # standard packing in struct uses no alignment.
+        # So, we have to align using pad bytes.
+        #
+        # Unaligned accesses will crash Python (on those platforms that
+        # don't allow it, like sparc solaris).
         if sys.byteorder == "little":
             base = BigEndianStructure
-            fmt = ">bhid"
+            fmt = ">bxhid"
         else:
             base = LittleEndianStructure
-            fmt = "<bhid"
+            fmt = "<bxhid"
 
         class S(base):
-            _pack_ = 1 # struct with '<' or '>' uses standard alignment.
             _fields_ = [("b", c_byte),
                         ("h", c_short),
                         ("i", c_int),
@@ -217,6 +221,55 @@ class Test(unittest.TestCase):
         s1 = S(0x12, 0x1234, 0x12345678, 3.14)
         s2 = struct.pack(fmt, 0x12, 0x1234, 0x12345678, 3.14)
         self.failUnlessEqual(bin(s1), bin(s2))
+
+    if is_resource_enabled("unaligned_access"):
+
+        def test_unaligned_nonnative_struct_fields(self):
+            if sys.byteorder == "little":
+                base = BigEndianStructure
+                fmt = ">b h xi xd"
+            else:
+                base = LittleEndianStructure
+                fmt = "<b h xi xd"
+
+            class S(base):
+                _pack_ = 1
+                _fields_ = [("b", c_byte),
+
+                            ("h", c_short),
+
+                            ("_1", c_byte),
+                            ("i", c_int),
+
+                            ("_2", c_byte),
+                            ("d", c_double)]
+
+            s1 = S(0x12, 0x1234, 0, 0x12345678, 0, 3.14)
+            s2 = struct.pack(fmt, 0x12, 0x1234, 0x12345678, 3.14)
+            self.failUnlessEqual(bin(s1), bin(s2))
+
+        def test_unaligned_native_struct_fields(self):
+            if sys.byteorder == "little":
+                fmt = "<b h xi xd"
+            else:
+                base = LittleEndianStructure
+                fmt = ">b h xi xd"
+
+            class S(Structure):
+                _pack_ = 1
+                _fields_ = [("b", c_byte),
+
+                            ("h", c_short),
+
+                            ("_1", c_byte),
+                            ("i", c_int),
+
+                            ("_2", c_byte),
+                            ("d", c_double)]
+
+            s1 = S(0x12, 0x1234, 0, 0x12345678, 0, 3.14)
+            s2 = struct.pack(fmt, 0x12, 0x1234, 0x12345678, 3.14)
+            self.failUnlessEqual(bin(s1), bin(s2))
 
 if __name__ == "__main__":
     unittest.main()
