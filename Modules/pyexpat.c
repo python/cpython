@@ -1519,6 +1519,8 @@ xmlparse_getattr(xmlparseobject *self, char *name)
     if (strcmp(name, "__members__") == 0) {
         int i;
         PyObject *rc = PyList_New(0);
+	if (!rc)
+		return NULL;
         for (i = 0; handler_info[i].name != NULL; i++) {
             PyObject *o = get_handler_name(&handler_info[i]);
             if (o != NULL)

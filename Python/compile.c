@@ -319,7 +319,9 @@ static PyObject *
 list2dict(PyObject *list)
 {
 	Py_ssize_t i, n;
-	PyObject *v, *k, *dict = PyDict_New();
+	PyObject *v, *k;
+	PyObject *dict = PyDict_New();
+	if (!dict) return NULL;
 
 	n = PyList_Size(list);
 	for (i = 0; i < n; i++) {

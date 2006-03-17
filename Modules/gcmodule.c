@@ -1085,6 +1085,8 @@ gc_get_referrers(PyObject *self, PyObject *args)
 {
 	int i;
 	PyObject *result = PyList_New(0);
+	if (!result) return NULL;
+
 	for (i = 0; i < NUM_GENERATIONS; i++) {
 		if (!(gc_referrers_for(args, GEN_HEAD(i), result))) {
 			Py_DECREF(result);
