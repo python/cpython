@@ -1015,7 +1015,7 @@ class Logger(Filterer):
         """
         Convenience method for logging an ERROR with exception information.
         """
-        self.error(msg, *args, exc_info=1)
+        self.error(msg, exc_info=1, *args)
 
     def critical(self, msg, *args, **kwargs):
         """
@@ -1292,7 +1292,7 @@ def exception(msg, *args):
     Log a message with severity 'ERROR' on the root logger,
     with exception information.
     """
-    error(msg, *args, exc_info=1)
+    error(msg, exc_info=1, *args)
 
 def warning(msg, *args, **kwargs):
     """
