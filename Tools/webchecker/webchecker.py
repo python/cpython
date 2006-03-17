@@ -684,7 +684,7 @@ class Page:
 
     def note(self, level, msg, *args):
         if self.checker:
-            apply(self.checker.note, (level, msg) + args)
+            self.checker.note(level, msg, *args)
         else:
             if self.verbose >= level:
                 if args:
@@ -741,7 +741,7 @@ class MyURLopener(urllib.FancyURLopener):
 
     def __init__(*args):
         self = args[0]
-        apply(urllib.FancyURLopener.__init__, args)
+        urllib.FancyURLopener.__init__(*args)
         self.addheaders = [
             ('User-agent', 'Python-webchecker/%s' % __version__),
             ]

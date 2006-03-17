@@ -81,7 +81,7 @@ class Server:
                 raise NameError, "illegal method name %s" % repr(methodname)
             else:
                 method = getattr(self, methodname)
-                reply = (None, apply(method, args), id)
+                reply = (None, method(*args), id)
         except:
             reply = (sys.exc_info()[:2], id)
         if id < 0 and reply[:2] == (None, None):
@@ -117,7 +117,7 @@ from security import Security
 class SecureServer(Server, Security):
 
     def __init__(self, *args):
-        apply(Server.__init__, (self,) + args)
+        Server.__init__(self, *args)
         Security.__init__(self)
 
     def _verify(self, conn, address):

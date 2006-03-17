@@ -50,7 +50,7 @@ class TraceMetaClass:
             init = inst.__getattr__('__init__')
         except AttributeError:
             init = lambda: None
-        apply(init, args, kw)
+        init(*args, **kw)
         return inst
 
     __trace_output__ = None
@@ -85,7 +85,7 @@ class NotTracingWrapper:
         self.func = func
         self.inst = inst
     def __call__(self, *args, **kw):
-        return apply(self.func, (self.inst,) + args, kw)
+        return self.func(self.inst, *args, **kw)
 
 class TracingWrapper(NotTracingWrapper):
     def __call__(self, *args, **kw):
@@ -93,7 +93,7 @@ class TracingWrapper(NotTracingWrapper):
                                  "calling %s, inst=%s, args=%s, kw=%s",
                                  self.__name__, self.inst, args, kw)
         try:
-            rv = apply(self.func, (self.inst,) + args, kw)
+            rv = self.func(self.inst, *args, **kw)
         except:
             t, v, tb = sys.exc_info()
             self.inst.__trace_call__(self.inst.__trace_output__,

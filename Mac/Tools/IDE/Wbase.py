@@ -78,7 +78,7 @@ class Widget:
             if type(args[0]) == FunctionType or type(args[0]) == MethodType:
                 self._possize = args[0]
             else:
-                apply(self.resize, args[0])
+                self.resize(*args[0])
         elif len(args) == 2:
             self._possize = (0, 0) + args
         elif len(args) == 4:
@@ -175,37 +175,37 @@ class Widget:
 
     def forall(self, methodname, *args):
         for w in self._widgets:
-            rv = apply(w.forall, (methodname,) + args)
+            rv = w.forall(methodname, *args)
             if rv:
                 return rv
         if self._bindings.has_key("<" + methodname + ">"):
             callback = self._bindings["<" + methodname + ">"]
-            rv = apply(callback, args)
+            rv = callback(*args)
             if rv:
                 return rv
         if hasattr(self, methodname):
             method = getattr(self, methodname)
-            return apply(method, args)
+            return method(*args)
 
     def forall_butself(self, methodname, *args):
         for w in self._widgets:
-            rv = apply(w.forall, (methodname,) + args)
+            rv = w.forall(methodname, *args)
             if rv:
                 return rv
 
     def forall_frombottom(self, methodname, *args):
         if self._bindings.has_key("<" + methodname + ">"):
             callback = self._bindings["<" + methodname + ">"]
-            rv = apply(callback, args)
+            rv = callback(*args)
             if rv:
                 return rv
         if hasattr(self, methodname):
             method = getattr(self, methodname)
-            rv = apply(method, args)
+            rv = method(*args)
             if rv:
                 return rv
         for w in self._widgets:
-            rv = apply(w.forall_frombottom, (methodname,) + args)
+            rv = w.forall_frombottom(methodname, *args)
             if rv:
                 return rv
 
@@ -670,7 +670,7 @@ def CallbackCall(callback, mustfit, *args):
         maxargs = func.func_code.co_argcount - 1
     else:
         if callable(callback):
-            return apply(callback, args)
+            return callback(*args)
         else:
             raise TypeError, "uncallable callback object"
 
@@ -679,7 +679,7 @@ def CallbackCall(callback, mustfit, *args):
     else:
         minargs = maxargs
     if minargs <= len(args) <= maxargs:
-        return apply(callback, args)
+        return callback(*args)
     elif not mustfit and minargs == 0:
         return callback()
     else:

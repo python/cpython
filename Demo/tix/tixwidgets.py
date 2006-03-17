@@ -71,8 +71,7 @@ class Demo:
         hm.add_checkbutton(label='BalloonHelp', underline=0, command=ToggleHelp,
                            variable=self.useBalloons)
         # The trace variable option doesn't seem to work, instead I use 'command'
-        #apply(w.tk.call, ('trace', 'variable', self.useBalloons, 'w',
-        #                     ToggleHelp))
+        #w.tk.call('trace', 'variable', self.useBalloons, 'w', ToggleHelp))
 
         return w
 

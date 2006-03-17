@@ -180,7 +180,7 @@ def copyres(input, output, *args, **kwargs):
         output = Res.FSpOpenResFile(output, 3)
         openedout = 1
     try:
-        apply(buildtools.copyres, (input, output) + args, kwargs)
+        buildtools.copyres(input, output, *args, **kwargs)
     finally:
         if openedin:
             Res.CloseResFile(input)

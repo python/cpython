@@ -194,7 +194,7 @@ def main():
         if o == '-l':
             addn_link.append(a)
         if o == '-a':
-            apply(modulefinder.AddPackagePath, tuple(a.split("=", 2)))
+            modulefinder.AddPackagePath(*a.split("=", 2))
         if o == '-r':
             f,r = a.split("=", 2)
             replace_paths.append( (f,r) )

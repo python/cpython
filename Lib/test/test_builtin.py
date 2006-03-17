@@ -153,32 +153,6 @@ class BuiltinTest(unittest.TestCase):
         S = [10, 20, 30]
         self.assertEqual(any(x > 42 for x in S), False)
 
-    def test_apply(self):
-        def f0(*args):
-            self.assertEqual(args, ())
-        def f1(a1):
-            self.assertEqual(a1, 1)
-        def f2(a1, a2):
-            self.assertEqual(a1, 1)
-            self.assertEqual(a2, 2)
-        def f3(a1, a2, a3):
-            self.assertEqual(a1, 1)
-            self.assertEqual(a2, 2)
-            self.assertEqual(a3, 3)
-        apply(f0, ())
-        apply(f1, (1,))
-        apply(f2, (1, 2))
-        apply(f3, (1, 2, 3))
-
-        # A PyCFunction that takes only positional parameters should allow an
-        # empty keyword dictionary to pass without a complaint, but raise a
-        # TypeError if the dictionary is non-empty.
-        apply(id, (1,), {})
-        self.assertRaises(TypeError, apply, id, (1,), {"foo": 1})
-        self.assertRaises(TypeError, apply)
-        self.assertRaises(TypeError, apply, id, 42)
-        self.assertRaises(TypeError, apply, id, (42,), 42)
-
     def test_callable(self):
         self.assert_(callable(len))
         def f(): pass

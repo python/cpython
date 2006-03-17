@@ -155,8 +155,7 @@ class PackDialog(Dialog):
         def set(self, e=None):
             self.current = self.var.get()
             try:
-                apply(self.dialog.widget.pack, (),
-                      {self.option: self.current})
+                self.dialog.widget.pack(**{self.option: self.current})
             except TclError, msg:
                 print msg
                 self.refresh()

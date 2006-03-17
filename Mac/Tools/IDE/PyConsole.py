@@ -26,7 +26,7 @@ def inspect(foo):                       # JJS 1/25/99
 class ConsoleTextWidget(W.EditText):
 
     def __init__(self, *args, **kwargs):
-        apply(W.EditText.__init__, (self,) + args, kwargs)
+        W.EditText.__init__(self, *args, **kwargs)
         self._inputstart = 0
         self._buf = ''
         self.pyinteractive = PyInteractive.PyInteractive()

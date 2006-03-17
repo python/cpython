@@ -523,8 +523,7 @@ class SortDemo:
         if self.size not in sizes:
             sizes.append(self.size)
             sizes.sort()
-        self.m_size = apply(OptionMenu,
-                            (self.botleftframe, self.v_size) + tuple(sizes))
+        self.m_size = OptionMenu(self.botleftframe, self.v_size, *sizes)
         self.m_size.pack(fill=X)
 
         self.v_speed = StringVar(self.master)

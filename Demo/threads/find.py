@@ -17,7 +17,6 @@
 
 import sys
 import getopt
-import string
 import time
 import os
 from stat import *
@@ -85,7 +84,7 @@ class WorkQ:
             if not job:
                 break
             func, args = job
-            apply(func, args)
+            func(*args)
             self._donework()
 
     def run(self, nworkers):
@@ -104,7 +103,7 @@ def main():
     opts, args = getopt.getopt(sys.argv[1:], '-w:')
     for opt, arg in opts:
         if opt == '-w':
-            nworkers = string.atoi(arg)
+            nworkers = int(arg)
     if not args:
         args = [os.curdir]
 

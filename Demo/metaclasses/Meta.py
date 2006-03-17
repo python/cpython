@@ -14,7 +14,7 @@ class MetaMethodWrapper:
         self.__name__ = self.func.__name__
 
     def __call__(self, *args, **kw):
-        return apply(self.func, (self.inst,) + args, kw)
+        return self.func(self.inst, *args, **kw)
 
 class MetaHelper:
 
@@ -86,7 +86,7 @@ class MetaClass:
             init = inst.__getattr__('__init__')
         except AttributeError:
             init = lambda: None
-        apply(init, args, kw)
+        init(*args, **kw)
         return inst
 
 

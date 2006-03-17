@@ -186,7 +186,7 @@ def test():
     if hasattr(proxy, what):
         attr = getattr(proxy, what)
         if callable(attr):
-            print apply(attr, tuple(sys.argv[2:]))
+            print attr(*sys.argv[2:])
         else:
             print repr(attr)
     else:

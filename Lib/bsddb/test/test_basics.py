@@ -444,7 +444,7 @@ class BasicTestCase(unittest.TestCase):
                     print "attempting to use a closed cursor's %s method" % \
                           method
                 # a bug may cause a NULL pointer dereference...
-                apply(getattr(c, method), args)
+                getattr(c, method)(*args)
             except db.DBError, val:
                 assert val[0] == 0
                 if verbose: print val

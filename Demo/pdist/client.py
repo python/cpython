@@ -132,12 +132,11 @@ from security import Security
 class SecureClient(Client, Security):
 
     def __init__(self, *args):
-        import string
-        apply(self._pre_init, args)
+        self._pre_init(*args)
         Security.__init__(self)
         self._wf.flush()
         line = self._rf.readline()
-        challenge = string.atoi(string.strip(line))
+        challenge = int(line.strip())
         response = self._encode_challenge(challenge)
         line = repr(long(response))
         if line[-1] in 'Ll': line = line[:-1]

@@ -172,7 +172,7 @@ class BitVec:
     def __cmp__(self, other, *rest):
         #rprt('%r.__cmp__%r\n' % (self, (other,) + rest))
         if type(other) != type(self):
-            other = apply(bitvec, (other, ) + rest)
+            other = bitvec(other, *rest)
         #expensive solution... recursive binary, with slicing
         length = self._len
         if length == 0 or other._len == 0:
@@ -237,7 +237,7 @@ class BitVec:
         #rprt('%s.__setslice__%r\n' % (self, (i, j, sequence) + rest))
         i, j = _check_slice(self._len, i, j)
         if type(sequence) != type(self):
-            sequence = apply(bitvec, (sequence, ) + rest)
+            sequence = bitvec(sequence, *rest)
         #sequence is now of our own type
         ls_part = self[:i]
         ms_part = self[j:]
@@ -283,7 +283,7 @@ class BitVec:
     def __and__(self, otherseq, *rest):
         #rprt('%r.__and__%r\n' % (self, (otherseq,) + rest))
         if type(otherseq) != type(self):
-            otherseq = apply(bitvec, (otherseq, ) + rest)
+            otherseq = bitvec(otherseq, *rest)
         #sequence is now of our own type
         return BitVec(self._data & otherseq._data, \
                   min(self._len, otherseq._len))
@@ -292,7 +292,7 @@ class BitVec:
     def __xor__(self, otherseq, *rest):
         #rprt('%r.__xor__%r\n' % (self, (otherseq,) + rest))
         if type(otherseq) != type(self):
-            otherseq = apply(bitvec, (otherseq, ) + rest)
+            otherseq = bitvec(otherseq, *rest)
         #sequence is now of our own type
         return BitVec(self._data ^ otherseq._data, \
                   max(self._len, otherseq._len))
@@ -301,7 +301,7 @@ class BitVec:
     def __or__(self, otherseq, *rest):
         #rprt('%r.__or__%r\n' % (self, (otherseq,) + rest))
         if type(otherseq) != type(self):
-            otherseq = apply(bitvec, (otherseq, ) + rest)
+            otherseq = bitvec(otherseq, *rest)
         #sequence is now of our own type
         return BitVec(self._data | otherseq._data, \
                   max(self._len, otherseq._len))
@@ -316,7 +316,7 @@ class BitVec:
         #needed for *some* of the arithmetic operations
         #rprt('%r.__coerce__%r\n' % (self, (otherseq,) + rest))
         if type(otherseq) != type(self):
-            otherseq = apply(bitvec, (otherseq, ) + rest)
+            otherseq = bitvec(otherseq, *rest)
         return self, otherseq
 
     def __int__(self):

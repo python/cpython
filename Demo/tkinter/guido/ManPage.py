@@ -22,7 +22,7 @@ class EditableManPage(ScrolledText):
     # Initialize instance
     def __init__(self, master=None, **cnf):
         # Initialize base class
-        apply(ScrolledText.__init__, (self, master), cnf)
+        ScrolledText.__init__(self, master, **cnf)
 
         # Define tags for formatting styles
         self.tag_config('X', underline=1)
@@ -178,7 +178,7 @@ class ReadonlyManPage(EditableManPage):
     # Initialize instance
     def __init__(self, master=None, **cnf):
         cnf['state'] = DISABLED
-        apply(EditableManPage.__init__, (self, master), cnf)
+        EditableManPage.__init__(self, master, **cnf)
 
 # Alias
 ManPage = ReadonlyManPage

@@ -162,7 +162,7 @@ def make_archive (base_name, format,
     func = format_info[0]
     for (arg,val) in format_info[1]:
         kwargs[arg] = val
-    filename = apply(func, (base_name, base_dir), kwargs)
+    filename = func(base_name, base_dir, **kwargs)
 
     if root_dir is not None:
         log.debug("changing back to '%s'", save_cwd)

@@ -90,7 +90,7 @@ def Node(*args):
             raise
     else:
         raise WalkerError, "Can't find appropriate Node type: %s" % str(args)
-        #return apply(ast.Node, args)
+        #return ast.Node(*args)
 
 class Transformer:
     """Utility object for transforming Python parse trees.

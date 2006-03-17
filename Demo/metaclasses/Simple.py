@@ -28,7 +28,7 @@ class BoundMethod:
         self.instance = instance
     def __call__(self, *args):
         print "calling", self.function, "for", self.instance, "with", args
-        return apply(self.function, (self.instance,) + args)
+        return self.function(self.instance, *args)
 
 Trace = Tracing('Trace', (), {})
 

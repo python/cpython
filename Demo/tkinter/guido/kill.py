@@ -9,7 +9,7 @@ import os
 
 class BarButton(Menubutton):
     def __init__(self, master=None, **cnf):
-        apply(Menubutton.__init__, (self, master), cnf)
+        Menubutton.__init__(self, master, **cnf)
         self.pack(side=LEFT)
         self.menu = Menu(self, name='menu')
         self['menu'] = self.menu
