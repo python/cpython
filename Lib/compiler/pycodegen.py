@@ -999,7 +999,7 @@ class CodeGenerator:
         '+=' : 'INPLACE_ADD',
         '-=' : 'INPLACE_SUBTRACT',
         '*=' : 'INPLACE_MULTIPLY',
-        '/=' : 'INPLACE_DIVIDE',
+        '/=' : 'INPLACE_TRUE_DIVIDE',
         '//=': 'INPLACE_FLOOR_DIVIDE',
         '%=' : 'INPLACE_MODULO',
         '**=': 'INPLACE_POWER',
