@@ -212,7 +212,25 @@ implemented by Richard Jones and Fred Drake.}
 %======================================================================
 \section{PEP 338: Executing Modules as Scripts}
 
-% XXX write this
+The \programopt{-m} switch added in Python 2.4 to execute a module as
+a script gained a few more abilities.  Instead of being implemented in
+C code inside the Python interpreter, the switch now uses an
+implementation in a new module, \module{runpy}.
+
+The \module{runpy} module implements a more sophisticated import
+mechanism so that it's now possible to run modules in a package such
+as \module{pychecker.checker}.  The module also supports alternative
+import mechanisms such as the \module{zipimport} module.  (This means
+you can add a .zip archive's path to \code{sys.path} and then use the
+\programopt{-m} switch to execute code from the archive.
+
+
+\begin{seealso}
+
+\seepep{338}{Executing modules as scripts}{PEP written and 
+implemented by Nick Coghlan.}
+
+\end{seealso}
 
 
 %======================================================================
