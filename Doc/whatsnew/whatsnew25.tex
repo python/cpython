@@ -597,6 +597,15 @@ now has \member{st_gen} and \member{st_birthtime}.
 The \member{st_flags} member is also available, if the platform supports it.
 % XXX patch 1180695, 1212117
 
+\item The old \module{regex} and \module{regsub} modules, which have been 
+deprecated ever since Python 2.0, have finally been deleted.  
+
+\item The \file{lib-old} directory,
+which includes ancient modules such as \module{dircmp} and
+\module{ni}, was also deleted.  \file{lib-old} wasn't on the default
+\code{sys.path}, so unless your programs explicitly added the directory to 
+\code{sys.path}, this removal shouldn't affect your code.
+
 \item The \module{socket} module now supports \constant{AF_NETLINK}
 sockets on Linux, thanks to a patch from Philippe Biondi.  
 Netlink sockets are a Linux-specific mechanism for communications
@@ -715,7 +724,14 @@ Some of the more notable changes are:
 
 \begin{itemize}
 
-\item Details go here.
+\item Evan Jones's patch to obmalloc, first described in a talk
+at PyCon DC 2005, was applied.  Python 2.4 allocated small objects in
+256K-sized arenas, but never freed arenas.  With this patch, Python
+will free arenas when they're empty.  The net effect is that on some
+platforms, when you allocate many objects, Python's memory usage may
+actually drop when you delete them, and the memory may be returned to
+the operating system.  (Implemented by Evan Jones, and reworked by Tim
+Peters.)
 
 \end{itemize}
 
