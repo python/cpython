@@ -1583,12 +1583,6 @@ flush the read-ahead buffer.
   implemented, or cannot be implemented efficiently.
 \end{methoddesc}
 
-\begin{methoddesc}[file]{xreadlines}{}
-  This method returns the same thing as \code{iter(f)}.
-  \versionadded{2.1}
-  \deprecated{2.3}{Use \samp{for \var{line} in \var{file}} instead.}
-\end{methoddesc}
-
 \begin{methoddesc}[file]{seek}{offset\optional{, whence}}
   Set the file's current position, like \code{stdio}'s \cfunction{fseek()}.
   The \var{whence} argument is optional and defaults to \code{0}

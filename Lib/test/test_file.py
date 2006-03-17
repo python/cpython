@@ -179,7 +179,7 @@ for s in (-1, 0, 1, 512):
 
 methods = ['fileno', 'flush', 'isatty', 'next', 'read', 'readinto',
            'readline', 'readlines', 'seek', 'tell', 'truncate', 'write',
-           'xreadlines', '__iter__']
+           '__iter__']
 if sys.platform.startswith('atheos'):
     methods.remove('truncate')
 

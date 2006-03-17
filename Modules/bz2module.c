@@ -778,13 +778,6 @@ BZ2File_readlines(BZ2FileObject *self, PyObject *args)
 	return list;
 }
 
-PyDoc_STRVAR(BZ2File_xreadlines__doc__,
-"xreadlines() -> self\n\
-\n\
-For backward compatibility. BZ2File objects now include the performance\n\
-optimizations previously implemented in the xreadlines module.\n\
-");
-
 PyDoc_STRVAR(BZ2File_write__doc__,
 "write(data) -> None\n\
 \n\
@@ -1183,7 +1176,6 @@ static PyMethodDef BZ2File_methods[] = {
 	{"read", (PyCFunction)BZ2File_read, METH_VARARGS, BZ2File_read__doc__},
 	{"readline", (PyCFunction)BZ2File_readline, METH_VARARGS, BZ2File_readline__doc__},
 	{"readlines", (PyCFunction)BZ2File_readlines, METH_VARARGS, BZ2File_readlines__doc__},
-	{"xreadlines", (PyCFunction)BZ2File_getiter, METH_VARARGS, BZ2File_xreadlines__doc__},
 	{"write", (PyCFunction)BZ2File_write, METH_VARARGS, BZ2File_write__doc__},
 	{"writelines", (PyCFunction)BZ2File_writelines, METH_O, BZ2File_writelines__doc__},
 	{"seek", (PyCFunction)BZ2File_seek, METH_VARARGS, BZ2File_seek__doc__},
