@@ -205,7 +205,7 @@ class BaseTest(unittest.TestCase):
         self.assert_((a > a) is False)
         self.assert_((a >= a) is True)
 
-        as = array.array(self.typecode, self.smallerexample)
+        al = array.array(self.typecode, self.smallerexample)
         ab = array.array(self.typecode, self.biggerexample)
 
         self.assert_((a == 2*a) is False)
@@ -215,12 +215,12 @@ class BaseTest(unittest.TestCase):
         self.assert_((a > 2*a) is False)
         self.assert_((a >= 2*a) is False)
 
-        self.assert_((a == as) is False)
-        self.assert_((a != as) is True)
-        self.assert_((a < as) is False)
-        self.assert_((a <= as) is False)
-        self.assert_((a > as) is True)
-        self.assert_((a >= as) is True)
+        self.assert_((a == al) is False)
+        self.assert_((a != al) is True)
+        self.assert_((a < al) is False)
+        self.assert_((a <= al) is False)
+        self.assert_((a > al) is True)
+        self.assert_((a >= al) is True)
 
         self.assert_((a == ab) is False)
         self.assert_((a != ab) is True)
