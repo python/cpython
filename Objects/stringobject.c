@@ -16,7 +16,7 @@ static PyStringObject *nullstring;
    When the interned string reaches a refcnt of 0 the string deallocation
    function will delete the reference from this dictionary.
 
-   Another way to look at this is that to say that the actual reference 
+   Another way to look at this is that to say that the actual reference
    count of a string is:  s->ob_refcnt + (s->ob_sstate?2:0)
 */
 static PyObject *interned;
@@ -183,7 +183,7 @@ PyString_FromFormatV(const char *format, va_list vargs)
 				++f;
 			/* likewise for %zd */
 			if (*f == 'z' && *(f+1) == 'd')
-				++f;			
+				++f;
 
 			switch (*f) {
 			case 'c':
@@ -273,18 +273,9 @@ PyString_FromFormatV(const char *format, va_list vargs)
 			case 'd':
 				if (longflag)
 					sprintf(s, "%ld", va_arg(vargs, long));
-				else if (size_tflag) {
-					/* Instead of checking whether the C
-					   library supports %zd, handle the
-					   common cases. */
-				        #if SIZEOF_SIZE_T == SIZEOF_LONG
-					sprintf(s, "%ld", va_arg(vargs, long));
-					#elif defined(MS_WINDOWS)
-					sprintf(s, "%Id", va_arg(vargs, size_t));
-					#else
-					#error Cannot print size_t values
-					#endif
-				}
+				else if (size_tflag)
+					sprintf(s, "%" PY_FORMAT_SIZE_T "d",
+					        va_arg(vargs, size_t));
 				else
 					sprintf(s, "%d", va_arg(vargs, int));
 				s += strlen(s);
@@ -622,7 +613,7 @@ PyObject *PyString_DecodeEscape(const char *s,
 			*p++ = c;
 			break;
 		case 'x':
-			if (isxdigit(Py_CHARMASK(s[0])) 
+			if (isxdigit(Py_CHARMASK(s[0]))
 			    && isxdigit(Py_CHARMASK(s[1]))) {
 				unsigned int x = 0;
 				c = Py_CHARMASK(*s);
@@ -646,7 +637,7 @@ PyObject *PyString_DecodeEscape(const char *s,
 				break;
 			}
 			if (!errors || strcmp(errors, "strict") == 0) {
-				PyErr_SetString(PyExc_ValueError, 
+				PyErr_SetString(PyExc_ValueError,
 						"invalid \\x escape");
 				goto failed;
 			}
@@ -838,7 +829,7 @@ PyString_Repr(PyObject *obj, int smartquotes)
 
 		/* figure out which quote to use; single is preferred */
 		quote = '\'';
-		if (smartquotes && 
+		if (smartquotes &&
 		    memchr(op->ob_sval, '\'', op->ob_size) &&
 		    !memchr(op->ob_sval, '"', op->ob_size))
 			quote = '"';
@@ -1003,7 +994,7 @@ string_repeat(register PyStringObject *a, register Py_ssize_t n)
 /* String slice a[i:j] consists of characters a[i] ... a[j-1] */
 
 static PyObject *
-string_slice(register PyStringObject *a, register Py_ssize_t i, 
+string_slice(register PyStringObject *a, register Py_ssize_t i,
 	     register Py_ssize_t j)
      /* j -- may be negative! */
 {
@@ -1047,7 +1038,7 @@ string_contains(PyObject *a, PyObject *el)
 
 	if (len_sub == 0)
 		return 1;
-	/* last points to one char beyond the start of the rightmost 
+	/* last points to one char beyond the start of the rightmost
 	   substring.  When s<last, there is still room for a possible match
 	   and s[0] through s[len_sub-1] will be in bounds.
 	   shortsub is len_sub minus the last character which is checked
@@ -1207,7 +1198,7 @@ string_subscript(PyStringObject* self, PyObject* item)
 		char* result_buf;
 		PyObject* result;
 
-		if (PySlice_GetIndicesEx((PySliceObject*)item, 
+		if (PySlice_GetIndicesEx((PySliceObject*)item,
 				 PyString_GET_SIZE(self),
 				 &start, &stop, &step, &slicelength) < 0) {
 			return NULL;
@@ -1222,19 +1213,19 @@ string_subscript(PyStringObject* self, PyObject* item)
 			if (result_buf == NULL)
 				return PyErr_NoMemory();
 
-			for (cur = start, i = 0; i < slicelength; 
+			for (cur = start, i = 0; i < slicelength;
 			     cur += step, i++) {
 				result_buf[i] = source_buf[cur];
 			}
-			
-			result = PyString_FromStringAndSize(result_buf, 
+
+			result = PyString_FromStringAndSize(result_buf,
 							    slicelength);
 			PyMem_Free(result_buf);
 			return result;
 		}
-	} 
+	}
 	else {
-		PyErr_SetString(PyExc_TypeError, 
+		PyErr_SetString(PyExc_TypeError,
 				"string indices must be integers");
 		return NULL;
 	}
@@ -1661,7 +1652,7 @@ string_join(PyStringObject *self, PyObject *orig)
 	}
 
 	/* There are at least two things to join, or else we have a subclass
-	 * of the builtin types in the sequence.  
+	 * of the builtin types in the sequence.
 	 * Do a pre-pass to figure out the total amount of space we'll
 	 * need (sz), see whether any argument is absurd, and defer to
 	 * the Unicode join if appropriate.
@@ -2711,7 +2702,7 @@ string_encode(PyStringObject *self, PyObject *args)
     char *encoding = NULL;
     char *errors = NULL;
     PyObject *v;
-    
+
     if (!PyArg_ParseTuple(args, "|ss:encode", &encoding, &errors))
         return NULL;
     v = PyString_AsEncodedObject((PyObject *)self, encoding, errors);
@@ -2748,7 +2739,7 @@ string_decode(PyStringObject *self, PyObject *args)
     char *encoding = NULL;
     char *errors = NULL;
     PyObject *v;
-    
+
     if (!PyArg_ParseTuple(args, "|ss:decode", &encoding, &errors))
         return NULL;
     v = PyString_AsDecodedObject((PyObject *)self, encoding, errors);
@@ -3483,7 +3474,7 @@ PyTypeObject PyString_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	&string_as_buffer,			/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES | 
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES |
 		Py_TPFLAGS_BASETYPE,		/* tp_flags */
 	string_doc,				/* tp_doc */
 	0,					/* tp_traverse */
@@ -3636,7 +3627,7 @@ formatfloat(char *buf, size_t buflen, int flags,
 	     len = 1 + 50 + 1 + prec = 52 + prec
 
 	   If prec=0 the effective precision is 1 (the leading digit is
-	   always given), therefore increase the length by one. 
+	   always given), therefore increase the length by one.
 
 	*/
 	if ((type == 'g' && buflen <= (size_t)10 + (size_t)prec) ||
@@ -4440,7 +4431,7 @@ void _Py_ReleaseInternedStrings(void)
 	   detector, interned strings are not forcibly deallocated; rather, we
 	   give them their stolen references back, and then clear and DECREF
 	   the interned dict. */
-	   
+
 	fprintf(stderr, "releasing interned strings\n");
 	n = PyList_GET_SIZE(keys);
 	for (i = 0; i < n; i++) {
