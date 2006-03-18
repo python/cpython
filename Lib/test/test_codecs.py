@@ -1,7 +1,7 @@
 from test import test_support
 import unittest
 import codecs
-import sys, StringIO
+import sys, StringIO, _testcapi
 
 class Queue(object):
     """
@@ -1032,9 +1032,11 @@ class BasicUnicodeTest(unittest.TestCase):
                     decodedresult += reader.read()
                 self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
 
-                # check incremental decoder/encoder and iterencode()/iterdecode()
+                # check incremental decoder/encoder (fetched via the Python
+                # and C API) and iterencode()/iterdecode()
                 try:
                     encoder = codecs.getincrementalencoder(encoding)()
+                    cencoder = _testcapi.codec_incrementalencoder(encoding)
                 except LookupError: # no IncrementalEncoder
                     pass
                 else:
@@ -1046,6 +1048,16 @@ class BasicUnicodeTest(unittest.TestCase):
                     decodedresult = u""
                     for c in encodedresult:
                         decodedresult += decoder.decode(c)
+                    self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
+
+                    # check C API
+                    encodedresult = ""
+                    for c in s:
+                        encodedresult += cencoder.encode(c)
+                    cdecoder = _testcapi.codec_incrementaldecoder(encoding)
+                    decodedresult = u""
+                    for c in encodedresult:
+                        decodedresult += cdecoder.decode(c)
                     self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
 
                     # check iterencode()/iterdecode()
