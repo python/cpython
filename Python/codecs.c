@@ -230,16 +230,14 @@ PyObject *codec_getincrementalcodec(const char *encoding,
     if (codecs == NULL)
 	return NULL;
     inccodec = PyObject_GetAttrString(codecs, attrname);
-    if (inccodec == NULL) {
-	Py_DECREF(codecs);
+    Py_DECREF(codecs);
+    if (inccodec == NULL)
 	return NULL;
-    }
     if (errors)
 	ret = PyObject_CallFunction(inccodec, "s", errors);
     else
 	ret = PyObject_CallFunction(inccodec, NULL);
     Py_DECREF(inccodec);
-    Py_DECREF(codecs);
     return ret;
 }
 
