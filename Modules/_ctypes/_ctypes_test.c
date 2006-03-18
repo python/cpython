@@ -99,7 +99,7 @@ EXPORT(char *) my_strdup(char *src)
 #ifdef HAVE_WCHAR_H
 EXPORT(wchar_t *) my_wcsdup(wchar_t *src)
 {
-	int len = wcslen(src);
+	size_t len = wcslen(src);
 	wchar_t *ptr = malloc((len + 1) * sizeof(wchar_t));
 	if (ptr == NULL)
 		return NULL;
