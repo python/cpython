@@ -2,9 +2,18 @@
 # Author: Ben Gertzfield, Barry Warsaw
 # Contact: email-sig@python.org
 
-import email.base64MIME
-import email.quopriMIME
-from email.Encoders import encode_7or8bit
+__all__ = [
+    'Charset',
+    'add_alias',
+    'add_charset',
+    'add_codec',
+    ]
+
+import email.base64mime
+import email.quoprimime
+
+from email import errors
+from email.encoders import encode_7or8bit
 
 
 
@@ -186,8 +195,17 @@ class Charset:
     """
     def __init__(self, input_charset=DEFAULT_CHARSET):
         # RFC 2046, $4.1.2 says charsets are not case sensitive.  We coerce to
-        # unicode because its .lower() is locale insensitive.
-        input_charset = unicode(input_charset, 'ascii').lower()
+        # unicode because its .lower() is locale insensitive.  If the argument
+        # is already a unicode, we leave it at that, but ensure that the
+        # charset is ASCII, as the standard (RFC XXX) requires.
+        try:
+            if isinstance(input_charset, unicode):
+                input_charset.encode('ascii')
+            else:
+                input_charset = unicode(input_charset, 'ascii')
+        except UnicodeError:
+            raise errors.CharsetError(input_charset)
+        input_charset = input_charset.lower()
         # Set the input charset after filtering through the aliases
         self.input_charset = ALIASES.get(input_charset, input_charset)
         # We can try to guess which encoding and conversion to use by the
@@ -307,12 +325,12 @@ class Charset:
         cset = self.get_output_charset()
         # The len(s) of a 7bit encoding is len(s)
         if self.header_encoding == BASE64:
-            return email.base64MIME.base64_len(s) + len(cset) + MISC_LEN
+            return email.base64mime.base64_len(s) + len(cset) + MISC_LEN
         elif self.header_encoding == QP:
-            return email.quopriMIME.header_quopri_len(s) + len(cset) + MISC_LEN
+            return email.quoprimime.header_quopri_len(s) + len(cset) + MISC_LEN
         elif self.header_encoding == SHORTEST:
-            lenb64 = email.base64MIME.base64_len(s)
-            lenqp = email.quopriMIME.header_quopri_len(s)
+            lenb64 = email.base64mime.base64_len(s)
+            lenqp = email.quoprimime.header_quopri_len(s)
             return min(lenb64, lenqp) + len(cset) + MISC_LEN
         else:
             return len(s)
@@ -335,16 +353,16 @@ class Charset:
             s = self.convert(s)
         # 7bit/8bit encodings return the string unchanged (modulo conversions)
         if self.header_encoding == BASE64:
-            return email.base64MIME.header_encode(s, cset)
+            return email.base64mime.header_encode(s, cset)
         elif self.header_encoding == QP:
-            return email.quopriMIME.header_encode(s, cset, maxlinelen=None)
+            return email.quoprimime.header_encode(s, cset, maxlinelen=None)
         elif self.header_encoding == SHORTEST:
-            lenb64 = email.base64MIME.base64_len(s)
-            lenqp = email.quopriMIME.header_quopri_len(s)
+            lenb64 = email.base64mime.base64_len(s)
+            lenqp = email.quoprimime.header_quopri_len(s)
             if lenb64 < lenqp:
-                return email.base64MIME.header_encode(s, cset)
+                return email.base64mime.header_encode(s, cset)
             else:
-                return email.quopriMIME.header_encode(s, cset, maxlinelen=None)
+                return email.quoprimime.header_encode(s, cset, maxlinelen=None)
         else:
             return s
 
@@ -363,8 +381,8 @@ class Charset:
             s = self.convert(s)
         # 7bit/8bit encodings return the string unchanged (module conversions)
         if self.body_encoding is BASE64:
-            return email.base64MIME.body_encode(s)
+            return email.base64mime.body_encode(s)
         elif self.body_encoding is QP:
-            return email.quopriMIME.body_encode(s)
+            return email.quoprimime.body_encode(s)
         else:
             return s

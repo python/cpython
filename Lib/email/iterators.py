@@ -1,8 +1,15 @@
-# Copyright (C) 2001-2004 Python Software Foundation
+# Copyright (C) 2001-2006 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
 """Various types of useful iterators and generators."""
+
+__all__ = [
+    'body_line_iterator',
+    'typed_subpart_iterator',
+    'walk',
+    # Do not include _structure() since it's part of the debugging API.
+    ]
 
 import sys
 from cStringIO import StringIO
@@ -25,7 +32,6 @@ def walk(self):
 
 
 # These two functions are imported into the Iterators.py interface module.
-# The Python 2.2 version uses generators for efficiency.
 def body_line_iterator(msg, decode=False):
     """Iterate over the parts, returning string payloads line-by-line.
 

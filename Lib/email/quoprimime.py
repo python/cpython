@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2004 Python Software Foundation
+# Copyright (C) 2001-2006 Python Software Foundation
 # Author: Ben Gertzfield
 # Contact: email-sig@python.org
 
@@ -26,9 +26,27 @@ does dumb encoding and decoding.  To deal with the various line
 wrapping issues, use the email.Header module.
 """
 
+__all__ = [
+    'body_decode',
+    'body_encode',
+    'body_quopri_check',
+    'body_quopri_len',
+    'decode',
+    'decodestring',
+    'encode',
+    'encodestring',
+    'header_decode',
+    'header_encode',
+    'header_quopri_check',
+    'header_quopri_len',
+    'quote',
+    'unquote',
+    ]
+
 import re
+
 from string import hexdigits
-from email.Utils import fix_eols
+from email.utils import fix_eols
 
 CRLF = '\r\n'
 NL = '\n'

@@ -1,10 +1,11 @@
-\declaremodule{standard}{email.Message}
+\declaremodule{standard}{email.message}
 \modulesynopsis{The base class representing email messages.}
 
 The central class in the \module{email} package is the
-\class{Message} class; it is the base class for the \module{email}
-object model.  \class{Message} provides the core functionality for
-setting and querying header fields, and for accessing message bodies.
+\class{Message} class, imported from the \module{email.message} module.  It is
+the base class for the \module{email} object model.  \class{Message} provides
+the core functionality for setting and querying header fields, and for
+accessing message bodies.
 
 Conceptually, a \class{Message} object consists of \emph{headers} and
 \emph{payloads}.  Headers are \rfc{2822} style field names and
@@ -45,7 +46,7 @@ begin with \code{From }.  For more flexibility, instantiate a
 
 \begin{verbatim}
 from cStringIO import StringIO
-from email.Generator import Generator
+from email.generator import Generator
 fp = StringIO()
 g = Generator(fp, mangle_from_=False, maxheaderlen=60)
 g.flatten(msg)
@@ -119,7 +120,7 @@ client's responsibility to ensure the payload invariants.  Optional
 
 \begin{methoddesc}[Message]{set_charset}{charset}
 Set the character set of the payload to \var{charset}, which can
-either be a \class{Charset} instance (see \refmodule{email.Charset}), a
+either be a \class{Charset} instance (see \refmodule{email.charset}), a
 string naming a character set,
 or \code{None}.  If it is a string, it will be converted to a
 \class{Charset} instance.  If \var{charset} is \code{None}, the
@@ -128,8 +129,8 @@ or \code{None}.  If it is a string, it will be converted to a
 \exception{TypeError}.
 
 The message will be assumed to be of type \mimetype{text/*} encoded with
-\code{charset.input_charset}.  It will be converted to
-\code{charset.output_charset}
+\var{charset.input_charset}.  It will be converted to
+\var{charset.output_charset}
 and encoded properly, if needed, when generating the plain text
 representation of the message.  MIME headers
 (\mailheader{MIME-Version}, \mailheader{Content-Type},
@@ -513,6 +514,9 @@ message/rfc822
 \end{verbatim}
 \end{methoddesc}
 
+\versionchanged[The previously deprecated methods \method{get_type()},
+\method{get_main_type()}, and \method{get_subtype()} were removed]{2.5}
+
 \class{Message} objects can also optionally contain two instance
 attributes, which can be used when generating the plain text of a MIME
 message.
@@ -532,7 +536,7 @@ to the message's \var{preamble} attribute.  When the \class{Generator}
 is writing out the plain text representation of a MIME message, and it
 finds the message has a \var{preamble} attribute, it will write this
 text in the area between the headers and the first boundary.  See
-\refmodule{email.Parser} and \refmodule{email.Generator} for details.
+\refmodule{email.parser} and \refmodule{email.generator} for details.
 
 Note that if the message object has no preamble, the
 \var{preamble} attribute will be \code{None}.
@@ -543,58 +547,15 @@ The \var{epilogue} attribute acts the same way as the \var{preamble}
 attribute, except that it contains text that appears between the last
 boundary and the end of the message.
 
-One note: when generating the flat text for a \mimetype{multipart}
-message that has no \var{epilogue} (using the standard
-\class{Generator} class), no newline is added after the closing
-boundary line.  If the message object has an \var{epilogue} and its
-value does not start with a newline, a newline is printed after the
-closing boundary.  This seems a little clumsy, but it makes the most
-practical sense.  The upshot is that if you want to ensure that a
-newline get printed after your closing \mimetype{multipart} boundary,
-set the \var{epilogue} to the empty string.
+\versionchanged[You do not need to set the epilogue to the empty string in
+order for the \class{Generator} to print a newline at the end of the
+file]{2.5}
 \end{datadesc}
 
 \begin{datadesc}{defects}
 The \var{defects} attribute contains a list of all the problems found when
-parsing this message.  See \refmodule{email.Errors} for a detailed description
+parsing this message.  See \refmodule{email.errors} for a detailed description
 of the possible parsing defects.
 
 \versionadded{2.4}
 \end{datadesc}
-
-\subsubsection{Deprecated methods}
-
-\versionchanged[The \method{add_payload()} method was removed; use the
-\method{attach()} method instead]{2.4}
-
-The following methods are deprecated.  They are documented here for
-completeness.
-
-\begin{methoddesc}[Message]{get_type}{\optional{failobj}}
-Return the message's content type, as a string of the form
-\mimetype{maintype/subtype} as taken from the
-\mailheader{Content-Type} header.
-The returned string is coerced to lowercase.
-
-If there is no \mailheader{Content-Type} header in the message,
-\var{failobj} is returned (defaults to \code{None}).
-
-\deprecated{2.2.2}{Use the \method{get_content_type()} method instead.}
-\end{methoddesc}
-
-\begin{methoddesc}[Message]{get_main_type}{\optional{failobj}}
-Return the message's \emph{main} content type.  This essentially returns the
-\var{maintype} part of the string returned by \method{get_type()}, with the
-same semantics for \var{failobj}.
-
-\deprecated{2.2.2}{Use the \method{get_content_maintype()} method instead.}
-\end{methoddesc}
-
-\begin{methoddesc}[Message]{get_subtype}{\optional{failobj}}
-Return the message's sub-content type.  This essentially returns the
-\var{subtype} part of the string returned by \method{get_type()}, with the
-same semantics for \var{failobj}.
-
-\deprecated{2.2.2}{Use the \method{get_content_subtype()} method instead.}
-\end{methoddesc}
-

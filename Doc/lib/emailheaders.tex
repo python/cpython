@@ -1,4 +1,4 @@
-\declaremodule{standard}{email.Header}
+\declaremodule{standard}{email.header}
 \modulesynopsis{Representing non-ASCII headers}
 
 \rfc{2822} is the base standard that describes the format of email
@@ -15,17 +15,18 @@ slew of RFCs have been written describing how to encode email
 containing non-\ASCII{} characters into \rfc{2822}-compliant format.
 These RFCs include \rfc{2045}, \rfc{2046}, \rfc{2047}, and \rfc{2231}.
 The \module{email} package supports these standards in its
-\module{email.Header} and \module{email.Charset} modules.
+\module{email.header} and \module{email.charset} modules.
 
 If you want to include non-\ASCII{} characters in your email headers,
 say in the \mailheader{Subject} or \mailheader{To} fields, you should
 use the \class{Header} class and assign the field in the
 \class{Message} object to an instance of \class{Header} instead of
-using a string for the header value.  For example:
+using a string for the header value.  Import the \class{Header} class from the
+\module{email.header} module.  For example:
 
 \begin{verbatim}
->>> from email.Message import Message
->>> from email.Header import Header
+>>> from email.message import Message
+>>> from email.header import Header
 >>> msg = Message()
 >>> h = Header('p\xf6stal', 'iso-8859-1')
 >>> msg['Subject'] = h
@@ -87,7 +88,7 @@ Optional \var{errors} is passed straight through to the
 Append the string \var{s} to the MIME header.
 
 Optional \var{charset}, if given, should be a \class{Charset} instance
-(see \refmodule{email.Charset}) or the name of a character set, which
+(see \refmodule{email.charset}) or the name of a character set, which
 will be converted to a \class{Charset} instance.  A value of
 \code{None} (the default) means that the \var{charset} given in the
 constructor is used.
@@ -139,7 +140,7 @@ This method allows you to compare two \class{Header} instances for equality.
 This method allows you to compare two \class{Header} instances for inequality.
 \end{methoddesc}
 
-The \module{email.Header} module also provides the following
+The \module{email.header} module also provides the following
 convenient functions.
 
 \begin{funcdesc}{decode_header}{header}
@@ -155,7 +156,7 @@ encoded string.
 Here's an example:
 
 \begin{verbatim}
->>> from email.Header import decode_header
+>>> from email.header import decode_header
 >>> decode_header('=?iso-8859-1?q?p=F6stal?=')
 [('p\xf6stal', 'iso-8859-1')]
 \end{verbatim}

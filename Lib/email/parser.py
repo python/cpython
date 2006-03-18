@@ -1,13 +1,16 @@
-# Copyright (C) 2001-2004 Python Software Foundation
+# Copyright (C) 2001-2006 Python Software Foundation
 # Author: Barry Warsaw, Thomas Wouters, Anthony Baxter
 # Contact: email-sig@python.org
 
 """A parser of RFC 2822 and MIME email messages."""
 
+__all__ = ['Parser', 'HeaderParser']
+
 import warnings
 from cStringIO import StringIO
-from email.FeedParser import FeedParser
-from email.Message import Message
+
+from email.feedparser import FeedParser
+from email.message import Message
 
 
 

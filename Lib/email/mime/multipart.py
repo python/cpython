@@ -1,14 +1,16 @@
-# Copyright (C) 2002-2004 Python Software Foundation
+# Copyright (C) 2002-2006 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
 """Base class for MIME multipart/* type messages."""
 
-from email import MIMEBase
+__all__ = ['MIMEMultipart']
+
+from email.mime.base import MIMEBase
 
 
 
-class MIMEMultipart(MIMEBase.MIMEBase):
+class MIMEMultipart(MIMEBase):
     """Base class for MIME multipart/* type messages."""
 
     def __init__(self, _subtype='mixed', boundary=None, _subparts=None,
@@ -31,7 +33,7 @@ class MIMEMultipart(MIMEBase.MIMEBase):
         Additional parameters for the Content-Type header are taken from the
         keyword arguments (or passed into the _params argument).
         """
-        MIMEBase.MIMEBase.__init__(self, 'multipart', _subtype, **_params)
+        MIMEBase.__init__(self, 'multipart', _subtype, **_params)
         if _subparts:
             for p in _subparts:
                 self.attach(p)

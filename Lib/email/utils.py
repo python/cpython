@@ -1,8 +1,23 @@
-# Copyright (C) 2001-2004 Python Software Foundation
+# Copyright (C) 2001-2006 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
 """Miscellaneous utilities."""
+
+__all__ = [
+    'collapse_rfc2231_value',
+    'decode_params',
+    'decode_rfc2231',
+    'encode_rfc2231',
+    'formataddr',
+    'formatdate',
+    'getaddresses',
+    'make_msgid',
+    'parseaddr',
+    'parsedate',
+    'parsedate_tz',
+    'unquote',
+    ]
 
 import os
 import re
@@ -24,7 +39,7 @@ from email._parseaddr import parsedate_tz as _parsedate_tz
 from quopri import decodestring as _qdecode
 
 # Intrapackage imports
-from email.Encoders import _bencode, _qencode
+from email.encoders import _bencode, _qencode
 
 COMMASPACE = ', '
 EMPTYSTRING = ''

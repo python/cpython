@@ -1,15 +1,16 @@
-# Copyright (C) 2001-2004 Python Software Foundation
+# Copyright (C) 2001-2006 Python Software Foundation
 # Author: Anthony Baxter
 # Contact: email-sig@python.org
 
 """Class representing audio/* type MIME documents."""
 
-import sndhdr
-from cStringIO import StringIO
+__all__ = ['MIMEAudio']
 
-from email import Errors
-from email import Encoders
-from email.MIMENonMultipart import MIMENonMultipart
+import sndhdr
+
+from cStringIO import StringIO
+from email import encoders
+from email.mime.nonmultipart import MIMENonMultipart
 
 
 
@@ -42,7 +43,7 @@ class MIMEAudio(MIMENonMultipart):
     """Class for generating audio/* MIME documents."""
 
     def __init__(self, _audiodata, _subtype=None,
-                 _encoder=Encoders.encode_base64, **_params):
+                 _encoder=encoders.encode_base64, **_params):
         """Create an audio/* type MIME document.
 
         _audiodata is a string containing the raw audio data.  If this data

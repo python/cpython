@@ -1,4 +1,4 @@
-\declaremodule{standard}{email.Parser}
+\declaremodule{standard}{email.parser}
 \modulesynopsis{Parse flat text email messages to produce a message
 	        object structure.}
 
@@ -41,9 +41,10 @@ message object trees any way it finds necessary.
 
 \versionadded{2.4}
 
-The \class{FeedParser} provides an API that is conducive to incremental
-parsing of email messages, such as would be necessary when reading the text of
-an email message from a source that can block (e.g. a socket).  The
+The \class{FeedParser}, imported from the \module{email.feedparser} module,
+provides an API that is conducive to incremental parsing of email messages,
+such as would be necessary when reading the text of an email message from a
+source that can block (e.g. a socket).  The
 \class{FeedParser} can of course be used to parse an email message fully
 contained in a string or a file, but the classic \class{Parser} API may be
 more convenient for such use cases.  The semantics and results of the two
@@ -56,14 +57,14 @@ accurate when parsing standards-compliant messages, and it does a very good
 job of parsing non-compliant messages, providing information about how a
 message was deemed broken.  It will populate a message object's \var{defects}
 attribute with a list of any problems it found in a message.  See the
-\refmodule{email.Errors} module for the list of defects that it can find.
+\refmodule{email.errors} module for the list of defects that it can find.
 
 Here is the API for the \class{FeedParser}:
 
 \begin{classdesc}{FeedParser}{\optional{_factory}}
 Create a \class{FeedParser} instance.  Optional \var{_factory} is a
 no-argument callable that will be called whenever a new message object is
-needed.  It defaults to the \class{email.Message.Message} class.
+needed.  It defaults to the \class{email.message.Message} class.
 \end{classdesc}
 
 \begin{methoddesc}[FeedParser]{feed}{data}
@@ -82,21 +83,22 @@ more data to a closed \class{FeedParser}.
 
 \subsubsection{Parser class API}
 
-The \class{Parser} provides an API that can be used to parse a message when
-the complete contents of the message are available in a string or file.  The
-\module{email.Parser} module also provides a second class, called
+The \class{Parser} class, imported from the \module{email.parser} module,
+provides an API that can be used to parse a message when the complete contents
+of the message are available in a string or file.  The
+\module{email.parser} module also provides a second class, called
 \class{HeaderParser} which can be used if you're only interested in
 the headers of the message. \class{HeaderParser} can be much faster in
 these situations, since it does not attempt to parse the message body,
 instead setting the payload to the raw body as a string.
 \class{HeaderParser} has the same API as the \class{Parser} class.
 
-\begin{classdesc}{Parser}{\optional{_class\optional{, strict}}}
+\begin{classdesc}{Parser}{\optional{_class}}
 The constructor for the \class{Parser} class takes an optional
 argument \var{_class}.  This must be a callable factory (such as a
 function or a class), and it is used whenever a sub-message object
 needs to be created.  It defaults to \class{Message} (see
-\refmodule{email.Message}).  The factory will be called without
+\refmodule{email.message}).  The factory will be called without
 arguments.
 
 The optional \var{strict} flag is ignored.  \deprecated{2.4}{Because the
@@ -201,6 +203,6 @@ Here are some notes on the parsing semantics:
       \method{is_multipart()} method may return \code{False}.  If such
       messages were parsed with the \class{FeedParser}, they will have an
       instance of the \class{MultipartInvariantViolationDefect} class in their
-      \var{defects} attribute list.  See \refmodule{email.Errors} for
+      \var{defects} attribute list.  See \refmodule{email.errors} for
       details.
 \end{itemize}

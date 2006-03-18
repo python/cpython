@@ -1,12 +1,22 @@
-# Copyright (C) 2001-2004 Python Software Foundation
+# Copyright (C) 2001-2006 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
 """Encodings and related functions."""
 
+__all__ = [
+    'encode_7or8bit',
+    'encode_base64',
+    'encode_noop',
+    'encode_quopri',
+    ]
+
 import base64
+
 from quopri import encodestring as _encodestring
 
+
+
 def _qencode(s):
     enc = _encodestring(s, quotetabs=True)
     # Must encode spaces, which quopri.encodestring() doesn't do
