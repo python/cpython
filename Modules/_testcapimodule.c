@@ -478,6 +478,26 @@ test_u_code(PyObject *self)
 	return Py_None;
 }
 
+static
+PyObject *codec_incrementalencoder(PyObject *self, PyObject *args)
+{
+	const char *encoding, *errors = NULL;
+	if (!PyArg_ParseTuple(args, "s|s:test_incrementalencoder", 
+			      &encoding, &errors))
+		return NULL;
+	return PyCodec_IncrementalEncoder(encoding, errors);
+}
+
+static
+PyObject *codec_incrementaldecoder(PyObject *self, PyObject *args)
+{
+	const char *encoding, *errors = NULL;
+	if (!PyArg_ParseTuple(args, "s|s:test_incrementaldecoder", 
+			      &encoding, &errors))
+		return NULL;
+	return PyCodec_IncrementalDecoder(encoding, errors);
+}
+
 #endif
 
 /* Simple test of _PyLong_NumBits and _PyLong_Sign. */
@@ -623,6 +643,10 @@ static PyMethodDef TestMethods[] = {
 	{"getargs_K",		(PyCFunction)getargs_K,		 METH_VARARGS},
 	{"test_longlong_api",	(PyCFunction)test_longlong_api,	 METH_NOARGS},
 	{"test_L_code",		(PyCFunction)test_L_code,	 METH_NOARGS},
+	{"codec_incrementalencoder",
+	 (PyCFunction)codec_incrementalencoder,	 METH_VARARGS},
+	{"codec_incrementaldecoder",
+	 (PyCFunction)codec_incrementaldecoder,	 METH_VARARGS},
 #endif
 #ifdef Py_USING_UNICODE
 	{"test_u_code",		(PyCFunction)test_u_code,	 METH_NOARGS},
