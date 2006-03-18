@@ -12,6 +12,10 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Previously, Python code had no easy way to access the contents of a
+  cell object. Now, a ``cell_contents`` attribute has been added
+  (closes patch #1170323).
+
 - Patch #1123430: Python's small-object allocator now returns an arena to
   the system ``free()`` when all memory within an arena becomes unused
   again.  Prior to Python 2.5, arenas (256KB chunks of memory) were never

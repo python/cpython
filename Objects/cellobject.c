@@ -86,6 +86,18 @@ cell_clear(PyCellObject *op)
 	return 0;
 }
 
+static PyObject *
+cell_get_contents(PyCellObject *op, void *closure)
+{
+	Py_XINCREF(op->ob_ref);
+	return op->ob_ref;
+}
+
+static PyGetSetDef cell_getsetlist[] = {
+	{"cell_contents", (getter)cell_get_contents, NULL},
+	{NULL} /* sentinel */
+};
+
 PyTypeObject PyCell_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -111,4 +123,11 @@ PyTypeObject PyCell_Type = {
  	0,					/* tp_doc */
  	(traverseproc)cell_traverse,		/* tp_traverse */
  	(inquiry)cell_clear,			/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0, 					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	0,					/* tp_members */
+	cell_getsetlist,			/* tp_getset */
 };
