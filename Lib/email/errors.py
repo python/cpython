@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2004 Python Software Foundation
+# Copyright (C) 2001-2006 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -24,6 +24,10 @@ class BoundaryError(MessageParseError):
 
 class MultipartConversionError(MessageError, TypeError):
     """Conversion to a multipart is prohibited."""
+
+
+class CharsetError(MessageError):
+    """An illegal charset was given."""
 
 
 

@@ -19,9 +19,12 @@ the current message.  Defects are just instances that live on the message
 object's .defects attribute.
 """
 
+__all__ = ['FeedParser']
+
 import re
-from email import Errors
-from email import Message
+
+from email import errors
+from email import message
 
 NLCRE = re.compile('\r\n|\r|\n')
 NLCRE_bol = re.compile('(\r\n|\r|\n)')
@@ -130,7 +133,7 @@ class BufferedSubFile(object):
 class FeedParser:
     """A feed-style parser of email."""
 
-    def __init__(self, _factory=Message.Message):
+    def __init__(self, _factory=message.Message):
         """_factory is called with no arguments to create a new message obj"""
         self._factory = _factory
         self._input = BufferedSubFile()
@@ -164,7 +167,7 @@ class FeedParser:
         # Look for final set of defects
         if root.get_content_maintype() == 'multipart' \
                and not root.is_multipart():
-            root.defects.append(Errors.MultipartInvariantViolationDefect())
+            root.defects.append(errors.MultipartInvariantViolationDefect())
         return root
 
     def _new_message(self):
@@ -277,7 +280,7 @@ class FeedParser:
                 # defined a boundary.  That's a problem which we'll handle by
                 # reading everything until the EOF and marking the message as
                 # defective.
-                self._cur.defects.append(Errors.NoBoundaryInMultipartDefect())
+                self._cur.defects.append(errors.NoBoundaryInMultipartDefect())
                 lines = []
                 for line in self._input:
                     if line is NeedMoreData:
@@ -381,7 +384,7 @@ class FeedParser:
             # that as a defect and store the captured text as the payload.
             # Everything from here to the EOF is epilogue.
             if capturing_preamble:
-                self._cur.defects.append(Errors.StartBoundaryNotFoundDefect())
+                self._cur.defects.append(errors.StartBoundaryNotFoundDefect())
                 self._cur.set_payload(EMPTYSTRING.join(preamble))
                 epilogue = []
                 for line in self._input:
@@ -432,7 +435,7 @@ class FeedParser:
                     # The first line of the headers was a continuation.  This
                     # is illegal, so let's note the defect, store the illegal
                     # line, and ignore it for purposes of headers.
-                    defect = Errors.FirstHeaderLineIsContinuationDefect(line)
+                    defect = errors.FirstHeaderLineIsContinuationDefect(line)
                     self._cur.defects.append(defect)
                     continue
                 lastvalue.append(line)
@@ -460,13 +463,13 @@ class FeedParser:
                 else:
                     # Weirdly placed unix-from line.  Note this as a defect
                     # and ignore it.
-                    defect = Errors.MisplacedEnvelopeHeaderDefect(line)
+                    defect = errors.MisplacedEnvelopeHeaderDefect(line)
                     self._cur.defects.append(defect)
                     continue
             # Split the line on the colon separating field name from value.
             i = line.find(':')
             if i < 0:
-                defect = Errors.MalformedHeaderDefect(line)
+                defect = errors.MalformedHeaderDefect(line)
                 self._cur.defects.append(defect)
                 continue
             lastheader = line[:i]

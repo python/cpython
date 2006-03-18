@@ -4,14 +4,16 @@
 
 """Classes to generate plain text from a message object tree."""
 
+__all__ = ['Generator', 'DecodedGenerator']
+
 import re
 import sys
 import time
 import random
 import warnings
-from cStringIO import StringIO
 
-from email.Header import Header
+from cStringIO import StringIO
+from email.header import Header
 
 UNDERSCORE = '_'
 NL = '\n'
@@ -80,12 +82,6 @@ class Generator:
                 ufrom = 'From nobody ' + time.ctime(time.time())
             print >> self._fp, ufrom
         self._write(msg)
-
-    # For backwards compatibility, but this is slower
-    def __call__(self, msg, unixfrom=False):
-        warnings.warn('__call__() deprecated; use flatten()',
-                      DeprecationWarning, 2)
-        self.flatten(msg, unixfrom)
 
     def clone(self, fp):
         """Clone this generator with the exact same options."""

@@ -1,11 +1,13 @@
-# Copyright (C) 2001-2004 Python Software Foundation
+# Copyright (C) 2001-2006 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
 """Class representing text/* type MIME documents."""
 
-from email.MIMENonMultipart import MIMENonMultipart
-from email.Encoders import encode_7or8bit
+__all__ = ['MIMEText']
+
+from email.encoders import encode_7or8bit
+from email.mime.nonmultipart import MIMENonMultipart
 
 
 

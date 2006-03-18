@@ -1,15 +1,17 @@
-# Copyright (C) 2002-2004 Python Software Foundation
+# Copyright (C) 2002-2006 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
 """Base class for MIME type messages that are not multipart."""
 
-from email import Errors
-from email import MIMEBase
+__all__ = ['MIMENonMultipart']
+
+from email import errors
+from email.mime.base import MIMEBase
 
 
 
-class MIMENonMultipart(MIMEBase.MIMEBase):
+class MIMENonMultipart(MIMEBase):
     """Base class for MIME multipart/* type messages."""
 
     __pychecker__ = 'unusednames=payload'
@@ -18,7 +20,7 @@ class MIMENonMultipart(MIMEBase.MIMEBase):
         # The public API prohibits attaching multiple subparts to MIMEBase
         # derived subtypes since none of them are, by definition, of content
         # type multipart/*
-        raise Errors.MultipartConversionError(
+        raise errors.MultipartConversionError(
             'Cannot attach additional subparts to non-multipart/*')
 
     del __pychecker__

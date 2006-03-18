@@ -1,14 +1,15 @@
-# Copyright (C) 2001-2004 Python Software Foundation
+# Copyright (C) 2001-2006 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
 """Class representing image/* type MIME documents."""
 
+__all__ = ['MIMEImage']
+
 import imghdr
 
-from email import Errors
-from email import Encoders
-from email.MIMENonMultipart import MIMENonMultipart
+from email import encoders
+from email.mime.nonmultipart import MIMENonMultipart
 
 
 
@@ -16,7 +17,7 @@ class MIMEImage(MIMENonMultipart):
     """Class for generating image/* type MIME documents."""
 
     def __init__(self, _imagedata, _subtype=None,
-                 _encoder=Encoders.encode_base64, **_params):
+                 _encoder=encoders.encode_base64, **_params):
         """Create an image/* type MIME document.
 
         _imagedata is a string containing the raw image data.  If this data

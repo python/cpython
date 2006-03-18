@@ -1,4 +1,4 @@
-# Copyright (C) 2002-2004 Python Software Foundation
+# Copyright (C) 2002-2006 Python Software Foundation
 # Author: Ben Gertzfield
 # Contact: email-sig@python.org
 
@@ -24,9 +24,21 @@ decoding.  To deal with the various line wrapping issues, use the email.Header
 module.
 """
 
+__all__ = [
+    'base64_len',
+    'body_decode',
+    'body_encode',
+    'decode',
+    'decodestring',
+    'encode',
+    'encodestring',
+    'header_encode',
+    ]
+
 import re
+
 from binascii import b2a_base64, a2b_base64
-from email.Utils import fix_eols
+from email.utils import fix_eols
 
 CRLF = '\r\n'
 NL = '\n'

@@ -1,11 +1,13 @@
-# Copyright (C) 2001-2004 Python Software Foundation
+# Copyright (C) 2001-2006 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
 """Class representing message/* MIME documents."""
 
-from email import Message
-from email.MIMENonMultipart import MIMENonMultipart
+__all__ = ['MIMEMessage']
+
+from email import message
+from email.mime.nonmultipart import MIMENonMultipart
 
 
 
@@ -23,10 +25,10 @@ class MIMEMessage(MIMENonMultipart):
         the term "rfc822" is technically outdated by RFC 2822).
         """
         MIMENonMultipart.__init__(self, 'message', _subtype)
-        if not isinstance(_msg, Message.Message):
+        if not isinstance(_msg, message.Message):
             raise TypeError('Argument is not an instance of Message')
         # It's convenient to use this base class method.  We need to do it
         # this way or we'll get an exception
-        Message.Message.attach(self, _msg)
+        message.Message.attach(self, _msg)
         # And be sure our default type is set correctly
         self.set_default_type('message/rfc822')

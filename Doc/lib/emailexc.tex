@@ -1,8 +1,8 @@
-\declaremodule{standard}{email.Errors}
+\declaremodule{standard}{email.errors}
 \modulesynopsis{The exception classes used by the email package.}
 
 The following exception classes are defined in the
-\module{email.Errors} module:
+\module{email.errors} module:
 
 \begin{excclassdesc}{MessageError}{}
 This is the base class for all exceptions that the \module{email}
@@ -59,7 +59,7 @@ problem was found, so for example, if a message nested inside a
 \mimetype{multipart/alternative} had a malformed header, that nested message
 object would have a defect, but the containing messages would not.
 
-All defect classes are subclassed from \class{email.Errors.MessageDefect}, but
+All defect classes are subclassed from \class{email.errors.MessageDefect}, but
 this class is \emph{not} an exception!
 
 \versionadded[All the defect classes were added]{2.4}

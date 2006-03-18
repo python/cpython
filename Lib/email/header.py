@@ -1,16 +1,23 @@
-# Copyright (C) 2002-2004 Python Software Foundation
+# Copyright (C) 2002-2006 Python Software Foundation
 # Author: Ben Gertzfield, Barry Warsaw
 # Contact: email-sig@python.org
 
 """Header encoding and decoding functionality."""
 
+__all__ = [
+    'Header',
+    'decode_header',
+    'make_header',
+    ]
+
 import re
 import binascii
 
-import email.quopriMIME
-import email.base64MIME
-from email.Errors import HeaderParseError
-from email.Charset import Charset
+import email.quoprimime
+import email.base64mime
+
+from email.errors import HeaderParseError
+from email.charset import Charset
 
 NL = '\n'
 SPACE = ' '
@@ -42,7 +49,7 @@ fcre = re.compile(r'[\041-\176]+:$')
 
 
 # Helpers
-_max_append = email.quopriMIME._max_append
+_max_append = email.quoprimime._max_append
 
 
 
@@ -82,10 +89,10 @@ def decode_header(header):
                 encoded = parts[2]
                 dec = None
                 if encoding == 'q':
-                    dec = email.quopriMIME.header_decode(encoded)
+                    dec = email.quoprimime.header_decode(encoded)
                 elif encoding == 'b':
                     try:
-                        dec = email.base64MIME.decode(encoded)
+                        dec = email.base64mime.decode(encoded)
                     except binascii.Error:
                         # Turn this into a higher level exception.  BAW: Right
                         # now we throw the lower level exception away but

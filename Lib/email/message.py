@@ -4,6 +4,8 @@
 
 """Basic message object for the email package object model."""
 
+__all__ = ['Message']
+
 import re
 import uu
 import binascii
@@ -11,9 +13,9 @@ import warnings
 from cStringIO import StringIO
 
 # Intrapackage imports
-from email import Utils
-from email import Errors
-from email import Charset
+import email.charset
+from email import utils
+from email import errors
 
 SEMISPACE = '; '
 
@@ -41,11 +43,11 @@ def _formatparam(param, value=None, quote=True):
         if isinstance(value, tuple):
             # Encode as per RFC 2231
             param += '*'
-            value = Utils.encode_rfc2231(value[2], value[0], value[1])
+            value = utils.encode_rfc2231(value[2], value[0], value[1])
         # BAW: Please check this.  I think that if quote is set it should
         # force quoting even if not necessary.
         if quote or tspecials.search(value):
-            return '%s="%s"' % (param, Utils.quote(value))
+            return '%s="%s"' % (param, utils.quote(value))
         else:
             return '%s=%s' % (param, value)
     else:
@@ -70,14 +72,14 @@ def _parseparam(s):
 
 
 def _unquotevalue(value):
-    # This is different than Utils.collapse_rfc2231_value() because it doesn't
+    # This is different than utils.collapse_rfc2231_value() because it doesn't
     # try to convert the value to a unicode.  Message.get_param() and
     # Message.get_params() are both currently defined to return the tuple in
     # the face of RFC 2231 parameters.
     if isinstance(value, tuple):
-        return value[0], value[1], Utils.unquote(value[2])
+        return value[0], value[1], utils.unquote(value[2])
     else:
-        return Utils.unquote(value)
+        return utils.unquote(value)
 
 
 
@@ -188,17 +190,17 @@ class Message:
                 return None
             cte = self.get('content-transfer-encoding', '').lower()
             if cte == 'quoted-printable':
-                return Utils._qdecode(payload)
+                return utils._qdecode(payload)
             elif cte == 'base64':
                 try:
-                    return Utils._bdecode(payload)
+                    return utils._bdecode(payload)
                 except binascii.Error:
                     # Incorrect padding
                     return payload
             elif cte in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
                 sfp = StringIO()
                 try:
-                    uu.decode(StringIO(payload+'\n'), sfp)
+                    uu.decode(StringIO(payload+'\n'), sfp, quiet=True)
                     payload = sfp.getvalue()
                 except uu.Error:
                     # Some decoding problem
@@ -237,8 +239,8 @@ class Message:
             self._charset = None
             return
         if isinstance(charset, str):
-            charset = Charset.Charset(charset)
-        if not isinstance(charset, Charset.Charset):
+            charset = email.charset.Charset(charset)
+        if not isinstance(charset, email.charset.Charset):
             raise TypeError(charset)
         # BAW: should we accept strings that can serve as arguments to the
         # Charset constructor?
@@ -413,49 +415,6 @@ class Message:
             raise KeyError(_name)
 
     #
-    # Deprecated methods.  These will be removed in email 3.1.
-    #
-
-    def get_type(self, failobj=None):
-        """Returns the message's content type.
-
-        The returned string is coerced to lowercase and returned as a single
-        string of the form `maintype/subtype'.  If there was no Content-Type
-        header in the message, failobj is returned (defaults to None).
-        """
-        warnings.warn('get_type() deprecated; use get_content_type()',
-                      DeprecationWarning, 2)
-        missing = object()
-        value = self.get('content-type', missing)
-        if value is missing:
-            return failobj
-        return paramre.split(value)[0].lower().strip()
-
-    def get_main_type(self, failobj=None):
-        """Return the message's main content type if present."""
-        warnings.warn('get_main_type() deprecated; use get_content_maintype()',
-                      DeprecationWarning, 2)
-        missing = object()
-        ctype = self.get_type(missing)
-        if ctype is missing:
-            return failobj
-        if ctype.count('/') <> 1:
-            return failobj
-        return ctype.split('/')[0]
-
-    def get_subtype(self, failobj=None):
-        """Return the message's content subtype if present."""
-        warnings.warn('get_subtype() deprecated; use get_content_subtype()',
-                      DeprecationWarning, 2)
-        missing = object()
-        ctype = self.get_type(missing)
-        if ctype is missing:
-            return failobj
-        if ctype.count('/') <> 1:
-            return failobj
-        return ctype.split('/')[1]
-
-    #
     # Use these three methods instead of the three above.
     #
 
@@ -537,7 +496,7 @@ class Message:
                 name = p.strip()
                 val = ''
             params.append((name, val))
-        params = Utils.decode_params(params)
+        params = utils.decode_params(params)
         return params
 
     def get_params(self, failobj=None, header='content-type', unquote=True):
@@ -714,7 +673,7 @@ class Message:
             filename = self.get_param('name', missing, 'content-disposition')
         if filename is missing:
             return failobj
-        return Utils.collapse_rfc2231_value(filename).strip()
+        return utils.collapse_rfc2231_value(filename).strip()
 
     def get_boundary(self, failobj=None):
         """Return the boundary associated with the payload if present.
@@ -727,7 +686,7 @@ class Message:
         if boundary is missing:
             return failobj
         # RFC 2046 says that boundaries may begin but not end in w/s
-        return Utils.collapse_rfc2231_value(boundary).rstrip()
+        return utils.collapse_rfc2231_value(boundary).rstrip()
 
     def set_boundary(self, boundary):
         """Set the boundary parameter in Content-Type to 'boundary'.
@@ -744,7 +703,7 @@ class Message:
         if params is missing:
             # There was no Content-Type header, and we don't know what type
             # to set it to, so raise an exception.
-            raise Errors.HeaderParseError, 'No Content-Type header found'
+            raise errors.HeaderParseError('No Content-Type header found')
         newparams = []
         foundp = False
         for pk, pv in params:
