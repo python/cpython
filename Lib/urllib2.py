@@ -112,7 +112,7 @@ except ImportError:
     from StringIO import StringIO
 
 # not sure how many of these need to be gotten rid of
-from urllib import (unwrap, unquote, splittype, splithost,
+from urllib import (unwrap, unquote, splittype, splithost, quote,
      addinfourl, splitport, splitgophertype, splitquery,
      splitattr, ftpwrapper, noheaders, splituser, splitpasswd, splitvalue)
 
@@ -507,6 +507,8 @@ class HTTPRedirectHandler(BaseHandler):
             # from the user (of urllib2, in this case).  In practice,
             # essentially all clients do redirect in this case, so we
             # do the same.
+            # be conciliant with URIs containing a space
+            newurl = newurl.replace(' ', '%20')
             return Request(newurl,
                            headers=req.headers,
                            origin_req_host=req.get_origin_req_host(),
