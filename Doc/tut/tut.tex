@@ -3692,19 +3692,49 @@ Traceback (most recent call last):
 KeyboardInterrupt
 \end{verbatim}
 
-A \emph{finally clause} is executed whether or not an exception has
-occurred in the try clause.  When an exception has occurred, it is
-re-raised after the finally clause is executed.  The finally clause is
-also executed ``on the way out'' when the \keyword{try} statement is
-left via a \keyword{break} or \keyword{return} statement.
+A \emph{finally clause} is always executed before leaving the
+\keyword{try} statement, whether an exception has occurred or not.
+When an exception has occurred in the \keyword{try} clause and has not
+been handled by an \keyword{except} clause (or it has occurred in a
+\keyword{except} or \keyword{else} clause), it is re-raised after the
+\keyword{finally} clause has been executed.  The \keyword{finally} clause
+is also executed ``on the way out'' when any other clause of the
+\keyword{try} statement is left via a \keyword{break}, \keyword{continue}
+or \keyword{return} statement.  A more complicated example:
 
-The code in the finally clause is useful for releasing external
-resources (such as files or network connections), regardless of
-whether the use of the resource was successful.
+\begin{verbatim}
+>>> def divide(x, y):
+...     try:
+...         result = x / y
+...     except ZeroDivisionError:
+...         print "division by zero!"
+...     else:
+...         print "result is", result
+...     finally:
+...         print "executing finally clause"
+...
+>>> divide(2, 1)
+result is 2
+executing finally clause
+>>> divide(2, 0)
+division by zero!
+executing finally clause
+>>> divide("2", "1")
+executing finally clause
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+  File "<stdin>", line 3, in divide
+TypeError: unsupported operand type(s) for /: 'str' and 'str'
+\end{verbatim}
 
-A \keyword{try} statement must either have one or more except clauses
-or one finally clause, but not both (because it would be unclear which
-clause should be executed first).
+As you can see, the \keyword{finally} clause is executed in any
+event.  The \exception{TypeError} raised by dividing two strings
+is not handled by the \keyword{except} clause and therefore
+re-raised after the \keyword{finally} clauses has been executed.
+
+In real world applications, the \keyword{finally} clause is useful
+for releasing external resources (such as files or network connections),
+regardless of whether the use of the resource was successful.
 
 
 \chapter{Classes \label{classes}}
