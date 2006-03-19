@@ -374,6 +374,7 @@ class IOBinding:
         try:
             f = open(filename, "wb")
             f.write(chars)
+            f.flush()
             f.close()
             return True
         except IOError, msg:
