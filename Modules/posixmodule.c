@@ -5097,6 +5097,7 @@ posix_setgroups(PyObject *self, PyObject *args)
 }
 #endif /* HAVE_SETGROUPS */
 
+#if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
 static PyObject *
 wait_helper(int pid, int status, struct rusage *ru)
 {
@@ -5154,6 +5155,7 @@ wait_helper(int pid, int status, struct rusage *ru)
 
 	return Py_BuildValue("iiO", pid, status, result);
 }
+#endif /* HAVE_WAIT3 || HAVE_WAIT4 */
 
 #ifdef HAVE_WAIT3
 PyDoc_STRVAR(posix_wait3__doc__,
