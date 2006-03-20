@@ -536,9 +536,12 @@ static PyObject *
 h_set(void *ptr, PyObject *value, unsigned size)
 {
 	long val;
+	short x;
 	if (get_long(value, &val) < 0)
 		return NULL;
-	*(short *)ptr = (short)SET(*(short *)ptr, (short)val, size);
+	memcpy(&x, ptr, sizeof(x));
+	x = SET(x, (short)val, size);
+	memcpy(ptr, &x, sizeof(x));
 	_RET(value);
 }
 
@@ -550,24 +553,28 @@ h_set_sw(void *ptr, PyObject *value, unsigned size)
 	short field;
 	if (get_long(value, &val) < 0)
 		return NULL;
-	field = SWAP_2(*(short *)ptr);
+	memcpy(&field, ptr, sizeof(field));
+	field = SWAP_2(field);
 	field = SET(field, (short)val, size);
-	*(short *)ptr = SWAP_2(field);
+	field = SWAP_2(field);
+	memcpy(ptr, &field, sizeof(field));
 	_RET(value);
 }
 
 static PyObject *
 h_get(void *ptr, unsigned size)
 {
-	short val = *(short *)ptr;
+	short val;
+	memcpy(&val, ptr, sizeof(val));
 	GET_BITFIELD(val, size);
-	return PyInt_FromLong(val);
+	return PyInt_FromLong((long)val);
 }
 
 static PyObject *
 h_get_sw(void *ptr, unsigned size)
 {
-	short val = *(short *)ptr;
+	short val;
+	memcpy(&val, ptr, sizeof(val));
 	val = SWAP_2(val);
 	GET_BITFIELD(val, size);
 	return PyInt_FromLong(val);
@@ -577,10 +584,12 @@ static PyObject *
 H_set(void *ptr, PyObject *value, unsigned size)
 {
 	unsigned long val;
+	unsigned short x;
 	if (get_ulong(value, &val) < 0)
 		return NULL;
-	*(unsigned short *)ptr = (unsigned short)SET(*(unsigned short *)ptr,
-						     (unsigned short)val, size);
+	memcpy(&x, ptr, sizeof(x));
+	x = SET(x, (unsigned short)val, size);
+	memcpy(ptr, &x, sizeof(x));
 	_RET(value);
 }
 
@@ -591,9 +600,11 @@ H_set_sw(void *ptr, PyObject *value, unsigned size)
 	unsigned short field;
 	if (get_ulong(value, &val) < 0)
 		return NULL;
-	field = SWAP_2(*(unsigned short *)ptr);
+	memcpy(&field, ptr, sizeof(field));
+	field = SWAP_2(field);
 	field = SET(field, (unsigned short)val, size);
-	*(unsigned short *)ptr = SWAP_2(field);
+	field = SWAP_2(field);
+	memcpy(ptr, &field, sizeof(field));
 	_RET(value);
 }
 
@@ -601,7 +612,8 @@ H_set_sw(void *ptr, PyObject *value, unsigned size)
 static PyObject *
 H_get(void *ptr, unsigned size)
 {
-	unsigned short val = *(unsigned short *)ptr;
+	unsigned short val;
+	memcpy(&val, ptr, sizeof(val));
 	GET_BITFIELD(val, size);
 	return PyInt_FromLong(val);
 }
@@ -609,7 +621,8 @@ H_get(void *ptr, unsigned size)
 static PyObject *
 H_get_sw(void *ptr, unsigned size)
 {
-	unsigned short val = *(unsigned short *)ptr;
+	unsigned short val;
+	memcpy(&val, ptr, sizeof(val));
 	val = SWAP_2(val);
 	GET_BITFIELD(val, size);
 	return PyInt_FromLong(val);
@@ -619,9 +632,12 @@ static PyObject *
 i_set(void *ptr, PyObject *value, unsigned size)
 {
 	long val;
+	int x;
 	if (get_long(value, &val) < 0)
 		return NULL;
-	*(int *)ptr = (int)SET(*(int *)ptr, (int)val, size);
+	memcpy(&x, ptr, sizeof(x));
+	x = SET(x, (int)val, size);
+	memcpy(ptr, &x, sizeof(x));
 	_RET(value);
 }
 
@@ -632,9 +648,11 @@ i_set_sw(void *ptr, PyObject *value, unsigned size)
 	int field;
 	if (get_long(value, &val) < 0)
 		return NULL;
-	field = SWAP_INT(*(int *)ptr);
+	memcpy(&field, ptr, sizeof(field));
+	field = SWAP_INT(field);
 	field = SET(field, (int)val, size);
-	*(int *)ptr = SWAP_INT(field);
+	field = SWAP_INT(field);
+	memcpy(ptr, &field, sizeof(field));
 	_RET(value);
 }
 
@@ -642,7 +660,8 @@ i_set_sw(void *ptr, PyObject *value, unsigned size)
 static PyObject *
 i_get(void *ptr, unsigned size)
 {
-	int val = *(int *)ptr;
+	int val;
+	memcpy(&val, ptr, sizeof(val));
 	GET_BITFIELD(val, size);
 	return PyInt_FromLong(val);
 }
@@ -650,7 +669,8 @@ i_get(void *ptr, unsigned size)
 static PyObject *
 i_get_sw(void *ptr, unsigned size)
 {
-	int val = *(int *)ptr;
+	int val;
+	memcpy(&val, ptr, sizeof(val));
 	val = SWAP_INT(val);
 	GET_BITFIELD(val, size);
 	return PyInt_FromLong(val);
@@ -684,9 +704,12 @@ static PyObject *
 I_set(void *ptr, PyObject *value, unsigned size)
 {
 	unsigned long val;
+	unsigned int x;
 	if (get_ulong(value, &val) < 0)
 		return  NULL;
-	*(unsigned int *)ptr = (unsigned int)SET(*(unsigned int *)ptr, (unsigned int)val, size);
+	memcpy(&x, ptr, sizeof(x));
+	x = SET(x, (unsigned int)val, size);
+	memcpy(ptr, &x, sizeof(x));
 	_RET(value);
 }
 
@@ -697,9 +720,10 @@ I_set_sw(void *ptr, PyObject *value, unsigned size)
 	unsigned int field;
 	if (get_ulong(value, &val) < 0)
 		return  NULL;
-	field = SWAP_INT(*(unsigned int *)ptr);
+	memcpy(&field, ptr, sizeof(field));
 	field = (unsigned int)SET(field, (unsigned int)val, size);
-	*(unsigned int *)ptr = SWAP_INT(field);
+	field = SWAP_INT(field);
+	memcpy(ptr, &field, sizeof(field));
 	_RET(value);
 }
 
@@ -707,7 +731,8 @@ I_set_sw(void *ptr, PyObject *value, unsigned size)
 static PyObject *
 I_get(void *ptr, unsigned size)
 {
-	unsigned int val = *(unsigned int *)ptr;
+	unsigned int val;
+	memcpy(&val, ptr, sizeof(val));
 	GET_BITFIELD(val, size);
 	return PyLong_FromUnsignedLong(val);
 }
@@ -715,7 +740,8 @@ I_get(void *ptr, unsigned size)
 static PyObject *
 I_get_sw(void *ptr, unsigned size)
 {
-	unsigned int val = *(unsigned int *)ptr;
+	unsigned int val;
+	memcpy(&val, ptr, sizeof(val));
 	val = SWAP_INT(val);
 	GET_BITFIELD(val, size);
 	return PyLong_FromUnsignedLong(val);
@@ -725,9 +751,12 @@ static PyObject *
 l_set(void *ptr, PyObject *value, unsigned size)
 {
 	long val;
+	long x;
 	if (get_long(value, &val) < 0)
 		return NULL;
-	*(long *)ptr = (long)SET(*(long *)ptr, val, size);
+	memcpy(&x, ptr, sizeof(x));
+	x = SET(x, val, size);
+	memcpy(ptr, &x, sizeof(x));
 	_RET(value);
 }
 
@@ -738,9 +767,11 @@ l_set_sw(void *ptr, PyObject *value, unsigned size)
 	long field;
 	if (get_long(value, &val) < 0)
 		return NULL;
-	field = SWAP_LONG(*(long *)ptr);
+	memcpy(&field, ptr, sizeof(field));
+	field = SWAP_LONG(field);
 	field = (long)SET(field, val, size);
-	*(long *)ptr = SWAP_LONG(field);
+	field = SWAP_LONG(field);
+	memcpy(ptr, &field, sizeof(field));
 	_RET(value);
 }
 
@@ -748,7 +779,8 @@ l_set_sw(void *ptr, PyObject *value, unsigned size)
 static PyObject *
 l_get(void *ptr, unsigned size)
 {
-	long val = *(long *)ptr;
+	long val;
+	memcpy(&val, ptr, sizeof(val));
 	GET_BITFIELD(val, size);
 	return PyInt_FromLong(val);
 }
@@ -756,7 +788,8 @@ l_get(void *ptr, unsigned size)
 static PyObject *
 l_get_sw(void *ptr, unsigned size)
 {
-	long val = *(long *)ptr;
+	long val;
+	memcpy(&val, ptr, sizeof(val));
 	val = SWAP_LONG(val);
 	GET_BITFIELD(val, size);
 	return PyInt_FromLong(val);
@@ -766,9 +799,12 @@ static PyObject *
 L_set(void *ptr, PyObject *value, unsigned size)
 {
 	unsigned long val;
+	unsigned long x;
 	if (get_ulong(value, &val) < 0)
 		return  NULL;
-	*(unsigned long *)ptr = (unsigned long)SET(*(unsigned long *)ptr, val, size);
+	memcpy(&x, ptr, sizeof(x));
+	x = SET(x, val, size);
+	memcpy(ptr, &x, sizeof(x));
 	_RET(value);
 }
 
@@ -779,9 +815,11 @@ L_set_sw(void *ptr, PyObject *value, unsigned size)
 	unsigned long field;
 	if (get_ulong(value, &val) < 0)
 		return  NULL;
-	field = SWAP_LONG(*(unsigned long *)ptr);
+	memcpy(&field, ptr, sizeof(field));
+	field = SWAP_LONG(field);
 	field = (unsigned long)SET(field, val, size);
-	*(unsigned long *)ptr = SWAP_LONG(field);
+	field = SWAP_LONG(field);
+	memcpy(ptr, &field, sizeof(field));
 	_RET(value);
 }
 
@@ -789,7 +827,8 @@ L_set_sw(void *ptr, PyObject *value, unsigned size)
 static PyObject *
 L_get(void *ptr, unsigned size)
 {
-	unsigned long val = *(unsigned long *)ptr;
+	unsigned long val;
+	memcpy(&val, ptr, sizeof(val));
 	GET_BITFIELD(val, size);
 	return PyLong_FromUnsignedLong(val);
 }
@@ -797,7 +836,8 @@ L_get(void *ptr, unsigned size)
 static PyObject *
 L_get_sw(void *ptr, unsigned size)
 {
-	unsigned long val = *(unsigned long *)ptr;
+	unsigned long val;
+	memcpy(&val, ptr, sizeof(val));
 	val = SWAP_LONG(val);
 	GET_BITFIELD(val, size);
 	return PyLong_FromUnsignedLong(val);
@@ -808,9 +848,12 @@ static PyObject *
 q_set(void *ptr, PyObject *value, unsigned size)
 {
 	PY_LONG_LONG val;
+	PY_LONG_LONG x;
 	if (get_longlong(value, &val) < 0)
 		return NULL;
-	*(PY_LONG_LONG *)ptr = (PY_LONG_LONG)SET(*(PY_LONG_LONG *)ptr, val, size);
+	memcpy(&x, ptr, sizeof(x));
+	x = SET(x, val, size);
+	memcpy(ptr, &x, sizeof(x));
 	_RET(value);
 }
 
@@ -821,16 +864,19 @@ q_set_sw(void *ptr, PyObject *value, unsigned size)
 	PY_LONG_LONG field;
 	if (get_longlong(value, &val) < 0)
 		return NULL;
-	field = SWAP_8(*(PY_LONG_LONG *)ptr);
+	memcpy(&field, ptr, sizeof(field));
+	field = SWAP_8(field);
 	field = (PY_LONG_LONG)SET(field, val, size);
-	*(PY_LONG_LONG *)ptr = SWAP_8(field);
+	field = SWAP_8(field);
+	memcpy(ptr, &field, sizeof(field));
 	_RET(value);
 }
 
 static PyObject *
 q_get(void *ptr, unsigned size)
 {
-	PY_LONG_LONG val = *(PY_LONG_LONG *)ptr;
+	PY_LONG_LONG val;
+	memcpy(&val, ptr, sizeof(val));
 	GET_BITFIELD(val, size);
 	return PyLong_FromLongLong(val);
 }
@@ -838,7 +884,8 @@ q_get(void *ptr, unsigned size)
 static PyObject *
 q_get_sw(void *ptr, unsigned size)
 {
-	PY_LONG_LONG val = *(PY_LONG_LONG *)ptr;
+	PY_LONG_LONG val;
+	memcpy(&val, ptr, sizeof(val));
 	val = SWAP_8(val);
 	GET_BITFIELD(val, size);
 	return PyLong_FromLongLong(val);
@@ -848,9 +895,12 @@ static PyObject *
 Q_set(void *ptr, PyObject *value, unsigned size)
 {
 	unsigned PY_LONG_LONG val;
+	unsigned PY_LONG_LONG x;
 	if (get_ulonglong(value, &val) < 0)
 		return NULL;
-	*(unsigned PY_LONG_LONG *)ptr = (unsigned PY_LONG_LONG)SET(*(unsigned PY_LONG_LONG *)ptr, val, size);
+	memcpy(&x, ptr, sizeof(x));
+	x = SET(x, val, size);
+	memcpy(ptr, &x, sizeof(x));
 	_RET(value);
 }
 
@@ -861,16 +911,19 @@ Q_set_sw(void *ptr, PyObject *value, unsigned size)
 	unsigned PY_LONG_LONG field;
 	if (get_ulonglong(value, &val) < 0)
 		return NULL;
-	field = SWAP_8(*(unsigned PY_LONG_LONG *)ptr);
+	memcpy(&field, ptr, sizeof(field));
+	field = SWAP_8(field);
 	field = (unsigned PY_LONG_LONG)SET(field, val, size);
-	*(unsigned PY_LONG_LONG *)ptr = SWAP_8(field);
+	field = SWAP_8(field);
+	memcpy(ptr, &field, sizeof(field));
 	_RET(value);
 }
 
 static PyObject *
 Q_get(void *ptr, unsigned size)
 {
-	unsigned PY_LONG_LONG val = *(unsigned PY_LONG_LONG *)ptr;
+	unsigned PY_LONG_LONG val;
+	memcpy(&val, ptr, sizeof(val));
 	GET_BITFIELD(val, size);
 	return PyLong_FromUnsignedLongLong(val);
 }
@@ -878,7 +931,8 @@ Q_get(void *ptr, unsigned size)
 static PyObject *
 Q_get_sw(void *ptr, unsigned size)
 {
-	unsigned PY_LONG_LONG val = *(unsigned PY_LONG_LONG *)ptr;
+	unsigned PY_LONG_LONG val;
+	memcpy(&val, ptr, sizeof(val));
 	val = SWAP_8(val);
 	GET_BITFIELD(val, size);
 	return PyLong_FromUnsignedLongLong(val);
@@ -903,14 +957,16 @@ d_set(void *ptr, PyObject *value, unsigned size)
 			     value->ob_type->tp_name);
 		return NULL;
 	}
-	*(double *)ptr = x;
+	memcpy(ptr, &x, sizeof(double));
 	_RET(value);
 }
 
 static PyObject *
 d_get(void *ptr, unsigned size)
 {
-	return PyFloat_FromDouble(*(double *)ptr);
+	double val;
+	memcpy(&val, ptr, sizeof(val));
+	return PyFloat_FromDouble(val);
 }
 
 static PyObject *
@@ -957,14 +1013,16 @@ f_set(void *ptr, PyObject *value, unsigned size)
 			     value->ob_type->tp_name);
 		return NULL;
 	}
-	*(float *)ptr = x;
+	memcpy(ptr, &x, sizeof(x));
 	_RET(value);
 }
 
 static PyObject *
 f_get(void *ptr, unsigned size)
 {
-	return PyFloat_FromDouble(*(float *)ptr);
+	float val;
+	memcpy(&val, ptr, sizeof(val));
+	return PyFloat_FromDouble(val);
 }
 
 static PyObject *
