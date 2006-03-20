@@ -3025,8 +3025,8 @@ or the abstract number protocol (including
 \cfunction{PyNumber_Or()}, \cfunction{PyNumber_Xor()},
 \cfunction{PyNumber_InPlaceAdd()}, \cfunction{PyNumber_InPlaceSubtract()},
 \cfunction{PyNumber_InPlaceOr()}, and \cfunction{PyNumber_InPlaceXor()}).
-Note, \cfunction{PyNumber_InPlaceSubtract()} is also useful clearing
-clearing a set (\code{s-=s}).                         
+
+For example, to clear a set, write:  \code{PyObject_CallMethod(s, "clear", NULL)}
                       
 \begin{ctypedesc}{PySetObject}
   This subtype of \ctype{PyObject} is used to hold the internal data for
