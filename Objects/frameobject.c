@@ -749,7 +749,7 @@ PyFrame_FastToLocals(PyFrameObject *f)
 		return;
 	PyErr_Fetch(&error_type, &error_value, &error_traceback);
 	fast = f->f_localsplus;
-	j = PyTuple_Size(map);
+	j = PyTuple_GET_SIZE(map);
 	if (j > f->f_nlocals)
 		j = f->f_nlocals;
 	if (f->f_nlocals)
@@ -787,7 +787,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 		return;
 	PyErr_Fetch(&error_type, &error_value, &error_traceback);
 	fast = f->f_localsplus;
-	j = PyTuple_Size(map);
+	j = PyTuple_GET_SIZE(map);
 	if (j > f->f_nlocals)
 		j = f->f_nlocals;
 	if (f->f_nlocals)

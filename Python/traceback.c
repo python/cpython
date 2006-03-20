@@ -165,7 +165,7 @@ tb_displayline(PyObject *f, char *filename, int lineno, char *name)
 				}
 				if (PyString_Check(v)) {
 					size_t len;
-					len = PyString_Size(v);
+					len = PyString_GET_SIZE(v);
 					if (len + 1 + taillen >= MAXPATHLEN)
 						continue; /* Too long */
 					strcpy(namebuf, PyString_AsString(v));

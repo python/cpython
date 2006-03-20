@@ -388,15 +388,15 @@ class_str(PyClassObject *op)
 		Py_INCREF(name);
 		return name;
 	}
-	m = PyString_Size(mod);
-	n = PyString_Size(name);
+	m = PyString_GET_SIZE(mod);
+	n = PyString_GET_SIZE(name);
 	res = PyString_FromStringAndSize((char *)NULL, m+1+n);
 	if (res != NULL) {
-		char *s = PyString_AsString(res);
-		memcpy(s, PyString_AsString(mod), m);
+		char *s = PyString_AS_STRING(res);
+		memcpy(s, PyString_AS_STRING(mod), m);
 		s += m;
 		*s++ = '.';
-		memcpy(s, PyString_AsString(name), n);
+		memcpy(s, PyString_AS_STRING(name), n);
 	}
 	return res;
 }

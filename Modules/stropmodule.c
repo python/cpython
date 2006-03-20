@@ -942,7 +942,7 @@ strop_translate(PyObject *self, PyObject *args)
 	}
 
 	table = table1;
-	inlen = PyString_Size(input_obj);
+	inlen = PyString_GET_SIZE(input_obj);
 	result = PyString_FromStringAndSize((char *)NULL, inlen);
 	if (result == NULL)
 		return NULL;

@@ -1216,12 +1216,12 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 #endif
 		if (!PyString_Check(v))
 			continue;
-		len = PyString_Size(v);
+		len = PyString_GET_SIZE(v);
 		if (len + 2 + namelen + MAXSUFFIXSIZE >= buflen) {
 			Py_XDECREF(copy);
 			continue; /* Too long */
 		}
-		strcpy(buf, PyString_AsString(v));
+		strcpy(buf, PyString_AS_STRING(v));
 		if (strlen(buf) != len) {
 			Py_XDECREF(copy);
 			continue; /* v contains '\0' */

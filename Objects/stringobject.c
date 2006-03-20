@@ -569,8 +569,9 @@ PyObject *PyString_DecodeEscape(const char *s,
 				if (!w)	goto failed;
 
 				/* Append bytes to output buffer. */
-				r = PyString_AsString(w);
-				rn = PyString_Size(w);
+				assert(PyString_Check(w));
+				r = PyString_AS_STRING(w);
+				rn = PyString_GET_SIZE(w);
 				memcpy(p, r, rn);
 				p += rn;
 				Py_DECREF(w);
@@ -2314,12 +2315,12 @@ string_translate(PyStringObject *self, PyObject *args)
 	}
 
 	table = table1;
-	inlen = PyString_Size(input_obj);
+	inlen = PyString_GET_SIZE(input_obj);
 	result = PyString_FromStringAndSize((char *)NULL, inlen);
 	if (result == NULL)
 		return NULL;
 	output_start = output = PyString_AsString(result);
-	input = PyString_AsString(input_obj);
+	input = PyString_AS_STRING(input_obj);
 
 	if (dellen == 0) {
 		/* If no deletions are required, use faster code */
