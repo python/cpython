@@ -72,14 +72,14 @@ def message_from_file(fp, *args, **kws):
 import sys
 
 class LazyImporter(object):
-  def __init__(self, module_name):
-      self.__name__ = 'email.' + module_name
+    def __init__(self, module_name):
+        self.__name__ = 'email.' + module_name
 
-  def __getattr__(self, name):
-      __import__(self.__name__)
-      mod = sys.modules[self.__name__]
-      self.__dict__.update(mod.__dict__)
-      return getattr(mod, name)
+    def __getattr__(self, name):
+        __import__(self.__name__)
+        mod = sys.modules[self.__name__]
+        self.__dict__.update(mod.__dict__)
+        return getattr(mod, name)
 
 
 _LOWERNAMES = [
