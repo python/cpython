@@ -1057,11 +1057,6 @@ Modules/getpath.o.
 
 --with-tsc: Profile using the Pentium timestamping counter (TSC).
 
---with-fpectl:  Enable building the ``fpectl'' module which can be used
-	to control the generation of SIGFPE and its conversion into a
-	Python exception. Note: this module is dangerous or useless
-	except in the hands of experts.
-
 
 Building for multiple architectures (using the VPATH feature)
 -------------------------------------------------------------
