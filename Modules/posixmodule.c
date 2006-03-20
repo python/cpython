@@ -5091,6 +5091,128 @@ posix_setgroups(PyObject *self, PyObject *args)
 }
 #endif /* HAVE_SETGROUPS */
 
+static PyObject *
+wait_helper(int pid, int status, struct rusage *ru)
+{
+	PyObject *result;
+   	static PyObject *struct_rusage;
+
+	if (pid == -1)
+		return posix_error();
+
+	if (struct_rusage == NULL) {
+		PyObject *m = PyImport_ImportModule("resource");
+		if (m == NULL)
+			return NULL;
+		struct_rusage = PyObject_GetAttrString(m, "struct_rusage");
+		Py_DECREF(m);
+		if (struct_rusage == NULL)
+			return NULL;
+	}
+
+	/* XXX(nnorwitz): Copied (w/mods) from resource.c, there should be only one. */
+	result = PyStructSequence_New((PyTypeObject*) struct_rusage);
+	if (!result)
+		return NULL;
+
+#ifndef doubletime
+#define doubletime(TV) ((double)(TV).tv_sec + (TV).tv_usec * 0.000001)
+#endif
+
+	PyStructSequence_SET_ITEM(result, 0,
+			PyFloat_FromDouble(doubletime(ru->ru_utime)));
+	PyStructSequence_SET_ITEM(result, 1,
+			PyFloat_FromDouble(doubletime(ru->ru_stime)));
+#define SET_INT(result, index, value)\
+		PyStructSequence_SET_ITEM(result, index, PyInt_FromLong(value))
+	SET_INT(result, 2, ru->ru_maxrss);
+	SET_INT(result, 3, ru->ru_ixrss);
+	SET_INT(result, 4, ru->ru_idrss);
+	SET_INT(result, 5, ru->ru_isrss);
+	SET_INT(result, 6, ru->ru_minflt);
+	SET_INT(result, 7, ru->ru_majflt);
+	SET_INT(result, 8, ru->ru_nswap);
+	SET_INT(result, 9, ru->ru_inblock);
+	SET_INT(result, 10, ru->ru_oublock);
+	SET_INT(result, 11, ru->ru_msgsnd);
+	SET_INT(result, 12, ru->ru_msgrcv);
+	SET_INT(result, 13, ru->ru_nsignals);
+	SET_INT(result, 14, ru->ru_nvcsw);
+	SET_INT(result, 15, ru->ru_nivcsw);
+#undef SET_INT
+
+	if (PyErr_Occurred()) {
+		Py_DECREF(result);
+		return NULL;
+	}
+
+	return Py_BuildValue("iiO", pid, status, result);
+}
+
+#ifdef HAVE_WAIT3
+PyDoc_STRVAR(posix_wait3__doc__,
+"wait3(options) -> (pid, status, rusage)\n\n\
+Wait for completion of a child process.");
+
+static PyObject *
+posix_wait3(PyObject *self, PyObject *args)
+{
+	int pid, options;
+	struct rusage ru;
+
+#ifdef UNION_WAIT
+	union wait status;
+#define status_i (status.w_status)
+#else
+	int status;
+#define status_i status
+#endif
+	status_i = 0;
+
+	if (!PyArg_ParseTuple(args, "i:wait3", &options))
+		return NULL;
+
+	Py_BEGIN_ALLOW_THREADS
+	pid = wait3(&status, options, &ru);
+	Py_END_ALLOW_THREADS
+
+	return wait_helper(pid, status_i, &ru);
+#undef status_i
+}
+#endif /* HAVE_WAIT3 */
+
+#ifdef HAVE_WAIT4
+PyDoc_STRVAR(posix_wait4__doc__,
+"wait4(pid, options) -> (pid, status, rusage)\n\n\
+Wait for completion of a given child process.");
+
+static PyObject *
+posix_wait4(PyObject *self, PyObject *args)
+{
+	int pid, options;
+	struct rusage ru;
+
+#ifdef UNION_WAIT
+	union wait status;
+#define status_i (status.w_status)
+#else
+	int status;
+#define status_i status
+#endif
+	status_i = 0;
+
+	if (!PyArg_ParseTuple(args, "ii:wait4", &pid, &options))
+		return NULL;
+
+	Py_BEGIN_ALLOW_THREADS
+	pid = wait4(pid, &status, options, &ru);
+	Py_END_ALLOW_THREADS
+
+	return wait_helper(pid, status_i, &ru);
+#undef status_i
+}
+#endif /* HAVE_WAIT4 */
+
 #ifdef HAVE_WAITPID
 PyDoc_STRVAR(posix_waitpid__doc__,
 "waitpid(pid, options) -> (pid, status)\n\n\
@@ -7696,6 +7818,12 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_WAIT
 	{"wait",	posix_wait, METH_NOARGS, posix_wait__doc__},
 #endif /* HAVE_WAIT */
+#ifdef HAVE_WAIT3
+        {"wait3",	posix_wait3, METH_VARARGS, posix_wait3__doc__},
+#endif /* HAVE_WAIT3 */
+#ifdef HAVE_WAIT4
+        {"wait4",	posix_wait4, METH_VARARGS, posix_wait4__doc__},
+#endif /* HAVE_WAIT4 */
 #if defined(HAVE_WAITPID) || defined(HAVE_CWAIT)
 	{"waitpid",	posix_waitpid, METH_VARARGS, posix_waitpid__doc__},
 #endif /* HAVE_WAITPID */
