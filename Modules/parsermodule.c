@@ -657,9 +657,10 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             }
         }
         if (!ok) {
-            PyErr_SetObject(parser_error,
-                            Py_BuildValue("os", elem,
-                                          "Illegal node construct."));
+            PyObject *err = Py_BuildValue("os", elem,
+                                          "Illegal node construct.");
+            PyErr_SetObject(parser_error, err);
+            Py_XDECREF(err);
             Py_XDECREF(elem);
             return (0);
         }
@@ -710,8 +711,9 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
              *  It has to be one or the other; this is an error.
              *  Throw an exception.
              */
-            PyErr_SetObject(parser_error,
-                            Py_BuildValue("os", elem, "unknown node type."));
+            PyObject *err = Py_BuildValue("os", elem, "unknown node type.");
+            PyErr_SetObject(parser_error, err);
+            Py_XDECREF(err);
             Py_XDECREF(elem);
             return (0);
         }
@@ -762,6 +764,7 @@ build_node_tree(PyObject *tuple)
         tuple = Py_BuildValue("os", tuple,
                     "Illegal syntax-tree; cannot start with terminal symbol.");
         PyErr_SetObject(parser_error, tuple);
+        Py_XDECREF(tuple);
     }
     else if (ISNONTERMINAL(num)) {
         /*
@@ -792,14 +795,16 @@ build_node_tree(PyObject *tuple)
             }
         }
     }
-    else
+    else {
         /*  The tuple is illegal -- if the number is neither TERMINAL nor
          *  NONTERMINAL, we can't use it.  Not sure the implementation
          *  allows this condition, but the API doesn't preclude it.
          */
-        PyErr_SetObject(parser_error,
-                        Py_BuildValue("os", tuple,
-                                      "Illegal component tuple."));
+        PyObject *err = Py_BuildValue("os", tuple,
+                                      "Illegal component tuple.");
+        PyErr_SetObject(parser_error, err);
+        Py_XDECREF(err);
+    }
 
     return (res);
 }
