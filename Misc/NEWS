@@ -295,6 +295,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1309579: wait3 and wait4 were added to the posix module.
+
 - Patch #1231053: The audioop module now supports encoding/decoding of alaw.
   In addition, the existing ulaw code was updated.
 
