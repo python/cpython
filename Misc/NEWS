@@ -12,7 +12,21 @@ What's New in Python 3000?
 TO DO
 -----
 
-- Make strings all Unicode.  (First have to introduce the bytes type.)
+- See PEP 3000.
+
+- Test merging certain changes from the 2.5 HEAD code.
+
+- Weed really old/weird stuff from the library.
+
+- Unify range() and xrange().
+
+- Revamp the dict API: keys(), values(), items() return iterators, etc.
+
+- Add the bytes type.
+
+- Rework the standard I/O library to use bytes for binary files.
+
+- Make strings all Unicode.
 
 - Get rid of classic class implementation.
 
@@ -30,6 +44,8 @@ Core and Builtins
 - 'as' and 'with' are keywords.
 
 - Absolute import is the default behavior for 'import foo' etc.
+
+- input(), raw_input() and apply() are gone.
 
 Extension Modules
 -----------------
