@@ -6396,15 +6396,16 @@ posix_tmpnam(PyObject *self, PyObject *noargs)
     name = tmpnam(buffer);
 #endif
     if (name == NULL) {
-        PyErr_SetObject(PyExc_OSError,
-                        Py_BuildValue("is", 0,
+	PyObject *err = Py_BuildValue("is", 0,
 #ifdef USE_TMPNAM_R
                                       "unexpected NULL from tmpnam_r"
 #else
                                       "unexpected NULL from tmpnam"
 #endif
-                                      ));
-        return NULL;
+                                      );
+	PyErr_SetObject(PyExc_OSError, err);
+	Py_XDECREF(err);
+	return NULL;
     }
     return PyString_FromString(buffer);
 }
