@@ -12,9 +12,10 @@ is the same format as used by the \refmodule{al} and \refmodule{sunaudiodev}
 modules.  All scalar items are integers, unless specified otherwise.
 
 % This para is mostly here to provide an excuse for the index entries...
-This module provides support for u-LAW and Intel/DVI ADPCM encodings.
+This module provides support for a-LAW, u-LAW and Intel/DVI ADPCM encodings.
 \index{Intel/DVI ADPCM}
 \index{ADPCM, Intel/DVI}
+\index{a-LAW}
 \index{u-LAW}
 
 A few of the more complicated operations only take 16-bit samples,
@@ -40,6 +41,13 @@ Decode an Intel/DVI ADPCM coded fragment to a linear fragment.  See
 the description of \function{lin2adpcm()} for details on ADPCM coding.
 Return a tuple \code{(\var{sample}, \var{newstate})} where the sample
 has the width specified in \var{width}.
+\end{funcdesc}
+
+\begin{funcdesc}{alaw2lin}{fragment, width}
+Convert sound fragments in a-LAW encoding to linearly encoded sound
+fragments.  a-LAW encoding always uses 8 bits samples, so \var{width}
+refers only to the sample width of the output fragment here.
+\versionadded{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{avg}{fragment, width}
@@ -98,10 +106,6 @@ The routine takes time proportional to \code{len(\var{fragment})}.
 Return the value of sample \var{index} from the fragment.
 \end{funcdesc}
 
-\begin{funcdesc}{lin2lin}{fragment, width, newwidth}
-Convert samples between 1-, 2- and 4-byte formats.
-\end{funcdesc}
-
 \begin{funcdesc}{lin2adpcm}{fragment, width, state}
 Convert samples to 4 bit Intel/DVI ADPCM encoding.  ADPCM coding is an
 adaptive coding scheme, whereby each 4 bit number is the difference
@@ -115,6 +119,18 @@ returns a tuple \code{(\var{adpcmfrag}, \var{newstate})}, and the
 \function{lin2adpcm()}.  In the initial call, \code{None} can be
 passed as the state.  \var{adpcmfrag} is the ADPCM coded fragment
 packed 2 4-bit values per byte.
+\end{funcdesc}
+
+\begin{funcdesc}{lin2alaw}{fragment, width}
+Convert samples in the audio fragment to a-LAW encoding and return
+this as a Python string.  a-LAW is an audio encoding format whereby
+you get a dynamic range of about 13 bits using only 8 bit samples.  It
+is used by the Sun audio hardware, among others.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{lin2lin}{fragment, width, newwidth}
+Convert samples between 1-, 2- and 4-byte formats.
 \end{funcdesc}
 
 \begin{funcdesc}{lin2ulaw}{fragment, width}
