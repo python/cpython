@@ -406,7 +406,8 @@ extern "C" {
  *    typedef int T1 Py_DEPRECATED(2.4);
  *    extern int x() Py_DEPRECATED(2.5);
  */
-#if defined(__GNUC__) && (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)
+#if defined(__GNUC__) && ((__GNUC__ >= 4) || \
+			  (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1))
 #define Py_DEPRECATED(VERSION_UNUSED) __attribute__((__deprecated__))
 #else
 #define Py_DEPRECATED(VERSION_UNUSED)
