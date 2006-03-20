@@ -295,6 +295,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1231053: The audioop module now supports encoding/decoding of alaw.
+  In addition, the existing ulaw code was updated.
+
 - RFE #567972: Socket objects' family, type and proto properties are
   now exposed via new get...() methods.
 
