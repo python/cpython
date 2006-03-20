@@ -5153,7 +5153,7 @@ wait_helper(int pid, int status, struct rusage *ru)
 		return NULL;
 	}
 
-	return Py_BuildValue("iiO", pid, status, result);
+	return Py_BuildValue("iiN", pid, status, result);
 }
 #endif /* HAVE_WAIT3 || HAVE_WAIT4 */
 
