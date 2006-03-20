@@ -846,38 +846,6 @@ get_tdelta(ProfilerObject *self)
 /* The workhorse:  the profiler callback function. */
 
 static int
-profiler_callback(ProfilerObject *self, PyFrameObject *frame, int what,
-                  PyObject *arg)
-{
-    int tdelta = -1;
-    int fileno;
-
-    if (self->frametimings)
-        tdelta = get_tdelta(self);
-    switch (what) {
-    case PyTrace_CALL:
-        fileno = get_fileno(self, frame->f_code);
-        if (fileno < 0)
-            return -1;
-        if (pack_enter(self, fileno, tdelta,
-                       frame->f_code->co_firstlineno) < 0)
-            return -1;
-        break;
-    case PyTrace_RETURN:
-        if (pack_exit(self, tdelta) < 0)
-            return -1;
-        break;
-    default:
-        /* should never get here */
-        break;
-    }
-    return 0;
-}
-
-
-/* Alternate callback when we want PyTrace_LINE events */
-
-static int
 tracer_callback(ProfilerObject *self, PyFrameObject *frame, int what,
                 PyObject *arg)
 {
@@ -895,7 +863,7 @@ tracer_callback(ProfilerObject *self, PyFrameObject *frame, int what,
     case PyTrace_RETURN:
         return pack_exit(self, get_tdelta(self));
 
-    case PyTrace_LINE:
+    case PyTrace_LINE:  /* we only get these events if we asked for them */
         if (self->linetimings)
             return pack_lineno_tdelta(self, frame->f_lineno,
 				      get_tdelta(self));
@@ -989,7 +957,7 @@ do_start(ProfilerObject *self)
     if (self->lineevents)
         PyEval_SetTrace((Py_tracefunc) tracer_callback, (PyObject *)self);
     else
-        PyEval_SetProfile((Py_tracefunc) profiler_callback, (PyObject *)self);
+        PyEval_SetProfile((Py_tracefunc) tracer_callback, (PyObject *)self);
 }
 
 static void
