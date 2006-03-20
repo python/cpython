@@ -264,6 +264,12 @@ extern int lstat(const char *, struct stat *);
 #define WTERMSIG(u_wait) ((u_wait).w_termsig)
 #endif
 
+#define WAIT_TYPE union wait
+#define WAIT_STATUS_INT(s) (s.w_status)
+
+#else /* !UNION_WAIT */
+#define WAIT_TYPE int
+#define WAIT_STATUS_INT(s) (s)
 #endif /* UNION_WAIT */
 
 /* Don't use the "_r" form if we don't need it (also, won't have a
@@ -5159,15 +5165,8 @@ posix_wait3(PyObject *self, PyObject *args)
 {
 	int pid, options;
 	struct rusage ru;
-
-#ifdef UNION_WAIT
-	union wait status;
-#define status_i (status.w_status)
-#else
-	int status;
-#define status_i status
-#endif
-	status_i = 0;
+	WAIT_TYPE status;
+	WAIT_STATUS_INT(status) = 0;
 
 	if (!PyArg_ParseTuple(args, "i:wait3", &options))
 		return NULL;
@@ -5176,8 +5175,7 @@ posix_wait3(PyObject *self, PyObject *args)
 	pid = wait3(&status, options, &ru);
 	Py_END_ALLOW_THREADS
 
-	return wait_helper(pid, status_i, &ru);
-#undef status_i
+	return wait_helper(pid, WAIT_STATUS_INT(status), &ru);
 }
 #endif /* HAVE_WAIT3 */
 
@@ -5191,15 +5189,8 @@ posix_wait4(PyObject *self, PyObject *args)
 {
 	int pid, options;
 	struct rusage ru;
-
-#ifdef UNION_WAIT
-	union wait status;
-#define status_i (status.w_status)
-#else
-	int status;
-#define status_i status
-#endif
-	status_i = 0;
+	WAIT_TYPE status;
+	WAIT_STATUS_INT(status) = 0;
 
 	if (!PyArg_ParseTuple(args, "ii:wait4", &pid, &options))
 		return NULL;
@@ -5208,8 +5199,7 @@ posix_wait4(PyObject *self, PyObject *args)
 	pid = wait4(pid, &status, options, &ru);
 	Py_END_ALLOW_THREADS
 
-	return wait_helper(pid, status_i, &ru);
-#undef status_i
+	return wait_helper(pid, WAIT_STATUS_INT(status), &ru);
 }
 #endif /* HAVE_WAIT4 */
 
@@ -5222,14 +5212,8 @@ static PyObject *
 posix_waitpid(PyObject *self, PyObject *args)
 {
 	int pid, options;
-#ifdef UNION_WAIT
-	union wait status;
-#define status_i (status.w_status)
-#else
-	int status;
-#define status_i status
-#endif
-	status_i = 0;
+	WAIT_TYPE status;
+	WAIT_STATUS_INT(status) = 0;
 
 	if (!PyArg_ParseTuple(args, "ii:waitpid", &pid, &options))
 		return NULL;
@@ -5238,8 +5222,8 @@ posix_waitpid(PyObject *self, PyObject *args)
 	Py_END_ALLOW_THREADS
 	if (pid == -1)
 		return posix_error();
-	else
-		return Py_BuildValue("ii", pid, status_i);
+
+	return Py_BuildValue("ii", pid, WAIT_STATUS_INT(status));
 }
 
 #elif defined(HAVE_CWAIT)
@@ -5262,10 +5246,9 @@ posix_waitpid(PyObject *self, PyObject *args)
 	Py_END_ALLOW_THREADS
 	if (pid == -1)
 		return posix_error();
-	else
-		/* shift the status left a byte so this is more like the
-		   POSIX waitpid */
-		return Py_BuildValue("ii", pid, status << 8);
+
+	/* shift the status left a byte so this is more like the POSIX waitpid */
+	return Py_BuildValue("ii", pid, status << 8);
 }
 #endif /* HAVE_WAITPID || HAVE_CWAIT */
 
@@ -5278,23 +5261,16 @@ static PyObject *
 posix_wait(PyObject *self, PyObject *noargs)
 {
 	int pid;
-#ifdef UNION_WAIT
-	union wait status;
-#define status_i (status.w_status)
-#else
-	int status;
-#define status_i status
-#endif
+	WAIT_TYPE status;
+	WAIT_STATUS_INT(status) = 0;
 
-	status_i = 0;
 	Py_BEGIN_ALLOW_THREADS
 	pid = wait(&status);
 	Py_END_ALLOW_THREADS
 	if (pid == -1)
 		return posix_error();
-	else
-		return Py_BuildValue("ii", pid, status_i);
-#undef status_i
+
+	return Py_BuildValue("ii", pid, WAIT_STATUS_INT(status));
 }
 #endif
 
@@ -6132,22 +6108,13 @@ Return True if the process returning 'status' was dumped to a core file.");
 static PyObject *
 posix_WCOREDUMP(PyObject *self, PyObject *args)
 {
-#ifdef UNION_WAIT
-	union wait status;
-#define status_i (status.w_status)
-#else
-	int status;
-#define status_i status
-#endif
-	status_i = 0;
+	WAIT_TYPE status;
+	WAIT_STATUS_INT(status) = 0;
 
-	if (!PyArg_ParseTuple(args, "i:WCOREDUMP", &status_i))
-	{
+	if (!PyArg_ParseTuple(args, "i:WCOREDUMP", &WAIT_STATUS_INT(status)))
 		return NULL;
-	}
 
 	return PyBool_FromLong(WCOREDUMP(status));
-#undef status_i
 }
 #endif /* WCOREDUMP */
 
@@ -6160,22 +6127,13 @@ job control stop.");
 static PyObject *
 posix_WIFCONTINUED(PyObject *self, PyObject *args)
 {
-#ifdef UNION_WAIT
-	union wait status;
-#define status_i (status.w_status)
-#else
-	int status;
-#define status_i status
-#endif
-	status_i = 0;
+	WAIT_TYPE status;
+	WAIT_STATUS_INT(status) = 0;
 
-	if (!PyArg_ParseTuple(args, "i:WCONTINUED", &status_i))
-	{
+	if (!PyArg_ParseTuple(args, "i:WCONTINUED", &WAIT_STATUS_INT(status)))
 		return NULL;
-	}
 
 	return PyBool_FromLong(WIFCONTINUED(status));
-#undef status_i
 }
 #endif /* WIFCONTINUED */
 
@@ -6187,22 +6145,13 @@ Return True if the process returning 'status' was stopped.");
 static PyObject *
 posix_WIFSTOPPED(PyObject *self, PyObject *args)
 {
-#ifdef UNION_WAIT
-	union wait status;
-#define status_i (status.w_status)
-#else
-	int status;
-#define status_i status
-#endif
-	status_i = 0;
+	WAIT_TYPE status;
+	WAIT_STATUS_INT(status) = 0;
 
-	if (!PyArg_ParseTuple(args, "i:WIFSTOPPED", &status_i))
-	{
+	if (!PyArg_ParseTuple(args, "i:WIFSTOPPED", &WAIT_STATUS_INT(status)))
 		return NULL;
-	}
 
 	return PyBool_FromLong(WIFSTOPPED(status));
-#undef status_i
 }
 #endif /* WIFSTOPPED */
 
@@ -6214,22 +6163,13 @@ Return True if the process returning 'status' was terminated by a signal.");
 static PyObject *
 posix_WIFSIGNALED(PyObject *self, PyObject *args)
 {
-#ifdef UNION_WAIT
-	union wait status;
-#define status_i (status.w_status)
-#else
-	int status;
-#define status_i status
-#endif
-	status_i = 0;
+	WAIT_TYPE status;
+	WAIT_STATUS_INT(status) = 0;
 
-	if (!PyArg_ParseTuple(args, "i:WIFSIGNALED", &status_i))
-	{
+	if (!PyArg_ParseTuple(args, "i:WIFSIGNALED", &WAIT_STATUS_INT(status)))
 		return NULL;
-	}
 
 	return PyBool_FromLong(WIFSIGNALED(status));
-#undef status_i
 }
 #endif /* WIFSIGNALED */
 
@@ -6242,22 +6182,13 @@ system call.");
 static PyObject *
 posix_WIFEXITED(PyObject *self, PyObject *args)
 {
-#ifdef UNION_WAIT
-	union wait status;
-#define status_i (status.w_status)
-#else
-	int status;
-#define status_i status
-#endif
-	status_i = 0;
+	WAIT_TYPE status;
+	WAIT_STATUS_INT(status) = 0;
 
-	if (!PyArg_ParseTuple(args, "i:WIFEXITED", &status_i))
-	{
+	if (!PyArg_ParseTuple(args, "i:WIFEXITED", &WAIT_STATUS_INT(status)))
 		return NULL;
-	}
 
 	return PyBool_FromLong(WIFEXITED(status));
-#undef status_i
 }
 #endif /* WIFEXITED */
 
@@ -6269,22 +6200,13 @@ Return the process return code from 'status'.");
 static PyObject *
 posix_WEXITSTATUS(PyObject *self, PyObject *args)
 {
-#ifdef UNION_WAIT
-	union wait status;
-#define status_i (status.w_status)
-#else
-	int status;
-#define status_i status
-#endif
-	status_i = 0;
+	WAIT_TYPE status;
+	WAIT_STATUS_INT(status) = 0;
 
-	if (!PyArg_ParseTuple(args, "i:WEXITSTATUS", &status_i))
-	{
+	if (!PyArg_ParseTuple(args, "i:WEXITSTATUS", &WAIT_STATUS_INT(status)))
 		return NULL;
-	}
 
 	return Py_BuildValue("i", WEXITSTATUS(status));
-#undef status_i
 }
 #endif /* WEXITSTATUS */
 
@@ -6297,22 +6219,13 @@ value.");
 static PyObject *
 posix_WTERMSIG(PyObject *self, PyObject *args)
 {
-#ifdef UNION_WAIT
-	union wait status;
-#define status_i (status.w_status)
-#else
-	int status;
-#define status_i status
-#endif
-	status_i = 0;
+	WAIT_TYPE status;
+	WAIT_STATUS_INT(status) = 0;
 
-	if (!PyArg_ParseTuple(args, "i:WTERMSIG", &status_i))
-	{
+	if (!PyArg_ParseTuple(args, "i:WTERMSIG", &WAIT_STATUS_INT(status)))
 		return NULL;
-	}
 
 	return Py_BuildValue("i", WTERMSIG(status));
-#undef status_i
 }
 #endif /* WTERMSIG */
 
@@ -6325,22 +6238,13 @@ the 'status' value.");
 static PyObject *
 posix_WSTOPSIG(PyObject *self, PyObject *args)
 {
-#ifdef UNION_WAIT
-	union wait status;
-#define status_i (status.w_status)
-#else
-	int status;
-#define status_i status
-#endif
-	status_i = 0;
+	WAIT_TYPE status;
+	WAIT_STATUS_INT(status) = 0;
 
-	if (!PyArg_ParseTuple(args, "i:WSTOPSIG", &status_i))
-	{
+	if (!PyArg_ParseTuple(args, "i:WSTOPSIG", &WAIT_STATUS_INT(status)))
 		return NULL;
-	}
 
 	return Py_BuildValue("i", WSTOPSIG(status));
-#undef status_i
 }
 #endif /* WSTOPSIG */
 
