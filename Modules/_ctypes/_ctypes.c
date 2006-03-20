@@ -3191,8 +3191,10 @@ CFuncPtr_clear(CFuncPtrObject *self)
 	Py_CLEAR(self->converters);
 	Py_CLEAR(self->paramflags);
 
-	if (self->thunk)
+	if (self->thunk) {
 		FreeCallback(self->thunk);
+		PyMem_Free(self->thunk);
+	}
 	self->thunk = NULL;
 
 	return CData_clear((CDataObject *)self);
