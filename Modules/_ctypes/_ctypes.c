@@ -2512,7 +2512,7 @@ _get_name(PyObject *obj, char **pname)
 #endif
 	if (PyString_Check(obj) || PyUnicode_Check(obj)) {
 		*pname = PyString_AsString(obj);
-		return pname ? 1 : 0;
+		return *pname ? 1 : 0;
 	}
 	PyErr_SetString(PyExc_TypeError,
 			"function name must be string or integer");
