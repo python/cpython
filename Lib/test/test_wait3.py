@@ -18,9 +18,9 @@ except AttributeError:
 class Wait3Test(ForkWait):
     def wait_impl(self, cpid):
         while 1:
-           spid, status, rusage = os.wait3(0)
-           if spid == cpid:
-               break
+            spid, status, rusage = os.wait3(0)
+            if spid == cpid:
+                break
         self.assertEqual(spid, cpid)
         self.assertEqual(status, 0, "cause = %d, exit = %d" % (status&0xff, status>>8))
         self.assertTrue(rusage)
