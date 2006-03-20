@@ -2,15 +2,6 @@
 
 #if (PY_VERSION_HEX < 0x02050000)
 typedef int Py_ssize_t;
-#define lenfunc inquiry
-#define readbufferproc getreadbufferproc
-#define writebufferproc getwritebufferproc
-#define segcountproc getsegcountproc
-#define charbufferproc getcharbufferproc
-#define ssizeargfunc intargfunc
-#define ssizessizeargfunc intintargfunc
-#define ssizeobjargproc intobjargproc
-#define ssizessizeobjargproc intintobjargproc
 #endif
 
 #ifndef MS_WIN32
