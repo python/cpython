@@ -1228,8 +1228,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 				}
 			}
 			assert(zreplacement != NULL);
-			ptoappend = PyString_AsString(zreplacement);
-			ntoappend = PyString_Size(zreplacement);
+			ptoappend = PyString_AS_STRING(zreplacement);
+			ntoappend = PyString_GET_SIZE(zreplacement);
 		}
 		else if (ch == 'Z') {
 			/* format tzname */
@@ -1257,14 +1257,18 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 						Py_DECREF(temp);
 						if (Zreplacement == NULL)
 							goto Done;
+						if (!PyString_Check(Zreplacement)) {
+							PyErr_SetString(PyExc_TypeError, "tzname.replace() did not return a string");
+							goto Done;
+						}
 					}
 					else
 						Py_DECREF(temp);
 				}
 			}
 			assert(Zreplacement != NULL);
-			ptoappend = PyString_AsString(Zreplacement);
-			ntoappend = PyString_Size(Zreplacement);
+			ptoappend = PyString_AS_STRING(Zreplacement);
+			ntoappend = PyString_GET_SIZE(Zreplacement);
 		}
 		else {
 			/* percent followed by neither z nor Z */
@@ -1275,6 +1279,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
  		/* Append the ntoappend chars starting at ptoappend to
  		 * the new format.
  		 */
+ 		assert(ptoappend != NULL);
  		assert(ntoappend >= 0);
  		if (ntoappend == 0)
  			continue;
