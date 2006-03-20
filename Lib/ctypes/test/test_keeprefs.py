@@ -140,5 +140,10 @@ class PointerToStructure(unittest.TestCase):
         r.a[0].x = 42
         r.a[0].y = 99
 
+        # to avoid leaking when tests are run several times
+        # clean up the types left in the cache.
+        from ctypes import _pointer_type_cache
+        del _pointer_type_cache[POINT]
+
 if __name__ == "__main__":
     unittest.main()
