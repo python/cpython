@@ -1045,13 +1045,16 @@ class Logger(Filterer):
         file name, line number and function name.
         """
         f = currentframe().f_back
-        while 1:
+        rv = "(unknown file)", 0, "(unknown function)"
+        while hasattr(f, "f_code"):
             co = f.f_code
             filename = os.path.normcase(co.co_filename)
             if filename == _srcfile:
                 f = f.f_back
                 continue
-            return filename, f.f_lineno, co.co_name
+            rv = (filename, f.f_lineno, co.co_name)
+            break
+        return rv
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info):
         """
@@ -1324,12 +1327,14 @@ def shutdown():
     """
     for h in _handlerList[:]: # was _handlers.keys():
         #errors might occur, for example, if files are locked
-        #we just ignore them
+        #we just ignore them if raiseExceptions is not set
         try:
             h.flush()
             h.close()
         except:
-            pass
+            if raiseExceptions:
+                raise
+            #else, swallow
 
 #Let's try and shutdown automatically on application exit...
 try:
