@@ -15,3 +15,17 @@ if not exist db-4.4.20\build_win32\debug\libdb44sd.lib (
 
 @rem OpenSSL
 if not exist openssl-0.9.8a svn export http://svn.python.org/projects/external/openssl-0.9.8a
+
+@rem tcltk
+if not exist tcl8.4.12 (
+   if exist tcltk rd /s/q tcltk
+   svn export http://svn.python.org/projects/external/tcl8.4.12
+   svn export http://svn.python.org/projects/external/tk8.4.12
+   cd tcl8.4.12\win
+   nmake -f makefile.vc
+   nmake -f makefile.vc INSTALLDIR=..\..\tcltk install
+   cd ..\..
+   cd tk8.4.12\win
+   nmake -f makefile.vc TCLDIR=..\..\tcl8.4.12
+   nmake -f makefile.vc TCLDIR=..\..\tcl8.4.12 INSTALLDIR=..\..\tcltk install
+)
