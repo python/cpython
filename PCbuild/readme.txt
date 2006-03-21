@@ -64,27 +64,21 @@ unpack into new subdirectories of dist\.
 
 _tkinter
     Python wrapper for the Tk windowing system.  Requires building
-    Tcl/Tk first.  Following are instructions for Tcl/Tk 8.4.7; these
-    should work for version 8.4.6 too, with suitable substitutions:
+    Tcl/Tk first.  Following are instructions for Tcl/Tk 8.4.12.
 
     Get source
     ----------
-    Go to
-        http://prdownloads.sourceforge.net/tcl/
-    and download
-        tcl847-src.zip
-        tk847-src.zip
-    Unzip into
-        dist\tcl8.4.7\
-        dist\tk8.4.7\
-    respectively.
+    In the dist directory, run
+    svn export http://svn.python.org/projects/external/tcl8.4.12
+    svn export http://svn.python.org/projects/external/tk8.4.12
+    svn export http://svn.python.org/projects/external/tix-8.4.0
 
     Build Tcl first (done here w/ MSVC 7.1 on Windows XP)
     ---------------
     Use "Start -> All Programs -> Microsoft Visual Studio .NET 2003
          -> Visual Studio .NET Tools -> Visual Studio .NET 2003 Command Prompt"
     to get a shell window with the correct environment settings
-    cd dist\tcl8.4.7\win
+    cd dist\tcl8.4.12\win
     nmake -f makefile.vc
     nmake -f makefile.vc INSTALLDIR=..\..\tcltk install
 
@@ -99,9 +93,9 @@ _tkinter
 
     Build Tk
     --------
-    cd dist\tk8.4.7\win
-    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.7
-    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.7 INSTALLDIR=..\..\tcltk install
+    cd dist\tk8.4.12\win
+    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.12
+    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.12 INSTALLDIR=..\..\tcltk install
 
     XXX Should we compile with OPTS=threads?
 
@@ -109,7 +103,7 @@ _tkinter
     XXX directory.  Is all of that really needed for Python use of Tcl/Tk?
 
     Optional:  run tests, via
-        nmake -f makefile.vc TCLDIR=..\..\tcl8.4.7 test
+        nmake -f makefile.vc TCLDIR=..\..\tcl8.4.12 test
 
         On WinXP Pro, wholly up to date as of 30-Aug-2004:
         all.tcl:        Total   8420    Passed  6826    Skipped 1581    Failed  13
@@ -118,12 +112,9 @@ _tkinter
 
    Built Tix
    ---------
-   Download from http://prdownloads.sourceforge.net/tix/tix-8.1.4.tar.gz
-   cd dist\tix-8.1.4
-   [cygwin]patch -p1 < ..\..\python\PC\tix.diff
-   cd win
-   nmake -f makefile.vc
-   nmake -f makefile.vc install
+   cd dist\tix-8.4.0\win
+   nmake -f python.mak
+   nmake -f python.mak install
 
 bz2
     Python wrapper for the libbz2 compression library.  Homepage
