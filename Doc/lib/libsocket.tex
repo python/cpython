@@ -654,21 +654,6 @@ Note that the \method{connect()} operation is subject to the timeout
 setting, and in general it is recommended to call
 \method{settimeout()} before calling \method{connect()}.
 
-\begin{methoddesc}[socket]{getfamily}{}
-Return the socket family, as given to the \class{socket} constructor.
-\versionadded{2.5}
-\end{methoddesc}
-
-\begin{methoddesc}[socket]{gettype}{}
-Return the socket type, as given to the \class{socket} constructor.
-\versionadded{2.5}
-\end{methoddesc}
-
-\begin{methoddesc}[socket]{getproto}{}
-Return the socket protocol, as given to the \class{socket} constructor.
-\versionadded{2.5}
-\end{methoddesc}
-
 \begin{methoddesc}[socket]{setsockopt}{level, optname, value}
 Set the value of the given socket option (see the \UNIX{} manual page
 \manpage{setsockopt}{2}).  The needed symbolic constants are defined in
@@ -690,6 +675,25 @@ and receives are disallowed.
 Note that there are no methods \method{read()} or \method{write()};
 use \method{recv()} and \method{send()} without \var{flags} argument
 instead.
+
+
+Socket objects also have these (read-only) attributes that correspond
+to the values given to the \class{socket} constructor.
+
+\begin{memberdesc}[socket]{family}
+The socket family.
+\versionadded{2.5}
+\end{memberdesc}
+
+\begin{memberdesc}[socket]{type}
+The socket type.
+\versionadded{2.5}
+\end{memberdesc}
+
+\begin{memberdesc}[socket]{proto}
+The socket protocol.
+\versionadded{2.5}
+\end{memberdesc}
 
 
 \subsection{SSL Objects \label{ssl-objects}}
