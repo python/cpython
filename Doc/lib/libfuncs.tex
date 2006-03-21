@@ -735,8 +735,11 @@ class C:
 \begin{funcdesc}{pow}{x, y\optional{, z}}
   Return \var{x} to the power \var{y}; if \var{z} is present, return
   \var{x} to the power \var{y}, modulo \var{z} (computed more
-  efficiently than \code{pow(\var{x}, \var{y}) \%\ \var{z}}).  The
-  arguments must have numeric types.  With mixed operand types, the
+  efficiently than \code{pow(\var{x}, \var{y}) \%\ \var{z}}).
+  The two-argument form \code{pow(\var{x}, \var{y})} is equivalent to using
+  the power operator: \code{\var{x}**\var{y}}.
+  
+  The arguments must have numeric types.  With mixed operand types, the
   coercion rules for binary arithmetic operators apply.  For int and
   long int operands, the result has the same type as the operands
   (after coercion) unless the second argument is negative; in that
