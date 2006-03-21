@@ -182,24 +182,10 @@ class _socketobject(object):
         Return a regular file object corresponding to the socket.  The mode
         and bufsize arguments are as for the built-in open() function."""
         return _fileobject(self._sock, mode, bufsize)
-
-    def getfamily(self):
-        """getfamily() -> socket family
-
-        Return the socket family."""
-        return self._sock.family
-
-    def gettype(self):
-        """gettype() -> socket type
-
-        Return the socket type."""
-        return self._sock.type
-
-    def getproto(self):
-        """getproto() -> socket protocol
-
-        Return the socket protocol."""
-        return self._sock.proto
+    
+    family = property(lambda self: self._sock.family, doc="the socket family")
+    type = property(lambda self: self._sock.type, doc="the socket type")
+    proto = property(lambda self: self._sock.proto, doc="the socket protocol")
 
     _s = ("def %s(self, *args): return self._sock.%s(*args)\n\n"
           "%s.__doc__ = _realsocket.%s.__doc__\n")
