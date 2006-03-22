@@ -605,7 +605,7 @@ DocTestFinder finds the line number of each example:
     ...     ...     print x,
     ...     0 1 2 3 4 5 6 7 8 9
     ...     >>> x/2
-    ...     6
+    ...     6.0
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> [e.lineno for e in test.examples]
@@ -680,7 +680,7 @@ statistics.  Here's a simple DocTest case we can use:
     ...     >>> print x
     ...     12
     ...     >>> x/2
-    ...     6
+    ...     6.0
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
 
@@ -701,7 +701,7 @@ the failure and proceeds to the next example:
     ...     >>> print x
     ...     14
     ...     >>> x/2
-    ...     6
+    ...     6.0
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=True).run(test)
@@ -725,7 +725,7 @@ the failure and proceeds to the next example:
     Trying:
         x/2
     Expecting:
-        6
+        6.0
     ok
     (1, 3)
 """
@@ -739,7 +739,7 @@ output:
     ...     >>> print x
     ...     12
     ...     >>> x/2
-    ...     6
+    ...     6.0
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
 
@@ -756,7 +756,7 @@ output:
     Trying:
         x/2
     Expecting:
-        6
+        6.0
     ok
     (0, 3)
 
@@ -786,7 +786,7 @@ iff `-v` appears in sys.argv:
     Trying:
         x/2
     Expecting:
-        6
+        6.0
     ok
     (0, 3)
 
@@ -808,7 +808,7 @@ replaced with any other string:
     ...     >>> x = 12
     ...     >>> print x/0
     ...     Traceback (most recent call last):
-    ...     ZeroDivisionError: integer division or modulo by zero
+    ...     ZeroDivisionError: float division
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
@@ -825,7 +825,7 @@ unexpected exception:
     ...     >>> print 'pre-exception output', x/0
     ...     pre-exception output
     ...     Traceback (most recent call last):
-    ...     ZeroDivisionError: integer division or modulo by zero
+    ...     ZeroDivisionError: float division
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
@@ -836,7 +836,7 @@ unexpected exception:
         print 'pre-exception output', x/0
     Exception raised:
         ...
-        ZeroDivisionError: integer division or modulo by zero
+        ZeroDivisionError: float division
     (1, 2)
 
 Exception messages may contain newlines:
@@ -933,7 +933,7 @@ unexpected exception:
     Exception raised:
         Traceback (most recent call last):
         ...
-        ZeroDivisionError: integer division or modulo by zero
+        ZeroDivisionError: float division
     (1, 1)
 """
     def optionflags(): r"""
