@@ -4952,6 +4952,12 @@ jcompile(node *n, const char *filename, struct compiling *base,
 		return NULL;
 	if (flags && flags->cf_flags & PyCF_SOURCE_IS_UTF8) {
 		sc.c_encoding = "utf-8";
+		if (TYPE(n) == encoding_decl) {
+			com_error(&sc, PyExc_SyntaxError, 
+				  "encoding declaration in Unicode string");
+			co = NULL;
+			goto exit;
+		}
 	} else if (TYPE(n) == encoding_decl) {
 		sc.c_encoding = STR(n);
 		n = CHILD(n, 0);
@@ -5044,7 +5050,7 @@ jcompile(node *n, const char *filename, struct compiling *base,
 		PyErr_SetString(PyExc_SystemError, "lost syntax error");
 	}
  exit:
-	if (base == NULL) {
+	if (base == NULL && sc.c_symtable != NULL) {
 		PySymtable_Free(sc.c_symtable);
 		sc.c_symtable = NULL;
 	}

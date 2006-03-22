@@ -12,6 +12,9 @@ What's New in Python 2.4.3c1?
 Core and builtins
 -----------------
 
+- Bug #1115379: Compiling a Unicode string with an encoding declaration
+  now gives a SyntaxError.
+
 - Fix missing check on whether the PendingDeprecationWarning for string
   exceptions was re-raised as an actual PendingDeprecationWarning when
   'warnings' is set to a filter action of "error"

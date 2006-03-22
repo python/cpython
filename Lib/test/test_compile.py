@@ -261,6 +261,10 @@ if 1:
         f1, f2 = f()
         self.assertNotEqual(id(f1.func_code), id(f2.func_code))
 
+    def test_unicode_encoding(self):
+        # SF bug 1115379
+        self.assertRaises(SyntaxError, compile, u"# -*- coding: utf-8 -*-\npass\n", "tmp", "exec")
+
 def test_main():
     test_support.run_unittest(TestSpecifics)
 
