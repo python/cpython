@@ -720,7 +720,7 @@ typedef struct {
 	PyObject *string; /* This cannot cause cycles. */
 } PyTclObject;
 
-staticforward PyTypeObject PyTclObject_Type;
+static PyTypeObject PyTclObject_Type;
 #define PyTclObject_Check(v)	((v)->ob_type == &PyTclObject_Type)
 
 static PyObject *
@@ -858,7 +858,7 @@ static PyMethodDef PyTclObject_methods[] = {
 	{0}
 };
 
-statichere PyTypeObject PyTclObject_Type = {
+static PyTypeObject PyTclObject_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
 	"_tkinter.Tcl_Obj",		/*tp_name*/

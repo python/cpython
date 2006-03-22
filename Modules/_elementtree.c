@@ -267,7 +267,7 @@ typedef struct {
 
 } ElementObject;
 
-staticforward PyTypeObject Element_Type;
+static PyTypeObject Element_Type;
 
 #define Element_CheckExact(op) ((op)->ob_type == &Element_Type)
 
@@ -1396,7 +1396,7 @@ static PySequenceMethods element_as_sequence = {
     element_setslice,
 };
 
-statichere PyTypeObject Element_Type = {
+static PyTypeObject Element_Type = {
     PyObject_HEAD_INIT(NULL)
     0, "Element", sizeof(ElementObject), 0,
     /* methods */
@@ -1435,7 +1435,7 @@ typedef struct {
 
 } TreeBuilderObject;
 
-staticforward PyTypeObject TreeBuilder_Type;
+static PyTypeObject TreeBuilder_Type;
 
 #define TreeBuilder_CheckExact(op) ((op)->ob_type == &TreeBuilder_Type)
 
@@ -1805,7 +1805,7 @@ treebuilder_getattr(TreeBuilderObject* self, char* name)
     return Py_FindMethod(treebuilder_methods, (PyObject*) self, name);
 }
 
-statichere PyTypeObject TreeBuilder_Type = {
+static PyTypeObject TreeBuilder_Type = {
     PyObject_HEAD_INIT(NULL)
     0, "TreeBuilder", sizeof(TreeBuilderObject), 0,
     /* methods */
@@ -1849,7 +1849,7 @@ typedef struct {
 
 } XMLParserObject;
 
-staticforward PyTypeObject XMLParser_Type;
+static PyTypeObject XMLParser_Type;
 
 /* helpers */
 
@@ -2580,7 +2580,7 @@ xmlparser_getattr(XMLParserObject* self, char* name)
     return res;
 }
 
-statichere PyTypeObject XMLParser_Type = {
+static PyTypeObject XMLParser_Type = {
     PyObject_HEAD_INIT(NULL)
     0, "XMLParser", sizeof(XMLParserObject), 0,
     /* methods */
