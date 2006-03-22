@@ -2770,7 +2770,7 @@ pattern_getattr(PatternObject* self, char* name)
     return NULL;
 }
 
-statichere PyTypeObject Pattern_Type = {
+static PyTypeObject Pattern_Type = {
     PyObject_HEAD_INIT(NULL)
     0, "_" SRE_MODULE ".SRE_Pattern",
     sizeof(PatternObject), sizeof(SRE_CODE),
@@ -3251,7 +3251,7 @@ match_getattr(MatchObject* self, char* name)
 /* FIXME: implement setattr("string", None) as a special case (to
    detach the associated string, if any */
 
-statichere PyTypeObject Match_Type = {
+static PyTypeObject Match_Type = {
     PyObject_HEAD_INIT(NULL)
     0, "_" SRE_MODULE ".SRE_Match",
     sizeof(MatchObject), sizeof(int),
@@ -3361,7 +3361,7 @@ scanner_getattr(ScannerObject* self, char* name)
     return NULL;
 }
 
-statichere PyTypeObject Scanner_Type = {
+static PyTypeObject Scanner_Type = {
     PyObject_HEAD_INIT(NULL)
     0, "_" SRE_MODULE ".SRE_Scanner",
     sizeof(ScannerObject), 0,

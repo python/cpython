@@ -685,21 +685,6 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
  */
 PyAPI_DATA(int) _Py_SwappedOp[];
 
-/*
-Define staticforward and statichere for source compatibility with old
-C extensions.
-
-The staticforward define was needed to support certain broken C
-compilers (notably SCO ODT 3.0, perhaps early AIX as well) botched the
-static keyword when it was used with a forward declaration of a static
-initialized structure.  Standard C allows the forward declaration with
-static, and we've decided to stop catering to broken C compilers.
-(In fact, we expect that the compilers are all fixed eight years later.)
-*/
-
-#define staticforward static
-#define statichere static
-
 
 /*
 More conventions
