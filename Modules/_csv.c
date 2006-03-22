@@ -83,7 +83,7 @@ typedef struct {
 	int strict;		/* raise exception on bad CSV */
 } DialectObj;
 
-staticforward PyTypeObject Dialect_Type;
+static PyTypeObject Dialect_Type;
 
 typedef struct {
         PyObject_HEAD
@@ -101,7 +101,7 @@ typedef struct {
 	unsigned long line_num;	/* Source-file line number */
 } ReaderObj;
 
-staticforward PyTypeObject Reader_Type;
+static PyTypeObject Reader_Type;
 
 #define ReaderObject_Check(v)   ((v)->ob_type == &Reader_Type)
 
@@ -118,7 +118,7 @@ typedef struct {
 	int num_fields;		/* number of fields in record */
 } WriterObj;        
 
-staticforward PyTypeObject Writer_Type;
+static PyTypeObject Writer_Type;
 
 /*
  * DIALECT class

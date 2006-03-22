@@ -283,7 +283,7 @@ typedef struct {
 
 
 
-staticforward PyTypeObject DB_Type, DBCursor_Type, DBEnv_Type, DBTxn_Type, DBLock_Type;
+static PyTypeObject DB_Type, DBCursor_Type, DBEnv_Type, DBTxn_Type, DBLock_Type;
 
 #define DBObject_Check(v)           ((v)->ob_type == &DB_Type)
 #define DBCursorObject_Check(v)     ((v)->ob_type == &DBCursor_Type)
@@ -4823,7 +4823,7 @@ DBLock_getattr(DBLockObject* self, char *name)
     return NULL;
 }
 
-statichere PyTypeObject DB_Type = {
+static PyTypeObject DB_Type = {
     PyObject_HEAD_INIT(NULL)
     0,                  /*ob_size*/
     "DB",               /*tp_name*/
@@ -4856,7 +4856,7 @@ statichere PyTypeObject DB_Type = {
 };
 
 
-statichere PyTypeObject DBCursor_Type = {
+static PyTypeObject DBCursor_Type = {
     PyObject_HEAD_INIT(NULL)
     0,                  /*ob_size*/
     "DBCursor",         /*tp_name*/
@@ -4889,7 +4889,7 @@ statichere PyTypeObject DBCursor_Type = {
 };
 
 
-statichere PyTypeObject DBEnv_Type = {
+static PyTypeObject DBEnv_Type = {
     PyObject_HEAD_INIT(NULL)
     0,          /*ob_size*/
     "DBEnv",            /*tp_name*/
@@ -4921,7 +4921,7 @@ statichere PyTypeObject DBEnv_Type = {
 #endif
 };
 
-statichere PyTypeObject DBTxn_Type = {
+static PyTypeObject DBTxn_Type = {
     PyObject_HEAD_INIT(NULL)
     0,          /*ob_size*/
     "DBTxn",    /*tp_name*/
@@ -4954,7 +4954,7 @@ statichere PyTypeObject DBTxn_Type = {
 };
 
 
-statichere PyTypeObject DBLock_Type = {
+static PyTypeObject DBLock_Type = {
     PyObject_HEAD_INIT(NULL)
     0,          /*ob_size*/
     "DBLock",   /*tp_name*/

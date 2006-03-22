@@ -53,7 +53,7 @@ typedef struct {
 	HANDLE handle;
 } sp_handle_object;
 
-staticforward PyTypeObject sp_handle_type;
+static PyTypeObject sp_handle_type;
 
 static PyObject*
 sp_handle_new(HANDLE handle)
@@ -127,7 +127,7 @@ sp_handle_as_int(sp_handle_object* self)
 
 static PyNumberMethods sp_handle_as_number;
 
-statichere PyTypeObject sp_handle_type = {
+static PyTypeObject sp_handle_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/*ob_size*/
 	"_subprocess_handle", sizeof(sp_handle_object), 0,

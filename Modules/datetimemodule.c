@@ -2931,7 +2931,7 @@ static PyMethodDef tzinfo_methods[] = {
 static char tzinfo_doc[] =
 PyDoc_STR("Abstract base class for time zone info objects.");
 
-statichere PyTypeObject PyDateTime_TZInfoType = {
+static PyTypeObject PyDateTime_TZInfoType = {
 	PyObject_HEAD_INIT(NULL)
 	0,					/* ob_size */
 	"datetime.tzinfo",			/* tp_name */
@@ -3451,7 +3451,7 @@ static PyNumberMethods time_as_number = {
 	(inquiry)time_nonzero,			/* nb_nonzero */
 };
 
-statichere PyTypeObject PyDateTime_TimeType = {
+static PyTypeObject PyDateTime_TimeType = {
 	PyObject_HEAD_INIT(NULL)
 	0,					/* ob_size */
 	"datetime.time",			/* tp_name */
@@ -4536,7 +4536,7 @@ static PyNumberMethods datetime_as_number = {
 	0,					/* nb_nonzero */
 };
 
-statichere PyTypeObject PyDateTime_DateTimeType = {
+static PyTypeObject PyDateTime_DateTimeType = {
 	PyObject_HEAD_INIT(NULL)
 	0,					/* ob_size */
 	"datetime.datetime",			/* tp_name */

@@ -591,7 +591,7 @@ PointerType_set_type(PyTypeObject *self, PyObject *type)
 	return Py_None;
 }
 
-staticforward PyObject *_byref(PyObject *);
+static PyObject *_byref(PyObject *);
 
 static PyObject *
 PointerType_from_param(PyObject *type, PyObject *value)

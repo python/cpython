@@ -117,7 +117,7 @@ typedef struct {
 #define POF_BUILTINS    0x004
 #define POF_NOMEMORY    0x100
 
-staticforward PyTypeObject PyProfiler_Type;
+static PyTypeObject PyProfiler_Type;
 
 #define PyProfiler_Check(op) PyObject_TypeCheck(op, &PyProfiler_Type)
 #define PyProfiler_CheckExact(op) ((op)->ob_type == &PyProfiler_Type)
@@ -798,7 +798,7 @@ Profiler(custom_timer=None, time_unit=None, subcalls=True, builtins=True)\n\
     is, in seconds).\n\
 ");
 
-statichere PyTypeObject PyProfiler_Type = {
+static PyTypeObject PyProfiler_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,                                      /* ob_size */
 	"_lsprof.Profiler",                     /* tp_name */
