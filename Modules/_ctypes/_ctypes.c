@@ -3499,7 +3499,7 @@ Array_init(CDataObject *self, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-Array_item(PyObject *_self, int index)
+Array_item(PyObject *_self, Py_ssize_t index)
 {
 	CDataObject *self = (CDataObject *)_self;
 	int offset, size;
@@ -3567,7 +3567,7 @@ Array_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh)
 }
 
 static int
-Array_ass_item(PyObject *_self, int index, PyObject *value)
+Array_ass_item(PyObject *_self, Py_ssize_t index, PyObject *value)
 {
 	CDataObject *self = (CDataObject *)_self;
 	int size, offset;
@@ -3595,7 +3595,7 @@ Array_ass_item(PyObject *_self, int index, PyObject *value)
 }
 
 static int
-Array_ass_slice(PyObject *_self, int ilow, int ihigh, PyObject *value)
+Array_ass_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *value)
 {
 	CDataObject *self = (CDataObject *)_self;
 	int i, len;
@@ -3636,7 +3636,7 @@ Array_ass_slice(PyObject *_self, int ilow, int ihigh, PyObject *value)
 	return 0;
 }
 
-static int
+static Py_ssize_t
 Array_length(PyObject *_self)
 {
 	CDataObject *self = (CDataObject *)_self;
@@ -4002,7 +4002,7 @@ static PyTypeObject Simple_Type = {
   Pointer_Type
 */
 static PyObject *
-Pointer_item(PyObject *_self, int index)
+Pointer_item(PyObject *_self, Py_ssize_t index)
 {
 	CDataObject *self = (CDataObject *)_self;
 	int size, offset;
@@ -4030,7 +4030,7 @@ Pointer_item(PyObject *_self, int index)
 }
 
 static int
-Pointer_ass_item(PyObject *_self, int index, PyObject *value)
+Pointer_ass_item(PyObject *_self, Py_ssize_t index, PyObject *value)
 {
 	CDataObject *self = (CDataObject *)_self;
 	int size;
