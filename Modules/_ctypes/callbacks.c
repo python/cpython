@@ -264,16 +264,6 @@ if (x == NULL) _AddTraceback(what, __FILE__, __LINE__ - 1), PyErr_Print()
 	PyGILState_Release(state);
 }
 
-typedef struct {
-	ffi_closure *pcl; /* the C callable */
-	ffi_cif cif;
-	PyObject *converters;
-	PyObject *callable;
-	SETFUNC setfunc;
-	ffi_type *restype;
-	ffi_type *atypes[0];
-} ffi_info;
-
 static void closure_fcn(ffi_cif *cif,
 			void *resp,
 			void **args,
@@ -289,15 +279,10 @@ static void closure_fcn(ffi_cif *cif,
 			  args);
 }
 
-void FreeCallback(THUNK thunk)
-{
-	FreeClosure(((ffi_info *)thunk)->pcl);
-}
-
-THUNK AllocFunctionCallback(PyObject *callable,
-			    PyObject *converters,
-			    PyObject *restype,
-			    int is_cdecl)
+ffi_info *AllocFunctionCallback(PyObject *callable,
+				PyObject *converters,
+				PyObject *restype,
+				int is_cdecl)
 {
 	int result;
 	ffi_info *p;
@@ -306,8 +291,10 @@ THUNK AllocFunctionCallback(PyObject *callable,
 
 	nArgs = PySequence_Size(converters);
 	p = (ffi_info *)PyMem_Malloc(sizeof(ffi_info) + sizeof(ffi_type) * (nArgs + 1));
-	if (p == NULL)
-		return (THUNK)PyErr_NoMemory();
+	if (p == NULL) {
+		PyErr_NoMemory();
+		return NULL;
+	}
 	p->pcl = MallocClosure();
 	if (p->pcl == NULL) {
 		PyErr_NoMemory();
@@ -356,11 +343,12 @@ THUNK AllocFunctionCallback(PyObject *callable,
 
 	p->converters = converters;
 	p->callable = callable;
-	return (THUNK)p;
+	return p;
 
   error:
 	if (p) {
-		FreeCallback((THUNK)p);
+		if (p->pcl)
+			FreeClosure(p->pcl);
 		PyMem_Free(p);
 	}
 	return NULL;
