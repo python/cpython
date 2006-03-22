@@ -105,6 +105,10 @@ bytes(cdata)
 #include <ffi.h>
 #ifdef MS_WIN32
 #include <windows.h>
+#include <malloc.h>
+#ifndef IS_INTRESOURCE
+#define IS_INTRESOURCE(x) (((size_t)(x) >> 16) == 0)
+#endif
 # ifdef _WIN32_WCE
 /* Unlike desktop Windows, WinCE has both W and A variants of
    GetProcAddress, but the default W version is not what we want */
@@ -2402,7 +2406,7 @@ static PPROC FindAddress(void *handle, char *name, PyObject *type)
 	   funcname -> _funcname@<n>
 	   where n is 0, 4, 8, 12, ..., 128
 	 */
-	mangled_name = _alloca(strlen(name) + 1 + 1 + 1 + 3); /* \0 _ @ %d */
+	mangled_name = alloca(strlen(name) + 1 + 1 + 1 + 3); /* \0 _ @ %d */
 	for (i = 0; i < 32; ++i) {
 		sprintf(mangled_name, "_%s@%d", name, i*4);
 		address = (PPROC)GetProcAddress(handle, mangled_name);
@@ -2557,14 +2561,14 @@ CFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #ifdef MS_WIN32
 	address = FindAddress(handle, name, (PyObject *)type);
 	if (!address) {
-		if ((size_t)name & ~0xFFFF)
+		if (!IS_INTRESOURCE(name))
 			PyErr_Format(PyExc_AttributeError,
 				     "function '%s' not found",
 				     name);
 		else
 			PyErr_Format(PyExc_AttributeError,
 				     "function ordinal %d not found",
-				     name);
+				     (WORD)(size_t)name);
 		return NULL;
 	}
 #else
@@ -2651,7 +2655,7 @@ CFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	CFuncPtrObject *self;
 	PyObject *callable;
 	StgDictObject *dict;
-	THUNK thunk;
+	ffi_info *thunk;
 
 	if (PyTuple_GET_SIZE(args) == 0)
 		return GenericCData_new(type, args, kwds);
@@ -3192,10 +3196,10 @@ CFuncPtr_clear(CFuncPtrObject *self)
 	Py_CLEAR(self->paramflags);
 
 	if (self->thunk) {
-		FreeCallback(self->thunk);
+		FreeClosure(self->thunk->pcl);
 		PyMem_Free(self->thunk);
+		self->thunk = NULL;
 	}
-	self->thunk = NULL;
 
 	return CData_clear((CDataObject *)self);
 }

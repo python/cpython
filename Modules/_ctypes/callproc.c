@@ -64,14 +64,17 @@
 #endif
 
 #ifdef MS_WIN32
-#define alloca _alloca
+#include <malloc.h>
 #endif
 
 #include <ffi.h>
 #include "ctypes.h"
 
-#ifdef _DEBUG
-#define DEBUG_EXCEPTIONS /* */
+#if defined(_DEBUG) || defined(__MINGW32__)
+/* Don't use structured exception handling on Windows if this is defined.
+   MingW, AFAIK, doesn't support it.
+*/
+#define DONT_USE_SEH
 #endif
 
 #ifdef MS_WIN32
@@ -96,6 +99,7 @@ static TCHAR *FormatError(DWORD code)
 	return lpMsgBuf;
 }
 
+#ifndef DONT_USE_SEH
 void SetException(DWORD code, EXCEPTION_RECORD *pr)
 {
 	TCHAR *lpMsgBuf;
@@ -254,6 +258,7 @@ static DWORD HandleException(EXCEPTION_POINTERS *ptrs,
 	*record = *ptrs->ExceptionRecord;
 	return EXCEPTION_EXECUTE_HANDLER;
 }
+#endif
 
 static PyObject *
 check_hresult(PyObject *self, PyObject *args)
@@ -612,8 +617,10 @@ static int _call_function_pointer(int flags,
 	int cc;
 #ifdef MS_WIN32
 	int delta;
+#ifndef DONT_USE_SEH
 	DWORD dwExceptionCode = 0;
 	EXCEPTION_RECORD record;
+#endif
 #endif
 	/* XXX check before here */
 	if (restype == NULL) {
@@ -640,14 +647,14 @@ static int _call_function_pointer(int flags,
 	if ((flags & FUNCFLAG_PYTHONAPI) == 0)
 		Py_UNBLOCK_THREADS
 #ifdef MS_WIN32
-#ifndef DEBUG_EXCEPTIONS
+#ifndef DONT_USE_SEH
 	__try {
 #endif
 		delta =
 #endif
 			ffi_call(&cif, (void *)pProc, resmem, avalues);
 #ifdef MS_WIN32
-#ifndef DEBUG_EXCEPTIONS
+#ifndef DONT_USE_SEH
 	}
 	__except (HandleException(GetExceptionInformation(),
 				  &dwExceptionCode, &record)) {
@@ -658,10 +665,12 @@ static int _call_function_pointer(int flags,
 	if ((flags & FUNCFLAG_PYTHONAPI) == 0)
 		Py_BLOCK_THREADS
 #ifdef MS_WIN32
+#ifndef DONT_USE_SEH
 	if (dwExceptionCode) {
 		SetException(dwExceptionCode, &record);
 		return -1;
 	}
+#endif
 	if (delta < 0) {
 		if (flags & FUNCFLAG_CDECL)
 			PyErr_Format(PyExc_ValueError,
