@@ -477,6 +477,14 @@ Extension Modules
 Library
 -------
 
+- email 4.0 package now integrated.  This is largely the same as the email 3.0
+  package that was included in Python 2.3, except that PEP 8 module names are
+  now used (e.g. mail.message instead of email.Message).  The MIME classes
+  have been moved to a subpackage (e.g. email.mime.text instead of
+  email.MIMEText).  The old names are still supported for now.  Several
+  deprecated Message methods have been removed and lots of bugs have been
+  fixed.  More details can be found in the email package documentation.
+
 - Patch #1436130: codecs.lookup() now returns a CodecInfo object (a subclass
   of tuple) that provides incremental decoders and encoders (a way to use
   stateful codecs without the stream API). Functions
