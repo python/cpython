@@ -47,6 +47,8 @@ Core and Builtins
 
 - input(), raw_input() and apply() are gone.
 
+- Removed staticforward and statichere macros.
+
 Extension Modules
 -----------------
 
