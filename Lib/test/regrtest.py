@@ -744,6 +744,8 @@ _expectations = {
         test_sunaudiodev
         test_threadsignals
         test_timing
+        test_wait3
+        test_wait4
         """,
     'linux2':
         """
