@@ -301,7 +301,7 @@ Extension Modules
   In addition, the existing ulaw code was updated.
 
 - RFE #567972: Socket objects' family, type and proto properties are
-  now exposed via new get...() methods.
+  now exposed via new attributes.
 
 - Everything under lib-old was removed.  This includes the following modules:
     Para, addpack, cmp, cmpcache, codehack, dircmp, dump, find, fmt, grep,
