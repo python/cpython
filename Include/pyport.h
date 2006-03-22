@@ -476,14 +476,12 @@ extern double hypot(double, double);
 #endif
 
 
-/*******************************************************************
-On 4.4BSD-descendants, ctype functions serves the whole range of
-wchar_t character set rather than single byte code points only.
-This characteristic can break some operations of string object
-including str.upper() and str.split() on UTF-8 locales.  This
-workaround was provided by Tim Robbins of FreeBSD project.  He said
-the incompatibility will be fixed in FreeBSD 6.
-********************************************************************/
+/* On 4.4BSD-descendants, ctype functions serves the whole range of
+ * wchar_t character set rather than single byte code points only.
+ * This characteristic can break some operations of string object
+ * including str.upper() and str.split() on UTF-8 locales.  This
+ * workaround was provided by Tim Robbins of FreeBSD project.
+ */
 
 #ifdef __FreeBSD__
 #include <osreldate.h>
