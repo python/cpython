@@ -182,7 +182,7 @@ class _socketobject(object):
         Return a regular file object corresponding to the socket.  The mode
         and bufsize arguments are as for the built-in open() function."""
         return _fileobject(self._sock, mode, bufsize)
-    
+
     family = property(lambda self: self._sock.family, doc="the socket family")
     type = property(lambda self: self._sock.type, doc="the socket type")
     proto = property(lambda self: self._sock.proto, doc="the socket protocol")
