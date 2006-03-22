@@ -477,6 +477,8 @@ Extension Modules
 Library
 -------
 
+- Added the ctypes ffi package.
+
 - email 4.0 package now integrated.  This is largely the same as the email 3.0
   package that was included in Python 2.3, except that PEP 8 module names are
   now used (e.g. mail.message instead of email.Message).  The MIME classes
