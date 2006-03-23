@@ -179,14 +179,17 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
         process = subprocess.Popen([sys.executable, "-mquopri"],
                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         cout, cerr = process.communicate(p)
-        self.assert_(cout == e)
+        # On Windows, Python will output the result to stdout using
+        # CRLF, as the mode of stdout is text mode. To compare this
+        # with the expected result, we need to do a line-by-line comparison.
+        self.assert_(cout.splitlines() == e.splitlines())
 
     def test_scriptdecode(self):
         (p, e) = self.STRINGS[-1]
         process = subprocess.Popen([sys.executable, "-mquopri", "-d"],
                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         cout, cerr = process.communicate(e)
-        self.assert_(cout == p)
+        self.assert_(cout.splitlines() == p.splitlines())
 
 def test_main():
     test_support.run_unittest(QuopriTestCase)
