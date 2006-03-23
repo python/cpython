@@ -663,7 +663,7 @@ locale_alias = {
 #
 # This maps Windows language identifiers to locale strings.
 #
-# This list has been updated from 
+# This list has been updated from
 # http://msdn.microsoft.com/library/default.asp?url=/library/en-us/intl/nls_238z.asp
 # to include every locale up to Windows XP.
 #

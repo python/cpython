@@ -269,7 +269,7 @@ class StreamReader(Codec):
         if self.linebuffer:
             self.charbuffer = "".join(self.linebuffer)
             self.linebuffer = None
-            
+
         # read until we get the required number of characters (if available)
         while True:
             # can the request can be satisfied from the character buffer?
@@ -338,7 +338,7 @@ class StreamReader(Codec):
             if not keepends:
                 line = line.splitlines(False)[0]
             return line
-            
+
         readsize = size or 72
         line = ""
         # If size is given, we call read() only once

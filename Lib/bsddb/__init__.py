@@ -195,7 +195,7 @@ class _DBWithCursor(_iter_mixin):
                 try:
                     self.saved_dbc_key = c.current(0,0,0)[0]
                 except db.DBError:
-                    pass                    
+                    pass
             c.close()
             del c
         for cref in self._cursor_refs.values():

@@ -1135,9 +1135,9 @@ def testPatch1094164 ():
     # Check that replacing a child with itself leaves the tree unchanged
     elem.replaceChild(e, e)
     confirm(e.parentNode is elem, "After replaceChild()")
-    
-    
-    
+
+
+
 def testReplaceWholeText():
     def setup():
         doc = parseString("<doc>a<e/>d</doc>")
