@@ -1247,24 +1247,6 @@ PySequence_GetItem(PyObject *s, Py_ssize_t i)
 	return type_error("unindexable object");
 }
 
-static PyObject *
-sliceobj_from_ssizet_ssizet(Py_ssize_t i, Py_ssize_t j)
-{
-	PyObject *start, *end, *slice;
-	start = PyInt_FromSsize_t(i);
-	if (!start)
-		return NULL;
-	end = PyInt_FromSsize_t(j);
-	if (!end) {
-		Py_DECREF(start);
-		return NULL;
-	}
-	slice = PySlice_New(start, end, NULL);
-	Py_DECREF(start);
-	Py_DECREF(end);
-	return slice;
-}
-
 PyObject *
 PySequence_GetSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2)
 {
@@ -1289,7 +1271,7 @@ PySequence_GetSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2)
 		return m->sq_slice(s, i1, i2);
 	} else if ((mp = s->ob_type->tp_as_mapping) && mp->mp_subscript) {
 		PyObject *res;
-		PyObject *slice = sliceobj_from_ssizet_ssizet(i1, i2);
+		PyObject *slice = _PySlice_FromIndices(i1, i2);
 		if (!slice)
 			return NULL;
 		res = mp->mp_subscript(s, slice);
@@ -1381,7 +1363,7 @@ PySequence_SetSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2, PyObject *o)
 		return m->sq_ass_slice(s, i1, i2, o);
 	} else if ((mp = s->ob_type->tp_as_mapping) && mp->mp_ass_subscript) {
 		int res;
-		PyObject *slice = sliceobj_from_ssizet_ssizet(i1, i2);
+		PyObject *slice = _PySlice_FromIndices(i1, i2);
 		if (!slice)
 			return -1;
 		res = mp->mp_ass_subscript(s, slice, o);
