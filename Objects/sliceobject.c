@@ -79,6 +79,25 @@ PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
 	return (PyObject *) obj;
 }
 
+PyObject *
+_PySlice_FromIndices(Py_ssize_t istart, Py_ssize_t istop)
+{
+	PyObject *start, *end, *slice;
+	start = PyInt_FromSsize_t(istart);
+	if (!start)
+		return NULL;
+	end = PyInt_FromSsize_t(istop);
+	if (!end) {
+		Py_DECREF(start);
+		return NULL;
+	}
+
+	slice = PySlice_New(start, end, NULL);
+	Py_DECREF(start);
+	Py_DECREF(end);
+	return slice;
+}
+
 int
 PySlice_GetIndices(PySliceObject *r, Py_ssize_t length,
                    Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step)
