@@ -12,6 +12,9 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1115379: Compiling a Unicode string with an encoding declaration
+  now gives a SyntaxError.
+
 - Previously, Python code had no easy way to access the contents of a
   cell object. Now, a ``cell_contents`` attribute has been added
   (closes patch #1170323).

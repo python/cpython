@@ -191,6 +191,10 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
 
     if (flags && flags->cf_flags & PyCF_SOURCE_IS_UTF8) {
         c.c_encoding = "utf-8";
+        if (TYPE(n) == encoding_decl) {
+                ast_error(n, "encoding declaration in Unicode string");
+                goto error;
+        }
     } else if (TYPE(n) == encoding_decl) {
         c.c_encoding = STR(n);
         n = CHILD(n, 0);
