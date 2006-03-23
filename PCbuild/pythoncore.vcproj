@@ -1385,7 +1385,7 @@
 					Name="VCCLCompilerTool"
 					Optimization="2"
 					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="BUILD=67"/>
+					PreprocessorDefinitions="BUILD=68"/>
 			</FileConfiguration>
 			<FileConfiguration
 				Name="Debug|Win32">
@@ -1393,7 +1393,7 @@
 					Name="VCCLCompilerTool"
 					Optimization="0"
 					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="BUILD=67"/>
+					PreprocessorDefinitions="BUILD=68"/>
 			</FileConfiguration>
 			<FileConfiguration
 				Name="ReleaseItanium|Win32">
@@ -1401,7 +1401,7 @@
 					Name="VCCLCompilerTool"
 					Optimization="2"
 					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="BUILD=67"/>
+					PreprocessorDefinitions="BUILD=68"/>
 			</FileConfiguration>
 		</File>
 		<File

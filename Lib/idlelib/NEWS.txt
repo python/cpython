@@ -1,7 +1,7 @@
-What's New in IDLE 1.1.3?
-=========================
+What's New in IDLE 1.1.3c1?
+===========================
 
-*Release date:
+*Release date: 23-MAR-2006*
 
 - Source file f.flush() after writing; trying to avoid lossage if user
   kills GUI.  Reported by Bruce Sherwood.
