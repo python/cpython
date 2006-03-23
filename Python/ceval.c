@@ -3935,7 +3935,7 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 	if (v != NULL) {
 		Py_ssize_t x;
 		if (PyInt_Check(v)) {
-			x = PyInt_AsLong(v);
+			x = PyInt_AsSsize_t(v);
 		} 
 		else if (v->ob_type->tp_as_number &&
 			 PyType_HasFeature(v->ob_type, Py_TPFLAGS_HAVE_INDEX)
