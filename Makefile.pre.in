@@ -720,6 +720,9 @@ libinstall:	$(BUILDPYTHON) $(srcdir)/Lib/$(PLATDIR)
 		a=$(srcdir)/Lib/$$d; \
 		if test ! -d $$a; then continue; else true; fi; \
 		b=$(LIBDEST)/$$d; \
+		if [ `ls $$a | wc -l` -lt 1 ]; then \
+			continue; \
+		fi; \
 		for i in $$a/*; \
 		do \
 			case $$i in \
