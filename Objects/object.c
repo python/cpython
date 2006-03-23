@@ -138,10 +138,9 @@ _Py_NegativeRefcount(const char *fname, int lineno, PyObject *op)
 {
 	char buf[300];
 
-	/* XXX(twouters) cast refcount to long until %zd is universally
-	   available */
 	PyOS_snprintf(buf, sizeof(buf),
-		      "%s:%i object at %p has negative ref count %ld",
+		      "%s:%i object at %p has negative ref count "
+		      "%" PY_FORMAT_SIZE_T "d",
 		      fname, lineno, op, (long)op->ob_refcnt);
 	Py_FatalError(buf);
 }
