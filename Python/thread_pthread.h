@@ -26,6 +26,16 @@
 #endif
 #endif
 
+/* Before FreeBSD 5.4, system scope threads was very limited resource
+   in default setting.  So the process scope is preferred to get
+   enough number of threads to work. */
+#ifdef __FreeBSD__
+#include <osreldate.h>
+#if __FreeBSD_version >= 500000 && __FreeBSD_version < 504101
+#undef PTHREAD_SYSTEM_SCHED_SUPPORTED
+#endif
+#endif
+
 #if !defined(pthread_attr_default)
 #  define pthread_attr_default ((pthread_attr_t *)NULL)
 #endif
@@ -138,7 +148,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #ifdef THREAD_STACK_SIZE
 	pthread_attr_setstacksize(&attrs, THREAD_STACK_SIZE);
 #endif
-#if defined(PTHREAD_SYSTEM_SCHED_SUPPORTED) && !defined(__FreeBSD__)
+#if defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
         pthread_attr_setscope(&attrs, PTHREAD_SCOPE_SYSTEM);
 #endif
 
