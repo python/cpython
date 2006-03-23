@@ -1,7 +1,7 @@
 from test import test_support
 import unittest
 
-import sys, os, cStringIO
+import sys, os, cStringIO, subprocess
 import quopri
 
 
@@ -176,17 +176,17 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
 
     def test_scriptencode(self):
         (p, e) = self.STRINGS[-1]
-        (cin, cout) = os.popen2("%s -mquopri" % sys.executable)
-        cin.write(p)
-        cin.close()
-        self.assert_(cout.read() == e)
+        process = subprocess.Popen([sys.executable, "-mquopri"],
+                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        cout, cerr = process.communicate(p)
+        self.assert_(cout == e)
 
     def test_scriptdecode(self):
         (p, e) = self.STRINGS[-1]
-        (cin, cout) = os.popen2("%s -mquopri -d" % sys.executable)
-        cin.write(e)
-        cin.close()
-        self.assert_(cout.read() == p)
+        process = subprocess.Popen([sys.executable, "-mquopri", "-d"],
+                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        cout, cerr = process.communicate(e)
+        self.assert_(cout == p)
 
 def test_main():
     test_support.run_unittest(QuopriTestCase)
