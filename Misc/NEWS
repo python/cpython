@@ -483,6 +483,8 @@ Extension Modules
 Library
 -------
 
+- popen2.Popen objects now preserve the command in a .cmd attribute.
+
 - Added the ctypes ffi package.
 
 - email 4.0 package now integrated.  This is largely the same as the email 3.0

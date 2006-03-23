@@ -39,6 +39,7 @@ class Popen3:
         specified, it specifies the size of the I/O buffers to/from the child
         process."""
         _cleanup()
+        self.cmd = cmd
         p2cread, p2cwrite = os.pipe()
         c2pread, c2pwrite = os.pipe()
         if capturestderr:
@@ -186,6 +187,9 @@ else:
     __all__.extend(["Popen3", "Popen4"])
 
 def _test():
+    # When the test runs, there shouldn't be any open pipes
+    _cleanup()
+    assert not _active, "Active pipes when test starts " + repr([c.cmd for c in _active])
     cmd  = "cat"
     teststr = "ab cd\n"
     if os.name == "nt":
