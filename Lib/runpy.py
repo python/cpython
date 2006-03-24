@@ -379,21 +379,17 @@ def _run_module_code(code, init_globals=None,
         restore_module = mod_name in sys.modules
         if restore_module:
             saved_module = sys.modules[mod_name]
-        imp.acquire_lock()
+        sys.argv[0] = mod_fname
+        sys.modules[mod_name] = temp_module
         try:
-            sys.argv[0] = mod_fname
-            sys.modules[mod_name] = temp_module
-            try:
-                _run_code(code, mod_globals, init_globals,
-                          mod_name, mod_fname, mod_loader)
-            finally:
-                sys.argv[0] = saved_argv0
-                if restore_module:
-                    sys.modules[mod_name] = saved_module
-                else:
-                    del sys.modules[mod_name]
+            _run_code(code, mod_globals, init_globals,
+                      mod_name, mod_fname, mod_loader)
         finally:
-            imp.release_lock()
+            sys.argv[0] = saved_argv0
+        if restore_module:
+                sys.modules[mod_name] = saved_module
+        else:
+                del sys.modules[mod_name]
         # Copy the globals of the temporary module, as they
         # may be cleared when the temporary module goes away
         return mod_globals.copy()
