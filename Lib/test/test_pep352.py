@@ -120,22 +120,6 @@ class UsageTests(unittest.TestCase):
     def tearDown(self):
         warnings.filters = self._filters[:]
 
-    def test_raise_classic(self):
-        class ClassicClass:
-            pass
-        try:
-            raise ClassicClass
-        except ClassicClass:
-            pass
-        except:
-            self.fail("unable to raise classic class")
-        try:
-            raise ClassicClass()
-        except ClassicClass:
-            pass
-        except:
-            self.fail("unable to raise class class instance")
-
     def test_raise_new_style_non_exception(self):
         class NewStyleClass(object):
             pass
@@ -152,32 +136,8 @@ class UsageTests(unittest.TestCase):
         except:
             self.fail("unable to raise new-style class instance")
 
-    def test_raise_string(self):
-        warnings.resetwarnings()
-        warnings.filterwarnings("error")
-        try:
-            raise "spam"
-        except DeprecationWarning:
-            pass
-        except:
-            self.fail("raising a string did not cause a DeprecationWarning")
-
-    def test_catch_string(self):
-        # Test will be pertinent when catching exceptions raises a
-        #   DeprecationWarning
-        warnings.filterwarnings("ignore", "raising")
-        str_exc = "spam"
-        try:
-            raise str_exc
-        except str_exc:
-            pass
-        except:
-            self.fail("catching a string exception failed")
-
 def test_main():
     run_unittest(ExceptionClassTests, UsageTests)
-
-
 
 if __name__ == '__main__':
     test_main()
