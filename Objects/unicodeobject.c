@@ -6445,7 +6445,6 @@ static PyNumberMethods unicode_as_number = {
 	0,				/*nb_add*/
 	0,				/*nb_subtract*/
 	0,				/*nb_multiply*/
-	0,				/*nb_divide*/
 	unicode_mod,			/*nb_remainder*/
 };
 

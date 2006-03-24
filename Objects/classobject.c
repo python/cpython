@@ -1551,7 +1551,6 @@ BINARY(instance_rshift, "rshift", PyNumber_Rshift)
 BINARY(instance_add, "add", PyNumber_Add)
 BINARY(instance_sub, "sub", PyNumber_Subtract)
 BINARY(instance_mul, "mul", PyNumber_Multiply)
-BINARY(instance_div, "div", PyNumber_Divide)
 BINARY(instance_mod, "mod", PyNumber_Remainder)
 BINARY(instance_divmod, "divmod", PyNumber_Divmod)
 BINARY(instance_floordiv, "floordiv", PyNumber_FloorDivide)
@@ -1565,7 +1564,6 @@ BINARY_INPLACE(instance_irshift, "rshift", PyNumber_InPlaceRshift)
 BINARY_INPLACE(instance_iadd, "add", PyNumber_InPlaceAdd)
 BINARY_INPLACE(instance_isub, "sub", PyNumber_InPlaceSubtract)
 BINARY_INPLACE(instance_imul, "mul", PyNumber_InPlaceMultiply)
-BINARY_INPLACE(instance_idiv, "div", PyNumber_InPlaceDivide)
 BINARY_INPLACE(instance_imod, "mod", PyNumber_InPlaceRemainder)
 BINARY_INPLACE(instance_ifloordiv, "floordiv", PyNumber_InPlaceFloorDivide)
 BINARY_INPLACE(instance_itruediv, "truediv", PyNumber_InPlaceTrueDivide)
@@ -2054,7 +2052,6 @@ static PyNumberMethods instance_as_number = {
 	(binaryfunc)instance_add,		/* nb_add */
 	(binaryfunc)instance_sub,		/* nb_subtract */
 	(binaryfunc)instance_mul,		/* nb_multiply */
-	(binaryfunc)instance_div,		/* nb_divide */
 	(binaryfunc)instance_mod,		/* nb_remainder */
 	(binaryfunc)instance_divmod,		/* nb_divmod */
 	(ternaryfunc)instance_pow,		/* nb_power */
@@ -2077,7 +2074,6 @@ static PyNumberMethods instance_as_number = {
 	(binaryfunc)instance_iadd,		/* nb_inplace_add */
 	(binaryfunc)instance_isub,		/* nb_inplace_subtract */
 	(binaryfunc)instance_imul,		/* nb_inplace_multiply */
-	(binaryfunc)instance_idiv,		/* nb_inplace_divide */
 	(binaryfunc)instance_imod,		/* nb_inplace_remainder */
 	(ternaryfunc)instance_ipow,		/* nb_inplace_power */
 	(binaryfunc)instance_ilshift,		/* nb_inplace_lshift */

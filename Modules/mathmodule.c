@@ -266,7 +266,7 @@ math_log(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	ans = PyNumber_Divide(num, den);
+	ans = PyNumber_TrueDivide(num, den);
 	Py_DECREF(num);
 	Py_DECREF(den);
 	return ans;

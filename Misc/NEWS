@@ -40,6 +40,14 @@ Core and Builtins
 - Exceptions *must* derive from BaseException.
 
 - Integer division always returns a float.  The -Q option is no more.
+  All the following are gone:
+   * PyNumber_Divide and PyNumber_InPlaceDivide
+   * __div__, __rdiv__, and __idiv__
+   * nb_divide, nb_inplace_divide
+   * operator.div, operator.idiv, operator.__div__, operator.__idiv__
+  (Only __truediv__ and __floordiv__ remain, not sure how to handle them
+   if we want to re-use __div__ and friends.  If we do, it will make
+   it harder to write code for both 2.x and 3.x.)
 
 - 'as' and 'with' are keywords.
 

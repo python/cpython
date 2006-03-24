@@ -140,8 +140,6 @@ class Rat(object):
             return float(self) / other
         return NotImplemented
 
-    __div__ = __truediv__
-
     def __rtruediv__(self, other):
         """Divide two Rats, or a Rat and a number (reversed args)."""
         if isRat(other):
@@ -151,8 +149,6 @@ class Rat(object):
         if isnum(other):
             return other / float(self)
         return NotImplemented
-
-    __rdiv__ = __rtruediv__
 
     def __floordiv__(self, other):
         """Divide two Rats, returning the floored result."""

@@ -1135,10 +1135,9 @@ class Decimal(object):
         return ans
     __rmul__ = __mul__
 
-    def __div__(self, other, context=None):
+    def __truediv__(self, other, context=None):
         """Return self / other."""
         return self._divide(other, context=context)
-    __truediv__ = __div__
 
     def _divide(self, other, divmod = 0, context=None):
         """Return a / b, to context.prec precision.
@@ -1306,13 +1305,12 @@ class Decimal(object):
             ans = ans._fix(context)
         return ans
 
-    def __rdiv__(self, other, context=None):
-        """Swaps self/other and returns __div__."""
+    def __rtruediv__(self, other, context=None):
+        """Swaps self/other and returns __truediv__."""
         other = _convert_other(other)
         if other is NotImplemented:
             return other
-        return other.__div__(self, context=context)
-    __rtruediv__ = __rdiv__
+        return other.__truediv__(self, context=context)
 
     def __divmod__(self, other, context=None):
         """
@@ -1384,9 +1382,9 @@ class Decimal(object):
         rounding = context._set_rounding_decision(NEVER_ROUND)
 
         if other._sign:
-            comparison = other.__div__(Decimal(-2), context=context)
+            comparison = other.__truediv__(Decimal(-2), context=context)
         else:
-            comparison = other.__div__(Decimal(2), context=context)
+            comparison = other.__truediv__(Decimal(2), context=context)
 
         context._set_rounding_decision(rounding)
         context._regard_flags(*flags)
@@ -1751,7 +1749,7 @@ class Decimal(object):
         if n < 0:
             #n is a long now, not Decimal instance
             n = -n
-            mul = Decimal(1).__div__(mul, context=context)
+            mul = Decimal(1).__truediv__(mul, context=context)
 
         spot = 1
         while spot <= n:
@@ -1972,7 +1970,7 @@ class Decimal(object):
         rounding = context._set_rounding(ROUND_HALF_EVEN)
         while 1:
             context.prec = min(2*context.prec - 2, maxp)
-            ans = half.__mul__(ans.__add__(tmp.__div__(ans, context=context),
+            ans = half.__mul__(ans.__add__(tmp.__truediv__(ans, context=context),
                                            context=context), context=context)
             if context.prec == maxp:
                 break
@@ -2454,7 +2452,7 @@ class Context(object):
         >>> ExtendedContext.divide(Decimal('2.40E+6'), Decimal('2'))
         Decimal("1.20E+6")
         """
-        return a.__div__(b, context=self)
+        return a.__truediv__(b, context=self)
 
     def divide_int(self, a, b):
         """Divides two numbers and returns the integer part of the result.

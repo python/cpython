@@ -55,19 +55,15 @@ class ComplexTest(unittest.TestCase):
         if x != 0:
             q = z / x
             self.assertClose(q, y)
-            q = z.__div__(x)
-            self.assertClose(q, y)
             q = z.__truediv__(x)
             self.assertClose(q, y)
         if y != 0:
             q = z / y
             self.assertClose(q, x)
-            q = z.__div__(y)
-            self.assertClose(q, x)
             q = z.__truediv__(y)
             self.assertClose(q, x)
 
-    def test_div(self):
+    def test_truediv(self):
         simple_real = [float(i) for i in xrange(-5, 6)]
         simple_complex = [complex(x, y) for x in simple_real for y in simple_real]
         for x in simple_complex:
@@ -84,7 +80,7 @@ class ComplexTest(unittest.TestCase):
             self.check_div(complex(random(), random()),
                            complex(random(), random()))
 
-        self.assertRaises(ZeroDivisionError, complex.__div__, 1+1j, 0+0j)
+        self.assertRaises(ZeroDivisionError, complex.__truediv__, 1+1j, 0+0j)
         # FIXME: The following currently crashes on Alpha
         # self.assertRaises(OverflowError, pow, 1e200+1j, 1e200+1j)
 

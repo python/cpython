@@ -580,29 +580,8 @@ int_div(PyIntObject *x, PyIntObject *y)
 	case DIVMOD_OK:
 		return PyInt_FromLong(d);
 	case DIVMOD_OVERFLOW:
-		return PyLong_Type.tp_as_number->nb_divide((PyObject *)x,
-							   (PyObject *)y);
-	default:
-		return NULL;
-	}
-}
-
-static PyObject *
-int_classic_div(PyIntObject *x, PyIntObject *y)
-{
-	long xi, yi;
-	long d, m;
-	CONVERT_TO_LONG(x, xi);
-	CONVERT_TO_LONG(y, yi);
-	if (Py_DivisionWarningFlag &&
-	    PyErr_Warn(PyExc_DeprecationWarning, "classic int division") < 0)
-		return NULL;
-	switch (i_divmod(xi, yi, &d, &m)) {
-	case DIVMOD_OK:
-		return PyInt_FromLong(d);
-	case DIVMOD_OVERFLOW:
-		return PyLong_Type.tp_as_number->nb_divide((PyObject *)x,
-							   (PyObject *)y);
+		return PyLong_Type.tp_as_number->nb_floor_divide((PyObject *)x,
+							         (PyObject *)y);
 	default:
 		return NULL;
 	}
@@ -1034,7 +1013,6 @@ static PyNumberMethods int_as_number = {
 	(binaryfunc)int_add,	/*nb_add*/
 	(binaryfunc)int_sub,	/*nb_subtract*/
 	(binaryfunc)int_mul,	/*nb_multiply*/
-	(binaryfunc)int_classic_div, /*nb_divide*/
 	(binaryfunc)int_mod,	/*nb_remainder*/
 	(binaryfunc)int_divmod,	/*nb_divmod*/
 	(ternaryfunc)int_pow,	/*nb_power*/
@@ -1057,7 +1035,6 @@ static PyNumberMethods int_as_number = {
 	0,			/*nb_inplace_add*/
 	0,			/*nb_inplace_subtract*/
 	0,			/*nb_inplace_multiply*/
-	0,			/*nb_inplace_divide*/
 	0,			/*nb_inplace_remainder*/
 	0,			/*nb_inplace_power*/
 	0,			/*nb_inplace_lshift*/

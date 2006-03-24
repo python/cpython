@@ -431,7 +431,6 @@ static PyNumberMethods PyHKEY_NumberMethods =
 	PyHKEY_binaryFailureFunc,	/* nb_add */
 	PyHKEY_binaryFailureFunc,	/* nb_subtract */
 	PyHKEY_binaryFailureFunc,	/* nb_multiply */
-	PyHKEY_binaryFailureFunc,	/* nb_divide */
 	PyHKEY_binaryFailureFunc,	/* nb_remainder */
 	PyHKEY_binaryFailureFunc,	/* nb_divmod */
 	PyHKEY_ternaryFailureFunc,	/* nb_power */

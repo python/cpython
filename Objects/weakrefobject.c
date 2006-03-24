@@ -471,7 +471,6 @@ proxy_compare(PyObject *proxy, PyObject *v)
 WRAP_BINARY(proxy_add, PyNumber_Add)
 WRAP_BINARY(proxy_sub, PyNumber_Subtract)
 WRAP_BINARY(proxy_mul, PyNumber_Multiply)
-WRAP_BINARY(proxy_div, PyNumber_Divide)
 WRAP_BINARY(proxy_mod, PyNumber_Remainder)
 WRAP_BINARY(proxy_divmod, PyNumber_Divmod)
 WRAP_TERNARY(proxy_pow, PyNumber_Power)
@@ -490,7 +489,6 @@ WRAP_UNARY(proxy_float, PyNumber_Float)
 WRAP_BINARY(proxy_iadd, PyNumber_InPlaceAdd)
 WRAP_BINARY(proxy_isub, PyNumber_InPlaceSubtract)
 WRAP_BINARY(proxy_imul, PyNumber_InPlaceMultiply)
-WRAP_BINARY(proxy_idiv, PyNumber_InPlaceDivide)
 WRAP_BINARY(proxy_imod, PyNumber_InPlaceRemainder)
 WRAP_TERNARY(proxy_ipow, PyNumber_InPlacePower)
 WRAP_BINARY(proxy_ilshift, PyNumber_InPlaceLshift)
@@ -591,7 +589,6 @@ static PyNumberMethods proxy_as_number = {
     (binaryfunc)proxy_add,      /*nb_add*/
     (binaryfunc)proxy_sub,      /*nb_subtract*/
     (binaryfunc)proxy_mul,      /*nb_multiply*/
-    (binaryfunc)proxy_div,      /*nb_divide*/
     (binaryfunc)proxy_mod,      /*nb_remainder*/
     (binaryfunc)proxy_divmod,   /*nb_divmod*/
     (ternaryfunc)proxy_pow,     /*nb_power*/
@@ -614,7 +611,6 @@ static PyNumberMethods proxy_as_number = {
     (binaryfunc)proxy_iadd,     /*nb_inplace_add*/
     (binaryfunc)proxy_isub,     /*nb_inplace_subtract*/
     (binaryfunc)proxy_imul,     /*nb_inplace_multiply*/
-    (binaryfunc)proxy_idiv,     /*nb_inplace_divide*/
     (binaryfunc)proxy_imod,     /*nb_inplace_remainder*/
     (ternaryfunc)proxy_ipow,    /*nb_inplace_power*/
     (binaryfunc)proxy_ilshift,  /*nb_inplace_lshift*/
