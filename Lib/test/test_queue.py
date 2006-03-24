@@ -246,11 +246,22 @@ def QueueJoinTest(q):
         q.put(i)
     q.join()
     verify(cum==sum(range(100)), "q.join() did not block until all tasks were done")
+    q.join()        # Make sure you can join more than once
+
+def QueueTaskDoneTest(q)
+    try:
+        q.task_done()
+    except ValueError:
+        pass
+    else:
+        raise TestFailed("Did not detect task count going negative")
 
 def test():
-    q = Queue.Queue()
+    q = Queue.Queue(20)
+    QueueTaskDoneTest(q)
     QueueJoinTest(q)
     QueueJoinTest(q)
+    QueueTaskDoneTest(q)
 
     q = Queue.Queue(QUEUE_SIZE)
     # Do it a couple of times on the same queue
