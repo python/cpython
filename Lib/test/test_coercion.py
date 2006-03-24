@@ -44,10 +44,10 @@ class MethodNumber:
     def __rmul__(self,other):
         return other * self.arg
 
-    def __div__(self,other):
+    def __truediv__(self,other):
         return self.arg / other
 
-    def __rdiv__(self,other):
+    def __rtruediv__(self,other):
         return other / self.arg
 
     def __pow__(self,other):

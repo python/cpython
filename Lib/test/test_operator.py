@@ -144,11 +144,6 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnless(operator.delslice(a, 2, 8) is None)
         self.assert_(a == [0, 1, 8, 9])
 
-    def test_div(self):
-        self.failUnlessRaises(TypeError, operator.div, 5)
-        self.failUnlessRaises(TypeError, operator.div, None, None)
-        self.failUnless(operator.floordiv(5, 2) == 2)
-
     def test_floordiv(self):
         self.failUnlessRaises(TypeError, operator.floordiv, 5)
         self.failUnlessRaises(TypeError, operator.floordiv, None, None)
@@ -416,7 +411,6 @@ class OperatorTestCase(unittest.TestCase):
         class C(object):
             def __iadd__     (self, other): return "iadd"
             def __iand__     (self, other): return "iand"
-            def __idiv__     (self, other): return "idiv"
             def __ifloordiv__(self, other): return "ifloordiv"
             def __ilshift__  (self, other): return "ilshift"
             def __imod__     (self, other): return "imod"
@@ -431,7 +425,6 @@ class OperatorTestCase(unittest.TestCase):
         c = C()
         self.assertEqual(operator.iadd     (c, 5), "iadd")
         self.assertEqual(operator.iand     (c, 5), "iand")
-        self.assertEqual(operator.idiv     (c, 5), "idiv")
         self.assertEqual(operator.ifloordiv(c, 5), "ifloordiv")
         self.assertEqual(operator.ilshift  (c, 5), "ilshift")
         self.assertEqual(operator.imod     (c, 5), "imod")
@@ -446,7 +439,6 @@ class OperatorTestCase(unittest.TestCase):
         self.assertEqual(operator.irepeat  (c, 5), "imul")
         self.assertEqual(operator.__iadd__     (c, 5), "iadd")
         self.assertEqual(operator.__iand__     (c, 5), "iand")
-        self.assertEqual(operator.__idiv__     (c, 5), "idiv")
         self.assertEqual(operator.__ifloordiv__(c, 5), "ifloordiv")
         self.assertEqual(operator.__ilshift__  (c, 5), "ilshift")
         self.assertEqual(operator.__imod__     (c, 5), "imod")

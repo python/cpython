@@ -5,7 +5,7 @@ x += 1
 x *= 2
 x **= 2
 x -= 8
-x //= 2
+x /= 2
 x //= 1
 x %= 12
 x &= 2
@@ -19,7 +19,7 @@ x[0] += 1
 x[0] *= 2
 x[0] **= 2
 x[0] -= 8
-x[0] //= 2
+x[0] /= 2
 x[0] //= 2
 x[0] %= 12
 x[0] &= 2
@@ -33,7 +33,7 @@ x[0] += 1
 x[0] *= 2
 x[0] **= 2
 x[0] -= 8
-x[0] //= 2
+x[0] /= 2
 x[0] //= 1
 x[0] %= 12
 x[0] &= 2
@@ -123,14 +123,6 @@ class testall:
         print "__imul__ called"
         return self
 
-    def __div__(self, val):
-        print "__div__ called"
-    def __rdiv__(self, val):
-        print "__rdiv__ called"
-    def __idiv__(self, val):
-        print "__idiv__ called"
-        return self
-
     def __floordiv__(self, val):
         print "__floordiv__ called"
         return self
@@ -146,6 +138,9 @@ class testall:
         return self
     def __itruediv__(self, val):
         print "__itruediv__ called"
+        return self
+    def __rtruediv__(self, val):
+        print "__rtruediv__ called"
         return self
 
     def __mod__(self, val):
@@ -217,16 +212,9 @@ x * 1
 1 * x
 x *= 1
 
-if 1/2 == 0:
-    x / 1
-    1 / x
-    x /= 1
-else:
-    # True division is in effect, so "/" doesn't map to __div__ etc;
-    # but the canned expected-output file requires that those get called.
-    x.__div__(1)
-    x.__rdiv__(1)
-    x.__idiv__(1)
+x / 1
+1 / x
+x /= 1
 
 x // 1
 1 // x

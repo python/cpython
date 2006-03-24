@@ -1755,7 +1755,6 @@ static PyNumberMethods set_as_number = {
 	0,				/*nb_add*/
 	(binaryfunc)set_sub,		/*nb_subtract*/
 	0,				/*nb_multiply*/
-	0,				/*nb_divide*/
 	0,				/*nb_remainder*/
 	0,				/*nb_divmod*/
 	0,				/*nb_power*/
@@ -1778,7 +1777,6 @@ static PyNumberMethods set_as_number = {
 	0,				/*nb_inplace_add*/
 	(binaryfunc)set_isub,		/*nb_inplace_subtract*/
 	0,				/*nb_inplace_multiply*/
-	0,				/*nb_inplace_divide*/
 	0,				/*nb_inplace_remainder*/
 	0,				/*nb_inplace_power*/
 	0,				/*nb_inplace_lshift*/
@@ -1867,7 +1865,6 @@ static PyNumberMethods frozenset_as_number = {
 	0,				/*nb_add*/
 	(binaryfunc)set_sub,		/*nb_subtract*/
 	0,				/*nb_multiply*/
-	0,				/*nb_divide*/
 	0,				/*nb_remainder*/
 	0,				/*nb_divmod*/
 	0,				/*nb_power*/

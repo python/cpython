@@ -3812,7 +3812,6 @@ static PyNumberMethods Simple_as_number = {
 	0, /* nb_add */
 	0, /* nb_subtract */
 	0, /* nb_multiply */
-	0, /* nb_divide */
 	0, /* nb_remainder */
 	0, /* nb_divmod */
 	0, /* nb_power */
@@ -4165,7 +4164,6 @@ static PyNumberMethods Pointer_as_number = {
 	0, /* nb_add */
 	0, /* nb_subtract */
 	0, /* nb_multiply */
-	0, /* nb_divide */
 	0, /* nb_remainder */
 	0, /* nb_divmod */
 	0, /* nb_power */

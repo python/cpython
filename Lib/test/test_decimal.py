@@ -507,7 +507,7 @@ class DecimalImplicitConstructionTest(unittest.TestCase):
                 ('+', '__add__', '__radd__'),
                 ('-', '__sub__', '__rsub__'),
                 ('*', '__mul__', '__rmul__'),
-                ('/', '__div__', '__rdiv__'),
+                ('/', '__truediv__', '__rtruediv__'),
                 ('%', '__mod__', '__rmod__'),
                 ('//', '__floordiv__', '__rfloordiv__'),
                 ('**', '__pow__', '__rpow__'),
@@ -975,7 +975,6 @@ class DecimalUsabilityTest(unittest.TestCase):
 
         checkSameDec("__abs__")
         checkSameDec("__add__", True)
-        checkSameDec("__div__", True)
         checkSameDec("__divmod__", True)
         checkSameDec("__cmp__", True)
         checkSameDec("__float__")
@@ -990,7 +989,6 @@ class DecimalUsabilityTest(unittest.TestCase):
         checkSameDec("__pos__")
         checkSameDec("__pow__", True)
         checkSameDec("__radd__", True)
-        checkSameDec("__rdiv__", True)
         checkSameDec("__rdivmod__", True)
         checkSameDec("__repr__")
         checkSameDec("__rfloordiv__", True)

@@ -625,7 +625,6 @@ BINARY_FUNC(PyNumber_And, nb_and, "&")
 BINARY_FUNC(PyNumber_Lshift, nb_lshift, "<<")
 BINARY_FUNC(PyNumber_Rshift, nb_rshift, ">>")
 BINARY_FUNC(PyNumber_Subtract, nb_subtract, "-")
-BINARY_FUNC(PyNumber_Divide, nb_divide, "/")
 BINARY_FUNC(PyNumber_Divmod, nb_divmod, "divmod()")
 
 PyObject *
@@ -765,7 +764,6 @@ INPLACE_BINOP(PyNumber_InPlaceAnd, nb_inplace_and, nb_and, "&=")
 INPLACE_BINOP(PyNumber_InPlaceLshift, nb_inplace_lshift, nb_lshift, "<<=")
 INPLACE_BINOP(PyNumber_InPlaceRshift, nb_inplace_rshift, nb_rshift, ">>=")
 INPLACE_BINOP(PyNumber_InPlaceSubtract, nb_inplace_subtract, nb_subtract, "-=")
-INPLACE_BINOP(PyNumber_InPlaceDivide, nb_inplace_divide, nb_divide, "/=")
 
 PyObject *
 PyNumber_InPlaceFloorDivide(PyObject *v, PyObject *w)

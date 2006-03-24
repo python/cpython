@@ -29,10 +29,6 @@ def testbinop(a, b, res, expr="a+b", meth="__add__"):
     if verbose: print "checking", expr
     dict = {'a': a, 'b': b}
 
-    # XXX Hack so this passes before 2.3 when -Qnew is specified.
-    if meth == "__div__" and 1/2 == 0.5:
-        meth = "__truediv__"
-
     vereq(eval(expr, dict), res)
     t = type(a)
     m = getattr(t, meth)
@@ -4044,9 +4040,8 @@ def notimplemented():
                 ('__add__',      'x + y',                   'x += y'),
                 ('__sub__',      'x - y',                   'x -= y'),
                 ('__mul__',      'x * y',                   'x *= y'),
-                ('__truediv__',  'operator.truediv(x, y)',  None),
-                ('__floordiv__', 'operator.floordiv(x, y)', None),
-                ('__div__',      'x / y',                   'x /= y'),
+                ('__truediv__',  'x / y',                   None),
+                ('__floordiv__', 'x // y',                  None),
                 ('__mod__',      'x % y',                   'x %= y'),
                 ('__divmod__',   'divmod(x, y)',            None),
                 ('__pow__',      'x ** y',                  'x **= y'),

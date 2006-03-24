@@ -3014,7 +3014,6 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYNUM(nb_add);
 		COPYNUM(nb_subtract);
 		COPYNUM(nb_multiply);
-		COPYNUM(nb_divide);
 		COPYNUM(nb_remainder);
 		COPYNUM(nb_divmod);
 		COPYNUM(nb_power);
@@ -3037,7 +3036,6 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYNUM(nb_inplace_add);
 		COPYNUM(nb_inplace_subtract);
 		COPYNUM(nb_inplace_multiply);
-		COPYNUM(nb_inplace_divide);
 		COPYNUM(nb_inplace_remainder);
 		COPYNUM(nb_inplace_power);
 		COPYNUM(nb_inplace_lshift);
@@ -3045,12 +3043,11 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYNUM(nb_inplace_and);
 		COPYNUM(nb_inplace_xor);
 		COPYNUM(nb_inplace_or);
-		if (base->tp_flags & Py_TPFLAGS_CHECKTYPES) {
-			COPYNUM(nb_true_divide);
-			COPYNUM(nb_floor_divide);
-			COPYNUM(nb_inplace_true_divide);
-			COPYNUM(nb_inplace_floor_divide);
-		}
+		COPYNUM(nb_true_divide);
+		COPYNUM(nb_floor_divide);
+		COPYNUM(nb_inplace_true_divide);
+		COPYNUM(nb_inplace_floor_divide);
+		/* XXX(nnorwitz): we don't need to check flags do we? */
 		if (base->tp_flags & Py_TPFLAGS_HAVE_INDEX) {
 			COPYNUM(nb_index);
 		}
@@ -4291,7 +4288,6 @@ slot_mp_ass_subscript(PyObject *self, PyObject *key, PyObject *value)
 SLOT1BIN(slot_nb_add, nb_add, "__add__", "__radd__")
 SLOT1BIN(slot_nb_subtract, nb_subtract, "__sub__", "__rsub__")
 SLOT1BIN(slot_nb_multiply, nb_multiply, "__mul__", "__rmul__")
-SLOT1BIN(slot_nb_divide, nb_divide, "__div__", "__rdiv__")
 SLOT1BIN(slot_nb_remainder, nb_remainder, "__mod__", "__rmod__")
 SLOT1BIN(slot_nb_divmod, nb_divmod, "__divmod__", "__rdivmod__")
 
@@ -4470,7 +4466,6 @@ SLOT0(slot_nb_hex, "__hex__")
 SLOT1(slot_nb_inplace_add, "__iadd__", PyObject *, "O")
 SLOT1(slot_nb_inplace_subtract, "__isub__", PyObject *, "O")
 SLOT1(slot_nb_inplace_multiply, "__imul__", PyObject *, "O")
-SLOT1(slot_nb_inplace_divide, "__idiv__", PyObject *, "O")
 SLOT1(slot_nb_inplace_remainder, "__imod__", PyObject *, "O")
 SLOT1(slot_nb_inplace_power, "__ipow__", PyObject *, "O")
 SLOT1(slot_nb_inplace_lshift, "__ilshift__", PyObject *, "O")
@@ -5077,10 +5072,6 @@ static slotdef slotdefs[] = {
 		"*"),
 	RBINSLOT("__rmul__", nb_multiply, slot_nb_multiply,
 		 "*"),
-	BINSLOT("__div__", nb_divide, slot_nb_divide,
-		"/"),
-	RBINSLOT("__rdiv__", nb_divide, slot_nb_divide,
-		 "/"),
 	BINSLOT("__mod__", nb_remainder, slot_nb_remainder,
 		"%"),
 	RBINSLOT("__rmod__", nb_remainder, slot_nb_remainder,
@@ -5130,8 +5121,6 @@ static slotdef slotdefs[] = {
 	       wrap_binaryfunc, "-"),
 	IBSLOT("__imul__", nb_inplace_multiply, slot_nb_inplace_multiply,
 	       wrap_binaryfunc, "*"),
-	IBSLOT("__idiv__", nb_inplace_divide, slot_nb_inplace_divide,
-	       wrap_binaryfunc, "/"),
 	IBSLOT("__imod__", nb_inplace_remainder, slot_nb_inplace_remainder,
 	       wrap_binaryfunc, "%"),
 	IBSLOT("__ipow__", nb_inplace_power, slot_nb_inplace_power,

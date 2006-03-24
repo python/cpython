@@ -158,7 +158,6 @@ typedef struct {
 	binaryfunc nb_add;
 	binaryfunc nb_subtract;
 	binaryfunc nb_multiply;
-	binaryfunc nb_divide;
 	binaryfunc nb_remainder;
 	binaryfunc nb_divmod;
 	ternaryfunc nb_power;
@@ -182,7 +181,6 @@ typedef struct {
 	binaryfunc nb_inplace_add;
 	binaryfunc nb_inplace_subtract;
 	binaryfunc nb_inplace_multiply;
-	binaryfunc nb_inplace_divide;
 	binaryfunc nb_inplace_remainder;
 	ternaryfunc nb_inplace_power;
 	binaryfunc nb_inplace_lshift;
@@ -192,7 +190,6 @@ typedef struct {
 	binaryfunc nb_inplace_or;
 
 	/* Added in release 2.2 */
-	/* The following require the Py_TPFLAGS_HAVE_CLASS flag */
 	binaryfunc nb_floor_divide;
 	binaryfunc nb_true_divide;
 	binaryfunc nb_inplace_floor_divide;
