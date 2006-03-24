@@ -7,7 +7,7 @@ from unicodedata import normalize
 TESTDATAFILE = "NormalizationTest" + os.extsep + "txt"
 TESTDATAURL = "http://www.unicode.org/Public/4.1.0/ucd/" + TESTDATAFILE
 
-class RangeError:
+class RangeError(Exception):
     pass
 
 def NFC(str):
