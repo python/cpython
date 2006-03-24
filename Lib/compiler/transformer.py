@@ -34,8 +34,8 @@ import sys
 class WalkerError(StandardError):
     pass
 
-from consts import CO_VARARGS, CO_VARKEYWORDS
-from consts import OP_ASSIGN, OP_DELETE, OP_APPLY
+from compiler.consts import CO_VARARGS, CO_VARKEYWORDS
+from compiler.consts import OP_ASSIGN, OP_DELETE, OP_APPLY
 
 def parseFile(path):
     f = open(path, "U")
