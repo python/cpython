@@ -626,7 +626,7 @@ class HandlerTests(unittest.TestCase):
         from urllib2 import build_opener, HTTPHandler, HTTPError, \
              HTTPCookieProcessor
 
-        from test_cookielib import interact_netscape
+        from test.test_cookielib import interact_netscape
 
         cj = CookieJar()
         interact_netscape(cj, "http://www.example.com/", "spam=eggs")
