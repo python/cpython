@@ -94,6 +94,7 @@ class Popen3:
         if self.sts < 0:
             try:
                 pid, sts = os.waitpid(self.pid, os.WNOHANG)
+                # pid will be 0 if self.pid hasn't terminated
                 if pid == self.pid:
                     self.sts = sts
             except os.error:
@@ -105,8 +106,10 @@ class Popen3:
         """Wait for and return the exit status of the child process."""
         if self.sts < 0:
             pid, sts = os.waitpid(self.pid, 0)
-            if pid == self.pid:
-                self.sts = sts
+            # This used to be a test, but it is believed to be
+            # always true, so I changed it to an assertion - mvl
+            assert pid == self.pid
+            self.sts = sts
         return self.sts
 
 
