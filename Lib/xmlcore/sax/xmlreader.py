@@ -1,9 +1,9 @@
 """An XML Reader is the SAX 2 name for an XML parser. XML Parsers
 should be based on this code. """
 
-import handler
+from . import handler
 
-from _exceptions import SAXNotSupportedException, SAXNotRecognizedException
+from ._exceptions import SAXNotSupportedException, SAXNotRecognizedException
 
 
 # ===== XMLREADER =====
