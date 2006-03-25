@@ -30,9 +30,12 @@ class GeneratorContextManager(object):
         else:
             try:
                 self.gen.throw(type, value, traceback)
-                return True
+                raise RuntimeError("generator didn't stop after throw()")
             except StopIteration:
                 return True
+            except:
+                if sys.exc_info()[1] is not value:
+                    raise
 
 
 def contextmanager(func):
