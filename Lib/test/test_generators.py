@@ -1545,6 +1545,9 @@ caught ValueError (1)
 >>> g.throw(ValueError, TypeError(1))  # mismatched type, rewrapped
 caught ValueError (1)
 
+>>> g.throw(ValueError, ValueError(1), None)   # explicit None traceback
+caught ValueError (1)
+
 >>> g.throw(ValueError(1), "foo")       # bad args
 Traceback (most recent call last):
   ...
@@ -1592,8 +1595,7 @@ ValueError: 7
 >>> f().throw("abc")     # throw on just-opened generator
 Traceback (most recent call last):
   ...
-TypeError: exceptions must be classes, or instances, not str
-
+abc
 
 Now let's try closing a generator:
 
