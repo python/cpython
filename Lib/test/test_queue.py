@@ -251,7 +251,7 @@ def QueueJoinTest(q):
         q.put(None)         # instruct the threads to close
     q.join()                # verify that you can join twice
 
-def QueueTaskDoneTest(q)
+def QueueTaskDoneTest(q):
     try:
         q.task_done()
     except ValueError:
