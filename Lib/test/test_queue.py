@@ -228,6 +228,9 @@ def worker(q):
     global cum
     while True:
         x = q.get()
+        if x is None:
+            q.task_done()
+            return
         cumlock.acquire()
         try:
             cum += x
@@ -239,18 +242,29 @@ def QueueJoinTest(q):
     global cum
     cum = 0
     for i in (0,1):
-        t = threading.Thread(target=worker, args=(q,))
-        t.setDaemon(True)
-        t.start()
+        threading.Thread(target=worker, args=(q,)).start()
     for i in xrange(100):
         q.put(i)
     q.join()
     verify(cum==sum(range(100)), "q.join() did not block until all tasks were done")
+    for i in (0,1):
+        q.put(None)         # instruct the threads to close
+    q.join()                # verify that you can join twice
+
+def QueueTaskDoneTest(q)
+    try:
+        q.task_done()
+    except ValueError:
+        pass
+    else:
+        raise TestFailed("Did not detect task count going negative")
 
 def test():
     q = Queue.Queue()
+    QueueTaskDoneTest(q)
     QueueJoinTest(q)
     QueueJoinTest(q)
+    QueueTaskDoneTest(q)
 
     q = Queue.Queue(QUEUE_SIZE)
     # Do it a couple of times on the same queue
