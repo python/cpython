@@ -234,7 +234,7 @@ def worker(q):
         finally:
             cumlock.release()
         q.task_done()
-    
+
 def QueueJoinTest(q):
     global cum
     cum = 0
