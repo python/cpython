@@ -249,6 +249,7 @@ comparison operations):
   \hline
   \lineiii{\var{x} * \var{y}}{product of \var{x} and \var{y}}{}
   \lineiii{\var{x} / \var{y}}{quotient of \var{x} and \var{y}}{(1)}
+  \lineiii{\var{x} // \var{y}}{(floored) quotient of \var{x} and \var{y}}{(5)}
   \lineiii{\var{x} \%{} \var{y}}{remainder of \code{\var{x} / \var{y}}}{(4)}
   \hline
   \lineiii{-\var{x}}{\var{x} negated}{}
@@ -299,6 +300,9 @@ Complex floor division operator, modulo operator, and \function{divmod()}.
 \deprecated{2.3}{Instead convert to float using \function{abs()}
 if appropriate.}
 
+\item[(5)]
+Also referred to as integer division.  The resultant value is a whole integer,
+though the result's type is not necessarily int.
 \end{description}
 % XXXJH exceptions: overflow (when? what operations?) zerodivision
 
