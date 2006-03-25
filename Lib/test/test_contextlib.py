@@ -45,6 +45,28 @@ class ContextManagerTestCase(unittest.TestCase):
             self.fail("Expected ZeroDivisionError")
         self.assertEqual(state, [1, 42, 999])
 
+    def test_contextmanager_no_reraise(self):
+        @contextmanager
+        def whee():
+            yield
+        ctx = whee().__context__()
+        ctx.__enter__()
+        # Calling __exit__ should not result in an exception
+        self.failIf(ctx.__exit__(TypeError, TypeError("foo"), None))
+
+    def test_contextmanager_trap_yield_after_throw(self):
+        @contextmanager
+        def whoo():
+            try:
+                yield
+            except:
+                yield
+        ctx = whoo().__context__()
+        ctx.__enter__()
+        self.assertRaises(
+            RuntimeError, ctx.__exit__, TypeError, TypeError("foo"), None
+        )
+
     def test_contextmanager_except(self):
         state = []
         @contextmanager
