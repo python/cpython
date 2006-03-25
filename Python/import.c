@@ -40,6 +40,7 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        Python 1.5:   20121
        Python 1.5.1: 20121
        Python 1.5.2: 20121
+       Python 1.6:   50428
        Python 2.0:   50823
        Python 2.0.1: 50823
        Python 2.1:   60202
