@@ -387,9 +387,9 @@ def _run_module_code(code, init_globals=None,
         finally:
             sys.argv[0] = saved_argv0
         if restore_module:
-                sys.modules[mod_name] = saved_module
+            sys.modules[mod_name] = saved_module
         else:
-                del sys.modules[mod_name]
+            del sys.modules[mod_name]
         # Copy the globals of the temporary module, as they
         # may be cleared when the temporary module goes away
         return mod_globals.copy()
