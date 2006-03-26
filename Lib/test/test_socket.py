@@ -270,7 +270,7 @@ class GeneralModuleTests(unittest.TestCase):
         all_host_names = [hostname, hname] + aliases
         fqhn = socket.getfqdn()
         if not fqhn in all_host_names:
-            self.fail("Error testing host resolution mechanisms.")
+            self.fail("Error testing host resolution mechanisms. (fqdn: %s, all: %s)" % (fqdn, repr(all_host_names)))
 
     def testRefCountGetNameInfo(self):
         # Testing reference count for getnameinfo
