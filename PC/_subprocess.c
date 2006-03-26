@@ -104,7 +104,7 @@ sp_handle_dealloc(sp_handle_object* self)
 {
 	if (self->handle != INVALID_HANDLE_VALUE)
 		CloseHandle(self->handle);
-	PyMem_DEL(self);
+	PyObject_FREE(self);
 }
 
 static PyMethodDef sp_handle_methods[] = {

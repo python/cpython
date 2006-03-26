@@ -59,6 +59,7 @@ PyAPI_FUNC(void) PyMem_Free(void *);
 /* Redirect all memory operations to Python's debugging allocator. */
 #define PyMem_MALLOC		PyObject_MALLOC
 #define PyMem_REALLOC		PyObject_REALLOC
+#define PyMem_FREE		PyObject_FREE
 
 #else	/* ! PYMALLOC_DEBUG */
 
@@ -68,13 +69,9 @@ PyAPI_FUNC(void) PyMem_Free(void *);
    pymalloc. To solve these problems, allocate an extra byte. */
 #define PyMem_MALLOC(n)         malloc((n) ? (n) : 1)
 #define PyMem_REALLOC(p, n)     realloc((p), (n) ? (n) : 1)
+#define PyMem_FREE		free
 
 #endif	/* PYMALLOC_DEBUG */
-
-/* In order to avoid breaking old code mixing PyObject_{New, NEW} with
-   PyMem_{Del, DEL} and PyMem_{Free, FREE}, the PyMem "release memory"
-   functions have to be redirected to the object deallocator. */
-#define PyMem_FREE           	PyObject_FREE
 
 /*
  * Type-oriented memory interface
@@ -95,11 +92,11 @@ PyAPI_FUNC(void) PyMem_Free(void *);
 #define PyMem_RESIZE(p, type, n) \
 	( (p) = (type *) PyMem_REALLOC((p), (n) * sizeof(type)) )
 
-/* In order to avoid breaking old code mixing PyObject_{New, NEW} with
-   PyMem_{Del, DEL} and PyMem_{Free, FREE}, the PyMem "release memory"
-   functions have to be redirected to the object deallocator. */
-#define PyMem_Del		PyObject_Free
-#define PyMem_DEL		PyObject_FREE
+/* PyMem{Del,DEL} are left over from ancient days, and shouldn't be used
+ * anymore.  They're just confusing aliases for PyMem_{Free,FREE} now.
+ */
+#define PyMem_Del		PyMem_Free
+#define PyMem_DEL		PyMem_FREE
 
 #ifdef __cplusplus
 }
