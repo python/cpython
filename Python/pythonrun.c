@@ -1457,7 +1457,7 @@ err_input(perrdetail *err)
 	v = Py_BuildValue("(ziiz)", err->filename,
 			  err->lineno, err->offset, err->text);
 	if (err->text != NULL) {
-		PyMem_DEL(err->text);
+		PyObject_FREE(err->text);
 		err->text = NULL;
 	}
 	w = NULL;

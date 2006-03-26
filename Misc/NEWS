@@ -311,7 +311,7 @@ Extension Modules
 
 - Everything under lib-old was removed.  This includes the following modules:
     Para, addpack, cmp, cmpcache, codehack, dircmp, dump, find, fmt, grep,
-    lockfile, newdir, ni, packmail, poly, rand, statcache, tb, tzparse, 
+    lockfile, newdir, ni, packmail, poly, rand, statcache, tb, tzparse,
     util, whatsound, whrandom, zmod
 
 - The following modules were removed:  regsub, reconvert, regex, regex_syntax.
@@ -941,6 +941,17 @@ Build
 
 C API
 -----
+
+- ``PyMem_{Del, DEL}`` and ``PyMem_{Free, FREE}`` no longer map to
+  ``PyObject_{Free, FREE}``.  They map to the system ``free()`` now.  If memory
+  is obtained via the ``PyObject_`` family, it must be released via the
+  ``PyObject_`` family, and likewise for the ``PyMem_`` family.  This has
+  always been officially true, but when Python's small-object allocator was
+  introduced, an attempt was made to cater to a few extension modules
+  discovered at the time that obtained memory via ``PyObject_New`` but
+  released it via ``PyMem_DEL``.  It's years later, and if such code still
+  exists it will fail now (probably with segfaults, but calling wrong
+  low-level memory management functions can yield many symptoms).
 
 - Added a C API for set and frozenset objects.
 
