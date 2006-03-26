@@ -60,7 +60,7 @@ class TestBase:
             "&#2835;&#2851;&#2912; nd eggs"
         )
 
-    def test_customreplace(self):
+    def test_customreplace_encode(self):
         if self.has_iso10646:
             return
 
@@ -95,6 +95,19 @@ class TestBase:
         for ret in ([1, 2, 3], [], None, object(), 'string', ''):
             self.assertRaises(TypeError, self.encode, self.unmappedunicode,
                               'test.cjktest')
+
+    def test_callback_long_index(self):
+        def myreplace(exc):
+            return (u'x', long(exc.end))
+        codecs.register_error("test.cjktest", myreplace)
+        self.assertEqual(self.encode(u'abcd' + self.unmappedunicode + u'efgh',
+                                     'test.cjktest'), ('abcdxefgh', 9))
+
+        def myreplace(exc):
+            return (u'x', sys.maxint + 1)
+        codecs.register_error("test.cjktest", myreplace)
+        self.assertRaises(IndexError, self.encode, self.unmappedunicode,
+                          'test.cjktest')
 
     def test_callback_None_index(self):
         def myreplace(exc):
