@@ -2001,13 +2001,13 @@ posix_mkdir(PyObject *self, PyObject *args)
 }
 
 
-#ifdef HAVE_NICE
-#if defined(HAVE_BROKEN_NICE) && defined(HAVE_SYS_RESOURCE_H)
-#if defined(HAVE_GETPRIORITY) && !defined(PRIO_PROCESS)
+/* sys/resource.h is needed for at least: wait3(), wait4(), broken nice. */
+#if defined(HAVE_SYS_RESOURCE_H)
 #include <sys/resource.h>
 #endif
-#endif
 
+
+#ifdef HAVE_NICE
 PyDoc_STRVAR(posix_nice__doc__,
 "nice(inc) -> new_priority\n\n\
 Decrease the priority of process by inc and return the new priority.");
