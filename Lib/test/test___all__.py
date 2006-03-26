@@ -5,8 +5,6 @@ from test.test_support import verify, verbose
 import sys
 import warnings
 
-warnings.filterwarnings("ignore", ".* regsub .*", DeprecationWarning,
-                        r'^regsub$')
 warnings.filterwarnings("ignore",
                         "the gopherlib module is deprecated",
                         DeprecationWarning,
