@@ -162,7 +162,10 @@ if verbose:
     print "15. Unicode filenames"
 try:
     t1 = writeTmp(1, ["A\nB"])
-    fi = FileInput(files=unicode(t1, sys.getfilesystemencoding()))
+    encoding = sys.getfilesystemencoding()
+    if encoding is None:
+        encoding = 'ascii'
+    fi = FileInput(files=unicode(t1, encoding))
     lines = list(fi)
     verify(lines == ["A\n", "B"])
 finally:
