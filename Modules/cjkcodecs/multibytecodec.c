@@ -334,8 +334,8 @@ multibytecodec_encerror(MultibyteCodec *codec,
 	if (newpos < 0 || buf->inbuf_top + newpos > buf->inbuf_end) {
 		PyErr_Clear();
 		PyErr_Format(PyExc_IndexError,
-			     "position %ld from error handler out of bounds",
-			     (long)newpos);
+			     "position %zd from error handler out of bounds",
+			     newpos);
 		goto errorexit;
 	}
 	buf->inbuf = buf->inbuf_top + newpos;
@@ -445,8 +445,8 @@ multibytecodec_decerror(MultibyteCodec *codec,
 	if (newpos < 0 || buf->inbuf_top + newpos > buf->inbuf_end) {
 		PyErr_Clear();
 		PyErr_Format(PyExc_IndexError,
-				"position %ld from error handler out of bounds",
-				(long)newpos);
+			     "position %zd from error handler out of bounds",
+			     newpos);
 		goto errorexit;
 	}
 	buf->inbuf = buf->inbuf_top + newpos;
