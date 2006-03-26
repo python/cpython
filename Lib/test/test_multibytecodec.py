@@ -7,7 +7,7 @@
 
 from test import test_support
 from test import test_multibytecodec_support
-import unittest, StringIO, codecs
+import unittest, StringIO, codecs, sys
 
 class Test_MultibyteCodec(unittest.TestCase):
 
@@ -19,6 +19,12 @@ class Test_MultibyteCodec(unittest.TestCase):
     def test_str_decode(self):
         self.assertEqual('abcd'.encode('gb18030'), 'abcd')
 
+    def test_errorcallback_longindex(self):
+        dec = codecs.getdecoder('euc-kr')
+        myreplace  = lambda exc: (u'', sys.maxint+1)
+        codecs.register_error('test.cjktest', myreplace)
+        self.assertRaises(IndexError, dec,
+                          'apple\x92ham\x93spam', 'test.cjktest')
 
 class Test_IncrementalEncoder(unittest.TestCase):
 
