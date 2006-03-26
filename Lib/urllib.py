@@ -1031,7 +1031,7 @@ def splithost(url):
     global _hostprog
     if _hostprog is None:
         import re
-        _hostprog = re.compile('^//([^/]*)(.*)$')
+        _hostprog = re.compile('^//([^/?]*)(.*)$')
 
     match = _hostprog.match(url)
     if match: return match.group(1, 2)
