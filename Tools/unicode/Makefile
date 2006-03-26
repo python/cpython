@@ -15,7 +15,7 @@ RM = /bin/rm
 
 all:	distclean mappings codecs
 
-codecs:	misc windows iso apple ebcdic custom-mappings
+codecs:	misc windows iso apple ebcdic custom-mappings cjk
 
 ### Mappings
 
@@ -71,6 +71,9 @@ apple:	build/
 ebcdic:	build/
 	$(PYTHON) gencodec.py MAPPINGS/VENDORS/MICSFT/EBCDIC/ build/
 	$(RM) -f build/readme.*
+
+cjk:	build/
+	$(PYTHON) gencjkcodecs.py build/
 
 ### Cleanup
 

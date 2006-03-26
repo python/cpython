@@ -217,11 +217,8 @@ ENCODER(gb18030)
 					break;
 				}
 
-			if (utrrange->first == 0) {
-				PyErr_SetString(PyExc_RuntimeError,
-						"unicode mapping invalid");
+			if (utrrange->first == 0)
 				return 1;
-			}
 			continue;
 		}
 
