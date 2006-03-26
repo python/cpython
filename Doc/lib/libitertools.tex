@@ -271,12 +271,29 @@ by functions or loops that truncate the stream.
      def izip(*iterables):
          iterables = map(iter, iterables)
          while iterables:
-             result = [i.next() for i in iterables]
+             result = [it.next() for it in iterables]
              yield tuple(result)
   \end{verbatim}
 
   \versionchanged[When no iterables are specified, returns a zero length
-                  iterator instead of raising a TypeError exception]{2.4}  
+                  iterator instead of raising a TypeError exception]{2.4}
+
+  Note, the left-to-right evaluation order of the iterables is guaranteed.
+  This makes possible an idiom for clustering a data series into n-length
+  groups using \samp{izip(*[iter(s)]*n)}.  For data that doesn't fit
+  n-length groups exactly, the last tuple can be pre-padded with fill
+  values using \samp(izip(*[chain(s, [None]*(n-1))]*n)}.
+         
+  Note, when \function{izip()} is used with unequal length inputs, subsequent
+  iteration over the longer iterables cannot reliably be continued after
+  \function{izip()} terminates.  Potentially, up to one entry will be missing
+  from each of the left-over iterables. This occurs because a value is fetched
+  from each iterator in-turn, but the process ends when one of the iterators
+  terminates.  This leaves the last fetched values in limbo (they cannot be
+  returned in a final, incomplete tuple and they are cannot be pushed back
+  into the iterator for retrieval with \code{it.next()}.  In general,
+  \function{izip()} should only be used with unequal length inputs when you
+  don't care about trailing, unmatched values from the longer iterables.
 \end{funcdesc}
 
 \begin{funcdesc}{repeat}{object\optional{, times}}
@@ -511,5 +528,10 @@ def pairwise(iterable):
     except StopIteration:
         pass
     return izip(a, b)
+
+def grouper(n, iterable, padvalue=None):
+    "grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'), ('g','x','x')"
+    return izip(*[chain(iterable, repeat(padvalue, n-1))]*n)
+    
 
 \end{verbatim}
