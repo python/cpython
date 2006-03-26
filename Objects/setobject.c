@@ -445,7 +445,7 @@ set_clear_internal(PySetObject *so)
 		}
 #ifdef Py_DEBUG
 		else
-			assert(entry->key == NULL || entry->key == dummy);
+			assert(entry->key == NULL);
 #endif
 	}
 
