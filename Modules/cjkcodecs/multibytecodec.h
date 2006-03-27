@@ -123,10 +123,10 @@ typedef struct {
 #define ERROR_IGNORE		(PyObject *)(2)
 #define ERROR_REPLACE		(PyObject *)(3)
 #define ERROR_ISCUSTOM(p)	((p) < ERROR_STRICT || ERROR_REPLACE < (p))
-#define ERROR_DECREF(p) do {		\
-	if (ERROR_ISCUSTOM(p)) {	\
-		Py_DECREF(p);		\
-	}				\
+#define ERROR_DECREF(p) do {			\
+	if (p != NULL && ERROR_ISCUSTOM(p)) {	\
+		Py_DECREF(p);			\
+	}					\
 } while (0);
 
 #define MBENC_FLUSH		0x0001 /* encode all characters encodable */
