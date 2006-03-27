@@ -255,6 +255,10 @@ d22v(1, 2, 3, 4, 5)
 d22v(*(1, 2, 3, 4))
 d22v(1, 2, *(3, 4, 5))
 d22v(1, *(2, 3), **{'d': 4})
+def d31v((x)): pass
+d31v(1)
+def d32v((x,)): pass
+d32v((1,))
 
 ### lambdef: 'lambda' [varargslist] ':' test
 print 'lambdef'
