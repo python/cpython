@@ -122,11 +122,6 @@ extensions = [
     '_ctypes_test.pyd'
 ]
 
-if major+minor <= "24":
-    extensions.extend([
-    'zlib.pyd',
-    ])
-
 # Well-known component UUIDs
 # These are needed for SharedDLLs reference counter; if
 # a different UUID was used for each incarnation of, say,
