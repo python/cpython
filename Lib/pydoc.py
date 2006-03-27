@@ -249,20 +249,24 @@ def safeimport(path, forceload=0, cache={}):
     package path is specified, the module at the end of the path is returned,
     not the package at the beginning.  If the optional 'forceload' argument
     is 1, we reload the module from disk (unless it's a dynamic extension)."""
-    if forceload and path in sys.modules:
-        # This is the only way to be sure.  Checking the mtime of the file
-        # isn't good enough (e.g. what if the module contains a class that
-        # inherits from another module that has changed?).
-        if path not in sys.builtin_module_names:
-            # Python never loads a dynamic extension a second time from the
-            # same path, even if the file is changed or missing.  Deleting
-            # the entry in sys.modules doesn't help for dynamic extensions,
-            # so we're not even going to try to keep them up to date.
-            info = inspect.getmoduleinfo(sys.modules[path].__file__)
-            if info[3] != imp.C_EXTENSION:
-                cache[path] = sys.modules[path] # prevent module from clearing
-                del sys.modules[path]
     try:
+        # If forceload is 1 and the module has been previously loaded from
+        # disk, we always have to reload the module.  Checking the file's
+        # mtime isn't good enough (e.g. the module could contain a class
+        # that inherits from another module that has changed).
+        if forceload and path in sys.modules:
+            if path not in sys.builtin_module_names:
+                # Avoid simply calling reload() because it leaves names in
+                # the currently loaded module lying around if they're not
+                # defined in the new source file.  Instead, remove the
+                # module from sys.modules and re-import.  Also remove any
+                # submodules because they won't appear in the newly loaded
+                # module's namespace if they're already in sys.modules.
+                subs = [m for m in sys.modules if m.startswith(path + '.')]
+                for key in [path] + subs:
+                    # Prevent garbage collection.
+                    cache[key] = sys.modules[key]
+                    del sys.modules[key]
         module = __import__(path)
     except:
         # Did the error occur before or after the module was found?
