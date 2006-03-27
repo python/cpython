@@ -363,6 +363,17 @@ at the normal location for the kind of exit that was taken.
 
 \end{enumerate}
 
+\begin{notice}
+In Python 2.5, the \keyword{with} statement is only allowed
+when the \code{with_statement} feature has been enabled.  It will always
+be enabled in Python 2.6.  This \code{__future__} import statement can
+be used to enable the feature:
+
+\begin{verbatim}
+from __future__ import with_statement
+\end{verbatim}
+\end{notice}
+
 \begin{seealso}
   \seepep{0343}{The "with" statement}
          {The specification, background, and examples for the
