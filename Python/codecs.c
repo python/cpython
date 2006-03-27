@@ -36,8 +36,7 @@ int PyCodec_Register(PyObject *search_function)
 	goto onError;
     }
     if (!PyCallable_Check(search_function)) {
-	PyErr_SetString(PyExc_TypeError,
-			"argument must be callable");
+	PyErr_SetString(PyExc_TypeError, "argument must be callable");
 	goto onError;
     }
     return PyList_Append(interp->codec_search_path, search_function);
@@ -305,7 +304,7 @@ PyObject *PyCodec_Encode(PyObject *object,
 			 const char *errors)
 {
     PyObject *encoder = NULL;
-    PyObject *args = NULL, *result;
+    PyObject *args = NULL, *result = NULL;
     PyObject *v;
 
     encoder = PyCodec_Encoder(encoding);
@@ -336,6 +335,7 @@ PyObject *PyCodec_Encode(PyObject *object,
     return v;
 	
  onError:
+    Py_XDECREF(result);
     Py_XDECREF(args);
     Py_XDECREF(encoder);
     return NULL;
