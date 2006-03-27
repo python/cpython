@@ -645,10 +645,17 @@ ast_for_arguments(struct compiling *c, const node *n)
 		    goto error;
 		}
                 if (NCH(ch) == 3) {
-                    asdl_seq_SET(args, k++, 
-                                    compiler_complex_args(c, CHILD(ch, 1))); 
-		}
-                else if (TYPE(CHILD(ch, 0)) == NAME) {
+		    ch = CHILD(ch, 1);
+		    /* def foo((x)): is not complex, special case. */
+		    if (NCH(ch) != 1) {
+			/* We have complex arguments, setup for unpacking. */
+			asdl_seq_SET(args, k++, compiler_complex_args(c, ch));
+		    } else {
+			/* def foo((x)): setup for checking NAME below. */
+			ch = CHILD(ch, 0);
+		    }
+                }
+                if (TYPE(CHILD(ch, 0)) == NAME) {
 		    expr_ty name;
 		    if (!strcmp(STR(CHILD(ch, 0)), "None")) {
 			    ast_error(CHILD(ch, 0), "assignment to None");
