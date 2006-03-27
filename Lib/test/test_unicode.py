@@ -9,6 +9,24 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 import unittest, sys, string, codecs, new
 from test import test_support, string_tests
 
+# Error handling (bad decoder return)
+def search_function(encoding):
+    def decode1(input, errors="strict"):
+        return 42 # not a tuple
+    def encode1(input, errors="strict"):
+        return 42 # not a tuple
+    def encode2(input, errors="strict"):
+        return (42, 42) # no unicode
+    def decode2(input, errors="strict"):
+        return (42, 42) # no unicode
+    if encoding=="test.unicode1":
+        return (encode1, decode1, None, None)
+    elif encoding=="test.unicode2":
+        return (encode2, decode2, None, None)
+    else:
+        return None
+codecs.register(search_function)
+
 class UnicodeTest(
     string_tests.CommonTest,
     string_tests.MixinStrUnicodeUserStringTest,
@@ -578,23 +596,6 @@ class UnicodeTest(
         # Error handling (truncated escape sequence)
         self.assertRaises(UnicodeError, "\\".decode, "unicode-escape")
 
-        # Error handling (bad decoder return)
-        def search_function(encoding):
-            def decode1(input, errors="strict"):
-                return 42 # not a tuple
-            def encode1(input, errors="strict"):
-                return 42 # not a tuple
-            def encode2(input, errors="strict"):
-                return (42, 42) # no unicode
-            def decode2(input, errors="strict"):
-                return (42, 42) # no unicode
-            if encoding=="test.unicode1":
-                return (encode1, decode1, None, None)
-            elif encoding=="test.unicode2":
-                return (encode2, decode2, None, None)
-            else:
-                return None
-        codecs.register(search_function)
         self.assertRaises(TypeError, "hello".decode, "test.unicode1")
         self.assertRaises(TypeError, unicode, "hello", "test.unicode2")
         self.assertRaises(TypeError, u"hello".encode, "test.unicode1")
