@@ -758,7 +758,9 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
 			datalen, ctx->errors, final ? MBENC_FLUSH : 0);
 	if (r == NULL) {
 		/* recover the original pending buffer */
-		memcpy(ctx->pending, inbuf_tmp, Py_UNICODE_SIZE * origpending);
+		if (origpending > 0)
+			memcpy(ctx->pending, inbuf_tmp,
+				Py_UNICODE_SIZE * origpending);
 		ctx->pendingsize = origpending;
 		goto errorexit;
 	}
@@ -887,16 +889,8 @@ static PyObject *
 mbiencoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	MultibyteIncrementalEncoderObject *self;
-	PyObject *codec;
+	PyObject *codec = NULL;
 	char *errors = NULL;
-
-	codec = PyObject_GetAttrString((PyObject *)type, "codec");
-	if (codec == NULL)
-		return NULL;
-	if (!MultibyteCodec_Check(codec)) {
-		PyErr_SetString(PyExc_TypeError, "codec is unexpected type");
-		return NULL;
-	}
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|s:IncrementalEncoder",
 					 incnewkwarglist, &errors))
@@ -905,6 +899,14 @@ mbiencoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	self = (MultibyteIncrementalEncoderObject *)type->tp_alloc(type, 0);
 	if (self == NULL)
 		return NULL;
+
+	codec = PyObject_GetAttrString((PyObject *)type, "codec");
+	if (codec == NULL)
+		goto errorexit;
+	if (!MultibyteCodec_Check(codec)) {
+		PyErr_SetString(PyExc_TypeError, "codec is unexpected type");
+		goto errorexit;
+	}
 
 	self->codec = ((MultibyteCodecObject *)codec)->codec;
 	self->pendingsize = 0;
@@ -915,10 +917,12 @@ mbiencoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	    self->codec->encinit(&self->state, self->codec->config) != 0)
 		goto errorexit;
 
+	Py_DECREF(codec);
 	return (PyObject *)self;
 
 errorexit:
 	Py_XDECREF(self);
+	Py_XDECREF(codec);
 	return NULL;
 }
 
@@ -1080,16 +1084,8 @@ static PyObject *
 mbidecoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	MultibyteIncrementalDecoderObject *self;
-	PyObject *codec;
+	PyObject *codec = NULL;
 	char *errors = NULL;
-
-	codec = PyObject_GetAttrString((PyObject *)type, "codec");
-	if (codec == NULL)
-		return NULL;
-	if (!MultibyteCodec_Check(codec)) {
-		PyErr_SetString(PyExc_TypeError, "codec is unexpected type");
-		return NULL;
-	}
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|s:IncrementalDecoder",
 					 incnewkwarglist, &errors))
@@ -1098,6 +1094,14 @@ mbidecoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	self = (MultibyteIncrementalDecoderObject *)type->tp_alloc(type, 0);
 	if (self == NULL)
 		return NULL;
+
+	codec = PyObject_GetAttrString((PyObject *)type, "codec");
+	if (codec == NULL)
+		goto errorexit;
+	if (!MultibyteCodec_Check(codec)) {
+		PyErr_SetString(PyExc_TypeError, "codec is unexpected type");
+		goto errorexit;
+	}
 
 	self->codec = ((MultibyteCodecObject *)codec)->codec;
 	self->pendingsize = 0;
@@ -1108,10 +1112,12 @@ mbidecoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	    self->codec->decinit(&self->state, self->codec->config) != 0)
 		goto errorexit;
 
+	Py_DECREF(codec);
 	return (PyObject *)self;
 
 errorexit:
 	Py_XDECREF(self);
+	Py_XDECREF(codec);
 	return NULL;
 }
 
@@ -1381,16 +1387,8 @@ static PyObject *
 mbstreamreader_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	MultibyteStreamReaderObject *self;
-	PyObject *codec, *stream;
+	PyObject *stream, *codec = NULL;
 	char *errors = NULL;
-
-	codec = PyObject_GetAttrString((PyObject *)type, "codec");
-	if (codec == NULL)
-		return NULL;
-	if (!MultibyteCodec_Check(codec)) {
-		PyErr_SetString(PyExc_TypeError, "codec is unexpected type");
-		return NULL;
-	}
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|s:StreamReader",
 				streamkwarglist, &stream, &errors))
@@ -1399,6 +1397,14 @@ mbstreamreader_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	self = (MultibyteStreamReaderObject *)type->tp_alloc(type, 0);
 	if (self == NULL)
 		return NULL;
+
+	codec = PyObject_GetAttrString((PyObject *)type, "codec");
+	if (codec == NULL)
+		goto errorexit;
+	if (!MultibyteCodec_Check(codec)) {
+		PyErr_SetString(PyExc_TypeError, "codec is unexpected type");
+		goto errorexit;
+	}
 
 	self->codec = ((MultibyteCodecObject *)codec)->codec;
 	self->stream = stream;
@@ -1411,10 +1417,12 @@ mbstreamreader_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	    self->codec->decinit(&self->state, self->codec->config) != 0)
 		goto errorexit;
 
+	Py_DECREF(codec);
 	return (PyObject *)self;
 
 errorexit:
 	Py_XDECREF(self);
+	Py_XDECREF(codec);
 	return NULL;
 }
 
@@ -1501,6 +1509,7 @@ mbstreamwriter_iwrite(MultibyteStreamWriterObject *self,
 	if (wr == NULL)
 		return -1;
 
+	Py_DECREF(wr);
 	return 0;
 }
 
@@ -1583,16 +1592,8 @@ static PyObject *
 mbstreamwriter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	MultibyteStreamWriterObject *self;
-	PyObject *codec, *stream;
+	PyObject *stream, *codec = NULL;
 	char *errors = NULL;
-
-	codec = PyObject_GetAttrString((PyObject *)type, "codec");
-	if (codec == NULL)
-		return NULL;
-	if (!MultibyteCodec_Check(codec)) {
-		PyErr_SetString(PyExc_TypeError, "codec is unexpected type");
-		return NULL;
-	}
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|s:StreamWriter",
 				streamkwarglist, &stream, &errors))
@@ -1601,6 +1602,14 @@ mbstreamwriter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	self = (MultibyteStreamWriterObject *)type->tp_alloc(type, 0);
 	if (self == NULL)
 		return NULL;
+
+	codec = PyObject_GetAttrString((PyObject *)type, "codec");
+	if (codec == NULL)
+		goto errorexit;
+	if (!MultibyteCodec_Check(codec)) {
+		PyErr_SetString(PyExc_TypeError, "codec is unexpected type");
+		goto errorexit;
+	}
 
 	self->codec = ((MultibyteCodecObject *)codec)->codec;
 	self->stream = stream;
@@ -1613,10 +1622,12 @@ mbstreamwriter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	    self->codec->encinit(&self->state, self->codec->config) != 0)
 		goto errorexit;
 
+	Py_DECREF(codec);
 	return (PyObject *)self;
 
 errorexit:
 	Py_XDECREF(self);
+	Py_XDECREF(codec);
 	return NULL;
 }
 
