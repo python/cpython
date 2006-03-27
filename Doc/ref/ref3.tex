@@ -2106,3 +2106,61 @@ implement a \method{__coerce__()} method, for use by the built-in
 \function{coerce()} function.
 
 \end{itemize}
+
+\subsection{Context Managers and Contexts\label{context-managers}}
+
+A \dfn{context manager} is an object that manages the entry to, and exit
+from, a \dfn{context} surrounding a block of code.  Context managers are
+normally invoked using the \keyword{with} statement (described in
+section~\ref{with}), but can also be used by directly invoking their
+methods.
+\stindex{with}
+\index{context manager}
+\index{context}
+
+Typical uses of context managers include saving and restoring various
+kinds of global state, locking and unlocking resources, closing opened
+files, etc.
+
+\begin{methoddesc}[context manager]{__context__}{self}
+Invoked when the object is used as the context expression of a
+\keyword{with} statement.  The return value must implement
+\method{__enter__()} and \method{__exit__()} methods.  Simple context
+managers that wish to directly
+implement \method{__enter__()} and \method{__exit__()} should just
+return \var{self}.
+
+Context managers written in Python can also implement this method using
+a generator function decorated with the
+\function{contextlib.contextmanager} decorator, as this can be simpler
+than writing individual \method{__enter__()} and \method{__exit__()}
+methods when the state to be managed is complex.
+\end{methoddesc}
+
+\begin{methoddesc}[context]{__enter__}{self}
+Enter the context defined by this object. The \keyword{with} statement
+will bind this method's return value to the target(s) specified in the
+\keyword{as} clause of the statement, if any.
+\end{methoddesc}
+
+\begin{methoddesc}[context]{__exit__}{exc_type, exc_value, traceback}
+Exit the context defined by this object. The parameters describe the
+exception that caused the context to be exited. If the context was
+exited without an exception, all three arguments will be
+\constant{None}.
+
+If an exception is supplied, and the method wishes to suppress the
+exception (i.e., prevent it from being propagated), it should return a
+true value. Otherwise, the exception will be processed normally upon
+exit from this method.
+
+Note that \method{__exit__} methods should not reraise the passed-in
+exception; this is the caller's responsibility.
+\end{methoddesc}
+
+\begin{seealso}
+  \seepep{0343}{The "with" statement}
+         {The specification, background, and examples for the
+          Python \keyword{with} statement.}
+\end{seealso}
+
