@@ -675,3 +675,26 @@ keyword arguments \var{kwargs}, after \var{interval} seconds have passed.
 Stop the timer, and cancel the execution of the timer's action.  This
 will only work if the timer is still in its waiting stage.
 \end{methoddesc}
+
+\subsection{Using locks, conditions, and semaphores in the \keyword{with}
+statement \label{with-locks}}
+
+All of the objects provided by this module that have \method{acquire()} and
+\method{release()} methods can be used as context managers for a \keyword{with}
+statement.  The \method{acquire()} method will be called when the block is
+entered, and \method{release()} will be called when the block is exited.
+
+Currently, \class{Lock}, \class{RLock}, \class{Condition}, \class{Semaphore},
+and \class{BoundedSemaphore} objects may be used as \keyword{with}
+statement context managers.  For example:
+
+\begin{verbatim}
+from __future__ import with_statement
+import threading
+
+some_rlock = threading.RLock()
+
+with some_rlock:
+    print "some_rlock is locked while this executes"
+\end{verbatim}
+

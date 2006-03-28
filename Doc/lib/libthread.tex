@@ -100,6 +100,19 @@ Return the status of the lock:\ \code{True} if it has been acquired by
 some thread, \code{False} if not.
 \end{methoddesc}
 
+In addition to these methods, lock objects can also be used via the
+\keyword{with} statement, e.g.:
+
+\begin{verbatim}
+from __future__ import with_statement
+import thread
+
+a_lock = thread.allocate_lock()
+
+with a_lock:
+    print "a_lock is locked while this executes"
+\end{verbatim}
+
 \strong{Caveats:}
 
 \begin{itemize}
