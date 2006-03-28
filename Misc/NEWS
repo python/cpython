@@ -7,6 +7,17 @@ Python News
 What's New in Python 2.4.3c1?
 =============================
 
+*Release date: 29-MAR-2006*
+
+Core and builtins
+-----------------
+
+- A few reference leaks were squished.
+
+
+What's New in Python 2.4.3c1?
+=============================
+
 *Release date: 23-MAR-2006*
 
 Core and builtins
