@@ -185,10 +185,12 @@ There are four distinct numeric types: \dfn{plain integers},
 In addition, Booleans are a subtype of plain integers.
 Plain integers (also just called \dfn{integers})
 are implemented using \ctype{long} in C, which gives them at least 32
-bits of precision.  Long integers have unlimited precision.  Floating
-point numbers are implemented using \ctype{double} in C.  All bets on
-their precision are off unless you happen to know the machine you are
-working with.
+bits of precision (\code{sys.maxint} is always set to the maximum
+plain integer value for the current platform, the minimum value is 
+\code{-sys.maxint - 1}).  Long integers have unlimited precision.
+Floating point numbers are implemented using \ctype{double} in C.
+All bets on their precision are off unless you happen to know the
+machine you are working with.
 \obindex{numeric}
 \obindex{Boolean}
 \obindex{integer}
