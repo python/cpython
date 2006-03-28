@@ -483,12 +483,6 @@ Extension Modules
 Library
 -------
 
-- Bug #1459963: urllib2 now normalizes HTTP header names correctly
-  with title().
-
-- Bug #1459963: urllib2 now normalizes HTTP header names correctly
-  with title().
-
 - Queue.Queue objects now support .task_done() and .join() methods
   to make it easier to monitor when daemon threads have completed
   processing all enqueued tasks.  Patch #1455676.
