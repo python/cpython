@@ -562,7 +562,17 @@ raise_exception(PyObject *self, PyObject *args)
 
 #ifdef WITH_THREAD
 
-void _make_call(void *callable)
+/* test_thread_state spawns a thread of its own, and that thread releases
+ * `thread_done` when it's finished.  The driver code has to know when the
+ * thread finishes, because the thread uses a PyObject (the callable) that
+ * may go away when the driver finishes.  The former lack of this explicit
+ * synchronization caused rare segfaults, so rare that they were seen only
+ * on a Mac buildbot (although they were possible on any box).
+ */
+static PyThread_type_lock thread_done = NULL;
+
+static void
+_make_call(void *callable)
 {
 	PyObject *rc;
 	PyGILState_STATE s = PyGILState_Ensure();
@@ -571,32 +581,53 @@ void _make_call(void *callable)
 	PyGILState_Release(s);
 }
 
+/* Same thing, but releases `thread_done` when it returns.  This variant
+ * should be called only from threads spawned by test_thread_state().
+ */
+static void
+_make_call_from_thread(void *callable)
+{
+	_make_call(callable);
+	PyThread_release_lock(thread_done);
+}
+
 static PyObject *
 test_thread_state(PyObject *self, PyObject *args)
 {
 	PyObject *fn;
+
 	if (!PyArg_ParseTuple(args, "O:test_thread_state", &fn))
 		return NULL;
-	/* Ensure Python is setup for threading */
+
+	/* Ensure Python is set up for threading */
 	PyEval_InitThreads();
-	/* Start a new thread for our callback. */
-	PyThread_start_new_thread( _make_call, fn);
+	thread_done = PyThread_allocate_lock();
+	if (thread_done == NULL)
+		return PyErr_NoMemory();
+	PyThread_acquire_lock(thread_done, 1);
+
+	/* Start a new thread with our callback. */
+	PyThread_start_new_thread(_make_call_from_thread, fn);
 	/* Make the callback with the thread lock held by this thread */
 	_make_call(fn);
 	/* Do it all again, but this time with the thread-lock released */
 	Py_BEGIN_ALLOW_THREADS
 	_make_call(fn);
+	PyThread_acquire_lock(thread_done, 1);  /* wait for thread to finish */
 	Py_END_ALLOW_THREADS
+
 	/* And once more with and without a thread
-	   XXX - should use a lock and work out exactly what we are trying 
-	   to test <wink> 
+	   XXX - should use a lock and work out exactly what we are trying
+	   to test <wink>
 	*/
 	Py_BEGIN_ALLOW_THREADS
-	PyThread_start_new_thread( _make_call, fn);
+	PyThread_start_new_thread(_make_call_from_thread, fn);
 	_make_call(fn);
+	PyThread_acquire_lock(thread_done, 1);  /* wait for thread to finish */
 	Py_END_ALLOW_THREADS
-	Py_INCREF(Py_None);
-	return Py_None;
+
+	PyThread_free_lock(thread_done);
+	Py_RETURN_NONE;
 }
 #endif
 
