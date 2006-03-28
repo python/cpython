@@ -626,24 +626,20 @@ class UnicodeTest(
         self.assertEqual(u'hello'.encode('latin-1'), 'hello')
 
         # Roundtrip safety for BMP (just the first 1024 chars)
-        for c in xrange(1024):
-            u = unichr(c)
-            for encoding in ('utf-7', 'utf-8', 'utf-16', 'utf-16-le',
-                             'utf-16-be', 'raw_unicode_escape',
-                             'unicode_escape', 'unicode_internal'):
-                self.assertEqual(unicode(u.encode(encoding),encoding), u)
+        u = u''.join(map(unichr, xrange(1024)))
+        for encoding in ('utf-7', 'utf-8', 'utf-16', 'utf-16-le', 'utf-16-be',
+                         'raw_unicode_escape', 'unicode_escape', 'unicode_internal'):
+            self.assertEqual(unicode(u.encode(encoding),encoding), u)
 
         # Roundtrip safety for BMP (just the first 256 chars)
-        for c in xrange(256):
-            u = unichr(c)
-            for encoding in ('latin-1',):
-                self.assertEqual(unicode(u.encode(encoding),encoding), u)
+        u = u''.join(map(unichr, xrange(256)))
+        for encoding in ('latin-1',):
+            self.assertEqual(unicode(u.encode(encoding),encoding), u)
 
         # Roundtrip safety for BMP (just the first 128 chars)
-        for c in xrange(128):
-            u = unichr(c)
-            for encoding in ('ascii',):
-                self.assertEqual(unicode(u.encode(encoding),encoding), u)
+        u = u''.join(map(unichr, xrange(128)))
+        for encoding in ('ascii',):
+            self.assertEqual(unicode(u.encode(encoding),encoding), u)
 
         # Roundtrip safety for non-BMP (just a few chars)
         u = u'\U00010001\U00020002\U00030003\U00040004\U00050005'
@@ -743,6 +739,18 @@ class UnicodeTest(
         x = u'\U00100000'
         y = x.encode("raw-unicode-escape").decode("raw-unicode-escape")
         self.assertEqual(x, y)
+
+    def test_unicode_repr(self):
+        class s1:
+            def __repr__(self):
+                return '\\n'
+
+        class s2:
+            def __repr__(self):
+                return u'\\n'
+
+        self.assertEqual(repr(s1()), '\\n')
+        self.assertEqual(repr(s2()), '\\n')
 
 def test_main():
     test_support.run_unittest(UnicodeTest)

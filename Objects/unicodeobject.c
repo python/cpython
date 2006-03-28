@@ -1982,9 +1982,9 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
     while (size-- > 0) {
         Py_UNICODE ch = *s++;
 
-        /* Escape quotes and backslashes */
-        if ((quotes &&
-	     ch == (Py_UNICODE) PyString_AS_STRING(repr)[1]) || ch == '\\') {
+        /* Escape quotes */
+        if (quotes &&
+	    (ch == (Py_UNICODE) PyString_AS_STRING(repr)[1] || ch == '\\')) {
             *p++ = '\\';
             *p++ = (char) ch;
 	    continue;
