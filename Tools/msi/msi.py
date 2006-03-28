@@ -496,7 +496,7 @@ def add_ui(db):
     c = exit_dialog.text("warning", 135, 200, 220, 40, 0x30003,
             "{\\VerdanaRed9}Warning: Python 2.5.x is the last "
             "Python release for Windows 9x.")
-    c.condition("Hide", "NOT Version9x")
+    c.condition("Hide", "NOT Version9X")
 
     exit_dialog.text("Description", 135, 235, 220, 20, 0x30003,
                "Click the Finish button to exit the Installer.")
