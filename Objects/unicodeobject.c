@@ -7013,15 +7013,15 @@ PyObject *PyUnicode_Format(PyObject *format,
                         /* nothing to do */;
                     else if (PyString_Check(temp)) {
                         /* convert to string to Unicode */
-		    unicode = PyUnicode_Decode(PyString_AS_STRING(temp),
+		        unicode = PyUnicode_Decode(PyString_AS_STRING(temp),
 						   PyString_GET_SIZE(temp),
-					       NULL,
+						   NULL,
 						   "strict");
-		    Py_DECREF(temp);
-		    temp = unicode;
-		    if (temp == NULL)
-			goto onError;
-		}
+		        Py_DECREF(temp);
+		        temp = unicode;
+		        if (temp == NULL)
+			    goto onError;
+		    }
 		    else {
 			Py_DECREF(temp);
 			PyErr_SetString(PyExc_TypeError,
@@ -7117,11 +7117,13 @@ PyObject *PyUnicode_Format(PyObject *format,
 		reslen += rescnt;
 		if (reslen < 0) {
 		    Py_XDECREF(temp);
-		    Py_DECREF(result);
-		    return PyErr_NoMemory();
+		    PyErr_NoMemory();
+		    goto onError;
 		}
-		if (_PyUnicode_Resize(&result, reslen) < 0)
-		    return NULL;
+		if (_PyUnicode_Resize(&result, reslen) < 0) {
+		    Py_XDECREF(temp);
+		    goto onError;
+		}
 		res = PyUnicode_AS_UNICODE(result)
 		    + reslen - rescnt;
 	    }
@@ -7171,6 +7173,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    if (dict && (argidx < arglen) && c != '%') {
 		PyErr_SetString(PyExc_TypeError,
 				"not all arguments converted during string formatting");
+                Py_XDECREF(temp);
 		goto onError;
 	    }
 	    Py_XDECREF(temp);
@@ -7182,12 +7185,12 @@ PyObject *PyUnicode_Format(PyObject *format,
 	goto onError;
     }
 
+    if (_PyUnicode_Resize(&result, reslen - rescnt) < 0)
+	goto onError;
     if (args_owned) {
 	Py_DECREF(args);
     }
     Py_DECREF(uformat);
-    if (_PyUnicode_Resize(&result, reslen - rescnt) < 0)
-	goto onError;
     return (PyObject *)result;
 
  onError:
