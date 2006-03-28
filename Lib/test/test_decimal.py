@@ -503,16 +503,22 @@ class DecimalImplicitConstructionTest(unittest.TestCase):
         self.assertEqual(eval('Decimal(10) != E()'), 'ne 10')
 
         # insert operator methods and then exercise them
-        for sym, lop, rop in (
-                ('+', '__add__', '__radd__'),
-                ('-', '__sub__', '__rsub__'),
-                ('*', '__mul__', '__rmul__'),
-                ('/', '__div__', '__rdiv__'),
-                ('%', '__mod__', '__rmod__'),
-                ('//', '__floordiv__', '__rfloordiv__'),
-                ('**', '__pow__', '__rpow__'),
-            ):
-
+        oplist = [
+            ('+', '__add__', '__radd__'),
+            ('-', '__sub__', '__rsub__'),
+            ('*', '__mul__', '__rmul__'),
+            ('%', '__mod__', '__rmod__'),
+            ('//', '__floordiv__', '__rfloordiv__'),
+            ('**', '__pow__', '__rpow__')
+        ]
+        if 1/2 == 0:
+            # testing with classic division, so add __div__
+            oplist.append(('/', '__div__', '__rdiv__'))
+        else:
+            # testing with -Qnew, so add __truediv__
+            oplist.append(('/', '__truediv__', '__rtruediv__'))
+        
+        for sym, lop, rop in oplist:
             setattr(E, lop, lambda self, other: 'str' + lop + str(other))
             setattr(E, rop, lambda self, other: str(other) + rop + 'str')
             self.assertEqual(eval('E()' + sym + 'Decimal(10)'),
