@@ -17,13 +17,13 @@ Core and builtins
 - A threading issue that caused random segfaults on some platforms from 
   the testsuite was fixed in test_capi.
 
-Extension Modules
------------------
-
 - Reverted fix for Bug #1379994: Builtin unicode_escape and 
   raw_unicode_escape codec now encodes backslash correctly.
   This caused another issue for unicode repr strings being double-escaped
   (SF Bug #1459029). Correct fix will be in 2.5, but is too risky for 2.4.3.
+
+Extension Modules
+-----------------
 
 - Ubuntu bug #29289: Fixed a bug that the gb18030 codec raises
   RuntimeError on encoding surrogate pair area on UCS4 build.
