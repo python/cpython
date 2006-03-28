@@ -78,6 +78,7 @@ def contextmanager(func):
     try:
         helper.__name__ = func.__name__
         helper.__doc__ = func.__doc__
+        helper.__dict__ = func.__dict__
     except:
         pass
     return helper

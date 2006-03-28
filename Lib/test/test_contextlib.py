@@ -84,6 +84,21 @@ class ContextManagerTestCase(unittest.TestCase):
             raise ZeroDivisionError(999)
         self.assertEqual(state, [1, 42, 999])
 
+    def test_contextmanager_attribs(self):
+        def attribs(**kw):
+            def decorate(func):
+                for k,v in kw.items():
+                    setattr(func,k,v)
+                return func
+            return decorate
+        @contextmanager
+        @attribs(foo='bar')
+        def baz(spam):
+            """Whee!"""
+        self.assertEqual(baz.__name__,'baz')
+        self.assertEqual(baz.foo, 'bar')
+        self.assertEqual(baz.__doc__, "Whee!")
+
 class NestedTestCase(unittest.TestCase):
 
     # XXX This needs more work
