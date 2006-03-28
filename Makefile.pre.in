@@ -682,7 +682,8 @@ LIBSUBDIRS=	lib-old lib-tk site-packages test test/output test/data \
 		test/decimaltestdata \
 		encodings compiler hotshot \
 		email email/mime email/test email/test/data \
-		logging bsddb bsddb/test csv ctypes idlelib idlelib/Icons \
+		logging bsddb bsddb/test csv \
+		ctypes ctypes/test idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
 		curses $(MACHDEPS)
 libinstall:	$(BUILDPYTHON) $(srcdir)/Lib/$(PLATDIR)
