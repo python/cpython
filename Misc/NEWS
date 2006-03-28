@@ -4,8 +4,8 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.4.3c1?
-=============================
+What's New in Python 2.4.3?
+===========================
 
 *Release date: 29-MAR-2006*
 
@@ -13,6 +13,9 @@ Core and builtins
 -----------------
 
 - A few reference leaks were squished.
+
+- A threading issue that caused random segfaults on some platforms from 
+  the testsuite was fixed in test_capi.
 
 
 What's New in Python 2.4.3c1?
