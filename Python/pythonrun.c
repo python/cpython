@@ -30,14 +30,11 @@
 #endif
 
 #ifndef Py_REF_DEBUG
-#  define PRINT_TOTAL_REFS()
+#define PRINT_TOTAL_REFS()
 #else /* Py_REF_DEBUG */
-#  if defined(MS_WIN64)
-#    define PRINT_TOTAL_REFS() fprintf(stderr, "[%Id refs]\n", _Py_RefTotal);
-#  else /* ! MS_WIN64 */
-#    define PRINT_TOTAL_REFS() fprintf(stderr, "[%ld refs]\n", \
-			Py_SAFE_DOWNCAST(_Py_RefTotal, Py_ssize_t, long));
-#  endif /* MS_WIN64 */
+#define PRINT_TOTAL_REFS() fprintf(stderr,				\
+				   "[%" PY_FORMAT_SIZE_T "d refs]\n",	\
+				   _Py_RefTotal)
 #endif
 
 extern char *Py_GetPath(void);
@@ -393,7 +390,7 @@ Py_Finalize(void)
 	dump_counts();
 #endif
 
-	PRINT_TOTAL_REFS()
+	PRINT_TOTAL_REFS();
 
 #ifdef Py_TRACE_REFS
 	/* Display all objects still alive -- this can invoke arbitrary
@@ -683,7 +680,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
 	}
 	for (;;) {
 		ret = PyRun_InteractiveOneFlags(fp, filename, flags);
-		PRINT_TOTAL_REFS()
+		PRINT_TOTAL_REFS();
 		if (ret == E_EOF)
 			return 0;
 		/*

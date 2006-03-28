@@ -413,7 +413,7 @@ has_finalizer(PyObject *op)
 		assert(delstr != NULL);
 		return _PyInstance_Lookup(op, delstr) != NULL;
 	}
-	else 
+	else
 		return op->ob_type->tp_del != NULL;
 }
 
@@ -741,15 +741,9 @@ collect(int generation)
 		PySys_WriteStderr("gc: collecting generation %d...\n",
 				  generation);
 		PySys_WriteStderr("gc: objects in each generation:");
-		for (i = 0; i < NUM_GENERATIONS; i++) {
-#ifdef MS_WIN64
-			PySys_WriteStderr(" %Id", gc_list_size(GEN_HEAD(i)));
-#else
-			PySys_WriteStderr(" %ld",
-				Py_SAFE_DOWNCAST(gc_list_size(GEN_HEAD(i)),
-						 Py_ssize_t, long));
-#endif
-		}
+		for (i = 0; i < NUM_GENERATIONS; i++)
+			PySys_WriteStderr(" %" PY_FORMAT_SIZE_T "d",
+					  gc_list_size(GEN_HEAD(i)));
 		PySys_WriteStderr("\n");
 	}
 
@@ -837,21 +831,14 @@ collect(int generation)
 			debug_cycle("uncollectable", FROM_GC(gc));
 	}
 	if (debug & DEBUG_STATS) {
-		if (m == 0 && n == 0) {
+		if (m == 0 && n == 0)
 			PySys_WriteStderr("gc: done.\n");
-		}
-		else {
-#ifdef MS_WIN64
+		else
 			PySys_WriteStderr(
-			    "gc: done, %Id unreachable, %Id uncollectable.\n",
+			    "gc: done, "
+			    "%" PY_FORMAT_SIZE_T "d unreachable, "
+			    "%" PY_FORMAT_SIZE_T "d uncollectable.\n",
 			    n+m, n);
-#else
-			PySys_WriteStderr(
-			    "gc: done, %ld unreachable, %ld uncollectable.\n",
-			    Py_SAFE_DOWNCAST(n+m, Py_ssize_t, long),
-			    Py_SAFE_DOWNCAST(n, Py_ssize_t, long));
-#endif
-		}
 	}
 
 	/* Append instances in the uncollectable set to a Python
