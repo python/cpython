@@ -301,7 +301,7 @@ _PyLong_AsSsize_t(PyObject *vv)
 /* Get a Py_ssize_t from a long int object.
    Silently reduce values larger than PY_SSIZE_T_MAX to PY_SSIZE_T_MAX,
    and silently boost values less than -PY_SSIZE_T_MAX-1 to -PY_SSIZE_T_MAX-1.
-   Return 0 on error, 1 on success.
+   On error, return -1 with an exception set.
 */
 
 static Py_ssize_t
