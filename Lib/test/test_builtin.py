@@ -1295,8 +1295,16 @@ class BuiltinTest(unittest.TestCase):
                          'test_builtin_tmp', 'exec')
             sys.stdin.seek(0, 0)
             exec compile('print input()', 'test_builtin_tmp', 'exec')
-            self.assertEqual(sys.stdout.getvalue().splitlines(),
-                             ['0', '0.5', '0'])
+            # The result we expect depends on whether new division semantics
+            # are already in effect.
+            if 1/2 == 0:
+                # This test was compiled with old semantics.
+                expected = ['0', '0.5', '0']
+            else:
+                # This test was compiled with new semantics (e.g., -Qnew
+                # was given on the command line.
+                expected = ['0.5', '0.5', '0.5']
+            self.assertEqual(sys.stdout.getvalue().splitlines(), expected)
 
             del sys.stdout
             self.assertRaises(RuntimeError, input, 'prompt')
