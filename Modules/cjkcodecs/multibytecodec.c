@@ -735,7 +735,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
 	datalen = PyUnicode_GET_SIZE(unistr);
 	origpending = ctx->pendingsize;
 
-	if (ctx->pendingsize > 0) {
+	if (origpending > 0) {
 		inbuf_tmp = PyMem_New(Py_UNICODE, datalen + ctx->pendingsize);
 		if (inbuf_tmp == NULL)
 			goto errorexit;
