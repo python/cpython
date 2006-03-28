@@ -121,7 +121,9 @@ def closing(thing):
 
 And lets you write code like this:
 \begin{verbatim}
+from __future__ import with_statement
 from contextlib import closing
+import codecs
 
 with closing(codecs.open("foo", encoding="utf8")) as f:
     for line in f:
