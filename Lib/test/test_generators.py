@@ -1713,6 +1713,34 @@ enclosing function a generator:
 
 """
 
+refleaks_tests = """
+Prior to adding cycle-GC support to itertools.tee, this code would leak
+references. We add it to the standard suite so the routine refleak-tests
+would trigger if it starts being uncleanable again.
+
+>>> import itertools
+>>> def leak():
+...     class gen:
+...         def __iter__(self):
+...             return self
+...         def next(self):
+...             return self.item
+...     g = gen()
+...     head, tail = itertools.tee(g)
+...     g.item = head
+...     return head
+>>> it = leak()
+
+Make sure to also test the involvement of the tee-internal teedataobject,
+which stores returned items.
+
+>>> item = it.next()
+
+There should be more test_generator-induced refleaks here, after they get
+fixed.
+
+"""
+
 __test__ = {"tut":      tutorial_tests,
             "pep":      pep_tests,
             "email":    email_tests,
@@ -1721,6 +1749,7 @@ __test__ = {"tut":      tutorial_tests,
             "conjoin":  conjoin_tests,
             "weakref":  weakref_tests,
             "coroutine":  coroutine_tests,
+            "refleaks": refleaks_tests,
             }
 
 # Magic test name that regrtest.py invokes *after* importing this module.
