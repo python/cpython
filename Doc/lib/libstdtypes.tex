@@ -1500,6 +1500,38 @@ Files have the following methods:
   Any operation which requires that the file be open will raise a
   \exception{ValueError} after the file has been closed.  Calling
   \method{close()} more than once is allowed.
+
+  As of Python 2.5, you can avoid having to call this method explicitly
+  if you use the \keyword{with} statement.  For example, the following
+  code will automatically close \code{f} when the \keyword{with} block
+  is exited:
+
+\begin{verbatim}
+from __future__ import with_statement
+
+with open("hello.txt") as f:
+    for line in f:
+        print line
+\end{verbatim}
+
+  In older versions of Python, you would have needed to do this to get
+  the same effect:
+
+\begin{verbatim}
+f = open("hello.txt")
+try:
+    for line in f:
+        print line
+finally:
+    f.close()
+\end{verbatim}
+
+  \note{Not all ``file-like'' types in Python support use as a context
+  manager for the \keyword{with} statement.  If your code is intended to
+  work with any file-like object, you can use the \function{closing()}
+  function in the \module{contextlib} module instead of using the object
+  directly.  See section~\ref{context-closing} for details.}
+  
 \end{methoddesc}
 
 \begin{methoddesc}[file]{flush}{}
