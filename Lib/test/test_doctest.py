@@ -604,7 +604,7 @@ DocTestFinder finds the line number of each example:
     ...     >>> for x in range(10):
     ...     ...     print x,
     ...     0 1 2 3 4 5 6 7 8 9
-    ...     >>> x/2
+    ...     >>> x//2
     ...     6
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
@@ -679,7 +679,7 @@ statistics.  Here's a simple DocTest case we can use:
     ...     >>> x = 12
     ...     >>> print x
     ...     12
-    ...     >>> x/2
+    ...     >>> x//2
     ...     6
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
@@ -700,7 +700,7 @@ the failure and proceeds to the next example:
     ...     >>> x = 12
     ...     >>> print x
     ...     14
-    ...     >>> x/2
+    ...     >>> x//2
     ...     6
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
@@ -723,7 +723,7 @@ the failure and proceeds to the next example:
     Got:
         12
     Trying:
-        x/2
+        x//2
     Expecting:
         6
     ok
@@ -738,7 +738,7 @@ output:
     ...     >>> x = 12
     ...     >>> print x
     ...     12
-    ...     >>> x/2
+    ...     >>> x//2
     ...     6
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
@@ -754,7 +754,7 @@ output:
         12
     ok
     Trying:
-        x/2
+        x//2
     Expecting:
         6
     ok
@@ -784,7 +784,7 @@ iff `-v` appears in sys.argv:
         12
     ok
     Trying:
-        x/2
+        x//2
     Expecting:
         6
     ok
@@ -806,7 +806,7 @@ replaced with any other string:
     >>> def f(x):
     ...     '''
     ...     >>> x = 12
-    ...     >>> print x/0
+    ...     >>> print x//0
     ...     Traceback (most recent call last):
     ...     ZeroDivisionError: integer division or modulo by zero
     ...     '''
@@ -822,7 +822,7 @@ unexpected exception:
     >>> def f(x):
     ...     '''
     ...     >>> x = 12
-    ...     >>> print 'pre-exception output', x/0
+    ...     >>> print 'pre-exception output', x//0
     ...     pre-exception output
     ...     Traceback (most recent call last):
     ...     ZeroDivisionError: integer division or modulo by zero
@@ -833,7 +833,7 @@ unexpected exception:
     **********************************************************************
     File ..., line 4, in f
     Failed example:
-        print 'pre-exception output', x/0
+        print 'pre-exception output', x//0
     Exception raised:
         ...
         ZeroDivisionError: integer division or modulo by zero
@@ -920,7 +920,7 @@ unexpected exception:
 
     >>> def f(x):
     ...     r'''
-    ...     >>> 1/0
+    ...     >>> 1//0
     ...     0
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
@@ -929,7 +929,7 @@ unexpected exception:
     **********************************************************************
     File ..., line 3, in f
     Failed example:
-        1/0
+        1//0
     Exception raised:
         Traceback (most recent call last):
         ...
