@@ -80,7 +80,7 @@ class Packer:
         if n < 0:
             raise ValueError, 'fstring size must be nonnegative'
         data = s[:n]
-        n = ((n+3)/4)*4
+        n = ((n+3)//4)*4
         data = data + (n - len(data)) * '\0'
         self.__buf.write(data)
 
@@ -192,7 +192,7 @@ class Unpacker:
         if n < 0:
             raise ValueError, 'fstring size must be nonnegative'
         i = self.__pos
-        j = i + (n+3)/4*4
+        j = i + (n+3)//4*4
         if j > len(self.__buf):
             raise EOFError
         self.__pos = j
