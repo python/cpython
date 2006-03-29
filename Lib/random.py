@@ -310,15 +310,16 @@ class Random(_random.Random):
                 pool[j] = pool[n-i-1]   # move non-selected item into vacancy
         else:
             try:
-                n > 0 and (population[0], population[n//2], population[n-1])
-            except (TypeError, KeyError):   # handle sets and dictionaries
-                population = tuple(population)
-            selected = {}
-            for i in xrange(k):
-                j = _int(random() * n)
-                while j in selected:
+                selected = {}
+                for i in xrange(k):
                     j = _int(random() * n)
-                result[i] = selected[j] = population[j]
+                    while j in selected:
+                        j = _int(random() * n)
+                    result[i] = selected[j] = population[j]
+            except (TypeError, KeyError):   # handle sets and dictionaries
+                if isinstance(population, list):
+                    raise
+                return self.sample(list(population), k)
         return result
 
 ## -------------------- real-valued distributions  -------------------
