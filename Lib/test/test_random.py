@@ -96,6 +96,9 @@ class TestBasicOps(unittest.TestCase):
         self.gen.sample(dict.fromkeys('abcdefghijklmnopqrst'), 2)
         self.gen.sample(str('abcdefghijklmnopqrst'), 2)
         self.gen.sample(tuple('abcdefghijklmnopqrst'), 2)
+        # SF bug #1460340 -- random.sample can raise KeyError
+        a = dict.fromkeys(range(10)+range(10,100,2)+range(100,110))
+        self.gen.sample(a,3)
 
     def test_gauss(self):
         # Ensure that the seed() method initializes all the hidden state.  In
