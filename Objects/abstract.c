@@ -942,8 +942,9 @@ PyNumber_Index(PyObject *item)
 		value = nb->nb_index(item);
 	}
 	else {
-		PyErr_SetString(PyExc_IndexError, 
-				"object cannot be interpreted as an index");
+		PyErr_Format(PyExc_TypeError,
+			     "'%.200s' object cannot be interpreted "
+			     "as an index", item->ob_type->tp_name);
 	}
 	return value;
 }
