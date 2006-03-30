@@ -832,11 +832,11 @@ static PyTypeObject deque_type = {
 	0,				/* tp_itemsize */
 	/* methods */
 	(destructor)deque_dealloc,	/* tp_dealloc */
-	(printfunc)deque_tp_print,	/* tp_print */
+	deque_tp_print,			/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
 	0,				/* tp_compare */
-	(reprfunc)deque_repr,		/* tp_repr */
+	deque_repr,			/* tp_repr */
 	0,				/* tp_as_number */
 	&deque_as_sequence,		/* tp_as_sequence */
 	0,				/* tp_as_mapping */
@@ -1302,7 +1302,7 @@ static PyTypeObject defdict_type = {
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_HAVE_WEAKREFS,	/* tp_flags */
 	defdict_doc,			/* tp_doc */
-	(traverseproc)defdict_traverse,	/* tp_traverse */
+	defdict_traverse,		/* tp_traverse */
 	(inquiry)defdict_tp_clear,	/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset*/
@@ -1316,7 +1316,7 @@ static PyTypeObject defdict_type = {
 	0,				/* tp_descr_get */
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
-	(initproc)defdict_init,		/* tp_init */
+	defdict_init,			/* tp_init */
 	PyType_GenericAlloc,		/* tp_alloc */
 	0,				/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
