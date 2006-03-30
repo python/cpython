@@ -22,7 +22,6 @@ class LoaderTest(unittest.TestCase):
         else:
             name = "libc.so.6"
 ##        print (sys.platform, os.name)
-        name = "impossible.so"
         try:
             cdll.load(name)
         except Exception, details:
