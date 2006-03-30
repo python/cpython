@@ -517,7 +517,7 @@ class DecimalImplicitConstructionTest(unittest.TestCase):
         else:
             # testing with -Qnew, so add __truediv__
             oplist.append(('/', '__truediv__', '__rtruediv__'))
-        
+
         for sym, lop, rop in oplist:
             setattr(E, lop, lambda self, other: 'str' + lop + str(other))
             setattr(E, rop, lambda self, other: str(other) + rop + 'str')

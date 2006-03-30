@@ -64,7 +64,7 @@ class AugAssignTest(unittest.TestCase):
         x *= 2
 
         self.assertEquals(x, [1, 2, 3, 4, 1, 2, 3, 4])
-        
+
         x = [1, 2, 3]
         y = x
         x[1:2] *= 2
@@ -82,7 +82,7 @@ class AugAssignTest(unittest.TestCase):
                 return self.val + val
             def __add__(self, val):
                 return aug_test(self.val + val)
-        
+
         class aug_test2(aug_test):
             def __iadd__(self, val):
                 self.val = self.val + val
@@ -91,7 +91,7 @@ class AugAssignTest(unittest.TestCase):
         class aug_test3(aug_test):
             def __iadd__(self, val):
                 return aug_test3(self.val + val)
-        
+
         x = aug_test(1)
         y = x
         x += 10
@@ -103,7 +103,7 @@ class AugAssignTest(unittest.TestCase):
         x = aug_test2(2)
         y = x
         x += 10
-        
+
         self.assert_(y is x)
         self.assertEquals(x.val, 12)
 
@@ -319,7 +319,7 @@ __lshift__ called
 __rlshift__ called
 __ilshift__ called
 '''.splitlines())
-                          
+
 def test_main():
     run_unittest(AugAssignTest)
 
