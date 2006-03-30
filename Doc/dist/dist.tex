@@ -1754,8 +1754,21 @@ built using an earlier invocation of \file{setup.py}, but that only
 distributions named on the command line for the invocation including
 the \command{upload} command are uploaded.
 
-The \command{upload} command uses the username and password stored in
-the file \file{\$HOME/.pypirc}, see section~\ref{pypirc}.
+The \command{upload} command uses the username, password, and repository
+URL from the \file{\$HOME/.pypirc} file (see section~\ref{pypirc} for
+more on this file).
+
+You can use the \programopt{--sign} option to tell \command{upload} to
+sign each uploaded file using GPG (GNU Privacy Guard).  The 
+\program{gpg} program must be available for execution on the system
+\envvar{PATH}.  You can also specify which key to use for signing
+using the \programopt{--identity=\var{name}} option.
+
+Other \command{upload} options include 
+\programopt{--repository=\var{url}} (which lets you override the
+repository setting from \file{\$HOME/.pypirc}), and
+\programopt{--show-response} (which displays the full response text
+from the PyPI server for help in debugging upload problems).
 
 \chapter{Examples}
 \label{examples}
