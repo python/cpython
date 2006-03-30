@@ -22,7 +22,11 @@ class LoaderTest(unittest.TestCase):
         else:
             name = "libc.so.6"
 ##        print (sys.platform, os.name)
-        cdll.load(name)
+        name = "impossible.so"
+        try:
+            cdll.load(name)
+        except Exception, details:
+            self.fail((str(details), name, (os.name, sys.platform)))
         self.assertRaises(OSError, cdll.load, self.unknowndll)
 
     def test_load_version(self):
