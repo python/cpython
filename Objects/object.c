@@ -1774,12 +1774,12 @@ static PyTypeObject PyNone_Type = {
 	"NoneType",
 	0,
 	0,
-	(destructor)none_dealloc,	     /*tp_dealloc*/ /*never called*/
+	none_dealloc,	/*tp_dealloc*/ /*never called*/
 	0,		/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
-	(reprfunc)none_repr, /*tp_repr*/
+	none_repr,	/*tp_repr*/
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
@@ -1805,12 +1805,12 @@ static PyTypeObject PyNotImplemented_Type = {
 	"NotImplementedType",
 	0,
 	0,
-	(destructor)none_dealloc,	     /*tp_dealloc*/ /*never called*/
+	none_dealloc,	/*tp_dealloc*/ /*never called*/
 	0,		/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
-	(reprfunc)NotImplemented_repr, /*tp_repr*/
+	NotImplemented_repr, /*tp_repr*/
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/

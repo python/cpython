@@ -3460,18 +3460,18 @@ PyTypeObject PyString_Type = {
 	"str",
 	sizeof(PyStringObject),
 	sizeof(char),
- 	(destructor)string_dealloc, 		/* tp_dealloc */
+ 	string_dealloc, 			/* tp_dealloc */
 	(printfunc)string_print, 		/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
-	(reprfunc)string_repr, 			/* tp_repr */
+	string_repr, 				/* tp_repr */
 	&string_as_number,			/* tp_as_number */
 	&string_as_sequence,			/* tp_as_sequence */
 	&string_as_mapping,			/* tp_as_mapping */
 	(hashfunc)string_hash, 			/* tp_hash */
 	0,					/* tp_call */
-	(reprfunc)string_str,			/* tp_str */
+	string_str,				/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	&string_as_buffer,			/* tp_as_buffer */

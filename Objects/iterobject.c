@@ -123,7 +123,7 @@ PyTypeObject PySeqIter_Type = {
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
-	(iternextfunc)iter_iternext,		/* tp_iternext */
+	iter_iternext,				/* tp_iternext */
 	seqiter_methods,			/* tp_methods */
 	0,					/* tp_members */
 };

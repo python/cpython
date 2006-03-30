@@ -1125,13 +1125,13 @@ Convert a string or number to a floating point number, if possible.");
 
 
 static PyNumberMethods float_as_number = {
-	(binaryfunc)float_add, /*nb_add*/
-	(binaryfunc)float_sub, /*nb_subtract*/
-	(binaryfunc)float_mul, /*nb_multiply*/
-	(binaryfunc)float_classic_div, /*nb_divide*/
-	(binaryfunc)float_rem, /*nb_remainder*/
-	(binaryfunc)float_divmod, /*nb_divmod*/
-	(ternaryfunc)float_pow, /*nb_power*/
+	float_add, 	/*nb_add*/
+	float_sub, 	/*nb_subtract*/
+	float_mul, 	/*nb_multiply*/
+	float_classic_div, /*nb_divide*/
+	float_rem, 	/*nb_remainder*/
+	float_divmod, 	/*nb_divmod*/
+	float_pow, 	/*nb_power*/
 	(unaryfunc)float_neg, /*nb_negative*/
 	(unaryfunc)float_pos, /*nb_positive*/
 	(unaryfunc)float_abs, /*nb_absolute*/
@@ -1142,10 +1142,10 @@ static PyNumberMethods float_as_number = {
 	0,		/*nb_and*/
 	0,		/*nb_xor*/
 	0,		/*nb_or*/
-	(coercion)float_coerce, /*nb_coerce*/
-	(unaryfunc)float_int, /*nb_int*/
-	(unaryfunc)float_long, /*nb_long*/
-	(unaryfunc)float_float, /*nb_float*/
+	float_coerce, 	/*nb_coerce*/
+	float_int, 	/*nb_int*/
+	float_long, 	/*nb_long*/
+	float_float,	/*nb_float*/
 	0,		/* nb_oct */
 	0,		/* nb_hex */
 	0,		/* nb_inplace_add */
@@ -1191,7 +1191,7 @@ PyTypeObject PyFloat_Type = {
 	float_doc,				/* tp_doc */
  	0,					/* tp_traverse */
 	0,					/* tp_clear */
-	(richcmpfunc)float_richcompare,		/* tp_richcompare */
+	float_richcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */

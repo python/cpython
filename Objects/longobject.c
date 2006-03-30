@@ -3130,26 +3130,26 @@ static PyNumberMethods long_as_number = {
 	(binaryfunc)	long_add,	/*nb_add*/
 	(binaryfunc)	long_sub,	/*nb_subtract*/
 	(binaryfunc)	long_mul,	/*nb_multiply*/
-	(binaryfunc)	long_classic_div, /*nb_divide*/
-	(binaryfunc)	long_mod,	/*nb_remainder*/
-	(binaryfunc)	long_divmod,	/*nb_divmod*/
-	(ternaryfunc)	long_pow,	/*nb_power*/
+			long_classic_div, /*nb_divide*/
+			long_mod,	/*nb_remainder*/
+			long_divmod,	/*nb_divmod*/
+			long_pow,	/*nb_power*/
 	(unaryfunc) 	long_neg,	/*nb_negative*/
 	(unaryfunc) 	long_pos,	/*tp_positive*/
 	(unaryfunc) 	long_abs,	/*tp_absolute*/
 	(inquiry)	long_nonzero,	/*tp_nonzero*/
 	(unaryfunc)	long_invert,	/*nb_invert*/
-	(binaryfunc)	long_lshift,	/*nb_lshift*/
+			long_lshift,	/*nb_lshift*/
 	(binaryfunc)	long_rshift,	/*nb_rshift*/
-	(binaryfunc)	long_and,	/*nb_and*/
-	(binaryfunc)	long_xor,	/*nb_xor*/
-	(binaryfunc)	long_or,	/*nb_or*/
-	(coercion)	long_coerce,	/*nb_coerce*/
-	(unaryfunc)	long_int,	/*nb_int*/
-	(unaryfunc)	long_long,	/*nb_long*/
-	(unaryfunc)	long_float,	/*nb_float*/
-	(unaryfunc)	long_oct,	/*nb_oct*/
-	(unaryfunc)	long_hex,	/*nb_hex*/
+			long_and,	/*nb_and*/
+			long_xor,	/*nb_xor*/
+			long_or,	/*nb_or*/
+			long_coerce,	/*nb_coerce*/
+			long_int,	/*nb_int*/
+			long_long,	/*nb_long*/
+			long_float,	/*nb_float*/
+			long_oct,	/*nb_oct*/
+			long_hex,	/*nb_hex*/
 	0,				/* nb_inplace_add */
 	0,				/* nb_inplace_subtract */
 	0,				/* nb_inplace_multiply */
@@ -3161,11 +3161,11 @@ static PyNumberMethods long_as_number = {
 	0,				/* nb_inplace_and */
 	0,				/* nb_inplace_xor */
 	0,				/* nb_inplace_or */
-	(binaryfunc)long_div,		/* nb_floor_divide */
+	long_div,			/* nb_floor_divide */
 	long_true_divide,		/* nb_true_divide */
 	0,				/* nb_inplace_floor_divide */
 	0,				/* nb_inplace_true_divide */
-	(lenfunc)long_index,            /* nb_index */
+	long_index,			/* nb_index */
 };
 
 PyTypeObject PyLong_Type = {
@@ -3174,18 +3174,18 @@ PyTypeObject PyLong_Type = {
 	"long",					/* tp_name */
 	sizeof(PyLongObject) - sizeof(digit),	/* tp_basicsize */
 	sizeof(digit),				/* tp_itemsize */
-	(destructor)long_dealloc,		/* tp_dealloc */
+	long_dealloc,				/* tp_dealloc */
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	(cmpfunc)long_compare,			/* tp_compare */
-	(reprfunc)long_repr,			/* tp_repr */
+	long_repr,				/* tp_repr */
 	&long_as_number,			/* tp_as_number */
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	(hashfunc)long_hash,			/* tp_hash */
         0,              			/* tp_call */
-        (reprfunc)long_str,			/* tp_str */
+        long_str,				/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */

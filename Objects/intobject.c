@@ -1069,7 +1069,7 @@ static PyNumberMethods int_as_number = {
 	int_true_divide,	/* nb_true_divide */
 	0,			/* nb_inplace_floor_divide */
 	0,			/* nb_inplace_true_divide */
-	(lenfunc)PyInt_AsSsize_t, /* nb_index */
+	PyInt_AsSsize_t,	/* nb_index */
 };
 
 PyTypeObject PyInt_Type = {
