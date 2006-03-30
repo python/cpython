@@ -3027,8 +3027,6 @@ or the abstract number protocol (including
 \cfunction{PyNumber_InPlaceAdd()}, \cfunction{PyNumber_InPlaceSubtract()},
 \cfunction{PyNumber_InPlaceOr()}, and \cfunction{PyNumber_InPlaceXor()}).
 
-For example, to clear a set, write:  \code{PyObject_CallMethod(s, "clear", NULL)}
-                      
 \begin{ctypedesc}{PySetObject}
   This subtype of \ctype{PyObject} is used to hold the internal data for
   both \class{set} and \class{frozenset} objects.  It is like a
@@ -3112,7 +3110,6 @@ The following functions and macros are available for instances of
   \class{frozenset}, or an instance of a subtype.                         
 \end{cfuncdesc}
 
-
 The following functions are available for instances of \class{set} or
 its subtypes but not for instances of \class{frozenset} or its subtypes.
 
@@ -3143,4 +3140,6 @@ its subtypes but not for instances of \class{frozenset} or its subtypes.
   of \class{set} or its subtype.                        
 \end{cfuncdesc}
 
-
+\begin{cfuncdesc}{int}{PySet_Clear}{PyObject *set}
+  Empty an existing set of all elements.
+\end{cfuncdesc}
