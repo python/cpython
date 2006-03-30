@@ -12,6 +12,8 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Fixed bug #1459029 - unicode reprs were double-escaped.
+
 - Patch #1396919: The system scope threads are reenabled on FreeBSD
   5.4 and later versions.
 

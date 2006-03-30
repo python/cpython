@@ -316,7 +316,7 @@ PyObject_Repr(PyObject *v)
 #ifdef Py_USING_UNICODE
 		if (PyUnicode_Check(res)) {
 			PyObject* str;
-			str = PyUnicode_AsUnicodeEscapeString(res);
+			str = PyUnicode_AsEncodedString(res, NULL, NULL);
 			Py_DECREF(res);
 			if (str)
 				res = str;
