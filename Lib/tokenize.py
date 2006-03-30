@@ -182,7 +182,7 @@ def untokenize(iterable):
     for tok in iterable:
         toknum, tokval = tok[:2]
 
-        if toknum == NAME:
+        if toknum in (NAME, NUMBER):
             tokval += ' '
 
         if toknum == INDENT:
