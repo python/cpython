@@ -1969,6 +1969,16 @@ PySet_Size(PyObject *anyset)
 }
 
 int
+PySet_Clear(PyObject *set)
+{
+	if (!PyType_IsSubtype(set->ob_type, &PySet_Type)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	return set_clear_internal((PySetObject *)set);
+}
+
+int
 PySet_Contains(PyObject *anyset, PyObject *key)
 {
 	if (!PyAnySet_Check(anyset)) {
@@ -1998,6 +2008,21 @@ PySet_Add(PyObject *set, PyObject *key)
 	return set_add_key((PySetObject *)set, key);
 }
 
+int
+_PySet_Next(PyObject *set, Py_ssize_t *pos, PyObject **entry)
+{
+	setentry *entry_ptr;
+
+	if (!PyAnySet_Check(set)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	if (set_next((PySetObject *)set, pos, &entry_ptr) == 0)
+		return 0;
+	*entry = entry_ptr->key;
+	return 1;
+}
+
 PyObject *
 PySet_Pop(PyObject *set)
 {
@@ -2008,6 +2033,15 @@ PySet_Pop(PyObject *set)
 	return set_pop((PySetObject *)set);
 }
 
+int
+_PySet_Update(PyObject *set, PyObject *iterable)
+{
+	if (!PyType_IsSubtype(set->ob_type, &PySet_Type)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	return set_update_internal((PySetObject *)set, iterable);
+}
 
 #ifdef Py_DEBUG
 
@@ -2024,7 +2058,11 @@ PySet_Pop(PyObject *set)
 static PyObject *
 test_c_api(PySetObject *so)
 {
-	PyObject *elem, *dup, *t, *f, *ob = (PyObject *)so;
+	int count;
+	char *s;
+	Py_ssize_t i;
+	PyObject *elem, *dup, *t, *f, *dup2;
+	PyObject *ob = (PyObject *)so;
 
 	/* Verify preconditions and exercise type/size checks */
 	assert(PyAnySet_Check(ob));
@@ -2054,6 +2092,35 @@ test_c_api(PySetObject *so)
 	assert(PySet_GET_SIZE(ob) == 2);
 	assert(PySet_Discard(ob, elem) == 0);
 	assert(PySet_GET_SIZE(ob) == 2);
+
+	/* Exercise clear */
+	dup2 = PySet_New(dup);
+	assert(PySet_Clear(dup2) == 0);
+	assert(PySet_Size(dup2) == 0);
+	Py_DECREF(dup2);
+
+	/* Raise SystemError on clear or update of frozen set */
+	f = PyFrozenSet_New(dup);
+	assertRaises(PySet_Clear(f) == -1, PyExc_SystemError);
+	assertRaises(_PySet_Update(f, dup) == -1, PyExc_SystemError);
+	Py_DECREF(f);
+
+	/* Exercise direct iteration */
+	i = 0, count = 0;
+	while (_PySet_Next((PyObject *)dup, &i, &elem)) {
+		s = PyString_AsString(elem);
+		assert(s && (s[0] == 'a' || s[0] == 'b' || s[0] == 'c'));
+		count++;
+	}
+	assert(count == 3);
+
+	/* Exercise updates */
+	dup2 = PySet_New(NULL);
+	assert(_PySet_Update(dup2, dup) == 0);
+	assert(PySet_Size(dup2) == 3);
+	assert(_PySet_Update(dup2, dup) == 0);
+	assert(PySet_Size(dup2) == 3);
+	Py_DECREF(dup2);
 
 	/* Raise SystemError when self argument is not a set or frozenset. */
 	t = PyTuple_New(0);

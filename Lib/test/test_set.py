@@ -421,7 +421,7 @@ class TestSet(TestJointOps):
         self.assertRaises(ReferenceError, str, p)
 
     # C API test only available in a debug build
-    if hasattr(sys, "gettotalrefcount"):
+    if hasattr(set, "test_c_api"):
         def test_c_api(self):
             self.assertEqual(set('abc').test_c_api(), True)
 
