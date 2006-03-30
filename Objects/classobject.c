@@ -2030,45 +2030,45 @@ instance_call(PyObject *func, PyObject *arg, PyObject *kw)
 
 
 static PyNumberMethods instance_as_number = {
-	(binaryfunc)instance_add,		/* nb_add */
-	(binaryfunc)instance_sub,		/* nb_subtract */
-	(binaryfunc)instance_mul,		/* nb_multiply */
-	(binaryfunc)instance_div,		/* nb_divide */
-	(binaryfunc)instance_mod,		/* nb_remainder */
-	(binaryfunc)instance_divmod,		/* nb_divmod */
-	(ternaryfunc)instance_pow,		/* nb_power */
-	(unaryfunc)instance_neg,		/* nb_negative */
-	(unaryfunc)instance_pos,		/* nb_positive */
-	(unaryfunc)instance_abs,		/* nb_absolute */
-	(inquiry)instance_nonzero,		/* nb_nonzero */
-	(unaryfunc)instance_invert,		/* nb_invert */
-	(binaryfunc)instance_lshift,		/* nb_lshift */
-	(binaryfunc)instance_rshift,		/* nb_rshift */
-	(binaryfunc)instance_and,		/* nb_and */
-	(binaryfunc)instance_xor,		/* nb_xor */
-	(binaryfunc)instance_or,		/* nb_or */
-	(coercion)instance_coerce,		/* nb_coerce */
-	(unaryfunc)instance_int,		/* nb_int */
-	(unaryfunc)instance_long,		/* nb_long */
-	(unaryfunc)instance_float,		/* nb_float */
-	(unaryfunc)instance_oct,		/* nb_oct */
-	(unaryfunc)instance_hex,		/* nb_hex */
-	(binaryfunc)instance_iadd,		/* nb_inplace_add */
-	(binaryfunc)instance_isub,		/* nb_inplace_subtract */
-	(binaryfunc)instance_imul,		/* nb_inplace_multiply */
-	(binaryfunc)instance_idiv,		/* nb_inplace_divide */
-	(binaryfunc)instance_imod,		/* nb_inplace_remainder */
-	(ternaryfunc)instance_ipow,		/* nb_inplace_power */
-	(binaryfunc)instance_ilshift,		/* nb_inplace_lshift */
-	(binaryfunc)instance_irshift,		/* nb_inplace_rshift */
-	(binaryfunc)instance_iand,		/* nb_inplace_and */
-	(binaryfunc)instance_ixor,		/* nb_inplace_xor */
-	(binaryfunc)instance_ior,		/* nb_inplace_or */
-	(binaryfunc)instance_floordiv,		/* nb_floor_divide */
-	(binaryfunc)instance_truediv,		/* nb_true_divide */
-	(binaryfunc)instance_ifloordiv,		/* nb_inplace_floor_divide */
-	(binaryfunc)instance_itruediv,		/* nb_inplace_true_divide */
-	(lenfunc)instance_index,		/* nb_index */
+	instance_add,			/* nb_add */
+	instance_sub,			/* nb_subtract */
+	instance_mul,			/* nb_multiply */
+	instance_div,			/* nb_divide */
+	instance_mod,			/* nb_remainder */
+	instance_divmod,		/* nb_divmod */
+	instance_pow,			/* nb_power */
+	(unaryfunc)instance_neg,	/* nb_negative */
+	(unaryfunc)instance_pos,	/* nb_positive */
+	(unaryfunc)instance_abs,	/* nb_absolute */
+	(inquiry)instance_nonzero,	/* nb_nonzero */
+	(unaryfunc)instance_invert,	/* nb_invert */
+	instance_lshift,		/* nb_lshift */
+	instance_rshift,		/* nb_rshift */
+	instance_and,			/* nb_and */
+	instance_xor,			/* nb_xor */
+	instance_or,			/* nb_or */
+	instance_coerce,		/* nb_coerce */
+	(unaryfunc)instance_int,	/* nb_int */
+	(unaryfunc)instance_long,	/* nb_long */
+	(unaryfunc)instance_float,	/* nb_float */
+	(unaryfunc)instance_oct,	/* nb_oct */
+	(unaryfunc)instance_hex,	/* nb_hex */
+	instance_iadd,			/* nb_inplace_add */
+	instance_isub,			/* nb_inplace_subtract */
+	instance_imul,			/* nb_inplace_multiply */
+	instance_idiv,			/* nb_inplace_divide */
+	instance_imod,			/* nb_inplace_remainder */
+	instance_ipow,			/* nb_inplace_power */
+	instance_ilshift,		/* nb_inplace_lshift */
+	instance_irshift,		/* nb_inplace_rshift */
+	instance_iand,			/* nb_inplace_and */
+	instance_ixor,			/* nb_inplace_xor */
+	instance_ior,			/* nb_inplace_or */
+	instance_floordiv,		/* nb_floor_divide */
+	instance_truediv,		/* nb_true_divide */
+	instance_ifloordiv,		/* nb_inplace_floor_divide */
+	instance_itruediv,		/* nb_inplace_true_divide */
+	(lenfunc)instance_index,	/* nb_index */
 };
 
 PyTypeObject PyInstance_Type = {
@@ -2514,7 +2514,7 @@ PyTypeObject PyMethod_Type = {
 	(hashfunc)instancemethod_hash,		/* tp_hash */
 	instancemethod_call,			/* tp_call */
 	0,					/* tp_str */
-	(getattrofunc)instancemethod_getattro,	/* tp_getattro */
+	instancemethod_getattro,		/* tp_getattro */
 	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC  | Py_TPFLAGS_HAVE_WEAKREFS, /* tp_flags */

@@ -2063,7 +2063,7 @@ PyTypeObject PyFile_Type = {
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
-	(initproc)file_init,			/* tp_init */
+	file_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	file_new,				/* tp_new */
 	PyObject_Del,                           /* tp_free */

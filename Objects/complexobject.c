@@ -962,10 +962,10 @@ static PyNumberMethods complex_as_number = {
 	0,					/* nb_and */
 	0,					/* nb_xor */
 	0,					/* nb_or */
-	(coercion)complex_coerce,		/* nb_coerce */
-	(unaryfunc)complex_int,			/* nb_int */
-	(unaryfunc)complex_long,		/* nb_long */
-	(unaryfunc)complex_float,		/* nb_float */
+	complex_coerce,				/* nb_coerce */
+	complex_int,				/* nb_int */
+	complex_long,				/* nb_long */
+	complex_float,				/* nb_float */
 	0,					/* nb_oct */
 	0,					/* nb_hex */
 	0,					/* nb_inplace_add */
@@ -991,7 +991,7 @@ PyTypeObject PyComplex_Type = {
 	"complex",
 	sizeof(PyComplexObject),
 	0,
-	(destructor)complex_dealloc,		/* tp_dealloc */
+	complex_dealloc,			/* tp_dealloc */
 	(printfunc)complex_print,		/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */

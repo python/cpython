@@ -6380,7 +6380,7 @@ static PyMethodDef unicode_methods[] = {
     /* Order is according to common usage: often used methods should
        appear first, since lookup is done sequentially. */
 
-    {"encode", (PyCFunction) unicode_encode, METH_VARARGS, encode__doc__},
+    {"encode",  unicode_encode, METH_VARARGS, encode__doc__},
     {"replace", (PyCFunction) unicode_replace, METH_VARARGS, replace__doc__},
     {"split", (PyCFunction) unicode_split, METH_VARARGS, split__doc__},
     {"rsplit", (PyCFunction) unicode_rsplit, METH_VARARGS, rsplit__doc__},
@@ -6451,13 +6451,13 @@ static PyNumberMethods unicode_as_number = {
 
 static PySequenceMethods unicode_as_sequence = {
     (lenfunc) unicode_length, 		/* sq_length */
-    (binaryfunc) PyUnicode_Concat, 	/* sq_concat */
+    PyUnicode_Concat,		 	/* sq_concat */
     (ssizeargfunc) unicode_repeat, 	/* sq_repeat */
     (ssizeargfunc) unicode_getitem, 	/* sq_item */
     (ssizessizeargfunc) unicode_slice, 	/* sq_slice */
     0, 					/* sq_ass_item */
     0, 					/* sq_ass_slice */
-    (objobjproc)PyUnicode_Contains, 	/*sq_contains*/
+    PyUnicode_Contains, 		/* sq_contains */
 };
 
 #define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
@@ -7337,7 +7337,7 @@ PyTypeObject PyUnicode_Type = {
     0,				 	/* tp_getattr */
     0, 					/* tp_setattr */
     (cmpfunc) unicode_compare, 		/* tp_compare */
-    (reprfunc) unicode_repr, 		/* tp_repr */
+    unicode_repr, 			/* tp_repr */
     &unicode_as_number, 		/* tp_as_number */
     &unicode_as_sequence, 		/* tp_as_sequence */
     &unicode_as_mapping, 		/* tp_as_mapping */

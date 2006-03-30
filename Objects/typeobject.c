@@ -2788,7 +2788,7 @@ PyTypeObject PyBaseObject_Type = {
 	"object",				/* tp_name */
 	sizeof(PyObject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
-	(destructor)object_dealloc,		/* tp_dealloc */
+	object_dealloc,				/* tp_dealloc */
 	0,					/* tp_print */
 	0,			 		/* tp_getattr */
 	0,					/* tp_setattr */

@@ -1531,7 +1531,7 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
 }
 
 static int
-set_nocmp(PyObject *self)
+set_nocmp(PyObject *self, PyObject *other)
 {
 	PyErr_SetString(PyExc_TypeError, "cannot compare sets using cmp()");
 	return -1;
@@ -1688,7 +1688,7 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PySequenceMethods set_as_sequence = {
-	(lenfunc)set_len,		/* sq_length */
+	set_len,			/* sq_length */
 	0,				/* sq_concat */
 	0,				/* sq_repeat */
 	0,				/* sq_item */
@@ -1804,7 +1804,7 @@ PyTypeObject PySet_Type = {
 	(printfunc)set_tp_print,	/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	(cmpfunc)set_nocmp,		/* tp_compare */
+	set_nocmp,			/* tp_compare */
 	(reprfunc)set_repr,		/* tp_repr */
 	&set_as_number,			/* tp_as_number */
 	&set_as_sequence,		/* tp_as_sequence */
@@ -1899,7 +1899,7 @@ PyTypeObject PyFrozenSet_Type = {
 	(printfunc)set_tp_print,	/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	(cmpfunc)set_nocmp,		/* tp_compare */
+	set_nocmp,			/* tp_compare */
 	(reprfunc)set_repr,		/* tp_repr */
 	&frozenset_as_number,		/* tp_as_number */
 	&set_as_sequence,		/* tp_as_sequence */

@@ -315,7 +315,7 @@ static PyTypeObject _struct_sequence_template = {
 	0,					/* tp_as_number */
 	&structseq_as_sequence,			/* tp_as_sequence */
 	0,					/* tp_as_mapping */
-	(hashfunc)structseq_hash,              	/* tp_hash */
+	structseq_hash,				/* tp_hash */
 	0,              			/* tp_call */
 	0,					/* tp_str */
 	0,                       		/* tp_getattro */
