@@ -3542,12 +3542,16 @@ wrap_unaryfunc(PyObject *self, PyObject *args, void *wrapped)
 }
 
 static PyObject *
-wrap_ssizeargfunc(PyObject *self, PyObject *args, void *wrapped)
+wrap_indexargfunc(PyObject *self, PyObject *args, void *wrapped)
 {
 	ssizeargfunc func = (ssizeargfunc)wrapped;
+	PyObject* o;
 	Py_ssize_t i;
 
-	if (!PyArg_ParseTuple(args, "n", &i))
+	if (!PyArg_UnpackTuple(args, "", 1, 1, &o))
+		return NULL;
+	i = PyNumber_Index(o);
+	if (i == -1 && PyErr_Occurred())
 		return NULL;
 	return (*func)(self, i);
 }
@@ -3557,7 +3561,7 @@ getindex(PyObject *self, PyObject *arg)
 {
 	Py_ssize_t i;
 
-	i = PyInt_AsSsize_t(arg);
+	i = PyNumber_Index(arg);
 	if (i == -1 && PyErr_Occurred())
 		return -1;
 	if (i < 0) {
@@ -4366,36 +4370,21 @@ slot_nb_nonzero(PyObject *self)
 static Py_ssize_t 
 slot_nb_index(PyObject *self)
 {
-	PyObject *func, *args;
 	static PyObject *index_str;
-	Py_ssize_t result = -1;
+	PyObject *temp = call_method(self, "__index__", &index_str, "()");
+	Py_ssize_t result;
 
-	func = lookup_maybe(self, "__index__", &index_str);
-	if (func == NULL) {
-		if (!PyErr_Occurred()) {
-			PyErr_SetString(PyExc_TypeError, 
-				"object cannot be interpreted as an index");
-		}
+	if (temp == NULL)
 		return -1;
- 	}
-	args = PyTuple_New(0);
-	if (args != NULL) {
-		PyObject *temp = PyObject_Call(func, args, NULL);
-		Py_DECREF(args);
-		if (temp != NULL) {
-			if (PyInt_Check(temp) || PyLong_Check(temp)) {
-				result =
-                                  temp->ob_type->tp_as_number->nb_index(temp);
-			}
-			else {
- 				PyErr_SetString(PyExc_TypeError, 
-				    "__index__ must return an int or a long");
-				result = -1;
-			}
-			Py_DECREF(temp);
-		}
+	if (PyInt_CheckExact(temp) || PyLong_CheckExact(temp)) {
+		result = temp->ob_type->tp_as_number->nb_index(temp);
 	}
-	Py_DECREF(func);
+	else {
+		PyErr_SetString(PyExc_TypeError, 
+				"__index__ must return an int or a long");
+		result = -1;
+	}
+	Py_DECREF(temp);
 	return result;
 }
 
@@ -5026,9 +5015,9 @@ static slotdef slotdefs[] = {
 	   test_descr.notimplemented() */
 	SQSLOT("__add__", sq_concat, NULL, wrap_binaryfunc,
           "x.__add__(y) <==> x+y"),
-	SQSLOT("__mul__", sq_repeat, NULL, wrap_ssizeargfunc,
+	SQSLOT("__mul__", sq_repeat, NULL, wrap_indexargfunc,
           "x.__mul__(n) <==> x*n"),
-	SQSLOT("__rmul__", sq_repeat, NULL, wrap_ssizeargfunc,
+	SQSLOT("__rmul__", sq_repeat, NULL, wrap_indexargfunc,
           "x.__rmul__(n) <==> n*x"),
 	SQSLOT("__getitem__", sq_item, slot_sq_item, wrap_sq_item,
 	       "x.__getitem__(y) <==> x[y]"),
@@ -5054,7 +5043,7 @@ static slotdef slotdefs[] = {
 	SQSLOT("__iadd__", sq_inplace_concat, NULL,
           wrap_binaryfunc, "x.__iadd__(y) <==> x+=y"),
 	SQSLOT("__imul__", sq_inplace_repeat, NULL,
-          wrap_ssizeargfunc, "x.__imul__(y) <==> x*=y"),
+          wrap_indexargfunc, "x.__imul__(y) <==> x*=y"),
 
 	MPSLOT("__len__", mp_length, slot_mp_length, wrap_lenfunc,
 	       "x.__len__() <==> len(x)"),
