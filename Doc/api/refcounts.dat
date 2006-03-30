@@ -382,6 +382,9 @@ PyFloat_FromString:PyObject*::+1:
 PyFloat_FromString:PyObject*:str:0:
 PyFloat_FromString:char**:pend:0:ignored
 
+PyFrozenSet_New:PyObject*::+1:
+PyFrozenSet_New:PyObject*:iterable:0:
+
 PyFunction_GetClosure:PyObject*::0:
 PyFunction_GetClosure:PyObject*:op:0:
 
@@ -484,6 +487,9 @@ PyInt_FromString:PyObject*::+1:
 PyInt_FromString:char*:str:0:
 PyInt_FromString:char**:pend:0:
 PyInt_FromString:int:base:0:
+
+PyInt_FromSsize_t:PyObject*::+1:
+PyInt_FromSsize_t:Py_ssize_t:ival::
 
 PyInt_GetMax:long:::
 
@@ -1137,6 +1143,9 @@ PySet_Contains:PyObject*:key:0:
 PySet_Discard:int:::
 PySet_Discard:PyObject*:set:0:
 PySet_Discard:PyObject*:key:-1:no effect if key not found
+
+PySet_New:PyObject*::+1:
+PySet_New:PyObject*:iterable:0:
 
 PySet_Pop:PyObject*::0:or returns NULL and raises KeyError if set is empty
 PySet_Pop:PyObject*:set:0:
