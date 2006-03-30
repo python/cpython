@@ -181,7 +181,7 @@ infix_results = {
     (6,8): ('e', (6,0)),
 
     # MethodNumber(2)
-    (7,0): ('e', (0,0)), 
+    (7,0): ('e', (0,0)),
     (7,1): ('e', (0,1)),
     (7,2): ('e', (0,2)),
     (7,3): ('e', (0,3)),
@@ -192,7 +192,7 @@ infix_results = {
     (7,8): ('e', (0,8)),
 
     # CoerceNumber(2)
-    (8,0): ('e', (0,0)), 
+    (8,0): ('e', (0,0)),
     (8,1): ('e', (0,1)),
     (8,2): ('e', (0,2)),
     (8,3): ('e', (0,3)),
@@ -223,8 +223,8 @@ def process_infix_results():
                         res[i][6] = res[i][6][1]
             infix_results[key] = res
 
-        
-        
+
+
 process_infix_results()
 # now infix_results has two lists of results for every pairing.
 

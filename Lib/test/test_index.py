@@ -17,7 +17,7 @@ class ListTestCase(unittest.TestCase):
         self.n = newstyle()
         self.o2 = oldstyle()
         self.n2 = newstyle()
-    
+
     def test_basic(self):
         self.o.ind = -2
         self.n.ind = 2
@@ -25,7 +25,7 @@ class ListTestCase(unittest.TestCase):
         assert(self.seq[self.o] == 40)
         assert(operator.index(self.o) == -2)
         assert(operator.index(self.n) == 2)
-        
+
     def test_error(self):
         self.o.ind = 'dumb'
         self.n.ind = 'bad'
@@ -50,8 +50,8 @@ class TupleTestCase(unittest.TestCase):
         self.n = newstyle()
         self.o2 = oldstyle()
         self.n2 = newstyle()
-        
-    
+
+
     def test_basic(self):
         self.o.ind = -2
         self.n.ind = 2
@@ -59,7 +59,7 @@ class TupleTestCase(unittest.TestCase):
         assert(self.seq[self.o] == 40)
         assert(operator.index(self.o) == -2)
         assert(operator.index(self.n) == 2)
-        
+
     def test_error(self):
         self.o.ind = 'dumb'
         self.n.ind = 'bad'
@@ -84,8 +84,8 @@ class StringTestCase(unittest.TestCase):
         self.n = newstyle()
         self.o2 = oldstyle()
         self.n2 = newstyle()
-        
-    
+
+
     def test_basic(self):
         self.o.ind = -2
         self.n.ind = 2
@@ -93,7 +93,7 @@ class StringTestCase(unittest.TestCase):
         assert(self.seq[self.o] == self.seq[-2])
         assert(operator.index(self.o) == -2)
         assert(operator.index(self.n) == 2)
-        
+
     def test_error(self):
         self.o.ind = 'dumb'
         self.n.ind = 'bad'
@@ -119,8 +119,8 @@ class UnicodeTestCase(unittest.TestCase):
         self.n = newstyle()
         self.o2 = oldstyle()
         self.n2 = newstyle()
-        
-    
+
+
     def test_basic(self):
         self.o.ind = -2
         self.n.ind = 2
@@ -128,7 +128,7 @@ class UnicodeTestCase(unittest.TestCase):
         assert(self.seq[self.o] == self.seq[-2])
         assert(operator.index(self.o) == -2)
         assert(operator.index(self.n) == 2)
-        
+
     def test_error(self):
         self.o.ind = 'dumb'
         self.n.ind = 'bad'

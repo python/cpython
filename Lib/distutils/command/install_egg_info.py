@@ -26,7 +26,7 @@ class install_egg_info(Command):
             to_filename(safe_version(self.distribution.get_version())),
             sys.version[:3]
         )
-        self.target = os.path.join(self.install_dir, basename) 
+        self.target = os.path.join(self.install_dir, basename)
         self.outputs = [self.target]
 
     def run(self):
@@ -40,7 +40,7 @@ class install_egg_info(Command):
             f = open(target, 'w')
             self.distribution.metadata.write_pkg_file(f)
             f.close()
-            
+
     def get_outputs(self):
         return self.outputs
 

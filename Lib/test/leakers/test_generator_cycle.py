@@ -8,4 +8,3 @@ def leak():
         while True:
             yield g
     g = gen()
-
