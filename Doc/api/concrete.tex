@@ -2714,6 +2714,7 @@ rather than explicitly calling \cfunction{PyGen_New}.
 
 \begin{cfuncdesc}{PyObject*}{PyGen_New}{PyFrameObject *frame}
   Create and return a new generator object based on the \var{frame} object.
+  A reference to \var{frame} is stolen by this function.
   The parameter must not be \NULL{}.
 \end{cfuncdesc}
 
