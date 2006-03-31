@@ -474,15 +474,22 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 
 	if (!(buf = PyString_FromStringAndSize((char *) 0, len)))
 		return NULL;
+	
+	/* first check if there are bytes ready to be read */
+	Py_BEGIN_ALLOW_THREADS
+	count = SSL_pending(self->ssl);
+	Py_END_ALLOW_THREADS
 
-	sockstate = check_socket_and_wait_for_timeout(self->Socket, 0);
-	if (sockstate == SOCKET_HAS_TIMED_OUT) {
-		PyErr_SetString(PySSLErrorObject, "The read operation timed out");
-		Py_DECREF(buf);
-		return NULL;
-	} else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
-		PyErr_SetString(PySSLErrorObject, "Underlying socket too large for select().");
-		return NULL;
+	if (!count) {
+		sockstate = check_socket_and_wait_for_timeout(self->Socket, 0);
+		if (sockstate == SOCKET_HAS_TIMED_OUT) {
+			PyErr_SetString(PySSLErrorObject, "The read operation timed out");
+			Py_DECREF(buf);
+			return NULL;
+		} else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
+			PyErr_SetString(PySSLErrorObject, "Underlying socket too large for select().");
+			return NULL;
+		}
 	}
 	do {
 		err = 0;
