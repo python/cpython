@@ -5768,9 +5768,20 @@ posix_fdopen(PyObject *self, PyObject *args)
 			     "invalid file mode '%s'", mode);
 		return NULL;
 	}
-
 	Py_BEGIN_ALLOW_THREADS
-	fp = fdopen(fd, mode);
+	if (mode[0] == 'a') {
+		/* try to make sure the O_APPEND flag is set */
+		int flags;
+		flags = fcntl(fd, F_GETFL);
+		if (flags != -1)
+			fcntl(fd, F_SETFL, flags | O_APPEND);
+		fp = fdopen(fd, mode);
+		if (fp == NULL)
+			/* restore old mode if fdopen failed */
+			fcntl(fd, F_SETFL, flags);
+	} else {
+		fp = fdopen(fd, mode);
+	}
 	Py_END_ALLOW_THREADS
 	if (fp == NULL)
 		return posix_error();
