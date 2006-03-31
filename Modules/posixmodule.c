@@ -5769,6 +5769,7 @@ posix_fdopen(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	Py_BEGIN_ALLOW_THREADS
+#if !defined(MS_WINDOWS) && defined(HAVE_FCNTL_H)
 	if (mode[0] == 'a') {
 		/* try to make sure the O_APPEND flag is set */
 		int flags;
@@ -5782,6 +5783,9 @@ posix_fdopen(PyObject *self, PyObject *args)
 	} else {
 		fp = fdopen(fd, mode);
 	}
+#else
+	fp = fdopen(fd, mode);
+#endif
 	Py_END_ALLOW_THREADS
 	if (fp == NULL)
 		return posix_error();
