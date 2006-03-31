@@ -121,6 +121,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1462313, bug #1443328: the pickle modules now can handle classes
+  that have __private names in their __slots__.
+
 - A regrtest option -w was added to re-run failed tests in verbose mode.
 
 - Patch #1337756: fileinput now handles Unicode filenames correctly.
