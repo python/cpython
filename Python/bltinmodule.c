@@ -1870,32 +1870,34 @@ For most object types, eval(repr(object)) == object.");
 
 
 static PyObject *
-builtin_round(PyObject *self, PyObject *args)
+builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	double x;
+	double number;
 	double f;
 	int ndigits = 0;
 	int i;
+	static char *kwlist[] = {"number", "ndigits", 0};
 
-	if (!PyArg_ParseTuple(args, "d|i:round", &x, &ndigits))
-			return NULL;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "d|i:round",
+                kwlist, &number, &ndigits))
+                return NULL;
 	f = 1.0;
 	i = abs(ndigits);
 	while  (--i >= 0)
 		f = f*10.0;
 	if (ndigits < 0)
-		x /= f;
+		number /= f;
 	else
-		x *= f;
-	if (x >= 0.0)
-		x = floor(x + 0.5);
+		number *= f;
+	if (number >= 0.0)
+		number = floor(number + 0.5);
 	else
-		x = ceil(x - 0.5);
+		number = ceil(number - 0.5);
 	if (ndigits < 0)
-		x *= f;
+		number *= f;
 	else
-		x /= f;
-	return PyFloat_FromDouble(x);
+		number /= f;
+	return PyFloat_FromDouble(number);
 }
 
 PyDoc_STRVAR(round_doc,
@@ -2248,7 +2250,7 @@ static PyMethodDef builtin_methods[] = {
  	{"reduce",	builtin_reduce,     METH_VARARGS, reduce_doc},
  	{"reload",	builtin_reload,     METH_O, reload_doc},
  	{"repr",	builtin_repr,       METH_O, repr_doc},
- 	{"round",	builtin_round,      METH_VARARGS, round_doc},
+ 	{"round",	(PyCFunction)builtin_round,      METH_VARARGS | METH_KEYWORDS, round_doc},
  	{"setattr",	builtin_setattr,    METH_VARARGS, setattr_doc},
  	{"sorted",	(PyCFunction)builtin_sorted,     METH_VARARGS | METH_KEYWORDS, sorted_doc},
  	{"sum",		builtin_sum,        METH_VARARGS, sum_doc},
