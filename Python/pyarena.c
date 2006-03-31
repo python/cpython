@@ -6,6 +6,9 @@
    Measurements with standard library modules suggest the average
    allocation is about 20 bytes and that most compiles use a single
    block.
+
+   TODO(jhylton): Think about a realloc API, maybe just for the last
+   allocation?
 */
 
 #define DEFAULT_BLOCK_SIZE 8192
@@ -39,9 +42,25 @@ typedef struct _block {
 */
 
 struct _arena {
+        /* Pointer to the first block allocated for the arena, never NULL.
+           It is used only to find the first block when the arena is
+           being freed.
+         */
 	block *a_head;
+
+        /* Pointer to the block currently used for allocation.  It's
+           ab_next field should be NULL.  If it is not-null after a
+           call to block_alloc(), it means a new block has been allocated
+           and a_cur should be reset to point it.
+         */
 	block *a_cur;
+
+        /* A Python list object containing references to all the PyObject
+           pointers associated with this area.  They will be DECREFed
+           when the arena is freed.
+        */
         PyObject *a_objects;
+
 #if defined(Py_DEBUG)
         /* Debug output */
         size_t total_allocs;
@@ -134,6 +153,7 @@ PyArena_New()
 void
 PyArena_Free(PyArena *arena)
 {
+        int r;
 	assert(arena);
 #if defined(Py_DEBUG)
         /*
@@ -146,6 +166,13 @@ PyArena_Free(PyArena *arena)
 #endif
 	block_free(arena->a_head);
         assert(arena->a_objects->ob_refcnt == 1);
+
+        /* Clear all the elements from the list.  This is necessary
+           to guarantee that they will be DECREFed. */
+        r = PyList_SetSlice(arena->a_objects,
+                            0, PyList_GET_SIZE(arena->a_objects), NULL);
+        assert(r == 0);
+        assert(PyList_GET_SIZE(arena->a_objects) == 0);
         Py_DECREF(arena->a_objects);
 	free(arena);
 }
