@@ -1,5 +1,6 @@
 # Test just the SSL support in the socket module, in a moderately bogus way.
 
+import sys
 from test import test_support
 import socket
 import time
@@ -27,18 +28,22 @@ def test_basic():
     buf = f.read()
     f.close()
 
-def test_timeout():
-    test_support.requires('network')
+if not sys.platform.startswith('win'):
+    def test_timeout():
+        test_support.requires('network')
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(30.0)
-    # connect to service which issues an welcome banner (without need to write anything)
-    s.connect(("gmail.org", 995))
-    ss = socket.ssl(s)
-    # read part of return welcome banner twice,# read part of return welcome banner twice
-    ss.read(1)
-    ss.read(1)
-    s.close()
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(30.0)
+        # connect to service which issues an welcome banner (without need to write anything)
+        s.connect(("gmail.org", 995))
+        ss = socket.ssl(s)
+        # read part of return welcome banner twice,# read part of return welcome banner twice
+        ss.read(1)
+        ss.read(1)
+        s.close()
+else:
+    def test_timeout():
+        pass
 					    
 def test_rude_shutdown():
     try:
