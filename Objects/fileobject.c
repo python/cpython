@@ -1697,7 +1697,7 @@ drop_readahead(PyFileObject *f)
 
 /* Make sure that file has a readahead buffer with at least one byte
    (unless at EOF) and no more than bufsize.  Returns negative value on
-   error */
+   error, will set MemoryError if bufsize bytes cannot be allocated. */
 static int
 readahead(PyFileObject *f, int bufsize)
 {
@@ -1710,6 +1710,7 @@ readahead(PyFileObject *f, int bufsize)
 			drop_readahead(f);
 	}
 	if ((f->f_buf = PyMem_Malloc(bufsize)) == NULL) {
+		PyErr_NoMemory();
 		return -1;
 	}
 	Py_BEGIN_ALLOW_THREADS
