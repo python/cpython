@@ -675,7 +675,10 @@ concept, viz. produce the results only as needed instead of producing them
 all and thereby wasting memory.
 
 Thanks to itertools.tee, it is now clear "how to get the internal uses of
-m235 to share a single generator".
+m235 to share a single generator". Unfortunately, using generators this way
+creates a reference-cycle that the garbage collector (currently) can't clean
+up, so we have to explicitly break the cycle (by calling the inner
+generator's close() method)
 
 >>> from itertools import tee
 >>> def m235():
@@ -685,10 +688,11 @@ m235 to share a single generator".
 ...                        merge(times(3, m3),
 ...                              times(5, m5))):
 ...             yield n
-...     m2, m3, m5, mRes = tee(_m235(), 4)
-...     return mRes
+...     m1 = _m235()
+...     m2, m3, m5, mRes = tee(m1, 4)
+...     return m1.close, mRes
 
->>> it = m235()
+>>> closer, it = m235()
 >>> for i in range(5):
 ...     print firstn(it, 15)
 [1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20, 24]
@@ -696,6 +700,7 @@ m235 to share a single generator".
 [81, 90, 96, 100, 108, 120, 125, 128, 135, 144, 150, 160, 162, 180, 192]
 [200, 216, 225, 240, 243, 250, 256, 270, 288, 300, 320, 324, 360, 375, 384]
 [400, 405, 432, 450, 480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675]
+>>> closer()
 
 The "tee" function does just what we want. It internally keeps a generated
 result for as long as it has not been "consumed" from all of the duplicated
@@ -703,8 +708,10 @@ iterators, whereupon it is deleted. You can therefore print the hamming
 sequence during hours without increasing memory usage, or very little.
 
 The beauty of it is that recursive running after their tail FP algorithms
-are quite straightforwardly expressed with this Python idiom.
-
+are quite straightforwardly expressed with this Python idiom. The problem is
+that this creates the same kind of reference cycle as the m235()
+implementation above, and again we have to explicitly close the innermost
+generator to clean up the cycle.
 
 Ye olde Fibonacci generator, tee style.
 
@@ -721,11 +728,14 @@ Ye olde Fibonacci generator, tee style.
 ...         for res in _isum(fibHead, fibTail):
 ...             yield res
 ...
-...     fibHead, fibTail, fibRes = tee(_fib(), 3)
-...     return fibRes
+...     realfib = _fib()
+...     fibHead, fibTail, fibRes = tee(realfib, 3)
+...     return realfib.close, fibRes
 
->>> firstn(fib(), 17)
+>>> closer, fibber = fib()
+>>> firstn(fibber, 17)
 [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584]
+>>> closer()
 
 """
 
