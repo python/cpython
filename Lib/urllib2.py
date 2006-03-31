@@ -119,7 +119,7 @@ from urllib import (unwrap, unquote, splittype, splithost, quote,
 # support for FileHandler, proxies via environment variables
 from urllib import localhost, url2pathname, getproxies
 
-__version__ = "2.4"
+__version__ = "2.5"
 
 _opener = None
 def urlopen(url, data=None):
