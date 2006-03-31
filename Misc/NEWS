@@ -898,6 +898,9 @@ Library
 Build
 -----
 
+- Fix test_float, test_long, and test_struct failures on Tru64 with gcc
+  by using -mieee gcc option.
+
 - Patch #1432345: Make python compile on DragonFly.
 
 - Build support for Win64-AMD64 was added.
