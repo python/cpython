@@ -1395,6 +1395,9 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertEqual(round(-8.0, -1), -10.0)
 
+        # test new kwargs
+        self.assertEqual(round(number=-8.0, ndigits=-1), -10.0)
+
         self.assertRaises(TypeError, round)
 
     def test_setattr(self):
