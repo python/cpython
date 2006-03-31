@@ -24,25 +24,32 @@ base calendar for all computations.
 
 \begin{classdesc}{Calendar}{\optional{firstweekday}}
 Creates a \class{Calendar} object. \var{firstweekday} is an integer
-specifying the first day of the week. 0 is Monday, 6 is Sunday.
+specifying the first day of the week. \code{0} is Monday (the default),
+\code{6} is Sunday.
 
-A \class{Calendar} object provides several method that can
+A \class{Calendar} object provides several methods that can
 be used for preparing the calendar data for formatting. This
 class doesn't do any formatting itself. This is the job of
 subclasses.
 \versionadded{2.5}
+\end{classdesc}
+
+\class{Calendar} instances have the following methods:
 
 \begin{methoddesc}{firstweekday}{}
 Return the first day of the week (as specified in the constructor
-or changed via \method{setfirstweekday()}.
+or changed via \method{setfirstweekday()}).
+\end{methoddesc}
 
 \begin{methoddesc}{setfirstweekday}{weekday}
 Set the first day of the week.
+\end{methoddesc}
 
 \begin{methoddesc}{iterweekdays}{weekday}
 Return an iterator for the week day numbers that will be used
 for one week. The first number from the iterator will be the
-same as the number return by \method{firstweekday()}.
+same as the number returned by \method{firstweekday()}.
+\end{methoddesc}
 
 \begin{methoddesc}{itermonthdates}{year, month}
 Return an iterator for the month \var{month} (1-12) in the
@@ -50,99 +57,123 @@ year \var{year}. This iterator will return all days (as
 \class{datetime.date} objects) for the month and all days
 before the start of the month or after the end of the month
 that are required to get a complete week.
+\end{methoddesc}
 
 \begin{methoddesc}{itermonthdays2}{year, month}
 Return an iterator for the month \var{month} in the year
 \var{year} similar to \method{itermonthdates()}. Days returned
-will be tuple consisting of a day number and a week day
+will be tuples consisting of a day number and a week day
 number.
+\end{methoddesc}
 
 \begin{methoddesc}{itermonthdays}{year, month}
 Return an iterator for the month \var{month} in the year
 \var{year} similar to \method{itermonthdates()}. Days returned
 will simply be day numbers.
+\end{methoddesc}
 
 \begin{methoddesc}{monthdatescalendar}{year, month}
 Return a list of the weeks in the month \var{month} of
 the \var{year} as full weeks. Weeks are lists of seven
 \class{datetime.date} objects.
+\end{methoddesc}
 
 \begin{methoddesc}{monthdays2calendar}{year, month}
 Return a list of the weeks in the month \var{month} of
 the \var{year} as full weeks. Weeks are lists of seven
 tuples of day numbers and weekday numbers.
+\end{methoddesc}
 
 \begin{methoddesc}{monthdayscalendar}{year, month}
 Return a list of the weeks in the month \var{month} of
 the \var{year} as full weeks. Weeks are lists of seven
 day numbers.
+\end{methoddesc}
 
 \begin{methoddesc}{yeardatescalendar}{year, month\optional{, width}}
 Return the data for the specified year ready for formatting. The return
-value is a list of month rows. Each month row contains upto \var{width}
+value is a list of month rows. Each month row contains up to \var{width}
 months (defaulting to 3). Each month contains between 4 and 6 weeks and
-each week contains 1-7 days. Days are \class{datetime.date} objects.
+each week contains 1--7 days. Days are \class{datetime.date} objects.
+\end{methoddesc}
 
 \begin{methoddesc}{yeardays2calendar}{year, month\optional{, width}}
 Return the data for the specified year ready for formatting (similar to
 \method{yeardatescalendar()}). Entries in the week lists are tuples of
 day numbers and weekday numbers. Day numbers outside this month are zero.
+\end{methoddesc}
 
 \begin{methoddesc}{yeardayscalendar}{year, month\optional{, width}}
 Return the data for the specified year ready for formatting (similar to
 \method{yeardatescalendar()}). Entries in the week lists are day numbers.
 Day numbers outside this month are zero.
+\end{methoddesc}
 
 
 \begin{classdesc}{TextCalendar}{\optional{firstweekday}}
-This class can be used for generating plain text calendars.
+This class can be used to generate plain text calendars.
 
 \versionadded{2.5}
+\end{classdesc}
+
+\class{TextCalendar} instances have the following methods:
 
 \begin{methoddesc}{formatmonth}{theyear, themonth\optional{, w\optional{, l}}}
-Returns a month's calendar in a multi-line string. If \var{w} is
+Return a month's calendar in a multi-line string. If \var{w} is
 provided, it specifies the width of the date columns, which are
 centered. If \var{l} is given, it specifies the number of lines that
 each week will use. Depends on the first weekday as set by
 \function{setfirstweekday()}.
+\end{methoddesc}
 
 \begin{methoddesc}{prmonth}{theyear, themonth\optional{, w\optional{, l}}}
-Prints a month's calendar as returned by \method{formatmonth()}.
+Print a month's calendar as returned by \method{formatmonth()}.
+\end{methoddesc}
 
-\begin{methoddesc}{formatyear}{theyear, themonth\optional{, w\optional{, l\optional{, c\optional{, m}}}}}
-Returns a \var{m}-column calendar for an entire year as a multi-line string.
+\begin{methoddesc}{formatyear}{theyear, themonth\optional{, w\optional{,
+                               l\optional{, c\optional{, m}}}}}
+Return a \var{m}-column calendar for an entire year as a multi-line string.
 Optional parameters \var{w}, \var{l}, and \var{c} are for date column
 width, lines per week, and number of spaces between month columns,
 respectively. Depends on the first weekday as set by
 \method{setfirstweekday()}.  The earliest year for which a calendar can
 be generated is platform-dependent.
+\end{methoddesc}
 
-\begin{methoddesc}{pryear}{theyear\optional{, w\optional{, l\optional{, c\optional{, m}}}}}
-Prints the calendar for an entire year as returned by  \method{formatyear()}.
-\end{funcdesc}
+\begin{methoddesc}{pryear}{theyear\optional{, w\optional{, l\optional{,
+                           c\optional{, m}}}}}
+Print the calendar for an entire year as returned by \method{formatyear()}.
+\end{methoddesc}
 
 
 \begin{classdesc}{HTMLCalendar}{\optional{firstweekday}}
-This class can be used for generating HTML calendars.
+This class can be used to generate HTML calendars.
 
 \versionadded{2.5}
+\end{classdesc}
+
+\class{HTMLCalendar} instances have the following methods:
 
 \begin{methoddesc}{formatmonth}{theyear, themonth\optional{, withyear}}
-Returns a month's calendar as an HTML table. If \var{withyear} is
+Return a month's calendar as an HTML table. If \var{withyear} is
 true the year will be included in the header, otherwise just the
-monthname will be used.
+month name will be used.
+\end{methoddesc}
 
 \begin{methoddesc}{formatyear}{theyear, themonth\optional{, width}}
-Returns a year's calendar as an HTML table. \var{width} (defaulting to 3)
+Return a year's calendar as an HTML table. \var{width} (defaulting to 3)
 specifies the number of months per row.
+\end{methoddesc}
 
-\begin{methoddesc}{formatyearpage}{theyear, themonth\optional{, width\optional{, css\optional{, encoding}}}}
-Returns a year's calendar as an complete HTML page. \var{width}
+\begin{methoddesc}{formatyearpage}{theyear, themonth\optional{,
+                                   width\optional{, css\optional{, encoding}}}}
+Return a year's calendar as a complete HTML page. \var{width}
 (defaulting to 3) specifies the number of months per row. \var{css}
 is the name for the cascading style sheet to be used. \constant{None}
-can be passed, if no style sheet should be used. \var{encoding}
+can be passed if no style sheet should be used. \var{encoding}
 specifies the encoding to be used for the output (defaulting
-the the system default encoding).
+to the system default encoding).
+\end{methoddesc}
 
 
 For simple text calendars this module provides the following functions.
