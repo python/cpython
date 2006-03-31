@@ -5777,7 +5777,7 @@ posix_fdopen(PyObject *self, PyObject *args)
 		if (flags != -1)
 			fcntl(fd, F_SETFL, flags | O_APPEND);
 		fp = fdopen(fd, mode);
-		if (fp == NULL)
+		if (fp == NULL && flags != -1)
 			/* restore old mode if fdopen failed */
 			fcntl(fd, F_SETFL, flags);
 	} else {
