@@ -165,7 +165,7 @@ def format_exception_only(etype, value):
     if value is None:
         list.append(str(stype) + '\n')
     else:
-        if etype is SyntaxError:
+        if issubclass(etype, SyntaxError):
             try:
                 msg, (filename, lineno, offset, line) = value
             except:
