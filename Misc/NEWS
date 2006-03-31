@@ -25,6 +25,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1380952: fix SSL objects timing out on consecutive read()s
+
 - Ubuntu bug #29289: Fixed a bug that the gb18030 codec raises
   RuntimeError on encoding surrogate pair area on UCS4 build.
 
