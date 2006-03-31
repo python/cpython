@@ -8,6 +8,22 @@ class C:
     pass
 
 
+class WithoutSlots(object):
+    pass
+
+class WithWeakref(object):
+    __slots__ = ('__weakref__',)
+
+class WithPrivate(object):
+    __slots__ = ('__spam',)
+
+class WithSingleString(object):
+    __slots__ = 'spam'
+
+class WithInherited(WithSingleString):
+    __slots__ = ('eggs',)
+
+
 class CopyRegTestCase(unittest.TestCase):
 
     def test_class(self):
@@ -83,6 +99,19 @@ class CopyRegTestCase(unittest.TestCase):
         for code in -1, 0, 0x80000000L:
             self.assertRaises(ValueError, copy_reg.add_extension,
                               mod, func, code)
+
+    def test_slotnames(self):
+        self.assertEquals(copy_reg._slotnames(WithoutSlots), [])
+        self.assertEquals(copy_reg._slotnames(WithWeakref), [])
+        expected = ['_WithPrivate__spam']
+        self.assertEquals(copy_reg._slotnames(WithPrivate), expected)
+        self.assertEquals(copy_reg._slotnames(WithSingleString), ['spam'])
+        expected = ['eggs', 'spam']
+        expected.sort()
+        result = copy_reg._slotnames(WithInherited)
+        result.sort()
+        self.assertEquals(result, expected)
+
 
 def test_main():
     test_support.run_unittest(CopyRegTestCase)
