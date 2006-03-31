@@ -485,6 +485,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1250170: mimetools now gracefully handles socket.gethostname()
+  failures gracefully.
+
 - patch #1457316: "setup.py upload" now supports --identity to select the
   key to be used for signing the uploaded code.
 

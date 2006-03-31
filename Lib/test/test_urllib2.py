@@ -349,13 +349,19 @@ class HandlerTests(unittest.TestCase):
         TESTFN = test_support.TESTFN
         urlpath = sanepathname2url(os.path.abspath(TESTFN))
         towrite = "hello, world\n"
-        for url in [
+        urls = [
             "file://localhost%s" % urlpath,
             "file://%s" % urlpath,
             "file://%s%s" % (socket.gethostbyname('localhost'), urlpath),
-            "file://%s%s" % (socket.gethostbyname(socket.gethostname()),
-                             urlpath),
-            ]:
+            ]
+        try:
+            localaddr = socket.gethostbyname(socket.gethostname())    
+        except socket.gaierror:
+            localaddr = ''
+        if localaddr:
+            urls.append("file://%s%s" % (localaddr, urlpath))
+            
+        for url in urls:
             f = open(TESTFN, "wb")
             try:
                 try:
