@@ -547,7 +547,8 @@ documentation; flag constants (like \constant{O_RDONLY} and
 This function is intended for low-level I/O.  For normal usage,
 use the built-in function \function{open()}, which returns a ``file
 object'' with \method{read()} and \method{write()} methods (and many
-more).
+more).  To wrap a file descriptor in a ``file object'', use
+\function{fdopen()}.
 \end{notice}
 \end{funcdesc}
 
