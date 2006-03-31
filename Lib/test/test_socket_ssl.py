@@ -40,6 +40,9 @@ if not sys.platform.startswith('win'):
         ss.read(1)
         ss.read(1)
         s.close()
+else:
+    def test_timeout():
+        pass
 					    
 def test_rude_shutdown():
     try:
