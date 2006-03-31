@@ -29,7 +29,8 @@ import glob
 import os, sys
 import pickle, copy
 from decimal import *
-from test.test_support import TestSkipped, run_unittest, run_doctest, is_resource_enabled
+from test.test_support import (TestSkipped, run_unittest, run_doctest,
+                               is_resource_enabled)
 import random
 try:
     import threading
@@ -39,12 +40,13 @@ except ImportError:
 # Useful Test Constant
 Signals = getcontext().flags.keys()
 
-# Tests are built around these assumed context defaults
-DefaultContext.prec=9
-DefaultContext.rounding=ROUND_HALF_EVEN
-DefaultContext.traps=dict.fromkeys(Signals, 0)
+# Tests are built around these assumed context defaults.
+# test_main() restores the original context.
+ORIGINAL_CONTEXT = getcontext().copy()
+DefaultContext.prec = 9
+DefaultContext.rounding = ROUND_HALF_EVEN
+DefaultContext.traps = dict.fromkeys(Signals, 0)
 setcontext(DefaultContext)
-
 
 TESTDATADIR = 'decimaltestdata'
 if __name__ == '__main__':
@@ -1081,10 +1083,12 @@ def test_main(arith=False, verbose=None):
         DecimalTest,
     ]
 
-    run_unittest(*test_classes)
-    import decimal as DecimalModule
-    run_doctest(DecimalModule, verbose)
-
+    try:
+        run_unittest(*test_classes)
+        import decimal as DecimalModule
+        run_doctest(DecimalModule, verbose)
+    finally:
+        setcontext(ORIGINAL_CONTEXT)
 
 if __name__ == '__main__':
     # Calling with no arguments runs all tests.
