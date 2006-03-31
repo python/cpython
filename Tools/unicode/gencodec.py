@@ -348,7 +348,7 @@ def getregentry():
     l.extend(encoding_map_code)
 
     # Final new-line
-    l.append('\n')
+    l.append('')
 
     return '\n'.join(l).expandtabs()
 
