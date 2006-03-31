@@ -443,6 +443,10 @@ define in order to be compatible to the Python codec registry.
   Decodes \var{object} (taking the current state of the decoder into account)
   and returns the resulting decoded object. If this is the last call to
   \method{decode} \var{final} must be true (the default is false).
+  If \var{final} is true the decoder must decode the input completely and must
+  flush all buffers. If this isn't possible (e.g. because of incomplete byte
+  sequences at the end of the input) it must initiate error handling just like
+  in the stateless case (which might raise an exception).
 \end{methoddesc}
 
 \begin{methoddesc}{reset}{}
