@@ -3168,7 +3168,8 @@ socket_fromfd(PyObject *self, PyObject *args)
 PyDoc_STRVAR(fromfd_doc,
 "fromfd(fd, family, type[, proto]) -> socket object\n\
 \n\
-Create a socket object from the given file descriptor.\n\
+Create a socket object from a duplicate of the given\n\
+file descriptor.\n\
 The remaining arguments are the same as for socket().");
 
 #endif /* NO_DUP */
@@ -4052,7 +4053,7 @@ init_socket(void)
 	PyModule_AddIntConstant(m, "NETLINK_IP6_FW", NETLINK_IP6_FW);
 	PyModule_AddIntConstant(m, "NETLINK_DNRTMSG", NETLINK_DNRTMSG);
 	PyModule_AddIntConstant(m, "NETLINK_TAPBASE", NETLINK_TAPBASE);
-#endif
+#endif /* AF_NETLINK */
 #ifdef AF_ROUTE
 	/* Alias to emulate 4.4BSD */
 	PyModule_AddIntConstant(m, "AF_ROUTE", AF_ROUTE);
