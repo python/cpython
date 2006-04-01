@@ -489,6 +489,9 @@ Extension Modules
 Library
 -------
 
+- Patch #624325: urlparse.urlparse() and urlparse.urlsplit() results
+  now sport attributes that provide access to the parts of the result.
+
 - Patch #1462498: sgmllib now handles entity and character references
   in attribute values.
 
