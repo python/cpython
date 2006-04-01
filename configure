@@ -1513,7 +1513,9 @@ case $ac_sys_system/$ac_sys_release in
     ;;
   # On Mac OS X 10.4, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
   # disables platform specific features beyond repair.
-  Darwin/8.*)
+  # On Mac OS X 10.3, defining _POSIX_C_SOURCE or _XOPEN_SOURCE 
+  # has no effect, don't bother defineing them
+  Darwin/[78].*)
     define_xopen_source=no
     ;;
 
