@@ -4,6 +4,20 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.4.4c1?
+=============================
+
+*Release date: DD-MMM-2006*
+
+Library
+-------
+
+- Bug #1460340: ``random.sample(dict)`` failed in various ways.  Dicts
+  aren't officially supported here, and trying to use them will probably
+  raise an exception some day.  But dicts have been allowed, and "mostly
+  worked", so support for them won't go away without warning.
+
+
 What's New in Python 2.4.3?
 ===========================
 
@@ -14,10 +28,10 @@ Core and builtins
 
 - A few reference leaks were squished.
 
-- A threading issue that caused random segfaults on some platforms from 
+- A threading issue that caused random segfaults on some platforms from
   the testsuite was fixed in test_capi.
 
-- Reverted fix for Bug #1379994: Builtin unicode_escape and 
+- Reverted fix for Bug #1379994: Builtin unicode_escape and
   raw_unicode_escape codec now encodes backslash correctly.
   This caused another issue for unicode repr strings being double-escaped
   (SF Bug #1459029). Correct fix will be in 2.5, but is too risky for 2.4.3.

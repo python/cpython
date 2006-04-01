@@ -285,6 +285,15 @@ class Random(_random.Random):
         large population:   sample(xrange(10000000), 60)
         """
 
+        # XXX Although the documentation says `population` is "a sequence",
+        # XXX attempts are made to cater to any iterable with a __len__
+        # XXX method.  This has had mixed success.  Examples from both
+        # XXX sides:  sets work fine, and should become officially supported;
+        # XXX dicts are much harder, and have failed in various subtle
+        # XXX ways across attempts.  Support for mapping types should probably
+        # XXX be dropped (and users should pass mapping.keys() or .values()
+        # XXX explicitly).
+
         # Sampling without replacement entails tracking either potential
         # selections (the pool) in a list or previous selections in a
         # dictionary.
@@ -302,7 +311,9 @@ class Random(_random.Random):
         random = self.random
         _int = int
         result = [None] * k
-        if n < 6 * k:     # if n len list takes less space than a k len dict
+        if n < 6 * k or hasattr(population, "keys"):
+            # An n-length list is smaller than a k-length set, or this is a
+            # mapping type so the other algorithm wouldn't work.
             pool = list(population)
             for i in xrange(k):         # invariant:  non-selected at [0,n-i)
                 j = _int(random() * (n-i))
@@ -316,10 +327,10 @@ class Random(_random.Random):
                     while j in selected:
                         j = _int(random() * n)
                     result[i] = selected[j] = population[j]
-            except (TypeError, KeyError):   # handle sets and dictionaries
+            except (TypeError, KeyError):   # handle (at least) sets
                 if isinstance(population, list):
                     raise
-                return self.sample(list(population), k)
+                return self.sample(tuple(population), k)
         return result
 
 ## -------------------- real-valued distributions  -------------------
