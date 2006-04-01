@@ -737,6 +737,9 @@ yes)
 	Darwin*)
 	    BASECFLAGS="$BASECFLAGS -Wno-long-double -no-cpp-precomp -mno-fused-madd"
 	    ;;
+	OSF*)
+	    BASECFLAGS="$BASECFLAGS -mieee"
+	    ;;
     esac
     ;;
 

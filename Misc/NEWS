@@ -9,6 +9,12 @@ What's New in Python 2.4.4c1?
 
 *Release date: DD-MMM-2006*
 
+Core and builtins
+-----------------
+
+Extension Modules
+-----------------
+
 Library
 -------
 
@@ -16,6 +22,14 @@ Library
   aren't officially supported here, and trying to use them will probably
   raise an exception some day.  But dicts have been allowed, and "mostly
   worked", so support for them won't go away without warning.
+
+Tools/Demos
+-----------
+
+Build
+-----
+
+- Fix test_long failure on Tru64 with gcc by using -mieee gcc option.
 
 
 What's New in Python 2.4.3?
