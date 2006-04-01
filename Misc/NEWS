@@ -64,10 +64,10 @@ Core and builtins
   to "error" is triggered) when raising a warning for raising string
   exceptions.
 
-- CO_GENERATOR_ALLOWED is no longer defined, this behavior is the default.
+- CO_GENERATOR_ALLOWED is no longer defined. This behavior is the default.
   The name was removed from Include/code.h.
 
-- PEP 308: conditional expressions were added (x if cond else y).
+- PEP 308: conditional expressions were added: (x if cond else y).
 
 - Patch 1433928:
   - The copy module now "copies" function objects (as atomic objects).
@@ -125,12 +125,12 @@ Core and builtins
 
 - Patch #1350409: Work around signal handling bug in Visual Studio 2005.
 
-- Bug #1281408: Py_BuildValue now works correct even with unsigned longs
+- Bug #1281408: Py_BuildValue now works correctly even with unsigned longs
   and long longs.
 
 - SF Bug #1350188, "setdlopenflags" leads to crash upon "import"
-  It was possible dlerror() returns a NULL pointer, use a default error
-  message in this case.
+  It was possible for dlerror() to return a NULL pointer, so 
+  it will now use a default error message in this case.
 
 - Replaced most Unicode charmap codecs with new ones using the
   new Unicode translate string feature in the builtin charmap
@@ -140,13 +140,13 @@ Core and builtins
 
 - Added a few more codecs for Mac OS encodings
 
-- Speed up some Unicode operations.
+- Sped up some Unicode operations.
 
 - A new AST parser implementation was completed. The abstract
   syntax tree is available for read-only (non-compile) access
   to Python code; an _ast module was added.
 
-- SF bug #1167751: fix incorrect code being for generator expressions.
+- SF bug #1167751: fix incorrect code being produced for generator expressions.
   The following code now raises a SyntaxError:  foo(a = i for i in range(10))
 
 - SF Bug #976608: fix SystemError when mtime of an imported file is -1.
@@ -158,7 +158,7 @@ Core and builtins
 
 - SF bug #772896: unknown encoding results in MemoryError.
 
-- All iterators now have a Boolean value of true.  Formerly, some iterators
+- All iterators now have a Boolean value of True.  Formerly, some iterators
   supported a __len__() method which evaluated to False when the iterator
   was empty.
 
@@ -198,7 +198,7 @@ Core and builtins
 - SF bug #1185883:  Python's small-object memory allocator took over
   a block managed by the platform C library whenever a realloc specified
   a small new size.  However, there's no portable way to know then how
-  much of the address space following the pointer is valid, so no
+  much of the address space following the pointer is valid, so there's no
   portable way to copy data from the C-managed block into Python's
   small-object space without risking a memory fault.  Python's small-object
   realloc now leaves such blocks under the control of the platform C
@@ -669,7 +669,7 @@ Library
 - Bug #1163178: Make IDNA return an empty string when the input is empty.
 
 - Patch #848017: Make Cookie more RFC-compliant. Use CRLF as default output
-  separator and do not output trailing semicola.
+  separator and do not output trailing semicolon.
 
 - Patch #1062060: urllib.urlretrieve() now raises a new exception, named
   ContentTooShortException, when the actually downloaded size does not
@@ -707,7 +707,7 @@ Library
 - Bug #1177468: Don't cache the /dev/urandom file descriptor for os.urandom,
   as this can cause problems with apps closing all file descriptors.
 
-- Bug #839151: Fix an attempt to access sys.argv in the warnings module
+- Bug #839151: Fix an attempt to access sys.argv in the warnings module;
   it can be missing in embedded interpreters
 
 - Bug #1155638: Fix a bug which affected HTTP 0.9 responses in httplib.
@@ -721,7 +721,7 @@ Library
   Bug #1224621.
 
 - The tokenize module has a new untokenize() function to support a full
-  roundtrip from lexed tokens back to Python sourcecode.  In addition,
+  roundtrip from lexed tokens back to Python source code.  In addition,
   the generate_tokens() function now accepts a callable argument that
   terminates by raising StopIteration.
 
