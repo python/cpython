@@ -45,7 +45,10 @@ extern PyTypeObject StatementType;
 int statement_create(Statement* self, Connection* connection, PyObject* sql);
 void statement_dealloc(Statement* self);
 
-int statement_recompile(Statement* self);
+int statement_bind_parameter(Statement* self, int pos, PyObject* parameter);
+void statement_bind_parameters(Statement* self, PyObject* parameters);
+
+int statement_recompile(Statement* self, PyObject* parameters);
 int statement_finalize(Statement* self);
 int statement_reset(Statement* self);
 void statement_mark_dirty(Statement* self);

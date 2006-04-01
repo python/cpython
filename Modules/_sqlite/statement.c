@@ -22,7 +22,10 @@
  */
 
 #include "statement.h"
+#include "cursor.h"
 #include "connection.h"
+#include "microprotocols.h"
+#include "prepare_protocol.h"
 
 /* prototypes */
 int check_remaining_sql(const char* tail);
@@ -82,7 +85,136 @@ int statement_create(Statement* self, Connection* connection, PyObject* sql)
     return rc;
 }
 
-int statement_recompile(Statement* self)
+int statement_bind_parameter(Statement* self, int pos, PyObject* parameter)
+{
+    int rc = SQLITE_OK;
+    long longval;
+#ifdef HAVE_LONG_LONG
+    PY_LONG_LONG longlongval;
+#endif
+    const char* buffer;
+    char* string;
+    int buflen;
+    PyObject* stringval;
+
+    if (parameter == Py_None) {
+        rc = sqlite3_bind_null(self->st, pos);
+    } else if (PyInt_Check(parameter)) {
+        longval = PyInt_AsLong(parameter);
+        rc = sqlite3_bind_int64(self->st, pos, (sqlite_int64)longval);
+#ifdef HAVE_LONG_LONG
+    } else if (PyLong_Check(parameter)) {
+        longlongval = PyLong_AsLongLong(parameter);
+        /* in the overflow error case, longlongval is -1, and an exception is set */
+        rc = sqlite3_bind_int64(self->st, pos, (sqlite_int64)longlongval);
+#endif
+    } else if (PyFloat_Check(parameter)) {
+        rc = sqlite3_bind_double(self->st, pos, PyFloat_AsDouble(parameter));
+    } else if (PyBuffer_Check(parameter)) {
+        if (PyObject_AsCharBuffer(parameter, &buffer, &buflen) == 0) {
+            rc = sqlite3_bind_blob(self->st, pos, buffer, buflen, SQLITE_TRANSIENT);
+        } else {
+            PyErr_SetString(PyExc_ValueError, "could not convert BLOB to buffer");
+            rc = -1;
+        }
+    } else if PyString_Check(parameter) {
+        string = PyString_AsString(parameter);
+        rc = sqlite3_bind_text(self->st, pos, string, -1, SQLITE_TRANSIENT);
+    } else if PyUnicode_Check(parameter) {
+        stringval = PyUnicode_AsUTF8String(parameter);
+        string = PyString_AsString(stringval);
+        rc = sqlite3_bind_text(self->st, pos, string, -1, SQLITE_TRANSIENT);
+        Py_DECREF(stringval);
+    } else {
+        rc = -1;
+    }
+
+    return rc;
+}
+
+void statement_bind_parameters(Statement* self, PyObject* parameters)
+{
+    PyObject* current_param;
+    PyObject* adapted;
+    const char* binding_name;
+    int i;
+    int rc;
+    int num_params_needed;
+    int num_params;
+
+    Py_BEGIN_ALLOW_THREADS
+    num_params_needed = sqlite3_bind_parameter_count(self->st);
+    Py_END_ALLOW_THREADS
+
+    if (PyDict_Check(parameters)) {
+        /* parameters passed as dictionary */
+        for (i = 1; i <= num_params_needed; i++) {
+            Py_BEGIN_ALLOW_THREADS
+            binding_name = sqlite3_bind_parameter_name(self->st, i);
+            Py_END_ALLOW_THREADS
+            if (!binding_name) {
+                PyErr_Format(ProgrammingError, "Binding %d has no name, but you supplied a dictionary (which has only names).", i);
+                return;
+            }
+
+            binding_name++; /* skip first char (the colon) */
+            current_param = PyDict_GetItemString(parameters, binding_name);
+            if (!current_param) {
+                PyErr_Format(ProgrammingError, "You did not supply a value for binding %d.", i);
+                return;
+            }
+
+            Py_INCREF(current_param);
+            adapted = microprotocols_adapt(current_param, (PyObject*)&SQLitePrepareProtocolType, NULL);
+            if (adapted) {
+                Py_DECREF(current_param);
+            } else {
+                PyErr_Clear();
+                adapted = current_param;
+            }
+
+            rc = statement_bind_parameter(self, i, adapted);
+            Py_DECREF(adapted);
+
+            if (rc != SQLITE_OK) {
+                PyErr_Format(InterfaceError, "Error binding parameter :%s - probably unsupported type.", binding_name);
+                return;
+           }
+        }
+    } else {
+        /* parameters passed as sequence */
+        num_params = PySequence_Length(parameters);
+        if (num_params != num_params_needed) {
+            PyErr_Format(ProgrammingError, "Incorrect number of bindings supplied. The current statement uses %d, and there are %d supplied.",
+                         num_params_needed, num_params);
+            return;
+        }
+        for (i = 0; i < num_params; i++) {
+            current_param = PySequence_GetItem(parameters, i);
+            if (!current_param) {
+                return;
+            }
+            adapted = microprotocols_adapt(current_param, (PyObject*)&SQLitePrepareProtocolType, NULL);
+
+            if (adapted) {
+                Py_DECREF(current_param);
+            } else {
+                PyErr_Clear();
+                adapted = current_param;
+            }
+
+            rc = statement_bind_parameter(self, i + 1, adapted);
+            Py_DECREF(adapted);
+
+            if (rc != SQLITE_OK) {
+                PyErr_Format(InterfaceError, "Error binding parameter %d - probably unsupported type.", i);
+                return;
+            }
+        }
+    }
+}
+
+int statement_recompile(Statement* self, PyObject* params)
 {
     const char* tail;
     int rc;
@@ -98,7 +230,17 @@ int statement_recompile(Statement* self)
                          &tail);
 
     if (rc == SQLITE_OK) {
+        /* The efficient sqlite3_transfer_bindings is only available in SQLite
+         * version 3.2.2 or later. For older SQLite releases, that might not
+         * even define SQLITE_VERSION_NUMBER, we do it the manual way.
+         */
+        #ifdef SQLITE_VERSION_NUMBER
+        #if SQLITE_VERSION_NUMBER >= 3002002
         (void)sqlite3_transfer_bindings(self->st, new_st);
+        #endif
+        #else
+        statement_bind_parameters(self, params);
+        #endif
 
         (void)sqlite3_finalize(self->st);
         self->st = new_st;

@@ -690,6 +690,7 @@ class PyBuildExt(build_ext):
             dblib_dir = None
 
         # The sqlite interface
+        sqlite_setup_debug = True   # verbose debug prints from this script?
 
         # We hunt for "#define SQLITE_VERSION_NUMBER nnnnn"
         # We need to find a version >= 3002002 (> sqlite version 3.2.2)
@@ -701,22 +702,37 @@ class PyBuildExt(build_ext):
                              '/usr/local/include/sqlite',
                              '/usr/local/include/sqlite3',
                            ]
-        MIN_SQLITE_VERSION = 3002002
+        MIN_SQLITE_VERSION_NUMBER = 3000008
+        MIN_SQLITE_VERSION = "3.0.8"
         for d in sqlite_inc_paths + inc_dirs:
             f = os.path.join(d, "sqlite3.h")
             if os.path.exists(f):
-                if db_setup_debug: print "found %s"%f
+                if sqlite_setup_debug: print "sqlite: found %s"%f
                 f = open(f).read()
                 m = re.search(r"#define\WSQLITE_VERSION_NUMBER\W(\d+)", f)
                 if m:
                     sqlite_version = int(m.group(1))
-                    if sqlite_version >= MIN_SQLITE_VERSION:
+                    if sqlite_version >= MIN_SQLITE_VERSION_NUMBER:
                         # we win!
                         print "%s/sqlite3.h: version %s"%(d, sqlite_version)
                         sqlite_incdir = d
                         break
+                    elif sqlite_version == 3000000:
+                        # Bug in a common version out there where 
+                        # SQLITE_VERSION_NUMBER was set incorrectly
+                        if sqlite_setup_debug: 
+                            print "found buggy SQLITE_VERSION_NUMBER, checking"
+                        m = re.search(r'#define\WSQLITE_VERSION\W+"([\.\d]+)"',
+                                                                            f)
+                        if m:
+                            sqlite_version = m.group(1)
+                            if sqlite_version >= MIN_SQLITE_VERSION:
+                                print "%s/sqlite3.h: version %s"%(d, 
+                                                            sqlite_version)
+                                sqlite_incdir = d
+                                break
                     else:
-                        if db_setup_debug: 
+                        if sqlite_setup_debug: 
                             print "%s: version %d is too old, need >= %s"%(d,
                                         sqlite_version, MIN_SQLITE_VERSION)
         
