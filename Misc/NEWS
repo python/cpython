@@ -489,6 +489,11 @@ Extension Modules
 Library
 -------
 
+- Bug #1460340: ``random.sample(dict)`` failed in various ways.  Dicts
+  aren't officially supported here, and trying to use them will probably
+  raise an exception some day.  But dicts have been allowed, and "mostly
+  worked", so support for them won't go away without warning.
+
 - Bug #1445068: getpass.getpass() can now be given an explicit stream
   argument to specify where to write the prompt.
 
