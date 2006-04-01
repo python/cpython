@@ -689,6 +689,81 @@ class PyBuildExt(build_ext):
             dblibs = []
             dblib_dir = None
 
+        # The sqlite interface
+
+        # We hunt for "#define SQLITE_VERSION_NUMBER nnnnn"
+        # We need to find a version >= 3002002 (> sqlite version 3.2.2)
+        sqlite_incdir = sqlite_libdir = None
+        sqlite_inc_paths = [ '/usr/include', 
+                             '/usr/include/sqlite',
+                             '/usr/include/sqlite3',
+                             '/usr/local/include',
+                             '/usr/local/include/sqlite',
+                             '/usr/local/include/sqlite3',
+                           ]
+        MIN_SQLITE_VERSION = 3002002
+        for d in sqlite_inc_paths + inc_dirs:
+            f = os.path.join(d, "sqlite3.h")
+            if os.path.exists(f):
+                if db_setup_debug: print "found %s"%f
+                f = open(f).read()
+                m = re.search(r"#define\WSQLITE_VERSION_NUMBER\W(\d+)", f)
+                if m:
+                    sqlite_version = int(m.group(1))
+                    if sqlite_version >= MIN_SQLITE_VERSION:
+                        # we win!
+                        print "%s/sqlite3.h: version %s"%(d, sqlite_version)
+                        sqlite_incdir = d
+                        break
+                    else:
+                        if db_setup_debug: 
+                            print "%s: version %d is too old, need >= %s"%(d,
+                                        sqlite_version, MIN_SQLITE_VERSION)
+        
+        if sqlite_incdir:
+            sqlite_dirs_to_check = [
+                os.path.join(sqlite_incdir, '..', 'lib64'),
+                os.path.join(sqlite_incdir, '..', 'lib'),
+                os.path.join(sqlite_incdir, '..', '..', 'lib64'),
+                os.path.join(sqlite_incdir, '..', '..', 'lib'),
+            ]
+            sqlite_libfile = self.compiler.find_library_file(
+                                sqlite_dirs_to_check + lib_dirs, 'sqlite3')
+            sqlite_libdir = [os.path.abspath(os.path.dirname(sqlite_libfile))]
+
+        if sqlite_incdir and sqlite_libdir:
+            sqlite_srcs = ['_sqlite/adapters.c',
+                '_sqlite/cache.c',
+                '_sqlite/connection.c',
+                '_sqlite/converters.c',
+                '_sqlite/cursor.c',
+                '_sqlite/microprotocols.c',
+                '_sqlite/module.c',
+                '_sqlite/prepare_protocol.c',
+                '_sqlite/row.c',
+                '_sqlite/statement.c',
+                '_sqlite/util.c', ]
+
+            PYSQLITE_VERSION = "2.1.3"
+            sqlite_defines = []
+            if sys.platform != "win32":
+                sqlite_defines.append(('PYSQLITE_VERSION', 
+                                        '"%s"' % PYSQLITE_VERSION))
+            else:
+                sqlite_defines.append(('PYSQLITE_VERSION', 
+                                        '\\"'+PYSQLITE_VERSION+'\\"'))
+            sqlite_defines.append(('PY_MAJOR_VERSION', 
+                                        str(sys.version_info[0])))
+            sqlite_defines.append(('PY_MINOR_VERSION', 
+                                        str(sys.version_info[1])))
+
+            exts.append(Extension('_sqlite3', sqlite_srcs,
+                                  define_macros=sqlite_defines,
+                                  include_dirs=["Modules/_sqlite", 
+                                                sqlite_incdir],
+                                  library_dirs=sqlite_libdir,
+                                  runtime_library_dirs=sqlite_libdir,
+                                  libraries=["sqlite3",]))
 
         # Look for Berkeley db 1.85.   Note that it is built as a different
         # module name so it can be included even when later versions are
