@@ -2057,14 +2057,15 @@ exception is raised.  But see the following exception:
 \item
 
 Exception to the previous item: if the left operand is an instance of
-a built-in type or a new-style class, and the right operand is an
-instance of a proper subclass of that type or class, the right
-operand's \method{__rop__()} method is tried \emph{before} the left
-operand's \method{__op__()} method.  This is done so that a subclass can
-completely override binary operators.  Otherwise, the left operand's
-__op__ method would always accept the right operand: when an instance
-of a given class is expected, an instance of a subclass of that class
-is always acceptable.
+a built-in type or a new-style class, and the right operand is an instance
+of a proper subclass of that type or class and overrides the base's
+\method{__rop__()} method, the right operand's \method{__rop__()} method
+is tried \emph{before} the left operand's \method{__op__()} method.
+
+This is done so that a subclass can completely override binary operators.
+Otherwise, the left operand's \method{__op__()} method would always
+accept the right operand: when an instance of a given class is expected,
+an instance of a subclass of that class is always acceptable.
 
 \item
 
