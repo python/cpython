@@ -94,7 +94,7 @@ int statement_bind_parameter(Statement* self, int pos, PyObject* parameter)
 #endif
     const char* buffer;
     char* string;
-    int buflen;
+    Py_ssize_t buflen;
     PyObject* stringval;
 
     if (parameter == Py_None) {
