@@ -920,7 +920,9 @@ Library
 
 - Bug #947906: An object oriented interface has been added to the calendar
   module. It's possible to generate HTML calendar now and the module can be
-  called as a script (e.g. via ``python -mcalendar``).
+  called as a script (e.g. via ``python -mcalendar``). Localized month and
+  weekday names can be ouput (even if an exotic encoding is used) using
+  special classes that use unicode.
 
 Build
 -----
