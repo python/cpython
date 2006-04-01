@@ -58,8 +58,9 @@ struct instr {
 };
 
 typedef struct basicblock_ {
-	/* next block in the list of blocks for a unit (don't confuse with
-	 * b_next) */
+    /* Each basicblock in a compilation unit is linked via b_list in the
+       reverse order that the block are allocated.  b_list points to the next
+       block, not to be confused with b_next, which is next by control flow. */
 	struct basicblock_ *b_list;
 	/* number of instructions used */
 	int b_iused;
@@ -114,7 +115,9 @@ struct compiler_unit {
 	PyObject *u_private;	/* for private name mangling */
 
 	int u_argcount;	   /* number of arguments for block */ 
-	basicblock *u_blocks; /* pointer to list of blocks */
+    /* Pointer to the most recently allocated block.  By following b_list
+       members, you can reach all early allocated blocks. */
+	basicblock *u_blocks;
 	basicblock *u_curblock; /* pointer to current block */
 	int u_tmpname;	   /* temporary variables for list comps */
 
@@ -1194,7 +1197,7 @@ compiler_new_block(struct compiler *c)
 		return NULL;
 	}
 	memset((void *)b, 0, sizeof(basicblock));
-	assert (b->b_next == NULL);
+    /* Extend the singly linked list of blocks with new block. */
 	b->b_list = u->u_blocks;
 	u->u_blocks = b;
 	return b;
@@ -1266,6 +1269,13 @@ compiler_next_instr(struct compiler *c, basicblock *b)
 	}
 	return b->b_iused++;
 }
+
+/* Set the i_lineno member of the instruction at offse off if the
+   line number for the current expression/statement (?) has not
+   already been set.  If it has been set, the call has no effect.
+
+   Every time a new node is b
+   */
 
 static void
 compiler_set_lineno(struct compiler *c, int off)
@@ -1609,7 +1619,6 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 	off = compiler_next_instr(c, c->u->u_curblock);
 	if (off < 0)
 		return 0;
-	compiler_set_lineno(c, off);
 	i = &c->u->u_curblock->b_instr[off];
 	i->i_opcode = opcode;
 	i->i_target = b;
@@ -1618,6 +1627,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 		i->i_jabs = 1;
 	else
 		i->i_jrel = 1;
+	compiler_set_lineno(c, off);
 	return 1;
 }
 
@@ -2230,7 +2240,7 @@ compiler_while(struct compiler *c, stmt_ty s)
 		ADDOP(c, POP_BLOCK);
 	}
 	compiler_pop_fblock(c, LOOP, loop);
-	if (orelse != NULL)
+	if (orelse != NULL) /* what if orelse is just pass? */
 		VISIT_SEQ(c, stmt, s->v.While.orelse);
 	compiler_use_next_block(c, end);
 
@@ -2610,8 +2620,10 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 {
 	int i, n;
 
+    /* Always assign a lineno to the next instruction for a stmt. */
 	c->u->u_lineno = s->lineno;
 	c->u->u_lineno_set = false;
+
 	switch (s->kind) {
 	case FunctionDef_kind:
 		return compiler_function(c, s);
@@ -3486,6 +3498,9 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 {
 	int i, n;
 
+    /* If expr e has a different line number than the last expr/stmt,
+       set a new line number for the next instruction.
+       */
 	if (e->lineno > c->u->u_lineno) {
 		c->u->u_lineno = e->lineno;
 		c->u->u_lineno_set = false;
