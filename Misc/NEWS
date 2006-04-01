@@ -489,6 +489,11 @@ Extension Modules
 Library
 -------
 
+- Added the sqlite3 package. This is based on pysqlite2.1.3, and provides
+  a DB-API interface in the standard library. You'll need sqlite 3.2.2 or
+  later to build this - if you have an earlier version, the C extension 
+  module will not be built.
+
 - Bug #1460340: ``random.sample(dict)`` failed in various ways.  Dicts
   aren't officially supported here, and trying to use them will probably
   raise an exception some day.  But dicts have been allowed, and "mostly
