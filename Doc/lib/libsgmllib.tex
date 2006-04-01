@@ -95,9 +95,16 @@ lower case, and the \var{method} argument is the bound method which
 should be used to support semantic interpretation of the start tag.
 The \var{attributes} argument is a list of \code{(\var{name},
 \var{value})} pairs containing the attributes found inside the tag's
-\code{<>} brackets.  The \var{name} has been translated to lower case.
+\code{<>} brackets.
+
+The \var{name} has been translated to lower case.
 Double quotes and backslashes in the \var{value} have been interpreted,
-as well as known entity and character references.
+as well as known character references and known entity references
+terminated by a semicolon (normally, entity references can be terminated
+by any non-alphanumerical character, but this would break the very
+common case of \code{<A HREF="url?spam=1&eggs=2">} when \code{eggs}
+is a valid entity name).
+
 For instance, for the tag \code{<A HREF="http://www.cwi.nl/">}, this
 method would be called as \samp{unknown_starttag('a', [('href',
 'http://www.cwi.nl/')])}.  The base implementation simply calls
