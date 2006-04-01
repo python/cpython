@@ -3113,7 +3113,8 @@ socket_fromfd(PyObject *self, PyObject *args)
 PyDoc_STRVAR(fromfd_doc,
 "fromfd(fd, family, type[, proto]) -> socket object\n\
 \n\
-Create a socket object from the given file descriptor.\n\
+Create a socket object from a duplicate of the given\n\
+file descriptor.\n\
 The remaining arguments are the same as for socket().");
 
 #endif /* NO_DUP */
