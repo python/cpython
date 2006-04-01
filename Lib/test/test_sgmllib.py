@@ -214,6 +214,20 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
             ("starttag", "e", [("a", "rgb(1,2,3)")]),
             ])
 
+    def test_attr_values_entities(self):
+        """Substitution of entities and charrefs in attribute values"""
+        # SF bug #1452246
+        self.check_events("""<a b=&lt; c=&lt;&gt; d=&lt-&gt; e='&lt; '
+                                f="&xxx;" g='&#32;&#33;' h='&#500;' i='x?a=b&c=d;'>""",
+            [("starttag", "a", [("b", "<"),
+                                ("c", "<>"),
+                                ("d", "&lt->"),
+                                ("e", "< "),
+                                ("f", "&xxx;"),
+                                ("g", " !"),
+                                ("h", "&#500;"),
+                                ("i", "x?a=b&c=d;"), ])])
+
     def test_attr_funky_names(self):
         self.check_events("""<a a.b='v' c:d=v e-f=v>""", [
             ("starttag", "a", [("a.b", "v"), ("c:d", "v"), ("e-f", "v")]),
