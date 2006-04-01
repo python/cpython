@@ -239,7 +239,7 @@ PyObject* _fetch_one_row(Cursor* self)
     PY_LONG_LONG intval;
     PyObject* converter;
     PyObject* converted;
-    int nbytes;
+    Py_ssize_t nbytes;
     PyObject* buffer;
     void* raw_buffer;
     const char* val_str;
