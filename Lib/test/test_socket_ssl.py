@@ -30,7 +30,7 @@ def test_basic():
 # XXX Tim disabled this test on all platforms, for now, since the
 # XXX s.connect(("gmail.org", 995))
 # XXX line starting timing out on all the builbot slaves.
-if 0: not sys.platform.startswith('win'):
+if 0: #not sys.platform.startswith('win'):
     def test_timeout():
         test_support.requires('network')
 
