@@ -176,6 +176,24 @@ to the system default encoding).
 \end{methoddesc}
 
 
+\begin{classdesc}{LocaleTextCalendar}{\optional{firstweekday\optional{, locale}}}
+This subclass of \class{TextCalendar} can be passed a locale name in the
+constructor and will return month and weekday names in the specified locale.
+If this locale includes an encoding all strings containing month and weekday
+names will be returned as unicode.
+\versionadded{2.5}
+\end{classdesc}
+
+
+\begin{classdesc}{LocaleHTMLCalendar}{\optional{firstweekday\optional{, locale}}}
+This subclass of \class{HTMLCalendar} can be passed a locale name in the
+constructor and will return month and weekday names in the specified locale.
+If this locale includes an encoding all strings containing month and weekday
+names will be returned as unicode.
+\versionadded{2.5}
+\end{classdesc}
+
+
 For simple text calendars this module provides the following functions.
 
 \begin{funcdesc}{setfirstweekday}{weekday}
