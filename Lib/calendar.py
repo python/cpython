@@ -128,25 +128,14 @@ class Calendar(object):
     """
 
     def __init__(self, firstweekday=0):
-        self._firstweekday = firstweekday # 0 = Monday, 6 = Sunday
-
-    def firstweekday(self):
-        return self._firstweekday
-
-    def setfirstweekday(self, weekday):
-        """
-        Set weekday (Monday=0, Sunday=6) to start each week.
-        """
-        if not MONDAY <= weekday <= SUNDAY:
-            raise IllegalWeekdayError(weekday)
-        self._firstweekday = weekday
+        self.firstweekday = firstweekday # 0 = Monday, 6 = Sunday
 
     def iterweekdays(self):
         """
         Return a iterator for one week of weekday numbers starting with the
         configured first one.
         """
-        for i in xrange(self._firstweekday, self._firstweekday + 7):
+        for i in xrange(self.firstweekday, self.firstweekday + 7):
             yield i%7
 
     def itermonthdates(self, year, month):
@@ -157,13 +146,13 @@ class Calendar(object):
         """
         date = datetime.date(year, month, 1)
         # Go back to the beginning of the week
-        days = (date.weekday() - self._firstweekday) % 7
+        days = (date.weekday() - self.firstweekday) % 7
         date -= datetime.timedelta(days=days)
         oneday = datetime.timedelta(days=1)
         while True:
             yield date
             date += oneday
-            if date.month != month and date.weekday() == self._firstweekday:
+            if date.month != month and date.weekday() == self.firstweekday:
                 break
 
     def itermonthdays2(self, year, month):
@@ -570,8 +559,14 @@ class LocaleHTMLCalendar(HTMLCalendar):
 # Support for old module level interface
 c = TextCalendar()
 
-firstweekday = c.firstweekday
-setfirstweekday = c.setfirstweekday
+def firstweekday():
+    return c.firstweekday
+
+def setfirstweekday(firstweekday):
+    if not MONDAY <= firstweekday <= SUNDAY:
+        raise IllegalWeekdayError(firstweekday)
+    c.firstweekday = firstweekday
+
 monthcalendar = c.monthdayscalendar
 prweek = c.prweek
 week = c.formatweek
