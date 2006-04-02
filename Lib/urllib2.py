@@ -14,7 +14,7 @@ non-error returns.  The HTTPRedirectHandler automatically deals with
 HTTP 301, 302, 303 and 307 redirect errors, and the HTTPDigestAuthHandler
 deals with digest authentication.
 
-urlopen(url, data=None) -- basic usage is that same as original
+urlopen(url, data=None) -- basic usage is the same as original
 urllib.  pass the url and optionally data to post to an HTTP URL, and
 get a file-like object back.  One difference is that you can also pass
 a Request instance instead of URL.  Raises a URLError (subclass of
@@ -77,15 +77,12 @@ f = urllib2.urlopen('http://www.python.org/')
 # the handler knows that the problem was, e.g., that it didn't know
 # that hash algo that requested in the challenge, it would be good to
 # pass that information along to the client, too.
-
-# XXX to do:
-# name!
-# documentation (getting there)
-# complex proxies
-# abstract factory for opener
 # ftp errors aren't handled cleanly
-# gopher can return a socket.error
 # check digest against correct (i.e. non-apache) implementation
+
+# Possible extensions:
+# complex proxies  XXX not sure what exactly was meant by this
+# abstract factory for opener
 
 import base64
 import ftplib
@@ -111,8 +108,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-# not sure how many of these need to be gotten rid of
-from urllib import (unwrap, unquote, splittype, splithost, quote,
+from urllib import (unwrap, unquote, splittype, splithost,
      addinfourl, splitport, splitgophertype, splitquery,
      splitattr, ftpwrapper, noheaders, splituser, splitpasswd, splitvalue)
 
@@ -331,8 +327,9 @@ class OpenerDirector:
         pass
 
     def _call_chain(self, chain, kind, meth_name, *args):
-        # XXX raise an exception if no one else should try to handle
-        # this url.  return None if you can't but someone else could.
+        # Handlers raise an exception if no one else should try to handle
+        # the request, or return None if they can't but another handler
+        # could.  Otherwise, they return the response.
         handlers = chain.get(kind, ())
         for handler in handlers:
             func = getattr(handler, meth_name)
@@ -674,50 +671,6 @@ class ProxyHandler(BaseHandler):
             # a request for http://acme.example.com/a into one for
             # ftp://proxy.example.com/a
             return self.parent.open(req)
-
-# feature suggested by Duncan Booth
-# XXX custom is not a good name
-class CustomProxy:
-    # either pass a function to the constructor or override handle
-    def __init__(self, proto, func=None, proxy_addr=None):
-        self.proto = proto
-        self.func = func
-        self.addr = proxy_addr
-
-    def handle(self, req):
-        if self.func and self.func(req):
-            return 1
-
-    def get_proxy(self):
-        return self.addr
-
-class CustomProxyHandler(BaseHandler):
-    # Proxies must be in front
-    handler_order = 100
-
-    def __init__(self, *proxies):
-        self.proxies = {}
-
-    def proxy_open(self, req):
-        proto = req.get_type()
-        try:
-            proxies = self.proxies[proto]
-        except KeyError:
-            return None
-        for p in proxies:
-            if p.handle(req):
-                req.set_proxy(p.get_proxy())
-                return self.parent.open(req)
-        return None
-
-    def do_proxy(self, p, req):
-        return self.parent.open(req)
-
-    def add_proxy(self, cpo):
-        if cpo.proto in self.proxies:
-            self.proxies[cpo.proto].append(cpo)
-        else:
-            self.proxies[cpo.proto] = [cpo]
 
 class HTTPPasswordMgr:
     def __init__(self):
@@ -1333,6 +1286,7 @@ class CacheFTPHandler(FTPHandler):
 
 class GopherHandler(BaseHandler):
     def gopher_open(self, req):
+        # XXX can raise socket.error
         import gopherlib  # this raises DeprecationWarning in 2.5
         host = req.get_host()
         if not host:
@@ -1348,25 +1302,3 @@ class GopherHandler(BaseHandler):
         else:
             fp = gopherlib.send_selector(selector, host)
         return addinfourl(fp, noheaders(), req.get_full_url())
-
-#bleck! don't use this yet
-class OpenerFactory:
-
-    default_handlers = [UnknownHandler, HTTPHandler,
-                        HTTPDefaultErrorHandler, HTTPRedirectHandler,
-                        FTPHandler, FileHandler]
-    handlers = []
-    replacement_handlers = []
-
-    def add_handler(self, h):
-        self.handlers = self.handlers + [h]
-
-    def replace_handler(self, h):
-        pass
-
-    def build_opener(self):
-        opener = OpenerDirector()
-        for ph in self.default_handlers:
-            if inspect.isclass(ph):
-                ph = ph()
-            opener.add_handler(ph)
