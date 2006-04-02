@@ -1130,8 +1130,11 @@ class FileHandler(BaseHandler):
     names = None
     def get_names(self):
         if FileHandler.names is None:
-            FileHandler.names = (socket.gethostbyname('localhost'),
-                                 socket.gethostbyname(socket.gethostname()))
+            try:
+                FileHandler.names = (socket.gethostbyname('localhost'),
+                                    socket.gethostbyname(socket.gethostname()))
+            except socket.gaierror:
+                FileHandler.names = (socket.gethostbyname('localhost'),)
         return FileHandler.names
 
     # not entirely sure what the rules are here
