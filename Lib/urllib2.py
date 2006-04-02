@@ -108,7 +108,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-from urllib import (unwrap, unquote, splittype, splithost,
+from urllib import (unwrap, unquote, splittype, splithost, quote,
      addinfourl, splitport, splitgophertype, splitquery,
      splitattr, ftpwrapper, noheaders, splituser, splitpasswd, splitvalue)
 
