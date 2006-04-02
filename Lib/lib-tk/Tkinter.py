@@ -449,18 +449,15 @@ class Misc:
             # I'd rather use time.sleep(ms*0.001)
             self.tk.call('after', ms)
         else:
-            # XXX Disgusting hack to clean up after calling func
-            tmp = []
-            def callit(func=func, args=args, self=self, tmp=tmp):
+            def callit():
                 try:
                     func(*args)
                 finally:
                     try:
-                        self.deletecommand(tmp[0])
+                        self.deletecommand(name)
                     except TclError:
                         pass
             name = self._register(callit)
-            tmp.append(name)
             return self.tk.call('after', ms, name)
     def after_idle(self, func, *args):
         """Call FUNC once if the Tcl main loop has no event to
