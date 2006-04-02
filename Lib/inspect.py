@@ -484,19 +484,6 @@ def getcomments(object):
                 comments[-1:] = []
             return string.join(comments, '')
 
-class ListReader:
-    """Provide a readline() method to return lines from a list of strings."""
-    def __init__(self, lines):
-        self.lines = lines
-        self.index = 0
-
-    def readline(self):
-        i = self.index
-        if i < len(self.lines):
-            self.index = i + 1
-            return self.lines[i]
-        else: return ''
-
 class EndOfBlock(Exception): pass
 
 class BlockFinder:
@@ -506,40 +493,46 @@ class BlockFinder:
         self.islambda = False
         self.started = False
         self.passline = False
-        self.last = 0
+        self.last = 1
 
     def tokeneater(self, type, token, (srow, scol), (erow, ecol), line):
         if not self.started:
+            # look for the first "def", "class" or "lambda"
             if token in ("def", "class", "lambda"):
                 if token == "lambda":
                     self.islambda = True
                 self.started = True
-            self.passline = True
+            self.passline = True    # skip to the end of the line
         elif type == tokenize.NEWLINE:
-            self.passline = False
+            self.passline = False   # stop skipping when a NEWLINE is seen
             self.last = srow
+            if self.islambda:       # lambdas always end at the first NEWLINE
+                raise EndOfBlock
         elif self.passline:
             pass
-        elif self.islambda:
-            raise EndOfBlock, self.last
         elif type == tokenize.INDENT:
             self.indent = self.indent + 1
             self.passline = True
         elif type == tokenize.DEDENT:
             self.indent = self.indent - 1
-            if self.indent == 0:
-                raise EndOfBlock, self.last
-        elif type == tokenize.NAME and scol == 0:
-            raise EndOfBlock, self.last
+            # the end of matching indent/dedent pairs end a block
+            # (note that this only works for "def"/"class" blocks,
+            #  not e.g. for "if: else:" or "try: finally:" blocks)
+            if self.indent <= 0:
+                raise EndOfBlock
+        elif self.indent == 0 and type not in (tokenize.COMMENT, tokenize.NL):
+            # any other token on the same indentation level end the previous
+            # block as well, except the pseudo-tokens COMMENT and NL.
+            raise EndOfBlock
 
 def getblock(lines):
     """Extract the block of code at the top of the given list of lines."""
+    blockfinder = BlockFinder()
     try:
-        tokenize.tokenize(ListReader(lines).readline, BlockFinder().tokeneater)
-    except EndOfBlock, eob:
-        return lines[:eob.args[0]]
-    # Fooling the indent/dedent logic implies a one-line definition
-    return lines[:1]
+        tokenize.tokenize(iter(lines).next, blockfinder.tokeneater)
+    except (EndOfBlock, IndentationError):
+        pass
+    return lines[:blockfinder.last]
 
 def getsourcelines(object):
     """Return a list of source lines and starting line number for an object.
