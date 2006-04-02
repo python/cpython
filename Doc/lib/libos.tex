@@ -343,6 +343,10 @@ Availability: Macintosh, \UNIX, Windows.
 \versionchanged[When specified, the \var{mode} argument must now start
   with one of the letters \character{r}, \character{w}, or \character{a},
   otherwise a \exception{ValueError} is raised]{2.3}
+\versionchanged[On \UNIX, when the \var{mode} argument starts with
+  \character{a}, the \var{O_APPEND} flag is set on the file descriptor
+  (which the \cfunction{fdopen()} implementation already does on most
+  platforms)]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{popen}{command\optional{, mode\optional{, bufsize}}}
@@ -1732,7 +1736,7 @@ The \function{spawn()} functions called with \constant{P_NOWAIT}
 return suitable process handles.
 \end{funcdesc}
 
-\begin{funcdesc}{wait3}{\{optional{options}}
+\begin{funcdesc}{wait3}{\optional{options}}
 Similar to \function{waitpid()}, except no process id argument is given and
 a 3-element tuple containing the child's process id, exit status indication,
 and resource usage information is returned.  Refer to
