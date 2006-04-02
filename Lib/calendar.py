@@ -152,7 +152,7 @@ class Calendar(object):
         while True:
             yield date
             date += oneday
-            if date.month != month and date.weekday() == self.firstweekday:
+            if date.month != month and date.weekday() == self.firstweekday%7:
                 break
 
     def itermonthdays2(self, year, month):
