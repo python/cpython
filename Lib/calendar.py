@@ -131,11 +131,9 @@ class Calendar(object):
         self.firstweekday = firstweekday # 0 = Monday, 6 = Sunday
 
     def getfirstweekday(self):
-        return self._firstweekday
+        return self._firstweekday % 7
     
     def setfirstweekday(self, firstweekday):
-        if not MONDAY <= firstweekday <= SUNDAY:
-            raise IllegalWeekdayError(firstweekday)
         self._firstweekday = firstweekday
     firstweekday = property(getfirstweekday, setfirstweekday)
 
