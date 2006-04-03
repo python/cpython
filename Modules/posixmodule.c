@@ -7469,28 +7469,31 @@ win32_startfile(PyObject *self, PyObject *args)
 	HINSTANCE rc;
 #ifdef Py_WIN_WIDE_FILENAMES
 	if (unicode_file_names()) {
-		PyObject *unipath, *woperation;
+		PyObject *unipath, *woperation = NULL;
 		if (!PyArg_ParseTuple(args, "U|s:startfile",
 				      &unipath, &operation)) {
 			PyErr_Clear();
 			goto normal;
 		}
 		
-		woperation = PyUnicode_DecodeASCII(operation, 
-					           strlen(operation), NULL);
-		if (!woperation) {
-			PyErr_Clear();
-			goto normal;
+
+		if (operation) {
+		    woperation = PyUnicode_DecodeASCII(operation, 
+						       strlen(operation), NULL);
+		    if (!woperation) {
+			    PyErr_Clear();
+			    operation = NULL;
+			    goto normal;
+		    }
 		}
 			
 		Py_BEGIN_ALLOW_THREADS
-		rc = ShellExecuteW((HWND)0, operation,
+		rc = ShellExecuteW((HWND)0, woperation ? PyUnicode_AS_UNICODE(woperation) : 0,
 			PyUnicode_AS_UNICODE(unipath),
-			PyUnicode_AS_UNICODE(woperation),
 			NULL, NULL, SW_SHOWNORMAL);
 		Py_END_ALLOW_THREADS
 
-		Py_DECREF(woperation);
+		Py_XDECREF(woperation);
 		if (rc <= (HINSTANCE)32) {
 			PyObject *errval = win32_error_unicode("startfile",
 						PyUnicode_AS_UNICODE(unipath));
