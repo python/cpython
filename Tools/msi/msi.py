@@ -886,7 +886,7 @@ def add_files(db):
                 continue
             tcltk.set_current()
         elif dir in ['test', 'tests', 'data', 'output']:
-            # test: Lib, Lib/email, Lib/bsddb
+            # test: Lib, Lib/email, Lib/bsddb, Lib/ctypes, Lib/sqlite3
             # tests: Lib/distutils
             # data: Lib/email/test
             # output: Lib/test
@@ -913,6 +913,7 @@ def add_files(db):
             lib.add_file("test.xml.out")
             lib.add_file("testtar.tar")
             lib.add_file("test_difflib_expect.html")
+            lib.add_file("check_soundcard.vbs")
             lib.glob("*.uue")
             lib.add_file("readme.txt", src="README")
         if dir=='decimaltestdata':
