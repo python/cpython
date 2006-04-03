@@ -445,7 +445,7 @@ class DictTest(unittest.TestCase):
             self.fail_("g[42] didn't raise KeyError")
 
 
-import mapping_tests
+from test import mapping_tests
 
 class GeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
     type2test = dict
