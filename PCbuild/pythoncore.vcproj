@@ -623,7 +623,7 @@
 			RelativePath="..\Modules\mathmodule.c">
 		</File>
 		<File
-			RelativePath="..\Modules\md5c.c">
+			RelativePath="..\Modules\md5.c">
 		</File>
 		<File
 			RelativePath="..\Modules\md5module.c">
