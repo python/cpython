@@ -413,10 +413,10 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
 
 static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
 {
-    int i;
+    int i, result;
     PyObject *s, *l = PyList_New(num_fields);
     if (!l) return 0;
-    for(i=0; i < num_fields; i++) {
+    for(i = 0; i < num_fields; i++) {
         s = PyString_FromString(attrs[i]);
         if (!s) {
             Py_DECREF(l);
@@ -424,7 +424,9 @@ static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
         }
         PyList_SET_ITEM(l, i, s);
     }
-    return PyObject_SetAttrString((PyObject*)type, "_attributes", l) >=0;
+    result = PyObject_SetAttrString((PyObject*)type, "_attributes", l) >= 0;
+    Py_DECREF(l);
+    return result;
 }
 
 static PyObject* ast2obj_list(asdl_seq *seq, PyObject* (*func)(void*))
@@ -465,9 +467,9 @@ static PyObject* ast2obj_int(bool b)
 }
 """, 0, reflow=False)
 
-        self.emit("static int initialized;", 0)
         self.emit("static int init_types(void)",0)
         self.emit("{", 0)
+        self.emit("static int initialized;", 1)
         self.emit("if (initialized) return 1;", 1)
         self.emit('AST_type = make_type("AST", &PyBaseObject_Type, NULL, 0);', 1)
         for dfn in mod.dfns:
@@ -543,7 +545,7 @@ class ASTModuleVisitor(PickleVisitor):
         self.addObj(cons.name)
 
     def addObj(self, name):
-        self.emit('if(PyDict_SetItemString(d, "%s", (PyObject*)%s_type) < 0) return;' % (name, name), 1)
+        self.emit('if (PyDict_SetItemString(d, "%s", (PyObject*)%s_type) < 0) return;' % (name, name), 1)
 
 _SPECIALIZED_SEQUENCES = ('stmt', 'expr')
 
