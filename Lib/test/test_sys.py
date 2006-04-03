@@ -261,6 +261,11 @@ class SysModuleTest(unittest.TestCase):
         self.assert_(vi[3] in ("alpha", "beta", "candidate", "final"))
         self.assert_(isinstance(vi[4], int))
 
+    def test_43581(self):
+        # Can't use sys.stdout, as this is a cStringIO object when
+        # the test runs under regrtest.
+        self.assert_(sys.__stdout__.encoding == sys.__stderr__.encoding)
+
 def test_main():
     test.test_support.run_unittest(SysModuleTest)
 
