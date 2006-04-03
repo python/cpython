@@ -2476,7 +2476,7 @@ compiler_import(struct compiler *c, stmt_ty s)
 		int r;
 		PyObject *level;
 
-		if (c->c_flags && (c->c_flags->cf_flags & CO_FUTURE_ABSIMPORT))
+		if (c->c_flags && (c->c_flags->cf_flags & CO_FUTURE_ABSOLUTE_IMPORT))
 			level = PyInt_FromLong(0);
 		else
 			level = PyInt_FromLong(-1);
@@ -2524,7 +2524,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 		return 0;
 
 	if (s->v.ImportFrom.level == 0 && c->c_flags &&
-	    !(c->c_flags->cf_flags & CO_FUTURE_ABSIMPORT))
+	    !(c->c_flags->cf_flags & CO_FUTURE_ABSOLUTE_IMPORT))
 		level = PyInt_FromLong(-1);
 	else
 		level = PyInt_FromLong(s->v.ImportFrom.level);
