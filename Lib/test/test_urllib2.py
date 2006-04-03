@@ -355,12 +355,12 @@ class HandlerTests(unittest.TestCase):
             "file://%s%s" % (socket.gethostbyname('localhost'), urlpath),
             ]
         try:
-            localaddr = socket.gethostbyname(socket.gethostname())    
+            localaddr = socket.gethostbyname(socket.gethostname())
         except socket.gaierror:
             localaddr = ''
         if localaddr:
             urls.append("file://%s%s" % (localaddr, urlpath))
-            
+
         for url in urls:
             f = open(TESTFN, "wb")
             try:

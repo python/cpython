@@ -270,7 +270,7 @@ class SGMLParser(markupbase.ParserBase):
             if not rest:
                 attrvalue = attrname
             else:
-                if (attrvalue[:1] == "'" == attrvalue[-1:] or 
+                if (attrvalue[:1] == "'" == attrvalue[-1:] or
                     attrvalue[:1] == '"' == attrvalue[-1:]):
                     # strip quotes
                     attrvalue = attrvalue[1:-1]
