@@ -491,6 +491,10 @@ Extension Modules
 Library
 -------
 
+- The email module's parsedate_tz function now sets the daylight savings
+  flag to -1 (unknown) since it can't tell from the date whether it should
+  be set.
+
 - Patch #624325: urlparse.urlparse() and urlparse.urlsplit() results
   now sport attributes that provide access to the parts of the result.
 

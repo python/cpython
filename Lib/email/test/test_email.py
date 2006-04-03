@@ -2113,12 +2113,12 @@ class TestMiscellaneous(TestEmailBase):
     def test_parsedate_no_dayofweek(self):
         eq = self.assertEqual
         eq(Utils.parsedate_tz('25 Feb 2003 13:47:26 -0800'),
-           (2003, 2, 25, 13, 47, 26, 0, 1, 0, -28800))
+           (2003, 2, 25, 13, 47, 26, 0, 1, -1, -28800))
 
     def test_parsedate_compact_no_dayofweek(self):
         eq = self.assertEqual
         eq(Utils.parsedate_tz('5 Feb 2003 13:47:26 -0800'),
-           (2003, 2, 5, 13, 47, 26, 0, 1, 0, -28800))
+           (2003, 2, 5, 13, 47, 26, 0, 1, -1, -28800))
 
     def test_parsedate_acceptable_to_time_functions(self):
         eq = self.assertEqual
