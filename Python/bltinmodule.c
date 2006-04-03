@@ -31,23 +31,25 @@ static PyObject *filterunicode(PyObject *, PyObject *);
 static PyObject *filtertuple (PyObject *, PyObject *);
 
 static PyObject *
-builtin___import__(PyObject *self, PyObject *args)
+builtin___import__(PyObject *self, PyObject *args, PyObject *kwds)
 {
+	static char *kwlist[] = {"name", "globals", "locals", "fromlist",
+				 "level", 0};
 	char *name;
 	PyObject *globals = NULL;
 	PyObject *locals = NULL;
 	PyObject *fromlist = NULL;
 	int level = -1;
 
-	if (!PyArg_ParseTuple(args, "s|OOOi:__import__",
-			&name, &globals, &locals, &fromlist, &level))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|OOOi:__import__",
+			kwlist, &name, &globals, &locals, &fromlist, &level))
 		return NULL;
 	return PyImport_ImportModuleLevel(name, globals, locals,
 					  fromlist, level);
 }
 
 PyDoc_STRVAR(import_doc,
-"__import__(name, globals, locals, fromlist) -> module\n\
+"__import__(name, globals={}, locals={}, fromlist=[], level=-1) -> module\n\
 \n\
 Import a module.  The globals are only used to determine the context;\n\
 they are not modified.  The locals are currently unused.  The fromlist\n\
@@ -55,7 +57,10 @@ should be a list of names to emulate ``from name import ...'', or an\n\
 empty list to emulate ``import name''.\n\
 When importing a module from a package, note that __import__('A.B', ...)\n\
 returns package A when fromlist is empty, but its submodule B when\n\
-fromlist is not empty.");
+fromlist is not empty.  Level is used to determine whether to perform \n\
+absolute or relative imports.  -1 is the original strategy of attempting\n\
+both absolute and relative imports, 0 is absolute, a positive number\n\
+is the number of parent directories to search relative to the current module.");
 
 
 static PyObject *
@@ -2210,7 +2215,7 @@ in length to the length of the shortest argument sequence.");
 
 
 static PyMethodDef builtin_methods[] = {
- 	{"__import__",	builtin___import__, METH_VARARGS, import_doc},
+ 	{"__import__",	(PyCFunction)builtin___import__, METH_VARARGS | METH_KEYWORDS, import_doc},
  	{"abs",		builtin_abs,        METH_O, abs_doc},
  	{"all",		builtin_all,        METH_O, all_doc},
  	{"any",		builtin_any,        METH_O, any_doc},
