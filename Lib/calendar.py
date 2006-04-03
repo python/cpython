@@ -130,6 +130,15 @@ class Calendar(object):
     def __init__(self, firstweekday=0):
         self.firstweekday = firstweekday # 0 = Monday, 6 = Sunday
 
+    def getfirstweekday(self):
+        return self._firstweekday
+    
+    def setfirstweekday(self, firstweekday):
+        if not MONDAY <= firstweekday <= SUNDAY:
+            raise IllegalWeekdayError(firstweekday)
+        self._firstweekday = firstweekday
+    firstweekday = property(getfirstweekday, setfirstweekday)
+
     def iterweekdays(self):
         """
         Return a iterator for one week of weekday numbers starting with the
@@ -559,14 +568,8 @@ class LocaleHTMLCalendar(HTMLCalendar):
 # Support for old module level interface
 c = TextCalendar()
 
-def firstweekday():
-    return c.firstweekday
-
-def setfirstweekday(firstweekday):
-    if not MONDAY <= firstweekday <= SUNDAY:
-        raise IllegalWeekdayError(firstweekday)
-    c.firstweekday = firstweekday
-
+firstweekday = c.getfirstweekday
+setfirstweekday = c.setfirstweekday
 monthcalendar = c.monthdayscalendar
 prweek = c.prweek
 week = c.formatweek
