@@ -491,6 +491,9 @@ Extension Modules
 - datetime.datetime() now has a strptime class method which can be used to
   create datetime object using a string and format.
 
+- Patch #360466: Replace the MD5 implementation from RSA Data Security Inc
+  with the implementation from http://sourceforge.net/projects/libmd5-rfc/.
+
 Library
 -------
 
