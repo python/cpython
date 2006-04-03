@@ -6,7 +6,7 @@
 #  "python2"?
 #WARNING: Commenting out doesn't work.  Last line is what's used.
 %define config_binsuffix none
-%define config_binsuffix 2.4
+%define config_binsuffix 2.5
 
 #  Build tkinter?  "auto" enables it if /usr/bin/wish exists.
 #WARNING: Commenting out doesn't work.  Last line is what's used.
@@ -33,9 +33,9 @@
 #################################
 
 %define name python
-%define version 2.4
-%define libvers 2.4
-%define release 2pydotorg
+%define version 2.5a1
+%define libvers 2.5
+%define release 1pydotorg
 %define __prefix /usr
 
 #  kludge to get around rpm <percent>define weirdness
@@ -62,6 +62,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildPrereq: expat-devel
 BuildPrereq: db4-devel
 BuildPrereq: gdbm-devel
+BuildPrereq: sqlite-devel
 Prefix: %{__prefix}
 Packager: Sean Reifschneider <jafo-rpms@tummy.com>
 
@@ -354,6 +355,8 @@ rm -f mainpkg.files tools.files
 %{__prefix}/%{libdirname}/python%{libvers}/test
 %{__prefix}/%{libdirname}/python%{libvers}/xml
 %{__prefix}/%{libdirname}/python%{libvers}/email
+%{__prefix}/%{libdirname}/python%{libvers}/email/mime
+%{__prefix}/%{libdirname}/python%{libvers}/sqlite3
 %{__prefix}/%{libdirname}/python%{libvers}/compiler
 %{__prefix}/%{libdirname}/python%{libvers}/bsddb
 %{__prefix}/%{libdirname}/python%{libvers}/hotshot
