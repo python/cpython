@@ -15,7 +15,7 @@ class LoaderTest(unittest.TestCase):
             name = "libc.dylib"
         elif sys.platform.startswith("freebsd"):
             name = "libc.so"
-        elif sys.platform == "sunos5":
+        elif sys.platform in ("sunos5", "osf1V5"):
             name = "libc.so"
         elif sys.platform.startswith("netbsd") or sys.platform.startswith("openbsd"):
             name = "libc.so"

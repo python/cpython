@@ -56,7 +56,10 @@ elif os.name == "posix":
         expr = '/[^\(\)\s]*lib%s\.[^\(\)\s]*' % name
         res = re.search(expr, os.popen('/sbin/ldconfig -p 2>/dev/null').read())
         if not res:
-            return None
+            cmd = 'ldd %s 2>/dev/null' % sys.executable
+            res = re.search(expr, os.popen(cmd).read())
+            if not res:
+                return None
         return res.group(0)
 
     def _get_soname(f):
