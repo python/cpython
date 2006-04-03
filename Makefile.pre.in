@@ -682,6 +682,7 @@ LIBSUBDIRS=	lib-old lib-tk site-packages test test/output test/data \
 		test/decimaltestdata \
 		encodings compiler hotshot \
 		email email/mime email/test email/test/data \
+		sqlite3 sqlite3/test \
 		logging bsddb bsddb/test csv \
 		ctypes ctypes/test idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
