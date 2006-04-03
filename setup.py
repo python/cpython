@@ -999,115 +999,73 @@ class PyBuildExt(build_ext):
                 carbon_extra_compile_args = []
 
             # Mac OS X specific modules.
-            exts.append( Extension('_CF', ['cf/_CFmodule.c', 'cf/pycfbridge.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'CoreFoundation']) )
-            exts.append( Extension('ColorPicker', ['ColorPickermodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('autoGIL', ['autoGIL.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'CoreFoundation']) )
-            exts.append( Extension('gestalt', ['gestaltmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('MacOS', ['macosmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('OSATerminology', ['OSATerminology.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('icglue', ['icgluemodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Res', ['res/_Resmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Snd', ['snd/_Sndmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('Nav', ['Nav.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_AE', ['ae/_AEmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_AH', ['ah/_AHmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_App', ['app/_Appmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_CarbonEvt', ['carbonevt/_CarbonEvtmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_CG', ['cg/_CGmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'ApplicationServices']) )
-            exts.append( Extension('_Cm', ['cm/_Cmmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Ctl', ['ctl/_Ctlmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Dlg', ['dlg/_Dlgmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Drag', ['drag/_Dragmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Evt', ['evt/_Evtmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_File', ['file/_Filemodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Folder', ['folder/_Foldermodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Fm', ['fm/_Fmmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Help', ['help/_Helpmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Icn', ['icn/_Icnmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_IBCarbon', ['ibcarbon/_IBCarbon.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Launch', ['launch/_Launchmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'ApplicationServices']) )
-            exts.append( Extension('_List', ['list/_Listmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Menu', ['menu/_Menumodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Mlte', ['mlte/_Mltemodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_OSA', ['osa/_OSAmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Qd', ['qd/_Qdmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Qdoffs', ['qdoffs/_Qdoffsmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
+            def macSrcExists(name1, name2=''):
+                if not name1:
+                    return None
+                names = (name1,)
+                if name2:
+                    names = (name1, name2)
+                path = os.path.join(srcdir, 'Mac', 'Modules', *names)
+                return os.path.exists(path)
+
+            def addMacExtension(name, kwds, extra_srcs=[]):
+                dirname = ''
+                if name[0] == '_':
+                    dirname = name[1:].lower()
+                cname = name + '.c'
+                cmodulename = name + 'module.c'
+                # Check for NNN.c, NNNmodule.c, _nnn/NNN.c, _nnn/NNNmodule.c
+                if macSrcExists(cname):
+                    srcs = [cname]
+                elif macSrcExists(cmodulename):
+                    srcs = [cmodulename]
+                elif macSrcExists(dirname, cname):
+                    # XXX(nnorwitz): If all the names ended with module, we
+                    # wouldn't need this condition.  ibcarbon is the only one.
+                    srcs = [os.path.join(dirname, cname)]
+                elif macSrcExists(dirname, cmodulename):
+                    srcs = [os.path.join(dirname, cmodulename)]
+                else:
+                    raise RuntimeError("%s not found" % name)
+
+                # Here's the whole point:  add the extension with sources
+                exts.append(Extension(name, srcs + extra_srcs, **kwds))
+
+            # Core Foundation
+            core_kwds = {'extra_compile_args': carbon_extra_compile_args,
+                         'extra_link_args': ['-framework', 'CoreFoundation'],
+                        }
+            addMacExtension('_CF', core_kwds, ['cf/pycfbridge.c'])
+            addMacExtension('autoGIL', core_kwds)
+
+            # Carbon
+            carbon_kwds = {'extra_compile_args': carbon_extra_compile_args,
+                           'extra_link_args': ['-framework', 'Carbon'],
+                          }
+            CARBON_EXTS = ['ColorPicker', 'gestalt', 'MacOS', 'Nav', 
+                           'OSATerminology', 'icglue', 
+                           # All these are in subdirs
+                           '_AE', '_AH', '_App', '_CarbonEvt', '_Cm', '_Ctl', 
+                           '_Dlg', '_Drag', '_Evt', '_File', '_Folder', '_Fm',
+                           '_Help', '_Icn', '_IBCarbon', '_List', 
+                           '_Menu', '_Mlte', '_OSA', '_Res', '_Qd', '_Qdoffs', 
+                           '_Scrap', '_Snd', '_TE', '_Win',
+                          ] 
+            for name in CARBON_EXTS:
+                addMacExtension(name, carbon_kwds)
+
+            # Application Services & QuickTime
+            app_kwds = {'extra_compile_args': carbon_extra_compile_args,
+                        'extra_link_args': ['-framework','ApplicationServices'],
+                       }
+            addMacExtension('_Launch', app_kwds)
+            addMacExtension('_CG', app_kwds)
+
             exts.append( Extension('_Qt', ['qt/_Qtmodule.c'],
                         extra_compile_args=carbon_extra_compile_args,
                         extra_link_args=['-framework', 'QuickTime',
                                      '-framework', 'Carbon']) )
-            exts.append( Extension('_Scrap', ['scrap/_Scrapmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_TE', ['te/_TEmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
+
             # As there is no standardized place (yet) to put
             # user-installed Mac libraries on OSX, we search for "waste"
             # in parent directories of the Python source tree. You
@@ -1119,7 +1077,6 @@ class PyBuildExt(build_ext):
             waste_libs = find_library_file(self.compiler, "WASTE", [],
                     ["../"*n + "waste/Static Libraries" for n in (0,1,2,3,4)])
             if waste_incs != None and waste_libs != None:
-                (srcdir,) = sysconfig.get_config_vars('srcdir')
                 exts.append( Extension('waste',
                                ['waste/wastemodule.c'] + [
                                 os.path.join(srcdir, d) for d in
@@ -1132,9 +1089,6 @@ class PyBuildExt(build_ext):
                                libraries = ['WASTE'],
                                extra_link_args = ['-framework', 'Carbon'],
                 ) )
-            exts.append( Extension('_Win', ['win/_Winmodule.c'],
-                        extra_compile_args=carbon_extra_compile_args,
-                        extra_link_args=['-framework', 'Carbon']) )
 
         self.extensions.extend(exts)
 
