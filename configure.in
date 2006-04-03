@@ -621,7 +621,7 @@ AC_SUBST(AR)
 AC_CHECK_PROGS(AR, ar aal, ar)
 
 AC_SUBST(SVNVERSION)
-AC_CHECK_PROG(SVNVERSION, svnversion, found)
+AC_CHECK_PROG(SVNVERSION, svnversion, found, not-found)
 if test $SVNVERSION = found
 then
 	SVNVERSION="svnversion \$(srcdir)"
