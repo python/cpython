@@ -846,8 +846,6 @@ details.
 
 \begin{itemize}
 
-% ctypes added
-
 % collections.deque now has .remove()
 % collections.defaultdict
 
@@ -989,11 +987,6 @@ by some specifications, so it's still available as
 
 % patch #754022: Greatly enhanced webbrowser.py (by Oleg Broytmann).
 
-\item A new package \module{xml.etree} has been added, which contains
-a subset of the ElementTree XML library.  Available modules are
-\module{ElementTree}, \module{ElementPath}, and
-\module{ElementInclude}, from ElementTree 1.2.6. (Contributed by
-Fredrik Lundh.)
 
 \item The \module{xmlrpclib} module now supports returning 
       \class{datetime} objects for the XML-RPC date type.  Supply 
@@ -1011,7 +1004,33 @@ Fredrik Lundh.)
 
 % XXX new distutils features: upload
 
-%\subsection{The ElementTree package}
+\subsection{The ctypes package}
+
+The \module{ctypes} package, written by Thomas Heller, has been added 
+to the standard library.  \module{ctypes} lets you call arbitrary functions 
+in shared libraries or DLLs.
+
+In subsequent alpha releases of Python 2.5, I'll add a brief 
+introduction that shows some basic usage of the module.
+
+% XXX write introduction
+
+
+\subsection{The ElementTree package}
+
+A subset of Fredrik Lundh's ElementTree library for processing XML has
+been added to the standard library as \module{xml.etree}.  The
+vailable modules are
+\module{ElementTree}, \module{ElementPath}, and
+\module{ElementInclude} from ElementTree 1.2.6. 
+
+In subsequent alpha releases of Python 2.5, I'll add a brief
+introduction that will provide a page-long overview of using
+ElementTree.  Full documentation for
+ElementTree is available at \url{http://effbot.org/zone/element-index.htm}.
+
+% XXX write introduction
+
 
 \subsection{The hashlib package}
 
@@ -1061,9 +1080,30 @@ and \method{copy()} returns a new hashing object with the same digest state.
 This module was contributed by Gregory P. Smith.
 
 
-%\subsection{The sqlite3 package}
+\subsection{The sqlite3 package}
 
-% XXX write these sections
+The pysqlite module (\url{http://www.pysqlite.org}), a wrapper for the
+SQLite embedded database, has been added to the standard library under
+the package name \module{sqlite3}.  SQLite is a C library that
+provides a SQL-language database that stores data in disk files
+without requiring a separate server process.  pysqlite was written by
+Gerhard H\"aring, and provides a SQL interface that complies with the
+DB-API 2.0 specification.  This means that it should be possible to
+write the first version of your applications using SQLite for data
+storage and, if switching to a larger database such as PostgreSQL or
+Oracle is necessary, the switch should be relatively easy.
+
+If you're compiling the Python source yourself, note that the source
+tree doesn't include the SQLite code itself, only the wrapper module.
+You'll need to have the SQLite libraries and headers installed before
+compiling Python, and the build process will compile the module when
+the necessary headers are available.
+
+In subsequent alpha releases of Python 2.5, I'll add a brief 
+introduction that shows some basic usage of the module.
+
+% XXX write introduction
+
 
 % ======================================================================
 \section{Build and C API Changes}
