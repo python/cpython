@@ -692,50 +692,42 @@ class PyBuildExt(build_ext):
         # The sqlite interface
         sqlite_setup_debug = True   # verbose debug prints from this script?
 
-        # We hunt for "#define SQLITE_VERSION_NUMBER nnnnn"
-        # We need to find a version >= 3002002 (> sqlite version 3.2.2)
+        # We hunt for #define SQLITE_VERSION "n.n.n"
+        # We need to find >= sqlite version 3.0.8
         sqlite_incdir = sqlite_libdir = None
-        sqlite_inc_paths = [ '/usr/include', 
+        sqlite_inc_paths = [ '/usr/include',
                              '/usr/include/sqlite',
                              '/usr/include/sqlite3',
                              '/usr/local/include',
                              '/usr/local/include/sqlite',
                              '/usr/local/include/sqlite3',
                            ]
-        MIN_SQLITE_VERSION_NUMBER = 3000008
-        MIN_SQLITE_VERSION = "3.0.8"
+        MIN_SQLITE_VERSION_NUMBER = (3, 0, 8)
+        MIN_SQLITE_VERSION = ".".join([str(x)
+                                    for x in MIN_SQLITE_VERSION_NUMBER])
         for d in sqlite_inc_paths + inc_dirs:
             f = os.path.join(d, "sqlite3.h")
             if os.path.exists(f):
                 if sqlite_setup_debug: print "sqlite: found %s"%f
-                f = open(f).read()
-                m = re.search(r"#define\WSQLITE_VERSION_NUMBER\W(\d+)", f)
+                incf = open(f).read()
+                m = re.search(
+                    r'\s*.*#\s*.*define\s.*SQLITE_VERSION\W*"(.*)"', incf)
                 if m:
-                    sqlite_version = int(m.group(1))
-                    if sqlite_version >= MIN_SQLITE_VERSION_NUMBER:
+                    sqlite_version = m.group(1)
+                    sqlite_version_tuple = tuple([int(x)
+                                        for x in sqlite_version.split(".")])
+                    if sqlite_version_tuple >= MIN_SQLITE_VERSION_NUMBER:
                         # we win!
                         print "%s/sqlite3.h: version %s"%(d, sqlite_version)
                         sqlite_incdir = d
                         break
-                    elif sqlite_version == 3000000:
-                        # Bug in a common version out there where 
-                        # SQLITE_VERSION_NUMBER was set incorrectly
-                        if sqlite_setup_debug: 
-                            print "found buggy SQLITE_VERSION_NUMBER, checking"
-                        m = re.search(r'#define\WSQLITE_VERSION\W+"([\.\d]+)"',
-                                                                            f)
-                        if m:
-                            sqlite_version = m.group(1)
-                            if sqlite_version >= MIN_SQLITE_VERSION:
-                                print "%s/sqlite3.h: version %s"%(d, 
-                                                            sqlite_version)
-                                sqlite_incdir = d
-                                break
                     else:
-                        if sqlite_setup_debug: 
+                        if sqlite_setup_debug:
                             print "%s: version %d is too old, need >= %s"%(d,
                                         sqlite_version, MIN_SQLITE_VERSION)
-        
+                elif sqlite_setup_debug:
+                    print "sqlite: %s had no SQLITE_VERSION"%(f,)
+
         if sqlite_incdir:
             sqlite_dirs_to_check = [
                 os.path.join(sqlite_incdir, '..', 'lib64'),
@@ -763,19 +755,19 @@ class PyBuildExt(build_ext):
             PYSQLITE_VERSION = "2.1.3"
             sqlite_defines = []
             if sys.platform != "win32":
-                sqlite_defines.append(('PYSQLITE_VERSION', 
+                sqlite_defines.append(('PYSQLITE_VERSION',
                                         '"%s"' % PYSQLITE_VERSION))
             else:
-                sqlite_defines.append(('PYSQLITE_VERSION', 
+                sqlite_defines.append(('PYSQLITE_VERSION',
                                         '\\"'+PYSQLITE_VERSION+'\\"'))
-            sqlite_defines.append(('PY_MAJOR_VERSION', 
+            sqlite_defines.append(('PY_MAJOR_VERSION',
                                         str(sys.version_info[0])))
-            sqlite_defines.append(('PY_MINOR_VERSION', 
+            sqlite_defines.append(('PY_MINOR_VERSION',
                                         str(sys.version_info[1])))
 
             exts.append(Extension('_sqlite3', sqlite_srcs,
                                   define_macros=sqlite_defines,
-                                  include_dirs=["Modules/_sqlite", 
+                                  include_dirs=["Modules/_sqlite",
                                                 sqlite_incdir],
                                   library_dirs=sqlite_libdir,
                                   runtime_library_dirs=sqlite_libdir,
