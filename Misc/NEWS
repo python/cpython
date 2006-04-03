@@ -12,6 +12,9 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1421664: sys.stderr.encoding is now set to the same value as
+  sys.stdout.encoding.
+
 - __import__ accepts keyword arguments.
 
 - Patch #1460496: round() now accepts keyword arguments.
