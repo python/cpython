@@ -23,7 +23,7 @@ class TracebackCases(unittest.TestCase):
     def syntax_error_without_caret(self):
         # XXX why doesn't compile raise the same traceback?
         import test.badsyntax_nocaret
-    
+
     def syntax_error_bad_indentation(self):
         compile("def spam():\n  print 1\n print 2", "?", "exec")
 
