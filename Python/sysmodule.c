@@ -1069,6 +1069,11 @@ _PySys_Init(void)
 		if (!PyFile_SetEncoding(sysout, buf))
 			return NULL;
 	}
+	if(isatty(_fileno(stderr))) {
+		sprintf(buf, "cp%d", GetConsoleOutputCP());
+		if (!PyFile_SetEncoding(syserr, buf))
+			return NULL;
+	}
 #endif
 
 	PyDict_SetItemString(sysdict, "stdin", sysin);
