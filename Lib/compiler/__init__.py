@@ -21,6 +21,6 @@ compileFile(filename)
     Generates a .pyc file by compiling filename.
 """
 
-from transformer import parse, parseFile
-from visitor import walk
-from pycodegen import compile, compileFile
+from compiler.transformer import parse, parseFile
+from compiler.visitor import walk
+from compiler.pycodegen import compile, compileFile

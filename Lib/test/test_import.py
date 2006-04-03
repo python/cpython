@@ -15,7 +15,7 @@ else:
     raise TestFailed("import of RAnDoM should have failed (case mismatch)")
 
 # Another brief digression to test the accuracy of manifest float constants.
-import double_const  # don't blink -- that *was* the test
+from test import double_const  # don't blink -- that *was* the test
 
 def remove_files(name):
     for f in (name + os.extsep + "py",
