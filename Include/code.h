@@ -45,7 +45,7 @@ typedef struct {
 #define CO_GENERATOR_ALLOWED    0x1000
 #endif
 #define CO_FUTURE_DIVISION    	0x2000
-#define CO_FUTURE_ABSIMPORT	0x4000 /* absolute import by default */
+#define CO_FUTURE_ABSOLUTE_IMPORT 0x4000 /* do absolute imports by default */
 #define CO_FUTURE_WITH_STATEMENT  0x8000
 
 /* This should be defined if a future statement modifies the syntax.

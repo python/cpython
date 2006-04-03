@@ -29,8 +29,8 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, const char *filename)
 			continue;
 		} else if (strcmp(feature, FUTURE_DIVISION) == 0) {
 			ff->ff_features |= CO_FUTURE_DIVISION;
-		} else if (strcmp(feature, FUTURE_ABSIMPORT) == 0) {
-			ff->ff_features |= CO_FUTURE_ABSIMPORT;
+		} else if (strcmp(feature, FUTURE_ABSOLUTE_IMPORT) == 0) {
+			ff->ff_features |= CO_FUTURE_ABSOLUTE_IMPORT;
 		} else if (strcmp(feature, FUTURE_WITH_STATEMENT) == 0) {
 			ff->ff_features |= CO_FUTURE_WITH_STATEMENT;
 		} else if (strcmp(feature, "braces") == 0) {
