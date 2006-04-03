@@ -18,6 +18,10 @@ Extension Modules
 Library
 -------
 
+- The email module's parsedate_tz function now sets the daylight savings
+  flag to -1 (unknown) since it can't tell from the date whether it should
+  be set.
+
 - Bug #1460340: ``random.sample(dict)`` failed in various ways.  Dicts
   aren't officially supported here, and trying to use them will probably
   raise an exception some day.  But dicts have been allowed, and "mostly
