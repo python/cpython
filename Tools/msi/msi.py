@@ -942,6 +942,7 @@ def add_files(db):
             lib.add_file("test.xml.out")
             lib.add_file("testtar.tar")
             lib.add_file("test_difflib_expect.html")
+            lib.add_file("check_soundcard.vbs")
             lib.glob("*.uue")
             lib.add_file("readme.txt", src="README")
         if dir=='decimaltestdata':
