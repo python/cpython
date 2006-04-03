@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="pythoncore"
-	ProjectGUID="{7AFA1F0B-A8A1-455A-A832-BF263404BBEF}"
+	ProjectGUID="{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26}"
 	RootNamespace="pythoncore"
 	SccProjectName="pythoncore"
 	SccLocalPath="..">

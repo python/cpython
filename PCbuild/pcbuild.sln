@@ -96,6 +96,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_ctypes", "_ctypes.vcproj",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_ctypes_test", "_ctypes_test.vcproj", "{8CF334D9-4F82-42EB-97AF-83592C5AFD2F}"
 	ProjectSection(ProjectDependencies) = postProject
+		{F22F40F4-D318-40DC-96B3-88DC81CE0894} = {F22F40F4-D318-40DC-96B3-88DC81CE0894}
 	EndProjectSection
 EndProject
 Global
