@@ -132,9 +132,10 @@ class Calendar(object):
 
     def getfirstweekday(self):
         return self._firstweekday % 7
-    
+
     def setfirstweekday(self, firstweekday):
         self._firstweekday = firstweekday
+
     firstweekday = property(getfirstweekday, setfirstweekday)
 
     def iterweekdays(self):
@@ -159,7 +160,7 @@ class Calendar(object):
         while True:
             yield date
             date += oneday
-            if date.month != month and date.weekday() == self.firstweekday%7:
+            if date.month != month and date.weekday() == self.firstweekday:
                 break
 
     def itermonthdays2(self, year, month):
@@ -567,7 +568,12 @@ class LocaleHTMLCalendar(HTMLCalendar):
 c = TextCalendar()
 
 firstweekday = c.getfirstweekday
-setfirstweekday = c.setfirstweekday
+
+def setfirstweekday(firstweekday):
+    if not MONDAY <= firstweekday <= SUNDAY:
+        raise IllegalWeekdayError(firstweekday)
+    c.firstweekday = firstweekday
+
 monthcalendar = c.monthdayscalendar
 prweek = c.prweek
 week = c.formatweek
