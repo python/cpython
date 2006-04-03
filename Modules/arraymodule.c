@@ -186,7 +186,8 @@ u_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 	if (!PyArg_Parse(v, "u#;array item must be unicode character", &p, &len))
 		return -1;
 	if (len != 1) {
-		PyErr_SetString(PyExc_TypeError, "array item must be unicode character");
+		PyErr_SetString(PyExc_TypeError,
+				"array item must be unicode character");
 		return -1;
 	}
 	if (i >= 0)
