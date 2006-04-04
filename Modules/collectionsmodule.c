@@ -1277,8 +1277,11 @@ a new value when a key is not present, in __getitem__ only.\n\
 A defaultdict compares equal to a dict with the same items.\n\
 ");
 
+/* See comment in xxsubtype.c */
+#define DEFERRED_ADDRESS(ADDR) 0
+
 static PyTypeObject defdict_type = {
-	PyObject_HEAD_INIT(NULL)
+	PyObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type))
 	0,				/* ob_size */
 	"collections.defaultdict",	/* tp_name */
 	sizeof(defdictobject),		/* tp_basicsize */
@@ -1311,7 +1314,7 @@ static PyTypeObject defdict_type = {
 	defdict_methods,		/* tp_methods */
 	defdict_members,		/* tp_members */
 	0,				/* tp_getset */
-	&PyDict_Type,			/* tp_base */
+	DEFERRED_ADDRESS(&PyDict_Type),	/* tp_base */
 	0,				/* tp_dict */
 	0,				/* tp_descr_get */
 	0,				/* tp_descr_set */
@@ -1344,6 +1347,7 @@ initcollections(void)
 	Py_INCREF(&deque_type);
 	PyModule_AddObject(m, "deque", (PyObject *)&deque_type);
 
+	defdict_type.tp_base = &PyDict_Type;
 	if (PyType_Ready(&defdict_type) < 0)
 		return;
 	Py_INCREF(&defdict_type);
