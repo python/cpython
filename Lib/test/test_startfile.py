@@ -11,7 +11,7 @@ import unittest
 from test import test_support
 
 # use this form so that the test is skipped when startfile is not available:
-from os import startfile
+from os import startfile, path
 
 class TestCase(unittest.TestCase):
     def test_nonexisting(self):
@@ -21,12 +21,12 @@ class TestCase(unittest.TestCase):
         self.assertRaises(OSError, startfile, u"nonexisting.vbs")
 
     def test_empty(self):
-        empty = os.path.join(os.path.dirname(__file__), "empty.vbs")
+        empty = path.join(path.dirname(__file__), "empty.vbs")
         startfile(empty)
         startfile(empty, "open")
 
     def test_empty_u(self):
-        empty = os.path.join(os.path.dirname(__file__), "empty.vbs")
+        empty = path.join(path.dirname(__file__), "empty.vbs")
         startfile(unicode(empty, "mbcs"))
         startfile(unicode(empty, "mbcs"), "open")
 
