@@ -967,7 +967,13 @@ def add_files(db):
             for f in glob.glob1(tcldir, "*.dll"):
                 lib.add_file(f, src=os.path.join(tcldir, f))
     # Add sqlite
-    lib.add_file(srcdir+"/"+sqlite_dir+"/sqlite3.dll")
+    if msilib.msi_type=="Intel64;1033":
+        sqlite_arch = "/ia64"
+    elif msilib.msi_type=="x64;1033":
+        sqlite_arch = "/amd64"
+    else:
+        sqlite_arch = ""
+    lib.add_file(srcdir+"/"+sqlite_dir+sqlite_arch+"/sqlite3.dll")
     # check whether there are any unknown extensions
     for f in glob.glob1(srcdir+"/PCBuild", "*.pyd"):
         if f.endswith("_d.pyd"): continue # debug version
