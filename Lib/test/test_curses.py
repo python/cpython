@@ -24,6 +24,9 @@ term = os.environ.get('TERM')
 if not term or term == 'unknown':
     raise TestSkipped, "$TERM=%r, calling initscr() may cause exit" % term
 
+if sys.platform == "cygwin":
+    raise TestSkipped("cygwin's curses mostly just hangs")
+
 def window_funcs(stdscr):
     "Test the methods of windows"
     win = curses.newwin(10,10)
