@@ -694,11 +694,27 @@ in a few releases.
 
 \begin{seealso}
 
-\seepep{352}{}{PEP written by 
+\seepep{352}{Required Superclass for Exceptions}{PEP written by 
 Brett Cannon and Guido van Rossum; implemented by Brett Cannon.}
 
 \end{seealso}
 
+
+%======================================================================
+\section{PEP 353: Using ssize_t as the index type}
+
+A wide-ranging change to Python's C API, using a new 
+\ctype{Py_ssize_t} type definition instead of \ctype{int}, 
+will permit the interpreter to handle more data on 64-bit platforms.
+This change doesn't affect Python's capacity on 32-bit platforms.
+
+This section will be expanded in future alpha releases.
+
+\begin{seealso}
+
+\seepep{353}{}{PEP written and implemented by Martin von L\"owis.}
+
+\end{seealso}
 
 %======================================================================
 \section{PEP 357: The '__index__' method}
@@ -1201,7 +1217,7 @@ changes to your code:
 
 \begin{itemize}
 
-\item XXX the pickle module no longer uses the deprecated bin parameter.
+\item The \module{pickle} module no longer uses the deprecated \var{bin} parameter.
 
 \end{itemize}
 
@@ -1211,6 +1227,6 @@ changes to your code:
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: .
+article: no one yet.
 
 \end{document}
