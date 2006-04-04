@@ -1495,7 +1495,7 @@ PyDoc_STRVAR(csv_reader_doc,
 PyDoc_STRVAR(csv_writer_doc,
 "    csv_writer = csv.writer(fileobj [, dialect='excel']\n"
 "                            [optional keyword args])\n"
-"    for row in csv_writer:\n"
+"    for row in sequence:\n"
 "        csv_writer.writerow(row)\n"
 "\n"
 "    [or]\n"
