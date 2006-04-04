@@ -1934,6 +1934,14 @@ import_module_level(char *name, PyObject *globals, PyObject *locals,
 		}
 		tail = next;
 	}
+	if (tail == Py_None) {
+		/* If tail is Py_None, both get_parent and load_next found
+		   an empty module name: someone called __import__("") or
+		   doctored faulty bytecode */
+		PyErr_SetString(PyExc_ValueError,
+				"Empty module name");
+		return NULL;
+	}
 
 	if (fromlist != NULL) {
 		if (fromlist == Py_None || !PyObject_IsTrue(fromlist))
@@ -2094,7 +2102,8 @@ load_next(PyObject *mod, PyObject *altmod, char **p_name, char *buf,
 	PyObject *result;
 
 	if (strlen(name) == 0) {
-		/* empty module name only happens in 'from . import' */
+		/* completely empty module name should only happen in
+		   'from . import' (or '__import__("")')*/
 		Py_INCREF(mod);
 		*p_name = NULL;
 		return mod;
