@@ -2398,6 +2398,8 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 						s->v.TryExcept.handlers, i);
 		if (!handler->type && i < n-1)
 		    return compiler_error(c, "default 'except:' must be last");
+        c->u->u_lineno_set = false;
+        c->u->u_lineno = handler->lineno;
 		except = compiler_new_block(c);
 		if (except == NULL)
 			return 0;
