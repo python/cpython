@@ -98,8 +98,11 @@ module Python version "$Revision$"
 	comprehension = (expr target, expr iter, expr* ifs)
 
 	-- not sure what to call the first argument for raise and except
-
-	excepthandler = (expr? type, expr? name, stmt* body)
+	-- TODO(jhylton): Figure out if there is a better way to handle
+	--                lineno and col_offset fields, particularly when
+        --                ast is exposed to Python.
+	excepthandler = (expr? type, expr? name, stmt* body, int lineno,
+	                 int col_offset)
 
 	arguments = (expr* args, identifier? vararg, 
 		     identifier? kwarg, expr* defaults)
