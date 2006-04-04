@@ -104,13 +104,6 @@ range_item(rangeobject *r, Py_ssize_t i)
 static Py_ssize_t
 range_length(rangeobject *r)
 {
-#if LONG_MAX != INT_MAX /* XXX ssize_t_max */
-	if (r->len > INT_MAX) {
-		PyErr_SetString(PyExc_ValueError,
-				"xrange object size cannot be reported");
-		return -1;
-	}
-#endif
 	return (Py_ssize_t)(r->len);
 }
 
