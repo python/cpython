@@ -108,6 +108,7 @@ class BuiltinTest(unittest.TestCase):
         __import__('string')
         self.assertRaises(ImportError, __import__, 'spamspam')
         self.assertRaises(TypeError, __import__, 1, 2, 3, 4)
+        self.assertRaises(ValueError, __import__, '')
 
     def test_abs(self):
         # int
