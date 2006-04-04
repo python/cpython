@@ -732,7 +732,7 @@ def main(srcfile):
     f.close()
 
     if SRC_DIR:
-        p = "%s/%s-ast.c" % (SRC_DIR, mod.name)
+        p = os.path.join(SRC_DIR, str(mod.name) + "-ast.c")
     else:
         p = "%s-ast.c" % mod.name
     f = open(p, "wb")
