@@ -1,6 +1,6 @@
-/* util.h - various utility functions
+/* sqlitecompat.h - compatibility macros
  *
- * Copyright (C) 2005-2006 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2006 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *
@@ -21,18 +21,14 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PYSQLITE_UTIL_H
-#define PYSQLITE_UTIL_H
-#include "Python.h"
-#include "pythread.h"
-#include "sqlite3.h"
-#include "connection.h"
+#ifndef PYSQLITE_COMPAT_H
+#define PYSQLITE_COMPAT_H
 
-int _sqlite_step_with_busyhandler(sqlite3_stmt* statement, Connection* connection);
+/* define Py_ssize_t for pre-2.5 versions of Python */
 
-/**
- * Checks the SQLite error code and sets the appropriate DB-API exception.
- * Returns the error code (0 means no error occured).
- */
-int _seterror(sqlite3* db);
+#if PY_VERSION_HEX < 0x02050000
+typedef int Py_ssize_t;
+typedef int (*lenfunc)(PyObject*);
+#endif
+
 #endif

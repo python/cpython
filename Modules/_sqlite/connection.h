@@ -69,6 +69,9 @@ typedef struct
      * in connection_dealloc */
     PyObject* function_pinboard;
 
+    /* a dictionary of registered collation name => collation callable mappings */
+    PyObject* collations;
+
     /* Exception objects */
     PyObject* Warning;
     PyObject* Error;

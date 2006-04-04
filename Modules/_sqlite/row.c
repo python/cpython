@@ -1,6 +1,6 @@
 /* row.c - an enhanced tuple for database rows
  *
- * Copyright (C) 2005 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2005-2006 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *
@@ -23,6 +23,7 @@
 
 #include "row.h"
 #include "cursor.h"
+#include "sqlitecompat.h"
 
 void row_dealloc(Row* self)
 {
@@ -78,9 +79,12 @@ PyObject* row_subscript(Row* self, PyObject* idx)
     if (PyInt_Check(idx)) {
         _idx = PyInt_AsLong(idx);
         item = PyTuple_GetItem(self->data, _idx);
-        if (item) {
-            Py_INCREF(item);
-        }
+        Py_XINCREF(item);
+        return item;
+    } else if (PyLong_Check(idx)) {
+        _idx = PyLong_AsLong(idx);
+        item = PyTuple_GetItem(self->data, _idx);
+        Py_XINCREF(item);
         return item;
     } else if (PyString_Check(idx)) {
         key = PyString_AsString(idx);
@@ -89,6 +93,9 @@ PyObject* row_subscript(Row* self, PyObject* idx)
 
         for (i = 0; i < nitems; i++) {
             compare_key = PyString_AsString(PyTuple_GET_ITEM(PyTuple_GET_ITEM(self->description, i), 0));
+            if (!compare_key) {
+                return NULL;
+            }
 
             p1 = key;
             p2 = compare_key;

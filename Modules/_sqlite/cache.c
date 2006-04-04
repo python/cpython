@@ -1,6 +1,6 @@
 /* cache .c - a LRU cache
  *
- * Copyright (C) 2004-2005 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2004-2006 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *
@@ -29,7 +29,6 @@ Node* new_node(PyObject* key, PyObject* data)
     Node* node;
 
     node = (Node*) (NodeType.tp_alloc(&NodeType, 0));
-    /*node = PyObject_New(Node, &NodeType);*/
     if (!node) {
         return NULL;
     }
@@ -72,7 +71,12 @@ int cache_init(Cache* self, PyObject* args, PyObject* kwargs)
     self->size = size;
     self->first = NULL;
     self->last = NULL;
+
     self->mapping = PyDict_New();
+    if (!self->mapping) {
+        return -1;
+    }
+
     Py_INCREF(factory);
     self->factory = factory;
 
@@ -108,15 +112,10 @@ void cache_dealloc(Cache* self)
 
 PyObject* cache_get(Cache* self, PyObject* args)
 {
-    PyObject* key;
+    PyObject* key = args;
     Node* node;
     Node* ptr;
     PyObject* data;
-
-    if (!PyArg_ParseTuple(args, "O", &key))
-    {
-        return NULL; 
-    }
 
     node = (Node*)PyDict_GetItem(self->mapping, key);
     if (node) {
@@ -153,7 +152,11 @@ PyObject* cache_get(Cache* self, PyObject* args)
         if (PyDict_Size(self->mapping) == self->size) {
             if (self->last) {
                 node = self->last;
-                PyDict_DelItem(self->mapping, self->last->key);
+
+                if (PyDict_DelItem(self->mapping, self->last->key) != 0) {
+                    return NULL;
+                }
+
                 if (node->prev) {
                     node->prev->next = NULL;
                 }
@@ -171,9 +174,17 @@ PyObject* cache_get(Cache* self, PyObject* args)
         }
 
         node = new_node(key, data);
+        if (!node) {
+            return NULL;
+        }
         node->prev = self->last;
 
         Py_DECREF(data);
+
+        if (PyDict_SetItem(self->mapping, key, (PyObject*)node) != 0) {
+            Py_DECREF(node);
+            return NULL;
+        }
 
         if (self->last) {
             self->last->next = node;
@@ -181,7 +192,6 @@ PyObject* cache_get(Cache* self, PyObject* args)
             self->first = node;
         }
         self->last = node;
-        PyDict_SetItem(self->mapping, key, (PyObject*)node);
     }
 
     Py_INCREF(node->data);
@@ -215,10 +225,19 @@ PyObject* cache_display(Cache* self, PyObject* args)
         Py_INCREF(nextkey);
 
         fmt_args = Py_BuildValue("OOO", prevkey, ptr->key, nextkey);
+        if (!fmt_args) {
+            return NULL;
+        }
         template = PyString_FromString("%s <- %s ->%s\n");
+        if (!template) {
+            return NULL;
+        }
         display_str = PyString_Format(template, fmt_args);
         Py_DECREF(template);
         Py_DECREF(fmt_args);
+        if (!display_str) {
+            return NULL;
+        }
         PyObject_Print(display_str, stdout, Py_PRINT_RAW);
         Py_DECREF(display_str);
 
@@ -233,7 +252,7 @@ PyObject* cache_display(Cache* self, PyObject* args)
 }
 
 static PyMethodDef cache_methods[] = {
-    {"get", (PyCFunction)cache_get, METH_VARARGS,
+    {"get", (PyCFunction)cache_get, METH_O,
         PyDoc_STR("Gets an entry from the cache.")},
     {"display", (PyCFunction)cache_display, METH_NOARGS,
         PyDoc_STR("For debugging only.")},
