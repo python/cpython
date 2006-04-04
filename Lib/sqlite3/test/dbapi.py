@@ -268,6 +268,12 @@ class CursorTests(unittest.TestCase):
         self.cu.executemany("insert into test(name) values (?)", [(1,), (2,), (3,)])
         self.failUnlessEqual(self.cu.rowcount, 3)
 
+    def CheckTotalChanges(self):
+        self.cu.execute("insert into test(name) values ('foo')")
+        self.cu.execute("insert into test(name) values ('foo')")
+        if self.cx.total_changes < 2:
+            self.fail("total changes reported wrong value")
+
     # Checks for executemany:
     # Sequences are required by the DB-API, iterators
     # enhancements in pysqlite.

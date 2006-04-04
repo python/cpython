@@ -24,6 +24,7 @@
 #include "cursor.h"
 #include "module.h"
 #include "util.h"
+#include "sqlitecompat.h"
 
 /* used to decide wether to call PyInt_FromLong or PyLong_FromLongLong */
 #define INT32_MIN (-2147483647 - 1)
@@ -84,6 +85,9 @@ int cursor_init(Cursor* self, PyObject* args, PyObject* kwargs)
     self->next_row = NULL;
 
     self->row_cast_map = PyList_New(0);
+    if (!self->row_cast_map) {
+        return -1;
+    }
 
     Py_INCREF(Py_None);
     self->description = Py_None;
@@ -94,6 +98,9 @@ int cursor_init(Cursor* self, PyObject* args, PyObject* kwargs)
     self->arraysize = 1;
 
     self->rowcount = PyInt_FromLong(-1L);
+    if (!self->rowcount) {
+        return -1;
+    }
 
     Py_INCREF(Py_None);
     self->row_factory = Py_None;
@@ -126,7 +133,7 @@ void cursor_dealloc(Cursor* self)
     self->ob_type->tp_free((PyObject*)self);
 }
 
-void build_row_cast_map(Cursor* self)
+int build_row_cast_map(Cursor* self)
 {
     int i;
     const char* type_start = (const char*)-1;
@@ -139,10 +146,10 @@ void build_row_cast_map(Cursor* self)
     PyObject* key;
 
     if (!self->connection->detect_types) {
-        return;
+        return 0;
     }
 
-    Py_DECREF(self->row_cast_map);
+    Py_XDECREF(self->row_cast_map);
     self->row_cast_map = PyList_New(0);
 
     for (i = 0; i < sqlite3_column_count(self->statement->st); i++) {
@@ -156,6 +163,13 @@ void build_row_cast_map(Cursor* self)
                     type_start = pos + 1;
                 } else if (*pos == ']' && type_start != (const char*)-1) {
                     key = PyString_FromStringAndSize(type_start, pos - type_start);
+                    if (!key) {
+                        /* creating a string failed, but it is too complicated
+                         * to propagate the error here, we just assume there is
+                         * no converter and proceed */
+                        break;
+                    }
+
                     converter = PyDict_GetItem(converters, key);
                     Py_DECREF(key);
                     break;
@@ -170,6 +184,9 @@ void build_row_cast_map(Cursor* self)
                 for (pos = decltype;;pos++) {
                     if (*pos == ' ' || *pos == 0) {
                         py_decltype = PyString_FromStringAndSize(decltype, pos - decltype);
+                        if (!py_decltype) {
+                            return -1;
+                        }
                         break;
                     }
                 }
@@ -179,17 +196,32 @@ void build_row_cast_map(Cursor* self)
             }
         }
 
-        if (converter) {
-            PyList_Append(self->row_cast_map, converter);
-        } else {
-            PyList_Append(self->row_cast_map, Py_None);
+        if (!converter) {
+            converter = Py_None;
+        }
+
+        if (PyList_Append(self->row_cast_map, converter) != 0) {
+            if (converter != Py_None) {
+                Py_DECREF(converter);
+            }
+            Py_XDECREF(self->row_cast_map);
+            self->row_cast_map = NULL;
+
+            return -1;
         }
     }
+
+    return 0;
 }
 
 PyObject* _build_column_name(const char* colname)
 {
     const char* pos;
+
+    if (!colname) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
 
     for (pos = colname;; pos++) {
         if (*pos == 0 || *pos == ' ') {
@@ -250,6 +282,9 @@ PyObject* _fetch_one_row(Cursor* self)
     Py_END_ALLOW_THREADS
 
     row = PyTuple_New(numcols);
+    if (!row) {
+        return NULL;
+    }
 
     for (i = 0; i < numcols; i++) {
         if (self->connection->detect_types) {
@@ -268,6 +303,9 @@ PyObject* _fetch_one_row(Cursor* self)
                 converted = Py_None;
             } else {
                 item = PyString_FromString(val_str);
+                if (!item) {
+                    return NULL;
+                }
                 converted = PyObject_CallFunction(converter, "O", item);
                 if (!converted) {
                     /* TODO: have a way to log these errors */
@@ -404,10 +442,16 @@ PyObject* _query_execute(Cursor* self, int multiple, PyObject* args)
 
         if (second_argument == NULL) {
             second_argument = PyTuple_New(0);
+            if (!second_argument) {
+                return NULL;
+            }
         } else {
             Py_INCREF(second_argument);
         }
-        PyList_Append(parameters_list, second_argument);
+        if (PyList_Append(parameters_list, second_argument) != 0) {
+            Py_DECREF(second_argument);
+            return NULL;
+        }
         Py_DECREF(second_argument);
 
         parameters_iter = PyObject_GetIter(parameters_list);
@@ -436,6 +480,9 @@ PyObject* _query_execute(Cursor* self, int multiple, PyObject* args)
 
     Py_DECREF(self->rowcount);
     self->rowcount = PyInt_FromLong(-1L);
+    if (!self->rowcount) {
+        goto error;
+    }
 
     statement_type = detect_statement_type(operation_cstr);
     if (self->connection->begin_statement) {
@@ -457,6 +504,9 @@ PyObject* _query_execute(Cursor* self, int multiple, PyObject* args)
                    - we better COMMIT first so it works for all cases */
                 if (self->connection->inTransaction) {
                     func_args = PyTuple_New(0);
+                    if (!func_args) {
+                        goto error;
+                    }
                     result = connection_commit(self->connection, func_args);
                     Py_DECREF(func_args);
                     if (!result) {
@@ -471,12 +521,18 @@ PyObject* _query_execute(Cursor* self, int multiple, PyObject* args)
                                 "You cannot execute SELECT statements in executemany().");
                     goto error;
                 }
+                break;
         }
     }
 
     func_args = PyTuple_New(1);
+    if (!func_args) {
+        goto error;
+    }
     Py_INCREF(operation);
-    PyTuple_SetItem(func_args, 0, operation);
+    if (PyTuple_SetItem(func_args, 0, operation) != 0) {
+        goto error;
+    }
 
     if (self->statement) {
         (void)statement_reset(self->statement);
@@ -493,6 +549,9 @@ PyObject* _query_execute(Cursor* self, int multiple, PyObject* args)
     if (self->statement->in_use) {
         Py_DECREF(self->statement);
         self->statement = PyObject_New(Statement, &StatementType);
+        if (!self->statement) {
+            goto error;
+        }
         rc = statement_create(self->statement, self->connection, operation);
         if (rc != SQLITE_OK) {
             self->statement = 0;
@@ -516,7 +575,10 @@ PyObject* _query_execute(Cursor* self, int multiple, PyObject* args)
             goto error;
         }
 
-        build_row_cast_map(self);
+        if (build_row_cast_map(self) != 0) {
+            PyErr_SetString(OperationalError, "Error while building row_cast_map");
+            goto error;
+        }
 
         rc = _sqlite_step_with_busyhandler(self->statement->st, self->connection);
         if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
@@ -543,8 +605,14 @@ PyObject* _query_execute(Cursor* self, int multiple, PyObject* args)
             if (self->description == Py_None) {
                 Py_DECREF(self->description);
                 self->description = PyTuple_New(numcols);
+                if (!self->description) {
+                    goto error;
+                }
                 for (i = 0; i < numcols; i++) {
                     descriptor = PyTuple_New(7);
+                    if (!descriptor) {
+                        goto error;
+                    }
                     PyTuple_SetItem(descriptor, 0, _build_column_name(sqlite3_column_name(self->statement->st, i)));
                     Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 1, Py_None);
                     Py_INCREF(Py_None); PyTuple_SetItem(descriptor, 2, Py_None);
@@ -608,8 +676,8 @@ error:
     if (PyErr_Occurred()) {
         return NULL;
     } else {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_INCREF(self);
+        return (PyObject*)self;
     }
 }
 
@@ -658,6 +726,9 @@ PyObject* cursor_executescript(Cursor* self, PyObject* args)
 
     /* commit first */
     func_args = PyTuple_New(0);
+    if (!func_args) {
+        goto error;
+    }
     result = connection_commit(self->connection, func_args);
     Py_DECREF(func_args);
     if (!result) {
@@ -710,8 +781,8 @@ error:
     if (PyErr_Occurred()) {
         return NULL;
     } else {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_INCREF(self);
+        return (PyObject*)self;
     }
 }
 
@@ -789,9 +860,12 @@ PyObject* cursor_fetchmany(Cursor* self, PyObject* args)
     }
 
     list = PyList_New(0);
+    if (!list) {
+        return NULL;
+    }
 
     /* just make sure we enter the loop */
-    row = (PyObject*)1;
+    row = Py_None;
 
     while (row) {
         row = cursor_iternext(self);
@@ -821,9 +895,12 @@ PyObject* cursor_fetchall(Cursor* self, PyObject* args)
     PyObject* list;
 
     list = PyList_New(0);
+    if (!list) {
+        return NULL;
+    }
 
     /* just make sure we enter the loop */
-    row = (PyObject*)1;
+    row = (PyObject*)Py_None;
 
     while (row) {
         row = cursor_iternext(self);

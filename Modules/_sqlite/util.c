@@ -1,6 +1,6 @@
 /* util.c - various utility functions
  *
- * Copyright (C) 2005 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2005-2006 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *
@@ -23,30 +23,6 @@
 
 #include "module.h"
 #include "connection.h"
-
-/*
- * it's not so trivial to write a portable sleep in C. For now, the simplest
- * solution is to just use Python's sleep().
- */
-void pysqlite_sleep(double seconds)
-{
-    PyObject* ret;
-
-    ret = PyObject_CallFunction(time_sleep, "d", seconds);
-    Py_DECREF(ret);
-}
-
-double pysqlite_time(void)
-{
-    PyObject* ret;
-    double time;
-
-    ret = PyObject_CallFunction(time_time, "");
-    time = PyFloat_AsDouble(ret);
-    Py_DECREF(ret);
-
-    return time;
-}
 
 int _sqlite_step_with_busyhandler(sqlite3_stmt* statement, Connection* connection
 )
@@ -75,63 +51,35 @@ int _seterror(sqlite3* db)
         case SQLITE_OK:
             PyErr_Clear();
             break;
-        case SQLITE_ERROR:
-            PyErr_SetString(OperationalError, sqlite3_errmsg(db));
-            break;
         case SQLITE_INTERNAL:
+        case SQLITE_NOTFOUND:
             PyErr_SetString(InternalError, sqlite3_errmsg(db));
-            break;
-        case SQLITE_PERM:
-            PyErr_SetString(OperationalError, sqlite3_errmsg(db));
-            break;
-        case SQLITE_ABORT:
-            PyErr_SetString(OperationalError, sqlite3_errmsg(db));
-            break;
-        case SQLITE_BUSY:
-            PyErr_SetString(OperationalError, sqlite3_errmsg(db));
-            break;
-        case SQLITE_LOCKED:
-            PyErr_SetString(OperationalError, sqlite3_errmsg(db));
             break;
         case SQLITE_NOMEM:
             (void)PyErr_NoMemory();
             break;
+        case SQLITE_ERROR:
+        case SQLITE_PERM:
+        case SQLITE_ABORT:
+        case SQLITE_BUSY:
+        case SQLITE_LOCKED:
         case SQLITE_READONLY:
-            PyErr_SetString(OperationalError, sqlite3_errmsg(db));
-            break;
         case SQLITE_INTERRUPT:
-            PyErr_SetString(OperationalError, sqlite3_errmsg(db));
-            break;
         case SQLITE_IOERR:
+        case SQLITE_FULL:
+        case SQLITE_CANTOPEN:
+        case SQLITE_PROTOCOL:
+        case SQLITE_EMPTY:
+        case SQLITE_SCHEMA:
             PyErr_SetString(OperationalError, sqlite3_errmsg(db));
             break;
         case SQLITE_CORRUPT:
             PyErr_SetString(DatabaseError, sqlite3_errmsg(db));
             break;
-        case SQLITE_NOTFOUND:
-            PyErr_SetString(InternalError, sqlite3_errmsg(db));
-            break;
-        case SQLITE_FULL:
-            PyErr_SetString(OperationalError, sqlite3_errmsg(db));
-            break;
-        case SQLITE_CANTOPEN:
-            PyErr_SetString(OperationalError, sqlite3_errmsg(db));
-            break;
-        case SQLITE_PROTOCOL:
-            PyErr_SetString(OperationalError, sqlite3_errmsg(db));
-            break;
-        case SQLITE_EMPTY:
-            PyErr_SetString(OperationalError, sqlite3_errmsg(db));
-            break;
-        case SQLITE_SCHEMA:
-            PyErr_SetString(OperationalError, sqlite3_errmsg(db));
-            break;
         case SQLITE_TOOBIG:
             PyErr_SetString(DataError, sqlite3_errmsg(db));
             break;
         case SQLITE_CONSTRAINT:
-            PyErr_SetString(IntegrityError, sqlite3_errmsg(db));
-            break;
         case SQLITE_MISMATCH:
             PyErr_SetString(IntegrityError, sqlite3_errmsg(db));
             break;
@@ -140,6 +88,7 @@ int _seterror(sqlite3* db)
             break;
         default:
             PyErr_SetString(DatabaseError, sqlite3_errmsg(db));
+            break;
     }
 
     return errorcode;

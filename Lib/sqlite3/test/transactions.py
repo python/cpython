@@ -25,7 +25,7 @@ import os, unittest
 import sqlite3 as sqlite
 
 def get_db_path():
-    return "testdb"
+    return "sqlite_testdb"
 
 class TransactionTests(unittest.TestCase):
     def setUp(self):
@@ -46,6 +46,8 @@ class TransactionTests(unittest.TestCase):
 
         self.cur2.close()
         self.con2.close()
+
+        os.unlink(get_db_path())
 
     def CheckDMLdoesAutoCommitBefore(self):
         self.cur1.execute("create table test(i)")

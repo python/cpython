@@ -3,7 +3,7 @@
  * Copyright (C) 2004-2006 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
- *
+ * 
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
  * arising from the use of this software.
@@ -28,6 +28,8 @@
 #include "cursor.h"
 #include "prepare_protocol.h"
 #include "util.h"
+#include "sqlitecompat.h"
+
 #include "pythread.h"
 
 static int connection_set_isolation_level(Connection* self, PyObject* isolation_level);
@@ -101,6 +103,14 @@ int connection_init(Connection* self, PyObject* args, PyObject* kwargs)
     self->check_same_thread = check_same_thread;
 
     self->function_pinboard = PyDict_New();
+    if (!self->function_pinboard) {
+        return -1;
+    }
+
+    self->collations = PyDict_New();
+    if (!self->collations) {
+        return -1;
+    }
 
     self->Warning = Warning;
     self->Error = Error;
@@ -167,6 +177,7 @@ void connection_dealloc(Connection* self)
     Py_XDECREF(self->function_pinboard);
     Py_XDECREF(self->row_factory);
     Py_XDECREF(self->text_factory);
+    Py_XDECREF(self->collations);
 
     self->ob_type->tp_free((PyObject*)self);
 }
@@ -420,6 +431,9 @@ PyObject* _build_py_params(sqlite3_context *context, int argc, sqlite3_value** a
     void* raw_buffer;
 
     args = PyTuple_New(argc);
+    if (!args) {
+        return NULL;
+    }
 
     for (i = 0; i < argc; i++) {
         cur_value = argv[i];
@@ -655,6 +669,15 @@ static PyObject* connection_get_isolation_level(Connection* self, void* unused)
     return self->isolation_level;
 }
 
+static PyObject* connection_get_total_changes(Connection* self, void* unused)
+{
+    if (!check_connection(self)) {
+        return NULL;
+    } else {
+        return Py_BuildValue("i", sqlite3_total_changes(self->db));
+    }
+}
+
 static int connection_set_isolation_level(Connection* self, PyObject* isolation_level)
 {
     PyObject* empty;
@@ -669,7 +692,13 @@ static int connection_set_isolation_level(Connection* self, PyObject* isolation_
         self->isolation_level = Py_None;
 
         empty = PyTuple_New(0);
+        if (!empty) {
+            return -1;
+        }
         res = connection_commit(self, empty);
+        if (!res) {
+            return -1;
+        }
         Py_DECREF(empty);
         Py_DECREF(res);
 
@@ -825,11 +854,134 @@ error:
     return cursor;
 }
 
+/* ------------------------- COLLATION CODE ------------------------ */
+
+static int
+collation_callback(
+        void* context,
+        int text1_length, const void* text1_data,
+        int text2_length, const void* text2_data)
+{
+    PyObject* callback = (PyObject*)context;
+    PyObject* string1 = 0;
+    PyObject* string2 = 0;
+    PyGILState_STATE gilstate;
+
+    PyObject* retval = NULL;
+    int result = 0;
+
+    gilstate = PyGILState_Ensure();
+
+    if (PyErr_Occurred()) {
+        goto finally;
+    }
+
+    string1 = PyString_FromStringAndSize((const char*)text1_data, text1_length);
+    string2 = PyString_FromStringAndSize((const char*)text2_data, text2_length);
+
+    if (!string1 || !string2) {
+        goto finally; /* failed to allocate strings */
+    }
+
+    retval = PyObject_CallFunctionObjArgs(callback, string1, string2, NULL);
+
+    if (!retval) {
+        /* execution failed */
+        goto finally;
+    }
+
+    result = PyInt_AsLong(retval);
+    if (PyErr_Occurred()) {
+        result = 0;
+    }
+
+finally:
+    Py_XDECREF(string1);
+    Py_XDECREF(string2);
+    Py_XDECREF(retval);
+
+    PyGILState_Release(gilstate);
+
+    return result;
+}
+
+static PyObject *
+connection_create_collation(Connection* self, PyObject* args)
+{
+    PyObject* callable;
+    PyObject* uppercase_name = 0;
+    PyObject* name;
+    PyObject* retval;
+    char* chk;
+    int rc;
+
+    if (!check_thread(self) || !check_connection(self)) {
+        goto finally;
+    }
+
+    if (!PyArg_ParseTuple(args, "O!O:create_collation(name, callback)", &PyString_Type, &name, &callable)) {
+        goto finally;
+    }
+
+    uppercase_name = PyObject_CallMethod(name, "upper", "");
+    if (!uppercase_name) {
+        goto finally;
+    }
+
+    chk = PyString_AsString(uppercase_name);
+    while (*chk) {
+        if ((*chk >= '0' && *chk <= '9')
+         || (*chk >= 'A' && *chk <= 'Z')
+         || (*chk == '_'))
+        {
+            chk++;
+        } else {
+            PyErr_SetString(ProgrammingError, "invalid character in collation name");
+            goto finally;
+        }
+    }
+
+    if (callable != Py_None && !PyCallable_Check(callable)) {
+        PyErr_SetString(PyExc_TypeError, "parameter must be callable");
+        goto finally;
+    }
+
+    if (callable != Py_None) {
+        PyDict_SetItem(self->collations, uppercase_name, callable);
+    } else {
+        PyDict_DelItem(self->collations, uppercase_name);
+    }
+
+    rc = sqlite3_create_collation(self->db,
+                                  PyString_AsString(uppercase_name),
+                                  SQLITE_UTF8,
+                                  (callable != Py_None) ? callable : NULL,
+                                  (callable != Py_None) ? collation_callback : NULL);
+    if (rc != SQLITE_OK) {
+        PyDict_DelItem(self->collations, uppercase_name);
+        _seterror(self->db);
+        goto finally;
+    }
+
+finally:
+    Py_XDECREF(uppercase_name);
+
+    if (PyErr_Occurred()) {
+        retval = NULL;
+    } else {
+        Py_INCREF(Py_None);
+        retval = Py_None;
+    }
+
+    return retval;
+}
+
 static char connection_doc[] =
 PyDoc_STR("<missing docstring>");
 
 static PyGetSetDef connection_getset[] = {
     {"isolation_level",  (getter)connection_get_isolation_level, (setter)connection_set_isolation_level},
+    {"total_changes",  (getter)connection_get_total_changes, (setter)0},
     {NULL}
 };
 
@@ -852,6 +1004,8 @@ static PyMethodDef connection_methods[] = {
         PyDoc_STR("Repeatedly executes a SQL statement. Non-standard.")},
     {"executescript", (PyCFunction)connection_executescript, METH_VARARGS,
         PyDoc_STR("Executes a multiple SQL statements at once. Non-standard.")},
+    {"create_collation", (PyCFunction)connection_create_collation, METH_VARARGS,
+        PyDoc_STR("Creates a collation function.")},
     {NULL, NULL}
 };
 

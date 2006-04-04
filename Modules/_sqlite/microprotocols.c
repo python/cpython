@@ -45,9 +45,7 @@ microprotocols_init(PyObject *dict)
         return -1;
     }
 
-    PyDict_SetItemString(dict, "adapters", psyco_adapters);
-
-    return 0;
+    return PyDict_SetItemString(dict, "adapters", psyco_adapters);
 }
 
 
@@ -65,8 +63,17 @@ microprotocols_add(PyTypeObject *type, PyObject *proto, PyObject *cast)
             cast, type->tp_name);
     */
 
+
     key = Py_BuildValue("(OO)", (PyObject*)type, proto);
-    PyDict_SetItem(psyco_adapters, key, cast);
+    if (!key) {
+        return -1;
+    }
+
+    if (PyDict_SetItem(psyco_adapters, key, cast) != 0) {
+        Py_DECREF(key);
+        return -1;
+    }
+
     Py_DECREF(key);
 
     return 0;
@@ -85,6 +92,9 @@ microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
 
     /* look for an adapter in the registry */
     key = Py_BuildValue("(OO)", (PyObject*)obj->ob_type, proto);
+    if (!key) {
+        return NULL;
+    }
     adapter = PyDict_GetItem(psyco_adapters, key);
     Py_DECREF(key);
     if (adapter) {

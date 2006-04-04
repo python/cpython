@@ -752,7 +752,7 @@ class PyBuildExt(build_ext):
                 '_sqlite/statement.c',
                 '_sqlite/util.c', ]
 
-            PYSQLITE_VERSION = "2.1.3"
+            PYSQLITE_VERSION = "2.2.0"
             sqlite_defines = []
             if sys.platform != "win32":
                 sqlite_defines.append(('PYSQLITE_VERSION',

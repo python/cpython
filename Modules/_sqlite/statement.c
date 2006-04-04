@@ -26,6 +26,7 @@
 #include "connection.h"
 #include "microprotocols.h"
 #include "prepare_protocol.h"
+#include "sqlitecompat.h"
 
 /* prototypes */
 int check_remaining_sql(const char* tail);
