@@ -741,7 +741,6 @@ _expectations = {
         test_pwd
         test_resource
         test_signal
-        test_sqlite
         test_sunaudiodev
         test_threadsignals
         test_timing
