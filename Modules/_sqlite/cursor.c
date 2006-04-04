@@ -443,14 +443,14 @@ PyObject* _query_execute(Cursor* self, int multiple, PyObject* args)
         if (second_argument == NULL) {
             second_argument = PyTuple_New(0);
             if (!second_argument) {
-                return NULL;
+                goto error;
             }
         } else {
             Py_INCREF(second_argument);
         }
         if (PyList_Append(parameters_list, second_argument) != 0) {
             Py_DECREF(second_argument);
-            return NULL;
+            goto error;
         }
         Py_DECREF(second_argument);
 
@@ -714,7 +714,7 @@ PyObject* cursor_executescript(Cursor* self, PyObject* args)
         script_cstr = PyString_AsString(script_obj);
     } else if (PyUnicode_Check(script_obj)) {
         script_str = PyUnicode_AsUTF8String(script_obj);
-        if (!script_obj) {
+        if (!script_str) {
             return NULL;
         }
 
