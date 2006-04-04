@@ -276,7 +276,7 @@ class FunctionVisitor(PrototypeVisitor):
         emit("%s p;" % ctype, 1)
         for argtype, argname, opt in args:
             # XXX hack alert: false is allowed for a bool
-            if not opt and not argtype == "bool":
+            if not opt and not (argtype == "bool" or argtype == "int"):
                 emit("if (!%s) {" % argname, 1)
                 emit("PyErr_SetString(PyExc_ValueError,", 2)
                 msg = "field %s is required for %s" % (argname, name)

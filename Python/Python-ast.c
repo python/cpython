@@ -331,6 +331,8 @@ static char *excepthandler_fields[]={
         "type",
         "name",
         "body",
+        "lineno",
+        "col_offset",
 };
 static PyTypeObject *arguments_type;
 static PyObject* ast2obj_arguments(void*);
@@ -712,7 +714,7 @@ static int init_types(void)
                                        comprehension_fields, 3);
         if (!comprehension_type) return 0;
         excepthandler_type = make_type("excepthandler", AST_type,
-                                       excepthandler_fields, 3);
+                                       excepthandler_fields, 5);
         if (!excepthandler_type) return 0;
         arguments_type = make_type("arguments", AST_type, arguments_fields, 4);
         if (!arguments_type) return 0;
@@ -1843,7 +1845,8 @@ comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs, PyArena *arena)
 }
 
 excepthandler_ty
-excepthandler(expr_ty type, expr_ty name, asdl_seq * body, PyArena *arena)
+excepthandler(expr_ty type, expr_ty name, asdl_seq * body, int lineno, int
+              col_offset, PyArena *arena)
 {
         excepthandler_ty p;
         p = (excepthandler_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1854,6 +1857,8 @@ excepthandler(expr_ty type, expr_ty name, asdl_seq * body, PyArena *arena)
         p->type = type;
         p->name = name;
         p->body = body;
+        p->lineno = lineno;
+        p->col_offset = col_offset;
         return p;
 }
 
@@ -2917,6 +2922,16 @@ ast2obj_excepthandler(void* _o)
         if (PyObject_SetAttrString(result, "body", value) == -1)
                 goto failed;
         Py_DECREF(value);
+        value = ast2obj_int(o->lineno);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "lineno", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_int(o->col_offset);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "col_offset", value) == -1)
+                goto failed;
+        Py_DECREF(value);
         return result;
 failed:
         Py_XDECREF(value);
@@ -3033,7 +3048,7 @@ init_ast(void)
         if (PyDict_SetItemString(d, "AST", (PyObject*)AST_type) < 0) return;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return;
-        if (PyModule_AddStringConstant(m, "__version__", "42753") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "") < 0)
                 return;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return;
         if (PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0)

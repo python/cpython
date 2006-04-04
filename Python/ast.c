@@ -247,7 +247,8 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
                 stmts = asdl_seq_new(1, arena);
                 if (!stmts)
 		    goto error;
-                asdl_seq_SET(stmts, 0, Pass(n->n_lineno, n->n_col_offset, arena));
+                asdl_seq_SET(stmts, 0, Pass(n->n_lineno, n->n_col_offset,
+                                            arena));
                 return Interactive(stmts, arena);
             }
             else {
@@ -568,8 +569,8 @@ compiler_complex_args(struct compiling *c, const node *n)
 	    		ast_error(child, "assignment to None");
 		    	return NULL;
 		    }   
-            arg = Name(NEW_IDENTIFIER(child), Store, LINENO(child), child->n_col_offset,
-                       c->c_arena);
+            arg = Name(NEW_IDENTIFIER(child), Store, LINENO(child),
+                       child->n_col_offset, c->c_arena);
 	    }
         else {
             arg = compiler_complex_args(c, CHILD(CHILD(n, 2*i), 1));
@@ -662,7 +663,8 @@ ast_for_arguments(struct compiling *c, const node *n)
 			    goto error;
 		    }
                     name = Name(NEW_IDENTIFIER(CHILD(ch, 0)),
-                                Param, LINENO(ch), ch->n_col_offset, c->c_arena);
+                                Param, LINENO(ch), ch->n_col_offset,
+                                c->c_arena);
                     if (!name)
                         goto error;
                     asdl_seq_SET(args, k++, name);
@@ -754,7 +756,8 @@ ast_for_decorator(struct compiling *c, const node *n)
 	name_expr = NULL;
     }
     else if (NCH(n) == 5) { /* Call with no arguments */
-	d = Call(name_expr, NULL, NULL, NULL, NULL, LINENO(n), n->n_col_offset, c->c_arena);
+	d = Call(name_expr, NULL, NULL, NULL, NULL, LINENO(n),
+                 n->n_col_offset, c->c_arena);
 	if (!d)
 	    return NULL;
 	name_expr = NULL;
@@ -826,7 +829,8 @@ ast_for_funcdef(struct compiling *c, const node *n)
     if (!body)
 	return NULL;
 
-    return FunctionDef(name, args, body, decorator_seq, LINENO(n), n->n_col_offset, c->c_arena);
+    return FunctionDef(name, args, body, decorator_seq, LINENO(n),
+                       n->n_col_offset, c->c_arena);
 }
 
 static expr_ty
@@ -872,7 +876,8 @@ ast_for_ifexpr(struct compiling *c, const node *n)
     orelse = ast_for_expr(c, CHILD(n, 4));
     if (!orelse)
 	return NULL;
-    return IfExp(expression, body, orelse, LINENO(n), n->n_col_offset, c->c_arena);
+    return IfExp(expression, body, orelse, LINENO(n), n->n_col_offset,
+                 c->c_arena);
 }
 
 /* Count the number of 'for' loop in a list comprehension.
@@ -983,7 +988,8 @@ ast_for_listcomp(struct compiling *c, const node *n)
 	    lc = comprehension(asdl_seq_GET(t, 0), expression, NULL,
                                c->c_arena);
 	else
-	    lc = comprehension(Tuple(t, Store, LINENO(ch), ch->n_col_offset, c->c_arena),
+	    lc = comprehension(Tuple(t, Store, LINENO(ch), ch->n_col_offset,
+                                     c->c_arena),
                                expression, NULL, c->c_arena);
         if (!lc)
             return NULL;
@@ -1128,7 +1134,8 @@ ast_for_genexp(struct compiling *c, const node *n)
             ge = comprehension(asdl_seq_GET(t, 0), expression,
                                NULL, c->c_arena);
         else
-            ge = comprehension(Tuple(t, Store, LINENO(ch), ch->n_col_offset, c->c_arena),
+            ge = comprehension(Tuple(t, Store, LINENO(ch), ch->n_col_offset,
+                                     c->c_arena),
                                expression, NULL, c->c_arena);
 
         if (!ge)
@@ -1372,7 +1379,8 @@ ast_for_binop(struct compiling *c, const node *n)
         if (!operator)
             return NULL;
 
-	result = BinOp(expr1, operator, expr2, LINENO(n), n->n_col_offset, c->c_arena);
+	result = BinOp(expr1, operator, expr2, LINENO(n), n->n_col_offset,
+                       c->c_arena);
 	if (!result)
             return NULL;
 
@@ -1390,7 +1398,8 @@ ast_for_binop(struct compiling *c, const node *n)
                     return NULL;
 
                 tmp_result = BinOp(result, operator, tmp, 
-				   LINENO(next_oper), next_oper->n_col_offset, c->c_arena);
+				   LINENO(next_oper), next_oper->n_col_offset,
+                                   c->c_arena);
 		if (!tmp) 
 			return NULL;
 		result = tmp_result;
@@ -1408,7 +1417,8 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
     REQ(n, trailer);
     if (TYPE(CHILD(n, 0)) == LPAR) {
         if (NCH(n) == 2)
-            return Call(left_expr, NULL, NULL, NULL, NULL, LINENO(n), n->n_col_offset, c->c_arena);
+            return Call(left_expr, NULL, NULL, NULL, NULL, LINENO(n),
+                        n->n_col_offset, c->c_arena);
         else
             return ast_for_call(c, CHILD(n, 1), left_expr);
     }
@@ -1424,7 +1434,8 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             slice_ty slc = ast_for_slice(c, CHILD(n, 0));
             if (!slc)
                 return NULL;
-            return Subscript(left_expr, slc, Load, LINENO(n), n->n_col_offset, c->c_arena);
+            return Subscript(left_expr, slc, Load, LINENO(n), n->n_col_offset,
+                             c->c_arena);
         }
         else {
             /* The grammar is ambiguous here. The ambiguity is resolved 
@@ -1565,7 +1576,8 @@ ast_for_expr(struct compiling *c, const node *n)
                 asdl_seq_SET(seq, i / 2, e);
             }
             if (!strcmp(STR(CHILD(n, 1)), "and"))
-                return BoolOp(And, seq, LINENO(n), n->n_col_offset, c->c_arena);
+                return BoolOp(And, seq, LINENO(n), n->n_col_offset,
+                              c->c_arena);
             assert(!strcmp(STR(CHILD(n, 1)), "or"));
             return BoolOp(Or, seq, LINENO(n), n->n_col_offset, c->c_arena);
         case not_test:
@@ -1578,7 +1590,8 @@ ast_for_expr(struct compiling *c, const node *n)
                 if (!expression)
                     return NULL;
 
-                return UnaryOp(Not, expression, LINENO(n), n->n_col_offset, c->c_arena);
+                return UnaryOp(Not, expression, LINENO(n), n->n_col_offset,
+                               c->c_arena);
             }
         case comparison:
             if (NCH(n) == 1) {
@@ -1617,7 +1630,8 @@ ast_for_expr(struct compiling *c, const node *n)
                     return NULL;
 		}
                     
-                return Compare(expression, ops, cmps, LINENO(n), n->n_col_offset, c->c_arena);
+                return Compare(expression, ops, cmps, LINENO(n),
+                               n->n_col_offset, c->c_arena);
             }
             break;
 
@@ -2623,7 +2637,8 @@ ast_for_for_stmt(struct compiling *c, const node *n)
     if (!suite_seq)
         return NULL;
 
-    return For(target, expression, suite_seq, seq, LINENO(n), n->n_col_offset, c->c_arena);
+    return For(target, expression, suite_seq, seq, LINENO(n), n->n_col_offset,
+               c->c_arena);
 }
 
 static excepthandler_ty
@@ -2638,7 +2653,8 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
         if (!suite_seq)
             return NULL;
 
-	return excepthandler(NULL, NULL, suite_seq, c->c_arena);
+	return excepthandler(NULL, NULL, suite_seq, LINENO(exc),
+                             exc->n_col_offset, c->c_arena);
     }
     else if (NCH(exc) == 2) {
         expr_ty expression;
@@ -2651,7 +2667,8 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
         if (!suite_seq)
             return NULL;
 
-	return excepthandler(expression, NULL, suite_seq, c->c_arena);
+	return excepthandler(expression, NULL, suite_seq, LINENO(exc),
+                             exc->n_col_offset, c->c_arena);
     }
     else if (NCH(exc) == 4) {
         asdl_seq *suite_seq;
@@ -2668,7 +2685,8 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
         if (!suite_seq)
             return NULL;
 
-	return excepthandler(expression, e, suite_seq, c->c_arena);
+	return excepthandler(expression, e, suite_seq, LINENO(exc),
+                             exc->n_col_offset, c->c_arena);
     }
 
     PyErr_Format(PyExc_SystemError,
@@ -2737,7 +2755,8 @@ ast_for_try_stmt(struct compiling *c, const node *n)
             asdl_seq_SET(handlers, i, e);
         }
 
-	except_st = TryExcept(body, handlers, orelse, LINENO(n), n->n_col_offset, c->c_arena);
+	except_st = TryExcept(body, handlers, orelse, LINENO(n),
+                              n->n_col_offset, c->c_arena);
         if (!finally)
 	    return except_st;
 
@@ -2812,16 +2831,16 @@ ast_for_classdef(struct compiling *c, const node *n)
         s = ast_for_suite(c, CHILD(n, 3));
         if (!s)
             return NULL;
-	return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, s, LINENO(n), n->n_col_offset,
-                        c->c_arena);
+	return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, s, LINENO(n),
+                        n->n_col_offset, c->c_arena);
     }
     /* check for empty base list */
     if (TYPE(CHILD(n,3)) == RPAR) {
 	s = ast_for_suite(c, CHILD(n,5));
 	if (!s)
 		return NULL;
-	return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, s, LINENO(n), n->n_col_offset,
-                        c->c_arena);
+	return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, s, LINENO(n),
+                        n->n_col_offset, c->c_arena);
     }
 
     /* else handle the base class list */
@@ -2832,8 +2851,8 @@ ast_for_classdef(struct compiling *c, const node *n)
     s = ast_for_suite(c, CHILD(n, 6));
     if (!s)
         return NULL;
-    return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), bases, s, LINENO(n), n->n_col_offset,
-                    c->c_arena);
+    return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), bases, s, LINENO(n),
+                    n->n_col_offset, c->c_arena);
 }
 
 static stmt_ty
@@ -3105,7 +3124,8 @@ parsestr(const char *s, const char *encoding)
 #ifndef Py_USING_UNICODE
 			/* This should not happen - we never see any other
 			   encoding. */
-			Py_FatalError("cannot deal with encodings in this build.");
+			Py_FatalError(
+                            "cannot deal with encodings in this build.");
 #else
 			PyObject *v, *u = PyUnicode_DecodeUTF8(s, len, NULL);
 			if (u == NULL)
