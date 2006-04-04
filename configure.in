@@ -171,18 +171,14 @@ case $ac_sys_system/$ac_sys_release in
       define_xopen_source=no
     fi
     ;;
-  # XXX(nnorwitz): the 2 cases below should be Darwin/[78].*, 
-  # but autoconf seems to convert that to Darwin/78.* which is incorrect.
-  # On Mac OS X 10.3, defining _POSIX_C_SOURCE or _XOPEN_SOURCE 
-  # has no effect, don't bother defining them.
-  Darwin/7.*)
-    define_xopen_source=no
-    ;;
   # On Mac OS X 10.4, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
   # disables platform specific features beyond repair.
-  Darwin/8.*)
+  # On Mac OS X 10.3, defining _POSIX_C_SOURCE or _XOPEN_SOURCE 
+  # has no effect, don't bother defineing them
+  Darwin/@<:@78@:>@.*)
     define_xopen_source=no
     ;;
+
 esac
 
 if test $define_xopen_source = yes
