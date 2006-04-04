@@ -29,3 +29,7 @@ if not exist tcl8.4.12 (
    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.12
    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.12 INSTALLDIR=..\..\tcltk install
 )
+
+@rem sqlite
+if not exist sqlite-source-3.3.4 svn export http://svn.python.org/projects/external/sqlite-source-3.3.4
+if not exist build/Python/PCbuild/sqlite3.dll copy sqlite-source-3.3.4/sqlite3.dll build/Python/PCbuild
