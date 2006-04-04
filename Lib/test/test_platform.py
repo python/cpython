@@ -63,7 +63,12 @@ class PlatformTest(unittest.TestCase):
         res = platform.dist()
 
     def test_libc_ver(self):
-        res = platform.libc_ver()
+        from sys import executable
+        import os
+        if os.path.isdir(executable) and os.path.exists(executable+'.exe'):
+            # Cygwin horror
+            executable = executable + '.exe'
+        res = platform.libc_ver(executable)
 
 def test_main():
     test_support.run_unittest(
