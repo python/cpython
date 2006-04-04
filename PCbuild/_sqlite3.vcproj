@@ -22,7 +22,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\Include;..\PC;..\..\sqlite-source-3.3.4"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;PYSQLITE_VERSION=&quot;2.1.3&quot;"
+				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;PYSQLITE_VERSION=\&quot;2.1.3\&quot;"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
@@ -33,6 +33,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="..\..\sqlite-source-3.3.4\sqlite3.lib"
 				OutputFile="./_sqlite3_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -134,7 +135,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="{MSSDKPATH}\include\Win64\atl;{MSSDKPATH}\include\Win64\crt;{MSSDKPATH}\include\Win64\crt\sys;{MSSDKPATH}\include\Win64\mfc;..\Include;..\PC;..\..\sqlite-source-3.3.4"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;PYSQLITE_VERSION=&quot;2.1.3&quot;"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;PYSQLITE_VERSION=\&quot;2.1.3\&quot;"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
@@ -151,6 +152,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
+				AdditionalDependencies="..\..\sqlite-source-3.3.4\sqlite3.lib"
 				OutputFile="./_sqlite3.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -195,7 +197,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="{MSSDKPATH}\include\Win64\atl\amd64;{MSSDKPATH}\include\Win64\crt\amd64;{MSSDKPATH}\include\Win64\crt\amd64\sys;{MSSDKPATH}\include\Win64\mfc\amd64;..\Include;..\PC;..\..\sqlite-source-3.3.4"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;PYSQLITE_VERSION=&quot;2.1.3&quot;"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;PYSQLITE_VERSION=\&quot;2.1.3\&quot;"
 				StringPooling="TRUE"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
@@ -212,6 +214,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
+				AdditionalDependencies="..\..\sqlite-source-3.3.4\sqlite3.lib"
 				OutputFile="./_sqlite3.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
