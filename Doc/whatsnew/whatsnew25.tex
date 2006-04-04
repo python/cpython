@@ -21,6 +21,10 @@ This article explains the new features in Python 2.5.  No release date
 for Python 2.5 has been set; it will probably be released in the
 autumn of 2006.
 
+(This is still an early draft, and some sections are still skeletal or
+completely missing.  Comments on the present material will still be
+welcomed.)
+
 % XXX Compare with previous release in 2 - 3 sentences here.
 
 This article doesn't attempt to provide a complete specification of
@@ -48,10 +52,10 @@ else:
 \end{verbatim}
 
 There have been endless tedious discussions of syntax on both
-python-dev and comp.lang.python, and even a vote that found the
-majority of voters wanted some way to write conditional expressions,
-but there was no syntax that was clearly preferred by a majority.
-Candidates include C's \code{cond ? true_v : false_v},
+python-dev and comp.lang.python.  A vote was even held that found the
+majority of voters wanted conditional expressions in some form,
+but there was no syntax that was preferred by a clear majority.
+Candidates included C's \code{cond ? true_v : false_v},
 \code{if cond then true_v else false_v}, and 16 other variations.
 
 GvR eventually chose a surprising syntax:
@@ -299,7 +303,7 @@ form of the import statement, only the \code{from ... import} form.
 \seepep{328}{Imports: Multi-Line and Absolute/Relative}{PEP written
 by Aahz; implemented by XXX.}
 
-\seeurl{XXX}{py.std}
+%\seeurl{http://codespeak.net/py/current/doc/misc.html\#mapping-the-standard-python-library-into-py}{py.std}
 
 \end{seealso}
 
@@ -369,9 +373,7 @@ handler or the \var{else-block} and a new exception is raised, the
 \begin{seealso}
 
 \seepep{341}{Unifying try-except and try-finally}{PEP written by Georg Brandl; 
-implementation by Thomas Lee.
-XXX check implementor -- http://python.org/sf/1355913
-}
+implementation by Thomas Lee.}
 
 \end{seealso}
 
@@ -582,7 +584,7 @@ with open('/etc/passwd', 'r') as f:
 \end{verbatim}
 
 The \module{threading} module's locks and condition variables 
-also support the new statement:
+also support the \keyword{with} statement:
 
 \begin{verbatim}
 lock = threading.Lock()
@@ -616,8 +618,12 @@ with decimal.Context(prec=16):
 
 % XXX write this
 
+This section still needs to be written.
+
 The new \module{contextlib} module provides some functions and a
-decorator that are useful for writing context managers.
+decorator that are useful for writing context managers.  
+Future versions will go into more detail.
+
 % XXX describe further
 
 \begin{seealso}
@@ -735,7 +741,7 @@ its result.
 \begin{seealso}
 
 \seepep{357}{Allowing Any Object to be Used for Slicing}{PEP written 
-(XXX and implemented?) by Travis Oliphant.}
+and implemented by Travis Oliphant.}
 
 \end{seealso}
 
@@ -831,7 +837,7 @@ code corresponding to \code{a = 5}.
 \end{itemize}
 
 The net result of the 2.5 optimizations is that Python 2.5 runs the
-pystone benchmark around XX\% faster than Python 2.4.
+pystone benchmark around XXX\% faster than Python 2.4.
 
 
 %======================================================================
