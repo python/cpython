@@ -214,6 +214,15 @@ _bsddb
       target ("Release IA64" for Itanium, "Release AMD64" for AMD64), e.g.
     devenv db-4.4.20\build_win32\Berkeley_DB.sln /build "Release AMD64" /project db_static /useenv
 
+_sqlite3
+    Python wrapper for SQLite library.
+    
+    Get the source code through
+    
+    svn export http://svn.python.org/projects/external/sqlite-source-3.3.4
+    
+    To use the extension module in a Python build tree, copy sqlite3.dll into
+    the PCbuild folder.
 
 _ssl
     Python wrapper for the secure sockets library.

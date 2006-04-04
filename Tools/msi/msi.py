@@ -24,6 +24,8 @@ srcdir = os.path.abspath("../..")
 full_current_version = None
 # Is Tcl available at all?
 have_tcl = True
+# Where is sqlite3.dll located, relative to srcdir?
+sqlite_dir = "../sqlite-source-3.3.4"
 
 try:
     from config import *
@@ -86,7 +88,8 @@ extensions = [
     '_tkinter.pyd',
     '_msi.pyd',
     '_ctypes.pyd',
-    '_ctypes_test.pyd'
+    '_ctypes_test.pyd',
+    '_sqlite3.pyd'
 ]
 
 # Well-known component UUIDs
@@ -963,6 +966,8 @@ def add_files(db):
             tcldir = os.path.normpath(srcdir+"/../tcltk/bin")
             for f in glob.glob1(tcldir, "*.dll"):
                 lib.add_file(f, src=os.path.join(tcldir, f))
+    # Add sqlite
+    lib.add_file(srcdir+"/"+sqlite_dir+"/sqlite3.dll")
     # check whether there are any unknown extensions
     for f in glob.glob1(srcdir+"/PCBuild", "*.pyd"):
         if f.endswith("_d.pyd"): continue # debug version
