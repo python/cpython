@@ -150,8 +150,10 @@ def run_tests():
                                 (eval_tests, eval_results, "eval")):
         for i, o in itertools.izip(input, output):
             ast_tree = compile(i, "?", kind, 0x400)
-            print repr(to_tuple(ast_tree))
-            print repr(o)
+            # XXX(nnorwitz): these prints seem to be only for debugging.
+            #  If they are really desired, we must generate the output file.
+            # print repr(to_tuple(ast_tree))
+            # print repr(o)
             assert to_tuple(ast_tree) == o
             test_order(ast_tree, (0, 0))
 
