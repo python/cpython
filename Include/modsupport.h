@@ -20,7 +20,7 @@ extern "C" {
 #define PyArg_BuildValue		_PyArg_BuildValue_SizeT
 #define PyArg_VaBuildValue		_PyArg_VaBuildValue_SizeT
 #else
-#if HAVE_DECLSPEC_DLL
+#ifdef HAVE_DECLSPEC_DLL
 PyAPI_FUNC(int) _PyArg_Parse_SizeT(PyObject *, char *, ...);
 PyAPI_FUNC(int) _PyArg_ParseTuple_SizeT(PyObject *, char *, ...);
 PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywords_SizeT(PyObject *, PyObject *,
