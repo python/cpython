@@ -1938,6 +1938,8 @@ import_module_level(char *name, PyObject *globals, PyObject *locals,
 		/* If tail is Py_None, both get_parent and load_next found
 		   an empty module name: someone called __import__("") or
 		   doctored faulty bytecode */
+		Py_DECREF(tail);
+		Py_DECREF(head);
 		PyErr_SetString(PyExc_ValueError,
 				"Empty module name");
 		return NULL;
