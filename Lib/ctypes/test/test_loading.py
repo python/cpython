@@ -2,59 +2,59 @@ from ctypes import *
 import sys, unittest
 import os, StringIO
 
+libc_name = None
+if os.name == "nt":
+    libc_name = "msvcrt"
+elif os.name == "ce":
+    libc_name = "coredll"
+elif sys.platform == "darwin":
+    libc_name = "libc.dylib"
+elif sys.platform == "cygwin":
+    libc_name = "cygwin1.dll"
+else:
+    for line in os.popen("ldd %s" % sys.executable):
+        if "libc.so" in line:
+            if sys.platform == "openbsd3":
+                libc_name = line.split()[4]
+            else:
+                libc_name = line.split()[2]
+##            print "libc_name is", libc_name
+            break
+
 class LoaderTest(unittest.TestCase):
 
     unknowndll = "xxrandomnamexx"
 
-    def test_load(self):
-        if os.name == "nt":
-            name = "msvcrt"
-        elif os.name == "ce":
-            name = "coredll"
-        elif sys.platform == "darwin":
-            name = "libc.dylib"
-        elif sys.platform.startswith("freebsd"):
-            name = "libc.so"
-        elif sys.platform in ("sunos5", "osf1V5"):
-            name = "libc.so"
-        elif sys.platform.startswith("netbsd") or sys.platform.startswith("openbsd"):
-            name = "libc.so"
-        else:
-            name = "libc.so.6"
-##        print (sys.platform, os.name)
-        try:
-            cdll.load(name)
-        except Exception, details:
-            self.fail((str(details), name, (os.name, sys.platform)))
-        self.assertRaises(OSError, cdll.load, self.unknowndll)
+    if libc_name is not None:
+        def test_load(self):
+            cdll.load(libc_name)
+            cdll.load(os.path.basename(libc_name))
+            self.assertRaises(OSError, cdll.load, self.unknowndll)
 
-    def test_load_version(self):
-        version = "6"
-        name = "c"
-        if sys.platform == "linux2":
-            cdll.load_version(name, version)
+    if libc_name is not None and "libc.so.6" in libc_name:
+        def test_load_version(self):
+            cdll.load_version("c", "6")
             # linux uses version, libc 9 should not exist
-            self.assertRaises(OSError, cdll.load_version, name, "9")
-        self.assertRaises(OSError, cdll.load_version, self.unknowndll, "")
+            self.assertRaises(OSError, cdll.load_version, "c", "9")
+            self.assertRaises(OSError, cdll.load_version, self.unknowndll, "")
 
-    if os.name == "posix" and sys.platform != "sunos5":
         def test_find(self):
             name = "c"
             cdll.find(name)
             self.assertRaises(OSError, cdll.find, self.unknowndll)
 
-    def test_load_library(self):
-        if os.name == "nt":
-            windll.load_library("kernel32").GetModuleHandleW
-            windll.LoadLibrary("kernel32").GetModuleHandleW
-            WinDLL("kernel32").GetModuleHandleW
-        elif os.name == "ce":
-            windll.load_library("coredll").GetModuleHandleW
-            windll.LoadLibrary("coredll").GetModuleHandleW
-            WinDLL("coredll").GetModuleHandleW
+    if os.name in ("nt", "ce"):
+        def test_load_library(self):
+            if os.name == "nt":
+                windll.load_library("kernel32").GetModuleHandleW
+                windll.LoadLibrary("kernel32").GetModuleHandleW
+                WinDLL("kernel32").GetModuleHandleW
+            elif os.name == "ce":
+                windll.load_library("coredll").GetModuleHandleW
+                windll.LoadLibrary("coredll").GetModuleHandleW
+                WinDLL("coredll").GetModuleHandleW
 
-    def test_load_ordinal_functions(self):
-        if os.name in ("nt", "ce"):
+        def test_load_ordinal_functions(self):
             import _ctypes_test
             dll = WinDLL(_ctypes_test.__file__)
             # We load the same function both via ordinal and name
