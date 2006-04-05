@@ -99,7 +99,7 @@ typedef Py_intptr_t	Py_ssize_t;
 
 /* Largest positive value of type Py_ssize_t. */
 #define PY_SSIZE_T_MAX ((Py_ssize_t)(((size_t)-1)>>1))
-/* Smallest positive value of type Py_ssize_t. */
+/* Smallest negative value of type Py_ssize_t. */
 #define PY_SSIZE_T_MIN (-PY_SSIZE_T_MAX-1)
 
 /* PY_FORMAT_SIZE_T is a platform-specific modifier for use in a printf
