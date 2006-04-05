@@ -499,7 +499,7 @@ b_set(void *ptr, PyObject *value, unsigned size)
 	long val;
 	if (get_long(value, &val) < 0)
 		return NULL;
-	*(char *)ptr = (char)SET(*(char *)ptr, (char)val, size);
+	*(signed char *)ptr = (signed char)SET(*(signed char *)ptr, (signed char)val, size);
 	_RET(value);
 }
 
@@ -507,7 +507,7 @@ b_set(void *ptr, PyObject *value, unsigned size)
 static PyObject *
 b_get(void *ptr, unsigned size)
 {
-	char val = *(char *)ptr;
+	signed char val = *(signed char *)ptr;
 	GET_BITFIELD(val, size);
 	return PyInt_FromLong(val);
 }
