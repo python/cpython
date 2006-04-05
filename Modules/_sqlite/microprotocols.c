@@ -55,28 +55,19 @@ int
 microprotocols_add(PyTypeObject *type, PyObject *proto, PyObject *cast)
 {
     PyObject* key;
+    int rc;
 
     if (proto == NULL) proto = (PyObject*)&SQLitePrepareProtocolType;
-
-    /*
-    Dprintf("microprotocols_add: cast %p for (%s, ?)",
-            cast, type->tp_name);
-    */
-
 
     key = Py_BuildValue("(OO)", (PyObject*)type, proto);
     if (!key) {
         return -1;
     }
 
-    if (PyDict_SetItem(psyco_adapters, key, cast) != 0) {
-        Py_DECREF(key);
-        return -1;
-    }
-
+    rc = PyDict_SetItem(psyco_adapters, key, cast);
     Py_DECREF(key);
 
-    return 0;
+    return rc;
 }
 
 /* microprotocols_adapt - adapt an object to the built-in protocol */

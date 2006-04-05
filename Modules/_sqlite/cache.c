@@ -262,7 +262,7 @@ static PyMethodDef cache_methods[] = {
 PyTypeObject NodeType = {
         PyObject_HEAD_INIT(NULL)
         0,                                              /* ob_size */
-        "pysqlite2.dbapi2.Node",                        /* tp_name */
+        MODULE_NAME "Node",                             /* tp_name */
         sizeof(Node),                                   /* tp_basicsize */
         0,                                              /* tp_itemsize */
         (destructor)node_dealloc,                       /* tp_dealloc */
@@ -305,7 +305,7 @@ PyTypeObject NodeType = {
 PyTypeObject CacheType = {
         PyObject_HEAD_INIT(NULL)
         0,                                              /* ob_size */
-        "pysqlite2.dbapi2.Cache",                       /* tp_name */
+        MODULE_NAME ".Cache",                           /* tp_name */
         sizeof(Cache),                                  /* tp_basicsize */
         0,                                              /* tp_itemsize */
         (destructor)cache_dealloc,                      /* tp_dealloc */

@@ -154,7 +154,7 @@ PyMappingMethods row_as_mapping = {
 PyTypeObject RowType = {
         PyObject_HEAD_INIT(NULL)
         0,                                              /* ob_size */
-        "pysqlite2.dbapi2.Row",                         /* tp_name */
+        MODULE_NAME ".Row",                             /* tp_name */
         sizeof(Row),                                    /* tp_basicsize */
         0,                                              /* tp_itemsize */
         (destructor)row_dealloc,                        /* tp_dealloc */

@@ -977,7 +977,7 @@ static struct PyMemberDef cursor_members[] =
 PyTypeObject CursorType = {
         PyObject_HEAD_INIT(NULL)
         0,                                              /* ob_size */
-        "pysqlite2.dbapi2.Cursor",                      /* tp_name */
+        MODULE_NAME ".Cursor",                          /* tp_name */
         sizeof(Cursor),                                 /* tp_basicsize */
         0,                                              /* tp_itemsize */
         (destructor)cursor_dealloc,                     /* tp_dealloc */

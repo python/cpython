@@ -755,11 +755,10 @@ class PyBuildExt(build_ext):
             PYSQLITE_VERSION = "2.2.0"
             sqlite_defines = []
             if sys.platform != "win32":
-                sqlite_defines.append(('PYSQLITE_VERSION',
-                                        '"%s"' % PYSQLITE_VERSION))
+                sqlite_defines.append(('MODULE_NAME', '"sqlite3"'))
             else:
-                sqlite_defines.append(('PYSQLITE_VERSION',
-                                        '\\"'+PYSQLITE_VERSION+'\\"'))
+                sqlite_defines.append(('MODULE_NAME', '\\"sqlite3\\"'))
+
             sqlite_defines.append(('PY_MAJOR_VERSION',
                                         str(sys.version_info[0])))
             sqlite_defines.append(('PY_MINOR_VERSION',

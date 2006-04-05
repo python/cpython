@@ -214,56 +214,56 @@ PyMODINIT_FUNC init_sqlite3(void)
 
     /*** Create DB-API Exception hierarchy */
 
-    if (!(Error = PyErr_NewException("sqlite3.Error", PyExc_StandardError, NULL))) {
+    if (!(Error = PyErr_NewException(MODULE_NAME ".Error", PyExc_StandardError, NULL))) {
         goto error;
     }
     PyDict_SetItemString(dict, "Error", Error);
 
-    if (!(Warning = PyErr_NewException("sqlite3.Warning", PyExc_StandardError, NULL))) {
+    if (!(Warning = PyErr_NewException(MODULE_NAME ".Warning", PyExc_StandardError, NULL))) {
         goto error;
     }
     PyDict_SetItemString(dict, "Warning", Warning);
 
     /* Error subclasses */
 
-    if (!(InterfaceError = PyErr_NewException("sqlite3.InterfaceError", Error, NULL))) {
+    if (!(InterfaceError = PyErr_NewException(MODULE_NAME ".InterfaceError", Error, NULL))) {
         goto error;
     }
     PyDict_SetItemString(dict, "InterfaceError", InterfaceError);
 
-    if (!(DatabaseError = PyErr_NewException("sqlite3.DatabaseError", Error, NULL))) {
+    if (!(DatabaseError = PyErr_NewException(MODULE_NAME ".DatabaseError", Error, NULL))) {
         goto error;
     }
     PyDict_SetItemString(dict, "DatabaseError", DatabaseError);
 
     /* DatabaseError subclasses */
 
-    if (!(InternalError = PyErr_NewException("sqlite3.InternalError", DatabaseError, NULL))) {
+    if (!(InternalError = PyErr_NewException(MODULE_NAME ".InternalError", DatabaseError, NULL))) {
         goto error;
     }
     PyDict_SetItemString(dict, "InternalError", InternalError);
 
-    if (!(OperationalError = PyErr_NewException("sqlite3.OperationalError", DatabaseError, NULL))) {
+    if (!(OperationalError = PyErr_NewException(MODULE_NAME ".OperationalError", DatabaseError, NULL))) {
         goto error;
     }
     PyDict_SetItemString(dict, "OperationalError", OperationalError);
 
-    if (!(ProgrammingError = PyErr_NewException("sqlite3.ProgrammingError", DatabaseError, NULL))) {
+    if (!(ProgrammingError = PyErr_NewException(MODULE_NAME ".ProgrammingError", DatabaseError, NULL))) {
         goto error;
     }
     PyDict_SetItemString(dict, "ProgrammingError", ProgrammingError);
 
-    if (!(IntegrityError = PyErr_NewException("sqlite3.IntegrityError", DatabaseError,NULL))) {
+    if (!(IntegrityError = PyErr_NewException(MODULE_NAME ".IntegrityError", DatabaseError,NULL))) {
         goto error;
     }
     PyDict_SetItemString(dict, "IntegrityError", IntegrityError);
 
-    if (!(DataError = PyErr_NewException("sqlite3.DataError", DatabaseError, NULL))) {
+    if (!(DataError = PyErr_NewException(MODULE_NAME ".DataError", DatabaseError, NULL))) {
         goto error;
     }
     PyDict_SetItemString(dict, "DataError", DataError);
 
-    if (!(NotSupportedError = PyErr_NewException("sqlite3.NotSupportedError", DatabaseError, NULL))) {
+    if (!(NotSupportedError = PyErr_NewException(MODULE_NAME ".NotSupportedError", DatabaseError, NULL))) {
         goto error;
     }
     PyDict_SetItemString(dict, "NotSupportedError", NotSupportedError);
@@ -320,6 +320,6 @@ PyMODINIT_FUNC init_sqlite3(void)
 error:
     if (PyErr_Occurred())
     {
-        PyErr_SetString(PyExc_ImportError, "_sqlite3: init failed");
+        PyErr_SetString(PyExc_ImportError, MODULE_NAME ": init failed");
     }
 }
