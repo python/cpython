@@ -36,7 +36,7 @@ void prepare_protocol_dealloc(SQLitePrepareProtocol* self)
 PyTypeObject SQLitePrepareProtocolType= {
         PyObject_HEAD_INIT(NULL)
         0,                                              /* ob_size */
-        "pysqlite2.dbapi2.PrepareProtocol",             /* tp_name */
+        MODULE_NAME ".PrepareProtocol",                 /* tp_name */
         sizeof(SQLitePrepareProtocol),                  /* tp_basicsize */
         0,                                              /* tp_itemsize */
         (destructor)prepare_protocol_dealloc,           /* tp_dealloc */

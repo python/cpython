@@ -381,7 +381,7 @@ int check_remaining_sql(const char* tail)
 PyTypeObject StatementType = {
         PyObject_HEAD_INIT(NULL)
         0,                                              /* ob_size */
-        "pysqlite2.dbapi2.Statement",                   /* tp_name */
+        MODULE_NAME ".Statement",                       /* tp_name */
         sizeof(Statement),                              /* tp_basicsize */
         0,                                              /* tp_itemsize */
         (destructor)statement_dealloc,                  /* tp_dealloc */

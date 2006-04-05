@@ -1029,7 +1029,7 @@ static struct PyMemberDef connection_members[] =
 PyTypeObject ConnectionType = {
         PyObject_HEAD_INIT(NULL)
         0,                                              /* ob_size */
-        "pysqlite2.dbapi2.Connection",                  /* tp_name */
+        MODULE_NAME ".Connection",                      /* tp_name */
         sizeof(Connection),                             /* tp_basicsize */
         0,                                              /* tp_itemsize */
         (destructor)connection_dealloc,                 /* tp_dealloc */
