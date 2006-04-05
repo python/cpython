@@ -31,7 +31,7 @@ class LoaderTest(unittest.TestCase):
             cdll.load(os.path.basename(libc_name))
             self.assertRaises(OSError, cdll.load, self.unknowndll)
 
-    if libc_name is not None and "libc.so.6" in libc_name:
+    if libc_name is not None and os.path.basename(libc_name) == "libc.so.6":
         def test_load_version(self):
             cdll.load_version("c", "6")
             # linux uses version, libc 9 should not exist
