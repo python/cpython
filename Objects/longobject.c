@@ -281,7 +281,7 @@ _long_as_ssize_t(PyObject *vv) {
 	if (sign > 0) 
 		return PY_SSIZE_T_MAX;
 	else 
-		return -PY_SSIZE_T_MAX-1;
+		return PY_SSIZE_T_MIN;
 }
 
 /* Get a Py_ssize_t from a long int object.
