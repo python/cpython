@@ -1042,15 +1042,15 @@ class PyBuildExt(build_ext):
             carbon_kwds = {'extra_compile_args': carbon_extra_compile_args,
                            'extra_link_args': ['-framework', 'Carbon'],
                           }
-            CARBON_EXTS = ['ColorPicker', 'gestalt', 'MacOS', 'Nav', 
-                           'OSATerminology', 'icglue', 
+            CARBON_EXTS = ['ColorPicker', 'gestalt', 'MacOS', 'Nav',
+                           'OSATerminology', 'icglue',
                            # All these are in subdirs
-                           '_AE', '_AH', '_App', '_CarbonEvt', '_Cm', '_Ctl', 
+                           '_AE', '_AH', '_App', '_CarbonEvt', '_Cm', '_Ctl',
                            '_Dlg', '_Drag', '_Evt', '_File', '_Folder', '_Fm',
-                           '_Help', '_Icn', '_IBCarbon', '_List', 
-                           '_Menu', '_Mlte', '_OSA', '_Res', '_Qd', '_Qdoffs', 
+                           '_Help', '_Icn', '_IBCarbon', '_List',
+                           '_Menu', '_Mlte', '_OSA', '_Res', '_Qd', '_Qdoffs',
                            '_Scrap', '_Snd', '_TE', '_Win',
-                          ] 
+                          ]
             for name in CARBON_EXTS:
                 addMacExtension(name, carbon_kwds)
 

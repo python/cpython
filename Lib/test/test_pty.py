@@ -22,7 +22,7 @@ def normalize_output(data):
     # Some operating systems do conversions on newline.  We could possibly
     # fix that by doing the appropriate termios.tcsetattr()s.  I couldn't
     # figure out the right combo on Tru64 and I don't have an IRIX box.
-    # So just normalize the output and doc the problem O/Ses by allowing 
+    # So just normalize the output and doc the problem O/Ses by allowing
     # certain combinations for some platforms, but avoid allowing other
     # differences (like extra whitespace, trailing garbage, etc.)
 
