@@ -764,6 +764,7 @@ _expectations = {
         test_ntpath
         test_ossaudiodev
         test_sqlite
+        test_startfile
         test_sunaudiodev
         """,
    'mac':
@@ -804,6 +805,7 @@ _expectations = {
         test_resource
         test_signal
         test_sqlite
+        test_startfile
         test_sunaudiodev
         test_sundry
         test_tarfile
@@ -828,6 +830,7 @@ _expectations = {
         test_openpty
         test_pyexpat
         test_sax
+        test_startfile
         test_sqlite
         test_sunaudiodev
         test_sundry
@@ -852,6 +855,7 @@ _expectations = {
         test_pyexpat
         test_sax
         test_sqlite
+        test_startfile
         test_sunaudiodev
         test_sundry
         """,
@@ -880,6 +884,7 @@ _expectations = {
         test_queue
         test_sax
         test_sqlite
+        test_startfile
         test_sunaudiodev
         test_sundry
         test_thread
@@ -921,6 +926,7 @@ _expectations = {
         test_pwd
         test_strop
         test_sqlite
+        test_startfile
         test_sunaudiodev
         test_sundry
         test_thread
@@ -951,6 +957,7 @@ _expectations = {
         test_ossaudiodev
         test_poll
         test_sqlite
+        test_startfile
         test_sunaudiodev
         """,
     'sunos5':
@@ -970,6 +977,7 @@ _expectations = {
         test_linuxaudiodev
         test_openpty
         test_sqlite
+        test_startfile
         test_zipfile
         test_zlib
         """,
@@ -997,6 +1005,7 @@ _expectations = {
         test_pyexpat
         test_sax
         test_sqlite
+        test_startfile
         test_sunaudiodev
         test_zipfile
         test_zlib
@@ -1023,6 +1032,7 @@ _expectations = {
         test_popen2
         test_resource
         test_sqlite
+        test_startfile
         test_sunaudiodev
         """,
     'cygwin':
@@ -1072,6 +1082,7 @@ _expectations = {
         test_resource
         test_signal
         test_sqlite
+        test_startfile
         test_sunaudiodev
         """,
     'freebsd4':
@@ -1099,6 +1110,7 @@ _expectations = {
         test_socket_ssl
         test_socketserver
         test_sqlite
+        test_startfile
         test_sunaudiodev
         test_tcl
         test_timeout
@@ -1129,6 +1141,7 @@ _expectations = {
         test_nis
         test_ossaudiodev
         test_sqlite
+        test_startfile
         test_sunaudiodev
         test_tcl
         test_winreg
@@ -1162,6 +1175,7 @@ _expectations = {
         test_scriptpackages
         test_tcl
         test_sqlite
+        test_startfile
         test_sunaudiodev
         test_unicode_file
         test_winreg
