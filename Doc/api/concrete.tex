@@ -1803,8 +1803,9 @@ format.
 
 \begin{cfuncdesc}{PyObject*}{PyList_GetItem}{PyObject *list, Py_ssize_t index}
   Return the object at position \var{pos} in the list pointed to by
-  \var{p}.  If \var{pos} is out of bounds, return \NULL{} and set an
-  \exception{IndexError} exception.
+  \var{p}.  The position must be positive, indexing from the end of the
+  list is not supported.  If \var{pos} is out of bounds, return \NULL{}
+  and set an \exception{IndexError} exception.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_GET_ITEM}{PyObject *list, Py_ssize_t i}
