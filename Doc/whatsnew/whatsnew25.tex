@@ -249,10 +249,8 @@ you wanted Python's standard \module{string} module?  There's no clean
 way to ignore \module{pkg.string} and look for the standard module;
 generally you had to look at the contents of \code{sys.modules}, which
 is slightly unclean.   
-Holger Krekel's py.std package provides a tidier way to perform
-imports from the standard library, \code{from py.std import string},
-% XXX correct attribution?
-% XXX is that import correct?
+Holger Krekel's \module{py.std} package provides a tidier way to perform
+imports from the standard library, \code{import py ; py.std.string.join()},
 but that package isn't available on all Python installations.
 
 Reading code which relies on relative imports is also less clear,
@@ -266,7 +264,7 @@ future version of Python.
 In Python 2.5, you can switch \keyword{import}'s behaviour to 
 absolute imports using a \code{from __future__ import absolute_import}
 directive.  This absolute-import behaviour will become the default in
-a future version (probably Python 2.6).  Once absolute-imports 
+a future version (probably Python 2.7).  Once absolute imports 
 are the default, \code{import string} will
 always find the standard library's version.
 It's suggested that users should begin using absolute imports as much
@@ -300,10 +298,11 @@ form of the import statement, only the \code{from ... import} form.
 
 \begin{seealso}
 
-\seepep{328}{Imports: Multi-Line and Absolute/Relative}{PEP written
-by Aahz; implemented by XXX.}
+\seepep{328}{Imports: Multi-Line and Absolute/Relative}
+{PEP written by Aahz; implemented by Thomas Wouters.}
 
-%\seeurl{http://codespeak.net/py/current/doc/misc.html\#mapping-the-standard-python-library-into-py}{py.std}
+\seeurl{http://codespeak.net/py/current/doc/index.html}
+{The py library by Holger Krekel, which contains the \module{py.std} package.}
 
 \end{seealso}
 
@@ -701,20 +700,66 @@ Brett Cannon and Guido van Rossum; implemented by Brett Cannon.}
 
 
 %======================================================================
-\section{PEP 353: Using ssize_t as the index type}
+\section{PEP 353: Using ssize_t as the index type\label{section-353}}
 
 A wide-ranging change to Python's C API, using a new 
 \ctype{Py_ssize_t} type definition instead of \ctype{int}, 
 will permit the interpreter to handle more data on 64-bit platforms.
 This change doesn't affect Python's capacity on 32-bit platforms.
 
-This section will be expanded in future alpha releases.
+Various pieces of the Python interpreter used C's \ctype{int} type to
+store sizes or counts; for example, the number of items in a list or
+tuple were stored in an \ctype{int}.  The C compilers for most 64-bit
+platforms still define \ctype{int} as a 32-bit type, so that meant
+that lists could only hold up to \code{2**31 - 1} = 2147483647 items.
+(There are actually a few different programming models that 64-bit C
+compilers can use -- see
+\url{http://www.unix.org/version2/whatsnew/lp64_wp.html} for a
+discussion -- but the most commonly available model leaves \ctype{int}
+as 32 bits.)
+
+A limit of 2147483647 items doesn't really matter on a 32-bit platform
+because you'll run out of memory before hitting the length limit.
+Each list item requires space for a pointer, which is 4 bytes, plus
+space for a \ctype{PyObject} representing the item.  2147483647*4 is
+already more bytes than a 32-bit address space can contain.
+
+It's possible to address that much memory on a 64-bit platform,
+however.  The pointers for a list that size would only require 16GiB
+of space, so it's not unreasonable that Python programmers might
+construct lists that large.  Therefore, the Python interpreter had to
+be changed to use some type other than \ctype{int}, and this will be a
+64-bit type on 64-bit platforms.  The change will cause
+incompatibilities on 64-bit machines, so it was deemed worth making
+the transition now, while the number of 64-bit users is still
+relatively small.  (In 5 or 10 years, we may \emph{all} be on 64-bit
+machines, and the transition would be more painful then.)
+
+This change most strongly affects authors of C extension modules.  
+Python strings and container types such as lists and tuples 
+now use \ctype{Py_ssize_t} to store their size.  
+Functions such as \cfunction{PyList_Size()} 
+now return \ctype{Py_ssize_t}.  Code in extension modules
+may therefore need to have some variables changed to
+\ctype{Py_ssize_t}.  
+
+The \cfunction{PyArg_ParseTuple()} and \cfunction{Py_BuildValue()} functions
+have a new conversion code, \samp{n}, for \ctype{Py_ssize_t}.  
+\cfunction{PyArg_ParseTuple()}'s \samp{s#} and \samp{t#} still output
+\ctype{int} by default, but you can define the macro 
+\csimplemacro{PY_SSIZE_T_CLEAN} before including \file{Python.h} 
+to make them return \ctype{Py_ssize_t}.
+
+\pep{353} has a section on conversion guidelines that 
+extension authors should read to learn about supporting 64-bit
+platforms.
 
 \begin{seealso}
 
-\seepep{353}{}{PEP written and implemented by Martin von L\"owis.}
+\seepep{353}{Using ssize_t as the index type}{PEP written and implemented by Martin von L\"owis.}
 
 \end{seealso}
+
 
 %======================================================================
 \section{PEP 357: The '__index__' method}
@@ -1044,7 +1089,8 @@ A subset of Fredrik Lundh's ElementTree library for processing XML has
 been added to the standard library as \module{xml.etree}.  The
 vailable modules are
 \module{ElementTree}, \module{ElementPath}, and
-\module{ElementInclude} from ElementTree 1.2.6. 
+\module{ElementInclude} from ElementTree 1.2.6.   
+The \module{cElementTree} accelerator module is also included. 
 
 In subsequent alpha releases of Python 2.5, I'll add a brief
 introduction that will provide a page-long overview of using
@@ -1134,7 +1180,11 @@ Changes to Python's build process and to the C API include:
 
 \begin{itemize}
 
-% XXX PEP 353: ssize_t
+\item The largest change to the C API came from \pep{353},
+which modifies the interpreter to use a \ctype{Py_ssize_t} type
+definition instead of \ctype{int}.  See the earlier
+section~ref{section-353} for a discussion of this change.
+
 \item The design of the bytecode compiler has changed a great deal, to
 no longer generate bytecode by traversing the parse tree.  Instead
 the parse tree is converted to an abstract syntax tree (or AST), and it is 
@@ -1227,6 +1277,6 @@ changes to your code:
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: no one yet.
+article: Thomas Wouters.
 
 \end{document}
