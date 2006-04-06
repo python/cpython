@@ -1037,7 +1037,7 @@ gc_get_count(PyObject *self, PyObject *noargs)
 static int
 referrersvisit(PyObject* obj, PyObject *objs)
 {
-	int i;
+	Py_ssize_t i;
 	for (i = 0; i < PyTuple_GET_SIZE(objs); i++)
 		if (PyTuple_GET_ITEM(objs, i) == obj)
 			return 1;
@@ -1097,7 +1097,7 @@ Return the list of objects that are directly referred to by objs.");
 static PyObject *
 gc_get_referents(PyObject *self, PyObject *args)
 {
-	int i;
+	Py_ssize_t i;
 	PyObject *result = PyList_New(0);
 
 	if (result == NULL)
