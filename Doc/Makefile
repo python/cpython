@@ -108,7 +108,7 @@ MKISILOHTML=$(MKHOWTO) --html --about html/stdabout.dat \
 		--iconserver ../icons \
 		--l2h-init perl/isilo.perl --numeric --split 1 \
 		--dvips-safe
-MKISILO=   iSilo386 -U -y -rCR -d0
+MKISILO=   iSiloXC -o isilo/settings.ixs
 MKPDF=	   $(MKHOWTO) --paper=$(PAPER) --pdf
 MKPS=	   $(MKHOWTO) --paper=$(PAPER) --ps
 
@@ -441,8 +441,7 @@ isilo:	isilo/python-api.pdb \
 	isilo/python-whatsnew.pdb
 
 isilo/python-api.pdb: isilo/api/api.html isilo/api/api.css
-	$(MKISILO) "-iPython/C API Reference Manual" \
-		isilo/api/api.html $@
+	$(MKISILO) -x isilo/api.ixs isilo/api/api.html $@
 
 isilo/python-doc.pdb: isilo/doc/doc.html isilo/doc/doc.css
 	$(MKISILO) "-iDocumenting Python" \
@@ -691,7 +690,7 @@ distlatex:	bziplatex ziplatex
 # The small amount of additional work is a small price to pay for not
 # having to remember which order to do it in. ;)
 paperdist:	distpdf distps pkglist
-edist:		disthtml distinfo zipisilo pkglist
+edist:		disthtml distinfo pkglist
 
 # The pkglist.html file is used as part of the download.html page on
 # python.org; it is not used as intermediate input here or as part of
