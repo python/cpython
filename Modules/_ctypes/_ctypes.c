@@ -1271,7 +1271,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 	PyObject *name = PyTuple_GET_ITEM(args, 0);
 	PyObject *swapped_args;
 	static PyObject *suffix;
-	int i;
+	Py_ssize_t i;
 
 	swapped_args = PyTuple_New(PyTuple_GET_SIZE(args));
 	if (!swapped_args)
@@ -1284,8 +1284,9 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 		suffix = PyString_FromString("_be");
 #endif
 
-	Py_INCREF(suffix);
-	PyString_ConcatAndDel(&name, suffix);
+	PyString_Concat(&name, suffix);
+	if (name == NULL)
+		return NULL;
 
 	PyTuple_SET_ITEM(swapped_args, 0, name);
 	for (i=1; i<PyTuple_GET_SIZE(args); ++i) {
