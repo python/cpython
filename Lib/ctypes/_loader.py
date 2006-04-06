@@ -1,14 +1,11 @@
-# WORK IN PROGRESS!  DO NOT (yet) USE!
 import sys, os
 import ctypes
 
-__all__ = ["LibraryLoader", "RTLD_LOCAL", "RTLD_GLOBAL"]
-
 if os.name in ("nt", "ce"):
     from _ctypes import LoadLibrary as dlopen
-    RTLD_LOCAL = RTLD_GLOBAL = None
 else:
-    from _ctypes import dlopen, RTLD_LOCAL, RTLD_GLOBAL
+    from _ctypes import dlopen
+from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 
 # _findLib(name) returns an iterable of possible names for a library.
 if os.name in ("nt", "ce"):

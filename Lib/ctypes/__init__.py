@@ -9,11 +9,7 @@ from _ctypes import Union, Structure, Array
 from _ctypes import _Pointer
 from _ctypes import CFuncPtr as _CFuncPtr
 from _ctypes import __version__ as _ctypes_version
-try:
-    from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
-except (ImportError, AttributeError):
-    RTLD_GLOBAL = RTLD_LOCAL = None
-
+from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 from _ctypes import ArgumentError
 
 from struct import calcsize as _calcsize

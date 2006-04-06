@@ -4575,10 +4575,20 @@ init_ctypes(void)
 	PyModule_AddObject(m, "_wstring_at_addr", PyLong_FromVoidPtr(wstring_at));
 #endif
 
-#ifdef RTLD_LOCAL
+/* If RTLD_LOCAL is not defined (Windows!), set it to zero. */
+#ifndef RTLD_LOCAL
+#define RTLD_LOCAL 0
+#endif
+
+/* If RTLD_GLOBAL is not defined (cygwin), set it to the same value as
+   RTLD_LOCAL.
+*/
+#ifndef RTLD_GLOBAL
+#define RTLD_GLOBAL RTLD_LOCAL
+#endif
+
 	PyModule_AddObject(m, "RTLD_LOCAL", PyInt_FromLong(RTLD_LOCAL));
 	PyModule_AddObject(m, "RTLD_GLOBAL", PyInt_FromLong(RTLD_GLOBAL));
-#endif
 	
 	PyExc_ArgError = PyErr_NewException("ctypes.ArgumentError", NULL, NULL);
 	if (PyExc_ArgError) {
