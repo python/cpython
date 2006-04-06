@@ -201,11 +201,13 @@ def module_funcs(stdscr):
         curses.has_key(13)
 
     if hasattr(curses, 'getmouse'):
-        curses.mousemask(curses.BUTTON1_PRESSED)
-        curses.mouseinterval(10)
-        # just verify these don't cause errors
-        m = curses.getmouse()
-        curses.ungetmouse(*m)
+        (availmask, oldmask) = curses.mousemask(curses.BUTTON1_PRESSED)
+        # availmask indicates that mouse stuff not available.
+        if availmask != 0:
+            curses.mouseinterval(10)
+            # just verify these don't cause errors
+            m = curses.getmouse()
+            curses.ungetmouse(*m)
 
 def unit_tests():
     from curses import ascii
