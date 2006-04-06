@@ -419,7 +419,7 @@ PyObject* _query_execute(Cursor* self, int multiple, PyObject* args)
         } else {
             /* sequence */
             parameters_iter = PyObject_GetIter(second_argument);
-            if (PyErr_Occurred())
+            if (!parameters_iter)
             {
                 return NULL;
             }
