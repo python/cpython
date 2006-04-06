@@ -180,4 +180,4 @@ Answers to the Questions
       whether it's safe to remove, see the "Why is Python Installed on
       my Computer?" FAQ, found at:
 
-          http://www.python.org/doc/faq/installed.html
+          http://www.python.org/doc/faq/installed/
