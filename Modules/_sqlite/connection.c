@@ -585,6 +585,8 @@ void _final_callback(sqlite3_context* context)
         function_result = Py_None;
     } else {
         args = PyTuple_New(0);
+        if (!args)
+                return;
         function_result = PyObject_CallObject(finalizemethod, args);
         Py_DECREF(args);
         Py_DECREF(finalizemethod);
