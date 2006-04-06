@@ -8,6 +8,7 @@ from test import test_support
 # Tell it we don't know about external files:
 mimetypes.knownfiles = []
 mimetypes.inited = False
+mimetypes._default_mime_types()
 
 
 class MimeTypesTestCase(unittest.TestCase):
