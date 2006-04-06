@@ -141,10 +141,17 @@ cat myzip.zip >> python.exe
   Write the file named \var{filename} to the archive, giving it the
   archive name \var{arcname} (by default, this will be the same as
   \var{filename}, but without a drive letter and with leading path
-  separators removed).  If given, \var{compress_type} overrides the value
-  given for the \var{compression} parameter to the constructor for
-  the new entry.  The archive must be open with mode \code{'w'} or
-  \code{'a'}.
+  separators removed).  If given, \var{compress_type} overrides the
+  value given for the \var{compression} parameter to the constructor
+  for the new entry.  The archive must be open with mode \code{'w'}
+  or \code{'a'}.
+  
+  \note{There is no official file name encoding for ZIP files.
+  If you have unicode file names, please convert them to byte strings
+  in your desired encoding before passing them to \method{write()}.
+  WinZip interprets all file names as encoded in CP437, also known
+  as DOS Latin.}
+
   \note{Archive names should be relative to the archive root, that is,
         they should not start with a path separator.}
 \end{methoddesc}
