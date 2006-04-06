@@ -4036,7 +4036,12 @@ init_socket(void)
 	/*  */
 	PyModule_AddIntConstant(m, "AF_NETLINK", AF_NETLINK);
 	PyModule_AddIntConstant(m, "NETLINK_ROUTE", NETLINK_ROUTE);
+#ifdef NETLINK_SKIP
 	PyModule_AddIntConstant(m, "NETLINK_SKIP", NETLINK_SKIP);
+#endif
+#ifdef NETLINK_W1
+	PyModule_AddIntConstant(m, "NETLINK_W1", NETLINK_W1);
+#endif
 	PyModule_AddIntConstant(m, "NETLINK_USERSOCK", NETLINK_USERSOCK);
 	PyModule_AddIntConstant(m, "NETLINK_FIREWALL", NETLINK_FIREWALL);
 #ifdef NETLINK_TCPDIAG
@@ -4048,11 +4053,17 @@ init_socket(void)
 #ifdef NETLINK_XFRM
 	PyModule_AddIntConstant(m, "NETLINK_XFRM", NETLINK_XFRM);
 #endif
+#ifdef NETLINK_ARPD
 	PyModule_AddIntConstant(m, "NETLINK_ARPD", NETLINK_ARPD);
+#endif
+#ifdef NETLINK_ROUTE6
 	PyModule_AddIntConstant(m, "NETLINK_ROUTE6", NETLINK_ROUTE6);
+#endif
 	PyModule_AddIntConstant(m, "NETLINK_IP6_FW", NETLINK_IP6_FW);
 	PyModule_AddIntConstant(m, "NETLINK_DNRTMSG", NETLINK_DNRTMSG);
+#ifdef NETLINK_TAPBASE
 	PyModule_AddIntConstant(m, "NETLINK_TAPBASE", NETLINK_TAPBASE);
+#endif
 #endif /* AF_NETLINK */
 #ifdef AF_ROUTE
 	/* Alias to emulate 4.4BSD */
