@@ -3,7 +3,7 @@
 % $Id$
 
 % Fix XXX comments
-% Distutils upload
+% Distutils upload (PEP 243)
 % The easy_install stuff
 % xml.etree section
 % added sqlite3
@@ -545,8 +545,10 @@ First, I'll discuss the statement as it will commonly be used, and
 then I'll discuss the detailed implementation and how to write objects
 (called ``context managers'') that can be used with this statement.
 Most people, who will only use \keyword{with} in company with an
-existing object, don't need to know these details, but can 
-Authors of new context managers will need to understand the 
+existing object, don't need to know these details and can 
+just use objects that are documented to work as context managers.
+Authors of new context managers will need to understand the details of
+the underlying implementation.
 
 The \keyword{with} statement is a new control-flow structure whose
 basic structure is:
@@ -745,7 +747,7 @@ may therefore need to have some variables changed to
 
 The \cfunction{PyArg_ParseTuple()} and \cfunction{Py_BuildValue()} functions
 have a new conversion code, \samp{n}, for \ctype{Py_ssize_t}.  
-\cfunction{PyArg_ParseTuple()}'s \samp{s#} and \samp{t#} still output
+\cfunction{PyArg_ParseTuple()}'s \samp{s\#} and \samp{t\#} still output
 \ctype{int} by default, but you can define the macro 
 \csimplemacro{PY_SSIZE_T_CLEAN} before including \file{Python.h} 
 to make them return \ctype{Py_ssize_t}.
