@@ -332,7 +332,7 @@ def _default_mime_types():
         '.Z': 'compress',
         }
 
-    # Before adding new types, make sure they are either registered with IANA, 
+    # Before adding new types, make sure they are either registered with IANA,
     # at http://www.isi.edu/in-notes/iana/assignments/media-types
     # or extensions, i.e. using the x- prefix
 
@@ -463,7 +463,7 @@ def _default_mime_types():
         '.zip'    : 'application/zip',
         }
 
-    # These are non-standard types, commonly found in the wild.  They will 
+    # These are non-standard types, commonly found in the wild.  They will
     # only match if strict=0 flag is given to the API methods.
 
     # Please sort these too
