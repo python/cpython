@@ -767,6 +767,8 @@ void Extend_Error_Info(PyObject *exc_class, char *fmt, ...)
 	if (cls_str) {
 		PyString_ConcatAndDel(&s, cls_str);
 		PyString_ConcatAndDel(&s, PyString_FromString(": "));
+		if (s == NULL)
+			goto error;
 	} else
 		PyErr_Clear();
 	msg_str = PyObject_Str(v);
@@ -775,12 +777,15 @@ void Extend_Error_Info(PyObject *exc_class, char *fmt, ...)
 	else {
 		PyErr_Clear();
 		PyString_ConcatAndDel(&s, PyString_FromString("???"));
+		if (s == NULL)
+			goto error;
 	}
 	PyErr_SetObject(exc_class, s);
+error:
 	Py_XDECREF(tp);
 	Py_XDECREF(v);
 	Py_XDECREF(tb);
-	Py_DECREF(s);
+	Py_XDECREF(s);
 }
 
 
