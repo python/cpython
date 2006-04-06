@@ -1952,17 +1952,14 @@ do_argstrip(PyStringObject *self, int striptype, PyObject *args)
 			return res;
 		}
 #endif
-		else {
-			PyErr_Format(PyExc_TypeError,
+		PyErr_Format(PyExc_TypeError,
 #ifdef Py_USING_UNICODE
-				     "%s arg must be None, str or unicode",
+			     "%s arg must be None, str or unicode",
 #else
-				     "%s arg must be None or str",
+			     "%s arg must be None or str",
 #endif
-				     STRIPNAME(striptype));
-			return NULL;
-		}
-		return do_xstrip(self, striptype, sep);
+			     STRIPNAME(striptype));
+		return NULL;
 	}
 
 	return do_strip(self, striptype);
