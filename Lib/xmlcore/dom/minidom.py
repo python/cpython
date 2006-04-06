@@ -20,8 +20,6 @@ from xmlcore.dom import EMPTY_NAMESPACE, EMPTY_PREFIX, XMLNS_NAMESPACE, domreg
 from xmlcore.dom.minicompat import *
 from xmlcore.dom.xmlbuilder import DOMImplementationLS, DocumentLS
 
-_TupleType = type(())
-
 # This is used by the ID-cache invalidation checks; the list isn't
 # actually complete, since the nodes being checked will never be the
 # DOCUMENT_NODE or DOCUMENT_FRAGMENT_NODE.  (The node being checked is
@@ -523,7 +521,7 @@ class NamedNodeMap(object):
             return cmp(id(self), id(other))
 
     def __getitem__(self, attname_or_tuple):
-        if isinstance(attname_or_tuple, _TupleType):
+        if isinstance(attname_or_tuple, tuple):
             return self._attrsNS[attname_or_tuple]
         else:
             return self._attrs[attname_or_tuple]
@@ -1170,7 +1168,7 @@ class ReadOnlySequentialNamedNodeMap(object):
                 return n
 
     def __getitem__(self, name_or_tuple):
-        if isinstance(name_or_tuple, _TupleType):
+        if isinstance(name_or_tuple, tuple):
             node = self.getNamedItemNS(*name_or_tuple)
         else:
             node = self.getNamedItem(name_or_tuple)
