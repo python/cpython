@@ -51,21 +51,21 @@ EXPORT(void) _testfunc_v(int a, int b, int *presult)
 	*presult = a + b;
 }
 
-EXPORT(int) _testfunc_i_bhilfd(char b, short h, int i, long l, float f, double d)
+EXPORT(int) _testfunc_i_bhilfd(signed char b, short h, int i, long l, float f, double d)
 {
 //	printf("_testfunc_i_bhilfd got %d %d %d %ld %f %f\n",
 //	       b, h, i, l, f, d);
 	return (int)(b + h + i + l + f + d);
 }
 
-EXPORT(float) _testfunc_f_bhilfd(char b, short h, int i, long l, float f, double d)
+EXPORT(float) _testfunc_f_bhilfd(signed char b, short h, int i, long l, float f, double d)
 {
 //	printf("_testfunc_f_bhilfd got %d %d %d %ld %f %f\n",
 //	       b, h, i, l, f, d);
 	return (float)(b + h + i + l + f + d);
 }
 
-EXPORT(double) _testfunc_d_bhilfd(char b, short h, int i, long l, float f, double d)
+EXPORT(double) _testfunc_d_bhilfd(signed char b, short h, int i, long l, float f, double d)
 {
 //	printf("_testfunc_d_bhilfd got %d %d %d %ld %f %f\n",
 //	       b, h, i, l, f, d);
@@ -152,13 +152,13 @@ EXPORT(int) _testfunc_callback_with_pointer(int (*func)(int *))
 }
 
 #ifdef HAVE_LONG_LONG
-EXPORT(PY_LONG_LONG) _testfunc_q_bhilfdq(char b, short h, int i, long l, float f,
+EXPORT(PY_LONG_LONG) _testfunc_q_bhilfdq(signed char b, short h, int i, long l, float f,
 				     double d, PY_LONG_LONG q)
 {
 	return (PY_LONG_LONG)(b + h + i + l + f + d + q);
 }
 
-EXPORT(PY_LONG_LONG) _testfunc_q_bhilfd(char b, short h, int i, long l, float f, double d)
+EXPORT(PY_LONG_LONG) _testfunc_q_bhilfd(signed char b, short h, int i, long l, float f, double d)
 {
 	return (PY_LONG_LONG)(b + h + i + l + f + d);
 }
