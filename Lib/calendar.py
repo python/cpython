@@ -256,7 +256,7 @@ class TextCalendar(Calendar):
     similar to the UNIX program cal.
     """
 
-    def prweek(theweek, width):
+    def prweek(self, theweek, width):
         """
         Print a single week (no newline).
         """
