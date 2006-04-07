@@ -841,9 +841,7 @@ false values.  \function{any()} returns \constant{True} if any value
 returned by the iterator is true; otherwise it will return
 \constant{False}.  \function{all()} returns \constant{True} only if
 all of the values returned by the iterator evaluate as being true.
-
-% XXX who added?
-
+(Suggested by GvR, and implemented by Raymond Hettinger.)
 
 \item The list of base classes in a class definition can now be empty.  
 As an example, this is now legal:
@@ -976,8 +974,7 @@ will return a function
 that retrieves the \member{a} and \member{b} attributes.  Combining 
 this new feature with the \method{sort()} method's \code{key} parameter 
 lets you easily sort lists using multiple fields.
-
-% XXX who added?
+(Contributed by Raymond Hettinger.)
 
 
 \item The \module{os} module underwent a number of changes.  The
@@ -1001,13 +998,14 @@ as input, so it waits for any child process to exit and returns a
 3-tuple of \var{process-id}, \var{exit-status}, \var{resource-usage}
 as returned from the \function{resource.getrusage()} function.
 \function{wait4(\var{pid})} does take a process ID.
-(Contributed by XXX.)
+(Contributed by Chad J. Schroeder.)
 
 On FreeBSD, the \function{os.stat()} function now returns 
 times with nanosecond resolution, and the returned object
 now has \member{st_gen} and \member{st_birthtime}.
 The \member{st_flags} member is also available, if the platform supports it.
-% XXX patch 1180695, 1212117
+(Contributed by Antti Louko and  Diego Petten\`o.)
+% (Patch 1180695, 1212117)
 
 \item The old \module{regex} and \module{regsub} modules, which have been 
 deprecated ever since Python 2.0, have finally been deleted.  
@@ -1061,7 +1059,8 @@ by some specifications, so it's still available as
       \class{datetime} objects for the XML-RPC date type.  Supply 
       \code{use_datetime=True} to the \function{loads()} function
       or the \class{Unmarshaller} class to enable this feature.
-% XXX patch 1120353
+      (Contributed by Skip Montanaro.)
+% Patch 1120353
 
 
 \end{itemize}
