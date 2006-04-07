@@ -180,6 +180,9 @@ class PyBuildExt(build_ext):
 
     def build_extension(self, ext):
 
+        if ext.name == '_ctypes':
+            self.configure_ctypes(ext)
+
         try:
             build_ext.build_extension(self, ext)
         except (CCompilerError, DistutilsError), why:
@@ -1264,7 +1267,7 @@ class PyBuildExt(build_ext):
         # *** Uncomment these for TOGL extension only:
         #       -lGL -lGLU -lXext -lXmu \
 
-    def detect_ctypes(self):
+    def configure_ctypes(self, ext):
         (srcdir,) = sysconfig.get_config_vars('srcdir')
         ffi_builddir = os.path.join(self.build_temp, 'libffi')
         ffi_srcdir = os.path.abspath(os.path.join(srcdir, 'Modules',
@@ -1296,12 +1299,20 @@ class PyBuildExt(build_ext):
         include_dirs = [os.path.join(ffi_builddir, 'include'),
                         ffi_builddir, ffi_srcdir]
         extra_compile_args = fficonfig['ffi_cflags'].split()
+
+        ext.sources.extend(fficonfig['ffi_sources'])
+        ext.include_dirs.extend(include_dirs)
+        ext.extra_compile_args.extend(extra_compile_args)
+
+    def detect_ctypes(self):
+        include_dirs = []
+        extra_compile_args = []
         sources = ['_ctypes/_ctypes.c',
                    '_ctypes/callbacks.c',
                    '_ctypes/callproc.c',
                    '_ctypes/stgdict.c',
                    '_ctypes/cfield.c',
-                   '_ctypes/malloc_closure.c'] + fficonfig['ffi_sources']
+                   '_ctypes/malloc_closure.c']
         depends = ['_ctypes/ctypes.h']
 
         if sys.platform == 'darwin':
