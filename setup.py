@@ -181,7 +181,8 @@ class PyBuildExt(build_ext):
     def build_extension(self, ext):
 
         if ext.name == '_ctypes':
-            self.configure_ctypes(ext)
+            if not self.configure_ctypes(ext):
+                return
 
         try:
             build_ext.build_extension(self, ext)
@@ -1287,7 +1288,7 @@ class PyBuildExt(build_ext):
             res = os.system(cmd)
             if res or not os.path.exists(ffi_configfile):
                 print "Failed to configure _ctypes module"
-                return
+                return False
 
         fficonfig = {}
         execfile(ffi_configfile, globals(), fficonfig)
@@ -1303,6 +1304,7 @@ class PyBuildExt(build_ext):
         ext.sources.extend(fficonfig['ffi_sources'])
         ext.include_dirs.extend(include_dirs)
         ext.extra_compile_args.extend(extra_compile_args)
+        return True
 
     def detect_ctypes(self):
         include_dirs = []
