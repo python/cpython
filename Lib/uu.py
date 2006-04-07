@@ -151,7 +151,7 @@ def test():
 
     (options, args) = parser.parse_args()
     if len(args) > 2:
-        p.error('incorrect number of arguments')
+        parser.error('incorrect number of arguments')
         sys.exit(1)
 
     input = sys.stdin
