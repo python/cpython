@@ -332,7 +332,7 @@ def _default_mime_types():
         '.Z': 'compress',
         }
 
-    # Before adding new types, make sure they are either registered with IANA, 
+    # Before adding new types, make sure they are either registered with IANA,
     # at http://www.isi.edu/in-notes/iana/assignments/media-types
     # or extensions, i.e. using the x- prefix
 
