@@ -97,7 +97,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.3.0.1"
+#define PY_BSDDB_VERSION "4.3.0.2"
 static char *rcs_id = "$Id$";
 
 
@@ -5128,9 +5128,21 @@ DL_EXPORT(void) init_bsddb(void)
     ADD_INT(d, DB_SET_TXN_TIMEOUT);
 #endif
 
+    /* The exception name must be correct for pickled exception *
+     * objects to unpickle properly.                            */
+#ifdef PYBSDDB_STANDALONE  /* different value needed for standalone pybsddb */
+#define PYBSDDB_EXCEPTION_BASE  "bsddb3.db."
+#else
+#define PYBSDDB_EXCEPTION_BASE  "bsddb.db."
+#endif
+
+    /* All the rest of the exceptions derive only from DBError */
+#define MAKE_EX(name)   name = PyErr_NewException(PYBSDDB_EXCEPTION_BASE #name, DBError, NULL); \
+                        PyDict_SetItemString(d, #name, name)
+
     /* The base exception class is DBError */
-    DBError = PyErr_NewException("bsddb._db.DBError", NULL, NULL);
-    PyDict_SetItemString(d, "DBError", DBError);
+    DBError = NULL;     /* used in MAKE_EX so that it derives from nothing */
+    MAKE_EX(DBError);
 
     /* Some magic to make DBNotFoundError derive from both DBError and
        KeyError, since the API only supports using one base class. */
@@ -5140,10 +5152,6 @@ DL_EXPORT(void) init_bsddb(void)
     DBNotFoundError = PyDict_GetItemString(d, "DBNotFoundError");
     PyDict_DelItemString(d, "KeyError");
 
-
-    /* All the rest of the exceptions derive only from DBError */
-#define MAKE_EX(name)   name = PyErr_NewException("bsddb._db." #name, DBError, NULL); \
-                        PyDict_SetItemString(d, #name, name)
 
 #if !INCOMPLETE_IS_WARNING
     MAKE_EX(DBIncompleteError);

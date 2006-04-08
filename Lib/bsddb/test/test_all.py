@@ -64,6 +64,7 @@ def suite():
         'test_join',
         'test_lock',
         'test_misc',
+        'test_pickle',
         'test_queue',
         'test_recno',
         'test_thread',
