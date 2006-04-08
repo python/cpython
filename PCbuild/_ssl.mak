@@ -2,12 +2,12 @@
 !IFDEF DEBUG
 MODULE=_ssl_d.pyd
 TEMP_DIR=x86-temp-debug/_ssl
-CFLAGS=/Od /Zi /MDd /LDd /DDEBUG /D_DEBUG
+CFLAGS=/Od /Zi /MDd /LDd /DDEBUG /D_DEBUG /DWIN32
 SSL_LIB_DIR=$(SSL_DIR)/out32.dbg
 !ELSE
 MODULE=_ssl.pyd
 TEMP_DIR=x86-temp-release/_ssl
-CFLAGS=/Ox /MD /LD
+CFLAGS=/Ox /MD /LD /DWIN32
 SSL_LIB_DIR=$(SSL_DIR)/out32
 !ENDIF
 
