@@ -121,14 +121,6 @@ def getfqdn(name=''):
     return name
 
 
-#
-# These classes are used by the socket() defined on Windows and BeOS
-# platforms to provide a best-effort implementation of the cleanup
-# semantics needed when sockets can't be dup()ed.
-#
-# These are not actually used on other platforms.
-#
-
 _socketmethods = (
     'bind', 'connect', 'connect_ex', 'fileno', 'listen',
     'getpeername', 'getsockname', 'getsockopt', 'setsockopt',
