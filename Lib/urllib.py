@@ -442,9 +442,9 @@ class URLopener:
         return addinfourl(fp, noheaders(), "gopher:" + url)
 
     def open_file(self, url):
+        """Use local file or FTP depending on form of URL."""
         if not isinstance(url, str):
             raise IOError, ('file error', 'proxy support for file protocol currently not implemented')
-        """Use local file or FTP depending on form of URL."""
         if url[:2] == '//' and url[2:3] != '/' and url[2:12].lower() != 'localhost/':
             return self.open_ftp(url)
         else:
