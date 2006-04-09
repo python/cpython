@@ -42,11 +42,13 @@ Signals = getcontext().flags.keys()
 
 # Tests are built around these assumed context defaults.
 # test_main() restores the original context.
-ORIGINAL_CONTEXT = getcontext().copy()
-DefaultContext.prec = 9
-DefaultContext.rounding = ROUND_HALF_EVEN
-DefaultContext.traps = dict.fromkeys(Signals, 0)
-setcontext(DefaultContext)
+def init():
+    global ORIGINAL_CONTEXT
+    ORIGINAL_CONTEXT = getcontext().copy()
+    DefaultContext.prec = 9
+    DefaultContext.rounding = ROUND_HALF_EVEN
+    DefaultContext.traps = dict.fromkeys(Signals, 0)
+    setcontext(DefaultContext)
 
 TESTDATADIR = 'decimaltestdata'
 if __name__ == '__main__':
@@ -1069,6 +1071,7 @@ def test_main(arith=False, verbose=None):
     is enabled in regrtest.py
     """
 
+    init()
     global TEST_ALL
     TEST_ALL = arith or is_resource_enabled('decimal')
 

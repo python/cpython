@@ -152,6 +152,10 @@ class TestSFpatches(unittest.TestCase):
         difflib.SequenceMatcher(None, old, new).get_opcodes()
 
 
-Doctests = doctest.DocTestSuite(difflib)
+def test_main():
+    difflib.HtmlDiff._default_prefix = 0
+    Doctests = doctest.DocTestSuite(difflib)
+    run_unittest(TestSFpatches, TestSFbugs, Doctests)
 
-run_unittest(TestSFpatches, TestSFbugs, Doctests)
+if __name__ == '__main__':
+    test_main()
