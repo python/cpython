@@ -1382,7 +1382,14 @@ options:
 
 class TestHelp(BaseTest):
     def setUp(self):
+        self.orig_columns = os.environ.get('COLUMNS')
         self.parser = self.make_parser(80)
+
+    def tearDown(self):
+        if self.orig_columns is None:
+            del os.environ['COLUMNS']
+        else:
+            os.environ['COLUMNS'] = self.orig_columns
 
     def make_parser(self, columns):
         options = [
