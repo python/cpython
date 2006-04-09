@@ -12,6 +12,12 @@ What's New in Python 2.5 alpha 2?
 Core and builtins
 -----------------
 
+- Python on OS X 10.3 and above now uses dlopen() (via dynload_shlib.c) 
+  to load extension modules and now provides the dl module. As a result,
+  sys.setdlopenflags() now works correctly on these systems. (SF patch 
+  #1454844)
+
+
 Extension Modules
 -----------------
 
