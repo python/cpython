@@ -60,7 +60,7 @@ def glob0(dirname, basename):
     if basename == '':
         # `os.path.split()` returns an empty basename for paths ending with a
         # directory separator.  'q*x/' should match only directories.
-        if os.isdir(dirname):
+        if os.path.isdir(dirname):
             return [basename]
     else:
         if os.path.lexists(os.path.join(dirname, basename)):

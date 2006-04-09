@@ -20,6 +20,8 @@ Extension Modules
 Library
 -------
 
+- Fix exception when doing glob.glob('anything*/')
+
 Build
 -----
 
