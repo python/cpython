@@ -84,5 +84,9 @@ class TestModule(unittest.TestCase):
 def test_main(verbose=None):
     test_support.run_unittest(TestModule)
 
+# Obscure hack so that this test passes after reloads (regrtest -R).
+if '__warningregistry__' in globals():
+    del globals()['__warningregistry__']
+
 if __name__ == "__main__":
     test_main(verbose=True)
