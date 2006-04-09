@@ -969,7 +969,7 @@ class PyBuildExt(build_ext):
         if sys.maxint == 0x7fffffff:
             # This requires sizeof(int) == sizeof(long) == sizeof(char*)
             dl_inc = find_file('dlfcn.h', [], inc_dirs)
-            if (dl_inc is not None) and (platform not in ['atheos', 'darwin']):
+            if (dl_inc is not None) and (platform not in ['atheos']):
                 exts.append( Extension('dl', ['dlmodule.c']) )
 
         # Thomas Heller's _ctypes module

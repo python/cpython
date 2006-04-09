@@ -10819,7 +10819,7 @@ echo "${ECHO_T}$enable_toolbox_glue" >&6
 
 
 case $ac_sys_system/$ac_sys_release in
-  Darwin/[01234567].*)
+  Darwin/[01567]\..*)
     OTHER_LIBTOOL_OPT="-prebind -seg1addr 0x10000000"
     ;;
   Darwin/*)
@@ -10829,7 +10829,7 @@ esac
 
 
 case $ac_sys_system/$ac_sys_release in
-  Darwin/[01234567].*)
+  Darwin/[01567]\..*)
     LIBTOOL_CRUFT="-framework System -lcc_dynamic -arch_only `arch`"
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
@@ -13980,7 +13980,8 @@ then
 	;;
 	BeOS*) DYNLOADFILE="dynload_beos.o";;
 	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
-	Darwin/*) DYNLOADFILE="dynload_next.o";;
+	# Use dynload_next.c only on 10.2 and below, which don't have native dlopen()
+	Darwin/[0156]\..*) DYNLOADFILE="dynload_next.o";;
 	atheos*) DYNLOADFILE="dynload_atheos.o";;
 	*)
 	# use dynload_shlib.c and dlopen() if we have it; otherwise stub

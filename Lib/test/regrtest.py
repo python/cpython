@@ -945,7 +945,6 @@ _expectations = {
         test_cd
         test_cl
         test_curses
-        test_dl
         test_gdbm
         test_gl
         test_imgfile
