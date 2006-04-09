@@ -455,6 +455,9 @@ PyObject* _query_execute(Cursor* self, int multiple, PyObject* args)
         Py_DECREF(second_argument);
 
         parameters_iter = PyObject_GetIter(parameters_list);
+        if (!parameters_iter) {
+            goto error;
+        }
     }
 
     if (self->statement != NULL) {
@@ -670,7 +673,7 @@ PyObject* _query_execute(Cursor* self, int multiple, PyObject* args)
 error:
     Py_XDECREF(operation_bytestr);
     Py_XDECREF(parameters);
-    Py_DECREF(parameters_iter);
+    Py_XDECREF(parameters_iter);
     Py_XDECREF(parameters_list);
 
     if (PyErr_Occurred()) {
