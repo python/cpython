@@ -333,7 +333,9 @@ booleans.  The following macros are available, however.
   The pointer value can be retrieved from the resulting value using
   \cfunction{PyLong_AsVoidPtr()}.
   \versionadded{1.5.2}
-\end{cfuncdesc}
+  \versionchanged[If the integer is larger than LONG_MAX,
+  a positive long integer is returned]{2.5}
+ \end{cfuncdesc}
 
 \begin{cfuncdesc}{long}{PyLong_AsLong}{PyObject *pylong}
   Return a C \ctype{long} representation of the contents of
@@ -394,6 +396,8 @@ booleans.  The following macros are available, however.
   produce a usable \ctype{void} pointer for values created with
   \cfunction{PyLong_FromVoidPtr()}.
   \versionadded{1.5.2}
+  \versionchanged[For values outside 0..LONG_MAX, both signed and
+  unsigned integers are acccepted]{2.5}
 \end{cfuncdesc}
 
 

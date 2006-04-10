@@ -771,6 +771,8 @@ PyObject *
 PyLong_FromVoidPtr(void *p)
 {
 #if SIZEOF_VOID_P <= SIZEOF_LONG
+	if ((long)p < 0)
+		return PyLong_FromUnsignedLong((unsigned long)p);
 	return PyInt_FromLong((long)p);
 #else
 
@@ -783,7 +785,7 @@ PyLong_FromVoidPtr(void *p)
 	/* optimize null pointers */
 	if (p == NULL)
 		return PyInt_FromLong(0);
-	return PyLong_FromLongLong((PY_LONG_LONG)p);
+	return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG)p);
 
 #endif /* SIZEOF_VOID_P <= SIZEOF_LONG */
 }
@@ -802,8 +804,10 @@ PyLong_AsVoidPtr(PyObject *vv)
 
 	if (PyInt_Check(vv))
 		x = PyInt_AS_LONG(vv);
-	else
+	else if (PyLong_Check(vv) && _PyLong_Sign(vv) < 0)
 		x = PyLong_AsLong(vv);
+	else
+		x = PyLong_AsUnsignedLong(vv);
 #else
 
 #ifndef HAVE_LONG_LONG
@@ -816,8 +820,10 @@ PyLong_AsVoidPtr(PyObject *vv)
 
 	if (PyInt_Check(vv))
 		x = PyInt_AS_LONG(vv);
-	else
+	else if (PyLong_Check(vv) && _PyLong_Sign(vv) < 0)
 		x = PyLong_AsLongLong(vv);
+	else
+		x = PyLong_AsUnsignedLongLong(vv);
 
 #endif /* SIZEOF_VOID_P <= SIZEOF_LONG */
 
