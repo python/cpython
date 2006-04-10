@@ -26,6 +26,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1467770: Reduce usage of subprocess._active to processes which
+  the application hasn't waited on.
+
 - Patch #1462222: Fix Tix.Grid.
 
 - Fix exception when doing glob.glob('anything*/')
