@@ -414,7 +414,13 @@ _active = []
 
 def _cleanup():
     for inst in _active[:]:
-        inst.poll()
+        if inst.poll(_deadstate=sys.maxint) >= 0:
+            try:
+                _active.remove(inst)
+            except ValueError:
+                # This can happen if two threads create a new Popen instance.
+                # It's harmless that it was already removed, so ignore.
+                pass
 
 PIPE = -1
 STDOUT = -2
@@ -527,6 +533,7 @@ class Popen(object):
         """Create new Popen instance."""
         _cleanup()
 
+        self._child_created = False
         if not isinstance(bufsize, (int, long)):
             raise TypeError("bufsize must be an integer")
 
@@ -592,13 +599,23 @@ class Popen(object):
             else:
                 self.stderr = os.fdopen(errread, 'rb', bufsize)
 
-        _active.append(self)
-
 
     def _translate_newlines(self, data):
         data = data.replace("\r\n", "\n")
         data = data.replace("\r", "\n")
         return data
+
+
+    def __del__(self):
+        if not self._child_created:
+            # We didn't get to successfully create a child process.
+            return
+        # In case the child hasn't been waited on, check if it's done.
+        self.poll(_deadstate=sys.maxint)
+        if self.returncode is None:
+            # Child is still running, keep us alive until we can wait on it.
+            _active.append(self)
+
 
     def communicate(self, input=None):
         """Interact with process: Send data to stdin.  Read data from
@@ -777,6 +794,7 @@ class Popen(object):
                 raise WindowsError(*e.args)
 
             # Retain the process handle, but close the thread handle
+            self._child_created = True
             self._handle = hp
             self.pid = pid
             ht.Close()
@@ -795,13 +813,12 @@ class Popen(object):
                 errwrite.Close()
 
 
-        def poll(self):
+        def poll(self, _deadstate=None):
             """Check if child process has terminated.  Returns returncode
             attribute."""
             if self.returncode is None:
                 if WaitForSingleObject(self._handle, 0) == WAIT_OBJECT_0:
                     self.returncode = GetExitCodeProcess(self._handle)
-                    _active.remove(self)
             return self.returncode
 
 
@@ -811,7 +828,6 @@ class Popen(object):
             if self.returncode is None:
                 obj = WaitForSingleObject(self._handle, INFINITE)
                 self.returncode = GetExitCodeProcess(self._handle)
-                _active.remove(self)
             return self.returncode
 
 
@@ -958,6 +974,7 @@ class Popen(object):
             self._set_cloexec_flag(errpipe_write)
 
             self.pid = os.fork()
+            self._child_created = True
             if self.pid == 0:
                 # Child
                 try:
@@ -1042,10 +1059,8 @@ class Popen(object):
                 # Should never happen
                 raise RuntimeError("Unknown child exit status!")
 
-            _active.remove(self)
 
-
-        def poll(self):
+        def poll(self, _deadstate=None):
             """Check if child process has terminated.  Returns returncode
             attribute."""
             if self.returncode is None:
@@ -1054,7 +1069,8 @@ class Popen(object):
                     if pid == self.pid:
                         self._handle_exitstatus(sts)
                 except os.error:
-                    pass
+                    if _deadstate is not None:
+                        self.returncode = _deadstate
             return self.returncode
 
 
