@@ -313,20 +313,24 @@ class DecimalContextTestCase(unittest.TestCase):
 
     def testBasic(self):
         ctx = decimal.getcontext()
-        ctx.prec = save_prec = decimal.ExtendedContext.prec + 5
-        with decimal.ExtendedContext:
-            self.assertEqual(decimal.getcontext().prec,
-                             decimal.ExtendedContext.prec)
-        self.assertEqual(decimal.getcontext().prec, save_prec)
+        orig_context = ctx.copy()
         try:
+            ctx.prec = save_prec = decimal.ExtendedContext.prec + 5
             with decimal.ExtendedContext:
                 self.assertEqual(decimal.getcontext().prec,
                                  decimal.ExtendedContext.prec)
-                1/0
-        except ZeroDivisionError:
             self.assertEqual(decimal.getcontext().prec, save_prec)
-        else:
-            self.fail("Didn't raise ZeroDivisionError")
+            try:
+                with decimal.ExtendedContext:
+                    self.assertEqual(decimal.getcontext().prec,
+                                     decimal.ExtendedContext.prec)
+                    1/0
+            except ZeroDivisionError:
+                self.assertEqual(decimal.getcontext().prec, save_prec)
+            else:
+                self.fail("Didn't raise ZeroDivisionError")
+        finally:
+            decimal.setcontext(orig_context)
 
 
 # This is needed to make the test actually run under regrtest.py!
