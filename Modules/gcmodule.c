@@ -413,8 +413,12 @@ has_finalizer(PyObject *op)
 		assert(delstr != NULL);
 		return _PyInstance_Lookup(op, delstr) != NULL;
 	}
-	else
+	else if (PyType_HasFeature(op->ob_type, Py_TPFLAGS_HEAPTYPE))
 		return op->ob_type->tp_del != NULL;
+	else if (PyGen_CheckExact(op))
+		return PyGen_NeedsFinalizing((PyGenObject *)op);
+	else
+		return 0;
 }
 
 /* Move the objects in unreachable with __del__ methods into `finalizers`.
