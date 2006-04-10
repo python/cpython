@@ -31,11 +31,11 @@ class GeneratorContextManager(object):
             try:
                 self.gen.throw(type, value, traceback)
                 raise RuntimeError("generator didn't stop after throw()")
-            except StopIteration:
+            except StopIteration, exc:
                 # Suppress the exception *unless* it's the same exception that
                 # was passed to throw().  This prevents a StopIteration
                 # raised inside the "with" statement from being suppressed
-                return sys.exc_info()[1] is not value
+                return exc is not value
             except:
                 # only re-raise if it's *not* the exception that was
                 # passed to throw(), because __exit__() must not raise
