@@ -5,8 +5,6 @@
 % Fix XXX comments
 % Distutils upload (PEP 243)
 % The easy_install stuff
-% xml.etree section
-% added sqlite3
 
 \title{What's New in Python 2.5}
 \release{0.1}
@@ -1087,18 +1085,87 @@ introduction that shows some basic usage of the module.
 \subsection{The ElementTree package}
 
 A subset of Fredrik Lundh's ElementTree library for processing XML has
-been added to the standard library as \module{xml.etree}.  The
+been added to the standard library as \module{xmlcore.etree}.  The
 vailable modules are
 \module{ElementTree}, \module{ElementPath}, and
 \module{ElementInclude} from ElementTree 1.2.6.   
 The \module{cElementTree} accelerator module is also included. 
 
-In subsequent alpha releases of Python 2.5, I'll add a brief
-introduction that will provide a page-long overview of using
-ElementTree.  Full documentation for
-ElementTree is available at \url{http://effbot.org/zone/element-index.htm}.
+The rest of this section will provide a brief overview of using
+ElementTree.  Full documentation for ElementTree is available at
+\url{http://effbot.org/zone/element-index.htm}.
+
+ElementTree represents an XML document as a tree of element nodes.
+The text content of the document is stored as the \member{.text}
+and \member{.tail} attributes of 
+(This is one of the major differences between ElementTree and 
+the Document Object Model; in the DOM there are many different
+types of node, including \class{TextNode}.)
+
+The most commonly used parsing function is \function{parse()}, that
+takes either a string (assumed to contain a filename) or a file-like
+object and returns an \class{ElementTree} instance:
+
+\begin{verbatim}
+from xmlcore.etree import ElementTree as ET
+
+tree = ET.parse('ex-1.xml')
+
+feed = urllib.urlopen(
+          'http://planet.python.org/rss10.xml')
+tree = ET.parse(feed)
+\end{verbatim}
+
+Once you have an \class{ElementTree} instance, you
+can call its \method{getroot()} method to get the root \class{Element} node.
+
+There's also an \function{XML()} function that takes a string literal
+and returns an \class{Element} node (not an \class{ElementTree}).  
+This function provides a tidy way to incorporate XML fragments,
+approaching the convenience of an XML literal:
+
+\begin{verbatim}
+svg = et.XML("""<svg width="10px" version="1.0">
+             </svg>""")
+svg.set('height', '320px')
+svg.append(elem1)
+\end{verbatim}
+
+Each XML element supports some dictionary-like and some list-like
+access methods.  Dictionary-like methods are used to access attribute
+values, and list-like methods are used to access child nodes.
+
+% XXX finish this
+
+To generate XML output, you should call the
+\method{ElementTree.write()} method.  Like \function{parse()},
+it can take either a string or a file-like object:
+
+\begin{verbatim}
+# Encoding is US-ASCII
+tree.write('output.xml')
+
+# Encoding is UTF-8
+f = open('output.xml', 'w')
+tree.write(f, 'utf-8')
+\end{verbatim}
+
+(Caution: the default encoding used for output is ASCII, which isn't
+very useful for general XML work, raising an exception if there are
+any characters with values greater than 127.  You should always
+specify a different encoding such as UTF-8 that can handle any Unicode
+character.)
+
 
 % XXX write introduction
+
+\begin{seealso}
+
+\seeurl{http://effbot.org/zone/element-index.htm}
+{Official documentation for ElementTree.}
+
+
+\end{seealso}
 
 
 \subsection{The hashlib package}
@@ -1373,6 +1440,6 @@ changes to your code:
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Thomas Wouters.
+article: Mike Rovner, Thomas Wouters.
 
 \end{document}
