@@ -404,7 +404,7 @@ test_k_code(PyObject *self)
 
         PyTuple_SET_ITEM(tuple, 0, num);
 
-        value = -1;
+        value = 0;
         if (PyArg_ParseTuple(tuple, "k:test_k_code", &value) < 0)
         	return NULL;
         if (value != ULONG_MAX)
@@ -423,7 +423,7 @@ test_k_code(PyObject *self)
 
         PyTuple_SET_ITEM(tuple, 0, num);
 
-	value = -1;
+	value = 0;
         if (PyArg_ParseTuple(tuple, "k:test_k_code", &value) < 0)
         	return NULL;
         if (value != (unsigned long)-0x42)
