@@ -105,7 +105,7 @@ char *_PyParser_TokenNames[] = {
 static struct tok_state *
 tok_new(void)
 {
-	struct tok_state *tok = PyMem_NEW(struct tok_state, 1);
+	struct tok_state *tok = PyMem_MALLOC(sizeof(struct tok_state));
 	if (tok == NULL)
 		return NULL;
 	tok->buf = tok->cur = tok->end = tok->inp = tok->start = NULL;
@@ -721,7 +721,7 @@ tok_stdin_decode(struct tok_state *tok, char **inp)
 	if (converted == NULL)
 		goto error_nomem;
 
-	PyMem_FREE(*inp);
+	PyObject_FREE(*inp);
 	*inp = converted;
 	if (tok->encoding != NULL)
 		PyObject_FREE(tok->encoding);
@@ -781,12 +781,12 @@ tok_nextc(register struct tok_state *tok)
 			if (new == NULL)
 				tok->done = E_INTR;
 			else if (*new == '\0') {
-				PyMem_FREE(new);
+				PyObject_FREE(new);
 				tok->done = E_EOF;
 			}
 #if !defined(PGEN) && defined(Py_USING_UNICODE)
 			else if (tok_stdin_decode(tok, &new) != 0)
-				PyMem_FREE(new);
+				PyObject_FREE(new);
 #endif
 			else if (tok->start != NULL) {
 				size_t start = tok->start - tok->buf;
@@ -798,7 +798,7 @@ tok_nextc(register struct tok_state *tok)
 				if (buf == NULL) {
 					PyObject_FREE(tok->buf);
 					tok->buf = NULL;
-					PyMem_FREE(new);
+					PyObject_FREE(new);
 					tok->done = E_NOMEM;
 					return EOF;
 				}
@@ -806,7 +806,7 @@ tok_nextc(register struct tok_state *tok)
 				tok->cur = tok->buf + oldlen;
 				tok->line_start = tok->cur;
 				strcpy(tok->buf + oldlen, new);
-				PyMem_FREE(new);
+				PyObject_FREE(new);
 				tok->inp = tok->buf + newlen;
 				tok->end = tok->inp + 1;
 				tok->start = tok->buf + start;
