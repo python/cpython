@@ -904,7 +904,7 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *typedict;
 	int length;
 
-	int itemsize, itemalign, itemlen;
+	int itemsize, itemalign;
 
 	typedict = PyTuple_GetItem(args, 2);
 	if (!typedict)
@@ -941,7 +941,6 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	itemsize = itemdict->size;
 	itemalign = itemdict->align;
-	itemlen = itemdict->length;
 
 	stgdict->size = itemsize * length;
 	stgdict->align = itemalign;

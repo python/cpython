@@ -4089,7 +4089,7 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 {
 	int d_bytecode, d_lineno;
 	int len;
-	char *lnotab;
+	unsigned char *lnotab;
 
 	d_bytecode = a->a_offset - a->a_lineno_off;
 	d_lineno = i->i_lineno - a->a_lineno;
@@ -4112,7 +4112,8 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 			if (_PyString_Resize(&a->a_lnotab, len) < 0)
 				return 0;
 		}
-		lnotab = PyString_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
+		lnotab = (unsigned char *)
+			   PyString_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
 		for (j = 0; j < ncodes; j++) {
 			*lnotab++ = 255;
 			*lnotab++ = 0;
@@ -4133,7 +4134,8 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 			if (_PyString_Resize(&a->a_lnotab, len) < 0)
 				return 0;
 		}
-		lnotab = PyString_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
+		lnotab = (unsigned char *)
+			   PyString_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
 		*lnotab++ = 255;
 		*lnotab++ = d_bytecode;
 		d_bytecode = 0;
@@ -4150,7 +4152,8 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 		if (_PyString_Resize(&a->a_lnotab, len * 2) < 0)
 			return 0;
 	}
-	lnotab = PyString_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
+	lnotab = (unsigned char *)
+			PyString_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
 
 	a->a_lnotab_off += 2;
 	if (d_bytecode) {

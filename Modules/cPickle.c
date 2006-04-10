@@ -123,7 +123,7 @@ static PyObject *__class___str, *__getinitargs___str, *__dict___str,
   *__getstate___str, *__setstate___str, *__name___str, *__reduce___str,
   *__reduce_ex___str,
   *write_str, *append_str,
-  *read_str, *readline_str, *__main___str, *__basicnew___str,
+  *read_str, *readline_str, *__main___str, 
   *copy_reg_str, *dispatch_table_str;
 
 /*************************************************************************
@@ -5602,7 +5602,6 @@ init_stuff(PyObject *module_dict)
 	INIT_STR(readline);
 	INIT_STR(copy_reg);
 	INIT_STR(dispatch_table);
-	INIT_STR(__basicnew__);
 
 	if (!( copy_reg = PyImport_ImportModule("copy_reg")))
 		return -1;
