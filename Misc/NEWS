@@ -26,6 +26,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1462222: Fix Tix.Grid.
+
 - Fix exception when doing glob.glob('anything*/')
 
 Build
