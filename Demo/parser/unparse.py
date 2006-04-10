@@ -1,5 +1,8 @@
 "Usage: unparse.py <path to source file>"
 import sys
+import _ast
+import cStringIO
+import os
 
 class Unparser:
     """Methods in this class recursively traverse an AST and
@@ -69,6 +72,18 @@ class Unparser:
             self.write(a.name)
             if a.asname:
                 self.write(" as "+a.asname)
+                
+    def _ImportFrom(self, t):
+        self.fill("from ")
+        self.write(t.module)
+        self.write(" import ")
+        for i, a in enumerate(t.names):
+            if i == 0:
+                self.write(", ")
+            self.write(a.name)
+            if a.asname:
+                self.write(" as "+a.asname)
+        # XXX(jpe) what is level for?
 
     def _Assign(self, t):
         self.fill()
@@ -88,6 +103,36 @@ class Unparser:
         if t.value:
             self.dispatch(t.value)
 
+    def _Pass(self, t):
+        self.fill("pass")
+        
+    def _Break(self, t):
+        self.fill("break")
+
+    def _Continue(self, t):
+        self.fill("continue")
+        
+    def _Delete(self, t):
+        self.fill("del ")
+        self.dispatch(t.targets)
+
+    def _Assert(self, t):
+        self.fill("assert ")
+        self.dispatch(t.test)
+        if t.msg:
+            self.write(", ")
+            self.dispatch(t.msg)
+        
+    def _Exec(self, t):
+        self.fill("exec ")
+        self.dispatch(t.body)
+        if t.globals:
+            self.write(" in ")
+            self.dispatch(t.globals)
+        if t.locals:
+            self.write(", ")
+            self.dispatch(t.locals)
+
     def _Print(self, t):
         self.fill("print ")
         do_comma = False
@@ -102,6 +147,67 @@ class Unparser:
         if not t.nl:
             self.write(",")
 
+    def _Global(self, t):
+        self.fill("global")
+        for i, n in enumerate(t.names):
+            if i != 0:
+                self.write(",")
+            self.write(" " + n)
+
+    def _Yield(self, t):
+        self.fill("yield")
+        if t.value:
+            self.write(" (")
+            self.dispatch(t.value)
+            self.write(")")
+                  
+    def _Raise(self, t):
+        self.fill('raise ')
+        if t.type:
+            self.dispatch(t.type)
+        if t.inst:
+            self.write(", ")
+            self.dispatch(t.inst)
+        if t.tback:
+            self.write(", ")
+            self.dispatch(t.tback)
+      
+    def _TryExcept(self, t):
+        self.fill("try")
+        self.enter()
+        self.dispatch(t.body)
+        self.leave()
+        
+        for ex in t.handlers:
+            self.dispatch(ex)
+        if t.orelse:
+            self.fill("else")
+            self.enter()
+            self.dispatch(t.orelse)
+            self.leave()
+
+    def _TryFinally(self, t):
+        self.fill("try")
+        self.enter()
+        self.dispatch(t.body)
+        self.leave()
+
+        self.fill("finally")
+        self.enter()
+        self.dispatch(t.finalbody)
+        self.leave()
+
+    def _excepthandler(self, t):
+        self.fill("except ")
+        if t.type:
+            self.dispatch(t.type)
+        if t.name:
+            self.write(", ")
+            self.dispatch(t.name)
+        self.enter()
+        self.dispatch(t.body)
+        self.leave()
+        
     def _ClassDef(self, t):
         self.write("\n")
         self.fill("class "+t.name)
@@ -119,22 +225,10 @@ class Unparser:
         self.write("\n")
         self.fill("def "+t.name + "(")
         self.dispatch(t.args)
+        self.write(")")
         self.enter()
         self.dispatch(t.body)
         self.leave()
-
-    def _If(self, t):
-        self.fill("if ")
-        self.dispatch(t.test)
-        self.enter()
-        # XXX elif?
-        self.dispatch(t.body)
-        self.leave()
-        if t.orelse:
-            self.fill("else")
-            self.enter()
-            self.dispatch(t.orelse)
-            self.leave()
 
     def _For(self, t):
         self.fill("for ")
@@ -150,6 +244,41 @@ class Unparser:
             self.dispatch(t.orelse)
             self.leave
 
+    def _If(self, t):
+        self.fill("if ")
+        self.dispatch(t.test)
+        self.enter()
+        # XXX elif?
+        self.dispatch(t.body)
+        self.leave()
+        if t.orelse:
+            self.fill("else")
+            self.enter()
+            self.dispatch(t.orelse)
+            self.leave()
+
+    def _While(self, t):
+        self.fill("while ")
+        self.dispatch(t.test)
+        self.enter()
+        self.dispatch(t.body)
+        self.leave()
+        if t.orelse:
+            self.fill("else")
+            self.enter()
+            self.dispatch(t.orelse)
+            self.leave
+            
+    def _With(self, t):
+        self.fill("with ")
+        self.dispatch(t.context_expr)
+        if t.optional_vars:
+            self.write(" as ")
+            self.dispatch(t.optional_vars)
+        self.enter()
+        self.dispatch(t.body)
+        self.leave()
+
     # expr
     def _Str(self, tree):
         self.write(repr(tree.s))
@@ -157,6 +286,11 @@ class Unparser:
     def _Name(self, t):
         self.write(t.id)
 
+    def _Repr(self, t):
+        self.write("`")
+        self.dispatch(t.value)
+        self.write("`")
+        
     def _Num(self, t):
         self.write(repr(t.n))
 
@@ -167,6 +301,37 @@ class Unparser:
             self.write(", ")
         self.write("]")
 
+    def _ListComp(self, t):
+        self.write("[")
+        self.dispatch(t.elt)
+        for gen in t.generators:
+            self.dispatch(gen)
+        self.write("]")
+        
+    def _GeneratorExp(self, t):
+        self.write("(")
+        self.dispatch(t.elt)
+        for gen in t.generators:
+            self.dispatch(gen)
+        self.write(")")
+        
+    def _comprehension(self, t):
+        self.write(" for ")
+        self.dispatch(t.target)
+        self.write(" in ")
+        self.dispatch(t.iter)
+        for if_clause in t.ifs:
+            self.write(" if ")
+            self.dispatch(if_clause)
+
+    def _IfExp(self, t):
+        self.dispatch(t.body)
+        self.write(" if ")
+        self.dispatch(t.test)
+        if t.orelse:
+            self.write(" else ")
+            self.dispatch(t.orelse)
+            
     def _Dict(self, t):
         self.write("{")
         for k,v in zip(t.keys, t.values):
@@ -194,8 +359,8 @@ class Unparser:
         self.write(")")
 
     binop = { "Add":"+", "Sub":"-", "Mult":"*", "Div":"/", "Mod":"%",
-                    "RShift":"<<", "BitOr":"|", "BitXor":"^", "BitAnd":"&",
-                    "FloorDiv":"//"}
+                    "LShift":">>", "RShift":"<<", "BitOr":"|", "BitXor":"^", "BitAnd":"&",
+                    "FloorDiv":"//", "Pow": "**"}
     def _BinOp(self, t):
         self.write("(")
         self.dispatch(t.left)
@@ -213,6 +378,15 @@ class Unparser:
             self.dispatch(e)
             self.write(")")
 
+    boolops = {_ast.And: 'and', _ast.Or: 'or'}
+    def _BoolOp(self, t):
+        self.write("(")
+        self.dispatch(t.values[0])
+        for v in t.values[1:]:
+            self.write(" %s " % self.boolops[t.op.__class__])
+            self.dispatch(v)
+        self.write(")")
+        
     def _Attribute(self,t):
         self.dispatch(t.value)
         self.write(".")
@@ -234,12 +408,12 @@ class Unparser:
             if comma: self.write(", ")
             else: comma = True
             self.write("*")
-            self.dispatch(t.stararg)
+            self.dispatch(t.starargs)
         if t.kwargs:
             if comma: self.write(", ")
             else: comma = True
             self.write("**")
-            self.dispatch(t.stararg)
+            self.dispatch(t.kwargs)
         self.write(")")
 
     def _Subscript(self, t):
@@ -249,6 +423,9 @@ class Unparser:
         self.write("]")
 
     # slice
+    def _Ellipsis(self, t):
+        self.write("...")
+        
     def _Index(self, t):
         self.dispatch(t.value)
 
@@ -262,6 +439,12 @@ class Unparser:
             self.write(":")
             self.dispatch(t.step)
 
+    def _ExtSlice(self, t):
+        for i, d in enumerate(t.dims):
+            if i != 0:
+                self.write(': ')
+            self.dispatch(d)
+            
     # others
     def _arguments(self, t):
         first = True
@@ -283,13 +466,51 @@ class Unparser:
         if t.kwarg:
             if first:first = False
             else: self.write(", ")
-            self.write("**"+self.kwarg)
-        self.write(")")
+            self.write("**"+t.kwarg)
 
-def roundtrip(filename):
+    def _keyword(self, t):
+        self.write(t.arg)
+        self.write("=")
+        self.dispatch(t.value)
+        
+    def _Lambda(self, t):
+        self.write("lambda ")
+        self.dispatch(t.args)
+        self.write(": ")
+        self.dispatch(t.body)
+        
+def roundtrip(filename, output=sys.stdout):
     source = open(filename).read()
     tree = compile(source, filename, "exec", 0x400)
-    Unparser(tree)
+    Unparser(tree, output)
 
+
+
+def testdir(a):
+    try:
+        names = [n for n in os.listdir(a) if n.endswith('.py')]
+    except OSError:
+        print >> sys.stderr, "Directory not readable: %s" % a
+    else:
+        for n in names:
+            fullname = os.path.join(a, n)
+            if os.path.isfile(fullname):
+                output = cStringIO.StringIO()
+                print 'Testing %s' % fullname
+                try:
+                    roundtrip(fullname, output)
+                except Exception, e:
+                    print '  Failed to compile, exception is %s' % repr(e)
+            elif os.path.isdir(fullname):
+                testdir(fullname)
+
+def main(args):
+    if args[0] == '--testdir':
+        for a in args[1:]:
+            testdir(a)
+    else:
+        for a in args:
+            roundtrip(a)
+            
 if __name__=='__main__':
-    roundtrip(sys.argv[1])
+    main(sys.argv[1:])
