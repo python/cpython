@@ -12,6 +12,10 @@ What's New in Python 2.5 alpha 2?
 Core and builtins
 -----------------
 
+- Patch #837242: id() of any Python object always gives a positive
+  number, which might be a long integer. PyLong_FromVoidPtr and
+  PyLong_AsVoidPtr have been changed accordingly.
+
 - Python on OS X 10.3 and above now uses dlopen() (via dynload_shlib.c) 
   to load extension modules and now provides the dl module. As a result,
   sys.setdlopenflags() now works correctly on these systems. (SF patch 
