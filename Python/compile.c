@@ -314,7 +314,7 @@ compiler_free(struct compiler *c)
 	if (c->c_st)
 		PySymtable_Free(c->c_st);
 	if (c->c_future)
-		PyMem_Free(c->c_future);
+		PyObject_Free(c->c_future);
 	Py_DECREF(c->c_stack);
 }
 
