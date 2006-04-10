@@ -3094,7 +3094,7 @@ posix_openpty(PyObject *self, PyObject *noargs)
 #if defined(HAVE_DEV_PTMX) && !defined(HAVE_OPENPTY) && !defined(HAVE__GETPTY)
 	PyOS_sighandler_t sig_saved;
 #ifdef sun
-	extern char *ptsname();
+	extern char *ptsname(int fildes);
 #endif
 #endif
 
