@@ -213,8 +213,8 @@ def parse_config_h(fp, g=None):
     """
     if g is None:
         g = {}
-    define_rx = re.compile("#define ([A-Z][A-Z0-9_]+) (.*)\n")
-    undef_rx = re.compile("/[*] #undef ([A-Z][A-Z0-9_]+) [*]/\n")
+    define_rx = re.compile("#define ([A-Z][A-Za-z0-9_]+) (.*)\n")
+    undef_rx = re.compile("/[*] #undef ([A-Z][A-Za-z0-9_]+) [*]/\n")
     #
     while 1:
         line = fp.readline()
@@ -344,6 +344,17 @@ def _init_posix():
     try:
         filename = get_makefile_filename()
         parse_makefile(filename, g)
+    except IOError, msg:
+        my_msg = "invalid Python installation: unable to open %s" % filename
+        if hasattr(msg, "strerror"):
+            my_msg = my_msg + " (%s)" % msg.strerror
+
+        raise DistutilsPlatformError(my_msg)
+
+    # load the installed pyconfig.h:
+    try:
+        filename = get_config_h_filename()
+        parse_config_h(file(filename), g)
     except IOError, msg:
         my_msg = "invalid Python installation: unable to open %s" % filename
         if hasattr(msg, "strerror"):
