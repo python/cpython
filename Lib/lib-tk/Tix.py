@@ -1791,7 +1791,7 @@ class Grid(TixWidget):
     # valid specific resources as of Tk 8.4
     # editdonecmd, editnotifycmd, floatingcols, floatingrows, formatcmd,
     # highlightbackground, highlightcolor, leftmargin, itemtype, selectmode,
-    # selectunit, topmargin, 
+    # selectunit, topmargin,
     def __init__(self, master=None, cnf={}, **kw):
         static= []
         self.cnf= cnf
@@ -1805,7 +1805,7 @@ class Grid(TixWidget):
     def anchor_get(self):
         "Get the (x,y) coordinate of the current anchor cell"
         return self._getints(self.tk.call(self, 'anchor', 'get'))
-        
+
     # def bdtype
     # def delete dim from ?to?
     def delete_row(self, from_, to=None):

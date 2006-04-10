@@ -72,7 +72,7 @@ class Unparser:
             self.write(a.name)
             if a.asname:
                 self.write(" as "+a.asname)
-                
+
     def _ImportFrom(self, t):
         self.fill("from ")
         self.write(t.module)
@@ -105,13 +105,13 @@ class Unparser:
 
     def _Pass(self, t):
         self.fill("pass")
-        
+
     def _Break(self, t):
         self.fill("break")
 
     def _Continue(self, t):
         self.fill("continue")
-        
+
     def _Delete(self, t):
         self.fill("del ")
         self.dispatch(t.targets)
@@ -122,7 +122,7 @@ class Unparser:
         if t.msg:
             self.write(", ")
             self.dispatch(t.msg)
-        
+
     def _Exec(self, t):
         self.fill("exec ")
         self.dispatch(t.body)
@@ -160,7 +160,7 @@ class Unparser:
             self.write(" (")
             self.dispatch(t.value)
             self.write(")")
-                  
+
     def _Raise(self, t):
         self.fill('raise ')
         if t.type:
@@ -171,13 +171,13 @@ class Unparser:
         if t.tback:
             self.write(", ")
             self.dispatch(t.tback)
-      
+
     def _TryExcept(self, t):
         self.fill("try")
         self.enter()
         self.dispatch(t.body)
         self.leave()
-        
+
         for ex in t.handlers:
             self.dispatch(ex)
         if t.orelse:
@@ -207,7 +207,7 @@ class Unparser:
         self.enter()
         self.dispatch(t.body)
         self.leave()
-        
+
     def _ClassDef(self, t):
         self.write("\n")
         self.fill("class "+t.name)
@@ -268,7 +268,7 @@ class Unparser:
             self.enter()
             self.dispatch(t.orelse)
             self.leave
-            
+
     def _With(self, t):
         self.fill("with ")
         self.dispatch(t.context_expr)
@@ -290,7 +290,7 @@ class Unparser:
         self.write("`")
         self.dispatch(t.value)
         self.write("`")
-        
+
     def _Num(self, t):
         self.write(repr(t.n))
 
@@ -307,14 +307,14 @@ class Unparser:
         for gen in t.generators:
             self.dispatch(gen)
         self.write("]")
-        
+
     def _GeneratorExp(self, t):
         self.write("(")
         self.dispatch(t.elt)
         for gen in t.generators:
             self.dispatch(gen)
         self.write(")")
-        
+
     def _comprehension(self, t):
         self.write(" for ")
         self.dispatch(t.target)
@@ -331,7 +331,7 @@ class Unparser:
         if t.orelse:
             self.write(" else ")
             self.dispatch(t.orelse)
-            
+
     def _Dict(self, t):
         self.write("{")
         for k,v in zip(t.keys, t.values):
@@ -386,7 +386,7 @@ class Unparser:
             self.write(" %s " % self.boolops[t.op.__class__])
             self.dispatch(v)
         self.write(")")
-        
+
     def _Attribute(self,t):
         self.dispatch(t.value)
         self.write(".")
@@ -425,7 +425,7 @@ class Unparser:
     # slice
     def _Ellipsis(self, t):
         self.write("...")
-        
+
     def _Index(self, t):
         self.dispatch(t.value)
 
@@ -444,7 +444,7 @@ class Unparser:
             if i != 0:
                 self.write(': ')
             self.dispatch(d)
-            
+
     # others
     def _arguments(self, t):
         first = True
@@ -472,13 +472,13 @@ class Unparser:
         self.write(t.arg)
         self.write("=")
         self.dispatch(t.value)
-        
+
     def _Lambda(self, t):
         self.write("lambda ")
         self.dispatch(t.args)
         self.write(": ")
         self.dispatch(t.body)
-        
+
 def roundtrip(filename, output=sys.stdout):
     source = open(filename).read()
     tree = compile(source, filename, "exec", 0x400)
@@ -511,6 +511,6 @@ def main(args):
     else:
         for a in args:
             roundtrip(a)
-            
+
 if __name__=='__main__':
     main(sys.argv[1:])
