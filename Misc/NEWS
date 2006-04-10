@@ -33,6 +33,8 @@ Library
 Build
 -----
 
+- Patch #1429775: Link extension modules with the shared libpython.
+
 C API
 -----
 
