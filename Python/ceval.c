@@ -2179,6 +2179,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 		case SETUP_LOOP:
 		case SETUP_EXCEPT:
 		case SETUP_FINALLY:
+			/* NOTE: If you add any new block-setup opcodes that are not try/except/finally
+			   handlers, you may need to update the PyGen_NeedsFinalizing() function. */
+
 			PyFrame_BlockSetup(f, opcode, INSTR_OFFSET() + oparg,
 					   STACK_LEVEL());
 			continue;

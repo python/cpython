@@ -5,6 +5,7 @@
 #include "genobject.h"
 #include "ceval.h"
 #include "structmember.h"
+#include "opcode.h"
 
 static int
 gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
@@ -357,4 +358,23 @@ PyGen_New(PyFrameObject *f)
 	gen->gi_weakreflist = NULL;
 	_PyObject_GC_TRACK(gen);
 	return (PyObject *)gen;
+}
+
+int
+PyGen_NeedsFinalizing(PyGenObject *gen)
+{
+	int i;
+	PyFrameObject *f = gen->gi_frame;
+
+	if ((PyObject *)f == Py_None || f->f_stacktop==NULL || f->f_iblock<=0)
+		return 0; /* no frame or no blockstack == no finalization */
+
+	for (i=f->f_iblock; i>=0; i--) {
+		if (f->f_blockstack[i].b_type != SETUP_LOOP)
+			/* any block type besides a loop requires cleanup */
+			return 1;
+	}
+
+	/* No blocks except loops, it's safe to skip finalization */
+	return 0;
 }
