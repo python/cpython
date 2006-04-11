@@ -1604,6 +1604,16 @@ LIBS="$withval $LIBS"
 ],
 [AC_MSG_RESULT(no)])
 
+# Check for use of the system libffi library
+AC_MSG_CHECKING(for --with-system-ffi)
+AC_ARG_WITH(system_ffi,
+            AC_HELP_STRING(--with-system-ffi, build _ctypes module using an installed ffi library))
+
+if test -z "$with_system_ffi"
+then with_system_ffi="no"
+fi
+AC_MSG_RESULT($with_system_ffi)
+
 # Determine if signalmodule should be used.
 AC_SUBST(USE_SIGNAL_MODULE)
 AC_SUBST(SIGNAL_OBJS)

@@ -973,7 +973,7 @@ class PyBuildExt(build_ext):
                 exts.append( Extension('dl', ['dlmodule.c']) )
 
         # Thomas Heller's _ctypes module
-        self.detect_ctypes()
+        self.detect_ctypes(inc_dirs, lib_dirs)
 
         # Platform-specific libraries
         if platform == 'linux2':
@@ -1269,44 +1269,46 @@ class PyBuildExt(build_ext):
         #       -lGL -lGLU -lXext -lXmu \
 
     def configure_ctypes(self, ext):
-        (srcdir,) = sysconfig.get_config_vars('srcdir')
-        ffi_builddir = os.path.join(self.build_temp, 'libffi')
-        ffi_srcdir = os.path.abspath(os.path.join(srcdir, 'Modules',
-                                     '_ctypes', 'libffi'))
-        ffi_configfile = os.path.join(ffi_builddir, 'fficonfig.py')
+        if not self.use_system_libffi:
+            (srcdir,) = sysconfig.get_config_vars('srcdir')
+            ffi_builddir = os.path.join(self.build_temp, 'libffi')
+            ffi_srcdir = os.path.abspath(os.path.join(srcdir, 'Modules',
+                                         '_ctypes', 'libffi'))
+            ffi_configfile = os.path.join(ffi_builddir, 'fficonfig.py')
 
-        if self.force or not os.path.exists(ffi_configfile):
-            from distutils.dir_util import mkpath
-            mkpath(ffi_builddir)
-            config_args = []
+            if self.force or not os.path.exists(ffi_configfile):
+                from distutils.dir_util import mkpath
+                mkpath(ffi_builddir)
+                config_args = []
 
-            # Pass empty CFLAGS because we'll just append the resulting CFLAGS
-            # to Python's; -g or -O2 is to be avoided.
-            cmd = "cd %s && env CFLAGS='' '%s/configure' %s" \
-                  % (ffi_builddir, ffi_srcdir, " ".join(config_args))
+                # Pass empty CFLAGS because we'll just append the resulting
+                # CFLAGS to Python's; -g or -O2 is to be avoided.
+                cmd = "cd %s && env CFLAGS='' '%s/configure' %s" \
+                      % (ffi_builddir, ffi_srcdir, " ".join(config_args))
 
-            res = os.system(cmd)
-            if res or not os.path.exists(ffi_configfile):
-                print "Failed to configure _ctypes module"
-                return False
+                res = os.system(cmd)
+                if res or not os.path.exists(ffi_configfile):
+                    print "Failed to configure _ctypes module"
+                    return False
 
-        fficonfig = {}
-        execfile(ffi_configfile, globals(), fficonfig)
-        ffi_srcdir = os.path.join(fficonfig['ffi_srcdir'], 'src')
+            fficonfig = {}
+            execfile(ffi_configfile, globals(), fficonfig)
+            ffi_srcdir = os.path.join(fficonfig['ffi_srcdir'], 'src')
 
-        # Add .S (preprocessed assembly) to C compiler source extensions.
-        self.compiler.src_extensions.append('.S')
+            # Add .S (preprocessed assembly) to C compiler source extensions.
+            self.compiler.src_extensions.append('.S')
 
-        include_dirs = [os.path.join(ffi_builddir, 'include'),
-                        ffi_builddir, ffi_srcdir]
-        extra_compile_args = fficonfig['ffi_cflags'].split()
+            include_dirs = [os.path.join(ffi_builddir, 'include'),
+                            ffi_builddir, ffi_srcdir]
+            extra_compile_args = fficonfig['ffi_cflags'].split()
 
-        ext.sources.extend(fficonfig['ffi_sources'])
-        ext.include_dirs.extend(include_dirs)
-        ext.extra_compile_args.extend(extra_compile_args)
+            ext.sources.extend(fficonfig['ffi_sources'])
+            ext.include_dirs.extend(include_dirs)
+            ext.extra_compile_args.extend(extra_compile_args)
         return True
 
-    def detect_ctypes(self):
+    def detect_ctypes(self, inc_dirs, lib_dirs):
+        self.use_system_libffi = False
         include_dirs = []
         extra_compile_args = []
         sources = ['_ctypes/_ctypes.c',
@@ -1326,11 +1328,39 @@ class PyBuildExt(build_ext):
         ext = Extension('_ctypes',
                         include_dirs=include_dirs,
                         extra_compile_args=extra_compile_args,
+                        libraries=[],
                         sources=sources,
                         depends=depends)
         ext_test = Extension('_ctypes_test',
                              sources=['_ctypes/_ctypes_test.c'])
         self.extensions.extend([ext, ext_test])
+
+        if not '--with-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS"):
+            return
+
+        ffi_inc = find_file('ffi.h', [], inc_dirs)
+        if ffi_inc is not None:
+            ffi_h = ffi_inc[0] + '/ffi.h'
+            fp = open(ffi_h)
+            while 1:
+                line = fp.readline()
+                if not line:
+                    ffi_inc = None
+                    break
+                if line.startswith('#define LIBFFI_H'):
+                    break
+        ffi_lib = None
+        if ffi_inc is not None:
+            for lib_name in ('ffi_convenience', 'ffi_pic', 'ffi'):
+                if (self.compiler.find_library_file(lib_dirs, lib_name)):
+                    ffi_lib = lib_name
+                    break
+
+        if ffi_inc and ffi_lib:
+            ext.include_dirs.extend(ffi_inc)
+            ext.libraries.append(ffi_lib)
+            self.use_system_libffi = True
+
 
 class PyBuildInstall(install):
     # Suppress the warning about installation into the lib_dynload
