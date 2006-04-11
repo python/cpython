@@ -155,8 +155,10 @@ class StructVisitor(EmitVisitor):
             type = sum.types[i]
             enum.append("%s_kind=%d" % (type.name, i + 1))
 
+        emit("enum _%(name)s_kind {" + ", ".join(enum) + "};")
+
         emit("struct _%(name)s {")
-        emit("enum { " + ", ".join(enum) + " } kind;", depth + 1)
+        emit("enum _%(name)s_kind kind;", depth + 1)
         emit("union {", depth + 1)
         for t in sum.types:
             self.visit(t, depth + 2)
@@ -679,8 +681,8 @@ class ObjVisitor(PickleVisitor):
                 self.emit("if (!value) goto failed;", depth+1)
                 self.emit("for(i = 0; i < n; i++)", depth+1)
                 # This cannot fail, so no need for error handling
-                self.emit("PyList_SET_ITEM(value, i, ast2obj_%s((%s_ty)asdl_seq_GET(%s, i)));" %
-                                (field.type, field.type, value), depth+2, reflow=False)
+                self.emit("PyList_SET_ITEM(value, i, ast2obj_cmpop((cmpop_ty)(int)asdl_seq_GET(%s, i)));" % value,
+                          depth+2, reflow=False)
                 self.emit("}", depth)
             else:
                 self.emit("value = ast2obj_list(%s, ast2obj_%s);" % (value, field.type), depth)
