@@ -1648,6 +1648,7 @@ posix_listdir(PyObject *self, PyObject *args)
 	struct dirent *ep;
 	int arg_is_unicode = 1;
 
+	errno = 0;
 	if (!PyArg_ParseTuple(args, "U:listdir", &v)) {
 		arg_is_unicode = 0;
 		PyErr_Clear();
