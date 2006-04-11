@@ -529,7 +529,7 @@ new_arena(void)
 		nbytes = numarenas * sizeof(*arenas);
 		if (nbytes / sizeof(*arenas) != numarenas)
 			return NULL;	/* overflow */
-		arenaobj = (arena_object *)realloc(arenas, nbytes);
+		arenaobj = (struct arena_object *)realloc(arenas, nbytes);
 		if (arenaobj == NULL)
 			return NULL;
 		arenas = arenaobj;
