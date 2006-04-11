@@ -1763,7 +1763,6 @@ def specials():
     c1 = C()
     c2 = C()
     verify(not not c1)
-    vereq(hash(c1), id(c1))
     vereq(cmp(c1, c2), cmp(id(c1), id(c2)))
     vereq(c1, c1)
     verify(c1 != c2)
