@@ -15,6 +15,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1467952: os.listdir() now correctly raises an error if readdir()
+  fails with an error condition.
+
 - Fix bsddb.db.DBError derived exceptions so they can be unpickled.
 
 Library
