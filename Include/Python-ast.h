@@ -35,9 +35,10 @@ typedef struct _keyword *keyword_ty;
 typedef struct _alias *alias_ty;
 
 
+enum _mod_kind {Module_kind=1, Interactive_kind=2, Expression_kind=3,
+                 Suite_kind=4};
 struct _mod {
-        enum { Module_kind=1, Interactive_kind=2, Expression_kind=3,
-               Suite_kind=4 } kind;
+        enum _mod_kind kind;
         union {
                 struct {
                         asdl_seq *body;
@@ -58,14 +59,15 @@ struct _mod {
         } v;
 };
 
+enum _stmt_kind {FunctionDef_kind=1, ClassDef_kind=2, Return_kind=3,
+                  Delete_kind=4, Assign_kind=5, AugAssign_kind=6, Print_kind=7,
+                  For_kind=8, While_kind=9, If_kind=10, With_kind=11,
+                  Raise_kind=12, TryExcept_kind=13, TryFinally_kind=14,
+                  Assert_kind=15, Import_kind=16, ImportFrom_kind=17,
+                  Exec_kind=18, Global_kind=19, Expr_kind=20, Pass_kind=21,
+                  Break_kind=22, Continue_kind=23};
 struct _stmt {
-        enum { FunctionDef_kind=1, ClassDef_kind=2, Return_kind=3,
-               Delete_kind=4, Assign_kind=5, AugAssign_kind=6, Print_kind=7,
-               For_kind=8, While_kind=9, If_kind=10, With_kind=11,
-               Raise_kind=12, TryExcept_kind=13, TryFinally_kind=14,
-               Assert_kind=15, Import_kind=16, ImportFrom_kind=17,
-               Exec_kind=18, Global_kind=19, Expr_kind=20, Pass_kind=21,
-               Break_kind=22, Continue_kind=23 } kind;
+        enum _stmt_kind kind;
         union {
                 struct {
                         identifier name;
@@ -181,12 +183,14 @@ struct _stmt {
         int col_offset;
 };
 
+enum _expr_kind {BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
+                  IfExp_kind=5, Dict_kind=6, ListComp_kind=7,
+                  GeneratorExp_kind=8, Yield_kind=9, Compare_kind=10,
+                  Call_kind=11, Repr_kind=12, Num_kind=13, Str_kind=14,
+                  Attribute_kind=15, Subscript_kind=16, Name_kind=17,
+                  List_kind=18, Tuple_kind=19};
 struct _expr {
-        enum { BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
-               IfExp_kind=5, Dict_kind=6, ListComp_kind=7, GeneratorExp_kind=8,
-               Yield_kind=9, Compare_kind=10, Call_kind=11, Repr_kind=12,
-               Num_kind=13, Str_kind=14, Attribute_kind=15, Subscript_kind=16,
-               Name_kind=17, List_kind=18, Tuple_kind=19 } kind;
+        enum _expr_kind kind;
         union {
                 struct {
                         boolop_ty op;
@@ -292,9 +296,9 @@ struct _expr {
         int col_offset;
 };
 
+enum _slice_kind {Ellipsis_kind=1, Slice_kind=2, ExtSlice_kind=3, Index_kind=4};
 struct _slice {
-        enum { Ellipsis_kind=1, Slice_kind=2, ExtSlice_kind=3, Index_kind=4 }
-               kind;
+        enum _slice_kind kind;
         union {
                 struct {
                         expr_ty lower;
