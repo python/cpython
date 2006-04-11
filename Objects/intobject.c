@@ -335,7 +335,8 @@ PyInt_FromString(char *s, char **pend, int base)
 {
 	char *end;
 	long x;
-	char buffer[256]; /* For errors */
+	Py_ssize_t slen;
+	PyObject *sobj, *srepr;
 
 	if ((base != 0 && base < 2) || base > 36) {
 		PyErr_SetString(PyExc_ValueError,
@@ -359,9 +360,18 @@ PyInt_FromString(char *s, char **pend, int base)
 		end++;
 	if (*end != '\0') {
   bad:
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "invalid literal for int(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
+		slen = strlen(s) < 200 ? strlen(s) : 200;
+		sobj = PyString_FromStringAndSize(s, slen);
+		if (sobj == NULL)
+			return NULL;
+		srepr = PyObject_Repr(sobj);
+		Py_DECREF(sobj);
+		if (srepr == NULL)
+			return NULL;
+		PyErr_Format(PyExc_ValueError,
+			     "invalid literal for int() with base %d: %s",
+			     base, PyString_AS_STRING(srepr));
+		Py_DECREF(srepr);
 		return NULL;
 	}
 	else if (errno != 0)

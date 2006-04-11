@@ -1400,6 +1400,8 @@ PyLong_FromString(char *str, char **pend, int base)
 	int sign = 1;
 	char *start, *orig_str = str;
 	PyLongObject *z;
+	PyObject *strobj, *strrepr;
+	Py_ssize_t slen;
 
 	if ((base != 0 && base < 2) || base > 36) {
 		PyErr_SetString(PyExc_ValueError,
@@ -1465,9 +1467,19 @@ PyLong_FromString(char *str, char **pend, int base)
 	return (PyObject *) z;
 
  onError:
-	PyErr_Format(PyExc_ValueError,
-		     "invalid literal for long(): %.200s", orig_str);
 	Py_XDECREF(z);
+	slen = strlen(orig_str) < 200 ? strlen(orig_str) : 200;
+	strobj = PyString_FromStringAndSize(orig_str, slen);
+	if (strobj == NULL)
+		return NULL;
+	strrepr = PyObject_Repr(strobj);
+	Py_DECREF(strobj);
+	if (strrepr == NULL)
+		return NULL;
+	PyErr_Format(PyExc_ValueError,
+		     "invalid literal for long() with base %d: %s",
+		     base, PyString_AS_STRING(strrepr));
+	Py_DECREF(strrepr);
 	return NULL;
 }
 
