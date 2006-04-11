@@ -1365,7 +1365,7 @@ ast_for_binop(struct compiling *c, const node *n)
 
 	int i, nops;
 	expr_ty expr1, expr2, result;
-        operator_ty operator;
+        operator_ty newoperator;
 
         expr1 = ast_for_expr(c, CHILD(n, 0));
         if (!expr1)
@@ -1375,11 +1375,11 @@ ast_for_binop(struct compiling *c, const node *n)
         if (!expr2)
             return NULL;
 
-        operator = get_operator(CHILD(n, 1));
-        if (!operator)
+        newoperator = get_operator(CHILD(n, 1));
+        if (!newoperator)
             return NULL;
 
-	result = BinOp(expr1, operator, expr2, LINENO(n), n->n_col_offset,
+	result = BinOp(expr1, newoperator, expr2, LINENO(n), n->n_col_offset,
                        c->c_arena);
 	if (!result)
             return NULL;
@@ -1389,15 +1389,15 @@ ast_for_binop(struct compiling *c, const node *n)
 		expr_ty tmp_result, tmp;
 		const node* next_oper = CHILD(n, i * 2 + 1);
 
-		operator = get_operator(next_oper);
-                if (!operator)
+		newoperator = get_operator(next_oper);
+                if (!newoperator)
                     return NULL;
 
                 tmp = ast_for_expr(c, CHILD(n, i * 2 + 2));
                 if (!tmp)
                     return NULL;
 
-                tmp_result = BinOp(result, operator, tmp, 
+                tmp_result = BinOp(result, newoperator, tmp, 
 				   LINENO(next_oper), next_oper->n_col_offset,
                                    c->c_arena);
 		if (!tmp) 
@@ -1610,10 +1610,10 @@ ast_for_expr(struct compiling *c, const node *n)
                 }
                 for (i = 1; i < NCH(n); i += 2) {
                     /* XXX cmpop_ty is just an enum */
-                    cmpop_ty operator;
+                    cmpop_ty newoperator;
 
-                    operator = ast_for_comp_op(CHILD(n, i));
-                    if (!operator) {
+                    newoperator = ast_for_comp_op(CHILD(n, i));
+                    if (!newoperator) {
                         return NULL;
 		    }
 
@@ -1622,7 +1622,7 @@ ast_for_expr(struct compiling *c, const node *n)
                         return NULL;
 		    }
                         
-                    asdl_seq_SET(ops, i / 2, (void *)(Py_uintptr_t)operator);
+                    asdl_seq_SET(ops, i / 2, (void *)(Py_uintptr_t)newoperator);
                     asdl_seq_SET(cmps, i / 2, expression);
                 }
                 expression = ast_for_expr(c, CHILD(n, 0));
@@ -1882,7 +1882,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
     }
     else if (TYPE(CHILD(n, 1)) == augassign) {
         expr_ty expr1, expr2;
-        operator_ty operator;
+        operator_ty newoperator;
 	node *ch = CHILD(n, 0);
 
 	if (TYPE(ch) == testlist)
@@ -1924,11 +1924,11 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         if (!expr2)
             return NULL;
 
-        operator = ast_for_augassign(CHILD(n, 1));
-        if (!operator)
+        newoperator = ast_for_augassign(CHILD(n, 1));
+        if (!newoperator)
             return NULL;
 
-	return AugAssign(expr1, operator, expr2, LINENO(n), n->n_col_offset, c->c_arena);
+	return AugAssign(expr1, newoperator, expr2, LINENO(n), n->n_col_offset, c->c_arena);
     }
     else {
 	int i;
@@ -2541,8 +2541,8 @@ ast_for_if_stmt(struct compiling *c, const node *n)
 	    int off = 5 + (n_elif - i - 1) * 4;
             expr_ty expression;
             asdl_seq *suite_seq;
-	    asdl_seq *new = asdl_seq_new(1, c->c_arena);
-	    if (!new)
+	    asdl_seq *newobj = asdl_seq_new(1, c->c_arena);
+	    if (!newobj)
 		return NULL;
             expression = ast_for_expr(c, CHILD(n, off));
             if (!expression)
@@ -2551,10 +2551,10 @@ ast_for_if_stmt(struct compiling *c, const node *n)
             if (!suite_seq)
                 return NULL;
 
-	    asdl_seq_SET(new, 0,
+	    asdl_seq_SET(newobj, 0,
 			 If(expression, suite_seq, orelse, 
 			    LINENO(CHILD(n, off)), CHILD(n, off)->n_col_offset, c->c_arena));
-	    orelse = new;
+	    orelse = newobj;
 	}
 	return If(ast_for_expr(c, CHILD(n, 1)),
 		  ast_for_suite(c, CHILD(n, 3)),

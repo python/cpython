@@ -893,7 +893,7 @@ SyntaxError__str__(PyObject *self, PyObject *args)
 	    if (have_filename)
 		bufsize += PyString_GET_SIZE(filename);
 
-	    buffer = PyMem_MALLOC(bufsize);
+	    buffer = (char *)PyMem_MALLOC(bufsize);
 	    if (buffer != NULL) {
 		if (have_filename && have_lineno)
 		    PyOS_snprintf(buffer, bufsize, "%s (%s, line %ld)",
