@@ -5,6 +5,9 @@
 % Fix XXX comments
 % Distutils upload (PEP 243)
 % The easy_install stuff
+% Access to ASTs with compile() flag
+% Stateful codec changes
+% ASCII is now default encoding for modules
 
 \title{What's New in Python 2.5}
 \release{0.1}
@@ -1132,10 +1135,34 @@ svg.append(elem1)
 \end{verbatim}
 
 Each XML element supports some dictionary-like and some list-like
-access methods.  Dictionary-like methods are used to access attribute
-values, and list-like methods are used to access child nodes.
+access methods.  Dictionary-like operations are used to access attribute
+values, and list-like operations are used to access child nodes.
 
-% XXX finish this
+\begin{tableii}{c|l}{code}{Operation}{Result}
+  \lineii{elem[n]}{Returns n'th child element.}
+  \lineii{elem[m:n]}{Returns list of m'th through n'th child elements.}
+  \lineii{len(elem)}{Returns number of child elements.}
+  \lineii{elem.getchildren()}{Returns list of child elements.}
+  \lineii{elem.append(elem2)}{Adds \var{elem2} as a child.}
+  \lineii{elem.insert(index, elem2)}{Inserts \var{elem2} at the specified location.}
+  \lineii{del elem[n]}{Deletes n'th child element.}
+  \lineii{elem.keys()}{Returns list of attribute names.}
+  \lineii{elem.get(name)}{Returns value of attribute \var{name}.}
+  \lineii{elem.set(name, value)}{Sets new value for attribute \var{name}.}
+  \lineii{elem.attrib}{Retrieves the dictionary containing attributes.}
+  \lineii{del elem.attrib[name]}{Deletes attribute \var{name}.}
+\end{tableii}
+
+Comments and processing instructions are also represented as
+\class{Element} nodes.  To check if a node is a comment or processing
+instructions:
+
+\begin{verbatim}
+if elem.tag is ET.Comment:
+    ...
+elif elem.tag is ET.ProcessingInstruction:
+    ...
+\end{verbatim}
 
 To generate XML output, you should call the
 \method{ElementTree.write()} method.  Like \function{parse()},
@@ -1156,8 +1183,8 @@ any characters with values greater than 127.  You should always
 specify a different encoding such as UTF-8 that can handle any Unicode
 character.)
 
-
-% XXX write introduction
+This section is only a partial description of the ElementTree interfaces.
+Please read the package's official documentation for more details.
 
 \begin{seealso}
 
