@@ -547,7 +547,7 @@ tuple_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 tuple_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *tmp, *new, *item;
+	PyObject *tmp, *newobj, *item;
 	Py_ssize_t i, n;
 
 	assert(PyType_IsSubtype(type, &PyTuple_Type));
@@ -555,16 +555,16 @@ tuple_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (tmp == NULL)
 		return NULL;
 	assert(PyTuple_Check(tmp));
-	new = type->tp_alloc(type, n = PyTuple_GET_SIZE(tmp));
-	if (new == NULL)
+	newobj = type->tp_alloc(type, n = PyTuple_GET_SIZE(tmp));
+	if (newobj == NULL)
 		return NULL;
 	for (i = 0; i < n; i++) {
 		item = PyTuple_GET_ITEM(tmp, i);
 		Py_INCREF(item);
-		PyTuple_SET_ITEM(new, i, item);
+		PyTuple_SET_ITEM(newobj, i, item);
 	}
 	Py_DECREF(tmp);
-	return new;
+	return newobj;
 }
 
 PyDoc_STRVAR(tuple_doc,
