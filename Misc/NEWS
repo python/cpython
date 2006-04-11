@@ -15,7 +15,7 @@ Core and builtins
 - Patch #837242: ``id()`` of any Python object always gives a positive
   number now, which might be a long integer. ``PyLong_FromVoidPtr`` and
   ``PyLong_AsVoidPtr`` have been changed accordingly.  Note that it has
-  never been correct to implement a ``hash()`` method that returns the
+  never been correct to implement a ``__hash()__`` method that returns the
   ``id()`` of an object:
 
       def __hash__(self):
@@ -23,7 +23,7 @@ Core and builtins
 
   because a hash result must be a (short) Python int but it was always
   possible for ``id()`` to return a Python long.  However, because ``id()``
-  cuold return negative values before, on a 32-bit box an ``id()`` result
+  could return negative values before, on a 32-bit box an ``id()`` result
   was always usable as a hash value before this patch.  That's no longer
   necessarily so.
 
