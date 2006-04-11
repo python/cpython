@@ -12,13 +12,24 @@ What's New in Python 2.5 alpha 2?
 Core and builtins
 -----------------
 
-- Patch #837242: id() of any Python object always gives a positive
-  number, which might be a long integer. PyLong_FromVoidPtr and
-  PyLong_AsVoidPtr have been changed accordingly.
+- Patch #837242: ``id()`` of any Python object always gives a positive
+  number now, which might be a long integer. ``PyLong_FromVoidPtr`` and
+  ``PyLong_AsVoidPtr`` have been changed accordingly.  Note that it has
+  never been correct to implement a ``hash()`` method that returns the
+  ``id()`` of an object:
 
-- Python on OS X 10.3 and above now uses dlopen() (via dynload_shlib.c) 
+      def __hash__(self):
+          return id(self)  # WRONG
+
+  because a hash result must be a (short) Python int but it was always
+  possible for ``id()`` to return a Python long.  However, because ``id()``
+  cuold return negative values before, on a 32-bit box an ``id()`` result
+  was always usable as a hash value before this patch.  That's no longer
+  necessarily so.
+
+- Python on OS X 10.3 and above now uses dlopen() (via dynload_shlib.c)
   to load extension modules and now provides the dl module. As a result,
-  sys.setdlopenflags() now works correctly on these systems. (SF patch 
+  sys.setdlopenflags() now works correctly on these systems. (SF patch
   #1454844)
 
 - Patch #1463867: enhanced garbage collection to allow cleanup of cycles
@@ -197,7 +208,7 @@ Core and builtins
   and long longs.
 
 - SF Bug #1350188, "setdlopenflags" leads to crash upon "import"
-  It was possible for dlerror() to return a NULL pointer, so 
+  It was possible for dlerror() to return a NULL pointer, so
   it will now use a default error message in this case.
 
 - Replaced most Unicode charmap codecs with new ones using the
@@ -572,7 +583,7 @@ Library
 
 - Added the sqlite3 package. This is based on pysqlite2.1.3, and provides
   a DB-API interface in the standard library. You'll need sqlite 3.0.8 or
-  later to build this - if you have an earlier version, the C extension 
+  later to build this - if you have an earlier version, the C extension
   module will not be built.
 
 - Bug #1460340: ``random.sample(dict)`` failed in various ways.  Dicts
