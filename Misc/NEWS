@@ -21,6 +21,11 @@ Core and builtins
   sys.setdlopenflags() now works correctly on these systems. (SF patch 
   #1454844)
 
+- Patch #1463867: enhanced garbage collection to allow cleanup of cycles
+  involving generators that have paused outside of any ``try`` or ``with``
+  blocks.  (In 2.5a1, a paused generator that was part of a reference
+  cycle could not be garbage collected, regardless of whether it was
+  paused in a ``try`` or ``with`` block.)
 
 Extension Modules
 -----------------
@@ -51,6 +56,11 @@ C API
 
 Tests
 -----
+
+- The test_contextlib test in 2.5a1 wasn't actually run unless you ran
+  it separately and by hand.  It also wasn't cleaning up its changes to
+  the current Decimal context.
+
 
 Documentation
 -------------
