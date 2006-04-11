@@ -507,7 +507,7 @@ PyEval_EvalFrame(PyFrameObject *f) {
 }
 
 PyObject *
-PyEval_EvalFrameEx(PyFrameObject *f, int throw)
+PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
 #ifdef DXPAIRS
 	int lastopcode = 0;
@@ -756,7 +756,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throw)
 	x = Py_None;	/* Not a reference, just anything non-NULL */
 	w = NULL;
 
-	if (throw) { /* support for generator.throw() */
+	if (throwflag) { /* support for generator.throw() */
 		why = WHY_EXCEPTION;
 		goto on_error;
 	}
