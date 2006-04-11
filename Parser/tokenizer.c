@@ -105,7 +105,8 @@ char *_PyParser_TokenNames[] = {
 static struct tok_state *
 tok_new(void)
 {
-	struct tok_state *tok = PyMem_MALLOC(sizeof(struct tok_state));
+	struct tok_state *tok = (struct tok_state *)PyMem_MALLOC(
+                                                sizeof(struct tok_state));
 	if (tok == NULL)
 		return NULL;
 	tok->buf = tok->cur = tok->end = tok->inp = tok->start = NULL;
@@ -775,38 +776,38 @@ tok_nextc(register struct tok_state *tok)
 			return Py_CHARMASK(*tok->cur++);
 		}
 		if (tok->prompt != NULL) {
-			char *new = PyOS_Readline(stdin, stdout, tok->prompt);
+			char *newtok = PyOS_Readline(stdin, stdout, tok->prompt);
 			if (tok->nextprompt != NULL)
 				tok->prompt = tok->nextprompt;
-			if (new == NULL)
+			if (newtok == NULL)
 				tok->done = E_INTR;
-			else if (*new == '\0') {
-				PyObject_FREE(new);
+			else if (*newtok == '\0') {
+				PyObject_FREE(newtok);
 				tok->done = E_EOF;
 			}
 #if !defined(PGEN) && defined(Py_USING_UNICODE)
-			else if (tok_stdin_decode(tok, &new) != 0)
-				PyObject_FREE(new);
+			else if (tok_stdin_decode(tok, &newtok) != 0)
+				PyObject_FREE(newtok);
 #endif
 			else if (tok->start != NULL) {
 				size_t start = tok->start - tok->buf;
 				size_t oldlen = tok->cur - tok->buf;
-				size_t newlen = oldlen + strlen(new);
+				size_t newlen = oldlen + strlen(newtok);
 				char *buf = tok->buf;
 				buf = (char *)PyObject_REALLOC(buf, newlen+1);
 				tok->lineno++;
 				if (buf == NULL) {
 					PyObject_FREE(tok->buf);
 					tok->buf = NULL;
-					PyObject_FREE(new);
+					PyObject_FREE(newtok);
 					tok->done = E_NOMEM;
 					return EOF;
 				}
 				tok->buf = buf;
 				tok->cur = tok->buf + oldlen;
 				tok->line_start = tok->cur;
-				strcpy(tok->buf + oldlen, new);
-				PyObject_FREE(new);
+				strcpy(tok->buf + oldlen, newtok);
+				PyObject_FREE(newtok);
 				tok->inp = tok->buf + newlen;
 				tok->end = tok->inp + 1;
 				tok->start = tok->buf + start;
@@ -815,7 +816,7 @@ tok_nextc(register struct tok_state *tok)
 				tok->lineno++;
 				if (tok->buf != NULL)
 					PyObject_FREE(tok->buf);
-				tok->buf = new;
+				tok->buf = newtok;
 				tok->line_start = tok->buf;
 				tok->cur = tok->buf;
 				tok->line_start = tok->buf;
