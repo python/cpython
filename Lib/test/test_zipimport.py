@@ -269,7 +269,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
     def testGetCompiledSource(self):
         pyc = make_pyc(compile(test_src, "<???>", "exec"), NOW)
-        files = {TESTMOD + ".py": (NOW, test_src), 
+        files = {TESTMOD + ".py": (NOW, test_src),
                  TESTMOD + pyc_ext: (NOW, pyc)}
         self.doTest(pyc_ext, files, TESTMOD, call=self.assertModuleSource)
 
@@ -310,7 +310,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             module.do_raise()
         except:
             tb = sys.exc_info()[2].tb_next
-            
+
             f,lno,n,line = extract_tb(tb, 1)[0]
             self.assertEqual(line, raise_src.strip())
 
