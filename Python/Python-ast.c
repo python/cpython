@@ -2328,8 +2328,6 @@ ast2obj_stmt(void* _o)
                 result = PyType_GenericNew(Continue_type, NULL, NULL);
                 if (!result) goto failed;
                 break;
-        default:
-                ;
         }
         value = ast2obj_int(o->lineno);
         if (!value) goto failed;
