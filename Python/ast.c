@@ -31,7 +31,7 @@ static asdl_seq *seq_for_testlist(struct compiling *, const node *);
 static expr_ty ast_for_expr(struct compiling *, const node *);
 static stmt_ty ast_for_stmt(struct compiling *, const node *);
 static asdl_seq *ast_for_suite(struct compiling *, const node *);
-static asdl_seq *ast_for_exprlist(struct compiling *, const node *, int);
+static asdl_seq *ast_for_exprlist(struct compiling *, const node *, expr_context_ty);
 static expr_ty ast_for_testlist(struct compiling *, const node *);
 static expr_ty ast_for_testlist_gexp(struct compiling *, const node *);
 
@@ -316,7 +316,7 @@ get_operator(const node *n)
         case PERCENT:
             return Mod;
         default:
-            return 0;
+            return (operator_ty)0;
     }
 }
 
@@ -424,7 +424,7 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
 	int i;
 
 	for (i = 0; i < asdl_seq_LEN(s); i++) {
-	    if (!set_context(asdl_seq_GET(s, i), ctx, n))
+	    if (!set_context((expr_ty)asdl_seq_GET(s, i), ctx, n))
 		return 0;
 	}
     }
@@ -465,7 +465,7 @@ ast_for_augassign(const node *n)
                 return Mult;
         default:
             PyErr_Format(PyExc_SystemError, "invalid augassign: %s", STR(n));
-            return 0;
+            return (operator_ty)0;
     }
 }
 
@@ -499,7 +499,7 @@ ast_for_comp_op(const node *n)
             default:
                 PyErr_Format(PyExc_SystemError, "invalid comp_op: %s",
                              STR(n));
-                return 0;
+                return (cmpop_ty)0;
 	}
     }
     else if (NCH(n) == 2) {
@@ -513,12 +513,12 @@ ast_for_comp_op(const node *n)
             default:
                 PyErr_Format(PyExc_SystemError, "invalid comp_op: %s %s",
                              STR(CHILD(n, 0)), STR(CHILD(n, 1)));
-                return 0;
+                return (cmpop_ty)0;
 	}
     }
     PyErr_Format(PyExc_SystemError, "invalid comp_op: has %d children",
                  NCH(n));
-    return 0;
+    return (cmpop_ty)0;
 }
 
 static asdl_seq *
@@ -985,7 +985,7 @@ ast_for_listcomp(struct compiling *c, const node *n)
             return NULL;
 
 	if (asdl_seq_LEN(t) == 1)
-	    lc = comprehension(asdl_seq_GET(t, 0), expression, NULL,
+	    lc = comprehension((expr_ty)asdl_seq_GET(t, 0), expression, NULL,
                                c->c_arena);
 	else
 	    lc = comprehension(Tuple(t, Store, LINENO(ch), ch->n_col_offset,
@@ -1131,7 +1131,7 @@ ast_for_genexp(struct compiling *c, const node *n)
             return NULL;
 
         if (asdl_seq_LEN(t) == 1)
-            ge = comprehension(asdl_seq_GET(t, 0), expression,
+            ge = comprehension((expr_ty)asdl_seq_GET(t, 0), expression,
                                NULL, c->c_arena);
         else
             ge = comprehension(Tuple(t, Store, LINENO(ch), ch->n_col_offset,
@@ -2002,7 +2002,7 @@ ast_for_print_stmt(struct compiling *c, const node *n)
 }
 
 static asdl_seq *
-ast_for_exprlist(struct compiling *c, const node *n, int context)
+ast_for_exprlist(struct compiling *c, const node *n, expr_context_ty context)
 {
     asdl_seq *seq;
     int i;
@@ -2626,7 +2626,7 @@ ast_for_for_stmt(struct compiling *c, const node *n)
     if (!_target)
         return NULL;
     if (asdl_seq_LEN(_target) == 1)
-	target = asdl_seq_GET(_target, 0);
+	target = (expr_ty)asdl_seq_GET(_target, 0);
     else
 	target = Tuple(_target, Store, LINENO(n), n->n_col_offset, c->c_arena);
 
