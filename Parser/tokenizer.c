@@ -164,7 +164,7 @@ error_ret(struct tok_state *tok) /* XXX */
 {
 	tok->decoding_erred = 1;
 	if (tok->fp != NULL && tok->buf != NULL) /* see PyTokenizer_Free */
-		PyObject_FREE(tok->buf);
+		PyMem_FREE(tok->buf);
 	tok->buf = NULL;
 	return NULL;		/* as if it were EOF */
 }
@@ -172,7 +172,7 @@ error_ret(struct tok_state *tok) /* XXX */
 static char *
 new_string(const char *s, Py_ssize_t len)
 {
-	char* result = (char *)PyObject_MALLOC(len + 1);
+	char* result = (char *)PyMem_MALLOC(len + 1);
 	if (result != NULL) {
 		memcpy(result, s, len);
 		result[len] = '\0';
@@ -237,7 +237,7 @@ get_coding_spec(const char *s, Py_ssize_t size)
 				char* r = new_string(begin, t - begin);
 				char* q = get_normal_name(r);
 				if (r != q) {
-					PyObject_FREE(r);
+					PyMem_FREE(r);
 					r = new_string(q, strlen(q));
 				}
 				return r;
@@ -278,18 +278,18 @@ check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
 					tok->decoding_state = -1;
 				}
 				else
-					PyObject_FREE(cs);
+					PyMem_FREE(cs);
 #else
                                 /* Without Unicode support, we cannot
                                    process the coding spec. Since there
                                    won't be any Unicode literals, that
                                    won't matter. */
-				PyObject_FREE(cs);
+				PyMem_FREE(cs);
 #endif
 			}
 		} else {	/* then, compare cs with BOM */
 			r = (strcmp(tok->encoding, cs) == 0);
-			PyObject_FREE(cs);
+			PyMem_FREE(cs);
 		}
 	}
 	if (!r) {
@@ -335,7 +335,7 @@ check_bom(int get_char(struct tok_state *),
 		return 1;
 	}
 	if (tok->encoding != NULL)
-		PyObject_FREE(tok->encoding);
+		PyMem_FREE(tok->encoding);
 	tok->encoding = new_string("utf-8", 5);	/* resulting is in utf-8 */
 	return 1;
   NON_BOM:
@@ -657,7 +657,7 @@ PyTokenizer_FromFile(FILE *fp, char *ps1, char *ps2)
 	struct tok_state *tok = tok_new();
 	if (tok == NULL)
 		return NULL;
-	if ((tok->buf = (char *)PyObject_MALLOC(BUFSIZ)) == NULL) {
+	if ((tok->buf = (char *)PyMem_MALLOC(BUFSIZ)) == NULL) {
 		PyTokenizer_Free(tok);
 		return NULL;
 	}
@@ -676,13 +676,13 @@ void
 PyTokenizer_Free(struct tok_state *tok)
 {
 	if (tok->encoding != NULL)
-		PyObject_FREE(tok->encoding);
+		PyMem_FREE(tok->encoding);
 #ifndef PGEN
 	Py_XDECREF(tok->decoding_readline);
 	Py_XDECREF(tok->decoding_buffer);
 #endif
 	if (tok->fp != NULL && tok->buf != NULL)
-		PyObject_FREE(tok->buf);
+		PyMem_FREE(tok->buf);
 	PyMem_FREE(tok);
 }
 
@@ -722,10 +722,10 @@ tok_stdin_decode(struct tok_state *tok, char **inp)
 	if (converted == NULL)
 		goto error_nomem;
 
-	PyObject_FREE(*inp);
+	PyMem_FREE(*inp);
 	*inp = converted;
 	if (tok->encoding != NULL)
-		PyObject_FREE(tok->encoding);
+		PyMem_FREE(tok->encoding);
 	tok->encoding = new_string(encoding, strlen(encoding));
 	if (tok->encoding == NULL)
 		goto error_nomem;
@@ -782,24 +782,24 @@ tok_nextc(register struct tok_state *tok)
 			if (newtok == NULL)
 				tok->done = E_INTR;
 			else if (*newtok == '\0') {
-				PyObject_FREE(newtok);
+				PyMem_FREE(newtok);
 				tok->done = E_EOF;
 			}
 #if !defined(PGEN) && defined(Py_USING_UNICODE)
 			else if (tok_stdin_decode(tok, &newtok) != 0)
-				PyObject_FREE(newtok);
+				PyMem_FREE(newtok);
 #endif
 			else if (tok->start != NULL) {
 				size_t start = tok->start - tok->buf;
 				size_t oldlen = tok->cur - tok->buf;
 				size_t newlen = oldlen + strlen(newtok);
 				char *buf = tok->buf;
-				buf = (char *)PyObject_REALLOC(buf, newlen+1);
+				buf = (char *)PyMem_REALLOC(buf, newlen+1);
 				tok->lineno++;
 				if (buf == NULL) {
-					PyObject_FREE(tok->buf);
+					PyMem_FREE(tok->buf);
 					tok->buf = NULL;
-					PyObject_FREE(newtok);
+					PyMem_FREE(newtok);
 					tok->done = E_NOMEM;
 					return EOF;
 				}
@@ -807,7 +807,7 @@ tok_nextc(register struct tok_state *tok)
 				tok->cur = tok->buf + oldlen;
 				tok->line_start = tok->cur;
 				strcpy(tok->buf + oldlen, newtok);
-				PyObject_FREE(newtok);
+				PyMem_FREE(newtok);
 				tok->inp = tok->buf + newlen;
 				tok->end = tok->inp + 1;
 				tok->start = tok->buf + start;
@@ -815,7 +815,7 @@ tok_nextc(register struct tok_state *tok)
 			else {
 				tok->lineno++;
 				if (tok->buf != NULL)
-					PyObject_FREE(tok->buf);
+					PyMem_FREE(tok->buf);
 				tok->buf = newtok;
 				tok->line_start = tok->buf;
 				tok->cur = tok->buf;
@@ -831,7 +831,7 @@ tok_nextc(register struct tok_state *tok)
 			if (tok->start == NULL) {
 				if (tok->buf == NULL) {
 					tok->buf = (char *)
-						PyObject_MALLOC(BUFSIZ);
+						PyMem_MALLOC(BUFSIZ);
 					if (tok->buf == NULL) {
 						tok->done = E_NOMEM;
 						return EOF;
@@ -866,8 +866,8 @@ tok_nextc(register struct tok_state *tok)
 				Py_ssize_t curvalid = tok->inp - tok->buf;
 				Py_ssize_t newsize = curvalid + BUFSIZ;
 				char *newbuf = tok->buf;
-				newbuf = (char *)PyObject_REALLOC(newbuf,
-								  newsize);
+				newbuf = (char *)PyMem_REALLOC(newbuf,
+							       newsize);
 				if (newbuf == NULL) {
 					tok->done = E_NOMEM;
 					tok->cur = tok->inp;
