@@ -30,6 +30,10 @@ Extension Modules
 Library
 -------
 
+- The warnings, linecache, inspect, traceback, site, and doctest modules
+  were updated to work correctly with modules imported from zipfiles or
+  via other PEP 302 __loader__ objects.
+
 - Patch #1467770: Reduce usage of subprocess._active to processes which
   the application hasn't waited on.
 

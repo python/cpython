@@ -15,7 +15,7 @@ the formatted traceback.
 
 The \module{linecache} module defines the following functions:
 
-\begin{funcdesc}{getline}{filename, lineno}
+\begin{funcdesc}{getline}{filename, lineno\optional{, module_globals}}
 Get line \var{lineno} from file named \var{filename}. This function
 will never throw an exception --- it will return \code{''} on errors
 (the terminating newline character will be included for lines that are
@@ -23,7 +23,11 @@ found).
 
 If a file named \var{filename} is not found, the function will look
 for it in the module\indexiii{module}{search}{path} search path,
-\code{sys.path}.
+\code{sys.path}, after first checking for a PEP 302 \code{__loader__}
+in \var{module_globals}, in case the module was imported from a zipfile
+or other non-filesystem import source. 
+
+\versionadded[The \var{module_globals} parameter was added]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{clearcache}{}

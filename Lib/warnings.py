@@ -58,10 +58,11 @@ def warn(message, category=None, stacklevel=1):
         if not filename:
             filename = module
     registry = globals.setdefault("__warningregistry__", {})
-    warn_explicit(message, category, filename, lineno, module, registry)
+    warn_explicit(message, category, filename, lineno, module, registry,
+                  globals)
 
 def warn_explicit(message, category, filename, lineno,
-                  module=None, registry=None):
+                  module=None, registry=None, module_globals=None):
     if module is None:
         module = filename or "<unknown>"
         if module[-3:].lower() == ".py":
@@ -92,6 +93,11 @@ def warn_explicit(message, category, filename, lineno,
     if action == "ignore":
         registry[key] = 1
         return
+
+    # Prime the linecache for formatting, in case the
+    # "file" is actually in a zipfile or something.
+    linecache.getlines(filename, module_globals)
+
     if action == "error":
         raise message
     # Other actions
