@@ -3043,7 +3043,7 @@ def subclasspropagation():
     class D(B, C):
         pass
     d = D()
-    vereq(hash(d), id(d))
+    orig_hash = hash(d) # related to id(d) in platform-dependent ways
     A.__hash__ = lambda self: 42
     vereq(hash(d), 42)
     C.__hash__ = lambda self: 314
@@ -3059,7 +3059,7 @@ def subclasspropagation():
     del C.__hash__
     vereq(hash(d), 42)
     del A.__hash__
-    vereq(hash(d), id(d))
+    vereq(hash(d), orig_hash)
     d.foo = 42
     d.bar = 42
     vereq(d.foo, 42)
