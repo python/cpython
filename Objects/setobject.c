@@ -3,7 +3,7 @@
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
    Derived from Lib/sets.py and Objects/dictobject.c.
 
-   Copyright (c) 2003-5 Python Software Foundation.
+   Copyright (c) 2003-6 Python Software Foundation.
    All rights reserved.
 */
 
@@ -719,8 +719,6 @@ set_nohash(PyObject *self)
 
 /***** Set iterator type ***********************************************/
 
-static PyTypeObject PySetIter_Type; /* Forward */
-
 typedef struct {
 	PyObject_HEAD
 	PySetObject *si_set; /* Set to NULL when iterator is exhausted */
@@ -728,20 +726,6 @@ typedef struct {
 	int si_pos;
 	long len;
 } setiterobject;
-
-static PyObject *
-set_iter(PySetObject *so)
-{
-	setiterobject *si = PyObject_New(setiterobject, &PySetIter_Type);
-	if (si == NULL)
-		return NULL;
-	Py_INCREF(so);
-	si->si_set = so;
-	si->si_used = so->used;
-	si->si_pos = 0;
-	si->len = so->used;
-	return (PyObject *)si;
-}
 
 static void
 setiter_dealloc(setiterobject *si)
@@ -837,6 +821,20 @@ static PyTypeObject PySetIter_Type = {
 	setiter_methods,			/* tp_methods */
 	0,
 };
+
+static PyObject *
+set_iter(PySetObject *so)
+{
+	setiterobject *si = PyObject_New(setiterobject, &PySetIter_Type);
+	if (si == NULL)
+		return NULL;
+	Py_INCREF(so);
+	si->si_set = so;
+	si->si_used = so->used;
+	si->si_pos = 0;
+	si->len = so->used;
+	return (PyObject *)si;
+}
 
 static int
 set_update_internal(PySetObject *so, PyObject *other)

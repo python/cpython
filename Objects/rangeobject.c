@@ -200,53 +200,6 @@ typedef struct {
 	long	len;
 } rangeiterobject;
 
-static PyTypeObject Pyrangeiter_Type;
-
-static PyObject *
-range_iter(PyObject *seq)
-{
-	rangeiterobject *it;
-
-	if (!PyRange_Check(seq)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-	it = PyObject_New(rangeiterobject, &Pyrangeiter_Type);
-	if (it == NULL)
-		return NULL;
-	it->index = 0;
-	it->start = ((rangeobject *)seq)->start;
-	it->step = ((rangeobject *)seq)->step;
-	it->len = ((rangeobject *)seq)->len;
-	return (PyObject *)it;
-}
-
-static PyObject *
-range_reverse(PyObject *seq)
-{
-	rangeiterobject *it;
-	long start, step, len;
-
-	if (!PyRange_Check(seq)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-	it = PyObject_New(rangeiterobject, &Pyrangeiter_Type);
-	if (it == NULL)
-		return NULL;
-
-	start = ((rangeobject *)seq)->start;
-	step = ((rangeobject *)seq)->step;
-	len = ((rangeobject *)seq)->len;
-
-	it->index = 0;
-	it->start = start + (len-1) * step;
-	it->step = -step;
-	it->len = len;
-
-	return (PyObject *)it;
-}
-
 static PyObject *
 rangeiter_next(rangeiterobject *r)
 {
@@ -301,3 +254,48 @@ static PyTypeObject Pyrangeiter_Type = {
 	rangeiter_methods,			/* tp_methods */
 	0,
 };
+
+static PyObject *
+range_iter(PyObject *seq)
+{
+	rangeiterobject *it;
+
+	if (!PyRange_Check(seq)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	it = PyObject_New(rangeiterobject, &Pyrangeiter_Type);
+	if (it == NULL)
+		return NULL;
+	it->index = 0;
+	it->start = ((rangeobject *)seq)->start;
+	it->step = ((rangeobject *)seq)->step;
+	it->len = ((rangeobject *)seq)->len;
+	return (PyObject *)it;
+}
+
+static PyObject *
+range_reverse(PyObject *seq)
+{
+	rangeiterobject *it;
+	long start, step, len;
+
+	if (!PyRange_Check(seq)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	it = PyObject_New(rangeiterobject, &Pyrangeiter_Type);
+	if (it == NULL)
+		return NULL;
+
+	start = ((rangeobject *)seq)->start;
+	step = ((rangeobject *)seq)->step;
+	len = ((rangeobject *)seq)->len;
+
+	it->index = 0;
+	it->start = start + (len-1) * step;
+	it->step = -step;
+	it->len = len;
+
+	return (PyObject *)it;
+}

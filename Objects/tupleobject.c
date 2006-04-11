@@ -791,27 +791,6 @@ typedef struct {
 	PyTupleObject *it_seq; /* Set to NULL when iterator is exhausted */
 } tupleiterobject;
 
-PyTypeObject PyTupleIter_Type;
-
-static PyObject *
-tuple_iter(PyObject *seq)
-{
-	tupleiterobject *it;
-
-	if (!PyTuple_Check(seq)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-	it = PyObject_GC_New(tupleiterobject, &PyTupleIter_Type);
-	if (it == NULL)
-		return NULL;
-	it->it_index = 0;
-	Py_INCREF(seq);
-	it->it_seq = (PyTupleObject *)seq;
-	_PyObject_GC_TRACK(it);
-	return (PyObject *)it;
-}
-
 static void
 tupleiter_dealloc(tupleiterobject *it)
 {
@@ -901,3 +880,22 @@ PyTypeObject PyTupleIter_Type = {
 	tupleiter_methods,			/* tp_methods */
 	0,
 };
+
+static PyObject *
+tuple_iter(PyObject *seq)
+{
+	tupleiterobject *it;
+
+	if (!PyTuple_Check(seq)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	it = PyObject_GC_New(tupleiterobject, &PyTupleIter_Type);
+	if (it == NULL)
+		return NULL;
+	it->it_index = 0;
+	Py_INCREF(seq);
+	it->it_seq = (PyTupleObject *)seq;
+	_PyObject_GC_TRACK(it);
+	return (PyObject *)it;
+}
