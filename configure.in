@@ -2792,7 +2792,8 @@ then
   #include <wchar.h>
   int main()
   {
-        exit((((wchar_t) -1) < ((wchar_t) 0)) ? 1 : 0);
+	/* Success: exit code 0 */
+        exit((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
   }
   ],
   ac_cv_wchar_t_signed=yes,
