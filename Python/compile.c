@@ -197,19 +197,19 @@ static PyCodeObject *assemble(struct compiler *, int addNone);
 static PyObject *__doc__;
 
 PyObject *
-_Py_Mangle(PyObject *private, PyObject *ident)
+_Py_Mangle(PyObject *privateobj, PyObject *ident)
 {
 	/* Name mangling: __private becomes _classname__private.
 	   This is independent from how the name is used. */
 	const char *p, *name = PyString_AsString(ident);
 	char *buffer;
 	size_t nlen, plen;
-	if (private == NULL || name == NULL || name[0] != '_' ||
+	if (privateobj == NULL || name == NULL || name[0] != '_' ||
             name[1] != '_') {
 		Py_INCREF(ident);
 		return ident;
 	}
-	p = PyString_AsString(private);
+	p = PyString_AsString(privateobj);
 	nlen = strlen(name);
 	if (name[nlen-1] == '_' && name[nlen-2] == '_') {
 		Py_INCREF(ident);
@@ -612,7 +612,7 @@ fold_unaryops_on_constants(unsigned char *codestr, PyObject *consts)
 static unsigned int *
 markblocks(unsigned char *code, int len)
 {
-	unsigned int *blocks = PyMem_Malloc(len*sizeof(int));
+	unsigned int *blocks = (unsigned int *)PyMem_Malloc(len*sizeof(int));
 	int i,j, opcode, blockcnt = 0;
 
 	if (blocks == NULL)
@@ -693,10 +693,11 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names,
 		goto exitUnchanged;
 
 	/* Make a modifiable copy of the code string */
-	codestr = PyMem_Malloc(codelen);
+	codestr = (unsigned char *)PyMem_Malloc(codelen);
 	if (codestr == NULL)
 		goto exitUnchanged;
-	codestr = memcpy(codestr, PyString_AS_STRING(code), codelen);
+	codestr = (unsigned char *)memcpy(codestr, 
+                                        PyString_AS_STRING(code), codelen);
 
 	/* Verify that RETURN_VALUE terminates the codestring.	This allows
 	   the various transformation patterns to look ahead several
@@ -707,7 +708,7 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names,
 		goto exitUnchanged;
 
 	/* Mapping to new jump targets after NOPs are removed */
-	addrmap = PyMem_Malloc(codelen * sizeof(int));
+	addrmap = (int *)PyMem_Malloc(codelen * sizeof(int));
 	if (addrmap == NULL)
 		goto exitUnchanged;
 
@@ -1087,7 +1088,8 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
 {
 	struct compiler_unit *u;
 
-	u = PyObject_Malloc(sizeof(struct compiler_unit));
+	u = (struct compiler_unit *)PyObject_Malloc(sizeof(
+                                                struct compiler_unit));
 	if (!u) {
 		PyErr_NoMemory();
 		return 0;
@@ -1243,8 +1245,8 @@ compiler_next_instr(struct compiler *c, basicblock *b)
 {
 	assert(b != NULL);
 	if (b->b_instr == NULL) {
-		b->b_instr = PyObject_Malloc(sizeof(struct instr) *
-					     DEFAULT_BLOCK_SIZE);
+		b->b_instr = (struct instr *)PyObject_Malloc(
+                                 sizeof(struct instr) * DEFAULT_BLOCK_SIZE);
 		if (b->b_instr == NULL) {
 			PyErr_NoMemory();
 			return -1;
@@ -1262,7 +1264,8 @@ compiler_next_instr(struct compiler *c, basicblock *b)
 			return -1;
 		}
 		b->b_ialloc <<= 1;
-		b->b_instr = PyObject_Realloc((void *)b->b_instr, newsize);
+		b->b_instr = (struct instr *)PyObject_Realloc(
+                                                (void *)b->b_instr, newsize);
 		if (b->b_instr == NULL)
 			return -1;
 		memset((char *)b->b_instr + oldsize, 0, newsize - oldsize);
@@ -1720,11 +1723,33 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 	} \
 }
 
+#define VISIT_SEQ_WITH_CAST(C, TYPE, SEQ, CAST) { \
+	int _i; \
+	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
+	for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
+		TYPE ## _ty elt = (CAST)asdl_seq_GET(seq, _i); \
+		if (!compiler_visit_ ## TYPE((C), elt)) \
+			return 0; \
+	} \
+}
+
 #define VISIT_SEQ_IN_SCOPE(C, TYPE, SEQ) { \
 	int _i; \
 	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
 	for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
 		TYPE ## _ty elt = asdl_seq_GET(seq, _i); \
+		if (!compiler_visit_ ## TYPE((C), elt)) { \
+			compiler_exit_scope(c); \
+			return 0; \
+		} \
+	} \
+}
+
+#define VISIT_SEQ_IN_SCOPE_WITH_CAST(C, TYPE, SEQ, CAST) { \
+	int _i; \
+	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
+	for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
+		TYPE ## _ty elt = (CAST)asdl_seq_GET(seq, _i); \
 		if (!compiler_visit_ ## TYPE((C), elt)) { \
 			compiler_exit_scope(c); \
 			return 0; \
@@ -1750,7 +1775,7 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
 
 	if (!asdl_seq_LEN(stmts))
 		return 1;
-	st = asdl_seq_GET(stmts, 0);
+	st = (stmt_ty)asdl_seq_GET(stmts, 0);
 	if (compiler_isdocstring(st)) {
 		i = 1;
 		VISIT(c, expr, st->v.Expr.value);
@@ -1758,7 +1783,7 @@ compiler_body(struct compiler *c, asdl_seq *stmts)
 			return 0;
 	}
 	for (; i < asdl_seq_LEN(stmts); i++)
-	    VISIT(c, stmt, asdl_seq_GET(stmts, i));
+	    VISIT(c, stmt, (stmt_ty)asdl_seq_GET(stmts, i));
 	return 1;
 }
 
@@ -1784,7 +1809,8 @@ compiler_mod(struct compiler *c, mod_ty mod)
 		break;
 	case Interactive_kind:
 		c->c_interactive = 1;
-		VISIT_SEQ_IN_SCOPE(c, stmt, mod->v.Interactive.body);
+		VISIT_SEQ_IN_SCOPE_WITH_CAST(c, stmt, 
+                                        mod->v.Interactive.body, stmt_ty);
 		break;
 	case Expression_kind:
 		VISIT_IN_SCOPE(c, expr, mod->v.Expression.body);
@@ -1901,7 +1927,7 @@ compiler_decorators(struct compiler *c, asdl_seq* decos)
 		return 1;
 
 	for (i = 0; i < asdl_seq_LEN(decos); i++) {
-		VISIT(c, expr, asdl_seq_GET(decos, i));
+		VISIT(c, expr, (expr_ty)asdl_seq_GET(decos, i));
 	}
 	return 1;
 }
@@ -1913,7 +1939,7 @@ compiler_arguments(struct compiler *c, arguments_ty args)
 	int n = asdl_seq_LEN(args->args);
 	/* Correctly handle nested argument lists */
 	for (i = 0; i < n; i++) {
-		expr_ty arg = asdl_seq_GET(args->args, i);
+		expr_ty arg = (expr_ty)asdl_seq_GET(args->args, i);
 		if (arg->kind == Tuple_kind) {
 			PyObject *id = PyString_FromFormat(".%d", i);
 			if (id == NULL) {
@@ -1945,12 +1971,12 @@ compiler_function(struct compiler *c, stmt_ty s)
 	if (!compiler_decorators(c, decos))
 		return 0;
 	if (args->defaults)
-		VISIT_SEQ(c, expr, args->defaults);
+		VISIT_SEQ_WITH_CAST(c, expr, args->defaults, expr_ty);
 	if (!compiler_enter_scope(c, s->v.FunctionDef.name, (void *)s,
 				  s->lineno))
 		return 0;
 
-	st = asdl_seq_GET(s->v.FunctionDef.body, 0);
+	st = (stmt_ty)asdl_seq_GET(s->v.FunctionDef.body, 0);
 	docstring = compiler_isdocstring(st);
 	if (docstring)
 	    first_const = st->v.Expr.value->v.Str.s;
@@ -1966,7 +1992,7 @@ compiler_function(struct compiler *c, stmt_ty s)
 	n = asdl_seq_LEN(s->v.FunctionDef.body);
 	/* if there was a docstring, we need to skip the first statement */
 	for (i = docstring; i < n; i++) {
-		stmt_ty s2 = asdl_seq_GET(s->v.FunctionDef.body, i);
+		stmt_ty s2 = (stmt_ty)asdl_seq_GET(s->v.FunctionDef.body, i);
 		if (i == 0 && s2->kind == Expr_kind &&
 		    s2->v.Expr.value->kind == Str_kind)
 			continue;
@@ -1998,7 +2024,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 	/* push the tuple of base classes on the stack */
 	n = asdl_seq_LEN(s->v.ClassDef.bases);
 	if (n > 0)
-		VISIT_SEQ(c, expr, s->v.ClassDef.bases);
+		VISIT_SEQ_WITH_CAST(c, expr, s->v.ClassDef.bases, expr_ty);
 	ADDOP_I(c, BUILD_TUPLE, n);
 	if (!compiler_enter_scope(c, s->v.ClassDef.name, (void *)s,
 				  s->lineno))
@@ -2082,7 +2108,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
 	}
 
 	if (args->defaults)
-		VISIT_SEQ(c, expr, args->defaults);
+		VISIT_SEQ_WITH_CAST(c, expr, args->defaults, expr_ty);
 	if (!compiler_enter_scope(c, name, (void *)e, e->lineno))
 		return 0;
 
@@ -2155,12 +2181,12 @@ compiler_if(struct compiler *c, stmt_ty s)
 	VISIT(c, expr, s->v.If.test);
 	ADDOP_JREL(c, JUMP_IF_FALSE, next);
 	ADDOP(c, POP_TOP);
-	VISIT_SEQ(c, stmt, s->v.If.body);
+	VISIT_SEQ_WITH_CAST(c, stmt, s->v.If.body, stmt_ty);
 	ADDOP_JREL(c, JUMP_FORWARD, end);
 	compiler_use_next_block(c, next);
 	ADDOP(c, POP_TOP);
 	if (s->v.If.orelse)
-	    VISIT_SEQ(c, stmt, s->v.If.orelse);
+	    VISIT_SEQ_WITH_CAST(c, stmt, s->v.If.orelse, stmt_ty);
 	compiler_use_next_block(c, end);
 	return 1;
 }
@@ -2183,12 +2209,12 @@ compiler_for(struct compiler *c, stmt_ty s)
 	compiler_use_next_block(c, start);
 	ADDOP_JREL(c, FOR_ITER, cleanup);
 	VISIT(c, expr, s->v.For.target);
-	VISIT_SEQ(c, stmt, s->v.For.body);
+	VISIT_SEQ_WITH_CAST(c, stmt, s->v.For.body, stmt_ty);
 	ADDOP_JABS(c, JUMP_ABSOLUTE, start);
 	compiler_use_next_block(c, cleanup);
 	ADDOP(c, POP_BLOCK);
 	compiler_pop_fblock(c, LOOP, start);
-	VISIT_SEQ(c, stmt, s->v.For.orelse);
+	VISIT_SEQ_WITH_CAST(c, stmt, s->v.For.orelse, stmt_ty);
 	compiler_use_next_block(c, end);
 	return 1;
 }
@@ -2227,7 +2253,7 @@ compiler_while(struct compiler *c, stmt_ty s)
 		ADDOP_JREL(c, JUMP_IF_FALSE, anchor);
 		ADDOP(c, POP_TOP);
 	}
-	VISIT_SEQ(c, stmt, s->v.While.body);
+	VISIT_SEQ_WITH_CAST(c, stmt, s->v.While.body, stmt_ty);
 	ADDOP_JABS(c, JUMP_ABSOLUTE, loop);
 
 	/* XXX should the two POP instructions be in a separate block
@@ -2241,7 +2267,7 @@ compiler_while(struct compiler *c, stmt_ty s)
 	}
 	compiler_pop_fblock(c, LOOP, loop);
 	if (orelse != NULL) /* what if orelse is just pass? */
-		VISIT_SEQ(c, stmt, s->v.While.orelse);
+		VISIT_SEQ_WITH_CAST(c, stmt, s->v.While.orelse, stmt_ty);
 	compiler_use_next_block(c, end);
 
 	return 1;
@@ -2322,7 +2348,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
 	compiler_use_next_block(c, body);
 	if (!compiler_push_fblock(c, FINALLY_TRY, body))
 		return 0;
-	VISIT_SEQ(c, stmt, s->v.TryFinally.body);
+	VISIT_SEQ_WITH_CAST(c, stmt, s->v.TryFinally.body, stmt_ty);
 	ADDOP(c, POP_BLOCK);
 	compiler_pop_fblock(c, FINALLY_TRY, body);
 
@@ -2330,7 +2356,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
 	compiler_use_next_block(c, end);
 	if (!compiler_push_fblock(c, FINALLY_END, end))
 		return 0;
-	VISIT_SEQ(c, stmt, s->v.TryFinally.finalbody);
+	VISIT_SEQ_WITH_CAST(c, stmt, s->v.TryFinally.finalbody, stmt_ty);
 	ADDOP(c, END_FINALLY);
 	compiler_pop_fblock(c, FINALLY_END, end);
 
@@ -2387,14 +2413,14 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 	compiler_use_next_block(c, body);
 	if (!compiler_push_fblock(c, EXCEPT, body))
 		return 0;
-	VISIT_SEQ(c, stmt, s->v.TryExcept.body);
+	VISIT_SEQ_WITH_CAST(c, stmt, s->v.TryExcept.body, stmt_ty);
 	ADDOP(c, POP_BLOCK);
 	compiler_pop_fblock(c, EXCEPT, body);
 	ADDOP_JREL(c, JUMP_FORWARD, orelse);
 	n = asdl_seq_LEN(s->v.TryExcept.handlers);
 	compiler_use_next_block(c, except);
 	for (i = 0; i < n; i++) {
-		excepthandler_ty handler = asdl_seq_GET(
+		excepthandler_ty handler = (excepthandler_ty)asdl_seq_GET(
 						s->v.TryExcept.handlers, i);
 		if (!handler->type && i < n-1)
 		    return compiler_error(c, "default 'except:' must be last");
@@ -2418,7 +2444,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 			ADDOP(c, POP_TOP);
 		}
 		ADDOP(c, POP_TOP);
-		VISIT_SEQ(c, stmt, handler->body);
+		VISIT_SEQ_WITH_CAST(c, stmt, handler->body, stmt_ty);
 		ADDOP_JREL(c, JUMP_FORWARD, end);
 		compiler_use_next_block(c, except);
 		if (handler->type)
@@ -2426,7 +2452,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 	}
 	ADDOP(c, END_FINALLY);
 	compiler_use_next_block(c, orelse);
-	VISIT_SEQ(c, stmt, s->v.TryExcept.orelse);
+	VISIT_SEQ_WITH_CAST(c, stmt, s->v.TryExcept.orelse, stmt_ty);
 	compiler_use_next_block(c, end);
 	return 1;
 }
@@ -2474,7 +2500,7 @@ compiler_import(struct compiler *c, stmt_ty s)
 	int i, n = asdl_seq_LEN(s->v.Import.names);
 
 	for (i = 0; i < n; i++) {
-		alias_ty alias = asdl_seq_GET(s->v.Import.names, i);
+		alias_ty alias = (alias_ty)asdl_seq_GET(s->v.Import.names, i);
 		int r;
 		PyObject *level;
 
@@ -2538,7 +2564,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 
 	/* build up the names */
 	for (i = 0; i < n; i++) {
-		alias_ty alias = asdl_seq_GET(s->v.ImportFrom.names, i);
+		alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
 		Py_INCREF(alias->name);
 		PyTuple_SET_ITEM(names, i, alias->name);
 	}
@@ -2561,7 +2587,7 @@ compiler_from_import(struct compiler *c, stmt_ty s)
 	Py_DECREF(names);
 	ADDOP_NAME(c, IMPORT_NAME, s->v.ImportFrom.module, names);
 	for (i = 0; i < n; i++) {
-		alias_ty alias = asdl_seq_GET(s->v.ImportFrom.names, i);
+		alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
 		identifier store_name;
 
 		if (i == 0 && *PyString_AS_STRING(alias->name) == '*') {
@@ -2646,7 +2672,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 		ADDOP(c, RETURN_VALUE);
 		break;
 	case Delete_kind:
-		VISIT_SEQ(c, expr, s->v.Delete.targets)
+		VISIT_SEQ_WITH_CAST(c, expr, s->v.Delete.targets, expr_ty)
 		break;
 	case Assign_kind:
 		n = asdl_seq_LEN(s->v.Assign.targets);
@@ -3000,11 +3026,11 @@ compiler_boolop(struct compiler *c, expr_ty e)
 	s = e->v.BoolOp.values;
 	n = asdl_seq_LEN(s) - 1;
 	for (i = 0; i < n; ++i) {
-		VISIT(c, expr, asdl_seq_GET(s, i));
+		VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
 		ADDOP_JREL(c, jumpi, end);
 		ADDOP(c, POP_TOP)
 	}
-	VISIT(c, expr, asdl_seq_GET(s, n));
+	VISIT(c, expr, (expr_ty)asdl_seq_GET(s, n));
 	compiler_use_next_block(c, end);
 	return 1;
 }
@@ -3016,7 +3042,7 @@ compiler_list(struct compiler *c, expr_ty e)
 	if (e->v.List.ctx == Store) {
 		ADDOP_I(c, UNPACK_SEQUENCE, n);
 	}
-	VISIT_SEQ(c, expr, e->v.List.elts);
+	VISIT_SEQ_WITH_CAST(c, expr, e->v.List.elts, expr_ty);
 	if (e->v.List.ctx == Load) {
 		ADDOP_I(c, BUILD_LIST, n);
 	}
@@ -3030,7 +3056,7 @@ compiler_tuple(struct compiler *c, expr_ty e)
 	if (e->v.Tuple.ctx == Store) {
 		ADDOP_I(c, UNPACK_SEQUENCE, n);
 	}
-	VISIT_SEQ(c, expr, e->v.Tuple.elts);
+	VISIT_SEQ_WITH_CAST(c, expr, e->v.Tuple.elts, expr_ty);
 	if (e->v.Tuple.ctx == Load) {
 		ADDOP_I(c, BUILD_TUPLE, n);
 	}
@@ -3051,7 +3077,8 @@ compiler_compare(struct compiler *c, expr_ty e)
 		cleanup = compiler_new_block(c);
 		if (cleanup == NULL)
 		    return 0;
-		VISIT(c, expr, asdl_seq_GET(e->v.Compare.comparators, 0));
+		VISIT(c, expr, 
+                        (expr_ty)asdl_seq_GET(e->v.Compare.comparators, 0));
 	}
 	for (i = 1; i < n; i++) {
 		ADDOP(c, DUP_TOP);
@@ -3063,9 +3090,10 @@ compiler_compare(struct compiler *c, expr_ty e)
 		NEXT_BLOCK(c);
 		ADDOP(c, POP_TOP);
 		if (i < (n - 1))
-		    VISIT(c, expr, asdl_seq_GET(e->v.Compare.comparators, i));
+		    VISIT(c, expr, 
+                            (expr_ty)asdl_seq_GET(e->v.Compare.comparators, i));
 	}
-	VISIT(c, expr, asdl_seq_GET(e->v.Compare.comparators, n - 1));
+	VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n - 1));
 	ADDOP_I(c, COMPARE_OP,
 		/* XXX We're casting a void* to cmpop_ty in the next stmt. */
 	       cmpop((cmpop_ty)asdl_seq_GET(e->v.Compare.ops, n - 1)));
@@ -3089,9 +3117,9 @@ compiler_call(struct compiler *c, expr_ty e)
 
 	VISIT(c, expr, e->v.Call.func);
 	n = asdl_seq_LEN(e->v.Call.args);
-	VISIT_SEQ(c, expr, e->v.Call.args);
+	VISIT_SEQ_WITH_CAST(c, expr, e->v.Call.args, expr_ty);
 	if (e->v.Call.keywords) {
-		VISIT_SEQ(c, keyword, e->v.Call.keywords);
+		VISIT_SEQ_WITH_CAST(c, keyword, e->v.Call.keywords, keyword_ty);
 		n |= asdl_seq_LEN(e->v.Call.keywords) << 8;
 	}
 	if (e->v.Call.starargs) {
@@ -3140,7 +3168,7 @@ compiler_listcomp_generator(struct compiler *c, PyObject *tmpname,
 		anchor == NULL)
 	    return 0;
 
-	l = asdl_seq_GET(generators, gen_index);
+	l = (comprehension_ty)asdl_seq_GET(generators, gen_index);
 	VISIT(c, expr, l->iter);
 	ADDOP(c, GET_ITER);
 	compiler_use_next_block(c, start);
@@ -3151,7 +3179,7 @@ compiler_listcomp_generator(struct compiler *c, PyObject *tmpname,
 	/* XXX this needs to be cleaned up...a lot! */
 	n = asdl_seq_LEN(l->ifs);
 	for (i = 0; i < n; i++) {
-		expr_ty e = asdl_seq_GET(l->ifs, i);
+		expr_ty e = (expr_ty)asdl_seq_GET(l->ifs, i);
 		VISIT(c, expr, e);
 		ADDOP_JREL(c, JUMP_IF_FALSE, if_cleanup);
 		NEXT_BLOCK(c);
@@ -3236,7 +3264,7 @@ compiler_genexp_generator(struct compiler *c,
 	    anchor == NULL || end == NULL)
 		return 0;
 
-	ge = asdl_seq_GET(generators, gen_index);
+	ge = (comprehension_ty)asdl_seq_GET(generators, gen_index);
 	ADDOP_JREL(c, SETUP_LOOP, end);
 	if (!compiler_push_fblock(c, LOOP, start))
 		return 0;
@@ -3259,7 +3287,7 @@ compiler_genexp_generator(struct compiler *c,
 	/* XXX this needs to be cleaned up...a lot! */
 	n = asdl_seq_LEN(ge->ifs);
 	for (i = 0; i < n; i++) {
-		expr_ty e = asdl_seq_GET(ge->ifs, i);
+		expr_ty e = (expr_ty)asdl_seq_GET(ge->ifs, i);
 		VISIT(c, expr, e);
 		ADDOP_JREL(c, JUMP_IF_FALSE, if_cleanup);
 		NEXT_BLOCK(c);
@@ -3472,7 +3500,7 @@ compiler_with(struct compiler *c, stmt_ty s)
     }
 
     /* BLOCK code */
-    VISIT_SEQ(c, stmt, s->v.With.body);
+    VISIT_SEQ_WITH_CAST(c, stmt, s->v.With.body, stmt_ty);
 
     /* End of try block; start the finally block */
     ADDOP(c, POP_BLOCK);
@@ -3531,9 +3559,11 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 		   It wants the stack to look like (value) (dict) (key) */
 		for (i = 0; i < n; i++) {
 			ADDOP(c, DUP_TOP);
-			VISIT(c, expr, asdl_seq_GET(e->v.Dict.values, i));
+			VISIT(c, expr, 
+                                (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
 			ADDOP(c, ROT_TWO);
-			VISIT(c, expr, asdl_seq_GET(e->v.Dict.keys, i));
+			VISIT(c, expr, 
+                                (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
 			ADDOP(c, STORE_SUBSCR);
 		}
 		break;
@@ -3900,7 +3930,8 @@ compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 		if (ctx != AugStore) {
 			int i, n = asdl_seq_LEN(s->v.ExtSlice.dims);
 			for (i = 0; i < n; i++) {
-				slice_ty sub = asdl_seq_GET(s->v.ExtSlice.dims, i);
+				slice_ty sub = (slice_ty)asdl_seq_GET(
+                                        s->v.ExtSlice.dims, i);
 				if (!compiler_visit_nested_slice(c, sub, ctx))
 					return 0;
 			}

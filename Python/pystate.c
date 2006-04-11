@@ -297,23 +297,23 @@ PyThreadState_Get(void)
 
 
 PyThreadState *
-PyThreadState_Swap(PyThreadState *new)
+PyThreadState_Swap(PyThreadState *newts)
 {
-	PyThreadState *old = _PyThreadState_Current;
+	PyThreadState *oldts = _PyThreadState_Current;
 
-	_PyThreadState_Current = new;
+	_PyThreadState_Current = newts;
 	/* It should not be possible for more than one thread state
 	   to be used for a thread.  Check this the best we can in debug
 	   builds.
 	*/
 #if defined(Py_DEBUG) && defined(WITH_THREAD)
-	if (new) {
+	if (newts) {
 		PyThreadState *check = PyGILState_GetThisThreadState();
-		if (check && check->interp == new->interp && check != new)
+		if (check && check->interp == newts->interp && check != newts)
 			Py_FatalError("Invalid thread state for this thread");
 	}
 #endif
-	return old;
+	return oldts;
 }
 
 /* An extension mechanism to store arbitrary additional per-thread state.
@@ -491,7 +491,7 @@ PyGILState_Ensure(void)
 	   called Py_Initialize() and usually PyEval_InitThreads().
 	*/
 	assert(autoInterpreterState); /* Py_Initialize() hasn't been called! */
-	tcur = PyThread_get_key_value(autoTLSkey);
+	tcur = (PyThreadState *)PyThread_get_key_value(autoTLSkey);
 	if (tcur == NULL) {
 		/* Create a new thread state for this thread */
 		tcur = PyThreadState_New(autoInterpreterState);
@@ -518,7 +518,8 @@ PyGILState_Ensure(void)
 void
 PyGILState_Release(PyGILState_STATE oldstate)
 {
-	PyThreadState *tcur = PyThread_get_key_value(autoTLSkey);
+	PyThreadState *tcur = (PyThreadState *)PyThread_get_key_value(
+                                                                autoTLSkey);
 	if (tcur == NULL)
 		Py_FatalError("auto-releasing thread-state, "
 		              "but no thread-state for this thread");

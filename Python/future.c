@@ -19,7 +19,7 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, const char *filename)
 
 	names = s->v.ImportFrom.names;
 	for (i = 0; i < asdl_seq_LEN(names); i++) {
-                alias_ty name = asdl_seq_GET(names, i);
+                alias_ty name = (alias_ty)asdl_seq_GET(names, i);
 		const char *feature = PyString_AsString(name->name);
 		if (!feature)
 			return 0;
@@ -73,7 +73,7 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, const char *filename)
 	   
 
 	for (i = 0; i < asdl_seq_LEN(mod->v.Module.body); i++) {
-		stmt_ty s = asdl_seq_GET(mod->v.Module.body, i);
+		stmt_ty s = (stmt_ty)asdl_seq_GET(mod->v.Module.body, i);
 
 		if (done && s->lineno > prev_line)
 			return 1;
