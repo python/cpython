@@ -111,7 +111,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 	size_t n;
 	char *p;
 	n = 100;
-	if ((p = PyObject_MALLOC(n)) == NULL)
+	if ((p = (char *)PyObject_MALLOC(n)) == NULL)
 		return NULL;
 	fflush(sys_stdout);
 #ifndef RISCOS
@@ -141,7 +141,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 	n = strlen(p);
 	while (n > 0 && p[n-1] != '\n') {
 		size_t incr = n+2;
-		p = PyObject_REALLOC(p, n + incr);
+		p = (char *)PyObject_REALLOC(p, n + incr);
 		if (p == NULL)
 			return NULL;
 		if (incr > INT_MAX) {
@@ -151,7 +151,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 			break;
 		n += strlen(p+n);
 	}
-	return PyObject_REALLOC(p, n+1);
+	return (char *)PyObject_REALLOC(p, n+1);
 }
 
 

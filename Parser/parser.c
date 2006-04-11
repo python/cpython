@@ -75,7 +75,7 @@ PyParser_New(grammar *g, int start)
 	
 	if (!g->g_accel)
 		PyGrammar_AddAccelerators(g);
-	ps = PyMem_MALLOC(sizeof(parser_state));
+	ps = (parser_state *)PyMem_MALLOC(sizeof(parser_state));
 	if (ps == NULL)
 		return NULL;
 	ps->p_grammar = g;

@@ -20,7 +20,7 @@ newgrammar(int start)
 {
 	grammar *g;
 	
-	g = PyObject_MALLOC(sizeof(grammar));
+	g = (grammar *)PyObject_MALLOC(sizeof(grammar));
 	if (g == NULL)
 		Py_FatalError("no mem for new grammar");
 	g->g_ndfas = 0;
@@ -37,7 +37,8 @@ adddfa(grammar *g, int type, char *name)
 {
 	dfa *d;
 	
-	g->g_dfa = PyObject_REALLOC(g->g_dfa, sizeof(dfa) * (g->g_ndfas + 1));
+	g->g_dfa = (dfa *)PyObject_REALLOC(g->g_dfa, 
+                                            sizeof(dfa) * (g->g_ndfas + 1));
 	if (g->g_dfa == NULL)
 		Py_FatalError("no mem to resize dfa in adddfa");
 	d = &g->g_dfa[g->g_ndfas++];
@@ -55,7 +56,7 @@ addstate(dfa *d)
 {
 	state *s;
 	
-	d->d_state = PyObject_REALLOC(d->d_state,
+	d->d_state = (state *)PyObject_REALLOC(d->d_state,
 				      sizeof(state) * (d->d_nstates + 1));
 	if (d->d_state == NULL)
 		Py_FatalError("no mem to resize state in addstate");
@@ -79,7 +80,7 @@ addarc(dfa *d, int from, int to, int lbl)
 	assert(0 <= to && to < d->d_nstates);
 	
 	s = &d->d_state[from];
-	s->s_arc = PyObject_REALLOC(s->s_arc, sizeof(arc) * (s->s_narcs + 1));
+	s->s_arc = (arc *)PyObject_REALLOC(s->s_arc, sizeof(arc) * (s->s_narcs + 1));
 	if (s->s_arc == NULL)
 		Py_FatalError("no mem to resize arc list in addarc");
 	a = &s->s_arc[s->s_narcs++];
@@ -98,7 +99,7 @@ addlabel(labellist *ll, int type, char *str)
 			strcmp(ll->ll_label[i].lb_str, str) == 0)
 			return i;
 	}
-	ll->ll_label = PyObject_REALLOC(ll->ll_label,
+	ll->ll_label = (label *)PyObject_REALLOC(ll->ll_label,
 					sizeof(label) * (ll->ll_nlabels + 1));
 	if (ll->ll_label == NULL)
 		Py_FatalError("no mem to resize labellist in addlabel");
@@ -197,7 +198,7 @@ translabel(grammar *g, label *lb)
 				name_len = p - src;
 			else
 				name_len = strlen(src);
-			dest = malloc(name_len + 1);
+			dest = (char *)malloc(name_len + 1);
 			strncpy(dest, src, name_len);
 			dest[name_len] = '\0';
 			free(lb->lb_str);

@@ -59,7 +59,7 @@ calcfirstset(grammar *g, dfa *d)
 	nbits = g->g_ll.ll_nlabels;
 	result = newbitset(nbits);
 	
-	sym = PyObject_MALLOC(sizeof(int));
+	sym = (int *)PyObject_MALLOC(sizeof(int));
 	if (sym == NULL)
 		Py_FatalError("no mem for new sym in calcfirstset");
 	nsyms = 1;
@@ -73,7 +73,8 @@ calcfirstset(grammar *g, dfa *d)
 				break;
 		}
 		if (j >= nsyms) { /* New label */
-			sym = PyObject_REALLOC(sym, sizeof(int) * (nsyms + 1));
+			sym = (int *)PyObject_REALLOC(sym, 
+                                                sizeof(int) * (nsyms + 1));
 			if (sym == NULL)
 				Py_FatalError(
 				    "no mem to resize sym in calcfirstset");
