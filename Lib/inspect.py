@@ -353,7 +353,7 @@ def getsourcefile(object):
         if 'b' in mode and string.lower(filename[-len(suffix):]) == suffix:
             # Looks like a binary file.  We want to only return a text file.
             return None
-    if os.path.exists(filename) or hasattr(getmodule(object),'__loader__'):
+    if os.path.exists(filename) or hasattr(getmodule(object), '__loader__'):
         return filename
 
 def getabsfile(object):
