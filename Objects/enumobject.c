@@ -9,8 +9,6 @@ typedef struct {
 	PyObject* en_result;	   /* result tuple  */
 } enumobject;
 
-PyTypeObject PyEnum_Type;
-
 static PyObject *
 enum_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {

@@ -208,7 +208,7 @@ class_getattr(register PyClassObject *op, PyObject *name)
 {
 	register PyObject *v;
 	register char *sname = PyString_AsString(name);
-	PyClassObject *class;
+	PyClassObject *klass;
 	descrgetfunc f;
 
 	if (sname[0] == '_' && sname[1] == '_') {
@@ -234,7 +234,7 @@ class_getattr(register PyClassObject *op, PyObject *name)
 			return v;
 		}
 	}
-	v = class_lookup(op, name, &class);
+	v = class_lookup(op, name, &klass);
 	if (v == NULL) {
 		PyErr_Format(PyExc_AttributeError,
 			     "class %.50s has no attribute '%.400s'",
@@ -481,23 +481,23 @@ PyTypeObject PyClass_Type = {
 };
 
 int
-PyClass_IsSubclass(PyObject *class, PyObject *base)
+PyClass_IsSubclass(PyObject *klass, PyObject *base)
 {
 	Py_ssize_t i, n;
 	PyClassObject *cp;
-	if (class == base)
+	if (klass == base)
 		return 1;
 	if (PyTuple_Check(base)) {
 		n = PyTuple_GET_SIZE(base);
 		for (i = 0; i < n; i++) {
-			if (PyClass_IsSubclass(class, PyTuple_GET_ITEM(base, i)))
+			if (PyClass_IsSubclass(klass, PyTuple_GET_ITEM(base, i)))
 				return 1;
 		}
 		return 0;
 	}
-	if (class == NULL || !PyClass_Check(class))
+	if (klass == NULL || !PyClass_Check(klass))
 		return 0;
-	cp = (PyClassObject *)class;
+	cp = (PyClassObject *)klass;
 	n = PyTuple_Size(cp->cl_bases);
 	for (i = 0; i < n; i++) {
 		if (PyClass_IsSubclass(PyTuple_GetItem(cp->cl_bases, i), base))
@@ -719,7 +719,7 @@ static PyObject *
 instance_getattr2(register PyInstanceObject *inst, PyObject *name)
 {
 	register PyObject *v;
-	PyClassObject *class;
+	PyClassObject *klass;
 	descrgetfunc f;
 
 	v = PyDict_GetItem(inst->in_dict, name);
@@ -727,7 +727,7 @@ instance_getattr2(register PyInstanceObject *inst, PyObject *name)
 		Py_INCREF(v);
 		return v;
 	}
-	v = class_lookup(inst->in_class, name, &class);
+	v = class_lookup(inst->in_class, name, &klass);
 	if (v != NULL) {
 		Py_INCREF(v);
 		f = TP_DESCR_GET(v->ob_type);
@@ -767,7 +767,7 @@ PyObject *
 _PyInstance_Lookup(PyObject *pinst, PyObject *name)
 {
 	PyObject *v;
-	PyClassObject *class;
+	PyClassObject *klass;
 	PyInstanceObject *inst;	/* pinst cast to the right type */
 
 	assert(PyInstance_Check(pinst));
@@ -777,7 +777,7 @@ _PyInstance_Lookup(PyObject *pinst, PyObject *name)
 
  	v = PyDict_GetItem(inst->in_dict, name);
 	if (v == NULL)
-		v = class_lookup(inst->in_class, name, &class);
+		v = class_lookup(inst->in_class, name, &klass);
 	return v;
 }
 
@@ -2123,7 +2123,7 @@ PyTypeObject PyInstance_Type = {
 static PyMethodObject *free_list;
 
 PyObject *
-PyMethod_New(PyObject *func, PyObject *self, PyObject *class)
+PyMethod_New(PyObject *func, PyObject *self, PyObject *klass)
 {
 	register PyMethodObject *im;
 	if (!PyCallable_Check(func)) {
@@ -2145,8 +2145,8 @@ PyMethod_New(PyObject *func, PyObject *self, PyObject *class)
 	im->im_func = func;
 	Py_XINCREF(self);
 	im->im_self = self;
-	Py_XINCREF(class);
-	im->im_class = class;
+	Py_XINCREF(klass);
+	im->im_class = klass;
 	_PyObject_GC_TRACK(im);
 	return (PyObject *)im;
 }
@@ -2368,15 +2368,15 @@ instancemethod_traverse(PyMethodObject *im, visitproc visit, void *arg)
 }
 
 static void
-getclassname(PyObject *class, char *buf, int bufsize)
+getclassname(PyObject *klass, char *buf, int bufsize)
 {
 	PyObject *name;
 
 	assert(bufsize > 1);
 	strcpy(buf, "?"); /* Default outcome */
-	if (class == NULL)
+	if (klass == NULL)
 		return;
-	name = PyObject_GetAttrString(class, "__name__");
+	name = PyObject_GetAttrString(klass, "__name__");
 	if (name == NULL) {
 		/* This function cannot return an exception */
 		PyErr_Clear();
@@ -2392,7 +2392,7 @@ getclassname(PyObject *class, char *buf, int bufsize)
 static void
 getinstclassname(PyObject *inst, char *buf, int bufsize)
 {
-	PyObject *class;
+	PyObject *klass;
 
 	if (inst == NULL) {
 		assert(bufsize > 0 && (size_t)bufsize > strlen("nothing"));
@@ -2400,22 +2400,22 @@ getinstclassname(PyObject *inst, char *buf, int bufsize)
 		return;
 	}
 
-	class = PyObject_GetAttrString(inst, "__class__");
-	if (class == NULL) {
+	klass = PyObject_GetAttrString(inst, "__class__");
+	if (klass == NULL) {
 		/* This function cannot return an exception */
 		PyErr_Clear();
-		class = (PyObject *)(inst->ob_type);
-		Py_INCREF(class);
+		klass = (PyObject *)(inst->ob_type);
+		Py_INCREF(klass);
 	}
-	getclassname(class, buf, bufsize);
-	Py_XDECREF(class);
+	getclassname(klass, buf, bufsize);
+	Py_XDECREF(klass);
 }
 
 static PyObject *
 instancemethod_call(PyObject *func, PyObject *arg, PyObject *kw)
 {
 	PyObject *self = PyMethod_GET_SELF(func);
-	PyObject *class = PyMethod_GET_CLASS(func);
+	PyObject *klass = PyMethod_GET_CLASS(func);
 	PyObject *result;
 
 	func = PyMethod_GET_FUNCTION(func);
@@ -2428,14 +2428,14 @@ instancemethod_call(PyObject *func, PyObject *arg, PyObject *kw)
 		if (self == NULL)
 			ok = 0;
 		else {
-			ok = PyObject_IsInstance(self, class);
+			ok = PyObject_IsInstance(self, klass);
 			if (ok < 0)
 				return NULL;
 		}
 		if (!ok) {
 			char clsbuf[256];
 			char instbuf[256];
-			getclassname(class, clsbuf, sizeof(clsbuf));
+			getclassname(klass, clsbuf, sizeof(clsbuf));
 			getinstclassname(self, instbuf, sizeof(instbuf));
 			PyErr_Format(PyExc_TypeError,
 				     "unbound method %s%s must be called with "

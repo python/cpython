@@ -959,21 +959,21 @@ float_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 float_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *tmp, *new;
+	PyObject *tmp, *newobj;
 
 	assert(PyType_IsSubtype(type, &PyFloat_Type));
 	tmp = float_new(&PyFloat_Type, args, kwds);
 	if (tmp == NULL)
 		return NULL;
 	assert(PyFloat_CheckExact(tmp));
-	new = type->tp_alloc(type, 0);
-	if (new == NULL) {
+	newobj = type->tp_alloc(type, 0);
+	if (newobj == NULL) {
 		Py_DECREF(tmp);
 		return NULL;
 	}
-	((PyFloatObject *)new)->ob_fval = ((PyFloatObject *)tmp)->ob_fval;
+	((PyFloatObject *)newobj)->ob_fval = ((PyFloatObject *)tmp)->ob_fval;
 	Py_DECREF(tmp);
-	return new;
+	return newobj;
 }
 
 static PyObject *
