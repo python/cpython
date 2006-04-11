@@ -1901,6 +1901,12 @@ posix_listdir(PyObject *self, PyObject *args)
 		}
 		Py_DECREF(v);
 	}
+	if (errno != 0 && d != NULL) {
+		/* readdir() returned NULL and set errno */
+		closedir(dirp);
+		Py_DECREF(d);
+		return posix_error_with_allocated_filename(name); 
+	}
 	closedir(dirp);
 	PyMem_Free(name);
 
