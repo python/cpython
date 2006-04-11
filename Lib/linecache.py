@@ -81,7 +81,7 @@ def updatecache(filename, module_globals=None):
     except os.error, msg:
         basename = os.path.split(filename)[1]
 
-        # Try for a __loader__, if available        
+        # Try for a __loader__, if available
         if module_globals and '__loader__' in module_globals:
             name = module_globals.get('__name__')
             loader = module_globals['__loader__']
@@ -95,7 +95,7 @@ def updatecache(filename, module_globals=None):
                         pass
                     else:
                         cache[filename] = (
-                            len(data), None, 
+                            len(data), None,
                             [line+'\n' for line in data.splitlines()], fullname
                         )
                         return cache[filename][2]
