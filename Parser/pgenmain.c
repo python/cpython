@@ -136,7 +136,7 @@ char *
 PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 {
 	size_t n = 1000;
-	char *p = PyMem_MALLOC(n);
+	char *p = (char *)PyMem_MALLOC(n);
 	char *q;
 	if (p == NULL)
 		return NULL;
@@ -149,7 +149,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 	n = strlen(p);
 	if (n > 0 && p[n-1] != '\n')
 		p[n-1] = '\n';
-	return PyMem_REALLOC(p, n+1);
+	return (char *)PyMem_REALLOC(p, n+1);
 }
 
 /* No-nonsense fgets */

@@ -105,14 +105,14 @@ block_alloc(block *b, size_t size)
 		   the default block, allocate a one-off block that is
 		   exactly the right size. */
 		/* TODO(jhylton): Think about space waste at end of block */
-		block *new = block_new(
+		block *newbl = block_new(
 				size < DEFAULT_BLOCK_SIZE ?
 				DEFAULT_BLOCK_SIZE : size);
-		if (!new)
+		if (!newbl)
 			return NULL;
 		assert(!b->ab_next);
-		b->ab_next = new;
-		b = new;
+		b->ab_next = newbl;
+		b = newbl;
 	}
 
 	assert(b->ab_offset + size <= b->ab_size);
