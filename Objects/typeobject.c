@@ -453,7 +453,7 @@ PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
 	if (PyType_IS_GC(type))
 		obj = _PyObject_GC_Malloc(size);
 	else
-		obj = PyObject_MALLOC(size);
+		obj = (PyObject *)PyObject_MALLOC(size);
 
 	if (obj == NULL)
 		return PyErr_NoMemory();
@@ -1150,7 +1150,7 @@ pmerge(PyObject *acc, PyObject* to_merge) {
 	   remain[i] is the index of the next base in to_merge[i]
 	   that is not included in acc.
 	*/
-	remain = PyMem_MALLOC(SIZEOF_INT*to_merge_size);
+	remain = (int *)PyMem_MALLOC(SIZEOF_INT*to_merge_size);
 	if (remain == NULL)
 		return -1;
 	for (i = 0; i < to_merge_size; i++)
@@ -1896,7 +1896,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		PyObject *doc = PyDict_GetItemString(dict, "__doc__");
 		if (doc != NULL && PyString_Check(doc)) {
 			const size_t n = (size_t)PyString_GET_SIZE(doc);
-                        char *tp_doc = PyObject_MALLOC(n+1);
+                        char *tp_doc = (char *)PyObject_MALLOC(n+1);
 			if (tp_doc == NULL) {
 				Py_DECREF(type);
 				return NULL;
@@ -2446,23 +2446,23 @@ same_slots_added(PyTypeObject *a, PyTypeObject *b)
 }
 
 static int
-compatible_for_assignment(PyTypeObject* old, PyTypeObject* new, char* attr)
+compatible_for_assignment(PyTypeObject* oldto, PyTypeObject* newto, char* attr)
 {
 	PyTypeObject *newbase, *oldbase;
 
-	if (new->tp_dealloc != old->tp_dealloc ||
-	    new->tp_free != old->tp_free)
+	if (newto->tp_dealloc != oldto->tp_dealloc ||
+	    newto->tp_free != oldto->tp_free)
 	{
 		PyErr_Format(PyExc_TypeError,
 			     "%s assignment: "
 			     "'%s' deallocator differs from '%s'",
 			     attr,
-			     new->tp_name,
-			     old->tp_name);
+			     newto->tp_name,
+			     oldto->tp_name);
 		return 0;
 	}
-	newbase = new;
-	oldbase = old;
+	newbase = newto;
+	oldbase = oldto;
 	while (equiv_structs(newbase, newbase->tp_base))
 		newbase = newbase->tp_base;
 	while (equiv_structs(oldbase, oldbase->tp_base))
@@ -2474,8 +2474,8 @@ compatible_for_assignment(PyTypeObject* old, PyTypeObject* new, char* attr)
 			     "%s assignment: "
 			     "'%s' object layout differs from '%s'",
 			     attr,
-			     new->tp_name,
-			     old->tp_name);
+			     newto->tp_name,
+			     oldto->tp_name);
 		return 0;
 	}
 
@@ -2485,8 +2485,8 @@ compatible_for_assignment(PyTypeObject* old, PyTypeObject* new, char* attr)
 static int
 object_set_class(PyObject *self, PyObject *value, void *closure)
 {
-	PyTypeObject *old = self->ob_type;
-	PyTypeObject *new;
+	PyTypeObject *oldto = self->ob_type;
+	PyTypeObject *newto;
 
 	if (value == NULL) {
 		PyErr_SetString(PyExc_TypeError,
@@ -2499,18 +2499,18 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
 		  value->ob_type->tp_name);
 		return -1;
 	}
-	new = (PyTypeObject *)value;
-	if (!(new->tp_flags & Py_TPFLAGS_HEAPTYPE) ||
-	    !(old->tp_flags & Py_TPFLAGS_HEAPTYPE))
+	newto = (PyTypeObject *)value;
+	if (!(newto->tp_flags & Py_TPFLAGS_HEAPTYPE) ||
+	    !(oldto->tp_flags & Py_TPFLAGS_HEAPTYPE))
 	{
 		PyErr_Format(PyExc_TypeError,
 			     "__class__ assignment: only for heap types");
 		return -1;
 	}
-	if (compatible_for_assignment(new, old, "__class__")) {
-		Py_INCREF(new);
-		self->ob_type = new;
-		Py_DECREF(old);
+	if (compatible_for_assignment(newto, oldto, "__class__")) {
+		Py_INCREF(newto);
+		self->ob_type = newto;
+		Py_DECREF(oldto);
 		return 0;
 	}
 	else {
@@ -3332,7 +3332,7 @@ add_subclass(PyTypeObject *base, PyTypeObject *type)
 {
 	Py_ssize_t i;
 	int result;
-	PyObject *list, *ref, *new;
+	PyObject *list, *ref, *newobj;
 
 	list = base->tp_subclasses;
 	if (list == NULL) {
@@ -3341,16 +3341,16 @@ add_subclass(PyTypeObject *base, PyTypeObject *type)
 			return -1;
 	}
 	assert(PyList_Check(list));
-	new = PyWeakref_NewRef((PyObject *)type, NULL);
+	newobj = PyWeakref_NewRef((PyObject *)type, NULL);
 	i = PyList_GET_SIZE(list);
 	while (--i >= 0) {
 		ref = PyList_GET_ITEM(list, i);
 		assert(PyWeakref_CheckRef(ref));
 		if (PyWeakref_GET_OBJECT(ref) == Py_None)
-			return PyList_SetItem(list, i, new);
+			return PyList_SetItem(list, i, newobj);
 	}
-	result = PyList_Append(list, new);
-	Py_DECREF(new);
+	result = PyList_Append(list, newobj);
+	Py_DECREF(newobj);
 	return result;
 }
 
@@ -5746,7 +5746,7 @@ static PyObject *
 super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
 	superobject *su = (superobject *)self;
-	superobject *new;
+	superobject *newobj;
 
 	if (obj == NULL || obj == Py_None || su->obj != NULL) {
 		/* Not binding to an object, or already bound */
@@ -5763,16 +5763,16 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 		PyTypeObject *obj_type = supercheck(su->type, obj);
 		if (obj_type == NULL)
 			return NULL;
-		new = (superobject *)PySuper_Type.tp_new(&PySuper_Type,
+		newobj = (superobject *)PySuper_Type.tp_new(&PySuper_Type,
 							 NULL, NULL);
-		if (new == NULL)
+		if (newobj == NULL)
 			return NULL;
 		Py_INCREF(su->type);
 		Py_INCREF(obj);
-		new->type = su->type;
-		new->obj = obj;
-		new->obj_type = obj_type;
-		return (PyObject *)new;
+		newobj->type = su->type;
+		newobj->obj = obj;
+		newobj->obj_type = obj_type;
+		return (PyObject *)newobj;
 	}
 }
 

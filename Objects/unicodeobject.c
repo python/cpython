@@ -149,7 +149,7 @@ int unicode_resize(register PyUnicodeObject *unicode,
     oldstr = unicode->str;
     PyMem_RESIZE(unicode->str, Py_UNICODE, length + 1);
     if (!unicode->str) {
-	unicode->str = oldstr;
+	unicode->str = (Py_UNICODE *)oldstr;
         PyErr_NoMemory();
         return -1;
     }
@@ -1884,7 +1884,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                 Py_DECREF(m);
                 if (api == NULL)
                     goto ucnhashError;
-                ucnhash_CAPI = PyCObject_AsVoidPtr(api);
+                ucnhash_CAPI = (_PyUnicode_Name_CAPI *)PyCObject_AsVoidPtr(api);
                 Py_DECREF(api);
                 if (ucnhash_CAPI == NULL)
                     goto ucnhashError;
@@ -2499,8 +2499,8 @@ static PyObject *unicode_encode_ucs1(const Py_UNICODE *p,
     /* current output position */
     Py_ssize_t respos = 0;
     Py_ssize_t ressize;
-    char *encoding = (limit == 256) ? "latin-1" : "ascii";
-    char *reason = (limit == 256) ? "ordinal not in range(256)" : "ordinal not in range(128)";
+    const char *encoding = (limit == 256) ? "latin-1" : "ascii";
+    const char *reason = (limit == 256) ? "ordinal not in range(256)" : "ordinal not in range(128)";
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
     /* the following variable is used for caching string comparisons
@@ -6488,7 +6488,8 @@ unicode_subscript(PyUnicodeObject* self, PyObject* item)
             return PyUnicode_FromUnicode(NULL, 0);
         } else {
             source_buf = PyUnicode_AS_UNICODE((PyObject*)self);
-            result_buf = PyMem_MALLOC(slicelength*sizeof(Py_UNICODE));
+            result_buf = (Py_UNICODE *)PyMem_MALLOC(slicelength*
+                                                    sizeof(Py_UNICODE));
 	    
 	    if (result_buf == NULL)
 		    return PyErr_NoMemory();

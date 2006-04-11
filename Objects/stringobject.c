@@ -1051,7 +1051,7 @@ string_contains(PyObject *a, PyObject *el)
 	lastchar = sub[shortsub];
 	last = s + PyString_GET_SIZE(a) - len_sub + 1;
 	while (s < last) {
-		s = memchr(s, firstchar, last-s);
+		s = (char *)memchr(s, firstchar, last-s);
 		if (s == NULL)
 			return 0;
 		assert(s < last);
@@ -1210,7 +1210,7 @@ string_subscript(PyStringObject* self, PyObject* item)
 		}
 		else {
 			source_buf = PyString_AsString((PyObject*)self);
-			result_buf = PyMem_Malloc(slicelength);
+			result_buf = (char *)PyMem_Malloc(slicelength);
 			if (result_buf == NULL)
 				return PyErr_NoMemory();
 
@@ -2028,12 +2028,12 @@ string_lower(PyStringObject *self)
 {
 	char *s = PyString_AS_STRING(self), *s_new;
 	Py_ssize_t i, n = PyString_GET_SIZE(self);
-	PyObject *new;
+	PyObject *newobj;
 
-	new = PyString_FromStringAndSize(NULL, n);
-	if (new == NULL)
+	newobj = PyString_FromStringAndSize(NULL, n);
+	if (newobj == NULL)
 		return NULL;
-	s_new = PyString_AsString(new);
+	s_new = PyString_AsString(newobj);
 	for (i = 0; i < n; i++) {
 		int c = Py_CHARMASK(*s++);
 		if (isupper(c)) {
@@ -2042,7 +2042,7 @@ string_lower(PyStringObject *self)
 			*s_new = c;
 		s_new++;
 	}
-	return new;
+	return newobj;
 }
 
 
@@ -2056,12 +2056,12 @@ string_upper(PyStringObject *self)
 {
 	char *s = PyString_AS_STRING(self), *s_new;
 	Py_ssize_t i, n = PyString_GET_SIZE(self);
-	PyObject *new;
+	PyObject *newobj;
 
-	new = PyString_FromStringAndSize(NULL, n);
-	if (new == NULL)
+	newobj = PyString_FromStringAndSize(NULL, n);
+	if (newobj == NULL)
 		return NULL;
-	s_new = PyString_AsString(new);
+	s_new = PyString_AsString(newobj);
 	for (i = 0; i < n; i++) {
 		int c = Py_CHARMASK(*s++);
 		if (islower(c)) {
@@ -2070,7 +2070,7 @@ string_upper(PyStringObject *self)
 			*s_new = c;
 		s_new++;
 	}
-	return new;
+	return newobj;
 }
 
 
@@ -2086,12 +2086,12 @@ string_title(PyStringObject *self)
 	char *s = PyString_AS_STRING(self), *s_new;
 	Py_ssize_t i, n = PyString_GET_SIZE(self);
 	int previous_is_cased = 0;
-	PyObject *new;
+	PyObject *newobj;
 
-	new = PyString_FromStringAndSize(NULL, n);
-	if (new == NULL)
+	newobj = PyString_FromStringAndSize(NULL, n);
+	if (newobj == NULL)
 		return NULL;
-	s_new = PyString_AsString(new);
+	s_new = PyString_AsString(newobj);
 	for (i = 0; i < n; i++) {
 		int c = Py_CHARMASK(*s++);
 		if (islower(c)) {
@@ -2106,7 +2106,7 @@ string_title(PyStringObject *self)
 			previous_is_cased = 0;
 		*s_new++ = c;
 	}
-	return new;
+	return newobj;
 }
 
 PyDoc_STRVAR(capitalize__doc__,
@@ -2120,12 +2120,12 @@ string_capitalize(PyStringObject *self)
 {
 	char *s = PyString_AS_STRING(self), *s_new;
 	Py_ssize_t i, n = PyString_GET_SIZE(self);
-	PyObject *new;
+	PyObject *newobj;
 
-	new = PyString_FromStringAndSize(NULL, n);
-	if (new == NULL)
+	newobj = PyString_FromStringAndSize(NULL, n);
+	if (newobj == NULL)
 		return NULL;
-	s_new = PyString_AsString(new);
+	s_new = PyString_AsString(newobj);
 	if (0 < n) {
 		int c = Py_CHARMASK(*s++);
 		if (islower(c))
@@ -2142,7 +2142,7 @@ string_capitalize(PyStringObject *self)
 			*s_new = c;
 		s_new++;
 	}
-	return new;
+	return newobj;
 }
 
 
@@ -2199,7 +2199,7 @@ string_count(PyStringObject *self, PyObject *args)
 		}
 		if (i >= m)
 			break;
-		t = memchr(s+i, sub[0], m-i);
+		t = (const char *)memchr(s+i, sub[0], m-i);
 		if (t == NULL)
 			break;
 		i = t - s;
@@ -2218,12 +2218,12 @@ string_swapcase(PyStringObject *self)
 {
 	char *s = PyString_AS_STRING(self), *s_new;
 	Py_ssize_t i, n = PyString_GET_SIZE(self);
-	PyObject *new;
+	PyObject *newobj;
 
-	new = PyString_FromStringAndSize(NULL, n);
-	if (new == NULL)
+	newobj = PyString_FromStringAndSize(NULL, n);
+	if (newobj == NULL)
 		return NULL;
-	s_new = PyString_AsString(new);
+	s_new = PyString_AsString(newobj);
 	for (i = 0; i < n; i++) {
 		int c = Py_CHARMASK(*s++);
 		if (islower(c)) {
@@ -2236,7 +2236,7 @@ string_swapcase(PyStringObject *self)
 			*s_new = c;
 		s_new++;
 	}
-	return new;
+	return newobj;
 }
 
 
@@ -2524,7 +2524,7 @@ string_replace(PyStringObject *self, PyObject *args)
 	const Py_ssize_t len = PyString_GET_SIZE(self);
 	Py_ssize_t sub_len, repl_len, out_len;
 	int count = -1;
-	PyObject *new;
+	PyObject *newobj;
 	PyObject *subobj, *replobj;
 
 	if (!PyArg_ParseTuple(args, "OO|i:replace",
@@ -2563,20 +2563,20 @@ string_replace(PyStringObject *self, PyObject *args)
 	if (out_len == -1) {
 		if (PyString_CheckExact(self)) {
 			/* we're returning another reference to self */
-			new = (PyObject*)self;
-			Py_INCREF(new);
+			newobj = (PyObject*)self;
+			Py_INCREF(newobj);
 		}
 		else {
-			new = PyString_FromStringAndSize(str, len);
-			if (new == NULL)
+			newobj = PyString_FromStringAndSize(str, len);
+			if (newobj == NULL)
 				return NULL;
 		}
 	}
 	else {
-		new = PyString_FromStringAndSize(new_s, out_len);
+		newobj = PyString_FromStringAndSize(new_s, out_len);
 		PyMem_FREE(new_s);
 	}
-	return new;
+	return newobj;
 }
 
 
