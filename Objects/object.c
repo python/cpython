@@ -1900,9 +1900,7 @@ _Py_PrintReferences(FILE *fp)
 	PyObject *op;
 	fprintf(fp, "Remaining objects:\n");
 	for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
-		/* XXX(twouters) cast refcount to long until %zd is
-		   universally available */
-		fprintf(fp, "%p [%ld] ", op, (long)op->ob_refcnt);
+		fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] ", op, op->ob_refcnt);
 		if (PyObject_Print(op, fp, 0) != 0)
 			PyErr_Clear();
 		putc('\n', fp);
@@ -1918,10 +1916,8 @@ _Py_PrintReferenceAddresses(FILE *fp)
 	PyObject *op;
 	fprintf(fp, "Remaining object addresses:\n");
 	for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
-		/* XXX(twouters) cast refcount to long until %zd is
-		   universally available */
-		fprintf(fp, "%p [%ld] %s\n", op, (long)op->ob_refcnt,
-					    op->ob_type->tp_name);
+		fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] %s\n", op,
+			op->ob_refcnt, op->ob_type->tp_name);
 }
 
 PyObject *
