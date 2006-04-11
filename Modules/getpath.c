@@ -566,7 +566,7 @@ calculate_path(void)
     bufsz += strlen(exec_prefix) + 1;
 
     /* This is the only malloc call in this file */
-    buf = PyMem_Malloc(bufsz);
+    buf = (char *)PyMem_Malloc(bufsz);
 
     if (buf == NULL) {
         /* We can't exit, so print a warning and limp along */

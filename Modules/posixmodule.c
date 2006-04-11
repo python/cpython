@@ -6009,7 +6009,7 @@ static PyObject *
 posix_putenv(PyObject *self, PyObject *args)
 {
         char *s1, *s2;
-        char *new;
+        char *newenv;
 	PyObject *newstr;
 	size_t len;
 
@@ -6040,9 +6040,9 @@ posix_putenv(PyObject *self, PyObject *args)
 	newstr = PyString_FromStringAndSize(NULL, (int)len - 1);
 	if (newstr == NULL)
 		return PyErr_NoMemory();
-	new = PyString_AS_STRING(newstr);
-	PyOS_snprintf(new, len, "%s=%s", s1, s2);
-	if (putenv(new)) {
+	newenv = PyString_AS_STRING(newstr);
+	PyOS_snprintf(newenv, len, "%s=%s", s1, s2);
+	if (putenv(newenv)) {
                 Py_DECREF(newstr);
                 posix_error();
                 return NULL;
