@@ -313,7 +313,8 @@ PyFile_SetBufSize(PyObject *f, int bufsize)
 			PyMem_Free(file->f_setbuf);
 			file->f_setbuf = NULL;
 		} else {
-			file->f_setbuf = PyMem_Realloc(file->f_setbuf, bufsize);
+			file->f_setbuf = (char *)PyMem_Realloc(file->f_setbuf, 
+                                                                bufsize);
 		}
 #ifdef HAVE_SETVBUF
 		setvbuf(file->f_fp, file->f_setbuf, type, bufsize);
@@ -1391,7 +1392,7 @@ file_readlines(PyFileObject *f, PyObject *args)
 			goto cleanup;
 		}
 		totalread += nread;
-		p = memchr(buffer+nfilled, '\n', nread);
+		p = (char *)memchr(buffer+nfilled, '\n', nread);
 		if (p == NULL) {
 			/* Need a larger buffer to fit this line */
 			nfilled += nread;
@@ -1431,7 +1432,7 @@ file_readlines(PyFileObject *f, PyObject *args)
 			if (err != 0)
 				goto error;
 			q = p;
-			p = memchr(q, '\n', end-q);
+			p = (char *)memchr(q, '\n', end-q);
 		} while (p != NULL);
 		/* Move the remaining incomplete line to the start */
 		nfilled = end-q;
@@ -1809,7 +1810,7 @@ readahead(PyFileObject *f, int bufsize)
 		else
 			drop_readahead(f);
 	}
-	if ((f->f_buf = PyMem_Malloc(bufsize)) == NULL) {
+	if ((f->f_buf = (char *)PyMem_Malloc(bufsize)) == NULL) {
 		PyErr_NoMemory();
 		return -1;
 	}
@@ -1852,7 +1853,7 @@ readahead_get_line_skip(PyFileObject *f, int skip, int bufsize)
 	if (len == 0)
 		return (PyStringObject *)
 			PyString_FromStringAndSize(NULL, skip);
-	bufptr = memchr(f->f_bufptr, '\n', len);
+	bufptr = (char *)memchr(f->f_bufptr, '\n', len);
 	if (bufptr != NULL) {
 		bufptr++;			/* Count the '\n' */
 		len = bufptr - f->f_bufptr;

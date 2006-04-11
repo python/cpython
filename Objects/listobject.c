@@ -1805,28 +1805,11 @@ typedef struct {
 	PyObject *value;
 } sortwrapperobject;
 
-static PyTypeObject sortwrapper_type;
-
-static PyObject *
-sortwrapper_richcompare(sortwrapperobject *a, sortwrapperobject *b, int op)
-{
-	if (!PyObject_TypeCheck(b, &sortwrapper_type)) {
-		PyErr_SetString(PyExc_TypeError,
-			"expected a sortwrapperobject");
-		return NULL;
-	}
-	return PyObject_RichCompare(a->key, b->key, op);
-}
-
-static void
-sortwrapper_dealloc(sortwrapperobject *so)
-{
-	Py_XDECREF(so->key);
-	Py_XDECREF(so->value);
-	PyObject_Del(so);
-}
-
 PyDoc_STRVAR(sortwrapper_doc, "Object wrapper with a custom sort key.");
+static PyObject *
+sortwrapper_richcompare(sortwrapperobject *, sortwrapperobject *, int);
+static void
+sortwrapper_dealloc(sortwrapperobject *);
 
 static PyTypeObject sortwrapper_type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -1857,6 +1840,26 @@ static PyTypeObject sortwrapper_type = {
 	0,					/* tp_clear */
 	(richcmpfunc)sortwrapper_richcompare,	/* tp_richcompare */
 };
+
+
+static PyObject *
+sortwrapper_richcompare(sortwrapperobject *a, sortwrapperobject *b, int op)
+{
+	if (!PyObject_TypeCheck(b, &sortwrapper_type)) {
+		PyErr_SetString(PyExc_TypeError,
+			"expected a sortwrapperobject");
+		return NULL;
+	}
+	return PyObject_RichCompare(a->key, b->key, op);
+}
+
+static void
+sortwrapper_dealloc(sortwrapperobject *so)
+{
+	Py_XDECREF(so->key);
+	Py_XDECREF(so->value);
+	PyObject_Del(so);
+}
 
 /* Returns a new reference to a sortwrapper.
    Consumes the references to the two underlying objects. */
@@ -2698,7 +2701,53 @@ typedef struct {
 	PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
 } listiterobject;
 
-PyTypeObject PyListIter_Type;
+static PyObject *list_iter(PyObject *);
+static void listiter_dealloc(listiterobject *);
+static int listiter_traverse(listiterobject *, visitproc, void *);
+static PyObject *listiter_next(listiterobject *);
+static PyObject *listiter_len(listiterobject *);
+
+PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
+
+static PyMethodDef listiter_methods[] = {
+	{"__length_hint__", (PyCFunction)listiter_len, METH_NOARGS, length_hint_doc},
+ 	{NULL,		NULL}		/* sentinel */
+};
+
+PyTypeObject PyListIter_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,					/* ob_size */
+	"listiterator",				/* tp_name */
+	sizeof(listiterobject),			/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	(destructor)listiter_dealloc,		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+	0,					/* tp_doc */
+	(traverseproc)listiter_traverse,	/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	PyObject_SelfIter,			/* tp_iter */
+	(iternextfunc)listiter_next,		/* tp_iternext */
+	listiter_methods,			/* tp_methods */
+	0,					/* tp_members */
+};
+
 
 static PyObject *
 list_iter(PyObject *seq)
@@ -2770,29 +2819,40 @@ listiter_len(listiterobject *it)
 	}
 	return PyInt_FromLong(0);
 }
+/*********************** List Reverse Iterator **************************/
 
-PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
+typedef struct {
+	PyObject_HEAD
+	Py_ssize_t it_index;
+	PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
+} listreviterobject;
 
-static PyMethodDef listiter_methods[] = {
-	{"__length_hint__", (PyCFunction)listiter_len, METH_NOARGS, length_hint_doc},
- 	{NULL,		NULL}		/* sentinel */
+static PyObject *list_reversed(PyListObject *, PyObject *);
+static void listreviter_dealloc(listreviterobject *);
+static int listreviter_traverse(listreviterobject *, visitproc, void *);
+static PyObject *listreviter_next(listreviterobject *);
+static Py_ssize_t listreviter_len(listreviterobject *);
+
+static PySequenceMethods listreviter_as_sequence = {
+	(lenfunc)listreviter_len,	/* sq_length */
+	0,				/* sq_concat */
 };
 
-PyTypeObject PyListIter_Type = {
+PyTypeObject PyListRevIter_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
-	"listiterator",				/* tp_name */
-	sizeof(listiterobject),			/* tp_basicsize */
+	"listreverseiterator",			/* tp_name */
+	sizeof(listreviterobject),		/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
-	(destructor)listiter_dealloc,		/* tp_dealloc */
+	(destructor)listreviter_dealloc,	/* tp_dealloc */
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
+	&listreviter_as_sequence,		/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
@@ -2802,25 +2862,14 @@ PyTypeObject PyListIter_Type = {
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
 	0,					/* tp_doc */
-	(traverseproc)listiter_traverse,	/* tp_traverse */
+	(traverseproc)listreviter_traverse,	/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
-	(iternextfunc)listiter_next,		/* tp_iternext */
-	listiter_methods,			/* tp_methods */
-	0,					/* tp_members */
+	(iternextfunc)listreviter_next,		/* tp_iternext */
+	0,
 };
-
-/*********************** List Reverse Iterator **************************/
-
-typedef struct {
-	PyObject_HEAD
-	Py_ssize_t it_index;
-	PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
-} listreviterobject;
-
-PyTypeObject PyListRevIter_Type;
 
 static PyObject *
 list_reversed(PyListObject *seq, PyObject *unused)
@@ -2884,40 +2933,3 @@ listreviter_len(listreviterobject *it)
 	return len;
 }
 
-static PySequenceMethods listreviter_as_sequence = {
-	(lenfunc)listreviter_len,	/* sq_length */
-	0,				/* sq_concat */
-};
-
-PyTypeObject PyListRevIter_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
-	"listreverseiterator",			/* tp_name */
-	sizeof(listreviterobject),		/* tp_basicsize */
-	0,					/* tp_itemsize */
-	/* methods */
-	(destructor)listreviter_dealloc,	/* tp_dealloc */
-	0,					/* tp_print */
-	0,					/* tp_getattr */
-	0,					/* tp_setattr */
-	0,					/* tp_compare */
-	0,					/* tp_repr */
-	0,					/* tp_as_number */
-	&listreviter_as_sequence,		/* tp_as_sequence */
-	0,					/* tp_as_mapping */
-	0,					/* tp_hash */
-	0,					/* tp_call */
-	0,					/* tp_str */
-	PyObject_GenericGetAttr,		/* tp_getattro */
-	0,					/* tp_setattro */
-	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
-	0,					/* tp_doc */
-	(traverseproc)listreviter_traverse,	/* tp_traverse */
-	0,					/* tp_clear */
-	0,					/* tp_richcompare */
-	0,					/* tp_weaklistoffset */
-	PyObject_SelfIter,			/* tp_iter */
-	(iternextfunc)listreviter_next,		/* tp_iternext */
-	0,
-};

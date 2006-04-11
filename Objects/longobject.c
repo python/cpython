@@ -1476,7 +1476,7 @@ PyObject *
 PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
 {
 	PyObject *result;
-	char *buffer = PyMem_MALLOC(length+1);
+	char *buffer = (char *)PyMem_MALLOC(length+1);
 
 	if (buffer == NULL)
 		return NULL;
@@ -3088,7 +3088,7 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyLongObject *tmp, *new;
+	PyLongObject *tmp, *newobj;
 	Py_ssize_t i, n;
 
 	assert(PyType_IsSubtype(type, &PyLong_Type));
@@ -3099,17 +3099,17 @@ long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	n = tmp->ob_size;
 	if (n < 0)
 		n = -n;
-	new = (PyLongObject *)type->tp_alloc(type, n);
-	if (new == NULL) {
+	newobj = (PyLongObject *)type->tp_alloc(type, n);
+	if (newobj == NULL) {
 		Py_DECREF(tmp);
 		return NULL;
 	}
-	assert(PyLong_Check(new));
-	new->ob_size = tmp->ob_size;
+	assert(PyLong_Check(newobj));
+	newobj->ob_size = tmp->ob_size;
 	for (i = 0; i < n; i++)
-		new->ob_digit[i] = tmp->ob_digit[i];
+		newobj->ob_digit[i] = tmp->ob_digit[i];
 	Py_DECREF(tmp);
-	return (PyObject *)new;
+	return (PyObject *)newobj;
 }
 
 static PyObject *

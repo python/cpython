@@ -376,7 +376,7 @@ PyObject *
 PyInt_FromUnicode(Py_UNICODE *s, Py_ssize_t length, int base)
 {
 	PyObject *result;
-	char *buffer = PyMem_MALLOC(length+1);
+	char *buffer = (char *)PyMem_MALLOC(length+1);
 
 	if (buffer == NULL)
 		return NULL;
@@ -982,7 +982,7 @@ int_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 int_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *tmp, *new;
+	PyObject *tmp, *newobj;
 	long ival;
 
 	assert(PyType_IsSubtype(type, &PyInt_Type));
@@ -999,14 +999,14 @@ int_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		ival = ((PyIntObject *)tmp)->ob_ival;
 	}
 
-	new = type->tp_alloc(type, 0);
-	if (new == NULL) {
+	newobj = type->tp_alloc(type, 0);
+	if (newobj == NULL) {
 		Py_DECREF(tmp);
 		return NULL;
 	}
-	((PyIntObject *)new)->ob_ival = ival;
+	((PyIntObject *)newobj)->ob_ival = ival;
 	Py_DECREF(tmp);
-	return new;
+	return newobj;
 }
 
 static PyObject *
