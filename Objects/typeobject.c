@@ -5216,19 +5216,19 @@ slotptr(PyTypeObject *type, int ioffset)
 	assert(offset >= 0);
 	assert(offset < offsetof(PyHeapTypeObject, as_buffer));
 	if (offset >= offsetof(PyHeapTypeObject, as_sequence)) {
-		ptr = (void *)type->tp_as_sequence;
+		ptr = (char *)type->tp_as_sequence;
 		offset -= offsetof(PyHeapTypeObject, as_sequence);
 	}
 	else if (offset >= offsetof(PyHeapTypeObject, as_mapping)) {
-		ptr = (void *)type->tp_as_mapping;
+		ptr = (char *)type->tp_as_mapping;
 		offset -= offsetof(PyHeapTypeObject, as_mapping);
 	}
 	else if (offset >= offsetof(PyHeapTypeObject, as_number)) {
-		ptr = (void *)type->tp_as_number;
+		ptr = (char *)type->tp_as_number;
 		offset -= offsetof(PyHeapTypeObject, as_number);
 	}
 	else {
-		ptr = (void *)type;
+		ptr = (char *)type;
 	}
 	if (ptr != NULL)
 		ptr += offset;
