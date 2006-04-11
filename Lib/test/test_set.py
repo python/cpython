@@ -224,7 +224,7 @@ class TestJointOps(unittest.TestCase):
         # Bug #1257731
         class H(self.thetype):
             def __hash__(self):
-                return id(self)
+                return int(id(self) & 0x7fffffff)
         s=H()
         f=set()
         f.add(s)
