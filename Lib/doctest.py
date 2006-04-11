@@ -236,6 +236,15 @@ def _normalize_module(module, depth=2):
     else:
         raise TypeError("Expected a module, string, or None")
 
+def _load_testfile(filename, package, module_relative):
+    if module_relative:
+        package = _normalize_module(package, 3)
+        filename = _module_relative_path(package, filename)
+        if hasattr(package, '__loader__'):
+            if hasattr(package.__loader__, 'get_data'):
+                return package.__loader__.get_data(filename), filename
+    return open(filename).read(), filename
+
 def _indent(s, indent=4):
     """
     Add the given number of space characters to the beginning every
@@ -1319,13 +1328,13 @@ class DocTestRunner:
     __LINECACHE_FILENAME_RE = re.compile(r'<doctest '
                                          r'(?P<name>[\w\.]+)'
                                          r'\[(?P<examplenum>\d+)\]>$')
-    def __patched_linecache_getlines(self, filename):
+    def __patched_linecache_getlines(self, filename, module_globals=None):
         m = self.__LINECACHE_FILENAME_RE.match(filename)
         if m and m.group('name') == self.test.name:
             example = self.test.examples[int(m.group('examplenum'))]
             return example.source.splitlines(True)
         else:
-            return self.save_linecache_getlines(filename)
+            return self.save_linecache_getlines(filename, module_globals)
 
     def run(self, test, compileflags=None, out=None, clear_globs=True):
         """
@@ -1933,9 +1942,7 @@ def testfile(filename, module_relative=True, name=None, package=None,
                          "relative paths.")
 
     # Relativize the path
-    if module_relative:
-        package = _normalize_module(package)
-        filename = _module_relative_path(package, filename)
+    text, filename = _load_testfile(filename, package, module_relative)
 
     # If no name was given, then use the file's name.
     if name is None:
@@ -1955,8 +1962,7 @@ def testfile(filename, module_relative=True, name=None, package=None,
         runner = DocTestRunner(verbose=verbose, optionflags=optionflags)
 
     # Read the file, convert it to a test, and run it.
-    s = open(filename).read()
-    test = parser.get_doctest(s, globs, name, filename, 0)
+    test = parser.get_doctest(text, globs, name, filename, 0)
     runner.run(test)
 
     if report:
@@ -2336,15 +2342,13 @@ def DocFileTest(path, module_relative=True, package=None,
                          "relative paths.")
 
     # Relativize the path.
-    if module_relative:
-        package = _normalize_module(package)
-        path = _module_relative_path(package, path)
+    doc, path = _load_testfile(path, package, module_relative)
+
     if "__file__" not in globs:
         globs["__file__"] = path
 
     # Find the file and read it.
     name = os.path.basename(path)
-    doc = open(path).read()
 
     # Convert it to a test, and wrap it in a DocFileCase.
     test = parser.get_doctest(doc, globs, name, path, 0)

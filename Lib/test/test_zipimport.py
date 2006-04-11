@@ -12,7 +12,12 @@ from test import test_support
 from test.test_importhooks import ImportHooksBaseTestCase, test_src, test_co
 
 import zipimport
-
+import linecache
+import doctest
+import inspect
+import StringIO
+from traceback import extract_tb, extract_stack, print_tb
+raise_src = 'def do_raise(): raise TypeError\n'
 
 # so we only run testAFakeZlib once if this test is run repeatedly
 # which happens when we look for ref leaks
@@ -54,7 +59,8 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
     def setUp(self):
         # We're reusing the zip archive path, so we must clear the
-        # cached directory info.
+        # cached directory info and linecache
+        linecache.clearcache()
         zipimport._zip_directory_cache.clear()
         ImportHooksBaseTestCase.setUp(self)
 
@@ -83,6 +89,11 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
             mod = __import__(".".join(modules), globals(), locals(),
                              ["__dummy__"])
+
+            call = kw.get('call')
+            if call is not None:
+                call(mod)
+
             if expected_ext:
                 file = mod.get_file()
                 self.assertEquals(file, os.path.join(TEMP_ZIP,
@@ -248,6 +259,74 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         files = {TESTMOD + ".py": (NOW, test_src)}
         self.doTest(".py", files, TESTMOD,
                     stuff="Some Stuff"*31)
+
+    def assertModuleSource(self, module):
+        self.assertEqual(inspect.getsource(module), test_src)
+
+    def testGetSource(self):
+        files = {TESTMOD + ".py": (NOW, test_src)}
+        self.doTest(".py", files, TESTMOD, call=self.assertModuleSource)
+
+    def testGetCompiledSource(self):
+        pyc = make_pyc(compile(test_src, "<???>", "exec"), NOW)
+        files = {TESTMOD + ".py": (NOW, test_src), 
+                 TESTMOD + pyc_ext: (NOW, pyc)}
+        self.doTest(pyc_ext, files, TESTMOD, call=self.assertModuleSource)
+
+    def runDoctest(self, callback):
+        files = {TESTMOD + ".py": (NOW, test_src),
+                 "xyz.txt": (NOW, ">>> log.append(True)\n")}
+        self.doTest(".py", files, TESTMOD, call=callback)
+
+    def doDoctestFile(self, module):
+        log = []
+        old_master, doctest.master = doctest.master, None
+        try:
+            doctest.testfile(
+                'xyz.txt', package=module, module_relative=True,
+                globs=locals()
+            )
+        finally:
+            doctest.master = old_master
+        self.assertEqual(log,[True])
+
+    def testDoctestFile(self):
+        self.runDoctest(self.doDoctestFile)
+
+    def doDoctestSuite(self, module):
+        log = []
+        doctest.DocFileTest(
+            'xyz.txt', package=module, module_relative=True,
+            globs=locals()
+        ).run()
+        self.assertEqual(log,[True])
+
+    def testDoctestSuite(self):
+        self.runDoctest(self.doDoctestSuite)
+
+
+    def doTraceback(self, module):
+        try:
+            module.do_raise()
+        except:
+            tb = sys.exc_info()[2].tb_next
+            
+            f,lno,n,line = extract_tb(tb, 1)[0]
+            self.assertEqual(line, raise_src.strip())
+
+            f,lno,n,line = extract_stack(tb.tb_frame, 1)[0]
+            self.assertEqual(line, raise_src.strip())
+
+            s = StringIO.StringIO()
+            print_tb(tb, 1, s)
+            self.failUnless(s.getvalue().endswith(raise_src))
+        else:
+            raise AssertionError("This ought to be impossible")
+
+    def testTraceback(self):
+        files = {TESTMOD + ".py": (NOW, raise_src)}
+        self.doTest(None, files, TESTMOD, call=self.doTraceback)
+
 
 class CompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_DEFLATED
