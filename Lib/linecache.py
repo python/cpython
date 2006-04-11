@@ -37,7 +37,7 @@ def getlines(filename, module_globals=None):
     if filename in cache:
         return cache[filename][2]
     else:
-        return updatecache(filename,module_globals)
+        return updatecache(filename, module_globals)
 
 
 def checkcache(filename=None):
@@ -85,13 +85,13 @@ def updatecache(filename, module_globals=None):
         if module_globals and '__loader__' in module_globals:
             name = module_globals.get('__name__')
             loader = module_globals['__loader__']
-            get_source = getattr(loader, 'get_source' ,None)
+            get_source = getattr(loader, 'get_source', None)
 
             if name and get_source:
                 if basename.startswith(name.split('.')[-1]+'.'):
                     try:
                         data = get_source(name)
-                    except (ImportError,IOError):
+                    except (ImportError, IOError):
                         pass
                     else:
                         cache[filename] = (
