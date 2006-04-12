@@ -275,7 +275,7 @@ data_stack_grow(SRE_STATE* state, int size)
             data_stack_dealloc(state);
             return SRE_ERROR_MEMORY;
         }
-        state->data_stack = stack;
+        state->data_stack = (char *)stack;
         state->data_stack_size = cursize;
     }
     return 0;
@@ -335,7 +335,7 @@ SRE_AT(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
 {
     /* check if pointer is at given position */
 
-    int this, that;
+    int thisp, thatp;
 
     switch (at) {
 
@@ -362,57 +362,57 @@ SRE_AT(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
     case SRE_AT_BOUNDARY:
         if (state->beginning == state->end)
             return 0;
-        that = ((void*) ptr > state->beginning) ?
+        thatp = ((void*) ptr > state->beginning) ?
             SRE_IS_WORD((int) ptr[-1]) : 0;
-        this = ((void*) ptr < state->end) ?
+        thisp = ((void*) ptr < state->end) ?
             SRE_IS_WORD((int) ptr[0]) : 0;
-        return this != that;
+        return thisp != thatp;
 
     case SRE_AT_NON_BOUNDARY:
         if (state->beginning == state->end)
             return 0;
-        that = ((void*) ptr > state->beginning) ?
+        thatp = ((void*) ptr > state->beginning) ?
             SRE_IS_WORD((int) ptr[-1]) : 0;
-        this = ((void*) ptr < state->end) ?
+        thisp = ((void*) ptr < state->end) ?
             SRE_IS_WORD((int) ptr[0]) : 0;
-        return this == that;
+        return thisp == thatp;
 
     case SRE_AT_LOC_BOUNDARY:
         if (state->beginning == state->end)
             return 0;
-        that = ((void*) ptr > state->beginning) ?
+        thatp = ((void*) ptr > state->beginning) ?
             SRE_LOC_IS_WORD((int) ptr[-1]) : 0;
-        this = ((void*) ptr < state->end) ?
+        thisp = ((void*) ptr < state->end) ?
             SRE_LOC_IS_WORD((int) ptr[0]) : 0;
-        return this != that;
+        return thisp != thatp;
 
     case SRE_AT_LOC_NON_BOUNDARY:
         if (state->beginning == state->end)
             return 0;
-        that = ((void*) ptr > state->beginning) ?
+        thatp = ((void*) ptr > state->beginning) ?
             SRE_LOC_IS_WORD((int) ptr[-1]) : 0;
-        this = ((void*) ptr < state->end) ?
+        thisp = ((void*) ptr < state->end) ?
             SRE_LOC_IS_WORD((int) ptr[0]) : 0;
-        return this == that;
+        return thisp == thatp;
 
 #if defined(HAVE_UNICODE)
     case SRE_AT_UNI_BOUNDARY:
         if (state->beginning == state->end)
             return 0;
-        that = ((void*) ptr > state->beginning) ?
+        thatp = ((void*) ptr > state->beginning) ?
             SRE_UNI_IS_WORD((int) ptr[-1]) : 0;
-        this = ((void*) ptr < state->end) ?
+        thisp = ((void*) ptr < state->end) ?
             SRE_UNI_IS_WORD((int) ptr[0]) : 0;
-        return this != that;
+        return thisp != thatp;
 
     case SRE_AT_UNI_NON_BOUNDARY:
         if (state->beginning == state->end)
             return 0;
-        that = ((void*) ptr > state->beginning) ?
+        thatp = ((void*) ptr > state->beginning) ?
             SRE_UNI_IS_WORD((int) ptr[-1]) : 0;
-        this = ((void*) ptr < state->end) ?
+        thisp = ((void*) ptr < state->end) ?
             SRE_UNI_IS_WORD((int) ptr[0]) : 0;
-        return this == that;
+        return thisp == thatp;
 #endif
 
     }
@@ -516,8 +516,8 @@ LOCAL(int)
 SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, int maxcount)
 {
     SRE_CODE chr;
-    SRE_CHAR* ptr = state->ptr;
-    SRE_CHAR* end = state->end;
+    SRE_CHAR* ptr = (SRE_CHAR *)state->ptr;
+    SRE_CHAR* end = (SRE_CHAR *)state->end;
     int i;
 
     /* adjust end */
@@ -803,7 +803,7 @@ typedef struct {
 LOCAL(int)
 SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 {
-    SRE_CHAR* end = state->end;
+    SRE_CHAR* end = (SRE_CHAR *)state->end;
     int alloc_pos, ctx_pos = -1;
     int i, ret = 0;
     int jump;
@@ -821,7 +821,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 
 entrance:
 
-    ctx->ptr = state->ptr;
+    ctx->ptr = (SRE_CHAR *)state->ptr;
 
     if (ctx->pattern[0] == SRE_OP_INFO) {
         /* optimization info block */
@@ -1477,8 +1477,8 @@ exit:
 LOCAL(int)
 SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 {
-    SRE_CHAR* ptr = state->start;
-    SRE_CHAR* end = state->end;
+    SRE_CHAR* ptr = (SRE_CHAR *)state->start;
+    SRE_CHAR* end = (SRE_CHAR *)state->end;
     int status = 0;
     int prefix_len = 0;
     int prefix_skip = 0;
@@ -1524,7 +1524,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
         /* pattern starts with a known prefix.  use the overlap
            table to skip forward as fast as we possibly can */
         int i = 0;
-        end = state->end;
+        end = (SRE_CHAR *)state->end;
         while (ptr < end) {
             for (;;) {
                 if ((SRE_CODE) ptr[0] != prefix[i]) {
@@ -1559,7 +1559,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
         /* pattern starts with a literal character.  this is used
            for short prefixes, and if fast search is disabled */
         SRE_CODE chr = pattern[1];
-        end = state->end;
+        end = (SRE_CHAR *)state->end;
         for (;;) {
             while (ptr < end && (SRE_CODE) ptr[0] != chr)
                 ptr++;
@@ -1576,7 +1576,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
         }
     } else if (charset) {
         /* pattern starts with a character from a known set */
-        end = state->end;
+        end = (SRE_CHAR *)state->end;
         for (;;) {
             while (ptr < end && !SRE_CHARSET(charset, ptr[0]))
                 ptr++;
@@ -1619,72 +1619,8 @@ SRE_LITERAL_TEMPLATE(SRE_CHAR* ptr, int len)
 /* factories and destructors */
 
 /* see sre.h for object declarations */
-
-static PyTypeObject Pattern_Type;
-static PyTypeObject Match_Type;
-static PyTypeObject Scanner_Type;
-
-static PyObject *
-_compile(PyObject* self_, PyObject* args)
-{
-    /* "compile" pattern descriptor to pattern object */
-
-    PatternObject* self;
-    int i, n;
-
-    PyObject* pattern;
-    int flags = 0;
-    PyObject* code;
-    int groups = 0;
-    PyObject* groupindex = NULL;
-    PyObject* indexgroup = NULL;
-    if (!PyArg_ParseTuple(args, "OiO!|iOO", &pattern, &flags,
-                          &PyList_Type, &code, &groups,
-                          &groupindex, &indexgroup))
-        return NULL;
-
-    n = PyList_GET_SIZE(code);
-
-    self = PyObject_NEW_VAR(PatternObject, &Pattern_Type, n);
-    if (!self)
-        return NULL;
-
-    self->codesize = n;
-
-    for (i = 0; i < n; i++) {
-        PyObject *o = PyList_GET_ITEM(code, i);
-        unsigned long value = PyInt_Check(o) ? (unsigned long)PyInt_AsLong(o)
-                                              : PyLong_AsUnsignedLong(o);
-        self->code[i] = (SRE_CODE) value;
-        if ((unsigned long) self->code[i] != value) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "regular expression code size limit exceeded");
-            break;
-        }
-    }
-
-    if (PyErr_Occurred()) {
-        PyObject_DEL(self);
-        return NULL;
-    }
-
-    Py_INCREF(pattern);
-    self->pattern = pattern;
-
-    self->flags = flags;
-
-    self->groups = groups;
-
-    Py_XINCREF(groupindex);
-    self->groupindex = groupindex;
-
-    Py_XINCREF(indexgroup);
-    self->indexgroup = indexgroup;
-
-    self->weakreflist = NULL;
-
-    return (PyObject*) self;
-}
+static PyObject*pattern_new_match(PatternObject*, SRE_STATE*, int);
+static PyObject*pattern_scanner(PatternObject*, PyObject*);
 
 static PyObject *
 sre_codesize(PyObject* self, PyObject* args)
@@ -1898,98 +1834,6 @@ pattern_error(int status)
             "internal error in regular expression engine"
             );
     }
-}
-
-static PyObject*
-pattern_new_match(PatternObject* pattern, SRE_STATE* state, int status)
-{
-    /* create match object (from state object) */
-
-    MatchObject* match;
-    int i, j;
-    char* base;
-    int n;
-
-    if (status > 0) {
-
-        /* create match object (with room for extra group marks) */
-        match = PyObject_NEW_VAR(MatchObject, &Match_Type,
-                                 2*(pattern->groups+1));
-        if (!match)
-            return NULL;
-
-        Py_INCREF(pattern);
-        match->pattern = pattern;
-
-        Py_INCREF(state->string);
-        match->string = state->string;
-
-        match->regs = NULL;
-        match->groups = pattern->groups+1;
-
-        /* fill in group slices */
-
-        base = (char*) state->beginning;
-        n = state->charsize;
-
-        match->mark[0] = ((char*) state->start - base) / n;
-        match->mark[1] = ((char*) state->ptr - base) / n;
-
-        for (i = j = 0; i < pattern->groups; i++, j+=2)
-            if (j+1 <= state->lastmark && state->mark[j] && state->mark[j+1]) {
-                match->mark[j+2] = ((char*) state->mark[j] - base) / n;
-                match->mark[j+3] = ((char*) state->mark[j+1] - base) / n;
-            } else
-                match->mark[j+2] = match->mark[j+3] = -1; /* undefined */
-
-        match->pos = state->pos;
-        match->endpos = state->endpos;
-
-        match->lastindex = state->lastindex;
-
-        return (PyObject*) match;
-
-    } else if (status == 0) {
-
-        /* no match */
-        Py_INCREF(Py_None);
-        return Py_None;
-
-    }
-
-    /* internal error */
-    pattern_error(status);
-    return NULL;
-}
-
-static PyObject*
-pattern_scanner(PatternObject* pattern, PyObject* args)
-{
-    /* create search state object */
-
-    ScannerObject* self;
-
-    PyObject* string;
-    int start = 0;
-    int end = INT_MAX;
-    if (!PyArg_ParseTuple(args, "O|ii:scanner", &string, &start, &end))
-        return NULL;
-
-    /* create scanner object */
-    self = PyObject_NEW(ScannerObject, &Scanner_Type);
-    if (!self)
-        return NULL;
-
-    string = state_init(&self->state, pattern, string, start, end);
-    if (!string) {
-        PyObject_DEL(self);
-        return NULL;
-    }
-
-    Py_INCREF(pattern);
-    self->pattern = (PyObject*) pattern;
-
-    return (PyObject*) self;
 }
 
 static void
@@ -2414,7 +2258,7 @@ error:
 }
 
 static PyObject*
-pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
+pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
              int count, int subn)
 {
     SRE_STATE state;
@@ -2429,15 +2273,15 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
     int i, b, e;
     int filter_is_callable;
 
-    if (PyCallable_Check(template)) {
+    if (PyCallable_Check(ptemplate)) {
         /* sub/subn takes either a function or a template */
-        filter = template;
+        filter = ptemplate;
         Py_INCREF(filter);
         filter_is_callable = 1;
     } else {
         /* if not callable, check if it's a literal string */
         int literal;
-        ptr = getstring(template, &n, &b);
+        ptr = getstring(ptemplate, &n, &b);
         if (ptr) {
             if (b == 1) {
                 literal = sre_literal_template(ptr, n);
@@ -2451,14 +2295,14 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
             literal = 0;
         }
         if (literal) {
-            filter = template;
+            filter = ptemplate;
             Py_INCREF(filter);
             filter_is_callable = 0;
         } else {
             /* not a literal; hand it over to the template compiler */
             filter = call(
                 SRE_PY_MODULE, "_subx",
-                PyTuple_Pack(2, self, template)
+                PyTuple_Pack(2, self, ptemplate)
                 );
             if (!filter)
                 return NULL;
@@ -2597,29 +2441,29 @@ error:
 static PyObject*
 pattern_sub(PatternObject* self, PyObject* args, PyObject* kw)
 {
-    PyObject* template;
+    PyObject* ptemplate;
     PyObject* string;
     int count = 0;
     static char* kwlist[] = { "repl", "string", "count", NULL };
     if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|i:sub", kwlist,
-                                     &template, &string, &count))
+                                     &ptemplate, &string, &count))
         return NULL;
 
-    return pattern_subx(self, template, string, count, 0);
+    return pattern_subx(self, ptemplate, string, count, 0);
 }
 
 static PyObject*
 pattern_subn(PatternObject* self, PyObject* args, PyObject* kw)
 {
-    PyObject* template;
+    PyObject* ptemplate;
     PyObject* string;
     int count = 0;
     static char* kwlist[] = { "repl", "string", "count", NULL };
     if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|i:subn", kwlist,
-                                     &template, &string, &count))
+                                     &ptemplate, &string, &count))
         return NULL;
 
-    return pattern_subx(self, template, string, count, 1);
+    return pattern_subx(self, ptemplate, string, count, 1);
 }
 
 static PyObject*
@@ -2799,6 +2643,68 @@ statichere PyTypeObject Pattern_Type = {
     offsetof(PatternObject, weakreflist),	/* tp_weaklistoffset */
 };
 
+static PyObject *
+_compile(PyObject* self_, PyObject* args)
+{
+    /* "compile" pattern descriptor to pattern object */
+
+    PatternObject* self;
+    int i, n;
+
+    PyObject* pattern;
+    int flags = 0;
+    PyObject* code;
+    int groups = 0;
+    PyObject* groupindex = NULL;
+    PyObject* indexgroup = NULL;
+    if (!PyArg_ParseTuple(args, "OiO!|iOO", &pattern, &flags,
+                          &PyList_Type, &code, &groups,
+                          &groupindex, &indexgroup))
+        return NULL;
+
+    n = PyList_GET_SIZE(code);
+
+    self = PyObject_NEW_VAR(PatternObject, &Pattern_Type, n);
+    if (!self)
+        return NULL;
+
+    self->codesize = n;
+
+    for (i = 0; i < n; i++) {
+        PyObject *o = PyList_GET_ITEM(code, i);
+        unsigned long value = PyInt_Check(o) ? (unsigned long)PyInt_AsLong(o)
+                                              : PyLong_AsUnsignedLong(o);
+        self->code[i] = (SRE_CODE) value;
+        if ((unsigned long) self->code[i] != value) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "regular expression code size limit exceeded");
+            break;
+        }
+    }
+
+    if (PyErr_Occurred()) {
+        PyObject_DEL(self);
+        return NULL;
+    }
+
+    Py_INCREF(pattern);
+    self->pattern = pattern;
+
+    self->flags = flags;
+
+    self->groups = groups;
+
+    Py_XINCREF(groupindex);
+    self->groupindex = groupindex;
+
+    Py_XINCREF(indexgroup);
+    self->indexgroup = indexgroup;
+
+    self->weakreflist = NULL;
+
+    return (PyObject*) self;
+}
+
 /* -------------------------------------------------------------------- */
 /* match methods */
 
@@ -2868,14 +2774,14 @@ match_getslice(MatchObject* self, PyObject* index, PyObject* def)
 static PyObject*
 match_expand(MatchObject* self, PyObject* args)
 {
-    PyObject* template;
-    if (!PyArg_ParseTuple(args, "O:expand", &template))
+    PyObject* ptemplate;
+    if (!PyArg_ParseTuple(args, "O:expand", &ptemplate))
         return NULL;
 
     /* delegate to Python code */
     return call(
         SRE_PY_MODULE, "_expand",
-        PyTuple_Pack(3, self->pattern, self, template)
+        PyTuple_Pack(3, self->pattern, self, ptemplate)
         );
 }
 
@@ -3262,6 +3168,69 @@ statichere PyTypeObject Match_Type = {
     (getattrfunc)match_getattr /*tp_getattr*/
 };
 
+static PyObject*
+pattern_new_match(PatternObject* pattern, SRE_STATE* state, int status)
+{
+    /* create match object (from state object) */
+
+    MatchObject* match;
+    int i, j;
+    char* base;
+    int n;
+
+    if (status > 0) {
+
+        /* create match object (with room for extra group marks) */
+        match = PyObject_NEW_VAR(MatchObject, &Match_Type,
+                                 2*(pattern->groups+1));
+        if (!match)
+            return NULL;
+
+        Py_INCREF(pattern);
+        match->pattern = pattern;
+
+        Py_INCREF(state->string);
+        match->string = state->string;
+
+        match->regs = NULL;
+        match->groups = pattern->groups+1;
+
+        /* fill in group slices */
+
+        base = (char*) state->beginning;
+        n = state->charsize;
+
+        match->mark[0] = ((char*) state->start - base) / n;
+        match->mark[1] = ((char*) state->ptr - base) / n;
+
+        for (i = j = 0; i < pattern->groups; i++, j+=2)
+            if (j+1 <= state->lastmark && state->mark[j] && state->mark[j+1]) {
+                match->mark[j+2] = ((char*) state->mark[j] - base) / n;
+                match->mark[j+3] = ((char*) state->mark[j+1] - base) / n;
+            } else
+                match->mark[j+2] = match->mark[j+3] = -1; /* undefined */
+
+        match->pos = state->pos;
+        match->endpos = state->endpos;
+
+        match->lastindex = state->lastindex;
+
+        return (PyObject*) match;
+
+    } else if (status == 0) {
+
+        /* no match */
+        Py_INCREF(Py_None);
+        return Py_None;
+
+    }
+
+    /* internal error */
+    pattern_error(status);
+    return NULL;
+}
+
+
 /* -------------------------------------------------------------------- */
 /* scanner methods (experimental) */
 
@@ -3371,6 +3340,36 @@ statichere PyTypeObject Scanner_Type = {
     0, /*tp_print*/
     (getattrfunc)scanner_getattr, /*tp_getattr*/
 };
+
+static PyObject*
+pattern_scanner(PatternObject* pattern, PyObject* args)
+{
+    /* create search state object */
+
+    ScannerObject* self;
+
+    PyObject* string;
+    int start = 0;
+    int end = INT_MAX;
+    if (!PyArg_ParseTuple(args, "O|ii:scanner", &string, &start, &end))
+        return NULL;
+
+    /* create scanner object */
+    self = PyObject_NEW(ScannerObject, &Scanner_Type);
+    if (!self)
+        return NULL;
+
+    string = state_init(&self->state, pattern, string, start, end);
+    if (!string) {
+        PyObject_DEL(self);
+        return NULL;
+    }
+
+    Py_INCREF(pattern);
+    self->pattern = (PyObject*) pattern;
+
+    return (PyObject*) self;
+}
 
 static PyMethodDef _functions[] = {
     {"compile", _compile, METH_VARARGS},
