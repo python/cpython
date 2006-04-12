@@ -12,74 +12,50 @@ warnings.filterwarnings("ignore",
 from test.test_support import verbose
 
 import BaseHTTPServer
+import DocXMLRPCServer
 import CGIHTTPServer
-import Queue
 import SimpleHTTPServer
-import SocketServer
+import SimpleXMLRPCServer
 import aifc
-import anydbm
 import audiodev
 import bdb
+import cgitb
 import cmd
 import code
-import codeop
-import colorsys
-import commands
 import compileall
-try:
-    import curses   # not available on Windows
-except ImportError:
-    if verbose:
-        print "skipping curses"
-import dircache
-import dis
-import distutils
-import doctest
-import dumbdbm
 import encodings
-import fnmatch
 import formatter
-import fpformat
 import ftplib
 import getpass
-import glob
 import gopherlib
 import htmlentitydefs
-import htmllib
-import httplib
-import imaplib
+import ihooks
 import imghdr
 import imputil
 import keyword
-import macpath
+import linecache
 import macurl2path
 import mailcap
-import mhlib
-import mimetypes
 import mimify
-import multifile
 import mutex
 import nntplib
 import nturl2path
+import opcode
+import os2emxpath
 import pdb
 import pipes
 #import poplib
 import posixfile
-import profile
 import pstats
 import py_compile
-import repr
+import pydoc
+import rexec
 try:
     import rlcompleter   # not available on Windows
 except ImportError:
     if verbose:
         print "skipping rlcompleter"
-import robotparser
 import sched
-import sgmllib
-import shelve
-import shlex
-import shutil
 import smtplib
 import sndhdr
 import statvfs
@@ -89,12 +65,12 @@ import sunaudio
 import symbol
 import tabnanny
 import telnetlib
-import test
+import timeit
 import toaiff
-import urllib2
+import token
+import tty
 # Can't test the "user" module -- if the user has a ~/.pythonrc.py, it
 # can screw up all sorts of things (esp. if it prints!).
 #import user
 import webbrowser
-import whichdb
 import xml
