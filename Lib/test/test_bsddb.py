@@ -14,7 +14,7 @@ class TestBSDDB(unittest.TestCase):
     openflag = 'c'
 
     def setUp(self):
-        self.f = self.openmethod[0](self.fname, self.openflag)
+        self.f = self.openmethod[0](self.fname, self.openflag, cachesize=32768)
         self.d = dict(q='Guido', w='van', e='Rossum', r='invented', t='Python', y='')
         for k, v in self.d.iteritems():
             self.f[k] = v
