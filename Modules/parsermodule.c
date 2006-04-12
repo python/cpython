@@ -1326,7 +1326,7 @@ validate_gen_for(node *tree)
     return res;
 }
 
-/*  list_if:  'if' test [list_iter]
+/*  list_if:  'if' old_test [list_iter]
  */
 static int
 validate_list_if(node *tree)
@@ -1341,12 +1341,12 @@ validate_list_if(node *tree)
 
     if (res)
         res = (validate_name(CHILD(tree, 0), "if")
-               && validate_test(CHILD(tree, 1)));
+               && validate_old_test(CHILD(tree, 1)));
 
     return res;
 }
 
-/*  gen_if:  'if' test [gen_iter]
+/*  gen_if:  'if' old_test [gen_iter]
  */
 static int
 validate_gen_if(node *tree)
@@ -1361,7 +1361,7 @@ validate_gen_if(node *tree)
     
     if (res)
         res = (validate_name(CHILD(tree, 0), "if")
-               && validate_test(CHILD(tree, 1)));
+               && validate_old_test(CHILD(tree, 1)));
 
     return res;
 }
