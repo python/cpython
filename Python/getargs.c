@@ -6,6 +6,9 @@
 #include <ctype.h>
 
 
+#ifdef __cplusplus
+extern "C" { 
+#endif
 int PyArg_Parse(PyObject *, const char *, ...);
 int PyArg_ParseTuple(PyObject *, const char *, ...);
 int PyArg_VaParse(PyObject *, const char *, va_list);
@@ -1742,3 +1745,6 @@ _PyArg_NoKeywords(const char *funcname, PyObject *kw)
 			funcname);
 	return 0;
 }
+#ifdef __cplusplus
+};
+#endif
