@@ -227,7 +227,8 @@ PySymtable_Build(mod_ty mod, const char *filename, PyFutureFeatures *future)
 	case Module_kind:
 		seq = mod->v.Module.body;
 		for (i = 0; i < asdl_seq_LEN(seq); i++)
-			if (!symtable_visit_stmt(st, asdl_seq_GET(seq, i)))
+			if (!symtable_visit_stmt(st, 
+                                    (stmt_ty)asdl_seq_GET(seq, i)))
 				goto error;
 		break;
 	case Expression_kind:
@@ -237,7 +238,8 @@ PySymtable_Build(mod_ty mod, const char *filename, PyFutureFeatures *future)
 	case Interactive_kind:
 		seq = mod->v.Interactive.body;
 		for (i = 0; i < asdl_seq_LEN(seq); i++)
-			if (!symtable_visit_stmt(st, asdl_seq_GET(seq, i)))
+			if (!symtable_visit_stmt(st, 
+                                    (stmt_ty)asdl_seq_GET(seq, i)))
 				goto error;
 		break;
 	case Suite_kind:
@@ -506,7 +508,7 @@ check_unoptimized(const PySTEntryObject* ste) {
 */
 static int
 update_symbols(PyObject *symbols, PyObject *scope, 
-               PyObject *bound, PyObject *free, int class)
+               PyObject *bound, PyObject *free, int classflag)
 {
 	PyObject *name, *v, *u, *w, *free_value = NULL;
 	Py_ssize_t pos = 0;
@@ -541,7 +543,7 @@ update_symbols(PyObject *symbols, PyObject *scope,
 			   the class that has the same name as a local
 			   or global in the class scope.
 			*/
-			if  (class && 
+			if  (classflag && 
 			     PyInt_AS_LONG(o) & (DEF_BOUND | DEF_GLOBAL)) {
 				long i = PyInt_AS_LONG(o) | DEF_FREE_CLASS;
 				o = PyInt_FromLong(i);
@@ -851,7 +853,7 @@ error:
 	int i; \
 	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
 	for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-		TYPE ## _ty elt = asdl_seq_GET(seq, i); \
+		TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
 		if (!symtable_visit_ ## TYPE((ST), elt)) \
 			return 0; \
 	} \
@@ -861,7 +863,7 @@ error:
 	int i; \
 	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
 	for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-		TYPE ## _ty elt = asdl_seq_GET(seq, i); \
+		TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
 		if (!symtable_visit_ ## TYPE((ST), elt)) { \
 			symtable_exit_block((ST), (S)); \
 			return 0; \
@@ -873,7 +875,7 @@ error:
 	int i; \
 	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
 	for (i = (START); i < asdl_seq_LEN(seq); i++) { \
-		TYPE ## _ty elt = asdl_seq_GET(seq, i); \
+		TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
 		if (!symtable_visit_ ## TYPE((ST), elt)) \
 			return 0; \
 	} \
@@ -883,7 +885,7 @@ error:
 	int i; \
 	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
 	for (i = (START); i < asdl_seq_LEN(seq); i++) { \
-		TYPE ## _ty elt = asdl_seq_GET(seq, i); \
+		TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
 		if (!symtable_visit_ ## TYPE((ST), elt)) { \
 			symtable_exit_block((ST), (S)); \
 			return 0; \
@@ -1036,7 +1038,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 		int i;
 		asdl_seq *seq = s->v.Global.names;
 		for (i = 0; i < asdl_seq_LEN(seq); i++) {
-			identifier name = asdl_seq_GET(seq, i);
+			identifier name = (identifier)asdl_seq_GET(seq, i);
 			char *c_name = PyString_AS_STRING(name);
 			long cur = symtable_lookup(st, name);
 			if (cur < 0)
@@ -1200,7 +1202,7 @@ symtable_visit_params(struct symtable *st, asdl_seq *args, int toplevel)
 	
         /* go through all the toplevel arguments first */
 	for (i = 0; i < asdl_seq_LEN(args); i++) {
-		expr_ty arg = asdl_seq_GET(args, i);
+		expr_ty arg = (expr_ty)asdl_seq_GET(args, i);
 		if (arg->kind == Name_kind) {
 			assert(arg->v.Name.ctx == Param ||
                                (arg->v.Name.ctx == Store && !toplevel));
@@ -1236,7 +1238,7 @@ symtable_visit_params_nested(struct symtable *st, asdl_seq *args)
 {
 	int i;
 	for (i = 0; i < asdl_seq_LEN(args); i++) {
-		expr_ty arg = asdl_seq_GET(args, i);
+		expr_ty arg = (expr_ty)asdl_seq_GET(args, i);
 		if (arg->kind == Tuple_kind &&
 		    !symtable_visit_params(st, arg->v.Tuple.elts, 0))
 			return 0;
