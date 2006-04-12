@@ -1453,6 +1453,23 @@ actually drop when you delete them, and the memory may be returned to
 the operating system.  (Implemented by Evan Jones, and reworked by Tim
 Peters.)
 
+Note that this change means extension modules need to be more careful
+with how they allocate memory.  Python's API has a number of different
+functions for allocating memory that are grouped into families.  For
+example, \cfunction{PyMem_Malloc()}, \cfunction{PyMem_Realloc()}, and
+\cfunction{PyMem_Free()} are one family that allocates raw memory,
+while \cfunction{PyObject_Malloc()}, \cfunction{PyObject_Realloc()},
+and \cfunction{PyObject_Free()} are another family that's supposed to
+be used for creating Python objects.  
+
+Previously these different families all reduced to the platform's
+\cfunction{malloc()} and \cfunction{free()} functions.  This meant 
+it didn't matter if you got things wrong and allocated memory with the
+\cfunction{PyMem} function but freed it with the \cfunction{PyObject}
+function.  With the obmalloc change, these families now do different
+things, and mismatches will probably result in a segfault.  You should
+carefully test your C extension modules with Python 2.5.
+
 \item Coverity, a company that markets a source code analysis tool
   called Prevent, provided the results of their examination of the Python
   source code.  The analysis found a number of refcounting bugs, often
@@ -1471,6 +1488,21 @@ changes to your code:
 \begin{itemize}
 
 \item The \module{pickle} module no longer uses the deprecated \var{bin} parameter.
+
+\item C API: Many functions now use \ctype{Py_ssize_t} 
+instead of \ctype{int} to allow processing more data 
+on 64-bit machines.  Extension code may need to make 
+the same change to avoid warnings and to support 64-bit machines.
+See the earlier
+section~ref{section-353} for a discussion of this change.
+
+\item C API: 
+The obmalloc changes mean that 
+you must be careful to not mix usage 
+of the \cfunction{PyMem_*()} and \cfunction{PyObject_*()}
+families of functions. Memory allocated with 
+one family's \cfunction{*_Malloc()} must be 
+freed with the corresponding family's \cfunction{*_Free()} function.
 
 \end{itemize}
 
