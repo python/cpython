@@ -23,6 +23,10 @@ Extension Modules
 Library
 -------
 
+- Patch #860326: traceback.format_exception_only() now prepends the
+  exception's module name to non-builtin exceptions, like the interpreter
+  itself does.
+
 - The email module's parsedate_tz function now sets the daylight savings
   flag to -1 (unknown) since it can't tell from the date whether it should
   be set.

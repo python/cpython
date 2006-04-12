@@ -159,6 +159,10 @@ def format_exception_only(etype, value):
     list = []
     if type(etype) == types.ClassType:
         stype = etype.__name__
+        if not hasattr(etype, '__module__'):
+            stype = '<unknown>.' + stype
+        elif etype.__module__ != 'exceptions':
+            stype = etype.__module__ + '.' + stype
     else:
         stype = etype
     if value is None:
