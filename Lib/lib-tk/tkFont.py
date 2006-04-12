@@ -117,7 +117,9 @@ class Font:
         try:
             if self.delete_font:
                 self._call("font", "delete", self.name)
-        except (AttributeError, Tkinter.TclError):
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
             pass
 
     def copy(self):
