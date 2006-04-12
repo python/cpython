@@ -5,7 +5,8 @@
 % Fix XXX comments
 % The easy_install stuff
 % Stateful codec changes
-% ASCII is now default encoding for modules
+% Write ctypes examples
+% Count up the patches and bugs
 
 \title{What's New in Python 2.5}
 \release{0.1}
@@ -53,7 +54,7 @@ supplying the \programopt{--sign} and
 \begin{seealso}
 
 \seepep{243}{Module Repository Upload Mechanism}{PEP written by
-Sean Reifschneider; implemented by Martin von L\"owis
+Sean Reifschneider; implemented by Martin von~L\"owis
 and Richard Jones.  Note that the PEP doesn't exactly 
 describe what's implemented in PyPI.}
 
@@ -783,7 +784,7 @@ platforms.
 
 \begin{seealso}
 
-\seepep{353}{Using ssize_t as the index type}{PEP written and implemented by Martin von L\"owis.}
+\seepep{353}{Using ssize_t as the index type}{PEP written and implemented by Martin von~L\"owis.}
 
 \end{seealso}
 
@@ -867,6 +868,17 @@ returned by the iterator is true; otherwise it will return
 \constant{False}.  \function{all()} returns \constant{True} only if
 all of the values returned by the iterator evaluate as being true.
 (Suggested by GvR, and implemented by Raymond Hettinger.)
+
+\item ASCII is now the default encoding for modules.  It's now 
+a syntax error if a module contains string literals with 8-bit
+characters but doesn't have an encoding declaration.  In Python 2.4
+this triggered a warning, not a syntax error.  See \pep{263} 
+for how to declare a module's encoding; for example, you might add 
+a line like this near the top of the source file:
+
+\begin{verbatim}
+# -*- coding: latin1 -*-
+\end{verbatim}
 
 \item The list of base classes in a class definition can now be empty.  
 As an example, this is now legal:
@@ -1056,7 +1068,7 @@ Socket objects also gained accessor methods \method{getfamily()},
 family, type, and protocol values for the socket.
 
 \item New module: \module{spwd} provides functions for accessing the
-shadow password database on systems that support it.  
+shadow password database on systems that support it.
 % XXX give example
 
 % XXX patch #1382163: sys.subversion,  Py_GetBuildNumber()
@@ -1094,8 +1106,6 @@ by some specifications, so it's still available as
 
 %======================================================================
 % whole new modules get described in subsections here
-
-% XXX new distutils features: upload
 
 \subsection{The ctypes package}
 
@@ -1405,14 +1415,16 @@ the parse tree is converted to an abstract syntax tree (or AST), and it is
 the abstract syntax tree that's traversed to produce the bytecode.
 
 It's possible for Python code to obtain AST objects by using the 
-\function{compile()} built-in and specifying 0x400 as the value of the 
+\function{compile()} built-in and specifying \code{_ast.PyCF_ONLY_AST}
+as the value of the 
 \var{flags} parameter:
 
 \begin{verbatim}
+from _ast import PyCF_ONLY_AST
 ast = compile("""a=0
 for i in range(10):
     a += i
-""", "<string>", 'exec', 0x0400)
+""", "<string>", 'exec', PyCF_ONLY_AST)
 
 assignment = ast.body[0]
 for_loop = ast.body[1]
@@ -1512,6 +1524,11 @@ changes to your code:
 
 \begin{itemize}
 
+\item ASCII is now the default encoding for modules.  It's now 
+a syntax error if a module contains string literals with 8-bit
+characters but doesn't have an encoding declaration.  In Python 2.4
+this triggered a warning, not a syntax error.
+
 \item The \module{pickle} module no longer uses the deprecated \var{bin} parameter.
 
 \item C API: Many functions now use \ctype{Py_ssize_t} 
@@ -1537,6 +1554,6 @@ freed with the corresponding family's \cfunction{*_Free()} function.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Mike Rovner, Thomas Wouters.
+article: Martin von~L\"owis, Mike Rovner, Thomas Wouters.
 
 \end{document}
