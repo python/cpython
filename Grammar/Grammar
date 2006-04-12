@@ -131,11 +131,11 @@ argument: test [gen_for] | test '=' test  # Really [keyword '='] test
 
 list_iter: list_for | list_if
 list_for: 'for' exprlist 'in' testlist_safe [list_iter]
-list_if: 'if' test [list_iter]
+list_if: 'if' old_test [list_iter]
 
 gen_iter: gen_for | gen_if
 gen_for: 'for' exprlist 'in' or_test [gen_iter]
-gen_if: 'if' test [gen_iter]
+gen_if: 'if' old_test [gen_iter]
 
 testlist1: test (',' test)*
 
