@@ -217,10 +217,8 @@ gen_throw(PyGenObject *gen, PyObject *args)
 
 	/* First, check the traceback argument, replacing None with
 	   NULL. */
-	if (tb == Py_None) {
-		Py_DECREF(tb);
+	if (tb == Py_None)
 		tb = NULL;
-	}
 	else if (tb != NULL && !PyTraceBack_Check(tb)) {
 		PyErr_SetString(PyExc_TypeError,
 			"throw() third argument must be a traceback object");
