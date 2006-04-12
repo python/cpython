@@ -22,24 +22,6 @@ typedef struct {
 	PyThread_type_lock lock_lock;
 } lockobject;
 
-static PyTypeObject Locktype;
-
-static lockobject *
-newlockobject(void)
-{
-	lockobject *self;
-	self = PyObject_New(lockobject, &Locktype);
-	if (self == NULL)
-		return NULL;
-	self->lock_lock = PyThread_allocate_lock();
-	if (self->lock_lock == NULL) {
-		PyObject_Del(self);
-		self = NULL;
-		PyErr_SetString(ThreadError, "can't allocate lock");
-	}
-	return self;
-}
-
 static void
 lock_dealloc(lockobject *self)
 {
@@ -166,6 +148,22 @@ static PyTypeObject Locktype = {
 	0,				/*tp_repr*/
 };
 
+static lockobject *
+newlockobject(void)
+{
+	lockobject *self;
+	self = PyObject_New(lockobject, &Locktype);
+	if (self == NULL)
+		return NULL;
+	self->lock_lock = PyThread_allocate_lock();
+	if (self->lock_lock == NULL) {
+		PyObject_Del(self);
+		self = NULL;
+		PyErr_SetString(ThreadError, "can't allocate lock");
+	}
+	return self;
+}
+
 /* Thread-local objects */
 
 #include "structmember.h"
@@ -177,8 +175,6 @@ typedef struct {
 	PyObject *kw;
 	PyObject *dict;
 } localobject;
-
-static PyTypeObject localtype;
 
 static PyObject *
 local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
@@ -315,29 +311,6 @@ _ldict(localobject *self)
 	return ldict;
 }
 
-static PyObject *
-local_getattro(localobject *self, PyObject *name)
-{
-	PyObject *ldict, *value;
-
-	ldict = _ldict(self);
-	if (ldict == NULL) 
-		return NULL;
-
-	if (self->ob_type != &localtype)
-		/* use generic lookup for subtypes */
-		return PyObject_GenericGetAttr((PyObject *)self, name);
-
-	/* Optimization: just look in dict ourselves */
-	value = PyDict_GetItem(ldict, name);
-	if (value == NULL) 
-		/* Fall back on generic to get __class__ and __dict__ */
-		return PyObject_GenericGetAttr((PyObject *)self, name);
-
-	Py_INCREF(value);
-	return value;
-}
-
 static int
 local_setattro(localobject *self, PyObject *name, PyObject *v)
 {
@@ -367,6 +340,8 @@ static PyGetSetDef local_getset[] = {
 	 "Local-data dictionary", NULL},
 	{NULL}  /* Sentinel */
 };
+
+static PyObject *local_getattro(localobject *, PyObject *);
 
 static PyTypeObject localtype = {
 	PyObject_HEAD_INIT(NULL)
@@ -412,6 +387,28 @@ static PyTypeObject localtype = {
 	/* tp_is_gc          */ 0, /* For PyObject_IS_GC */
 };
 
+static PyObject *
+local_getattro(localobject *self, PyObject *name)
+{
+	PyObject *ldict, *value;
+
+	ldict = _ldict(self);
+	if (ldict == NULL) 
+		return NULL;
+
+	if (self->ob_type != &localtype)
+		/* use generic lookup for subtypes */
+		return PyObject_GenericGetAttr((PyObject *)self, name);
+
+	/* Optimization: just look in dict ourselves */
+	value = PyDict_GetItem(ldict, name);
+	if (value == NULL) 
+		/* Fall back on generic to get __class__ and __dict__ */
+		return PyObject_GenericGetAttr((PyObject *)self, name);
+
+	Py_INCREF(value);
+	return value;
+}
 
 /* Module functions */
 
@@ -559,6 +556,8 @@ thread_PyThread_exit_prog(PyObject *self, PyObject *args)
 	for (;;) { } /* Should not be reached */
 }
 #endif
+
+static lockobject *newlockobject(void);
 
 static PyObject *
 thread_PyThread_allocate_lock(PyObject *self)
