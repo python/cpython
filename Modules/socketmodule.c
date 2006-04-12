@@ -1098,7 +1098,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		addr = (struct sockaddr_un*)&(s->sock_addr).un;
 		if (!PyArg_Parse(args, "t#", &path, &len))
 			return 0;
-		if (len > sizeof addr->sun_path) {
+		if (len >= sizeof addr->sun_path) {
 			PyErr_SetString(socket_error,
 					"AF_UNIX path too long");
 			return 0;
