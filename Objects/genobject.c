@@ -106,7 +106,8 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
 }
 
 PyDoc_STRVAR(send_doc,
-"send(arg) -> send 'arg' into generator, return next yielded value or raise StopIteration.");
+"send(arg) -> send 'arg' into generator,\n\
+return next yielded value or raise StopIteration.");
 
 static PyObject *
 gen_send(PyGenObject *gen, PyObject *arg)
@@ -203,7 +204,8 @@ gen_del(PyObject *self)
 
 
 PyDoc_STRVAR(throw_doc,
-"throw(typ[,val[,tb]]) -> raise exception in generator, return next yielded value or raise StopIteration.");
+"throw(typ[,val[,tb]]) -> raise exception in generator,\n\
+return next yielded value or raise StopIteration.");
 
 static PyObject *
 gen_throw(PyGenObject *gen, PyObject *args) 
@@ -259,7 +261,7 @@ gen_throw(PyGenObject *gen, PyObject *args)
 			goto failed_throw;
 	}
 
-	PyErr_Restore(typ,val,tb);
+	PyErr_Restore(typ, val, tb);
 	return gen_send_ex(gen, Py_None, 1);
 
 failed_throw:
