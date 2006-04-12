@@ -5,7 +5,6 @@
 % Fix XXX comments
 % Distutils upload (PEP 243)
 % The easy_install stuff
-% Access to ASTs with compile() flag
 % Stateful codec changes
 % ASCII is now default encoding for modules
 
@@ -1379,6 +1378,20 @@ section~ref{section-353} for a discussion of this change.
 no longer generate bytecode by traversing the parse tree.  Instead
 the parse tree is converted to an abstract syntax tree (or AST), and it is 
 the abstract syntax tree that's traversed to produce the bytecode.
+
+It's possible for Python code to obtain AST objects by using the 
+\function{compile()} built-in and specifying 0x400 as the value of the 
+\var{flags} parameter:
+
+\begin{verbatim}
+ast = compile("""a=0
+for i in range(10):
+    a += i
+""", "<string>", 'exec', 0x0400)
+
+assignment = ast.body[0]
+for_loop = ast.body[1]
+\end{verbatim}
 
 No documentation has been written for the AST code yet.  To start
 learning about it, read the definition of the various AST nodes in
