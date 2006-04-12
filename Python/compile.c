@@ -1717,17 +1717,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 	int _i; \
 	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
 	for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
-		TYPE ## _ty elt = asdl_seq_GET(seq, _i); \
-		if (!compiler_visit_ ## TYPE((C), elt)) \
-			return 0; \
-	} \
-}
-
-#define VISIT_SEQ_WITH_CAST(C, TYPE, SEQ, CAST) { \
-	int _i; \
-	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
-	for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
-		TYPE ## _ty elt = (CAST)asdl_seq_GET(seq, _i); \
+		TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
 		if (!compiler_visit_ ## TYPE((C), elt)) \
 			return 0; \
 	} \
@@ -1737,19 +1727,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 	int _i; \
 	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
 	for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
-		TYPE ## _ty elt = asdl_seq_GET(seq, _i); \
-		if (!compiler_visit_ ## TYPE((C), elt)) { \
-			compiler_exit_scope(c); \
-			return 0; \
-		} \
-	} \
-}
-
-#define VISIT_SEQ_IN_SCOPE_WITH_CAST(C, TYPE, SEQ, CAST) { \
-	int _i; \
-	asdl_seq *seq = (SEQ); /* avoid variable capture */ \
-	for (_i = 0; _i < asdl_seq_LEN(seq); _i++) { \
-		TYPE ## _ty elt = (CAST)asdl_seq_GET(seq, _i); \
+		TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, _i); \
 		if (!compiler_visit_ ## TYPE((C), elt)) { \
 			compiler_exit_scope(c); \
 			return 0; \
@@ -1809,8 +1787,8 @@ compiler_mod(struct compiler *c, mod_ty mod)
 		break;
 	case Interactive_kind:
 		c->c_interactive = 1;
-		VISIT_SEQ_IN_SCOPE_WITH_CAST(c, stmt, 
-                                        mod->v.Interactive.body, stmt_ty);
+		VISIT_SEQ_IN_SCOPE(c, stmt, 
+                                        mod->v.Interactive.body);
 		break;
 	case Expression_kind:
 		VISIT_IN_SCOPE(c, expr, mod->v.Expression.body);
@@ -1971,7 +1949,7 @@ compiler_function(struct compiler *c, stmt_ty s)
 	if (!compiler_decorators(c, decos))
 		return 0;
 	if (args->defaults)
-		VISIT_SEQ_WITH_CAST(c, expr, args->defaults, expr_ty);
+		VISIT_SEQ(c, expr, args->defaults);
 	if (!compiler_enter_scope(c, s->v.FunctionDef.name, (void *)s,
 				  s->lineno))
 		return 0;
@@ -2024,7 +2002,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 	/* push the tuple of base classes on the stack */
 	n = asdl_seq_LEN(s->v.ClassDef.bases);
 	if (n > 0)
-		VISIT_SEQ_WITH_CAST(c, expr, s->v.ClassDef.bases, expr_ty);
+		VISIT_SEQ(c, expr, s->v.ClassDef.bases);
 	ADDOP_I(c, BUILD_TUPLE, n);
 	if (!compiler_enter_scope(c, s->v.ClassDef.name, (void *)s,
 				  s->lineno))
@@ -2108,7 +2086,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
 	}
 
 	if (args->defaults)
-		VISIT_SEQ_WITH_CAST(c, expr, args->defaults, expr_ty);
+		VISIT_SEQ(c, expr, args->defaults);
 	if (!compiler_enter_scope(c, name, (void *)e, e->lineno))
 		return 0;
 
@@ -2181,12 +2159,12 @@ compiler_if(struct compiler *c, stmt_ty s)
 	VISIT(c, expr, s->v.If.test);
 	ADDOP_JREL(c, JUMP_IF_FALSE, next);
 	ADDOP(c, POP_TOP);
-	VISIT_SEQ_WITH_CAST(c, stmt, s->v.If.body, stmt_ty);
+	VISIT_SEQ(c, stmt, s->v.If.body);
 	ADDOP_JREL(c, JUMP_FORWARD, end);
 	compiler_use_next_block(c, next);
 	ADDOP(c, POP_TOP);
 	if (s->v.If.orelse)
-	    VISIT_SEQ_WITH_CAST(c, stmt, s->v.If.orelse, stmt_ty);
+	    VISIT_SEQ(c, stmt, s->v.If.orelse);
 	compiler_use_next_block(c, end);
 	return 1;
 }
@@ -2209,12 +2187,12 @@ compiler_for(struct compiler *c, stmt_ty s)
 	compiler_use_next_block(c, start);
 	ADDOP_JREL(c, FOR_ITER, cleanup);
 	VISIT(c, expr, s->v.For.target);
-	VISIT_SEQ_WITH_CAST(c, stmt, s->v.For.body, stmt_ty);
+	VISIT_SEQ(c, stmt, s->v.For.body);
 	ADDOP_JABS(c, JUMP_ABSOLUTE, start);
 	compiler_use_next_block(c, cleanup);
 	ADDOP(c, POP_BLOCK);
 	compiler_pop_fblock(c, LOOP, start);
-	VISIT_SEQ_WITH_CAST(c, stmt, s->v.For.orelse, stmt_ty);
+	VISIT_SEQ(c, stmt, s->v.For.orelse);
 	compiler_use_next_block(c, end);
 	return 1;
 }
@@ -2253,7 +2231,7 @@ compiler_while(struct compiler *c, stmt_ty s)
 		ADDOP_JREL(c, JUMP_IF_FALSE, anchor);
 		ADDOP(c, POP_TOP);
 	}
-	VISIT_SEQ_WITH_CAST(c, stmt, s->v.While.body, stmt_ty);
+	VISIT_SEQ(c, stmt, s->v.While.body);
 	ADDOP_JABS(c, JUMP_ABSOLUTE, loop);
 
 	/* XXX should the two POP instructions be in a separate block
@@ -2267,7 +2245,7 @@ compiler_while(struct compiler *c, stmt_ty s)
 	}
 	compiler_pop_fblock(c, LOOP, loop);
 	if (orelse != NULL) /* what if orelse is just pass? */
-		VISIT_SEQ_WITH_CAST(c, stmt, s->v.While.orelse, stmt_ty);
+		VISIT_SEQ(c, stmt, s->v.While.orelse);
 	compiler_use_next_block(c, end);
 
 	return 1;
@@ -2348,7 +2326,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
 	compiler_use_next_block(c, body);
 	if (!compiler_push_fblock(c, FINALLY_TRY, body))
 		return 0;
-	VISIT_SEQ_WITH_CAST(c, stmt, s->v.TryFinally.body, stmt_ty);
+	VISIT_SEQ(c, stmt, s->v.TryFinally.body);
 	ADDOP(c, POP_BLOCK);
 	compiler_pop_fblock(c, FINALLY_TRY, body);
 
@@ -2356,7 +2334,7 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
 	compiler_use_next_block(c, end);
 	if (!compiler_push_fblock(c, FINALLY_END, end))
 		return 0;
-	VISIT_SEQ_WITH_CAST(c, stmt, s->v.TryFinally.finalbody, stmt_ty);
+	VISIT_SEQ(c, stmt, s->v.TryFinally.finalbody);
 	ADDOP(c, END_FINALLY);
 	compiler_pop_fblock(c, FINALLY_END, end);
 
@@ -2413,7 +2391,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 	compiler_use_next_block(c, body);
 	if (!compiler_push_fblock(c, EXCEPT, body))
 		return 0;
-	VISIT_SEQ_WITH_CAST(c, stmt, s->v.TryExcept.body, stmt_ty);
+	VISIT_SEQ(c, stmt, s->v.TryExcept.body);
 	ADDOP(c, POP_BLOCK);
 	compiler_pop_fblock(c, EXCEPT, body);
 	ADDOP_JREL(c, JUMP_FORWARD, orelse);
@@ -2444,7 +2422,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 			ADDOP(c, POP_TOP);
 		}
 		ADDOP(c, POP_TOP);
-		VISIT_SEQ_WITH_CAST(c, stmt, handler->body, stmt_ty);
+		VISIT_SEQ(c, stmt, handler->body);
 		ADDOP_JREL(c, JUMP_FORWARD, end);
 		compiler_use_next_block(c, except);
 		if (handler->type)
@@ -2452,7 +2430,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 	}
 	ADDOP(c, END_FINALLY);
 	compiler_use_next_block(c, orelse);
-	VISIT_SEQ_WITH_CAST(c, stmt, s->v.TryExcept.orelse, stmt_ty);
+	VISIT_SEQ(c, stmt, s->v.TryExcept.orelse);
 	compiler_use_next_block(c, end);
 	return 1;
 }
@@ -2672,7 +2650,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 		ADDOP(c, RETURN_VALUE);
 		break;
 	case Delete_kind:
-		VISIT_SEQ_WITH_CAST(c, expr, s->v.Delete.targets, expr_ty)
+		VISIT_SEQ(c, expr, s->v.Delete.targets)
 		break;
 	case Assign_kind:
 		n = asdl_seq_LEN(s->v.Assign.targets);
@@ -3042,7 +3020,7 @@ compiler_list(struct compiler *c, expr_ty e)
 	if (e->v.List.ctx == Store) {
 		ADDOP_I(c, UNPACK_SEQUENCE, n);
 	}
-	VISIT_SEQ_WITH_CAST(c, expr, e->v.List.elts, expr_ty);
+	VISIT_SEQ(c, expr, e->v.List.elts);
 	if (e->v.List.ctx == Load) {
 		ADDOP_I(c, BUILD_LIST, n);
 	}
@@ -3056,7 +3034,7 @@ compiler_tuple(struct compiler *c, expr_ty e)
 	if (e->v.Tuple.ctx == Store) {
 		ADDOP_I(c, UNPACK_SEQUENCE, n);
 	}
-	VISIT_SEQ_WITH_CAST(c, expr, e->v.Tuple.elts, expr_ty);
+	VISIT_SEQ(c, expr, e->v.Tuple.elts);
 	if (e->v.Tuple.ctx == Load) {
 		ADDOP_I(c, BUILD_TUPLE, n);
 	}
@@ -3117,9 +3095,9 @@ compiler_call(struct compiler *c, expr_ty e)
 
 	VISIT(c, expr, e->v.Call.func);
 	n = asdl_seq_LEN(e->v.Call.args);
-	VISIT_SEQ_WITH_CAST(c, expr, e->v.Call.args, expr_ty);
+	VISIT_SEQ(c, expr, e->v.Call.args);
 	if (e->v.Call.keywords) {
-		VISIT_SEQ_WITH_CAST(c, keyword, e->v.Call.keywords, keyword_ty);
+		VISIT_SEQ(c, keyword, e->v.Call.keywords);
 		n |= asdl_seq_LEN(e->v.Call.keywords) << 8;
 	}
 	if (e->v.Call.starargs) {
@@ -3500,7 +3478,7 @@ compiler_with(struct compiler *c, stmt_ty s)
     }
 
     /* BLOCK code */
-    VISIT_SEQ_WITH_CAST(c, stmt, s->v.With.body, stmt_ty);
+    VISIT_SEQ(c, stmt, s->v.With.body);
 
     /* End of try block; start the finally block */
     ADDOP(c, POP_BLOCK);
