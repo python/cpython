@@ -16,6 +16,14 @@
 /* Object used as dummy key to fill deleted entries */
 static PyObject *dummy = NULL; /* Initialized by first call to make_new_set() */
 
+#ifdef Py_REF_DEBUG
+PyObject *
+_PySet_Dummy(void)
+{
+	return dummy;
+}
+#endif
+
 #define INIT_NONZERO_SET_SLOTS(so) do {				\
 	(so)->table = (so)->smalltable;				\
 	(so)->mask = PySet_MINSIZE - 1;				\

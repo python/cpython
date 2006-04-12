@@ -34,7 +34,7 @@
 #else /* Py_REF_DEBUG */
 #define PRINT_TOTAL_REFS() fprintf(stderr,				\
 				   "[%" PY_FORMAT_SIZE_T "d refs]\n",	\
-				   _Py_RefTotal)
+				   _Py_GetRefTotal())
 #endif
 
 extern char *Py_GetPath(void);
