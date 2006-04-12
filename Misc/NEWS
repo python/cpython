@@ -49,6 +49,9 @@ Extension Modules
 Library
 -------
 
+- SimpleXMLRPCServer relied on the fcntl module, which is unavailable on
+  Windows. Bug #1469163.
+
 - The warnings, linecache, inspect, traceback, site, and doctest modules
   were updated to work correctly with modules imported from zipfiles or
   via other PEP 302 __loader__ objects.
