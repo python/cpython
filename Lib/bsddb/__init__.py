@@ -358,7 +358,7 @@ def _checkflag(flag, file):
         #flags = db.DB_CREATE | db.DB_TRUNCATE
         # we used db.DB_TRUNCATE flag for this before but BerkeleyDB
         # 4.2.52 changed to disallowed truncate with txn environments.
-        if os.path.isfile(file):
+        if file is not None and os.path.isfile(file):
             os.unlink(file)
     else:
         raise error, "flags should be one of 'r', 'w', 'c' or 'n'"

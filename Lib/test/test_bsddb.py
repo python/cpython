@@ -11,9 +11,10 @@ from test import test_support
 from sets import Set
 
 class TestBSDDB(unittest.TestCase):
+    openflag = 'c'
 
     def setUp(self):
-        self.f = self.openmethod[0](self.fname, 'c')
+        self.f = self.openmethod[0](self.fname, self.openflag)
         self.d = dict(q='Guido', w='van', e='Rossum', r='invented', t='Python', y='')
         for k, v in self.d.iteritems():
             self.f[k] = v
@@ -267,6 +268,11 @@ class TestBTree_InMemory(TestBSDDB):
     fname = None
     openmethod = [bsddb.btopen]
 
+class TestBTree_InMemory_Truncate(TestBSDDB):
+    fname = None
+    openflag = 'n'
+    openmethod = [bsddb.btopen]
+
 class TestHashTable(TestBSDDB):
     fname = test_support.TESTFN
     openmethod = [bsddb.hashopen]
@@ -285,6 +291,7 @@ def test_main(verbose=None):
         TestHashTable,
         TestBTree_InMemory,
         TestHashTable_InMemory,
+        TestBTree_InMemory_Truncate,
     )
 
 if __name__ == "__main__":
