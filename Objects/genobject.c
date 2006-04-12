@@ -10,7 +10,8 @@
 static int
 gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
 {
-	return visit((PyObject *)gen->gi_frame, arg);
+	Py_VISIT(gen->gi_frame);
+	return 0;
 }
 
 static void
@@ -26,7 +27,7 @@ gen_dealloc(PyGenObject *gen)
 
 	_PyObject_GC_TRACK(self);
 
-	if (gen->gi_frame->f_stacktop!=NULL) {
+	if (gen->gi_frame!=NULL && gen->gi_frame->f_stacktop!=NULL) {
 		/* Generator is paused, so we need to close */
 		gen->ob_type->tp_del(self);
 		if (self->ob_refcnt > 0)
@@ -51,7 +52,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
 				"generator already executing");
 		return NULL;
 	}
-	if ((PyObject *)f == Py_None || f->f_stacktop == NULL) {
+	if (f==NULL || f->f_stacktop == NULL) {
 		/* Only set exception if called from send() */
 		if (arg && !exc) PyErr_SetNone(PyExc_StopIteration);
 		return NULL;
@@ -98,8 +99,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
 	if (!result || f->f_stacktop == NULL) {
 		/* generator can't be rerun, so release the frame */
 		Py_DECREF(f);
-		gen->gi_frame = (PyFrameObject *)Py_None;
-		Py_INCREF(Py_None);
+		gen->gi_frame = NULL;
 	}
 
 	return result;
@@ -147,7 +147,7 @@ gen_del(PyObject *self)
         PyObject *error_type, *error_value, *error_traceback;
 	PyGenObject *gen = (PyGenObject *)self;
 
-	if ((PyObject *)gen->gi_frame == Py_None || gen->gi_frame->f_stacktop==NULL)
+	if (!gen->gi_frame || gen->gi_frame->f_stacktop==NULL)
 		/* Generator isn't paused, so no need to close */
 		return;
 
@@ -366,7 +366,7 @@ PyGen_NeedsFinalizing(PyGenObject *gen)
 	int i;
 	PyFrameObject *f = gen->gi_frame;
 
-	if ((PyObject *)f == Py_None || f->f_stacktop==NULL || f->f_iblock<=0)
+	if (f == NULL || f->f_stacktop==NULL || f->f_iblock<=0)
 		return 0; /* no frame or no blockstack == no finalization */
 
 	for (i=f->f_iblock; i>=0; i--) {
