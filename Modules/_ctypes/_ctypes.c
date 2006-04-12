@@ -548,7 +548,7 @@ PointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 	stgdict->size = sizeof(void *);
 	stgdict->align = getentry("P")->pffi_type->alignment;
-	stgdict->length = 2;
+	stgdict->length = 1;
 	stgdict->ffi_type = ffi_type_pointer;
 
 	proto = PyDict_GetItemString(typedict, "_type_"); /* Borrowed ref */
