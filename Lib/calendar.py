@@ -5,6 +5,7 @@ default, these calendars have Monday as the first day of the week, and
 Sunday as the last (the European convention). Use setfirstweekday() to
 set the first day of the week (0=Monday, 6=Sunday)."""
 
+from __future__ import with_statement
 import sys, datetime, locale
 
 __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
@@ -479,6 +480,21 @@ class HTMLCalendar(Calendar):
         return ''.join(v).encode(encoding, "xmlcharrefreplace")
 
 
+class TimeEncoding:
+    def __init__(self, locale):
+        self.locale = locale
+
+    def __context__(self):
+        return self
+
+    def __enter__(self):
+        self.oldlocale = locale.setlocale(locale.LC_TIME, self.locale)
+        return locale.getlocale(locale.LC_TIME)[1]
+
+    def __exit__(self, *args):
+        locale.setlocale(locale.LC_TIME, self.oldlocale)
+
+
 class LocaleTextCalendar(TextCalendar):
     """
     This class can be passed a locale name in the constructor and will return
@@ -494,9 +510,7 @@ class LocaleTextCalendar(TextCalendar):
         self.locale = locale
 
     def formatweekday(self, day, width):
-        oldlocale = locale.setlocale(locale.LC_TIME, self.locale)
-        try:
-            encoding = locale.getlocale(locale.LC_TIME)[1]
+        with TimeEncoding(self.locale) as encoding:
             if width >= 9:
                 names = day_name
             else:
@@ -504,24 +518,16 @@ class LocaleTextCalendar(TextCalendar):
             name = names[day]
             if encoding is not None:
                 name = name.decode(encoding)
-            result = name[:width].center(width)
-        finally:
-            locale.setlocale(locale.LC_TIME, oldlocale)
-        return result
+            return name[:width].center(width)
 
     def formatmonthname(self, theyear, themonth, width, withyear=True):
-        oldlocale = locale.setlocale(locale.LC_TIME, self.locale)
-        try:
-            encoding = locale.getlocale(locale.LC_TIME)[1]
+        with TimeEncoding(self.locale) as encoding:
             s = month_name[themonth]
             if encoding is not None:
                 s = s.decode(encoding)
             if withyear:
                 s = "%s %r" % (s, theyear)
-            result = s.center(width)
-        finally:
-            locale.setlocale(locale.LC_TIME, oldlocale)
-        return result
+            return s.center(width)
 
 
 class LocaleHTMLCalendar(HTMLCalendar):
@@ -538,30 +544,20 @@ class LocaleHTMLCalendar(HTMLCalendar):
         self.locale = locale
 
     def formatweekday(self, day):
-        oldlocale = locale.setlocale(locale.LC_TIME, self.locale)
-        try:
-            encoding = locale.getlocale(locale.LC_TIME)[1]
+        with TimeEncoding(self.locale) as encoding:
             s = day_abbr[day]
             if encoding is not None:
                 s = s.decode(encoding)
-            result = '<th class="%s">%s</th>' % (self.cssclasses[day], s)
-        finally:
-            locale.setlocale(locale.LC_TIME, oldlocale)
-        return result
+            return '<th class="%s">%s</th>' % (self.cssclasses[day], s)
 
     def formatmonthname(self, theyear, themonth, withyear=True):
-        oldlocale = locale.setlocale(locale.LC_TIME, self.locale)
-        try:
-            encoding = locale.getlocale(locale.LC_TIME)[1]
+        with TimeEncoding(self.locale) as encoding:
             s = month_name[themonth]
             if encoding is not None:
                 s = s.decode(encoding)
             if withyear:
                 s = '%s %s' % (s, theyear)
-            result = '<tr><th colspan="7" class="month">%s</th></tr>' % s
-        finally:
-            locale.setlocale(locale.LC_TIME, oldlocale)
-        return result
+            return '<tr><th colspan="7" class="month">%s</th></tr>' % s
 
 
 # Support for old module level interface
