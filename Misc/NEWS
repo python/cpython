@@ -49,6 +49,10 @@ Extension Modules
 Library
 -------
 
+- Patch #860326: traceback.format_exception_only() now prepends the
+  exception's module name to non-builtin exceptions, like the interpreter
+  itself does.
+
 - SimpleXMLRPCServer relied on the fcntl module, which is unavailable on
   Windows. Bug #1469163.
 
