@@ -5,7 +5,20 @@
 
 #ifdef Py_REF_DEBUG
 long _Py_RefTotal;
-#endif
+long
+_Py_GetRefTotal(void)
+{
+	PyObject *o;
+	long total = _Py_RefTotal;
+        /* ignore the references to the dummy object of the dicts
+           because they are not reliable and not useful (now that the
+           hash table code is well-tested) */
+	o = _PyDict_Dummy();
+	if (o != NULL)
+		total -= o->ob_refcnt;
+	return total;
+}
+#endif /* Py_REF_DEBUG */
 
 int Py_DivisionWarningFlag;
 

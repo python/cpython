@@ -379,7 +379,7 @@ Py_Finalize(void)
 #endif
 
 #ifdef Py_REF_DEBUG
-	fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
+	fprintf(stderr, "[%ld refs]\n", _Py_GetRefTotal());
 #endif
 
 #ifdef Py_TRACE_REFS
@@ -694,7 +694,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
 	for (;;) {
 		ret = PyRun_InteractiveOneFlags(fp, filename, flags);
 #ifdef Py_REF_DEBUG
-		fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
+		fprintf(stderr, "[%ld refs]\n", _Py_GetRefTotal());
 #endif
 		if (ret == E_EOF)
 			return 0;

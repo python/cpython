@@ -115,6 +115,14 @@ equally good collision statistics, needed less code & used less memory.
 /* Object used as dummy key to fill deleted entries */
 static PyObject *dummy; /* Initialized by first call to newdictobject() */
 
+#ifdef Py_REF_DEBUG
+PyObject *
+_PyDict_Dummy(void)
+{
+	return dummy;
+}
+#endif
+
 /* forward declarations */
 static dictentry *
 lookdict_string(dictobject *mp, PyObject *key, long hash);

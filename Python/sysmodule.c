@@ -604,10 +604,9 @@ sys_getrefcount(PyObject *self, PyObject *arg)
 static PyObject *
 sys_gettotalrefcount(PyObject *self)
 {
-	return PyInt_FromLong(_Py_RefTotal);
+	return PyInt_FromLong(_Py_GetRefTotal());
 }
-
-#endif /* Py_TRACE_REFS */
+#endif /* Py_REF_DEBUG */
 
 PyDoc_STRVAR(getrefcount_doc,
 "getrefcount(object) -> integer\n\
