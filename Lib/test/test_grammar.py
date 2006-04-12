@@ -815,6 +815,11 @@ x = 10; t = False; g = ((i,j) for i in range(x) if t for j in range(x))
 x = 5; t = True;
 verify([(i,j) for i in range(10) for j in range(5)] == list(g))
 
+# Grammar allows multiple adjacent 'if's in listcomps and genexps,
+# even though it's silly. Make sure it works (ifelse broke this.)
+verify([ x for x in range(10) if x % 2 if x % 3 ], [1, 5, 7])
+verify((x for x in range(10) if x % 2 if x % 3), [1, 5, 7])
+
 # Test ifelse expressions in various cases
 def _checkeval(msg, ret):
     "helper to check that evaluation of expressions is done correctly"

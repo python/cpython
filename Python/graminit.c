@@ -1678,7 +1678,7 @@ static arc arcs_77_0[1] = {
 	{91, 1},
 };
 static arc arcs_77_1[1] = {
-	{26, 2},
+	{105, 2},
 };
 static arc arcs_77_2[2] = {
 	{162, 3},
@@ -1735,7 +1735,7 @@ static arc arcs_80_0[1] = {
 	{91, 1},
 };
 static arc arcs_80_1[1] = {
-	{26, 2},
+	{105, 2},
 };
 static arc arcs_80_2[2] = {
 	{164, 3},
