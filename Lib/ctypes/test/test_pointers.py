@@ -166,6 +166,18 @@ class PointersTestCase(unittest.TestCase):
         result = func( byref(argc), argv )
         assert result == 'world', result
 
+    def test_bug_1467852(self):
+        # http://sourceforge.net/tracker/?func=detail&atid=532154&aid=1467852&group_id=71702
+        x = c_int(5)
+        dummy = []
+        for i in range(32000):
+            dummy.append(c_int(i))
+        y = c_int(6)
+        p = pointer(x)
+        pp = pointer(p)
+        q = pointer(y)
+        pp[0] = q         # <==
+        self.failUnlessEqual(p[0], 6)
 
 if __name__ == '__main__':
     unittest.main()
