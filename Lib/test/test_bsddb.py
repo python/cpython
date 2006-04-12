@@ -13,7 +13,7 @@ from sets import Set
 class TestBSDDB(unittest.TestCase):
 
     def setUp(self):
-        self.f = self.openmethod[0](self.fname, 'c')
+        self.f = self.openmethod[0](self.fname, 'c', cachesize=32768)
         self.d = dict(q='Guido', w='van', e='Rossum', r='invented', t='Python', y='')
         for k, v in self.d.iteritems():
             self.f[k] = v

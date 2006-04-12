@@ -288,10 +288,9 @@ def hashopen(file, flag='c', mode=0666, pgsize=None, ffactor=None, nelem=None,
             cachesize=None, lorder=None, hflags=0):
 
     flags = _checkflag(flag, file)
-    e = _openDBEnv()
+    e = _openDBEnv(cachesize)
     d = db.DB(e)
     d.set_flags(hflags)
-    if cachesize is not None: d.set_cachesize(0, cachesize)
     if pgsize is not None:    d.set_pagesize(pgsize)
     if lorder is not None:    d.set_lorder(lorder)
     if ffactor is not None:   d.set_h_ffactor(ffactor)
@@ -306,9 +305,8 @@ def btopen(file, flag='c', mode=0666,
             pgsize=None, lorder=None):
 
     flags = _checkflag(flag, file)
-    e = _openDBEnv()
+    e = _openDBEnv(cachesize)
     d = db.DB(e)
-    if cachesize is not None: d.set_cachesize(0, cachesize)
     if pgsize is not None: d.set_pagesize(pgsize)
     if lorder is not None: d.set_lorder(lorder)
     d.set_flags(btflags)
@@ -325,9 +323,8 @@ def rnopen(file, flag='c', mode=0666,
             rlen=None, delim=None, source=None, pad=None):
 
     flags = _checkflag(flag, file)
-    e = _openDBEnv()
+    e = _openDBEnv(cachesize)
     d = db.DB(e)
-    if cachesize is not None: d.set_cachesize(0, cachesize)
     if pgsize is not None: d.set_pagesize(pgsize)
     if lorder is not None: d.set_lorder(lorder)
     d.set_flags(rnflags)
@@ -340,8 +337,13 @@ def rnopen(file, flag='c', mode=0666,
 
 #----------------------------------------------------------------------
 
-def _openDBEnv():
+def _openDBEnv(cachesize):
     e = db.DBEnv()
+    if cachesize is not None:
+        if cachesize >= 20480:
+            e.set_cachesize(0, cachesize)
+        else:
+            raise error, "cachesize must be >= 20480"
     e.open('.', db.DB_PRIVATE | db.DB_CREATE | db.DB_THREAD | db.DB_INIT_LOCK | db.DB_INIT_MPOOL)
     return e
 
