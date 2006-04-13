@@ -3058,12 +3058,18 @@ compiler_compare(struct compiler *c, expr_ty e)
 		VISIT(c, expr, 
                         (expr_ty)asdl_seq_GET(e->v.Compare.comparators, 0));
 	}
+#ifdef __cplusplus
+#define CMPCAST (intptr_t)
+#else
+#define CMPCAST 
+#endif
 	for (i = 1; i < n; i++) {
 		ADDOP(c, DUP_TOP);
 		ADDOP(c, ROT_THREE);
 		/* XXX We're casting a void* to cmpop_ty in the next stmt. */
 		ADDOP_I(c, COMPARE_OP,
-			cmpop((cmpop_ty)asdl_seq_GET(e->v.Compare.ops, i - 1)));
+			cmpop((cmpop_ty)( CMPCAST asdl_seq_GET(
+                                                  e->v.Compare.ops, i - 1))));
 		ADDOP_JREL(c, JUMP_IF_FALSE, cleanup);
 		NEXT_BLOCK(c);
 		ADDOP(c, POP_TOP);
@@ -3074,7 +3080,8 @@ compiler_compare(struct compiler *c, expr_ty e)
 	VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Compare.comparators, n - 1));
 	ADDOP_I(c, COMPARE_OP,
 		/* XXX We're casting a void* to cmpop_ty in the next stmt. */
-	       cmpop((cmpop_ty)asdl_seq_GET(e->v.Compare.ops, n - 1)));
+	       cmpop((cmpop_ty)( CMPCAST asdl_seq_GET(e->v.Compare.ops, 
+                                                       n - 1))));
 	if (n > 1) {
 		basicblock *end = compiler_new_block(c);
 		if (end == NULL)
@@ -3087,6 +3094,7 @@ compiler_compare(struct compiler *c, expr_ty e)
 	}
 	return 1;
 }
+#undef CMPCAST
 
 static int
 compiler_call(struct compiler *c, expr_ty e)
