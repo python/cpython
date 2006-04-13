@@ -91,6 +91,11 @@
  * process to find the installed Python tree.
  */
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
+
 #ifndef VERSION
 #if defined(__VMS)
 #define VERSION "2_1"
@@ -681,3 +686,9 @@ Py_GetProgramFullPath(void)
         calculate_path();
     return progpath;
 }
+
+
+#ifdef __cplusplus
+}
+#endif
+

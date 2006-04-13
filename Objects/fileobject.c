@@ -48,6 +48,10 @@
 #define NEWLINE_LF 2		/* \n newline seen */
 #define NEWLINE_CRLF 4		/* \r\n newline seen */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 FILE *
 PyFile_AsFile(PyObject *f)
 {
@@ -2441,3 +2445,8 @@ Py_UniversalNewlineFread(char *buf, size_t n,
 	f->f_skipnextlf = skipnextlf;
 	return dst - buf;
 }
+
+#ifdef __cplusplus
+}
+#endif
+

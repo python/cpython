@@ -83,6 +83,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 */
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Free list for Unicode objects */
 static PyUnicodeObject *unicode_freelist;
 static int unicode_freelist_size;
@@ -7417,6 +7422,11 @@ _PyUnicode_Fini(void)
     unicode_freelist = NULL;
     unicode_freelist_size = 0;
 }
+
+#ifdef __cplusplus
+}
+#endif
+
 
 /*
 Local variables:

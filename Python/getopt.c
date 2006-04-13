@@ -27,6 +27,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int _PyOS_opterr = 1;          /* generate error messages */
 int _PyOS_optind = 1;          /* index into argv array   */
 char *_PyOS_optarg = NULL;     /* optional argument       */
@@ -81,3 +85,8 @@ int _PyOS_GetOpt(int argc, char **argv, char *optstring)
 
 	return option;
 }
+
+#ifdef __cplusplus
+}
+#endif
+
