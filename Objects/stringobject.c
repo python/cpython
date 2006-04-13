@@ -1332,7 +1332,7 @@ static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
 		Py_DECREF(str);
 
 static PyObject *
-split_whitespace(const char *s, Py_ssize_t len, int maxsplit)
+split_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 {
 	Py_ssize_t i, j;
 	PyObject *str;
@@ -1366,7 +1366,7 @@ split_whitespace(const char *s, Py_ssize_t len, int maxsplit)
 }
 
 static PyObject *
-split_char(const char *s, Py_ssize_t len, char ch, int maxcount)
+split_char(const char *s, Py_ssize_t len, char ch, Py_ssize_t maxcount)
 {
 	register Py_ssize_t i, j;
 	PyObject *str;
@@ -1472,7 +1472,7 @@ string_split(PyStringObject *self, PyObject *args)
 }
 
 static PyObject *
-rsplit_whitespace(const char *s, Py_ssize_t len, int maxsplit)
+rsplit_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 {
 	Py_ssize_t i, j;
 	PyObject *str;
@@ -1506,7 +1506,7 @@ rsplit_whitespace(const char *s, Py_ssize_t len, int maxsplit)
 }
 
 static PyObject *
-rsplit_char(const char *s, Py_ssize_t len, char ch, int maxcount)
+rsplit_char(const char *s, Py_ssize_t len, char ch, Py_ssize_t maxcount)
 {
 	register Py_ssize_t i, j;
 	PyObject *str;
