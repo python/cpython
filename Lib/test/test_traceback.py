@@ -5,9 +5,6 @@ from test.test_support import run_unittest, is_jython
 
 import traceback
 
-class TbError(Exception):
-    pass
-
 class TracebackCases(unittest.TestCase):
     # For now, a very minimal set of tests.  I want to be sure that
     # formatting of SyntaxErrors works based on changes for 2.1.
@@ -105,24 +102,6 @@ def test():
         except:
             import sys
             sys.exc_traceback.__members__
-
-    def raise_tberror(self):
-        raise TbError
-
-    def raise_typeerror(self):
-        raise TypeError
-
-    def test_modulename(self):
-        # Bug 860326: format_exception_only should prepend module name
-        # to exceptions not in "exceptions", like PyErr_Print does.
-        err = self.get_exception_format(self.raise_tberror, TbError)
-        self.assertEquals(len(err), 1)
-        self.assert_(err[0] == '__main__.TbError\n' or
-                     err[0] == 'test.test_traceback.TbError\n')
-
-        err = self.get_exception_format(self.raise_typeerror, TypeError)
-        self.assertEquals(err[0], 'TypeError\n')
-
 
 def test_main():
     run_unittest(TracebackCases)
