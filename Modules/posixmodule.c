@@ -22,6 +22,10 @@
 #    include <unixio.h>
 #endif /* defined(__VMS) */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 PyDoc_STRVAR(posix__doc__,
 "This module provides access to operating system functionality that is\n\
 standardized by the C Standard and the POSIX standard (a thinly\n\
@@ -8253,3 +8257,8 @@ INITFUNC(void)
 	PyModule_AddObject(m, "statvfs_result",
 			   (PyObject*) &StatVFSResultType);
 }
+
+#ifdef __cplusplus
+}
+#endif
+

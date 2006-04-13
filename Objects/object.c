@@ -3,6 +3,10 @@
 
 #include "Python.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef Py_REF_DEBUG
 Py_ssize_t _Py_RefTotal;
 
@@ -2112,3 +2116,8 @@ _PyTrash_destroy_chain(void)
 		--_PyTrash_delete_nesting;
 	}
 }
+
+#ifdef __cplusplus
+}
+#endif
+

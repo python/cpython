@@ -29,6 +29,10 @@
     "Type \"help\", \"copyright\", \"credits\" or \"license\" " \
     "for more information."
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* For Py_GetArgcArgv(); set by main() */
 static char **orig_argv;
 static int  orig_argc;
@@ -540,3 +544,8 @@ Py_GetArgcArgv(int *argc, char ***argv)
 	*argc = orig_argc;
 	*argv = orig_argv;
 }
+
+#ifdef __cplusplus
+}
+#endif
+

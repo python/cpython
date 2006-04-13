@@ -17,6 +17,9 @@
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
+#ifdef __cplusplus
+extern "C" { 
+#endif
 
 extern time_t PyOS_GetLastModificationTime(char *, FILE *);
 						/* In getmtime.c */
@@ -2947,3 +2950,7 @@ PyImport_AppendInittab(char *name, void (*initfunc)(void))
 
 	return PyImport_ExtendInittab(newtab);
 }
+
+#ifdef __cplusplus
+}
+#endif

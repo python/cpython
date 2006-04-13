@@ -37,6 +37,10 @@
 				   _Py_GetRefTotal())
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern char *Py_GetPath(void);
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
@@ -1692,3 +1696,8 @@ PyParser_SimpleParseString(const char *str, int start)
 {
 	return PyParser_SimpleParseStringFlags(str, start, 0);
 }
+
+#ifdef __cplusplus
+}
+#endif
+

@@ -6,6 +6,10 @@
 #include "Python.h"
 #include "pyconfig.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 time_t
 PyOS_GetLastModificationTime(char *path, FILE *fp)
 {
@@ -15,3 +19,8 @@ PyOS_GetLastModificationTime(char *path, FILE *fp)
 	else
 		return st.st_mtime;
 }
+
+#ifdef __cplusplus
+}
+#endif
+
