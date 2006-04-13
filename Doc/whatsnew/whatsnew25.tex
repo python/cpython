@@ -227,7 +227,16 @@ set to a URL for the package's source code.  This means it's now
 possible to look up an entry in the package index, determine the
 dependencies for a package, and download the required packages.
 
-% XXX put example here
+\begin{verbatim}
+VERSION = '1.0'
+setup(name='PyPackage', 
+      version=VERSION,
+      requires=['numarray', 'zlib (>=1.1.4)'],
+      obsoletes=['OldPackage']
+      download_url=('http://www.example.com/pypackage/dist/pkg-%s.tar.gz'
+                    % VERSION),
+     )
+\end{verbatim}
  
 \begin{seealso}
 
@@ -1070,7 +1079,18 @@ family, type, and protocol values for the socket.
 shadow password database on systems that support it.
 % XXX give example
 
-% XXX patch #1382163: sys.subversion,  Py_GetBuildNumber()
+\item The Python developers switched from CVS to Subversion during the 2.5
+development process.  Information about the exact build version is 
+available as the \code{sys.subversion} variable, a 3-tuple
+of \code{(\var{interpreter-name}, \var{branch-name}, \var{revision-range})}.
+For example, at the time of writing 
+my copy of 2.5 was reporting \code{('CPython', 'trunk', '45313:45315')}.
+
+This information is also available to C extensions via the 
+\cfunction{Py_GetBuildInfo()} function that returns a 
+string of build information like this:
+\code{"trunk:45355:45356M, Apr 13 2006, 07:42:19"}.  
+(Contributed by Barry Warsaw.)
 
 \item The \class{TarFile} class in the \module{tarfile} module now has
 an \method{extractall()} method that extracts all members from the
@@ -1106,6 +1126,7 @@ by some specifications, so it's still available as
 %======================================================================
 % whole new modules get described in subsections here
 
+%======================================================================
 \subsection{The ctypes package}
 
 The \module{ctypes} package, written by Thomas Heller, has been added 
@@ -1179,8 +1200,6 @@ Perhaps developers will begin to write
 Python wrappers atop a library accessed through \module{ctypes} instead
 of extension modules, now that \module{ctypes} is included with core Python.
 
-% XXX write introduction
-
 \begin{seealso}
 
 \seeurl{http://starship.python.net/crew/theller/ctypes/}
@@ -1188,6 +1207,8 @@ of extension modules, now that \module{ctypes} is included with core Python.
 
 \end{seealso}
 
+
+%======================================================================
 \subsection{The ElementTree package}
 
 A subset of Fredrik Lundh's ElementTree library for processing XML has
@@ -1298,6 +1319,7 @@ Please read the package's official documentation for more details.
 \end{seealso}
 
 
+%======================================================================
 \subsection{The hashlib package}
 
 A new \module{hashlib} module has been added to replace the
@@ -1346,6 +1368,7 @@ and \method{copy()} returns a new hashing object with the same digest state.
 This module was contributed by Gregory P. Smith.
 
 
+%======================================================================
 \subsection{The sqlite3 package}
 
 The pysqlite module (\url{http://www.pysqlite.org}), a wrapper for the
@@ -1524,6 +1547,13 @@ AST sprints at conferences such as PyCon.
 new set, \cfunction{PySet_Add()} and \cfunction{PySet_Discard()} to
 add and remove elements, and \cfunction{PySet_Contains} and
 \cfunction{PySet_Size} to examine the set's state.
+
+\item C code can now obtain information about the exact revision
+of the Python interpreter by calling the 
+\cfunction{Py_GetBuildInfo()} function that returns a 
+string of build information like this:
+\code{"trunk:45355:45356M, Apr 13 2006, 07:42:19"}.  
+(Contributed by Barry Warsaw.)
 
 \item The \cfunction{PyRange_New()} function was removed.  It was
 never documented, never used in the core code, and had dangerously lax
