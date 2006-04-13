@@ -1746,14 +1746,13 @@ builtin_raw_input(PyObject *self, PyObject *args)
 		}
 		else { /* strip trailing '\n' */
 			size_t len = strlen(s);
-			if (len > INT_MAX) {
+			if (len > PY_SSIZE_T_MAX) {
 				PyErr_SetString(PyExc_OverflowError,
 						"[raw_]input: input too long");
 				result = NULL;
 			}
 			else {
-				result = PyString_FromStringAndSize(s,
-								(int)(len-1));
+				result = PyString_FromStringAndSize(s, len-1);
 			}
 		}
 		PyMem_FREE(s);
