@@ -19,22 +19,18 @@ typedef enum {false, true} bool;
 
 typedef struct {
     int size;
-    union {
-        void *elements[1];
-	unsigned int enum_type[1];
-    } elt;
+    void *elements[1];
 } asdl_seq;
 
 asdl_seq *asdl_seq_new(int size, PyArena *arena);
 
-#define asdl_seq_GET(S, I) (S)->elt.elements[(I)]
-#define asdl_seq_GET_ENUM(S, I) (S)->elt.enum_type[(I)]
+#define asdl_seq_GET(S, I) (S)->elements[(I)]
 #define asdl_seq_LEN(S) ((S) == NULL ? 0 : (S)->size)
 #ifdef Py_DEBUG
 #define asdl_seq_SET(S, I, V) { \
         int _asdl_i = (I); \
         assert((S) && _asdl_i < (S)->size); \
-        (S)->elt.elements[_asdl_i] = (V); \
+        (S)->elements[_asdl_i] = (V); \
 }
 #else
 #define asdl_seq_SET(S, I, V) (S)->elements[I] = (V)
