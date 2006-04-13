@@ -5,7 +5,6 @@
 % Fix XXX comments
 % The easy_install stuff
 % Stateful codec changes
-% Write ctypes examples
 % Count up the patches and bugs
 
 \title{What's New in Python 2.5}
@@ -1111,13 +1110,83 @@ by some specifications, so it's still available as
 
 The \module{ctypes} package, written by Thomas Heller, has been added 
 to the standard library.  \module{ctypes} lets you call arbitrary functions 
-in shared libraries or DLLs.
+in shared libraries or DLLs.  Long-time users may remember the \module{dl} module, which 
+provides functions for loading shared libraries and calling functions in them.  The \module{ctypes} package is much fancier.
 
-In subsequent alpha releases of Python 2.5, I'll add a brief 
-introduction that shows some basic usage of the module.
+To load a shared library or DLL, you must create an instance of the 
+\class{CDLL} class and provide the name or path of the shared library
+or DLL.  Once that's done, you can call arbitrary functions
+by accessing them as attributes of the \class{CDLL} object.  
+
+\begin{verbatim}
+import ctypes
+
+libc = ctypes.CDLL('libc.so.6')
+result = libc.printf("Line of output\n")
+\end{verbatim}
+
+Type constructors for the various C types are provided: \function{c_int},
+\function{c_float}, \function{c_double}, \function{c_char_p} (equivalent to \ctype{char *}), and so forth.  Unlike Python's types, the C versions are all mutable; you can assign to their \member{value} attribute
+to change the wrapped value.  Python integers and strings will be automatically
+converted to the corresponding C types, but for other types you 
+must call the correct type constructor.  (And I mean \emph{must}; 
+getting it wrong will often result in the interpreter crashing 
+with a segmentation fault.)
+
+You shouldn't use \function{c_char_p} with a Python string when the C function will be modifying the memory area, because Python strings are 
+supposed to be immutable; breaking this rule will cause puzzling bugs.  When you need a modifiable memory area,
+use \function{create_string_buffer():
+
+\begin{verbatim}
+s = "this is a string"
+buf = ctypes.create_string_buffer(s)
+libc.strfry(buf)
+\end{verbatim}
+
+C functions are assumed to return integers, but you can set
+the \member{restype} attribute of the function object to 
+change this:
+
+\begin{verbatim}
+>>> libc.atof('2.71828')
+-1783957616
+>>> libc.atof.restype = ctypes.c_double
+>>> libc.atof('2.71828')
+2.71828
+\end{verbatim}
+
+\module{ctypes} also provides a wrapper for Python's C API 
+as the \code{ctypes.pythonapi} object.  This object does \emph{not} 
+release the global interpreter lock before calling a function, because the lock must be held when calling into the interpreter's code.  
+There's a \class{py_object()} type constructor that will create a 
+\ctype{PyObject *} pointer.  A simple usage:
+
+\begin{verbatim}
+import ctypes
+
+d = {}
+ctypes.pythonapi.PyObject_SetItem(ctypes.py_object(d),
+          ctypes.py_object("abc"),  ctypes.py_object(1))
+# d is now {'abc', 1}.
+\end{verbatim}
+
+Don't forget to use \class{py_object()}; if it's omitted you end 
+up with a segmentation fault.
+
+\module{ctypes} has been around for a while, but people still write 
+and distribution hand-coded extension modules because you can't rely on \module{ctypes} being present.
+Perhaps developers will begin to write 
+Python wrappers atop a library accessed through \module{ctypes} instead
+of extension modules, now that \module{ctypes} is included with core Python.
 
 % XXX write introduction
 
+\begin{seealso}
+
+\seeurl{http://starship.python.net/crew/theller/ctypes/}
+{The ctypes web page, with a tutorial, reference, and FAQ.}
+
+\end{seealso}
 
 \subsection{The ElementTree package}
 
