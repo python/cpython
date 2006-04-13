@@ -105,7 +105,7 @@ PyString_FromString(const char *str)
 
 	assert(str != NULL);
 	size = strlen(str);
-	if (size > INT_MAX) {
+	if (size > PY_SSIZE_T_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
 			"string is too long for a Python string");
 		return NULL;
@@ -814,7 +814,7 @@ PyString_Repr(PyObject *obj, int smartquotes)
 	register PyStringObject* op = (PyStringObject*) obj;
 	size_t newsize = 2 + 4 * op->ob_size;
 	PyObject *v;
-	if (newsize > INT_MAX) {
+	if (newsize > PY_SSIZE_T_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
 			"string is too large to make repr");
 	}
@@ -1414,7 +1414,7 @@ string_split(PyStringObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "|Oi:split", &subobj, &maxsplit))
 		return NULL;
 	if (maxsplit < 0)
-		maxsplit = INT_MAX;
+		maxsplit = PY_SSIZE_T_MAX;
 	if (subobj == Py_None)
 		return split_whitespace(s, len, maxsplit);
 	if (PyString_Check(subobj)) {
@@ -1555,7 +1555,7 @@ string_rsplit(PyStringObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "|Oi:rsplit", &subobj, &maxsplit))
 		return NULL;
 	if (maxsplit < 0)
-		maxsplit = INT_MAX;
+		maxsplit = PY_SSIZE_T_MAX;
 	if (subobj == Py_None)
 		return rsplit_whitespace(s, len, maxsplit);
 	if (PyString_Check(subobj)) {
@@ -1685,7 +1685,7 @@ string_join(PyStringObject *self, PyObject *orig)
 		sz += PyString_GET_SIZE(item);
 		if (i != 0)
 			sz += seplen;
-		if (sz < old_sz || sz > INT_MAX) {
+		if (sz < old_sz || sz > PY_SSIZE_T_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
 				"join() is too long for a Python string");
 			Py_DECREF(seq);
@@ -1746,7 +1746,7 @@ string_find_internal(PyStringObject *self, PyObject *args, int dir)
 {
 	const char *s = PyString_AS_STRING(self), *sub;
 	Py_ssize_t len = PyString_GET_SIZE(self);
-	Py_ssize_t n, i = 0, last = INT_MAX;
+	Py_ssize_t n, i = 0, last = PY_SSIZE_T_MAX;
 	PyObject *subobj;
 
 	/* XXX ssize_t i */
@@ -2158,7 +2158,7 @@ string_count(PyStringObject *self, PyObject *args)
 {
 	const char *s = PyString_AS_STRING(self), *sub, *t;
 	Py_ssize_t len = PyString_GET_SIZE(self), n;
-	Py_ssize_t i = 0, last = INT_MAX;
+	Py_ssize_t i = 0, last = PY_SSIZE_T_MAX;
 	Py_ssize_t m, r;
 	PyObject *subobj;
 
@@ -2446,7 +2446,7 @@ mymemreplace(const char *str, Py_ssize_t len,		/* input string */
 	/* find length of output string */
 	nfound = (pat_len > 0) ? mymemcnt(str, len, pat, pat_len) : len + 1;
 	if (count < 0)
-		count = INT_MAX;
+		count = PY_SSIZE_T_MAX;
 	else if (nfound > count)
 		nfound = count;
 	if (nfound == 0)
@@ -2595,7 +2595,7 @@ string_startswith(PyStringObject *self, PyObject *args)
 	const char* prefix;
 	Py_ssize_t plen;
 	Py_ssize_t start = 0;
-	Py_ssize_t end = INT_MAX;
+	Py_ssize_t end = PY_SSIZE_T_MAX;
 	PyObject *subobj;
 
 	if (!PyArg_ParseTuple(args, "O|O&O&:startswith", &subobj,
@@ -2646,7 +2646,7 @@ string_endswith(PyStringObject *self, PyObject *args)
 	const char* suffix;
 	Py_ssize_t slen;
 	Py_ssize_t start = 0;
-	Py_ssize_t end = INT_MAX;
+	Py_ssize_t end = PY_SSIZE_T_MAX;
 	PyObject *subobj;
 
 	if (!PyArg_ParseTuple(args, "O|O&O&:endswith", &subobj,
@@ -3701,7 +3701,7 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 	}
 	buf = PyString_AsString(result);
 	llen = PyString_Size(result);
-	if (llen > INT_MAX) {
+	if (llen > PY_SSIZE_T_MAX) {
 		PyErr_SetString(PyExc_ValueError, "string too large in _PyString_FormatLong");
 		return NULL;
 	}
