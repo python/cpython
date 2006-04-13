@@ -572,8 +572,11 @@ defined in \file{Modules/getpath.c}).
 Sometimes, it is desirable to ``uninitialize'' Python.  For instance, 
 the application may want to start over (make another call to 
 \cfunction{Py_Initialize()}) or the application is simply done with its 
-use of Python and wants to free all memory allocated by Python.  This
+use of Python and wants to free memory allocated by Python.  This
 can be accomplished by calling \cfunction{Py_Finalize()}.  The function
 \cfunction{Py_IsInitialized()}\ttindex{Py_IsInitialized()} returns
 true if Python is currently in the initialized state.  More
 information about these functions is given in a later chapter.
+Notice that \cfunction{Py_Finalize} does \emph{not} free all memory
+allocated by the Python interpreter, e.g. memory allocated by extension
+modules currently cannot be released.
