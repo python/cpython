@@ -412,7 +412,7 @@ implementation by Thomas Lee.}
 
 
 %======================================================================
-\section{PEP 342: New Generator Features}
+\section{PEP 342: New Generator Features\label{section-generators}}
 
 Python 2.5 adds a simple way to pass values \emph{into} a generator.
 As introduced in Python 2.3, generators only produce output; once a
@@ -541,7 +541,7 @@ figure out patterns for using coroutines effectively in Python.
 The addition of the \method{close()} method has one side effect that
 isn't obvious.  \method{close()} is called when a generator is
 garbage-collected, so this means the generator's code gets one last
-chance to run before the generator is destroyed, and this last chance
+chance to run before the generator is destroyed.  This last chance
 means that \code{try...finally} statements in generators can now be
 guaranteed to work; the \keyword{finally} clause will now always get a
 chance to run.  The syntactic restriction that you couldn't mix
@@ -551,6 +551,11 @@ trivia, but using generators and \code{try...finally} is actually
 necessary in order to implement the  \keyword{with} statement
 described by PEP 343.  We'll look at this new statement in the following 
 section.
+
+Another even more esoteric effect of this change: previously, the
+\member{gi_frame} attribute of a generator was always a frame object.
+It's now possible for \member{gi_frame} to be \code{None}
+once the generator has been exhausted.
 
 \begin{seealso}
 
@@ -1640,6 +1645,11 @@ characters but doesn't have an encoding declaration.  In Python 2.4
 this triggered a warning, not a syntax error.
 
 \item The \module{pickle} module no longer uses the deprecated \var{bin} parameter.
+
+\item Previously, the \member{gi_frame} attribute of a generator
+was always a frame object.  Because of the \pep{342} changes
+described in section~\ref{section-generators}, it's now possible
+for \member{gi_frame} to be \code{None}.
 
 \item C API: Many functions now use \ctype{Py_ssize_t} 
 instead of \ctype{int} to allow processing more data 
