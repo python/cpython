@@ -360,6 +360,15 @@ getargs_l(PyObject *self, PyObject *args)
 	return PyLong_FromLong(value);
 }
 
+static PyObject *
+getargs_n(PyObject *self, PyObject *args)
+{
+	Py_ssize_t value;
+	if (!PyArg_ParseTuple(args, "n", &value))
+	return NULL;
+	return PyInt_FromSsize_t(value);
+}
+
 #ifdef HAVE_LONG_LONG
 static PyObject *
 getargs_L(PyObject *self, PyObject *args)
@@ -661,17 +670,18 @@ static PyMethodDef TestMethods[] = {
 	{"test_k_code",		(PyCFunction)test_k_code,	 METH_NOARGS},
 	{"test_null_strings",	(PyCFunction)test_null_strings,	 METH_NOARGS},
 
-	{"getargs_b",		(PyCFunction)getargs_b,		 METH_VARARGS},
-	{"getargs_B",		(PyCFunction)getargs_B,		 METH_VARARGS},
-	{"getargs_H",		(PyCFunction)getargs_H,		 METH_VARARGS},
-	{"getargs_I",		(PyCFunction)getargs_I,		 METH_VARARGS},
-	{"getargs_k",		(PyCFunction)getargs_k,		 METH_VARARGS},
-	{"getargs_i",		(PyCFunction)getargs_i,		 METH_VARARGS},
-	{"getargs_l",		(PyCFunction)getargs_l,		 METH_VARARGS},
+	{"getargs_b",		getargs_b,			 METH_VARARGS},
+	{"getargs_B",		getargs_B,			 METH_VARARGS},
+	{"getargs_H",		getargs_H,			 METH_VARARGS},
+	{"getargs_I",		getargs_I,			 METH_VARARGS},
+	{"getargs_k",		getargs_k,			 METH_VARARGS},
+	{"getargs_i",		getargs_i,			 METH_VARARGS},
+	{"getargs_l",		getargs_l,			 METH_VARARGS},
+	{"getargs_n",		getargs_n, 			 METH_VARARGS},
 #ifdef HAVE_LONG_LONG
-	{"getargs_L",		(PyCFunction)getargs_L,		 METH_VARARGS},
-	{"getargs_K",		(PyCFunction)getargs_K,		 METH_VARARGS},
-	{"test_longlong_api",	(PyCFunction)test_longlong_api,	 METH_NOARGS},
+	{"getargs_L",		getargs_L,			 METH_VARARGS},
+	{"getargs_K",		getargs_K,			 METH_VARARGS},
+	{"test_longlong_api",	test_longlong_api,		 METH_NOARGS},
 	{"test_L_code",		(PyCFunction)test_L_code,	 METH_NOARGS},
 	{"codec_incrementalencoder",
 	 (PyCFunction)codec_incrementalencoder,	 METH_VARARGS},
@@ -682,7 +692,7 @@ static PyMethodDef TestMethods[] = {
 	{"test_u_code",		(PyCFunction)test_u_code,	 METH_NOARGS},
 #endif
 #ifdef WITH_THREAD
-	{"_test_thread_state", (PyCFunction)test_thread_state, METH_VARARGS},
+	{"_test_thread_state",  test_thread_state, 		 METH_VARARGS},
 #endif
 	{NULL, NULL} /* sentinel */
 };
