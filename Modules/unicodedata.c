@@ -486,8 +486,8 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
     Py_UNICODE *i, *end, *o;
     /* Longest decomposition in Unicode 3.2: U+FDFA */
     Py_UNICODE stack[20]; 
-    int space, stackptr, isize;
-    int index, prefix, count;
+    Py_ssize_t space, isize;
+    int index, prefix, count, stackptr;
     unsigned char prev, cur;
 	
     stackptr = 0;
@@ -508,7 +508,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
             /* Hangul Decomposition adds three characters in
                a single step, so we need atleast that much room. */
             if (space < 3) {
-                int newsize = PyString_GET_SIZE(result) + 10;
+                Py_ssize_t newsize = PyString_GET_SIZE(result) + 10;
                 space += 10;
                 if (PyUnicode_Resize(&result, newsize) == -1)
                     return NULL;
