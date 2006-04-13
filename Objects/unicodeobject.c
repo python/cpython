@@ -225,8 +225,7 @@ PyUnicodeObject *_PyUnicode_New(Py_ssize_t length)
      */
     unicode->str[0] = 0;
     unicode->str[length] = 0;
-	assert(length<INT_MAX);
-    unicode->length = (int)length;
+    unicode->length = length;
     unicode->hash = -1;
     unicode->defenc = NULL;
     return unicode;
