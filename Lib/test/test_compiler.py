@@ -1,9 +1,11 @@
 import compiler
 from compiler.ast import flatten
-import os
+import os, sys, time, unittest
 import test.test_support
-import unittest
 from random import random
+
+# How much time in seconds can pass before we print a 'Still working' message.
+_PRINT_WORKING_MSG_INTERVAL = 5 * 60
 
 class CompilerTest(unittest.TestCase):
 
@@ -13,11 +15,18 @@ class CompilerTest(unittest.TestCase):
         # that any of the code is correct, merely the compiler is able
         # to generate some kind of code for it.
 
+        next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
         libdir = os.path.dirname(unittest.__file__)
         testdir = os.path.dirname(test.test_support.__file__)
 
         for dir in [libdir, testdir]:
             for basename in os.listdir(dir):
+                # Print still working message since this test can be really slow
+                if next_time <= time.time():
+                    next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
+                    print >>sys.__stdout__, \
+                       '  testCompileLibrary still working, be patient...'
+
                 if not basename.endswith(".py"):
                     continue
                 if not TEST_ALL and random() < 0.98:
