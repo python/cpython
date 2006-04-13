@@ -1012,7 +1012,7 @@ individual elements of a list:
 \end{verbatim}
 
 Assignment to slices is also possible, and this can even change the size
-of the list:
+of the list or clear it entirely:
 
 \begin{verbatim}
 >>> # Replace some items:
@@ -1027,9 +1027,14 @@ of the list:
 ... a[1:1] = ['bletch', 'xyzzy']
 >>> a
 [123, 'bletch', 'xyzzy', 1234]
->>> a[:0] = a     # Insert (a copy of) itself at the beginning
+>>> # Insert (a copy of) itself at the beginning
+>>> a[:0] = a
 >>> a
 [123, 'bletch', 'xyzzy', 1234, 123, 'bletch', 'xyzzy', 1234]
+>>> # Clear the list: replace all items with an empty list
+>>> a[:] = []
+>>> a
+[]
 \end{verbatim}
 
 The built-in function \function{len()} also applies to lists:
@@ -2011,9 +2016,9 @@ applied to complex expressions and nested functions:
 There is a way to remove an item from a list given its index instead
 of its value: the \keyword{del} statement.  This differs from the
 \method{pop()}) method which returns a value.  The \keyword{del}
-statement can also be used to
-remove slices from a list (which we did earlier by assignment of an
-empty list to the slice).  For example:
+statement can also be used to remove slices from a list or clear the
+entire list (which we did earlier by assignment of an empty list to
+the slice).  For example:
 
 \begin{verbatim}
 >>> a = [-1, 1, 66.25, 333, 333, 1234.5]
@@ -2023,6 +2028,9 @@ empty list to the slice).  For example:
 >>> del a[2:4]
 >>> a
 [1, 66.25, 1234.5]
+>>> del a[:]
+>>> a
+[]
 \end{verbatim}
 
 \keyword{del} can also be used to delete entire variables:
