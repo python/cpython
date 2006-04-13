@@ -21,11 +21,11 @@ asdl_seq_new(int size, PyArena *arena)
 asdl_int_seq *
 asdl_int_seq_new(int size, PyArena *arena)
 {
-	asdl_seq *seq = NULL;
+	asdl_int_seq *seq = NULL;
 	size_t n = sizeof(asdl_seq) +
 			(size ? (sizeof(int) * (size - 1)) : 0);
 
-	seq = (asdl_seq *)PyArena_Malloc(arena, n);
+	seq = (asdl_int_seq *)PyArena_Malloc(arena, n);
 	if (!seq) {
 		PyErr_NoMemory();
 		return NULL;
