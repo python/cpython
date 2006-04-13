@@ -1135,7 +1135,7 @@ with a segmentation fault.)
 
 You shouldn't use \function{c_char_p} with a Python string when the C function will be modifying the memory area, because Python strings are 
 supposed to be immutable; breaking this rule will cause puzzling bugs.  When you need a modifiable memory area,
-use \function{create_string_buffer():
+use \function{create_string_buffer()}:
 
 \begin{verbatim}
 s = "this is a string"
