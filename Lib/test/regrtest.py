@@ -520,7 +520,7 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
                 import gc
                 def cleanup():
                     import _strptime, linecache, warnings, dircache
-                    import urlparse, urllib, urllib2, mimetypes
+                    import urlparse, urllib, urllib2, mimetypes, doctest
                     from distutils.dir_util import _path_created
                     _path_created.clear()
                     warnings.filters[:] = fs
@@ -537,6 +537,7 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
                     dircache.reset()
                     linecache.clearcache()
                     mimetypes._default_mime_types()
+                    doctest.master = None
                 if indirect_test:
                     def run_the_test():
                         indirect_test()
@@ -548,6 +549,7 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
                 print >> sys.stderr, "beginning", repcount, "repetitions"
                 print >> sys.stderr, \
                       ("1234567890"*(repcount//10 + 1))[:repcount]
+                cleanup()
                 for i in range(repcount):
                     rc = sys.gettotalrefcount()
                     run_the_test()
