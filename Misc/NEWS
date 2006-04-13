@@ -44,7 +44,16 @@ Extension Modules
 - Bug #1467952: os.listdir() now correctly raises an error if readdir()
   fails with an error condition.
 
-- Fix bsddb.db.DBError derived exceptions so they can be unpickled.
+- Fixed bsddb.db.DBError derived exceptions so they can be unpickled.
+
+- Bug #1117761: bsddb.*open() no longer raises an exception when using
+  the cachesize parameter.
+
+- Bug #1149413: bsddb.*open() no longer raises an exception when using
+  a temporary db (file=None) with the 'n' flag to truncate on open.
+
+- Bug #1332852: bsddb module minimum BerkeleyDB version raised to 3.3
+  as older versions cause excessive test failures.
 
 Library
 -------

@@ -571,14 +571,13 @@ class PyBuildExt(build_ext):
 
         # Sleepycat Berkeley DB interface.  http://www.sleepycat.com
         #
-        # This requires the Sleepycat DB code. The earliest supported version
-        # of that library is 3.2, the latest supported version is 4.4.  A list
-        # of available releases can be found at
-        #
-        # http://www.sleepycat.com/update/index.html
+        # This requires the Sleepycat DB code. The supported versions
+        # are set below.  Visit http://www.sleepycat.com/ to download
+        # a release.  Most open source OSes come with one or more
+        # versions of BerkeleyDB already installed.
 
         max_db_ver = (4, 4)
-        min_db_ver = (3, 2)
+        min_db_ver = (3, 3)
         db_setup_debug = False   # verbose debug prints from this script?
 
         # construct a list of paths to look for the header file in on

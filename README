@@ -719,14 +719,13 @@ Configuring the bsddb and dbm modules
 Beginning with Python version 2.3, the PyBsddb package
 <http://pybsddb.sf.net/> was adopted into Python as the bsddb package,
 exposing a set of package-level functions which provide
-backwards-compatible behavior.  Only versions 3.1 through 4.1 of
+backwards-compatible behavior.  Only versions 3.3 through 4.4 of
 Sleepycat's libraries provide the necessary API, so older versions
 aren't supported through this interface.  The old bsddb module has
 been retained as bsddb185, though it is not built by default.  Users
 wishing to use it will have to tweak Modules/Setup to build it.  The
 dbm module will still be built against the Sleepycat libraries if
-other preferred alternatives (ndbm, gdbm) are not found, though
-versions of the Sleepycat library prior to 3.1 are not considered.
+other preferred alternatives (ndbm, gdbm) are not found.
 
 Building the sqlite3 module
 ---------------------------
