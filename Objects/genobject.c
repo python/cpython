@@ -10,7 +10,7 @@
 static int
 gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
 {
-	Py_VISIT(gen->gi_frame);
+	Py_VISIT((PyObject *)gen->gi_frame);
 	return 0;
 }
 
