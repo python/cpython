@@ -1407,11 +1407,11 @@ string_split(PyStringObject *self, PyObject *args)
 {
 	Py_ssize_t len = PyString_GET_SIZE(self), n, i, j;
 	int err;
-	int maxsplit = -1;
+	Py_ssize_t maxsplit = -1;
 	const char *s = PyString_AS_STRING(self), *sub;
 	PyObject *list, *item, *subobj = Py_None;
 
-	if (!PyArg_ParseTuple(args, "|Oi:split", &subobj, &maxsplit))
+	if (!PyArg_ParseTuple(args, "|On:split", &subobj, &maxsplit))
 		return NULL;
 	if (maxsplit < 0)
 		maxsplit = PY_SSIZE_T_MAX;
@@ -1548,11 +1548,11 @@ string_rsplit(PyStringObject *self, PyObject *args)
 {
 	Py_ssize_t len = PyString_GET_SIZE(self), n, i, j;
 	int err;
-	int maxsplit = -1;
+	Py_ssize_t maxsplit = -1;
 	const char *s = PyString_AS_STRING(self), *sub;
 	PyObject *list, *item, *subobj = Py_None;
 
-	if (!PyArg_ParseTuple(args, "|Oi:rsplit", &subobj, &maxsplit))
+	if (!PyArg_ParseTuple(args, "|On:rsplit", &subobj, &maxsplit))
 		return NULL;
 	if (maxsplit < 0)
 		maxsplit = PY_SSIZE_T_MAX;
