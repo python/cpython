@@ -370,8 +370,8 @@ implemented by Nick Coghlan.}
 
 Until Python 2.5, the \keyword{try} statement came in two
 flavours. You could use a \keyword{finally} block to ensure that code
-is always executed, or a number of \keyword{except} blocks to catch an
-exception.  You couldn't combine both \keyword{except} blocks and a
+is always executed, or one or more \keyword{except} blocks to catch 
+specific exceptions.  You couldn't combine both \keyword{except} blocks and a
 \keyword{finally} block, because generating the right bytecode for the
 combined version was complicated and it wasn't clear what the
 semantics of the combined should be.  
@@ -949,7 +949,7 @@ pystone benchmark around XXX\% faster than Python 2.4.
 %======================================================================
 \section{New, Improved, and Deprecated Modules}
 
-As usual, Python's standard library received a number of enhancements and
+As usual, Python's standard library received many enhancements and
 bug fixes.  Here's a partial list of the most notable changes, sorted
 alphabetically by module name. Consult the
 \file{Misc/NEWS} file in the source tree for a more
@@ -1022,7 +1022,7 @@ lets you easily sort lists using multiple fields.
 (Contributed by Raymond Hettinger.)
 
 
-\item The \module{os} module underwent a number of changes.  The
+\item The \module{os} module underwent several changes.  The
 \member{stat_float_times} variable now defaults to true, meaning that
 \function{os.stat()} will now return time values as floats.  (This
 doesn't necessarily mean that \function{os.stat()} will return times
@@ -1590,7 +1590,7 @@ the operating system.  (Implemented by Evan Jones, and reworked by Tim
 Peters.)
 
 Note that this change means extension modules need to be more careful
-with how they allocate memory.  Python's API has a number of different
+with how they allocate memory.  Python's API has many different
 functions for allocating memory that are grouped into families.  For
 example, \cfunction{PyMem_Malloc()}, \cfunction{PyMem_Realloc()}, and
 \cfunction{PyMem_Free()} are one family that allocates raw memory,
@@ -1608,9 +1608,10 @@ carefully test your C extension modules with Python 2.5.
 
 \item Coverity, a company that markets a source code analysis tool
   called Prevent, provided the results of their examination of the Python
-  source code.  The analysis found a number of refcounting bugs, often
-  in error-handling code.  These bugs have been fixed.
-  % XXX provide reference?
+  source code.  The analysis found about 60 bugs that 
+  were quickly fixed.  Many of the bugs were refcounting problems, often
+  occurring in error-handling code.  See
+  \url{http://scan.coverity.com} for the statistics.
 
 \end{itemize}
 
