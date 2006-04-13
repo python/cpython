@@ -20,6 +20,9 @@ Extension Modules
 
 - Fix bsddb.db.DBError derived exceptions so they can be unpickled.
 
+- Bug #1117761: bsddb.*open() no longer raises an exception when using
+  the cachesize parameter.
+
 Library
 -------
 
