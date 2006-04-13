@@ -823,7 +823,7 @@ file_read(PyFileObject *f, PyObject *args)
 		buffersize = new_buffersize(f, (size_t)0);
 	else
 		buffersize = bytesrequested;
-	if (buffersize > INT_MAX) {
+	if (buffersize > PY_SSIZE_T_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
 	"requested number of bytes is more than a Python string can hold");
 		return NULL;
@@ -1098,7 +1098,7 @@ getline_via_fgets(FILE *fp)
 		assert(*(pvend-1) == '\0');
 		increment = total_v_size >> 2;	/* mild exponential growth */
 		total_v_size += increment;
-		if (total_v_size > INT_MAX) {
+		if (total_v_size > PY_SSIZE_T_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
 			    "line is longer than a Python string can hold");
 			Py_DECREF(v);
@@ -1209,7 +1209,7 @@ get_line(PyFileObject *f, int n)
 		used_v_size = total_v_size;
 		increment = total_v_size >> 2; /* mild exponential growth */
 		total_v_size += increment;
-		if (total_v_size > INT_MAX) {
+		if (total_v_size > PY_SSIZE_T_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
 			    "line is longer than a Python string can hold");
 			Py_DECREF(v);
@@ -1401,7 +1401,7 @@ file_readlines(PyFileObject *f, PyObject *args)
 			/* Need a larger buffer to fit this line */
 			nfilled += nread;
 			buffersize *= 2;
-			if (buffersize > INT_MAX) {
+			if (buffersize > PY_SSIZE_T_MAX) {
 				PyErr_SetString(PyExc_OverflowError,
 			    "line is longer than a Python string can hold");
 				goto error;
