@@ -240,7 +240,7 @@ struct _expr {
                 
                 struct {
                         expr_ty left;
-                        asdl_seq *ops;
+                        asdl_int_seq *ops;
                         asdl_seq *comparators;
                 } Compare;
                 
@@ -409,7 +409,7 @@ expr_ty ListComp(expr_ty elt, asdl_seq * generators, int lineno, int
 expr_ty GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, int
                      col_offset, PyArena *arena);
 expr_ty Yield(expr_ty value, int lineno, int col_offset, PyArena *arena);
-expr_ty Compare(expr_ty left, asdl_seq * ops, asdl_seq * comparators, int
+expr_ty Compare(expr_ty left, asdl_int_seq * ops, asdl_seq * comparators, int
                 lineno, int col_offset, PyArena *arena);
 expr_ty Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty
              starargs, expr_ty kwargs, int lineno, int col_offset, PyArena

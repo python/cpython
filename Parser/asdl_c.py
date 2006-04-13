@@ -188,7 +188,10 @@ class StructVisitor(EmitVisitor):
         ctype = get_c_type(field.type)
         name = field.name
         if field.seq:
-            self.emit("asdl_seq *%(name)s;" % locals(), depth)
+            if field.type.value in ('cmpop',):
+                self.emit("asdl_int_seq *%(name)s;" % locals(), depth)
+            else:
+                self.emit("asdl_seq *%(name)s;" % locals(), depth)
         else:
             self.emit("%(ctype)s %(name)s;" % locals(), depth)
 
@@ -234,7 +237,10 @@ class PrototypeVisitor(EmitVisitor):
                 name = f.name
             # XXX should extend get_c_type() to handle this
             if f.seq:
-                ctype = "asdl_seq *"
+                if f.type.value in ('cmpop',):
+                    ctype = "asdl_int_seq *"
+                else:
+                    ctype = "asdl_seq *"
             else:
                 ctype = get_c_type(f.type)
             args.append((ctype, name, f.opt or f.seq))
@@ -681,7 +687,7 @@ class ObjVisitor(PickleVisitor):
                 self.emit("if (!value) goto failed;", depth+1)
                 self.emit("for(i = 0; i < n; i++)", depth+1)
                 # This cannot fail, so no need for error handling
-                self.emit("PyList_SET_ITEM(value, i, ast2obj_cmpop((cmpop_ty)(int)asdl_seq_GET(%s, i)));" % value,
+                self.emit("PyList_SET_ITEM(value, i, ast2obj_cmpop((cmpop_ty)asdl_seq_GET(%s, i)));" % value,
                           depth+2, reflow=False)
                 self.emit("}", depth)
             else:
