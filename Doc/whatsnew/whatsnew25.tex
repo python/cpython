@@ -958,21 +958,25 @@ details.
 
 \begin{itemize}
 
-% collections.deque now has .remove()
+% XXX collections.deque now has .remove()
 % collections.defaultdict
 
 % the cPickle module no longer accepts the deprecated None option in the
 % args tuple returned by __reduce__().
 
-% csv module improvements
+% XXX csv module improvements
 
-% datetime.datetime() now has a strptime class method which can be used to
+% XXX datetime.datetime() now has a strptime class method which can be used to
 % create datetime object using a string and format.
 
-% fileinput: opening hook used to control how files are opened.
+% XXX fileinput: opening hook used to control how files are opened.
 % .input() now has a mode parameter
 % now has a fileno() function
 % accepts Unicode filenames
+
+\item The \module{audioop} module now supports the a-LAW encoding,
+and the code for u-LAW encoding has been improved.  (Contributed by
+Lars Immisch.)
 
 \item In the \module{gc} module, the new \function{get_count()} function
 returns a 3-tuple containing the current collection counts for the
@@ -1563,9 +1567,15 @@ error checking.
 
 
 %======================================================================
-%\subsection{Port-Specific Changes}
+\subsection{Port-Specific Changes}
 
-%Platform-specific changes go here.
+\begin{itemize}
+
+\item MacOS X (10.3 and higher): dynamic loading of modules
+now uses the \cfunction{dlopen()} function instead of MacOS-specific
+functions.
+
+\end{itemize}
 
 
 %======================================================================
