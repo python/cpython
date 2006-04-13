@@ -135,14 +135,9 @@ int unicode_resize(register PyUnicodeObject *unicode,
     /* Resizing shared object (unicode_empty or single character
        objects) in-place is not allowed. Use PyUnicode_Resize()
        instead ! */
-    if (unicode == unicode_empty ||
-	(unicode->length == 1 &&
-         /* MvL said unicode->str[] may be signed.  Python generally assumes
-          * an int contains at least 32 bits, and we don't use more than
-          * 32 bits even in a UCS4 build, so casting to unsigned int should
-          * be correct.
-          */
-	 (unsigned int)unicode->str[0] < 256U &&
+    if (unicode == unicode_empty || 
+	(unicode->length == 1 && 
+	 unicode->str[0] < 256U &&
 	 unicode_latin1[unicode->str[0]] == unicode)) {
         PyErr_SetString(PyExc_SystemError,
                         "can't resize shared unicode objects");
