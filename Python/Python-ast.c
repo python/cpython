@@ -1503,8 +1503,8 @@ Yield(expr_ty value, int lineno, int col_offset, PyArena *arena)
 }
 
 expr_ty
-Compare(expr_ty left, asdl_seq * ops, asdl_seq * comparators, int lineno, int
-        col_offset, PyArena *arena)
+Compare(expr_ty left, asdl_int_seq * ops, asdl_seq * comparators, int lineno,
+        int col_offset, PyArena *arena)
 {
         expr_ty p;
         if (!left) {
@@ -2503,7 +2503,7 @@ ast2obj_expr(void* _o)
                         value = PyList_New(n);
                         if (!value) goto failed;
                         for(i = 0; i < n; i++)
-                                PyList_SET_ITEM(value, i, ast2obj_cmpop((cmpop_ty)(int)asdl_seq_GET(o->v.Compare.ops, i)));
+                                PyList_SET_ITEM(value, i, ast2obj_cmpop((cmpop_ty)asdl_seq_GET(o->v.Compare.ops, i)));
                 }
                 if (!value) goto failed;
                 if (PyObject_SetAttrString(result, "ops", value) == -1)

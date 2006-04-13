@@ -1600,8 +1600,9 @@ ast_for_expr(struct compiling *c, const node *n)
             }
             else {
                 expr_ty expression;
-                asdl_seq *ops, *cmps;
-                ops = asdl_seq_new(NCH(n) / 2, c->c_arena);
+                asdl_int_seq *ops;
+		asdl_seq *cmps;
+                ops = asdl_int_seq_new(NCH(n) / 2, c->c_arena);
                 if (!ops)
                     return NULL;
                 cmps = asdl_seq_new(NCH(n) / 2, c->c_arena);
@@ -1609,7 +1610,6 @@ ast_for_expr(struct compiling *c, const node *n)
                     return NULL;
                 }
                 for (i = 1; i < NCH(n); i += 2) {
-                    /* XXX cmpop_ty is just an enum */
                     cmpop_ty newoperator;
 
                     newoperator = ast_for_comp_op(CHILD(n, i));
@@ -1622,7 +1622,7 @@ ast_for_expr(struct compiling *c, const node *n)
                         return NULL;
 		    }
                         
-                    asdl_seq_SET(ops, i / 2, (void *)(Py_uintptr_t)newoperator);
+                    asdl_seq_SET(ops, i / 2, newoperator);
                     asdl_seq_SET(cmps, i / 2, expression);
                 }
                 expression = ast_for_expr(c, CHILD(n, 0));
