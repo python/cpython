@@ -56,12 +56,12 @@ PyObject *normalizestring(const char *string)
     char *p;
     PyObject *v;
     
-	if (len > INT_MAX) {
-		PyErr_SetString(PyExc_OverflowError, "string is too large");
-		return NULL;
-	}
+    if (len > PY_SSIZE_T_MAX) {
+	PyErr_SetString(PyExc_OverflowError, "string is too large");
+	return NULL;
+    }
 	
-    v = PyString_FromStringAndSize(NULL, (int)len);
+    v = PyString_FromStringAndSize(NULL, len);
     if (v == NULL)
 	return NULL;
     p = PyString_AS_STRING(v);

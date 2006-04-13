@@ -181,7 +181,7 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
 		PyErr_BadInternalCall();
 		return -1;
 	}
-	if (n == INT_MAX) {
+	if (n == PY_SSIZE_T_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
 			"cannot add more objects to list");
 		return -1;
@@ -221,7 +221,7 @@ app1(PyListObject *self, PyObject *v)
 	Py_ssize_t n = PyList_GET_SIZE(self);
 
 	assert (v != NULL);
-	if (n == INT_MAX) {
+	if (n == PY_SSIZE_T_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
 			"cannot add more objects to list");
 		return -1;

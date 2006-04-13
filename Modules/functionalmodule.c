@@ -48,7 +48,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
 	pto->fn = func;
 	Py_INCREF(func);
-	pto->args = PyTuple_GetSlice(args, 1, INT_MAX);
+	pto->args = PyTuple_GetSlice(args, 1, PY_SSIZE_T_MAX);
 	if (pto->args == NULL) {
 		pto->kw = NULL;
 		Py_DECREF(pto);

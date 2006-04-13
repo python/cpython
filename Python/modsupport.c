@@ -407,7 +407,7 @@ do_mkvalue(const char **p_format, va_list *p_va)
 			else {
 				if (n < 0) {
 					size_t m = strlen(str);
-					if (m > INT_MAX) {
+					if (m > PY_SSIZE_T_MAX) {
 						PyErr_SetString(PyExc_OverflowError,
 							"string too long for Python string");
 						return NULL;
