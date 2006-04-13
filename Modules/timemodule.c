@@ -443,7 +443,7 @@ time_strftime(PyObject *self, PyObject *args)
 	 * will be ahead of time...
 	 */
 	for (i = 1024; ; i += i) {
-		outbuf = malloc(i);
+		outbuf = (char *)malloc(i);
 		if (outbuf == NULL) {
 			return PyErr_NoMemory();
 		}

@@ -446,16 +446,16 @@ strop_lower(PyObject *self, PyObject *args)
 {
 	char *s, *s_new;
 	Py_ssize_t i, n;
-	PyObject *new;
+	PyObject *newstr;
 	int changed;
 
 	WARN;
 	if (PyString_AsStringAndSize(args, &s, &n))
 		return NULL;
-	new = PyString_FromStringAndSize(NULL, n);
-	if (new == NULL)
+	newstr = PyString_FromStringAndSize(NULL, n);
+	if (newstr == NULL)
 		return NULL;
-	s_new = PyString_AsString(new);
+	s_new = PyString_AsString(newstr);
 	changed = 0;
 	for (i = 0; i < n; i++) {
 		int c = Py_CHARMASK(*s++);
@@ -467,11 +467,11 @@ strop_lower(PyObject *self, PyObject *args)
 		s_new++;
 	}
 	if (!changed) {
-		Py_DECREF(new);
+		Py_DECREF(newstr);
 		Py_INCREF(args);
 		return args;
 	}
-	return new;
+	return newstr;
 }
 
 
@@ -485,16 +485,16 @@ strop_upper(PyObject *self, PyObject *args)
 {
 	char *s, *s_new;
 	Py_ssize_t i, n;
-	PyObject *new;
+	PyObject *newstr;
 	int changed;
 
 	WARN;
 	if (PyString_AsStringAndSize(args, &s, &n))
 		return NULL;
-	new = PyString_FromStringAndSize(NULL, n);
-	if (new == NULL)
+	newstr = PyString_FromStringAndSize(NULL, n);
+	if (newstr == NULL)
 		return NULL;
-	s_new = PyString_AsString(new);
+	s_new = PyString_AsString(newstr);
 	changed = 0;
 	for (i = 0; i < n; i++) {
 		int c = Py_CHARMASK(*s++);
@@ -506,11 +506,11 @@ strop_upper(PyObject *self, PyObject *args)
 		s_new++;
 	}
 	if (!changed) {
-		Py_DECREF(new);
+		Py_DECREF(newstr);
 		Py_INCREF(args);
 		return args;
 	}
-	return new;
+	return newstr;
 }
 
 
@@ -525,16 +525,16 @@ strop_capitalize(PyObject *self, PyObject *args)
 {
 	char *s, *s_new;
 	Py_ssize_t i, n;
-	PyObject *new;
+	PyObject *newstr;
 	int changed;
 
 	WARN;
 	if (PyString_AsStringAndSize(args, &s, &n))
 		return NULL;
-	new = PyString_FromStringAndSize(NULL, n);
-	if (new == NULL)
+	newstr = PyString_FromStringAndSize(NULL, n);
+	if (newstr == NULL)
 		return NULL;
-	s_new = PyString_AsString(new);
+	s_new = PyString_AsString(newstr);
 	changed = 0;
 	if (0 < n) {
 		int c = Py_CHARMASK(*s++);
@@ -555,11 +555,11 @@ strop_capitalize(PyObject *self, PyObject *args)
 		s_new++;
 	}
 	if (!changed) {
-		Py_DECREF(new);
+		Py_DECREF(newstr);
 		Py_INCREF(args);
 		return args;
 	}
-	return new;
+	return newstr;
 }
 
 
@@ -691,16 +691,16 @@ strop_swapcase(PyObject *self, PyObject *args)
 {
 	char *s, *s_new;
 	Py_ssize_t i, n;
-	PyObject *new;
+	PyObject *newstr;
 	int changed;
 
 	WARN;
 	if (PyString_AsStringAndSize(args, &s, &n))
 		return NULL;
-	new = PyString_FromStringAndSize(NULL, n);
-	if (new == NULL)
+	newstr = PyString_FromStringAndSize(NULL, n);
+	if (newstr == NULL)
 		return NULL;
-	s_new = PyString_AsString(new);
+	s_new = PyString_AsString(newstr);
 	changed = 0;
 	for (i = 0; i < n; i++) {
 		int c = Py_CHARMASK(*s++);
@@ -717,11 +717,11 @@ strop_swapcase(PyObject *self, PyObject *args)
 		s_new++;
 	}
 	if (!changed) {
-		Py_DECREF(new);
+		Py_DECREF(newstr);
 		Py_INCREF(args);
 		return args;
 	}
-	return new;
+	return newstr;
 }
 
 
@@ -1141,7 +1141,7 @@ strop_replace(PyObject *self, PyObject *args)
 	char *str, *pat,*sub,*new_s;
 	Py_ssize_t len,pat_len,sub_len,out_len;
 	Py_ssize_t count = -1;
-	PyObject *new;
+	PyObject *newstr;
 
 	WARN;
 	if (!PyArg_ParseTuple(args, "t#t#t#|n:replace",
@@ -1165,14 +1165,14 @@ strop_replace(PyObject *self, PyObject *args)
 	}
 	if (out_len == -1) {
 		/* we're returning another reference to the input string */
-		new = PyTuple_GetItem(args, 0);
-		Py_XINCREF(new);
+		newstr = PyTuple_GetItem(args, 0);
+		Py_XINCREF(newstr);
 	}
 	else {
-		new = PyString_FromStringAndSize(new_s, out_len);
+		newstr = PyString_FromStringAndSize(new_s, out_len);
 		PyMem_FREE(new_s);
 	}
-	return new;
+	return newstr;
 }
 
 
