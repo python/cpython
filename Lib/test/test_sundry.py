@@ -68,7 +68,12 @@ import telnetlib
 import timeit
 import toaiff
 import token
-import tty
+try:
+    import tty     # not available on Windows
+except ImportError:
+    if verbose:
+        print "skipping tty"
+
 # Can't test the "user" module -- if the user has a ~/.pythonrc.py, it
 # can screw up all sorts of things (esp. if it prints!).
 #import user
