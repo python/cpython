@@ -308,7 +308,7 @@ unpack_string(LogReaderObject *self, PyObject **pvalue)
     if ((err = unpack_packed_int(self, &len, 0)))
         return err;
 
-    buf = malloc(len);
+    buf = (char *)malloc(len);
     for (i=0; i < len; i++) {
         ch = fgetc(self->logfp);
 	buf[i] = ch;
@@ -1403,7 +1403,7 @@ get_version_string(void)
         ++rev;
     while (rev[i] != ' ' && rev[i] != '\0')
         ++i;
-    buffer = malloc(i + 1);
+    buffer = (char *)malloc(i + 1);
     if (buffer != NULL) {
         memmove(buffer, rev, i);
         buffer[i] = '\0';
