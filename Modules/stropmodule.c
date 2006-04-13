@@ -333,7 +333,7 @@ strop_rfind(PyObject *self, PyObject *args)
 {
 	char *s, *sub;
 	Py_ssize_t len, n, j;
-	Py_ssize_t i = 0, last = INT_MAX;
+	Py_ssize_t i = 0, last = PY_SSIZE_T_MAX;
 
 	WARN;
 	if (!PyArg_ParseTuple(args, "t#t#|nn:rfind", &s, &len, &sub, &n, &i, &last))
@@ -647,7 +647,7 @@ strop_count(PyObject *self, PyObject *args)
 {
 	char *s, *sub;
 	Py_ssize_t len, n;
-	Py_ssize_t i = 0, last = INT_MAX;
+	Py_ssize_t i = 0, last = PY_SSIZE_T_MAX;
 	Py_ssize_t m, r;
 
 	WARN;
@@ -1078,7 +1078,7 @@ mymemreplace(const char *str, Py_ssize_t len,		/* input string */
 	/* find length of output string */
 	nfound = mymemcnt(str, len, pat, pat_len);
 	if (count < 0)
-		count = INT_MAX;
+		count = PY_SSIZE_T_MAX;
 	else if (nfound > count)
 		nfound = count;
 	if (nfound == 0)
