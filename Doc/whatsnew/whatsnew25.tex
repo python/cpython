@@ -5,6 +5,7 @@
 % Fix XXX comments
 % The easy_install stuff
 % Stateful codec changes
+% cProfile
 % Count up the patches and bugs
 
 \title{What's New in Python 2.5}
@@ -1021,6 +1022,11 @@ itertools.islice(iterable, s.start, s.stop, s.step)
 
 (Contributed by Raymond Hettinger.)
 
+\item The \module{nis} module now supports accessing domains other
+than the system default domain by supplying a \var{domain} argument to
+the \function{nis.match()} and \function{nis.maps()} functions.
+(Contributed by Ben Bell.)
+
 \item The \module{operator} module's \function{itemgetter()} 
 and \function{attrgetter()} functions now support multiple fields.  
 A call such as \code{operator.attrgetter('a', 'b')}
@@ -1134,6 +1140,9 @@ by some specifications, so it's still available as
 
 %======================================================================
 % whole new modules get described in subsections here
+
+%======================================================================
+%\subsection{The cProfile module}
 
 %======================================================================
 \subsection{The ctypes package}
