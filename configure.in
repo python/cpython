@@ -3221,13 +3221,13 @@ AC_MSG_RESULT(done)
 AC_CONFIG_FILES(Makefile.pre Modules/Setup.config)
 AC_OUTPUT
 
-echo "creating Setup"
+echo "creating Modules/Setup"
 if test ! -f Modules/Setup
 then
 	cp $srcdir/Modules/Setup.dist Modules/Setup
 fi
 
-echo "creating Setup.local"
+echo "creating Modules/Setup.local"
 if test ! -f Modules/Setup.local
 then
 	echo "# Edit this file for local setup changes" >Modules/Setup.local
