@@ -1042,11 +1042,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				STORE_SIZE(PyUnicode_GET_SIZE(arg));
 			}
 			else {
-			char *buf;
-			Py_ssize_t count = convertbuffer(arg, p, &buf);
-			if (count < 0)
-				return converterr(buf, arg, msgbuf, bufsize);
-			STORE_SIZE(count/(sizeof(Py_UNICODE))); 
+				return converterr("cannot convert raw buffers",
+						  arg, msgbuf, bufsize);
 			}
 			format++;
 		} else {
