@@ -84,7 +84,7 @@ Build
 
 - Patch #1324762:Remove ccpython.cc; replace --with-cxx with
   --with-cxx-main. Link with C++ compiler only if --with-cxx-main was
-  specified. (Can be overriden by explicitly setting LINKCC.) Decouple
+  specified. (Can be overridden by explicitly setting LINKCC.) Decouple
   CXX from --with-cxx-main, see description in README.
 
 - Patch #1429775: Link extension modules with the shared libpython.
