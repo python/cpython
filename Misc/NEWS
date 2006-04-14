@@ -12,6 +12,13 @@ What's New in Python 2.5 alpha 2?
 Core and builtins
 -----------------
 
+- Bug #1454485, array.array('u') could crash the interpreter.  This was
+  due to PyArgs_ParseTuple(args, 'u#', ...) trying to convert buffers (strings)
+  to unicode when it didn't make sense.  'u#' now requires a unicode string.
+
+- Py_UNICODE is unsigned.  It was always documented as unsigned, but
+  due to a bug had a signed value in previous versions.
+
 - Patch #837242: ``id()`` of any Python object always gives a positive
   number now, which might be a long integer. ``PyLong_FromVoidPtr`` and
   ``PyLong_AsVoidPtr`` have been changed accordingly.  Note that it has
