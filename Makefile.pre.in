@@ -30,6 +30,7 @@ VPATH=		@srcdir@
 
 CC=		@CC@
 CXX=		@CXX@
+MAINCC=		@MAINCC@
 LINKCC=		@LINKCC@
 AR=		@AR@
 RANLIB=		@RANLIB@
@@ -157,7 +158,6 @@ LIBC=		@LIBC@
 SYSLIBS=	$(LIBM) $(LIBC)
 SHLIBS=		@SHLIBS@
 
-MAINOBJ=	@MAINOBJ@
 THREADOBJ=	@THREADOBJ@
 DLINCLDIR=	@DLINCLDIR@
 DYNLOADFILE=	@DYNLOADFILE@
@@ -326,9 +326,9 @@ LIBRARY_OBJS=	\
 all:		$(BUILDPYTHON) oldsharedmods sharedmods
 
 # Build the interpreter
-$(BUILDPYTHON):	Modules/$(MAINOBJ) $(LIBRARY) $(LDLIBRARY)
+$(BUILDPYTHON):	Modules/python.o $(LIBRARY) $(LDLIBRARY)
 		$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) -o $@ \
-			Modules/$(MAINOBJ) \
+			Modules/python.o \
 			$(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
 platform: $(BUILDPYTHON)
@@ -448,8 +448,8 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
 		-DVPATH='"$(VPATH)"' \
 		-o $@ $(srcdir)/Modules/getpath.c
 
-Modules/ccpython.o: $(srcdir)/Modules/ccpython.cc
-	$(CXX) -c $(PY_CFLAGS) -o $@ $(srcdir)/Modules/ccpython.cc
+Modules/python.o: $(srcdir)/Modules/python.c
+	$(MAINCC) -c $(PY_CFLAGS) -o $@ $(srcdir)/Modules/python.c
 
 
 $(GRAMMAR_H) $(GRAMMAR_C): $(PGEN) $(GRAMMAR_INPUT)
@@ -537,7 +537,7 @@ PYTHON_HEADERS= \
 		Include/weakrefobject.h \
 		pyconfig.h
 
-$(LIBRARY_OBJS) $(MODOBJS) Modules/$(MAINOBJ): $(PYTHON_HEADERS)
+$(LIBRARY_OBJS) $(MODOBJS) Modules/python.o: $(PYTHON_HEADERS)
 
 
 ######################################################################
@@ -813,7 +813,7 @@ libainstall:	all
 		fi; \
 	fi
 	$(INSTALL_DATA) Modules/config.c $(DESTDIR)$(LIBPL)/config.c
-	$(INSTALL_DATA) Modules/$(MAINOBJ) $(DESTDIR)$(LIBPL)/$(MAINOBJ)
+	$(INSTALL_DATA) Modules/python.o $(DESTDIR)$(LIBPL)/python.o
 	$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(DESTDIR)$(LIBPL)/config.c.in
 	$(INSTALL_DATA) Makefile $(DESTDIR)$(LIBPL)/Makefile
 	$(INSTALL_DATA) Modules/Setup $(DESTDIR)$(LIBPL)/Setup
