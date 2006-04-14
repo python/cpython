@@ -47,11 +47,8 @@ PyParser_ParseStringFlagsFilename(const char *s, const char *filename,
 	}
 
         tok->filename = filename ? filename : "<string>";
-	if (Py_TabcheckFlag || Py_VerboseFlag) {
-		tok->altwarning = (tok->filename != NULL);
-		if (Py_TabcheckFlag >= 2)
-			tok->alterror++;
-	}
+	if (Py_TabcheckFlag >= 3)
+		tok->alterror = 0;
 
 	return parsetok(tok, g, start, err_ret, flags);
 }
@@ -79,12 +76,8 @@ PyParser_ParseFileFlags(FILE *fp, const char *filename, grammar *g, int start,
 		return NULL;
 	}
 	tok->filename = filename;
-	if (Py_TabcheckFlag || Py_VerboseFlag) {
-		tok->altwarning = (filename != NULL);
-		if (Py_TabcheckFlag >= 2)
-			tok->alterror++;
-	}
-
+	if (Py_TabcheckFlag >= 3)
+		tok->alterror = 0;
 
 	return parsetok(tok, g, start, err_ret, flags);
 }
