@@ -233,7 +233,7 @@ class BufferedIncrementalDecoder(IncrementalDecoder):
 
     def reset(self):
         IncrementalDecoder.reset(self)
-        self.bytebuffer = ""
+        self.buffer = ""
 
 #
 # The StreamWriter and StreamReader class provide generic working
