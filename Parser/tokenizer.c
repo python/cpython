@@ -120,8 +120,8 @@ tok_new(void)
 	tok->lineno = 0;
 	tok->level = 0;
 	tok->filename = NULL;
-	tok->altwarning = 0;
-	tok->alterror = 0;
+	tok->altwarning = 1;
+	tok->alterror = 1;
 	tok->alttabsize = 1;
 	tok->altindstack[0] = 0;
 	tok->decoding_state = 0;
@@ -1207,41 +1207,10 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 	/* Set start of current token */
 	tok->start = tok->cur - 1;
 	
-	/* Skip comment, while looking for tab-setting magic */
-	if (c == '#') {
-		static char *tabforms[] = {
-			"tab-width:",		/* Emacs */
-			":tabstop=",		/* vim, full form */
-			":ts=",			/* vim, abbreviated form */
-			"set tabsize=",		/* will vi never die? */
-		/* more templates can be added here to support other editors */
-		};
-		char cbuf[80];
-		char *tp, **cp;
-		tp = cbuf;
-		do {
-			*tp++ = c = tok_nextc(tok);
-		} while (c != EOF && c != '\n' &&
-			 tp - cbuf + 1 < sizeof(cbuf));
-		*tp = '\0';
-		for (cp = tabforms; 
-		     cp < tabforms + sizeof(tabforms)/sizeof(tabforms[0]);
-		     cp++) {
-			if ((tp = strstr(cbuf, *cp))) {
-				int newsize = atoi(tp + strlen(*cp));
-
-				if (newsize >= 1 && newsize <= 40) {
-					tok->tabsize = newsize;
-					if (Py_VerboseFlag)
-					    PySys_WriteStderr(
-						"Tab size set to %d\n",
-						newsize);
-				}
-			}
-		}
+	/* Skip comment */
+	if (c == '#')
 		while (c != EOF && c != '\n')
 			c = tok_nextc(tok);
-	}
 	
 	/* Check for EOF and errors now */
 	if (c == EOF) {
