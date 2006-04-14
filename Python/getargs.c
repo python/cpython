@@ -18,6 +18,18 @@ int PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
 int PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,
 				const char *, char **, va_list);
 
+#ifdef HAVE_DECLSPEC_DLL
+/* Export functions */
+PyAPI_FUNC(int) _PyArg_Parse_SizeT(PyObject *, char *, ...);
+PyAPI_FUNC(int) _PyArg_ParseTuple_SizeT(PyObject *, char *, ...);
+PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywords_SizeT(PyObject *, PyObject *,
+                                                  const char *, char **, ...);
+PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
+PyAPI_FUNC(int) _PyArg_VaParse_SizeT(PyObject *, char *, va_list);
+PyAPI_FUNC(int) _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *, PyObject *,
+                                              const char *, char **, va_list);
+#endif
+
 #define FLAG_COMPAT 1
 #define FLAG_SIZE_T 2
 
