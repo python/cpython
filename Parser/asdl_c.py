@@ -726,39 +726,35 @@ def main(srcfile):
         sys.exit(1)
     if INC_DIR:
         p = "%s/%s-ast.h" % (INC_DIR, mod.name)
-    else:
-        p = "%s-ast.h" % mod.name
-    f = open(p, "wb")
-    print >> f, auto_gen_msg
-    print >> f, '#include "asdl.h"\n'
-    c = ChainOfVisitors(TypeDefVisitor(f),
-                        StructVisitor(f),
-                        PrototypeVisitor(f),
-                        )
-    c.visit(mod)
-    print >>f, "PyObject* PyAST_mod2obj(mod_ty t);"
-    f.close()
+        f = open(p, "wb")
+        print >> f, auto_gen_msg
+        print >> f, '#include "asdl.h"\n'
+        c = ChainOfVisitors(TypeDefVisitor(f),
+                            StructVisitor(f),
+                            PrototypeVisitor(f),
+                            )
+        c.visit(mod)
+        print >>f, "PyObject* PyAST_mod2obj(mod_ty t);"
+        f.close()
 
     if SRC_DIR:
         p = os.path.join(SRC_DIR, str(mod.name) + "-ast.c")
-    else:
-        p = "%s-ast.c" % mod.name
-    f = open(p, "wb")
-    print >> f, auto_gen_msg
-    print >> f, '#include "Python.h"'
-    print >> f, '#include "%s-ast.h"' % mod.name
-    print >> f
-    print >>f, "static PyTypeObject* AST_type;"
-    v = ChainOfVisitors(
-                        PyTypesDeclareVisitor(f),
-                        PyTypesVisitor(f),
-                        FunctionVisitor(f),
-                        ObjVisitor(f),
-                        ASTModuleVisitor(f),
-                        PartingShots(f),
-                        )
-    v.visit(mod)
-    f.close()
+        f = open(p, "wb")
+        print >> f, auto_gen_msg
+        print >> f, '#include "Python.h"'
+        print >> f, '#include "%s-ast.h"' % mod.name
+        print >> f
+        print >>f, "static PyTypeObject* AST_type;"
+        v = ChainOfVisitors(
+            PyTypesDeclareVisitor(f),
+            PyTypesVisitor(f),
+            FunctionVisitor(f),
+            ObjVisitor(f),
+            ASTModuleVisitor(f),
+            PartingShots(f),
+            )
+        v.visit(mod)
+        f.close()
 
 if __name__ == "__main__":
     import sys
@@ -767,6 +763,9 @@ if __name__ == "__main__":
     INC_DIR = ''
     SRC_DIR = ''
     opts, args = getopt.getopt(sys.argv[1:], "h:c:")
+    if len(opts) != 1:
+        print "Must specify exactly one output file"
+        sys.exit(1)
     for o, v in opts:
         if o == '-h':
             INC_DIR = v
@@ -774,4 +773,5 @@ if __name__ == "__main__":
             SRC_DIR = v
     if len(args) != 1:
         print "Must specify single input file"
+        sys.exit(1)
     main(args[0])
