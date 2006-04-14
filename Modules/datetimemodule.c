@@ -3825,6 +3825,10 @@ datetime_strptime(PyObject *cls, PyObject *args)
 		if (PySequence_Check(obj) && PySequence_Size(obj) >= 6)
 			for (i=0; i < 6; i++) {
 				PyObject *p = PySequence_GetItem(obj, i);
+				if (p == NULL) {
+					Py_DECREF(obj);
+					return NULL;
+				}
 				if (PyInt_Check(p))
 					ia[i] = PyInt_AsLong(p);
 				else
