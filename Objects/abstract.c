@@ -10,6 +10,14 @@
 
 #define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
 
+#ifdef HAVE_DECLSPEC_DLL
+PyAPI_FUNC(PyObject *) _PyObject_CallFunction_SizeT(PyObject *callable_object,
+						    char *format, ...);
+PyAPI_FUNC(PyObject *) _PyObject_CallMethod_SizeT(PyObject *o, char *m,
+						  char *format, ...);
+#endif
+
+
 /* Shorthands to return certain errors */
 
 static PyObject *
@@ -1800,11 +1808,37 @@ PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw)
 	return NULL;
 }
 
+static PyObject*
+call_function_tail(PyObject *callable, PyObject *args)
+{
+	PyObject *retval;
+
+	if (args == NULL)
+		return NULL;
+
+	if (!PyTuple_Check(args)) {
+		PyObject *a;
+
+		a = PyTuple_New(1);
+		if (a == NULL) {
+			Py_DECREF(args);
+			return NULL;
+		}
+		PyTuple_SET_ITEM(a, 0, args);
+		args = a;
+	}
+	retval = PyObject_Call(callable, args, NULL);
+
+	Py_DECREF(args);
+
+	return retval;
+}
+
 PyObject *
 PyObject_CallFunction(PyObject *callable, char *format, ...)
 {
 	va_list va;
-	PyObject *args, *retval;
+	PyObject *args;
 
 	if (callable == NULL)
 		return null_error();
@@ -1817,31 +1851,34 @@ PyObject_CallFunction(PyObject *callable, char *format, ...)
 	else
 		args = PyTuple_New(0);
 
-	if (args == NULL)
-		return NULL;
+	return call_function_tail(callable, args);
+}
 
-	if (!PyTuple_Check(args)) {
-		PyObject *a;
+PyObject *
+_PyObject_CallFunction_SizeT(PyObject *callable, char *format, ...)
+{
+	va_list va;
+	PyObject *args;
 
-		a = PyTuple_New(1);
-		if (a == NULL)
-			return NULL;
-		if (PyTuple_SetItem(a, 0, args) < 0)
-			return NULL;
-		args = a;
+	if (callable == NULL)
+		return null_error();
+
+	if (format && *format) {
+		va_start(va, format);
+		args = _Py_VaBuildValue_SizeT(format, va);
+		va_end(va);
 	}
-	retval = PyObject_Call(callable, args, NULL);
+	else
+		args = PyTuple_New(0);
 
-	Py_DECREF(args);
-
-	return retval;
+	return call_function_tail(callable, args);
 }
 
 PyObject *
 PyObject_CallMethod(PyObject *o, char *name, char *format, ...)
 {
 	va_list va;
-	PyObject *args = NULL;
+	PyObject *args;
 	PyObject *func = NULL;
 	PyObject *retval = NULL;
 
@@ -1867,24 +1904,49 @@ PyObject_CallMethod(PyObject *o, char *name, char *format, ...)
 	else
 		args = PyTuple_New(0);
 
-	if (!args)
-		goto exit;
-
-	if (!PyTuple_Check(args)) {
-		PyObject *a;
-
-		a = PyTuple_New(1);
-		if (a == NULL)
-			goto exit;
-		if (PyTuple_SetItem(a, 0, args) < 0)
-			goto exit;
-		args = a;
-	}
-
-	retval = PyObject_Call(func, args, NULL);
+	retval = call_function_tail(func, args);
 
   exit:
-	Py_XDECREF(args);
+	/* args gets consumed in call_function_tail */
+	Py_XDECREF(func);
+
+	return retval;
+}
+
+PyObject *
+_PyObject_CallMethod_SizeT(PyObject *o, char *name, char *format, ...)
+{
+	va_list va;
+	PyObject *args;
+	PyObject *func = NULL;
+	PyObject *retval = NULL;
+
+	if (o == NULL || name == NULL)
+		return null_error();
+
+	func = PyObject_GetAttrString(o, name);
+	if (func == NULL) {
+		PyErr_SetString(PyExc_AttributeError, name);
+		return 0;
+	}
+
+	if (!PyCallable_Check(func)) {
+		type_error("call of non-callable attribute"); 
+		goto exit;
+	}
+
+	if (format && *format) {
+		va_start(va, format);
+		args = _Py_VaBuildValue_SizeT(format, va);
+		va_end(va);
+	}
+	else
+		args = PyTuple_New(0);
+
+	retval = call_function_tail(func, args);
+
+  exit:
+	/* args gets consumed in call_function_tail */
 	Py_XDECREF(func);
 
 	return retval;

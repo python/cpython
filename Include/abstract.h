@@ -4,6 +4,11 @@
 extern "C" {
 #endif
 
+#ifdef PY_SSIZE_T_CLEAN
+#define PyObject_CallFunction _PyObject_CallFunction_SizeT
+#define PyObject_CallMethod _PyObject_CallMethod_SizeT
+#endif
+
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 /*

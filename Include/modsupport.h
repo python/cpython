@@ -17,20 +17,10 @@ extern "C" {
 #define PyArg_ParseTupleAndKeywords	_PyArg_ParseTupleAndKeywords_SizeT
 #define PyArg_VaParse			_PyArg_VaParse_SizeT
 #define PyArg_VaParseTupleAndKeywords	_PyArg_VaParseTupleAndKeywords_SizeT
-#define PyArg_BuildValue		_PyArg_BuildValue_SizeT
-#define PyArg_VaBuildValue		_PyArg_VaBuildValue_SizeT
+#define Py_BuildValue			_Py_BuildValue_SizeT
+#define Py_VaBuildValue			_Py_VaBuildValue_SizeT
 #else
-#ifdef HAVE_DECLSPEC_DLL
-PyAPI_FUNC(int) _PyArg_Parse_SizeT(PyObject *, char *, ...);
-PyAPI_FUNC(int) _PyArg_ParseTuple_SizeT(PyObject *, char *, ...);
-PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywords_SizeT(PyObject *, PyObject *,
-                                                  const char *, char **, ...);
-PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
-PyAPI_FUNC(int) _PyArg_VaParse_SizeT(PyObject *, char *, va_list);
-PyAPI_FUNC(int) _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *, PyObject *,
-                                              const char *, char **, va_list);
 PyAPI_FUNC(PyObject *) _Py_VaBuildValue_SizeT(const char *, va_list);
-#endif
 #endif
 
 PyAPI_FUNC(int) PyArg_Parse(PyObject *, const char *, ...);
