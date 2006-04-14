@@ -313,56 +313,6 @@ AC_ARG_WITH(gcc,
 	esac])
 AC_MSG_RESULT($without_gcc)
 
-AC_SUBST(CXX)
-AC_SUBST(MAINOBJ)
-MAINOBJ=python.o
-AC_MSG_CHECKING(for --with-cxx=<compiler>)
-AC_ARG_WITH(cxx,
-            AC_HELP_STRING(--with-cxx=<compiler>, enable C++ support),
-[
-	check_cxx=no
-	case $withval in
-	no)	CXX=
-		with_cxx=no;;
-	*)	CXX=$withval
-		MAINOBJ=ccpython.o
-		with_cxx=$withval;;
-	esac], [
-	with_cxx=no
-	check_cxx=yes
-])
-AC_MSG_RESULT($with_cxx)
-
-if test "$with_cxx" = "yes"
-then
-	AC_MSG_ERROR([must supply a compiler when using --with-cxx])
-fi
-
-dnl The following fragment works similar to AC_PROG_CXX.
-dnl It does not fail if CXX is not found, and it is not executed if 
-dnl --without-cxx was given.
-dnl Finally, it does not test whether CXX is g++.
-
-dnl Autoconf 2.5x does not have AC_PROG_CXX_WORKS anymore
-ifdef([AC_PROG_CXX_WORKS],[],
-      [AC_DEFUN([AC_PROG_CXX_WORKS],
-      [AC_LANG_PUSH(C++)dnl
-       _AC_COMPILER_EXEEXT
-       AC_LANG_POP()
-      ]
-)])
-
-if test "$check_cxx" = "yes" 
-then
-	AC_CHECK_PROGS(CXX, $CCC c++ g++ gcc CC cxx cc++ cl, notfound)
-	if test "$CXX" = "notfound"
-	then
-		CXX=
-	else
-		AC_PROG_CXX_WORKS
-	fi
-fi
-
 # If the user switches compilers, we can't believe the cache
 if test ! -z "$ac_cv_prog_CC" -a ! -z "$CC" -a "$CC" != "$ac_cv_prog_CC"
 then
@@ -371,6 +321,61 @@ then
 fi
 
 AC_PROG_CC
+
+AC_SUBST(CXX)
+AC_SUBST(MAINCC)
+AC_MSG_CHECKING(for --with-cxx-main=<compiler>)
+AC_ARG_WITH(cxx_main,
+            AC_HELP_STRING([--with-cxx-main=<compiler>],
+                           [compile main() and link python executable with C++ compiler]),
+[
+	
+	case $withval in
+	no)	with_cxx_main=no
+		MAINCC='$(CC)';;
+	yes)	with_cxx_main=yes
+		MAINCC='$(CXX)';;
+	*)	with_cxx_main=yes
+		MAINCC=$withval
+		if test -z "$CXX"
+		then
+			CXX=$withval
+		fi;;
+	esac], [
+	with_cxx_main=no
+	MAINCC='$(CC)'
+])
+AC_MSG_RESULT($with_cxx_main)
+
+preset_cxx="$CXX"
+if test -z "$CXX"
+then
+        case "$CC" in
+        gcc)    AC_PATH_PROG(CXX, [g++], [g++], [notfound]) ;;
+        cc)     AC_PATH_PROG(CXX, [c++], [c++], [notfound]) ;;
+        esac
+	if test "$CXX" = "notfound"
+	then
+		CXX=""
+	fi
+fi
+if test -z "$CXX"
+then
+	AC_CHECK_PROGS(CXX, $CCC c++ g++ gcc CC cxx cc++ cl, notfound)
+	if test "$CXX" = "notfound"
+	then
+		CXX=""
+	fi
+fi
+if test "$preset_cxx" != "$CXX"
+then
+        AC_MSG_WARN([
+
+  By default, distutils will build C++ extension modules with "$CXX".
+  If this is not intended, then set CXX on the configure command line.
+  ])
+fi
+
 
 # checks for UNIX variants that set C preprocessor variables
 AC_AIX
@@ -480,22 +485,7 @@ AC_SUBST(LINKCC)
 AC_MSG_CHECKING(LINKCC)
 if test -z "$LINKCC"
 then
-        if test -z "$CXX"; then
-              LINKCC="\$(PURIFY) \$(CC)"
-        else
-              echo 'extern "C" void foo();int main(){foo();}' > conftest_a.cc
-              $CXX -c conftest_a.cc # 2>&5
-              echo 'void foo(){}' > conftest_b.$ac_ext
-              $CC -c conftest_b.$ac_ext # 2>&5
-              if $CC -o conftest$ac_exeext conftest_a.$ac_objext conftest_b.$ac_objext 2>&5 \
-                 && test -s conftest$ac_exeext && ./conftest$ac_exeext
-              then
-                 LINKCC="\$(PURIFY) \$(CC)"
-              else
-                 LINKCC="\$(PURIFY) \$(CXX)"
-              fi
-              rm -fr conftest*
-        fi
+	LINKCC='$(PURIFY) $(MAINCC)'
 	case $ac_sys_system in
 	AIX*)
 	   exp_extra="\"\""

@@ -1045,13 +1045,35 @@ Modules/getpath.o.
 --with-libs='libs': Add 'libs' to the LIBS that the python interpreter
         is linked against.
 
---with-cxx=<compiler>: Some C++ compilers require that main() is
-        compiled with the C++ if there is any C++ code in the application.
-        Specifically, g++ on a.out systems may require that to support
-        construction of global objects. With this option, the main() function
-        of Python will be compiled with <compiler>; use that only if you
-        plan to use C++ extension modules, and if your compiler requires
-        compilation of main() as a C++ program.
+--with-cxx-main=<compiler>: If you plan to use C++ extension modules,
+        then -- on some platforms -- you need to compile python's main()
+        function with the C++ compiler. With this option, make will use
+        <compiler> to compile main() *and* to link the python executable.
+        It is likely that the resulting executable depends on the C++
+        runtime library of <compiler>. (The default is --without-cxx-main.)
+
+        There are platforms that do not require you to build Python
+        with a C++ compiler in order to use C++ extension modules.
+        E.g., x86 Linux with ELF shared binaries and GCC 3.x, 4.x is such
+        a platform. We recommend that you configure Python
+        --without-cxx-main on those platforms because a mismatch
+        between the C++ compiler version used to build Python and to
+        build a C++ extension module is likely to cause a crash at
+        runtime.
+
+        The Python installation also stores the variable CXX that
+        determines, e.g., the C++ compiler distutils calls by default
+        to build C++ extensions. If you set CXX on the configure command
+        line to any string of non-zero length, then configure won't
+        change CXX. If you do not preset CXX but pass
+        --with-cxx-main=<compiler>, then configure sets CXX=<compiler>.
+        In all other cases, configure looks for a C++ compiler by
+        some common names (c++, g++, gcc, CC, cxx, cc++, cl) and sets
+        CXX to the first compiler it finds. If it does not find any
+        C++ compiler, then it sets CXX="".
+
+        Similarly, if you want to change the command used to link the
+        python executable, then set LINKCC on the configure command line.
 
 
 --with-pydebug:  Enable additional debugging code to help track down
