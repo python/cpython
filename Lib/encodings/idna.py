@@ -70,7 +70,7 @@ def ToASCII(label):
         # Skip to step 8.
         if 0 < len(label) < 64:
             return label
-        raise UnicodeError("label too long")
+        raise UnicodeError("label empty or too long")
 
     # Step 2: nameprep
     label = nameprep(label)
@@ -85,7 +85,7 @@ def ToASCII(label):
         # Skip to step 8.
         if 0 < len(label) < 64:
             return label
-        raise UnicodeError("label too long")
+        raise UnicodeError("label empty or too long")
 
     # Step 5: Check ACE prefix
     if label.startswith(uace_prefix):
@@ -100,7 +100,7 @@ def ToASCII(label):
     # Step 8: Check size
     if 0 < len(label) < 64:
         return label
-    raise UnicodeError("label too long")
+    raise UnicodeError("label empty or too long")
 
 def ToUnicode(label):
     # Step 1: Check for ASCII
