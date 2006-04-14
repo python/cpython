@@ -2,10 +2,10 @@
 \usepackage{distutils}
 % $Id$
 
-% Fix XXX comments
+% Writing context managers
 % The easy_install stuff
 % Stateful codec changes
-% cProfile
+% Fix XXX comments
 % Count up the patches and bugs
 
 \title{What's New in Python 2.5}
@@ -1400,7 +1400,8 @@ Please read the package's official documentation for more details.
 %======================================================================
 \subsection{The hashlib package}
 
-A new \module{hashlib} module has been added to replace the
+A new \module{hashlib} module, written by Gregory P. Smith, 
+has been added to replace the
 \module{md5} and \module{sha} modules.  \module{hashlib} adds support
 for additional secure hashes (SHA-224, SHA-256, SHA-384, and SHA-512).
 When available, the module uses OpenSSL for fast platform optimized
@@ -1443,26 +1444,25 @@ current digest state, \method{digest()} and \method{hexdigest()}
 return the digest value as a binary string or a string of hex digits,
 and \method{copy()} returns a new hashing object with the same digest state.
 
-This module was contributed by Gregory P. Smith.
-
 
 %======================================================================
 \subsection{The sqlite3 package}
 
 The pysqlite module (\url{http://www.pysqlite.org}), a wrapper for the
 SQLite embedded database, has been added to the standard library under
-the package name \module{sqlite3}.  SQLite is a C library that
-provides a SQL-language database that stores data in disk files
-without requiring a separate server process.  pysqlite was written by
-Gerhard H\"aring, and provides a SQL interface that complies with the
-DB-API 2.0 specification described by \pep{249}. This means that it
-should be possible to write the first version of your applications
-using SQLite for data storage and, if switching to a larger database
-such as PostgreSQL or Oracle is necessary, the switch should be
-relatively easy.
+the package name \module{sqlite3}.  
+
+SQLite is a C library that provides a SQL-language database that
+stores data in disk files without requiring a separate server process.
+pysqlite was written by Gerhard H\"aring and provides a SQL interface
+compliant with the DB-API 2.0 specification described by
+\pep{249}. This means that it should be possible to write the first
+version of your applications using SQLite for data storage.  If
+switching to a larger database such as PostgreSQL or Oracle is
+later necessary, the switch should be relatively easy.
 
 If you're compiling the Python source yourself, note that the source
-tree doesn't include the SQLite code itself, only the wrapper module.
+tree doesn't include the SQLite code, only the wrapper module.
 You'll need to have the SQLite libraries and headers installed before
 compiling Python, and the build process will compile the module when
 the necessary headers are available.
@@ -1491,17 +1491,18 @@ c.execute('''create table stocks
 
 # Insert a row of data
 c.execute("""insert into stocks
-          values ('2006-01-05','BUY','RHAT',100, 35.14)""")
+          values ('2006-01-05','BUY','RHAT',100,35.14)""")
 \end{verbatim}    
 
-Usually your SQL queries will need to reflect the value of Python
+Usually your SQL operations will need to use values from Python
 variables.  You shouldn't assemble your query using Python's string
 operations because doing so is insecure; it makes your program
-vulnerable to what's called an SQL injection attack.  Instead, use
-SQLite's parameter substitution, putting \samp{?} as a placeholder
-wherever you want to use a value, and then provide a tuple of values
-as the second argument to the cursor's \method{execute()} method.  For
-example:
+vulnerable to an SQL injection attack.  
+
+Instead, use SQLite's parameter substitution.  Put \samp{?} as a
+placeholder wherever you want to use a value, and then provide a tuple
+of values as the second argument to the cursor's \method{execute()}
+method.  For example:
 
 \begin{verbatim}    
 # Never do this -- insecure!
@@ -1510,7 +1511,7 @@ c.execute("... where symbol = '%s'" % symbol)
 
 # Do this instead
 t = (symbol,)
-c.execute("... where symbol = '?'", t)
+c.execute('select * from stocks where symbol=?', ('IBM',))
 
 # Larger example
 for t in (('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
@@ -1538,15 +1539,6 @@ This example uses the iterator form:
 (u'2006-04-06', u'SELL', u'IBM', 500, 53.0)
 (u'2006-04-05', u'BUY', u'MSOFT', 1000, 72.0)
 >>>
-\end{verbatim}
-
-You should also use parameter substitution with SELECT statements:
-
-\begin{verbatim}
->>> c.execute('select * from stocks where symbol=?', ('IBM',))
->>> print c.fetchall()
-[(u'2006-03-28', u'BUY', u'IBM', 1000, 45.0), 
- (u'2006-04-06', u'SELL', u'IBM', 500, 53.0)]
 \end{verbatim}
 
 For more information about the SQL dialect supported by SQLite, see 
@@ -1625,6 +1617,7 @@ AST sprints at conferences such as PyCon.
 new set, \cfunction{PySet_Add()} and \cfunction{PySet_Discard()} to
 add and remove elements, and \cfunction{PySet_Contains} and
 \cfunction{PySet_Size} to examine the set's state.
+(Contributed by Raymond Hettinger.)
 
 \item C code can now obtain information about the exact revision
 of the Python interpreter by calling the 
@@ -1632,6 +1625,10 @@ of the Python interpreter by calling the
 string of build information like this:
 \code{"trunk:45355:45356M, Apr 13 2006, 07:42:19"}.  
 (Contributed by Barry Warsaw.)
+
+\item The CPython interpreter is still written in C, but 
+the code can now be compiled with a {\Cpp} compiler without errors.  
+(Implemented by Anthony Baxter, Martin von~L\"owis, Skip Montanaro.)
 
 \item The \cfunction{PyRange_New()} function was removed.  It was
 never documented, never used in the core code, and had dangerously lax
