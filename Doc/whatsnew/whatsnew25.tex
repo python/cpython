@@ -857,10 +857,29 @@ language.
 
 \begin{itemize}
 
+\item The \class{dict} type has a new hook for letting subclasses
+provide a default value when a key isn't contained in the dictionary.
+When a key isn't found, the dictionary's
+\method{__missing__(\var{key})}
+method will be called.  This hook is used to implement
+the new \class{defaultdict} class in the \module{collections}
+module.  The following example defines a dictionary 
+that returns zero for any missing key:
+
+\begin{verbatim}
+class zerodict (dict):
+    def __missing__ (self, key):
+        return 0
+
+d = zerodict({1:1, 2:2})
+print d[1], d[2]   # Prints 1, 2
+print d[3], d[4]   # Prints 0, 0
+\end{verbatim}
+
 \item The \function{min()} and \function{max()} built-in functions
 gained a \code{key} keyword argument analogous to the \code{key}
-argument for \method{sort()}.  This argument supplies a function
-that takes a single argument and is called for every value in the list; 
+argument for \method{sort()}.  This argument supplies a function that
+takes a single argument and is called for every value in the list;
 \function{min()}/\function{max()} will return the element with the 
 smallest/largest return value from this function.
 For example, to find the longest string in a list, you can do:
@@ -902,8 +921,6 @@ class C():
     pass
 \end{verbatim}
 (Implemented by Brett Cannon.)
-
-% XXX __missing__ hook in dictionaries
 
 \end{itemize}
 
@@ -964,9 +981,6 @@ details.
 
 \begin{itemize}
 
-% XXX collections.deque now has .remove()
-% collections.defaultdict
-
 % the cPickle module no longer accepts the deprecated None option in the
 % args tuple returned by __reduce__().
 
@@ -983,6 +997,55 @@ details.
 \item The \module{audioop} module now supports the a-LAW encoding,
 and the code for u-LAW encoding has been improved.  (Contributed by
 Lars Immisch.)
+
+\item The \module{collections} module gained a new type,
+\class{defaultdict}, that subclasses the standard \class{dict}
+type.  The new type mostly behaves like a dictionary but constructs a
+default value when a key isn't present, automatically adding it to the
+dictionary for the requested key value.
+
+The first argument to \class{defaultdict}'s constructor is a factory
+function that gets called whenever a key is requested but not found.
+This factory function receives no arguments, so you can use built-in
+type constructors such as \function{list()} or \function{int()}.  For
+example, 
+you can make an index of words based on their initial letter like this:
+
+\begin{verbatim}
+words = """Nel mezzo del cammin di nostra vita
+mi ritrovai per una selva oscura
+che la diritta via era smarrita""".lower().split()
+
+index = defaultdict(list)
+
+for w in words:
+    init_letter = w[0]
+    index[init_letter].append(w)
+\end{verbatim}
+
+Printing \code{index} results in the following output:
+
+\begin{verbatim}
+defaultdict(<type 'list'>, {'c': ['cammin', 'che'], 'e': ['era'], 
+	'd': ['del', 'di', 'diritta'], 'm': ['mezzo', 'mi'], 
+	'l': ['la'], 'o': ['oscura'], 'n': ['nel', 'nostra'], 
+	'p': ['per'], 's': ['selva', 'smarrita'], 
+	'r': ['ritrovai'], 'u': ['una'], 'v': ['vita', 'via']}
+\end{verbatim}
+
+The \class{deque} double-ended queue type supplied by the
+\module{collections} module now has a \method{remove(\var{value})}
+method that removes the first occurrence of \var{value} in the queue,
+raising \exception{ValueError} if the value isn't found.
+
+\item The \module{cProfile} module is a C implementation of 
+the existing \module{profile} module that has much lower overhead.
+The module's interface is the same as \module{profile}: you run
+\code{cProfile.run('main()')} to profile a function, can save profile
+data to a file, etc.  It's not yet known if the Hotshot profiler,
+which is also written in C but doesn't match the \module{profile}
+module's interface, will continue to be maintained in future versions
+of Python.  (Contributed by Armin Rigo.)
 
 \item In the \module{gc} module, the new \function{get_count()} function
 returns a 3-tuple containing the current collection counts for the
@@ -1140,9 +1203,6 @@ by some specifications, so it's still available as
 
 %======================================================================
 % whole new modules get described in subsections here
-
-%======================================================================
-%\subsection{The cProfile module}
 
 %======================================================================
 \subsection{The ctypes package}
