@@ -1044,20 +1044,24 @@ class BasicUnicodeTest(unittest.TestCase):
                     encodedresult = ""
                     for c in s:
                         encodedresult += encoder.encode(c)
+                    encodedresult += encoder.encode(u"", True)
                     decoder = codecs.getincrementaldecoder(encoding)()
                     decodedresult = u""
                     for c in encodedresult:
                         decodedresult += decoder.decode(c)
+                    decodedresult += decoder.decode("", True)
                     self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
 
                     # check C API
                     encodedresult = ""
                     for c in s:
                         encodedresult += cencoder.encode(c)
+                    encodedresult += cencoder.encode(u"", True)
                     cdecoder = _testcapi.codec_incrementaldecoder(encoding)
                     decodedresult = u""
                     for c in encodedresult:
                         decodedresult += cdecoder.decode(c)
+                    decodedresult += cdecoder.decode("", True)
                     self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
 
                     # check iterencode()/iterdecode()
