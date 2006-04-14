@@ -194,13 +194,79 @@ class Codec(codecs.Codec):
 
         return u".".join(result)+trailing_dot, len(input)
 
-class IncrementalEncoder(codecs.IncrementalEncoder):
-    def encode(self, input, final=False):
-        return Codec().encode(input, self.errors)[0]
+class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
+    def _buffer_encode(self, input, errors, final):
+        if errors != 'strict':
+            # IDNA is quite clear that implementations must be strict
+            raise UnicodeError("unsupported error handling "+errors)
 
-class IncrementalDecoder(codecs.IncrementalDecoder):
-    def decode(self, input, final=False):
-        return Codec().decode(input, self.errors)[0]
+        if not input:
+            return ("", 0)
+
+        labels = dots.split(input)
+        trailing_dot = u''
+        if labels:
+            if not labels[-1]:
+                trailing_dot = '.'
+                del labels[-1]
+            elif not final:
+                # Keep potentially unfinished label until the next call
+                del labels[-1]
+                if labels:
+                    trailing_dot = '.'
+
+        result = []
+        size = 0
+        for label in labels:
+            result.append(ToASCII(label))
+            if size:
+                size += 1
+            size += len(label)
+
+        # Join with U+002E
+        result = ".".join(result) + trailing_dot
+        size += len(trailing_dot)
+        return (result, size)
+
+class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
+    def _buffer_decode(self, input, errors, final):
+        if errors != 'strict':
+            raise UnicodeError("Unsupported error handling "+errors)
+
+        if not input:
+            return (u"", 0)
+
+        # IDNA allows decoding to operate on Unicode strings, too.
+        if isinstance(input, unicode):
+            labels = dots.split(input)
+        else:
+            # Must be ASCII string
+            input = str(input)
+            unicode(input, "ascii")
+            labels = input.split(".")
+
+        trailing_dot = u''
+        if labels:
+            if not labels[-1]:
+                trailing_dot = u'.'
+                del labels[-1]
+            elif not final:
+                # Keep potentially unfinished label until the next call
+                del labels[-1]
+                if labels:
+                    trailing_dot = u'.'
+
+        result = []
+        size = 0
+        for label in labels:
+            result.append(ToUnicode(label))
+            if size:
+                size += 1
+            size += len(label)
+
+        result = u".".join(result) + trailing_dot
+        size += len(trailing_dot)
+        return (result, size)
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass

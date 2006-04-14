@@ -781,15 +781,82 @@ class NameprepTest(unittest.TestCase):
                 except Exception,e:
                     raise test_support.TestFailed("Test 3.%d: %s" % (pos+1, str(e)))
 
-class CodecTest(unittest.TestCase):
-    def test_builtin(self):
+class IDNACodecTest(unittest.TestCase):
+    def test_builtin_decode(self):
         self.assertEquals(unicode("python.org", "idna"), u"python.org")
+        self.assertEquals(unicode("python.org.", "idna"), u"python.org.")
+        self.assertEquals(unicode("xn--pythn-mua.org", "idna"), u"pyth\xf6n.org")
+        self.assertEquals(unicode("xn--pythn-mua.org.", "idna"), u"pyth\xf6n.org.")
+
+    def test_builtin_encode(self):
+        self.assertEquals(u"python.org".encode("idna"), "python.org")
+        self.assertEquals("python.org.".encode("idna"), "python.org.")
+        self.assertEquals(u"pyth\xf6n.org".encode("idna"), "xn--pythn-mua.org")
+        self.assertEquals(u"pyth\xf6n.org.".encode("idna"), "xn--pythn-mua.org.")
 
     def test_stream(self):
         import StringIO
         r = codecs.getreader("idna")(StringIO.StringIO("abc"))
         r.read(3)
         self.assertEquals(r.read(), u"")
+
+    def test_incremental_decode(self):
+        self.assertEquals(
+            "".join(codecs.iterdecode("python.org", "idna")),
+            u"python.org"
+        )
+        self.assertEquals(
+            "".join(codecs.iterdecode("python.org.", "idna")),
+            u"python.org."
+        )
+        self.assertEquals(
+            "".join(codecs.iterdecode("xn--pythn-mua.org.", "idna")),
+            u"pyth\xf6n.org."
+        )
+        self.assertEquals(
+            "".join(codecs.iterdecode("xn--pythn-mua.org.", "idna")),
+            u"pyth\xf6n.org."
+        )
+
+        decoder = codecs.getincrementaldecoder("idna")()
+        self.assertEquals(decoder.decode("xn--xam", ), u"")
+        self.assertEquals(decoder.decode("ple-9ta.o", ), u"\xe4xample.")
+        self.assertEquals(decoder.decode(u"rg"), u"")
+        self.assertEquals(decoder.decode(u"", True), u"org")
+
+        decoder.reset()
+        self.assertEquals(decoder.decode("xn--xam", ), u"")
+        self.assertEquals(decoder.decode("ple-9ta.o", ), u"\xe4xample.")
+        self.assertEquals(decoder.decode("rg."), u"org.")
+        self.assertEquals(decoder.decode("", True), u"")
+
+    def test_incremental_encode(self):
+        self.assertEquals(
+            "".join(codecs.iterencode(u"python.org", "idna")),
+            "python.org"
+        )
+        self.assertEquals(
+            "".join(codecs.iterencode(u"python.org.", "idna")),
+            "python.org."
+        )
+        self.assertEquals(
+            "".join(codecs.iterencode(u"pyth\xf6n.org.", "idna")),
+            "xn--pythn-mua.org."
+        )
+        self.assertEquals(
+            "".join(codecs.iterencode(u"pyth\xf6n.org.", "idna")),
+            "xn--pythn-mua.org."
+        )
+
+        encoder = codecs.getincrementalencoder("idna")()
+        self.assertEquals(encoder.encode(u"\xe4x"), "")
+        self.assertEquals(encoder.encode(u"ample.org"), "xn--xample-9ta.")
+        self.assertEquals(encoder.encode(u"", True), "org")
+
+        encoder.reset()
+        self.assertEquals(encoder.encode(u"\xe4x"), "")
+        self.assertEquals(encoder.encode(u"ample.org."), "xn--xample-9ta.org.")
+        self.assertEquals(encoder.encode(u"", True), "")
 
 class CodecsModuleTest(unittest.TestCase):
 
@@ -1158,7 +1225,7 @@ def test_main():
         PunycodeTest,
         UnicodeInternalTest,
         NameprepTest,
-        CodecTest,
+        IDNACodecTest,
         CodecsModuleTest,
         StreamReaderTest,
         Str2StrTest,
