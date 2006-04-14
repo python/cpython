@@ -181,6 +181,33 @@ class IncrementalEncoder(object):
         Resets the encoder to the initial state.
         """
 
+class BufferedIncrementalEncoder(IncrementalEncoder):
+    """
+    This subclass of IncrementalEncoder can be used as the baseclass for an
+    incremental encoder if the encoder must keep some of the output in a
+    buffer between calls to encode().
+    """
+    def __init__(self, errors='strict'):
+        IncrementalEncoder.__init__(self, errors)
+        self.buffer = "" # unencoded input that is kept between calls to encode()
+
+    def _buffer_encode(self, input, errors, final):
+        # Overwrite this method in subclasses: It must encode input
+        # and return an (output, length consumed) tuple
+        raise NotImplementedError
+
+    def encode(self, input, final=False):
+        # encode input (taking the buffer into account)
+        data = self.buffer + input
+        (result, consumed) = self._buffer_encode(data, self.errors, final)
+        # keep unencoded input until the next call
+        self.buffer = data[consumed:]
+        return result
+
+    def reset(self):
+        IncrementalEncoder.reset(self)
+        self.buffer = ""
+
 class IncrementalDecoder(object):
     """
     An IncrementalDecoder decodes an input in multiple steps. The input can be
