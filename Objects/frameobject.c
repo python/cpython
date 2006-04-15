@@ -1,4 +1,3 @@
-
 /* Frame object implementation */
 
 #include "Python.h"
@@ -333,7 +332,7 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
 
 	Py_XINCREF(v);
 	f->f_trace = v;
-	
+
 	if (v != NULL)
 		f->f_lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
 
@@ -399,7 +398,7 @@ frame_dealloc(PyFrameObject *f)
 		for (p = f->f_valuestack; p < f->f_stacktop; p++)
 			Py_XDECREF(*p);
 	}
-	
+
 	Py_XDECREF(f->f_back);
 	Py_DECREF(f->f_code);
 	Py_DECREF(f->f_builtins);
@@ -459,7 +458,7 @@ frame_clear(PyFrameObject *f)
 
 	oldtop = f->f_stacktop;
 
-	/* Before anything else, make sure that this frame is clearly marked 
+	/* Before anything else, make sure that this frame is clearly marked
            as being defunct! */
         f->f_stacktop = NULL;
 
@@ -536,7 +535,7 @@ int _PyFrame_Init()
 }
 
 PyFrameObject *
-PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals, 
+PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 	    PyObject *locals)
 {
 	PyFrameObject *back = tstate->frame;
@@ -565,10 +564,10 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 				builtins = NULL;
 		}
 		if (builtins == NULL) {
-			/* No builtins!  Make up a minimal one 
+			/* No builtins!  Make up a minimal one
 			   Give them 'None', at least. */
 			builtins = PyDict_New();
-			if (builtins == NULL || 
+			if (builtins == NULL ||
 			    PyDict_SetItemString(
 				    builtins, "None", Py_None) < 0)
 				return NULL;
@@ -613,7 +612,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 	Py_INCREF(globals);
 	f->f_globals = globals;
 	/* Most functions have CO_NEWLOCALS and CO_OPTIMIZED set. */
-	if ((code->co_flags & (CO_NEWLOCALS | CO_OPTIMIZED)) == 
+	if ((code->co_flags & (CO_NEWLOCALS | CO_OPTIMIZED)) ==
 		(CO_NEWLOCALS | CO_OPTIMIZED))
 		locals = NULL; /* PyFrame_FastToLocals() will set. */
 	else if (code->co_flags & CO_NEWLOCALS) {
@@ -761,10 +760,10 @@ PyFrame_FastToLocals(PyFrameObject *f)
 		      && PyTuple_Check(f->f_code->co_freevars))) {
 			return;
 		}
-		map_to_dict(f->f_code->co_cellvars, 
+		map_to_dict(f->f_code->co_cellvars,
 			    PyTuple_GET_SIZE(f->f_code->co_cellvars),
 			    locals, fast + f->f_nlocals, 1);
-		map_to_dict(f->f_code->co_freevars, 
+		map_to_dict(f->f_code->co_freevars,
 			    PyTuple_GET_SIZE(f->f_code->co_freevars),
 			    locals, fast + f->f_nlocals + f->f_ncells, 1);
 	}
@@ -798,12 +797,12 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 		if (!(PyTuple_Check(f->f_code->co_cellvars)
 		      && PyTuple_Check(f->f_code->co_freevars)))
 			return;
-		dict_to_map(f->f_code->co_cellvars, 
+		dict_to_map(f->f_code->co_cellvars,
 			    PyTuple_GET_SIZE(f->f_code->co_cellvars),
 			    locals, fast + f->f_nlocals, 1, clear);
-		dict_to_map(f->f_code->co_freevars, 
+		dict_to_map(f->f_code->co_freevars,
 			    PyTuple_GET_SIZE(f->f_code->co_freevars),
-			    locals, fast + f->f_nlocals + f->f_ncells, 1, 
+			    locals, fast + f->f_nlocals + f->f_ncells, 1,
 			    clear);
 	}
 	PyErr_Restore(error_type, error_value, error_traceback);
