@@ -723,22 +723,6 @@ Ye olde Fibonacci generator, tee style.
 
 """
 
-leak_test1 = """
-
-This test leaked at one point due to generator finalization/destruction.
-It was copied from Lib/test/leakers/test_generator_cycle.py before the file
-was removed.
-
->>> def leak():
-...    def gen():
-...        while True:
-...            yield g
-...    g = gen()
-
->>> leak()
-
-"""
-
 # syntax_tests mostly provokes SyntaxErrors.  Also fiddling with #if 0
 # hackery.
 
@@ -1746,6 +1730,21 @@ which stores returned items.
 
 >>> item = it.next()
 
+
+
+This test leaked at one point due to generator finalization/destruction.
+It was copied from Lib/test/leakers/test_generator_cycle.py before the file
+was removed.
+
+>>> def leak():
+...    def gen():
+...        while True:
+...            yield g
+...    g = gen()
+
+>>> leak()
+
+
 There should be more test_generator-induced refleaks here, after they get
 fixed.
 
@@ -1755,7 +1754,6 @@ __test__ = {"tut":      tutorial_tests,
             "pep":      pep_tests,
             "email":    email_tests,
             "fun":      fun_tests,
-            "leak1":    leak_test1,
             "syntax":   syntax_tests,
             "conjoin":  conjoin_tests,
             "weakref":  weakref_tests,
