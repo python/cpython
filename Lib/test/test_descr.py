@@ -267,39 +267,8 @@ def test_dir():
     for arg in 2, 2L, 2j, 2e0, [2], "2", u"2", (2,), {2:2}, type, test_dir:
         dir(arg)
 
-    # Try classic classes.
-    class C:
-        Cdata = 1
-        def Cmethod(self): pass
-
-    cstuff = ['Cdata', 'Cmethod', '__doc__', '__module__']
-    vereq(dir(C), cstuff)
-    verify('im_self' in dir(C.Cmethod))
-
-    c = C()  # c.__doc__ is an odd thing to see here; ditto c.__module__.
-    vereq(dir(c), cstuff)
-
-    c.cdata = 2
-    c.cmethod = lambda self: 0
-    vereq(dir(c), cstuff + ['cdata', 'cmethod'])
-    verify('im_self' in dir(c.Cmethod))
-
-    class A(C):
-        Adata = 1
-        def Amethod(self): pass
-
-    astuff = ['Adata', 'Amethod'] + cstuff
-    vereq(dir(A), astuff)
-    verify('im_self' in dir(A.Amethod))
-    a = A()
-    vereq(dir(a), astuff)
-    verify('im_self' in dir(a.Amethod))
-    a.adata = 42
-    a.amethod = lambda self: 3
-    vereq(dir(a), astuff + ['adata', 'amethod'])
-
-    # The same, but with new-style classes.  Since these have object as a
-    # base class, a lot more gets sucked in.
+    # Test dir on custom classes. Since these have object as a
+    # base class, a lot of stuff gets sucked in.
     def interesting(strings):
         return [s for s in strings if not s.startswith('_')]
 
@@ -881,96 +850,6 @@ def multi():
     vereq(int(Node()), 23)
     vereq(Frag().__int__(), 42)
     vereq(int(Frag()), 42)
-
-    # MI mixing classic and new-style classes.
-
-    class A:
-        x = 1
-
-    class B(A):
-        pass
-
-    class C(A):
-        x = 2
-
-    class D(B, C):
-        pass
-    vereq(D.x, 1)
-
-    # Classic MRO is preserved for a classic base class.
-    class E(D, object):
-        pass
-    vereq(E.__mro__, (E, D, B, A, C, object))
-    vereq(E.x, 1)
-
-    # But with a mix of classic bases, their MROs are combined using
-    # new-style MRO.
-    class F(B, C, object):
-        pass
-    vereq(F.__mro__, (F, B, C, A, object))
-    vereq(F.x, 2)
-
-    # Try something else.
-    class C:
-        def cmethod(self):
-            return "C a"
-        def all_method(self):
-            return "C b"
-
-    class M1(C, object):
-        def m1method(self):
-            return "M1 a"
-        def all_method(self):
-            return "M1 b"
-
-    vereq(M1.__mro__, (M1, C, object))
-    m = M1()
-    vereq(m.cmethod(), "C a")
-    vereq(m.m1method(), "M1 a")
-    vereq(m.all_method(), "M1 b")
-
-    class D(C):
-        def dmethod(self):
-            return "D a"
-        def all_method(self):
-            return "D b"
-
-    class M2(D, object):
-        def m2method(self):
-            return "M2 a"
-        def all_method(self):
-            return "M2 b"
-
-    vereq(M2.__mro__, (M2, D, C, object))
-    m = M2()
-    vereq(m.cmethod(), "C a")
-    vereq(m.dmethod(), "D a")
-    vereq(m.m2method(), "M2 a")
-    vereq(m.all_method(), "M2 b")
-
-    class M3(M1, M2, object):
-        def m3method(self):
-            return "M3 a"
-        def all_method(self):
-            return "M3 b"
-    vereq(M3.__mro__, (M3, M1, M2, D, C, object))
-    m = M3()
-    vereq(m.cmethod(), "C a")
-    vereq(m.dmethod(), "D a")
-    vereq(m.m1method(), "M1 a")
-    vereq(m.m2method(), "M2 a")
-    vereq(m.m3method(), "M3 a")
-    vereq(m.all_method(), "M3 b")
-
-    class Classic:
-        pass
-    try:
-        class New(Classic):
-            __metaclass__ = type
-    except TypeError:
-        pass
-    else:
-        raise TestFailed, "new class with only classic bases - shouldn't be"
 
 def diamond():
     if verbose: print "Testing multiple inheritance special cases..."
@@ -3618,29 +3497,6 @@ def test_mutable_bases():
         pass
     else:
         raise TestFailed, "shouldn't be able to create inheritance cycles"
-
-    # let's throw a classic class into the mix:
-    class Classic:
-        def meth2(self):
-            return 3
-
-    D.__bases__ = (C, Classic)
-
-    vereq(d.meth2(), 3)
-    vereq(e.meth2(), 3)
-    try:
-        d.a
-    except AttributeError:
-        pass
-    else:
-        raise TestFailed, "attribute should have vanished"
-
-    try:
-        D.__bases__ = (Classic,)
-    except TypeError:
-        pass
-    else:
-        raise TestFailed, "new-style class must have a new-style base"
 
 def test_mutable_bases_with_failing_mro():
     if verbose:
