@@ -139,11 +139,13 @@ class TestRetrievingSourceCode(GetSourceBase):
                           ('StupidGit', mod.StupidGit)])
         tree = inspect.getclasstree([cls[1] for cls in classes], 1)
         self.assertEqual(tree,
-                         [(mod.ParrotDroppings, ()),
-                          (mod.StupidGit, ()),
-                          [(mod.MalodorousPervert, (mod.StupidGit,)),
-                           [(mod.FesteringGob, (mod.MalodorousPervert,
-                                                   mod.ParrotDroppings))
+                         [(object, ()),
+                          [(mod.ParrotDroppings, (object,)),
+                           (mod.StupidGit, (object,)),
+                           [(mod.MalodorousPervert, (mod.StupidGit,)),
+                            [(mod.FesteringGob, (mod.MalodorousPervert,
+                                                    mod.ParrotDroppings))
+                             ]
                             ]
                            ]
                           ])
@@ -255,17 +257,6 @@ def attrs_wo_objs(cls):
     return [t[:3] for t in inspect.classify_class_attrs(cls)]
 
 class TestClassesAndFunctions(unittest.TestCase):
-    def test_classic_mro(self):
-        # Test classic-class method resolution order.
-        class A:    pass
-        class B(A): pass
-        class C(A): pass
-        class D(B, C): pass
-
-        expected = (D, B, A, C)
-        got = inspect.getmro(D)
-        self.assertEqual(expected, got)
-
     def test_newstyle_mro(self):
         # The same w/ new-class MRO.
         class A(object):    pass
@@ -308,67 +299,6 @@ class TestClassesAndFunctions(unittest.TestCase):
 
         self.assertArgSpecEquals(sublistOfOne, [['foo']])
 
-    def test_classify_oldstyle(self):
-        class A:
-            def s(): pass
-            s = staticmethod(s)
-
-            def c(cls): pass
-            c = classmethod(c)
-
-            def getp(self): pass
-            p = property(getp)
-
-            def m(self): pass
-
-            def m1(self): pass
-
-            datablob = '1'
-
-        attrs = attrs_wo_objs(A)
-        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
-        self.assert_(('c', 'class method', A) in attrs, 'missing class method')
-        self.assert_(('p', 'property', A) in attrs, 'missing property')
-        self.assert_(('m', 'method', A) in attrs, 'missing plain method')
-        self.assert_(('m1', 'method', A) in attrs, 'missing plain method')
-        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
-
-        class B(A):
-            def m(self): pass
-
-        attrs = attrs_wo_objs(B)
-        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
-        self.assert_(('c', 'class method', A) in attrs, 'missing class method')
-        self.assert_(('p', 'property', A) in attrs, 'missing property')
-        self.assert_(('m', 'method', B) in attrs, 'missing plain method')
-        self.assert_(('m1', 'method', A) in attrs, 'missing plain method')
-        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
-
-
-        class C(A):
-            def m(self): pass
-            def c(self): pass
-
-        attrs = attrs_wo_objs(C)
-        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
-        self.assert_(('c', 'method', C) in attrs, 'missing plain method')
-        self.assert_(('p', 'property', A) in attrs, 'missing property')
-        self.assert_(('m', 'method', C) in attrs, 'missing plain method')
-        self.assert_(('m1', 'method', A) in attrs, 'missing plain method')
-        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
-
-        class D(B, C):
-            def m1(self): pass
-
-        attrs = attrs_wo_objs(D)
-        self.assert_(('s', 'static method', A) in attrs, 'missing static method')
-        self.assert_(('c', 'class method', A) in attrs, 'missing class method')
-        self.assert_(('p', 'property', A) in attrs, 'missing property')
-        self.assert_(('m', 'method', B) in attrs, 'missing plain method')
-        self.assert_(('m1', 'method', D) in attrs, 'missing plain method')
-        self.assert_(('datablob', 'data', A) in attrs, 'missing data')
-
-    # Repeat all that, but w/ new-style classes.
     def test_classify_newstyle(self):
         class A(object):
 
