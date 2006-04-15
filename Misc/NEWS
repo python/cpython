@@ -35,6 +35,8 @@ TO DO
 Core and Builtins
 -----------------
 
+- __coerce__ has been removed.
+
 - Classic classes are a thing of the past.  All classes are new style.
 
 - Exceptions *must* derive from BaseException.
