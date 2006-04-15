@@ -828,12 +828,9 @@ Reader_traverse(ReaderObj *self, visitproc visit, void *arg)
 static int
 Reader_clear(ReaderObj *self)
 {
-        Py_XDECREF(self->dialect);
-        Py_XDECREF(self->input_iter);
-        Py_XDECREF(self->fields);
-        self->dialect = NULL;
-        self->input_iter = NULL;
-        self->fields = NULL;
+	Py_CLEAR(self->dialect);
+	Py_CLEAR(self->input_iter);
+	Py_CLEAR(self->fields);
 	return 0;
 }
 
@@ -1260,10 +1257,8 @@ Writer_traverse(WriterObj *self, visitproc visit, void *arg)
 static int
 Writer_clear(WriterObj *self)
 {
-        Py_XDECREF(self->dialect);
-        Py_XDECREF(self->writeline);
-	self->dialect = NULL;
-	self->writeline = NULL;
+	Py_CLEAR(self->dialect);
+	Py_CLEAR(self->writeline);
 	return 0;
 }
 

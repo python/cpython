@@ -1236,10 +1236,7 @@ defdict_traverse(PyObject *self, visitproc visit, void *arg)
 static int
 defdict_tp_clear(defdictobject *dd)
 {
-	if (dd->default_factory != NULL) {
-		Py_DECREF(dd->default_factory);
-		dd->default_factory = NULL;
-	}
+	Py_CLEAR(dd->default_factory);
 	return PyDict_Type.tp_clear((PyObject *)dd);
 }
 

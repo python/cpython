@@ -2931,16 +2931,14 @@ Pickler_traverse(Picklerobject *self, visitproc visit, void *arg)
 static int
 Pickler_clear(Picklerobject *self)
 {
-#define CLEAR(SLOT) Py_XDECREF(SLOT); SLOT = NULL;
-	CLEAR(self->write);
-	CLEAR(self->memo);
-	CLEAR(self->fast_memo);
-	CLEAR(self->arg);
-	CLEAR(self->file);
-	CLEAR(self->pers_func);
-	CLEAR(self->inst_pers_func);
-	CLEAR(self->dispatch_table);
-#undef CLEAR
+	Py_CLEAR(self->write);
+	Py_CLEAR(self->memo);
+	Py_CLEAR(self->fast_memo);
+	Py_CLEAR(self->arg);
+	Py_CLEAR(self->file);
+	Py_CLEAR(self->pers_func);
+	Py_CLEAR(self->inst_pers_func);
+	Py_CLEAR(self->dispatch_table);
 	return 0;
 }
 
@@ -5284,17 +5282,15 @@ Unpickler_traverse(Unpicklerobject *self, visitproc visit, void *arg)
 static int
 Unpickler_clear(Unpicklerobject *self)
 {
-#define CLEAR(SLOT) Py_XDECREF(SLOT); SLOT = NULL
-	CLEAR(self->readline);
-	CLEAR(self->read);
-	CLEAR(self->file);
-	CLEAR(self->memo);
-	CLEAR(self->stack);
-	CLEAR(self->pers_func);
-	CLEAR(self->arg);
-	CLEAR(self->last_string);
-	CLEAR(self->find_class);
-#undef CLEAR
+	Py_CLEAR(self->readline);
+	Py_CLEAR(self->read);
+	Py_CLEAR(self->file);
+	Py_CLEAR(self->memo);
+	Py_CLEAR(self->stack);
+	Py_CLEAR(self->pers_func);
+	Py_CLEAR(self->arg);
+	Py_CLEAR(self->last_string);
+	Py_CLEAR(self->find_class);
 	return 0;
 }
 
