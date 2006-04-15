@@ -2208,18 +2208,20 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
 	Py_BEGIN_ALLOW_THREADS
 	memset(&addrbuf, 0, addrlen);
 	timeout = internal_select(s, 0);
-	if (!timeout)
-		n = recvfrom(s->sock_fd, PyString_AS_STRING(buf), len, flags,
+	if (!timeout) {
 #ifndef MS_WINDOWS
 #if defined(PYOS_OS2) && !defined(PYCC_GCC)
-			     (struct sockaddr *) &addrbuf, &addrlen
+		n = recvfrom(s->sock_fd, PyString_AS_STRING(buf), len, flags,
+			     (struct sockaddr *) &addrbuf, &addrlen);
 #else
-			     (void *) &addrbuf, &addrlen
+		n = recvfrom(s->sock_fd, PyString_AS_STRING(buf), len, flags,
+			     (void *) &addrbuf, &addrlen);
 #endif
 #else
-			     (struct sockaddr *) &addrbuf, &addrlen
+		n = recvfrom(s->sock_fd, PyString_AS_STRING(buf), len, flags,
+			     (struct sockaddr *) &addrbuf, &addrlen);
 #endif
-			);
+	}
 	Py_END_ALLOW_THREADS
 
 	if (timeout) {
