@@ -454,8 +454,14 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 static void
 frame_clear(PyFrameObject *f)
 {
-	PyObject **fastlocals, **p;
+	PyObject **fastlocals, **p, **oldtop;
 	int i, slots;
+
+	oldtop = f->f_stacktop;
+
+	/* Before anything else, make sure that this frame is clearly marked 
+           as being defunct! */
+        f->f_stacktop = NULL;
 
 	Py_XDECREF(f->f_exc_type);
 	f->f_exc_type = NULL;
@@ -473,17 +479,13 @@ frame_clear(PyFrameObject *f)
 	slots = f->f_nlocals + f->f_ncells + f->f_nfreevars;
 	fastlocals = f->f_localsplus;
 	for (i = slots; --i >= 0; ++fastlocals) {
-		if (*fastlocals != NULL) {
-			Py_XDECREF(*fastlocals);
-			*fastlocals = NULL;
-		}
+		Py_CLEAR(*fastlocals);
 	}
 
 	/* stack */
-	if (f->f_stacktop != NULL) {
-		for (p = f->f_valuestack; p < f->f_stacktop; p++) {
-			Py_XDECREF(*p);
-			*p = NULL;
+	if (oldtop != NULL) {
+		for (p = f->f_valuestack; p < oldtop; p++) {
+			Py_CLEAR(*p);
 		}
 	}
 }
