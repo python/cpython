@@ -381,7 +381,7 @@ Extension modules
         The file db.build should be copied from the Python PCBuild directory
 	to the directory db-4.4.20\build_win32.
 
-	The file db_static.vcproj in db-4.4.20\build_win32 sould be edited to
+	The file db_static.vcproj in db-4.4.20\build_win32 should be edited to
 	remove the string "$(SolutionDir)" - this occurs in 2 places, only
 	relevant for 64-bit builds. (The edit is required as otherwise, nant
 	wants to read the solution file, which is not in a suitable form).
