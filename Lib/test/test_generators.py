@@ -700,11 +700,12 @@ result for as long as it has not been "consumed" from all of the duplicated
 iterators, whereupon it is deleted. You can therefore print the hamming
 sequence during hours without increasing memory usage, or very little.
 
-The beauty of it is that recursive running after their tail FP algorithms
+The beauty of it is that recursive running-after-their-tail FP algorithms
 are quite straightforwardly expressed with this Python idiom. The problem is
-that this creates the same kind of reference cycle as the m235()
-implementation above, and again we have to explicitly close the innermost
-generator to clean up the cycle.
+that this creates an uncollectable reference cycle, and we have to explicitly
+close the innermost generator to clean up the cycle.
+XXX As of 14-Apr-2006, Tim doubts that anyone understands _why_ some cycle
+XXX is uncollectable here.
 
 Ye olde Fibonacci generator, tee style.
 
@@ -730,6 +731,7 @@ Ye olde Fibonacci generator, tee style.
 [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584]
 >>> closer()
 
+XXX Again the tee-based approach leaks without an explicit close().
 """
 
 leak_test1 = """
