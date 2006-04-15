@@ -171,7 +171,10 @@ PyArena_Free(PyArena *arena)
         */
 #endif
 	block_free(arena->a_head);
+	/* This property normally holds, except when the code being compiled
+	   is sys.getobjects(0), in which case there will be two references.
         assert(arena->a_objects->ob_refcnt == 1);
+	*/
 
         /* Clear all the elements from the list.  This is necessary
            to guarantee that they will be DECREFed. */
