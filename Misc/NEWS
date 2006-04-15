@@ -87,7 +87,10 @@ Library
 Build
 -----
 
+- Patch #1470875: Building Python with MS Free Compiler
+
 - Patch #1161914: Add a python-config script.
+
 - Patch #1324762:Remove ccpython.cc; replace --with-cxx with
   --with-cxx-main. Link with C++ compiler only if --with-cxx-main was
   specified. (Can be overridden by explicitly setting LINKCC.) Decouple
