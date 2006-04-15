@@ -115,9 +115,12 @@ def __%(method)s__(self, *args):
     print "__%(method)s__:", args
 """
 
+d = {}
 for method in testmeths:
-    exec method_template % locals() in AllTests.__dict__
-
+    exec method_template % locals() in d
+for k in d:
+    setattr(AllTests, k, d[k])
+del d, k
 del method, method_template
 
 # this also tests __init__ of course.
