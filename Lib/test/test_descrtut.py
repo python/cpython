@@ -265,19 +265,19 @@ implicit first argument that is the *class* for which they are invoked.
     ...         print "classmethod", cls, y
 
     >>> C.foo(1)
-    classmethod test.test_descrtut.C 1
+    classmethod <class 'test.test_descrtut.C'> 1
     >>> c = C()
     >>> c.foo(1)
-    classmethod test.test_descrtut.C 1
+    classmethod <class 'test.test_descrtut.C'> 1
 
     >>> class D(C):
     ...     pass
 
     >>> D.foo(1)
-    classmethod test.test_descrtut.D 1
+    classmethod <class 'test.test_descrtut.D'> 1
     >>> d = D()
     >>> d.foo(1)
-    classmethod test.test_descrtut.D 1
+    classmethod <class 'test.test_descrtut.D'> 1
 
 This prints "classmethod __main__.D 1" both times; in other words, the
 class passed as the first argument of foo() is the class involved in the
@@ -293,11 +293,11 @@ But notice this:
 
     >>> E.foo(1)
     E.foo() called
-    classmethod test.test_descrtut.C 1
+    classmethod <class 'test.test_descrtut.C'> 1
     >>> e = E()
     >>> e.foo(1)
     E.foo() called
-    classmethod test.test_descrtut.C 1
+    classmethod <class 'test.test_descrtut.C'> 1
 
 In this example, the call to C.foo() from E.foo() will see class C as its
 first argument, not class E. This is to be expected, since the call
@@ -386,7 +386,7 @@ Method resolution order
 
 This example is implicit in the writeup.
 
->>> class A:    # classic class
+>>> class A:    # implicit new-style class
 ...     def save(self):
 ...         print "called A.save()"
 >>> class B(A):
@@ -398,9 +398,9 @@ This example is implicit in the writeup.
 ...     pass
 
 >>> D().save()
-called A.save()
+called C.save()
 
->>> class A(object):  # new class
+>>> class A(object):  # explicit new-style class
 ...     def save(self):
 ...         print "called A.save()"
 >>> class B(A):
