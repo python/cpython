@@ -35,7 +35,7 @@ gen_dealloc(PyGenObject *gen)
 	}
 
 	_PyObject_GC_UNTRACK(self);
-	Py_XDECREF(gen->gi_frame);
+	Py_CLEAR(gen->gi_frame);
 	PyObject_GC_Del(gen);
 }
 
@@ -130,8 +130,8 @@ gen_close(PyGenObject *gen, PyObject *args)
 			"generator ignored GeneratorExit");
 		return NULL;
 	}
-	if ( PyErr_ExceptionMatches(PyExc_StopIteration) 
-	     || PyErr_ExceptionMatches(PyExc_GeneratorExit) ) 
+	if ( PyErr_ExceptionMatches(PyExc_StopIteration)
+	     || PyErr_ExceptionMatches(PyExc_GeneratorExit) )
 	{
 		PyErr_Clear();	/* ignore these errors */
 		Py_INCREF(Py_None);
@@ -208,7 +208,7 @@ PyDoc_STRVAR(throw_doc,
 return next yielded value or raise StopIteration.");
 
 static PyObject *
-gen_throw(PyGenObject *gen, PyObject *args) 
+gen_throw(PyGenObject *gen, PyObject *args)
 {
 	PyObject *typ;
 	PyObject *tb = NULL;
@@ -328,7 +328,7 @@ PyTypeObject PyGen_Type = {
 	0,					/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
-        
+
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
@@ -366,15 +366,16 @@ PyGen_NeedsFinalizing(PyGenObject *gen)
 	int i;
 	PyFrameObject *f = gen->gi_frame;
 
-	if (f == NULL || f->f_stacktop==NULL || f->f_iblock<=0)
-		return 0; /* no frame or no blockstack == no finalization */
+	if (f == NULL || f->f_stacktop == NULL || f->f_iblock <= 0)
+		return 0; /* no frame or empty blockstack == no finalization */
 
-	for (i=f->f_iblock; i>=0; i--) {
+	/* Any block type besides a loop requires cleanup. */
+	i = f->f_iblock;
+	while (--i >= 0) {
 		if (f->f_blockstack[i].b_type != SETUP_LOOP)
-			/* any block type besides a loop requires cleanup */
 			return 1;
 	}
 
-	/* No blocks except loops, it's safe to skip finalization */
+	/* No blocks except loops, it's safe to skip finalization. */
 	return 0;
 }

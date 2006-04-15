@@ -421,7 +421,6 @@ Subject: Re: PEP 255: Simple Generators
 ...         self.name = name
 ...         self.parent = None
 ...         self.generator = self.generate()
-...         self.close = self.generator.close
 ...
 ...     def generate(self):
 ...         while not self.parent:
@@ -483,8 +482,6 @@ merged F into A
 A->A B->G C->A D->G E->G F->A G->G H->G I->A J->G K->A L->A M->G
 merged A into G
 A->G B->G C->G D->G E->G F->G G->G H->G I->G J->G K->G L->G M->G
-
->>> for s in sets: s.close()    # break cycles
 
 """
 # Emacs turd '
@@ -593,7 +590,6 @@ arguments are iterable -- a LazyList is the same as a generator to times().
 ...     def __init__(self, g):
 ...         self.sofar = []
 ...         self.fetch = g.next
-...         self.close = g.close
 ...
 ...     def __getitem__(self, i):
 ...         sofar, fetch = self.sofar, self.fetch
@@ -624,8 +620,6 @@ efficient.
 [200, 216, 225, 240, 243, 250, 256, 270, 288, 300, 320, 324, 360, 375, 384]
 [400, 405, 432, 450, 480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675]
 
->>> m235.close()
-
 Ye olde Fibonacci generator, LazyList style.
 
 >>> def fibgen(a, b):
@@ -648,7 +642,6 @@ Ye olde Fibonacci generator, LazyList style.
 >>> fib = LazyList(fibgen(1, 2))
 >>> firstn(iter(fib), 17)
 [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584]
->>> fib.close()
 
 
 Running after your tail with itertools.tee (new in version 2.4)
