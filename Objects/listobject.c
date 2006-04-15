@@ -2274,7 +2274,6 @@ static int
 list_traverse(PyListObject *o, visitproc visit, void *arg)
 {
 	Py_ssize_t i;
-	PyObject *x;
 
 	for (i = o->ob_size; --i >= 0; )
 		Py_VISIT(o->ob_item[i]);
