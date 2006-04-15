@@ -53,10 +53,8 @@ tb_traverse(PyTracebackObject *tb, visitproc visit, void *arg)
 static void
 tb_clear(PyTracebackObject *tb)
 {
-	Py_XDECREF(tb->tb_next);
-	Py_XDECREF(tb->tb_frame);
-	tb->tb_next = NULL;
-	tb->tb_frame = NULL;
+	Py_CLEAR(tb->tb_next);
+	Py_CLEAR(tb->tb_frame);
 }
 
 PyTypeObject PyTraceBack_Type = {

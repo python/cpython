@@ -1669,8 +1669,7 @@ static int
 xmlparse_clear(xmlparseobject *op)
 {
     clear_handlers(op, 0);
-    Py_XDECREF(op->intern);
-    op->intern = 0;
+    Py_CLEAR(op->intern);
     return 0;
 }
 #endif

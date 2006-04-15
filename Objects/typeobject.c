@@ -559,8 +559,8 @@ clear_slots(PyTypeObject *type, PyObject *self)
 			char *addr = (char *)self + mp->offset;
 			PyObject *obj = *(PyObject **)addr;
 			if (obj != NULL) {
-				Py_DECREF(obj);
 				*(PyObject **)addr = NULL;
+				Py_DECREF(obj);
 			}
 		}
 	}
@@ -2236,13 +2236,6 @@ type_clear(PyTypeObject *type)
 	   for heaptypes. */
 	assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
-#define CLEAR(SLOT) \
-	if (SLOT) { \
-		tmp = (PyObject *)(SLOT); \
-		SLOT = NULL; \
-		Py_DECREF(tmp); \
-	}
-
 	/* The only field we need to clear is tp_mro, which is part of a
 	   hard cycle (its first element is the class itself) that won't
 	   be broken otherwise (it's a tuple and tuples don't have a
@@ -2268,9 +2261,7 @@ type_clear(PyTypeObject *type)
 	       A tuple of strings can't be part of a cycle.
 	*/
 
-	CLEAR(type->tp_mro);
-
-#undef CLEAR
+	Py_CLEAR(type->tp_mro);
 
 	return 0;
 }

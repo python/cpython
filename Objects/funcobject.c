@@ -655,9 +655,7 @@ cm_traverse(classmethod *cm, visitproc visit, void *arg)
 static int
 cm_clear(classmethod *cm)
 {
-	Py_XDECREF(cm->cm_callable);
-	cm->cm_callable = NULL;
-
+	Py_CLEAR(cm->cm_callable);
 	return 0;
 }
 
