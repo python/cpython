@@ -826,6 +826,11 @@ libainstall:	all
 	$(INSTALL_DATA) Modules/Setup.config $(DESTDIR)$(LIBPL)/Setup.config
 	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(DESTDIR)$(LIBPL)/makesetup
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
+	# Substitution happens here, as the completely-expanded BINDIR
+	# is not available in configure
+	sed -e "s,@BINDIR@,$(BINDIR)," < $(srcdir)/Misc/python-config.in >python-config
+	$(INSTALL_SCRIPT) python-config $(BINDIR)/python-config
+	rm python-config
 	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
 		echo; echo "Installing support files for building shared extension modules on AIX:"; \
