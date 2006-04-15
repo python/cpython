@@ -349,6 +349,14 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 	PyMemberDef* members;
 	int n_members, n_unnamed_members, i, k;
 
+#ifdef Py_TRACE_REFS
+	/* if the type object was chained, unchain it first
+	   before overwriting its storage */
+	if (type->_ob_next) {
+		_Py_ForgetReference((PyObject*)type);
+	}
+#endif
+
 	n_unnamed_members = 0;
 	for (i = 0; desc->fields[i].name != NULL; ++i)
 		if (desc->fields[i].name == PyStructSequence_UnnamedField)
