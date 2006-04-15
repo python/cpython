@@ -67,7 +67,7 @@ class Unsigned_TestCase(unittest.TestCase):
     def test_b(self):
         from _testcapi import getargs_b
         # b returns 'unsigned char', and does range checking (0 ... UCHAR_MAX)
-        self.failUnlessEqual(3, getargs_b(3.14))
+        self.assertRaises(TypeError, getargs_b, 3.14)
         self.failUnlessEqual(99, getargs_b(Long()))
         self.failUnlessEqual(99, getargs_b(Int()))
 
@@ -83,7 +83,7 @@ class Unsigned_TestCase(unittest.TestCase):
     def test_B(self):
         from _testcapi import getargs_B
         # B returns 'unsigned char', no range checking
-        self.failUnlessEqual(3, getargs_B(3.14))
+        self.assertRaises(TypeError, getargs_B, 3.14)
         self.failUnlessEqual(99, getargs_B(Long()))
         self.failUnlessEqual(99, getargs_B(Int()))
 
@@ -100,7 +100,7 @@ class Unsigned_TestCase(unittest.TestCase):
     def test_H(self):
         from _testcapi import getargs_H
         # H returns 'unsigned short', no range checking
-        self.failUnlessEqual(3, getargs_H(3.14))
+        self.assertRaises(TypeError, getargs_H, 3.14)
         self.failUnlessEqual(99, getargs_H(Long()))
         self.failUnlessEqual(99, getargs_H(Int()))
 
@@ -117,7 +117,7 @@ class Unsigned_TestCase(unittest.TestCase):
     def test_I(self):
         from _testcapi import getargs_I
         # I returns 'unsigned int', no range checking
-        self.failUnlessEqual(3, getargs_I(3.14))
+        self.assertRaises(TypeError, getargs_I, 3.14)
         self.failUnlessEqual(99, getargs_I(Long()))
         self.failUnlessEqual(99, getargs_I(Int()))
 
@@ -153,7 +153,7 @@ class Signed_TestCase(unittest.TestCase):
     def test_i(self):
         from _testcapi import getargs_i
         # i returns 'int', and does range checking (INT_MIN ... INT_MAX)
-        self.failUnlessEqual(3, getargs_i(3.14))
+        self.assertRaises(TypeError, getargs_i, 3.14)
         self.failUnlessEqual(99, getargs_i(Long()))
         self.failUnlessEqual(99, getargs_i(Int()))
 
@@ -169,7 +169,7 @@ class Signed_TestCase(unittest.TestCase):
     def test_l(self):
         from _testcapi import getargs_l
         # l returns 'long', and does range checking (LONG_MIN ... LONG_MAX)
-        self.failUnlessEqual(3, getargs_l(3.14))
+        self.assertRaises(TypeError, getargs_l, 3.14)
         self.failUnlessEqual(99, getargs_l(Long()))
         self.failUnlessEqual(99, getargs_l(Int()))
 
