@@ -22,12 +22,11 @@ gen_dealloc(PyGenObject *gen)
 	_PyObject_GC_UNTRACK(gen);
 
 	if (gen->gi_weakreflist != NULL)
-		PyObject_ClearWeakRefs((PyObject *) gen);
-
+		PyObject_ClearWeakRefs(self);
 
 	_PyObject_GC_TRACK(self);
 
-	if (gen->gi_frame!=NULL && gen->gi_frame->f_stacktop!=NULL) {
+	if (gen->gi_frame != NULL && gen->gi_frame->f_stacktop != NULL) {
 		/* Generator is paused, so we need to close */
 		gen->ob_type->tp_del(self);
 		if (self->ob_refcnt > 0)
@@ -54,14 +53,16 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
 	}
 	if (f==NULL || f->f_stacktop == NULL) {
 		/* Only set exception if called from send() */
-		if (arg && !exc) PyErr_SetNone(PyExc_StopIteration);
+		if (arg && !exc)
+			PyErr_SetNone(PyExc_StopIteration);
 		return NULL;
 	}
 
 	if (f->f_lasti == -1) {
 		if (arg && arg != Py_None) {
 			PyErr_SetString(PyExc_TypeError,
-				"can't send non-None value to a just-started generator");
+					"can't send non-None value to a "
+					"just-started generator");
 			return NULL;
 		}
 	} else {
@@ -93,7 +94,8 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
 		Py_DECREF(result);
 		result = NULL;
 		/* Set exception if not called by gen_iternext() */
-		if (arg) PyErr_SetNone(PyExc_StopIteration);
+		if (arg)
+			PyErr_SetNone(PyExc_StopIteration);
 	}
 
 	if (!result || f->f_stacktop == NULL) {
@@ -127,11 +129,11 @@ gen_close(PyGenObject *gen, PyObject *args)
 	if (retval) {
 		Py_DECREF(retval);
 		PyErr_SetString(PyExc_RuntimeError,
-			"generator ignored GeneratorExit");
+				"generator ignored GeneratorExit");
 		return NULL;
 	}
-	if ( PyErr_ExceptionMatches(PyExc_StopIteration)
-	     || PyErr_ExceptionMatches(PyExc_GeneratorExit) )
+	if (PyErr_ExceptionMatches(PyExc_StopIteration)
+	    || PyErr_ExceptionMatches(PyExc_GeneratorExit))
 	{
 		PyErr_Clear();	/* ignore these errors */
 		Py_INCREF(Py_None);
@@ -147,7 +149,7 @@ gen_del(PyObject *self)
         PyObject *error_type, *error_value, *error_traceback;
 	PyGenObject *gen = (PyGenObject *)self;
 
-	if (!gen->gi_frame || gen->gi_frame->f_stacktop==NULL)
+	if (gen->gi_frame == NULL || gen->gi_frame->f_stacktop == NULL)
 		/* Generator isn't paused, so no need to close */
 		return;
 
@@ -158,10 +160,10 @@ gen_del(PyObject *self)
         /* Save the current exception, if any. */
         PyErr_Fetch(&error_type, &error_value, &error_traceback);
 
-	res = gen_close((PyGenObject *)self, NULL);
+	res = gen_close(gen, NULL);
 
 	if (res == NULL)
-		PyErr_WriteUnraisable((PyObject *)self);
+		PyErr_WriteUnraisable(self);
 	else
 		Py_DECREF(res);
 
