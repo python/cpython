@@ -68,6 +68,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1191700: Adjust column alignment in bdb breakpoint lists.
+
 - SimpleXMLRPCServer relied on the fcntl module, which is unavailable on
   Windows. Bug #1469163.
 
