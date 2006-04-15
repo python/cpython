@@ -73,8 +73,7 @@ cell_repr(PyCellObject *op)
 static int
 cell_traverse(PyCellObject *op, visitproc visit, void *arg)
 {
-	if (op->ob_ref)
-		return visit(op->ob_ref, arg);
+	Py_VISIT(op->ob_ref);
 	return 0;
 }
 

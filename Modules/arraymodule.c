@@ -2061,8 +2061,7 @@ arrayiter_dealloc(arrayiterobject *it)
 static int
 arrayiter_traverse(arrayiterobject *it, visitproc visit, void *arg)
 {
-	if (it->ao != NULL)
-		return visit((PyObject *)(it->ao), arg);
+	Py_VISIT(it->ao);
 	return 0;
 }
 

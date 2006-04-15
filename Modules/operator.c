@@ -358,8 +358,7 @@ itemgetter_dealloc(itemgetterobject *ig)
 static int
 itemgetter_traverse(itemgetterobject *ig, visitproc visit, void *arg)
 {
-	if (ig->item)
-		return visit(ig->item, arg);
+	Py_VISIT(ig->item);
 	return 0;
 }
 
@@ -497,8 +496,7 @@ attrgetter_dealloc(attrgetterobject *ag)
 static int
 attrgetter_traverse(attrgetterobject *ag, visitproc visit, void *arg)
 {
-	if (ag->attr)
-		return visit(ag->attr, arg);
+	Py_VISIT(ag->attr);
 	return 0;
 }
 

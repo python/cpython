@@ -109,8 +109,7 @@ weakref_dealloc(PyObject *self)
 static int
 gc_traverse(PyWeakReference *self, visitproc visit, void *arg)
 {
-    if (self->wr_callback != NULL)
-        return visit(self->wr_callback, arg);
+    Py_VISIT(self->wr_callback);
     return 0;
 }
 

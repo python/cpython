@@ -1732,17 +1732,12 @@ static int
 dict_traverse(PyObject *op, visitproc visit, void *arg)
 {
 	Py_ssize_t i = 0;
-	int err;
 	PyObject *pk;
 	PyObject *pv;
 
 	while (PyDict_Next(op, &i, &pk, &pv)) {
-		err = visit(pk, arg);
-		if (err)
-			return err;
-		err = visit(pv, arg);
-		if (err)
-			return err;
+		Py_VISIT(pk);
+		Py_VISIT(pv);
 	}
 	return 0;
 }

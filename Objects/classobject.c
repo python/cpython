@@ -404,37 +404,12 @@ class_str(PyClassObject *op)
 static int
 class_traverse(PyClassObject *o, visitproc visit, void *arg)
 {
-	int err;
-	if (o->cl_bases) {
-		err = visit(o->cl_bases, arg);
-		if (err)
-			return err;
-	}
-	if (o->cl_dict) {
-		err = visit(o->cl_dict, arg);
-		if (err)
-			return err;
-	}
-	if (o->cl_name) {
-		err = visit(o->cl_name, arg);
-		if (err)
-			return err;
-	}
-	if (o->cl_getattr) {
-		err = visit(o->cl_getattr, arg);
-		if (err)
-			return err;
-	}
-	if (o->cl_setattr) {
-		err = visit(o->cl_setattr, arg);
-		if (err)
-			return err;
-	}
-	if (o->cl_delattr) {
-		err = visit(o->cl_delattr, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(o->cl_bases);
+	Py_VISIT(o->cl_dict);
+	Py_VISIT(o->cl_name);
+	Py_VISIT(o->cl_getattr);
+	Py_VISIT(o->cl_setattr);
+	Py_VISIT(o->cl_delattr);
 	return 0;
 }
 
@@ -979,17 +954,8 @@ instance_hash(PyInstanceObject *inst)
 static int
 instance_traverse(PyInstanceObject *o, visitproc visit, void *arg)
 {
-	int err;
-	if (o->in_class) {
-		err = visit((PyObject *)(o->in_class), arg);
-		if (err)
-			return err;
-	}
-	if (o->in_dict) {
-		err = visit(o->in_dict, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(o->in_class);
+	Py_VISIT(o->in_dict);
 	return 0;
 }
 
@@ -2348,22 +2314,9 @@ instancemethod_hash(PyMethodObject *a)
 static int
 instancemethod_traverse(PyMethodObject *im, visitproc visit, void *arg)
 {
-	int err;
-	if (im->im_func) {
-		err = visit(im->im_func, arg);
-		if (err)
-			return err;
-	}
-	if (im->im_self) {
-		err = visit(im->im_self, arg);
-		if (err)
-			return err;
-	}
-	if (im->im_class) {
-		err = visit(im->im_class, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(im->im_func);
+	Py_VISIT(im->im_self);
+	Py_VISIT(im->im_class);
 	return 0;
 }
 

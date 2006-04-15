@@ -39,15 +39,9 @@ tb_dealloc(PyTracebackObject *tb)
 static int
 tb_traverse(PyTracebackObject *tb, visitproc visit, void *arg)
 {
-	int err = 0;
-	if (tb->tb_next) {
-		err = visit((PyObject *)tb->tb_next, arg);
-		if (err)
-			return err;
-	}
-	if (tb->tb_frame) 
-		err = visit((PyObject *)tb->tb_frame, arg);
-	return err;
+	Py_VISIT(tb->tb_next);
+	Py_VISIT(tb->tb_frame);
+	return 0;
 }
 
 static void
