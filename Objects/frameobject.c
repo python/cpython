@@ -454,36 +454,29 @@ frame_clear(PyFrameObject *f)
 	PyObject **fastlocals, **p, **oldtop;
 	int i, slots;
 
-	oldtop = f->f_stacktop;
-
 	/* Before anything else, make sure that this frame is clearly marked
-           as being defunct! */
+         * as being defunct!  Else, e.g., a generator reachable from this
+         * frame may also point to this frame, believe itself to still be
+         * active, and try cleaning up this frame again.
+         */
+	oldtop = f->f_stacktop;
         f->f_stacktop = NULL;
 
-	Py_XDECREF(f->f_exc_type);
-	f->f_exc_type = NULL;
-
-	Py_XDECREF(f->f_exc_value);
-	f->f_exc_value = NULL;
-
-	Py_XDECREF(f->f_exc_traceback);
-	f->f_exc_traceback = NULL;
-
-	Py_XDECREF(f->f_trace);
-	f->f_trace = NULL;
+	Py_CLEAR(f->f_exc_type);
+	Py_CLEAR(f->f_exc_value);
+	Py_CLEAR(f->f_exc_traceback);
+	Py_CLEAR(f->f_trace);
 
 	/* locals */
 	slots = f->f_nlocals + f->f_ncells + f->f_nfreevars;
 	fastlocals = f->f_localsplus;
-	for (i = slots; --i >= 0; ++fastlocals) {
+	for (i = slots; --i >= 0; ++fastlocals)
 		Py_CLEAR(*fastlocals);
-	}
 
 	/* stack */
 	if (oldtop != NULL) {
-		for (p = f->f_valuestack; p < oldtop; p++) {
+		for (p = f->f_valuestack; p < oldtop; p++)
 			Py_CLEAR(*p);
-		}
 	}
 }
 
