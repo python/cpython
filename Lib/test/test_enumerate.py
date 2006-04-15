@@ -92,7 +92,7 @@ class EnumerateTestCase(unittest.TestCase):
         self.assertRaises(TypeError, self.enum, X(self.seq))
 
     def test_illformediterable(self):
-        self.assertRaises(TypeError, list, self.enum(N(self.seq)))
+        self.assertRaises(TypeError, self.enum, N(self.seq))
 
     def test_exception_propagation(self):
         self.assertRaises(ZeroDivisionError, list, self.enum(E(self.seq)))
