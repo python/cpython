@@ -438,16 +438,9 @@ static int
 tupletraverse(PyTupleObject *o, visitproc visit, void *arg)
 {
 	Py_ssize_t i;
-	PyObject *x;
 
-	for (i = o->ob_size; --i >= 0; ) {
-		x = o->ob_item[i];
-		if (x != NULL) {
-			int err = visit(x, arg);
-			if (err)
-				return err;
-		}
-	}
+	for (i = o->ob_size; --i >= 0; )
+		Py_VISIT(o->ob_item[i]);
 	return 0;
 }
 
@@ -802,9 +795,8 @@ tupleiter_dealloc(tupleiterobject *it)
 static int
 tupleiter_traverse(tupleiterobject *it, visitproc visit, void *arg)
 {
-	if (it->it_seq == NULL)
-		return 0;
-	return visit((PyObject *)it->it_seq, arg);
+	Py_VISIT(it->it_seq);
+	return 0;
 }
 
 static PyObject *

@@ -48,7 +48,16 @@ module instead.
 		}						\
 	} while (0)
 #endif
-
+#ifndef Py_VISIT
+#define Py_VISIT(op)							\
+        do { 								\
+                if (op) {						\
+                        int vret = visit((PyObject *)(op), arg);	\
+                        if (vret)					\
+                                return vret;				\
+                }							\
+        } while (0)
+#endif
 
 /* end 2.2 compatibility macros */
 
@@ -825,16 +834,9 @@ Reader_dealloc(ReaderObj *self)
 static int
 Reader_traverse(ReaderObj *self, visitproc visit, void *arg)
 {
-	int err;
-#define VISIT(SLOT) \
-	if (SLOT) { \
-		err = visit((PyObject *)(SLOT), arg); \
-		if (err) \
-			return err; \
-	}
-	VISIT(self->dialect);
-	VISIT(self->input_iter);
-	VISIT(self->fields);
+	Py_VISIT(self->dialect);
+	Py_VISIT(self->input_iter);
+	Py_VISIT(self->fields);
 	return 0;
 }
 
@@ -1255,15 +1257,8 @@ Writer_dealloc(WriterObj *self)
 static int
 Writer_traverse(WriterObj *self, visitproc visit, void *arg)
 {
-	int err;
-#define VISIT(SLOT) \
-	if (SLOT) { \
-		err = visit((PyObject *)(SLOT), arg); \
-		if (err) \
-			return err; \
-	}
-	VISIT(self->dialect);
-	VISIT(self->writeline);
+	Py_VISIT(self->dialect);
+	Py_VISIT(self->writeline);
 	return 0;
 }
 

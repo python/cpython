@@ -1655,13 +1655,8 @@ static int
 xmlparse_traverse(xmlparseobject *op, visitproc visit, void *arg)
 {
     int i, err;
-    for (i = 0; handler_info[i].name != NULL; i++) {
-        if (!op->handlers[i])
-            continue;
-        err = visit(op->handlers[i], arg);
-        if (err)
-            return err;
-    }
+    for (i = 0; handler_info[i].name != NULL; i++)
+        Py_VISIT(op->handlers[i]);
     return 0;
 }
 

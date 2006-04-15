@@ -525,21 +525,15 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
 
 	if (type->tp_dictoffset != base->tp_dictoffset) {
 		PyObject **dictptr = _PyObject_GetDictPtr(self);
-		if (dictptr && *dictptr) {
-			int err = visit(*dictptr, arg);
-			if (err)
-				return err;
-		}
+		if (dictptr && *dictptr)
+			Py_VISIT(*dictptr);
 	}
 
-	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE)
 		/* For a heaptype, the instances count as references
 		   to the type.  Traverse the type so the collector
 		   can find cycles involving this link. */
-		int err = visit((PyObject *)type, arg);
-		if (err)
-			return err;
-	}
+		Py_VISIT(type);
 
 	if (basetraverse)
 		return basetraverse(self, visit, arg);
@@ -2198,31 +2192,20 @@ PyDoc_STRVAR(type_doc,
 static int
 type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 {
-	int err;
-
 	/* Because of type_is_gc(), the collector only calls this
 	   for heaptypes. */
 	assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
-#define VISIT(SLOT) \
-	if (SLOT) { \
-		err = visit((PyObject *)(SLOT), arg); \
-		if (err) \
-			return err; \
-	}
-
-	VISIT(type->tp_dict);
-	VISIT(type->tp_cache);
-	VISIT(type->tp_mro);
-	VISIT(type->tp_bases);
-	VISIT(type->tp_base);
+	Py_VISIT(type->tp_dict);
+	Py_VISIT(type->tp_cache);
+	Py_VISIT(type->tp_mro);
+	Py_VISIT(type->tp_bases);
+	Py_VISIT(type->tp_base);
 
 	/* There's no need to visit type->tp_subclasses or
 	   ((PyHeapTypeObject *)type)->ht_slots, because they can't be involved
 	   in cycles; tp_subclasses is a list of weak references,
 	   and slots is a tuple of strings. */
-
-#undef VISIT
 
 	return 0;
 }
@@ -5805,20 +5788,10 @@ static int
 super_traverse(PyObject *self, visitproc visit, void *arg)
 {
 	superobject *su = (superobject *)self;
-	int err;
 
-#define VISIT(SLOT) \
-	if (SLOT) { \
-		err = visit((PyObject *)(SLOT), arg); \
-		if (err) \
-			return err; \
-	}
-
-	VISIT(su->obj);
-	VISIT(su->type);
-	VISIT(su->obj_type);
-
-#undef VISIT
+	Py_VISIT(su->obj);
+	Py_VISIT(su->type);
+	Py_VISIT(su->obj_type);
 
 	return 0;
 }

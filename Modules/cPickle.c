@@ -2909,22 +2909,14 @@ Pickler_dealloc(Picklerobject *self)
 static int
 Pickler_traverse(Picklerobject *self, visitproc visit, void *arg)
 {
-	int err;
-#define VISIT(SLOT) \
-	if (SLOT) { \
-		err = visit((PyObject *)(SLOT), arg); \
-		if (err) \
-			return err; \
-	}
-	VISIT(self->write);
-	VISIT(self->memo);
-	VISIT(self->fast_memo);
-	VISIT(self->arg);
-	VISIT(self->file);
-	VISIT(self->pers_func);
-	VISIT(self->inst_pers_func);
-	VISIT(self->dispatch_table);
-#undef VISIT
+	Py_VISIT(self->write);
+	Py_VISIT(self->memo);
+	Py_VISIT(self->fast_memo);
+	Py_VISIT(self->arg);
+	Py_VISIT(self->file);
+	Py_VISIT(self->pers_func);
+	Py_VISIT(self->inst_pers_func);
+	Py_VISIT(self->dispatch_table);
 	return 0;
 }
 
@@ -5258,24 +5250,15 @@ Unpickler_dealloc(Unpicklerobject *self)
 static int
 Unpickler_traverse(Unpicklerobject *self, visitproc visit, void *arg)
 {
-	int err;
-
-#define VISIT(SLOT) \
-	if (SLOT) { \
-		err = visit((PyObject *)(SLOT), arg); \
-		if (err) \
-			return err; \
-	}
-	VISIT(self->readline);
-	VISIT(self->read);
-	VISIT(self->file);
-	VISIT(self->memo);
-	VISIT(self->stack);
-	VISIT(self->pers_func);
-	VISIT(self->arg);
-	VISIT(self->last_string);
-	VISIT(self->find_class);
-#undef VISIT
+	Py_VISIT(self->readline);
+	Py_VISIT(self->read);
+	Py_VISIT(self->file);
+	Py_VISIT(self->memo);
+	Py_VISIT(self->stack);
+	Py_VISIT(self->pers_func);
+	Py_VISIT(self->arg);
+	Py_VISIT(self->last_string);
+	Py_VISIT(self->find_class);
 	return 0;
 }
 

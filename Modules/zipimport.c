@@ -170,13 +170,7 @@ static int
 zipimporter_traverse(PyObject *obj, visitproc visit, void *arg)
 {
 	ZipImporter *self = (ZipImporter *)obj;
-	int err;
-
-	if (self->files != NULL) {
-		err = visit(self->files, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(self->files);
 	return 0;
 }
 

@@ -377,13 +377,7 @@ static int
 descr_traverse(PyObject *self, visitproc visit, void *arg)
 {
 	PyDescrObject *descr = (PyDescrObject *)self;
-	int err;
-
-	if (descr->d_type) {
-		err = visit((PyObject *)(descr->d_type), arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(descr->d_type);
 	return 0;
 }
 
@@ -814,13 +808,7 @@ static int
 proxy_traverse(PyObject *self, visitproc visit, void *arg)
 {
 	proxyobject *pp = (proxyobject *)self;
-	int err;
-
-	if (pp->dict) {
-		err = visit(pp->dict, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(pp->dict);
 	return 0;
 }
 
@@ -999,18 +987,8 @@ static int
 wrapper_traverse(PyObject *self, visitproc visit, void *arg)
 {
 	wrapperobject *wp = (wrapperobject *)self;
-	int err;
-
-	if (wp->descr) {
-		err = visit((PyObject *)(wp->descr), arg);
-		if (err)
-			return err;
-	}
-	if (wp->self) {
-		err = visit(wp->self, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(wp->descr);
+	Py_VISIT(wp->self);
 	return 0;
 }
 
@@ -1237,20 +1215,10 @@ static int
 property_traverse(PyObject *self, visitproc visit, void *arg)
 {
 	propertyobject *pp = (propertyobject *)self;
-	int err;
-
-#define VISIT(SLOT) \
-	if (pp->SLOT) { \
-		err = visit((PyObject *)(pp->SLOT), arg); \
-		if (err) \
-			return err; \
-	}
-
-	VISIT(prop_get);
-	VISIT(prop_set);
-	VISIT(prop_del);
-	VISIT(prop_doc);
-
+	Py_VISIT(pp->prop_get);
+	Py_VISIT(pp->prop_set);
+	Py_VISIT(pp->prop_del);
+	Py_VISIT(pp->prop_doc);
 	return 0;
 }
 
