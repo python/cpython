@@ -23,13 +23,6 @@ the expense of doing their own locking).
 #endif
 
 
-#define ZAP(x) { \
-	PyObject *tmp = (PyObject *)(x); \
-	(x) = NULL; \
-	Py_XDECREF(tmp); \
-}
-
-
 #ifdef WITH_THREAD
 #include "pythread.h"
 static PyThread_type_lock head_mutex = NULL; /* Protects interp->tstate_head */
@@ -106,12 +99,12 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
 	for (p = interp->tstate_head; p != NULL; p = p->next)
 		PyThreadState_Clear(p);
 	HEAD_UNLOCK();
-	ZAP(interp->codec_search_path);
-	ZAP(interp->codec_search_cache);
-	ZAP(interp->codec_error_registry);
-	ZAP(interp->modules);
-	ZAP(interp->sysdict);
-	ZAP(interp->builtins);
+	Py_CLEAR(interp->codec_search_path);
+	Py_CLEAR(interp->codec_search_cache);
+	Py_CLEAR(interp->codec_error_registry);
+	Py_CLEAR(interp->modules);
+	Py_CLEAR(interp->sysdict);
+	Py_CLEAR(interp->builtins);
 }
 
 
@@ -215,23 +208,23 @@ PyThreadState_Clear(PyThreadState *tstate)
 		fprintf(stderr,
 		  "PyThreadState_Clear: warning: thread still has a frame\n");
 
-	ZAP(tstate->frame);
+	Py_CLEAR(tstate->frame);
 
-	ZAP(tstate->dict);
-	ZAP(tstate->async_exc);
+	Py_CLEAR(tstate->dict);
+	Py_CLEAR(tstate->async_exc);
 
-	ZAP(tstate->curexc_type);
-	ZAP(tstate->curexc_value);
-	ZAP(tstate->curexc_traceback);
+	Py_CLEAR(tstate->curexc_type);
+	Py_CLEAR(tstate->curexc_value);
+	Py_CLEAR(tstate->curexc_traceback);
 
-	ZAP(tstate->exc_type);
-	ZAP(tstate->exc_value);
-	ZAP(tstate->exc_traceback);
+	Py_CLEAR(tstate->exc_type);
+	Py_CLEAR(tstate->exc_value);
+	Py_CLEAR(tstate->exc_traceback);
 
 	tstate->c_profilefunc = NULL;
 	tstate->c_tracefunc = NULL;
-	ZAP(tstate->c_profileobj);
-	ZAP(tstate->c_traceobj);
+	Py_CLEAR(tstate->c_profileobj);
+	Py_CLEAR(tstate->c_traceobj);
 }
 
 
@@ -360,7 +353,7 @@ PyThreadState_SetAsyncExc(long id, PyObject *exc) {
 	for (p = interp->tstate_head; p != NULL; p = p->next) {
 		if (p->thread_id != id)
 			continue;
-		ZAP(p->async_exc);
+		Py_CLEAR(p->async_exc);
 		Py_XINCREF(exc);
 		p->async_exc = exc;
 		count += 1;
