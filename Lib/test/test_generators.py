@@ -1745,8 +1745,40 @@ was removed.
 >>> leak()
 
 
-There should be more test_generator-induced refleaks here, after they get
-fixed.
+
+This test isn't really generator related, but rather exception-in-cleanup
+related. The coroutine tests (above) just happen to cause an exception in
+the generator's __del__ (tp_del) method. We can also test for this
+explicitly, without generators. We do have to redirect stderr to avoid
+printing warnings and to doublecheck that we actually tested what we wanted
+to test.
+
+>>> import sys, StringIO
+>>> old = sys.stderr
+>>> try:
+...     sys.stderr = StringIO.StringIO()
+...     class Leaker:
+...         def __del__(self):
+...             raise RuntimeError
+...
+...     l = Leaker()
+...     del l
+...     err = sys.stderr.getvalue().strip()
+...     err.startswith(
+...         "Exception exceptions.RuntimeError: RuntimeError() in <"
+...     )
+...     err.endswith("> ignored")
+...     len(err.splitlines())
+... finally:
+...     sys.stderr = old
+True
+True
+1
+
+
+
+These refleak tests should perhaps be in a testfile of their own,
+test_generators just happened to be the test that drew these out.
 
 """
 

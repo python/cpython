@@ -604,6 +604,7 @@ PyErr_WriteUnraisable(PyObject *obj)
 				PyFile_WriteString(": ", f);
 				PyFile_WriteObject(v, f, 0);
 			}
+			Py_DECREF(moduleName);
 		}
 		PyFile_WriteString(" in ", f);
 		PyFile_WriteObject(obj, f, 0);
