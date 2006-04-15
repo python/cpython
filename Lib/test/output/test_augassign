@@ -1,6 +1,9 @@
 test_augassign
+6.0
 6
-[6]
+[6.0]
+6
+6.0
 6
 [1, 2, 3, 4, 1, 2, 3, 4]
 [1, 2, 1, 2, 3]
@@ -22,9 +25,9 @@ __isub__ called
 __mul__ called
 __rmul__ called
 __imul__ called
-__div__ called
-__rdiv__ called
-__idiv__ called
+__truediv__ called
+__rtruediv__ called
+__itruediv__ called
 __floordiv__ called
 __rfloordiv__ called
 __ifloordiv__ called
