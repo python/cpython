@@ -48,6 +48,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1191065: Fix preprocessor problems on systems where recvfrom
+  is a macro.
+
 - Bug #1467952: os.listdir() now correctly raises an error if readdir()
   fails with an error condition.
 
