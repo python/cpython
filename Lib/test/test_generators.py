@@ -668,10 +668,7 @@ concept, viz. produce the results only as needed instead of producing them
 all and thereby wasting memory.
 
 Thanks to itertools.tee, it is now clear "how to get the internal uses of
-m235 to share a single generator". Unfortunately, using generators this way
-creates a reference-cycle that the garbage collector (currently) can't clean
-up, so we have to explicitly break the cycle (by calling the inner
-generator's close() method)
+m235 to share a single generator".
 
 >>> from itertools import tee
 >>> def m235():
@@ -683,9 +680,9 @@ generator's close() method)
 ...             yield n
 ...     m1 = _m235()
 ...     m2, m3, m5, mRes = tee(m1, 4)
-...     return m1.close, mRes
+...     return mRes
 
->>> closer, it = m235()
+>>> it = m235()
 >>> for i in range(5):
 ...     print firstn(it, 15)
 [1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20, 24]
@@ -693,7 +690,6 @@ generator's close() method)
 [81, 90, 96, 100, 108, 120, 125, 128, 135, 144, 150, 160, 162, 180, 192]
 [200, 216, 225, 240, 243, 250, 256, 270, 288, 300, 320, 324, 360, 375, 384]
 [400, 405, 432, 450, 480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675]
->>> closer()
 
 The "tee" function does just what we want. It internally keeps a generated
 result for as long as it has not been "consumed" from all of the duplicated
@@ -701,11 +697,7 @@ iterators, whereupon it is deleted. You can therefore print the hamming
 sequence during hours without increasing memory usage, or very little.
 
 The beauty of it is that recursive running-after-their-tail FP algorithms
-are quite straightforwardly expressed with this Python idiom. The problem is
-that this creates an uncollectable reference cycle, and we have to explicitly
-close the innermost generator to clean up the cycle.
-XXX As of 14-Apr-2006, Tim doubts that anyone understands _why_ some cycle
-XXX is uncollectable here.
+are quite straightforwardly expressed with this Python idiom.
 
 Ye olde Fibonacci generator, tee style.
 
@@ -724,14 +716,11 @@ Ye olde Fibonacci generator, tee style.
 ...
 ...     realfib = _fib()
 ...     fibHead, fibTail, fibRes = tee(realfib, 3)
-...     return realfib.close, fibRes
+...     return fibRes
 
->>> closer, fibber = fib()
->>> firstn(fibber, 17)
+>>> firstn(fib(), 17)
 [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584]
->>> closer()
 
-XXX Again the tee-based approach leaks without an explicit close().
 """
 
 leak_test1 = """
