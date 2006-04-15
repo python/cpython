@@ -185,11 +185,11 @@ class TestErrorHandling(unittest.TestCase):
 
     def test_len_only(self):
         for f in (bisect_left, bisect_right, insort_left, insort_right):
-            self.assertRaises(AttributeError, f, LenOnly(), 10)
+            self.assertRaises(TypeError, f, LenOnly(), 10)
 
     def test_get_only(self):
         for f in (bisect_left, bisect_right, insort_left, insort_right):
-            self.assertRaises(AttributeError, f, GetOnly(), 10)
+            self.assertRaises(TypeError, f, GetOnly(), 10)
 
     def test_cmp_err(self):
         seq = [CmpErr(), CmpErr(), CmpErr()]
