@@ -37,6 +37,20 @@ module instead.
 #		define PyMODINIT_FUNC void
 #	endif /* __cplusplus */
 #endif
+
+#ifndef Py_CLEAR
+#define Py_CLEAR(op)						\
+	do {							\
+		if (op) {					\
+			PyObject *tmp = (PyObject *)(op);	\
+			(op) = NULL;				\
+			Py_DECREF(tmp);				\
+		}						\
+	} while (0)
+#endif
+#ifndef Py_VISIT
+
+
 /* end 2.2 compatibility macros */
 
 #define IS_BASESTRING(o) \
