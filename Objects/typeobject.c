@@ -2213,8 +2213,6 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 static int
 type_clear(PyTypeObject *type)
 {
-	PyObject *tmp;
-
 	/* Because of type_is_gc(), the collector only calls this
 	   for heaptypes. */
 	assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
