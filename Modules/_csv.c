@@ -48,7 +48,6 @@ module instead.
 		}						\
 	} while (0)
 #endif
-#ifndef Py_VISIT
 
 
 /* end 2.2 compatibility macros */
