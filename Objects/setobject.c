@@ -978,8 +978,8 @@ PySet_Fini(void)
 		so = free_sets[num_free_sets];
 		PyObject_GC_Del(so);
 	}
-	Py_XDECREF(dummy);
-	Py_XDECREF(emptyfrozenset);
+	Py_CLEAR(dummy);
+	Py_CLEAR(emptyfrozenset);
 }
 
 static PyObject *
