@@ -303,13 +303,13 @@ PyAPI_FUNC(void) PyObject_GC_Del(void *);
  * "visit" and "arg".  This is intended to keep tp_traverse functions
  * looking as much alike as possible.
  */
-#define Py_VISIT(op)					\
-        do { 						\
-                if (op) {				\
-                        int vret = visit((op), arg);	\
-                        if (vret)			\
-                                return vret;		\
-                }					\
+#define Py_VISIT(op)							\
+        do { 								\
+                if (op) {						\
+                        int vret = visit((PyObject *)(op), arg);	\
+                        if (vret)					\
+                                return vret;				\
+                }							\
         } while (0)
 
 /* This is here for the sake of backwards compatibility.  Extensions that

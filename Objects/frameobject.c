@@ -422,30 +422,28 @@ static int
 frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 {
 	PyObject **fastlocals, **p;
-	int i, err, slots;
-#define VISIT(o) if (o) {if ((err = visit((PyObject *)(o), arg))) return err;}
+	int i, slots;
 
-	VISIT(f->f_back);
-	VISIT(f->f_code);
-	VISIT(f->f_builtins);
-	VISIT(f->f_globals);
-	VISIT(f->f_locals);
-	VISIT(f->f_trace);
-	VISIT(f->f_exc_type);
-	VISIT(f->f_exc_value);
-	VISIT(f->f_exc_traceback);
+	Py_VISIT(f->f_back);
+	Py_VISIT(f->f_code);
+	Py_VISIT(f->f_builtins);
+	Py_VISIT(f->f_globals);
+	Py_VISIT(f->f_locals);
+	Py_VISIT(f->f_trace);
+	Py_VISIT(f->f_exc_type);
+	Py_VISIT(f->f_exc_value);
+	Py_VISIT(f->f_exc_traceback);
 
 	/* locals */
 	slots = f->f_nlocals + f->f_ncells + f->f_nfreevars;
 	fastlocals = f->f_localsplus;
-	for (i = slots; --i >= 0; ++fastlocals) {
-		VISIT(*fastlocals);
-	}
+	for (i = slots; --i >= 0; ++fastlocals)
+		Py_VISIT(*fastlocals);
 
 	/* stack */
 	if (f->f_stacktop != NULL) {
 		for (p = f->f_valuestack; p < f->f_stacktop; p++)
-			VISIT(*p);
+			Py_VISIT(*p);
 	}
 	return 0;
 }
