@@ -185,7 +185,7 @@ gen_del(PyObject *self)
                 _Py_NewReference(self);
                 self->ob_refcnt = refcnt;
         }
-        assert(!PyType_IS_GC(self->ob_type) ||
+        assert(PyType_IS_GC(self->ob_type) &&
                _Py_AS_GC(self)->gc.gc_refs != _PyGC_REFS_UNTRACKED);
 
         /* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
