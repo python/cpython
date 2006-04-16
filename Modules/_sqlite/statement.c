@@ -48,8 +48,6 @@ int statement_create(Statement* self, Connection* connection, PyObject* sql)
     char* sql_cstr;
 
     self->st = NULL;
-
-    self->st = NULL;
     self->in_use = 0;
 
     if (PyString_Check(sql)) {
@@ -80,6 +78,7 @@ int statement_create(Statement* self, Connection* connection, PyObject* sql)
 
     if (rc == SQLITE_OK && check_remaining_sql(tail)) {
         (void)sqlite3_finalize(self->st);
+        self->st = NULL;
         rc = PYSQLITE_TOO_MUCH_SQL;
     }
 
