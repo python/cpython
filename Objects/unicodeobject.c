@@ -4219,7 +4219,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
 	/* Convert item to Unicode. */
 	if (! PyUnicode_Check(item) && ! PyString_Check(item)) {
 	    PyErr_Format(PyExc_TypeError,
-			 "sequence item %i: expected string or Unicode,"
+			 "sequence item %zd: expected string or Unicode,"
 			 " %.80s found",
 			 i, item->ob_type->tp_name);
 	    goto onError;
