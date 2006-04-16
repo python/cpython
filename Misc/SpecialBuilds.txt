@@ -1,8 +1,8 @@
 This file describes some special Python build types enabled via
 compile-time preprocessor defines.
 
-It is best to define these options in the EXTRA_CFLAGS environment variable;
-``EXTRA_CFLAGS="-DPy_REF_DEBUG" ./configure``.
+It is best to define these options in the EXTRA_CFLAGS make variable;
+``make EXTRA_CFLAGS="-DPy_REF_DEBUG"``.
 
 ---------------------------------------------------------------------------
 Py_REF_DEBUG                                              introduced in 1.4
