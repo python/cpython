@@ -585,11 +585,7 @@ executed.
 First, I'll discuss the statement as it will commonly be used, and
 then a subsection will examine the implementation details and how to
 write objects (called ``context managers'') that can be used with this
-statement.  Most people will only use \keyword{with} in company with
-existing objects that are documented to work as context managers, and
-don't need to know these details, so you can skip the subsection if
-you like.  Authors of new context managers will need to understand the
-details of the underlying implementation.
+statement.  
 
 The \keyword{with} statement is a new control-flow structure whose
 basic structure is:
@@ -663,7 +659,11 @@ with decimal.Context(prec=16):
 \subsection{Writing Context Managers}
 
 Under the hood, the \keyword{with} statement is fairly complicated.
-The interface demanded of context managers contains several methods.
+Most people will only use \keyword{with} in company with
+existing objects that are documented to work as context managers, and
+don't need to know these details, so you can skip the following section if
+you like.  Authors of new context managers will need to understand the
+details of the underlying implementation.
 
 A high-level explanation of the context management protocol is:
 
@@ -826,19 +826,74 @@ finally:
 \end{verbatim}
 \end{comment}
 
+\subsection{The contextlib module\label{module-contextlib}}
 
 The new \module{contextlib} module provides some functions and a
-decorator that are useful for writing context managers.  
-Future versions will go into more detail.
+decorator that are useful for writing context managers.
 
-% XXX describe further
+The decorator is called \function{contextmanager}, and lets you write
+a simple context manager as a generator.  The generator should yield
+exactly one value.  The code up to the \keyword{yield} will be
+executed as the \method{__enter__()} method, and the value yielded
+will be the method's return value that will get bound to the variable
+in the \keyword{with} statement's \keyword{as} clause, if any.  The
+code after the \keyword{yield} will be executed in the
+\method{__exit__()} method.  Any exception raised in the block 
+will be raised by the \keyword{yield} statement.
+
+Our database example from the previous section could be written 
+using this decorator as:
+
+\begin{verbatim}
+from contextlib import contextmanager
+
+@contextmanager
+def db_transaction (connection):
+    cursor = connection.cursor()
+    try:
+        yield cursor
+    except:
+        connection.rollback()
+        raise
+    else:
+        connection.commit()
+
+db = DatabaseConnection()
+with db_transaction(db) as cursor:
+    ...
+\end{verbatim}
+
+There's a \function{nested(\var{mgr1}, \var{mgr2}, ...)} manager that 
+combines a number of context managers so you don't need to write 
+nested \keyword{with} statements.  This example
+both uses a database transaction and also acquires a thread lock:
+
+\begin{verbatim}
+lock = threading.Lock()
+with nested (db_transaction(db), lock) as (cursor, locked):
+    ...
+\end{verbatim}
+
+Finally, the \function{closing(\var{object})} context manager 
+returns \var{object} so that it can be bound to a variable,
+and calls \code{\var{object}.close()} at the end of the block.
+
+\begin{verbatim}
+with closing(open('/tmp/file', 'r')) as f:
+    for line in f:
+        ... 
+\end{verbatim}
 
 \begin{seealso}
 
-\seepep{343}{The ``with'' statement}{PEP written by 
-Guido van Rossum and Nick Coghlan. 
-The PEP shows the code generated for a \keyword{with} statement,
-which can be helpful in learning how context managers work.}
+\seepep{343}{The ``with'' statement}{PEP written by Guido van Rossum
+and Nick Coghlan; implemented by Mike Bland, Guido van Rossum, and
+Neal Norwitz.  The PEP shows the code generated for a \keyword{with}
+statement, which can be helpful in learning how context managers
+work.}
+
+\seeurl{../lib/module-contextlib.html}{The documentation 
+for the \module{contextlib} module.}
 
 \end{seealso}
 
@@ -1140,12 +1195,11 @@ pystone benchmark around XXX\% faster than Python 2.4.
 %======================================================================
 \section{New, Improved, and Deprecated Modules}
 
-As usual, Python's standard library received many enhancements and
-bug fixes.  Here's a partial list of the most notable changes, sorted
-alphabetically by module name. Consult the
-\file{Misc/NEWS} file in the source tree for a more
-complete list of changes, or look through the SVN logs for all the
-details.
+The standard library received many enhancements and bug fixes in
+Python 2.5.  Here's a partial list of the most notable changes, sorted
+alphabetically by module name. Consult the \file{Misc/NEWS} file in
+the source tree for a more complete list of changes, or look through
+the SVN logs for all the details.
 
 \begin{itemize}
 
@@ -1205,6 +1259,10 @@ The \class{deque} double-ended queue type supplied by the
 \module{collections} module now has a \method{remove(\var{value})}
 method that removes the first occurrence of \var{value} in the queue,
 raising \exception{ValueError} if the value isn't found.
+
+\item The \module{contextlib} module contains helper functions for use 
+with the new \keyword{with} statement.  See section~\ref{module-contextlib}
+for more about this module.  (Contributed by Phillip J. Eby.)
 
 \item The \module{cProfile} module is a C implementation of 
 the existing \module{profile} module that has much lower overhead.
