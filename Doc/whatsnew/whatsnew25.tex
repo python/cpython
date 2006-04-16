@@ -2,7 +2,6 @@
 \usepackage{distutils}
 % $Id$
 
-% Writing context managers
 % The easy_install stuff
 % Stateful codec changes
 % Fix XXX comments
@@ -1178,8 +1177,9 @@ In 2.5 the internal data structure has been customized for implementing sets,
 and as a result sets will use a third less memory and are somewhat faster.
 (Implemented by Raymond Hettinger.)
 
-\item The performance of some Unicode operations has been improved.
-% XXX provide details?
+\item The performance of some Unicode operations, such as 
+character map decoding, has been improved.
+% Patch 1313939
 
 \item The code generator's peephole optimizer now performs
 simple constant folding in expressions.  If you write something like
