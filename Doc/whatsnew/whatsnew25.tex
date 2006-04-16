@@ -323,7 +323,7 @@ perform the relative import starting from the parent of the current
 package.  For example, code in the \module{A.B.C} module can do:
 
 \begin{verbatim}
-from . import D   		# Imports A.B.D
+from . import D                 # Imports A.B.D
 from .. import E                # Imports A.E
 from ..F import G               # Imports A.F.G
 \end{verbatim}
@@ -431,7 +431,7 @@ def counter (maximum):
     i = 0
     while i < maximum:
         yield i
-	i += 1
+        i += 1
 \end{verbatim}
 
 When you call \code{counter(10)}, the result is an iterator that
@@ -473,11 +473,11 @@ def counter (maximum):
     i = 0
     while i < maximum:
         val = (yield i)
-	# If value provided, change counter
+        # If value provided, change counter
         if val is not None:
             i = val
-	else:
-  	    i += 1
+        else:
+            i += 1
 \end{verbatim}
 
 And here's an example of changing the counter:
@@ -578,33 +578,34 @@ Sugalski.}
 %======================================================================
 \section{PEP 343: The 'with' statement}
 
-The \keyword{with} statement allows a clearer 
-version of code that uses \code{try...finally} blocks
+The \keyword{with} statement allows a clearer version of code that
+uses \code{try...finally} blocks to ensure that clean-up code is
+executed.
 
 First, I'll discuss the statement as it will commonly be used, and
-then I'll discuss the detailed implementation and how to write objects
-(called ``context managers'') that can be used with this statement.
-Most people, who will only use \keyword{with} in company with an
-existing object, don't need to know these details and can 
-just use objects that are documented to work as context managers.
-Authors of new context managers will need to understand the details of
-the underlying implementation.
+then a subsection will examine the implementation details and how to
+write objects (called ``context managers'') that can be used with this
+statement.  Most people will only use \keyword{with} in company with
+existing objects that are documented to work as context managers, and
+don't need to know these details, so you can skip the subsection if
+you like.  Authors of new context managers will need to understand the
+details of the underlying implementation.
 
 The \keyword{with} statement is a new control-flow structure whose
 basic structure is:
 
 \begin{verbatim}
-with expression as variable:
+with expression [as variable]:
     with-block
 \end{verbatim}
 
 The expression is evaluated, and it should result in a type of object
 that's called a context manager.  The context manager can return a
-value that will be bound to the name \var{variable}.  (Note carefully:
-\var{variable} is \emph{not} assigned the result of \var{expression}.
-One method of the context manager is run before \var{with-block} is
-executed, and another method is run after the block is done, even if
-the block raised an exception.
+value that can optionally be bound to the name \var{variable}.  (Note
+carefully: \var{variable} is \emph{not} assigned the result of
+\var{expression}.)  One method of the context manager is run before
+\var{with-block} is executed, and another method is run after the
+block is done, even if the block raised an exception.
 
 To enable the statement in Python 2.5, you need 
 to add the following directive to your module:
@@ -613,16 +614,21 @@ to add the following directive to your module:
 from __future__ import with_statement
 \end{verbatim}
 
-Some standard Python objects can now behave as context managers.  For
-example, file objects:
+The statement will always be enabled in Python 2.6.
+
+Some standard Python objects can now behave as context managers. File
+objects are one example:
 
 \begin{verbatim}
 with open('/etc/passwd', 'r') as f:
     for line in f:
         print line
-
-# f has been automatically closed at this point.
+        ... more processing code ...
 \end{verbatim}
+
+After this statement has executed, the file object in \var{f} will
+have been automatically closed at this point, even if the 'for' loop
+raised an exception part-way through the block.
 
 The \module{threading} module's locks and condition variables 
 also support the \keyword{with} statement:
@@ -634,7 +640,7 @@ with lock:
     ...
 \end{verbatim}
 
-The lock is acquired before the block is executed, and released once 
+The lock is acquired before the block is executed, and always released once 
 the block is complete.
 
 The \module{decimal} module's contexts, which encapsulate the desired
@@ -644,9 +650,8 @@ used as context managers.
 \begin{verbatim}
 import decimal
 
-v1 = decimal.Decimal('578')
-
 # Displays with default precision of 28 digits
+v1 = decimal.Decimal('578')
 print v1.sqrt()
 
 with decimal.Context(prec=16):
@@ -657,9 +662,170 @@ with decimal.Context(prec=16):
 
 \subsection{Writing Context Managers}
 
-% XXX write this
+Under the hood, the \keyword{with} statement is fairly complicated.
+The interface demanded of context managers contains several methods.
 
-This section still needs to be written.
+A high-level explanation of the context management protocol is:
+
+\begin{itemize}
+\item The expression is evaluated and should result in an object
+that's a context manager, meaning that it has a 
+\method{__context__()} method.
+
+\item This object's \method{__context__()} method is called, and must
+return a context object.  
+
+\item The context's \method{__enter__()} method is called. 
+The value returned is assigned to \var{VAR}.  If no \code{as \var{VAR}} 
+clause is present, the value is simply discarded.
+
+\item The code in \var{BLOCK} is executed.
+
+\item If \var{BLOCK} raises an exception, the context object's
+\method{__exit__(\var{type}, \var{value}, \var{traceback})} is called
+with the exception's information, the same values returned by
+\function{sys.exc_info()}.  The method's return value
+controls whether the exception is re-raised: any false value 
+re-raises the exception, and \code{True} will result in suppressing it.
+You'll only rarely want to suppress the exception; the 
+author of the code containing the \keyword{with} statement will 
+never realize anything went wrong.
+
+\item If \var{BLOCK} didn't raise an exception, 
+the context object's \method{__exit__()} is still called,
+but \var{type}, \var{value}, and \var{traceback} are all \code{None}.
+
+\end{itemize}
+
+Let's think through an example.  I won't present detailed code but
+will only sketch the necessary code.  The example will be writing a
+context manager for a database that supports transactions.
+
+(For people unfamiliar with database terminology: a set of changes to
+the database are grouped into a transaction.  Transactions can be
+either committed, meaning that all the changes are written into the
+database, or rolled back, meaning that the changes are all discarded
+and the database is unchanged.  See any database textbook for more
+information.)
+% XXX find a shorter reference?
+
+Let's assume there's an object representing a database connection.
+Our goal will be to let the user write code like this:
+
+\begin{verbatim}
+db_connection = DatabaseConnection()
+with db_connection as cursor:
+    cursor.execute('insert into ...')
+    cursor.execute('delete from ...')
+    # ... more operations ...
+\end{verbatim}
+
+The transaction should either be committed if the code in the block
+runs flawlessly, or rolled back if there's an exception.
+
+First, the \class{DatabaseConnection} needs a \method{__context__()}
+method.  Sometimes an object can be its own context manager and can
+simply return \code{self}; the \module{threading} module's lock objects 
+can do this.  For our database example, though, we need to 
+create a new object; I'll call this class \class{DatabaseContext}.
+Our \method{__context__()} must therefore look like this:
+
+\begin{verbatim}
+class DatabaseConnection:
+    ...
+    def __context__ (self):
+        return DatabaseContext(self)
+
+    # Database interface
+    def cursor (self):
+        "Returns a cursor object and starts a new transaction"
+    def commit (self):
+        "Commits current transaction"
+    def rollback (self):
+        "Rolls back current transaction"
+\end{verbatim}
+
+The context needs the connection object so that the connection
+object's \method{commit()} or \method{rollback()} methods can be
+called:
+
+\begin{verbatim}
+class DatabaseContext:
+    def __init__ (self, connection):
+        self.connection = connection
+\end{verbatim}
+
+The \method {__enter__()} method is pretty easy, having only
+to start a new transaction.  In this example,
+the resulting cursor object would be a useful result,
+so the method will return it.  The user can 
+then add \code{as cursor} to their \keyword{with} statement
+to bind the cursor to a variable name.
+
+\begin{verbatim}
+class DatabaseContext:
+    ...
+    def __enter__ (self):
+        # Code to start a new transaction
+        cursor = self.connection.cursor()
+        return cursor
+\end{verbatim}
+
+The \method{__exit__()} method is the most complicated because it's
+where most of the work has to be done.  The method has to check if an
+exception occurred.  If there was no exception, the transaction is
+committed.  The transaction is rolled back if there was an exception.
+Here the code will just fall off the end of the function, returning 
+the default value of \code{None}.  \code{None} is false, so the exception
+will be re-raised automatically.  If you wished, you could be more explicit
+and add a \keyword{return} at the marked location.
+
+\begin{verbatim}
+class DatabaseContext:
+    ...
+    def __exit__ (self, type, value, tb):
+        if tb is None:
+            # No exception, so commit
+            self.connection.commit()
+        else:
+            # Exception occurred, so rollback.
+            self.connection.rollback()
+            # return False
+\end{verbatim}
+
+\begin{comment}
+% XXX should I give the code, or is the above explanation sufficient?
+\pep{343} shows the code generated for a \keyword{with} statement.  A
+statement such as:
+
+\begin{verbatim}
+with EXPR as VAR:
+    BLOCK
+\end{verbatim}
+
+is translated into:
+
+\begin{verbatim}
+ctx = (EXPR).__context__()
+exit = ctx.__exit__  # Not calling it yet
+value = ctx.__enter__()
+exc = True
+try:
+    try:
+        VAR = value  # Only if "as VAR" is present
+        BLOCK
+    except:
+        # The exceptional case is handled here
+        exc = False
+        if not exit(*sys.exc_info()):
+            raise
+finally:
+    # The normal and non-local-goto cases are handled here
+    if exc:
+        exit(None, None, None)
+\end{verbatim}
+\end{comment}
+
 
 The new \module{contextlib} module provides some functions and a
 decorator that are useful for writing context managers.  
@@ -670,7 +836,9 @@ Future versions will go into more detail.
 \begin{seealso}
 
 \seepep{343}{The ``with'' statement}{PEP written by 
-Guido van Rossum and Nick Coghlan. }
+Guido van Rossum and Nick Coghlan. 
+The PEP shows the code generated for a \keyword{with} statement,
+which can be helpful in learning how context managers work.}
 
 \end{seealso}
 
@@ -887,7 +1055,7 @@ For example, to find the longest string in a list, you can do:
 \begin{verbatim}
 L = ['medium', 'longest', 'short']
 # Prints 'longest'
-print max(L, key=len)		   
+print max(L, key=len)              
 # Prints 'short', because lexicographically 'short' has the largest value
 print max(L)         
 \end{verbatim}
@@ -1027,10 +1195,10 @@ Printing \code{index} results in the following output:
 
 \begin{verbatim}
 defaultdict(<type 'list'>, {'c': ['cammin', 'che'], 'e': ['era'], 
-	'd': ['del', 'di', 'diritta'], 'm': ['mezzo', 'mi'], 
-	'l': ['la'], 'o': ['oscura'], 'n': ['nel', 'nostra'], 
-	'p': ['per'], 's': ['selva', 'smarrita'], 
-	'r': ['ritrovai'], 'u': ['una'], 'v': ['vita', 'via']}
+        'd': ['del', 'di', 'diritta'], 'm': ['mezzo', 'mi'], 
+        'l': ['la'], 'o': ['oscura'], 'n': ['nel', 'nostra'], 
+        'p': ['per'], 's': ['selva', 'smarrita'], 
+        'r': ['ritrovai'], 'u': ['una'], 'v': ['vita', 'via']}
 \end{verbatim}
 
 The \class{deque} double-ended queue type supplied by the
@@ -1415,15 +1583,15 @@ for creating new hashing objects are named differently.
 
 \begin{verbatim}
 # Old versions
-h = md5.md5()	
-h = md5.new()	
+h = md5.md5()   
+h = md5.new()   
 
 # New version 
 h = hashlib.md5()
 
 # Old versions
-h = sha.sha()	
-h = sha.new()	
+h = sha.sha()   
+h = sha.new()   
 
 # New version 
 h = hashlib.sha1()
@@ -1435,7 +1603,7 @@ h = hashlib.sha384()
 h = hashlib.sha512()
 
 # Alternative form
-h = hashlib.new('md5')		# Provide algorithm as a string
+h = hashlib.new('md5')          # Provide algorithm as a string
 \end{verbatim}
 
 Once a hash object has been created, its methods are the same as before:
@@ -1515,9 +1683,9 @@ c.execute('select * from stocks where symbol=?', ('IBM',))
 
 # Larger example
 for t in (('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
-	  ('2006-04-05', 'BUY', 'MSOFT', 1000, 72.00),
-	  ('2006-04-06', 'SELL', 'IBM', 500, 53.00),
-	 ):
+          ('2006-04-05', 'BUY', 'MSOFT', 1000, 72.00),
+          ('2006-04-06', 'SELL', 'IBM', 500, 53.00),
+         ):
     c.execute('insert into stocks values (?,?,?,?,?)', t)
 \end{verbatim}
 
