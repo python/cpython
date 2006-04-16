@@ -688,9 +688,13 @@ static int connection_set_isolation_level(Connection* self, PyObject* isolation_
 
     Py_XDECREF(self->isolation_level);
 
+    if (self->begin_statement) {
+        PyMem_Free(self->begin_statement);
+        self->begin_statement = NULL;
+    }
+
     if (isolation_level == Py_None) {
         Py_INCREF(Py_None);
-        self->begin_statement = NULL;
         self->isolation_level = Py_None;
 
         empty = PyTuple_New(0);
