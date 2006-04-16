@@ -72,6 +72,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1063914: Add Tkinter.Misc.clipboard_get().
+
 - Patch #1191700: Adjust column alignment in bdb breakpoint lists.
 
 - SimpleXMLRPCServer relied on the fcntl module, which is unavailable on
