@@ -981,6 +981,7 @@ static PyStructSequence_Desc statvfs_result_desc = {
 	10
 };
 
+static int initialized;
 static PyTypeObject StatResultType;
 static PyTypeObject StatVFSResultType;
 static newfunc structseq_new;
@@ -8241,21 +8242,24 @@ INITFUNC(void)
 		posix_putenv_garbage = PyDict_New();
 #endif
 
-	stat_result_desc.name = MODNAME ".stat_result";
-	stat_result_desc.fields[7].name = PyStructSequence_UnnamedField;
-	stat_result_desc.fields[8].name = PyStructSequence_UnnamedField;
-	stat_result_desc.fields[9].name = PyStructSequence_UnnamedField;
-	PyStructSequence_InitType(&StatResultType, &stat_result_desc);
-	structseq_new = StatResultType.tp_new;
-	StatResultType.tp_new = statresult_new;
+	if (!initialized) {
+		stat_result_desc.name = MODNAME ".stat_result";
+		stat_result_desc.fields[7].name = PyStructSequence_UnnamedField;
+		stat_result_desc.fields[8].name = PyStructSequence_UnnamedField;
+		stat_result_desc.fields[9].name = PyStructSequence_UnnamedField;
+		PyStructSequence_InitType(&StatResultType, &stat_result_desc);
+		structseq_new = StatResultType.tp_new;
+		StatResultType.tp_new = statresult_new;
+
+		statvfs_result_desc.name = MODNAME ".statvfs_result";
+		PyStructSequence_InitType(&StatVFSResultType, &statvfs_result_desc);
+	}
 	Py_INCREF((PyObject*) &StatResultType);
 	PyModule_AddObject(m, "stat_result", (PyObject*) &StatResultType);
-
-	statvfs_result_desc.name = MODNAME ".statvfs_result";
-	PyStructSequence_InitType(&StatVFSResultType, &statvfs_result_desc);
 	Py_INCREF((PyObject*) &StatVFSResultType);
 	PyModule_AddObject(m, "statvfs_result",
 			   (PyObject*) &StatVFSResultType);
+	initialized = 1;
 }
 
 #ifdef __cplusplus

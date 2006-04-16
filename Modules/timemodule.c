@@ -228,6 +228,7 @@ static PyStructSequence_Desc struct_time_type_desc = {
 	9,
 };
 
+static int initialized;
 static PyTypeObject StructTimeType;
 
 static PyObject *
@@ -807,9 +808,13 @@ inittime(void)
 	hInterruptEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	SetConsoleCtrlHandler( PyCtrlHandler, TRUE);
 #endif /* MS_WINDOWS */
-        PyStructSequence_InitType(&StructTimeType, &struct_time_type_desc);
+	if (!initialized) {
+		PyStructSequence_InitType(&StructTimeType, 
+					  &struct_time_type_desc);
+	}
 	Py_INCREF(&StructTimeType);
 	PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType);
+	initialized = 1;
 }
 
 
