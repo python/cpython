@@ -483,24 +483,24 @@ class Misc:
     def bell(self, displayof=0):
         """Ring a display's bell."""
         self.tk.call(('bell',) + self._displayof(displayof))
-        
+
     # Clipboard handling:
     def clipboard_get(self, **kw):
         """Retrieve data from the clipboard on window's display.
-        
-        The window keyword defaults to the root window of the Tkinter 
+
+        The window keyword defaults to the root window of the Tkinter
         application.
-        
-        The type keyword specifies the form in which the data is 
-        to be returned and should be an atom name such as STRING 
-        or FILE_NAME.  Type defaults to STRING. 
-        
+
+        The type keyword specifies the form in which the data is
+        to be returned and should be an atom name such as STRING
+        or FILE_NAME.  Type defaults to STRING.
+
         This command is equivalent to:
-        
+
         selection_get(CLIPBOARD)
         """
         return self.tk.call(('clipboard', 'get') + self._options(kw))
-        
+
     def clipboard_clear(self, **kw):
         """Clear the data in the Tk clipboard.
 
