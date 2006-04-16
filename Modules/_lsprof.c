@@ -515,6 +515,7 @@ static PyStructSequence_Desc profiler_subentry_desc = {
 	5
 };
 
+static int initialized;
 static PyTypeObject StatsEntryType;
 static PyTypeObject StatsSubEntryType;
 
@@ -857,8 +858,12 @@ init_lsprof(void)
 		return;
 	PyDict_SetItemString(d, "Profiler", (PyObject *)&PyProfiler_Type);
 
-	PyStructSequence_InitType(&StatsEntryType, &profiler_entry_desc);
-	PyStructSequence_InitType(&StatsSubEntryType, &profiler_subentry_desc);
+	if (!initialized) {
+		PyStructSequence_InitType(&StatsEntryType, 
+					  &profiler_entry_desc);
+		PyStructSequence_InitType(&StatsSubEntryType, 
+					  &profiler_subentry_desc);
+	}
 	Py_INCREF((PyObject*) &StatsEntryType);
 	Py_INCREF((PyObject*) &StatsSubEntryType);
 	PyModule_AddObject(module, "profiler_entry",
@@ -866,4 +871,5 @@ init_lsprof(void)
 	PyModule_AddObject(module, "profiler_subentry",
 			   (PyObject*) &StatsSubEntryType);
 	empty_tuple = PyTuple_New(0);
+	initialized = 1;
 }

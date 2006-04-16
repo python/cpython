@@ -12,6 +12,10 @@ What's New in Python 2.5 alpha 2?
 Core and builtins
 -----------------
 
+- All uses of PyStructSequence_InitType have been changed to initialize
+  the type objects only once, even if the interpreter is initialized
+  multiple times.
+
 - Bug #1454485, array.array('u') could crash the interpreter.  This was
   due to PyArgs_ParseTuple(args, 'u#', ...) trying to convert buffers (strings)
   to unicode when it didn't make sense.  'u#' now requires a unicode string.

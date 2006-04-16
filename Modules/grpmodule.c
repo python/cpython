@@ -29,6 +29,7 @@ static PyStructSequence_Desc struct_group_type_desc = {
 };
 
 
+static int initialized;
 static PyTypeObject StructGrpType;
 
 static PyObject *
@@ -174,6 +175,8 @@ initgrp(void)
     if (m == NULL)
         return;
     d = PyModule_GetDict(m);
-    PyStructSequence_InitType(&StructGrpType, &struct_group_type_desc);
+    if (!initialized)
+	    PyStructSequence_InitType(&StructGrpType, &struct_group_type_desc);
     PyDict_SetItemString(d, "struct_group", (PyObject *) &StructGrpType);
+    initialized = 1;
 }
