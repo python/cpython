@@ -1654,7 +1654,7 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
 static int
 xmlparse_traverse(xmlparseobject *op, visitproc visit, void *arg)
 {
-    int i, err;
+    int i;
     for (i = 0; handler_info[i].name != NULL; i++)
         Py_VISIT(op->handlers[i]);
     return 0;
