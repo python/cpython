@@ -25,7 +25,7 @@ class Error(ValueError):
     pass
 
 # File header format: magic, version, unused, number of entries
-AS_HEADER_FORMAT=">ll16sh"
+AS_HEADER_FORMAT=">LL16sh"
 AS_HEADER_LENGTH=26
 # The flag words for AppleSingle
 AS_MAGIC=0x00051600

@@ -25,6 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 #include "pymactoolbox.h"
+#include <arpa/inet.h>	/* for ntohl, htonl */
 
 
 /* Like strerror() but for Mac OS error numbers */
@@ -156,12 +157,14 @@ PyMac_GetFullPathname(FSSpec *fss, char *path, int len)
 int
 PyMac_GetOSType(PyObject *v, OSType *pr)
 {
+	uint32_t tmp;
 	if (!PyString_Check(v) || PyString_Size(v) != 4) {
 		PyErr_SetString(PyExc_TypeError,
 			"OSType arg must be string of 4 chars");
 		return 0;
 	}
-	memcpy((char *)pr, PyString_AsString(v), 4);
+	memcpy((char *)&tmp, PyString_AsString(v), 4);
+	*pr = (OSType)ntohl(tmp);
 	return 1;
 }
 
@@ -169,7 +172,8 @@ PyMac_GetOSType(PyObject *v, OSType *pr)
 PyObject *
 PyMac_BuildOSType(OSType t)
 {
-	return PyString_FromStringAndSize((char *)&t, 4);
+	uint32_t tmp = htonl((uint32_t)t);
+	return PyString_FromStringAndSize((char *)&tmp, 4);
 }
 
 /* Convert an NumVersion value to a 4-element tuple */
