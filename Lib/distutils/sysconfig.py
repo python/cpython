@@ -31,7 +31,7 @@ landmark = os.path.join(argv0_path, "Modules", "Setup")
 
 python_build = os.path.isfile(landmark)
 
-del argv0_path, landmark
+del landmark
 
 
 def get_python_version():
@@ -185,7 +185,7 @@ def customize_compiler(compiler):
 def get_config_h_filename():
     """Return full pathname of installed pyconfig.h file."""
     if python_build:
-        inc_dir = os.curdir
+        inc_dir = argv0_path
     else:
         inc_dir = get_python_inc(plat_specific=1)
     if get_python_version() < '2.2':
