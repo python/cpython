@@ -43,7 +43,10 @@ class XrangeTest(unittest.TestCase):
         self.assertRaises(TypeError, xrange, 1, 2, 3, 4)
         self.assertRaises(ValueError, xrange, 1, 2, 0)
 
-        self.assertRaises(OverflowError, xrange, 1e100, 1e101, 1e101)
+        self.assertRaises(TypeError, xrange, 0.0, 2, 1)
+        self.assertRaises(TypeError, xrange, 1, 2.0, 1)
+        self.assertRaises(TypeError, xrange, 1, 2, 1.0)
+        self.assertRaises(TypeError, xrange, 1e100, 1e101, 1e101)
 
         self.assertRaises(TypeError, xrange, 0, "spam")
         self.assertRaises(TypeError, xrange, 0, 42, "spam")
