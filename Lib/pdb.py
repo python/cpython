@@ -86,6 +86,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.rcLines.append(line)
             rcFile.close()
 
+        self.commands = {} # associates a command list to breakpoint numbers
+        self.commands_doprompt = {} # for each bp num, tells if the prompt must be disp. after execing the cmd list
+        self.commands_silent = {} # for each bp num, tells if the stack trace must be disp. after execing the cmd list
+        self.commands_defining = False # True while in the process of defining a command list
+        self.commands_bnum = None # The breakpoint number for which we are defining a list
+
     def reset(self):
         bdb.Bdb.reset(self)
         self.forget()
@@ -132,7 +138,28 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 or frame.f_lineno<= 0):
                 return
             self._wait_for_mainpyfile = 0
-        self.interaction(frame, None)
+        if self.bp_commands(frame):
+            self.interaction(frame, None)
+            
+    def bp_commands(self,frame):
+        """ Call every command that was set for the current active breakpoint (if there is one)
+        Returns True if the normal interaction function must be called, False otherwise """
+        #self.currentbp is set in bdb.py in bdb.break_here if a breakpoint was hit
+        if getattr(self,"currentbp",False) and self.currentbp in self.commands:
+            currentbp = self.currentbp
+            self.currentbp = 0
+            lastcmd_back = self.lastcmd
+            self.setup(frame, None)
+            for line in self.commands[currentbp]:
+                self.onecmd(line)
+            self.lastcmd = lastcmd_back
+            if not self.commands_silent[currentbp]:
+                self.print_stack_entry(self.stack[self.curindex])
+            if self.commands_doprompt[currentbp]:
+                self.cmdloop()
+            self.forget()
+            return 
+        return 1
 
     def user_return(self, frame, return_value):
         """This function is called when a return trap is set here."""
@@ -197,11 +224,69 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 line = line[:marker].rstrip()
         return line
 
+    def onecmd(self, line):
+        """Interpret the argument as though it had been typed in response
+        to the prompt. 
+        
+        Checks wether  this line is typed in the normal prompt or in a breakpoint command list definition
+        """
+        if not self.commands_defining:
+            return cmd.Cmd.onecmd(self, line)
+        else:
+            return self.handle_command_def(line)
+
+    def handle_command_def(self,line):        
+        """ Handles one command line during command list definition. """
+        cmd, arg, line = self.parseline(line)
+        if cmd == 'silent':
+            self.commands_silent[self.commands_bnum] = True
+            return # continue to handle other cmd def in the cmd list
+        elif cmd == 'end':
+            self.cmdqueue = []
+            return 1 # end of cmd list
+        cmdlist = self.commands[self.commands_bnum]
+        if (arg):
+            cmdlist.append(cmd+' '+arg)
+        else:
+            cmdlist.append(cmd)
+        # Determine if we must stop
+        try:
+            func = getattr(self, 'do_' + cmd)
+        except AttributeError:
+            func = self.default
+        if func.func_name in self.commands_resuming : # one of the resuming commands. 
+            self.commands_doprompt[self.commands_bnum] = False
+            self.cmdqueue = []
+            return 1
+        return 
+
     # Command definitions, called by cmdloop()
     # The argument is the remaining string on the command line
     # Return true to exit from the command loop
 
     do_h = cmd.Cmd.do_help
+
+    def do_commands(self, arg):
+        """Defines a list of commands associated to a breakpoint
+        Those commands will be executed whenever the breakpoint causes the program to stop execution."""
+        if not arg:
+            bnum = len(bdb.Breakpoint.bpbynumber)-1
+        else:
+            try:
+                bnum = int(arg)
+            except:
+                print "Usage : commands [bnum]\n        ...\n        end"
+                return
+        self.commands_bnum = bnum
+        self.commands[bnum] = []
+        self.commands_doprompt[bnum] = True
+        self.commands_silent[bnum] = False
+        prompt_back = self.prompt
+        self.prompt = '(com) '
+        self.commands_defining = True
+        self.cmdloop()
+        self.commands_defining = False
+        self.prompt = prompt_back
 
     def do_break(self, arg, temporary = 0):
         # break [ ([filename:]lineno | function) [, "condition"] ]
@@ -686,6 +771,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if args[0] in self.aliases:
             del self.aliases[args[0]]
 
+    #list of all the commands making the program resume execution.
+    commands_resuming = ['do_continue', 'do_step', 'do_next', 'do_return', 'do_quit', 'do_jump']
+
     # Print a traceback starting at the top stack frame.
     # The most recently entered frame is printed last;
     # this is different from dbx and gdb, but consistent with
@@ -938,6 +1026,41 @@ alias ps pi self
     def help_unalias(self):
         print """unalias name
 Deletes the specified alias."""
+
+    def help_commands(self):
+        print """commands [bpnumber]
+(com) ...
+(com) end
+(Pdb)
+
+Specify a list of commands for breakpoint number bpnumber.  The
+commands themselves appear on the following lines.  Type a line
+containing just 'end' to terminate the commands.
+
+To remove all commands from a breakpoint, type commands and
+follow it immediately with  end; that is, give no commands.
+
+With no bpnumber argument, commands refers to the last
+breakpoint set.
+
+You can use breakpoint commands to start your program up again.
+Simply use the continue command, or step, or any other
+command that resumes execution.
+
+Specifying any command resuming execution (currently continue,
+step, next, return, jump, quit and their abbreviations) terminates
+the command list (as if that command was immediately followed by end).
+This is because any time you resume execution
+(even with a simple next or step), you may encounter·
+another breakpoint--which could have its own command list, leading to
+ambiguities about which list to execute.
+
+   If you use the 'silent' command in the command list, the
+usual message about stopping at a breakpoint is not printed.  This may
+be desirable for breakpoints that are to print a specific message and
+then continue.  If none of the other commands print anything, you
+see no sign that the breakpoint was reached.
+"""
 
     def help_pdb(self):
         help()

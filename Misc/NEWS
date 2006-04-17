@@ -72,6 +72,8 @@ Extension Modules
 Library
 -------
 
+- Patch #790710: Add breakpoint command lists in pdb.
+
 - Patch #1063914: Add Tkinter.Misc.clipboard_get().
 
 - Patch #1191700: Adjust column alignment in bdb breakpoint lists.
