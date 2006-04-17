@@ -44,6 +44,7 @@ int main()
 		_strlwr(path);
 		printf("%s\n", path);
                 fflush(stdout);
+                /*
 		if (strstr(path, "build\\pcbuild\\python_d.exe") != NULL) {
 			printf("Terminating %s (pid %d)\n", path, pids[i]);
 			if (!TerminateProcess(hProcess, 1)) {
@@ -52,6 +53,7 @@ int main()
 			}
 			return 0;
 		}
+                */
 
 		CloseHandle(hProcess);
 	}
