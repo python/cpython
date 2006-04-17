@@ -792,38 +792,6 @@ class DatabaseContext:
             # return False
 \end{verbatim}
 
-\begin{comment}
-% XXX should I give the code, or is the above explanation sufficient?
-\pep{343} shows the code generated for a \keyword{with} statement.  A
-statement such as:
-
-\begin{verbatim}
-with EXPR as VAR:
-    BLOCK
-\end{verbatim}
-
-is translated into:
-
-\begin{verbatim}
-ctx = (EXPR).__context__()
-exit = ctx.__exit__  # Not calling it yet
-value = ctx.__enter__()
-exc = True
-try:
-    try:
-        VAR = value  # Only if "as VAR" is present
-        BLOCK
-    except:
-        # The exceptional case is handled here
-        exc = False
-        if not exit(*sys.exc_info()):
-            raise
-finally:
-    # The normal and non-local-goto cases are handled here
-    if exc:
-        exit(None, None, None)
-\end{verbatim}
-\end{comment}
 
 \subsection{The contextlib module\label{module-contextlib}}
 
