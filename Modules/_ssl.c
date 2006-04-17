@@ -55,7 +55,6 @@ typedef struct {
 	SSL_CTX* 	ctx;
 	SSL*     	ssl;
 	X509*    	server_cert;
-	BIO*		sbio;
 	char    	server[X509_NAME_MAXLEN];
 	char		issuer[X509_NAME_MAXLEN];
 
