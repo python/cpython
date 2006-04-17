@@ -133,7 +133,7 @@ affects what we see:
 >>> del mydata
 """
 
-# Threading import is at end
+from threading import currentThread, RLock, enumerate
 
 class _localbase(object):
     __slots__ = '_local__key', '_local__args', '_local__lock'
@@ -203,35 +203,30 @@ class local(_localbase):
             lock.release()
 
 
-    def __del__():
-        threading_enumerate = enumerate
-        __getattribute__ = object.__getattribute__
+    # The default argument is a hack, to give __del__ a local name for
+    # threading.enumerate (sidestepping problems with Python None'ing-out
+    # module globals at shutdown time).
+    def __del__(self, _threading_enumerate=enumerate):
 
-        def __del__(self):
-            key = __getattribute__(self, '_local__key')
+        key = object.__getattribute__(self, '_local__key')
 
+        try:
+            threads = list(_threading_enumerate())
+        except:
+            # If enumerate fails, as it seems to do during
+            # shutdown, we'll skip cleanup under the assumption
+            # that there is nothing to clean up.
+            return
+
+        for thread in threads:
             try:
-                threads = list(threading_enumerate())
-            except:
-                # if enumerate fails, as it seems to do during
-                # shutdown, we'll skip cleanup under the assumption
-                # that there is nothing to clean up
-                return
+                __dict__ = thread.__dict__
+            except AttributeError:
+                # Thread is dying, rest in peace.
+                continue
 
-            for thread in threads:
+            if key in __dict__:
                 try:
-                    __dict__ = thread.__dict__
-                except AttributeError:
-                    # Thread is dying, rest in peace
-                    continue
-
-                if key in __dict__:
-                    try:
-                        del __dict__[key]
-                    except KeyError:
-                        pass # didn't have anything in this thread
-
-        return __del__
-    __del__ = __del__()
-
-from threading import currentThread, enumerate, RLock
+                    del __dict__[key]
+                except KeyError:
+                    pass # didn't have anything in this thread
