@@ -1,3 +1,3 @@
 cd Tools\buildbot
 nmake /f kill_python.mak
-kill_python3.exe
+kill_python4.exe
