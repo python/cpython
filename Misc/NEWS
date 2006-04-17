@@ -95,6 +95,9 @@ Library
 Build
 -----
 
+- The Makefile now has a reindent target, which runs reindent.py on
+  the library.
+
 - Patch #1470875: Building Python with MS Free Compiler
 
 - Patch #1161914: Add a python-config script.
