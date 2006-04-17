@@ -446,7 +446,7 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
     return PyString_FromString(decomp);
 }
 
-void
+static void
 get_decomp_record(PyObject *self, Py_UCS4 code, int *index, int *prefix, int *count)
 {
     if (code >= 0x110000) {
