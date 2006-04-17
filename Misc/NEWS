@@ -29,6 +29,9 @@ Extension Modules
 Library
 -------
 
+- The ``__del__`` method of class ``local`` in module ``_threading_local``
+  returned before accomplishing any of its intended cleanup.
+
 - Patch #1191700: Adjust column alignment in bdb breakpoint lists.
 
 - The email module's parsedate_tz function now sets the daylight savings
