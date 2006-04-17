@@ -1,3 +1,3 @@
 cd Tools\buildbot
 nmake /C /S /f kill_python.mak
-kill_python.exe
+kill_python2.exe
