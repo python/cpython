@@ -72,6 +72,9 @@ Extension Modules
 Library
 -------
 
+- The ``__del__`` method of class ``local`` in module ``_threading_local``
+  returned before accomplishing any of its intended cleanup.
+
 - Patch #790710: Add breakpoint command lists in pdb.
 
 - Patch #1063914: Add Tkinter.Misc.clipboard_get().
