@@ -10,6 +10,8 @@ class CmdLineTest(unittest.TestCase):
         infp.close()
         data = outfp.read()
         outfp.close()
+        # try to cleanup the child so we don't appear to leak when running
+        # with regrtest -R.  This should be a no-op on Windows.
         popen2._cleanup()
         return data
 
