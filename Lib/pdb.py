@@ -140,7 +140,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._wait_for_mainpyfile = 0
         if self.bp_commands(frame):
             self.interaction(frame, None)
-            
+
     def bp_commands(self,frame):
         """ Call every command that was set for the current active breakpoint (if there is one)
         Returns True if the normal interaction function must be called, False otherwise """
@@ -158,7 +158,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if self.commands_doprompt[currentbp]:
                 self.cmdloop()
             self.forget()
-            return 
+            return
         return 1
 
     def user_return(self, frame, return_value):
@@ -226,8 +226,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def onecmd(self, line):
         """Interpret the argument as though it had been typed in response
-        to the prompt. 
-        
+        to the prompt.
+
         Checks wether  this line is typed in the normal prompt or in a breakpoint command list definition
         """
         if not self.commands_defining:
@@ -235,7 +235,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             return self.handle_command_def(line)
 
-    def handle_command_def(self,line):        
+    def handle_command_def(self,line):
         """ Handles one command line during command list definition. """
         cmd, arg, line = self.parseline(line)
         if cmd == 'silent':
@@ -254,11 +254,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             func = getattr(self, 'do_' + cmd)
         except AttributeError:
             func = self.default
-        if func.func_name in self.commands_resuming : # one of the resuming commands. 
+        if func.func_name in self.commands_resuming : # one of the resuming commands.
             self.commands_doprompt[self.commands_bnum] = False
             self.cmdqueue = []
             return 1
-        return 
+        return
 
     # Command definitions, called by cmdloop()
     # The argument is the remaining string on the command line
