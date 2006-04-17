@@ -13,7 +13,6 @@ int main()
 		return 1;
 	}
 	num_processes = cbNeeded/sizeof(pids[0]);
-        printf("%d processes\n", num_processes);
 	for (i = 0; i < num_processes; i++) {
 		HANDLE hProcess;
 		char path[MAX_PATH];
@@ -42,9 +41,7 @@ int main()
 		}
 
 		_strlwr(path);
-		printf("%s\n", path);
-                fflush(stdout);
-                /*
+		/* printf("%s\n", path); */
 		if (strstr(path, "build\\pcbuild\\python_d.exe") != NULL) {
 			printf("Terminating %s (pid %d)\n", path, pids[i]);
 			if (!TerminateProcess(hProcess, 1)) {
@@ -53,7 +50,6 @@ int main()
 			}
 			return 0;
 		}
-                */
 
 		CloseHandle(hProcess);
 	}
