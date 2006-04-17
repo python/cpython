@@ -35,7 +35,7 @@ int main()
 			printf("EnumProcessModules failed: %d\n", GetLastError());
 			return 1;
 		}
-		if (!GetProcessImageFileName(hProcess, path, sizeof(path))) {
+		if (!GetModuleFileNameEx(hProcess, NULL, path, sizeof(path))) {
 			printf("GetProcessImageFileName failed\n");
 			return 1;
 		}
