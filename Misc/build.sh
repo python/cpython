@@ -60,7 +60,7 @@ REFLOG="build/reflog.txt.out"
 # Note: test_XXX (none currently) really leak, but are disabled
 # so we don't send spam.  Any test which really leaks should only 
 # be listed here if there are also test cases under Lib/test/leakers.
-LEAKY_TESTS="test_(cmd_line|ctypes|filecmp|socket|threadedtempfile|threading|threading_local|urllib2)"
+LEAKY_TESTS="test_(ctypes|filecmp|socket|threadedtempfile|threading|threading_local|urllib2)"
 
 # Skip these tests altogether when looking for leaks.  These tests
 # do not need to be stored above in LEAKY_TESTS too.
@@ -167,6 +167,8 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             ## run the tests looking for leaks
             F=make-test-refleak.out
             start=`current_time`
+            ## ensure that the reflog exists so the grep doesn't fail
+            touch $REFLOG
             ./python ./Lib/test/regrtest.py -R 4:3:$REFLOG -u network $LEAKY_SKIPS >& build/$F
             NUM_FAILURES=`egrep -vc "$LEAKY_TESTS" $REFLOG`
             update_status "Testing refleaks ($NUM_FAILURES failures)" "$F" $start
