@@ -6,10 +6,12 @@ import subprocess
 
 class CmdLineTest(unittest.TestCase):
     def start_python(self, cmd_line):
-        outfp, infp = popen2.popen4('%s %s' % (sys.executable, cmd_line))
+        inst = popen2.Popen4('%s %s' % (sys.executable, cmd_line))
+        outfp, infp = inst.fromchild, inst.tochild
         infp.close()
         data = outfp.read()
         outfp.close()
+        inst.wait()
         return data
 
     def exit_code(self, cmd_line):
