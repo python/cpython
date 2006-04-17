@@ -1677,9 +1677,9 @@ string_join(PyStringObject *self, PyObject *orig)
 			}
 #endif
 			PyErr_Format(PyExc_TypeError,
-				     "sequence item %i: expected string,"
+				     "sequence item %zd: expected string,"
 				     " %.80s found",
-				     /*XXX*/(int)i, item->ob_type->tp_name);
+				     i, item->ob_type->tp_name);
 			Py_DECREF(seq);
 			return NULL;
 		}
