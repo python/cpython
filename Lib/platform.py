@@ -607,7 +607,8 @@ def mac_ver(release='',versioninfo=('','',''),machine=''):
         versioninfo = (version,stage,nonrel)
     if sysa:
         machine = {0x1: '68k',
-                   0x2: 'PowerPC'}.get(sysa,'')
+                   0x2: 'PowerPC',
+                   0xa: 'i386'}.get(sysa,'')
     return release,versioninfo,machine
 
 def _java_getprop(name,default):
