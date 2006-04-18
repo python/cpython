@@ -3,6 +3,7 @@
 % $Id$
 
 % The easy_install stuff
+% Describe the pkgutil module
 % Stateful codec changes
 % Fix XXX comments
 % Count up the patches and bugs
@@ -1173,8 +1174,6 @@ the SVN logs for all the details.
 % the cPickle module no longer accepts the deprecated None option in the
 % args tuple returned by __reduce__().
 
-% XXX csv module improvements
-
 % XXX datetime.datetime() now has a strptime class method which can be used to
 % create datetime object using a string and format.
 
@@ -1239,6 +1238,17 @@ data to a file, etc.  It's not yet known if the Hotshot profiler,
 which is also written in C but doesn't match the \module{profile}
 module's interface, will continue to be maintained in future versions
 of Python.  (Contributed by Armin Rigo.)
+
+\item The \module{csv} module, which parses files in
+comma-separated value format, received several enhancements and a
+number of bugfixes.  You can now set the maximum size in bytes of a
+field by calling the \method{csv.field_size_limit(\var{new_limit})}
+function; omitting the \var{new_limit} argument will return the
+currently-set limit.  The \class{reader} class now has a
+\member{line_num} attribute that counts the number of physical lines
+read from the source; records can span multiple physical lines, so
+\member{line_num} is not the same as the number of records read.
+(Contributed by Skip Montanaro and Andrew McNamara.)
 
 \item In the \module{gc} module, the new \function{get_count()} function
 returns a 3-tuple containing the current collection counts for the
