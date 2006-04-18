@@ -1549,10 +1549,10 @@ usage: %(script)s [options] requirement_or_url ...
     with_ei_usage(lambda:
         setup(
             script_args = ['-q','easy_install', '-v']+argv,
+            script_name = sys.argv[0] or 'easy_install',
             distclass=DistributionWithoutHelpCommands, **kw
         )
     )
-
 
 
 
