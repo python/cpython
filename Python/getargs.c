@@ -645,8 +645,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		unsigned int ival;
 		if (float_argument_error(arg))
 			return converterr("integer<I>", arg, msgbuf, bufsize);
-		ival = PyInt_AsUnsignedLongMask(arg);
-		if (ival == -1 && PyErr_Occurred())
+		ival = (unsigned int)PyInt_AsUnsignedLongMask(arg);
+		if (ival == (unsigned int)-1 && PyErr_Occurred())
 			return converterr("integer<I>", arg, msgbuf, bufsize);
 		else
 			*p = ival;
