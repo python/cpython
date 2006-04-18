@@ -234,7 +234,7 @@ raise_test_longlong_error(const char* msg)
 #include "testcapi_long.h"
 
 static PyObject *
-test_longlong_api(PyObject* self)
+test_longlong_api(PyObject* self, PyObject *args)
 {
 	return TESTNAME(raise_test_longlong_error);
 }
