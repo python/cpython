@@ -74,7 +74,7 @@ EXPORT(double) _testfunc_d_bhilfd(signed char b, short h, int i, long l, float f
 
 EXPORT(char *) _testfunc_p_p(void *s)
 {
-	return s;
+	return (char *)s;
 }
 
 EXPORT(void *) _testfunc_c_p_p(int *argcp, char **argv)
@@ -89,7 +89,7 @@ EXPORT(void *) get_strchr(void)
 
 EXPORT(char *) my_strdup(char *src)
 {
-	char *dst = malloc(strlen(src)+1);
+	char *dst = (char *)malloc(strlen(src)+1);
 	if (!dst)
 		return NULL;
 	strcpy(dst, src);
@@ -100,7 +100,7 @@ EXPORT(char *) my_strdup(char *src)
 EXPORT(wchar_t *) my_wcsdup(wchar_t *src)
 {
 	size_t len = wcslen(src);
-	wchar_t *ptr = malloc((len + 1) * sizeof(wchar_t));
+	wchar_t *ptr = (wchar_t *)malloc((len + 1) * sizeof(wchar_t));
 	if (ptr == NULL)
 		return NULL;
 	memcpy(ptr, src, (len+1) * sizeof(wchar_t));
@@ -191,7 +191,7 @@ EXPORT(int) _testfunc_ppp(char ***p)
 {
 	static char message[] = "Hello, World";
 	if (p) {
-		*p = malloc(sizeof(char *));
+		*p = (char **)malloc(sizeof(char *));
 		printf("malloc returned %p\n", *p);
 		**p = message;
 		return 1;

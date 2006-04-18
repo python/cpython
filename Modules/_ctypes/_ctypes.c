@@ -549,7 +549,7 @@ PointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	stgdict->size = sizeof(void *);
 	stgdict->align = getentry("P")->pffi_type->alignment;
 	stgdict->length = 1;
-	stgdict->ffi_type = ffi_type_pointer;
+	stgdict->ffi_type_pointer = ffi_type_pointer;
 
 	proto = PyDict_GetItemString(typedict, "_type_"); /* Borrowed ref */
 	if (proto && -1 == PointerType_SetProto(stgdict, proto)) {
@@ -949,7 +949,7 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	stgdict->proto = proto;
 
 	/* Arrays are passed as pointers to function calls. */
-	stgdict->ffi_type = ffi_type_pointer;
+	stgdict->ffi_type_pointer = ffi_type_pointer;
 
 	/* create the new instance (which is a class,
 	   since we are a metatype!) */
@@ -1307,7 +1307,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 	if (!stgdict) /* XXX leaks result! */
 		return NULL;
 
-	stgdict->ffi_type = *fmt->pffi_type;
+	stgdict->ffi_type_pointer = *fmt->pffi_type;
 	stgdict->align = fmt->pffi_type->alignment;
 	stgdict->length = 0;
 	stgdict->size = fmt->pffi_type->size;
@@ -1365,7 +1365,7 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	fmt = getentry(PyString_AS_STRING(proto));
 
-	stgdict->ffi_type = *fmt->pffi_type;
+	stgdict->ffi_type_pointer = *fmt->pffi_type;
 	stgdict->align = fmt->pffi_type->alignment;
 	stgdict->length = 0;
 	stgdict->size = fmt->pffi_type->size;
@@ -1635,7 +1635,7 @@ make_funcptrtype_dict(StgDictObject *stgdict)
 	stgdict->size = sizeof(void *);
 	stgdict->setfunc = NULL;
 	stgdict->getfunc = NULL;
-	stgdict->ffi_type = ffi_type_pointer;
+	stgdict->ffi_type_pointer = ffi_type_pointer;
 
 	ob = PyDict_GetItemString((PyObject *)stgdict, "_flags_");
 	if (!ob || !PyInt_Check(ob)) {
@@ -1857,7 +1857,7 @@ CData_clear(CDataObject *self)
 	StgDictObject *dict = PyObject_stgdict((PyObject *)self);
 	Py_CLEAR(self->b_objects);
 	if ((self->b_needsfree)
-	    && (dict->size > sizeof(self->b_value)))
+	    && ((size_t)dict->size > sizeof(self->b_value)))
 		PyMem_Free(self->b_ptr);
 	self->b_ptr = NULL;
 	Py_CLEAR(self->b_base);
@@ -1979,7 +1979,7 @@ PyTypeObject CData_Type = {
 
 static void CData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
 {
-	if (dict->size <= sizeof(obj->b_value)) {
+	if ((size_t)dict->size <= sizeof(obj->b_value)) {
 		/* No need to call malloc, can use the default buffer */
 		obj->b_ptr = (char *)&obj->b_value;
 		obj->b_needsfree = 1;
@@ -1987,7 +1987,7 @@ static void CData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
 		/* In python 2.4, and ctypes 0.9.6, the malloc call took about
 		   33% of the creation time for c_int().
 		*/
-		obj->b_ptr = PyMem_Malloc(dict->size);
+		obj->b_ptr = (char *)PyMem_Malloc(dict->size);
 		obj->b_needsfree = 1;
 		memset(obj->b_ptr, 0, dict->size);
 	}
@@ -2052,7 +2052,7 @@ CData_AtAddress(PyObject *type, void *buf)
 	if (!pd)
 		return NULL;
 	assert(CDataObject_Check(pd));
-	pd->b_ptr = buf;
+	pd->b_ptr = (char *)buf;
 	pd->b_length = dict->length;
 	pd->b_size = dict->size;
 	return (PyObject *)pd;
@@ -3295,7 +3295,7 @@ Struct_as_parameter(CDataObject *self)
 
 	parg->tag = 'V';
 	stgdict = PyObject_stgdict((PyObject *)self);
-	parg->pffi_type = &stgdict->ffi_type;
+	parg->pffi_type = &stgdict->ffi_type_pointer;
 	/* For structure parameters (by value), parg->value doesn't contain the structure
 	   data itself, instead parg->value.p *points* to the structure's data
 	   See also _ctypes.c, function _call_function_pointer().
