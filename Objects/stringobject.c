@@ -746,7 +746,7 @@ PyString_AsStringAndSize(register PyObject *obj,
 	*s = PyString_AS_STRING(obj);
 	if (len != NULL)
 		*len = PyString_GET_SIZE(obj);
-	else if (strlen(*s) != PyString_GET_SIZE(obj)) {
+	else if (strlen(*s) != (size_t)PyString_GET_SIZE(obj)) {
 		PyErr_SetString(PyExc_TypeError,
 				"expected string without null bytes");
 		return -1;
