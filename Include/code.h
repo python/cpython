@@ -72,6 +72,21 @@ PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 	((*(co)->co_code->ob_type->tp_as_buffer->bf_getreadbuffer) \
 	 ((co)->co_code, 0, (void **)(pp)))
 
+typedef struct _addr_pair {
+        int ap_lower;
+        int ap_upper;
+} PyAddrPair;
+
+/* Check whether lasti (an instruction offset) falls outside bounds
+   and whether it is a line number that should be traced.  Returns
+   a line number if it should be traced or -1 if the line should not.
+
+   If lasti is not within bounds, updates bounds.
+*/
+
+PyAPI_FUNC(int) PyCode_CheckLineNumber(PyCodeObject* co,
+                                       int lasti, PyAddrPair *bounds);
+
 #ifdef __cplusplus
 }
 #endif
