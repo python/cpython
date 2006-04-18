@@ -1283,6 +1283,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 		suffix = PyString_FromString("_be");
 #endif
 
+	Py_INCREF(name);
 	PyString_Concat(&name, suffix);
 	if (name == NULL)
 		return NULL;
@@ -1459,6 +1460,7 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		PyObject_SetAttrString(swapped, "__ctype_le__", (PyObject *)result);
 		PyObject_SetAttrString(swapped, "__ctype_be__", swapped);
 #endif
+		Py_DECREF(swapped);
 	};
 
 	return (PyObject *)result;
