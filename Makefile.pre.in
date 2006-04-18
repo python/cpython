@@ -691,6 +691,7 @@ LIBSUBDIRS=	lib-old lib-tk site-packages test test/output test/data \
 		logging bsddb bsddb/test csv \
 		ctypes ctypes/test ctypes/macholib idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
+		setuptools setuptools/command setuptools/tests setuptools.egg-info \
 		curses $(MACHDEPS)
 libinstall:	$(BUILDPYTHON) $(srcdir)/Lib/$(PLATDIR)
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
