@@ -74,7 +74,7 @@ _Py_AddToAllObjects(PyObject *op, int force)
 
 #ifdef COUNT_ALLOCS
 static PyTypeObject *type_list;
-/* All types are added to type_list, atleast when
+/* All types are added to type_list, at least when
    they get one object created. That makes them
    immortal, which unfortunately contributes to
    garbage itself. If unlist_types_without_objects
