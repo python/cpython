@@ -2284,10 +2284,10 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
         ptr = getstring(ptemplate, &n, &b);
         if (ptr) {
             if (b == 1) {
-                literal = sre_literal_template(ptr, n);
+		    literal = sre_literal_template((unsigned char *)ptr, n);
             } else {
 #if defined(HAVE_UNICODE)
-                literal = sre_uliteral_template(ptr, n);
+		    literal = sre_uliteral_template((Py_UNICODE *)ptr, n);
 #endif
             }
         } else {
