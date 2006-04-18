@@ -988,11 +988,12 @@ TAGS::
 
 # Sanitation targets -- clean leaves libraries, executables and tags
 # files, which clobber removes those as well
+pycremoval:
+	find $(srcdir) -name '*.py[co]' -exec rm -f {} ';'
 
-clean:
+clean: pycremoval
 	find . -name '*.o' -exec rm -f {} ';'
 	find . -name '*.s[ol]' -exec rm -f {} ';'
-	find $(srcdir) -name '*.py[co]' -exec rm -f {} ';'
 	find $(srcdir)/build -name 'fficonfig.h' -exec rm -f {} ';' || true
 	find $(srcdir)/build -name 'fficonfig.py' -exec rm -f {} ';' || true
 
