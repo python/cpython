@@ -74,6 +74,17 @@ Extension Modules
 Library
 -------
 
+- New modules: setuptools, easy_install, and pkg_resources, to support
+  building, installing, and using Python eggs, respectively.
+
+- The pydoc module now supports documenting packages contained in
+  .zip or .egg files.
+
+- The pkgutil module now has several new utility functions, such
+  as ``walk_packages()`` to support working with packages that are either
+  in the filesystem or zip files.
+
+
 - The ``__del__`` method of class ``local`` in module ``_threading_local``
   returned before accomplishing any of its intended cleanup.
 
