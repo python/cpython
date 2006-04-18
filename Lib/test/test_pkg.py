@@ -146,7 +146,7 @@ print "t4.sub.subsub.spam =", spam
     ("t5 __init__"+os.extsep+"py", "import t5.foo"),
     ("t5 string"+os.extsep+"py", "print __name__, 'loading'; spam = 1"),
     ("t5 foo"+os.extsep+"py",
-     "print __name__, 'loading'; import string; print string.spam"),
+     "print __name__, 'loading'; from . import string; print string.spam"),
      ],
 """
 import t5
