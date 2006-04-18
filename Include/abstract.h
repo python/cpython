@@ -348,6 +348,11 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 Python expression: o.method(args).
        */
 
+     PyAPI_FUNC(PyObject *) _PyObject_CallFunction_SizeT(PyObject *callable,
+							 char *format, ...);
+     PyAPI_FUNC(PyObject *) _PyObject_CallMethod_SizeT(PyObject *o,
+						       char *name,
+						       char *format, ...);
 
      PyAPI_FUNC(PyObject *) PyObject_CallFunctionObjArgs(PyObject *callable,
                                                         ...);
