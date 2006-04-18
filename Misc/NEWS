@@ -954,7 +954,7 @@ Library
     dictates.
   + the parser now removes the escapechar prefix from escaped characters.
   + when quoting=QUOTE_NONNUMERIC, the writer now tests for numeric
-    types, rather than any object than can be represented as a numeric.
+    types, rather than any object that can be represented as a numeric.
   + when quoting=QUOTE_NONNUMERIC, the reader now casts unquoted fields
     to floats.
   + reader now allows \r characters to be quoted (previously it only allowed
