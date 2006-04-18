@@ -52,10 +52,16 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
-import sys, imp, os, re, types, inspect, __builtin__
+import sys, imp, os, re, types, inspect, __builtin__, pkgutil
 from repr import Repr
 from string import expandtabs, find, join, lower, split, strip, rfind, rstrip
-from collections import deque
+try:
+    from collections import deque
+except ImportError:
+    # Python 2.3 compatibility
+    class deque(list):
+        def popleft(self):
+            return self.pop(0)
 
 # --------------------------------------------------------- common routines
 
@@ -182,6 +188,23 @@ def ispackage(path):
                 return True
     return False
 
+def source_synopsis(file):
+    line = file.readline()
+    while line[:1] == '#' or not strip(line):
+        line = file.readline()
+        if not line: break
+    line = strip(line)
+    if line[:4] == 'r"""': line = line[1:]
+    if line[:3] == '"""':
+        line = line[3:]
+        if line[-1:] == '\\': line = line[:-1]
+        while not strip(line):
+            line = file.readline()
+            if not line: break
+        result = strip(split(line, '"""')[0])
+    else: result = None
+    return result
+
 def synopsis(filename, cache={}):
     """Get the one-line summary out of a module file."""
     mtime = os.stat(filename).st_mtime
@@ -196,24 +219,11 @@ def synopsis(filename, cache={}):
         if info and 'b' in info[2]: # binary modules have to be imported
             try: module = imp.load_module('__temp__', file, filename, info[1:])
             except: return None
-            result = split(module.__doc__ or '', '\n')[0]
+            result = (module.__doc__ or '').splitlines()[0]
             del sys.modules['__temp__']
         else: # text modules can be directly examined
-            line = file.readline()
-            while line[:1] == '#' or not strip(line):
-                line = file.readline()
-                if not line: break
-            line = strip(line)
-            if line[:4] == 'r"""': line = line[1:]
-            if line[:3] == '"""':
-                line = line[3:]
-                if line[-1:] == '\\': line = line[:-1]
-                while not strip(line):
-                    line = file.readline()
-                    if not line: break
-                result = strip(split(line, '"""')[0])
-            else: result = None
-        file.close()
+            result = source_synopsis(file)
+            file.close()
         cache[filename] = (mtime, result)
     return result
 
@@ -643,16 +653,8 @@ class HTMLDoc(Doc):
 
         if hasattr(object, '__path__'):
             modpkgs = []
-            modnames = []
-            for file in os.listdir(object.__path__[0]):
-                path = os.path.join(object.__path__[0], file)
-                modname = inspect.getmodulename(file)
-                if modname != '__init__':
-                    if modname and modname not in modnames:
-                        modpkgs.append((modname, name, 0, 0))
-                        modnames.append(modname)
-                    elif ispackage(path):
-                        modpkgs.append((file, name, 1, 0))
+            for importer, modname, ispkg in pkgutil.iter_modules(object.__path__):
+                modpkgs.append((modname, name, ispkg, 0))
             modpkgs.sort()
             contents = self.multicolumn(modpkgs, self.modpkglink)
             result = result + self.bigsection(
@@ -796,7 +798,10 @@ class HTMLDoc(Doc):
             tag += ':<br>\n'
 
             # Sort attrs by name.
-            attrs.sort(key=lambda t: t[0])
+            try:
+                attrs.sort(key=lambda t: t[0])
+            except TypeError:
+                attrs.sort(lambda t1, t2: cmp(t1[0], t2[0]))    # 2.3 compat
 
             # Pump out the attrs, segregated by kind.
             attrs = spill('Methods %s' % tag, attrs,
@@ -914,25 +919,9 @@ class HTMLDoc(Doc):
         """Generate an HTML index for a directory of modules."""
         modpkgs = []
         if shadowed is None: shadowed = {}
-        seen = {}
-        files = os.listdir(dir)
-
-        def found(name, ispackage,
-                  modpkgs=modpkgs, shadowed=shadowed, seen=seen):
-            if name not in seen:
-                modpkgs.append((name, '', ispackage, name in shadowed))
-                seen[name] = 1
-                shadowed[name] = 1
-
-        # Package spam/__init__.py takes precedence over module spam.py.
-        for file in files:
-            path = os.path.join(dir, file)
-            if ispackage(path): found(file, 1)
-        for file in files:
-            path = os.path.join(dir, file)
-            if os.path.isfile(path):
-                modname = inspect.getmodulename(file)
-                if modname: found(modname, 0)
+        for importer, name, ispkg in pkgutil.iter_modules([dir]):
+            modpkgs.append((name, '', ispkg, name in shadowed))
+            shadowed[name] = 1
 
         modpkgs.sort()
         contents = self.multicolumn(modpkgs, self.modpkglink)
@@ -1059,14 +1048,12 @@ class TextDoc(Doc):
 
         if hasattr(object, '__path__'):
             modpkgs = []
-            for file in os.listdir(object.__path__[0]):
-                path = os.path.join(object.__path__[0], file)
-                modname = inspect.getmodulename(file)
-                if modname != '__init__':
-                    if modname and modname not in modpkgs:
-                        modpkgs.append(modname)
-                    elif ispackage(path):
-                        modpkgs.append(file + ' (package)')
+            for importer, modname, ispkg in pkgutil.iter_modules(object.__path__):
+                if ispkg:
+                    modpkgs.append(modname + ' (package)')
+                else:
+                    modpkgs.append(modname)
+
             modpkgs.sort()
             result = result + self.section(
                 'PACKAGE CONTENTS', join(modpkgs, '\n'))
@@ -1490,20 +1477,9 @@ def writedoc(thing, forceload=0):
 def writedocs(dir, pkgpath='', done=None):
     """Write out HTML documentation for all modules in a directory tree."""
     if done is None: done = {}
-    for file in os.listdir(dir):
-        path = os.path.join(dir, file)
-        if ispackage(path):
-            writedocs(path, pkgpath + file + '.', done)
-        elif os.path.isfile(path):
-            modname = inspect.getmodulename(path)
-            if modname:
-                if modname == '__init__':
-                    modname = pkgpath[:-1] # remove trailing period
-                else:
-                    modname = pkgpath + modname
-                if modname not in done:
-                    done[modname] = 1
-                    writedoc(modname)
+    for importer, modname, ispkg in pkgutil.walk_packages([dir], pkgpath):
+        writedoc(modname)
+    return
 
 class Helper:
     keywords = {
@@ -1830,30 +1806,9 @@ class Scanner:
             self.state.append((child, self.children(child)))
         return child
 
-class ModuleScanner(Scanner):
+
+class ModuleScanner:
     """An interruptible scanner that searches module synopses."""
-    def __init__(self):
-        roots = map(lambda dir: (dir, ''), pathdirs())
-        Scanner.__init__(self, roots, self.submodules, self.isnewpackage)
-        self.inodes = map(lambda (dir, pkg): os.stat(dir).st_ino, roots)
-
-    def submodules(self, (dir, package)):
-        children = []
-        for file in os.listdir(dir):
-            path = os.path.join(dir, file)
-            if ispackage(path):
-                children.append((path, package + (package and '.') + file))
-            else:
-                children.append((path, package))
-        children.sort() # so that spam.py comes before spam.pyc or spam.pyo
-        return children
-
-    def isnewpackage(self, (dir, package)):
-        inode = os.path.exists(dir) and os.stat(dir).st_ino
-        if not (os.path.islink(dir) and inode in self.inodes):
-            self.inodes.append(inode) # detect circular symbolic links
-            return ispackage(dir)
-        return False
 
     def run(self, callback, key=None, completer=None):
         if key: key = lower(key)
@@ -1870,22 +1825,31 @@ class ModuleScanner(Scanner):
                     if find(lower(modname + ' - ' + desc), key) >= 0:
                         callback(None, modname, desc)
 
-        while not self.quit:
-            node = self.next()
-            if not node: break
-            path, package = node
-            modname = inspect.getmodulename(path)
-            if os.path.isfile(path) and modname:
-                modname = package + (package and '.') + modname
-                if not modname in seen:
-                    seen[modname] = 1 # if we see spam.py, skip spam.pyc
-                    if key is None:
-                        callback(path, modname, '')
+        for importer, modname, ispkg in pkgutil.walk_packages():
+            if self.quit:
+                break
+            if key is None:
+                callback(None, modname, '')
+            else:
+                loader = importer.find_module(modname)
+                if hasattr(loader,'get_source'):
+                    import StringIO
+                    desc = source_synopsis(
+                        StringIO.StringIO(loader.get_source(modname))
+                    ) or ''
+                    if hasattr(loader,'get_filename'):
+                        path = loader.get_filename(modname)
                     else:
-                        desc = synopsis(path) or ''
-                        if find(lower(modname + ' - ' + desc), key) >= 0:
-                            callback(path, modname, desc)
-        if completer: completer()
+                        path = None
+                else:
+                    module = loader.load_module(modname)
+                    desc = (module.__doc__ or '').splitlines()[0]
+                    path = getattr(module,'__file__',None)
+                if find(lower(modname + ' - ' + desc), key) >= 0:
+                    callback(path, modname, desc)
+
+        if completer:
+            completer()
 
 def apropos(key):
     """Print all the one-line module summaries that contain a substring."""
@@ -1950,7 +1914,7 @@ def serve(port, callback=None, completer=None):
                     'Built-in Modules', '#ffffff', '#ee77aa', contents)]
 
                 seen = {}
-                for dir in pathdirs():
+                for dir in sys.path:
                     indices.append(html.index(dir, seen))
                 contents = heading + join(indices) + '''<p align=right>
 <font color="#909090" face="helvetica, arial"><strong>
