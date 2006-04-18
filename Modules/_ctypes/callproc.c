@@ -581,10 +581,10 @@ ffi_type *GetType(PyObject *obj)
 	/* This little trick works correctly with MSVC.
 	   It returns small structures in registers
 	*/
-	if (dict->ffi_type.type == FFI_TYPE_STRUCT) {
-		if (dict->ffi_type.size <= 4)
+	if (dict->ffi_type_pointer.type == FFI_TYPE_STRUCT) {
+		if (dict->ffi_type_pointer.size <= 4)
 			return &ffi_type_sint32;
-		else if (dict->ffi_type.size <= 8)
+		else if (dict->ffi_type_pointer.size <= 8)
 			return &ffi_type_sint64;
 	}
 #endif
