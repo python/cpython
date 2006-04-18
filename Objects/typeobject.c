@@ -1118,12 +1118,12 @@ set_mro_error(PyObject *to_merge, int *remain)
 	off = PyOS_snprintf(buf, sizeof(buf), "Cannot create a \
 consistent method resolution\norder (MRO) for bases");
 	i = 0;
-	while (PyDict_Next(set, &i, &k, &v) && off < sizeof(buf)) {
+	while (PyDict_Next(set, &i, &k, &v) && (size_t)off < sizeof(buf)) {
 		PyObject *name = class_name(k);
 		off += PyOS_snprintf(buf + off, sizeof(buf) - off, " %s",
 				     name ? PyString_AS_STRING(name) : "?");
 		Py_XDECREF(name);
-		if (--n && off+1 < sizeof(buf)) {
+		if (--n && (size_t)(off+1) < sizeof(buf)) {
 			buf[off++] = ',';
 			buf[off] = '\0';
 		}
@@ -5186,16 +5186,16 @@ slotptr(PyTypeObject *type, int ioffset)
 
 	/* Note: this depends on the order of the members of PyHeapTypeObject! */
 	assert(offset >= 0);
-	assert(offset < offsetof(PyHeapTypeObject, as_buffer));
-	if (offset >= offsetof(PyHeapTypeObject, as_sequence)) {
+	assert((size_t)offset < offsetof(PyHeapTypeObject, as_buffer));
+	if ((size_t)offset >= offsetof(PyHeapTypeObject, as_sequence)) {
 		ptr = (char *)type->tp_as_sequence;
 		offset -= offsetof(PyHeapTypeObject, as_sequence);
 	}
-	else if (offset >= offsetof(PyHeapTypeObject, as_mapping)) {
+	else if ((size_t)offset >= offsetof(PyHeapTypeObject, as_mapping)) {
 		ptr = (char *)type->tp_as_mapping;
 		offset -= offsetof(PyHeapTypeObject, as_mapping);
 	}
-	else if (offset >= offsetof(PyHeapTypeObject, as_number)) {
+	else if ((size_t)offset >= offsetof(PyHeapTypeObject, as_number)) {
 		ptr = (char *)type->tp_as_number;
 		offset -= offsetof(PyHeapTypeObject, as_number);
 	}

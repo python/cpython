@@ -97,7 +97,7 @@ PyFloat_FromString(PyObject *v, char **pend)
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(v)) {
-		if (PyUnicode_GET_SIZE(v) >= sizeof(s_buffer)) {
+		if (PyUnicode_GET_SIZE(v) >= (Py_ssize_t)sizeof(s_buffer)) {
 			PyErr_SetString(PyExc_ValueError,
 				"Unicode float() literal too long to convert");
 			return NULL;

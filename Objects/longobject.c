@@ -419,7 +419,7 @@ _PyLong_NumBits(PyObject *vv)
 		digit msd = v->ob_digit[ndigits - 1];
 
 		result = (ndigits - 1) * SHIFT;
-		if (result / SHIFT != ndigits - 1)
+		if (result / SHIFT != (size_t)(ndigits - 1))
 			goto Overflow;
 		do {
 			++result;
@@ -953,7 +953,7 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
 
 	if (vv == NULL || !PyLong_Check(vv)) {
 		PyErr_BadInternalCall();
-		return -1;
+		return (unsigned PY_LONG_LONG)-1;
 	}
 
 	res = _PyLong_AsByteArray(
