@@ -6812,17 +6812,19 @@ posix_confstr(PyObject *self, PyObject *args)
     char buffer[64];
 
     if (PyArg_ParseTuple(args, "O&:confstr", conv_confstr_confname, &name)) {
-        int len = confstr(name, buffer, sizeof(buffer));
+	int len;
 
         errno = 0;
-        if (len == 0) {
-            if (errno != 0)
-                posix_error();
-            else
-                result = PyString_FromString("");
+	len = confstr(name, buffer, sizeof(buffer));
+
+	if (len == -1) {
+	    posix_error();
+	}
+	else if (len == 0) {
+            result = PyString_FromString("");
         }
         else {
-            if (len >= sizeof(buffer)) {
+		if ((unsigned int)len >= sizeof(buffer)) {
                 result = PyString_FromStringAndSize(NULL, len);
                 if (result != NULL)
                     confstr(name, PyString_AS_STRING(result), len+1);
