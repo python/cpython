@@ -12,6 +12,8 @@ What's New in Python 2.5 alpha 2?
 Core and builtins
 -----------------
 
+- Under COUNT_ALLOCS, types are not necessarily immortal anymore.
+
 - All uses of PyStructSequence_InitType have been changed to initialize
   the type objects only once, even if the interpreter is initialized
   multiple times.
