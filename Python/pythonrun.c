@@ -311,7 +311,7 @@ Py_Initialize(void)
 
 
 #ifdef COUNT_ALLOCS
-extern void dump_counts(void);
+extern void dump_counts(FILE*);
 #endif
 
 /* Undo the effect of Py_Initialize().
@@ -373,6 +373,13 @@ Py_Finalize(void)
 	 * XXX I haven't seen a real-life report of either of these.
 	 */
 	PyGC_Collect();
+#ifdef COUNT_ALLOCS
+	/* With COUNT_ALLOCS, it helps to run GC multiple times:
+	   each collection might release some types from the type
+	   list, so they become garbage. */
+	while (PyGC_Collect() > 0)
+		/* nothing */;
+#endif
 
 	/* Destroy all modules */
 	PyImport_Cleanup();
@@ -401,7 +408,7 @@ Py_Finalize(void)
 
 	/* Debugging stuff */
 #ifdef COUNT_ALLOCS
-	dump_counts();
+	dump_counts(stdout);
 #endif
 
 	PRINT_TOTAL_REFS();

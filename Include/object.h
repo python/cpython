@@ -339,6 +339,7 @@ typedef struct _typeobject {
 	Py_ssize_t tp_allocs;
 	Py_ssize_t tp_frees;
 	Py_ssize_t tp_maxalloc;
+	struct _typeobject *tp_prev;
 	struct _typeobject *tp_next;
 #endif
 } PyTypeObject;
@@ -598,8 +599,9 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
 
 #ifdef COUNT_ALLOCS
 PyAPI_FUNC(void) inc_count(PyTypeObject *);
+PyAPI_FUNC(void) dec_count(PyTypeObject *);
 #define _Py_INC_TPALLOCS(OP)	inc_count((OP)->ob_type)
-#define _Py_INC_TPFREES(OP)	(OP)->ob_type->tp_frees++
+#define _Py_INC_TPFREES(OP)	dec_count((OP)->ob_type)
 #define _Py_DEC_TPFREES(OP)	(OP)->ob_type->tp_frees--
 #define _Py_COUNT_ALLOCS_COMMA	,
 #else

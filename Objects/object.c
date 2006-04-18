@@ -74,23 +74,30 @@ _Py_AddToAllObjects(PyObject *op, int force)
 
 #ifdef COUNT_ALLOCS
 static PyTypeObject *type_list;
+/* All types are added to type_list, atleast when
+   they get one object created. That makes them
+   immortal, which unfortunately contributes to
+   garbage itself. If unlist_types_without_objects
+   is set, they will be removed from the type_list
+   once the last object is deallocated. */
+int unlist_types_without_objects;
 extern int tuple_zero_allocs, fast_tuple_allocs;
 extern int quick_int_allocs, quick_neg_int_allocs;
 extern int null_strings, one_strings;
 void
-dump_counts(void)
+dump_counts(FILE* f)
 {
 	PyTypeObject *tp;
 
 	for (tp = type_list; tp; tp = tp->tp_next)
-		fprintf(stderr, "%s alloc'd: %d, freed: %d, max in use: %d\n",
+		fprintf(f, "%s alloc'd: %d, freed: %d, max in use: %d\n",
 			tp->tp_name, tp->tp_allocs, tp->tp_frees,
 			tp->tp_maxalloc);
-	fprintf(stderr, "fast tuple allocs: %d, empty: %d\n",
+	fprintf(f, "fast tuple allocs: %d, empty: %d\n",
 		fast_tuple_allocs, tuple_zero_allocs);
-	fprintf(stderr, "fast int allocs: pos: %d, neg: %d\n",
+	fprintf(f, "fast int allocs: pos: %d, neg: %d\n",
 		quick_int_allocs, quick_neg_int_allocs);
-	fprintf(stderr, "null strings: %d, 1-strings: %d\n",
+	fprintf(f, "null strings: %d, 1-strings: %d\n",
 		null_strings, one_strings);
 }
 
@@ -124,10 +131,12 @@ get_counts(void)
 void
 inc_count(PyTypeObject *tp)
 {
-	if (tp->tp_allocs == 0) {
+	if (tp->tp_next == NULL && tp->tp_prev == NULL) {
 		/* first time; insert in linked list */
 		if (tp->tp_next != NULL) /* sanity check */
 			Py_FatalError("XXX inc_count sanity check");
+		if (type_list)
+			type_list->tp_prev = tp;
 		tp->tp_next = type_list;
 		/* Note that as of Python 2.2, heap-allocated type objects
 		 * can go away, but this code requires that they stay alive
@@ -150,6 +159,24 @@ inc_count(PyTypeObject *tp)
 	if (tp->tp_allocs - tp->tp_frees > tp->tp_maxalloc)
 		tp->tp_maxalloc = tp->tp_allocs - tp->tp_frees;
 }
+
+void dec_count(PyTypeObject *tp)
+{
+	tp->tp_frees++;
+	if (unlist_types_without_objects &&
+	    tp->tp_allocs == tp->tp_frees) {
+		/* unlink the type from type_list */
+		if (tp->tp_prev)
+			tp->tp_prev->tp_next = tp->tp_next;
+		else
+			type_list = tp->tp_next;
+		if (tp->tp_next)
+			tp->tp_next->tp_prev = tp->tp_prev;
+		tp->tp_next = tp->tp_prev = NULL;
+		Py_DECREF(tp);
+	}
+}
+
 #endif
 
 #ifdef Py_REF_DEBUG
