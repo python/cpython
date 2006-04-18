@@ -88,7 +88,7 @@ class test(Command):
         self.reinitialize_command('build_ext', inplace=1)
         self.run_command('build_ext')
 
-        if self.distribution.tests_require:            
+        if self.distribution.tests_require:
             self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
         if self.test_suite:
@@ -117,7 +117,3 @@ class test(Command):
             None, None, [unittest.__file__]+self.test_args,
             testLoader = loader_class()
         )
-
-
-
-

@@ -22,7 +22,7 @@ class install_egg_info(Command):
             None, None, ei_cmd.egg_name, ei_cmd.egg_version
         ).egg_name()+'.egg-info'
         self.source = ei_cmd.egg_info
-        self.target = os.path.join(self.install_dir, basename) 
+        self.target = os.path.join(self.install_dir, basename)
         self.outputs = [self.target]
 
     def run(self):
@@ -43,7 +43,7 @@ class install_egg_info(Command):
         return self.outputs
 
     def copytree(self):
-        # Copy the .egg-info tree to site-packages       
+        # Copy the .egg-info tree to site-packages
         def skimmer(src,dst):
             # filter out source-control directories; note that 'src' is always
             # a '/'-separated path, regardless of platform.  'dst' is a
@@ -78,5 +78,4 @@ class install_egg_info(Command):
                     "(p not in mp) and mp.append(p)\n"
                     % locals()
                 )
-            f.close()            
-
+            f.close()

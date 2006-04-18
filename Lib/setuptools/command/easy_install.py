@@ -1357,7 +1357,7 @@ class PthDistributions(Environment):
         """Write changed .pth file back to disk"""
         if not self.dirty:
             return
-            
+
         data = '\n'.join(map(self.make_relative,self.paths))
         if data:
             log.debug("Saving %s", self.filename)
@@ -1434,7 +1434,7 @@ def uncache_zipdir(path):
                 del zdc[p]
                 return
 
-    
+
 def get_script_args(dist, executable=sys_executable):
     """Yield write_script() argument tuples for a distribution's entrypoints"""
     spec = str(dist.as_requirement())
@@ -1553,8 +1553,3 @@ usage: %(script)s [options] requirement_or_url ...
             distclass=DistributionWithoutHelpCommands, **kw
         )
     )
-
-
-
-
-

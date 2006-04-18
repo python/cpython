@@ -82,7 +82,7 @@ def edit_config(filename, settings, dry_run=False):
 
 class option_base(Command):
     """Abstract base class for commands that mess with config files"""
-    
+
     user_options = [
         ('global-config', 'g',
                  "save options to the site-wide distutils.cfg file"),
@@ -94,7 +94,7 @@ class option_base(Command):
 
     boolean_options = [
         'global-config', 'user-config',
-    ]    
+    ]
 
     def initialize_options(self):
         self.global_config = None
@@ -116,7 +116,7 @@ class option_base(Command):
                 "Must specify only one configuration file option",
                 filenames
             )
-        self.filename, = filenames    
+        self.filename, = filenames
 
 
 
@@ -130,7 +130,7 @@ class setopt(option_base):
         ('command=', 'c', 'command to set an option for'),
         ('option=',  'o',  'option to set'),
         ('set-value=',   's', 'value of the option'),
-        ('remove',   'r', 'remove (unset) the value'), 
+        ('remove',   'r', 'remove (unset) the value'),
     ] + option_base.user_options
 
     boolean_options = option_base.boolean_options + ['remove']
@@ -156,9 +156,3 @@ class setopt(option_base):
             },
             self.dry_run
         )
-
-
-
-
-
-

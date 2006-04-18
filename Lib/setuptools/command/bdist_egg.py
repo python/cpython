@@ -233,7 +233,7 @@ class bdist_egg(Command):
 
         if self.exclude_source_files:
             self.zap_pyfiles()
-        
+
         # Make the archive
         make_zipfile(self.egg_output, archive_root, verbose=self.verbose,
                           dry_run=self.dry_run)
@@ -262,7 +262,7 @@ class bdist_egg(Command):
 
     def make_init_files(self):
         """Create missing package __init__ files"""
-        init_files = []       
+        init_files = []
         for base,dirs,files in walk_egg(self.bdist_dir):
             if base==self.bdist_dir:
                 # don't put an __init__ in the root
@@ -276,7 +276,7 @@ class bdist_egg(Command):
                             filename = os.path.join(base,'__init__.py')
                             if not self.dry_run:
                                 f = open(filename,'w'); f.write(NS_PKG_STUB)
-                                f.close()    
+                                f.close()
                             init_files.append(filename)
                     break
             else:
@@ -329,7 +329,7 @@ NATIVE_EXTENSIONS = dict.fromkeys('.dll .so .dylib .pyd'.split())
 def walk_egg(egg_dir):
     """Walk an unpacked egg's contents, skipping the metadata directory"""
     walker = os.walk(egg_dir)
-    base,dirs,files = walker.next()       
+    base,dirs,files = walker.next()
     if 'EGG-INFO' in dirs:
         dirs.remove('EGG-INFO')
     yield base,dirs,files
@@ -447,5 +447,3 @@ def make_zipfile (zip_filename, base_dir, verbose=0, dry_run=0, compress=None):
         os.path.walk(base_dir, visit, None)
 
     return zip_filename
-
-

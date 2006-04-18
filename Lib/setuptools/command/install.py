@@ -60,7 +60,7 @@ class install(_install):
         caller = sys._getframe(2)
         caller_module = caller.f_globals.get('__name__','')
         caller_name = caller.f_code.co_name
-        
+
         if caller_module != 'distutils.dist' or caller_name!='run_commands':
             # We weren't called from the command line or setup(), so we
             # should run in backward-compatibility mode to support bdist_*
@@ -68,7 +68,7 @@ class install(_install):
             _install.run(self)
         else:
             self.do_egg_install()
-            
+
 
 
 
@@ -99,25 +99,3 @@ class install(_install):
         cmd.args = args
         cmd.run()
         setuptools.bootstrap_install_from = None
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

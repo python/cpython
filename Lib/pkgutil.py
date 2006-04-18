@@ -44,7 +44,7 @@ def simplegeneric(func):
                 class cls(cls,object): pass
                 mro = cls.__mro__[1:]
             except TypeError:
-                mro = object,   # must be an ExtensionClass or some such  :(               
+                mro = object,   # must be an ExtensionClass or some such  :(
         for t in mro:
             if t in registry:
                 return registry[t](*args,**kw)
@@ -64,7 +64,7 @@ def simplegeneric(func):
     wrapper.__dict__ = func.__dict__
     wrapper.__doc__ = func.__doc__
     wrapper.register = register
-    return wrapper        
+    return wrapper
 
 
 def walk_packages(path=None, prefix='', onerror=None):
@@ -160,7 +160,7 @@ class ImpImporter:
             modname = inspect.getmodulename(fn)
             if modname=='__init__' or modname in yielded:
                 continue
-            
+
             path = os.path.join(self.path, fn)
             ispkg = False
 
@@ -276,7 +276,7 @@ class ImpLoader:
 try:
     import zipimport
     from zipimport import zipimporter
-    
+
     def iter_zipimport_modules(importer, prefix=''):
         dirlist = zipimport._zip_directory_cache[importer.archive].keys()
         dirlist.sort()

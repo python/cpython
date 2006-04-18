@@ -201,5 +201,3 @@ This package cannot be safely installed by EasyInstall, and may not
 support alternate installation locations even if you run its setup
 script by hand.  Please inform the package's author and the EasyInstall
 maintainers to find out if a fix or workaround is available.""" % self.args
-
-

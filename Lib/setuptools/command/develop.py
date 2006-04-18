@@ -46,7 +46,7 @@ class develop(easy_install):
             "Please rename %r to %r before using 'develop'"
             % (ei.egg_info, ei.broken_egg_info)
             )
-        self.args = [ei.egg_name]       
+        self.args = [ei.egg_name]
         easy_install.finalize_options(self)
         self.egg_link = os.path.join(self.install_dir, ei.egg_name+'.egg-link')
         self.egg_base = ei.egg_base
@@ -104,7 +104,7 @@ class develop(easy_install):
         # create wrapper scripts in the script dir, pointing to dist.scripts
 
         # new-style...
-        self.install_wrapper_scripts(dist)  
+        self.install_wrapper_scripts(dist)
 
         # ...and old-style
         for script_name in self.distribution.scripts or []:
@@ -114,10 +114,3 @@ class develop(easy_install):
             script_text = f.read()
             f.close()
             self.install_script(dist, script_name, script_text, script_path)
-
-
-
-
-
-
-

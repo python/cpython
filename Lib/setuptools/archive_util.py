@@ -14,7 +14,7 @@ class UnrecognizedFormat(DistutilsError):
     """Couldn't recognize the archive type"""
 
 def default_filter(src,dst):
-    """The default progress/filter callback; returns True for all files"""   
+    """The default progress/filter callback; returns True for all files"""
     return dst
 
 
@@ -184,7 +184,7 @@ def unpack_tarfile(filename, extract_dir, progress_filter=default_filter):
                 name = member.name
                 # don't extract absolute paths or ones with .. in them
                 if not name.startswith('/') and '..' not in name:
-                    dst = os.path.join(extract_dir, *name.split('/'))                
+                    dst = os.path.join(extract_dir, *name.split('/'))
                     dst = progress_filter(name, dst)
                     if dst:
                         if dst.endswith(os.sep):
@@ -198,8 +198,3 @@ def unpack_tarfile(filename, extract_dir, progress_filter=default_filter):
 
 
 extraction_drivers = unpack_directory, unpack_zipfile, unpack_tarfile
-
-
-
-
-
