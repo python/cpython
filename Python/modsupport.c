@@ -7,9 +7,6 @@
 typedef double va_double;
 
 static PyObject *va_build_value(const char *, va_list, int);
-#ifdef HAVE_DECLSPEC_DLL
-PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
-#endif
 
 /* Package context -- the full module name for package imports */
 char *_Py_PackageContext = NULL;
