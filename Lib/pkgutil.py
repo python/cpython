@@ -11,6 +11,7 @@ from types import ModuleType
 
 __all__ = [
     'get_importer', 'iter_importers', 'get_loader', 'find_loader',
+    'walk_packages', 'iter_modules',
     'ImpImporter', 'ImpLoader', 'read_code', 'extend_path',
 ]
 
@@ -25,6 +26,95 @@ def read_code(stream):
 
     stream.read(4) # Skip timestamp
     return marshal.load(stream)
+
+
+def simplegeneric(func):
+    """Make a trivial single-dispatch generic function"""
+    registry = {}
+    def wrapper(*args,**kw):
+        ob = args[0]
+        try:
+            cls = ob.__class__
+        except AttributeError:
+            cls = type(ob)
+        try:
+            mro = cls.__mro__
+        except AttributeError:
+            try:
+                class cls(cls,object): pass
+                mro = cls.__mro__[1:]
+            except TypeError:
+                mro = object,   # must be an ExtensionClass or some such  :(               
+        for t in mro:
+            if t in registry:
+                return registry[t](*args,**kw)
+        else:
+            return func(*args,**kw)
+    try:
+        wrapper.__name__ = func.__name__
+    except (TypeError,AttributeError):
+        pass    # Python 2.3 doesn't allow functions to be renamed
+
+    def register(typ, func=None):
+        if func is None:
+            return lambda f: register(typ, f)
+        registry[typ] = func
+        return func
+
+    wrapper.__dict__ = func.__dict__
+    wrapper.__doc__ = func.__doc__
+    wrapper.register = register
+    return wrapper        
+
+
+def walk_packages(path=None, prefix='', onerror=None):
+    """Yield submodule names+loaders recursively, for path or sys.path"""
+
+    def seen(p,m={}):
+        if p in m: return True
+        m[p] = True
+
+    for importer, name, ispkg in iter_modules(path, prefix):
+        yield importer, name, ispkg
+
+        if ispkg:
+            try:
+                __import__(name)
+            except ImportError:
+                if onerror is not None:
+                    onerror()
+            else:
+                path = getattr(sys.modules[name], '__path__', None) or []
+
+                # don't traverse path items we've seen before
+                path = [p for p in path if not seen(p)]
+
+                for item in walk_packages(path, name+'.'):
+                    yield item
+
+
+def iter_modules(path=None, prefix=''):
+    """Yield submodule names+loaders for path or sys.path"""
+    if path is None:
+        importers = iter_importers()
+    else:
+        importers = map(get_importer, path)
+
+    yielded = {}
+    for i in importers:
+        for name, ispkg in iter_importer_modules(i, prefix):
+            if name not in yielded:
+                yielded[name] = 1
+                yield i, name, ispkg
+
+
+#@simplegeneric
+def iter_importer_modules(importer, prefix=''):
+    if not hasattr(importer,'iter_modules'):
+        return []
+    return importer.iter_modules(prefix)
+
+iter_importer_modules = simplegeneric(iter_importer_modules)
 
 
 class ImpImporter:
@@ -49,12 +139,44 @@ class ImpImporter:
         if self.path is None:
             path = None
         else:
-            path = [self.path]
+            path = [os.path.realpath(self.path)]
         try:
             file, filename, etc = imp.find_module(subname, path)
         except ImportError:
             return None
         return ImpLoader(fullname, file, filename, etc)
+
+    def iter_modules(self, prefix=''):
+        if self.path is None or not os.path.isdir(self.path):
+            return
+
+        yielded = {}
+        import inspect
+
+        filenames = os.listdir(self.path)
+        filenames.sort()  # handle packages before same-named modules
+
+        for fn in filenames:
+            modname = inspect.getmodulename(fn)
+            if modname=='__init__' or modname in yielded:
+                continue
+            
+            path = os.path.join(self.path, fn)
+            ispkg = False
+
+            if not modname and os.path.isdir(path) and '.' not in fn:
+                modname = fn
+                for fn in os.listdir(path):
+                    subname = inspect.getmodulename(fn)
+                    if subname=='__init__':
+                        ispkg = True
+                        break
+                else:
+                    continue    # not a package
+
+            if modname and '.' not in modname:
+                yielded[modname] = 1
+                yield prefix + modname, ispkg
 
 
 class ImpLoader:
@@ -97,7 +219,8 @@ class ImpLoader:
                               "module %s" % (self.fullname, fullname))
         return fullname
 
-    def is_package(self):
+    def is_package(self, fullname):
+        fullname = self._fix_name(fullname)
         return self.etc[2]==imp.PKG_DIRECTORY
 
     def get_code(self, fullname=None):
@@ -136,6 +259,7 @@ class ImpLoader:
                 self.source = self._get_delegate().get_source()
         return self.source
 
+
     def _get_delegate(self):
         return ImpImporter(self.filename).find_module('__init__')
 
@@ -147,6 +271,45 @@ class ImpLoader:
         elif self.etc[2] in (imp.PY_SOURCE, imp.PY_COMPILED, imp.C_EXTENSION):
             return self.filename
         return None
+
+
+try:
+    import zipimport
+    from zipimport import zipimporter
+    
+    def iter_zipimport_modules(importer, prefix=''):
+        dirlist = zipimport._zip_directory_cache[importer.archive].keys()
+        dirlist.sort()
+        _prefix = importer.prefix
+        plen = len(_prefix)
+        yielded = {}
+        import inspect
+        for fn in dirlist:
+            if not fn.startswith(_prefix):
+                continue
+
+            fn = fn[plen:].split(os.sep)
+
+            if len(fn)==2 and fn[1].startswith('__init__.py'):
+                if fn[0] not in yielded:
+                    yielded[fn[0]] = 1
+                    yield fn[0], True
+
+            if len(fn)!=1:
+                continue
+
+            modname = inspect.getmodulename(fn[0])
+            if modname=='__init__':
+                continue
+
+            if modname and '.' not in modname and modname not in yielded:
+                yielded[modname] = 1
+                yield prefix + modname, False
+
+    iter_importer_modules.register(zipimporter, iter_zipimport_modules)
+
+except ImportError:
+    pass
 
 
 def get_importer(path_item):
@@ -183,7 +346,7 @@ def get_importer(path_item):
     return importer
 
 
-def iter_importers(fullname):
+def iter_importers(fullname=""):
     """Yield PEP 302 importers for the given module name
 
     If fullname contains a '.', the importers will be for the package
@@ -224,7 +387,6 @@ def iter_importers(fullname):
     if '.' not in fullname:
         yield ImpImporter()
 
-
 def get_loader(module_or_name):
     """Get a PEP 302 "loader" object for module_or_name
 
@@ -249,7 +411,6 @@ def get_loader(module_or_name):
     else:
         fullname = module_or_name
     return find_loader(fullname)
-
 
 def find_loader(fullname):
     """Find a PEP 302 "loader" object for fullname
