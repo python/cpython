@@ -588,7 +588,7 @@ ffi_type *GetType(PyObject *obj)
 			return &ffi_type_sint64;
 	}
 #endif
-	return &dict->ffi_type;
+	return &dict->ffi_type_pointer;
 }
 
 

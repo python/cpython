@@ -318,7 +318,7 @@ ffi_info *AllocFunctionCallback(PyObject *callable,
 		if (dict == NULL)
 			goto error;
 		p->setfunc = dict->setfunc;
-		p->restype = &dict->ffi_type;
+		p->restype = &dict->ffi_type_pointer;
 	}
 
 	cc = FFI_DEFAULT_ABI;
