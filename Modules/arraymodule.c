@@ -1164,7 +1164,7 @@ array_reverse(arrayobject *self, PyObject *unused)
 	register char *p, *q;
 	/* little buffer to hold items while swapping */
 	char tmp[256];	/* 8 is probably enough -- but why skimp */
-	assert(itemsize <= sizeof(tmp));
+	assert((size_t)itemsize <= sizeof(tmp));
 
 	if (self->ob_size > 1) {
 		for (p = self->ob_item,
@@ -1674,7 +1674,8 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
 			}
 
 			self->ob_size -= slicelength;
-			self->ob_item = PyMem_REALLOC(self->ob_item, itemsize*self->ob_size);
+			self->ob_item = (char *)PyMem_REALLOC(self->ob_item,
+							      itemsize*self->ob_size);
 			self->allocated = self->ob_size;
 
 			return 0;
@@ -1866,7 +1867,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				if (n > 0) {
 					arrayobject *self = (arrayobject *)a;
 					char *item = self->ob_item;
-					item = PyMem_Realloc(item, n);
+					item = (char *)PyMem_Realloc(item, n);
 					if (item == NULL) {
 						PyErr_NoMemory();
 						Py_DECREF(a);
