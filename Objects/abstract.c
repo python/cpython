@@ -10,13 +10,6 @@
 
 #define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
 
-#ifdef HAVE_DECLSPEC_DLL
-PyAPI_FUNC(PyObject *) _PyObject_CallFunction_SizeT(PyObject *callable_object,
-						    char *format, ...);
-PyAPI_FUNC(PyObject *) _PyObject_CallMethod_SizeT(PyObject *o, char *m,
-						  char *format, ...);
-#endif
-
 
 /* Shorthands to return certain errors */
 
