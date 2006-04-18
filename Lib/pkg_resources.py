@@ -18,7 +18,7 @@ from sets import ImmutableSet
 from os import utime, rename, unlink    # capture these to bypass sandboxing
 from os import open as os_open
 
-def _get_max_platform(plat):
+def get_supported_platform():
     """Return this platform's maximum compatible version.
 
     distutils.util.get_platform() normally reports the minimum version
@@ -31,7 +31,7 @@ def _get_max_platform(plat):
     If this condition occurs for any other platform with a version in its
     platform strings, this function should be extended accordingly.
     """
-    m = macosVersionString.match(plat)
+    plat = get_build_platform(); m = macosVersionString.match(plat)
     if m is not None and sys.platform == "darwin":
         try:
             plat = 'macosx-%s-%s' % ('.'.join(_macosx_vers()[:2]), m.group(3))
@@ -138,7 +138,7 @@ def _macosx_vers(_cache=[]):
 def _macosx_arch(machine):
     return {'PowerPC':'ppc', 'Power_Macintosh':'ppc'}.get(machine,machine)
 
-def get_platform():
+def get_build_platform():
     """Return this platform's string for platform-specific distributions
 
     XXX Currently this is the same as ``distutils.util.get_platform()``, but it
@@ -160,7 +160,7 @@ def get_platform():
 
 macosVersionString = re.compile(r"macosx-(\d+)\.(\d+)-(.*)")
 darwinVersionString = re.compile(r"darwin-(\d+)\.(\d+)\.(\d+)-(.*)")
-
+get_platform = get_build_platform   # XXX backward compat
 
 def compatible_platforms(provided,required):
     """Can code for the `provided` platform run on the `required` platform?
@@ -171,8 +171,6 @@ def compatible_platforms(provided,required):
     """
     if provided is None or required is None or provided==required:
         return True     # easy case
-    provided = _get_max_platform(provided)
-    if provided==required: return True
 
     # Mac OS X special cases
     reqMac = macosVersionString.match(required)
@@ -202,6 +200,8 @@ def compatible_platforms(provided,required):
         if provMac.group(1) != reqMac.group(1) or \
             provMac.group(3) != reqMac.group(3):
             return False
+
+
 
         # is the required OS major update >= the provided one?
         if int(provMac.group(2)) > int(reqMac.group(2)):
@@ -616,7 +616,7 @@ class WorkingSet(object):
 class Environment(object):
     """Searchable snapshot of distributions on a search path"""
 
-    def __init__(self,search_path=None,platform=get_platform(),python=PY_MAJOR):
+    def __init__(self, search_path=None, platform=get_supported_platform(), python=PY_MAJOR):
         """Snapshot distributions available on a search path
 
         Any distributions found on `search_path` are added to the environment.

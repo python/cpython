@@ -8,7 +8,7 @@ from setuptools import Command
 from distutils.dir_util import remove_tree, mkpath
 from distutils.sysconfig import get_python_version, get_python_lib
 from distutils import log
-from pkg_resources import get_platform, Distribution
+from pkg_resources import get_build_platform, Distribution
 from types import CodeType
 from setuptools.extension import Library
 
@@ -48,7 +48,7 @@ class bdist_egg(Command):
             "temporary directory for creating the distribution"),
         ('plat-name=', 'p',
                      "platform name to embed in generated filenames "
-                     "(default: %s)" % get_platform()),
+                     "(default: %s)" % get_build_platform()),
         ('exclude-source-files', None,
                      "remove all .py files from the generated egg"),
         ('keep-temp', 'k',
@@ -99,7 +99,7 @@ class bdist_egg(Command):
             self.bdist_dir = os.path.join(bdist_base, 'egg')
 
         if self.plat_name is None:
-            self.plat_name = get_platform()
+            self.plat_name = get_build_platform()
 
         self.set_undefined_options('bdist',('dist_dir', 'dist_dir'))
 
