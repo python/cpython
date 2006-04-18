@@ -12,6 +12,15 @@ What's New in Python 2.5 alpha 2?
 Core and builtins
 -----------------
 
+- Bug #1465834: 'bdist_wininst preinstall script support' was fixed
+  by converting these apis from macros into exported functions again:
+
+    PyParser_SimpleParseFile PyParser_SimpleParseString PyRun_AnyFile
+    PyRun_AnyFileEx PyRun_AnyFileFlags PyRun_File PyRun_FileEx
+    PyRun_FileFlags PyRun_InteractiveLoop PyRun_InteractiveOne
+    PyRun_SimpleFile PyRun_SimpleFileEx PyRun_SimpleString
+    PyRun_String Py_CompileString
+
 - Under COUNT_ALLOCS, types are not necessarily immortal anymore.
 
 - All uses of PyStructSequence_InitType have been changed to initialize
