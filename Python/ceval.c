@@ -3219,132 +3219,29 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
 		      PyFrameObject *frame, int *instr_lb, int *instr_ub,
 		      int *instr_prev)
 {
-	/* The theory of SET_LINENO-less tracing.
-
-	   In a nutshell, we use the co_lnotab field of the code object
-	   to tell when execution has moved onto a different line.
-
-	   As mentioned above, the basic idea is so set things up so
-	   that
-
-	         *instr_lb <= frame->f_lasti < *instr_ub
-
-	   is true so long as execution does not change lines.
-
-	   This is all fairly simple.  Digging the information out of
-	   co_lnotab takes some work, but is conceptually clear.
-
-	   Somewhat harder to explain is why we don't *always* call the
-	   line trace function when the above test fails.
-
-	   Consider this code:
-
-	   1: def f(a):
-	   2:     if a:
-	   3:        print 1
-	   4:     else:
-	   5:        print 2
-
-	   which compiles to this:
-
-	   2           0 LOAD_FAST                0 (a)
-		       3 JUMP_IF_FALSE            9 (to 15)
-		       6 POP_TOP
-
-	   3           7 LOAD_CONST               1 (1)
-		      10 PRINT_ITEM
-		      11 PRINT_NEWLINE
-		      12 JUMP_FORWARD             6 (to 21)
-		 >>   15 POP_TOP
-
-	   5          16 LOAD_CONST               2 (2)
-		      19 PRINT_ITEM
-		      20 PRINT_NEWLINE
-		 >>   21 LOAD_CONST               0 (None)
-		      24 RETURN_VALUE
-
-	   If 'a' is false, execution will jump to instruction at offset
-	   15 and the co_lnotab will claim that execution has moved to
-	   line 3.  This is at best misleading.  In this case we could
-	   associate the POP_TOP with line 4, but that doesn't make
-	   sense in all cases (I think).
-
-	   What we do is only call the line trace function if the co_lnotab
-	   indicates we have jumped to the *start* of a line, i.e. if the
-	   current instruction offset matches the offset given for the
-	   start of a line by the co_lnotab.
-
-	   This also takes care of the situation where 'a' is true.
-	   Execution will jump from instruction offset 12 to offset 21.
-	   Then the co_lnotab would imply that execution has moved to line
-	   5, which is again misleading.
-
-	   Why do we set f_lineno when tracing?  Well, consider the code
-	   above when 'a' is true.  If stepping through this with 'n' in
-	   pdb, you would stop at line 1 with a "call" type event, then
-	   line events on lines 2 and 3, then a "return" type event -- but
-	   you would be shown line 5 during this event.  This is a change
-	   from the behaviour in 2.2 and before, and I've found it
-	   confusing in practice.  By setting and using f_lineno when
-	   tracing, one can report a line number different from that
-	   suggested by f_lasti on this one occasion where it's desirable.
-	*/
-
 	int result = 0;
 
+        /* If the last instruction executed isn't in the current
+           instruction window, reset the window.  If the last
+           instruction happens to fall at the start of a line or if it
+           represents a jump backwards, call the trace function.
+        */
 	if ((frame->f_lasti < *instr_lb || frame->f_lasti >= *instr_ub)) {
-		PyCodeObject* co = frame->f_code;
-		int size, addr, line;
-		unsigned char* p;
+                int line;
+                PyAddrPair bounds;
 
-		size = PyString_GET_SIZE(co->co_lnotab) / 2;
-		p = (unsigned char*)PyString_AS_STRING(co->co_lnotab);
-
-		addr = 0;
-		line = co->co_firstlineno;
-
-		/* possible optimization: if f->f_lasti == instr_ub
-		   (likely to be a common case) then we already know
-		   instr_lb -- if we stored the matching value of p
-		   somwhere we could skip the first while loop. */
-
-		/* see comments in compile.c for the description of
-		   co_lnotab.  A point to remember: increments to p
-		   should come in pairs -- although we don't care about
-		   the line increments here, treating them as byte
-		   increments gets confusing, to say the least. */
-
-		while (size > 0) {
-			if (addr + *p > frame->f_lasti)
-				break;
-			addr += *p++;
-			if (*p) *instr_lb = addr;
-			line += *p++;
-			--size;
-		}
-
-		if (addr == frame->f_lasti) {
+                line = PyCode_CheckLineNumber(frame->f_code, frame->f_lasti,
+                                              &bounds);
+                if (line >= 0) {
 			frame->f_lineno = line;
 			result = call_trace(func, obj, frame,
 					    PyTrace_LINE, Py_None);
-		}
-
-		if (size > 0) {
-			while (--size >= 0) {
-				addr += *p++;
-				if (*p++)
-					break;
-			}
-			*instr_ub = addr;
-		}
-		else {
-			*instr_ub = INT_MAX;
-		}
+                }
+                *instr_lb = bounds.ap_lower;
+                *instr_ub = bounds.ap_upper;
 	}
 	else if (frame->f_lasti <= *instr_prev) {
-		/* jumping back in the same line forces a trace event */
-		result = call_trace(func, obj, frame,
-				    PyTrace_LINE, Py_None);
+		result = call_trace(func, obj, frame, PyTrace_LINE, Py_None);
 	}
 	*instr_prev = frame->f_lasti;
 	return result;
