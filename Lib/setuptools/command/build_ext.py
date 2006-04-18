@@ -283,5 +283,3 @@ else:
         self.create_static_lib(
             objects, basename, output_dir, debug, target_lang
         )
-
-

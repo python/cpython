@@ -143,7 +143,7 @@ class DistroTests(TestCase):
         self.assertRaises(VersionConflict, ws.resolve,
             parse_requirements("Foo==0.9"), ad)
         ws = WorkingSet([]) # reset
-        
+
         # Request an extra that causes an unresolved dependency for "Baz"
         self.assertRaises(
             DistributionNotFound, ws.resolve,parse_requirements("Foo[bar]"), ad
@@ -161,7 +161,7 @@ class DistroTests(TestCase):
         self.assertRaises( VersionConflict,
             ws.resolve, parse_requirements("Foo==1.2\nFoo!=1.2"), ad
         )
-        
+
     def testDistroDependsOptions(self):
         d = self.distRequires("""
             Twisted>=1.5
@@ -481,12 +481,3 @@ class ParseTests(TestCase):
         for p,v1 in enumerate(torture):
             for v2 in torture[p+1:]:
                 c(v2,v1)
-
-
-
-
-
-
-
-
-

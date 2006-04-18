@@ -363,7 +363,3 @@ def get_pkg_info_revision():
             if match:
                 return int(match.group(1))
     return 0
-
-
-
-

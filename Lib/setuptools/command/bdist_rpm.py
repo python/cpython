@@ -35,34 +35,3 @@ class bdist_rpm(_bdist_rpm):
         ]
         spec.insert(spec.index(line24)+1, "%define unmangled_version "+version)
         return spec
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

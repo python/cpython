@@ -8,7 +8,7 @@ import sys
 if sys.version>='2.5':
     # In Python 2.5 and above, distutils includes its own upload command
     __all__.remove('upload')
-    
+
 
 from distutils.command.bdist import bdist
 

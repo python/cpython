@@ -28,7 +28,7 @@ class rotate(Command):
                 "(e.g. '.zip' or '.egg')"
             )
         if self.keep is None:
-            raise DistutilsOptionError("Must specify number of files to keep")           
+            raise DistutilsOptionError("Must specify number of files to keep")
         try:
             self.keep = int(self.keep)
         except ValueError:
@@ -55,28 +55,3 @@ class rotate(Command):
                 log.info("Deleting %s", f)
                 if not self.dry_run:
                     os.unlink(f)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

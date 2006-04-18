@@ -260,7 +260,7 @@ class PackageIndex(Environment):
 
     def find_packages(self, requirement):
         self.scan_url(self.index_url + requirement.unsafe_name+'/')
-        
+
         if not self.package_pages.get(requirement.key):
             # Fall back to safe version of the name
             self.scan_url(self.index_url + requirement.project_name+'/')
@@ -489,7 +489,7 @@ class PackageIndex(Environment):
                 "Can't process plain .py files without an '#egg=name-version'"
                 " suffix to enable automatic setup script generation."
             )
-        
+
     dl_blocksize = 8192
     def _download_to(self, url, filename):
         self.url_ok(url,True)   # raises error if not allowed
@@ -672,26 +672,3 @@ def get_sf_ip():
             # DNS-bl0ck1n9 f1r3w4llz sUx0rs!
             _sf_mirrors[:] = ['dl.sourceforge.net']
     return random.choice(_sf_mirrors)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

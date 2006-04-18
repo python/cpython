@@ -22,4 +22,3 @@ class saveopts(option_base):
                     settings.setdefault(cmd,{})[opt] = val
 
         edit_config(self.filename, settings, self.dry_run)
-

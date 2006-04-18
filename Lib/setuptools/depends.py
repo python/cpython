@@ -237,10 +237,3 @@ def extract_constant(code,symbol,default=-1):
             return const
         else:
             const = default
-
-
-
-
-
-
-

@@ -144,7 +144,7 @@ class sdist(_sdist):
         self.filelist.append(os.path.join(ei_cmd.egg_info,'SOURCES.txt'))
 
         self.check_metadata()
-        self.make_distribution()        
+        self.make_distribution()
 
         dist_files = getattr(self.distribution,'dist_files',[])
         for file in self.archive_files:
@@ -161,4 +161,3 @@ class sdist(_sdist):
             # dying and thus masking the real error
             sys.exc_info()[2].tb_next.tb_frame.f_locals['template'].close()
             raise
-

@@ -796,25 +796,3 @@ class Feature:
                     " doesn't contain any packages or modules under %s"
                     % (self.description, item, item)
                 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -93,7 +93,7 @@ class build_py(_build_py):
         ei_cmd = self.get_finalized_command('egg_info')
         for path in ei_cmd.filelist.files:
             if path.endswith('.py'):
-                continue            
+                continue
             d,f = os.path.split(assert_relative(path))
             prev = None
             while d and d!=prev and d not in src_dirs:
@@ -142,7 +142,7 @@ class build_py(_build_py):
 
         f = open(init_py,'rU')
         if 'declare_namespace' not in f.read():
-            from distutils.errors import DistutilsError       
+            from distutils.errors import DistutilsError
             raise DistutilsError(
               "Namespace package problem: %s is a namespace package, but its\n"
               "__init__.py does not call declare_namespace()! Please fix it.\n"
@@ -167,7 +167,7 @@ class build_py(_build_py):
         globs = (self.exclude_package_data.get('', [])
                  + self.exclude_package_data.get(package, []))
         bad = []
-        for pattern in globs:           
+        for pattern in globs:
             bad.extend(
                 fnmatch.filter(
                     files, os.path.join(src_dir, convert_path(pattern))
@@ -190,16 +190,3 @@ setup() arguments must *always* be /-separated paths relative to the
 setup.py directory, *never* absolute paths.
 """ % path
     )
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -362,8 +362,3 @@ class TestCommandTests(TestCase):
         ts5 = makeSetup().get_command_obj('test')
         ts5.ensure_finalized()
         self.assertEqual(ts5.test_suite, None)
-
-
-
-
-
