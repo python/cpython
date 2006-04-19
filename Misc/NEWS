@@ -147,6 +147,11 @@ Tests
   it separately and by hand.  It also wasn't cleaning up its changes to
   the current Decimal context.
 
+Tools
+-----
+
+- Added the Python benchmark suite pybench to the Tools/ directory;
+  contributed by Marc-Andre Lemburg.
 
 Documentation
 -------------
