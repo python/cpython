@@ -825,6 +825,32 @@ class TestExceptions(unittest.TestCase):
         self.assert_(issubclass(socket.gaierror, socket.error))
         self.assert_(issubclass(socket.timeout, socket.error))
 
+class TestLinuxAbstractNamespace(unittest.TestCase):
+
+    UNIX_PATH_MAX = 108
+
+    def testLinuxAbstractNamespace(self):
+        address = "\x00python-test-hello\x00\xff"
+        s1 = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s1.bind(address)
+        s1.listen(1)
+        s2 = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s2.connect(s1.getsockname())
+        s1.accept()
+        self.assertEqual(s1.getsockname(), address)
+        self.assertEqual(s2.getpeername(), address)
+
+    def testMaxName(self):
+        address = "\x00" + "h" * (self.UNIX_PATH_MAX - 1)
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.bind(address)
+        self.assertEqual(s.getsockname(), address)
+
+    def testNameOverflow(self):
+        address = "\x00" + "h" * self.UNIX_PATH_MAX
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.assertRaises(socket.error, s.bind, address)
+
 
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPTimeoutTest, TestExceptions]
@@ -840,6 +866,8 @@ def test_main():
     ])
     if hasattr(socket, "socketpair"):
         tests.append(BasicSocketPairTest)
+    if sys.platform == 'linux2':
+        tests.append(TestLinuxAbstractNamespace)
     test_support.run_unittest(*tests)
 
 if __name__ == "__main__":

@@ -968,7 +968,18 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen, int proto)
 	case AF_UNIX:
 	{
 		struct sockaddr_un *a = (struct sockaddr_un *) addr;
-		return PyString_FromString(a->sun_path);
+#ifdef linux
+		if (a->sun_path[0] == 0) {  /* Linux abstract namespace */
+			addrlen -= (sizeof(*a) - sizeof(a->sun_path));
+			return PyString_FromStringAndSize(a->sun_path,
+							  addrlen);
+		}
+		else
+#endif /* linux */
+		{
+			/* regular NULL-terminated string */
+			return PyString_FromString(a->sun_path);
+		}
 	}
 #endif /* AF_UNIX */
 
@@ -1098,14 +1109,28 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		addr = (struct sockaddr_un*)&(s->sock_addr).un;
 		if (!PyArg_Parse(args, "t#", &path, &len))
 			return 0;
-		if (len >= sizeof addr->sun_path) {
-			PyErr_SetString(socket_error,
-					"AF_UNIX path too long");
-			return 0;
+#ifdef linux
+		if (len > 0 && path[0] == 0) {
+			/* Linux abstract namespace extension */
+			if (len > sizeof addr->sun_path) {
+				PyErr_SetString(socket_error,
+						"AF_UNIX path too long");
+				return 0;
+			}
+		}
+		else
+#endif /* linux */
+                {
+			/* regular NULL-terminated string */
+			if (len >= sizeof addr->sun_path) {
+				PyErr_SetString(socket_error,
+						"AF_UNIX path too long");
+				return 0;
+			}
+			addr->sun_path[len] = 0;
 		}
 		addr->sun_family = s->sock_family;
 		memcpy(addr->sun_path, path, len);
-		addr->sun_path[len] = 0;
 		*addr_ret = (struct sockaddr *) addr;
 #if defined(PYOS_OS2)
 		*len_ret = sizeof(*addr);
