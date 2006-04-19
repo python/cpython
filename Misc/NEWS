@@ -80,6 +80,9 @@ Extension Modules
 - Bug #1332852: bsddb module minimum BerkeleyDB version raised to 3.3
   as older versions cause excessive test failures.
 
+- Patch #1062014: AF_UNIX sockets under Linux have a special
+  abstract namespace that is now fully supported.
+
 Library
 -------
 
