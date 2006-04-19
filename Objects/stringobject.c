@@ -2524,11 +2524,11 @@ string_replace(PyStringObject *self, PyObject *args)
 	char *new_s;
 	const Py_ssize_t len = PyString_GET_SIZE(self);
 	Py_ssize_t sub_len, repl_len, out_len;
-	int count = -1;
+	Py_ssize_t count = -1;
 	PyObject *newobj;
 	PyObject *subobj, *replobj;
 
-	if (!PyArg_ParseTuple(args, "OO|i:replace",
+	if (!PyArg_ParseTuple(args, "OO|n:replace",
 			      &subobj, &replobj, &count))
 		return NULL;
 
