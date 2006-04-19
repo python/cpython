@@ -2860,10 +2860,10 @@ PyDoc_STRVAR(ljust__doc__,
 static PyObject *
 string_ljust(PyStringObject *self, PyObject *args)
 {
-    int width;
+    Py_ssize_t width;
     char fillchar = ' ';
 
-    if (!PyArg_ParseTuple(args, "i|c:ljust", &width, &fillchar))
+    if (!PyArg_ParseTuple(args, "n|c:ljust", &width, &fillchar))
         return NULL;
 
     if (PyString_GET_SIZE(self) >= width && PyString_CheckExact(self)) {
@@ -2884,10 +2884,10 @@ PyDoc_STRVAR(rjust__doc__,
 static PyObject *
 string_rjust(PyStringObject *self, PyObject *args)
 {
-    int width;
+    Py_ssize_t width;
     char fillchar = ' ';
 
-    if (!PyArg_ParseTuple(args, "i|c:rjust", &width, &fillchar))
+    if (!PyArg_ParseTuple(args, "n|c:rjust", &width, &fillchar))
         return NULL;
 
     if (PyString_GET_SIZE(self) >= width && PyString_CheckExact(self)) {
@@ -2909,10 +2909,10 @@ static PyObject *
 string_center(PyStringObject *self, PyObject *args)
 {
     Py_ssize_t marg, left;
-    long width;
+    Py_ssize_t width;
     char fillchar = ' ';
 
-    if (!PyArg_ParseTuple(args, "l|c:center", &width, &fillchar))
+    if (!PyArg_ParseTuple(args, "n|c:center", &width, &fillchar))
         return NULL;
 
     if (PyString_GET_SIZE(self) >= width && PyString_CheckExact(self)) {
@@ -2938,9 +2938,9 @@ string_zfill(PyStringObject *self, PyObject *args)
     Py_ssize_t fill;
     PyObject *s;
     char *p;
+    Py_ssize_t width;
 
-    long width;
-    if (!PyArg_ParseTuple(args, "l:zfill", &width))
+    if (!PyArg_ParseTuple(args, "n:zfill", &width))
         return NULL;
 
     if (PyString_GET_SIZE(self) >= width) {
