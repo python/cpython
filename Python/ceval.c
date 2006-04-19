@@ -4238,8 +4238,8 @@ string_concatenate(PyObject *v, PyObject *w,
 		/* Now we own the last reference to 'v', so we can resize it
 		 * in-place.
 		 */
-		int v_len = PyString_GET_SIZE(v);
-		int w_len = PyString_GET_SIZE(w);
+		Py_ssize_t v_len = PyString_GET_SIZE(v);
+		Py_ssize_t w_len = PyString_GET_SIZE(w);
 		if (_PyString_Resize(&v, v_len + w_len) != 0) {
 			/* XXX if _PyString_Resize() fails, 'v' has been
 			 * deallocated so it cannot be put back into 'variable'.
