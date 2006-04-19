@@ -145,7 +145,7 @@ around your conditional expressions, you won't run into this case.
 \begin{seealso}
 
 \seepep{308}{Conditional Expressions}{PEP written by
-Guido van Rossum and Raymond D. Hettinger; implemented by Thomas
+Guido van~Rossum and Raymond D. Hettinger; implemented by Thomas
 Wouters.}
 
 \end{seealso}
@@ -549,7 +549,7 @@ chance to run.  The syntactic restriction that you couldn't mix
 therefore been removed.  This seems like a minor bit of language
 trivia, but using generators and \code{try...finally} is actually
 necessary in order to implement the  \keyword{with} statement
-described by PEP 343.  We'll look at this new statement in the following 
+described by PEP 343.  I'll look at this new statement in the following 
 section.
 
 Another even more esoteric effect of this change: previously, the
@@ -560,7 +560,7 @@ once the generator has been exhausted.
 \begin{seealso}
 
 \seepep{342}{Coroutines via Enhanced Generators}{PEP written by 
-Guido van Rossum and Phillip J. Eby;
+Guido van~Rossum and Phillip J. Eby;
 implemented by Phillip J. Eby.  Includes examples of 
 some fancier uses of generators as coroutines.}
 
@@ -581,10 +581,10 @@ The \keyword{with} statement allows a clearer version of code that
 uses \code{try...finally} blocks to ensure that clean-up code is
 executed.
 
-First, I'll discuss the statement as it will commonly be used, and
-then a subsection will examine the implementation details and how to
-write objects (called ``context managers'') that can be used with this
-statement.  
+In this section, I'll discuss the statement as it will commonly be
+used.  In the next section, I'll examine the implementation details
+and show how to write objects called ``context managers'' and
+``contexts'' for use with this statement.
 
 The \keyword{with} statement is a new control-flow structure whose
 basic structure is:
@@ -830,10 +830,29 @@ with db_transaction(db) as cursor:
     ...
 \end{verbatim}
 
-There's a \function{nested(\var{mgr1}, \var{mgr2}, ...)} manager that 
-combines a number of context managers so you don't need to write 
-nested \keyword{with} statements.  This example
-both uses a database transaction and also acquires a thread lock:
+You can also use this decorator to write the \method{__context__()} method
+for a class without creating a new class for the context:
+
+\begin{verbatim}
+class DatabaseConnection:
+
+    @contextmanager
+    def __context__ (self):
+	cursor = self.cursor()
+	try:
+	    yield cursor
+	except:
+	    self.rollback()
+	    raise
+	else:
+	    self.commit()
+\end{verbatim}
+
+
+There's a \function{nested(\var{mgr1}, \var{mgr2}, ...)} manager that
+combines a number of context managers so you don't need to write
+nested \keyword{with} statements.  This example statement does two
+things, starting a database transaction and acquiring a thread lock:
 
 \begin{verbatim}
 lock = threading.Lock()
@@ -853,8 +872,8 @@ with closing(open('/tmp/file', 'r')) as f:
 
 \begin{seealso}
 
-\seepep{343}{The ``with'' statement}{PEP written by Guido van Rossum
-and Nick Coghlan; implemented by Mike Bland, Guido van Rossum, and
+\seepep{343}{The ``with'' statement}{PEP written by Guido van~Rossum
+and Nick Coghlan; implemented by Mike Bland, Guido van~Rossum, and
 Neal Norwitz.  The PEP shows the code generated for a \keyword{with}
 statement, which can be helpful in learning how context managers
 work.}
@@ -926,7 +945,7 @@ in a few releases.
 \begin{seealso}
 
 \seepep{352}{Required Superclass for Exceptions}{PEP written by 
-Brett Cannon and Guido van Rossum; implemented by Brett Cannon.}
+Brett Cannon and Guido van~Rossum; implemented by Brett Cannon.}
 
 \end{seealso}
 
@@ -1174,9 +1193,6 @@ the SVN logs for all the details.
 % the cPickle module no longer accepts the deprecated None option in the
 % args tuple returned by __reduce__().
 
-% XXX datetime.datetime() now has a strptime class method which can be used to
-% create datetime object using a string and format.
-
 % XXX fileinput: opening hook used to control how files are opened.
 % .input() now has a mode parameter
 % now has a fileno() function
@@ -1249,6 +1265,19 @@ currently-set limit.  The \class{reader} class now has a
 read from the source; records can span multiple physical lines, so
 \member{line_num} is not the same as the number of records read.
 (Contributed by Skip Montanaro and Andrew McNamara.)
+
+\item The \class{datetime} class in the \module{datetime} 
+module now has a \method{strptime(\var{string}, \var{format})} 
+method for parsing date strings, contributed by Josh Spoerri.
+It uses the same format characters as \function{time.strptime()} and
+\function{time.strftime()}:
+
+\begin{verbatim}
+from datetime import datetime
+
+ts = datetime.strptime('10:13:15 2006-03-07',
+                       '%H:%M:%S %Y-%m-%d')
+\end{verbatim}
 
 \item In the \module{gc} module, the new \function{get_count()} function
 returns a 3-tuple containing the current collection counts for the
@@ -1943,6 +1972,7 @@ freed with the corresponding family's \cfunction{*_Free()} function.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Martin von~L\"owis, Mike Rovner, Thomas Wouters.
+article: Phillip J. Eby, Kent Johnson, Martin von~L\"owis, Mike
+Rovner, Thomas Wouters.
 
 \end{document}
