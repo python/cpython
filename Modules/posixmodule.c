@@ -6816,7 +6816,6 @@ posix_confstr(PyObject *self, PyObject *args)
 
         errno = 0;
 	len = confstr(name, buffer, sizeof(buffer));
-
 	if (len == 0) {
 	    if (errno) {
 		posix_error();
@@ -6827,7 +6826,7 @@ posix_confstr(PyObject *self, PyObject *args)
 	    }
         }
         else {
-		if ((unsigned int)len >= sizeof(buffer)) {
+	    if ((unsigned int)len >= sizeof(buffer)) {
                 result = PyString_FromStringAndSize(NULL, len+1);
                 if (result != NULL)
                     confstr(name, PyString_AS_STRING(result), len+1);
