@@ -166,6 +166,10 @@ What's New in Python 2.5 alpha 1?
 Core and builtins
 -----------------
 
+- On Windows, .DLL is not an accepted file name extension for
+  extension modules anymore; extensions are only found if they
+  end in .PYD.
+
 - Bug #1421664: sys.stderr.encoding is now set to the same value as
   sys.stdout.encoding.
 
