@@ -1844,14 +1844,14 @@ Return string-valued system configuration values.
 string which is the name of a defined system value; these names are
 specified in a number of standards (\POSIX, \UNIX{} 95, \UNIX{} 98, and
 others).  Some platforms define additional names as well.  The names
-known to the host operating system are given in the
+known to the host operating system are given as the keys of the
 \code{confstr_names} dictionary.  For configuration variables not
 included in that mapping, passing an integer for \var{name} is also
 accepted.
 Availability: Macintosh, \UNIX.
 
-If the configuration value specified by \var{name} isn't defined, the
-empty string is returned.
+If the configuration value specified by \var{name} isn't defined,
+\code{None} is returned.
 
 If \var{name} is a string and is not known, \exception{ValueError} is
 raised.  If a specific value for \var{name} is not supported by the
