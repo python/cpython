@@ -18,7 +18,7 @@ class Repr:
         self.maxdeque = 6
         self.maxstring = 30
         self.maxlong = 40
-        self.maxother = 20
+        self.maxother = 30
 
     def repr(self, x):
         return self.repr1(x, self.maxlevel)
@@ -31,12 +31,7 @@ class Repr:
         if hasattr(self, 'repr_' + typename):
             return getattr(self, 'repr_' + typename)(x, level)
         else:
-            s = __builtin__.repr(x)
-            if len(s) > self.maxother:
-                i = max(0, (self.maxother-3)//2)
-                j = max(0, self.maxother-3-i)
-                s = s[:i] + '...' + s[len(s)-j:]
-            return s
+            return self.repr_instance(x, level)
 
     def _repr_iterable(self, x, level, left, right, maxiter, trail=''):
         n = len(x)
@@ -112,9 +107,9 @@ class Repr:
             # exceptions -- then make up something
         except:
             return '<%s instance at %x>' % (x.__class__.__name__, id(x))
-        if len(s) > self.maxstring:
-            i = max(0, (self.maxstring-3)//2)
-            j = max(0, self.maxstring-3-i)
+        if len(s) > self.maxother:
+            i = max(0, (self.maxother-3)//2)
+            j = max(0, self.maxother-3-i)
             s = s[:i] + '...' + s[len(s)-j:]
         return s
 
