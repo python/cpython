@@ -47,6 +47,15 @@ PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 void
 PyErr_SetObject(PyObject *exception, PyObject *value)
 {
+	if (exception != NULL &&
+	    !PyExceptionClass_Check(exception)) {
+		PyObject *excstr = PyObject_Repr(exception);
+		PyErr_Format(PyExc_SystemError,
+			     "exception %s not a BaseException subclass",
+			     PyString_AS_STRING(excstr));
+		Py_DECREF(excstr);
+		return;
+	}
 	Py_XINCREF(exception);
 	Py_XINCREF(value);
 	PyErr_Restore(exception, value, (PyObject *)NULL);

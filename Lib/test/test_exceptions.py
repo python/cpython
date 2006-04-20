@@ -171,9 +171,14 @@ except Exception, e: pass
 # test that setting an exception at the C level works even if the
 # exception object can't be constructed.
 
-class BadException:
+class BadException(Exception):
     def __init__(self):
         raise RuntimeError, "can't instantiate BadException"
+
+# Exceptions must inherit from BaseException, raising invalid exception
+# should instead raise SystemError
+class InvalidException:
+    pass
 
 def test_capi1():
     import _testcapi
@@ -201,8 +206,21 @@ def test_capi2():
     else:
         print "Expected exception"
 
+def test_capi3():
+    import _testcapi
+    try:
+        _testcapi.raise_exception(InvalidException, 1)
+    except SystemError:
+        pass
+    except InvalidException:
+        raise AssertionError("Managed to raise InvalidException");
+    else:
+        print "Expected SystemError exception"
+    
+
 if not sys.platform.startswith('java'):
     test_capi1()
     test_capi2()
+    test_capi3()
 
 unlink(TESTFN)
