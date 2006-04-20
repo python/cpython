@@ -865,9 +865,12 @@ returns \var{object} so that it can be bound to a variable,
 and calls \code{\var{object}.close()} at the end of the block.
 
 \begin{verbatim}
-with closing(open('/tmp/file', 'r')) as f:
+import urllib, sys
+from contextlib import closing
+
+with closing(urllib.urlopen('http://www.yahoo.com')) as f:
     for line in f:
-        ... 
+        sys.stdout.write(line)
 \end{verbatim}
 
 \begin{seealso}
@@ -1193,11 +1196,6 @@ the SVN logs for all the details.
 % the cPickle module no longer accepts the deprecated None option in the
 % args tuple returned by __reduce__().
 
-% XXX fileinput: opening hook used to control how files are opened.
-% .input() now has a mode parameter
-% now has a fileno() function
-% accepts Unicode filenames
-
 \item The \module{audioop} module now supports the a-LAW encoding,
 and the code for u-LAW encoding has been improved.  (Contributed by
 Lars Immisch.)
@@ -1242,11 +1240,12 @@ The \class{deque} double-ended queue type supplied by the
 method that removes the first occurrence of \var{value} in the queue,
 raising \exception{ValueError} if the value isn't found.
 
-\item The \module{contextlib} module contains helper functions for use 
-with the new \keyword{with} statement.  See section~\ref{module-contextlib}
-for more about this module.  (Contributed by Phillip J. Eby.)
+\item New module: The \module{contextlib} module contains helper functions for use 
+with the new \keyword{with} statement.  See
+section~\ref{module-contextlib} for more about this module.
+(Contributed by Phillip J. Eby.)
 
-\item The \module{cProfile} module is a C implementation of 
+\item New module: The \module{cProfile} module is a C implementation of 
 the existing \module{profile} module that has much lower overhead.
 The module's interface is the same as \module{profile}: you run
 \code{cProfile.run('main()')} to profile a function, can save profile
@@ -1278,6 +1277,17 @@ from datetime import datetime
 ts = datetime.strptime('10:13:15 2006-03-07',
                        '%H:%M:%S %Y-%m-%d')
 \end{verbatim}
+
+\item The \module{fileinput} module was made more flexible.
+Unicode filenames are now supported, and a \var{mode} parameter that
+defaults to \code{"r"} was added to the
+\function{input()} function to allow opening files in binary or
+universal-newline mode.  Another new parameter, \var{openhook},
+lets you use a function other than \function{open()} 
+to open the input files.  Once you're iterating over 
+the set of files, the \class{FileInput} object's new
+\method{fileno()} returns the file descriptor for the currently opened file.
+(Contributed by Georg Brandl.)
 
 \item In the \module{gc} module, the new \function{get_count()} function
 returns a 3-tuple containing the current collection counts for the
@@ -1385,9 +1395,9 @@ Socket objects also gained accessor methods \method{getfamily()},
 \method{gettype()}, and \method{getproto()} methods to retrieve the
 family, type, and protocol values for the socket.
 
-\item New module: \module{spwd} provides functions for accessing the
-shadow password database on systems that support it.
-% XXX give example
+\item New module: the \module{spwd} module provides functions for
+accessing the shadow password database on systems that support 
+shadow passwords.
 
 \item The Python developers switched from CVS to Subversion during the 2.5
 development process.  Information about the exact build version is 
@@ -1418,7 +1428,20 @@ of the Unicode character database.  Version 3.2.0 is required
 by some specifications, so it's still available as 
 \member{unicodedata.db_3_2_0}.
 
-% patch #754022: Greatly enhanced webbrowser.py (by Oleg Broytmann).
+\item The \module{webbrowser} module received a number of
+enhancements.
+It's now usable as a script with \code{python -m webbrowser}, taking a
+URL as the argument; there are a number of switches 
+to control the behaviour (\programopt{-n} for a new browser window, 
+\programopt{-t} for a new tab).  New module-level functions,
+\function{open_new()} and \function{open_new_tab()}, were added 
+to support this.  The module's \function{open()} function supports an
+additional feature, an \var{autoraise} parameter that signals whether
+to raise the open window when possible. A number of additional
+browsers were added to the supported list such as Firefox, Opera,
+Konqueror, and elinks.  (Contributed by Oleg Broytmann and George
+Brandl.)
+% Patch #754022
 
 
 \item The \module{xmlrpclib} module now supports returning 
@@ -1432,9 +1455,6 @@ by some specifications, so it's still available as
 \end{itemize}
 
 
-
-%======================================================================
-% whole new modules get described in subsections here
 
 %======================================================================
 \subsection{The ctypes package}
@@ -1878,6 +1898,10 @@ error checking.
 now uses the \cfunction{dlopen()} function instead of MacOS-specific
 functions.
 
+\item Windows: \file{.dll} is no longer supported as a filename extension for 
+extension modules.  \file{.pyd} is now the only filename extension that will
+be searched for.
+
 \end{itemize}
 
 
@@ -1972,7 +1996,7 @@ freed with the corresponding family's \cfunction{*_Free()} function.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Phillip J. Eby, Kent Johnson, Martin von~L\"owis, Mike
-Rovner, Thomas Wouters.
+article: Phillip J. Eby, Kent Johnson, Martin von~L\"owis, Gustavo
+Niemeyer, Mike Rovner, Thomas Wouters.
 
 \end{document}
