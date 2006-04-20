@@ -383,6 +383,8 @@ class PEP253Mixin(PEP252Mixin):
         Output("%s_tp_free, /* tp_free */", self.prefix)
 
     def output_tp_initBody_basecall(self):
+        """If a type shares its init call with its base type set output_tp_initBody
+        to output_tp_initBody_basecall"""
         if self.basetype:
             Output("if (%s.tp_init)", self.basetype)
             OutLbrace()
@@ -395,7 +397,6 @@ class PEP253Mixin(PEP252Mixin):
         if self.output_tp_initBody:
             Output("static int %s_tp_init(PyObject *_self, PyObject *_args, PyObject *_kwds)", self.prefix)
             OutLbrace()
-            self.output_tp_initBody_basecall()
             self.output_tp_initBody()
             OutRbrace()
         else:
@@ -425,7 +426,7 @@ class PEP253Mixin(PEP252Mixin):
         if self.basetype:
             Output("if (%s.tp_new)", self.basetype)
             OutLbrace()
-            Output("if ( (*%s.tp_init)(_self, _args, _kwds) == NULL) return NULL;", self.basetype)
+            Output("if ( (*%s.tp_new)(type, _args, _kwds) == NULL) return NULL;", self.basetype)
             Dedent()
             Output("} else {")
             Indent()
