@@ -81,7 +81,7 @@ class ConcatStrings(Test):
 
         for i in xrange(self.rounds):
             pass
-            
+
 
 class CompareStrings(Test):
 
@@ -163,7 +163,7 @@ class CompareStrings(Test):
 
         for i in xrange(self.rounds):
             pass
-            
+
 
 class CompareInternedStrings(Test):
 
@@ -245,7 +245,7 @@ class CompareInternedStrings(Test):
 
         for i in xrange(self.rounds):
             pass
-            
+
 
 class CreateStringsWithConcat(Test):
 
@@ -320,7 +320,7 @@ class CreateStringsWithConcat(Test):
 
         for i in xrange(self.rounds):
             pass
-            
+
 
 class StringSlicing(Test):
 
@@ -334,45 +334,45 @@ class StringSlicing(Test):
 
         for i in xrange(self.rounds):
 
-                s[50:]
-                s[:25]
-                s[50:55]
-                s[-1:]
-                s[:1]
-                s[2:]
-                s[11:-11]
+            s[50:]
+            s[:25]
+            s[50:55]
+            s[-1:]
+            s[:1]
+            s[2:]
+            s[11:-11]
 
-                s[50:]
-                s[:25]
-                s[50:55]
-                s[-1:]
-                s[:1]
-                s[2:]
-                s[11:-11]
+            s[50:]
+            s[:25]
+            s[50:55]
+            s[-1:]
+            s[:1]
+            s[2:]
+            s[11:-11]
 
-                s[50:]
-                s[:25]
-                s[50:55]
-                s[-1:]
-                s[:1]
-                s[2:]
-                s[11:-11]
+            s[50:]
+            s[:25]
+            s[50:55]
+            s[-1:]
+            s[:1]
+            s[2:]
+            s[11:-11]
 
-                s[50:]
-                s[:25]
-                s[50:55]
-                s[-1:]
-                s[:1]
-                s[2:]
-                s[11:-11]
+            s[50:]
+            s[:25]
+            s[50:55]
+            s[-1:]
+            s[:1]
+            s[2:]
+            s[11:-11]
 
-                s[50:]
-                s[:25]
-                s[50:55]
-                s[-1:]
-                s[:1]
-                s[2:]
-                s[11:-11]
+            s[50:]
+            s[:25]
+            s[50:55]
+            s[-1:]
+            s[:1]
+            s[2:]
+            s[11:-11]
 
     def calibrate(self):
 
@@ -560,5 +560,3 @@ if hasattr('', 'lower'):
 
             for i in xrange(self.rounds):
                 s = data[i % len_data]
-
-

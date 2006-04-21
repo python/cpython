@@ -86,7 +86,7 @@ class ConcatUnicode(Test):
 
         for i in xrange(self.rounds):
             pass
-            
+
 
 class CompareUnicode(Test):
 
@@ -168,7 +168,7 @@ class CompareUnicode(Test):
 
         for i in xrange(self.rounds):
             pass
-            
+
 
 class CreateUnicodeWithConcat(Test):
 
@@ -243,7 +243,7 @@ class CreateUnicodeWithConcat(Test):
 
         for i in xrange(self.rounds):
             pass
-            
+
 
 class UnicodeSlicing(Test):
 
@@ -303,7 +303,7 @@ class UnicodeSlicing(Test):
 
         for i in xrange(self.rounds):
             pass
-        
+
 ### String methods
 
 class UnicodeMappings(Test):
@@ -318,7 +318,7 @@ class UnicodeMappings(Test):
         t = join(map(unichr,range(100)),'')
         u = join(map(unichr,range(500)),'')
         v = join(map(unichr,range(1000)),'')
-        
+
         for i in xrange(self.rounds):
 
             s.lower()
@@ -375,7 +375,7 @@ class UnicodeMappings(Test):
         t = join(map(unichr,range(100)),'')
         u = join(map(unichr,range(500)),'')
         v = join(map(unichr,range(1000)),'')
-        
+
         for i in xrange(self.rounds):
             pass
 
@@ -389,7 +389,7 @@ class UnicodePredicates(Test):
 
         data = (u'abc', u'123', u'   ', u'\u1234\u2345\u3456', u'\uFFFF'*10)
         len_data = len(data)
-        
+
         for i in xrange(self.rounds):
             s = data[i % len_data]
 
@@ -447,7 +447,7 @@ class UnicodePredicates(Test):
 
         data = (u'abc', u'123', u'   ', u'\u1234\u2345\u3456', u'\uFFFF'*10)
         len_data = len(data)
-        
+
         for i in xrange(self.rounds):
             s = data[i % len_data]
 
