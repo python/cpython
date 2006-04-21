@@ -1,3 +1,11 @@
+\declaremodule{standard}{email.mime}
+\declaremodule{standard}{email.mime.base}
+\declaremodule{standard}{email.mime.nonmultipart}
+\declaremodule{standard}{email.mime.multipart}
+\declaremodule{standard}{email.mime.audio}
+\declaremodule{standard}{email.mime.image}
+\declaremodule{standard}{email.mime.message}
+\declaremodule{standard}{email.mime.text}
 Ordinarily, you get a message object structure by passing a file or
 some text to a parser, which parses the text and returns the root
 message object.  However you can also build a complete message
@@ -6,26 +14,16 @@ hand.  In fact, you can also take an existing structure and add new
 \class{Message} objects, move them around, etc.  This makes a very
 convenient interface for slicing-and-dicing MIME messages.
 
-You can create a new object structure by creating \class{Message}
-instances, adding attachments and all the appropriate headers manually.
-For MIME messages though, the \module{email} package provides some
-convenient subclasses to make things easier.  Each of these classes
-should be imported from a module with the same name as the class, from
-within the \module{email} package.  E.g.:
-
-\begin{verbatim}
-import email.MIMEImage.MIMEImage
-\end{verbatim}
-
-or
-
-\begin{verbatim}
-from email.MIMEText import MIMEText
-\end{verbatim}
+You can create a new object structure by creating \class{Message} instances,
+adding attachments and all the appropriate headers manually.  For MIME
+messages though, the \module{email} package provides some convenient
+subclasses to make things easier.
 
 Here are the classes:
 
 \begin{classdesc}{MIMEBase}{_maintype, _subtype, **_params}
+Module: \module{email.mime.base}
+
 This is the base class for all the MIME-specific subclasses of
 \class{Message}.  Ordinarily you won't create instances specifically
 of \class{MIMEBase}, although you could.  \class{MIMEBase} is provided
@@ -45,6 +43,8 @@ The \class{MIMEBase} class always adds a \mailheader{Content-Type} header
 \end{classdesc}
 
 \begin{classdesc}{MIMENonMultipart}{}
+Module: \module{email.mime.nonmultipart}
+
 A subclass of \class{MIMEBase}, this is an intermediate base class for
 MIME messages that are not \mimetype{multipart}.  The primary purpose
 of this class is to prevent the use of the \method{attach()} method,
@@ -57,6 +57,7 @@ exception is raised.
 
 \begin{classdesc}{MIMEMultipart}{\optional{subtype\optional{,
     boundary\optional{, _subparts\optional{, _params}}}}}
+Module: \module{email.mime.multipart}
 
 A subclass of \class{MIMEBase}, this is an intermediate base class for
 MIME messages that are \mimetype{multipart}.  Optional \var{_subtype}
@@ -80,8 +81,31 @@ argument, which is a keyword dictionary.
 \versionadded{2.2.2}
 \end{classdesc}
 
+\begin{classdesc}{MIMEApplication}{_data\optional{, _subtype\optional{,
+    _encoder\optional{, **_params}}}}
+Module: \module{email.mime.application}
+
+A subclass of \class{MIMENonMultipart}, the \class{MIMEApplication} class is
+used to represent MIME message objects of major type \mimetype{application}.
+\var{_data} is a string containing the raw byte data.  Optional \var{_subtype}
+specifies the MIME subtype and defaults to \mimetype{octet-stream}.  
+
+Optional \var{_encoder} is a callable (i.e. function) which will
+perform the actual encoding of the data for transport.  This
+callable takes one argument, which is the \class{MIMEApplication} instance.
+It should use \method{get_payload()} and \method{set_payload()} to
+change the payload to encoded form.  It should also add any
+\mailheader{Content-Transfer-Encoding} or other headers to the message
+object as necessary.  The default encoding is base64.  See the
+\refmodule{email.encoders} module for a list of the built-in encoders.
+
+\var{_params} are passed straight through to the base class constructor.
+\versionadded{2.5}
+\end{classdesc}
+
 \begin{classdesc}{MIMEAudio}{_audiodata\optional{, _subtype\optional{,
     _encoder\optional{, **_params}}}}
+Module: \module{email.mime.audio}
 
 A subclass of \class{MIMENonMultipart}, the \class{MIMEAudio} class
 is used to create MIME message objects of major type \mimetype{audio}.
@@ -100,13 +124,14 @@ It should use \method{get_payload()} and \method{set_payload()} to
 change the payload to encoded form.  It should also add any
 \mailheader{Content-Transfer-Encoding} or other headers to the message
 object as necessary.  The default encoding is base64.  See the
-\refmodule{email.Encoders} module for a list of the built-in encoders.
+\refmodule{email.encoders} module for a list of the built-in encoders.
 
 \var{_params} are passed straight through to the base class constructor.
 \end{classdesc}
 
 \begin{classdesc}{MIMEImage}{_imagedata\optional{, _subtype\optional{,
     _encoder\optional{, **_params}}}}
+Module: \module{email.mime.image}
 
 A subclass of \class{MIMENonMultipart}, the \class{MIMEImage} class is
 used to create MIME message objects of major type \mimetype{image}.
@@ -125,13 +150,15 @@ It should use \method{get_payload()} and \method{set_payload()} to
 change the payload to encoded form.  It should also add any
 \mailheader{Content-Transfer-Encoding} or other headers to the message
 object as necessary.  The default encoding is base64.  See the
-\refmodule{email.Encoders} module for a list of the built-in encoders.
+\refmodule{email.encoders} module for a list of the built-in encoders.
 
 \var{_params} are passed straight through to the \class{MIMEBase}
 constructor.
 \end{classdesc}
 
 \begin{classdesc}{MIMEMessage}{_msg\optional{, _subtype}}
+Module: \module{email.mime.message}
+
 A subclass of \class{MIMENonMultipart}, the \class{MIMEMessage} class
 is used to create MIME objects of main type \mimetype{message}.
 \var{_msg} is used as the payload, and must be an instance of class
@@ -143,6 +170,8 @@ to \mimetype{rfc822}.
 \end{classdesc}
 
 \begin{classdesc}{MIMEText}{_text\optional{, _subtype\optional{, _charset}}}
+Module: \module{email.mime.text}
+
 A subclass of \class{MIMENonMultipart}, the \class{MIMEText} class is
 used to create MIME objects of major type \mimetype{text}.
 \var{_text} is the string for the payload.  \var{_subtype} is the

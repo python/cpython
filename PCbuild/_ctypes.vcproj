@@ -33,12 +33,14 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				OutputFile="./_ctypes_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\./_ctypes_d.pdb"
 				SubSystem="0"
+				BaseAddress="0x1D1A0000"
 				ImportLibrary=".\./_ctypes_d.lib"
 				TargetMachine="1"/>
 			<Tool
@@ -85,6 +87,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				OutputFile="./_ctypes.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -93,6 +96,7 @@
 				SubSystem="0"
 				OptimizeReferences="0"
 				EnableCOMDATFolding="0"
+				BaseAddress="0x1D1A0000"
 				ImportLibrary=".\./_ctypes.lib"
 				TargetMachine="1"/>
 			<Tool
@@ -142,7 +146,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
+				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK /EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				OutputFile="./_ctypes.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -151,6 +155,7 @@
 				SubSystem="0"
 				OptimizeReferences="0"
 				EnableCOMDATFolding="0"
+				BaseAddress="0x1D1A0000"
 				ImportLibrary=".\./_ctypes.lib"
 				TargetMachine="0"/>
 			<Tool
@@ -200,7 +205,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
+				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK /EXPORT:DllGetClassObject,PRIVATE /EXPORT:DllCanUnloadNow,PRIVATE"
 				OutputFile="./_ctypes.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -209,6 +214,7 @@
 				SubSystem="0"
 				OptimizeReferences="0"
 				EnableCOMDATFolding="0"
+				BaseAddress="0x1D1A0000"
 				ImportLibrary=".\./_ctypes.lib"
 				TargetMachine="0"/>
 			<Tool

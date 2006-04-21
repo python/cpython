@@ -3,8 +3,6 @@
 import copy
 import xmlcore.dom
 
-from xmlcore.dom.minicompat import *
-
 from xmlcore.dom.NodeFilter import NodeFilter
 
 
@@ -211,7 +209,7 @@ def _name_xform(name):
     return name.lower().replace('-', '_')
 
 
-class DOMEntityResolver(NewStyle):
+class DOMEntityResolver(object):
     __slots__ = '_opener',
 
     def resolveEntity(self, publicId, systemId):
@@ -255,7 +253,7 @@ class DOMEntityResolver(NewStyle):
                     return param.split("=", 1)[1].lower()
 
 
-class DOMInputSource(NewStyle):
+class DOMInputSource(object):
     __slots__ = ('byteStream', 'characterStream', 'stringData',
                  'encoding', 'publicId', 'systemId', 'baseURI')
 

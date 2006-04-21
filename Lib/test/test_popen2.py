@@ -35,6 +35,9 @@ def _test():
     # same test as popen2._test(), but using the os.popen*() API
     print "Testing os module:"
     import popen2
+    # When the test runs, there shouldn't be any open pipes
+    popen2._cleanup()
+    assert not popen2._active, "Active pipes when test starts " + repr([c.cmd for c in popen2._active])
     cmd  = "cat"
     teststr = "ab cd\n"
     if os.name == "nt":
@@ -65,6 +68,7 @@ def _test():
         raise ValueError("unexpected %r on stderr" % (got,))
     for inst in popen2._active[:]:
         inst.wait()
+    popen2._cleanup()
     if popen2._active:
         raise ValueError("_active not empty")
     print "All OK"

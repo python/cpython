@@ -446,7 +446,7 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
     return PyString_FromString(decomp);
 }
 
-void
+static void
 get_decomp_record(PyObject *self, Py_UCS4 code, int *index, int *prefix, int *count)
 {
     if (code >= 0x110000) {
@@ -486,8 +486,8 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
     Py_UNICODE *i, *end, *o;
     /* Longest decomposition in Unicode 3.2: U+FDFA */
     Py_UNICODE stack[20]; 
-    int space, stackptr, isize;
-    int index, prefix, count;
+    Py_ssize_t space, isize;
+    int index, prefix, count, stackptr;
     unsigned char prev, cur;
 	
     stackptr = 0;
@@ -508,7 +508,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
             /* Hangul Decomposition adds three characters in
                a single step, so we need atleast that much room. */
             if (space < 3) {
-                int newsize = PyString_GET_SIZE(result) + 10;
+                Py_ssize_t newsize = PyString_GET_SIZE(result) + 10;
                 space += 10;
                 if (PyUnicode_Resize(&result, newsize) == -1)
                     return NULL;
@@ -759,7 +759,7 @@ _gethash(const char *s, int len, int scale)
     unsigned long h = 0;
     unsigned long ix;
     for (i = 0; i < len; i++) {
-        h = (h * scale) + (unsigned char) toupper(s[i]);
+        h = (h * scale) + (unsigned char) toupper(Py_CHARMASK(s[i]));
         ix = h & 0xff000000;
         if (ix)
             h = (h ^ ((ix>>24) & 0xff)) & 0x00ffffff;
@@ -906,7 +906,7 @@ _cmpname(PyObject *self, int code, const char* name, int namelen)
     if (!_getucname(self, code, buffer, sizeof(buffer)))
         return 0;
     for (i = 0; i < namelen; i++) {
-        if (toupper(name[i]) != buffer[i])
+        if (toupper(Py_CHARMASK(name[i])) != buffer[i])
             return 0;
     }
     return buffer[namelen] == '\0';

@@ -1,9 +1,9 @@
-"""Thread-local objects
+"""Thread-local objects.
 
-(Note that this module provides a Python version of thread
- threading.local class.  Depending on the version of Python you're
- using, there may be a faster one available.  You should always import
- the local class from threading.)
+(Note that this module provides a Python version of the threading.local
+ class.  Depending on the version of Python you're using, there may be a
+ faster one available.  You should always import the `local` class from
+ `threading`.)
 
 Thread-local objects support the management of thread-local data.
 If you have data that you want to be local to a thread, simply create
@@ -133,7 +133,17 @@ affects what we see:
 >>> del mydata
 """
 
-# Threading import is at end
+__all__ = ["local"]
+
+# We need to use objects from the threading module, but the threading
+# module may also want to use our `local` class, if support for locals
+# isn't compiled in to the `thread` module.  This creates potential problems
+# with circular imports.  For that reason, we don't import `threading`
+# until the bottom of this file (a hack sufficient to worm around the
+# potential problems).  Note that almost all platforms do have support for
+# locals in the `thread` module, and there is no circular import problem
+# then, so problems introduced by fiddling the order of imports here won't
+# manifest on most boxes.
 
 class _localbase(object):
     __slots__ = '_local__key', '_local__args', '_local__lock'
@@ -202,36 +212,30 @@ class local(_localbase):
         finally:
             lock.release()
 
+    def __del__(self):
+        import threading
 
-    def __del__():
-        threading_enumerate = enumerate
-        __getattribute__ = object.__getattribute__
+        key = object.__getattribute__(self, '_local__key')
 
-        def __del__(self):
-            key = __getattribute__(self, '_local__key')
+        try:
+            threads = list(threading.enumerate())
+        except:
+            # If enumerate fails, as it seems to do during
+            # shutdown, we'll skip cleanup under the assumption
+            # that there is nothing to clean up.
+            return
 
+        for thread in threads:
             try:
-                threads = list(threading_enumerate())
-            except:
-                # if enumerate fails, as it seems to do during
-                # shutdown, we'll skip cleanup under the assumption
-                # that there is nothing to clean up
-                return
+                __dict__ = thread.__dict__
+            except AttributeError:
+                # Thread is dying, rest in peace.
+                continue
 
-            for thread in threads:
+            if key in __dict__:
                 try:
-                    __dict__ = thread.__dict__
-                except AttributeError:
-                    # Thread is dying, rest in peace
-                    continue
+                    del __dict__[key]
+                except KeyError:
+                    pass # didn't have anything in this thread
 
-                if key in __dict__:
-                    try:
-                        del __dict__[key]
-                    except KeyError:
-                        pass # didn't have anything in this thread
-
-        return __del__
-    __del__ = __del__()
-
-from threading import currentThread, enumerate, RLock
+from threading import currentThread, RLock

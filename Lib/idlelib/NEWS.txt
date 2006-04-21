@@ -1,7 +1,10 @@
-What's New in IDLE 1.2a0?
-=======================
+What's New in IDLE 1.2a1?
+=========================
 
-*Release date: XX-XXX-2006*
+*Release date: 05-APR-2006*
+
+- Source file f.flush() after writing; trying to avoid lossage if user
+  kills GUI.
 
 - Options / Keys / Advanced dialog made functional.  Also, allow binding
   of 'movement' keys.
@@ -70,7 +73,7 @@ What's New in IDLE 1.2a0?
 
 - Improve error handling when .idlerc can't be created (warn and exit).
 
-- The GUI was hanging if the shell window was closed while a raw_input() 
+- The GUI was hanging if the shell window was closed while a raw_input()
   was pending.  Restored the quit() of the readline() mainloop().
   http://mail.python.org/pipermail/idle-dev/2004-December/002307.html
 

@@ -113,8 +113,9 @@ class TimeoutTestCase(unittest.TestCase):
 
         # If we are too close to www.python.org, this test will fail.
         # Pick a host that should be farther away.
-        if socket.getfqdn().split('.')[-2:] == ['python', 'org']:
-            self.addr_remote = ('python.net', 80)
+        if (socket.getfqdn().split('.')[-2:] == ['python', 'org'] or
+            socket.getfqdn().split('.')[-2:-1] == ['xs4all']):
+            self.addr_remote = ('tut.fi', 80)
 
         _t1 = time.time()
         self.failUnlessRaises(socket.error, self.sock.connect,

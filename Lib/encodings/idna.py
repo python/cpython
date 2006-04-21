@@ -35,7 +35,7 @@ def nameprep(label):
            stringprep.in_table_c7(c) or \
            stringprep.in_table_c8(c) or \
            stringprep.in_table_c9(c):
-            raise UnicodeError, "Invalid character %s" % repr(c)
+            raise UnicodeError("Invalid character %r" % c)
 
     # Check bidi
     RandAL = map(stringprep.in_table_d1, label)
@@ -48,14 +48,14 @@ def nameprep(label):
             # 2) If a string contains any RandALCat character, the string
             # MUST NOT contain any LCat character.
             if filter(stringprep.in_table_d2, label):
-                raise UnicodeError, "Violation of BIDI requirement 2"
+                raise UnicodeError("Violation of BIDI requirement 2")
 
             # 3) If a string contains any RandALCat character, a
             # RandALCat character MUST be the first character of the
             # string, and a RandALCat character MUST be the last
             # character of the string.
             if not RandAL[0] or not RandAL[-1]:
-                raise UnicodeError, "Violation of BIDI requirement 3"
+                raise UnicodeError("Violation of BIDI requirement 3")
 
     return label
 
@@ -70,7 +70,7 @@ def ToASCII(label):
         # Skip to step 8.
         if 0 < len(label) < 64:
             return label
-        raise UnicodeError, "label too long"
+        raise UnicodeError("label empty or too long")
 
     # Step 2: nameprep
     label = nameprep(label)
@@ -85,11 +85,11 @@ def ToASCII(label):
         # Skip to step 8.
         if 0 < len(label) < 64:
             return label
-        raise UnicodeError, "label too long"
+        raise UnicodeError("label empty or too long")
 
     # Step 5: Check ACE prefix
     if label.startswith(uace_prefix):
-        raise UnicodeError, "Label starts with ACE prefix"
+        raise UnicodeError("Label starts with ACE prefix")
 
     # Step 6: Encode with PUNYCODE
     label = label.encode("punycode")
@@ -100,7 +100,7 @@ def ToASCII(label):
     # Step 8: Check size
     if 0 < len(label) < 64:
         return label
-    raise UnicodeError, "label too long"
+    raise UnicodeError("label empty or too long")
 
 def ToUnicode(label):
     # Step 1: Check for ASCII
@@ -119,7 +119,7 @@ def ToUnicode(label):
         try:
             label = label.encode("ascii")
         except UnicodeError:
-            raise UnicodeError, "Invalid character in IDN label"
+            raise UnicodeError("Invalid character in IDN label")
     # Step 3: Check for ACE prefix
     if not label.startswith(ace_prefix):
         return unicode(label, "ascii")
@@ -136,7 +136,7 @@ def ToUnicode(label):
     # Step 7: Compare the result of step 6 with the one of step 3
     # label2 will already be in lower case.
     if label.lower() != label2:
-        raise UnicodeError, ("IDNA does not round-trip", label, label2)
+        raise UnicodeError("IDNA does not round-trip", label, label2)
 
     # Step 8: return the result of step 5
     return result
@@ -148,7 +148,7 @@ class Codec(codecs.Codec):
 
         if errors != 'strict':
             # IDNA is quite clear that implementations must be strict
-            raise UnicodeError, "unsupported error handling "+errors
+            raise UnicodeError("unsupported error handling "+errors)
 
         if not input:
             return "", 0
@@ -168,7 +168,7 @@ class Codec(codecs.Codec):
     def decode(self,input,errors='strict'):
 
         if errors != 'strict':
-            raise UnicodeError, "Unsupported error handling "+errors
+            raise UnicodeError("Unsupported error handling "+errors)
 
         if not input:
             return u"", 0
@@ -194,13 +194,79 @@ class Codec(codecs.Codec):
 
         return u".".join(result)+trailing_dot, len(input)
 
-class IncrementalEncoder(codecs.IncrementalEncoder):
-    def encode(self, input, final=False):
-        return Codec().encode(input, self.errors)[0]
+class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
+    def _buffer_encode(self, input, errors, final):
+        if errors != 'strict':
+            # IDNA is quite clear that implementations must be strict
+            raise UnicodeError("unsupported error handling "+errors)
 
-class IncrementalDecoder(codecs.IncrementalDecoder):
-    def decode(self, input, final=False):
-        return Codec().decode(input, self.errors)[0]
+        if not input:
+            return ("", 0)
+
+        labels = dots.split(input)
+        trailing_dot = u''
+        if labels:
+            if not labels[-1]:
+                trailing_dot = '.'
+                del labels[-1]
+            elif not final:
+                # Keep potentially unfinished label until the next call
+                del labels[-1]
+                if labels:
+                    trailing_dot = '.'
+
+        result = []
+        size = 0
+        for label in labels:
+            result.append(ToASCII(label))
+            if size:
+                size += 1
+            size += len(label)
+
+        # Join with U+002E
+        result = ".".join(result) + trailing_dot
+        size += len(trailing_dot)
+        return (result, size)
+
+class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
+    def _buffer_decode(self, input, errors, final):
+        if errors != 'strict':
+            raise UnicodeError("Unsupported error handling "+errors)
+
+        if not input:
+            return (u"", 0)
+
+        # IDNA allows decoding to operate on Unicode strings, too.
+        if isinstance(input, unicode):
+            labels = dots.split(input)
+        else:
+            # Must be ASCII string
+            input = str(input)
+            unicode(input, "ascii")
+            labels = input.split(".")
+
+        trailing_dot = u''
+        if labels:
+            if not labels[-1]:
+                trailing_dot = u'.'
+                del labels[-1]
+            elif not final:
+                # Keep potentially unfinished label until the next call
+                del labels[-1]
+                if labels:
+                    trailing_dot = u'.'
+
+        result = []
+        size = 0
+        for label in labels:
+            result.append(ToUnicode(label))
+            if size:
+                size += 1
+            size += len(label)
+
+        result = u".".join(result) + trailing_dot
+        size += len(trailing_dot)
+        return (result, size)
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass

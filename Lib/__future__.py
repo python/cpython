@@ -64,7 +64,7 @@ __all__ = ["all_feature_names"] + all_feature_names
 CO_NESTED            = 0x0010   # nested_scopes
 CO_GENERATOR_ALLOWED = 0        # generators (obsolete, was 0x1000)
 CO_FUTURE_DIVISION   = 0x2000   # division
-CO_FUTURE_ABSIMPORT  = 0x4000   # absolute_import
+CO_FUTURE_ABSOLUTE_IMPORT = 0x4000 # perform absolute imports by default
 CO_FUTURE_WITH_STATEMENT  = 0x8000   # with statement
 
 class _Feature:
@@ -109,7 +109,7 @@ division = _Feature((2, 2, 0, "alpha", 2),
 
 absolute_import = _Feature((2, 5, 0, "alpha", 1),
                            (2, 7, 0, "alpha", 0),
-                           CO_FUTURE_ABSIMPORT)
+                           CO_FUTURE_ABSOLUTE_IMPORT)
 
 with_statement = _Feature((2, 5, 0, "alpha", 1),
                           (2, 6, 0, "alpha", 0),

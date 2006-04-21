@@ -3,7 +3,7 @@
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
    Derived from Lib/sets.py and Objects/dictobject.c.
 
-   Copyright (c) 2003-5 Python Software Foundation.
+   Copyright (c) 2003-6 Python Software Foundation.
    All rights reserved.
 */
 
@@ -15,6 +15,14 @@
 
 /* Object used as dummy key to fill deleted entries */
 static PyObject *dummy = NULL; /* Initialized by first call to make_new_set() */
+
+#ifdef Py_REF_DEBUG
+PyObject *
+_PySet_Dummy(void)
+{
+	return dummy;
+}
+#endif
 
 #define INIT_NONZERO_SET_SLOTS(so) do {				\
 	(so)->table = (so)->smalltable;				\
@@ -445,7 +453,7 @@ set_clear_internal(PySetObject *so)
 		}
 #ifdef Py_DEBUG
 		else
-			assert(entry->key == NULL || entry->key == dummy);
+			assert(entry->key == NULL);
 #endif
 	}
 
@@ -719,8 +727,6 @@ set_nohash(PyObject *self)
 
 /***** Set iterator type ***********************************************/
 
-static PyTypeObject PySetIter_Type; /* Forward */
-
 typedef struct {
 	PyObject_HEAD
 	PySetObject *si_set; /* Set to NULL when iterator is exhausted */
@@ -728,20 +734,6 @@ typedef struct {
 	int si_pos;
 	long len;
 } setiterobject;
-
-static PyObject *
-set_iter(PySetObject *so)
-{
-	setiterobject *si = PyObject_New(setiterobject, &PySetIter_Type);
-	if (si == NULL)
-		return NULL;
-	Py_INCREF(so);
-	si->si_set = so;
-	si->si_used = so->used;
-	si->si_pos = 0;
-	si->len = so->used;
-	return (PyObject *)si;
-}
 
 static void
 setiter_dealloc(setiterobject *si)
@@ -837,6 +829,20 @@ static PyTypeObject PySetIter_Type = {
 	setiter_methods,			/* tp_methods */
 	0,
 };
+
+static PyObject *
+set_iter(PySetObject *so)
+{
+	setiterobject *si = PyObject_New(setiterobject, &PySetIter_Type);
+	if (si == NULL)
+		return NULL;
+	Py_INCREF(so);
+	si->si_set = so;
+	si->si_used = so->used;
+	si->si_pos = 0;
+	si->len = so->used;
+	return (PyObject *)si;
+}
 
 static int
 set_update_internal(PySetObject *so, PyObject *other)
@@ -972,8 +978,8 @@ PySet_Fini(void)
 		so = free_sets[num_free_sets];
 		PyObject_GC_Del(so);
 	}
-	Py_XDECREF(dummy);
-	Py_XDECREF(emptyfrozenset);
+	Py_CLEAR(dummy);
+	Py_CLEAR(emptyfrozenset);
 }
 
 static PyObject *
@@ -1531,7 +1537,7 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
 }
 
 static int
-set_nocmp(PyObject *self)
+set_nocmp(PyObject *self, PyObject *other)
 {
 	PyErr_SetString(PyExc_TypeError, "cannot compare sets using cmp()");
 	return -1;
@@ -1688,7 +1694,7 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PySequenceMethods set_as_sequence = {
-	(lenfunc)set_len,		/* sq_length */
+	set_len,			/* sq_length */
 	0,				/* sq_concat */
 	0,				/* sq_repeat */
 	0,				/* sq_item */
@@ -1802,7 +1808,7 @@ PyTypeObject PySet_Type = {
 	(printfunc)set_tp_print,	/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	(cmpfunc)set_nocmp,		/* tp_compare */
+	set_nocmp,			/* tp_compare */
 	(reprfunc)set_repr,		/* tp_repr */
 	&set_as_number,			/* tp_as_number */
 	&set_as_sequence,		/* tp_as_sequence */
@@ -1896,7 +1902,7 @@ PyTypeObject PyFrozenSet_Type = {
 	(printfunc)set_tp_print,	/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
-	(cmpfunc)set_nocmp,		/* tp_compare */
+	set_nocmp,			/* tp_compare */
 	(reprfunc)set_repr,		/* tp_repr */
 	&frozenset_as_number,		/* tp_as_number */
 	&set_as_sequence,		/* tp_as_sequence */
@@ -1966,6 +1972,16 @@ PySet_Size(PyObject *anyset)
 }
 
 int
+PySet_Clear(PyObject *set)
+{
+	if (!PyType_IsSubtype(set->ob_type, &PySet_Type)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	return set_clear_internal((PySetObject *)set);
+}
+
+int
 PySet_Contains(PyObject *anyset, PyObject *key)
 {
 	if (!PyAnySet_Check(anyset)) {
@@ -1995,6 +2011,21 @@ PySet_Add(PyObject *set, PyObject *key)
 	return set_add_key((PySetObject *)set, key);
 }
 
+int
+_PySet_Next(PyObject *set, Py_ssize_t *pos, PyObject **entry)
+{
+	setentry *entry_ptr;
+
+	if (!PyAnySet_Check(set)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	if (set_next((PySetObject *)set, pos, &entry_ptr) == 0)
+		return 0;
+	*entry = entry_ptr->key;
+	return 1;
+}
+
 PyObject *
 PySet_Pop(PyObject *set)
 {
@@ -2005,6 +2036,15 @@ PySet_Pop(PyObject *set)
 	return set_pop((PySetObject *)set);
 }
 
+int
+_PySet_Update(PyObject *set, PyObject *iterable)
+{
+	if (!PyType_IsSubtype(set->ob_type, &PySet_Type)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	return set_update_internal((PySetObject *)set, iterable);
+}
 
 #ifdef Py_DEBUG
 
@@ -2021,7 +2061,11 @@ PySet_Pop(PyObject *set)
 static PyObject *
 test_c_api(PySetObject *so)
 {
-	PyObject *elem, *dup, *t, *f, *ob = (PyObject *)so;
+	int count;
+	char *s;
+	Py_ssize_t i;
+	PyObject *elem, *dup, *t, *f, *dup2;
+	PyObject *ob = (PyObject *)so;
 
 	/* Verify preconditions and exercise type/size checks */
 	assert(PyAnySet_Check(ob));
@@ -2051,6 +2095,35 @@ test_c_api(PySetObject *so)
 	assert(PySet_GET_SIZE(ob) == 2);
 	assert(PySet_Discard(ob, elem) == 0);
 	assert(PySet_GET_SIZE(ob) == 2);
+
+	/* Exercise clear */
+	dup2 = PySet_New(dup);
+	assert(PySet_Clear(dup2) == 0);
+	assert(PySet_Size(dup2) == 0);
+	Py_DECREF(dup2);
+
+	/* Raise SystemError on clear or update of frozen set */
+	f = PyFrozenSet_New(dup);
+	assertRaises(PySet_Clear(f) == -1, PyExc_SystemError);
+	assertRaises(_PySet_Update(f, dup) == -1, PyExc_SystemError);
+	Py_DECREF(f);
+
+	/* Exercise direct iteration */
+	i = 0, count = 0;
+	while (_PySet_Next((PyObject *)dup, &i, &elem)) {
+		s = PyString_AsString(elem);
+		assert(s && (s[0] == 'a' || s[0] == 'b' || s[0] == 'c'));
+		count++;
+	}
+	assert(count == 3);
+
+	/* Exercise updates */
+	dup2 = PySet_New(NULL);
+	assert(_PySet_Update(dup2, dup) == 0);
+	assert(PySet_Size(dup2) == 3);
+	assert(_PySet_Update(dup2, dup) == 0);
+	assert(PySet_Size(dup2) == 3);
+	Py_DECREF(dup2);
 
 	/* Raise SystemError when self argument is not a set or frozenset. */
 	t = PyTuple_New(0);

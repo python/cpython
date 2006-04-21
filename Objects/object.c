@@ -3,9 +3,30 @@
 
 #include "Python.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef Py_REF_DEBUG
 Py_ssize_t _Py_RefTotal;
-#endif
+
+Py_ssize_t
+_Py_GetRefTotal(void)
+{
+	PyObject *o;
+	Py_ssize_t total = _Py_RefTotal;
+        /* ignore the references to the dummy object of the dicts and sets
+           because they are not reliable and not useful (now that the
+           hash table code is well-tested) */
+	o = _PyDict_Dummy();
+	if (o != NULL)
+		total -= o->ob_refcnt;
+	o = _PySet_Dummy();
+	if (o != NULL)
+		total -= o->ob_refcnt;
+	return total;
+}
+#endif /* Py_REF_DEBUG */
 
 int Py_DivisionWarningFlag;
 
@@ -53,23 +74,30 @@ _Py_AddToAllObjects(PyObject *op, int force)
 
 #ifdef COUNT_ALLOCS
 static PyTypeObject *type_list;
+/* All types are added to type_list, at least when
+   they get one object created. That makes them
+   immortal, which unfortunately contributes to
+   garbage itself. If unlist_types_without_objects
+   is set, they will be removed from the type_list
+   once the last object is deallocated. */
+int unlist_types_without_objects;
 extern int tuple_zero_allocs, fast_tuple_allocs;
 extern int quick_int_allocs, quick_neg_int_allocs;
 extern int null_strings, one_strings;
 void
-dump_counts(void)
+dump_counts(FILE* f)
 {
 	PyTypeObject *tp;
 
 	for (tp = type_list; tp; tp = tp->tp_next)
-		fprintf(stderr, "%s alloc'd: %d, freed: %d, max in use: %d\n",
+		fprintf(f, "%s alloc'd: %d, freed: %d, max in use: %d\n",
 			tp->tp_name, tp->tp_allocs, tp->tp_frees,
 			tp->tp_maxalloc);
-	fprintf(stderr, "fast tuple allocs: %d, empty: %d\n",
+	fprintf(f, "fast tuple allocs: %d, empty: %d\n",
 		fast_tuple_allocs, tuple_zero_allocs);
-	fprintf(stderr, "fast int allocs: pos: %d, neg: %d\n",
+	fprintf(f, "fast int allocs: pos: %d, neg: %d\n",
 		quick_int_allocs, quick_neg_int_allocs);
-	fprintf(stderr, "null strings: %d, 1-strings: %d\n",
+	fprintf(f, "null strings: %d, 1-strings: %d\n",
 		null_strings, one_strings);
 }
 
@@ -103,10 +131,12 @@ get_counts(void)
 void
 inc_count(PyTypeObject *tp)
 {
-	if (tp->tp_allocs == 0) {
+	if (tp->tp_next == NULL && tp->tp_prev == NULL) {
 		/* first time; insert in linked list */
 		if (tp->tp_next != NULL) /* sanity check */
 			Py_FatalError("XXX inc_count sanity check");
+		if (type_list)
+			type_list->tp_prev = tp;
 		tp->tp_next = type_list;
 		/* Note that as of Python 2.2, heap-allocated type objects
 		 * can go away, but this code requires that they stay alive
@@ -129,6 +159,24 @@ inc_count(PyTypeObject *tp)
 	if (tp->tp_allocs - tp->tp_frees > tp->tp_maxalloc)
 		tp->tp_maxalloc = tp->tp_allocs - tp->tp_frees;
 }
+
+void dec_count(PyTypeObject *tp)
+{
+	tp->tp_frees++;
+	if (unlist_types_without_objects &&
+	    tp->tp_allocs == tp->tp_frees) {
+		/* unlink the type from type_list */
+		if (tp->tp_prev)
+			tp->tp_prev->tp_next = tp->tp_next;
+		else
+			type_list = tp->tp_next;
+		if (tp->tp_next)
+			tp->tp_next->tp_prev = tp->tp_prev;
+		tp->tp_next = tp->tp_prev = NULL;
+		Py_DECREF(tp);
+	}
+}
+
 #endif
 
 #ifdef Py_REF_DEBUG
@@ -138,11 +186,10 @@ _Py_NegativeRefcount(const char *fname, int lineno, PyObject *op)
 {
 	char buf[300];
 
-	/* XXX(twouters) cast refcount to long until %zd is universally
-	   available */
 	PyOS_snprintf(buf, sizeof(buf),
-		      "%s:%i object at %p has negative ref count %ld",
-		      fname, lineno, op, (long)op->ob_refcnt);
+		      "%s:%i object at %p has negative ref count "
+		      "%" PY_FORMAT_SIZE_T "d",
+		      fname, lineno, op, op->ob_refcnt);
 	Py_FatalError(buf);
 }
 
@@ -317,7 +364,7 @@ PyObject_Repr(PyObject *v)
 #ifdef Py_USING_UNICODE
 		if (PyUnicode_Check(res)) {
 			PyObject* str;
-			str = PyUnicode_AsUnicodeEscapeString(res);
+			str = PyUnicode_AsEncodedString(res, NULL, NULL);
 			Py_DECREF(res);
 			if (str)
 				res = str;
@@ -1775,12 +1822,12 @@ static PyTypeObject PyNone_Type = {
 	"NoneType",
 	0,
 	0,
-	(destructor)none_dealloc,	     /*tp_dealloc*/ /*never called*/
+	none_dealloc,	/*tp_dealloc*/ /*never called*/
 	0,		/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
-	(reprfunc)none_repr, /*tp_repr*/
+	none_repr,	/*tp_repr*/
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
@@ -1806,12 +1853,12 @@ static PyTypeObject PyNotImplemented_Type = {
 	"NotImplementedType",
 	0,
 	0,
-	(destructor)none_dealloc,	     /*tp_dealloc*/ /*never called*/
+	none_dealloc,	/*tp_dealloc*/ /*never called*/
 	0,		/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
-	(reprfunc)NotImplemented_repr, /*tp_repr*/
+	NotImplemented_repr, /*tp_repr*/
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
@@ -1901,9 +1948,7 @@ _Py_PrintReferences(FILE *fp)
 	PyObject *op;
 	fprintf(fp, "Remaining objects:\n");
 	for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
-		/* XXX(twouters) cast refcount to long until %zd is
-		   universally available */
-		fprintf(fp, "%p [%ld] ", op, (long)op->ob_refcnt);
+		fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] ", op, op->ob_refcnt);
 		if (PyObject_Print(op, fp, 0) != 0)
 			PyErr_Clear();
 		putc('\n', fp);
@@ -1919,10 +1964,8 @@ _Py_PrintReferenceAddresses(FILE *fp)
 	PyObject *op;
 	fprintf(fp, "Remaining object addresses:\n");
 	for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
-		/* XXX(twouters) cast refcount to long until %zd is
-		   universally available */
-		fprintf(fp, "%p [%ld] %s\n", op, (long)op->ob_refcnt,
-					    op->ob_type->tp_name);
+		fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] %s\n", op,
+			op->ob_refcnt, op->ob_type->tp_name);
 }
 
 PyObject *
@@ -2100,3 +2143,8 @@ _PyTrash_destroy_chain(void)
 		--_PyTrash_delete_nesting;
 	}
 }
+
+#ifdef __cplusplus
+}
+#endif
+

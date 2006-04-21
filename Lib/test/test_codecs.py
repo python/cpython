@@ -1,7 +1,7 @@
 from test import test_support
 import unittest
 import codecs
-import sys, StringIO
+import sys, StringIO, _testcapi
 
 class Queue(object):
     """
@@ -781,15 +781,82 @@ class NameprepTest(unittest.TestCase):
                 except Exception,e:
                     raise test_support.TestFailed("Test 3.%d: %s" % (pos+1, str(e)))
 
-class CodecTest(unittest.TestCase):
-    def test_builtin(self):
+class IDNACodecTest(unittest.TestCase):
+    def test_builtin_decode(self):
         self.assertEquals(unicode("python.org", "idna"), u"python.org")
+        self.assertEquals(unicode("python.org.", "idna"), u"python.org.")
+        self.assertEquals(unicode("xn--pythn-mua.org", "idna"), u"pyth\xf6n.org")
+        self.assertEquals(unicode("xn--pythn-mua.org.", "idna"), u"pyth\xf6n.org.")
+
+    def test_builtin_encode(self):
+        self.assertEquals(u"python.org".encode("idna"), "python.org")
+        self.assertEquals("python.org.".encode("idna"), "python.org.")
+        self.assertEquals(u"pyth\xf6n.org".encode("idna"), "xn--pythn-mua.org")
+        self.assertEquals(u"pyth\xf6n.org.".encode("idna"), "xn--pythn-mua.org.")
 
     def test_stream(self):
         import StringIO
         r = codecs.getreader("idna")(StringIO.StringIO("abc"))
         r.read(3)
         self.assertEquals(r.read(), u"")
+
+    def test_incremental_decode(self):
+        self.assertEquals(
+            "".join(codecs.iterdecode("python.org", "idna")),
+            u"python.org"
+        )
+        self.assertEquals(
+            "".join(codecs.iterdecode("python.org.", "idna")),
+            u"python.org."
+        )
+        self.assertEquals(
+            "".join(codecs.iterdecode("xn--pythn-mua.org.", "idna")),
+            u"pyth\xf6n.org."
+        )
+        self.assertEquals(
+            "".join(codecs.iterdecode("xn--pythn-mua.org.", "idna")),
+            u"pyth\xf6n.org."
+        )
+
+        decoder = codecs.getincrementaldecoder("idna")()
+        self.assertEquals(decoder.decode("xn--xam", ), u"")
+        self.assertEquals(decoder.decode("ple-9ta.o", ), u"\xe4xample.")
+        self.assertEquals(decoder.decode(u"rg"), u"")
+        self.assertEquals(decoder.decode(u"", True), u"org")
+
+        decoder.reset()
+        self.assertEquals(decoder.decode("xn--xam", ), u"")
+        self.assertEquals(decoder.decode("ple-9ta.o", ), u"\xe4xample.")
+        self.assertEquals(decoder.decode("rg."), u"org.")
+        self.assertEquals(decoder.decode("", True), u"")
+
+    def test_incremental_encode(self):
+        self.assertEquals(
+            "".join(codecs.iterencode(u"python.org", "idna")),
+            "python.org"
+        )
+        self.assertEquals(
+            "".join(codecs.iterencode(u"python.org.", "idna")),
+            "python.org."
+        )
+        self.assertEquals(
+            "".join(codecs.iterencode(u"pyth\xf6n.org.", "idna")),
+            "xn--pythn-mua.org."
+        )
+        self.assertEquals(
+            "".join(codecs.iterencode(u"pyth\xf6n.org.", "idna")),
+            "xn--pythn-mua.org."
+        )
+
+        encoder = codecs.getincrementalencoder("idna")()
+        self.assertEquals(encoder.encode(u"\xe4x"), "")
+        self.assertEquals(encoder.encode(u"ample.org"), "xn--xample-9ta.")
+        self.assertEquals(encoder.encode(u"", True), "org")
+
+        encoder.reset()
+        self.assertEquals(encoder.encode(u"\xe4x"), "")
+        self.assertEquals(encoder.encode(u"ample.org."), "xn--xample-9ta.org.")
+        self.assertEquals(encoder.encode(u"", True), "")
 
 class CodecsModuleTest(unittest.TestCase):
 
@@ -1032,9 +1099,11 @@ class BasicUnicodeTest(unittest.TestCase):
                     decodedresult += reader.read()
                 self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
 
-                # check incremental decoder/encoder and iterencode()/iterdecode()
+                # check incremental decoder/encoder (fetched via the Python
+                # and C API) and iterencode()/iterdecode()
                 try:
                     encoder = codecs.getincrementalencoder(encoding)()
+                    cencoder = _testcapi.codec_incrementalencoder(encoding)
                 except LookupError: # no IncrementalEncoder
                     pass
                 else:
@@ -1042,10 +1111,24 @@ class BasicUnicodeTest(unittest.TestCase):
                     encodedresult = ""
                     for c in s:
                         encodedresult += encoder.encode(c)
+                    encodedresult += encoder.encode(u"", True)
                     decoder = codecs.getincrementaldecoder(encoding)()
                     decodedresult = u""
                     for c in encodedresult:
                         decodedresult += decoder.decode(c)
+                    decodedresult += decoder.decode("", True)
+                    self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
+
+                    # check C API
+                    encodedresult = ""
+                    for c in s:
+                        encodedresult += cencoder.encode(c)
+                    encodedresult += cencoder.encode(u"", True)
+                    cdecoder = _testcapi.codec_incrementaldecoder(encoding)
+                    decodedresult = u""
+                    for c in encodedresult:
+                        decodedresult += cdecoder.decode(c)
+                    decodedresult += cdecoder.decode("", True)
                     self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
 
                     # check iterencode()/iterdecode()
@@ -1142,7 +1225,7 @@ def test_main():
         PunycodeTest,
         UnicodeInternalTest,
         NameprepTest,
-        CodecTest,
+        IDNACodecTest,
         CodecsModuleTest,
         StreamReaderTest,
         Str2StrTest,

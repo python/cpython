@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2004 Python Software Foundation
+% Copyright (C) 2001-2006 Python Software Foundation
 % Author: barry@python.org (Barry Warsaw)
 
 \section{\module{email} ---
@@ -18,10 +18,10 @@ subsumes most of the functionality in several older standard modules
 such as \refmodule{rfc822}, \refmodule{mimetools},
 \refmodule{multifile}, and other non-standard packages such as
 \module{mimecntl}.  It is specifically \emph{not} designed to do any
-sending of email messages to SMTP (\rfc{2821}) servers; that is the
-function of the \refmodule{smtplib} module.  The \module{email}
-package attempts to be as RFC-compliant as possible, supporting in
-addition to \rfc{2822}, such MIME-related RFCs as
+sending of email messages to SMTP (\rfc{2821}), NNTP, or other servers; those
+are functions of modules such as \refmodule{smtplib} and \refmodule{nntplib}.
+The \module{email} package attempts to be as RFC-compliant as possible,
+supporting in addition to \rfc{2822}, such MIME-related RFCs as
 \rfc{2045}, \rfc{2046}, \rfc{2047}, and \rfc{2231}.
 
 The primary distinguishing feature of the \module{email} package is
@@ -41,7 +41,7 @@ The following sections describe the functionality of the
 should be common in applications: an email message is read as flat
 text from a file or other source, the text is parsed to produce the
 object structure of the email message, this structure is manipulated,
-and finally rendered back into flat text.
+and finally, the object tree is rendered back into flat text.
 
 It is perfectly feasible to create the object structure out of whole
 cloth --- i.e. completely from scratch.  From there, a similar
@@ -56,6 +56,7 @@ package, a section on differences and porting is provided.
 
 \begin{seealso}
     \seemodule{smtplib}{SMTP protocol client}
+    \seemodule{nntplib}{NNTP protocol client}
 \end{seealso}
 
 \subsection{Representing an email message}
@@ -88,22 +89,51 @@ package, a section on differences and porting is provided.
 \subsection{Iterators}
 \input{emailiter}
 
-\subsection{Package History}
+\subsection{Package History\label{email-pkg-history}}
 
-Version 1 of the \module{email} package was bundled with Python
-releases up to Python 2.2.1.  Version 2 was developed for the Python
-2.3 release, and backported to Python 2.2.2.  It was also available as
-a separate distutils-based package, and is compatible back to Python 2.1.
+This table describes the release history of the email package, corresponding
+to the version of Python that the package was released with.  For purposes of
+this document, when you see a note about change or added versions, these refer
+to the Python version the change was made it, \emph{not} the email package
+version.  This table also describes the Python compatibility of each version
+of the package.
 
-\module{email} version 3.0 was released with Python 2.4 and as a separate
-distutils-based package.  It is compatible back to Python 2.3.
+\begin{tableiii}{l|l|l}{constant}{email version}{distributed with}{compatible with}
+\lineiii{1.x}{Python 2.2.0 to Python 2.2.1}{\emph{no longer supported}}
+\lineiii{2.5}{Python 2.2.2+ and Python 2.3}{Python 2.1 to 2.5}
+\lineiii{3.0}{Python 2.4}{Python 2.3 to 2.5}
+\lineiii{4.0}{Python 2.5}{Python 2.3 to 2.5}
+\end{tableiii}
 
-Here are the differences between \module{email} version 3 and version 2:
+Here are the major differences between \module{email} verson 4 and version 3:
+
+\begin{itemize}
+\item All modules have been renamed according to \pep{8} standards.  For
+      example, the version 3 module \module{email.Message} was renamed to
+      \module{email.message} in version 4.
+
+\item A new subpackage \module{email.mime} was added and all the version 3
+      \module{email.MIME*} modules were renamed and situated into the
+      \module{email.mime} subpackage.  For example, the version 3 module
+      \module{email.MIMEText} was renamed to \module{email.mime.text}.
+
+      \emph{Note that the version 3 names will continue to work until Python
+      2.6}.
+
+\item The \module{email.mime.application} module was added, which contains the
+      \class{MIMEApplication} class.
+
+\item Methods that were deprecated in version 3 have been removed.  These
+      include \method{Generator.__call__()}, \method{Message.get_type()},
+      \method{Message.get_main_type()}, \method{Message.get_subtype()}.
+\end{itemize}
+
+Here are the major differences between \module{email} version 3 and version 2:
 
 \begin{itemize}
 \item The \class{FeedParser} class was introduced, and the \class{Parser}
       class was implemented in terms of the \class{FeedParser}.  All parsing
-      there for is non-strict, and parsing will make a best effort never to
+      therefore is non-strict, and parsing will make a best effort never to
       raise an exception.  Problems found while parsing messages are stored in
       the message's \var{defect} attribute.
 
@@ -117,7 +147,7 @@ Here are the differences between \module{email} version 3 and version 2:
       \method{Generator.__call__()}, \method{Message.get_type()},
       \method{Message.get_main_type()}, \method{Message.get_subtype()}, and
       the \var{strict} argument to the \class{Parser} class.  These are
-      expected to be removed in email 3.1.
+      expected to be removed in future versions.
 
 \item Support for Pythons earlier than 2.3 has been removed.
 \end{itemize}
@@ -278,12 +308,12 @@ The \class{Message} class has the following differences:
 \item The method \method{getpayloadastext()} was removed.  Similar
       functionality
       is supported by the \class{DecodedGenerator} class in the
-      \refmodule{email.Generator} module.
+      \refmodule{email.generator} module.
 
 \item The method \method{getbodyastext()} was removed.  You can get
       similar functionality by creating an iterator with
       \function{typed_subpart_iterator()} in the
-      \refmodule{email.Iterators} module.
+      \refmodule{email.iterators} module.
 \end{itemize}
 
 The \class{Parser} class has no differences in its public interface.
@@ -295,7 +325,7 @@ notification\footnote{Delivery Status Notifications (DSN) are defined
 in \rfc{1894}.}.
 
 The \class{Generator} class has no differences in its public
-interface.  There is a new class in the \refmodule{email.Generator}
+interface.  There is a new class in the \refmodule{email.generator}
 module though, called \class{DecodedGenerator} which provides most of
 the functionality previously available in the
 \method{Message.getpayloadastext()} method.
@@ -329,11 +359,11 @@ The following modules and classes have been changed:
 
 \module{mimelib} provided some utility functions in its
 \module{address} and \module{date} modules.  All of these functions
-have been moved to the \refmodule{email.Utils} module.
+have been moved to the \refmodule{email.utils} module.
 
 The \code{MsgReader} class/module has been removed.  Its functionality
 is most closely supported in the \function{body_line_iterator()}
-function in the \refmodule{email.Iterators} module.
+function in the \refmodule{email.iterators} module.
 
 \subsection{Examples}
 

@@ -155,8 +155,10 @@ class StructVisitor(EmitVisitor):
             type = sum.types[i]
             enum.append("%s_kind=%d" % (type.name, i + 1))
 
+        emit("enum _%(name)s_kind {" + ", ".join(enum) + "};")
+
         emit("struct _%(name)s {")
-        emit("enum { " + ", ".join(enum) + " } kind;", depth + 1)
+        emit("enum _%(name)s_kind kind;", depth + 1)
         emit("union {", depth + 1)
         for t in sum.types:
             self.visit(t, depth + 2)
@@ -186,7 +188,10 @@ class StructVisitor(EmitVisitor):
         ctype = get_c_type(field.type)
         name = field.name
         if field.seq:
-            self.emit("asdl_seq *%(name)s;" % locals(), depth)
+            if field.type.value in ('cmpop',):
+                self.emit("asdl_int_seq *%(name)s;" % locals(), depth)
+            else:
+                self.emit("asdl_seq *%(name)s;" % locals(), depth)
         else:
             self.emit("%(ctype)s %(name)s;" % locals(), depth)
 
@@ -232,7 +237,10 @@ class PrototypeVisitor(EmitVisitor):
                 name = f.name
             # XXX should extend get_c_type() to handle this
             if f.seq:
-                ctype = "asdl_seq *"
+                if f.type.value in ('cmpop',):
+                    ctype = "asdl_int_seq *"
+                else:
+                    ctype = "asdl_seq *"
             else:
                 ctype = get_c_type(f.type)
             args.append((ctype, name, f.opt or f.seq))
@@ -276,7 +284,7 @@ class FunctionVisitor(PrototypeVisitor):
         emit("%s p;" % ctype, 1)
         for argtype, argname, opt in args:
             # XXX hack alert: false is allowed for a bool
-            if not opt and not argtype == "bool":
+            if not opt and not (argtype == "bool" or argtype == "int"):
                 emit("if (!%s) {" % argname, 1)
                 emit("PyErr_SetString(PyExc_ValueError,", 2)
                 msg = "field %s is required for %s" % (argname, name)
@@ -413,10 +421,10 @@ static PyTypeObject* make_type(char *type, PyTypeObject* base, char**fields, int
 
 static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
 {
-    int i;
+    int i, result;
     PyObject *s, *l = PyList_New(num_fields);
     if (!l) return 0;
-    for(i=0; i < num_fields; i++) {
+    for(i = 0; i < num_fields; i++) {
         s = PyString_FromString(attrs[i]);
         if (!s) {
             Py_DECREF(l);
@@ -424,7 +432,9 @@ static int add_attributes(PyTypeObject* type, char**attrs, int num_fields)
         }
         PyList_SET_ITEM(l, i, s);
     }
-    return PyObject_SetAttrString((PyObject*)type, "_attributes", l) >=0;
+    result = PyObject_SetAttrString((PyObject*)type, "_attributes", l) >= 0;
+    Py_DECREF(l);
+    return result;
 }
 
 static PyObject* ast2obj_list(asdl_seq *seq, PyObject* (*func)(void*))
@@ -465,9 +475,9 @@ static PyObject* ast2obj_int(bool b)
 }
 """, 0, reflow=False)
 
-        self.emit("static int initialized;", 0)
         self.emit("static int init_types(void)",0)
         self.emit("{", 0)
+        self.emit("static int initialized;", 1)
         self.emit("if (initialized) return 1;", 1)
         self.emit('AST_type = make_type("AST", &PyBaseObject_Type, NULL, 0);', 1)
         for dfn in mod.dfns:
@@ -543,7 +553,7 @@ class ASTModuleVisitor(PickleVisitor):
         self.addObj(cons.name)
 
     def addObj(self, name):
-        self.emit('if(PyDict_SetItemString(d, "%s", (PyObject*)%s_type) < 0) return;' % (name, name), 1)
+        self.emit('if (PyDict_SetItemString(d, "%s", (PyObject*)%s_type) < 0) return;' % (name, name), 1)
 
 _SPECIALIZED_SEQUENCES = ('stmt', 'expr')
 
@@ -677,8 +687,8 @@ class ObjVisitor(PickleVisitor):
                 self.emit("if (!value) goto failed;", depth+1)
                 self.emit("for(i = 0; i < n; i++)", depth+1)
                 # This cannot fail, so no need for error handling
-                self.emit("PyList_SET_ITEM(value, i, ast2obj_%s((%s_ty)asdl_seq_GET(%s, i)));" %
-                                (field.type, field.type, value), depth+2, reflow=False)
+                self.emit("PyList_SET_ITEM(value, i, ast2obj_cmpop((cmpop_ty)asdl_seq_GET(%s, i)));" % value,
+                          depth+2, reflow=False)
                 self.emit("}", depth)
             else:
                 self.emit("value = ast2obj_list(%s, ast2obj_%s);" % (value, field.type), depth)
@@ -716,39 +726,35 @@ def main(srcfile):
         sys.exit(1)
     if INC_DIR:
         p = "%s/%s-ast.h" % (INC_DIR, mod.name)
-    else:
-        p = "%s-ast.h" % mod.name
-    f = open(p, "wb")
-    print >> f, auto_gen_msg
-    print >> f, '#include "asdl.h"\n'
-    c = ChainOfVisitors(TypeDefVisitor(f),
-                        StructVisitor(f),
-                        PrototypeVisitor(f),
-                        )
-    c.visit(mod)
-    print >>f, "PyObject* PyAST_mod2obj(mod_ty t);"
-    f.close()
+        f = open(p, "wb")
+        print >> f, auto_gen_msg
+        print >> f, '#include "asdl.h"\n'
+        c = ChainOfVisitors(TypeDefVisitor(f),
+                            StructVisitor(f),
+                            PrototypeVisitor(f),
+                            )
+        c.visit(mod)
+        print >>f, "PyObject* PyAST_mod2obj(mod_ty t);"
+        f.close()
 
     if SRC_DIR:
-        p = "%s/%s-ast.c" % (SRC_DIR, mod.name)
-    else:
-        p = "%s-ast.c" % mod.name
-    f = open(p, "wb")
-    print >> f, auto_gen_msg
-    print >> f, '#include "Python.h"'
-    print >> f, '#include "%s-ast.h"' % mod.name
-    print >> f
-    print >>f, "static PyTypeObject* AST_type;"
-    v = ChainOfVisitors(
-                        PyTypesDeclareVisitor(f),
-                        PyTypesVisitor(f),
-                        FunctionVisitor(f),
-                        ObjVisitor(f),
-                        ASTModuleVisitor(f),
-                        PartingShots(f),
-                        )
-    v.visit(mod)
-    f.close()
+        p = os.path.join(SRC_DIR, str(mod.name) + "-ast.c")
+        f = open(p, "wb")
+        print >> f, auto_gen_msg
+        print >> f, '#include "Python.h"'
+        print >> f, '#include "%s-ast.h"' % mod.name
+        print >> f
+        print >>f, "static PyTypeObject* AST_type;"
+        v = ChainOfVisitors(
+            PyTypesDeclareVisitor(f),
+            PyTypesVisitor(f),
+            FunctionVisitor(f),
+            ObjVisitor(f),
+            ASTModuleVisitor(f),
+            PartingShots(f),
+            )
+        v.visit(mod)
+        f.close()
 
 if __name__ == "__main__":
     import sys
@@ -757,6 +763,9 @@ if __name__ == "__main__":
     INC_DIR = ''
     SRC_DIR = ''
     opts, args = getopt.getopt(sys.argv[1:], "h:c:")
+    if len(opts) != 1:
+        print "Must specify exactly one output file"
+        sys.exit(1)
     for o, v in opts:
         if o == '-h':
             INC_DIR = v
@@ -764,4 +773,5 @@ if __name__ == "__main__":
             SRC_DIR = v
     if len(args) != 1:
         print "Must specify single input file"
+        sys.exit(1)
     main(args[0])

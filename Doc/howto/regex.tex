@@ -33,11 +33,8 @@ This document is available from
 
 The \module{re} module was added in Python 1.5, and provides
 Perl-style regular expression patterns.  Earlier versions of Python
-came with the \module{regex} module, which provides Emacs-style
-patterns.  Emacs-style patterns are slightly less readable and
-don't provide as many features, so there's not much reason to use
-the \module{regex} module when writing new code, though you might
-encounter old code that uses it.
+came with the \module{regex} module, which provided Emacs-style
+patterns.  \module{regex} module was removed in Python 2.5.
 
 Regular expressions (or REs) are essentially a tiny, highly
 specialized programming language embedded inside Python and made
@@ -1458,7 +1455,7 @@ Jeffrey Friedl's \citetitle{Mastering Regular Expressions}, published
 by O'Reilly.  Unfortunately, it exclusively concentrates on Perl and
 Java's flavours of regular expressions, and doesn't contain any Python
 material at all, so it won't be useful as a reference for programming
-in Python.  (The first edition covered Python's now-obsolete
+in Python.  (The first edition covered Python's now-removed
 \module{regex} module, which won't help you much.)  Consider checking
 it out from your library.
 

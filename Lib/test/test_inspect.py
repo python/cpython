@@ -295,9 +295,11 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertArgSpecEquals(A.m, ['self'])
 
     def test_getargspec_sublistofone(self):
-        def sublistOfOne((foo)): return 1
-
+        def sublistOfOne((foo,)): return 1
         self.assertArgSpecEquals(sublistOfOne, [['foo']])
+
+        def fakeSublistOfOne((foo)): return 1
+        self.assertArgSpecEquals(fakeSublistOfOne, ['foo'])
 
     def test_classify_newstyle(self):
         class A(object):

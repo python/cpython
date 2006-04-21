@@ -1519,6 +1519,8 @@ xmlparse_getattr(xmlparseobject *self, char *name)
     if (strcmp(name, "__members__") == 0) {
         int i;
         PyObject *rc = PyList_New(0);
+	if (!rc)
+		return NULL;
         for (i = 0; handler_info[i].name != NULL; i++) {
             PyObject *o = get_handler_name(&handler_info[i]);
             if (o != NULL)
@@ -1652,14 +1654,9 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
 static int
 xmlparse_traverse(xmlparseobject *op, visitproc visit, void *arg)
 {
-    int i, err;
-    for (i = 0; handler_info[i].name != NULL; i++) {
-        if (!op->handlers[i])
-            continue;
-        err = visit(op->handlers[i], arg);
-        if (err)
-            return err;
-    }
+    int i;
+    for (i = 0; handler_info[i].name != NULL; i++)
+        Py_VISIT(op->handlers[i]);
     return 0;
 }
 
@@ -1667,8 +1664,7 @@ static int
 xmlparse_clear(xmlparseobject *op)
 {
     clear_handlers(op, 0);
-    Py_XDECREF(op->intern);
-    op->intern = 0;
+    Py_CLEAR(op->intern);
     return 0;
 }
 #endif

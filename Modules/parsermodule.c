@@ -657,9 +657,10 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             }
         }
         if (!ok) {
-            PyErr_SetObject(parser_error,
-                            Py_BuildValue("os", elem,
-                                          "Illegal node construct."));
+            PyObject *err = Py_BuildValue("os", elem,
+                                          "Illegal node construct.");
+            PyErr_SetObject(parser_error, err);
+            Py_XDECREF(err);
             Py_XDECREF(elem);
             return (0);
         }
@@ -700,7 +701,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                 }
             }
             len = PyString_GET_SIZE(temp) + 1;
-            strn = (char *)PyMem_MALLOC(len);
+            strn = (char *)PyObject_MALLOC(len);
             if (strn != NULL)
                 (void) memcpy(strn, PyString_AS_STRING(temp), len);
             Py_DECREF(temp);
@@ -710,18 +711,19 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
              *  It has to be one or the other; this is an error.
              *  Throw an exception.
              */
-            PyErr_SetObject(parser_error,
-                            Py_BuildValue("os", elem, "unknown node type."));
+            PyObject *err = Py_BuildValue("os", elem, "unknown node type.");
+            PyErr_SetObject(parser_error, err);
+            Py_XDECREF(err);
             Py_XDECREF(elem);
             return (0);
         }
         err = PyNode_AddChild(root, type, strn, *line_num, 0);
         if (err == E_NOMEM) {
-            PyMem_DEL(strn);
+            PyObject_FREE(strn);
             return (node *) PyErr_NoMemory();
         }
         if (err == E_OVERFLOW) {
-            PyMem_DEL(strn);
+            PyObject_FREE(strn);
             PyErr_SetString(PyExc_ValueError,
                             "unsupported number of child nodes");
             return NULL;
@@ -740,7 +742,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
         }
         Py_XDECREF(elem);
     }
-    return (root);
+    return root;
 }
 
 
@@ -762,6 +764,7 @@ build_node_tree(PyObject *tuple)
         tuple = Py_BuildValue("os", tuple,
                     "Illegal syntax-tree; cannot start with terminal symbol.");
         PyErr_SetObject(parser_error, tuple);
+        Py_XDECREF(tuple);
     }
     else if (ISNONTERMINAL(num)) {
         /*
@@ -784,7 +787,7 @@ build_node_tree(PyObject *tuple)
             if (res && encoding) {
                 Py_ssize_t len;
                 len = PyString_GET_SIZE(encoding) + 1;
-                res->n_str = (char *)PyMem_MALLOC(len);
+                res->n_str = (char *)PyObject_MALLOC(len);
                 if (res->n_str != NULL)
                     (void) memcpy(res->n_str, PyString_AS_STRING(encoding), len);
                 Py_DECREF(encoding);
@@ -792,14 +795,16 @@ build_node_tree(PyObject *tuple)
             }
         }
     }
-    else
+    else {
         /*  The tuple is illegal -- if the number is neither TERMINAL nor
          *  NONTERMINAL, we can't use it.  Not sure the implementation
          *  allows this condition, but the API doesn't preclude it.
          */
-        PyErr_SetObject(parser_error,
-                        Py_BuildValue("os", tuple,
-                                      "Illegal component tuple."));
+        PyObject *err = Py_BuildValue("os", tuple,
+                                      "Illegal component tuple.");
+        PyErr_SetObject(parser_error, err);
+        Py_XDECREF(err);
+    }
 
     return (res);
 }
@@ -1321,7 +1326,7 @@ validate_gen_for(node *tree)
     return res;
 }
 
-/*  list_if:  'if' test [list_iter]
+/*  list_if:  'if' old_test [list_iter]
  */
 static int
 validate_list_if(node *tree)
@@ -1336,12 +1341,12 @@ validate_list_if(node *tree)
 
     if (res)
         res = (validate_name(CHILD(tree, 0), "if")
-               && validate_test(CHILD(tree, 1)));
+               && validate_old_test(CHILD(tree, 1)));
 
     return res;
 }
 
-/*  gen_if:  'if' test [gen_iter]
+/*  gen_if:  'if' old_test [gen_iter]
  */
 static int
 validate_gen_if(node *tree)
@@ -1356,7 +1361,7 @@ validate_gen_if(node *tree)
     
     if (res)
         res = (validate_name(CHILD(tree, 0), "if")
-               && validate_test(CHILD(tree, 1)));
+               && validate_old_test(CHILD(tree, 1)));
 
     return res;
 }

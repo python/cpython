@@ -40,7 +40,6 @@ struct _zipimporter {
 	PyObject *files;    /* dict with file info {path: toc_entry} */
 };
 
-static PyTypeObject ZipImporter_Type;
 static PyObject *ZipImportError;
 static PyObject *zip_directory_cache = NULL;
 
@@ -171,13 +170,7 @@ static int
 zipimporter_traverse(PyObject *obj, visitproc visit, void *arg)
 {
 	ZipImporter *self = (ZipImporter *)obj;
-	int err;
-
-	if (self->files != NULL) {
-		err = visit(self->files, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(self->files);
 	return 0;
 }
 
@@ -958,7 +951,7 @@ normalize_line_endings(PyObject *source)
 	PyObject *fixed_source;
 
 	/* one char extra for trailing \n and one for terminating \0 */
-	buf = PyMem_Malloc(PyString_Size(source) + 2);
+	buf = (char *)PyMem_Malloc(PyString_Size(source) + 2);
 	if (buf == NULL) {
 		PyErr_SetString(PyExc_MemoryError,
 				"zipimport: no memory to allocate "

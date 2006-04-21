@@ -6,6 +6,7 @@ from msilib import Feature, CAB, Directory, Dialog, Binary, add_data
 import uisample
 from win32com.client import constants
 from distutils.spawn import find_executable
+from uuids import product_codes
 
 # Settings can be overridden in config.py below
 # 0 for official python.org releases
@@ -23,6 +24,8 @@ srcdir = os.path.abspath("../..")
 full_current_version = None
 # Is Tcl available at all?
 have_tcl = True
+# Where is sqlite3.dll located, relative to srcdir?
+sqlite_dir = "../sqlite-source-3.3.4"
 
 try:
     from config import *
@@ -62,30 +65,6 @@ current_version = "%s.%d" % (short_version, FIELD3)
 upgrade_code_snapshot='{92A24481-3ECB-40FC-8836-04B7966EC0D5}'
 upgrade_code='{65E6DE48-A358-434D-AA4F-4AF72DB4718F}'
 
-# This should be extended for each Python release.
-# The product code must change whenever the name of the MSI file
-# changes, and when new component codes are issued for existing
-# components. See "Changing the Product Code". As we change the
-# component codes with every build, we need a new product code
-# each time. For intermediate (snapshot) releases, they are automatically
-# generated. For official releases, we record the product codes,
-# so people can refer to them.
-product_codes = {
-    '2.4.101': '{0e9b4d8e-6cda-446e-a208-7b92f3ddffa0}', # 2.4a1, released as a snapshot
-    '2.4.102': '{1b998745-4901-4edb-bc52-213689e1b922}', # 2.4a2
-    '2.4.103': '{33fc8bd2-1e8f-4add-a40a-ade2728d5942}', # 2.4a3
-    '2.4.111': '{51a7e2a8-2025-4ef0-86ff-e6aab742d1fa}', # 2.4b1
-    '2.4.112': '{4a5e7c1d-c659-4fe3-b8c9-7c65bd9c95a5}', # 2.4b2
-    '2.4.121': '{75508821-a8e9-40a8-95bd-dbe6033ddbea}', # 2.4c1
-    '2.4.122': '{83a9118b-4bdd-473b-afc3-bcb142feca9e}', # 2.4c2
-    '2.4.150': '{82d9302e-f209-4805-b548-52087047483a}', # 2.4.0
-    '2.4.1121':'{be027411-8e6b-4440-a29b-b07df0690230}', # 2.4.1c1
-    '2.4.1122':'{02818752-48bf-4074-a281-7a4114c4f1b1}', # 2.4.1c2
-    '2.4.1150':'{4d4f5346-7e4a-40b5-9387-fdb6181357fc}', # 2.4.1
-    '2.4.2121':'{5ef9d6b6-df78-45d2-ab09-14786a3c5a99}', # 2.4.2c1
-    '2.4.2150':'{b191e49c-ea23-43b2-b28a-14e0784069b8}', # 2.4.2
-}
-
 if snapshot:
     current_version = "%s.%s.%s" % (major, minor, int(time.time()/3600/24))
     product_code = msilib.gen_uuid()
@@ -109,13 +88,9 @@ extensions = [
     '_tkinter.pyd',
     '_msi.pyd',
     '_ctypes.pyd',
-    '_ctypes_test.pyd'
+    '_ctypes_test.pyd',
+    '_sqlite3.pyd'
 ]
-
-if major+minor <= "24":
-    extensions.extend([
-    'zlib.pyd',
-    ])
 
 # Well-known component UUIDs
 # These are needed for SharedDLLs reference counter; if
@@ -392,7 +367,7 @@ def add_ui(db):
               ("VerdanaRed9", "Verdana", 9, 255, 0),
              ])
 
-    compileargs = r"-Wi [TARGETDIR]Lib\compileall.py -f -x badsyntax [TARGETDIR]Lib"
+    compileargs = r"-Wi [TARGETDIR]Lib\compileall.py -f -x bad_coding|badsyntax|site-packages [TARGETDIR]Lib"
     # See "CustomAction Table"
     add_data(db, "CustomAction", [
         # msidbCustomActionTypeFirstSequence + msidbCustomActionTypeTextData + msidbCustomActionTypeProperty
@@ -491,7 +466,7 @@ def add_ui(db):
     c = exit_dialog.text("warning", 135, 200, 220, 40, 0x30003,
             "{\\VerdanaRed9}Warning: Python 2.5.x is the last "
             "Python release for Windows 9x.")
-    c.condition("Hide", "NOT Version9x")
+    c.condition("Hide", "NOT Version9X")
 
     exit_dialog.text("Description", 135, 235, 220, 20, 0x30003,
                "Click the Finish button to exit the Installer.")
@@ -914,7 +889,7 @@ def add_files(db):
                 continue
             tcltk.set_current()
         elif dir in ['test', 'tests', 'data', 'output']:
-            # test: Lib, Lib/email, Lib/bsddb
+            # test: Lib, Lib/email, Lib/bsddb, Lib/ctypes, Lib/sqlite3
             # tests: Lib/distutils
             # data: Lib/email/test
             # output: Lib/test
@@ -941,6 +916,8 @@ def add_files(db):
             lib.add_file("test.xml.out")
             lib.add_file("testtar.tar")
             lib.add_file("test_difflib_expect.html")
+            lib.add_file("check_soundcard.vbs")
+            lib.add_file("empty.vbs")
             lib.glob("*.uue")
             lib.add_file("readme.txt", src="README")
         if dir=='decimaltestdata':
@@ -990,6 +967,14 @@ def add_files(db):
             tcldir = os.path.normpath(srcdir+"/../tcltk/bin")
             for f in glob.glob1(tcldir, "*.dll"):
                 lib.add_file(f, src=os.path.join(tcldir, f))
+    # Add sqlite
+    if msilib.msi_type=="Intel64;1033":
+        sqlite_arch = "/ia64"
+    elif msilib.msi_type=="x64;1033":
+        sqlite_arch = "/amd64"
+    else:
+        sqlite_arch = ""
+    lib.add_file(srcdir+"/"+sqlite_dir+sqlite_arch+"/sqlite3.dll")
     # check whether there are any unknown extensions
     for f in glob.glob1(srcdir+"/PCBuild", "*.pyd"):
         if f.endswith("_d.pyd"): continue # debug version

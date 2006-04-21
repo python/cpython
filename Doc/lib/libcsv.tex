@@ -33,8 +33,9 @@ form using the \class{DictReader} and \class{DictWriter} classes.
 \begin{notice}
   This version of the \module{csv} module doesn't support Unicode
   input.  Also, there are currently some issues regarding \ASCII{} NUL
-  characters.  Accordingly, all input should generally be printable
-  \ASCII{} to be safe.  These restrictions will be removed in the future.
+  characters.  Accordingly, all input should be UTF-8 or printable
+  \ASCII{} to be safe; see the examples in section~\ref{csv-examples}.
+  These restrictions will be removed in the future.
 \end{notice}
 
 \begin{seealso}
@@ -365,7 +366,7 @@ A read-only description of the dialect in use by the writer.
 
 
 
-\subsection{Examples}
+\subsection{Examples\label{csv-examples}}
 
 The simplest example of reading a CSV file:
 
@@ -426,37 +427,99 @@ for row in csv.reader(['one,two,three']):
 \end{verbatim}
 
 The \module{csv} module doesn't directly support reading and writing
-Unicode, but it is 8-bit clean save for some problems with \ASCII{} NUL
-characters, so you can write classes that handle the encoding and decoding
-for you as long as you avoid encodings like utf-16 that use NULs:
+Unicode, but it is 8-bit-clean save for some problems with \ASCII{} NUL
+characters.  So you can write functions or classes that handle the
+encoding and decoding for you as long as you avoid encodings like
+UTF-16 that use NULs.  UTF-8 is recommended.
+
+\function{unicode_csv_reader} below is a generator that wraps
+\class{csv.reader} to handle Unicode CSV data (a list of Unicode
+strings).  \function{utf_8_encoder} is a generator that encodes the
+Unicode strings as UTF-8, one string (or row) at a time.  The encoded
+strings are parsed by the CSV reader, and
+\function{unicode_csv_reader} decodes the UTF-8-encoded cells back
+into Unicode:
 
 \begin{verbatim}
 import csv
 
+def unicode_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
+    # csv.py doesn't do Unicode; encode temporarily as UTF-8:
+    csv_reader = csv.reader(utf_8_encoder(unicode_csv_data),
+                            dialect=dialect, **kwargs)
+    for row in csv_reader:
+        # decode UTF-8 back to Unicode, cell by cell:
+        yield [unicode(cell, 'utf-8') for cell in row]
+
+def utf_8_encoder(unicode_csv_data):
+    for line in unicode_csv_data:
+        yield line.encode('utf-8')
+\end{verbatim}
+
+For all other encodings the following \class{UnicodeReader} and
+\class{UnicodeWriter} classes can be used. They take an additional
+\var{encoding} parameter in their constructor and make sure that the data
+passes the real reader or writer encoded as UTF-8:
+
+\begin{verbatim}
+import csv, codecs, cStringIO
+
+class UTF8Recoder:
+    """
+    Iterator that reads an encoded stream and reencodes the input to UTF-8
+    """
+    def __init__(self, f, encoding):
+        self.reader = codecs.getreader(encoding)(f)
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        return self.reader.next().encode("utf-8")
+
 class UnicodeReader:
+    """
+    A CSV reader which will iterate over lines in the CSV file "f",
+    which is encoded in the given encoding.
+    """
+
     def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
+        f = UTF8Recoder(f, encoding)
         self.reader = csv.reader(f, dialect=dialect, **kwds)
-        self.encoding = encoding
 
     def next(self):
         row = self.reader.next()
-        return [unicode(s, self.encoding) for s in row]
+        return [unicode(s, "utf-8") for s in row]
 
     def __iter__(self):
         return self
 
 class UnicodeWriter:
+    """
+    A CSV writer which will write rows to CSV file "f",
+    which is encoded in the given encoding.
+    """
+
     def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
-        self.writer = csv.writer(f, dialect=dialect, **kwds)
-        self.encoding = encoding
+        # Redirect output to a queue
+        self.queue = cStringIO.StringIO()
+        self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
+        self.stream = f
+        self.encoder = codecs.getincrementalencoder(encoding)()
 
     def writerow(self, row):
-        self.writer.writerow([s.encode(self.encoding) for s in row])
+        self.writer.writerow([s.encode("utf-8") for s in row])
+        # Fetch UTF-8 output from the queue ...
+        data = self.queue.getvalue()
+        data = data.decode("utf-8")
+        # ... and reencode it into the target encoding
+        data = self.encoder.encode(data)
+        # write to the target stream
+        self.stream.write(data)
+        # empty queue
+        self.queue.truncate(0)
 
     def writerows(self, rows):
         for row in rows:
             self.writerow(row)
 \end{verbatim}
-
-They should work just like the \class{csv.reader} and \class{csv.writer}
-classes but add an \var{encoding} parameter.

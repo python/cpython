@@ -29,7 +29,7 @@
 # into a program for a different change to Python programs...
 
 import sys
-import regex
+import re
 import os
 from stat import *
 import string
@@ -53,7 +53,7 @@ def main():
             if fix(arg): bad = 1
     sys.exit(bad)
 
-ispythonprog = regex.compile('^[a-zA-Z0-9_]+\.py$')
+ispythonprog = re.compile('^[a-zA-Z0-9_]+\.py$')
 def ispython(name):
     return ispythonprog.match(name) >= 0
 
@@ -104,7 +104,7 @@ def fix(filename):
         if lineno == 1 and g is None and line[:2] == '#!':
             # Check for non-Python scripts
             words = string.split(line[2:])
-            if words and regex.search('[pP]ython', words[0]) < 0:
+            if words and re.search('[pP]ython', words[0]) < 0:
                 msg = filename + ': ' + words[0]
                 msg = msg + ' script; not fixed\n'
                 err(msg)

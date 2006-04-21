@@ -44,7 +44,7 @@ typedef struct {
 /* These are no longer used. */
 #define CO_GENERATOR_ALLOWED    0x1000
 #define CO_FUTURE_DIVISION    	0x2000
-#define CO_FUTURE_ABSIMPORT	0x4000 /* absolute import by default */
+#define CO_FUTURE_ABSOLUTE_IMPORT 0x4000 /* do absolute imports by default */
 #define CO_FUTURE_WITH_STATEMENT  0x8000
 #endif
 
@@ -71,6 +71,21 @@ PyAPI_FUNC(int) PyCode_Addr2Line(PyCodeObject *, int);
 #define _PyCode_GETCODEPTR(co, pp) \
 	((*(co)->co_code->ob_type->tp_as_buffer->bf_getreadbuffer) \
 	 ((co)->co_code, 0, (void **)(pp)))
+
+typedef struct _addr_pair {
+        int ap_lower;
+        int ap_upper;
+} PyAddrPair;
+
+/* Check whether lasti (an instruction offset) falls outside bounds
+   and whether it is a line number that should be traced.  Returns
+   a line number if it should be traced or -1 if the line should not.
+
+   If lasti is not within bounds, updates bounds.
+*/
+
+PyAPI_FUNC(int) PyCode_CheckLineNumber(PyCodeObject* co,
+                                       int lasti, PyAddrPair *bounds);
 
 #ifdef __cplusplus
 }

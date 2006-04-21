@@ -7,6 +7,9 @@
 #        with someone who can; ask around on python-dev for help.  Fred
 #        Drake <fdrake@acm.org> will probably be listening there.
 
+# NOTE WELL: You should also follow all the steps listed in PEP 306,
+# "How to Change Python's Grammar"
+
 # Start symbols for the grammar:
 #	single_input is a single interactive statement;
 #	file_input is a module or sequence of commands read from an input file;
@@ -119,11 +122,11 @@ argument: test [gen_for] | test '=' test  # Really [keyword '='] test
 
 list_iter: list_for | list_if
 list_for: 'for' exprlist 'in' testlist_safe [list_iter]
-list_if: 'if' test [list_iter]
+list_if: 'if' old_test [list_iter]
 
 gen_iter: gen_for | gen_if
 gen_for: 'for' exprlist 'in' or_test [gen_iter]
-gen_if: 'if' test [gen_iter]
+gen_if: 'if' old_test [gen_iter]
 
 testlist1: test (',' test)*
 

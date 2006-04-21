@@ -61,7 +61,7 @@ class BaseTest(unittest.TestCase):
         bi = a.buffer_info()
         self.assert_(isinstance(bi, tuple))
         self.assertEqual(len(bi), 2)
-        self.assert_(isinstance(bi[0], int))
+        self.assert_(isinstance(bi[0], (int, long)))
         self.assert_(isinstance(bi[1], int))
         self.assertEqual(bi[1], len(a))
 

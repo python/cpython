@@ -246,7 +246,7 @@ Lfinish:
 /* END(ffi_closure_ASM)  */
 
 .data
-.section __TEXT,__eh_frame,coalesced,no_toc+strip_static_syms+live_support
+.section __TEXT,__eh_frame,coalesced,no_toc+strip_static_syms
 EH_frame1:
 	.set	L$set$0,LECIE1-LSCIE1
 	.long	L$set$0	; Length of Common Information Entry

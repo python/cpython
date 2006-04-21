@@ -28,6 +28,10 @@
     "Type \"help\", \"copyright\", \"credits\" or \"license\" " \
     "for more information."
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* For Py_GetArgcArgv(); set by main() */
 static char **orig_argv;
 static int  orig_argc;
@@ -206,7 +210,7 @@ Py_Main(int argc, char **argv)
 			/* -c is the last option; following arguments
 			   that look like options are left for the
 			   command to interpret. */
-			command = malloc(strlen(_PyOS_optarg) + 2);
+			command = (char *)malloc(strlen(_PyOS_optarg) + 2);
 			if (command == NULL)
 				Py_FatalError(
 				   "not enough memory to copy -c argument");
@@ -219,7 +223,7 @@ Py_Main(int argc, char **argv)
 			/* -m is the last option; following arguments
 			   that look like options are left for the
 			   module to interpret. */
-			module = malloc(strlen(_PyOS_optarg) + 2);
+			module = (char *)malloc(strlen(_PyOS_optarg) + 2);
 			if (module == NULL)
 				Py_FatalError(
 				   "not enough memory to copy -m argument");
@@ -509,3 +513,8 @@ Py_GetArgcArgv(int *argc, char ***argv)
 	*argc = orig_argc;
 	*argv = orig_argv;
 }
+
+#ifdef __cplusplus
+}
+#endif
+

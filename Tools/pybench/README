@@ -1,0 +1,372 @@
+________________________________________________________________________
+
+PYBENCH - A Python Benchmark Suite
+________________________________________________________________________
+
+     Extendable suite of of low-level benchmarks for measuring
+          the performance of the Python implementation 
+                 (interpreter, compiler or VM).
+
+pybench is a collection of tests that provides a standardized way to
+measure the performance of Python implementations. It takes a very
+close look at different aspects of Python programs and let's you
+decide which factors are more important to you than others, rather
+than wrapping everything up in one number, like the other performance
+tests do (e.g. pystone which is included in the Python Standard
+Library).
+
+pybench has been used in the past by several Python developers to
+track down performance bottlenecks or to demonstrate the impact of
+optimizations and new features in Python.
+
+The command line interface for pybench is the file pybench.py. Run
+this script with option '--help' to get a listing of the possible
+options. Without options, pybench will simply execute the benchmark
+and then print out a report to stdout.
+
+
+Micro-Manual
+------------
+
+Run 'pybench.py -h' to see the help screen.
+Run 'pybench.py' to just let the benchmark suite do it's thing and
+'pybench.py -f <file>' to have it store the results in a file too.
+
+This is the current output of pybench.py --help:
+
+Synopsis:
+ pybench.py [option] files...
+
+Options and default settings:
+  -n arg           number of rounds (10)
+  -f arg           save benchmark to file arg ()
+  -c arg           compare benchmark with the one in file arg ()
+  -s arg           show benchmark in file arg, then exit ()
+  -S               show statistics of benchmarks (0)
+  -w arg           set warp factor to arg (20)
+  -d               hide noise in compares (0)
+  --no-gc          disable garbage collection (0)
+  -v               generate verbose output
+  -h               show this help text
+  --help           show this help text
+  --debug          enable debugging
+  --copyright      show copyright
+  --examples       show examples of usage
+
+Version:
+ 1.3
+
+The normal operation is to run the suite and display the
+results. Use -f to save them for later reuse or comparisms.
+
+Examples:
+
+python1.5 pybench.py -w 100 -f p15
+python1.4 pybench.py -w 100 -f p14
+python pybench.py -s p15 -c p14
+
+
+License
+-------
+
+See LICENSE file.
+
+
+Sample output
+-------------
+
+PYBENCH 1.3
+
+Machine Details:
+   Platform ID:  Linux-2.6.8-24.19-default-x86_64-with-SuSE-9.2-x86-64
+   Executable:   /home/lemburg/projects/Python/Installation/bin/python
+   Python:       2.5a1.0
+   Compiler:     GCC 3.3.4 (pre 3.3.5 20040809)
+   Build:        Apr  9 2006 01:50:57 (#trunk)
+
+Searching for tests...
+   BuiltinFunctionCalls
+   BuiltinMethodLookup
+   CompareFloats
+   CompareFloatsIntegers
+   CompareIntegers
+   CompareInternedStrings
+   CompareLongs
+   CompareStrings
+   CompareUnicode
+   ConcatStrings
+   ConcatUnicode
+   CreateInstances
+   CreateStringsWithConcat
+   CreateUnicodeWithConcat
+   DictCreation
+   DictWithFloatKeys
+   DictWithIntegerKeys
+   DictWithStringKeys
+   ForLoops
+   IfThenElse
+   ListSlicing
+   NestedForLoops
+   NormalClassAttribute
+   NormalInstanceAttribute
+   PythonFunctionCalls
+   PythonMethodCalls
+   Recursion
+   SecondImport
+   SecondPackageImport
+   SecondSubmoduleImport
+   SimpleComplexArithmetic
+   SimpleDictManipulation
+   SimpleFloatArithmetic
+   SimpleIntFloatArithmetic
+   SimpleIntegerArithmetic
+   SimpleListManipulation
+   SimpleLongArithmetic
+   SmallLists
+   SmallTuples
+   SpecialClassAttribute
+   SpecialInstanceAttribute
+   StringMappings
+   StringPredicates
+   StringSlicing
+   TryExcept
+   TryRaiseExcept
+   TupleSlicing
+   UnicodeMappings
+   UnicodePredicates
+   UnicodeProperties
+   UnicodeSlicing
+
+Running 10 round(s) of the suite:
+
+...
+
+ Round 10                         real   abs    overhead
+          BuiltinFunctionCalls:   0.030r 0.030a 0.000o
+           BuiltinMethodLookup:   0.059r 0.060a 0.001o
+                 CompareFloats:   0.050r 0.050a 0.000o
+         CompareFloatsIntegers:   0.050r 0.050a 0.000o
+               CompareIntegers:   0.070r 0.070a 0.000o
+        CompareInternedStrings:   0.039r 0.040a 0.001o
+                  CompareLongs:   0.050r 0.050a 0.000o
+                CompareStrings:   0.060r 0.060a 0.000o
+                CompareUnicode:   0.060r 0.060a 0.000o
+                 ConcatStrings:   0.040r 0.040a 0.000o
+                 ConcatUnicode:   0.050r 0.050a 0.000o
+               CreateInstances:   0.050r 0.050a 0.000o
+       CreateStringsWithConcat:   0.029r 0.030a 0.001o
+       CreateUnicodeWithConcat:   0.060r 0.060a 0.000o
+                  DictCreation:   0.040r 0.040a 0.000o
+             DictWithFloatKeys:   0.089r 0.090a 0.000o
+           DictWithIntegerKeys:   0.059r 0.060a 0.001o
+            DictWithStringKeys:   0.070r 0.070a 0.001o
+                      ForLoops:   0.050r 0.050a 0.000o
+                    IfThenElse:   0.070r 0.070a 0.000o
+                   ListSlicing:   0.030r 0.030a 0.000o
+                NestedForLoops:   0.030r 0.030a 0.000o
+          NormalClassAttribute:   0.060r 0.060a 0.000o
+       NormalInstanceAttribute:   0.060r 0.060a 0.000o
+           PythonFunctionCalls:   0.060r 0.060a 0.000o
+             PythonMethodCalls:   0.050r 0.050a 0.000o
+                     Recursion:   0.050r 0.050a 0.000o
+                  SecondImport:   0.030r 0.030a 0.000o
+           SecondPackageImport:   0.030r 0.030a 0.000o
+         SecondSubmoduleImport:   0.040r 0.040a 0.000o
+       SimpleComplexArithmetic:   0.030r 0.030a 0.000o
+        SimpleDictManipulation:   0.040r 0.040a 0.000o
+         SimpleFloatArithmetic:   0.050r 0.050a 0.001o
+      SimpleIntFloatArithmetic:   0.060r 0.060a 0.000o
+       SimpleIntegerArithmetic:   0.060r 0.060a 0.000o
+        SimpleListManipulation:   0.030r 0.030a 0.000o
+          SimpleLongArithmetic:   0.030r 0.030a 0.000o
+                    SmallLists:   0.050r 0.050a 0.000o
+                   SmallTuples:   0.050r 0.050a 0.000o
+         SpecialClassAttribute:   0.060r 0.060a 0.000o
+      SpecialInstanceAttribute:   0.079r 0.080a 0.001o
+                StringMappings:   0.060r 0.060a 0.000o
+              StringPredicates:   0.049r 0.050a 0.001o
+                 StringSlicing:   0.039r 0.040a 0.000o
+                     TryExcept:   0.079r 0.080a 0.001o
+                TryRaiseExcept:   0.059r 0.060a 0.001o
+                  TupleSlicing:   0.050r 0.050a 0.000o
+               UnicodeMappings:   0.070r 0.070a 0.001o
+             UnicodePredicates:   0.059r 0.060a 0.001o
+             UnicodeProperties:   0.059r 0.060a 0.001o
+                UnicodeSlicing:   0.050r 0.050a 0.000o
+                                 ----------------------
+            Average round time:      2.937 seconds
+
+
+Tests:                              per run    per oper.   overhead
+------------------------------------------------------------------------
+          BuiltinFunctionCalls:      29.85 ms    0.23 us    0.00 ms
+           BuiltinMethodLookup:      66.85 ms    0.13 us    0.50 ms
+                 CompareFloats:      43.00 ms    0.10 us    0.00 ms
+         CompareFloatsIntegers:      51.80 ms    0.12 us    0.00 ms
+               CompareIntegers:      70.70 ms    0.08 us    0.50 ms
+        CompareInternedStrings:      41.40 ms    0.08 us    0.50 ms
+                  CompareLongs:      47.90 ms    0.11 us    0.00 ms
+                CompareStrings:      58.50 ms    0.12 us    0.50 ms
+                CompareUnicode:      56.55 ms    0.15 us    0.50 ms
+                 ConcatStrings:      44.75 ms    0.30 us    0.00 ms
+                 ConcatUnicode:      54.55 ms    0.36 us    0.50 ms
+               CreateInstances:      50.95 ms    1.21 us    0.00 ms
+       CreateStringsWithConcat:      28.85 ms    0.14 us    0.50 ms
+       CreateUnicodeWithConcat:      53.75 ms    0.27 us    0.00 ms
+                  DictCreation:      41.90 ms    0.28 us    0.00 ms
+             DictWithFloatKeys:      88.50 ms    0.15 us    0.50 ms
+           DictWithIntegerKeys:      62.55 ms    0.10 us    0.50 ms
+            DictWithStringKeys:      60.50 ms    0.10 us    0.50 ms
+                      ForLoops:      46.90 ms    4.69 us    0.00 ms
+                    IfThenElse:      60.55 ms    0.09 us    0.00 ms
+                   ListSlicing:      29.90 ms    8.54 us    0.00 ms
+                NestedForLoops:      33.95 ms    0.10 us    0.00 ms
+          NormalClassAttribute:      62.75 ms    0.10 us    0.50 ms
+       NormalInstanceAttribute:      61.80 ms    0.10 us    0.50 ms
+           PythonFunctionCalls:      60.00 ms    0.36 us    0.00 ms
+             PythonMethodCalls:      50.00 ms    0.67 us    0.00 ms
+                     Recursion:      46.85 ms    3.75 us    0.00 ms
+                  SecondImport:      35.00 ms    1.40 us    0.00 ms
+           SecondPackageImport:      32.00 ms    1.28 us    0.00 ms
+         SecondSubmoduleImport:      38.00 ms    1.52 us    0.00 ms
+       SimpleComplexArithmetic:      26.85 ms    0.12 us    0.00 ms
+        SimpleDictManipulation:      40.85 ms    0.14 us    0.00 ms
+         SimpleFloatArithmetic:      48.70 ms    0.09 us    0.50 ms
+      SimpleIntFloatArithmetic:      57.70 ms    0.09 us    0.00 ms
+       SimpleIntegerArithmetic:      58.75 ms    0.09 us    0.50 ms
+        SimpleListManipulation:      34.80 ms    0.13 us    0.00 ms
+          SimpleLongArithmetic:      30.95 ms    0.19 us    0.50 ms
+                    SmallLists:      47.60 ms    0.19 us    0.00 ms
+                   SmallTuples:      48.80 ms    0.20 us    0.50 ms
+         SpecialClassAttribute:      61.70 ms    0.10 us    0.00 ms
+      SpecialInstanceAttribute:      76.70 ms    0.13 us    0.50 ms
+                StringMappings:      58.70 ms    0.47 us    0.00 ms
+              StringPredicates:      50.00 ms    0.18 us    1.00 ms
+                 StringSlicing:      39.65 ms    0.23 us    0.50 ms
+                     TryExcept:      84.45 ms    0.06 us    0.50 ms
+                TryRaiseExcept:      61.75 ms    4.12 us    0.50 ms
+                  TupleSlicing:      48.95 ms    0.47 us    0.00 ms
+               UnicodeMappings:      71.50 ms    3.97 us    0.50 ms
+             UnicodePredicates:      52.75 ms    0.23 us    1.00 ms
+             UnicodeProperties:      61.90 ms    0.31 us    1.00 ms
+                UnicodeSlicing:      53.75 ms    0.31 us    0.50 ms
+------------------------------------------------------------------------
+            Average round time:    2937.00 ms
+
+________________________________________________________________________
+
+Writing New Tests
+________________________________________________________________________
+
+pybench tests are simple modules defining one or more pybench.Test
+subclasses.
+
+Writing a test essentially boils down to providing two methods:
+.test() which runs .rounds number of .operations test operations each
+and .calibrate() which does the same except that it doesn't actually
+execute the operations.
+
+
+Here's an example:
+------------------
+
+from pybench import Test
+
+class IntegerCounting(Test):
+
+    # Version number of the test as float (x.yy); this is important
+    # for comparisons of benchmark runs - tests with unequal version
+    # number will not get compared.
+    version = 1.0
+    
+    # The number of abstract operations done in each round of the
+    # test. An operation is the basic unit of what you want to
+    # measure. The benchmark will output the amount of run-time per
+    # operation. Note that in order to raise the measured timings
+    # significantly above noise level, it is often required to repeat
+    # sets of operations more than once per test round. The measured
+    # overhead per test round should be less than 1 second.
+    operations = 20
+
+    # Number of rounds to execute per test run. This should be
+    # adjusted to a figure that results in a test run-time of between
+    # 20-50 seconds.
+    rounds = 100000
+
+    def test(self):
+
+	""" Run the test.
+
+	    The test needs to run self.rounds executing
+	    self.operations number of operations each.
+
+        """
+        # Init the test
+        a = 1
+
+        # Run test rounds
+	#
+        # NOTE: Use xrange() for all test loops unless you want to face
+	# a 20MB process !
+	#
+        for i in xrange(self.rounds):
+
+            # Repeat the operations per round to raise the run-time
+            # per operation significantly above the noise level of the
+            # for-loop overhead. 
+
+	    # Execute 20 operations (a += 1):
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+            a += 1
+
+    def calibrate(self):
+
+	""" Calibrate the test.
+
+	    This method should execute everything that is needed to
+	    setup and run the test - except for the actual operations
+	    that you intend to measure. pybench uses this method to
+            measure the test implementation overhead.
+
+        """
+        # Init the test
+        a = 1
+
+        # Run test rounds (without actually doing any operation)
+        for i in xrange(self.rounds):
+
+	    # Skip the actual execution of the operations, since we
+	    # only want to measure the test's administration overhead.
+            pass
+
+Registering a new test module
+-----------------------------
+
+To register a test module with pybench, the classes need to be
+imported into the pybench.Setup module. pybench will then scan all the
+symbols defined in that module for subclasses of pybench.Test and
+automatically add them to the benchmark suite.
+
+
+Have fun,
+--
+Marc-Andre Lemburg
+mal@lemburg.com

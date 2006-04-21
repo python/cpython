@@ -20,7 +20,13 @@ _active = []
 
 def _cleanup():
     for inst in _active[:]:
-        inst.poll()
+        if inst.poll(_deadstate=sys.maxint) >= 0:
+            try:
+                _active.remove(inst)
+            except ValueError:
+                # This can happen if two threads create a new Popen instance.
+                # It's harmless that it was already removed, so ignore.
+                pass
 
 class Popen3:
     """Class representing a child process.  Normally instances are created
@@ -39,6 +45,7 @@ class Popen3:
         specified, it specifies the size of the I/O buffers to/from the child
         process."""
         _cleanup()
+        self.cmd = cmd
         p2cread, p2cwrite = os.pipe()
         c2pread, c2pwrite = os.pipe()
         if capturestderr:
@@ -60,7 +67,13 @@ class Popen3:
             self.childerr = os.fdopen(errout, 'r', bufsize)
         else:
             self.childerr = None
-        _active.append(self)
+
+    def __del__(self):
+        # In case the child hasn't been waited on, check if it's done.
+        self.poll(_deadstate=sys.maxint)
+        if self.sts < 0:
+            # Child is still running, keep us alive until we can wait on it.
+            _active.append(self)
 
     def _run_child(self, cmd):
         if isinstance(cmd, basestring):
@@ -75,26 +88,28 @@ class Popen3:
         finally:
             os._exit(1)
 
-    def poll(self):
+    def poll(self, _deadstate=None):
         """Return the exit status of the child process if it has finished,
         or -1 if it hasn't finished yet."""
         if self.sts < 0:
             try:
                 pid, sts = os.waitpid(self.pid, os.WNOHANG)
+                # pid will be 0 if self.pid hasn't terminated
                 if pid == self.pid:
                     self.sts = sts
-                    _active.remove(self)
             except os.error:
-                pass
+                if _deadstate is not None:
+                    self.sts = _deadstate
         return self.sts
 
     def wait(self):
         """Wait for and return the exit status of the child process."""
         if self.sts < 0:
             pid, sts = os.waitpid(self.pid, 0)
-            if pid == self.pid:
-                self.sts = sts
-                _active.remove(self)
+            # This used to be a test, but it is believed to be
+            # always true, so I changed it to an assertion - mvl
+            assert pid == self.pid
+            self.sts = sts
         return self.sts
 
 
@@ -103,6 +118,7 @@ class Popen4(Popen3):
 
     def __init__(self, cmd, bufsize=-1):
         _cleanup()
+        self.cmd = cmd
         p2cread, p2cwrite = os.pipe()
         c2pread, c2pwrite = os.pipe()
         self.pid = os.fork()
@@ -116,7 +132,6 @@ class Popen4(Popen3):
         self.tochild = os.fdopen(p2cwrite, 'w', bufsize)
         os.close(c2pwrite)
         self.fromchild = os.fdopen(c2pread, 'r', bufsize)
-        _active.append(self)
 
 
 if sys.platform[:3] == "win" or sys.platform == "os2emx":
@@ -186,6 +201,9 @@ else:
     __all__.extend(["Popen3", "Popen4"])
 
 def _test():
+    # When the test runs, there shouldn't be any open pipes
+    _cleanup()
+    assert not _active, "Active pipes when test starts " + repr([c.cmd for c in _active])
     cmd  = "cat"
     teststr = "ab cd\n"
     if os.name == "nt":
@@ -216,6 +234,7 @@ def _test():
         raise ValueError("unexpected %r on stderr" % (got,))
     for inst in _active[:]:
         inst.wait()
+    _cleanup()
     if _active:
         raise ValueError("_active not empty")
     print "All OK"

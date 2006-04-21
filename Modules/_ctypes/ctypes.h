@@ -2,15 +2,6 @@
 
 #if (PY_VERSION_HEX < 0x02050000)
 typedef int Py_ssize_t;
-#define lenfunc inquiry
-#define readbufferproc getreadbufferproc
-#define writebufferproc getwritebufferproc
-#define segcountproc getsegcountproc
-#define charbufferproc getcharbufferproc
-#define ssizeargfunc intargfunc
-#define ssizessizeargfunc intintargfunc
-#define ssizeobjargproc intobjargproc
-#define ssizessizeobjargproc intintobjargproc
 #endif
 
 #ifndef MS_WIN32
@@ -30,8 +21,9 @@ typedef int Py_ssize_t;
 #define PY_LONG_LONG LONG_LONG
 #endif
 
-typedef int (*THUNK)(void);
 typedef struct tagCDataObject CDataObject;
+typedef PyObject *(* GETFUNC)(void *, unsigned size);
+typedef PyObject *(* SETFUNC)(void *, PyObject *value, unsigned size);
 
 /* A default buffer in CDataObject, which can be used for small C types.  If
 this buffer is too small, PyMem_Malloc will be called to create a larger one,
@@ -72,6 +64,16 @@ struct tagCDataObject {
 };
 
 typedef struct {
+	ffi_closure *pcl; /* the C callable */
+	ffi_cif cif;
+	PyObject *converters;
+	PyObject *callable;
+	SETFUNC setfunc;
+	ffi_type *restype;
+	ffi_type *atypes[0];
+} ffi_info;
+
+typedef struct {
 	/* First part identical to tagCDataObject */
 	PyObject_HEAD
 	char *b_ptr;		/* pointer to memory block */
@@ -85,7 +87,7 @@ typedef struct {
 	union value b_value;
 	/* end of tagCDataObject, additional fields follow */
 
-	THUNK thunk;
+	ffi_info *thunk;
 	PyObject *callable;
 
 	/* These two fields will override the ones in the type's stgdict if
@@ -154,17 +156,12 @@ CreateArrayType(PyObject *itemtype, Py_ssize_t length);
 
 extern void init_callbacks_in_module(PyObject *m);
 
-extern THUNK AllocFunctionCallback(PyObject *callable,
-				   PyObject *converters,
-				   PyObject *restype,
-				   int stdcall);
-extern void FreeCallback(THUNK);
-
 extern PyMethodDef module_methods[];
 
-typedef PyObject *(* GETFUNC)(void *, unsigned size);
-typedef PyObject *(* SETFUNC)(void *, PyObject *value, unsigned size);
-
+extern ffi_info *AllocFunctionCallback(PyObject *callable,
+				       PyObject *converters,
+				       PyObject *restype,
+				       int stdcall);
 /* a table entry describing a predefined ctypes type */
 struct fielddesc {
 	char code;
@@ -201,7 +198,7 @@ typedef struct {
 	Py_ssize_t size;	/* number of bytes */
 	Py_ssize_t align;	/* alignment requirements */
 	Py_ssize_t length;	/* number of fields */
-	ffi_type ffi_type;
+	ffi_type ffi_type_pointer;
 	PyObject *proto;	/* Only for Pointer/ArrayObject */
 	SETFUNC setfunc;	/* Only for simple objects */
 	GETFUNC getfunc;	/* Only for simple objects */

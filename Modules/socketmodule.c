@@ -62,6 +62,7 @@ Local naming conventions:
 */
 
 #include "Python.h"
+#include "structmember.h"
 
 #undef MAX
 #define MAX(x, y) ((x) < (y) ? (y) : (x))
@@ -967,7 +968,18 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen, int proto)
 	case AF_UNIX:
 	{
 		struct sockaddr_un *a = (struct sockaddr_un *) addr;
-		return PyString_FromString(a->sun_path);
+#ifdef linux
+		if (a->sun_path[0] == 0) {  /* Linux abstract namespace */
+			addrlen -= (sizeof(*a) - sizeof(a->sun_path));
+			return PyString_FromStringAndSize(a->sun_path,
+							  addrlen);
+		}
+		else
+#endif /* linux */
+		{
+			/* regular NULL-terminated string */
+			return PyString_FromString(a->sun_path);
+		}
 	}
 #endif /* AF_UNIX */
 
@@ -1097,14 +1109,28 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		addr = (struct sockaddr_un*)&(s->sock_addr).un;
 		if (!PyArg_Parse(args, "t#", &path, &len))
 			return 0;
-		if (len > sizeof addr->sun_path) {
-			PyErr_SetString(socket_error,
-					"AF_UNIX path too long");
-			return 0;
+#ifdef linux
+		if (len > 0 && path[0] == 0) {
+			/* Linux abstract namespace extension */
+			if (len > sizeof addr->sun_path) {
+				PyErr_SetString(socket_error,
+						"AF_UNIX path too long");
+				return 0;
+			}
+		}
+		else
+#endif /* linux */
+                {
+			/* regular NULL-terminated string */
+			if (len >= sizeof addr->sun_path) {
+				PyErr_SetString(socket_error,
+						"AF_UNIX path too long");
+				return 0;
+			}
+			addr->sun_path[len] = 0;
 		}
 		addr->sun_family = s->sock_family;
 		memcpy(addr->sun_path, path, len);
-		addr->sun_path[len] = 0;
 		*addr_ret = (struct sockaddr *) addr;
 #if defined(PYOS_OS2)
 		*len_ret = sizeof(*addr);
@@ -2207,18 +2233,20 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
 	Py_BEGIN_ALLOW_THREADS
 	memset(&addrbuf, 0, addrlen);
 	timeout = internal_select(s, 0);
-	if (!timeout)
-		n = recvfrom(s->sock_fd, PyString_AS_STRING(buf), len, flags,
+	if (!timeout) {
 #ifndef MS_WINDOWS
 #if defined(PYOS_OS2) && !defined(PYCC_GCC)
-			     (struct sockaddr *) &addrbuf, &addrlen
+		n = recvfrom(s->sock_fd, PyString_AS_STRING(buf), len, flags,
+			     (struct sockaddr *) &addrbuf, &addrlen);
 #else
-			     (void *) &addrbuf, &addrlen
+		n = recvfrom(s->sock_fd, PyString_AS_STRING(buf), len, flags,
+			     (void *) &addrbuf, &addrlen);
 #endif
 #else
-			     (struct sockaddr *) &addrbuf, &addrlen
+		n = recvfrom(s->sock_fd, PyString_AS_STRING(buf), len, flags,
+			     (struct sockaddr *) &addrbuf, &addrlen);
 #endif
-			);
+	}
 	Py_END_ALLOW_THREADS
 
 	if (timeout) {
@@ -2502,6 +2530,14 @@ static PyMethodDef sock_methods[] = {
 	{NULL,			NULL}		/* sentinel */
 };
 
+/* SockObject members */
+static PyMemberDef sock_memberlist[] = {
+       {"family", T_INT, offsetof(PySocketSockObject, sock_family), READONLY, "the socket family"},
+       {"type", T_INT, offsetof(PySocketSockObject, sock_type), READONLY, "the socket type"},
+       {"proto", T_INT, offsetof(PySocketSockObject, sock_proto), READONLY, "the socket protocol"},
+       {"timeout", T_DOUBLE, offsetof(PySocketSockObject, sock_timeout), READONLY, "the socket timeout"},
+       {0},
+};
 
 /* Deallocate a socket object in response to the last Py_DECREF().
    First close the file description. */
@@ -2625,7 +2661,7 @@ static PyTypeObject sock_type = {
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	sock_methods,				/* tp_methods */
-	0,					/* tp_members */
+	sock_memberlist,			/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
@@ -3159,7 +3195,8 @@ socket_fromfd(PyObject *self, PyObject *args)
 PyDoc_STRVAR(fromfd_doc,
 "fromfd(fd, family, type[, proto]) -> socket object\n\
 \n\
-Create a socket object from the given file descriptor.\n\
+Create a socket object from a duplicate of the given\n\
+file descriptor.\n\
 The remaining arguments are the same as for socket().");
 
 #endif /* NO_DUP */
@@ -4026,7 +4063,12 @@ init_socket(void)
 	/*  */
 	PyModule_AddIntConstant(m, "AF_NETLINK", AF_NETLINK);
 	PyModule_AddIntConstant(m, "NETLINK_ROUTE", NETLINK_ROUTE);
+#ifdef NETLINK_SKIP
 	PyModule_AddIntConstant(m, "NETLINK_SKIP", NETLINK_SKIP);
+#endif
+#ifdef NETLINK_W1
+	PyModule_AddIntConstant(m, "NETLINK_W1", NETLINK_W1);
+#endif
 	PyModule_AddIntConstant(m, "NETLINK_USERSOCK", NETLINK_USERSOCK);
 	PyModule_AddIntConstant(m, "NETLINK_FIREWALL", NETLINK_FIREWALL);
 #ifdef NETLINK_TCPDIAG
@@ -4038,12 +4080,18 @@ init_socket(void)
 #ifdef NETLINK_XFRM
 	PyModule_AddIntConstant(m, "NETLINK_XFRM", NETLINK_XFRM);
 #endif
+#ifdef NETLINK_ARPD
 	PyModule_AddIntConstant(m, "NETLINK_ARPD", NETLINK_ARPD);
+#endif
+#ifdef NETLINK_ROUTE6
 	PyModule_AddIntConstant(m, "NETLINK_ROUTE6", NETLINK_ROUTE6);
+#endif
 	PyModule_AddIntConstant(m, "NETLINK_IP6_FW", NETLINK_IP6_FW);
 	PyModule_AddIntConstant(m, "NETLINK_DNRTMSG", NETLINK_DNRTMSG);
+#ifdef NETLINK_TAPBASE
 	PyModule_AddIntConstant(m, "NETLINK_TAPBASE", NETLINK_TAPBASE);
 #endif
+#endif /* AF_NETLINK */
 #ifdef AF_ROUTE
 	/* Alias to emulate 4.4BSD */
 	PyModule_AddIntConstant(m, "AF_ROUTE", AF_ROUTE);

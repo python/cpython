@@ -15,7 +15,7 @@
 
 typedef struct {
 	PyObject_HEAD
-        MD5_CTX	md5;		/* the context holder */
+        md5_state_t	md5;		/* the context holder */
 } md5object;
 
 static PyTypeObject MD5type;
@@ -31,7 +31,7 @@ newmd5object(void)
 	if (md5p == NULL)
 		return NULL;
 
-	MD5Init(&md5p->md5);	/* actual initialisation */
+	md5_init(&md5p->md5);	/* actual initialisation */
 	return md5p;
 }
 
@@ -56,7 +56,7 @@ md5_update(md5object *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s#:update", &cp, &len))
 		return NULL;
 
-	MD5Update(&self->md5, cp, len);
+	md5_append(&self->md5, cp, len);
 
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -73,12 +73,12 @@ arguments.");
 static PyObject *
 md5_digest(md5object *self)
 {
- 	MD5_CTX mdContext;
+ 	md5_state_t mdContext;
 	unsigned char aDigest[16];
 
 	/* make a temporary copy, and perform the final */
 	mdContext = self->md5;
-	MD5Final(aDigest, &mdContext);
+	md5_finish(&mdContext, aDigest);
 
 	return PyString_FromStringAndSize((char *)aDigest, 16);
 }
@@ -94,14 +94,14 @@ including null bytes.");
 static PyObject *
 md5_hexdigest(md5object *self)
 {
- 	MD5_CTX mdContext;
+ 	md5_state_t mdContext;
 	unsigned char digest[16];
 	unsigned char hexdigest[32];
 	int i, j;
 
 	/* make a temporary copy, and perform the final */
 	mdContext = self->md5;
-	MD5Final(digest, &mdContext);
+	md5_finish(&mdContext, digest);
 
 	/* Make hex version of the digest */
 	for(i=j=0; i<16; i++) {
@@ -272,7 +272,7 @@ MD5_new(PyObject *self, PyObject *args)
 		return NULL;
 
 	if (cp)
-		MD5Update(&md5p->md5, cp, len);
+		md5_append(&md5p->md5, cp, len);
 
 	return (PyObject *)md5p;
 }

@@ -204,8 +204,7 @@ module_repr(PyModuleObject *m)
 static int
 module_traverse(PyModuleObject *m, visitproc visit, void *arg)
 {
-	if (m->md_dict != NULL)
-		return visit(m->md_dict, arg);
+	Py_VISIT(m->md_dict);
 	return 0;
 }
 

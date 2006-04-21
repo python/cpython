@@ -31,6 +31,9 @@
 # The parameter names are as they appear in the API manual, not the source
 # code. 
 
+PyBool_FromLong:PyObject*::+1:
+PyBool_FromLong:long:v:0:
+
 PyBuffer_FromObject:PyObject*::+1:
 PyBuffer_FromObject:PyObject*:base:+1:
 PyBuffer_FromObject:int:offset::
@@ -109,6 +112,35 @@ PyComplex_ImagAsDouble:PyObject*:op:0:
 
 PyComplex_RealAsDouble:double:::
 PyComplex_RealAsDouble:PyObject*:op:0:
+
+PyDate_FromDate:PyObject*::+1:
+PyDate_FromDate:int:year::
+PyDate_FromDate:int:month::
+PyDate_FromDate:int:day::
+
+PyDate_FromTimestamp:PyObject*::+1:
+PyDate_FromTimestamp:PyObject*:args:0:
+
+PyDateTime_FromDateAndTime:PyObject*::+1:
+PyDateTime_FromDateAndTime:int:year::
+PyDateTime_FromDateAndTime:int:month::
+PyDateTime_FromDateAndTime:int:day::
+PyDateTime_FromDateAndTime:int:hour::
+PyDateTime_FromDateAndTime:int:minute::
+PyDateTime_FromDateAndTime:int:second::
+PyDateTime_FromDateAndTime:int:usecond::
+
+PyDateTime_FromTimestamp:PyObject*::+1:
+PyDateTime_FromTimestamp:PyObject*:args:0:
+
+PyDelta_FromDSU:PyObject*::+1:
+PyDelta_FromDSU:int:days::
+PyDelta_FromDSU:int:seconds::
+PyDelta_FromDSU:int:useconds::
+
+PyDescr_NewClassMethod:PyObject*::+1:
+PyDescr_NewClassMethod:PyTypeObject*:type::
+PyDescr_NewClassMethod:PyMethodDef*:method::
 
 PyDescr_NewGetSet:PyObject*::+1:
 PyDescr_NewGetSet:PyTypeObject*:type::
@@ -226,6 +258,15 @@ PyErr_Restore:PyObject*:type:-1:
 PyErr_Restore:PyObject*:value:-1:
 PyErr_Restore:PyObject*:traceback:-1:
 
+PyErr_SetExcFromWindowsErr:PyObject*::null:
+PyErr_SetExcFromWindowsErr:PyObject*:type:0:
+PyErr_SetExcFromWindowsErr:int:ierr::
+
+PyErr_SetExcFromWindowsErrWithFilename:PyObject*::null:
+PyErr_SetExcFromWindowsErrWithFilename:PyObject*:type:0:
+PyErr_SetExcFromWindowsErrWithFilename:int:ierr::
+PyErr_SetExcFromWindowsErrWithFilename:char*:filename::
+
 PyErr_SetFromErrno:PyObject*::null:
 PyErr_SetFromErrno:PyObject*:type:0:
 
@@ -337,6 +378,13 @@ PyFloat_Check:PyObject*:p:0:
 PyFloat_FromDouble:PyObject*::+1:
 PyFloat_FromDouble:double:v::
 
+PyFloat_FromString:PyObject*::+1:
+PyFloat_FromString:PyObject*:str:0:
+PyFloat_FromString:char**:pend:0:ignored
+
+PyFrozenSet_New:PyObject*::+1:
+PyFrozenSet_New:PyObject*:iterable:0:
+
 PyFunction_GetClosure:PyObject*::0:
 PyFunction_GetClosure:PyObject*:op:0:
 
@@ -363,6 +411,9 @@ PyFunction_SetClosure:PyObject*:closure:+1:
 PyFunction_SetDefaults:int:::
 PyFunction_SetDefaults:PyObject*:op:0:
 PyFunction_SetDefaults:PyObject*:defaults:+1:
+
+PyGen_New:PyObject*::+1:
+PyGen_New:PyFrameObject*:frame:0:
 
 Py_InitModule:PyObject*::0:
 Py_InitModule:char*:name::
@@ -431,6 +482,14 @@ PyInt_Check:PyObject*:op:0:
 
 PyInt_FromLong:PyObject*::+1:
 PyInt_FromLong:long:ival::
+
+PyInt_FromString:PyObject*::+1:
+PyInt_FromString:char*:str:0:
+PyInt_FromString:char**:pend:0:
+PyInt_FromString:int:base:0:
+
+PyInt_FromSsize_t:PyObject*::+1:
+PyInt_FromSsize_t:Py_ssize_t:ival::
 
 PyInt_GetMax:long:::
 
@@ -939,6 +998,31 @@ PyRun_File:int:start::
 PyRun_File:PyObject*:globals:0:
 PyRun_File:PyObject*:locals:0:
 
+PyRun_FileEx:PyObject*::+1:??? -- same as eval_code2()
+PyRun_FileEx:FILE*:fp::
+PyRun_FileEx:char*:filename::
+PyRun_FileEx:int:start::
+PyRun_FileEx:PyObject*:globals:0:
+PyRun_FileEx:PyObject*:locals:0:
+PyRun_FileEx:int:closeit::
+
+PyRun_FileFlags:PyObject*::+1:??? -- same as eval_code2()
+PyRun_FileFlags:FILE*:fp::
+PyRun_FileFlags:char*:filename::
+PyRun_FileFlags:int:start::
+PyRun_FileFlags:PyObject*:globals:0:
+PyRun_FileFlags:PyObject*:locals:0:
+PyRun_FileFlags:PyCompilerFlags*:flags::
+
+PyRun_FileExFlags:PyObject*::+1:??? -- same as eval_code2()
+PyRun_FileExFlags:FILE*:fp::
+PyRun_FileExFlags:char*:filename::
+PyRun_FileExFlags:int:start::
+PyRun_FileExFlags:PyObject*:globals:0:
+PyRun_FileExFlags:PyObject*:locals:0:
+PyRun_FileExFlags:int:closeit::
+PyRun_FileExFlags:PyCompilerFlags*:flags::
+
 PyRun_InteractiveLoop:int:::
 PyRun_InteractiveLoop:FILE*:fp::
 PyRun_InteractiveLoop:char*:filename::
@@ -959,6 +1043,13 @@ PyRun_String:char*:str::
 PyRun_String:int:start::
 PyRun_String:PyObject*:globals:0:
 PyRun_String:PyObject*:locals:0:
+
+PyRun_StringFlags:PyObject*::+1:??? -- same as eval_code2()
+PyRun_StringFlags:char*:str::
+PyRun_StringFlags:int:start::
+PyRun_StringFlags:PyObject*:globals:0:
+PyRun_StringFlags:PyObject*:locals:0:
+PyRun_StringFlags:PyCompilerFlags*:flags::
 
 PySeqIter_New:PyObject*::+1:
 PySeqIter_New:PyObject*:seq::
@@ -1052,6 +1143,9 @@ PySet_Contains:PyObject*:key:0:
 PySet_Discard:int:::
 PySet_Discard:PyObject*:set:0:
 PySet_Discard:PyObject*:key:-1:no effect if key not found
+
+PySet_New:PyObject*::+1:
+PySet_New:PyObject*:iterable:0:
 
 PySet_Pop:PyObject*::0:or returns NULL and raises KeyError if set is empty
 PySet_Pop:PyObject*:set:0:
@@ -1167,6 +1261,12 @@ PyThreadState_New:PyInterpreterState*:interp::
 PyThreadState_Swap:PyThreadState*:::
 PyThreadState_Swap:PyThreadState*:tstate::
 
+PyTime_FromTime:PyObject*::+1:
+PyTime_FromTime:int:hour::
+PyTime_FromTime:int:minute::
+PyTime_FromTime:int:second::
+PyTime_FromTime:int:usecond::
+
 PyTuple_Check:int:::
 PyTuple_Check:PyObject*:p:0:
 
@@ -1185,6 +1285,10 @@ PyTuple_GetSlice:int:high::
 
 PyTuple_New:PyObject*::+1:
 PyTuple_New:int:len::
+
+PyTuple_Pack:PyObject*::+1:
+PyTuple_Pack:int:len::
+PyTuple_Pack:PyObject*:...:0:
 
 PyTuple_SET_ITEM:void:::
 PyTuple_SET_ITEM:PyTupleObject*:p:0:
@@ -1297,6 +1401,19 @@ PyUnicode_Decode:const char*:s::
 PyUnicode_Decode:int:size::
 PyUnicode_Decode:const char*:encoding::
 PyUnicode_Decode:const char*:errors::
+
+PyUnicode_DecodeUTF16Stateful:PyObject*::+1:
+PyUnicode_DecodeUTF16Stateful:const char*:s::
+PyUnicode_DecodeUTF16Stateful:int:size::
+PyUnicode_DecodeUTF16Stateful:const char*:errors::
+PyUnicode_DecodeUTF16Stateful:int*:byteorder::
+PyUnicode_DecodeUTF16Stateful:int*:consumed::
+
+PyUnicode_DecodeUTF8Stateful:PyObject*::+1:
+PyUnicode_DecodeUTF8Stateful:const char*:s::
+PyUnicode_DecodeUTF8Stateful:int:size::
+PyUnicode_DecodeUTF8Stateful:const char*:errors::
+PyUnicode_DecodeUTF8Stateful:int*:consumed::
 
 PyUnicode_Encode:PyObject*::+1:
 PyUnicode_Encode:const Py_UNICODE*:s::
@@ -1512,6 +1629,12 @@ Py_CompileString:PyObject*::+1:
 Py_CompileString:char*:str::
 Py_CompileString:char*:filename::
 Py_CompileString:int:start::
+
+Py_CompileStringFlags:PyObject*::+1:
+Py_CompileStringFlags:char*:str::
+Py_CompileStringFlags:char*:filename::
+Py_CompileStringFlags:int:start::
+Py_CompileStringFlags:PyCompilerFlags*:flags::
 
 Py_DECREF:void:::
 Py_DECREF:PyObject*:o:-1:

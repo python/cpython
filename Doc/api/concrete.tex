@@ -156,7 +156,7 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
   Create a new integer object with a value of \var{ival}.
 
   The current implementation keeps an array of integer objects for all
-  integers between \code{-1} and \code{100}, when you create an int in
+  integers between \code{-5} and \code{256}, when you create an int in
   that range you actually just get back a reference to the existing
   object. So it should be possible to change the value of \code{1}.  I
   suspect the behaviour of Python in this case is undefined. :-)
@@ -333,7 +333,9 @@ booleans.  The following macros are available, however.
   The pointer value can be retrieved from the resulting value using
   \cfunction{PyLong_AsVoidPtr()}.
   \versionadded{1.5.2}
-\end{cfuncdesc}
+  \versionchanged[If the integer is larger than LONG_MAX,
+  a positive long integer is returned]{2.5}
+ \end{cfuncdesc}
 
 \begin{cfuncdesc}{long}{PyLong_AsLong}{PyObject *pylong}
   Return a C \ctype{long} representation of the contents of
@@ -394,6 +396,8 @@ booleans.  The following macros are available, however.
   produce a usable \ctype{void} pointer for values created with
   \cfunction{PyLong_FromVoidPtr()}.
   \versionadded{1.5.2}
+  \versionchanged[For values outside 0..LONG_MAX, both signed and
+  unsigned integers are acccepted]{2.5}
 \end{cfuncdesc}
 
 
@@ -1803,8 +1807,9 @@ format.
 
 \begin{cfuncdesc}{PyObject*}{PyList_GetItem}{PyObject *list, Py_ssize_t index}
   Return the object at position \var{pos} in the list pointed to by
-  \var{p}.  If \var{pos} is out of bounds, return \NULL{} and set an
-  \exception{IndexError} exception.
+  \var{p}.  The position must be positive, indexing from the end of the
+  list is not supported.  If \var{pos} is out of bounds, return \NULL{}
+  and set an \exception{IndexError} exception.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_GET_ITEM}{PyObject *list, Py_ssize_t i}
@@ -2264,8 +2269,8 @@ There are a few functions specific to Python functions.
 \begin{cfuncdesc}{PyObject*}{PyFunction_New}{PyObject *code,
                                              PyObject *globals}
   Return a new function object associated with the code object
-  \var{code}. \var{globals} must be a dictionary with the the global
-  varaibles accessible to the function.
+  \var{code}. \var{globals} must be a dictionary with the global
+  variables accessible to the function.
 
   The function's docstring, name and \var{__module__} are retrieved
   from the code object, the argument defaults and closure are set to
@@ -2811,6 +2816,7 @@ rather than explicitly calling \cfunction{PyGen_New}.
 
 \begin{cfuncdesc}{PyObject*}{PyGen_New}{PyFrameObject *frame}
   Create and return a new generator object based on the \var{frame} object.
+  A reference to \var{frame} is stolen by this function.
   The parameter must not be \NULL{}.
 \end{cfuncdesc}
 
@@ -3025,9 +3031,7 @@ or the abstract number protocol (including
 \cfunction{PyNumber_Or()}, \cfunction{PyNumber_Xor()},
 \cfunction{PyNumber_InPlaceAdd()}, \cfunction{PyNumber_InPlaceSubtract()},
 \cfunction{PyNumber_InPlaceOr()}, and \cfunction{PyNumber_InPlaceXor()}).
-Note, \cfunction{PyNumber_InPlaceSubtract()} is also useful clearing
-clearing a set (\code{s-=s}).                         
-                      
+
 \begin{ctypedesc}{PySetObject}
   This subtype of \ctype{PyObject} is used to hold the internal data for
   both \class{set} and \class{frozenset} objects.  It is like a
@@ -3111,7 +3115,6 @@ The following functions and macros are available for instances of
   \class{frozenset}, or an instance of a subtype.                         
 \end{cfuncdesc}
 
-
 The following functions are available for instances of \class{set} or
 its subtypes but not for instances of \class{frozenset} or its subtypes.
 
@@ -3142,4 +3145,6 @@ its subtypes but not for instances of \class{frozenset} or its subtypes.
   of \class{set} or its subtype.                        
 \end{cfuncdesc}
 
-
+\begin{cfuncdesc}{int}{PySet_Clear}{PyObject *set}
+  Empty an existing set of all elements.
+\end{cfuncdesc}

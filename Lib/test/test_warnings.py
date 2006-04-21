@@ -82,6 +82,10 @@ class TestModule(unittest.TestCase):
         self.assertEqual(msg.category, 'UserWarning')
 
 def test_main(verbose=None):
+    # Obscure hack so that this test passes after reloads or repeated calls
+    # to test_main (regrtest -R).
+    if '__warningregistry__' in globals():
+        del globals()['__warningregistry__']
     test_support.run_unittest(TestModule)
 
 if __name__ == "__main__":

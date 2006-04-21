@@ -438,7 +438,7 @@ class Telnet:
                     else:
                         self.iacseq += c
                 elif len(self.iacseq) == 1:
-                    'IAC: IAC CMD [OPTION only for WILL/WONT/DO/DONT]'
+                    # 'IAC: IAC CMD [OPTION only for WILL/WONT/DO/DONT]'
                     if c in (DO, DONT, WILL, WONT):
                         self.iacseq += c
                         continue

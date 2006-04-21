@@ -20,8 +20,6 @@ from xmlcore.dom import EMPTY_NAMESPACE, EMPTY_PREFIX, XMLNS_NAMESPACE, domreg
 from xmlcore.dom.minicompat import *
 from xmlcore.dom.xmlbuilder import DOMImplementationLS, DocumentLS
 
-_TupleType = type(())
-
 # This is used by the ID-cache invalidation checks; the list isn't
 # actually complete, since the nodes being checked will never be the
 # DOCUMENT_NODE or DOCUMENT_FRAGMENT_NODE.  (The node being checked is
@@ -31,7 +29,7 @@ _nodeTypes_with_children = (xmlcore.dom.Node.ELEMENT_NODE,
                             xmlcore.dom.Node.ENTITY_REFERENCE_NODE)
 
 
-class Node(xmlcore.dom.Node, GetattrMagic):
+class Node(xmlcore.dom.Node):
     namespaceURI = None # this is non-null only for elements and attributes
     parentNode = None
     ownerDocument = None
@@ -459,7 +457,7 @@ defproperty(Attr, "localName",  doc="Namespace-local name of this attribute.")
 defproperty(Attr, "schemaType", doc="Schema type for this attribute.")
 
 
-class NamedNodeMap(NewStyle, GetattrMagic):
+class NamedNodeMap(object):
     """The attribute list is a transient interface to the underlying
     dictionaries.  Mutations here will change the underlying element's
     dictionary.
@@ -523,7 +521,7 @@ class NamedNodeMap(NewStyle, GetattrMagic):
             return cmp(id(self), id(other))
 
     def __getitem__(self, attname_or_tuple):
-        if isinstance(attname_or_tuple, _TupleType):
+        if isinstance(attname_or_tuple, tuple):
             return self._attrsNS[attname_or_tuple]
         else:
             return self._attrs[attname_or_tuple]
@@ -613,7 +611,7 @@ defproperty(NamedNodeMap, "length",
 AttributeList = NamedNodeMap
 
 
-class TypeInfo(NewStyle):
+class TypeInfo(object):
     __slots__ = 'namespace', 'name'
 
     def __init__(self, namespace, name):
@@ -1146,7 +1144,7 @@ class CDATASection(Text):
         writer.write("<![CDATA[%s]]>" % self.data)
 
 
-class ReadOnlySequentialNamedNodeMap(NewStyle, GetattrMagic):
+class ReadOnlySequentialNamedNodeMap(object):
     __slots__ = '_seq',
 
     def __init__(self, seq=()):
@@ -1170,7 +1168,7 @@ class ReadOnlySequentialNamedNodeMap(NewStyle, GetattrMagic):
                 return n
 
     def __getitem__(self, name_or_tuple):
-        if isinstance(name_or_tuple, _TupleType):
+        if isinstance(name_or_tuple, tuple):
             node = self.getNamedItemNS(*name_or_tuple)
         else:
             node = self.getNamedItem(name_or_tuple)
@@ -1418,7 +1416,7 @@ class DOMImplementation(DOMImplementationLS):
     def _create_document(self):
         return Document()
 
-class ElementInfo(NewStyle):
+class ElementInfo(object):
     """Object that represents content-model information for an element.
 
     This implementation is not expected to be used in practice; DOM

@@ -466,47 +466,14 @@ func_repr(PyFunctionObject *op)
 static int
 func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 {
-	int err;
-	if (f->func_code) {
-		err = visit(f->func_code, arg);
-		if (err)
-			return err;
-	}
-	if (f->func_globals) {
-		err = visit(f->func_globals, arg);
-		if (err)
-			return err;
-	}
-	if (f->func_module) {
-		err = visit(f->func_module, arg);
-		if (err)
-			return err;
-	}
-	if (f->func_defaults) {
-		err = visit(f->func_defaults, arg);
-		if (err)
-			return err;
-	}
-	if (f->func_doc) {
-		err = visit(f->func_doc, arg);
-		if (err)
-			return err;
-	}
-	if (f->func_name) {
-		err = visit(f->func_name, arg);
-		if (err)
-			return err;
-	}
-	if (f->func_dict) {
-		err = visit(f->func_dict, arg);
-		if (err)
-			return err;
-	}
-	if (f->func_closure) {
-		err = visit(f->func_closure, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(f->func_code);
+	Py_VISIT(f->func_globals);
+	Py_VISIT(f->func_module);
+	Py_VISIT(f->func_defaults);
+	Py_VISIT(f->func_doc);
+	Py_VISIT(f->func_name);
+	Py_VISIT(f->func_dict);
+	Py_VISIT(f->func_closure);
 	return 0;
 }
 
@@ -647,17 +614,14 @@ cm_dealloc(classmethod *cm)
 static int
 cm_traverse(classmethod *cm, visitproc visit, void *arg)
 {
-	if (!cm->cm_callable)
-		return 0;
-	return visit(cm->cm_callable, arg);
+	Py_VISIT(cm->cm_callable);
+	return 0;
 }
 
 static int
 cm_clear(classmethod *cm)
 {
-	Py_XDECREF(cm->cm_callable);
-	cm->cm_callable = NULL;
-
+	Py_CLEAR(cm->cm_callable);
 	return 0;
 }
 
@@ -808,9 +772,8 @@ sm_dealloc(staticmethod *sm)
 static int
 sm_traverse(staticmethod *sm, visitproc visit, void *arg)
 {
-	if (!sm->sm_callable)
-		return 0;
-	return visit(sm->sm_callable, arg);
+	Py_VISIT(sm->sm_callable);
+	return 0;
 }
 
 static int

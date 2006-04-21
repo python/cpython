@@ -55,6 +55,7 @@ static PyStructSequence_Desc struct_rusage_desc = {
 	16	/* n_in_sequence */
 };
 
+static int initialized;
 static PyTypeObject StructRUsageType;
 
 static PyObject *
@@ -244,7 +245,10 @@ initresource(void)
 	}
 	Py_INCREF(ResourceError);
 	PyModule_AddObject(m, "error", ResourceError);
- 	PyStructSequence_InitType(&StructRUsageType, &struct_rusage_desc);
+	if (!initialized)
+		PyStructSequence_InitType(&StructRUsageType, 
+					  &struct_rusage_desc);
+	Py_INCREF(&StructRUsageType);
  	PyModule_AddObject(m, "struct_rusage", 
 			   (PyObject*) &StructRUsageType);
 
@@ -320,4 +324,5 @@ initresource(void)
 	if (v) {
 		PyModule_AddObject(m, "RLIM_INFINITY", v);
 	}
+	initialized = 1;
 }

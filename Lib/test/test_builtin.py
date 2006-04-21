@@ -108,6 +108,7 @@ class BuiltinTest(unittest.TestCase):
         __import__('string')
         self.assertRaises(ImportError, __import__, 'spamspam')
         self.assertRaises(TypeError, __import__, 1, 2, 3, 4)
+        self.assertRaises(ValueError, __import__, '')
 
     def test_abs(self):
         # int
@@ -1316,6 +1317,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(round(-999999999.9), -1000000000.0)
 
         self.assertEqual(round(-8.0, -1), -10.0)
+
+        # test new kwargs
+        self.assertEqual(round(number=-8.0, ndigits=-1), -10.0)
 
         self.assertRaises(TypeError, round)
 

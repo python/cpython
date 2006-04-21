@@ -24,26 +24,26 @@ ellipsis_repr(PyObject *op)
 
 static PyTypeObject PyEllipsis_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
-	"ellipsis",				/* tp_name */
-	0,					/* tp_basicsize */
-	0,					/* tp_itemsize */
-	0, /*never called*/			/* tp_dealloc */
-	0,					/* tp_print */
-	0,					/* tp_getattr */
-	0,					/* tp_setattr */
-	0,					/* tp_compare */
-	(reprfunc)ellipsis_repr,		/* tp_repr */
-	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
-	0,					/* tp_as_mapping */
-	0,					/* tp_hash */
-	0,					/* tp_call */
-	0,					/* tp_str */
-	PyObject_GenericGetAttr,		/* tp_getattro */
-	0,					/* tp_setattro */
-	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	0,				/* ob_size */
+	"ellipsis",			/* tp_name */
+	0,				/* tp_basicsize */
+	0,				/* tp_itemsize */
+	0, /*never called*/		/* tp_dealloc */
+	0,				/* tp_print */
+	0,				/* tp_getattr */
+	0,				/* tp_setattr */
+	0,				/* tp_compare */
+	ellipsis_repr,			/* tp_repr */
+	0,				/* tp_as_number */
+	0,				/* tp_as_sequence */
+	0,				/* tp_as_mapping */
+	0,				/* tp_hash */
+	0,				/* tp_call */
+	0,				/* tp_str */
+	PyObject_GenericGetAttr,	/* tp_getattro */
+	0,				/* tp_setattro */
+	0,				/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,		/* tp_flags */
 };
 
 PyObject _Py_EllipsisObject = {
@@ -79,6 +79,25 @@ PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
 	return (PyObject *) obj;
 }
 
+PyObject *
+_PySlice_FromIndices(Py_ssize_t istart, Py_ssize_t istop)
+{
+	PyObject *start, *end, *slice;
+	start = PyInt_FromSsize_t(istart);
+	if (!start)
+		return NULL;
+	end = PyInt_FromSsize_t(istop);
+	if (!end) {
+		Py_DECREF(start);
+		return NULL;
+	}
+
+	slice = PySlice_New(start, end, NULL);
+	Py_DECREF(start);
+	Py_DECREF(end);
+	return slice;
+}
+
 int
 PySlice_GetIndices(PySliceObject *r, Py_ssize_t length,
                    Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step)
@@ -87,21 +106,21 @@ PySlice_GetIndices(PySliceObject *r, Py_ssize_t length,
 	if (r->step == Py_None) {
 		*step = 1;
 	} else {
-		if (!PyInt_Check(r->step)) return -1;
-		*step = PyInt_AsLong(r->step);
+		if (!PyInt_Check(r->step) && !PyLong_Check(r->step)) return -1;
+		*step = PyInt_AsSsize_t(r->step);
 	}
 	if (r->start == Py_None) {
 		*start = *step < 0 ? length-1 : 0;
 	} else {
-		if (!PyInt_Check(r->start)) return -1;
-		*start = PyInt_AsLong(r->start);
+		if (!PyInt_Check(r->start) && !PyLong_Check(r->step)) return -1;
+		*start = PyInt_AsSsize_t(r->start);
 		if (*start < 0) *start += length;
 	}
 	if (r->stop == Py_None) {
 		*stop = *step < 0 ? -1 : length;
 	} else {
-		if (!PyInt_Check(r->stop)) return -1;
-		*stop = PyInt_AsLong(r->stop);
+		if (!PyInt_Check(r->stop) && !PyLong_Check(r->step)) return -1;
+		*stop = PyInt_AsSsize_t(r->stop);
 		if (*stop < 0) *stop += length;
 	}
 	if (*stop > length) return -1;
@@ -233,7 +252,7 @@ slice_indices(PySliceObject* self, PyObject* len)
 {
 	Py_ssize_t ilen, start, stop, step, slicelength;
 
-	ilen = PyInt_AsLong(len);
+	ilen = PyInt_AsSsize_t(len);
 
 	if (ilen == -1 && PyErr_Occurred()) {
 		return NULL;
@@ -244,7 +263,7 @@ slice_indices(PySliceObject* self, PyObject* len)
 		return NULL;
 	}
 
-	return Py_BuildValue("(iii)", start, stop, step);
+	return Py_BuildValue("(nnn)", start, stop, step);
 }
 
 PyDoc_STRVAR(slice_indices_doc,

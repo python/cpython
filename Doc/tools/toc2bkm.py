@@ -44,6 +44,20 @@ _transition_map = {
 INCLUDED_LEVELS = ("chapter", "section", "subsection", "subsubsection")
 
 
+class BadSectionNesting(Exception):
+    """Raised for unsupported section level transitions."""
+
+    def __init__(self, level, newsection, path, lineno):
+        self.level = level
+        self.newsection = newsection
+        self.path = path
+        self.lineno = lineno
+
+    def __str__(self):
+        return ("illegal transition from %s to %s at %s (line %s)"
+                % (self.level, self.newsection, self.path, self.lineno))
+
+
 def parse_toc(fp, bigpart=None):
     toc = top = []
     stack = [toc]
@@ -65,7 +79,10 @@ def parse_toc(fp, bigpart=None):
                 if stype not in INCLUDED_LEVELS:
                     # we don't want paragraphs & subparagraphs
                     continue
-                direction = _transition_map[(level, stype)]
+                try:
+                    direction = _transition_map[(level, stype)]
+                except KeyError:
+                    raise BadSectionNesting(level, stype, fp.name, lineno)
                 if direction == OUTER_TO_INNER:
                     toc = toc[-1][-1]
                     stack.insert(0, toc)

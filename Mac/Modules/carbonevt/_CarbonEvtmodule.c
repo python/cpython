@@ -40,7 +40,7 @@ EventTypeSpec_Convert(PyObject *v, EventTypeSpec *out)
                         PyMac_GetOSType, &(out->eventClass),
                         &(out->eventKind)))
                 return 1;
-        return NULL;
+        return 0;
 }
 
 /********** end EventTypeSpec *******/
@@ -78,7 +78,7 @@ EventHotKeyID_Convert(PyObject *v, EventHotKeyID *out)
 {
         if (PyArg_ParseTuple(v, "ll", &out->signature, &out->id))
                 return 1;
-        return NULL;
+        return 0;
 }
 
 /********** end EventHotKeyID *******/

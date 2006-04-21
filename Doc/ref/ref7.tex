@@ -46,6 +46,7 @@ Summarizing:
   \productioncont{| \token{while_stmt}}
   \productioncont{| \token{for_stmt}}
   \productioncont{| \token{try_stmt}}
+  \productioncont{| \token{with_stmt}}
   \productioncont{| \token{funcdef}}
   \productioncont{| \token{classdef}}
   \production{suite}
@@ -305,8 +306,75 @@ statement to generate exceptions may be found in section~\ref{raise}.
 \section{The \keyword{with} statement\label{with}}
 \stindex{with}
 
-The \keyword{with} statement specifies 
+\versionadded{2.5}
 
+The \keyword{with} statement is used to wrap the execution of a block
+with methods defined by a context manager (see
+section~\ref{context-managers}). This allows common
+\keyword{try}...\keyword{except}...\keyword{finally} usage patterns to
+be encapsulated as context managers for convenient reuse.
+
+\begin{productionlist}
+  \production{with_stmt}
+  {"with" \token{expression} ["as" target_list] ":" \token{suite}}
+\end{productionlist}
+
+The execution of the \keyword{with} statement proceeds as follows:
+
+\begin{enumerate}
+
+\item The expression is evaluated, to obtain a context manager
+object.
+
+\item The context manager's \method{__context__()} method is invoked to
+obtain a context object.
+
+\item The context object's \method{__enter__()} method is invoked.
+
+\item If a target list was included in the \keyword{with}
+statement, the return value from \method{__enter__()} is assigned to it.
+
+\note{The \keyword{with} statement guarantees that if the
+\method{__enter__()} method returns without an error, then
+\method{__exit__()} will always be called. Thus, if an error occurs
+during the assignment to the target list, it will be treated the same as
+an error occurring within the suite would be. See step 6 below.}
+
+\item The suite is executed.
+
+\item The context object's \method{__exit__()} method is invoked. If an
+exception caused the suite to be exited, its type, value, and
+traceback are passed as arguments to \method{__exit__()}. Otherwise,
+three \constant{None} arguments are supplied.
+
+If the suite was exited due to an exception, and the return
+value from the \method{__exit__()} method was false, the exception is
+reraised. If the return value was true, the exception is suppressed, and
+execution continues with the statement following the \keyword{with}
+statement.
+
+If the suite was exited for any reason other than an exception, the
+return value from \method{__exit__()} is ignored, and execution proceeds
+at the normal location for the kind of exit that was taken.
+
+\end{enumerate}
+
+\begin{notice}
+In Python 2.5, the \keyword{with} statement is only allowed
+when the \code{with_statement} feature has been enabled.  It will always
+be enabled in Python 2.6.  This \code{__future__} import statement can
+be used to enable the feature:
+
+\begin{verbatim}
+from __future__ import with_statement
+\end{verbatim}
+\end{notice}
+
+\begin{seealso}
+  \seepep{0343}{The "with" statement}
+         {The specification, background, and examples for the
+          Python \keyword{with} statement.}
+\end{seealso}
 
 \section{Function definitions\label{function}}
 \indexii{function}{definition}

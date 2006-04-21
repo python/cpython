@@ -173,7 +173,9 @@ case $ac_sys_system/$ac_sys_release in
     ;;
   # On Mac OS X 10.4, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
   # disables platform specific features beyond repair.
-  Darwin/8.*)
+  # On Mac OS X 10.3, defining _POSIX_C_SOURCE or _XOPEN_SOURCE 
+  # has no effect, don't bother defineing them
+  Darwin/@<:@78@:>@.*)
     define_xopen_source=no
     ;;
 
@@ -311,56 +313,6 @@ AC_ARG_WITH(gcc,
 	esac])
 AC_MSG_RESULT($without_gcc)
 
-AC_SUBST(CXX)
-AC_SUBST(MAINOBJ)
-MAINOBJ=python.o
-AC_MSG_CHECKING(for --with-cxx=<compiler>)
-AC_ARG_WITH(cxx,
-            AC_HELP_STRING(--with-cxx=<compiler>, enable C++ support),
-[
-	check_cxx=no
-	case $withval in
-	no)	CXX=
-		with_cxx=no;;
-	*)	CXX=$withval
-		MAINOBJ=ccpython.o
-		with_cxx=$withval;;
-	esac], [
-	with_cxx=no
-	check_cxx=yes
-])
-AC_MSG_RESULT($with_cxx)
-
-if test "$with_cxx" = "yes"
-then
-	AC_MSG_ERROR([must supply a compiler when using --with-cxx])
-fi
-
-dnl The following fragment works similar to AC_PROG_CXX.
-dnl It does not fail if CXX is not found, and it is not executed if 
-dnl --without-cxx was given.
-dnl Finally, it does not test whether CXX is g++.
-
-dnl Autoconf 2.5x does not have AC_PROG_CXX_WORKS anymore
-ifdef([AC_PROG_CXX_WORKS],[],
-      [AC_DEFUN([AC_PROG_CXX_WORKS],
-      [AC_LANG_PUSH(C++)dnl
-       _AC_COMPILER_EXEEXT
-       AC_LANG_POP()
-      ]
-)])
-
-if test "$check_cxx" = "yes" 
-then
-	AC_CHECK_PROGS(CXX, $CCC c++ g++ gcc CC cxx cc++ cl, notfound)
-	if test "$CXX" = "notfound"
-	then
-		CXX=
-	else
-		AC_PROG_CXX_WORKS
-	fi
-fi
-
 # If the user switches compilers, we can't believe the cache
 if test ! -z "$ac_cv_prog_CC" -a ! -z "$CC" -a "$CC" != "$ac_cv_prog_CC"
 then
@@ -369,6 +321,61 @@ then
 fi
 
 AC_PROG_CC
+
+AC_SUBST(CXX)
+AC_SUBST(MAINCC)
+AC_MSG_CHECKING(for --with-cxx-main=<compiler>)
+AC_ARG_WITH(cxx_main,
+            AC_HELP_STRING([--with-cxx-main=<compiler>],
+                           [compile main() and link python executable with C++ compiler]),
+[
+	
+	case $withval in
+	no)	with_cxx_main=no
+		MAINCC='$(CC)';;
+	yes)	with_cxx_main=yes
+		MAINCC='$(CXX)';;
+	*)	with_cxx_main=yes
+		MAINCC=$withval
+		if test -z "$CXX"
+		then
+			CXX=$withval
+		fi;;
+	esac], [
+	with_cxx_main=no
+	MAINCC='$(CC)'
+])
+AC_MSG_RESULT($with_cxx_main)
+
+preset_cxx="$CXX"
+if test -z "$CXX"
+then
+        case "$CC" in
+        gcc)    AC_PATH_PROG(CXX, [g++], [g++], [notfound]) ;;
+        cc)     AC_PATH_PROG(CXX, [c++], [c++], [notfound]) ;;
+        esac
+	if test "$CXX" = "notfound"
+	then
+		CXX=""
+	fi
+fi
+if test -z "$CXX"
+then
+	AC_CHECK_PROGS(CXX, $CCC c++ g++ gcc CC cxx cc++ cl, notfound)
+	if test "$CXX" = "notfound"
+	then
+		CXX=""
+	fi
+fi
+if test "$preset_cxx" != "$CXX"
+then
+        AC_MSG_WARN([
+
+  By default, distutils will build C++ extension modules with "$CXX".
+  If this is not intended, then set CXX on the configure command line.
+  ])
+fi
+
 
 # checks for UNIX variants that set C preprocessor variables
 AC_AIX
@@ -478,22 +485,7 @@ AC_SUBST(LINKCC)
 AC_MSG_CHECKING(LINKCC)
 if test -z "$LINKCC"
 then
-        if test -z "$CXX"; then
-              LINKCC="\$(PURIFY) \$(CC)"
-        else
-              echo 'extern "C" void foo();int main(){foo();}' > conftest_a.cc
-              $CXX -c conftest_a.cc # 2>&5
-              echo 'void foo(){}' > conftest_b.$ac_ext
-              $CC -c conftest_b.$ac_ext # 2>&5
-              if $CC -o conftest$ac_exeext conftest_a.$ac_objext conftest_b.$ac_objext 2>&5 \
-                 && test -s conftest$ac_exeext && ./conftest$ac_exeext
-              then
-                 LINKCC="\$(PURIFY) \$(CC)"
-              else
-                 LINKCC="\$(PURIFY) \$(CXX)"
-              fi
-              rm -fr conftest*
-        fi
+	LINKCC='$(PURIFY) $(MAINCC)'
 	case $ac_sys_system in
 	AIX*)
 	   exp_extra="\"\""
@@ -619,7 +611,7 @@ AC_SUBST(AR)
 AC_CHECK_PROGS(AR, ar aal, ar)
 
 AC_SUBST(SVNVERSION)
-AC_CHECK_PROG(SVNVERSION, svnversion, found)
+AC_CHECK_PROG(SVNVERSION, svnversion, found, not-found)
 if test $SVNVERSION = found
 then
 	SVNVERSION="svnversion \$(srcdir)"
@@ -683,18 +675,21 @@ if test -z "$OPT"
 then
     case $GCC in
     yes)
+        if test "$CC" != 'g++' ; then
+	    STRICT_PROTO="-Wstrict-prototypes"
+	fi
 	case $ac_cv_prog_cc_g in
 	yes)
 	    if test "$Py_DEBUG" = 'true' ; then
 		# Optimization messes up debuggers, so turn it off for
 		# debug builds.
-		OPT="-g -Wall -Wstrict-prototypes"
+		OPT="-g -Wall $STRICT_PROTO"
 	    else
-		OPT="-g -O3 -Wall -Wstrict-prototypes"
+		OPT="-g -O3 -Wall $STRICT_PROTO"
 	    fi
 	    ;;
 	*)
-	    OPT="-O3 -Wall -Wstrict-prototypes"
+	    OPT="-O3 -Wall $STRICT_PROTO"
 	    ;;
 	esac
 	case $ac_sys_system in
@@ -745,6 +740,9 @@ yes)
 	# is there any other compiler on Darwin besides gcc?
 	Darwin*)
 	    BASECFLAGS="$BASECFLAGS -Wno-long-double -no-cpp-precomp -mno-fused-madd"
+	    ;;
+	OSF*)
+	    BASECFLAGS="$BASECFLAGS -mieee"
 	    ;;
     esac
     ;;
@@ -1254,7 +1252,7 @@ AC_MSG_RESULT($enable_toolbox_glue)
 
 AC_SUBST(OTHER_LIBTOOL_OPT)
 case $ac_sys_system/$ac_sys_release in
-  Darwin/@<:@01234567@:>@.*) 
+  Darwin/@<:@01567@:>@\..*) 
     OTHER_LIBTOOL_OPT="-prebind -seg1addr 0x10000000"
     ;;
   Darwin/*)
@@ -1264,7 +1262,7 @@ esac
 
 AC_SUBST(LIBTOOL_CRUFT)
 case $ac_sys_system/$ac_sys_release in
-  Darwin/@<:@01234567@:>@.*) 
+  Darwin/@<:@01567@:>@\..*) 
     LIBTOOL_CRUFT="-framework System -lcc_dynamic -arch_only `arch`"
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
@@ -1598,6 +1596,16 @@ AC_MSG_RESULT($withval)
 LIBS="$withval $LIBS"
 ],
 [AC_MSG_RESULT(no)])
+
+# Check for use of the system libffi library
+AC_MSG_CHECKING(for --with-system-ffi)
+AC_ARG_WITH(system_ffi,
+            AC_HELP_STRING(--with-system-ffi, build _ctypes module using an installed ffi library))
+
+if test -z "$with_system_ffi"
+then with_system_ffi="no"
+fi
+AC_MSG_RESULT($with_system_ffi)
 
 # Determine if signalmodule should be used.
 AC_SUBST(USE_SIGNAL_MODULE)
@@ -2105,7 +2113,8 @@ then
 	;;
 	BeOS*) DYNLOADFILE="dynload_beos.o";;
 	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
-	Darwin/*) DYNLOADFILE="dynload_next.o";;
+	# Use dynload_next.c only on 10.2 and below, which don't have native dlopen()
+	Darwin/@<:@0156@:>@\..*) DYNLOADFILE="dynload_next.o";;
 	atheos*) DYNLOADFILE="dynload_atheos.o";;
 	*)
 	# use dynload_shlib.c and dlopen() if we have it; otherwise stub
@@ -2148,7 +2157,7 @@ AC_CHECK_FUNCS(alarm bind_textdomain_codeset chown clock confstr ctermid \
  setlocale setregid setreuid setsid setpgid setpgrp setuid setvbuf snprintf \
  sigaction siginterrupt sigrelse strftime \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unsetenv utimes waitpid wcscoll _getpty)
+ truncate uname unsetenv utimes waitpid wait3 wait4 wcscoll _getpty)
 
 # For some functions, having a definition is not sufficient, since
 # we want to take their address.
@@ -2786,7 +2795,8 @@ then
   #include <wchar.h>
   int main()
   {
-        exit((((wchar_t) -1) < ((wchar_t) 0)) ? 1 : 0);
+	/* Success: exit code 0 */
+        exit((((wchar_t) -1) < ((wchar_t) 0)) ? 0 : 1);
   }
   ],
   ac_cv_wchar_t_signed=yes,
@@ -3211,13 +3221,13 @@ AC_MSG_RESULT(done)
 AC_CONFIG_FILES(Makefile.pre Modules/Setup.config)
 AC_OUTPUT
 
-echo "creating Setup"
+echo "creating Modules/Setup"
 if test ! -f Modules/Setup
 then
 	cp $srcdir/Modules/Setup.dist Modules/Setup
 fi
 
-echo "creating Setup.local"
+echo "creating Modules/Setup.local"
 if test ! -f Modules/Setup.local
 then
 	echo "# Edit this file for local setup changes" >Modules/Setup.local

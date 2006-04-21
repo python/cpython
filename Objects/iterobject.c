@@ -38,9 +38,8 @@ iter_dealloc(seqiterobject *it)
 static int
 iter_traverse(seqiterobject *it, visitproc visit, void *arg)
 {
-	if (it->it_seq == NULL)
-		return 0;
-	return visit(it->it_seq, arg);
+	Py_VISIT(it->it_seq);
+	return 0;
 }
 
 static PyObject *
@@ -123,7 +122,7 @@ PyTypeObject PySeqIter_Type = {
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
-	(iternextfunc)iter_iternext,		/* tp_iternext */
+	iter_iternext,				/* tp_iternext */
 	seqiter_methods,			/* tp_methods */
 	0,					/* tp_members */
 };
@@ -162,11 +161,8 @@ calliter_dealloc(calliterobject *it)
 static int
 calliter_traverse(calliterobject *it, visitproc visit, void *arg)
 {
-	int err;
-	if (it->it_callable != NULL && (err = visit(it->it_callable, arg)))
-		return err;
-	if (it->it_sentinel != NULL && (err = visit(it->it_sentinel, arg)))
-		return err;
+	Py_VISIT(it->it_callable);
+	Py_VISIT(it->it_sentinel);
 	return 0;
 }
 

@@ -5,7 +5,7 @@
 import sys
 import os
 import string
-import regex
+import re
 from Tkinter import *
 from ManPage import ManPage
 
@@ -208,15 +208,15 @@ class SelectionBox:
             print 'Empty search string'
             return
         if not self.casevar.get():
-            map = regex.casefold
+            map = re.IGNORECASE
         else:
             map = None
         try:
             if map:
-                prog = regex.compile(search, map)
+                prog = re.compile(search, map)
             else:
-                prog = regex.compile(search)
-        except regex.error, msg:
+                prog = re.compile(search)
+        except re.error, msg:
             self.frame.bell()
             print 'Regex error:', msg
             return

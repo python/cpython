@@ -1228,8 +1228,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 				}
 			}
 			assert(zreplacement != NULL);
-			ptoappend = PyString_AsString(zreplacement);
-			ntoappend = PyString_Size(zreplacement);
+			ptoappend = PyString_AS_STRING(zreplacement);
+			ntoappend = PyString_GET_SIZE(zreplacement);
 		}
 		else if (ch == 'Z') {
 			/* format tzname */
@@ -1257,14 +1257,18 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 						Py_DECREF(temp);
 						if (Zreplacement == NULL)
 							goto Done;
+						if (!PyString_Check(Zreplacement)) {
+							PyErr_SetString(PyExc_TypeError, "tzname.replace() did not return a string");
+							goto Done;
+						}
 					}
 					else
 						Py_DECREF(temp);
 				}
 			}
 			assert(Zreplacement != NULL);
-			ptoappend = PyString_AsString(Zreplacement);
-			ntoappend = PyString_Size(Zreplacement);
+			ptoappend = PyString_AS_STRING(Zreplacement);
+			ntoappend = PyString_GET_SIZE(Zreplacement);
 		}
 		else {
 			/* percent followed by neither z nor Z */
@@ -1275,6 +1279,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
  		/* Append the ntoappend chars starting at ptoappend to
  		 * the new format.
  		 */
+ 		assert(ptoappend != NULL);
  		assert(ntoappend >= 0);
  		if (ntoappend == 0)
  			continue;
@@ -2404,11 +2409,11 @@ static PyObject *
 date_repr(PyDateTime_Date *self)
 {
 	char buffer[1028];
-	const char *typename;
+	const char *type_name;
 
-	typename = self->ob_type->tp_name;
+	type_name = self->ob_type->tp_name;
 	PyOS_snprintf(buffer, sizeof(buffer), "%s(%d, %d, %d)",
-		      typename,
+		      type_name,
 		      GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 
 	return PyString_FromString(buffer);
@@ -3130,7 +3135,7 @@ static PyObject *
 time_repr(PyDateTime_Time *self)
 {
 	char buffer[100];
-	const char *typename = self->ob_type->tp_name;
+	const char *type_name = self->ob_type->tp_name;
 	int h = TIME_GET_HOUR(self);
 	int m = TIME_GET_MINUTE(self);
 	int s = TIME_GET_SECOND(self);
@@ -3139,13 +3144,13 @@ time_repr(PyDateTime_Time *self)
 
 	if (us)
 		PyOS_snprintf(buffer, sizeof(buffer),
-			      "%s(%d, %d, %d, %d)", typename, h, m, s, us);
+			      "%s(%d, %d, %d, %d)", type_name, h, m, s, us);
 	else if (s)
 		PyOS_snprintf(buffer, sizeof(buffer),
-			      "%s(%d, %d, %d)", typename, h, m, s);
+			      "%s(%d, %d, %d)", type_name, h, m, s);
 	else
 		PyOS_snprintf(buffer, sizeof(buffer),
-			      "%s(%d, %d)", typename, h, m);
+			      "%s(%d, %d)", type_name, h, m);
 	result = PyString_FromString(buffer);
 	if (result != NULL && HASTZINFO(self))
 		result = append_keyword_tzinfo(result, self->tzinfo);
@@ -3816,6 +3821,10 @@ datetime_strptime(PyObject *cls, PyObject *args)
 		if (PySequence_Check(obj) && PySequence_Size(obj) >= 6)
 			for (i=0; i < 6; i++) {
 				PyObject *p = PySequence_GetItem(obj, i);
+				if (p == NULL) {
+					Py_DECREF(obj);
+					return NULL;
+				}
 				if (PyInt_Check(p))
 					ia[i] = PyInt_AsLong(p);
 				else
@@ -4023,13 +4032,13 @@ static PyObject *
 datetime_repr(PyDateTime_DateTime *self)
 {
 	char buffer[1000];
-	const char *typename = self->ob_type->tp_name;
+	const char *type_name = self->ob_type->tp_name;
 	PyObject *baserepr;
 
 	if (DATE_GET_MICROSECOND(self)) {
 		PyOS_snprintf(buffer, sizeof(buffer),
 			      "%s(%d, %d, %d, %d, %d, %d, %d)",
-			      typename,
+			      type_name,
 			      GET_YEAR(self), GET_MONTH(self), GET_DAY(self),
 			      DATE_GET_HOUR(self), DATE_GET_MINUTE(self),
 			      DATE_GET_SECOND(self),
@@ -4038,7 +4047,7 @@ datetime_repr(PyDateTime_DateTime *self)
 	else if (DATE_GET_SECOND(self)) {
 		PyOS_snprintf(buffer, sizeof(buffer),
 			      "%s(%d, %d, %d, %d, %d, %d)",
-			      typename,
+			      type_name,
 			      GET_YEAR(self), GET_MONTH(self), GET_DAY(self),
 			      DATE_GET_HOUR(self), DATE_GET_MINUTE(self),
 			      DATE_GET_SECOND(self));
@@ -4046,7 +4055,7 @@ datetime_repr(PyDateTime_DateTime *self)
 	else {
 		PyOS_snprintf(buffer, sizeof(buffer),
 			      "%s(%d, %d, %d, %d, %d)",
-			      typename,
+			      type_name,
 			      GET_YEAR(self), GET_MONTH(self), GET_DAY(self),
 			      DATE_GET_HOUR(self), DATE_GET_MINUTE(self));
 	}

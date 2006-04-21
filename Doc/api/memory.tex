@@ -195,9 +195,7 @@ free(buf1);       /* Fatal -- should be PyMem_Del()  */
 In addition to the functions aimed at handling raw memory blocks from
 the Python heap, objects in Python are allocated and released with
 \cfunction{PyObject_New()}, \cfunction{PyObject_NewVar()} and
-\cfunction{PyObject_Del()}, or with their corresponding macros
-\cfunction{PyObject_NEW()}, \cfunction{PyObject_NEW_VAR()} and
-\cfunction{PyObject_DEL()}.
+\cfunction{PyObject_Del()}.
 
 These will be explained in the next chapter on defining and
 implementing new object types in C.

@@ -1,4 +1,4 @@
-\declaremodule{standard}{email.Generator}
+\declaremodule{standard}{email.generator}
 \modulesynopsis{Generate flat text email messages from a message structure.}
 
 One of the most common tasks is to generate the flat text of the email
@@ -8,7 +8,7 @@ module or the \refmodule{nntplib} module, or print the message on the
 console.  Taking a message object structure and producing a flat text
 document is the job of the \class{Generator} class.
 
-Again, as with the \refmodule{email.Parser} module, you aren't limited
+Again, as with the \refmodule{email.parser} module, you aren't limited
 to the functionality of the bundled generator; you could write one
 from scratch yourself.  However the bundled generator knows how to
 generate most email in a standards-compliant way, should handle MIME
@@ -17,7 +17,8 @@ transformation from flat text, to a message structure via the
 \class{Parser} class, and back to flat text, is idempotent (the input
 is identical to the output).
 
-Here are the public methods of the \class{Generator} class:
+Here are the public methods of the \class{Generator} class, imported from the
+\module{email.generator} module:
 
 \begin{classdesc}{Generator}{outfp\optional{, mangle_from_\optional{,
     maxheaderlen}}}
@@ -40,7 +41,7 @@ mailbox format files.
 Optional \var{maxheaderlen} specifies the longest length for a
 non-continued header.  When a header line is longer than
 \var{maxheaderlen} (in characters, with tabs expanded to 8 spaces),
-the header will be split as defined in the \module{email.Header}
+the header will be split as defined in the \module{email.header.Header}
 class.  Set to zero to disable header wrapping.  The default is 78, as
 recommended (but not required) by \rfc{2822}.
 \end{classdesc}
@@ -81,9 +82,9 @@ be used in extended print statements.
 As a convenience, see the methods \method{Message.as_string()} and
 \code{str(aMessage)}, a.k.a. \method{Message.__str__()}, which
 simplify the generation of a formatted string representation of a
-message object.  For more detail, see \refmodule{email.Message}.
+message object.  For more detail, see \refmodule{email.message}.
 
-The \module{email.Generator} module also provides a derived class,
+The \module{email.generator} module also provides a derived class,
 called \class{DecodedGenerator} which is like the \class{Generator}
 base class, except that non-\mimetype{text} parts are substituted with
 a format string representing the part.
@@ -128,13 +129,5 @@ The default value for \var{fmt} is \code{None}, meaning
 \versionadded{2.2.2}
 \end{classdesc}
 
-\subsubsection{Deprecated methods}
-
-The following methods are deprecated in \module{email} version 2.
-They are documented here for completeness.
-
-\begin{methoddesc}[Generator]{__call__}{msg\optional{, unixfrom}}
-This method is identical to the \method{flatten()} method.
-
-\deprecated{2.2.2}{Use the \method{flatten()} method instead.}
-\end{methoddesc}
+\versionchanged[The previously deprecated method \method{__call__()} was
+removed]{2.5}

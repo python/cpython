@@ -100,12 +100,18 @@ else:
     print "writelines accepted sequence of non-string objects"
 f.close()
 
-try:
-    sys.stdin.seek(-1)
-except IOError:
-    pass
+# This causes the interpreter to exit on OSF1 v5.1.
+if sys.platform != 'osf1V5':
+    try:
+        sys.stdin.seek(-1)
+    except IOError:
+        pass
+    else:
+        print "should not be able to seek on sys.stdin"
 else:
-    print "should not be able to seek on sys.stdin"
+    print >>sys.__stdout__, (
+        '  Skipping sys.stdin.seek(-1), it may crash the interpreter.'
+        ' Test manually.')
 
 try:
     sys.stdin.truncate()

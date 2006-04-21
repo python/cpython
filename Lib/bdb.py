@@ -479,10 +479,10 @@ class Breakpoint:
         else:
             disp = 'keep '
         if self.enabled:
-            disp = disp + 'yes'
+            disp = disp + 'yes  '
         else:
-            disp = disp + 'no '
-        print '%-4dbreakpoint    %s at %s:%d' % (self.number, disp,
+            disp = disp + 'no   '
+        print '%-4dbreakpoint   %s at %s:%d' % (self.number, disp,
                              self.file, self.line)
         if self.cond:
             print '\tstop only if %s' % (self.cond,)

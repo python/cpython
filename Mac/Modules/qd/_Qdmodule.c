@@ -5824,7 +5824,6 @@ static PyObject *Qd_MacDrawText(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	char *textBuf__in__;
-	int textBuf__len__;
 	int textBuf__in_len__;
 	short firstByte;
 	short byteCount;
@@ -5885,7 +5884,6 @@ static PyObject *Qd_TextWidth(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	short _rv;
 	char *textBuf__in__;
-	int textBuf__len__;
 	int textBuf__in_len__;
 	short firstByte;
 	short byteCount;
@@ -6471,7 +6469,6 @@ static PyObject *Qd_DrawText(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	char *textBuf__in__;
-	int textBuf__len__;
 	int textBuf__in_len__;
 	short firstByte;
 	short byteCount;
@@ -6534,7 +6531,7 @@ static PyObject *Qd_RawBitMap(PyObject *_self, PyObject *_args)
 	        return NULL;
 	if ( PyString_Size(source) != sizeof(BitMap) && PyString_Size(source) != sizeof(PixMap) ) {
 	        PyErr_Format(PyExc_TypeError,
-	                "Argument size was %d, should be %d (sizeof BitMap) or %d (sizeof PixMap)",
+	                "Argument size was %ld, should be %lu (sizeof BitMap) or %lu (sizeof PixMap)",
 	                PyString_Size(source), sizeof(BitMap), sizeof(PixMap));
 	        return NULL;
 	}

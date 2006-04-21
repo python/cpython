@@ -37,6 +37,28 @@ module instead.
 #		define PyMODINIT_FUNC void
 #	endif /* __cplusplus */
 #endif
+
+#ifndef Py_CLEAR
+#define Py_CLEAR(op)						\
+	do {							\
+		if (op) {					\
+			PyObject *tmp = (PyObject *)(op);	\
+			(op) = NULL;				\
+			Py_DECREF(tmp);				\
+		}						\
+	} while (0)
+#endif
+#ifndef Py_VISIT
+#define Py_VISIT(op)							\
+        do { 								\
+                if (op) {						\
+                        int vret = visit((PyObject *)(op), arg);	\
+                        if (vret)					\
+                                return vret;				\
+                }							\
+        } while (0)
+#endif
+
 /* end 2.2 compatibility macros */
 
 #define IS_BASESTRING(o) \
@@ -812,28 +834,18 @@ Reader_dealloc(ReaderObj *self)
 static int
 Reader_traverse(ReaderObj *self, visitproc visit, void *arg)
 {
-	int err;
-#define VISIT(SLOT) \
-	if (SLOT) { \
-		err = visit((PyObject *)(SLOT), arg); \
-		if (err) \
-			return err; \
-	}
-	VISIT(self->dialect);
-	VISIT(self->input_iter);
-	VISIT(self->fields);
+	Py_VISIT(self->dialect);
+	Py_VISIT(self->input_iter);
+	Py_VISIT(self->fields);
 	return 0;
 }
 
 static int
 Reader_clear(ReaderObj *self)
 {
-        Py_XDECREF(self->dialect);
-        Py_XDECREF(self->input_iter);
-        Py_XDECREF(self->fields);
-        self->dialect = NULL;
-        self->input_iter = NULL;
-        self->fields = NULL;
+	Py_CLEAR(self->dialect);
+	Py_CLEAR(self->input_iter);
+	Py_CLEAR(self->fields);
 	return 0;
 }
 
@@ -1245,25 +1257,16 @@ Writer_dealloc(WriterObj *self)
 static int
 Writer_traverse(WriterObj *self, visitproc visit, void *arg)
 {
-	int err;
-#define VISIT(SLOT) \
-	if (SLOT) { \
-		err = visit((PyObject *)(SLOT), arg); \
-		if (err) \
-			return err; \
-	}
-	VISIT(self->dialect);
-	VISIT(self->writeline);
+	Py_VISIT(self->dialect);
+	Py_VISIT(self->writeline);
 	return 0;
 }
 
 static int
 Writer_clear(WriterObj *self)
 {
-        Py_XDECREF(self->dialect);
-        Py_XDECREF(self->writeline);
-	self->dialect = NULL;
-	self->writeline = NULL;
+	Py_CLEAR(self->dialect);
+	Py_CLEAR(self->writeline);
 	return 0;
 }
 
@@ -1495,7 +1498,7 @@ PyDoc_STRVAR(csv_reader_doc,
 PyDoc_STRVAR(csv_writer_doc,
 "    csv_writer = csv.writer(fileobj [, dialect='excel']\n"
 "                            [optional keyword args])\n"
-"    for row in csv_writer:\n"
+"    for row in sequence:\n"
 "        csv_writer.writerow(row)\n"
 "\n"
 "    [or]\n"

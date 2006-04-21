@@ -1638,7 +1638,9 @@ def specials():
     c1 = C()
     c2 = C()
     verify(not not c1)
-    vereq(hash(c1), id(c1))
+    verify(id(c1) != id(c2))
+    hash(c1)
+    hash(c2)
     vereq(cmp(c1, c2), cmp(id(c1), id(c2)))
     vereq(c1, c1)
     verify(c1 != c2)
@@ -1660,7 +1662,9 @@ def specials():
     d1 = D()
     d2 = D()
     verify(not not d1)
-    vereq(hash(d1), id(d1))
+    verify(id(d1) != id(d2))
+    hash(d1)
+    hash(d2)
     vereq(cmp(d1, d2), cmp(id(d1), id(d2)))
     vereq(d1, d1)
     verify(d1 != d2)
@@ -2914,7 +2918,7 @@ def subclasspropagation():
     class D(B, C):
         pass
     d = D()
-    vereq(hash(d), id(d))
+    orig_hash = hash(d) # related to id(d) in platform-dependent ways
     A.__hash__ = lambda self: 42
     vereq(hash(d), 42)
     C.__hash__ = lambda self: 314
@@ -2930,7 +2934,7 @@ def subclasspropagation():
     del C.__hash__
     vereq(hash(d), 42)
     del A.__hash__
-    vereq(hash(d), id(d))
+    vereq(hash(d), orig_hash)
     d.foo = 42
     d.bar = 42
     vereq(d.foo, 42)

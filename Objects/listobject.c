@@ -181,7 +181,7 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
 		PyErr_BadInternalCall();
 		return -1;
 	}
-	if (n == INT_MAX) {
+	if (n == PY_SSIZE_T_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
 			"cannot add more objects to list");
 		return -1;
@@ -221,7 +221,7 @@ app1(PyListObject *self, PyObject *v)
 	Py_ssize_t n = PyList_GET_SIZE(self);
 
 	assert (v != NULL);
-	if (n == INT_MAX) {
+	if (n == PY_SSIZE_T_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
 			"cannot add more objects to list");
 		return -1;
@@ -1805,28 +1805,11 @@ typedef struct {
 	PyObject *value;
 } sortwrapperobject;
 
-static PyTypeObject sortwrapper_type;
-
-static PyObject *
-sortwrapper_richcompare(sortwrapperobject *a, sortwrapperobject *b, int op)
-{
-	if (!PyObject_TypeCheck(b, &sortwrapper_type)) {
-		PyErr_SetString(PyExc_TypeError,
-			"expected a sortwrapperobject");
-		return NULL;
-	}
-	return PyObject_RichCompare(a->key, b->key, op);
-}
-
-static void
-sortwrapper_dealloc(sortwrapperobject *so)
-{
-	Py_XDECREF(so->key);
-	Py_XDECREF(so->value);
-	PyObject_Del(so);
-}
-
 PyDoc_STRVAR(sortwrapper_doc, "Object wrapper with a custom sort key.");
+static PyObject *
+sortwrapper_richcompare(sortwrapperobject *, sortwrapperobject *, int);
+static void
+sortwrapper_dealloc(sortwrapperobject *);
 
 static PyTypeObject sortwrapper_type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -1857,6 +1840,26 @@ static PyTypeObject sortwrapper_type = {
 	0,					/* tp_clear */
 	(richcmpfunc)sortwrapper_richcompare,	/* tp_richcompare */
 };
+
+
+static PyObject *
+sortwrapper_richcompare(sortwrapperobject *a, sortwrapperobject *b, int op)
+{
+	if (!PyObject_TypeCheck(b, &sortwrapper_type)) {
+		PyErr_SetString(PyExc_TypeError,
+			"expected a sortwrapperobject");
+		return NULL;
+	}
+	return PyObject_RichCompare(a->key, b->key, op);
+}
+
+static void
+sortwrapper_dealloc(sortwrapperobject *so)
+{
+	Py_XDECREF(so->key);
+	Py_XDECREF(so->value);
+	PyObject_Del(so);
+}
 
 /* Returns a new reference to a sortwrapper.
    Consumes the references to the two underlying objects. */
@@ -2271,16 +2274,9 @@ static int
 list_traverse(PyListObject *o, visitproc visit, void *arg)
 {
 	Py_ssize_t i;
-	PyObject *x;
 
-	for (i = o->ob_size; --i >= 0; ) {
-		x = o->ob_item[i];
-		if (x != NULL) {
-			int err = visit(x, arg);
-			if (err)
-				return err;
-		}
-	}
+	for (i = o->ob_size; --i >= 0; )
+		Py_VISIT(o->ob_item[i]);
 	return 0;
 }
 
@@ -2698,78 +2694,11 @@ typedef struct {
 	PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
 } listiterobject;
 
-PyTypeObject PyListIter_Type;
-
-static PyObject *
-list_iter(PyObject *seq)
-{
-	listiterobject *it;
-
-	if (!PyList_Check(seq)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-	it = PyObject_GC_New(listiterobject, &PyListIter_Type);
-	if (it == NULL)
-		return NULL;
-	it->it_index = 0;
-	Py_INCREF(seq);
-	it->it_seq = (PyListObject *)seq;
-	_PyObject_GC_TRACK(it);
-	return (PyObject *)it;
-}
-
-static void
-listiter_dealloc(listiterobject *it)
-{
-	_PyObject_GC_UNTRACK(it);
-	Py_XDECREF(it->it_seq);
-	PyObject_GC_Del(it);
-}
-
-static int
-listiter_traverse(listiterobject *it, visitproc visit, void *arg)
-{
-	if (it->it_seq == NULL)
-		return 0;
-	return visit((PyObject *)it->it_seq, arg);
-}
-
-static PyObject *
-listiter_next(listiterobject *it)
-{
-	PyListObject *seq;
-	PyObject *item;
-
-	assert(it != NULL);
-	seq = it->it_seq;
-	if (seq == NULL)
-		return NULL;
-	assert(PyList_Check(seq));
-
-	if (it->it_index < PyList_GET_SIZE(seq)) {
-		item = PyList_GET_ITEM(seq, it->it_index);
-		++it->it_index;
-		Py_INCREF(item);
-		return item;
-	}
-
-	Py_DECREF(seq);
-	it->it_seq = NULL;
-	return NULL;
-}
-
-static PyObject *
-listiter_len(listiterobject *it)
-{
-	Py_ssize_t len;
-	if (it->it_seq) {
-		len = PyList_GET_SIZE(it->it_seq) - it->it_index;
-		if (len >= 0)
-			return PyInt_FromSsize_t(len);
-	}
-	return PyInt_FromLong(0);
-}
+static PyObject *list_iter(PyObject *);
+static void listiter_dealloc(listiterobject *);
+static int listiter_traverse(listiterobject *, visitproc, void *);
+static PyObject *listiter_next(listiterobject *);
+static PyObject *listiter_len(listiterobject *);
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
@@ -2812,6 +2741,76 @@ PyTypeObject PyListIter_Type = {
 	0,					/* tp_members */
 };
 
+
+static PyObject *
+list_iter(PyObject *seq)
+{
+	listiterobject *it;
+
+	if (!PyList_Check(seq)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	it = PyObject_GC_New(listiterobject, &PyListIter_Type);
+	if (it == NULL)
+		return NULL;
+	it->it_index = 0;
+	Py_INCREF(seq);
+	it->it_seq = (PyListObject *)seq;
+	_PyObject_GC_TRACK(it);
+	return (PyObject *)it;
+}
+
+static void
+listiter_dealloc(listiterobject *it)
+{
+	_PyObject_GC_UNTRACK(it);
+	Py_XDECREF(it->it_seq);
+	PyObject_GC_Del(it);
+}
+
+static int
+listiter_traverse(listiterobject *it, visitproc visit, void *arg)
+{
+	Py_VISIT(it->it_seq);
+	return 0;
+}
+
+static PyObject *
+listiter_next(listiterobject *it)
+{
+	PyListObject *seq;
+	PyObject *item;
+
+	assert(it != NULL);
+	seq = it->it_seq;
+	if (seq == NULL)
+		return NULL;
+	assert(PyList_Check(seq));
+
+	if (it->it_index < PyList_GET_SIZE(seq)) {
+		item = PyList_GET_ITEM(seq, it->it_index);
+		++it->it_index;
+		Py_INCREF(item);
+		return item;
+	}
+
+	Py_DECREF(seq);
+	it->it_seq = NULL;
+	return NULL;
+}
+
+static PyObject *
+listiter_len(listiterobject *it)
+{
+	Py_ssize_t len;
+	if (it->it_seq) {
+		len = PyList_GET_SIZE(it->it_seq) - it->it_index;
+		if (len >= 0)
+			return PyInt_FromSsize_t(len);
+	}
+	return PyInt_FromLong(0);
+}
 /*********************** List Reverse Iterator **************************/
 
 typedef struct {
@@ -2820,69 +2819,11 @@ typedef struct {
 	PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
 } listreviterobject;
 
-PyTypeObject PyListRevIter_Type;
-
-static PyObject *
-list_reversed(PyListObject *seq, PyObject *unused)
-{
-	listreviterobject *it;
-
-	it = PyObject_GC_New(listreviterobject, &PyListRevIter_Type);
-	if (it == NULL)
-		return NULL;
-	assert(PyList_Check(seq));
-	it->it_index = PyList_GET_SIZE(seq) - 1;
-	Py_INCREF(seq);
-	it->it_seq = seq;
-	PyObject_GC_Track(it);
-	return (PyObject *)it;
-}
-
-static void
-listreviter_dealloc(listreviterobject *it)
-{
-	PyObject_GC_UnTrack(it);
-	Py_XDECREF(it->it_seq);
-	PyObject_GC_Del(it);
-}
-
-static int
-listreviter_traverse(listreviterobject *it, visitproc visit, void *arg)
-{
-	if (it->it_seq == NULL)
-		return 0;
-	return visit((PyObject *)it->it_seq, arg);
-}
-
-static PyObject *
-listreviter_next(listreviterobject *it)
-{
-	PyObject *item;
-	Py_ssize_t index = it->it_index;
-	PyListObject *seq = it->it_seq;
-
-	if (index>=0 && index < PyList_GET_SIZE(seq)) {
-		item = PyList_GET_ITEM(seq, index);
-		it->it_index--;
-		Py_INCREF(item);
-		return item;
-	}
-	it->it_index = -1;
-	if (seq != NULL) {
-		it->it_seq = NULL;
-		Py_DECREF(seq);
-	}
-	return NULL;
-}
-
-static Py_ssize_t
-listreviter_len(listreviterobject *it)
-{
-	Py_ssize_t len = it->it_index + 1;
-	if (it->it_seq == NULL || PyList_GET_SIZE(it->it_seq) < len)
-		return 0;
-	return len;
-}
+static PyObject *list_reversed(PyListObject *, PyObject *);
+static void listreviter_dealloc(listreviterobject *);
+static int listreviter_traverse(listreviterobject *, visitproc, void *);
+static PyObject *listreviter_next(listreviterobject *);
+static Py_ssize_t listreviter_len(listreviterobject *);
 
 static PySequenceMethods listreviter_as_sequence = {
 	(lenfunc)listreviter_len,	/* sq_length */
@@ -2921,3 +2862,65 @@ PyTypeObject PyListRevIter_Type = {
 	(iternextfunc)listreviter_next,		/* tp_iternext */
 	0,
 };
+
+static PyObject *
+list_reversed(PyListObject *seq, PyObject *unused)
+{
+	listreviterobject *it;
+
+	it = PyObject_GC_New(listreviterobject, &PyListRevIter_Type);
+	if (it == NULL)
+		return NULL;
+	assert(PyList_Check(seq));
+	it->it_index = PyList_GET_SIZE(seq) - 1;
+	Py_INCREF(seq);
+	it->it_seq = seq;
+	PyObject_GC_Track(it);
+	return (PyObject *)it;
+}
+
+static void
+listreviter_dealloc(listreviterobject *it)
+{
+	PyObject_GC_UnTrack(it);
+	Py_XDECREF(it->it_seq);
+	PyObject_GC_Del(it);
+}
+
+static int
+listreviter_traverse(listreviterobject *it, visitproc visit, void *arg)
+{
+	Py_VISIT(it->it_seq);
+	return 0;
+}
+
+static PyObject *
+listreviter_next(listreviterobject *it)
+{
+	PyObject *item;
+	Py_ssize_t index = it->it_index;
+	PyListObject *seq = it->it_seq;
+
+	if (index>=0 && index < PyList_GET_SIZE(seq)) {
+		item = PyList_GET_ITEM(seq, index);
+		it->it_index--;
+		Py_INCREF(item);
+		return item;
+	}
+	it->it_index = -1;
+	if (seq != NULL) {
+		it->it_seq = NULL;
+		Py_DECREF(seq);
+	}
+	return NULL;
+}
+
+static Py_ssize_t
+listreviter_len(listreviterobject *it)
+{
+	Py_ssize_t len = it->it_index + 1;
+	if (it->it_seq == NULL || PyList_GET_SIZE(it->it_seq) < len)
+		return 0;
+	return len;
+}
+

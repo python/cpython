@@ -10,8 +10,10 @@
 
 This module implements high-performance container datatypes.  Currently,
 there are two datatypes, deque and defaultdict.
-Future additions may include B-trees and Fibonacci heaps.
+Future additions may include balanced trees and ordered dictionaries.
 \versionchanged[Added defaultdict]{2.5}
+
+\subsection{\class{deque} objects \label{deque-objects}}
 
 \begin{funcdesc}{deque}{\optional{iterable}}
   Returns a new deque objected initialized left-to-right (using
@@ -137,7 +139,7 @@ IndexError: pop from an empty deque
 deque(['c', 'b', 'a'])
 \end{verbatim}
 
-\subsection{Recipes \label{deque-recipes}}
+\subsubsection{Recipes \label{deque-recipes}}
 
 This section shows various approaches to working with deques.
 
@@ -215,6 +217,8 @@ def maketree(iterable):
 
 
 
+\subsection{\class{defaultdict} objects \label{defaultdict-objects}}
+
 \begin{funcdesc}{defaultdict}{\optional{default_factory\optional{, ...}}}
   Returns a new dictionary-like object.  \class{defaultdict} is a subclass
   of the builtin \class{dict} class.  It overrides one method and adds one
@@ -255,3 +259,79 @@ the standard \class{dict} operations:
   from the first argument to the constructor, if present, or to \code{None}, 
   if absent.
 \end{datadesc}
+
+
+\subsubsection{\class{defaultdict} Examples \label{defaultdict-examples}}
+
+Using \class{list} as the \member{default_factory}, it is easy to group
+a sequence of key-value pairs into a dictionary of lists:
+
+\begin{verbatim}
+>>> s = [('yellow', 1), ('blue', 2), ('yellow', 3), ('blue', 4), ('red', 1)]
+>>> d = defaultdict(list)
+>>> for k, v in s:
+        d[k].append(v)
+
+>>> d.items()
+[('blue', [2, 4]), ('red', [1]), ('yellow', [1, 3])]
+\end{verbatim}
+
+When each key is encountered for the first time, it is not already in the
+mapping; so an entry is automatically created using the
+\member{default_factory} function which returns an empty \class{list}.  The
+\method{list.append()} operation then attaches the value to the new list.  When
+keys are encountered again, the look-up proceeds normally (returning the list
+for that key) and the \method{list.append()} operation adds another value to
+the list. This technique is simpler and faster than an equivalent technique
+using \method{dict.setdefault()}:
+
+\begin{verbatim}
+>>> d = {}
+>>> for k, v in s:
+	d.setdefault(k, []).append(v)
+
+>>> d.items()
+[('blue', [2, 4]), ('red', [1]), ('yellow', [1, 3])]
+\end{verbatim}
+
+Setting the \member{default_factory} to \class{int} makes the
+\class{defaultdict} useful for counting (like a bag or multiset in other
+languages):
+
+\begin{verbatim}
+>>> s = 'mississippi'
+>>> d = defaultdict(int)
+>>> for k in s:
+        d[k] += 1
+
+>>> d.items()
+[('i', 4), ('p', 2), ('s', 4), ('m', 1)]
+\end{verbatim}
+
+When a letter is first encountered, it is missing from the mapping, so the
+\member{default_factory} function calls \function{int()} to supply a default
+count of zero.  The increment operation then builds up the count for each
+letter. This technique makes counting simpler and faster than an equivalent
+technique using \method{dict.get()}:
+
+\begin{verbatim}
+>>> d = {}
+>>> for k in s:
+	d[k] = d.get(k, 0) + 1
+
+>>> d.items()
+[('i', 4), ('p', 2), ('s', 4), ('m', 1)]
+\end{verbatim}
+
+Setting the \member{default_factory} to \class{set} makes the
+\class{defaultdict} useful for building a dictionary of sets:
+
+\begin{verbatim}
+>>> s = [('red', 1), ('blue', 2), ('red', 3), ('blue', 4), ('red', 1), ('blue', 4)]
+>>> d = defaultdict(set)
+>>> for k, v in s:
+        d[k].add(v)
+
+>>> d.items()
+[('blue', set([2, 4])), ('red', set([1, 3]))]
+\end{verbatim}

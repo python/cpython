@@ -57,12 +57,7 @@ class XrangeTest(unittest.TestCase):
         self.assertRaises(OverflowError, xrange, 0, 2*sys.maxint)
 
         r = xrange(-sys.maxint, sys.maxint, 2)
-        if sys.maxint > 0x7fffffff:
-            # XXX raising ValueError is less than ideal, but this can't
-            # be fixed until range_length() returns a long in rangeobject.c
-            self.assertRaises(ValueError, len, r)
-        else:
-            self.assertEqual(len(r), sys.maxint)
+        self.assertEqual(len(r), sys.maxint)
         self.assertRaises(OverflowError, xrange, -sys.maxint-1, sys.maxint, 2)
 
 def test_main():

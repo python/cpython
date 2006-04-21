@@ -139,8 +139,8 @@ file using the \method{fromfile()} method).
 \end{methoddesc}
 
 \begin{methoddesc}[array]{fromunicode}{s}
-Extends this array with data from the given unicode string.
-The array must be a type 'u' array; otherwise a ValueError
+Extends this array with data from the given unicode string.  The array
+must be a type \code{'u'} array; otherwise a \exception{ValueError}
 is raised.  Use \samp{array.fromstring(ustr.decode(enc))} to
 append Unicode data to an array of some other type.
 \end{methoddesc}
@@ -197,8 +197,8 @@ be written to a file by the \method{tofile()} method.)
 
 \begin{methoddesc}[array]{tounicode}{}
 Convert the array to a unicode string.  The array must be
-a type 'u' array; otherwise a ValueError is raised.  Use
-array.tostring().decode(enc) to obtain a unicode string
+a type \code{'u'} array; otherwise a \exception{ValueError} is raised.
+Use \samp{array.tostring().decode(enc)} to obtain a unicode string
 from an array of some other type.
 \end{methoddesc}
 

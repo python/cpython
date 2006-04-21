@@ -176,8 +176,6 @@ class PyBuildExt(build_ext):
         #
 
         # Some modules that are normally always on:
-        exts.append( Extension('regex', ['regexmodule.c', 'regexpr.c']) )
-
         exts.append( Extension('_weakref', ['_weakref.c']) )
         exts.append( Extension('_symtable', ['symtablemodule.c']) )
 

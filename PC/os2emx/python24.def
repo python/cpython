@@ -1134,19 +1134,6 @@ EXPORTS
 ; From python24_s.lib(_randommodule)
 ;  "init_random"
 
-; From python24_s.lib(regexmodule)
-;  "initregex"
-
-; From python24_s.lib(regexpr)
-;  "_Py_re_syntax_table"
-;  "_Py_re_compile_initialize"
-;  "_Py_re_compile_pattern"
-;  "_Py_re_match"
-;  "_Py_re_search"
-;  "_Py_re_set_syntax"
-;  "_Py_re_compile_fastmap"
-;  "_Py_re_syntax"
-
 ; From python24_s.lib(rgbimgmodule)
 ;  "initrgbimg"
 

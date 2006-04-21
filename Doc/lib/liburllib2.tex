@@ -384,7 +384,7 @@ determined by sorting the handler instances.
     \method{\var{protocol}_open()} are called to handle the request.
     This stage ends when a handler either returns a
     non-\constant{None} value (ie. a response), or raises an exception
-    (usually URLError).  Exceptions are allowed to propagate.
+    (usually \exception{URLError}).  Exceptions are allowed to propagate.
 
     In fact, the above algorithm is first tried for methods named
     \method{default_open}.  If all such methods return

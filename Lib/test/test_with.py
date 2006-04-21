@@ -494,6 +494,62 @@ class ExceptionalTestCase(unittest.TestCase, ContextmanagerAssertionMixin):
         self.assertAfterWithGeneratorInvariantsWithError(self.foo)
         self.assertAfterWithGeneratorInvariantsNoError(self.bar)
 
+    def testRaisedStopIteration1(self):
+        @contextmanager
+        def cm():
+            yield
+
+        def shouldThrow():
+            with cm():
+                raise StopIteration("from with")
+
+        self.assertRaises(StopIteration, shouldThrow)
+
+    def testRaisedStopIteration2(self):
+        class cm (object):
+            def __context__(self):
+                return self
+
+            def __enter__(self):
+                pass
+
+            def __exit__(self, type, value, traceback):
+                pass
+
+        def shouldThrow():
+            with cm():
+                raise StopIteration("from with")
+
+        self.assertRaises(StopIteration, shouldThrow)
+
+    def testRaisedGeneratorExit1(self):
+        @contextmanager
+        def cm():
+            yield
+
+        def shouldThrow():
+            with cm():
+                raise GeneratorExit("from with")
+
+        self.assertRaises(GeneratorExit, shouldThrow)
+
+    def testRaisedGeneratorExit2(self):
+        class cm (object):
+            def __context__(self):
+                return self
+
+            def __enter__(self):
+                pass
+
+            def __exit__(self, type, value, traceback):
+                pass
+
+        def shouldThrow():
+            with cm():
+                raise GeneratorExit("from with")
+
+        self.assertRaises(GeneratorExit, shouldThrow)
+
 
 class NonLocalFlowControlTestCase(unittest.TestCase):
 

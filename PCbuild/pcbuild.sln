@@ -96,6 +96,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_ctypes", "_ctypes.vcproj",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_ctypes_test", "_ctypes_test.vcproj", "{8CF334D9-4F82-42EB-97AF-83592C5AFD2F}"
 	ProjectSection(ProjectDependencies) = postProject
+		{F22F40F4-D318-40DC-96B3-88DC81CE0894} = {F22F40F4-D318-40DC-96B3-88DC81CE0894}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_sqlite3", "_sqlite3.vcproj", "{2FF0A312-22F9-4C34-B070-842916DE27A9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26} = {CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26}
 	EndProjectSection
 EndProject
 Global
@@ -260,6 +266,14 @@ Global
 		{8CF334D9-4F82-42EB-97AF-83592C5AFD2F}.Release.Build.0 = Release|Win32
 		{8CF334D9-4F82-42EB-97AF-83592C5AFD2F}.ReleaseAMD64.ActiveCfg = ReleaseAMD64|Win32
 		{8CF334D9-4F82-42EB-97AF-83592C5AFD2F}.ReleaseItanium.ActiveCfg = ReleaseItanium|Win32
+		{2FF0A312-22F9-4C34-B070-842916DE27A9}.Debug.ActiveCfg = Debug|Win32
+		{2FF0A312-22F9-4C34-B070-842916DE27A9}.Debug.Build.0 = Debug|Win32
+		{2FF0A312-22F9-4C34-B070-842916DE27A9}.Release.ActiveCfg = Release|Win32
+		{2FF0A312-22F9-4C34-B070-842916DE27A9}.Release.Build.0 = Release|Win32
+		{2FF0A312-22F9-4C34-B070-842916DE27A9}.ReleaseAMD64.ActiveCfg = ReleaseAMD64|Win32
+		{2FF0A312-22F9-4C34-B070-842916DE27A9}.ReleaseAMD64.Build.0 = ReleaseAMD64|Win32
+		{2FF0A312-22F9-4C34-B070-842916DE27A9}.ReleaseItanium.ActiveCfg = ReleaseItanium|Win32
+		{2FF0A312-22F9-4C34-B070-842916DE27A9}.ReleaseItanium.Build.0 = ReleaseItanium|Win32
 	EndGlobalSection
 	GlobalSection(SolutionItems) = postSolution
 		..\Modules\getbuildinfo.c = ..\Modules\getbuildinfo.c

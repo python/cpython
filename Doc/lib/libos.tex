@@ -343,6 +343,10 @@ Availability: Macintosh, \UNIX, Windows.
 \versionchanged[When specified, the \var{mode} argument must now start
   with one of the letters \character{r}, \character{w}, or \character{a},
   otherwise a \exception{ValueError} is raised]{2.3}
+\versionchanged[On \UNIX, when the \var{mode} argument starts with
+  \character{a}, the \var{O_APPEND} flag is set on the file descriptor
+  (which the \cfunction{fdopen()} implementation already does on most
+  platforms)]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{popen}{command\optional{, mode\optional{, bufsize}}}
@@ -547,7 +551,8 @@ documentation; flag constants (like \constant{O_RDONLY} and
 This function is intended for low-level I/O.  For normal usage,
 use the built-in function \function{open()}, which returns a ``file
 object'' with \method{read()} and \method{write()} methods (and many
-more).
+more).  To wrap a file descriptor in a ``file object'', use
+\function{fdopen()}.
 \end{notice}
 \end{funcdesc}
 
@@ -1731,6 +1736,27 @@ The \function{spawn()} functions called with \constant{P_NOWAIT}
 return suitable process handles.
 \end{funcdesc}
 
+\begin{funcdesc}{wait3}{\optional{options}}
+Similar to \function{waitpid()}, except no process id argument is given and
+a 3-element tuple containing the child's process id, exit status indication,
+and resource usage information is returned.  Refer to
+\module{resource}.\function{getrusage()}
+for details on resource usage information.  The option argument is the same
+as that provided to \function{waitpid()} and \function{wait4()}.
+Availability: \UNIX.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{wait4}{pid, options}
+Similar to \function{waitpid()}, except a 3-element tuple, containing the
+child's process id, exit status indication, and resource usage information
+is returned.  Refer to \module{resource}.\function{getrusage()} for details
+on resource usage information.  The arguments to \function{wait4()} are
+the same as those provided to \function{waitpid()}.
+Availability: \UNIX.
+\versionadded{2.5}
+\end{funcdesc}
+
 \begin{datadesc}{WNOHANG}
 The option for \function{waitpid()} to return immediately if no child
 process status is available immediately. The function returns
@@ -1818,14 +1844,14 @@ Return string-valued system configuration values.
 string which is the name of a defined system value; these names are
 specified in a number of standards (\POSIX, \UNIX{} 95, \UNIX{} 98, and
 others).  Some platforms define additional names as well.  The names
-known to the host operating system are given in the
+known to the host operating system are given as the keys of the
 \code{confstr_names} dictionary.  For configuration variables not
 included in that mapping, passing an integer for \var{name} is also
 accepted.
 Availability: Macintosh, \UNIX.
 
-If the configuration value specified by \var{name} isn't defined, the
-empty string is returned.
+If the configuration value specified by \var{name} isn't defined,
+\code{None} is returned.
 
 If \var{name} is a string and is not known, \exception{ValueError} is
 raised.  If a specific value for \var{name} is not supported by the

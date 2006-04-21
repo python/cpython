@@ -453,7 +453,7 @@ PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
 	if (PyType_IS_GC(type))
 		obj = _PyObject_GC_Malloc(size);
 	else
-		obj = PyObject_MALLOC(size);
+		obj = (PyObject *)PyObject_MALLOC(size);
 
 	if (obj == NULL)
 		return PyErr_NoMemory();
@@ -525,21 +525,15 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
 
 	if (type->tp_dictoffset != base->tp_dictoffset) {
 		PyObject **dictptr = _PyObject_GetDictPtr(self);
-		if (dictptr && *dictptr) {
-			int err = visit(*dictptr, arg);
-			if (err)
-				return err;
-		}
+		if (dictptr && *dictptr)
+			Py_VISIT(*dictptr);
 	}
 
-	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE)
 		/* For a heaptype, the instances count as references
 		   to the type.  Traverse the type so the collector
 		   can find cycles involving this link. */
-		int err = visit((PyObject *)type, arg);
-		if (err)
-			return err;
-	}
+		Py_VISIT(type);
 
 	if (basetraverse)
 		return basetraverse(self, visit, arg);
@@ -559,8 +553,8 @@ clear_slots(PyTypeObject *type, PyObject *self)
 			char *addr = (char *)self + mp->offset;
 			PyObject *obj = *(PyObject **)addr;
 			if (obj != NULL) {
-				Py_DECREF(obj);
 				*(PyObject **)addr = NULL;
+				Py_DECREF(obj);
 			}
 		}
 	}
@@ -1106,14 +1100,17 @@ set_mro_error(PyObject *to_merge, int *remain)
 	char buf[1000];
 	PyObject *k, *v;
 	PyObject *set = PyDict_New();
+	if (!set) return;
 
 	to_merge_size = PyList_GET_SIZE(to_merge);
 	for (i = 0; i < to_merge_size; i++) {
 		PyObject *L = PyList_GET_ITEM(to_merge, i);
 		if (remain[i] < PyList_GET_SIZE(L)) {
 			PyObject *c = PyList_GET_ITEM(L, remain[i]);
-			if (PyDict_SetItem(set, c, Py_None) < 0)
+			if (PyDict_SetItem(set, c, Py_None) < 0) {
+				Py_DECREF(set);
 				return;
+			}
 		}
 	}
 	n = PyDict_Size(set);
@@ -1121,12 +1118,12 @@ set_mro_error(PyObject *to_merge, int *remain)
 	off = PyOS_snprintf(buf, sizeof(buf), "Cannot create a \
 consistent method resolution\norder (MRO) for bases");
 	i = 0;
-	while (PyDict_Next(set, &i, &k, &v) && off < sizeof(buf)) {
+	while (PyDict_Next(set, &i, &k, &v) && (size_t)off < sizeof(buf)) {
 		PyObject *name = class_name(k);
 		off += PyOS_snprintf(buf + off, sizeof(buf) - off, " %s",
 				     name ? PyString_AS_STRING(name) : "?");
 		Py_XDECREF(name);
-		if (--n && off+1 < sizeof(buf)) {
+		if (--n && (size_t)(off+1) < sizeof(buf)) {
 			buf[off++] = ',';
 			buf[off] = '\0';
 		}
@@ -1147,7 +1144,7 @@ pmerge(PyObject *acc, PyObject* to_merge) {
 	   remain[i] is the index of the next base in to_merge[i]
 	   that is not included in acc.
 	*/
-	remain = PyMem_MALLOC(SIZEOF_INT*to_merge_size);
+	remain = (int *)PyMem_MALLOC(SIZEOF_INT*to_merge_size);
 	if (remain == NULL)
 		return -1;
 	for (i = 0; i < to_merge_size; i++)
@@ -1893,7 +1890,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		PyObject *doc = PyDict_GetItemString(dict, "__doc__");
 		if (doc != NULL && PyString_Check(doc)) {
 			const size_t n = (size_t)PyString_GET_SIZE(doc);
-                        char *tp_doc = PyObject_MALLOC(n+1);
+                        char *tp_doc = (char *)PyObject_MALLOC(n+1);
 			if (tp_doc == NULL) {
 				Py_DECREF(type);
 				return NULL;
@@ -2195,31 +2192,20 @@ PyDoc_STRVAR(type_doc,
 static int
 type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 {
-	int err;
-
 	/* Because of type_is_gc(), the collector only calls this
 	   for heaptypes. */
 	assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
-#define VISIT(SLOT) \
-	if (SLOT) { \
-		err = visit((PyObject *)(SLOT), arg); \
-		if (err) \
-			return err; \
-	}
-
-	VISIT(type->tp_dict);
-	VISIT(type->tp_cache);
-	VISIT(type->tp_mro);
-	VISIT(type->tp_bases);
-	VISIT(type->tp_base);
+	Py_VISIT(type->tp_dict);
+	Py_VISIT(type->tp_cache);
+	Py_VISIT(type->tp_mro);
+	Py_VISIT(type->tp_bases);
+	Py_VISIT(type->tp_base);
 
 	/* There's no need to visit type->tp_subclasses or
 	   ((PyHeapTypeObject *)type)->ht_slots, because they can't be involved
 	   in cycles; tp_subclasses is a list of weak references,
 	   and slots is a tuple of strings. */
-
-#undef VISIT
 
 	return 0;
 }
@@ -2227,18 +2213,9 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 static int
 type_clear(PyTypeObject *type)
 {
-	PyObject *tmp;
-
 	/* Because of type_is_gc(), the collector only calls this
 	   for heaptypes. */
 	assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
-
-#define CLEAR(SLOT) \
-	if (SLOT) { \
-		tmp = (PyObject *)(SLOT); \
-		SLOT = NULL; \
-		Py_DECREF(tmp); \
-	}
 
 	/* The only field we need to clear is tp_mro, which is part of a
 	   hard cycle (its first element is the class itself) that won't
@@ -2265,9 +2242,7 @@ type_clear(PyTypeObject *type)
 	       A tuple of strings can't be part of a cycle.
 	*/
 
-	CLEAR(type->tp_mro);
-
-#undef CLEAR
+	Py_CLEAR(type->tp_mro);
 
 	return 0;
 }
@@ -2443,23 +2418,23 @@ same_slots_added(PyTypeObject *a, PyTypeObject *b)
 }
 
 static int
-compatible_for_assignment(PyTypeObject* old, PyTypeObject* new, char* attr)
+compatible_for_assignment(PyTypeObject* oldto, PyTypeObject* newto, char* attr)
 {
 	PyTypeObject *newbase, *oldbase;
 
-	if (new->tp_dealloc != old->tp_dealloc ||
-	    new->tp_free != old->tp_free)
+	if (newto->tp_dealloc != oldto->tp_dealloc ||
+	    newto->tp_free != oldto->tp_free)
 	{
 		PyErr_Format(PyExc_TypeError,
 			     "%s assignment: "
 			     "'%s' deallocator differs from '%s'",
 			     attr,
-			     new->tp_name,
-			     old->tp_name);
+			     newto->tp_name,
+			     oldto->tp_name);
 		return 0;
 	}
-	newbase = new;
-	oldbase = old;
+	newbase = newto;
+	oldbase = oldto;
 	while (equiv_structs(newbase, newbase->tp_base))
 		newbase = newbase->tp_base;
 	while (equiv_structs(oldbase, oldbase->tp_base))
@@ -2471,8 +2446,8 @@ compatible_for_assignment(PyTypeObject* old, PyTypeObject* new, char* attr)
 			     "%s assignment: "
 			     "'%s' object layout differs from '%s'",
 			     attr,
-			     new->tp_name,
-			     old->tp_name);
+			     newto->tp_name,
+			     oldto->tp_name);
 		return 0;
 	}
 
@@ -2482,8 +2457,8 @@ compatible_for_assignment(PyTypeObject* old, PyTypeObject* new, char* attr)
 static int
 object_set_class(PyObject *self, PyObject *value, void *closure)
 {
-	PyTypeObject *old = self->ob_type;
-	PyTypeObject *new;
+	PyTypeObject *oldto = self->ob_type;
+	PyTypeObject *newto;
 
 	if (value == NULL) {
 		PyErr_SetString(PyExc_TypeError,
@@ -2496,18 +2471,18 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
 		  value->ob_type->tp_name);
 		return -1;
 	}
-	new = (PyTypeObject *)value;
-	if (!(new->tp_flags & Py_TPFLAGS_HEAPTYPE) ||
-	    !(old->tp_flags & Py_TPFLAGS_HEAPTYPE))
+	newto = (PyTypeObject *)value;
+	if (!(newto->tp_flags & Py_TPFLAGS_HEAPTYPE) ||
+	    !(oldto->tp_flags & Py_TPFLAGS_HEAPTYPE))
 	{
 		PyErr_Format(PyExc_TypeError,
 			     "__class__ assignment: only for heap types");
 		return -1;
 	}
-	if (compatible_for_assignment(new, old, "__class__")) {
-		Py_INCREF(new);
-		self->ob_type = new;
-		Py_DECREF(old);
+	if (compatible_for_assignment(newto, oldto, "__class__")) {
+		Py_INCREF(newto);
+		self->ob_type = newto;
+		Py_DECREF(oldto);
 		return 0;
 	}
 	else {
@@ -2785,7 +2760,7 @@ PyTypeObject PyBaseObject_Type = {
 	"object",				/* tp_name */
 	sizeof(PyObject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
-	(destructor)object_dealloc,		/* tp_dealloc */
+	object_dealloc,				/* tp_dealloc */
 	0,					/* tp_print */
 	0,			 		/* tp_getattr */
 	0,					/* tp_setattr */
@@ -3326,7 +3301,7 @@ add_subclass(PyTypeObject *base, PyTypeObject *type)
 {
 	Py_ssize_t i;
 	int result;
-	PyObject *list, *ref, *new;
+	PyObject *list, *ref, *newobj;
 
 	list = base->tp_subclasses;
 	if (list == NULL) {
@@ -3335,16 +3310,16 @@ add_subclass(PyTypeObject *base, PyTypeObject *type)
 			return -1;
 	}
 	assert(PyList_Check(list));
-	new = PyWeakref_NewRef((PyObject *)type, NULL);
+	newobj = PyWeakref_NewRef((PyObject *)type, NULL);
 	i = PyList_GET_SIZE(list);
 	while (--i >= 0) {
 		ref = PyList_GET_ITEM(list, i);
 		assert(PyWeakref_CheckRef(ref));
 		if (PyWeakref_GET_OBJECT(ref) == Py_None)
-			return PyList_SetItem(list, i, new);
+			return PyList_SetItem(list, i, newobj);
 	}
-	result = PyList_Append(list, new);
-	Py_DECREF(new);
+	result = PyList_Append(list, newobj);
+	Py_DECREF(newobj);
 	return result;
 }
 
@@ -3536,12 +3511,16 @@ wrap_unaryfunc(PyObject *self, PyObject *args, void *wrapped)
 }
 
 static PyObject *
-wrap_ssizeargfunc(PyObject *self, PyObject *args, void *wrapped)
+wrap_indexargfunc(PyObject *self, PyObject *args, void *wrapped)
 {
 	ssizeargfunc func = (ssizeargfunc)wrapped;
+	PyObject* o;
 	Py_ssize_t i;
 
-	if (!PyArg_ParseTuple(args, "n", &i))
+	if (!PyArg_UnpackTuple(args, "", 1, 1, &o))
+		return NULL;
+	i = PyNumber_Index(o);
+	if (i == -1 && PyErr_Occurred())
 		return NULL;
 	return (*func)(self, i);
 }
@@ -3551,7 +3530,7 @@ getindex(PyObject *self, PyObject *arg)
 {
 	Py_ssize_t i;
 
-	i = PyInt_AsSsize_t(arg);
+	i = PyNumber_Index(arg);
 	if (i == -1 && PyErr_Occurred())
 		return -1;
 	if (i < 0) {
@@ -4359,36 +4338,21 @@ slot_nb_nonzero(PyObject *self)
 static Py_ssize_t 
 slot_nb_index(PyObject *self)
 {
-	PyObject *func, *args;
 	static PyObject *index_str;
-	Py_ssize_t result = -1;
+	PyObject *temp = call_method(self, "__index__", &index_str, "()");
+	Py_ssize_t result;
 
-	func = lookup_maybe(self, "__index__", &index_str);
-	if (func == NULL) {
-		if (!PyErr_Occurred()) {
-			PyErr_SetString(PyExc_TypeError, 
-				"object cannot be interpreted as an index");
-		}
+	if (temp == NULL)
 		return -1;
- 	}
-	args = PyTuple_New(0);
-	if (args != NULL) {
-		PyObject *temp = PyObject_Call(func, args, NULL);
-		Py_DECREF(args);
-		if (temp != NULL) {
-			if (PyInt_Check(temp) || PyLong_Check(temp)) {
-				result =
-                                  temp->ob_type->tp_as_number->nb_index(temp);
-			}
-			else {
- 				PyErr_SetString(PyExc_TypeError, 
-				    "__index__ must return an int or a long");
-				result = -1;
-			}
-			Py_DECREF(temp);
-		}
+	if (PyInt_CheckExact(temp) || PyLong_CheckExact(temp)) {
+		result = temp->ob_type->tp_as_number->nb_index(temp);
 	}
-	Py_DECREF(func);
+	else {
+		PyErr_SetString(PyExc_TypeError, 
+				"__index__ must return an int or a long");
+		result = -1;
+	}
+	Py_DECREF(temp);
 	return result;
 }
 
@@ -5018,9 +4982,9 @@ static slotdef slotdefs[] = {
 	   test_descr.notimplemented() */
 	SQSLOT("__add__", sq_concat, NULL, wrap_binaryfunc,
           "x.__add__(y) <==> x+y"),
-	SQSLOT("__mul__", sq_repeat, NULL, wrap_ssizeargfunc,
+	SQSLOT("__mul__", sq_repeat, NULL, wrap_indexargfunc,
           "x.__mul__(n) <==> x*n"),
-	SQSLOT("__rmul__", sq_repeat, NULL, wrap_ssizeargfunc,
+	SQSLOT("__rmul__", sq_repeat, NULL, wrap_indexargfunc,
           "x.__rmul__(n) <==> n*x"),
 	SQSLOT("__getitem__", sq_item, slot_sq_item, wrap_sq_item,
 	       "x.__getitem__(y) <==> x[y]"),
@@ -5046,7 +5010,7 @@ static slotdef slotdefs[] = {
 	SQSLOT("__iadd__", sq_inplace_concat, NULL,
           wrap_binaryfunc, "x.__iadd__(y) <==> x+=y"),
 	SQSLOT("__imul__", sq_inplace_repeat, NULL,
-          wrap_ssizeargfunc, "x.__imul__(y) <==> x*=y"),
+          wrap_indexargfunc, "x.__imul__(y) <==> x*=y"),
 
 	MPSLOT("__len__", mp_length, slot_mp_length, wrap_lenfunc,
 	       "x.__len__() <==> len(x)"),
@@ -5211,21 +5175,21 @@ slotptr(PyTypeObject *type, int ioffset)
 
 	/* Note: this depends on the order of the members of PyHeapTypeObject! */
 	assert(offset >= 0);
-	assert(offset < offsetof(PyHeapTypeObject, as_buffer));
-	if (offset >= offsetof(PyHeapTypeObject, as_sequence)) {
-		ptr = (void *)type->tp_as_sequence;
+	assert((size_t)offset < offsetof(PyHeapTypeObject, as_buffer));
+	if ((size_t)offset >= offsetof(PyHeapTypeObject, as_sequence)) {
+		ptr = (char *)type->tp_as_sequence;
 		offset -= offsetof(PyHeapTypeObject, as_sequence);
 	}
-	else if (offset >= offsetof(PyHeapTypeObject, as_mapping)) {
-		ptr = (void *)type->tp_as_mapping;
+	else if ((size_t)offset >= offsetof(PyHeapTypeObject, as_mapping)) {
+		ptr = (char *)type->tp_as_mapping;
 		offset -= offsetof(PyHeapTypeObject, as_mapping);
 	}
-	else if (offset >= offsetof(PyHeapTypeObject, as_number)) {
-		ptr = (void *)type->tp_as_number;
+	else if ((size_t)offset >= offsetof(PyHeapTypeObject, as_number)) {
+		ptr = (char *)type->tp_as_number;
 		offset -= offsetof(PyHeapTypeObject, as_number);
 	}
 	else {
-		ptr = (void *)type;
+		ptr = (char *)type;
 	}
 	if (ptr != NULL)
 		ptr += offset;
@@ -5743,7 +5707,7 @@ static PyObject *
 super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
 	superobject *su = (superobject *)self;
-	superobject *new;
+	superobject *newobj;
 
 	if (obj == NULL || obj == Py_None || su->obj != NULL) {
 		/* Not binding to an object, or already bound */
@@ -5760,16 +5724,16 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 		PyTypeObject *obj_type = supercheck(su->type, obj);
 		if (obj_type == NULL)
 			return NULL;
-		new = (superobject *)PySuper_Type.tp_new(&PySuper_Type,
+		newobj = (superobject *)PySuper_Type.tp_new(&PySuper_Type,
 							 NULL, NULL);
-		if (new == NULL)
+		if (newobj == NULL)
 			return NULL;
 		Py_INCREF(su->type);
 		Py_INCREF(obj);
-		new->type = su->type;
-		new->obj = obj;
-		new->obj_type = obj_type;
-		return (PyObject *)new;
+		newobj->type = su->type;
+		newobj->obj = obj;
+		newobj->obj_type = obj_type;
+		return (PyObject *)newobj;
 	}
 }
 
@@ -5811,20 +5775,10 @@ static int
 super_traverse(PyObject *self, visitproc visit, void *arg)
 {
 	superobject *su = (superobject *)self;
-	int err;
 
-#define VISIT(SLOT) \
-	if (SLOT) { \
-		err = visit((PyObject *)(SLOT), arg); \
-		if (err) \
-			return err; \
-	}
-
-	VISIT(su->obj);
-	VISIT(su->type);
-	VISIT(su->obj_type);
-
-#undef VISIT
+	Py_VISIT(su->obj);
+	Py_VISIT(su->type);
+	Py_VISIT(su->obj_type);
 
 	return 0;
 }

@@ -80,6 +80,14 @@ class GlobTests(unittest.TestCase):
         eq(self.glob('?a?', '*F'), map(self.norm, [os.path.join('aaa', 'zzzF'),
                                                    os.path.join('aab', 'F')]))
 
+    def test_glob_directory_with_trailing_slash(self):
+        # We are verifying that when there is wildcard pattern which
+        # ends with os.sep doesn't blow up.
+        res = glob.glob(self.tempdir + '*' + os.sep)
+        self.assertEqual(len(res), 1)
+        # either of these results are reasonable
+        self.assertTrue(res[0] in [self.tempdir, self.tempdir + os.sep])
+
     def test_glob_broken_symlinks(self):
         if hasattr(os, 'symlink'):
             eq = self.assertSequencesEqual_noorder

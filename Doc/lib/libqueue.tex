@@ -1,3 +1,4 @@
+
 \section{\module{Queue} ---
          A synchronized queue class}
 
@@ -94,3 +95,51 @@ immediately available, else raise the \exception{Empty} exception
 \begin{methoddesc}{get_nowait}{}
 Equivalent to \code{get(False)}.
 \end{methoddesc}
+
+Two methods are offered to support tracking whether enqueued tasks have
+been fully processed by daemon consumer threads.
+
+\begin{methoddesc}{task_done}{}
+Indicate that a formerly enqueued task is complete.  Used by queue consumer
+threads.  For each \method{get()} used to fetch a task, a subsequent call to
+\method{task_done()} tells the queue that the processing on the task is complete.
+
+If a \method{join()} is currently blocking, it will resume when all items
+have been processed (meaning that a \method{task_done()} call was received
+for every item that had been \method{put()} into the queue).
+
+Raises a \exception{ValueError} if called more times than there were items
+placed in the queue.
+\versionadded{2.5}
+\end{methoddesc}
+
+\begin{methoddesc}{join}{}
+Blocks until all items in the queue have been gotten and processed.
+
+The count of unfinished tasks goes up whenever an item is added to the
+queue. The count goes down whenever a consumer thread calls \method{task_done()}
+to indicate that the item was retrieved and all work on it is complete.
+When the count of unfinished tasks drops to zero, join() unblocks.
+\versionadded{2.5}
+\end{methoddesc}
+
+Example of how to wait for enqueued tasks to be completed:
+
+\begin{verbatim}
+    def worker(): 
+        while True: 
+            item = q.get() 
+            do_work(item) 
+            q.task_done() 
+
+    q = Queue() 
+    for i in range(num_worker_threads): 
+         t = Thread(target=worker)
+         t.setDaemon(True)
+         t.start() 
+
+    for item in source():
+        q.put(item) 
+
+    q.join()       # block until all tasks are done
+\end{verbatim}

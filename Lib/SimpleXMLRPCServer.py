@@ -104,7 +104,11 @@ from xmlrpclib import Fault
 import SocketServer
 import BaseHTTPServer
 import sys
-import os, fcntl
+import os
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
 
 def resolve_dotted_attribute(obj, attr, allow_dotted_names=True):
     """resolve_dotted_attribute(a, 'b.c.d') => a.b.c.d
@@ -493,7 +497,7 @@ class SimpleXMLRPCServer(SocketServer.TCPServer,
         # [Bug #1222790] If possible, set close-on-exec flag; if a
         # method spawns a subprocess, the subprocess shouldn't have
         # the listening socket open.
-        if hasattr(fcntl, 'FD_CLOEXEC'):
+        if fcntl is not None and hasattr(fcntl, 'FD_CLOEXEC'):
             flags = fcntl.fcntl(self.fileno(), fcntl.F_GETFD)
             flags |= fcntl.FD_CLOEXEC
             fcntl.fcntl(self.fileno(), fcntl.F_SETFD, flags)

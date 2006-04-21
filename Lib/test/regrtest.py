@@ -520,7 +520,7 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
                 import gc
                 def cleanup():
                     import _strptime, linecache, warnings, dircache
-                    import urlparse, urllib, urllib2
+                    import urlparse, urllib, urllib2, mimetypes, doctest
                     from distutils.dir_util import _path_created
                     _path_created.clear()
                     warnings.filters[:] = fs
@@ -536,6 +536,8 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
                     sys.path_importer_cache.update(pic)
                     dircache.reset()
                     linecache.clearcache()
+                    mimetypes._default_mime_types()
+                    doctest.master = None
                 if indirect_test:
                     def run_the_test():
                         indirect_test()
@@ -547,6 +549,7 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
                 print >> sys.stderr, "beginning", repcount, "repetitions"
                 print >> sys.stderr, \
                       ("1234567890"*(repcount//10 + 1))[:repcount]
+                cleanup()
                 for i in range(repcount):
                     rc = sys.gettotalrefcount()
                     run_the_test()
@@ -744,6 +747,8 @@ _expectations = {
         test_sunaudiodev
         test_threadsignals
         test_timing
+        test_wait3
+        test_wait4
         """,
     'linux2':
         """
@@ -761,6 +766,8 @@ _expectations = {
         test_nis
         test_ntpath
         test_ossaudiodev
+        test_sqlite
+        test_startfile
         test_sunaudiodev
         """,
    'mac':
@@ -800,6 +807,8 @@ _expectations = {
         test_pwd
         test_resource
         test_signal
+        test_sqlite
+        test_startfile
         test_sunaudiodev
         test_sundry
         test_tarfile
@@ -824,6 +833,8 @@ _expectations = {
         test_openpty
         test_pyexpat
         test_sax
+        test_startfile
+        test_sqlite
         test_sunaudiodev
         test_sundry
         """,
@@ -846,6 +857,8 @@ _expectations = {
         test_openpty
         test_pyexpat
         test_sax
+        test_sqlite
+        test_startfile
         test_sunaudiodev
         test_sundry
         """,
@@ -873,6 +886,8 @@ _expectations = {
         test_pyexpat
         test_queue
         test_sax
+        test_sqlite
+        test_startfile
         test_sunaudiodev
         test_sundry
         test_thread
@@ -913,6 +928,8 @@ _expectations = {
         test_pty
         test_pwd
         test_strop
+        test_sqlite
+        test_startfile
         test_sunaudiodev
         test_sundry
         test_thread
@@ -930,7 +947,6 @@ _expectations = {
         test_cd
         test_cl
         test_curses
-        test_dl
         test_gdbm
         test_gl
         test_imgfile
@@ -942,6 +958,8 @@ _expectations = {
         test_ntpath
         test_ossaudiodev
         test_poll
+        test_sqlite
+        test_startfile
         test_sunaudiodev
         """,
     'sunos5':
@@ -960,6 +978,8 @@ _expectations = {
         test_imgfile
         test_linuxaudiodev
         test_openpty
+        test_sqlite
+        test_startfile
         test_zipfile
         test_zlib
         """,
@@ -986,6 +1006,8 @@ _expectations = {
         test_openpty
         test_pyexpat
         test_sax
+        test_sqlite
+        test_startfile
         test_sunaudiodev
         test_zipfile
         test_zlib
@@ -1011,6 +1033,8 @@ _expectations = {
         test_poll
         test_popen2
         test_resource
+        test_sqlite
+        test_startfile
         test_sunaudiodev
         """,
     'cygwin':
@@ -1032,6 +1056,7 @@ _expectations = {
         test_nis
         test_ossaudiodev
         test_socketserver
+        test_sqlite
         test_sunaudiodev
         """,
     'os2emx':
@@ -1058,6 +1083,8 @@ _expectations = {
         test_pty
         test_resource
         test_signal
+        test_sqlite
+        test_startfile
         test_sunaudiodev
         """,
     'freebsd4':
@@ -1084,6 +1111,8 @@ _expectations = {
         test_scriptpackages
         test_socket_ssl
         test_socketserver
+        test_sqlite
+        test_startfile
         test_sunaudiodev
         test_tcl
         test_timeout
@@ -1113,12 +1142,46 @@ _expectations = {
         test_macostools
         test_nis
         test_ossaudiodev
+        test_sqlite
+        test_startfile
         test_sunaudiodev
         test_tcl
         test_winreg
         test_winsound
         test_zipimport
         test_zlib
+        """,
+    'openbsd3':
+        """
+        test_aepack
+        test_al
+        test_applesingle
+        test_bsddb
+        test_bsddb3
+        test_cd
+        test_cl
+        test_ctypes
+        test_dl
+        test_gdbm
+        test_gl
+        test_imgfile
+        test_linuxaudiodev
+        test_locale
+        test_macfs
+        test_macostools
+        test_nis
+        test_normalization
+        test_ossaudiodev
+        test_pep277
+        test_plistlib
+        test_scriptpackages
+        test_tcl
+        test_sqlite
+        test_startfile
+        test_sunaudiodev
+        test_unicode_file
+        test_winreg
+        test_winsound
         """,
 }
 _expectations['freebsd5'] = _expectations['freebsd4']

@@ -100,8 +100,8 @@ options; the traditional \UNIX{} syntax is a hyphen (``-'') followed by a
 single letter, e.g. \code{"-x"} or \code{"-F"}.  Also, traditional \UNIX{}
 syntax allows multiple options to be merged into a single argument,
 e.g.  \code{"-x -F"} is equivalent to \code{"-xF"}.  The GNU project
-introduced \code{"-{}-"} followed by a series of hyphen-separated words,
-e.g. \code{"-{}-file"} or \code{"-{}-dry-run"}.  These are the only two option
+introduced \code{"{--}"} followed by a series of hyphen-separated words,
+e.g. \code{"{--}file"} or \code{"{--}dry-run"}.  These are the only two option
 syntaxes provided by \module{optparse}.
 
 Some other option syntaxes that the world has seen include:
@@ -170,7 +170,7 @@ For example, consider this hypothetical command-line:
 prog -v --report /tmp/report.txt foo bar
 \end{verbatim}
 
-\code{"-v"} and \code{"-{}-report"} are both options.  Assuming that
+\code{"-v"} and \code{"{--}report"} are both options.  Assuming that
 \longprogramopt{report} takes one argument, \code{"/tmp/report.txt"} is an option
 argument.  \code{"foo"} and \code{"bar"} are positional arguments.
 
@@ -587,7 +587,7 @@ programmer errors and user errors.  Programmer errors are usually
 erroneous calls to \code{parse.add{\_}option()}, e.g. invalid option strings,
 unknown option attributes, missing option attributes, etc.  These are
 dealt with in the usual way: raise an exception (either
-\code{optparse.OptionError} or \code{TypeError}) and let the program crash.
+\exception{optparse.OptionError} or \exception{TypeError}) and let the program crash.
 
 Handling user errors is much more important, since they are guaranteed
 to happen no matter how stable your code is.  \module{optparse} can automatically
@@ -1019,9 +1019,9 @@ callback) as-is.
 
 Integer arguments are passed to \code{int()} to convert them to Python
 integers.  If \code{int()} fails, so will \module{optparse}, although with a more
-useful error message.  (Internally, \module{optparse} raises OptionValueError;
-OptionParser catches this exception higher up and terminates your
-program with a useful error message.)
+useful error message.  (Internally, \module{optparse} raises
+\exception{OptionValueError}; OptionParser catches this exception higher
+up and terminates your program with a useful error message.)
 
 Likewise, \code{float} arguments are passed to \code{float()} for conversion,
 \code{long} arguments to \code{long()}, and \code{complex} arguments to
@@ -1032,7 +1032,7 @@ arguments.
 option attribute (a sequence of strings) defines the set of allowed
 option arguments.  \code{optparse.option.check{\_}choice()} compares
 user-supplied option arguments against this master list and raises
-OptionValueError if an invalid string is given.
+\exception{OptionValueError} if an invalid string is given.
 
 
 \subsubsection{Querying and manipulating your option parser\label{optparse-querying-manipulating-option-parser}}
@@ -1052,7 +1052,7 @@ that option is removed.  If that option provided any other
 option strings, all of those option strings become invalid.
 
 If \code{opt{\_}str} does not occur in any option belonging to this
-OptionParser, raises ValueError.
+OptionParser, raises \exception{ValueError}.
 \end{description}
 
 
@@ -1087,7 +1087,7 @@ The available conflict-handling mechanisms are:
 \begin{description}
 \item[\code{error} (default)]
 assume option conflicts are a programming error and raise 
-OptionConflictError
+\exception{OptionConflictError}
 \item[\code{resolve}]
 resolve option conflicts intelligently (see below)
 \end{description}
@@ -1260,7 +1260,7 @@ is a dictionary of arbitrary keyword arguments supplied via
 
 \subsubsection{Raising errors in a callback\label{optparse-raising-errors-in-callback}}
 
-The callback function should raise OptionValueError if there are any
+The callback function should raise \exception{OptionValueError} if there are any
 problems with the option or its argument(s).  \module{optparse} catches this and
 terminates the program, printing the error message you supply to
 stderr.  Your message should be clear, concise, accurate, and mention

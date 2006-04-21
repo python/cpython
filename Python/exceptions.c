@@ -14,6 +14,7 @@
  * Copyright (c) 1998-2000 by Secret Labs AB.  All rights reserved.
  */
 
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "osdefs.h"
 
@@ -893,7 +894,7 @@ SyntaxError__str__(PyObject *self, PyObject *args)
 	    if (have_filename)
 		bufsize += PyString_GET_SIZE(filename);
 
-	    buffer = PyMem_MALLOC(bufsize);
+	    buffer = (char *)PyMem_MALLOC(bufsize);
 	    if (buffer != NULL) {
 		if (have_filename && have_lineno)
 		    PyOS_snprintf(buffer, bufsize, "%s (%s, line %ld)",
@@ -1450,8 +1451,8 @@ PyObject * PyUnicodeDecodeError_Create(
 	assert(length < INT_MAX);
 	assert(start < INT_MAX);
 	assert(end < INT_MAX);
-    return PyObject_CallFunction(PyExc_UnicodeDecodeError, "ss#iis",
-	encoding, object, (int)length, (int)start, (int)end, reason);
+    return PyObject_CallFunction(PyExc_UnicodeDecodeError, "ss#nns",
+	encoding, object, length, start, end, reason);
 }
 
 
@@ -1565,7 +1566,7 @@ PyObject * PyUnicodeTranslateError_Create(
 	const Py_UNICODE *object, Py_ssize_t length,
 	Py_ssize_t start, Py_ssize_t end, const char *reason)
 {
-    return PyObject_CallFunction(PyExc_UnicodeTranslateError, "u#iis",
+    return PyObject_CallFunction(PyExc_UnicodeTranslateError, "u#nns",
 	object, length, start, end, reason);
 }
 #endif

@@ -10,7 +10,6 @@
 #ifdef WITH_THREAD
 #include "pythread.h"
 #endif /* WITH_THREAD */
-
 static PyObject *TestError;	/* set to exception object in init */
 
 /* Raise TestError with test_name + ": " + msg, and return NULL. */
@@ -235,7 +234,7 @@ raise_test_longlong_error(const char* msg)
 #include "testcapi_long.h"
 
 static PyObject *
-test_longlong_api(PyObject* self)
+test_longlong_api(PyObject* self, PyObject *args)
 {
 	return TESTNAME(raise_test_longlong_error);
 }
@@ -361,6 +360,15 @@ getargs_l(PyObject *self, PyObject *args)
 	return PyLong_FromLong(value);
 }
 
+static PyObject *
+getargs_n(PyObject *self, PyObject *args)
+{
+	Py_ssize_t value;
+	if (!PyArg_ParseTuple(args, "n", &value))
+	return NULL;
+	return PyInt_FromSsize_t(value);
+}
+
 #ifdef HAVE_LONG_LONG
 static PyObject *
 getargs_L(PyObject *self, PyObject *args)
@@ -405,7 +413,7 @@ test_k_code(PyObject *self)
 
         PyTuple_SET_ITEM(tuple, 0, num);
 
-        value = -1;
+        value = 0;
         if (PyArg_ParseTuple(tuple, "k:test_k_code", &value) < 0)
         	return NULL;
         if (value != ULONG_MAX)
@@ -424,7 +432,7 @@ test_k_code(PyObject *self)
 
         PyTuple_SET_ITEM(tuple, 0, num);
 
-	value = -1;
+	value = 0;
         if (PyArg_ParseTuple(tuple, "k:test_k_code", &value) < 0)
         	return NULL;
         if (value != (unsigned long)-0x42)
@@ -476,6 +484,26 @@ test_u_code(PyObject *self)
 	Py_DECREF(tuple);
 	Py_INCREF(Py_None);
 	return Py_None;
+}
+
+static
+PyObject *codec_incrementalencoder(PyObject *self, PyObject *args)
+{
+	const char *encoding, *errors = NULL;
+	if (!PyArg_ParseTuple(args, "s|s:test_incrementalencoder",
+			      &encoding, &errors))
+		return NULL;
+	return PyCodec_IncrementalEncoder(encoding, errors);
+}
+
+static
+PyObject *codec_incrementaldecoder(PyObject *self, PyObject *args)
+{
+	const char *encoding, *errors = NULL;
+	if (!PyArg_ParseTuple(args, "s|s:test_incrementaldecoder",
+			      &encoding, &errors))
+		return NULL;
+	return PyCodec_IncrementalDecoder(encoding, errors);
 }
 
 #endif
@@ -563,7 +591,17 @@ raise_exception(PyObject *self, PyObject *args)
 
 #ifdef WITH_THREAD
 
-void _make_call(void *callable)
+/* test_thread_state spawns a thread of its own, and that thread releases
+ * `thread_done` when it's finished.  The driver code has to know when the
+ * thread finishes, because the thread uses a PyObject (the callable) that
+ * may go away when the driver finishes.  The former lack of this explicit
+ * synchronization caused rare segfaults, so rare that they were seen only
+ * on a Mac buildbot (although they were possible on any box).
+ */
+static PyThread_type_lock thread_done = NULL;
+
+static void
+_make_call(void *callable)
 {
 	PyObject *rc;
 	PyGILState_STATE s = PyGILState_Ensure();
@@ -572,32 +610,53 @@ void _make_call(void *callable)
 	PyGILState_Release(s);
 }
 
+/* Same thing, but releases `thread_done` when it returns.  This variant
+ * should be called only from threads spawned by test_thread_state().
+ */
+static void
+_make_call_from_thread(void *callable)
+{
+	_make_call(callable);
+	PyThread_release_lock(thread_done);
+}
+
 static PyObject *
 test_thread_state(PyObject *self, PyObject *args)
 {
 	PyObject *fn;
+
 	if (!PyArg_ParseTuple(args, "O:test_thread_state", &fn))
 		return NULL;
-	/* Ensure Python is setup for threading */
+
+	/* Ensure Python is set up for threading */
 	PyEval_InitThreads();
-	/* Start a new thread for our callback. */
-	PyThread_start_new_thread( _make_call, fn);
+	thread_done = PyThread_allocate_lock();
+	if (thread_done == NULL)
+		return PyErr_NoMemory();
+	PyThread_acquire_lock(thread_done, 1);
+
+	/* Start a new thread with our callback. */
+	PyThread_start_new_thread(_make_call_from_thread, fn);
 	/* Make the callback with the thread lock held by this thread */
 	_make_call(fn);
 	/* Do it all again, but this time with the thread-lock released */
 	Py_BEGIN_ALLOW_THREADS
 	_make_call(fn);
+	PyThread_acquire_lock(thread_done, 1);  /* wait for thread to finish */
 	Py_END_ALLOW_THREADS
+
 	/* And once more with and without a thread
-	   XXX - should use a lock and work out exactly what we are trying 
-	   to test <wink> 
+	   XXX - should use a lock and work out exactly what we are trying
+	   to test <wink>
 	*/
 	Py_BEGIN_ALLOW_THREADS
-	PyThread_start_new_thread( _make_call, fn);
+	PyThread_start_new_thread(_make_call_from_thread, fn);
 	_make_call(fn);
+	PyThread_acquire_lock(thread_done, 1);  /* wait for thread to finish */
 	Py_END_ALLOW_THREADS
-	Py_INCREF(Py_None);
-	return Py_None;
+
+	PyThread_free_lock(thread_done);
+	Py_RETURN_NONE;
 }
 #endif
 
@@ -611,24 +670,29 @@ static PyMethodDef TestMethods[] = {
 	{"test_k_code",		(PyCFunction)test_k_code,	 METH_NOARGS},
 	{"test_null_strings",	(PyCFunction)test_null_strings,	 METH_NOARGS},
 
-	{"getargs_b",		(PyCFunction)getargs_b,		 METH_VARARGS},
-	{"getargs_B",		(PyCFunction)getargs_B,		 METH_VARARGS},
-	{"getargs_H",		(PyCFunction)getargs_H,		 METH_VARARGS},
-	{"getargs_I",		(PyCFunction)getargs_I,		 METH_VARARGS},
-	{"getargs_k",		(PyCFunction)getargs_k,		 METH_VARARGS},
-	{"getargs_i",		(PyCFunction)getargs_i,		 METH_VARARGS},
-	{"getargs_l",		(PyCFunction)getargs_l,		 METH_VARARGS},
+	{"getargs_b",		getargs_b,			 METH_VARARGS},
+	{"getargs_B",		getargs_B,			 METH_VARARGS},
+	{"getargs_H",		getargs_H,			 METH_VARARGS},
+	{"getargs_I",		getargs_I,			 METH_VARARGS},
+	{"getargs_k",		getargs_k,			 METH_VARARGS},
+	{"getargs_i",		getargs_i,			 METH_VARARGS},
+	{"getargs_l",		getargs_l,			 METH_VARARGS},
+	{"getargs_n",		getargs_n, 			 METH_VARARGS},
 #ifdef HAVE_LONG_LONG
-	{"getargs_L",		(PyCFunction)getargs_L,		 METH_VARARGS},
-	{"getargs_K",		(PyCFunction)getargs_K,		 METH_VARARGS},
-	{"test_longlong_api",	(PyCFunction)test_longlong_api,	 METH_NOARGS},
+	{"getargs_L",		getargs_L,			 METH_VARARGS},
+	{"getargs_K",		getargs_K,			 METH_VARARGS},
+	{"test_longlong_api",	test_longlong_api,		 METH_NOARGS},
 	{"test_L_code",		(PyCFunction)test_L_code,	 METH_NOARGS},
+	{"codec_incrementalencoder",
+	 (PyCFunction)codec_incrementalencoder,	 METH_VARARGS},
+	{"codec_incrementaldecoder",
+	 (PyCFunction)codec_incrementaldecoder,	 METH_VARARGS},
 #endif
 #ifdef Py_USING_UNICODE
 	{"test_u_code",		(PyCFunction)test_u_code,	 METH_NOARGS},
 #endif
 #ifdef WITH_THREAD
-	{"_test_thread_state", (PyCFunction)test_thread_state, METH_VARARGS},
+	{"_test_thread_state",  test_thread_state, 		 METH_VARARGS},
 #endif
 	{NULL, NULL} /* sentinel */
 };
@@ -650,8 +714,10 @@ init_testcapi(void)
 	PyModule_AddObject(m, "ULONG_MAX", PyLong_FromUnsignedLong(ULONG_MAX));
 	PyModule_AddObject(m, "INT_MIN", PyInt_FromLong(INT_MIN));
 	PyModule_AddObject(m, "LONG_MIN", PyInt_FromLong(LONG_MIN));
+	PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyInt_FromSsize_t(PY_SSIZE_T_MIN));
 	PyModule_AddObject(m, "INT_MAX", PyInt_FromLong(INT_MAX));
 	PyModule_AddObject(m, "LONG_MAX", PyInt_FromLong(LONG_MAX));
+	PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyInt_FromSsize_t(PY_SSIZE_T_MAX));
 
 	TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
 	Py_INCREF(TestError);

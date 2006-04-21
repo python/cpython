@@ -93,9 +93,28 @@ class TestBasicOps(unittest.TestCase):
         self.gen.sample(set(range(20)), 2)
         self.gen.sample(range(20), 2)
         self.gen.sample(xrange(20), 2)
-        self.gen.sample(dict.fromkeys('abcdefghijklmnopqrst'), 2)
         self.gen.sample(str('abcdefghijklmnopqrst'), 2)
         self.gen.sample(tuple('abcdefghijklmnopqrst'), 2)
+
+    def test_sample_on_dicts(self):
+        self.gen.sample(dict.fromkeys('abcdefghijklmnopqrst'), 2)
+
+        # SF bug #1460340 -- random.sample can raise KeyError
+        a = dict.fromkeys(range(10)+range(10,100,2)+range(100,110))
+        self.gen.sample(a, 3)
+
+        # A followup to bug #1460340:  sampling from a dict could return
+        # a subset of its keys or of its values, depending on the size of
+        # the subset requested.
+        N = 30
+        d = dict((i, complex(i, i)) for i in xrange(N))
+        for k in xrange(N+1):
+            samp = self.gen.sample(d, k)
+            # Verify that we got ints back (keys); the values are complex.
+            for x in samp:
+                self.assert_(type(x) is int)
+        samp.sort()
+        self.assertEqual(samp, range(N))
 
     def test_gauss(self):
         # Ensure that the seed() method initializes all the hidden state.  In

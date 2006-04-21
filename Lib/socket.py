@@ -121,14 +121,6 @@ def getfqdn(name=''):
     return name
 
 
-#
-# These classes are used by the socket() defined on Windows and BeOS
-# platforms to provide a best-effort implementation of the cleanup
-# semantics needed when sockets can't be dup()ed.
-#
-# These are not actually used on other platforms.
-#
-
 _socketmethods = (
     'bind', 'connect', 'connect_ex', 'fileno', 'listen',
     'getpeername', 'getsockname', 'getsockopt', 'setsockopt',
@@ -182,6 +174,10 @@ class _socketobject(object):
         Return a regular file object corresponding to the socket.  The mode
         and bufsize arguments are as for the built-in open() function."""
         return _fileobject(self._sock, mode, bufsize)
+
+    family = property(lambda self: self._sock.family, doc="the socket family")
+    type = property(lambda self: self._sock.type, doc="the socket type")
+    proto = property(lambda self: self._sock.proto, doc="the socket protocol")
 
     _s = ("def %s(self, *args): return self._sock.%s(*args)\n\n"
           "%s.__doc__ = _realsocket.%s.__doc__\n")

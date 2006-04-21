@@ -488,11 +488,12 @@ enough information is saved so that the next time \method{next()} is
 invoked, the function can proceed exactly as if the \keyword{yield}
 statement were just another external call.
 
-The \keyword{yield} statement is not allowed in the \keyword{try}
-clause of a \keyword{try} ...\ \keyword{finally} construct.  The
-difficulty is that there's no guarantee the generator will ever be
-resumed, hence no guarantee that the \keyword{finally} block will ever
-get executed.
+As of Python version 2.5, the \keyword{yield} statement is now
+allowed in the \keyword{try} clause of a \keyword{try} ...\ 
+\keyword{finally} construct.  If the generator is not resumed before
+it is finalized (by reaching a zero reference count or by being garbage
+collected), the generator-iterator's \method{close()} method will be
+called, allowing any pending \keyword{finally} clauses to execute.
 
 \begin{notice}
 In Python 2.2, the \keyword{yield} statement is only allowed
@@ -510,6 +511,11 @@ from __future__ import generators
   \seepep{0255}{Simple Generators}
          {The proposal for adding generators and the \keyword{yield}
           statement to Python.}
+
+  \seepep{0342}{Coroutines via Enhanced Generators}
+         {The proposal that, among other generator enhancements,
+          proposed allowing \keyword{yield} to appear inside a
+          \keyword{try} ... \keyword{finally} block.}
 \end{seealso}
 
 

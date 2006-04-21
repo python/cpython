@@ -38,7 +38,7 @@ static void
 StgDict_dealloc(StgDictObject *self)
 {
 	StgDict_clear(self);
-	PyMem_Free(self->ffi_type.elements);
+	PyMem_Free(self->ffi_type_pointer.elements);
 	PyDict_Type.tp_dealloc((PyObject *)self);
 }
 
@@ -49,8 +49,8 @@ StgDict_clone(StgDictObject *dst, StgDictObject *src)
 	int size;
 
 	StgDict_clear(dst);
-	PyMem_Free(dst->ffi_type.elements);
-	dst->ffi_type.elements = NULL;
+	PyMem_Free(dst->ffi_type_pointer.elements);
+	dst->ffi_type_pointer.elements = NULL;
 
 	d = (char *)dst;
 	s = (char *)src;
@@ -64,13 +64,15 @@ StgDict_clone(StgDictObject *dst, StgDictObject *src)
 	Py_XINCREF(dst->restype);
 	Py_XINCREF(dst->checker);
 
-	if (src->ffi_type.elements == NULL)
+	if (src->ffi_type_pointer.elements == NULL)
 		return 0;
 	size = sizeof(ffi_type *) * (src->length + 1);
-	dst->ffi_type.elements = PyMem_Malloc(size);
-	if (dst->ffi_type.elements == NULL)
+	dst->ffi_type_pointer.elements = PyMem_Malloc(size);
+	if (dst->ffi_type_pointer.elements == NULL)
 		return -1;
-	memcpy(dst->ffi_type.elements, src->ffi_type.elements, size);
+	memcpy(dst->ffi_type_pointer.elements,
+	       src->ffi_type_pointer.elements,
+	       size);
 	return 0;
 }
 
@@ -234,8 +236,8 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 	   stuff is sucessfully finished. */
 	stgdict->flags |= DICTFLAG_FINAL;	/* set final */
 
-	if (stgdict->ffi_type.elements)
-		PyMem_Free(stgdict->ffi_type.elements);
+	if (stgdict->ffi_type_pointer.elements)
+		PyMem_Free(stgdict->ffi_type_pointer.elements);
 
 	basedict = PyType_stgdict((PyObject *)((PyTypeObject *)type)->tp_base);
 	if (basedict && !use_broken_old_ctypes_semantics) {
@@ -243,10 +245,12 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 		align = basedict->align;
 		union_size = 0;
 		total_align = align ? align : 1;
-		stgdict->ffi_type.type = FFI_TYPE_STRUCT;
-		stgdict->ffi_type.elements = PyMem_Malloc(sizeof(ffi_type *) * (basedict->length + len + 1));
-		memset(stgdict->ffi_type.elements, 0, sizeof(ffi_type *) * (basedict->length + len + 1));
-		memcpy(stgdict->ffi_type.elements, basedict->ffi_type.elements,
+		stgdict->ffi_type_pointer.type = FFI_TYPE_STRUCT;
+		stgdict->ffi_type_pointer.elements = PyMem_Malloc(sizeof(ffi_type *) * (basedict->length + len + 1));
+		memset(stgdict->ffi_type_pointer.elements, 0,
+		       sizeof(ffi_type *) * (basedict->length + len + 1));
+		memcpy(stgdict->ffi_type_pointer.elements,
+		       basedict->ffi_type_pointer.elements,
 		       sizeof(ffi_type *) * (basedict->length));
 		ffi_ofs = basedict->length;
 	} else {
@@ -255,9 +259,10 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 		align = 0;
 		union_size = 0;
 		total_align = 1;
-		stgdict->ffi_type.type = FFI_TYPE_STRUCT;
-		stgdict->ffi_type.elements = PyMem_Malloc(sizeof(ffi_type *) * (len + 1));
-		memset(stgdict->ffi_type.elements, 0, sizeof(ffi_type *) * (len + 1));
+		stgdict->ffi_type_pointer.type = FFI_TYPE_STRUCT;
+		stgdict->ffi_type_pointer.elements = PyMem_Malloc(sizeof(ffi_type *) * (len + 1));
+		memset(stgdict->ffi_type_pointer.elements, 0,
+		       sizeof(ffi_type *) * (len + 1));
 		ffi_ofs = 0;
 	}
 
@@ -283,10 +288,10 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 				     i);
 			return -1;
 		}
-		stgdict->ffi_type.elements[ffi_ofs + i] = &dict->ffi_type;
+		stgdict->ffi_type_pointer.elements[ffi_ofs + i] = &dict->ffi_type_pointer;
 		dict->flags |= DICTFLAG_FINAL; /* mark field type final */
 		if (PyTuple_Size(pair) == 3) { /* bits specified */
-			switch(dict->ffi_type.type) {
+			switch(dict->ffi_type_pointer.type) {
 			case FFI_TYPE_UINT8:
 			case FFI_TYPE_UINT16:
 			case FFI_TYPE_UINT32:
@@ -357,8 +362,8 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 	/* Adjust the size according to the alignment requirements */
 	size = ((size + total_align - 1) / total_align) * total_align;
 
-	stgdict->ffi_type.alignment = total_align;
-	stgdict->ffi_type.size = size;
+	stgdict->ffi_type_pointer.alignment = total_align;
+	stgdict->ffi_type_pointer.size = size;
 
 	stgdict->size = size;
 	stgdict->align = total_align;

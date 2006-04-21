@@ -73,6 +73,11 @@ class PosixTester(unittest.TestCase):
             finally:
                 fp.close()
 
+    def test_confstr(self):
+        if hasattr(posix, 'confstr'):
+            self.assertRaises(ValueError, posix.confstr, "CS_garbage")
+            self.assertEqual(len(posix.confstr("CS_PATH")) > 0, True)
+
     def test_dup2(self):
         if hasattr(posix, 'dup2'):
             fp1 = open(test_support.TESTFN)

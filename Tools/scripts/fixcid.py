@@ -35,7 +35,7 @@
 # files.
 
 import sys
-import regex
+import re
 import os
 from stat import *
 import getopt
@@ -90,7 +90,7 @@ def main():
 # Change this regular expression to select a different set of files
 Wanted = '^[a-zA-Z0-9_]+\.[ch]$'
 def wanted(name):
-    return regex.match(Wanted, name) >= 0
+    return re.match(Wanted, name) >= 0
 
 def recursedown(dirname):
     dbg('recursedown(%r)\n' % (dirname,))
@@ -212,12 +212,12 @@ Number = Floatnumber + '\|' + Intnumber
 # Anything else is an operator -- don't list this explicitly because of '/*'
 
 OutsideComment = (Identifier, Number, String, Char, CommentStart)
-OutsideCommentPattern = '\(' + '\|'.join(OutsideComment) + '\)'
-OutsideCommentProgram = regex.compile(OutsideCommentPattern)
+OutsideCommentPattern = '(' + '|'.join(OutsideComment) + ')'
+OutsideCommentProgram = re.compile(OutsideCommentPattern)
 
 InsideComment = (Identifier, Number, CommentEnd)
-InsideCommentPattern = '\(' + '\|'.join(InsideComment) + '\)'
-InsideCommentProgram = regex.compile(InsideCommentPattern)
+InsideCommentPattern = '(' + '|'.join(InsideComment) + ')'
+InsideCommentProgram = re.compile(InsideCommentPattern)
 
 def initfixline():
     global Program

@@ -6,7 +6,7 @@ are always available.  They are listed here in alphabetical order.
 
 \setindexsubitem{(built-in function)}
 
-\begin{funcdesc}{__import__}{name\optional{, globals\optional{, locals\optional{, fromlist}}}}
+\begin{funcdesc}{__import__}{name\optional{, globals\optional{, locals\optional{, fromlist\optional{, level}}}}}
   This function is invoked by the \keyword{import}\stindex{import}
   statement.  It mainly exists so that you can replace it with another
   function that has a compatible interface, in order to change the
@@ -20,9 +20,9 @@ are always available.  They are listed here in alphabetical order.
 
   For example, the statement \samp{import spam} results in the
   following call: \code{__import__('spam',} \code{globals(),}
-  \code{locals(), [])}; the statement \samp{from spam.ham import eggs}
+  \code{locals(), [], -1)}; the statement \samp{from spam.ham import eggs}
   results in \samp{__import__('spam.ham', globals(), locals(),
-  ['eggs'])}.  Note that even though \code{locals()} and
+  ['eggs'], -1)}.  Note that even though \code{locals()} and
   \code{['eggs']} are passed in as arguments, the
   \function{__import__()} function does not set the local variable
   named \code{eggs}; this is done by subsequent code that is generated
@@ -52,6 +52,15 @@ def my_import(name):
         mod = getattr(mod, comp)
     return mod
 \end{verbatim}
+
+  \var{level} specifies whether to use absolute or relative imports.
+  The default is \code{-1} which indicates both absolute and relative
+  imports will be attempted.  \code{0} means only perform absolute imports.
+  Positive values for \var{level} indicate the number of parent directories
+  to search relative to the directory of the module calling
+  \function{__import__}.
+\versionchanged[The level parameter was added]{2.5}
+\versionchanged[Keyword support for parameters was added]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{abs}{x}
@@ -683,7 +692,7 @@ class C:
 \end{funcdesc}
 
 \begin{funcdesc}{object}{}
-  Return a new featureless object.  \function{object()} is a base
+  Return a new featureless object.  \class{object} is a base
   for all new style classes.  It has the methods that are common
   to all instances of new style classes.
   \versionadded{2.2}
@@ -718,8 +727,11 @@ class C:
 \begin{funcdesc}{pow}{x, y\optional{, z}}
   Return \var{x} to the power \var{y}; if \var{z} is present, return
   \var{x} to the power \var{y}, modulo \var{z} (computed more
-  efficiently than \code{pow(\var{x}, \var{y}) \%\ \var{z}}).  The
-  arguments must have numeric types.  With mixed operand types, the
+  efficiently than \code{pow(\var{x}, \var{y}) \%\ \var{z}}).
+  The two-argument form \code{pow(\var{x}, \var{y})} is equivalent to using
+  the power operator: \code{\var{x}**\var{y}}.
+  
+  The arguments must have numeric types.  With mixed operand types, the
   coercion rules for binary arithmetic operators apply.  For int and
   long int operands, the result has the same type as the operands
   (after coercion) unless the second argument is negative; in that

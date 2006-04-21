@@ -169,7 +169,8 @@ the latter would defeat the purpose of the warning message).
 \end{funcdesc}
 
 \begin{funcdesc}{warn_explicit}{message, category, filename,
- lineno\optional{, module\optional{, registry}}}
+ lineno\optional{, module\optional{, registry\optional{,
+ module_globals}}}}
 This is a low-level interface to the functionality of
 \function{warn()}, passing in explicitly the message, category,
 filename and line number, and optionally the module name and the
@@ -179,6 +180,11 @@ stripped; if no registry is passed, the warning is never suppressed.
 \var{message} must be a string and \var{category} a subclass of
 \exception{Warning} or \var{message} may be a \exception{Warning} instance,
 in which case \var{category} will be ignored.
+
+\var{module_globals}, if supplied, should be the global namespace in use
+by the code for which the warning is issued.  (This argument is used to
+support displaying source for modules found in zipfiles or other
+non-filesystem import sources, and was added in Python 2.5.)
 \end{funcdesc}
 
 \begin{funcdesc}{showwarning}{message, category, filename,

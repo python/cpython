@@ -1168,6 +1168,17 @@ class TestDateTime(TestDate):
         self.assertEqual(dt2 - dt1, us)
         self.assert_(dt1 < dt2)
 
+    def test_strftime_with_bad_tzname_replace(self):
+        # verify ok if tzinfo.tzname().replace() returns a non-string
+        class MyTzInfo(FixedOffset):
+            def tzname(self, dt):
+                class MyStr(str):
+                    def replace(self, *args):
+                        return None
+                return MyStr('name')
+        t = self.theclass(2005, 3, 2, 0, 0, 0, 0, MyTzInfo(3, 'name'))
+        self.assertRaises(TypeError, t.strftime, '%Z')
+
     def test_bad_constructor_arguments(self):
         # bad years
         self.theclass(MINYEAR, 1, 1)  # no exception

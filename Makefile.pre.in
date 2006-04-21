@@ -30,6 +30,7 @@ VPATH=		@srcdir@
 
 CC=		@CC@
 CXX=		@CXX@
+MAINCC=		@MAINCC@
 LINKCC=		@LINKCC@
 AR=		@AR@
 RANLIB=		@RANLIB@
@@ -157,7 +158,6 @@ LIBC=		@LIBC@
 SYSLIBS=	$(LIBM) $(LIBC)
 SHLIBS=		@SHLIBS@
 
-MAINOBJ=	@MAINOBJ@
 THREADOBJ=	@THREADOBJ@
 DLINCLDIR=	@DLINCLDIR@
 DYNLOADFILE=	@DYNLOADFILE@
@@ -219,13 +219,15 @@ PGENOBJS=	$(PGENMAIN) $(POBJS) $(PGOBJS)
 
 ##########################################################################
 # AST
-AST_H=		$(srcdir)/Include/Python-ast.h
-AST_C=		$(srcdir)/Python/Python-ast.c
+AST_H_DIR=	$(srcdir)/Include
+AST_H=		$(AST_H_DIR)/Python-ast.h
+AST_C_DIR=	$(srcdir)/Python
+AST_C=		$(AST_C_DIR)/Python-ast.c
 AST_ASDL=	$(srcdir)/Parser/Python.asdl
 
 ASDLGEN_FILES=	$(srcdir)/Parser/asdl.py $(srcdir)/Parser/asdl_c.py
 # XXX Note that a build now requires Python exist before the build starts
-ASDLGEN=	$(srcdir)/Parser/asdl_c.py -h $(srcdir)/Include -c $(srcdir)/Python
+ASDLGEN=	$(srcdir)/Parser/asdl_c.py
 
 ##########################################################################
 # Python
@@ -326,9 +328,9 @@ LIBRARY_OBJS=	\
 all:		$(BUILDPYTHON) oldsharedmods sharedmods
 
 # Build the interpreter
-$(BUILDPYTHON):	Modules/$(MAINOBJ) $(LIBRARY) $(LDLIBRARY)
+$(BUILDPYTHON):	Modules/python.o $(LIBRARY) $(LDLIBRARY)
 		$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) -o $@ \
-			Modules/$(MAINOBJ) \
+			Modules/python.o \
 			$(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
 platform: $(BUILDPYTHON)
@@ -448,8 +450,8 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
 		-DVPATH='"$(VPATH)"' \
 		-o $@ $(srcdir)/Modules/getpath.c
 
-Modules/ccpython.o: $(srcdir)/Modules/ccpython.cc
-	$(CXX) -c $(PY_CFLAGS) -o $@ $(srcdir)/Modules/ccpython.cc
+Modules/python.o: $(srcdir)/Modules/python.c
+	$(MAINCC) -c $(PY_CFLAGS) -o $@ $(srcdir)/Modules/python.c
 
 
 $(GRAMMAR_H) $(GRAMMAR_C): $(PGEN) $(GRAMMAR_INPUT)
@@ -465,9 +467,12 @@ Parser/metagrammar.o:	$(srcdir)/Parser/metagrammar.c
 
 Parser/tokenizer_pgen.o:	$(srcdir)/Parser/tokenizer.c
 
-$(AST_H) $(AST_C): $(AST_ASDL) $(ASDLGEN_FILES)
-	$(ASDLGEN) $(AST_ASDL)
+$(AST_H): $(AST_ASDL) $(ASDLGEN_FILES)
+	$(ASDLGEN) -h $(AST_H_DIR) $(AST_ASDL)
 
+$(AST_C): $(AST_ASDL) $(ASDLGEN_FILES)
+	$(ASDLGEN) -c $(AST_C_DIR) $(AST_ASDL)
+	
 Python/compile.o Python/symtable.o: $(GRAMMAR_H) $(AST_H)
 
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
@@ -537,7 +542,7 @@ PYTHON_HEADERS= \
 		Include/weakrefobject.h \
 		pyconfig.h
 
-$(LIBRARY_OBJS) $(MODOBJS) Modules/$(MAINOBJ): $(PYTHON_HEADERS)
+$(LIBRARY_OBJS) $(MODOBJS) Modules/python.o: $(PYTHON_HEADERS)
 
 
 ######################################################################
@@ -680,9 +685,13 @@ PLATMACDIRS= plat-mac plat-mac/Carbon plat-mac/lib-scriptpackages \
 PLATMACPATH=:plat-mac:plat-mac/lib-scriptpackages
 LIBSUBDIRS=	lib-old lib-tk site-packages test test/output test/data \
 		test/decimaltestdata \
-		encodings email email/test email/test/data compiler hotshot \
-		logging bsddb bsddb/test csv ctypes idlelib idlelib/Icons \
+		encodings compiler hotshot \
+		email email/mime email/test email/test/data \
+		sqlite3 sqlite3/test \
+		logging bsddb bsddb/test csv \
+		ctypes ctypes/test ctypes/macholib idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
+		setuptools setuptools/command setuptools/tests setuptools.egg-info \
 		curses $(MACHDEPS)
 libinstall:	$(BUILDPYTHON) $(srcdir)/Lib/$(PLATDIR)
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
@@ -718,6 +727,7 @@ libinstall:	$(BUILDPYTHON) $(srcdir)/Lib/$(PLATDIR)
 	do \
 		a=$(srcdir)/Lib/$$d; \
 		if test ! -d $$a; then continue; else true; fi; \
+		if test `ls $$a | wc -l` -lt 1; then continue; fi; \
 		b=$(LIBDEST)/$$d; \
 		for i in $$a/*; \
 		do \
@@ -809,7 +819,7 @@ libainstall:	all
 		fi; \
 	fi
 	$(INSTALL_DATA) Modules/config.c $(DESTDIR)$(LIBPL)/config.c
-	$(INSTALL_DATA) Modules/$(MAINOBJ) $(DESTDIR)$(LIBPL)/$(MAINOBJ)
+	$(INSTALL_DATA) Modules/python.o $(DESTDIR)$(LIBPL)/python.o
 	$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(DESTDIR)$(LIBPL)/config.c.in
 	$(INSTALL_DATA) Makefile $(DESTDIR)$(LIBPL)/Makefile
 	$(INSTALL_DATA) Modules/Setup $(DESTDIR)$(LIBPL)/Setup
@@ -817,6 +827,11 @@ libainstall:	all
 	$(INSTALL_DATA) Modules/Setup.config $(DESTDIR)$(LIBPL)/Setup.config
 	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(DESTDIR)$(LIBPL)/makesetup
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
+	# Substitution happens here, as the completely-expanded BINDIR
+	# is not available in configure
+	sed -e "s,@BINDIR@,$(BINDIR)," < $(srcdir)/Misc/python-config.in >python-config
+	$(INSTALL_SCRIPT) python-config $(BINDIR)/python-config
+	rm python-config
 	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
 		echo; echo "Installing support files for building shared extension modules on AIX:"; \
@@ -942,6 +957,10 @@ config.status:	$(srcdir)/configure
 .c.o:
 	$(CC) -c $(PY_CFLAGS) -o $@ $<
 
+# Run reindent on the library
+reindent:
+	./python$(EXEEXT) $(srcdir)/Tools/scripts/reindent.py -r $(srcdir)/Lib
+
 # Rerun configure with the same options as it was run last time,
 # provided the config.status script exists
 recheck:
@@ -969,13 +988,14 @@ TAGS::
 
 # Sanitation targets -- clean leaves libraries, executables and tags
 # files, which clobber removes those as well
+pycremoval:
+	find $(srcdir) -name '*.py[co]' -exec rm -f {} ';'
 
-clean:
+clean: pycremoval
 	find . -name '*.o' -exec rm -f {} ';'
 	find . -name '*.s[ol]' -exec rm -f {} ';'
-	find $(srcdir) -name '*.py[co]' -exec rm -f {} ';'
-	find $(srcdir) -name 'fficonfig.h' -exec rm -f {} ';'
-	find $(srcdir) -name 'fficonfig.py' -exec rm -f {} ';'
+	find $(srcdir)/build -name 'fficonfig.h' -exec rm -f {} ';' || true
+	find $(srcdir)/build -name 'fficonfig.py' -exec rm -f {} ';' || true
 
 clobber: clean
 	-rm -f $(BUILDPYTHON) $(PGEN) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \

@@ -27,6 +27,9 @@ int make_buildinfo2()
 	DWORD type, size;
 	if (_stat(".svn", &st) < 0)
 		return 0;
+	/* Allow suppression of subwcrev.exe invocation if a no_subwcrev file is present. */
+	if (_stat("no_subwcrev", &st) == 0)
+		return 0;
 	if (RegOpenKey(HKEY_LOCAL_MACHINE, "Software\\TortoiseSVN", &hTortoise) != ERROR_SUCCESS &&
 	    RegOpenKey(HKEY_CURRENT_USER, "Software\\TortoiseSVN", &hTortoise) != ERROR_SUCCESS)
 		/* Tortoise not installed */

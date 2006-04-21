@@ -30,9 +30,22 @@ class GeneratorContextManager(object):
         else:
             try:
                 self.gen.throw(type, value, traceback)
-                return True
-            except StopIteration:
-                return True
+                raise RuntimeError("generator didn't stop after throw()")
+            except StopIteration, exc:
+                # Suppress the exception *unless* it's the same exception that
+                # was passed to throw().  This prevents a StopIteration
+                # raised inside the "with" statement from being suppressed
+                return exc is not value
+            except:
+                # only re-raise if it's *not* the exception that was
+                # passed to throw(), because __exit__() must not raise
+                # an exception unless __exit__() itself failed.  But throw()
+                # has to raise the exception to signal propagation, so this
+                # fixes the impedance mismatch between the throw() protocol
+                # and the __exit__() protocol.
+                #
+                if sys.exc_info()[1] is not value:
+                    raise
 
 
 def contextmanager(func):
@@ -68,6 +81,7 @@ def contextmanager(func):
     try:
         helper.__name__ = func.__name__
         helper.__doc__ = func.__doc__
+        helper.__dict__ = func.__dict__
     except:
         pass
     return helper

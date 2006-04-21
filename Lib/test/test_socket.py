@@ -268,9 +268,9 @@ class GeneralModuleTests(unittest.TestCase):
             # Probably a similar problem as above; skip this test
             return
         all_host_names = [hostname, hname] + aliases
-        fqhn = socket.getfqdn()
+        fqhn = socket.getfqdn(ip)
         if not fqhn in all_host_names:
-            self.fail("Error testing host resolution mechanisms.")
+            self.fail("Error testing host resolution mechanisms. (fqdn: %s, all: %s)" % (fqhn, repr(all_host_names)))
 
     def testRefCountGetNameInfo(self):
         # Testing reference count for getnameinfo
@@ -468,6 +468,14 @@ class GeneralModuleTests(unittest.TestCase):
         sock.settimeout(1)
         sock.close()
         self.assertRaises(socket.error, sock.send, "spam")
+
+    def testNewAttributes(self):
+        # testing .family, .type and .protocol
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.assertEqual(sock.family, socket.AF_INET)
+        self.assertEqual(sock.type, socket.SOCK_STREAM)
+        self.assertEqual(sock.proto, 0)
+        sock.close()
 
 class BasicTCPTest(SocketConnectedTest):
 
@@ -817,6 +825,32 @@ class TestExceptions(unittest.TestCase):
         self.assert_(issubclass(socket.gaierror, socket.error))
         self.assert_(issubclass(socket.timeout, socket.error))
 
+class TestLinuxAbstractNamespace(unittest.TestCase):
+
+    UNIX_PATH_MAX = 108
+
+    def testLinuxAbstractNamespace(self):
+        address = "\x00python-test-hello\x00\xff"
+        s1 = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s1.bind(address)
+        s1.listen(1)
+        s2 = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s2.connect(s1.getsockname())
+        s1.accept()
+        self.assertEqual(s1.getsockname(), address)
+        self.assertEqual(s2.getpeername(), address)
+
+    def testMaxName(self):
+        address = "\x00" + "h" * (self.UNIX_PATH_MAX - 1)
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.bind(address)
+        self.assertEqual(s.getsockname(), address)
+
+    def testNameOverflow(self):
+        address = "\x00" + "h" * self.UNIX_PATH_MAX
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.assertRaises(socket.error, s.bind, address)
+
 
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPTimeoutTest, TestExceptions]
@@ -832,6 +866,8 @@ def test_main():
     ])
     if hasattr(socket, "socketpair"):
         tests.append(BasicSocketPairTest)
+    if sys.platform == 'linux2':
+        tests.append(TestLinuxAbstractNamespace)
     test_support.run_unittest(*tests)
 
 if __name__ == "__main__":
