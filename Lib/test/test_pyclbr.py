@@ -57,6 +57,8 @@ class PyclbrTest(TestCase):
             ignore are ignored.   If no module is provided, the appropriate
             module is loaded with __import__.'''
 
+        ignore = set(ignore) | set(['object'])
+
         if module == None:
             # Import it.
             # ('<silly>' is to work around an API silliness in __import__)
@@ -164,7 +166,7 @@ class PyclbrTest(TestCase):
                              'getproxies_internetconfig',)) # not on all platforms
         cm('pickle')
         cm('aifc', ignore=('openfp',))  # set with = in module
-        cm('Cookie')
+        cm('Cookie', ignore=('Cookie',)) # Cookie is an alias for SmartCookie
         cm('sre_parse', ignore=('dump',)) # from sre_constants import *
         cm('pdb')
         cm('pydoc')
