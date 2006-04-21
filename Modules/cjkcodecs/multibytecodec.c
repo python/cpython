@@ -927,6 +927,12 @@ errorexit:
 }
 
 static int
+mbiencoder_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	return 0;
+}
+
+static int
 mbiencoder_traverse(MultibyteIncrementalEncoderObject *self,
 		    visitproc visit, void *arg)
 {
@@ -982,7 +988,7 @@ static PyTypeObject MultibyteIncrementalEncoder_Type = {
 	0,				/* tp_descr_get */
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
-	0,				/* tp_init */
+	mbiencoder_init,		/* tp_init */
 	0,				/* tp_alloc */
 	mbiencoder_new,			/* tp_new */
 };
@@ -1122,6 +1128,12 @@ errorexit:
 }
 
 static int
+mbidecoder_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	return 0;
+}
+
+static int
 mbidecoder_traverse(MultibyteIncrementalDecoderObject *self,
 		    visitproc visit, void *arg)
 {
@@ -1177,7 +1189,7 @@ static PyTypeObject MultibyteIncrementalDecoder_Type = {
 	0,				/* tp_descr_get */
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
-	0,				/* tp_init */
+	mbidecoder_init,		/* tp_init */
 	0,				/* tp_alloc */
 	mbidecoder_new,			/* tp_new */
 };
@@ -1427,6 +1439,12 @@ errorexit:
 }
 
 static int
+mbstreamreader_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	return 0;
+}
+
+static int
 mbstreamreader_traverse(MultibyteStreamReaderObject *self,
 			visitproc visit, void *arg)
 {
@@ -1484,7 +1502,7 @@ static PyTypeObject MultibyteStreamReader_Type = {
 	0,				/* tp_descr_get */
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
-	0,				/* tp_init */
+	mbstreamreader_init,		/* tp_init */
 	0,				/* tp_alloc */
 	mbstreamreader_new,		/* tp_new */
 };
@@ -1632,6 +1650,12 @@ errorexit:
 }
 
 static int
+mbstreamwriter_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	return 0;
+}
+
+static int
 mbstreamwriter_traverse(MultibyteStreamWriterObject *self,
 			visitproc visit, void *arg)
 {
@@ -1706,7 +1730,7 @@ static PyTypeObject MultibyteStreamWriter_Type = {
 	0,				/* tp_descr_get */
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
-	0,				/* tp_init */
+	mbstreamwriter_init,		/* tp_init */
 	0,				/* tp_alloc */
 	mbstreamwriter_new,		/* tp_new */
 };
