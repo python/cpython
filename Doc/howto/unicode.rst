@@ -733,6 +733,7 @@ Version 1.02: posted August 16 2005.  Corrects factual errors.
 
 .. comment Additional topic: building Python w/ UCS2 or UCS4 support
 .. comment Describe obscure -U switch somewhere?
+.. comment Describe use of codecs.StreamRecoder and StreamReaderWriter
 
 .. comment 
    Original outline:
