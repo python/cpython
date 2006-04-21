@@ -197,18 +197,6 @@ xx_bug(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-/* Example passing NULLs to PyObject_Str(NULL) and PyObject_Unicode(NULL). */
-
-static PyObject *
-xx_null(PyObject *self, PyObject *noargs)
-{
-	PyObject *o1 = PyObject_Str(NULL), *o2 = PyObject_Unicode(NULL);
-	PyObject *tuple = PyTuple_Pack(2, o1, o2);
-	Py_XDECREF(o1);
-	Py_XDECREF(o2);
-	return tuple;
-}
-
 /* Test bad format character */
 
 static PyObject *
@@ -343,8 +331,6 @@ static PyMethodDef xx_methods[] = {
 		PyDoc_STR("new() -> new Xx object")},
 	{"bug",		xx_bug,		METH_VARARGS,
 		PyDoc_STR("bug(o) -> None")},
-	{"null",	xx_null,	METH_NOARGS,
-		PyDoc_STR("null(o) -> ('NULL', u'NULL')")},
 	{NULL,		NULL}		/* sentinel */
 };
 

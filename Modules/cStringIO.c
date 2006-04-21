@@ -144,7 +144,8 @@ PyDoc_STRVAR(IO_isatty__doc__, "isatty(): always returns 0");
 
 static PyObject *
 IO_isatty(IOobject *self, PyObject *unused) {
-	Py_INCREF(Py_False);
+        if (!IO__opencheck(self)) return NULL;
+        Py_INCREF(Py_False);
         return Py_False;
 }
 

@@ -15,6 +15,14 @@ class Codec(codecs.Codec):
     def decode(self,input,errors='strict'):
         return codecs.charmap_decode(input,errors,decoding_map)
 
+class IncrementalEncoder(codecs.IncrementalEncoder):
+    def encode(self, input, final=False):
+        return codecs.charmap_encode(input,self.errors,encoding_map)[0]
+
+class IncrementalDecoder(codecs.IncrementalDecoder):
+    def decode(self, input, final=False):
+        return codecs.charmap_decode(input,self.errors,decoding_map)[0]
+
 class StreamWriter(Codec,codecs.StreamWriter):
     pass
 
@@ -24,7 +32,15 @@ class StreamReader(Codec,codecs.StreamReader):
 ### encodings module API
 
 def getregentry():
-    return (Codec().encode,Codec().decode,StreamReader,StreamWriter)
+    return codecs.CodecInfo(
+        name='palmos',
+        encode=Codec().encode,
+        decode=Codec().decode,
+        incrementalencoder=IncrementalEncoder,
+        incrementaldecoder=IncrementalDecoder,
+        streamreader=StreamReader,
+        streamwriter=StreamWriter,
+    )
 
 ### Decoding Map
 

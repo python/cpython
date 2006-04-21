@@ -46,6 +46,14 @@ class Codec(codecs.Codec):
     def decode(self, input,errors='strict'):
         return quopri_decode(input,errors)
 
+class IncrementalEncoder(codecs.IncrementalEncoder):
+    def encode(self, input, final=False):
+        return quopri_encode(input, self.errors)[0]
+
+class IncrementalDecoder(codecs.IncrementalDecoder):
+    def decode(self, input, final=False):
+        return quopri_decode(input, self.errors)[0]
+
 class StreamWriter(Codec, codecs.StreamWriter):
     pass
 
@@ -55,4 +63,12 @@ class StreamReader(Codec,codecs.StreamReader):
 # encodings module API
 
 def getregentry():
-    return (quopri_encode, quopri_decode, StreamReader, StreamWriter)
+    return codecs.CodecInfo(
+        name='quopri',
+        encode=quopri_encode,
+        decode=quopri_decode,
+        incrementalencoder=IncrementalEncoder,
+        incrementaldecoder=IncrementalDecoder,
+        streamwriter=StreamWriter,
+        streamreader=StreamReader,
+    )
