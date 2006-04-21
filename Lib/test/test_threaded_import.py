@@ -6,7 +6,7 @@
 # randrange, and then Python hangs.
 
 import thread
-from test.test_support import verbose, TestSkipped
+from test.test_support import verbose, TestSkipped, TestFailed
 
 critical_section = thread.allocate_lock()
 done = thread.allocate_lock()
@@ -24,6 +24,23 @@ def task():
     critical_section.release()
     if finished:
         done.release()
+
+def test_import_hangers():
+    import sys
+    if verbose:
+        print "testing import hangers ...",
+
+    from test import threaded_import_hangers
+
+    try:
+        if threaded_import_hangers.errors:
+            raise TestFailed(threaded_import_hangers.errors)
+        elif verbose:
+            print "OK."
+    finally:
+        # In case this test is run again, make sure the helper module
+        # gets loaded from scratch again.
+        del sys.modules['test.threaded_import_hangers']
 
 # Tricky:  When regrtest imports this module, the thread running regrtest
 # grabs the import lock and won't let go of it until this module returns.
@@ -52,6 +69,8 @@ def test_main():        # magic name!  see above
         if verbose:
             print "OK."
     done.release()
+
+    test_import_hangers()
 
 if __name__ == "__main__":
     test_main()
