@@ -3,13 +3,13 @@ Package generated from /Volumes/Sap/Applications (Mac OS 9)/Netscape Communicato
 """
 import aetools
 Error = aetools.Error
-import Standard_Suite
-import Standard_URL_suite
-import Mozilla_suite
-import Text
-import WorldWideWeb_suite
-import PowerPlant
-import Required_suite
+from . import Standard_Suite
+from . import Standard_URL_suite
+from . import Mozilla_suite
+from . import Text
+from . import WorldWideWeb_suite
+from . import PowerPlant
+from . import Required_suite
 
 
 _code_to_module = {
@@ -34,13 +34,13 @@ _code_to_fullname = {
     'reqd' : ('Netscape.Required_suite', 'Required_suite'),
 }
 
-from Standard_Suite import *
-from Standard_URL_suite import *
-from Mozilla_suite import *
-from Text import *
-from WorldWideWeb_suite import *
-from PowerPlant import *
-from Required_suite import *
+from Netscape.Standard_Suite import *
+from Netscape.Standard_URL_suite import *
+from Netscape.Mozilla_suite import *
+from Netscape.Text import *
+from Netscape.WorldWideWeb_suite import *
+from Netscape.PowerPlant import *
+from Netscape.Required_suite import *
 
 def getbaseclasses(v):
     if not getattr(v, '_propdict', None):

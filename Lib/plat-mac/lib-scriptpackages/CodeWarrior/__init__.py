@@ -3,10 +3,10 @@ Package generated from /Volumes/Sap/Applications (Mac OS 9)/Metrowerks CodeWarri
 """
 import aetools
 Error = aetools.Error
-import CodeWarrior_suite
-import Standard_Suite
-import Metrowerks_Shell_Suite
-import Required
+from . import CodeWarrior_suite
+from . import Standard_Suite
+from . import Metrowerks_Shell_Suite
+from . import Required
 
 
 _code_to_module = {
@@ -25,10 +25,10 @@ _code_to_fullname = {
     'reqd' : ('CodeWarrior.Required', 'Required'),
 }
 
-from CodeWarrior_suite import *
-from Standard_Suite import *
-from Metrowerks_Shell_Suite import *
-from Required import *
+from CodeWarrior.CodeWarrior_suite import *
+from CodeWarrior.Standard_Suite import *
+from CodeWarrior.Metrowerks_Shell_Suite import *
+from CodeWarrior.Required import *
 
 def getbaseclasses(v):
     if not getattr(v, '_propdict', None):

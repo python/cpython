@@ -173,7 +173,7 @@ class _Prop_title_displays_window_size(aetools.NProperty):
 
 windows = window
 application._superclassnames = []
-import Standard_Suite
+from . import Standard_Suite
 application._privpropdict = {
     '_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
     'properties' : _Prop_properties,

@@ -3,15 +3,15 @@ Package generated from /System/Library/CoreServices/Finder.app
 """
 import aetools
 Error = aetools.Error
-import Standard_Suite
-import Legacy_suite
-import Containers_and_folders
-import Files
-import Finder_Basics
-import Finder_items
-import Window_classes
-import Type_Definitions
-import Enumerations
+from . import Standard_Suite
+from . import Legacy_suite
+from . import Containers_and_folders
+from . import Files
+from . import Finder_Basics
+from . import Finder_items
+from . import Window_classes
+from . import Type_Definitions
+from . import Enumerations
 
 
 _code_to_module = {
@@ -40,15 +40,15 @@ _code_to_fullname = {
     'tpnm' : ('Finder.Enumerations', 'Enumerations'),
 }
 
-from Standard_Suite import *
-from Legacy_suite import *
-from Containers_and_folders import *
-from Files import *
-from Finder_Basics import *
-from Finder_items import *
-from Window_classes import *
-from Type_Definitions import *
-from Enumerations import *
+from Finder.Standard_Suite import *
+from Finder.Legacy_suite import *
+from Finder.Containers_and_folders import *
+from Finder.Files import *
+from Finder.Finder_Basics import *
+from Finder.Finder_items import *
+from Finder.Window_classes import *
+from Finder.Type_Definitions import *
+from Finder.Enumerations import *
 
 def getbaseclasses(v):
     if not getattr(v, '_propdict', None):

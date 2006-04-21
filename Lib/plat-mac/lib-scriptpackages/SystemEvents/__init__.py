@@ -3,14 +3,14 @@ Package generated from /System/Library/CoreServices/System Events.app
 """
 import aetools
 Error = aetools.Error
-import Standard_Suite
-import Text_Suite
-import Disk_Folder_File_Suite
-import Folder_Actions_Suite
-import Login_Items_Suite
-import Power_Suite
-import Processes_Suite
-import System_Events_Suite
+from . import Standard_Suite
+from . import Text_Suite
+from . import Disk_Folder_File_Suite
+from . import Folder_Actions_Suite
+from . import Login_Items_Suite
+from . import Power_Suite
+from . import Processes_Suite
+from . import System_Events_Suite
 
 
 _code_to_module = {
@@ -37,14 +37,14 @@ _code_to_fullname = {
     'sevs' : ('SystemEvents.System_Events_Suite', 'System_Events_Suite'),
 }
 
-from Standard_Suite import *
-from Text_Suite import *
-from Disk_Folder_File_Suite import *
-from Folder_Actions_Suite import *
-from Login_Items_Suite import *
-from Power_Suite import *
-from Processes_Suite import *
-from System_Events_Suite import *
+from SystemEvents.Standard_Suite import *
+from SystemEvents.Text_Suite import *
+from SystemEvents.Disk_Folder_File_Suite import *
+from SystemEvents.Folder_Actions_Suite import *
+from SystemEvents.Login_Items_Suite import *
+from SystemEvents.Power_Suite import *
+from SystemEvents.Processes_Suite import *
+from SystemEvents.System_Events_Suite import *
 
 def getbaseclasses(v):
     if not getattr(v, '_propdict', None):

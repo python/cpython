@@ -148,8 +148,8 @@ class _Prop_warns_before_emptying(aetools.NProperty):
 #        element 'inlf' as ['indx', 'name']
 #        element 'pack' as ['indx', 'name']
 disk._superclassnames = ['container']
-import Files
-import Finder_items
+from . import Files
+from . import Finder_items
 disk._privpropdict = {
     '_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
     'capacity' : _Prop_capacity,

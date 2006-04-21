@@ -454,7 +454,7 @@ single_class_browser._privpropdict = {
 }
 single_class_browser._privelemdict = {
 }
-import Standard_Suite
+from . import Standard_Suite
 single_class_hierarchy._superclassnames = ['document']
 single_class_hierarchy._privpropdict = {
     'inherits' : _Prop_inherits,

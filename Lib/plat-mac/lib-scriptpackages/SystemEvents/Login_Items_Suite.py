@@ -40,7 +40,7 @@ class _Prop_path(aetools.NProperty):
     want = 'utxt'
 
 login_items = login_item
-import Standard_Suite
+from . import Standard_Suite
 login_item._superclassnames = ['item']
 login_item._privpropdict = {
     '_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,

@@ -3,12 +3,12 @@ Package generated from /Applications/Internet Explorer.app
 """
 import aetools
 Error = aetools.Error
-import Standard_Suite
-import URL_Suite
-import Netscape_Suite
-import Microsoft_Internet_Explorer
-import Web_Browser_Suite
-import Required_Suite
+from . import Standard_Suite
+from . import URL_Suite
+from . import Netscape_Suite
+from . import Microsoft_Internet_Explorer
+from . import Web_Browser_Suite
+from . import Required_Suite
 
 
 _code_to_module = {
@@ -31,12 +31,12 @@ _code_to_fullname = {
     'reqd' : ('Explorer.Required_Suite', 'Required_Suite'),
 }
 
-from Standard_Suite import *
-from URL_Suite import *
-from Netscape_Suite import *
-from Microsoft_Internet_Explorer import *
-from Web_Browser_Suite import *
-from Required_Suite import *
+from Explorer.Standard_Suite import *
+from Explorer.URL_Suite import *
+from Explorer.Netscape_Suite import *
+from Explorer.Microsoft_Internet_Explorer import *
+from Explorer.Web_Browser_Suite import *
+from Explorer.Required_Suite import *
 
 def getbaseclasses(v):
     if not getattr(v, '_propdict', None):

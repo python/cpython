@@ -4,15 +4,15 @@ Resource aeut resid 0 Standard Event Suites for English
 """
 import aetools
 Error = aetools.Error
-import Text_Suite
-import AppleScript_Suite
-import Standard_Suite
-import Macintosh_Connectivity_Clas
-import QuickDraw_Graphics_Suite
-import QuickDraw_Graphics_Suppleme
-import Required_Suite
-import Table_Suite
-import Type_Names_Suite
+from . import Text_Suite
+from . import AppleScript_Suite
+from . import Standard_Suite
+from . import Macintosh_Connectivity_Clas
+from . import QuickDraw_Graphics_Suite
+from . import QuickDraw_Graphics_Suppleme
+from . import Required_Suite
+from . import Table_Suite
+from . import Type_Names_Suite
 
 
 _code_to_module = {
@@ -41,15 +41,15 @@ _code_to_fullname = {
     'tpnm' : ('StdSuites.Type_Names_Suite', 'Type_Names_Suite'),
 }
 
-from Text_Suite import *
-from AppleScript_Suite import *
-from Standard_Suite import *
-from Macintosh_Connectivity_Clas import *
-from QuickDraw_Graphics_Suite import *
-from QuickDraw_Graphics_Suppleme import *
-from Required_Suite import *
-from Table_Suite import *
-from Type_Names_Suite import *
+from StdSuites.Text_Suite import *
+from StdSuites.AppleScript_Suite import *
+from StdSuites.Standard_Suite import *
+from StdSuites.Macintosh_Connectivity_Clas import *
+from StdSuites.QuickDraw_Graphics_Suite import *
+from StdSuites.QuickDraw_Graphics_Suppleme import *
+from StdSuites.Required_Suite import *
+from StdSuites.Table_Suite import *
+from StdSuites.Type_Names_Suite import *
 
 def getbaseclasses(v):
     if not getattr(v, '_propdict', None):
