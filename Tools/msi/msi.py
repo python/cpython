@@ -908,6 +908,12 @@ def add_files(db):
         if files:
             # Add an entry to the RemoveFile table to remove bytecode files.
             lib.remove_pyc()
+        if dir.endswith('.egg-info'):
+            lib.add_file('entry_points.txt')
+            lib.add_file('PKG-INFO')
+            lib.add_file('top_level.txt')
+            lib.add_file('zip-safe')
+            continue
         if dir=='test' and parent.physical=='Lib':
             lib.add_file("185test.db")
             lib.add_file("audiotest.au")
@@ -930,9 +936,12 @@ def add_files(db):
         if dir=="Icons":
             lib.glob("*.gif")
             lib.add_file("idle.icns")
-        if dir=="command":
+        if dir=="command" and parent.physical=="distutils":
             lib.add_file("wininst-6.exe")
             lib.add_file("wininst-7.1.exe")
+        if dir=="setuptools":
+            lib.add_file("cli.exe")
+            lib.add_file("gui.exe")
         if dir=="data" and parent.physical=="test" and parent.basedir.physical=="email":
             # This should contain all non-.svn files listed in subversion
             for f in os.listdir(lib.absolute):
