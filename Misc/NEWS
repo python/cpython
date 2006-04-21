@@ -29,6 +29,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1473760: ``tempfile.TemporaryFile()`` could hang on Windows, when
+  called from a thread spawned as a side effect of importing a module.
+
 - The ``__del__`` method of class ``local`` in module ``_threading_local``
   returned before accomplishing any of its intended cleanup.
 
@@ -42,6 +45,9 @@ Library
   aren't officially supported here, and trying to use them will probably
   raise an exception some day.  But dicts have been allowed, and "mostly
   worked", so support for them won't go away without warning.
+
+- New modules: setuptools, easy_install, and pkg_resources, to support
+  building, installing, and using Python eggs, respectively.
 
 Tools/Demos
 -----------

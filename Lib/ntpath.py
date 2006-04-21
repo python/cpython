@@ -482,27 +482,28 @@ def normpath(path):
 
 
 # Return an absolute path.
-def abspath(path):
-    """Return the absolute version of a path"""
-    try:
-        from nt import _getfullpathname
-    except ImportError: # Not running on Windows - mock up something sensible.
-        global abspath
-        def _abspath(path):
-            if not isabs(path):
-                path = join(os.getcwd(), path)
-            return normpath(path)
-        abspath = _abspath
-        return _abspath(path)
+try:
+    from nt import _getfullpathname
 
-    if path: # Empty path must return current working directory.
-        try:
-            path = _getfullpathname(path)
-        except WindowsError:
-            pass # Bad path - return unchanged.
-    else:
-        path = os.getcwd()
-    return normpath(path)
+except ImportError: # not running on Windows - mock up something sensible
+    def abspath(path):
+        """Return the absolute version of a path."""
+        if not isabs(path):
+            path = join(os.getcwd(), path)
+        return normpath(path)
+
+else:  # use native Windows method on Windows
+    def abspath(path):
+        """Return the absolute version of a path."""
+
+        if path: # Empty path must return current working directory.
+            try:
+                path = _getfullpathname(path)
+            except WindowsError:
+                pass # Bad path - return unchanged.
+        else:
+            path = os.getcwd()
+        return normpath(path)
 
 # realpath is a no-op on systems without islink support
 realpath = abspath
