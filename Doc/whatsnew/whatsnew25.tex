@@ -1266,6 +1266,11 @@ which is also written in C but doesn't match the \module{profile}
 module's interface, will continue to be maintained in future versions
 of Python.  (Contributed by Armin Rigo.)
 
+Also, the \module{pstats} module used to analyze the data measured by
+the profiler now supports directing the output to any file stream 
+by supplying a \var{stream} argument to the \class{Stats} constructor.
+(Contributed by Skip Montanaro.)
+
 \item The \module{csv} module, which parses files in
 comma-separated value format, received several enhancements and a
 number of bugfixes.  You can now set the maximum size in bytes of a
