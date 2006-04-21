@@ -24,7 +24,7 @@ class BITS(Structure):
                 ("R", c_short, 6),
                 ("S", c_short, 7)]
 
-func = cdll.load(_ctypes_test.__file__).unpack_bitfields
+func = CDLL(_ctypes_test.__file__).unpack_bitfields
 func.argtypes = POINTER(BITS), c_char
 
 ##for n in "ABCDEFGHIMNOPQRS":

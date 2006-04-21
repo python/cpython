@@ -8,7 +8,7 @@ class ReturnFuncPtrTestCase(unittest.TestCase):
     def test_with_prototype(self):
         # The _ctypes_test shared lib/dll exports quite some functions for testing.
         # The get_strchr function returns a *pointer* to the C strchr function.
-        dll = cdll.load(_ctypes_test.__file__)
+        dll = CDLL(_ctypes_test.__file__)
         get_strchr = dll.get_strchr
         get_strchr.restype = CFUNCTYPE(c_char_p, c_char_p, c_char)
         strchr = get_strchr()
@@ -18,7 +18,7 @@ class ReturnFuncPtrTestCase(unittest.TestCase):
         self.assertRaises(TypeError, strchr, "abcdef")
 
     def test_without_prototype(self):
-        dll = cdll.load(_ctypes_test.__file__)
+        dll = CDLL(_ctypes_test.__file__)
         get_strchr = dll.get_strchr
         # the default 'c_int' would not work on systems where sizeof(int) != sizeof(void *)
         get_strchr.restype = c_void_p

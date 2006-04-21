@@ -8,7 +8,7 @@ except NameError:
     WINFUNCTYPE = CFUNCTYPE
 
 import _ctypes_test
-lib = cdll.load(_ctypes_test.__file__)
+lib = CDLL(_ctypes_test.__file__)
 
 class CFuncPtrTestCase(unittest.TestCase):
     def test_basic(self):

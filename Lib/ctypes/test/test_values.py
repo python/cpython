@@ -10,7 +10,7 @@ import _ctypes_test
 class ValuesTestCase(unittest.TestCase):
 
     def test_an_integer(self):
-        ctdll = cdll.load(_ctypes_test.__file__)
+        ctdll = CDLL(_ctypes_test.__file__)
         an_integer = c_int.in_dll(ctdll, "an_integer")
         x = an_integer.value
         self.failUnlessEqual(x, ctdll.get_an_integer())
@@ -18,7 +18,7 @@ class ValuesTestCase(unittest.TestCase):
         self.failUnlessEqual(x*2, ctdll.get_an_integer())
 
     def test_undefined(self):
-        ctdll = cdll.load(_ctypes_test.__file__)
+        ctdll = CDLL(_ctypes_test.__file__)
         self.assertRaises(ValueError, c_int.in_dll, ctdll, "Undefined_Symbol")
 
     class Win_ValuesTestCase(unittest.TestCase):

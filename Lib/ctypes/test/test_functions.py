@@ -15,9 +15,9 @@ except NameError:
     WINFUNCTYPE = CFUNCTYPE
 
 import _ctypes_test
-dll = cdll.load(_ctypes_test.__file__)
+dll = CDLL(_ctypes_test.__file__)
 if sys.platform == "win32":
-    windll = windll.load(_ctypes_test.__file__)
+    windll = WinDLL(_ctypes_test.__file__)
 
 class POINT(Structure):
     _fields_ = [("x", c_int), ("y", c_int)]
