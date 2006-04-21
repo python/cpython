@@ -734,6 +734,8 @@ collect(int generation)
 	PyGC_Head unreachable; /* non-problematic unreachable trash */
 	PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
 	PyGC_Head *gc;
+	static PyObject *tmod = NULL;
+	double t1 = 0.0;
 
 	if (delstr == NULL) {
 		delstr = PyString_InternFromString("__del__");
@@ -741,7 +743,23 @@ collect(int generation)
 			Py_FatalError("gc couldn't allocate \"__del__\"");
 	}
 
+	if (tmod == NULL) {
+		tmod = PyImport_ImportModule("time");
+		if (tmod == NULL)
+			PyErr_Clear();
+	}
+
 	if (debug & DEBUG_STATS) {
+		if (tmod != NULL) {
+			PyObject *f = PyObject_CallMethod(tmod, "time", NULL);
+			if (f == NULL) {
+				PyErr_Clear();
+			}
+			else {
+				t1 = PyFloat_AsDouble(f);
+				Py_DECREF(f);
+			}
+		}
 		PySys_WriteStderr("gc: collecting generation %d...\n",
 				  generation);
 		PySys_WriteStderr("gc: objects in each generation:");
@@ -813,6 +831,17 @@ collect(int generation)
 		m++;
 		if (debug & DEBUG_COLLECTABLE) {
 			debug_cycle("collectable", FROM_GC(gc));
+		}
+		if (tmod != NULL && (debug & DEBUG_STATS)) {
+			PyObject *f = PyObject_CallMethod(tmod, "time", NULL);
+			if (f == NULL) {
+				PyErr_Clear();
+			}
+			else {
+				t1 = PyFloat_AsDouble(f)-t1;
+				Py_DECREF(f);
+				PySys_WriteStderr("gc: %.4fs elapsed.\n", t1);
+			}
 		}
 	}
 
