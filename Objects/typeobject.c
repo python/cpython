@@ -4183,10 +4183,10 @@ slot_sq_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
 
 	if (value == NULL)
 		res = call_method(self, "__delitem__", &delitem_str,
-				  "(i)", index);
+				  "(n)", index);
 	else
 		res = call_method(self, "__setitem__", &setitem_str,
-				  "(iO)", index, value);
+				  "(nO)", index, value);
 	if (res == NULL)
 		return -1;
 	Py_DECREF(res);
@@ -4201,10 +4201,10 @@ slot_sq_ass_slice(PyObject *self, Py_ssize_t i, Py_ssize_t j, PyObject *value)
 
 	if (value == NULL)
 		res = call_method(self, "__delslice__", &delslice_str,
-				  "(ii)", i, j);
+				  "(nn)", i, j);
 	else
 		res = call_method(self, "__setslice__", &setslice_str,
-				  "(iiO)", i, j, value);
+				  "(nnO)", i, j, value);
 	if (res == NULL)
 		return -1;
 	Py_DECREF(res);
