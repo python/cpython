@@ -13,24 +13,7 @@ extern "C" {
 #endif
 
 #include <fficonfig.h>
-
-/* Do not move this. Some versions of AIX are very picky about where
-   this is positioned. */
-#ifdef __GNUC__
-# define alloca __builtin_alloca
-#else
-# if HAVE_ALLOCA_H
-#  include <alloca.h>
-# else
-#  ifdef _AIX
- #pragma alloca
-#  else
-#   ifndef alloca /* predefined by HP cc +Olibcalls */
-char *alloca ();
-#   endif
-#  endif
-# endif
-#endif
+#include <malloc.h>
 
 /* Check for the existence of memcpy. */
 #if STDC_HEADERS
