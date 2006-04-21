@@ -38,7 +38,7 @@ class TryRaiseExcept(Test):
 
         for i in xrange(self.rounds):
             pass
-            
+
 
 class TryExcept(Test):
 
@@ -677,5 +677,3 @@ class TryExcept(Test):
 
         for i in xrange(self.rounds):
             pass
-            
-

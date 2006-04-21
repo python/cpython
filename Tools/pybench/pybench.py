@@ -38,7 +38,7 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE !
 __version__ = '1.3'
 
 #
-# NOTE: Use xrange for all test loops unless you want to face 
+# NOTE: Use xrange for all test loops unless you want to face
 #       a 20MB process !
 #
 # All tests should have rounds set to values so that a run()
@@ -85,7 +85,7 @@ class Test:
     # for comparisons of benchmark runs - tests with unequal version
     # number will not get compared.
     version = 1.0
-    
+
     # The number of abstract operations done in each round of the
     # test. An operation is the basic unit of what you want to
     # measure. The benchmark will output the amount of run-time per
@@ -129,7 +129,7 @@ class Test:
         """ Run the test in two phases: first calibrate, then
             do the actual test. Be careful to keep the calibration
             timing low w/r to the test timing.
-            
+
         """
         test = self.test
         calibrate = self.calibrate
@@ -144,7 +144,7 @@ class Test:
             offset = offset + t
         offset = offset / cruns
         # now the real thing
-        t = clock() 
+        t = clock()
         test()
         t = clock() - t
         self.last_timing = (t-offset,t,offset)
@@ -152,32 +152,32 @@ class Test:
 
     def calibrate(self):
 
-	""" Calibrate the test.
+        """ Calibrate the test.
 
-	    This method should execute everything that is needed to
-	    setup and run the test - except for the actual operations
-	    that you intend to measure. pybench uses this method to
-	    measure the test implementation overhead.
+            This method should execute everything that is needed to
+            setup and run the test - except for the actual operations
+            that you intend to measure. pybench uses this method to
+            measure the test implementation overhead.
 
         """
         return
 
     def test(self):
 
-	""" Run the test.
+        """ Run the test.
 
-	    The test needs to run self.rounds executing
-	    self.operations number of operations each.
+            The test needs to run self.rounds executing
+            self.operations number of operations each.
 
         """
         # do some tests
         return
-    
+
     def stat(self):
 
         """ Returns two value: average time per run and average per
             operation.
-            
+
         """
         runs = len(self.times)
         if runs == 0:
@@ -210,7 +210,7 @@ class Benchmark:
     roundtime = 0               # Average round time
     version = None              # Benchmark version number (see __init__)
                                 # as float x.yy
-    starttime = None		# Benchmark start time
+    starttime = None            # Benchmark start time
 
     def __init__(self):
 
@@ -254,7 +254,7 @@ class Benchmark:
             print
         self.roundtime = (clock() - roundtime) / self.rounds
         print
-    
+
     def print_stat(self, compare_to=None, hidenoise=0):
 
         if not compare_to:
@@ -380,7 +380,7 @@ python pybench.py -s p15 -c p14
         hidenoise = self.values['-d']
         warp = self.values['-w']
         nogc = self.values['--no-gc']
-        
+
         # Switch off GC
         if nogc:
             try:
@@ -407,7 +407,7 @@ python pybench.py -s p15 -c p14
                 compare_to = bench
             except IOError:
                 print '* Error opening/reading file',compare_to
-                compare_to = None    
+                compare_to = None
 
         if show_bench:
             try:

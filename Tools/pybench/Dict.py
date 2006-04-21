@@ -93,70 +93,70 @@ class DictWithStringKeys(Test):
             d['jkl'] = 4
             d['mno'] = 5
             d['pqr'] = 6
-              
+
             d['abc']
             d['def']
             d['ghi']
             d['jkl']
             d['mno']
             d['pqr']
-              
+
             d['abc'] = 1
             d['def'] = 2
             d['ghi'] = 3
             d['jkl'] = 4
             d['mno'] = 5
             d['pqr'] = 6
-              
+
             d['abc']
             d['def']
             d['ghi']
             d['jkl']
             d['mno']
             d['pqr']
-              
+
             d['abc'] = 1
             d['def'] = 2
             d['ghi'] = 3
             d['jkl'] = 4
             d['mno'] = 5
             d['pqr'] = 6
-              
+
             d['abc']
             d['def']
             d['ghi']
             d['jkl']
             d['mno']
             d['pqr']
-              
+
             d['abc'] = 1
             d['def'] = 2
             d['ghi'] = 3
             d['jkl'] = 4
             d['mno'] = 5
             d['pqr'] = 6
-              
+
             d['abc']
             d['def']
             d['ghi']
             d['jkl']
             d['mno']
             d['pqr']
-              
+
             d['abc'] = 1
             d['def'] = 2
             d['ghi'] = 3
             d['jkl'] = 4
             d['mno'] = 5
             d['pqr'] = 6
-              
+
             d['abc']
             d['def']
             d['ghi']
             d['jkl']
             d['mno']
             d['pqr']
-              
+
     def calibrate(self):
 
         d = {}
@@ -182,70 +182,70 @@ class DictWithFloatKeys(Test):
             d[4.567] = 4
             d[5.678] = 5
             d[6.789] = 6
-              
+
             d[1.234]
             d[2.345]
             d[3.456]
             d[4.567]
             d[5.678]
             d[6.789]
-              
+
             d[1.234] = 1
             d[2.345] = 2
             d[3.456] = 3
             d[4.567] = 4
             d[5.678] = 5
             d[6.789] = 6
-              
+
             d[1.234]
             d[2.345]
             d[3.456]
             d[4.567]
             d[5.678]
             d[6.789]
-              
+
             d[1.234] = 1
             d[2.345] = 2
             d[3.456] = 3
             d[4.567] = 4
             d[5.678] = 5
             d[6.789] = 6
-              
+
             d[1.234]
             d[2.345]
             d[3.456]
             d[4.567]
             d[5.678]
             d[6.789]
-              
+
             d[1.234] = 1
             d[2.345] = 2
             d[3.456] = 3
             d[4.567] = 4
             d[5.678] = 5
             d[6.789] = 6
-              
+
             d[1.234]
             d[2.345]
             d[3.456]
             d[4.567]
             d[5.678]
             d[6.789]
-              
+
             d[1.234] = 1
             d[2.345] = 2
             d[3.456] = 3
             d[4.567] = 4
             d[5.678] = 5
             d[6.789] = 6
-              
+
             d[1.234]
             d[2.345]
             d[3.456]
             d[4.567]
             d[5.678]
             d[6.789]
-              
+
     def calibrate(self):
 
         d = {}
@@ -271,70 +271,70 @@ class DictWithIntegerKeys(Test):
             d[4] = 4
             d[5] = 5
             d[6] = 6
-              
+
             d[1]
             d[2]
             d[3]
             d[4]
             d[5]
             d[6]
-              
+
             d[1] = 1
             d[2] = 2
             d[3] = 3
             d[4] = 4
             d[5] = 5
             d[6] = 6
-              
+
             d[1]
             d[2]
             d[3]
             d[4]
             d[5]
             d[6]
-              
+
             d[1] = 1
             d[2] = 2
             d[3] = 3
             d[4] = 4
             d[5] = 5
             d[6] = 6
-              
+
             d[1]
             d[2]
             d[3]
             d[4]
             d[5]
             d[6]
-              
+
             d[1] = 1
             d[2] = 2
             d[3] = 3
             d[4] = 4
             d[5] = 5
             d[6] = 6
-              
+
             d[1]
             d[2]
             d[3]
             d[4]
             d[5]
             d[6]
-              
+
             d[1] = 1
             d[2] = 2
             d[3] = 3
             d[4] = 4
             d[5] = 5
             d[6] = 6
-              
+
             d[1]
             d[2]
             d[3]
             d[4]
             d[5]
             d[6]
-              
+
     def calibrate(self):
 
         d = {}
@@ -360,7 +360,7 @@ class SimpleDictManipulation(Test):
             d[3] = 3
             d[4] = 4
             d[5] = 5
-            
+
             x = d[0]
             x = d[1]
             x = d[2]
@@ -388,7 +388,7 @@ class SimpleDictManipulation(Test):
             d[3] = 3
             d[4] = 4
             d[5] = 5
-            
+
             x = d[0]
             x = d[1]
             x = d[2]
@@ -416,7 +416,7 @@ class SimpleDictManipulation(Test):
             d[3] = 3
             d[4] = 4
             d[5] = 5
-            
+
             x = d[0]
             x = d[1]
             x = d[2]
@@ -444,7 +444,7 @@ class SimpleDictManipulation(Test):
             d[3] = 3
             d[4] = 4
             d[5] = 5
-            
+
             x = d[0]
             x = d[1]
             x = d[2]
@@ -472,7 +472,7 @@ class SimpleDictManipulation(Test):
             d[3] = 3
             d[4] = 4
             d[5] = 5
-            
+
             x = d[0]
             x = d[1]
             x = d[2]
@@ -500,4 +500,3 @@ class SimpleDictManipulation(Test):
 
         for i in xrange(self.rounds):
             pass
-
