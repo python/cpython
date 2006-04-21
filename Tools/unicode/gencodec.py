@@ -248,7 +248,7 @@ def python_tabledef_code(varname, map, comments=1, key_precision=2):
     append(')')
     return l
 
-def codegen(name, map, comments=1):
+def codegen(name, map, encodingname, comments=1):
 
     """ Returns Python source for the given map.
 
@@ -272,7 +272,7 @@ def codegen(name, map, comments=1):
 
     l = [
         '''\
-""" Python Character Mapping Codec generated from '%s' with gencodec.py.
+""" Python Character Mapping Codec %s generated from '%s' with gencodec.py.
 
 """#"
 
@@ -283,11 +283,9 @@ import codecs
 class Codec(codecs.Codec):
 
     def encode(self,input,errors='strict'):
-
         return codecs.charmap_encode(input,errors,encoding_map)
 
-    def decode(self,input,errors='strict'):
-''' % name
+    def decode(self,input,errors='strict'):''' % (encodingname, name)
         ]
     if decoding_table_code:
         l.append('''\
@@ -295,6 +293,20 @@ class Codec(codecs.Codec):
     else:
         l.append('''\
         return codecs.charmap_decode(input,errors,decoding_map)''')
+
+    l.append('''
+class IncrementalEncoder(codecs.IncrementalEncoder):
+    def encode(self, input, final=False):
+        return codecs.charmap_encode(input,self.errors,encoding_map)[0]
+
+class IncrementalDecoder(codecs.IncrementalDecoder):
+    def decode(self, input, final=False):''')
+    if decoding_table_code:
+        l.append('''\
+        return codecs.charmap_decode(input,self.errors,decoding_table)[0]''')
+    else:
+        l.append('''\
+        return codecs.charmap_decode(input,self.errors,decoding_map)[0]''')
 
     l.append('''
 class StreamWriter(Codec,codecs.StreamWriter):
@@ -306,9 +318,16 @@ class StreamReader(Codec,codecs.StreamReader):
 ### encodings module API
 
 def getregentry():
-
-    return (Codec().encode,Codec().decode,StreamReader,StreamWriter)
-''')
+    return codecs.CodecInfo((
+        name=%r,
+        Codec().encode,
+        Codec().decode,
+        streamwriter=StreamWriter,
+        streamreader=StreamReader,
+        incrementalencoder=IncrementalEncoder,
+        incrementaldecoder=IncrementalDecoder,
+    ))
+''' % encodingname.replace('_', '-'))
 
     # Add decoding table or map (with preference to the table)
     if not decoding_table_code:
@@ -331,11 +350,11 @@ def getregentry():
     # Final new-line
     l.append('\n')
 
-    return '\n'.join(l)
+    return '\n'.join(l).expandtabs()
 
-def pymap(name,map,pyfile,comments=1):
+def pymap(name,map,pyfile,encodingname,comments=1):
 
-    code = codegen(name,map,comments)
+    code = codegen(name,map,encodingname,comments)
     f = open(pyfile,'w')
     f.write(code)
     f.close()
@@ -349,7 +368,7 @@ def marshalmap(name,map,marshalfile):
     marshal.dump(d,f)
     f.close()
 
-def convertdir(dir,prefix='',comments=1):
+def convertdir(dir, dirprefix='', nameprefix='', comments=1):
 
     mapnames = os.listdir(dir)
     for mapname in mapnames:
@@ -360,38 +379,40 @@ def convertdir(dir,prefix='',comments=1):
         name = name.replace('-','_')
         name = name.split('.')[0]
         name = name.lower()
+        name = nameprefix + name
         codefile = name + '.py'
         marshalfile = name + '.mapping'
         print 'converting %s to %s and %s' % (mapname,
-                                              prefix + codefile,
-                                              prefix + marshalfile)
+                                              dirprefix + codefile,
+                                              dirprefix + marshalfile)
         try:
             map = readmap(os.path.join(dir,mapname))
             if not map:
                 print '* map is empty; skipping'
             else:
-                pymap(mappathname, map, prefix + codefile,comments)
-                marshalmap(mappathname, map, prefix + marshalfile)
+                pymap(mappathname, map, dirprefix + codefile,name,comments)
+                marshalmap(mappathname, map, dirprefix + marshalfile)
         except ValueError, why:
             print '* conversion failed: %s' % why
             raise
 
-def rewritepythondir(dir,prefix='',comments=1):
+def rewritepythondir(dir, dirprefix='', comments=1):
 
     mapnames = os.listdir(dir)
     for mapname in mapnames:
         if not mapname.endswith('.mapping'):
             continue
-        codefile = mapname[:-len('.mapping')] + '.py'
+        name = mapname[:-len('.mapping')]
+        codefile = name + '.py'
         print 'converting %s to %s' % (mapname,
-                                       prefix + codefile)
+                                       dirprefix + codefile)
         try:
             map = marshal.load(open(os.path.join(dir,mapname),
                                'rb'))
             if not map:
                 print '* map is empty; skipping'
             else:
-                pymap(mapname, map, prefix + codefile,comments)
+                pymap(mapname, map, dirprefix + codefile,name,comments)
         except ValueError, why:
             print '* conversion failed: %s' % why
 

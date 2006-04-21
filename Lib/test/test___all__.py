@@ -5,8 +5,6 @@ from test.test_support import verify, verbose
 import sys
 import warnings
 
-warnings.filterwarnings("ignore", ".* 'pre' .*", DeprecationWarning,
-                        r'pre$')
 warnings.filterwarnings("ignore", ".* regsub .*", DeprecationWarning,
                         r'^regsub$')
 warnings.filterwarnings("ignore",
@@ -122,7 +120,6 @@ class AllTest(unittest.TestCase):
         self.check_all("poplib")
         self.check_all("posixpath")
         self.check_all("pprint")
-        self.check_all("pre")  # deprecated
         self.check_all("profile")
         self.check_all("pstats")
         self.check_all("pty")

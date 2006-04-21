@@ -13,6 +13,14 @@ class Codec(codecs.Codec):
     encode = codecs.utf_7_encode
     decode = codecs.utf_7_decode
 
+class IncrementalEncoder(codecs.IncrementalEncoder):
+    def encode(self, input, final=False):
+        return codecs.utf_7_encode(input, self.errors)[0]
+
+class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
+    def _buffer_decode(self, input, errors, final):
+        return codecs.utf_7_decode(input, self.errors)
+
 class StreamWriter(Codec,codecs.StreamWriter):
     pass
 
@@ -22,5 +30,12 @@ class StreamReader(Codec,codecs.StreamReader):
 ### encodings module API
 
 def getregentry():
-
-    return (Codec.encode,Codec.decode,StreamReader,StreamWriter)
+    return codecs.CodecInfo(
+        name='utf-7',
+        encode=Codec.encode,
+        decode=Codec.decode,
+        incrementalencoder=IncrementalEncoder,
+        incrementaldecoder=IncrementalDecoder,
+        streamreader=StreamReader,
+        streamwriter=StreamWriter,
+    )
