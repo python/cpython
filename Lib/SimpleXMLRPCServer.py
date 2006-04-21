@@ -560,6 +560,7 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
             self.handle_xmlrpc(request_text)
 
 if __name__ == '__main__':
+    print 'Running XML-RPC server on port 8000'
     server = SimpleXMLRPCServer(("localhost", 8000))
     server.register_function(pow)
     server.register_function(lambda x,y: x+y, 'add')
