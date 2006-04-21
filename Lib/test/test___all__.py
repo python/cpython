@@ -145,7 +145,6 @@ class AllTest(unittest.TestCase):
         self.check_all("smtplib")
         self.check_all("sndhdr")
         self.check_all("socket")
-        self.check_all("sre")
         self.check_all("_strptime")
         self.check_all("symtable")
         self.check_all("tabnanny")

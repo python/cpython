@@ -3,7 +3,7 @@ sys.path = ['.'] + sys.path
 
 from test.test_support import verbose, run_unittest
 import re
-from sre import Scanner
+from re import Scanner
 import sys, os, traceback
 from weakref import proxy
 
