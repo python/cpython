@@ -46,9 +46,6 @@ Library
   raise an exception some day.  But dicts have been allowed, and "mostly
   worked", so support for them won't go away without warning.
 
-- New modules: setuptools, easy_install, and pkg_resources, to support
-  building, installing, and using Python eggs, respectively.
-
 Tools/Demos
 -----------
 
