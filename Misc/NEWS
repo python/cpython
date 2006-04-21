@@ -120,6 +120,9 @@ Library
 
 - Fix exception when doing glob.glob('anything*/')
 
+- The pstats.Stats class accepts an optional stream keyword argument to
+  direct output to an alternate file-like object.
+
 Build
 -----
 
