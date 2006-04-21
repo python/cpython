@@ -31,5 +31,6 @@ ffi_sources += ffi_platforms['@TARGET@']
 ffi_sources = [os.path.join('@srcdir@', f) for f in ffi_sources]
 
 ffi_cflags = '@CFLAGS@'
+# I think this may no longer be needed:
 if sys.platform == "openbsd3":
     ffi_cflags += " -fno-stack-protector"

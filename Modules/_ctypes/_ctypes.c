@@ -1223,6 +1223,19 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 			return value;
 		}
 	}
+/* function pointer */
+	if (CFuncPtrObject_Check(value)) {
+		PyCArgObject *parg;
+		CFuncPtrObject *func;
+		func = (CFuncPtrObject *)value;
+		parg = new_CArgObject();
+		parg->pffi_type = &ffi_type_pointer;
+		parg->tag = 'P';
+		Py_INCREF(value);
+		parg->value.p = *(void **)func->b_ptr;
+		parg->obj = value;
+		return (PyObject *)parg;
+	}
 /* c_char_p, c_wchar_p */
 	stgd = PyObject_stgdict(value);
 	if (stgd && CDataObject_Check(value) && stgd->proto && PyString_Check(stgd->proto)) {
@@ -4407,6 +4420,8 @@ cast_check_pointertype(PyObject *arg)
 
 	if (PointerTypeObject_Check(arg))
 		return 1;
+	if (CFuncPtrTypeObject_Check(arg))
+		return 1;
 	dict = PyType_stgdict(arg);
 	if (dict) {
 		if (PyString_Check(dict->proto)
@@ -4566,7 +4581,7 @@ init_ctypes(void)
 #endif
 	PyModule_AddObject(m, "FUNCFLAG_CDECL", PyInt_FromLong(FUNCFLAG_CDECL));
 	PyModule_AddObject(m, "FUNCFLAG_PYTHONAPI", PyInt_FromLong(FUNCFLAG_PYTHONAPI));
-	PyModule_AddStringConstant(m, "__version__", "0.9.9.4");
+	PyModule_AddStringConstant(m, "__version__", "0.9.9.6");
 
 	PyModule_AddObject(m, "_memmove_addr", PyLong_FromVoidPtr(memmove));
 	PyModule_AddObject(m, "_memset_addr", PyLong_FromVoidPtr(memset));

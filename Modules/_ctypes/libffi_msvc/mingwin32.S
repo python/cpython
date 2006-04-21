@@ -41,11 +41,7 @@
 _ffi_call_SYSV:
         pushl %ebp
         movl  %esp,%ebp
-
-	#THe: save previous %esi, and store the current stack pointer in %esi
-	pushl %esi
-	movl %esp,%esi
-
+ 
         # Make room for all of the new args.
         movl  16(%ebp),%ecx                                                     
         subl  %ecx,%esp
@@ -68,9 +64,7 @@ _ffi_call_SYSV:
         # Remove the space we pushed for the args
         movl  16(%ebp),%ecx
         addl  %ecx,%esp
-
-	sub %esp,%esi # calculate stack pointer difference
-
+ 
         # Load %ecx with the return type code
         movl  20(%ebp),%ecx
  
@@ -80,14 +74,14 @@ _ffi_call_SYSV:
  
         # Even if there is no space for the return value, we are
         # obliged to handle floating-point values.
-        cmpl  $FFI_TYPE_FLOAT,%ecx
+        cmpl  $2,%ecx  # Float_type
         jne   noretval
         fstp  %st(0)
  
         jmp   epilogue
  
 retint:
-        cmpl  $FFI_TYPE_INT,%ecx
+        cmpl  $1,%ecx    # Int_type
         jne   retfloat
         # Load %ecx with the pointer to storage for the return value
         movl  24(%ebp),%ecx
@@ -95,7 +89,7 @@ retint:
         jmp   epilogue
  
 retfloat:
-        cmpl  $FFI_TYPE_FLOAT,%ecx
+        cmpl  $2,%ecx   # Float_type
         jne   retdouble   
          # Load %ecx with the pointer to storage for the return value
         movl  24(%ebp),%ecx
@@ -103,7 +97,7 @@ retfloat:
         jmp   epilogue
  
 retdouble:
-        cmpl  $FFI_TYPE_DOUBLE,%ecx
+        cmpl  $3,%ecx     # Double_type
         jne   retlongdouble
         # Load %ecx with the pointer to storage for the return value
         movl  24(%ebp),%ecx
@@ -111,7 +105,7 @@ retdouble:
         jmp   epilogue
  
 retlongdouble:
-        cmpl  $FFI_TYPE_LONGDOUBLE,%ecx
+        cmpl  $4,%ecx     # Longdouble_type
         jne   retint64
         # Load %ecx with the pointer to storage for the return value
         movl  24(%ebp),%ecx
@@ -119,7 +113,7 @@ retlongdouble:
         jmp   epilogue
  
 retint64:
-        cmpl  $FFI_TYPE_SINT64,%ecx
+        cmpl  $12,%ecx      # SINT64_type
         jne   retstruct
         # Load %ecx with the pointer to storage for the return value
         movl  24(%ebp),%ecx
@@ -131,8 +125,6 @@ retstruct:
  
 noretval:
 epilogue:
-	movl %esi,%eax # return the stack pointer detlta in %eax
-	popl %esi # restore previous %esi
         movl %ebp,%esp
         popl %ebp
         ret
@@ -147,10 +139,6 @@ _ffi_call_STDCALL:
         pushl %ebp
         movl  %esp,%ebp
 
-	#THe: save previous %esi, and store the current stack pointer in %esi
-	pushl %esi
-	movl %esp,%esi
-	
         # Make room for all of the new args.
         movl  16(%ebp),%ecx 
         subl  %ecx,%esp
@@ -170,8 +158,6 @@ _ffi_call_STDCALL:
 
         call  *28(%ebp)
 
-	sub %esp,%esi # difference in stack
-
         # stdcall functions pop arguments off the stack themselves
 
         # Load %ecx with the return type code
@@ -183,14 +169,14 @@ _ffi_call_STDCALL:
 
         # Even if there is no space for the return value, we are
         # obliged to handle floating-point values.
-        cmpl  $FFI_TYPE_FLOAT,%ecx
+        cmpl  $2,%ecx      # Float_type
         jne   sc_noretval
         fstp  %st(0)
 
         jmp   sc_epilogue
 
 sc_retint:
-        cmpl  $FFI_TYPE_INT,%ecx
+        cmpl  $1,%ecx       # Int_type
         jne   sc_retfloat
         # Load %ecx with the pointer to storage for the return value
         movl  24(%ebp),%ecx
@@ -198,7 +184,7 @@ sc_retint:
         jmp   sc_epilogue
 
 sc_retfloat:
-        cmpl  $FFI_TYPE_FLOAT,%ecx
+        cmpl  $2,%ecx       # Float_type
         jne   sc_retdouble
          # Load %ecx with the pointer to storage for the return value
         movl  24(%ebp),%ecx
@@ -206,7 +192,7 @@ sc_retfloat:
         jmp   sc_epilogue
 
 sc_retdouble:
-        cmpl  $FFI_TYPE_DOUBLE,%ecx
+        cmpl  $2,%ecx       # Double_type
         jne   sc_retlongdouble
         # Load %ecx with the pointer to storage for the return value
         movl  24(%ebp),%ecx
@@ -214,7 +200,7 @@ sc_retdouble:
         jmp   sc_epilogue
 
 sc_retlongdouble:
-        cmpl  $FFI_TYPE_LONGDOUBLE,%ecx
+        cmpl  $4,%ecx      # Longdouble_type 
         jne   sc_retint64
         # Load %ecx with the pointer to storage for the return value
         movl  24(%ebp),%ecx
@@ -222,7 +208,7 @@ sc_retlongdouble:
         jmp   sc_epilogue
 
 sc_retint64:
-        cmpl  $FFI_TYPE_SINT64,%ecx
+        cmpl  $12,%ecx      # SINT64_Type
         jne   sc_retstruct
         # Load %ecx with the pointer to storage for the return value
         movl  24(%ebp),%ecx
@@ -234,10 +220,9 @@ sc_retstruct:
 
 sc_noretval:
 sc_epilogue:
-        movl %esi,%eax # return the stack difference
-	popl %esi # restore previous %esi value
         movl %ebp,%esp
         popl %ebp
         ret
 
 .ffi_call_STDCALL_end:
+
