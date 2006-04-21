@@ -2,10 +2,10 @@
 # shift_jis.py: Python Unicode Codec for SHIFT_JIS
 #
 # Written by Hye-Shik Chang <perky@FreeBSD.org>
-# $CJKCodecs: shift_jis.py,v 1.8 2004/06/28 18:16:03 perky Exp $
 #
 
 import _codecs_jp, codecs
+import _multibytecodec as mbc
 
 codec = _codecs_jp.getcodec('shift_jis')
 
@@ -13,22 +13,27 @@ class Codec(codecs.Codec):
     encode = codec.encode
     decode = codec.decode
 
-class StreamReader(Codec, codecs.StreamReader):
-    def __init__(self, stream, errors='strict'):
-        codecs.StreamReader.__init__(self, stream, errors)
-        __codec = codec.StreamReader(stream, errors)
-        self.read = __codec.read
-        self.readline = __codec.readline
-        self.readlines = __codec.readlines
-        self.reset = __codec.reset
+class IncrementalEncoder(mbc.MultibyteIncrementalEncoder,
+                         codecs.IncrementalEncoder):
+    codec = codec
 
-class StreamWriter(Codec, codecs.StreamWriter):
-    def __init__(self, stream, errors='strict'):
-        codecs.StreamWriter.__init__(self, stream, errors)
-        __codec = codec.StreamWriter(stream, errors)
-        self.write = __codec.write
-        self.writelines = __codec.writelines
-        self.reset = __codec.reset
+class IncrementalDecoder(mbc.MultibyteIncrementalDecoder,
+                         codecs.IncrementalDecoder):
+    codec = codec
+
+class StreamReader(Codec, mbc.MultibyteStreamReader, codecs.StreamReader):
+    codec = codec
+
+class StreamWriter(Codec, mbc.MultibyteStreamWriter, codecs.StreamWriter):
+    codec = codec
 
 def getregentry():
-    return (codec.encode, codec.decode, StreamReader, StreamWriter)
+    return codecs.CodecInfo(
+        name='shift_jis',
+        encode=Codec().encode,
+        decode=Codec().decode,
+        incrementalencoder=IncrementalEncoder,
+        incrementaldecoder=IncrementalDecoder,
+        streamreader=StreamReader,
+        streamwriter=StreamWriter,
+    )

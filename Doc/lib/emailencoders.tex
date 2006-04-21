@@ -1,4 +1,4 @@
-\declaremodule{standard}{email.Encoders}
+\declaremodule{standard}{email.encoders}
 \modulesynopsis{Encoders for email message payloads.}
 
 When creating \class{Message} objects from scratch, you often need to
@@ -7,7 +7,7 @@ This is especially true for \mimetype{image/*} and \mimetype{text/*}
 type messages containing binary data.
 
 The \module{email} package provides some convenient encodings in its
-\module{Encoders} module.  These encoders are actually used by the
+\module{encoders} module.  These encoders are actually used by the
 \class{MIMEAudio} and \class{MIMEImage} class constructors to provide default
 encodings.  All encoder functions take exactly one argument, the message
 object to encode.  They usually extract the payload, encode it, and reset the

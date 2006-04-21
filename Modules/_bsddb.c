@@ -101,6 +101,10 @@
 static char *rcs_id = "$Id$";
 
 
+#if (PY_VERSION_HEX < 0x02050000)
+#define Py_ssize_t      int
+#endif
+
 #ifdef WITH_THREAD
 
 /* These are for when calling Python --> C */
@@ -4688,7 +4692,11 @@ static PyMethodDef DB_methods[] = {
 
 
 static PyMappingMethods DB_mapping = {
+#if (PY_VERSION_HEX < 0x02050000)
+        (inquiry)DB_length,          /*mp_length*/
+#else
         (lenfunc)DB_length,          /*mp_length*/
+#endif
         (binaryfunc)DB_subscript,    /*mp_subscript*/
         (objobjargproc)DB_ass_sub,   /*mp_ass_subscript*/
 };
@@ -5385,9 +5393,21 @@ DL_EXPORT(void) init_bsddb(void)
     ADD_INT(d, DB_SET_TXN_TIMEOUT);
 #endif
 
+    /* The exception name must be correct for pickled exception *
+     * objects to unpickle properly.                            */
+#ifdef PYBSDDB_STANDALONE  /* different value needed for standalone pybsddb */
+#define PYBSDDB_EXCEPTION_BASE  "bsddb3.db."
+#else
+#define PYBSDDB_EXCEPTION_BASE  "bsddb.db."
+#endif
+
+    /* All the rest of the exceptions derive only from DBError */
+#define MAKE_EX(name)   name = PyErr_NewException(PYBSDDB_EXCEPTION_BASE #name, DBError, NULL); \
+                        PyDict_SetItemString(d, #name, name)
+
     /* The base exception class is DBError */
-    DBError = PyErr_NewException("bsddb._db.DBError", NULL, NULL);
-    PyDict_SetItemString(d, "DBError", DBError);
+    DBError = NULL;     /* used in MAKE_EX so that it derives from nothing */
+    MAKE_EX(DBError);
 
     /* Some magic to make DBNotFoundError and DBKeyEmptyError derive
      * from both DBError and KeyError, since the API only supports
@@ -5400,10 +5420,6 @@ DL_EXPORT(void) init_bsddb(void)
     DBKeyEmptyError = PyDict_GetItemString(d, "DBKeyEmptyError");
     PyDict_DelItemString(d, "KeyError");
 
-
-    /* All the rest of the exceptions derive only from DBError */
-#define MAKE_EX(name)   name = PyErr_NewException("bsddb._db." #name, DBError, NULL); \
-                        PyDict_SetItemString(d, #name, name)
 
 #if !INCOMPLETE_IS_WARNING
     MAKE_EX(DBIncompleteError);

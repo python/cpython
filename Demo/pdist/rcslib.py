@@ -8,7 +8,7 @@ files and (possibly) corresponding work files.
 
 import fnmatch
 import os
-import regsub
+import re
 import string
 import tempfile
 
@@ -150,7 +150,7 @@ class RCS:
             cmd = 'ci %s%s -t%s %s %s' % \
                   (lockflag, rev, f.name, otherflags, name)
         else:
-            message = regsub.gsub('\([\\"$`]\)', '\\\\\\1', message)
+            message = re.sub(r'([\"$`])', r'\\\1', message)
             cmd = 'ci %s%s -m"%s" %s %s' % \
                   (lockflag, rev, message, otherflags, name)
         return self._system(cmd)

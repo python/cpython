@@ -56,12 +56,12 @@ PyObject *normalizestring(const char *string)
     char *p;
     PyObject *v;
     
-	if (len > INT_MAX) {
-		PyErr_SetString(PyExc_OverflowError, "string is too large");
-		return NULL;
-	}
+    if (len > PY_SSIZE_T_MAX) {
+	PyErr_SetString(PyExc_OverflowError, "string is too large");
+	return NULL;
+    }
 	
-    v = PyString_FromStringAndSize(NULL, (int)len);
+    v = PyString_FromStringAndSize(NULL, len);
     if (v == NULL)
 	return NULL;
     p = PyString_AS_STRING(v);
@@ -200,24 +200,65 @@ PyObject *args_tuple(PyObject *object,
     return args;
 }
 
-/* Build a codec by calling factory(stream[,errors]) or just
-   factory(errors) depending on whether the given parameters are
-   non-NULL. */
+/* Helper function to get a codec item */
 
 static
-PyObject *build_stream_codec(PyObject *factory,
-			     PyObject *stream,
-			     const char *errors)
+PyObject *codec_getitem(const char *encoding, int index)
 {
-    PyObject *args, *codec;
+    PyObject *codecs;
+    PyObject *v;
 
-    args = args_tuple(stream, errors);
-    if (args == NULL)
+    codecs = _PyCodec_Lookup(encoding);
+    if (codecs == NULL)
 	return NULL;
-    
-    codec = PyEval_CallObject(factory, args);
-    Py_DECREF(args);
-    return codec;
+    v = PyTuple_GET_ITEM(codecs, index);
+    Py_DECREF(codecs);
+    Py_INCREF(v);
+    return v;
+}
+
+/* Helper function to create an incremental codec. */
+
+static
+PyObject *codec_getincrementalcodec(const char *encoding,
+				    const char *errors,
+				    const char *attrname)
+{
+    PyObject *codecs, *ret, *inccodec;
+
+    codecs = _PyCodec_Lookup(encoding);
+    if (codecs == NULL)
+	return NULL;
+    inccodec = PyObject_GetAttrString(codecs, attrname);
+    Py_DECREF(codecs);
+    if (inccodec == NULL)
+	return NULL;
+    if (errors)
+	ret = PyObject_CallFunction(inccodec, "s", errors);
+    else
+	ret = PyObject_CallFunction(inccodec, NULL);
+    Py_DECREF(inccodec);
+    return ret;
+}
+
+/* Helper function to create a stream codec. */
+
+static
+PyObject *codec_getstreamcodec(const char *encoding,
+			       PyObject *stream,
+			       const char *errors,
+			       const int index)
+{
+    PyObject *codecs, *streamcodec;
+
+    codecs = _PyCodec_Lookup(encoding);
+    if (codecs == NULL)
+	return NULL;
+
+    streamcodec = PyEval_CallFunction(
+	PyTuple_GET_ITEM(codecs, index), "Os", stream, errors);
+    Py_DECREF(codecs);
+    return streamcodec;
 }
 
 /* Convenience APIs to query the Codec registry. 
@@ -228,120 +269,38 @@ PyObject *build_stream_codec(PyObject *factory,
 
 PyObject *PyCodec_Encoder(const char *encoding)
 {
-    PyObject *codecs;
-    PyObject *v;
-
-    codecs = _PyCodec_Lookup(encoding);
-    if (codecs == NULL)
-	goto onError;
-    v = PyTuple_GET_ITEM(codecs,0);
-    Py_DECREF(codecs);
-    Py_INCREF(v);
-    return v;
-
- onError:
-    return NULL;
+    return codec_getitem(encoding, 0);
 }
 
 PyObject *PyCodec_Decoder(const char *encoding)
 {
-    PyObject *codecs;
-    PyObject *v;
-
-    codecs = _PyCodec_Lookup(encoding);
-    if (codecs == NULL)
-	goto onError;
-    v = PyTuple_GET_ITEM(codecs,1);
-    Py_DECREF(codecs);
-    Py_INCREF(v);
-    return v;
-
- onError:
-    return NULL;
+    return codec_getitem(encoding, 1);
 }
 
 PyObject *PyCodec_IncrementalEncoder(const char *encoding,
 				     const char *errors)
 {
-    PyObject *codecs, *ret, *encoder;
-
-    codecs = _PyCodec_Lookup(encoding);
-    if (codecs == NULL)
-	goto onError;
-    encoder = PyObject_GetAttrString(codecs, "incrementalencoder");
-    if (encoder == NULL) {
-	Py_DECREF(codecs);
-	return NULL;
-    }
-    if (errors)
-	ret = PyObject_CallFunction(encoder, "O", errors);
-    else
-	ret = PyObject_CallFunction(encoder, NULL);
-    Py_DECREF(encoder);
-    Py_DECREF(codecs);
-    return ret;
-
- onError:
-    return NULL;
+    return codec_getincrementalcodec(encoding, errors, "incrementalencoder");
 }
 
 PyObject *PyCodec_IncrementalDecoder(const char *encoding,
 				     const char *errors)
 {
-    PyObject *codecs, *ret, *decoder;
-
-    codecs = _PyCodec_Lookup(encoding);
-    if (codecs == NULL)
-	goto onError;
-    decoder = PyObject_GetAttrString(codecs, "incrementaldecoder");
-    if (decoder == NULL) {
-	Py_DECREF(codecs);
-	return NULL;
-    }
-    if (errors)
-	ret = PyObject_CallFunction(decoder, "O", errors);
-    else
-	ret = PyObject_CallFunction(decoder, NULL);
-    Py_DECREF(decoder);
-    Py_DECREF(codecs);
-    return ret;
-
- onError:
-    return NULL;
+    return codec_getincrementalcodec(encoding, errors, "incrementaldecoder");
 }
 
 PyObject *PyCodec_StreamReader(const char *encoding,
 			       PyObject *stream,
 			       const char *errors)
 {
-    PyObject *codecs, *ret;
-
-    codecs = _PyCodec_Lookup(encoding);
-    if (codecs == NULL)
-	goto onError;
-    ret = build_stream_codec(PyTuple_GET_ITEM(codecs,2),stream,errors);
-    Py_DECREF(codecs);
-    return ret;
-
- onError:
-    return NULL;
+    return codec_getstreamcodec(encoding, stream, errors, 2);
 }
 
 PyObject *PyCodec_StreamWriter(const char *encoding,
 			       PyObject *stream,
 			       const char *errors)
 {
-    PyObject *codecs, *ret;
-
-    codecs = _PyCodec_Lookup(encoding);
-    if (codecs == NULL)
-	goto onError;
-    ret = build_stream_codec(PyTuple_GET_ITEM(codecs,3),stream,errors);
-    Py_DECREF(codecs);
-    return ret;
-
- onError:
-    return NULL;
+    return codec_getstreamcodec(encoding, stream, errors, 3);
 }
 
 /* Encode an object (e.g. an Unicode object) using the given encoding

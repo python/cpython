@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="pythoncore"
-	ProjectGUID="{7AFA1F0B-A8A1-455A-A832-BF263404BBEF}"
+	ProjectGUID="{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26}"
 	RootNamespace="pythoncore"
 	SccProjectName="pythoncore"
 	SccLocalPath="..">
@@ -623,7 +623,7 @@
 			RelativePath="..\Modules\mathmodule.c">
 		</File>
 		<File
-			RelativePath="..\Modules\md5c.c">
+			RelativePath="..\Modules\md5.c">
 		</File>
 		<File
 			RelativePath="..\Modules\md5module.c">
@@ -705,12 +705,6 @@
 		</File>
 		<File
 			RelativePath="..\Objects\rangeobject.c">
-		</File>
-		<File
-			RelativePath="..\Modules\regexmodule.c">
-		</File>
-		<File
-			RelativePath="..\Modules\regexpr.c">
 		</File>
 		<File
 			RelativePath="..\Modules\rgbimgmodule.c">

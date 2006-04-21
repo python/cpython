@@ -113,6 +113,14 @@ class LockType(object):
             self.locked_status = True
             return True
 
+    __enter__ = acquire
+
+    def __exit__(self, typ, val, tb):
+        self.release()
+
+    def __context__(self):
+        return self
+
     def release(self):
         """Release the dummy lock."""
         # XXX Perhaps shouldn't actually bother to test?  Could lead

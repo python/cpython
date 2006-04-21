@@ -123,7 +123,7 @@ static PyObject *__class___str, *__getinitargs___str, *__dict___str,
   *__getstate___str, *__setstate___str, *__name___str, *__reduce___str,
   *__reduce_ex___str,
   *write_str, *append_str,
-  *read_str, *readline_str, *__main___str, *__basicnew___str,
+  *read_str, *readline_str, *__main___str, 
   *copy_reg_str, *dispatch_table_str;
 
 /*************************************************************************
@@ -2909,38 +2909,28 @@ Pickler_dealloc(Picklerobject *self)
 static int
 Pickler_traverse(Picklerobject *self, visitproc visit, void *arg)
 {
-	int err;
-#define VISIT(SLOT) \
-	if (SLOT) { \
-		err = visit((PyObject *)(SLOT), arg); \
-		if (err) \
-			return err; \
-	}
-	VISIT(self->write);
-	VISIT(self->memo);
-	VISIT(self->fast_memo);
-	VISIT(self->arg);
-	VISIT(self->file);
-	VISIT(self->pers_func);
-	VISIT(self->inst_pers_func);
-	VISIT(self->dispatch_table);
-#undef VISIT
+	Py_VISIT(self->write);
+	Py_VISIT(self->memo);
+	Py_VISIT(self->fast_memo);
+	Py_VISIT(self->arg);
+	Py_VISIT(self->file);
+	Py_VISIT(self->pers_func);
+	Py_VISIT(self->inst_pers_func);
+	Py_VISIT(self->dispatch_table);
 	return 0;
 }
 
 static int
 Pickler_clear(Picklerobject *self)
 {
-#define CLEAR(SLOT) Py_XDECREF(SLOT); SLOT = NULL;
-	CLEAR(self->write);
-	CLEAR(self->memo);
-	CLEAR(self->fast_memo);
-	CLEAR(self->arg);
-	CLEAR(self->file);
-	CLEAR(self->pers_func);
-	CLEAR(self->inst_pers_func);
-	CLEAR(self->dispatch_table);
-#undef CLEAR
+	Py_CLEAR(self->write);
+	Py_CLEAR(self->memo);
+	Py_CLEAR(self->fast_memo);
+	Py_CLEAR(self->arg);
+	Py_CLEAR(self->file);
+	Py_CLEAR(self->pers_func);
+	Py_CLEAR(self->inst_pers_func);
+	Py_CLEAR(self->dispatch_table);
 	return 0;
 }
 
@@ -5260,41 +5250,30 @@ Unpickler_dealloc(Unpicklerobject *self)
 static int
 Unpickler_traverse(Unpicklerobject *self, visitproc visit, void *arg)
 {
-	int err;
-
-#define VISIT(SLOT) \
-	if (SLOT) { \
-		err = visit((PyObject *)(SLOT), arg); \
-		if (err) \
-			return err; \
-	}
-	VISIT(self->readline);
-	VISIT(self->read);
-	VISIT(self->file);
-	VISIT(self->memo);
-	VISIT(self->stack);
-	VISIT(self->pers_func);
-	VISIT(self->arg);
-	VISIT(self->last_string);
-	VISIT(self->find_class);
-#undef VISIT
+	Py_VISIT(self->readline);
+	Py_VISIT(self->read);
+	Py_VISIT(self->file);
+	Py_VISIT(self->memo);
+	Py_VISIT(self->stack);
+	Py_VISIT(self->pers_func);
+	Py_VISIT(self->arg);
+	Py_VISIT(self->last_string);
+	Py_VISIT(self->find_class);
 	return 0;
 }
 
 static int
 Unpickler_clear(Unpicklerobject *self)
 {
-#define CLEAR(SLOT) Py_XDECREF(SLOT); SLOT = NULL
-	CLEAR(self->readline);
-	CLEAR(self->read);
-	CLEAR(self->file);
-	CLEAR(self->memo);
-	CLEAR(self->stack);
-	CLEAR(self->pers_func);
-	CLEAR(self->arg);
-	CLEAR(self->last_string);
-	CLEAR(self->find_class);
-#undef CLEAR
+	Py_CLEAR(self->readline);
+	Py_CLEAR(self->read);
+	Py_CLEAR(self->file);
+	Py_CLEAR(self->memo);
+	Py_CLEAR(self->stack);
+	Py_CLEAR(self->pers_func);
+	Py_CLEAR(self->arg);
+	Py_CLEAR(self->last_string);
+	Py_CLEAR(self->find_class);
 	return 0;
 }
 
@@ -5602,7 +5581,6 @@ init_stuff(PyObject *module_dict)
 	INIT_STR(readline);
 	INIT_STR(copy_reg);
 	INIT_STR(dispatch_table);
-	INIT_STR(__basicnew__);
 
 	if (!( copy_reg = PyImport_ImportModule("copy_reg")))
 		return -1;

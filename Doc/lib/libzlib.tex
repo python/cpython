@@ -166,11 +166,14 @@ continue.  If \var{max_length} is not supplied then the whole input is
 decompressed, and \member{unconsumed_tail} is an empty string.
 \end{methoddesc}
 
-\begin{methoddesc}[Decompress]{flush}{}
+\begin{methoddesc}[Decompress]{flush}{\optional{length}}
 All pending input is processed, and a string containing the remaining
 uncompressed output is returned.  After calling \method{flush()}, the
 \method{decompress()} method cannot be called again; the only realistic
 action is to delete the object.
+
+The optional parameter \var{length} sets the initial size of the
+output buffer.
 \end{methoddesc}
 
 \begin{seealso}

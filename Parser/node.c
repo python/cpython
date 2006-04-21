@@ -62,7 +62,7 @@ fancy_roundup(int n)
  * Win98).
  *
  * In a run of compileall across the 2.3a0 Lib directory, Andrew MacIntyre
- * reported that, with this scheme, 89% of PyMem_RESIZE calls in
+ * reported that, with this scheme, 89% of PyObject_REALLOC calls in
  * PyNode_AddChild passed 1 for the size, and 9% passed 4.  So this usually
  * wastes very little memory, but is very effective at sidestepping
  * platform-realloc disasters on vulnernable platforms.

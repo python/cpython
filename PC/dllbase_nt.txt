@@ -33,6 +33,7 @@ More standard extensions 1D100000 - 1e000000
  - bZ2                       1D170000 - 1D180000
  - datetime                  1D180000 - 1D190000    pyd removed in 2.4
  - _csv                      1D190000 - 1D1A0000    pyd removed in 2.4
+ - _ctypes                   1D1A0000 - 1D1B0000
 
 Other extension modules
  - win32api                  1e200000 - 1e220000

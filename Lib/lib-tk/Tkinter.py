@@ -449,18 +449,15 @@ class Misc:
             # I'd rather use time.sleep(ms*0.001)
             self.tk.call('after', ms)
         else:
-            # XXX Disgusting hack to clean up after calling func
-            tmp = []
-            def callit(func=func, args=args, self=self, tmp=tmp):
+            def callit():
                 try:
                     func(*args)
                 finally:
                     try:
-                        self.deletecommand(tmp[0])
+                        self.deletecommand(name)
                     except TclError:
                         pass
             name = self._register(callit)
-            tmp.append(name)
             return self.tk.call('after', ms, name)
     def after_idle(self, func, *args):
         """Call FUNC once if the Tcl main loop has no event to
@@ -486,7 +483,24 @@ class Misc:
     def bell(self, displayof=0):
         """Ring a display's bell."""
         self.tk.call(('bell',) + self._displayof(displayof))
+
     # Clipboard handling:
+    def clipboard_get(self, **kw):
+        """Retrieve data from the clipboard on window's display.
+
+        The window keyword defaults to the root window of the Tkinter
+        application.
+
+        The type keyword specifies the form in which the data is
+        to be returned and should be an atom name such as STRING
+        or FILE_NAME.  Type defaults to STRING.
+
+        This command is equivalent to:
+
+        selection_get(CLIPBOARD)
+        """
+        return self.tk.call(('clipboard', 'get') + self._options(kw))
+
     def clipboard_clear(self, **kw):
         """Clear the data in the Tk clipboard.
 

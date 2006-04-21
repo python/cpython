@@ -115,6 +115,14 @@ equally good collision statistics, needed less code & used less memory.
 /* Object used as dummy key to fill deleted entries */
 static PyObject *dummy = NULL; /* Initialized by first call to newdictobject() */
 
+#ifdef Py_REF_DEBUG
+PyObject *
+_PyDict_Dummy(void)
+{
+	return dummy;
+}
+#endif
+
 /* forward declarations */
 static dictentry *
 lookdict_string(dictobject *mp, PyObject *key, long hash);
@@ -1724,17 +1732,12 @@ static int
 dict_traverse(PyObject *op, visitproc visit, void *arg)
 {
 	Py_ssize_t i = 0;
-	int err;
 	PyObject *pk;
 	PyObject *pv;
 
 	while (PyDict_Next(op, &i, &pk, &pv)) {
-		err = visit(pk, arg);
-		if (err)
-			return err;
-		err = visit(pv, arg);
-		if (err)
-			return err;
+		Py_VISIT(pk);
+		Py_VISIT(pv);
 	}
 	return 0;
 }
@@ -1880,16 +1883,16 @@ PyDict_Contains(PyObject *op, PyObject *key)
 
 /* Hack to implement "key in dict" */
 static PySequenceMethods dict_as_sequence = {
-	0,					/* sq_length */
-	0,					/* sq_concat */
-	0,					/* sq_repeat */
-	0,					/* sq_item */
-	0,					/* sq_slice */
-	0,					/* sq_ass_item */
-	0,					/* sq_ass_slice */
-	(objobjproc)PyDict_Contains,		/* sq_contains */
-	0,					/* sq_inplace_concat */
-	0,					/* sq_inplace_repeat */
+	0,			/* sq_length */
+	0,			/* sq_concat */
+	0,			/* sq_repeat */
+	0,			/* sq_item */
+	0,			/* sq_slice */
+	0,			/* sq_ass_item */
+	0,			/* sq_ass_slice */
+	PyDict_Contains,	/* sq_contains */
+	0,			/* sq_inplace_concat */
+	0,			/* sq_inplace_repeat */
 };
 
 static PyObject *
@@ -1966,8 +1969,8 @@ PyTypeObject PyDict_Type = {
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,		/* tp_flags */
 	dictionary_doc,				/* tp_doc */
-	(traverseproc)dict_traverse,		/* tp_traverse */
-	(inquiry)dict_tp_clear,			/* tp_clear */
+	dict_traverse,				/* tp_traverse */
+	dict_tp_clear,				/* tp_clear */
 	dict_richcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)dict_iter,			/* tp_iter */
@@ -1980,7 +1983,7 @@ PyTypeObject PyDict_Type = {
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
-	(initproc)dict_init,			/* tp_init */
+	dict_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	dict_new,				/* tp_new */
 	PyObject_GC_Del,        		/* tp_free */

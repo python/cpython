@@ -49,7 +49,8 @@ addnfastate(nfa *nf)
 {
 	nfastate *st;
 	
-	PyMem_RESIZE(nf->nf_state, nfastate, nf->nf_nstates + 1);
+	nf->nf_state = (nfastate *)PyObject_REALLOC(nf->nf_state, 
+                                    sizeof(nfastate) * (nf->nf_nstates + 1));
 	if (nf->nf_state == NULL)
 		Py_FatalError("out of mem");
 	st = &nf->nf_state[nf->nf_nstates++];
@@ -65,7 +66,8 @@ addnfaarc(nfa *nf, int from, int to, int lbl)
 	nfaarc *ar;
 	
 	st = &nf->nf_state[from];
-	PyMem_RESIZE(st->st_arc, nfaarc, st->st_narcs + 1);
+	st->st_arc = (nfaarc *)PyObject_REALLOC(st->st_arc,
+				      sizeof(nfaarc) * (st->st_narcs + 1));
 	if (st->st_arc == NULL)
 		Py_FatalError("out of mem");
 	ar = &st->st_arc[st->st_narcs++];
@@ -79,7 +81,7 @@ newnfa(char *name)
 	nfa *nf;
 	static int type = NT_OFFSET; /* All types will be disjunct */
 	
-	nf = PyMem_NEW(nfa, 1);
+	nf = (nfa *)PyObject_MALLOC(sizeof(nfa));
 	if (nf == NULL)
 		Py_FatalError("no mem for new nfa");
 	nf->nf_type = type++;
@@ -104,7 +106,7 @@ newnfagrammar(void)
 {
 	nfagrammar *gr;
 	
-	gr = PyMem_NEW(nfagrammar, 1);
+	gr = (nfagrammar *)PyObject_MALLOC(sizeof(nfagrammar));
 	if (gr == NULL)
 		Py_FatalError("no mem for new nfa grammar");
 	gr->gr_nnfas = 0;
@@ -121,7 +123,8 @@ addnfa(nfagrammar *gr, char *name)
 	nfa *nf;
 	
 	nf = newnfa(name);
-	PyMem_RESIZE(gr->gr_nfa, nfa *, gr->gr_nnfas + 1);
+	gr->gr_nfa = (nfa **)PyObject_REALLOC(gr->gr_nfa,
+				      sizeof(nfa) * (gr->gr_nnfas + 1));
 	if (gr->gr_nfa == NULL)
 		Py_FatalError("out of mem");
 	gr->gr_nfa[gr->gr_nnfas++] = nf;
@@ -361,7 +364,7 @@ typedef struct _ss_arc {
 typedef struct _ss_state {
 	bitset	ss_ss;
 	int	ss_narcs;
-	ss_arc	*ss_arc;
+	struct _ss_arc	*ss_arc;
 	int	ss_deleted;
 	int	ss_finish;
 	int	ss_rename;
@@ -392,7 +395,7 @@ makedfa(nfagrammar *gr, nfa *nf, dfa *d)
 	
 	ss = newbitset(nbits);
 	addclosure(ss, nf, nf->nf_start);
-	xx_state = PyMem_NEW(ss_state, 1);
+	xx_state = (ss_state *)PyObject_MALLOC(sizeof(ss_state));
 	if (xx_state == NULL)
 		Py_FatalError("no mem for xx_state in makedfa");
 	xx_nstates = 1;
@@ -411,6 +414,7 @@ makedfa(nfagrammar *gr, nfa *nf, dfa *d)
 
 	/* For each unmarked state... */
 	for (istate = 0; istate < xx_nstates; ++istate) {
+		size_t size;
 		yy = &xx_state[istate];
 		ss = yy->ss_ss;
 		/* For all its states... */
@@ -430,8 +434,9 @@ makedfa(nfagrammar *gr, nfa *nf, dfa *d)
 						goto found;
 				}
 				/* Add new arc for this state */
-				PyMem_RESIZE(yy->ss_arc, ss_arc,
-					     yy->ss_narcs + 1);
+				size = sizeof(ss_arc) * (yy->ss_narcs + 1);
+				yy->ss_arc = (ss_arc *)PyObject_REALLOC(
+                                                            yy->ss_arc, size);
 				if (yy->ss_arc == NULL)
 					Py_FatalError("out of mem");
 				zz = &yy->ss_arc[yy->ss_narcs++];
@@ -453,7 +458,9 @@ makedfa(nfagrammar *gr, nfa *nf, dfa *d)
 					goto done;
 				}
 			}
-			PyMem_RESIZE(xx_state, ss_state, xx_nstates + 1);
+			size = sizeof(ss_state) * (xx_nstates + 1);
+			xx_state = (ss_state *)PyObject_REALLOC(xx_state, 
+                                                                    size);
 			if (xx_state == NULL)
 				Py_FatalError("out of mem");
 			zz->sa_arrow = xx_nstates;

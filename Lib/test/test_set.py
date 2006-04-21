@@ -224,7 +224,7 @@ class TestJointOps(unittest.TestCase):
         # Bug #1257731
         class H(self.thetype):
             def __hash__(self):
-                return id(self)
+                return int(id(self) & 0x7fffffff)
         s=H()
         f=set()
         f.add(s)
@@ -421,7 +421,7 @@ class TestSet(TestJointOps):
         self.assertRaises(ReferenceError, str, p)
 
     # C API test only available in a debug build
-    if hasattr(sys, "gettotalrefcount"):
+    if hasattr(set, "test_c_api"):
         def test_c_api(self):
             self.assertEqual(set('abc').test_c_api(), True)
 

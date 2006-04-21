@@ -264,16 +264,6 @@ if (x == NULL) _AddTraceback(what, __FILE__, __LINE__ - 1), PyErr_Print()
 	PyGILState_Release(state);
 }
 
-typedef struct {
-	ffi_closure *pcl; /* the C callable */
-	ffi_cif cif;
-	PyObject *converters;
-	PyObject *callable;
-	SETFUNC setfunc;
-	ffi_type *restype;
-	ffi_type *atypes[0];
-} ffi_info;
-
 static void closure_fcn(ffi_cif *cif,
 			void *resp,
 			void **args,
@@ -289,16 +279,10 @@ static void closure_fcn(ffi_cif *cif,
 			  args);
 }
 
-void FreeCallback(THUNK thunk)
-{
-	FreeClosure(((ffi_info *)thunk)->pcl);
-	PyMem_Free(thunk);
-}
-
-THUNK AllocFunctionCallback(PyObject *callable,
-			    PyObject *converters,
-			    PyObject *restype,
-			    int is_cdecl)
+ffi_info *AllocFunctionCallback(PyObject *callable,
+				PyObject *converters,
+				PyObject *restype,
+				int is_cdecl)
 {
 	int result;
 	ffi_info *p;
@@ -313,13 +297,14 @@ THUNK AllocFunctionCallback(PyObject *callable,
 	}
 	p->pcl = MallocClosure();
 	if (p->pcl == NULL) {
-		PyMem_Free(p);
 		PyErr_NoMemory();
-		return NULL;
+		goto error;
 	}
 
 	for (i = 0; i < nArgs; ++i) {
 		PyObject *cnv = PySequence_GetItem(converters, i);
+		if (cnv == NULL)
+			goto error;
 		p->atypes[i] = GetType(cnv);
 		Py_DECREF(cnv);
 	}
@@ -330,12 +315,10 @@ THUNK AllocFunctionCallback(PyObject *callable,
 		p->restype = &ffi_type_void;
 	} else {
 		StgDictObject *dict = PyType_stgdict(restype);
-		if (dict == NULL) {
-			PyMem_Free(p);
-			return NULL;
-		}
+		if (dict == NULL)
+			goto error;
 		p->setfunc = dict->setfunc;
-		p->restype = &dict->ffi_type;
+		p->restype = &dict->ffi_type_pointer;
 	}
 
 	cc = FFI_DEFAULT_ABI;
@@ -349,21 +332,26 @@ THUNK AllocFunctionCallback(PyObject *callable,
 	if (result != FFI_OK) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "ffi_prep_cif failed with %d", result);
-		PyMem_Free(p);
-		return NULL;
+		goto error;
 	}
 	result = ffi_prep_closure(p->pcl, &p->cif, closure_fcn, p);
 	if (result != FFI_OK) {
 		PyErr_Format(PyExc_RuntimeError,
 			     "ffi_prep_closure failed with %d", result);
-		PyMem_Free(p);
-		return NULL;
+		goto error;
 	}
 
 	p->converters = converters;
 	p->callable = callable;
+	return p;
 
-	return (THUNK)p;
+  error:
+	if (p) {
+		if (p->pcl)
+			FreeClosure(p->pcl);
+		PyMem_Free(p);
+	}
+	return NULL;
 }
 
 /****************************************************************************

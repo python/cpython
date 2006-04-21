@@ -315,7 +315,7 @@ static PyTypeObject _struct_sequence_template = {
 	0,					/* tp_as_number */
 	&structseq_as_sequence,			/* tp_as_sequence */
 	0,					/* tp_as_mapping */
-	(hashfunc)structseq_hash,              	/* tp_hash */
+	structseq_hash,				/* tp_hash */
 	0,              			/* tp_call */
 	0,					/* tp_str */
 	0,                       		/* tp_getattro */
@@ -348,6 +348,14 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 	PyObject *dict;
 	PyMemberDef* members;
 	int n_members, n_unnamed_members, i, k;
+
+#ifdef Py_TRACE_REFS
+	/* if the type object was chained, unchain it first
+	   before overwriting its storage */
+	if (type->_ob_next) {
+		_Py_ForgetReference((PyObject*)type);
+	}
+#endif
 
 	n_unnamed_members = 0;
 	for (i = 0; desc->fields[i].name != NULL; ++i)

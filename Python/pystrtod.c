@@ -101,7 +101,7 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 		char *copy, *c;
 
 		/* We need to convert the '.' to the locale specific decimal point */
-		copy = malloc(end - nptr + 1 + decimal_point_len);
+		copy = (char *)malloc(end - nptr + 1 + decimal_point_len);
 
 		c = copy;
 		memcpy(c, nptr, decimal_point_pos - nptr);

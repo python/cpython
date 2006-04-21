@@ -1,83 +1,69 @@
 #!/usr/bin/env python
 
-"""Send the contents of a directory as a MIME message.
+"""Send the contents of a directory as a MIME message."""
 
-Usage: dirmail [options] from to [to ...]*
-
-Options:
-    -h / --help
-        Print this message and exit.
-
-    -d directory
-    --directory=directory
-        Mail the contents of the specified directory, otherwise use the
-        current directory.  Only the regular files in the directory are sent,
-        and we don't recurse to subdirectories.
-
-`from' is the email address of the sender of the message.
-
-`to' is the email address of the recipient of the message, and multiple
-recipients may be given.
-
-The email is sent by forwarding to your local SMTP server, which then does the
-normal delivery process.  Your local machine must be running an SMTP server.
-"""
-
-import sys
 import os
-import getopt
+import sys
 import smtplib
 # For guessing MIME type based on file name extension
 import mimetypes
 
-from email import Encoders
-from email.Message import Message
-from email.MIMEAudio import MIMEAudio
-from email.MIMEBase import MIMEBase
-from email.MIMEMultipart import MIMEMultipart
-from email.MIMEImage import MIMEImage
-from email.MIMEText import MIMEText
+from optparse import OptionParser
+
+from email import encoders
+from email.message import Message
+from email.mime.audio import MIMEAudio
+from email.mime.base import MIMEBase
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 COMMASPACE = ', '
 
 
-def usage(code, msg=''):
-    print >> sys.stderr, __doc__
-    if msg:
-        print >> sys.stderr, msg
-    sys.exit(code)
-
-
 def main():
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hd:', ['help', 'directory='])
-    except getopt.error, msg:
-        usage(1, msg)
+    parser = OptionParser(usage="""\
+Send the contents of a directory as a MIME message.
 
-    dir = os.curdir
-    for opt, arg in opts:
-        if opt in ('-h', '--help'):
-            usage(0)
-        elif opt in ('-d', '--directory'):
-            dir = arg
+Usage: %prog [options]
 
-    if len(args) < 2:
-        usage(1)
-
-    sender = args[0]
-    recips = args[1:]
-
+Unless the -o option is given, the email is sent by forwarding to your local
+SMTP server, which then does the normal delivery process.  Your local machine
+must be running an SMTP server.
+""")
+    parser.add_option('-d', '--directory',
+                      type='string', action='store',
+                      help="""Mail the contents of the specified directory,
+                      otherwise use the current directory.  Only the regular
+                      files in the directory are sent, and we don't recurse to
+                      subdirectories.""")
+    parser.add_option('-o', '--output',
+                      type='string', action='store', metavar='FILE',
+                      help="""Print the composed message to FILE instead of
+                      sending the message to the SMTP server.""")
+    parser.add_option('-s', '--sender',
+                      type='string', action='store', metavar='SENDER',
+                      help='The value of the From: header (required)')
+    parser.add_option('-r', '--recipient',
+                      type='string', action='append', metavar='RECIPIENT',
+                      default=[], dest='recipients',
+                      help='A To: header value (at least one required)')
+    opts, args = parser.parse_args()
+    if not opts.sender or not opts.recipients:
+        parser.print_help()
+        sys.exit(1)
+    directory = opts.directory
+    if not directory:
+        directory = '.'
     # Create the enclosing (outer) message
     outer = MIMEMultipart()
-    outer['Subject'] = 'Contents of directory %s' % os.path.abspath(dir)
-    outer['To'] = COMMASPACE.join(recips)
-    outer['From'] = sender
+    outer['Subject'] = 'Contents of directory %s' % os.path.abspath(directory)
+    outer['To'] = COMMASPACE.join(opts.recipients)
+    outer['From'] = opts.sender
     outer.preamble = 'You will not see this in a MIME-aware mail reader.\n'
-    # To guarantee the message ends with a newline
-    outer.epilogue = ''
 
-    for filename in os.listdir(dir):
-        path = os.path.join(dir, filename)
+    for filename in os.listdir(directory):
+        path = os.path.join(directory, filename)
         if not os.path.isfile(path):
             continue
         # Guess the content type based on the file's extension.  Encoding
@@ -108,16 +94,21 @@ def main():
             msg.set_payload(fp.read())
             fp.close()
             # Encode the payload using Base64
-            Encoders.encode_base64(msg)
+            encoders.encode_base64(msg)
         # Set the filename parameter
         msg.add_header('Content-Disposition', 'attachment', filename=filename)
         outer.attach(msg)
-
-    # Now send the message
-    s = smtplib.SMTP()
-    s.connect()
-    s.sendmail(sender, recips, outer.as_string())
-    s.close()
+    # Now send or store the message
+    composed = outer.as_string()
+    if opts.output:
+        fp = open(opts.output, 'w')
+        fp.write(composed)
+        fp.close()
+    else:
+        s = smtplib.SMTP()
+        s.connect()
+        s.sendmail(opts.sender, opts.recipients, composed)
+        s.close()
 
 
 if __name__ == '__main__':

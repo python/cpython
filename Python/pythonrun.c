@@ -30,14 +30,15 @@
 #endif
 
 #ifndef Py_REF_DEBUG
-#  define PRINT_TOTAL_REFS()
+#define PRINT_TOTAL_REFS()
 #else /* Py_REF_DEBUG */
-#  if defined(MS_WIN64)
-#    define PRINT_TOTAL_REFS() fprintf(stderr, "[%Id refs]\n", _Py_RefTotal);
-#  else /* ! MS_WIN64 */
-#    define PRINT_TOTAL_REFS() fprintf(stderr, "[%ld refs]\n", \
-			Py_SAFE_DOWNCAST(_Py_RefTotal, Py_ssize_t, long));
-#  endif /* MS_WIN64 */
+#define PRINT_TOTAL_REFS() fprintf(stderr,				\
+				   "[%" PY_FORMAT_SIZE_T "d refs]\n",	\
+				   _Py_GetRefTotal())
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 extern char *Py_GetPath(void);
@@ -280,6 +281,16 @@ Py_InitializeEx(int install_sigs)
 		}
 		Py_XDECREF(sys_isatty);
 
+		sys_stream = PySys_GetObject("stderr");
+		sys_isatty = PyObject_CallMethod(sys_stream, "isatty", "");
+		if (!sys_isatty)
+			PyErr_Clear();
+		if(sys_isatty && PyObject_IsTrue(sys_isatty)) {
+			if (!PyFile_SetEncoding(sys_stream, codeset))
+				Py_FatalError("Cannot set codeset of stderr");
+		}
+		Py_XDECREF(sys_isatty);
+
 		if (!Py_FileSystemDefaultEncoding)
 			Py_FileSystemDefaultEncoding = codeset;
 		else
@@ -296,7 +307,7 @@ Py_Initialize(void)
 
 
 #ifdef COUNT_ALLOCS
-extern void dump_counts(void);
+extern void dump_counts(FILE*);
 #endif
 
 /* Undo the effect of Py_Initialize().
@@ -358,6 +369,13 @@ Py_Finalize(void)
 	 * XXX I haven't seen a real-life report of either of these.
 	 */
 	PyGC_Collect();
+#ifdef COUNT_ALLOCS
+	/* With COUNT_ALLOCS, it helps to run GC multiple times:
+	   each collection might release some types from the type
+	   list, so they become garbage. */
+	while (PyGC_Collect() > 0)
+		/* nothing */;
+#endif
 
 	/* Destroy all modules */
 	PyImport_Cleanup();
@@ -386,10 +404,10 @@ Py_Finalize(void)
 
 	/* Debugging stuff */
 #ifdef COUNT_ALLOCS
-	dump_counts();
+	dump_counts(stdout);
 #endif
 
-	PRINT_TOTAL_REFS()
+	PRINT_TOTAL_REFS();
 
 #ifdef Py_TRACE_REFS
 	/* Display all objects still alive -- this can invoke arbitrary
@@ -679,7 +697,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
 	}
 	for (;;) {
 		ret = PyRun_InteractiveOneFlags(fp, filename, flags);
-		PRINT_TOTAL_REFS()
+		PRINT_TOTAL_REFS();
 		if (ret == E_EOF)
 			return 0;
 		/*
@@ -1451,7 +1469,7 @@ err_input(perrdetail *err)
 	v = Py_BuildValue("(ziiz)", err->filename,
 			  err->lineno, err->offset, err->text);
 	if (err->text != NULL) {
-		PyMem_DEL(err->text);
+		PyObject_FREE(err->text);
 		err->text = NULL;
 	}
 	w = NULL;
@@ -1666,16 +1684,113 @@ PyOS_setsig(int sig, PyOS_sighandler_t handler)
 /* Deprecated C API functions still provided for binary compatiblity */
 
 #undef PyParser_SimpleParseFile
-#undef PyParser_SimpleParseString
-
-node *
+PyAPI_FUNC(node *)
 PyParser_SimpleParseFile(FILE *fp, const char *filename, int start)
 {
 	return PyParser_SimpleParseFileFlags(fp, filename, start, 0);
 }
 
-node *
+#undef PyParser_SimpleParseString
+PyAPI_FUNC(node *)
 PyParser_SimpleParseString(const char *str, int start)
 {
 	return PyParser_SimpleParseStringFlags(str, start, 0);
 }
+
+#undef PyRun_AnyFile
+PyAPI_FUNC(int)
+PyRun_AnyFile(FILE *fp, const char *name)
+{
+	return PyRun_AnyFileExFlags(fp, name, 0, NULL);
+}
+
+#undef PyRun_AnyFileEx
+PyAPI_FUNC(int)
+PyRun_AnyFileEx(FILE *fp, const char *name, int closeit)
+{
+	return PyRun_AnyFileExFlags(fp, name, closeit, NULL);
+}
+
+#undef PyRun_AnyFileFlags
+PyAPI_FUNC(int)
+PyRun_AnyFileFlags(FILE *fp, const char *name, PyCompilerFlags *flags)
+{
+	return PyRun_AnyFileExFlags(fp, name, 0, flags);
+}
+
+#undef PyRun_File
+PyAPI_FUNC(PyObject *)
+PyRun_File(FILE *fp, const char *p, int s, PyObject *g, PyObject *l)
+{
+        return PyRun_FileExFlags(fp, p, s, g, l, 0, NULL);
+}
+
+#undef PyRun_FileEx
+PyAPI_FUNC(PyObject *)
+PyRun_FileEx(FILE *fp, const char *p, int s, PyObject *g, PyObject *l, int c)
+{
+        return PyRun_FileExFlags(fp, p, s, g, l, c, NULL);
+}
+
+#undef PyRun_FileFlags
+PyAPI_FUNC(PyObject *)
+PyRun_FileFlags(FILE *fp, const char *p, int s, PyObject *g, PyObject *l,
+		PyCompilerFlags *flags)
+{
+        return PyRun_FileExFlags(fp, p, s, g, l, 0, flags);
+}
+
+#undef PyRun_SimpleFile
+PyAPI_FUNC(int)
+PyRun_SimpleFile(FILE *f, const char *p)
+{
+	return PyRun_SimpleFileExFlags(f, p, 0, NULL);
+}
+
+#undef PyRun_SimpleFileEx
+PyAPI_FUNC(int)
+PyRun_SimpleFileEx(FILE *f, const char *p, int c)
+{
+	return PyRun_SimpleFileExFlags(f, p, c, NULL);
+}
+
+
+#undef PyRun_String
+PyAPI_FUNC(PyObject *)
+PyRun_String(const char *str, int s, PyObject *g, PyObject *l)
+{
+	return PyRun_StringFlags(str, s, g, l, NULL);
+}
+
+#undef PyRun_SimpleString
+PyAPI_FUNC(int)
+PyRun_SimpleString(const char *s)
+{
+	return PyRun_SimpleStringFlags(s, NULL);
+}
+
+#undef Py_CompileString
+PyAPI_FUNC(PyObject *)
+Py_CompileString(const char *str, const char *p, int s)
+{
+	return Py_CompileStringFlags(str, p, s, NULL);
+}
+
+#undef PyRun_InteractiveOne
+PyAPI_FUNC(int)
+PyRun_InteractiveOne(FILE *f, const char *p)
+{
+	return PyRun_InteractiveOneFlags(f, p, NULL);
+}
+
+#undef PyRun_InteractiveLoop
+PyAPI_FUNC(int)
+PyRun_InteractiveLoop(FILE *f, const char *p)
+{
+	return PyRun_InteractiveLoopFlags(f, p, NULL);
+}
+
+#ifdef __cplusplus
+}
+#endif
+

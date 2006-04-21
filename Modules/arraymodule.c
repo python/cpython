@@ -186,7 +186,8 @@ u_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
 	if (!PyArg_Parse(v, "u#;array item must be unicode character", &p, &len))
 		return -1;
 	if (len != 1) {
-		PyErr_SetString(PyExc_TypeError, "array item must be unicode character");
+		PyErr_SetString(PyExc_TypeError,
+				"array item must be unicode character");
 		return -1;
 	}
 	if (i >= 0)
@@ -1163,7 +1164,7 @@ array_reverse(arrayobject *self, PyObject *unused)
 	register char *p, *q;
 	/* little buffer to hold items while swapping */
 	char tmp[256];	/* 8 is probably enough -- but why skimp */
-	assert(itemsize <= sizeof(tmp));
+	assert((size_t)itemsize <= sizeof(tmp));
 
 	if (self->ob_size > 1) {
 		for (p = self->ob_item,
@@ -1673,7 +1674,8 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
 			}
 
 			self->ob_size -= slicelength;
-			self->ob_item = PyMem_REALLOC(self->ob_item, itemsize*self->ob_size);
+			self->ob_item = (char *)PyMem_REALLOC(self->ob_item,
+							      itemsize*self->ob_size);
 			self->allocated = self->ob_size;
 
 			return 0;
@@ -1865,7 +1867,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				if (n > 0) {
 					arrayobject *self = (arrayobject *)a;
 					char *item = self->ob_item;
-					item = PyMem_Realloc(item, n);
+					item = (char *)PyMem_Realloc(item, n);
 					if (item == NULL) {
 						PyErr_NoMemory();
 						Py_DECREF(a);
@@ -2060,8 +2062,7 @@ arrayiter_dealloc(arrayiterobject *it)
 static int
 arrayiter_traverse(arrayiterobject *it, visitproc visit, void *arg)
 {
-	if (it->ao != NULL)
-		return visit((PyObject *)(it->ao), arg);
+	Py_VISIT(it->ao);
 	return 0;
 }
 

@@ -12,15 +12,53 @@ class UrlParseTestCase(unittest.TestCase):
     def checkRoundtrips(self, url, parsed, split):
         result = urlparse.urlparse(url)
         self.assertEqual(result, parsed)
+        t = (result.scheme, result.netloc, result.path,
+             result.params, result.query, result.fragment)
+        self.assertEqual(t, parsed)
         # put it back together and it should be the same
         result2 = urlparse.urlunparse(result)
         self.assertEqual(result2, url)
+        self.assertEqual(result2, result.geturl())
+
+        # the result of geturl() is a fixpoint; we can always parse it
+        # again to get the same result:
+        result3 = urlparse.urlparse(result.geturl())
+        self.assertEqual(result3.geturl(), result.geturl())
+        self.assertEqual(result3,          result)
+        self.assertEqual(result3.scheme,   result.scheme)
+        self.assertEqual(result3.netloc,   result.netloc)
+        self.assertEqual(result3.path,     result.path)
+        self.assertEqual(result3.params,   result.params)
+        self.assertEqual(result3.query,    result.query)
+        self.assertEqual(result3.fragment, result.fragment)
+        self.assertEqual(result3.username, result.username)
+        self.assertEqual(result3.password, result.password)
+        self.assertEqual(result3.hostname, result.hostname)
+        self.assertEqual(result3.port,     result.port)
 
         # check the roundtrip using urlsplit() as well
         result = urlparse.urlsplit(url)
         self.assertEqual(result, split)
+        t = (result.scheme, result.netloc, result.path,
+             result.query, result.fragment)
+        self.assertEqual(t, split)
         result2 = urlparse.urlunsplit(result)
         self.assertEqual(result2, url)
+        self.assertEqual(result2, result.geturl())
+
+        # check the fixpoint property of re-parsing the result of geturl()
+        result3 = urlparse.urlsplit(result.geturl())
+        self.assertEqual(result3.geturl(), result.geturl())
+        self.assertEqual(result3,          result)
+        self.assertEqual(result3.scheme,   result.scheme)
+        self.assertEqual(result3.netloc,   result.netloc)
+        self.assertEqual(result3.path,     result.path)
+        self.assertEqual(result3.query,    result.query)
+        self.assertEqual(result3.fragment, result.fragment)
+        self.assertEqual(result3.username, result.username)
+        self.assertEqual(result3.password, result.password)
+        self.assertEqual(result3.hostname, result.hostname)
+        self.assertEqual(result3.port,     result.port)
 
     def test_roundtrips(self):
         testcases = [
@@ -186,6 +224,69 @@ class UrlParseTestCase(unittest.TestCase):
             (RFC2396_BASE, 'http://a/b/c/d;p?q', ''),
             ]:
             self.assertEqual(urlparse.urldefrag(url), (defrag, frag))
+
+    def test_urlsplit_attributes(self):
+        url = "HTTP://WWW.PYTHON.ORG/doc/#frag"
+        p = urlparse.urlsplit(url)
+        self.assertEqual(p.scheme, "http")
+        self.assertEqual(p.netloc, "WWW.PYTHON.ORG")
+        self.assertEqual(p.path, "/doc/")
+        self.assertEqual(p.query, "")
+        self.assertEqual(p.fragment, "frag")
+        self.assertEqual(p.username, None)
+        self.assertEqual(p.password, None)
+        self.assertEqual(p.hostname, "www.python.org")
+        self.assertEqual(p.port, None)
+        # geturl() won't return exactly the original URL in this case
+        # since the scheme is always case-normalized
+        #self.assertEqual(p.geturl(), url)
+
+        url = "http://User:Pass@www.python.org:080/doc/?query=yes#frag"
+        p = urlparse.urlsplit(url)
+        self.assertEqual(p.scheme, "http")
+        self.assertEqual(p.netloc, "User:Pass@www.python.org:080")
+        self.assertEqual(p.path, "/doc/")
+        self.assertEqual(p.query, "query=yes")
+        self.assertEqual(p.fragment, "frag")
+        self.assertEqual(p.username, "User")
+        self.assertEqual(p.password, "Pass")
+        self.assertEqual(p.hostname, "www.python.org")
+        self.assertEqual(p.port, 80)
+        self.assertEqual(p.geturl(), url)
+
+    def test_attributes_bad_port(self):
+        """Check handling of non-integer ports."""
+        p = urlparse.urlsplit("http://www.example.net:foo")
+        self.assertEqual(p.netloc, "www.example.net:foo")
+        self.assertRaises(ValueError, lambda: p.port)
+
+        p = urlparse.urlparse("http://www.example.net:foo")
+        self.assertEqual(p.netloc, "www.example.net:foo")
+        self.assertRaises(ValueError, lambda: p.port)
+
+    def test_attributes_without_netloc(self):
+        # This example is straight from RFC 3261.  It looks like it
+        # should allow the username, hostname, and port to be filled
+        # in, but doesn't.  Since it's a URI and doesn't use the
+        # scheme://netloc syntax, the netloc and related attributes
+        # should be left empty.
+        uri = "sip:alice@atlanta.com;maddr=239.255.255.1;ttl=15"
+        p = urlparse.urlsplit(uri)
+        self.assertEqual(p.netloc, "")
+        self.assertEqual(p.username, None)
+        self.assertEqual(p.password, None)
+        self.assertEqual(p.hostname, None)
+        self.assertEqual(p.port, None)
+        self.assertEqual(p.geturl(), uri)
+
+        p = urlparse.urlparse(uri)
+        self.assertEqual(p.netloc, "")
+        self.assertEqual(p.username, None)
+        self.assertEqual(p.password, None)
+        self.assertEqual(p.hostname, None)
+        self.assertEqual(p.port, None)
+        self.assertEqual(p.geturl(), uri)
+
 
 def test_main():
     test_support.run_unittest(UrlParseTestCase)

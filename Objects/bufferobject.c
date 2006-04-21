@@ -169,7 +169,7 @@ PyBuffer_New(Py_ssize_t size)
 	}
 	/* XXX: check for overflow in multiply */
 	/* Inline PyObject_New */
-	o = PyObject_MALLOC(sizeof(*b) + size);
+	o = (PyObject *)PyObject_MALLOC(sizeof(*b) + size);
 	if ( o == NULL )
 		return PyErr_NoMemory();
 	b = (PyBufferObject *) PyObject_INIT(o, &PyBuffer_Type);
@@ -305,7 +305,7 @@ buffer_str(PyBufferObject *self)
 	Py_ssize_t size;
 	if (!get_buf(self, &ptr, &size))
 		return NULL;
-	return PyString_FromStringAndSize(ptr, size);
+	return PyString_FromStringAndSize((const char *)ptr, size);
 }
 
 /* Sequence methods */

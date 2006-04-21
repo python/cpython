@@ -51,16 +51,14 @@ class CallbackTracbackTestCase(unittest.TestCase):
     def test_IntegerDivisionError(self):
         cb = CFUNCTYPE(c_int, c_int)(callback_func)
         out = self.capture_stderr(cb, 0)
-        self.failUnlessEqual(out.splitlines()[-1],
-                             "ZeroDivisionError: "
-                             "integer division or modulo by zero")
+        self.failUnlessEqual(out.splitlines()[-1][:19],
+                             "ZeroDivisionError: ")
 
     def test_FloatDivisionError(self):
         cb = CFUNCTYPE(c_int, c_double)(callback_func)
         out = self.capture_stderr(cb, 0.0)
-        self.failUnlessEqual(out.splitlines()[-1],
-                             "ZeroDivisionError: "
-                             "float division")
+        self.failUnlessEqual(out.splitlines()[-1][:19],
+                             "ZeroDivisionError: ")
 
     def test_TypeErrorDivisionError(self):
         cb = CFUNCTYPE(c_int, c_char_p)(callback_func)

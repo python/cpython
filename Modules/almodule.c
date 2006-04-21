@@ -1482,7 +1482,8 @@ al_GetParams(PyObject *self, PyObject *args)
 	}
 	if (alGetParams(resource, pvs, npvs) < 0)
 		goto error;
-	v = PyList_New(npvs);
+	if (!(v = PyList_New(npvs)))
+		goto error;
 	for (i = 0; i < npvs; i++) {
 		if (pvs[i].sizeOut < 0) {
 			char buf[32];
@@ -1692,6 +1693,7 @@ al_GetParamInfo(PyObject *self, PyObject *args)
 	if (alGetParamInfo(res, param, &pinfo) < 0)
 		return NULL;
 	v = PyDict_New();
+	if (!v) return NULL;
 
 	item = PyInt_FromLong((long) pinfo.resource);
 	PyDict_SetItemString(v, "resource", item);

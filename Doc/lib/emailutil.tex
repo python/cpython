@@ -1,7 +1,7 @@
-\declaremodule{standard}{email.Utils}
+\declaremodule{standard}{email.utils}
 \modulesynopsis{Miscellaneous email package utilities.}
 
-There are several useful utilities provided in the \module{email.Utils}
+There are several useful utilities provided in the \module{email.utils}
 module:
 
 \begin{funcdesc}{quote}{str}
@@ -38,7 +38,7 @@ values as might be returned by \method{Message.get_all()}.  Here's a
 simple example that gets all the recipients of a message:
 
 \begin{verbatim}
-from email.Utils import getaddresses
+from email.utils import getaddresses
 
 tos = msg.get_all('to', [])
 ccs = msg.get_all('cc', [])

@@ -29,6 +29,7 @@ class upload(Command):
          'display full response text from server'),
         ('sign', 's',
          'sign files to upload using gpg'),
+        ('identity=', 'i', 'GPG identity used to sign files'),
         ]
     boolean_options = ['show-response', 'sign']
 
@@ -38,8 +39,13 @@ class upload(Command):
         self.repository = ''
         self.show_response = 0
         self.sign = False
+        self.identity = None
 
     def finalize_options(self):
+        if self.identity and not self.sign:
+            raise DistutilsOptionError(
+                "Must use --sign for --identity to have meaning"
+            )
         if os.environ.has_key('HOME'):
             rc = os.path.join(os.environ['HOME'], '.pypirc')
             if os.path.exists(rc):
@@ -67,7 +73,10 @@ class upload(Command):
     def upload_file(self, command, pyversion, filename):
         # Sign if requested
         if self.sign:
-            spawn(("gpg", "--detach-sign", "-a", filename),
+            gpg_args = ["gpg", "--detach-sign", "-a", filename]
+            if self.identity:
+                gpg_args[2:2] = ["--local-user", self.identity]
+            spawn(gpg_args,
                   dry_run=self.dry_run)
 
         # Fill in the data - send all the meta-data in case we need to

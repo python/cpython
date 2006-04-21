@@ -1329,7 +1329,7 @@ int CFDataRefObj_Convert(PyObject *v, CFDataRef *p_itself)
 	if (v == Py_None) { *p_itself = NULL; return 1; }
 	if (PyString_Check(v)) {
 	    char *cStr;
-	    int cLen;
+	    Py_ssize_t cLen;
 	    if( PyString_AsStringAndSize(v, &cStr, &cLen) < 0 ) return 0;
 	    *p_itself = CFDataCreate((CFAllocatorRef)NULL, (unsigned char *)cStr, cLen);
 	    return 1;
@@ -1826,7 +1826,7 @@ int CFStringRefObj_Convert(PyObject *v, CFStringRef *p_itself)
 	if (PyString_Check(v)) {
 	    char *cStr;
 	    if (!PyArg_Parse(v, "es", "ascii", &cStr))
-	        return NULL;
+	        return 0;
 	        *p_itself = CFStringCreateWithCString((CFAllocatorRef)NULL, cStr, kCFStringEncodingASCII);
 	        return 1;
 	}

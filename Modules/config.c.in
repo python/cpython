@@ -17,6 +17,10 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include "Python.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* -- ADDMODULE MARKER 1 -- */
 
@@ -50,3 +54,9 @@ struct _inittab _PyImport_Inittab[] = {
 	/* Sentinel */
 	{0, 0}
 };
+
+
+#ifdef __cplusplus
+}
+#endif
+

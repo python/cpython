@@ -97,7 +97,7 @@ PyFloat_FromString(PyObject *v, char **pend)
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(v)) {
-		if (PyUnicode_GET_SIZE(v) >= sizeof(s_buffer)) {
+		if (PyUnicode_GET_SIZE(v) >= (Py_ssize_t)sizeof(s_buffer)) {
 			PyErr_SetString(PyExc_ValueError,
 				"Unicode float() literal too long to convert");
 			return NULL;
@@ -940,21 +940,21 @@ float_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 float_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *tmp, *new;
+	PyObject *tmp, *newobj;
 
 	assert(PyType_IsSubtype(type, &PyFloat_Type));
 	tmp = float_new(&PyFloat_Type, args, kwds);
 	if (tmp == NULL)
 		return NULL;
 	assert(PyFloat_CheckExact(tmp));
-	new = type->tp_alloc(type, 0);
-	if (new == NULL) {
+	newobj = type->tp_alloc(type, 0);
+	if (newobj == NULL) {
 		Py_DECREF(tmp);
 		return NULL;
 	}
-	((PyFloatObject *)new)->ob_fval = ((PyFloatObject *)tmp)->ob_fval;
+	((PyFloatObject *)newobj)->ob_fval = ((PyFloatObject *)tmp)->ob_fval;
 	Py_DECREF(tmp);
-	return new;
+	return newobj;
 }
 
 static PyObject *
@@ -1106,12 +1106,12 @@ Convert a string or number to a floating point number, if possible.");
 
 
 static PyNumberMethods float_as_number = {
-	(binaryfunc)float_add, /*nb_add*/
-	(binaryfunc)float_sub, /*nb_subtract*/
-	(binaryfunc)float_mul, /*nb_multiply*/
-	(binaryfunc)float_rem, /*nb_remainder*/
-	(binaryfunc)float_divmod, /*nb_divmod*/
-	(ternaryfunc)float_pow, /*nb_power*/
+	float_add, 	/*nb_add*/
+	float_sub, 	/*nb_subtract*/
+	float_mul, 	/*nb_multiply*/
+	float_rem, 	/*nb_remainder*/
+	float_divmod, 	/*nb_divmod*/
+	float_pow, 	/*nb_power*/
 	(unaryfunc)float_neg, /*nb_negative*/
 	(unaryfunc)float_pos, /*nb_positive*/
 	(unaryfunc)float_abs, /*nb_absolute*/
@@ -1122,10 +1122,10 @@ static PyNumberMethods float_as_number = {
 	0,		/*nb_and*/
 	0,		/*nb_xor*/
 	0,		/*nb_or*/
-	(coercion)float_coerce, /*nb_coerce*/
-	(unaryfunc)float_int, /*nb_int*/
-	(unaryfunc)float_long, /*nb_long*/
-	(unaryfunc)float_float, /*nb_float*/
+	float_coerce, 	/*nb_coerce*/
+	float_int, 	/*nb_int*/
+	float_long, 	/*nb_long*/
+	float_float,	/*nb_float*/
 	0,		/* nb_oct */
 	0,		/* nb_hex */
 	0,		/* nb_inplace_add */
@@ -1170,7 +1170,7 @@ PyTypeObject PyFloat_Type = {
 	float_doc,				/* tp_doc */
  	0,					/* tp_traverse */
 	0,					/* tp_clear */
-	(richcmpfunc)float_richcompare,		/* tp_richcompare */
+	float_richcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */

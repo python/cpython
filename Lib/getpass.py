@@ -15,11 +15,14 @@ import sys
 
 __all__ = ["getpass","getuser"]
 
-def unix_getpass(prompt='Password: '):
+def unix_getpass(prompt='Password: ', stream=None):
     """Prompt for a password, with echo turned off.
+    The prompt is written on stream, by default stdout.
 
     Restore terminal settings at end.
     """
+    if stream is None:
+        stream = sys.stdout
 
     try:
         fd = sys.stdin.fileno()
@@ -32,18 +35,18 @@ def unix_getpass(prompt='Password: '):
     new[3] = new[3] & ~termios.ECHO # 3 == 'lflags'
     try:
         termios.tcsetattr(fd, termios.TCSADRAIN, new)
-        passwd = _raw_input(prompt)
+        passwd = _raw_input(prompt, stream)
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
-    sys.stdout.write('\n')
+    stream.write('\n')
     return passwd
 
 
-def win_getpass(prompt='Password: '):
+def win_getpass(prompt='Password: ', stream=None):
     """Prompt for password with echo off, using Windows getch()."""
     if sys.stdin is not sys.__stdin__:
-        return default_getpass(prompt)
+        return default_getpass(prompt, stream)
     import msvcrt
     for c in prompt:
         msvcrt.putch(c)
@@ -63,16 +66,18 @@ def win_getpass(prompt='Password: '):
     return pw
 
 
-def default_getpass(prompt='Password: '):
-    print "Warning: Problem with getpass. Passwords may be echoed."
-    return _raw_input(prompt)
+def default_getpass(prompt='Password: ', stream=None):
+    print >>sys.stderr, "Warning: Problem with getpass. Passwords may be echoed."
+    return _raw_input(prompt, stream)
 
 
-def _raw_input(prompt=""):
+def _raw_input(prompt="", stream=None):
     # This doesn't save the string in the GNU readline history.
+    if stream is None:
+        stream = sys.stdout
     prompt = str(prompt)
     if prompt:
-        sys.stdout.write(prompt)
+        stream.write(prompt)
     line = sys.stdin.readline()
     if not line:
         raise EOFError

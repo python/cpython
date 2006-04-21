@@ -64,14 +64,17 @@
 #endif
 
 #ifdef MS_WIN32
-#define alloca _alloca
+#include <malloc.h>
 #endif
 
 #include <ffi.h>
 #include "ctypes.h"
 
-#ifdef _DEBUG
-#define DEBUG_EXCEPTIONS /* */
+#if defined(_DEBUG) || defined(__MINGW32__)
+/* Don't use structured exception handling on Windows if this is defined.
+   MingW, AFAIK, doesn't support it.
+*/
+#define DONT_USE_SEH
 #endif
 
 #ifdef MS_WIN32
@@ -96,6 +99,7 @@ static TCHAR *FormatError(DWORD code)
 	return lpMsgBuf;
 }
 
+#ifndef DONT_USE_SEH
 void SetException(DWORD code, EXCEPTION_RECORD *pr)
 {
 	TCHAR *lpMsgBuf;
@@ -254,6 +258,7 @@ static DWORD HandleException(EXCEPTION_POINTERS *ptrs,
 	*record = *ptrs->ExceptionRecord;
 	return EXCEPTION_EXECUTE_HANDLER;
 }
+#endif
 
 static PyObject *
 check_hresult(PyObject *self, PyObject *args)
@@ -576,14 +581,14 @@ ffi_type *GetType(PyObject *obj)
 	/* This little trick works correctly with MSVC.
 	   It returns small structures in registers
 	*/
-	if (dict->ffi_type.type == FFI_TYPE_STRUCT) {
-		if (dict->ffi_type.size <= 4)
+	if (dict->ffi_type_pointer.type == FFI_TYPE_STRUCT) {
+		if (dict->ffi_type_pointer.size <= 4)
 			return &ffi_type_sint32;
-		else if (dict->ffi_type.size <= 8)
+		else if (dict->ffi_type_pointer.size <= 8)
 			return &ffi_type_sint64;
 	}
 #endif
-	return &dict->ffi_type;
+	return &dict->ffi_type_pointer;
 }
 
 
@@ -612,8 +617,10 @@ static int _call_function_pointer(int flags,
 	int cc;
 #ifdef MS_WIN32
 	int delta;
+#ifndef DONT_USE_SEH
 	DWORD dwExceptionCode = 0;
 	EXCEPTION_RECORD record;
+#endif
 #endif
 	/* XXX check before here */
 	if (restype == NULL) {
@@ -640,14 +647,14 @@ static int _call_function_pointer(int flags,
 	if ((flags & FUNCFLAG_PYTHONAPI) == 0)
 		Py_UNBLOCK_THREADS
 #ifdef MS_WIN32
-#ifndef DEBUG_EXCEPTIONS
+#ifndef DONT_USE_SEH
 	__try {
 #endif
 		delta =
 #endif
 			ffi_call(&cif, (void *)pProc, resmem, avalues);
 #ifdef MS_WIN32
-#ifndef DEBUG_EXCEPTIONS
+#ifndef DONT_USE_SEH
 	}
 	__except (HandleException(GetExceptionInformation(),
 				  &dwExceptionCode, &record)) {
@@ -658,10 +665,12 @@ static int _call_function_pointer(int flags,
 	if ((flags & FUNCFLAG_PYTHONAPI) == 0)
 		Py_BLOCK_THREADS
 #ifdef MS_WIN32
+#ifndef DONT_USE_SEH
 	if (dwExceptionCode) {
 		SetException(dwExceptionCode, &record);
 		return -1;
 	}
+#endif
 	if (delta < 0) {
 		if (flags & FUNCFLAG_CDECL)
 			PyErr_Format(PyExc_ValueError,
@@ -758,6 +767,8 @@ void Extend_Error_Info(PyObject *exc_class, char *fmt, ...)
 	if (cls_str) {
 		PyString_ConcatAndDel(&s, cls_str);
 		PyString_ConcatAndDel(&s, PyString_FromString(": "));
+		if (s == NULL)
+			goto error;
 	} else
 		PyErr_Clear();
 	msg_str = PyObject_Str(v);
@@ -766,12 +777,15 @@ void Extend_Error_Info(PyObject *exc_class, char *fmt, ...)
 	else {
 		PyErr_Clear();
 		PyString_ConcatAndDel(&s, PyString_FromString("???"));
+		if (s == NULL)
+			goto error;
 	}
 	PyErr_SetObject(exc_class, s);
+error:
 	Py_XDECREF(tp);
 	Py_XDECREF(v);
 	Py_XDECREF(tb);
-	Py_DECREF(s);
+	Py_XDECREF(s);
 }
 
 
@@ -1363,7 +1377,7 @@ static int
 converter(PyObject *obj, void **address)
 {
 	*address = PyLong_AsVoidPtr(obj);
-	return address != NULL;
+	return *address != NULL;
 }
 
 static PyObject *
@@ -1423,71 +1437,7 @@ set_conversion_mode(PyObject *self, PyObject *args)
 }
 #endif
 
-static char cast_doc[] =
-"cast(cobject, ctype) -> ctype-instance\n\
-\n\
-Create an instance of ctype, and copy the internal memory buffer\n\
-of cobject to the new instance.  Should be used to cast one type\n\
-of pointer to another type of pointer.\n\
-Doesn't work correctly with ctypes integers.\n";
-
-static int cast_check_pointertype(PyObject *arg, PyObject **pobj)
-{
-	StgDictObject *dict;
-
-	if (PointerTypeObject_Check(arg)) {
-		*pobj = arg;
-		return 1;
-	}
-	dict = PyType_stgdict(arg);
-	if (dict) {
-		if (PyString_Check(dict->proto)
-		    && (strchr("sPzUZXO", PyString_AS_STRING(dict->proto)[0]))) {
-			/* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */
-			*pobj = arg;
-			return 1;
-		}
-	}
-	if (PyType_Check(arg)) {
-		PyErr_Format(PyExc_TypeError,
-			     "cast() argument 2 must be a pointer type, not %s",
-			     ((PyTypeObject *)arg)->tp_name);
-	} else {
-		PyErr_Format(PyExc_TypeError,
-			     "cast() argument 2 must be a pointer type, not a %s",
-			     arg->ob_type->tp_name);
-	}
-	return 0;
-}
-
-static PyObject *cast(PyObject *self, PyObject *args)
-{
-	PyObject *obj, *ctype;
-	struct argument a;
-	CDataObject *result;
-
-	/* We could and should allow array types for the second argument
-	   also, but we cannot use the simple memcpy below for them. */
-	if (!PyArg_ParseTuple(args, "OO&:cast", &obj, &cast_check_pointertype, &ctype))
-		return NULL;
-	if (-1 == ConvParam(obj, 1, &a))
-		return NULL;
-	result = (CDataObject *)PyObject_CallFunctionObjArgs(ctype, NULL);
-	if (result == NULL) {
-		Py_XDECREF(a.keep);
-		return NULL;
-	}
-	// result->b_size
-	// a.ffi_type->size
-	memcpy(result->b_ptr, &a.value,
-	       min(result->b_size, (int)a.ffi_type->size));
-	Py_XDECREF(a.keep);
-	return (PyObject *)result;
-}
-
-
 PyMethodDef module_methods[] = {
-	{"cast", cast, METH_VARARGS, cast_doc},
 #ifdef CTYPES_UNICODE
 	{"set_conversion_mode", set_conversion_mode, METH_VARARGS, set_conversion_mode_doc},
 #endif

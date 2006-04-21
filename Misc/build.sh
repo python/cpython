@@ -55,13 +55,21 @@ INSTALL_DIR="/tmp/python-test/local"
 RSYNC_OPTS="-aC -e ssh"
 
 REFLOG="build/reflog.txt.out"
-# These tests are not stable and sometimes report leaks; however,
-# test_generators really leaks.  Since test_generators probably won't
-# be fixed real soon, disable warning about it for now.
+# These tests are not stable and falsely report leaks sometimes.
 # The entire leak report will be mailed if any test not in this list leaks.
-LEAKY_TESTS="test_(capi|cfgparser|charmapcodec|cmd_line|compiler|filecmp|generators|quopri|socket|threaded_import|threadedtempfile|threading|threading_local|urllib2)"
+# Note: test_XXX (none currently) really leak, but are disabled
+# so we don't send spam.  Any test which really leaks should only 
+# be listed here if there are also test cases under Lib/test/leakers.
+LEAKY_TESTS="test_(ctypes|filecmp|socket|threadedtempfile|threading|urllib2)"
 
-# Change this flag to "yes" for old releases to just update/build the docs.
+# Skip these tests altogether when looking for leaks.  These tests
+# do not need to be stored above in LEAKY_TESTS too.
+# test_compiler almost never finishes with the same number of refs
+# since it depends on other modules, skip it.
+# test_logging causes hangs, skip it.
+LEAKY_SKIPS="-x test_compiler test_logging"
+
+# Change this flag to "yes" for old releases to only update/build the docs.
 BUILD_DISABLED="no"
 
 ## utility functions
@@ -159,7 +167,9 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             ## run the tests looking for leaks
             F=make-test-refleak.out
             start=`current_time`
-            ./python ./Lib/test/regrtest.py -R 4:3:$REFLOG -u network >& build/$F
+            ## ensure that the reflog exists so the grep doesn't fail
+            touch $REFLOG
+            ./python ./Lib/test/regrtest.py -R 4:3:$REFLOG -u network $LEAKY_SKIPS >& build/$F
             NUM_FAILURES=`egrep -vc "$LEAKY_TESTS" $REFLOG`
             update_status "Testing refleaks ($NUM_FAILURES failures)" "$F" $start
             mail_on_failure "refleak" $REFLOG

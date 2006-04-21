@@ -20,5 +20,8 @@ class SizesTestCase(unittest.TestCase):
         self.failUnlessEqual(8, sizeof(c_int64))
         self.failUnlessEqual(8, sizeof(c_uint64))
 
+    def test_size_t(self):
+        self.failUnlessEqual(sizeof(c_void_p), sizeof(c_size_t))
+
 if __name__ == "__main__":
     unittest.main()

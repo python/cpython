@@ -101,7 +101,7 @@ PyAPI_FUNC(void) PyObject_Free(void *);
 
 /* Macros */
 #ifdef WITH_PYMALLOC
-#ifdef PYMALLOC_DEBUG
+#ifdef PYMALLOC_DEBUG	/* WITH_PYMALLOC && PYMALLOC_DEBUG */
 PyAPI_FUNC(void *) _PyObject_DebugMalloc(size_t nbytes);
 PyAPI_FUNC(void *) _PyObject_DebugRealloc(void *p, size_t nbytes);
 PyAPI_FUNC(void) _PyObject_DebugFree(void *p);
@@ -124,11 +124,7 @@ PyAPI_FUNC(void) _PyObject_DebugMallocStats(void);
 #else	/* ! WITH_PYMALLOC */
 #define PyObject_MALLOC		PyMem_MALLOC
 #define PyObject_REALLOC	PyMem_REALLOC
-/* This is an odd one!  For backward compatibility with old extensions, the
-   PyMem "release memory" functions have to invoke the object allocator's
-   free() function.  When pymalloc isn't enabled, that leaves us using
-   the platform free(). */
-#define PyObject_FREE		free
+#define PyObject_FREE		PyMem_FREE
 
 #endif	/* WITH_PYMALLOC */
 
@@ -307,13 +303,13 @@ PyAPI_FUNC(void) PyObject_GC_Del(void *);
  * "visit" and "arg".  This is intended to keep tp_traverse functions
  * looking as much alike as possible.
  */
-#define Py_VISIT(op)					\
-        do { 						\
-                if (op) {				\
-                        int vret = visit((op), arg);	\
-                        if (vret)			\
-                                return vret;		\
-                }					\
+#define Py_VISIT(op)							\
+        do { 								\
+                if (op) {						\
+                        int vret = visit((PyObject *)(op), arg);	\
+                        if (vret)					\
+                                return vret;				\
+                }							\
         } while (0)
 
 /* This is here for the sake of backwards compatibility.  Extensions that

@@ -203,7 +203,7 @@ It also supports certain of Python's built-in operators through
 
 \subsection{Binary Objects \label{binary-objects}}
 
-This class may initialized from string data (which may include NULs).
+This class may be initialized from string data (which may include NULs).
 The primary access to the content of a \class{Binary} object is
 provided by an attribute:
 
@@ -301,10 +301,6 @@ add_result, address = multicall()
 \begin{funcdesc}{boolean}{value}
 Convert any Python value to one of the XML-RPC Boolean constants,
 \code{True} or \code{False}.
-\end{funcdesc}
-
-\begin{funcdesc}{binary}{data}
-Trivially convert any Python string to a \class{Binary} object.
 \end{funcdesc}
 
 \begin{funcdesc}{dumps}{params\optional{, methodname\optional{, 

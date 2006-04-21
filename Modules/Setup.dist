@@ -236,9 +236,9 @@ GLHACK=-Dclear=__GLclear
 
 # The md5 module implements the RSA Data Security, Inc. MD5
 # Message-Digest Algorithm, described in RFC 1321.  The necessary files
-# md5c.c and md5.h are included here.
+# md5.c and md5.h are included here.
 
-#md5 md5module.c md5c.c
+#md5 md5module.c md5.c
 
 
 # The sha module implements the SHA checksum algorithm.

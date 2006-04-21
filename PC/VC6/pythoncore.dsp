@@ -535,14 +535,6 @@ SOURCE=..\..\Objects\rangeobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Modules\regexmodule.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\Modules\regexpr.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\Modules\rgbimgmodule.c
 # End Source File
 # Begin Source File

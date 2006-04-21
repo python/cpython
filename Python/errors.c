@@ -16,6 +16,11 @@ extern char *strerror(int);
 
 #include <ctype.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 void
 PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 {
@@ -609,6 +614,7 @@ PyErr_WriteUnraisable(PyObject *obj)
 				PyFile_WriteString(": ", f);
 				PyFile_WriteObject(v, f, 0);
 			}
+			Py_XDECREF(moduleName);
 		}
 		PyFile_WriteString(" in ", f);
 		PyFile_WriteObject(obj, f, 0);
@@ -796,3 +802,8 @@ PyErr_ProgramText(const char *filename, int lineno)
 	}
 	return NULL;
 }
+
+#ifdef __cplusplus
+}
+#endif
+

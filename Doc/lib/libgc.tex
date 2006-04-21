@@ -35,7 +35,8 @@ Returns true if automatic collection is enabled.
 \begin{funcdesc}{collect}{\optional{generation}}
 With no arguments, run a full collection.  The optional argument
 \var{generation} may be an integer specifying which generation to collect
-(from 0 to 2).  A ValueError is raised if the generation number is invalid.
+(from 0 to 2).  A \exception{ValueError} is raised if the generation number 
+is invalid.
 The number of unreachable objects found is returned.
 
 \versionchanged[The optional \var{generation} argument was added]{2.5}

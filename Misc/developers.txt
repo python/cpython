@@ -17,6 +17,12 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- George Yoshida (SF name "quiver") added to the SourceForge Python
+  project 14 Apr 2006, by Tim Peters, as a tracker admin.  See
+  contemporaneous python-checkins thread with the unlikely Subject:
+
+      r45329 - python/trunk/Doc/whatsnew/whatsnew25.tex
+
 - Ronald Oussoren was given SVN access on 3 Mar 2006 by NCN, for Mac
   related work.
 

@@ -1541,8 +1541,8 @@ class Tree(TixWidget):
         '''This command is used to indicate whether the entry given by
      entryPath has children entries and whether the children are visible. mode
      must be one of open, close or none. If mode is set to open, a (+)
-     indicator is drawn next to the entry. If mode is set to close, a (-)
-     indicator is drawn next to the entry. If mode is set to none, no
+     indicator is drawn next the the entry. If mode is set to close, a (-)
+     indicator is drawn next the the entry. If mode is set to none, no
      indicators will be drawn for this entry. The default mode is none. The
      open mode indicates the entry has hidden children and this entry can be
      opened by the user. The close mode indicates that all the children of the
@@ -1773,6 +1773,7 @@ class CObjView(TixWidget):
     # FIXME: It should inherit -superclass tixScrolledWidget
     pass
 
+
 class Grid(TixWidget):
     '''The Tix Grid command creates a new window  and makes it into a
     tixGrid widget. Additional options, may be specified on the command
@@ -1787,26 +1788,101 @@ class Grid(TixWidget):
     border.
 
     Subwidgets - None'''
-    pass
+    # valid specific resources as of Tk 8.4
+    # editdonecmd, editnotifycmd, floatingcols, floatingrows, formatcmd,
+    # highlightbackground, highlightcolor, leftmargin, itemtype, selectmode,
+    # selectunit, topmargin,
+    def __init__(self, master=None, cnf={}, **kw):
+        static= []
+        self.cnf= cnf
+        TixWidget.__init__(self, master, 'tixGrid', static, cnf, kw)
 
+    # valid options as of Tk 8.4
+    # anchor, bdtype, cget, configure, delete, dragsite, dropsite, entrycget, edit
+    # entryconfigure, format, geometryinfo, info, index, move, nearest, selection
+    # set, size, unset, xview, yview
     # def anchor option ?args ...?
+    def anchor_get(self):
+        "Get the (x,y) coordinate of the current anchor cell"
+        return self._getints(self.tk.call(self, 'anchor', 'get'))
+
     # def bdtype
     # def delete dim from ?to?
+    def delete_row(self, from_, to=None):
+        """Delete rows between from_ and to inclusive.
+        If to is not provided,  delete only row at from_"""
+        if to is None:
+            self.tk.call(self, 'delete', 'row', from_)
+        else:
+            self.tk.call(self, 'delete', 'row', from_, to)
+    def delete_column(self, from_, to=None):
+        """Delete columns between from_ and to inclusive.
+        If to is not provided,  delete only column at from_"""
+        if to is None:
+            self.tk.call(self, 'delete', 'column', from_)
+        else:
+            self.tk.call(self, 'delete', 'column', from_, to)
     # def edit apply
     # def edit set x y
-    # def entrycget x y option
-    # def entryconfigure x y ?option? ?value option value ...?
+
+    def entrycget(self, x, y, option):
+        "Get the option value for cell at (x,y)"
+        return self.tk.call(self, 'entrycget', x, y, option)
+
+    def entryconfigure(self, x, y, **kw):
+        return self.tk.call(self, 'entryconfigure', x, y, *self._options(None, kw))
     # def format
     # def index
+
+    def info_exists(self, x, y):
+        "Return True if display item exists at (x,y)"
+        return bool(int(self.tk.call(self, 'info', 'exists', x, y)))
+
+    def info_bbox(self, x, y):
+        # This seems to always return '', at least for 'text' displayitems
+        return self.tk.call(self, 'info', 'bbox', x, y)
+
+    def nearest(self, x, y):
+        "Return coordinate of cell nearest pixel coordinate (x,y)"
+        return self._getints(self.tk.call(self, 'nearest', x, y))
+
+    # def selection adjust
+    # def selection clear
+    # def selection includes
+    # def selection set
+    # def selection toggle
     # def move dim from to offset
-    # def set x y ?-itemtype type? ?option value...?
+
+    def set(self, x, y, itemtype=None, **kw):
+        args= self._options(self.cnf, kw)
+        if itemtype is not None:
+            args= ('-itemtype', itemtype) + args
+        self.tk.call(self, 'set', x, y, *args)
+
     # def size dim index ?option value ...?
     # def unset x y
-    # def xview
-    # def yview
 
-class ScrolledGrid(TixWidget):
+    def xview(self):
+        return self._getdoubles(self.tk.call(self, 'xview'))
+    def xview_moveto(self, fraction):
+        self.tk.call(self,'xview', 'moveto', fraction)
+    def xview_scroll(self, count, what="units"):
+        "Scroll right (count>0) or left <count> of units|pages"
+        self.tk.call(self, 'xview', 'scroll', count, what)
+
+    def yview(self):
+        return self._getdoubles(self.tk.call(self, 'yview'))
+    def yview_moveto(self, fraction):
+        self.tk.call(self,'ysview', 'moveto', fraction)
+    def yview_scroll(self, count, what="units"):
+        "Scroll down (count>0) or up <count> of units|pages"
+        self.tk.call(self, 'yview', 'scroll', count, what)
+
+class ScrolledGrid(Grid):
     '''Scrolled Grid widgets'''
 
     # FIXME: It should inherit -superclass tixScrolledWidget
-    pass
+    def __init__(self, master=None, cnf={}, **kw):
+        static= []
+        self.cnf= cnf
+        TixWidget.__init__(self, master, 'tixScrolledGrid', static, cnf, kw)

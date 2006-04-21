@@ -2,7 +2,7 @@
 import smtplib
 
 # Import the email modules we'll need
-from email.MIMEText import MIMEText
+from email.mime.text import MIMEText
 
 # Open a plain text file for reading.  For this example, assume that
 # the text file contains only ASCII characters.

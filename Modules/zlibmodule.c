@@ -654,7 +654,9 @@ PyZlib_flush(compobject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(decomp_flush__doc__,
-"flush() -- Return a string containing any remaining decompressed data.\n"
+"flush( [length] ) -- Return a string containing any remaining\n"
+"decompressed data. length, if given, is the initial size of the\n"
+"output buffer.\n"
 "\n"
 "The decompressor object can no longer be used after this call.");
 

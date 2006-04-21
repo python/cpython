@@ -48,6 +48,10 @@
 #define NEWLINE_LF 2		/* \n newline seen */
 #define NEWLINE_CRLF 4		/* \r\n newline seen */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 FILE *
 PyFile_AsFile(PyObject *f)
 {
@@ -313,7 +317,8 @@ PyFile_SetBufSize(PyObject *f, int bufsize)
 			PyMem_Free(file->f_setbuf);
 			file->f_setbuf = NULL;
 		} else {
-			file->f_setbuf = PyMem_Realloc(file->f_setbuf, bufsize);
+			file->f_setbuf = (char *)PyMem_Realloc(file->f_setbuf, 
+                                                                bufsize);
 		}
 #ifdef HAVE_SETVBUF
 		setvbuf(file->f_fp, file->f_setbuf, type, bufsize);
@@ -818,7 +823,7 @@ file_read(PyFileObject *f, PyObject *args)
 		buffersize = new_buffersize(f, (size_t)0);
 	else
 		buffersize = bytesrequested;
-	if (buffersize > INT_MAX) {
+	if (buffersize > PY_SSIZE_T_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
 	"requested number of bytes is more than a Python string can hold");
 		return NULL;
@@ -1093,7 +1098,7 @@ getline_via_fgets(FILE *fp)
 		assert(*(pvend-1) == '\0');
 		increment = total_v_size >> 2;	/* mild exponential growth */
 		total_v_size += increment;
-		if (total_v_size > INT_MAX) {
+		if (total_v_size > PY_SSIZE_T_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
 			    "line is longer than a Python string can hold");
 			Py_DECREF(v);
@@ -1204,7 +1209,7 @@ get_line(PyFileObject *f, int n)
 		used_v_size = total_v_size;
 		increment = total_v_size >> 2; /* mild exponential growth */
 		total_v_size += increment;
-		if (total_v_size > INT_MAX) {
+		if (total_v_size > PY_SSIZE_T_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
 			    "line is longer than a Python string can hold");
 			Py_DECREF(v);
@@ -1391,12 +1396,12 @@ file_readlines(PyFileObject *f, PyObject *args)
 			goto cleanup;
 		}
 		totalread += nread;
-		p = memchr(buffer+nfilled, '\n', nread);
+		p = (char *)memchr(buffer+nfilled, '\n', nread);
 		if (p == NULL) {
 			/* Need a larger buffer to fit this line */
 			nfilled += nread;
 			buffersize *= 2;
-			if (buffersize > INT_MAX) {
+			if (buffersize > PY_SSIZE_T_MAX) {
 				PyErr_SetString(PyExc_OverflowError,
 			    "line is longer than a Python string can hold");
 				goto error;
@@ -1431,7 +1436,7 @@ file_readlines(PyFileObject *f, PyObject *args)
 			if (err != 0)
 				goto error;
 			q = p;
-			p = memchr(q, '\n', end-q);
+			p = (char *)memchr(q, '\n', end-q);
 		} while (p != NULL);
 		/* Move the remaining incomplete line to the start */
 		nfilled = end-q;
@@ -1790,7 +1795,7 @@ drop_readahead(PyFileObject *f)
 
 /* Make sure that file has a readahead buffer with at least one byte
    (unless at EOF) and no more than bufsize.  Returns negative value on
-   error */
+   error, will set MemoryError if bufsize bytes cannot be allocated. */
 static int
 readahead(PyFileObject *f, int bufsize)
 {
@@ -1802,7 +1807,8 @@ readahead(PyFileObject *f, int bufsize)
 		else
 			drop_readahead(f);
 	}
-	if ((f->f_buf = PyMem_Malloc(bufsize)) == NULL) {
+	if ((f->f_buf = (char *)PyMem_Malloc(bufsize)) == NULL) {
+		PyErr_NoMemory();
 		return -1;
 	}
 	Py_BEGIN_ALLOW_THREADS
@@ -1844,7 +1850,7 @@ readahead_get_line_skip(PyFileObject *f, int skip, int bufsize)
 	if (len == 0)
 		return (PyStringObject *)
 			PyString_FromStringAndSize(NULL, skip);
-	bufptr = memchr(f->f_bufptr, '\n', len);
+	bufptr = (char *)memchr(f->f_bufptr, '\n', len);
 	if (bufptr != NULL) {
 		bufptr++;			/* Count the '\n' */
 		len = bufptr - f->f_bufptr;
@@ -2056,7 +2062,7 @@ PyTypeObject PyFile_Type = {
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
-	(initproc)file_init,			/* tp_init */
+	file_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	file_new,				/* tp_new */
 	PyObject_Del,                           /* tp_free */
@@ -2432,3 +2438,8 @@ Py_UniversalNewlineFread(char *buf, size_t n,
 	f->f_skipnextlf = skipnextlf;
 	return dst - buf;
 }
+
+#ifdef __cplusplus
+}
+#endif
+

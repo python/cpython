@@ -6,12 +6,12 @@
 # Python script for bumping up an RCS major revision number.
 
 import sys
-import regex
+import re
 import rcslib
 import string
 
 WITHLOCK = 1
-majorrev_re = regex.compile('^[0-9]+')
+majorrev_re = re.compile('^[0-9]+')
 
 dir = rcslib.RCS()
 

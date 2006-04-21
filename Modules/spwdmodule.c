@@ -52,6 +52,7 @@ static PyStructSequence_Desc struct_spwd_type_desc = {
 	9,
 };
 
+static int initialized;
 static PyTypeObject StructSpwdType;
 
 
@@ -173,7 +174,10 @@ initspwd(void)
 	m=Py_InitModule3("spwd", spwd_methods, spwd__doc__);
 	if (m == NULL)
 		return;
-	PyStructSequence_InitType(&StructSpwdType, &struct_spwd_type_desc);
+	if (!initialized)
+		PyStructSequence_InitType(&StructSpwdType, 
+					  &struct_spwd_type_desc);
 	Py_INCREF((PyObject *) &StructSpwdType);
 	PyModule_AddObject(m, "struct_spwd", (PyObject *) &StructSpwdType);
+	initialized = 1;
 }

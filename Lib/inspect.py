@@ -353,7 +353,7 @@ def getsourcefile(object):
         if 'b' in mode and string.lower(filename[-len(suffix):]) == suffix:
             # Looks like a binary file.  We want to only return a text file.
             return None
-    if os.path.exists(filename):
+    if os.path.exists(filename) or hasattr(getmodule(object), '__loader__'):
         return filename
 
 def getabsfile(object):
@@ -379,7 +379,7 @@ def getmodule(object):
     if file in modulesbyfile:
         return sys.modules.get(modulesbyfile[file])
     for module in sys.modules.values():
-        if hasattr(module, '__file__'):
+        if ismodule(module) and hasattr(module, '__file__'):
             modulesbyfile[
                 os.path.realpath(
                         getabsfile(module))] = module.__name__
@@ -406,7 +406,7 @@ def findsource(object):
     in the file and the line number indexes a line in that list.  An IOError
     is raised if the source code cannot be retrieved."""
     file = getsourcefile(object) or getfile(object)
-    lines = linecache.getlines(file)
+    lines = linecache.getlines(file, getmodule(object).__dict__)
     if not lines:
         raise IOError('could not get source code')
 

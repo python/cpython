@@ -438,16 +438,9 @@ static int
 tupletraverse(PyTupleObject *o, visitproc visit, void *arg)
 {
 	Py_ssize_t i;
-	PyObject *x;
 
-	for (i = o->ob_size; --i >= 0; ) {
-		x = o->ob_item[i];
-		if (x != NULL) {
-			int err = visit(x, arg);
-			if (err)
-				return err;
-		}
-	}
+	for (i = o->ob_size; --i >= 0; )
+		Py_VISIT(o->ob_item[i]);
 	return 0;
 }
 
@@ -547,7 +540,7 @@ tuple_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 tuple_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *tmp, *new, *item;
+	PyObject *tmp, *newobj, *item;
 	Py_ssize_t i, n;
 
 	assert(PyType_IsSubtype(type, &PyTuple_Type));
@@ -555,16 +548,16 @@ tuple_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (tmp == NULL)
 		return NULL;
 	assert(PyTuple_Check(tmp));
-	new = type->tp_alloc(type, n = PyTuple_GET_SIZE(tmp));
-	if (new == NULL)
+	newobj = type->tp_alloc(type, n = PyTuple_GET_SIZE(tmp));
+	if (newobj == NULL)
 		return NULL;
 	for (i = 0; i < n; i++) {
 		item = PyTuple_GET_ITEM(tmp, i);
 		Py_INCREF(item);
-		PyTuple_SET_ITEM(new, i, item);
+		PyTuple_SET_ITEM(newobj, i, item);
 	}
 	Py_DECREF(tmp);
-	return new;
+	return newobj;
 }
 
 PyDoc_STRVAR(tuple_doc,
@@ -615,6 +608,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
 		}
 		else {
 			result = PyTuple_New(slicelength);
+			if (!result) return NULL;
 
 			src = self->ob_item;
 			dest = ((PyTupleObject *)result)->ob_item;
@@ -790,27 +784,6 @@ typedef struct {
 	PyTupleObject *it_seq; /* Set to NULL when iterator is exhausted */
 } tupleiterobject;
 
-PyTypeObject PyTupleIter_Type;
-
-static PyObject *
-tuple_iter(PyObject *seq)
-{
-	tupleiterobject *it;
-
-	if (!PyTuple_Check(seq)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-	it = PyObject_GC_New(tupleiterobject, &PyTupleIter_Type);
-	if (it == NULL)
-		return NULL;
-	it->it_index = 0;
-	Py_INCREF(seq);
-	it->it_seq = (PyTupleObject *)seq;
-	_PyObject_GC_TRACK(it);
-	return (PyObject *)it;
-}
-
 static void
 tupleiter_dealloc(tupleiterobject *it)
 {
@@ -822,9 +795,8 @@ tupleiter_dealloc(tupleiterobject *it)
 static int
 tupleiter_traverse(tupleiterobject *it, visitproc visit, void *arg)
 {
-	if (it->it_seq == NULL)
-		return 0;
-	return visit((PyObject *)it->it_seq, arg);
+	Py_VISIT(it->it_seq);
+	return 0;
 }
 
 static PyObject *
@@ -900,3 +872,22 @@ PyTypeObject PyTupleIter_Type = {
 	tupleiter_methods,			/* tp_methods */
 	0,
 };
+
+static PyObject *
+tuple_iter(PyObject *seq)
+{
+	tupleiterobject *it;
+
+	if (!PyTuple_Check(seq)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	it = PyObject_GC_New(tupleiterobject, &PyTupleIter_Type);
+	if (it == NULL)
+		return NULL;
+	it->it_index = 0;
+	Py_INCREF(seq);
+	it->it_seq = (PyTupleObject *)seq;
+	_PyObject_GC_TRACK(it);
+	return (PyObject *)it;
+}

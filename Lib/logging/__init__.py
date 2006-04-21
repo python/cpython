@@ -719,7 +719,7 @@ class StreamHandler(Handler):
         If strm is not specified, sys.stderr is used.
         """
         Handler.__init__(self)
-        if not strm:
+        if strm is None:
             strm = sys.stderr
         self.stream = strm
         self.formatter = None

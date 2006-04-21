@@ -228,6 +228,7 @@ static PyStructSequence_Desc struct_time_type_desc = {
 	9,
 };
 
+static int initialized;
 static PyTypeObject StructTimeType;
 
 static PyObject *
@@ -443,7 +444,7 @@ time_strftime(PyObject *self, PyObject *args)
 	 * will be ahead of time...
 	 */
 	for (i = 1024; ; i += i) {
-		outbuf = malloc(i);
+		outbuf = (char *)malloc(i);
 		if (outbuf == NULL) {
 			return PyErr_NoMemory();
 		}
@@ -807,9 +808,13 @@ inittime(void)
 	hInterruptEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	SetConsoleCtrlHandler( PyCtrlHandler, TRUE);
 #endif /* MS_WINDOWS */
-        PyStructSequence_InitType(&StructTimeType, &struct_time_type_desc);
+	if (!initialized) {
+		PyStructSequence_InitType(&StructTimeType, 
+					  &struct_time_type_desc);
+	}
 	Py_INCREF(&StructTimeType);
 	PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType);
+	initialized = 1;
 }
 
 

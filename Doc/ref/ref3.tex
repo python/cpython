@@ -1035,7 +1035,7 @@ by the built-in \function{classmethod()} constructor.
 %=========================================================================
 \section{New-style and classic classes}
 
-Classes and instances come in two flavours: old-style or classic, and new-style.  
+Classes and instances come in two flavors: old-style or classic, and new-style.  
 
 Up to Python 2.1, old-style classes were the only flavour available to the
 user.  The concept of (old-style) class is unrelated to the concept of type: if
@@ -1065,10 +1065,14 @@ the way special methods are invoked.  Others are "fixes" that could not be
 implemented before for compatibility concerns, like the method resolution order
 in case of multiple inheritance.
 
-This manuel is not up-to-date with respect to new-style classes.  For now,
+This manual is not up-to-date with respect to new-style classes.  For now,
 please see \url{http://www.python.org/doc/newstyle.html} for more information.
 
-The plan is to eventually drop old-style classes, leaving only the semantics of new-style classes.  This change will probably only be feasible in Python 3.0.
+The plan is to eventually drop old-style classes, leaving only the semantics of
+new-style classes.  This change will probably only be feasible in Python 3.0.
+\index{class}{new-style}
+\index{class}{classic}
+\index{class}{old-style}
 
 %=========================================================================
 \section{Special method names\label{specialnames}}
@@ -2053,14 +2057,15 @@ exception is raised.  But see the following exception:
 \item
 
 Exception to the previous item: if the left operand is an instance of
-a built-in type or a new-style class, and the right operand is an
-instance of a proper subclass of that type or class, the right
-operand's \method{__rop__()} method is tried \emph{before} the left
-operand's \method{__op__()} method.  This is done so that a subclass can
-completely override binary operators.  Otherwise, the left operand's
-__op__ method would always accept the right operand: when an instance
-of a given class is expected, an instance of a subclass of that class
-is always acceptable.
+a built-in type or a new-style class, and the right operand is an instance
+of a proper subclass of that type or class and overrides the base's
+\method{__rop__()} method, the right operand's \method{__rop__()} method
+is tried \emph{before} the left operand's \method{__op__()} method.
+
+This is done so that a subclass can completely override binary operators.
+Otherwise, the left operand's \method{__op__()} method would always
+accept the right operand: when an instance of a given class is expected,
+an instance of a subclass of that class is always acceptable.
 
 \item
 
@@ -2106,3 +2111,63 @@ implement a \method{__coerce__()} method, for use by the built-in
 \function{coerce()} function.
 
 \end{itemize}
+
+\subsection{Context Managers and Contexts\label{context-managers}}
+
+\versionadded{2.5}
+
+A \dfn{context manager} is an object that manages the entry to, and exit
+from, a \dfn{context} surrounding a block of code.  Context managers are
+normally invoked using the \keyword{with} statement (described in
+section~\ref{with}), but can also be used by directly invoking their
+methods.
+\stindex{with}
+\index{context manager}
+\index{context}
+
+Typical uses of context managers include saving and restoring various
+kinds of global state, locking and unlocking resources, closing opened
+files, etc.
+
+\begin{methoddesc}[context manager]{__context__}{self}
+Invoked when the object is used as the context expression of a
+\keyword{with} statement.  The return value must implement
+\method{__enter__()} and \method{__exit__()} methods.  Simple context
+managers that wish to directly
+implement \method{__enter__()} and \method{__exit__()} should just
+return \var{self}.
+
+Context managers written in Python can also implement this method using
+a generator function decorated with the
+\function{contextlib.contextmanager} decorator, as this can be simpler
+than writing individual \method{__enter__()} and \method{__exit__()}
+methods when the state to be managed is complex.
+\end{methoddesc}
+
+\begin{methoddesc}[context]{__enter__}{self}
+Enter the context defined by this object. The \keyword{with} statement
+will bind this method's return value to the target(s) specified in the
+\keyword{as} clause of the statement, if any.
+\end{methoddesc}
+
+\begin{methoddesc}[context]{__exit__}{exc_type, exc_value, traceback}
+Exit the context defined by this object. The parameters describe the
+exception that caused the context to be exited. If the context was
+exited without an exception, all three arguments will be
+\constant{None}.
+
+If an exception is supplied, and the method wishes to suppress the
+exception (i.e., prevent it from being propagated), it should return a
+true value. Otherwise, the exception will be processed normally upon
+exit from this method.
+
+Note that \method{__exit__} methods should not reraise the passed-in
+exception; this is the caller's responsibility.
+\end{methoddesc}
+
+\begin{seealso}
+  \seepep{0343}{The "with" statement}
+         {The specification, background, and examples for the
+          Python \keyword{with} statement.}
+\end{seealso}
+

@@ -91,6 +91,11 @@
  * process to find the installed Python tree.
  */
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
+
 #ifndef VERSION
 #if defined(__VMS)
 #define VERSION "2_1"
@@ -566,7 +571,7 @@ calculate_path(void)
     bufsz += strlen(exec_prefix) + 1;
 
     /* This is the only malloc call in this file */
-    buf = PyMem_Malloc(bufsz);
+    buf = (char *)PyMem_Malloc(bufsz);
 
     if (buf == NULL) {
         /* We can't exit, so print a warning and limp along */
@@ -681,3 +686,9 @@ Py_GetProgramFullPath(void)
         calculate_path();
     return progpath;
 }
+
+
+#ifdef __cplusplus
+}
+#endif
+

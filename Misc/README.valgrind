@@ -24,6 +24,12 @@ You may need to run the tests in batches under Valgrind to keep
 the memory usage down to allow the tests to complete.  It seems to take
 about 5 times longer to run --without-pymalloc.
 
+Apr 15, 2006:
+  test_ctypes causes Valgrind 3.1.1 to fail (crash).
+  test_socket_ssl should be skipped when running valgrind.
+	The reason is that it purposely uses uninitialized memory.
+	This causes many spurious warnings, so it's easier to just skip it.
+
 
 Details:
 --------

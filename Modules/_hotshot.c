@@ -26,7 +26,7 @@ typedef __int64 hs_time;
 #ifndef HAVE_GETTIMEOFDAY
 #error "This module requires gettimeofday() on non-Windows platforms!"
 #endif
-#if (defined(PYOS_OS2) && defined(PYCC_GCC))
+#if (defined(PYOS_OS2) && defined(PYCC_GCC)) || defined(__QNX__)
 #include <sys/time.h>
 #else
 #include <sys/resource.h>
@@ -308,7 +308,7 @@ unpack_string(LogReaderObject *self, PyObject **pvalue)
     if ((err = unpack_packed_int(self, &len, 0)))
         return err;
 
-    buf = malloc(len);
+    buf = (char *)malloc(len);
     for (i=0; i < len; i++) {
         ch = fgetc(self->logfp);
 	buf[i] = ch;
@@ -918,7 +918,7 @@ calibrate(void)
 #endif
     }
 #if defined(MS_WINDOWS) || defined(PYOS_OS2) || \
-    defined(__VMS)
+    defined(__VMS) || defined (__QNX__)
     rusage_diff = -1;
 #else
     {
@@ -1403,7 +1403,7 @@ get_version_string(void)
         ++rev;
     while (rev[i] != ' ' && rev[i] != '\0')
         ++i;
-    buffer = malloc(i + 1);
+    buffer = (char *)malloc(i + 1);
     if (buffer != NULL) {
         memmove(buffer, rev, i);
         buffer[i] = '\0';

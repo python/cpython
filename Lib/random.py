@@ -285,6 +285,15 @@ class Random(_random.Random):
         large population:   sample(xrange(10000000), 60)
         """
 
+        # XXX Although the documentation says `population` is "a sequence",
+        # XXX attempts are made to cater to any iterable with a __len__
+        # XXX method.  This has had mixed success.  Examples from both
+        # XXX sides:  sets work fine, and should become officially supported;
+        # XXX dicts are much harder, and have failed in various subtle
+        # XXX ways across attempts.  Support for mapping types should probably
+        # XXX be dropped (and users should pass mapping.keys() or .values()
+        # XXX explicitly).
+
         # Sampling without replacement entails tracking either potential
         # selections (the pool) in a list or previous selections in a set.
 
@@ -304,7 +313,9 @@ class Random(_random.Random):
         setsize = 21        # size of a small set minus size of an empty list
         if k > 5:
             setsize += 4 ** _ceil(_log(k * 3, 4)) # table size for big sets
-        if n <= setsize:    # is an n-length list smaller than a k-length set
+        if n <= setsize or hasattr(population, "keys"):
+            # An n-length list is smaller than a k-length set, or this is a
+            # mapping type so the other algorithm wouldn't work.
             pool = list(population)
             for i in xrange(k):         # invariant:  non-selected at [0,n-i)
                 j = _int(random() * (n-i))
@@ -312,17 +323,18 @@ class Random(_random.Random):
                 pool[j] = pool[n-i-1]   # move non-selected item into vacancy
         else:
             try:
-                n > 0 and (population[0], population[n//2], population[n-1])
-            except (TypeError, KeyError):   # handle non-sequence iterables
-                population = tuple(population)
-            selected = set()
-            selected_add = selected.add
-            for i in xrange(k):
-                j = _int(random() * n)
-                while j in selected:
+                selected = set()
+                selected_add = selected.add
+                for i in xrange(k):
                     j = _int(random() * n)
-                selected_add(j)
-                result[i] = population[j]
+                    while j in selected:
+                        j = _int(random() * n)
+                    selected_add(j)
+                    result[i] = population[j]
+            except (TypeError, KeyError):   # handle (at least) sets
+                if isinstance(population, list):
+                    raise
+                return self.sample(tuple(population), k)
         return result
 
 ## -------------------- real-valued distributions  -------------------

@@ -504,7 +504,7 @@ Instance methods:
   Return a string representing the date, controlled by an explicit
   format string.  Format codes referring to hours, minutes or seconds
   will see 0 values.
-  See the section on \method{strftime()} behavior.
+  See section~\ref{strftime-behavior} -- \method{strftime()} behavior.
 \end{methoddesc}
 
 
@@ -970,8 +970,8 @@ Instance methods:
 
 \begin{methoddesc}{strftime}{format}
   Return a string representing the date and time, controlled by an
-  explicit format string.  See the section on \method{strftime()}
-  behavior.
+  explicit format string.  See section~\ref{strftime-behavior} --
+  \method{strftime()} behavior.
 \end{methoddesc}
 
 
@@ -1100,7 +1100,8 @@ Instance methods:
 
 \begin{methoddesc}{strftime}{format}
   Return a string representing the time, controlled by an explicit
-  format string.  See the section on \method{strftime()} behavior.
+  format string.  See section~\ref{strftime-behavior} --
+  \method{strftime()} behavior.
 \end{methoddesc}
 
 \begin{methoddesc}{utcoffset}{}
@@ -1368,7 +1369,7 @@ representing only EST (fixed offset -5 hours), or only EDT (fixed offset
 -4 hours)).
 
 
-\subsection{\method{strftime()} Behavior}
+\subsection{\method{strftime()} Behavior\label{strftime-behavior}}
 
 \class{date}, \class{datetime}, and \class{time}
 objects all support a \code{strftime(\var{format})}

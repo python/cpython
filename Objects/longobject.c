@@ -281,7 +281,7 @@ _long_as_ssize_t(PyObject *vv) {
 	if (sign > 0) 
 		return PY_SSIZE_T_MAX;
 	else 
-		return -PY_SSIZE_T_MAX-1;
+		return PY_SSIZE_T_MIN;
 }
 
 /* Get a Py_ssize_t from a long int object.
@@ -301,7 +301,7 @@ _PyLong_AsSsize_t(PyObject *vv)
 /* Get a Py_ssize_t from a long int object.
    Silently reduce values larger than PY_SSIZE_T_MAX to PY_SSIZE_T_MAX,
    and silently boost values less than -PY_SSIZE_T_MAX-1 to -PY_SSIZE_T_MAX-1.
-   Return 0 on error, 1 on success.
+   On error, return -1 with an exception set.
 */
 
 static Py_ssize_t
@@ -419,7 +419,7 @@ _PyLong_NumBits(PyObject *vv)
 		digit msd = v->ob_digit[ndigits - 1];
 
 		result = (ndigits - 1) * SHIFT;
-		if (result / SHIFT != ndigits - 1)
+		if (result / SHIFT != (size_t)(ndigits - 1))
 			goto Overflow;
 		do {
 			++result;
@@ -771,6 +771,8 @@ PyObject *
 PyLong_FromVoidPtr(void *p)
 {
 #if SIZEOF_VOID_P <= SIZEOF_LONG
+	if ((long)p < 0)
+		return PyLong_FromUnsignedLong((unsigned long)p);
 	return PyInt_FromLong((long)p);
 #else
 
@@ -783,7 +785,7 @@ PyLong_FromVoidPtr(void *p)
 	/* optimize null pointers */
 	if (p == NULL)
 		return PyInt_FromLong(0);
-	return PyLong_FromLongLong((PY_LONG_LONG)p);
+	return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG)p);
 
 #endif /* SIZEOF_VOID_P <= SIZEOF_LONG */
 }
@@ -802,8 +804,10 @@ PyLong_AsVoidPtr(PyObject *vv)
 
 	if (PyInt_Check(vv))
 		x = PyInt_AS_LONG(vv);
-	else
+	else if (PyLong_Check(vv) && _PyLong_Sign(vv) < 0)
 		x = PyLong_AsLong(vv);
+	else
+		x = PyLong_AsUnsignedLong(vv);
 #else
 
 #ifndef HAVE_LONG_LONG
@@ -816,8 +820,10 @@ PyLong_AsVoidPtr(PyObject *vv)
 
 	if (PyInt_Check(vv))
 		x = PyInt_AS_LONG(vv);
-	else
+	else if (PyLong_Check(vv) && _PyLong_Sign(vv) < 0)
 		x = PyLong_AsLongLong(vv);
+	else
+		x = PyLong_AsUnsignedLongLong(vv);
 
 #endif /* SIZEOF_VOID_P <= SIZEOF_LONG */
 
@@ -947,7 +953,7 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
 
 	if (vv == NULL || !PyLong_Check(vv)) {
 		PyErr_BadInternalCall();
-		return -1;
+		return (unsigned PY_LONG_LONG)-1;
 	}
 
 	res = _PyLong_AsByteArray(
@@ -1394,6 +1400,8 @@ PyLong_FromString(char *str, char **pend, int base)
 	int sign = 1;
 	char *start, *orig_str = str;
 	PyLongObject *z;
+	PyObject *strobj, *strrepr;
+	Py_ssize_t slen;
 
 	if ((base != 0 && base < 2) || base > 36) {
 		PyErr_SetString(PyExc_ValueError,
@@ -1459,9 +1467,19 @@ PyLong_FromString(char *str, char **pend, int base)
 	return (PyObject *) z;
 
  onError:
-	PyErr_Format(PyExc_ValueError,
-		     "invalid literal for long(): %.200s", orig_str);
 	Py_XDECREF(z);
+	slen = strlen(orig_str) < 200 ? strlen(orig_str) : 200;
+	strobj = PyString_FromStringAndSize(orig_str, slen);
+	if (strobj == NULL)
+		return NULL;
+	strrepr = PyObject_Repr(strobj);
+	Py_DECREF(strobj);
+	if (strrepr == NULL)
+		return NULL;
+	PyErr_Format(PyExc_ValueError,
+		     "invalid literal for long() with base %d: %s",
+		     base, PyString_AS_STRING(strrepr));
+	Py_DECREF(strrepr);
 	return NULL;
 }
 
@@ -1470,7 +1488,7 @@ PyObject *
 PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
 {
 	PyObject *result;
-	char *buffer = PyMem_MALLOC(length+1);
+	char *buffer = (char *)PyMem_MALLOC(length+1);
 
 	if (buffer == NULL)
 		return NULL;
@@ -3066,7 +3084,7 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyLongObject *tmp, *new;
+	PyLongObject *tmp, *newobj;
 	Py_ssize_t i, n;
 
 	assert(PyType_IsSubtype(type, &PyLong_Type));
@@ -3077,17 +3095,17 @@ long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	n = tmp->ob_size;
 	if (n < 0)
 		n = -n;
-	new = (PyLongObject *)type->tp_alloc(type, n);
-	if (new == NULL) {
+	newobj = (PyLongObject *)type->tp_alloc(type, n);
+	if (newobj == NULL) {
 		Py_DECREF(tmp);
 		return NULL;
 	}
-	assert(PyLong_Check(new));
-	new->ob_size = tmp->ob_size;
+	assert(PyLong_Check(newobj));
+	newobj->ob_size = tmp->ob_size;
 	for (i = 0; i < n; i++)
-		new->ob_digit[i] = tmp->ob_digit[i];
+		newobj->ob_digit[i] = tmp->ob_digit[i];
 	Py_DECREF(tmp);
-	return (PyObject *)new;
+	return (PyObject *)newobj;
 }
 
 static PyObject *
@@ -3114,25 +3132,25 @@ static PyNumberMethods long_as_number = {
 	(binaryfunc)	long_add,	/*nb_add*/
 	(binaryfunc)	long_sub,	/*nb_subtract*/
 	(binaryfunc)	long_mul,	/*nb_multiply*/
-	(binaryfunc)	long_mod,	/*nb_remainder*/
-	(binaryfunc)	long_divmod,	/*nb_divmod*/
-	(ternaryfunc)	long_pow,	/*nb_power*/
+			long_mod,	/*nb_remainder*/
+			long_divmod,	/*nb_divmod*/
+			long_pow,	/*nb_power*/
 	(unaryfunc) 	long_neg,	/*nb_negative*/
 	(unaryfunc) 	long_pos,	/*tp_positive*/
 	(unaryfunc) 	long_abs,	/*tp_absolute*/
 	(inquiry)	long_nonzero,	/*tp_nonzero*/
 	(unaryfunc)	long_invert,	/*nb_invert*/
-	(binaryfunc)	long_lshift,	/*nb_lshift*/
+			long_lshift,	/*nb_lshift*/
 	(binaryfunc)	long_rshift,	/*nb_rshift*/
-	(binaryfunc)	long_and,	/*nb_and*/
-	(binaryfunc)	long_xor,	/*nb_xor*/
-	(binaryfunc)	long_or,	/*nb_or*/
-	(coercion)	long_coerce,	/*nb_coerce*/
-	(unaryfunc)	long_int,	/*nb_int*/
-	(unaryfunc)	long_long,	/*nb_long*/
-	(unaryfunc)	long_float,	/*nb_float*/
-	(unaryfunc)	long_oct,	/*nb_oct*/
-	(unaryfunc)	long_hex,	/*nb_hex*/
+			long_and,	/*nb_and*/
+			long_xor,	/*nb_xor*/
+			long_or,	/*nb_or*/
+			long_coerce,	/*nb_coerce*/
+			long_int,	/*nb_int*/
+			long_long,	/*nb_long*/
+			long_float,	/*nb_float*/
+			long_oct,	/*nb_oct*/
+			long_hex,	/*nb_hex*/
 	0,				/* nb_inplace_add */
 	0,				/* nb_inplace_subtract */
 	0,				/* nb_inplace_multiply */
@@ -3143,11 +3161,11 @@ static PyNumberMethods long_as_number = {
 	0,				/* nb_inplace_and */
 	0,				/* nb_inplace_xor */
 	0,				/* nb_inplace_or */
-	(binaryfunc)long_div,		/* nb_floor_divide */
+	long_div,			/* nb_floor_divide */
 	long_true_divide,		/* nb_true_divide */
 	0,				/* nb_inplace_floor_divide */
 	0,				/* nb_inplace_true_divide */
-	(lenfunc)long_index,            /* nb_index */
+	long_index,			/* nb_index */
 };
 
 PyTypeObject PyLong_Type = {
@@ -3156,18 +3174,18 @@ PyTypeObject PyLong_Type = {
 	"long",					/* tp_name */
 	sizeof(PyLongObject) - sizeof(digit),	/* tp_basicsize */
 	sizeof(digit),				/* tp_itemsize */
-	(destructor)long_dealloc,		/* tp_dealloc */
+	long_dealloc,				/* tp_dealloc */
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	(cmpfunc)long_compare,			/* tp_compare */
-	(reprfunc)long_repr,			/* tp_repr */
+	long_repr,				/* tp_repr */
 	&long_as_number,			/* tp_as_number */
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	(hashfunc)long_hash,			/* tp_hash */
         0,              			/* tp_call */
-        (reprfunc)long_str,			/* tp_str */
+        long_str,				/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */

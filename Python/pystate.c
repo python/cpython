@@ -23,19 +23,16 @@ the expense of doing their own locking).
 #endif
 
 
-#define ZAP(x) { \
-	PyObject *tmp = (PyObject *)(x); \
-	(x) = NULL; \
-	Py_XDECREF(tmp); \
-}
-
-
 #ifdef WITH_THREAD
 #include "pythread.h"
 static PyThread_type_lock head_mutex = NULL; /* Protects interp->tstate_head */
 #define HEAD_INIT() (void)(head_mutex || (head_mutex = PyThread_allocate_lock()))
 #define HEAD_LOCK() PyThread_acquire_lock(head_mutex, WAIT_LOCK)
 #define HEAD_UNLOCK() PyThread_release_lock(head_mutex)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* The single PyInterpreterState used by this process'
    GILState implementation
@@ -102,12 +99,12 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
 	for (p = interp->tstate_head; p != NULL; p = p->next)
 		PyThreadState_Clear(p);
 	HEAD_UNLOCK();
-	ZAP(interp->codec_search_path);
-	ZAP(interp->codec_search_cache);
-	ZAP(interp->codec_error_registry);
-	ZAP(interp->modules);
-	ZAP(interp->sysdict);
-	ZAP(interp->builtins);
+	Py_CLEAR(interp->codec_search_path);
+	Py_CLEAR(interp->codec_search_cache);
+	Py_CLEAR(interp->codec_error_registry);
+	Py_CLEAR(interp->modules);
+	Py_CLEAR(interp->sysdict);
+	Py_CLEAR(interp->builtins);
 }
 
 
@@ -211,23 +208,23 @@ PyThreadState_Clear(PyThreadState *tstate)
 		fprintf(stderr,
 		  "PyThreadState_Clear: warning: thread still has a frame\n");
 
-	ZAP(tstate->frame);
+	Py_CLEAR(tstate->frame);
 
-	ZAP(tstate->dict);
-	ZAP(tstate->async_exc);
+	Py_CLEAR(tstate->dict);
+	Py_CLEAR(tstate->async_exc);
 
-	ZAP(tstate->curexc_type);
-	ZAP(tstate->curexc_value);
-	ZAP(tstate->curexc_traceback);
+	Py_CLEAR(tstate->curexc_type);
+	Py_CLEAR(tstate->curexc_value);
+	Py_CLEAR(tstate->curexc_traceback);
 
-	ZAP(tstate->exc_type);
-	ZAP(tstate->exc_value);
-	ZAP(tstate->exc_traceback);
+	Py_CLEAR(tstate->exc_type);
+	Py_CLEAR(tstate->exc_value);
+	Py_CLEAR(tstate->exc_traceback);
 
 	tstate->c_profilefunc = NULL;
 	tstate->c_tracefunc = NULL;
-	ZAP(tstate->c_profileobj);
-	ZAP(tstate->c_traceobj);
+	Py_CLEAR(tstate->c_profileobj);
+	Py_CLEAR(tstate->c_traceobj);
 }
 
 
@@ -297,23 +294,23 @@ PyThreadState_Get(void)
 
 
 PyThreadState *
-PyThreadState_Swap(PyThreadState *new)
+PyThreadState_Swap(PyThreadState *newts)
 {
-	PyThreadState *old = _PyThreadState_Current;
+	PyThreadState *oldts = _PyThreadState_Current;
 
-	_PyThreadState_Current = new;
+	_PyThreadState_Current = newts;
 	/* It should not be possible for more than one thread state
 	   to be used for a thread.  Check this the best we can in debug
 	   builds.
 	*/
 #if defined(Py_DEBUG) && defined(WITH_THREAD)
-	if (new) {
+	if (newts) {
 		PyThreadState *check = PyGILState_GetThisThreadState();
-		if (check && check->interp == new->interp && check != new)
+		if (check && check->interp == newts->interp && check != newts)
 			Py_FatalError("Invalid thread state for this thread");
 	}
 #endif
-	return old;
+	return oldts;
 }
 
 /* An extension mechanism to store arbitrary additional per-thread state.
@@ -356,7 +353,7 @@ PyThreadState_SetAsyncExc(long id, PyObject *exc) {
 	for (p = interp->tstate_head; p != NULL; p = p->next) {
 		if (p->thread_id != id)
 			continue;
-		ZAP(p->async_exc);
+		Py_CLEAR(p->async_exc);
 		Py_XINCREF(exc);
 		p->async_exc = exc;
 		count += 1;
@@ -491,7 +488,7 @@ PyGILState_Ensure(void)
 	   called Py_Initialize() and usually PyEval_InitThreads().
 	*/
 	assert(autoInterpreterState); /* Py_Initialize() hasn't been called! */
-	tcur = PyThread_get_key_value(autoTLSkey);
+	tcur = (PyThreadState *)PyThread_get_key_value(autoTLSkey);
 	if (tcur == NULL) {
 		/* Create a new thread state for this thread */
 		tcur = PyThreadState_New(autoInterpreterState);
@@ -518,7 +515,8 @@ PyGILState_Ensure(void)
 void
 PyGILState_Release(PyGILState_STATE oldstate)
 {
-	PyThreadState *tcur = PyThread_get_key_value(autoTLSkey);
+	PyThreadState *tcur = (PyThreadState *)PyThread_get_key_value(
+                                                                autoTLSkey);
 	if (tcur == NULL)
 		Py_FatalError("auto-releasing thread-state, "
 		              "but no thread-state for this thread");
@@ -551,4 +549,11 @@ PyGILState_Release(PyGILState_STATE oldstate)
 	else if (oldstate == PyGILState_UNLOCKED)
 		PyEval_SaveThread();
 }
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* WITH_THREAD */
+
+

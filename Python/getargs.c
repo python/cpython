@@ -6,6 +6,9 @@
 #include <ctype.h>
 
 
+#ifdef __cplusplus
+extern "C" { 
+#endif
 int PyArg_Parse(PyObject *, const char *, ...);
 int PyArg_ParseTuple(PyObject *, const char *, ...);
 int PyArg_VaParse(PyObject *, const char *, va_list);
@@ -14,6 +17,18 @@ int PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
 				const char *, char **, ...);
 int PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,
 				const char *, char **, va_list);
+
+#ifdef HAVE_DECLSPEC_DLL
+/* Export functions */
+PyAPI_FUNC(int) _PyArg_Parse_SizeT(PyObject *, char *, ...);
+PyAPI_FUNC(int) _PyArg_ParseTuple_SizeT(PyObject *, char *, ...);
+PyAPI_FUNC(int) _PyArg_ParseTupleAndKeywords_SizeT(PyObject *, PyObject *,
+                                                  const char *, char **, ...);
+PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
+PyAPI_FUNC(int) _PyArg_VaParse_SizeT(PyObject *, char *, va_list);
+PyAPI_FUNC(int) _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *, PyObject *,
+                                              const char *, char **, va_list);
+#endif
 
 #define FLAG_COMPAT 1
 #define FLAG_SIZE_T 2
@@ -631,8 +646,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		unsigned int ival;
 		if (float_argument_error(arg))
 			return converterr("integer<I>", arg, msgbuf, bufsize);
-		ival = PyInt_AsUnsignedLongMask(arg);
-		if (ival == -1 && PyErr_Occurred())
+		ival = (unsigned int)PyInt_AsUnsignedLongMask(arg);
+		if (ival == (unsigned int)-1 && PyErr_Occurred())
 			return converterr("integer<I>", arg, msgbuf, bufsize);
 		else
 			*p = ival;
@@ -645,10 +660,10 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		Py_ssize_t *p = va_arg(*p_va, Py_ssize_t *);
 		Py_ssize_t ival;
 		if (float_argument_error(arg))
-			return converterr("integer<i>", arg, msgbuf, bufsize);
+			return converterr("integer<n>", arg, msgbuf, bufsize);
 		ival = PyInt_AsSsize_t(arg);
 		if (ival == -1 && PyErr_Occurred())
-			return converterr("integer<i>", arg, msgbuf, bufsize);
+			return converterr("integer<n>", arg, msgbuf, bufsize);
 		*p = ival;
 		break;
 	}
@@ -1040,11 +1055,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				STORE_SIZE(PyUnicode_GET_SIZE(arg));
 			}
 			else {
-			char *buf;
-			Py_ssize_t count = convertbuffer(arg, p, &buf);
-			if (count < 0)
-				return converterr(buf, arg, msgbuf, bufsize);
-			STORE_SIZE(count/(sizeof(Py_UNICODE))); 
+				return converterr("cannot convert raw buffers",
+						  arg, msgbuf, bufsize);
 			}
 			format++;
 		} else {
@@ -1743,3 +1755,6 @@ _PyArg_NoKeywords(const char *funcname, PyObject *kw)
 			funcname);
 	return 0;
 }
+#ifdef __cplusplus
+};
+#endif

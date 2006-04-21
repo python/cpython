@@ -40,9 +40,9 @@ modules contained in the package.
 
 \begin{funcdesc}{parse}{buf}
 Returns an abstract syntax tree for the Python source code in \var{buf}.
-The function raises SyntaxError if there is an error in the source
-code.  The return value is a \class{compiler.ast.Module} instance that
-contains the tree.  
+The function raises \exception{SyntaxError} if there is an error in the
+source code.  The return value is a \class{compiler.ast.Module} instance
+that contains the tree.  
 \end{funcdesc}
 
 \begin{funcdesc}{parseFile}{path}

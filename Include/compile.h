@@ -22,7 +22,7 @@ typedef struct {
 #define FUTURE_NESTED_SCOPES "nested_scopes"
 #define FUTURE_GENERATORS "generators"
 #define FUTURE_DIVISION "division"
-#define FUTURE_ABSIMPORT "absolute_import"
+#define FUTURE_ABSOLUTE_IMPORT "absolute_import"
 #define FUTURE_WITH_STATEMENT "with_statement"
 
 struct _mod; /* Declare the existence of this type */

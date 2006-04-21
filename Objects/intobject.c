@@ -255,18 +255,18 @@ PyInt_AsUnsignedLongMask(register PyObject *op)
 	if (op == NULL || (nb = op->ob_type->tp_as_number) == NULL ||
 	    nb->nb_int == NULL) {
 		PyErr_SetString(PyExc_TypeError, "an integer is required");
-		return -1;
+		return (unsigned long)-1;
 	}
 
 	io = (PyIntObject*) (*nb->nb_int) (op);
 	if (io == NULL)
-		return -1;
+		return (unsigned long)-1;
 	if (!PyInt_Check(io)) {
 		if (PyLong_Check(io)) {
 			val = PyLong_AsUnsignedLongMask((PyObject *)io);
 			Py_DECREF(io);
 			if (PyErr_Occurred())
-				return -1;
+				return (unsigned long)-1;
 			return val;
 		}
 		else
@@ -274,7 +274,7 @@ PyInt_AsUnsignedLongMask(register PyObject *op)
 			Py_DECREF(io);
 			PyErr_SetString(PyExc_TypeError,
 					"nb_int should return int object");
-			return -1;
+			return (unsigned long)-1;
 		}
 	}
 
@@ -300,18 +300,18 @@ PyInt_AsUnsignedLongLongMask(register PyObject *op)
 	if (op == NULL || (nb = op->ob_type->tp_as_number) == NULL ||
 	    nb->nb_int == NULL) {
 		PyErr_SetString(PyExc_TypeError, "an integer is required");
-		return -1;
+		return (unsigned PY_LONG_LONG)-1;
 	}
 
 	io = (PyIntObject*) (*nb->nb_int) (op);
 	if (io == NULL)
-		return -1;
+		return (unsigned PY_LONG_LONG)-1;
 	if (!PyInt_Check(io)) {
 		if (PyLong_Check(io)) {
 			val = PyLong_AsUnsignedLongLongMask((PyObject *)io);
 			Py_DECREF(io);
 			if (PyErr_Occurred())
-				return -1;
+				return (unsigned PY_LONG_LONG)-1;
 			return val;
 		}
 		else
@@ -319,7 +319,7 @@ PyInt_AsUnsignedLongLongMask(register PyObject *op)
 			Py_DECREF(io);
 			PyErr_SetString(PyExc_TypeError,
 					"nb_int should return int object");
-			return -1;
+			return (unsigned PY_LONG_LONG)-1;
 		}
 	}
 
@@ -335,7 +335,8 @@ PyInt_FromString(char *s, char **pend, int base)
 {
 	char *end;
 	long x;
-	char buffer[256]; /* For errors */
+	Py_ssize_t slen;
+	PyObject *sobj, *srepr;
 
 	if ((base != 0 && base < 2) || base > 36) {
 		PyErr_SetString(PyExc_ValueError,
@@ -359,9 +360,18 @@ PyInt_FromString(char *s, char **pend, int base)
 		end++;
 	if (*end != '\0') {
   bad:
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "invalid literal for int(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
+		slen = strlen(s) < 200 ? strlen(s) : 200;
+		sobj = PyString_FromStringAndSize(s, slen);
+		if (sobj == NULL)
+			return NULL;
+		srepr = PyObject_Repr(sobj);
+		Py_DECREF(sobj);
+		if (srepr == NULL)
+			return NULL;
+		PyErr_Format(PyExc_ValueError,
+			     "invalid literal for int() with base %d: %s",
+			     base, PyString_AS_STRING(srepr));
+		Py_DECREF(srepr);
 		return NULL;
 	}
 	else if (errno != 0)
@@ -376,7 +386,7 @@ PyObject *
 PyInt_FromUnicode(Py_UNICODE *s, Py_ssize_t length, int base)
 {
 	PyObject *result;
-	char *buffer = PyMem_MALLOC(length+1);
+	char *buffer = (char *)PyMem_MALLOC(length+1);
 
 	if (buffer == NULL)
 		return NULL;
@@ -961,7 +971,7 @@ int_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 int_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *tmp, *new;
+	PyObject *tmp, *newobj;
 	long ival;
 
 	assert(PyType_IsSubtype(type, &PyInt_Type));
@@ -978,14 +988,14 @@ int_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		ival = ((PyIntObject *)tmp)->ob_ival;
 	}
 
-	new = type->tp_alloc(type, 0);
-	if (new == NULL) {
+	newobj = type->tp_alloc(type, 0);
+	if (newobj == NULL) {
 		Py_DECREF(tmp);
 		return NULL;
 	}
-	((PyIntObject *)new)->ob_ival = ival;
+	((PyIntObject *)newobj)->ob_ival = ival;
 	Py_DECREF(tmp);
-	return new;
+	return newobj;
 }
 
 static PyObject *
@@ -1046,7 +1056,7 @@ static PyNumberMethods int_as_number = {
 	int_true_divide,	/* nb_true_divide */
 	0,			/* nb_inplace_floor_divide */
 	0,			/* nb_inplace_true_divide */
-	(lenfunc)PyInt_AsSsize_t, /* nb_index */
+	PyInt_AsSsize_t,	/* nb_index */
 };
 
 PyTypeObject PyInt_Type = {
@@ -1119,6 +1129,7 @@ PyInt_Fini(void)
 	PyIntObject *p;
 	PyIntBlock *list, *next;
 	int i;
+	unsigned int ctr;
 	int bc, bf;	/* block count, number of freed blocks */
 	int irem, isum;	/* remaining unfreed ints per block, total */
 
@@ -1141,9 +1152,9 @@ PyInt_Fini(void)
 	while (list != NULL) {
 		bc++;
 		irem = 0;
-		for (i = 0, p = &list->objects[0];
-		     i < N_INTOBJECTS;
-		     i++, p++) {
+		for (ctr = 0, p = &list->objects[0];
+		     ctr < N_INTOBJECTS;
+		     ctr++, p++) {
 			if (PyInt_CheckExact(p) && p->ob_refcnt != 0)
 				irem++;
 		}
@@ -1151,9 +1162,9 @@ PyInt_Fini(void)
 		if (irem) {
 			list->next = block_list;
 			block_list = list;
-			for (i = 0, p = &list->objects[0];
-			     i < N_INTOBJECTS;
-			     i++, p++) {
+			for (ctr = 0, p = &list->objects[0];
+			     ctr < N_INTOBJECTS;
+			     ctr++, p++) {
 				if (!PyInt_CheckExact(p) ||
 				    p->ob_refcnt == 0) {
 					p->ob_type = (struct _typeobject *)
@@ -1194,9 +1205,9 @@ PyInt_Fini(void)
 	if (Py_VerboseFlag > 1) {
 		list = block_list;
 		while (list != NULL) {
-			for (i = 0, p = &list->objects[0];
-			     i < N_INTOBJECTS;
-			     i++, p++) {
+			for (ctr = 0, p = &list->objects[0];
+			     ctr < N_INTOBJECTS;
+			     ctr++, p++) {
 				if (PyInt_CheckExact(p) && p->ob_refcnt != 0)
 					/* XXX(twouters) cast refcount to
 					   long until %zd is universally

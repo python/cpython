@@ -269,9 +269,37 @@ class SGMLParser(markupbase.ParserBase):
             attrname, rest, attrvalue = match.group(1, 2, 3)
             if not rest:
                 attrvalue = attrname
-            elif attrvalue[:1] == '\'' == attrvalue[-1:] or \
-                 attrvalue[:1] == '"' == attrvalue[-1:]:
-                attrvalue = attrvalue[1:-1]
+            else:
+                if (attrvalue[:1] == "'" == attrvalue[-1:] or
+                    attrvalue[:1] == '"' == attrvalue[-1:]):
+                    # strip quotes
+                    attrvalue = attrvalue[1:-1]
+                l = 0
+                new_attrvalue = ''
+                while l < len(attrvalue):
+                    av_match = entityref.match(attrvalue, l)
+                    if (av_match and av_match.group(1) in self.entitydefs and
+                        attrvalue[av_match.end(1)] == ';'):
+                        # only substitute entityrefs ending in ';' since
+                        # otherwise we may break <a href='?p=x&q=y'>
+                        # which is very common
+                        new_attrvalue += self.entitydefs[av_match.group(1)]
+                        l = av_match.end(0)
+                        continue
+                    ch_match = charref.match(attrvalue, l)
+                    if ch_match:
+                        try:
+                            char = chr(int(ch_match.group(1)))
+                            new_attrvalue += char
+                            l = ch_match.end(0)
+                            continue
+                        except ValueError:
+                            # invalid character reference, don't substitute
+                            pass
+                    # all other cases
+                    new_attrvalue += attrvalue[l]
+                    l += 1
+                attrvalue = new_attrvalue
             attrs.append((attrname.lower(), attrvalue))
             k = match.end(0)
         if rawdata[j] == '>':

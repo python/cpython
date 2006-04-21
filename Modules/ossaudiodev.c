@@ -935,24 +935,32 @@ build_namelists (PyObject *module)
 
     labels = PyList_New(num_controls);
     names = PyList_New(num_controls);
+    if (labels == NULL || names == NULL)
+        goto error2;
     for (i = 0; i < num_controls; i++) {
         s = PyString_FromString(control_labels[i]);
         if (s == NULL)
-            return -1;
+            goto error2;
         PyList_SET_ITEM(labels, i, s);
 
         s = PyString_FromString(control_names[i]);
         if (s == NULL)
-            return -1;
+            goto error2;
         PyList_SET_ITEM(names, i, s);
     }
 
     if (PyModule_AddObject(module, "control_labels", labels) == -1)
-        return -1;
+        goto error2;
     if (PyModule_AddObject(module, "control_names", names) == -1)
-        return -1;
+        goto error1;
 
     return 0;
+
+error2:
+    Py_XDECREF(labels);
+error1:
+    Py_XDECREF(names);
+    return -1;
 }
 
 

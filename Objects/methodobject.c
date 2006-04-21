@@ -149,17 +149,8 @@ meth_get__name__(PyCFunctionObject *m, void *closure)
 static int
 meth_traverse(PyCFunctionObject *m, visitproc visit, void *arg)
 {
-	int err;
-	if (m->m_self != NULL) {
-		err = visit(m->m_self, arg);
-		if (err)
-			return err;
-	}
-	if (m->m_module != NULL) {
-		err = visit(m->m_module, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(m->m_self);
+	Py_VISIT(m->m_module);
 	return 0;
 }
 

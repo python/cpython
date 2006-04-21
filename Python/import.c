@@ -17,6 +17,9 @@
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
+#ifdef __cplusplus
+extern "C" { 
+#endif
 
 extern time_t PyOS_GetLastModificationTime(char *, FILE *);
 						/* In getmtime.c */
@@ -40,6 +43,7 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        Python 1.5:   20121
        Python 1.5.1: 20121
        Python 1.5.2: 20121
+       Python 1.6:   50428
        Python 2.0:   50823
        Python 2.0.1: 50823
        Python 2.1:   60202
@@ -1217,12 +1221,12 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 #endif
 		if (!PyString_Check(v))
 			continue;
-		len = PyString_Size(v);
+		len = PyString_GET_SIZE(v);
 		if (len + 2 + namelen + MAXSUFFIXSIZE >= buflen) {
 			Py_XDECREF(copy);
 			continue; /* Too long */
 		}
-		strcpy(buf, PyString_AsString(v));
+		strcpy(buf, PyString_AS_STRING(v));
 		if (strlen(buf) != len) {
 			Py_XDECREF(copy);
 			continue; /* v contains '\0' */
@@ -1934,6 +1938,16 @@ import_module_level(char *name, PyObject *globals, PyObject *locals,
 		}
 		tail = next;
 	}
+	if (tail == Py_None) {
+		/* If tail is Py_None, both get_parent and load_next found
+		   an empty module name: someone called __import__("") or
+		   doctored faulty bytecode */
+		Py_DECREF(tail);
+		Py_DECREF(head);
+		PyErr_SetString(PyExc_ValueError,
+				"Empty module name");
+		return NULL;
+	}
 
 	if (fromlist != NULL) {
 		if (fromlist == Py_None || !PyObject_IsTrue(fromlist))
@@ -2094,7 +2108,8 @@ load_next(PyObject *mod, PyObject *altmod, char **p_name, char *buf,
 	PyObject *result;
 
 	if (strlen(name) == 0) {
-		/* empty module name only happens in 'from . import' */
+		/* completely empty module name should only happen in
+		   'from . import' (or '__import__("")')*/
 		Py_INCREF(mod);
 		*p_name = NULL;
 		return mod;
@@ -2936,3 +2951,7 @@ PyImport_AppendInittab(char *name, void (*initfunc)(void))
 
 	return PyImport_ExtendInittab(newtab);
 }
+
+#ifdef __cplusplus
+}
+#endif

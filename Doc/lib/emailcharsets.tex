@@ -1,4 +1,4 @@
-\declaremodule{standard}{email.Charset}
+\declaremodule{standard}{email.charset}
 \modulesynopsis{Character Sets}
 
 This module provides a class \class{Charset} for representing
@@ -6,6 +6,8 @@ character sets and character set conversions in email messages, as
 well as a character set registry and several convenience methods for
 manipulating this registry.  Instances of \class{Charset} are used in
 several other modules within the \module{email} package.
+
+Import this class from the \module{email.charset} module.
 
 \versionadded{2.2.2}
 
@@ -153,7 +155,7 @@ input charset to the output charset automatically.  This is not useful
 for multibyte character sets, which have line length issues (multibyte
 characters must be split on a character, not a byte boundary); use the
 higher-level \class{Header} class to deal with these issues (see
-\refmodule{email.Header}).  \var{convert} defaults to \code{False}.
+\refmodule{email.header}).  \var{convert} defaults to \code{False}.
 
 The type of encoding (base64 or quoted-printable) will be based on
 the \var{header_encoding} attribute.
@@ -188,7 +190,7 @@ This method allows you to compare two \class{Charset} instances for equality.
 This method allows you to compare two \class{Charset} instances for inequality.
 \end{methoddesc}
 
-The \module{email.Charset} module also provides the following
+The \module{email.charset} module also provides the following
 functions for adding new entries to the global character set, alias,
 and codec registries:
 

@@ -255,7 +255,11 @@ class SMTP:
                 self.local_hostname = fqdn
             else:
                 # We can't find an fqdn hostname, so use a domain literal
-                addr = socket.gethostbyname(socket.gethostname())
+                addr = '127.0.0.1'
+                try:
+                    addr = socket.gethostbyname(socket.gethostname())
+                except socket.gaierror:
+                    pass
                 self.local_hostname = '[%s]' % addr
 
     def set_debuglevel(self, debuglevel):

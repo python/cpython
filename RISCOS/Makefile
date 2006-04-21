@@ -74,7 +74,6 @@ MODULES_DYNAMIC =\
 	@.^.Lib.md5/pyd\
 	@.^.Lib.operator/pyd\
 	@.^.Lib.parser/pyd\
-	@.^.Lib.regex/pyd\
 	@.^.Lib.rgbimg/pyd\
 	@.^.Lib.sha/pyd\
 	@.^.Lib.signal/pyd\
@@ -283,10 +282,6 @@ $(LIB_PYTHON):	$(OBJECTS)
 
 @.^.Lib.parser/pyd: @.^.Modules.o.parsermodule s.linktab
 	$(MAKEDLK) -d @.^.Lib.parser/pyd -s s.linktab -o @.^.Modules.o.parsermodule -e initparser
-
-@.^.Lib.regex/pyd: @.^.Modules.o.regexmodule @.^.Modules.o.regexpr s.linktab
-	$(LINK) -aof -o @.^.Modules.o.regexlink @.^.Modules.o.regexmodule @.^.Modules.o.regexpr
-	$(MAKEDLK) -d @.^.Lib.regex/pyd -s s.linktab -o @.^.Modules.o.regexlink -e initregex
 
 @.^.Lib.rgbimg/pyd: @.^.Modules.o.rgbimgmodule s.linktab
 	$(MAKEDLK) -d @.^.Lib.rgbimg/pyd -s s.linktab -o @.^.Modules.o.rgbimgmodule -e initrgbimg

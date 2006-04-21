@@ -17,8 +17,10 @@ extern "C" {
 #define PyArg_ParseTupleAndKeywords	_PyArg_ParseTupleAndKeywords_SizeT
 #define PyArg_VaParse			_PyArg_VaParse_SizeT
 #define PyArg_VaParseTupleAndKeywords	_PyArg_VaParseTupleAndKeywords_SizeT
-#define PyArg_BuildValue		_PyArg_BuildValue_SizeT
-#define PyArg_VaBuildValue		_PyArg_VaBuildValue_SizeT
+#define Py_BuildValue			_Py_BuildValue_SizeT
+#define Py_VaBuildValue			_Py_VaBuildValue_SizeT
+#else
+PyAPI_FUNC(PyObject *) _Py_VaBuildValue_SizeT(const char *, va_list);
 #endif
 
 PyAPI_FUNC(int) PyArg_Parse(PyObject *, const char *, ...);
@@ -27,6 +29,7 @@ PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
                                                   const char *, char **, ...);
 PyAPI_FUNC(int) PyArg_UnpackTuple(PyObject *, const char *, Py_ssize_t, Py_ssize_t, ...);
 PyAPI_FUNC(PyObject *) Py_BuildValue(const char *, ...);
+PyAPI_FUNC(PyObject *) _Py_BuildValue_SizeT(const char *, ...);
 PyAPI_FUNC(int) _PyArg_NoKeywords(const char *funcname, PyObject *kw);
 
 PyAPI_FUNC(int) PyArg_VaParse(PyObject *, const char *, va_list);

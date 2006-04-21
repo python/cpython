@@ -600,10 +600,9 @@ sys_getrefcount(PyObject *self, PyObject *arg)
 static PyObject *
 sys_gettotalrefcount(PyObject *self)
 {
-	return PyInt_FromSsize_t(_Py_RefTotal);
+	return PyInt_FromSsize_t(_Py_GetRefTotal());
 }
-
-#endif /* Py_TRACE_REFS */
+#endif /* Py_REF_DEBUG */
 
 PyDoc_STRVAR(getrefcount_doc,
 "getrefcount(object) -> integer\n\
@@ -697,6 +696,10 @@ a 11-tuple where the entries in the tuple are counts of:\n\
 10. Number of stack pops performed by call_function()"
 );
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef Py_TRACE_REFS
 /* Defined in objects.c because it uses static globals if that file */
 extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
@@ -705,6 +708,10 @@ extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
 #ifdef DYNAMIC_EXECUTION_PROFILE
 /* Defined in ceval.c because it uses static globals if that file */
 extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 static PyMethodDef sys_methods[] = {
@@ -1065,6 +1072,11 @@ _PySys_Init(void)
 		if (!PyFile_SetEncoding(sysout, buf))
 			return NULL;
 	}
+	if(isatty(_fileno(stderr))) {
+		sprintf(buf, "cp%d", GetConsoleOutputCP());
+		if (!PyFile_SetEncoding(syserr, buf))
+			return NULL;
+	}
 #endif
 
 	PyDict_SetItemString(sysdict, "stdin", sysin);
@@ -1406,7 +1418,7 @@ mywrite(char *name, FILE *fp, const char *format, va_list va)
 			PyErr_Clear();
 			fputs(buffer, fp);
 		}
-		if (written < 0 || written >= sizeof(buffer)) {
+		if (written < 0 || (size_t)written >= sizeof(buffer)) {
 			const char *truncated = "... truncated";
 			if (PyFile_WriteString(truncated, file) != 0) {
 				PyErr_Clear();

@@ -255,6 +255,10 @@ d22v(1, 2, 3, 4, 5)
 d22v(*(1, 2, 3, 4))
 d22v(1, 2, *(3, 4, 5))
 d22v(1, *(2, 3), **{'d': 4})
+def d31v((x)): pass
+d31v(1)
+def d32v((x,)): pass
+d32v((1,))
 
 ### lambdef: 'lambda' [varargslist] ':' test
 print 'lambdef'
@@ -810,6 +814,11 @@ verify(len(list(g)) == 10)
 x = 10; t = False; g = ((i,j) for i in range(x) if t for j in range(x))
 x = 5; t = True;
 verify([(i,j) for i in range(10) for j in range(5)] == list(g))
+
+# Grammar allows multiple adjacent 'if's in listcomps and genexps,
+# even though it's silly. Make sure it works (ifelse broke this.)
+verify([ x for x in range(10) if x % 2 if x % 3 ], [1, 5, 7])
+verify((x for x in range(10) if x % 2 if x % 3), [1, 5, 7])
 
 # Test ifelse expressions in various cases
 def _checkeval(msg, ret):

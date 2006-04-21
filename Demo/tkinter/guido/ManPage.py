@@ -1,6 +1,6 @@
 # Widget to display a man page
 
-import regex
+import re
 from Tkinter import *
 from Tkinter import _tkinter
 from ScrolledText import ScrolledText
@@ -11,10 +11,10 @@ ITALICFONT = '*-Courier-Medium-O-Normal-*-120-*'
 
 # XXX Recognizing footers is system dependent
 # (This one works for IRIX 5.2 and Solaris 2.2)
-footerprog = regex.compile(
+footerprog = re.compile(
         '^     Page [1-9][0-9]*[ \t]+\|^.*Last change:.*[1-9][0-9]*\n')
-emptyprog = regex.compile('^[ \t]*\n')
-ulprog = regex.compile('^[ \t]*[Xv!_][Xv!_ \t]*\n')
+emptyprog = re.compile('^[ \t]*\n')
+ulprog = re.compile('^[ \t]*[Xv!_][Xv!_ \t]*\n')
 
 # Basic Man Page class -- does not disable editing
 class EditableManPage(ScrolledText):

@@ -413,8 +413,12 @@ has_finalizer(PyObject *op)
 		assert(delstr != NULL);
 		return _PyInstance_Lookup(op, delstr) != NULL;
 	}
-	else 
+	else if (PyType_HasFeature(op->ob_type, Py_TPFLAGS_HEAPTYPE))
 		return op->ob_type->tp_del != NULL;
+	else if (PyGen_CheckExact(op))
+		return PyGen_NeedsFinalizing((PyGenObject *)op);
+	else
+		return 0;
 }
 
 /* Move the objects in unreachable with __del__ methods into `finalizers`.
@@ -730,6 +734,8 @@ collect(int generation)
 	PyGC_Head unreachable; /* non-problematic unreachable trash */
 	PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
 	PyGC_Head *gc;
+	static PyObject *tmod = NULL;
+	double t1 = 0.0;
 
 	if (delstr == NULL) {
 		delstr = PyString_InternFromString("__del__");
@@ -737,19 +743,29 @@ collect(int generation)
 			Py_FatalError("gc couldn't allocate \"__del__\"");
 	}
 
+	if (tmod == NULL) {
+		tmod = PyImport_ImportModule("time");
+		if (tmod == NULL)
+			PyErr_Clear();
+	}
+
 	if (debug & DEBUG_STATS) {
+		if (tmod != NULL) {
+			PyObject *f = PyObject_CallMethod(tmod, "time", NULL);
+			if (f == NULL) {
+				PyErr_Clear();
+			}
+			else {
+				t1 = PyFloat_AsDouble(f);
+				Py_DECREF(f);
+			}
+		}
 		PySys_WriteStderr("gc: collecting generation %d...\n",
 				  generation);
 		PySys_WriteStderr("gc: objects in each generation:");
-		for (i = 0; i < NUM_GENERATIONS; i++) {
-#ifdef MS_WIN64
-			PySys_WriteStderr(" %Id", gc_list_size(GEN_HEAD(i)));
-#else
-			PySys_WriteStderr(" %ld",
-				Py_SAFE_DOWNCAST(gc_list_size(GEN_HEAD(i)),
-						 Py_ssize_t, long));
-#endif
-		}
+		for (i = 0; i < NUM_GENERATIONS; i++)
+			PySys_WriteStderr(" %" PY_FORMAT_SIZE_T "d",
+					  gc_list_size(GEN_HEAD(i)));
 		PySys_WriteStderr("\n");
 	}
 
@@ -816,6 +832,17 @@ collect(int generation)
 		if (debug & DEBUG_COLLECTABLE) {
 			debug_cycle("collectable", FROM_GC(gc));
 		}
+		if (tmod != NULL && (debug & DEBUG_STATS)) {
+			PyObject *f = PyObject_CallMethod(tmod, "time", NULL);
+			if (f == NULL) {
+				PyErr_Clear();
+			}
+			else {
+				t1 = PyFloat_AsDouble(f)-t1;
+				Py_DECREF(f);
+				PySys_WriteStderr("gc: %.4fs elapsed.\n", t1);
+			}
+		}
 	}
 
 	/* Clear weakrefs and invoke callbacks as necessary. */
@@ -837,21 +864,14 @@ collect(int generation)
 			debug_cycle("uncollectable", FROM_GC(gc));
 	}
 	if (debug & DEBUG_STATS) {
-		if (m == 0 && n == 0) {
+		if (m == 0 && n == 0)
 			PySys_WriteStderr("gc: done.\n");
-		}
-		else {
-#ifdef MS_WIN64
+		else
 			PySys_WriteStderr(
-			    "gc: done, %Id unreachable, %Id uncollectable.\n",
+			    "gc: done, "
+			    "%" PY_FORMAT_SIZE_T "d unreachable, "
+			    "%" PY_FORMAT_SIZE_T "d uncollectable.\n",
 			    n+m, n);
-#else
-			PySys_WriteStderr(
-			    "gc: done, %ld unreachable, %ld uncollectable.\n",
-			    Py_SAFE_DOWNCAST(n+m, Py_ssize_t, long),
-			    Py_SAFE_DOWNCAST(n, Py_ssize_t, long));
-#endif
-		}
 	}
 
 	/* Append instances in the uncollectable set to a Python
@@ -1050,7 +1070,7 @@ gc_get_count(PyObject *self, PyObject *noargs)
 static int
 referrersvisit(PyObject* obj, PyObject *objs)
 {
-	int i;
+	Py_ssize_t i;
 	for (i = 0; i < PyTuple_GET_SIZE(objs); i++)
 		if (PyTuple_GET_ITEM(objs, i) == obj)
 			return 1;
@@ -1085,6 +1105,8 @@ gc_get_referrers(PyObject *self, PyObject *args)
 {
 	int i;
 	PyObject *result = PyList_New(0);
+	if (!result) return NULL;
+
 	for (i = 0; i < NUM_GENERATIONS; i++) {
 		if (!(gc_referrers_for(args, GEN_HEAD(i), result))) {
 			Py_DECREF(result);
@@ -1108,7 +1130,7 @@ Return the list of objects that are directly referred to by objs.");
 static PyObject *
 gc_get_referents(PyObject *self, PyObject *args)
 {
-	int i;
+	Py_ssize_t i;
 	PyObject *result = PyList_New(0);
 
 	if (result == NULL)
@@ -1288,7 +1310,8 @@ PyObject *
 _PyObject_GC_Malloc(size_t basicsize)
 {
 	PyObject *op;
-	PyGC_Head *g = PyObject_MALLOC(sizeof(PyGC_Head) + basicsize);
+	PyGC_Head *g = (PyGC_Head *)PyObject_MALLOC(
+                sizeof(PyGC_Head) + basicsize);
 	if (g == NULL)
 		return PyErr_NoMemory();
 	g->gc.gc_refs = GC_UNTRACKED;
@@ -1330,7 +1353,7 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
 {
 	const size_t basicsize = _PyObject_VAR_SIZE(op->ob_type, nitems);
 	PyGC_Head *g = AS_GC(op);
-	g = PyObject_REALLOC(g,  sizeof(PyGC_Head) + basicsize);
+	g = (PyGC_Head *)PyObject_REALLOC(g,  sizeof(PyGC_Head) + basicsize);
 	if (g == NULL)
 		return (PyVarObject *)PyErr_NoMemory();
 	op = (PyVarObject *) FROM_GC(g);

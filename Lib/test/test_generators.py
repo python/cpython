@@ -421,7 +421,6 @@ Subject: Re: PEP 255: Simple Generators
 ...         self.name = name
 ...         self.parent = None
 ...         self.generator = self.generate()
-...         self.close = self.generator.close
 ...
 ...     def generate(self):
 ...         while not self.parent:
@@ -483,8 +482,6 @@ merged F into A
 A->A B->G C->A D->G E->G F->A G->G H->G I->A J->G K->A L->A M->G
 merged A into G
 A->G B->G C->G D->G E->G F->G G->G H->G I->G J->G K->G L->G M->G
-
->>> for s in sets: s.close()    # break cycles
 
 """
 # Emacs turd '
@@ -593,7 +590,6 @@ arguments are iterable -- a LazyList is the same as a generator to times().
 ...     def __init__(self, g):
 ...         self.sofar = []
 ...         self.fetch = g.next
-...         self.close = g.close
 ...
 ...     def __getitem__(self, i):
 ...         sofar, fetch = self.sofar, self.fetch
@@ -624,8 +620,6 @@ efficient.
 [200, 216, 225, 240, 243, 250, 256, 270, 288, 300, 320, 324, 360, 375, 384]
 [400, 405, 432, 450, 480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675]
 
->>> m235.close()
-
 Ye olde Fibonacci generator, LazyList style.
 
 >>> def fibgen(a, b):
@@ -648,7 +642,6 @@ Ye olde Fibonacci generator, LazyList style.
 >>> fib = LazyList(fibgen(1, 2))
 >>> firstn(iter(fib), 17)
 [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584]
->>> fib.close()
 
 
 Running after your tail with itertools.tee (new in version 2.4)
@@ -685,7 +678,8 @@ m235 to share a single generator".
 ...                        merge(times(3, m3),
 ...                              times(5, m5))):
 ...             yield n
-...     m2, m3, m5, mRes = tee(_m235(), 4)
+...     m1 = _m235()
+...     m2, m3, m5, mRes = tee(m1, 4)
 ...     return mRes
 
 >>> it = m235()
@@ -702,9 +696,8 @@ result for as long as it has not been "consumed" from all of the duplicated
 iterators, whereupon it is deleted. You can therefore print the hamming
 sequence during hours without increasing memory usage, or very little.
 
-The beauty of it is that recursive running after their tail FP algorithms
+The beauty of it is that recursive running-after-their-tail FP algorithms
 are quite straightforwardly expressed with this Python idiom.
-
 
 Ye olde Fibonacci generator, tee style.
 
@@ -721,7 +714,8 @@ Ye olde Fibonacci generator, tee style.
 ...         for res in _isum(fibHead, fibTail):
 ...             yield res
 ...
-...     fibHead, fibTail, fibRes = tee(_fib(), 3)
+...     realfib = _fib()
+...     fibHead, fibTail, fibRes = tee(realfib, 3)
 ...     return fibRes
 
 >>> firstn(fib(), 17)
@@ -1545,6 +1539,9 @@ caught ValueError (1)
 >>> g.throw(ValueError, TypeError(1))  # mismatched type, rewrapped
 caught ValueError (1)
 
+>>> g.throw(ValueError, ValueError(1), None)   # explicit None traceback
+caught ValueError (1)
+
 >>> g.throw(ValueError(1), "foo")       # bad args
 Traceback (most recent call last):
   ...
@@ -1592,8 +1589,7 @@ ValueError: 7
 >>> f().throw("abc")     # throw on just-opened generator
 Traceback (most recent call last):
   ...
-TypeError: exceptions must be classes, or instances, not str
-
+abc
 
 Now let's try closing a generator:
 
@@ -1711,6 +1707,81 @@ enclosing function a generator:
 
 """
 
+refleaks_tests = """
+Prior to adding cycle-GC support to itertools.tee, this code would leak
+references. We add it to the standard suite so the routine refleak-tests
+would trigger if it starts being uncleanable again.
+
+>>> import itertools
+>>> def leak():
+...     class gen:
+...         def __iter__(self):
+...             return self
+...         def next(self):
+...             return self.item
+...     g = gen()
+...     head, tail = itertools.tee(g)
+...     g.item = head
+...     return head
+>>> it = leak()
+
+Make sure to also test the involvement of the tee-internal teedataobject,
+which stores returned items.
+
+>>> item = it.next()
+
+
+
+This test leaked at one point due to generator finalization/destruction.
+It was copied from Lib/test/leakers/test_generator_cycle.py before the file
+was removed.
+
+>>> def leak():
+...    def gen():
+...        while True:
+...            yield g
+...    g = gen()
+
+>>> leak()
+
+
+
+This test isn't really generator related, but rather exception-in-cleanup
+related. The coroutine tests (above) just happen to cause an exception in
+the generator's __del__ (tp_del) method. We can also test for this
+explicitly, without generators. We do have to redirect stderr to avoid
+printing warnings and to doublecheck that we actually tested what we wanted
+to test.
+
+>>> import sys, StringIO
+>>> old = sys.stderr
+>>> try:
+...     sys.stderr = StringIO.StringIO()
+...     class Leaker:
+...         def __del__(self):
+...             raise RuntimeError
+...
+...     l = Leaker()
+...     del l
+...     err = sys.stderr.getvalue().strip()
+...     err.startswith(
+...         "Exception exceptions.RuntimeError: RuntimeError() in <"
+...     )
+...     err.endswith("> ignored")
+...     len(err.splitlines())
+... finally:
+...     sys.stderr = old
+True
+True
+1
+
+
+
+These refleak tests should perhaps be in a testfile of their own,
+test_generators just happened to be the test that drew these out.
+
+"""
+
 __test__ = {"tut":      tutorial_tests,
             "pep":      pep_tests,
             "email":    email_tests,
@@ -1719,6 +1790,7 @@ __test__ = {"tut":      tutorial_tests,
             "conjoin":  conjoin_tests,
             "weakref":  weakref_tests,
             "coroutine":  coroutine_tests,
+            "refleaks": refleaks_tests,
             }
 
 # Magic test name that regrtest.py invokes *after* importing this module.

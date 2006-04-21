@@ -62,23 +62,6 @@ defining new object types.
   after this call as the memory is no longer a valid Python object.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{\var{TYPE}*}{PyObject_NEW}{TYPE, PyTypeObject *type}
-  Macro version of \cfunction{PyObject_New()}, to gain performance at
-  the expense of safety.  This does not check \var{type} for a \NULL{}
-  value.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{\var{TYPE}*}{PyObject_NEW_VAR}{TYPE, PyTypeObject *type,
-                                                Py_ssize_t size}
-  Macro version of \cfunction{PyObject_NewVar()}, to gain performance
-  at the expense of safety.  This does not check \var{type} for a
-  \NULL{} value.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{void}{PyObject_DEL}{PyObject *op}
-  Macro version of \cfunction{PyObject_Del()}.
-\end{cfuncdesc}
-
 \begin{cfuncdesc}{PyObject*}{Py_InitModule}{char *name,
                                             PyMethodDef *methods}
   Create a new module object based on a name and table of functions,

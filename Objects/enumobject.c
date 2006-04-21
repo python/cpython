@@ -9,8 +9,6 @@ typedef struct {
 	PyObject* en_result;	   /* result tuple  */
 } enumobject;
 
-PyTypeObject PyEnum_Type;
-
 static PyObject *
 enum_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -51,18 +49,8 @@ enum_dealloc(enumobject *en)
 static int
 enum_traverse(enumobject *en, visitproc visit, void *arg)
 {
-	int err;
-
-	if (en->en_sit) {
-		err = visit(en->en_sit, arg);
-		if (err)
-			return err;
-	}
-	if (en->en_result) {
-		err = visit(en->en_result, arg);
-		if (err)
-			return err;
-	}
+	Py_VISIT(en->en_sit);
+	Py_VISIT(en->en_result);
 	return 0;
 }
 
@@ -207,8 +195,7 @@ reversed_dealloc(reversedobject *ro)
 static int
 reversed_traverse(reversedobject *ro, visitproc visit, void *arg)
 {
-	if (ro->seq)
-		return visit((PyObject *)(ro->seq), arg);
+	Py_VISIT(ro->seq);
 	return 0;
 }
 

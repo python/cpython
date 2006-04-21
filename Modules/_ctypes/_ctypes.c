@@ -105,6 +105,10 @@ bytes(cdata)
 #include <ffi.h>
 #ifdef MS_WIN32
 #include <windows.h>
+#include <malloc.h>
+#ifndef IS_INTRESOURCE
+#define IS_INTRESOURCE(x) (((size_t)(x) >> 16) == 0)
+#endif
 # ifdef _WIN32_WCE
 /* Unlike desktop Windows, WinCE has both W and A variants of
    GetProcAddress, but the default W version is not what we want */
@@ -285,6 +289,7 @@ CDataType_from_param(PyObject *type, PyObject *value)
 	if (PyCArg_CheckExact(value)) {
 		PyCArgObject *p = (PyCArgObject *)value;
 		PyObject *ob = p->obj;
+		const char *ob_name;
 		StgDictObject *dict;
 		dict = PyType_stgdict(type);
 
@@ -296,10 +301,10 @@ CDataType_from_param(PyObject *type, PyObject *value)
 			Py_INCREF(value);
 			return value;
 		}
+		ob_name = (ob) ? ob->ob_type->tp_name : "???";
 		PyErr_Format(PyExc_TypeError,
 			     "expected %s instance instead of pointer to %s",
-			     ((PyTypeObject *)type)->tp_name,
-			     ob->ob_type->tp_name);
+			     ((PyTypeObject *)type)->tp_name, ob_name);
 		return NULL;
 	}
 #if 1
@@ -506,12 +511,12 @@ size property/method, and the sequence protocol.
 static int
 PointerType_SetProto(StgDictObject *stgdict, PyObject *proto)
 {
-	if (proto && !PyType_Check(proto)) {
+	if (!proto || !PyType_Check(proto)) {
 		PyErr_SetString(PyExc_TypeError,
 				"_type_ must be a type");
 		return -1;
 	}
-	if (proto && !PyType_stgdict(proto)) {
+	if (!PyType_stgdict(proto)) {
 		PyErr_SetString(PyExc_TypeError,
 				"_type_ must have storage info");
 		return -1;
@@ -543,8 +548,8 @@ PointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 	stgdict->size = sizeof(void *);
 	stgdict->align = getentry("P")->pffi_type->alignment;
-	stgdict->length = 2;
-	stgdict->ffi_type = ffi_type_pointer;
+	stgdict->length = 1;
+	stgdict->ffi_type_pointer = ffi_type_pointer;
 
 	proto = PyDict_GetItemString(typedict, "_type_"); /* Borrowed ref */
 	if (proto && -1 == PointerType_SetProto(stgdict, proto)) {
@@ -899,7 +904,7 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *typedict;
 	int length;
 
-	int itemsize, itemalign, itemlen;
+	int itemsize, itemalign;
 
 	typedict = PyTuple_GetItem(args, 2);
 	if (!typedict)
@@ -936,7 +941,6 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	itemsize = itemdict->size;
 	itemalign = itemdict->align;
-	itemlen = itemdict->length;
 
 	stgdict->size = itemsize * length;
 	stgdict->align = itemalign;
@@ -945,7 +949,7 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	stgdict->proto = proto;
 
 	/* Arrays are passed as pointers to function calls. */
-	stgdict->ffi_type = ffi_type_pointer;
+	stgdict->ffi_type_pointer = ffi_type_pointer;
 
 	/* create the new instance (which is a class,
 	   since we are a metatype!) */
@@ -1264,9 +1268,13 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 	PyTypeObject *result;
 	StgDictObject *stgdict;
 	PyObject *name = PyTuple_GET_ITEM(args, 0);
-	PyObject *swapped_args = PyTuple_New(PyTuple_GET_SIZE(args));
+	PyObject *swapped_args;
 	static PyObject *suffix;
-	int i;
+	Py_ssize_t i;
+
+	swapped_args = PyTuple_New(PyTuple_GET_SIZE(args));
+	if (!swapped_args)
+		return NULL;
 
 	if (suffix == NULL)
 #ifdef WORDS_BIGENDIAN
@@ -1275,8 +1283,10 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 		suffix = PyString_FromString("_be");
 #endif
 
-	Py_INCREF(suffix);
-	PyString_ConcatAndDel(&name, suffix);
+	Py_INCREF(name);
+	PyString_Concat(&name, suffix);
+	if (name == NULL)
+		return NULL;
 
 	PyTuple_SET_ITEM(swapped_args, 0, name);
 	for (i=1; i<PyTuple_GET_SIZE(args); ++i) {
@@ -1297,7 +1307,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 	if (!stgdict) /* XXX leaks result! */
 		return NULL;
 
-	stgdict->ffi_type = *fmt->pffi_type;
+	stgdict->ffi_type_pointer = *fmt->pffi_type;
 	stgdict->align = fmt->pffi_type->alignment;
 	stgdict->length = 0;
 	stgdict->size = fmt->pffi_type->size;
@@ -1355,7 +1365,7 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	fmt = getentry(PyString_AS_STRING(proto));
 
-	stgdict->ffi_type = *fmt->pffi_type;
+	stgdict->ffi_type_pointer = *fmt->pffi_type;
 	stgdict->align = fmt->pffi_type->alignment;
 	stgdict->length = 0;
 	stgdict->size = fmt->pffi_type->size;
@@ -1450,6 +1460,7 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		PyObject_SetAttrString(swapped, "__ctype_le__", (PyObject *)result);
 		PyObject_SetAttrString(swapped, "__ctype_be__", swapped);
 #endif
+		Py_DECREF(swapped);
 	};
 
 	return (PyObject *)result;
@@ -1624,7 +1635,7 @@ make_funcptrtype_dict(StgDictObject *stgdict)
 	stgdict->size = sizeof(void *);
 	stgdict->setfunc = NULL;
 	stgdict->getfunc = NULL;
-	stgdict->ffi_type = ffi_type_pointer;
+	stgdict->ffi_type_pointer = ffi_type_pointer;
 
 	ob = PyDict_GetItemString((PyObject *)stgdict, "_flags_");
 	if (!ob || !PyInt_Check(ob)) {
@@ -1846,7 +1857,7 @@ CData_clear(CDataObject *self)
 	StgDictObject *dict = PyObject_stgdict((PyObject *)self);
 	Py_CLEAR(self->b_objects);
 	if ((self->b_needsfree)
-	    && (dict->size > sizeof(self->b_value)))
+	    && ((size_t)dict->size > sizeof(self->b_value)))
 		PyMem_Free(self->b_ptr);
 	self->b_ptr = NULL;
 	Py_CLEAR(self->b_base);
@@ -1873,8 +1884,9 @@ static PyMemberDef CData_members[] = {
 	{ NULL },
 };
 
-static Py_ssize_t CData_GetBuffer(CDataObject *self, Py_ssize_t seg, void **pptr)
+static Py_ssize_t CData_GetBuffer(PyObject *_self, Py_ssize_t seg, void **pptr)
 {
+	CDataObject *self = (CDataObject *)_self;
 	if (seg != 0) {
 		/* Hm. Must this set an exception? */
 		return -1;
@@ -1883,7 +1895,7 @@ static Py_ssize_t CData_GetBuffer(CDataObject *self, Py_ssize_t seg, void **pptr
 	return self->b_size;
 }
 
-static Py_ssize_t CData_GetSegcount(CDataObject *self, Py_ssize_t *lenp)
+static Py_ssize_t CData_GetSegcount(PyObject *_self, Py_ssize_t *lenp)
 {
 	if (lenp)
 		*lenp = 1;
@@ -1891,10 +1903,10 @@ static Py_ssize_t CData_GetSegcount(CDataObject *self, Py_ssize_t *lenp)
 }
 
 static PyBufferProcs CData_as_buffer = {
-	(readbufferproc)CData_GetBuffer,
-	(writebufferproc)CData_GetBuffer,
-	(segcountproc)CData_GetSegcount,
-	(charbufferproc)NULL,
+	CData_GetBuffer,
+	CData_GetBuffer,
+	CData_GetSegcount,
+	NULL,
 };
 
 /*
@@ -1967,7 +1979,7 @@ PyTypeObject CData_Type = {
 
 static void CData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
 {
-	if (dict->size <= sizeof(obj->b_value)) {
+	if ((size_t)dict->size <= sizeof(obj->b_value)) {
 		/* No need to call malloc, can use the default buffer */
 		obj->b_ptr = (char *)&obj->b_value;
 		obj->b_needsfree = 1;
@@ -1975,7 +1987,7 @@ static void CData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
 		/* In python 2.4, and ctypes 0.9.6, the malloc call took about
 		   33% of the creation time for c_int().
 		*/
-		obj->b_ptr = PyMem_Malloc(dict->size);
+		obj->b_ptr = (char *)PyMem_Malloc(dict->size);
 		obj->b_needsfree = 1;
 		memset(obj->b_ptr, 0, dict->size);
 	}
@@ -2040,7 +2052,7 @@ CData_AtAddress(PyObject *type, void *buf)
 	if (!pd)
 		return NULL;
 	assert(CDataObject_Check(pd));
-	pd->b_ptr = buf;
+	pd->b_ptr = (char *)buf;
 	pd->b_length = dict->length;
 	pd->b_size = dict->size;
 	return (PyObject *)pd;
@@ -2383,6 +2395,11 @@ static PPROC FindAddress(void *handle, char *name, PyObject *type)
 	address = (PPROC)GetProcAddress(handle, name);
 	if (address)
 		return address;
+
+	if (((size_t)name & ~0xFFFF) == 0) {
+		return NULL;
+	}
+
 	/* It should not happen that dict is NULL, but better be safe */
 	if (dict==NULL || dict->flags & FUNCFLAG_CDECL)
 		return address;
@@ -2391,7 +2408,7 @@ static PPROC FindAddress(void *handle, char *name, PyObject *type)
 	   funcname -> _funcname@<n>
 	   where n is 0, 4, 8, 12, ..., 128
 	 */
-	mangled_name = _alloca(strlen(name) + 1 + 1 + 1 + 3); /* \0 _ @ %d */
+	mangled_name = alloca(strlen(name) + 1 + 1 + 1 + 3); /* \0 _ @ %d */
 	for (i = 0; i < 32; ++i) {
 		sprintf(mangled_name, "_%s@%d", name, i*4);
 		address = (PPROC)GetProcAddress(handle, mangled_name);
@@ -2488,6 +2505,28 @@ _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
 	return 1;
 }
 
+static int
+_get_name(PyObject *obj, char **pname)
+{
+#ifdef MS_WIN32
+	if (PyInt_Check(obj) || PyLong_Check(obj)) {
+		/* We have to use MAKEINTRESOURCEA for Windows CE.
+		   Works on Windows as well, of course.
+		*/
+		*pname = MAKEINTRESOURCEA(PyInt_AsUnsignedLongMask(obj) & 0xFFFF);
+		return 1;
+	}
+#endif
+	if (PyString_Check(obj) || PyUnicode_Check(obj)) {
+		*pname = PyString_AsString(obj);
+		return *pname ? 1 : 0;
+	}
+	PyErr_SetString(PyExc_TypeError,
+			"function name must be string or integer");
+	return 0;
+}
+
+
 static PyObject *
 CFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -2499,7 +2538,7 @@ CFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	void *handle;
 	PyObject *paramflags = NULL;
 
-	if (!PyArg_ParseTuple(args, "sO|O", &name, &dll, &paramflags))
+	if (!PyArg_ParseTuple(args, "(O&O)|O", _get_name, &name, &dll, &paramflags))
 		return NULL;
 	if (paramflags == Py_None)
 		paramflags = NULL;
@@ -2524,9 +2563,14 @@ CFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #ifdef MS_WIN32
 	address = FindAddress(handle, name, (PyObject *)type);
 	if (!address) {
-		PyErr_Format(PyExc_AttributeError,
-			     "function '%s' not found",
-			     name);
+		if (!IS_INTRESOURCE(name))
+			PyErr_Format(PyExc_AttributeError,
+				     "function '%s' not found",
+				     name);
+		else
+			PyErr_Format(PyExc_AttributeError,
+				     "function ordinal %d not found",
+				     (WORD)(size_t)name);
 		return NULL;
 	}
 #else
@@ -2603,8 +2647,9 @@ CFuncPtr_FromVtblIndex(PyTypeObject *type, PyObject *args, PyObject *kwds)
   "O" - must be a callable, creates a C callable function
 
   two or more argument forms (the third argument is a paramflags tuple)
-  "sO|O" - function name, dll object (with an integer handle)
-  "is|O" - vtable index, method name, creates callable calling COM vtbl
+  "(sO)|..." - (function name, dll object (with an integer handle)), paramflags
+  "(iO)|..." - (function ordinal, dll object (with an integer handle)), paramflags
+  "is|..." - vtable index, method name, creates callable calling COM vtbl
 */
 static PyObject *
 CFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -2612,19 +2657,18 @@ CFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	CFuncPtrObject *self;
 	PyObject *callable;
 	StgDictObject *dict;
-	THUNK thunk;
+	ffi_info *thunk;
 
 	if (PyTuple_GET_SIZE(args) == 0)
 		return GenericCData_new(type, args, kwds);
 
-	/* Shouldn't the following better be done in __init__? */
-	if (2 <= PyTuple_GET_SIZE(args)) {
-#ifdef MS_WIN32
-		if (PyInt_Check(PyTuple_GET_ITEM(args, 0)))
-			return CFuncPtr_FromVtblIndex(type, args, kwds);
-#endif
+	if (1 <= PyTuple_GET_SIZE(args) && PyTuple_Check(PyTuple_GET_ITEM(args, 0)))
 		return CFuncPtr_FromDll(type, args, kwds);
-	}
+
+#ifdef MS_WIN32
+	if (2 <= PyTuple_GET_SIZE(args) && PyInt_Check(PyTuple_GET_ITEM(args, 0)))
+		return CFuncPtr_FromVtblIndex(type, args, kwds);
+#endif
 
 	if (1 == PyTuple_GET_SIZE(args)
 	    && (PyInt_Check(PyTuple_GET_ITEM(args, 0))
@@ -2781,7 +2825,7 @@ _get_arg(int *pindex, char *name, PyObject *defval, PyObject *inargs, PyObject *
 static PyObject *
 _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 		PyObject *inargs, PyObject *kwds,
-		int *poutmask, int *pinoutmask, int *pnumretvals)
+		int *poutmask, int *pinoutmask, unsigned int *pnumretvals)
 {
 	PyObject *paramflags = self->paramflags;
 	PyObject *callargs;
@@ -2835,8 +2879,14 @@ _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 
 		switch (flag & (PARAMFLAG_FIN | PARAMFLAG_FOUT | PARAMFLAG_FLCID)) {
 		case PARAMFLAG_FIN | PARAMFLAG_FLCID:
-			/* ['in', 'lcid'] parameter.  Always taken from defval */
-			Py_INCREF(defval);
+			/* ['in', 'lcid'] parameter.  Always taken from defval,
+			 if given, else the integer 0. */
+			if (defval == NULL) {
+				defval = PyInt_FromLong(0);
+				if (defval == NULL)
+					goto error;
+			} else
+				Py_INCREF(defval);
 			PyTuple_SET_ITEM(callargs, i, defval);
 			break;
 		case (PARAMFLAG_FIN | PARAMFLAG_FOUT):
@@ -2939,9 +2989,10 @@ _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 */
 static PyObject *
 _build_result(PyObject *result, PyObject *callargs,
-	      int outmask, int inoutmask, int numretvals)
+	      int outmask, int inoutmask, unsigned int numretvals)
 {
-	int i, index, bit;
+	unsigned int i, index;
+	int bit;
 	PyObject *tup = NULL;
 
 	if (callargs == NULL)
@@ -2952,6 +3003,7 @@ _build_result(PyObject *result, PyObject *callargs,
 	}
 	Py_DECREF(result);
 
+	/* tup will not be allocated if numretvals == 1 */
 	/* allocate tuple to hold the result */
 	if (numretvals > 1) {
 		tup = PyTuple_New(numretvals);
@@ -3009,7 +3061,7 @@ CFuncPtr_call(CFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
 
 	int inoutmask;
 	int outmask;
-	int numretvals;
+	unsigned int numretvals;
 
 	assert(dict); /* if not, it's a bug */
 	restype = self->restype ? self->restype : dict->restype;
@@ -3145,9 +3197,11 @@ CFuncPtr_clear(CFuncPtrObject *self)
 	Py_CLEAR(self->converters);
 	Py_CLEAR(self->paramflags);
 
-	if (self->thunk)
-		FreeCallback(self->thunk);
-	self->thunk = NULL;
+	if (self->thunk) {
+		FreeClosure(self->thunk->pcl);
+		PyMem_Free(self->thunk);
+		self->thunk = NULL;
+	}
 
 	return CData_clear((CDataObject *)self);
 }
@@ -3241,7 +3295,7 @@ Struct_as_parameter(CDataObject *self)
 
 	parg->tag = 'V';
 	stgdict = PyObject_stgdict((PyObject *)self);
-	parg->pffi_type = &stgdict->ffi_type;
+	parg->pffi_type = &stgdict->ffi_type_pointer;
 	/* For structure parameters (by value), parg->value doesn't contain the structure
 	   data itself, instead parg->value.p *points* to the structure's data
 	   See also _ctypes.c, function _call_function_pointer().
@@ -3275,6 +3329,8 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
 		if (!fields) {
 			PyErr_Clear();
 			fields = PyTuple_New(0);
+			if (!fields)
+				return -1;
 		}
 
 		if (PyTuple_GET_SIZE(args) > PySequence_Length(fields)) {
@@ -3445,8 +3501,9 @@ Array_init(CDataObject *self, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-Array_item(CDataObject *self, int index)
+Array_item(PyObject *_self, Py_ssize_t index)
 {
+	CDataObject *self = (CDataObject *)_self;
 	int offset, size;
 	StgDictObject *stgdict;
 
@@ -3469,8 +3526,9 @@ Array_item(CDataObject *self, int index)
 }
 
 static PyObject *
-Array_slice(CDataObject *self, Py_ssize_t ilow, Py_ssize_t ihigh)
+Array_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
+	CDataObject *self = (CDataObject *)_self;
 	StgDictObject *stgdict, *itemdict;
 	PyObject *proto;
 	PyListObject *np;
@@ -3504,15 +3562,16 @@ Array_slice(CDataObject *self, Py_ssize_t ilow, Py_ssize_t ihigh)
 		return NULL;
 
 	for (i = 0; i < len; i++) {
-		PyObject *v = Array_item(self, i+ilow);
+		PyObject *v = Array_item(_self, i+ilow);
 		PyList_SET_ITEM(np, i, v);
 	}
 	return (PyObject *)np;
 }
 
 static int
-Array_ass_item(CDataObject *self, int index, PyObject *value)
+Array_ass_item(PyObject *_self, Py_ssize_t index, PyObject *value)
 {
+	CDataObject *self = (CDataObject *)_self;
 	int size, offset;
 	StgDictObject *stgdict;
 	char *ptr;
@@ -3538,8 +3597,9 @@ Array_ass_item(CDataObject *self, int index, PyObject *value)
 }
 
 static int
-Array_ass_slice(CDataObject *self, int ilow, int ihigh, PyObject *value)
+Array_ass_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *value)
 {
+	CDataObject *self = (CDataObject *)_self;
 	int i, len;
 
 	if (value == NULL) {
@@ -3570,7 +3630,7 @@ Array_ass_slice(CDataObject *self, int ilow, int ihigh, PyObject *value)
 		int result;
 		if (item == NULL)
 			return -1;
-		result = Array_ass_item(self, i+ilow, item);
+		result = Array_ass_item(_self, i+ilow, item);
 		Py_DECREF(item);
 		if (result == -1)
 			return -1;
@@ -3578,20 +3638,21 @@ Array_ass_slice(CDataObject *self, int ilow, int ihigh, PyObject *value)
 	return 0;
 }
 
-static int
-Array_length(CDataObject *self)
+static Py_ssize_t
+Array_length(PyObject *_self)
 {
+	CDataObject *self = (CDataObject *)_self;
 	return self->b_length;
 }
 
 static PySequenceMethods Array_as_sequence = {
-	(lenfunc)Array_length,			/* sq_length; */
+	Array_length,				/* sq_length; */
 	0,					/* sq_concat; */
 	0,					/* sq_repeat; */
-	(ssizeargfunc)Array_item,		/* sq_item; */
-	(ssizessizeargfunc)Array_slice,		/* sq_slice; */
-	(ssizeobjargproc)Array_ass_item,	/* sq_ass_item; */
-	(ssizessizeobjargproc)Array_ass_slice,	/* sq_ass_slice; */
+	Array_item,				/* sq_item; */
+	Array_slice,				/* sq_slice; */
+	Array_ass_item,				/* sq_ass_item; */
+	Array_ass_slice,			/* sq_ass_slice; */
 	0,					/* sq_contains; */
 	
 	0,					/* sq_inplace_concat; */
@@ -3942,8 +4003,9 @@ static PyTypeObject Simple_Type = {
   Pointer_Type
 */
 static PyObject *
-Pointer_item(CDataObject *self, int index)
+Pointer_item(PyObject *_self, Py_ssize_t index)
 {
+	CDataObject *self = (CDataObject *)_self;
 	int size, offset;
 	StgDictObject *stgdict, *itemdict;
 	PyObject *proto;
@@ -3969,8 +4031,9 @@ Pointer_item(CDataObject *self, int index)
 }
 
 static int
-Pointer_ass_item(CDataObject *self, int index, PyObject *value)
+Pointer_ass_item(PyObject *_self, Py_ssize_t index, PyObject *value)
 {
+	CDataObject *self = (CDataObject *)_self;
 	int size;
 	StgDictObject *stgdict;
 
@@ -4111,8 +4174,9 @@ Pointer_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-Pointer_slice(CDataObject *self, Py_ssize_t ilow, Py_ssize_t ihigh)
+Pointer_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
+	CDataObject *self = (CDataObject *)_self;
 	PyListObject *np;
 	StgDictObject *stgdict, *itemdict;
 	PyObject *proto;
@@ -4142,7 +4206,7 @@ Pointer_slice(CDataObject *self, Py_ssize_t ilow, Py_ssize_t ihigh)
 		return NULL;
 
 	for (i = 0; i < len; i++) {
-		PyObject *v = Pointer_item(self, i+ilow);
+		PyObject *v = Pointer_item(_self, i+ilow);
 		PyList_SET_ITEM(np, i, v);
 	}
 	return (PyObject *)np;
@@ -4152,9 +4216,9 @@ static PySequenceMethods Pointer_as_sequence = {
 	0,					/* inquiry sq_length; */
 	0,					/* binaryfunc sq_concat; */
 	0,					/* intargfunc sq_repeat; */
-	(ssizeargfunc)Pointer_item,		/* intargfunc sq_item; */
-	(ssizessizeargfunc)Pointer_slice,	/* intintargfunc sq_slice; */
-	(ssizeobjargproc)Pointer_ass_item,	/* intobjargproc sq_ass_item; */
+	Pointer_item,				/* intargfunc sq_item; */
+	Pointer_slice,				/* intintargfunc sq_slice; */
+	Pointer_ass_item,			/* intobjargproc sq_ass_item; */
 	0,					/* intintobjargproc sq_ass_slice; */
 	0,					/* objobjproc sq_contains; */
 	/* Added in release 2.0 */
@@ -4334,6 +4398,42 @@ string_at(const char *ptr, Py_ssize_t size)
 	return PyString_FromStringAndSize(ptr, size);
 }
 
+static int
+cast_check_pointertype(PyObject *arg)
+{
+	StgDictObject *dict;
+
+	if (PointerTypeObject_Check(arg))
+		return 1;
+	dict = PyType_stgdict(arg);
+	if (dict) {
+		if (PyString_Check(dict->proto)
+		    && (strchr("sPzUZXO", PyString_AS_STRING(dict->proto)[0]))) {
+			/* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */
+			return 1;
+		}
+	}
+	PyErr_Format(PyExc_TypeError,
+		     "cast() argument 2 must be a pointer type, not %s",
+		     PyType_Check(arg)
+		     ? ((PyTypeObject *)arg)->tp_name
+		     : arg->ob_type->tp_name);
+	return 0;
+}
+
+static PyObject *
+cast(void *ptr, PyObject *ctype)
+{
+	CDataObject *result;
+	if (0 == cast_check_pointertype(ctype))
+		return NULL;
+	result = (CDataObject *)PyObject_CallFunctionObjArgs(ctype, NULL);
+	if (result == NULL)
+		return NULL;
+	/* Should we assert that result is a pointer type? */
+	memcpy(result->b_ptr, &ptr, sizeof(void *));
+	return (PyObject *)result;
+}
 
 #ifdef CTYPES_UNICODE
 static PyObject *
@@ -4469,14 +4569,25 @@ init_ctypes(void)
 	PyModule_AddObject(m, "_memmove_addr", PyLong_FromVoidPtr(memmove));
 	PyModule_AddObject(m, "_memset_addr", PyLong_FromVoidPtr(memset));
 	PyModule_AddObject(m, "_string_at_addr", PyLong_FromVoidPtr(string_at));
+	PyModule_AddObject(m, "_cast_addr", PyLong_FromVoidPtr(cast));
 #ifdef CTYPES_UNICODE
 	PyModule_AddObject(m, "_wstring_at_addr", PyLong_FromVoidPtr(wstring_at));
 #endif
 
-#ifdef RTLD_LOCAL
+/* If RTLD_LOCAL is not defined (Windows!), set it to zero. */
+#ifndef RTLD_LOCAL
+#define RTLD_LOCAL 0
+#endif
+
+/* If RTLD_GLOBAL is not defined (cygwin), set it to the same value as
+   RTLD_LOCAL.
+*/
+#ifndef RTLD_GLOBAL
+#define RTLD_GLOBAL RTLD_LOCAL
+#endif
+
 	PyModule_AddObject(m, "RTLD_LOCAL", PyInt_FromLong(RTLD_LOCAL));
 	PyModule_AddObject(m, "RTLD_GLOBAL", PyInt_FromLong(RTLD_GLOBAL));
-#endif
 	
 	PyExc_ArgError = PyErr_NewException("ctypes.ArgumentError", NULL, NULL);
 	if (PyExc_ArgError) {

@@ -66,7 +66,7 @@ def print_tb(tb, limit=None, file=None):
         _print(file,
                '  File "%s", line %d, in %s' % (filename,lineno,name))
         linecache.checkcache(filename)
-        line = linecache.getline(filename, lineno)
+        line = linecache.getline(filename, lineno, f.f_globals)
         if line: _print(file, '    ' + line.strip())
         tb = tb.tb_next
         n = n+1
@@ -98,7 +98,7 @@ def extract_tb(tb, limit = None):
         filename = co.co_filename
         name = co.co_name
         linecache.checkcache(filename)
-        line = linecache.getline(filename, lineno)
+        line = linecache.getline(filename, lineno, f.f_globals)
         if line: line = line.strip()
         else: line = None
         list.append((filename, lineno, name, line))
@@ -158,14 +158,14 @@ def format_exception_only(etype, value):
     """
     list = []
     if (type(etype) == types.ClassType
-        or issubclass(etype, Exception)):
+        or (isinstance(etype, type) and issubclass(etype, Exception))):
         stype = etype.__name__
     else:
         stype = etype
     if value is None:
         list.append(str(stype) + '\n')
     else:
-        if etype is SyntaxError:
+        if issubclass(etype, SyntaxError):
             try:
                 msg, (filename, lineno, offset, line) = value
             except:
@@ -279,7 +279,7 @@ def extract_stack(f=None, limit = None):
         filename = co.co_filename
         name = co.co_name
         linecache.checkcache(filename)
-        line = linecache.getline(filename, lineno)
+        line = linecache.getline(filename, lineno, f.f_globals)
         if line: line = line.strip()
         else: line = None
         list.append((filename, lineno, name, line))

@@ -180,6 +180,10 @@ class PyBuildExt(build_ext):
 
     def build_extension(self, ext):
 
+        if ext.name == '_ctypes':
+            if not self.configure_ctypes(ext):
+                return
+
         try:
             build_ext.build_extension(self, ext)
         except (CCompilerError, DistutilsError), why:
@@ -326,8 +330,6 @@ class PyBuildExt(build_ext):
         #
 
         # Some modules that are normally always on:
-        exts.append( Extension('regex', ['regexmodule.c', 'regexpr.c']) )
-
         exts.append( Extension('_weakref', ['_weakref.c']) )
 
         # array objects
@@ -551,8 +553,8 @@ class PyBuildExt(build_ext):
             exts.append( Extension('_sha', ['shamodule.c']) )
             # The _md5 module implements the RSA Data Security, Inc. MD5
             # Message-Digest Algorithm, described in RFC 1321.  The
-            # necessary files md5c.c and md5.h are included here.
-            exts.append( Extension('_md5', ['md5module.c', 'md5c.c']) )
+            # necessary files md5.c and md5.h are included here.
+            exts.append( Extension('_md5', ['md5module.c', 'md5.c']) )
 
         if (openssl_ver < 0x00908000):
             # OpenSSL doesn't do these until 0.9.8 so we'll bring our own hash
@@ -569,14 +571,13 @@ class PyBuildExt(build_ext):
 
         # Sleepycat Berkeley DB interface.  http://www.sleepycat.com
         #
-        # This requires the Sleepycat DB code. The earliest supported version
-        # of that library is 3.2, the latest supported version is 4.4.  A list
-        # of available releases can be found at
-        #
-        # http://www.sleepycat.com/update/index.html
+        # This requires the Sleepycat DB code. The supported versions
+        # are set below.  Visit http://www.sleepycat.com/ to download
+        # a release.  Most open source OSes come with one or more
+        # versions of BerkeleyDB already installed.
 
         max_db_ver = (4, 4)
-        min_db_ver = (3, 2)
+        min_db_ver = (3, 3)
         db_setup_debug = False   # verbose debug prints from this script?
 
         # construct a list of paths to look for the header file in on
@@ -691,6 +692,88 @@ class PyBuildExt(build_ext):
             dblibs = []
             dblib_dir = None
 
+        # The sqlite interface
+        sqlite_setup_debug = True   # verbose debug prints from this script?
+
+        # We hunt for #define SQLITE_VERSION "n.n.n"
+        # We need to find >= sqlite version 3.0.8
+        sqlite_incdir = sqlite_libdir = None
+        sqlite_inc_paths = [ '/usr/include',
+                             '/usr/include/sqlite',
+                             '/usr/include/sqlite3',
+                             '/usr/local/include',
+                             '/usr/local/include/sqlite',
+                             '/usr/local/include/sqlite3',
+                           ]
+        MIN_SQLITE_VERSION_NUMBER = (3, 0, 8)
+        MIN_SQLITE_VERSION = ".".join([str(x)
+                                    for x in MIN_SQLITE_VERSION_NUMBER])
+        for d in sqlite_inc_paths + inc_dirs:
+            f = os.path.join(d, "sqlite3.h")
+            if os.path.exists(f):
+                if sqlite_setup_debug: print "sqlite: found %s"%f
+                incf = open(f).read()
+                m = re.search(
+                    r'\s*.*#\s*.*define\s.*SQLITE_VERSION\W*"(.*)"', incf)
+                if m:
+                    sqlite_version = m.group(1)
+                    sqlite_version_tuple = tuple([int(x)
+                                        for x in sqlite_version.split(".")])
+                    if sqlite_version_tuple >= MIN_SQLITE_VERSION_NUMBER:
+                        # we win!
+                        print "%s/sqlite3.h: version %s"%(d, sqlite_version)
+                        sqlite_incdir = d
+                        break
+                    else:
+                        if sqlite_setup_debug:
+                            print "%s: version %d is too old, need >= %s"%(d,
+                                        sqlite_version, MIN_SQLITE_VERSION)
+                elif sqlite_setup_debug:
+                    print "sqlite: %s had no SQLITE_VERSION"%(f,)
+
+        if sqlite_incdir:
+            sqlite_dirs_to_check = [
+                os.path.join(sqlite_incdir, '..', 'lib64'),
+                os.path.join(sqlite_incdir, '..', 'lib'),
+                os.path.join(sqlite_incdir, '..', '..', 'lib64'),
+                os.path.join(sqlite_incdir, '..', '..', 'lib'),
+            ]
+            sqlite_libfile = self.compiler.find_library_file(
+                                sqlite_dirs_to_check + lib_dirs, 'sqlite3')
+            sqlite_libdir = [os.path.abspath(os.path.dirname(sqlite_libfile))]
+
+        if sqlite_incdir and sqlite_libdir:
+            sqlite_srcs = ['_sqlite/adapters.c',
+                '_sqlite/cache.c',
+                '_sqlite/connection.c',
+                '_sqlite/converters.c',
+                '_sqlite/cursor.c',
+                '_sqlite/microprotocols.c',
+                '_sqlite/module.c',
+                '_sqlite/prepare_protocol.c',
+                '_sqlite/row.c',
+                '_sqlite/statement.c',
+                '_sqlite/util.c', ]
+
+            PYSQLITE_VERSION = "2.2.0"
+            sqlite_defines = []
+            if sys.platform != "win32":
+                sqlite_defines.append(('MODULE_NAME', '"sqlite3"'))
+            else:
+                sqlite_defines.append(('MODULE_NAME', '\\"sqlite3\\"'))
+
+            sqlite_defines.append(('PY_MAJOR_VERSION',
+                                        str(sys.version_info[0])))
+            sqlite_defines.append(('PY_MINOR_VERSION',
+                                        str(sys.version_info[1])))
+
+            exts.append(Extension('_sqlite3', sqlite_srcs,
+                                  define_macros=sqlite_defines,
+                                  include_dirs=["Modules/_sqlite",
+                                                sqlite_incdir],
+                                  library_dirs=sqlite_libdir,
+                                  runtime_library_dirs=sqlite_libdir,
+                                  libraries=["sqlite3",]))
 
         # Look for Berkeley db 1.85.   Note that it is built as a different
         # module name so it can be included even when later versions are
@@ -865,7 +948,7 @@ class PyBuildExt(build_ext):
         # Fredrik Lundh's cElementTree module.  Note that this also
         # uses expat (via the CAPI hook in pyexpat).
 
-        if os.path.isfile('Modules/_elementtree.c'):
+        if os.path.isfile(os.path.join(srcdir, 'Modules', '_elementtree.c')):
             define_macros.append(('USE_PYEXPAT_CAPI', None))
             exts.append(Extension('_elementtree',
                                   define_macros = define_macros,
@@ -885,11 +968,11 @@ class PyBuildExt(build_ext):
         if sys.maxint == 0x7fffffff:
             # This requires sizeof(int) == sizeof(long) == sizeof(char*)
             dl_inc = find_file('dlfcn.h', [], inc_dirs)
-            if (dl_inc is not None) and (platform not in ['atheos', 'darwin']):
+            if (dl_inc is not None) and (platform not in ['atheos']):
                 exts.append( Extension('dl', ['dlmodule.c']) )
 
         # Thomas Heller's _ctypes module
-        self.detect_ctypes()
+        self.detect_ctypes(inc_dirs, lib_dirs)
 
         # Platform-specific libraries
         if platform == 'linux2':
@@ -905,82 +988,86 @@ class PyBuildExt(build_ext):
             exts.append( Extension('sunaudiodev', ['sunaudiodev.c']) )
 
         if platform == 'darwin' and ("--disable-toolbox-glue" not in
-            sysconfig.get_config_var("CONFIG_ARGS")):
-            # Mac OS X specific modules.
-            exts.append( Extension('_CF', ['cf/_CFmodule.c', 'cf/pycfbridge.c'],
-                        extra_link_args=['-framework', 'CoreFoundation']) )
+                sysconfig.get_config_var("CONFIG_ARGS")):
 
-            exts.append( Extension('ColorPicker', ['ColorPickermodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('autoGIL', ['autoGIL.c'],
-                        extra_link_args=['-framework', 'CoreFoundation']) )
-            exts.append( Extension('gestalt', ['gestaltmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('MacOS', ['macosmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('OSATerminology', ['OSATerminology.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('icglue', ['icgluemodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Res', ['res/_Resmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Snd', ['snd/_Sndmodule.c'],
-                        extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('Nav', ['Nav.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_AE', ['ae/_AEmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_AH', ['ah/_AHmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_App', ['app/_Appmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_CarbonEvt', ['carbonevt/_CarbonEvtmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_CG', ['cg/_CGmodule.c'],
-                    extra_link_args=['-framework', 'ApplicationServices']) )
-            exts.append( Extension('_Cm', ['cm/_Cmmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Ctl', ['ctl/_Ctlmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Dlg', ['dlg/_Dlgmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Drag', ['drag/_Dragmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Evt', ['evt/_Evtmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_File', ['file/_Filemodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Folder', ['folder/_Foldermodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Fm', ['fm/_Fmmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Help', ['help/_Helpmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Icn', ['icn/_Icnmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_IBCarbon', ['ibcarbon/_IBCarbon.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Launch', ['launch/_Launchmodule.c'],
-                    extra_link_args=['-framework', 'ApplicationServices']) )
-            exts.append( Extension('_List', ['list/_Listmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Menu', ['menu/_Menumodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Mlte', ['mlte/_Mltemodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_OSA', ['osa/_OSAmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Qd', ['qd/_Qdmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_Qdoffs', ['qdoffs/_Qdoffsmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
+            if os.uname()[2] > '8.':
+                # We're on Mac OS X 10.4 or later, the compiler should
+                # support '-Wno-deprecated-declarations'. This will
+                # surpress deprecation warnings for the Carbon extensions,
+                # these extensions wrap the Carbon APIs and even those
+                # parts that are deprecated.
+                carbon_extra_compile_args = ['-Wno-deprecated-declarations']
+            else:
+                carbon_extra_compile_args = []
+
+            # Mac OS X specific modules.
+            def macSrcExists(name1, name2=''):
+                if not name1:
+                    return None
+                names = (name1,)
+                if name2:
+                    names = (name1, name2)
+                path = os.path.join(srcdir, 'Mac', 'Modules', *names)
+                return os.path.exists(path)
+
+            def addMacExtension(name, kwds, extra_srcs=[]):
+                dirname = ''
+                if name[0] == '_':
+                    dirname = name[1:].lower()
+                cname = name + '.c'
+                cmodulename = name + 'module.c'
+                # Check for NNN.c, NNNmodule.c, _nnn/NNN.c, _nnn/NNNmodule.c
+                if macSrcExists(cname):
+                    srcs = [cname]
+                elif macSrcExists(cmodulename):
+                    srcs = [cmodulename]
+                elif macSrcExists(dirname, cname):
+                    # XXX(nnorwitz): If all the names ended with module, we
+                    # wouldn't need this condition.  ibcarbon is the only one.
+                    srcs = [os.path.join(dirname, cname)]
+                elif macSrcExists(dirname, cmodulename):
+                    srcs = [os.path.join(dirname, cmodulename)]
+                else:
+                    raise RuntimeError("%s not found" % name)
+
+                # Here's the whole point:  add the extension with sources
+                exts.append(Extension(name, srcs + extra_srcs, **kwds))
+
+            # Core Foundation
+            core_kwds = {'extra_compile_args': carbon_extra_compile_args,
+                         'extra_link_args': ['-framework', 'CoreFoundation'],
+                        }
+            addMacExtension('_CF', core_kwds, ['cf/pycfbridge.c'])
+            addMacExtension('autoGIL', core_kwds)
+
+            # Carbon
+            carbon_kwds = {'extra_compile_args': carbon_extra_compile_args,
+                           'extra_link_args': ['-framework', 'Carbon'],
+                          }
+            CARBON_EXTS = ['ColorPicker', 'gestalt', 'MacOS', 'Nav',
+                           'OSATerminology', 'icglue',
+                           # All these are in subdirs
+                           '_AE', '_AH', '_App', '_CarbonEvt', '_Cm', '_Ctl',
+                           '_Dlg', '_Drag', '_Evt', '_File', '_Folder', '_Fm',
+                           '_Help', '_Icn', '_IBCarbon', '_List',
+                           '_Menu', '_Mlte', '_OSA', '_Res', '_Qd', '_Qdoffs',
+                           '_Scrap', '_Snd', '_TE', '_Win',
+                          ]
+            for name in CARBON_EXTS:
+                addMacExtension(name, carbon_kwds)
+
+            # Application Services & QuickTime
+            app_kwds = {'extra_compile_args': carbon_extra_compile_args,
+                        'extra_link_args': ['-framework','ApplicationServices'],
+                       }
+            addMacExtension('_Launch', app_kwds)
+            addMacExtension('_CG', app_kwds)
+
             exts.append( Extension('_Qt', ['qt/_Qtmodule.c'],
-                    extra_link_args=['-framework', 'QuickTime',
+                        extra_compile_args=carbon_extra_compile_args,
+                        extra_link_args=['-framework', 'QuickTime',
                                      '-framework', 'Carbon']) )
-            exts.append( Extension('_Scrap', ['scrap/_Scrapmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_TE', ['te/_TEmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
+
             # As there is no standardized place (yet) to put
             # user-installed Mac libraries on OSX, we search for "waste"
             # in parent directories of the Python source tree. You
@@ -992,7 +1079,6 @@ class PyBuildExt(build_ext):
             waste_libs = find_library_file(self.compiler, "WASTE", [],
                     ["../"*n + "waste/Static Libraries" for n in (0,1,2,3,4)])
             if waste_incs != None and waste_libs != None:
-                (srcdir,) = sysconfig.get_config_vars('srcdir')
                 exts.append( Extension('waste',
                                ['waste/wastemodule.c'] + [
                                 os.path.join(srcdir, d) for d in
@@ -1005,8 +1091,6 @@ class PyBuildExt(build_ext):
                                libraries = ['WASTE'],
                                extra_link_args = ['-framework', 'Carbon'],
                 ) )
-            exts.append( Extension('_Win', ['win/_Winmodule.c'],
-                    extra_link_args=['-framework', 'Carbon']) )
 
         self.extensions.extend(exts)
 
@@ -1183,44 +1267,55 @@ class PyBuildExt(build_ext):
         # *** Uncomment these for TOGL extension only:
         #       -lGL -lGLU -lXext -lXmu \
 
-    def detect_ctypes(self):
-        (srcdir,) = sysconfig.get_config_vars('srcdir')
-        ffi_builddir = os.path.join(self.build_temp, 'libffi')
-        ffi_srcdir = os.path.abspath(os.path.join(srcdir, 'Modules',
-                                     '_ctypes', 'libffi'))
-        ffi_configfile = os.path.join(ffi_builddir, 'fficonfig.py')
+    def configure_ctypes(self, ext):
+        if not self.use_system_libffi:
+            (srcdir,) = sysconfig.get_config_vars('srcdir')
+            ffi_builddir = os.path.join(self.build_temp, 'libffi')
+            ffi_srcdir = os.path.abspath(os.path.join(srcdir, 'Modules',
+                                         '_ctypes', 'libffi'))
+            ffi_configfile = os.path.join(ffi_builddir, 'fficonfig.py')
 
-        if self.force or not os.path.exists(ffi_configfile):
-            from distutils.dir_util import mkpath
-            mkpath(ffi_builddir)
-            config_args = []
+            if self.force or not os.path.exists(ffi_configfile):
+                from distutils.dir_util import mkpath
+                mkpath(ffi_builddir)
+                config_args = []
 
-            # Pass empty CFLAGS because we'll just append the resulting CFLAGS
-            # to Python's; -g or -O2 is to be avoided.
-            cmd = "cd %s && env CFLAGS='' '%s/configure' %s" \
-                  % (ffi_builddir, ffi_srcdir, " ".join(config_args))
+                # Pass empty CFLAGS because we'll just append the resulting
+                # CFLAGS to Python's; -g or -O2 is to be avoided.
+                cmd = "cd %s && env CFLAGS='' '%s/configure' %s" \
+                      % (ffi_builddir, ffi_srcdir, " ".join(config_args))
 
-            res = os.system(cmd)
-            if res or not os.path.exists(ffi_configfile):
-                print "Failed to configure _ctypes module"
-                return
+                res = os.system(cmd)
+                if res or not os.path.exists(ffi_configfile):
+                    print "Failed to configure _ctypes module"
+                    return False
 
-        fficonfig = {}
-        execfile(ffi_configfile, globals(), fficonfig)
-        ffi_srcdir = os.path.join(fficonfig['ffi_srcdir'], 'src')
+            fficonfig = {}
+            execfile(ffi_configfile, globals(), fficonfig)
+            ffi_srcdir = os.path.join(fficonfig['ffi_srcdir'], 'src')
 
-        # Add .S (preprocessed assembly) to C compiler source extensions.
-        self.compiler.src_extensions.append('.S')
+            # Add .S (preprocessed assembly) to C compiler source extensions.
+            self.compiler.src_extensions.append('.S')
 
-        include_dirs = [os.path.join(ffi_builddir, 'include'),
-                        ffi_builddir, ffi_srcdir]
-        extra_compile_args = fficonfig['ffi_cflags'].split()
+            include_dirs = [os.path.join(ffi_builddir, 'include'),
+                            ffi_builddir, ffi_srcdir]
+            extra_compile_args = fficonfig['ffi_cflags'].split()
+
+            ext.sources.extend(fficonfig['ffi_sources'])
+            ext.include_dirs.extend(include_dirs)
+            ext.extra_compile_args.extend(extra_compile_args)
+        return True
+
+    def detect_ctypes(self, inc_dirs, lib_dirs):
+        self.use_system_libffi = False
+        include_dirs = []
+        extra_compile_args = []
         sources = ['_ctypes/_ctypes.c',
                    '_ctypes/callbacks.c',
                    '_ctypes/callproc.c',
                    '_ctypes/stgdict.c',
                    '_ctypes/cfield.c',
-                   '_ctypes/malloc_closure.c'] + fficonfig['ffi_sources']
+                   '_ctypes/malloc_closure.c']
         depends = ['_ctypes/ctypes.h']
 
         if sys.platform == 'darwin':
@@ -1232,11 +1327,39 @@ class PyBuildExt(build_ext):
         ext = Extension('_ctypes',
                         include_dirs=include_dirs,
                         extra_compile_args=extra_compile_args,
+                        libraries=[],
                         sources=sources,
                         depends=depends)
         ext_test = Extension('_ctypes_test',
                              sources=['_ctypes/_ctypes_test.c'])
         self.extensions.extend([ext, ext_test])
+
+        if not '--with-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS"):
+            return
+
+        ffi_inc = find_file('ffi.h', [], inc_dirs)
+        if ffi_inc is not None:
+            ffi_h = ffi_inc[0] + '/ffi.h'
+            fp = open(ffi_h)
+            while 1:
+                line = fp.readline()
+                if not line:
+                    ffi_inc = None
+                    break
+                if line.startswith('#define LIBFFI_H'):
+                    break
+        ffi_lib = None
+        if ffi_inc is not None:
+            for lib_name in ('ffi_convenience', 'ffi_pic', 'ffi'):
+                if (self.compiler.find_library_file(lib_dirs, lib_name)):
+                    ffi_lib = lib_name
+                    break
+
+        if ffi_inc and ffi_lib:
+            ext.include_dirs.extend(ffi_inc)
+            ext.libraries.append(ffi_lib)
+            self.use_system_libffi = True
+
 
 class PyBuildInstall(install):
     # Suppress the warning about installation into the lib_dynload

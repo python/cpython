@@ -104,13 +104,6 @@ range_item(rangeobject *r, Py_ssize_t i)
 static Py_ssize_t
 range_length(rangeobject *r)
 {
-#if LONG_MAX != INT_MAX /* XXX ssize_t_max */
-	if (r->len > INT_MAX) {
-		PyErr_SetString(PyExc_ValueError,
-				"xrange object size cannot be reported");
-		return -1;
-	}
-#endif
 	return (Py_ssize_t)(r->len);
 }
 
@@ -157,44 +150,44 @@ static PyMethodDef range_methods[] = {
 
 PyTypeObject PyRange_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
-	0,				/* Number of items for varobject */
-	"xrange",			/* Name of this type */
-	sizeof(rangeobject),		/* Basic object size */
-	0,				/* Item size for varobject */
-	(destructor)PyObject_Del,	/* tp_dealloc */
-	0,				/* tp_print */
-	0,				/* tp_getattr */
-	0,				/* tp_setattr */
-	0,				/* tp_compare */
-	(reprfunc)range_repr,		/* tp_repr */
-	0,				/* tp_as_number */
-	&range_as_sequence,		/* tp_as_sequence */
-	0,				/* tp_as_mapping */
-	0,				/* tp_hash */
-	0,				/* tp_call */
-	0,				/* tp_str */
-	PyObject_GenericGetAttr,	/* tp_getattro */
-	0,				/* tp_setattro */
-	0,				/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,		/* tp_flags */
-	range_doc,			/* tp_doc */
-	0,				/* tp_traverse */
-	0,				/* tp_clear */
-	0,				/* tp_richcompare */
-	0,				/* tp_weaklistoffset */
-	(getiterfunc)range_iter,	/* tp_iter */
-	0,				/* tp_iternext */
-	range_methods,			/* tp_methods */
-	0,				/* tp_members */
-	0,				/* tp_getset */
-	0,				/* tp_base */
-	0,				/* tp_dict */
-	0,				/* tp_descr_get */
-	0,				/* tp_descr_set */
-	0,				/* tp_dictoffset */
-	0,				/* tp_init */
-	0,				/* tp_alloc */
-	range_new,			/* tp_new */
+	0,			/* Number of items for varobject */
+	"xrange",		/* Name of this type */
+	sizeof(rangeobject),	/* Basic object size */
+	0,			/* Item size for varobject */
+	(destructor)PyObject_Del, /* tp_dealloc */
+	0,			/* tp_print */
+	0,			/* tp_getattr */
+	0,			/* tp_setattr */
+	0,			/* tp_compare */
+	(reprfunc)range_repr,	/* tp_repr */
+	0,			/* tp_as_number */
+	&range_as_sequence,	/* tp_as_sequence */
+	0,			/* tp_as_mapping */
+	0,			/* tp_hash */
+	0,			/* tp_call */
+	0,			/* tp_str */
+	PyObject_GenericGetAttr,  /* tp_getattro */
+	0,			/* tp_setattro */
+	0,			/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,	/* tp_flags */
+	range_doc,		/* tp_doc */
+	0,			/* tp_traverse */
+	0,			/* tp_clear */
+	0,			/* tp_richcompare */
+	0,			/* tp_weaklistoffset */
+	range_iter,		/* tp_iter */
+	0,			/* tp_iternext */
+	range_methods,		/* tp_methods */
+	0,			/* tp_members */
+	0,			/* tp_getset */
+	0,			/* tp_base */
+	0,			/* tp_dict */
+	0,			/* tp_descr_get */
+	0,			/* tp_descr_set */
+	0,			/* tp_dictoffset */
+	0,			/* tp_init */
+	0,			/* tp_alloc */
+	range_new,		/* tp_new */
 };
 
 /*********************** Xrange Iterator **************************/
@@ -206,53 +199,6 @@ typedef struct {
 	long	step;
 	long	len;
 } rangeiterobject;
-
-static PyTypeObject Pyrangeiter_Type;
-
-static PyObject *
-range_iter(PyObject *seq)
-{
-	rangeiterobject *it;
-
-	if (!PyRange_Check(seq)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-	it = PyObject_New(rangeiterobject, &Pyrangeiter_Type);
-	if (it == NULL)
-		return NULL;
-	it->index = 0;
-	it->start = ((rangeobject *)seq)->start;
-	it->step = ((rangeobject *)seq)->step;
-	it->len = ((rangeobject *)seq)->len;
-	return (PyObject *)it;
-}
-
-static PyObject *
-range_reverse(PyObject *seq)
-{
-	rangeiterobject *it;
-	long start, step, len;
-
-	if (!PyRange_Check(seq)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-	it = PyObject_New(rangeiterobject, &Pyrangeiter_Type);
-	if (it == NULL)
-		return NULL;
-
-	start = ((rangeobject *)seq)->start;
-	step = ((rangeobject *)seq)->step;
-	len = ((rangeobject *)seq)->len;
-
-	it->index = 0;
-	it->start = start + (len-1) * step;
-	it->step = -step;
-	it->len = len;
-
-	return (PyObject *)it;
-}
 
 static PyObject *
 rangeiter_next(rangeiterobject *r)
@@ -308,3 +254,48 @@ static PyTypeObject Pyrangeiter_Type = {
 	rangeiter_methods,			/* tp_methods */
 	0,
 };
+
+static PyObject *
+range_iter(PyObject *seq)
+{
+	rangeiterobject *it;
+
+	if (!PyRange_Check(seq)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	it = PyObject_New(rangeiterobject, &Pyrangeiter_Type);
+	if (it == NULL)
+		return NULL;
+	it->index = 0;
+	it->start = ((rangeobject *)seq)->start;
+	it->step = ((rangeobject *)seq)->step;
+	it->len = ((rangeobject *)seq)->len;
+	return (PyObject *)it;
+}
+
+static PyObject *
+range_reverse(PyObject *seq)
+{
+	rangeiterobject *it;
+	long start, step, len;
+
+	if (!PyRange_Check(seq)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	it = PyObject_New(rangeiterobject, &Pyrangeiter_Type);
+	if (it == NULL)
+		return NULL;
+
+	start = ((rangeobject *)seq)->start;
+	step = ((rangeobject *)seq)->step;
+	len = ((rangeobject *)seq)->len;
+
+	it->index = 0;
+	it->start = start + (len-1) * step;
+	it->step = -step;
+	it->len = len;
+
+	return (PyObject *)it;
+}

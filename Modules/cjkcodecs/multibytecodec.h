@@ -67,24 +67,51 @@ typedef struct {
 	MultibyteCodec *codec;
 } MultibyteCodecObject;
 
-#define MAXDECPENDING	8
+#define MultibyteCodec_Check(op) ((op)->ob_type == &MultibyteCodec_Type)
+
+#define _MultibyteStatefulCodec_HEAD		\
+	PyObject_HEAD				\
+	MultibyteCodec *codec;			\
+	MultibyteCodec_State state;		\
+	PyObject *errors;
 typedef struct {
-	PyObject_HEAD
-	MultibyteCodec *codec;
-	MultibyteCodec_State state;
-	unsigned char pending[MAXDECPENDING];
-	Py_ssize_t pendingsize;
-	PyObject *stream, *errors;
-} MultibyteStreamReaderObject;
+	_MultibyteStatefulCodec_HEAD
+} MultibyteStatefulCodecContext;
 
 #define MAXENCPENDING	2
-typedef struct {
-	PyObject_HEAD
-	MultibyteCodec *codec;
-	MultibyteCodec_State state;
-	Py_UNICODE pending[MAXENCPENDING];
+#define _MultibyteStatefulEncoder_HEAD		\
+	_MultibyteStatefulCodec_HEAD		\
+	Py_UNICODE pending[MAXENCPENDING];	\
 	Py_ssize_t pendingsize;
-	PyObject *stream, *errors;
+typedef struct {
+	_MultibyteStatefulEncoder_HEAD
+} MultibyteStatefulEncoderContext;
+
+#define MAXDECPENDING	8
+#define _MultibyteStatefulDecoder_HEAD		\
+	_MultibyteStatefulCodec_HEAD		\
+	unsigned char pending[MAXDECPENDING];	\
+	Py_ssize_t pendingsize;
+typedef struct {
+	_MultibyteStatefulDecoder_HEAD
+} MultibyteStatefulDecoderContext;
+
+typedef struct {
+	_MultibyteStatefulEncoder_HEAD
+} MultibyteIncrementalEncoderObject;
+
+typedef struct {
+	_MultibyteStatefulDecoder_HEAD
+} MultibyteIncrementalDecoderObject;
+
+typedef struct {
+	_MultibyteStatefulDecoder_HEAD
+	PyObject *stream;
+} MultibyteStreamReaderObject;
+
+typedef struct {
+	_MultibyteStatefulEncoder_HEAD
+	PyObject *stream;
 } MultibyteStreamWriterObject;
 
 /* positive values for illegal sequences */
@@ -95,7 +122,12 @@ typedef struct {
 #define ERROR_STRICT		(PyObject *)(1)
 #define ERROR_IGNORE		(PyObject *)(2)
 #define ERROR_REPLACE		(PyObject *)(3)
-#define ERROR_MAX		ERROR_REPLACE
+#define ERROR_ISCUSTOM(p)	((p) < ERROR_STRICT || ERROR_REPLACE < (p))
+#define ERROR_DECREF(p) do {			\
+	if (p != NULL && ERROR_ISCUSTOM(p)) {	\
+		Py_DECREF(p);			\
+	}					\
+} while (0);
 
 #define MBENC_FLUSH		0x0001 /* encode all characters encodable */
 #define MBENC_MAX		MBENC_FLUSH

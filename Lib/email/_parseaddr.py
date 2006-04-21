@@ -6,6 +6,13 @@
 Lifted directly from rfc822.py.  This should eventually be rewritten.
 """
 
+__all__ = [
+    'mktime_tz',
+    'parsedate',
+    'parsedate_tz',
+    'quote',
+    ]
+
 import time
 
 SPACE = ' '
@@ -117,7 +124,8 @@ def parsedate_tz(data):
         else:
             tzsign = 1
         tzoffset = tzsign * ( (tzoffset//100)*3600 + (tzoffset % 100)*60)
-    return yy, mm, dd, thh, tmm, tss, 0, 1, 0, tzoffset
+    # Daylight Saving Time flag is set to -1, since DST is unknown.
+    return yy, mm, dd, thh, tmm, tss, 0, 1, -1, tzoffset
 
 
 def parsedate(data):

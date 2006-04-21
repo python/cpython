@@ -1946,8 +1946,6 @@ quopri           Conversions to/from quoted-printable transport encoding.
 rand             Don't use unless you want compatibility with C's rand().
 random           Random variable generators
 re               Regular Expressions.
-reconvert        Convert old ("regex") regular expressions to new syntax
-                 ("re").
 repr             Redo repr() but with limits on most sizes.
 rexec            Restricted execution facilities ("safe" exec, eval, etc).
 rfc822           RFC-822 message manipulation class.
@@ -2025,7 +2023,6 @@ zipfile          Read & write PK zipped files.
             array               Obj efficiently representing arrays of basic values
             math                Math functions of C standard
             time                Time-related functions (also the newer datetime module)
-            regex               Regular expression matching operations
             marshal             Read and write some python values in binary format
             struct              Convert between python values and C structs
 

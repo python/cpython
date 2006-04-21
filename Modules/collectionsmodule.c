@@ -832,11 +832,11 @@ static PyTypeObject deque_type = {
 	0,				/* tp_itemsize */
 	/* methods */
 	(destructor)deque_dealloc,	/* tp_dealloc */
-	(printfunc)deque_tp_print,	/* tp_print */
+	deque_tp_print,			/* tp_print */
 	0,				/* tp_getattr */
 	0,				/* tp_setattr */
 	0,				/* tp_compare */
-	(reprfunc)deque_repr,		/* tp_repr */
+	deque_repr,			/* tp_repr */
 	0,				/* tp_as_number */
 	&deque_as_sequence,		/* tp_as_sequence */
 	0,				/* tp_as_mapping */
@@ -1236,10 +1236,7 @@ defdict_traverse(PyObject *self, visitproc visit, void *arg)
 static int
 defdict_tp_clear(defdictobject *dd)
 {
-	if (dd->default_factory != NULL) {
-		Py_DECREF(dd->default_factory);
-		dd->default_factory = NULL;
-	}
+	Py_CLEAR(dd->default_factory);
 	return PyDict_Type.tp_clear((PyObject *)dd);
 }
 
@@ -1277,8 +1274,11 @@ a new value when a key is not present, in __getitem__ only.\n\
 A defaultdict compares equal to a dict with the same items.\n\
 ");
 
+/* See comment in xxsubtype.c */
+#define DEFERRED_ADDRESS(ADDR) 0
+
 static PyTypeObject defdict_type = {
-	PyObject_HEAD_INIT(NULL)
+	PyObject_HEAD_INIT(DEFERRED_ADDRESS(&PyType_Type))
 	0,				/* ob_size */
 	"collections.defaultdict",	/* tp_name */
 	sizeof(defdictobject),		/* tp_basicsize */
@@ -1302,7 +1302,7 @@ static PyTypeObject defdict_type = {
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_HAVE_WEAKREFS,	/* tp_flags */
 	defdict_doc,			/* tp_doc */
-	(traverseproc)defdict_traverse,	/* tp_traverse */
+	defdict_traverse,		/* tp_traverse */
 	(inquiry)defdict_tp_clear,	/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset*/
@@ -1311,12 +1311,12 @@ static PyTypeObject defdict_type = {
 	defdict_methods,		/* tp_methods */
 	defdict_members,		/* tp_members */
 	0,				/* tp_getset */
-	&PyDict_Type,			/* tp_base */
+	DEFERRED_ADDRESS(&PyDict_Type),	/* tp_base */
 	0,				/* tp_dict */
 	0,				/* tp_descr_get */
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
-	(initproc)defdict_init,		/* tp_init */
+	defdict_init,			/* tp_init */
 	PyType_GenericAlloc,		/* tp_alloc */
 	0,				/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
@@ -1344,6 +1344,7 @@ initcollections(void)
 	Py_INCREF(&deque_type);
 	PyModule_AddObject(m, "deque", (PyObject *)&deque_type);
 
+	defdict_type.tp_base = &PyDict_Type;
 	if (PyType_Ready(&defdict_type) < 0)
 		return;
 	Py_INCREF(&defdict_type);

@@ -13,6 +13,7 @@ typedef struct {
 	PyObject_HEAD
 	/* The gi_ prefix is intended to remind of generator-iterator. */
 
+	/* Note: gi_frame can be NULL if the generator is "finished" */
 	struct _frame *gi_frame;
 
 	/* True if generator is being executed. */
@@ -28,6 +29,7 @@ PyAPI_DATA(PyTypeObject) PyGen_Type;
 #define PyGen_CheckExact(op) ((op)->ob_type == &PyGen_Type)
 
 PyAPI_FUNC(PyObject *) PyGen_New(struct _frame *);
+PyAPI_FUNC(int) PyGen_NeedsFinalizing(PyGenObject *);
 
 #ifdef __cplusplus
 }

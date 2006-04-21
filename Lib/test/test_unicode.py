@@ -810,6 +810,22 @@ class UnicodeTest(
         self.assertEqual(str(Foo9("foo")), "string")
         self.assertEqual(unicode(Foo9("foo")), u"not unicode")
 
+    def test_unicode_repr(self):
+        class s1:
+            def __repr__(self):
+                return '\\n'
+
+        class s2:
+            def __repr__(self):
+                return u'\\n'
+
+        self.assertEqual(repr(s1()), '\\n')
+        self.assertEqual(repr(s2()), '\\n')
+
+
+
+
+
 def test_main():
     test_support.run_unittest(UnicodeTest)
 

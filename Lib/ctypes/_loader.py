@@ -1,14 +1,11 @@
-# WORK IN PROGRESS!  DO NOT (yet) USE!
 import sys, os
 import ctypes
 
-__all__ = ["LibraryLoader", "RTLD_LOCAL", "RTLD_GLOBAL"]
-
 if os.name in ("nt", "ce"):
     from _ctypes import LoadLibrary as dlopen
-    RTLD_LOCAL = RTLD_GLOBAL = None
 else:
-    from _ctypes import dlopen, RTLD_LOCAL, RTLD_GLOBAL
+    from _ctypes import dlopen
+from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 
 # _findLib(name) returns an iterable of possible names for a library.
 if os.name in ("nt", "ce"):
@@ -56,7 +53,10 @@ elif os.name == "posix":
         expr = '/[^\(\)\s]*lib%s\.[^\(\)\s]*' % name
         res = re.search(expr, os.popen('/sbin/ldconfig -p 2>/dev/null').read())
         if not res:
-            return None
+            cmd = 'ldd %s 2>/dev/null' % sys.executable
+            res = re.search(expr, os.popen(cmd).read())
+            if not res:
+                return None
         return res.group(0)
 
     def _get_soname(f):

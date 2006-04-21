@@ -13,8 +13,7 @@ from urllib2 import Request, OpenerDirector
 # parse_keqv_list, parse_http_list (I'm leaving this for Anthony Baxter
 #  and Greg Stein, since they're doing Digest Authentication)
 # Authentication stuff (ditto)
-# ProxyHandler, CustomProxy, CustomProxyHandler (I don't use a proxy)
-# GopherHandler (haven't used gopher for a decade or so...)
+# CustomProxy, CustomProxyHandler
 
 class TrivialTests(unittest.TestCase):
     def test_trivial(self):
@@ -90,6 +89,7 @@ class FakeMethod:
         return self.handle(self.meth_name, self.action, *args)
 
 class MockHandler:
+    handler_order = 500
     def __init__(self, methods):
         self._define_methods(methods)
     def _define_methods(self, methods):
@@ -154,7 +154,7 @@ def add_ordered_mock_handlers(opener, meth_spec):
     for meths in meth_spec:
         class MockHandlerSubclass(MockHandler): pass
         h = MockHandlerSubclass(meths)
-        h.handler_order = count
+        h.handler_order += count
         h.add_parent(opener)
         count = count + 1
         handlers.append(h)
@@ -349,13 +349,19 @@ class HandlerTests(unittest.TestCase):
         TESTFN = test_support.TESTFN
         urlpath = sanepathname2url(os.path.abspath(TESTFN))
         towrite = "hello, world\n"
-        for url in [
+        urls = [
             "file://localhost%s" % urlpath,
             "file://%s" % urlpath,
             "file://%s%s" % (socket.gethostbyname('localhost'), urlpath),
-            "file://%s%s" % (socket.gethostbyname(socket.gethostname()),
-                             urlpath),
-            ]:
+            ]
+        try:
+            localaddr = socket.gethostbyname(socket.gethostname())
+        except socket.gaierror:
+            localaddr = ''
+        if localaddr:
+            urls.append("file://%s%s" % (localaddr, urlpath))
+
+        for url in urls:
             f = open(TESTFN, "wb")
             try:
                 try:
@@ -636,6 +642,23 @@ class HandlerTests(unittest.TestCase):
         o.open("http://www.example.com/")
         self.assert_(not hh.req.has_header("Cookie"))
 
+    def test_proxy(self):
+        o = OpenerDirector()
+        ph = urllib2.ProxyHandler(dict(http="proxy.example.com:3128"))
+        o.add_handler(ph)
+        meth_spec = [
+            [("http_open", "return response")]
+            ]
+        handlers = add_ordered_mock_handlers(o, meth_spec)
+
+        req = Request("http://acme.example.com/")
+        self.assertEqual(req.get_host(), "acme.example.com")
+        r = o.open(req)
+        self.assertEqual(req.get_host(), "proxy.example.com:3128")
+
+        self.assertEqual([(handlers[0], "http_open")],
+                         [tup[0:2] for tup in o.calls])
+
 
 class MiscTests(unittest.TestCase):
 
@@ -821,6 +844,7 @@ class NetworkTests(unittest.TestCase):
 
 
 def test_main(verbose=None):
+    test_support.run_doctest(urllib2, verbose)
     tests = (TrivialTests,
              OpenerDirectorTests,
              HandlerTests,

@@ -2,10 +2,10 @@
 # big5hkscs.py: Python Unicode Codec for BIG5HKSCS
 #
 # Written by Hye-Shik Chang <perky@FreeBSD.org>
-# $CJKCodecs: big5hkscs.py,v 1.1 2004/06/29 05:14:27 perky Exp $
 #
 
 import _codecs_hk, codecs
+import _multibytecodec as mbc
 
 codec = _codecs_hk.getcodec('big5hkscs')
 
@@ -13,22 +13,27 @@ class Codec(codecs.Codec):
     encode = codec.encode
     decode = codec.decode
 
-class StreamReader(Codec, codecs.StreamReader):
-    def __init__(self, stream, errors='strict'):
-        codecs.StreamReader.__init__(self, stream, errors)
-        __codec = codec.StreamReader(stream, errors)
-        self.read = __codec.read
-        self.readline = __codec.readline
-        self.readlines = __codec.readlines
-        self.reset = __codec.reset
+class IncrementalEncoder(mbc.MultibyteIncrementalEncoder,
+                         codecs.IncrementalEncoder):
+    codec = codec
 
-class StreamWriter(Codec, codecs.StreamWriter):
-    def __init__(self, stream, errors='strict'):
-        codecs.StreamWriter.__init__(self, stream, errors)
-        __codec = codec.StreamWriter(stream, errors)
-        self.write = __codec.write
-        self.writelines = __codec.writelines
-        self.reset = __codec.reset
+class IncrementalDecoder(mbc.MultibyteIncrementalDecoder,
+                         codecs.IncrementalDecoder):
+    codec = codec
+
+class StreamReader(Codec, mbc.MultibyteStreamReader, codecs.StreamReader):
+    codec = codec
+
+class StreamWriter(Codec, mbc.MultibyteStreamWriter, codecs.StreamWriter):
+    codec = codec
 
 def getregentry():
-    return (codec.encode, codec.decode, StreamReader, StreamWriter)
+    return codecs.CodecInfo(
+        name='big5hkscs',
+        encode=Codec().encode,
+        decode=Codec().decode,
+        incrementalencoder=IncrementalEncoder,
+        incrementaldecoder=IncrementalDecoder,
+        streamreader=StreamReader,
+        streamwriter=StreamWriter,
+    )

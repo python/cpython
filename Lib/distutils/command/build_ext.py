@@ -185,7 +185,9 @@ class build_ext (Command):
 
         # for extensions under Cygwin and AtheOS Python's library directory must be
         # appended to library_dirs
-        if sys.platform[:6] == 'cygwin' or sys.platform[:6] == 'atheos':
+        if sys.platform[:6] == 'cygwin' or sys.platform[:6] == 'atheos' or \
+               (sys.platform.startswith('linux') and
+                sysconfig.get_config_var('Py_ENABLE_SHARED')):
             if string.find(sys.executable, sys.exec_prefix) != -1:
                 # building third party extensions
                 self.library_dirs.append(os.path.join(sys.prefix, "lib",
@@ -688,6 +690,13 @@ class build_ext (Command):
             # extensions, it is a reference to the original list
             return ext.libraries + [pythonlib, "m"] + extra
         else:
-            return ext.libraries
+            from distutils import sysconfig
+            if sysconfig.get_config_var('Py_ENABLE_SHARED'):
+                template = "python%d.%d"
+                pythonlib = (template %
+                             (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff))
+                return ext.libraries + [pythonlib]
+            else:
+                return ext.libraries
 
 # class build_ext

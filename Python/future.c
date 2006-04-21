@@ -19,7 +19,7 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, const char *filename)
 
 	names = s->v.ImportFrom.names;
 	for (i = 0; i < asdl_seq_LEN(names); i++) {
-                alias_ty name = asdl_seq_GET(names, i);
+                alias_ty name = (alias_ty)asdl_seq_GET(names, i);
 		const char *feature = PyString_AsString(name->name);
 		if (!feature)
 			return 0;
@@ -29,7 +29,7 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, const char *filename)
 			continue;
 		} else if (strcmp(feature, FUTURE_DIVISION) == 0) {
 			continue;
-		} else if (strcmp(feature, FUTURE_ABSIMPORT) == 0) {
+		} else if (strcmp(feature, FUTURE_ABSOLUTE_IMPORT) == 0) {
 			continue;
 		} else if (strcmp(feature, FUTURE_WITH_STATEMENT) == 0) {
 			continue;
@@ -73,7 +73,7 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, const char *filename)
 	   
 
 	for (i = 0; i < asdl_seq_LEN(mod->v.Module.body); i++) {
-		stmt_ty s = asdl_seq_GET(mod->v.Module.body, i);
+		stmt_ty s = (stmt_ty)asdl_seq_GET(mod->v.Module.body, i);
 
 		if (done && s->lineno > prev_line)
 			return 1;
@@ -120,14 +120,14 @@ PyFuture_FromAST(mod_ty mod, const char *filename)
 {
 	PyFutureFeatures *ff;
 
-	ff = (PyFutureFeatures *)PyMem_Malloc(sizeof(PyFutureFeatures));
+	ff = (PyFutureFeatures *)PyObject_Malloc(sizeof(PyFutureFeatures));
 	if (ff == NULL)
 		return NULL;
 	ff->ff_features = 0;
 	ff->ff_lineno = -1;
 
 	if (!future_parse(ff, mod, filename)) {
-		PyMem_Free((void *)ff);
+		PyObject_Free(ff);
 		return NULL;
 	}
 	return ff;

@@ -31,7 +31,7 @@ landmark = os.path.join(argv0_path, "Modules", "Setup")
 
 python_build = os.path.isfile(landmark)
 
-del argv0_path, landmark
+del landmark
 
 
 def get_python_version():
@@ -185,7 +185,7 @@ def customize_compiler(compiler):
 def get_config_h_filename():
     """Return full pathname of installed pyconfig.h file."""
     if python_build:
-        inc_dir = os.curdir
+        inc_dir = argv0_path
     else:
         inc_dir = get_python_inc(plat_specific=1)
     if get_python_version() < '2.2':
@@ -213,8 +213,8 @@ def parse_config_h(fp, g=None):
     """
     if g is None:
         g = {}
-    define_rx = re.compile("#define ([A-Z][A-Z0-9_]+) (.*)\n")
-    undef_rx = re.compile("/[*] #undef ([A-Z][A-Z0-9_]+) [*]/\n")
+    define_rx = re.compile("#define ([A-Z][A-Za-z0-9_]+) (.*)\n")
+    undef_rx = re.compile("/[*] #undef ([A-Z][A-Za-z0-9_]+) [*]/\n")
     #
     while 1:
         line = fp.readline()
@@ -351,6 +351,17 @@ def _init_posix():
 
         raise DistutilsPlatformError(my_msg)
 
+    # load the installed pyconfig.h:
+    try:
+        filename = get_config_h_filename()
+        parse_config_h(file(filename), g)
+    except IOError, msg:
+        my_msg = "invalid Python installation: unable to open %s" % filename
+        if hasattr(msg, "strerror"):
+            my_msg = my_msg + " (%s)" % msg.strerror
+
+        raise DistutilsPlatformError(my_msg)
+
     # On MacOSX we need to check the setting of the environment variable
     # MACOSX_DEPLOYMENT_TARGET: configure bases some choices on it so
     # it needs to be compatible.
@@ -361,7 +372,7 @@ def _init_posix():
         if cur_target == '':
             cur_target = cfg_target
             os.putenv('MACOSX_DEPLOYMENT_TARGET', cfg_target)
-        if cfg_target != cur_target:
+        elif map(int, cfg_target.split('.')) > map(int, cur_target.split('.')):
             my_msg = ('$MACOSX_DEPLOYMENT_TARGET mismatch: now "%s" but "%s" during configure'
                 % (cur_target, cfg_target))
             raise DistutilsPlatformError(my_msg)
