@@ -161,7 +161,7 @@ directly.
 \end{funcdesc}
 
 \begin{funcdesc}{lookup_error}{name}
-Return the error handler previously register under the name \var{name}.
+Return the error handler previously registered under the name \var{name}.
 
 Raises a \exception{LookupError} in case the handler cannot be found.
 \end{funcdesc}
@@ -366,7 +366,7 @@ steps. It defines the following methods which every incremental encoder must
 define in order to be compatible with the Python codec registry.
 
 \begin{classdesc}{IncrementalEncoder}{\optional{errors}}
-  Constructor for a \class{IncrementalEncoder} instance.
+  Constructor for an \class{IncrementalEncoder} instance.
 
   All incremental encoders must provide this constructor interface. They are
   free to add additional keyword arguments, but only the ones defined
@@ -413,7 +413,7 @@ steps. It defines the following methods which every incremental decoder must
 define in order to be compatible with the Python codec registry.
 
 \begin{classdesc}{IncrementalDecoder}{\optional{errors}}
-  Constructor for a \class{IncrementalDecoder} instance.
+  Constructor for an \class{IncrementalDecoder} instance.
 
   All incremental decoders must provide this constructor interface. They are
   free to add additional keyword arguments, but only the ones defined
