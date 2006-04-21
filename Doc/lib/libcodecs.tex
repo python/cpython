@@ -295,14 +295,14 @@ function interfaces of the stateless encoder and decoder:
 The \class{StreamWriter} and \class{StreamReader} classes provide
 generic working interfaces which can be used to implement new
 encodings submodules very easily. See \module{encodings.utf_8} for an
-example on how this is done.
+example of how this is done.
 
 
 \subsubsection{StreamWriter Objects \label{stream-writer-objects}}
 
 The \class{StreamWriter} class is a subclass of \class{Codec} and
 defines the following methods which every stream writer must define in
-order to be compatible to the Python codec registry.
+order to be compatible with the Python codec registry.
 
 \begin{classdesc}{StreamWriter}{stream\optional{, errors}}
   Constructor for a \class{StreamWriter} instance. 
@@ -355,14 +355,14 @@ order to be compatible to the Python codec registry.
 \end{methoddesc}
 
 In addition to the above methods, the \class{StreamWriter} must also
-inherit all other methods and attribute from the underlying stream.
+inherit all other methods and attributes from the underlying stream.
 
 
 \subsubsection{StreamReader Objects \label{stream-reader-objects}}
 
 The \class{StreamReader} class is a subclass of \class{Codec} and
 defines the following methods which every stream reader must define in
-order to be compatible to the Python codec registry.
+order to be compatible with the Python codec registry.
 
 \begin{classdesc}{StreamReader}{stream\optional{, errors}}
   Constructor for a \class{StreamReader} instance. 
@@ -371,7 +371,7 @@ order to be compatible to the Python codec registry.
   free to add additional keyword arguments, but only the ones defined
   here are used by the Python codec registry.
 
-  \var{stream} must be a file-like object open for reading (binary)
+  \var{stream} must be a file-like object open for reading binary
   data.
 
   The \class{StreamReader} may implement different error handling
@@ -427,20 +427,20 @@ order to be compatible to the Python codec registry.
   \var{size}, if given, is passed as size argument to the stream's
   \method{readline()} method.
 
-  If \var{keepends} is false lineends will be stripped from the
+  If \var{keepends} is false line-endings will be stripped from the
   lines returned.
 
   \versionchanged[\var{keepends} argument added]{2.4}
 \end{methoddesc}
 
 \begin{methoddesc}{readlines}{\optional{sizehint\optional{, keepends}}}
-  Read all lines available on the input stream and return them as list
+  Read all lines available on the input stream and return them as a list
   of lines.
 
-  Line breaks are implemented using the codec's decoder method and are
+  Line-endings are implemented using the codec's decoder method and are
   included in the list entries if \var{keepends} is true.
 
-  \var{sizehint}, if given, is passed as \var{size} argument to the
+  \var{sizehint}, if given, is passed as the \var{size} argument to the
   stream's \method{read()} method.
 \end{methoddesc}
 
@@ -452,7 +452,7 @@ order to be compatible to the Python codec registry.
 \end{methoddesc}
 
 In addition to the above methods, the \class{StreamReader} must also
-inherit all other methods and attribute from the underlying stream.
+inherit all other methods and attributes from the underlying stream.
 
 The next two base classes are included for convenience. They are not
 needed by the codec registry, but may provide useful in practice.
@@ -478,7 +478,7 @@ the \function{lookup()} function to construct the instance.
 
 \class{StreamReaderWriter} instances define the combined interfaces of
 \class{StreamReader} and \class{StreamWriter} classes. They inherit
-all other methods and attribute from the underlying stream.
+all other methods and attributes from the underlying stream.
 
 
 \subsubsection{StreamRecoder Objects \label{stream-recoder-objects}}
@@ -504,14 +504,14 @@ the \function{lookup()} function to construct the instance.
   \var{stream} must be a file-like object.
 
   \var{encode}, \var{decode} must adhere to the \class{Codec}
-  interface, \var{Reader}, \var{Writer} must be factory functions or
+  interface. \var{Reader}, \var{Writer} must be factory functions or
   classes providing objects of the \class{StreamReader} and
   \class{StreamWriter} interface respectively.
 
   \var{encode} and \var{decode} are needed for the frontend
   translation, \var{Reader} and \var{Writer} for the backend
   translation.  The intermediate format used is determined by the two
-  sets of codecs, e.g. the Unicode codecs will use Unicode as
+  sets of codecs, e.g. the Unicode codecs will use Unicode as the 
   intermediate encoding.
 
   Error handling is done in the same way as defined for the
@@ -520,12 +520,12 @@ the \function{lookup()} function to construct the instance.
 
 \class{StreamRecoder} instances define the combined interfaces of
 \class{StreamReader} and \class{StreamWriter} classes. They inherit
-all other methods and attribute from the underlying stream.
+all other methods and attributes from the underlying stream.
 
 \subsection{Standard Encodings\label{standard-encodings}}
 
-Python comes with a number of codecs builtin, either implemented as C
-functions, or with dictionaries as mapping tables. The following table
+Python comes with a number of codecs built-in, either implemented as C
+functions or with dictionaries as mapping tables. The following table
 lists the codecs by name, together with a few common aliases, and the
 languages for which the encoding is likely used. Neither the list of
 aliases nor the list of languages is meant to be exhaustive. Notice
