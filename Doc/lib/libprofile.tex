@@ -391,17 +391,17 @@ Analysis of the profiler data is done using this class from the
 % (This \stmodindex use may be hard to change ;-( )
 \stmodindex{pstats}
 
-\begin{classdesc}{Stats}{filename\optional{, \moreargs}}
+\begin{classdesc}{Stats}{filename\optional{, \moreargs\optional{, stream=sys.stdout}}}
 This class constructor creates an instance of a ``statistics object''
 from a \var{filename} (or set of filenames).  \class{Stats} objects are
-manipulated by methods, in order to print useful reports.
+manipulated by methods, in order to print useful reports.  You may specify
+an alternate output stream by giving the keyword argument, \code{stream}.
 
-The file selected by the above constructor must have been created by
-the corresponding version of \module{profile} or \module{cProfile}.
-To be specific, there is
-\emph{no} file compatibility guaranteed with future versions of this
-profiler, and there is no compatibility with files produced by other
-profilers.
+The file selected by the above constructor must have been created by the
+corresponding version of \module{profile} or \module{cProfile}.  To be
+specific, there is \emph{no} file compatibility guaranteed with future
+versions of this profiler, and there is no compatibility with files produced
+by other profilers.
 %(such as the old system profiler).
 
 If several files are provided, all the statistics for identical
