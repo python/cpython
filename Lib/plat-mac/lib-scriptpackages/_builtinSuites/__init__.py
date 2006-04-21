@@ -5,7 +5,7 @@ in the Required suite according to the Apple docs, but they often seem to be
 in the Standard suite.
 """
 import aetools
-import builtin_Suite
+from . import builtin_Suite
 
 
 _code_to_module = {
@@ -20,7 +20,7 @@ _code_to_fullname = {
         'core' : ('_builtinSuites.builtin_Suite', 'builtin_Suite'),
 }
 
-from builtin_Suite import *
+from _builtinSuites.builtin_Suite import *
 
 class _builtinSuites(builtin_Suite_Events,
                 aetools.TalkTo):

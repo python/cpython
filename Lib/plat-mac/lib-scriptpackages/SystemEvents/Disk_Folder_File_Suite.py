@@ -5,6 +5,11 @@ Generated from /System/Library/CoreServices/System Events.app
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
+# Crutch for recursive import
+import sys
+import SystemEvents
+SystemEvents.Disk_Folder_File_Suite = sys.modules[__name__]
+
 import aetools
 import MacOS
 
@@ -210,10 +215,10 @@ class _Prop_version(aetools.NProperty):
 
 files = file
 application._superclassnames = []
-import Standard_Suite
-import Folder_Actions_Suite
-import Login_Items_Suite
-import Processes_Suite
+from . import Standard_Suite
+from . import Folder_Actions_Suite
+from . import Login_Items_Suite
+from . import Processes_Suite
 application._privpropdict = {
     '_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
     'folder_actions_enabled' : _Prop_folder_actions_enabled,

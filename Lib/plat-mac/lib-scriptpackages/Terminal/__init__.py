@@ -3,9 +3,9 @@ Package generated from /Applications/Utilities/Terminal.app
 """
 import aetools
 Error = aetools.Error
-import Standard_Suite
-import Text_Suite
-import Terminal_Suite
+from . import Standard_Suite
+from . import Text_Suite
+from . import Terminal_Suite
 
 
 _code_to_module = {
@@ -22,9 +22,9 @@ _code_to_fullname = {
     'trmx' : ('Terminal.Terminal_Suite', 'Terminal_Suite'),
 }
 
-from Standard_Suite import *
-from Text_Suite import *
-from Terminal_Suite import *
+from Terminal.Standard_Suite import *
+from Terminal.Text_Suite import *
+from Terminal.Terminal_Suite import *
 
 def getbaseclasses(v):
     if not getattr(v, '_propdict', None):

@@ -101,7 +101,7 @@ attachment._privelemdict = {
     'paragraph' : paragraph,
     'word' : word,
 }
-import Standard_Suite
+from . import Standard_Suite
 attribute_run._superclassnames = ['item']
 attribute_run._privpropdict = {
     '_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,

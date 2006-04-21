@@ -65,11 +65,11 @@ properties = _Prop_properties()
 
 applications = application
 application._superclassnames = []
-import Disk_Folder_File_Suite
-import Standard_Suite
-import Folder_Actions_Suite
-import Login_Items_Suite
-import Processes_Suite
+from . import Disk_Folder_File_Suite
+from . import Standard_Suite
+from . import Folder_Actions_Suite
+from . import Login_Items_Suite
+from . import Processes_Suite
 application._privpropdict = {
     '_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
     'folder_actions_enabled' : _Prop_folder_actions_enabled,
