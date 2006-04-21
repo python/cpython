@@ -4,7 +4,6 @@
 
 % The easy_install stuff
 % Describe the pkgutil module
-% Stateful codec changes
 % Fix XXX comments
 % Count up the patches and bugs
 
@@ -35,7 +34,7 @@ rationale, refer to the PEP for a particular new feature.
 
 
 %======================================================================
-\section{PEP 243: Uploading Modules to PyPI}
+\section{PEP 243: Uploading Modules to PyPI\label{pep-243}}
 
 PEP 243 describes an HTTP-based protocol for submitting software
 packages to a central archive.  The Python package index at
@@ -61,7 +60,7 @@ describe what's implemented in PyPI.}
 
 
 %======================================================================
-\section{PEP 308: Conditional Expressions}
+\section{PEP 308: Conditional Expressions\label{pep-308}}
 
 For a long time, people have been requesting a way to write
 conditional expressions, expressions that return value A or value B
@@ -152,7 +151,7 @@ Wouters.}
 
 
 %======================================================================
-\section{PEP 309: Partial Function Application}
+\section{PEP 309: Partial Function Application\label{pep-309}}
 
 The \module{functional} module is intended to contain tools for
 functional-style programming.  Currently it only contains a
@@ -214,7 +213,7 @@ Raymond Hettinger.}
 
 
 %======================================================================
-\section{PEP 314: Metadata for Python Software Packages v1.1}
+\section{PEP 314: Metadata for Python Software Packages v1.1\label{pep-314}}
 
 Some simple dependency support was added to Distutils.  The
 \function{setup()} function now has \code{requires}, \code{provides},
@@ -248,7 +247,7 @@ implemented by Richard Jones and Fred Drake.}
 
 
 %======================================================================
-\section{PEP 328: Absolute and Relative Imports}
+\section{PEP 328: Absolute and Relative Imports\label{pep-328}}
 
 The simpler part of PEP 328 was implemented in Python 2.4: parentheses
 could now be used to enclose the names imported from a module using
@@ -342,7 +341,7 @@ form of the import statement, only the \code{from ... import} form.
 
 
 %======================================================================
-\section{PEP 338: Executing Modules as Scripts}
+\section{PEP 338: Executing Modules as Scripts\label{pep-338}}
 
 The \programopt{-m} switch added in Python 2.4 to execute a module as
 a script gained a few more abilities.  Instead of being implemented in
@@ -366,7 +365,7 @@ implemented by Nick Coghlan.}
 
 
 %======================================================================
-\section{PEP 341: Unified try/except/finally}
+\section{PEP 341: Unified try/except/finally\label{pep-341}}
 
 Until Python 2.5, the \keyword{try} statement came in two
 flavours. You could use a \keyword{finally} block to ensure that code
@@ -412,7 +411,7 @@ implementation by Thomas Lee.}
 
 
 %======================================================================
-\section{PEP 342: New Generator Features\label{section-generators}}
+\section{PEP 342: New Generator Features\label{pep-342}}
 
 Python 2.5 adds a simple way to pass values \emph{into} a generator.
 As introduced in Python 2.3, generators only produce output; once a
@@ -578,9 +577,9 @@ Sugalski.}
 
 
 %======================================================================
-\section{PEP 343: The 'with' statement}
+\section{PEP 343: The 'with' statement\label{pep-343}}
 
-The \keyword{with} statement allows a clearer version of code that
+The '\keyword{with}' statement allows a clearer version of code that
 uses \code{try...finally} blocks to ensure that clean-up code is
 executed.
 
@@ -589,7 +588,7 @@ used.  In the next section, I'll examine the implementation details
 and show how to write objects called ``context managers'' and
 ``contexts'' for use with this statement.
 
-The \keyword{with} statement is a new control-flow structure whose
+The '\keyword{with}' statement is a new control-flow structure whose
 basic structure is:
 
 \begin{verbatim}
@@ -625,11 +624,11 @@ with open('/etc/passwd', 'r') as f:
 \end{verbatim}
 
 After this statement has executed, the file object in \var{f} will
-have been automatically closed at this point, even if the 'for' loop
+have been automatically closed, even if the 'for' loop
 raised an exception part-way through the block.
 
 The \module{threading} module's locks and condition variables 
-also support the \keyword{with} statement:
+also support the '\keyword{with}' statement:
 
 \begin{verbatim}
 lock = threading.Lock()
@@ -658,10 +657,10 @@ with decimal.Context(prec=16):
     print v1.sqrt()
 \end{verbatim}
 
-\subsection{Writing Context Managers}
+\subsection{Writing Context Managers\label{context-managers}}
 
-Under the hood, the \keyword{with} statement is fairly complicated.
-Most people will only use \keyword{with} in company with
+Under the hood, the '\keyword{with}' statement is fairly complicated.
+Most people will only use '\keyword{with}' in company with
 existing objects that are documented to work as context managers, and
 don't need to know these details, so you can skip the following section if
 you like.  Authors of new context managers will need to understand the
@@ -678,7 +677,7 @@ that's a context manager, meaning that it has a
 return a context object.  
 
 \item The context's \method{__enter__()} method is called. 
-The value returned is assigned to \var{VAR}.  If no \code{as \var{VAR}} 
+The value returned is assigned to \var{VAR}.  If no \code{'as \var{VAR}'} 
 clause is present, the value is simply discarded.
 
 \item The code in \var{BLOCK} is executed.
@@ -690,7 +689,7 @@ with the exception's information, the same values returned by
 controls whether the exception is re-raised: any false value 
 re-raises the exception, and \code{True} will result in suppressing it.
 You'll only rarely want to suppress the exception; the 
-author of the code containing the \keyword{with} statement will 
+author of the code containing the '\keyword{with}' statement will 
 never realize anything went wrong.
 
 \item If \var{BLOCK} didn't raise an exception, 
@@ -761,7 +760,7 @@ The \method {__enter__()} method is pretty easy, having only
 to start a new transaction.  In this example,
 the resulting cursor object would be a useful result,
 so the method will return it.  The user can 
-then add \code{as cursor} to their \keyword{with} statement
+then add \code{as cursor} to their '\keyword{with}' statement
 to bind the cursor to a variable name.
 
 \begin{verbatim}
@@ -806,7 +805,7 @@ a simple context manager as a generator.  The generator should yield
 exactly one value.  The code up to the \keyword{yield} will be
 executed as the \method{__enter__()} method, and the value yielded
 will be the method's return value that will get bound to the variable
-in the \keyword{with} statement's \keyword{as} clause, if any.  The
+in the '\keyword{with}' statement's \keyword{as} clause, if any.  The
 code after the \keyword{yield} will be executed in the
 \method{__exit__()} method.  Any exception raised in the block 
 will be raised by the \keyword{yield} statement.
@@ -854,7 +853,7 @@ class DatabaseConnection:
 
 There's a \function{nested(\var{mgr1}, \var{mgr2}, ...)} manager that
 combines a number of context managers so you don't need to write
-nested \keyword{with} statements.  This example statement does two
+nested '\keyword{with}' statements.  This example statement does two
 things, starting a database transaction and acquiring a thread lock:
 
 \begin{verbatim}
@@ -880,7 +879,7 @@ with closing(urllib.urlopen('http://www.yahoo.com')) as f:
 
 \seepep{343}{The ``with'' statement}{PEP written by Guido van~Rossum
 and Nick Coghlan; implemented by Mike Bland, Guido van~Rossum, and
-Neal Norwitz.  The PEP shows the code generated for a \keyword{with}
+Neal Norwitz.  The PEP shows the code generated for a '\keyword{with}'
 statement, which can be helpful in learning how context managers
 work.}
 
@@ -891,7 +890,7 @@ for the \module{contextlib} module.}
 
 
 %======================================================================
-\section{PEP 352: Exceptions as New-Style Classes}
+\section{PEP 352: Exceptions as New-Style Classes\label{pep-352}}
 
 Exception classes can now be new-style classes, not just classic
 classes, and the built-in \exception{Exception} class and all the
@@ -957,7 +956,7 @@ Brett Cannon and Guido van~Rossum; implemented by Brett Cannon.}
 
 
 %======================================================================
-\section{PEP 353: Using ssize_t as the index type\label{section-353}}
+\section{PEP 353: Using ssize_t as the index type\label{pep-353}}
 
 A wide-ranging change to Python's C API, using a new 
 \ctype{Py_ssize_t} type definition instead of \ctype{int}, 
@@ -1019,7 +1018,7 @@ platforms.
 
 
 %======================================================================
-\section{PEP 357: The '__index__' method}
+\section{PEP 357: The '__index__' method\label{pep-357}}
 
 The NumPy developers had a problem that could only be solved by adding
 a new special method, \method{__index__}.  When using slice notation,
@@ -1092,8 +1091,8 @@ print d[3], d[4]   # Prints 0, 0
 \end{verbatim}
 
 \item The \function{min()} and \function{max()} built-in functions
-gained a \code{key} keyword argument analogous to the \code{key}
-argument for \method{sort()}.  This argument supplies a function that
+gained a \code{key} keyword parameter analogous to the \code{key}
+argument for \method{sort()}.  This parameter supplies a function that
 takes a single argument and is called for every value in the list;
 \function{min()}/\function{max()} will return the element with the 
 smallest/largest return value from this function.
@@ -1186,7 +1185,7 @@ pystone benchmark around XXX\% faster than Python 2.4.
 
 
 %======================================================================
-\section{New, Improved, and Deprecated Modules}
+\section{New, Improved, and Removed Modules}
 
 The standard library received many enhancements and bug fixes in
 Python 2.5.  Here's a partial list of the most notable changes, sorted
@@ -1196,12 +1195,22 @@ the SVN logs for all the details.
 
 \begin{itemize}
 
-% the cPickle module no longer accepts the deprecated None option in the
-% args tuple returned by __reduce__().
-
 \item The \module{audioop} module now supports the a-LAW encoding,
 and the code for u-LAW encoding has been improved.  (Contributed by
 Lars Immisch.)
+
+\item The \module{codecs} module gained support for incremental
+codecs.  The \function{codec.lookup()} function now
+returns a \class{CodecInfo} instance instead of a tuple.
+\class{CodecInfo} instances behave like a 4-tuple to preserve backward
+compatibility but also have the attributes \member{encode},
+\member{decode}, \member{incrementalencoder}, \member{incrementaldecoder},
+\member{streamwriter}, and \member{streamreader}.  Incremental codecs 
+can receive input and produce output in multiple chunks; the output is
+the same as if the entire input was fed to the non-incremental codec.
+See the \module{codecs} module documentation for details.
+(Designed and implemented by Walter D\"orwald.)
+% Patch  1436130
 
 \item The \module{collections} module gained a new type,
 \class{defaultdict}, that subclasses the standard \class{dict}
@@ -1244,7 +1253,7 @@ method that removes the first occurrence of \var{value} in the queue,
 raising \exception{ValueError} if the value isn't found.
 
 \item New module: The \module{contextlib} module contains helper functions for use 
-with the new \keyword{with} statement.  See
+with the new '\keyword{with}' statement.  See
 section~\ref{module-contextlib} for more about this module.
 (Contributed by Phillip J. Eby.)
 
@@ -1256,6 +1265,11 @@ data to a file, etc.  It's not yet known if the Hotshot profiler,
 which is also written in C but doesn't match the \module{profile}
 module's interface, will continue to be maintained in future versions
 of Python.  (Contributed by Armin Rigo.)
+
+Also, the \module{pstats} module used to analyze the data measured by
+the profiler now supports directing the output to any file stream 
+by supplying a \var{stream} argument to the \class{Stats} constructor.
+(Contributed by Skip Montanaro.)
 
 \item The \module{csv} module, which parses files in
 comma-separated value format, received several enhancements and a
@@ -1302,7 +1316,7 @@ to specify which generation to collect.
 
 \item The \function{nsmallest()} and 
 \function{nlargest()} functions in the \module{heapq} module 
-now support a \code{key} keyword argument similar to the one
+now support a \code{key} keyword parameter similar to the one
 provided by the \function{min()}/\function{max()} functions
 and the \method{sort()} methods.  For example:
 Example:
@@ -1375,14 +1389,20 @@ The \member{st_flags} member is also available, if the platform supports it.
 (Contributed by Antti Louko and  Diego Petten\`o.)
 % (Patch 1180695, 1212117)
 
+\item The \module{pickle} and \module{cPickle} modules no
+longer accept a return value of \code{None} from the
+\method{__reduce__()} method; the method must return a tuple of
+arguments instead.  The ability to return \code{None} was deprecated
+in Python 2.4, so this completes the removal of the feature.
+
 \item The old \module{regex} and \module{regsub} modules, which have been 
 deprecated ever since Python 2.0, have finally been deleted.  
 Other deleted modules: \module{statcache}, \module{tzparse},
 \module{whrandom}.
 
-\item The \file{lib-old} directory,
+\item Also deleted: the \file{lib-old} directory,
 which includes ancient modules such as \module{dircmp} and
-\module{ni}, was also deleted.  \file{lib-old} wasn't on the default
+\module{ni}, was removed.  \file{lib-old} wasn't on the default
 \code{sys.path}, so unless your programs explicitly added the directory to 
 \code{sys.path}, this removal shouldn't affect your code.
 
@@ -1824,7 +1844,7 @@ Changes to Python's build process and to the C API include:
 \item The largest change to the C API came from \pep{353},
 which modifies the interpreter to use a \ctype{Py_ssize_t} type
 definition instead of \ctype{int}.  See the earlier
-section~\ref{section-353} for a discussion of this change.
+section~\ref{pep-353} for a discussion of this change.
 
 \item The design of the bytecode compiler has changed a great deal, to
 no longer generate bytecode by traversing the parse tree.  Instead
@@ -1969,19 +1989,23 @@ a syntax error if a module contains string literals with 8-bit
 characters but doesn't have an encoding declaration.  In Python 2.4
 this triggered a warning, not a syntax error.
 
-\item The \module{pickle} module no longer uses the deprecated \var{bin} parameter.
-
 \item Previously, the \member{gi_frame} attribute of a generator
 was always a frame object.  Because of the \pep{342} changes
-described in section~\ref{section-generators}, it's now possible
+described in section~\ref{pep-342}, it's now possible
 for \member{gi_frame} to be \code{None}.
 
+
+\item Library: The \module{pickle} and \module{cPickle} modules no
+longer accept a return value of \code{None} from the
+\method{__reduce__()} method; the method must return a tuple of
+arguments instead.  The modules also no longer accept the deprecated
+\var{bin} keyword parameter.
+
 \item C API: Many functions now use \ctype{Py_ssize_t} 
-instead of \ctype{int} to allow processing more data 
-on 64-bit machines.  Extension code may need to make 
-the same change to avoid warnings and to support 64-bit machines.
-See the earlier
-section~\ref{section-353} for a discussion of this change.
+instead of \ctype{int} to allow processing more data on 64-bit
+machines.  Extension code may need to make the same change to avoid
+warnings and to support 64-bit machines.  See the earlier
+section~\ref{pep-353} for a discussion of this change.
 
 \item C API: 
 The obmalloc changes mean that 

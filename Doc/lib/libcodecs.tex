@@ -93,21 +93,21 @@ additional functions which use \function{lookup()} for the codec
 lookup:
 
 \begin{funcdesc}{getencoder}{encoding}
-Lookup up the codec for the given encoding and return its encoder
+Look up the codec for the given encoding and return its encoder
 function.
 
 Raises a \exception{LookupError} in case the encoding cannot be found.
 \end{funcdesc}
 
 \begin{funcdesc}{getdecoder}{encoding}
-Lookup up the codec for the given encoding and return its decoder
+Look up the codec for the given encoding and return its decoder
 function.
 
 Raises a \exception{LookupError} in case the encoding cannot be found.
 \end{funcdesc}
 
 \begin{funcdesc}{getincrementalencoder}{encoding}
-Lookup up the codec for the given encoding and return its incremental encoder
+Look up the codec for the given encoding and return its incremental encoder
 class or factory function.
 
 Raises a \exception{LookupError} in case the encoding cannot be found or the
@@ -116,7 +116,7 @@ codec doesn't support an incremental encoder.
 \end{funcdesc}
 
 \begin{funcdesc}{getincrementaldecoder}{encoding}
-Lookup up the codec for the given encoding and return its incremental decoder
+Look up the codec for the given encoding and return its incremental decoder
 class or factory function.
 
 Raises a \exception{LookupError} in case the encoding cannot be found or the
@@ -125,14 +125,14 @@ codec doesn't support an incremental decoder.
 \end{funcdesc}
 
 \begin{funcdesc}{getreader}{encoding}
-Lookup up the codec for the given encoding and return its StreamReader
+Look up the codec for the given encoding and return its StreamReader
 class or factory function.
 
 Raises a \exception{LookupError} in case the encoding cannot be found.
 \end{funcdesc}
 
 \begin{funcdesc}{getwriter}{encoding}
-Lookup up the codec for the given encoding and return its StreamWriter
+Look up the codec for the given encoding and return its StreamWriter
 class or factory function.
 
 Raises a \exception{LookupError} in case the encoding cannot be found.
@@ -353,7 +353,7 @@ incremental encoder/decoder. The incremental encoder/decoder keeps track of
 the encoding/decoding process during method calls.
 
 The joined output of calls to the \method{encode}/\method{decode} method is the
-same as if the all single inputs where joined into one, and this input was
+same as if all the single inputs were joined into one, and this input was
 encoded/decoded with the stateless encoder/decoder.
 
 
@@ -363,7 +363,7 @@ encoded/decoded with the stateless encoder/decoder.
 
 The \class{IncrementalEncoder} class is used for encoding an input in multiple
 steps. It defines the following methods which every incremental encoder must
-define in order to be compatible to the Python codec registry.
+define in order to be compatible with the Python codec registry.
 
 \begin{classdesc}{IncrementalEncoder}{\optional{errors}}
   Constructor for a \class{IncrementalEncoder} instance.
@@ -410,7 +410,7 @@ define in order to be compatible to the Python codec registry.
 
 The \class{IncrementalDecoder} class is used for decoding an input in multiple
 steps. It defines the following methods which every incremental decoder must
-define in order to be compatible to the Python codec registry.
+define in order to be compatible with the Python codec registry.
 
 \begin{classdesc}{IncrementalDecoder}{\optional{errors}}
   Constructor for a \class{IncrementalDecoder} instance.
@@ -456,15 +456,15 @@ define in order to be compatible to the Python codec registry.
 
 The \class{StreamWriter} and \class{StreamReader} classes provide
 generic working interfaces which can be used to implement new
-encodings submodules very easily. See \module{encodings.utf_8} for an
-example on how this is done.
+encoding submodules very easily. See \module{encodings.utf_8} for an
+example of how this is done.
 
 
 \subsubsection{StreamWriter Objects \label{stream-writer-objects}}
 
 The \class{StreamWriter} class is a subclass of \class{Codec} and
 defines the following methods which every stream writer must define in
-order to be compatible to the Python codec registry.
+order to be compatible with the Python codec registry.
 
 \begin{classdesc}{StreamWriter}{stream\optional{, errors}}
   Constructor for a \class{StreamWriter} instance. 
@@ -473,7 +473,7 @@ order to be compatible to the Python codec registry.
   free to add additional keyword arguments, but only the ones defined
   here are used by the Python codec registry.
 
-  \var{stream} must be a file-like object open for writing (binary)
+  \var{stream} must be a file-like object open for writing binary
   data.
 
   The \class{StreamWriter} may implement different error handling
@@ -512,19 +512,19 @@ order to be compatible to the Python codec registry.
   Flushes and resets the codec buffers used for keeping state.
 
   Calling this method should ensure that the data on the output is put
-  into a clean state, that allows appending of new fresh data without
+  into a clean state that allows appending of new fresh data without
   having to rescan the whole stream to recover state.
 \end{methoddesc}
 
 In addition to the above methods, the \class{StreamWriter} must also
-inherit all other methods and attribute from the underlying stream.
+inherit all other methods and attributes from the underlying stream.
 
 
 \subsubsection{StreamReader Objects \label{stream-reader-objects}}
 
 The \class{StreamReader} class is a subclass of \class{Codec} and
 defines the following methods which every stream reader must define in
-order to be compatible to the Python codec registry.
+order to be compatible with the Python codec registry.
 
 \begin{classdesc}{StreamReader}{stream\optional{, errors}}
   Constructor for a \class{StreamReader} instance. 
@@ -589,20 +589,20 @@ order to be compatible to the Python codec registry.
   \var{size}, if given, is passed as size argument to the stream's
   \method{readline()} method.
 
-  If \var{keepends} is false lineends will be stripped from the
+  If \var{keepends} is false line-endings will be stripped from the
   lines returned.
 
   \versionchanged[\var{keepends} argument added]{2.4}
 \end{methoddesc}
 
 \begin{methoddesc}{readlines}{\optional{sizehint\optional{, keepends}}}
-  Read all lines available on the input stream and return them as list
+  Read all lines available on the input stream and return them as a list
   of lines.
 
-  Line breaks are implemented using the codec's decoder method and are
+  Line-endings are implemented using the codec's decoder method and are
   included in the list entries if \var{keepends} is true.
 
-  \var{sizehint}, if given, is passed as \var{size} argument to the
+  \var{sizehint}, if given, is passed as the \var{size} argument to the
   stream's \method{read()} method.
 \end{methoddesc}
 
@@ -614,7 +614,7 @@ order to be compatible to the Python codec registry.
 \end{methoddesc}
 
 In addition to the above methods, the \class{StreamReader} must also
-inherit all other methods and attribute from the underlying stream.
+inherit all other methods and attributes from the underlying stream.
 
 The next two base classes are included for convenience. They are not
 needed by the codec registry, but may provide useful in practice.
@@ -640,7 +640,7 @@ the \function{lookup()} function to construct the instance.
 
 \class{StreamReaderWriter} instances define the combined interfaces of
 \class{StreamReader} and \class{StreamWriter} classes. They inherit
-all other methods and attribute from the underlying stream.
+all other methods and attributes from the underlying stream.
 
 
 \subsubsection{StreamRecoder Objects \label{stream-recoder-objects}}
@@ -666,14 +666,14 @@ the \function{lookup()} function to construct the instance.
   \var{stream} must be a file-like object.
 
   \var{encode}, \var{decode} must adhere to the \class{Codec}
-  interface, \var{Reader}, \var{Writer} must be factory functions or
+  interface. \var{Reader}, \var{Writer} must be factory functions or
   classes providing objects of the \class{StreamReader} and
   \class{StreamWriter} interface respectively.
 
   \var{encode} and \var{decode} are needed for the frontend
   translation, \var{Reader} and \var{Writer} for the backend
   translation.  The intermediate format used is determined by the two
-  sets of codecs, e.g. the Unicode codecs will use Unicode as
+  sets of codecs, e.g. the Unicode codecs will use Unicode as the
   intermediate encoding.
 
   Error handling is done in the same way as defined for the
@@ -682,7 +682,7 @@ the \function{lookup()} function to construct the instance.
 
 \class{StreamRecoder} instances define the combined interfaces of
 \class{StreamReader} and \class{StreamWriter} classes. They inherit
-all other methods and attribute from the underlying stream.
+all other methods and attributes from the underlying stream.
 
 \subsection{Encodings and Unicode\label{encodings-overview}}
 
@@ -695,7 +695,7 @@ compiled (either via \longprogramopt{enable-unicode=ucs2} or
 memory, CPU endianness and how these arrays are stored as bytes become
 an issue. Transforming a unicode object into a sequence of bytes is
 called encoding and recreating the unicode object from the sequence of
-bytes is known as decoding. There are many different methods how this
+bytes is known as decoding. There are many different methods for how this
 transformation can be done (these methods are also called encodings).
 The simplest method is to map the codepoints 0-255 to the bytes
 \code{0x0}-\code{0xff}. This means that a unicode object that contains 
@@ -742,7 +742,7 @@ been decoded into a Unicode string; as a \samp{ZERO WIDTH NO-BREAK SPACE}
 it's a normal character that will be decoded like any other.
 
 There's another encoding that is able to encoding the full range of
-Unicode characters: UTF-8. UTF-8 is an 8bit encoding, which means
+Unicode characters: UTF-8. UTF-8 is an 8-bit encoding, which means
 there are no issues with byte order in UTF-8. Each byte in a UTF-8
 byte sequence consists of two parts: Marker bits (the most significant
 bits) and payload bits. The marker bits are a sequence of zero to six
@@ -762,7 +762,7 @@ character):
 The least significant bit of the Unicode character is the rightmost x
 bit.
 
-As UTF-8 is an 8bit encoding no BOM is required and any \code{U+FEFF}
+As UTF-8 is an 8-bit encoding no BOM is required and any \code{U+FEFF}
 character in the decoded Unicode string (even if it's the first
 character) is treated as a \samp{ZERO WIDTH NO-BREAK SPACE}.
 
@@ -775,7 +775,7 @@ with which a UTF-8 encoding can be detected, Microsoft invented a
 variant of UTF-8 (that Python 2.5 calls \code{"utf-8-sig"}) for its Notepad
 program: Before any of the Unicode characters is written to the file,
 a UTF-8 encoded BOM (which looks like this as a byte sequence: \code{0xef},
-\code{0xbb}, \code{0xbf}) is written. As it's rather improbably that any
+\code{0xbb}, \code{0xbf}) is written. As it's rather improbable that any
 charmap encoded file starts with these byte values (which would e.g. map to
 
    LATIN SMALL LETTER I WITH DIAERESIS \\
@@ -794,8 +794,8 @@ first three bytes in the file.
 
 \subsection{Standard Encodings\label{standard-encodings}}
 
-Python comes with a number of codecs builtin, either implemented as C
-functions, or with dictionaries as mapping tables. The following table
+Python comes with a number of codecs built-in, either implemented as C
+functions or with dictionaries as mapping tables. The following table
 lists the codecs by name, together with a few common aliases, and the
 languages for which the encoding is likely used. Neither the list of
 aliases nor the list of languages is meant to be exhaustive. Notice
@@ -1337,7 +1337,7 @@ Convert a label to Unicode, as specified in \rfc{3490}.
              UTF-8 codec with BOM signature}
 \declaremodule{standard}{encodings.utf-8-sig}   % XXX utf_8_sig gives TeX errors
 \modulesynopsis{UTF-8 codec with BOM signature}
-\moduleauthor{Walter D\"orwald}
+\moduleauthor{Walter D\"orwald}{}
 
 \versionadded{2.5}
 

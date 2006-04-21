@@ -865,7 +865,7 @@ PyString_Repr(PyObject *obj, int smartquotes)
 		*p++ = quote;
 		*p = '\0';
 		_PyString_Resize(
-			&v, (int) (p - PyString_AS_STRING(v)));
+			&v, (p - PyString_AS_STRING(v)));
 		return v;
 	}
 }
