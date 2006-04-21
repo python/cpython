@@ -113,7 +113,7 @@ class IncrementalParser(XMLReader):
         XMLReader.__init__(self)
 
     def parse(self, source):
-        import saxutils
+        from . import saxutils
         source = saxutils.prepare_input_source(source)
 
         self.prepareParser(source)
