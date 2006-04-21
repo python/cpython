@@ -749,6 +749,8 @@ class Marshaller:
             # store instance attributes as a struct (really?)
             self.dump_struct(value.__dict__, write)
     dispatch[InstanceType] = dump_instance
+    dispatch[DateTime] = dump_instance
+    dispatch[Binary] = dump_instance
 
 ##
 # XML-RPC unmarshaller.
