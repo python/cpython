@@ -34,7 +34,7 @@ rationale, refer to the PEP for a particular new feature.
 
 
 %======================================================================
-\section{PEP 243: Uploading Modules to PyPI}
+\section{PEP 243: Uploading Modules to PyPI\label{pep-243}}
 
 PEP 243 describes an HTTP-based protocol for submitting software
 packages to a central archive.  The Python package index at
@@ -60,7 +60,7 @@ describe what's implemented in PyPI.}
 
 
 %======================================================================
-\section{PEP 308: Conditional Expressions}
+\section{PEP 308: Conditional Expressions\label{pep-308}}
 
 For a long time, people have been requesting a way to write
 conditional expressions, expressions that return value A or value B
@@ -151,7 +151,7 @@ Wouters.}
 
 
 %======================================================================
-\section{PEP 309: Partial Function Application}
+\section{PEP 309: Partial Function Application\label{pep-309}}
 
 The \module{functional} module is intended to contain tools for
 functional-style programming.  Currently it only contains a
@@ -213,7 +213,7 @@ Raymond Hettinger.}
 
 
 %======================================================================
-\section{PEP 314: Metadata for Python Software Packages v1.1}
+\section{PEP 314: Metadata for Python Software Packages v1.1\label{pep-314}}
 
 Some simple dependency support was added to Distutils.  The
 \function{setup()} function now has \code{requires}, \code{provides},
@@ -247,7 +247,7 @@ implemented by Richard Jones and Fred Drake.}
 
 
 %======================================================================
-\section{PEP 328: Absolute and Relative Imports}
+\section{PEP 328: Absolute and Relative Imports\label{pep-328}}
 
 The simpler part of PEP 328 was implemented in Python 2.4: parentheses
 could now be used to enclose the names imported from a module using
@@ -341,7 +341,7 @@ form of the import statement, only the \code{from ... import} form.
 
 
 %======================================================================
-\section{PEP 338: Executing Modules as Scripts}
+\section{PEP 338: Executing Modules as Scripts\label{pep-338}}
 
 The \programopt{-m} switch added in Python 2.4 to execute a module as
 a script gained a few more abilities.  Instead of being implemented in
@@ -365,7 +365,7 @@ implemented by Nick Coghlan.}
 
 
 %======================================================================
-\section{PEP 341: Unified try/except/finally}
+\section{PEP 341: Unified try/except/finally\label{pep-341}}
 
 Until Python 2.5, the \keyword{try} statement came in two
 flavours. You could use a \keyword{finally} block to ensure that code
@@ -411,7 +411,7 @@ implementation by Thomas Lee.}
 
 
 %======================================================================
-\section{PEP 342: New Generator Features\label{section-generators}}
+\section{PEP 342: New Generator Features\label{pep-342}}
 
 Python 2.5 adds a simple way to pass values \emph{into} a generator.
 As introduced in Python 2.3, generators only produce output; once a
@@ -577,7 +577,7 @@ Sugalski.}
 
 
 %======================================================================
-\section{PEP 343: The 'with' statement}
+\section{PEP 343: The 'with' statement\label{pep-343}}
 
 The '\keyword{with}' statement allows a clearer version of code that
 uses \code{try...finally} blocks to ensure that clean-up code is
@@ -657,7 +657,7 @@ with decimal.Context(prec=16):
     print v1.sqrt()
 \end{verbatim}
 
-\subsection{Writing Context Managers}
+\subsection{Writing Context Managers\label{context-managers}}
 
 Under the hood, the '\keyword{with}' statement is fairly complicated.
 Most people will only use '\keyword{with}' in company with
@@ -890,7 +890,7 @@ for the \module{contextlib} module.}
 
 
 %======================================================================
-\section{PEP 352: Exceptions as New-Style Classes}
+\section{PEP 352: Exceptions as New-Style Classes\label{pep-352}}
 
 Exception classes can now be new-style classes, not just classic
 classes, and the built-in \exception{Exception} class and all the
@@ -956,7 +956,7 @@ Brett Cannon and Guido van~Rossum; implemented by Brett Cannon.}
 
 
 %======================================================================
-\section{PEP 353: Using ssize_t as the index type\label{section-353}}
+\section{PEP 353: Using ssize_t as the index type\label{pep-353}}
 
 A wide-ranging change to Python's C API, using a new 
 \ctype{Py_ssize_t} type definition instead of \ctype{int}, 
@@ -1018,7 +1018,7 @@ platforms.
 
 
 %======================================================================
-\section{PEP 357: The '__index__' method}
+\section{PEP 357: The '__index__' method\label{pep-357}}
 
 The NumPy developers had a problem that could only be solved by adding
 a new special method, \method{__index__}.  When using slice notation,
@@ -1839,7 +1839,7 @@ Changes to Python's build process and to the C API include:
 \item The largest change to the C API came from \pep{353},
 which modifies the interpreter to use a \ctype{Py_ssize_t} type
 definition instead of \ctype{int}.  See the earlier
-section~\ref{section-353} for a discussion of this change.
+section~\ref{pep-353} for a discussion of this change.
 
 \item The design of the bytecode compiler has changed a great deal, to
 no longer generate bytecode by traversing the parse tree.  Instead
@@ -1986,7 +1986,7 @@ this triggered a warning, not a syntax error.
 
 \item Previously, the \member{gi_frame} attribute of a generator
 was always a frame object.  Because of the \pep{342} changes
-described in section~\ref{section-generators}, it's now possible
+described in section~\ref{pep-342}, it's now possible
 for \member{gi_frame} to be \code{None}.
 
 
@@ -2000,7 +2000,7 @@ arguments instead.  The modules also no longer accept the deprecated
 instead of \ctype{int} to allow processing more data on 64-bit
 machines.  Extension code may need to make the same change to avoid
 warnings and to support 64-bit machines.  See the earlier
-section~\ref{section-353} for a discussion of this change.
+section~\ref{pep-353} for a discussion of this change.
 
 \item C API: 
 The obmalloc changes mean that 
