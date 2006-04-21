@@ -1,6 +1,8 @@
 from ctypes import *
 import sys, unittest
 import os, StringIO
+from ctypes.util import find_library
+from ctypes.test import is_resource_enabled
 
 libc_name = None
 if os.name == "nt":
@@ -18,8 +20,10 @@ else:
                 libc_name = line.split()[4]
             else:
                 libc_name = line.split()[2]
-##            print "libc_name is", libc_name
             break
+
+if is_resource_enabled("printing"):
+    print "libc_name is", libc_name
 
 class LoaderTest(unittest.TestCase):
 
@@ -27,30 +31,38 @@ class LoaderTest(unittest.TestCase):
 
     if libc_name is not None:
         def test_load(self):
-            cdll.load(libc_name)
-            cdll.load(os.path.basename(libc_name))
-            self.assertRaises(OSError, cdll.load, self.unknowndll)
+            CDLL(libc_name)
+            CDLL(os.path.basename(libc_name))
+            self.assertRaises(OSError, CDLL, self.unknowndll)
 
     if libc_name is not None and os.path.basename(libc_name) == "libc.so.6":
         def test_load_version(self):
-            cdll.load_version("c", "6")
+            cdll.LoadLibrary("libc.so.6")
             # linux uses version, libc 9 should not exist
-            self.assertRaises(OSError, cdll.load_version, "c", "9")
-            self.assertRaises(OSError, cdll.load_version, self.unknowndll, "")
+            self.assertRaises(OSError, cdll.LoadLibrary, "libc.so.9")
+            self.assertRaises(OSError, cdll.LoadLibrary, self.unknowndll)
 
-        def test_find(self):
-            name = "c"
-            cdll.find(name)
-            self.assertRaises(OSError, cdll.find, self.unknowndll)
+    def test_find(self):
+        for name in ("c", "m"):
+            lib = find_library(name)
+            if lib:
+                cdll.LoadLibrary(lib)
+                CDLL(lib)
 
     if os.name in ("nt", "ce"):
         def test_load_library(self):
+            if is_resource_enabled("printing"):
+                print find_library("kernel32")
+                print find_library("user32")
+
             if os.name == "nt":
-                windll.load_library("kernel32").GetModuleHandleW
+                windll.kernel32.GetModuleHandleW
+                windll["kernel32"].GetModuleHandleW
                 windll.LoadLibrary("kernel32").GetModuleHandleW
                 WinDLL("kernel32").GetModuleHandleW
             elif os.name == "ce":
-                windll.load_library("coredll").GetModuleHandleW
+                windll.coredll.GetModuleHandleW
+                windll["coredll"].GetModuleHandleW
                 windll.LoadLibrary("coredll").GetModuleHandleW
                 WinDLL("coredll").GetModuleHandleW
 

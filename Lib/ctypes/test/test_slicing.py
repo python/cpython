@@ -37,7 +37,7 @@ class SlicesTestCase(unittest.TestCase):
     def test_char_ptr(self):
         s = "abcdefghijklmnopqrstuvwxyz\0"
 
-        dll = cdll.load(_ctypes_test.__file__)
+        dll = CDLL(_ctypes_test.__file__)
         dll.my_strdup.restype = POINTER(c_char)
         res = dll.my_strdup(s)
         self.failUnlessEqual(res[:len(s)], s)
@@ -65,7 +65,7 @@ class SlicesTestCase(unittest.TestCase):
         def test_wchar_ptr(self):
             s = u"abcdefghijklmnopqrstuvwxyz\0"
 
-            dll = cdll.load(_ctypes_test.__file__)
+            dll = CDLL(_ctypes_test.__file__)
             dll.my_wcsdup.restype = POINTER(c_wchar)
             dll.my_wcsdup.argtypes = POINTER(c_wchar),
             res = dll.my_wcsdup(s)

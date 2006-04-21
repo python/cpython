@@ -3,7 +3,7 @@
 import os as _os, sys as _sys
 from itertools import chain as _chain
 
-__version__ = "0.9.9.4"
+__version__ = "0.9.9.6"
 
 from _ctypes import Union, Structure, Array
 from _ctypes import _Pointer
@@ -22,8 +22,6 @@ if _os.name in ("nt", "ce"):
 
 from _ctypes import FUNCFLAG_CDECL as _FUNCFLAG_CDECL, \
      FUNCFLAG_PYTHONAPI as _FUNCFLAG_PYTHONAPI
-
-from ctypes._loader import LibraryLoader
 
 """
 WINOLEAPI -> HRESULT
@@ -72,9 +70,11 @@ def CFUNCTYPE(restype, *argtypes):
     The function prototype can be called in three ways to create a
     callable object:
 
-    prototype(funct) - returns a C callable function calling funct
-    prototype(vtbl_index, method_name[, paramflags]) - a Python callable that calls a COM method
-    prototype(funct_name, dll[, paramflags]) - a Python callable that calls an exported function in a dll
+    prototype(integer address) -> foreign function
+    prototype(callable) -> create and return a C callable function from callable
+    prototype(integer index, method name[, paramflags]) -> foreign function calling a COM method
+    prototype((ordinal number, dll object)[, paramflags]) -> foreign function exported by ordinal
+    prototype((function name, dll object)[, paramflags]) -> foreign function exported by name
     """
     try:
         return _c_functype_cache[(restype, argtypes)]
@@ -352,6 +352,23 @@ if _os.name in ("nt", "ce"):
             _flags_ = _FUNCFLAG_STDCALL
             _restype_ = HRESULT
 
+class LibraryLoader(object):
+    def __init__(self, dlltype):
+        self._dlltype = dlltype
+
+    def __getattr__(self, name):
+        if name[0] == '_':
+            raise AttributeError(name)
+        dll = self._dlltype(name)
+        setattr(self, name, dll)
+        return dll
+
+    def __getitem__(self, name):
+        return getattr(self, name)
+
+    def LoadLibrary(self, name):
+        return self._dlltype(name)
+
 cdll = LibraryLoader(CDLL)
 pydll = LibraryLoader(PyDLL)
 
@@ -402,7 +419,12 @@ def PYFUNCTYPE(restype, *argtypes):
         _restype_ = restype
         _flags_ = _FUNCFLAG_CDECL | _FUNCFLAG_PYTHONAPI
     return CFunctionType
-cast = PYFUNCTYPE(py_object, c_void_p, py_object)(_cast_addr)
+_cast = PYFUNCTYPE(py_object, c_void_p, py_object)(_cast_addr)
+
+def cast(obj, typ):
+    result = _cast(obj, typ)
+    result.__keepref = obj
+    return result
 
 _string_at = CFUNCTYPE(py_object, c_void_p, c_int)(_string_at_addr)
 def string_at(ptr, size=0):

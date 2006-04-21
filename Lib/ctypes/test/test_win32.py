@@ -54,7 +54,7 @@ class Structures(unittest.TestCase):
                         ("right", c_long),
                         ("bottom", c_long)]
 
-        dll = cdll.load(_ctypes_test.__file__)
+        dll = CDLL(_ctypes_test.__file__)
 
         pt = POINT(10, 10)
         rect = RECT(0, 0, 20, 20)
