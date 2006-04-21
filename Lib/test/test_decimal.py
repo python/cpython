@@ -511,7 +511,7 @@ class DecimalImplicitConstructionTest(unittest.TestCase):
             ('+', '__add__', '__radd__'),
             ('-', '__sub__', '__rsub__'),
             ('*', '__mul__', '__rmul__'),
-            ('/', '__truediv__', '__rtruediv__')
+            ('/', '__truediv__', '__rtruediv__'),
             ('%', '__mod__', '__rmod__'),
             ('//', '__floordiv__', '__rfloordiv__'),
             ('**', '__pow__', '__rpow__')
