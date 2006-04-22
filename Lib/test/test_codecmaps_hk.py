@@ -3,7 +3,6 @@
 # test_codecmaps_hk.py
 #   Codec mapping tests for HongKong encodings
 #
-# $CJKCodecs: test_codecmaps_hk.py,v 1.1 2004/07/10 17:35:20 perky Exp $
 
 from test import test_support
 from test import test_multibytecodec_support

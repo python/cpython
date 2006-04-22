@@ -3,7 +3,6 @@
 # test_multibytecodec.py
 #   Unit test for multibytecodec itself
 #
-# $CJKCodecs: test_multibytecodec.py,v 1.8 2004/06/19 06:09:55 perky Exp $
 
 from test import test_support
 from test import test_multibytecodec_support
