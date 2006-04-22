@@ -48,6 +48,12 @@ used for special class methods; variants without leading and trailing\n\
   if(-1 == (r=AOP(a1,a2))) return NULL; \
   return PyInt_FromLong(r); }
 
+#define spamn2(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
+  PyObject *a1, *a2; Py_ssize_t r; \
+  if(! PyArg_UnpackTuple(a,#OP,2,2,&a1,&a2)) return NULL; \
+  if(-1 == (r=AOP(a1,a2))) return NULL; \
+  return PyInt_FromSsize_t(r); }
+
 #define spami2b(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; long r; \
   if(! PyArg_UnpackTuple(a,#OP,2,2,&a1,&a2)) return NULL; \
@@ -99,8 +105,8 @@ spam2(op_iconcat       , PySequence_InPlaceConcat)
 spamoi(op_irepeat      , PySequence_InPlaceRepeat)
 spami2b(op_contains     , PySequence_Contains)
 spami2b(sequenceIncludes, PySequence_Contains)
-spami2(indexOf         , PySequence_Index)
-spami2(countOf         , PySequence_Count)
+spamn2(indexOf         , PySequence_Index)
+spamn2(countOf         , PySequence_Count)
 spami(isMappingType    , PyMapping_Check)
 spam2(op_getitem       , PyObject_GetItem)
 spam2n(op_delitem       , PyObject_DelItem)

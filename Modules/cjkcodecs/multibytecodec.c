@@ -831,7 +831,7 @@ decoder_feed_buffer(MultibyteStatefulDecoderContext *ctx,
 {
 	while (buf->inbuf < buf->inbuf_end) {
 		Py_ssize_t inleft, outleft;
-		int r;
+		Py_ssize_t r;
 
 		inleft = (Py_ssize_t)(buf->inbuf_end - buf->inbuf);
 		outleft = (Py_ssize_t)(buf->outbuf_end - buf->outbuf);
