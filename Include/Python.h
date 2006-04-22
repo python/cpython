@@ -78,6 +78,7 @@
 
 #include "pydebug.h"
 
+#include "bytesobject.h"
 #include "unicodeobject.h"
 #include "intobject.h"
 #include "boolobject.h"

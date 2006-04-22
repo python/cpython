@@ -1881,6 +1881,9 @@ _Py_ReadyTypes(void)
 	if (PyType_Ready(&PyBool_Type) < 0)
 		Py_FatalError("Can't initialize 'bool'");
 
+	if (PyType_Ready(&PyBytes_Type) < 0)
+		Py_FatalError("Can't initialize 'bytes'");
+
 	if (PyType_Ready(&PyString_Type) < 0)
 		Py_FatalError("Can't initialize 'str'");
 

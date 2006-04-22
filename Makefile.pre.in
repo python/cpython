@@ -278,6 +278,7 @@ OBJECT_OBJS=	\
 		Objects/abstract.o \
 		Objects/boolobject.o \
 		Objects/bufferobject.o \
+		Objects/bytesobject.o \
 		Objects/cellobject.o \
 		Objects/classobject.o \
 		Objects/cobject.o \
@@ -494,6 +495,7 @@ PYTHON_HEADERS= \
 		Include/abstract.h \
 		Include/boolobject.h \
 		Include/bufferobject.h \
+		Include/bytesobject.h \
 		Include/ceval.h \
 		Include/classobject.h \
 		Include/cobject.h \
