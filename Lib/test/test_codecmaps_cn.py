@@ -3,7 +3,6 @@
 # test_codecmaps_cn.py
 #   Codec mapping tests for PRC encodings
 #
-# $CJKCodecs: test_codecmaps_cn.py,v 1.3 2004/06/19 06:09:55 perky Exp $
 
 from test import test_support
 from test import test_multibytecodec_support
