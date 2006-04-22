@@ -1420,7 +1420,7 @@ write_header(ProfilerObject *self)
     char *buffer;
     char cwdbuffer[PATH_MAX];
     PyObject *temp;
-    int i, len;
+    Py_ssize_t i, len;
 
     buffer = get_version_string();
     if (buffer == NULL) {

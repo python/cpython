@@ -169,7 +169,7 @@ codec_decode(PyObject *self, PyObject *args)
 
 static
 PyObject *codec_tuple(PyObject *unicode,
-		      int len)
+		      Py_ssize_t len)
 {
     PyObject *v,*w;
 
@@ -181,7 +181,7 @@ PyObject *codec_tuple(PyObject *unicode,
 	return NULL;
     }
     PyTuple_SET_ITEM(v,0,unicode);
-    w = PyInt_FromLong(len);
+    w = PyInt_FromSsize_t(len);
     if (w == NULL) {
 	Py_DECREF(v);
 	return NULL;
@@ -213,7 +213,7 @@ escape_encode(PyObject *self,
 	PyObject *str;
 	const char *errors = NULL;
 	char *buf;
-	int len;
+	Py_ssize_t len;
 
 	if (!PyArg_ParseTuple(args, "O!|z:escape_encode",
 			      &PyString_Type, &str, &errors))
