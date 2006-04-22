@@ -266,7 +266,7 @@ class Maildir(Mailbox):
             if e.errno == errno.ENOENT:
                 pass
             else:
-                raise 
+                raise
 
     def __setitem__(self, key, message):
         """Replace the keyed message; raise KeyError if it doesn't exist."""
@@ -1641,7 +1641,7 @@ class BabylMessage(Message):
             self._labels.remove(label)
         except ValueError:
             pass
-    
+
     def get_visible(self):
         """Return a Message representation of visible headers."""
         return Message(self._visible)
@@ -1840,7 +1840,7 @@ def _lock_file(f, dotlock=True):
             except OSError, e:
                 if e.errno == errno.EEXIST:
                     os.remove(pre_lock.name)
-                    raise ExternalClashError('dot lock unavailable: %s' % 
+                    raise ExternalClashError('dot lock unavailable: %s' %
                                              f.name)
                 else:
                     raise
