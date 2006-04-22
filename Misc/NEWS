@@ -99,6 +99,10 @@ Library
   as ``walk_packages()`` to support working with packages that are either
   in the filesystem or zip files.
 
+- The mailbox module can now modify and delete messages from
+  mailboxes, in addition to simply reading them.  Thanks to Gregory
+  K. Johnson for writing the code, and to the 2005 Google Summer of
+  Code for funding his work.
 
 - The ``__del__`` method of class ``local`` in module ``_threading_local``
   returned before accomplishing any of its intended cleanup.
@@ -202,8 +206,8 @@ Core and builtins
   especially long-running applications that, from time to time, temporarily
   use a large number of small objects.  Note that when Python returns an
   arena to the platform C's ``free()``, there's no guarantee that the
-  platform C will in turn return that memory to the operating system.  The
-  effect of the patch is to stop making that impossible, and in tests it
+  platform C library will in turn return that memory to the operating system.
+  The effect of the patch is to stop making that impossible, and in tests it
   appears to be effective at least on Microsoft C and gcc-based systems.
   Thanks to Evan Jones for hard work and patience.
 
