@@ -391,7 +391,7 @@ Analysis of the profiler data is done using this class from the
 % (This \stmodindex use may be hard to change ;-( )
 \stmodindex{pstats}
 
-\begin{classdesc}{Stats}{filename\optional{, \moreargs\optional{, stream=sys.stdout}}}
+\begin{classdesc}{Stats}{filename\optional{, stream=sys.stdout\optional{, \moreargs}}}
 This class constructor creates an instance of a ``statistics object''
 from a \var{filename} (or set of filenames).  \class{Stats} objects are
 manipulated by methods, in order to print useful reports.  You may specify
@@ -409,6 +409,8 @@ functions will be coalesced, so that an overall view of several
 processes can be considered in a single report.  If additional files
 need to be combined with data in an existing \class{Stats} object, the
 \method{add()} method can be used.
+
+\versionchanged[The \var{stream} parameter was added]{2.5}
 \end{classdesc}
 
 
