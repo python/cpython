@@ -1380,7 +1380,7 @@ class TestMessageConversion(TestBase):
         msg.update_visible()
         for label in ('unseen', 'deleted', 'filed', 'answered', 'forwarded',
                       'edited', 'resent'):
-            msg.add_label(label)       
+            msg.add_label(label)
         msg2 = mailbox.BabylMessage(msg)
         self.assert_(msg2.get_labels() == ['unseen', 'deleted', 'filed',
                                            'answered', 'forwarded', 'edited',
@@ -1673,17 +1673,17 @@ Return-Path: <gkj@gregorykjohnson.com>
 X-Original-To: gkj+person@localhost
 Delivered-To: gkj+person@localhost
 Received: from localhost (localhost [127.0.0.1])
-	by andy.gregorykjohnson.com (Postfix) with ESMTP id 356ED9DD17
-	for <gkj+person@localhost>; Wed, 13 Jul 2005 17:23:16 -0400 (EDT)
+        by andy.gregorykjohnson.com (Postfix) with ESMTP id 356ED9DD17
+        for <gkj+person@localhost>; Wed, 13 Jul 2005 17:23:16 -0400 (EDT)
 Delivered-To: gkj@sundance.gregorykjohnson.com
 Received: from localhost [127.0.0.1]
-	by localhost with POP3 (fetchmail-6.2.5)
-	for gkj+person@localhost (single-drop); Wed, 13 Jul 2005 17:23:16 -0400 (EDT)
+        by localhost with POP3 (fetchmail-6.2.5)
+        for gkj+person@localhost (single-drop); Wed, 13 Jul 2005 17:23:16 -0400 (EDT)
 Received: from andy.gregorykjohnson.com (andy.gregorykjohnson.com [64.32.235.228])
-	by sundance.gregorykjohnson.com (Postfix) with ESMTP id 5B056316746
-	for <gkj@gregorykjohnson.com>; Wed, 13 Jul 2005 17:23:11 -0400 (EDT)
+        by sundance.gregorykjohnson.com (Postfix) with ESMTP id 5B056316746
+        for <gkj@gregorykjohnson.com>; Wed, 13 Jul 2005 17:23:11 -0400 (EDT)
 Received: by andy.gregorykjohnson.com (Postfix, from userid 1000)
-	id 490CD9DD17; Wed, 13 Jul 2005 17:23:11 -0400 (EDT)
+        id 490CD9DD17; Wed, 13 Jul 2005 17:23:11 -0400 (EDT)
 Date: Wed, 13 Jul 2005 17:23:11 -0400
 From: "Gregory K. Johnson" <gkj@gregorykjohnson.com>
 To: gkj@gregorykjohnson.com
@@ -1701,7 +1701,7 @@ Content-Disposition: inline
 
 This is a sample message.
 
--- 
+--
 Gregory K. Johnson
 
 --NMuMz9nt05w80d4+
@@ -1720,17 +1720,17 @@ _sample_headers = {
     "X-Original-To":"gkj+person@localhost",
     "Delivered-To":"gkj+person@localhost",
     "Received":"""from localhost (localhost [127.0.0.1])
-	by andy.gregorykjohnson.com (Postfix) with ESMTP id 356ED9DD17
-	for <gkj+person@localhost>; Wed, 13 Jul 2005 17:23:16 -0400 (EDT)""",
+        by andy.gregorykjohnson.com (Postfix) with ESMTP id 356ED9DD17
+        for <gkj+person@localhost>; Wed, 13 Jul 2005 17:23:16 -0400 (EDT)""",
     "Delivered-To":"gkj@sundance.gregorykjohnson.com",
     "Received":"""from localhost [127.0.0.1]
-	by localhost with POP3 (fetchmail-6.2.5)
-	for gkj+person@localhost (single-drop); Wed, 13 Jul 2005 17:23:16 -0400 (EDT)""",
+        by localhost with POP3 (fetchmail-6.2.5)
+        for gkj+person@localhost (single-drop); Wed, 13 Jul 2005 17:23:16 -0400 (EDT)""",
     "Received":"""from andy.gregorykjohnson.com (andy.gregorykjohnson.com [64.32.235.228])
-	by sundance.gregorykjohnson.com (Postfix) with ESMTP id 5B056316746
-	for <gkj@gregorykjohnson.com>; Wed, 13 Jul 2005 17:23:11 -0400 (EDT)""",
+        by sundance.gregorykjohnson.com (Postfix) with ESMTP id 5B056316746
+        for <gkj@gregorykjohnson.com>; Wed, 13 Jul 2005 17:23:11 -0400 (EDT)""",
     "Received":"""by andy.gregorykjohnson.com (Postfix, from userid 1000)
-	id 490CD9DD17; Wed, 13 Jul 2005 17:23:11 -0400 (EDT)""",
+        id 490CD9DD17; Wed, 13 Jul 2005 17:23:11 -0400 (EDT)""",
     "Date":"Wed, 13 Jul 2005 17:23:11 -0400",
     "From":""""Gregory K. Johnson" <gkj@gregorykjohnson.com>""",
     "To":"gkj@gregorykjohnson.com",
@@ -1742,7 +1742,7 @@ _sample_headers = {
 
 _sample_payloads = ("""This is a sample message.
 
--- 
+--
 Gregory K. Johnson
 """,
 """H4sICM2D1UIAA3RleHQAC8nILFYAokSFktSKEoW0zJxUPa7wzJIMhZLyfIWczLzUYj0uAHTs
