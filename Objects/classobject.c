@@ -320,7 +320,7 @@ class_setattr(PyClassObject *op, PyObject *name, PyObject *v)
 	}
 	sname = PyString_AsString(name);
 	if (sname[0] == '_' && sname[1] == '_') {
-		int n = PyString_Size(name);
+		Py_ssize_t n = PyString_Size(name);
 		if (sname[n-1] == '_' && sname[n-2] == '_') {
 			char *err = NULL;
 			if (strcmp(sname, "__dict__") == 0)
@@ -380,7 +380,7 @@ class_str(PyClassObject *op)
 	PyObject *mod = PyDict_GetItemString(op->cl_dict, "__module__");
 	PyObject *name = op->cl_name;
 	PyObject *res;
-	int m, n;
+	Py_ssize_t m, n;
 
 	if (name == NULL || !PyString_Check(name))
 		return class_repr(op);
@@ -638,7 +638,7 @@ instance_dealloc(register PyInstanceObject *inst)
 		PyObject_GC_Del(inst);
 	}
 	else {
-		int refcnt = inst->ob_refcnt;
+		Py_ssize_t refcnt = inst->ob_refcnt;
 		/* __del__ resurrected it!  Make it look like the original
 		 * Py_DECREF never happened.
 		 */
@@ -778,7 +778,7 @@ instance_setattr(PyInstanceObject *inst, PyObject *name, PyObject *v)
 	PyObject *func, *args, *res, *tmp;
 	char *sname = PyString_AsString(name);
 	if (sname[0] == '_' && sname[1] == '_') {
-		int n = PyString_Size(name);
+		Py_ssize_t n = PyString_Size(name);
 		if (sname[n-1] == '_' && sname[n-2] == '_') {
 			if (strcmp(sname, "__dict__") == 0) {
 				if (PyEval_GetRestricted()) {
@@ -1263,7 +1263,7 @@ instance_contains(PyInstanceObject *inst, PyObject *member)
 		 */
 		PyErr_Clear();
 		return _PySequence_IterSearch((PyObject *)inst, member,
-					      PY_ITERSEARCH_CONTAINS);
+					      PY_ITERSEARCH_CONTAINS) > 0;
 	}
 	else
 		return -1;

@@ -1560,7 +1560,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			    /* XXX move into writeobject() ? */
 			    if (PyString_Check(v)) {
 				char *s = PyString_AS_STRING(v);
-				int len = PyString_GET_SIZE(v);
+				Py_ssize_t len = PyString_GET_SIZE(v);
 				if (len == 0 ||
 				    !isspace(Py_CHARMASK(s[len-1])) ||
 				    s[len-1] == ' ')
@@ -1569,7 +1569,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #ifdef Py_USING_UNICODE
 			    else if (PyUnicode_Check(v)) {
 				Py_UNICODE *s = PyUnicode_AS_UNICODE(v);
-				int len = PyUnicode_GET_SIZE(v);
+				Py_ssize_t len = PyUnicode_GET_SIZE(v);
 				if (len == 0 ||
 				    !Py_UNICODE_ISSPACE(s[len-1]) ||
 				    s[len-1] == ' ')

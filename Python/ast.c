@@ -3034,7 +3034,7 @@ decode_unicode(const char *s, size_t len, int rawmode, const char *encoding)
 			if (*s & 0x80) { /* XXX inefficient */
 				PyObject *w;
 				char *r;
-				int rn, i;
+				Py_ssize_t rn, i;
 				w = decode_utf8(&s, end, "utf-16-be");
 				if (w == NULL) {
 					Py_DECREF(u);
