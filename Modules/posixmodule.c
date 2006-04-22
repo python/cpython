@@ -2440,7 +2440,7 @@ posix_execve(PyObject *self, PyObject *args)
 	PyObject *key, *val, *keys=NULL, *vals=NULL;
 	Py_ssize_t i, pos, argc, envc;
 	PyObject *(*getitem)(PyObject *, Py_ssize_t);
-	int lastarg = 0;
+	Py_ssize_t lastarg = 0;
 
 	/* execve has three arguments: (path, argv, env), where
 	   argv is a list or tuple of strings and env is a dictionary
@@ -2581,7 +2581,8 @@ posix_spawnv(PyObject *self, PyObject *args)
 	char *path;
 	PyObject *argv;
 	char **argvlist;
-	int mode, i, argc;
+	int mode, i;
+	Py_ssize_t argc;
 	Py_intptr_t spawnval;
 	PyObject *(*getitem)(PyObject *, Py_ssize_t);
 
@@ -2670,10 +2671,11 @@ posix_spawnve(PyObject *self, PyObject *args)
 	char **argvlist;
 	char **envlist;
 	PyObject *key, *val, *keys=NULL, *vals=NULL, *res=NULL;
-	int mode, i, pos, argc, envc;
+	int mode, pos, envc;
+	Py_ssize_t argc, i;
 	Py_intptr_t spawnval;
 	PyObject *(*getitem)(PyObject *, Py_ssize_t);
-	int lastarg = 0;
+	Py_ssize_t lastarg = 0;
 
 	/* spawnve has four arguments: (mode, path, argv, env), where
 	   argv is a list or tuple of strings and env is a dictionary
@@ -4374,7 +4376,7 @@ _PyPopenCreateProcess(char *cmdstring,
 			char modulepath[_MAX_PATH];
 			struct stat statinfo;
 			GetModuleFileName(NULL, modulepath, sizeof(modulepath));
-			for (i = x = 0; modulepath[i]; i++)
+			for (x = i = 0; modulepath[i]; i++)
 				if (modulepath[i] == SEP)
 					x = i+1;
 			modulepath[x] = '\0';
