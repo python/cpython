@@ -130,7 +130,7 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
     /* Get the iterator */
     it = PyObject_GetIter(arg);
     if (it == NULL)
-	return 0;
+	return -1;
     iternext = *it->ob_type->tp_iternext;
 
     /* Run the iterator to exhaustion */
@@ -151,6 +151,7 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
 
 	/* Interpret it as an int (__index__) */
 	value = PyNumber_Index(item);
+	Py_DECREF(item);
 	if (value == -1 && PyErr_Occurred())
 	    goto error;
 
