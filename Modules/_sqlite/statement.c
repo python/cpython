@@ -64,6 +64,7 @@ int statement_create(Statement* self, Connection* connection, PyObject* sql)
         return rc;
     }
 
+    self->in_weakreflist = NULL;
     self->sql = sql_str;
 
     sql_cstr = PyString_AsString(sql_str);
@@ -304,6 +305,10 @@ void statement_dealloc(Statement* self)
 
     Py_XDECREF(self->sql);
 
+    if (self->in_weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject*)self);
+    }
+
     self->ob_type->tp_free((PyObject*)self);
 }
 
@@ -398,12 +403,12 @@ PyTypeObject StatementType = {
         0,                                              /* tp_getattro */
         0,                                              /* tp_setattro */
         0,                                              /* tp_as_buffer */
-        Py_TPFLAGS_DEFAULT,                             /* tp_flags */
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_WEAKREFS,  /* tp_flags */
         0,                                              /* tp_doc */
         0,                                              /* tp_traverse */
         0,                                              /* tp_clear */
         0,                                              /* tp_richcompare */
-        0,                                              /* tp_weaklistoffset */
+        offsetof(Statement, in_weakreflist),            /* tp_weaklistoffset */
         0,                                              /* tp_iter */
         0,                                              /* tp_iternext */
         0,                                              /* tp_methods */

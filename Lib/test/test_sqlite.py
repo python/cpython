@@ -6,11 +6,12 @@ try:
 except ImportError:
     raise TestSkipped('no sqlite available')
 from sqlite3.test import (dbapi, types, userfunctions,
-                                factory, transactions)
+                                factory, transactions, hooks, regression)
 
 def test_main():
     run_unittest(dbapi.suite(), types.suite(), userfunctions.suite(),
-                 factory.suite(), transactions.suite())
+                 factory.suite(), transactions.suite(), hooks.suite(),
+                 regression.suite())
 
 if __name__ == "__main__":
     test_main()

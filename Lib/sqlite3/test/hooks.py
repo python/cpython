@@ -22,7 +22,7 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import os, unittest
-import pysqlite2.dbapi2 as sqlite
+import sqlite3 as sqlite
 
 class CollationTests(unittest.TestCase):
     def setUp(self):
@@ -72,7 +72,7 @@ class CollationTests(unittest.TestCase):
             result = con.execute(sql).fetchall()
             self.fail("should have raised an OperationalError")
         except sqlite.OperationalError, e:
-            self.failUnlessEqual(e.args[0], "no such collation sequence: mycoll")
+            self.failUnlessEqual(e.args[0].lower(), "no such collation sequence: mycoll")
 
     def CheckCollationRegisterTwice(self):
         """

@@ -743,10 +743,8 @@ class PyBuildExt(build_ext):
             sqlite_libdir = [os.path.abspath(os.path.dirname(sqlite_libfile))]
 
         if sqlite_incdir and sqlite_libdir:
-            sqlite_srcs = ['_sqlite/adapters.c',
-                '_sqlite/cache.c',
+            sqlite_srcs = ['_sqlite/cache.c',
                 '_sqlite/connection.c',
-                '_sqlite/converters.c',
                 '_sqlite/cursor.c',
                 '_sqlite/microprotocols.c',
                 '_sqlite/module.c',
@@ -755,17 +753,11 @@ class PyBuildExt(build_ext):
                 '_sqlite/statement.c',
                 '_sqlite/util.c', ]
 
-            PYSQLITE_VERSION = "2.2.0"
             sqlite_defines = []
             if sys.platform != "win32":
                 sqlite_defines.append(('MODULE_NAME', '"sqlite3"'))
             else:
                 sqlite_defines.append(('MODULE_NAME', '\\"sqlite3\\"'))
-
-            sqlite_defines.append(('PY_MAJOR_VERSION',
-                                        str(sys.version_info[0])))
-            sqlite_defines.append(('PY_MINOR_VERSION',
-                                        str(sys.version_info[1])))
 
             exts.append(Extension('_sqlite3', sqlite_srcs,
                                   define_macros=sqlite_defines,
