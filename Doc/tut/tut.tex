@@ -941,9 +941,9 @@ with \function{str()}, conversion takes place using this default encoding.
 u'abc'
 >>> str(u"abc")
 'abc'
->>> u"הצü"
+>>> u"ן¿½"
 u'\xe4\xf6\xfc'
->>> str(u"הצü")
+>>> str(u"ן¿½")
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
 UnicodeEncodeError: 'ascii' codec can't encode characters in position 0-2: ordinal not in range(128)
@@ -955,7 +955,7 @@ that takes one argument, the name of the encoding.  Lowercase names
 for encodings are preferred.
 
 \begin{verbatim}
->>> u"הצü".encode('utf-8')
+>>> u"ן¿½".encode('utf-8')
 '\xc3\xa4\xc3\xb6\xc3\xbc'
 \end{verbatim}
 
@@ -3744,6 +3744,36 @@ In real world applications, the \keyword{finally} clause is useful
 for releasing external resources (such as files or network connections),
 regardless of whether the use of the resource was successful.
 
+\section{Predefined Clean-up Actions \label{cleanup-with}}
+
+Some objects define standard clean-up actions to be undertaken when
+the object is no longer needed, regardless of whether or not the
+operation using the object succeeded or failed.
+Look at the following example, which tries to open a file and print
+its contents to the screen.
+
+\begin{verbatim}
+for line in open("myfile.txt"):
+    print line
+\end{verbatim}
+
+The problem with this code is that it leaves the file open for an
+indeterminate amount of time after the code has finished executing.
+This is not an issue in simple scripts, but can be a problem for
+larger applications. The \keyword{with} statement allows
+objects like files to be used in a way that ensures they are
+always cleaned up promptly and correctly.
+
+\begin{verbatim}
+with open("myfile.txt") as f:
+    for line in f:
+        print line
+\end{verbatim}
+
+After the statement is executed, the file \var{f} is always closed,
+even if a problem was encountered while processing the lines. Other
+objects which provide predefined clean-up actions will indicate
+this in their documentation.
 
 \chapter{Classes \label{classes}}
 
