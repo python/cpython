@@ -41,28 +41,29 @@ class BytesTest(unittest.TestCase):
                 return self.i
         b = bytes([C(), C(1), C(254), C(255)])
         self.assertEqual(list(b), [0, 1, 254, 255])
-        self.assertRaises(ValueError, lambda: bytes([C(-1)]))
-        self.assertRaises(ValueError, lambda: bytes([C(256)]))
+        self.assertRaises(ValueError, bytes, [C(-1)])
+        self.assertRaises(ValueError, bytes, [C(256)])
 
     def test_constructor_type_errors(self):
+        self.assertRaises(TypeError, bytes, 0)
         class C:
             pass
-        self.assertRaises(TypeError, lambda: bytes(["0"]))
-        self.assertRaises(TypeError, lambda: bytes([0.0]))
-        self.assertRaises(TypeError, lambda: bytes([None]))
-        self.assertRaises(TypeError, lambda: bytes([C()]))
+        self.assertRaises(TypeError, bytes, ["0"])
+        self.assertRaises(TypeError, bytes, [0.0])
+        self.assertRaises(TypeError, bytes, [None])
+        self.assertRaises(TypeError, bytes, [C()])
 
     def test_constructor_value_errors(self):
-        self.assertRaises(ValueError, lambda: bytes([-1]))
-        self.assertRaises(ValueError, lambda: bytes([-sys.maxint]))
-        self.assertRaises(ValueError, lambda: bytes([-sys.maxint-1]))
-        self.assertRaises(ValueError, lambda: bytes([-sys.maxint-2]))
-        self.assertRaises(ValueError, lambda: bytes([-10**100]))
-        self.assertRaises(ValueError, lambda: bytes([256]))
-        self.assertRaises(ValueError, lambda: bytes([257]))
-        self.assertRaises(ValueError, lambda: bytes([sys.maxint]))
-        self.assertRaises(ValueError, lambda: bytes([sys.maxint+1]))
-        self.assertRaises(ValueError, lambda: bytes([10**100]))
+        self.assertRaises(ValueError, bytes, [-1])
+        self.assertRaises(ValueError, bytes, [-sys.maxint])
+        self.assertRaises(ValueError, bytes, [-sys.maxint-1])
+        self.assertRaises(ValueError, bytes, [-sys.maxint-2])
+        self.assertRaises(ValueError, bytes, [-10**100])
+        self.assertRaises(ValueError, bytes, [256])
+        self.assertRaises(ValueError, bytes, [257])
+        self.assertRaises(ValueError, bytes, [sys.maxint])
+        self.assertRaises(ValueError, bytes, [sys.maxint+1])
+        self.assertRaises(ValueError, bytes, [10**100])
 
     def test_repr(self):
         self.assertEqual(repr(bytes()), "bytes()")
@@ -98,6 +99,37 @@ class BytesTest(unittest.TestCase):
     def test_doc(self):
         self.failUnless(bytes.__doc__ != None)
         self.failUnless(bytes.__doc__.startswith("bytes("))
+
+    # XXX More stuff to test and build (TDD):
+    # constructor from str: bytes(<str>) == bytes(map(ord, <str>))?
+    # encoding constructor: bytes(<unicode>[, <encoding>[, <errors>]])
+    # default encoding Latin-1? (Matching ord)
+    # slicing
+    # extended slicing?
+    # item assignment
+    # slice assignment
+    # extended slice assignment?
+    # __contains__ with simple int arg
+    # __contains__ with another bytes arg?
+    # find/index? (int or bytes arg?)
+    # count? (int arg)
+    # concatenation (+)
+    # repeat?
+    # extend?
+    # append?
+    # insert?
+    # pop?
+    # __reversed__?
+    # reverse? (inplace)
+    # NOT sort!
+    # __iter__? (optimization)
+    # __str__? (could return "".join(map(chr, self))
+    # decode
+    # buffer API
+    # check that regexp searches work
+    # (I suppose re.sub() returns a string)
+    # file.readinto
+    # file.write
 
 
 def test_main():
