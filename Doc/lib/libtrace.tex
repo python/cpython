@@ -19,7 +19,7 @@ python -m trace --count somefile.py ...
 \end{verbatim}
 
 The above will generate annotated listings of all Python modules imported
-during the execution of somefile.py.
+during the execution of \code{somefile.py}.
 
 \subsection{Command Line Arguments}
 
@@ -69,7 +69,7 @@ Run \code{cmd} under control of the Trace object with the current tracing
 parameters.
 \end{methoddesc}
 
-\begin{methoddesc}[Trace]{run}{cmd\optional{,globals=None\optional{,locals=None}}}
+\begin{methoddesc}[Trace]{runctx}{cmd\optional{,globals=None\optional{,locals=None}}}
 Run \code{cmd} under control of the Trace object with the current tracing
 parameters in the defined global and local environments.  If not defined,
 \code{globals} and \code{locals} default to empty dictionaries.
