@@ -35,15 +35,17 @@ Sample use, command line:
   trace.py --trackcalls spam.py eggs
 
 Sample use, programmatically
-   # create a Trace object, telling it what to ignore, and whether to
-   # do tracing or line-counting or both.
-   trace = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,], trace=0,
-                       count=1)
-   # run the new command using the given trace
-   trace.run('main()')
-   # make a report, telling it where you want output
-   r = trace.results()
-   r.write_results(show_missing=True)
+  import sys
+
+  # create a Trace object, telling it what to ignore, and whether to
+  # do tracing or line-counting or both.
+  tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,], trace=0,
+  		    count=1)
+  # run the new command using the given tracer
+  tracer.run('main()')
+  # make a report, placing output in /tmp
+  r = tracer.results()
+  r.write_results(show_missing=True, coverdir="/tmp")
 """
 
 import linecache
