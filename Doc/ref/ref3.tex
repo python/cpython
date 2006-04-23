@@ -2116,42 +2116,54 @@ implement a \method{__coerce__()} method, for use by the built-in
 
 \versionadded{2.5}
 
-A \dfn{context manager} is an object that manages the entry to, and exit
-from, a \dfn{context} surrounding a block of code.  Context managers are
-normally invoked using the \keyword{with} statement (described in
-section~\ref{with}), but can also be used by directly invoking their
-methods.
+A \dfn{context object} is an object that defines the runtime context
+to be established when executing a \keyword{with} statement. The
+context object provides a \dfn{context manager} which manages the
+entry into, and the exit from, the desired runtime context for the
+execution of the block of code.  Context managers are normally
+invoked using the \keyword{with} statement (described in
+section~\ref{with}), but can also be used by directly invoking
+their methods.
+
 \stindex{with}
 \index{context manager}
-\index{context}
+\index{context object}
 
-Typical uses of context managers include saving and restoring various
-kinds of global state, locking and unlocking resources, closing opened
-files, etc.
+Typical uses of contexts and context managers include saving and
+restoring various kinds of global state, locking and unlocking
+resources, closing opened files, etc.
 
-\begin{methoddesc}[context manager]{__context__}{self}
+For more information on contexts and context manager objects, see
+``\ulink{Context Types}{../lib/typecontext.html}'' in the
+\citetitle[../lib/lib.html]{Python Library Reference}.
+
+\begin{methoddesc}[context]{__context__}{self}
 Invoked when the object is used as the context expression of a
 \keyword{with} statement.  The return value must implement
-\method{__enter__()} and \method{__exit__()} methods.  Simple context
-managers that wish to directly
-implement \method{__enter__()} and \method{__exit__()} should just
-return \var{self}.
+\method{__enter__()} and \method{__exit__()} methods.  Simple contexts
+may be able to implement \method{__enter__()} and \method{__exit__()}
+directly without requiring a separate context manager object and
+should just return \var{self}.
 
-Context managers written in Python can also implement this method using
+Context objects written in Python can also implement this method using
 a generator function decorated with the
 \function{contextlib.contextmanager} decorator, as this can be simpler
 than writing individual \method{__enter__()} and \method{__exit__()}
-methods when the state to be managed is complex.
+methods on a separate object when the state to be managed is complex.
+
+Context manager objects also need to implement this method; they are
+required to return themselves.
 \end{methoddesc}
 
-\begin{methoddesc}[context]{__enter__}{self}
-Enter the context defined by this object. The \keyword{with} statement
+\begin{methoddesc}[context manager]{__enter__}{self}
+Enter the context managed by this object. The \keyword{with} statement
 will bind this method's return value to the target(s) specified in the
 \keyword{as} clause of the statement, if any.
 \end{methoddesc}
 
-\begin{methoddesc}[context]{__exit__}{exc_type, exc_value, traceback}
-Exit the context defined by this object. The parameters describe the
+\begin{methoddesc}[context manager]{__exit__}
+{self, exc_type, exc_value, traceback}
+Exit the context managed by this object. The parameters describe the
 exception that caused the context to be exited. If the context was
 exited without an exception, all three arguments will be
 \constant{None}.

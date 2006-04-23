@@ -329,13 +329,12 @@ The execution of the \keyword{with} statement proceeds as follows:
 
 \begin{enumerate}
 
-\item The expression is evaluated, to obtain a context manager
-object.
+\item The expression is evaluated, to obtain a context object.
 
-\item The context manager's \method{__context__()} method is invoked to
-obtain a context object.
+\item The context object's \method{__context__()} method is invoked to
+obtain a context manager object.
 
-\item The context object's \method{__enter__()} method is invoked.
+\item The context manager's \method{__enter__()} method is invoked.
 
 \item If a target list was included in the \keyword{with}
 statement, the return value from \method{__enter__()} is assigned to it.
@@ -348,8 +347,8 @@ an error occurring within the suite would be. See step 6 below.}
 
 \item The suite is executed.
 
-\item The context object's \method{__exit__()} method is invoked. If an
-exception caused the suite to be exited, its type, value, and
+\item The context manager's \method{__exit__()} method is invoked. If
+an exception caused the suite to be exited, its type, value, and
 traceback are passed as arguments to \method{__exit__()}. Otherwise,
 three \constant{None} arguments are supplied.
 
