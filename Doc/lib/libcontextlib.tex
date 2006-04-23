@@ -49,8 +49,9 @@ occurred.  Thus, you can use a
 the error (if any), or ensure that some cleanup takes place.
 
 Note that you can use \code{@contextmanager} to define a context
-manager's \method{__context__} method.  This is usually more convenient
-than creating another class just to serve as a context.  For example:
+object's \method{__context__} method.  This is usually more convenient
+than creating another class just to serve as a context manager.
+For example:
 
 \begin{verbatim}
 from __future__ import with_statement
@@ -97,10 +98,10 @@ with A as X:
             do_something()
 \end{verbatim}
 
-Note that if one of the nested contexts' \method{__exit__()} method
+Note that if the \method{__exit__()} method of one of the nested context managers
 raises an exception, any previous exception state will be lost; the new
-exception will be passed to the outer contexts' \method{__exit__()}
-method(s), if any.  In general, \method{__exit__()} methods should avoid
+exception will be passed to the \method{__exit__()} methods of any remaining
+outer context managers.  In general, \method{__exit__()} methods should avoid
 raising exceptions, and in particular they should not re-raise a
 passed-in exception.
 \end{funcdesc}
@@ -127,9 +128,9 @@ from __future__ import with_statement
 from contextlib import closing
 import codecs
 
-with closing(codecs.open("foo", encoding="utf8")) as f:
+with closing(urllib.urlopen('http://www.python.org')) as f:
     for line in f:
-        print line.encode("latin1")
+        print line
 \end{verbatim}
 
 without needing to explicitly close \code{f}.  Even if an error occurs,
