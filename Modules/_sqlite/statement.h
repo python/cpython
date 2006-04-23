@@ -38,6 +38,7 @@ typedef struct
     sqlite3_stmt* st;
     PyObject* sql;
     int in_use;
+    PyObject* in_weakreflist; /* List of weak references */
 } Statement;
 
 extern PyTypeObject StatementType;

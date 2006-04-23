@@ -1,6 +1,6 @@
 /* cache.h - definitions for the LRU cache
  *
- * Copyright (C) 2004-2005 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2004-2006 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *
@@ -25,6 +25,10 @@
 #define PYSQLITE_CACHE_H
 #include "Python.h"
 
+/* The LRU cache is implemented as a combination of a doubly-linked with a
+ * dictionary. The list items are of type 'Node' and the dictionary has the
+ * nodes as values. */
+
 typedef struct _Node
 {
     PyObject_HEAD
@@ -39,10 +43,18 @@ typedef struct
 {
     PyObject_HEAD
     int size;
+
+    /* a dictionary mapping keys to Node entries */
     PyObject* mapping;
+
+    /* the factory callable */
     PyObject* factory;
+
     Node* first;
     Node* last;
+
+    /* if set, decrement the factory function when the Cache is deallocated.
+     * this is almost always desirable, but not in the pysqlite context */
     int decref_factory;
 } Cache;
 

@@ -1,6 +1,6 @@
 /* connection.h - definitions for the connection type
  *
- * Copyright (C) 2004-2005 Gerhard Häring <gh@ghaering.de>
+ * Copyright (C) 2004-2006 Gerhard Häring <gh@ghaering.de>
  *
  * This file is part of pysqlite.
  *
@@ -37,7 +37,12 @@ typedef struct
     PyObject_HEAD
     sqlite3* db;
 
+    /* 1 if we are currently within a transaction, i. e. if a BEGIN has been
+     * issued */
     int inTransaction;
+
+    /* the type detection mode. Only 0, PARSE_DECLTYPES, PARSE_COLNAMES or a
+     * bitwise combination thereof makes sense */
     int detect_types;
 
     /* the timeout value in seconds for database locks */
@@ -54,13 +59,31 @@ typedef struct
      * freed in connection destructor */
     char* begin_statement;
 
+    /* 1 if a check should be performed for each API call if the connection is
+     * used from the same thread it was created in */
     int check_same_thread;
+
+    /* thread identification of the thread the connection was created in */
     long thread_ident;
 
     Cache* statement_cache;
 
+    /* A list of weak references to statements used within this connection */
+    PyObject* statements;
+
+    /* a counter for how many statements were created in the connection. May be
+     * reset to 0 at certain intervals */
+    int created_statements;
+
     PyObject* row_factory;
 
+    /* Determines how bytestrings from SQLite are converted to Python objects:
+     * - PyUnicode_Type:        Python Unicode objects are constructed from UTF-8 bytestrings
+     * - OptimizedUnicode:      Like before, but for ASCII data, only PyStrings are created.
+     * - PyString_Type:         PyStrings are created as-is.
+     * - Any custom callable:   Any object returned from the callable called with the bytestring
+     *                          as single parameter.
+     */
     PyObject* text_factory;
 
     /* remember references to functions/classes used in

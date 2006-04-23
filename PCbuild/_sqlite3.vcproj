@@ -251,16 +251,10 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\Modules\_sqlite\adapters.c">
-		</File>
-		<File
 			RelativePath="..\Modules\_sqlite\cache.c">
 		</File>
 		<File
 			RelativePath="..\Modules\_sqlite\connection.c">
-		</File>
-		<File
-			RelativePath="..\Modules\_sqlite\converters.c">
 		</File>
 		<File
 			RelativePath="..\Modules\_sqlite\cursor.c">
