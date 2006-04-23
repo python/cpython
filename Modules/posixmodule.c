@@ -13,6 +13,18 @@
 
 /* See also ../Dos/dosmodule.c */
 
+#ifdef __APPLE__
+   /*
+    * Step 1 of support for weak-linking a number of symbols existing on 
+    * OSX 10.4 and later, see the comment in the #ifdef __APPLE__ block
+    * at the end of this file for more information.
+    */
+#  pragma weak lchown
+#  pragma weak statvfs
+#  pragma weak fstatvfs
+
+#endif /* __APPLE__ */
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
@@ -8266,6 +8278,45 @@ INITFUNC(void)
 	PyModule_AddObject(m, "statvfs_result",
 			   (PyObject*) &StatVFSResultType);
 	initialized = 1;
+
+#ifdef __APPLE__
+	/*
+	 * Step 2 of weak-linking support on Mac OS X.
+	 *
+	 * The code below removes functions that are not available on the
+	 * currently active platform. 
+	 *
+	 * This block allow one to use a python binary that was build on
+	 * OSX 10.4 on OSX 10.3, without loosing access to new APIs on 
+	 * OSX 10.4.
+	 */
+#ifdef HAVE_FSTATVFS
+	if (fstatvfs == NULL) {
+		if (PyObject_DelAttrString(m, "fstatvfs") == -1) {
+			return;
+		}
+	}
+#endif /* HAVE_FSTATVFS */
+
+#ifdef HAVE_STATVFS
+	if (statvfs == NULL) {
+		if (PyObject_DelAttrString(m, "statvfs") == -1) {
+			return;
+		}
+	}
+#endif /* HAVE_STATVFS */
+
+# ifdef HAVE_LCHOWN
+	if (lchown == NULL) {
+		if (PyObject_DelAttrString(m, "lchown") == -1) {
+			return;
+		}
+	}
+#endif /* HAVE_LCHOWN */
+
+
+#endif /* __APPLE__ */
+
 }
 
 #ifdef __cplusplus
