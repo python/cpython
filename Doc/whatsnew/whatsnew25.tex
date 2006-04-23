@@ -1340,6 +1340,30 @@ itertools.islice(iterable, s.start, s.stop, s.step)
 
 (Contributed by Raymond Hettinger.)
 
+\item The \module{mailbox} module underwent a massive rewrite to add
+the capability to modify mailboxes in addition to reading them.  A new
+set of classes that include \class{mbox}, \class{MH}, and
+\class{Maildir} are used to read mailboxes, and have an
+\method{add(\var{message})} method to add messages,
+\method{remove(\var{key})} to remove messages, and
+\method{lock()}/\method{unlock()} to lock/unlock the mailbox.  The
+following example converts a maildir-format mailbox into an mbox-format one:
+
+\begin{verbatim}
+import mailbox
+
+# 'factory=None' uses email.Message.Message as the class representing
+# individual messages.
+src = mailbox.Maildir('maildir', factory=None)
+dest = mailbox.mbox('/tmp/mbox')
+
+for msg in src:
+    dest.add(msg)
+\end{verbatim}
+
+(Contributed by Gregory K. Johnson.  Funding was provided by Google's
+2005 Summer of Code.)
+
 \item The \module{nis} module now supports accessing domains other
 than the system default domain by supplying a \var{domain} argument to
 the \function{nis.match()} and \function{nis.maps()} functions.
@@ -1354,6 +1378,11 @@ this new feature with the \method{sort()} method's \code{key} parameter
 lets you easily sort lists using multiple fields.
 (Contributed by Raymond Hettinger.)
 
+\item The \module{optparse} module was updated to version 1.5.1 of the
+Optik library.  The \class{OptionParser} class gained an
+\member{epilog} attribute, a string that will be printed after the
+help message, and a \method{destroy()} method to break reference
+cycles created by the object. (Contributed by Greg Ward.)
 
 \item The \module{os} module underwent several changes.  The
 \member{stat_float_times} variable now defaults to true, meaning that
