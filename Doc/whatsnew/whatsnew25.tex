@@ -585,8 +585,7 @@ executed.
 
 In this section, I'll discuss the statement as it will commonly be
 used.  In the next section, I'll examine the implementation details
-and show how to write objects called ``context managers'' and
-``contexts'' for use with this statement.
+and show how to write objects for use with this statement.
 
 The '\keyword{with}' statement is a new control-flow structure whose
 basic structure is:
@@ -596,13 +595,13 @@ with expression [as variable]:
     with-block
 \end{verbatim}
 
-The expression is evaluated, and it should result in a type of object
-that's called a context manager.  The context manager can return a
+The expression is evaluated, and it should result in an object that
+supports the context management protocol.  This object may return a
 value that can optionally be bound to the name \var{variable}.  (Note
-carefully: \var{variable} is \emph{not} assigned the result of
-\var{expression}.)  One method of the context manager is run before
-\var{with-block} is executed, and another method is run after the
-block is done, even if the block raised an exception.
+carefully that \var{variable} is \emph{not} assigned the result of
+\var{expression}.)  The object can then run set-up code
+before \var{with-block} is executed and some clean-up code
+is executed after the block is done, even if the block raised an exception.
 
 To enable the statement in Python 2.5, you need 
 to add the following directive to your module:
@@ -613,7 +612,8 @@ from __future__ import with_statement
 
 The statement will always be enabled in Python 2.6.
 
-Some standard Python objects can now behave as context managers. File
+Some standard Python objects now support the context management
+protocol and can be used with the '\keyword{with}' statement. File
 objects are one example:
 
 \begin{verbatim}
@@ -637,12 +637,11 @@ with lock:
     ...
 \end{verbatim}
 
-The lock is acquired before the block is executed, and always released once 
+The lock is acquired before the block is executed and always released once 
 the block is complete.
 
 The \module{decimal} module's contexts, which encapsulate the desired
-precision and rounding characteristics for computations, can also be
-used as context managers.
+precision and rounding characteristics for computations, also work.
 
 \begin{verbatim}
 import decimal
@@ -660,47 +659,45 @@ with decimal.Context(prec=16):
 \subsection{Writing Context Managers\label{context-managers}}
 
 Under the hood, the '\keyword{with}' statement is fairly complicated.
-Most people will only use '\keyword{with}' in company with
-existing objects that are documented to work as context managers, and
-don't need to know these details, so you can skip the following section if
-you like.  Authors of new context managers will need to understand the
-details of the underlying implementation.
+Most people will only use '\keyword{with}' in company with existing
+objects and don't need to know these details, so you can skip the
+following section if you like.  Authors of new objects will need to
+understand the details of the underlying implementation.
 
 A high-level explanation of the context management protocol is:
 
 \begin{itemize}
 \item The expression is evaluated and should result in an object
-that's a context manager, meaning that it has a 
-\method{__context__()} method.
+with a \method{__context__()} method.
 
 \item This object's \method{__context__()} method is called, and must
-return a context object.  
+return another object that has \method{__enter__()} and
+\method{__exit__()}.
 
-\item The context's \method{__enter__()} method is called. 
-The value returned is assigned to \var{VAR}.  If no \code{'as \var{VAR}'} 
-clause is present, the value is simply discarded.
+\item This object's \method{__enter__()} method is called.  The value
+returned is assigned to \var{VAR}.  If no \code{'as \var{VAR}'} clause
+is present, the value is simply discarded.
 
 \item The code in \var{BLOCK} is executed.
 
-\item If \var{BLOCK} raises an exception, the context object's
+\item If \var{BLOCK} raises an exception, the
 \method{__exit__(\var{type}, \var{value}, \var{traceback})} is called
 with the exception's information, the same values returned by
-\function{sys.exc_info()}.  The method's return value
-controls whether the exception is re-raised: any false value 
-re-raises the exception, and \code{True} will result in suppressing it.
-You'll only rarely want to suppress the exception; the 
-author of the code containing the '\keyword{with}' statement will 
-never realize anything went wrong.
+\function{sys.exc_info()}.  The method's return value controls whether
+the exception is re-raised: any false value re-raises the exception,
+and \code{True} will result in suppressing it.  You'll only rarely
+want to suppress the exception; the author of the code containing the
+'\keyword{with}' statement will never realize anything went wrong.
 
 \item If \var{BLOCK} didn't raise an exception, 
-the context object's \method{__exit__()} is still called,
+the \method{__exit__()} method is still called,
 but \var{type}, \var{value}, and \var{traceback} are all \code{None}.
 
 \end{itemize}
 
 Let's think through an example.  I won't present detailed code but
-will only sketch the necessary code.  The example will be writing a
-context manager for a database that supports transactions.
+will only sketch the methods necessary for a database that supports
+transactions.
 
 (For people unfamiliar with database terminology: a set of changes to
 the database are grouped into a transaction.  Transactions can be
@@ -721,15 +718,15 @@ with db_connection as cursor:
     # ... more operations ...
 \end{verbatim}
 
-The transaction should either be committed if the code in the block
-runs flawlessly, or rolled back if there's an exception.
+The transaction should be committed if the code in the block
+runs flawlessly or rolled back if there's an exception.
 
 First, the \class{DatabaseConnection} needs a \method{__context__()}
-method.  Sometimes an object can be its own context manager and can
-simply return \code{self}; the \module{threading} module's lock objects 
-can do this.  For our database example, though, we need to 
-create a new object; I'll call this class \class{DatabaseContext}.
-Our \method{__context__()} must therefore look like this:
+method.  Sometimes an object can simply return \code{self}; the
+\module{threading} module's lock objects do this, for example.  For
+our database example, though, we need to create a new object; I'll
+call this class \class{DatabaseContext}.  Our \method{__context__()}
+method must therefore look like this:
 
 \begin{verbatim}
 class DatabaseConnection:
@@ -746,9 +743,9 @@ class DatabaseConnection:
         "Rolls back current transaction"
 \end{verbatim}
 
-The context needs the connection object so that the connection
-object's \method{commit()} or \method{rollback()} methods can be
-called:
+Instance of \class{DatabaseContext} need the connection object so that
+the connection object's \method{commit()} or \method{rollback()}
+methods can be called:
 
 \begin{verbatim}
 class DatabaseContext:
@@ -756,12 +753,11 @@ class DatabaseContext:
         self.connection = connection
 \end{verbatim}
 
-The \method {__enter__()} method is pretty easy, having only
-to start a new transaction.  In this example,
-the resulting cursor object would be a useful result,
-so the method will return it.  The user can 
-then add \code{as cursor} to their '\keyword{with}' statement
-to bind the cursor to a variable name.
+The \method {__enter__()} method is pretty easy, having only to start
+a new transaction.  For this application the resulting cursor object
+would be a useful result, so the method will return it.  The user can
+then add \code{as cursor} to their '\keyword{with}' statement to bind
+the cursor to a variable name.
 
 \begin{verbatim}
 class DatabaseContext:
@@ -798,17 +794,18 @@ class DatabaseContext:
 \subsection{The contextlib module\label{module-contextlib}}
 
 The new \module{contextlib} module provides some functions and a
-decorator that are useful for writing context managers.
+decorator that are useful for writing objects for use with the
+'\keyword{with}' statement.
 
 The decorator is called \function{contextmanager}, and lets you write
-a simple context manager as a generator.  The generator should yield
-exactly one value.  The code up to the \keyword{yield} will be
-executed as the \method{__enter__()} method, and the value yielded
-will be the method's return value that will get bound to the variable
-in the '\keyword{with}' statement's \keyword{as} clause, if any.  The
-code after the \keyword{yield} will be executed in the
-\method{__exit__()} method.  Any exception raised in the block 
-will be raised by the \keyword{yield} statement.
+a simple context manager as a generator function.  The generator
+should yield exactly one value.  The code up to the \keyword{yield}
+will be executed as the \method{__enter__()} method, and the value
+yielded will be the method's return value that will get bound to the
+variable in the '\keyword{with}' statement's \keyword{as} clause, if
+any.  The code after the \keyword{yield} will be executed in the
+\method{__exit__()} method.  Any exception raised in the block will be
+raised by the \keyword{yield} statement.
 
 Our database example from the previous section could be written 
 using this decorator as:
@@ -832,8 +829,9 @@ with db_transaction(db) as cursor:
     ...
 \end{verbatim}
 
-You can also use this decorator to write the \method{__context__()} method
-for a class without creating a new class for the context:
+You can also use this decorator to write the \method{__context__()}
+method for a class without creating a new class to act as the context
+manager:
 
 \begin{verbatim}
 class DatabaseConnection:
@@ -851,8 +849,8 @@ class DatabaseConnection:
 \end{verbatim}
 
 
-There's a \function{nested(\var{mgr1}, \var{mgr2}, ...)} manager that
-combines a number of context managers so you don't need to write
+There's a \function{nested(\var{mgr1}, \var{mgr2}, ...)} function that
+combines a number of contexts so you don't need to write
 nested '\keyword{with}' statements.  This example statement does two
 things, starting a database transaction and acquiring a thread lock:
 
@@ -862,7 +860,7 @@ with nested (db_transaction(db), lock) as (cursor, locked):
     ...
 \end{verbatim}
 
-Finally, the \function{closing(\var{object})} context manager 
+Finally, the \function{closing(\var{object})} function
 returns \var{object} so that it can be bound to a variable,
 and calls \code{\var{object}.close()} at the end of the block.
 
@@ -880,8 +878,7 @@ with closing(urllib.urlopen('http://www.yahoo.com')) as f:
 \seepep{343}{The ``with'' statement}{PEP written by Guido van~Rossum
 and Nick Coghlan; implemented by Mike Bland, Guido van~Rossum, and
 Neal Norwitz.  The PEP shows the code generated for a '\keyword{with}'
-statement, which can be helpful in learning how context managers
-work.}
+statement, which can be helpful in learning how the statement works.}
 
 \seeurl{../lib/module-contextlib.html}{The documentation 
 for the \module{contextlib} module.}
