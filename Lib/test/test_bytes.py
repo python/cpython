@@ -101,7 +101,7 @@ class BytesTest(unittest.TestCase):
 
 
 def test_main():
-    test.test_support.run_unittest(XrangeTest)
+    test.test_support.run_unittest(BytesTest)
 
 
 if __name__ == "__main__":
