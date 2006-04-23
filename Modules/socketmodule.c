@@ -61,6 +61,15 @@ Local naming conventions:
 
 */
 
+#ifdef __APPLE__
+  /*
+   * inet_aton is not available on OSX 10.3, yet we want to use a binary
+   * that was build on 10.4 or later to work on that release, weak linking
+   * comes to the rescue.
+   */
+# pragma weak inet_aton
+#endif
+
 #include "Python.h"
 #include "structmember.h"
 
@@ -306,6 +315,11 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
    older releases don't have */
 #undef HAVE_GETADDRINFO
 #endif
+
+#ifdef HAVE_INET_ATON
+#define USE_INET_ATON_WEAKLINK
+#endif
+
 #endif
 
 /* I know this is a bad practice, but it is the easiest... */
@@ -3333,7 +3347,9 @@ socket_inet_aton(PyObject *self, PyObject *args)
 #endif
 #ifdef HAVE_INET_ATON
 	struct in_addr buf;
-#else
+#endif
+
+#if !defined(HAVE_INET_ATON) || defined(USE_INET_ATON_WEAKLINK)
 	/* Have to use inet_addr() instead */
 	unsigned long packed_addr;
 #endif
@@ -3344,6 +3360,10 @@ socket_inet_aton(PyObject *self, PyObject *args)
 
 
 #ifdef HAVE_INET_ATON
+
+#ifdef USE_INET_ATON_WEAKLINK
+    if (inet_aton != NULL) {
+#endif
 	if (inet_aton(ip_addr, &buf))
 		return PyString_FromStringAndSize((char *)(&buf),
 						  sizeof(buf));
@@ -3352,7 +3372,14 @@ socket_inet_aton(PyObject *self, PyObject *args)
 			"illegal IP address string passed to inet_aton");
 	return NULL;
 
-#else /* ! HAVE_INET_ATON */
+#ifdef USE_INET_ATON_WEAKLINK
+   } else {
+#endif
+
+#endif
+
+#if !defined(HAVE_INET_ATON) || defined(USE_INET_ATON_WEAKLINK)
+
 	/* special-case this address as inet_addr might return INADDR_NONE
 	 * for this */
 	if (strcmp(ip_addr, "255.255.255.255") == 0) {
@@ -3369,6 +3396,11 @@ socket_inet_aton(PyObject *self, PyObject *args)
 	}
 	return PyString_FromStringAndSize((char *) &packed_addr,
 					  sizeof(packed_addr));
+
+#ifdef USE_INET_ATON_WEAKLINK
+   }
+#endif
+
 #endif
 }
 
