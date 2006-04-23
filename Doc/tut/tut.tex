@@ -941,9 +941,9 @@ with \function{str()}, conversion takes place using this default encoding.
 u'abc'
 >>> str(u"abc")
 'abc'
->>> u"ן¿½"
+>>> u"הצü"
 u'\xe4\xf6\xfc'
->>> str(u"ן¿½")
+>>> str(u"הצü")
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
 UnicodeEncodeError: 'ascii' codec can't encode characters in position 0-2: ordinal not in range(128)
@@ -955,7 +955,7 @@ that takes one argument, the name of the encoding.  Lowercase names
 for encodings are preferred.
 
 \begin{verbatim}
->>> u"ן¿½".encode('utf-8')
+>>> u"הצü".encode('utf-8')
 '\xc3\xa4\xc3\xb6\xc3\xbc'
 \end{verbatim}
 
@@ -3744,6 +3744,7 @@ In real world applications, the \keyword{finally} clause is useful
 for releasing external resources (such as files or network connections),
 regardless of whether the use of the resource was successful.
 
+
 \section{Predefined Clean-up Actions \label{cleanup-with}}
 
 Some objects define standard clean-up actions to be undertaken when
@@ -3774,6 +3775,7 @@ After the statement is executed, the file \var{f} is always closed,
 even if a problem was encountered while processing the lines. Other
 objects which provide predefined clean-up actions will indicate
 this in their documentation.
+
 
 \chapter{Classes \label{classes}}
 
