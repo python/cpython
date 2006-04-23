@@ -86,6 +86,11 @@ Extension Modules
 Library
 -------
 
+- Updated optparse module to Optik 1.5.1 (allow numeric constants in
+  hex, octal, or binary; add ``append_const`` action; keep going if
+  gettext cannot be imported; added ``OptionParser.destroy()`` method;
+  added ``epilog`` for better help generation).
+
 - Bug #1473760: ``tempfile.TemporaryFile()`` could hang on Windows, when
   called from a thread spawned as a side effect of importing a module.
 
