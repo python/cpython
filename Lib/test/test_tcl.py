@@ -124,6 +124,7 @@ class TclTest(unittest.TestCase):
         self.assertRaises(TclError,tcl.winfo_geometry)
         tcl.loadtk()
         self.assertEqual('1x1+0+0', tcl.winfo_geometry())
+        tcl.destroy()
 
     def testLoadTkFailure(self):
         import os
