@@ -54,6 +54,12 @@ Build
 
 - Fix test_long failure on Tru64 with gcc by using -mieee gcc option.
 
+Documentation
+-------------
+
+- Bug #1337990: clarified that ``doctest`` does not support examples
+  requiring both expected output and an exception.
+
 
 What's New in Python 2.4.3?
 ===========================

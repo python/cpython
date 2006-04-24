@@ -407,10 +407,13 @@ You can force use of your own dict as the execution context by passing
 \subsubsection{What About Exceptions?\label{doctest-exceptions}}
 
 No problem, provided that the traceback is the only output produced by
-the example:  just paste in the traceback.  Since tracebacks contain
-details that are likely to change rapidly (for example, exact file paths
-and line numbers), this is one case where doctest works hard to be
-flexible in what it accepts.
+the example:  just paste in the traceback.\footnote{Examples containing
+    both expected output and an exception are not supported.  Trying
+    to guess where one ends and the other begins is too error-prone,
+    and that also makes for a confusing test.}
+Since tracebacks contain details that are likely to change rapidly (for
+example, exact file paths and line numbers), this is one case where doctest
+works hard to be flexible in what it accepts.
 
 Simple example:
 
