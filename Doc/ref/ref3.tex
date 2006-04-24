@@ -2112,47 +2112,45 @@ implement a \method{__coerce__()} method, for use by the built-in
 
 \end{itemize}
 
-\subsection{Context Managers and Contexts\label{context-managers}}
+\subsection{Context Specifiers and Managers\label{context-managers}}
 
 \versionadded{2.5}
 
-A \dfn{context object} is an object that defines the runtime context
-to be established when executing a \keyword{with} statement. The
-context object provides a \dfn{context manager} which manages the
-entry into, and the exit from, the desired runtime context for the
-execution of the block of code.  Context managers are normally
-invoked using the \keyword{with} statement (described in
-section~\ref{with}), but can also be used by directly invoking
-their methods.
+A \dfn{context specifier} is an object that defines the runtime
+context to be established when executing a \keyword{with}
+statement. The context specifier provides a \dfn{context manager}
+which manages the entry into, and the exit from, the desired
+runtime context for the execution of the block of code.  Context
+managers are normally invoked using the \keyword{with} statement
+(described in section~\ref{with}), but can also be used by
+directly invoking their methods.
 
 \stindex{with}
 \index{context manager}
-\index{context object}
+\index{context specifier}
 
-Typical uses of contexts and context managers include saving and
+Typical uses of context specifiers and managers include saving and
 restoring various kinds of global state, locking and unlocking
 resources, closing opened files, etc.
 
-For more information on contexts and context manager objects, see
-``\ulink{Context Types}{../lib/typecontext.html}'' in the
+For more information on context specifiers and context manager objects,
+see ``\ulink{Context Types}{../lib/typecontext.html}'' in the
 \citetitle[../lib/lib.html]{Python Library Reference}.
 
-\begin{methoddesc}[context]{__context__}{self}
+\begin{methoddesc}[context specifier]{__context__}{self}
 Invoked when the object is used as the context expression of a
-\keyword{with} statement.  The return value must implement
-\method{__enter__()} and \method{__exit__()} methods.  Simple contexts
-may be able to implement \method{__enter__()} and \method{__exit__()}
-directly without requiring a separate context manager object and
-should just return \var{self}.
+\keyword{with} statement.  The returned object must implement
+\method{__enter__()} and \method{__exit__()} methods.
 
-Context objects written in Python can also implement this method using
-a generator function decorated with the
+Context specifiers written in Python can also implement this method
+using a generator function decorated with the
 \function{contextlib.contextmanager} decorator, as this can be simpler
 than writing individual \method{__enter__()} and \method{__exit__()}
 methods on a separate object when the state to be managed is complex.
 
 Context manager objects also need to implement this method; they are
-required to return themselves.
+required to return themselves (that is, this method will simply
+return \var{self}).
 \end{methoddesc}
 
 \begin{methoddesc}[context manager]{__enter__}{self}
