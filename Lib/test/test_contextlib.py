@@ -146,6 +146,29 @@ class NestedTestCase(unittest.TestCase):
         else:
             self.fail("Didn't raise ZeroDivisionError")
 
+    def test_nested_right_exception(self):
+        state = []
+        @contextmanager
+        def a():
+            yield 1
+        class b(object):
+            def __enter__(self):
+                return 2
+            def __exit__(self, *exc_info):
+                try:
+                    raise Exception()
+                except:
+                    pass
+        try:
+            with nested(a(), b()) as (x, y):
+                1/0
+        except ZeroDivisionError:
+            self.assertEqual((x, y), (1, 2))
+        except Exception:
+            self.fail("Reraised wrong exception")
+        else:
+            self.fail("Didn't raise ZeroDivisionError")
+
     def test_nested_b_swallows(self):
         @contextmanager
         def a():
