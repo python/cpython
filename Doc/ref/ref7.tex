@@ -315,10 +315,10 @@ statement to generate exceptions may be found in section~\ref{raise}.
 \versionadded{2.5}
 
 The \keyword{with} statement is used to wrap the execution of a block
-with methods defined by a context manager (see
+with methods defined by a context specifier or manager (see
 section~\ref{context-managers}). This allows common
 \keyword{try}...\keyword{except}...\keyword{finally} usage patterns to
-be encapsulated as context managers for convenient reuse.
+be encapsulated as context specifiers or managers for convenient reuse.
 
 \begin{productionlist}
   \production{with_stmt}
@@ -329,10 +329,10 @@ The execution of the \keyword{with} statement proceeds as follows:
 
 \begin{enumerate}
 
-\item The expression is evaluated, to obtain a context object.
+\item The expression is evaluated, to obtain a context specifier.
 
-\item The context object's \method{__context__()} method is invoked to
-obtain a context manager object.
+\item The context specifier's \method{__context__()} method is
+invoked to obtain a context manager object.
 
 \item The context manager's \method{__enter__()} method is invoked.
 

@@ -1756,20 +1756,21 @@ implemented in C will have to provide a writable
 \subsection{Context Types \label{typecontext}}
 
 \versionadded{2.5}
-\index{context protocol}
+\index{context specification protocol}
 \index{context management protocol}
-\index{protocol!context}
+\index{protocol!context specification}
 \index{protocol!context management}
 
 Python's \keyword{with} statement supports the concept of a runtime
-context defined by a context object.  This is implemented using three
-distinct methods; these are used to allow user-defined classes to
-define a context.
+context defined by a context specifier.  This is implemented using
+three distinct methods; these are used to allow user-defined
+classes to define a context.
 
-The \dfn{context protocol} consists of a single method that needs
-to be provided for an object to define a runtime context:
+The \dfn{context specification protocol} consists of a single
+method that needs to be provided for a context specifier object to
+define a runtime context:
 
-\begin{methoddesc}[context]{__context__}{}
+\begin{methoddesc}[context specifier]{__context__}{}
   Return a context manager object.  The object is required to support
   the context management protocol described below.  If an object
   supports different kinds of runtime context, additional methods can
@@ -1787,27 +1788,29 @@ following three methods, which together form the
 
 \begin{methoddesc}[context manager]{__context__}{}
   Return the context manager object itself.  This is required to
-  allow both contexts and context managers to be used with the
-  \keyword{with} statement.
+  allow both context specifiers and context managers to be used with
+  the \keyword{with} statement.
 \end{methoddesc}
 
 \begin{methoddesc}[context manager]{__enter__}{}
-  Set up the runtime context and return either the defining context
-  object or another object related to the runtime context. The value
+  Enter the runtime context and return either the defining context
+  specifier or another object related to the runtime context. The value
   returned by this method is bound to the identifier in the
   \keyword{as} clause of \keyword{with} statements using this context.
   (An example of a context with a context manager that returns the
-  original context object is file objects, which are returned from
+  original context specifier is file objects, which are returned from
   __enter__() to allow \function{open()} to be used directly in a with
   statement. An example of a context manager that returns a related
-  object is \code{decimal.Context} which returns a copy of the original
-  context to allow changes to be made to the current decimal context
-  without affecting code outside the \keyword{with} statement).
+  object is \code{decimal.Context} which sets the active decimal
+  context to a copy of the context specifier and then returns the copy
+  to allow changes to be made to the current decimal context in the
+  body of the \keyword{with} statement) without affecting code outside
+  the \keyword{with} statement).
 \end{methoddesc}
 
 \begin{methoddesc}[context manager]{__exit__}{exc_type, exc_val, exc_tb}
-  Tear down the runtime context and return a Boolean flag indicating if
-  an expection that occurred should be suppressed. If an exception
+  Exit the runtime context and return a Boolean flag indicating if any
+  expection that occurred should be suppressed. If an exception
   occurred while executing the body of the \keyword{with} statement, the
   arguments contain the exception type, value and traceback information.
   Otherwise, all three arguments are \var{None}.
@@ -1826,20 +1829,21 @@ following three methods, which together form the
   \method{__exit__()} method has actually failed.
 \end{methoddesc}
 
-Python defines several context objects to support easy thread
-synchronisation, prompt closure of files or other objects, and
-thread-safe manipulation of the decimal arithmetic context. The
-specific types are not important beyond their implementation of
-the context protocol.
+Python defines several context specifiers and managers to support
+easy thread synchronisation, prompt closure of files or other
+objects, and thread-safe manipulation of the decimal arithmetic
+context. The specific types are not important beyond their
+implementation of the context specification and context
+management protocols.
 
 Python's generators and the \code{contextlib.contextmanager}
 decorator provide a convenient way to implement the context
-and context management protocols.  If a context object's
-\method{__context__()} method is implemented as a generator decorated
-with the \code{contextlib.contextmanager} decorator, it will
-automatically return a context manager object supplying the
-necessary \method{__context__()}, \method{__enter__()} and
-\method{__exit__()} methods.
+specification and context management protocols.  If a context
+specifier's \method{__context__()} method is implemented as a
+generator decorated with the \code{contextlib.contextmanager}
+decorator, it will automatically return a context manager
+object supplying the necessary \method{__context__()},
+\method{__enter__()} and \method{__exit__()} methods.
 
 Note that there is no specific slot for any of these methods in the
 type structure for Python objects in the Python/C API. Extension

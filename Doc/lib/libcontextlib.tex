@@ -46,12 +46,17 @@ after the block is exited.  If an unhandled exception occurs in the
 block, it is reraised inside the generator at the point where the yield
 occurred.  Thus, you can use a
 \keyword{try}...\keyword{except}...\keyword{finally} statement to trap
-the error (if any), or ensure that some cleanup takes place.
+the error (if any), or ensure that some cleanup takes place. If an
+exception is trapped merely in order to log it or to perform some
+action (rather than to suppress it entirely), the generator must
+reraise that exception. Otherwise the \keyword{with} statement will
+treat the exception as having been handled, and resume execution with
+the statement immediately following the \keyword{with} statement.
 
 Note that you can use \code{@contextmanager} to define a context
-object's \method{__context__} method.  This is usually more convenient
-than creating another class just to serve as a context manager.
-For example:
+specifier's \method{__context__} method.  This is usually more
+convenient than creating another class just to serve as a context
+manager. For example:
 
 \begin{verbatim}
 from __future__ import with_statement
@@ -78,7 +83,7 @@ hello from <__main__.Tag instance at 0x402ce8ec>
 \end{funcdesc}
 
 \begin{funcdesc}{nested}{ctx1\optional{, ctx2\optional{, ...}}}
-Combine multiple context managers into a single nested context manager.
+Combine multiple context specifiers into a single nested context manager.
 
 Code like this:
 
@@ -98,11 +103,15 @@ with A as X:
             do_something()
 \end{verbatim}
 
-Note that if the \method{__exit__()} method of one of the nested context managers
-raises an exception, any previous exception state will be lost; the new
-exception will be passed to the \method{__exit__()} methods of any remaining
-outer context managers.  In general, \method{__exit__()} methods should avoid
-raising exceptions, and in particular they should not re-raise a
+Note that if the \method{__exit__()} method of one of the nested
+context managers indicates an exception should be suppressed, no
+exception information will be passed to any remaining outer context
+managers. Similarly, if the \method{__exit__()} method of one of the
+nested context managers raises an exception, any previous exception
+state will be lost; the new exception will be passed to the
+\method{__exit__()} methods of any remaining outer context managers.
+In general, \method{__exit__()} methods should avoid raising
+exceptions, and in particular they should not re-raise a
 passed-in exception.
 \end{funcdesc}
 
