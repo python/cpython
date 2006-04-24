@@ -171,6 +171,8 @@ Tools
 Documentation
 -------------
 
+- Bug #1337990: clarified that ``doctest`` does not support examples
+  requiring both expected output and an exception.
 
 
 What's New in Python 2.5 alpha 1?
