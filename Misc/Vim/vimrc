@@ -19,9 +19,8 @@
 " Number of spaces to use for an indent.
 " This will affect Ctrl-T and 'autoindent'.
 " Python: 4 spaces
-" C: tab (8 spaces)
-au BufRead,BufNewFile *.py,*pyw set shiftwidth=4
-au BufRead,BufNewFile *.c,*.h set shiftwidth=8
+" C: 4 spaces
+au BufRead,BufNewFile *.py,*pyw,*.c,*.h set shiftwidth=4
 
 " Number of spaces that a pre-existing tab is equal to.
 " For the amount of space used for a new tab use shiftwidth.
@@ -32,16 +31,17 @@ au BufRead,BufNewFile *py,*pyw,*.c,*.h set tabstop=8
 " Replace tabs with the equivalent number of spaces.
 " Also have an autocmd for Makefiles since they require hard tabs.
 " Python: yes
-" C: no
+" C: yes
 " Makefile: no
-au BufRead,BufNewFile *.py,*.pyw set expandtab
-au BufRead,BufNewFile *.c,*.h set noexpandtab
+au BufRead,BufNewFile *.py,*.pyw,*.c,*.h set expandtab
 au BufRead,BufNewFile Makefile* set noexpandtab
 
 " Use the below highlight group when displaying bad whitespace is desired
 highlight BadWhitespace ctermbg=red guibg=red
 
 " Display tabs at the beginning of a line in Python mode as bad
+" Should be done for C code, but not until all code has been moved to 4-space
+"   indents.
 au BufRead,BufNewFile *.py,*.pyw match BadWhitespace /^\t\+/
 
 " Wrap text after a certain number of characters
