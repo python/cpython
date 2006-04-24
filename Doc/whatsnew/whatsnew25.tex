@@ -579,13 +579,12 @@ Sugalski.}
 %======================================================================
 \section{PEP 343: The 'with' statement\label{pep-343}}
 
-The '\keyword{with}' statement allows a clearer version of code that
-uses \code{try...finally} blocks to ensure that clean-up code is
-executed.
-
-In this section, I'll discuss the statement as it will commonly be
-used.  In the next section, I'll examine the implementation details
-and show how to write objects for use with this statement.
+The '\keyword{with}' statement clarifies code that previously would
+use \code{try...finally} blocks to ensure that clean-up code is
+executed.  In this section, I'll discuss the statement as it will
+commonly be used.  In the next section, I'll examine the
+implementation details and show how to write objects for use with this
+statement.
 
 The '\keyword{with}' statement is a new control-flow structure whose
 basic structure is:
@@ -660,21 +659,22 @@ with decimal.Context(prec=16):
 
 Under the hood, the '\keyword{with}' statement is fairly complicated.
 Most people will only use '\keyword{with}' in company with existing
-objects and don't need to know these details, so you can skip the
-following section if you like.  Authors of new objects will need to
-understand the details of the underlying implementation.
+objects and don't need to know these details, so you can skip the rest
+of this section if you like.  Authors of new objects will need to
+understand the details of the underlying implementation and should
+keep reading.
 
 A high-level explanation of the context management protocol is:
 
 \begin{itemize}
 \item The expression is evaluated and should result in an object
-with a \method{__context__()} method.
+with a \method{__context__()} method (called a ``context specifier'').
 
-\item This object's \method{__context__()} method is called, and must
-return another object that has \method{__enter__()} and
-\method{__exit__()}.
+\item The context specifier's \method{__context__()} method is called, 
+and must return another object (called a ``context manager'') that has
+\method{__enter__()} and \method{__exit__()} methods.
 
-\item This object's \method{__enter__()} method is called.  The value
+\item The context manager's \method{__enter__()} method is called.  The value
 returned is assigned to \var{VAR}.  If no \code{'as \var{VAR}'} clause
 is present, the value is simply discarded.
 
@@ -725,14 +725,14 @@ First, the \class{DatabaseConnection} needs a \method{__context__()}
 method.  Sometimes an object can simply return \code{self}; the
 \module{threading} module's lock objects do this, for example.  For
 our database example, though, we need to create a new object; I'll
-call this class \class{DatabaseContext}.  Our \method{__context__()}
+call this class \class{DatabaseContextMgr}.  Our \method{__context__()}
 method must therefore look like this:
 
 \begin{verbatim}
 class DatabaseConnection:
     ...
     def __context__ (self):
-        return DatabaseContext(self)
+        return DatabaseContextMgr(self)
 
     # Database interface
     def cursor (self):
@@ -743,12 +743,12 @@ class DatabaseConnection:
         "Rolls back current transaction"
 \end{verbatim}
 
-Instance of \class{DatabaseContext} need the connection object so that
+Instance of \class{DatabaseContextMgr} need the connection object so that
 the connection object's \method{commit()} or \method{rollback()}
 methods can be called:
 
 \begin{verbatim}
-class DatabaseContext:
+class DatabaseContextMgr:
     def __init__ (self, connection):
         self.connection = connection
 \end{verbatim}
@@ -760,7 +760,7 @@ then add \code{as cursor} to their '\keyword{with}' statement to bind
 the cursor to a variable name.
 
 \begin{verbatim}
-class DatabaseContext:
+class DatabaseContextMgr:
     ...
     def __enter__ (self):
         # Code to start a new transaction
@@ -772,13 +772,15 @@ The \method{__exit__()} method is the most complicated because it's
 where most of the work has to be done.  The method has to check if an
 exception occurred.  If there was no exception, the transaction is
 committed.  The transaction is rolled back if there was an exception.
-Here the code will just fall off the end of the function, returning 
-the default value of \code{None}.  \code{None} is false, so the exception
-will be re-raised automatically.  If you wished, you could be more explicit
-and add a \keyword{return} at the marked location.
+
+In the code below, execution will just fall off the end of the
+function, returning the default value of \code{None}.  \code{None} is
+false, so the exception will be re-raised automatically.  If you
+wished, you could be more explicit and add a \keyword{return}
+statement at the marked location.
 
 \begin{verbatim}
-class DatabaseContext:
+class DatabaseContextMgr:
     ...
     def __exit__ (self, type, value, tb):
         if tb is None:
@@ -830,8 +832,8 @@ with db_transaction(db) as cursor:
 \end{verbatim}
 
 You can also use this decorator to write the \method{__context__()}
-method for a class without creating a new class to act as the context
-manager:
+method for a class without having to create a new class representing
+the context manager:
 
 \begin{verbatim}
 class DatabaseConnection:
@@ -1262,8 +1264,8 @@ which is also written in C but doesn't match the \module{profile}
 module's interface, will continue to be maintained in future versions
 of Python.  (Contributed by Armin Rigo.)
 
-Also, the \module{pstats} module used to analyze the data measured by
-the profiler now supports directing the output to any file stream 
+Also, the \module{pstats} module for analyzing the data measured by
+the profiler now supports directing the output to any file object
 by supplying a \var{stream} argument to the \class{Stats} constructor.
 (Contributed by Skip Montanaro.)
 
