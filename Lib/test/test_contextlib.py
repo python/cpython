@@ -152,6 +152,8 @@ class NestedTestCase(unittest.TestCase):
         def a():
             yield 1
         class b(object):
+            def __context__(self):
+                return self
             def __enter__(self):
                 return 2
             def __exit__(self, *exc_info):
