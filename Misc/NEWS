@@ -171,6 +171,10 @@ Tools
 Documentation
 -------------
 
+- PEP 343: Added Context Types section to the library reference
+  and attempted to bring other PEP 343 related documentation into
+  line with the implementation and/or python-dev discussions.
+
 - Bug #1337990: clarified that ``doctest`` does not support examples
   requiring both expected output and an exception.
 
@@ -415,7 +419,7 @@ Core and builtins
   subclasses of str always behaved.  int/long/float, conversion of an instance
   to the base class has been moved to the proper nb_* magic slot and out of
   PyNumber_*().
-  Thanks Walter Dörwald.
+  Thanks Walter Dï¿½wald.
 
 - Descriptors defined in C with a PyGetSetDef structure, where the setter is
   NULL, now raise an AttributeError when attempting to set or delete the
