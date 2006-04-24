@@ -86,6 +86,9 @@ Extension Modules
 Library
 -------
 
+- Fixed contextlib.nested to cope with exceptions being raised and
+  caught inside exit handlers.
+
 - Updated optparse module to Optik 1.5.1 (allow numeric constants in
   hex, octal, or binary; add ``append_const`` action; keep going if
   gettext cannot be imported; added ``OptionParser.destroy()`` method;
@@ -157,6 +160,9 @@ C API
 
 Tests
 -----
+
+- test_contextlib now checks contextlib.nested can cope with exceptions
+  being raised and caught inside exit handlers.
 
 - test_cmd_line now checks operation of the -m and -c command switches
 
