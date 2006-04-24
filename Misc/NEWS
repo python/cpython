@@ -158,6 +158,8 @@ C API
 Tests
 -----
 
+- test_cmd_line now checks operation of the -m and -c command switches
+
 - The test_contextlib test in 2.5a1 wasn't actually run unless you ran
   it separately and by hand.  It also wasn't cleaning up its changes to
   the current Decimal context.

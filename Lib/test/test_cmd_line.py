@@ -18,6 +18,11 @@ class CmdLineTest(unittest.TestCase):
     def exit_code(self, cmd_line):
         return subprocess.call([sys.executable, cmd_line], stderr=subprocess.PIPE)
 
+    def popen_python(self, *args):
+        cmd_line = [sys.executable]
+        cmd_line.extend(args)
+        return subprocess.Popen(cmd_line, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
     def test_directories(self):
         self.assertNotEqual(self.exit_code('.'), 0)
         self.assertNotEqual(self.exit_code('< .'), 0)
@@ -49,6 +54,56 @@ class CmdLineTest(unittest.TestCase):
     def test_version(self):
         version = 'Python %d.%d' % sys.version_info[:2]
         self.assertTrue(self.start_python('-V').startswith(version))
+
+    def test_run_module(self):
+        # Test expected operation of the '-m' switch
+        # Switch needs an argument
+        result = self.popen_python('-m')
+        exit_code = result.wait()
+        self.assertNotEqual(exit_code, 0)
+        err_details = result.stderr.read()
+        self.assertTrue(err_details.startswith('Argument expected'))
+        # Check we get an import error for a nonexistent module
+        result = self.popen_python('-m', 'fnord43520xyz')
+        exit_code = result.wait()
+        self.assertNotEqual(exit_code, 0)
+        err_details = result.stderr.read()
+        self.assertTrue('ImportError' in err_details)
+        # Traceback shown if the requested module is located for execution
+        # and subsequently fails (even if that module is runpy)
+        result = self.popen_python('-m', 'runpy', 'fnord')
+        exit_code = result.wait()
+        self.assertNotEqual(exit_code, 0)
+        err_details = result.stderr.read()
+        self.assertTrue(err_details.startswith('Traceback'))
+        # Silence if module is located and run successfully
+        result = self.popen_python('-m', 'timeit', '-n', '1')
+        exit_code = result.wait()
+        self.assertEqual(exit_code, 0)
+        err_details = result.stderr.read()
+        self.assertTrue(err_details in ('', '\n'))
+
+    def test_run_code(self):
+        # Test expected operation of the '-c' switch
+        # Switch needs an argument
+        result = self.popen_python('-c')
+        exit_code = result.wait()
+        self.assertNotEqual(exit_code, 0)
+        err_details = result.stderr.read()
+        self.assertTrue(err_details.startswith('Argument expected'))
+        # Traceback shown for uncaught exceptions
+        result = self.popen_python('-c', 'raise Exception')
+        exit_code = result.wait()
+        self.assertNotEqual(exit_code, 0)
+        err_details = result.stderr.read()
+        self.assertTrue(err_details.startswith('Traceback'))
+        # Silence if execution is successful
+        result = self.popen_python('-c', '""')
+        exit_code = result.wait()
+        self.assertEqual(exit_code, 0)
+        err_details = result.stderr.read()
+        self.assertTrue(err_details in ('', '\n'))
+
 
 def test_main():
     test.test_support.run_unittest(CmdLineTest)
