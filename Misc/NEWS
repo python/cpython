@@ -97,9 +97,6 @@ Library
 - Bug #1473760: ``tempfile.TemporaryFile()`` could hang on Windows, when
   called from a thread spawned as a side effect of importing a module.
 
-- New modules: setuptools, easy_install, and pkg_resources, to support
-  building, installing, and using Python eggs, respectively.
-
 - The pydoc module now supports documenting packages contained in
   .zip or .egg files.
 
