@@ -21,7 +21,7 @@ extern "C" {
 /* Object layout */
 typedef struct {
     PyObject_VAR_HEAD
-    char *ob_sval;
+    char *ob_bytes;
 } PyBytesObject;
 
 /* Type object */
@@ -32,13 +32,14 @@ PyAPI_DATA(PyTypeObject) PyBytes_Type;
 #define PyBytes_CheckExact(self) ((self)->ob_type == &PyBytes_Type)
 
 /* Direct API functions */
+PyAPI_FUNC(PyObject *) PyBytes_FromObject(PyObject *);
 PyAPI_FUNC(PyObject *) PyBytes_FromStringAndSize(const char *, Py_ssize_t);
 PyAPI_FUNC(Py_ssize_t) PyBytes_Size(PyObject *);
 PyAPI_FUNC(char *) PyBytes_AsString(PyObject *);
 PyAPI_FUNC(int) PyBytes_Resize(PyObject *, Py_ssize_t);
 
 /* Macros, trading safety for speed */
-#define PyBytes_AS_STRING(self) (((PyBytesObject *)(self))->ob_sval)
+#define PyBytes_AS_STRING(self) (((PyBytesObject *)(self))->ob_bytes)
 #define PyBytes_GET_SIZE(self)  (((PyBytesObject *)(self))->ob_size)
 
 #ifdef __cplusplus

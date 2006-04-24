@@ -880,6 +880,11 @@ file_readinto(PyFileObject *f, PyObject *args)
 
 	if (f->f_fp == NULL)
 		return err_closed();
+	if (!f->f_binary) {
+		PyErr_SetString(PyExc_TypeError,
+				"readinto() requires binary mode");
+		return NULL;
+	}
 	/* refuse to mix with f.next() */
 	if (f->f_buf != NULL &&
 	    (f->f_bufend - f->f_bufptr) > 0 &&

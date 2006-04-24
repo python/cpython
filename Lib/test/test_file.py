@@ -67,6 +67,17 @@ n = f.readinto(a)
 f.close()
 verify(buf == a.tostring()[:n])
 
+# verify readinto refuses text files
+a = array('c', 'x'*10)
+f = open(TESTFN, 'r')
+try:
+    f.readinto(a)
+    raise TestFailed("readinto shouldn't work in text mode")
+except TypeError:
+    pass
+finally:
+    f.close()
+
 # verify writelines with integers
 f = open(TESTFN, 'wb')
 try:
@@ -261,13 +272,13 @@ methods = [("readline", ()), ("read", ()), ("readlines", ()),
 
 try:
     # Prepare the testfile
-    bag = open(TESTFN, "w")
+    bag = open(TESTFN, "wb")
     bag.write(filler * nchunks)
     bag.writelines(testlines)
     bag.close()
     # Test for appropriate errors mixing read* and iteration
     for methodname, args in methods:
-        f = open(TESTFN)
+        f = open(TESTFN, 'rb')
         if f.next() != filler:
             raise TestFailed, "Broken testfile"
         meth = getattr(f, methodname)
@@ -286,7 +297,7 @@ try:
     # Each line in the bag o' ham is 4 bytes ("h", "a", "m", "\n"), so
     # 4096 lines of that should get us exactly on the buffer boundary for
     # any power-of-2 buffersize between 4 and 16384 (inclusive).
-    f = open(TESTFN)
+    f = open(TESTFN, 'rb')
     for i in range(nchunks):
         f.next()
     testline = testlines.pop(0)
@@ -328,7 +339,7 @@ try:
         raise TestFailed("readlines() after next() with empty buffer "
                          "failed. Got %r, expected %r" % (line, testline))
     # Reading after iteration hit EOF shouldn't hurt either
-    f = open(TESTFN)
+    f = open(TESTFN, 'rb')
     try:
         for line in f:
             pass
