@@ -667,13 +667,13 @@ A high-level explanation of the context management protocol is:
 
 \begin{itemize}
 \item The expression is evaluated and should result in an object
-with a \method{__context__()} method (called a ``context specifier'').
+with a \method{__context__()} method (called a ``context manager'').
 
 \item The context specifier's \method{__context__()} method is called, 
-and must return another object (called a ``context manager'') that has
+and must return another object (called a ``with-statement context object'') that has
 \method{__enter__()} and \method{__exit__()} methods.
 
-\item The context manager's \method{__enter__()} method is called.  The value
+\item The context object's \method{__enter__()} method is called.  The value
 returned is assigned to \var{VAR}.  If no \code{'as \var{VAR}'} clause
 is present, the value is simply discarded.
 
@@ -685,7 +685,8 @@ with the exception's information, the same values returned by
 \function{sys.exc_info()}.  The method's return value controls whether
 the exception is re-raised: any false value re-raises the exception,
 and \code{True} will result in suppressing it.  You'll only rarely
-want to suppress the exception; the author of the code containing the
+want to suppress the exception, because if you do
+the author of the code containing the
 '\keyword{with}' statement will never realize anything went wrong.
 
 \item If \var{BLOCK} didn't raise an exception, 
@@ -724,14 +725,14 @@ First, the \class{DatabaseConnection} needs a \method{__context__()}
 method.  Sometimes an object can simply return \code{self}; the
 \module{threading} module's lock objects do this, for example.  For
 our database example, though, we need to create a new object; I'll
-call this class \class{DatabaseContextMgr}.  Our \method{__context__()}
+call this class \class{DatabaseContext}.  Our \method{__context__()}
 method must therefore look like this:
 
 \begin{verbatim}
 class DatabaseConnection:
     ...
     def __context__ (self):
-        return DatabaseContextMgr(self)
+        return DatabaseContext(self)
 
     # Database interface
     def cursor (self):
@@ -742,12 +743,12 @@ class DatabaseConnection:
         "Rolls back current transaction"
 \end{verbatim}
 
-Instance of \class{DatabaseContextMgr} need the connection object so that
+Instances of \class{DatabaseContext} need the connection object so that
 the connection object's \method{commit()} or \method{rollback()}
 methods can be called:
 
 \begin{verbatim}
-class DatabaseContextMgr:
+class DatabaseContext:
     def __init__ (self, connection):
         self.connection = connection
 \end{verbatim}
@@ -759,7 +760,7 @@ then add \code{as cursor} to their '\keyword{with}' statement to bind
 the cursor to a variable name.
 
 \begin{verbatim}
-class DatabaseContextMgr:
+class DatabaseContext:
     ...
     def __enter__ (self):
         # Code to start a new transaction
@@ -779,7 +780,7 @@ wished, you could be more explicit and add a \keyword{return}
 statement at the marked location.
 
 \begin{verbatim}
-class DatabaseContextMgr:
+class DatabaseContext:
     ...
     def __exit__ (self, type, value, tb):
         if tb is None:
@@ -798,8 +799,8 @@ The new \module{contextlib} module provides some functions and a
 decorator that are useful for writing objects for use with the
 '\keyword{with}' statement.
 
-The decorator is called \function{contextmanager}, and lets you write
-a simple context manager as a generator function.  The generator
+The decorator is called \function{contextfactory}, and lets you write
+a single generator function instead of defining a new class.  The generator
 should yield exactly one value.  The code up to the \keyword{yield}
 will be executed as the \method{__enter__()} method, and the value
 yielded will be the method's return value that will get bound to the
@@ -812,9 +813,9 @@ Our database example from the previous section could be written
 using this decorator as:
 
 \begin{verbatim}
-from contextlib import contextmanager
+from contextlib import contextfactory
 
-@contextmanager
+@contextfactory
 def db_transaction (connection):
     cursor = connection.cursor()
     try:
@@ -831,13 +832,12 @@ with db_transaction(db) as cursor:
 \end{verbatim}
 
 You can also use this decorator to write the \method{__context__()}
-method for a class without having to create a new class representing
-the context manager:
+method for a class:
 
 \begin{verbatim}
 class DatabaseConnection:
 
-    @contextmanager
+    @contextfactory
     def __context__ (self):
 	cursor = self.cursor()
 	try:
@@ -850,10 +850,11 @@ class DatabaseConnection:
 \end{verbatim}
 
 
-There's a \function{nested(\var{mgr1}, \var{mgr2}, ...)} function that
-combines a number of contexts so you don't need to write
-nested '\keyword{with}' statements.  This example statement does two
-things, starting a database transaction and acquiring a thread lock:
+The \module{contextlib} module also has a \function{nested(\var{mgr1},
+\var{mgr2}, ...)} function that combines a number of contexts so you
+don't need to write nested '\keyword{with}' statements.  In this
+example, the single '\keyword{with}' statement both starts a database
+transaction and acquires a thread lock:
 
 \begin{verbatim}
 lock = threading.Lock()
