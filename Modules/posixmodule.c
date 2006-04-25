@@ -244,7 +244,11 @@ extern int lstat(const char *, struct stat *);
 #endif /* OS2 */
 
 #ifndef MAXPATHLEN
+#if defined(PATH_MAX) && PATH_MAX > 1024   
+#define MAXPATHLEN PATH_MAX
+#else
 #define MAXPATHLEN 1024
+#endif
 #endif /* MAXPATHLEN */
 
 #ifdef UNION_WAIT
