@@ -428,7 +428,7 @@ Core and builtins
   subclasses of str always behaved.  int/long/float, conversion of an instance
   to the base class has been moved to the proper nb_* magic slot and out of
   PyNumber_*().
-  Thanks Walter D�wald.
+  Thanks Walter D�rwald.
 
 - Descriptors defined in C with a PyGetSetDef structure, where the setter is
   NULL, now raise an AttributeError when attempting to set or delete the
