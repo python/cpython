@@ -86,6 +86,10 @@ Extension Modules
 Library
 -------
 
+- Patch #1475231: ``doctest`` has a new ``SKIP`` option, which causes
+  a doctest to be skipped (the code is not run, and the expected output
+  or exception is ignored).
+
 - Fixed contextlib.nested to cope with exceptions being raised and
   caught inside exit handlers.
 
