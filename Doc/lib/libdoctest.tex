@@ -616,6 +616,20 @@ TypeError: object doesn't support item assignment
 
 \end{datadesc}
 
+\begin{datadesc}{SKIP}
+
+    When specified, do not run the example at all.  This can be useful
+    in contexts where doctest examples serve as both documentation and
+    test cases, and an example should be included for documentation
+    purposes, but should not be checked.  E.g., the example's output
+    might be random; or the example might depend on resources which
+    would be unavailable to the test driver.
+
+    The SKIP flag can also be used for temporarily "commenting out"
+    examples.
+
+\end{datadesc}
+
 \begin{datadesc}{COMPARISON_FLAGS}
     A bitmask or'ing together all the comparison flags above.
 \end{datadesc}
@@ -744,6 +758,7 @@ can be useful.
     were added; by default \code{<BLANKLINE>} in expected output
     matches an empty line in actual output; and doctest directives
     were added]{2.4}
+\versionchanged[Constant \constant{SKIP} was added]{2.5}
 
 There's also a way to register new option flag names, although this
 isn't useful unless you intend to extend \refmodule{doctest} internals
