@@ -580,7 +580,7 @@ class MSVCCompiler (CCompiler) :
                         "but the expected registry settings are not present.\n"
                         "You must at least run the Visual Studio GUI once "
                         "so that these entries are created.")
-                break
+                    break
         return []
 
     def set_path_env_var(self, name):
