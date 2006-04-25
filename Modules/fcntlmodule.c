@@ -95,6 +95,7 @@ corresponding to the return value of the fcntl call in the C code.");
 static PyObject *
 fcntl_ioctl(PyObject *self, PyObject *args)
 {
+#define IOCTL_BUFSZ 1024
 	int fd;
 	/* In PyArg_ParseTuple below, use the unsigned int 'I' format for
 	   the signed int 'code' variable, because Python turns 0x8000000
@@ -106,7 +107,7 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 	char *str;
 	Py_ssize_t len;
 	int mutate_arg = 1;
-	char buf[1024];
+ 	char buf[IOCTL_BUFSZ+1];  /* argument plus NUL byte */
 
 	if (PyArg_ParseTuple(args, "O&Iw#|i:ioctl",
                              conv_descriptor, &fd, &code, 
@@ -114,8 +115,9 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 		char *arg;
 
 	       	if (mutate_arg) {
-			if (len <= sizeof buf) {
+			if (len <= IOCTL_BUFSZ) {
 				memcpy(buf, str, len);
+				buf[len] = '\0';
 				arg = buf;
 			} 
 			else {
@@ -123,13 +125,14 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 			}
 		}
 		else {
-			if (len > sizeof buf) {
+			if (len > IOCTL_BUFSZ) {
 				PyErr_SetString(PyExc_ValueError,
 					"ioctl string arg too long");
 				return NULL;
 			}
 			else {
 				memcpy(buf, str, len);
+				buf[len] = '\0';
 				arg = buf;
 			}
 		}
@@ -141,7 +144,7 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 		else {
 			ret = ioctl(fd, code, arg);
 		}
-		if (mutate_arg && (len < sizeof buf)) {
+		if (mutate_arg && (len < IOCTL_BUFSZ)) {
 			memcpy(str, buf, len);
 		}
 		if (ret < 0) {
@@ -159,12 +162,13 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 	PyErr_Clear();
 	if (PyArg_ParseTuple(args, "O&Is#:ioctl",
                              conv_descriptor, &fd, &code, &str, &len)) {
-		if (len > sizeof buf) {
+		if (len > IOCTL_BUFSZ) {
 			PyErr_SetString(PyExc_ValueError,
 					"ioctl string arg too long");
 			return NULL;
 		}
 		memcpy(buf, str, len);
+		buf[len] = '\0';
 		Py_BEGIN_ALLOW_THREADS
 		ret = ioctl(fd, code, buf);
 		Py_END_ALLOW_THREADS
@@ -195,6 +199,7 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	return PyInt_FromLong((long)ret);
+#undef IOCTL_BUFSZ
 }
 
 PyDoc_STRVAR(ioctl_doc,
