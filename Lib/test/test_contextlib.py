@@ -13,9 +13,9 @@ from test.test_support import run_suite
 
 class ContextManagerTestCase(unittest.TestCase):
 
-    def test_contextmanager_plain(self):
+    def test_contextfactory_plain(self):
         state = []
-        @contextmanager
+        @contextfactory
         def woohoo():
             state.append(1)
             yield 42
@@ -26,9 +26,9 @@ class ContextManagerTestCase(unittest.TestCase):
             state.append(x)
         self.assertEqual(state, [1, 42, 999])
 
-    def test_contextmanager_finally(self):
+    def test_contextfactory_finally(self):
         state = []
-        @contextmanager
+        @contextfactory
         def woohoo():
             state.append(1)
             try:
@@ -47,8 +47,8 @@ class ContextManagerTestCase(unittest.TestCase):
             self.fail("Expected ZeroDivisionError")
         self.assertEqual(state, [1, 42, 999])
 
-    def test_contextmanager_no_reraise(self):
-        @contextmanager
+    def test_contextfactory_no_reraise(self):
+        @contextfactory
         def whee():
             yield
         ctx = whee().__context__()
@@ -56,8 +56,8 @@ class ContextManagerTestCase(unittest.TestCase):
         # Calling __exit__ should not result in an exception
         self.failIf(ctx.__exit__(TypeError, TypeError("foo"), None))
 
-    def test_contextmanager_trap_yield_after_throw(self):
-        @contextmanager
+    def test_contextfactory_trap_yield_after_throw(self):
+        @contextfactory
         def whoo():
             try:
                 yield
@@ -69,9 +69,9 @@ class ContextManagerTestCase(unittest.TestCase):
             RuntimeError, ctx.__exit__, TypeError, TypeError("foo"), None
         )
 
-    def test_contextmanager_except(self):
+    def test_contextfactory_except(self):
         state = []
-        @contextmanager
+        @contextfactory
         def woohoo():
             state.append(1)
             try:
@@ -86,14 +86,14 @@ class ContextManagerTestCase(unittest.TestCase):
             raise ZeroDivisionError(999)
         self.assertEqual(state, [1, 42, 999])
 
-    def test_contextmanager_attribs(self):
+    def test_contextfactory_attribs(self):
         def attribs(**kw):
             def decorate(func):
                 for k,v in kw.items():
                     setattr(func,k,v)
                 return func
             return decorate
-        @contextmanager
+        @contextfactory
         @attribs(foo='bar')
         def baz(spam):
             """Whee!"""
@@ -106,13 +106,13 @@ class NestedTestCase(unittest.TestCase):
     # XXX This needs more work
 
     def test_nested(self):
-        @contextmanager
+        @contextfactory
         def a():
             yield 1
-        @contextmanager
+        @contextfactory
         def b():
             yield 2
-        @contextmanager
+        @contextfactory
         def c():
             yield 3
         with nested(a(), b(), c()) as (x, y, z):
@@ -122,14 +122,14 @@ class NestedTestCase(unittest.TestCase):
 
     def test_nested_cleanup(self):
         state = []
-        @contextmanager
+        @contextfactory
         def a():
             state.append(1)
             try:
                 yield 2
             finally:
                 state.append(3)
-        @contextmanager
+        @contextfactory
         def b():
             state.append(4)
             try:
@@ -148,7 +148,7 @@ class NestedTestCase(unittest.TestCase):
 
     def test_nested_right_exception(self):
         state = []
-        @contextmanager
+        @contextfactory
         def a():
             yield 1
         class b(object):
@@ -172,10 +172,10 @@ class NestedTestCase(unittest.TestCase):
             self.fail("Didn't raise ZeroDivisionError")
 
     def test_nested_b_swallows(self):
-        @contextmanager
+        @contextfactory
         def a():
             yield
-        @contextmanager
+        @contextfactory
         def b():
             try:
                 yield
@@ -189,7 +189,7 @@ class NestedTestCase(unittest.TestCase):
             self.fail("Didn't swallow ZeroDivisionError")
 
     def test_nested_break(self):
-        @contextmanager
+        @contextfactory
         def a():
             yield
         state = 0
@@ -201,7 +201,7 @@ class NestedTestCase(unittest.TestCase):
         self.assertEqual(state, 1)
 
     def test_nested_continue(self):
-        @contextmanager
+        @contextfactory
         def a():
             yield
         state = 0
@@ -213,7 +213,7 @@ class NestedTestCase(unittest.TestCase):
         self.assertEqual(state, 3)
 
     def test_nested_return(self):
-        @contextmanager
+        @contextfactory
         def a():
             try:
                 yield

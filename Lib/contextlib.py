@@ -2,10 +2,10 @@
 
 import sys
 
-__all__ = ["contextmanager", "nested", "closing"]
+__all__ = ["contextfactory", "nested", "closing"]
 
-class GeneratorContextManager(object):
-    """Helper for @contextmanager decorator."""
+class GeneratorContext(object):
+    """Helper for @contextfactory decorator."""
 
     def __init__(self, gen):
         self.gen = gen
@@ -48,8 +48,8 @@ class GeneratorContextManager(object):
                     raise
 
 
-def contextmanager(func):
-    """@contextmanager decorator.
+def contextfactory(func):
+    """@contextfactory decorator.
 
     Typical usage:
 
@@ -77,7 +77,7 @@ def contextmanager(func):
 
     """
     def helper(*args, **kwds):
-        return GeneratorContextManager(func(*args, **kwds))
+        return GeneratorContext(func(*args, **kwds))
     try:
         helper.__name__ = func.__name__
         helper.__doc__ = func.__doc__
@@ -87,7 +87,7 @@ def contextmanager(func):
     return helper
 
 
-@contextmanager
+@contextfactory
 def nested(*contexts):
     """Support multiple context managers in a single with-statement.
 
@@ -133,9 +133,8 @@ def nested(*contexts):
             raise exc[0], exc[1], exc[2]
 
 
-@contextmanager
-def closing(thing):
-    """Context manager to automatically close something at the end of a block.
+class closing(object):
+    """Context to automatically close something at the end of a block.
 
     Code like this:
 
@@ -151,7 +150,11 @@ def closing(thing):
             f.close()
 
     """
-    try:
-        yield thing
-    finally:
-        thing.close()
+    def __init__(self, thing):
+        self.thing = thing
+    def __context__(self):
+        return self
+    def __enter__(self):
+        return self.thing
+    def __exit__(self, *exc_info):
+        self.thing.close()
