@@ -2173,7 +2173,7 @@ for name in rounding_functions:
 
 del name, val, globalname, rounding_functions
 
-class ContextManager(object):
+class WithStatementContext(object):
     """Helper class to simplify Context management.
 
     Sample usage:
@@ -2249,7 +2249,7 @@ class Context(object):
         return ', '.join(s) + ')'
 
     def __context__(self):
-        return ContextManager(self.copy())
+        return WithStatementContext(self.copy())
 
     def clear_flags(self):
         """Reset all flags to zero"""

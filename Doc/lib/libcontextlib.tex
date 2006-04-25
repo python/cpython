@@ -11,18 +11,19 @@ This module provides utilities for common tasks involving the
 
 Functions provided:
 
-\begin{funcdesc}{contextmanager}{func}
-This function is a decorator that can be used to define context managers
-for use with the \keyword{with} statement, without needing to create a
-class or separate \method{__enter__()} and \method{__exit__()} methods.
+\begin{funcdesc}{context}func}
+This function is a decorator that can be used to define a factory
+function for \keyword{with} statement context objects, without
+needing to create a class or separate \method{__enter__()} and
+\method{__exit__()} methods.
 
 A simple example:
 
 \begin{verbatim}
 from __future__ import with_statement
-from contextlib import contextmanager
+from contextlib import contextfactory
 
-@contextmanager
+@contextfactory
 def tag(name):
     print "<%s>" % name
     yield
@@ -36,9 +37,10 @@ foo
 </h1>
 \end{verbatim}
 
-When called, the decorated function must return a generator-iterator.
-This iterator must yield exactly one value, which will be bound to the
-targets in the \keyword{with} statement's \keyword{as} clause, if any.
+The function being decorated must return a generator-iterator when
+called. This iterator must yield exactly one value, which will be
+bound to the targets in the \keyword{with} statement's \keyword{as}
+clause, if any.
 
 At the point where the generator yields, the block nested in the
 \keyword{with} statement is executed.  The generator is then resumed
@@ -53,20 +55,20 @@ reraise that exception. Otherwise the \keyword{with} statement will
 treat the exception as having been handled, and resume execution with
 the statement immediately following the \keyword{with} statement.
 
-Note that you can use \code{@contextmanager} to define a context
-specifier's \method{__context__} method.  This is usually more
+Note that you can use \code{@contextfactory} to define a context
+manager's \method{__context__} method.  This is usually more
 convenient than creating another class just to serve as a context
-manager. For example:
+object. For example:
 
 \begin{verbatim}
 from __future__ import with_statement
-from contextlib import contextmanager
+from contextlib import contextfactory
 
 class Tag:
     def __init__(self, name):
         self.name = name
         
-    @contextmanager
+    @contextfactory
     def __context__(self):
         print "<%s>" % self.name
         yield self
@@ -83,7 +85,7 @@ hello from <__main__.Tag instance at 0x402ce8ec>
 \end{funcdesc}
 
 \begin{funcdesc}{nested}{ctx1\optional{, ctx2\optional{, ...}}}
-Combine multiple context specifiers into a single nested context manager.
+Combine multiple context managers into a single nested context manager.
 
 Code like this:
 
@@ -104,12 +106,12 @@ with A as X:
 \end{verbatim}
 
 Note that if the \method{__exit__()} method of one of the nested
-context managers indicates an exception should be suppressed, no
+context objects indicates an exception should be suppressed, no
 exception information will be passed to any remaining outer context
-managers. Similarly, if the \method{__exit__()} method of one of the
-nested context managers raises an exception, any previous exception
+objects. Similarly, if the \method{__exit__()} method of one of the
+nested context objects raises an exception, any previous exception
 state will be lost; the new exception will be passed to the
-\method{__exit__()} methods of any remaining outer context managers.
+\method{__exit__()} methods of any remaining outer context objects.
 In general, \method{__exit__()} methods should avoid raising
 exceptions, and in particular they should not re-raise a
 passed-in exception.
@@ -117,13 +119,13 @@ passed-in exception.
 
 \label{context-closing}
 \begin{funcdesc}{closing}{thing}
-Return a context manager that closes \var{thing} upon completion of the
+Return a context that closes \var{thing} upon completion of the
 block.  This is basically equivalent to:
 
 \begin{verbatim}
-from contextlib import contextmanager
+from contextlib import contextfactory
 
-@contextmanager
+@contextfactory
 def closing(thing):
     try:
         yield thing
@@ -137,14 +139,33 @@ from __future__ import with_statement
 from contextlib import closing
 import codecs
 
-with closing(urllib.urlopen('http://www.python.org')) as f:
-    for line in f:
+with closing(urllib.urlopen('http://www.python.org')) as page:
+    for line in page:
         print line
 \end{verbatim}
 
-without needing to explicitly close \code{f}.  Even if an error occurs,
-\code{f.close()} will be called when the \keyword{with} block is exited.
+without needing to explicitly close \code{page}.  Even if an error
+occurs, \code{page.close()} will be called when the \keyword{with}
+block is exited.
 
+Context managers with a close method can use this context factory
+directly without needing to implement their own
+\method{__context__()} method.
+\begin{verbatim}
+from __future__ import with_statement
+from contextlib import closing
+
+class MyClass:
+    def close(self):
+        print "Closing", self
+    __context__ = closing
+
+>>> with MyClass() as x:
+...     print "Hello from", x
+...
+Hello from <__main__.MyClass instance at 0xb7df02ec>
+Closing <__main__.MyClass instance at 0xb7df02ec>
+\end{verbatim}
 \end{funcdesc}
 
 \begin{seealso}
