@@ -164,7 +164,6 @@ class _Condition(_Verbose):
         self.__lock = lock
         # Export the lock's acquire() and release() methods
         self.acquire = lock.acquire
-        self.__enter__ = self.acquire
         self.release = lock.release
         # If the lock defines _release_save() and/or _acquire_restore(),
         # these override the default implementations (which just call
@@ -184,10 +183,7 @@ class _Condition(_Verbose):
         self.__waiters = []
 
     def __context__(self):
-        return self
-
-    def __exit__(self, t, v, tb):
-        self.release()
+        return self.__lock.__context__()
 
     def __repr__(self):
         return "<Condition(%s, %d)>" % (self.__lock, len(self.__waiters))
