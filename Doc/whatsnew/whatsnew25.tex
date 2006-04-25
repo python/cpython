@@ -2,7 +2,6 @@
 \usepackage{distutils}
 % $Id$
 
-% The easy_install stuff
 % Describe the pkgutil module
 % Fix XXX comments
 % Count up the patches and bugs
@@ -1293,6 +1292,11 @@ ts = datetime.strptime('10:13:15 2006-03-07',
                        '%H:%M:%S %Y-%m-%d')
 \end{verbatim}
 
+\item The \module{doctest} module gained a \code{SKIP} option that
+keeps an example from being executed at all.  This is intended for
+code snippets that are usage examples intended for the reader and
+aren't actually test cases.
+
 \item The \module{fileinput} module was made more flexible.
 Unicode filenames are now supported, and a \var{mode} parameter that
 defaults to \code{"r"} was added to the
@@ -1415,6 +1419,15 @@ now has \member{st_gen} and \member{st_birthtime}.
 The \member{st_flags} member is also available, if the platform supports it.
 (Contributed by Antti Louko and  Diego Petten\`o.)
 % (Patch 1180695, 1212117)
+
+\item The Python debugger provided by the \module{pdb} module
+can now store lists of commands to execute when a breakpoint is
+reached and execution stops.  Once breakpoint #1 has been created,
+enter \samp{commands 1} and enter a series of commands to be executed,
+finishing the list with \samp{end}.  The command list can include
+commands that resume execution, such as \samp{continue} or
+\samp{next}.  (Contributed by Gr\'egoire Dooms.)
+% Patch 790710
 
 \item The \module{pickle} and \module{cPickle} modules no
 longer accept a return value of \code{None} from the
