@@ -1217,6 +1217,14 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		int port, flowinfo, scope_id, result;
  		addr = (struct sockaddr_in6*)&(s->sock_addr).in6;
 		flowinfo = scope_id = 0;
+		if (!PyTuple_Check(args)) {
+			PyErr_Format(
+				PyExc_TypeError,
+				"getsockaddrarg: "
+				"AF_INET6 address must be tuple, not %.500s",
+				args->ob_type->tp_name);
+			return 0;
+		}
 		if (!PyArg_ParseTuple(args, "eti|ii", 
 				      "idna", &host, &port, &flowinfo,
 				      &scope_id)) {
@@ -1319,6 +1327,14 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		char *haddr = NULL;
 		unsigned int halen = 0;
 
+		if (!PyTuple_Check(args)) {
+			PyErr_Format(
+				PyExc_TypeError,
+				"getsockaddrarg: "
+				"AF_PACKET address must be tuple, not %.500s",
+				args->ob_type->tp_name);
+			return 0;
+		}
 		if (!PyArg_ParseTuple(args, "si|iis#", &interfaceName,
 				      &protoNumber, &pkttype, &hatype,
 				      &haddr, &halen))
