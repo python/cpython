@@ -696,6 +696,21 @@ class ListTest(unittest.TestCase):
     def test_concat_large(self, size):
         return self.basic_test_concat(size)
 
+    def basic_test_inplace_concat(self, size):
+        l = [sys.stdout] * size
+        l += l
+        self.assertEquals(len(l), size * 2)
+        self.failUnless(l[0] is l[-1])
+        self.failUnless(l[size - 1] is l[size + 1])
+
+    @bigmemtest(minsize=_2G // 2 + 2, memuse=8)
+    def test_inplace_concat_small(self, size):
+        return self.basic_test_inplace_concat(size)
+
+    @bigmemtest(minsize=_2G + 2, memuse=8)
+    def test_inplace_concat_large(self, size):
+        return self.basic_test_inplace_concat(size)
+
     @bigmemtest(minsize=_2G // 5 + 10, memuse=8*5)
     def test_contains(self, size):
         l = [1, 2, 3, 4, 5] * size
@@ -781,7 +796,26 @@ class ListTest(unittest.TestCase):
     def test_repeat_large(self, size):
         return self.basic_test_repeat(size)
 
-    # Test repr-result of >2G
+    def basic_test_inplace_repeat(self, size):
+        l = ['']
+        l *= size
+        self.assertEquals(len(l), size)
+        self.failUnless(l[0] is l[-1])
+        del l
+
+        l = [''] * size
+        l *= 2
+        self.assertEquals(len(l), size * 2)
+        self.failUnless(l[size - 1] is l[-1])
+
+    @bigmemtest(minsize=_2G // 2 + 2, memuse=16)
+    def test_inplace_repeat_small(self, size):
+        return self.basic_test_inplace_repeat(size)
+
+    @bigmemtest(minsize=_2G + 2, memuse=16)
+    def test_inplace_repeat_large(self, size):
+        return self.basic_test_inplace_repeat(size)
+
     def basic_test_repr(self, size):
         l = [0] * size
         s = repr(l)
@@ -821,11 +855,11 @@ class ListTest(unittest.TestCase):
         self.failUnless(l[0] is l[-1])
         self.failUnless(l[size - 1] is l[size + 1])
 
-    @bigmemtest(minsize=_2G // 2 + 2, memuse=8)
+    @bigmemtest(minsize=_2G // 2 + 2, memuse=16)
     def test_extend_small(self, size):
         return self.basic_test_extend(size)
 
-    @bigmemtest(minsize=_2G + 2, memuse=8)
+    @bigmemtest(minsize=_2G + 2, memuse=16)
     def test_extend_large(self, size):
         return self.basic_test_extend(size)
 
