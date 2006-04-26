@@ -70,6 +70,12 @@ if test $TARGETDIR = unknown; then
   AC_MSG_ERROR(["libffi has not been ported to $host."])
 fi
 
+dnl  libffi changes TARGET for MIPS to define a such macro in the header
+dnl  while MIPS_IRIX or MIPS_LINUX is separatedly used to decide which
+dnl  files will be compiled.  So, we need to keep the original decision
+dnl  of TARGET to use in fficonfig.py.in.
+MKTARGET=$TARGET
+
 case x$TARGET in
   xMIPS*) TARGET=MIPS ;;
   *) ;;
@@ -183,6 +189,7 @@ AH_BOTTOM([
 
 AC_SUBST(TARGET)
 AC_SUBST(TARGETDIR)
+AC_SUBST(MKTARGET)
 
 AC_SUBST(SHELL)
 
