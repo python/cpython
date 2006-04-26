@@ -180,6 +180,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libprofile.tex \
 	lib/libhotshot.tex \
 	lib/libtimeit.tex \
+	lib/libtrace.tex \
 	lib/libcgi.tex \
 	lib/libcgitb.tex \
 	lib/liburllib.tex \
