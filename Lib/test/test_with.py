@@ -10,13 +10,13 @@ __email__ = "mbland at acm dot org"
 import sys
 import unittest
 from collections import deque
-from contextlib import GeneratorContextManager, contextmanager
+from contextlib import GeneratorContext, contextfactory
 from test.test_support import run_unittest
 
 
-class MockContextManager(GeneratorContextManager):
+class MockContextManager(GeneratorContext):
     def __init__(self, gen):
-        GeneratorContextManager.__init__(self, gen)
+        GeneratorContext.__init__(self, gen)
         self.context_called = False
         self.enter_called = False
         self.exit_called = False
@@ -24,16 +24,16 @@ class MockContextManager(GeneratorContextManager):
 
     def __context__(self):
         self.context_called = True
-        return GeneratorContextManager.__context__(self)
+        return GeneratorContext.__context__(self)
 
     def __enter__(self):
         self.enter_called = True
-        return GeneratorContextManager.__enter__(self)
+        return GeneratorContext.__enter__(self)
 
     def __exit__(self, type, value, traceback):
         self.exit_called = True
         self.exit_args = (type, value, traceback)
-        return GeneratorContextManager.__exit__(self, type, value, traceback)
+        return GeneratorContext.__exit__(self, type, value, traceback)
 
 
 def mock_contextmanager(func):
@@ -495,7 +495,7 @@ class ExceptionalTestCase(unittest.TestCase, ContextmanagerAssertionMixin):
         self.assertAfterWithGeneratorInvariantsNoError(self.bar)
 
     def testRaisedStopIteration1(self):
-        @contextmanager
+        @contextfactory
         def cm():
             yield
 
@@ -523,7 +523,7 @@ class ExceptionalTestCase(unittest.TestCase, ContextmanagerAssertionMixin):
         self.assertRaises(StopIteration, shouldThrow)
 
     def testRaisedGeneratorExit1(self):
-        @contextmanager
+        @contextfactory
         def cm():
             yield
 
