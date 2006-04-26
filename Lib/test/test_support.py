@@ -285,7 +285,7 @@ def bigmemtest(minsize, memuse, overhead=5*_1M):
     test-interpreted units.) 'memuse' is the number of 'bytes per size' for
     the test, or a good estimate of it. 'overhead' specifies fixed overhead,
     independant of the testsize, and defaults to 5Mb.
-    
+
     The decorator tries to guess a good value for 'size' and passes it to
     the decorated test function. If minsize * memuse is more than the
     allowed memory use (as defined by max_memuse), the test is skipped.
