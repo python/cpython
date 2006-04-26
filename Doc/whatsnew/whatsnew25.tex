@@ -1827,7 +1827,7 @@ c.execute("... where symbol = '%s'" % symbol)
 
 # Do this instead
 t = (symbol,)
-c.execute('select * from stocks where symbol=?', ('IBM',))
+c.execute('select * from stocks where symbol=?', t)
 
 # Larger example
 for t in (('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
@@ -2065,6 +2065,6 @@ freed with the corresponding family's \cfunction{*_Free()} function.
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Phillip J. Eby, Kent Johnson, Martin von~L\"owis, Gustavo
-Niemeyer, Mike Rovner, Thomas Wouters.
+Niemeyer, James Pryor, Mike Rovner, Thomas Wouters.
 
 \end{document}
