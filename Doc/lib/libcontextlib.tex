@@ -149,8 +149,7 @@ occurs, \code{page.close()} will be called when the \keyword{with}
 block is exited.
 
 Context managers with a close method can use this context factory
-directly without needing to implement their own
-\method{__context__()} method.
+to easily implement their own \method{__context__()} method.
 \begin{verbatim}
 from __future__ import with_statement
 from contextlib import closing
@@ -158,7 +157,8 @@ from contextlib import closing
 class MyClass:
     def close(self):
         print "Closing", self
-    __context__ = closing
+    def __context__(self):
+        return closing(self)
 
 >>> with MyClass() as x:
 ...     print "Hello from", x
