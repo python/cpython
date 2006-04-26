@@ -171,6 +171,11 @@ Tests
   it separately and by hand.  It also wasn't cleaning up its changes to
   the current Decimal context.
 
+- regrtest.py now has a -M option to run tests that test the new limits of
+  containers, on 64-bit architectures. Running these tests is only sensible
+  on 64-bit machines with more than two gigabytes of memory. The argument
+  passed is the maximum amount of memory for the tests to use.
+
 Tools
 -----
 

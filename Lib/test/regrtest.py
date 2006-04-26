@@ -25,6 +25,7 @@ Command line options:
 -N: nocoverdir -- Put coverage files alongside modules
 -L: runleaks   -- run the leaks(1) command just before exit
 -R: huntrleaks -- search for reference leaks (needs debug build, v. slow)
+-M: memlimit   -- run very large memory-consuming tests
 
 If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
@@ -62,6 +63,19 @@ test is run to let gettotalrefcount settle down, 'run' is the number
 of times further it is run and 'fname' is the name of the file the
 reports are written to.  These parameters all have defaults (5, 4 and
 "reflog.txt" respectively), so the minimal invocation is '-R ::'.
+
+-M runs tests that require an exorbitant amount of memory. These tests
+typically try to ascertain containers keep working when containing more than
+2 bilion objects, and only work on 64-bit systems. The passed-in memlimit,
+which is a string in the form of '2.5Gb', determines howmuch memory the
+tests will limit themselves to (but they may go slightly over.) The number
+shouldn't be more memory than the machine has (including swap memory). You
+should also keep in mind that swap memory is generally much, much slower
+than RAM, and setting memlimit to all available RAM or higher will heavily
+tax the machine. On the other hand, it is no use running these tests with a
+limit of less than 2.5Gb, and many require more than 20Gb. Tests that expect
+to use more than memlimit memory will be skipped. The big-memory tests
+generally run very, very long.
 
 -u is used to specify which special resource intensive tests to run,
 such as those requiring large file support or network connectivity.
@@ -180,12 +194,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
 
     test_support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:t:TD:NLR:w',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:t:TD:NLR:wM:',
                                    ['help', 'verbose', 'quiet', 'generate',
                                     'exclude', 'single', 'random', 'fromfile',
                                     'findleaks', 'use=', 'threshold=', 'trace',
                                     'coverdir=', 'nocoverdir', 'runleaks',
-                                    'huntrleaks=', 'verbose2',
+                                    'huntrleaks=', 'verbose2', 'memlimit=',
                                     ])
     except getopt.error, msg:
         usage(2, msg)
@@ -241,6 +255,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
                 huntrleaks[1] = int(huntrleaks[1])
             if len(huntrleaks[2]) == 0:
                 huntrleaks[2] = "reflog.txt"
+        elif o in ('-M', '--memlimit'):
+            test_support.set_memlimit(a)
         elif o in ('-u', '--use'):
             u = [x.lower() for x in a.split(',')]
             for r in u:
