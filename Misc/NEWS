@@ -156,6 +156,8 @@ Build
 
 - Patch #1429775: Link extension modules with the shared libpython.
 
+- Fixed a libffi build problem on MIPS systems.
+
 C API
 -----
 
