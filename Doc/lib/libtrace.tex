@@ -9,7 +9,7 @@ annotated statement coverage listings, print caller/callee relationships and
 list functions executed during a program run.  It can be used in another
 program or from the command line.
 
-\subsection{Command Line Usage}
+\subsection{Command Line Usage\label{trace-cli}}
 
 The \module{trace} module can be invoked from the command line.  It can be
 as simple as
@@ -19,39 +19,62 @@ python -m trace --count somefile.py ...
 \end{verbatim}
 
 The above will generate annotated listings of all Python modules imported
-during the execution of \code{somefile.py}.
+during the execution of \file{somefile.py}.
 
-\subsection{Command Line Arguments}
+The following command-line arguments are supported:
 
 \begin{description}
-\item[--trace, -t]{Display lines as they are executed.}
-\item[--count, -c]{Produce a set of  annotated listing files upon program
-completion that shows how many times each statement was executed.}
-\item[--report, -r]{Produce an annotated list from an earlier program run that
-used the \code{--count} and \code{--file} arguments.}
-\item[--no-report, -R]{Do not generate annotated listings.  This is useful
-if you intend to make several runs with \code{--count} then produce a single
-set of annotated listings at the end.}
-\item[--listfuncs, -l]{List the functions executed by running the program.}
-\item[--trackcalls, -T]{Generate calling relationships exposed by running the
-program.}
-\item[--file, -f]{Name a file containing (or to contain) counts.}
-\item[--coverdir, -C]{Name a directory in which to save annotated listing
-files.}
-\item[--missing, -m]{When generating annotated listings, mark lines which
-were not executed with \code{>>>>>>}.}
-\item[--summary -s]{When using \code{--count} or \code{--report}, write a
-brief summary to stdout for each file processed.}
-\item[--ignore-module]{Ignore the named module and its submodules (if it is
-a package).  May be given multiple times.}
-\item[--ignore-dir]{Ignore all modules and packages in the named directory
-and subdirectories.  May be given multiple times.}
+\item[\longprogramopt{trace}, \programopt{-t}]
+Display lines as they are executed.
+
+\item[\longprogramopt{count}, \programopt{-c}]
+Produce a set of  annotated listing files upon program
+completion that shows how many times each statement was executed.
+
+\item[\longprogramopt{report}, \programopt{-r}]
+Produce an annotated list from an earlier program run that
+used the \longprogramopt{count} and \longprogramopt{file} arguments.
+
+\item[\longprogramopt{no-report}, \programopt{-R}]
+Do not generate annotated listings.  This is useful if you intend to make
+several runs with \longprogramopt{count} then produce a single set
+of annotated listings at the end.
+
+\item[\longprogramopt{listfuncs}, \programopt{-l}]
+List the functions executed by running the program.
+
+\item[\longprogramopt{trackcalls}, \programopt{-T}]
+Generate calling relationships exposed by running the program.
+
+\item[\longprogramopt{file}, \programopt{-f}]
+Name a file containing (or to contain) counts.
+
+\item[\longprogramopt{coverdir}, \programopt{-C}]
+Name a directory in which to save annotated listing files.
+
+\item[\longprogramopt{missing}, \programopt{-m}]
+When generating annotated listings, mark lines which
+were not executed with \code{>}\code{>}\code{>}\code{>}\code{>}\code{>}.
+
+\item[\longprogramopt{summary}, \programopt{-s}]
+When using \longprogramopt{count} or \longprogramopt{report}, write a
+brief summary to stdout for each file processed.
+
+\item[\longprogramopt{ignore-module}]
+Ignore the named module and its submodules (if it is
+a package).  May be given multiple times.
+
+\item[\longprogramopt{ignore-dir}]
+Ignore all modules and packages in the named directory
+and subdirectories.  May be given multiple times.
 \end{description}
 
-\subsection{Program Usage}
+\subsection{Programming Interface\label{trace-api}}
 
-\begin{classdesc}{Trace}{\optional{count=1\optional{,trace=1\optional{,countfuncs=0\optional{,countcallers=0\optional{,ignoremods=()\optional{,ignoredirs=()\optional{,infile=None\optional{,outfile=None}}}}}}}}}
-
+\begin{classdesc}{Trace}{\optional{count=1\optional{, trace=1\optional{,
+                         countfuncs=0\optional{, countcallers=0\optional{,
+                         ignoremods=()\optional{, ignoredirs=()\optional{,
+                         infile=None\optional{, outfile=None}}}}}}}}}
 Create an object to trace execution of a single statement or expression.
 All parameters are optional.  \var{count} enables counting of line numbers.
 \var{trace} enables line execution tracing.  \var{countfuncs} enables
@@ -61,36 +84,41 @@ packages to ignore.  \var{ignoredirs} is a list of directories whose modules
 or packages should be ignored.  \var{infile} is the file from which to read
 stored count information.  \var{outfile} is a file in which to write updated
 count information.
-
 \end{classdesc}
 
 \begin{methoddesc}[Trace]{run}{cmd}
-Run \code{cmd} under control of the Trace object with the current tracing
+Run \var{cmd} under control of the Trace object with the current tracing
 parameters.
 \end{methoddesc}
 
-\begin{methoddesc}[Trace]{runctx}{cmd\optional{,globals=None\optional{,locals=None}}}
-Run \code{cmd} under control of the Trace object with the current tracing
+\begin{methoddesc}[Trace]{runctx}{cmd\optional{, globals=None\optional{,
+                                  locals=None}}}
+Run \var{cmd} under control of the Trace object with the current tracing
 parameters in the defined global and local environments.  If not defined,
-\code{globals} and \code{locals} default to empty dictionaries.
+\var{globals} and \var{locals} default to empty dictionaries.
 \end{methoddesc}
 
 \begin{methoddesc}[Trace]{runfunc}{func, *args, **kwds}
-Call \code{function} with the given arguments under control of the Trace
-object with the current tracing parameters.
+Call \var{func} with the given arguments under control of the
+\class{Trace} object with the current tracing parameters.
 \end{methoddesc}
 
-\subsubsection{Example}
+This is a simple example showing the use of this module:
 
 \begin{verbatim}
 import sys
+import trace
 
 # create a Trace object, telling it what to ignore, and whether to
 # do tracing or line-counting or both.
-tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,], trace=0,
-		    count=1)
+tracer = trace.Trace(
+    ignoredirs=[sys.prefix, sys.exec_prefix],
+    trace=0,
+    count=1)
+
 # run the new command using the given tracer
 tracer.run('main()')
+
 # make a report, placing output in /tmp
 r = tracer.results()
 r.write_results(show_missing=True, coverdir="/tmp")
