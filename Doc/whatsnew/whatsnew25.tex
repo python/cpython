@@ -1063,7 +1063,7 @@ and implemented by Travis Oliphant.}
 
 
 %======================================================================
-\section{Other Language Changes}
+\section{Other Language Changes\label{other-lang}}
 
 Here are all of the changes that Python 2.5 makes to the core Python
 language.
@@ -1139,7 +1139,7 @@ class C():
 
 
 %======================================================================
-\subsection{Interactive Interpreter Changes}
+\subsection{Interactive Interpreter Changes\label{interactive}}
 
 In the interactive interpreter, \code{quit} and \code{exit} 
 have long been strings so that new users get a somewhat helpful message
@@ -1157,7 +1157,7 @@ interpreter as they expect.  (Implemented by Georg Brandl.)
 
 
 %======================================================================
-\subsection{Optimizations}
+\subsection{Optimizations\label{opts}}
 
 \begin{itemize}
 
@@ -1184,7 +1184,7 @@ pystone benchmark around XXX\% faster than Python 2.4.
 
 
 %======================================================================
-\section{New, Improved, and Removed Modules}
+\section{New, Improved, and Removed Modules\label{modules}}
 
 The standard library received many enhancements and bug fixes in
 Python 2.5.  Here's a partial list of the most notable changes, sorted
@@ -1521,7 +1521,7 @@ Brandl.)
 
 
 %======================================================================
-\subsection{The ctypes package}
+\subsection{The ctypes package\label{module-ctypes}}
 
 The \module{ctypes} package, written by Thomas Heller, has been added 
 to the standard library.  \module{ctypes} lets you call arbitrary functions 
@@ -1603,7 +1603,7 @@ of extension modules, now that \module{ctypes} is included with core Python.
 
 
 %======================================================================
-\subsection{The ElementTree package}
+\subsection{The ElementTree package\label{module-etree}}
 
 A subset of Fredrik Lundh's ElementTree library for processing XML has
 been added to the standard library as \module{xmlcore.etree}.  The
@@ -1714,7 +1714,7 @@ Please read the package's official documentation for more details.
 
 
 %======================================================================
-\subsection{The hashlib package}
+\subsection{The hashlib package\label{module-hashlib}}
 
 A new \module{hashlib} module, written by Gregory P. Smith, 
 has been added to replace the
@@ -1762,7 +1762,7 @@ and \method{copy()} returns a new hashing object with the same digest state.
 
 
 %======================================================================
-\subsection{The sqlite3 package}
+\subsection{The sqlite3 package\label{module-sqlite}}
 
 The pysqlite module (\url{http://www.pysqlite.org}), a wrapper for the
 SQLite embedded database, has been added to the standard library under
@@ -1876,7 +1876,7 @@ Marc-Andr\'e Lemburg.}
 
 
 % ======================================================================
-\section{Build and C API Changes}
+\section{Build and C API Changes\label{build-api}}
 
 Changes to Python's build process and to the C API include:
 
@@ -1954,7 +1954,7 @@ error checking.
 
 
 %======================================================================
-\subsection{Port-Specific Changes}
+\subsection{Port-Specific Changes\label{ports}}
 
 \begin{itemize}
 
@@ -2018,7 +2018,7 @@ carefully test your C extension modules with Python 2.5.
 
 
 %======================================================================
-\section{Porting to Python 2.5}
+\section{Porting to Python 2.5\label{porting}}
 
 This section lists previously described changes that may require
 changes to your code:
