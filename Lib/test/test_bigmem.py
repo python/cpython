@@ -726,39 +726,39 @@ class ListTest(unittest.TestCase):
         self.assertEquals(l[size - 6:size - 2], [None] * 4)
         self.assertEquals(l[size:size], [])
         self.assertEquals(l[size:size+5], [])
-        
+
         l[size - 2] = 5
         self.assertEquals(len(l), size)
         self.assertEquals(l[-3:], [None, 5, None])
         self.assertEquals(l.count(5), 1)
         self.assertRaises(IndexError, operator.setitem, l, size, 6)
         self.assertEquals(len(l), size)
-        
+
         l[size - 7:] = [1, 2, 3, 4, 5]
         size -= 2
         self.assertEquals(len(l), size)
         self.assertEquals(l[-7:], [None, None, 1, 2, 3, 4, 5])
-        
+
         l[:7] = [1, 2, 3, 4, 5]
         size -= 2
         self.assertEquals(len(l), size)
         self.assertEquals(l[:7], [1, 2, 3, 4, 5, None, None])
-        
+
         del l[size - 1]
         size -= 1
         self.assertEquals(len(l), size)
         self.assertEquals(l[-1], 4)
-        
+
         del l[-2:]
         size -= 2
         self.assertEquals(len(l), size)
         self.assertEquals(l[-1], 2)
-        
+
         del l[0]
         size -= 1
         self.assertEquals(len(l), size)
         self.assertEquals(l[0], 2)
-        
+
         del l[:2]
         size -= 2
         self.assertEquals(len(l), size)
@@ -866,12 +866,12 @@ class ListTest(unittest.TestCase):
         size -= 1
         self.assertEquals(len(l), size)
         self.assertEquals(item, u"e")
-        
+
         item = l.pop(0)
         size -= 1
         self.assertEquals(len(l), size)
         self.assertEquals(item, u"a")
-        
+
         item = l.pop(size - 2)
         size -= 1
         self.assertEquals(len(l), size)
@@ -894,7 +894,7 @@ class ListTest(unittest.TestCase):
         size -= 1
         self.assertEquals(len(l), size)
         self.assertEquals(l[-2:], [10, 10])
-        
+
     @bigmemtest(minsize=_2G + 10, memuse=8)
     def test_reverse(self, size):
         l = [1, 2, 3, 4, 5] * (size // 5)
@@ -911,7 +911,7 @@ class ListTest(unittest.TestCase):
         self.assertEquals(l.count(1), size // 5)
         self.assertEquals(l[:10], [1] * 10)
         self.assertEquals(l[-10:], [5] * 10)
-        
+
 def test_main():
     test_support.run_unittest(StrTest, TupleTest, ListTest)
 
