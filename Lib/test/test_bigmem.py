@@ -833,8 +833,9 @@ class ListTest(unittest.TestCase):
     def test_repr_large(self, size):
         return self.basic_test_repr(size)
 
-
-    @bigmemtest(minsize=_2G, memuse=8)
+    # list overallocates ~1/8th of the total size (on first expansion) so
+    # the single list.append call puts memuse at 9 bytes per size.
+    @bigmemtest(minsize=_2G, memuse=9)
     def test_append(self, size):
         l = [object()] * size
         l.append(object())
@@ -872,7 +873,8 @@ class ListTest(unittest.TestCase):
         self.assertRaises(ValueError, l.index, 1, size - 4, size)
         self.assertRaises(ValueError, l.index, 6L)
 
-    @bigmemtest(minsize=_2G + 10, memuse=8)
+    # This tests suffers from overallocation, just like test_append.
+    @bigmemtest(minsize=_2G + 10, memuse=9)
     def test_insert(self, size):
         l = [1.0] * size
         l.insert(size - 1, "A")
@@ -920,6 +922,8 @@ class ListTest(unittest.TestCase):
         size -= 1
         self.assertEquals(len(l), size)
 
+        # Because of the earlier l.remove(), this append doesn't trigger
+        # a resize.
         l.append(5)
         size += 1
         self.assertEquals(len(l), size)
