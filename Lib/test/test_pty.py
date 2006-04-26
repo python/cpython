@@ -24,11 +24,11 @@ def normalize_output(data):
 
     # OSF/1 (Tru64) apparently turns \n into \r\r\n.
     if data.endswith('\r\r\n'):
-        return data[:-3] + '\n'
+        return data.replace('\r\r\n', '\n')
 
     # IRIX apparently turns \n into \r\n.
     if data.endswith('\r\n'):
-        return data[:-2] + '\n'
+        return data.replace('\r\n', '\n')
 
     return data
 
