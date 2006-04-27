@@ -296,7 +296,56 @@ class BytesTest(unittest.TestCase):
         self.assertRaises(TypeError, lambda: b * 3.14)
         self.assertRaises(TypeError, lambda: 3.14 * b)
         self.assertRaises(MemoryError, lambda: b * sys.maxint)
+
+    def test_repeat_1char(self):
         self.assertEqual(bytes('x')*100, bytes('x'*100))
+
+    def test_iconcat(self):
+        b = bytes("abc")
+        b1 = b
+        b += bytes("def")
+        self.assertEqual(b, bytes("abcdef"))
+        self.assertEqual(b, b1)
+        self.failUnless(b is b1)
+
+    def test_irepeat(self):
+        b = bytes("abc")
+        b1 = b
+        b *= 3
+        self.assertEqual(b, bytes("abcabcabc"))
+        self.assertEqual(b, b1)
+        self.failUnless(b is b1)
+
+    def test_irepeat_1char(self):
+        b = bytes("x")
+        b1 = b
+        b *= 100
+        self.assertEqual(b, bytes("x"*100))
+        self.assertEqual(b, b1)
+        self.failUnless(b is b1)
+
+    def test_contains(self):
+        b = bytes("abc")
+        self.failUnless(ord('a') in b)
+        self.failUnless(long(ord('a')) in b)
+        self.failIf(200 in b)
+        self.failIf(200L in b)
+        self.assertRaises(ValueError, lambda: 300 in b)
+        self.assertRaises(ValueError, lambda: -1 in b)
+        self.assertRaises(TypeError, lambda: None in b)
+        self.assertRaises(TypeError, lambda: float(ord('a')) in b)
+        self.assertRaises(TypeError, lambda: "a" in b)
+        self.failUnless(bytes("") in b)
+        self.failUnless(bytes("a") in b)
+        self.failUnless(bytes("b") in b)
+        self.failUnless(bytes("c") in b)
+        self.failUnless(bytes("ab") in b)
+        self.failUnless(bytes("bc") in b)
+        self.failUnless(bytes("abc") in b)
+        self.failIf(bytes("ac") in b)
+        self.failIf(bytes("d") in b)
+        self.failIf(bytes("dab") in b)
+        self.failIf(bytes("abd") in b)
 
     # Optimizations:
     # __iter__? (optimization)
@@ -311,7 +360,6 @@ class BytesTest(unittest.TestCase):
     # pop
     # NOT sort!
     # With int arg:
-    # __contains__
     # index
     # count
     # append
@@ -321,7 +369,6 @@ class BytesTest(unittest.TestCase):
     # startswith
     # endswidth
     # find, rfind
-    # __contains__ (bytes arg)
     # index, rindex (bytes arg)
     # join
     # replace

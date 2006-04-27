@@ -116,6 +116,31 @@ bytes_concat(PyBytesObject *self, PyObject *other)
 }
 
 static PyObject *
+bytes_iconcat(PyBytesObject *self, PyObject *other)
+{
+    Py_ssize_t mysize;
+    Py_ssize_t osize;
+    Py_ssize_t size;
+
+    if (!PyBytes_Check(other)) {
+        PyErr_Format(PyExc_TypeError,
+                     "can't concat bytes to %.100s", other->ob_type->tp_name);
+        return NULL;
+    }
+
+    mysize = self->ob_size;
+    osize = ((PyBytesObject *)other)->ob_size;
+    size = mysize + osize;
+    if (size < 0)
+        return PyErr_NoMemory();
+    if (PyBytes_Resize((PyObject *)self, size) < 0)
+        return NULL;
+    memcpy(self->ob_bytes + mysize, ((PyBytesObject *)other)->ob_bytes, osize);
+    Py_INCREF(self);
+    return (PyObject *)self;
+}
+
+static PyObject *
 bytes_repeat(PyBytesObject *self, Py_ssize_t count)
 {
     PyBytesObject *result;
@@ -133,12 +158,78 @@ bytes_repeat(PyBytesObject *self, Py_ssize_t count)
         if (mysize == 1)
             memset(result->ob_bytes, self->ob_bytes[0], size);
         else {
-            int i;
+            Py_ssize_t i;
             for (i = 0; i < count; i++)
                 memcpy(result->ob_bytes + i*mysize, self->ob_bytes, mysize);
         }
     }
     return (PyObject *)result;
+}
+
+static PyObject *
+bytes_irepeat(PyBytesObject *self, Py_ssize_t count)
+{
+    Py_ssize_t mysize;
+    Py_ssize_t size;
+
+    if (count < 0)
+        count = 0;
+    mysize = self->ob_size;
+    size = mysize * count;
+    if (count != 0 && size / count != mysize)
+        return PyErr_NoMemory();
+    if (PyBytes_Resize((PyObject *)self, size) < 0)
+        return NULL;
+    
+    if (mysize == 1)
+        memset(self->ob_bytes, self->ob_bytes[0], size);
+    else {
+        Py_ssize_t i;
+        for (i = 1; i < count; i++)
+            memcpy(self->ob_bytes + i*mysize, self->ob_bytes, mysize);
+    }
+
+    Py_INCREF(self);
+    return (PyObject *)self;
+}
+
+static int
+bytes_substring(PyBytesObject *self, PyBytesObject *other)
+{
+    Py_ssize_t i;
+
+    if (other->ob_size == 1) {
+        return memchr(self->ob_bytes, other->ob_bytes[0], 
+                      self->ob_size) != NULL;
+    }
+    if (other->ob_size == 0)
+        return 1; /* Edge case */
+    for (i = 0; i + other->ob_size <= self->ob_size; i++) {
+        /* XXX Yeah, yeah, lots of optimizations possible... */
+        if (memcmp(self->ob_bytes + i, other->ob_bytes, other->ob_size) == 0)
+            return 1;
+    }
+    return 0;
+}
+
+static int
+bytes_contains(PyBytesObject *self, PyObject *value)
+{
+    Py_ssize_t ival;
+
+    if (PyBytes_Check(value))
+        return bytes_substring(self, (PyBytesObject *)value);
+
+    ival = PyNumber_Index(value);
+    if (ival == -1 && PyErr_Occurred())
+        return -1;
+
+    if (ival < 0 || ival >= 256) {
+        PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
+        return -1;
+    }
+
+    return memchr(self->ob_bytes, ival, self->ob_size) != NULL;
 }
 
 static PyObject *
@@ -590,11 +681,9 @@ static PySequenceMethods bytes_as_sequence = {
     (ssizessizeargfunc)bytes_getslice,  /*sq_slice*/
     (ssizeobjargproc)bytes_setitem,     /*sq_ass_item*/
     (ssizessizeobjargproc)bytes_setslice, /* sq_ass_slice */
-#if 0
     (objobjproc)bytes_contains,         /* sq_contains */
-    (binaryfunc)bytes_inplace_concat,   /* sq_inplace_concat */
-    (ssizeargfunc)bytes_inplace_repeat, /* sq_inplace_repeat */
-#endif
+    (binaryfunc)bytes_iconcat,   /* sq_inplace_concat */
+    (ssizeargfunc)bytes_irepeat, /* sq_inplace_repeat */
 };
 
 static PyMappingMethods bytes_as_mapping = {
