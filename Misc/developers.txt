@@ -17,6 +17,12 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Steven Bethard was given SVN access on 27 Apr 2006 by DJG, for PEP
+  update access.
+
+- Talin was given SVN access on 27 Apr 2006 by DJG, for PEP update
+  access.
+
 - George Yoshida (SF name "quiver") added to the SourceForge Python
   project 14 Apr 2006, by Tim Peters, as a tracker admin.  See
   contemporaneous python-checkins thread with the unlikely Subject:
@@ -102,3 +108,4 @@ GvR:  Guido van Rossum
 NCN:  Neal Norwitz
 RDH:  Raymond Hettinger
 TGP:  Tim Peters
+DJG:  David Goodger
