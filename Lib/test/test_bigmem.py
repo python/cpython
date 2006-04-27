@@ -703,11 +703,11 @@ class ListTest(unittest.TestCase):
         self.failUnless(l[0] is l[-1])
         self.failUnless(l[size - 1] is l[size + 1])
 
-    @bigmemtest(minsize=_2G // 2 + 2, memuse=8)
+    @bigmemtest(minsize=_2G // 2 + 2, memuse=24)
     def test_inplace_concat_small(self, size):
         return self.basic_test_inplace_concat(size)
 
-    @bigmemtest(minsize=_2G + 2, memuse=8)
+    @bigmemtest(minsize=_2G + 2, memuse=24)
     def test_inplace_concat_large(self, size):
         return self.basic_test_inplace_concat(size)
 
