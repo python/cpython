@@ -108,6 +108,7 @@ PyAPI_DATA(PyObject *) PyExc_SyntaxWarning;
 PyAPI_DATA(PyObject *) PyExc_OverflowWarning;
 PyAPI_DATA(PyObject *) PyExc_RuntimeWarning;
 PyAPI_DATA(PyObject *) PyExc_FutureWarning;
+PyAPI_DATA(PyObject *) PyExc_ImportWarning;
 
 
 /* Convenience functions */

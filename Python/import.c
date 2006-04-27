@@ -1271,19 +1271,42 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 #ifdef HAVE_STAT
 		if (stat(buf, &statbuf) == 0 &&         /* it exists */
 		    S_ISDIR(statbuf.st_mode) &&         /* it's a directory */
-		    find_init_module(buf) &&            /* it has __init__.py */
-		    case_ok(buf, len, namelen, name)) { /* and case matches */
-			Py_XDECREF(copy);
-			return &fd_package;
+		    case_ok(buf, len, namelen, name)) { /* case matches */
+			if (find_init_module(buf)) { /* and has __init__.py */
+				Py_XDECREF(copy);
+				return &fd_package;
+			}
+			else {
+				char warnstr[MAXPATHLEN+80];
+				sprintf(warnstr, "Not importing directory "
+					"'%.*s': missing __init__.py", 
+					MAXPATHLEN, buf);
+				if (PyErr_Warn(PyExc_ImportWarning,
+					       warnstr)) {
+					Py_XDECREF(copy);
+					return NULL;
+				}
+			}
 		}
 #else
 		/* XXX How are you going to test for directories? */
 #ifdef RISCOS
 		if (isdir(buf) &&
-		    find_init_module(buf) &&
 		    case_ok(buf, len, namelen, name)) {
-			Py_XDECREF(copy);
-			return &fd_package;
+			if (find_init_module(buf)) {
+				Py_XDECREF(copy);
+				return &fd_package;
+			}
+			else {
+				char warnstr[MAXPATHLEN+80];
+				sprintf(warnstr, "Not importing directory "
+					"'%.*s': missing __init__.py", 
+					MAXPATHLEN, buf);
+				if (PyErr_Warn(PyExc_ImportWarning,
+					       warnstr)) {
+					Py_XDECREF(copy);
+					return NULL;
+				}
 		}
 #endif
 #endif
