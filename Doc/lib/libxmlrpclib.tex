@@ -340,7 +340,7 @@ objects, they are converted to \class{DateTime} objects internally, so only
 
 \begin{verbatim}
 # simple test program (from the XML-RPC specification)
-from xmlrpclib import ServerProxy
+from xmlrpclib import ServerProxy, Error
 
 # server = ServerProxy("http://localhost:8000") # local server
 server = ServerProxy("http://betty.userland.com")
