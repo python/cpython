@@ -298,7 +298,7 @@ def bigmemtest(minsize, memuse, overhead=5*_1M):
                 # we still want to run the tests with size set to a few kb,
                 # to make sure they work. We still want to avoid using
                 # too much memory, though, but we do that noisily.
-                maxsize = 1024*5
+                maxsize = 5147
                 self.failIf(maxsize * memuse + overhead > 20 * _1M)
             else:
                 maxsize = int((max_memuse - overhead) / memuse)
