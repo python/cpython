@@ -318,6 +318,7 @@ function will raise a \exception{Fault} exception.
 
 \begin{verbatim}
 # simple test program (from the XML-RPC specification)
+from xmlrpclib import ServerProxy
 
 # server = ServerProxy("http://localhost:8000") # local server
 server = ServerProxy("http://betty.userland.com")
