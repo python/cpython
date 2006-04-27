@@ -1647,6 +1647,8 @@ PyDoc_STRVAR(FutureWarning__doc__,
 "Base class for warnings about constructs that will change semantically "
 "in the future.");
 
+PyDoc_STRVAR(ImportWarning__doc__,
+"Base class for warnings about probable mistakes in module imports");
 
 
 /* module global functions */
@@ -1719,6 +1721,7 @@ PyObject *PyExc_SyntaxWarning;
 PyObject *PyExc_OverflowWarning;
 PyObject *PyExc_RuntimeWarning;
 PyObject *PyExc_FutureWarning;
+PyObject *PyExc_ImportWarning;
 
 
 
@@ -1818,6 +1821,8 @@ static struct {
   RuntimeWarning__doc__},
  {"FutureWarning", &PyExc_FutureWarning, &PyExc_Warning,
   FutureWarning__doc__},
+ {"ImportWarning", &PyExc_ImportWarning, &PyExc_Warning,
+  ImportWarning__doc__},
  /* Sentinel */
  {NULL}
 };

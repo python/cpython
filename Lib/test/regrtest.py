@@ -138,6 +138,12 @@ if sys.maxint > 0x7fffffff:
     warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning,
                             "<string>")
 
+# Ignore ImportWarnings that only occur in the source tree,
+# (because of modules with the same name as source-directories in Modules/)
+for mod in ("ctypes", "gzip", "test.test_zipimport", "test.test_zlib"):
+    warnings.filterwarnings(module=".*%s$" % (mod,),
+                            action="ignore", category=ImportWarning)
+
 # MacOSX (a.k.a. Darwin) has a default stack size that is too small
 # for deeply recursive regular expressions.  We see this as crashes in
 # the Python test suite when running test_re.py and test_sre.py.  The

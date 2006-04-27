@@ -205,3 +205,20 @@ def test_import_name_binding():
     assert y is test.test_support, y.__name__
 
 test_import_name_binding()
+
+def test_import_initless_directory_warning():
+    import warnings
+    oldfilters = warnings.filters[:]
+    warnings.simplefilter('error', ImportWarning);
+    try:
+        # Just a random non-package directory we always expect to be
+        # somewhere in sys.path...
+        __import__("site-packages")
+    except ImportWarning:
+        pass
+    else:
+        raise AssertionError
+    finally:
+        warnings.filters = oldfilters
+
+test_import_initless_directory_warning()
