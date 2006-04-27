@@ -140,7 +140,9 @@ if sys.maxint > 0x7fffffff:
 
 # Ignore ImportWarnings that only occur in the source tree,
 # (because of modules with the same name as source-directories in Modules/)
-for mod in ("ctypes", "gzip", "test.test_zipimport", "test.test_zlib"):
+for mod in ("ctypes", "gzip", "zipfile", "tarfile", "encodings.zlib_codec",
+            "test.test_zipimport", "test.test_zlib", "test.test_zipfile",
+            "test.test_codecs", "test.string_tests"):
     warnings.filterwarnings(module=".*%s$" % (mod,),
                             action="ignore", category=ImportWarning)
 
