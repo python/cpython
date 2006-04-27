@@ -1760,16 +1760,16 @@ The \command{upload} command uses the username, password, and repository
 URL from the \file{\$HOME/.pypirc} file (see section~\ref{pypirc} for
 more on this file).
 
-You can use the \programopt{--sign} option to tell \command{upload} to
+You can use the \longprogramopt{sign} option to tell \command{upload} to
 sign each uploaded file using GPG (GNU Privacy Guard).  The 
 \program{gpg} program must be available for execution on the system
 \envvar{PATH}.  You can also specify which key to use for signing
-using the \programopt{--identity=\var{name}} option.
+using the \longprogramopt{identity=\var{name}} option.
 
 Other \command{upload} options include 
-\programopt{--repository=\var{url}} (which lets you override the
+\longprogramopt{repository=\var{url}} (which lets you override the
 repository setting from \file{\$HOME/.pypirc}), and
-\programopt{--show-response} (which displays the full response text
+\longprogramopt{show-response} (which displays the full response text
 from the PyPI server for help in debugging upload problems).
 
 \chapter{Examples}
