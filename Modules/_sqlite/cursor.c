@@ -27,8 +27,12 @@
 #include "sqlitecompat.h"
 
 /* used to decide wether to call PyInt_FromLong or PyLong_FromLongLong */
+#ifndef INT32_MIN
 #define INT32_MIN (-2147483647 - 1)
+#endif
+#ifndef INT32_MAX
 #define INT32_MAX 2147483647
+#endif
 
 PyObject* cursor_iternext(Cursor *self);
 

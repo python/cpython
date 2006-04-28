@@ -49,23 +49,6 @@ OptFSSpecPtr_Convert(PyObject *v, FSSpec **p_itself)
 }
 
 /*
-** Parse an optional rect
-*/
-static int
-OptRectPtr_Convert(PyObject *v, Rect **p_itself)
-{
-        static Rect r;
-
-        if (v == Py_None)
-        {
-                *p_itself = NULL;
-                return 1;
-        }
-        *p_itself = &r;
-        return PyMac_GetRect(v, *p_itself);
-}
-
-/*
 ** Parse an optional GWorld
 */
 static int
