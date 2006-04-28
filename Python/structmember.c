@@ -260,8 +260,9 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 			PyErr_BadArgument();
 			return -1;
 		} else {
-                        *(PY_LONG_LONG*)addr = PyLong_AsLongLong(v);
-                        if ((*addr == -1) && PyErr_Occurred()) {
+                        PY_LONG_LONG value;
+                        *(PY_LONG_LONG*)addr = value = PyLong_AsLongLong(v);
+                        if ((value == -1) && PyErr_Occurred()) {
                                 return -1;
                         }
                 }
@@ -271,8 +272,10 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
                         PyErr_BadArgument();
                         return -1;
                 } else {
-                        *(unsigned PY_LONG_LONG*)addr = PyLong_AsUnsignedLongLong(v);
-                        if ((*addr == -1) && PyErr_Occurred()) {
+                        unsigned PY_LONG_LONG value;
+                        *(unsigned PY_LONG_LONG*)addr = value = PyLong_AsUnsignedLongLong(v);
+                        if ((value == (unsigned PY_LONG_LONG)-1) &&
+			    PyErr_Occurred()) {
                                 return -1;
                         }
                 }
