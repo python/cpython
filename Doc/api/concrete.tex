@@ -1366,7 +1366,7 @@ The following codec API is special in that maps Unicode to Unicode.
   The \var{mapping} table must map Unicode ordinal integers to Unicode
   ordinal integers or None (causing deletion of the character).
 
-  Mapping tables need only provide the method{__getitem__()}
+  Mapping tables need only provide the \method{__getitem__()}
   interface; dictionaries and sequences work well.  Unmapped character
   ordinals (ones which cause a \exception{LookupError}) are left
   untouched and are copied as-is.
