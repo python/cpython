@@ -45,6 +45,7 @@ def get_platform ():
     osname = string.lower(osname)
     osname = string.replace(osname, '/', '')
     machine = string.replace(machine, ' ', '_')
+    machine = string.replace(machine, '/', '-')
 
     if osname[:5] == "linux":
         # At least on Linux/Intel, 'machine' is the processor --
