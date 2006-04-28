@@ -31,7 +31,7 @@ def read_code(stream):
 def simplegeneric(func):
     """Make a trivial single-dispatch generic function"""
     registry = {}
-    def wrapper(*args,**kw):
+    def wrapper(*args, **kw):
         ob = args[0]
         try:
             cls = ob.__class__
@@ -41,18 +41,19 @@ def simplegeneric(func):
             mro = cls.__mro__
         except AttributeError:
             try:
-                class cls(cls,object): pass
+                class cls(cls, object):
+                    pass
                 mro = cls.__mro__[1:]
             except TypeError:
                 mro = object,   # must be an ExtensionClass or some such  :(
         for t in mro:
             if t in registry:
-                return registry[t](*args,**kw)
+                return registry[t](*args, **kw)
         else:
-            return func(*args,**kw)
+            return func(*args, **kw)
     try:
         wrapper.__name__ = func.__name__
-    except (TypeError,AttributeError):
+    except (TypeError, AttributeError):
         pass    # Python 2.3 doesn't allow functions to be renamed
 
     def register(typ, func=None):
@@ -70,8 +71,9 @@ def simplegeneric(func):
 def walk_packages(path=None, prefix='', onerror=None):
     """Yield submodule names+loaders recursively, for path or sys.path"""
 
-    def seen(p,m={}):
-        if p in m: return True
+    def seen(p, m={}):
+        if p in m:
+            return True
         m[p] = True
 
     for importer, name, ispkg in iter_modules(path, prefix):
@@ -110,7 +112,7 @@ def iter_modules(path=None, prefix=''):
 
 #@simplegeneric
 def iter_importer_modules(importer, prefix=''):
-    if not hasattr(importer,'iter_modules'):
+    if not hasattr(importer, 'iter_modules'):
         return []
     return importer.iter_modules(prefix)
 
@@ -336,7 +338,7 @@ def get_importer(path_item):
                 pass
         else:
             importer = None
-        sys.path_importer_cache.setdefault(path_item,importer)
+        sys.path_importer_cache.setdefault(path_item, importer)
 
     if importer is None:
         try:
@@ -377,7 +379,7 @@ def iter_importers(fullname=""):
         pkg = '.'.join(fullname.split('.')[:-1])
         if pkg not in sys.modules:
             __import__(pkg)
-        path = getattr(sys.modules[pkg],'__path__',None) or []
+        path = getattr(sys.modules[pkg], '__path__', None) or []
     else:
         for importer in sys.meta_path:
             yield importer
@@ -404,7 +406,7 @@ def get_loader(module_or_name):
         module_or_name = sys.modules[module_or_name]
     if isinstance(module_or_name, ModuleType):
         module = module_or_name
-        loader = getattr(module,'__loader__',None)
+        loader = getattr(module, '__loader__', None)
         if loader is not None:
             return loader
         fullname = module.__name__
