@@ -447,7 +447,7 @@ def register_X_browsers():
     # First, the Mozilla/Netscape browsers
     for browser in ("mozilla-firefox", "firefox",
                     "mozilla-firebird", "firebird",
-                    "mozilla", "netscape"):
+                    "seamonkey", "mozilla", "netscape"):
         if _iscommand(browser):
             register(browser, None, Mozilla(browser))
 
