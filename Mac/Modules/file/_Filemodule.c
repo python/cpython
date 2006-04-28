@@ -105,13 +105,14 @@ _PyMac_GetFullPathname(FSSpec *fss, char *path, int len)
 		FSSpec fss2;
 		int tocopy;
 
-		err = FSMakeFSSpec(fss->vRefNum, fss->parID, "", &fss2);
+		err = FSMakeFSSpec(fss->vRefNum, fss->parID,
+				   (unsigned char*)"", &fss2);
 		if (err)
 			return err;
 		err = FSpMakeFSRef(&fss2, &fsr);
 		if (err)
 			return err;
-		err = (OSErr)FSRefMakePath(&fsr, path, len-1);
+		err = (OSErr)FSRefMakePath(&fsr, (unsigned char*)path, len-1);
 		if (err)
 			return err;
 		/* This part is not 100% safe: we append the filename part, but
@@ -123,12 +124,12 @@ _PyMac_GetFullPathname(FSSpec *fss, char *path, int len)
 		if ((strlen(path) + tocopy) >= len)
 			tocopy = len - strlen(path) - 1;
 		if (tocopy > 0)
-			strncat(path, fss->name+1, tocopy);
+			strncat(path, (char*)fss->name+1, tocopy);
 	}
 	else {
 		if (err)
 			return err;
-		err = (OSErr)FSRefMakePath(&fsr, path, len);
+		err = (OSErr)FSRefMakePath(&fsr, (unsigned char*)path, len);
 		if (err)
 			return err;
 	}
