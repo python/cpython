@@ -146,8 +146,9 @@ should detect mount points for all \UNIX{} and \POSIX{} variants.
 \end{funcdesc}
 
 \begin{funcdesc}{join}{path1\optional{, path2\optional{, ...}}}
-Joins one or more path components intelligently.  If any component is
-an absolute path, all previous components are thrown away, and joining
+Join one or more path components intelligently.  If any component is
+an absolute path, all previous components (on Windows, including the
+previous drive letter, if there was one) are thrown away, and joining
 continues.  The return value is the concatenation of \var{path1}, and
 optionally \var{path2}, etc., with exactly one directory separator
 (\code{os.sep}) inserted between components, unless \var{path2} is
