@@ -122,7 +122,7 @@ def copytree(src, dst, symlinks=False):
                 copy2(srcname, dstname)
             # XXX What about devices, sockets etc.?
         except (IOError, os.error), why:
-            errors.append((srcname, dstname, why))
+            errors.append((srcname, dstname, str(why)))
         # catch the Error from the recursive copytree so that we can
         # continue with other files
         except Error, err:
