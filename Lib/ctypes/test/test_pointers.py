@@ -133,27 +133,6 @@ class PointersTestCase(unittest.TestCase):
         self.failUnlessEqual(p[0], 42)
         self.failUnlessEqual(p.contents.value, 42)
 
-    def test_incomplete(self):
-        lpcell = POINTER("cell")
-        class cell(Structure):
-            _fields_ = [("value", c_int),
-                        ("next", lpcell)]
-        SetPointerType(lpcell, cell)
-
-        # Make a structure containing a pointer to itself:
-        c = cell()
-        c.value = 42
-        c.next = pointer(c)
-
-        result = []
-        for i in range(8):
-            result.append(c.value)
-            c = c.next[0]
-        self.failUnlessEqual(result, [42] * 8)
-
-        from ctypes import _pointer_type_cache
-        del _pointer_type_cache[cell]
-
     def test_charpp( self ):
         """Test that a character pointer-to-pointer is correctly passed"""
         dll = CDLL(_ctypes_test.__file__)
