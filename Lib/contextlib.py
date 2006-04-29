@@ -53,7 +53,7 @@ def contextfactory(func):
 
     Typical usage:
 
-        @contextmanager
+        @contextfactory
         def some_generator(<arguments>):
             <setup>
             try:
