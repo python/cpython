@@ -142,6 +142,8 @@ Library
 Build
 -----
 
+- Patch #1471883: Add --enable-universalsdk.
+
 - The Makefile now has a reindent target, which runs reindent.py on
   the library.
 
