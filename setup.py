@@ -913,20 +913,11 @@ class PyBuildExt(build_ext):
         #
         # More information on Expat can be found at www.libexpat.org.
         #
-        if sys.byteorder == "little":
-            xmlbo = "1234"
-        else:
-            xmlbo = "4321"
         expatinc = os.path.join(os.getcwd(), srcdir, 'Modules', 'expat')
         define_macros = [
-            ('XML_NS', '1'),
-            ('XML_DTD', '1'),
-            ('BYTEORDER', xmlbo),
-            ('XML_CONTEXT_BYTES','1024'),
-            ]
-        for feature_macro in ['HAVE_MEMMOVE', 'HAVE_BCOPY']:
-            if config_h_vars.has_key(feature_macro):
-                define_macros.append((feature_macro, '1'))
+            ('HAVE_EXPAT_CONFIG_H', '1'),
+        ]
+
         exts.append(Extension('pyexpat',
                               define_macros = define_macros,
                               include_dirs = [expatinc],

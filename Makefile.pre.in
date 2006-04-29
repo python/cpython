@@ -108,13 +108,17 @@ EXE=		@EXEEXT@
 BUILDEXE=	@BUILDEXEEXT@
 
 # Short name and location for Mac OS X Python framework
+UNIVERSALSDK=@UNIVERSALSDK@
 PYTHONFRAMEWORK=	@PYTHONFRAMEWORK@
 PYTHONFRAMEWORKDIR=	@PYTHONFRAMEWORKDIR@
 PYTHONFRAMEWORKPREFIX=	@PYTHONFRAMEWORKPREFIX@
 PYTHONFRAMEWORKINSTALLDIR= @PYTHONFRAMEWORKINSTALLDIR@
 # Deployment target selected during configure, to be checked
-# by distutils
-CONFIGURE_MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
+# by distutils. The export statement is needed to ensure that the
+# deployment target is active during build.
+MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
+@EXPORT_MACOSX_DEPLOYMENT_TARGET@export MACOSX_DEPLOYMENT_TARGET
+
 # Options to enable prebinding (for fast startup prior to Mac OS X 10.3)
 OTHER_LIBTOOL_OPT=@OTHER_LIBTOOL_OPT@
 
@@ -377,8 +381,17 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
                 $(RESSRCDIR)/version.plist \
                 $(RESSRCDIR)/English.lproj/InfoPlist.strings
 	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)
-	libtool -o $(LDLIBRARY) -dynamic $(OTHER_LIBTOOL_OPT) $(LIBRARY) \
-		@LIBTOOL_CRUFT@
+	if test "${UNIVERSALSDK}"; then \
+		$(CC) -o $(LDLIBRARY) -arch i386 -arch ppc -dynamiclib \
+			-isysroot "${UNIVERSALSDK}" \
+			-all_load $(LIBRARY) -Wl,-single_module \
+			-install_name $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/Python \
+			-compatibility_version $(VERSION) \
+			-current_version $(VERSION); \
+        else \
+		libtool -o $(LDLIBRARY) -dynamic $(OTHER_LIBTOOL_OPT) $(LIBRARY) \
+			@LIBTOOL_CRUFT@ ;\
+	fi
 	$(INSTALL) -d -m $(DIRMODE)  \
 		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/English.lproj
 	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist \
@@ -567,6 +580,19 @@ testall:	all platform
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
 		-$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
 		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
+
+#  Run the unitests for both architectures in a Universal build on OSX
+#  Must be run on an Intel box.
+testuniversal:	all platform
+		if [ `arch` != 'i386' ];then \
+			echo "This can only be used on OSX/i386" ;\
+			exit 1 ;\
+		fi
+		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
+		-$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
+		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
+		$(RUNSHARED) /usr/libexec/oah/translate ./$(BUILDPYTHON) -E -tt $(TESTPROG) $(TESTOPTS) -uall
+
 
 # Like testall, but with a single pass only
 buildbottest:	all platform
