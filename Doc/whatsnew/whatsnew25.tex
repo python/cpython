@@ -1962,6 +1962,11 @@ error checking.
 now uses the \cfunction{dlopen()} function instead of MacOS-specific
 functions.
 
+\item MacOS X: a \longprogramopt{enable-universalsdk} switch was added
+to the \program{configure} script that compiles the interpreter as a
+universal binary able to run on both PowerPC and Intel processors.
+(Contributed by Ronald Oussoren.)
+
 \item Windows: \file{.dll} is no longer supported as a filename extension for 
 extension modules.  \file{.pyd} is now the only filename extension that will
 be searched for.
