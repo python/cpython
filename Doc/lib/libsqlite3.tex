@@ -1,0 +1,105 @@
+\section{\module{sqlite3} ---
+         DB-API 2.0 interface for SQLite databases}
+
+\declaremodule{builtin}{sqlite3}
+\modulesynopsis{A DB-API 2.0 interface based on SQLite 3.x.}
+
+
+
+The module defines the following:
+
+\begin{datadesc}{PARSE_DECLTYPES}
+This constant is meant to be used with the detect_types parameter of the connect function.
+
+Setting it makes the sqlite3 module parse the declared type for each column it
+returns.  It will parse out the first word of the declared type, i. e. for
+"integer primary key", it will parse out "integer". Then for that column, it
+will look into pysqlite's converters dictionary and use the converter function
+registered for that type there.  Converter names are case-sensitive!
+\end{datadesc}
+
+
+\begin{datadesc}{PARSE_COLNAMES}
+
+Setting this makes pysqlite parse the column name for each column it returns.
+It will look for a string formed [mytype] in there, and then decide that
+'mytype' is the type of the column. It will try to find an entry of 'mytype' in
+the converters dictionary and then use the converter function found there to
+return the value. The column name found in cursor.description is only the first
+word of the column name, i.  e. if you use something like 'as "x [datetime]"'
+in your SQL, then pysqlite will parse out everything until the first blank for
+the column name: the column name would simply be "x".
+\end{datadesc}
+
+\begin{funcdesc}{connect}{database\optional{, timeout, isolation_level, detect_types, check_same_thread, factory}}
+Opens a connection to the SQLite database file \var{database}. You can use
+\code{":memory:"} to open a database connection to a database that resides in
+RAM instead of on disk.
+
+When a database is accessed by multiple connections, and one of the processes
+modifies the database, the SQLite database is locked until that transaction is
+committed. The \var{timeout} parameter specifies how long the connection should
+wait for the lock to go away until raising an exception. The default for the
+timeout parameter is 5.0 (five seconds). 
+
+For the \var{isolation_level} parameter, please see TODO: link property of
+Connection objects.
+
+SQLite natively supports only the types TEXT, INTEGER, FLOAT, BLOB and NULL. If
+you want to use other types, like you have to add support for them yourself.
+The \var{detect_types} parameter and the using custom *converters* registered with
+the module-level *register_converter* function allow you to easily do that.
+
+\var{detect_types} defaults to 0 (i. e. off, no type detection), you can set it
+to any combination of *PARSE_DECLTYPES* and *PARSE_COLNAMES* to turn type
+detection on.
+
+By default, the sqlite3 module uses its Connection class for the connect call.
+You can, however, subclass the Connection class and make .connect() use your
+class instead by providing your class for the \var{factory} parameter.
+
+Consult the section `4. SQLite and Python types`_ of this manual for details.
+
+The sqlite3 module internally uses a statement cache to avoid SQL parsing
+overhead. If you want to explicitly set the number of statements that are
+cached for the connection, you can set the \var{cached_statements} parameter.
+The currently implemented default is to cache 100 statements.
+\end{funcdesc}
+
+\begin{funcdesc}{register_converter}{typename, callable}
+
+Registers a callable to convert a bytestring from the database into a custom
+Python type. The callable will be invoked for all database values that are of
+the type \var{typename}. Confer the parameter **detect_types** of the
+**connect** method for how the type detection works. Note that the case of
+\var{typename} and the name of the type in your query must match!
+\end{funcdesc}
+
+\begin{funcdesc}{register_adapter}{type, callable}
+Registers a callable to convert the custom Python type \var{type} into one of
+SQLite's supported types. The callable \var{callable} accepts as single
+parameter the Python value, and must return a value of the following types:
+int, long, float, str (UTF-8 encoded), unicode or buffer.
+\end{funcdesc}
+
+
+
+
+
+
+\subsection{Connection Objects \label{Connection-Objects}}
+
+A \class{Connection} instance has the following attributes and methods:
+
+\member{isolation_level}
+    Get or set the current isolation level. None for autocommit mode or one
+    of "DEFERRED", "IMMEDIATE" or "EXLUSIVE". See `5. Controlling
+    Transactions`_ for a more detailed explanation.
+
+\begin{methoddesc}{cursor}{\optional{cursorClass}}
+    The cursor method accepts a single optional parameter \var{cursorClass}.
+    This is a custom cursor class which must extend sqlite3.Cursor.
+\end{methoddesc}
+
+TODO: execute*
+

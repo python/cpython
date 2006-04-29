@@ -350,7 +350,8 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libturtle.tex \
 	lib/libtarfile.tex \
 	lib/libcsv.tex \
-	lib/libcfgparser.tex
+	lib/libcfgparser.tex \
+	lib/libsqlite3.tex
 
 # LaTeX source files for Macintosh Library Modules.
 MACFILES= $(HOWTOSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
