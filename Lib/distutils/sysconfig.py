@@ -366,8 +366,8 @@ def _init_posix():
     # MACOSX_DEPLOYMENT_TARGET: configure bases some choices on it so
     # it needs to be compatible.
     # If it isn't set we set it to the configure-time value
-    if sys.platform == 'darwin' and g.has_key('CONFIGURE_MACOSX_DEPLOYMENT_TARGET'):
-        cfg_target = g['CONFIGURE_MACOSX_DEPLOYMENT_TARGET']
+    if sys.platform == 'darwin' and g.has_key('MACOSX_DEPLOYMENT_TARGET'):
+        cfg_target = g['MACOSX_DEPLOYMENT_TARGET']
         cur_target = os.getenv('MACOSX_DEPLOYMENT_TARGET', '')
         if cur_target == '':
             cur_target = cfg_target
