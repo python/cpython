@@ -2,7 +2,6 @@
 \usepackage{distutils}
 % $Id$
 
-% Describe the pkgutil module
 % Fix XXX comments
 % Count up the patches and bugs
 
@@ -1435,6 +1434,11 @@ longer accept a return value of \code{None} from the
 \method{__reduce__()} method; the method must return a tuple of
 arguments instead.  The ability to return \code{None} was deprecated
 in Python 2.4, so this completes the removal of the feature.
+
+\item The \module{pkgutil} module, containing various utility
+functions for finding packages, was enhanced to support PEP 302's
+import hooks and now also works for packages stored in ZIP-format archives.
+(Contributed by Phillip J. Eby.)
 
 \item The old \module{regex} and \module{regsub} modules, which have been 
 deprecated ever since Python 2.0, have finally been deleted.  
