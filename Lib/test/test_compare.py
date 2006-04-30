@@ -6,19 +6,6 @@ class Empty:
     def __repr__(self):
         return '<Empty>'
 
-class Coerce:
-    def __init__(self, arg):
-        self.arg = arg
-
-    def __repr__(self):
-        return '<Coerce %s>' % self.arg
-
-    def __coerce__(self, other):
-        if isinstance(other, Coerce):
-            return self.arg, other.arg
-        else:
-            return self.arg, other
-
 class Cmp:
     def __init__(self,arg):
         self.arg = arg
@@ -30,7 +17,7 @@ class Cmp:
         return cmp(self.arg, other)
 
 class ComparisonTest(unittest.TestCase):
-    set1 = [2, 2.0, 2L, 2+0j, Coerce(2), Cmp(2.0)]
+    set1 = [2, 2.0, 2L, 2+0j, Cmp(2.0)]
     set2 = [[1], (3,), None, Empty()]
     candidates = set1 + set2
 
