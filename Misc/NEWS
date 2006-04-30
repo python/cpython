@@ -86,6 +86,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1470846: fix urllib2 ProxyBasicAuthHandler.
+
 - Patch #1475231: ``doctest`` has a new ``SKIP`` option, which causes
   a doctest to be skipped (the code is not run, and the expected output
   or exception is ignored).
