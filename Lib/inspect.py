@@ -353,7 +353,13 @@ def getsourcefile(object):
         if 'b' in mode and string.lower(filename[-len(suffix):]) == suffix:
             # Looks like a binary file.  We want to only return a text file.
             return None
-    if os.path.exists(filename) or hasattr(getmodule(object), '__loader__'):
+    if os.path.exists(filename):
+        return filename
+    # Ugly but necessary - '<stdin>' and '<string>' mean that getmodule()
+    # would infinitely recurse, because they're not real files nor loadable
+    # Note that this means that writing a PEP 302 loader that uses '<'
+    # at the start of a filename is now not a good idea.  :(
+    if filename[:1]!='<' and hasattr(getmodule(object), '__loader__'):
         return filename
 
 def getabsfile(object):
