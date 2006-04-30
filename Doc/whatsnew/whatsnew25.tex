@@ -1125,6 +1125,14 @@ a line like this near the top of the source file:
 # -*- coding: latin1 -*-
 \end{verbatim}
 
+\item One error that Python programmers sometimes make is forgetting
+to include an \file{__init__.py} module in a package directory.
+Debugging this mistake can be confusing, and usually requires running
+Python with the \programopt{-v} switch to log all the paths searched.
+In Python 2.5, a new \exception{ImportWarning} warning is raised when
+an import would have picked up a directory as a package but no
+\file{__init__.py} was found.  (Implemented by Thomas Wouters.)
+
 \item The list of base classes in a class definition can now be empty.  
 As an example, this is now legal:
 
@@ -1439,6 +1447,15 @@ in Python 2.4, so this completes the removal of the feature.
 functions for finding packages, was enhanced to support PEP 302's
 import hooks and now also works for packages stored in ZIP-format archives.
 (Contributed by Phillip J. Eby.)
+
+\item The pybench benchmark suite by Marc-Andr\'e~Lemburg is now
+included in the \file{Tools/pybench} directory.  The pybench suite is
+an improvement on the commonly used \file{pystone.py} program because
+pybench provides a more detailed measurement of the interpreter's
+performance.  It times particular operations such as function calls,
+tuple slicing, method lookups, and numeric operations, instead of
+performing many different operations and reducing the result to a
+single number as \file{pystone.py} does.
 
 \item The old \module{regex} and \module{regsub} modules, which have been 
 deprecated ever since Python 2.0, have finally been deleted.  
