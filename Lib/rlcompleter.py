@@ -39,7 +39,6 @@ used, and this module (and the readline module) are silently inactive.
 
 """
 
-import readline
 import __builtin__
 import __main__
 
@@ -147,4 +146,9 @@ def get_class_members(klass):
             ret = ret + get_class_members(base)
     return ret
 
-readline.set_completer(Completer().complete)
+try:
+    import readline
+except ImportError:
+    pass
+else:
+    readline.set_completer(Completer().complete)
