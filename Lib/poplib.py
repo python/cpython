@@ -295,8 +295,8 @@ class POP3:
         m = self.timestamp.match(self.welcome)
         if not m:
             raise error_proto('-ERR APOP not supported by server')
-        import md5
-        digest = md5.new(m.group(1)+secret).digest()
+        import hashlib
+        digest = hashlib.md5(m.group(1)+secret).digest()
         digest = ''.join(map(lambda x:'%02x'%ord(x), digest))
         return self._shortcmd('APOP %s %s' % (user, digest))
 
