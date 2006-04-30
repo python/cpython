@@ -410,20 +410,11 @@ class UnicodeTest(
             def __str__(self):
                 return u'\u1234'
         self.assertEqual('%s' % Wrapper(), u'\u1234')
-
+    
+    @test_support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
     def test_format_float(self):
-        try:
-            import locale
-            orig_locale = locale.setlocale(locale.LC_ALL)
-            locale.setlocale(locale.LC_ALL, 'de_DE')
-        except (ImportError, locale.Error):
-            return # skip if we can't set locale
-
-        try:
-            # should not format with a comma, but always with C locale
-            self.assertEqual(u'1.0', u'%.1f' % 1.0)
-        finally:
-            locale.setlocale(locale.LC_ALL, orig_locale)
+        # should not format with a comma, but always with C locale
+        self.assertEqual(u'1.0', u'%.1f' % 1.0)
 
     def test_constructor(self):
         # unicode(obj) tests (this maps to PyObject_Unicode() at C level)

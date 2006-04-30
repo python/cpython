@@ -1151,7 +1151,9 @@ save_float(Picklerobject *self, PyObject *args)
 	else {
 		char c_str[250];
 		c_str[0] = FLOAT;
-		PyOS_snprintf(c_str + 1, sizeof(c_str) - 1, "%.17g\n", x);
+		PyOS_ascii_formatd(c_str + 1, sizeof(c_str) - 2, "%.17g", x);
+		/* Extend the formatted string with a newline character */
+		strcat(c_str, "\n");
 
 		if (self->write_func(self, c_str, strlen(c_str)) < 0)
 			return -1;
