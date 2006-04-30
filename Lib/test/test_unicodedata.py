@@ -6,7 +6,7 @@
 
 """#"
 import unittest, test.test_support
-import sha
+import hashlib
 
 encoding = 'utf-8'
 
@@ -19,7 +19,7 @@ class UnicodeMethodsTest(unittest.TestCase):
     expectedchecksum = 'a6555cd209d960dcfa17bfdce0c96d91cfa9a9ba'
 
     def test_method_checksum(self):
-        h = sha.sha()
+        h = hashlib.sha1()
         for i in range(65536):
             char = unichr(i)
             data = [
@@ -79,7 +79,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     def test_function_checksum(self):
         data = []
-        h = sha.sha()
+        h = hashlib.sha1()
 
         for i in range(0x10000):
             char = unichr(i)

@@ -6,7 +6,7 @@ from distutils.errors import *
 from distutils.core import Command
 from distutils.spawn import spawn
 from distutils import log
-from md5 import md5
+from hashlib import md5
 import os
 import socket
 import platform

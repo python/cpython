@@ -88,14 +88,13 @@ import base64
 import ftplib
 import httplib
 import inspect
-import md5
+import hashlib
 import mimetypes
 import mimetools
 import os
 import posixpath
 import random
 import re
-import sha
 import socket
 import sys
 import time
@@ -869,8 +868,8 @@ class AbstractDigestAuthHandler:
         # and server to avoid chosen plaintext attacks, to provide mutual
         # authentication, and to provide some message integrity protection.
         # This isn't a fabulous effort, but it's probably Good Enough.
-        dig = sha.new("%s:%s:%s:%s" % (self.nonce_count, nonce, time.ctime(),
-                                       randombytes(8))).hexdigest()
+        dig = hashlib.sha1("%s:%s:%s:%s" % (self.nonce_count, nonce, time.ctime(),
+                                            randombytes(8))).hexdigest()
         return dig[:16]
 
     def get_authorization(self, req, chal):
@@ -932,9 +931,9 @@ class AbstractDigestAuthHandler:
     def get_algorithm_impls(self, algorithm):
         # lambdas assume digest modules are imported at the top level
         if algorithm == 'MD5':
-            H = lambda x: md5.new(x).hexdigest()
+            H = lambda x: hashlib.md5(x).hexdigest()
         elif algorithm == 'SHA':
-            H = lambda x: sha.new(x).hexdigest()
+            H = lambda x: hashlib.sha1(x).hexdigest()
         # XXX MD5-sess
         KD = lambda s, d: H("%s:%s" % (s, d))
         return H, KD
