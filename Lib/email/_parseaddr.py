@@ -360,6 +360,7 @@ class AddrlistClass:
                 break
             elif allowcomments and self.field[self.pos] == '(':
                 slist.append(self.getcomment())
+                continue        # have already advanced pos from getcomment
             elif self.field[self.pos] == '\\':
                 quote = True
             else:
