@@ -2149,9 +2149,9 @@ using a generator function decorated with the
 than writing individual \method{__enter__()} and \method{__exit__()}
 methods on a separate object when the state to be managed is complex.
 
-With statement context objects also need to implement this method; they
-are required to return themselves (that is, this method will simply
-return \var{self}).
+\keyword{with} statement context objects also need to implement this
+method; they are required to return themselves (that is, this method
+will simply return \var{self}).
 \end{methoddesc}
 
 \begin{methoddesc}[with statement context]{__enter__}{self}

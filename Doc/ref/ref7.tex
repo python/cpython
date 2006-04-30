@@ -315,7 +315,7 @@ statement to generate exceptions may be found in section~\ref{raise}.
 \versionadded{2.5}
 
 The \keyword{with} statement is used to wrap the execution of a block
-with methods defined by a context manager or with statement context
+with methods defined by a context manager or \keyword{with} statement context
 object (see section~\ref{context-managers}). This allows common
 \keyword{try}...\keyword{except}...\keyword{finally} usage patterns to
 be encapsulated for convenient reuse.
@@ -332,7 +332,7 @@ The execution of the \keyword{with} statement proceeds as follows:
 \item The context expression is evaluated, to obtain a context manager.
 
 \item The context manger's \method{__context__()} method is
-invoked to obtain a with statement context object.
+invoked to obtain a \keyword{with} statement context object.
 
 \item The context object's \method{__enter__()} method is invoked.
 
