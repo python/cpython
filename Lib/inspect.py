@@ -412,7 +412,11 @@ def findsource(object):
     in the file and the line number indexes a line in that list.  An IOError
     is raised if the source code cannot be retrieved."""
     file = getsourcefile(object) or getfile(object)
-    lines = linecache.getlines(file, getmodule(object).__dict__)
+    module = getmodule(object)
+    if module:
+        lines = linecache.getlines(file, module.__dict__)
+    else:
+        lines = linecache.getlines(file)
     if not lines:
         raise IOError('could not get source code')
 
