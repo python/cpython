@@ -1,7 +1,8 @@
 # Python test set -- built-in functions
 
 import test.test_support, unittest
-from test.test_support import fcmp, have_unicode, TESTFN, unlink, run_unittest
+from test.test_support import fcmp, have_unicode, TESTFN, unlink, \
+                              run_unittest, run_with_locale
 from operator import neg
 
 import sys, warnings, cStringIO, random, UserDict
@@ -554,33 +555,20 @@ class BuiltinTest(unittest.TestCase):
             # Implementation limitation in PyFloat_FromString()
             self.assertRaises(ValueError, float, unicode("1"*10000))
 
+    @run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
     def test_float_with_comma(self):
         # set locale to something that doesn't use '.' for the decimal point
-        try:
-            import locale
-            orig_locale = locale.setlocale(locale.LC_NUMERIC)
-            locale.setlocale(locale.LC_NUMERIC, 'fr_FR')
-        except:
-            # if we can't set the locale, just ignore this test
+        import locale
+        if not locale.localeconv()['decimal_point'] == ',':
             return
 
-        try:
-            self.assertEqual(locale.localeconv()['decimal_point'], ',')
-        except:
-            # this test is worthless, just skip it and reset the locale
-            locale.setlocale(locale.LC_NUMERIC, orig_locale)
-            return
-
-        try:
-            self.assertEqual(float("  3,14  "), 3.14)
-            self.assertEqual(float("  +3,14  "), 3.14)
-            self.assertEqual(float("  -3,14  "), -3.14)
-            self.assertRaises(ValueError, float, "  0x3.1  ")
-            self.assertRaises(ValueError, float, "  -0x3.p-1  ")
-            self.assertEqual(float("  25.e-1  "), 2.5)
-            self.assertEqual(fcmp(float("  .25e-1  "), .025), 0)
-        finally:
-            locale.setlocale(locale.LC_NUMERIC, orig_locale)
+        self.assertEqual(float("  3,14  "), 3.14)
+        self.assertEqual(float("  +3,14  "), 3.14)
+        self.assertEqual(float("  -3,14  "), -3.14)
+        self.assertRaises(ValueError, float, "  0x3.1  ")
+        self.assertRaises(ValueError, float, "  -0x3.p-1  ")
+        self.assertEqual(float("  25.e-1  "), 2.5)
+        self.assertEqual(fcmp(float("  .25e-1  "), .025), 0)
 
     def test_floatconversion(self):
         # Make sure that calls to __float__() work properly

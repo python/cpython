@@ -28,6 +28,7 @@ import select
 import os, sys, string, struct, types, cPickle, cStringIO
 import socket, tempfile, threading, time
 import logging, logging.handlers, logging.config
+from test.test_support import run_with_locale
 
 BANNER = "-- %-10s %-6s ---------------------------------------------------\n"
 
@@ -657,19 +658,11 @@ def test_main_inner():
             pass
         rootLogger.removeHandler(hdlr)
 
+# Set the locale to the platform-dependent default.  I have no idea
+# why the test does this, but in any case we save the current locale
+# first and restore it at the end.
+@run_with_locale('LC_ALL', '')
 def test_main():
-    import locale
-    # Set the locale to the platform-dependent default.  I have no idea
-    # why the test does this, but in any case we save the current locale
-    # first so we can restore it at the end.
-    try:
-        original_locale = locale.setlocale(locale.LC_ALL)
-        locale.setlocale(locale.LC_ALL, '')
-    except (ValueError, locale.Error):
-        # this happens on a Solaris box which only supports "C" locale
-        # or a Mac OS X box which supports very little locale stuff at all
-        original_locale = None
-
     # Save and restore the original root logger level across the tests.
     # Otherwise, e.g., if any test using cookielib runs after test_logging,
     # cookielib's debug-level logger tries to log messages, leading to
@@ -681,8 +674,6 @@ def test_main():
     try:
         test_main_inner()
     finally:
-        if original_locale is not None:
-            locale.setlocale(locale.LC_ALL, original_locale)
         root_logger.setLevel(original_logging_level)
 
 if __name__ == "__main__":
