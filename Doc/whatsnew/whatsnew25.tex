@@ -1468,6 +1468,12 @@ which includes ancient modules such as \module{dircmp} and
 \code{sys.path}, so unless your programs explicitly added the directory to 
 \code{sys.path}, this removal shouldn't affect your code.
 
+\item The \module{rlcompleter} module is no longer 
+dependent on importing the \module{readline} module and
+therefore now works on non-{\UNIX} platforms.
+(Patch from Robert Kiendl.)
+% Patch #1472854
+
 \item The \module{socket} module now supports \constant{AF_NETLINK}
 sockets on Linux, thanks to a patch from Philippe Biondi.  
 Netlink sockets are a Linux-specific mechanism for communications
