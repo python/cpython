@@ -86,6 +86,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1472854: make the rlcompleter.Completer class usable on non-
+  UNIX platforms.
+
 - Patch #1470846: fix urllib2 ProxyBasicAuthHandler.
 
 - Patch #1475231: ``doctest`` has a new ``SKIP`` option, which causes
