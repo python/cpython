@@ -621,14 +621,20 @@ user/password.
 \subsection{AbstractBasicAuthHandler Objects
             \label{abstract-basic-auth-handler}}
 
-\begin{methoddesc}[AbstractBasicAuthHandler]{handle_authentication_request}
+\begin{methoddesc}[AbstractBasicAuthHandler]{http_error_auth_reqed}
                                             {authreq, host, req, headers}
 Handle an authentication request by getting a user/password pair, and
 re-trying the request.  \var{authreq} should be the name of the header
 where the information about the realm is included in the request,
-\var{host} is the host to authenticate to, \var{req} should be the
-(failed) \class{Request} object, and \var{headers} should be the error
-headers.
+\var{host} specifies the URL and path to authenticate for, \var{req}
+should be the (failed) \class{Request} object, and \var{headers}
+should be the error headers.
+
+\var{host} is either an authority (e.g. \code{"python.org"}) or a URL
+containing an authority component (e.g. \code{"http://python.org/"}).
+In either case, the authority must not contain a userinfo component
+(so, \code{"python.org"} and \code{"python.org:80"} are fine,
+\code{"joe:password@python.org"} is not).
 \end{methoddesc}
 
 
@@ -653,7 +659,7 @@ Retry the request with authentication information, if available.
 \subsection{AbstractDigestAuthHandler Objects
             \label{abstract-digest-auth-handler}}
 
-\begin{methoddesc}[AbstractDigestAuthHandler]{handle_authentication_request}
+\begin{methoddesc}[AbstractDigestAuthHandler]{http_error_auth_reqed}
                                             {authreq, host, req, headers}
 \var{authreq} should be the name of the header where the information about
 the realm is included in the request, \var{host} should be the host to

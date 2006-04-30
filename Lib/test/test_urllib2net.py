@@ -23,6 +23,46 @@ class URLTimeoutTest(unittest.TestCase):
         f = urllib2.urlopen("http://www.python.org/")
         x = f.read()
 
+
+class AuthTests(unittest.TestCase):
+    """Tests urllib2 authentication features."""
+
+## Disabled at the moment since there is no page under python.org which
+## could be used to HTTP authentication.
+#
+#    def test_basic_auth(self):
+#        import httplib
+#
+#        test_url = "http://www.python.org/test/test_urllib2/basic_auth"
+#        test_hostport = "www.python.org"
+#        test_realm = 'Test Realm'
+#        test_user = 'test.test_urllib2net'
+#        test_password = 'blah'
+#
+#        # failure
+#        try:
+#            urllib2.urlopen(test_url)
+#        except urllib2.HTTPError, exc:
+#            self.assertEqual(exc.code, 401)
+#        else:
+#            self.fail("urlopen() should have failed with 401")
+#
+#        # success
+#        auth_handler = urllib2.HTTPBasicAuthHandler()
+#        auth_handler.add_password(test_realm, test_hostport,
+#                                  test_user, test_password)
+#        opener = urllib2.build_opener(auth_handler)
+#        f = opener.open('http://localhost/')
+#        response = urllib2.urlopen("http://www.python.org/")
+#
+#        # The 'userinfo' URL component is deprecated by RFC 3986 for security
+#        # reasons, let's not implement it!  (it's already implemented for proxy
+#        # specification strings (that is, URLs or authorities specifying a
+#        # proxy), so we must keep that)
+#        self.assertRaises(httplib.InvalidURL,
+#                          urllib2.urlopen, "http://evil:thing@example.com")
+
+
 class urlopenNetworkTests(unittest.TestCase):
     """Tests urllib2.urlopen using the network.
 
@@ -86,7 +126,8 @@ class urlopenNetworkTests(unittest.TestCase):
 
 def test_main():
     test_support.requires("network")
-    test_support.run_unittest(URLTimeoutTest, urlopenNetworkTests)
+    test_support.run_unittest(URLTimeoutTest, urlopenNetworkTests,
+                              AuthTests)
 
 if __name__ == "__main__":
     test_main()

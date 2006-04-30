@@ -612,7 +612,6 @@ def _parse_proxy(proxy):
     ('http', 'joe', 'password', 'proxy.example.com')
 
     """
-    from urlparse import _splitnetloc
     scheme, r_scheme = splittype(proxy)
     if not r_scheme.startswith("/"):
         # authority
@@ -673,6 +672,7 @@ class ProxyHandler(BaseHandler):
             return self.parent.open(req)
 
 class HTTPPasswordMgr:
+
     def __init__(self):
         self.passwd = {}
 
@@ -696,10 +696,15 @@ class HTTPPasswordMgr:
 
     def reduce_uri(self, uri):
         """Accept netloc or URI and extract only the netloc and path"""
-        parts = urlparse.urlparse(uri)
+        parts = urlparse.urlsplit(uri)
         if parts[1]:
+            # URI
             return parts[1], parts[2] or '/'
+        elif parts[0]:
+            # host:port
+            return uri, '/'
         else:
+            # host
             return parts[2], '/'
 
     def is_suburi(self, base, test):
@@ -742,6 +747,8 @@ class AbstractBasicAuthHandler:
         self.add_password = self.passwd.add_password
 
     def http_error_auth_reqed(self, authreq, host, req, headers):
+        # host may be an authority (without userinfo) or a URL with an
+        # authority
         # XXX could be multiple headers
         authreq = headers.get(authreq, None)
         if authreq:
@@ -752,10 +759,7 @@ class AbstractBasicAuthHandler:
                     return self.retry_http_basic_auth(host, req, realm)
 
     def retry_http_basic_auth(self, host, req, realm):
-        # TODO(jhylton): Remove the host argument? It depends on whether
-        # retry_http_basic_auth() is consider part of the public API.
-        # It probably is.
-        user, pw = self.passwd.find_user_password(realm, req.get_full_url())
+        user, pw = self.passwd.find_user_password(realm, host)
         if pw is not None:
             raw = "%s:%s" % (user, pw)
             auth = 'Basic %s' % base64.encodestring(raw).strip()
@@ -766,14 +770,15 @@ class AbstractBasicAuthHandler:
         else:
             return None
 
+
 class HTTPBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
     auth_header = 'Authorization'
 
     def http_error_401(self, req, fp, code, msg, headers):
-        host = urlparse.urlparse(req.get_full_url())[1]
+        url = req.get_full_url()
         return self.http_error_auth_reqed('www-authenticate',
-                                          host, req, headers)
+                                          url, req, headers)
 
 
 class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
@@ -781,9 +786,13 @@ class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
     auth_header = 'Proxy-authorization'
 
     def http_error_407(self, req, fp, code, msg, headers):
-        host = req.get_host()
+        # http_error_auth_reqed requires that there is no userinfo component in
+        # authority.  Assume there isn't one, since urllib2 does not (and
+        # should not, RFC 3986 s. 3.2.1) support requests for URLs containing
+        # userinfo.
+        authority = req.get_host()
         return self.http_error_auth_reqed('proxy-authenticate',
-                                          host, req, headers)
+                                          authority, req, headers)
 
 
 def randombytes(n):
