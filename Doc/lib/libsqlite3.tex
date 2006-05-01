@@ -2,7 +2,7 @@
          DB-API 2.0 interface for SQLite databases}
 
 \declaremodule{builtin}{sqlite3}
-\modulesynopsis{A DB-API 2.0 interface based on SQLite 3.x.}
+\modulesynopsis{A DB-API 2.0 implementation using SQLite 3.x.}
 
 
 
@@ -20,7 +20,6 @@ registered for that type there.  Converter names are case-sensitive!
 
 
 \begin{datadesc}{PARSE_COLNAMES}
-
 Setting this makes pysqlite parse the column name for each column it returns.
 It will look for a string formed [mytype] in there, and then decide that
 'mytype' is the type of the column. It will try to find an entry of 'mytype' in
@@ -67,7 +66,6 @@ The currently implemented default is to cache 100 statements.
 \end{funcdesc}
 
 \begin{funcdesc}{register_converter}{typename, callable}
-
 Registers a callable to convert a bytestring from the database into a custom
 Python type. The callable will be invoked for all database values that are of
 the type \var{typename}. Confer the parameter **detect_types** of the
@@ -83,23 +81,19 @@ int, long, float, str (UTF-8 encoded), unicode or buffer.
 \end{funcdesc}
 
 
-
-
-
-
-\subsection{Connection Objects \label{Connection-Objects}}
+\subsection{Connection Objects \label{sqlite3-Connection-Objects}}
 
 A \class{Connection} instance has the following attributes and methods:
 
-\member{isolation_level}
-    Get or set the current isolation level. None for autocommit mode or one
-    of "DEFERRED", "IMMEDIATE" or "EXLUSIVE". See `5. Controlling
-    Transactions`_ for a more detailed explanation.
+\begin{memberdesc}{isolation_level}
+  Get or set the current isolation level.  None for autocommit mode or one
+  of "DEFERRED", "IMMEDIATE" or "EXLUSIVE".  See `5. Controlling
+  Transactions`_ for a more detailed explanation.
+\end{memberdesc}
 
 \begin{methoddesc}{cursor}{\optional{cursorClass}}
-    The cursor method accepts a single optional parameter \var{cursorClass}.
-    This is a custom cursor class which must extend sqlite3.Cursor.
+  The cursor method accepts a single optional parameter \var{cursorClass}.
+  This is a custom cursor class which must extend \class{sqlite3.Cursor}.
 \end{methoddesc}
 
 TODO: execute*
-
