@@ -2064,6 +2064,12 @@ class TestMiscellaneous(unittest.TestCase):
            ['foo: ;', '"Jason R. Mastaler" <jason@dom.ain>']),
            [('', ''), ('Jason R. Mastaler', 'jason@dom.ain')])
 
+    def test_getaddresses_embedded_comment(self):
+        """Test proper handling of a nested comment"""
+        eq = self.assertEqual
+        addrs = Utils.getaddresses(['User ((nested comment)) <foo@bar.com>'])
+        eq(addrs[0][1], 'foo@bar.com')
+
     def test_utils_quote_unquote(self):
         eq = self.assertEqual
         msg = Message()
