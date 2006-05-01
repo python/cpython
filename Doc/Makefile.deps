@@ -308,6 +308,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libgetpass.tex \
 	lib/libshutil.tex \
 	lib/librepr.tex \
+	lib/libmsilib.tex \
 	lib/libmsvcrt.tex \
 	lib/libwinreg.tex \
 	lib/libwinsound.tex \
