@@ -86,8 +86,8 @@ int, long, float, str (UTF-8 encoded), unicode or buffer.
 A \class{Connection} instance has the following attributes and methods:
 
 \begin{memberdesc}{isolation_level}
-  Get or set the current isolation level.  None for autocommit mode or one
-  of "DEFERRED", "IMMEDIATE" or "EXLUSIVE".  See `5. Controlling
+  Get or set the current isolation level. None for autocommit mode or one
+  of "DEFERRED", "IMMEDIATE" or "EXLUSIVE". See `5. Controlling
   Transactions`_ for a more detailed explanation.
 \end{memberdesc}
 
@@ -96,4 +96,136 @@ A \class{Connection} instance has the following attributes and methods:
   This is a custom cursor class which must extend \class{sqlite3.Cursor}.
 \end{methoddesc}
 
-TODO: execute*
+\begin{methoddesc}{execute}{sql, \optional{parameters}}
+This is a nonstandard shortcut that creates an intermediate cursor object by
+calling the cursor method, then calls the cursor's execute method with the
+parameters given.
+\end{methoddesc}
+
+\begin{methoddesc}{executemany}{sql, \optional{parameters}}
+This is a nonstandard shortcut that creates an intermediate cursor object by
+calling the cursor method, then calls the cursor's executemany method with the
+parameters given.
+\end{methoddesc}
+
+\begin{methoddesc}{executescript}{sql_script}
+This is a nonstandard shortcut that creates an intermediate cursor object by
+calling the cursor method, then calls the cursor's executescript method with the
+parameters given.
+\end{methoddesc}
+
+\begin{memberdesc}{row_factory}
+  You can change this attribute to a callable that accepts the cursor and
+  the original row as tuple and will return the real result row.  This
+  way, you can implement more advanced ways of returning results, like
+  ones that can also access columns by name.
+
+  Example:
+
+  \verbatiminput{sqlite3/row_factory.py}
+
+  If the standard tuple types don't suffice for you, and you want name-based
+  access to columns, you should consider setting \member{row_factory} to the
+  highly-optimized pysqlite2.dbapi2.Row type. It provides both
+  index-based and case-insensitive name-based access to columns with almost
+  no memory overhead. Much better than your own custom dictionary-based
+  approach or even a db_row based solution.
+\end{memberdesc}
+
+\begin{memberdesc}{text_factory}
+  Using this attribute you can control what objects pysqlite returns for the
+  TEXT data type. By default, this attribute is set to ``unicode`` and
+  pysqlite will return Unicode objects for TEXT. If you want to return
+  bytestrings instead, you can set it to ``str``.
+
+  For efficiency reasons, there's also a way to return Unicode objects only
+  for non-ASCII data, and bytestrings otherwise. To activate it, set this
+  attribute to ``pysqlite2.dbapi2.OptimizedUnicode``.
+
+  You can also set it to any other callable that accepts a single bytestring
+  parameter and returns the result object.
+
+  See the following example code for illustration:
+
+  \verbatiminput{sqlite3/text_factory.py}
+\end{memberdesc}
+
+\begin{memberdesc}{total_changes}
+  Returns the total number of database rows that have be modified, inserted,
+  or deleted since the database connection was opened.
+\end{memberdesc}
+
+
+
+
+
+\subsection{Cursor Objects \label{Cursor-Objects}}
+
+A \class{Cursor} instance has the following attributes and methods:
+
+\begin{methoddesc}{execute}{sql, \optional{parameters}}
+
+Executes a SQL statement. The SQL statement may be parametrized (i. e.
+placeholders instead of SQL literals). The sqlite3 module supports two kinds of
+placeholders: question marks (qmark style) and named placeholders (named
+style).
+
+This example shows how to use parameters with qmark style:
+
+    \verbatiminput{sqlite3/execute_1.py}
+
+This example shows how to use the named style:
+
+    \verbatiminput{sqlite3/execute_2.py}
+
+    \method{execute} will only execute a single SQL statement. If you try to
+    execute more than one statement with it, it will raise a Warning. Use
+    \method{executescript} if want to execute multiple SQL statements with one
+    call.
+\end{methoddesc}
+
+
+\begin{methoddesc}{executemany}{sql, seq_of_parameters}
+Executes a SQL command against all parameter sequences or mappings found in the
+sequence \var{sql}. The \module{sqlite3} module also allows
+to use an iterator yielding parameters instead of a sequence.
+
+\verbatiminput{sqlite3/executemany_1.py}
+
+Here's a shorter example using a generator:
+
+\verbatiminput{sqlite3/executemany_2.py}
+\end{methoddesc}
+
+\begin{methoddesc}{executescript}{sql_script}
+
+This is a nonstandard convenience method for executing multiple SQL statements
+at once. It issues a COMMIT statement before, then executes the SQL script it
+gets as a parameter.
+
+\var{sql_script} can be a bytestring or a Unicode string.
+
+Example:
+
+\verbatiminput{sqlite3/executescript.py}
+\end{methoddesc}
+
+\begin{memberdesc}{rowcount}
+  Although the Cursors of the \module{sqlite3} module implement this
+  attribute, the database engine's own support for the determination of "rows
+  affected"/"rows selected" is quirky.
+
+  For \code{SELECT} statements, \member{rowcount} is always None because we cannot
+  determine the number of rows a query produced until all rows were fetched.
+
+  For \code{DELETE} statements, SQLite reports \member{rowcount} as 0 if you make a
+  \code{DELETE FROM table} without any condition.
+
+  For \method{executemany} statements, pysqlite sums up the number of
+  modifications into \member{rowcount}.
+
+  As required by the Python DB API Spec, the \member{rowcount} attribute "is -1
+  in case no executeXX() has been performed on the cursor or the rowcount
+  of the last operation is not determinable by the interface".
+\end{memberdesc}
+
