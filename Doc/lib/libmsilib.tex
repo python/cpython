@@ -43,14 +43,14 @@ MSI routines, and standard table structures.
 
 \begin{funcdesc}{UUIDCreate}{}
   Return the string representation of a new unique identifier.
-  This wraps the Windows API functions \code{UuidCreate} and
-  \code{UuidToString}.
+  This wraps the Windows API functions \cfunction{UuidCreate} and
+  \cfunction{UuidToString}.
 \end{funcdesc}
 
 \begin{funcdesc}{OpenDatabase}{path, persist}
   Return a new database object by calling MsiOpenDatabase.  
   \var{path} is the file name of the
-  MSI file; persist can be one of the constants 
+  MSI file; \var{persist} can be one of the constants 
   \code{MSIDBOPEN_CREATEDIRECT}, \code{MSIDBOPEN_CREATE},
   \code{MSIDBOPEN_DIRECT}, \code{MSIDBOPEN_READONLY}, or
   \code{MSIDBOPEN_TRANSACT}, and may include the flag
@@ -60,7 +60,7 @@ MSI routines, and standard table structures.
 \end{funcdesc}
 
 \begin{funcdesc}{CreateRecord}{count}
-  Return a new record object by calling MSICreateRecord.
+  Return a new record object by calling \cfunction{MSICreateRecord}.
   \var{count} is the number of fields of the record.
 \end{funcdesc}
 
@@ -88,7 +88,7 @@ MSI routines, and standard table structures.
 \end{funcdesc}
 
 \begin{classdesc}{Binary}{filename}
-  Represents entries into the Binary table; inserting such
+  Represents entries in the Binary table; inserting such
   an object using \function{add_data} reads the file named
   \var{filename} into the table.
 \end{classdesc}
@@ -100,6 +100,7 @@ MSI routines, and standard table structures.
   and one attribute per table that has the actual content.
 
   This is typically used to install the sequence 
+  % XXX unfinished sentence
 \end{funcdesc}
 
 \begin{funcdesc}{add_stream}{database, name, path}
@@ -122,18 +123,18 @@ MSI routines, and standard table structures.
 \subsection{Database Objects\label{database-objects}}
 
 \begin{methoddesc}{OpenView}{sql}
-  Return a view object, by calling MSIDatabaseOpenView.
+  Return a view object, by calling \cfunction{MSIDatabaseOpenView}.
   \var{sql} is the SQL statement to execute.
 \end{methoddesc}
 
 \begin{methoddesc}{Commit}{}
   Commit the changes pending in the current transaction,
-  by calling MSIDatabaseCommit.
+  by calling \cfunction{MSIDatabaseCommit}.
 \end{methoddesc}
 
 \begin{methoddesc}{GetSummaryInformation}{count}
   Return a new summary information object, by calling
-  MsiGetSummaryInformation.  \var{count} is the maximum number of
+  \cfunction{MsiGetSummaryInformation}.  \var{count} is the maximum number of
   updated values.
 \end{methoddesc}
 
@@ -146,24 +147,24 @@ MSI routines, and standard table structures.
 \subsection{View Objects\label{view-objects}}
 
 \begin{methoddesc}{Execute}{\optional{params=None}}
-  Execute the SQL query of the view, through MSIViewExecute.
+  Execute the SQL query of the view, through \cfunction{MSIViewExecute}.
   \var{params} is an optional record describing actual values
   of the parameter tokens in the query.
 \end{methoddesc}
 
 \begin{methoddesc}{GetColumnInfo}{kind}
   Return a record describing the columns of the view, through
-  calling MsiViewGetColumnInfo. \var{kind} can be either
-  \code{MSICOLINFO_NAMES} or \code{MSICOLINFO_TYPES}
+  calling \cfunction{MsiViewGetColumnInfo}. \var{kind} can be either
+  \code{MSICOLINFO_NAMES} or \code{MSICOLINFO_TYPES}.
 \end{methoddesc}
 
 \begin{methoddesc}{Fetch}{}
   Return a result record of the query, through calling
-  MsiViewFetch.
+  \cfunction{MsiViewFetch}.
 \end{methoddesc}
 
 \begin{methoddesc}{Modify}{kind, data}
-  Modify the view, by calling MsiViewModify. \var{kind}
+  Modify the view, by calling \cfunction{MsiViewModify}. \var{kind}
   can be one of  \code{MSIMODIFY_SEEK}, \code{MSIMODIFY_REFRESH},
   \code{MSIMODIFY_INSERT}, \code{MSIMODIFY_UPDATE}, \code{MSIMODIFY_ASSIGN},
   \code{MSIMODIFY_REPLACE}, \code{MSIMODIFY_MERGE}, \code{MSIMODIFY_DELETE},
@@ -175,7 +176,7 @@ MSI routines, and standard table structures.
 \end{methoddesc}
 
 \begin{methoddesc}{Close}{}
-  Close the view, through MsiViewClose.
+  Close the view, through \cfunction{MsiViewClose}.
 \end{methoddesc}
 
 \begin{seealso}
@@ -189,7 +190,7 @@ MSI routines, and standard table structures.
 \subsection{Summary Information Objects\label{summary-objects}}
 
 \begin{methoddesc}{GetProperty}{field}
-  Return a property of the summary, through MsiSummaryInfoGetProperty.
+  Return a property of the summary, through \cfunction{MsiSummaryInfoGetProperty}.
   \var{field} is the name of the property, and can be one of the
   constants
   \code{PID_CODEPAGE}, \code{PID_TITLE}, \code{PID_SUBJECT},
@@ -202,11 +203,11 @@ MSI routines, and standard table structures.
 
 \begin{methoddesc}{GetPropertyCount}{}
   Return the number of summary properties, through
-  MsiSummaryInfoGetPropertyCount.
+  \cfunction{MsiSummaryInfoGetPropertyCount}.
 \end{methoddesc}
 
 \begin{methoddesc}{SetProperty}{field, value}
-  Set a property through MsiSummaryInfoSetProperty. \var{field}
+  Set a property through \cfunction{MsiSummaryInfoSetProperty}. \var{field}
   can have the same values as in \method{GetProperty}, \var{value}
   is the new value of the property. Possible value types are integer
   and string.
@@ -214,7 +215,7 @@ MSI routines, and standard table structures.
 
 \begin{methoddesc}{Persist}{}
   Write the modified properties to the summary information stream,
-  using MsiSummaryInfoPersist.
+  using \cfunction{MsiSummaryInfoPersist}.
 \end{methoddesc}
 
 \begin{seealso}
@@ -227,27 +228,27 @@ MSI routines, and standard table structures.
 \subsection{Record Objects\label{record-objects}}
 
 \begin{methoddesc}{GetFieldCount}{}
-  Return the number of fields of the record, through MsiRecordGetFieldCount.
+  Return the number of fields of the record, through \cfunction{MsiRecordGetFieldCount}.
 \end{methoddesc}
 
 \begin{methoddesc}{SetString}{field, value}
-  Set \var{field} to \var{value} through MsiRecordSetString.
+  Set \var{field} to \var{value} through \cfunction{MsiRecordSetString}.
   \var{field} must be an integer; \var{value} a string.
 \end{methoddesc}
 
 \begin{methoddesc}{SetStream}{field, value}
   Set \var{field} to the contents of the file named \var{value},
-  through MsiRecordSetStream.
+  through \cfunction{MsiRecordSetStream}.
   \var{field} must be an integer; \var{value} a string.
 \end{methoddesc}
 
 \begin{methoddesc}{SetInteger}{field, value}
-  Set \var{field} to \var{value} through MsiRecordSetInteger.
-  Both \var{field} and \var{value} must be an integers.
+  Set \var{field} to \var{value} through \cfunction{MsiRecordSetInteger}.
+  Both \var{field} and \var{value} must be an integer.
 \end{methoddesc}
 
 \begin{methoddesc}{ClearData}{}
-  Set all fields of the record to 0, through MsiRecordClearData.
+  Set all fields of the record to 0, through \cfunction{MsiRecordClearData}.
 \end{methoddesc}
 
 \begin{seealso}
@@ -295,13 +296,14 @@ the string inside the exception will contain more detail.
                   logical, default, component, \optional{flags}}
   Create a new directory in the Directory table. There is a current
   component at each point in time for the directory, which is either
-  explicitly created through start_component, or implicitly when files
+  explicitly created through \function{start_component}, or implicitly when files
   are added for the first time. Files are added into the current
   component, and into the cab file.  To create a directory, a base
-  directory object needs to be specified (can be None), the path to
-  the physical directory, and a logical directory name.  Default
+  directory object needs to be specified (can be \code{None}), the path to
+  the physical directory, and a logical directory name.  \var{default}
   specifies the DefaultDir slot in the directory table. componentflags
   specifies the default flags that new components get.
+  % XXX signature says 'component', 'flags'; text says 'componentflags'.
 \end{classdesc}
 
 \begin{methoddesc}[Directory]{start_component}{\optional{component\optional{,
