@@ -296,7 +296,7 @@ the string inside the exception will contain more detail.
                   logical, default, component, \optional{flags}}
   Create a new directory in the Directory table. There is a current
   component at each point in time for the directory, which is either
-  explicitly created through \function{start_component}, or implicitly when files
+  explicitly created through \method{start_component}, or implicitly when files
   are added for the first time. Files are added into the current
   component, and into the cab file.  To create a directory, a base
   directory object needs to be specified (can be \code{None}), the path to
@@ -309,30 +309,30 @@ the string inside the exception will contain more detail.
 \begin{methoddesc}[Directory]{start_component}{\optional{component\optional{,
       feature\optional{, flags\optional{, keyfile\optional{, uuid}}}}}}
   Add an entry to the Component table, and make this component the
-  current for this directory. If no component name is given, the
-  directory name is used. If no feature is given, the current feature
-  is used. If no flags are given, the directory's default flags are
-  used. If no keyfile is given, the KeyPath is left null in the
+  current component for this directory. If no component name is given, the
+  directory name is used. If no \var{feature} is given, the current feature
+  is used. If no \var{flags} are given, the directory's default flags are
+  used. If no \var{keyfile} is given, the KeyPath is left null in the
   Component table.
 \end{methoddesc}
 
 \begin{methoddesc}[Directory]{add_file}{file\optional{, src\optional{,
       version\optional{, language}}}}
   Add a file to the current component of the directory, starting a new
-  one one if there is no current component. By default, the file name
-  in the source and the file table will be identical. If the src file
+  one if there is no current component. By default, the file name
+  in the source and the file table will be identical. If the \var{src} file
   is specified, it is interpreted relative to the current
-  directory. Optionally, a version and a language can be specified for
+  directory. Optionally, a \var{version} and a \var{language} can be specified for
   the entry in the File table.
 \end{methoddesc}
 
 \begin{methoddesc}[Directory]{glob}{pattern\optional{, exclude}}
   Add a list of files to the current component as specified in the glob
-  pattern. Individual files can be excluded in the exclude list.
+  pattern. Individual files can be excluded in the \var{exclude} list.
 \end{methoddesc}
 
 \begin{methoddesc}[Directory]{remove_pyc}{}
-  Remove .pyc/.pyo files on uninstall
+  Remove \code{.pyc}/\code{.pyo} files on uninstall.
 \end{methoddesc}
 
 \begin{seealso}
@@ -409,14 +409,14 @@ installing Python packages.
            
 \begin{classdesc}{Dialog}{db, name, x, y, w, h, attr, title, first, 
     default, cancel}
-  Return a new Dialog object. An entry in the \code{Dialog} table
+  Return a new \class{Dialog} object. An entry in the \code{Dialog} table
   is made, with the specified coordinates, dialog attributes, title,
   name of the first, default, and cancel controls.
 \end{classdesc}
 
 \begin{methoddesc}[Dialog]{control}{name, type, x, y, width, height, 
                   attributes, property, text, control_next, help}
-  Return a new Control object. An entry in the \code{Control} table
+  Return a new \class{Control} object. An entry in the \code{Control} table
   is made with the specified parameters.
 
   This is a generic method; for specific types, specialized methods
