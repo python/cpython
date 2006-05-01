@@ -1,5 +1,5 @@
 # -*- coding: iso-8859-1 -*-
-# Copyright (C) 2005 Martin v. Löwis
+# Copyright (C) 2005, 2006 Martin v. Löwis
 # Licensed to PSF under a Contributor Agreement.
 # The bdist_wininst command proper
 # based on bdist_wininst
@@ -16,7 +16,7 @@ from distutils.version import StrictVersion
 from distutils.errors import DistutilsOptionError
 from distutils import log
 import msilib
-from msilib import schema, sequence, uisample
+from msilib import schema, sequence, text
 from msilib import Directory, Feature, Dialog, add_data
 
 class PyDialog(Dialog):
@@ -374,8 +374,8 @@ class bdist_msi (Command):
                   ("MaintenanceTypeDlg", "Installed AND NOT RESUME AND NOT Preselected", 1250),
                   ("ProgressDlg", None, 1280)])
 
-        add_data(db, 'ActionText', uisample.ActionText)
-        add_data(db, 'UIText', uisample.UIText)
+        add_data(db, 'ActionText', text.ActionText)
+        add_data(db, 'UIText', text.UIText)
         #####################################################################
         # Standard dialogs: FatalError, UserExit, ExitDialog
         fatal=PyDialog(db, "FatalError", x, y, w, h, modal, title,
@@ -502,9 +502,9 @@ class bdist_msi (Command):
 
         seldlg.back("< Back", None, active=0)
         c = seldlg.next("Next >", "Cancel")
-        c.event("SetTargetPath", "TARGETDIR", order=1)
-        c.event("SpawnWaitDialog", "WaitForCostingDlg", order=2)
-        c.event("EndDialog", "Return", order=3)
+        c.event("SetTargetPath", "TARGETDIR", ordering=1)
+        c.event("SpawnWaitDialog", "WaitForCostingDlg", ordering=2)
+        c.event("EndDialog", "Return", ordering=3)
 
         c = seldlg.cancel("Cancel", "DirectoryCombo")
         c.event("SpawnDialog", "CancelDlg")
@@ -561,7 +561,7 @@ class bdist_msi (Command):
 
         c = whichusers.next("Next >", "Cancel")
         c.event("[ALLUSERS]", "1", 'WhichUsers="ALL"', 1)
-        c.event("EndDialog", "Return", order = 2)
+        c.event("EndDialog", "Return", ordering = 2)
 
         c = whichusers.cancel("Cancel", "AdminInstall")
         c.event("SpawnDialog", "CancelDlg")

@@ -196,11 +196,9 @@ class CAB:
         self.filenames.add(logical)
         return logical
 
-    def append(self, full, file, logical = None):
+    def append(self, full, logical):
         if os.path.isdir(full):
             return
-        if not logical:
-            logical = self.gen_id(dir, file)
         self.index += 1
         self.files.append((full, logical))
         return self.index, logical
@@ -330,7 +328,7 @@ class Directory:
             logical = self.keyfiles[file]
         else:
             logical = None
-        sequence, logical = self.cab.append(absolute, file, logical)
+        sequence, logical = self.cab.append(absolute, logical)
         assert logical not in self.ids
         self.ids.add(logical)
         short = self.make_short(file)
@@ -400,13 +398,14 @@ class Control:
         self.dlg = dlg
         self.name = name
 
-    def event(self, ev, arg, cond = "1", order = None):
+    def event(self, event, argument, condition = "1", ordering = None):
         add_data(self.dlg.db, "ControlEvent",
-                 [(self.dlg.name, self.name, ev, arg, cond, order)])
+                 [(self.dlg.name, self.name, event, argument,
+                   condition, ordering)])
 
-    def mapping(self, ev, attr):
+    def mapping(self, mapping, attribute):
         add_data(self.dlg.db, "EventMapping",
-                 [(self.dlg.name, self.name, ev, attr)])
+                 [(self.dlg.name, self.name, event, attribute)])
 
     def condition(self, action, condition):
         add_data(self.dlg.db, "ControlCondition",
