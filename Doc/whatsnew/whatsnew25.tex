@@ -1633,7 +1633,7 @@ of extension modules, now that \module{ctypes} is included with core Python.
 \subsection{The ElementTree package\label{module-etree}}
 
 A subset of Fredrik Lundh's ElementTree library for processing XML has
-been added to the standard library as \module{xmlcore.etree}.  The
+been added to the standard library as \module{xml.etree}.  The
 available modules are
 \module{ElementTree}, \module{ElementPath}, and
 \module{ElementInclude} from ElementTree 1.2.6.   
@@ -1655,7 +1655,7 @@ takes either a string (assumed to contain a filename) or a file-like
 object and returns an \class{ElementTree} instance:
 
 \begin{verbatim}
-from xmlcore.etree import ElementTree as ET
+from xml.etree import ElementTree as ET
 
 tree = ET.parse('ex-1.xml')
 
@@ -1673,7 +1673,7 @@ This function provides a tidy way to incorporate XML fragments,
 approaching the convenience of an XML literal:
 
 \begin{verbatim}
-svg = et.XML("""<svg width="10px" version="1.0">
+svg = ET.XML("""<svg width="10px" version="1.0">
              </svg>""")
 svg.set('height', '320px')
 svg.append(elem1)
@@ -1687,7 +1687,7 @@ values, and list-like operations are used to access child nodes.
   \lineii{elem[n]}{Returns n'th child element.}
   \lineii{elem[m:n]}{Returns list of m'th through n'th child elements.}
   \lineii{len(elem)}{Returns number of child elements.}
-  \lineii{elem.getchildren()}{Returns list of child elements.}
+  \lineii{list(elem)}{Returns list of child elements.}
   \lineii{elem.append(elem2)}{Adds \var{elem2} as a child.}
   \lineii{elem.insert(index, elem2)}{Inserts \var{elem2} at the specified location.}
   \lineii{del elem[n]}{Deletes n'th child element.}
@@ -2096,7 +2096,7 @@ freed with the corresponding family's \cfunction{*_Free()} function.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Phillip J. Eby, Kent Johnson, Martin von~L\"owis, Gustavo
-Niemeyer, James Pryor, Mike Rovner, Thomas Wouters.
+article: Phillip J. Eby, Kent Johnson, Martin von~L\"owis, Fredrik Lundh, 
+Gustavo Niemeyer, James Pryor, Mike Rovner, Thomas Wouters.
 
 \end{document}
