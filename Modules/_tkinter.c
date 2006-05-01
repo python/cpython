@@ -2619,21 +2619,32 @@ Tkapp_InterpAddr(PyObject *self, PyObject *args)
 static PyObject	*
 Tkapp_TkInit(PyObject *self, PyObject *args)
 {
+	static int has_failed;
 	Tcl_Interp *interp = Tkapp_Interp(self);
 	Tk_Window main_window;
 	const char * _tk_exists = NULL;
-	PyObject *res =	NULL;
 	int err;
 	main_window = Tk_MainWindow(interp);
 
+	/* In all current versions of Tk (including 8.4.13), Tk_Init
+	   deadlocks on the second call when the first call failed.
+	   To avoid the deadlock, we just refuse the second call through
+	   a static variable. */
+	if (has_failed) {
+		PyErr_SetString(Tkinter_TclError, 
+				"Calling Tk_Init again after a previous call failed might deadlock");
+		return NULL;
+	}
+	   
 	/* We want to guard against calling Tk_Init() multiple times */
 	CHECK_TCL_APPARTMENT;
 	ENTER_TCL
 	err = Tcl_Eval(Tkapp_Interp(self), "info exists	tk_version");
 	ENTER_OVERLAP
 	if (err == TCL_ERROR) {
-		/* XXX: shouldn't we do something with res? */
-		res = Tkinter_Error(self);
+		/* This sets an exception, but we cannot return right
+		   away because we need to exit the overlap first. */
+		Tkinter_Error(self);
 	} else {
 		_tk_exists = Tkapp_Result(self);
 	}
@@ -2644,6 +2655,7 @@ Tkapp_TkInit(PyObject *self, PyObject *args)
 	if (_tk_exists == NULL || strcmp(_tk_exists, "1") != 0)	{
 		if (Tk_Init(interp)	== TCL_ERROR) {
 		        PyErr_SetString(Tkinter_TclError, Tcl_GetStringResult(Tkapp_Interp(self)));
+			has_failed = 1;
 			return NULL;
 		}
 	}
