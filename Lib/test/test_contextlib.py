@@ -51,7 +51,7 @@ class ContextManagerTestCase(unittest.TestCase):
         @contextfactory
         def whee():
             yield
-        ctx = whee().__context__()
+        ctx = whee()
         ctx.__enter__()
         # Calling __exit__ should not result in an exception
         self.failIf(ctx.__exit__(TypeError, TypeError("foo"), None))
@@ -63,7 +63,7 @@ class ContextManagerTestCase(unittest.TestCase):
                 yield
             except:
                 yield
-        ctx = whoo().__context__()
+        ctx = whoo()
         ctx.__enter__()
         self.assertRaises(
             RuntimeError, ctx.__exit__, TypeError, TypeError("foo"), None
@@ -152,8 +152,6 @@ class NestedTestCase(unittest.TestCase):
         def a():
             yield 1
         class b(object):
-            def __context__(self):
-                return self
             def __enter__(self):
                 return 2
             def __exit__(self, *exc_info):
@@ -341,12 +339,12 @@ class DecimalContextTestCase(unittest.TestCase):
         orig_context = ctx.copy()
         try:
             ctx.prec = save_prec = decimal.ExtendedContext.prec + 5
-            with decimal.ExtendedContext:
+            with decimal.ExtendedContext.context_manager():
                 self.assertEqual(decimal.getcontext().prec,
                                  decimal.ExtendedContext.prec)
             self.assertEqual(decimal.getcontext().prec, save_prec)
             try:
-                with decimal.ExtendedContext:
+                with decimal.ExtendedContext.context_manager():
                     self.assertEqual(decimal.getcontext().prec,
                                      decimal.ExtendedContext.prec)
                     1/0

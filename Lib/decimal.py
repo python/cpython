@@ -2248,7 +2248,7 @@ class Context(object):
         s.append('traps=[' + ', '.join([t.__name__ for t, v in self.traps.items() if v]) + ']')
         return ', '.join(s) + ')'
 
-    def __context__(self):
+    def context_manager(self):
         return WithStatementContext(self.copy())
 
     def clear_flags(self):

@@ -54,34 +54,6 @@ action (rather than to suppress it entirely), the generator must
 reraise that exception. Otherwise the \keyword{with} statement will
 treat the exception as having been handled, and resume execution with
 the statement immediately following the \keyword{with} statement.
-
-Note that you can use \code{@contextfactory} to define a context
-manager's \method{__context__} method.  This is usually more
-convenient than creating another class just to serve as a context
-object. For example:
-
-\begin{verbatim}
-from __future__ import with_statement
-from contextlib import contextfactory
-
-class Tag:
-    def __init__(self, name):
-        self.name = name
-        
-    @contextfactory
-    def __context__(self):
-        print "<%s>" % self.name
-        yield self
-        print "</%s>" % self.name
-        
-h1 = Tag("h1")
-
->>> with h1 as me:
-...     print "hello from", me
-<h1>
-hello from <__main__.Tag instance at 0x402ce8ec>
-</h1>
-\end{verbatim}
 \end{funcdesc}
 
 \begin{funcdesc}{nested}{ctx1\optional{, ctx2\optional{, ...}}}
@@ -147,25 +119,6 @@ with closing(urllib.urlopen('http://www.python.org')) as page:
 without needing to explicitly close \code{page}.  Even if an error
 occurs, \code{page.close()} will be called when the \keyword{with}
 block is exited.
-
-Context managers with a close method can use this context factory
-to easily implement their own \method{__context__()} method.
-\begin{verbatim}
-from __future__ import with_statement
-from contextlib import closing
-
-class MyClass:
-    def close(self):
-        print "Closing", self
-    def __context__(self):
-        return closing(self)
-
->>> with MyClass() as x:
-...     print "Hello from", x
-...
-Hello from <__main__.MyClass instance at 0xb7df02ec>
-Closing <__main__.MyClass instance at 0xb7df02ec>
-\end{verbatim}
 \end{funcdesc}
 
 \begin{seealso}

@@ -98,13 +98,6 @@ PyDoc_STRVAR(locked_doc,
 \n\
 Return whether the lock is in the locked state.");
 
-static PyObject *
-lock_context(lockobject *self)
-{
-	Py_INCREF(self);
-	return (PyObject *)self;
-}
-
 static PyMethodDef lock_methods[] = {
 	{"acquire_lock", (PyCFunction)lock_PyThread_acquire_lock, 
 	 METH_VARARGS, acquire_doc},
@@ -118,8 +111,6 @@ static PyMethodDef lock_methods[] = {
 	 METH_NOARGS, locked_doc},
 	{"locked",       (PyCFunction)lock_locked_lock,  
 	 METH_NOARGS, locked_doc},
-	{"__context__",  (PyCFunction)lock_context,
-	 METH_NOARGS, PyDoc_STR("__context__() -> self.")},
 	{"__enter__",    (PyCFunction)lock_PyThread_acquire_lock,
 	 METH_VARARGS, acquire_doc},
 	{"__exit__",    (PyCFunction)lock_PyThread_release_lock,
