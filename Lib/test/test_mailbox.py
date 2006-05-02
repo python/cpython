@@ -717,7 +717,7 @@ class _TestMboxMMDF(TestMailbox):
         self._box._file.seek(0)
         contents = self._box._file.read()
         self._box.close()
-        self.assert_(contents == file(self._path, 'rb').read())
+        self.assert_(contents == open(self._path, 'rb').read())
         self._box = self._factory(self._path)
 
 
@@ -1473,7 +1473,7 @@ class TestProxyFile(TestProxyFileBase):
 
     def setUp(self):
         self._path = test_support.TESTFN
-        self._file = file(self._path, 'wb+')
+        self._file = open(self._path, 'wb+')
 
     def tearDown(self):
         self._file.close()
@@ -1522,7 +1522,7 @@ class TestPartialFile(TestProxyFileBase):
 
     def setUp(self):
         self._path = test_support.TESTFN
-        self._file = file(self._path, 'wb+')
+        self._file = open(self._path, 'wb+')
 
     def tearDown(self):
         self._file.close()

@@ -294,7 +294,7 @@ class Maildir(Mailbox):
     def get_message(self, key):
         """Return a Message representation or raise a KeyError."""
         subpath = self._lookup(key)
-        f = file(os.path.join(self._path, subpath), 'r')
+        f = open(os.path.join(self._path, subpath), 'r')
         try:
             msg = MaildirMessage(f)
         finally:
@@ -308,7 +308,7 @@ class Maildir(Mailbox):
 
     def get_string(self, key):
         """Return a string representation or raise a KeyError."""
-        f = file(os.path.join(self._path, self._lookup(key)), 'r')
+        f = open(os.path.join(self._path, self._lookup(key)), 'r')
         try:
             return f.read()
         finally:
@@ -316,7 +316,7 @@ class Maildir(Mailbox):
 
     def get_file(self, key):
         """Return a file-like representation or raise a KeyError."""
-        f = file(os.path.join(self._path, self._lookup(key)), 'rb')
+        f = open(os.path.join(self._path, self._lookup(key)), 'rb')
         return _ProxyFile(f)
 
     def iterkeys(self):
@@ -422,7 +422,7 @@ class Maildir(Mailbox):
         except OSError, e:
             if e.errno == errno.ENOENT:
                 Maildir._count += 1
-                return file(path, 'wb+')
+                return open(path, 'wb+')
             else:
                 raise
         else:
@@ -471,15 +471,15 @@ class _singlefileMailbox(Mailbox):
         """Initialize a single-file mailbox."""
         Mailbox.__init__(self, path, factory, create)
         try:
-            f = file(self._path, 'rb+')
+            f = open(self._path, 'rb+')
         except IOError, e:
             if e.errno == errno.ENOENT:
                 if create:
-                    f = file(self._path, 'wb+')
+                    f = open(self._path, 'wb+')
                 else:
                     raise NoSuchMailboxError(self._path)
             elif e.errno == errno.EACCES:
-                f = file(self._path, 'rb')
+                f = open(self._path, 'rb')
             else:
                 raise
         self._file = f
@@ -572,7 +572,7 @@ class _singlefileMailbox(Mailbox):
                 os.rename(new_file.name, self._path)
             else:
                 raise
-        self._file = file(self._path, 'rb+')
+        self._file = open(self._path, 'rb+')
         self._toc = new_toc
         self._pending = False
         if self._locked:
@@ -792,7 +792,7 @@ class MH(Mailbox):
         """Remove the keyed message; raise KeyError if it doesn't exist."""
         path = os.path.join(self._path, str(key))
         try:
-            f = file(path, 'rb+')
+            f = open(path, 'rb+')
         except IOError, e:
             if e.errno == errno.ENOENT:
                 raise KeyError('No message with key: %s' % key)
@@ -814,7 +814,7 @@ class MH(Mailbox):
         """Replace the keyed message; raise KeyError if it doesn't exist."""
         path = os.path.join(self._path, str(key))
         try:
-            f = file(path, 'rb+')
+            f = open(path, 'rb+')
         except IOError, e:
             if e.errno == errno.ENOENT:
                 raise KeyError('No message with key: %s' % key)
@@ -838,9 +838,9 @@ class MH(Mailbox):
         """Return a Message representation or raise a KeyError."""
         try:
             if self._locked:
-                f = file(os.path.join(self._path, str(key)), 'r+')
+                f = open(os.path.join(self._path, str(key)), 'r+')
             else:
-                f = file(os.path.join(self._path, str(key)), 'r')
+                f = open(os.path.join(self._path, str(key)), 'r')
         except IOError, e:
             if e.errno == errno.ENOENT:
                 raise KeyError('No message with key: %s' % key)
@@ -865,9 +865,9 @@ class MH(Mailbox):
         """Return a string representation or raise a KeyError."""
         try:
             if self._locked:
-                f = file(os.path.join(self._path, str(key)), 'r+')
+                f = open(os.path.join(self._path, str(key)), 'r+')
             else:
-                f = file(os.path.join(self._path, str(key)), 'r')
+                f = open(os.path.join(self._path, str(key)), 'r')
         except IOError, e:
             if e.errno == errno.ENOENT:
                 raise KeyError('No message with key: %s' % key)
@@ -887,7 +887,7 @@ class MH(Mailbox):
     def get_file(self, key):
         """Return a file-like representation or raise a KeyError."""
         try:
-            f = file(os.path.join(self._path, str(key)), 'rb')
+            f = open(os.path.join(self._path, str(key)), 'rb')
         except IOError, e:
             if e.errno == errno.ENOENT:
                 raise KeyError('No message with key: %s' % key)
@@ -911,7 +911,7 @@ class MH(Mailbox):
     def lock(self):
         """Lock the mailbox."""
         if not self._locked:
-            self._file = file(os.path.join(self._path, '.mh_sequences'), 'rb+')
+            self._file = open(os.path.join(self._path, '.mh_sequences'), 'rb+')
             _lock_file(self._file)
             self._locked = True
 
@@ -963,7 +963,7 @@ class MH(Mailbox):
     def get_sequences(self):
         """Return a name-to-key-list dictionary to define each sequence."""
         results = {}
-        f = file(os.path.join(self._path, '.mh_sequences'), 'r')
+        f = open(os.path.join(self._path, '.mh_sequences'), 'r')
         try:
             all_keys = set(self.keys())
             for line in f:
@@ -989,7 +989,7 @@ class MH(Mailbox):
 
     def set_sequences(self, sequences):
         """Set sequences using the given name-to-key-list dictionary."""
-        f = file(os.path.join(self._path, '.mh_sequences'), 'r+')
+        f = open(os.path.join(self._path, '.mh_sequences'), 'r+')
         try:
             os.close(os.open(f.name, os.O_WRONLY | os.O_TRUNC))
             for name, keys in sequences.iteritems():
@@ -1024,7 +1024,7 @@ class MH(Mailbox):
         for key in self.iterkeys():
             if key - 1 != prev:
                 changes.append((key, prev + 1))
-                f = file(os.path.join(self._path, str(key)), 'r+')
+                f = open(os.path.join(self._path, str(key)), 'r+')
                 try:
                     if self._locked:
                         _lock_file(f)
@@ -1864,7 +1864,7 @@ def _create_carefully(path):
     """Create a file if it doesn't exist and open for reading and writing."""
     fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDWR)
     try:
-        return file(path, 'rb+')
+        return open(path, 'rb+')
     finally:
         os.close(fd)
 
