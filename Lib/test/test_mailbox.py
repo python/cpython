@@ -577,14 +577,18 @@ class TestMaildir(TestMailbox):
         # Remove old files from 'tmp'
         foo_path = os.path.join(self._path, 'tmp', 'foo')
         bar_path = os.path.join(self._path, 'tmp', 'bar')
-        file(foo_path, 'w').close()
-        file(bar_path, 'w').close()
+        f = open(foo_path, 'w')
+        f.write("@")
+        f.close()
+        f = open(bar_path, 'w')
+        f.write("@")
+        f.close()
         self._box.clean()
         self.assert_(os.path.exists(foo_path))
         self.assert_(os.path.exists(bar_path))
         foo_stat = os.stat(foo_path)
-        os.utime(os.path.join(foo_path), (time.time() - 129600 - 2,
-                                          foo_stat.st_mtime))
+        os.utime(foo_path, (time.time() - 129600 - 2,
+                            foo_stat.st_mtime))
         self._box.clean()
         self.assert_(not os.path.exists(foo_path))
         self.assert_(os.path.exists(bar_path))
