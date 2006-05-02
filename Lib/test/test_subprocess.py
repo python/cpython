@@ -347,7 +347,7 @@ class ProcessTestCase(unittest.TestCase):
                          stdout=subprocess.PIPE,
                          universal_newlines=1)
         stdout = p.stdout.read()
-        if hasattr(open, 'newlines'):
+        if hasattr(p.stdout, 'newlines'):
             # Interpreter with universal newline support
             self.assertEqual(stdout,
                              "line1\nline2\nline3\nline4\nline5\nline6")
@@ -374,7 +374,7 @@ class ProcessTestCase(unittest.TestCase):
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                          universal_newlines=1)
         (stdout, stderr) = p.communicate()
-        if hasattr(open, 'newlines'):
+        if hasattr(stdout, 'newlines'):
             # Interpreter with universal newline support
             self.assertEqual(stdout,
                              "line1\nline2\nline3\nline4\nline5\nline6")
