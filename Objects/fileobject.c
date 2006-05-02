@@ -1706,9 +1706,6 @@ PyDoc_STRVAR(close_doc,
 PyDoc_STRVAR(isatty_doc,
 "isatty() -> true or false.  True if the file is connected to a tty device.");
 
-PyDoc_STRVAR(context_doc,
-	     "__context__() -> self.");
-
 PyDoc_STRVAR(enter_doc,
 	     "__enter__() -> self.");
 
@@ -1729,7 +1726,6 @@ static PyMethodDef file_methods[] = {
 	{"flush",     (PyCFunction)file_flush,    METH_NOARGS,  flush_doc},
 	{"close",     (PyCFunction)file_close,    METH_NOARGS,  close_doc},
 	{"isatty",    (PyCFunction)file_isatty,   METH_NOARGS,  isatty_doc},
-	{"__context__", (PyCFunction)file_self,   METH_NOARGS,  context_doc},
 	{"__enter__", (PyCFunction)file_self,     METH_NOARGS,  enter_doc},
 	{"__exit__",  (PyCFunction)file_close,    METH_VARARGS, close_doc},
 	{NULL,	      NULL}		/* sentinel */
@@ -2445,4 +2441,3 @@ Py_UniversalNewlineFread(char *buf, size_t n,
 #ifdef __cplusplus
 }
 #endif
-

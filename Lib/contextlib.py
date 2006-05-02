@@ -10,9 +10,6 @@ class GeneratorContext(object):
     def __init__(self, gen):
         self.gen = gen
 
-    def __context__(self):
-        return self
-
     def __enter__(self):
         try:
             return self.gen.next()
@@ -88,7 +85,7 @@ def contextfactory(func):
 
 
 @contextfactory
-def nested(*contexts):
+def nested(*managers):
     """Support multiple context managers in a single with-statement.
 
     Code like this:
@@ -109,8 +106,7 @@ def nested(*contexts):
     exc = (None, None, None)
     try:
         try:
-            for context in contexts:
-                mgr = context.__context__()
+            for mgr in managers:
                 exit = mgr.__exit__
                 enter = mgr.__enter__
                 vars.append(enter())
@@ -152,8 +148,6 @@ class closing(object):
     """
     def __init__(self, thing):
         self.thing = thing
-    def __context__(self):
-        return self
     def __enter__(self):
         return self.thing
     def __exit__(self, *exc_info):

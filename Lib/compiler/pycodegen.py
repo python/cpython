@@ -833,8 +833,6 @@ class CodeGenerator:
         self.__with_count += 1
         self.set_lineno(node)
         self.visit(node.expr)
-        self.emit('LOAD_ATTR', '__context__')
-        self.emit('CALL_FUNCTION', 0)
         self.emit('DUP_TOP')
         self.emit('LOAD_ATTR', '__exit__')
         self._implicitNameOp('STORE', exitvar)

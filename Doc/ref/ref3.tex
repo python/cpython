@@ -2138,22 +2138,6 @@ For more information on context managers and context objects,
 see ``\ulink{Context Types}{../lib/typecontext.html}'' in the
 \citetitle[../lib/lib.html]{Python Library Reference}.
 
-\begin{methoddesc}[context manager]{__context__}{self}
-Invoked when the object is used as the context expression of a
-\keyword{with} statement.  The returned object must implement
-\method{__enter__()} and \method{__exit__()} methods.
-
-Context managers written in Python can also implement this method
-using a generator function decorated with the
-\function{contextlib.contextfactory} decorator, as this can be simpler
-than writing individual \method{__enter__()} and \method{__exit__()}
-methods on a separate object when the state to be managed is complex.
-
-\keyword{with} statement context objects also need to implement this
-method; they are required to return themselves (that is, this method
-will simply return \var{self}).
-\end{methoddesc}
-
 \begin{methoddesc}[with statement context]{__enter__}{self}
 Enter the runtime context related to this object. The \keyword{with}
 statement will bind this method's return value to the target(s)

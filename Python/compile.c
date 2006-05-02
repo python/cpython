@@ -3371,7 +3371,7 @@ expr_constant(expr_ty e)
   
    It is implemented roughly as:
   
-   context = (EXPR).__context__()
+   context = EXPR
    exit = context.__exit__  # not calling it
    value = context.__enter__()
    try:
@@ -3387,17 +3387,12 @@ expr_constant(expr_ty e)
 static int
 compiler_with(struct compiler *c, stmt_ty s)
 {
-    static identifier context_attr, enter_attr, exit_attr;
+    static identifier enter_attr, exit_attr;
     basicblock *block, *finally;
     identifier tmpexit, tmpvalue = NULL;
 
     assert(s->kind == With_kind);
 
-    if (!context_attr) {
-	context_attr = PyString_InternFromString("__context__");
-	if (!context_attr)
-	    return 0;
-    }
     if (!enter_attr) {
 	enter_attr = PyString_InternFromString("__enter__");
 	if (!enter_attr)
@@ -3436,10 +3431,8 @@ compiler_with(struct compiler *c, stmt_ty s)
 	PyArena_AddPyObject(c->c_arena, tmpvalue);
     }
 
-    /* Evaluate (EXPR).__context__() */
+    /* Evaluate EXPR */
     VISIT(c, expr, s->v.With.context_expr);
-    ADDOP_O(c, LOAD_ATTR, context_attr, names);
-    ADDOP_I(c, CALL_FUNCTION, 0);
 
     /* Squirrel away context.__exit__  */
     ADDOP(c, DUP_TOP);
