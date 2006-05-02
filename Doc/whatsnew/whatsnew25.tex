@@ -638,7 +638,8 @@ The lock is acquired before the block is executed and always released once
 the block is complete.
 
 The \module{decimal} module's contexts, which encapsulate the desired
-precision and rounding characteristics for computations, also work.
+precision and rounding characteristics for computations, provide a 
+\method{context_manager()} method for getting a context manager:
 
 \begin{verbatim}
 import decimal
@@ -647,7 +648,8 @@ import decimal
 v1 = decimal.Decimal('578')
 print v1.sqrt()
 
-with decimal.Context(prec=16):
+ctx = decimal.Context(prec=16) 
+with ctx.context_manager():
     # All code in this block uses a precision of 16 digits.
     # The original context is restored on exiting the block.
     print v1.sqrt()
@@ -665,14 +667,12 @@ keep reading.
 A high-level explanation of the context management protocol is:
 
 \begin{itemize}
-\item The expression is evaluated and should result in an object
-with a \method{__context__()} method (called a ``context manager'').
 
-\item The context specifier's \method{__context__()} method is called, 
-and must return another object (called a ``with-statement context object'') that has
+\item The expression is evaluated and should result in an object
+called a ``context manager''.  The context manager must have
 \method{__enter__()} and \method{__exit__()} methods.
 
-\item The context object's \method{__enter__()} method is called.  The value
+\item The context manager's \method{__enter__()} method is called.  The value
 returned is assigned to \var{VAR}.  If no \code{'as \var{VAR}'} clause
 is present, the value is simply discarded.
 
@@ -680,7 +680,7 @@ is present, the value is simply discarded.
 
 \item If \var{BLOCK} raises an exception, the
 \method{__exit__(\var{type}, \var{value}, \var{traceback})} is called
-with the exception's information, the same values returned by
+with the exception details, the same values returned by
 \function{sys.exc_info()}.  The method's return value controls whether
 the exception is re-raised: any false value re-raises the exception,
 and \code{True} will result in suppressing it.  You'll only rarely
@@ -719,20 +719,11 @@ with db_connection as cursor:
 
 The transaction should be committed if the code in the block
 runs flawlessly or rolled back if there's an exception.
-
-First, the \class{DatabaseConnection} needs a \method{__context__()}
-method.  Sometimes an object can simply return \code{self}; the
-\module{threading} module's lock objects do this, for example.  For
-our database example, though, we need to create a new object; I'll
-call this class \class{DatabaseContext}.  Our \method{__context__()}
-method must therefore look like this:
+Here's the basic interface
+for \class{DatabaseConnection} that I'll assume:
 
 \begin{verbatim}
 class DatabaseConnection:
-    ...
-    def __context__ (self):
-        return DatabaseContext(self)
-
     # Database interface
     def cursor (self):
         "Returns a cursor object and starts a new transaction"
@@ -742,16 +733,6 @@ class DatabaseConnection:
         "Rolls back current transaction"
 \end{verbatim}
 
-Instances of \class{DatabaseContext} need the connection object so that
-the connection object's \method{commit()} or \method{rollback()}
-methods can be called:
-
-\begin{verbatim}
-class DatabaseContext:
-    def __init__ (self, connection):
-        self.connection = connection
-\end{verbatim}
-
 The \method {__enter__()} method is pretty easy, having only to start
 a new transaction.  For this application the resulting cursor object
 would be a useful result, so the method will return it.  The user can
@@ -759,11 +740,11 @@ then add \code{as cursor} to their '\keyword{with}' statement to bind
 the cursor to a variable name.
 
 \begin{verbatim}
-class DatabaseContext:
+class DatabaseConnection:
     ...
     def __enter__ (self):
         # Code to start a new transaction
-        cursor = self.connection.cursor()
+        cursor = self.cursor()
         return cursor
 \end{verbatim}
 
@@ -779,15 +760,15 @@ wished, you could be more explicit and add a \keyword{return}
 statement at the marked location.
 
 \begin{verbatim}
-class DatabaseContext:
+class DatabaseConnection:
     ...
     def __exit__ (self, type, value, tb):
         if tb is None:
             # No exception, so commit
-            self.connection.commit()
+            self.commit()
         else:
             # Exception occurred, so rollback.
-            self.connection.rollback()
+            self.rollback()
             # return False
 \end{verbatim}
 
@@ -830,27 +811,8 @@ with db_transaction(db) as cursor:
     ...
 \end{verbatim}
 
-You can also use this decorator to write the \method{__context__()}
-method for a class:
-
-\begin{verbatim}
-class DatabaseConnection:
-
-    @contextfactory
-    def __context__ (self):
-	cursor = self.cursor()
-	try:
-	    yield cursor
-	except:
-	    self.rollback()
-	    raise
-	else:
-	    self.commit()
-\end{verbatim}
-
-
 The \module{contextlib} module also has a \function{nested(\var{mgr1},
-\var{mgr2}, ...)} function that combines a number of contexts so you
+\var{mgr2}, ...)} function that combines a number of context managers so you
 don't need to write nested '\keyword{with}' statements.  In this
 example, the single '\keyword{with}' statement both starts a database
 transaction and acquires a thread lock:
