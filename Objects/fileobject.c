@@ -2025,10 +2025,6 @@ PyDoc_STR(
 "'\\r', '\\n', '\\r\\n' or a tuple containing all the newline types seen.\n"
 "\n"
 "'U' cannot be combined with 'w' or '+' mode.\n"
-)
-PyDoc_STR(
-"\n"
-"Note:  open() is an alias for file()."
 );
 
 PyTypeObject PyFile_Type = {

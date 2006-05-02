@@ -1342,6 +1342,18 @@ Return the octal representation of an integer or long integer.");
 
 
 static PyObject *
+builtin_open(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	return PyObject_Call((PyObject*)&PyFile_Type, args, kwds);
+}
+
+PyDoc_STRVAR(open_doc,
+"open(name[, mode[, buffering]]) -> file object\n\
+\n\
+Open a file using the file() type, returns a file object.");
+
+
+static PyObject *
 builtin_ord(PyObject *self, PyObject* obj)
 {
 	long ord;
@@ -2247,6 +2259,7 @@ static PyMethodDef builtin_methods[] = {
  	{"max",		(PyCFunction)builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
  	{"min",		(PyCFunction)builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
  	{"oct",		builtin_oct,        METH_O, oct_doc},
+ 	{"open",	(PyCFunction)builtin_open,       METH_VARARGS | METH_KEYWORDS, open_doc},
  	{"ord",		builtin_ord,        METH_O, ord_doc},
  	{"pow",		builtin_pow,        METH_VARARGS, pow_doc},
  	{"range",	builtin_range,      METH_VARARGS, range_doc},
@@ -2313,6 +2326,7 @@ _PyBuiltin_Init(void)
 #endif
 	SETBUILTIN("dict",		&PyDict_Type);
  	SETBUILTIN("enumerate",		&PyEnum_Type);
+	SETBUILTIN("file",		&PyFile_Type);
 	SETBUILTIN("float",		&PyFloat_Type);
 	SETBUILTIN("frozenset",		&PyFrozenSet_Type);
 	SETBUILTIN("property",		&PyProperty_Type);
@@ -2329,10 +2343,6 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("tuple",		&PyTuple_Type);
 	SETBUILTIN("type",		&PyType_Type);
 	SETBUILTIN("xrange",		&PyRange_Type);
-
-	/* Note that open() is just an alias of file(). */
-	SETBUILTIN("open",		&PyFile_Type);
-	SETBUILTIN("file",		&PyFile_Type);
 #ifdef Py_USING_UNICODE
 	SETBUILTIN("unicode",		&PyUnicode_Type);
 #endif

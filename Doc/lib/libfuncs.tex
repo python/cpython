@@ -455,12 +455,7 @@ class C:
     after any I/O has been performed, and there's no reliable way to
     determine whether this is the case.}
 
-  The \function{file()} constructor is new in Python 2.2 and is an
-  alias for \function{open()}.  Both spellings are equivalent.  The
-  intent is for \function{open()} to continue to be preferred for use
-  as a factory function which returns a new \class{file} object.  The
-  spelling, \class{file} is more suited to type testing (for example,
-  writing \samp{isinstance(f, file)}).
+  \versionadded{2.2}
 \end{funcdesc}
 
 \begin{funcdesc}{filter}{function, list}
@@ -725,7 +720,10 @@ class C:
 \end{funcdesc}
 
 \begin{funcdesc}{open}{filename\optional{, mode\optional{, bufsize}}}
-  An alias for the \function{file()} function above.
+  A wrapper for the \function{file()} function above.  The intent is
+  for \function{open()} to be preferred for use as a factory function
+  returning a new \class{file} object.  \class{file} is more suited to
+  type testing (for example, writing \samp{isinstance(f, file)}).
 \end{funcdesc}
 
 \begin{funcdesc}{ord}{c}
