@@ -1724,14 +1724,15 @@ tree.write('output.xml')
 
 # Encoding is UTF-8
 f = open('output.xml', 'w')
-tree.write(f, 'utf-8')
+tree.write(f, encoding='utf-8')
 \end{verbatim}
 
-(Caution: the default encoding used for output is ASCII, which isn't
-very useful for general XML work, raising an exception if there are
-any characters with values greater than 127.  You should always
-specify a different encoding such as UTF-8 that can handle any Unicode
-character.)
+(Caution: the default encoding used for output is ASCII.  For general
+XML work, where an element's name may contain arbitrary Unicode
+characters, ASCII isn't a very useful encoding because it will raise
+an exception if an element's name contains any characters with values
+greater than 127.  Therefore, it's best to specify a different
+encoding such as UTF-8 that can handle any Unicode character.)
 
 This section is only a partial description of the ElementTree interfaces.
 Please read the package's official documentation for more details.
