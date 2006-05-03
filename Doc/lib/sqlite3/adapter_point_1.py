@@ -14,4 +14,3 @@ cur = con.cursor()
 p = Point(4.0, -3.2)
 cur.execute("select ?", (p,))
 print cur.fetchone()[0]
-

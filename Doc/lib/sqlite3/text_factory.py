@@ -40,4 +40,3 @@ assert type(row[0]) == unicode
 cur.execute("select ?", ("Germany",))
 row = cur.fetchone()
 assert type(row[0]) == str
-

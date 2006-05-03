@@ -410,7 +410,7 @@ class UnicodeTest(
             def __str__(self):
                 return u'\u1234'
         self.assertEqual('%s' % Wrapper(), u'\u1234')
-    
+
     @test_support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
     def test_format_float(self):
         # should not format with a comma, but always with C locale
