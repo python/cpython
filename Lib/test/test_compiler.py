@@ -56,6 +56,9 @@ class CompilerTest(unittest.TestCase):
     def testYieldExpr(self):
         compiler.compile("def g(): yield\n\n", "<string>", "exec")
 
+    def testDefaultArgs(self):
+        self.assertRaises(SyntaxError, compiler.parse, "def foo(a=1, b): pass")
+
     def testLineNo(self):
         # Test that all nodes except Module have a correct lineno attribute.
         filename = __file__

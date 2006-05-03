@@ -91,6 +91,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1385040: don't allow "def foo(a=1, b): pass" in the compiler
+  package.
+
 - Patch #1472854: make the rlcompleter.Completer class usable on non-
   UNIX platforms.
 
