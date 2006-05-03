@@ -509,7 +509,8 @@ if sys.platform[:3] == "win":
     _tryorder = []
     _browsers = {}
     # Prefer mozilla/netscape/opera if present
-    for browser in ("firefox", "firebird", "mozilla", "netscape", "opera"):
+    for browser in ("firefox", "firebird", "seamonkey", "mozilla",
+                    "netscape", "opera"):
         if _iscommand(browser):
             register(browser, None, BackgroundBrowser(browser))
     register("windows-default", WindowsDefault)
