@@ -1753,67 +1753,50 @@ implemented in C will have to provide a writable
 \end{memberdesc}
 
 
-\subsection{Context Types \label{typecontext}}
+\subsection{Context Manager Types \label{typecontextmanager}}
 
 \versionadded{2.5}
-\index{with statement context protocol}
+\index{context manager}
 \index{context management protocol}
-\index{protocol!with statement context}
 \index{protocol!context management}
 
 Python's \keyword{with} statement supports the concept of a runtime
 context defined by a context manager.  This is implemented using
-three distinct methods; these are used to allow user-defined
-classes to define a runtime context.
+two separate methods that allow user-defined classes to define
+a runtime context that is entered before the statement body is
+executed and exited when the statement ends.
 
-The \dfn{context management protocol} consists of a single
-method that needs to be provided for a context manager object to
+The \dfn{context management protocol} consists of a pair of
+methods that need to be provided for a context manager object to
 define a runtime context:
 
-\begin{methoddesc}[context manager]{__context__}{}
-  Return a with statement context object.  The object is required to
-  support the with statement context protocol described below.  If an
-  object supports different kinds of runtime context, additional
-  methods can be provided to specifically request context objects for
-  those kinds of runtime context.  (An example of an object supporting
-  multiple kinds of context would be a synchronisation object which
-  supported both a locked context for normal thread synchronisation
-  and an unlocked context to temporarily release a held lock while
-  performing a potentially long running operation)
-\end{methoddesc}
+\begin{methoddesc}[context manager]{__enter__}{}
+  Enter the runtime context and return either this object or another
+  object related to the runtime context. The value returned by this
+  method is bound to the identifier in the \keyword{as} clause of
+  \keyword{with} statements using this context manager.
 
-The with statement context objects themselves are required to support the
-following three methods, which together form the
-\dfn{with statement context protocol}:
-
-\begin{methoddesc}[with statement context]{__context__}{}
-  Return the context object itself.  This is required to allow both
-  context objects and context managers to be used in a \keyword{with}
+  An example of a context manager that returns itself is a file object.
+  File objects return themselves from __enter__() to allow
+  \function{open()} to be used as the context expression in a with
   statement.
+
+  An example of a context manager that returns a related
+  object is the one returned by \code{decimal.Context.get_manager()}.
+  These managers set the active decimal context to a copy of the
+  original decimal context and then return the copy. This allows
+  changes to be made to the current decimal context in the body of
+  the \keyword{with} statement without affecting code outside
+  the \keyword{with} statement.
 \end{methoddesc}
 
-\begin{methoddesc}[with statement context]{__enter__}{}
-  Enter the runtime context and return either the defining context
-  manager or another object related to the runtime context. The value
-  returned by this method is bound to the identifier in the
-  \keyword{as} clause of \keyword{with} statements using this context.
-  (An example of a context object that returns the original context
-  manager is file objects, which are returned from __enter__() to
-  allow \function{open()} to be used directly in a with
-  statement. An example of a context object that returns a related
-  object is \code{decimal.Context} which sets the active decimal
-  context to a copy of the context manager and then returns the copy.
-  This allows changes to be made to the current decimal context in the
-  body of the \keyword{with} statement without affecting code outside
-  the \keyword{with} statement).
-\end{methoddesc}
-
-\begin{methoddesc}[with statement context]{__exit__}{exc_type, exc_val, exc_tb}
+\begin{methoddesc}[context manager]{__exit__}{exc_type, exc_val, exc_tb}
   Exit the runtime context and return a Boolean flag indicating if any
   expection that occurred should be suppressed. If an exception
   occurred while executing the body of the \keyword{with} statement, the
   arguments contain the exception type, value and traceback information.
   Otherwise, all three arguments are \var{None}.
+
   Returning a true value from this method will cause the \keyword{with}
   statement to suppress the exception and continue execution with the
   statement immediately following the \keyword{with} statement. Otherwise
@@ -1821,6 +1804,7 @@ following three methods, which together form the
   executing. Exceptions that occur during execution of this method will
   replace any exception that occurred in the body of the \keyword{with}
   statement.
+
   The exception passed in should never be reraised explicitly - instead,
   this method should return a false value to indicate that the method
   completed successfully and does not want to suppress the raised
@@ -1829,20 +1813,18 @@ following three methods, which together form the
   \method{__exit__()} method has actually failed.
 \end{methoddesc}
 
-Python defines several context objects and managers to support
-easy thread synchronisation, prompt closure of files or other
-objects, and thread-safe manipulation of the decimal arithmetic
-context. The specific types are not important beyond their
-implementation of the context management and with statement context
-protocols.
+Python defines several context managers to support easy thread
+synchronisation, prompt closure of files or other objects, and
+simpler manipulation of the active decimal arithmetic
+context. The specific types are not treated specially beyond
+their implementation of the context management protocol.
 
 Python's generators and the \code{contextlib.contextfactory} decorator
-provide a convenient way to implement these protocols.  If a context
-manager's \method{__context__()} method is implemented as a
-generator decorated with the \code{contextlib.contextfactory}
-decorator, it will automatically return a with statement context
-object supplying the necessary \method{__context__()},
-\method{__enter__()} and \method{__exit__()} methods.
+provide a convenient way to implement these protocols.  If a generator
+function is decorated with the \code{contextlib.contextfactory}
+decorator, it will return a context manager implementing the necessary
+\method{__enter__()} and \method{__exit__()} methods, rather than the
+iterator produced by an undecorated generator function.
 
 Note that there is no specific slot for any of these methods in the
 type structure for Python objects in the Python/C API. Extension

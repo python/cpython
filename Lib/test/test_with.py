@@ -10,25 +10,26 @@ __email__ = "mbland at acm dot org"
 import sys
 import unittest
 from collections import deque
-from contextlib import GeneratorContext, contextfactory
+from contextlib import GeneratorContextManager, contextmanager
 from test.test_support import run_unittest
 
 
-class MockContextManager(GeneratorContext):
+class MockContextManager(GeneratorContextManager):
     def __init__(self, gen):
-        GeneratorContext.__init__(self, gen)
+        GeneratorContextManager.__init__(self, gen)
         self.enter_called = False
         self.exit_called = False
         self.exit_args = None
 
     def __enter__(self):
         self.enter_called = True
-        return GeneratorContext.__enter__(self)
+        return GeneratorContextManager.__enter__(self)
 
     def __exit__(self, type, value, traceback):
         self.exit_called = True
         self.exit_args = (type, value, traceback)
-        return GeneratorContext.__exit__(self, type, value, traceback)
+        return GeneratorContextManager.__exit__(self, type,
+                                                value, traceback)
 
 
 def mock_contextmanager(func):
@@ -439,7 +440,7 @@ class ExceptionalTestCase(unittest.TestCase, ContextmanagerAssertionMixin):
         self.assertAfterWithGeneratorInvariantsNoError(self.bar)
 
     def testRaisedStopIteration1(self):
-        @contextfactory
+        @contextmanager
         def cm():
             yield
 
@@ -463,7 +464,7 @@ class ExceptionalTestCase(unittest.TestCase, ContextmanagerAssertionMixin):
         self.assertRaises(StopIteration, shouldThrow)
 
     def testRaisedGeneratorExit1(self):
-        @contextfactory
+        @contextmanager
         def cm():
             yield
 

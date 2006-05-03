@@ -2112,14 +2112,13 @@ implement a \method{__coerce__()} method, for use by the built-in
 
 \end{itemize}
 
-\subsection{With Statement Contexts and Context Managers\label{context-managers}}
+\subsection{With Statement Context Managers\label{context-managers}}
 
 \versionadded{2.5}
 
 A \dfn{context manager} is an object that defines the runtime
 context to be established when executing a \keyword{with}
-statement. The context manager provides a
-\dfn{with statement context object} which manages the entry into,
+statement. The context manager handles the entry into,
 and the exit from, the desired runtime context for the execution
 of the block of code.  Context managers are normally invoked using
 the \keyword{with} statement (described in section~\ref{with}), but
@@ -2127,18 +2126,16 @@ can also be used by directly invoking their methods.
 
 \stindex{with}
 \index{context manager}
-\index{context (with statement)}
-\index{with statement context}
 
-Typical uses of context managers and contexts include saving and
+Typical uses of context managers include saving and
 restoring various kinds of global state, locking and unlocking
 resources, closing opened files, etc.
 
-For more information on context managers and context objects,
-see ``\ulink{Context Types}{../lib/typecontext.html}'' in the
+For more information on context managers, see
+``\ulink{Context Types}{../lib/typecontextmanager.html}'' in the
 \citetitle[../lib/lib.html]{Python Library Reference}.
 
-\begin{methoddesc}[with statement context]{__enter__}{self}
+\begin{methoddesc}[context manager]{__enter__}{self}
 Enter the runtime context related to this object. The \keyword{with}
 statement will bind this method's return value to the target(s)
 specified in the \keyword{as} clause of the statement, if any.
