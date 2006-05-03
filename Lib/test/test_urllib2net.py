@@ -2,6 +2,7 @@
 
 import unittest
 from test import test_support
+from test.test_urllib2 import sanepathname2url
 
 import socket
 import urllib2
@@ -124,10 +125,145 @@ class urlopenNetworkTests(unittest.TestCase):
                           # urllib2.urlopen, "http://www.sadflkjsasadf.com/")
                           urllib2.urlopen, "http://www.python.invalid/")
 
+
+class OtherNetworkTests(unittest.TestCase):
+    def setUp(self):
+        if 0:  # for debugging
+            import logging
+            logger = logging.getLogger("test_urllib2net")
+            logger.addHandler(logging.StreamHandler())
+
+    def test_range (self):
+        req = urllib2.Request("http://www.python.org",
+                              headers={'Range': 'bytes=20-39'})
+        result = urllib2.urlopen(req)
+        data = result.read()
+        self.assertEqual(len(data), 20)
+
+    # XXX The rest of these tests aren't very good -- they don't check much.
+    # They do sometimes catch some major disasters, though.
+
+    def test_ftp(self):
+        urls = [
+            'ftp://www.python.org/pub/python/misc/sousa.au',
+            'ftp://www.python.org/pub/tmp/blat',
+            'ftp://gatekeeper.research.compaq.com/pub/DEC/SRC'
+                '/research-reports/00README-Legal-Rules-Regs',
+            ]
+        self._test_urls(urls, self._extra_handlers())
+
+    def test_gopher(self):
+        import warnings
+        warnings.filterwarnings("ignore",
+                                "the gopherlib module is deprecated",
+                                DeprecationWarning,
+                                "urllib2$")
+        urls = [
+            # Thanks to Fred for finding these!
+            'gopher://gopher.lib.ncsu.edu/11/library/stacks/Alex',
+            'gopher://gopher.vt.edu:10010/10/33',
+            ]
+        self._test_urls(urls, self._extra_handlers())
+
+    def test_file(self):
+        TESTFN = test_support.TESTFN
+        f = open(TESTFN, 'w')
+        try:
+            f.write('hi there\n')
+            f.close()
+            urls = [
+                'file:'+sanepathname2url(os.path.abspath(TESTFN)),
+
+                # XXX bug, should raise URLError
+                #('file://nonsensename/etc/passwd', None, urllib2.URLError)
+                ('file://nonsensename/etc/passwd', None, (OSError, socket.error))
+                ]
+            self._test_urls(urls, self._extra_handlers())
+        finally:
+            os.remove(TESTFN)
+
+    def test_http(self):
+        urls = [
+            'http://www.espn.com/', # redirect
+            'http://www.python.org/Spanish/Inquistion/',
+            ('http://www.python.org/cgi-bin/faqw.py',
+             'query=pythonistas&querytype=simple&casefold=yes&req=search', None),
+            'http://www.python.org/',
+            ]
+        self._test_urls(urls, self._extra_handlers())
+
+    # XXX Following test depends on machine configurations that are internal
+    # to CNRI.  Need to set up a public server with the right authentication
+    # configuration for test purposes.
+
+##     def test_cnri(self):
+##         if socket.gethostname() == 'bitdiddle':
+##             localhost = 'bitdiddle.cnri.reston.va.us'
+##         elif socket.gethostname() == 'bitdiddle.concentric.net':
+##             localhost = 'localhost'
+##         else:
+##             localhost = None
+##         if localhost is not None:
+##             urls = [
+##                 'file://%s/etc/passwd' % localhost,
+##                 'http://%s/simple/' % localhost,
+##                 'http://%s/digest/' % localhost,
+##                 'http://%s/not/found.h' % localhost,
+##                 ]
+
+##             bauth = HTTPBasicAuthHandler()
+##             bauth.add_password('basic_test_realm', localhost, 'jhylton',
+##                                'password')
+##             dauth = HTTPDigestAuthHandler()
+##             dauth.add_password('digest_test_realm', localhost, 'jhylton',
+##                                'password')
+
+##             self._test_urls(urls, self._extra_handlers()+[bauth, dauth])
+
+    def _test_urls(self, urls, handlers):
+        import socket
+        import time
+        import logging
+        debug = logging.getLogger("test_urllib2").debug
+
+        urllib2.install_opener(urllib2.build_opener(*handlers))
+
+        for url in urls:
+            if isinstance(url, tuple):
+                url, req, expected_err = url
+            else:
+                req = expected_err = None
+            debug(url)
+            try:
+                f = urllib2.urlopen(url, req)
+            except (IOError, socket.error, OSError), err:
+                debug(err)
+                if expected_err:
+                    self.assert_(isinstance(err, expected_err))
+            else:
+                buf = f.read()
+                f.close()
+                debug("read %d bytes" % len(buf))
+            debug("******** next url coming up...")
+            time.sleep(0.1)
+
+    def _extra_handlers(self):
+        handlers = []
+
+        handlers.append(urllib2.GopherHandler)
+
+        cfh = urllib2.CacheFTPHandler()
+        cfh.setTimeout(1)
+        handlers.append(cfh)
+
+        return handlers
+
+
+
 def test_main():
     test_support.requires("network")
     test_support.run_unittest(URLTimeoutTest, urlopenNetworkTests,
-                              AuthTests)
+                              AuthTests, OtherNetworkTests)
 
 if __name__ == "__main__":
     test_main()
