@@ -527,7 +527,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             arg = arg[i+1:]
             try:
                 lineno = int(arg)
-            except:
+            except ValueError:
                 err = "Invalid line number (%s)" % arg
             else:
                 err = self.clear_break(filename, lineno)
@@ -535,6 +535,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
         numberlist = arg.split()
         for i in numberlist:
+            try:
+                i = int(i)
+            except ValueError:
+                print 'Breakpoint index %r is not a number' % i
+                continue
+
             if not (0 <= i < len(bdb.Breakpoint.bpbynumber)):
                 print 'No breakpoint numbered', i
                 continue
