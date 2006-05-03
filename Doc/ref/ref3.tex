@@ -1875,8 +1875,8 @@ These methods are
 called to implement the binary arithmetic operations (\code{+},
 \code{-}, \code{*}, \code{//}, \code{\%},
 \function{divmod()}\bifuncindex{divmod},
-\function{pow()}\bifuncindex{pow}, \code{**}, \code{<}\code{<},
-\code{>}\code{>}, \code{\&}, \code{\^}, \code{|}).  For instance, to
+\function{pow()}\bifuncindex{pow}, \code{**}, \code{<<},
+\code{>>}, \code{\&}, \code{\^}, \code{|}).  For instance, to
 evaluate the expression \var{x}\code{+}\var{y}, where \var{x} is an
 instance of a class that has an \method{__add__()} method,
 \code{\var{x}.__add__(\var{y})} is called.  The \method{__divmod__()}
@@ -1915,8 +1915,8 @@ These methods are
 called to implement the binary arithmetic operations (\code{+},
 \code{-}, \code{*}, \code{/}, \code{\%},
 \function{divmod()}\bifuncindex{divmod},
-\function{pow()}\bifuncindex{pow}, \code{**}, \code{<}\code{<},
-\code{>}\code{>}, \code{\&}, \code{\^}, \code{|}) with reflected
+\function{pow()}\bifuncindex{pow}, \code{**}, \code{<<},
+\code{>>}, \code{\&}, \code{\^}, \code{|}) with reflected
 (swapped) operands.  These functions are only called if the left
 operand does not support the corresponding operation.  For instance,
 to evaluate the expression \var{x}\code{-}\var{y}, where \var{y} is an
@@ -1942,7 +1942,7 @@ complicated).
 \methodline[numeric object]{__ior__}{self, other}
 These methods are called to implement the augmented arithmetic
 operations (\code{+=}, \code{-=}, \code{*=}, \code{/=}, \code{\%=},
-\code{**=}, \code{<}\code{<=}, \code{>}\code{>=}, \code{\&=},
+\code{**=}, \code{<<=}, \code{>>=}, \code{\&=},
 \code{\textasciicircum=}, \code{|=}).  These methods should attempt to do the
 operation in-place (modifying \var{self}) and return the result (which
 could be, but does not have to be, \var{self}).  If a specific method
