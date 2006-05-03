@@ -796,11 +796,20 @@ class HTTPConnection:
                     nil, netloc, nil, nil, nil = urlsplit(url)
 
                 if netloc:
-                    self.putheader('Host', netloc.encode("idna"))
-                elif self.port == HTTP_PORT:
-                    self.putheader('Host', self.host.encode("idna"))
+                    try:
+                        netloc_enc = netloc.encode("ascii")
+                    except UnicodeEncodeError:
+                        netloc_enc = netloc.encode("idna")
+                    self.putheader('Host', netloc_enc)
                 else:
-                    self.putheader('Host', "%s:%s" % (self.host.encode("idna"), self.port))
+                    try:
+                        host_enc = self.host.encode("ascii")
+                    except UnicodeEncodeError:
+                        host_enc = self.host.encode("idna")
+                    if self.port == HTTP_PORT:
+                        self.putheader('Host', host_enc)
+                    else:
+                        self.putheader('Host', "%s:%s" % (host_enc, self.port))
 
             # note: we are assuming that clients will not attempt to set these
             #       headers since *this* library must deal with the
