@@ -815,7 +815,7 @@ class AbstractDigestAuthHandler:
             auth_val = 'Digest %s' % auth
             if req.headers.get(self.auth_header, None) == auth_val:
                 return None
-            req.add_header(self.auth_header, auth_val)
+            req.add_unredirected_header(self.auth_header, auth_val)
             resp = self.parent.open(req)
             return resp
 
