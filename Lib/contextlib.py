@@ -2,10 +2,10 @@
 
 import sys
 
-__all__ = ["contextfactory", "nested", "closing"]
+__all__ = ["contextmanager", "nested", "closing"]
 
-class GeneratorContext(object):
-    """Helper for @contextfactory decorator."""
+class GeneratorContextManager(object):
+    """Helper for @contextmanager decorator."""
 
     def __init__(self, gen):
         self.gen = gen
@@ -45,12 +45,12 @@ class GeneratorContext(object):
                     raise
 
 
-def contextfactory(func):
-    """@contextfactory decorator.
+def contextmanager(func):
+    """@contextmanager decorator.
 
     Typical usage:
 
-        @contextfactory
+        @contextmanager
         def some_generator(<arguments>):
             <setup>
             try:
@@ -74,7 +74,7 @@ def contextfactory(func):
 
     """
     def helper(*args, **kwds):
-        return GeneratorContext(func(*args, **kwds))
+        return GeneratorContextManager(func(*args, **kwds))
     try:
         helper.__name__ = func.__name__
         helper.__doc__ = func.__doc__
@@ -84,7 +84,7 @@ def contextfactory(func):
     return helper
 
 
-@contextfactory
+@contextmanager
 def nested(*managers):
     """Support multiple context managers in a single with-statement.
 

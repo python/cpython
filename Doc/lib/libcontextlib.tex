@@ -11,19 +11,20 @@ This module provides utilities for common tasks involving the
 
 Functions provided:
 
-\begin{funcdesc}{context}{func}
+\begin{funcdesc}{contextmanager}{func}
 This function is a decorator that can be used to define a factory
 function for \keyword{with} statement context objects, without
 needing to create a class or separate \method{__enter__()} and
 \method{__exit__()} methods.
 
-A simple example:
+A simple example (this is not recommended as a real way of
+generating HTML!):
 
 \begin{verbatim}
 from __future__ import with_statement
-from contextlib import contextfactory
+from contextlib import contextmanager
 
-@contextfactory
+@contextmanager
 def tag(name):
     print "<%s>" % name
     yield
@@ -56,7 +57,7 @@ treat the exception as having been handled, and resume execution with
 the statement immediately following the \keyword{with} statement.
 \end{funcdesc}
 
-\begin{funcdesc}{nested}{ctx1\optional{, ctx2\optional{, ...}}}
+\begin{funcdesc}{nested}{mgr1\optional{, mgr2\optional{, ...}}}
 Combine multiple context managers into a single nested context manager.
 
 Code like this:
@@ -78,12 +79,12 @@ with A as X:
 \end{verbatim}
 
 Note that if the \method{__exit__()} method of one of the nested
-context objects indicates an exception should be suppressed, no
+context managers indicates an exception should be suppressed, no
 exception information will be passed to any remaining outer context
 objects. Similarly, if the \method{__exit__()} method of one of the
-nested context objects raises an exception, any previous exception
+nested context managers raises an exception, any previous exception
 state will be lost; the new exception will be passed to the
-\method{__exit__()} methods of any remaining outer context objects.
+\method{__exit__()} methods of any remaining outer context managers.
 In general, \method{__exit__()} methods should avoid raising
 exceptions, and in particular they should not re-raise a
 passed-in exception.
@@ -91,13 +92,13 @@ passed-in exception.
 
 \label{context-closing}
 \begin{funcdesc}{closing}{thing}
-Return a context that closes \var{thing} upon completion of the
-block.  This is basically equivalent to:
+Return a context manager that closes \var{thing} upon completion of
+the block.  This is basically equivalent to:
 
 \begin{verbatim}
-from contextlib import contextfactory
+from contextlib import contextmanager
 
-@contextfactory
+@contextmanager
 def closing(thing):
     try:
         yield thing
