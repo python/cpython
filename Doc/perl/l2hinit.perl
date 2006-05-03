@@ -4,7 +4,14 @@ package main;
 
 use L2hos;
 
-$HTML_VERSION = 4.0;
+$HTML_VERSION = 4.01;
+$LOWER_CASE_TAGS = 1;
+$NO_FRENCH_QUOTES = 1;
+
+# Force Unicode support to be loaded; request UTF-8 output.
+do_require_extension('unicode');
+do_require_extension('utf8');
+$HTML_OPTIONS = 'utf8';
 
 $MAX_LINK_DEPTH = 2;
 $ADDRESS = '';
@@ -106,6 +113,13 @@ sub custom_driver_hook {
         $ENV{'TEXINPUTS'} = undef;
     }
     print "\nSetting \$TEXINPUTS to $TEXINPUTS\n";
+
+    # Not sure why we need to deal with this both here and at the top,
+    # but this is needed to actually make it work.
+    do_require_extension('utf8');
+    $charset = $utf8_str;
+    $CHARSET = $utf8_str;
+    $USE_UTF = 1;
 }
 
 
