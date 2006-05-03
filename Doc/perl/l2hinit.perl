@@ -8,6 +8,9 @@ $HTML_VERSION = 4.01;
 $LOWER_CASE_TAGS = 1;
 $NO_FRENCH_QUOTES = 1;
 
+# '' in \code{...} is still converted, so we can't use this yet.
+#$USE_CURLY_QUOTES = 1;
+
 # Force Unicode support to be loaded; request UTF-8 output.
 do_require_extension('unicode');
 do_require_extension('utf8');
