@@ -1679,7 +1679,7 @@ Create a hard link to a file.");
 static PyObject *
 posix_link(PyObject *self, PyObject *args)
 {
-	return posix_2str(args, "etet:link", link, NULL, NULL);
+	return posix_2str(args, "etet:link", link);
 }
 #endif /* HAVE_LINK */
 
@@ -2145,7 +2145,7 @@ posix_rename(PyObject *self, PyObject *args)
 	Py_INCREF(Py_None);
 	return Py_None;
 #else
-	return posix_2str(args, "etet:rename", rename, NULL, NULL);
+	return posix_2str(args, "etet:rename", rename);
 #endif
 }
 
@@ -5420,7 +5420,7 @@ Create a symbolic link pointing to src named dst.");
 static PyObject *
 posix_symlink(PyObject *self, PyObject *args)
 {
-	return posix_2str(args, "etet:symlink", symlink, NULL, NULL);
+	return posix_2str(args, "etet:symlink", symlink);
 }
 #endif /* HAVE_SYMLINK */
 
