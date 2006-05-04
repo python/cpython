@@ -67,6 +67,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Use Win32 API to implement os.{chdir,rename,rmdir,remove}. As a result,
+  these functions now raise WindowsError instead of OSError.
+
 - Calling Tk_Init twice is refused if the first call failed as that
   may deadlock.
 
