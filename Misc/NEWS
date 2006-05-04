@@ -12,6 +12,8 @@ What's New in Python 2.5 alpha 2?
 Core and builtins
 -----------------
 
+- Patch #1475845: Raise IndentationError for unexpected indent.
+
 - Patch #1479181: split open() and file() from being aliases for each other.
 
 - Bug #1465834: 'bdist_wininst preinstall script support' was fixed

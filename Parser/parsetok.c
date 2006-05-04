@@ -194,8 +194,10 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 		if ((err_ret->error =
 		     PyParser_AddToken(ps, (int)type, str, tok->lineno, col_offset,
 				       &(err_ret->expected))) != E_OK) {
-			if (err_ret->error != E_DONE)
+			if (err_ret->error != E_DONE) {
 				PyObject_FREE(str);
+				err_ret->token = type;
+			}				
 			break;
 		}
 	}

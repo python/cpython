@@ -243,15 +243,18 @@ from test import test_support
 class SyntaxTestCase(unittest.TestCase):
 
     def _check_error(self, code, errtext,
-                     filename="<testcase>", mode="exec"):
+                     filename="<testcase>", mode="exec", subclass=None):
         """Check that compiling code raises SyntaxError with errtext.
 
         errtest is a regular expression that must be present in the
-        test of the exception raised.
+        test of the exception raised.  If subclass is specified it
+        is the expected subclass of SyntaxError (e.g. IndentationError).
         """
         try:
             compile(code, filename, mode)
         except SyntaxError, err:
+            if subclass and not isinstance(err, subclass):
+                self.fail("SyntaxError is not a %s" % subclass.__name__)
             mo = re.search(errtext, str(err))
             if mo is None:
                 self.fail("SyntaxError did not contain '%r'" % (errtext,))
@@ -289,6 +292,19 @@ class SyntaxTestCase(unittest.TestCase):
             :  del x
             :""")
         self._check_error(source, "nested scope")
+
+    def test_unexpected_indent(self):
+        self._check_error("foo()\n bar()\n", "unexpected indent",
+                          subclass=IndentationError)
+
+    def test_no_indent(self):
+        self._check_error("if 1:\nfoo()", "expected an indented block",
+                          subclass=IndentationError)
+
+    def test_bad_outdent(self):
+        self._check_error("if 1:\n  foo()\n bar()",
+                          "unindent does not match .* level",
+                          subclass=IndentationError)
 
 def test_main():
     test_support.run_unittest(SyntaxTestCase)
