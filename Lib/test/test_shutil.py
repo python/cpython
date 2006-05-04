@@ -48,12 +48,12 @@ class TestShutil(unittest.TestCase):
         if self.errorState == 0:
             self.assertEqual(func, os.remove)
             self.assertEqual(arg, self.childpath)
-            self.assertEqual(exc[0], OSError)
+            self.failUnless(issubclass(exc[0], OSError))
             self.errorState = 1
         else:
             self.assertEqual(func, os.rmdir)
             self.assertEqual(arg, TESTFN)
-            self.assertEqual(exc[0], OSError)
+            self.failUnless(issubclass(exc[0], OSError))
             self.errorState = 2
 
     def test_rmtree_dont_delete_file(self):

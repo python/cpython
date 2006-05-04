@@ -458,21 +458,29 @@ win32_error_unicode(char* function, Py_UNICODE* filename)
 
 static PyObject *_PyUnicode_FromFileSystemEncodedObject(register PyObject *obj)
 {
-	/* XXX Perhaps we should make this API an alias of
-	   PyObject_Unicode() instead ?! */
-	if (PyUnicode_CheckExact(obj)) {
-		Py_INCREF(obj);
-		return obj;
-	}
-	if (PyUnicode_Check(obj)) {
+}
+
+/* Function suitable for O& conversion */
+static int
+convert_to_unicode(PyObject *arg, void* _param)
+{
+	PyObject **param = (PyObject**)_param;
+	if (PyUnicode_CheckExact(arg)) {
+		Py_INCREF(arg);
+		*param = arg;
+	} 
+	else if (PyUnicode_Check(arg)) {
 		/* For a Unicode subtype that's not a Unicode object,
 		   return a true Unicode object with the same data. */
-	return PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(obj),
-	                             PyUnicode_GET_SIZE(obj));
+		*param = PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(arg),
+					       PyUnicode_GET_SIZE(arg));
+		return *param != NULL;
 	}
-	return PyUnicode_FromEncodedObject(obj,
-	                                   Py_FileSystemDefaultEncoding,
-	                                   "strict");
+	else
+		*param = PyUnicode_FromEncodedObject(arg,
+				                     Py_FileSystemDefaultEncoding,
+					             "strict");
+	return (*param) != NULL;
 }
 
 #endif /* Py_WIN_WIDE_FILENAMES */
@@ -589,35 +597,10 @@ unicode_file_names(void)
 #endif
 
 static PyObject *
-posix_1str(PyObject *args, char *format, int (*func)(const char*),
-	   char *wformat, int (*wfunc)(const Py_UNICODE*))
+posix_1str(PyObject *args, char *format, int (*func)(const char*))
 {
 	char *path1 = NULL;
 	int res;
-#ifdef Py_WIN_WIDE_FILENAMES
-	if (unicode_file_names()) {
-		PyUnicodeObject *po;
-		if (PyArg_ParseTuple(args, wformat, &po)) {
-			Py_BEGIN_ALLOW_THREADS
-			/*  PyUnicode_AS_UNICODE OK without thread
-			    lock as it is a simple dereference. */
-			res = (*wfunc)(PyUnicode_AS_UNICODE(po));
-			Py_END_ALLOW_THREADS
-			if (res < 0)
-				return posix_error_with_unicode_filename(PyUnicode_AS_UNICODE(po));
-			Py_INCREF(Py_None);
-			return Py_None;
-		}
-		/* Drop the argument parsing error as narrow
-		   strings are also valid. */
-		PyErr_Clear();
-	}
-#else
-	/* Platforms that don't support Unicode filenames
-	   shouldn't be passing these extra params */
-	assert(wformat==NULL && wfunc == NULL);
-#endif
-
 	if (!PyArg_ParseTuple(args, format,
 	                      Py_FileSystemDefaultEncoding, &path1))
 		return NULL;
@@ -634,52 +617,10 @@ posix_1str(PyObject *args, char *format, int (*func)(const char*),
 static PyObject *
 posix_2str(PyObject *args,
 	   char *format,
-	   int (*func)(const char *, const char *),
-	   char *wformat,
-	   int (*wfunc)(const Py_UNICODE *, const Py_UNICODE *))
+	   int (*func)(const char *, const char *))
 {
 	char *path1 = NULL, *path2 = NULL;
 	int res;
-#ifdef Py_WIN_WIDE_FILENAMES
-	if (unicode_file_names()) {
-		PyObject *po1;
-		PyObject *po2;
-		if (PyArg_ParseTuple(args, wformat, &po1, &po2)) {
-			if (PyUnicode_Check(po1) || PyUnicode_Check(po2)) {
-				PyObject *wpath1;
-				PyObject *wpath2;
-				wpath1 = _PyUnicode_FromFileSystemEncodedObject(po1);
-				wpath2 = _PyUnicode_FromFileSystemEncodedObject(po2);
-				if (!wpath1 || !wpath2) {
-					Py_XDECREF(wpath1);
-					Py_XDECREF(wpath2);
-					return NULL;
-				}
-				Py_BEGIN_ALLOW_THREADS
-				/* PyUnicode_AS_UNICODE OK without thread
-				   lock as it is a simple dereference.  */
-				res = (*wfunc)(PyUnicode_AS_UNICODE(wpath1),
-					       PyUnicode_AS_UNICODE(wpath2));
-				Py_END_ALLOW_THREADS
-				Py_XDECREF(wpath1);
-				Py_XDECREF(wpath2);
-				if (res != 0)
-					return posix_error();
-				Py_INCREF(Py_None);
-				return Py_None;
-			}
-			/* Else flow through as neither is Unicode. */
-		}
-		/* Drop the argument parsing error as narrow
-		   strings are also valid. */
-		PyErr_Clear();
-	}
-#else
-	/* Platforms that don't support Unicode filenames
-	   shouldn't be passing these extra params */
-	assert(wformat==NULL && wfunc == NULL);
-#endif
-
 	if (!PyArg_ParseTuple(args, format,
 	                      Py_FileSystemDefaultEncoding, &path1,
 	                      Py_FileSystemDefaultEncoding, &path2))
@@ -695,6 +636,101 @@ posix_2str(PyObject *args,
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
+#ifdef Py_WIN_WIDE_FILENAMES
+static PyObject*
+win32_1str(PyObject* args, char* func, 
+	   char* format, BOOL (__stdcall *funcA)(LPCSTR), 
+	   char* wformat, BOOL (__stdcall *funcW)(LPWSTR))
+{
+	PyObject *uni;
+	char *ansi;
+	BOOL result;
+	if (unicode_file_names()) {
+		if (!PyArg_ParseTuple(args, wformat, &uni))
+			PyErr_Clear();
+		else {
+			Py_BEGIN_ALLOW_THREADS
+			result = funcW(PyUnicode_AsUnicode(uni));
+			Py_END_ALLOW_THREADS
+			if (!result)
+				return win32_error_unicode(func, PyUnicode_AsUnicode(uni));
+			Py_INCREF(Py_None);
+			return Py_None;
+		}
+	}
+	if (!PyArg_ParseTuple(args, format, &ansi))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	result = funcA(ansi);
+	Py_END_ALLOW_THREADS
+	if (!result)
+		return win32_error(func, ansi);
+	Py_INCREF(Py_None);
+	return Py_None;
+
+}
+
+/* This is a reimplementation of the C library's chdir function,
+   but one that produces Win32 errors instead of DOS error codes.
+   chdir is essentially a wrapper around SetCurrentDirectory; however,
+   it also needs to set "magic" environment variables indicating
+   the per-drive current directory, which are of the form =<drive>: */
+BOOL __stdcall
+win32_chdir(LPCSTR path)
+{
+	char new_path[MAX_PATH+1];
+	int result;
+	char env[4] = "=x:";
+
+	if(!SetCurrentDirectoryA(path))
+		return FALSE;
+	result = GetCurrentDirectoryA(MAX_PATH+1, new_path);
+	if (!result)
+		return FALSE;
+	/* In the ANSI API, there should not be any paths longer
+	   than MAX_PATH. */
+	assert(result <= MAX_PATH+1);
+	if (strncmp(new_path, "\\\\", 2) == 0 ||
+	    strncmp(new_path, "//", 2) == 0)
+	    /* UNC path, nothing to do. */
+	    return TRUE;
+	env[1] = new_path[0];
+	return SetEnvironmentVariableA(env, new_path);
+}
+
+/* The Unicode version differs from the ANSI version
+   since the current directory might exceed MAX_PATH characters */
+BOOL __stdcall
+win32_wchdir(LPCWSTR path)
+{
+	wchar_t _new_path[MAX_PATH+1], *new_path = _new_path;
+	int result;
+	wchar_t env[4] = L"=x:";
+
+	if(!SetCurrentDirectoryW(path))
+		return FALSE;
+	result = GetCurrentDirectoryW(MAX_PATH+1, new_path);
+	if (!result)
+		return FALSE;
+	if (result > MAX_PATH+1) {
+		new_path = malloc(result);
+		if (!new_path) {
+			SetLastError(ERROR_OUTOFMEMORY);
+			return FALSE;
+		}
+	}
+	if (wcsncmp(new_path, L"\\\\", 2) == 0 ||
+	    wcsncmp(new_path, L"//", 2) == 0)
+	    /* UNC path, nothing to do. */
+	    return TRUE;
+	env[1] = new_path[0];
+	result = SetEnvironmentVariableW(env, new_path);
+	if (new_path != _new_path)
+		free(new_path);
+	return result;
+}
+#endif
 
 #ifdef MS_WINDOWS
 /* The CRT of Windows has a number of flaws wrt. its stat() implementation:
@@ -1410,14 +1446,13 @@ static PyObject *
 posix_chdir(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-	return posix_1str(args, "et:chdir", chdir, "U:chdir", _wchdir);
+	return win32_1str(args, "chdir", "s:chdir", win32_chdir, "U:chdir", win32_wchdir);
 #elif defined(PYOS_OS2) && defined(PYCC_GCC)
-	return posix_1str(args, "et:chdir", _chdir2, NULL, NULL);
+	return posix_1str(args, "et:chdir", _chdir2);
 #elif defined(__VMS)
-	return posix_1str(args, "et:chdir", (int (*)(const char *))chdir,
-			  NULL, NULL);
+	return posix_1str(args, "et:chdir", (int (*)(const char *))chdir);
 #else
-	return posix_1str(args, "et:chdir", chdir, NULL, NULL);
+	return posix_1str(args, "et:chdir", chdir);
 #endif
 }
 
@@ -1485,7 +1520,7 @@ Change root directory to path.");
 static PyObject *
 posix_chroot(PyObject *self, PyObject *args)
 {
-	return posix_1str(args, "et:chroot", chroot, NULL, NULL);
+	return posix_1str(args, "et:chroot", chroot);
 }
 #endif
 
@@ -2071,7 +2106,6 @@ posix_nice(PyObject *self, PyObject *args)
 }
 #endif /* HAVE_NICE */
 
-
 PyDoc_STRVAR(posix_rename__doc__,
 "rename(old, new)\n\n\
 Rename a file or directory.");
@@ -2080,7 +2114,36 @@ static PyObject *
 posix_rename(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-	return posix_2str(args, "etet:rename", rename, "OO:rename", _wrename);
+	PyObject *o1, *o2;
+	char *p1, *p2;
+	BOOL result;
+	if (unicode_file_names()) {
+	    if (!PyArg_ParseTuple(args, "O&O&:rename", 
+		convert_to_unicode, &o1,
+		convert_to_unicode, &o2))
+		    PyErr_Clear();
+	    else {
+		    Py_BEGIN_ALLOW_THREADS
+		    result = MoveFileW(PyUnicode_AsUnicode(o1),
+				       PyUnicode_AsUnicode(o2));
+		    Py_END_ALLOW_THREADS
+		    Py_DECREF(o1);
+		    Py_DECREF(o2);
+		    if (!result)
+			    return win32_error("rename", NULL);
+		    Py_INCREF(Py_None);
+		    return Py_None;
+	    }
+	}
+	if (!PyArg_ParseTuple(args, "ss:rename", &p1, &p2))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	result = MoveFileA(p1, p2);
+	Py_END_ALLOW_THREADS
+	if (!result)
+		return win32_error("rename", NULL);
+	Py_INCREF(Py_None);
+	return Py_None;
 #else
 	return posix_2str(args, "etet:rename", rename, NULL, NULL);
 #endif
@@ -2095,9 +2158,9 @@ static PyObject *
 posix_rmdir(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-	return posix_1str(args, "et:rmdir", rmdir, "U:rmdir", _wrmdir);
+	return win32_1str(args, "rmdir", "s:rmdir", RemoveDirectoryA, "U:rmdir", RemoveDirectoryW);
 #else
-	return posix_1str(args, "et:rmdir", rmdir, NULL, NULL);
+	return posix_1str(args, "et:rmdir", rmdir);
 #endif
 }
 
@@ -2166,9 +2229,9 @@ static PyObject *
 posix_unlink(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
-	return posix_1str(args, "et:remove", unlink, "U:remove", _wunlink);
+	return win32_1str(args, "remove", "s:remove", DeleteFileA, "U:remove", DeleteFileW);
 #else
-	return posix_1str(args, "et:remove", unlink, NULL, NULL);
+	return posix_1str(args, "et:remove", unlink);
 #endif
 }
 
