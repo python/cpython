@@ -347,6 +347,30 @@ class BytesTest(unittest.TestCase):
         self.failIf(bytes("dab") in b)
         self.failIf(bytes("abd") in b)
 
+    def test_alloc(self):
+        b = bytes()
+        alloc = b.__alloc__()
+        self.assert_(alloc >= 0)
+        seq = [alloc]
+        for i in range(100):
+            b += bytes("x")
+            alloc = b.__alloc__()
+            self.assert_(alloc >= len(b))
+            if alloc not in seq:
+                seq.append(alloc)
+        print seq
+
+    def test_join(self):
+        self.assertEqual(bytes.join([]), bytes())
+        self.assertEqual(bytes.join([bytes()]), bytes())
+        for part in [("abc",), ("a", "bc"), ("ab", "c"), ("a", "b", "c")]:
+            lst = map(bytes, part)
+            self.assertEqual(bytes.join(lst), bytes("abc"))
+            self.assertEqual(bytes.join(tuple(lst)), bytes("abc"))
+            self.assertEqual(bytes.join(iter(lst)), bytes("abc"))
+        # XXX more...
+            
+
     # Optimizations:
     # __iter__? (optimization)
     # __reversed__? (optimization)

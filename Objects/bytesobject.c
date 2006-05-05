@@ -48,7 +48,7 @@ PyBytes_Size(PyObject *self)
     assert(self != NULL);
     assert(PyBytes_Check(self));
 
-    return ((PyBytesObject *)self)->ob_size;
+    return PyBytes_GET_SIZE(self);
 }
 
 char  *
@@ -57,7 +57,7 @@ PyBytes_AsString(PyObject *self)
     assert(self != NULL);
     assert(PyBytes_Check(self));
 
-    return ((PyBytesObject *)self)->ob_bytes;
+    return PyBytes_AS_STRING(self);
 }
 
 int
@@ -714,6 +714,68 @@ bytes_alloc(PyBytesObject *self)
     return PyInt_FromSsize_t(self->ob_alloc);
 }
 
+PyDoc_STRVAR(join_doc,
+"bytes.join(iterable_of_bytes) -> bytes\n\
+\n\
+Concatenates any number of bytes objects.  Example:\n\
+bytes.join([bytes('ab'), bytes('pq'), bytes('rs')]) -> bytes('abpqrs').");
+
+static PyObject *
+bytes_join(PyObject *cls, PyObject *it)
+{
+    PyObject *seq;
+    Py_ssize_t i;
+    Py_ssize_t n;
+    PyObject **items;
+    Py_ssize_t totalsize = 0;
+    PyObject *result;
+    char *dest;
+
+    seq = PySequence_Fast(it, "can only join an iterable");
+    if (seq == NULL)
+	return NULL;
+    n = PySequence_Fast_GET_SIZE(seq);
+    items = PySequence_Fast_ITEMS(seq);
+
+    /* Compute the total size, and check that they are all bytes */
+    for (i = 0; i < n; i++) {
+	PyObject *obj = items[i];
+	if (!PyBytes_Check(obj)) {
+	    PyErr_Format(PyExc_TypeError,
+			 "can only join an iterable of bytes "
+			 "(item %d has type '%.100s')",
+			 i, obj->ob_type->tp_name);
+	    goto error;
+	}
+	totalsize += PyBytes_GET_SIZE(obj);
+	if (totalsize < 0) {
+	    PyErr_NoMemory();
+	    goto error;
+	}
+    }
+
+    /* Allocate the result, and copy the bytes */
+    result = PyBytes_FromStringAndSize(NULL, totalsize);
+    if (result == NULL)
+	goto error;
+    dest = PyBytes_AS_STRING(result);
+    for (i = 0; i < n; i++) {
+	PyObject *obj = items[i];
+	Py_ssize_t size = PyBytes_GET_SIZE(obj);
+	memcpy(dest, PyBytes_AS_STRING(obj), size);
+	dest += size;
+    }
+
+    /* Done */
+    Py_DECREF(seq);
+    return result;
+
+    /* Error handling */
+  error:
+    Py_DECREF(seq);
+    return NULL;
+}
+
 static PySequenceMethods bytes_as_sequence = {
     (lenfunc)bytes_length,              /*sq_length*/
     (binaryfunc)bytes_concat,           /*sq_concat*/
@@ -746,6 +808,7 @@ static PyMethodDef
 bytes_methods[] = {
     {"decode", (PyCFunction)bytes_decode, METH_VARARGS, decode_doc},
     {"__alloc__", (PyCFunction)bytes_alloc, METH_NOARGS, alloc_doc},
+    {"join", (PyCFunction)bytes_join, METH_O|METH_CLASS, join_doc},
     {NULL}
 };
 
