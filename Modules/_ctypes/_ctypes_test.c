@@ -96,6 +96,11 @@ EXPORT(char *) my_strdup(char *src)
 	return dst;
 }
 
+EXPORT(void) free(void *ptr)
+{
+	free(ptr);
+}
+
 #ifdef HAVE_WCHAR_H
 EXPORT(wchar_t *) my_wcsdup(wchar_t *src)
 {
