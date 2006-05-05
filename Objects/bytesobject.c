@@ -4,6 +4,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "structmember.h"
 
 /* Direct API functions */
 
@@ -25,7 +26,6 @@ PyBytes_FromStringAndSize(const char *bytes, Py_ssize_t size)
     if (new == NULL)
         return NULL;
 
-    new->ob_size = size;
     if (size == 0)
         new->ob_bytes = NULL;
     else {
@@ -37,6 +37,7 @@ PyBytes_FromStringAndSize(const char *bytes, Py_ssize_t size)
         if (bytes != NULL)
             memcpy(new->ob_bytes, bytes, size);
     }
+    new->ob_size = new->ob_alloc = size;
     
     return (PyObject *)new;
 }
@@ -63,12 +64,31 @@ int
 PyBytes_Resize(PyObject *self, Py_ssize_t size)
 {
     void *sval;
+    Py_ssize_t alloc = ((PyBytesObject *)self)->ob_alloc;
 
     assert(self != NULL);
     assert(PyBytes_Check(self));
     assert(size >= 0);
 
-    sval = PyMem_Realloc(((PyBytesObject *)self)->ob_bytes, size);
+    if (size < alloc / 2) {
+        /* Major downsize; resize down to exact size */
+        alloc = size;
+    }
+    else if (size <= alloc) {
+        /* Within allocated size; quick exit */
+        ((PyBytesObject *)self)->ob_size = size;
+        return 0;
+    }
+    else if (size <= alloc * 1.125) {
+        /* Moderate upsize; overallocate similar to list_resize() */
+        alloc = size + (size >> 3) + (size < 9 ? 3 : 6);
+    }
+    else {
+        /* Major upsize; resize up to exact size */
+        alloc = size;
+    }
+
+    sval = PyMem_Realloc(((PyBytesObject *)self)->ob_bytes, alloc);
     if (sval == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -76,6 +96,7 @@ PyBytes_Resize(PyObject *self, Py_ssize_t size)
 
     ((PyBytesObject *)self)->ob_bytes = sval;
     ((PyBytesObject *)self)->ob_size = size;
+    ((PyBytesObject *)self)->ob_alloc = alloc;
 
     return 0;
 }
@@ -133,7 +154,9 @@ bytes_iconcat(PyBytesObject *self, PyObject *other)
     size = mysize + osize;
     if (size < 0)
         return PyErr_NoMemory();
-    if (PyBytes_Resize((PyObject *)self, size) < 0)
+    if (size <= self->ob_alloc)
+        self->ob_size = size;
+    else if (PyBytes_Resize((PyObject *)self, size) < 0)
         return NULL;
     memcpy(self->ob_bytes + mysize, ((PyBytesObject *)other)->ob_bytes, osize);
     Py_INCREF(self);
@@ -178,7 +201,9 @@ bytes_irepeat(PyBytesObject *self, Py_ssize_t count)
     size = mysize * count;
     if (count != 0 && size / count != mysize)
         return PyErr_NoMemory();
-    if (PyBytes_Resize((PyObject *)self, size) < 0)
+    if (size <= self->ob_alloc)
+        self->ob_size = size;
+    else if (PyBytes_Resize((PyObject *)self, size) < 0)
         return NULL;
     
     if (mysize == 1)
@@ -372,9 +397,11 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
     PyObject *it;
     PyObject *(*iternext)(PyObject *);
 
-    /* Empty previous contents (yes, do this first of all!) */
-    if (PyBytes_Resize((PyObject *)self, 0) < 0)
-        return -1;
+    if (self->ob_size != 0) {
+        /* Empty previous contents (yes, do this first of all!) */
+        if (PyBytes_Resize((PyObject *)self, 0) < 0)
+            return -1;
+    }
 
     /* Parse arguments */
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oss:bytes", kwlist,
@@ -410,7 +437,9 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
         }
         bytes = PyString_AS_STRING(encoded);
         size = PyString_GET_SIZE(encoded);
-        if (PyBytes_Resize((PyObject *)self, size) < 0) {
+        if (size <= self->ob_alloc)
+            self->ob_size = size;
+        else if (PyBytes_Resize((PyObject *)self, size) < 0) {
             Py_DECREF(encoded);
             return -1;
         }
@@ -492,8 +521,9 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
         }
 
         /* Append the byte */
-        /* XXX Speed this up */
-        if (PyBytes_Resize((PyObject *)self, self->ob_size+1) < 0)
+        if (self->ob_size < self->ob_alloc)
+            self->ob_size++;
+        else if (PyBytes_Resize((PyObject *)self, self->ob_size+1) < 0)
             goto error;
         self->ob_bytes[self->ob_size-1] = value;
     }
@@ -673,6 +703,17 @@ bytes_decode(PyObject *self, PyObject *args)
     return PyCodec_Decode(self, encoding, errors);
 }
 
+PyDoc_STRVAR(alloc_doc,
+"B.__alloc__() -> int\n\
+\n\
+Returns the number of bytes actually allocated.");
+
+static PyObject *
+bytes_alloc(PyBytesObject *self)
+{
+    return PyInt_FromSsize_t(self->ob_alloc);
+}
+
 static PySequenceMethods bytes_as_sequence = {
     (lenfunc)bytes_length,              /*sq_length*/
     (binaryfunc)bytes_concat,           /*sq_concat*/
@@ -704,7 +745,8 @@ static PyBufferProcs bytes_as_buffer = {
 static PyMethodDef
 bytes_methods[] = {
     {"decode", (PyCFunction)bytes_decode, METH_VARARGS, decode_doc},
-    {NULL,     NULL}
+    {"__alloc__", (PyCFunction)bytes_alloc, METH_NOARGS, alloc_doc},
+    {NULL}
 };
 
 PyDoc_STRVAR(bytes_doc,
