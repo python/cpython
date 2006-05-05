@@ -39,16 +39,19 @@ class SlicesTestCase(unittest.TestCase):
 
         dll = CDLL(_ctypes_test.__file__)
         dll.my_strdup.restype = POINTER(c_char)
+        dll.my_free.restype = None
         res = dll.my_strdup(s)
         self.failUnlessEqual(res[:len(s)], s)
 
         import operator
         self.assertRaises(TypeError, operator.setslice,
                           res, 0, 5, u"abcde")
+        dll.free(res)
 
         dll.my_strdup.restype = POINTER(c_byte)
         res = dll.my_strdup(s)
         self.failUnlessEqual(res[:len(s)-1], range(ord("a"), ord("z")+1))
+        dll.free(res)
 
     def test_char_array(self):
         s = "abcdefghijklmnopqrstuvwxyz\0"
@@ -68,12 +71,14 @@ class SlicesTestCase(unittest.TestCase):
             dll = CDLL(_ctypes_test.__file__)
             dll.my_wcsdup.restype = POINTER(c_wchar)
             dll.my_wcsdup.argtypes = POINTER(c_wchar),
+            dll.my_free.restype = None
             res = dll.my_wcsdup(s)
             self.failUnlessEqual(res[:len(s)], s)
 
             import operator
             self.assertRaises(TypeError, operator.setslice,
                               res, 0, 5, u"abcde")
+            dll.free(res)
 
             if sizeof(c_wchar) == sizeof(c_short):
                 dll.my_wcsdup.restype = POINTER(c_short)
@@ -81,8 +86,11 @@ class SlicesTestCase(unittest.TestCase):
                 dll.my_wcsdup.restype = POINTER(c_int)
             elif sizeof(c_wchar) == sizeof(c_long):
                 dll.my_wcsdup.restype = POINTER(c_long)
+            else:
+                return
             res = dll.my_wcsdup(s)
             self.failUnlessEqual(res[:len(s)-1], range(ord("a"), ord("z")+1))
+            dll.free(res)
 
 ################################################################
 
