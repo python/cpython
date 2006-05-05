@@ -96,7 +96,7 @@ EXPORT(char *) my_strdup(char *src)
 	return dst;
 }
 
-EXPORT(void) free(void *ptr)
+EXPORT(void)my_free(void *ptr)
 {
 	free(ptr);
 }
@@ -202,11 +202,6 @@ EXPORT(int) _testfunc_ppp(char ***p)
 		return 1;
 	}
 	return 0;
-}
-
-EXPORT(void) my_free(void *p)
-{
-	printf("my_free got %p\n", p);
 }
 
 typedef struct {
