@@ -1058,7 +1058,11 @@ runner.run(suite)
 There are two main functions for creating \class{\refmodule{unittest}.TestSuite}
 instances from text files and modules with doctests:
 
-\begin{funcdesc}{DocFileSuite}{*paths, **kw}
+\begin{funcdesc}{DocFileSuite}{\optional{module_relative}\optional{,
+                              package}\optional{, setUp}\optional{,
+                              tearDown}\optional{, globs}\optional{,
+			      optionflags}\optional{, parser}}
+
   Convert doctest tests from one or more text files to a
   \class{\refmodule{unittest}.TestSuite}.
 
