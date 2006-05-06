@@ -770,6 +770,16 @@ FILE_TIME_to_time_t_nsec(FILETIME *in_ptr, int *time_out, int* nsec_out)
 	*time_out = Py_SAFE_DOWNCAST((in / 10000000) - secs_between_epochs, __int64, int);
 }
 
+static void
+time_t_to_FILE_TIME(int time_in, int nsec_in, FILETIME *out_ptr)
+{
+	/* XXX endianness */
+	__int64 out;
+	out = time_in + secs_between_epochs;
+	out = out * 10000000 + nsec_in;
+	*(__int64*)out_ptr = out;
+}
+
 /* Below, we *know* that ugo+r is 0444 */
 #if _S_IREAD != 0400
 #error Unsupported C library
@@ -1344,24 +1354,39 @@ posix_access(PyObject *self, PyObject *args)
 {
 	char *path;
 	int mode;
-	int res;
-
+	
 #ifdef Py_WIN_WIDE_FILENAMES
+	DWORD attr;
 	if (unicode_file_names()) {
 		PyUnicodeObject *po;
 		if (PyArg_ParseTuple(args, "Ui:access", &po, &mode)) {
 			Py_BEGIN_ALLOW_THREADS
 			/* PyUnicode_AS_UNICODE OK without thread lock as
 			   it is a simple dereference. */
-			res = _waccess(PyUnicode_AS_UNICODE(po), mode);
+			attr = GetFileAttributesW(PyUnicode_AS_UNICODE(po));
 			Py_END_ALLOW_THREADS
-			return PyBool_FromLong(res == 0);
+			goto finish;
 		}
 		/* Drop the argument parsing error as narrow strings
 		   are also valid. */
 		PyErr_Clear();
 	}
-#endif
+	if (!PyArg_ParseTuple(args, "eti:access",
+			      Py_FileSystemDefaultEncoding, &path, &mode))
+		return 0;
+	Py_BEGIN_ALLOW_THREADS
+	attr = GetFileAttributesA(path);
+	Py_END_ALLOW_THREADS
+	PyMem_Free(path);
+finish:
+	if (attr == 0xFFFFFFFF)
+		/* File does not exist, or cannot read attributes */
+		return PyBool_FromLong(0);
+	/* Access is possible if either write access wasn't requested, or
+	   the file isn't read-only. */
+	return PyBool_FromLong(!(mode & 2) || !(attr && FILE_ATTRIBUTE_READONLY));
+#else
+	int res;
 	if (!PyArg_ParseTuple(args, "eti:access", 
 			      Py_FileSystemDefaultEncoding, &path, &mode))
 		return NULL;
@@ -1370,6 +1395,7 @@ posix_access(PyObject *self, PyObject *args)
 	Py_END_ALLOW_THREADS
 	PyMem_Free(path);
 	return PyBool_FromLong(res == 0);
+#endif
 }
 
 #ifndef F_OK
@@ -1481,14 +1507,24 @@ posix_chmod(PyObject *self, PyObject *args)
 	int i;
 	int res;
 #ifdef Py_WIN_WIDE_FILENAMES
+	DWORD attr;
 	if (unicode_file_names()) {
 		PyUnicodeObject *po;
 		if (PyArg_ParseTuple(args, "Ui|:chmod", &po, &i)) {
 			Py_BEGIN_ALLOW_THREADS
-			res = _wchmod(PyUnicode_AS_UNICODE(po), i);
+			attr = GetFileAttributesW(PyUnicode_AS_UNICODE(po));
+			if (attr != 0xFFFFFFFF) {
+				if (i & _S_IWRITE)
+					attr &= ~FILE_ATTRIBUTE_READONLY;
+				else
+					attr |= FILE_ATTRIBUTE_READONLY;
+				res = SetFileAttributesW(PyUnicode_AS_UNICODE(po), attr);
+			}
+			else
+				res = 0;
 			Py_END_ALLOW_THREADS
-			if (res < 0)
-				return posix_error_with_unicode_filename(
+			if (!res)
+				return win32_error_unicode("chmod",
 						PyUnicode_AS_UNICODE(po));
 			Py_INCREF(Py_None);
 			return Py_None;
@@ -1497,7 +1533,29 @@ posix_chmod(PyObject *self, PyObject *args)
 		   are also valid. */
 		PyErr_Clear();
 	}
-#endif /* Py_WIN_WIDE_FILENAMES */
+	if (!PyArg_ParseTuple(args, "eti:chmod", Py_FileSystemDefaultEncoding,
+	                      &path, &i))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	attr = GetFileAttributesA(path);
+	if (attr != 0xFFFFFFFF) {
+		if (i & _S_IWRITE)
+			attr &= ~FILE_ATTRIBUTE_READONLY;
+		else
+			attr |= FILE_ATTRIBUTE_READONLY;
+		res = SetFileAttributesA(path, attr);
+	}
+	else
+		res = 0;
+	Py_END_ALLOW_THREADS
+	if (!res) {
+		win32_error("chmod", path);
+		PyMem_Free(path);
+		return NULL;
+	}
+	Py_INCREF(Py_None);
+	return Py_None;
+#else /* Py_WIN_WIDE_FILENAMES */
 	if (!PyArg_ParseTuple(args, "eti:chmod", Py_FileSystemDefaultEncoding,
 	                      &path, &i))
 		return NULL;
@@ -1509,6 +1567,7 @@ posix_chmod(PyObject *self, PyObject *args)
 	PyMem_Free(path);
 	Py_INCREF(Py_None);
 	return Py_None;
+#endif
 }
 
 
@@ -1644,15 +1703,33 @@ posix_getcwdu(PyObject *self, PyObject *noargs)
 	char *res;
 
 #ifdef Py_WIN_WIDE_FILENAMES
+	DWORD len;
 	if (unicode_file_names()) {
-		wchar_t *wres;
 		wchar_t wbuf[1026];
+		wchar_t *wbuf2 = wbuf;
+		PyObject *resobj;
 		Py_BEGIN_ALLOW_THREADS
-		wres = _wgetcwd(wbuf, sizeof wbuf/ sizeof wbuf[0]);
+		len = GetCurrentDirectoryW(sizeof wbuf/ sizeof wbuf[0], wbuf);
+		/* If the buffer is large enough, len does not include the
+		   terminating \0. If the buffer is too small, len includes
+		   the space needed for the terminator. */
+		if (len >= sizeof wbuf/ sizeof wbuf[0]) {
+			wbuf2 = malloc(len * sizeof(wchar_t));
+			if (wbuf2)
+				len = GetCurrentDirectoryW(len, wbuf2);
+		}
 		Py_END_ALLOW_THREADS
-		if (wres == NULL)
-			return posix_error();
-		return PyUnicode_FromWideChar(wbuf, wcslen(wbuf));
+		if (!wbuf2) {
+			PyErr_NoMemory();
+			return NULL;
+		}
+		if (!len) {
+			if (wbuf2 != wbuf) free(wbuf2);
+			return win32_error("getcwdu", NULL);
+		}
+		resobj = PyUnicode_FromWideChar(wbuf2, len);
+		if (wbuf2 != wbuf) free(wbuf2);
+		return resobj;
 	}
 #endif
 
@@ -2033,10 +2110,10 @@ posix_mkdir(PyObject *self, PyObject *args)
 			Py_BEGIN_ALLOW_THREADS
 			/* PyUnicode_AS_UNICODE OK without thread lock as
 			   it is a simple dereference. */
-			res = _wmkdir(PyUnicode_AS_UNICODE(po));
+			res = CreateDirectoryW(PyUnicode_AS_UNICODE(po), NULL);
 			Py_END_ALLOW_THREADS
-			if (res < 0)
-				return posix_error();
+			if (!res)
+				return win32_error_unicode("mkdir", PyUnicode_AS_UNICODE(po));
 			Py_INCREF(Py_None);
 			return Py_None;
 		}
@@ -2044,13 +2121,29 @@ posix_mkdir(PyObject *self, PyObject *args)
 		   are also valid. */
 		PyErr_Clear();
 	}
-#endif
+	if (!PyArg_ParseTuple(args, "et|i:mkdir",
+	                      Py_FileSystemDefaultEncoding, &path, &mode))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	/* PyUnicode_AS_UNICODE OK without thread lock as
+	   it is a simple dereference. */
+	res = CreateDirectoryA(path, NULL);
+	Py_END_ALLOW_THREADS
+	if (!res) {
+		win32_error("mkdir", path);
+		PyMem_Free(path);
+		return NULL;
+	}
+	PyMem_Free(path);
+	Py_INCREF(Py_None);
+	return Py_None;
+#else
 
 	if (!PyArg_ParseTuple(args, "et|i:mkdir",
 	                      Py_FileSystemDefaultEncoding, &path, &mode))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-#if ( defined(__WATCOMC__) || defined(_MSC_VER) || defined(PYCC_VACPP) ) && !defined(__QNX__)
+#if ( defined(__WATCOMC__) || defined(PYCC_VACPP) ) && !defined(__QNX__)
 	res = mkdir(path);
 #else
 	res = mkdir(path, mode);
@@ -2061,6 +2154,7 @@ posix_mkdir(PyObject *self, PyObject *args)
 	PyMem_Free(path);
 	Py_INCREF(Py_None);
 	return Py_None;
+#endif
 }
 
 
@@ -2299,6 +2393,84 @@ second form is used, set the access and modified times to the current time.");
 static PyObject *
 posix_utime(PyObject *self, PyObject *args)
 {
+#ifdef Py_WIN_WIDE_FILENAMES
+	PyObject *arg;
+	PyUnicodeObject *obwpath;
+	wchar_t *wpath = NULL;
+	char *apath = NULL;
+	HANDLE hFile;
+	long atimesec, mtimesec, ausec, musec;
+	FILETIME atime, mtime;
+	PyObject *result = NULL;
+
+	if (unicode_file_names()) {
+		if (PyArg_ParseTuple(args, "UO|:utime", &obwpath, &arg)) {
+			wpath = PyUnicode_AS_UNICODE(obwpath);
+			Py_BEGIN_ALLOW_THREADS
+			hFile = CreateFileW(wpath, FILE_WRITE_ATTRIBUTES, 0,
+					    NULL, OPEN_EXISTING, 0, NULL);
+			Py_END_ALLOW_THREADS
+			if (hFile == INVALID_HANDLE_VALUE)
+				return win32_error_unicode("utime", wpath);
+		} else
+			/* Drop the argument parsing error as narrow strings
+			   are also valid. */
+			PyErr_Clear();
+	}
+	if (!wpath) {
+		if (!PyArg_ParseTuple(args, "etO:utime",
+				Py_FileSystemDefaultEncoding, &apath, &arg))
+			return NULL;
+		Py_BEGIN_ALLOW_THREADS
+		hFile = CreateFileA(apath, FILE_WRITE_ATTRIBUTES, 0,
+				    NULL, OPEN_EXISTING, 0, NULL);
+		Py_END_ALLOW_THREADS
+		if (hFile == INVALID_HANDLE_VALUE) {
+			win32_error("utime", apath);
+			PyMem_Free(apath);
+			return NULL;
+		}
+		PyMem_Free(apath);
+	}
+	
+	if (arg == Py_None) {
+		SYSTEMTIME now;
+		GetSystemTime(&now);
+		if (!SystemTimeToFileTime(&now, &mtime) ||
+		    !SystemTimeToFileTime(&now, &atime)) {
+			win32_error("utime", NULL);
+			goto done;
+		    }
+	}
+	else if (!PyTuple_Check(arg) || PyTuple_Size(arg) != 2) {
+		PyErr_SetString(PyExc_TypeError,
+				"utime() arg 2 must be a tuple (atime, mtime)");
+		goto done;
+	}
+	else {
+		if (extract_time(PyTuple_GET_ITEM(arg, 0),
+				 &atimesec, &ausec) == -1)
+			goto done;
+		time_t_to_FILE_TIME(atimesec, ausec, &atime);
+		if (extract_time(PyTuple_GET_ITEM(arg, 1),
+				 &mtimesec, &musec) == -1)
+			goto done;
+		time_t_to_FILE_TIME(mtimesec, musec, &mtime);
+	}
+	if (!SetFileTime(hFile, NULL, &atime, &mtime)) {
+		/* Avoid putting the file name into the error here,
+		   as that may confuse the user into believing that
+		   something is wrong with the file, when it also
+		   could be the time stamp that gives a problem. */
+		win32_error("utime", NULL);
+	}
+	Py_INCREF(Py_None);
+	result = Py_None;
+done:
+	CloseHandle(hFile);
+	return result;
+#else /* Py_WIN_WIDE_FILENAMES */
+
 	char *path = NULL;
 	long atime, mtime, ausec, musec;
 	int res;
@@ -2321,33 +2493,13 @@ posix_utime(PyObject *self, PyObject *args)
 #define UTIME_ARG buf
 #endif /* HAVE_UTIMES */
 
-	int have_unicode_filename = 0;
-#ifdef Py_WIN_WIDE_FILENAMES
-	PyUnicodeObject *obwpath;
-	wchar_t *wpath;
-	if (unicode_file_names()) {
-		if (PyArg_ParseTuple(args, "UO|:utime", &obwpath, &arg)) {
-			wpath = PyUnicode_AS_UNICODE(obwpath);
-			have_unicode_filename = 1;
-		} else
-			/* Drop the argument parsing error as narrow strings
-			   are also valid. */
-			PyErr_Clear();
-	}
-#endif /* Py_WIN_WIDE_FILENAMES */
 
-	if (!have_unicode_filename && \
-		!PyArg_ParseTuple(args, "etO:utime",
+	if (!PyArg_ParseTuple(args, "etO:utime",
 				  Py_FileSystemDefaultEncoding, &path, &arg))
 		return NULL;
 	if (arg == Py_None) {
 		/* optional time values not given */
 		Py_BEGIN_ALLOW_THREADS
-#ifdef Py_WIN_WIDE_FILENAMES
-		if (have_unicode_filename)
-			res = _wutime(wpath, NULL);
-		else
-#endif /* Py_WIN_WIDE_FILENAMES */
 		res = utime(path, NULL);
 		Py_END_ALLOW_THREADS
 	}
@@ -2378,23 +2530,11 @@ posix_utime(PyObject *self, PyObject *args)
 		Py_END_ALLOW_THREADS
 #else
 		Py_BEGIN_ALLOW_THREADS
-#ifdef Py_WIN_WIDE_FILENAMES
-		if (have_unicode_filename)
-			/* utime is OK with utimbuf, but _wutime insists
-			   on _utimbuf (the msvc headers assert the
-			   underscore version is ansi) */
-			res = _wutime(wpath, (struct _utimbuf *)UTIME_ARG);
-		else
-#endif /* Py_WIN_WIDE_FILENAMES */
 		res = utime(path, UTIME_ARG);
 		Py_END_ALLOW_THREADS
 #endif /* HAVE_UTIMES */
 	}
 	if (res < 0) {
-#ifdef Py_WIN_WIDE_FILENAMES
-		if (have_unicode_filename)
-			return posix_error_with_unicode_filename(wpath);
-#endif /* Py_WIN_WIDE_FILENAMES */
 		return posix_error_with_allocated_filename(path);
 	}
 	PyMem_Free(path);
@@ -2403,6 +2543,7 @@ posix_utime(PyObject *self, PyObject *args)
 #undef UTIME_ARG
 #undef ATIME
 #undef MTIME
+#endif /* Py_WIN_WIDE_FILENAMES */
 }
 
 

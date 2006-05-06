@@ -375,6 +375,18 @@ class Win32ErrorTests(unittest.TestCase):
     def test_chdir(self):
         self.assertRaises(WindowsError, os.chdir, test_support.TESTFN)
 
+    def test_mkdir(self):
+        self.assertRaises(WindowsError, os.chdir, test_support.TESTFN)
+
+    def test_utime(self):
+        self.assertRaises(WindowsError, os.utime, test_support.TESTFN, None)
+
+    def test_access(self):
+        self.assertRaises(WindowsError, os.utime, test_support.TESTFN, 0)
+
+    def test_chmod(self):
+        self.assertRaises(WindowsError, os.utime, test_support.TESTFN, 0)
+
 if sys.platform != 'win32':
     class Win32ErrorTests(unittest.TestCase):
         pass
