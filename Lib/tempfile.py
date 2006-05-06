@@ -327,6 +327,10 @@ def mkdtemp(suffix="", prefix=template, dir=None):
         try:
             _os.mkdir(file, 0700)
             return file
+        except WindowsError, e:
+            if e.errno == 183: # ERROR_ALREADY_EXISTS
+                continue # try again
+            raise
         except OSError, e:
             if e.errno == _errno.EEXIST:
                 continue # try again
