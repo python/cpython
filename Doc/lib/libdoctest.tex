@@ -1061,7 +1061,7 @@ instances from text files and modules with doctests:
 \begin{funcdesc}{DocFileSuite}{\optional{module_relative}\optional{,
                               package}\optional{, setUp}\optional{,
                               tearDown}\optional{, globs}\optional{,
-			      optionflags}\optional{, parser}}
+                              optionflags}\optional{, parser}}
 
   Convert doctest tests from one or more text files to a
   \class{\refmodule{unittest}.TestSuite}.
@@ -1130,9 +1130,9 @@ instances from text files and modules with doctests:
 
   \versionadded{2.4}
 
-  Starting in Python 2.5, the global \code{__file__} was added to the
+  \versionchanged[The global \code{__file__} was added to the
   globals provided to doctests loaded from a text file using
-  \function{DocFileSuite()}.
+  \function{DocFileSuite()}]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{DocTestSuite}{\optional{module}\optional{,
