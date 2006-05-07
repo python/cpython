@@ -974,15 +974,18 @@ class DefaultCookiePolicy(CookiePolicy):
             req_host, erhn = eff_request_host(request)
             domain = cookie.domain
             if self.strict_domain and (domain.count(".") >= 2):
+                # XXX This should probably be compared with the Konqueror
+                # (kcookiejar.cpp) and Mozilla implementations, but it's a
+                # losing battle.
                 i = domain.rfind(".")
                 j = domain.rfind(".", 0, i)
                 if j == 0:  # domain like .foo.bar
                     tld = domain[i+1:]
                     sld = domain[j+1:i]
-                    if (sld.lower() in (
-                        "co", "ac",
-                        "com", "edu", "org", "net", "gov", "mil", "int") and
-                        len(tld) == 2):
+                    if sld.lower() in ("co", "ac", "com", "edu", "org", "net",
+                       "gov", "mil", "int", "aero", "biz", "cat", "coop",
+                       "info", "jobs", "mobi", "museum", "name", "pro",
+                       "travel", "eu") and len(tld) == 2:
                         # domain like .co.uk
                         debug("   country-code second level domain %s", domain)
                         return False
