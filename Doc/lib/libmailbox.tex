@@ -230,7 +230,7 @@ Flush the mailbox, unlock it if necessary, and close any open files. For some
 create=True}}}
 A subclass of \class{Mailbox} for mailboxes in Maildir format. Parameter
 \var{factory} is a callable object that accepts a file-like message
-representation (which behaves as if open in binary mode) and returns a custom
+representation (which behaves as if opened in binary mode) and returns a custom
 representation. If \var{factory} is \code{None}, \class{MaildirMessage} is used
 as the default message representation. If \var{create} is \code{True}, the
 mailbox is created if it does not exist.
@@ -356,7 +356,7 @@ the underlying message while the returned file remains open.
 \begin{classdesc}{mbox}{path\optional{, factory=None\optional{, create=True}}}
 A subclass of \class{Mailbox} for mailboxes in mbox format. Parameter
 \var{factory} is a callable object that accepts a file-like message
-representation (which behaves as if open in binary mode) and returns a custom
+representation (which behaves as if opened in binary mode) and returns a custom
 representation. If \var{factory} is \code{None}, \class{mboxMessage} is used as
 the default message representation. If \var{create} is \code{True}, the mailbox
 is created if it does not exist.
@@ -409,7 +409,7 @@ Three locking mechanisms are used---dot locking and, if available, the
 \begin{classdesc}{MH}{path\optional{, factory=None\optional{, create=True}}}
 A subclass of \class{Mailbox} for mailboxes in MH format. Parameter
 \var{factory} is a callable object that accepts a file-like message
-representation (which behaves as if open in binary mode) and returns a custom
+representation (which behaves as if opened in binary mode) and returns a custom
 representation. If \var{factory} is \code{None}, \class{MHMessage} is used as
 the default message representation. If \var{create} is \code{True}, the mailbox
 is created if it does not exist.
@@ -516,7 +516,7 @@ information on the mailbox format.}
 \begin{classdesc}{Babyl}{path\optional{, factory=None\optional{, create=True}}}
 A subclass of \class{Mailbox} for mailboxes in Babyl format. Parameter
 \var{factory} is a callable object that accepts a file-like message
-representation (which behaves as if open in binary mode) and returns a custom
+representation (which behaves as if opened in binary mode) and returns a custom
 representation. If \var{factory} is \code{None}, \class{BabylMessage} is used
 as the default message representation. If \var{create} is \code{True}, the
 mailbox is created if it does not exist.
@@ -579,7 +579,7 @@ Mail with Rmail}{The Rmail manual, with some information on Babyl semantics.}
 \begin{classdesc}{MMDF}{path\optional{, factory=None\optional{, create=True}}}
 A subclass of \class{Mailbox} for mailboxes in MMDF format. Parameter
 \var{factory} is a callable object that accepts a file-like message
-representation (which behaves as if open in binary mode) and returns a custom
+representation (which behaves as if opened in binary mode) and returns a custom
 representation. If \var{factory} is \code{None}, \class{MMDFMessage} is used as
 the default message representation. If \var{create} is \code{True}, the mailbox
 is created if it does not exist.
