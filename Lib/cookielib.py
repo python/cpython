@@ -7,9 +7,9 @@ Docstrings, comments and debug strings in this code refer to the
 attributes of the HTTP cookie system as cookie-attributes, to distinguish
 them clearly from Python attributes.
 
-Class diagram (note that the classes which do not derive from
-FileCookieJar are not distributed with the Python standard library, but
-are available from http://wwwsearch.sf.net/):
+Class diagram (note that BSDDBCookieJar and the MSIE* classes are not
+distributed with the Python standard library, but are available from
+http://wwwsearch.sf.net/):
 
                         CookieJar____
                         /     \      \
@@ -25,7 +25,10 @@ are available from http://wwwsearch.sf.net/):
 
 """
 
-import sys, re, urlparse, copy, time, urllib, logging
+__all__ = ['Cookie', 'CookieJar', 'CookiePolicy', 'DefaultCookiePolicy',
+           'FileCookieJar', 'LWPCookieJar', 'LoadError', 'MozillaCookieJar']
+
+import re, urlparse, copy, time, urllib, logging
 try:
     import threading as _threading
 except ImportError:
@@ -39,15 +42,10 @@ DEFAULT_HTTP_PORT = str(httplib.HTTP_PORT)
 MISSING_FILENAME_TEXT = ("a filename was not supplied (nor was the CookieJar "
                          "instance initialised with one)")
 
-def reraise_unmasked_exceptions(unmasked=()):
+def _warn_unhandled_exception():
     # There are a few catch-all except: statements in this module, for
-    # catching input that's bad in unexpected ways.
-    # This function re-raises some exceptions we don't want to trap.
-    unmasked = unmasked + (KeyboardInterrupt, SystemExit, MemoryError)
-    etype = sys.exc_info()[0]
-    if issubclass(etype, unmasked):
-        raise
-    # swallowed an exception
+    # catching input that's bad in unexpected ways.  Warn if any
+    # exceptions are caught there.
     import warnings, traceback, StringIO
     f = StringIO.StringIO()
     traceback.print_exc(None, f)
@@ -1555,8 +1553,8 @@ class CookieJar:
         try:
             cookies = self._cookies_from_attrs_set(
                 split_header_words(rfc2965_hdrs), request)
-        except:
-            reraise_unmasked_exceptions()
+        except Exception:
+            _warn_unhandled_exception()
             cookies = []
 
         if ns_hdrs and netscape:
@@ -1564,8 +1562,8 @@ class CookieJar:
                 # RFC 2109 and Netscape cookies
                 ns_cookies = self._cookies_from_attrs_set(
                     parse_ns_headers(ns_hdrs), request)
-            except:
-                reraise_unmasked_exceptions()
+            except Exception:
+                _warn_unhandled_exception()
                 ns_cookies = []
             self._process_rfc2109_cookies(ns_cookies)
 
