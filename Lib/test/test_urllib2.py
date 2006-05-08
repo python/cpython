@@ -779,6 +779,27 @@ class HandlerTests(unittest.TestCase):
                               "proxy.example.com:3128",
                               )
 
+    def test_basic_and_digest_auth_handlers(self):
+        # HTTPDigestAuthHandler threw an exception if it couldn't handle a 40*
+        # response (http://python.org/sf/1479302), where it should instead
+        # return None to allow another handler (especially
+        # HTTPBasicAuthHandler) to handle the response.
+        class TestDigestAuthHandler(urllib2.HTTPDigestAuthHandler):
+            handler_order = 400  # strictly before HTTPBasicAuthHandler
+        opener = OpenerDirector()
+        password_manager = MockPasswordManager()
+        digest_handler = TestDigestAuthHandler(password_manager)
+        basic_handler = urllib2.HTTPBasicAuthHandler(password_manager)
+        opener.add_handler(digest_handler)
+        realm = "ACME Networks"
+        http_handler = MockHTTPHandler(
+            401, 'WWW-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
+        self._test_basic_auth(opener, basic_handler, "Authorization",
+                              realm, http_handler, password_manager,
+                              "http://acme.example.com/protected",
+                              "http://acme.example.com/protected",
+                              )
+
     def _test_basic_auth(self, opener, auth_handler, auth_header,
                          realm, http_handler, password_manager,
                          request_url, protected_url):
