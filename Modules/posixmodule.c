@@ -1553,6 +1553,7 @@ posix_chmod(PyObject *self, PyObject *args)
 		PyMem_Free(path);
 		return NULL;
 	}
+	PyMem_Free(path);
 	Py_INCREF(Py_None);
 	return Py_None;
 #else /* Py_WIN_WIDE_FILENAMES */
