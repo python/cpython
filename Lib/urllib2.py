@@ -846,9 +846,6 @@ class AbstractDigestAuthHandler:
             scheme = authreq.split()[0]
             if scheme.lower() == 'digest':
                 return self.retry_http_digest_auth(req, authreq)
-            else:
-                raise ValueError("AbstractDigestAuthHandler doesn't know "
-                                 "about %s"%(scheme))
 
     def retry_http_digest_auth(self, req, auth):
         token, challenge = auth.split(' ', 1)
