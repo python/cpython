@@ -1,5 +1,6 @@
 from ctypes import *
 import unittest, sys
+from ctypes.test import is_resource_enabled
 
 ################################################################
 # This section should be moved into ctypes\__init__.py, when it's ready.
@@ -33,20 +34,24 @@ class PythonAPITestCase(unittest.TestCase):
         del pyob
         self.failUnlessEqual(grc(s), refcnt)
 
-    def test_PyInt_Long(self):
-        ref42 = grc(42)
-        pythonapi.PyInt_FromLong.restype = py_object
-        self.failUnlessEqual(pythonapi.PyInt_FromLong(42), 42)
+    if is_resource_enabled("refcount"):
+        # This test is unreliable, because it is possible that code in
+        # unittest changes the refcount of the '42' integer.  So, it
+        # is disabled by default.
+        def test_PyInt_Long(self):
+            ref42 = grc(42)
+            pythonapi.PyInt_FromLong.restype = py_object
+            self.failUnlessEqual(pythonapi.PyInt_FromLong(42), 42)
 
-        self.failUnlessEqual(grc(42), ref42)
+            self.failUnlessEqual(grc(42), ref42)
 
-        pythonapi.PyInt_AsLong.argtypes = (py_object,)
-        pythonapi.PyInt_AsLong.restype = c_long
+            pythonapi.PyInt_AsLong.argtypes = (py_object,)
+            pythonapi.PyInt_AsLong.restype = c_long
 
-        res = pythonapi.PyInt_AsLong(42)
-        self.failUnlessEqual(grc(res), ref42 + 1)
-        del res
-        self.failUnlessEqual(grc(42), ref42)
+            res = pythonapi.PyInt_AsLong(42)
+            self.failUnlessEqual(grc(res), ref42 + 1)
+            del res
+            self.failUnlessEqual(grc(42), ref42)
 
     def test_PyObj_FromPtr(self):
         s = "abc def ghi jkl"
