@@ -2899,7 +2899,6 @@ set_exc_info(PyThreadState *tstate,
 			Py_INCREF(Py_None);
 			tstate->exc_type = Py_None;
 		}
-		tmp_type = frame->f_exc_type;
 		tmp_value = frame->f_exc_value;
 		tmp_tb = frame->f_exc_traceback;
 		Py_XINCREF(tstate->exc_type);
@@ -2908,7 +2907,6 @@ set_exc_info(PyThreadState *tstate,
 		frame->f_exc_type = tstate->exc_type;
 		frame->f_exc_value = tstate->exc_value;
 		frame->f_exc_traceback = tstate->exc_traceback;
-		Py_XDECREF(tmp_type);
 		Py_XDECREF(tmp_value);
 		Py_XDECREF(tmp_tb);
 	}
@@ -2942,7 +2940,7 @@ reset_exc_info(PyThreadState *tstate)
 		tmp_type = tstate->exc_type;
 		tmp_value = tstate->exc_value;
 		tmp_tb = tstate->exc_traceback;
-		Py_XINCREF(frame->f_exc_type);
+		Py_INCREF(frame->f_exc_type);
 		Py_XINCREF(frame->f_exc_value);
 		Py_XINCREF(frame->f_exc_traceback);
 		tstate->exc_type = frame->f_exc_type;
