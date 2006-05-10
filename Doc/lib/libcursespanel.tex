@@ -22,6 +22,9 @@ Returns the bottom panel in the panel stack.
 
 \begin{funcdesc}{new_panel}{win}
 Returns a panel object, associating it with the given window \var{win}.
+Be aware that you need to keep the returned panel object referenced
+explicitly.  If you don't, the panel object is garbage collected and
+removed from the panel stack.
 \end{funcdesc}
 
 \begin{funcdesc}{top_panel}{}
