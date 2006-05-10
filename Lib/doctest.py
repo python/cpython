@@ -352,7 +352,7 @@ class _OutputRedirectingPdb(pdb.Pdb):
     """
     def __init__(self, out):
         self.__out = out
-        pdb.Pdb.__init__(self)
+        pdb.Pdb.__init__(self, stdout=out)
 
     def trace_dispatch(self, *args):
         # Redirect stdout to the given stream.
