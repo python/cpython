@@ -473,7 +473,9 @@ class Breakpoint:
     def disable(self):
         self.enabled = 0
 
-    def bpprint(self):
+    def bpprint(self, out=None):
+        if out is None:
+            out = sys.stdout
         if self.temporary:
             disp = 'del  '
         else:
@@ -482,17 +484,17 @@ class Breakpoint:
             disp = disp + 'yes  '
         else:
             disp = disp + 'no   '
-        print '%-4dbreakpoint   %s at %s:%d' % (self.number, disp,
-                             self.file, self.line)
+        print >>out, '%-4dbreakpoint   %s at %s:%d' % (self.number, disp,
+                                                       self.file, self.line)
         if self.cond:
-            print '\tstop only if %s' % (self.cond,)
+            print >>out, '\tstop only if %s' % (self.cond,)
         if self.ignore:
-            print '\tignore next %d hits' % (self.ignore)
+            print >>out, '\tignore next %d hits' % (self.ignore)
         if (self.hits):
             if (self.hits > 1): ss = 's'
             else: ss = ''
-            print ('\tbreakpoint already hit %d time%s' %
-                   (self.hits, ss))
+            print >>out, ('\tbreakpoint already hit %d time%s' %
+                          (self.hits, ss))
 
 # -----------end of Breakpoint class----------
 

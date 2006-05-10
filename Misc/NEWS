@@ -96,6 +96,10 @@ Extension Modules
 Library
 -------
 
+- Patch #721464: pdb.Pdb instances can now be given explicit stdin and
+  stdout arguments, making it possible to redirect input and output
+  for remote debugging.
+
 - Patch #1484695: Update the tarfile module to version 0.8. This fixes
   a couple of issues, notably handling of long file names using the
   GNU LONGNAME extension.
