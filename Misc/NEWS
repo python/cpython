@@ -67,7 +67,7 @@ Core and builtins
 Extension Modules
 -----------------
 
-- Use Win32 API to implement os.{access,chdir,chmod,mkdir,remove,rename,rmdir,utime}. 
+- Use Win32 API to implement os.{access,chdir,chmod,mkdir,remove,rename,rmdir,utime}.
   As a result, these functions now raise WindowsError instead of OSError.
 
 - Calling Tk_Init twice is refused if the first call failed as that
@@ -95,6 +95,9 @@ Extension Modules
 
 Library
 -------
+
+- Patch #1478292. ``doctest.register_optionflag(name)`` shouldn't create a
+  new flag when ``name`` is already the name of an option flag.
 
 - Bug #1385040: don't allow "def foo(a=1, b): pass" in the compiler
   package.

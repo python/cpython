@@ -129,9 +129,8 @@ warnings.filterwarnings("ignore", "is_private", DeprecationWarning,
 
 OPTIONFLAGS_BY_NAME = {}
 def register_optionflag(name):
-    flag = 1 << len(OPTIONFLAGS_BY_NAME)
-    OPTIONFLAGS_BY_NAME[name] = flag
-    return flag
+    # Create a new flag unless `name` is already known.
+    return OPTIONFLAGS_BY_NAME.setdefault(name, 1 << len(OPTIONFLAGS_BY_NAME))
 
 DONT_ACCEPT_TRUE_FOR_1 = register_optionflag('DONT_ACCEPT_TRUE_FOR_1')
 DONT_ACCEPT_BLANKLINE = register_optionflag('DONT_ACCEPT_BLANKLINE')
