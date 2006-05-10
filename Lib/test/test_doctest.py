@@ -1281,6 +1281,26 @@ count as failures:
         ValueError: 2
     (3, 5)
 
+New option flags can also be registered, via register_optionflag().  Here
+we reach into doctest's internals a bit.
+
+    >>> unlikely = "UNLIKELY_OPTION_NAME"
+    >>> unlikely in doctest.OPTIONFLAGS_BY_NAME
+    False
+    >>> new_flag_value = doctest.register_optionflag(unlikely)
+    >>> unlikely in doctest.OPTIONFLAGS_BY_NAME
+    True
+
+Before 2.4.4/2.5, registering a name more than once erroneously created
+more than one flag value.  Here we verify that's fixed:
+
+    >>> redundant_flag_value = doctest.register_optionflag(unlikely)
+    >>> redundant_flag_value == new_flag_value
+    True
+
+Clean up.
+    >>> del doctest.OPTIONFLAGS_BY_NAME[unlikely]
+
     """
 
     def option_directives(): r"""

@@ -32,6 +32,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1478292. ``doctest.register_optionflag(name)`` shouldn't create a
+  new flag when ``name`` is already the name of an option flag.
+
 - Bug #1473760: ``tempfile.TemporaryFile()`` could hang on Windows, when
   called from a thread spawned as a side effect of importing a module.
 
