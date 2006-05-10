@@ -392,13 +392,17 @@ finally:
 \end{verbatim}
 
 The code in \var{block-1} is executed.  If the code raises an
-exception, the handlers are tried in order: \var{handler-1},
-\var{handler-2}, ...  If no exception is raised, the \var{else-block}
-is executed.  No matter what happened previously, the
-\var{final-block} is executed once the code block is complete and any
-raised exceptions handled.  Even if there's an error in an exception
-handler or the \var{else-block} and a new exception is raised, the
-\var{final-block} is still executed.
+exception, the various \keyword{except} blocks are tested: if the
+exception is of class \class{Exception1}, \var{handler-1} is executed;
+otherwise if it's of class \class{Exception2}, \var{handler-2} is
+executed, and so forth.  If no exception is raised, the
+\var{else-block} is executed.  
+
+No matter what happened previously, the \var{final-block} is executed
+once the code block is complete and any raised exceptions handled.
+Even if there's an error in an exception handler or the
+\var{else-block} and a new exception is raised, the
+code in the \var{final-block} is still run.
 
 \begin{seealso}
 
@@ -2065,6 +2069,6 @@ freed with the corresponding family's \cfunction{*_Free()} function.
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Phillip J. Eby, Kent Johnson, Martin von~L\"owis, Fredrik Lundh, 
-Gustavo Niemeyer, James Pryor, Mike Rovner, Thomas Wouters.
+Gustavo Niemeyer, James Pryor, Mike Rovner, Scott Weikart, Thomas Wouters.
 
 \end{document}
