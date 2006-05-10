@@ -33,7 +33,7 @@
 __version__ = "$Revision$"
 # $Source$
 
-version     = "0.6.4"
+version     = "0.8.0"
 __author__  = "Lars Gustäbel (lars@gustaebel.de)"
 __date__    = "$Date$"
 __cvsid__   = "$Id$"
@@ -137,16 +137,64 @@ def nts(s):
     """
     return s.rstrip(NUL)
 
-def calc_chksum(buf):
-    """Calculate the checksum for a member's header. It's a simple addition
-       of all bytes, treating the chksum field as if filled with spaces.
-       buf is a 512 byte long string buffer which holds the header.
+def stn(s, length):
+    """Convert a python string to a null-terminated string buffer.
     """
-    chk = 256                           # chksum field is treated as blanks,
-                                        # so the initial value is 8 * ord(" ")
-    for c in buf[:148]: chk += ord(c)   # sum up all bytes before chksum
-    for c in buf[156:]: chk += ord(c)   # sum up all bytes after chksum
-    return chk
+    return struct.pack("%ds" % (length - 1), s) + NUL
+
+def nti(s):
+    """Convert a number field to a python number.
+    """
+    # There are two possible encodings for a number field, see
+    # itn() below.
+    if s[0] != chr(0200):
+        n = int(s.rstrip(NUL) or "0", 8)
+    else:
+        n = 0L
+        for i in xrange(len(s) - 1):
+            n <<= 8
+            n += ord(s[i + 1])
+    return n
+
+def itn(n, digits=8, posix=False):
+    """Convert a python number to a number field.
+    """
+    # POSIX 1003.1-1988 requires numbers to be encoded as a string of
+    # octal digits followed by a null-byte, this allows values up to
+    # (8**(digits-1))-1. GNU tar allows storing numbers greater than
+    # that if necessary. A leading 0200 byte indicates this particular
+    # encoding, the following digits-1 bytes are a big-endian
+    # representation. This allows values up to (256**(digits-1))-1.
+    if 0 <= n < 8 ** (digits - 1):
+        s = "%0*o" % (digits - 1, n) + NUL
+    else:
+        if posix:
+            raise ValueError, "overflow in number field"
+
+        if n < 0:
+            # XXX We mimic GNU tar's behaviour with negative numbers,
+            # this could raise OverflowError.
+            n = struct.unpack("L", struct.pack("l", n))[0]
+
+        s = ""
+        for i in xrange(digits - 1):
+            s = chr(n & 0377) + s
+            n >>= 8
+        s = chr(0200) + s
+    return s
+
+def calc_chksums(buf):
+    """Calculate the checksum for a member's header by summing up all
+       characters except for the chksum field which is treated as if
+       it was filled with spaces. According to the GNU tar sources,
+       some tars (Sun and NeXT) calculate chksum with signed char,
+       which will be different if there are chars in the buffer with
+       the high bit set. So we calculate two checksums, unsigned and
+       signed.
+    """
+    unsigned_chksum = 256 + sum(struct.unpack("148B", buf[:148]) + struct.unpack("356B", buf[156:512]))
+    signed_chksum = 256 + sum(struct.unpack("148b", buf[:148]) + struct.unpack("356b", buf[156:512]))
+    return unsigned_chksum, signed_chksum
 
 def copyfileobj(src, dst, length=None):
     """Copy length bytes from fileobj src to fileobj dst.
@@ -655,7 +703,7 @@ class ExFileObject(object):
         """Get an iterator over the file object.
         """
         if self.closed:
-            raise ValueError("I/O operation on closed file")
+            raise ValueError, "I/O operation on closed file"
         return self
 
     def next(self):
@@ -684,24 +732,24 @@ class TarInfo(object):
            of the member.
         """
 
-        self.name     = name       # member name (dirnames must end with '/')
-        self.mode     = 0666       # file permissions
-        self.uid      = 0          # user id
-        self.gid      = 0          # group id
-        self.size     = 0          # file size
-        self.mtime    = 0          # modification time
-        self.chksum   = 0          # header checksum
-        self.type     = REGTYPE    # member type
-        self.linkname = ""         # link name
-        self.uname    = "user"     # user name
-        self.gname    = "group"    # group name
-        self.devmajor = 0          #-
-        self.devminor = 0          #-for use with CHRTYPE and BLKTYPE
-        self.prefix   = ""         # prefix to filename or holding information
-                                   # about sparse files
+        self.name = name        # member name (dirnames must end with '/')
+        self.mode = 0666        # file permissions
+        self.uid = 0            # user id
+        self.gid = 0            # group id
+        self.size = 0           # file size
+        self.mtime = 0          # modification time
+        self.chksum = 0         # header checksum
+        self.type = REGTYPE     # member type
+        self.linkname = ""      # link name
+        self.uname = "user"     # user name
+        self.gname = "group"    # group name
+        self.devmajor = 0       # device major number
+        self.devminor = 0       # device minor number
+        self.prefix = ""        # prefix to filename or information
+                                # about sparse files
 
-        self.offset   = 0          # the tar header starts here
-        self.offset_data = 0       # the file's data starts here
+        self.offset = 0         # the tar header starts here
+        self.offset_data = 0    # the file's data starts here
 
     def __repr__(self):
         return "<%s %r at %#x>" % (self.__class__.__name__,self.name,id(self))
@@ -710,95 +758,57 @@ class TarInfo(object):
     def frombuf(cls, buf):
         """Construct a TarInfo object from a 512 byte string buffer.
         """
+        if len(buf) != BLOCKSIZE:
+            raise ValueError, "truncated header"
+        if buf.count(NUL) == BLOCKSIZE:
+            raise ValueError, "empty header"
+
         tarinfo = cls()
-        tarinfo.name   = nts(buf[0:100])
-        tarinfo.mode   = int(buf[100:108], 8)
-        tarinfo.uid    = int(buf[108:116],8)
-        tarinfo.gid    = int(buf[116:124],8)
-
-        # There are two possible codings for the size field we
-        # have to discriminate, see comment in tobuf() below.
-        if buf[124] != chr(0200):
-            tarinfo.size = long(buf[124:136], 8)
-        else:
-            tarinfo.size = 0L
-            for i in range(11):
-                tarinfo.size <<= 8
-                tarinfo.size += ord(buf[125 + i])
-
-        tarinfo.mtime  = long(buf[136:148], 8)
-        tarinfo.chksum = int(buf[148:156], 8)
-        tarinfo.type   = buf[156:157]
+        tarinfo.buf = buf
+        tarinfo.name = nts(buf[0:100])
+        tarinfo.mode = nti(buf[100:108])
+        tarinfo.uid = nti(buf[108:116])
+        tarinfo.gid = nti(buf[116:124])
+        tarinfo.size = nti(buf[124:136])
+        tarinfo.mtime = nti(buf[136:148])
+        tarinfo.chksum = nti(buf[148:156])
+        tarinfo.type = buf[156:157]
         tarinfo.linkname = nts(buf[157:257])
-        tarinfo.uname  = nts(buf[265:297])
-        tarinfo.gname  = nts(buf[297:329])
-        try:
-            tarinfo.devmajor = int(buf[329:337], 8)
-            tarinfo.devminor = int(buf[337:345], 8)
-        except ValueError:
-            tarinfo.devmajor = tarinfo.devmajor = 0
+        tarinfo.uname = nts(buf[265:297])
+        tarinfo.gname = nts(buf[297:329])
+        tarinfo.devmajor = nti(buf[329:337])
+        tarinfo.devminor = nti(buf[337:345])
         tarinfo.prefix = buf[345:500]
 
-        # Some old tar programs represent a directory as a regular
-        # file with a trailing slash.
-        if tarinfo.isreg() and tarinfo.name.endswith("/"):
-            tarinfo.type = DIRTYPE
-
-        # The prefix field is used for filenames > 100 in
-        # the POSIX standard.
-        # name = prefix + '/' + name
-        if tarinfo.type != GNUTYPE_SPARSE:
-            tarinfo.name = normpath(os.path.join(nts(tarinfo.prefix), tarinfo.name))
-
-        # Directory names should have a '/' at the end.
-        if tarinfo.isdir():
-            tarinfo.name += "/"
+        if tarinfo.chksum not in calc_chksums(buf):
+            raise ValueError, "invalid header"
         return tarinfo
 
-    def tobuf(self):
+    def tobuf(self, posix=False):
         """Return a tar header block as a 512 byte string.
         """
-        # Prefer the size to be encoded as 11 octal ascii digits
-        # which is the most portable. If the size exceeds this
-        # limit (>= 8 GB), encode it as an 88-bit value which is
-        # a GNU tar feature.
-        if self.size <= MAXSIZE_MEMBER:
-            size = "%011o" % self.size
-        else:
-            s = self.size
-            size = ""
-            for i in range(11):
-                size = chr(s & 0377) + size
-                s >>= 8
-            size = chr(0200) + size
+        parts = [
+            stn(self.name, 100),
+            itn(self.mode & 07777, 8, posix),
+            itn(self.uid, 8, posix),
+            itn(self.gid, 8, posix),
+            itn(self.size, 12, posix),
+            itn(self.mtime, 12, posix),
+            "        ", # checksum field
+            self.type,
+            stn(self.linkname, 100),
+            stn(MAGIC, 6),
+            stn(VERSION, 2),
+            stn(self.uname, 32),
+            stn(self.gname, 32),
+            itn(self.devmajor, 8, posix),
+            itn(self.devminor, 8, posix),
+            stn(self.prefix, 155)
+        ]
 
-        # The following code was contributed by Detlef Lannert.
-        parts = []
-        for value, fieldsize in (
-                (self.name, 100),
-                ("%07o" % (self.mode & 07777), 8),
-                ("%07o" % self.uid, 8),
-                ("%07o" % self.gid, 8),
-                (size, 12),
-                ("%011o" % self.mtime, 12),
-                ("        ", 8),
-                (self.type, 1),
-                (self.linkname, 100),
-                (MAGIC, 6),
-                (VERSION, 2),
-                (self.uname, 32),
-                (self.gname, 32),
-                ("%07o" % self.devmajor, 8),
-                ("%07o" % self.devminor, 8),
-                (self.prefix, 155)
-            ):
-            l = len(value)
-            parts.append(value[:fieldsize] + (fieldsize - l) * NUL)
-
-        buf = "".join(parts)
-        chksum = calc_chksum(buf)
+        buf = struct.pack("%ds" % BLOCKSIZE, "".join(parts))
+        chksum = calc_chksums(buf)[0]
         buf = buf[:148] + "%06o\0" % chksum + buf[155:]
-        buf += (BLOCKSIZE - len(buf)) * NUL
         self.buf = buf
         return buf
 
@@ -873,12 +883,12 @@ class TarFile(object):
         self.fileobj = fileobj
 
         # Init datastructures
-        self.closed      = False
-        self.members     = []       # list of members as TarInfo objects
-        self._loaded     = False    # flag if all members have been read
-        self.offset      = 0L       # current position in the archive file
-        self.inodes      = {}       # dictionary caching the inodes of
-                                    # archive members already added
+        self.closed = False
+        self.members = []       # list of members as TarInfo objects
+        self._loaded = False    # flag if all members have been read
+        self.offset = 0L        # current position in the archive file
+        self.inodes = {}        # dictionary caching the inodes of
+                                # archive members already added
 
         if self._mode == "r":
             self.firstmember = None
@@ -1347,7 +1357,7 @@ class TarFile(object):
                 tarinfo.name = tarinfo.name[:LENGTH_NAME - 1]
                 self._dbg(2, "tarfile: Created GNU tar extension LONGNAME")
 
-        self.fileobj.write(tarinfo.tobuf())
+        self.fileobj.write(tarinfo.tobuf(self.posix))
         self.offset += BLOCKSIZE
 
         # If there's data to follow, append it.
@@ -1660,7 +1670,6 @@ class TarFile(object):
             raise ExtractError, "could not change modification time"
 
     #--------------------------------------------------------------------------
-
     def next(self):
         """Return the next member of the archive as a TarInfo object, when
            TarFile is opened for reading. Return None if there is no more
@@ -1678,70 +1687,81 @@ class TarFile(object):
             buf = self.fileobj.read(BLOCKSIZE)
             if not buf:
                 return None
+
             try:
                 tarinfo = TarInfo.frombuf(buf)
-            except ValueError:
+
+                # Set the TarInfo object's offset to the current position of the
+                # TarFile and set self.offset to the position where the data blocks
+                # should begin.
+                tarinfo.offset = self.offset
+                self.offset += BLOCKSIZE
+
+                tarinfo = self.proc_member(tarinfo)
+
+            except ValueError, e:
                 if self.ignore_zeros:
-                    if buf.count(NUL) == BLOCKSIZE:
-                        adj = "empty"
-                    else:
-                        adj = "invalid"
-                    self._dbg(2, "0x%X: %s block" % (self.offset, adj))
+                    self._dbg(2, "0x%X: %s" % (self.offset, e))
                     self.offset += BLOCKSIZE
                     continue
                 else:
-                    # Block is empty or unreadable.
                     if self.offset == 0:
-                        # If the first block is invalid. That does not
-                        # look like a tar archive we can handle.
-                        raise ReadError,"empty, unreadable or compressed file"
+                        raise ReadError, str(e)
                     return None
             break
 
-        # We shouldn't rely on this checksum, because some tar programs
-        # calculate it differently and it is merely validating the
-        # header block. We could just as well skip this part, which would
-        # have a slight effect on performance...
-        if tarinfo.chksum != calc_chksum(buf):
-            self._dbg(1, "tarfile: Bad Checksum %r" % tarinfo.name)
+        # Some old tar programs represent a directory as a regular
+        # file with a trailing slash.
+        if tarinfo.isreg() and tarinfo.name.endswith("/"):
+            tarinfo.type = DIRTYPE
 
-        # Set the TarInfo object's offset to the current position of the
-        # TarFile and set self.offset to the position where the data blocks
-        # should begin.
-        tarinfo.offset = self.offset
-        self.offset += BLOCKSIZE
+        # The prefix field is used for filenames > 100 in
+        # the POSIX standard.
+        # name = prefix + '/' + name
+        tarinfo.name = normpath(os.path.join(nts(tarinfo.prefix), tarinfo.name))
 
-        # Check if the TarInfo object has a typeflag for which a callback
-        # method is registered in the TYPE_METH. If so, then call it.
-        if tarinfo.type in self.TYPE_METH:
-            return self.TYPE_METH[tarinfo.type](self, tarinfo)
-
-        tarinfo.offset_data = self.offset
-        if tarinfo.isreg() or tarinfo.type not in SUPPORTED_TYPES:
-            # Skip the following data blocks.
-            self.offset += self._block(tarinfo.size)
+        # Directory names should have a '/' at the end.
+        if tarinfo.isdir():
+            tarinfo.name += "/"
 
         self.members.append(tarinfo)
         return tarinfo
 
     #--------------------------------------------------------------------------
-    # Below are some methods which are called for special typeflags in the
-    # next() method, e.g. for unwrapping GNU longname/longlink blocks. They
-    # are registered in TYPE_METH below. You can register your own methods
-    # with this mapping.
-    # A registered method is called with a TarInfo object as only argument.
-    #
-    # During its execution the method MUST perform the following tasks:
-    # 1. set tarinfo.offset_data to the position where the data blocks begin,
-    #    if there is data to follow.
-    # 2. set self.offset to the position where the next member's header will
+    # The following are methods that are called depending on the type of a
+    # member. The entry point is proc_member() which is called with a TarInfo
+    # object created from the header block from the current offset. The
+    # proc_member() method can be overridden in a subclass to add custom
+    # proc_*() methods. A proc_*() method MUST implement the following
+    # operations:
+    # 1. Set tarinfo.offset_data to the position where the data blocks begin,
+    #    if there is data that follows.
+    # 2. Set self.offset to the position where the next member's header will
     #    begin.
-    # 3. append the tarinfo object to self.members, if it is supposed to appear
-    #    as a member of the TarFile object.
-    # 4. return tarinfo or another valid TarInfo object.
+    # 3. Return tarinfo or another valid TarInfo object.
+    def proc_member(self, tarinfo):
+        """Choose the right processing method for tarinfo depending
+           on its type and call it.
+        """
+        if tarinfo.type in (GNUTYPE_LONGNAME, GNUTYPE_LONGLINK):
+            return self.proc_gnulong(tarinfo)
+        elif tarinfo.type == GNUTYPE_SPARSE:
+            return self.proc_sparse(tarinfo)
+        else:
+            return self.proc_builtin(tarinfo)
+
+    def proc_builtin(self, tarinfo):
+        """Process a builtin type member or an unknown member
+           which will be treated as a regular file.
+        """
+        tarinfo.offset_data = self.offset
+        if tarinfo.isreg() or tarinfo.type not in SUPPORTED_TYPES:
+            # Skip the following data blocks.
+            self.offset += self._block(tarinfo.size)
+        return tarinfo
 
     def proc_gnulong(self, tarinfo):
-        """Evaluate the blocks that hold a GNU longname
+        """Process the blocks that hold a GNU longname
            or longlink member.
         """
         buf = ""
@@ -1752,9 +1772,15 @@ class TarFile(object):
             self.offset += BLOCKSIZE
             count -= BLOCKSIZE
 
-        # Fetch the next header
-        next = self.next()
+        # Fetch the next header and process it.
+        b = self.fileobj.read(BLOCKSIZE)
+        t = TarInfo.frombuf(b)
+        t.offset = self.offset
+        self.offset += BLOCKSIZE
+        next = self.proc_member(t)
 
+        # Patch the TarInfo object from the next header with
+        # the longname information.
         next.offset = tarinfo.offset
         if tarinfo.type == GNUTYPE_LONGNAME:
             next.name = nts(buf)
@@ -1764,9 +1790,9 @@ class TarFile(object):
         return next
 
     def proc_sparse(self, tarinfo):
-        """Analyze a GNU sparse header plus extra headers.
+        """Process a GNU sparse header plus extra headers.
         """
-        buf = tarinfo.tobuf()
+        buf = tarinfo.buf
         sp = _ringbuffer()
         pos = 386
         lastpos = 0L
@@ -1775,8 +1801,8 @@ class TarFile(object):
         # first header.
         for i in xrange(4):
             try:
-                offset = int(buf[pos:pos + 12], 8)
-                numbytes = int(buf[pos + 12:pos + 24], 8)
+                offset = nti(buf[pos:pos + 12])
+                numbytes = nti(buf[pos + 12:pos + 24])
             except ValueError:
                 break
             if offset > lastpos:
@@ -1787,7 +1813,7 @@ class TarFile(object):
             pos += 24
 
         isextended = ord(buf[482])
-        origsize = int(buf[483:495], 8)
+        origsize = nti(buf[483:495])
 
         # If the isextended flag is given,
         # there are extra headers to process.
@@ -1797,8 +1823,8 @@ class TarFile(object):
             pos = 0
             for i in xrange(21):
                 try:
-                    offset = int(buf[pos:pos + 12], 8)
-                    numbytes = int(buf[pos + 12:pos + 24], 8)
+                    offset = nti(buf[pos:pos + 12])
+                    numbytes = nti(buf[pos + 12:pos + 24])
                 except ValueError:
                     break
                 if offset > lastpos:
@@ -1818,17 +1844,11 @@ class TarFile(object):
         self.offset += self._block(tarinfo.size)
         tarinfo.size = origsize
 
-        self.members.append(tarinfo)
-        return tarinfo
+        # Clear the prefix field so that it is not used
+        # as a pathname in next().
+        tarinfo.prefix = ""
 
-    # The type mapping for the next() method. The keys are single character
-    # strings, the typeflag. The values are methods which are called when
-    # next() encounters such a typeflag.
-    TYPE_METH = {
-        GNUTYPE_LONGNAME: proc_gnulong,
-        GNUTYPE_LONGLINK: proc_gnulong,
-        GNUTYPE_SPARSE:   proc_sparse
-    }
+        return tarinfo
 
     #--------------------------------------------------------------------------
     # Little helper methods:

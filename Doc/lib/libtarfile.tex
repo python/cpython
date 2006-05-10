@@ -334,8 +334,12 @@ the file's data itself.
     Create and return a \class{TarInfo} object from a string buffer.
 \end{methoddesc}
 
-\begin{methoddesc}{tobuf}{}
+\begin{methoddesc}{tobuf}{posix}
     Create a string buffer from a \class{TarInfo} object.
+    See \class{TarFile}'s \member{posix} attribute for information
+    on the \var{posix} argument. It defaults to \constant{False}.
+
+    \versionadded[The \var{posix} parameter]{2.5}
 \end{methoddesc}
 
 A \code{TarInfo} object has the following public data attributes:

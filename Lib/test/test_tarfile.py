@@ -2,6 +2,7 @@ import sys
 import os
 import shutil
 import tempfile
+import StringIO
 
 import unittest
 import tarfile
@@ -25,7 +26,7 @@ def path(path):
 testtar = path("testtar.tar")
 tempdir = os.path.join(tempfile.gettempdir(), "testtar" + os.extsep + "dir")
 tempname = test_support.TESTFN
-membercount = 10
+membercount = 12
 
 def tarname(comp=""):
     if not comp:
@@ -254,7 +255,7 @@ class WriteTest(BaseTest):
             if not tarinfo.isreg():
                 continue
             f = self.src.extractfile(tarinfo)
-            if self.dst.posix and len(tarinfo.name) > tarfile.LENGTH_NAME:
+            if self.dst.posix and len(tarinfo.name) > tarfile.LENGTH_NAME and "/" not in tarinfo.name:
                 self.assertRaises(ValueError, self.dst.addfile,
                                  tarinfo, f)
             else:
@@ -385,6 +386,49 @@ class WriteGNULongTest(unittest.TestCase):
         self._test(("longnam/" * 127) + "longname_",
                    ("longlnk/" * 127) + "longlink_")
 
+class ReadGNULongTest(unittest.TestCase):
+
+    def setUp(self):
+        self.tar = tarfile.open(tarname())
+
+    def tearDown(self):
+        self.tar.close()
+
+    def test_1471427(self):
+        """Test reading of longname (bug #1471427).
+        """
+        name = "test/" * 20 + "0-REGTYPE"
+        try:
+            tarinfo = self.tar.getmember(name)
+        except KeyError:
+            tarinfo = None
+        self.assert_(tarinfo is not None, "longname not found")
+        self.assert_(tarinfo.type != tarfile.DIRTYPE, "read longname as dirtype")
+
+    def test_read_name(self):
+        name = ("0-LONGNAME-" * 10)[:101]
+        try:
+            tarinfo = self.tar.getmember(name)
+        except KeyError:
+            tarinfo = None
+        self.assert_(tarinfo is not None, "longname not found")
+
+    def test_read_link(self):
+        link = ("1-LONGLINK-" * 10)[:101]
+        name = ("0-LONGNAME-" * 10)[:101]
+        try:
+            tarinfo = self.tar.getmember(link)
+        except KeyError:
+            tarinfo = None
+        self.assert_(tarinfo is not None, "longlink not found")
+        self.assert_(tarinfo.linkname == name, "linkname wrong")
+
+    def test_truncated_longname(self):
+        fobj = StringIO.StringIO(file(tarname()).read(1024))
+        tar = tarfile.open(name="foo.tar", fileobj=fobj)
+        self.assert_(len(tar.getmembers()) == 0, "")
+
+
 class ExtractHardlinkTest(BaseTest):
 
     def test_hardlink(self):
@@ -512,6 +556,7 @@ def test_main():
         WriteSize0Test,
         WriteStreamTest,
         WriteGNULongTest,
+        ReadGNULongTest,
     ]
 
     if hasattr(os, "link"):
