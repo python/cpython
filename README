@@ -166,6 +166,13 @@ two -- please be patient!)  You may want to pass options to the
 configure script -- see the section below on configuration options and
 variables.  When it's done, you are ready to run make.
 
+As a prerequisite, you need at least a C compiler on your system,
+along with header files for the standard C library. You also need
+a C++ compiler, unless you pass --without-cxx to configure. In
+addition, you need header files and libraries for various optional
+extension modules; if these are missing, the build process will
+skip building these modules.
+
 To build Python, you normally type "make" in the toplevel directory.
 If you have changed the configuration, the Makefile may have to be
 rebuilt.  In this case you may have to run make again to correctly
