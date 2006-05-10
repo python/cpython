@@ -327,8 +327,10 @@ element_new(PyObject* tag, PyObject* attrib)
 
     if (attrib != Py_None) {
 
-        if (element_new_extra(self, attrib) < 0)
+        if (element_new_extra(self, attrib) < 0) {
+            PyObject_Del(self);
             return NULL;
+	}
 
         self->extra->length = 0;
         self->extra->allocated = STATIC_CHILDREN;

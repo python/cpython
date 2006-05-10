@@ -66,8 +66,7 @@ long_normalize(register PyLongObject *v)
 PyLongObject *
 _PyLong_New(Py_ssize_t size)
 {
-	if (size > INT_MAX) {
-		/* XXX: Fix this check when ob_size becomes ssize_t */
+	if (size > PY_SSIZE_T_MAX) {
 		PyErr_NoMemory();
 		return NULL;
 	}
@@ -1580,9 +1579,10 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 	assert(size_w == ABS(w->ob_size)); /* That's how d was calculated */
 
 	size_v = ABS(v->ob_size);
-	a = _PyLong_New(size_v - size_w + 1);
+	k = size_v - size_w;
+	a = _PyLong_New(k + 1);
 
-	for (j = size_v, k = a->ob_size-1; a != NULL && k >= 0; --j, --k) {
+	for (j = size_v; a != NULL && k >= 0; --j, --k) {
 		digit vj = (j >= size_v) ? 0 : v->ob_digit[j];
 		twodigits q;
 		stwodigits carry = 0;
