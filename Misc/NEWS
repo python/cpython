@@ -96,6 +96,10 @@ Extension Modules
 Library
 -------
 
+- Patch #1484695: Update the tarfile module to version 0.8. This fixes
+  a couple of issues, notably handling of long file names using the
+  GNU LONGNAME extension.
+
 - Patch #1478292. ``doctest.register_optionflag(name)`` shouldn't create a
   new flag when ``name`` is already the name of an option flag.
 
