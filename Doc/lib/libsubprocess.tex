@@ -70,10 +70,10 @@ value for \var{bufsize} is \constant{0} (unbuffered).
 
 The \var{executable} argument specifies the program to execute. It is
 very seldom needed: Usually, the program to execute is defined by the
-\var{args} argument. If \var{shell=True}, the \var{executable}
+\var{args} argument. If \code{shell=True}, the \var{executable}
 argument specifies which shell to use. On \UNIX{}, the default shell
-is /bin/sh.  On Windows, the default shell is specified by the COMSPEC
-environment variable.
+is \file{/bin/sh}.  On Windows, the default shell is specified by the
+\envvar{COMSPEC} environment variable.
 
 \var{stdin}, \var{stdout} and \var{stderr} specify the executed
 programs' standard input, standard output and standard error file
@@ -88,16 +88,19 @@ handle as for stdout.
 
 If \var{preexec_fn} is set to a callable object, this object will be
 called in the child process just before the child is executed.
+(\UNIX{} only)
 
 If \var{close_fds} is true, all file descriptors except \constant{0},
 \constant{1} and \constant{2} will be closed before the child process is
-executed.
+executed. (\UNIX{} only)
 
 If \var{shell} is \constant{True}, the specified command will be
 executed through the shell.
 
-If \var{cwd} is not \code{None}, the current directory will be changed
-to cwd before the child is executed.
+If \var{cwd} is not \code{None}, the child's current directory will be
+changed to \var{cwd} before it is executed.  Note that this directory
+is not considered when searching the executable, so you can't specify
+the program's path relative to \var{cwd}.
 
 If \var{env} is not \code{None}, it defines the environment variables
 for the new process.
