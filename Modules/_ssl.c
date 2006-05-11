@@ -183,10 +183,8 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 	int sockstate;
 
 	self = PyObject_New(PySSLObject, &PySSL_Type); /* Create new object */
-	if (self == NULL) {
-		PyErr_SetString(PySSLErrorObject, "newPySSLObject error");
+	if (self == NULL)
 		return NULL;
-	}
 	memset(self->server, '\0', sizeof(char) * X509_NAME_MAXLEN);
 	memset(self->issuer, '\0', sizeof(char) * X509_NAME_MAXLEN);
 	self->server_cert = NULL;
