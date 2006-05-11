@@ -3247,6 +3247,27 @@ else
   AC_MSG_RESULT(no)
 fi
 
+AC_MSG_CHECKING(for %zd printf() format support)
+AC_TRY_RUN([#include <stdio.h>
+#include <stddef.h>
+#include <string.h>
+
+int main()
+{
+    char buffer[4];
+
+    if(sprintf(buffer, "%zd", (size_t)123) < 0)
+       	return 1;
+
+    if (strncmp(buffer, "123", 3))
+	return 1;
+    
+    return 0;
+}],
+[AC_MSG_RESULT(yes)
+ AC_DEFINE(PY_FORMAT_SIZE_T, "z", [Define to printf format modifier for Py_ssize_t])],
+ AC_MSG_RESULT(no))
+
 AC_CHECK_TYPE(socklen_t,,
   AC_DEFINE(socklen_t,int,
             Define to `int' if <sys/socket.h> does not define.),[

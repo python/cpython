@@ -727,6 +727,9 @@
 /* Defined if PTHREAD_SCOPE_SYSTEM supported. */
 #undef PTHREAD_SYSTEM_SCHED_SUPPORTED
 
+/* Define to printf format modifier for Py_ssize_t */
+#undef PY_FORMAT_SIZE_T
+
 /* Define as the integral type used for Unicode representation. */
 #undef PY_UNICODE_TYPE
 
