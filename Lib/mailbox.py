@@ -24,12 +24,6 @@ __all__ = [ 'Mailbox', 'Maildir', 'mbox', 'MH', 'Babyl', 'MMDF',
             'BabylMessage', 'MMDFMessage', 'UnixMailbox',
             'PortableUnixMailbox', 'MmdfMailbox', 'MHMailbox', 'BabylMailbox' ]
 
-if sys.platform != 'win32':
-    # Define WindowsError so that we can use it in an except statement
-    # even on non-Windows systems
-    class WindowsError:
-        pass
-
 class Mailbox:
     """A group of messages in a particular place."""
 
@@ -268,9 +262,6 @@ class Maildir(Mailbox):
             self.remove(key)
         except KeyError:
             pass
-        except WindowsError, e:
-            if e.errno != 2: # ERROR_FILE_NOT_FOUND
-                raise
         except OSError, e:
             if e.errno != errno.ENOENT:
                 raise
@@ -426,12 +417,6 @@ class Maildir(Mailbox):
         path = os.path.join(self._path, 'tmp', uniq)
         try:
             os.stat(path)
-        except WindowsError, e:
-            if e.errno == 2: # ERROR_FILE_NOT_FOUND
-                Maildir._count += 1
-                return open(path, 'wb+')
-            else:
-                raise
         except OSError, e:
             if e.errno == errno.ENOENT:
                 Maildir._count += 1
@@ -579,12 +564,6 @@ class _singlefileMailbox(Mailbox):
         self._file.close()
         try:
             os.rename(new_file.name, self._path)
-        except WindowsError, e:
-            if e.errno == 183: # ERROR_ALREADY_EXISTS
-                os.remove(self._path)
-                os.rename(new_file.name, self._path)
-            else:
-                raise
         except OSError, e:
             if e.errno == errno.EEXIST:
                 os.remove(self._path)
@@ -1856,13 +1835,6 @@ def _lock_file(f, dotlock=True):
                 else:
                     os.rename(pre_lock.name, f.name + '.lock')
                     dotlock_done = True
-            except WindowsError, e:
-                if e.errno == 183:  # ERROR_ALREADY_EXISTS
-                    os.remove(pre_lock.name)
-                    raise ExternalClashError('dot lock unavailable: %s' %
-                                             f.name)
-                else:
-                    raise
             except OSError, e:
                 if e.errno == errno.EEXIST:
                     os.remove(pre_lock.name)

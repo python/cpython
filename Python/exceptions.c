@@ -704,15 +704,132 @@ PyMethodDef EnvironmentError_methods[] = {
     {NULL, NULL}
 };
 
-
-
-
 PyDoc_STRVAR(IOError__doc__, "I/O operation failed.");
 
 PyDoc_STRVAR(OSError__doc__, "OS system call failed.");
 
 #ifdef MS_WINDOWS
+#include "errmap.h"
+
 PyDoc_STRVAR(WindowsError__doc__, "MS-Windows OS system call failed.");
+
+static PyObject *
+WindowsError__init__(PyObject *self, PyObject *args)
+{
+	PyObject *o_errcode, *result;
+	long errcode, posix_errno;
+	result = EnvironmentError__init__(self, args);
+	if (!result)
+		return NULL;
+	self = get_self(args);
+	if (!self)
+		goto failed;
+	/* Set errno to the POSIX errno, and winerror to the Win32
+	   error code. */
+	o_errcode = PyObject_GetAttrString(self, "errno");
+	if (!o_errcode)
+		goto failed;
+	errcode = PyInt_AsLong(o_errcode);
+	if (!errcode == -1 && PyErr_Occurred())
+		goto failed;
+	posix_errno = winerror_to_errno(errcode);
+	if (PyObject_SetAttrString(self, "winerror", o_errcode) < 0)
+		goto failed;
+	Py_DECREF(o_errcode);
+	o_errcode = PyInt_FromLong(posix_errno);
+	if (!o_errcode)
+		goto failed;
+	if (PyObject_SetAttrString(self, "errno", o_errcode) < 0)
+		goto failed;
+	Py_DECREF(o_errcode);
+	return result;
+failed:
+	/* Could not set errno. */
+	Py_XDECREF(o_errcode);
+	Py_DECREF(self);
+	Py_DECREF(result);
+	return NULL;
+}
+
+static PyObject *
+WindowsError__str__(PyObject *self, PyObject *args)
+{
+    PyObject *originalself = self;
+    PyObject *filename;
+    PyObject *serrno;
+    PyObject *strerror;
+    PyObject *rtnval = NULL;
+
+    if (!PyArg_ParseTuple(args, "O:__str__", &self))
+	return NULL;
+
+    filename = PyObject_GetAttrString(self, "filename");
+    serrno = PyObject_GetAttrString(self, "winerror");
+    strerror = PyObject_GetAttrString(self, "strerror");
+    if (!filename || !serrno || !strerror)
+	goto finally;
+
+    if (filename != Py_None) {
+	PyObject *fmt = PyString_FromString("[Error %s] %s: %s");
+	PyObject *repr = PyObject_Repr(filename);
+	PyObject *tuple = PyTuple_New(3);
+
+	if (!fmt || !repr || !tuple) {
+	    Py_XDECREF(fmt);
+	    Py_XDECREF(repr);
+	    Py_XDECREF(tuple);
+	    goto finally;
+	}
+
+	PyTuple_SET_ITEM(tuple, 0, serrno);
+	PyTuple_SET_ITEM(tuple, 1, strerror);
+	PyTuple_SET_ITEM(tuple, 2, repr);
+
+	rtnval = PyString_Format(fmt, tuple);
+
+	Py_DECREF(fmt);
+	Py_DECREF(tuple);
+	/* already freed because tuple owned only reference */
+	serrno = NULL;
+	strerror = NULL;
+    }
+    else if (PyObject_IsTrue(serrno) && PyObject_IsTrue(strerror)) {
+	PyObject *fmt = PyString_FromString("[Error %s] %s");
+	PyObject *tuple = PyTuple_New(2);
+
+	if (!fmt || !tuple) {
+	    Py_XDECREF(fmt);
+	    Py_XDECREF(tuple);
+	    goto finally;
+	}
+
+	PyTuple_SET_ITEM(tuple, 0, serrno);
+	PyTuple_SET_ITEM(tuple, 1, strerror);
+
+	rtnval = PyString_Format(fmt, tuple);
+
+	Py_DECREF(fmt);
+	Py_DECREF(tuple);
+	/* already freed because tuple owned only reference */
+	serrno = NULL;
+	strerror = NULL;
+    }
+    else
+	rtnval = EnvironmentError__str__(originalself, args);
+
+  finally:
+    Py_XDECREF(filename);
+    Py_XDECREF(serrno);
+    Py_XDECREF(strerror);
+    return rtnval;
+}
+
+static
+PyMethodDef WindowsError_methods[] = {
+    {"__init__", WindowsError__init__, METH_VARARGS},
+    {"__str__", WindowsError__str__, METH_VARARGS},
+    {NULL, NULL}
+};
 #endif /* MS_WINDOWS */
 
 #ifdef __VMS
@@ -1760,7 +1877,7 @@ static struct {
  {"OSError", &PyExc_OSError, &PyExc_EnvironmentError, OSError__doc__},
 #ifdef MS_WINDOWS
  {"WindowsError", &PyExc_WindowsError, &PyExc_OSError,
-  WindowsError__doc__},
+WindowsError__doc__, WindowsError_methods},
 #endif /* MS_WINDOWS */
 #ifdef __VMS
  {"VMSError", &PyExc_VMSError, &PyExc_OSError,
