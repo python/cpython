@@ -12,6 +12,11 @@ What's New in Python 2.5 alpha 2?
 Core and builtins
 -----------------
 
+- WindowsError now has two error code attributes: errno, which carries
+  the error values from errno.h, and winerror, which carries the error
+  values from winerror.h. Previous versions put the winerror.h values
+  (from GetLastError()) into the errno attribute.
+
 - Patch #1475845: Raise IndentationError for unexpected indent.
 
 - Patch #1479181: split open() and file() from being aliases for each other.

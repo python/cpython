@@ -399,11 +399,15 @@ Raised when an \keyword{assert} statement fails.
 \begin{excdesc}{WindowsError}
   Raised when a Windows-specific error occurs or when the error number
   does not correspond to an \cdata{errno} value.  The
-  \member{errno} and \member{strerror} values are created from the
+  \member{winerror} and \member{strerror} values are created from the
   return values of the \cfunction{GetLastError()} and
   \cfunction{FormatMessage()} functions from the Windows Platform API.
+  The \member{errno} value maps the \member{winerror} value to 
+  corresponding \code{errno.h} values.
   This is a subclass of \exception{OSError}.
 \versionadded{2.0}
+\versionchanged[Previous versions put the \cfunction{GetLastError()}
+codes into \member{errno}]{2.5}
 \end{excdesc}
 
 \begin{excdesc}{ZeroDivisionError}
