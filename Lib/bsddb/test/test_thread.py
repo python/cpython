@@ -57,8 +57,6 @@ class BaseThreadedTestCase(unittest.TestCase):
         self.homeDir = homeDir
         try:
             os.mkdir(homeDir)
-        except WindowsError, e:
-            if e.errno <> 183: raise # ERROR_ALREADY_EXISTS
         except OSError, e:
             if e.errno <> errno.EEXIST: raise
         self.env = db.DBEnv()
