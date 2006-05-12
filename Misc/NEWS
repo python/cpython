@@ -72,6 +72,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- On Win32, os.listdir now supports arbitrarily-long Unicode path names 
+  (up to the system limit of 32K characters).
+
 - Use Win32 API to implement os.{access,chdir,chmod,mkdir,remove,rename,rmdir,utime}.
   As a result, these functions now raise WindowsError instead of OSError.
 
