@@ -763,8 +763,11 @@ static __int64 secs_between_epochs = 11644473600; /* Seconds between 1.1.1601 an
 static void
 FILE_TIME_to_time_t_nsec(FILETIME *in_ptr, int *time_out, int* nsec_out)
 {
-	/* XXX endianness */
-	__int64 in = *(__int64*)in_ptr;
+	/* XXX endianness. Shouldn't matter, as all Windows implementations are little-endian */
+	/* Cannot simply cast and dereference in_ptr, 
+	   since it might not be aligned properly */
+	__int64 in;
+	memcpy(&in, in_ptr, sizeof(in));
 	*nsec_out = (int)(in % 10000000) * 100; /* FILETIME is in units of 100 nsec. */
 	/* XXX Win32 supports time stamps past 2038; we currently don't */
 	*time_out = Py_SAFE_DOWNCAST((in / 10000000) - secs_between_epochs, __int64, int);
@@ -777,7 +780,7 @@ time_t_to_FILE_TIME(int time_in, int nsec_in, FILETIME *out_ptr)
 	__int64 out;
 	out = time_in + secs_between_epochs;
 	out = out * 10000000 + nsec_in;
-	*(__int64*)out_ptr = out;
+	memcpy(out_ptr, &out, sizeof(out));
 }
 
 /* Below, we *know* that ugo+r is 0444 */
