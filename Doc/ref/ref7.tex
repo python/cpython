@@ -284,11 +284,8 @@ The \keyword{try}...\keyword{finally} form specifies a `cleanup' handler.  The
 \keyword{finally} clause is executed, and then the saved exception is
 re-raised.  If the \keyword{finally} clause raises another exception or
 executes a \keyword{return} or \keyword{break} statement, the saved
-exception is lost.  A \keyword{continue} statement is illegal in the
-\keyword{finally} clause.  (The reason is a problem with the current
-implementation -- this restriction may be lifted in the future).  The
-exception information is not available to the program during execution of
-the \keyword{finally} clause.
+exception is lost.  The exception information is not available to the
+program during execution of the \keyword{finally} clause.
 \kwindex{finally}
 
 When a \keyword{return}, \keyword{break} or \keyword{continue} statement is
