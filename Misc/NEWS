@@ -223,6 +223,8 @@ Tools
 Documentation
 -------------
 
+- Patch #1473132: Improve docs for ``tp_clear`` and ``tp_traverse``.
+
 - PEP 343: Added Context Types section to the library reference
   and attempted to bring other PEP 343 related documentation into
   line with the implementation and/or python-dev discussions.
