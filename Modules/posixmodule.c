@@ -1782,37 +1782,46 @@ posix_listdir(PyObject *self, PyObject *args)
 	HANDLE hFindFile;
 	BOOL result;
 	WIN32_FIND_DATA FileData;
-	/* MAX_PATH characters could mean a bigger encoded string */
-	char namebuf[MAX_PATH*2+5];
+	char namebuf[MAX_PATH+5]; /* Overallocate for \\*.*\0 */
 	char *bufptr = namebuf;
-	Py_ssize_t len = sizeof(namebuf)/sizeof(namebuf[0]);
+	Py_ssize_t len = sizeof(namebuf)-5; /* only claim to have space for MAX_PATH */
 
 #ifdef Py_WIN_WIDE_FILENAMES
 	/* If on wide-character-capable OS see if argument
 	   is Unicode and if so use wide API.  */
 	if (unicode_file_names()) {
-		PyUnicodeObject *po;
+		PyObject *po;
 		if (PyArg_ParseTuple(args, "U:listdir", &po)) {
 			WIN32_FIND_DATAW wFileData;
-			Py_UNICODE wnamebuf[MAX_PATH*2+5];
+			Py_UNICODE *wnamebuf;
 			Py_UNICODE wch;
-			wcsncpy(wnamebuf, PyUnicode_AS_UNICODE(po), MAX_PATH);
-			wnamebuf[MAX_PATH] = L'\0';
-			len = wcslen(wnamebuf);
-			wch = (len > 0) ? wnamebuf[len-1] : L'\0';
-			if (wch != L'/' && wch != L'\\' && wch != L':')
-				wnamebuf[len++] = L'/';
-			wcscpy(wnamebuf + len, L"*.*");
-			if ((d = PyList_New(0)) == NULL)
+			/* Overallocate for \\*.*\0 */
+			len = PyUnicode_GET_SIZE(po);
+			wnamebuf = malloc((len + 5) * sizeof(wchar_t));
+			if (!wnamebuf) {
+				PyErr_NoMemory();
 				return NULL;
+			}
+			wcscpy(wnamebuf, PyUnicode_AS_UNICODE(po));
+			wch = len > 0 ? wnamebuf[len-1] : '\0';
+			if (wch != L'/' && wch != L'\\' && wch != L':')
+				wnamebuf[len++] = L'\\';
+			wcscpy(wnamebuf + len, L"*.*");
+			if ((d = PyList_New(0)) == NULL) {
+				free(wnamebuf);
+				return NULL;
+			}
 			hFindFile = FindFirstFileW(wnamebuf, &wFileData);
 			if (hFindFile == INVALID_HANDLE_VALUE) {
-				errno = GetLastError();
-				if (errno == ERROR_FILE_NOT_FOUND) {
+				int error = GetLastError();
+				if (error == ERROR_FILE_NOT_FOUND) {
+					free(wnamebuf);
 					return d;
 				}
 				Py_DECREF(d);
-				return win32_error_unicode("FindFirstFileW", wnamebuf);
+				win32_error_unicode("FindFirstFileW", wnamebuf);
+				free(wnamebuf);
+				return NULL;
 			}
 			do {
 				/* Skip over . and .. */
@@ -1839,7 +1848,9 @@ posix_listdir(PyObject *self, PyObject *args)
 
 			if (FindClose(hFindFile) == FALSE) {
 				Py_DECREF(d);
-				return win32_error_unicode("FindClose", wnamebuf);
+				win32_error_unicode("FindClose", wnamebuf);
+				free(wnamebuf);
+				return NULL;
 			}
 			return d;
 		}
@@ -1864,8 +1875,8 @@ posix_listdir(PyObject *self, PyObject *args)
 
 	hFindFile = FindFirstFile(namebuf, &FileData);
 	if (hFindFile == INVALID_HANDLE_VALUE) {
-		errno = GetLastError();
-		if (errno == ERROR_FILE_NOT_FOUND)
+		int error = GetLastError();
+		if (error == ERROR_FILE_NOT_FOUND)
 			return d;
 		Py_DECREF(d);
 		return win32_error("FindFirstFile", namebuf);
