@@ -660,9 +660,7 @@ test_thread_state(PyObject *self, PyObject *args)
 }
 #endif
 
-/* Some tests of PyString_FromFormat().  This needs more tests.
- * PyString_FromFormat() also needs docs.
- */
+/* Some tests of PyString_FromFormat().  This needs more tests. */
 static PyObject *
 test_string_from_format(PyObject *self, PyObject *args)
 {
