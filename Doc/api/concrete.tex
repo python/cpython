@@ -245,7 +245,7 @@ booleans.  The following macros are available, however.
 \end{csimplemacrodesc}
 
 \begin{cfuncdesc}{PyObject*}{PyBool_FromLong}{long v}
-  Return a new reference to \constant{Py_True} or \constant{Py_False} 
+  Return a new reference to \constant{Py_True} or \constant{Py_False}
   depending on the truth value of \var{v}.
 \versionadded{2.3}
 \end{cfuncdesc}
@@ -618,12 +618,24 @@ parameter and are called with a non-string parameter.
   exactly to the format characters in the \var{format} string.  The
   following format characters are allowed:
 
+  % This should be exactly the same as the table in PyErr_Format.
+  % One should just refer to the other.
+
+  % The descriptions for %zd and %zu are wrong, but the truth is complicated
+  % because not all compilers support the %z width modifier -- we fake it
+  % when necessary via interpolating PY_FORMAT_SIZE_T.
+
+  % %u, %lu, %zu should have "new in Python 2.5" blurbs.
+
   \begin{tableiii}{l|l|l}{member}{Format Characters}{Type}{Comment}
     \lineiii{\%\%}{\emph{n/a}}{The literal \% character.}
     \lineiii{\%c}{int}{A single character, represented as an C int.}
     \lineiii{\%d}{int}{Exactly equivalent to \code{printf("\%d")}.}
+    \lineiii{\%u}{unsigned int}{Exactly equivalent to \code{printf("\%u")}.}
     \lineiii{\%ld}{long}{Exactly equivalent to \code{printf("\%ld")}.}
-    \lineiii{\%zd}{long}{Exactly equivalent to \code{printf("\%zd")}.}
+    \lineiii{\%lu}{unsigned long}{Exactly equivalent to \code{printf("\%lu")}.}
+    \lineiii{\%zd}{Py_ssize_t}{Exactly equivalent to \code{printf("\%zd")}.}
+    \lineiii{\%zu}{ssize_t}{Exactly equivalent to \code{printf("\%zu")}.}
     \lineiii{\%i}{int}{Exactly equivalent to \code{printf("\%i")}.}
     \lineiii{\%x}{int}{Exactly equivalent to \code{printf("\%x")}.}
     \lineiii{\%s}{char*}{A null-terminated C character array.}
@@ -632,6 +644,10 @@ parameter and are called with a non-string parameter.
 	guaranteed to start with the literal \code{0x} regardless of
 	what the platform's \code{printf} yields.}
   \end{tableiii}
+
+  An unrecognized format character causes all the rest of the format
+  string to be copied as-is to the result string, and any extra
+  arguments discarded.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_FromFormatV}{const char *format,
@@ -687,7 +703,7 @@ parameter and are called with a non-string parameter.
   \var{size})}.  It must not be deallocated.  If \var{string} is a
   Unicode object, this function computes the default encoding of
   \var{string} and operates on that.  If \var{string} is not a string
-  object at all, \cfunction{PyString_AsStringAndSize()} returns 
+  object at all, \cfunction{PyString_AsStringAndSize()} returns
   \code{-1} and raises \exception{TypeError}.
 \end{cfuncdesc}
 
@@ -1494,7 +1510,7 @@ They all return \NULL{} or \code{-1} if an exception occurs.
   Return 1 if \var{substr} matches \var{str}[\var{start}:\var{end}] at
   the given tail end (\var{direction} == -1 means to do a prefix
   match, \var{direction} == 1 a suffix match), 0 otherwise.
-  Return \code{-1} if an error occurred.                         
+  Return \code{-1} if an error occurred.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{Py_ssize_t}{PyUnicode_Find}{PyObject *str,
@@ -3013,7 +3029,7 @@ Macros for the convenience of modules implementing the DB API:
 
 
 \subsection{Set Objects \label{setObjects}}
-\sectionauthor{Raymond D. Hettinger}{python@rcn.com}                     
+\sectionauthor{Raymond D. Hettinger}{python@rcn.com}
 
 \obindex{set}
 \obindex{frozenset}
@@ -3022,8 +3038,8 @@ Macros for the convenience of modules implementing the DB API:
 This section details the public API for \class{set} and \class{frozenset}
 objects.  Any functionality not listed below is best accessed using the
 either the abstract object protocol (including
-\cfunction{PyObject_CallMethod()}, \cfunction{PyObject_RichCompareBool()}, 
-\cfunction{PyObject_Hash()}, \cfunction{PyObject_Repr()}, 
+\cfunction{PyObject_CallMethod()}, \cfunction{PyObject_RichCompareBool()},
+\cfunction{PyObject_Hash()}, \cfunction{PyObject_Repr()},
 \cfunction{PyObject_IsTrue()}, \cfunction{PyObject_Print()}, and
 \cfunction{PyObject_GetIter()})
 or the abstract number protocol (including
@@ -3040,7 +3056,7 @@ or the abstract number protocol (including
   block of memory for medium and large sized sets (much like list storage).
   None of the fields of this structure should be considered public and
   are subject to change.  All access should be done through the
-  documented API rather than by manipulating the values in the structure. 
+  documented API rather than by manipulating the values in the structure.
 
 \end{ctypedesc}
 
@@ -3059,7 +3075,7 @@ The following type check macros work on pointers to any Python object.
 Likewise, the constructor functions work with any iterable Python object.
 
 \begin{cfuncdesc}{int}{PyAnySet_Check}{PyObject *p}
-  Return true if \var{p} is a \class{set} object, a \class{frozenset} 
+  Return true if \var{p} is a \class{set} object, a \class{frozenset}
   object, or an instance of a subtype.
 \end{cfuncdesc}
 
@@ -3112,7 +3128,7 @@ The following functions and macros are available for instances of
   function does not automatically convert unhashable sets into temporary
   frozensets.  Raise a \exception{TypeError} if the \var{key} is unhashable.
   Raise \exception{PyExc_SystemError} if \var{anyset} is not a \class{set},
-  \class{frozenset}, or an instance of a subtype.                         
+  \class{frozenset}, or an instance of a subtype.
 \end{cfuncdesc}
 
 The following functions are available for instances of \class{set} or
@@ -3134,7 +3150,7 @@ its subtypes but not for instances of \class{frozenset} or its subtypes.
   unhashable.  Unlike the Python \method{discard()} method, this function
   does not automatically convert unhashable sets into temporary frozensets.
   Raise \exception{PyExc_SystemError} if \var{set} is an not an instance
-  of \class{set} or its subtype.                         
+  of \class{set} or its subtype.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PySet_Pop}{PyObject *set}
@@ -3142,7 +3158,7 @@ its subtypes but not for instances of \class{frozenset} or its subtypes.
   and removes the object from the \var{set}.  Return \NULL{} on
   failure.  Raise \exception{KeyError} if the set is empty.
   Raise a \exception{SystemError} if \var{set} is an not an instance
-  of \class{set} or its subtype.                        
+  of \class{set} or its subtype.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PySet_Clear}{PyObject *set}

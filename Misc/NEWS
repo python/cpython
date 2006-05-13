@@ -72,7 +72,7 @@ Core and builtins
 Extension Modules
 -----------------
 
-- On Win32, os.listdir now supports arbitrarily-long Unicode path names 
+- On Win32, os.listdir now supports arbitrarily-long Unicode path names
   (up to the system limit of 32K characters).
 
 - Use Win32 API to implement os.{access,chdir,chmod,mkdir,remove,rename,rmdir,utime}.
@@ -199,6 +199,10 @@ Build
 
 C API
 -----
+
+- ``PyString_FromFormat``, ``PyErr_Format``, and ``PyString_FromFormatV``
+  now accept formats "%u" for unsigned ints, "%lu" for unsigned longs,
+  and "%zu" for unsigned integers of type ``size_t``.
 
 Tests
 -----
