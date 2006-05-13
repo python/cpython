@@ -275,8 +275,8 @@ PyString_FromFormatV(const char *format, va_list vargs)
 				if (longflag)
 					sprintf(s, "%ld", va_arg(vargs, long));
 				else if (size_tflag)
-					sprintf(s, "%" PY_FORMAT_SIZE_T "u",
-					        va_arg(vargs, size_t));
+					sprintf(s, "%" PY_FORMAT_SIZE_T "d",
+					        va_arg(vargs, Py_ssize_t));
 				else
 					sprintf(s, "%d", va_arg(vargs, int));
 				s += strlen(s);
