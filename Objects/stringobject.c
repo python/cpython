@@ -176,14 +176,11 @@ PyString_FromFormatV(const char *format, va_list vargs)
 			while (*++f && *f != '%' && !isalpha(Py_CHARMASK(*f)))
 				;
 
-			/* skip the 'l' in %ld, since it doesn't change the
-			   width.  although only %d is supported (see
-			   "expand" section below), others can be easily
-			   added */
-			if (*f == 'l' && *(f+1) == 'd')
-				++f;
-			/* likewise for %zd */
-			if (*f == 'z' && *(f+1) == 'd')
+			/* skip the 'l' or 'z' in {%ld, %zd, %lu, %zu} since
+			 * they don't affect the amount of space we reserve.
+			 */
+			if ((*f == 'l' || *f == 'z') &&
+					(f[1] == 'd' || f[1] == 'u'))
 				++f;
 
 			switch (*f) {
@@ -193,7 +190,7 @@ PyString_FromFormatV(const char *format, va_list vargs)
 			case '%':
 				n++;
 				break;
-			case 'd': case 'i': case 'x':
+			case 'd': case 'u': case 'i': case 'x':
 				(void) va_arg(count, int);
 				/* 20 bytes is enough to hold a 64-bit
 				   integer.  Decimal takes the most space.
@@ -255,14 +252,14 @@ PyString_FromFormatV(const char *format, va_list vargs)
 			}
 			while (*f && *f != '%' && !isalpha(Py_CHARMASK(*f)))
 				f++;
-			/* handle the long flag, but only for %ld.  others
-			   can be added when necessary. */
-			if (*f == 'l' && *(f+1) == 'd') {
+			/* handle the long flag, but only for %ld and %lu.
+			   others can be added when necessary. */
+			if (*f == 'l' && (f[1] == 'd' || f[1] == 'u')) {
 				longflag = 1;
 				++f;
 			}
 			/* handle the size_t flag. */
-			if (*f == 'z' && *(f+1) == 'd') {
+			if (*f == 'z' && (f[1] == 'd' || f[1] == 'u')) {
 				size_tflag = 1;
 				++f;
 			}
@@ -279,6 +276,18 @@ PyString_FromFormatV(const char *format, va_list vargs)
 					        va_arg(vargs, Py_ssize_t));
 				else
 					sprintf(s, "%d", va_arg(vargs, int));
+				s += strlen(s);
+				break;
+			case 'u':
+				if (longflag)
+					sprintf(s, "%lu",
+						va_arg(vargs, unsigned long));
+				else if (size_tflag)
+					sprintf(s, "%" PY_FORMAT_SIZE_T "u",
+					        va_arg(vargs, size_t));
+				else
+					sprintf(s, "%u",
+						va_arg(vargs, unsigned int));
 				s += strlen(s);
 				break;
 			case 'i':
