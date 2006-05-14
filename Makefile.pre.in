@@ -856,7 +856,7 @@ libainstall:	all
 	# Substitution happens here, as the completely-expanded BINDIR
 	# is not available in configure
 	sed -e "s,@BINDIR@,$(BINDIR)," < $(srcdir)/Misc/python-config.in >python-config
-	$(INSTALL_SCRIPT) python-config $(BINDIR)/python-config
+	$(INSTALL_SCRIPT) python-config $(DESTDIR)$(BINDIR)/python-config
 	rm python-config
 	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
@@ -936,27 +936,20 @@ frameworkinstallstructure:	$(LDLIBRARY)
 
 # This installs Mac/Lib into the framework
 frameworkinstallmaclib:
-	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installmacsubtree \
-		$(RUNSHARED) BUILDPYTHON=./$(BUILDPYTHON) DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
-		srcdir=$(srcdir) builddir=. prefix=$(prefix) LIBDEST=$(LIBDEST) \
-		DESTDIR=$(DESTDIR)
+	cd Mac/OSX && $(MAKE) installmacsubtree DESTDIR="$(DESTDIR)"
 
 # This installs the IDE, the Launcher and other apps into /Applications
 frameworkinstallapps:
-	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installapps \
-		$(RUNSHARED) BUILDPYTHON=./$(BUILDPYTHON) DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
-		srcdir=$(srcdir) builddir=. DESTDIR=$(DESTDIR) prefix=$(prefix)
+	cd Mac/OSX && $(MAKE) installapps DESTDIR="$(DESTDIR)"
 
 # This install the unix python and pythonw tools in /usr/local/bin
 frameworkinstallunixtools:
-	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installunixtools \
-		DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
-		srcdir=$(srcdir) builddir=. DESTDIR=$(DESTDIR) prefix=$(prefix)
+	cd Mac/OSX && $(MAKE) installunixtools DESTDIR="$(DESTDIR)"
 
 # This installs the Demos and Tools into the applications directory.
 # It is not part of a normal frameworkinstall
 frameworkinstallextras:
-	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installextras \
+	$(MAKE) -f Mac/OSX/Makefile installextras \
 		$(RUNSHARED) BUILDPYTHON=./$(BUILDPYTHON) DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
 		srcdir=$(srcdir) builddir=. DESTDIR=$(DESTDIR)
 

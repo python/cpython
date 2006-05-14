@@ -105,6 +105,12 @@ AC_ARG_ENABLE(framework,
 		PYTHONFRAMEWORKPREFIX=$enableval
 		PYTHONFRAMEWORKINSTALLDIR=$PYTHONFRAMEWORKPREFIX/$PYTHONFRAMEWORKDIR
 		prefix=$PYTHONFRAMEWORKINSTALLDIR/Versions/$VERSION
+
+		# Add makefiles for Mac specific code to the list of output
+		# files:
+		AC_CONFIG_FILES(Mac/OSX/Makefile)
+		AC_CONFIG_FILES(Mac/OSX/PythonLauncher/Makefile)
+		AC_CONFIG_FILES(Mac/OSX/IDLE/Makefile)
 	esac
 	],[
 	PYTHONFRAMEWORK=
