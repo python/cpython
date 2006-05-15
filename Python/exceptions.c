@@ -223,12 +223,9 @@ BaseException__init__(PyObject *self, PyObject *args)
 
 
 static PyObject *
-BaseException__str__(PyObject *self, PyObject *args)
+BaseException__str__(PyObject *_self, PyObject *self)
 {
-    PyObject *out;
-
-    if (!PyArg_ParseTuple(args, "O:__str__", &self))
-        return NULL;
+    PyObject *out, *args;
 
     args = PyObject_GetAttrString(self, "args");
     if (!args)
@@ -376,7 +373,7 @@ BaseException_methods[] = {
     /* methods for the BaseException class */
     {"__getitem__", BaseException__getitem__, METH_VARARGS},
     {"__repr__", BaseException__repr__, METH_VARARGS},
-    {"__str__",     BaseException__str__, METH_VARARGS},
+    {"__str__",     BaseException__str__, METH_O},
 #ifdef Py_USING_UNICODE
     {"__unicode__",  BaseException__unicode__, METH_VARARGS},
 #endif /* Py_USING_UNICODE */
@@ -617,16 +614,12 @@ EnvironmentError__init__(PyObject *self, PyObject *args)
 
 
 static PyObject *
-EnvironmentError__str__(PyObject *self, PyObject *args)
+EnvironmentError__str__(PyObject *originalself, PyObject *self)
 {
-    PyObject *originalself = self;
     PyObject *filename;
     PyObject *serrno;
     PyObject *strerror;
     PyObject *rtnval = NULL;
-
-    if (!PyArg_ParseTuple(args, "O:__str__", &self))
-	return NULL;
 
     filename = PyObject_GetAttrString(self, "filename");
     serrno = PyObject_GetAttrString(self, "errno");
@@ -687,7 +680,7 @@ EnvironmentError__str__(PyObject *self, PyObject *args)
 	 * but there is no StandardError__str__() function; we happen to
 	 * know that's just a pass through to BaseException__str__().
 	 */
-	rtnval = BaseException__str__(originalself, args);
+	rtnval = BaseException__str__(originalself, self);
 
   finally:
     Py_XDECREF(filename);
@@ -700,7 +693,7 @@ EnvironmentError__str__(PyObject *self, PyObject *args)
 static
 PyMethodDef EnvironmentError_methods[] = {
     {"__init__", EnvironmentError__init__, METH_VARARGS},
-    {"__str__",  EnvironmentError__str__, METH_VARARGS},
+    {"__str__",  EnvironmentError__str__, METH_O},
     {NULL, NULL}
 };
 
@@ -746,22 +739,20 @@ WindowsError__init__(PyObject *self, PyObject *args)
 failed:
 	/* Could not set errno. */
 	Py_XDECREF(o_errcode);
-	Py_DECREF(self);
 	Py_DECREF(result);
 	return NULL;
 }
 
 static PyObject *
-WindowsError__str__(PyObject *self, PyObject *args)
+WindowsError__str__(PyObject *originalself, PyObject *self)
 {
-    PyObject *originalself = self;
     PyObject *filename;
     PyObject *serrno;
     PyObject *strerror;
+    PyObject *repr = NULL;
+    PyObject *fmt = NULL;
+    PyObject *tuple = NULL;
     PyObject *rtnval = NULL;
-
-    if (!PyArg_ParseTuple(args, "O:__str__", &self))
-	return NULL;
 
     filename = PyObject_GetAttrString(self, "filename");
     serrno = PyObject_GetAttrString(self, "winerror");
@@ -770,64 +761,46 @@ WindowsError__str__(PyObject *self, PyObject *args)
 	goto finally;
 
     if (filename != Py_None) {
-	PyObject *fmt = PyString_FromString("[Error %s] %s: %s");
-	PyObject *repr = PyObject_Repr(filename);
-	PyObject *tuple = PyTuple_New(3);
-
-	if (!fmt || !repr || !tuple) {
-	    Py_XDECREF(fmt);
-	    Py_XDECREF(repr);
-	    Py_XDECREF(tuple);
+	fmt = PyString_FromString("[Error %s] %s: %s");
+	repr = PyObject_Repr(filename);
+	if (!fmt || !repr)
 	    goto finally;
-	}
+	
 
-	PyTuple_SET_ITEM(tuple, 0, serrno);
-	PyTuple_SET_ITEM(tuple, 1, strerror);
-	PyTuple_SET_ITEM(tuple, 2, repr);
+	tuple = PyTuple_Pack(3, serrno, strerror, repr);
+	if (!tuple)
+	    goto finally;
 
 	rtnval = PyString_Format(fmt, tuple);
-
-	Py_DECREF(fmt);
-	Py_DECREF(tuple);
-	/* already freed because tuple owned only reference */
-	serrno = NULL;
-	strerror = NULL;
     }
     else if (PyObject_IsTrue(serrno) && PyObject_IsTrue(strerror)) {
-	PyObject *fmt = PyString_FromString("[Error %s] %s");
-	PyObject *tuple = PyTuple_New(2);
-
-	if (!fmt || !tuple) {
-	    Py_XDECREF(fmt);
-	    Py_XDECREF(tuple);
+	fmt = PyString_FromString("[Error %s] %s");
+	if (!fmt)
 	    goto finally;
-	}
 
-	PyTuple_SET_ITEM(tuple, 0, serrno);
-	PyTuple_SET_ITEM(tuple, 1, strerror);
+	tuple = PyTuple_Pack(2, serrno, strerror);
+	if (!tuple)
+	    goto finally;
 
 	rtnval = PyString_Format(fmt, tuple);
-
-	Py_DECREF(fmt);
-	Py_DECREF(tuple);
-	/* already freed because tuple owned only reference */
-	serrno = NULL;
-	strerror = NULL;
     }
     else
-	rtnval = EnvironmentError__str__(originalself, args);
+	rtnval = EnvironmentError__str__(originalself, self);
 
   finally:
     Py_XDECREF(filename);
     Py_XDECREF(serrno);
     Py_XDECREF(strerror);
+    Py_XDECREF(repr);
+    Py_XDECREF(fmt);
+    Py_XDECREF(tuple);
     return rtnval;
 }
 
 static
 PyMethodDef WindowsError_methods[] = {
     {"__init__", WindowsError__init__, METH_VARARGS},
-    {"__str__", WindowsError__str__, METH_VARARGS},
+    {"__str__", WindowsError__str__, METH_O},
     {NULL, NULL}
 };
 #endif /* MS_WINDOWS */
@@ -972,14 +945,11 @@ my_basename(char *name)
 
 
 static PyObject *
-SyntaxError__str__(PyObject *self, PyObject *args)
+SyntaxError__str__(PyObject *_self, PyObject *self)
 {
     PyObject *msg;
     PyObject *str;
     PyObject *filename, *lineno, *result;
-
-    if (!PyArg_ParseTuple(args, "O:__str__", &self))
-	return NULL;
 
     if (!(msg = PyObject_GetAttrString(self, "msg")))
 	return NULL;
@@ -1045,19 +1015,16 @@ SyntaxError__str__(PyObject *self, PyObject *args)
 
 static PyMethodDef SyntaxError_methods[] = {
     {"__init__", SyntaxError__init__, METH_VARARGS},
-    {"__str__",  SyntaxError__str__, METH_VARARGS},
+    {"__str__",  SyntaxError__str__, METH_O},
     {NULL, NULL}
 };
 
 
 static PyObject *
-KeyError__str__(PyObject *self, PyObject *args)
+KeyError__str__(PyObject *_self, PyObject *self)
 {
     PyObject *argsattr;
     PyObject *result;
-
-    if (!PyArg_ParseTuple(args, "O:__str__", &self))
-	return NULL;
 
     argsattr = PyObject_GetAttrString(self, "args");
     if (!argsattr)
@@ -1077,14 +1044,14 @@ KeyError__str__(PyObject *self, PyObject *args)
 	result = PyObject_Repr(key);
     }
     else
-	result = BaseException__str__(self, args);
+	result = BaseException__str__(_self, self);
 
     Py_DECREF(argsattr);
     return result;
 }
 
 static PyMethodDef KeyError_methods[] = {
-    {"__str__",  KeyError__str__, METH_VARARGS},
+    {"__str__",  KeyError__str__, METH_O},
     {NULL, NULL}
 };
 
