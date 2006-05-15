@@ -12,6 +12,8 @@ What's New in Python 2.4.4c1?
 Core and builtins
 -----------------
 
+- Patch #1488312, Fix memory alignment problem on SPARC in unicode
+
 Extension Modules
 -----------------
 
