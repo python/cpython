@@ -2313,7 +2313,7 @@ PyObject *_PyUnicode_DecodeUnicodeInternal(const char *s,
     end = s + size;
 
     while (s < end) {
-        *p = *(Py_UNICODE *)s;
+        memcpy(p, s, sizeof(Py_UNICODE));
         /* We have to sanity check the raw data, otherwise doom looms for
            some malformed UCS-4 data. */
         if (

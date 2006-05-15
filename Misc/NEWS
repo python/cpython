@@ -12,6 +12,8 @@ What's New in Python 2.5 alpha 3?
 Core and builtins
 -----------------
 
+- Patch #1488312, Fix memory alignment problem on SPARC in unicode
+
 - Bug #1487966: Fix SystemError with conditional expression in assignment
 
 - WindowsError now has two error code attributes: errno, which carries
