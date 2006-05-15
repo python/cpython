@@ -221,7 +221,8 @@ class ReadDetectFileobjTest(ReadTest):
 
     def setUp(self):
         name = tarname(self.comp)
-        self.tar = tarfile.open(name, mode=self.mode, fileobj=file(name))
+        self.tar = tarfile.open(name, mode=self.mode,
+                                fileobj=open(name, "rb"))
 
 class ReadAsteriskTest(ReadTest):
 
