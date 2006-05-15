@@ -295,6 +295,10 @@ class WriteSize0Test(BaseTest):
 
     def test_directory(self):
         path = os.path.join(self.tmpdir, "directory")
+        if os.path.exists(path):
+            # This shouldn't be necessary, but is <wink> if a previous
+            # run was killed in mid-stream.
+            shutil.rmtree(path)
         os.mkdir(path)
         tarinfo = self.dst.gettarinfo(path)
         self.assertEqual(tarinfo.size, 0)
