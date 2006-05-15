@@ -401,6 +401,9 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
         case Repr_kind:
             expr_name = "repr";
             break;
+        case IfExp_kind:
+            expr_name = "conditional expression";
+            break;
         default:
             PyErr_Format(PyExc_SystemError, 
                          "unexpected expression in assignment %d (line %d)", 

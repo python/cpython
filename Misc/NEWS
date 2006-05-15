@@ -12,6 +12,8 @@ What's New in Python 2.5 alpha 3?
 Core and builtins
 -----------------
 
+- Bug #1487966: Fix SystemError with conditional expression in assignment
+
 - WindowsError now has two error code attributes: errno, which carries
   the error values from errno.h, and winerror, which carries the error
   values from winerror.h. Previous versions put the winerror.h values
