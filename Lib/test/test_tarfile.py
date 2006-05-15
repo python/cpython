@@ -212,6 +212,17 @@ class ReadStreamTest(ReadTest):
 
         stream.close()
 
+class ReadDetectTest(ReadTest):
+
+    def setUp(self):
+        self.tar = tarfile.open(tarname(self.comp), self.mode)
+
+class ReadDetectFileobjTest(ReadTest):
+
+    def setUp(self):
+        name = tarname(self.comp)
+        self.tar = tarfile.open(name, mode=self.mode, fileobj=file(name))
+
 class ReadAsteriskTest(ReadTest):
 
     def setUp(self):
@@ -503,6 +514,10 @@ class WriteTestGzip(WriteTest):
     comp = "gz"
 class WriteStreamTestGzip(WriteStreamTest):
     comp = "gz"
+class ReadDetectTestGzip(ReadDetectTest):
+    comp = "gz"
+class ReadDetectFileobjTestGzip(ReadDetectFileobjTest):
+    comp = "gz"
 class ReadAsteriskTestGzip(ReadAsteriskTest):
     comp = "gz"
 class ReadStreamAsteriskTestGzip(ReadStreamAsteriskTest):
@@ -525,6 +540,10 @@ if bz2:
     class WriteTestBzip2(WriteTest):
         comp = "bz2"
     class WriteStreamTestBzip2(WriteStreamTestGzip):
+        comp = "bz2"
+    class ReadDetectTestBzip2(ReadDetectTest):
+        comp = "bz2"
+    class ReadDetectFileobjTestBzip2(ReadDetectFileobjTest):
         comp = "bz2"
     class ReadAsteriskTestBzip2(ReadAsteriskTest):
         comp = "bz2"
@@ -550,6 +569,8 @@ def test_main():
         FileModeTest,
         ReadTest,
         ReadStreamTest,
+        ReadDetectTest,
+        ReadDetectFileobjTest,
         ReadAsteriskTest,
         ReadStreamAsteriskTest,
         WriteTest,
@@ -567,6 +588,7 @@ def test_main():
         tests.extend([
             ReadTestGzip, ReadStreamTestGzip,
             WriteTestGzip, WriteStreamTestGzip,
+            ReadDetectTestGzip, ReadDetectFileobjTestGzip,
             ReadAsteriskTestGzip, ReadStreamAsteriskTestGzip
         ])
 
@@ -574,6 +596,7 @@ def test_main():
         tests.extend([
             ReadTestBzip2, ReadStreamTestBzip2,
             WriteTestBzip2, WriteStreamTestBzip2,
+            ReadDetectTestBzip2, ReadDetectFileobjTestBzip2,
             ReadAsteriskTestBzip2, ReadStreamAsteriskTestBzip2
         ])
     try:

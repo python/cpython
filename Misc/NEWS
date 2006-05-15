@@ -40,6 +40,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1488881: add support for external file objects in bz2 compressed
+  tarfiles.
+
 - Patch #721464: pdb.Pdb instances can now be given explicit stdin and
   stdout arguments, making it possible to redirect input and output
   for remote debugging.
