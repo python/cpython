@@ -556,6 +556,69 @@ class _StreamProxy(object):
         self.fileobj.close()
 # class StreamProxy
 
+class _BZ2Proxy(object):
+    """Small proxy class that enables external file object
+       support for "r:bz2" and "w:bz2" modes. This is actually
+       a workaround for a limitation in bz2 module's BZ2File
+       class which (unlike gzip.GzipFile) has no support for
+       a file object argument.
+    """
+
+    blocksize = 16 * 1024
+
+    def __init__(self, fileobj, mode):
+        self.fileobj = fileobj
+        self.mode = mode
+        self.init()
+
+    def init(self):
+        import bz2
+        self.pos = 0
+        if self.mode == "r":
+            self.bz2obj = bz2.BZ2Decompressor()
+            self.fileobj.seek(0)
+            self.buf = ""
+        else:
+            self.bz2obj = bz2.BZ2Compressor()
+
+    def read(self, size):
+        b = [self.buf]
+        x = len(self.buf)
+        while x < size:
+            try:
+                raw = self.fileobj.read(self.blocksize)
+                data = self.bz2obj.decompress(raw)
+                b.append(data)
+            except EOFError:
+                break
+            x += len(data)
+        self.buf = "".join(b)
+
+        buf = self.buf[:size]
+        self.buf = self.buf[size:]
+        self.pos += len(buf)
+        return buf
+
+    def seek(self, pos):
+        if pos < self.pos:
+            self.init()
+        self.read(pos - self.pos)
+
+    def tell(self):
+        return self.pos
+
+    def write(self, data):
+        self.pos += len(data)
+        raw = self.bz2obj.compress(data)
+        self.fileobj.write(raw)
+
+    def close(self):
+        if self.mode == "w":
+            raw = self.bz2obj.flush()
+            self.fileobj.write(raw)
+            self.fileobj.close()
+# class _BZ2Proxy
+
 #------------------------
 # Extraction file object
 #------------------------
@@ -1057,10 +1120,12 @@ class TarFile(object):
         tarname = pre + ext
 
         if fileobj is not None:
-            raise ValueError, "no support for external file objects"
+            fileobj = _BZ2Proxy(fileobj, mode)
+        else:
+            fileobj = bz2.BZ2File(name, mode, compresslevel=compresslevel)
 
         try:
-            t = cls.taropen(tarname, mode, bz2.BZ2File(name, mode, compresslevel=compresslevel))
+            t = cls.taropen(tarname, mode, fileobj)
         except IOError:
             raise ReadError, "not a bzip2 file"
         t._extfileobj = False
