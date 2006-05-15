@@ -1855,6 +1855,7 @@ posix_listdir(PyObject *self, PyObject *args)
 				free(wnamebuf);
 				return NULL;
 			}
+			free(wnamebuf);
 			return d;
 		}
 		/* Drop the argument parsing error as narrow strings
