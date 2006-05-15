@@ -4,10 +4,10 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.5 alpha 2?
+What's New in Python 2.5 alpha 3?
 =================================
 
-*Release date: 27-APR-2006*
+*Release date: XX-MAY-2006*
 
 Core and builtins
 -----------------
@@ -20,6 +20,65 @@ Core and builtins
 - Patch #1475845: Raise IndentationError for unexpected indent.
 
 - Patch #1479181: split open() and file() from being aliases for each other.
+
+Extension Modules
+-----------------
+
+- On Win32, os.listdir now supports arbitrarily-long Unicode path names
+  (up to the system limit of 32K characters).
+
+- Use Win32 API to implement os.{access,chdir,chmod,mkdir,remove,rename,rmdir,utime}.
+  As a result, these functions now raise WindowsError instead of OSError.
+
+- Calling Tk_Init twice is refused if the first call failed as that
+  may deadlock.
+
+Library
+-------
+
+- Patch #721464: pdb.Pdb instances can now be given explicit stdin and
+  stdout arguments, making it possible to redirect input and output
+  for remote debugging.
+
+- Patch #1484695: Update the tarfile module to version 0.8. This fixes
+  a couple of issues, notably handling of long file names using the
+  GNU LONGNAME extension.
+
+- Patch #1478292. ``doctest.register_optionflag(name)`` shouldn't create a
+  new flag when ``name`` is already the name of an option flag.
+
+- Bug #1385040: don't allow "def foo(a=1, b): pass" in the compiler
+  package.
+
+- Patch #1472854: make the rlcompleter.Completer class usable on non-
+  UNIX platforms.
+
+- Patch #1470846: fix urllib2 ProxyBasicAuthHandler.
+
+Build
+-----
+
+- Patch #1471883: Add --enable-universalsdk.
+
+C API
+-----
+
+Tests
+-----
+
+Tools
+-----
+
+Documentation
+-------------
+
+What's New in Python 2.5 alpha 2?
+=================================
+
+*Release date: 27-APR-2006*
+
+Core and builtins
+-----------------
 
 - Bug #1465834: 'bdist_wininst preinstall script support' was fixed
   by converting these apis from macros into exported functions again:
@@ -72,15 +131,6 @@ Core and builtins
 Extension Modules
 -----------------
 
-- On Win32, os.listdir now supports arbitrarily-long Unicode path names
-  (up to the system limit of 32K characters).
-
-- Use Win32 API to implement os.{access,chdir,chmod,mkdir,remove,rename,rmdir,utime}.
-  As a result, these functions now raise WindowsError instead of OSError.
-
-- Calling Tk_Init twice is refused if the first call failed as that
-  may deadlock.
-
 - Patch #1191065: Fix preprocessor problems on systems where recvfrom
   is a macro.
 
@@ -103,25 +153,6 @@ Extension Modules
 
 Library
 -------
-
-- Patch #721464: pdb.Pdb instances can now be given explicit stdin and
-  stdout arguments, making it possible to redirect input and output
-  for remote debugging.
-
-- Patch #1484695: Update the tarfile module to version 0.8. This fixes
-  a couple of issues, notably handling of long file names using the
-  GNU LONGNAME extension.
-
-- Patch #1478292. ``doctest.register_optionflag(name)`` shouldn't create a
-  new flag when ``name`` is already the name of an option flag.
-
-- Bug #1385040: don't allow "def foo(a=1, b): pass" in the compiler
-  package.
-
-- Patch #1472854: make the rlcompleter.Completer class usable on non-
-  UNIX platforms.
-
-- Patch #1470846: fix urllib2 ProxyBasicAuthHandler.
 
 - Patch #1475231: ``doctest`` has a new ``SKIP`` option, which causes
   a doctest to be skipped (the code is not run, and the expected output
@@ -179,8 +210,6 @@ Library
 Build
 -----
 
-- Patch #1471883: Add --enable-universalsdk.
-
 - The Makefile now has a reindent target, which runs reindent.py on
   the library.
 
@@ -196,9 +225,6 @@ Build
 - Patch #1429775: Link extension modules with the shared libpython.
 
 - Fixed a libffi build problem on MIPS systems.
-
-C API
------
 
 - ``PyString_FromFormat``, ``PyErr_Format``, and ``PyString_FromFormatV``
   now accept formats "%u" for unsigned ints, "%lu" for unsigned longs,
