@@ -150,7 +150,7 @@ class BundleBuilder(Defaults):
         bp = self.bundlepath
 
         # Create the app bundle in a temporary location and then
-        # rename the completed bundle. This way the Finder will 
+        # rename the completed bundle. This way the Finder will
         # never see an incomplete bundle (where it might pick up
         # and cache the wrong meta data)
         self.bundlepath = bp + '~'
