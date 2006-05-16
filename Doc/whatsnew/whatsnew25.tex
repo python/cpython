@@ -32,32 +32,6 @@ rationale, refer to the PEP for a particular new feature.
 
 
 %======================================================================
-\section{PEP 243: Uploading Modules to PyPI\label{pep-243}}
-
-PEP 243 describes an HTTP-based protocol for submitting software
-packages to a central archive.  The Python package index at
-\url{http://cheeseshop.python.org} now supports package uploads, and
-the new \command{upload} Distutils command will upload a package to the
-repository.
-
-Before a package can be uploaded, you must be able to build a
-distribution using the \command{sdist} Distutils command.  Once that
-works, you can run \code{python setup.py upload} to add your package
-to the PyPI archive.  Optionally you can GPG-sign the package by
-supplying the \longprogramopt{sign} and
-\longprogramopt{identity} options.
-
-\begin{seealso}
-
-\seepep{243}{Module Repository Upload Mechanism}{PEP written by
-Sean Reifschneider; implemented by Martin von~L\"owis
-and Richard Jones.  Note that the PEP doesn't exactly 
-describe what's implemented in PyPI.}
-
-\end{seealso}
-
-
-%======================================================================
 \section{PEP 308: Conditional Expressions\label{pep-308}}
 
 For a long time, people have been requesting a way to write
@@ -234,6 +208,20 @@ setup(name='PyPackage',
                     % VERSION),
      )
 \end{verbatim}
+
+Another new enhancement to the Python package index at
+\url{http://cheeseshop.python.org} is storing source and binary
+archives for a package.  The new \command{upload} Distutils command
+will upload a package to the repository.
+
+Before a package can be uploaded, you must be able to build a
+distribution using the \command{sdist} Distutils command.  Once that
+works, you can run \code{python setup.py upload} to add your package
+to the PyPI archive.  Optionally you can GPG-sign the package by
+supplying the \longprogramopt{sign} and
+\longprogramopt{identity} options.
+
+Package uploading was implemented by Martin von~L\"owis and Richard Jones. 
  
 \begin{seealso}
 
