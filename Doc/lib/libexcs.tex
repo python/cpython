@@ -80,7 +80,6 @@ text message explaining why the exception had been raised.  If more data needs
 to be attached to the exception, attach it through arbitrary attributes on the
 instance.  All arguments are also stored in \member{args} as a tuple, but it will
 eventually be deprecated and thus its use is discouraged.
-\versionchanged[Changed to inherit from \exception{BaseException}]{2.5}
 \versionadded{2.5}
 \end{excdesc}
 
@@ -88,6 +87,7 @@ eventually be deprecated and thus its use is discouraged.
 All built-in, non-system-exiting exceptions are derived
 from this class.  All user-defined exceptions should also be derived
 from this class.
+\versionchanged[Changed to inherit from \exception{BaseException}]{2.5}
 \end{excdesc}
 
 \begin{excdesc}{StandardError}
