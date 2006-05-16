@@ -123,6 +123,12 @@ prevents compressing any more data.  After calling
 action is to delete the object.  
 \end{methoddesc}
 
+\begin{methoddesc}[Compress]{copy}{}
+Returns a copy of the compression object.  This can be used to efficiently
+compress a set of data that share a common initial prefix.
+\versionadded{2.5}
+\end{methoddesc}
+
 Decompression objects support the following methods, and two attributes:
 
 \begin{memberdesc}{unused_data}
@@ -174,6 +180,13 @@ action is to delete the object.
 
 The optional parameter \var{length} sets the initial size of the
 output buffer.
+\end{methoddesc}
+
+\begin{methoddesc}[Decompress]{copy}{}
+Returns a copy of the decompression object.  This can be used to save the
+state of the decompressor midway through the data stream in order to speed up
+random seeks into the stream at a future point.
+\versionadded{2.5}
 \end{methoddesc}
 
 \begin{seealso}
