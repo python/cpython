@@ -2,7 +2,7 @@ import argvemulator
 from idlelib.PyShell import main
 import sys, os
 
-# Make sure sys.executable points to the python interpreter inside the 
+# Make sure sys.executable points to the python interpreter inside the
 # framework, instead of at the helper executable inside the application
 # bundle (the latter works, but doesn't allow access to the window server)
 sys.executable = os.path.join(sys.prefix, 'bin', 'python')
@@ -16,4 +16,4 @@ for idx, value in enumerate(sys.argv):
 
 argvemulator.ArgvCollector().mainloop()
 if __name__ == '__main__':
-        main()
+    main()
