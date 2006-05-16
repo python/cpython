@@ -60,6 +60,9 @@ Tools/Demos
 Build
 -----
 
+- Test for sys/statvfs.h before including it, as statvfs is present
+  on some OSX installation, but its header file is not.
+
 - Fix test_long failure on Tru64 with gcc by using -mieee gcc option.
 
 Documentation

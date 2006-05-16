@@ -6041,7 +6041,7 @@ posix_WSTOPSIG(PyObject *self, PyObject *args)
 #endif /* HAVE_SYS_WAIT_H */
 
 
-#if defined(HAVE_FSTATVFS)
+#if defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H)
 #ifdef _SCO_DS
 /* SCO OpenServer 5.0 and later requires _SVID3 before it reveals the
    needed definitions in sys/statvfs.h */
@@ -6108,10 +6108,10 @@ posix_fstatvfs(PyObject *self, PyObject *args)
 
         return _pystatvfs_fromstructstatvfs(st);
 }
-#endif /* HAVE_FSTATVFS */
+#endif /* HAVE_FSTATVFS && HAVE_SYS_STATVFS_H */
 
 
-#if defined(HAVE_STATVFS)
+#if defined(HAVE_STATVFS) && defined(HAVE_SYS_STATVFS_H)
 #include <sys/statvfs.h>
 
 PyDoc_STRVAR(posix_statvfs__doc__,
@@ -7593,10 +7593,10 @@ static PyMethodDef posix_methods[] = {
         {"WSTOPSIG",	posix_WSTOPSIG, METH_VARARGS, posix_WSTOPSIG__doc__},
 #endif /* WSTOPSIG */
 #endif /* HAVE_SYS_WAIT_H */
-#ifdef HAVE_FSTATVFS
+#if defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H)
 	{"fstatvfs",	posix_fstatvfs, METH_VARARGS, posix_fstatvfs__doc__},
 #endif
-#ifdef HAVE_STATVFS
+#if defined(HAVE_STATVFS) && defined(HAVE_SYS_STATVFS_H)
 	{"statvfs",	posix_statvfs, METH_VARARGS, posix_statvfs__doc__},
 #endif
 #ifdef HAVE_TMPFILE
