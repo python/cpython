@@ -45,6 +45,10 @@ Extension Modules
 Library
 -------
 
+- Patch #1180296: Two new functions were added to the locale module:
+  format_string() to get the effect of  "format % items" but locale-aware,
+  and currency() to format a monetary number with currency sign.
+
 - Patch #1486962: Several bugs in the turtle Tk demo module were fixed
   and several features added, such as speed and geometry control.
 
