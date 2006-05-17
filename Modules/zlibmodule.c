@@ -685,10 +685,12 @@ PyZlib_copy(compobject *self)
         goto error;
     }
 
+    Py_INCREF(self->unused_data);
+    Py_INCREF(self->unconsumed_tail);
+    Py_XDECREF(retval->unused_data);
+    Py_XDECREF(retval->unconsumed_tail);
     retval->unused_data = self->unused_data;
     retval->unconsumed_tail = self->unconsumed_tail;
-    Py_INCREF(retval->unused_data);
-    Py_INCREF(retval->unconsumed_tail);
 
     /* Mark it as being initialized */
     retval->is_initialised = 1;
@@ -698,7 +700,7 @@ PyZlib_copy(compobject *self)
 
 error:
     LEAVE_ZLIB
-    Py_XDECREF(retval);	
+    Py_XDECREF(retval);
     return NULL;
 }
 
@@ -734,10 +736,12 @@ PyZlib_uncopy(compobject *self)
         goto error;
     }
 
+    Py_INCREF(self->unused_data);
+    Py_INCREF(self->unconsumed_tail);
+    Py_XDECREF(retval->unused_data);
+    Py_XDECREF(retval->unconsumed_tail);
     retval->unused_data = self->unused_data;
     retval->unconsumed_tail = self->unconsumed_tail;
-    Py_INCREF(retval->unused_data);
-    Py_INCREF(retval->unconsumed_tail);
 
     /* Mark it as being initialized */
     retval->is_initialised = 1;
