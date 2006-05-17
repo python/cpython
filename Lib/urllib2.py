@@ -85,11 +85,8 @@ f = urllib2.urlopen('http://www.python.org/')
 # abstract factory for opener
 
 import base64
-import ftplib
-import httplib
-import inspect
 import hashlib
-import mimetypes
+import httplib
 import mimetools
 import os
 import posixpath
@@ -100,7 +97,6 @@ import sys
 import time
 import urlparse
 import bisect
-import cookielib
 
 try:
     from cStringIO import StringIO
@@ -168,6 +164,23 @@ class HTTPError(URLError, addinfourl):
 class GopherError(URLError):
     pass
 
+# copied from cookielib.py
+cut_port_re = re.compile(r":\d+$")
+def request_host(request):
+    """Return request-host, as defined by RFC 2965.
+
+    Variation from RFC: returned value is lowercased, for convenient
+    comparison.
+
+    """
+    url = request.get_full_url()
+    host = urlparse.urlparse(url)[1]
+    if host == "":
+        host = request.get_header("Host", "")
+
+    # remove port, if present
+    host = cut_port_re.sub("", host, 1)
+    return host.lower()
 
 class Request:
 
@@ -185,7 +198,7 @@ class Request:
             self.add_header(key, value)
         self.unredirected_hdrs = {}
         if origin_req_host is None:
-            origin_req_host = cookielib.request_host(self)
+            origin_req_host = request_host(self)
         self.origin_req_host = origin_req_host
         self.unverifiable = unverifiable
 
@@ -413,6 +426,9 @@ def build_opener(*handlers):
     If any of the handlers passed as arguments are subclasses of the
     default handlers, the default handlers will not be used.
     """
+    import types
+    def isclass(obj):
+        return isinstance(obj, types.ClassType) or hasattr(obj, "__bases__")
 
     opener = OpenerDirector()
     default_classes = [ProxyHandler, UnknownHandler, HTTPHandler,
@@ -423,7 +439,7 @@ def build_opener(*handlers):
     skip = []
     for klass in default_classes:
         for check in handlers:
-            if inspect.isclass(check):
+            if isclass(check):
                 if issubclass(check, klass):
                     skip.append(klass)
             elif isinstance(check, klass):
@@ -435,7 +451,7 @@ def build_opener(*handlers):
         opener.add_handler(klass())
 
     for h in handlers:
-        if inspect.isclass(h):
+        if isclass(h):
             h = h()
         opener.add_handler(h)
     return opener
@@ -1071,6 +1087,7 @@ if hasattr(httplib, 'HTTPS'):
 
 class HTTPCookieProcessor(BaseHandler):
     def __init__(self, cookiejar=None):
+        import cookielib
         if cookiejar is None:
             cookiejar = cookielib.CookieJar()
         self.cookiejar = cookiejar
@@ -1168,6 +1185,7 @@ class FileHandler(BaseHandler):
     # not entirely sure what the rules are here
     def open_local_file(self, req):
         import email.Utils
+        import mimetypes
         host = req.get_host()
         file = req.get_selector()
         localfile = url2pathname(file)
@@ -1188,6 +1206,8 @@ class FileHandler(BaseHandler):
 
 class FTPHandler(BaseHandler):
     def ftp_open(self, req):
+        import ftplib
+        import mimetypes
         host = req.get_host()
         if not host:
             raise IOError, ('ftp error', 'no host given')
