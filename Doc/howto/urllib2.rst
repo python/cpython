@@ -1,9 +1,9 @@
 ==============================================
  HOWTO Fetch Internet Resources Using urllib2
 ==============================================
-------------------------------------------
+----------------------------
   Fetching URLs With Python
-------------------------------------------
+----------------------------
 
 
 .. note::
@@ -30,19 +30,18 @@ Introduction
     This HOWTO is written by `Michael Foord
     <http://www.voidspace.org.uk/python/index.shtml>`_.
 
-**urllib2** is a Python_ module for fetching URLs (Uniform Resource
-Locators). It offers a very simple interface, in the form of the
-*urlopen* function. This is capable of fetching URLs using a variety
+**urllib2** is a `Python <http://www.python.org>`_ module for fetching URLs
+(Uniform Resource Locators). It offers a very simple interface, in the form of
+the *urlopen* function. This is capable of fetching URLs using a variety
 of different protocols. It also offers a slightly more complex
 interface for handling common situations - like basic authentication,
-cookies, proxies, and so on. These are provided by objects called
+cookies, proxies and so on. These are provided by objects called
 handlers and openers.
 
-While urllib2 supports fetching URLs for many "URL schemes"
-(identified by the string before the ":" in URL - e.g. "ftp" is the
-URL scheme of "ftp://python.org/") using their associated network
-protocols (e.g. FTP, HTTP), this tutorial focuses on the most common
-case, HTTP.
+urllib2 supports fetching URLs for many "URL schemes" (identified by the string
+before the ":" in URL - for example "ftp" is the URL scheme of
+"ftp://python.org/") using their associated network protocols (e.g. FTP, HTTP).
+This tutorial focuses on the most common case, HTTP.
 
 For straightforward situations *urlopen* is very easy to use. But as
 soon as you encounter errors or non-trivial cases when opening HTTP
@@ -51,7 +50,8 @@ Protocol. The most comprehensive and authoritative reference to HTTP
 is :RFC:`2616`. This is a technical document and not intended to be
 easy to read. This HOWTO aims to illustrate using *urllib2*, with
 enough detail about HTTP to help you through. It is not intended to
-replace the `urllib2 docs`_ , but is supplementary to them.
+replace the `urllib2 docs <http://docs.python.org/lib/module-urllib2.html>`_ ,
+but is supplementary to them.
 
 
 Fetching URLs
@@ -119,22 +119,41 @@ the ``data`` argument. The encoding is done using a function from the
     data = urllib.urlencode(values)
     req = urllib2.Request(url, data)
     response = urllib2.urlopen(req)
-    the_page = response.read()    
+    the_page = response.read()
 
 Note that other encodings are sometimes required (e.g. for file upload
-from HTML forms - see `HTML Specification, Form Submission`_ for more
-details).
+from HTML forms - see
+`HTML Specification, Form Submission <http://www.w3.org/TR/REC-html40/interact/forms.html#h-17.13>`_
+for more details).
 
 If you do not pass the ``data`` argument, urllib2 uses a **GET**
-request.  One way in which GET and POST requests differ is that POST
+request. One way in which GET and POST requests differ is that POST
 requests often have "side-effects": they change the state of the
 system in some way (for example by placing an order with the website
 for a hundredweight of tinned spam to be delivered to your door).
 Though the HTTP standard makes it clear that POSTs are intended to
 *always* cause side-effects, and GET requests *never* to cause
 side-effects, nothing prevents a GET request from having side-effects,
-nor a POST requests from having no side-effects.  Data can also be
-passed in an HTTP request by encoding it in the URL itself.
+nor a POST requests from having no side-effects. Data can also be
+passed in an HTTP GET request by encoding it in the URL itself.
+
+This is done as follows::
+
+    >>> import urllib2
+    >>> import urllib
+    >>> data = {}
+    >>> data['name'] = 'Somebody Here'
+    >>> data['location'] = 'Northampton'
+    >>> data['language'] = 'Python'
+    >>> url_values = urllib.urlencode(data)
+    >>> print url_values
+    name=Somebody+Here&language=Python&location=Northampton
+    >>> url = 'http://www.example.com/example.cgi'
+    >>> full_url = url + '?' + url_values
+    >>> data = urllib2.open(full_url)
+
+Notice that the full URL is created by adding a ``?`` to the URL, followed by
+the encoded values.
 
 Headers
 -------
@@ -355,7 +374,7 @@ Number 2
 
 ::
 
-    from urllib2 import Request, urlopen
+    from urllib2 import Request, urlopen, URLError
     req = Request(someurl)
     try:
         response = urlopen(req)
@@ -386,15 +405,17 @@ page fetched, particularly the headers sent by the server. It is
 currently an ``httplib.HTTPMessage`` instance.
 
 Typical headers include 'Content-length', 'Content-type', and so
-on. See the `Quick Reference to HTTP Headers`_ for a useful listing of
-HTTP headers with brief explanations of their meaning and use.
+on. See the
+`Quick Reference to HTTP Headers <http://www.cs.tut.fi/~jkorpela/http.html>`_
+for a useful listing of HTTP headers with brief explanations of their meaning
+and use.
 
 
 Openers and Handlers
 ====================
 
 When you fetch a URL you use an opener (an instance of the perhaps
-confusingly-named urllib2.OpenerDirector). Normally we have been using
+confusingly-named ``urllib2.OpenerDirector``). Normally we have been using
 the default opener - via ``urlopen`` - but you can create custom
 openers. Openers use handlers. All the "heavy lifting" is done by the
 handlers. Each handler knows how to open URLs for a particular URL
@@ -458,7 +479,7 @@ header sent by the server), then you can use a
 that case, it is convenient to use
 ``HTTPPasswordMgrWithDefaultRealm``. This allows you to specify a
 default username and password for a URL. This will be supplied in the
-absence of yoou providing an alternative combination for a specific
+absence of you providing an alternative combination for a specific
 realm. We indicate this by providing ``None`` as the realm argument to
 the ``add_password`` method.
 
@@ -557,19 +578,21 @@ Footnotes
 
 This document was reviewed and revised by John Lee.
 
-.. [#] For an introduction to the CGI protocol see `Writing Web Applications in Python`_. 
-.. [#] Like Google for example. The *proper* way to use google from a program is to use PyGoogle_ of course. See `Voidspace Google`_ for some examples of using the Google API.
-.. [#] Browser sniffing is a very bad practise for website design - building sites using web standards is much more sensible. Unfortunately a lot of sites still send different versions to different browsers.
-.. [#] The user agent for MSIE 6 is *'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322)'*
-.. [#] For details of more HTTP request headers, see `Quick Reference to HTTP Headers`_.
-
-.. [#] In my case I have to use a proxy to access the internet at work. If you attempt to fetch *localhost* URLs through this proxy it blocks them. IE is set to use the proxy, which urllib2 picks up on. In order to test scripts with a localhost server, I have to prevent urllib2 from using the proxy.  
-
-.. _Python: http://www.python.org
-.. _urllib2 docs: http://docs.python.org/lib/module-urllib2.html
-.. _HTML Specification, Form Submission: http://www.w3.org/TR/REC-html40/interact/forms.html#h-17.13
-.. _Quick Reference to HTTP Headers: http://www.cs.tut.fi/~jkorpela/http.html
-.. _PyGoogle: http://pygoogle.sourceforge.net
-.. _Voidspace Google: http://www.voidspace.org.uk/python/recipebook.shtml#google
-.. _Writing Web Applications in Python: http://www.pyzine.com/Issue008/Section_Articles/article_CGIOne.html
-.. _Basic Authentication Tutorial: http://www.voidspace.org.uk/python/articles/authentication.shtml
+.. [#] For an introduction to the CGI protocol see
+       `Writing Web Applications in Python <http://www.pyzine.com/Issue008/Section_Articles/article_CGIOne.html>`_. 
+.. [#] Like Google for example. The *proper* way to use google from a program
+       is to use `PyGoogle <http://pygoogle.sourceforge.net>_ of course. See
+       `Voidspace Google <http://www.voidspace.org.uk/python/recipebook.shtml#google>`_
+       for some examples of using the Google API.
+.. [#] Browser sniffing is a very bad practise for website design - building
+       sites using web standards is much more sensible. Unfortunately a lot of
+       sites still send different versions to different browsers.
+.. [#] The user agent for MSIE 6 is
+       *'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322)'*
+.. [#] For details of more HTTP request headers, see
+       `Quick Reference to HTTP Headers`_.
+.. [#] In my case I have to use a proxy to access the internet at work. If you
+       attempt to fetch *localhost* URLs through this proxy it blocks them. IE
+       is set to use the proxy, which urllib2 picks up on. In order to test
+       scripts with a localhost server, I have to prevent urllib2 from using
+       the proxy.
