@@ -2401,7 +2401,7 @@ extract_time(PyObject *t, long* sec, long* usec)
 }
 
 PyDoc_STRVAR(posix_utime__doc__,
-"utime(path, (atime, utime))\n\
+"utime(path, (atime, mtime))\n\
 utime(path, None)\n\n\
 Set the access and modified time of the file to the given values.  If the\n\
 second form is used, set the access and modified times to the current time.");
