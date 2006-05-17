@@ -45,6 +45,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1486962: Several bugs in the turtle Tk demo module were fixed
+  and several features added, such as speed and geometry control.
+
 - Patch #1488881: add support for external file objects in bz2 compressed
   tarfiles.
 
