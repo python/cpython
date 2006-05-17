@@ -713,7 +713,7 @@ void inittimezone(PyObject *m) {
 #ifdef __CYGWIN__
 	tzset();
 	PyModule_AddIntConstant(m, "timezone", _timezone);
-	PyModule_AddIntConstant(m, "altzone", _timezone);
+	PyModule_AddIntConstant(m, "altzone", _timezone-3600);
 	PyModule_AddIntConstant(m, "daylight", _daylight);
 	PyModule_AddObject(m, "tzname",
 			   Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
