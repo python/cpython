@@ -1,3 +1,4 @@
+prefix=@prefix@
 CC=@CC@
 LD=@CC@
 BASECFLAGS=@BASECFLAGS@
@@ -27,7 +28,8 @@ all: IDLE.app
 install: IDLE.app
 	test -d "$(DESTDIR)$(PYTHONAPPSDIR)" || mkdir -p "$(DESTDIR)$(PYTHONAPPSDIR)"
 	-test -d "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app" && rm -r "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
-	cp -r IDLE.app "$(DESTDIR)$(PYTHONAPPSDIR)"
+	cp -PR IDLE.app "$(DESTDIR)$(PYTHONAPPSDIR)"
+	touch "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
 
 clean:
 	rm -rf IDLE.app
@@ -40,9 +42,11 @@ IDLE.app:  \
 	$(RUNSHARED) $(BUILDPYTHON) $(BUNDLEBULDER) \
 		--builddir=. \
 		--name=IDLE \
+		--link-exec \
+		--plist=$(srcdir)/Info.plist \
 		--mainprogram=$(srcdir)/idlemain.py \
 		--iconfile=$(srcdir)/../Icons/IDLE.icns \
-		--bundle-id=org.python.IDLE \
 		--resource=$(srcdir)/../Icons/PythonSource.icns \
 		--resource=$(srcdir)/../Icons/PythonCompiled.icns \
+		--python=$(prefix)/Resources/Python.app/Contents/MacOS/Python \
 		build

@@ -74,9 +74,10 @@ install_versionedtools:
 	for fn in idle pydoc python-config ;\
 	do \
 		mv "$(DESTDIR)$(prefix)/bin/$${fn}" "$(DESTDIR)$(prefix)/bin/$${fn}$(VERSION)"  ;\
-		ln -sf "$${fn}$(VERSION)" "$${fn}" ;\
+		ln -sf "$${fn}$(VERSION)" "$(DESTDIR)$(prefix)/bin/$${fn}" ;\
 	done
-	rm -f "$(DESTDIR)$(prefix)/bin/smtpd.py"
+	mv "$(DESTDIR)$(prefix)/bin/smtpd.py" "$(DESTDIR)$(prefix)/bin/smtpd$(VERSION).py" 
+	ln -sf "smtpd$(VERSION).py" "$(DESTDIR)$(prefix)/bin/smtpd.py"
 
 
 pythonw: $(srcdir)/Tools/pythonw.c
@@ -142,7 +143,7 @@ install_BuildApplet:
 	$(BUILDPYTHON) $(srcdir)/../scripts/BuildApplet.py \
 		--destroot "$(DESTDIR)" \
 		--python $(INSTALLED_PYTHONAPP) \
-		--output "$(DESTDIR)$(PYTHONAPPSDIR)/BuildApplet.app" \
+		--output "$(DESTDIR)$(PYTHONAPPSDIR)/Build Applet.app" \
 		$(srcdir)/../scripts/BuildApplet.py
 
 MACLIBDEST=$(LIBDEST)/plat-mac
@@ -221,9 +222,9 @@ installextras:
 
 
 checkapplepython:
-	@if ! $(BUILDPYTHON) $(srcdir)/Mac/OSX/fixapplepython23.py -n; then \
+	@if ! $(BUILDPYTHON) $(srcdir)/fixapplepython23.py -n; then \
 		echo "* WARNING: Apple-installed Python 2.3 will have trouble building extensions from now on."; \
-		echo "* WARNING: Run $(srcdir)/Mac/OSX/fixapplepython23.py with \"sudo\" to fix this."; \
+		echo "* WARNING: Run $(srcdir)/fixapplepython23.py with \"sudo\" to fix this."; \
 	fi
 
 

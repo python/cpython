@@ -29,6 +29,7 @@ install: Python\ Launcher.app
 	test -d "$(DESTDIR)$(PYTHONAPPSDIR)" || mkdir -p "$(DESTDIR)$(PYTHONAPPSDIR)"
 	-test -d "$(DESTDIR)$(PYTHONAPPSDIR)/Python Launcher.app" && rm -r "$(DESTDIR)$(PYTHONAPPSDIR)/Python Launcher.app"
 	cp -r "Python Launcher.app" "$(DESTDIR)$(PYTHONAPPSDIR)"
+	touch "$(DESTDIR)$(PYTHONAPPSDIR)/Python Launcher.app"
 
 clean:
 	rm -f *.o "Python Launcher"
