@@ -970,20 +970,22 @@ The conversion types are:
   \lineiii{u}{Unsigned decimal.}{}
   \lineiii{x}{Unsigned hexadecimal (lowercase).}{(2)}
   \lineiii{X}{Unsigned hexadecimal (uppercase).}{(2)}
-  \lineiii{e}{Floating point exponential format (lowercase).}{}
-  \lineiii{E}{Floating point exponential format (uppercase).}{}
-  \lineiii{f}{Floating point decimal format.}{}
-  \lineiii{F}{Floating point decimal format.}{}
-  \lineiii{g}{Same as \character{e} if exponent is greater than -4 or
-              less than precision, \character{f} otherwise.}{}
-  \lineiii{G}{Same as \character{E} if exponent is greater than -4 or
-              less than precision, \character{F} otherwise.}{}
+  \lineiii{e}{Floating point exponential format (lowercase).}{(3)}
+  \lineiii{E}{Floating point exponential format (uppercase).}{(3)}
+  \lineiii{f}{Floating point decimal format.}{(3)}
+  \lineiii{F}{Floating point decimal format.}{(3)}
+  \lineiii{g}{Floating point format. Uses exponential format
+              if exponent is greater than -4 or less than precision,
+              decimal format otherwise.}{(4)}
+  \lineiii{G}{Floating point format. Uses exponential format
+              if exponent is greater than -4 or less than precision,
+              decimal format otherwise.}{(4)}
   \lineiii{c}{Single character (accepts integer or single character
               string).}{}
   \lineiii{r}{String (converts any python object using
-              \function{repr()}).}{(3)}
+              \function{repr()}).}{(5)}
   \lineiii{s}{String (converts any python object using
-              \function{str()}).}{(4)}
+              \function{str()}).}{(6)}
   \lineiii{\%}{No argument is converted, results in a \character{\%}
                character in the result.}{}
 \end{tableiii}
@@ -1003,10 +1005,27 @@ Notes:
     formatting of the number if the leading character of the result is
     not already a zero.
   \item[(3)]
-    The \code{\%r} conversion was added in Python 2.0.
+    The alternate form causes the result to always contain a decimal
+    point, even if no digits follow it.
+
+    The precision determines the number of digits after the decimal
+    point and defaults to 6.
   \item[(4)]
+    The alternate form causes the result to always contain a decimal
+    point, and trailing zeroes are not removed as they would
+    otherwise be.
+
+    The precision determines the number of significant digits before
+    and after the decimal point and defaults to 6.
+  \item[(5)]
+    The \code{\%r} conversion was added in Python 2.0.
+
+    The precision determines the maximal number of characters used.
+  \item[(6)]
     If the object or format provided is a \class{unicode} string,
     the resulting string will also be \class{unicode}.
+
+    The precision determines the maximal number of characters used.
 \end{description}
 
 % XXX Examples?
