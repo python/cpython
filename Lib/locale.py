@@ -132,7 +132,7 @@ def _group(s, monetary=False):
 def format(percent, value, grouping=False, monetary=False, *additional):
     """Returns the locale-aware substitution of a %? specifier
     (percent).
-    
+
     additional is for format strings which contain one or more
     '*' modifiers."""
     # this is only for one-percent-specifier strings and this should be checked

@@ -754,11 +754,11 @@ def setup(**geometry):
 
     Setting either width or height to None before drawing will force
       use of default geometry as in older versions of turtle.py
-    
+
     startx: starting position in pixels from the left edge of the screen.
       Default is to center window. Setting startx to None is the default
       and centers window horizontally on screen.
-    
+
     starty: starting position in pixels from the top edge of the screen.
       Default is to center window. Setting starty to None is the default
       and centers window vertically on screen.
@@ -776,7 +776,7 @@ def setup(**geometry):
 
     forces use of default geometry as in older versions of turtle.py
     """
-    
+
     global _width, _height, _startx, _starty
 
     width = geometry.get('width',_width)
@@ -790,7 +790,7 @@ def setup(**geometry):
         _height = height
     else:
         raise ValueError, "height can not be less than 0"
-        
+
     startx = geometry.get('startx', _startx)
     if startx >= 0 or startx == None:
         _startx = _startx
@@ -813,7 +813,7 @@ def setup(**geometry):
         # center window on screen
         if _startx is None:
             _startx = (_root.winfo_screenwidth() - _width) / 2
- 
+
         if _starty is None:
             _starty = (_root.winfo_screenheight() - _height) / 2
 
@@ -827,7 +827,7 @@ def title(title):
     Example:
     >>> title("My Window")
     """
-    
+
     global _title
     _title = title
 
@@ -904,10 +904,10 @@ def demo2():
             pendown = True
         circle(r,10)
     sleep(2)
-   
-    reset() 
+
+    reset()
     left(90)
-    
+
     # draw a series of triangles
     l = 10
     color("green")
@@ -936,7 +936,7 @@ def demo2():
     forward(90)
     color("red")
     speed('fastest')
-    down(); 
+    down();
 
     # create a second turtle and make the original pursue and catch it
     turtle=Turtle()
@@ -963,7 +963,7 @@ def demo2():
         forward(4)
     write("CAUGHT! ", move=True)
 
-    
+
 
 if __name__ == '__main__':
     from time import sleep
