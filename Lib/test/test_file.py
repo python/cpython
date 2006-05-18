@@ -136,7 +136,7 @@ f.close()
 bad_mode = "qwerty"
 try:
     open(TESTFN, bad_mode)
-except IOError, msg:
+except ValueError, msg:
     if msg[0] != 0:
         s = str(msg)
         if s.find(TESTFN) != -1 or s.find(bad_mode) == -1:

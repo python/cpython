@@ -12,6 +12,10 @@ What's New in Python 2.5 alpha 3?
 Core and builtins
 -----------------
 
+- Bug #1462152: file() now checks more thoroughly for invalid mode
+  strings and removes a possible "U" before passing the mode to the
+  C library function.
+
 - Patch #1488312, Fix memory alignment problem on SPARC in unicode
 
 - Bug #1487966: Fix SystemError with conditional expression in assignment
