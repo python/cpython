@@ -165,7 +165,7 @@ class GopherError(URLError):
     pass
 
 # copied from cookielib.py
-cut_port_re = re.compile(r":\d+$")
+_cut_port_re = re.compile(r":\d+$")
 def request_host(request):
     """Return request-host, as defined by RFC 2965.
 
@@ -179,7 +179,7 @@ def request_host(request):
         host = request.get_header("Host", "")
 
     # remove port, if present
-    host = cut_port_re.sub("", host, 1)
+    host = _cut_port_re.sub("", host, 1)
     return host.lower()
 
 class Request:

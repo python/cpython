@@ -36,13 +36,13 @@ except ImportError:
 import httplib  # only for the default HTTP port
 from calendar import timegm
 
-debug = 0   # set to true to enable debugging via the logging module
+debug = False   # set to True to enable debugging via the logging module
 logger = None
 
 def _debug(*args):
-    global logger
     if not debug:
         return
+    global logger
     if not logger:
         import logging
         logger = logging.getLogger("cookielib")
