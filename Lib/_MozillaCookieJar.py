@@ -1,6 +1,6 @@
 """Mozilla / Netscape cookie loading / saving."""
 
-import re, time, logging
+import re, time
 
 from cookielib import (_warn_unhandled_exception, FileCookieJar, LoadError,
                        Cookie, MISSING_FILENAME_TEXT)
