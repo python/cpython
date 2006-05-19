@@ -1750,6 +1750,11 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
 	if (TYPE(ch) == argument) {
 	    expr_ty e;
 	    if (NCH(ch) == 1) {
+		if (nkeywords) {
+		    ast_error(CHILD(ch, 0),
+			      "non-keyword arg after keyword arg");
+		    return NULL;
+		}
 		e = ast_for_expr(c, CHILD(ch, 0));
                 if (!e)
                     return NULL;
