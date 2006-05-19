@@ -309,6 +309,9 @@ class SyntaxTestCase(unittest.TestCase):
                           "unindent does not match .* level",
                           subclass=IndentationError)
 
+    def test_kwargs_last(self):
+        self._check_error("int(base=10, '2')", "non-keyword arg")
+
 def test_main():
     test_support.run_unittest(SyntaxTestCase)
     from test import test_syntax
