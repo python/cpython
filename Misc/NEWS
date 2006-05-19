@@ -81,6 +81,8 @@ Library
 Build
 -----
 
+- Bug/Patch #1481770: Use .so extension for shared libraries on HP-UX for ia64.
+
 - Patch #1471883: Add --enable-universalsdk.
 
 C API

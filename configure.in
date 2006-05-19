@@ -611,7 +611,14 @@ if test $enable_shared = "yes"; then
 	  INSTSONAME="$LDLIBRARY".$SOVERSION
 	  ;;
     hp*|HP*)
-	  LDLIBRARY='libpython$(VERSION).sl'
+	  case `uname -m` in
+		ia64)
+			LDLIBRARY='libpython$(VERSION).so'
+			;;
+		*)
+			LDLIBRARY='libpython$(VERSION).sl'
+			;;
+	  esac
 	  BLDLIBRARY='-Wl,+b,$(LIBDIR) -L. -lpython$(VERSION)'
 	  RUNSHARED=SHLIB_PATH=`pwd`:${SHLIB_PATH}
 	  ;;
@@ -1359,7 +1366,12 @@ AC_MSG_CHECKING(SO)
 if test -z "$SO"
 then
 	case $ac_sys_system in
-	hp*|HP*)   SO=.sl;;
+	hp*|HP*)
+		case `uname -m` in
+			ia64) SO=.so;;
+	  		*)    SO=.sl;;
+		esac
+		;;
 	CYGWIN*)   SO=.dll;;
 	*)	   SO=.so;;
 	esac
@@ -1376,6 +1388,7 @@ else
 	sleep 10
 fi
 AC_MSG_RESULT($SO)
+AC_DEFINE_UNQUOTED(SHLIB_EXT, "$SO", [Define this to be extension of shared libraries (including the dot!).])
 # LDSHARED is the ld *command* used to create shared library
 # -- "cc -G" on SunOS 5.x, "ld -shared" on IRIX 5
 # (Shared libraries in this instance are shared modules to be loaded into
