@@ -1753,7 +1753,7 @@ class TarFile(object):
 
             try:
                 tarinfo = TarInfo.frombuf(buf)
- 
+
                 # We shouldn't rely on this checksum, because some tar programs
                 # calculate it differently and it is merely validating the
                 # header block. We could just as well skip this part, which would
