@@ -14,8 +14,8 @@
 #endif
 
 const struct filedescr _PyImport_DynLoadFiletab[] = {
-	{".sl", "rb", C_EXTENSION},
-	{"module.sl", "rb", C_EXTENSION},
+	{SHLIB_EXT, "rb", C_EXTENSION},
+	{"module"SHLIB_EXT, "rb", C_EXTENSION},
 	{0, 0}
 };
 
