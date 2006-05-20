@@ -453,7 +453,7 @@ Basic Authentication
 To illustrate creating and installing a handler we will use the
 ``HTTPBasicAuthHandler``. For a more detailed discussion of this
 subject - including an explanation of how Basic Authentication works -
-see the `Basic Authentication Tutorial`_.
+see the `Basic Authentication Tutorial  <http://www.voidspace.org.uk/python/articles/authentication.shtml>`_.
 
 When authentication is required, the server sends a header (as well as
 the 401 error code) requesting authentication.  This specifies the
