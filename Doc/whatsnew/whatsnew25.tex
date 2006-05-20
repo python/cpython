@@ -405,7 +405,7 @@ implementation by Thomas Lee.}
 
 Python 2.5 adds a simple way to pass values \emph{into} a generator.
 As introduced in Python 2.3, generators only produce output; once a
-generator's code is invoked to create an iterator, there's no way to
+generator's code was invoked to create an iterator, there was no way to
 pass any new information into the function when its execution is
 resumed.  Sometimes the ability to pass in some information would be
 useful.  Hackish solutions to this include making the generator's code
@@ -525,8 +525,8 @@ one-way producers of information into both producers and consumers.
 
 Generators also become \emph{coroutines}, a more generalized form of
 subroutines.  Subroutines are entered at one point and exited at
-another point (the top of the function, and a \keyword{return
-statement}), but coroutines can be entered, exited, and resumed at
+another point (the top of the function, and a \keyword{return}
+statement), but coroutines can be entered, exited, and resumed at
 many different points (the \keyword{yield} statements).  We'll have to
 figure out patterns for using coroutines effectively in Python.
 
