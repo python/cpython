@@ -352,14 +352,19 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
         Py_UNICODE_ISDIGIT(ch) || \
         Py_UNICODE_ISNUMERIC(ch))
 
+/* memcpy has a considerable setup overhead on many platforms; use a
+   loop for short strings (the "16" below is pretty arbitary) */
 #define Py_UNICODE_COPY(target, source, length) do\
-    {int i; Py_UNICODE *t = (target); const Py_UNICODE *s = (source);\
-        for (i = 0; i < (length); i++) t[i] = s[i];\
+    {Py_ssize_t i_; Py_UNICODE *t_ = (target); const Py_UNICODE *s_ = (source);\
+      if (length > 16)\
+        memcpy(t_, s_, (length)*sizeof(Py_UNICODE));\
+      else\
+        for (i_ = 0; i_ < (length); i_++) t_[i_] = s_[i_];\
     } while (0)
 
 #define Py_UNICODE_FILL(target, value, length) do\
-    {int i; Py_UNICODE *t = (target); Py_UNICODE v = (value);\
-        for (i = 0; i < (length); i++) t[i] = v;\
+    {Py_ssize_t i_; Py_UNICODE *t_ = (target); Py_UNICODE v_ = (value);\
+        for (i_ = 0; i_ < (length); i_++) t_[i_] = v_;\
     } while (0)
 
 #define Py_UNICODE_MATCH(string, offset, substring)\
