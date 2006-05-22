@@ -121,12 +121,12 @@ static void SHAcopy(SHAobject *src, SHAobject *dest)
 
 /* Various logical functions */
 #define ROR64(x, y) \
-    ( ((((x) & 0xFFFFFFFFFFFFFFFFULL)>>((unsigned PY_LONG_LONG)(y) & 63)) | \
-      ((x)<<((unsigned PY_LONG_LONG)(64-((y) & 63))))) & 0xFFFFFFFFFFFFFFFFULL)
+    ( ((((x) & Py_ULL(0xFFFFFFFFFFFFFFFF))>>((unsigned PY_LONG_LONG)(y) & 63)) | \
+      ((x)<<((unsigned PY_LONG_LONG)(64-((y) & 63))))) & Py_ULL(0xFFFFFFFFFFFFFFFF))
 #define Ch(x,y,z)       (z ^ (x & (y ^ z)))
 #define Maj(x,y,z)      (((x | y) & z) | (x & y)) 
 #define S(x, n)         ROR64((x),(n))
-#define R(x, n)         (((x) & 0xFFFFFFFFFFFFFFFFULL) >> ((unsigned PY_LONG_LONG)n))
+#define R(x, n)         (((x) & Py_ULL(0xFFFFFFFFFFFFFFFF)) >> ((unsigned PY_LONG_LONG)n))
 #define Sigma0(x)       (S(x, 28) ^ S(x, 34) ^ S(x, 39))
 #define Sigma1(x)       (S(x, 14) ^ S(x, 18) ^ S(x, 41))
 #define Gamma0(x)       (S(x, 1) ^ S(x, 8) ^ R(x, 7))
@@ -156,86 +156,86 @@ sha512_transform(SHAobject *sha_info)
      d += t0;                                        \
      h  = t0 + t1;
 
-    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],0,0x428a2f98d728ae22ULL);
-    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],1,0x7137449123ef65cdULL);
-    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],2,0xb5c0fbcfec4d3b2fULL);
-    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],3,0xe9b5dba58189dbbcULL);
-    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],4,0x3956c25bf348b538ULL);
-    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],5,0x59f111f1b605d019ULL);
-    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],6,0x923f82a4af194f9bULL);
-    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],7,0xab1c5ed5da6d8118ULL);
-    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],8,0xd807aa98a3030242ULL);
-    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],9,0x12835b0145706fbeULL);
-    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],10,0x243185be4ee4b28cULL);
-    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],11,0x550c7dc3d5ffb4e2ULL);
-    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],12,0x72be5d74f27b896fULL);
-    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],13,0x80deb1fe3b1696b1ULL);
-    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],14,0x9bdc06a725c71235ULL);
-    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],15,0xc19bf174cf692694ULL);
-    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],16,0xe49b69c19ef14ad2ULL);
-    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],17,0xefbe4786384f25e3ULL);
-    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],18,0x0fc19dc68b8cd5b5ULL);
-    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],19,0x240ca1cc77ac9c65ULL);
-    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],20,0x2de92c6f592b0275ULL);
-    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],21,0x4a7484aa6ea6e483ULL);
-    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],22,0x5cb0a9dcbd41fbd4ULL);
-    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],23,0x76f988da831153b5ULL);
-    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],24,0x983e5152ee66dfabULL);
-    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],25,0xa831c66d2db43210ULL);
-    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],26,0xb00327c898fb213fULL);
-    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],27,0xbf597fc7beef0ee4ULL);
-    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],28,0xc6e00bf33da88fc2ULL);
-    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],29,0xd5a79147930aa725ULL);
-    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],30,0x06ca6351e003826fULL);
-    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],31,0x142929670a0e6e70ULL);
-    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],32,0x27b70a8546d22ffcULL);
-    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],33,0x2e1b21385c26c926ULL);
-    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],34,0x4d2c6dfc5ac42aedULL);
-    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],35,0x53380d139d95b3dfULL);
-    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],36,0x650a73548baf63deULL);
-    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],37,0x766a0abb3c77b2a8ULL);
-    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],38,0x81c2c92e47edaee6ULL);
-    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],39,0x92722c851482353bULL);
-    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],40,0xa2bfe8a14cf10364ULL);
-    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],41,0xa81a664bbc423001ULL);
-    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],42,0xc24b8b70d0f89791ULL);
-    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],43,0xc76c51a30654be30ULL);
-    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],44,0xd192e819d6ef5218ULL);
-    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],45,0xd69906245565a910ULL);
-    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],46,0xf40e35855771202aULL);
-    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],47,0x106aa07032bbd1b8ULL);
-    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],48,0x19a4c116b8d2d0c8ULL);
-    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],49,0x1e376c085141ab53ULL);
-    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],50,0x2748774cdf8eeb99ULL);
-    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],51,0x34b0bcb5e19b48a8ULL);
-    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],52,0x391c0cb3c5c95a63ULL);
-    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],53,0x4ed8aa4ae3418acbULL);
-    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],54,0x5b9cca4f7763e373ULL);
-    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],55,0x682e6ff3d6b2b8a3ULL);
-    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],56,0x748f82ee5defb2fcULL);
-    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],57,0x78a5636f43172f60ULL);
-    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],58,0x84c87814a1f0ab72ULL);
-    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],59,0x8cc702081a6439ecULL);
-    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],60,0x90befffa23631e28ULL);
-    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],61,0xa4506cebde82bde9ULL);
-    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],62,0xbef9a3f7b2c67915ULL);
-    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],63,0xc67178f2e372532bULL);
-    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],64,0xca273eceea26619cULL);
-    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],65,0xd186b8c721c0c207ULL);
-    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],66,0xeada7dd6cde0eb1eULL);
-    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],67,0xf57d4f7fee6ed178ULL);
-    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],68,0x06f067aa72176fbaULL);
-    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],69,0x0a637dc5a2c898a6ULL);
-    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],70,0x113f9804bef90daeULL);
-    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],71,0x1b710b35131c471bULL);
-    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],72,0x28db77f523047d84ULL);
-    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],73,0x32caab7b40c72493ULL);
-    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],74,0x3c9ebe0a15c9bebcULL);
-    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],75,0x431d67c49c100d4cULL);
-    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],76,0x4cc5d4becb3e42b6ULL);
-    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],77,0x597f299cfc657e2aULL);
-    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],78,0x5fcb6fab3ad6faecULL);
-    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],79,0x6c44198c4a475817ULL);
+    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],0,Py_ULL(0x428a2f98d728ae22));
+    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],1,Py_ULL(0x7137449123ef65cd));
+    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],2,Py_ULL(0xb5c0fbcfec4d3b2f));
+    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],3,Py_ULL(0xe9b5dba58189dbbc));
+    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],4,Py_ULL(0x3956c25bf348b538));
+    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],5,Py_ULL(0x59f111f1b605d019));
+    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],6,Py_ULL(0x923f82a4af194f9b));
+    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],7,Py_ULL(0xab1c5ed5da6d8118));
+    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],8,Py_ULL(0xd807aa98a3030242));
+    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],9,Py_ULL(0x12835b0145706fbe));
+    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],10,Py_ULL(0x243185be4ee4b28c));
+    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],11,Py_ULL(0x550c7dc3d5ffb4e2));
+    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],12,Py_ULL(0x72be5d74f27b896f));
+    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],13,Py_ULL(0x80deb1fe3b1696b1));
+    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],14,Py_ULL(0x9bdc06a725c71235));
+    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],15,Py_ULL(0xc19bf174cf692694));
+    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],16,Py_ULL(0xe49b69c19ef14ad2));
+    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],17,Py_ULL(0xefbe4786384f25e3));
+    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],18,Py_ULL(0x0fc19dc68b8cd5b5));
+    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],19,Py_ULL(0x240ca1cc77ac9c65));
+    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],20,Py_ULL(0x2de92c6f592b0275));
+    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],21,Py_ULL(0x4a7484aa6ea6e483));
+    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],22,Py_ULL(0x5cb0a9dcbd41fbd4));
+    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],23,Py_ULL(0x76f988da831153b5));
+    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],24,Py_ULL(0x983e5152ee66dfab));
+    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],25,Py_ULL(0xa831c66d2db43210));
+    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],26,Py_ULL(0xb00327c898fb213f));
+    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],27,Py_ULL(0xbf597fc7beef0ee4));
+    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],28,Py_ULL(0xc6e00bf33da88fc2));
+    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],29,Py_ULL(0xd5a79147930aa725));
+    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],30,Py_ULL(0x06ca6351e003826f));
+    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],31,Py_ULL(0x142929670a0e6e70));
+    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],32,Py_ULL(0x27b70a8546d22ffc));
+    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],33,Py_ULL(0x2e1b21385c26c926));
+    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],34,Py_ULL(0x4d2c6dfc5ac42aed));
+    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],35,Py_ULL(0x53380d139d95b3df));
+    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],36,Py_ULL(0x650a73548baf63de));
+    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],37,Py_ULL(0x766a0abb3c77b2a8));
+    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],38,Py_ULL(0x81c2c92e47edaee6));
+    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],39,Py_ULL(0x92722c851482353b));
+    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],40,Py_ULL(0xa2bfe8a14cf10364));
+    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],41,Py_ULL(0xa81a664bbc423001));
+    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],42,Py_ULL(0xc24b8b70d0f89791));
+    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],43,Py_ULL(0xc76c51a30654be30));
+    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],44,Py_ULL(0xd192e819d6ef5218));
+    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],45,Py_ULL(0xd69906245565a910));
+    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],46,Py_ULL(0xf40e35855771202a));
+    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],47,Py_ULL(0x106aa07032bbd1b8));
+    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],48,Py_ULL(0x19a4c116b8d2d0c8));
+    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],49,Py_ULL(0x1e376c085141ab53));
+    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],50,Py_ULL(0x2748774cdf8eeb99));
+    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],51,Py_ULL(0x34b0bcb5e19b48a8));
+    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],52,Py_ULL(0x391c0cb3c5c95a63));
+    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],53,Py_ULL(0x4ed8aa4ae3418acb));
+    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],54,Py_ULL(0x5b9cca4f7763e373));
+    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],55,Py_ULL(0x682e6ff3d6b2b8a3));
+    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],56,Py_ULL(0x748f82ee5defb2fc));
+    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],57,Py_ULL(0x78a5636f43172f60));
+    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],58,Py_ULL(0x84c87814a1f0ab72));
+    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],59,Py_ULL(0x8cc702081a6439ec));
+    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],60,Py_ULL(0x90befffa23631e28));
+    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],61,Py_ULL(0xa4506cebde82bde9));
+    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],62,Py_ULL(0xbef9a3f7b2c67915));
+    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],63,Py_ULL(0xc67178f2e372532b));
+    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],64,Py_ULL(0xca273eceea26619c));
+    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],65,Py_ULL(0xd186b8c721c0c207));
+    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],66,Py_ULL(0xeada7dd6cde0eb1e));
+    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],67,Py_ULL(0xf57d4f7fee6ed178));
+    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],68,Py_ULL(0x06f067aa72176fba));
+    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],69,Py_ULL(0x0a637dc5a2c898a6));
+    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],70,Py_ULL(0x113f9804bef90dae));
+    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],71,Py_ULL(0x1b710b35131c471b));
+    RND(S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],72,Py_ULL(0x28db77f523047d84));
+    RND(S[7],S[0],S[1],S[2],S[3],S[4],S[5],S[6],73,Py_ULL(0x32caab7b40c72493));
+    RND(S[6],S[7],S[0],S[1],S[2],S[3],S[4],S[5],74,Py_ULL(0x3c9ebe0a15c9bebc));
+    RND(S[5],S[6],S[7],S[0],S[1],S[2],S[3],S[4],75,Py_ULL(0x431d67c49c100d4c));
+    RND(S[4],S[5],S[6],S[7],S[0],S[1],S[2],S[3],76,Py_ULL(0x4cc5d4becb3e42b6));
+    RND(S[3],S[4],S[5],S[6],S[7],S[0],S[1],S[2],77,Py_ULL(0x597f299cfc657e2a));
+    RND(S[2],S[3],S[4],S[5],S[6],S[7],S[0],S[1],78,Py_ULL(0x5fcb6fab3ad6faec));
+    RND(S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[0],79,Py_ULL(0x6c44198c4a475817));
 
 #undef RND     
     
@@ -254,14 +254,14 @@ static void
 sha512_init(SHAobject *sha_info)
 {
     TestEndianness(sha_info->Endianness)
-    sha_info->digest[0] = 0x6a09e667f3bcc908ULL;
-    sha_info->digest[1] = 0xbb67ae8584caa73bULL;
-    sha_info->digest[2] = 0x3c6ef372fe94f82bULL;
-    sha_info->digest[3] = 0xa54ff53a5f1d36f1ULL;
-    sha_info->digest[4] = 0x510e527fade682d1ULL;
-    sha_info->digest[5] = 0x9b05688c2b3e6c1fULL;
-    sha_info->digest[6] = 0x1f83d9abfb41bd6bULL;
-    sha_info->digest[7] = 0x5be0cd19137e2179ULL;
+    sha_info->digest[0] = Py_ULL(0x6a09e667f3bcc908);
+    sha_info->digest[1] = Py_ULL(0xbb67ae8584caa73b);
+    sha_info->digest[2] = Py_ULL(0x3c6ef372fe94f82b);
+    sha_info->digest[3] = Py_ULL(0xa54ff53a5f1d36f1);
+    sha_info->digest[4] = Py_ULL(0x510e527fade682d1);
+    sha_info->digest[5] = Py_ULL(0x9b05688c2b3e6c1f);
+    sha_info->digest[6] = Py_ULL(0x1f83d9abfb41bd6b);
+    sha_info->digest[7] = Py_ULL(0x5be0cd19137e2179);
     sha_info->count_lo = 0L;
     sha_info->count_hi = 0L;
     sha_info->local = 0;
@@ -272,14 +272,14 @@ static void
 sha384_init(SHAobject *sha_info)
 {
     TestEndianness(sha_info->Endianness)
-    sha_info->digest[0] = 0xcbbb9d5dc1059ed8ULL;
-    sha_info->digest[1] = 0x629a292a367cd507ULL;
-    sha_info->digest[2] = 0x9159015a3070dd17ULL;
-    sha_info->digest[3] = 0x152fecd8f70e5939ULL;
-    sha_info->digest[4] = 0x67332667ffc00b31ULL;
-    sha_info->digest[5] = 0x8eb44a8768581511ULL;
-    sha_info->digest[6] = 0xdb0c2e0d64f98fa7ULL;
-    sha_info->digest[7] = 0x47b5481dbefa4fa4ULL;
+    sha_info->digest[0] = Py_ULL(0xcbbb9d5dc1059ed8);
+    sha_info->digest[1] = Py_ULL(0x629a292a367cd507);
+    sha_info->digest[2] = Py_ULL(0x9159015a3070dd17);
+    sha_info->digest[3] = Py_ULL(0x152fecd8f70e5939);
+    sha_info->digest[4] = Py_ULL(0x67332667ffc00b31);
+    sha_info->digest[5] = Py_ULL(0x8eb44a8768581511);
+    sha_info->digest[6] = Py_ULL(0xdb0c2e0d64f98fa7);
+    sha_info->digest[7] = Py_ULL(0x47b5481dbefa4fa4);
     sha_info->count_lo = 0L;
     sha_info->count_hi = 0L;
     sha_info->local = 0;

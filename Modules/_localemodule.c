@@ -12,10 +12,13 @@ This software comes with no warranty. Use at your own risk.
 #include "Python.h"
 
 #include <stdio.h>
-#include <errno.h>
 #include <locale.h>
 #include <string.h>
 #include <ctype.h>
+
+#ifndef DONT_HAVE_ERRNO_H
+#include <errno.h>
+#endif
 
 #ifdef HAVE_LANGINFO_H
 #include <langinfo.h>

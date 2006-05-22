@@ -14,6 +14,7 @@ the following #defines
 MS_WIN64 - Code specific to the MS Win64 API
 MS_WIN32 - Code specific to the MS Win32 (and Win64) API (obsolete, this covers all supported APIs)
 MS_WINDOWS - Code specific to Windows, but all versions.
+MS_WINCE - Code specific to Windows CE
 Py_ENABLE_SHARED - Code if the Python core is built as a DLL.
 
 Also note that neither "_M_IX86" or "_MSC_VER" should be used for
@@ -27,6 +28,10 @@ MS_CORE_DLL.
 
 */
 
+#ifdef _WIN32_WCE
+#define MS_WINCE
+#endif
+
 /* Visual Studio 2005 introduces deprecation warnings for
    "insecure" and POSIX functions. The insecure functions should
    be replaced by *_s versions (according to Microsoft); the
@@ -37,15 +42,23 @@ MS_CORE_DLL.
 #define _CRT_SECURE_NO_DEPRECATE 1
 #define _CRT_NONSTDC_NO_DEPRECATE 1
 
-#include <io.h>
+/* Windows CE does not have these */
+#ifndef MS_WINCE
+#define HAVE_IO_H
 #define HAVE_SYS_UTIME_H
-#define HAVE_HYPOT
 #define HAVE_TEMPNAM
 #define HAVE_TMPFILE
 #define HAVE_TMPNAM
 #define HAVE_CLOCK
-#define HAVE_STRFTIME
 #define HAVE_STRERROR
+#endif
+
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif
+
+#define HAVE_HYPOT
+#define HAVE_STRFTIME
 #define DONT_HAVE_SIG_ALARM
 #define DONT_HAVE_SIG_PAUSE
 #define LONG_BIT	32
@@ -62,6 +75,11 @@ MS_CORE_DLL.
 #define WITH_THREAD
 #ifndef NETSCAPE_PI
 #define USE_SOCKET
+#endif
+
+#ifdef MS_WINCE
+#define DONT_HAVE_SYS_STAT_H
+#define DONT_HAVE_ERRNO_H
 #endif
 
 /* Compiler specific defines */
@@ -116,6 +134,11 @@ MS_CORE_DLL.
 #define COMPILER _Py_PASTE_VERSION("64 bit (Unknown)")
 #endif
 #endif /* MS_WIN64 */
+
+/* _W64 is not defined for VC6 or eVC4 */
+#ifndef _W64
+#define _W64
+#endif
 
 /* Define like size_t, omitting the "unsigned" */
 #ifdef MS_WIN64
@@ -297,11 +320,16 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define SIZEOF_LONG_LONG 8
 
 /* VC 7.1 has them and VC 6.0 does not.  VC 6.0 has a version number of 1200.
+   Microsoft eMbedded Visual C++ 4.0 has a version number of 1201 and doesn't
+   define these.
    If some compiler does not provide them, modify the #if appropriately. */
 #if defined(_MSC_VER)
-#if _MSC_VER > 1200
+#if _MSC_VER > 1201
 #define HAVE_UINTPTR_T 1
 #define HAVE_INTPTR_T 1
+#else
+/* VC6 & eVC4 don't support the C99 LL suffix for 64-bit integer literals */
+#define Py_LL(x) x##I64
 #endif  /* _MSC_VER > 1200  */ 
 #endif  /* _MSC_VER */
 
@@ -397,7 +425,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #define HAVE_ALTZONE */
 
 /* Define if you have the putenv function.  */
+#ifndef MS_WINCE
 #define HAVE_PUTENV
+#endif
 
 /* Define if your compiler supports function prototypes */
 #define HAVE_PROTOTYPES
@@ -445,7 +475,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define HAVE_DYNAMIC_LOADING
 
 /* Define if you have ftime.  */
+#ifndef MS_WINCE
 #define HAVE_FTIME
+#endif
 
 /* Define if you have getpeername.  */
 #define HAVE_GETPEERNAME
@@ -454,7 +486,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #undef HAVE_GETPGRP */
 
 /* Define if you have getpid.  */
+#ifndef MS_WINCE
 #define HAVE_GETPID
+#endif
 
 /* Define if you have gettimeofday.  */
 /* #undef HAVE_GETTIMEOFDAY */
@@ -511,13 +545,17 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #undef HAVE_WAITPID */
 
 /* Define to 1 if you have the `wcscoll' function. */
+#ifndef MS_WINCE
 #define HAVE_WCSCOLL 1
+#endif
 
 /* Define if you have the <dlfcn.h> header file.  */
 /* #undef HAVE_DLFCN_H */
 
 /* Define if you have the <fcntl.h> header file.  */
+#ifndef MS_WINCE
 #define HAVE_FCNTL_H 1
+#endif
 
 /* Define if you have the <stdarg.h> prototypes.  */
 #define HAVE_STDARG_PROTOTYPES
