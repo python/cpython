@@ -5898,10 +5898,13 @@ unicode_repeat(PyUnicodeObject *str, Py_ssize_t len)
 
     p = u->str;
 
-    while (len-- > 0) {
-        Py_UNICODE_COPY(p, str->str, str->length);
-        p += str->length;
-    }
+    if (str->length == 1 && len > 0) {
+        Py_UNICODE_FILL(p, str->str[0], len);
+    } else
+        while (len-- > 0) {
+            Py_UNICODE_COPY(p, str->str, str->length);
+            p += str->length;
+        }
 
     return (PyObject*) u;
 }
