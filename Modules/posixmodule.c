@@ -4789,7 +4789,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 		 switch (mode & (_O_RDONLY | _O_TEXT | _O_BINARY | _O_WRONLY)) {
 		 case _O_WRONLY | _O_TEXT:
 			 /* Case for writing to child Stdin in text mode. */
-			 fd1 = _open_osfhandle((intptr_t)hChildStdinWrDup, mode);
+			 fd1 = _open_osfhandle((Py_intptr_t)hChildStdinWrDup, mode);
 			 f1 = _fdopen(fd1, "w");
 			 f = PyFile_FromFile(f1, cmdstring, "w", _PyPclose);
 			 PyFile_SetBufSize(f, 0);
@@ -4800,7 +4800,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 
 		 case _O_RDONLY | _O_TEXT:
 			 /* Case for reading from child Stdout in text mode. */
-			 fd1 = _open_osfhandle((intptr_t)hChildStdoutRdDup, mode);
+			 fd1 = _open_osfhandle((Py_intptr_t)hChildStdoutRdDup, mode);
 			 f1 = _fdopen(fd1, "r");
 			 f = PyFile_FromFile(f1, cmdstring, "r", _PyPclose);
 			 PyFile_SetBufSize(f, 0);
@@ -4811,7 +4811,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 
 		 case _O_RDONLY | _O_BINARY:
 			 /* Case for readinig from child Stdout in binary mode. */
-			 fd1 = _open_osfhandle((intptr_t)hChildStdoutRdDup, mode);
+			 fd1 = _open_osfhandle((Py_intptr_t)hChildStdoutRdDup, mode);
 			 f1 = _fdopen(fd1, "rb");
 			 f = PyFile_FromFile(f1, cmdstring, "rb", _PyPclose);
 			 PyFile_SetBufSize(f, 0);
@@ -4822,7 +4822,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 
 		 case _O_WRONLY | _O_BINARY:
 			 /* Case for writing to child Stdin in binary mode. */
-			 fd1 = _open_osfhandle((intptr_t)hChildStdinWrDup, mode);
+			 fd1 = _open_osfhandle((Py_intptr_t)hChildStdinWrDup, mode);
 			 f1 = _fdopen(fd1, "wb");
 			 f = PyFile_FromFile(f1, cmdstring, "wb", _PyPclose);
 			 PyFile_SetBufSize(f, 0);
@@ -4848,9 +4848,9 @@ _PyPopen(char *cmdstring, int mode, int n)
 			 m2 = "wb";
 		 }
 
-		 fd1 = _open_osfhandle((intptr_t)hChildStdinWrDup, mode);
+		 fd1 = _open_osfhandle((Py_intptr_t)hChildStdinWrDup, mode);
 		 f1 = _fdopen(fd1, m2);
-		 fd2 = _open_osfhandle((intptr_t)hChildStdoutRdDup, mode);
+		 fd2 = _open_osfhandle((Py_intptr_t)hChildStdoutRdDup, mode);
 		 f2 = _fdopen(fd2, m1);
 		 p1 = PyFile_FromFile(f1, cmdstring, m2, _PyPclose);
 		 PyFile_SetBufSize(p1, 0);
@@ -4880,11 +4880,11 @@ _PyPopen(char *cmdstring, int mode, int n)
 			 m2 = "wb";
 		 }
 
-		 fd1 = _open_osfhandle((intptr_t)hChildStdinWrDup, mode);
+		 fd1 = _open_osfhandle((Py_intptr_t)hChildStdinWrDup, mode);
 		 f1 = _fdopen(fd1, m2);
-		 fd2 = _open_osfhandle((intptr_t)hChildStdoutRdDup, mode);
+		 fd2 = _open_osfhandle((Py_intptr_t)hChildStdoutRdDup, mode);
 		 f2 = _fdopen(fd2, m1);
-		 fd3 = _open_osfhandle((intptr_t)hChildStderrRdDup, mode);
+		 fd3 = _open_osfhandle((Py_intptr_t)hChildStderrRdDup, mode);
 		 f3 = _fdopen(fd3, m1);
 		 p1 = PyFile_FromFile(f1, cmdstring, m2, _PyPclose);
 		 p2 = PyFile_FromFile(f2, cmdstring, m1, _PyPclose);
@@ -5488,7 +5488,7 @@ PyDoc_STRVAR(posix_waitpid__doc__,
 static PyObject *
 posix_waitpid(PyObject *self, PyObject *args)
 {
-	intptr_t pid;
+	Py_intptr_t pid;
 	int status, options;
 
 	if (!PyArg_ParseTuple(args, "ii:waitpid", &pid, &options))

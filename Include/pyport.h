@@ -685,4 +685,16 @@ typedef	struct fd_set {
 #pragma error_messages (off,E_END_OF_LOOP_CODE_NOT_REACHED)
 #endif
 
+/*
+ * Older Microsoft compilers don't support the C99 long long literal suffixes,
+ * so these will be defined in PC/pyconfig.h for those compilers.
+ */
+#ifndef Py_LL
+#define Py_LL(x) x##LL
+#endif
+
+#ifndef Py_ULL
+#define Py_ULL(x) Py_LL(x##U)
+#endif
+
 #endif /* Py_PYPORT_H */
