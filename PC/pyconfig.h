@@ -318,6 +318,8 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define SIZEOF_INT 4
 #define SIZEOF_LONG 4
 #define SIZEOF_LONG_LONG 8
+#define SIZEOF_DOUBLE 8
+#define SIZEOF_FLOAT 4
 
 /* VC 7.1 has them and VC 6.0 does not.  VC 6.0 has a version number of 1200.
    Microsoft eMbedded Visual C++ 4.0 has a version number of 1201 and doesn't
@@ -330,7 +332,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #else
 /* VC6 & eVC4 don't support the C99 LL suffix for 64-bit integer literals */
 #define Py_LL(x) x##I64
-#endif  /* _MSC_VER > 1200  */ 
+#endif  /* _MSC_VER > 1200  */
 #endif  /* _MSC_VER */
 
 #endif
