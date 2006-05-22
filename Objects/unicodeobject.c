@@ -4148,10 +4148,10 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
     PyObject *internal_separator = NULL;
     const Py_UNICODE blank = ' ';
     const Py_UNICODE *sep = &blank;
-    size_t seplen = 1;
+    Py_ssize_t seplen = 1;
     PyUnicodeObject *res = NULL; /* the result */
-    size_t res_alloc = 100;  /* # allocated bytes for string in res */
-    size_t res_used;         /* # used bytes */
+    Py_ssize_t res_alloc = 100;  /* # allocated bytes for string in res */
+    Py_ssize_t res_used;         /* # used bytes */
     Py_UNICODE *res_p;       /* pointer to free byte in res's string area */
     PyObject *fseq;          /* PySequence_Fast(seq) */
     Py_ssize_t seqlen;              /* len(fseq) -- number of items in sequence */
@@ -4212,8 +4212,8 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
     res_used = 0;
 
     for (i = 0; i < seqlen; ++i) {
-	size_t itemlen;
-	size_t new_res_used;
+	Py_ssize_t itemlen;
+	Py_ssize_t new_res_used;
 
 	item = PySequence_Fast_GET_ITEM(fseq, i);
 	/* Convert item to Unicode. */
@@ -4235,19 +4235,18 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
         /* Make sure we have enough space for the separator and the item. */
 	itemlen = PyUnicode_GET_SIZE(item);
 	new_res_used = res_used + itemlen;
-	if (new_res_used < res_used ||  new_res_used > PY_SSIZE_T_MAX)
+	if (new_res_used <= 0)
 	    goto Overflow;
 	if (i < seqlen - 1) {
 	    new_res_used += seplen;
-	    if (new_res_used < res_used ||  new_res_used > PY_SSIZE_T_MAX)
+	    if (new_res_used <= 0)
 		goto Overflow;
 	}
 	if (new_res_used > res_alloc) {
 	    /* double allocated size until it's big enough */
 	    do {
-	        size_t oldsize = res_alloc;
 	        res_alloc += res_alloc;
-	        if (res_alloc < oldsize || res_alloc > PY_SSIZE_T_MAX)
+	        if (res_alloc <= 0)
 	            goto Overflow;
 	    } while (new_res_used > res_alloc);
 	    if (_PyUnicode_Resize(&res, res_alloc) < 0) {
