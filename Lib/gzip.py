@@ -107,6 +107,7 @@ class GzipFile:
             self.extrabuf = ""
             self.extrasize = 0
             self.filename = filename
+            self.min_readsize = 64       # Starts small, scales exponentially
 
         elif mode[0:1] == 'w' or mode[0:1] == 'a':
             self.mode = WRITE
@@ -381,32 +382,39 @@ class GzipFile:
             self.read(count % 1024)
 
     def readline(self, size=-1):
-        if size < 0: size = sys.maxint
-        bufs = []
-        readsize = min(100, size)    # Read from the file in small chunks
+        if size < 0:
+            size = sys.maxint              # Line can be as long as maxint
+            readsize = self.min_readsize   # Read from file in small chunks
+        else:
+            readsize = size                # Only read in as much as specified
+
+        bufs = ""
+
         while True:
-            if size == 0:
-                return "".join(bufs) # Return resulting line
+            if size == 0: return bufs      # Return line (reached max len)
 
             c = self.read(readsize)
             i = c.find('\n')
-            if size is not None:
-                # We set i=size to break out of the loop under two
-                # conditions: 1) there's no newline, and the chunk is
-                # larger than size, or 2) there is a newline, but the
-                # resulting line would be longer than 'size'.
-                if i==-1 and len(c) > size: i=size-1
-                elif size <= i: i = size -1
 
+            # If there is a newline, or the string is empty
             if i >= 0 or c == '':
-                bufs.append(c[:i+1])    # Add portion of last chunk
-                self._unread(c[i+1:])   # Push back rest of chunk
-                return ''.join(bufs)    # Return resulting line
+                if size <= i: i = size - 1 # Another larger than size check
 
-            # Append chunk to list, decrease 'size',
-            bufs.append(c)
-            size = size - len(c)
-            readsize = min(size, readsize * 2)
+                self._unread(c[i+1:])      # Push back rest of chunk
+
+                return bufs + c[:i+1]      # Stored line, plus new segment
+
+            # If there is no newline
+            else:
+                if len(c) > size: i = size - 1   # If lineis larger than size
+
+                bufs = bufs + c
+                size = size - len(c)
+                readsize = min(size, int(readsize * 1.1))
+
+                # Optimize future readline() calls
+                if readsize > self.min_readsize:
+                    self.min_readsize = readsize
 
     def readlines(self, sizehint=0):
         # Negative numbers result in reading all the lines
