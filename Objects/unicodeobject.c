@@ -5078,8 +5078,8 @@ onError:
 PyDoc_STRVAR(count__doc__,
 "S.count(sub[, start[, end]]) -> int\n\
 \n\
-Return the number of occurrences of substring sub in Unicode string\n\
-S[start:end].  Optional arguments start and end are\n\
+Return the number of non-overlapping occurrences of substring sub in\n\
+Unicode string S[start:end].  Optional arguments start and end are\n\
 interpreted as in slice notation.");
 
 static PyObject *

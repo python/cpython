@@ -2159,9 +2159,9 @@ string_capitalize(PyStringObject *self)
 PyDoc_STRVAR(count__doc__,
 "S.count(sub[, start[, end]]) -> int\n\
 \n\
-Return the number of occurrences of substring sub in string\n\
-S[start:end].  Optional arguments start and end are\n\
-interpreted as in slice notation.");
+Return the number of non-overlapping occurrences of substring sub in\n\
+string S[start:end].  Optional arguments start and end are interpreted\n\
+as in slice notation.");
 
 static PyObject *
 string_count(PyStringObject *self, PyObject *args)
