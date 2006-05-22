@@ -352,12 +352,15 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
         Py_UNICODE_ISDIGIT(ch) || \
         Py_UNICODE_ISNUMERIC(ch))
 
-#define Py_UNICODE_COPY(target, source, length)\
-    (memcpy((target), (source), (length)*sizeof(Py_UNICODE)))
+#define Py_UNICODE_COPY(target, source, length) do\
+    {int i; Py_UNICODE *t = (target); const Py_UNICODE *s = (source);\
+        for (i = 0; i < (length); i++) t[i] = s[i];\
+    } while (0)
 
 #define Py_UNICODE_FILL(target, value, length) do\
-    {int i; for (i = 0; i < (length); i++) (target)[i] = (value);}\
-    while (0)
+    {int i; Py_UNICODE *t = (target); Py_UNICODE v = (value);\
+        for (i = 0; i < (length); i++) t[i] = v;\
+    } while (0)
 
 #define Py_UNICODE_MATCH(string, offset, substring)\
     ((*((string)->str + (offset)) == *((substring)->str)) &&\
