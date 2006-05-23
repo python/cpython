@@ -73,11 +73,16 @@ installunixtools:
 install_versionedtools:
 	for fn in idle pydoc python-config ;\
 	do \
+		if [ -h "$(DESTDIR)$(prefix)/bin/$${fn}" ]; then \
+			continue ;\
+		fi ;\
 		mv "$(DESTDIR)$(prefix)/bin/$${fn}" "$(DESTDIR)$(prefix)/bin/$${fn}$(VERSION)"  ;\
 		ln -sf "$${fn}$(VERSION)" "$(DESTDIR)$(prefix)/bin/$${fn}" ;\
 	done
-	mv "$(DESTDIR)$(prefix)/bin/smtpd.py" "$(DESTDIR)$(prefix)/bin/smtpd$(VERSION).py" 
-	ln -sf "smtpd$(VERSION).py" "$(DESTDIR)$(prefix)/bin/smtpd.py"
+	if [ ! -h "$(DESTDIR)$(prefix)/bin/smtpd.py" ]; then \
+		mv "$(DESTDIR)$(prefix)/bin/smtpd.py" "$(DESTDIR)$(prefix)/bin/smtpd$(VERSION).py"  ;\
+		ln -sf "smtpd$(VERSION).py" "$(DESTDIR)$(prefix)/bin/smtpd.py" ;\
+	fi
 
 
 pythonw: $(srcdir)/Tools/pythonw.c
