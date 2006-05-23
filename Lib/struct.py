@@ -50,7 +50,7 @@ def calcsize(fmt):
     except KeyError:
         o = _compile(fmt)
     return o.size
-    
+
 def pack(fmt, *args):
     """
     Return string containing values v1, v2, ... packed according to fmt.
@@ -73,4 +73,3 @@ def unpack(fmt, s):
     except KeyError:
         o = _compile(fmt)
     return o.unpack(s)
-    
