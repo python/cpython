@@ -4,34 +4,51 @@
    character strings, and unsigned numbers */
 
 #include "Python.h"
+#include "structseq.h"
+#include "structmember.h"
 #include <ctype.h>
 
-PyDoc_STRVAR(struct__doc__,
-"Functions to convert between Python values and C structs.\n\
-Python strings are used to hold the data representing the C struct\n\
-and also as format strings to describe the layout of data in the C struct.\n\
-\n\
-The optional first format char indicates byte order, size and alignment:\n\
- @: native order, size & alignment (default)\n\
- =: native order, std. size & alignment\n\
- <: little-endian, std. size & alignment\n\
- >: big-endian, std. size & alignment\n\
- !: same as >\n\
-\n\
-The remaining chars indicate types of args and must match exactly;\n\
-these can be preceded by a decimal repeat count:\n\
- x: pad byte (no data); c:char; b:signed byte; B:unsigned byte;\n\
- h:short; H:unsigned short; i:int; I:unsigned int;\n\
- l:long; L:unsigned long; f:float; d:double.\n\
-Special cases (preceding decimal count indicates length):\n\
- s:string (array of char); p: pascal string (with count byte).\n\
-Special case (only available in native format):\n\
- P:an integer type that is wide enough to hold a pointer.\n\
-Special case (not in native mode unless 'long long' in platform C):\n\
- q:long long; Q:unsigned long long\n\
-Whitespace between formats is ignored.\n\
-\n\
-The variable struct.error is an exception raised on errors.");
+
+/* compatibility macros */
+#if (PY_VERSION_HEX < 0x02050000)
+typedef int Py_ssize_t;
+#endif
+
+
+
+/* The translation function for each format character is table driven */
+
+typedef struct _formatdef {
+	char format;
+	int size;
+	int alignment;
+	PyObject* (*unpack)(const char *,
+			    const struct _formatdef *);
+	int (*pack)(char *, PyObject *,
+		    const struct _formatdef *);
+} formatdef;
+
+typedef struct _formatcode {
+	const struct _formatdef *fmtdef;
+	int offset;
+	int repeat;
+} formatcode;
+
+/* Struct object interface */
+
+typedef struct {
+	PyObject_HEAD
+	int s_size;
+	int s_len;
+	formatcode *s_codes;
+	PyObject *s_format;
+	PyObject *weakreflist; /* List of weak references */
+} PyStructObject;
+
+PyAPI_DATA(PyTypeObject) PyStruct_Type;
+
+#define PyStruct_Check(op) PyObject_TypeCheck(op, &PyStruct_Type)
+#define PyStruct_CheckExact(op) ((op)->ob_type == &PyStruct_Type)
 
 
 /* Exception */
@@ -200,18 +217,6 @@ unpack_double(const char *p,  /* start of 8-byte string */
 	return PyFloat_FromDouble(x);
 }
 
-
-/* The translation function for each format character is table driven */
-
-typedef struct _formatdef {
-	char format;
-	int size;
-	int alignment;
-	PyObject* (*unpack)(const char *,
-			    const struct _formatdef *);
-	int (*pack)(char *, PyObject *,
-		    const struct _formatdef *);
-} formatdef;
 
 /* A large number of small routines follow, with names of the form
 
@@ -949,15 +954,25 @@ align(int size, int c, const formatdef *e)
 /* calculate the size of a format string */
 
 static int
-calcsize(const char *fmt, const formatdef *f)
+prepare_s(PyStructObject *self)
 {
+	const formatdef *f;
 	const formatdef *e;
+	formatcode *codes;
+	
 	const char *s;
+	const char *fmt;
 	char c;
-	int size,  num, itemsize, x;
+	int size, len, numcodes, num, itemsize, x;
 
+	fmt = PyString_AS_STRING(self->s_format);
+
+	f = whichtable((char **)&fmt);
+	
 	s = fmt;
 	size = 0;
+	len = 0;
+	numcodes = 0;
 	while ((c = *s++) != '\0') {
 		if (isspace(Py_CHARMASK(c)))
 			continue;
@@ -982,6 +997,15 @@ calcsize(const char *fmt, const formatdef *f)
 		e = getentry(c, f);
 		if (e == NULL)
 			return -1;
+		
+		switch (c) {
+			case 's': /* fall through */
+			case 'p': len++; break;
+			case 'x': break;
+			default: len += num; break;
+		}
+		if (c != 'x') numcodes++;
+
 		itemsize = e->size;
 		size = align(size, c, e);
 		x = num * itemsize;
@@ -993,78 +1017,24 @@ calcsize(const char *fmt, const formatdef *f)
 		}
 	}
 
-	return size;
-}
-
-
-PyDoc_STRVAR(calcsize__doc__,
-"calcsize(fmt) -> int\n\
-Return size of C struct described by format string fmt.\n\
-See struct.__doc__ for more on format strings.");
-
-static PyObject *
-struct_calcsize(PyObject *self, PyObject *args)
-{
-	char *fmt;
-	const formatdef *f;
-	int size;
-
-	if (!PyArg_ParseTuple(args, "s:calcsize", &fmt))
-		return NULL;
-	f = whichtable(&fmt);
-	size = calcsize(fmt, f);
-	if (size < 0)
-		return NULL;
-	return PyInt_FromLong((long)size);
-}
-
-
-PyDoc_STRVAR(pack__doc__,
-"pack(fmt, v1, v2, ...) -> string\n\
-Return string containing values v1, v2, ... packed according to fmt.\n\
-See struct.__doc__ for more on format strings.");
-
-static PyObject *
-struct_pack(PyObject *self, PyObject *args)
-{
-	const formatdef *f, *e;
-	PyObject *format, *result, *v;
-	char *fmt;
-	int size, num;
-	Py_ssize_t i, n;
-	char *s, *res, *restart, *nres;
-	char c;
-
-	if (args == NULL || !PyTuple_Check(args) ||
-	    (n = PyTuple_Size(args)) < 1)
-	{
-		PyErr_SetString(PyExc_TypeError,
-			"struct.pack requires at least one argument");
-		return NULL;
+	self->s_size = size;
+	self->s_len = len;
+	codes = PyMem_MALLOC((numcodes + 1) * sizeof(formatcode));
+	if (codes == NULL) {
+		PyErr_NoMemory();
+		return -1;
 	}
-	format = PyTuple_GetItem(args, 0);
-	fmt = PyString_AsString(format);
-	if (!fmt)
-		return NULL;
-	f = whichtable(&fmt);
-	size = calcsize(fmt, f);
-	if (size < 0)
-		return NULL;
-	result = PyString_FromStringAndSize((char *)NULL, size);
-	if (result == NULL)
-		return NULL;
-
+	self->s_codes = codes;
+	
 	s = fmt;
-	i = 1;
-	res = restart = PyString_AsString(result);
-
+	size = 0;
 	while ((c = *s++) != '\0') {
 		if (isspace(Py_CHARMASK(c)))
 			continue;
 		if ('0' <= c && c <= '9') {
 			num = c - '0';
 			while ('0' <= (c = *s++) && c <= '9')
-			       num = num*10 + (c - '0');
+				num = num*10 + (c - '0');
 			if (c == '\0')
 				break;
 		}
@@ -1072,213 +1042,303 @@ struct_pack(PyObject *self, PyObject *args)
 			num = 1;
 
 		e = getentry(c, f);
-		if (e == NULL)
-			goto fail;
-		nres = restart + align((int)(res-restart), c, e);
-		/* Fill padd bytes with zeros */
-		while (res < nres)
-			*res++ = '\0';
-		if (num == 0 && c != 's')
-			continue;
-		do {
-			if (c == 'x') {
-				/* doesn't consume arguments */
-				memset(res, '\0', num);
-				res += num;
-				break;
-			}
-			if (i >= n) {
-				PyErr_SetString(StructError,
-					"insufficient arguments to pack");
-				goto fail;
-				}
-			v = PyTuple_GetItem(args, i++);
+		
+		size = align(size, c, e);
+		if (c != 'x') {
+			codes->offset = size;
+			codes->repeat = num;
+			codes->fmtdef = e;
+			codes++;
+		}
+		size += num * e->size;
+	}
+	codes->fmtdef = NULL;
+	codes->offset = -1;
+	codes->repeat = -1;
+	
+	return 0;
+}
+
+static PyObject *
+s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+	static PyObject *not_yet_string;
+
+	assert(type != NULL && type->tp_alloc != NULL);
+
+	self = type->tp_alloc(type, 0);
+	if (self != NULL) {
+		PyStructObject *s = (PyStructObject*)self;
+		Py_INCREF(Py_None);
+		s->s_format = Py_None;
+		s->s_codes = NULL;
+		s->s_size = -1;
+		s->s_len = -1;
+	}
+	return self;
+}
+
+static int
+s_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	PyStructObject *soself = (PyStructObject *)self;
+	PyObject *o_format = NULL;
+	int ret = 0;
+	static char *kwlist[] = {"format", 0};
+
+	assert(PyStruct_Check(self));
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "S:Struct", kwlist,
+					 &o_format))
+        	return -1;
+
+	Py_INCREF(o_format);
+	Py_XDECREF(soself->s_format);
+	soself->s_format = o_format;
+	
+	ret = prepare_s(soself);
+	return ret;
+}
+
+static void
+s_dealloc(PyStructObject *s)
+{
+	int sts = 0;
+	if (s->weakreflist != NULL)
+		PyObject_ClearWeakRefs((PyObject *)s);
+	if (s->s_codes != NULL) {
+		PyMem_FREE(s->s_codes);
+	}
+	Py_XDECREF(s->s_format);
+	s->ob_type->tp_free((PyObject *)s);
+}
+
+PyDoc_STRVAR(s_unpack__doc__,
+"unpack(str) -> (v1, v2, ...)\n\
+\n\
+Return tuple containing values unpacked according to this Struct's format.\n\
+Requires len(str) == self.size. See struct.__doc__ for more on format\n\
+strings.");
+
+static PyObject *
+s_unpack(PyObject *self, PyObject *inputstr)
+{
+	PyStructObject *soself;
+	PyObject *result;
+	char *restart;
+	formatcode *code;
+	Py_ssize_t i;
+	
+	soself = (PyStructObject *)self;
+	assert(PyStruct_Check(self));
+	assert(soself->s_codes != NULL);	
+	if (inputstr == NULL || !PyString_Check(inputstr) ||
+	    PyString_GET_SIZE(inputstr) != soself->s_size) {
+		PyErr_Format(StructError,
+			"unpack requires a string argument of length %d", soself->s_size);
+		return NULL;
+	}
+	result = PyTuple_New(soself->s_len);
+	if (result == NULL)
+		return NULL;
+	
+
+	restart = PyString_AS_STRING(inputstr);
+	i = 0;
+	for (code = soself->s_codes; code->fmtdef != NULL; code++) {
+		Py_ssize_t n;
+		PyObject *v;
+		const formatdef *e = code->fmtdef;
+		const char *res = restart + code->offset;
+		if (e->format == 's') {
+			v = PyString_FromStringAndSize(res, code->repeat);
 			if (v == NULL)
 				goto fail;
-			if (c == 's') {
-				/* num is string size, not repeat count */
-				Py_ssize_t n;
-				if (!PyString_Check(v)) {
-					PyErr_SetString(StructError,
-					  "argument for 's' must be a string");
+			PyTuple_SET_ITEM(result, i++, v);
+		} else if (e->format == 'p') {
+			n = *(unsigned char*)res;
+			if (n >= code->repeat)
+				n = code->repeat - 1;
+			v = PyString_FromStringAndSize(res + 1, n);
+			if (v == NULL)
+				goto fail;
+			PyTuple_SET_ITEM(result, i++, v);
+		} else {
+			for (n = 0; n < code->repeat; n++) {
+				v = e->unpack(res, e);
+				if (v == NULL)
 					goto fail;
-				}
-				n = PyString_Size(v);
-				if (n > num)
-					n = num;
-				if (n > 0)
-					memcpy(res, PyString_AsString(v), n);
-				if (n < num)
-					memset(res+n, '\0', num-n);
-				res += num;
-				break;
+				PyTuple_SET_ITEM(result, i++, v);
+				res += e->size;
 			}
-			else if (c == 'p') {
-				/* num is string size + 1,
-				   to fit in the count byte */
-				Py_ssize_t n;
-				num--; /* now num is max string size */
-				if (!PyString_Check(v)) {
-					PyErr_SetString(StructError,
-					  "argument for 'p' must be a string");
-					goto fail;
-				}
-				n = PyString_Size(v);
-				if (n > num)
-					n = num;
-				if (n > 0)
-					memcpy(res+1, PyString_AsString(v), n);
-				if (n < num)
-					/* no real need, just to be nice */
-					memset(res+1+n, '\0', num-n);
-				if (n > 255)
-					n = 255;
-				/* store the length byte */
-				*res++ = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
-				res += num;
-				break;
+		}
+	}
+
+	return result;
+fail:
+	Py_DECREF(result);
+	return NULL;
+};
+
+
+PyDoc_STRVAR(s_pack__doc__,
+"pack(v1, v2, ...) -> string\n\
+\n\
+Return a string containing values v1, v2, ... packed according to this\n\
+Struct's format. See struct.__doc__ for more on format strings.");
+
+static PyObject *
+s_pack(PyObject *self, PyObject *args)
+{
+	PyStructObject *soself;
+	PyObject *result;
+	char *restart;
+	formatcode *code;
+	Py_ssize_t i;
+	
+	soself = (PyStructObject *)self;
+	assert(PyStruct_Check(self));
+	assert(soself->s_codes != NULL);
+	if (args == NULL || !PyTuple_Check(args) ||
+	    PyTuple_GET_SIZE(args) != soself->s_len)
+	{
+		PyErr_Format(StructError,
+			"pack requires exactly %d arguments", soself->s_len);
+		return NULL;
+	}
+	
+	result = PyString_FromStringAndSize((char *)NULL, soself->s_size);
+	if (result == NULL)
+		return NULL;
+	
+	restart = PyString_AS_STRING(result);
+	memset(restart, '\0', soself->s_size);
+	i = 0;
+	for (code = soself->s_codes; code->fmtdef != NULL; code++) {
+		Py_ssize_t n;
+		PyObject *v;
+		const formatdef *e = code->fmtdef;
+		char *res = restart + code->offset;
+		if (e->format == 's') {
+			v = PyTuple_GET_ITEM(args, i++);
+			if (!PyString_Check(v)) {
+				PyErr_SetString(StructError,
+						"argument for 's' must be a string");
+				goto fail;
 			}
-			else {
+			n = PyString_GET_SIZE(v);
+			if (n > code->repeat)
+				n = code->repeat;
+			if (n > 0)
+				memcpy(res, PyString_AS_STRING(v), n);
+		} else if (e->format == 'p') {
+			v = PyTuple_GET_ITEM(args, i++);
+			if (!PyString_Check(v)) {
+				PyErr_SetString(StructError,
+						"argument for 'p' must be a string");
+				goto fail;
+			}
+			n = PyString_GET_SIZE(v);
+			if (n > (code->repeat - 1))
+				n = code->repeat - 1;
+			if (n > 0)
+				memcpy(res + 1, PyString_AS_STRING(v), n);
+			if (n > 255)
+				n = 255;
+			*res = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
+		} else {
+			for (n = 0; n < code->repeat; n++) {
+				v = PyTuple_GET_ITEM(args, i++);
 				if (e->pack(res, v, e) < 0)
 					goto fail;
 				res += e->size;
 			}
-		} while (--num > 0);
+		}
 	}
-
-	if (i < n) {
-		PyErr_SetString(StructError,
-				"too many arguments for pack format");
-		goto fail;
-	}
-
+	
 	return result;
 
- fail:
+fail:
 	Py_DECREF(result);
 	return NULL;
-}
-
-
-PyDoc_STRVAR(unpack__doc__,
-"unpack(fmt, string) -> (v1, v2, ...)\n\
-Unpack the string, containing packed C structure data, according\n\
-to fmt.  Requires len(string)==calcsize(fmt).\n\
-See struct.__doc__ for more on format strings.");
-
-static PyObject *
-struct_unpack(PyObject *self, PyObject *args)
-{
-	const formatdef *f, *e;
-	char *str, *start, *fmt, *s;
-	char c;
-	int len, size, num;
-	PyObject *res, *v;
-
-	if (!PyArg_ParseTuple(args, "ss#:unpack", &fmt, &start, &len))
-		return NULL;
-	f = whichtable(&fmt);
-	size = calcsize(fmt, f);
-	if (size < 0)
-		return NULL;
-	if (size != len) {
-		PyErr_SetString(StructError,
-				"unpack str size does not match format");
-		return NULL;
-	}
-	res = PyList_New(0);
-	if (res == NULL)
-		return NULL;
-	str = start;
-	s = fmt;
-	while ((c = *s++) != '\0') {
-		if (isspace(Py_CHARMASK(c)))
-			continue;
-		if ('0' <= c && c <= '9') {
-			num = c - '0';
-			while ('0' <= (c = *s++) && c <= '9')
-			       num = num*10 + (c - '0');
-			if (c == '\0')
-				break;
-		}
-		else
-			num = 1;
-
-		e = getentry(c, f);
-		if (e == NULL)
-			goto fail;
-		str = start + align((int)(str-start), c, e);
-		if (num == 0 && c != 's')
-			continue;
-
-		do {
-			if (c == 'x') {
-				str += num;
-				break;
-			}
-			if (c == 's') {
-				/* num is string size, not repeat count */
-				v = PyString_FromStringAndSize(str, num);
-				if (v == NULL)
-					goto fail;
-				str += num;
-				num = 0;
-			}
-			else if (c == 'p') {
-				/* num is string buffer size,
-				   not repeat count */
-				int n = *(unsigned char*)str;
-				/* first byte (unsigned) is string size */
-				if (n >= num)
-					n = num-1;
-				v = PyString_FromStringAndSize(str+1, n);
-				if (v == NULL)
-					goto fail;
-				str += num;
-				num = 0;
-			}
-			else {
-				v = e->unpack(str, e);
-				if (v == NULL)
-					goto fail;
-				str += e->size;
-			}
-			if (v == NULL || PyList_Append(res, v) < 0)
-				goto fail;
-			Py_DECREF(v);
-		} while (--num > 0);
-	}
-
-	v = PyList_AsTuple(res);
-	Py_DECREF(res);
-	return v;
-
- fail:
-	Py_DECREF(res);
-	return NULL;
+	
 }
 
 
 /* List of functions */
 
-static PyMethodDef struct_methods[] = {
-	{"calcsize",	struct_calcsize,	METH_VARARGS, calcsize__doc__},
-	{"pack",	struct_pack,		METH_VARARGS, pack__doc__},
-	{"unpack",	struct_unpack,		METH_VARARGS, unpack__doc__},
-	{NULL,		NULL}		/* sentinel */
+static struct PyMethodDef s_methods[] = {
+	{"pack",	s_pack,		METH_VARARGS, s_pack__doc__},
+	{"unpack",	s_unpack,	METH_O, s_unpack__doc__},
+	{NULL,	 NULL}		/* sentinel */
 };
 
+PyDoc_STRVAR(s__doc__, "Compiled struct object");
+
+#define OFF(x) offsetof(PyStructObject, x)
+
+static PyMemberDef s_memberlist[] = {
+	{"format",	T_OBJECT,	OFF(s_format),	RO,
+	 "struct format string"},
+	{"size",	T_INT,		OFF(s_size),	RO,
+	 "struct size in bytes"},
+	{"_len",	T_INT,		OFF(s_len),	RO,
+	 "number of items expected in tuple"},
+	{NULL}	/* Sentinel */
+};
+
+
+static
+PyTypeObject PyStructType = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,
+	"Struct",
+	sizeof(PyStructObject),
+	0,
+	(destructor)s_dealloc,			/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	PyObject_GenericSetAttr,		/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_WEAKREFS, /* tp_flags */
+	s__doc__,				/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	offsetof(PyStructObject, weakreflist),	/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	s_methods,				/* tp_methods */
+	s_memberlist,				/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	s_init,					/* tp_init */
+	PyType_GenericAlloc,			/* tp_alloc */
+	s_new,					/* tp_new */
+	PyObject_Del,				/* tp_free */
+};
 
 /* Module initialization */
 
 PyMODINIT_FUNC
-initstruct(void)
+init_struct(void)
 {
-	PyObject *m;
-
-	/* Create the module and add the functions */
-	m = Py_InitModule4("struct", struct_methods, struct__doc__,
-			   (PyObject*)NULL, PYTHON_API_VERSION);
+	PyObject *m = Py_InitModule("_struct", NULL);
 	if (m == NULL)
 		return;
 
@@ -1290,4 +1350,6 @@ initstruct(void)
 	}
 	Py_INCREF(StructError);
 	PyModule_AddObject(m, "error", StructError);
+	Py_INCREF((PyObject*)&PyStructType);
+	PyModule_AddObject(m, "Struct", (PyObject*)&PyStructType);
 }
