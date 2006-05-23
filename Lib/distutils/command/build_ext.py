@@ -689,6 +689,11 @@ class build_ext (Command):
             # don't extend ext.libraries, it may be shared with other
             # extensions, it is a reference to the original list
             return ext.libraries + [pythonlib, "m"] + extra
+
+        elif sys.platform == 'darwin':
+            # Don't use the default code below
+            return ext.libraries
+
         else:
             from distutils import sysconfig
             if sysconfig.get_config_var('Py_ENABLE_SHARED'):
