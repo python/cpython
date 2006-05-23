@@ -4982,54 +4982,56 @@ onError:
 int PyUnicode_Contains(PyObject *container,
 		       PyObject *element)
 {
-    PyUnicodeObject *u = NULL, *v = NULL;
+    PyUnicodeObject *u, *v;
     int result;
     Py_ssize_t size;
-    register const Py_UNICODE *lhs, *end, *rhs;
 
     /* Coerce the two arguments */
-    v = (PyUnicodeObject *)PyUnicode_FromObject(element);
-    if (v == NULL) {
+    v = (PyUnicodeObject *) PyUnicode_FromObject(element);
+    if (!v) {
 	PyErr_SetString(PyExc_TypeError,
 	    "'in <string>' requires string as left operand");
-	goto onError;
+        return -1;
     }
-    u = (PyUnicodeObject *)PyUnicode_FromObject(container);
-    if (u == NULL)
-	goto onError;
+
+    u = (PyUnicodeObject *) PyUnicode_FromObject(container);
+    if (!u) {
+        Py_DECREF(v);
+        return -1;
+    }
 
     size = PyUnicode_GET_SIZE(v);
-    rhs = PyUnicode_AS_UNICODE(v);
-    lhs = PyUnicode_AS_UNICODE(u);
+    if (!size) {
+        result = 1;
+        goto done;
+    }
 
     result = 0;
+
     if (size == 1) {
-	end = lhs + PyUnicode_GET_SIZE(u);
-	while (lhs < end) {
-	    if (*lhs++ == *rhs) {
+        Py_UNICODE chr = PyUnicode_AS_UNICODE(v)[0];
+        Py_UNICODE* ptr = PyUnicode_AS_UNICODE(u);
+	Py_UNICODE* end = ptr + PyUnicode_GET_SIZE(u);
+	for (; ptr < end; ptr++) {
+	    if (*ptr == chr) {
 		result = 1;
 		break;
 	    }
 	}
-    }
-    else {
-	end = lhs + (PyUnicode_GET_SIZE(u) - size);
-	while (lhs <= end) {
-	    if (memcmp(lhs++, rhs, size * sizeof(Py_UNICODE)) == 0) {
-		result = 1;
-		break;
-	    }
-	}
+    } else {
+        int start = 0;
+	int end = PyUnicode_GET_SIZE(u) - size;
+        for (; start <= end; start++)
+            if (Py_UNICODE_MATCH(u, start, v)) {
+                result = 1;
+                break;
+            }
     }
 
+done:
     Py_DECREF(u);
     Py_DECREF(v);
     return result;
-
-onError:
-    Py_XDECREF(u);
-    Py_XDECREF(v);
-    return -1;
 }
 
 /* Concat to string or Unicode object giving a new Unicode object. */
