@@ -527,6 +527,7 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 }
 
 
+
 PyObject *
 PyErr_NewException(char *name, PyObject *base, PyObject *dict)
 {
@@ -559,9 +560,15 @@ PyErr_NewException(char *name, PyObject *base, PyObject *dict)
 	classname = PyString_FromString(dot+1);
 	if (classname == NULL)
 		goto failure;
-	bases = PyTuple_Pack(1, base);
-	if (bases == NULL)
-		goto failure;
+	if (PyTuple_Check(base)) {
+		bases = base;
+		/* INCREF as we create a new ref in the else branch */
+		Py_INCREF(bases);
+	} else {
+		bases = PyTuple_Pack(1, base);
+		if (bases == NULL)
+			goto failure;
+	}
 	result = PyClass_New(bases, dict, classname);
   failure:
 	Py_XDECREF(bases);

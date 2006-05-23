@@ -12,6 +12,9 @@ What's New in Python 2.5 alpha 3?
 Core and builtins
 -----------------
 
+- PyErr_NewException now accepts a tuple of base classes as its
+  "base" parameter.
+
 - Patch #876206: function call speedup by retaining allocated frame
   objects.
 
