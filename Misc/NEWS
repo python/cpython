@@ -12,6 +12,8 @@ What's New in Python 2.5 alpha 3?
 Core and builtins
 -----------------
 
+- Patch #1281707: speed up gzip.readline.
+
 - Patch #1337051: reduced size of frame objects.
 
 - PyErr_NewException now accepts a tuple of base classes as its
