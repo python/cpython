@@ -1444,7 +1444,7 @@ def main():
                       'install_lib':PyBuildInstallLib},
           # The struct module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
-          ext_modules=[Extension('_struct', ['_struct.c'])],
+          ext_modules=[Extension('struct', ['structmodule.c'])],
 
           # Scripts to install
           scripts = ['Tools/scripts/pydoc', 'Tools/scripts/idle',
