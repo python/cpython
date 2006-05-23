@@ -45,8 +45,6 @@ typedef struct {
 	PyObject *weakreflist; /* List of weak references */
 } PyStructObject;
 
-PyAPI_DATA(PyTypeObject) PyStruct_Type;
-
 #define PyStruct_Check(op) PyObject_TypeCheck(op, &PyStruct_Type)
 #define PyStruct_CheckExact(op) ((op)->ob_type == &PyStruct_Type)
 
@@ -1063,7 +1061,6 @@ static PyObject *
 s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *self;
-	static PyObject *not_yet_string;
 
 	assert(type != NULL && type->tp_alloc != NULL);
 
@@ -1104,7 +1101,6 @@ s_init(PyObject *self, PyObject *args, PyObject *kwds)
 static void
 s_dealloc(PyStructObject *s)
 {
-	int sts = 0;
 	if (s->weakreflist != NULL)
 		PyObject_ClearWeakRefs((PyObject *)s);
 	if (s->s_codes != NULL) {
