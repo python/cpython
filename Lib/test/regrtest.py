@@ -545,6 +545,7 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
                 def cleanup():
                     import _strptime, linecache, warnings, dircache
                     import urlparse, urllib, urllib2, mimetypes, doctest
+                    import struct
                     from distutils.dir_util import _path_created
                     _path_created.clear()
                     warnings.filters[:] = fs
@@ -561,6 +562,7 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
                     dircache.reset()
                     linecache.clearcache()
                     mimetypes._default_mime_types()
+                    struct._cache.clear()
                     doctest.master = None
                 if indirect_test:
                     def run_the_test():
