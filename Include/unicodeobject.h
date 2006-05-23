@@ -367,10 +367,12 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
         for (i_ = 0; i_ < (length); i_++) t_[i_] = v_;\
     } while (0)
 
-#define Py_UNICODE_MATCH(string, offset, substring)\
-    ((*((string)->str + (offset)) == *((substring)->str)) &&\
-     !memcmp((string)->str + (offset), (substring)->str,\
-             (substring)->length*sizeof(Py_UNICODE)))
+/* check if substring matches at given offset.  the offset must be
+   valid, and the substring must not be empty */
+#define Py_UNICODE_MATCH(string, offset, substring) \
+    ((*((string)->str + (offset)) == *((substring)->str)) && \
+    ((*((string)->str + (offset) + (substring)->length-1) == *((substring)->str + (substring)->length-1))) && \
+     !memcmp((string)->str + (offset), (substring)->str, (substring)->length*sizeof(Py_UNICODE)))
 
 #ifdef __cplusplus
 extern "C" {
