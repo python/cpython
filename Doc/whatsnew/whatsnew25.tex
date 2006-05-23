@@ -1137,7 +1137,10 @@ and as a result sets will use a third less memory and are somewhat faster.
 (Implemented by Raymond Hettinger.)
 
 \item The performance of some Unicode operations, such as 
-character map decoding, has been improved.
+finding substrings and character map decoding, has been improved.
+(Substring search improvements were added by Fredrik Lundh and Andrew
+Dalke at the NeedForSpeed sprint. Character map decoding was improved
+by Walter D\"orwald.)
 % Patch 1313939
 
 \item The code generator's peephole optimizer now performs
