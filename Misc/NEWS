@@ -12,6 +12,11 @@ What's New in Python 2.5 alpha 3?
 Core and builtins
 -----------------
 
+- Bug #1334662: ``int(string, base)`` could deliver a wrong answer
+  when ``base`` was not 2, 4, 8, 10, 16 or 32, and ``string`` represented
+  an integer close to ``sys.maxint``.  This was repaired by patch
+  #1335972, which also gives a nice speedup.
+
 - Patch #1337051: reduced size of frame objects.
 
 - PyErr_NewException now accepts a tuple of base classes as its
