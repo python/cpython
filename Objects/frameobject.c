@@ -377,7 +377,6 @@ static PyGetSetDef frame_getsetlist[] = {
    a meaning:
 	ob_type		== &Frametype
 	f_back		next item on free list, or NULL
-	f_nlocals	number of locals
 	f_stacksize	size of value stack
         ob_size         size of localsplus
    Note that the value and block stacks are preserved -- this can save
@@ -458,7 +457,7 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 	Py_VISIT(f->f_exc_traceback);
 
 	/* locals */
-	slots = f->f_nlocals + f->f_ncells + f->f_nfreevars;
+	slots = f->f_code->co_nlocals + PyTuple_GET_SIZE(f->f_code->co_cellvars) + PyTuple_GET_SIZE(f->f_code->co_freevars);
 	fastlocals = f->f_localsplus;
 	for (i = slots; --i >= 0; ++fastlocals)
 		Py_VISIT(*fastlocals);
@@ -491,7 +490,7 @@ frame_clear(PyFrameObject *f)
 	Py_CLEAR(f->f_trace);
 
 	/* locals */
-	slots = f->f_nlocals + f->f_ncells + f->f_nfreevars;
+	slots = f->f_code->co_nlocals + PyTuple_GET_SIZE(f->f_code->co_cellvars) + PyTuple_GET_SIZE(f->f_code->co_freevars);
 	fastlocals = f->f_localsplus;
 	for (i = slots; --i >= 0; ++fastlocals)
 		Py_CLEAR(*fastlocals);
@@ -760,7 +759,9 @@ PyFrame_FastToLocals(PyFrameObject *f)
 	PyObject *locals, *map;
 	PyObject **fast;
 	PyObject *error_type, *error_value, *error_traceback;
+	PyCodeObject *co;
 	Py_ssize_t j;
+        int ncells, nfreevars;
 	if (f == NULL)
 		return;
 	locals = f->f_locals;
@@ -771,27 +772,24 @@ PyFrame_FastToLocals(PyFrameObject *f)
 			return;
 		}
 	}
-	map = f->f_code->co_varnames;
+	co = f->f_code;
+	map = co->co_varnames;
 	if (!PyTuple_Check(map))
 		return;
 	PyErr_Fetch(&error_type, &error_value, &error_traceback);
 	fast = f->f_localsplus;
 	j = PyTuple_GET_SIZE(map);
-	if (j > f->f_nlocals)
-		j = f->f_nlocals;
-	if (f->f_nlocals)
+	if (j > co->co_nlocals)
+		j = co->co_nlocals;
+	if (co->co_nlocals)
 		map_to_dict(map, j, locals, fast, 0);
-	if (f->f_ncells || f->f_nfreevars) {
-		if (!(PyTuple_Check(f->f_code->co_cellvars)
-		      && PyTuple_Check(f->f_code->co_freevars))) {
-			return;
-		}
-		map_to_dict(f->f_code->co_cellvars,
-			    PyTuple_GET_SIZE(f->f_code->co_cellvars),
-			    locals, fast + f->f_nlocals, 1);
-		map_to_dict(f->f_code->co_freevars,
-			    PyTuple_GET_SIZE(f->f_code->co_freevars),
-			    locals, fast + f->f_nlocals + f->f_ncells, 1);
+	ncells = PyTuple_GET_SIZE(co->co_cellvars);
+	nfreevars = PyTuple_GET_SIZE(co->co_freevars);
+	if (ncells || nfreevars) {
+		map_to_dict(co->co_cellvars, ncells,
+			    locals, fast + co->co_nlocals, 1);
+		map_to_dict(co->co_freevars, nfreevars,
+			    locals, fast + co->co_nlocals + ncells, 1);
 	}
 	PyErr_Restore(error_type, error_value, error_traceback);
 }
@@ -803,11 +801,14 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 	PyObject *locals, *map;
 	PyObject **fast;
 	PyObject *error_type, *error_value, *error_traceback;
+	PyCodeObject *co;
 	Py_ssize_t j;
+	int ncells, nfreevars;
 	if (f == NULL)
 		return;
 	locals = f->f_locals;
-	map = f->f_code->co_varnames;
+	co = f->f_code;
+	map = co->co_varnames;
 	if (locals == NULL)
 		return;
 	if (!PyTuple_Check(map))
@@ -815,21 +816,18 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 	PyErr_Fetch(&error_type, &error_value, &error_traceback);
 	fast = f->f_localsplus;
 	j = PyTuple_GET_SIZE(map);
-	if (j > f->f_nlocals)
-		j = f->f_nlocals;
-	if (f->f_nlocals)
-	    dict_to_map(f->f_code->co_varnames, j, locals, fast, 0, clear);
-	if (f->f_ncells || f->f_nfreevars) {
-		if (!(PyTuple_Check(f->f_code->co_cellvars)
-		      && PyTuple_Check(f->f_code->co_freevars)))
-			return;
-		dict_to_map(f->f_code->co_cellvars,
-			    PyTuple_GET_SIZE(f->f_code->co_cellvars),
-			    locals, fast + f->f_nlocals, 1, clear);
-		dict_to_map(f->f_code->co_freevars,
-			    PyTuple_GET_SIZE(f->f_code->co_freevars),
-			    locals, fast + f->f_nlocals + f->f_ncells, 1,
-			    clear);
+	if (j > co->co_nlocals)
+		j = co->co_nlocals;
+	if (co->co_nlocals)
+	    dict_to_map(co->co_varnames, j, locals, fast, 0, clear);
+	ncells = PyTuple_GET_SIZE(co->co_cellvars);
+	nfreevars = PyTuple_GET_SIZE(co->co_freevars);
+	if (ncells || nfreevars) {
+		dict_to_map(co->co_cellvars, ncells,
+			    locals, fast + co->co_nlocals, 1, clear);
+		dict_to_map(co->co_freevars, nfreevars,
+			    locals, fast + co->co_nlocals + ncells, 1, 
+ 			    clear);
 	}
 	PyErr_Restore(error_type, error_value, error_traceback);
 }

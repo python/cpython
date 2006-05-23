@@ -36,10 +36,6 @@ typedef struct _frame {
 				   in this scope */
     int f_iblock;		/* index in f_blockstack */
     PyTryBlock f_blockstack[CO_MAXBLOCKS]; /* for try and loop blocks */
-    int f_nlocals;		/* number of locals */
-    int f_ncells;
-    int f_nfreevars;
-    int f_stacksize;		/* size of value stack */
     PyObject *f_localsplus[1];	/* locals+stack, dynamically sized */
 } PyFrameObject;
 
