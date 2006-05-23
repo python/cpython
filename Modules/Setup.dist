@@ -167,7 +167,7 @@ GLHACK=-Dclear=__GLclear
 #array arraymodule.c	# array objects
 #cmath cmathmodule.c # -lm # complex math library functions
 #math mathmodule.c # -lm # math library functions, e.g. sin()
-#_struct _struct.c	# binary structure packing/unpacking
+#struct structmodule.c	# binary structure packing/unpacking
 #time timemodule.c # -lm # time operations and variables
 #operator operator.c	# operator.add() and similar goodies
 #_weakref _weakref.c	# basic weak reference support
