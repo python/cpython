@@ -24,6 +24,7 @@ typedef struct {
     PyObject *co_name;		/* string (name, for reference) */
     int co_firstlineno;		/* first source line number */
     PyObject *co_lnotab;	/* string (encoding addr<->lineno mapping) */
+    void *co_zombieframe;     /* for optimization only (see frameobject.c) */
 } PyCodeObject;
 
 /* Masks for co_flags above */

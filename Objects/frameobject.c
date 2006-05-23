@@ -350,10 +350,31 @@ static PyGetSetDef frame_getsetlist[] = {
 };
 
 /* Stack frames are allocated and deallocated at a considerable rate.
-   In an attempt to improve the speed of function calls, we maintain a
-   separate free list of stack frames (just like integers are
-   allocated in a special way -- see intobject.c).  When a stack frame
-   is on the free list, only the following members have a meaning:
+   In an attempt to improve the speed of function calls, we:
+
+   1. Hold a single "zombie" frame on each code object. This retains
+   the allocated and initialised frame object from an invocation of
+   the code object. The zombie is reanimated the next time we need a
+   frame object for that code object. Doing this saves the malloc/
+   realloc required when using a free_list frame that isn't the
+   correct size. It also saves some field initialisation.
+
+   In zombie mode, no field of PyFrameObject holds a reference, but
+   the following fields are still valid:
+
+     * ob_type, ob_size, f_code, f_valuestack,
+       f_nlocals, f_ncells, f_nfreevars, f_stacksize;
+       
+     * f_locals, f_trace,
+       f_exc_type, f_exc_value, f_exc_traceback are NULL;
+
+     * f_localsplus does not require re-allocation and
+       the local variables in f_localsplus are NULL.
+
+   2. We also maintain a separate free list of stack frames (just like
+   integers are allocated in a special way -- see intobject.c).  When
+   a stack frame is on the free list, only the following members have
+   a meaning:
 	ob_type		== &Frametype
 	f_back		next item on free list, or NULL
 	f_nlocals	number of locals
@@ -380,41 +401,43 @@ static int numfree = 0;		/* number of frames currently in free_list */
 static void
 frame_dealloc(PyFrameObject *f)
 {
-	int i, slots;
-	PyObject **fastlocals;
-	PyObject **p;
+	PyObject **p, **valuestack;
+	PyCodeObject *co;
 
  	PyObject_GC_UnTrack(f);
 	Py_TRASHCAN_SAFE_BEGIN(f)
 	/* Kill all local variables */
-	slots = f->f_nlocals + f->f_ncells + f->f_nfreevars;
-	fastlocals = f->f_localsplus;
-	for (i = slots; --i >= 0; ++fastlocals) {
-		Py_XDECREF(*fastlocals);
-	}
+        valuestack = f->f_valuestack;
+        for (p = f->f_localsplus; p < valuestack; p++)
+                Py_CLEAR(*p);
 
 	/* Free stack */
 	if (f->f_stacktop != NULL) {
-		for (p = f->f_valuestack; p < f->f_stacktop; p++)
+		for (p = valuestack; p < f->f_stacktop; p++)
 			Py_XDECREF(*p);
 	}
 
 	Py_XDECREF(f->f_back);
-	Py_DECREF(f->f_code);
 	Py_DECREF(f->f_builtins);
 	Py_DECREF(f->f_globals);
-	Py_XDECREF(f->f_locals);
-	Py_XDECREF(f->f_trace);
-	Py_XDECREF(f->f_exc_type);
-	Py_XDECREF(f->f_exc_value);
-	Py_XDECREF(f->f_exc_traceback);
-	if (numfree < MAXFREELIST) {
+	Py_CLEAR(f->f_locals);
+	Py_CLEAR(f->f_trace);
+	Py_CLEAR(f->f_exc_type);
+	Py_CLEAR(f->f_exc_value);
+	Py_CLEAR(f->f_exc_traceback);
+
+        co = f->f_code;
+        if (co != NULL && co->co_zombieframe == NULL)
+                co->co_zombieframe = f;
+	else if (numfree < MAXFREELIST) {
 		++numfree;
 		f->f_back = free_list;
 		free_list = f;
-	}
-	else
+        }
+	else 
 		PyObject_GC_Del(f);
+
+        Py_XDECREF(co);
 	Py_TRASHCAN_SAFE_END(f)
 }
 
@@ -532,7 +555,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 	PyFrameObject *back = tstate->frame;
 	PyFrameObject *f;
 	PyObject *builtins;
-	Py_ssize_t extras, ncells, nfrees, i;
+	Py_ssize_t i;
 
 #ifdef Py_DEBUG
 	if (code == NULL || globals == NULL || !PyDict_Check(globals) ||
@@ -541,9 +564,6 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 		return NULL;
 	}
 #endif
-	ncells = PyTuple_GET_SIZE(code->co_cellvars);
-	nfrees = PyTuple_GET_SIZE(code->co_freevars);
-	extras = code->co_stacksize + code->co_nlocals + ncells + nfrees;
 	if (back == NULL || back->f_globals != globals) {
 		builtins = PyDict_GetItem(globals, builtin_object);
 		if (builtins) {
@@ -574,71 +594,86 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 		assert(builtins != NULL && PyDict_Check(builtins));
 		Py_INCREF(builtins);
 	}
-	if (free_list == NULL) {
-		f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, extras);
-		if (f == NULL) {
-			Py_DECREF(builtins);
-			return NULL;
-		}
+	if (code->co_zombieframe != NULL) {
+                f = code->co_zombieframe;
+                code->co_zombieframe = NULL;
+                _Py_NewReference((PyObject *)f);
+                assert(f->f_code == code);
 	}
-	else {
-		assert(numfree > 0);
-		--numfree;
-		f = free_list;
-		free_list = free_list->f_back;
-		if (f->ob_size < extras) {
-			f = PyObject_GC_Resize(PyFrameObject, f, extras);
-			if (f == NULL) {
-				Py_DECREF(builtins);
-				return NULL;
-			}
-		}
-		_Py_NewReference((PyObject *)f);
+        else {
+                Py_ssize_t extras, ncells, nfrees;
+                ncells = PyTuple_GET_SIZE(code->co_cellvars);
+                nfrees = PyTuple_GET_SIZE(code->co_freevars);
+                extras = code->co_stacksize + code->co_nlocals + ncells +
+                    nfrees;
+                if (free_list == NULL) {
+                    f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type,
+                        extras);
+                    if (f == NULL) {
+                            Py_DECREF(builtins);
+                            return NULL;
+                    }
+                }
+                else {
+                    assert(numfree > 0);
+                    --numfree;
+                    f = free_list;
+                    free_list = free_list->f_back;
+                    if (f->ob_size < extras) {
+                            f = PyObject_GC_Resize(PyFrameObject, f, extras);
+                            if (f == NULL) {
+                                    Py_DECREF(builtins);
+                                    return NULL;
+                            }
+                    }
+                    _Py_NewReference((PyObject *)f);
+                }
+
+		f->f_code = code;
+		f->f_nlocals = code->co_nlocals;
+		f->f_stacksize = code->co_stacksize;
+		f->f_ncells = ncells;
+		f->f_nfreevars = nfrees;
+		extras = f->f_nlocals + ncells + nfrees;
+		f->f_valuestack = f->f_localsplus + extras;
+		for (i=0; i<extras; i++)
+			f->f_localsplus[i] = NULL;
+		f->f_locals = NULL;
+		f->f_trace = NULL;
+                f->f_exc_type = f->f_exc_value = f->f_exc_traceback = NULL;
 	}
 	f->f_builtins = builtins;
 	Py_XINCREF(back);
 	f->f_back = back;
 	Py_INCREF(code);
-	f->f_code = code;
 	Py_INCREF(globals);
 	f->f_globals = globals;
 	/* Most functions have CO_NEWLOCALS and CO_OPTIMIZED set. */
 	if ((code->co_flags & (CO_NEWLOCALS | CO_OPTIMIZED)) ==
 		(CO_NEWLOCALS | CO_OPTIMIZED))
-		locals = NULL; /* PyFrame_FastToLocals() will set. */
+		; /* f_locals = NULL; will be set by PyFrame_FastToLocals() */
 	else if (code->co_flags & CO_NEWLOCALS) {
 		locals = PyDict_New();
 		if (locals == NULL) {
 			Py_DECREF(f);
 			return NULL;
 		}
+                f->f_locals = locals;
 	}
 	else {
 		if (locals == NULL)
 			locals = globals;
 		Py_INCREF(locals);
+                f->f_locals = locals;
 	}
-	f->f_locals = locals;
-	f->f_trace = NULL;
-	f->f_exc_type = f->f_exc_value = f->f_exc_traceback = NULL;
 	f->f_tstate = tstate;
 
 	f->f_lasti = -1;
 	f->f_lineno = code->co_firstlineno;
 	f->f_restricted = (builtins != tstate->interp->builtins);
 	f->f_iblock = 0;
-	f->f_nlocals = code->co_nlocals;
-	f->f_stacksize = code->co_stacksize;
-	f->f_ncells = ncells;
-	f->f_nfreevars = nfrees;
 
-	extras = f->f_nlocals + ncells + nfrees;
-	/* Tim said it's ok to replace memset */
-	for (i=0; i<extras; i++)
-		f->f_localsplus[i] = NULL;
-
-	f->f_valuestack = f->f_localsplus + extras;
-	f->f_stacktop = f->f_valuestack;
+        f->f_stacktop = f->f_valuestack;
 	_PyObject_GC_TRACK(f);
 	return f;
 }

@@ -102,6 +102,7 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 		co->co_firstlineno = firstlineno;
 		Py_INCREF(lnotab);
 		co->co_lnotab = lnotab;
+                co->co_zombieframe = NULL;
 	}
 	return co;
 }
@@ -265,6 +266,8 @@ code_dealloc(PyCodeObject *co)
 	Py_XDECREF(co->co_filename);
 	Py_XDECREF(co->co_name);
 	Py_XDECREF(co->co_lnotab);
+        if (co->co_zombieframe != NULL)
+                PyObject_GC_Del(co->co_zombieframe);
 	PyObject_DEL(co);
 }
 

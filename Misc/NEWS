@@ -12,6 +12,9 @@ What's New in Python 2.5 alpha 3?
 Core and builtins
 -----------------
 
+- Patch #876206: function call speedup by retaining allocated frame
+  objects.
+
 - Bug #1462152: file() now checks more thoroughly for invalid mode
   strings and removes a possible "U" before passing the mode to the
   C library function.
