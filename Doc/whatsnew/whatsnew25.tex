@@ -1120,6 +1120,13 @@ interpreter as they expect.  (Implemented by Georg Brandl.)
 %======================================================================
 \subsection{Optimizations\label{opts}}
 
+Several of the optimizations were developed at the NeedForSpeed
+sprint, an event held in Reykjavik, Iceland, from May 21--28 2006.
+The sprint focused on speed enhancements to the CPython implementation
+and was funded by EWT LLC with local support from CCP Games.  Those
+optimizations added at this sprint are specially marked in the
+following list.
+
 \begin{itemize}
 
 \item When they were introduced 
@@ -1137,6 +1144,13 @@ character map decoding, has been improved.
 simple constant folding in expressions.  If you write something like
 \code{a = 2+3}, the code generator will do the arithmetic and produce
 code corresponding to \code{a = 5}.
+
+\item Function calls are now faster because code objects now keep 
+the most recently finished frame (a ``zombie frame'') in an internal
+field of the code object, reusing it the next time the code object is
+invoked.  (Original patch by Michael Hudson, modified by Armin Rigo
+and Richard Jones; committed at the NeedForSpeed sprint.)
+% Patch 876206
 
 \end{itemize}
 
@@ -1934,6 +1948,10 @@ of the Python interpreter by calling the
 string of build information like this:
 \code{"trunk:45355:45356M, Apr 13 2006, 07:42:19"}.  
 (Contributed by Barry Warsaw.)
+
+\item \cfunction{PyErr_NewException(\var{name}, \var{base},
+\var{dict})} can now accept a tuple of base classes as its \var{base}
+argument.  (Contributed by Georg Brandl.)
 
 \item The CPython interpreter is still written in C, but 
 the code can now be compiled with a {\Cpp} compiler without errors.  
