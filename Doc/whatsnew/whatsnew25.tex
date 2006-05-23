@@ -1137,10 +1137,10 @@ and as a result sets will use a third less memory and are somewhat faster.
 (Implemented by Raymond Hettinger.)
 
 \item The speed of some Unicode operations, such as 
-finding substrings and character map decoding, has been improved.
-(Substring search improvements were added by Fredrik Lundh and Andrew
-Dalke at the NeedForSpeed sprint. Character map decoding was improved
-by Walter D\"orwald.)
+finding substrings, string splitting, and character map decoding, has
+been improved.  (Substring search and splitting improvements were
+added by Fredrik Lundh and Andrew Dalke at the NeedForSpeed
+sprint. Character map decoding was improved by Walter D\"orwald.)
 % Patch 1313939
 
 \item The code generator's peephole optimizer now performs
@@ -1154,6 +1154,10 @@ field of the code object, reusing it the next time the code object is
 invoked.  (Original patch by Michael Hudson, modified by Armin Rigo
 and Richard Jones; committed at the NeedForSpeed sprint.)
 % Patch 876206
+
+Frame objects are also slightly smaller, which may improve cache locality
+and reduce memory usage a bit.  (Contributed by Neal Norwitz.)
+% Patch 1337051
 
 \end{itemize}
 
