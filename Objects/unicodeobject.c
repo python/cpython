@@ -5900,7 +5900,7 @@ unicode_repeat(PyUnicodeObject *str, Py_ssize_t len)
     if (str->length == 1 && len > 0) {
         Py_UNICODE_FILL(p, str->str[0], len);
     } else {
-	int done = 0; /* number of characters copied this far */
+	Py_ssize_t done = 0; /* number of characters copied this far */
 	if (done < nchars) {
             Py_UNICODE_COPY(p, str->str, str->length);
             done = str->length;
