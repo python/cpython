@@ -46,8 +46,8 @@ typedef struct {
 	PyObject *weakreflist; /* List of weak references */
 } PyStructObject;
 
-#define PyStruct_Check(op) PyObject_TypeCheck(op, &PyStruct_Type)
-#define PyStruct_CheckExact(op) ((op)->ob_type == &PyStruct_Type)
+#define PyStruct_Check(op) PyObject_TypeCheck(op, &PyStructType)
+#define PyStruct_CheckExact(op) ((op)->ob_type == &PyStructType)
 
 
 /* Exception */
