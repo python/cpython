@@ -45,6 +45,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1493701: performance enhancements for struct module.
+
 - Patch #1490224: time.altzone is now set correctly on Cygwin.
 
 - Patch #1435422: zlib's compress and decompress objects now have a
