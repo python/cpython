@@ -1,7 +1,7 @@
 #!/usr/bin/python2.3
 """
 This script is used to build the "official unofficial" universal build on
-Mac OS X. It requires Mac OS X 10.4, Xcode 2.2 and the 10.4u SDK to do its 
+Mac OS X. It requires Mac OS X 10.4, Xcode 2.2 and the 10.4u SDK to do its
 work.
 
 Please ensure that this script keeps working with Python 2.3, to avoid
@@ -31,7 +31,7 @@ except ImportError:
         plist.write(path)
 
 def shellQuote(value):
-    """ 
+    """
     Return the string value in a form that can savely be inserted into
     a shell command.
     """
@@ -141,7 +141,7 @@ LIBRARY_RECIPES=[
             "ncurses-5.5.patch",
         ],
         useLDFlags=False,
-        install='make && make install DESTDIR=%s && cd %s/usr/local/lib && ln -fs ../../../Library/Frameworks/Python.framework/Versions/%s/lib/lib* .'%( 
+        install='make && make install DESTDIR=%s && cd %s/usr/local/lib && ln -fs ../../../Library/Frameworks/Python.framework/Versions/%s/lib/lib* .'%(
             shellQuote(os.path.join(WORKDIR, 'libraries')),
             shellQuote(os.path.join(WORKDIR, 'libraries')),
             getVersion(),
@@ -190,7 +190,7 @@ PKG_RECIPES=[
         long_name="UNIX command-line tools",
         source="/usr/local/bin",
         readme="""\
-            This package installs the unix tools in /usr/local/bin for 
+            This package installs the unix tools in /usr/local/bin for
             compatibility with older releases of MacPython. This package
             is not necessary to use MacPython.
             """,
@@ -204,7 +204,7 @@ PKG_RECIPES=[
         readme="""\
             This package installs the python documentation at a location
             that is useable for pydoc and IDLE. If you have installed Xcode
-            it will also install a link to the documentation in 
+            it will also install a link to the documentation in
             /Developer/Documentation/Python
             """,
         postflight="scripts/postflight.documentation",
@@ -218,7 +218,7 @@ PKG_RECIPES=[
             the MacPython tools are found by your shell in preference of
             the system provided Python tools.
 
-            If you don't install this package you'll have to add 
+            If you don't install this package you'll have to add
             "/Library/Frameworks/Python.framework/Versions/%(VER)s/bin"
             to your PATH by hand.
             """,
@@ -297,7 +297,7 @@ def parseOptions(args = None):
         args = sys.argv[1:]
 
     try:
-        options, args = getopt.getopt(args, '?hb', 
+        options, args = getopt.getopt(args, '?hb',
                 [ 'build-dir=', 'third-party=', 'sdk-path=' , 'src-dir='])
     except getopt.error, msg:
         print msg
@@ -348,7 +348,7 @@ def extractArchive(builddir, archiveName):
     extracted archive.
 
     XXX: This function assumes that archives contain a toplevel directory
-    that is has the same name as the basename of the archive. This is 
+    that is has the same name as the basename of the archive. This is
     save enough for anything we use.
     """
     curdir = os.getcwd()
@@ -423,7 +423,7 @@ def downloadURL(url, fname):
 
 def buildRecipe(recipe, basedir, archList):
     """
-    Build software using a recipe. This function does the 
+    Build software using a recipe. This function does the
     'configure;make;make install' dance for C software, with a possibility
     to customize this process, basically a poor-mans DarwinPorts.
     """
@@ -469,9 +469,9 @@ def buildRecipe(recipe, basedir, archList):
             fn = path
 
         fn = os.path.join(curdir, fn)
-        runCommand('patch -p%s < %s'%(recipe.get('patchlevel', 1), 
+        runCommand('patch -p%s < %s'%(recipe.get('patchlevel', 1),
             shellQuote(fn),))
-    
+
     configure_args = [
         "--prefix=/usr/local",
         "--enable-static",
@@ -490,25 +490,25 @@ def buildRecipe(recipe, basedir, archList):
     if recipe.get('useLDFlags', 1):
         configure_args.extend([
             "CFLAGS=-arch %s -isysroot %s -I%s/usr/local/include"%(
-                    ' -arch '.join(archList), 
-                    shellQuote(SDKPATH)[1:-1], 
+                    ' -arch '.join(archList),
+                    shellQuote(SDKPATH)[1:-1],
                     shellQuote(basedir)[1:-1],),
             "LDFLAGS=-syslibroot,%s -L%s/usr/local/lib -arch %s"%(
-                shellQuote(SDKPATH)[1:-1], 
-                shellQuote(basedir)[1:-1], 
+                shellQuote(SDKPATH)[1:-1],
+                shellQuote(basedir)[1:-1],
                 ' -arch '.join(archList)),
         ])
     else:
         configure_args.extend([
             "CFLAGS=-arch %s -isysroot %s -I%s/usr/local/include"%(
-                    ' -arch '.join(archList), 
-                    shellQuote(SDKPATH)[1:-1], 
+                    ' -arch '.join(archList),
+                    shellQuote(SDKPATH)[1:-1],
                     shellQuote(basedir)[1:-1],),
         ])
 
     if 'configure_post' in recipe:
         configure_args = configure_args = list(recipe['configure_post'])
-	
+
     configure_args.insert(0, configure)
     configure_args = [ shellQuote(a) for a in configure_args ]
 
@@ -519,7 +519,7 @@ def buildRecipe(recipe, basedir, archList):
     runCommand('{ ' + install + ' ;} 2>&1')
 
     print "Done %s"%(name,)
-    print ""	
+    print ""
 
     os.chdir(curdir)
 
@@ -586,16 +586,16 @@ def buildPython():
     # claims that parts of the install assume python.exe exists.
     os.symlink('python', os.path.join(buildDir, 'python.exe'))
 
-    # Extract the version from the configure file, needed to calculate 
+    # Extract the version from the configure file, needed to calculate
     # several paths.
     version = getVersion()
 
     print "Running configure..."
     runCommand("%s -C --enable-framework --enable-universalsdk=%s LDFLAGS='-g -L'%s/libraries/usr/local/lib OPT='-g -O3 -I'%s/libraries/usr/local/include 2>&1"%(
         shellQuote(os.path.join(SRCDIR, 'configure')),
-        shellQuote(SDKPATH), shellQuote(WORKDIR), 
+        shellQuote(SDKPATH), shellQuote(WORKDIR),
         shellQuote(WORKDIR)))
-    
+
     print "Running make"
     runCommand("make")
 
@@ -611,10 +611,10 @@ def buildPython():
     if os.path.exists(os.path.join(WORKDIR, 'libraries', 'Library')):
         runCommand("mv %s/* %s"%(
             shellQuote(os.path.join(
-                WORKDIR, 'libraries', 'Library', 'Frameworks', 
+                WORKDIR, 'libraries', 'Library', 'Frameworks',
                 'Python.framework', 'Versions', getVersion(),
                 'lib')),
-            shellQuote(os.path.join(WORKDIR, '_root', 'Library', 'Frameworks', 
+            shellQuote(os.path.join(WORKDIR, '_root', 'Library', 'Frameworks',
                 'Python.framework', 'Versions', getVersion(),
                 'lib'))))
 
@@ -625,9 +625,9 @@ def buildPython():
             os.chmod(os.path.join(dirpath, dn), 0775)
 
         for fn in filenames:
-            if os.path.islink(fn): 
+            if os.path.islink(fn):
                 continue
-            
+
             # "chmod g+w $fn"
             p = os.path.join(dirpath, fn)
             st = os.stat(p)
@@ -658,7 +658,7 @@ def buildPython():
     os.makedirs(usr_local_bin)
     for fn in os.listdir(
                 os.path.join(frmDir, 'Versions', version, 'bin')):
-        os.symlink(os.path.join(to_framework, fn), 
+        os.symlink(os.path.join(to_framework, fn),
                    os.path.join(usr_local_bin, fn))
 
     os.chdir(curdir)
@@ -697,7 +697,7 @@ def packageFromRecipe(targetDir, recipe):
         isRequired = recipe.get('required', True)
 
         print "- building package %s"%(pkgname,)
-       
+
         # Substitute some variables
         textvars = dict(
             VER=getVersion(),
@@ -792,7 +792,7 @@ def makeMpkgPlist(path):
                 dict(
                     IFPkgFlagPackageLocation='%s.pkg'%(item['name']),
                     IFPkgFlagPackageSelection='selected'
-                )   
+                )
                 for item in PKG_RECIPES
             ],
             IFPkgFormatVersion=0.10000000149011612,
@@ -815,7 +815,7 @@ def buildInstaller():
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
     os.mkdir(outdir)
-    
+
     pkgroot = os.path.join(outdir, 'MacPython.mpkg', 'Contents')
     pkgcontents = os.path.join(pkgroot, 'Packages')
     os.makedirs(pkgcontents)
@@ -851,7 +851,7 @@ def installSize(clear=False, _saved=[]):
     if clear:
         del _saved[:]
     if not _saved:
-        data = captureCommand("du -ks %s"%( 
+        data = captureCommand("du -ks %s"%(
                     shellQuote(os.path.join(WORKDIR, '_root'))))
         _saved.append("%d"%((0.5 + (int(data.split()[0]) / 1024.0)),))
     return _saved[0]
@@ -892,7 +892,7 @@ def setIcon(filePath, icnsPath):
     icon = Carbon.Icn.ReadIconFile(ref)
     del ref
 
-    # 
+    #
     # Open the resource fork of the target, to add the icon later on.
     # For directories we use the file 'Icon\r' inside the directory.
     #
@@ -904,7 +904,7 @@ def setIcon(filePath, icnsPath):
         if not os.path.exists(tmpPath):
             fp = open(tmpPath, 'w')
             fp.close()
-    
+
         tmpRef, _ = Carbon.File.FSPathMakeRef(tmpPath)
         spec = Carbon.File.FSSpec(tmpRef)
 
@@ -917,7 +917,7 @@ def setIcon(filePath, icnsPath):
         pass
 
     # Try to create the resource fork again, this will avoid problems
-    # when adding an icon to a directory. I have no idea why this helps, 
+    # when adding an icon to a directory. I have no idea why this helps,
     # but without this adding the icon to a directory will fail sometimes.
     try:
         Carbon.Res.HCreateResFile(*spec.as_tuple())
@@ -946,7 +946,7 @@ def setIcon(filePath, icnsPath):
     Carbon.Res.CloseResFile(refNum)
 
     # And now set the kHasCustomIcon property for the target. Annoyingly,
-    # python doesn't seem to have bindings for the API that is needed for 
+    # python doesn't seem to have bindings for the API that is needed for
     # this. Cop out and call SetFile
     os.system("/Developer/Tools/SetFile -a C %s"%(
             shellQuote(filePath),))
@@ -981,8 +981,8 @@ def main():
     folder = os.path.join(WORKDIR, "_root", "Applications", "MacPython %s"%(
         getVersion(),))
     os.chmod(folder, 0755)
-    setIcon(folder, "../Icons/Python Folder.icns") 
-  
+    setIcon(folder, "../Icons/Python Folder.icns")
+
     # Create the installer
     buildInstaller()
 
@@ -999,11 +999,11 @@ def main():
     fp.close()
 
     # Custom icon for the DMG, shown when the DMG is mounted.
-    shutil.copy("../Icons/Disk Image.icns", 
+    shutil.copy("../Icons/Disk Image.icns",
             os.path.join(WORKDIR, "installer", ".VolumeIcon.icns"))
     os.system("/Developer/Tools/SetFile -a C %s"%(
             os.path.join(WORKDIR, "installer", ".VolumeIcon.icns")))
-            
+
 
     # And copy it to a DMG
     buildDMG()

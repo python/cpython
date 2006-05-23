@@ -69,10 +69,10 @@ def get_platform ():
             release = m.group()
     elif osname[:6] == "darwin":
         #
-        # For our purposes, we'll assume that the system version from 
-        # distutils' perspective is what MACOSX_DEPLOYMENT_TARGET is set 
+        # For our purposes, we'll assume that the system version from
+        # distutils' perspective is what MACOSX_DEPLOYMENT_TARGET is set
         # to. This makes the compatibility story a bit more sane because the
-        # machine is going to compile and link as if it were 
+        # machine is going to compile and link as if it were
         # MACOSX_DEPLOYMENT_TARGET.
         from distutils.sysconfig import get_config_vars
         cfgvars = get_config_vars()
@@ -97,7 +97,7 @@ def get_platform ():
                         r'<string>(.*?)</string>', f.read())
                 f.close()
                 if m is not None:
-                     macver = '.'.join(m.group(1).split('.')[:2])
+                    macver = '.'.join(m.group(1).split('.')[:2])
                 # else: fall back to the default behaviour
 
         if macver:
