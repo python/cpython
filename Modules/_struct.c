@@ -8,6 +8,7 @@
 #include "structmember.h"
 #include <ctype.h>
 
+static PyTypeObject PyStructType;
 
 /* compatibility macros */
 #if (PY_VERSION_HEX < 0x02050000)
