@@ -172,7 +172,7 @@ LOCAL(int) unicode_member(Py_UNICODE chr, Py_UNICODE* set, Py_ssize_t setlen)
         if (set[i] == chr)
             return 1;
 
-    return -1;
+    return 0;
 }
 
 #define BLOOM_MEMBER(mask, chr, set, setlen)\
