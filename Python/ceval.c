@@ -654,11 +654,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #ifdef LLTRACE
 #define PUSH(v)		{ (void)(BASIC_PUSH(v), \
                                lltrace && prtrace(TOP(), "push")); \
-                               assert(STACK_LEVEL() <= f->f_stacksize); }
+                               assert(STACK_LEVEL() <= co->co_stacksize); }
 #define POP()		((void)(lltrace && prtrace(TOP(), "pop")), BASIC_POP())
 #define STACKADJ(n)	{ (void)(BASIC_STACKADJ(n), \
                                lltrace && prtrace(TOP(), "stackadj")); \
-                               assert(STACK_LEVEL() <= f->f_stacksize); }
+                               assert(STACK_LEVEL() <= co->co_stacksize); }
 #define EXT_POP(STACK_POINTER) (lltrace && prtrace(*(STACK_POINTER), "ext_pop"), *--(STACK_POINTER))
 #else
 #define PUSH(v)		BASIC_PUSH(v)
@@ -729,7 +729,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 	names = co->co_names;
 	consts = co->co_consts;
 	fastlocals = f->f_localsplus;
-	freevars = f->f_localsplus + f->f_nlocals;
+	freevars = f->f_localsplus + co->co_nlocals;
 	first_instr = (unsigned char*) PyString_AS_STRING(co->co_code);
 	/* An explanation is in order for the next line.
 
@@ -780,7 +780,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		READ_TIMESTAMP(loop0);
 #endif
 		assert(stack_pointer >= f->f_valuestack); /* else underflow */
-		assert(STACK_LEVEL() <= f->f_stacksize);  /* else overflow */
+		assert(STACK_LEVEL() <= co->co_stacksize);  /* else overflow */
 
 		/* Do periodic things.  Doing this every time through
 		   the loop would add too much overhead, so we do it
@@ -1916,17 +1916,17 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			/* Don't stomp existing exception */
 			if (PyErr_Occurred())
 				break;
-			if (oparg < f->f_ncells) {
-				v = PyTuple_GetItem(co->co_cellvars,
+			if (oparg < PyTuple_GET_SIZE(co->co_cellvars)) {
+				v = PyTuple_GET_ITEM(co->co_cellvars,
 						       oparg);
 			       format_exc_check_arg(
 				       PyExc_UnboundLocalError,
 				       UNBOUNDLOCAL_ERROR_MSG,
 				       v);
 			} else {
-			       v = PyTuple_GetItem(
+			       v = PyTuple_GET_ITEM(
 					      co->co_freevars,
-					      oparg - f->f_ncells);
+					      oparg - PyTuple_GET_SIZE(co->co_cellvars));
 			       format_exc_check_arg(
 				       PyExc_NameError,
 				       UNBOUNDFREE_ERROR_MSG,
@@ -2610,7 +2610,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		return NULL;
 
 	fastlocals = f->f_localsplus;
-	freevars = f->f_localsplus + f->f_nlocals;
+	freevars = f->f_localsplus + co->co_nlocals;
 
 	if (co->co_argcount > 0 ||
 	    co->co_flags & (CO_VARARGS | CO_VARKEYWORDS)) {
@@ -2746,7 +2746,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	}
 	/* Allocate and initialize storage for cell vars, and copy free
 	   vars into frame.  This isn't too efficient right now. */
-	if (f->f_ncells) {
+	if (PyTuple_GET_SIZE(co->co_cellvars)) {
 		int i = 0, j = 0, nargs, found;
 		char *cellname, *argname;
 		PyObject *c;
@@ -2764,7 +2764,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		   that are arguments at the beginning of the cellvars
 		   list so that we can march over it more efficiently?
 		*/
-		for (i = 0; i < f->f_ncells; ++i) {
+		for (i = 0; i < PyTuple_GET_SIZE(co->co_cellvars); ++i) {
 			cellname = PyString_AS_STRING(
 				PyTuple_GET_ITEM(co->co_cellvars, i));
 			found = 0;
@@ -2775,7 +2775,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 					c = PyCell_New(GETLOCAL(j));
 					if (c == NULL)
 						goto fail;
-					GETLOCAL(f->f_nlocals + i) = c;
+					GETLOCAL(co->co_nlocals + i) = c;
 					found = 1;
 					break;
 				}
@@ -2784,16 +2784,16 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				c = PyCell_New(NULL);
 				if (c == NULL)
 					goto fail;
-				SETLOCAL(f->f_nlocals + i, c);
+				SETLOCAL(co->co_nlocals + i, c);
 			}
 		}
 	}
-	if (f->f_nfreevars) {
+	if (PyTuple_GET_SIZE(co->co_freevars)) {
 		int i;
-		for (i = 0; i < f->f_nfreevars; ++i) {
+		for (i = 0; i < PyTuple_GET_SIZE(co->co_freevars); ++i) {
 			PyObject *o = PyTuple_GET_ITEM(closure, i);
 			Py_INCREF(o);
-			freevars[f->f_ncells + i] = o;
+			freevars[PyTuple_GET_SIZE(co->co_cellvars) + i] = o;
 		}
 	}
 
@@ -4214,7 +4214,7 @@ string_concatenate(PyObject *v, PyObject *w,
 		}
 		case STORE_DEREF:
 		{
-			PyObject **freevars = f->f_localsplus + f->f_nlocals;
+			PyObject **freevars = f->f_localsplus + f->f_code->co_nlocals;
 			PyObject *c = freevars[PEEKARG()];
 			if (PyCell_GET(c) == v)
 				PyCell_Set(c, NULL);
