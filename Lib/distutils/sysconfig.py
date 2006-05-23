@@ -500,6 +500,21 @@ def get_config_vars(*args):
         _config_vars['prefix'] = PREFIX
         _config_vars['exec_prefix'] = EXEC_PREFIX
 
+        if sys.platform == 'darwin':
+            kernel_version = os.uname()[2] # Kernel version (8.4.3)
+            major_version = int(kernel_version.split('.')[0])
+
+            if major_version < 8:
+                # On Mac OS X before 10.4, check if -arch and -isysroot
+                # are in CFLAGS or LDFLAGS and remove them if they are.
+                # This is needed when building extensions on a 10.3 system
+                # using a universal build of python.
+                for key in ('LDFLAGS', 'BASECFLAGS'):
+                    flags = _config_vars[key]
+                    flags = re.sub('-arch\s+\w+\s', ' ', flags)
+                    flags = re.sub('-isysroot [^ \t]* ', ' ', flags)
+                    _config_vars[key] = flags
+
     if args:
         vals = []
         for name in args:
