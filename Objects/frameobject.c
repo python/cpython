@@ -362,8 +362,7 @@ static PyGetSetDef frame_getsetlist[] = {
    In zombie mode, no field of PyFrameObject holds a reference, but
    the following fields are still valid:
 
-     * ob_type, ob_size, f_code, f_valuestack,
-       f_nlocals, f_ncells, f_nfreevars, f_stacksize;
+     * ob_type, ob_size, f_code, f_valuestack;
        
      * f_locals, f_trace,
        f_exc_type, f_exc_value, f_exc_traceback are NULL;
@@ -629,11 +628,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
                 }
 
 		f->f_code = code;
-		f->f_nlocals = code->co_nlocals;
-		f->f_stacksize = code->co_stacksize;
-		f->f_ncells = ncells;
-		f->f_nfreevars = nfrees;
-		extras = f->f_nlocals + ncells + nfrees;
+		extras = code->co_nlocals + ncells + nfrees;
 		f->f_valuestack = f->f_localsplus + extras;
 		for (i=0; i<extras; i++)
 			f->f_localsplus[i] = NULL;
