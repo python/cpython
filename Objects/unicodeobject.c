@@ -46,6 +46,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
+#undef USE_INLINE /* XXX - set via configure? */
+
+#if defined(_MSC_VER) /* this is taken from _sre.c */
+#pragma warning(disable: 4710)
+/* fastest possible local call under MSVC */
+#define LOCAL(type) static __inline type __fastcall
+#elif defined(USE_INLINE)
+#define LOCAL(type) static inline type
+#else
+#define LOCAL(type) static type
+#endif
+
 /* Limit for the Unicode object free list */
 
 #define MAX_UNICODE_FREELIST_SIZE       1024
@@ -120,6 +132,51 @@ PyUnicode_GetMax(void)
 	return 0xFFFF;
 #endif
 }
+
+/* --- Bloom Filters ----------------------------------------------------- */
+
+/* stuff to implement simple "bloom filters" for Unicode characters.
+   to keep things simple, we use a single bitmask, using the least 5
+   bits from each unicode characters as the bit index. */
+
+/* the linebreak mask is set up by Unicode_Init below */
+
+#define BLOOM_MASK unsigned long
+
+static BLOOM_MASK bloom_linebreak;
+
+#define BLOOM(mask, ch) ((mask & (1 << ((ch) & 0x1F))))
+
+#define BLOOM_LINEBREAK(ch)\
+    (BLOOM(bloom_linebreak, (ch)) && Py_UNICODE_ISLINEBREAK((ch)))
+
+LOCAL(BLOOM_MASK) make_bloom_mask(Py_UNICODE* ptr, Py_ssize_t len)
+{
+    /* calculate simple bloom-style bitmask for a given unicode string */
+
+    long mask;
+    Py_ssize_t i;
+
+    mask = 0;
+    for (i = 0; i < len; i++)
+        mask |= (1 << (ptr[i] & 0x1F));
+
+    return mask;
+}
+
+LOCAL(int) unicode_member(Py_UNICODE chr, Py_UNICODE* set, Py_ssize_t setlen)
+{
+    Py_ssize_t i;
+
+    for (i = 0; i < setlen; i++)
+        if (set[i] == chr)
+            return 1;
+
+    return -1;
+}
+
+#define BLOOM_MEMBER(mask, chr, set, setlen)\
+    BLOOM(mask, chr) && unicode_member(chr, set, setlen)
 
 /* --- Unicode Object ----------------------------------------------------- */
 
@@ -3791,8 +3848,7 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
 
 /* --- Helpers ------------------------------------------------------------ */
 
-static
-Py_ssize_t count(PyUnicodeObject *self,
+static Py_ssize_t count(PyUnicodeObject *self,
 		 Py_ssize_t start,
 		 Py_ssize_t end,
 		 PyUnicodeObject *substring)
@@ -3850,8 +3906,7 @@ Py_ssize_t PyUnicode_Count(PyObject *str,
     return result;
 }
 
-static
-Py_ssize_t findstring(PyUnicodeObject *self,
+static Py_ssize_t findstring(PyUnicodeObject *self,
 	       PyUnicodeObject *substring,
 	       Py_ssize_t start,
 	       Py_ssize_t end,
@@ -4332,17 +4387,6 @@ PyUnicodeObject *pad(PyUnicodeObject *self,
         else								\
             Py_DECREF(str);
 
-#define SPLIT_INSERT(data, left, right)					\
-	str = PyUnicode_FromUnicode((data) + (left), (right) - (left));	\
-	if (!str)							\
-	    goto onError;						\
-	if (PyList_Insert(list, 0, str)) {				\
-	    Py_DECREF(str);						\
-	    goto onError;						\
-	}								\
-        else								\
-            Py_DECREF(str);
-
 static
 PyObject *split_whitespace(PyUnicodeObject *self,
 			   PyObject *list,
@@ -4403,7 +4447,7 @@ PyObject *PyUnicode_Splitlines(PyObject *string,
 	Py_ssize_t eol;
 
 	/* Find a line and append it */
-	while (i < len && !Py_UNICODE_ISLINEBREAK(data[i]))
+	while (i < len && !BLOOM_LINEBREAK(data[i]))
 	    i++;
 
 	/* Skip the line break reading CRLF as one line break */
@@ -4514,15 +4558,17 @@ PyObject *rsplit_whitespace(PyUnicodeObject *self,
 	if (j > i) {
 	    if (maxcount-- <= 0)
 		break;
-	    SPLIT_INSERT(self->str, i + 1, j + 1);
+	    SPLIT_APPEND(self->str, i + 1, j + 1);
 	    while (i >= 0 && Py_UNICODE_ISSPACE(self->str[i]))
 		i--;
 	    j = i;
 	}
     }
     if (j >= 0) {
-	SPLIT_INSERT(self->str, 0, j + 1);
+	SPLIT_APPEND(self->str, 0, j + 1);
     }
+    if (PyList_Reverse(list) < 0)
+        goto onError;
     return list;
 
  onError:
@@ -4545,14 +4591,16 @@ PyObject *rsplit_char(PyUnicodeObject *self,
 	if (self->str[i] == ch) {
 	    if (maxcount-- <= 0)
 		break;
-	    SPLIT_INSERT(self->str, i + 1, j + 1);
+	    SPLIT_APPEND(self->str, i + 1, j + 1);
 	    j = i = i - 1;
 	} else
 	    i--;
     }
     if (j >= -1) {
-	SPLIT_INSERT(self->str, 0, j + 1);
+	SPLIT_APPEND(self->str, 0, j + 1);
     }
+    if (PyList_Reverse(list) < 0)
+        goto onError;
     return list;
 
  onError:
@@ -4576,15 +4624,17 @@ PyObject *rsplit_substring(PyUnicodeObject *self,
 	if (Py_UNICODE_MATCH(self, i, substring)) {
 	    if (maxcount-- <= 0)
 		break;
-	    SPLIT_INSERT(self->str, i + sublen, j);
+	    SPLIT_APPEND(self->str, i + sublen, j);
 	    j = i;
 	    i -= sublen;
 	} else
 	    i--;
     }
     if (j >= 0) {
-	SPLIT_INSERT(self->str, 0, j);
+	SPLIT_APPEND(self->str, 0, j);
     }
+    if (PyList_Reverse(list) < 0)
+        goto onError;
     return list;
 
  onError:
@@ -4593,7 +4643,6 @@ PyObject *rsplit_substring(PyUnicodeObject *self,
 }
 
 #undef SPLIT_APPEND
-#undef SPLIT_INSERT
 
 static
 PyObject *split(PyUnicodeObject *self,
@@ -5703,16 +5752,6 @@ static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
 
 #define STRIPNAME(i) (stripformat[i]+3)
 
-static const Py_UNICODE *
-unicode_memchr(const Py_UNICODE *s, Py_UNICODE c, size_t n)
-{
-	size_t i;
-	for (i = 0; i < n; ++i)
-		if (s[i] == c)
-			return s+i;
-	return NULL;
-}
-
 /* externally visible for str.strip(unicode) */
 PyObject *
 _PyUnicode_XStrip(PyUnicodeObject *self, int striptype, PyObject *sepobj)
@@ -5723,27 +5762,29 @@ _PyUnicode_XStrip(PyUnicodeObject *self, int striptype, PyObject *sepobj)
 	Py_ssize_t seplen = PyUnicode_GET_SIZE(sepobj);
 	Py_ssize_t i, j;
 
+        BLOOM_MASK sepmask = make_bloom_mask(sep, seplen);
+
 	i = 0;
 	if (striptype != RIGHTSTRIP) {
-		while (i < len && unicode_memchr(sep, s[i], seplen)) {
-			i++;
-		}
+            while (i < len && BLOOM_MEMBER(sepmask, s[i], sep, seplen)) {
+                i++;
+            }
 	}
 
 	j = len;
 	if (striptype != LEFTSTRIP) {
-		do {
-			j--;
-		} while (j >= i && unicode_memchr(sep, s[j], seplen));
-		j++;
+            do {
+                j--;
+            } while (j >= i && BLOOM_MEMBER(sepmask, s[j], sep, seplen));
+            j++;
 	}
 
 	if (i == 0 && j == len && PyUnicode_CheckExact(self)) {
-		Py_INCREF(self);
-		return (PyObject*)self;
+            Py_INCREF(self);
+            return (PyObject*)self;
 	}
 	else
-		return PyUnicode_FromUnicode(s+i, j-i);
+            return PyUnicode_FromUnicode(s+i, j-i);
 }
 
 
@@ -7387,6 +7428,18 @@ void _PyUnicode_Init(void)
 {
     int i;
 
+    /* XXX - move this array to unicodectype.c ? */
+    Py_UNICODE linebreak[] = {
+        0x000A, /* LINE FEED */
+        0x000D, /* CARRIAGE RETURN */
+        0x001C, /* FILE SEPARATOR */
+        0x001D, /* GROUP SEPARATOR */
+        0x001E, /* RECORD SEPARATOR */
+        0x0085, /* NEXT LINE */
+        0x2028, /* LINE SEPARATOR */
+        0x2029, /* PARAGRAPH SEPARATOR */
+    };
+
     /* Init the implementation */
     unicode_freelist = NULL;
     unicode_freelist_size = 0;
@@ -7396,6 +7449,11 @@ void _PyUnicode_Init(void)
 	unicode_latin1[i] = NULL;
     if (PyType_Ready(&PyUnicode_Type) < 0)
 	Py_FatalError("Can't initialize 'unicode'");
+
+    /* initialize the linebreak bloom filter */
+    bloom_linebreak = make_bloom_mask(
+        linebreak, sizeof(linebreak) / sizeof(linebreak[0])
+        );
 }
 
 /* Finalize the Unicode implementation */
