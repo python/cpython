@@ -344,6 +344,9 @@
 			RelativePath="..\Modules\_bisectmodule.c">
 		</File>
 		<File
+			RelativePath="..\Modules\_struct.c">
+		</File>
+		<File
 			RelativePath="..\Modules\cjkcodecs\_codecs_cn.c">
 		</File>
 		<File
@@ -744,9 +747,6 @@
 		</File>
 		<File
 			RelativePath="..\Python\structmember.c">
-		</File>
-		<File
-			RelativePath="..\Modules\structmodule.c">
 		</File>
 		<File
 			RelativePath="..\Objects\structseq.c">
