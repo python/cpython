@@ -1143,6 +1143,11 @@ added by Fredrik Lundh and Andrew Dalke at the NeedForSpeed
 sprint. Character map decoding was improved by Walter D\"orwald.)
 % Patch 1313939
 
+\item The \module{struct} module now compiles structure format 
+strings into an internal representation and caches this
+representation, yielding a 20\% speedup.  (Contributed by Bob Ippolito
+at the NeedForSpeed sprint.)
+
 \item The code generator's peephole optimizer now performs
 simple constant folding in expressions.  If you write something like
 \code{a = 2+3}, the code generator will do the arithmetic and produce
