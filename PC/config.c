@@ -28,7 +28,6 @@ extern void init_sha(void);
 extern void init_sha256(void);
 extern void init_sha512(void);
 extern void initstrop(void);
-extern void initstruct(void);
 extern void inittime(void);
 extern void initthread(void);
 extern void initcStringIO(void);
@@ -53,6 +52,7 @@ extern void init_csv(void);
 extern void init_sre(void);
 extern void initparser(void);
 extern void init_winreg(void);
+extern void init_struct(void);
 extern void initdatetime(void);
 extern void initfunctional(void);
 extern void initzlib(void);
@@ -102,7 +102,6 @@ struct _inittab _PyImport_Inittab[] = {
         {"_sha256", init_sha256},
         {"_sha512", init_sha512},
         {"strop", initstrop},
-        {"struct", initstruct},
         {"time", inittime},
 #ifdef WITH_THREAD
         {"thread", initthread},
@@ -131,6 +130,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_sre", init_sre},
 	{"parser", initparser},
 	{"_winreg", init_winreg},
+	{"_struct", init_struct},
 	{"datetime", initdatetime},
 	{"functional", initfunctional},
 
