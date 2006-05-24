@@ -5068,8 +5068,8 @@ int PyUnicode_Contains(PyObject *container,
 	    }
 	}
     } else {
-        int start = 0;
-	int end = PyUnicode_GET_SIZE(u) - size;
+        Py_ssize_t start = 0;
+        Py_ssize_t end = PyUnicode_GET_SIZE(u) - size;
         for (; start <= end; start++)
             if (Py_UNICODE_MATCH(u, start, v)) {
                 result = 1;
