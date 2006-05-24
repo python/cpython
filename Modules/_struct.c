@@ -32,7 +32,7 @@ typedef struct _formatdef {
 typedef struct _formatcode {
 	const struct _formatdef *fmtdef;
 	int offset;
-	int repeat;
+	int size;
 } formatcode;
 
 /* Struct object interface */
@@ -45,6 +45,7 @@ typedef struct {
 	PyObject *s_format;
 	PyObject *weakreflist; /* List of weak references */
 } PyStructObject;
+
 
 #define PyStruct_Check(op) PyObject_TypeCheck(op, &PyStructType)
 #define PyStruct_CheckExact(op) ((op)->ob_type == &PyStructType)
@@ -962,7 +963,7 @@ prepare_s(PyStructObject *self)
 	const char *s;
 	const char *fmt;
 	char c;
-	int size, len, numcodes, num, itemsize, x;
+	int size, len, num, itemsize, x;
 
 	fmt = PyString_AS_STRING(self->s_format);
 
@@ -971,7 +972,6 @@ prepare_s(PyStructObject *self)
 	s = fmt;
 	size = 0;
 	len = 0;
-	numcodes = 0;
 	while ((c = *s++) != '\0') {
 		if (isspace(Py_CHARMASK(c)))
 			continue;
@@ -1003,7 +1003,6 @@ prepare_s(PyStructObject *self)
 			case 'x': break;
 			default: len += num; break;
 		}
-		if (c != 'x') numcodes++;
 
 		itemsize = e->size;
 		size = align(size, c, e);
@@ -1018,7 +1017,7 @@ prepare_s(PyStructObject *self)
 
 	self->s_size = size;
 	self->s_len = len;
-	codes = PyMem_MALLOC((numcodes + 1) * sizeof(formatcode));
+	codes = PyMem_MALLOC((len + 1) * sizeof(formatcode));
 	if (codes == NULL) {
 		PyErr_NoMemory();
 		return -1;
@@ -1043,17 +1042,27 @@ prepare_s(PyStructObject *self)
 		e = getentry(c, f);
 		
 		size = align(size, c, e);
-		if (c != 'x') {
+		if (c == 's' || c == 'p') {
 			codes->offset = size;
-			codes->repeat = num;
+			codes->size = num;
 			codes->fmtdef = e;
 			codes++;
+			size += num;
+		} else if (c == 'x') {
+			size += num;
+		} else {
+			while (--num >= 0) {
+				codes->offset = size;
+				codes->size = e->size;
+				codes->fmtdef = e;
+				codes++;
+				size += e->size;
+			}
 		}
-		size += num * e->size;
 	}
 	codes->fmtdef = NULL;
-	codes->offset = -1;
-	codes->repeat = -1;
+	codes->offset = size;
+	codes->size = 0;
 	
 	return 0;
 }
@@ -1111,6 +1120,46 @@ s_dealloc(PyStructObject *s)
 	s->ob_type->tp_free((PyObject *)s);
 }
 
+static PyObject *
+s_unpack_internal(PyStructObject *soself, char *startfrom) {
+	formatcode *code;
+	Py_ssize_t i = 0;
+	PyObject *result = PyTuple_New(soself->s_len);
+	if (result == NULL)
+		return NULL;
+
+	for (code = soself->s_codes; code->fmtdef != NULL; code++) {
+		PyObject *v;
+		const formatdef *e = code->fmtdef;
+		const char *res = startfrom + code->offset;
+		if (e->format == 's') {
+			v = PyString_FromStringAndSize(res, code->size);
+			if (v == NULL)
+				goto fail;
+			PyTuple_SET_ITEM(result, i++, v);
+		} else if (e->format == 'p') {
+			Py_ssize_t n = *(unsigned char*)res;
+			if (n >= code->size)
+				n = code->size - 1;
+			v = PyString_FromStringAndSize(res + 1, n);
+			if (v == NULL)
+				goto fail;
+			PyTuple_SET_ITEM(result, i++, v);
+		} else {
+			v = e->unpack(res, e);
+			if (v == NULL)
+				goto fail;
+			PyTuple_SET_ITEM(result, i++, v);
+		}
+	}
+
+	return result;
+fail:
+	Py_DECREF(result);
+	return NULL;
+};
+
+
 PyDoc_STRVAR(s_unpack__doc__,
 "unpack(str) -> (v1, v2, ...)\n\
 \n\
@@ -1121,63 +1170,62 @@ strings.");
 static PyObject *
 s_unpack(PyObject *self, PyObject *inputstr)
 {
-	PyStructObject *soself;
-	PyObject *result;
-	char *restart;
-	formatcode *code;
-	Py_ssize_t i;
-	
-	soself = (PyStructObject *)self;
+	PyStructObject *soself = (PyStructObject *)self;
 	assert(PyStruct_Check(self));
 	assert(soself->s_codes != NULL);	
 	if (inputstr == NULL || !PyString_Check(inputstr) ||
-	    PyString_GET_SIZE(inputstr) != soself->s_size) {
+		PyString_GET_SIZE(inputstr) != soself->s_size) {
 		PyErr_Format(StructError,
 			"unpack requires a string argument of length %d", soself->s_size);
 		return NULL;
 	}
-	result = PyTuple_New(soself->s_len);
-	if (result == NULL)
+	return s_unpack_internal(soself, PyString_AS_STRING(inputstr));
+}
+
+PyDoc_STRVAR(s_unpack_from__doc__,
+"unpack_from(buffer[, offset]) -> (v1, v2, ...)\n\
+\n\
+Return tuple containing values unpacked according to this Struct's format.\n\
+Unlike unpack, unpack_from can unpack values from any object supporting\n\
+the buffer API, not just str. Requires len(buffer[offset:]) >= self.size.\n\
+See struct.__doc__ for more on format strings.");
+
+static PyObject *
+s_unpack_from(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	static char *kwlist[] = {"buffer", "offset", 0};
+#if (PY_VERSION_HEX < 0x02050000)
+	static char *fmt = "z#|i:unpack_from";
+#else
+	static char *fmt = "z#|n:unpack_from";
+#endif
+	Py_ssize_t buffer_len = 0, offset = 0;
+	char *buffer = NULL;
+	PyStructObject *soself = (PyStructObject *)self;
+	assert(PyStruct_Check(self));
+	assert(soself->s_codes != NULL);
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, fmt, kwlist,
+					 &buffer, &buffer_len, &offset))
+        	return NULL;
+
+	if (buffer == NULL) {
+		PyErr_Format(StructError,
+			"unpack_from requires a buffer argument");
 		return NULL;
-	
-
-	restart = PyString_AS_STRING(inputstr);
-	i = 0;
-	for (code = soself->s_codes; code->fmtdef != NULL; code++) {
-		Py_ssize_t n;
-		PyObject *v;
-		const formatdef *e = code->fmtdef;
-		const char *res = restart + code->offset;
-		if (e->format == 's') {
-			v = PyString_FromStringAndSize(res, code->repeat);
-			if (v == NULL)
-				goto fail;
-			PyTuple_SET_ITEM(result, i++, v);
-		} else if (e->format == 'p') {
-			n = *(unsigned char*)res;
-			if (n >= code->repeat)
-				n = code->repeat - 1;
-			v = PyString_FromStringAndSize(res + 1, n);
-			if (v == NULL)
-				goto fail;
-			PyTuple_SET_ITEM(result, i++, v);
-		} else {
-			for (n = 0; n < code->repeat; n++) {
-				v = e->unpack(res, e);
-				if (v == NULL)
-					goto fail;
-				PyTuple_SET_ITEM(result, i++, v);
-				res += e->size;
-			}
-		}
 	}
+	
+	if (offset < 0)
+		offset += buffer_len;
 
-	return result;
-fail:
-	Py_DECREF(result);
-	return NULL;
-};
-
+	if (offset < 0 || (buffer_len - offset) < soself->s_size) {
+		PyErr_Format(StructError,
+			"unpack_from requires a buffer of at least %d bytes",
+			soself->s_size);
+		return NULL;
+	}
+	return s_unpack_internal(soself, buffer + offset);
+}
 
 PyDoc_STRVAR(s_pack__doc__,
 "pack(v1, v2, ...) -> string\n\
@@ -1225,8 +1273,8 @@ s_pack(PyObject *self, PyObject *args)
 				goto fail;
 			}
 			n = PyString_GET_SIZE(v);
-			if (n > code->repeat)
-				n = code->repeat;
+			if (n > code->size)
+				n = code->size;
 			if (n > 0)
 				memcpy(res, PyString_AS_STRING(v), n);
 		} else if (e->format == 'p') {
@@ -1237,20 +1285,17 @@ s_pack(PyObject *self, PyObject *args)
 				goto fail;
 			}
 			n = PyString_GET_SIZE(v);
-			if (n > (code->repeat - 1))
-				n = code->repeat - 1;
+			if (n > (code->size - 1))
+				n = code->size - 1;
 			if (n > 0)
 				memcpy(res + 1, PyString_AS_STRING(v), n);
 			if (n > 255)
 				n = 255;
 			*res = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
 		} else {
-			for (n = 0; n < code->repeat; n++) {
-				v = PyTuple_GET_ITEM(args, i++);
-				if (e->pack(res, v, e) < 0)
-					goto fail;
-				res += e->size;
-			}
+			v = PyTuple_GET_ITEM(args, i++);
+			if (e->pack(res, v, e) < 0)
+				goto fail;
 		}
 	}
 	
@@ -1266,8 +1311,9 @@ fail:
 /* List of functions */
 
 static struct PyMethodDef s_methods[] = {
-	{"pack",	s_pack,		METH_VARARGS, s_pack__doc__},
-	{"unpack",	s_unpack,	METH_O, s_unpack__doc__},
+	{"pack",	(PyCFunction)s_pack,		METH_VARARGS, s_pack__doc__},
+	{"unpack",	(PyCFunction)s_unpack,		METH_O, s_unpack__doc__},
+	{"unpack_from",	(PyCFunction)s_unpack_from,	METH_KEYWORDS, s_unpack_from__doc__},
 	{NULL,	 NULL}		/* sentinel */
 };
 

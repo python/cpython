@@ -437,3 +437,44 @@ def test_705836():
         TestFailed("expected OverflowError")
 
 test_705836()
+
+def test_unpack_from():
+    test_string = 'abcd01234'
+    fmt = '4s'
+    s = struct.Struct(fmt)
+    for cls in (str, buffer):
+        data = cls(test_string)
+        assert s.unpack_from(data) == ('abcd',)
+        assert s.unpack_from(data, 2) == ('cd01',)
+        assert s.unpack_from(data, 4) == ('0123',)
+        for i in xrange(6):
+            assert s.unpack_from(data, i) == (data[i:i+4],)
+        for i in xrange(6, len(test_string) + 1):
+            simple_err(s.unpack_from, data, i)
+    for cls in (str, buffer):
+        data = cls(test_string)
+        assert struct.unpack_from(fmt, data) == ('abcd',)
+        assert struct.unpack_from(fmt, data, 2) == ('cd01',)
+        assert struct.unpack_from(fmt, data, 4) == ('0123',)
+        for i in xrange(6):
+            assert struct.unpack_from(fmt, data, i) == (data[i:i+4],)
+        for i in xrange(6, len(test_string) + 1):
+            simple_err(struct.unpack_from, fmt, data, i)
+
+test_unpack_from()
+
+def test_1229380():
+    for endian in ('', '>', '<'):
+        for cls in (int, long):
+            for fmt in ('B', 'H', 'I', 'L'):
+                any_err(struct.pack, endian + fmt, cls(-1))
+
+            any_err(struct.pack, endian + 'B', cls(300))
+            any_err(struct.pack, endian + 'H', cls(70000))
+
+        any_err(struct.pack, endian + 'I', sys.maxint * 4L)
+        any_err(struct.pack, endian + 'L', sys.maxint * 4L)
+
+if 0:
+    # TODO: bug #1229380
+    test_1229380()
