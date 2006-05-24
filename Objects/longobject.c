@@ -277,9 +277,9 @@ _long_as_ssize_t(PyObject *vv) {
  overflow:
 	PyErr_SetString(PyExc_OverflowError,
 			"long int too large to convert to int");
-	if (sign > 0) 
+	if (sign > 0)
 		return PY_SSIZE_T_MAX;
-	else 
+	else
 		return PY_SSIZE_T_MIN;
 }
 
@@ -1304,7 +1304,34 @@ long_format(PyObject *aa, int base, int addL)
 	return (PyObject *)str;
 }
 
-/* *str points to the first digit in a string of base base digits.  base
+static int digval[] = {
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  37, 37, 37, 37, 37, 37,
+	37, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+	25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 37, 37, 37, 37, 37,
+	37, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+	25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
+	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37
+};
+
+/* *str points to the first digit in a string of base `base` digits.  base
  * is a power of 2 (2, 4, 8, 16, or 32).  *str is set to point to the first
  * non-digit (which may be *str!).  A normalized long is returned.
  * The point to this routine is that it takes time linear in the number of
@@ -1328,20 +1355,8 @@ long_from_binary_base(char **str, int base)
 		n >>= 1;
 	/* n <- total # of bits needed, while setting p to end-of-string */
 	n = 0;
-	for (;;) {
-		int k = -1;
-		char ch = *p;
-
-		if (ch <= '9')
-			k = ch - '0';
-		else if (ch >= 'a')
-			k = ch - 'a' + 10;
-		else if (ch >= 'A')
-			k = ch - 'A' + 10;
-		if (k < 0 || k >= base)
-			break;
+	while (digval[Py_CHARMASK(*p)] < base)
 		++p;
-	}
 	*str = p;
 	n = (p - start) * bits_per_char;
 	if (n / bits_per_char != p - start) {
@@ -1361,17 +1376,7 @@ long_from_binary_base(char **str, int base)
 	bits_in_accum = 0;
 	pdigit = z->ob_digit;
 	while (--p >= start) {
-		int k;
-		char ch = *p;
-
-		if (ch <= '9')
-			k = ch - '0';
-		else if (ch >= 'a')
-			k = ch - 'a' + 10;
-		else {
-			assert(ch >= 'A');
-			k = ch - 'A' + 10;
-		}
+		int k = digval[Py_CHARMASK(*p)];
 		assert(k >= 0 && k < base);
 		accum |= (twodigits)(k << bits_in_accum);
 		bits_in_accum += bits_per_char;
@@ -1427,33 +1432,140 @@ PyLong_FromString(char *str, char **pend, int base)
 	}
 	if (base == 16 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
 		str += 2;
+
 	start = str;
 	if ((base & (base - 1)) == 0)
 		z = long_from_binary_base(&str, base);
 	else {
-		z = _PyLong_New(0);
-		for ( ; z != NULL; ++str) {
-			int k = -1;
-			PyLongObject *temp;
+/***
+Binary bases can be converted in time linear in the number of digits, because
+Python's representation base is binary.  Other bases (including decimal!) use
+the simple quadratic-time algorithm below, complicated by some speed tricks.
 
-			if (*str <= '9')
-				k = *str - '0';
-			else if (*str >= 'a')
-				k = *str - 'a' + 10;
-			else if (*str >= 'A')
-				k = *str - 'A' + 10;
-			if (k < 0 || k >= base)
-				break;
-			temp = muladd1(z, (digit)base, (digit)k);
-			Py_DECREF(z);
-			z = temp;
+First some math:  the largest integer that can be expressed in N base-B digits
+is B**N-1.  Consequently, if we have an N-digit input in base B, the worst-
+case number of Python digits needed to hold it is the smallest integer n s.t.
+
+    BASE**n-1 >= B**N-1  [or, adding 1 to both sides]
+    BASE**n >= B**N      [taking logs to base BASE]
+    n >= log(B**N)/log(BASE) = N * log(B)/log(BASE)
+
+The static array log_base_BASE[base] == log(base)/log(BASE) so we can compute
+this quickly.  A Python long with that much space is reserved near the start,
+and the result is computed into it.
+
+The input string is actually treated as being in base base**i (i.e., i digits
+are processed at a time), where two more static arrays hold:
+
+    convwidth_base[base] = the largest integer i such that base**i <= BASE
+    convmultmax_base[base] = base ** convwidth_base[base]
+
+The first of these is the largest i such that i consecutive input digits
+must fit in a single Python digit.  The second is effectively the input
+base we're really using.
+
+Viewing the input as a sequence <c0, c1, ..., c_n-1> of digits in base
+convmultmax_base[base], the result is "simply"
+
+   (((c0*B + c1)*B + c2)*B + c3)*B + ... ))) + c_n-1
+
+where B = convmultmax_base[base].
+***/
+		register twodigits c;	/* current input character */
+		Py_ssize_t size_z;
+		int i;
+		int convwidth;
+		twodigits convmultmax, convmult;
+		digit *pz, *pzstop;
+		char* scan;
+
+		static double log_base_BASE[37] = {0.0e0,};
+		static int convwidth_base[37] = {0,};
+		static twodigits convmultmax_base[37] = {0,};
+
+		if (log_base_BASE[base] == 0.0) {
+			twodigits convmax = base;
+			int i = 1;
+
+			log_base_BASE[base] = log((double)base) /
+						log((double)BASE);
+			for (;;) {
+				twodigits next = convmax * base;
+				if (next > BASE)
+					break;
+				convmax = next;
+				++i;
+			}
+			convmultmax_base[base] = convmax;
+			assert(i > 0);
+			convwidth_base[base] = i;
+		}
+
+		/* Find length of the string of numeric characters. */
+		scan = str;
+		while (digval[Py_CHARMASK(*scan)] < base)
+			++scan;
+
+		/* Create a long object that can contain the largest possible
+		 * integer with this base and length.  Note that there's no
+		 * need to initialize z->ob_digit -- no slot is read up before
+		 * being stored into.
+		 */
+		size_z = (Py_ssize_t)((scan - str) * log_base_BASE[base]) + 1;
+		assert(size_z > 0);
+		z = _PyLong_New(size_z);
+		if (z == NULL)
+			return NULL;
+		z->ob_size = 0;
+
+		/* `convwidth` consecutive input digits are treated as a single
+		 * digit in base `convmultmax`.
+		 */
+		convwidth = convwidth_base[base];
+		convmultmax = convmultmax_base[base];
+
+		/* Work ;-) */
+		while (str < scan) {
+			/* grab up to convwidth digits from the input string */
+			c = (digit)digval[Py_CHARMASK(*str++)];
+			for (i = 1; i < convwidth && str != scan; ++i, ++str) {
+				c = (twodigits)(c *  base +
+					digval[Py_CHARMASK(*str)]);
+				assert(c < BASE);
+			}
+
+			convmult = convmultmax;
+			/* Calculate the shift only if we couldn't get
+			 * convwidth digits.
+			 */
+			if (i != convwidth) {
+				convmult = base;
+				for ( ; i > 1; --i)
+					convmult *= base;
+			}
+
+			/* Multiply z by convmult, and add c. */
+			pz = z->ob_digit;
+			pzstop = pz + z->ob_size;
+			for (; pz < pzstop; ++pz) {
+				c += (twodigits)*pz * convmult;
+				*pz = (digit)(c & MASK);
+				c >>= SHIFT;
+			}
+			/* carry off the current end? */
+			if (c) {
+				assert(c < BASE);
+				assert(z->ob_size < size_z);
+				*pz = (digit)c;
+				++z->ob_size;
+			}
 		}
 	}
 	if (z == NULL)
 		return NULL;
 	if (str == start)
 		goto onError;
-	if (sign < 0 && z != NULL && z->ob_size != 0)
+	if (sign < 0)
 		z->ob_size = -(z->ob_size);
 	if (*str == 'L' || *str == 'l')
 		str++;
