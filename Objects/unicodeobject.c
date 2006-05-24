@@ -3848,7 +3848,94 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
 
 /* --- Helpers ------------------------------------------------------------ */
 
-static Py_ssize_t count(PyUnicodeObject *self,
+#define USE_FAST /* experimental fast search implementation */
+
+/* fast search/count implementation, based on a mix between boyer-
+   moore and horspool, with a few more bells and whistles on the top.
+   for some more background, see: http://effbot.org/stringlib */
+
+#define FAST_COUNT 0
+#define FAST_SEARCH 1
+
+LOCAL(int) fastsearch(Py_UNICODE* s, Py_ssize_t n,
+                      Py_UNICODE* p, Py_ssize_t m,
+                      int mode)
+{
+    long mask;
+    int skip, count = 0;
+    Py_ssize_t i, j, mlast, w;
+
+    w = n - m;
+
+    if (w < 0)
+        return -1;
+
+    /* look for special cases */
+    if (m <= 1) {
+        if (m < 0)
+            return -1;
+        /* use special case for 1-character strings */
+        if (mode == FAST_COUNT) {
+            for (i = 0; i < n; i++)
+                if (s[i] == p[0])
+                    count++;
+            return count;
+        } else {
+            for (i = 0; i < n; i++)
+                if (s[i] == p[0])
+                    return i;
+        }
+        return -1;
+    }
+
+    mlast = m - 1;
+
+    /* create compressed boyer-moore delta 1 table */
+    skip = mlast - 1;
+    /* process pattern[:-1] */
+    for (mask = i = 0; i < mlast; i++) {
+        mask |= (1 << (p[i] & 0x1F));
+        if (p[i] == p[mlast])
+            skip = mlast - i - 1;
+    }
+    /* process pattern[-1] outside the loop */
+    mask |= (1 << (p[mlast] & 0x1F));
+
+    for (i = 0; i <= w; i++) {
+        /* note: using mlast in the skip path slows things down on x86 */
+        if (s[i+m-1] == p[m-1]) {
+            /* candidate match */
+            for (j = 0; j < mlast; j++)
+                if (s[i+j] != p[j])
+                    break;
+            if (j == mlast) {
+                /* got a match! */
+                if (mode != FAST_COUNT)
+                    return i;
+                count++;
+                i = i + mlast;
+                continue;
+            }
+            /* miss: check if next character is part of pattern */
+            if (!(mask & (1 << (s[i+m] & 0x1F))))
+                i = i + m;
+            else {
+                i = i + skip;
+                continue;
+            }
+        } else {
+            /* skip: check if next character is part of pattern */
+            if (!(mask & (1 << (s[i+m] & 0x1F))))
+                i = i + m;
+        }
+    }
+
+    if (mode != FAST_COUNT)
+        return -1;
+    return count;
+}
+
+LOCAL(Py_ssize_t) count(PyUnicodeObject *self,
 		 Py_ssize_t start,
 		 Py_ssize_t end,
 		 PyUnicodeObject *substring)
@@ -3869,6 +3956,14 @@ static Py_ssize_t count(PyUnicodeObject *self,
     if (substring->length == 0)
 	return (end - start + 1);
 
+#ifdef USE_FAST
+    count = fastsearch(
+        PyUnicode_AS_UNICODE(self) + start, end - start,
+        substring->str, substring->length, FAST_COUNT
+        );
+    if (count < 0)
+        count = 0; /* no match */
+#else    
     end -= substring->length;
 
     while (start <= end)
@@ -3877,6 +3972,7 @@ static Py_ssize_t count(PyUnicodeObject *self,
             start += substring->length;
         } else
             start++;
+#endif
 
     return count;
 }
@@ -3926,6 +4022,18 @@ static Py_ssize_t findstring(PyUnicodeObject *self,
 
     if (substring->length == 0)
 	return (direction > 0) ? start : end;
+
+#ifdef USE_FAST
+    if (direction > 0) {
+        Py_ssize_t pos = fastsearch(
+            PyUnicode_AS_UNICODE(self) + start, end - start,
+            substring->str, substring->length, FAST_SEARCH
+            );
+        if (pos < 0)
+            return pos;
+        return pos + start;
+    }
+#endif
 
     end -= substring->length;
 
