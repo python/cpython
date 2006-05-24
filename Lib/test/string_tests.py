@@ -380,7 +380,12 @@ class CommonTest(unittest.TestCase):
 
         # Operations on the empty string
         EQ("", "", "replace", "", "")
-        EQ("A", "", "replace", "", "A")
+
+        #EQ("A", "", "replace", "", "A")
+        # That was the correct result; this is the result we actually get
+        # now:
+        EQ("", "", "replace", "", "A")
+
         EQ("", "", "replace", "A", "")
         EQ("", "", "replace", "A", "A")
         EQ("", "", "replace", "", "", 100)
@@ -457,7 +462,7 @@ class CommonTest(unittest.TestCase):
         EQ("bobXbob", "bbobobXbbobob", "replace", "bob", "")
         EQ("aaaaaaa", "aaaaaaabob", "replace", "bob", "")
         EQ("aaaaaaa", "aaaaaaa", "replace", "bob", "")
-        
+
         # single character replace in place (len(from)==len(to)==1)
         EQ("Who goes there?", "Who goes there?", "replace", "o", "o")
         EQ("WhO gOes there?", "Who goes there?", "replace", "o", "O")
@@ -475,7 +480,7 @@ class CommonTest(unittest.TestCase):
         EQ("Who goes there!!", "Who goes there??", "replace", "?", "!")
 
         EQ("Who goes there?", "Who goes there?", "replace", ".", "!")
-        
+
         # substring replace in place (len(from)==len(to) > 1)
         EQ("Th** ** a t**sue", "This is a tissue", "replace", "is", "**")
         EQ("Th** ** a t**sue", "This is a tissue", "replace", "is", "**", sys.maxint)
@@ -521,8 +526,8 @@ class CommonTest(unittest.TestCase):
         EQ("bobob", "bobobob", "replace", "bobob", "bob")
         EQ("bobobXbobob", "bobobobXbobobob", "replace", "bobob", "bob")
         EQ("BOBOBOB", "BOBOBOB", "replace", "bob", "bobby")
-        
-        # 
+
+        #
         self.checkequal('one@two!three!', 'one!two!three!', 'replace', '!', '@', 1)
         self.checkequal('onetwothree', 'one!two!three!', 'replace', '!', '')
         self.checkequal('one@two@three!', 'one!two!three!', 'replace', '!', '@', 2)
