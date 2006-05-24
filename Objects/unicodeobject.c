@@ -3854,12 +3854,16 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
    moore and horspool, with a few more bells and whistles on the top.
    for some more background, see: http://effbot.org/stringlib */
 
+/* note: fastsearch may access s[n], which isn't a problem when using
+   Python's ordinary string types.  also, the count mode returns -1 if
+   there cannot possible be a match in the target string, and 0 if it
+   has actually checked for matches. */
+
 #define FAST_COUNT 0
 #define FAST_SEARCH 1
 
-LOCAL(int) fastsearch(Py_UNICODE* s, Py_ssize_t n,
-                      Py_UNICODE* p, Py_ssize_t m,
-                      int mode)
+LOCAL(Py_ssize_t)
+fastsearch(Py_UNICODE* s, Py_ssize_t n, Py_UNICODE* p, Py_ssize_t m, int mode)
 {
     long mask;
     int skip, count = 0;
@@ -3872,7 +3876,7 @@ LOCAL(int) fastsearch(Py_UNICODE* s, Py_ssize_t n,
 
     /* look for special cases */
     if (m <= 1) {
-        if (m < 0)
+        if (m <= 0)
             return -1;
         /* use special case for 1-character strings */
         if (mode == FAST_COUNT) {
@@ -5142,6 +5146,9 @@ int PyUnicode_Contains(PyObject *container,
     PyUnicodeObject *u, *v;
     int result;
     Py_ssize_t size;
+#ifdef USE_FAST
+    Py_ssize_t pos;
+#endif
 
     /* Coerce the two arguments */
     v = (PyUnicodeObject *) PyUnicode_FromObject(element);
@@ -5163,6 +5170,13 @@ int PyUnicode_Contains(PyObject *container,
         goto done;
     }
 
+#ifdef USE_FAST
+    pos = fastsearch(
+        PyUnicode_AS_UNICODE(u), PyUnicode_GET_SIZE(u),
+        PyUnicode_AS_UNICODE(v), size, FAST_SEARCH
+        );
+    result = (pos != -1);
+#else    
     result = 0;
 
     if (size == 1) {
@@ -5184,6 +5198,7 @@ int PyUnicode_Contains(PyObject *container,
                 break;
             }
     }
+#endif
 
 done:
     Py_DECREF(u);
