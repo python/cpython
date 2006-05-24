@@ -12,6 +12,12 @@ What's New in Python 2.5 alpha 3?
 Core and builtins
 -----------------
 
+- Patch #1442927: ``long(str, base)`` is now up to 6x faster for non-power-
+  of-2 bases.  The largest speedup is for inputs with about 1000 decimal
+  digits.  Conversion from non-power-of-2 bases remains quadratic-time in
+  the number of input digits (it was and remains linear-time for bases
+  2, 4, 8, 16 and 32).
+
 - Bug #1334662: ``int(string, base)`` could deliver a wrong answer
   when ``base`` was not 2, 4, 8, 10, 16 or 32, and ``string`` represented
   an integer close to ``sys.maxint``.  This was repaired by patch
