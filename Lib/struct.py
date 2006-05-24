@@ -73,7 +73,7 @@ def unpack(fmt, s):
     except KeyError:
         o = _compile(fmt)
     return o.unpack(s)
-    
+
 def unpack_from(fmt, buf, offset=0):
     """
     Unpack the buffer, containing packed C structure data, according to
