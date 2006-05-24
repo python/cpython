@@ -73,3 +73,15 @@ def unpack(fmt, s):
     except KeyError:
         o = _compile(fmt)
     return o.unpack(s)
+    
+def unpack_from(fmt, buf, offset=0):
+    """
+    Unpack the buffer, containing packed C structure data, according to
+    fmt starting at offset. Requires len(buffer[offset:]) >= calcsize(fmt).
+    See struct.__doc__ for more on format strings.
+    """
+    try:
+        o = _cache[fmt]
+    except KeyError:
+        o = _compile(fmt)
+    return o.unpack_from(buf, offset)
