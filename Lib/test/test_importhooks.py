@@ -14,6 +14,7 @@ def get_file():
 
 absimp = "import sub\n"
 relimp = "from . import sub\n"
+deeprelimp = "from .... import sub\n"
 futimp = "from __future__ import absolute_import\n"
 
 reload_src = test_src+"""\
@@ -26,6 +27,7 @@ reload_co = compile(reload_src, "<???>", "exec")
 test2_oldabs_co = compile(absimp + test_src, "<???>", "exec")
 test2_newabs_co = compile(futimp + absimp + test_src, "<???>", "exec")
 test2_newrel_co = compile(relimp + test_src, "<???>", "exec")
+test2_deeprel_co = compile(deeprelimp + test_src, "<???>", "exec")
 test2_futrel_co = compile(futimp + relimp + test_src, "<???>", "exec")
 
 test_path = "!!!_test_!!!"
@@ -46,10 +48,11 @@ class TestImporter:
         "hooktestmodule": (False, test_co),
         "hooktestpackage": (True, test_co),
         "hooktestpackage.sub": (True, test_co),
-        "hooktestpackage.sub.subber": (False, test_co),
+        "hooktestpackage.sub.subber": (True, test_co),
         "hooktestpackage.oldabs": (False, test2_oldabs_co),
         "hooktestpackage.newabs": (False, test2_newabs_co),
         "hooktestpackage.newrel": (False, test2_newrel_co),
+        "hooktestpackage.sub.subber.subest": (True, test2_deeprel_co),
         "hooktestpackage.futrel": (False, test2_futrel_co),
         "sub": (False, test_co),
         "reloadmodule": (False, test_co),
@@ -201,6 +204,12 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
         self.assertEqual(hooktestpackage.newrel.get_name(),
                          "hooktestpackage.newrel")
         self.assertEqual(hooktestpackage.newrel.sub,
+                         hooktestpackage.sub)
+
+        import hooktestpackage.sub.subber.subest as subest
+        self.assertEqual(subest.get_name(),
+                         "hooktestpackage.sub.subber.subest")
+        self.assertEqual(subest.sub,
                          hooktestpackage.sub)
 
         import hooktestpackage.futrel
