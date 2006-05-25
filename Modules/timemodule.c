@@ -63,11 +63,10 @@ static long main_thread;
 #endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ || __QNX__ */
 
-#if defined(MS_WINDOWS) && !defined(MS_WIN64) && !defined(__BORLANDC__)
+#if defined(MS_WINDOWS) && !defined(__BORLANDC__)
 /* Win32 has better clock replacement
-   XXX Win64 does not yet, but might when the platform matures. */
 #undef HAVE_CLOCK /* We have our own version down below */
-#endif /* MS_WINDOWS && !MS_WIN64 */
+#endif /* MS_WINDOWS && !defined(__BORLANDC__) */
 
 #if defined(PYOS_OS2)
 #define INCL_DOS
@@ -821,7 +820,7 @@ inittime(void)
 	SetConsoleCtrlHandler( PyCtrlHandler, TRUE);
 #endif /* MS_WINDOWS */
 	if (!initialized) {
-		PyStructSequence_InitType(&StructTimeType, 
+		PyStructSequence_InitType(&StructTimeType,
 					  &struct_time_type_desc);
 	}
 	Py_INCREF(&StructTimeType);

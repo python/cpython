@@ -64,6 +64,10 @@ Extension Modules
 - Use Win32 API to implement os.{access,chdir,chmod,mkdir,remove,rename,rmdir,utime}.
   As a result, these functions now raise WindowsError instead of OSError.
 
+- ``time.clock()`` on Win64 should use the high-performance Windows
+  ``QueryPerformanceCounter()`` now (as was already the case on 32-bit
+  Windows platforms).
+
 - Calling Tk_Init twice is refused if the first call failed as that
   may deadlock.
 
