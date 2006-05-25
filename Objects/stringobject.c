@@ -2460,6 +2460,7 @@ mymemreplace(const char *str, Py_ssize_t len,		/* input string */
 	char *out_s;
 	char *new_s;
 	Py_ssize_t nfound, offset, new_len;
+        Py_ssize_t product, delta;
 
 	if (len == 0 || (pat_len == 0 && sub_len == 0) || pat_len > len)
 		goto return_same;
@@ -2473,7 +2474,24 @@ mymemreplace(const char *str, Py_ssize_t len,		/* input string */
 	if (nfound == 0)
 		goto return_same;
 
-	new_len = len + nfound*(sub_len - pat_len);
+        delta = (sub_len - pat_len);
+        if (delta == 0) {
+            new_len = len;
+        } else {
+            product = nfound * (sub_len - pat_len);
+            if ((product / (sub_len - pat_len)) != nfound) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "replace string is too long");
+                return NULL;
+            }
+            new_len = len + product;
+            if (new_len < 0) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "replace string is too long");
+                return NULL;
+            }
+        }
+
 	if (new_len == 0) {
 		/* Have to allocate something for the caller to free(). */
 		out_s = (char *)PyMem_MALLOC(1);
@@ -2578,7 +2596,8 @@ string_replace(PyStringObject *self, PyObject *args)
 
 	new_s = mymemreplace(str,len,sub,sub_len,repl,repl_len,count,&out_len);
 	if (new_s == NULL) {
-		PyErr_NoMemory();
+		if (!PyErr_Occurred())
+			PyErr_NoMemory();
 		return NULL;
 	}
 	if (out_len == -1) {

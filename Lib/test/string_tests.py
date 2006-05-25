@@ -555,15 +555,14 @@ class CommonTest(unittest.TestCase):
         self.checkraises(TypeError, 'hello', 'replace', 42, 'h')
         self.checkraises(TypeError, 'hello', 'replace', 'h', 42)
 
-### Commented out until the underlying libraries are fixed
-##    def test_replace_overflow(self):
-##        # Check for overflow checking on 32 bit machines
-##        if sys.maxint != 2147483647:
-##            return
-##        A2_16 = "A" * (2**16)
-##        self.checkraises(OverflowError, A2_16, "replace", "", A2_16)
-##        self.checkraises(OverflowError, A2_16, "replace", "A", A2_16)
-##        self.checkraises(OverflowError, A2_16, "replace", "AA", A2_16+A2_16)
+    def test_replace_overflow(self):
+        # Check for overflow checking on 32 bit machines
+        if sys.maxint != 2147483647:
+            return
+        A2_16 = "A" * (2**16)
+        self.checkraises(OverflowError, A2_16, "replace", "", A2_16)
+        self.checkraises(OverflowError, A2_16, "replace", "A", A2_16)
+        self.checkraises(OverflowError, A2_16, "replace", "AA", A2_16+A2_16)
 
     def test_zfill(self):
         self.checkequal('123', '123', 'zfill', 2)

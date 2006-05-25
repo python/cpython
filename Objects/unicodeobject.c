@@ -3866,9 +3866,11 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
    for some more background, see: http://effbot.org/stringlib */
 
 /* note: fastsearch may access s[n], which isn't a problem when using
-   Python's ordinary string types.  also, the count mode returns -1 if
-   there cannot possible be a match in the target string, and 0 if it
-   has actually checked for matches. */
+   Python's ordinary string types, but may cause problems if you're
+   using this code in other contexts.  also, the count mode returns -1
+   if there cannot possible be a match in the target string, and 0 if
+   it has actually checked for matches, but didn't find any.  callers
+   beware! */
 
 #define FAST_COUNT 0
 #define FAST_SEARCH 1
@@ -4862,6 +4864,7 @@ PyObject *replace(PyUnicodeObject *self,
     } else {
 
         Py_ssize_t n, i;
+        Py_ssize_t product, new_size, delta;
         Py_UNICODE *p;
 
         /* replace strings */
@@ -4870,7 +4873,25 @@ PyObject *replace(PyUnicodeObject *self,
             n = maxcount;
         if (n == 0)
             goto nothing;
-        u = _PyUnicode_New(self->length + n * (str2->length - str1->length));
+        /* new_size = self->length + n * (str2->length - str1->length)); */
+        delta = (str2->length - str1->length);
+        if (delta == 0) {
+            new_size = self->length;
+        } else {
+            product = n * (str2->length - str1->length);
+            if ((product / (str2->length - str1->length)) != n) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "replace string is too long");
+                return NULL;
+            }
+            new_size = self->length + product;
+            if (new_size < 0) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "replace string is too long");
+                return NULL;
+            }
+        }
+        u = _PyUnicode_New(new_size);
         if (!u)
             return NULL;
         i = 0;
