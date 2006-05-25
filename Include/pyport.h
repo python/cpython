@@ -297,7 +297,7 @@ extern "C" {
 
 /* Py_IS_INFINITY(X)
  * Return 1 if float or double arg is an infinity, else 0.
- * Some architectures (Windows) have intrisics for this, so a special
+ * Some architectures (Windows) have intrinsics for this, so a special
  * macro for this particular test is useful
  */
 #ifndef Py_IS_FINITE
