@@ -2692,10 +2692,11 @@ replace_single_character_in_place(PyStringObject *self,
 	}
 	
 	/* Need to make a new string */
-	result = (PyStringObject *) PyString_FromStringAndSize(self_s, self_len);
+	result = (PyStringObject *) PyString_FromStringAndSize(NULL, self_len);
 	if (result == NULL)
 		return NULL;
 	result_s = PyString_AS_STRING(result);
+	memcpy(result_s, self_s, self_len);
 	
 	/* change everything in-place, starting with this one */
 	start =  result_s + (next-self_s);
@@ -2745,10 +2746,12 @@ replace_substring_in_place(PyStringObject *self,
 	}
 	
 	/* Need to make a new string */
-	result = (PyStringObject *) PyString_FromStringAndSize(self_s, self_len);
+	result = (PyStringObject *) PyString_FromStringAndSize(NULL, self_len);
 	if (result == NULL)
 		return NULL;
 	result_s = PyString_AS_STRING(result);
+	memcpy(result_s, self_s, self_len);
+
 	
 	/* change everything in-place, starting with this one */
 	start =  result_s + offset;
