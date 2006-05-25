@@ -572,13 +572,13 @@ static formatdef native_table[] = {
 	{'I',	sizeof(int),	INT_ALIGN,	nu_uint,	np_uint},
 	{'l',	sizeof(long),	LONG_ALIGN,	nu_long,	np_long},
 	{'L',	sizeof(long),	LONG_ALIGN,	nu_ulong,	np_ulong},
-	{'f',	sizeof(float),	FLOAT_ALIGN,	nu_float,	np_float},
-	{'d',	sizeof(double),	DOUBLE_ALIGN,	nu_double,	np_double},
-	{'P',	sizeof(void *),	VOID_P_ALIGN,	nu_void_p,	np_void_p},
 #ifdef HAVE_LONG_LONG
 	{'q',	sizeof(PY_LONG_LONG), LONG_LONG_ALIGN, nu_longlong, np_longlong},
 	{'Q',	sizeof(PY_LONG_LONG), LONG_LONG_ALIGN, nu_ulonglong,np_ulonglong},
 #endif
+	{'f',	sizeof(float),	FLOAT_ALIGN,	nu_float,	np_float},
+	{'d',	sizeof(double),	DOUBLE_ALIGN,	nu_double,	np_double},
+	{'P',	sizeof(void *),	VOID_P_ALIGN,	nu_void_p,	np_void_p},
 	{0}
 };
 
@@ -1477,6 +1477,30 @@ init_struct(void)
 	if (PyType_Ready(&PyStructType) < 0)
 		return;
 
+	/* Check endian and swap in faster functions */
+	{
+		int one = 1;
+		formatdef *native = native_table;
+		formatdef *other, *ptr;
+		if ((int)*(unsigned char*)&one)
+			other = lilendian_table;
+		else
+			other = bigendian_table;
+		while (native->format != '\0' && other->format != '\0') {
+			ptr = other;
+			while (ptr->format != '\0') {
+				if (ptr->format == native->format) {
+					ptr->pack = native->pack;
+					ptr->unpack = native->unpack;
+					if (ptr == other)
+						other++;
+					break;
+				}
+				ptr++;
+			}
+			native++;
+		}
+	}
 	
 	/* Add some symbolic constants to the module */
 	if (StructError == NULL) {
