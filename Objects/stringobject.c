@@ -1149,10 +1149,14 @@ string_contains(PyObject *a, PyObject *el)
 {
 	char *s = PyString_AS_STRING(a);
 	const char *sub = PyString_AS_STRING(el);
-	char *last;
 	Py_ssize_t len_sub = PyString_GET_SIZE(el);
+#ifdef USE_FAST
+	Py_ssize_t pos;
+#else
+	char *last;
 	Py_ssize_t shortsub;
 	char firstchar, lastchar;
+#endif
 
 	if (!PyString_CheckExact(el)) {
 #ifdef Py_USING_UNICODE
@@ -1168,6 +1172,14 @@ string_contains(PyObject *a, PyObject *el)
 
 	if (len_sub == 0)
 		return 1;
+
+#ifdef USE_FAST
+	pos = fastsearch(
+		s, PyString_GET_SIZE(a),
+		sub, len_sub, FAST_SEARCH
+		);
+	return (pos != -1);
+#else    
 	/* last points to one char beyond the start of the rightmost
 	   substring.  When s<last, there is still room for a possible match
 	   and s[0] through s[len_sub-1] will be in bounds.
@@ -1188,6 +1200,7 @@ string_contains(PyObject *a, PyObject *el)
 			return 1;
 		s++;
 	}
+#endif
 	return 0;
 }
 
@@ -1895,6 +1908,17 @@ string_find_internal(PyStringObject *self, PyObject *args, int dir)
 
 	string_adjust_indices(&i, &last, len);
 
+#ifdef USE_FAST
+	if (n == 0)
+		return (dir > 0) ? i : last;
+	if (dir > 0) {
+		Py_ssize_t pos = fastsearch(s + i, last - i, sub, n,
+					    FAST_SEARCH);
+		if (pos < 0)
+			return pos;
+		return pos + i;
+	}
+#endif
 	if (dir > 0) {
 		if (n == 0 && i <= last)
 			return (long)i;
