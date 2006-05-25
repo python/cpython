@@ -162,6 +162,7 @@ typedef int pid_t;
 #include <float.h>
 #define Py_IS_NAN _isnan
 #define Py_IS_INFINITY(X) (!_finite(X) && !_isnan(X))
+#define Py_IS_FINITE(X) _finite(X)
 
 #endif /* _MSC_VER */
 
