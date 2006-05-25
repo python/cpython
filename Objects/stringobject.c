@@ -1023,7 +1023,7 @@ string_length(PyStringObject *a)
 static PyObject *
 string_concat(register PyStringObject *a, register PyObject *bb)
 {
-	register size_t size;
+	register Py_ssize_t size;
 	register PyStringObject *op;
 	if (!PyString_Check(bb)) {
 #ifdef Py_USING_UNICODE
@@ -1047,7 +1047,12 @@ string_concat(register PyStringObject *a, register PyObject *bb)
 		return (PyObject *)a;
 	}
 	size = a->ob_size + b->ob_size;
-	/* XXX check overflow */
+	if (size < 0) {
+		PyErr_SetString(PyExc_OverflowError,
+				"strings are too large to concat");
+		return NULL;
+	}
+	  
 	/* Inline PyObject_NewVar */
 	op = (PyStringObject *)PyObject_MALLOC(sizeof(PyStringObject) + size);
 	if (op == NULL)
