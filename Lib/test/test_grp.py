@@ -31,7 +31,10 @@ class GroupDatabaseTestCase(unittest.TestCase):
             self.assertEqual(e2.gr_gid, e.gr_gid)
             e2 = grp.getgrnam(e.gr_name)
             self.check_value(e2)
-            self.assertEqual(e2.gr_name, e.gr_name)
+            # There are instances where getgrall() returns group names in
+            # lowercase while getgrgid() returns proper casing.
+            # Discovered on Ubuntu 5.04 (custom).
+            self.assertEqual(e2.gr_name.lower(), e.gr_name.lower())
 
     def test_errors(self):
         self.assertRaises(TypeError, grp.getgrgid)
