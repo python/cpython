@@ -3073,8 +3073,8 @@ find_class(PyObject *py_module_name, PyObject *py_global_name, PyObject *fc)
 					"pickles are not supported.");
 			return NULL;
 		}
-		return PyObject_CallFunction(fc, "OO", py_module_name,
-					     py_global_name);
+		return PyObject_CallFunctionObjArgs(fc, py_module_name,
+					            py_global_name, NULL);
 	}
 
 	module = PySys_GetObject("modules");

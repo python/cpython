@@ -3267,8 +3267,8 @@ initparser(void)
             && (pickler != NULL)) {
             PyObject *res;
 
-            res = PyObject_CallFunction(func, "OOO", &PyST_Type, pickler,
-                                        pickle_constructor);
+            res = PyObject_CallFunctionObjArgs(func, &PyST_Type, pickler,
+                                               pickle_constructor, NULL);
             Py_XDECREF(res);
         }
         Py_XDECREF(func);

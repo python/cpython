@@ -851,7 +851,7 @@ PyWeakref_GetObject(PyObject *ref)
 static void
 handle_callback(PyWeakReference *ref, PyObject *callback)
 {
-    PyObject *cbresult = PyObject_CallFunction(callback, "O", ref);
+    PyObject *cbresult = PyObject_CallFunctionObjArgs(callback, ref, NULL);
 
     if (cbresult == NULL)
         PyErr_WriteUnraisable(callback);

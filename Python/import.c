@@ -1043,7 +1043,7 @@ get_path_importer(PyObject *path_importer_cache, PyObject *path_hooks,
 		PyObject *hook = PyList_GetItem(path_hooks, j);
 		if (hook == NULL)
 			return NULL;
-		importer = PyObject_CallFunction(hook, "O", p);
+		importer = PyObject_CallFunctionObjArgs(hook, p, NULL);
 		if (importer != NULL)
 			break;
 
@@ -2499,8 +2499,8 @@ PyImport_Import(PyObject *module_name)
 		goto err;
 
 	/* Call the _import__ function with the proper argument list */
-	r = PyObject_CallFunction(import, "OOOO",
-				  module_name, globals, globals, silly_list);
+	r = PyObject_CallFunctionObjArgs(import, module_name, globals,
+					 globals, silly_list, NULL);
 
   err:
 	Py_XDECREF(globals);

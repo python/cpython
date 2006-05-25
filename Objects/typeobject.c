@@ -4641,10 +4641,10 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 	     (void *)PyObject_GenericGetAttr))
 		res = PyObject_GenericGetAttr(self, name);
 	else
-		res = PyObject_CallFunction(getattribute, "OO", self, name);
+		res = PyObject_CallFunctionObjArgs(getattribute, self, name, NULL);
 	if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
 		PyErr_Clear();
-		res = PyObject_CallFunction(getattr, "OO", self, name);
+		res = PyObject_CallFunctionObjArgs(getattr, self, name, NULL);
 	}
 	return res;
 }
@@ -4781,7 +4781,7 @@ slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 		obj = Py_None;
 	if (type == NULL)
 		type = Py_None;
-	return PyObject_CallFunction(get, "OOO", self, obj, type);
+	return PyObject_CallFunctionObjArgs(get, self, obj, type, NULL);
 }
 
 static int
@@ -5728,8 +5728,8 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 	if (su->ob_type != &PySuper_Type)
 		/* If su is an instance of a (strict) subclass of super,
 		   call its type */
-		return PyObject_CallFunction((PyObject *)su->ob_type,
-					     "OO", su->type, obj);
+		return PyObject_CallFunctionObjArgs((PyObject *)su->ob_type,
+					            su->type, obj, NULL);
 	else {
 		/* Inline the common case */
 		PyTypeObject *obj_type = supercheck(su->type, obj);
