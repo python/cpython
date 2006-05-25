@@ -882,6 +882,25 @@ class MixinStrUnicodeUserStringTest:
                 else:
                     self.checkcall(format, "__mod__", value)
 
+    def test_inplace_rewrites(self):
+        # Check that strings don't copy and modify cached single-character strings
+        self.checkequal('a', 'A', 'lower')
+        self.checkequal(True, 'A', 'isupper')
+        self.checkequal('A', 'a', 'upper')
+        self.checkequal(True, 'a', 'islower')
+ 
+        self.checkequal('a', 'A', 'replace', 'A', 'a')
+        self.checkequal(True, 'A', 'isupper')
+
+        self.checkequal('A', 'a', 'capitalize')
+        self.checkequal(True, 'a', 'islower')
+        
+        self.checkequal('A', 'a', 'swapcase')
+        self.checkequal(True, 'a', 'islower')
+
+        self.checkequal('A', 'a', 'title')
+        self.checkequal(True, 'a', 'islower')
+
 
 class MixinStrStringUserStringTest:
     # Additional tests for 8bit strings, i.e. str, UserString and
