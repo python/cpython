@@ -844,11 +844,36 @@ PyLong_AsVoidPtr(PyObject *vv)
 PyObject *
 PyLong_FromLongLong(PY_LONG_LONG ival)
 {
-	PY_LONG_LONG bytes = ival;
-	int one = 1;
-	return _PyLong_FromByteArray(
-			(unsigned char *)&bytes,
-			SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 1);
+	PyLongObject *v;
+	unsigned PY_LONG_LONG t;  /* unsigned so >> doesn't propagate sign bit */
+	int ndigits = 0;
+	int negative = 0;
+
+	if (ival < 0) {
+		ival = -ival;
+		negative = 1;
+	}
+
+	/* Count the number of Python digits.
+	   We used to pick 5 ("big enough for anything"), but that's a
+	   waste of time and space given that 5*15 = 75 bits are rarely
+	   needed. */
+	t = (unsigned PY_LONG_LONG)ival;
+	while (t) {
+		++ndigits;
+		t >>= SHIFT;
+	}
+	v = _PyLong_New(ndigits);
+	if (v != NULL) {
+		digit *p = v->ob_digit;
+		v->ob_size = negative ? -ndigits : ndigits;
+		t = (unsigned PY_LONG_LONG)ival;
+		while (t) {
+			*p++ = (digit)(t & MASK);
+			t >>= SHIFT;
+		}
+	}
+	return (PyObject *)v;
 }
 
 /* Create a new long int object from a C unsigned PY_LONG_LONG int. */
@@ -856,11 +881,26 @@ PyLong_FromLongLong(PY_LONG_LONG ival)
 PyObject *
 PyLong_FromUnsignedLongLong(unsigned PY_LONG_LONG ival)
 {
-	unsigned PY_LONG_LONG bytes = ival;
-	int one = 1;
-	return _PyLong_FromByteArray(
-			(unsigned char *)&bytes,
-			SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 0);
+	PyLongObject *v;
+	unsigned PY_LONG_LONG t;
+	int ndigits = 0;
+
+	/* Count the number of Python digits. */
+	t = (unsigned PY_LONG_LONG)ival;
+	while (t) {
+		++ndigits;
+		t >>= SHIFT;
+	}
+	v = _PyLong_New(ndigits);
+	if (v != NULL) {
+		digit *p = v->ob_digit;
+		v->ob_size = ndigits;
+		while (ival) {
+			*p++ = (digit)(ival & MASK);
+			ival >>= SHIFT;
+		}
+	}
+	return (PyObject *)v;
 }
 
 /* Create a new long int object from a C Py_ssize_t. */
