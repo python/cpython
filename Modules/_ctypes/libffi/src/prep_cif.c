@@ -114,8 +114,8 @@ static inline int struct_on_stack(int size)
 	/* This is not what the ABI says, but is what is really implemented */
 	switch (size) {
 	case 1: case 2: case 4: case 8: return 0;
-	return 1;
 	}
+	return 1;
 }
 #endif
 
