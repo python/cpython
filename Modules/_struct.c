@@ -1486,14 +1486,28 @@ init_struct(void)
 			other = lilendian_table;
 		else
 			other = bigendian_table;
+		/* Scan through the native table, find a matching
+		   entry in the endian table and swap in the
+		   native implementations whenever possible
+		   (64-bit platforms may not have "standard" sizes) */
 		while (native->format != '\0' && other->format != '\0') {
 			ptr = other;
 			while (ptr->format != '\0') {
 				if (ptr->format == native->format) {
-					ptr->pack = native->pack;
-					ptr->unpack = native->unpack;
+					/* Match faster when formats are
+					   listed in the same order */
 					if (ptr == other)
 						other++;
+					/* Only use the trick if the 
+					   size matches */
+					if (ptr->size != native->size)
+						break;
+					/* Skip float and double, could be
+					   "unknown" float format */
+					if (ptr->format == 'd' || ptr->format == 'f')
+						break;
+					ptr->pack = native->pack;
+					ptr->unpack = native->unpack;
 					break;
 				}
 				ptr++;
