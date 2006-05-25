@@ -799,8 +799,7 @@ PyString_AsStringAndSize(register PyObject *obj,
 #define FAST_SEARCH 1
 
 LOCAL(Py_ssize_t)
-	fastsearch(const char* s, Py_ssize_t n, const char* p,
-		   Py_ssize_t m, int mode)
+fastsearch(const char* s, Py_ssize_t n, const char* p, Py_ssize_t m, int mode)
 {
 	long mask;
 	int skip, count = 0;
@@ -860,10 +859,8 @@ LOCAL(Py_ssize_t)
 			/* miss: check if next character is part of pattern */
 			if (!(mask & (1 << (s[i+m] & 0x1F))))
 				i = i + m;
-			else {
+			else
 				i = i + skip;
-				continue;
-			}
 		} else {
 			/* skip: check if next character is part of pattern */
 			if (!(mask & (1 << (s[i+m] & 0x1F))))
@@ -1599,6 +1596,68 @@ string_split(PyStringObject *self, PyObject *args)
  fail:
 	Py_DECREF(list);
 	return NULL;
+}
+
+PyDoc_STRVAR(partition__doc__,
+"S.partition(sep) -> (head, sep, tail)\n\
+\n\
+Searches for the separator sep in S, and returns the part before it,\n\
+the separator itself, and the part after it.  If the separator is not\n\
+found, returns S and two empty strings.");
+
+static PyObject *
+string_partition(PyStringObject *self, PyObject *args)
+{
+	Py_ssize_t len = PyString_GET_SIZE(self), sep_len, pos;
+	const char *str = PyString_AS_STRING(self), *sep;
+	PyObject *sepobj;
+	PyObject * out;
+
+	if (!PyArg_ParseTuple(args, "O:partition", &sepobj))
+		return NULL;
+	if (PyString_Check(sepobj)) {
+		sep = PyString_AS_STRING(sepobj);
+		sep_len = PyString_GET_SIZE(sepobj);
+	}
+#ifdef Py_USING_UNICODE_NOTYET
+	else if (PyUnicode_Check(sepobj))
+		return PyUnicode_Partition((PyObject *)self, sepobj);
+#endif
+	else if (PyObject_AsCharBuffer(sepobj, &sep, &sep_len))
+		return NULL;
+
+	if (sep_len == 0) {
+		PyErr_SetString(PyExc_ValueError, "empty separator");
+		return NULL;
+	}
+
+	out = PyTuple_New(3);
+	if (!out)
+		return NULL;
+
+	pos = fastsearch(str, len, sep, sep_len, FAST_SEARCH);
+	if (pos < 0) {
+		Py_INCREF(self);
+		PyTuple_SET_ITEM(out, 0, (PyObject*) self);
+		Py_INCREF(nullstring);
+		PyTuple_SET_ITEM(out, 1, (PyObject*) nullstring);
+		Py_INCREF(nullstring);
+		PyTuple_SET_ITEM(out, 2, (PyObject*) nullstring);
+	} else {
+		Py_INCREF(sepobj);
+		PyTuple_SET_ITEM(out, 0, PyString_FromStringAndSize(str, pos));
+		PyTuple_SET_ITEM(out, 1, sepobj);
+		PyTuple_SET_ITEM(out, 2,
+			PyString_FromStringAndSize(str + sep_len + pos,
+						   len - sep_len - pos)
+			);
+		if (PyErr_Occurred()) {
+			Py_DECREF(out);
+			return NULL;
+		}
+	}
+
+	return out;
 }
 
 static PyObject *
@@ -3910,6 +3969,8 @@ string_methods[] = {
 	{"count", (PyCFunction)string_count, METH_VARARGS, count__doc__},
 	{"endswith", (PyCFunction)string_endswith, METH_VARARGS,
 	 endswith__doc__},
+	{"partition", (PyCFunction)string_partition, METH_VARARGS,
+	 partition__doc__},
 	{"find", (PyCFunction)string_find, METH_VARARGS, find__doc__},
 	{"index", (PyCFunction)string_index, METH_VARARGS, index__doc__},
 	{"lstrip", (PyCFunction)string_lstrip, METH_VARARGS, lstrip__doc__},
