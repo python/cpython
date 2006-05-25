@@ -2036,25 +2036,24 @@ Return a copy of the string S converted to lowercase.");
 static PyObject *
 string_lower(PyStringObject *self)
 {
-	char *s = PyString_AS_STRING(self), *s_new;
+	char *s;
 	Py_ssize_t i, n = PyString_GET_SIZE(self);
 	PyObject *newobj;
 
-	newobj = PyString_FromStringAndSize(NULL, n);
-	if (newobj == NULL)
+	newobj = PyString_FromStringAndSize(PyString_AS_STRING(self), n);
+	if (!newobj)
 		return NULL;
-	s_new = PyString_AsString(newobj);
+
+	s = PyString_AS_STRING(newobj);
+
 	for (i = 0; i < n; i++) {
-		int c = Py_CHARMASK(*s++);
-		if (isupper(c)) {
-			*s_new = tolower(c);
-		} else
-			*s_new = c;
-		s_new++;
+		char c = Py_CHARMASK(s[i]);
+		if (isupper(c))
+			s[i] = _tolower(c);
 	}
+
 	return newobj;
 }
-
 
 PyDoc_STRVAR(upper__doc__,
 "S.upper() -> string\n\
@@ -2064,25 +2063,24 @@ Return a copy of the string S converted to uppercase.");
 static PyObject *
 string_upper(PyStringObject *self)
 {
-	char *s = PyString_AS_STRING(self), *s_new;
+	char *s;
 	Py_ssize_t i, n = PyString_GET_SIZE(self);
 	PyObject *newobj;
 
-	newobj = PyString_FromStringAndSize(NULL, n);
-	if (newobj == NULL)
+	newobj = PyString_FromStringAndSize(PyString_AS_STRING(self), n);
+	if (!newobj)
 		return NULL;
-	s_new = PyString_AsString(newobj);
+
+	s = PyString_AS_STRING(newobj);
+
 	for (i = 0; i < n; i++) {
-		int c = Py_CHARMASK(*s++);
-		if (islower(c)) {
-			*s_new = toupper(c);
-		} else
-			*s_new = c;
-		s_new++;
+		char c = Py_CHARMASK(s[i]);
+		if (islower(c))
+			s[i] = _toupper(c);
 	}
+
 	return newobj;
 }
-
 
 PyDoc_STRVAR(title__doc__,
 "S.title() -> string\n\
