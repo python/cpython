@@ -799,7 +799,7 @@ PyString_AsStringAndSize(register PyObject *obj,
 #define FAST_SEARCH 1
 
 LOCAL(Py_ssize_t)
-	fastsearch(const unsigned char* s, Py_ssize_t n, const unsigned char* p,
+	fastsearch(const char* s, Py_ssize_t n, const char* p,
 		   Py_ssize_t m, int mode)
 {
 	long mask;
