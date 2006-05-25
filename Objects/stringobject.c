@@ -791,7 +791,7 @@ PyString_AsStringAndSize(register PyObject *obj,
 /* note: fastsearch may access s[n], which isn't a problem when using
    Python's ordinary string types, but may cause problems if you're
    using this code in other contexts.  also, the count mode returns -1
-   if there cannot possible be a match in the target string, and 0 if
+   if there cannot possibly be a match in the target string, and 0 if
    it has actually checked for matches, but didn't find any.  callers
    beware! */
 
