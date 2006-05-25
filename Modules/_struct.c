@@ -291,7 +291,7 @@ nu_uint(const char *p, const formatdef *f)
 	unsigned int x;
 	memcpy((char *)&x, p, sizeof x);
 #ifdef PY_USE_INT_WHEN_POSSIBLE
-	if (x <= INT_MAX)
+	if (x <= LONG_MAX)
 		return PyInt_FromLong((long)x);
 #endif
 	return PyLong_FromUnsignedLong((unsigned long)x);
@@ -311,7 +311,7 @@ nu_ulong(const char *p, const formatdef *f)
 	unsigned long x;
 	memcpy((char *)&x, p, sizeof x);
 #ifdef PY_USE_INT_WHEN_POSSIBLE
-	if (x <= INT_MAX)
+	if (x <= LONG_MAX)
 		return PyInt_FromLong((long)x);
 #endif
 	return PyLong_FromUnsignedLong(x);
@@ -328,7 +328,7 @@ nu_longlong(const char *p, const formatdef *f)
 	PY_LONG_LONG x;
 	memcpy((char *)&x, p, sizeof x);
 #ifdef PY_USE_INT_WHEN_POSSIBLE
-	if (x >= INT_MIN && x <= INT_MAX)
+	if (x >= LONG_MIN && x <= LONG_MAX)
 		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, PY_LONG_LONG, long));
 #endif
 	return PyLong_FromLongLong(x);
@@ -340,7 +340,7 @@ nu_ulonglong(const char *p, const formatdef *f)
 	unsigned PY_LONG_LONG x;
 	memcpy((char *)&x, p, sizeof x);
 #ifdef PY_USE_INT_WHEN_POSSIBLE
-	if (x <= INT_MAX)
+	if (x <= LONG_MAX)
 		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, unsigned PY_LONG_LONG, long));
 #endif
 	return PyLong_FromUnsignedLongLong(x);
@@ -607,7 +607,7 @@ bu_uint(const char *p, const formatdef *f)
 		x = (x<<8) | (*p++ & 0xFF);
 	} while (--i > 0);
 #ifdef PY_USE_INT_WHEN_POSSIBLE
-	if (x <= INT_MAX)
+	if (x <= LONG_MAX)
 		return PyInt_FromLong((long)x);
 #else
 	if (SIZEOF_LONG > f->size)
@@ -629,7 +629,7 @@ bu_longlong(const char *p, const formatdef *f)
 	if (SIZEOF_LONG_LONG > f->size)
 		x |= -(x & (1L << (8 * f->size - 1)));
 #ifdef PY_USE_INT_WHEN_POSSIBLE
-	if (x >= INT_MIN && x <= INT_MAX)
+	if (x >= LONG_MIN && x <= LONG_MAX)
 		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, PY_LONG_LONG, long));
 #endif
 	return PyLong_FromLongLong(x);
@@ -651,7 +651,7 @@ bu_ulonglong(const char *p, const formatdef *f)
 		x = (x<<8) | (*p++ & 0xFF);
 	} while (--i > 0);
 #ifdef PY_USE_INT_WHEN_POSSIBLE
-	if (x <= INT_MAX)
+	if (x <= LONG_MAX)
 		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, unsigned PY_LONG_LONG, long));
 #endif
 	return PyLong_FromUnsignedLongLong(x);
@@ -806,7 +806,7 @@ lu_uint(const char *p, const formatdef *f)
 		x = (x<<8) | (p[--i] & 0xFF);
 	} while (i > 0);
 #ifdef PY_USE_INT_WHEN_POSSIBLE
-	if (x <= INT_MAX)
+	if (x <= LONG_MAX)
 		return PyInt_FromLong((long)x);
 #else
 	if (SIZEOF_LONG > f->size)
@@ -828,7 +828,7 @@ lu_longlong(const char *p, const formatdef *f)
 	if (SIZEOF_LONG_LONG > f->size)
 		x |= -(x & (1L << (8 * f->size - 1)));
 #ifdef PY_USE_INT_WHEN_POSSIBLE
-	if (x >= INT_MIN && x <= INT_MAX)
+	if (x >= LONG_MIN && x <= LONG_MAX)
 		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, PY_LONG_LONG, long));
 #endif
 	return PyLong_FromLongLong(x);
@@ -850,7 +850,7 @@ lu_ulonglong(const char *p, const formatdef *f)
 		x = (x<<8) | (p[--i] & 0xFF);
 	} while (i > 0);
 #ifdef PY_USE_INT_WHEN_POSSIBLE
-	if (x <= INT_MAX)
+	if (x <= LONG_MAX)
 		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, unsigned PY_LONG_LONG, long));
 #endif
 	return PyLong_FromUnsignedLongLong(x);
@@ -1477,14 +1477,17 @@ init_struct(void)
 	if (PyType_Ready(&PyStructType) < 0)
 		return;
 
+	
 	/* Add some symbolic constants to the module */
 	if (StructError == NULL) {
 		StructError = PyErr_NewException("struct.error", NULL, NULL);
 		if (StructError == NULL)
 			return;
 	}
+
 	Py_INCREF(StructError);
 	PyModule_AddObject(m, "error", StructError);
+
 	Py_INCREF((PyObject*)&PyStructType);
 	PyModule_AddObject(m, "Struct", (PyObject*)&PyStructType);
 }
