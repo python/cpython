@@ -887,13 +887,13 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal(True, 'A', 'isupper')
         self.checkequal('A', 'a', 'upper')
         self.checkequal(True, 'a', 'islower')
- 
+
         self.checkequal('a', 'A', 'replace', 'A', 'a')
         self.checkequal(True, 'A', 'isupper')
 
         self.checkequal('A', 'a', 'capitalize')
         self.checkequal(True, 'a', 'islower')
-        
+
         self.checkequal('A', 'a', 'swapcase')
         self.checkequal(True, 'a', 'islower')
 
