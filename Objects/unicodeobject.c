@@ -5306,7 +5306,7 @@ unicode_count(PyUnicodeObject *self, PyObject *args)
     if (end < 0)
         end = 0;
 
-    result = PyInt_FromLong((long) count(self, start, end, substring));
+    result = PyInt_FromSsize_t(count(self, start, end, substring));
 
     Py_DECREF(substring);
     return result;
