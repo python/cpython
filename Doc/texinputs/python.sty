@@ -869,8 +869,17 @@
 % but only if we actually used hyperref:
 \ifpdf
   \newcommand{\url}[1]{{%
-    \py@pdfstartlink attr{/Border [0 0 0]} user{/S /URI /URI (#1)}%
-    \py@LinkColor%                              color of the link text
+    \py@pdfstartlink%
+    attr{ /Border [0 0 0] }%
+    user{%
+      /Subtype/Link%
+      /A<<%
+      /Type/Action%
+      /S/URI%
+      /URI(#1)%
+      >>%
+    }%
+    \py@LinkColor%                      color of the link text
     \py@smallsize\sf #1%
     \py@NormalColor%                    Turn it back off; these are declarative
     \pdfendlink}%                       and don't appear bound to the current
@@ -946,7 +955,16 @@
 \ifpdf
   \newcommand{\ulink}[2]{{%
     % For PDF, we *should* only generate a link when the URL is absolute.
-    \py@pdfstartlink attr{/Border [0 0 0]} user{/S /URI /URI (#2)}%
+    \py@pdfstartlink%
+    attr{ /Border [0 0 0] }%
+    user{%
+      /Subtype/Link%
+      /A<<%
+      /Type/Action%
+      /S/URI%
+      /URI(#2)%
+      >>%
+    }%
     \py@LinkColor%                              color of the link text
     #1%
     \py@NormalColor%                    Turn it back off; these are declarative
