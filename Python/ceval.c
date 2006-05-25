@@ -4053,7 +4053,7 @@ build_class(PyObject *methods, PyObject *bases, PyObject *name)
 			metaclass = (PyObject *) &PyClass_Type;
 		Py_INCREF(metaclass);
 	}
-	result = PyObject_CallFunction(metaclass, "OOO", name, bases, methods);
+	result = PyObject_CallFunctionObjArgs(metaclass, name, bases, methods, NULL);
 	Py_DECREF(metaclass);
 	if (result == NULL && PyErr_ExceptionMatches(PyExc_TypeError)) {
 		/* A type error here likely means that the user passed 

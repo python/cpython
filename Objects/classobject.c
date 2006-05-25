@@ -81,12 +81,9 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
 			if (!PyClass_Check(base)) {
 				if (PyCallable_Check(
 					(PyObject *) base->ob_type))
-					return PyObject_CallFunction(
+					return PyObject_CallFunctionObjArgs(
 						(PyObject *) base->ob_type,
-						"OOO",
-						name,
-						bases,
-						dict);
+						name, bases, dict, NULL);
 				PyErr_SetString(PyExc_TypeError,
 					"PyClass_New: base must be a class");
 				return NULL;
