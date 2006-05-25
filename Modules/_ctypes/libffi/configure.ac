@@ -21,6 +21,7 @@ AC_FUNC_MMAP_BLACKLIST
 
 TARGETDIR="unknown"
 case "$host" in
+i*86-*-darwin*) TARGET=X86_DARWIN; TARGETDIR=x86;;
 i*86-*-linux*) TARGET=X86; TARGETDIR=x86;;
 i*86-*-gnu*) TARGET=X86; TARGETDIR=x86;;
 i*86-*-solaris2.1[[0-9]]*) TARGET=X86_64; TARGETDIR=x86;;
@@ -99,6 +100,24 @@ fi
 AC_SUBST(HAVE_LONG_DOUBLE)
 
 AC_C_BIGENDIAN
+AH_VERBATIM([WORDS_BIGENDIAN],
+[
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). 
+
+   The block below does compile-time checking for endianness on platforms
+   that use GCC and therefore allows compiling fat binaries on OSX by using
+   '-arch ppc -arch i386' as the compile flags. The phrasing was choosen
+   such that the configure-result is used on systems that don't use GCC.
+*/
+#ifdef __BIG_ENDIAN__
+#define WORDS_BIGENDIAN 1
+#else
+#ifndef __LITTLE_ENDIAN__
+#undef WORDS_BIGENDIAN
+#endif
+#endif])
+
 
 if test x$TARGET = xSPARC; then
     AC_CACHE_CHECK([assembler and linker support unaligned pc related relocs],
@@ -201,7 +220,15 @@ test -d src || mkdir src
 test -d src/$TARGETDIR || mkdir src/$TARGETDIR
 ], [TARGETDIR="$TARGETDIR"])
 
-AC_CONFIG_LINKS(include/ffitarget.h:src/$TARGETDIR/ffitarget.h)
+TARGETINCDIR=$TARGETDIR
+case $host in
+*-*-darwin*)
+   TARGETINCDIR="darwin"
+   ;;
+esac
+
+
+AC_CONFIG_LINKS(include/ffitarget.h:src/$TARGETINCDIR/ffitarget.h)
 AC_CONFIG_LINKS(include/ffi_common.h:include/ffi_common.h)
 
 AC_CONFIG_FILES(include/ffi.h fficonfig.py)

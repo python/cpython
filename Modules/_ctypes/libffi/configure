@@ -3483,6 +3483,7 @@ fi
 
 TARGETDIR="unknown"
 case "$host" in
+i*86-*-darwin*) TARGET=X86_DARWIN; TARGETDIR=x86;;
 i*86-*-linux*) TARGET=X86; TARGETDIR=x86;;
 i*86-*-gnu*) TARGET=X86; TARGETDIR=x86;;
 i*86-*-solaris2.1[0-9]*) TARGET=X86_64; TARGETDIR=x86;;
@@ -5243,6 +5244,9 @@ presetting ac_cv_c_bigendian=no (or yes) will help" >&2;}
 esac
 
 
+
+
+
 if test x$TARGET = xSPARC; then
     echo "$as_me:$LINENO: checking assembler and linker support unaligned pc related relocs" >&5
 echo $ECHO_N "checking assembler and linker support unaligned pc related relocs... $ECHO_C" >&6
@@ -5470,7 +5474,15 @@ _ACEOF
           ac_config_commands="$ac_config_commands src"
 
 
-          ac_config_links="$ac_config_links include/ffitarget.h:src/$TARGETDIR/ffitarget.h"
+TARGETINCDIR=$TARGETDIR
+case $host in
+*-*-darwin*)
+   TARGETINCDIR="darwin"
+   ;;
+esac
+
+
+          ac_config_links="$ac_config_links include/ffitarget.h:src/$TARGETINCDIR/ffitarget.h"
 
           ac_config_links="$ac_config_links include/ffi_common.h:include/ffi_common.h"
 
@@ -6017,7 +6029,7 @@ do
   # Handling of arguments.
   "include/ffi.h" ) CONFIG_FILES="$CONFIG_FILES include/ffi.h" ;;
   "fficonfig.py" ) CONFIG_FILES="$CONFIG_FILES fficonfig.py" ;;
-  "include/ffitarget.h" ) CONFIG_LINKS="$CONFIG_LINKS include/ffitarget.h:src/$TARGETDIR/ffitarget.h" ;;
+  "include/ffitarget.h" ) CONFIG_LINKS="$CONFIG_LINKS include/ffitarget.h:src/$TARGETINCDIR/ffitarget.h" ;;
   "include/ffi_common.h" ) CONFIG_LINKS="$CONFIG_LINKS include/ffi_common.h:include/ffi_common.h" ;;
   "include" ) CONFIG_COMMANDS="$CONFIG_COMMANDS include" ;;
   "src" ) CONFIG_COMMANDS="$CONFIG_COMMANDS src" ;;
