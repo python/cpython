@@ -1416,7 +1416,7 @@ static PyMemberDef s_memberlist[] = {
 
 static
 PyTypeObject PyStructType = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0,
 	"Struct",
 	sizeof(PyStructObject),
@@ -1465,6 +1465,10 @@ init_struct(void)
 {
 	PyObject *m = Py_InitModule("_struct", NULL);
 	if (m == NULL)
+		return;
+
+	PyStructType.ob_type = &PyType_Type;
+	if (PyType_Ready(&PyStructType) < 0)
 		return;
 
 	/* Add some symbolic constants to the module */
