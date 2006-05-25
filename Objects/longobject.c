@@ -1304,7 +1304,14 @@ long_format(PyObject *aa, int base, int addL)
 	return (PyObject *)str;
 }
 
-static int digval[] = {
+/* Table of digit values for 8-bit string -> integer conversion.
+ * '0' maps to 0, ..., '9' maps to 9.
+ * 'a' and 'A' map to 10, ..., 'z' and 'Z' map to 35.
+ * All other indices map to 37.
+ * Note that when converting a base B string, a char c is a legitimate
+ * base B digit iff _PyLong_DigitValue[Py_CHARMASK(c)] < B.
+ */
+int _PyLong_DigitValue[256] = {
 	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
 	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
 	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
@@ -1321,14 +1328,6 @@ static int digval[] = {
 	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
 	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
 	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
-	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
-	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
-	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
-	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
-	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
-	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
-	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37,
-	37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37, 37
 };
 
 /* *str points to the first digit in a string of base `base` digits.  base
@@ -1355,7 +1354,7 @@ long_from_binary_base(char **str, int base)
 		n >>= 1;
 	/* n <- total # of bits needed, while setting p to end-of-string */
 	n = 0;
-	while (digval[Py_CHARMASK(*p)] < base)
+	while (_PyLong_DigitValue[Py_CHARMASK(*p)] < base)
 		++p;
 	*str = p;
 	n = (p - start) * bits_per_char;
@@ -1376,7 +1375,7 @@ long_from_binary_base(char **str, int base)
 	bits_in_accum = 0;
 	pdigit = z->ob_digit;
 	while (--p >= start) {
-		int k = digval[Py_CHARMASK(*p)];
+		int k = _PyLong_DigitValue[Py_CHARMASK(*p)];
 		assert(k >= 0 && k < base);
 		accum |= (twodigits)(k << bits_in_accum);
 		bits_in_accum += bits_per_char;
@@ -1503,7 +1502,7 @@ where B = convmultmax_base[base].
 
 		/* Find length of the string of numeric characters. */
 		scan = str;
-		while (digval[Py_CHARMASK(*scan)] < base)
+		while (_PyLong_DigitValue[Py_CHARMASK(*scan)] < base)
 			++scan;
 
 		/* Create a long object that can contain the largest possible
@@ -1527,10 +1526,10 @@ where B = convmultmax_base[base].
 		/* Work ;-) */
 		while (str < scan) {
 			/* grab up to convwidth digits from the input string */
-			c = (digit)digval[Py_CHARMASK(*str++)];
+			c = (digit)_PyLong_DigitValue[Py_CHARMASK(*str++)];
 			for (i = 1; i < convwidth && str != scan; ++i, ++str) {
 				c = (twodigits)(c *  base +
-					digval[Py_CHARMASK(*str)]);
+					_PyLong_DigitValue[Py_CHARMASK(*str)]);
 				assert(c < BASE);
 			}
 

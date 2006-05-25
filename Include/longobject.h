@@ -25,6 +25,7 @@ PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLongMask(PyObject *);
 PyAPI_FUNC(Py_ssize_t) _PyLong_AsSsize_t(PyObject *);
 PyAPI_FUNC(PyObject *) _PyLong_FromSize_t(size_t);
 PyAPI_FUNC(PyObject *) _PyLong_FromSsize_t(Py_ssize_t);
+PyAPI_DATA(int) _PyLong_DigitValue[256];
 
 /* _PyLong_AsScaledDouble returns a double x and an exponent e such that
    the true value is approximately equal to x * 2**(SHIFT*e).  e is >= 0.
