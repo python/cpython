@@ -295,9 +295,9 @@ extern "C" {
 #define Py_IS_INFINITY(X) ((X) && (X)*0.5 == (X))
 #endif
 
-/* Py_IS_INFINITY(X)
- * Return 1 if float or double arg is an infinity, else 0.
- * Some architectures (Windows) have intrinsics for this, so a special
+/* Py_IS_FINITE(X)
+ * Return 1 if float or double arg is neither infinite nor NAN, else 0.
+ * Some compilers (e.g. VisualStudio) have intrisics for this, so a special
  * macro for this particular test is useful
  */
 #ifndef Py_IS_FINITE
