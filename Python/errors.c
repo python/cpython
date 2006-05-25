@@ -785,7 +785,7 @@ PyErr_ProgramText(const char *filename, int lineno)
 				break;
 			/* fgets read *something*; if it didn't get as
 			   far as pLastChar, it must have found a newline
-			   or hit the end of the file;	if pLastChar is \n,
+			   or hit the end of the file; if pLastChar is \n,
 			   it obviously found a newline; else we haven't
 			   yet seen a newline, so must continue */
 		} while (*pLastChar != '\0' && *pLastChar != '\n');
