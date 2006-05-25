@@ -1461,18 +1461,6 @@ static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
 	else							\
 		Py_DECREF(str);
 
-#define SPLIT_INSERT(data, left, right)			 	\
-	str = PyString_FromStringAndSize((data) + (left),	\
-					 (right) - (left));	\
-	if (str == NULL)					\
-		goto onError;					\
-	if (PyList_Insert(list, 0, str)) {			\
-		Py_DECREF(str);					\
-		goto onError;					\
-	}							\
-	else							\
-		Py_DECREF(str);
-
 static PyObject *
 split_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 {
@@ -1632,15 +1620,17 @@ rsplit_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 		if (j > i) {
 			if (maxsplit-- <= 0)
 				break;
-			SPLIT_INSERT(s, i + 1, j + 1);
+			SPLIT_APPEND(s, i + 1, j + 1);
 			while (i >= 0 && isspace(Py_CHARMASK(s[i])))
 				i--;
 			j = i;
 		}
 	}
 	if (j >= 0) {
-		SPLIT_INSERT(s, 0, j + 1);
+		SPLIT_APPEND(s, 0, j + 1);
 	}
+	if (PyList_Reverse(list) < 0)
+		goto onError;
 	return list;
   onError:
 	Py_DECREF(list);
@@ -1661,14 +1651,16 @@ rsplit_char(const char *s, Py_ssize_t len, char ch, Py_ssize_t maxcount)
 		if (s[i] == ch) {
 			if (maxcount-- <= 0)
 				break;
-			SPLIT_INSERT(s, i + 1, j + 1);
+			SPLIT_APPEND(s, i + 1, j + 1);
 			j = i = i - 1;
 		} else
 			i--;
 	}
 	if (j >= -1) {
-		SPLIT_INSERT(s, 0, j + 1);
+		SPLIT_APPEND(s, 0, j + 1);
 	}
+	if (PyList_Reverse(list) < 0)
+		goto onError;
 	return list;
 
  onError:
