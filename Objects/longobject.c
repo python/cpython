@@ -40,7 +40,7 @@ static PyObject *long_format(PyObject *aa, int base, int addL);
 #define SIGCHECK(PyTryBlock) \
 	if (--_Py_Ticker < 0) { \
 		_Py_Ticker = _Py_CheckInterval; \
-		if (PyErr_CheckSignals()) { PyTryBlock; } \
+		if (PyErr_CheckSignals()) PyTryBlock \
 	}
 
 /* Normalize (remove leading zeros from) a long int object.
