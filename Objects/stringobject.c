@@ -2033,6 +2033,11 @@ PyDoc_STRVAR(lower__doc__,
 \n\
 Return a copy of the string S converted to lowercase.");
 
+/* _tolower and _toupper are defined by SUSv2, but they're not ISO C */
+#ifndef _tolower
+#define _tolower tolower
+#endif
+
 static PyObject *
 string_lower(PyStringObject *self)
 {
@@ -2061,6 +2066,10 @@ PyDoc_STRVAR(upper__doc__,
 "S.upper() -> string\n\
 \n\
 Return a copy of the string S converted to uppercase.");
+
+#ifndef _toupper
+#define _toupper toupper
+#endif
 
 static PyObject *
 string_upper(PyStringObject *self)
