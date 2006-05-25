@@ -2040,14 +2040,16 @@ string_lower(PyStringObject *self)
 	Py_ssize_t i, n = PyString_GET_SIZE(self);
 	PyObject *newobj;
 
-	newobj = PyString_FromStringAndSize(PyString_AS_STRING(self), n);
+	newobj = PyString_FromStringAndSize(NULL, n);
 	if (!newobj)
 		return NULL;
 
 	s = PyString_AS_STRING(newobj);
 
+	memcpy(s, PyString_AS_STRING(self), n);
+
 	for (i = 0; i < n; i++) {
-		char c = Py_CHARMASK(s[i]);
+		int c = Py_CHARMASK(s[i]);
 		if (isupper(c))
 			s[i] = _tolower(c);
 	}
@@ -2067,14 +2069,16 @@ string_upper(PyStringObject *self)
 	Py_ssize_t i, n = PyString_GET_SIZE(self);
 	PyObject *newobj;
 
-	newobj = PyString_FromStringAndSize(PyString_AS_STRING(self), n);
+	newobj = PyString_FromStringAndSize(NULL, n);
 	if (!newobj)
 		return NULL;
 
 	s = PyString_AS_STRING(newobj);
 
+	memcpy(s, PyString_AS_STRING(self), n);
+
 	for (i = 0; i < n; i++) {
-		char c = Py_CHARMASK(s[i]);
+		int c = Py_CHARMASK(s[i]);
 		if (islower(c))
 			s[i] = _toupper(c);
 	}
