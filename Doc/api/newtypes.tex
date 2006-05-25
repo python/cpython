@@ -990,10 +990,10 @@ The following three fields only exist if the
   An optional pointer to the rich comparison function.
 
   The signature is the same as for \cfunction{PyObject_RichCompare()}.
-  The function should return \code{1} if the requested comparison
-  returns true, \code{0} if it returns false.  It should return
-  \code{-1} and set an exception condition when an error occurred
-  during the comparison.
+  The function should return the result of the comparison (usually
+  \code{Py_True} or \code{Py_False}).  If the comparison is undefined,
+  it must return \code{Py_NotImplemented}, if another error occurred
+  it must return \code{NULL} and set an exception condition.
 
   This field is inherited by subtypes together with
   \member{tp_compare} and \member{tp_hash}: a subtype inherits all
