@@ -17,6 +17,12 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- 2006 Summer of Code entries: Matt Fleming was added on 25 May 2006
+  by AMK; he'll be working on enhancing the Python debugger.  SoC
+  developers are expected to work primarily in nondist/sandbox or on a
+  branch of their own, and will have their work reviewed before
+  changes are accepted into the trunk.
+
 - Steven Bethard was given SVN access on 27 Apr 2006 by DJG, for PEP
   update access.
 
@@ -40,7 +46,7 @@ Permissions History
 
 - Added two new developers for the Summer of Code project. 8 July 2005
   by RDH.  Andrew Kuchling will be mentoring Gregory K Johnson for a
-  project to enchance mailbox.  Brett Cannon requested access for Flovis
+  project to enhance mailbox.  Brett Cannon requested access for Flovis
   Bruynooghe (sirolf) to work on pstats, profile, and hotshot.  Both users
   are expected to work primarily in nondist/sandbox and have their work
   reviewed before making updates to active code.
