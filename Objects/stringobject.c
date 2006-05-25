@@ -3161,7 +3161,7 @@ string_replace(PyStringObject *self, PyObject *args)
 {
 	Py_ssize_t count = -1;
 	PyObject *from, *to;
-	char *tmp_s;
+	const char *tmp_s;
 	Py_ssize_t tmp_len;
 
 	if (!PyArg_ParseTuple(args, "OO|n:replace", &from, &to, &count))
