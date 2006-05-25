@@ -609,6 +609,9 @@ bu_uint(const char *p, const formatdef *f)
 #ifdef PY_USE_INT_WHEN_POSSIBLE
 	if (x <= INT_MAX)
 		return PyInt_FromLong((long)x);
+#else
+	if (SIZEOF_LONG > f->size)
+		return PyInt_FromLong((long)x);
 #endif
 	return PyLong_FromUnsignedLong(x);
 }
@@ -804,6 +807,9 @@ lu_uint(const char *p, const formatdef *f)
 	} while (i > 0);
 #ifdef PY_USE_INT_WHEN_POSSIBLE
 	if (x <= INT_MAX)
+		return PyInt_FromLong((long)x);
+#else
+	if (SIZEOF_LONG > f->size)
 		return PyInt_FromLong((long)x);
 #endif
 	return PyLong_FromUnsignedLong((long)x);
