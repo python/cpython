@@ -382,7 +382,7 @@ class PyBenchCmdline(Application):
                SwitchOption('--no-syscheck',
                     '"disable" sys check interval (set to sys.maxint)', 0),
                ArgumentOption('-t', 'tests containing substring', ''),
-               ArgumentOption('-C', 'number of calibration runs (default 20)', 20)
+               ArgumentOption('-C', 'number of calibration runs', 20)
                ]
 
     about = """\

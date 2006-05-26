@@ -46,6 +46,9 @@ Options and default settings:
   -w arg           set warp factor to arg (20)
   -d               hide noise in compares (0)
   --no-gc          disable garbage collection (0)
+  --no-syscheck    "disable" sys check interval (set to sys.maxint) (0)
+  -t arg           tests containing substring ()
+  -C arg           number of calibration runs (20)
   -v               generate verbose output
   -h               show this help text
   --help           show this help text
@@ -365,6 +368,14 @@ imported into the pybench.Setup module. pybench will then scan all the
 symbols defined in that module for subclasses of pybench.Test and
 automatically add them to the benchmark suite.
 
+
+Breaking Comparability
+----------------------
+
+If a change is made to any individual test that means it is no
+longer strcitly comparable with previous runs, the '.version' class
+variable should be updated. Therefafter, comparisons with previous
+versions of the test will list as "n/a" to reflect the change.
 
 Have fun,
 --
