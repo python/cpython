@@ -318,15 +318,15 @@ class StreamReader(Codec,codecs.StreamReader):
 ### encodings module API
 
 def getregentry():
-    return codecs.CodecInfo((
-        name=%r,
+    return codecs.CodecInfo(
         Codec().encode,
         Codec().decode,
+        name=%r,
         streamwriter=StreamWriter,
         streamreader=StreamReader,
         incrementalencoder=IncrementalEncoder,
         incrementaldecoder=IncrementalDecoder,
-    ))
+    )
 ''' % encodingname.replace('_', '-'))
 
     # Add decoding table or map (with preference to the table)
