@@ -727,6 +727,14 @@ a prefix; rather, all combinations of its values are stripped:
 \versionchanged[Support for the \var{chars} argument]{2.2.2}
 \end{methoddesc}
 
+\begin{methoddesc}[string]{partition}{sep}
+Splits the string at the \var{sep}, and return a 3-tuple containing
+the part before the separator, the separator itself, and the part
+after the separator.  If the separator is not found, return a 3-tuple
+containing the string itself, followed by two empty strings.
+\versionadded{2.5}
+\end{methoddesc}
+
 \begin{methoddesc}[string]{replace}{old, new\optional{, count}}
 Return a copy of the string with all occurrences of substring
 \var{old} replaced by \var{new}.  If the optional argument

@@ -1610,20 +1610,20 @@ string_partition(PyStringObject *self, PyObject *args)
 {
 	Py_ssize_t len = PyString_GET_SIZE(self), sep_len, pos;
 	const char *str = PyString_AS_STRING(self), *sep;
-	PyObject *sepobj;
+	PyObject *sep_obj;
 	PyObject * out;
 
-	if (!PyArg_ParseTuple(args, "O:partition", &sepobj))
+	if (!PyArg_ParseTuple(args, "O:partition", &sep_obj))
 		return NULL;
-	if (PyString_Check(sepobj)) {
-		sep = PyString_AS_STRING(sepobj);
-		sep_len = PyString_GET_SIZE(sepobj);
+	if (PyString_Check(sep_obj)) {
+		sep = PyString_AS_STRING(sep_obj);
+		sep_len = PyString_GET_SIZE(sep_obj);
 	}
-#ifdef Py_USING_UNICODE_NOTYET
-	else if (PyUnicode_Check(sepobj))
-		return PyUnicode_Partition((PyObject *)self, sepobj);
+#ifdef Py_USING_UNICODE
+	else if (PyUnicode_Check(sep_obj))
+		return PyUnicode_Partition((PyObject *)self, sep_obj);
 #endif
-	else if (PyObject_AsCharBuffer(sepobj, &sep, &sep_len))
+	else if (PyObject_AsCharBuffer(sep_obj, &sep, &sep_len))
 		return NULL;
 
 	if (sep_len == 0) {
@@ -1644,13 +1644,13 @@ string_partition(PyStringObject *self, PyObject *args)
 		Py_INCREF(nullstring);
 		PyTuple_SET_ITEM(out, 2, (PyObject*) nullstring);
 	} else {
-		Py_INCREF(sepobj);
+		PyObject* obj;
 		PyTuple_SET_ITEM(out, 0, PyString_FromStringAndSize(str, pos));
-		PyTuple_SET_ITEM(out, 1, sepobj);
-		PyTuple_SET_ITEM(out, 2,
-			PyString_FromStringAndSize(str + sep_len + pos,
-						   len - sep_len - pos)
-			);
+		Py_INCREF(sep_obj);
+		PyTuple_SET_ITEM(out, 1, sep_obj);
+		pos += sep_len;
+		obj = PyString_FromStringAndSize(str + pos, len - pos);
+		PyTuple_SET_ITEM(out, 2, obj);
 		if (PyErr_Occurred()) {
 			Py_DECREF(out);
 			return NULL;
