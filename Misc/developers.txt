@@ -24,6 +24,22 @@ Permissions History
   primarily in nondist/sandbox or on a branch of their own, and will
   have their work reviewed before changes are accepted into the trunk.
 
+- SVN access granted to the "Need for Speed" Iceland sprint attendees,
+  between May 17 and 21, 2006, by Tim Peters.  All work is to be done
+  in new sandbox projects or on new branches, with merging to the
+  trunk as approved:
+
+  Andrew Dalke
+  Christian Tismer
+  Jack Diederich
+  John Benediktsson
+  Kristján V. Jónsson
+  Martin Blais
+  Richard Emslie
+  Richard Jones
+  Runar Petursson
+  Steve Holden
+
 - Steven Bethard was given SVN access on 27 Apr 2006 by DJG, for PEP
   update access.
 
