@@ -1322,6 +1322,13 @@ static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
 #define STRIPNAME(i) (stripformat[i]+3)
 
 
+/* Don't call if length < 2 */
+#define Py_STRING_MATCH(target, offset, pattern, length)	\
+  (target[offset] == pattern[0] &&				\
+   target[offset+length-1] == pattern[length-1] &&		\
+   !memcmp(target+offset+1, pattern+1, length-2) )
+
+
 /* Overallocate the initial list to reduce the number of reallocs for small
    split sizes.  Eg, "A A A A A A A A A A".split() (10 elements) has three
    resizes, to sizes 4, 8, then 16.  Most observed string splits are for human
@@ -1416,18 +1423,19 @@ split_char(const char *s, Py_ssize_t len, char ch, Py_ssize_t maxcount)
 	if (list == NULL)
 		return NULL;
 
-	for (i = j = 0; i < len; ) {
-		/* TODO: Use findchar/memchr for this? */
-		if (s[i] == ch) {
-			if (maxcount-- <= 0)
+	i = j = 0;
+	while ((j < len) && (maxcount-- > 0)) {
+		for(; j<len; j++) {
+			/* I found that using memchr makes no difference */
+			if (s[j] == ch) {
+				SPLIT_ADD(s, i, j);
+				i = j = j + 1;
 				break;
-			SPLIT_ADD(s, j, i);
-			i = j = i + 1;
-		} else
-			i++;
+			}
+		}
 	}
-	if (j <= len) {
-		SPLIT_ADD(s, j, len);
+	if (i <= len) {
+		SPLIT_ADD(s, i, len);
 	}
 	FIX_PREALLOC_SIZE(list);
 	return list;
@@ -1452,6 +1460,9 @@ string_split(PyStringObject *self, PyObject *args)
 	Py_ssize_t maxsplit = -1, count=0;
 	const char *s = PyString_AS_STRING(self), *sub;
 	PyObject *list, *str, *subobj = Py_None;
+#ifdef USE_FAST
+	Py_ssize_t pos;
+#endif
 
 	if (!PyArg_ParseTuple(args, "|On:split", &subobj, &maxsplit))
 		return NULL;
@@ -1481,19 +1492,30 @@ string_split(PyStringObject *self, PyObject *args)
 	if (list == NULL)
 		return NULL;
 
+#ifdef USE_FAST
 	i = j = 0;
-	while (i+n <= len) {
-		/* TODO: Use Py_STRING_MATCH */
-		if (s[i] == sub[0] && memcmp(s+i, sub, n) == 0) {
-			if (maxsplit-- <= 0)
-				break;
-			SPLIT_ADD(s, j, i);
-			i = j = i + n;
-		}
-		else
-			i++;
+	while (maxsplit-- > 0) {
+		pos = fastsearch(s+i, len-i, sub, n, FAST_SEARCH);
+		if (pos < 0)
+			break;
+		j = i+pos;
+		SPLIT_ADD(s, i, j);
+		i = j + n;
+		
 	}
-	SPLIT_ADD(s, j, len);
+#else
+	i = j = 0;
+	while ((j+n <= len) && (maxsplit-- > 0)) {
+		for (; j+n <= len; j++) {
+			if (Py_STRING_MATCH(s, j, sub, n)) {
+				SPLIT_ADD(s, i, j);
+				i = j = j + n;
+				break;
+			}
+		}
+	}
+#endif
+	SPLIT_ADD(s, i, len);
 	FIX_PREALLOC_SIZE(list);
 	return list;
 
@@ -1610,14 +1632,15 @@ rsplit_char(const char *s, Py_ssize_t len, char ch, Py_ssize_t maxcount)
 	if (list == NULL)
 		return NULL;
 
-	for (i = j = len - 1; i >= 0; ) {
-		if (s[i] == ch) {
-			if (maxcount-- <= 0)
+	i = j = len - 1;
+	while ((i >= 0) && (maxcount-- > 0)) {
+		for (; i >= 0; i--) {
+			if (s[i] == ch) {
+				SPLIT_ADD(s, i + 1, j + 1);
+				j = i = i - 1;
 				break;
-			SPLIT_ADD(s, i + 1, j + 1);
-			j = i = i - 1;
-		} else
-			i--;
+			}
+		}
 	}
 	if (j >= -1) {
 		SPLIT_ADD(s, 0, j + 1);
@@ -1679,16 +1702,16 @@ string_rsplit(PyStringObject *self, PyObject *args)
 
 	j = len;
 	i = j - n;
-	while (i >= 0) {
-		if (s[i] == sub[0] && memcmp(s+i, sub, n) == 0) {
-			if (maxsplit-- <= 0)
+
+	while ( (i >= 0) && (maxsplit-- > 0) ) {
+		for (; i>=0; i--) {
+			if (Py_STRING_MATCH(s, i, sub, n)) {
+				SPLIT_ADD(s, i + n, j);
+				j = i;
+				i -= n;
 				break;
-			SPLIT_ADD(s, i+n, j);
-			j = i;
-			i -= n;
+			}
 		}
-		else
-			i--;
 	}
 	SPLIT_ADD(s, 0, j);
 	FIX_PREALLOC_SIZE(list);
@@ -2448,12 +2471,6 @@ string_translate(PyStringObject *self, PyObject *args)
 #define REVERSE -1
 
 /* find and count characters and substrings */
-
-/* Don't call if length < 2 */
-#define Py_STRING_MATCH(target, offset, pattern, length)	\
-  (target[offset] == pattern[0] &&				\
-   target[offset+length-1] == pattern[length-1] &&		\
-   !memcmp(target+offset+1, pattern+1, length-2) )
 
 #define findchar(target, target_len, c)				\
   ((char *)memchr((const void *)(target), c, target_len))
