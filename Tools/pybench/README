@@ -373,7 +373,7 @@ Breaking Comparability
 ----------------------
 
 If a change is made to any individual test that means it is no
-longer strcitly comparable with previous runs, the '.version' class
+longer strictly comparable with previous runs, the '.version' class
 variable should be updated. Therefafter, comparisons with previous
 versions of the test will list as "n/a" to reflect the change.
 
