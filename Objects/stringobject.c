@@ -767,18 +767,12 @@ PyString_AsStringAndSize(register PyObject *obj,
 /* -------------------------------------------------------------------- */
 /* stringlib components */
 
-#define USE_FAST
-
-#ifdef USE_FAST
-
 #define STRINGLIB_CHAR char
 #define STRINGLIB_NEW PyString_FromStringAndSize
 #define STRINGLIB_EMPTY nullstring
 
 #include "stringlib/fastsearch.h"
 #include "stringlib/partition.h"
-
-#endif
 
 /* -------------------------------------------------------------------- */
 /* Methods */
@@ -1054,13 +1048,7 @@ string_contains(PyObject *a, PyObject *el)
 	char *s = PyString_AS_STRING(a);
 	const char *sub = PyString_AS_STRING(el);
 	Py_ssize_t len_sub = PyString_GET_SIZE(el);
-#ifdef USE_FAST
 	Py_ssize_t pos;
-#else
-	char *last;
-	Py_ssize_t shortsub;
-	char firstchar, lastchar;
-#endif
 
 	if (!PyString_CheckExact(el)) {
 #ifdef Py_USING_UNICODE
@@ -1077,35 +1065,12 @@ string_contains(PyObject *a, PyObject *el)
 	if (len_sub == 0)
 		return 1;
 
-#ifdef USE_FAST
 	pos = fastsearch(
 		s, PyString_GET_SIZE(a),
 		sub, len_sub, FAST_SEARCH
 		);
+
 	return (pos != -1);
-#else    
-	/* last points to one char beyond the start of the rightmost
-	   substring.  When s<last, there is still room for a possible match
-	   and s[0] through s[len_sub-1] will be in bounds.
-	   shortsub is len_sub minus the last character which is checked
-	   separately just before the memcmp().  That check helps prevent
-	   false starts and saves the setup time for memcmp().
-	*/
-	firstchar = sub[0];
-	shortsub = len_sub - 1;
-	lastchar = sub[shortsub];
-	last = s + PyString_GET_SIZE(a) - len_sub + 1;
-	while (s < last) {
-		s = (char *)memchr(s, firstchar, last-s);
-		if (s == NULL)
-			return 0;
-		assert(s < last);
-		if (s[shortsub] == lastchar && memcmp(s, sub, shortsub) == 0)
-			return 1;
-		s++;
-	}
-#endif
-	return 0;
 }
 
 static PyObject *
@@ -1854,7 +1819,6 @@ string_find_internal(PyStringObject *self, PyObject *args, int dir)
 
 	string_adjust_indices(&i, &last, len);
 
-#ifdef USE_FAST
 	if (n == 0)
 		return (dir > 0) ? i : last;
 	if (dir > 0) {
@@ -1863,17 +1827,7 @@ string_find_internal(PyStringObject *self, PyObject *args, int dir)
 		if (pos < 0)
 			return pos;
 		return pos + i;
-	}
-#endif
-	if (dir > 0) {
-		if (n == 0 && i <= last)
-			return (long)i;
-		last -= n;
-		for (; i <= last; ++i)
-			if (s[i] == sub[0] && memcmp(&s[i], sub, n) == 0)
-				return (long)i;
-	}
-	else {
+	} else {
 		Py_ssize_t j;
 
         	if (n == 0 && i <= last)
@@ -2299,28 +2253,9 @@ string_count(PyStringObject *self, PyObject *args)
 	if (n == 0)
 		return PyInt_FromSsize_t(m-i);
 
-#ifdef USE_FAST
 	r = fastsearch(s + i, last - i, sub, n, FAST_COUNT);
 	if (r < 0)
 		r = 0; /* no match */
-#else
-	r = 0;
-	while (i < m) {
-		const char *t;
-		if (!memcmp(s+i, sub, n)) {
-			r++;
-			i += n;
-		} else {
-			i++;
-		}
-		if (i >= m)
-			break;
-		t = (const char *)memchr(s+i, sub[0], m-i);
-		if (t == NULL)
-			break;
-		i = t - s;
-	}
-#endif
 	return PyInt_FromSsize_t(r);
 }
 
