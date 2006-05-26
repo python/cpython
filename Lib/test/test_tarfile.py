@@ -87,7 +87,7 @@ class ReadTest(BaseTest):
         if self.sep != "|":
             filename = "0-REGTYPE-TEXT"
             self.tar.extract(filename, dirname())
-            lines1 = file(os.path.join(dirname(), filename), "rU").readlines()
+            lines1 = open(os.path.join(dirname(), filename), "rU").readlines()
             lines2 = self.tar.extractfile(filename).readlines()
             self.assert_(lines1 == lines2,
                          "_FileObject.readline() does not work correctly")
@@ -97,7 +97,7 @@ class ReadTest(BaseTest):
         if self.sep != "|":
             filename = "0-REGTYPE-TEXT"
             self.tar.extract(filename, dirname())
-            lines1 = file(os.path.join(dirname(), filename), "rU").readlines()
+            lines1 = open(os.path.join(dirname(), filename), "rU").readlines()
             lines2 = [line for line in self.tar.extractfile(filename)]
             self.assert_(lines1 == lines2,
                          "ExFileObject iteration does not work correctly")
@@ -108,7 +108,7 @@ class ReadTest(BaseTest):
         if self.sep != "|":
             filename = "0-REGTYPE"
             self.tar.extract(filename, dirname())
-            data = file(os.path.join(dirname(), filename), "rb").read()
+            data = open(os.path.join(dirname(), filename), "rb").read()
 
             tarinfo = self.tar.getmember(filename)
             fobj = self.tar.extractfile(tarinfo)
@@ -156,7 +156,7 @@ class ReadTest(BaseTest):
         tarinfo = tarfile.TarInfo("directory/")
         tarinfo.type = tarfile.REGTYPE
 
-        fobj = file(filename, "w")
+        fobj = open(filename, "w")
         fobj.write(tarinfo.tobuf())
         fobj.close()
 
@@ -286,10 +286,10 @@ class WriteSize0Test(BaseTest):
 
     def test_file(self):
         path = os.path.join(self.tmpdir, "file")
-        file(path, "w")
+        open(path, "w")
         tarinfo = self.dst.gettarinfo(path)
         self.assertEqual(tarinfo.size, 0)
-        file(path, "w").write("aaa")
+        open(path, "w").write("aaa")
         tarinfo = self.dst.gettarinfo(path)
         self.assertEqual(tarinfo.size, 3)
 
@@ -440,7 +440,7 @@ class ReadGNULongTest(unittest.TestCase):
         self.assert_(tarinfo.linkname == name, "linkname wrong")
 
     def test_truncated_longname(self):
-        fobj = StringIO.StringIO(file(tarname()).read(1024))
+        fobj = StringIO.StringIO(open(tarname()).read(1024))
         tar = tarfile.open(name="foo.tar", fileobj=fobj)
         self.assert_(len(tar.getmembers()) == 0, "")
 
@@ -480,7 +480,7 @@ class CreateHardlinkTest(BaseTest):
         if os.path.exists(self.bar):
             os.remove(self.bar)
 
-        file(self.foo, "w").write("foo")
+        open(self.foo, "w").write("foo")
         self.tar.add(self.foo)
 
     def test_add_twice(self):
@@ -565,10 +565,10 @@ if not gzip:
 def test_main():
     if gzip:
         # create testtar.tar.gz
-        gzip.open(tarname("gz"), "wb").write(file(tarname(), "rb").read())
+        gzip.open(tarname("gz"), "wb").write(open(tarname(), "rb").read())
     if bz2:
         # create testtar.tar.bz2
-        bz2.BZ2File(tarname("bz2"), "wb").write(file(tarname(), "rb").read())
+        bz2.BZ2File(tarname("bz2"), "wb").write(open(tarname(), "rb").read())
 
     tests = [
         FileModeTest,
