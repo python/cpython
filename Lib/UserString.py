@@ -102,6 +102,7 @@ class UserString:
         return self.__class__(self.data.ljust(width, *args))
     def lower(self): return self.__class__(self.data.lower())
     def lstrip(self, chars=None): return self.__class__(self.data.lstrip(chars))
+    def partition(self, sep): return self.data.partition(sep)
     def replace(self, old, new, maxsplit=-1):
         return self.__class__(self.data.replace(old, new, maxsplit))
     def rfind(self, sub, start=0, end=sys.maxint):
