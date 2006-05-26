@@ -16,12 +16,10 @@ typedef int Py_ssize_t;
 #endif
 
 
-/* PY_USE_INT_WHEN_POSSIBLE is an experimental flag that changes the 
+/* PY_USE_INT_WHEN_POSSIBLE is a flag that changes the 
    struct API to return int instead of long when possible. This is
    often a significant performance improvement. */
-/*
 #define PY_USE_INT_WHEN_POSSIBLE 1
-*/
 
 /* PY_STRUCT_RANGE_CHECKING performs range checking on all arguments
    to be packed. This will break some incorrect code that happened
