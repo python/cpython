@@ -319,16 +319,18 @@ def       for       lambda    try
 
 % When adding keywords, use reswords.py for reformatting
 
-Note that although the identifier \code{as} can be used as part of the
-syntax of \keyword{import} statements, it is not currently a reserved
-word by default.)
+\versionchanged[\constant{None} became a constant and is now
+recognized by the compiler as a name for the built-in object
+\constant{None}.  Although it is not a keyword, you cannot assign
+a different object to it]{2.4}
 
 \versionchanged[Both \keyword{as} and \keyword{with} are only recognized
-when the \code{with_statement} feature has been enabled.  It will always
-be enabled in Python 2.6. See section~\ref{with} for details]{2.5}
+when the \code{with_statement} future feature has been enabled.
+It will always be enabled in Python 2.6.  See section~\ref{with} for
+details.  Note that using \keyword{as} and \keyword{with} as identifiers
+will always issue a warning, even when the \code{with_statement} future
+directive is not in effect]{2.5}
 
-In some future version of Python, the identifier \code{None} will
-become a keyword.
 
 \subsection{Reserved classes of identifiers\label{id-classes}}
 
