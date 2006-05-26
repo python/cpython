@@ -1,5 +1,6 @@
 \subsection{ctypes reference\label{ctypes-reference}}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % functions
 \subsubsection{ctypes functions}
 
@@ -14,6 +15,8 @@ Returns the alignment requirements of a ctypes type.
 \end{funcdesc}
 
 \begin{excclassdesc}{ArgumentError}{}
+This exception is raised when a foreign function call cannot convert
+one of the passed arguments.
 \end{excclassdesc}
 
 \begin{funcdesc}{byref}{obj}
@@ -24,9 +27,33 @@ but the construction is a lot faster.
 \end{funcdesc}
 
 \begin{funcdesc}{cast}{obj, type}
+This function is similar to the cast operator in C.  It returns a new
+instance of \var{type} which points to the same memory block as
+\code{obj}.  \code{type} must be a pointer type, and \code{obj}
+ must be an object that can be interpreted as a pointer.
 \end{funcdesc}
 
+% XXX separate section for CFUNCTYPE, WINFUNCTYPE, PYFUNCTYPE?
+
 \begin{funcdesc}{CFUNCTYPE}{restype, *argtypes}
+This is a factory function that returns a function prototype.  The
+function prototype describes a function that has a result type of
+\code{restype}, and accepts arguments as specified by \code{argtypes}.
+The function prototype can be used to construct several kinds of
+functions, depending on how the prototype is called.
+
+The prototypes returned by \code{CFUNCTYPE} or \code{PYFUNCTYPE}
+create functions that use the standard C calling convention,
+prototypes returned from \code{WINFUNCTYPE} (on Windows) use the
+\code{__stdcall} calling convention.
+
+Functions created by calling the \code{CFUNCTYPE} and
+\code{WINFUNCTYPE} prototypes release the Python GIL
+before entering the foreign function, and acquire it back after
+leaving the function code.
+
+% XXX differences between CFUNCTYPE / WINFUNCTYPE / PYFUNCTYPE
+
 \end{funcdesc}
 
 \begin{funcdesc}{create_string_buffer}{init_or_size\optional{, size}}
@@ -67,35 +94,52 @@ unicode string according to ctypes conversion rules.
 \begin{funcdesc}{DllCanUnloadNow}{}
 Windows only: This function is a hook which allows to implement
 inprocess COM servers with ctypes.  It is called from the
-\code{DllCanUnloadNow} exported function that the \code{_ctypes}
-extension module exports.
+\code{DllCanUnloadNow} function that the \code{_ctypes}
+extension dll exports.
 \end{funcdesc}
 
 \begin{funcdesc}{DllGetClassObject}{}
 Windows only: This function is a hook which allows to implement
 inprocess COM servers with ctypes.  It is called from the
-\code{DllGetClassObject} exported function that the \code{_ctypes}
-extension module exports.
+\code{DllGetClassObject} function that the \code{_ctypes}
+extension dll exports.
 \end{funcdesc}
 
-\begin{funcdesc}{FormatError}{}
-Windows only:
+\begin{funcdesc}{FormatError}{\optional{code}}
+Windows only: Returns a textual description of the error code.  If no
+error code is specified, the last error code is used by calling the
+Windows api function \code{GetLastError}.
 \end{funcdesc}
 
 \begin{funcdesc}{GetLastError}{}
-Windows only:
+Windows only: Returns the last error code set by Windows in the
+calling thread.
 \end{funcdesc}
 
 \begin{funcdesc}{memmove}{dst, src, count}
+Same as the standard C \code{memmove} library function: copies
+\var{count} bytes from \code{src} to \code{dst}.  \code{dst} and
+\code{src} must be integers or ctypes instances that can be converted to pointers.
 \end{funcdesc}
 
 \begin{funcdesc}{memset}{dst, c, count}
+Same as the standard C \code{memset} library function: fills the
+memory clock at address \code{dst} with \var{count} bytes of value
+\var{c}.  \var{dst} must be an integer specifying an address, or a ctypes instance.
 \end{funcdesc}
 
-\begin{funcdesc}{POINTER}{}
+\begin{funcdesc}{POINTER}{type}
+This factory function creates and returns a new ctypes pointer type.
+Pointer types are cached an reused internally, so calling this
+function repeatedly is cheap.  \var{type} must be a ctypes type.
 \end{funcdesc}
 
-\begin{funcdesc}{pointer}{}
+\begin{funcdesc}{pointer}{obj}
+This function creates a new pointer instance, pointing to \var{obj}.
+The returned object is of the type \code{POINTER(type(obj))}.
+
+Note: If you just want to pass a pointer to an object to a foreign
+function call, you should use \code{byref(obj)} which is much faster.
 \end{funcdesc}
 
 \begin{funcdesc}{PYFUNCTYPE}{restype, *argtypes}
@@ -104,27 +148,56 @@ Windows only:
 \begin{funcdesc}{pythonapi}{}
 \end{funcdesc}
 
-\begin{funcdesc}{resize}{}
+\begin{funcdesc}{resize}{obj, size}
+This function resizes the internal memory buffer of \var{obj}, which
+must be an instance of a ctypes type.  It is not possible to make the
+buffer smaller than the native size of the objects type, as given by
+\code{sizeof(type(obj))}, but it is possible to enlarge the buffer.
 \end{funcdesc}
 
-\begin{funcdesc}{set_conversion_mode}{}
+\begin{funcdesc}{set_conversion_mode}{encoding, errors}
+This function sets the rules that ctypes objects use when converting
+between 8-bit strings and unicode strings.  \var{encoding} must be a
+string specifying an encoding, like 'utf-8' or 'mbcs', \var{errors}
+must be a string specifying the error handling on encoding/decoding
+errors.  Examples of possible values are ``strict'', ``replace'', or
+``ignore''.
+
+\code{set_conversion_mode} returns a 2-tuple containing the previous
+conversion rules.  On windows, the initial conversion rules are
+\code{('mbcs', 'ignore')}, on other systems \code{('ascii', 'strict')}.
 \end{funcdesc}
 
-\begin{funcdesc}{sizeof}{}
+\begin{funcdesc}{sizeof}{obj_or_type}
+Returns the size in bytes of a ctypes type or instance memory buffer.
+Does the same as the C sizeof() function.
 \end{funcdesc}
 
-\begin{funcdesc}{string_at}{address}
+\begin{funcdesc}{string_at}{address\optional{size}}
+This function returns the string starting at memory address
+\var{address}.  If \var{size} is specified, it is used as size,
+otherwise the string is assumed to be zero-terminated.
 \end{funcdesc}
 
-\begin{funcdesc}{WinError}{}
+\begin{funcdesc}{WinError}{code=None, descr=None}
+Windows only: this function is probably the worst-named thing in
+ctypes.  It creates an instance of \code{WindowsError}.  If \var{code}
+is not specified, \code{GetLastError} is called to determine the error
+code.  If \var{descr} is not spcified, \var{FormatError} is called to
+get a textual description of the error.
 \end{funcdesc}
 
 \begin{funcdesc}{WINFUNCTYPE}{restype, *argtypes}
 \end{funcdesc}
 
 \begin{funcdesc}{wstring_at}{address}
+This function returns the wide character string starting at memory
+address \var{address} as unicode string.  If \var{size} is specified,
+it is used as size, otherwise the string is assumed to be
+zero-terminated.
 \end{funcdesc}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % data types
 \subsubsection{data types}
 
@@ -132,8 +205,46 @@ ctypes defines a lot of C compatible datatypes, and also allows to
 define your own types.  Among other things, a ctypes type instance
 holds a memory block that contains C compatible data.
 
+\begin{classdesc}{_ctypes._CData}{}
+This non-public class is the base class of all ctypes data types.  It
+is mentioned here because it contains the common methods of the ctypes
+data types.
+\end{classdesc}
+
+Common methods of ctypes data types, these are all class methods (to
+be exact, they are methods of the metaclass):
+
+\begin{methoddesc}{from_address}{address}
+This method returns a ctypes type instance using the memory specified
+by \code{address}. 
+\end{methoddesc}
+
+\begin{methoddesc}{from_param}{obj}
+This method adapts \code{obj} to a ctypes type.
+\end{methoddesc}
+
+\begin{methoddesc}{in_dll}{name, library}
+This method returns a ctypes type instance exported by a shared
+library.  \var{name} is the name of the symbol that exports the data,
+\var{library} is the loaded shared library.
+\end{methoddesc}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % simple data types
 \subsubsection{simple data types}
+
+\begin{classdesc}{_ctypes._SimpleCData}{}
+This non-public class is the base class of all ctypes data types.  It
+is mentioned here because it contains the common attributes of the
+ctypes data types.
+\end{classdesc}
+
+\begin{memberdesc}{value}
+This attribute contains the actual value of the instance.  For integer
+types, it is an integer.
+\end{memberdesc}
+
+Here are the simple ctypes data types:
 
 \begin{classdesc}{c_byte}{\optional{value}}
 Represents a C \code{signed char} datatype, and interprets the value
@@ -148,6 +259,10 @@ initializer, the length of the string must be exactly one character.
 \end{classdesc}
 
 \begin{classdesc}{c_char_p}{\optional{value}}
+Represents a C \code{char *} datatype, which must be a pointer to a
+zero-terminated string.  The constructor accepts an integer address,
+or a string.
+% XXX Explain the difference to POINTER(c_char)
 \end{classdesc}
 
 \begin{classdesc}{c_double}{\optional{value}}
@@ -206,41 +321,78 @@ Represents a C \code{size_t} datatype.
 \end{classdesc}
 
 \begin{classdesc}{c_ubyte}{\optional{value}}
+Represents a C \code{unsigned char} datatype, and interprets the value
+as small integer.  The constructor accepts an optional integer
+initializer; no overflow checking is done.
 \end{classdesc}
 
 \begin{classdesc}{c_uint}{\optional{value}}
+Represents a C \code{unsigned int} datatype.  The constructor accepts
+an optional integer initializer; no overflow checking is done.  On
+platforms where \code{sizeof(int) == sizeof(long)} \var{c_int} is an
+alias to \var{c_long}.
 \end{classdesc}
 
 \begin{classdesc}{c_uint16}{\optional{value}}
+Represents a C 16-bit \code{unsigned int} datatype.  Usually an alias
+for \code{c_ushort}.
 \end{classdesc}
 
 \begin{classdesc}{c_uint32}{\optional{value}}
+Represents a C 32-bit \code{unsigned int} datatype.  Usually an alias
+for \code{c_uint}.
 \end{classdesc}
 
 \begin{classdesc}{c_uint64}{\optional{value}}
+Represents a C 64-bit \code{unsigned int} datatype.  Usually an alias
+for \code{c_ulonglong}.
 \end{classdesc}
 
 \begin{classdesc}{c_uint8}{\optional{value}}
+Represents a C 8-bit \code{unsigned int} datatype.  Usually an alias
+for \code{c_ubyte}.
 \end{classdesc}
 
 \begin{classdesc}{c_ulong}{\optional{value}}
+Represents a C \code{unsigned long} datatype.  The constructor accepts
+an optional integer initializer; no overflow checking is done.
 \end{classdesc}
 
 \begin{classdesc}{c_ulonglong}{\optional{value}}
+Represents a C \code{unsigned long long} datatype.  The constructor
+accepts an optional integer initializer; no overflow checking is done.
 \end{classdesc}
 
 \begin{classdesc}{c_ushort}{\optional{value}}
+Represents a C \code{unsigned short} datatype.  The constructor accepts
+an optional integer initializer; no overflow checking is done.
 \end{classdesc}
 
 \begin{classdesc}{c_void_p}{\optional{value}}
+Represents a C \code{void *} type.  The value is represented as
+integer.  The constructor accepts an optional integer initializer.
 \end{classdesc}
 
 \begin{classdesc}{c_wchar}{\optional{value}}
+Represents a C \code{wchar_t} datatype, and interprets the value as a
+single character unicode string.  The constructor accepts an optional
+string initializer, the length of the string must be exactly one
+character.
 \end{classdesc}
 
 \begin{classdesc}{c_wchar_p}{\optional{value}}
+Represents a C \code{wchar_t *} datatype, which must be a pointer to a
+zero-terminated wide character string.  The constructor accepts an
+integer address, or a string.
+% XXX Explain the difference to POINTER(c_wchar)
 \end{classdesc}
 
+\begin{classdesc}{HRESULT}{}
+Windows only: Represents a \code{HRESULT} value, which contains
+success or error information for a function or method call.
+\end{classdesc}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % structured data types
 \subsubsection{structured data types}
 
@@ -251,12 +403,17 @@ Represents a C \code{size_t} datatype.
 \end{classdesc}
 
 \begin{classdesc}{Structure}{}
+Base class for Structure data types.
+
 \end{classdesc}
 
 \begin{classdesc}{Union}{}
 \end{classdesc}
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% libraries
+\subsubsection{libraries}
 
 \begin{classdesc}{CDLL}{name, mode=RTLD_LOCAL, handle=None}
 \end{classdesc}
@@ -264,10 +421,11 @@ Represents a C \code{size_t} datatype.
 \begin{datadesc}{cdll}
 \end{datadesc}
 
-\begin{classdesc}{HRESULT}{}
-\end{classdesc}
-
 \begin{classdesc}{LibraryLoader}{dlltype}
+
+\begin{memberdesc}{LoadLibrary}{name, mode=RTLD_LOCAL, handle=None}
+\end{memberdesc}
+
 \end{classdesc}
 
 \begin{classdesc}{OleDLL}{name, mode=RTLD_LOCAL, handle=None}
