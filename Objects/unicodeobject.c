@@ -3869,63 +3869,47 @@ STRINGLIB_CMP(const Py_UNICODE* str, const Py_UNICODE* other, Py_ssize_t len)
 #define STRINGLIB_EMPTY unicode_empty
 
 #include "stringlib/fastsearch.h"
+
+#include "stringlib/count.h"
+#include "stringlib/find.h"
 #include "stringlib/partition.h"
 
-
-Py_LOCAL(Py_ssize_t) count(PyUnicodeObject *self,
-                           Py_ssize_t start,
-                           Py_ssize_t end,
-                           PyUnicodeObject *substring)
-{
-    Py_ssize_t count = 0;
-
-    if (start < 0)
-        start += self->length;
-    if (start < 0)
-        start = 0;
-    if (end > self->length)
-        end = self->length;
-    if (end < 0)
-        end += self->length;
-    if (end < 0)
-        end = 0;
-
-    if (substring->length == 0)
-	return (end - start + 1);
-
-    count = fastsearch(
-        PyUnicode_AS_UNICODE(self) + start, end - start,
-        substring->str, substring->length, FAST_COUNT
-        );
-
-    if (count < 0)
-        count = 0; /* no match */
-
-    return count;
-}
-
 Py_ssize_t PyUnicode_Count(PyObject *str,
-		    PyObject *substr,
-		    Py_ssize_t start,
-		    Py_ssize_t end)
+                           PyObject *substr,
+                           Py_ssize_t start,
+                           Py_ssize_t end)
 {
     Py_ssize_t result;
+    PyUnicodeObject* str_obj;
+    PyUnicodeObject* sub_obj;
 
-    str = PyUnicode_FromObject(str);
-    if (str == NULL)
+    str_obj = (PyUnicodeObject*) PyUnicode_FromObject(str);
+    if (!str_obj)
 	return -1;
-    substr = PyUnicode_FromObject(substr);
-    if (substr == NULL) {
-	Py_DECREF(str);
+    sub_obj = (PyUnicodeObject*) PyUnicode_FromObject(substr);
+    if (!sub_obj) {
+	Py_DECREF(str_obj);
 	return -1;
     }
 
-    result = count((PyUnicodeObject *)str,
-		   start, end,
-		   (PyUnicodeObject *)substr);
+    if (start < 0)
+        start += str_obj->length;
+    if (start < 0)
+        start = 0;
+    if (end > str_obj->length)
+        end = str_obj->length;
+    if (end < 0)
+        end += str_obj->length;
+    if (end < 0)
+        end = 0;
 
-    Py_DECREF(str);
-    Py_DECREF(substr);
+    result = stringlib_count(
+        str_obj->str + start, end - start, sub_obj->str, sub_obj->length
+        );
+
+    Py_DECREF(sub_obj);
+    Py_DECREF(str_obj);
+
     return result;
 }
 
@@ -4767,7 +4751,7 @@ PyObject *replace(PyUnicodeObject *self,
         Py_UNICODE *p;
 
         /* replace strings */
-        n = count(self, 0, self->length, str1);
+        n = stringlib_count(self->str, self->length, str1->str, str1->length);
         if (n > maxcount)
             n = maxcount;
         if (n == 0)
@@ -5162,7 +5146,7 @@ unicode_count(PyUnicodeObject *self, PyObject *args)
         return NULL;
 
     substring = (PyUnicodeObject *)PyUnicode_FromObject(
-						(PyObject *)substring);
+        (PyObject *)substring);
     if (substring == NULL)
 	return NULL;
 
@@ -5177,9 +5161,13 @@ unicode_count(PyUnicodeObject *self, PyObject *args)
     if (end < 0)
         end = 0;
 
-    result = PyInt_FromSsize_t(count(self, start, end, substring));
+    result = PyInt_FromSsize_t(
+        stringlib_count(self->str + start, end - start,
+                        substring->str, substring->length)
+        );
 
     Py_DECREF(substring);
+
     return result;
 }
 
@@ -6222,7 +6210,7 @@ PyUnicode_Partition(PyObject *str_in, PyObject *sep_in)
         return NULL;
     }
 
-    out = partition(
+    out = stringlib_partition(
         str_obj, PyUnicode_AS_UNICODE(str_obj), PyUnicode_GET_SIZE(str_obj),
         sep_obj, PyUnicode_AS_UNICODE(sep_obj), PyUnicode_GET_SIZE(sep_obj)
         );
@@ -6250,7 +6238,7 @@ PyUnicode_RPartition(PyObject *str_in, PyObject *sep_in)
         return NULL;
     }
 
-    out = rpartition(
+    out = stringlib_rpartition(
         str_obj, PyUnicode_AS_UNICODE(str_obj), PyUnicode_GET_SIZE(str_obj),
         sep_obj, PyUnicode_AS_UNICODE(sep_obj), PyUnicode_GET_SIZE(sep_obj)
         );

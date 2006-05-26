@@ -1548,7 +1548,7 @@ string_partition(PyStringObject *self, PyObject *sep_obj)
 	else if (PyObject_AsCharBuffer(sep_obj, &sep, &sep_len))
 		return NULL;
 
-	return partition(
+	return stringlib_partition(
 		(PyObject*) self,
 		PyString_AS_STRING(self), PyString_GET_SIZE(self),
 		sep_obj, sep, sep_len
@@ -1579,7 +1579,7 @@ string_rpartition(PyStringObject *self, PyObject *sep_obj)
 	else if (PyObject_AsCharBuffer(sep_obj, &sep, &sep_len))
 		return NULL;
 
-	return rpartition(
+	return stringlib_rpartition(
 		(PyObject*) self,
 		PyString_AS_STRING(self), PyString_GET_SIZE(self),
 		sep_obj, sep, sep_len
