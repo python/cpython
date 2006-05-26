@@ -3861,8 +3861,8 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
 Py_LOCAL(int)
 STRINGLIB_CMP(const Py_UNICODE* str, const Py_UNICODE* other, Py_ssize_t len)
 {
-    if (str[0] == other[0])
-        return 0;
+    if (str[0] != other[0])
+        return 1;
     return memcmp((void*) str, (void*) other, len * sizeof(Py_UNICODE));
 }
 
