@@ -336,8 +336,9 @@ for each thread.
   The \var{name} argument must be the name of the new exception, a C
   string of the form \code{module.class}.  The \var{base} and
   \var{dict} arguments are normally \NULL.  This creates a class
-  object derived from the root for all exceptions, the built-in name
-  \exception{Exception} (accessible in C as \cdata{PyExc_Exception}).
+  object derived from \exception{Exception} (accessible in C as
+  \cdata{PyExc_Exception}).
+
   The \member{__module__} attribute of the new class is set to the
   first part (up to the last dot) of the \var{name} argument, and the
   class name is set to the last part (after the last dot).  The
