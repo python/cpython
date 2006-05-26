@@ -252,6 +252,7 @@ class CommonTest(unittest.TestCase):
         self.checkequal(['a', 'b   '], '  a    b   ', 'split', None, 1)
         self.checkequal(['a', 'b   c   '], '  a    b   c   ', 'split', None, 1)
         self.checkequal(['a', 'b', 'c   '], '  a    b   c   ', 'split', None, 2)
+        self.checkequal(['a', 'b'], '\n\ta \t\r b \v ', 'split')
 
         # by a char
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'split', '|')
