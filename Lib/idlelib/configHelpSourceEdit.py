@@ -151,6 +151,7 @@ class GetHelpSourceDialog(Toplevel):
                     pass
                 else:
                     # Mac Safari insists on using the URI form for local files
+                    self.result = list(self.result)
                     self.result[1] = "file://" + path
             self.destroy()
 
