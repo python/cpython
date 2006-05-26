@@ -10,7 +10,7 @@ class ConcatUnicode(Test):
 
     version = 0.1
     operations = 10 * 5
-    rounds = 60000
+    rounds = 600*7
 
     def test(self):
 
@@ -92,7 +92,7 @@ class CompareUnicode(Test):
 
     version = 0.1
     operations = 10 * 5
-    rounds = 150000
+    rounds = 1500*17
 
     def test(self):
 
@@ -174,7 +174,7 @@ class CreateUnicodeWithConcat(Test):
 
     version = 0.1
     operations = 10 * 5
-    rounds = 80000
+    rounds = 800*12
 
     def test(self):
 
@@ -249,7 +249,7 @@ class UnicodeSlicing(Test):
 
     version = 0.1
     operations = 5 * 7
-    rounds = 100000
+    rounds = 10000
 
     def test(self):
 
@@ -310,7 +310,7 @@ class UnicodeMappings(Test):
 
     version = 0.1
     operations = 3 * (5 + 4 + 2 + 1)
-    rounds = 10000
+    rounds = 100*15
 
     def test(self):
 
@@ -383,7 +383,7 @@ class UnicodePredicates(Test):
 
     version = 0.1
     operations = 5 * 9
-    rounds = 100000
+    rounds = 1000*25
 
     def test(self):
 
@@ -460,7 +460,7 @@ else:
 
         version = 0.1
         operations = 5 * 8
-        rounds = 100000
+        rounds = 1000*15
 
         def test(self):
 

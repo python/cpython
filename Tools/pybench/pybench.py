@@ -35,7 +35,7 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE !
 """
 
 # Version number
-__version__ = '1.3'
+__version__ = '1.4'
 
 #
 # NOTE: Use xrange for all test loops unless you want to face
@@ -98,7 +98,7 @@ class Test:
     # Number of rounds to execute per test run. This should be
     # adjusted to a figure that results in a test run-time of between
     # 20-50 seconds.
-    rounds = 100000
+    rounds = 10000
 
     ### Internal variables
 
@@ -115,6 +115,8 @@ class Test:
 
         if warp > 1:
             self.rounds = self.rounds / warp
+            if self.rounds == 0:
+                self.rounds = 1
             self.warp = warp
         self.times = []
         self.overhead = []
@@ -137,12 +139,13 @@ class Test:
         cruns = self.cruns
         # first calibrate
         offset = 0.0
-        for i in range(cruns):
-            t = clock()
-            calibrate()
-            t = clock() - t
-            offset = offset + t
-        offset = offset / cruns
+        if cruns:
+            for i in range(cruns):
+                t = clock()
+                calibrate()
+                t = clock() - t
+                offset = offset + t
+            offset = offset / cruns
         # now the real thing
         t = clock()
         test()
@@ -175,13 +178,18 @@ class Test:
 
     def stat(self):
 
-        """ Returns two value: average time per run and average per
-            operation.
+        """ Returns four values:
+        minimum round time
+        average time per round
+        average time per operation
+        average overhead time
 
+        XXX Should this take warp factors into account?
         """
         runs = len(self.times)
         if runs == 0:
             return 0,0
+        mintime = min(self.times)
         totaltime = reduce(operator.add,self.times,0.0)
         avg = totaltime / float(runs)
         op_avg = totaltime / float(runs * self.rounds * self.operations)
@@ -191,7 +199,7 @@ class Test:
         else:
             # use self.last_timing - not too accurate
             ov_avg = self.last_timing[2]
-        return avg,op_avg,ov_avg
+        return mintime, avg, op_avg, ov_avg
 
 ### Load Setup
 
@@ -210,105 +218,132 @@ class Benchmark:
     roundtime = 0               # Average round time
     version = None              # Benchmark version number (see __init__)
                                 # as float x.yy
-    starttime = None            # Benchmark start time
 
     def __init__(self):
 
         self.tests = {}
         self.version = 0.31
 
-    def load_tests(self,setupmod,warp=1):
+    def load_tests(self, setupmod, warp=1, limitnames="", verbose=0):
 
         self.warp = warp
+        if limitnames:
+            limitnames = re.compile(limitnames, re.I)
+        else:
+            limitnames = None
         tests = self.tests
-        print 'Searching for tests...'
+        if verbose:
+            print 'Searching for tests ...',
         setupmod.__dict__.values()
         for c in setupmod.__dict__.values():
-            if hasattr(c,'is_a_test') and c.__name__ != 'Test':
-                tests[c.__name__] = c(warp)
+            if not hasattr(c,'is_a_test'):
+                continue
+            name = c.__name__
+            if  name == 'Test':
+                continue
+            if limitnames is not None and limitnames.search(name) is None:
+                continue
+            tests[name] = c(warp)
         l = tests.keys()
         l.sort()
-        for t in l:
-            print '  ',t
+        if verbose:
+            print
+            for t in l:
+                print '  ', t
+            print len(l), "tests found"
         print
 
-    def run(self):
+    def run(self, verbose):
 
         tests = self.tests.items()
         tests.sort()
         clock = time.clock
-        print 'Running %i round(s) of the suite: ' % self.rounds
+        print 'Running %i round(s) of the suite at warp factor %i:' % (self.rounds, self.warp)
         print
-        self.starttime = time.time()
         roundtime = clock()
         for i in range(self.rounds):
-            print ' Round %-25i  real   abs    overhead' % (i+1)
+            roundstarttime = clock()
+            if verbose:
+                print ' Round %-25i  real   abs    overhead' % (i+1)
             for j in range(len(tests)):
                 name,t = tests[j]
-                print '%30s:' % name,
+                if verbose:
+                    print '%30s:' % name,
                 t.run()
-                print '  %.3fr %.3fa %.3fo' % t.last_timing
-            print '                                 ----------------------'
-            print '            Average round time:      %.3f seconds' % \
-                  ((clock() - roundtime)/(i+1))
-            print
+                if verbose:
+                    print '  %.3fr %.3fa %.3fo' % t.last_timing
+            if verbose:
+                print '                                 ----------------------'
+                print '            Average round time:      %.3f seconds' % \
+                    ((clock() - roundtime)/(i+1))
+                print
+            else:
+                print '%d done in %.3f seconds' % (i+1, (clock() - roundstarttime))
         self.roundtime = (clock() - roundtime) / self.rounds
         print
 
     def print_stat(self, compare_to=None, hidenoise=0):
 
         if not compare_to:
-            print '%-30s      per run    per oper.   overhead' % 'Tests:'
-            print '-'*72
+            print '%-30s       min run    avg run    per oprn  overhead' % 'Tests:'
+            print '-'*77
             tests = self.tests.items()
             tests.sort()
+            totalmintime = 0
             for name,t in tests:
-                avg,op_avg,ov_avg = t.stat()
-                print '%30s: %10.2f ms %7.2f us %7.2f ms' % \
-                      (name,avg*1000.0,op_avg*1000000.0,ov_avg*1000.0)
-            print '-'*72
-            print '%30s: %10.2f ms' % \
-                  ('Average round time',self.roundtime * 1000.0)
+                mintime,avg,op_avg,ov_avg = t.stat()
+                totalmintime += mintime
+                print '%30s: %9.2f ms %9.2f ms %6.2f us  %6.2f' % \
+                      (name,mintime*1000.0,avg*1000.0,op_avg*1000000.0,ov_avg*1000.0)
+            print '-'*77
+            print '%30s: %9.2f ms' % \
+                  ('Notional minimum round time', totalmintime * 1000.0)
 
         else:
-            print '%-30s      per run    per oper.    diff *)' % \
+            print 'Comparing with: %s (rounds=%i, warp=%i)' % \
+                  (compare_to.name,compare_to.rounds,compare_to.warp)
+            print '%-30s      min run     cmp run     avg run      diff' % \
                   'Tests:'
-            print '-'*72
+            print '-'*77
             tests = self.tests.items()
             tests.sort()
             compatible = 1
-            for name,t in tests:
-                avg,op_avg,ov_avg = t.stat()
+            totalmintime = other_totalmintime = 0
+            for name, t in tests:
+                mintime, avg, op_avg, ov_avg = t.stat()
+                totalmintime += mintime
                 try:
                     other = compare_to.tests[name]
                 except KeyError:
                     other = None
                 if other and other.version == t.version and \
                    other.operations == t.operations:
-                    avg1,op_avg1,ov_avg1 = other.stat()
-                    qop_avg = (op_avg/op_avg1-1.0)*100.0
+                    mintime1, avg1, op_avg1, ov_avg1 = other.stat()
+                    other_totalmintime += mintime1
+                    diff = ((mintime*self.warp)/(mintime1*other.warp) - 1.0)*100.0
                     if hidenoise and abs(qop_avg) < 10:
-                        qop_avg = ''
+                        diff = ''
                     else:
-                        qop_avg = '%+7.2f%%' % qop_avg
+                        diff = '%+7.2f%%' % diff
                 else:
-                    qavg,qop_avg = 'n/a', 'n/a'
+                    qavg, diff = 'n/a', 'n/a'
                     compatible = 0
-                print '%30s: %10.2f ms %7.2f us  %8s' % \
-                      (name,avg*1000.0,op_avg*1000000.0,qop_avg)
-            print '-'*72
+                print '%30s: %8.2f ms %8.2f ms %8.2f ms  %8s' % \
+                      (name,mintime*1000.0,mintime1*1000.0 * compare_to.warp/self.warp, avg*1000.0,diff)
+            print '-'*77
+            #
+            # Summarise test results
+            #
             if compatible and compare_to.roundtime > 0 and \
                compare_to.version == self.version:
-                print '%30s: %10.2f ms             %+7.2f%%' % \
-                      ('Average round time',self.roundtime * 1000.0,
-                       ((self.roundtime*self.warp)/
-                        (compare_to.roundtime*compare_to.warp)-1.0)*100.0)
+                print '%30s: %8.2f ms %8.2f ms              %+7.2f%%' % \
+                      ('Notional minimum round time', totalmintime * 1000.0,
+                      other_totalmintime * 1000.0 * compare_to.warp/self.warp,
+                       ((totalmintime*self.warp)/
+                        (other_totalmintime*compare_to.warp)-1.0)*100.0)
             else:
-                print '%30s: %10.2f ms                  n/a' % \
-                      ('Average round time',self.roundtime * 1000.0)
-            print
-            print '*) measured against: %s (rounds=%i, warp=%i)' % \
-                  (compare_to.name,compare_to.rounds,compare_to.warp)
+                print '%30s: %9.2f ms                    n/a' % \
+                      ('Notional minimum round time', totalmintime * 1000.0)
         print
 
 def print_machine():
@@ -339,7 +374,12 @@ class PyBenchCmdline(Application):
                SwitchOption('-S','show statistics of benchmarks',0),
                ArgumentOption('-w','set warp factor to arg',Setup.Warp_factor),
                SwitchOption('-d','hide noise in compares', 0),
+               SwitchOption('-v','verbose output (not recommended)', 0),
                SwitchOption('--no-gc','disable garbage collection', 0),
+               SwitchOption('--no-syscheck',
+                    '"disable" sys check interval (set to sys.maxint)', 0),
+               ArgumentOption('-t', 'tests containing substring', ''),
+               ArgumentOption('-C', 'number of calibration runs (default 0)', '')
                ]
 
     about = """\
@@ -380,6 +420,11 @@ python pybench.py -s p15 -c p14
         hidenoise = self.values['-d']
         warp = self.values['-w']
         nogc = self.values['--no-gc']
+        limitnames = self.values['-t']
+        verbose = self.verbose
+        nosyscheck = self.values['--no-syscheck']
+        
+        print 'PYBENCH',__version__
 
         # Switch off GC
         if nogc:
@@ -390,8 +435,13 @@ python pybench.py -s p15 -c p14
             else:
                 if self.values['--no-gc']:
                     gc.disable()
+                    print 'NO GC'
 
-        print 'PYBENCH',__version__
+        # maximise sys check interval
+        if nosyscheck:
+            sys.setcheckinterval(sys.maxint)
+            print 'CHECKINTERVAL =', sys.maxint
+
         print
 
         if not compare_to:
@@ -436,9 +486,9 @@ python pybench.py -s p15 -c p14
         # Create benchmark object
         bench = Benchmark()
         bench.rounds = rounds
-        bench.load_tests(Setup,warp)
+        bench.load_tests(Setup, warp, limitnames, verbose)
         try:
-            bench.run()
+            bench.run(verbose)
         except KeyboardInterrupt:
             print
             print '*** KeyboardInterrupt -- Aborting'

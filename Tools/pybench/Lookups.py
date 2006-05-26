@@ -4,7 +4,7 @@ class SpecialClassAttribute(Test):
 
     version = 0.3
     operations = 5*(12 + 12)
-    rounds = 100000
+    rounds = 1000*16
 
     def test(self):
 
@@ -185,7 +185,7 @@ class NormalClassAttribute(Test):
 
     version = 0.3
     operations = 5*(12 + 12)
-    rounds = 100000
+    rounds = 1000*20
 
     def test(self):
 
@@ -371,7 +371,7 @@ class SpecialInstanceAttribute(Test):
 
     version = 0.3
     operations = 5*(12 + 12)
-    rounds = 100000
+    rounds = 1000*14
 
     def test(self):
 
@@ -559,7 +559,7 @@ class NormalInstanceAttribute(Test):
 
     version = 0.3
     operations = 5*(12 + 12)
-    rounds = 100000
+    rounds = 1000*22
 
     def test(self):
 
@@ -747,7 +747,7 @@ class BuiltinMethodLookup(Test):
 
     version = 0.3
     operations = 5*(3*5 + 3*5)
-    rounds = 70000
+    rounds = 700*15
 
     def test(self):
 

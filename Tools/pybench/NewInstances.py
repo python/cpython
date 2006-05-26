@@ -1,23 +1,23 @@
 from pybench import Test
 
-class CreateInstances(Test):
+class CreateNewInstances(Test):
 
-    version = 0.2
+    version = 0.1
     operations = 3 + 7 + 4
-    rounds = 600*17
+    rounds = 60000
 
     def test(self):
 
-        class c:
+        class c(object):
             pass
 
-        class d:
+        class d(object):
             def __init__(self,a,b,c):
                 self.a = a
                 self.b = b
                 self.c = c
 
-        class e:
+        class e(object):
             def __init__(self,a,b,c=4):
                 self.a = a
                 self.b = b
@@ -44,16 +44,16 @@ class CreateInstances(Test):
 
     def calibrate(self):
 
-        class c:
+        class c(object):
             pass
 
-        class d:
+        class d(object):
             def __init__(self,a,b,c):
                 self.a = a
                 self.b = b
                 self.c = c
 
-        class e:
+        class e(object):
             def __init__(self,a,b,c=4):
                 self.a = a
                 self.b = b

@@ -8,7 +8,7 @@ class SecondImport(Test):
 
     version = 0.1
     operations = 5 * 5
-    rounds = 20000
+    rounds = 2000*15
 
     def test(self):
 
@@ -53,7 +53,7 @@ class SecondPackageImport(Test):
 
     version = 0.1
     operations = 5 * 5
-    rounds = 20000
+    rounds = 200*20
 
     def test(self):
 
@@ -97,7 +97,7 @@ class SecondSubmoduleImport(Test):
 
     version = 0.1
     operations = 5 * 5
-    rounds = 20000
+    rounds = 200*17
 
     def test(self):
 
