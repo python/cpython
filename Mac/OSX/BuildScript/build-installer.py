@@ -593,7 +593,7 @@ def buildPython():
     print "Running configure..."
     runCommand("%s -C --enable-framework --enable-universalsdk=%s LDFLAGS='-g -L%s/libraries/usr/local/lib' OPT='-g -O3 -I%s/libraries/usr/local/include' 2>&1"%(
         shellQuote(os.path.join(SRCDIR, 'configure')),
-        shellQuote(SDKPATH), shellQuote(WORKDIR)[1:-1], 
+        shellQuote(SDKPATH), shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
     print "Running make"
