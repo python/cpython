@@ -358,7 +358,7 @@ class BytesTest(unittest.TestCase):
             self.assert_(alloc >= len(b))
             if alloc not in seq:
                 seq.append(alloc)
-        print seq
+        #print seq
 
     def test_join(self):
         self.assertEqual(bytes.join([]), bytes())
