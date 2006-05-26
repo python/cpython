@@ -775,6 +775,8 @@ PyString_AsStringAndSize(register PyObject *obj,
 #define STRINGLIB_EMPTY nullstring
 
 #include "stringlib/fastsearch.h"
+
+#include "stringlib/find.h"
 #include "stringlib/partition.h"
 
 /* -------------------------------------------------------------------- */
@@ -1876,25 +1878,10 @@ string_find_internal(PyStringObject *self, PyObject *args, int dir)
 
 	string_adjust_indices(&i, &last, len);
 
-	if (n == 0)
-		return (dir > 0) ? i : last;
-	if (dir > 0) {
-		Py_ssize_t pos = fastsearch(s + i, last - i, sub, n,
-					    FAST_SEARCH);
-		if (pos < 0)
-			return pos;
-		return pos + i;
-	} else {
-		Py_ssize_t j;
-
-        	if (n == 0 && i <= last)
-			return last;
-		for (j = last-n; j >= i; --j)
-			if (s[j] == sub[0] && memcmp(&s[j], sub, n) == 0)
-				return j;
-	}
-
-	return -1;
+	if (dir > 0)
+		return stringlib_find(s+i, last-i, sub, n, i);
+	else
+		return stringlib_rfind(s+i, last-i, sub, n, i);
 }
 
 

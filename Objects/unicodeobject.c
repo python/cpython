@@ -3967,15 +3967,14 @@ Py_ssize_t PyUnicode_Find(PyObject *str,
 
     if (direction > 0)
         result = stringlib_find(
-            str_obj->str + start, end - start, sub_obj->str, sub_obj->length
+            str_obj->str + start, end - start, sub_obj->str, sub_obj->length,
+            start
             );
     else
         result = stringlib_rfind(
-            str_obj->str + start, end - start, sub_obj->str, sub_obj->length
+            str_obj->str + start, end - start, sub_obj->str, sub_obj->length,
+            start
             );
-
-    if (result >= 0)
-        result += start;
 
     Py_DECREF(str_obj);
     Py_DECREF(sub_obj);

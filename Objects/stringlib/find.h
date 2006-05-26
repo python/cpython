@@ -9,29 +9,38 @@
 
 Py_LOCAL(Py_ssize_t)
 stringlib_find(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
-               const STRINGLIB_CHAR* sub, Py_ssize_t sub_len)
+               const STRINGLIB_CHAR* sub, Py_ssize_t sub_len,
+               Py_ssize_t offset)
 {
-    if (sub_len == 0)
-        return 0;
+    Py_ssize_t pos;
 
-    return fastsearch(str, str_len, sub, sub_len, FAST_SEARCH);
+    if (sub_len == 0)
+        return offset;
+
+    pos = fastsearch(str, str_len, sub, sub_len, FAST_SEARCH);
+
+    if (pos >= 0)
+        pos += offset;
+
+    return pos;
 }
 
 Py_LOCAL(Py_ssize_t)
 stringlib_rfind(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
-                const STRINGLIB_CHAR* sub, Py_ssize_t sub_len)
+                const STRINGLIB_CHAR* sub, Py_ssize_t sub_len,
+                Py_ssize_t offset)
 {
     Py_ssize_t pos;
 
     /* XXX - create reversefastsearch helper! */
     if (sub_len == 0)
-	pos = str_len;
+	pos = str_len + offset;
     else {
 	Py_ssize_t j;
         pos = -1;
 	for (j = str_len - sub_len; j >= 0; --j)
             if (STRINGLIB_CMP(str+j, sub, sub_len) == 0) {
-                pos = j;
+                pos = j + offset;
                 break;
             }
     }
