@@ -196,7 +196,7 @@ int unicode_resize(register PyUnicodeObject *unicode,
 
     /* We allocate one more byte to make sure the string is Ux0000 terminated.
        The overallocation is also used by fastsearch, which assumes that it's
-       safe to look at str[length] (without makeing any assumptions about what
+       safe to look at str[length] (without making any assumptions about what
        it contains). */
 
     oldstr = unicode->str;
