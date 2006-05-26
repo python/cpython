@@ -243,6 +243,8 @@ class CommonTest(unittest.TestCase):
         self.checkequal(['a', 'b', 'c d'], 'a b c d', 'split', None, 2)
         self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'split', None, 3)
         self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'split', None, 4)
+        self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'split', None,
+                        sys.maxint-1)
         self.checkequal(['a b c d'], 'a b c d', 'split', None, 0)
         self.checkequal(['a', 'b', 'c  d'], 'a  b  c  d', 'split', None, 2)
 
@@ -253,17 +255,30 @@ class CommonTest(unittest.TestCase):
         self.checkequal(['a', 'b   c   '], '  a    b   c   ', 'split', None, 1)
         self.checkequal(['a', 'b', 'c   '], '  a    b   c   ', 'split', None, 2)
         self.checkequal(['a', 'b'], '\n\ta \t\r b \v ', 'split')
+        aaa = ' a '*20
+        self.checkequal(['a']*20, aaa, 'split')
+        self.checkequal(['a'] + [aaa[4:]], aaa, 'split', None, 1)
+        self.checkequal(['a']*19 + ["a "], aaa, 'split', None, 19)
 
         # by a char
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'split', '|')
+        self.checkequal(['a|b|c|d'], 'a|b|c|d', 'split', '|', 0)
         self.checkequal(['a', 'b|c|d'], 'a|b|c|d', 'split', '|', 1)
         self.checkequal(['a', 'b', 'c|d'], 'a|b|c|d', 'split', '|', 2)
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'split', '|', 3)
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'split', '|', 4)
+        self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'split', '|',
+                        sys.maxint-2)
         self.checkequal(['a|b|c|d'], 'a|b|c|d', 'split', '|', 0)
         self.checkequal(['a', '', 'b||c||d'], 'a||b||c||d', 'split', '|', 2)
         self.checkequal(['endcase ', ''], 'endcase |', 'split', '|')
+        self.checkequal(['', ' startcase'], '| startcase', 'split', '|')
+        self.checkequal(['', 'bothcase', ''], '|bothcase|', 'split', '|')
         self.checkequal(['a', '', 'b\x00c\x00d'], 'a\x00\x00b\x00c\x00d', 'split', '\x00', 2)
+
+        self.checkequal(['a']*20, ('a|'*20)[:-1], 'split', '|')
+        self.checkequal(['a']*15 +['a|a|a|a|a'],
+                                   ('a|'*20)[:-1], 'split', '|', 15)
 
         # by string
         self.checkequal(['a', 'b', 'c', 'd'], 'a//b//c//d', 'split', '//')
@@ -271,15 +286,32 @@ class CommonTest(unittest.TestCase):
         self.checkequal(['a', 'b', 'c//d'], 'a//b//c//d', 'split', '//', 2)
         self.checkequal(['a', 'b', 'c', 'd'], 'a//b//c//d', 'split', '//', 3)
         self.checkequal(['a', 'b', 'c', 'd'], 'a//b//c//d', 'split', '//', 4)
+        self.checkequal(['a', 'b', 'c', 'd'], 'a//b//c//d', 'split', '//',
+                        sys.maxint-10)
         self.checkequal(['a//b//c//d'], 'a//b//c//d', 'split', '//', 0)
         self.checkequal(['a', '', 'b////c////d'], 'a////b////c////d', 'split', '//', 2)
         self.checkequal(['endcase ', ''], 'endcase test', 'split', 'test')
+        self.checkequal(['', ''], 'aaa', 'split', 'aaa')
+        self.checkequal(['aaa'], 'aaa', 'split', 'aaa', 0)
+        self.checkequal(['ab', 'ab'], 'abbaab', 'split', 'ba')
+        self.checkequal(['aaaa'], 'aaaa', 'split', 'aab')
+        self.checkequal([''], '', 'split', 'aaa')
+        self.checkequal(['aa'], 'aa', 'split', 'aaa')
+
+        self.checkequal(['a']*20, ('aBLAH'*20)[:-4], 'split', 'BLAH')
+        self.checkequal(['a']*20, ('aBLAH'*20)[:-4], 'split', 'BLAH', 19)
+        self.checkequal(['a']*18 + ['aBLAHa'], ('aBLAH'*20)[:-4],
+                        'split', 'BLAH', 18)
 
         # mixed use of str and unicode
         self.checkequal([u'a', u'b', u'c d'], 'a b c d', 'split', u' ', 2)
 
         # argument type
         self.checkraises(TypeError, 'hello', 'split', 42, 42, 42)
+
+        # null case
+        self.checkraises(ValueError, 'hello', 'split', '')
+        self.checkraises(ValueError, 'hello', 'split', '', 0)
 
     def test_rsplit(self):
         self.checkequal(['this', 'is', 'the', 'rsplit', 'function'],
