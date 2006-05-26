@@ -9,6 +9,7 @@ import time
 import thread, threading
 import Queue
 import sys
+import array
 from weakref import proxy
 
 PORT = 50007
@@ -852,8 +853,38 @@ class TestLinuxAbstractNamespace(unittest.TestCase):
         self.assertRaises(socket.error, s.bind, address)
 
 
+class BufferIOTest(SocketConnectedTest):
+    """
+    Test the buffer versions of socket.recv() and socket.send().
+    """
+    def __init__(self, methodName='runTest'):
+        SocketConnectedTest.__init__(self, methodName=methodName)
+
+    def testRecvBuf(self):
+        buf = array.array('c', ' '*1024)
+        nbytes = self.cli_conn.recv_buf(buf)
+        self.assertEqual(nbytes, len(MSG))
+        msg = buf.tostring()[:len(MSG)]
+        self.assertEqual(msg, MSG)
+
+    def _testRecvBuf(self):
+        buf = buffer(MSG)
+        self.serv_conn.send(buf)
+
+    def testRecvFromBuf(self):
+        buf = array.array('c', ' '*1024)
+        nbytes, addr = self.cli_conn.recvfrom_buf(buf)
+        self.assertEqual(nbytes, len(MSG))
+        msg = buf.tostring()[:len(MSG)]
+        self.assertEqual(msg, MSG)
+
+    def _testRecvFromBuf(self):
+        buf = buffer(MSG)
+        self.serv_conn.send(buf)
+
 def test_main():
-    tests = [GeneralModuleTests, BasicTCPTest, TCPTimeoutTest, TestExceptions]
+    tests = [GeneralModuleTests, BasicTCPTest, TCPTimeoutTest, TestExceptions,
+             BufferIOTest]
     if sys.platform != 'mac':
         tests.extend([ BasicUDPTest, UDPTimeoutTest ])
 

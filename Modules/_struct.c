@@ -15,6 +15,7 @@ static PyTypeObject PyStructType;
 typedef int Py_ssize_t;
 #endif
 
+
 /* PY_USE_INT_WHEN_POSSIBLE is an experimental flag that changes the 
    struct API to return int instead of long when possible. This is
    often a significant performance improvement. */
@@ -24,7 +25,6 @@ typedef int Py_ssize_t;
 
 
 /* The translation function for each format character is table driven */
-
 typedef struct _formatdef {
 	char format;
 	int size;
@@ -1315,50 +1315,36 @@ s_unpack_from(PyObject *self, PyObject *args, PyObject *kwds)
 	return s_unpack_internal(soself, buffer + offset);
 }
 
-PyDoc_STRVAR(s_pack__doc__,
-"pack(v1, v2, ...) -> string\n\
-\n\
-Return a string containing values v1, v2, ... packed according to this\n\
-Struct's format. See struct.__doc__ for more on format strings.");
 
-static PyObject *
-s_pack(PyObject *self, PyObject *args)
+/*
+ * Guts of the pack function.
+ *
+ * Takes a struct object, a tuple of arguments, and offset in that tuple of
+ * argument for where to start processing the arguments for packing, and a
+ * character buffer for writing the packed string.  The caller must insure
+ * that the buffer may contain the required length for packing the arguments.
+ * 0 is returned on success, 1 is returned if there is an error.
+ *
+ */
+static int
+s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 {
-	PyStructObject *soself;
-	PyObject *result;
-	char *restart;
 	formatcode *code;
 	Py_ssize_t i;
-	
-	soself = (PyStructObject *)self;
-	assert(PyStruct_Check(self));
-	assert(soself->s_codes != NULL);
-	if (args == NULL || !PyTuple_Check(args) ||
-	    PyTuple_GET_SIZE(args) != soself->s_len)
-	{
-		PyErr_Format(StructError,
-			"pack requires exactly %d arguments", soself->s_len);
-		return NULL;
-	}
-	
-	result = PyString_FromStringAndSize((char *)NULL, soself->s_size);
-	if (result == NULL)
-		return NULL;
-	
-	restart = PyString_AS_STRING(result);
-	memset(restart, '\0', soself->s_size);
-	i = 0;
+
+	memset(buf, '\0', soself->s_size);
+	i = offset;
 	for (code = soself->s_codes; code->fmtdef != NULL; code++) {
 		Py_ssize_t n;
 		PyObject *v;
 		const formatdef *e = code->fmtdef;
-		char *res = restart + code->offset;
+		char *res = buf + code->offset;
 		if (e->format == 's') {
 			v = PyTuple_GET_ITEM(args, i++);
 			if (!PyString_Check(v)) {
 				PyErr_SetString(StructError,
 						"argument for 's' must be a string");
-				goto fail;
+				return -1;
 			}
 			n = PyString_GET_SIZE(v);
 			if (n > code->size)
@@ -1370,7 +1356,7 @@ s_pack(PyObject *self, PyObject *args)
 			if (!PyString_Check(v)) {
 				PyErr_SetString(StructError,
 						"argument for 'p' must be a string");
-				goto fail;
+				return -1;
 			}
 			n = PyString_GET_SIZE(v);
 			if (n > (code->size - 1))
@@ -1383,16 +1369,109 @@ s_pack(PyObject *self, PyObject *args)
 		} else {
 			v = PyTuple_GET_ITEM(args, i++);
 			if (e->pack(res, v, e) < 0)
-				goto fail;
+				return -1;
 		}
 	}
 	
-	return result;
+	/* Success */
+	return 0;
+}
 
-fail:
-	Py_DECREF(result);
-	return NULL;
+
+PyDoc_STRVAR(s_pack__doc__,
+"pack(v1, v2, ...) -> string\n\
+\n\
+Return a string containing values v1, v2, ... packed according to this\n\
+Struct's format. See struct.__doc__ for more on format strings.");
+
+static PyObject *
+s_pack(PyObject *self, PyObject *args)
+{
+	PyStructObject *soself;
+	PyObject *result;
+
+	/* Validate arguments. */
+	soself = (PyStructObject *)self;
+	assert(PyStruct_Check(self));
+	assert(soself->s_codes != NULL);
+	if (args == NULL || !PyTuple_Check(args) ||
+	    PyTuple_GET_SIZE(args) != soself->s_len)
+	{
+		PyErr_Format(StructError,
+			"pack requires exactly %d arguments", soself->s_len);
+		return NULL;
+	}
 	
+	/* Allocate a new string */
+	result = PyString_FromStringAndSize((char *)NULL, soself->s_size);
+	if (result == NULL)
+		return NULL;
+	
+	/* Call the guts */
+	if ( s_pack_internal(soself, args, 0, PyString_AS_STRING(result)) != 0 ) {
+		Py_DECREF(result);
+		return NULL;
+	}
+
+	return result;
+}
+
+PyDoc_STRVAR(s_pack_to__doc__,
+"pack_to(buffer, offset, v1, v2, ...)\n\
+\n\
+Pack the values v2, v2, ... according to this Struct's format, write \n\
+the packed bytes into the given buffer at the given offset.  Note that \n\
+the offset is not an optional argument.  See struct.__doc__ for \n\
+more on format strings.");
+
+static PyObject *
+s_pack_to(PyObject *self, PyObject *args)
+{
+	PyStructObject *soself;
+	char *buffer;
+	Py_ssize_t buffer_len, offset;
+
+	/* Validate arguments.  +1 is for the first arg as buffer. */
+	soself = (PyStructObject *)self;
+	assert(PyStruct_Check(self));
+	assert(soself->s_codes != NULL);
+	if (args == NULL || !PyTuple_Check(args) ||
+	    PyTuple_GET_SIZE(args) != (soself->s_len + 2))
+	{
+		PyErr_Format(StructError,
+			     "pack_to requires exactly %d arguments", 
+			     (soself->s_len + 2));
+		return NULL;
+	}
+
+	/* Extract a writable memory buffer from the first argument */
+        if ( PyObject_AsWriteBuffer(PyTuple_GET_ITEM(args, 0), 
+                                    (void**)&buffer, &buffer_len) == -1 ) { 
+		return NULL;
+        }
+        assert( buffer_len >= 0 );
+
+	/* Extract the offset from the first argument */
+	offset = PyInt_AsLong(PyTuple_GET_ITEM(args, 1));
+
+ 	/* Support negative offsets. */
+	if (offset < 0)
+		offset += buffer_len;
+
+	/* Check boundaries */
+	if (offset < 0 || (buffer_len - offset) < soself->s_size) {
+		PyErr_Format(StructError,
+			     "pack_to requires a buffer of at least %d bytes",
+			     soself->s_size);
+		return NULL;
+	}
+	
+	/* Call the guts */
+	if ( s_pack_internal(soself, args, 2, buffer + offset) != 0 ) {
+		return NULL;
+	}
+
+	return Py_None;
 }
 
 
@@ -1400,6 +1479,7 @@ fail:
 
 static struct PyMethodDef s_methods[] = {
 	{"pack",	(PyCFunction)s_pack,		METH_VARARGS, s_pack__doc__},
+ 	{"pack_to",	(PyCFunction)s_pack_to,		METH_VARARGS, s_pack_to__doc__}, 
 	{"unpack",	(PyCFunction)s_unpack,		METH_O, s_unpack__doc__},
 	{"unpack_from",	(PyCFunction)s_unpack_from,	METH_KEYWORDS, s_unpack_from__doc__},
 	{NULL,	 NULL}		/* sentinel */
