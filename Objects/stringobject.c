@@ -2477,7 +2477,7 @@ return_self(PyStringObject *self)
 }
 
 Py_LOCAL(Py_ssize_t)
-countchar(char *target, int target_len, char c)
+     countchar(char *target, int target_len, char c, Py_ssize_t maxcount)
 {
 	Py_ssize_t count=0;
 	char *start=target;
@@ -2485,9 +2485,10 @@ countchar(char *target, int target_len, char c)
 
 	while ( (start=findchar(start, end-start, c)) != NULL ) {
 		count++;
+		if (count >= maxcount)
+			break;
 		start += 1;
 	}
-
 	return count;
 }
 
@@ -2534,7 +2535,7 @@ countstring(char *target, Py_ssize_t target_len,
 	    char *pattern, Py_ssize_t pattern_len,
 	    Py_ssize_t start,
 	    Py_ssize_t end,
-	    int direction)
+	    int direction, Py_ssize_t maxcount)
 {
 	Py_ssize_t count=0;
 
@@ -2552,21 +2553,26 @@ countstring(char *target, Py_ssize_t target_len,
 	}
 
 	/* zero-length substrings match everywhere */
-	if (pattern_len == 0)
-		return target_len+1;
+	if (pattern_len == 0 || maxcount == 0) {
+		if (target_len+1 < maxcount)
+			return target_len+1;
+		return maxcount;
+	}
 
 	end -= pattern_len;
-
 	if (direction < 0) {
-		for (; end >= start; end--)
+		for (; (end >= start); end--)
 			if (Py_STRING_MATCH(target, end, pattern, pattern_len)) {
 				count++;
+				if (--maxcount <= 0) break;
 				end -= pattern_len-1;
 			}
 	} else {
-		for (; start <= end; start++)
+		for (; (start <= end); start++)
 			if (Py_STRING_MATCH(target, start, pattern, pattern_len)) {
 				count++;
+				if (--maxcount <= 0)
+					break;
 				start += pattern_len-1;
 			}
 	}
@@ -2653,12 +2659,10 @@ replace_delete_single_character(PyStringObject *self,
 	self_len = PyString_GET_SIZE(self);
 	self_s = PyString_AS_STRING(self);
 
-	count = countchar(self_s, self_len, from_c);
+	count = countchar(self_s, self_len, from_c, maxcount);
 	if (count == 0) {
 		return return_self(self);
 	}
-	if (count > maxcount)
-		count = maxcount;
   
 	result_len = self_len - count;  /* from_len == 1 */
 	assert(result_len>=0);
@@ -2701,10 +2705,8 @@ replace_delete_substring(PyStringObject *self, PyStringObject *from,
 
 	count = countstring(self_s, self_len,
 			    from_s, from_len,
-			    0, self_len, 1);
-  
-	if (count > maxcount)
-		count = maxcount;
+			    0, self_len, 1,
+			    maxcount);
 
 	if (count == 0) {
 		/* no matches */
@@ -2857,9 +2859,7 @@ replace_single_character(PyStringObject *self,
 	self_s = PyString_AS_STRING(self);
 	self_len = PyString_GET_SIZE(self);
 	
-	count = countchar(self_s, self_len, from_c);
-	if (count > maxcount)
-		count = maxcount;
+	count = countchar(self_s, self_len, from_c, maxcount);
 	
 	if (count == 0) {
 		/* no matches, return unchanged */
@@ -2933,10 +2933,7 @@ replace_substring(PyStringObject *self,
 	
 	count = countstring(self_s, self_len,
 			    from_s, from_len,
-			    0, self_len, FORWARD);
-	if (count > maxcount)
-		count = maxcount;
-	
+			    0, self_len, FORWARD, maxcount);
 	if (count == 0) {
 		/* no matches, return unchanged */
 		return return_self(self);
