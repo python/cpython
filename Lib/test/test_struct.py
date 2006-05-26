@@ -509,7 +509,6 @@ class PackBufferTestCase(unittest.TestCase):
 
 def test_main():
     test.test_support.run_unittest(PackBufferTestCase)
-    
+
 if __name__ == "__main__":
     test_main()
-
