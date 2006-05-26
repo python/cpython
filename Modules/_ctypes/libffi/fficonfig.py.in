@@ -29,7 +29,7 @@ ffi_platforms = {
 
 # Build all darwin related files on all supported darwin architectures, this
 # makes it easier to build universal binaries.
-if 0:
+if 1:
     all_darwin = ('X86_DARWIN', 'POWERPC_DARWIN')
     all_darwin_files = []
     for pn in all_darwin:
