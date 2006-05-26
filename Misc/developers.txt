@@ -18,10 +18,11 @@ Permissions History
 -------------------
 
 - 2006 Summer of Code entries: Matt Fleming was added on 25 May 2006
-  by AMK; he'll be working on enhancing the Python debugger.  SoC
-  developers are expected to work primarily in nondist/sandbox or on a
-  branch of their own, and will have their work reviewed before
-  changes are accepted into the trunk.
+  by AMK; he'll be working on enhancing the Python debugger.  Jackilyn
+  Hoxworth was added on 25 May 2005 by AMK; she'll be adding logging
+  to the standard library.  SoC developers are expected to work
+  primarily in nondist/sandbox or on a branch of their own, and will
+  have their work reviewed before changes are accepted into the trunk.
 
 - Steven Bethard was given SVN access on 27 Apr 2006 by DJG, for PEP
   update access.
