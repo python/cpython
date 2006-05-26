@@ -217,7 +217,11 @@ class BinHex:
     def _writecrc(self):
         # XXXX Should this be here??
         # self.crc = binascii.crc_hqx('\0\0', self.crc)
-        self.ofp.write(struct.pack('>h', self.crc))
+        if self.crc < 0:
+            fmt = '>h'
+        else:
+            fmt = '>H'
+        self.ofp.write(struct.pack(fmt, self.crc))
         self.crc = 0
 
     def write(self, data):
