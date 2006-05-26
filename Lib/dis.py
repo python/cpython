@@ -18,8 +18,6 @@ def dis(x=None):
     if x is None:
         distb()
         return
-    if type(x) is types.InstanceType:
-        x = x.__class__
     if hasattr(x, 'im_func'):
         x = x.im_func
     if hasattr(x, 'func_code'):

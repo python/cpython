@@ -6,7 +6,6 @@ Objects of most types can now be created by calling the type object.
 
 from types import ClassType as classobj
 from types import FunctionType as function
-from types import InstanceType as instance
 from types import MethodType as instancemethod
 from types import ModuleType as module
 

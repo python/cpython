@@ -119,26 +119,6 @@ def _copy_with_copy_method(x):
 if PyStringMap is not None:
     d[PyStringMap] = _copy_with_copy_method
 
-def _copy_inst(x):
-    if hasattr(x, '__copy__'):
-        return x.__copy__()
-    if hasattr(x, '__getinitargs__'):
-        args = x.__getinitargs__()
-        y = x.__class__(*args)
-    else:
-        y = _EmptyClass()
-        y.__class__ = x.__class__
-    if hasattr(x, '__getstate__'):
-        state = x.__getstate__()
-    else:
-        state = x.__dict__
-    if hasattr(y, '__setstate__'):
-        y.__setstate__(state)
-    else:
-        y.__dict__.update(state)
-    return y
-d[types.InstanceType] = _copy_inst
-
 del d
 
 def deepcopy(x, memo=None, _nil=[]):
@@ -272,29 +252,6 @@ def _keep_alive(x, memo):
     except KeyError:
         # aha, this is the first one :-)
         memo[id(memo)]=[x]
-
-def _deepcopy_inst(x, memo):
-    if hasattr(x, '__deepcopy__'):
-        return x.__deepcopy__(memo)
-    if hasattr(x, '__getinitargs__'):
-        args = x.__getinitargs__()
-        args = deepcopy(args, memo)
-        y = x.__class__(*args)
-    else:
-        y = _EmptyClass()
-        y.__class__ = x.__class__
-    memo[id(x)] = y
-    if hasattr(x, '__getstate__'):
-        state = x.__getstate__()
-    else:
-        state = x.__dict__
-    state = deepcopy(state, memo)
-    if hasattr(y, '__setstate__'):
-        y.__setstate__(state)
-    else:
-        y.__dict__.update(state)
-    return y
-d[types.InstanceType] = _deepcopy_inst
 
 def _reconstruct(x, info, deep, memo=None):
     if isinstance(info, str):

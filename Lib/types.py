@@ -56,9 +56,7 @@ class _C:
     def _m(self): pass
 ClassType = type(_C)
 UnboundMethodType = type(_C._m)         # Same as MethodType
-_x = _C()
-InstanceType = type(_x)
-MethodType = type(_x._m)
+MethodType = type(_C()._m)
 
 BuiltinFunctionType = type(len)
 BuiltinMethodType = type([].append)     # Same as BuiltinFunctionType
@@ -86,4 +84,4 @@ EllipsisType = type(Ellipsis)
 DictProxyType = type(TypeType.__dict__)
 NotImplementedType = type(NotImplemented)
 
-del sys, _f, _g, _C, _x                  # Not for export
+del sys, _f, _g, _C                 # Not for export

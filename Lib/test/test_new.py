@@ -21,22 +21,12 @@ print 'new.classobj()'
 C = new.classobj('Spam', (Spam.Eggs,), {'get_more_yolks': get_more_yolks})
 if verbose:
     print C
-print 'new.instance()'
-c = new.instance(C, {'yolks': 3})
-if verbose:
-    print c
-o = new.instance(C)
-verify(o.__dict__ == {},
-       "new __dict__ should be empty")
-del o
-o = new.instance(C, None)
-verify(o.__dict__ == {},
-       "new __dict__ should be empty")
-del o
 
 def break_yolks(self):
     self.yolks = self.yolks - 2
 print 'new.instancemethod()'
+c = C()
+c.yolks = 3
 im = new.instancemethod(break_yolks, c, C)
 if verbose:
     print im

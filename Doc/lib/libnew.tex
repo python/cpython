@@ -16,14 +16,6 @@ interpreter when the object is used.
 
 The \module{new} module defines the following functions:
 
-\begin{funcdesc}{instance}{class\optional{, dict}}
-This function creates an instance of \var{class} with dictionary
-\var{dict} without calling the \method{__init__()} constructor.  If
-\var{dict} is omitted or \code{None}, a new, empty dictionary is
-created for the new instance.  Note that there are no guarantees that
-the object will be in a consistent state.
-\end{funcdesc}
-
 \begin{funcdesc}{instancemethod}{function, instance, class}
 This function will return a method object, bound to \var{instance}, or
 unbound if \var{instance} is \code{None}.  \var{function} must be
