@@ -1042,6 +1042,27 @@ print d[1], d[2]   # Prints 1, 2
 print d[3], d[4]   # Prints 0, 0
 \end{verbatim}
 
+\item Both 8-bit and Unicode strings have a new \method{partition(sep)} method.
+The \method{find(S)} method is often used to get an index which is
+then used to slice the string and obtain the pieces that are before
+and after the separator.  \method{partition(sep)} condenses this
+pattern into a single method call that returns a 3-tuple containing
+the substring before the separator, the separator itself, and the
+substring after the separator.  If the separator isn't found, the
+first element of the tuple is the entire string and the other two
+elements are empty.  Some examples:
+
+\begin{verbatim}
+>>> ('http://www.python.org').partition('://')
+('http', '://', 'www.python.org')
+>>> (u'Subject: a quick question').partition(':')
+(u'Subject', u':', u' a quick question')
+>>> ('file:/usr/share/doc/index.html').partition('://')
+('file:/usr/share/doc/index.html', '', '')
+\end{verbatim}
+
+(Implemented by Fredrik Lundh following a suggestion by Raymond Hettinger.)
+
 \item The \function{min()} and \function{max()} built-in functions
 gained a \code{key} keyword parameter analogous to the \code{key}
 argument for \method{sort()}.  This parameter supplies a function that
