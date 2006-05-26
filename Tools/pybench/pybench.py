@@ -428,7 +428,7 @@ python pybench.py -s p15 -c p14
         nosyscheck = self.values['--no-syscheck']
         cruns = self.values['-C']
         print "CRUNS:", cruns
-        
+
         print 'PYBENCH',__version__
 
         # Switch off GC
