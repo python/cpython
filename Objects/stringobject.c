@@ -1,6 +1,7 @@
 /* String object implementation */
 
 #define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 
 #include <ctype.h>
@@ -1485,7 +1486,7 @@ static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
 #define RSKIP_SPACE(s, i)        { while (i>=0  &&  isspace(Py_CHARMASK(s[i]))) i--; }
 #define RSKIP_NONSPACE(s, i)     { while (i>=0  && !isspace(Py_CHARMASK(s[i]))) i--; }
 
-static PyObject *
+Py_LOCAL(PyObject *)
 split_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 {
 	Py_ssize_t i, j, count=0;
@@ -1519,7 +1520,7 @@ split_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 	return NULL;
 }
 
-static PyObject *
+Py_LOCAL(PyObject *)
 split_char(const char *s, Py_ssize_t len, char ch, Py_ssize_t maxcount)
 {
 	register Py_ssize_t i, j, count=0;
@@ -1674,7 +1675,7 @@ string_partition(PyStringObject *self, PyObject *sep_obj)
 	return out;
 }
 
-static PyObject *
+Py_LOCAL(PyObject *)
 rsplit_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 {
 	Py_ssize_t i, j, count=0;
@@ -1710,7 +1711,7 @@ rsplit_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 	return NULL;
 }
 
-static PyObject *
+Py_LOCAL(PyObject *)
 rsplit_char(const char *s, Py_ssize_t len, char ch, Py_ssize_t maxcount)
 {
 	register Py_ssize_t i, j, count=0;
@@ -1923,7 +1924,7 @@ _PyString_Join(PyObject *sep, PyObject *x)
 	return string_join((PyStringObject *)sep, x);
 }
 
-static void
+Py_LOCAL(void)
 string_adjust_indices(Py_ssize_t *start, Py_ssize_t *end, Py_ssize_t len)
 {
 	if (*end > len)
@@ -1938,7 +1939,7 @@ string_adjust_indices(Py_ssize_t *start, Py_ssize_t *end, Py_ssize_t len)
 		*start = 0;
 }
 
-static Py_ssize_t
+Py_LOCAL(Py_ssize_t)
 string_find_internal(PyStringObject *self, PyObject *args, int dir)
 {
 	const char *s = PyString_AS_STRING(self), *sub;
@@ -2074,7 +2075,7 @@ string_rindex(PyStringObject *self, PyObject *args)
 }
 
 
-static PyObject *
+Py_LOCAL(PyObject *)
 do_xstrip(PyStringObject *self, int striptype, PyObject *sepobj)
 {
 	char *s = PyString_AS_STRING(self);
@@ -2107,7 +2108,7 @@ do_xstrip(PyStringObject *self, int striptype, PyObject *sepobj)
 }
 
 
-static PyObject *
+Py_LOCAL(PyObject *)
 do_strip(PyStringObject *self, int striptype)
 {
 	char *s = PyString_AS_STRING(self);
@@ -2137,7 +2138,7 @@ do_strip(PyStringObject *self, int striptype)
 }
 
 
-static PyObject *
+Py_LOCAL(PyObject *)
 do_argstrip(PyStringObject *self, int striptype, PyObject *args)
 {
 	PyObject *sep = NULL;
@@ -2600,7 +2601,7 @@ string_translate(PyStringObject *self, PyObject *args)
 
 /* String ops must return a string.  */
 /* If the object is subclass of string, create a copy */
-static PyStringObject *
+Py_LOCAL(PyStringObject *)
 return_self(PyStringObject *self)
 {
 	if (PyString_CheckExact(self)) {
@@ -2612,7 +2613,7 @@ return_self(PyStringObject *self)
 		PyString_GET_SIZE(self));
 }
 
-static Py_ssize_t
+Py_LOCAL(Py_ssize_t)
 countchar(char *target, int target_len, char c)
 {
 	Py_ssize_t count=0;
@@ -2627,7 +2628,7 @@ countchar(char *target, int target_len, char c)
 	return count;
 }
 
-static Py_ssize_t
+Py_LOCAL(Py_ssize_t)
 findstring(char *target, Py_ssize_t target_len,
 	   char *pattern, Py_ssize_t pattern_len,
 	   Py_ssize_t start,
@@ -2665,7 +2666,7 @@ findstring(char *target, Py_ssize_t target_len,
 	return -1;
 }
 
-Py_ssize_t
+Py_LOCAL(Py_ssize_t)
 countstring(char *target, Py_ssize_t target_len,
 	    char *pattern, Py_ssize_t pattern_len,
 	    Py_ssize_t start,
@@ -2713,7 +2714,7 @@ countstring(char *target, Py_ssize_t target_len,
 /* Algorithms for difference cases of string replacement */
 
 /* len(self)>=1, from="", len(to)>=1, maxcount>=1 */
-static PyStringObject *
+Py_LOCAL(PyStringObject *)
 replace_interleave(PyStringObject *self,
 		   PyStringObject *to,
 		   Py_ssize_t maxcount)
@@ -2776,7 +2777,7 @@ replace_interleave(PyStringObject *self,
 
 /* Special case for deleting a single character */
 /* len(self)>=1, len(from)==1, to="", maxcount>=1 */
-static PyStringObject *
+Py_LOCAL(PyStringObject *)
 replace_delete_single_character(PyStringObject *self,
 				char from_c, Py_ssize_t maxcount)
 {
@@ -2821,7 +2822,7 @@ replace_delete_single_character(PyStringObject *self,
 
 /* len(self)>=1, len(from)>=2, to="", maxcount>=1 */
 
-static PyStringObject *
+Py_LOCAL(PyStringObject *)
 replace_delete_substring(PyStringObject *self, PyStringObject *from,
 			 Py_ssize_t maxcount) {
 	char *self_s, *from_s, *result_s;
@@ -2876,7 +2877,7 @@ replace_delete_substring(PyStringObject *self, PyStringObject *from,
 }
 
 /* len(self)>=1, len(from)==len(to)==1, maxcount>=1 */
-static PyStringObject *
+Py_LOCAL(PyStringObject *)
 replace_single_character_in_place(PyStringObject *self,
 				  char from_c, char to_c,
 				  Py_ssize_t maxcount)
@@ -2921,7 +2922,7 @@ replace_single_character_in_place(PyStringObject *self,
 }
 
 /* len(self)>=1, len(from)==len(to)>=2, maxcount>=1 */
-static PyStringObject *
+Py_LOCAL(PyStringObject *)
 replace_substring_in_place(PyStringObject *self,
 			   PyStringObject *from,
 			   PyStringObject *to,
@@ -2978,7 +2979,7 @@ replace_substring_in_place(PyStringObject *self,
 }
 
 /* len(self)>=1, len(from)==1, len(to)>=2, maxcount>=1 */
-static PyStringObject *
+Py_LOCAL(PyStringObject *)
 replace_single_character(PyStringObject *self,
 			 char from_c,
 			 PyStringObject *to,
@@ -3051,7 +3052,7 @@ replace_single_character(PyStringObject *self,
 }
 
 /* len(self)>=1, len(from)>=2, len(to)>=2, maxcount>=1 */
-static PyStringObject *
+Py_LOCAL(PyStringObject *)
 replace_substring(PyStringObject *self,
 		  PyStringObject *from,
 		  PyStringObject *to,
@@ -3129,7 +3130,7 @@ replace_substring(PyStringObject *self,
 }
 
 
-static PyStringObject *
+Py_LOCAL(PyStringObject *)
 replace(PyStringObject *self,
 	PyStringObject *from,
 	PyStringObject *to,
@@ -3490,7 +3491,7 @@ string_expandtabs(PyStringObject *self, PyObject *args)
     return u;
 }
 
-static PyObject *
+Py_LOCAL(PyObject *)
 pad(PyStringObject *self, Py_ssize_t left, Py_ssize_t right, char fill)
 {
     PyObject *u;
@@ -4241,7 +4242,7 @@ _PyString_Resize(PyObject **pv, Py_ssize_t newsize)
 
 /* Helpers for formatstring */
 
-static PyObject *
+Py_LOCAL(PyObject *)
 getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
 {
 	Py_ssize_t argidx = *p_argidx;
@@ -4270,7 +4271,7 @@ getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
 #define F_ALT	(1<<3)
 #define F_ZERO	(1<<4)
 
-static int
+Py_LOCAL(int)
 formatfloat(char *buf, size_t buflen, int flags,
             int prec, int type, PyObject *v)
 {
@@ -4457,7 +4458,7 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 	return result;
 }
 
-static int
+Py_LOCAL(int)
 formatint(char *buf, size_t buflen, int flags,
           int prec, int type, PyObject *v)
 {
@@ -4529,7 +4530,7 @@ formatint(char *buf, size_t buflen, int flags,
 	return (int)strlen(buf);
 }
 
-static int
+Py_LOCAL(int)
 formatchar(char *buf, size_t buflen, PyObject *v)
 {
 	/* presume that the buffer is at least 2 characters long */
