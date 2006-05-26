@@ -3768,6 +3768,14 @@ string_splitlines(PyStringObject *self, PyObject *args)
     data = PyString_AS_STRING(self);
     len = PyString_GET_SIZE(self);
 
+    /* This does not use the preallocated list because splitlines is
+       usually run with hundreds of newlines.  The overhead of
+       switching between PyList_SET_ITEM and append causes about a
+       2-3% slowdown for that common case.  A smarter implementation
+       could move the if check out, so the SET_ITEMs are done first
+       and the appends only done when the prealloc buffer is full.
+       That's too much work for little gain.*/
+
     list = PyList_New(0);
     if (!list)
         goto onError;
