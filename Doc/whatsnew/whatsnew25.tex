@@ -1042,15 +1042,22 @@ print d[1], d[2]   # Prints 1, 2
 print d[3], d[4]   # Prints 0, 0
 \end{verbatim}
 
-\item Both 8-bit and Unicode strings have a new \method{partition(sep)} method.
+\item Both 8-bit and Unicode strings have new \method{partition(sep)} 
+and \method{rpartition(sep)} methods that simplify a common use case.
 The \method{find(S)} method is often used to get an index which is
 then used to slice the string and obtain the pieces that are before
-and after the separator.  \method{partition(sep)} condenses this
+and after the separator.  
+
+\method{partition(sep)} condenses this
 pattern into a single method call that returns a 3-tuple containing
 the substring before the separator, the separator itself, and the
 substring after the separator.  If the separator isn't found, the
 first element of the tuple is the entire string and the other two
-elements are empty.  Some examples:
+elements are empty.  \method{rpartition(sep)} also returns a 3-tuple
+but starts searching from the end of the string; the \samp{r} stands
+for 'reverse'.
+
+Some examples:
 
 \begin{verbatim}
 >>> ('http://www.python.org').partition('://')
@@ -1059,6 +1066,8 @@ elements are empty.  Some examples:
 (u'Subject', u':', u' a quick question')
 >>> ('file:/usr/share/doc/index.html').partition('://')
 ('file:/usr/share/doc/index.html', '', '')
+>>> 'www.python.org'.rpartition('.')
+('www.python', '.', 'org')
 \end{verbatim}
 
 (Implemented by Fredrik Lundh following a suggestion by Raymond Hettinger.)
@@ -1191,6 +1200,12 @@ and Richard Jones; committed at the NeedForSpeed sprint.)
 Frame objects are also slightly smaller, which may improve cache locality
 and reduce memory usage a bit.  (Contributed by Neal Norwitz.)
 % Patch 1337051
+
+\item Importing now caches the paths tried, recording whether 
+they exist or not so that the interpreter makes fewer 
+\cfunction{open()} and \cfunction{stat()} calls on startup.
+(Contributed by Martin von~L\"owis and Georg Brandl.)
+% Patch 921466
 
 \end{itemize}
 
