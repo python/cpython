@@ -3951,27 +3951,49 @@ static Py_ssize_t findstring(PyUnicodeObject *self,
 }
 
 Py_ssize_t PyUnicode_Find(PyObject *str,
-		   PyObject *substr,
-		   Py_ssize_t start,
-		   Py_ssize_t end,
-		   int direction)
+                          PyObject *substr,
+                          Py_ssize_t start,
+                          Py_ssize_t end,
+                          int direction)
 {
     Py_ssize_t result;
+    PyUnicodeObject* str_obj;
+    PyUnicodeObject* sub_obj;
 
-    str = PyUnicode_FromObject(str);
-    if (str == NULL)
+    str_obj = (PyUnicodeObject*) PyUnicode_FromObject(str);
+    if (!str)
 	return -2;
-    substr = PyUnicode_FromObject(substr);
-    if (substr == NULL) {
-	Py_DECREF(str);
+    sub_obj = (PyUnicodeObject*) PyUnicode_FromObject(substr);
+    if (!sub_obj) {
+	Py_DECREF(str_obj);
 	return -2;
     }
 
-    result = findstring((PyUnicodeObject *)str,
-			(PyUnicodeObject *)substr,
-			start, end, direction);
-    Py_DECREF(str);
-    Py_DECREF(substr);
+    if (start < 0)
+        start += str_obj->length;
+    if (start < 0)
+        start = 0;
+    if (end > str_obj->length)
+        end = str_obj->length;
+    if (end < 0)
+        end += str_obj->length;
+    if (end < 0)
+        end = 0;
+
+    if (direction > 0)
+        result = stringlib_find(
+            str_obj->str + start, end - start, sub_obj->str, sub_obj->length
+            );
+    else
+        result = stringlib_rfind(
+            str_obj->str + start, end - start, sub_obj->str, sub_obj->length
+            );
+
+    if (result >= 0)
+        result += start;
+
+    Py_DECREF(str_obj);
+    Py_DECREF(sub_obj);
     return result;
 }
 
