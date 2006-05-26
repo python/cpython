@@ -1,29 +1,57 @@
-Building and using a framework-based Python on Mac OS X.
---------------------------------------------------------
+============
+MacOSX Notes
+============
 
-This document provides a quick introduction to framework-based Python, its
-advantages, and how to build it.
+This document provides a quick overview of some Mac OS X specific features in
+the Python distribution.
+
+
+Building and using a universal binary of Python on Mac OS X
+===========================================================
+
+1. What is a universal binary
+-----------------------------
+
+A universal binary build of Python contains object code for both PPC and i386
+and can therefore run at native speed on both classic powerpc based macs and
+the newer intel based macs.
+
+2. How do I build a universal binary
+------------------------------------
+
+You can enable universal binaries by specifying the "--enable-universalsdk"
+flag to configure::
+
+  $ ./configure --enable-universalsdk
+  $ make
+  $ make install
+
+This flag can be used a framework build of python, but also with a classic
+unix build. Either way you will have to build python on Mac OS X 10.4 (or later)
+with Xcode 2.1 (or later). You also have to install the 10.4u SDK when 
+installing Xcode.
+
+
+Building and using a framework-based Python on Mac OS X.
+========================================================
+
 
 1. Why would I want a framework Python instead of a normal static Python?
 --------------------------------------------------------------------------
 
 The main reason is because you want to create GUI programs in Python. With the
-exception of X11/XDarwin-based GUI toolkits it appears that all GUI programs
-need to be run from a fullblown MacOSX application (a ".app" bundle).
+exception of X11/XDarwin-based GUI toolkits all GUI programs need to be run 
+from a fullblown MacOSX application (a ".app" bundle).
 
 While it is technically possible to create a .app without using frameworks you
 will have to do the work yourself if you really want this.
 
 A second reason for using frameworks is that they put Python-related items in
-only two places: /Library/Framework/Python.framework and /Applications/MacPython-2.3.
-This simplifies matters for users installing Python from a binary distribution
-if they want to get rid of it again. Moreover, due to the way frameworks work
-a user without admin privileges can install a binary distribution in his or
-her home directory without recompilation.
-
-Incidentally, the procedure described here is also the procedure that is
-used to create the MacPython binary installer, so the information here
-should theoretically allow you to rebuild that.
+only two places: "/Library/Framework/Python.framework" and 
+"/Applications/MacPython 2.5".  This simplifies matters for users installing 
+Python from a binary distribution if they want to get rid of it again. Moreover,
+due to the way frameworks work a user without admin privileges can install a 
+binary distribution in his or her home directory without recompilation.
 
 2. How does a framework Python differ from a normal static Python?
 ------------------------------------------------------------------
@@ -37,44 +65,40 @@ Versions/Current and you will see the familiar bin and lib directories.
 3. Do I need extra packages?
 ----------------------------
 
-Yes, probably. If you want to be able to use the PythonIDE you will need to
-get Waste, an all-singing-all-dancing TextEdit replacement, from
-www.merzwaren.com. It will unpack into a folder named something like "Waste
-2.1 Distribution". Make a symlink called "waste" to this folder, somewhere
-beside your Python source distribution (it can be "../waste", "../../waste",
-etc).
-
-If you want Tkinter support you need to get the OSX AquaTk distribution. If
+Yes, probably.  If you want Tkinter support you need to get the OSX AquaTk 
+distribution, this is installed by default on Mac OS X 10.4 or later. If
 you want wxPython you need to get that. If you want Cocoa you need to get
-pyobjc. Because all these are currently in a state of flux please refer to
-http://www.cwi.nl/~jack/macpython.html, which should contain pointers to more
-information.
+PyObjC. 
 
 4. How do I build a framework Python?
 -------------------------------------
 
 This directory contains a Makefile that will create a couple of python-related
 applications (fullblown OSX .app applications, that is) in
-/Applications/MacPython-2.3, and a hidden helper application Python.app inside the
-Python.framework, and unix tools "python" and "pythonw" into /usr/local/bin.
-In addition it has a target "installmacsubtree" that installs the relevant
-portions of the Mac subtree into the Python.framework.
+"/Applications/MacPython 2.3", and a hidden helper application Python.app 
+inside the Python.framework, and unix tools "python" and "pythonw" into 
+/usr/local/bin.  In addition it has a target "installmacsubtree" that installs 
+the relevant portions of the Mac subtree into the Python.framework.
 
 It is normally invoked indirectly through the main Makefile, as the last step
 in the sequence
-1. ./configure --enable-framework
-2. make
-3. make frameworkinstall
+
+ 1. ./configure --enable-framework
+
+ 2. make
+ 
+ 3. make install
 
 This sequence will put the framework in /Library/Framework/Python.framework,
-the applications in /Applications/Python and the unix tools in /usr/local/bin.
+the applications in /Applications/MacPython 2.5 and the unix tools in 
+/usr/local/bin.
 
 Installing in another place, for instance $HOME/Library/Frameworks if you have
 no admin privileges on your machine, has only been tested very lightly. This
 can be done by configuring with --enable-framework=$HOME/Library/Frameworks.
-The other two directories, /Applications/MacPython-2.3 and /usr/local/bin, will then
-also be deposited in $HOME. This is sub-optimal for the unix tools, which you
-would want in $HOME/bin, but there is no easy way to fix this right now.
+The other two directories, /Applications/MacPython-2.3 and /usr/local/bin, will 
+then also be deposited in $HOME. This is sub-optimal for the unix tools, which 
+you would want in $HOME/bin, but there is no easy way to fix this right now.
 
 Note that there are no references to the actual locations in the code or
 resource files, so you are free to move things around afterwards. For example,
@@ -89,18 +113,13 @@ There is an extra target frameworkinstallextras that is not part of the
 normal frameworkinstall which installs the Demo and Tools directories
 into /Applications/MacPython-2.3, this is useful for binary distributions.
 
-If you want to run the Makefile here directly, in stead of through the main
-Makefile, you will have to pass various variable-assignments. Read the
-beginning of the Makefile for details.
+What do all these programs do?
+===============================
 
-
-5. What do all these programs do?
----------------------------------
-
-PythonIDE.app is an integrated development environment for Python: editor,
+"IDLE.app" is an integrated development environment for Python: editor,
 debugger, etc.
 
-PythonLauncher.app is a helper application that will handle things when you
+"PythonLauncher.app" is a helper application that will handle things when you
 double-click a .py, .pyc or .pyw file. For the first two it creates a Terminal
 window and runs the scripts with the normal command-line Python. For the
 latter it runs the script in the Python.app interpreter so the script can do
@@ -108,7 +127,7 @@ GUI-things. Keep the "alt" key depressed while dragging or double-clicking a
 script to set runtime options. These options can be set once and for all
 through PythonLauncher's preferences dialog.
 
-BuildApplet.app creates an applet from a Python script. Drop the script on it
+"BuildApplet.app" creates an applet from a Python script. Drop the script on it
 and out comes a full-featured MacOS application. There is much more to this,
 to be supplied later. Some useful (but outdated) info can be found in
 Mac/Demo.
@@ -116,43 +135,27 @@ Mac/Demo.
 The commandline scripts /usr/local/bin/python and pythonw can be used to run
 non-GUI and GUI python scripts from the command line, respectively.
 
-6. How do I create a binary distribution?
------------------------------------------
+How do I create a binary distribution?
+======================================
 
-First go to Mac/OSX and run "python fixversions.py -a" with the Python
-you are going to distribute. This will fix the version numbers and copyright
-strings in the various Info.plist files.
+Go to the directory "Mac/OSX/BuildScript". There you'll find a script 
+"build-installer.py" that does all the work. This will download and build
+a number of 3th-party libaries, configures and builds a framework Python,
+installs it, creates the installer pacakge files and then packs this in a 
+DMG image.
 
-Go to the Mac/OSX/Dist directory. There you find a script "build" that
-does all the work: it configures and builds a framework Python, installs
-it, creates the installer package file and packs this in a DMG image.
+The script will build a universal binary, you'll therefore have to run this
+script on Mac OS X 10.4 or later and with Xcode 2.1 or later installed.
 
 All of this is normally done completely isolated in /tmp/_py, so it does not
 use your normal build directory nor does it install into /.
 
-Because the build script locates the Python source tree relative to its own
-pathname you may have to run it with a full pathname. If you are debugging your
-install you can pass one argument: the pathname where the build directory
-is located (i.e. where configure and make will be run), then this directory
-will be saved between runs of the build script. Do *not* specify your normal
-build directory here.
+Because of the way the script locates the files it needs you have to run it
+from within the BuildScript directory. The script accepts a number of 
+command-line arguments, run it with --help for more information.
 
-build will ask you whether you have updated the readme file, and it will offer
-to include the full documentation in the installer. That option has not
-been used for a while, and it may not work.
-
-If you need to execute code on the client machine after installing Python
-you can add this to resources/postflight. If you need to do even stranger things
-you have to read Apple's documentation on PackageMaker and read the source
-of Mac/scripts/buildpkg.py.
-
-7. Odds and ends.
------------------
-
-The PythonLauncher is actually an Objective C Cocoa app built with Project
-Builder. It could be a Python program, except for the fact that pyobjc is not
-a part of the core distribution, and is not completely finished yet as of this
-writing.
+Odds and ends
+=============
 
 Something to take note of is that the ".rsrc" files in the distribution are
 not actually resource files, they're AppleSingle encoded resource files. The
@@ -161,3 +164,4 @@ macresource module and the Mac/OSX/Makefile cater for this, and create
 files.
 
 	Jack Jansen, Jack.Jansen@cwi.nl, 15-Jul-2004.
+	Ronald Oussoren, RonaldOussoren@mac.com, 26-May-2006
