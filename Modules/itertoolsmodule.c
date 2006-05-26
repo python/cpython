@@ -1093,10 +1093,10 @@ static PyTypeObject takewhile_type = {
 typedef struct {
 	PyObject_HEAD
 	PyObject *it;
-	long	next;
-	long	stop;
-	long	step;
-	long	cnt;
+	Py_ssize_t next;
+	Py_ssize_t stop;
+	Py_ssize_t step;
+	Py_ssize_t cnt;
 } isliceobject;
 
 static PyTypeObject islice_type;
@@ -1105,7 +1105,7 @@ static PyObject *
 islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *seq;
-	long start=0, stop=-1, step=1;
+	Py_ssize_t start=0, stop=-1, step=1;
 	PyObject *it, *a1=NULL, *a2=NULL, *a3=NULL;
 	Py_ssize_t numargs;
 	isliceobject *lz;
@@ -1119,7 +1119,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	numargs = PyTuple_Size(args);
 	if (numargs == 2) {
 		if (a1 != Py_None) {
-			stop = PyInt_AsLong(a1);
+			stop = PyInt_AsSsize_t(a1);
 			if (stop == -1) {
 				if (PyErr_Occurred())
 					PyErr_Clear();
@@ -1130,11 +1130,11 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		}
 	} else {
 		if (a1 != Py_None)
-			start = PyInt_AsLong(a1);
+			start = PyInt_AsSsize_t(a1);
 		if (start == -1 && PyErr_Occurred())
 			PyErr_Clear();
 		if (a2 != Py_None) {
-			stop = PyInt_AsLong(a2);
+			stop = PyInt_AsSsize_t(a2);
 			if (stop == -1) {
 				if (PyErr_Occurred())
 					PyErr_Clear();
@@ -1152,7 +1152,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	if (a3 != NULL) {
 		if (a3 != Py_None)
-			step = PyInt_AsLong(a3);
+			step = PyInt_AsSsize_t(a3);
 		if (step == -1 && PyErr_Occurred())
 			PyErr_Clear();
 	}
@@ -1202,7 +1202,7 @@ islice_next(isliceobject *lz)
 {
 	PyObject *item;
 	PyObject *it = lz->it;
-	long oldnext;
+	Py_ssize_t oldnext;
 	PyObject *(*iternext)(PyObject *);
 
 	assert(PyIter_Check(it));
@@ -1600,8 +1600,8 @@ static PyTypeObject imap_type = {
 
 typedef struct {
 	PyObject_HEAD
-	Py_ssize_t	tuplesize;
-	long	iternum;		/* which iterator is active */
+	Py_ssize_t tuplesize;
+	Py_ssize_t iternum;		/* which iterator is active */
 	PyObject *ittuple;		/* tuple of iterators */
 } chainobject;
 
@@ -1612,7 +1612,7 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	chainobject *lz;
 	Py_ssize_t tuplesize = PySequence_Length(args);
-	int i;
+	Py_ssize_t i;
 	PyObject *ittuple;
 
 	if (!_PyArg_NoKeywords("chain()", kwds))
@@ -2033,7 +2033,7 @@ static PyTypeObject ifilterfalse_type = {
 
 typedef struct {
 	PyObject_HEAD
-	long	cnt;
+	Py_ssize_t cnt;
 } countobject;
 
 static PyTypeObject count_type;
@@ -2042,12 +2042,12 @@ static PyObject *
 count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	countobject *lz;
-	long cnt = 0;
+	Py_ssize_t cnt = 0;
 
 	if (!_PyArg_NoKeywords("count()", kwds))
 		return NULL;
 
-	if (!PyArg_ParseTuple(args, "|l:count", &cnt))
+	if (!PyArg_ParseTuple(args, "|n:count", &cnt))
 		return NULL;
 
 	/* create countobject structure */
@@ -2062,13 +2062,13 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 count_next(countobject *lz)
 {
-	return PyInt_FromLong(lz->cnt++);
+	return PyInt_FromSize_t(lz->cnt++);
 }
 
 static PyObject *
 count_repr(countobject *lz)
 {
-	return PyString_FromFormat("count(%ld)", lz->cnt);
+	return PyString_FromFormat("count(%zd)", lz->cnt);
 }
 
 PyDoc_STRVAR(count_doc,
@@ -2138,7 +2138,7 @@ static PyObject *
 izip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	izipobject *lz;
-	int i;
+	Py_ssize_t i;
 	PyObject *ittuple;  /* tuple of iterators */
 	PyObject *result;
 	Py_ssize_t tuplesize = PySequence_Length(args);
@@ -2212,7 +2212,7 @@ izip_traverse(izipobject *lz, visitproc visit, void *arg)
 static PyObject *
 izip_next(izipobject *lz)
 {
-	int i;
+	Py_ssize_t i;
 	Py_ssize_t tuplesize = lz->tuplesize;
 	PyObject *result = lz->result;
 	PyObject *it;
@@ -2314,7 +2314,7 @@ static PyTypeObject izip_type = {
 typedef struct {
 	PyObject_HEAD
 	PyObject *element;
-	long cnt;
+	Py_ssize_t cnt;
 } repeatobject;
 
 static PyTypeObject repeat_type;
@@ -2324,12 +2324,12 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	repeatobject *ro;
 	PyObject *element;
-	long cnt = -1;
+	Py_ssize_t cnt = -1;
 
 	if (!_PyArg_NoKeywords("repeat()", kwds))
 		return NULL;
 
-	if (!PyArg_ParseTuple(args, "O|l:repeat", &element, &cnt))
+	if (!PyArg_ParseTuple(args, "O|n:repeat", &element, &cnt))
 		return NULL;
 
 	if (PyTuple_Size(args) == 2 && cnt < 0)
@@ -2383,7 +2383,7 @@ repeat_repr(repeatobject *ro)
 		result = PyString_FromFormat("repeat(%s)",
 			PyString_AS_STRING(objrepr));
 	else
-		result = PyString_FromFormat("repeat(%s, %ld)",
+		result = PyString_FromFormat("repeat(%s, %zd)",
 			PyString_AS_STRING(objrepr), ro->cnt);
 	Py_DECREF(objrepr);
 	return result;
@@ -2396,7 +2396,7 @@ repeat_len(repeatobject *ro)
                 PyErr_SetString(PyExc_TypeError, "len() of unsized object");
 		return NULL;
 	}
-        return PyInt_FromLong(ro->cnt);
+        return PyInt_FromSize_t(ro->cnt);
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
