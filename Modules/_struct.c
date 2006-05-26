@@ -519,7 +519,7 @@ np_uint(char *p, PyObject *v, const formatdef *f)
 #endif
 	y = (unsigned int)x;
 #if defined(PY_STRUCT_RANGE_CHECKING) && (SIZEOF_LONG > SIZEOF_INT)
-	if (x < UINT_MIN || x > UINT_MAX)
+	if (x > UINT_MAX)
 		return _range_error(f->format, sizeof(y), 1);
 #endif
 	memcpy(p, (char *)&y, sizeof y);
