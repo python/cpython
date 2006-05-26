@@ -1,8 +1,7 @@
 \subsection{ctypes reference\label{ctypes-reference}}
 
-ctypes defines a lot of C compatible datatypes, and also allows to
-define your own types.  Among other things, a ctypes type instance
-holds a memory block that contains C compatible data.
+% functions
+\subsubsection{ctypes functions}
 
 \begin{funcdesc}{addressof}{obj}
 Returns the address of the memory buffer as integer.  \var{obj} must
@@ -17,15 +16,124 @@ Returns the alignment requirements of a ctypes type.
 \begin{excclassdesc}{ArgumentError}{}
 \end{excclassdesc}
 
-\begin{classdesc}{BigEndianStructure}{}
-\end{classdesc}
-
 \begin{funcdesc}{byref}{obj}
 Returns a light-weight pointer to \var{obj}, which must be an instance
 of a ctypes type.  The returned object can only be used as a foreign
 function call parameter.  It behaves similar to \code{pointer(obj)},
 but the construction is a lot faster.
 \end{funcdesc}
+
+\begin{funcdesc}{cast}{obj, type}
+\end{funcdesc}
+
+\begin{funcdesc}{CFUNCTYPE}{restype, *argtypes}
+\end{funcdesc}
+
+\begin{funcdesc}{create_string_buffer}{init_or_size\optional{, size}}
+This function creates a mutable character buffer.  The returned object
+is a ctypes array of \code{c_char}.
+
+\var{init_or_size} must be an integer which specifies the size of the
+array, or a string which will be used to initialize the array items.
+
+If a string is specified as first argument, the buffer is made one
+item larger than the length of the string so that the last element in
+the array is a NUL termination character.  An integer can be passed as
+second argument which allows to specify the size of the array if the
+length of the string should not be used.
+
+If the first parameter is a unicode string, it is converted into an
+8-bit string according to ctypes conversion rules.
+\end{funcdesc}
+
+\begin{funcdesc}{create_unicode_buffer}{init_or_size\optional{, size}}
+This function creates a mutable unicode character buffer.  The
+returned object is a ctypes array of \code{c_wchar}.
+
+\var{init_or_size} must be an integer which specifies the size of the
+array, or a unicode string which will be used to initialize the array
+items.
+
+If a unicode string is specified as first argument, the buffer is made
+one item larger than the length of the string so that the last element
+in the array is a NUL termination character.  An integer can be passed
+as second argument which allows to specify the size of the array if
+the length of the string should not be used.
+
+If the first parameter is a 8-bit string, it is converted into an
+unicode string according to ctypes conversion rules.
+\end{funcdesc}
+
+\begin{funcdesc}{DllCanUnloadNow}{}
+Windows only: This function is a hook which allows to implement
+inprocess COM servers with ctypes.  It is called from the
+\code{DllCanUnloadNow} exported function that the \code{_ctypes}
+extension module exports.
+\end{funcdesc}
+
+\begin{funcdesc}{DllGetClassObject}{}
+Windows only: This function is a hook which allows to implement
+inprocess COM servers with ctypes.  It is called from the
+\code{DllGetClassObject} exported function that the \code{_ctypes}
+extension module exports.
+\end{funcdesc}
+
+\begin{funcdesc}{FormatError}{}
+Windows only:
+\end{funcdesc}
+
+\begin{funcdesc}{GetLastError}{}
+Windows only:
+\end{funcdesc}
+
+\begin{funcdesc}{memmove}{dst, src, count}
+\end{funcdesc}
+
+\begin{funcdesc}{memset}{dst, c, count}
+\end{funcdesc}
+
+\begin{funcdesc}{POINTER}{}
+\end{funcdesc}
+
+\begin{funcdesc}{pointer}{}
+\end{funcdesc}
+
+\begin{funcdesc}{PYFUNCTYPE}{restype, *argtypes}
+\end{funcdesc}
+
+\begin{funcdesc}{pythonapi}{}
+\end{funcdesc}
+
+\begin{funcdesc}{resize}{}
+\end{funcdesc}
+
+\begin{funcdesc}{set_conversion_mode}{}
+\end{funcdesc}
+
+\begin{funcdesc}{sizeof}{}
+\end{funcdesc}
+
+\begin{funcdesc}{string_at}{address}
+\end{funcdesc}
+
+\begin{funcdesc}{WinError}{}
+\end{funcdesc}
+
+\begin{funcdesc}{WINFUNCTYPE}{restype, *argtypes}
+\end{funcdesc}
+
+\begin{funcdesc}{wstring_at}{address}
+\end{funcdesc}
+
+% data types
+\subsubsection{data types}
+
+ctypes defines a lot of C compatible datatypes, and also allows to
+define your own types.  Among other things, a ctypes type instance
+holds a memory block that contains C compatible data.
+
+% simple data types
+\subsubsection{simple data types}
 
 \begin{classdesc}{c_byte}{\optional{value}}
 Represents a C \code{signed char} datatype, and interprets the value
@@ -133,8 +241,22 @@ Represents a C \code{size_t} datatype.
 \begin{classdesc}{c_wchar_p}{\optional{value}}
 \end{classdesc}
 
-\begin{funcdesc}{cast}{obj, type}
-\end{funcdesc}
+% structured data types
+\subsubsection{structured data types}
+
+\begin{classdesc}{BigEndianStructure}{}
+\end{classdesc}
+
+\begin{classdesc}{LittleEndianStructure}{}
+\end{classdesc}
+
+\begin{classdesc}{Structure}{}
+\end{classdesc}
+
+\begin{classdesc}{Union}{}
+\end{classdesc}
+
+
 
 \begin{classdesc}{CDLL}{name, mode=RTLD_LOCAL, handle=None}
 \end{classdesc}
@@ -142,53 +264,17 @@ Represents a C \code{size_t} datatype.
 \begin{datadesc}{cdll}
 \end{datadesc}
 
-\begin{funcdesc}{CFUNCTYPE}{restype, *argtypes}
-\end{funcdesc}
-
-\begin{funcdesc}{create_string_buffer}{init\optional{, size}}
-\end{funcdesc}
-
-\begin{funcdesc}{create_unicode_buffer}{init\optional{, size}}
-\end{funcdesc}
-
-\begin{funcdesc}{DllCanUnloadNow}{}
-\end{funcdesc}
-
-\begin{funcdesc}{DllGetClassObject}{}
-\end{funcdesc}
-
-\begin{funcdesc}{FormatError}{}
-\end{funcdesc}
-
-\begin{funcdesc}{GetLastError}{}
-\end{funcdesc}
-
 \begin{classdesc}{HRESULT}{}
 \end{classdesc}
 
 \begin{classdesc}{LibraryLoader}{dlltype}
 \end{classdesc}
 
-\begin{classdesc}{LittleEndianStructure}{}
-\end{classdesc}
-
-\begin{funcdesc}{memmove}{dst, src, count}
-\end{funcdesc}
-
-\begin{funcdesc}{memset}{dst, c, count}
-\end{funcdesc}
-
 \begin{classdesc}{OleDLL}{name, mode=RTLD_LOCAL, handle=None}
 \end{classdesc}
 
 \begin{datadesc}{oledll}
 \end{datadesc}
-
-\begin{funcdesc}{POINTER}{}
-\end{funcdesc}
-
-\begin{funcdesc}{pointer}{}
-\end{funcdesc}
 
 \begin{classdesc}{py_object}{}
 \end{classdesc}
@@ -199,48 +285,15 @@ Represents a C \code{size_t} datatype.
 \begin{datadesc}{pydll}{}
 \end{datadesc}
 
-\begin{funcdesc}{PYFUNCTYPE}{restype, *argtypes}
-\end{funcdesc}
-
-\begin{funcdesc}{pythonapi}{}
-\end{funcdesc}
-
-\begin{funcdesc}{resize}{}
-\end{funcdesc}
-
 \begin{datadesc}{RTLD_GLOBAL}
 \end{datadesc}
 
 \begin{datadesc}{RTLD_LOCAL}
 \end{datadesc}
 
-\begin{funcdesc}{set_conversion_mode}{}
-\end{funcdesc}
-
-\begin{funcdesc}{sizeof}{}
-\end{funcdesc}
-
-\begin{funcdesc}{string_at}{address}
-\end{funcdesc}
-
-\begin{classdesc}{Structure}{}
-\end{classdesc}
-
-\begin{classdesc}{Union}{}
-\end{classdesc}
-
 \begin{classdesc}{WinDLL}{name, mode=RTLD_LOCAL, handle=None}
 \end{classdesc}
 
 \begin{datadesc}{windll}
 \end{datadesc}
-
-\begin{funcdesc}{WinError}{}
-\end{funcdesc}
-
-\begin{funcdesc}{WINFUNCTYPE}{restype, *argtypes}
-\end{funcdesc}
-
-\begin{funcdesc}{wstring_at}{address}
-\end{funcdesc}
 
