@@ -1495,20 +1495,52 @@ article about them is at \url{http://www.linuxjournal.com/article/7356}.
 In Python code, netlink addresses are represented as a tuple of 2 integers, 
 \code{(\var{pid}, \var{group_mask})}.
 
-Socket objects also gained accessor methods \method{getfamily()}, 
-\method{gettype()}, and \method{getproto()} methods to retrieve the
-family, type, and protocol values for the socket.
+Two new methods on socket objects, \method{recv_buf(\var{buffer})} and
+\method{recvfrom_buf(\var{buffer})}, store the received data in an object 
+that supports the buffer protocol instead of returning the data as a
+string.  This means you can put the data directly into an array or a
+memory-mapped file.
+
+Socket objects also gained \method{getfamily()}, \method{gettype()},
+and \method{getproto()} accessor methods to retrieve the family, type,
+and protocol values for the socket.
 
 \item New module: the \module{spwd} module provides functions for
 accessing the shadow password database on systems that support 
 shadow passwords.
 
+\Item The \module{struct} is now faster because it 
+compiles format strings into \class{Struct} objects
+with \method{pack()} and \method{unpack()} methods.  This is similar
+to how the \module{re} module lets you create compiled regular
+expression objects.  You can still use the module-level 
+\function{pack()} and \function{unpack()} functions; they'll create 
+\class{Struct} objects and cache them.  Or you can use 
+\class{Struct} instances directly:
+
+\begin{verbatim}
+s = struct.Struct('ih3s')
+
+data = s.pack(1972, 187, 'abc')
+year, number, name = s.unpack(data)
+\end{verbatim}
+
+You can also pack and unpack data to and from buffer objects directly
+using the \method{pack_to(\var{buffer}, \var{offset}, \var{v1},
+\var{v2}, ...)} and \method{unpack_from(\var{buffer}, \var{offset})}
+methods.  This lets you store data directly into an array or a
+memory-mapped file.
+
+(\class{Struct} objects were implemented by Bob Ippolito at the
+NeedForSpeed sprint.  Support for buffer objects was added by Martin
+Blais, also at the NeedForSpeed sprint.)
+
 \item The Python developers switched from CVS to Subversion during the 2.5
-development process.  Information about the exact build version is 
-available as the \code{sys.subversion} variable, a 3-tuple
-of \code{(\var{interpreter-name}, \var{branch-name}, \var{revision-range})}.
-For example, at the time of writing 
-my copy of 2.5 was reporting \code{('CPython', 'trunk', '45313:45315')}.
+development process.  Information about the exact build version is
+available as the \code{sys.subversion} variable, a 3-tuple of
+\code{(\var{interpreter-name}, \var{branch-name},
+\var{revision-range})}.  For example, at the time of writing my copy
+of 2.5 was reporting \code{('CPython', 'trunk', '45313:45315')}.
 
 This information is also available to C extensions via the 
 \cfunction{Py_GetBuildInfo()} function that returns a 
