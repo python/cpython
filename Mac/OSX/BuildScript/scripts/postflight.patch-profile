@@ -41,7 +41,7 @@ case "${BSH}" in
 	echo "" >> "${HOME}/.cshrc"
 	echo "# Setting PATH for MacPython ${PYVER}" >> "${HOME}/.cshrc"
 	echo "# The orginal version is saved in .cshrc.pysave" >> "${HOME}/.cshrc"
-	echo "setenv path=(${PYTHON_ROOT}/bin "'$path'")" >> "${HOME}/.cshrc"
+	echo "set path=(${PYTHON_ROOT}/bin "'$path'")" >> "${HOME}/.cshrc"
 	exit 0
 	;;
 bash)
