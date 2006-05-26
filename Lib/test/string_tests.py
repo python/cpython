@@ -246,6 +246,13 @@ class CommonTest(unittest.TestCase):
         self.checkequal(['a b c d'], 'a b c d', 'split', None, 0)
         self.checkequal(['a', 'b', 'c  d'], 'a  b  c  d', 'split', None, 2)
 
+        self.checkequal([], '         ', 'split')
+        self.checkequal(['a'], '  a    ', 'split')
+        self.checkequal(['a', 'b'], '  a    b   ', 'split')
+        self.checkequal(['a', 'b   '], '  a    b   ', 'split', None, 1)
+        self.checkequal(['a', 'b   c   '], '  a    b   c   ', 'split', None, 1)
+        self.checkequal(['a', 'b', 'c   '], '  a    b   c   ', 'split', None, 2)
+
         # by a char
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'split', '|')
         self.checkequal(['a', 'b|c|d'], 'a|b|c|d', 'split', '|', 1)
