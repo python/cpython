@@ -423,7 +423,7 @@ python pybench.py -s p15 -c p14
         limitnames = self.values['-t']
         verbose = self.verbose
         nosyscheck = self.values['--no-syscheck']
-        
+
         print 'PYBENCH',__version__
 
         # Switch off GC
