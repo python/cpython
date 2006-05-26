@@ -6,6 +6,9 @@
    XXX document it!
    */
 
+/* enable more aggressive local inlining (platform dependent) */
+#define PY_LOCAL_AGGRESSIVE
+
 #include "Python.h"
 
 #include "code.h"
@@ -15,6 +18,11 @@
 #include "structmember.h"
 
 #include <ctype.h>
+
+#if defined(_MSC_VER)
+/* enable more aggressive optimization for visual studio */
+#pragma optimize("agtw", on)
+#endif
 
 #ifndef WITH_TSC 
 
@@ -83,16 +91,16 @@ typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
 #ifdef WITH_TSC
-Py_LOCAL(PyObject *)call_function(PyObject ***, int, uint64*, uint64*);
+Py_LOCAL(PyObject *) call_function(PyObject ***, int, uint64*, uint64*);
 #else
-Py_LOCAL(PyObject *)call_function(PyObject ***, int);
+Py_LOCAL(PyObject *) call_function(PyObject ***, int);
 #endif
-Py_LOCAL(PyObject *)fast_function(PyObject *, PyObject ***, int, int, int);
-Py_LOCAL(PyObject *)do_call(PyObject *, PyObject ***, int, int);
-Py_LOCAL(PyObject *)ext_do_call(PyObject *, PyObject ***, int, int, int);
-Py_LOCAL(PyObject *)update_keyword_args(PyObject *, int, PyObject ***,PyObject *);
-Py_LOCAL(PyObject *)update_star_args(int, int, PyObject *, PyObject ***);
-Py_LOCAL(PyObject *)load_args(PyObject ***, int);
+Py_LOCAL(PyObject *) fast_function(PyObject *, PyObject ***, int, int, int);
+Py_LOCAL(PyObject *) do_call(PyObject *, PyObject ***, int, int);
+Py_LOCAL(PyObject *) ext_do_call(PyObject *, PyObject ***, int, int, int);
+Py_LOCAL(PyObject *) update_keyword_args(PyObject *, int, PyObject ***,PyObject *);
+Py_LOCAL(PyObject *) update_star_args(int, int, PyObject *, PyObject ***);
+Py_LOCAL(PyObject *) load_args(PyObject ***, int);
 #define CALL_FLAG_VAR 1
 #define CALL_FLAG_KW 2
 
@@ -108,19 +116,19 @@ Py_LOCAL(void) call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
 Py_LOCAL(int) maybe_call_line_trace(Py_tracefunc, PyObject *,
 				  PyFrameObject *, int *, int *, int *);
 
-Py_LOCAL(PyObject *)apply_slice(PyObject *, PyObject *, PyObject *);
+Py_LOCAL(PyObject *) apply_slice(PyObject *, PyObject *, PyObject *);
 Py_LOCAL(int) assign_slice(PyObject *, PyObject *,
 			PyObject *, PyObject *);
-Py_LOCAL(PyObject *)cmp_outcome(int, PyObject *, PyObject *);
-Py_LOCAL(PyObject *)import_from(PyObject *, PyObject *);
+Py_LOCAL(PyObject *) cmp_outcome(int, PyObject *, PyObject *);
+Py_LOCAL(PyObject *) import_from(PyObject *, PyObject *);
 Py_LOCAL(int) import_all_from(PyObject *, PyObject *);
-Py_LOCAL(PyObject *)build_class(PyObject *, PyObject *, PyObject *);
+Py_LOCAL(PyObject *) build_class(PyObject *, PyObject *, PyObject *);
 Py_LOCAL(int) exec_statement(PyFrameObject *,
 			  PyObject *, PyObject *, PyObject *);
 Py_LOCAL(void) set_exc_info(PyThreadState *, PyObject *, PyObject *, PyObject *);
 Py_LOCAL(void) reset_exc_info(PyThreadState *);
 Py_LOCAL(void) format_exc_check_arg(PyObject *, char *, PyObject *);
-Py_LOCAL(PyObject *)string_concatenate(PyObject *, PyObject *,
+Py_LOCAL(PyObject *) string_concatenate(PyObject *, PyObject *,
 				    PyFrameObject *, unsigned char *);
 
 #define NAME_ERROR_MSG \
@@ -476,7 +484,7 @@ enum why_code {
 		WHY_YIELD =	0x0040	/* 'yield' operator */
 };
 
-static enum why_code do_raise(PyObject *, PyObject *, PyObject *);
+Py_LOCAL(enum why_code) do_raise(PyObject *, PyObject *, PyObject *);
 Py_LOCAL(int) unpack_iterable(PyObject *, int, PyObject **);
 
 /* for manipulating the thread switch and periodic "stuff" - used to be
@@ -2971,7 +2979,7 @@ reset_exc_info(PyThreadState *tstate)
 
 /* Logic for the raise statement (too complicated for inlining).
    This *consumes* a reference count to each of its arguments. */
-static enum why_code
+Py_LOCAL(enum why_code)
 do_raise(PyObject *type, PyObject *value, PyObject *tb)
 {
 	if (type == NULL) {
