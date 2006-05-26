@@ -4,7 +4,7 @@ class DictCreation(Test):
 
     version = 0.3
     operations = 5*(5 + 5)
-    rounds = 600*24
+    rounds = 60000
 
     def test(self):
 
@@ -79,7 +79,7 @@ class DictWithStringKeys(Test):
 
     version = 0.1
     operations = 5*(6 + 6)
-    rounds = 2000*30
+    rounds = 200000
 
     def test(self):
 
@@ -168,7 +168,7 @@ class DictWithFloatKeys(Test):
 
     version = 0.1
     operations = 5*(6 + 6)
-    rounds = 20000
+    rounds = 200000
 
     def test(self):
 
@@ -257,7 +257,7 @@ class DictWithIntegerKeys(Test):
 
     version = 0.1
     operations = 5*(6 + 6)
-    rounds = 2000*19
+    rounds = 200000
 
     def test(self):
 
@@ -346,7 +346,7 @@ class SimpleDictManipulation(Test):
 
     version = 0.3
     operations = 5*(6 + 6 + 6 + 6)
-    rounds = 500*44
+    rounds = 50000
 
     def test(self):
 

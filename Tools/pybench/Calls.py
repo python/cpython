@@ -4,7 +4,7 @@ class PythonFunctionCalls(Test):
 
     version = 0.3
     operations = 5*(1+4+4+2)
-    rounds = 600*22
+    rounds = 60000
 
     def test(self):
 
@@ -113,7 +113,7 @@ class BuiltinFunctionCalls(Test):
 
     version = 0.4
     operations = 5*(2+5+5+5)
-    rounds = 300*24
+    rounds = 30000
 
     def test(self):
 
@@ -234,7 +234,7 @@ class PythonMethodCalls(Test):
 
     version = 0.3
     operations = 5*(6 + 5 + 4)
-    rounds = 200*27
+    rounds = 20000
 
     def test(self):
 
@@ -376,7 +376,7 @@ class Recursion(Test):
 
     version = 0.3
     operations = 5
-    rounds = 500*21
+    rounds = 50000
 
     def test(self):
 

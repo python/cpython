@@ -4,7 +4,7 @@ class TupleSlicing(Test):
 
     version = 0.31
     operations = 3 * 25 * 10 * 7
-    rounds = 100
+    rounds = 400
 
     def test(self):
 
@@ -272,7 +272,7 @@ class SmallTuples(Test):
 
     version = 0.3
     operations = 5*(1 + 3 + 6 + 2)
-    rounds = 800*16
+    rounds = 80000
 
     def test(self):
 

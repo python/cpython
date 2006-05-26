@@ -4,7 +4,7 @@ class IfThenElse(Test):
 
     version = 0.31
     operations = 30*3 # hard to say...
-    rounds = 1500*27
+    rounds = 150000
 
     def test(self):
 
@@ -471,7 +471,7 @@ class NestedForLoops(Test):
 
     version = 0.3
     operations = 1000*10*5
-    rounds = 100
+    rounds = 150
 
     def test(self):
 
@@ -496,7 +496,7 @@ class ForLoops(Test):
 
     version = 0.1
     operations = 5 * 5
-    rounds = 80*25
+    rounds = 8000
 
     def test(self):
 

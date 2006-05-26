@@ -4,7 +4,7 @@ class TryRaiseExcept(Test):
 
     version = 0.1
     operations = 2 + 3
-    rounds = 600*25
+    rounds = 60000
 
     def test(self):
 
@@ -44,7 +44,7 @@ class TryExcept(Test):
 
     version = 0.1
     operations = 15 * 10
-    rounds = 2000*16
+    rounds = 200000
 
     def test(self):
 

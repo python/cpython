@@ -4,7 +4,7 @@ class CreateInstances(Test):
 
     version = 0.2
     operations = 3 + 7 + 4
-    rounds = 600*17
+    rounds = 60000
 
     def test(self):
 
