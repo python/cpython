@@ -297,6 +297,8 @@ class CommonTest(unittest.TestCase):
         self.checkequal(['aaaa'], 'aaaa', 'split', 'aab')
         self.checkequal([''], '', 'split', 'aaa')
         self.checkequal(['aa'], 'aa', 'split', 'aaa')
+        self.checkequal(['A', 'bobb'], 'Abbobbbobb', 'split', 'bbobb')
+        self.checkequal(['A', 'B', ''], 'AbbobbBbbobb', 'split', 'bbobb')
 
         self.checkequal(['a']*20, ('aBLAH'*20)[:-4], 'split', 'BLAH')
         self.checkequal(['a']*20, ('aBLAH'*20)[:-4], 'split', 'BLAH', 19)
