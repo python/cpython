@@ -4,7 +4,7 @@ class SimpleIntegerArithmetic(Test):
 
     version = 0.3
     operations = 5 * (3 + 5 + 5 + 3 + 3 + 3)
-    rounds = 1200*21
+    rounds = 120000
 
     def test(self):
 
@@ -159,7 +159,7 @@ class SimpleFloatArithmetic(Test):
 
     version = 0.3
     operations = 5 * (3 + 5 + 5 + 3 + 3 + 3)
-    rounds = 1000*30
+    rounds = 100000
 
     def test(self):
 
@@ -314,7 +314,7 @@ class SimpleIntFloatArithmetic(Test):
 
     version = 0.3
     operations = 5 * (3 + 5 + 5 + 3 + 3 + 3)
-    rounds = 1200*30
+    rounds = 120000
 
     def test(self):
 
@@ -470,7 +470,7 @@ class SimpleLongArithmetic(Test):
 
     version = 0.3
     operations = 5 * (3 + 5 + 5 + 3 + 3 + 3)
-    rounds = 300*32
+    rounds = 30000
 
     def test(self):
 
@@ -625,7 +625,7 @@ class SimpleComplexArithmetic(Test):
 
     version = 0.3
     operations = 5 * (3 + 5 + 5 + 3 + 3 + 3)
-    rounds = 400*27
+    rounds = 40000
 
     def test(self):
 

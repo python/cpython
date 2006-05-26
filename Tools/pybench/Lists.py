@@ -4,7 +4,7 @@ class SimpleListManipulation(Test):
 
     version = 0.3
     operations = 5* (6 + 6 + 6)
-    rounds = 600*45
+    rounds = 60000
 
     def test(self):
 
@@ -132,7 +132,7 @@ class ListSlicing(Test):
 
     version = 0.4
     operations = 25*(3+1+2+1)
-    rounds = 4*45
+    rounds = 400
 
     def test(self):
 
@@ -169,7 +169,7 @@ class SmallLists(Test):
 
     version = 0.3
     operations = 5*(1+ 6 + 6 + 3 + 1)
-    rounds = 600*15
+    rounds = 60000
 
     def test(self):
 

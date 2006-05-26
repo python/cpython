@@ -35,7 +35,7 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE !
 """
 
 # Version number
-__version__ = '1.4'
+__version__ = '1.3'
 
 #
 # NOTE: Use xrange for all test loops unless you want to face

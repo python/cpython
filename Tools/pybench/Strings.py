@@ -5,7 +5,7 @@ class ConcatStrings(Test):
 
     version = 0.1
     operations = 10 * 5
-    rounds = 6000
+    rounds = 60000
 
     def test(self):
 
@@ -87,7 +87,7 @@ class CompareStrings(Test):
 
     version = 0.2
     operations = 10 * 5
-    rounds = 2000*22
+    rounds = 200000
 
     def test(self):
 
@@ -169,7 +169,7 @@ class CompareInternedStrings(Test):
 
     version = 0.1
     operations = 10 * 5
-    rounds = 2000*28
+    rounds = 200000
 
     def test(self):
 
@@ -251,7 +251,7 @@ class CreateStringsWithConcat(Test):
 
     version = 0.1
     operations = 10 * 5
-    rounds = 800*32
+    rounds = 80000
 
     def test(self):
 
@@ -326,7 +326,7 @@ class StringSlicing(Test):
 
     version = 0.1
     operations = 5 * 7
-    rounds = 1000*15
+    rounds = 100000
 
     def test(self):
 
@@ -389,7 +389,7 @@ if hasattr('', 'lower'):
 
         version = 0.1
         operations = 3 * (5 + 4 + 2 + 1)
-        rounds = 14000
+        rounds = 70000
 
         def test(self):
 
@@ -462,7 +462,7 @@ if hasattr('', 'lower'):
 
         version = 0.1
         operations = 10 * 7
-        rounds = 800*24
+        rounds = 80000
 
         def test(self):
 

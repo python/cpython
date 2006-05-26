@@ -17,7 +17,6 @@ Number_of_rounds = 10
 Warp_factor = 20
 
 # Import tests
-#from Empty import *
 from Arithmetic import *
 from Calls import *
 from Constructs import *
