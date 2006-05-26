@@ -802,7 +802,7 @@ LOCAL(Py_ssize_t)
 fastsearch(const char* s, Py_ssize_t n, const char* p, Py_ssize_t m, int mode)
 {
 	long mask;
-	int skip, count = 0;
+	Py_ssize_t skip, count = 0;
 	Py_ssize_t i, j, mlast, w;
 
 	w = n - m;
