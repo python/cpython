@@ -591,10 +591,10 @@ def buildPython():
     version = getVersion()
 
     print "Running configure..."
-    runCommand("%s -C --enable-framework --enable-universalsdk=%s LDFLAGS='-g -L'%s/libraries/usr/local/lib OPT='-g -O3 -I'%s/libraries/usr/local/include 2>&1"%(
+    runCommand("%s -C --enable-framework --enable-universalsdk=%s LDFLAGS='-g -L%s/libraries/usr/local/lib' OPT='-g -O3 -I%s/libraries/usr/local/include' 2>&1"%(
         shellQuote(os.path.join(SRCDIR, 'configure')),
-        shellQuote(SDKPATH), shellQuote(WORKDIR),
-        shellQuote(WORKDIR)))
+        shellQuote(SDKPATH), shellQuote(WORKDIR)[1:-1], 
+        shellQuote(WORKDIR)[1:-1]))
 
     print "Running make"
     runCommand("make")
@@ -839,6 +839,7 @@ def buildInstaller():
 
     writePlist(pl, os.path.join(pkgroot, 'Resources', 'Description.plist'))
     for fn in os.listdir('resources'):
+        if fn == '.svn': continue
         if fn.endswith('.jpg'):
             shutil.copy(os.path.join('resources', fn), os.path.join(rsrcDir, fn))
         else:

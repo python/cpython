@@ -3,12 +3,3 @@ This folder contains examples of Python usage and useful scripts and tools.
 You should be aware that these are not Macintosh-specific but are shared
 among Python on all platforms, so there are some that only run on Windows
 or Unix or another platform, and/or make little sense on a Macintosh.
-
-Some examples can be run from within the PythonIDE, but many will require
-that you start them from the command line or with PythonLauncher. In the
-latter case, you can supply any needed command line arguments by holding
-the "alt" key while dragging the script to PythonLauncher, or while
-double-clicking the script if PythonLauncher is set as the default application
-to open Python scripts with. See "Changing the application that opens a file"
-in Mac Help for information on making PythonLauncher the default application.
-

@@ -7,7 +7,7 @@ from idlelib.PyShell import main
 
 # Change the current directory the user's home directory, that way we'll get
 # a more useful default location in the open/save dialogs.
-os.chdir(os.expanduser('~'))
+os.chdir(os.path.expanduser('~/Documents'))
 
 
 # Make sure sys.executable points to the python interpreter inside the

@@ -38,7 +38,7 @@ IDLE.app:  \
 		$(srcdir)/../Icons/IDLE.icns $(srcdir)/idlemain.py \
 		$(srcdir)/../Icons/PythonSource.icns \
 		$(srcdir)/../Icons/PythonCompiled.icns
-	rm -fr PythonLauncher.app
+	rm -fr IDLE.app
 	$(RUNSHARED) $(BUILDPYTHON) $(BUNDLEBULDER) \
 		--builddir=. \
 		--name=IDLE \
