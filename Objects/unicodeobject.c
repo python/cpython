@@ -6357,13 +6357,8 @@ the separator itself, and the part after it.  If the separator is not\n\
 found, returns S and two empty strings.");
 
 static PyObject*
-unicode_partition(PyUnicodeObject *self, PyObject *args)
+unicode_partition(PyUnicodeObject *self, PyObject *separator)
 {
-    PyObject *separator;
-
-    if (!PyArg_ParseTuple(args, "O:partition", &separator))
-        return NULL;
-
     return PyUnicode_Partition((PyObject *)self, separator);
 }
 
@@ -6620,7 +6615,7 @@ static PyMethodDef unicode_methods[] = {
     {"count", (PyCFunction) unicode_count, METH_VARARGS, count__doc__},
     {"expandtabs", (PyCFunction) unicode_expandtabs, METH_VARARGS, expandtabs__doc__},
     {"find", (PyCFunction) unicode_find, METH_VARARGS, find__doc__},
-    {"partition", (PyCFunction) unicode_partition, METH_VARARGS, partition__doc__},
+    {"partition", (PyCFunction) unicode_partition, METH_O, partition__doc__},
     {"index", (PyCFunction) unicode_index, METH_VARARGS, index__doc__},
     {"ljust", (PyCFunction) unicode_ljust, METH_VARARGS, ljust__doc__},
     {"lower", (PyCFunction) unicode_lower, METH_NOARGS, lower__doc__},

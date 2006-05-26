@@ -1606,15 +1606,12 @@ the separator itself, and the part after it.  If the separator is not\n\
 found, returns S and two empty strings.");
 
 static PyObject *
-string_partition(PyStringObject *self, PyObject *args)
+string_partition(PyStringObject *self, PyObject *sep_obj)
 {
 	Py_ssize_t len = PyString_GET_SIZE(self), sep_len, pos;
 	const char *str = PyString_AS_STRING(self), *sep;
-	PyObject *sep_obj;
 	PyObject * out;
 
-	if (!PyArg_ParseTuple(args, "O:partition", &sep_obj))
-		return NULL;
 	if (PyString_Check(sep_obj)) {
 		sep = PyString_AS_STRING(sep_obj);
 		sep_len = PyString_GET_SIZE(sep_obj);
@@ -3969,8 +3966,7 @@ string_methods[] = {
 	{"count", (PyCFunction)string_count, METH_VARARGS, count__doc__},
 	{"endswith", (PyCFunction)string_endswith, METH_VARARGS,
 	 endswith__doc__},
-	{"partition", (PyCFunction)string_partition, METH_VARARGS,
-	 partition__doc__},
+	{"partition", (PyCFunction)string_partition, METH_O, partition__doc__},
 	{"find", (PyCFunction)string_find, METH_VARARGS, find__doc__},
 	{"index", (PyCFunction)string_index, METH_VARARGS, index__doc__},
 	{"lstrip", (PyCFunction)string_lstrip, METH_VARARGS, lstrip__doc__},
