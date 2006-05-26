@@ -687,46 +687,6 @@ class Pickler:
                 write(SETITEM)
             # else tmp is empty, and we're done
 
-    def save_inst(self, obj):
-        cls = obj.__class__
-
-        memo  = self.memo
-        write = self.write
-        save  = self.save
-
-        if hasattr(obj, '__getinitargs__'):
-            args = obj.__getinitargs__()
-            len(args) # XXX Assert it's a sequence
-            _keep_alive(args, memo)
-        else:
-            args = ()
-
-        write(MARK)
-
-        if self.bin:
-            save(cls)
-            for arg in args:
-                save(arg)
-            write(OBJ)
-        else:
-            for arg in args:
-                save(arg)
-            write(INST + cls.__module__ + '\n' + cls.__name__ + '\n')
-
-        self.memoize(obj)
-
-        try:
-            getstate = obj.__getstate__
-        except AttributeError:
-            stuff = obj.__dict__
-        else:
-            stuff = getstate()
-            _keep_alive(stuff, memo)
-        save(stuff)
-        write(BUILD)
-
-    dispatch[InstanceType] = save_inst
-
     def save_global(self, obj, name=None, pack=struct.pack):
         write = self.write
         memo = self.memo
