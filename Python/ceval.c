@@ -30,7 +30,7 @@ typedef unsigned long long uint64;
 
 #define READ_TIMESTAMP(var) ppc_getcounter(&var)
 
-static void
+Py_LOCAL(void)
 ppc_getcounter(uint64 *v)
 {
 	register unsigned long tbu, tb, tbu2;
@@ -83,44 +83,44 @@ typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
 #ifdef WITH_TSC
-static PyObject *call_function(PyObject ***, int, uint64*, uint64*);
+Py_LOCAL(PyObject *)call_function(PyObject ***, int, uint64*, uint64*);
 #else
-static PyObject *call_function(PyObject ***, int);
+Py_LOCAL(PyObject *)call_function(PyObject ***, int);
 #endif
-static PyObject *fast_function(PyObject *, PyObject ***, int, int, int);
-static PyObject *do_call(PyObject *, PyObject ***, int, int);
-static PyObject *ext_do_call(PyObject *, PyObject ***, int, int, int);
-static PyObject *update_keyword_args(PyObject *, int, PyObject ***,PyObject *);
-static PyObject *update_star_args(int, int, PyObject *, PyObject ***);
-static PyObject *load_args(PyObject ***, int);
+Py_LOCAL(PyObject *)fast_function(PyObject *, PyObject ***, int, int, int);
+Py_LOCAL(PyObject *)do_call(PyObject *, PyObject ***, int, int);
+Py_LOCAL(PyObject *)ext_do_call(PyObject *, PyObject ***, int, int, int);
+Py_LOCAL(PyObject *)update_keyword_args(PyObject *, int, PyObject ***,PyObject *);
+Py_LOCAL(PyObject *)update_star_args(int, int, PyObject *, PyObject ***);
+Py_LOCAL(PyObject *)load_args(PyObject ***, int);
 #define CALL_FLAG_VAR 1
 #define CALL_FLAG_KW 2
 
 #ifdef LLTRACE
-static int lltrace;
-static int prtrace(PyObject *, char *);
+Py_LOCAL(int) lltrace;
+Py_LOCAL(int) prtrace(PyObject *, char *);
 #endif
-static int call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
+Py_LOCAL(int) call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
 		      int, PyObject *);
-static void call_trace_protected(Py_tracefunc, PyObject *,
+Py_LOCAL(void) call_trace_protected(Py_tracefunc, PyObject *,
 				 PyFrameObject *, int, PyObject *);
-static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
-static int maybe_call_line_trace(Py_tracefunc, PyObject *,
+Py_LOCAL(void) call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
+Py_LOCAL(int) maybe_call_line_trace(Py_tracefunc, PyObject *,
 				  PyFrameObject *, int *, int *, int *);
 
-static PyObject *apply_slice(PyObject *, PyObject *, PyObject *);
-static int assign_slice(PyObject *, PyObject *,
+Py_LOCAL(PyObject *)apply_slice(PyObject *, PyObject *, PyObject *);
+Py_LOCAL(int) assign_slice(PyObject *, PyObject *,
 			PyObject *, PyObject *);
-static PyObject *cmp_outcome(int, PyObject *, PyObject *);
-static PyObject *import_from(PyObject *, PyObject *);
-static int import_all_from(PyObject *, PyObject *);
-static PyObject *build_class(PyObject *, PyObject *, PyObject *);
-static int exec_statement(PyFrameObject *,
+Py_LOCAL(PyObject *)cmp_outcome(int, PyObject *, PyObject *);
+Py_LOCAL(PyObject *)import_from(PyObject *, PyObject *);
+Py_LOCAL(int) import_all_from(PyObject *, PyObject *);
+Py_LOCAL(PyObject *)build_class(PyObject *, PyObject *, PyObject *);
+Py_LOCAL(int) exec_statement(PyFrameObject *,
 			  PyObject *, PyObject *, PyObject *);
-static void set_exc_info(PyThreadState *, PyObject *, PyObject *, PyObject *);
-static void reset_exc_info(PyThreadState *);
-static void format_exc_check_arg(PyObject *, char *, PyObject *);
-static PyObject *string_concatenate(PyObject *, PyObject *,
+Py_LOCAL(void) set_exc_info(PyThreadState *, PyObject *, PyObject *, PyObject *);
+Py_LOCAL(void) reset_exc_info(PyThreadState *);
+Py_LOCAL(void) format_exc_check_arg(PyObject *, char *, PyObject *);
+Py_LOCAL(PyObject *)string_concatenate(PyObject *, PyObject *,
 				    PyFrameObject *, unsigned char *);
 
 #define NAME_ERROR_MSG \
@@ -477,7 +477,7 @@ enum why_code {
 };
 
 static enum why_code do_raise(PyObject *, PyObject *, PyObject *);
-static int unpack_iterable(PyObject *, int, PyObject **);
+Py_LOCAL(int) unpack_iterable(PyObject *, int, PyObject **);
 
 /* for manipulating the thread switch and periodic "stuff" - used to be
    per thread, now just a pair o' globals */
@@ -2888,7 +2888,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 
 */
 
-static void
+Py_LOCAL(void)
 set_exc_info(PyThreadState *tstate,
 	     PyObject *type, PyObject *value, PyObject *tb)
 {
@@ -2933,7 +2933,7 @@ set_exc_info(PyThreadState *tstate,
 	PySys_SetObject("exc_traceback", tb);
 }
 
-static void
+Py_LOCAL(void)
 reset_exc_info(PyThreadState *tstate)
 {
 	PyFrameObject *frame;
@@ -3080,7 +3080,7 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 /* Iterate v argcnt times and store the results on the stack (via decreasing
    sp).  Return 1 for success, 0 if error. */
 
-static int
+Py_LOCAL(int)
 unpack_iterable(PyObject *v, int argcnt, PyObject **sp)
 {
 	int i = 0;
@@ -3127,7 +3127,7 @@ Error:
 
 
 #ifdef LLTRACE
-static int
+Py_LOCAL(int)
 prtrace(PyObject *v, char *str)
 {
 	printf("%s ", str);
@@ -3138,7 +3138,7 @@ prtrace(PyObject *v, char *str)
 }
 #endif
 
-static void
+Py_LOCAL(void)
 call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
 {
 	PyObject *type, *value, *traceback, *arg;
@@ -3164,7 +3164,7 @@ call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
 	}
 }
 
-static void
+Py_LOCAL(void)
 call_trace_protected(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
 		     int what, PyObject *arg)
 {
@@ -3181,7 +3181,7 @@ call_trace_protected(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
 	}
 }
 
-static int
+Py_LOCAL(int)
 call_trace(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
 	   int what, PyObject *arg)
 {
@@ -3216,7 +3216,7 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
 	return result;
 }
 
-static int
+Py_LOCAL(int)
 maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
 		      PyFrameObject *frame, int *instr_lb, int *instr_ub,
 		      int *instr_prev)
@@ -3444,7 +3444,7 @@ PyEval_GetFuncDesc(PyObject *func)
 	}
 }
 
-static void
+Py_LOCAL(void)
 err_args(PyObject *func, int flags, int nargs)
 {
 	if (flags & METH_NOARGS)
@@ -3491,7 +3491,7 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
 	x = call; \
 	}
 
-static PyObject *
+Py_LOCAL(PyObject *)
 call_function(PyObject ***pp_stack, int oparg
 #ifdef WITH_TSC
 		, uint64* pintr0, uint64* pintr1
@@ -3582,7 +3582,7 @@ call_function(PyObject ***pp_stack, int oparg
    done before evaluating the frame.
 */
 
-static PyObject *
+Py_LOCAL(PyObject *)
 fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 {
 	PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
@@ -3635,7 +3635,7 @@ fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 				 PyFunction_GET_CLOSURE(func));
 }
 
-static PyObject *
+Py_LOCAL(PyObject *)
 update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack,
                     PyObject *func)
 {
@@ -3675,7 +3675,7 @@ update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack,
 	return kwdict;
 }
 
-static PyObject *
+Py_LOCAL(PyObject *)
 update_star_args(int nstack, int nstar, PyObject *stararg,
 		 PyObject ***pp_stack)
 {
@@ -3700,7 +3700,7 @@ update_star_args(int nstack, int nstar, PyObject *stararg,
 	return callargs;
 }
 
-static PyObject *
+Py_LOCAL(PyObject *)
 load_args(PyObject ***pp_stack, int na)
 {
 	PyObject *args = PyTuple_New(na);
@@ -3715,7 +3715,7 @@ load_args(PyObject ***pp_stack, int na)
 	return args;
 }
 
-static PyObject *
+Py_LOCAL(PyObject *)
 do_call(PyObject *func, PyObject ***pp_stack, int na, int nk)
 {
 	PyObject *callargs = NULL;
@@ -3751,7 +3751,7 @@ do_call(PyObject *func, PyObject ***pp_stack, int na, int nk)
 	return result;
 }
 
-static PyObject *
+Py_LOCAL(PyObject *)
 ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 {
 	int nstar = 0;
@@ -3863,7 +3863,7 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
                      PyType_HasFeature((x)->ob_type, Py_TPFLAGS_HAVE_INDEX) \
 		     && (x)->ob_type->tp_as_number->nb_index))
 
-static PyObject *
+Py_LOCAL(PyObject *)
 apply_slice(PyObject *u, PyObject *v, PyObject *w) /* return u[v:w] */
 {
 	PyTypeObject *tp = u->ob_type;
@@ -3889,7 +3889,7 @@ apply_slice(PyObject *u, PyObject *v, PyObject *w) /* return u[v:w] */
 	}
 }
 
-static int
+Py_LOCAL(int)
 assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x)
 	/* u[v:w] = x */
 {
@@ -3923,7 +3923,7 @@ assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x)
 	}
 }
 
-static PyObject *
+Py_LOCAL(PyObject *)
 cmp_outcome(int op, register PyObject *v, register PyObject *w)
 {
 	int res = 0;
@@ -3956,7 +3956,7 @@ cmp_outcome(int op, register PyObject *v, register PyObject *w)
 	return v;
 }
 
-static PyObject *
+Py_LOCAL(PyObject *)
 import_from(PyObject *v, PyObject *name)
 {
 	PyObject *x;
@@ -3970,7 +3970,7 @@ import_from(PyObject *v, PyObject *name)
 	return x;
 }
 
-static int
+Py_LOCAL(int)
 import_all_from(PyObject *locals, PyObject *v)
 {
 	PyObject *all = PyObject_GetAttrString(v, "__all__");
@@ -4027,7 +4027,7 @@ import_all_from(PyObject *locals, PyObject *v)
 	return err;
 }
 
-static PyObject *
+Py_LOCAL(PyObject *)
 build_class(PyObject *methods, PyObject *bases, PyObject *name)
 {
 	PyObject *metaclass = NULL, *result, *base;
@@ -4079,7 +4079,7 @@ build_class(PyObject *methods, PyObject *bases, PyObject *name)
 	return result;
 }
 
-static int
+Py_LOCAL(int)
 exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 	       PyObject *locals)
 {
@@ -4175,7 +4175,7 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 	return 0;
 }
 
-static void
+Py_LOCAL(void)
 format_exc_check_arg(PyObject *exc, char *format_str, PyObject *obj)
 {
 	char *obj_str;
@@ -4190,7 +4190,7 @@ format_exc_check_arg(PyObject *exc, char *format_str, PyObject *obj)
 	PyErr_Format(exc, format_str, obj_str);
 }
 
-static PyObject *
+Py_LOCAL(PyObject *)
 string_concatenate(PyObject *v, PyObject *w,
 		   PyFrameObject *f, unsigned char *next_instr)
 {
@@ -4265,7 +4265,7 @@ string_concatenate(PyObject *v, PyObject *w,
 
 #ifdef DYNAMIC_EXECUTION_PROFILE
 
-static PyObject *
+Py_LOCAL(PyObject *)
 getarray(long a[256])
 {
 	int i;
