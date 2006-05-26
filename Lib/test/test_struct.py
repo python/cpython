@@ -323,7 +323,7 @@ class IntTester:
 
         else:
             # x is out of range -- verify pack realizes that.
-            if code in self.BUGGY_RANGE_CHECK:
+            if not PY_STRUCT_RANGE_CHECKING and code in self.BUGGY_RANGE_CHECK:
                 if verbose:
                     print "Skipping buggy range check for code", code
             else:
