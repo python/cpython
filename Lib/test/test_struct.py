@@ -10,6 +10,8 @@ del sys
 verify((struct.pack('=i', 1)[0] == chr(0)) == ISBIGENDIAN,
        "bigendian determination appears wrong")
 
+PY_STRUCT_RANGE_CHECKING = 1
+
 def string_reverse(s):
     chars = list(s)
     chars.reverse()
@@ -266,7 +268,7 @@ class IntTester:
 
         else:
             # x is out of range -- verify pack realizes that.
-            if code in self.BUGGY_RANGE_CHECK:
+            if not PY_STRUCT_RANGE_CHECKING and code in self.BUGGY_RANGE_CHECK:
                 if verbose:
                     print "Skipping buggy range check for code", code
             else:
@@ -442,6 +444,7 @@ def test_705836():
 test_705836()
 
 def test_1229380():
+    import sys
     for endian in ('', '>', '<'):
         for cls in (int, long):
             for fmt in ('B', 'H', 'I', 'L'):
@@ -453,8 +456,7 @@ def test_1229380():
         any_err(struct.pack, endian + 'I', sys.maxint * 4L)
         any_err(struct.pack, endian + 'L', sys.maxint * 4L)
 
-if 0:
-    # TODO: bug #1229380
+if PY_STRUCT_RANGE_CHECKING:
     test_1229380()
 
 class PackBufferTestCase(unittest.TestCase):
