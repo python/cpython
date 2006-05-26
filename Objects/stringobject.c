@@ -772,8 +772,11 @@ PyString_AsStringAndSize(register PyObject *obj,
 #ifdef USE_FAST
 
 #define STRINGLIB_CHAR char
+#define STRINGLIB_NEW PyString_FromStringAndSize
+#define STRINGLIB_EMPTY nullstring
 
 #include "stringlib/fastsearch.h"
+#include "stringlib/partition.h"
 
 #endif
 
@@ -1541,9 +1544,8 @@ found, returns S and two empty strings.");
 static PyObject *
 string_partition(PyStringObject *self, PyObject *sep_obj)
 {
-	Py_ssize_t len = PyString_GET_SIZE(self), sep_len, pos;
+	Py_ssize_t str_len = PyString_GET_SIZE(self), sep_len;
 	const char *str = PyString_AS_STRING(self), *sep;
-	PyObject * out;
 
 	if (PyString_Check(sep_obj)) {
 		sep = PyString_AS_STRING(sep_obj);
@@ -1556,38 +1558,7 @@ string_partition(PyStringObject *self, PyObject *sep_obj)
 	else if (PyObject_AsCharBuffer(sep_obj, &sep, &sep_len))
 		return NULL;
 
-	if (sep_len == 0) {
-		PyErr_SetString(PyExc_ValueError, "empty separator");
-		return NULL;
-	}
-
-	out = PyTuple_New(3);
-	if (!out)
-		return NULL;
-
-	pos = fastsearch(str, len, sep, sep_len, FAST_SEARCH);
-	if (pos < 0) {
-		Py_INCREF(self);
-		PyTuple_SET_ITEM(out, 0, (PyObject*) self);
-		Py_INCREF(nullstring);
-		PyTuple_SET_ITEM(out, 1, (PyObject*) nullstring);
-		Py_INCREF(nullstring);
-		PyTuple_SET_ITEM(out, 2, (PyObject*) nullstring);
-	} else {
-		PyObject* obj;
-		PyTuple_SET_ITEM(out, 0, PyString_FromStringAndSize(str, pos));
-		Py_INCREF(sep_obj);
-		PyTuple_SET_ITEM(out, 1, sep_obj);
-		pos += sep_len;
-		obj = PyString_FromStringAndSize(str + pos, len - pos);
-		PyTuple_SET_ITEM(out, 2, obj);
-		if (PyErr_Occurred()) {
-			Py_DECREF(out);
-			return NULL;
-		}
-	}
-
-	return out;
+	return partition((PyObject*)self, str, str_len, sep_obj, sep, sep_len);
 }
 
 Py_LOCAL(PyObject *)

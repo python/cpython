@@ -3856,7 +3856,13 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
 
 #define STRINGLIB_CHAR Py_UNICODE
 
+#define STRINGLIB_NEW PyUnicode_FromUnicode
+
+#define STRINGLIB_EMPTY unicode_empty
+
 #include "stringlib/fastsearch.h"
+#include "stringlib/partition.h"
+
 
 Py_LOCAL(Py_ssize_t) count(PyUnicodeObject *self,
                            Py_ssize_t start,
@@ -6197,59 +6203,26 @@ PyUnicode_Partition(PyObject *str_in, PyObject *sep_in)
 {
     PyObject* str_obj;
     PyObject* sep_obj;
-    Py_UNICODE *str, *sep;
-    Py_ssize_t len, sep_len, pos;
     PyObject* out;
-    
+
     str_obj = PyUnicode_FromObject(str_in);
     if (!str_obj)
 	return NULL;
     sep_obj = PyUnicode_FromObject(sep_in);
-    if (!sep_obj)
-        goto error;
-
-    str = PyUnicode_AS_UNICODE(str_obj);
-    len = PyUnicode_GET_SIZE(str_obj);
-
-    sep = PyUnicode_AS_UNICODE(sep_obj);
-    sep_len = PyUnicode_GET_SIZE(sep_obj);
-
-    if (sep_len == 0) {
-        PyErr_SetString(PyExc_ValueError, "empty separator");
-        goto error;
+    if (!sep_obj) {
+        Py_DECREF(str_obj);
+        return NULL;
     }
 
-    out = PyTuple_New(3);
-    if (!out)
-        goto error;
+    out = partition(
+        str_obj, PyUnicode_AS_UNICODE(str_obj), PyUnicode_GET_SIZE(str_obj),
+        sep_obj, PyUnicode_AS_UNICODE(sep_obj), PyUnicode_GET_SIZE(sep_obj)
+        );
 
-    pos = fastsearch(str, len, sep, sep_len, FAST_SEARCH);
-    if (pos < 0) {
-        Py_INCREF(str_obj);
-        PyTuple_SET_ITEM(out, 0, (PyObject*) str_obj);
-        Py_INCREF(unicode_empty);
-        PyTuple_SET_ITEM(out, 1, (PyObject*) unicode_empty);
-        Py_INCREF(unicode_empty);
-        PyTuple_SET_ITEM(out, 2, (PyObject*) unicode_empty);
-    } else {
-        PyObject* obj;
-        PyTuple_SET_ITEM(out, 0, PyUnicode_FromUnicode(str, pos));
-        Py_INCREF(sep_obj);
-        PyTuple_SET_ITEM(out, 1, sep_obj);
-        obj = PyUnicode_FromUnicode(str + sep_len + pos, len - sep_len - pos);
-        PyTuple_SET_ITEM(out, 2, obj);
-        if (PyErr_Occurred()) {
-            Py_DECREF(out);
-            goto error;
-        }
-    }
+    Py_DECREF(sep_obj);
+    Py_DECREF(str_obj);
 
     return out;
-
-error:
-    Py_XDECREF(sep_obj);
-    Py_DECREF(str_obj);
-    return NULL;
 }
 
 PyDoc_STRVAR(partition__doc__,
