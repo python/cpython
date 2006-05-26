@@ -4,7 +4,7 @@ class CompareIntegers(Test):
 
     version = 0.1
     operations = 30 * 5
-    rounds = 120000
+    rounds = 1200*21
 
     def test(self):
 
@@ -200,7 +200,7 @@ class CompareFloats(Test):
 
     version = 0.1
     operations = 30 * 5
-    rounds = 60000
+    rounds = 600*27
 
     def test(self):
 
@@ -396,7 +396,7 @@ class CompareFloatsIntegers(Test):
 
     version = 0.1
     operations = 30 * 5
-    rounds = 60000
+    rounds = 600*16
 
     def test(self):
 
@@ -592,7 +592,7 @@ class CompareLongs(Test):
 
     version = 0.1
     operations = 30 * 5
-    rounds = 60000
+    rounds = 600*24
 
     def test(self):
 
