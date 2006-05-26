@@ -104,7 +104,10 @@ gettimeout() -- return timeout or None\n\
 listen(n) -- start listening for incoming connections\n\
 makefile([mode, [bufsize]]) -- return a file object for the socket [*]\n\
 recv(buflen[, flags]) -- receive data\n\
-recvfrom(buflen[, flags]) -- receive data and sender's address\n\
+recv_buf(buffer[, nbytes[, flags]]) -- receive data (into a buffer)\n\
+recvfrom(buflen[, flags]) -- receive data and sender\'s address\n\
+recvfrom_buf(buffer[, nbytes, [, flags])\n\
+  -- receive data and sender\'s address (into a buffer)\n\
 sendall(data[, flags]) -- send all data\n\
 send(data[, flags]) -- send data, may not send all of it\n\
 sendto(data[, flags], addr) -- send data to a given address\n\
@@ -205,7 +208,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
    functions are declared correctly if compiling with
    MIPSPro 7.x in ANSI C mode (default) */
 
-/* XXX Using _SGIAPI is the wrong thing, 
+/* XXX Using _SGIAPI is the wrong thing,
    but I don't know what the right thing is. */
 #undef _SGIAPI /* to avoid warning */
 #define _SGIAPI 1
@@ -223,8 +226,8 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #include <netdb.h>
 #endif
 
-/* Irix 6.5 fails to define this variable at all. This is needed 
-   for both GCC and SGI's compiler. I'd say that the SGI headers 
+/* Irix 6.5 fails to define this variable at all. This is needed
+   for both GCC and SGI's compiler. I'd say that the SGI headers
    are just busted. Same thing for Solaris. */
 #if (defined(__sgi) || defined(sun)) && !defined(INET_ADDRSTRLEN)
 #define INET_ADDRSTRLEN 16
@@ -1194,10 +1197,10 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 				args->ob_type->tp_name);
 			return 0;
 		}
-		if (!PyArg_ParseTuple(args, "eti:getsockaddrarg", 
+		if (!PyArg_ParseTuple(args, "eti:getsockaddrarg",
 				      "idna", &host, &port))
 			return 0;
-                result = setipaddr(host, (struct sockaddr *)addr, 
+                result = setipaddr(host, (struct sockaddr *)addr,
                                    sizeof(*addr),  AF_INET);
                 PyMem_Free(host);
                 if (result < 0)
@@ -1225,12 +1228,12 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 				args->ob_type->tp_name);
 			return 0;
 		}
-		if (!PyArg_ParseTuple(args, "eti|ii", 
+		if (!PyArg_ParseTuple(args, "eti|ii",
 				      "idna", &host, &port, &flowinfo,
 				      &scope_id)) {
 			return 0;
 		}
-                result = setipaddr(host, (struct sockaddr *)addr,  
+                result = setipaddr(host, (struct sockaddr *)addr,
                                    sizeof(*addr), AF_INET6);
                 PyMem_Free(host);
                 if (result < 0)
@@ -1839,7 +1842,7 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 					int res_size = sizeof res;
 					/* It must be in the exception set */
 					assert(FD_ISSET(s->sock_fd, &fds_exc));
-					if (0 == getsockopt(s->sock_fd, SOL_SOCKET, SO_ERROR, 
+					if (0 == getsockopt(s->sock_fd, SOL_SOCKET, SO_ERROR,
 					                    (char *)&res, &res_size))
 						/* getsockopt also clears WSAGetLastError,
 						   so reset it back. */
@@ -2135,95 +2138,126 @@ The mode and buffersize arguments are as for the built-in open() function.");
 
 #endif /* NO_DUP */
 
+/*
+ * This is the guts of the recv() and recv_buf() methods, which reads into a
+ * char buffer.  If you have any inc/def ref to do to the objects that contain
+ * the buffer, do it in the caller.  This function returns the number of bytes
+ * succesfully read.  If there was an error, it returns -1.  Note that it is
+ * also possible that we return a number of bytes smaller than the request
+ * bytes.
+ */
+static int
+sock_recv_guts(PySocketSockObject *s, char* cbuf, int len, int flags)
+{
+        int timeout, outlen = 0;
+#ifdef __VMS
+	int remaining, nread;
+	char *read_buf;
+#endif
+
+	if (!IS_SELECTABLE(s)) {
+		select_error();
+		return -1;
+	}
+
+#ifndef __VMS
+	Py_BEGIN_ALLOW_THREADS
+	timeout = internal_select(s, 0);
+	if (!timeout)
+		outlen = recv(s->sock_fd, cbuf, len, flags);
+	Py_END_ALLOW_THREADS
+
+	if (timeout) {
+		PyErr_SetString(socket_timeout, "timed out");
+		return -1;
+	}
+	if (outlen < 0) {
+		/* Note: the call to errorhandler() ALWAYS indirectly returned
+		   NULL, so ignore its return value */
+		s->errorhandler();
+		return -1;
+	}
+#else
+	read_buf = cbuf;
+	remaining = len;
+	while (remaining != 0) {
+		unsigned int segment;
+
+		segment = remaining /SEGMENT_SIZE;
+		if (segment != 0) {
+			segment = SEGMENT_SIZE;
+		}
+		else {
+			segment = remaining;
+		}
+
+		Py_BEGIN_ALLOW_THREADS
+		timeout = internal_select(s, 0);
+		if (!timeout)
+			nread = recv(s->sock_fd, read_buf, segment, flags);
+		Py_END_ALLOW_THREADS
+
+		if (timeout) {
+			PyErr_SetString(socket_timeout, "timed out");
+			return -1;
+		}
+		if (nread < 0) {
+			s->errorhandler();
+			return -1;
+		}
+		if (nread != remaining) {
+			read_buf += nread;
+			break;
+		}
+
+		remaining -= segment;
+		read_buf += segment;
+	}
+	outlen = read_buf - cbuf;
+#endif /* !__VMS */
+
+	return outlen;
+}
+
 
 /* s.recv(nbytes [,flags]) method */
 
 static PyObject *
 sock_recv(PySocketSockObject *s, PyObject *args)
 {
-	int len, n = 0, flags = 0, timeout;
+	int recvlen, flags = 0, outlen;
 	PyObject *buf;
-#ifdef __VMS
-	int read_length;
-	char *read_buf;
-#endif
 
-	if (!PyArg_ParseTuple(args, "i|i:recv", &len, &flags))
+	if (!PyArg_ParseTuple(args, "i|i:recv", &recvlen, &flags))
 		return NULL;
 
-	if (len < 0) {
+	if (recvlen < 0) {
 		PyErr_SetString(PyExc_ValueError,
 				"negative buffersize in recv");
 		return NULL;
 	}
 
-	buf = PyString_FromStringAndSize((char *) 0, len);
+	/* Allocate a new string. */
+	buf = PyString_FromStringAndSize((char *) 0, recvlen);
 	if (buf == NULL)
 		return NULL;
 
-	if (!IS_SELECTABLE(s))
-		return select_error();
-
-#ifndef __VMS
-	Py_BEGIN_ALLOW_THREADS
-	timeout = internal_select(s, 0);
-	if (!timeout)
-		n = recv(s->sock_fd, PyString_AS_STRING(buf), len, flags);
-	Py_END_ALLOW_THREADS
-
-	if (timeout) {
+	/* Call the guts */
+	outlen = sock_recv_guts(s, PyString_AsString(buf), recvlen, flags);
+	if (outlen < 0) {
+		/* An error occured, release the string and return an
+		   error. */
 		Py_DECREF(buf);
-		PyErr_SetString(socket_timeout, "timed out");
 		return NULL;
 	}
-	if (n < 0) {
-		Py_DECREF(buf);
-		return s->errorhandler();
-	}
-	if (n != len)
-		_PyString_Resize(&buf, n);
-#else
-	read_buf = PyString_AsString(buf);
-	read_length = len;
-	while (read_length != 0) {
-		unsigned int segment;
-
-		segment = read_length /SEGMENT_SIZE;
-		if (segment != 0) {
-			segment = SEGMENT_SIZE;
-		}
-		else {
-			segment = read_length;
-		}
-
-		Py_BEGIN_ALLOW_THREADS
-		timeout = internal_select(s, 0);
-		if (!timeout)
-			n = recv(s->sock_fd, read_buf, segment, flags);
-		Py_END_ALLOW_THREADS
-
-		if (timeout) {
-			Py_DECREF(buf);
-			PyErr_SetString(socket_timeout, "timed out");
+	if (outlen != recvlen) {
+		/* We did not read as many bytes as we anticipated, resize the
+		   string if possible and be succesful. */
+		if (_PyString_Resize(&buf, outlen) < 0)
+			/* Oopsy, not so succesful after all. */
 			return NULL;
-		}
-		if (n < 0) {
-			Py_DECREF(buf);
-			return s->errorhandler();
-		}
-		if (n != read_length) {
-			read_buf += n;
-			break;
-		}
+	}
 
-		read_length -= segment;
-		read_buf += segment;
-	}
-	if (_PyString_Resize(&buf, (read_buf - PyString_AsString(buf))) < 0)
-	{
-	    return NULL;
-	}
-#endif /* !__VMS */
 	return buf;
 }
 
@@ -2236,29 +2270,90 @@ at least one byte is available or until the remote end is closed.  When\n\
 the remote end is closed and all data is read, return the empty string.");
 
 
-/* s.recvfrom(nbytes [,flags]) method */
+/* s.recv_buf(buffer, [nbytes [,flags]]) method */
 
-static PyObject *
-sock_recvfrom(PySocketSockObject *s, PyObject *args)
+static PyObject*
+sock_recv_buf(PySocketSockObject *s, PyObject *args, PyObject *kwds)
+{
+	static char *kwlist[] = {"buffer", "nbytes", "flags", 0};
+
+	int recvlen = 0, flags = 0, readlen;
+	char *buf;
+	int buflen;
+
+	/* Get the buffer's memory */
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "s#|ii:recv", kwlist,
+					 &buf, &buflen, &recvlen, &flags))
+		return NULL;
+	assert(buf != 0 && buflen > 0);
+
+	if (recvlen < 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"negative buffersize in recv");
+		return NULL;
+	}
+	if (recvlen == 0) {
+            /* If nbytes was not specified, use the buffer's length */
+            recvlen = buflen;
+	}
+
+	/* Check if the buffer is large enough */
+	if (buflen < recvlen) {
+		PyErr_SetString(PyExc_ValueError,
+				"buffer too small for requested bytes");
+		return NULL;
+	}
+
+	/* Call the guts */
+	readlen = sock_recv_guts(s, buf, recvlen, flags);
+	if (readlen < 0) {
+		/* Return an error. */
+		return NULL;
+	}
+
+	/* Return the number of bytes read.  Note that we do not do anything
+	   special here in the case that readlen < recvlen. */
+	return PyInt_FromLong(readlen);
+}
+
+PyDoc_STRVAR(recv_buf_doc,
+"recv_buf(buffer, [nbytes[, flags]]) -> nbytes_read\n\
+\n\
+A version of recv() that stores its data into a buffer rather than creating \n\
+a new string.  Receive up to buffersize bytes from the socket.  If buffersize \n\
+is not specified (or 0), receive up to the size available in the given buffer.\n\
+\n\
+See recv() for documentation about the flags.");
+
+
+/*
+ * This is the guts of the recv() and recv_buf() methods, which reads into a
+ * char buffer.  If you have any inc/def ref to do to the objects that contain
+ * the buffer, do it in the caller.  This function returns the number of bytes
+ * succesfully read.  If there was an error, it returns -1.  Note that it is
+ * also possible that we return a number of bytes smaller than the request
+ * bytes.
+ *
+ * 'addr' is a return value for the address object.  Note that you must decref
+ * it yourself.
+ */
+static int
+sock_recvfrom_guts(PySocketSockObject *s, char* cbuf, int len, int flags,
+		   PyObject** addr)
 {
 	sock_addr_t addrbuf;
-	PyObject *buf = NULL;
-	PyObject *addr = NULL;
-	PyObject *ret = NULL;
-	int len, n = 0, flags = 0, timeout;
+	int n = 0, timeout;
 	socklen_t addrlen;
 
-	if (!PyArg_ParseTuple(args, "i|i:recvfrom", &len, &flags))
-		return NULL;
+	*addr = NULL;
 
 	if (!getsockaddrlen(s, &addrlen))
-		return NULL;
-	buf = PyString_FromStringAndSize((char *) 0, len);
-	if (buf == NULL)
-		return NULL;
+		return -1;
 
-	if (!IS_SELECTABLE(s))
-		return select_error();
+	if (!IS_SELECTABLE(s)) {
+		select_error();
+		return -1;
+	}
 
 	Py_BEGIN_ALLOW_THREADS
 	memset(&addrbuf, 0, addrlen);
@@ -2266,41 +2361,71 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
 	if (!timeout) {
 #ifndef MS_WINDOWS
 #if defined(PYOS_OS2) && !defined(PYCC_GCC)
-		n = recvfrom(s->sock_fd, PyString_AS_STRING(buf), len, flags,
+		n = recvfrom(s->sock_fd, cbuf, len, flags,
 			     (struct sockaddr *) &addrbuf, &addrlen);
 #else
-		n = recvfrom(s->sock_fd, PyString_AS_STRING(buf), len, flags,
+		n = recvfrom(s->sock_fd, cbuf, len, flags,
 			     (void *) &addrbuf, &addrlen);
 #endif
 #else
-		n = recvfrom(s->sock_fd, PyString_AS_STRING(buf), len, flags,
+		n = recvfrom(s->sock_fd, cbuf, len, flags,
 			     (struct sockaddr *) &addrbuf, &addrlen);
 #endif
 	}
 	Py_END_ALLOW_THREADS
 
 	if (timeout) {
-		Py_DECREF(buf);
 		PyErr_SetString(socket_timeout, "timed out");
-		return NULL;
+		return -1;
 	}
 	if (n < 0) {
-		Py_DECREF(buf);
-		return s->errorhandler();
+		s->errorhandler();
+                return -1;
 	}
 
-	if (n != len && _PyString_Resize(&buf, n) < 0)
+	if (!(*addr = makesockaddr(s->sock_fd, (struct sockaddr *) &addrbuf,
+				   addrlen, s->sock_proto)))
+		return -1;
+
+	return n;
+}
+
+/* s.recvfrom(nbytes [,flags]) method */
+
+static PyObject *
+sock_recvfrom(PySocketSockObject *s, PyObject *args)
+{
+	PyObject *buf = NULL;
+	PyObject *addr = NULL;
+	PyObject *ret = NULL;
+	int recvlen, outlen, flags = 0;
+
+	if (!PyArg_ParseTuple(args, "i|i:recvfrom", &recvlen, &flags))
 		return NULL;
 
-	if (!(addr = makesockaddr(s->sock_fd, (struct sockaddr *) &addrbuf,
-				  addrlen, s->sock_proto)))
+	buf = PyString_FromStringAndSize((char *) 0, recvlen);
+	if (buf == NULL)
+		return NULL;
+
+	outlen = sock_recvfrom_guts(s, PyString_AS_STRING(buf),
+				    recvlen, flags, &addr);
+	if (outlen < 0) {
 		goto finally;
+	}
+
+	if (outlen != recvlen) {
+		/* We did not read as many bytes as we anticipated, resize the
+		   string if possible and be succesful. */
+		if (_PyString_Resize(&buf, outlen) < 0)
+			/* Oopsy, not so succesful after all. */
+			goto finally;
+	}
 
 	ret = PyTuple_Pack(2, buf, addr);
 
 finally:
-	Py_XDECREF(addr);
 	Py_XDECREF(buf);
+	Py_XDECREF(addr);
 	return ret;
 }
 
@@ -2308,6 +2433,57 @@ PyDoc_STRVAR(recvfrom_doc,
 "recvfrom(buffersize[, flags]) -> (data, address info)\n\
 \n\
 Like recv(buffersize, flags) but also return the sender's address info.");
+
+
+/* s.recvfrom_buf(buffer[, nbytes [,flags]]) method */
+
+static PyObject *
+sock_recvfrom_buf(PySocketSockObject *s, PyObject *args, PyObject* kwds)
+{
+	static char *kwlist[] = {"buffer", "nbytes", "flags", 0};
+
+	int recvlen = 0, flags = 0, readlen;
+	char *buf;
+	int buflen;
+
+	PyObject *addr = NULL;
+	PyObject *ret = NULL;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "s#|ii:recvfrom", kwlist,
+					 &buf, &buflen, &recvlen, &flags))
+		return NULL;
+	assert(buf != 0 && buflen > 0);
+
+	if (recvlen < 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"negative buffersize in recv");
+		return NULL;
+	}
+	if (recvlen == 0) {
+            /* If nbytes was not specified, use the buffer's length */
+            recvlen = buflen;
+	}
+
+	readlen = sock_recvfrom_guts(s, buf, recvlen, flags, &addr);
+	if (readlen < 0) {
+		/* Return an error */
+		goto finally;
+	}
+
+	/* Return the number of bytes read and the address.  Note that we do
+	   not do anything special here in the case that readlen < recvlen. */
+	ret = PyTuple_Pack(2, PyInt_FromLong(readlen), addr);
+	
+finally:
+	Py_XDECREF(addr);
+	return ret;
+}
+
+PyDoc_STRVAR(recvfrom_buf_doc,
+"recvfrom_buf(buffer[, nbytes[, flags]]) -> (nbytes, address info)\n\
+\n\
+Like recv_buf(buffer[, nbytes[, flags]]) but also return the sender's address info.");
+
 
 /* s.send(data [,flags]) method */
 
@@ -2503,59 +2679,63 @@ of the socket (flag == SHUT_WR), or both ends (flag == SHUT_RDWR).");
 /* List of methods for socket objects */
 
 static PyMethodDef sock_methods[] = {
-	{"accept",	(PyCFunction)sock_accept, METH_NOARGS,
-			accept_doc},
-	{"bind",	(PyCFunction)sock_bind, METH_O,
-			bind_doc},
-	{"close",	(PyCFunction)sock_close, METH_NOARGS,
-			close_doc},
-	{"connect",	(PyCFunction)sock_connect, METH_O,
-			connect_doc},
-	{"connect_ex",	(PyCFunction)sock_connect_ex, METH_O,
-			connect_ex_doc},
+	{"accept",	  (PyCFunction)sock_accept, METH_NOARGS,
+			  accept_doc},
+	{"bind",	  (PyCFunction)sock_bind, METH_O,
+			  bind_doc},
+	{"close",	  (PyCFunction)sock_close, METH_NOARGS,
+			  close_doc},
+	{"connect",	  (PyCFunction)sock_connect, METH_O,
+			  connect_doc},
+	{"connect_ex",	  (PyCFunction)sock_connect_ex, METH_O,
+			  connect_ex_doc},
 #ifndef NO_DUP
-	{"dup",		(PyCFunction)sock_dup, METH_NOARGS,
-			dup_doc},
+	{"dup",		  (PyCFunction)sock_dup, METH_NOARGS,
+			  dup_doc},
 #endif
-	{"fileno",	(PyCFunction)sock_fileno, METH_NOARGS,
-			fileno_doc},
+	{"fileno",	  (PyCFunction)sock_fileno, METH_NOARGS,
+			  fileno_doc},
 #ifdef HAVE_GETPEERNAME
-	{"getpeername",	(PyCFunction)sock_getpeername,
-			METH_NOARGS, getpeername_doc},
+	{"getpeername",	  (PyCFunction)sock_getpeername,
+			  METH_NOARGS, getpeername_doc},
 #endif
-	{"getsockname",	(PyCFunction)sock_getsockname,
-			METH_NOARGS, getsockname_doc},
-	{"getsockopt",	(PyCFunction)sock_getsockopt, METH_VARARGS,
-			getsockopt_doc},
-	{"listen",	(PyCFunction)sock_listen, METH_O,
-			listen_doc},
+	{"getsockname",	  (PyCFunction)sock_getsockname,
+			  METH_NOARGS, getsockname_doc},
+	{"getsockopt",	  (PyCFunction)sock_getsockopt, METH_VARARGS,
+			  getsockopt_doc},
+	{"listen",	  (PyCFunction)sock_listen, METH_O,
+			  listen_doc},
 #ifndef NO_DUP
-	{"makefile",	(PyCFunction)sock_makefile, METH_VARARGS,
-			makefile_doc},
+	{"makefile",	  (PyCFunction)sock_makefile, METH_VARARGS,
+			  makefile_doc},
 #endif
-	{"recv",	(PyCFunction)sock_recv, METH_VARARGS,
-			recv_doc},
-	{"recvfrom",	(PyCFunction)sock_recvfrom, METH_VARARGS,
-			recvfrom_doc},
-	{"send",	(PyCFunction)sock_send, METH_VARARGS,
-			send_doc},
-	{"sendall",	(PyCFunction)sock_sendall, METH_VARARGS,
-			sendall_doc},
-	{"sendto",	(PyCFunction)sock_sendto, METH_VARARGS,
-			sendto_doc},
-	{"setblocking",	(PyCFunction)sock_setblocking, METH_O,
-			setblocking_doc},
-	{"settimeout", (PyCFunction)sock_settimeout, METH_O,
-			settimeout_doc},
-	{"gettimeout", (PyCFunction)sock_gettimeout, METH_NOARGS,
-			gettimeout_doc},
-	{"setsockopt",	(PyCFunction)sock_setsockopt, METH_VARARGS,
-			setsockopt_doc},
-	{"shutdown",	(PyCFunction)sock_shutdown, METH_O,
-			shutdown_doc},
+	{"recv",	  (PyCFunction)sock_recv, METH_VARARGS,
+			  recv_doc},
+	{"recv_buf",	  (PyCFunction)sock_recv_buf, METH_VARARGS | METH_KEYWORDS,
+			  recv_buf_doc},
+	{"recvfrom",	  (PyCFunction)sock_recvfrom, METH_VARARGS,
+			  recvfrom_doc},
+	{"recvfrom_buf",  (PyCFunction)sock_recvfrom_buf, METH_VARARGS | METH_KEYWORDS,
+			  recvfrom_buf_doc},
+	{"send",	  (PyCFunction)sock_send, METH_VARARGS,
+			  send_doc},
+	{"sendall",	  (PyCFunction)sock_sendall, METH_VARARGS,
+			  sendall_doc},
+	{"sendto",	  (PyCFunction)sock_sendto, METH_VARARGS,
+			  sendto_doc},
+	{"setblocking",	  (PyCFunction)sock_setblocking, METH_O,
+			  setblocking_doc},
+	{"settimeout",    (PyCFunction)sock_settimeout, METH_O,
+			  settimeout_doc},
+	{"gettimeout",    (PyCFunction)sock_gettimeout, METH_NOARGS,
+			  gettimeout_doc},
+	{"setsockopt",	  (PyCFunction)sock_setsockopt, METH_VARARGS,
+			  setsockopt_doc},
+	{"shutdown",	  (PyCFunction)sock_shutdown, METH_O,
+			  shutdown_doc},
 #ifdef RISCOS
-	{"sleeptaskw",	(PyCFunction)sock_sleeptaskw, METH_O,
-	 		sleeptaskw_doc},
+	{"sleeptaskw",	  (PyCFunction)sock_sleeptaskw, METH_O,
+	 		  sleeptaskw_doc},
 #endif
 	{NULL,			NULL}		/* sentinel */
 };
@@ -3401,7 +3581,7 @@ socket_inet_aton(PyObject *self, PyObject *args)
 	if (strcmp(ip_addr, "255.255.255.255") == 0) {
 		packed_addr = 0xFFFFFFFF;
 	} else {
-	
+
 		packed_addr = inet_addr(ip_addr);
 
 		if (packed_addr == INADDR_NONE) {	/* invalid address */
@@ -3476,7 +3656,7 @@ socket_inet_pton(PyObject *self, PyObject *args)
 				"can't use AF_INET6, IPv6 is disabled");
 		return NULL;
 	}
-#endif 
+#endif
 
 	retval = inet_pton(af, ip, packed);
 	if (retval < 0) {
@@ -3499,7 +3679,7 @@ socket_inet_pton(PyObject *self, PyObject *args)
 		return NULL;
 	}
 }
-	
+
 PyDoc_STRVAR(inet_ntop_doc,
 "inet_ntop(af, packed_ip) -> string formatted IP address\n\
 \n\
@@ -3517,7 +3697,7 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 #else
 	char ip[INET_ADDRSTRLEN + 1];
 #endif
-	
+
 	/* Guarantee NUL-termination for PyString_FromString() below */
 	memset((void *) &ip[0], '\0', sizeof(ip));
 
@@ -3595,7 +3775,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 	} else if (PyString_Check(hobj)) {
 		hptr = PyString_AsString(hobj);
 	} else {
-		PyErr_SetString(PyExc_TypeError, 
+		PyErr_SetString(PyExc_TypeError,
 				"getaddrinfo() argument 1 must be string or None");
 		return NULL;
 	}
