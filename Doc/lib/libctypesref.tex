@@ -1,9 +1,17 @@
 \subsection{ctypes reference\label{ctypes-reference}}
 
+ctypes defines a lot of C compatible datatypes, and also allows to
+define your own types.  Among other things, a ctypes type instance
+holds a memory block that contains C compatible data.
+
 \begin{funcdesc}{addressof}{obj}
+Returns the address of the memory buffer as integer.  \var{obj} must
+be an instance of a ctypes type.
 \end{funcdesc}
 
 \begin{funcdesc}{alignment}{obj_or_type}
+Returns the alignment requirements of a ctypes type.
+\var{obj_or_type} must be a ctypes type or an instance.
 \end{funcdesc}
 
 \begin{excclassdesc}{ArgumentError}{}
@@ -13,48 +21,80 @@
 \end{classdesc}
 
 \begin{funcdesc}{byref}{obj}
+Returns a light-weight pointer to \var{obj}, which must be an instance
+of a ctypes type.  The returned object can only be used as a foreign
+function call parameter.  It behaves similar to \code{pointer(obj)},
+but the construction is a lot faster.
 \end{funcdesc}
 
 \begin{classdesc}{c_byte}{\optional{value}}
+Represents a C \code{signed char} datatype, and interprets the value
+as small integer.  The constructor accepts an optional integer
+initializer; no overflow checking is done.
 \end{classdesc}
 
 \begin{classdesc}{c_char}{\optional{value}}
+Represents a C \code{char} datatype, and interprets the value as a
+single character.  The constructor accepts an optional string
+initializer, the length of the string must be exactly one character.
 \end{classdesc}
 
 \begin{classdesc}{c_char_p}{\optional{value}}
 \end{classdesc}
 
 \begin{classdesc}{c_double}{\optional{value}}
+Represents a C \code{double} datatype.  The constructor accepts an
+optional float initializer.
 \end{classdesc}
 
 \begin{classdesc}{c_float}{\optional{value}}
+Represents a C \code{double} datatype.  The constructor accepts an
+optional float initializer.
 \end{classdesc}
 
 \begin{classdesc}{c_int}{\optional{value}}
+Represents a C \code{signed int} datatype.  The constructor accepts an
+optional integer initializer; no overflow checking is done.  On
+platforms where \code{sizeof(int) == sizeof(long)} \var{c_int} is an
+alias to \var{c_long}.
 \end{classdesc}
 
 \begin{classdesc}{c_int16}{\optional{value}}
+Represents a C 16-bit \code{signed int} datatype.  Usually an alias
+for \var{c_short}.
 \end{classdesc}
 
 \begin{classdesc}{c_int32}{\optional{value}}
+Represents a C 32-bit \code{signed int} datatype.  Usually an alias
+for \code{c_int}.
 \end{classdesc}
 
 \begin{classdesc}{c_int64}{\optional{value}}
+Represents a C 64-bit \code{signed int} datatype.  Usually an alias
+for \code{c_longlong}.
 \end{classdesc}
 
 \begin{classdesc}{c_int8}{\optional{value}}
+Represents a C 8-bit \code{signed int} datatype.  Usually an alias for \code{c_byte}.
 \end{classdesc}
 
 \begin{classdesc}{c_long}{\optional{value}}
+Represents a C \code{signed long} datatype.  The constructor accepts
+an optional integer initializer; no overflow checking is done.
 \end{classdesc}
 
 \begin{classdesc}{c_longlong}{\optional{value}}
+Represents a C \code{signed long long} datatype.  The constructor
+accepts an optional integer initializer; no overflow checking is done.
 \end{classdesc}
 
 \begin{classdesc}{c_short}{\optional{value}}
+Represents a C \code{signed short} datatype.  The constructor accepts
+an optional integer initializer; no overflow checking is done.
 \end{classdesc}
 
 \begin{classdesc}{c_size_t}{\optional{value}}
+Represents a C \code{size_t} datatype.
 \end{classdesc}
 
 \begin{classdesc}{c_ubyte}{\optional{value}}
