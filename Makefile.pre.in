@@ -614,7 +614,7 @@ memtest:	all platform
 		$(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
 
 # Install everything
-install:	altinstall bininstall maninstall
+install:	@FRAMEWORKINSTALLFIRST@ altinstall bininstall maninstall @FRAMEWORKINSTALLLAST@
 
 # Install almost everything without disturbing previous versions
 altinstall:	altbininstall libinstall inclinstall libainstall \
@@ -899,8 +899,10 @@ sharedinstall:
 # subtargets install specific parts. Much of the actual work is offloaded to
 # the Makefile in Mac/OSX
 #
-frameworkinstall: frameworkinstallframework \
-	frameworkinstallapps frameworkinstallunixtools
+#
+# This target is here for backward compatiblity, previous versions of Python
+# hadn't integrated framework installation in the normal install process.
+frameworkinstall: install
 
 # On install, we re-make the framework
 # structure in the install location, /Library/Frameworks/ or the argument to
