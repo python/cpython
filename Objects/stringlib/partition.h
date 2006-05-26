@@ -3,8 +3,6 @@
 #ifndef STRINGLIB_PARTITION_H
 #define STRINGLIB_PARTITION_H
 
-#include "stringlib/fastsearch.h"
-
 Py_LOCAL(PyObject*)
 partition(PyObject* str_obj, const STRINGLIB_CHAR* str, Py_ssize_t str_len,
 	  PyObject* sep_obj, const STRINGLIB_CHAR* sep, Py_ssize_t sep_len)
