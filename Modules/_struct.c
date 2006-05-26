@@ -763,7 +763,7 @@ bp_uint(char *p, PyObject *v, const formatdef *f)
 		return -1;
 	i = f->size;
 #ifdef PY_STRUCT_RANGE_CHECKING
-	if (i != SIZEOF_LONG && x >= (1 << (i * 8)))
+	if (i != SIZEOF_LONG && x >= (1 << (((unsigned int)i) * 8)))
 		return _range_error(f->format, f->size, 1);
 #endif
 	do {
@@ -975,7 +975,7 @@ lp_uint(char *p, PyObject *v, const formatdef *f)
 		return -1;
 	i = f->size;
 #ifdef PY_STRUCT_RANGE_CHECKING
-	if (i != SIZEOF_LONG && x >= (1 << (i * 8)))
+	if (i != SIZEOF_LONG && x >= (1 << (((unsigned int)i) * 8)))
 		return _range_error(f->format, f->size, 1);
 #endif
 	do {
