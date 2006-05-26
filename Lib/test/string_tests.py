@@ -900,6 +900,21 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal('A', 'a', 'title')
         self.checkequal(True, 'a', 'islower')
 
+    def test_partition(self):
+
+        self.checkequal(('this', ' is ', 'the partition method'),
+            'this is the partition method', 'partition', ' is ')
+
+        # from raymond's original specification
+        S = 'http://www.python.org'
+        self.checkequal(('http', '://', 'www.python.org'), S, 'partition', '://')
+        self.checkequal(('http://www.python.org', '', ''), S, 'partition', '?')
+        self.checkequal(('', 'http://', 'www.python.org'), S, 'partition', 'http://')
+        self.checkequal(('http://www.python.', 'org', ''), S, 'partition', 'org')
+
+        self.checkraises(ValueError, S, 'partition', '')
+        self.checkraises(TypeError, S, 'partition', None)
+
 
 class MixinStrStringUserStringTest:
     # Additional tests for 8bit strings, i.e. str, UserString and

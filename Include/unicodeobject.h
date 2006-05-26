@@ -184,6 +184,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_GetMax PyUnicodeUCS2_GetMax
 # define PyUnicode_GetSize PyUnicodeUCS2_GetSize
 # define PyUnicode_Join PyUnicodeUCS2_Join
+# define PyUnicode_Partition PyUnicodeUCS2_Partition
 # define PyUnicode_Replace PyUnicodeUCS2_Replace
 # define PyUnicode_Resize PyUnicodeUCS2_Resize
 # define PyUnicode_SetDefaultEncoding PyUnicodeUCS2_SetDefaultEncoding
@@ -259,6 +260,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_GetMax PyUnicodeUCS4_GetMax
 # define PyUnicode_GetSize PyUnicodeUCS4_GetSize
 # define PyUnicode_Join PyUnicodeUCS4_Join
+# define PyUnicode_Partition PyUnicodeUCS4_Partition
 # define PyUnicode_Replace PyUnicodeUCS4_Replace
 # define PyUnicode_Resize PyUnicodeUCS4_Resize
 # define PyUnicode_SetDefaultEncoding PyUnicodeUCS4_SetDefaultEncoding
@@ -1016,6 +1018,13 @@ PyAPI_FUNC(PyObject*) PyUnicode_Split(
 PyAPI_FUNC(PyObject*) PyUnicode_Splitlines(
     PyObject *s,		/* String to split */
     int keepends		/* If true, line end markers are included */
+    );		
+
+/* Partition a string using a given separator. */
+
+PyAPI_FUNC(PyObject*) PyUnicode_Partition(
+    PyObject *s,		/* String to partition */
+    PyObject *sep		/* String separator */
     );		
 
 /* Split a string giving a list of Unicode strings.
