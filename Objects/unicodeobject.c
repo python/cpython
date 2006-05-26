@@ -3858,6 +3858,14 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
 
 #define STRINGLIB_NEW PyUnicode_FromUnicode
 
+Py_LOCAL(int)
+STRINGLIB_CMP(const Py_UNICODE* str, const Py_UNICODE* other, Py_ssize_t len)
+{
+    if (str[0] == other[0])
+        return 0;
+    return memcmp((void*) str, (void*) other, len * sizeof(Py_UNICODE));
+}
+
 #define STRINGLIB_EMPTY unicode_empty
 
 #include "stringlib/fastsearch.h"
@@ -6225,6 +6233,34 @@ PyUnicode_Partition(PyObject *str_in, PyObject *sep_in)
     return out;
 }
 
+
+PyObject *
+PyUnicode_RPartition(PyObject *str_in, PyObject *sep_in)
+{
+    PyObject* str_obj;
+    PyObject* sep_obj;
+    PyObject* out;
+
+    str_obj = PyUnicode_FromObject(str_in);
+    if (!str_obj)
+	return NULL;
+    sep_obj = PyUnicode_FromObject(sep_in);
+    if (!sep_obj) {
+        Py_DECREF(str_obj);
+        return NULL;
+    }
+
+    out = rpartition(
+        str_obj, PyUnicode_AS_UNICODE(str_obj), PyUnicode_GET_SIZE(str_obj),
+        sep_obj, PyUnicode_AS_UNICODE(sep_obj), PyUnicode_GET_SIZE(sep_obj)
+        );
+
+    Py_DECREF(sep_obj);
+    Py_DECREF(str_obj);
+
+    return out;
+}
+
 PyDoc_STRVAR(partition__doc__,
 "S.partition(sep) -> (head, sep, tail)\n\
 \n\
@@ -6236,6 +6272,19 @@ static PyObject*
 unicode_partition(PyUnicodeObject *self, PyObject *separator)
 {
     return PyUnicode_Partition((PyObject *)self, separator);
+}
+
+PyDoc_STRVAR(rpartition__doc__,
+"S.rpartition(sep) -> (head, sep, tail)\n\
+\n\
+Searches for the separator sep in S, starting at the end of S, and returns\n\
+the part before it, the separator itself, and the part after it.  If the\n\
+separator is not found, returns S and two empty strings.");
+
+static PyObject*
+unicode_rpartition(PyUnicodeObject *self, PyObject *separator)
+{
+    return PyUnicode_RPartition((PyObject *)self, separator);
 }
 
 PyObject *PyUnicode_RSplit(PyObject *s,
@@ -6502,6 +6551,7 @@ static PyMethodDef unicode_methods[] = {
     {"rindex", (PyCFunction) unicode_rindex, METH_VARARGS, rindex__doc__},
     {"rjust", (PyCFunction) unicode_rjust, METH_VARARGS, rjust__doc__},
     {"rstrip", (PyCFunction) unicode_rstrip, METH_VARARGS, rstrip__doc__},
+    {"rpartition", (PyCFunction) unicode_rpartition, METH_O, rpartition__doc__},
     {"splitlines", (PyCFunction) unicode_splitlines, METH_VARARGS, splitlines__doc__},
     {"strip", (PyCFunction) unicode_strip, METH_VARARGS, strip__doc__},
     {"swapcase", (PyCFunction) unicode_swapcase, METH_NOARGS, swapcase__doc__},

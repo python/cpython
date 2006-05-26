@@ -95,3 +95,10 @@ fastsearch(const STRINGLIB_CHAR* s, Py_ssize_t n,
 }
 
 #endif
+
+/*
+Local variables:
+c-basic-offset: 4
+indent-tabs-mode: nil
+End:
+*/

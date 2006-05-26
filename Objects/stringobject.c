@@ -768,7 +768,10 @@ PyString_AsStringAndSize(register PyObject *obj,
 /* stringlib components */
 
 #define STRINGLIB_CHAR char
+
 #define STRINGLIB_NEW PyString_FromStringAndSize
+#define STRINGLIB_CMP memcmp
+
 #define STRINGLIB_EMPTY nullstring
 
 #include "stringlib/fastsearch.h"
@@ -1524,6 +1527,37 @@ string_partition(PyStringObject *self, PyObject *sep_obj)
 		return NULL;
 
 	return partition(
+		(PyObject*) self,
+		PyString_AS_STRING(self), PyString_GET_SIZE(self),
+		sep_obj, sep, sep_len
+		);
+}
+
+PyDoc_STRVAR(rpartition__doc__,
+"S.rpartition(sep) -> (head, sep, tail)\n\
+\n\
+Searches for the separator sep in S, starting at the end of S, and returns\n\
+the part before it, the separator itself, and the part after it.  If the\n\
+separator is not found, returns S and two empty strings.");
+
+static PyObject *
+string_rpartition(PyStringObject *self, PyObject *sep_obj)
+{
+	const char *sep;
+	Py_ssize_t sep_len;
+
+	if (PyString_Check(sep_obj)) {
+		sep = PyString_AS_STRING(sep_obj);
+		sep_len = PyString_GET_SIZE(sep_obj);
+	}
+#ifdef Py_USING_UNICODE
+	else if (PyUnicode_Check(sep_obj))
+		return PyUnicode_Partition((PyObject *) self, sep_obj);
+#endif
+	else if (PyObject_AsCharBuffer(sep_obj, &sep, &sep_len))
+		return NULL;
+
+	return rpartition(
 		(PyObject*) self,
 		PyString_AS_STRING(self), PyString_GET_SIZE(self),
 		sep_obj, sep, sep_len
@@ -3810,6 +3844,8 @@ string_methods[] = {
 	{"rfind", (PyCFunction)string_rfind, METH_VARARGS, rfind__doc__},
 	{"rindex", (PyCFunction)string_rindex, METH_VARARGS, rindex__doc__},
 	{"rstrip", (PyCFunction)string_rstrip, METH_VARARGS, rstrip__doc__},
+	{"rpartition", (PyCFunction)string_rpartition, METH_O,
+	 rpartition__doc__},
 	{"startswith", (PyCFunction)string_startswith, METH_VARARGS,
 	 startswith__doc__},
 	{"strip", (PyCFunction)string_strip, METH_VARARGS, strip__doc__},
