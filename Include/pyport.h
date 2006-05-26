@@ -141,6 +141,10 @@ typedef Py_intptr_t	Py_ssize_t;
  * convention for functions that are local to a given module.  It also enables
  * inlining, where suitable.
  *
+ * If PY_LOCAL_AGGRESSIVE is defined before python.h is included, a more
+ * "aggressive" inlining is enabled.  This may lead to code bloat, and may
+ * slow things down for those reasons.  Use with care.
+ *
  * NOTE: You can only use this for functions that are entirely local to a
  * module; functions that are exported via method tables, callbacks, etc,
  * should keep using static.
@@ -149,6 +153,10 @@ typedef Py_intptr_t	Py_ssize_t;
 #undef USE_INLINE /* XXX - set via configure? */
 
 #if defined(_MSC_VER)
+#if defined(PY_LOCAL_AGGRESSIVE)
+/* enable more aggressive optimization for visual studio */
+#pragma optimize("agtw", on)
+#endif
 /* ignore warnings if the compiler decides not to inline a function */ 
 #pragma warning(disable: 4710)
 /* fastest possible local call under MSVC */
