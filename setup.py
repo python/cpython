@@ -317,6 +317,23 @@ class PyBuildExt(build_ext):
         if platform in ['osf1', 'unixware7', 'openunix8']:
             lib_dirs += ['/usr/ccs/lib']
 
+        if platform == 'darwin':
+            # This should work on any unixy platform ;-)
+            # If the user has bothered specifying additional -I and -L flags
+            # in OPT and LDFLAGS we might as well use them here.
+            #   NOTE: using shlex.split would technically be more correct, but
+            # also gives a bootstrap problem. Let's hope nobody uses directories
+            # with whitespace in the name to store libraries.
+            cflags, ldflags = sysconfig.get_config_vars(
+                    'CFLAGS', 'LDFLAGS')
+            for item in cflags.split():
+                if item.startswith('-I'):
+                    inc_dirs.append(item[2:])
+
+            for item in ldflags.split():
+                if item.startswith('-L'):
+                    lib_dirs.append(item[2:])
+
         # Check for MacOS X, which doesn't need libm.a at all
         math_libs = ['m']
         if platform in ['darwin', 'beos', 'mac']:
@@ -459,6 +476,16 @@ class PyBuildExt(build_ext):
             if find_file('readline/rlconf.h', inc_dirs, []) is None:
                 do_readline = False
         if do_readline:
+            if sys.platform == 'darwin':
+                # In every directory on the search path search for a dynamic
+                # library and then a static library, instead of first looking
+                # for dynamic libraries on the entiry path.
+                # This way a staticly linked custom readline gets picked up
+                # before the (broken) dynamic library in /usr/lib.
+                readline_extra_link_args = ('-Wl,-search_paths_first',)
+            else:
+                readline_extra_link_args = ()
+
             readline_libs = ['readline']
             if self.compiler.find_library_file(lib_dirs,
                                                  'ncursesw'):
@@ -474,6 +501,7 @@ class PyBuildExt(build_ext):
                 readline_libs.append('termcap')
             exts.append( Extension('readline', ['readline.c'],
                                    library_dirs=['/usr/lib/termcap'],
+                                   extra_link_args=readline_extra_link_args,
                                    libraries=readline_libs) )
         if platform not in ['mac']:
             # crypt module.
@@ -708,7 +736,11 @@ class PyBuildExt(build_ext):
         MIN_SQLITE_VERSION_NUMBER = (3, 0, 8)
         MIN_SQLITE_VERSION = ".".join([str(x)
                                     for x in MIN_SQLITE_VERSION_NUMBER])
-        for d in sqlite_inc_paths + inc_dirs:
+
+        # Scan the default include directories before the SQLite specific
+        # ones. This allows one to override the copy of sqlite on OSX,
+        # where /usr/include contains an old version of sqlite.
+        for d in inc_dirs + sqlite_inc_paths:
             f = os.path.join(d, "sqlite3.h")
             if os.path.exists(f):
                 if sqlite_setup_debug: print "sqlite: found %s"%f
@@ -759,12 +791,24 @@ class PyBuildExt(build_ext):
             else:
                 sqlite_defines.append(('MODULE_NAME', '\\"sqlite3\\"'))
 
+
+            if sys.platform == 'darwin':
+                # In every directory on the search path search for a dynamic
+                # library and then a static library, instead of first looking
+                # for dynamic libraries on the entiry path.
+                # This way a staticly linked custom sqlite gets picked up
+                # before the dynamic library in /usr/lib.
+                sqlite_extra_link_args = ('-Wl,-search_paths_first',)
+            else:
+                sqlite_extra_link_args = ()
+
             exts.append(Extension('_sqlite3', sqlite_srcs,
                                   define_macros=sqlite_defines,
                                   include_dirs=["Modules/_sqlite",
                                                 sqlite_incdir],
                                   library_dirs=sqlite_libdir,
                                   runtime_library_dirs=sqlite_libdir,
+                                  extra_link_args=sqlite_extra_link_args,
                                   libraries=["sqlite3",]))
 
         # Look for Berkeley db 1.85.   Note that it is built as a different
