@@ -24,7 +24,7 @@
 #pragma optimize("agtw", on)
 #endif
 
-#ifndef WITH_TSC 
+#ifndef WITH_TSC
 
 #define READ_TIMESTAMP(var)
 
@@ -49,7 +49,7 @@ ppc_getcounter(uint64 *v)
 	asm volatile ("mftbu %0" : "=r" (tbu2));
 	if (__builtin_expect(tbu != tbu2, 0)) goto loop;
 
-	/* The slightly peculiar way of writing the next lines is 
+	/* The slightly peculiar way of writing the next lines is
 	   compiled better by GCC than any other way I tried. */
 	((long*)(v))[0] = tbu;
 	((long*)(v))[1] = tb;
@@ -62,7 +62,7 @@ ppc_getcounter(uint64 *v)
 
 #endif
 
-void dump_tsc(int opcode, int ticked, uint64 inst0, uint64 inst1, 
+void dump_tsc(int opcode, int ticked, uint64 inst0, uint64 inst1,
 	      uint64 loop0, uint64 loop1, uint64 intr0, uint64 intr1)
 {
 	uint64 intr, inst, loop;
@@ -567,7 +567,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
    inst0 -- beginning of switch statement for opcode dispatch
    inst1 -- end of switch statement (may be skipped)
    loop0 -- the top of the mainloop
-   loop1 -- place where control returns again to top of mainloop 
+   loop1 -- place where control returns again to top of mainloop
             (may be skipped)
    intr1 -- beginning of long interruption
    intr2 -- end of long interruption
@@ -768,7 +768,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		why = WHY_EXCEPTION;
 		goto on_error;
 	}
-		
+
 	for (;;) {
 #ifdef WITH_TSC
 		if (inst1 == 0) {
@@ -2218,7 +2218,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			   re-raising the exception.  (But non-local gotos
 			   should still be resumed.)
 			*/
-			
+
 			x = TOP();
 			u = SECOND();
 			if (PyInt_Check(u) || u == Py_None) {
@@ -2581,7 +2581,12 @@ fast_yield:
 		}
 	}
 
-	reset_exc_info(tstate);
+	if (tstate->frame->f_exc_type != NULL)
+		reset_exc_info(tstate);
+	else {
+		assert(tstate->frame->f_exc_value == NULL);
+		assert(tstate->frame->f_exc_traceback == NULL);
+	}
 
 	/* pop frame */
     exit_eval_frame:
@@ -2846,6 +2851,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 - Once an exception is caught by an except clause, it is transferred
   from tstate->curexc_ZZZ to tstate->exc_ZZZ, from which sys.exc_info()
   can pick it up.  This is the primary task of set_exc_info().
+  XXX That can't be right:  set_exc_info() doesn't look at tstate->curexc_ZZZ.
 
 - Now let me explain the complicated dance with frame->f_exc_ZZZ.
 
@@ -2900,33 +2906,33 @@ Py_LOCAL(void)
 set_exc_info(PyThreadState *tstate,
 	     PyObject *type, PyObject *value, PyObject *tb)
 {
-	PyFrameObject *frame;
+	PyFrameObject *frame = tstate->frame;
 	PyObject *tmp_type, *tmp_value, *tmp_tb;
 
-	frame = tstate->frame;
+	assert(type != NULL);
+	assert(frame != NULL);
 	if (frame->f_exc_type == NULL) {
-		/* This frame didn't catch an exception before */
-		/* Save previous exception of this thread in this frame */
+		assert(frame->f_exc_value == NULL);
+		assert(frame->f_exc_traceback == NULL);
+		/* This frame didn't catch an exception before. */
+		/* Save previous exception of this thread in this frame. */
 		if (tstate->exc_type == NULL) {
+			/* XXX Why is this set to Py_None? */
 			Py_INCREF(Py_None);
 			tstate->exc_type = Py_None;
 		}
-		tmp_value = frame->f_exc_value;
-		tmp_tb = frame->f_exc_traceback;
-		Py_XINCREF(tstate->exc_type);
+		Py_INCREF(tstate->exc_type);
 		Py_XINCREF(tstate->exc_value);
 		Py_XINCREF(tstate->exc_traceback);
 		frame->f_exc_type = tstate->exc_type;
 		frame->f_exc_value = tstate->exc_value;
 		frame->f_exc_traceback = tstate->exc_traceback;
-		Py_XDECREF(tmp_value);
-		Py_XDECREF(tmp_tb);
 	}
-	/* Set new exception for this thread */
+	/* Set new exception for this thread. */
 	tmp_type = tstate->exc_type;
 	tmp_value = tstate->exc_value;
 	tmp_tb = tstate->exc_traceback;
-	Py_XINCREF(type);
+	Py_INCREF(type);
 	Py_XINCREF(value);
 	Py_XINCREF(tb);
 	tstate->exc_type = type;
@@ -2946,33 +2952,42 @@ reset_exc_info(PyThreadState *tstate)
 {
 	PyFrameObject *frame;
 	PyObject *tmp_type, *tmp_value, *tmp_tb;
+
+	/* It's a precondition that the thread state's frame caught an
+	 * exception -- verify in a debug build.
+	 */
+	assert(tstate != NULL);
 	frame = tstate->frame;
-	if (frame->f_exc_type != NULL) {
-		/* This frame caught an exception */
-		tmp_type = tstate->exc_type;
-		tmp_value = tstate->exc_value;
-		tmp_tb = tstate->exc_traceback;
-		Py_INCREF(frame->f_exc_type);
-		Py_XINCREF(frame->f_exc_value);
-		Py_XINCREF(frame->f_exc_traceback);
-		tstate->exc_type = frame->f_exc_type;
-		tstate->exc_value = frame->f_exc_value;
-		tstate->exc_traceback = frame->f_exc_traceback;
-		Py_XDECREF(tmp_type);
-		Py_XDECREF(tmp_value);
-		Py_XDECREF(tmp_tb);
-		/* For b/w compatibility */
-		PySys_SetObject("exc_type", frame->f_exc_type);
-		PySys_SetObject("exc_value", frame->f_exc_value);
-		PySys_SetObject("exc_traceback", frame->f_exc_traceback);
-	}
+	assert(frame != NULL);
+	assert(frame->f_exc_type != NULL);
+
+	/* Copy the frame's exception info back to the thread state. */
+	tmp_type = tstate->exc_type;
+	tmp_value = tstate->exc_value;
+	tmp_tb = tstate->exc_traceback;
+	Py_INCREF(frame->f_exc_type);
+	Py_XINCREF(frame->f_exc_value);
+	Py_XINCREF(frame->f_exc_traceback);
+	tstate->exc_type = frame->f_exc_type;
+	tstate->exc_value = frame->f_exc_value;
+	tstate->exc_traceback = frame->f_exc_traceback;
+	Py_XDECREF(tmp_type);
+	Py_XDECREF(tmp_value);
+	Py_XDECREF(tmp_tb);
+
+	/* For b/w compatibility */
+	PySys_SetObject("exc_type", frame->f_exc_type);
+	PySys_SetObject("exc_value", frame->f_exc_value);
+	PySys_SetObject("exc_traceback", frame->f_exc_traceback);
+
+	/* Clear the frame's exception info. */
 	tmp_type = frame->f_exc_type;
 	tmp_value = frame->f_exc_value;
 	tmp_tb = frame->f_exc_traceback;
 	frame->f_exc_type = NULL;
 	frame->f_exc_value = NULL;
 	frame->f_exc_traceback = NULL;
-	Py_XDECREF(tmp_type);
+	Py_DECREF(tmp_type);
 	Py_XDECREF(tmp_value);
 	Py_XDECREF(tmp_tb);
 }
@@ -3846,7 +3861,7 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 		Py_ssize_t x;
 		if (PyInt_Check(v)) {
 			x = PyInt_AsSsize_t(v);
-		} 
+		}
 		else if (v->ob_type->tp_as_number &&
 			 PyType_HasFeature(v->ob_type, Py_TPFLAGS_HAVE_INDEX)
 			 && v->ob_type->tp_as_number->nb_index) {
@@ -4064,7 +4079,7 @@ build_class(PyObject *methods, PyObject *bases, PyObject *name)
 	result = PyObject_CallFunctionObjArgs(metaclass, name, bases, methods, NULL);
 	Py_DECREF(metaclass);
 	if (result == NULL && PyErr_ExceptionMatches(PyExc_TypeError)) {
-		/* A type error here likely means that the user passed 
+		/* A type error here likely means that the user passed
 		   in a base that was not a class (such the random module
 		   instead of the random.random type).  Help them out with
 		   by augmenting the error message with more information.*/
@@ -4204,7 +4219,7 @@ string_concatenate(PyObject *v, PyObject *w,
 {
 	/* This function implements 'variable += expr' when both arguments
 	   are strings. */
-	
+
 	if (v->ob_refcnt == 2) {
 		/* In the common case, there are 2 references to the value
 		 * stored in 'variable' when the += is performed: one on the
