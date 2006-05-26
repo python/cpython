@@ -21,7 +21,7 @@
 " Python: 4 spaces
 " C: tab (8 spaces)
 au BufRead,BufNewFile *.py,*pyw set shiftwidth=4
-au BufRead,BufNewFile *.c,*.h set shiftwidth=8
+au BufRead,BufNewFile *.c,*.h set shiftwidth=4
 
 " Number of spaces that a pre-existing tab is equal to.
 " For the amount of space used for a new tab use shiftwidth.
