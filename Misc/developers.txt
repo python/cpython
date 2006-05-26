@@ -39,6 +39,7 @@ Permissions History
   Richard Jones
   Runar Petursson
   Steve Holden
+  Richard M. Tew
 
 - Steven Bethard was given SVN access on 27 Apr 2006 by DJG, for PEP
   update access.
