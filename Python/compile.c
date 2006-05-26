@@ -334,7 +334,7 @@ list2dict(PyObject *list)
 			return NULL;
 		}
 		k = PyList_GET_ITEM(list, i);
-		k = Py_BuildValue("(OO)", k, k->ob_type);
+		k = PyTuple_Pack(2, k, k->ob_type);
 		if (k == NULL || PyDict_SetItem(dict, k, v) < 0) {
 			Py_XDECREF(k);
 			Py_DECREF(v);
@@ -377,7 +377,7 @@ dictbytype(PyObject *src, int scope_type, int flag, int offset)
 				return NULL;
 			}
 			i++;
-			tuple = Py_BuildValue("(OO)", k, k->ob_type);
+			tuple = PyTuple_Pack(2, k, k->ob_type);
 			if (!tuple || PyDict_SetItem(dest, tuple, item) < 0) {
 				Py_DECREF(item);
 				Py_DECREF(dest);
@@ -1841,7 +1841,7 @@ static int
 compiler_lookup_arg(PyObject *dict, PyObject *name)
 {
     PyObject *k, *v;
-    k = Py_BuildValue("(OO)", name, name->ob_type);
+    k = PyTuple_Pack(2, name, name->ob_type);
     if (k == NULL)
 	return -1;
     v = PyDict_GetItem(dict, k);

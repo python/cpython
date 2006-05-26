@@ -107,7 +107,7 @@ ast_error_finish(const char *filename)
 	Py_DECREF(errstr);
 	return;
     }
-    value = Py_BuildValue("(OO)", errstr, tmp);
+    value = PyTuple_Pack(2, errstr, tmp);
     Py_DECREF(errstr);
     Py_DECREF(tmp);
     if (!value)
