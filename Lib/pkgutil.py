@@ -340,11 +340,13 @@ def get_importer(path_item):
             importer = None
         sys.path_importer_cache.setdefault(path_item, importer)
 
-    if importer is None:
+    # The boolean values are used for caching valid and invalid
+    # file paths for the built-in import machinery
+    if importer in (None, True, False):
         try:
             importer = ImpImporter(path_item)
         except ImportError:
-            pass
+            importer = None
     return importer
 
 

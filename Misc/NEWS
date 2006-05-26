@@ -12,6 +12,10 @@ What's New in Python 2.5 alpha 3?
 Core and builtins
 -----------------
 
+- Patch #921466: sys.path_importer_cache is now used to cache valid and
+  invalid file paths for the built-in import machinery which leads to
+  fewer open calls on startup.
+
 - Patch #1442927: ``long(str, base)`` is now up to 6x faster for non-power-
   of-2 bases.  The largest speedup is for inputs with about 1000 decimal
   digits.  Conversion from non-power-of-2 bases remains quadratic-time in
