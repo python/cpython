@@ -3884,7 +3884,7 @@ LOCAL(Py_ssize_t)
 fastsearch(Py_UNICODE* s, Py_ssize_t n, Py_UNICODE* p, Py_ssize_t m, int mode)
 {
     long mask;
-    int skip, count = 0;
+    Py_ssize_t skip, count = 0;
     Py_ssize_t i, j, mlast, w;
 
     w = n - m;
