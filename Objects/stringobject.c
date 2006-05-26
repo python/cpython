@@ -1460,7 +1460,7 @@ static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
 	else							\
 		Py_DECREF(str);
 
-#define SPLIT_ADD(data, left, right)				\
+#define SPLIT_ADD(data, left, right) {				\
 	str = PyString_FromStringAndSize((data) + (left),	\
 					 (right) - (left));	\
 	if (str == NULL)					\
@@ -1475,10 +1475,15 @@ static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
 		else						\
 			Py_DECREF(str);				\
 	}							\
-	count++;
+	count++; }
 
 /* Always force the list to the expected size. */
 #define FIX_PREALLOC_SIZE(list) ((PyListObject *)list)->ob_size = count;		
+
+#define SKIP_SPACE(s, i, len)    { while (i<len &&  isspace(Py_CHARMASK(s[i]))) i++; }
+#define SKIP_NONSPACE(s, i, len) { while (i<len && !isspace(Py_CHARMASK(s[i]))) i++; }
+#define RSKIP_SPACE(s, i)        { while (i>=0  &&  isspace(Py_CHARMASK(s[i]))) i--; }
+#define RSKIP_NONSPACE(s, i)     { while (i>=0  && !isspace(Py_CHARMASK(s[i]))) i--; }
 
 static PyObject *
 split_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
@@ -1490,23 +1495,22 @@ split_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 	if (list == NULL)
 		return NULL;
 
-	for (i = j = 0; i < len; ) {
-		while (i < len && isspace(Py_CHARMASK(s[i])))
-			i++;
-		j = i;
-		while (i < len && !isspace(Py_CHARMASK(s[i])))
-			i++;
-		if (j < i) {
-			if (maxsplit-- <= 0)
-				break;
-			SPLIT_ADD(s, j, i);
-			while (i < len && isspace(Py_CHARMASK(s[i])))
-				i++;
-			j = i;
-		}
+	i = j = 0;
+
+	while (maxsplit-- > 0) {
+		SKIP_SPACE(s, i, len);
+		if (i==len) break;
+		j = i; i++;
+		SKIP_NONSPACE(s, i, len);
+		SPLIT_ADD(s, j, i);
 	}
-	if (j < len) {
-		SPLIT_ADD(s, j, len);
+
+	if (i < len) {
+		/* Only occurs when maxsplit was reached */
+		/* Skip any remaining whitespace and copy to end of string */
+		SKIP_SPACE(s, i, len);
+		if (i != len)
+			SPLIT_ADD(s, i, len);
 	}
 	FIX_PREALLOC_SIZE(list);
 	return list;
@@ -1680,23 +1684,22 @@ rsplit_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 	if (list == NULL)
 		return NULL;
 
-	for (i = j = len - 1; i >= 0; ) {
-		while (i >= 0 && isspace(Py_CHARMASK(s[i])))
-			i--;
-		j = i;
-		while (i >= 0 && !isspace(Py_CHARMASK(s[i])))
-			i--;
-		if (j > i) {
-			if (maxsplit-- <= 0)
-				break;
-			SPLIT_ADD(s, i + 1, j + 1);
-			while (i >= 0 && isspace(Py_CHARMASK(s[i])))
-				i--;
-			j = i;
-		}
+	i = j = len-1;
+	
+	while (maxsplit-- > 0) {
+		RSKIP_SPACE(s, i);
+		if (i<0) break;
+		j = i; i--;
+		RSKIP_NONSPACE(s, i);
+		SPLIT_ADD(s, i + 1, j + 1);
 	}
-	if (j >= 0) {
-		SPLIT_ADD(s, 0, j + 1);
+	if (i >= 0) {
+		/* Only occurs when maxsplit was reached */
+		/* Skip any remaining whitespace and copy to beginning of string */
+		RSKIP_SPACE(s, i);
+		if (i >= 0)
+			SPLIT_ADD(s, 0, i + 1);
+
 	}
 	FIX_PREALLOC_SIZE(list);
 	if (PyList_Reverse(list) < 0)
