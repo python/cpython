@@ -246,6 +246,7 @@ class CommonTest(unittest.TestCase):
         self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'split', None,
                         sys.maxint-1)
         self.checkequal(['a b c d'], 'a b c d', 'split', None, 0)
+        self.checkequal(['a b c d'], '  a b c d', 'split', None, 0)
         self.checkequal(['a', 'b', 'c  d'], 'a  b  c  d', 'split', None, 2)
 
         self.checkequal([], '         ', 'split')
@@ -332,6 +333,7 @@ class CommonTest(unittest.TestCase):
         self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'rsplit', None,
                         sys.maxint-20)
         self.checkequal(['a b c d'], 'a b c d', 'rsplit', None, 0)
+        self.checkequal(['a b c d'], 'a b c d  ', 'rsplit', None, 0)
         self.checkequal(['a  b', 'c', 'd'], 'a  b  c  d', 'rsplit', None, 2)
 
         self.checkequal([], '         ', 'rsplit')
