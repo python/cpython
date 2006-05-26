@@ -126,7 +126,7 @@ class Test:
         self.operations = self.operations
         self.rounds = self.rounds
 
-    def run(self):
+    def run(self, cruns):
 
         """ Run the test in two phases: first calibrate, then
             do the actual test. Be careful to keep the calibration
@@ -136,20 +136,23 @@ class Test:
         test = self.test
         calibrate = self.calibrate
         clock = time.clock
-        cruns = self.cruns
         # first calibrate
-        offset = 0.0
+        t = clock()
+        calibrate()
+        offset = clock() - t
         if cruns:
-            for i in range(cruns):
+            for i in range(cruns-1):
                 t = clock()
                 calibrate()
                 t = clock() - t
-                offset = offset + t
-            offset = offset / cruns
+                if t < offset:
+                    offset = t
         # now the real thing
         t = clock()
         test()
         t = clock() - t
+        if t < 0.01:
+            sys.exit("Lower warp required: test times < 10 ms are unreliable")
         self.last_timing = (t-offset,t,offset)
         self.times.append(t-offset)
 
@@ -253,7 +256,7 @@ class Benchmark:
             print len(l), "tests found"
         print
 
-    def run(self, verbose):
+    def run(self, verbose, cruns):
 
         tests = self.tests.items()
         tests.sort()
@@ -266,10 +269,10 @@ class Benchmark:
             if verbose:
                 print ' Round %-25i  real   abs    overhead' % (i+1)
             for j in range(len(tests)):
-                name,t = tests[j]
+                name, t = tests[j]
                 if verbose:
                     print '%30s:' % name,
-                t.run()
+                t.run(cruns)
                 if verbose:
                     print '  %.3fr %.3fa %.3fo' % t.last_timing
             if verbose:
@@ -379,7 +382,7 @@ class PyBenchCmdline(Application):
                SwitchOption('--no-syscheck',
                     '"disable" sys check interval (set to sys.maxint)', 0),
                ArgumentOption('-t', 'tests containing substring', ''),
-               ArgumentOption('-C', 'number of calibration runs (default 0)', '')
+               ArgumentOption('-C', 'number of calibration runs (default 20)', 20)
                ]
 
     about = """\
@@ -423,7 +426,9 @@ python pybench.py -s p15 -c p14
         limitnames = self.values['-t']
         verbose = self.verbose
         nosyscheck = self.values['--no-syscheck']
-
+        cruns = self.values['-C']
+        print "CRUNS:", cruns
+        
         print 'PYBENCH',__version__
 
         # Switch off GC
@@ -488,7 +493,7 @@ python pybench.py -s p15 -c p14
         bench.rounds = rounds
         bench.load_tests(Setup, warp, limitnames, verbose)
         try:
-            bench.run(verbose)
+            bench.run(verbose, cruns)
         except KeyboardInterrupt:
             print
             print '*** KeyboardInterrupt -- Aborting'
