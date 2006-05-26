@@ -105,7 +105,7 @@ Py_LOCAL(PyObject *) load_args(PyObject ***, int);
 #define CALL_FLAG_KW 2
 
 #ifdef LLTRACE
-Py_LOCAL(int) lltrace;
+static int lltrace;
 Py_LOCAL(int) prtrace(PyObject *, char *);
 #endif
 Py_LOCAL(int) call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
