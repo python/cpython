@@ -3874,6 +3874,19 @@ STRINGLIB_CMP(const Py_UNICODE* str, const Py_UNICODE* other, Py_ssize_t len)
 #include "stringlib/find.h"
 #include "stringlib/partition.h"
 
+/* helper macro to fixup start/end slice values */
+#define FIX_START_END(obj)                      \
+    if (start < 0)                              \
+        start += (obj)->length;                 \
+    if (start < 0)                              \
+        start = 0;                              \
+    if (end > (obj)->length)                    \
+        end = (obj)->length;                    \
+    if (end < 0)                                \
+        end += (obj)->length;                   \
+    if (end < 0)                                \
+        end = 0;
+
 Py_ssize_t PyUnicode_Count(PyObject *str,
                            PyObject *substr,
                            Py_ssize_t start,
@@ -3892,16 +3905,7 @@ Py_ssize_t PyUnicode_Count(PyObject *str,
 	return -1;
     }
 
-    if (start < 0)
-        start += str_obj->length;
-    if (start < 0)
-        start = 0;
-    if (end > str_obj->length)
-        end = str_obj->length;
-    if (end < 0)
-        end += str_obj->length;
-    if (end < 0)
-        end = 0;
+    FIX_START_END(str_obj);
 
     result = stringlib_count(
         str_obj->str + start, end - start, sub_obj->str, sub_obj->length
@@ -3919,17 +3923,7 @@ static Py_ssize_t findstring(PyUnicodeObject *self,
 	       Py_ssize_t end,
 	       int direction)
 {
-    if (start < 0)
-        start += self->length;
-    if (start < 0)
-        start = 0;
-
-    if (end > self->length)
-        end = self->length;
-    if (end < 0)
-        end += self->length;
-    if (end < 0)
-        end = 0;
+    FIX_START_END(self);
 
     if (substring->length == 0)
 	return (direction > 0) ? start : end;
@@ -3969,16 +3963,7 @@ Py_ssize_t PyUnicode_Find(PyObject *str,
 	return -2;
     }
 
-    if (start < 0)
-        start += str_obj->length;
-    if (start < 0)
-        start = 0;
-    if (end > str_obj->length)
-        end = str_obj->length;
-    if (end < 0)
-        end += str_obj->length;
-    if (end < 0)
-        end = 0;
+    FIX_START_END(str_obj);
 
     if (direction > 0)
         result = stringlib_find(
@@ -4004,20 +3989,10 @@ int tailmatch(PyUnicodeObject *self,
 	      Py_ssize_t end,
 	      int direction)
 {
-    if (start < 0)
-        start += self->length;
-    if (start < 0)
-        start = 0;
-
     if (substring->length == 0)
         return 1;
 
-    if (end > self->length)
-        end = self->length;
-    if (end < 0)
-        end += self->length;
-    if (end < 0)
-        end = 0;
+    FIX_START_END(self);
 
     end -= substring->length;
     if (end < start)
@@ -5172,16 +5147,7 @@ unicode_count(PyUnicodeObject *self, PyObject *args)
     if (substring == NULL)
 	return NULL;
 
-    if (start < 0)
-        start += self->length;
-    if (start < 0)
-        start = 0;
-    if (end > self->length)
-        end = self->length;
-    if (end < 0)
-        end += self->length;
-    if (end < 0)
-        end = 0;
+    FIX_START_END(self);
 
     result = PyInt_FromSsize_t(
         stringlib_count(self->str + start, end - start,
