@@ -139,12 +139,17 @@ typedef Py_intptr_t	Py_ssize_t;
 
 /* PY_LOCAL can be used instead of static to get the fastest possible calling
  * convention for functions that are local to a given module.  It also enables
- * inlining, where suitable. */
+ * inlining, where suitable.
+ *
+ * NOTE: You can only use this for functions that are entirely local to a
+ * module; functions that are exported via method tables, callbacks, etc,
+ * should keep using static.
+ */
 
 #undef USE_INLINE /* XXX - set via configure? */
 
 #if defined(_MSC_VER)
- /* ignore warnings if the compiler decides not to inline a function */ 
+/* ignore warnings if the compiler decides not to inline a function */ 
 #pragma warning(disable: 4710)
 /* fastest possible local call under MSVC */
 #define Py_LOCAL(type) static __inline type __fastcall

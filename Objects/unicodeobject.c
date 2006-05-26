@@ -49,18 +49,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
-#undef USE_INLINE /* XXX - set via configure? */
-
-#if defined(_MSC_VER) /* this is taken from _sre.c */
-#pragma warning(disable: 4710)
-/* fastest possible local call under MSVC */
-#define LOCAL(type) static __inline type __fastcall
-#elif defined(USE_INLINE)
-#define LOCAL(type) static inline type
-#else
-#define LOCAL(type) static type
-#endif
-
 /* Limit for the Unicode object free list */
 
 #define MAX_UNICODE_FREELIST_SIZE       1024
@@ -153,7 +141,7 @@ static BLOOM_MASK bloom_linebreak;
 #define BLOOM_LINEBREAK(ch)\
     (BLOOM(bloom_linebreak, (ch)) && Py_UNICODE_ISLINEBREAK((ch)))
 
-LOCAL(BLOOM_MASK) make_bloom_mask(Py_UNICODE* ptr, Py_ssize_t len)
+Py_LOCAL(BLOOM_MASK) make_bloom_mask(Py_UNICODE* ptr, Py_ssize_t len)
 {
     /* calculate simple bloom-style bitmask for a given unicode string */
 
@@ -167,7 +155,7 @@ LOCAL(BLOOM_MASK) make_bloom_mask(Py_UNICODE* ptr, Py_ssize_t len)
     return mask;
 }
 
-LOCAL(int) unicode_member(Py_UNICODE chr, Py_UNICODE* set, Py_ssize_t setlen)
+Py_LOCAL(int) unicode_member(Py_UNICODE chr, Py_UNICODE* set, Py_ssize_t setlen)
 {
     Py_ssize_t i;
 
@@ -2027,9 +2015,9 @@ onError:
 
 */
 
-LOCAL(const Py_UNICODE *) findchar(const Py_UNICODE *s,
-                                   Py_ssize_t size,
-                                   Py_UNICODE ch)
+Py_LOCAL(const Py_UNICODE *) findchar(const Py_UNICODE *s,
+                                      Py_ssize_t size,
+                                      Py_UNICODE ch)
 {
     /* like wcschr, but doesn't stop at NULL characters */
 
@@ -3880,7 +3868,7 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
 #define FAST_COUNT 0
 #define FAST_SEARCH 1
 
-LOCAL(Py_ssize_t)
+Py_LOCAL(Py_ssize_t)
 fastsearch(Py_UNICODE* s, Py_ssize_t n, Py_UNICODE* p, Py_ssize_t m, int mode)
 {
     long mask;
@@ -3955,10 +3943,10 @@ fastsearch(Py_UNICODE* s, Py_ssize_t n, Py_UNICODE* p, Py_ssize_t m, int mode)
     return count;
 }
 
-LOCAL(Py_ssize_t) count(PyUnicodeObject *self,
-		 Py_ssize_t start,
-		 Py_ssize_t end,
-		 PyUnicodeObject *substring)
+Py_LOCAL(Py_ssize_t) count(PyUnicodeObject *self,
+                           Py_ssize_t start,
+                           Py_ssize_t end,
+                           PyUnicodeObject *substring)
 {
     Py_ssize_t count = 0;
 

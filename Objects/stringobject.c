@@ -5,18 +5,6 @@
 
 #include <ctype.h>
 
-#undef USE_INLINE /* XXX - set via configure? */
-
-#if defined(_MSC_VER) /* this is taken from _sre.c */
-#pragma warning(disable: 4710)
-/* fastest possible local call under MSVC */
-#define LOCAL(type) static __inline type __fastcall
-#elif defined(USE_INLINE)
-#define LOCAL(type) static inline type
-#else
-#define LOCAL(type) static type
-#endif
-
 #ifdef COUNT_ALLOCS
 int null_strings, one_strings;
 #endif
@@ -798,7 +786,7 @@ PyString_AsStringAndSize(register PyObject *obj,
 #define FAST_COUNT 0
 #define FAST_SEARCH 1
 
-LOCAL(Py_ssize_t)
+Py_LOCAL(Py_ssize_t)
 fastsearch(const char* s, Py_ssize_t n, const char* p, Py_ssize_t m, int mode)
 {
 	long mask;
