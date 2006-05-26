@@ -999,8 +999,8 @@ class MixinStrUnicodeUserStringTest:
 
     def test_partition(self):
 
-        self.checkequal(('this', ' is ', 'the partition method'),
-            'this is the partition method', 'partition', ' is ')
+        self.checkequal(('this is the par', 'ti', 'tion method'),
+            'this is the partition method', 'partition', 'ti')
 
         # from raymond's original specification
         S = 'http://www.python.org'
@@ -1011,6 +1011,21 @@ class MixinStrUnicodeUserStringTest:
 
         self.checkraises(ValueError, S, 'partition', '')
         self.checkraises(TypeError, S, 'partition', None)
+
+    def test_rpartition(self):
+
+        self.checkequal(('this is the rparti', 'ti', 'on method'),
+            'this is the rpartition method', 'rpartition', 'ti')
+
+        # from raymond's original specification
+        S = 'http://www.python.org'
+        self.checkequal(('http', '://', 'www.python.org'), S, 'rpartition', '://')
+        self.checkequal(('http://www.python.org', '', ''), S, 'rpartition', '?')
+        self.checkequal(('', 'http://', 'www.python.org'), S, 'rpartition', 'http://')
+        self.checkequal(('http://www.python.', 'org', ''), S, 'rpartition', 'org')
+
+        self.checkraises(ValueError, S, 'rpartition', '')
+        self.checkraises(TypeError, S, 'rpartition', None)
 
 
 class MixinStrStringUserStringTest:
