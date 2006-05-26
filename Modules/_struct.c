@@ -23,6 +23,10 @@ typedef int Py_ssize_t;
 #define PY_USE_INT_WHEN_POSSIBLE 1
 */
 
+/* PY_STRUCT_RANGE_CHECKING performs range checking on all arguments
+   to be packed. This will break some incorrect code that happened
+   to accidentally do the right thing anyway (such as binhex). */
+#define PY_STRUCT_RANGE_CHECKING 1
 
 /* The translation function for each format character is table driven */
 typedef struct _formatdef {
@@ -150,9 +154,14 @@ get_ulong(PyObject *v, unsigned long *p)
 		*p = x;
 		return 0;
 	}
-	else {
-		return get_long(v, (long *)p);
+	if (get_long(v, (long *)p) < 0)
+		return -1;
+	if (((long)*p) < 0) {
+		PyErr_SetString(StructError,
+				"unsigned argument is < 0");
+		return -1;
 	}
+	return 0;
 }
 
 #ifdef HAVE_LONG_LONG
@@ -222,6 +231,38 @@ unpack_double(const char *p,  /* start of 8-byte string */
 		return NULL;
 	return PyFloat_FromDouble(x);
 }
+
+#ifdef PY_STRUCT_RANGE_CHECKING
+/* Helper to format the range error exceptions */
+static int
+_range_error(char format, int size, int is_unsigned)
+{
+	if (is_unsigned == 0) {
+		long smallest = 0, largest = 0;
+		int i = size * 8;
+		while (--i > 0) {
+			smallest = (smallest * 2) - 1;
+			largest = (largest * 2) + 1;
+		}
+		PyErr_Format(StructError,
+			"'%c' format requires %ld <= number <= %ld",
+			format,
+			smallest,
+			largest);
+	} else {
+		unsigned long largest = 0;
+		int i = size * 8;
+		while (--i >= 0)
+			largest = (largest * 2) + 1;
+		PyErr_Format(StructError,
+			"'%c' format requires 0 <= number <= %lu",
+			format,
+			largest);
+	}
+	return -1;
+}
+#endif
+
 
 
 /* A large number of small routines follow, with names of the form
@@ -380,7 +421,7 @@ np_byte(char *p, PyObject *v, const formatdef *f)
 		return -1;
 	if (x < -128 || x > 127){
 		PyErr_SetString(StructError,
-				"byte format requires -128<=number<=127");
+				"byte format requires -128 <= number <= 127");
 		return -1;
 	}
 	*p = (char)x;
@@ -395,7 +436,7 @@ np_ubyte(char *p, PyObject *v, const formatdef *f)
 		return -1;
 	if (x < 0 || x > 255){
 		PyErr_SetString(StructError,
-				"ubyte format requires 0<=number<=255");
+				"ubyte format requires 0 <= number <= 255");
 		return -1;
 	}
 	*p = (char)x;
@@ -424,7 +465,7 @@ np_short(char *p, PyObject *v, const formatdef *f)
 	if (x < SHRT_MIN || x > SHRT_MAX){
 		PyErr_SetString(StructError,
 				"short format requires " STRINGIFY(SHRT_MIN)
-				"<=number<=" STRINGIFY(SHRT_MAX));
+				" <= number <= " STRINGIFY(SHRT_MAX));
 		return -1;
 	}
 	y = (short)x;
@@ -441,7 +482,7 @@ np_ushort(char *p, PyObject *v, const formatdef *f)
 		return -1;
 	if (x < 0 || x > USHRT_MAX){
 		PyErr_SetString(StructError,
-				"short format requires 0<=number<=" STRINGIFY(USHRT_MAX));
+				"short format requires 0 <= number <= " STRINGIFY(USHRT_MAX));
 		return -1;
 	}
 	y = (unsigned short)x;
@@ -456,6 +497,10 @@ np_int(char *p, PyObject *v, const formatdef *f)
 	int y;
 	if (get_long(v, &x) < 0)
 		return -1;
+#if defined(PY_STRUCT_RANGE_CHECKING) && (SIZEOF_LONG > SIZEOF_INT)
+	if (x < INT_MIN || x > INT_MAX)
+		return _range_error(f->format, sizeof(y), 0);
+#endif
 	y = (int)x;
 	memcpy(p, (char *)&y, sizeof y);
 	return 0;
@@ -467,8 +512,16 @@ np_uint(char *p, PyObject *v, const formatdef *f)
 	unsigned long x;
 	unsigned int y;
 	if (get_ulong(v, &x) < 0)
+#ifdef PY_STRUCT_RANGE_CHECKING
+		return _range_error(f->format, sizeof(y), 1);
+#else
 		return -1;
+#endif
 	y = (unsigned int)x;
+#if defined(PY_STRUCT_RANGE_CHECKING) && (SIZEOF_LONG > SIZEOF_INT)
+	if (x < UINT_MIN || x > UINT_MAX)
+		return _range_error(f->format, sizeof(y), 1);
+#endif
 	memcpy(p, (char *)&y, sizeof y);
 	return 0;
 }
@@ -488,7 +541,11 @@ np_ulong(char *p, PyObject *v, const formatdef *f)
 {
 	unsigned long x;
 	if (get_ulong(v, &x) < 0)
+#ifdef PY_STRUCT_RANGE_CHECKING
+		return _range_error(f->format, sizeof(x), 1);
+#else
 		return -1;
+#endif
 	memcpy(p, (char *)&x, sizeof x);
 	return 0;
 }
@@ -683,6 +740,15 @@ bp_int(char *p, PyObject *v, const formatdef *f)
 	if (get_long(v, &x) < 0)
 		return -1;
 	i = f->size;
+#ifdef PY_STRUCT_RANGE_CHECKING
+	if (i != SIZEOF_LONG && (
+		(i == 2 && (x < -32768 || x > 32767))
+#if SIZEOF_LONG != 4
+		|| (i == 4) && (x < -2147483648L || x > -2147483647L)
+#endif
+		))
+		return _range_error(f->format, i, 0);
+#endif
 	do {
 		p[--i] = (char)x;
 		x >>= 8;
@@ -698,6 +764,10 @@ bp_uint(char *p, PyObject *v, const formatdef *f)
 	if (get_ulong(v, &x) < 0)
 		return -1;
 	i = f->size;
+#ifdef PY_STRUCT_RANGE_CHECKING
+	if (i != SIZEOF_LONG && x >= (1 << (i * 8)))
+		return _range_error(f->format, f->size, 1);
+#endif
 	do {
 		p[--i] = (char)x;
 		x >>= 8;
@@ -763,8 +833,8 @@ bp_double(char *p, PyObject *v, const formatdef *f)
 
 static formatdef bigendian_table[] = {
 	{'x',	1,		0,		NULL},
-	{'b',	1,		0,		bu_int,		bp_int},
-	{'B',	1,		0,		bu_uint,	bp_int},
+	{'b',	1,		0,		nu_byte,	np_byte},
+	{'B',	1,		0,		nu_ubyte,	np_ubyte},
 	{'c',	1,		0,		nu_char,	np_char},
 	{'s',	1,		0,		NULL},
 	{'p',	1,		0,		NULL},
@@ -882,6 +952,15 @@ lp_int(char *p, PyObject *v, const formatdef *f)
 	if (get_long(v, &x) < 0)
 		return -1;
 	i = f->size;
+#ifdef PY_STRUCT_RANGE_CHECKING
+	if (i != SIZEOF_LONG && (
+		(i == 2 && (x < -32768 || x > 32767))
+#if SIZEOF_LONG != 4
+		|| (i == 4) && (x < -2147483648L || x > -2147483647L)
+#endif
+		))
+		return _range_error(f->format, i, 0);
+#endif
 	do {
 		*p++ = (char)x;
 		x >>= 8;
@@ -897,6 +976,10 @@ lp_uint(char *p, PyObject *v, const formatdef *f)
 	if (get_ulong(v, &x) < 0)
 		return -1;
 	i = f->size;
+#ifdef PY_STRUCT_RANGE_CHECKING
+	if (i != SIZEOF_LONG && x >= (1 << (i * 8)))
+		return _range_error(f->format, f->size, 1);
+#endif
 	do {
 		*p++ = (char)x;
 		x >>= 8;
@@ -962,8 +1045,8 @@ lp_double(char *p, PyObject *v, const formatdef *f)
 
 static formatdef lilendian_table[] = {
 	{'x',	1,		0,		NULL},
-	{'b',	1,		0,		lu_int,		lp_int},
-	{'B',	1,		0,		lu_uint,	lp_int},
+	{'b',	1,		0,		nu_byte,	np_byte},
+	{'B',	1,		0,		nu_ubyte,	np_ubyte},
 	{'c',	1,		0,		nu_char,	np_char},
 	{'s',	1,		0,		NULL},
 	{'p',	1,		0,		NULL},
