@@ -132,15 +132,11 @@ TOEXEC  = 0001           # execute/search by other
 #---------------------------------------------------------
 # Some useful functions
 #---------------------------------------------------------
-def nts(s):
-    """Convert a null-terminated string buffer to a python string.
-    """
-    return s.rstrip(NUL)
 
 def stn(s, length):
     """Convert a python string to a null-terminated string buffer.
     """
-    return struct.pack("%ds" % (length - 1), s) + NUL
+    return s[:length-1] + (length - len(s) - 1) * NUL + NUL
 
 def nti(s):
     """Convert a number field to a python number.
@@ -616,7 +612,7 @@ class _BZ2Proxy(object):
         if self.mode == "w":
             raw = self.bz2obj.flush()
             self.fileobj.write(raw)
-            self.fileobj.close()
+        self.fileobj.close()
 # class _BZ2Proxy
 
 #------------------------
@@ -828,7 +824,7 @@ class TarInfo(object):
 
         tarinfo = cls()
         tarinfo.buf = buf
-        tarinfo.name = nts(buf[0:100])
+        tarinfo.name = buf[0:100].rstrip(NUL)
         tarinfo.mode = nti(buf[100:108])
         tarinfo.uid = nti(buf[108:116])
         tarinfo.gid = nti(buf[116:124])
@@ -836,9 +832,9 @@ class TarInfo(object):
         tarinfo.mtime = nti(buf[136:148])
         tarinfo.chksum = nti(buf[148:156])
         tarinfo.type = buf[156:157]
-        tarinfo.linkname = nts(buf[157:257])
-        tarinfo.uname = nts(buf[265:297])
-        tarinfo.gname = nts(buf[297:329])
+        tarinfo.linkname = buf[157:257].rstrip(NUL)
+        tarinfo.uname = buf[265:297].rstrip(NUL)
+        tarinfo.gname = buf[297:329].rstrip(NUL)
         tarinfo.devmajor = nti(buf[329:337])
         tarinfo.devminor = nti(buf[337:345])
         tarinfo.prefix = buf[345:500]
@@ -1790,7 +1786,8 @@ class TarFile(object):
         # The prefix field is used for filenames > 100 in
         # the POSIX standard.
         # name = prefix + '/' + name
-        tarinfo.name = normpath(os.path.join(nts(tarinfo.prefix), tarinfo.name))
+        tarinfo.name = normpath(os.path.join(tarinfo.prefix.rstrip(NUL),
+                                             tarinfo.name))
 
         # Directory names should have a '/' at the end.
         if tarinfo.isdir():
@@ -1855,9 +1852,9 @@ class TarFile(object):
         # the longname information.
         next.offset = tarinfo.offset
         if tarinfo.type == GNUTYPE_LONGNAME:
-            next.name = nts(buf)
+            next.name = buf.rstrip(NUL)
         elif tarinfo.type == GNUTYPE_LONGLINK:
-            next.linkname = nts(buf)
+            next.linkname = buf.rstrip(NUL)
 
         return next
 
