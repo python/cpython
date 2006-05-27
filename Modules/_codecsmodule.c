@@ -319,12 +319,11 @@ utf_16_decode(PyObject *self,
     if (!PyArg_ParseTuple(args, "t#|zi:utf_16_decode",
 			  &data, &size, &errors, &final))
 	return NULL;
-    /* XXX Why is consumed initialized to size? mvl */
     if (size < 0) {
 	    PyErr_SetString(PyExc_ValueError, "negative argument");
 	    return 0;
     }
-    consumed = size;
+    consumed = size; /* This is overwritten unless final is true. */
     decoded = PyUnicode_DecodeUTF16Stateful(data, size, errors, &byteorder,
 					    final ? NULL : &consumed);
     if (decoded == NULL)
@@ -348,12 +347,11 @@ utf_16_le_decode(PyObject *self,
 			  &data, &size, &errors, &final))
 	return NULL;
 
-    /* XXX Why is consumed initialized to size? mvl */
     if (size < 0) {
           PyErr_SetString(PyExc_ValueError, "negative argument");
           return 0;
     }
-    consumed = size;
+    consumed = size; /* This is overwritten unless final is true. */
     decoded = PyUnicode_DecodeUTF16Stateful(data, size, errors,
 	&byteorder, final ? NULL : &consumed);
     if (decoded == NULL)
@@ -377,12 +375,11 @@ utf_16_be_decode(PyObject *self,
     if (!PyArg_ParseTuple(args, "t#|zi:utf_16_be_decode",
 			  &data, &size, &errors, &final))
 	return NULL;
-    /* XXX Why is consumed initialized to size? mvl */
     if (size < 0) {
           PyErr_SetString(PyExc_ValueError, "negative argument");
           return 0;
     }
-    consumed = size;
+    consumed = size; /* This is overwritten unless final is true. */
     decoded = PyUnicode_DecodeUTF16Stateful(data, size, errors,
 	&byteorder, final ? NULL : &consumed);
     if (decoded == NULL)
@@ -413,12 +410,11 @@ utf_16_ex_decode(PyObject *self,
     if (!PyArg_ParseTuple(args, "t#|zii:utf_16_ex_decode",
 			  &data, &size, &errors, &byteorder, &final))
 	return NULL;
-    /* XXX Why is consumed initialized to size? mvl */
     if (size < 0) {
 	    PyErr_SetString(PyExc_ValueError, "negative argument");
 	    return 0;
     }
-    consumed = size;
+    consumed = size; /* This is overwritten unless final is true. */
     unicode = PyUnicode_DecodeUTF16Stateful(data, size, errors, &byteorder,
 					    final ? NULL : &consumed);
     if (unicode == NULL)
