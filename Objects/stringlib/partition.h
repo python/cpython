@@ -7,7 +7,7 @@
 #error must include "stringlib/fastsearch.h" before including this module
 #endif
 
-Py_LOCAL(PyObject*)
+Py_LOCAL_INLINE(PyObject*)
 stringlib_partition(
     PyObject* str_obj, const STRINGLIB_CHAR* str, Py_ssize_t str_len,
     PyObject* sep_obj, const STRINGLIB_CHAR* sep, Py_ssize_t sep_len
@@ -51,7 +51,7 @@ stringlib_partition(
     return out;
 }
 
-Py_LOCAL(PyObject*)
+Py_LOCAL_INLINE(PyObject*)
 stringlib_rpartition(
     PyObject* str_obj, const STRINGLIB_CHAR* str, Py_ssize_t str_len,
     PyObject* sep_obj, const STRINGLIB_CHAR* sep, Py_ssize_t sep_len

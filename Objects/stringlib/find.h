@@ -7,7 +7,7 @@
 #error must include "stringlib/fastsearch.h" before including this module
 #endif
 
-Py_LOCAL(Py_ssize_t)
+Py_LOCAL_INLINE(Py_ssize_t)
 stringlib_find(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
                const STRINGLIB_CHAR* sub, Py_ssize_t sub_len,
                Py_ssize_t offset)
@@ -25,7 +25,7 @@ stringlib_find(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
     return pos;
 }
 
-Py_LOCAL(Py_ssize_t)
+Py_LOCAL_INLINE(Py_ssize_t)
 stringlib_rfind(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
                 const STRINGLIB_CHAR* sub, Py_ssize_t sub_len,
                 Py_ssize_t offset)
@@ -50,7 +50,7 @@ stringlib_rfind(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
 
 #ifdef STRINGLIB_STR
 
-Py_LOCAL(Py_ssize_t)
+Py_LOCAL_INLINE(Py_ssize_t)
 stringlib_find_obj(PyObject* str, PyObject* sub,
                    Py_ssize_t start, Py_ssize_t end)
 {
@@ -60,7 +60,7 @@ stringlib_find_obj(PyObject* str, PyObject* sub,
         );
 }
 
-Py_LOCAL(int)
+Py_LOCAL_INLINE(int)
 stringlib_contains_obj(PyObject* str, PyObject* sub)
 {
     return stringlib_find(
@@ -69,7 +69,7 @@ stringlib_contains_obj(PyObject* str, PyObject* sub)
         ) != -1;
 }
 
-Py_LOCAL(Py_ssize_t)
+Py_LOCAL_INLINE(Py_ssize_t)
 stringlib_rfind_obj(PyObject* str, PyObject* sub,
                     Py_ssize_t start, Py_ssize_t end)
 {
