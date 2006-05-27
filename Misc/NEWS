@@ -12,6 +12,9 @@ What's New in Python 2.5 alpha 3?
 Core and builtins
 -----------------
 
+- Patch #1494554: Update unicodedata.numeric and unicode.isnumeric to
+  Unicode 4.1.
+
 - Patch #921466: sys.path_importer_cache is now used to cache valid and
   invalid file paths for the built-in import machinery which leads to
   fewer open calls on startup.
