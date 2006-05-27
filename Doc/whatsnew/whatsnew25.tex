@@ -1201,6 +1201,12 @@ Frame objects are also slightly smaller, which may improve cache locality
 and reduce memory usage a bit.  (Contributed by Neal Norwitz.)
 % Patch 1337051
 
+\item Python's built-in exceptions are now new-style classes, a change
+that speeds up instantiation considerably.  Exception handling in
+Python 2.5 is therefore about 30\% faster than in 2.4.
+(Contributed by Richard Jones and Sean Reifschneider at the 
+NeedForSpeed sprint.)
+
 \item Importing now caches the paths tried, recording whether 
 they exist or not so that the interpreter makes fewer 
 \cfunction{open()} and \cfunction{stat()} calls on startup.
