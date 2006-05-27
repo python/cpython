@@ -6,6 +6,18 @@
 #define MAKE_IT_NONE(x) (x) = Py_None; Py_INCREF(Py_None);
 #define EXC_MODULE_NAME "exceptions."
 
+/* NOTE: If the exception class hierarchy changes, don't forget to update
+ * Lib/test/exception_hierarchy.txt
+ */
+
+PyDoc_STRVAR(exceptions_doc, "Python's standard exception class hierarchy.\n\
+\n\
+Exceptions found here are defined both in the exceptions module and the\n\
+built-in namespace.  It is recommended that user-defined exceptions\n\
+inherit from Exception.  See the documentation for the exception\n\
+inheritance hierarchy.\n\
+");
+
 /*
  *    BaseException
  */
@@ -646,11 +658,11 @@ static PyMemberDef EnvironmentError_members[] = {
     {"message", T_OBJECT, offsetof(PyEnvironmentErrorObject, message), 0,
         PyDoc_STR("exception message")},
     {"errno", T_OBJECT, offsetof(PyEnvironmentErrorObject, myerrno), 0,
-        PyDoc_STR("exception code")},
+        PyDoc_STR("exception errno")},
     {"strerror", T_OBJECT, offsetof(PyEnvironmentErrorObject, strerror), 0,
-        PyDoc_STR("exception code")},
+        PyDoc_STR("exception strerror")},
     {"filename", T_OBJECT, offsetof(PyEnvironmentErrorObject, filename), 0,
-        PyDoc_STR("exception code")},
+        PyDoc_STR("exception filename")},
     {NULL}  /* Sentinel */
 };
 
@@ -880,13 +892,13 @@ static PyMemberDef WindowsError_members[] = {
     {"message", T_OBJECT, offsetof(PyWindowsErrorObject, message), 0,
         PyDoc_STR("exception message")},
     {"errno", T_OBJECT, offsetof(PyWindowsErrorObject, myerrno), 0,
-        PyDoc_STR("exception code")},
+        PyDoc_STR("POSIX exception code")},
     {"strerror", T_OBJECT, offsetof(PyWindowsErrorObject, strerror), 0,
-        PyDoc_STR("exception code")},
+        PyDoc_STR("exception strerror")},
     {"filename", T_OBJECT, offsetof(PyWindowsErrorObject, filename), 0,
-        PyDoc_STR("exception code")},
+        PyDoc_STR("exception filename")},
     {"winerror", T_OBJECT, offsetof(PyWindowsErrorObject, winerror), 0,
-        PyDoc_STR("windows exception code")},
+        PyDoc_STR("Win32 exception code")},
     {NULL}  /* Sentinel */
 };
 
@@ -2051,7 +2063,8 @@ _PyExc_Init(void)
     PRE_INIT(FutureWarning)
     PRE_INIT(ImportWarning)
 
-    m = Py_InitModule("exceptions", functions);
+    m = Py_InitModule4("exceptions", functions, exceptions_doc,
+        (PyObject *)NULL, PYTHON_API_VERSION);
     if (m == NULL) return;
 
     bltinmod = PyImport_ImportModule("__builtin__");
