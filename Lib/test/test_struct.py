@@ -509,6 +509,28 @@ class PackBufferTestCase(unittest.TestCase):
         self.assertRaises(struct.error, s.pack_to, small_buf, 0, test_string)
         self.assertRaises(struct.error, s.pack_to, small_buf, 2, test_string)
 
+    def test_pack_to_fn( self ):
+        test_string = 'Reykjavik rocks, eow!'
+        writable_buf = array.array('c', ' '*100)
+        fmt = '21s'
+        pack_to = lambda *args: struct.pack_to(fmt, *args)
+
+        # Test without offset
+        pack_to(writable_buf, 0, test_string)
+        from_buf = writable_buf.tostring()[:len(test_string)]
+        self.assertEquals(from_buf, test_string)
+
+        # Test with offset.
+        pack_to(writable_buf, 10, test_string)
+        from_buf = writable_buf.tostring()[:len(test_string)+10]
+        self.assertEquals(from_buf, (test_string[:10] + test_string))
+
+        # Go beyond boundaries.
+        small_buf = array.array('c', ' '*10)
+        self.assertRaises(struct.error, pack_to, small_buf, 0, test_string)
+        self.assertRaises(struct.error, pack_to, small_buf, 2, test_string)
+
+
 def test_main():
     test.test_support.run_unittest(PackBufferTestCase)
 
