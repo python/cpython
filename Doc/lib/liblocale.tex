@@ -61,7 +61,7 @@ locale.setlocale(locale.LC_ALL, '')
   Returns the database of the local conventions as a dictionary.
   This dictionary has the following strings as keys:
 
-  \begin{tableiii}{l|l|p{3in}}{constant}{Key}{Category}{Meaning}
+  \begin{tableiii}{l|l|p{3in}}{constant}{Category}{Key}{Meaning}
     \lineiii{LC_NUMERIC}{\code{'decimal_point'}}
             {Decimal point character.}
     \lineiii{}{\code{'grouping'}}
@@ -76,8 +76,20 @@ locale.setlocale(locale.LC_ALL, '')
             {International currency symbol.}
     \lineiii{}{\code{'currency_symbol'}}
             {Local currency symbol.}
+    \lineiii{}{\code{'p_cs_precedes/n_cs_precedes'}}
+            {Whether the currency symbol precedes the value (for positive resp.
+             negative values).}
+    \lineiii{}{\code{'p_sep_by_space/n_sep_by_space'}}
+            {Whether the currency symbol is separated from the value 
+             by a space (for positive resp. negative values).}
     \lineiii{}{\code{'mon_decimal_point'}}
             {Decimal point used for monetary values.}
+    \lineiii{}{\code{'frac_digits'}}
+            {Number of fractional digits used in local formatting
+             of monetary values.}
+    \lineiii{}{\code{'int_frac_digits'}}
+            {Number of fractional digits used in international
+             formatting of monetary values.}
     \lineiii{}{\code{'mon_thousands_sep'}}
             {Group separator used for monetary values.}
     \lineiii{}{\code{'mon_grouping'}}
@@ -87,13 +99,12 @@ locale.setlocale(locale.LC_ALL, '')
             {Symbol used to annotate a positive monetary value.}
     \lineiii{}{\code{'negative_sign'}}
             {Symbol used to annotate a negative monetary value.}
-    \lineiii{}{\code{'frac_digits'}}
-            {Number of fractional digits used in local formatting
-             of monetary values.}
-    \lineiii{}{\code{'int_frac_digits'}}
-            {Number of fractional digits used in international
-             formatting of monetary values.}
+    \lineiii{}{\code{'p_sign_posn/n_sign_posn'}}
+            {The position of the sign (for positive resp. negative values), see below.}
   \end{tableiii}
+  
+  All numeric values can be set to \constant{CHAR_MAX} to indicate that
+  there is no value specified in this locale.
 
   The possible values for \code{'p_sign_posn'} and
   \code{'n_sign_posn'} are given below.
@@ -104,7 +115,7 @@ locale.setlocale(locale.LC_ALL, '')
     \lineii{2}{The sign should follow the value and currency symbol.}
     \lineii{3}{The sign should immediately precede the value.}
     \lineii{4}{The sign should immediately follow the value.}
-    \lineii{\constant{LC_MAX}}{Nothing is specified in this locale.}
+    \lineii{\constant{CHAR_MAX}}{Nothing is specified in this locale.}
   \end{tableii}
 \end{funcdesc}
 
@@ -206,12 +217,44 @@ for which symbolic constants are available in the locale module.
   strings.
 \end{funcdesc}
 
-\begin{funcdesc}{format}{format, val\optional{, grouping}}
+\begin{funcdesc}{format}{format, val\optional{, grouping\optional{, monetary}}}
   Formats a number \var{val} according to the current
   \constant{LC_NUMERIC} setting.  The format follows the conventions
   of the \code{\%} operator.  For floating point values, the decimal
   point is modified if appropriate.  If \var{grouping} is true, also
   takes the grouping into account.
+
+  If \var{monetary} is true, the conversion uses monetary thousands
+  separator and grouping strings.
+
+  Please note that this function will only work for exactly one \%char
+  specifier. For whole format strings, use \function{format_string()}.
+
+  \versionchanged[Added the \var{monetary} parameter]{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{format_string}{format, val\optional{, grouping}}
+  Processes formatting specifiers as in \code{format \% val},
+  but takes the current locale settings into account.
+
+  \versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{currency}{val\optional{, symbol\optional{, grouping\optional{, international}}}}
+  Formats a number \var{val} according to the current \constant{LC_MONETARY}
+  settings. 
+  
+  The returned string includes the currency symbol if \var{symbol} is true,
+  which is the default.
+  If \var{grouping} is true (which is not the default), grouping is done with
+  the value.
+  If \var{international} is true (which is not the default), the international
+  currency symbol is used.
+
+  Note that this function will not work with the `C' locale, so you have to set
+  a locale via \function{setlocale()} first.
+
+  \versionadded{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{str}{float}

@@ -281,11 +281,8 @@ and is not handled, the exception is temporarily saved. The
 it is re-raised at the end of the \keyword{finally} clause.
 If the \keyword{finally} clause raises another exception or
 executes a \keyword{return} or \keyword{break} statement, the saved
-exception is lost.  A \keyword{continue} statement is illegal in the
-\keyword{finally} clause.  (The reason is a problem with the current
-implementation -- this restriction may be lifted in the future).  The
-exception information is not available to the program during execution of
-the \keyword{finally} clause.
+exception is lost.  The exception information is not available to the
+program during execution of the \keyword{finally} clause.
 \kwindex{finally}
 
 When a \keyword{return}, \keyword{break} or \keyword{continue} statement is
@@ -312,38 +309,34 @@ The \keyword{with} statement is used to wrap the execution of a block
 with methods defined by a context manager (see
 section~\ref{context-managers}). This allows common
 \keyword{try}...\keyword{except}...\keyword{finally} usage patterns to
-be encapsulated as context managers for convenient reuse.
+be encapsulated for convenient reuse.
 
 \begin{productionlist}
   \production{with_stmt}
-  {"with" \token{expression} ["as" target_list] ":" \token{suite}}
+  {"with" \token{expression} ["as" target] ":" \token{suite}}
 \end{productionlist}
 
 The execution of the \keyword{with} statement proceeds as follows:
 
 \begin{enumerate}
 
-\item The expression is evaluated, to obtain a context manager
-object.
+\item The context expression is evaluated to obtain a context manager.
 
-\item The context manager's \method{__context__()} method is invoked to
-obtain a context object.
+\item The context manager's \method{__enter__()} method is invoked.
 
-\item The context object's \method{__enter__()} method is invoked.
-
-\item If a target list was included in the \keyword{with}
+\item If a target was included in the \keyword{with}
 statement, the return value from \method{__enter__()} is assigned to it.
 
 \note{The \keyword{with} statement guarantees that if the
 \method{__enter__()} method returns without an error, then
 \method{__exit__()} will always be called. Thus, if an error occurs
 during the assignment to the target list, it will be treated the same as
-an error occurring within the suite would be. See step 6 below.}
+an error occurring within the suite would be. See step 5 below.}
 
 \item The suite is executed.
 
-\item The context object's \method{__exit__()} method is invoked. If an
-exception caused the suite to be exited, its type, value, and
+\item The context manager's \method{__exit__()} method is invoked. If
+an exception caused the suite to be exited, its type, value, and
 traceback are passed as arguments to \method{__exit__()}. Otherwise,
 three \constant{None} arguments are supplied.
 

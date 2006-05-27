@@ -136,46 +136,45 @@ fill_file_fields(PyFileObject *f, FILE *fp, PyObject *name, char *mode,
 /* check for known incorrect mode strings - problem is, platforms are
    free to accept any mode characters they like and are supposed to
    ignore stuff they don't understand... write or append mode with
-   universal newline support is expressly forbidden by PEP 278. */
+   universal newline support is expressly forbidden by PEP 278.
+   Additionally, remove the 'U' from the mode string as platforms
+   won't know what it is. */
 /* zero return is kewl - one is un-kewl */
 static int
-check_the_mode(char *mode)
+sanitize_the_mode(char *mode)
 {
+	char *upos;
 	size_t len = strlen(mode);
 
-	switch (len) {
-	case 0:
+	if (!len) {
 		PyErr_SetString(PyExc_ValueError, "empty mode string");
 		return 1;
+	}
 
-	/* reject wU, aU */
-	case 2:
-		switch (mode[0]) {
-		case 'w':
-		case 'a':
-			if (mode[1] == 'U') {
-				PyErr_SetString(PyExc_ValueError,
-						"invalid mode string");
-				return 1;
-			}
-			break;
-		}
-		break;
+	upos = strchr(mode, 'U');
+	if (upos) {
+		memmove(upos, upos+1, len-(upos-mode)); /* incl null char */
 
-	/* reject w+U, a+U, wU+, aU+ */
-	case 3:
-		switch (mode[0]) {
-		case 'w':
-		case 'a':
-			if ((mode[1] == '+' && mode[2] == 'U') ||
-			    (mode[1] == 'U' && mode[2] == '+')) {
-				PyErr_SetString(PyExc_ValueError,
-						"invalid mode string");
-				return 1;
-			}
-			break;
+		if (mode[0] == 'w' || mode[0] == 'a') {
+			PyErr_Format(PyExc_ValueError, "universal newline "
+			             "mode can only be used with modes "
+				     "starting with 'r'");
+			return 1;
 		}
-		break;
+
+		if (mode[0] != 'r') {
+			memmove(mode+1, mode, strlen(mode)+1);
+			mode[0] = 'r';
+		}
+
+		if (!strchr(mode, 'b')) {
+			memmove(mode+2, mode+1, strlen(mode));
+			mode[1] = 'b';
+		}
+	} else if (mode[0] != 'r' && mode[0] != 'w' && mode[0] != 'a') {
+		PyErr_Format(PyExc_ValueError, "mode string must begin with "
+	        	    "one of 'r', 'w', 'a' or 'U', not '%.200s'", mode);
+		return 1;
 	}
 
 	return 0;
@@ -184,6 +183,7 @@ check_the_mode(char *mode)
 static PyObject *
 open_the_file(PyFileObject *f, char *name, char *mode)
 {
+	char *newmode;
 	assert(f != NULL);
 	assert(PyFile_Check(f));
 #ifdef MS_WINDOWS
@@ -195,8 +195,18 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 	assert(mode != NULL);
 	assert(f->f_fp == NULL);
 
-	if (check_the_mode(mode))
+	/* probably need to replace 'U' by 'rb' */
+	newmode = PyMem_MALLOC(strlen(mode) + 3);
+	if (!newmode) {
+		PyErr_NoMemory();
 		return NULL;
+	}
+	strcpy(newmode, mode);
+
+	if (sanitize_the_mode(newmode)) {
+		f = NULL;
+		goto cleanup;
+	}
 
 	/* rexec.py can't stop a user from getting the file() constructor --
 	   all they have to do is get *any* file object f, and then do
@@ -204,16 +214,15 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 	if (PyEval_GetRestricted()) {
 		PyErr_SetString(PyExc_IOError,
 		"file() constructor not accessible in restricted mode");
-		return NULL;
+		f = NULL;
+		goto cleanup;
 	}
 	errno = 0;
 
-	if (strcmp(mode, "U") == 0 || strcmp(mode, "rU") == 0)
-		mode = "rb";
 #ifdef MS_WINDOWS
 	if (PyUnicode_Check(f->f_name)) {
 		PyObject *wmode;
-		wmode = PyUnicode_DecodeASCII(mode, strlen(mode), NULL);
+		wmode = PyUnicode_DecodeASCII(newmode, strlen(newmode), NULL);
 		if (f->f_name && wmode) {
 			Py_BEGIN_ALLOW_THREADS
 			/* PyUnicode_AS_UNICODE OK without thread
@@ -227,7 +236,7 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 #endif
 	if (NULL == f->f_fp && NULL != name) {
 		Py_BEGIN_ALLOW_THREADS
-		f->f_fp = fopen(name, mode);
+		f->f_fp = fopen(name, newmode);
 		Py_END_ALLOW_THREADS
 	}
 
@@ -254,6 +263,10 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 	}
 	if (f != NULL)
 		f = dircheck(f);
+
+cleanup:
+	PyMem_FREE(newmode);
+
 	return (PyObject *)f;
 }
 
@@ -1705,9 +1718,6 @@ PyDoc_STRVAR(close_doc,
 PyDoc_STRVAR(isatty_doc,
 "isatty() -> true or false.  True if the file is connected to a tty device.");
 
-PyDoc_STRVAR(context_doc,
-	     "__context__() -> self.");
-
 PyDoc_STRVAR(enter_doc,
 	     "__enter__() -> self.");
 
@@ -1727,7 +1737,6 @@ static PyMethodDef file_methods[] = {
 	{"flush",     (PyCFunction)file_flush,    METH_NOARGS,  flush_doc},
 	{"close",     (PyCFunction)file_close,    METH_NOARGS,  close_doc},
 	{"isatty",    (PyCFunction)file_isatty,   METH_NOARGS,  isatty_doc},
-	{"__context__", (PyCFunction)file_self,   METH_NOARGS,  context_doc},
 	{"__enter__", (PyCFunction)file_self,     METH_NOARGS,  enter_doc},
 	{"__exit__",  (PyCFunction)file_close,    METH_VARARGS, close_doc},
 	{NULL,	      NULL}		/* sentinel */
@@ -2023,10 +2032,6 @@ PyDoc_STR(
 "'\\r', '\\n', '\\r\\n' or a tuple containing all the newline types seen.\n"
 "\n"
 "'U' cannot be combined with 'w' or '+' mode.\n"
-)
-PyDoc_STR(
-"\n"
-"Note:  open() is an alias for file()."
 );
 
 PyTypeObject PyFile_Type = {
@@ -2447,4 +2452,3 @@ Py_UniversalNewlineFread(char *buf, size_t n,
 #ifdef __cplusplus
 }
 #endif
-

@@ -81,12 +81,9 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
 			if (!PyClass_Check(base)) {
 				if (PyCallable_Check(
 					(PyObject *) base->ob_type))
-					return PyObject_CallFunction(
+					return PyObject_CallFunctionObjArgs(
 						(PyObject *) base->ob_type,
-						"OOO",
-						name,
-						bases,
-						dict);
+						name, bases, dict, NULL);
 				PyErr_SetString(PyExc_TypeError,
 					"PyClass_New: base must be a class");
 				return NULL;
@@ -320,7 +317,7 @@ class_setattr(PyClassObject *op, PyObject *name, PyObject *v)
 	}
 	sname = PyString_AsString(name);
 	if (sname[0] == '_' && sname[1] == '_') {
-		int n = PyString_Size(name);
+		Py_ssize_t n = PyString_Size(name);
 		if (sname[n-1] == '_' && sname[n-2] == '_') {
 			char *err = NULL;
 			if (strcmp(sname, "__dict__") == 0)
@@ -380,7 +377,7 @@ class_str(PyClassObject *op)
 	PyObject *mod = PyDict_GetItemString(op->cl_dict, "__module__");
 	PyObject *name = op->cl_name;
 	PyObject *res;
-	int m, n;
+	Py_ssize_t m, n;
 
 	if (name == NULL || !PyString_Check(name))
 		return class_repr(op);
@@ -638,7 +635,7 @@ instance_dealloc(register PyInstanceObject *inst)
 		PyObject_GC_Del(inst);
 	}
 	else {
-		int refcnt = inst->ob_refcnt;
+		Py_ssize_t refcnt = inst->ob_refcnt;
 		/* __del__ resurrected it!  Make it look like the original
 		 * Py_DECREF never happened.
 		 */
@@ -778,7 +775,7 @@ instance_setattr(PyInstanceObject *inst, PyObject *name, PyObject *v)
 	PyObject *func, *args, *res, *tmp;
 	char *sname = PyString_AsString(name);
 	if (sname[0] == '_' && sname[1] == '_') {
-		int n = PyString_Size(name);
+		Py_ssize_t n = PyString_Size(name);
 		if (sname[n-1] == '_' && sname[n-2] == '_') {
 			if (strcmp(sname, "__dict__") == 0) {
 				if (PyEval_GetRestricted()) {
@@ -1075,21 +1072,15 @@ static PyMappingMethods instance_as_mapping = {
 static PyObject *
 instance_item(PyInstanceObject *inst, Py_ssize_t i)
 {
-	PyObject *func, *arg, *res;
+	PyObject *func, *res;
 
 	if (getitemstr == NULL)
 		getitemstr = PyString_InternFromString("__getitem__");
 	func = instance_getattr(inst, getitemstr);
 	if (func == NULL)
 		return NULL;
-	arg = Py_BuildValue("(n)", i);
-	if (arg == NULL) {
-		Py_DECREF(func);
-		return NULL;
-	}
-	res = PyEval_CallObject(func, arg);
+	res = PyObject_CallFunction(func, "n", i);
 	Py_DECREF(func);
-	Py_DECREF(arg);
 	return res;
 }
 
@@ -1263,7 +1254,7 @@ instance_contains(PyInstanceObject *inst, PyObject *member)
 		 */
 		PyErr_Clear();
 		return _PySequence_IterSearch((PyObject *)inst, member,
-					      PY_ITERSEARCH_CONTAINS);
+					      PY_ITERSEARCH_CONTAINS) > 0;
 	}
 	else
 		return -1;

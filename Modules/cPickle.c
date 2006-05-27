@@ -1151,7 +1151,9 @@ save_float(Picklerobject *self, PyObject *args)
 	else {
 		char c_str[250];
 		c_str[0] = FLOAT;
-		PyOS_snprintf(c_str + 1, sizeof(c_str) - 1, "%.17g\n", x);
+		PyOS_ascii_formatd(c_str + 1, sizeof(c_str) - 2, "%.17g", x);
+		/* Extend the formatted string with a newline character */
+		strcat(c_str, "\n");
 
 		if (self->write_func(self, c_str, strlen(c_str)) < 0)
 			return -1;
@@ -3071,8 +3073,8 @@ find_class(PyObject *py_module_name, PyObject *py_global_name, PyObject *fc)
 					"pickles are not supported.");
 			return NULL;
 		}
-		return PyObject_CallFunction(fc, "OO", py_module_name,
-					     py_global_name);
+		return PyObject_CallFunctionObjArgs(fc, py_module_name,
+					            py_global_name, NULL);
 	}
 
 	module = PySys_GetObject("modules");
@@ -5623,7 +5625,6 @@ init_stuff(PyObject *module_dict)
 
 	if (!( t=PyDict_New()))  return -1;
 	if (!( r=PyRun_String(
-		       "def __init__(self, *args): self.args=args\n\n"
 		       "def __str__(self):\n"
 		       "  return self.args and ('%s' % self.args[0]) or '(what)'\n",
 		       Py_file_input,
@@ -5643,7 +5644,6 @@ init_stuff(PyObject *module_dict)
 
 	if (!( t=PyDict_New()))  return -1;
 	if (!( r=PyRun_String(
-		       "def __init__(self, *args): self.args=args\n\n"
 		       "def __str__(self):\n"
 		       "  a=self.args\n"
 		       "  a=a and type(a[0]) or '(what)'\n"

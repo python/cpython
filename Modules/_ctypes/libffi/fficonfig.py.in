@@ -6,6 +6,7 @@ ffi_platforms = {
     'MIPS_IRIX': ['src/mips/ffi.c', 'src/mips/o32.S', 'src/mips/n32.S'],
     'MIPS_LINUX': ['src/mips/ffi.c', 'src/mips/o32.S'],
     'X86': ['src/x86/ffi.c', 'src/x86/sysv.S'],
+    'X86_DARWIN': ['src/x86/ffi_darwin.c', 'src/x86/darwin.S'],
     'X86_WIN32': ['src/x86/ffi.c', 'src/x86/win32.S'],
     'SPARC': ['src/sparc/ffi.c', 'src/sparc/v8.S', 'src/sparc/v9.S'],
     'ALPHA': ['src/alpha/ffi.c', 'src/alpha/osf.S'],
@@ -26,10 +27,22 @@ ffi_platforms = {
     'PA': ['src/pa/linux.S', 'src/pa/ffi.c'],
 }
 
+# Build all darwin related files on all supported darwin architectures, this
+# makes it easier to build universal binaries.
+if 1:
+    all_darwin = ('X86_DARWIN', 'POWERPC_DARWIN')
+    all_darwin_files = []
+    for pn in all_darwin:
+        all_darwin_files.extend(ffi_platforms[pn])
+    for pn in all_darwin:
+        ffi_platforms[pn] = all_darwin_files
+    del all_darwin, all_darwin_files, pn
+
 ffi_srcdir = '@srcdir@'
-ffi_sources += ffi_platforms['@TARGET@']
+ffi_sources += ffi_platforms['@MKTARGET@']
 ffi_sources = [os.path.join('@srcdir@', f) for f in ffi_sources]
 
 ffi_cflags = '@CFLAGS@'
+# I think this may no longer be needed:
 if sys.platform == "openbsd3":
     ffi_cflags += " -fno-stack-protector"

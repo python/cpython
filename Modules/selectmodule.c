@@ -8,6 +8,13 @@
 
 #include "Python.h"
 
+#ifdef __APPLE__
+    /* Perform runtime testing for a broken poll on OSX to make it easier
+     * to use the same binary on multiple releases of the OS.
+     */
+#undef HAVE_BROKEN_POLL
+#endif
+
 /* Windows #defines FD_SETSIZE to 64 if FD_SETSIZE isn't already defined.
    64 is too small (too many people have bumped into that limit).
    Here we boost it.
@@ -618,7 +625,38 @@ select_poll(PyObject *self, PyObject *args)
 		return NULL;
 	return (PyObject *)rv;
 }
-#endif /* HAVE_POLL && !HAVE_BROKEN_POLL */
+
+#ifdef __APPLE__
+/* 
+ * On some systems poll() sets errno on invalid file descriptors. We test
+ * for this at runtime because this bug may be fixed or introduced between
+ * OS releases.
+ */
+static int select_have_broken_poll(void)
+{
+	int poll_test;
+	int filedes[2];
+
+	struct pollfd poll_struct = { 0, POLLIN|POLLPRI|POLLOUT, 0 };
+
+	/* Create a file descriptor to make invalid */
+	if (pipe(filedes) < 0) {
+		return 1;
+	}
+	poll_struct.fd = filedes[0];
+	close(filedes[0]);
+	close(filedes[1]);
+	poll_test = poll(&poll_struct, 1, 0);
+	if (poll_test < 0) {
+		return 1;
+	} else if (poll_test == 0 && poll_struct.revents != POLLNVAL) {
+		return 1;
+	}
+	return 0;
+}
+#endif /* __APPLE__ */
+
+#endif /* HAVE_POLL */
 
 PyDoc_STRVAR(select_doc,
 "select(rlist, wlist, xlist[, timeout]) -> (rlist, wlist, xlist)\n\
@@ -645,9 +683,9 @@ On Windows, only sockets are supported; on Unix, all file descriptors.");
 
 static PyMethodDef select_methods[] = {
     {"select",	select_select, METH_VARARGS, select_doc},
-#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
+#if defined(HAVE_POLL) 
     {"poll",    select_poll,   METH_VARARGS, poll_doc},
-#endif /* HAVE_POLL && !HAVE_BROKEN_POLL */
+#endif /* HAVE_POLL */
     {0,  	0},			     /* sentinel */
 };
 
@@ -668,29 +706,40 @@ initselect(void)
 	SelectError = PyErr_NewException("select.error", NULL, NULL);
 	Py_INCREF(SelectError);
 	PyModule_AddObject(m, "error", SelectError);
-#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
-	poll_Type.ob_type = &PyType_Type;
-	PyModule_AddIntConstant(m, "POLLIN", POLLIN);
-	PyModule_AddIntConstant(m, "POLLPRI", POLLPRI);
-	PyModule_AddIntConstant(m, "POLLOUT", POLLOUT);
-	PyModule_AddIntConstant(m, "POLLERR", POLLERR);
-	PyModule_AddIntConstant(m, "POLLHUP", POLLHUP);
-	PyModule_AddIntConstant(m, "POLLNVAL", POLLNVAL);
+#if defined(HAVE_POLL) 
+
+#ifdef __APPLE__
+	if (select_have_broken_poll()) {
+		if (PyObject_DelAttrString(m, "poll") == -1) {
+			PyErr_Clear();
+		}
+	} else {
+#else
+	{
+#endif
+		poll_Type.ob_type = &PyType_Type;
+		PyModule_AddIntConstant(m, "POLLIN", POLLIN);
+		PyModule_AddIntConstant(m, "POLLPRI", POLLPRI);
+		PyModule_AddIntConstant(m, "POLLOUT", POLLOUT);
+		PyModule_AddIntConstant(m, "POLLERR", POLLERR);
+		PyModule_AddIntConstant(m, "POLLHUP", POLLHUP);
+		PyModule_AddIntConstant(m, "POLLNVAL", POLLNVAL);
 
 #ifdef POLLRDNORM
-	PyModule_AddIntConstant(m, "POLLRDNORM", POLLRDNORM);
+		PyModule_AddIntConstant(m, "POLLRDNORM", POLLRDNORM);
 #endif
 #ifdef POLLRDBAND
-	PyModule_AddIntConstant(m, "POLLRDBAND", POLLRDBAND);
+		PyModule_AddIntConstant(m, "POLLRDBAND", POLLRDBAND);
 #endif
 #ifdef POLLWRNORM
-	PyModule_AddIntConstant(m, "POLLWRNORM", POLLWRNORM);
+		PyModule_AddIntConstant(m, "POLLWRNORM", POLLWRNORM);
 #endif
 #ifdef POLLWRBAND
-	PyModule_AddIntConstant(m, "POLLWRBAND", POLLWRBAND);
+		PyModule_AddIntConstant(m, "POLLWRBAND", POLLWRBAND);
 #endif
 #ifdef POLLMSG
-	PyModule_AddIntConstant(m, "POLLMSG", POLLMSG);
+		PyModule_AddIntConstant(m, "POLLMSG", POLLMSG);
 #endif
-#endif /* HAVE_POLL && !HAVE_BROKEN_POLL */
+	}
+#endif /* HAVE_POLL */
 }

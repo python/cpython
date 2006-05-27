@@ -857,13 +857,6 @@ class ftpwrapper:
             self.ftp.voidcmd(cmd)
         conn = None
         if file and not isdir:
-            # Use nlst to see if the file exists at all
-            try:
-                self.ftp.nlst(file)
-            except ftplib.error_perm, reason:
-                raise IOError, ('ftp error', reason), sys.exc_info()[2]
-            # Restore the transfer mode!
-            self.ftp.voidcmd(cmd)
             # Try to retrieve as a file
             try:
                 cmd = 'RETR ' + file

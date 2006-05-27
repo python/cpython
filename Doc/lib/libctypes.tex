@@ -1,0 +1,1226 @@
+\newlength{\locallinewidth}
+\setlength{\locallinewidth}{\linewidth}
+\section{\module{ctypes} --- A foreign function library for Python.}
+\declaremodule{standard}{ctypes}
+\moduleauthor{Thomas Heller}{theller@python.net}
+\modulesynopsis{A foreign function library for Python.}
+\versionadded{2.5}
+
+\code{ctypes} is a foreign function library for Python.
+
+
+\subsection{ctypes tutorial\label{ctypes-ctypes-tutorial}}
+
+This tutorial describes version 0.9.9 of \code{ctypes}.
+
+Note: The code samples in this tutorial uses \code{doctest} to make sure
+that they actually work.  Since some code samples behave differently
+under Linux, Windows, or Mac OS X, they contain doctest directives in
+comments.
+
+Note: Quite some code samples references the ctypes \class{c{\_}int} type.
+This type is an alias to the \class{c{\_}long} type on 32-bit systems.  So,
+you should not be confused if \class{c{\_}long} is printed if you would
+expect \class{c{\_}int} - they are actually the same type.
+
+
+\subsubsection{Loading dynamic link libraries\label{ctypes-loading-dynamic-link-libraries}}
+
+\code{ctypes} exports the \var{cdll}, and on Windows also \var{windll} and
+\var{oledll} objects to load dynamic link libraries.
+
+You load libraries by accessing them as attributes of these objects.
+\var{cdll} loads libraries which export functions using the standard
+\code{cdecl} calling convention, while \var{windll} libraries call
+functions using the \code{stdcall} calling convention. \var{oledll} also
+uses the \code{stdcall} calling convention, and assumes the functions
+return a Windows \class{HRESULT} error code. The error code is used to
+automatically raise \class{WindowsError} Python exceptions when the
+function call fails.
+
+Here are some examples for Windows, note that \code{msvcrt} is the MS
+standard C library containing most standard C functions, and uses the
+cdecl calling convention:
+\begin{verbatim}
+>>> from ctypes import *
+>>> print windll.kernel32 # doctest: +WINDOWS
+<WinDLL 'kernel32', handle ... at ...>
+>>> print cdll.msvcrt # doctest: +WINDOWS
+<CDLL 'msvcrt', handle ... at ...>
+>>> libc = cdll.msvcrt # doctest: +WINDOWS
+>>>
+\end{verbatim}
+
+Windows appends the usual '.dll' file suffix automatically.
+
+On Linux, it is required to specify the filename \emph{including} the
+extension to load a library, so attribute access does not work.
+Either the \method{LoadLibrary} method of the dll loaders should be used,
+or you should load the library by creating an instance of CDLL by
+calling the constructor:
+\begin{verbatim}
+>>> cdll.LoadLibrary("libc.so.6") # doctest: +LINUX
+<CDLL 'libc.so.6', handle ... at ...>
+>>> libc = CDLL("libc.so.6")     # doctest: +LINUX
+>>> libc                         # doctest: +LINUX
+<CDLL 'libc.so.6', handle ... at ...>
+>>>
+\end{verbatim}
+
+XXX Add section for Mac OS X.
+
+
+\subsubsection{Accessing functions from loaded dlls\label{ctypes-accessing-functions-from-loaded-dlls}}
+
+Functions are accessed as attributes of dll objects:
+\begin{verbatim}
+>>> from ctypes import *
+>>> libc.printf
+<_FuncPtr object at 0x...>
+>>> print windll.kernel32.GetModuleHandleA # doctest: +WINDOWS
+<_FuncPtr object at 0x...>
+>>> print windll.kernel32.MyOwnFunction # doctest: +WINDOWS
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+  File "ctypes.py", line 239, in __getattr__
+    func = _StdcallFuncPtr(name, self)
+AttributeError: function 'MyOwnFunction' not found
+>>>
+\end{verbatim}
+
+Note that win32 system dlls like \code{kernel32} and \code{user32} often
+export ANSI as well as UNICODE versions of a function. The UNICODE
+version is exported with an \code{W} appended to the name, while the ANSI
+version is exported with an \code{A} appended to the name. The win32
+\code{GetModuleHandle} function, which returns a \emph{module handle} for a
+given module name, has the following C prototype, and a macro is used
+to expose one of them as \code{GetModuleHandle} depending on whether
+UNICODE is defined or not:
+\begin{verbatim}
+/* ANSI version */
+HMODULE GetModuleHandleA(LPCSTR lpModuleName);
+/* UNICODE version */
+HMODULE GetModuleHandleW(LPCWSTR lpModuleName);
+\end{verbatim}
+
+\var{windll} does not try to select one of them by magic, you must
+access the version you need by specifying \code{GetModuleHandleA} or
+\code{GetModuleHandleW} explicitely, and then call it with normal strings
+or unicode strings respectively.
+
+Sometimes, dlls export functions with names which aren't valid Python
+identifiers, like \code{"??2@YAPAXI@Z"}. In this case you have to use
+\code{getattr} to retrieve the function:
+\begin{verbatim}
+>>> getattr(cdll.msvcrt, "??2@YAPAXI@Z") # doctest: +WINDOWS
+<_FuncPtr object at 0x...>
+>>>
+\end{verbatim}
+
+On Windows, some dlls export functions not by name but by ordinal.
+These functions can be accessed by indexing the dll object with the
+odinal number:
+\begin{verbatim}
+>>> cdll.kernel32[1] # doctest: +WINDOWS
+<_FuncPtr object at 0x...>
+>>> cdll.kernel32[0] # doctest: +WINDOWS
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+  File "ctypes.py", line 310, in __getitem__
+    func = _StdcallFuncPtr(name, self)
+AttributeError: function ordinal 0 not found
+>>>
+\end{verbatim}
+
+
+\subsubsection{Calling functions\label{ctypes-calling-functions}}
+
+You can call these functions like any other Python callable. This
+example uses the \code{time()} function, which returns system time in
+seconds since the \UNIX{} epoch, and the \code{GetModuleHandleA()} function,
+which returns a win32 module handle.
+
+This example calls both functions with a NULL pointer (\code{None} should
+be used as the NULL pointer):
+\begin{verbatim}
+>>> print libc.time(None)
+114...
+>>> print hex(windll.kernel32.GetModuleHandleA(None)) # doctest: +WINDOWS
+0x1d000000
+>>>
+\end{verbatim}
+
+\code{ctypes} tries to protect you from calling functions with the wrong
+number of arguments.  Unfortunately this only works on Windows.  It
+does this by examining the stack after the function returns:
+\begin{verbatim}
+>>> windll.kernel32.GetModuleHandleA() # doctest: +WINDOWS
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+ValueError: Procedure probably called with not enough arguments (4 bytes missing)
+>>> windll.kernel32.GetModuleHandleA(0, 0) # doctest: +WINDOWS
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+ValueError: Procedure probably called with too many arguments (4 bytes in excess)
+>>>
+\end{verbatim}
+
+On Windows, \code{ctypes} uses win32 structured exception handling to
+prevent crashes from general protection faults when functions are
+called with invalid argument values:
+\begin{verbatim}
+>>> windll.kernel32.GetModuleHandleA(32) # doctest: +WINDOWS
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+WindowsError: exception: access violation reading 0x00000020
+>>>
+\end{verbatim}
+
+There are, however, enough ways to crash Python with \code{ctypes}, so
+you should be careful anyway.
+
+Python integers, strings and unicode strings are the only objects that
+can directly be used as parameters in these function calls.
+
+Before we move on calling functions with other parameter types, we
+have to learn more about \code{ctypes} data types.
+
+
+\subsubsection{Simple data types\label{ctypes-simple-data-types}}
+
+\code{ctypes} defines a number of primitive C compatible data types :
+\begin{quote}
+
+\begin{longtable}[c]{|p{0.19\locallinewidth}|p{0.28\locallinewidth}|p{0.14\locallinewidth}|}
+\hline
+\textbf{
+ctypes type
+} & \textbf{
+C type
+} & \textbf{
+Python type
+} \\
+\hline
+\endhead
+
+\class{c{\_}char}
+ & 
+\code{char}
+ & 
+character
+ \\
+\hline
+
+\class{c{\_}byte}
+ & 
+\code{char}
+ & 
+integer
+ \\
+\hline
+
+\class{c{\_}ubyte}
+ & 
+\code{unsigned char}
+ & 
+integer
+ \\
+\hline
+
+\class{c{\_}short}
+ & 
+\code{short}
+ & 
+integer
+ \\
+\hline
+
+\class{c{\_}ushort}
+ & 
+\code{unsigned short}
+ & 
+integer
+ \\
+\hline
+
+\class{c{\_}int}
+ & 
+\code{int}
+ & 
+integer
+ \\
+\hline
+
+\class{c{\_}uint}
+ & 
+\code{unsigned int}
+ & 
+integer
+ \\
+\hline
+
+\class{c{\_}long}
+ & 
+\code{long}
+ & 
+integer
+ \\
+\hline
+
+\class{c{\_}ulong}
+ & 
+\code{unsigned long}
+ & 
+long
+ \\
+\hline
+
+\class{c{\_}longlong}
+ & 
+\code{{\_}{\_}int64} or
+\code{long long}
+ & 
+long
+ \\
+\hline
+
+\class{c{\_}ulonglong}
+ & 
+\code{unsigned {\_}{\_}int64} or
+\code{unsigned long long}
+ & 
+long
+ \\
+\hline
+
+\class{c{\_}float}
+ & 
+\code{float}
+ & 
+float
+ \\
+\hline
+
+\class{c{\_}double}
+ & 
+\code{double}
+ & 
+float
+ \\
+\hline
+
+\class{c{\_}char{\_}p}
+ & 
+\code{char *}
+(NUL terminated)
+ & 
+string or
+\code{None}
+ \\
+\hline
+
+\class{c{\_}wchar{\_}p}
+ & 
+\code{wchar{\_}t *}
+(NUL terminated)
+ & 
+unicode or
+\code{None}
+ \\
+\hline
+
+\class{c{\_}void{\_}p}
+ & 
+\code{void *}
+ & 
+integer or
+\code{None}
+ \\
+\hline
+\end{longtable}
+\end{quote}
+
+All these types can be created by calling them with an optional
+initializer of the correct type and value:
+\begin{verbatim}
+>>> c_int()
+c_long(0)
+>>> c_char_p("Hello, World")
+c_char_p('Hello, World')
+>>> c_ushort(-3)
+c_ushort(65533)
+>>>
+\end{verbatim}
+
+Since these types are mutable, their value can also be changed
+afterwards:
+\begin{verbatim}
+>>> i = c_int(42)
+>>> print i
+c_long(42)
+>>> print i.value
+42
+>>> i.value = -99
+>>> print i.value
+-99
+>>>
+\end{verbatim}
+
+Assigning a new value to instances of the pointer types \class{c{\_}char{\_}p},
+\class{c{\_}wchar{\_}p}, and \class{c{\_}void{\_}p} changes the \emph{memory location} they
+point to, \emph{not the contents} of the memory block (of course not,
+because Python strings are immutable):
+\begin{verbatim}
+>>> s = "Hello, World"
+>>> c_s = c_char_p(s)
+>>> print c_s
+c_char_p('Hello, World')
+>>> c_s.value = "Hi, there"
+>>> print c_s
+c_char_p('Hi, there')
+>>> print s                 # first string is unchanged
+Hello, World
+\end{verbatim}
+
+You should be careful, however, not to pass them to functions
+expecting pointers to mutable memory. If you need mutable memory
+blocks, ctypes has a \code{create{\_}string{\_}buffer} function which creates
+these in various ways.  The current memory block contents can be
+accessed (or changed) with the \code{raw} property, if you want to access
+it as NUL terminated string, use the \code{string} property:
+\begin{verbatim}
+>>> from ctypes import *
+>>> p = create_string_buffer(3)      # create a 3 byte buffer, initialized to NUL bytes
+>>> print sizeof(p), repr(p.raw)
+3 '\x00\x00\x00'
+>>> p = create_string_buffer("Hello")      # create a buffer containing a NUL terminated string
+>>> print sizeof(p), repr(p.raw)
+6 'Hello\x00'
+>>> print repr(p.value)
+'Hello'
+>>> p = create_string_buffer("Hello", 10)  # create a 10 byte buffer
+>>> print sizeof(p), repr(p.raw)
+10 'Hello\x00\x00\x00\x00\x00'
+>>> p.value = "Hi"      
+>>> print sizeof(p), repr(p.raw)
+10 'Hi\x00lo\x00\x00\x00\x00\x00'
+>>>
+\end{verbatim}
+
+The \code{create{\_}string{\_}buffer} function replaces the \code{c{\_}buffer}
+function (which is still available as an alias), as well as the
+\code{c{\_}string} function from earlier ctypes releases.  To create a
+mutable memory block containing unicode characters of the C type
+\code{wchar{\_}t} use the \code{create{\_}unicode{\_}buffer} function.
+
+
+\subsubsection{Calling functions, continued\label{ctypes-calling-functions-continued}}
+
+Note that printf prints to the real standard output channel, \emph{not} to
+\code{sys.stdout}, so these examples will only work at the console
+prompt, not from within \emph{IDLE} or \emph{PythonWin}:
+\begin{verbatim}
+>>> printf = libc.printf
+>>> printf("Hello, %s\n", "World!")
+Hello, World!
+14
+>>> printf("Hello, %S", u"World!")
+Hello, World!
+13
+>>> printf("%d bottles of beer\n", 42)
+42 bottles of beer
+19
+>>> printf("%f bottles of beer\n", 42.5)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+ArgumentError: argument 2: exceptions.TypeError: Don't know how to convert parameter 2
+>>>
+\end{verbatim}
+
+As has been mentioned before, all Python types except integers,
+strings, and unicode strings have to be wrapped in their corresponding
+\code{ctypes} type, so that they can be converted to the required C data
+type:
+\begin{verbatim}
+>>> printf("An int %d, a double %f\n", 1234, c_double(3.14))
+Integer 1234, double 3.1400001049
+31
+>>>
+\end{verbatim}
+
+
+\subsubsection{Calling functions with your own custom data types\label{ctypes-calling-functions-with-own-custom-data-types}}
+
+You can also customize \code{ctypes} argument conversion to allow
+instances of your own classes be used as function arguments.
+\code{ctypes} looks for an \member{{\_}as{\_}parameter{\_}} attribute and uses this as
+the function argument. Of course, it must be one of integer, string,
+or unicode:
+\begin{verbatim}
+>>> class Bottles(object):
+...     def __init__(self, number):
+...         self._as_parameter_ = number
+...
+>>> bottles = Bottles(42)
+>>> printf("%d bottles of beer\n", bottles)
+42 bottles of beer
+19
+>>>
+\end{verbatim}
+
+If you don't want to store the instance's data in the
+\member{{\_}as{\_}parameter{\_}} instance variable, you could define a \code{property}
+which makes the data avaiblable.
+
+
+\subsubsection{Specifying the required argument types (function prototypes)\label{ctypes-specifying-required-argument-types}}
+
+It is possible to specify the required argument types of functions
+exported from DLLs by setting the \member{argtypes} attribute.
+
+\member{argtypes} must be a sequence of C data types (the \code{printf}
+function is probably not a good example here, because it takes a
+variable number and different types of parameters depending on the
+format string, on the other hand this is quite handy to experiment
+with this feature):
+\begin{verbatim}
+>>> printf.argtypes = [c_char_p, c_char_p, c_int, c_double]
+>>> printf("String '%s', Int %d, Double %f\n", "Hi", 10, 2.2)
+String 'Hi', Int 10, Double 2.200000
+37
+>>>
+\end{verbatim}
+
+Specifying a format protects against incompatible argument types (just
+as a prototype for a C function), and tries to convert the arguments
+to valid types:
+\begin{verbatim}
+>>> printf("%d %d %d", 1, 2, 3)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+ArgumentError: argument 2: exceptions.TypeError: wrong type
+>>> printf("%s %d %f", "X", 2, 3)
+X 2 3.00000012
+12
+>>>
+\end{verbatim}
+
+If you have defined your own classes which you pass to function calls,
+you have to implement a \method{from{\_}param} class method for them to be
+able to use them in the \member{argtypes} sequence. The \method{from{\_}param}
+class method receives the Python object passed to the function call,
+it should do a typecheck or whatever is needed to make sure this
+object is acceptable, and then return the object itself, it's
+\member{{\_}as{\_}parameter{\_}} attribute, or whatever you want to pass as the C
+function argument in this case. Again, the result should be an
+integer, string, unicode, a \code{ctypes} instance, or something having
+the \member{{\_}as{\_}parameter{\_}} attribute.
+
+
+\subsubsection{Return types\label{ctypes-return-types}}
+
+By default functions are assumed to return integers.  Other return
+types can be specified by setting the \member{restype} attribute of the
+function object.
+
+Here is a more advanced example, it uses the strchr function, which
+expects a string pointer and a char, and returns a pointer to a
+string:
+\begin{verbatim}
+>>> strchr = libc.strchr
+>>> strchr("abcdef", ord("d")) # doctest: +SKIP
+8059983
+>>> strchr.restype = c_char_p # c_char_p is a pointer to a string
+>>> strchr("abcdef", ord("d"))
+'def'
+>>> print strchr("abcdef", ord("x"))
+None
+>>>
+\end{verbatim}
+
+If you want to avoid the \code{ord("x")} calls above, you can set the
+\member{argtypes} attribute, and the second argument will be converted from
+a single character Python string into a C char:
+\begin{verbatim}
+>>> strchr.restype = c_char_p
+>>> strchr.argtypes = [c_char_p, c_char]
+>>> strchr("abcdef", "d")
+'def'
+>>> strchr("abcdef", "def")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+ArgumentError: argument 2: exceptions.TypeError: one character string expected
+>>> print strchr("abcdef", "x")
+None
+>>> strchr("abcdef", "d")
+'def'
+>>>
+\end{verbatim}
+
+XXX Mention the \member{errcheck} protocol...
+
+You can also use a callable Python object (a function or a class for
+example) as the \member{restype} attribute.  It will be called with the
+\code{integer} the C function returns, and the result of this call will
+be used as the result of your function call. This is useful to check
+for error return values and automatically raise an exception:
+\begin{verbatim}
+>>> GetModuleHandle = windll.kernel32.GetModuleHandleA # doctest: +WINDOWS
+>>> def ValidHandle(value):
+...     if value == 0:
+...         raise WinError()
+...     return value
+...
+>>>
+>>> GetModuleHandle.restype = ValidHandle # doctest: +WINDOWS
+>>> GetModuleHandle(None) # doctest: +WINDOWS
+486539264
+>>> GetModuleHandle("something silly") # doctest: +WINDOWS +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+  File "<stdin>", line 3, in ValidHandle
+WindowsError: [Errno 126] The specified module could not be found.
+>>>
+\end{verbatim}
+
+\code{WinError} is a function which will call Windows \code{FormatMessage()}
+api to get the string representation of an error code, and \emph{returns}
+an exception.  \code{WinError} takes an optional error code parameter, if
+no one is used, it calls \function{GetLastError()} to retrieve it.
+
+
+\subsubsection{Passing pointers (or: passing parameters by reference)\label{ctypes-passing-pointers}}
+
+Sometimes a C api function expects a \emph{pointer} to a data type as
+parameter, probably to write into the corresponding location, or if
+the data is too large to be passed by value. This is also known as
+\emph{passing parameters by reference}.
+
+\code{ctypes} exports the \function{byref} function which is used to pass
+parameters by reference.  The same effect can be achieved with the
+\code{pointer} function, although \code{pointer} does a lot more work since
+it constructs a real pointer object, so it is faster to use \function{byref}
+if you don't need the pointer object in Python itself:
+\begin{verbatim}
+>>> i = c_int()
+>>> f = c_float()
+>>> s = create_string_buffer('\000' * 32)
+>>> print i.value, f.value, repr(s.value)
+0 0.0 ''
+>>> libc.sscanf("1 3.14 Hello", "%d %f %s",
+...             byref(i), byref(f), s)
+3
+>>> print i.value, f.value, repr(s.value)
+1 3.1400001049 'Hello'
+>>>
+\end{verbatim}
+
+
+\subsubsection{Structures and unions\label{ctypes-structures-unions}}
+
+Structures and unions must derive from the \class{Structure} and \class{Union}
+base classes which are defined in the \code{ctypes} module. Each subclass
+must define a \member{{\_}fields{\_}} attribute.  \member{{\_}fields{\_}} must be a list of
+\emph{2-tuples}, containing a \emph{field name} and a \emph{field type}.
+
+The field type must be a \code{ctypes} type like \class{c{\_}int}, or any other
+derived \code{ctypes} type: structure, union, array, pointer.
+
+Here is a simple example of a POINT structure, which contains two
+integers named \code{x} and \code{y}, and also shows how to initialize a
+structure in the constructor:
+\begin{verbatim}
+>>> from ctypes import *
+>>> class POINT(Structure):
+...     _fields_ = [("x", c_int),
+...                 ("y", c_int)]
+...
+>>> point = POINT(10, 20)
+>>> print point.x, point.y
+10 20
+>>> point = POINT(y=5)
+>>> print point.x, point.y
+0 5
+>>> POINT(1, 2, 3)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+ValueError: too many initializers
+>>>
+\end{verbatim}
+
+You can, however, build much more complicated structures. Structures
+can itself contain other structures by using a structure as a field
+type.
+
+Here is a RECT structure which contains two POINTs named \code{upperleft}
+and \code{lowerright}
+\begin{verbatim}
+>>> class RECT(Structure):
+...     _fields_ = [("upperleft", POINT),
+...                 ("lowerright", POINT)]
+...
+>>> rc = RECT(point)
+>>> print rc.upperleft.x, rc.upperleft.y
+0 5
+>>> print rc.lowerright.x, rc.lowerright.y
+0 0
+>>>
+\end{verbatim}
+
+Nested structures can also be initialized in the constructor in
+several ways:
+\begin{verbatim}
+>>> r = RECT(POINT(1, 2), POINT(3, 4))
+>>> r = RECT((1, 2), (3, 4))
+\end{verbatim}
+
+Fields descriptors can be retrieved from the \emph{class}, they are useful
+for debugging because they can provide useful information:
+\begin{verbatim}
+>>> print POINT.x
+<Field type=c_long, ofs=0, size=4>
+>>> print POINT.y
+<Field type=c_long, ofs=4, size=4>
+>>>
+\end{verbatim}
+
+
+\subsubsection{Structure/union alignment and byte order\label{ctypes-structureunion-alignment-byte-order}}
+
+By default, Structure and Union fields are aligned in the same way the
+C compiler does it. It is possible to override this behaviour be
+specifying a \member{{\_}pack{\_}} class attribute in the subclass
+definition. This must be set to a positive integer and specifies the
+maximum alignment for the fields. This is what \code{{\#}pragma pack(n)}
+also does in MSVC.
+
+\code{ctypes} uses the native byte order for Structures and Unions.  To
+build structures with non-native byte order, you can use one of the
+BigEndianStructure, LittleEndianStructure, BigEndianUnion, and
+LittleEndianUnion base classes.  These classes cannot contain pointer
+fields.
+
+
+\subsubsection{Bit fields in structures and unions\label{ctypes-bit-fields-in-structures-unions}}
+
+It is possible to create structures and unions containing bit fields.
+Bit fields are only possible for integer fields, the bit width is
+specified as the third item in the \member{{\_}fields{\_}} tuples:
+\begin{verbatim}
+>>> class Int(Structure):
+...     _fields_ = [("first_16", c_int, 16),
+...                 ("second_16", c_int, 16)]
+...
+>>> print Int.first_16
+<Field type=c_long, ofs=0:0, bits=16>
+>>> print Int.second_16
+<Field type=c_long, ofs=0:16, bits=16>
+>>>
+\end{verbatim}
+
+
+\subsubsection{Arrays\label{ctypes-arrays}}
+
+Arrays are sequences, containing a fixed number of instances of the
+same type.
+
+The recommended way to create array types is by multiplying a data
+type with a positive integer:
+\begin{verbatim}
+TenPointsArrayType = POINT * 10
+\end{verbatim}
+
+Here is an example of an somewhat artifical data type, a structure
+containing 4 POINTs among other stuff:
+\begin{verbatim}
+>>> from ctypes import *
+>>> class POINT(Structure):
+...    _fields_ = ("x", c_int), ("y", c_int)
+...
+>>> class MyStruct(Structure):
+...    _fields_ = [("a", c_int),
+...                ("b", c_float),
+...                ("point_array", POINT * 4)]
+>>>
+>>> print len(MyStruct().point_array)
+4
+\end{verbatim}
+
+Instances are created in the usual way, by calling the class:
+\begin{verbatim}
+arr = TenPointsArrayType()
+for pt in arr:
+    print pt.x, pt.y
+\end{verbatim}
+
+The above code print a series of \code{0 0} lines, because the array
+contents is initialized to zeros.
+
+Initializers of the correct type can also be specified:
+\begin{verbatim}
+>>> from ctypes import *
+>>> TenIntegers = c_int * 10
+>>> ii = TenIntegers(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+>>> print ii
+<c_long_Array_10 object at 0x...>
+>>> for i in ii: print i,
+...
+1 2 3 4 5 6 7 8 9 10
+>>>
+\end{verbatim}
+
+
+\subsubsection{Pointers\label{ctypes-pointers}}
+
+Pointer instances are created by calling the \code{pointer} function on a
+\code{ctypes} type:
+\begin{verbatim}
+>>> from ctypes import *
+>>> i = c_int(42)
+>>> pi = pointer(i)
+>>>
+\end{verbatim}
+
+XXX XXX Not correct: use indexing, not the contents atribute
+
+Pointer instances have a \code{contents} attribute which returns the
+ctypes' type pointed to, the \code{c{\_}int(42)} in the above case:
+\begin{verbatim}
+>>> pi.contents
+c_long(42)
+>>>
+\end{verbatim}
+
+Assigning another \class{c{\_}int} instance to the pointer's contents
+attribute would cause the pointer to point to the memory location
+where this is stored:
+\begin{verbatim}
+>>> pi.contents = c_int(99)
+>>> pi.contents
+c_long(99)
+>>>
+\end{verbatim}
+
+Pointer instances can also be indexed with integers:
+\begin{verbatim}
+>>> pi[0]
+99
+>>>
+\end{verbatim}
+
+XXX What is this???
+Assigning to an integer index changes the pointed to value:
+\begin{verbatim}
+>>> i2 = pi[0]
+>>> i2
+99
+>>> pi[0] = 22
+>>> i2
+99
+>>>
+\end{verbatim}
+
+It is also possible to use indexes different from 0, but you must know
+what you're doing when you use this: You access or change arbitrary
+memory locations when you do this. Generally you only use this feature
+if you receive a pointer from a C function, and you \emph{know} that the
+pointer actually points to an array instead of a single item.
+
+
+\subsubsection{Pointer classes/types\label{ctypes-pointer-classestypes}}
+
+Behind the scenes, the \code{pointer} function does more than simply
+create pointer instances, it has to create pointer \emph{types} first.
+This is done with the \code{POINTER} function, which accepts any
+\code{ctypes} type, and returns a new type:
+\begin{verbatim}
+>>> PI = POINTER(c_int)
+>>> PI
+<class 'ctypes.LP_c_long'>
+>>> PI(42) # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+TypeError: expected c_long instead of int
+>>> PI(c_int(42))
+<ctypes.LP_c_long object at 0x...>
+>>>
+\end{verbatim}
+
+
+\subsubsection{Incomplete Types\label{ctypes-incomplete-types}}
+
+\emph{Incomplete Types} are structures, unions or arrays whose members are
+not yet specified. In C, they are specified by forward declarations, which
+are defined later:
+\begin{verbatim}
+struct cell; /* forward declaration */
+
+struct {
+    char *name;
+    struct cell *next;
+} cell;
+\end{verbatim}
+
+The straightforward translation into ctypes code would be this, but it
+does not work:
+\begin{verbatim}
+>>> class cell(Structure):
+...     _fields_ = [("name", c_char_p),
+...                 ("next", POINTER(cell))]
+...
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+  File "<stdin>", line 2, in cell
+NameError: name 'cell' is not defined
+>>>
+\end{verbatim}
+
+because the new \code{class cell} is not available in the class statement
+itself.  In \code{ctypes}, we can define the \code{cell} class and set the
+\member{{\_}fields{\_}} attribute later, after the class statement:
+\begin{verbatim}
+>>> from ctypes import *
+>>> class cell(Structure):
+...     pass
+...
+>>> cell._fields_ = [("name", c_char_p),
+...                  ("next", POINTER(cell))]
+>>>
+\end{verbatim}
+
+Lets try it. We create two instances of \code{cell}, and let them point
+to each other, and finally follow the pointer chain a few times:
+\begin{verbatim}
+>>> c1 = cell()
+>>> c1.name = "foo"
+>>> c2 = cell()
+>>> c2.name = "bar"
+>>> c1.next = pointer(c2)
+>>> c2.next = pointer(c1)
+>>> p = c1
+>>> for i in range(8):
+...     print p.name,
+...     p = p.next[0]
+...
+foo bar foo bar foo bar foo bar
+>>>    
+\end{verbatim}
+
+
+\subsubsection{Callback functions\label{ctypes-callback-functions}}
+
+\code{ctypes} allows to create C callable function pointers from Python
+callables. These are sometimes called \emph{callback functions}.
+
+First, you must create a class for the callback function, the class
+knows the calling convention, the return type, and the number and
+types of arguments this function will receive.
+
+The CFUNCTYPE factory function creates types for callback functions
+using the normal cdecl calling convention, and, on Windows, the
+WINFUNCTYPE factory function creates types for callback functions
+using the stdcall calling convention.
+
+Both of these factory functions are called with the result type as
+first argument, and the callback functions expected argument types as
+the remaining arguments.
+
+I will present an example here which uses the standard C library's
+\function{qsort} function, this is used to sort items with the help of a
+callback function. \function{qsort} will be used to sort an array of
+integers:
+\begin{verbatim}
+>>> IntArray5 = c_int * 5
+>>> ia = IntArray5(5, 1, 7, 33, 99)
+>>> qsort = libc.qsort
+>>> qsort.restype = None
+>>>
+\end{verbatim}
+
+\function{qsort} must be called with a pointer to the data to sort, the
+number of items in the data array, the size of one item, and a pointer
+to the comparison function, the callback. The callback will then be
+called with two pointers to items, and it must return a negative
+integer if the first item is smaller than the second, a zero if they
+are equal, and a positive integer else.
+
+So our callback function receives pointers to integers, and must
+return an integer. First we create the \code{type} for the callback
+function:
+\begin{verbatim}
+>>> CMPFUNC = CFUNCTYPE(c_int, POINTER(c_int), POINTER(c_int))
+>>>
+\end{verbatim}
+
+For the first implementation of the callback function, we simply print
+the arguments we get, and return 0 (incremental development ;-):
+\begin{verbatim}
+>>> def py_cmp_func(a, b):
+...     print "py_cmp_func", a, b
+...     return 0
+...
+>>>
+\end{verbatim}
+
+Create the C callable callback:
+\begin{verbatim}
+>>> cmp_func = CMPFUNC(py_cmp_func)
+>>>
+\end{verbatim}
+
+And we're ready to go:
+\begin{verbatim}
+>>> qsort(ia, len(ia), sizeof(c_int), cmp_func) # doctest: +WINDOWS
+py_cmp_func <ctypes.LP_c_long object at 0x00...> <ctypes.LP_c_long object at 0x00...>
+py_cmp_func <ctypes.LP_c_long object at 0x00...> <ctypes.LP_c_long object at 0x00...>
+py_cmp_func <ctypes.LP_c_long object at 0x00...> <ctypes.LP_c_long object at 0x00...>
+py_cmp_func <ctypes.LP_c_long object at 0x00...> <ctypes.LP_c_long object at 0x00...>
+py_cmp_func <ctypes.LP_c_long object at 0x00...> <ctypes.LP_c_long object at 0x00...>
+py_cmp_func <ctypes.LP_c_long object at 0x00...> <ctypes.LP_c_long object at 0x00...>
+py_cmp_func <ctypes.LP_c_long object at 0x00...> <ctypes.LP_c_long object at 0x00...>
+py_cmp_func <ctypes.LP_c_long object at 0x00...> <ctypes.LP_c_long object at 0x00...>
+py_cmp_func <ctypes.LP_c_long object at 0x00...> <ctypes.LP_c_long object at 0x00...>
+py_cmp_func <ctypes.LP_c_long object at 0x00...> <ctypes.LP_c_long object at 0x00...>
+>>>
+\end{verbatim}
+
+We know how to access the contents of a pointer, so lets redefine our callback:
+\begin{verbatim}
+>>> def py_cmp_func(a, b):
+...     print "py_cmp_func", a[0], b[0]
+...     return 0
+...
+>>> cmp_func = CMPFUNC(py_cmp_func)
+>>>
+\end{verbatim}
+
+Here is what we get on Windows:
+\begin{verbatim}
+>>> qsort(ia, len(ia), sizeof(c_int), cmp_func) # doctest: +WINDOWS
+py_cmp_func 7 1
+py_cmp_func 33 1
+py_cmp_func 99 1
+py_cmp_func 5 1
+py_cmp_func 7 5
+py_cmp_func 33 5
+py_cmp_func 99 5
+py_cmp_func 7 99
+py_cmp_func 33 99
+py_cmp_func 7 33
+>>>
+\end{verbatim}
+
+It is funny to see that on linux the sort function seems to work much
+more efficient, it is doing less comparisons:
+\begin{verbatim}
+>>> qsort(ia, len(ia), sizeof(c_int), cmp_func) # doctest: +LINUX
+py_cmp_func 5 1
+py_cmp_func 33 99
+py_cmp_func 7 33
+py_cmp_func 5 7
+py_cmp_func 1 7
+>>>
+\end{verbatim}
+
+Ah, we're nearly done! The last step is to actually compare the two
+items and return a useful result:
+\begin{verbatim}
+>>> def py_cmp_func(a, b):
+...     print "py_cmp_func", a[0], b[0]
+...     return a[0] - b[0]
+...
+>>>
+\end{verbatim}
+
+Final run on Windows:
+\begin{verbatim}
+>>> qsort(ia, len(ia), sizeof(c_int), CMPFUNC(py_cmp_func)) # doctest: +WINDOWS
+py_cmp_func 33 7
+py_cmp_func 99 33
+py_cmp_func 5 99
+py_cmp_func 1 99
+py_cmp_func 33 7
+py_cmp_func 1 33
+py_cmp_func 5 33
+py_cmp_func 5 7
+py_cmp_func 1 7
+py_cmp_func 5 1
+>>>
+\end{verbatim}
+
+and on Linux:
+\begin{verbatim}
+>>> qsort(ia, len(ia), sizeof(c_int), CMPFUNC(py_cmp_func)) # doctest: +LINUX
+py_cmp_func 5 1
+py_cmp_func 33 99
+py_cmp_func 7 33
+py_cmp_func 1 7
+py_cmp_func 5 7
+>>>
+\end{verbatim}
+
+So, our array sorted now:
+\begin{verbatim}
+>>> for i in ia: print i,
+...
+1 5 7 33 99
+>>>
+\end{verbatim}
+
+\textbf{Important note for callback functions:}
+
+Make sure you keep references to CFUNCTYPE objects as long as they are
+used from C code. ctypes doesn't, and if you don't, they may be
+garbage collected, crashing your program when a callback is made.
+
+
+\subsubsection{Accessing values exported from dlls\label{ctypes-accessing-values-exported-from-dlls}}
+
+Sometimes, a dll not only exports functions, it also exports
+values. An example in the Python library itself is the
+\code{Py{\_}OptimizeFlag}, an integer set to 0, 1, or 2, depending on the
+\programopt{-O} or \programopt{-OO} flag given on startup.
+
+\code{ctypes} can access values like this with the \method{in{\_}dll} class
+methods of the type.  \var{pythonapi} ìs a predefined symbol giving
+access to the Python C api:
+\begin{verbatim}
+>>> opt_flag = c_int.in_dll(pythonapi, "Py_OptimizeFlag")
+>>> print opt_flag
+c_long(0)
+>>>
+\end{verbatim}
+
+If the interpreter would have been started with \programopt{-O}, the sample
+would have printed \code{c{\_}long(1)}, or \code{c{\_}long(2)} if \programopt{-OO} would have
+been specified.
+
+An extended example which also demonstrates the use of pointers
+accesses the \code{PyImport{\_}FrozenModules} pointer exported by Python.
+
+Quoting the Python docs: \emph{This pointer is initialized to point to an
+array of ``struct {\_}frozen`` records, terminated by one whose members
+are all NULL or zero. When a frozen module is imported, it is searched
+in this table. Third-party code could play tricks with this to provide
+a dynamically created collection of frozen modules.}
+
+So manipulating this pointer could even prove useful. To restrict the
+example size, we show only how this table can be read with
+\code{ctypes}:
+\begin{verbatim}
+>>> from ctypes import *
+>>>
+>>> class struct_frozen(Structure):
+...     _fields_ = [("name", c_char_p),
+...                 ("code", POINTER(c_ubyte)),
+...                 ("size", c_int)]
+...
+>>>
+\end{verbatim}
+
+We have defined the \code{struct {\_}frozen} data type, so we can get the
+pointer to the table:
+\begin{verbatim}
+>>> FrozenTable = POINTER(struct_frozen)
+>>> table = FrozenTable.in_dll(pythonapi, "PyImport_FrozenModules")
+>>>
+\end{verbatim}
+
+Since \code{table} is a \code{pointer} to the array of \code{struct{\_}frozen}
+records, we can iterate over it, but we just have to make sure that
+our loop terminates, because pointers have no size. Sooner or later it
+would probably crash with an access violation or whatever, so it's
+better to break out of the loop when we hit the NULL entry:
+\begin{verbatim}
+>>> for item in table:
+...    print item.name, item.size
+...    if item.name is None:
+...        break
+...
+__hello__ 104
+__phello__ -104
+__phello__.spam 104
+None 0
+>>>
+\end{verbatim}
+
+The fact that standard Python has a frozen module and a frozen package
+(indicated by the negative size member) is not wellknown, it is only
+used for testing. Try it out with \code{import {\_}{\_}hello{\_}{\_}} for example.
+
+XXX Describe how to access the \var{code} member fields, which contain
+the byte code for the modules.
+
+
+\subsubsection{Surprises\label{ctypes-surprises}}
+
+There are some edges in \code{ctypes} where you may be expect something
+else than what actually happens.
+
+Consider the following example:
+\begin{verbatim}
+>>> from ctypes import *
+>>> class POINT(Structure):
+...     _fields_ = ("x", c_int), ("y", c_int)
+...
+>>> class RECT(Structure):
+...     _fields_ = ("a", POINT), ("b", POINT)
+...
+>>> p1 = POINT(1, 2)
+>>> p2 = POINT(3, 4)
+>>> rc = RECT(p1, p2)
+>>> print rc.a.x, rc.a.y, rc.b.x, rc.b.y
+1 2 3 4
+>>> # now swap the two points
+>>> rc.a, rc.b = rc.b, rc.a
+>>> print rc.a.x, rc.a.y, rc.b.x, rc.b.y
+3 4 3 4
+\end{verbatim}
+
+Hm. We certainly expected the last statement to print \code{3 4 1 2}.
+What happended? Here are the steps of the \code{rc.a, rc.b = rc.b, rc.a}
+line above:
+\begin{verbatim}
+>>> temp0, temp1 = rc.b, rc.a
+>>> rc.a = temp0
+>>> rc.b = temp1
+\end{verbatim}
+
+Note that \code{temp0} and \code{temp1} are objects still using the internal
+buffer of the \code{rc} object above. So executing \code{rc.a = temp0}
+copies the buffer contents of \code{temp0} into \code{rc} 's buffer.  This,
+in turn, changes the contents of \code{temp1}. So, the last assignment
+\code{rc.b = temp1}, doesn't have the expected effect.
+
+Keep in mind that retrieving subobjects from Structure, Unions, and
+Arrays doesn't \emph{copy} the subobject, instead it retrieves a wrapper
+object accessing the root-object's underlying buffer.
+
+Another example that may behave different from what one would expect is this:
+\begin{verbatim}
+>>> s = c_char_p()
+>>> s.value = "abc def ghi"
+>>> s.value
+'abc def ghi'
+>>> s.value is s.value
+False
+>>>
+\end{verbatim}
+
+Why is it printing \code{False}?  ctypes instances are objects containing
+a memory block plus some descriptors accessing the contents of the
+memory.  Storing a Python object in the memory block does not store
+the object itself, instead the \code{contents} of the object is stored.
+Accessing the contents again constructs a new Python each time!
+
+
+\subsubsection{Bugs, ToDo and non-implemented things\label{ctypes-bugs-todo-non-implemented-things}}
+
+Enumeration types are not implemented. You can do it easily yourself,
+using \class{c{\_}int} as the base class.
+
+\code{long double} is not implemented.
+% Local Variables:
+% compile-command: "make.bat"
+% End: 
+

@@ -8,7 +8,7 @@ except AttributeError:
     pass
 else:
     import _ctypes_test
-    dll = ctypes.cdll.load(_ctypes_test.__file__)
+    dll = ctypes.CDLL(_ctypes_test.__file__)
     wcslen = dll.my_wcslen
     wcslen.argtypes = [ctypes.c_wchar_p]
 
@@ -66,7 +66,7 @@ else:
             self.failUnlessEqual(buf[:], u"ab\0\0\0\0")
 
     import _ctypes_test
-    func = ctypes.cdll.load(_ctypes_test.__file__)._testfunc_p_p
+    func = ctypes.CDLL(_ctypes_test.__file__)._testfunc_p_p
 
     class StringTestCase(UnicodeTestCase):
         def setUp(self):

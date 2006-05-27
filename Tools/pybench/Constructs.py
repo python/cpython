@@ -562,4 +562,3 @@ class ForLoops(Test):
         l1 = range(1000)
         for i in xrange(self.rounds):
             pass
-

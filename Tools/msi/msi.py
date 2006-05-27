@@ -846,8 +846,6 @@ def add_files(db):
     default_feature.set_current()
     if not msilib.Win64:
         root.add_file("PCBuild/w9xpopen.exe")
-    root.add_file("PC/py.ico")
-    root.add_file("PC/pyc.ico")
     root.add_file("README.txt", src="README")
     root.add_file("NEWS.txt", src="Misc/NEWS")
     root.add_file("LICENSE.txt", src="LICENSE")
@@ -956,6 +954,8 @@ def add_files(db):
     # Add DLLs
     default_feature.set_current()
     lib = PyDirectory(db, cab, root, srcdir+"/PCBuild", "DLLs", "DLLS|DLLs")
+    lib.add_file("py.ico", src="../PC/py.ico")
+    lib.add_file("pyc.ico", src="../PC/pyc.ico")
     dlls = []
     tclfiles = []
     for f in extensions:
@@ -1124,11 +1124,11 @@ def add_registry(db):
              ] + tcl_verbs + [
              #Icons
              ("py.icon", -1, pat2 % (testprefix, ""), "",
-              r'[TARGETDIR]py.ico', "REGISTRY.def"),
+              r'[DLLs]py.ico', "REGISTRY.def"),
              ("pyw.icon", -1, pat2 % (testprefix, "NoCon"), "",
-              r'[TARGETDIR]py.ico', "REGISTRY.def"),
+              r'[DLLs]py.ico', "REGISTRY.def"),
              ("pyc.icon", -1, pat2 % (testprefix, "Compiled"), "",
-              r'[TARGETDIR]pyc.ico', "REGISTRY.def"),
+              r'[DLLs]pyc.ico', "REGISTRY.def"),
              # Descriptions
              ("py.txt", -1, pat3 % (testprefix, ""), "",
               "Python File", "REGISTRY.def"),

@@ -1,3 +1,4 @@
+#ifdef __ppc__
 /* -----------------------------------------------------------------------
    ffi.c - Copyright (c) 1998 Geoffrey Keating
 
@@ -380,18 +381,18 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
 extern void ffi_call_AIX(/*@out@*/ extended_cif *,
 			 unsigned, unsigned,
 			 /*@out@*/ unsigned *,
-			 void (*fn)(),
-			 void (*fn2)());
+			 void (*fn)(void),
+			 void (*fn2)(extended_cif *, unsigned *const));
 extern void ffi_call_DARWIN(/*@out@*/ extended_cif *,
 			    unsigned, unsigned,
 			    /*@out@*/ unsigned *,
-			    void (*fn)(),
-			    void (*fn2)());
+			    void (*fn)(void),
+			    void (*fn2)(extended_cif *, unsigned *const));
 /*@=declundef@*/
 /*@=exportheader@*/
 
 void ffi_call(/*@dependent@*/ ffi_cif *cif,
-	      void (*fn)(),
+	      void (*fn)(void),
 	      /*@out@*/ void *rvalue,
 	      /*@dependent@*/ void **avalue)
 {
@@ -767,3 +768,4 @@ int ffi_closure_helper_DARWIN (ffi_closure* closure, void * rvalue,
   /* Tell ffi_closure_ASM to perform return type promotions.  */
   return cif->rtype->type;
 }
+#endif

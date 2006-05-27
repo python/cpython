@@ -101,7 +101,7 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 		char *copy, *c;
 
 		/* We need to convert the '.' to the locale specific decimal point */
-		copy = (char *)malloc(end - nptr + 1 + decimal_point_len);
+		copy = (char *)PyMem_MALLOC(end - nptr + 1 + decimal_point_len);
 
 		c = copy;
 		memcpy(c, nptr, decimal_point_pos - nptr);
@@ -122,7 +122,7 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 				fail_pos = (char *)nptr + (fail_pos - copy);
 		}
 
-		free(copy);
+		PyMem_FREE(copy);
 
 	}
 	else {

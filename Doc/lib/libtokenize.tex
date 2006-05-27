@@ -47,7 +47,7 @@ An older entry point is retained for backward compatibility:
   call to the function should return one line of input as a string.
   Alternately, \var{readline} may be a callable object that signals
   completion by raising \exception{StopIteration}.
-  \versionchanged[Added StopIteration support]{2.5}
+  \versionchanged[Added \exception{StopIteration} support]{2.5}
 
   The second parameter, \var{tokeneater}, must also be a callable
   object.  It is called once for each token, with five arguments,

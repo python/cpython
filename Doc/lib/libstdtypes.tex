@@ -1,12 +1,11 @@
 \section{Built-in Types \label{types}}
 
 The following sections describe the standard types that are built into
-the interpreter.  Historically, Python's built-in types have differed
-from user-defined types because it was not possible to use the built-in
-types as the basis for object-oriented inheritance. With the 2.2
-release this situation has started to change, although the intended
-unification of user-defined and built-in types is as yet far from
-complete.
+the interpreter.
+\note{Historically (until release 2.2), Python's built-in types have
+differed from user-defined types because it was not possible to use
+the built-in types as the basis for object-oriented inheritance.
+This limitation does not exist any longer.}
 
 The principal built-in types are numerics, sequences, mappings, files
 classes, instances and exceptions.
@@ -19,7 +18,7 @@ the equivalent \function{repr()} function, or the slightly different
 \function{str()} function).  The latter
 function is implicitly used when an object is written by the
 \keyword{print}\stindex{print} statement.
-(Information on \ulink{\keyword{print} statement}{../ref/print.html}
+(Information on the \ulink{\keyword{print} statement}{../ref/print.html}
 and other language statements can be found in the
 \citetitle[../ref/ref.html]{Python Reference Manual} and the
 \citetitle[../tut/tut.html]{Python Tutorial}.)
@@ -728,6 +727,15 @@ a prefix; rather, all combinations of its values are stripped:
 \versionchanged[Support for the \var{chars} argument]{2.2.2}
 \end{methoddesc}
 
+\begin{methoddesc}[string]{partition}{sep}
+Split the string at the first occurrence of \var{sep}, and return
+a 3-tuple containing the part before the separator, the separator
+itself, and the part after the separator.  If the separator is not
+found, return a 3-tuple containing the string itself, followed by
+two empty strings.
+\versionadded{2.5}
+\end{methoddesc}
+
 \begin{methoddesc}[string]{replace}{old, new\optional{, count}}
 Return a copy of the string with all occurrences of substring
 \var{old} replaced by \var{new}.  If the optional argument
@@ -753,6 +761,15 @@ Padding is done using the specified \var{fillchar} (default is a space).
 The original string is returned if
 \var{width} is less than \code{len(\var{s})}.
 \versionchanged[Support for the \var{fillchar} argument]{2.4}
+\end{methoddesc}
+
+\begin{methoddesc}[string]{rpartition}{sep}
+Split the string at the last occurrence of \var{sep}, and return
+a 3-tuple containing the part before the separator, the separator
+itself, and the part after the separator.  If the separator is not
+found, return a 3-tuple containing the string itself, followed by
+two empty strings.
+\versionadded{2.5}
 \end{methoddesc}
 
 \begin{methoddesc}[string]{rsplit}{\optional{sep \optional{,maxsplit}}}
@@ -971,20 +988,22 @@ The conversion types are:
   \lineiii{u}{Unsigned decimal.}{}
   \lineiii{x}{Unsigned hexadecimal (lowercase).}{(2)}
   \lineiii{X}{Unsigned hexadecimal (uppercase).}{(2)}
-  \lineiii{e}{Floating point exponential format (lowercase).}{}
-  \lineiii{E}{Floating point exponential format (uppercase).}{}
-  \lineiii{f}{Floating point decimal format.}{}
-  \lineiii{F}{Floating point decimal format.}{}
-  \lineiii{g}{Same as \character{e} if exponent is greater than -4 or
-              less than precision, \character{f} otherwise.}{}
-  \lineiii{G}{Same as \character{E} if exponent is greater than -4 or
-              less than precision, \character{F} otherwise.}{}
+  \lineiii{e}{Floating point exponential format (lowercase).}{(3)}
+  \lineiii{E}{Floating point exponential format (uppercase).}{(3)}
+  \lineiii{f}{Floating point decimal format.}{(3)}
+  \lineiii{F}{Floating point decimal format.}{(3)}
+  \lineiii{g}{Floating point format. Uses exponential format
+              if exponent is greater than -4 or less than precision,
+              decimal format otherwise.}{(4)}
+  \lineiii{G}{Floating point format. Uses exponential format
+              if exponent is greater than -4 or less than precision,
+              decimal format otherwise.}{(4)}
   \lineiii{c}{Single character (accepts integer or single character
               string).}{}
   \lineiii{r}{String (converts any python object using
-              \function{repr()}).}{(3)}
+              \function{repr()}).}{(5)}
   \lineiii{s}{String (converts any python object using
-              \function{str()}).}{(4)}
+              \function{str()}).}{(6)}
   \lineiii{\%}{No argument is converted, results in a \character{\%}
                character in the result.}{}
 \end{tableiii}
@@ -1004,10 +1023,27 @@ Notes:
     formatting of the number if the leading character of the result is
     not already a zero.
   \item[(3)]
-    The \code{\%r} conversion was added in Python 2.0.
+    The alternate form causes the result to always contain a decimal
+    point, even if no digits follow it.
+
+    The precision determines the number of digits after the decimal
+    point and defaults to 6.
   \item[(4)]
+    The alternate form causes the result to always contain a decimal
+    point, and trailing zeroes are not removed as they would
+    otherwise be.
+
+    The precision determines the number of significant digits before
+    and after the decimal point and defaults to 6.
+  \item[(5)]
+    The \code{\%r} conversion was added in Python 2.0.
+
+    The precision determines the maximal number of characters used.
+  \item[(6)]
     If the object or format provided is a \class{unicode} string,
     the resulting string will also be \class{unicode}.
+
+    The precision determines the maximal number of characters used.
 \end{description}
 
 % XXX Examples?
@@ -1745,6 +1781,87 @@ implemented in C will have to provide a writable
 \keyword{print} statement, but to allow the implementation of
 \keyword{print} to keep track of its internal state.}
 \end{memberdesc}
+
+
+\subsection{Context Manager Types \label{typecontextmanager}}
+
+\versionadded{2.5}
+\index{context manager}
+\index{context management protocol}
+\index{protocol!context management}
+
+Python's \keyword{with} statement supports the concept of a runtime
+context defined by a context manager.  This is implemented using
+two separate methods that allow user-defined classes to define
+a runtime context that is entered before the statement body is
+executed and exited when the statement ends.
+
+The \dfn{context management protocol} consists of a pair of
+methods that need to be provided for a context manager object to
+define a runtime context:
+
+\begin{methoddesc}[context manager]{__enter__}{}
+  Enter the runtime context and return either this object or another
+  object related to the runtime context. The value returned by this
+  method is bound to the identifier in the \keyword{as} clause of
+  \keyword{with} statements using this context manager.
+
+  An example of a context manager that returns itself is a file object.
+  File objects return themselves from __enter__() to allow
+  \function{open()} to be used as the context expression in a
+  \keyword{with} statement.
+
+  An example of a context manager that returns a related
+  object is the one returned by \code{decimal.Context.get_manager()}.
+  These managers set the active decimal context to a copy of the
+  original decimal context and then return the copy. This allows
+  changes to be made to the current decimal context in the body of
+  the \keyword{with} statement without affecting code outside
+  the \keyword{with} statement.
+\end{methoddesc}
+
+\begin{methoddesc}[context manager]{__exit__}{exc_type, exc_val, exc_tb}
+  Exit the runtime context and return a Boolean flag indicating if any
+  expection that occurred should be suppressed. If an exception
+  occurred while executing the body of the \keyword{with} statement, the
+  arguments contain the exception type, value and traceback information.
+  Otherwise, all three arguments are \var{None}.
+
+  Returning a true value from this method will cause the \keyword{with}
+  statement to suppress the exception and continue execution with the
+  statement immediately following the \keyword{with} statement. Otherwise
+  the exception continues propagating after this method has finished
+  executing. Exceptions that occur during execution of this method will
+  replace any exception that occurred in the body of the \keyword{with}
+  statement.
+
+  The exception passed in should never be reraised explicitly - instead,
+  this method should return a false value to indicate that the method
+  completed successfully and does not want to suppress the raised
+  exception. This allows context management code (such as
+  \code{contextlib.nested}) to easily detect whether or not an
+  \method{__exit__()} method has actually failed.
+\end{methoddesc}
+
+Python defines several context managers to support easy thread
+synchronisation, prompt closure of files or other objects, and
+simpler manipulation of the active decimal arithmetic
+context. The specific types are not treated specially beyond
+their implementation of the context management protocol.
+
+Python's generators and the \code{contextlib.contextfactory} decorator
+provide a convenient way to implement these protocols.  If a generator
+function is decorated with the \code{contextlib.contextfactory}
+decorator, it will return a context manager implementing the necessary
+\method{__enter__()} and \method{__exit__()} methods, rather than the
+iterator produced by an undecorated generator function.
+
+Note that there is no specific slot for any of these methods in the
+type structure for Python objects in the Python/C API. Extension
+types wanting to define these methods must provide them as a normal
+Python accessible method. Compared to the overhead of setting up the
+runtime context, the overhead of a single class dictionary lookup
+is negligible.
 
 
 \subsection{Other Built-in Types \label{typesother}}

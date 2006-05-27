@@ -265,7 +265,7 @@ class TupleSlicing(Test):
             t = tuple(range(100))
 
             for j in r:
-                
+
                 pass
 
 class SmallTuples(Test):
@@ -362,4 +362,3 @@ class SmallTuples(Test):
 
         for i in xrange(self.rounds):
             pass
-

@@ -25,7 +25,7 @@ class SimpleListManipulation(Test):
             l[3] = 3
             l[4] = 4
             l[5] = 5
-            
+
             x = l[0]
             x = l[1]
             x = l[2]
@@ -46,7 +46,7 @@ class SimpleListManipulation(Test):
             l[3] = 3
             l[4] = 4
             l[5] = 5
-            
+
             x = l[0]
             x = l[1]
             x = l[2]
@@ -67,7 +67,7 @@ class SimpleListManipulation(Test):
             l[3] = 3
             l[4] = 4
             l[5] = 5
-            
+
             x = l[0]
             x = l[1]
             x = l[2]
@@ -88,7 +88,7 @@ class SimpleListManipulation(Test):
             l[3] = 3
             l[4] = 4
             l[5] = 5
-            
+
             x = l[0]
             x = l[1]
             x = l[2]
@@ -109,7 +109,7 @@ class SimpleListManipulation(Test):
             l[3] = 3
             l[4] = 4
             l[5] = 5
-            
+
             x = l[0]
             x = l[1]
             x = l[2]
@@ -190,11 +190,11 @@ class SmallLists(Test):
             l[3] = 3
             l[4] = 4
             l[5] = 5
-            
+
             l[:3] = [1,2,3]
             m = l[:-1]
             m = l[1:]
-            
+
             l[-1:] = [4,5,6]
 
             l = []
@@ -212,11 +212,11 @@ class SmallLists(Test):
             l[3] = 3
             l[4] = 4
             l[5] = 5
-            
+
             l[:3] = [1,2,3]
             m = l[:-1]
             m = l[1:]
-            
+
             l[-1:] = [4,5,6]
 
             l = []
@@ -234,11 +234,11 @@ class SmallLists(Test):
             l[3] = 3
             l[4] = 4
             l[5] = 5
-            
+
             l[:3] = [1,2,3]
             m = l[:-1]
             m = l[1:]
-            
+
             l[-1:] = [4,5,6]
 
             l = []
@@ -256,11 +256,11 @@ class SmallLists(Test):
             l[3] = 3
             l[4] = 4
             l[5] = 5
-            
+
             l[:3] = [1,2,3]
             m = l[:-1]
             m = l[1:]
-            
+
             l[-1:] = [4,5,6]
 
             l = []
@@ -278,15 +278,14 @@ class SmallLists(Test):
             l[3] = 3
             l[4] = 4
             l[5] = 5
-            
+
             l[:3] = [1,2,3]
             m = l[:-1]
             m = l[1:]
-            
+
             l[-1:] = [4,5,6]
 
     def calibrate(self):
 
         for i in xrange(self.rounds):
             l = []
-

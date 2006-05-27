@@ -484,9 +484,6 @@ class TimeEncoding:
     def __init__(self, locale):
         self.locale = locale
 
-    def __context__(self):
-        return self
-
     def __enter__(self):
         self.oldlocale = locale.setlocale(locale.LC_TIME, self.locale)
         return locale.getlocale(locale.LC_TIME)[1]

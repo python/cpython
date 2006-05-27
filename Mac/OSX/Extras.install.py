@@ -12,6 +12,7 @@ def isclean(name):
     if name == 'CVS': return 0
     if name == '.cvsignore': return 0
     if name == '.DS_store': return 0
+    if name == '.svn': return 0
     if name.endswith('~'): return 0
     if name.endswith('.BAK'): return 0
     if name.endswith('.pyc'): return 0

@@ -211,7 +211,7 @@
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/Zm200  /USECL:MS_OPTERON"
+				AdditionalOptions="/Zm200  /USECL:MS_OPTERON /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\Include,..\PC"
@@ -342,6 +342,9 @@
 		</Filter>
 		<File
 			RelativePath="..\Modules\_bisectmodule.c">
+		</File>
+		<File
+			RelativePath="..\Modules\_struct.c">
 		</File>
 		<File
 			RelativePath="..\Modules\cjkcodecs\_codecs_cn.c">
@@ -491,7 +494,7 @@
 			RelativePath="..\Python\errors.c">
 		</File>
 		<File
-			RelativePath="..\Python\exceptions.c">
+			RelativePath="..\Objects\exceptions.c">
 		</File>
 		<File
 			RelativePath="..\Objects\fileobject.c">
@@ -744,9 +747,6 @@
 		</File>
 		<File
 			RelativePath="..\Python\structmember.c">
-		</File>
-		<File
-			RelativePath="..\Modules\structmodule.c">
 		</File>
 		<File
 			RelativePath="..\Objects\structseq.c">

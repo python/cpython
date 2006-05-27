@@ -85,23 +85,18 @@ f = urllib2.urlopen('http://www.python.org/')
 # abstract factory for opener
 
 import base64
-import ftplib
+import hashlib
 import httplib
-import inspect
-import md5
-import mimetypes
 import mimetools
 import os
 import posixpath
 import random
 import re
-import sha
 import socket
 import sys
 import time
 import urlparse
 import bisect
-import cookielib
 
 try:
     from cStringIO import StringIO
@@ -169,6 +164,23 @@ class HTTPError(URLError, addinfourl):
 class GopherError(URLError):
     pass
 
+# copied from cookielib.py
+_cut_port_re = re.compile(r":\d+$")
+def request_host(request):
+    """Return request-host, as defined by RFC 2965.
+
+    Variation from RFC: returned value is lowercased, for convenient
+    comparison.
+
+    """
+    url = request.get_full_url()
+    host = urlparse.urlparse(url)[1]
+    if host == "":
+        host = request.get_header("Host", "")
+
+    # remove port, if present
+    host = _cut_port_re.sub("", host, 1)
+    return host.lower()
 
 class Request:
 
@@ -186,7 +198,7 @@ class Request:
             self.add_header(key, value)
         self.unredirected_hdrs = {}
         if origin_req_host is None:
-            origin_req_host = cookielib.request_host(self)
+            origin_req_host = request_host(self)
         self.origin_req_host = origin_req_host
         self.unverifiable = unverifiable
 
@@ -414,6 +426,9 @@ def build_opener(*handlers):
     If any of the handlers passed as arguments are subclasses of the
     default handlers, the default handlers will not be used.
     """
+    import types
+    def isclass(obj):
+        return isinstance(obj, types.ClassType) or hasattr(obj, "__bases__")
 
     opener = OpenerDirector()
     default_classes = [ProxyHandler, UnknownHandler, HTTPHandler,
@@ -424,7 +439,7 @@ def build_opener(*handlers):
     skip = []
     for klass in default_classes:
         for check in handlers:
-            if inspect.isclass(check):
+            if isclass(check):
                 if issubclass(check, klass):
                     skip.append(klass)
             elif isinstance(check, klass):
@@ -436,7 +451,7 @@ def build_opener(*handlers):
         opener.add_handler(klass())
 
     for h in handlers:
-        if inspect.isclass(h):
+        if isclass(h):
             h = h()
         opener.add_handler(h)
     return opener
@@ -612,7 +627,6 @@ def _parse_proxy(proxy):
     ('http', 'joe', 'password', 'proxy.example.com')
 
     """
-    from urlparse import _splitnetloc
     scheme, r_scheme = splittype(proxy)
     if not r_scheme.startswith("/"):
         # authority
@@ -673,6 +687,7 @@ class ProxyHandler(BaseHandler):
             return self.parent.open(req)
 
 class HTTPPasswordMgr:
+
     def __init__(self):
         self.passwd = {}
 
@@ -696,10 +711,15 @@ class HTTPPasswordMgr:
 
     def reduce_uri(self, uri):
         """Accept netloc or URI and extract only the netloc and path"""
-        parts = urlparse.urlparse(uri)
+        parts = urlparse.urlsplit(uri)
         if parts[1]:
+            # URI
             return parts[1], parts[2] or '/'
+        elif parts[0]:
+            # host:port
+            return uri, '/'
         else:
+            # host
             return parts[2], '/'
 
     def is_suburi(self, base, test):
@@ -742,6 +762,8 @@ class AbstractBasicAuthHandler:
         self.add_password = self.passwd.add_password
 
     def http_error_auth_reqed(self, authreq, host, req, headers):
+        # host may be an authority (without userinfo) or a URL with an
+        # authority
         # XXX could be multiple headers
         authreq = headers.get(authreq, None)
         if authreq:
@@ -752,10 +774,7 @@ class AbstractBasicAuthHandler:
                     return self.retry_http_basic_auth(host, req, realm)
 
     def retry_http_basic_auth(self, host, req, realm):
-        # TODO(jhylton): Remove the host argument? It depends on whether
-        # retry_http_basic_auth() is consider part of the public API.
-        # It probably is.
-        user, pw = self.passwd.find_user_password(realm, req.get_full_url())
+        user, pw = self.passwd.find_user_password(realm, host)
         if pw is not None:
             raw = "%s:%s" % (user, pw)
             auth = 'Basic %s' % base64.encodestring(raw).strip()
@@ -766,14 +785,15 @@ class AbstractBasicAuthHandler:
         else:
             return None
 
+
 class HTTPBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
     auth_header = 'Authorization'
 
     def http_error_401(self, req, fp, code, msg, headers):
-        host = urlparse.urlparse(req.get_full_url())[1]
+        url = req.get_full_url()
         return self.http_error_auth_reqed('www-authenticate',
-                                          host, req, headers)
+                                          url, req, headers)
 
 
 class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
@@ -781,9 +801,13 @@ class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
     auth_header = 'Proxy-authorization'
 
     def http_error_407(self, req, fp, code, msg, headers):
-        host = req.get_host()
+        # http_error_auth_reqed requires that there is no userinfo component in
+        # authority.  Assume there isn't one, since urllib2 does not (and
+        # should not, RFC 3986 s. 3.2.1) support requests for URLs containing
+        # userinfo.
+        authority = req.get_host()
         return self.http_error_auth_reqed('proxy-authenticate',
-                                          host, req, headers)
+                                          authority, req, headers)
 
 
 def randombytes(n):
@@ -838,9 +862,6 @@ class AbstractDigestAuthHandler:
             scheme = authreq.split()[0]
             if scheme.lower() == 'digest':
                 return self.retry_http_digest_auth(req, authreq)
-            else:
-                raise ValueError("AbstractDigestAuthHandler doesn't know "
-                                 "about %s"%(scheme))
 
     def retry_http_digest_auth(self, req, auth):
         token, challenge = auth.split(' ', 1)
@@ -850,7 +871,7 @@ class AbstractDigestAuthHandler:
             auth_val = 'Digest %s' % auth
             if req.headers.get(self.auth_header, None) == auth_val:
                 return None
-            req.add_header(self.auth_header, auth_val)
+            req.add_unredirected_header(self.auth_header, auth_val)
             resp = self.parent.open(req)
             return resp
 
@@ -860,8 +881,8 @@ class AbstractDigestAuthHandler:
         # and server to avoid chosen plaintext attacks, to provide mutual
         # authentication, and to provide some message integrity protection.
         # This isn't a fabulous effort, but it's probably Good Enough.
-        dig = sha.new("%s:%s:%s:%s" % (self.nonce_count, nonce, time.ctime(),
-                                       randombytes(8))).hexdigest()
+        dig = hashlib.sha1("%s:%s:%s:%s" % (self.nonce_count, nonce, time.ctime(),
+                                            randombytes(8))).hexdigest()
         return dig[:16]
 
     def get_authorization(self, req, chal):
@@ -923,9 +944,9 @@ class AbstractDigestAuthHandler:
     def get_algorithm_impls(self, algorithm):
         # lambdas assume digest modules are imported at the top level
         if algorithm == 'MD5':
-            H = lambda x: md5.new(x).hexdigest()
+            H = lambda x: hashlib.md5(x).hexdigest()
         elif algorithm == 'SHA':
-            H = lambda x: sha.new(x).hexdigest()
+            H = lambda x: hashlib.sha1(x).hexdigest()
         # XXX MD5-sess
         KD = lambda s, d: H("%s:%s" % (s, d))
         return H, KD
@@ -1066,6 +1087,7 @@ if hasattr(httplib, 'HTTPS'):
 
 class HTTPCookieProcessor(BaseHandler):
     def __init__(self, cookiejar=None):
+        import cookielib
         if cookiejar is None:
             cookiejar = cookielib.CookieJar()
         self.cookiejar = cookiejar
@@ -1163,6 +1185,7 @@ class FileHandler(BaseHandler):
     # not entirely sure what the rules are here
     def open_local_file(self, req):
         import email.Utils
+        import mimetypes
         host = req.get_host()
         file = req.get_selector()
         localfile = url2pathname(file)
@@ -1183,6 +1206,8 @@ class FileHandler(BaseHandler):
 
 class FTPHandler(BaseHandler):
     def ftp_open(self, req):
+        import ftplib
+        import mimetypes
         host = req.get_host()
         if not host:
             raise IOError, ('ftp error', 'no host given')

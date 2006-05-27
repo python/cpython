@@ -695,6 +695,22 @@ class CookieTests(TestCase):
                       'foo=bar; domain=friendly.org; Version="1"')
         self.assertEquals(len(c), 0)
 
+    def test_strict_domain(self):
+        # Cookies whose domain is a country-code tld like .co.uk should
+        # not be set if CookiePolicy.strict_domain is true.
+        from cookielib import CookieJar, DefaultCookiePolicy
+
+        cp = DefaultCookiePolicy(strict_domain=True)
+        cj = CookieJar(policy=cp)
+        interact_netscape(cj, "http://example.co.uk/", 'no=problemo')
+        interact_netscape(cj, "http://example.co.uk/",
+                          'okey=dokey; Domain=.example.co.uk')
+        self.assertEquals(len(cj), 2)
+        for pseudo_tld in [".co.uk", ".org.za", ".tx.us", ".name.us"]:
+            interact_netscape(cj, "http://example.%s/" % pseudo_tld,
+                              'spam=eggs; Domain=.co.uk')
+            self.assertEquals(len(cj), 2)
+
     def test_two_component_domain_ns(self):
         # Netscape: .www.bar.com, www.bar.com, .bar.com, bar.com, no domain
         # should all get accepted, as should .acme.com, acme.com and no domain

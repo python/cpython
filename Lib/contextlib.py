@@ -10,9 +10,6 @@ class GeneratorContextManager(object):
     def __init__(self, gen):
         self.gen = gen
 
-    def __context__(self):
-        return self
-
     def __enter__(self):
         try:
             return self.gen.next()
@@ -88,7 +85,7 @@ def contextmanager(func):
 
 
 @contextmanager
-def nested(*contexts):
+def nested(*managers):
     """Support multiple context managers in a single with-statement.
 
     Code like this:
@@ -109,8 +106,7 @@ def nested(*contexts):
     exc = (None, None, None)
     try:
         try:
-            for context in contexts:
-                mgr = context.__context__()
+            for mgr in managers:
                 exit = mgr.__exit__
                 enter = mgr.__enter__
                 vars.append(enter())
@@ -127,12 +123,14 @@ def nested(*contexts):
             except:
                 exc = sys.exc_info()
         if exc != (None, None, None):
-            raise
+            # Don't rely on sys.exc_info() still containing
+            # the right information. Another exception may
+            # have been raised and caught by an exit method
+            raise exc[0], exc[1], exc[2]
 
 
-@contextmanager
-def closing(thing):
-    """Context manager to automatically close something at the end of a block.
+class closing(object):
+    """Context to automatically close something at the end of a block.
 
     Code like this:
 
@@ -148,7 +146,9 @@ def closing(thing):
             f.close()
 
     """
-    try:
-        yield thing
-    finally:
-        thing.close()
+    def __init__(self, thing):
+        self.thing = thing
+    def __enter__(self):
+        return self.thing
+    def __exit__(self, *exc_info):
+        self.thing.close()

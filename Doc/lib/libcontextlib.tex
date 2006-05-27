@@ -12,11 +12,13 @@ This module provides utilities for common tasks involving the
 Functions provided:
 
 \begin{funcdesc}{contextmanager}{func}
-This function is a decorator that can be used to define context managers
-for use with the \keyword{with} statement, without needing to create a
-class or separate \method{__enter__()} and \method{__exit__()} methods.
+This function is a decorator that can be used to define a factory
+function for \keyword{with} statement context managers, without
+needing to create a class or separate \method{__enter__()} and
+\method{__exit__()} methods.
 
-A simple example:
+A simple example (this is not recommended as a real way of
+generating HTML!):
 
 \begin{verbatim}
 from __future__ import with_statement
@@ -36,9 +38,10 @@ foo
 </h1>
 \end{verbatim}
 
-When called, the decorated function must return a generator-iterator.
-This iterator must yield exactly one value, which will be bound to the
-targets in the \keyword{with} statement's \keyword{as} clause, if any.
+The function being decorated must return a generator-iterator when
+called. This iterator must yield exactly one value, which will be
+bound to the targets in the \keyword{with} statement's \keyword{as}
+clause, if any.
 
 At the point where the generator yields, the block nested in the
 \keyword{with} statement is executed.  The generator is then resumed
@@ -46,37 +49,16 @@ after the block is exited.  If an unhandled exception occurs in the
 block, it is reraised inside the generator at the point where the yield
 occurred.  Thus, you can use a
 \keyword{try}...\keyword{except}...\keyword{finally} statement to trap
-the error (if any), or ensure that some cleanup takes place.
-
-Note that you can use \code{@contextmanager} to define a context
-manager's \method{__context__} method.  This is usually more convenient
-than creating another class just to serve as a context.  For example:
-
-\begin{verbatim}
-from __future__ import with_statement
-from contextlib import contextmanager
-
-class Tag:
-    def __init__(self, name):
-        self.name = name
-        
-    @contextmanager
-    def __context__(self):
-        print "<%s>" % self.name
-        yield self
-        print "</%s>" % self.name
-        
-h1 = Tag("h1")
-
->>> with h1 as me:
-...     print "hello from", me
-<h1>
-hello from <__main__.Tag instance at 0x402ce8ec>
-</h1>
-\end{verbatim}
+the error (if any), or ensure that some cleanup takes place. If an
+exception is trapped merely in order to log it or to perform some
+action (rather than to suppress it entirely), the generator must
+reraise that exception. Otherwise the generator context manager will
+indicate to the \keyword{with} statement that the exception has been
+handled, and execution will resume with the statement immediately
+following the \keyword{with} statement.
 \end{funcdesc}
 
-\begin{funcdesc}{nested}{ctx1\optional{, ctx2\optional{, ...}}}
+\begin{funcdesc}{nested}{mgr1\optional{, mgr2\optional{, ...}}}
 Combine multiple context managers into a single nested context manager.
 
 Code like this:
@@ -97,18 +79,22 @@ with A as X:
             do_something()
 \end{verbatim}
 
-Note that if one of the nested contexts' \method{__exit__()} method
-raises an exception, any previous exception state will be lost; the new
-exception will be passed to the outer contexts' \method{__exit__()}
-method(s), if any.  In general, \method{__exit__()} methods should avoid
-raising exceptions, and in particular they should not re-raise a
+Note that if the \method{__exit__()} method of one of the nested
+context managers indicates an exception should be suppressed, no
+exception information will be passed to any remaining outer context
+managers. Similarly, if the \method{__exit__()} method of one of the
+nested managers raises an exception, any previous exception state will
+be lost; the new exception will be passed to the
+\method{__exit__()} methods of any remaining outer context managers.
+In general, \method{__exit__()} methods should avoid raising
+exceptions, and in particular they should not re-raise a
 passed-in exception.
 \end{funcdesc}
 
 \label{context-closing}
 \begin{funcdesc}{closing}{thing}
-Return a context manager that closes \var{thing} upon completion of the
-block.  This is basically equivalent to:
+Return a context manager that closes \var{thing} upon completion of
+the block.  This is basically equivalent to:
 
 \begin{verbatim}
 from contextlib import contextmanager
@@ -127,14 +113,14 @@ from __future__ import with_statement
 from contextlib import closing
 import codecs
 
-with closing(codecs.open("foo", encoding="utf8")) as f:
-    for line in f:
-        print line.encode("latin1")
+with closing(urllib.urlopen('http://www.python.org')) as page:
+    for line in page:
+        print line
 \end{verbatim}
 
-without needing to explicitly close \code{f}.  Even if an error occurs,
-\code{f.close()} will be called when the \keyword{with} block is exited.
-
+without needing to explicitly close \code{page}.  Even if an error
+occurs, \code{page.close()} will be called when the \keyword{with}
+block is exited.
 \end{funcdesc}
 
 \begin{seealso}

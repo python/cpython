@@ -775,4 +775,3 @@ class SimpleComplexArithmetic(Test):
 
         for i in xrange(self.rounds):
             pass
-

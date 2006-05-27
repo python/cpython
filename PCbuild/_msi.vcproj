@@ -189,7 +189,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions=" /USECL:MS_OPTERON"
+				AdditionalOptions=" /USECL:MS_OPTERON /GS-"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\Include,..\PC"
@@ -210,7 +210,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
-				AdditionalDependencies="fci.lib msi.lib rpcrt4.lib"
+				AdditionalDependencies="fci.lib msi.lib rpcrt4.lib bufferoverflowU.lib"
 				OutputFile="./_msi.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"

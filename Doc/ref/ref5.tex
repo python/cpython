@@ -22,9 +22,9 @@ are the same as for \code{othername}.
 
 When a description of an arithmetic operator below uses the phrase
 ``the numeric arguments are converted to a common type,'' the
-arguments are coerced using the coercion rules listed at the end of
-chapter \ref{datamodel}.  If both arguments are standard numeric
-types, the following coercions are applied:
+arguments are coerced using the coercion rules listed at
+~\ref{coercion-rules}.  If both arguments are standard numeric types,
+the following coercions are applied:
 
 \begin{itemize}
 \item	If either argument is a complex number, the other is converted
@@ -391,7 +391,8 @@ type but a string of exactly one character.
 
 A slicing selects a range of items in a sequence object (e.g., a
 string, tuple or list).  Slicings may be used as expressions or as
-targets in assignment or del statements.  The syntax for a slicing:
+targets in assignment or \keyword{del} statements.  The syntax for a
+slicing:
 \obindex{sequence}
 \obindex{string}
 \obindex{tuple}
@@ -1158,7 +1159,7 @@ have the same precedence and chain from left to right --- see section
   \hline
     \lineii{\code{\&}}				{Bitwise AND}
   \hline
-    \lineii{\code{<}\code{<}, \code{>}\code{>}}	{Shifts}
+    \lineii{\code{<<}, \code{>>}}		{Shifts}
   \hline
     \lineii{\code{+}, \code{-}}{Addition and subtraction}
   \hline

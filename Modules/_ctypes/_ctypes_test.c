@@ -96,6 +96,11 @@ EXPORT(char *) my_strdup(char *src)
 	return dst;
 }
 
+EXPORT(void)my_free(void *ptr)
+{
+	free(ptr);
+}
+
 #ifdef HAVE_WCHAR_H
 EXPORT(wchar_t *) my_wcsdup(wchar_t *src)
 {
@@ -197,11 +202,6 @@ EXPORT(int) _testfunc_ppp(char ***p)
 		return 1;
 	}
 	return 0;
-}
-
-EXPORT(void) my_free(void *p)
-{
-	printf("my_free got %p\n", p);
 }
 
 typedef struct {

@@ -18,29 +18,11 @@ class PosReturn:
             self.pos = len(exc.object)
         return (u"<?>", oldpos)
 
-# A UnicodeEncodeError object without a start attribute
-class NoStartUnicodeEncodeError(UnicodeEncodeError):
-    def __init__(self):
-        UnicodeEncodeError.__init__(self, "ascii", u"", 0, 1, "bad")
-        del self.start
-
 # A UnicodeEncodeError object with a bad start attribute
 class BadStartUnicodeEncodeError(UnicodeEncodeError):
     def __init__(self):
         UnicodeEncodeError.__init__(self, "ascii", u"", 0, 1, "bad")
         self.start = []
-
-# A UnicodeEncodeError object without an end attribute
-class NoEndUnicodeEncodeError(UnicodeEncodeError):
-    def __init__(self):
-        UnicodeEncodeError.__init__(self, "ascii", u"", 0, 1, "bad")
-        del self.end
-
-# A UnicodeEncodeError object without an object attribute
-class NoObjectUnicodeEncodeError(UnicodeEncodeError):
-    def __init__(self):
-        UnicodeEncodeError.__init__(self, "ascii", u"", 0, 1, "bad")
-        del self.object
 
 # A UnicodeEncodeError object with a bad object attribute
 class BadObjectUnicodeEncodeError(UnicodeEncodeError):
@@ -478,54 +460,14 @@ class CodecCallbackTest(unittest.TestCase):
            UnicodeError("ouch")
         )
         self.assertRaises(
-            AttributeError,
-            codecs.replace_errors,
-            NoStartUnicodeEncodeError()
-        )
-        self.assertRaises(
-            TypeError,
-            codecs.replace_errors,
-            BadStartUnicodeEncodeError()
-        )
-        self.assertRaises(
-            AttributeError,
-            codecs.replace_errors,
-            NoEndUnicodeEncodeError()
-        )
-        self.assertRaises(
-            AttributeError,
-            codecs.replace_errors,
-            NoObjectUnicodeEncodeError()
-        )
-        self.assertRaises(
             TypeError,
             codecs.replace_errors,
             BadObjectUnicodeEncodeError()
         )
         self.assertRaises(
-            AttributeError,
-            codecs.replace_errors,
-            NoEndUnicodeDecodeError()
-        )
-        self.assertRaises(
             TypeError,
             codecs.replace_errors,
             BadObjectUnicodeDecodeError()
-        )
-        self.assertRaises(
-            AttributeError,
-            codecs.replace_errors,
-            NoStartUnicodeTranslateError()
-        )
-        self.assertRaises(
-            AttributeError,
-            codecs.replace_errors,
-            NoEndUnicodeTranslateError()
-        )
-        self.assertRaises(
-            AttributeError,
-            codecs.replace_errors,
-            NoObjectUnicodeTranslateError()
         )
         # With the correct exception, "replace" returns an "?" or u"\ufffd" replacement
         self.assertEquals(
@@ -564,21 +506,6 @@ class CodecCallbackTest(unittest.TestCase):
             TypeError,
             codecs.xmlcharrefreplace_errors,
             UnicodeTranslateError(u"\u3042", 0, 1, "ouch")
-        )
-        self.assertRaises(
-            AttributeError,
-            codecs.xmlcharrefreplace_errors,
-            NoStartUnicodeEncodeError()
-        )
-        self.assertRaises(
-            AttributeError,
-            codecs.xmlcharrefreplace_errors,
-            NoEndUnicodeEncodeError()
-        )
-        self.assertRaises(
-            AttributeError,
-            codecs.xmlcharrefreplace_errors,
-            NoObjectUnicodeEncodeError()
         )
         # Use the correct exception
         cs = (0, 1, 9, 10, 99, 100, 999, 1000, 9999, 10000, 0x3042)

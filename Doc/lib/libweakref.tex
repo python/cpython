@@ -147,6 +147,24 @@ information.
         to vanish "by magic" (as a side effect of garbage collection).}
 \end{classdesc}
 
+\class{WeakKeyDictionary} objects have the following additional
+methods.  These expose the internal references directly.  The
+references are not guaranteed to be ``live'' at the time they are
+used, so the result of calling the references needs to be checked
+before being used.  This can be used to avoid creating references that
+will cause the garbage collector to keep the keys around longer than
+needed.
+
+\begin{methoddesc}{iterkeyrefs}{}
+  Return an iterator that yields the weak references to the keys.
+  \versionadded{2.5}
+\end{methoddesc}
+
+\begin{methoddesc}{keyrefs}{}
+  Return a list of weak references to the keys.
+  \versionadded{2.5}
+\end{methoddesc}
+
 \begin{classdesc}{WeakValueDictionary}{\optional{dict}}
   Mapping class that references values weakly.  Entries in the
   dictionary will be discarded when no strong reference to the value
@@ -159,6 +177,21 @@ information.
         program during iteration may cause items in the dictionary
         to vanish "by magic" (as a side effect of garbage collection).}
 \end{classdesc}
+
+\class{WeakValueDictionary} objects have the following additional
+methods.  These method have the same issues as the
+\method{iterkeyrefs()} and \method{keyrefs()} methods of
+\class{WeakKeyDictionary} objects.
+
+\begin{methoddesc}{itervaluerefs}{}
+  Return an iterator that yields the weak references to the values.
+  \versionadded{2.5}
+\end{methoddesc}
+
+\begin{methoddesc}{valuerefs}{}
+  Return a list of weak references to the values.
+  \versionadded{2.5}
+\end{methoddesc}
 
 \begin{datadesc}{ReferenceType}
   The type object for weak references objects.

@@ -54,6 +54,7 @@ __all__ = [
     'DONT_ACCEPT_BLANKLINE',
     'NORMALIZE_WHITESPACE',
     'ELLIPSIS',
+    'SKIP',
     'IGNORE_EXCEPTION_DETAIL',
     'COMPARISON_FLAGS',
     'REPORT_UDIFF',
@@ -128,20 +129,21 @@ warnings.filterwarnings("ignore", "is_private", DeprecationWarning,
 
 OPTIONFLAGS_BY_NAME = {}
 def register_optionflag(name):
-    flag = 1 << len(OPTIONFLAGS_BY_NAME)
-    OPTIONFLAGS_BY_NAME[name] = flag
-    return flag
+    # Create a new flag unless `name` is already known.
+    return OPTIONFLAGS_BY_NAME.setdefault(name, 1 << len(OPTIONFLAGS_BY_NAME))
 
 DONT_ACCEPT_TRUE_FOR_1 = register_optionflag('DONT_ACCEPT_TRUE_FOR_1')
 DONT_ACCEPT_BLANKLINE = register_optionflag('DONT_ACCEPT_BLANKLINE')
 NORMALIZE_WHITESPACE = register_optionflag('NORMALIZE_WHITESPACE')
 ELLIPSIS = register_optionflag('ELLIPSIS')
+SKIP = register_optionflag('SKIP')
 IGNORE_EXCEPTION_DETAIL = register_optionflag('IGNORE_EXCEPTION_DETAIL')
 
 COMPARISON_FLAGS = (DONT_ACCEPT_TRUE_FOR_1 |
                     DONT_ACCEPT_BLANKLINE |
                     NORMALIZE_WHITESPACE |
                     ELLIPSIS |
+                    SKIP |
                     IGNORE_EXCEPTION_DETAIL)
 
 REPORT_UDIFF = register_optionflag('REPORT_UDIFF')
@@ -350,7 +352,7 @@ class _OutputRedirectingPdb(pdb.Pdb):
     """
     def __init__(self, out):
         self.__out = out
-        pdb.Pdb.__init__(self)
+        pdb.Pdb.__init__(self, stdout=out)
 
     def trace_dispatch(self, *args):
         # Redirect stdout to the given stream.
@@ -1233,6 +1235,10 @@ class DocTestRunner:
                     else:
                         self.optionflags &= ~optionflag
 
+            # If 'SKIP' is set, then skip this example.
+            if self.optionflags & SKIP:
+                continue
+
             # Record that we started this example.
             tries += 1
             if not quiet:
@@ -1792,6 +1798,7 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
         DONT_ACCEPT_BLANKLINE
         NORMALIZE_WHITESPACE
         ELLIPSIS
+        SKIP
         IGNORE_EXCEPTION_DETAIL
         REPORT_UDIFF
         REPORT_CDIFF
@@ -1914,6 +1921,7 @@ def testfile(filename, module_relative=True, name=None, package=None,
         DONT_ACCEPT_BLANKLINE
         NORMALIZE_WHITESPACE
         ELLIPSIS
+        SKIP
         IGNORE_EXCEPTION_DETAIL
         REPORT_UDIFF
         REPORT_CDIFF

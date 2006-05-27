@@ -88,13 +88,16 @@ except ImportError:
 ### Number formatting APIs
 
 # Author: Martin von Loewis
+# improved by Georg Brandl
 
 #perform the grouping from right to left
-def _group(s):
-    conv=localeconv()
-    grouping=conv['grouping']
-    if not grouping:return (s, 0)
-    result=""
+def _group(s, monetary=False):
+    conv = localeconv()
+    thousands_sep = conv[monetary and 'mon_thousands_sep' or 'thousands_sep']
+    grouping = conv[monetary and 'mon_grouping' or 'grouping']
+    if not grouping:
+        return (s, 0)
+    result = ""
     seps = 0
     spaces = ""
     if s[-1] == ' ':
@@ -103,63 +106,142 @@ def _group(s):
         s = s[:sp]
     while s and grouping:
         # if grouping is -1, we are done
-        if grouping[0]==CHAR_MAX:
+        if grouping[0] == CHAR_MAX:
             break
         # 0: re-use last group ad infinitum
-        elif grouping[0]!=0:
+        elif grouping[0] != 0:
             #process last group
-            group=grouping[0]
-            grouping=grouping[1:]
+            group = grouping[0]
+            grouping = grouping[1:]
         if result:
-            result=s[-group:]+conv['thousands_sep']+result
+            result = s[-group:] + thousands_sep + result
             seps += 1
         else:
-            result=s[-group:]
-        s=s[:-group]
+            result = s[-group:]
+        s = s[:-group]
         if s and s[-1] not in "0123456789":
             # the leading string is only spaces and signs
-            return s+result+spaces,seps
+            return s + result + spaces, seps
     if not result:
-        return s+spaces,seps
+        return s + spaces, seps
     if s:
-        result=s+conv['thousands_sep']+result
+        result = s + thousands_sep + result
         seps += 1
-    return result+spaces,seps
+    return result + spaces, seps
 
-def format(f,val,grouping=0):
-    """Formats a value in the same way that the % formatting would use,
+def format(percent, value, grouping=False, monetary=False, *additional):
+    """Returns the locale-aware substitution of a %? specifier
+    (percent).
+
+    additional is for format strings which contain one or more
+    '*' modifiers."""
+    # this is only for one-percent-specifier strings and this should be checked
+    if percent[0] != '%':
+        raise ValueError("format() must be given exactly one %char "
+                         "format specifier")
+    if additional:
+        formatted = percent % ((value,) + additional)
+    else:
+        formatted = percent % value
+    # floats and decimal ints need special action!
+    if percent[-1] in 'eEfFgG':
+        seps = 0
+        parts = formatted.split('.')
+        if grouping:
+            parts[0], seps = _group(parts[0], monetary=monetary)
+        decimal_point = localeconv()[monetary and 'mon_decimal_point'
+                                              or 'decimal_point']
+        formatted = decimal_point.join(parts)
+        while seps:
+            sp = formatted.find(' ')
+            if sp == -1: break
+            formatted = formatted[:sp] + formatted[sp+1:]
+            seps -= 1
+    elif percent[-1] in 'diu':
+        if grouping:
+            formatted = _group(formatted, monetary=monetary)[0]
+    return formatted
+
+import re, operator
+_percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?'
+                         r'(?P<modifiers>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
+
+def format_string(f, val, grouping=False):
+    """Formats a string in the same way that the % formatting would use,
     but takes the current locale into account.
     Grouping is applied if the third parameter is true."""
-    result = f % val
-    fields = result.split(".")
-    seps = 0
-    if grouping:
-        fields[0],seps=_group(fields[0])
-    if len(fields)==2:
-        result = fields[0]+localeconv()['decimal_point']+fields[1]
-    elif len(fields)==1:
-        result = fields[0]
+    percents = list(_percent_re.finditer(f))
+    new_f = _percent_re.sub('%s', f)
+
+    if isinstance(val, tuple):
+        new_val = list(val)
+        i = 0
+        for perc in percents:
+            starcount = perc.group('modifiers').count('*')
+            new_val[i] = format(perc.group(), new_val[i], grouping, False, *new_val[i+1:i+1+starcount])
+            del new_val[i+1:i+1+starcount]
+            i += (1 + starcount)
+        val = tuple(new_val)
+    elif operator.isMappingType(val):
+        for perc in percents:
+            key = perc.group("key")
+            val[key] = format(perc.group(), val[key], grouping)
     else:
-        raise Error, "Too many decimal points in result string"
+        # val is a single value
+        val = format(percents[0].group(), val, grouping)
 
-    while seps:
-        # If the number was formatted for a specific width, then it
-        # might have been filled with spaces to the left or right. If
-        # so, kill as much spaces as there where separators.
-        # Leading zeroes as fillers are not yet dealt with, as it is
-        # not clear how they should interact with grouping.
-        sp = result.find(" ")
-        if sp==-1:break
-        result = result[:sp]+result[sp+1:]
-        seps -= 1
+    return new_f % val
 
-    return result
+def currency(val, symbol=True, grouping=False, international=False):
+    """Formats val according to the currency settings
+    in the current locale."""
+    conv = localeconv()
+
+    # check for illegal values
+    digits = conv[international and 'int_frac_digits' or 'frac_digits']
+    if digits == 127:
+        raise ValueError("Currency formatting is not possible using "
+                         "the 'C' locale.")
+
+    s = format('%%.%if' % digits, abs(val), grouping, monetary=True)
+    # '<' and '>' are markers if the sign must be inserted between symbol and value
+    s = '<' + s + '>'
+
+    if symbol:
+        smb = conv[international and 'int_curr_symbol' or 'currency_symbol']
+        precedes = conv[val<0 and 'n_cs_precedes' or 'p_cs_precedes']
+        separated = conv[val<0 and 'n_sep_by_space' or 'p_sep_by_space']
+
+        if precedes:
+            s = smb + (separated and ' ' or '') + s
+        else:
+            s = s + (separated and ' ' or '') + smb
+
+    sign_pos = conv[val<0 and 'n_sign_posn' or 'p_sign_posn']
+    sign = conv[val<0 and 'negative_sign' or 'positive_sign']
+
+    if sign_pos == 0:
+        s = '(' + s + ')'
+    elif sign_pos == 1:
+        s = sign + s
+    elif sign_pos == 2:
+        s = s + sign
+    elif sign_pos == 3:
+        s = s.replace('<', sign)
+    elif sign_pos == 4:
+        s = s.replace('>', sign)
+    else:
+        # the default if nothing specified;
+        # this should be the most fitting sign position
+        s = sign + s
+
+    return s.replace('<', '').replace('>', '')
 
 def str(val):
     """Convert float to integer, taking the locale into account."""
-    return format("%.12g",val)
+    return format("%.12g", val)
 
-def atof(string,func=float):
+def atof(string, func=float):
     "Parses a string as a float according to the locale settings."
     #First, get rid of the grouping
     ts = localeconv()['thousands_sep']
@@ -179,10 +261,10 @@ def atoi(str):
 def _test():
     setlocale(LC_ALL, "")
     #do grouping
-    s1=format("%d", 123456789,1)
+    s1 = format("%d", 123456789,1)
     print s1, "is", atoi(s1)
     #standard formatting
-    s1=str(3.14)
+    s1 = str(3.14)
     print s1, "is", atof(s1)
 
 ### Locale name aliasing engine

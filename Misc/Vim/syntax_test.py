@@ -19,8 +19,6 @@ assert True # keyword
 def foo():  # function definition
     return []
 class Bar(object):  # Class definition
-    def __context__(self):
-        return self
     def __enter__(self):
         pass
     def __exit__(self, *args):

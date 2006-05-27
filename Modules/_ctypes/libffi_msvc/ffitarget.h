@@ -43,23 +43,21 @@ typedef enum ffi_abi {
   FFI_FIRST_ABI = 0,
 
   /* ---- Intel x86 Win32 ---------- */
-#if defined(X86_WIN32) || defined(_MSC_VER)
   FFI_SYSV,
   FFI_STDCALL,
   /* TODO: Add fastcall support for the sake of completeness */
   FFI_DEFAULT_ABI = FFI_SYSV,
-#endif
 
   /* ---- Intel x86 and AMD x86-64 - */
-#if !defined(X86_WIN32) && (defined(__i386__) || defined(__x86_64__))
-  FFI_SYSV,
-  FFI_UNIX64,   /* Unix variants all use the same ABI for x86-64  */
-#ifdef __i386__
-  FFI_DEFAULT_ABI = FFI_SYSV,
-#else
-  FFI_DEFAULT_ABI = FFI_UNIX64,
-#endif
-#endif
+/* #if !defined(X86_WIN32) && (defined(__i386__) || defined(__x86_64__)) */
+/*   FFI_SYSV, */
+/*   FFI_UNIX64,*/   /* Unix variants all use the same ABI for x86-64  */
+/* #ifdef __i386__ */
+/*   FFI_DEFAULT_ABI = FFI_SYSV, */
+/* #else */
+/*   FFI_DEFAULT_ABI = FFI_UNIX64, */
+/* #endif */
+/* #endif */
 
   FFI_LAST_ABI = FFI_DEFAULT_ABI + 1
 } ffi_abi;

@@ -3679,6 +3679,13 @@ datetime_from_timestamp(PyObject *cls, TM_FUNC f, double timestamp,
 		return NULL;
 	fraction = timestamp - (double)timet;
 	us = (int)round_to_long(fraction * 1e6);
+	/* If timestamp is less than one microsecond smaller than a
+	 * full second, round up. Otherwise, ValueErrors are raised
+	 * for some floats. */
+	if (us == 1000000) {
+		timet += 1;
+		us = 0;
+	}
 	return datetime_from_timet_and_us(cls, f, timet, us, tzinfo);
 }
 

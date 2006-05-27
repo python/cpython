@@ -308,22 +308,28 @@ identifiers.  They must be spelled exactly as written here:%
 \index{reserved word}
 
 \begin{verbatim}
-and       del       for       is        raise    
-assert    elif      from      lambda    return   
-break     else      global    not       try      
-class     except    if        or        while    
-continue  exec      import    pass      yield    
-def       finally   in        print              
+and       del       from      not       while    
+as        elif      global    or        with     
+assert    else      if        pass      yield    
+break     except    import    print              
+class     exec      in        raise              
+continue  finally   is        return             
+def       for       lambda    try 
 \end{verbatim}
 
 % When adding keywords, use reswords.py for reformatting
 
-Note that although the identifier \code{as} can be used as part of the
-syntax of \keyword{import} statements, it is not currently a reserved
-word.
+\versionchanged[\constant{None} became a constant and is now
+recognized by the compiler as a name for the built-in object
+\constant{None}.  Although it is not a keyword, you cannot assign
+a different object to it]{2.4}
 
-In some future version of Python, the identifiers \code{as} and
-\code{None} will both become keywords.
+\versionchanged[Both \keyword{as} and \keyword{with} are only recognized
+when the \code{with_statement} future feature has been enabled.
+It will always be enabled in Python 2.6.  See section~\ref{with} for
+details.  Note that using \keyword{as} and \keyword{with} as identifiers
+will always issue a warning, even when the \code{with_statement} future
+directive is not in effect]{2.5}
 
 
 \subsection{Reserved classes of identifiers\label{id-classes}}
@@ -652,7 +658,7 @@ Some examples of floating point literals:
 \end{verbatim}
 
 Note that numeric literals do not include a sign; a phrase like
-\code{-1} is actually an expression composed of the operator
+\code{-1} is actually an expression composed of the unary operator
 \code{-} and the literal \code{1}.
 
 

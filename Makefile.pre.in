@@ -108,13 +108,17 @@ EXE=		@EXEEXT@
 BUILDEXE=	@BUILDEXEEXT@
 
 # Short name and location for Mac OS X Python framework
+UNIVERSALSDK=@UNIVERSALSDK@
 PYTHONFRAMEWORK=	@PYTHONFRAMEWORK@
 PYTHONFRAMEWORKDIR=	@PYTHONFRAMEWORKDIR@
 PYTHONFRAMEWORKPREFIX=	@PYTHONFRAMEWORKPREFIX@
 PYTHONFRAMEWORKINSTALLDIR= @PYTHONFRAMEWORKINSTALLDIR@
 # Deployment target selected during configure, to be checked
-# by distutils
-CONFIGURE_MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
+# by distutils. The export statement is needed to ensure that the
+# deployment target is active during build.
+MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
+@EXPORT_MACOSX_DEPLOYMENT_TARGET@export MACOSX_DEPLOYMENT_TARGET
+
 # Options to enable prebinding (for fast startup prior to Mac OS X 10.3)
 OTHER_LIBTOOL_OPT=@OTHER_LIBTOOL_OPT@
 
@@ -236,7 +240,6 @@ PYTHON_OBJS=	\
 		Python/asdl.o \
 		Python/ast.o \
 		Python/bltinmodule.o \
-		Python/exceptions.o \
 		Python/ceval.o \
 		Python/compile.o \
 		Python/codecs.o \
@@ -286,6 +289,7 @@ OBJECT_OBJS=	\
 		Objects/complexobject.o \
 		Objects/descrobject.o \
 		Objects/enumobject.o \
+		Objects/exceptions.o \
 		Objects/genobject.o \
 		Objects/fileobject.o \
 		Objects/floatobject.o \
@@ -378,8 +382,17 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
                 $(RESSRCDIR)/version.plist \
                 $(RESSRCDIR)/English.lproj/InfoPlist.strings
 	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)
-	libtool -o $(LDLIBRARY) -dynamic $(OTHER_LIBTOOL_OPT) $(LIBRARY) \
-		@LIBTOOL_CRUFT@
+	if test "${UNIVERSALSDK}"; then \
+		$(CC) -o $(LDLIBRARY) -arch i386 -arch ppc -dynamiclib \
+			-isysroot "${UNIVERSALSDK}" \
+			-all_load $(LIBRARY) -Wl,-single_module \
+			-install_name $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/Python \
+			-compatibility_version $(VERSION) \
+			-current_version $(VERSION); \
+        else \
+		libtool -o $(LDLIBRARY) -dynamic $(OTHER_LIBTOOL_OPT) $(LIBRARY) \
+			@LIBTOOL_CRUFT@ ;\
+	fi
 	$(INSTALL) -d -m $(DIRMODE)  \
 		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/English.lproj
 	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist \
@@ -570,6 +583,19 @@ testall:	all platform
 		-$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
 		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
 
+#  Run the unitests for both architectures in a Universal build on OSX
+#  Must be run on an Intel box.
+testuniversal:	all platform
+		if [ `arch` != 'i386' ];then \
+			echo "This can only be used on OSX/i386" ;\
+			exit 1 ;\
+		fi
+		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
+		-$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
+		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
+		$(RUNSHARED) /usr/libexec/oah/translate ./$(BUILDPYTHON) -E -tt $(TESTPROG) $(TESTOPTS) -uall
+
+
 # Like testall, but with a single pass only
 buildbottest:	all platform
 		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall -rw
@@ -590,7 +616,7 @@ memtest:	all platform
 		$(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
 
 # Install everything
-install:	altinstall bininstall maninstall
+install:	@FRAMEWORKINSTALLFIRST@ altinstall bininstall maninstall @FRAMEWORKINSTALLLAST@
 
 # Install almost everything without disturbing previous versions
 altinstall:	altbininstall libinstall inclinstall libainstall \
@@ -832,7 +858,7 @@ libainstall:	all
 	# Substitution happens here, as the completely-expanded BINDIR
 	# is not available in configure
 	sed -e "s,@BINDIR@,$(BINDIR)," < $(srcdir)/Misc/python-config.in >python-config
-	$(INSTALL_SCRIPT) python-config $(BINDIR)/python-config
+	$(INSTALL_SCRIPT) python-config $(DESTDIR)$(BINDIR)/python-config
 	rm python-config
 	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
@@ -875,8 +901,10 @@ sharedinstall:
 # subtargets install specific parts. Much of the actual work is offloaded to
 # the Makefile in Mac/OSX
 #
-frameworkinstall: frameworkinstallframework \
-	frameworkinstallapps frameworkinstallunixtools
+#
+# This target is here for backward compatiblity, previous versions of Python
+# hadn't integrated framework installation in the normal install process.
+frameworkinstall: install
 
 # On install, we re-make the framework
 # structure in the install location, /Library/Frameworks/ or the argument to
@@ -912,27 +940,20 @@ frameworkinstallstructure:	$(LDLIBRARY)
 
 # This installs Mac/Lib into the framework
 frameworkinstallmaclib:
-	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installmacsubtree \
-		$(RUNSHARED) BUILDPYTHON=./$(BUILDPYTHON) DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
-		srcdir=$(srcdir) builddir=. prefix=$(prefix) LIBDEST=$(LIBDEST) \
-		DESTDIR=$(DESTDIR)
+	cd Mac/OSX && $(MAKE) installmacsubtree DESTDIR="$(DESTDIR)"
 
 # This installs the IDE, the Launcher and other apps into /Applications
 frameworkinstallapps:
-	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installapps \
-		$(RUNSHARED) BUILDPYTHON=./$(BUILDPYTHON) DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
-		srcdir=$(srcdir) builddir=. DESTDIR=$(DESTDIR) prefix=$(prefix)
+	cd Mac/OSX && $(MAKE) installapps DESTDIR="$(DESTDIR)"
 
 # This install the unix python and pythonw tools in /usr/local/bin
 frameworkinstallunixtools:
-	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installunixtools \
-		DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
-		srcdir=$(srcdir) builddir=. DESTDIR=$(DESTDIR) prefix=$(prefix)
+	cd Mac/OSX && $(MAKE) installunixtools DESTDIR="$(DESTDIR)"
 
 # This installs the Demos and Tools into the applications directory.
 # It is not part of a normal frameworkinstall
 frameworkinstallextras:
-	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installextras \
+	$(MAKE) -f Mac/OSX/Makefile installextras \
 		$(RUNSHARED) BUILDPYTHON=./$(BUILDPYTHON) DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
 		srcdir=$(srcdir) builddir=. DESTDIR=$(DESTDIR)
 

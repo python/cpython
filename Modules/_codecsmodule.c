@@ -169,7 +169,7 @@ codec_decode(PyObject *self, PyObject *args)
 
 static
 PyObject *codec_tuple(PyObject *unicode,
-		      int len)
+		      Py_ssize_t len)
 {
     PyObject *v,*w;
 
@@ -181,7 +181,7 @@ PyObject *codec_tuple(PyObject *unicode,
 	return NULL;
     }
     PyTuple_SET_ITEM(v,0,unicode);
-    w = PyInt_FromLong(len);
+    w = PyInt_FromSsize_t(len);
     if (w == NULL) {
 	Py_DECREF(v);
 	return NULL;
@@ -213,7 +213,7 @@ escape_encode(PyObject *self,
 	PyObject *str;
 	const char *errors = NULL;
 	char *buf;
-	int len;
+	Py_ssize_t len;
 
 	if (!PyArg_ParseTuple(args, "O!|z:escape_encode",
 			      &PyString_Type, &str, &errors))
@@ -319,12 +319,11 @@ utf_16_decode(PyObject *self,
     if (!PyArg_ParseTuple(args, "t#|zi:utf_16_decode",
 			  &data, &size, &errors, &final))
 	return NULL;
-    /* XXX Why is consumed initialized to size? mvl */
     if (size < 0) {
 	    PyErr_SetString(PyExc_ValueError, "negative argument");
 	    return 0;
     }
-    consumed = size;
+    consumed = size; /* This is overwritten unless final is true. */
     decoded = PyUnicode_DecodeUTF16Stateful(data, size, errors, &byteorder,
 					    final ? NULL : &consumed);
     if (decoded == NULL)
@@ -348,12 +347,11 @@ utf_16_le_decode(PyObject *self,
 			  &data, &size, &errors, &final))
 	return NULL;
 
-    /* XXX Why is consumed initialized to size? mvl */
     if (size < 0) {
           PyErr_SetString(PyExc_ValueError, "negative argument");
           return 0;
     }
-    consumed = size;
+    consumed = size; /* This is overwritten unless final is true. */
     decoded = PyUnicode_DecodeUTF16Stateful(data, size, errors,
 	&byteorder, final ? NULL : &consumed);
     if (decoded == NULL)
@@ -377,12 +375,11 @@ utf_16_be_decode(PyObject *self,
     if (!PyArg_ParseTuple(args, "t#|zi:utf_16_be_decode",
 			  &data, &size, &errors, &final))
 	return NULL;
-    /* XXX Why is consumed initialized to size? mvl */
     if (size < 0) {
           PyErr_SetString(PyExc_ValueError, "negative argument");
           return 0;
     }
-    consumed = size;
+    consumed = size; /* This is overwritten unless final is true. */
     decoded = PyUnicode_DecodeUTF16Stateful(data, size, errors,
 	&byteorder, final ? NULL : &consumed);
     if (decoded == NULL)
@@ -413,12 +410,11 @@ utf_16_ex_decode(PyObject *self,
     if (!PyArg_ParseTuple(args, "t#|zii:utf_16_ex_decode",
 			  &data, &size, &errors, &byteorder, &final))
 	return NULL;
-    /* XXX Why is consumed initialized to size? mvl */
     if (size < 0) {
 	    PyErr_SetString(PyExc_ValueError, "negative argument");
 	    return 0;
     }
-    consumed = size;
+    consumed = size; /* This is overwritten unless final is true. */
     unicode = PyUnicode_DecodeUTF16Stateful(data, size, errors, &byteorder,
 					    final ? NULL : &consumed);
     if (unicode == NULL)

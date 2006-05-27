@@ -872,7 +872,7 @@ class Popen(object):
             # object do the translation: It is based on stdio, which is
             # impossible to combine with select (unless forcing no
             # buffering).
-            if self.universal_newlines and hasattr(open, 'newlines'):
+            if self.universal_newlines and hasattr(file, 'newlines'):
                 if stdout:
                     stdout = self._translate_newlines(stdout)
                 if stderr:
@@ -1141,7 +1141,7 @@ class Popen(object):
             # object do the translation: It is based on stdio, which is
             # impossible to combine with select (unless forcing no
             # buffering).
-            if self.universal_newlines and hasattr(open, 'newlines'):
+            if self.universal_newlines and hasattr(file, 'newlines'):
                 if stdout:
                     stdout = self._translate_newlines(stdout)
                 if stderr:

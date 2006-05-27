@@ -330,7 +330,7 @@ List comprehensions have the form:
 [ expression for expr in sequence1 
              for expr2 in sequence2 ...
 	     for exprN in sequenceN
-             if condition
+             if condition ]
 \end{verbatim}
 
 The \keyword{for}...\keyword{in} clauses contain the sequences to be
@@ -356,7 +356,7 @@ for expr1 in sequence1:
                   # resulting list.
 \end{verbatim}
 
-This means that when there are \keyword{for}...\keyword{in} clauses,
+This means that when there are multiple \keyword{for}...\keyword{in} clauses,
 the resulting list will be equal to the product of the lengths of all
 the sequences.  If you have two lists of length 3, the output list is
 9 elements long:
@@ -400,7 +400,7 @@ statement \code{a += 2} increments the value of the variable
 % The empty groups below prevent conversion to guillemets.
 The full list of supported assignment operators is \code{+=},
 \code{-=}, \code{*=}, \code{/=}, \code{\%=}, \code{**=}, \code{\&=},
-\code{|=}, \verb|^=|, \code{>{}>=}, and \code{<{}<=}.  Python classes can
+\code{|=}, \verb|^=|, \code{>>=}, and \code{<<=}.  Python classes can
 override the augmented assignment operators by defining methods named
 \method{__iadd__}, \method{__isub__}, etc.  For example, the following
 \class{Number} class stores a number and supports using += to create a

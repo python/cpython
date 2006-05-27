@@ -1,11 +1,16 @@
 from test.test_support import TestFailed, verbose, verify
+import test.test_support
 import struct
+import array
+import unittest
 
 import sys
 ISBIGENDIAN = sys.byteorder == "big"
 del sys
 verify((struct.pack('=i', 1)[0] == chr(0)) == ISBIGENDIAN,
        "bigendian determination appears wrong")
+
+PY_STRUCT_RANGE_CHECKING = 1
 
 def string_reverse(s):
     chars = list(s)
@@ -263,7 +268,7 @@ class IntTester:
 
         else:
             # x is out of range -- verify pack realizes that.
-            if code in self.BUGGY_RANGE_CHECK:
+            if not PY_STRUCT_RANGE_CHECKING and code in self.BUGGY_RANGE_CHECK:
                 if verbose:
                     print "Skipping buggy range check for code", code
             else:
@@ -318,7 +323,7 @@ class IntTester:
 
         else:
             # x is out of range -- verify pack realizes that.
-            if code in self.BUGGY_RANGE_CHECK:
+            if not PY_STRUCT_RANGE_CHECKING and code in self.BUGGY_RANGE_CHECK:
                 if verbose:
                     print "Skipping buggy range check for code", code
             else:
@@ -437,3 +442,97 @@ def test_705836():
         TestFailed("expected OverflowError")
 
 test_705836()
+
+def test_1229380():
+    import sys
+    for endian in ('', '>', '<'):
+        for cls in (int, long):
+            for fmt in ('B', 'H', 'I', 'L'):
+                any_err(struct.pack, endian + fmt, cls(-1))
+
+            any_err(struct.pack, endian + 'B', cls(300))
+            any_err(struct.pack, endian + 'H', cls(70000))
+
+        any_err(struct.pack, endian + 'I', sys.maxint * 4L)
+        any_err(struct.pack, endian + 'L', sys.maxint * 4L)
+
+if PY_STRUCT_RANGE_CHECKING:
+    test_1229380()
+
+class PackBufferTestCase(unittest.TestCase):
+    """
+    Test the packing methods that work on buffers.
+    """
+
+    def test_unpack_from( self ):
+        test_string = 'abcd01234'
+        fmt = '4s'
+        s = struct.Struct(fmt)
+        for cls in (str, buffer):
+            data = cls(test_string)
+            self.assertEquals(s.unpack_from(data), ('abcd',))
+            self.assertEquals(s.unpack_from(data, 2), ('cd01',))
+            self.assertEquals(s.unpack_from(data, 4), ('0123',))
+            for i in xrange(6):
+                self.assertEquals(s.unpack_from(data, i), (data[i:i+4],))
+            for i in xrange(6, len(test_string) + 1):
+                simple_err(s.unpack_from, data, i)
+        for cls in (str, buffer):
+            data = cls(test_string)
+            self.assertEquals(struct.unpack_from(fmt, data), ('abcd',))
+            self.assertEquals(struct.unpack_from(fmt, data, 2), ('cd01',))
+            self.assertEquals(struct.unpack_from(fmt, data, 4), ('0123',))
+            for i in xrange(6):
+                self.assertEquals(struct.unpack_from(fmt, data, i),
+                                  (data[i:i+4],))
+            for i in xrange(6, len(test_string) + 1):
+                simple_err(struct.unpack_from, fmt, data, i)
+
+    def test_pack_to( self ):
+        test_string = 'Reykjavik rocks, eow!'
+        writable_buf = array.array('c', ' '*100)
+        fmt = '21s'
+        s = struct.Struct(fmt)
+
+        # Test without offset
+        s.pack_to(writable_buf, 0, test_string)
+        from_buf = writable_buf.tostring()[:len(test_string)]
+        self.assertEquals(from_buf, test_string)
+
+        # Test with offset.
+        s.pack_to(writable_buf, 10, test_string)
+        from_buf = writable_buf.tostring()[:len(test_string)+10]
+        self.assertEquals(from_buf, (test_string[:10] + test_string))
+
+        # Go beyond boundaries.
+        small_buf = array.array('c', ' '*10)
+        self.assertRaises(struct.error, s.pack_to, small_buf, 0, test_string)
+        self.assertRaises(struct.error, s.pack_to, small_buf, 2, test_string)
+
+    def test_pack_to_fn( self ):
+        test_string = 'Reykjavik rocks, eow!'
+        writable_buf = array.array('c', ' '*100)
+        fmt = '21s'
+        pack_to = lambda *args: struct.pack_to(fmt, *args)
+
+        # Test without offset
+        pack_to(writable_buf, 0, test_string)
+        from_buf = writable_buf.tostring()[:len(test_string)]
+        self.assertEquals(from_buf, test_string)
+
+        # Test with offset.
+        pack_to(writable_buf, 10, test_string)
+        from_buf = writable_buf.tostring()[:len(test_string)+10]
+        self.assertEquals(from_buf, (test_string[:10] + test_string))
+
+        # Go beyond boundaries.
+        small_buf = array.array('c', ' '*10)
+        self.assertRaises(struct.error, pack_to, small_buf, 0, test_string)
+        self.assertRaises(struct.error, pack_to, small_buf, 2, test_string)
+
+
+def test_main():
+    test.test_support.run_unittest(PackBufferTestCase)
+
+if __name__ == "__main__":
+    test_main()

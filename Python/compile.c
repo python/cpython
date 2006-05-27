@@ -334,7 +334,7 @@ list2dict(PyObject *list)
 			return NULL;
 		}
 		k = PyList_GET_ITEM(list, i);
-		k = Py_BuildValue("(OO)", k, k->ob_type);
+		k = PyTuple_Pack(2, k, k->ob_type);
 		if (k == NULL || PyDict_SetItem(dict, k, v) < 0) {
 			Py_XDECREF(k);
 			Py_DECREF(v);
@@ -377,7 +377,7 @@ dictbytype(PyObject *src, int scope_type, int flag, int offset)
 				return NULL;
 			}
 			i++;
-			tuple = Py_BuildValue("(OO)", k, k->ob_type);
+			tuple = PyTuple_Pack(2, k, k->ob_type);
 			if (!tuple || PyDict_SetItem(dest, tuple, item) < 0) {
 				Py_DECREF(item);
 				Py_DECREF(dest);
@@ -1834,7 +1834,7 @@ static int
 compiler_lookup_arg(PyObject *dict, PyObject *name)
 {
     PyObject *k, *v;
-    k = Py_BuildValue("(OO)", name, name->ob_type);
+    k = PyTuple_Pack(2, name, name->ob_type);
     if (k == NULL)
 	return -1;
     v = PyDict_GetItem(dict, k);
@@ -3349,7 +3349,7 @@ expr_constant(expr_ty e)
   
    It is implemented roughly as:
   
-   context = (EXPR).__context__()
+   context = EXPR
    exit = context.__exit__  # not calling it
    value = context.__enter__()
    try:
@@ -3365,17 +3365,12 @@ expr_constant(expr_ty e)
 static int
 compiler_with(struct compiler *c, stmt_ty s)
 {
-    static identifier context_attr, enter_attr, exit_attr;
+    static identifier enter_attr, exit_attr;
     basicblock *block, *finally;
     identifier tmpexit, tmpvalue = NULL;
 
     assert(s->kind == With_kind);
 
-    if (!context_attr) {
-	context_attr = PyString_InternFromString("__context__");
-	if (!context_attr)
-	    return 0;
-    }
     if (!enter_attr) {
 	enter_attr = PyString_InternFromString("__enter__");
 	if (!enter_attr)
@@ -3414,10 +3409,8 @@ compiler_with(struct compiler *c, stmt_ty s)
 	PyArena_AddPyObject(c->c_arena, tmpvalue);
     }
 
-    /* Evaluate (EXPR).__context__() */
+    /* Evaluate EXPR */
     VISIT(c, expr, s->v.With.context_expr);
-    ADDOP_O(c, LOAD_ATTR, context_attr, names);
-    ADDOP_I(c, CALL_FUNCTION, 0);
 
     /* Squirrel away context.__exit__  */
     ADDOP(c, DUP_TOP);

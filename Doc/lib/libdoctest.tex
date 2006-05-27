@@ -333,8 +333,8 @@ NO!!!
 \end{verbatim}
 
 Any expected output must immediately follow the final
-\code{'>\code{>}>~'} or \code{'...~'} line containing the code, and
-the expected output (if any) extends to the next \code{'>\code{>}>~'}
+\code{'>>>~'} or \code{'...~'} line containing the code, and
+the expected output (if any) extends to the next \code{'>>>~'}
 or all-whitespace line.
 
 The fine print:
@@ -386,7 +386,7 @@ Backslashes in a raw docstring: m\n
 \end{verbatim}
 
 and as many leading whitespace characters are stripped from the
-expected output as appeared in the initial \code{'>\code{>}>~'} line
+expected output as appeared in the initial \code{'>>>~'} line
 that started the example.
 \end{itemize}
 
@@ -407,10 +407,13 @@ You can force use of your own dict as the execution context by passing
 \subsubsection{What About Exceptions?\label{doctest-exceptions}}
 
 No problem, provided that the traceback is the only output produced by
-the example:  just paste in the traceback.  Since tracebacks contain
-details that are likely to change rapidly (for example, exact file paths
-and line numbers), this is one case where doctest works hard to be
-flexible in what it accepts.
+the example:  just paste in the traceback.\footnote{Examples containing
+    both expected output and an exception are not supported.  Trying
+    to guess where one ends and the other begins is too error-prone,
+    and that also makes for a confusing test.}
+Since tracebacks contain details that are likely to change rapidly (for
+example, exact file paths and line numbers), this is one case where doctest
+works hard to be flexible in what it accepts.
 
 Simple example:
 
@@ -613,6 +616,20 @@ TypeError: object doesn't support item assignment
 
 \end{datadesc}
 
+\begin{datadesc}{SKIP}
+
+    When specified, do not run the example at all.  This can be useful
+    in contexts where doctest examples serve as both documentation and
+    test cases, and an example should be included for documentation
+    purposes, but should not be checked.  E.g., the example's output
+    might be random; or the example might depend on resources which
+    would be unavailable to the test driver.
+
+    The SKIP flag can also be used for temporarily "commenting out"
+    examples.
+
+\end{datadesc}
+
 \begin{datadesc}{COMPARISON_FLAGS}
     A bitmask or'ing together all the comparison flags above.
 \end{datadesc}
@@ -741,6 +758,7 @@ can be useful.
     were added; by default \code{<BLANKLINE>} in expected output
     matches an empty line in actual output; and doctest directives
     were added]{2.4}
+\versionchanged[Constant \constant{SKIP} was added]{2.5}
 
 There's also a way to register new option flag names, although this
 isn't useful unless you intend to extend \refmodule{doctest} internals
@@ -1040,7 +1058,11 @@ runner.run(suite)
 There are two main functions for creating \class{\refmodule{unittest}.TestSuite}
 instances from text files and modules with doctests:
 
-\begin{funcdesc}{DocFileSuite}{*paths, **kw}
+\begin{funcdesc}{DocFileSuite}{\optional{module_relative}\optional{,
+                              package}\optional{, setUp}\optional{,
+                              tearDown}\optional{, globs}\optional{,
+                              optionflags}\optional{, parser}}
+
   Convert doctest tests from one or more text files to a
   \class{\refmodule{unittest}.TestSuite}.
 
@@ -1108,9 +1130,9 @@ instances from text files and modules with doctests:
 
   \versionadded{2.4}
 
-  Starting in Python 2.5, the global \code{__file__} was added to the
+  \versionchanged[The global \code{__file__} was added to the
   globals provided to doctests loaded from a text file using
-  \function{DocFileSuite()}.
+  \function{DocFileSuite()}]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{DocTestSuite}{\optional{module}\optional{,

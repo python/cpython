@@ -95,15 +95,7 @@ def _maybe_compile(compiler, source, filename, symbol):
 
     if code:
         return code
-    try:
-        e1 = err1.__dict__
-    except AttributeError:
-        e1 = err1
-    try:
-        e2 = err2.__dict__
-    except AttributeError:
-        e2 = err2
-    if not code1 and e1 == e2:
+    if not code1 and repr(err1) == repr(err2):
         raise SyntaxError, err1
 
 def _compile(source, filename, symbol):

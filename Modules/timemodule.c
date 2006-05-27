@@ -5,6 +5,18 @@
 #include "structseq.h"
 #include "timefuncs.h"
 
+#ifdef __APPLE__
+#if defined(HAVE_GETTIMEOFDAY) && defined(HAVE_FTIME)
+  /*
+   * floattime falls back to ftime when getttimeofday fails because the latter
+   * might fail on some platforms. This fallback is unwanted on MacOSX because
+   * that makes it impossible to use a binary build on OSX 10.4 on earlier
+   * releases of the OS. Therefore claim we don't support ftime.
+   */
+# undef HAVE_FTIME
+#endif
+#endif
+
 #include <ctype.h>
 
 #include <sys/types.h>
@@ -51,11 +63,10 @@ static long main_thread;
 #endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ || __QNX__ */
 
-#if defined(MS_WINDOWS) && !defined(MS_WIN64) && !defined(__BORLANDC__)
-/* Win32 has better clock replacement
-   XXX Win64 does not yet, but might when the platform matures. */
-#undef HAVE_CLOCK /* We have our own version down below */
-#endif /* MS_WINDOWS && !MS_WIN64 */
+#if defined(MS_WINDOWS) && !defined(__BORLANDC__)
+/* Win32 has better clock replacement; we have our own version below. */
+#undef HAVE_CLOCK
+#endif /* MS_WINDOWS && !defined(__BORLANDC__) */
 
 #if defined(PYOS_OS2)
 #define INCL_DOS
@@ -150,7 +161,7 @@ time_clock(PyObject *self, PyObject *args)
 }
 #endif /* HAVE_CLOCK */
 
-#if defined(MS_WINDOWS) && !defined(MS_WIN64) && !defined(__BORLANDC__)
+#if defined(MS_WINDOWS) && !defined(__BORLANDC__)
 /* Due to Mark Hammond and Tim Peters */
 static PyObject *
 time_clock(PyObject *self, PyObject *args)
@@ -179,7 +190,7 @@ time_clock(PyObject *self, PyObject *args)
 }
 
 #define HAVE_CLOCK /* So it gets included in the methods */
-#endif /* MS_WINDOWS && !MS_WIN64 */
+#endif /* MS_WINDOWS && !defined(__BORLANDC__) */
 
 #ifdef HAVE_CLOCK
 PyDoc_STRVAR(clock_doc,
@@ -701,7 +712,7 @@ void inittimezone(PyObject *m) {
 #ifdef __CYGWIN__
 	tzset();
 	PyModule_AddIntConstant(m, "timezone", _timezone);
-	PyModule_AddIntConstant(m, "altzone", _timezone);
+	PyModule_AddIntConstant(m, "altzone", _timezone-3600);
 	PyModule_AddIntConstant(m, "daylight", _daylight);
 	PyModule_AddObject(m, "tzname",
 			   Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
@@ -809,7 +820,7 @@ inittime(void)
 	SetConsoleCtrlHandler( PyCtrlHandler, TRUE);
 #endif /* MS_WINDOWS */
 	if (!initialized) {
-		PyStructSequence_InitType(&StructTimeType, 
+		PyStructSequence_InitType(&StructTimeType,
 					  &struct_time_type_desc);
 	}
 	Py_INCREF(&StructTimeType);
@@ -842,6 +853,7 @@ floattime(void)
 			return (double)t.tv_sec + t.tv_usec*0.000001;
 #endif /* !GETTIMEOFDAY_NO_TZ */
 	}
+
 #endif /* !HAVE_GETTIMEOFDAY */
 	{
 #if defined(HAVE_FTIME)

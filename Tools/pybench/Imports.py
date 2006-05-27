@@ -47,7 +47,7 @@ class SecondImport(Test):
 
         for i in xrange(self.rounds):
             pass
-            
+
 
 class SecondPackageImport(Test):
 
@@ -92,7 +92,7 @@ class SecondPackageImport(Test):
 
         for i in xrange(self.rounds):
             pass
-            
+
 class SecondSubmoduleImport(Test):
 
     version = 0.1
@@ -136,4 +136,3 @@ class SecondSubmoduleImport(Test):
 
         for i in xrange(self.rounds):
             pass
-            

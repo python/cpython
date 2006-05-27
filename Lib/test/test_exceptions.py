@@ -81,14 +81,6 @@ try: x = undefined_variable
 except NameError: pass
 
 r(OverflowError)
-# XXX
-# Obscure:  in 2.2 and 2.3, this test relied on changing OverflowWarning
-# into an error, in order to trigger OverflowError.  In 2.4, OverflowWarning
-# should no longer be generated, so the focus of the test shifts to showing
-# that OverflowError *isn't* generated.  OverflowWarning should be gone
-# in Python 2.5, and then the filterwarnings() call, and this comment,
-# should go away.
-warnings.filterwarnings("error", "", OverflowWarning, __name__)
 x = 1
 for dummy in range(128):
     x += x  # this simply shouldn't blow up
@@ -224,3 +216,88 @@ if not sys.platform.startswith('java'):
     test_capi3()
 
 unlink(TESTFN)
+
+#  test that exception attributes are happy.
+try: str(u'Hello \u00E1')
+except Exception, e: sampleUnicodeEncodeError = e
+try: unicode('\xff')
+except Exception, e: sampleUnicodeDecodeError = e
+exceptionList = [
+        ( BaseException, (), { 'message' : '', 'args' : () }),
+        ( BaseException, (1, ), { 'message' : 1, 'args' : ( 1, ) }),
+        ( BaseException, ('foo', ), { 'message' : 'foo', 'args' : ( 'foo', ) }),
+        ( BaseException, ('foo', 1), { 'message' : '', 'args' : ( 'foo', 1 ) }),
+        ( SystemExit, ('foo',), { 'message' : 'foo', 'args' : ( 'foo', ),
+                'code' : 'foo' }),
+        ( IOError, ('foo',), { 'message' : 'foo', 'args' : ( 'foo', ), }),
+        ( IOError, ('foo', 'bar'), { 'message' : '',
+                'args' : ('foo', 'bar'), }),
+        ( IOError, ('foo', 'bar', 'baz'),
+                 { 'message' : '', 'args' : ('foo', 'bar'), }),
+        ( EnvironmentError, ('errnoStr', 'strErrorStr', 'filenameStr'),
+                { 'message' : '', 'args' : ('errnoStr', 'strErrorStr'),
+                    'strerror' : 'strErrorStr',
+                    'errno' : 'errnoStr', 'filename' : 'filenameStr' }),
+        ( EnvironmentError, (1, 'strErrorStr', 'filenameStr'),
+                { 'message' : '', 'args' : (1, 'strErrorStr'),
+                    'strerror' : 'strErrorStr', 'errno' : 1,
+                    'filename' : 'filenameStr' }),
+        ( SyntaxError, ('msgStr',),
+                { 'message' : 'msgStr', 'args' : ('msgStr', ),
+                    'print_file_and_line' : None, 'msg' : 'msgStr',
+                    'filename' : None, 'lineno' : None, 'offset' : None,
+                    'text' : None }),
+        ( SyntaxError, ('msgStr', ('filenameStr', 'linenoStr', 'offsetStr',
+                        'textStr')),
+                { 'message' : '', 'args' : ('msgStr', ('filenameStr',
+                        'linenoStr', 'offsetStr', 'textStr' )),
+                    'print_file_and_line' : None, 'msg' : 'msgStr',
+                    'filename' : 'filenameStr', 'lineno' : 'linenoStr',
+                    'offset' : 'offsetStr', 'text' : 'textStr' }),
+        ( SyntaxError, ('msgStr', 'filenameStr', 'linenoStr', 'offsetStr',
+                    'textStr', 'print_file_and_lineStr'),
+                { 'message' : '', 'args' : ('msgStr', 'filenameStr',
+                        'linenoStr', 'offsetStr', 'textStr',
+                        'print_file_and_lineStr'),
+                    'print_file_and_line' : None, 'msg' : 'msgStr',
+                    'filename' : None, 'lineno' : None, 'offset' : None,
+                    'text' : None }),
+        ( UnicodeError, (),
+                { 'message' : '', 'args' : (), }),
+        ( sampleUnicodeEncodeError,
+                { 'message' : '', 'args' : ('ascii', u'Hello \xe1', 6, 7,
+                        'ordinal not in range(128)'),
+                    'encoding' : 'ascii', 'object' : u'Hello \xe1',
+                    'start' : 6, 'reason' : 'ordinal not in range(128)' }),
+        ( sampleUnicodeDecodeError,
+                { 'message' : '', 'args' : ('ascii', '\xff', 0, 1,
+                        'ordinal not in range(128)'),
+                    'encoding' : 'ascii', 'object' : '\xff',
+                    'start' : 0, 'reason' : 'ordinal not in range(128)' }),
+        ( UnicodeTranslateError, (u"\u3042", 0, 1, "ouch"),
+                { 'message' : '', 'args' : (u'\u3042', 0, 1, 'ouch'),
+                    'object' : u'\u3042', 'reason' : 'ouch',
+                    'start' : 0, 'end' : 1 }),
+        ]
+try:
+    exceptionList.append(
+            ( WindowsError, (1, 'strErrorStr', 'filenameStr'),
+                    { 'message' : '', 'args' : (1, 'strErrorStr'),
+                        'strerror' : 'strErrorStr',
+                        'errno' : 22, 'filename' : 'filenameStr',
+                        'winerror' : 1 }))
+except NameError: pass
+
+for args in exceptionList:
+    expected = args[-1]
+    try:
+        if len(args) == 2: raise args[0]
+        else: raise apply(args[0], args[1])
+    except BaseException, e:
+        for checkArgName in expected.keys():
+            if repr(getattr(e, checkArgName)) != repr(expected[checkArgName]):
+                raise TestFailed('Checking exception arguments, exception '
+                        '"%s", attribute "%s" expected %s got %s.' %
+                        ( repr(e), checkArgName,
+                            repr(expected[checkArgName]),
+                            repr(getattr(e, checkArgName)) ))

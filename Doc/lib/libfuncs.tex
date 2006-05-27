@@ -418,7 +418,7 @@ class C:
   that differentiate between binary and text files (else it is
   ignored).  If the file cannot be opened, \exception{IOError} is
   raised.
-
+  
   In addition to the standard \cfunction{fopen()} values \var{mode}
   may be \code{'U'} or \code{'rU'}. If Python is built with universal
   newline support (the default) the file is opened as a text file, but
@@ -433,6 +433,9 @@ class C:
   \member{newlines} which has a value of \code{None} (if no newlines
   have yet been seen), \code{'\e n'}, \code{'\e r'}, \code{'\e r\e n'},
   or a tuple containing all the newline types seen.
+
+  Python enforces that the mode, after stripping \code{'U'}, begins with
+  \code{'r'}, \code{'w'} or \code{'a'}.
 
   If \var{mode} is omitted, it defaults to \code{'r'}.  When opening a
   binary file, you should append \code{'b'} to the \var{mode} value
@@ -455,12 +458,10 @@ class C:
     after any I/O has been performed, and there's no reliable way to
     determine whether this is the case.}
 
-  The \function{file()} constructor is new in Python 2.2 and is an
-  alias for \function{open()}.  Both spellings are equivalent.  The
-  intent is for \function{open()} to continue to be preferred for use
-  as a factory function which returns a new \class{file} object.  The
-  spelling, \class{file} is more suited to type testing (for example,
-  writing \samp{isinstance(f, file)}).
+  \versionadded{2.2}
+
+  \versionchanged[Restriction on first letter of mode string
+                  introduced]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{filter}{function, list}
@@ -708,7 +709,10 @@ class C:
 \end{funcdesc}
 
 \begin{funcdesc}{open}{filename\optional{, mode\optional{, bufsize}}}
-  An alias for the \function{file()} function above.
+  A wrapper for the \function{file()} function above.  The intent is
+  for \function{open()} to be preferred for use as a factory function
+  returning a new \class{file} object.  \class{file} is more suited to
+  type testing (for example, writing \samp{isinstance(f, file)}).
 \end{funcdesc}
 
 \begin{funcdesc}{ord}{c}

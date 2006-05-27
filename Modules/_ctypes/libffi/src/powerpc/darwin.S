@@ -1,3 +1,4 @@
+#ifdef __ppc__
 /* -----------------------------------------------------------------------
    darwin.S - Copyright (c) 2000 John Hornkvist
 	      Copyright (c) 2004 Free Software Foundation, Inc.
@@ -243,3 +244,4 @@ LEFDE1:
 	.align LOG2_GPR_BYTES
 LLFB0$non_lazy_ptr:
 	.g_long LFB0
+#endif

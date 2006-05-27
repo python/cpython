@@ -60,6 +60,29 @@ define_xopen_source=yes
 AC_SUBST(CONFIG_ARGS)
 CONFIG_ARGS="$ac_configure_args"
 
+AC_ARG_ENABLE(universalsdk,
+	AC_HELP_STRING(--enable-universalsdk@<:@SDKDIR@:>@, Build agains Mac OS X 10.4u SDK (ppc/i386)),
+[
+	case $enableval in
+	yes)
+		enableval=/Developer/SDKs/MacOSX10.4u.sdk
+		;;
+	esac
+	case $enableval in
+	no)
+		UNIVERSALSDK=
+		enable_universalsdk=
+		;;
+	*)
+		UNIVERSALSDK=$enableval
+		;;
+	esac
+],[
+   	UNIVERSALSDK=
+	enable_universalsdk=
+])
+AC_SUBST(UNIVERSALSDK)
+
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_ENABLE(framework,
               AC_HELP_STRING(--enable-framework@<:@=INSTALLDIR@:>@, Build (MacOSX|Darwin) framework),
@@ -74,6 +97,8 @@ AC_ARG_ENABLE(framework,
 		PYTHONFRAMEWORKDIR=no-framework
 		PYTHONFRAMEWORKPREFIX=
 		PYTHONFRAMEWORKINSTALLDIR=
+		FRAMEWORKINSTALLFIRST=
+		FRAMEWORKINSTALLLAST=
 		enable_framework=
 		;;
 	*)
@@ -81,19 +106,31 @@ AC_ARG_ENABLE(framework,
 		PYTHONFRAMEWORKDIR=Python.framework
 		PYTHONFRAMEWORKPREFIX=$enableval
 		PYTHONFRAMEWORKINSTALLDIR=$PYTHONFRAMEWORKPREFIX/$PYTHONFRAMEWORKDIR
+		FRAMEWORKINSTALLFIRST="frameworkinstallstructure"
+		FRAMEWORKINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools"
 		prefix=$PYTHONFRAMEWORKINSTALLDIR/Versions/$VERSION
+
+		# Add makefiles for Mac specific code to the list of output
+		# files:
+		AC_CONFIG_FILES(Mac/OSX/Makefile)
+		AC_CONFIG_FILES(Mac/OSX/PythonLauncher/Makefile)
+		AC_CONFIG_FILES(Mac/OSX/IDLE/Makefile)
 	esac
 	],[
 	PYTHONFRAMEWORK=
 	PYTHONFRAMEWORKDIR=no-framework
 	PYTHONFRAMEWORKPREFIX=
 	PYTHONFRAMEWORKINSTALLDIR=
+	FRAMEWORKINSTALLFIRST=
+	FRAMEWORKINSTALLLAST=
 	enable_framework=
 ])
 AC_SUBST(PYTHONFRAMEWORK)
 AC_SUBST(PYTHONFRAMEWORKDIR)
 AC_SUBST(PYTHONFRAMEWORKPREFIX)
 AC_SUBST(PYTHONFRAMEWORKINSTALLDIR)
+AC_SUBST(FRAMEWORKINSTALLFIRST)
+AC_SUBST(FRAMEWORKINSTALLLAST)
 
 ##AC_ARG_WITH(dyld,
 ##            AC_HELP_STRING(--with-dyld,
@@ -258,7 +295,9 @@ AC_MSG_RESULT($EXTRAPLATDIR)
 # it may influence the way we can build extensions, so distutils
 # needs to check it
 AC_SUBST(CONFIGURE_MACOSX_DEPLOYMENT_TARGET)
+AC_SUBST(EXPORT_MACOSX_DEPLOYMENT_TARGET)
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET=
+EXPORT_MACOSX_DEPLOYMENT_TARGET='#'
 
 # checks for alternative programs
 
@@ -580,7 +619,14 @@ if test $enable_shared = "yes"; then
 	  INSTSONAME="$LDLIBRARY".$SOVERSION
 	  ;;
     hp*|HP*)
-	  LDLIBRARY='libpython$(VERSION).sl'
+	  case `uname -m` in
+		ia64)
+			LDLIBRARY='libpython$(VERSION).so'
+			;;
+		*)
+			LDLIBRARY='libpython$(VERSION).sl'
+			;;
+	  esac
 	  BLDLIBRARY='-Wl,+b,$(LIBDIR) -L. -lpython$(VERSION)'
 	  RUNSHARED=SHLIB_PATH=`pwd`:${SHLIB_PATH}
 	  ;;
@@ -740,6 +786,10 @@ yes)
 	# is there any other compiler on Darwin besides gcc?
 	Darwin*)
 	    BASECFLAGS="$BASECFLAGS -Wno-long-double -no-cpp-precomp -mno-fused-madd"
+	    if test "${enable_universalsdk}"; then
+		BASECFLAGS="-arch ppc -arch i386 -isysroot ${UNIVERSALSDK} ${BASECFLAGS}"
+	    fi
+
 	    ;;
 	OSF*)
 	    BASECFLAGS="$BASECFLAGS -mieee"
@@ -998,8 +1048,8 @@ stropts.h termios.h thread.h \
 unistd.h utime.h \
 sys/audioio.h sys/bsdtty.h sys/file.h sys/loadavg.h sys/lock.h sys/mkdev.h \
 sys/modem.h \
-sys/param.h sys/poll.h sys/select.h sys/socket.h sys/time.h sys/times.h \
-sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h \
+sys/param.h sys/poll.h sys/select.h sys/socket.h sys/statvfs.h sys/time.h \
+sys/times.h sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h \
 sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 bluetooth/bluetooth.h)
 AC_HEADER_DIRENT
@@ -1263,7 +1313,12 @@ esac
 AC_SUBST(LIBTOOL_CRUFT)
 case $ac_sys_system/$ac_sys_release in
   Darwin/@<:@01567@:>@\..*) 
-    LIBTOOL_CRUFT="-framework System -lcc_dynamic -arch_only `arch`"
+    LIBTOOL_CRUFT="-framework System -lcc_dynamic"
+    if test "${enable_universalsdk}"; then
+	    :
+    else
+	LIBTOOL_CRUFT="${LIBTOOL_CRUFT} -arch_only `arch`"
+    fi
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
   Darwin/*)
@@ -1319,7 +1374,12 @@ AC_MSG_CHECKING(SO)
 if test -z "$SO"
 then
 	case $ac_sys_system in
-	hp*|HP*)   SO=.sl;;
+	hp*|HP*)
+		case `uname -m` in
+			ia64) SO=.so;;
+	  		*)    SO=.sl;;
+		esac
+		;;
 	CYGWIN*)   SO=.dll;;
 	*)	   SO=.so;;
 	esac
@@ -1336,6 +1396,7 @@ else
 	sleep 10
 fi
 AC_MSG_RESULT($SO)
+AC_DEFINE_UNQUOTED(SHLIB_EXT, "$SO", [Define this to be extension of shared libraries (including the dot!).])
 # LDSHARED is the ld *command* used to create shared library
 # -- "cc -G" on SunOS 5.x, "ld -shared" on IRIX 5
 # (Shared libraries in this instance are shared modules to be loaded into
@@ -1386,9 +1447,16 @@ then
 		# Use -undefined dynamic_lookup whenever possible (10.3 and later).
 		# This allows an extension to be used in any Python
 		cur_target=`sw_vers -productVersion | sed 's/\(10\.[[0-9]]*\).*/\1/'`
+		if test ${cur_target} '>' 10.2; then
+			cur_target=10.3
+		fi
 		CONFIGURE_MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET-${cur_target}}
+		EXPORT_MACOSX_DEPLOYMENT_TARGET=''
 		if test ${MACOSX_DEPLOYMENT_TARGET-${cur_target}} '>' 10.2
 		then
+			if test "${enable_universalsdk}"; then
+				LDFLAGS="-arch i386 -arch ppc -isysroot ${UNIVERSALSDK} ${LDFLAGS}"
+			fi
 			LDSHARED='$(CC) $(LDFLAGS) -bundle -undefined dynamic_lookup'
 			BLDSHARED="$LDSHARED"
 		else
@@ -2873,6 +2941,23 @@ fi
 
 # check for endianness
 AC_C_BIGENDIAN
+AH_VERBATIM([WORDS_BIGENDIAN],
+[
+ /* Define to 1 if your processor stores words with the most significant byte
+    first (like Motorola and SPARC, unlike Intel and VAX). 
+
+    The block below does compile-time checking for endianness on platforms
+    that use GCC and therefore allows compiling fat binaries on OSX by using 
+    '-arch ppc -arch i386' as the compile flags. The phrasing was choosen
+    such that the configure-result is used on systems that don't use GCC.
+  */
+#ifdef __BIG_ENDIAN__
+#define WORDS_BIGENDIAN 1
+#else
+#ifndef __LITTLE_ENDIAN__
+#undef WORDS_BIGENDIAN
+#endif
+#endif])
 
 # Check whether right shifting a negative integer extends the sign bit
 # or fills with zeros (like the Cray J90, according to Tim Peters).
@@ -3188,6 +3273,27 @@ then
 else
   AC_MSG_RESULT(no)
 fi
+
+AC_MSG_CHECKING(for %zd printf() format support)
+AC_TRY_RUN([#include <stdio.h>
+#include <stddef.h>
+#include <string.h>
+
+int main()
+{
+    char buffer[4];
+
+    if(sprintf(buffer, "%zd", (size_t)123) < 0)
+       	return 1;
+
+    if (strncmp(buffer, "123", 3))
+	return 1;
+    
+    return 0;
+}],
+[AC_MSG_RESULT(yes)
+ AC_DEFINE(PY_FORMAT_SIZE_T, "z", [Define to printf format modifier for Py_ssize_t])],
+ AC_MSG_RESULT(no))
 
 AC_CHECK_TYPE(socklen_t,,
   AC_DEFINE(socklen_t,int,

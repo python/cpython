@@ -41,7 +41,11 @@
 _ffi_call_SYSV:
         pushl %ebp
         movl  %esp,%ebp
- 
+
+	#THe: save previous %esi, and store the current stack pointer in %esi
+	pushl %esi
+	movl %esp,%esi
+
         # Make room for all of the new args.
         movl  16(%ebp),%ecx                                                     
         subl  %ecx,%esp
@@ -64,7 +68,9 @@ _ffi_call_SYSV:
         # Remove the space we pushed for the args
         movl  16(%ebp),%ecx
         addl  %ecx,%esp
- 
+
+	sub %esp,%esi # calculate stack pointer difference
+
         # Load %ecx with the return type code
         movl  20(%ebp),%ecx
  
@@ -125,6 +131,8 @@ retstruct:
  
 noretval:
 epilogue:
+	movl %esi,%eax # return the stack pointer detlta in %eax
+	popl %esi # restore previous %esi
         movl %ebp,%esp
         popl %ebp
         ret
@@ -139,6 +147,10 @@ _ffi_call_STDCALL:
         pushl %ebp
         movl  %esp,%ebp
 
+	#THe: save previous %esi, and store the current stack pointer in %esi
+	pushl %esi
+	movl %esp,%esi
+	
         # Make room for all of the new args.
         movl  16(%ebp),%ecx 
         subl  %ecx,%esp
@@ -157,6 +169,8 @@ _ffi_call_STDCALL:
         # potential performance hits.
 
         call  *28(%ebp)
+
+	sub %esp,%esi # difference in stack
 
         # stdcall functions pop arguments off the stack themselves
 
@@ -220,6 +234,8 @@ sc_retstruct:
 
 sc_noretval:
 sc_epilogue:
+        movl %esi,%eax # return the stack difference
+	popl %esi # restore previous %esi value
         movl %ebp,%esp
         popl %ebp
         ret

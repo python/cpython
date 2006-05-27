@@ -2,10 +2,6 @@
    See the file COPYING for copying permission.
 */
 
-#include <stddef.h>
-#include <string.h>                     /* memset(), memcpy() */
-#include <assert.h>
-
 #define XML_BUILDING_EXPAT 1
 
 #ifdef COMPILED_FROM_DSP
@@ -15,6 +11,10 @@
 #elif defined(HAVE_EXPAT_CONFIG_H)
 #include <expat_config.h>
 #endif /* ndef COMPILED_FROM_DSP */
+
+#include <stddef.h>
+#include <string.h>                     /* memset(), memcpy() */
+#include <assert.h>
 
 #include "expat.h"
 

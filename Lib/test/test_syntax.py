@@ -86,13 +86,16 @@ SyntaxError: can't assign to literal (<doctest test.test_syntax[11]>, line 1)
 Traceback (most recent call last):
 SyntaxError: can't assign to operator (<doctest test.test_syntax[12]>, line 1)
 
+>>> a if 1 else b = 1
+Traceback (most recent call last):
+SyntaxError: can't assign to conditional expression (<doctest test.test_syntax[13]>, line 1)
 
 From compiler_complex_args():
 
 >>> def f(None=1):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: assignment to None (<doctest test.test_syntax[13]>, line 1)
+SyntaxError: assignment to None (<doctest test.test_syntax[14]>, line 1)
 
 
 From ast_for_arguments():
@@ -100,22 +103,22 @@ From ast_for_arguments():
 >>> def f(x, y=1, z):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: non-default argument follows default argument (<doctest test.test_syntax[14]>, line 1)
+SyntaxError: non-default argument follows default argument (<doctest test.test_syntax[15]>, line 1)
 
 >>> def f(x, None):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: assignment to None (<doctest test.test_syntax[15]>, line 1)
+SyntaxError: assignment to None (<doctest test.test_syntax[16]>, line 1)
 
 >>> def f(*None):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: assignment to None (<doctest test.test_syntax[16]>, line 1)
+SyntaxError: assignment to None (<doctest test.test_syntax[17]>, line 1)
 
 >>> def f(**None):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: assignment to None (<doctest test.test_syntax[17]>, line 1)
+SyntaxError: assignment to None (<doctest test.test_syntax[18]>, line 1)
 
 
 From ast_for_funcdef():
@@ -123,7 +126,7 @@ From ast_for_funcdef():
 >>> def None(x):
 ...     pass
 Traceback (most recent call last):
-SyntaxError: assignment to None (<doctest test.test_syntax[18]>, line 1)
+SyntaxError: assignment to None (<doctest test.test_syntax[19]>, line 1)
 
 
 From ast_for_call():
@@ -135,7 +138,7 @@ From ast_for_call():
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 >>> f(x for x in L, 1)
 Traceback (most recent call last):
-SyntaxError: Generator expression must be parenthesized if not sole argument (<doctest test.test_syntax[22]>, line 1)
+SyntaxError: Generator expression must be parenthesized if not sole argument (<doctest test.test_syntax[23]>, line 1)
 >>> f((x for x in L), 1)
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -167,7 +170,7 @@ SyntaxError: Generator expression must be parenthesized if not sole argument (<d
 ...   i244,  i245,  i246,  i247,  i248,  i249,  i250,  i251,  i252,
 ...   i253,  i254,  i255)
 Traceback (most recent call last):
-SyntaxError: more than 255 arguments (<doctest test.test_syntax[24]>, line 1)
+SyntaxError: more than 255 arguments (<doctest test.test_syntax[25]>, line 1)
 
 The actual error cases counts positional arguments, keyword arguments,
 and generator expression arguments separately.  This test combines the
@@ -201,37 +204,37 @@ three.
 ...   (x for x in i244),  i245,  i246,  i247,  i248,  i249,  i250,  i251,
 ...    i252=1, i253=1,  i254=1,  i255=1)
 Traceback (most recent call last):
-SyntaxError: more than 255 arguments (<doctest test.test_syntax[25]>, line 1)
+SyntaxError: more than 255 arguments (<doctest test.test_syntax[26]>, line 1)
 
 >>> f(lambda x: x[0] = 3)
 Traceback (most recent call last):
-SyntaxError: lambda cannot contain assignment (<doctest test.test_syntax[26]>, line 1)
+SyntaxError: lambda cannot contain assignment (<doctest test.test_syntax[27]>, line 1)
 
 The grammar accepts any test (basically, any expression) in the
 keyword slot of a call site.  Test a few different options.
 
 >>> f(x()=2)
 Traceback (most recent call last):
-SyntaxError: keyword can't be an expression (<doctest test.test_syntax[27]>, line 1)
+SyntaxError: keyword can't be an expression (<doctest test.test_syntax[28]>, line 1)
 >>> f(a or b=1)
 Traceback (most recent call last):
-SyntaxError: keyword can't be an expression (<doctest test.test_syntax[28]>, line 1)
+SyntaxError: keyword can't be an expression (<doctest test.test_syntax[29]>, line 1)
 >>> f(x.y=1)
 Traceback (most recent call last):
-SyntaxError: keyword can't be an expression (<doctest test.test_syntax[29]>, line 1)
+SyntaxError: keyword can't be an expression (<doctest test.test_syntax[30]>, line 1)
 
 
 From ast_for_expr_stmt():
 
 >>> (x for x in x) += 1
 Traceback (most recent call last):
-SyntaxError: augmented assignment to generator expression not possible (<doctest test.test_syntax[30]>, line 1)
+SyntaxError: augmented assignment to generator expression not possible (<doctest test.test_syntax[31]>, line 1)
 >>> None += 1
 Traceback (most recent call last):
-SyntaxError: assignment to None (<doctest test.test_syntax[31]>, line 1)
+SyntaxError: assignment to None (<doctest test.test_syntax[32]>, line 1)
 >>> f() += 1
 Traceback (most recent call last):
-SyntaxError: illegal expression for augmented assignment (<doctest test.test_syntax[32]>, line 1)
+SyntaxError: illegal expression for augmented assignment (<doctest test.test_syntax[33]>, line 1)
 """
 
 import re
@@ -243,15 +246,18 @@ from test import test_support
 class SyntaxTestCase(unittest.TestCase):
 
     def _check_error(self, code, errtext,
-                     filename="<testcase>", mode="exec"):
+                     filename="<testcase>", mode="exec", subclass=None):
         """Check that compiling code raises SyntaxError with errtext.
 
         errtest is a regular expression that must be present in the
-        test of the exception raised.
+        test of the exception raised.  If subclass is specified it
+        is the expected subclass of SyntaxError (e.g. IndentationError).
         """
         try:
             compile(code, filename, mode)
         except SyntaxError, err:
+            if subclass and not isinstance(err, subclass):
+                self.fail("SyntaxError is not a %s" % subclass.__name__)
             mo = re.search(errtext, str(err))
             if mo is None:
                 self.fail("SyntaxError did not contain '%r'" % (errtext,))
@@ -289,6 +295,22 @@ class SyntaxTestCase(unittest.TestCase):
             :  del x
             :""")
         self._check_error(source, "nested scope")
+
+    def test_unexpected_indent(self):
+        self._check_error("foo()\n bar()\n", "unexpected indent",
+                          subclass=IndentationError)
+
+    def test_no_indent(self):
+        self._check_error("if 1:\nfoo()", "expected an indented block",
+                          subclass=IndentationError)
+
+    def test_bad_outdent(self):
+        self._check_error("if 1:\n  foo()\n bar()",
+                          "unindent does not match .* level",
+                          subclass=IndentationError)
+
+    def test_kwargs_last(self):
+        self._check_error("int(base=10, '2')", "non-keyword arg")
 
 def test_main():
     test_support.run_unittest(SyntaxTestCase)

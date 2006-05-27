@@ -90,9 +90,6 @@ class _RLock(_Verbose):
                 self.__owner and self.__owner.getName(),
                 self.__count)
 
-    def __context__(self):
-        return self
-
     def acquire(self, blocking=1):
         me = currentThread()
         if self.__owner is me:
@@ -164,7 +161,6 @@ class _Condition(_Verbose):
         self.__lock = lock
         # Export the lock's acquire() and release() methods
         self.acquire = lock.acquire
-        self.__enter__ = self.acquire
         self.release = lock.release
         # If the lock defines _release_save() and/or _acquire_restore(),
         # these override the default implementations (which just call
@@ -183,11 +179,11 @@ class _Condition(_Verbose):
             pass
         self.__waiters = []
 
-    def __context__(self):
-        return self
+    def __enter__(self):
+        return self.__lock.__enter__()
 
-    def __exit__(self, t, v, tb):
-        self.release()
+    def __exit__(self, *args):
+        return self.__lock.__exit__(*args)
 
     def __repr__(self):
         return "<Condition(%s, %d)>" % (self.__lock, len(self.__waiters))
@@ -281,9 +277,6 @@ class _Semaphore(_Verbose):
         _Verbose.__init__(self, verbose)
         self.__cond = Condition(Lock())
         self.__value = value
-
-    def __context__(self):
-        return self
 
     def acquire(self, blocking=1):
         rc = False

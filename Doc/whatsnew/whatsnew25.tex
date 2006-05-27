@@ -2,13 +2,11 @@
 \usepackage{distutils}
 % $Id$
 
-% The easy_install stuff
-% Describe the pkgutil module
 % Fix XXX comments
 % Count up the patches and bugs
 
 \title{What's New in Python 2.5}
-\release{0.1}
+\release{0.2}
 \author{A.M. Kuchling}
 \authoraddress{\email{amk@amk.ca}}
 
@@ -31,32 +29,6 @@ full details, you should refer to the documentation for Python 2.5.
 % XXX add hyperlink when the documentation becomes available online.
 If you want to understand the complete implementation and design
 rationale, refer to the PEP for a particular new feature.
-
-
-%======================================================================
-\section{PEP 243: Uploading Modules to PyPI\label{pep-243}}
-
-PEP 243 describes an HTTP-based protocol for submitting software
-packages to a central archive.  The Python package index at
-\url{http://cheeseshop.python.org} now supports package uploads, and
-the new \command{upload} Distutils command will upload a package to the
-repository.
-
-Before a package can be uploaded, you must be able to build a
-distribution using the \command{sdist} Distutils command.  Once that
-works, you can run \code{python setup.py upload} to add your package
-to the PyPI archive.  Optionally you can GPG-sign the package by
-supplying the \longprogramopt{sign} and
-\longprogramopt{identity} options.
-
-\begin{seealso}
-
-\seepep{243}{Module Repository Upload Mechanism}{PEP written by
-Sean Reifschneider; implemented by Martin von~L\"owis
-and Richard Jones.  Note that the PEP doesn't exactly 
-describe what's implemented in PyPI.}
-
-\end{seealso}
 
 
 %======================================================================
@@ -236,6 +208,20 @@ setup(name='PyPackage',
                     % VERSION),
      )
 \end{verbatim}
+
+Another new enhancement to the Python package index at
+\url{http://cheeseshop.python.org} is storing source and binary
+archives for a package.  The new \command{upload} Distutils command
+will upload a package to the repository.
+
+Before a package can be uploaded, you must be able to build a
+distribution using the \command{sdist} Distutils command.  Once that
+works, you can run \code{python setup.py upload} to add your package
+to the PyPI archive.  Optionally you can GPG-sign the package by
+supplying the \longprogramopt{sign} and
+\longprogramopt{identity} options.
+
+Package uploading was implemented by Martin von~L\"owis and Richard Jones. 
  
 \begin{seealso}
 
@@ -394,13 +380,17 @@ finally:
 \end{verbatim}
 
 The code in \var{block-1} is executed.  If the code raises an
-exception, the handlers are tried in order: \var{handler-1},
-\var{handler-2}, ...  If no exception is raised, the \var{else-block}
-is executed.  No matter what happened previously, the
-\var{final-block} is executed once the code block is complete and any
-raised exceptions handled.  Even if there's an error in an exception
-handler or the \var{else-block} and a new exception is raised, the
-\var{final-block} is still executed.
+exception, the various \keyword{except} blocks are tested: if the
+exception is of class \class{Exception1}, \var{handler-1} is executed;
+otherwise if it's of class \class{Exception2}, \var{handler-2} is
+executed, and so forth.  If no exception is raised, the
+\var{else-block} is executed.  
+
+No matter what happened previously, the \var{final-block} is executed
+once the code block is complete and any raised exceptions handled.
+Even if there's an error in an exception handler or the
+\var{else-block} and a new exception is raised, the
+code in the \var{final-block} is still run.
 
 \begin{seealso}
 
@@ -415,7 +405,7 @@ implementation by Thomas Lee.}
 
 Python 2.5 adds a simple way to pass values \emph{into} a generator.
 As introduced in Python 2.3, generators only produce output; once a
-generator's code is invoked to create an iterator, there's no way to
+generator's code was invoked to create an iterator, there was no way to
 pass any new information into the function when its execution is
 resumed.  Sometimes the ability to pass in some information would be
 useful.  Hackish solutions to this include making the generator's code
@@ -522,9 +512,9 @@ generators:
   \exception{GeneratorExit} or \exception{StopIteration}; catching the 
   exception and doing anything else is illegal and will trigger
   a \exception{RuntimeError}.  \method{close()} will also be called by 
-  Python's garbage collection when the generator is garbage-collected.
+  Python's garbage collector when the generator is garbage-collected.
 
-  If you need to run cleanup code in case of a \exception{GeneratorExit},
+  If you need to run cleanup code when a \exception{GeneratorExit} occurs,
   I suggest using a \code{try: ... finally:} suite instead of 
   catching \exception{GeneratorExit}.
 
@@ -535,8 +525,8 @@ one-way producers of information into both producers and consumers.
 
 Generators also become \emph{coroutines}, a more generalized form of
 subroutines.  Subroutines are entered at one point and exited at
-another point (the top of the function, and a \keyword{return
-statement}), but coroutines can be entered, exited, and resumed at
+another point (the top of the function, and a \keyword{return}
+statement), but coroutines can be entered, exited, and resumed at
 many different points (the \keyword{yield} statements).  We'll have to
 figure out patterns for using coroutines effectively in Python.
 
@@ -579,14 +569,12 @@ Sugalski.}
 %======================================================================
 \section{PEP 343: The 'with' statement\label{pep-343}}
 
-The '\keyword{with}' statement allows a clearer version of code that
-uses \code{try...finally} blocks to ensure that clean-up code is
-executed.
-
-In this section, I'll discuss the statement as it will commonly be
-used.  In the next section, I'll examine the implementation details
-and show how to write objects called ``context managers'' and
-``contexts'' for use with this statement.
+The '\keyword{with}' statement clarifies code that previously would
+use \code{try...finally} blocks to ensure that clean-up code is
+executed.  In this section, I'll discuss the statement as it will
+commonly be used.  In the next section, I'll examine the
+implementation details and show how to write objects for use with this
+statement.
 
 The '\keyword{with}' statement is a new control-flow structure whose
 basic structure is:
@@ -596,13 +584,13 @@ with expression [as variable]:
     with-block
 \end{verbatim}
 
-The expression is evaluated, and it should result in a type of object
-that's called a context manager.  The context manager can return a
+The expression is evaluated, and it should result in an object that
+supports the context management protocol.  This object may return a
 value that can optionally be bound to the name \var{variable}.  (Note
-carefully: \var{variable} is \emph{not} assigned the result of
-\var{expression}.)  One method of the context manager is run before
-\var{with-block} is executed, and another method is run after the
-block is done, even if the block raised an exception.
+carefully that \var{variable} is \emph{not} assigned the result of
+\var{expression}.)  The object can then run set-up code
+before \var{with-block} is executed and some clean-up code
+is executed after the block is done, even if the block raised an exception.
 
 To enable the statement in Python 2.5, you need 
 to add the following directive to your module:
@@ -613,7 +601,8 @@ from __future__ import with_statement
 
 The statement will always be enabled in Python 2.6.
 
-Some standard Python objects can now behave as context managers. File
+Some standard Python objects now support the context management
+protocol and can be used with the '\keyword{with}' statement. File
 objects are one example:
 
 \begin{verbatim}
@@ -637,12 +626,12 @@ with lock:
     ...
 \end{verbatim}
 
-The lock is acquired before the block is executed, and always released once 
+The lock is acquired before the block is executed and always released once 
 the block is complete.
 
 The \module{decimal} module's contexts, which encapsulate the desired
-precision and rounding characteristics for computations, can also be
-used as context managers.
+precision and rounding characteristics for computations, provide a 
+\method{context_manager()} method for getting a context manager:
 
 \begin{verbatim}
 import decimal
@@ -651,7 +640,8 @@ import decimal
 v1 = decimal.Decimal('578')
 print v1.sqrt()
 
-with decimal.Context(prec=16):
+ctx = decimal.Context(prec=16) 
+with ctx.context_manager():
     # All code in this block uses a precision of 16 digits.
     # The original context is restored on exiting the block.
     print v1.sqrt()
@@ -660,47 +650,45 @@ with decimal.Context(prec=16):
 \subsection{Writing Context Managers\label{context-managers}}
 
 Under the hood, the '\keyword{with}' statement is fairly complicated.
-Most people will only use '\keyword{with}' in company with
-existing objects that are documented to work as context managers, and
-don't need to know these details, so you can skip the following section if
-you like.  Authors of new context managers will need to understand the
-details of the underlying implementation.
+Most people will only use '\keyword{with}' in company with existing
+objects and don't need to know these details, so you can skip the rest
+of this section if you like.  Authors of new objects will need to
+understand the details of the underlying implementation and should
+keep reading.
 
 A high-level explanation of the context management protocol is:
 
 \begin{itemize}
+
 \item The expression is evaluated and should result in an object
-that's a context manager, meaning that it has a 
-\method{__context__()} method.
+called a ``context manager''.  The context manager must have
+\method{__enter__()} and \method{__exit__()} methods.
 
-\item This object's \method{__context__()} method is called, and must
-return a context object.  
-
-\item The context's \method{__enter__()} method is called. 
-The value returned is assigned to \var{VAR}.  If no \code{'as \var{VAR}'} 
-clause is present, the value is simply discarded.
+\item The context manager's \method{__enter__()} method is called.  The value
+returned is assigned to \var{VAR}.  If no \code{'as \var{VAR}'} clause
+is present, the value is simply discarded.
 
 \item The code in \var{BLOCK} is executed.
 
-\item If \var{BLOCK} raises an exception, the context object's
+\item If \var{BLOCK} raises an exception, the
 \method{__exit__(\var{type}, \var{value}, \var{traceback})} is called
-with the exception's information, the same values returned by
-\function{sys.exc_info()}.  The method's return value
-controls whether the exception is re-raised: any false value 
-re-raises the exception, and \code{True} will result in suppressing it.
-You'll only rarely want to suppress the exception; the 
-author of the code containing the '\keyword{with}' statement will 
-never realize anything went wrong.
+with the exception details, the same values returned by
+\function{sys.exc_info()}.  The method's return value controls whether
+the exception is re-raised: any false value re-raises the exception,
+and \code{True} will result in suppressing it.  You'll only rarely
+want to suppress the exception, because if you do
+the author of the code containing the
+'\keyword{with}' statement will never realize anything went wrong.
 
 \item If \var{BLOCK} didn't raise an exception, 
-the context object's \method{__exit__()} is still called,
+the \method{__exit__()} method is still called,
 but \var{type}, \var{value}, and \var{traceback} are all \code{None}.
 
 \end{itemize}
 
 Let's think through an example.  I won't present detailed code but
-will only sketch the necessary code.  The example will be writing a
-context manager for a database that supports transactions.
+will only sketch the methods necessary for a database that supports
+transactions.
 
 (For people unfamiliar with database terminology: a set of changes to
 the database are grouped into a transaction.  Transactions can be
@@ -721,22 +709,13 @@ with db_connection as cursor:
     # ... more operations ...
 \end{verbatim}
 
-The transaction should either be committed if the code in the block
-runs flawlessly, or rolled back if there's an exception.
-
-First, the \class{DatabaseConnection} needs a \method{__context__()}
-method.  Sometimes an object can be its own context manager and can
-simply return \code{self}; the \module{threading} module's lock objects 
-can do this.  For our database example, though, we need to 
-create a new object; I'll call this class \class{DatabaseContext}.
-Our \method{__context__()} must therefore look like this:
+The transaction should be committed if the code in the block
+runs flawlessly or rolled back if there's an exception.
+Here's the basic interface
+for \class{DatabaseConnection} that I'll assume:
 
 \begin{verbatim}
 class DatabaseConnection:
-    ...
-    def __context__ (self):
-        return DatabaseContext(self)
-
     # Database interface
     def cursor (self):
         "Returns a cursor object and starts a new transaction"
@@ -746,29 +725,18 @@ class DatabaseConnection:
         "Rolls back current transaction"
 \end{verbatim}
 
-The context needs the connection object so that the connection
-object's \method{commit()} or \method{rollback()} methods can be
-called:
+The \method {__enter__()} method is pretty easy, having only to start
+a new transaction.  For this application the resulting cursor object
+would be a useful result, so the method will return it.  The user can
+then add \code{as cursor} to their '\keyword{with}' statement to bind
+the cursor to a variable name.
 
 \begin{verbatim}
-class DatabaseContext:
-    def __init__ (self, connection):
-        self.connection = connection
-\end{verbatim}
-
-The \method {__enter__()} method is pretty easy, having only
-to start a new transaction.  In this example,
-the resulting cursor object would be a useful result,
-so the method will return it.  The user can 
-then add \code{as cursor} to their '\keyword{with}' statement
-to bind the cursor to a variable name.
-
-\begin{verbatim}
-class DatabaseContext:
+class DatabaseConnection:
     ...
     def __enter__ (self):
         # Code to start a new transaction
-        cursor = self.connection.cursor()
+        cursor = self.cursor()
         return cursor
 \end{verbatim}
 
@@ -776,21 +744,23 @@ The \method{__exit__()} method is the most complicated because it's
 where most of the work has to be done.  The method has to check if an
 exception occurred.  If there was no exception, the transaction is
 committed.  The transaction is rolled back if there was an exception.
-Here the code will just fall off the end of the function, returning 
-the default value of \code{None}.  \code{None} is false, so the exception
-will be re-raised automatically.  If you wished, you could be more explicit
-and add a \keyword{return} at the marked location.
+
+In the code below, execution will just fall off the end of the
+function, returning the default value of \code{None}.  \code{None} is
+false, so the exception will be re-raised automatically.  If you
+wished, you could be more explicit and add a \keyword{return}
+statement at the marked location.
 
 \begin{verbatim}
-class DatabaseContext:
+class DatabaseConnection:
     ...
     def __exit__ (self, type, value, tb):
         if tb is None:
             # No exception, so commit
-            self.connection.commit()
+            self.commit()
         else:
             # Exception occurred, so rollback.
-            self.connection.rollback()
+            self.rollback()
             # return False
 \end{verbatim}
 
@@ -798,25 +768,26 @@ class DatabaseContext:
 \subsection{The contextlib module\label{module-contextlib}}
 
 The new \module{contextlib} module provides some functions and a
-decorator that are useful for writing context managers.
+decorator that are useful for writing objects for use with the
+'\keyword{with}' statement.
 
-The decorator is called \function{contextmanager}, and lets you write
-a simple context manager as a generator.  The generator should yield
-exactly one value.  The code up to the \keyword{yield} will be
-executed as the \method{__enter__()} method, and the value yielded
-will be the method's return value that will get bound to the variable
-in the '\keyword{with}' statement's \keyword{as} clause, if any.  The
-code after the \keyword{yield} will be executed in the
-\method{__exit__()} method.  Any exception raised in the block 
-will be raised by the \keyword{yield} statement.
+The decorator is called \function{contextfactory}, and lets you write
+a single generator function instead of defining a new class.  The generator
+should yield exactly one value.  The code up to the \keyword{yield}
+will be executed as the \method{__enter__()} method, and the value
+yielded will be the method's return value that will get bound to the
+variable in the '\keyword{with}' statement's \keyword{as} clause, if
+any.  The code after the \keyword{yield} will be executed in the
+\method{__exit__()} method.  Any exception raised in the block will be
+raised by the \keyword{yield} statement.
 
 Our database example from the previous section could be written 
 using this decorator as:
 
 \begin{verbatim}
-from contextlib import contextmanager
+from contextlib import contextfactory
 
-@contextmanager
+@contextfactory
 def db_transaction (connection):
     cursor = connection.cursor()
     try:
@@ -832,29 +803,11 @@ with db_transaction(db) as cursor:
     ...
 \end{verbatim}
 
-You can also use this decorator to write the \method{__context__()} method
-for a class without creating a new class for the context:
-
-\begin{verbatim}
-class DatabaseConnection:
-
-    @contextmanager
-    def __context__ (self):
-	cursor = self.cursor()
-	try:
-	    yield cursor
-	except:
-	    self.rollback()
-	    raise
-	else:
-	    self.commit()
-\end{verbatim}
-
-
-There's a \function{nested(\var{mgr1}, \var{mgr2}, ...)} manager that
-combines a number of context managers so you don't need to write
-nested '\keyword{with}' statements.  This example statement does two
-things, starting a database transaction and acquiring a thread lock:
+The \module{contextlib} module also has a \function{nested(\var{mgr1},
+\var{mgr2}, ...)} function that combines a number of context managers so you
+don't need to write nested '\keyword{with}' statements.  In this
+example, the single '\keyword{with}' statement both starts a database
+transaction and acquires a thread lock:
 
 \begin{verbatim}
 lock = threading.Lock()
@@ -862,7 +815,7 @@ with nested (db_transaction(db), lock) as (cursor, locked):
     ...
 \end{verbatim}
 
-Finally, the \function{closing(\var{object})} context manager 
+Finally, the \function{closing(\var{object})} function
 returns \var{object} so that it can be bound to a variable,
 and calls \code{\var{object}.close()} at the end of the block.
 
@@ -880,8 +833,7 @@ with closing(urllib.urlopen('http://www.yahoo.com')) as f:
 \seepep{343}{The ``with'' statement}{PEP written by Guido van~Rossum
 and Nick Coghlan; implemented by Mike Bland, Guido van~Rossum, and
 Neal Norwitz.  The PEP shows the code generated for a '\keyword{with}'
-statement, which can be helpful in learning how context managers
-work.}
+statement, which can be helpful in learning how the statement works.}
 
 \seeurl{../lib/module-contextlib.html}{The documentation 
 for the \module{contextlib} module.}
@@ -1064,7 +1016,7 @@ and implemented by Travis Oliphant.}
 
 
 %======================================================================
-\section{Other Language Changes}
+\section{Other Language Changes\label{other-lang}}
 
 Here are all of the changes that Python 2.5 makes to the core Python
 language.
@@ -1089,6 +1041,36 @@ d = zerodict({1:1, 2:2})
 print d[1], d[2]   # Prints 1, 2
 print d[3], d[4]   # Prints 0, 0
 \end{verbatim}
+
+\item Both 8-bit and Unicode strings have new \method{partition(sep)} 
+and \method{rpartition(sep)} methods that simplify a common use case.
+The \method{find(S)} method is often used to get an index which is
+then used to slice the string and obtain the pieces that are before
+and after the separator.  
+
+\method{partition(sep)} condenses this
+pattern into a single method call that returns a 3-tuple containing
+the substring before the separator, the separator itself, and the
+substring after the separator.  If the separator isn't found, the
+first element of the tuple is the entire string and the other two
+elements are empty.  \method{rpartition(sep)} also returns a 3-tuple
+but starts searching from the end of the string; the \samp{r} stands
+for 'reverse'.
+
+Some examples:
+
+\begin{verbatim}
+>>> ('http://www.python.org').partition('://')
+('http', '://', 'www.python.org')
+>>> (u'Subject: a quick question').partition(':')
+(u'Subject', u':', u' a quick question')
+>>> ('file:/usr/share/doc/index.html').partition('://')
+('file:/usr/share/doc/index.html', '', '')
+>>> 'www.python.org'.rpartition('.')
+('www.python', '.', 'org')
+\end{verbatim}
+
+(Implemented by Fredrik Lundh following a suggestion by Raymond Hettinger.)
 
 \item The \function{min()} and \function{max()} built-in functions
 gained a \code{key} keyword parameter analogous to the \code{key}
@@ -1127,6 +1109,14 @@ a line like this near the top of the source file:
 # -*- coding: latin1 -*-
 \end{verbatim}
 
+\item One error that Python programmers sometimes make is forgetting
+to include an \file{__init__.py} module in a package directory.
+Debugging this mistake can be confusing, and usually requires running
+Python with the \programopt{-v} switch to log all the paths searched.
+In Python 2.5, a new \exception{ImportWarning} warning is raised when
+an import would have picked up a directory as a package but no
+\file{__init__.py} was found.  (Implemented by Thomas Wouters.)
+
 \item The list of base classes in a class definition can now be empty.  
 As an example, this is now legal:
 
@@ -1140,7 +1130,7 @@ class C():
 
 
 %======================================================================
-\subsection{Interactive Interpreter Changes}
+\subsection{Interactive Interpreter Changes\label{interactive}}
 
 In the interactive interpreter, \code{quit} and \code{exit} 
 have long been strings so that new users get a somewhat helpful message
@@ -1158,7 +1148,14 @@ interpreter as they expect.  (Implemented by Georg Brandl.)
 
 
 %======================================================================
-\subsection{Optimizations}
+\subsection{Optimizations\label{opts}}
+
+Several of the optimizations were developed at the NeedForSpeed
+sprint, an event held in Reykjavik, Iceland, from May 21--28 2006.
+The sprint focused on speed enhancements to the CPython implementation
+and was funded by EWT LLC with local support from CCP Games.  Those
+optimizations added at this sprint are specially marked in the
+following list.
 
 \begin{itemize}
 
@@ -1169,14 +1166,52 @@ In 2.5 the internal data structure has been customized for implementing sets,
 and as a result sets will use a third less memory and are somewhat faster.
 (Implemented by Raymond Hettinger.)
 
-\item The performance of some Unicode operations, such as 
-character map decoding, has been improved.
+\item The speed of some Unicode operations, such as 
+finding substrings, string splitting, and character map decoding, has
+been improved.  (Substring search and splitting improvements were
+added by Fredrik Lundh and Andrew Dalke at the NeedForSpeed
+sprint. Character map decoding was improved by Walter D\"orwald.)
 % Patch 1313939
+
+\item The \function{long(\var{str}, \var{base})} function is now
+faster on long digit strings because fewer intermediate results are
+calculated.  The peak is for strings of around 800--1000 digits where 
+the function is 6 times faster.
+(Contributed by Alan McIntyre and committed at the NeedForSpeed sprint.)
+% Patch 1442927
+
+\item The \module{struct} module now compiles structure format 
+strings into an internal representation and caches this
+representation, yielding a 20\% speedup.  (Contributed by Bob Ippolito
+at the NeedForSpeed sprint.)
 
 \item The code generator's peephole optimizer now performs
 simple constant folding in expressions.  If you write something like
 \code{a = 2+3}, the code generator will do the arithmetic and produce
 code corresponding to \code{a = 5}.
+
+\item Function calls are now faster because code objects now keep 
+the most recently finished frame (a ``zombie frame'') in an internal
+field of the code object, reusing it the next time the code object is
+invoked.  (Original patch by Michael Hudson, modified by Armin Rigo
+and Richard Jones; committed at the NeedForSpeed sprint.)
+% Patch 876206
+
+Frame objects are also slightly smaller, which may improve cache locality
+and reduce memory usage a bit.  (Contributed by Neal Norwitz.)
+% Patch 1337051
+
+\item Python's built-in exceptions are now new-style classes, a change
+that speeds up instantiation considerably.  Exception handling in
+Python 2.5 is therefore about 30\% faster than in 2.4.
+(Contributed by Richard Jones, Georg Brandl and Sean Reifschneider at
+the NeedForSpeed sprint.)
+
+\item Importing now caches the paths tried, recording whether 
+they exist or not so that the interpreter makes fewer 
+\cfunction{open()} and \cfunction{stat()} calls on startup.
+(Contributed by Martin von~L\"owis and Georg Brandl.)
+% Patch 921466
 
 \end{itemize}
 
@@ -1185,7 +1220,7 @@ pystone benchmark around XXX\% faster than Python 2.4.
 
 
 %======================================================================
-\section{New, Improved, and Removed Modules}
+\section{New, Improved, and Removed Modules\label{modules}}
 
 The standard library received many enhancements and bug fixes in
 Python 2.5.  Here's a partial list of the most notable changes, sorted
@@ -1255,7 +1290,6 @@ raising \exception{ValueError} if the value isn't found.
 \item New module: The \module{contextlib} module contains helper functions for use 
 with the new '\keyword{with}' statement.  See
 section~\ref{module-contextlib} for more about this module.
-(Contributed by Phillip J. Eby.)
 
 \item New module: The \module{cProfile} module is a C implementation of 
 the existing \module{profile} module that has much lower overhead.
@@ -1266,8 +1300,8 @@ which is also written in C but doesn't match the \module{profile}
 module's interface, will continue to be maintained in future versions
 of Python.  (Contributed by Armin Rigo.)
 
-Also, the \module{pstats} module used to analyze the data measured by
-the profiler now supports directing the output to any file stream 
+Also, the \module{pstats} module for analyzing the data measured by
+the profiler now supports directing the output to any file object
 by supplying a \var{stream} argument to the \class{Stats} constructor.
 (Contributed by Skip Montanaro.)
 
@@ -1294,6 +1328,11 @@ from datetime import datetime
 ts = datetime.strptime('10:13:15 2006-03-07',
                        '%H:%M:%S %Y-%m-%d')
 \end{verbatim}
+
+\item The \module{doctest} module gained a \code{SKIP} option that
+keeps an example from being executed at all.  This is intended for
+code snippets that are usage examples intended for the reader and
+aren't actually test cases.
 
 \item The \module{fileinput} module was made more flexible.
 Unicode filenames are now supported, and a \var{mode} parameter that
@@ -1344,6 +1383,35 @@ itertools.islice(iterable, s.start, s.stop, s.step)
 
 (Contributed by Raymond Hettinger.)
 
+\item The \module{mailbox} module underwent a massive rewrite to add
+the capability to modify mailboxes in addition to reading them.  A new
+set of classes that include \class{mbox}, \class{MH}, and
+\class{Maildir} are used to read mailboxes, and have an
+\method{add(\var{message})} method to add messages,
+\method{remove(\var{key})} to remove messages, and
+\method{lock()}/\method{unlock()} to lock/unlock the mailbox.  The
+following example converts a maildir-format mailbox into an mbox-format one:
+
+\begin{verbatim}
+import mailbox
+
+# 'factory=None' uses email.Message.Message as the class representing
+# individual messages.
+src = mailbox.Maildir('maildir', factory=None)
+dest = mailbox.mbox('/tmp/mbox')
+
+for msg in src:
+    dest.add(msg)
+\end{verbatim}
+
+(Contributed by Gregory K. Johnson.  Funding was provided by Google's
+2005 Summer of Code.)
+
+\item New module: the \module{msilib} module allows creating
+Microsoft Installer \file{.msi} files and CAB files.  Some support
+for reading the \file{.msi} database is also included.
+(Contributed by Martin von~L\"owis.)
+
 \item The \module{nis} module now supports accessing domains other
 than the system default domain by supplying a \var{domain} argument to
 the \function{nis.match()} and \function{nis.maps()} functions.
@@ -1358,6 +1426,11 @@ this new feature with the \method{sort()} method's \code{key} parameter
 lets you easily sort lists using multiple fields.
 (Contributed by Raymond Hettinger.)
 
+\item The \module{optparse} module was updated to version 1.5.1 of the
+Optik library.  The \class{OptionParser} class gained an
+\member{epilog} attribute, a string that will be printed after the
+help message, and a \method{destroy()} method to break reference
+cycles created by the object. (Contributed by Greg Ward.)
 
 \item The \module{os} module underwent several changes.  The
 \member{stat_float_times} variable now defaults to true, meaning that
@@ -1389,11 +1462,34 @@ The \member{st_flags} member is also available, if the platform supports it.
 (Contributed by Antti Louko and  Diego Petten\`o.)
 % (Patch 1180695, 1212117)
 
+\item The Python debugger provided by the \module{pdb} module
+can now store lists of commands to execute when a breakpoint is
+reached and execution stops.  Once breakpoint \#1 has been created,
+enter \samp{commands 1} and enter a series of commands to be executed,
+finishing the list with \samp{end}.  The command list can include
+commands that resume execution, such as \samp{continue} or
+\samp{next}.  (Contributed by Gr\'egoire Dooms.)
+% Patch 790710
+
 \item The \module{pickle} and \module{cPickle} modules no
 longer accept a return value of \code{None} from the
 \method{__reduce__()} method; the method must return a tuple of
 arguments instead.  The ability to return \code{None} was deprecated
 in Python 2.4, so this completes the removal of the feature.
+
+\item The \module{pkgutil} module, containing various utility
+functions for finding packages, was enhanced to support PEP 302's
+import hooks and now also works for packages stored in ZIP-format archives.
+(Contributed by Phillip J. Eby.)
+
+\item The pybench benchmark suite by Marc-Andr\'e~Lemburg is now
+included in the \file{Tools/pybench} directory.  The pybench suite is
+an improvement on the commonly used \file{pystone.py} program because
+pybench provides a more detailed measurement of the interpreter's
+speed.  It times particular operations such as function calls,
+tuple slicing, method lookups, and numeric operations, instead of
+performing many different operations and reducing the result to a
+single number as \file{pystone.py} does.
 
 \item The old \module{regex} and \module{regsub} modules, which have been 
 deprecated ever since Python 2.0, have finally been deleted.  
@@ -1406,6 +1502,12 @@ which includes ancient modules such as \module{dircmp} and
 \code{sys.path}, so unless your programs explicitly added the directory to 
 \code{sys.path}, this removal shouldn't affect your code.
 
+\item The \module{rlcompleter} module is no longer 
+dependent on importing the \module{readline} module and
+therefore now works on non-{\UNIX} platforms.
+(Patch from Robert Kiendl.)
+% Patch #1472854
+
 \item The \module{socket} module now supports \constant{AF_NETLINK}
 sockets on Linux, thanks to a patch from Philippe Biondi.  
 Netlink sockets are a Linux-specific mechanism for communications
@@ -1414,20 +1516,52 @@ article about them is at \url{http://www.linuxjournal.com/article/7356}.
 In Python code, netlink addresses are represented as a tuple of 2 integers, 
 \code{(\var{pid}, \var{group_mask})}.
 
-Socket objects also gained accessor methods \method{getfamily()}, 
-\method{gettype()}, and \method{getproto()} methods to retrieve the
-family, type, and protocol values for the socket.
+Two new methods on socket objects, \method{recv_buf(\var{buffer})} and
+\method{recvfrom_buf(\var{buffer})}, store the received data in an object 
+that supports the buffer protocol instead of returning the data as a
+string.  This means you can put the data directly into an array or a
+memory-mapped file.
+
+Socket objects also gained \method{getfamily()}, \method{gettype()},
+and \method{getproto()} accessor methods to retrieve the family, type,
+and protocol values for the socket.
 
 \item New module: the \module{spwd} module provides functions for
 accessing the shadow password database on systems that support 
 shadow passwords.
 
+\item The \module{struct} is now faster because it 
+compiles format strings into \class{Struct} objects
+with \method{pack()} and \method{unpack()} methods.  This is similar
+to how the \module{re} module lets you create compiled regular
+expression objects.  You can still use the module-level 
+\function{pack()} and \function{unpack()} functions; they'll create 
+\class{Struct} objects and cache them.  Or you can use 
+\class{Struct} instances directly:
+
+\begin{verbatim}
+s = struct.Struct('ih3s')
+
+data = s.pack(1972, 187, 'abc')
+year, number, name = s.unpack(data)
+\end{verbatim}
+
+You can also pack and unpack data to and from buffer objects directly
+using the \method{pack_to(\var{buffer}, \var{offset}, \var{v1},
+\var{v2}, ...)} and \method{unpack_from(\var{buffer}, \var{offset})}
+methods.  This lets you store data directly into an array or a
+memory-mapped file.
+
+(\class{Struct} objects were implemented by Bob Ippolito at the
+NeedForSpeed sprint.  Support for buffer objects was added by Martin
+Blais, also at the NeedForSpeed sprint.)
+
 \item The Python developers switched from CVS to Subversion during the 2.5
-development process.  Information about the exact build version is 
-available as the \code{sys.subversion} variable, a 3-tuple
-of \code{(\var{interpreter-name}, \var{branch-name}, \var{revision-range})}.
-For example, at the time of writing 
-my copy of 2.5 was reporting \code{('CPython', 'trunk', '45313:45315')}.
+development process.  Information about the exact build version is
+available as the \code{sys.subversion} variable, a 3-tuple of
+\code{(\var{interpreter-name}, \var{branch-name},
+\var{revision-range})}.  For example, at the time of writing my copy
+of 2.5 was reporting \code{('CPython', 'trunk', '45313:45315')}.
 
 This information is also available to C extensions via the 
 \cfunction{Py_GetBuildInfo()} function that returns a 
@@ -1449,7 +1583,7 @@ using the mode \code{'r|*'}.
 \item The \module{unicodedata} module has been updated to use version 4.1.0
 of the Unicode character database.  Version 3.2.0 is required 
 by some specifications, so it's still available as 
-\member{unicodedata.db_3_2_0}.
+\member{unicodedata.ucd_3_2_0}.
 
 \item The \module{webbrowser} module received a number of
 enhancements.
@@ -1474,13 +1608,19 @@ Brandl.)
       (Contributed by Skip Montanaro.)
 % Patch 1120353
 
+\item The \module{zlib} module's \class{Compress} and \class{Decompress}
+objects now support a \method{copy()} method that makes a copy of the 
+object's internal state and returns a new 
+\class{Compress} or \class{Decompress} object. 
+(Contributed by Chris AtLee.)
+% Patch 1435422
 
 \end{itemize}
 
 
 
 %======================================================================
-\subsection{The ctypes package}
+\subsection{The ctypes package\label{module-ctypes}}
 
 The \module{ctypes} package, written by Thomas Heller, has been added 
 to the standard library.  \module{ctypes} lets you call arbitrary functions 
@@ -1562,10 +1702,10 @@ of extension modules, now that \module{ctypes} is included with core Python.
 
 
 %======================================================================
-\subsection{The ElementTree package}
+\subsection{The ElementTree package\label{module-etree}}
 
 A subset of Fredrik Lundh's ElementTree library for processing XML has
-been added to the standard library as \module{xmlcore.etree}.  The
+been added to the standard library as \module{xml.etree}.  The
 available modules are
 \module{ElementTree}, \module{ElementPath}, and
 \module{ElementInclude} from ElementTree 1.2.6.   
@@ -1587,7 +1727,7 @@ takes either a string (assumed to contain a filename) or a file-like
 object and returns an \class{ElementTree} instance:
 
 \begin{verbatim}
-from xmlcore.etree import ElementTree as ET
+from xml.etree import ElementTree as ET
 
 tree = ET.parse('ex-1.xml')
 
@@ -1605,7 +1745,7 @@ This function provides a tidy way to incorporate XML fragments,
 approaching the convenience of an XML literal:
 
 \begin{verbatim}
-svg = et.XML("""<svg width="10px" version="1.0">
+svg = ET.XML("""<svg width="10px" version="1.0">
              </svg>""")
 svg.set('height', '320px')
 svg.append(elem1)
@@ -1619,7 +1759,7 @@ values, and list-like operations are used to access child nodes.
   \lineii{elem[n]}{Returns n'th child element.}
   \lineii{elem[m:n]}{Returns list of m'th through n'th child elements.}
   \lineii{len(elem)}{Returns number of child elements.}
-  \lineii{elem.getchildren()}{Returns list of child elements.}
+  \lineii{list(elem)}{Returns list of child elements.}
   \lineii{elem.append(elem2)}{Adds \var{elem2} as a child.}
   \lineii{elem.insert(index, elem2)}{Inserts \var{elem2} at the specified location.}
   \lineii{del elem[n]}{Deletes n'th child element.}
@@ -1651,14 +1791,15 @@ tree.write('output.xml')
 
 # Encoding is UTF-8
 f = open('output.xml', 'w')
-tree.write(f, 'utf-8')
+tree.write(f, encoding='utf-8')
 \end{verbatim}
 
-(Caution: the default encoding used for output is ASCII, which isn't
-very useful for general XML work, raising an exception if there are
-any characters with values greater than 127.  You should always
-specify a different encoding such as UTF-8 that can handle any Unicode
-character.)
+(Caution: the default encoding used for output is ASCII.  For general
+XML work, where an element's name may contain arbitrary Unicode
+characters, ASCII isn't a very useful encoding because it will raise
+an exception if an element's name contains any characters with values
+greater than 127.  Therefore, it's best to specify a different
+encoding such as UTF-8 that can handle any Unicode character.)
 
 This section is only a partial description of the ElementTree interfaces.
 Please read the package's official documentation for more details.
@@ -1673,7 +1814,7 @@ Please read the package's official documentation for more details.
 
 
 %======================================================================
-\subsection{The hashlib package}
+\subsection{The hashlib package\label{module-hashlib}}
 
 A new \module{hashlib} module, written by Gregory P. Smith, 
 has been added to replace the
@@ -1721,7 +1862,7 @@ and \method{copy()} returns a new hashing object with the same digest state.
 
 
 %======================================================================
-\subsection{The sqlite3 package}
+\subsection{The sqlite3 package\label{module-sqlite}}
 
 The pysqlite module (\url{http://www.pysqlite.org}), a wrapper for the
 SQLite embedded database, has been added to the standard library under
@@ -1786,7 +1927,7 @@ c.execute("... where symbol = '%s'" % symbol)
 
 # Do this instead
 t = (symbol,)
-c.execute('select * from stocks where symbol=?', ('IBM',))
+c.execute('select * from stocks where symbol=?', t)
 
 # Larger example
 for t in (('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
@@ -1835,7 +1976,7 @@ Marc-Andr\'e Lemburg.}
 
 
 % ======================================================================
-\section{Build and C API Changes}
+\section{Build and C API Changes\label{build-api}}
 
 Changes to Python's build process and to the C API include:
 
@@ -1901,6 +2042,22 @@ string of build information like this:
 \code{"trunk:45355:45356M, Apr 13 2006, 07:42:19"}.  
 (Contributed by Barry Warsaw.)
 
+\item Two new macros can be used to indicate C functions that are
+local to the current file so that a faster calling convention can be
+used.  \cfunction{Py_LOCAL(\var{type})} declares the function as
+returning a value of the specified \var{type} and uses a fast-calling
+qualifier. \cfunction{Py_LOCAL_INLINE(\var{type})} does the same thing
+and also requests the function be inlined.  If
+\cfunction{PY_LOCAL_AGGRESSIVE} is defined before \file{python.h} is
+included, a set of more aggressive optimizations are enabled for the
+module; you should benchmark the results to find out if these
+optimizations actually make the code faster.  (Contributed by Fredrik
+Lundh at the NeedForSpeed sprint.)
+
+\item \cfunction{PyErr_NewException(\var{name}, \var{base},
+\var{dict})} can now accept a tuple of base classes as its \var{base}
+argument.  (Contributed by Georg Brandl.)
+
 \item The CPython interpreter is still written in C, but 
 the code can now be compiled with a {\Cpp} compiler without errors.  
 (Implemented by Anthony Baxter, Martin von~L\"owis, Skip Montanaro.)
@@ -1913,13 +2070,18 @@ error checking.
 
 
 %======================================================================
-\subsection{Port-Specific Changes}
+\subsection{Port-Specific Changes\label{ports}}
 
 \begin{itemize}
 
 \item MacOS X (10.3 and higher): dynamic loading of modules
 now uses the \cfunction{dlopen()} function instead of MacOS-specific
 functions.
+
+\item MacOS X: a \longprogramopt{enable-universalsdk} switch was added
+to the \program{configure} script that compiles the interpreter as a
+universal binary able to run on both PowerPC and Intel processors.
+(Contributed by Ronald Oussoren.)
 
 \item Windows: \file{.dll} is no longer supported as a filename extension for 
 extension modules.  \file{.pyd} is now the only filename extension that will
@@ -1977,7 +2139,7 @@ carefully test your C extension modules with Python 2.5.
 
 
 %======================================================================
-\section{Porting to Python 2.5}
+\section{Porting to Python 2.5\label{porting}}
 
 This section lists previously described changes that may require
 changes to your code:
@@ -2023,7 +2185,7 @@ freed with the corresponding family's \cfunction{*_Free()} function.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Phillip J. Eby, Kent Johnson, Martin von~L\"owis, Gustavo
-Niemeyer, Mike Rovner, Thomas Wouters.
+article: Phillip J. Eby, Kent Johnson, Martin von~L\"owis, Fredrik Lundh, 
+Gustavo Niemeyer, James Pryor, Mike Rovner, Scott Weikart, Thomas Wouters.
 
 \end{document}

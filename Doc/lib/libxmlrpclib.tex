@@ -81,9 +81,11 @@ Python type):
 This is the full set of data types supported by XML-RPC.  Method calls
 may also raise a special \exception{Fault} instance, used to signal
 XML-RPC server errors, or \exception{ProtocolError} used to signal an
-error in the HTTP/HTTPS transport layer.  Note that even though starting
-with Python 2.2 you can subclass builtin types, the xmlrpclib module
-currently does not marshal instances of such subclasses.
+error in the HTTP/HTTPS transport layer.  Both \exception{Fault} and
+\exception{ProtocolError} derive from a base class called
+\exception{Error}.  Note that even though starting with Python 2.2 you
+can subclass builtin types, the xmlrpclib module currently does not
+marshal instances of such subclasses.
 
 When passing strings, characters special to XML such as \samp{<},
 \samp{>}, and \samp{\&} will be automatically escaped.  However, it's
@@ -340,6 +342,7 @@ objects, they are converted to \class{DateTime} objects internally, so only
 
 \begin{verbatim}
 # simple test program (from the XML-RPC specification)
+from xmlrpclib import ServerProxy, Error
 
 # server = ServerProxy("http://localhost:8000") # local server
 server = ServerProxy("http://betty.userland.com")

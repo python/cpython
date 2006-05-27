@@ -264,7 +264,7 @@ the command or module to handle.
 When commands are read from a tty, the interpreter is said to be in
 \emph{interactive mode}.  In this mode it prompts for the next command
 with the \emph{primary prompt}, usually three greater-than signs
-(\samp{>\code{>}>~}); for continuation lines it prompts with the
+(\samp{>>>~}); for continuation lines it prompts with the
 \emph{secondary prompt}, by default three dots (\samp{...~}).
 The interpreter prints a welcome message stating its version number
 and a copyright notice before printing the first prompt:
@@ -423,7 +423,7 @@ if filename and os.path.isfile(filename):
 \chapter{An Informal Introduction to Python \label{informal}}
 
 In the following examples, input and output are distinguished by the
-presence or absence of prompts (\samp{>\code{>}>~} and \samp{...~}): to repeat
+presence or absence of prompts (\samp{>>>~} and \samp{...~}): to repeat
 the example, you must type everything after the prompt, when the
 prompt appears; lines that do not begin with a prompt are output from
 the interpreter. %
@@ -455,7 +455,7 @@ STRING = "# This is not a comment."
 \section{Using Python as a Calculator \label{calculator}}
 
 Let's try some simple Python commands.  Start the interpreter and wait
-for the primary prompt, \samp{>\code{>}>~}.  (It shouldn't take long.)
+for the primary prompt, \samp{>>>~}.  (It shouldn't take long.)
 
 \subsection{Numbers \label{numbers}}
 
@@ -2723,7 +2723,7 @@ standard module \module{__builtin__}\refbimodindex{__builtin__}:
  'FloatingPointError', 'FutureWarning', 'IOError', 'ImportError',
  'IndentationError', 'IndexError', 'KeyError', 'KeyboardInterrupt',
  'LookupError', 'MemoryError', 'NameError', 'None', 'NotImplemented',
- 'NotImplementedError', 'OSError', 'OverflowError', 'OverflowWarning',
+ 'NotImplementedError', 'OSError', 'OverflowError', 
  'PendingDeprecationWarning', 'ReferenceError', 'RuntimeError',
  'RuntimeWarning', 'StandardError', 'StopIteration', 'SyntaxError',
  'SyntaxWarning', 'SystemError', 'SystemExit', 'TabError', 'True',
@@ -3763,6 +3763,38 @@ for releasing external resources (such as files or network connections),
 regardless of whether the use of the resource was successful.
 
 
+\section{Predefined Clean-up Actions \label{cleanup-with}}
+
+Some objects define standard clean-up actions to be undertaken when
+the object is no longer needed, regardless of whether or not the
+operation using the object succeeded or failed.
+Look at the following example, which tries to open a file and print
+its contents to the screen.
+
+\begin{verbatim}
+for line in open("myfile.txt"):
+    print line
+\end{verbatim}
+
+The problem with this code is that it leaves the file open for an
+indeterminate amount of time after the code has finished executing.
+This is not an issue in simple scripts, but can be a problem for
+larger applications. The \keyword{with} statement allows
+objects like files to be used in a way that ensures they are
+always cleaned up promptly and correctly.
+
+\begin{verbatim}
+with open("myfile.txt") as f:
+    for line in f:
+        print line
+\end{verbatim}
+
+After the statement is executed, the file \var{f} is always closed,
+even if a problem was encountered while processing the lines. Other
+objects which provide predefined clean-up actions will indicate
+this in their documentation.
+
+
 \chapter{Classes \label{classes}}
 
 Python's class mechanism adds classes to the language with a minimum
@@ -4757,7 +4789,7 @@ for sending mail:
 \begin{verbatim}
 >>> import urllib2
 >>> for line in urllib2.urlopen('http://tycho.usno.navy.mil/cgi-bin/timer.pl'):
-...     if 'EST' in line:      # look for Eastern Standard Time
+...     if 'EST' in line or 'EDT' in line:  # look for Eastern Time
 ...         print line
     
 <BR>Nov. 25, 09:43:32 PM EST
