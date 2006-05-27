@@ -134,6 +134,13 @@ class FunctionTests(unittest.TestCase):
     def tearDown(self):
         self.con.close()
 
+    def CheckFuncErrorOnCreate(self):
+        try:
+            self.con.create_function("bla", -100, lambda x: 2*x)
+            self.fail("should have raised an OperationalError")
+        except sqlite.OperationalError:
+            pass
+
     def CheckFuncRefCount(self):
         def getfunc():
             def f():
@@ -250,6 +257,13 @@ class AggregateTests(unittest.TestCase):
         #self.cur.close()
         #self.con.close()
         pass
+
+    def CheckAggrErrorOnCreate(self):
+        try:
+            self.con.create_function("bla", -100, AggrSum)
+            self.fail("should have raised an OperationalError")
+        except sqlite.OperationalError:
+            pass
 
     def CheckAggrNoStep(self):
         cur = self.con.cursor()

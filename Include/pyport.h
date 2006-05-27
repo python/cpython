@@ -137,6 +137,43 @@ typedef Py_intptr_t	Py_ssize_t;
 #   endif
 #endif
 
+/* Py_LOCAL can be used instead of static to get the fastest possible calling
+ * convention for functions that are local to a given module.
+ *
+ * Py_LOCAL_INLINE does the same thing, and also explicitly requests inlining,
+ * for platforms that support that.
+ *
+ * If PY_LOCAL_AGGRESSIVE is defined before python.h is included, more
+ * "aggressive" inlining/optimizaion is enabled for the entire module.  This
+ * may lead to code bloat, and may slow things down for those reasons.  It may
+ * also lead to errors, if the code relies on pointer aliasing.  Use with
+ * care.
+ *
+ * NOTE: You can only use this for functions that are entirely local to a
+ * module; functions that are exported via method tables, callbacks, etc,
+ * should keep using static.
+ */
+
+#undef USE_INLINE /* XXX - set via configure? */
+
+#if defined(_MSC_VER)
+#if defined(PY_LOCAL_AGGRESSIVE)
+/* enable more aggressive optimization for visual studio */
+#pragma optimize("agtw", on)
+#endif
+/* ignore warnings if the compiler decides not to inline a function */ 
+#pragma warning(disable: 4710)
+/* fastest possible local call under MSVC */
+#define Py_LOCAL(type) static type __fastcall
+#define Py_LOCAL_INLINE(type) static __inline type __fastcall
+#elif defined(USE_INLINE)
+#define Py_LOCAL(type) static type
+#define Py_LOCAL_INLINE(type) static inline type
+#else
+#define Py_LOCAL(type) static type
+#define Py_LOCAL_INLINE(type) static type
+#endif
+
 #include <stdlib.h>
 
 #include <math.h> /* Moved here from the math section, before extern "C" */
@@ -293,6 +330,15 @@ extern "C" {
  */
 #ifndef Py_IS_INFINITY
 #define Py_IS_INFINITY(X) ((X) && (X)*0.5 == (X))
+#endif
+
+/* Py_IS_FINITE(X)
+ * Return 1 if float or double arg is neither infinite nor NAN, else 0.
+ * Some compilers (e.g. VisualStudio) have intrisics for this, so a special
+ * macro for this particular test is useful
+ */
+#ifndef Py_IS_FINITE
+#define Py_IS_FINITE(X) (!Py_IS_INFINITY(X) && !Py_IS_NAN(X))
 #endif
 
 /* HUGE_VAL is supposed to expand to a positive double infinity.  Python
@@ -683,6 +729,18 @@ typedef	struct fd_set {
  */
 #ifdef __SUNPRO_C
 #pragma error_messages (off,E_END_OF_LOOP_CODE_NOT_REACHED)
+#endif
+
+/*
+ * Older Microsoft compilers don't support the C99 long long literal suffixes,
+ * so these will be defined in PC/pyconfig.h for those compilers.
+ */
+#ifndef Py_LL
+#define Py_LL(x) x##LL
+#endif
+
+#ifndef Py_ULL
+#define Py_ULL(x) Py_LL(x##U)
 #endif
 
 #endif /* Py_PYPORT_H */

@@ -107,7 +107,7 @@ ast_error_finish(const char *filename)
 	Py_DECREF(errstr);
 	return;
     }
-    value = Py_BuildValue("(OO)", errstr, tmp);
+    value = PyTuple_Pack(2, errstr, tmp);
     Py_DECREF(errstr);
     Py_DECREF(tmp);
     if (!value)
@@ -400,6 +400,9 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
             break;
         case Repr_kind:
             expr_name = "repr";
+            break;
+        case IfExp_kind:
+            expr_name = "conditional expression";
             break;
         default:
             PyErr_Format(PyExc_SystemError, 
@@ -1747,6 +1750,11 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
 	if (TYPE(ch) == argument) {
 	    expr_ty e;
 	    if (NCH(ch) == 1) {
+		if (nkeywords) {
+		    ast_error(CHILD(ch, 0),
+			      "non-keyword arg after keyword arg");
+		    return NULL;
+		}
 		e = ast_for_expr(c, CHILD(ch, 0));
                 if (!e)
                     return NULL;
@@ -3034,7 +3042,7 @@ decode_unicode(const char *s, size_t len, int rawmode, const char *encoding)
 			if (*s & 0x80) { /* XXX inefficient */
 				PyObject *w;
 				char *r;
-				int rn, i;
+				Py_ssize_t rn, i;
 				w = decode_utf8(&s, end, "utf-16-be");
 				if (w == NULL) {
 					Py_DECREF(u);

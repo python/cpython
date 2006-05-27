@@ -5,6 +5,7 @@
 import os
 import unittest
 import warnings
+import sys
 from test import test_support
 
 warnings.filterwarnings("ignore", "tempnam", RuntimeWarning, __name__)
@@ -364,6 +365,32 @@ class URandomTests (unittest.TestCase):
         except NotImplementedError:
             pass
 
+class Win32ErrorTests(unittest.TestCase):
+    def test_rename(self):
+        self.assertRaises(WindowsError, os.rename, test_support.TESTFN, test_support.TESTFN+".bak")
+
+    def test_remove(self):
+        self.assertRaises(WindowsError, os.remove, test_support.TESTFN)
+
+    def test_chdir(self):
+        self.assertRaises(WindowsError, os.chdir, test_support.TESTFN)
+
+    def test_mkdir(self):
+        self.assertRaises(WindowsError, os.chdir, test_support.TESTFN)
+
+    def test_utime(self):
+        self.assertRaises(WindowsError, os.utime, test_support.TESTFN, None)
+
+    def test_access(self):
+        self.assertRaises(WindowsError, os.utime, test_support.TESTFN, 0)
+
+    def test_chmod(self):
+        self.assertRaises(WindowsError, os.utime, test_support.TESTFN, 0)
+
+if sys.platform != 'win32':
+    class Win32ErrorTests(unittest.TestCase):
+        pass
+
 def test_main():
     test_support.run_unittest(
         TemporaryFileTests,
@@ -372,7 +399,8 @@ def test_main():
         WalkTests,
         MakedirTests,
         DevNullTests,
-        URandomTests
+        URandomTests,
+        Win32ErrorTests
     )
 
 if __name__ == "__main__":

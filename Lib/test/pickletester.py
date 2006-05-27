@@ -4,7 +4,8 @@ import cPickle
 import pickletools
 import copy_reg
 
-from test.test_support import TestFailed, have_unicode, TESTFN
+from test.test_support import TestFailed, have_unicode, TESTFN, \
+                              run_with_locale
 
 # Tests that try a number of pickle protocols should have a
 #     for proto in protocols:
@@ -526,6 +527,11 @@ class AbstractPickleTests(unittest.TestCase):
             p = self.dumps(n, 2)
             got = self.loads(p)
             self.assertEqual(n, got)
+
+    @run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
+    def test_float_format(self):
+        # make sure that floats are formatted locale independent
+        self.assertEqual(self.dumps(1.2)[0:3], 'F1.')
 
     def test_reduce(self):
         pass

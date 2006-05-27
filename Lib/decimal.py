@@ -731,7 +731,7 @@ class Decimal(object):
         """x.__hash__() <==> hash(x)"""
         # Decimal integers must hash the same as the ints
         # Non-integer decimals are normalized and hashed as strings
-        # Normalization assures that hast(100E-1) == hash(10)
+        # Normalization assures that hash(100E-1) == hash(10)
         if self._is_special:
             if self._isnan():
                 raise TypeError('Cannot hash a NaN value.')
@@ -2246,7 +2246,7 @@ class Context(object):
         s.append('traps=[' + ', '.join([t.__name__ for t, v in self.traps.items() if v]) + ']')
         return ', '.join(s) + ')'
 
-    def __context__(self):
+    def get_manager(self):
         return ContextManager(self.copy())
 
     def clear_flags(self):

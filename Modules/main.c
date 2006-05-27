@@ -9,7 +9,9 @@
 #endif
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif
 #endif
 
 #if (defined(PYOS_OS2) && !defined(PYCC_GCC)) || defined(MS_WINDOWS)

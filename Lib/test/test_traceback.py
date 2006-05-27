@@ -103,6 +103,12 @@ def test():
             import sys
             sys.exc_traceback.__members__
 
+    def test_base_exception(self):
+        # Test that exceptions derived from BaseException are formatted right
+        e = KeyboardInterrupt()
+        lst = traceback.format_exception_only(e.__class__, e)
+        self.assertEqual(lst, ['KeyboardInterrupt\n'])
+
 def test_main():
     run_unittest(TracebackCases)
 

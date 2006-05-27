@@ -261,6 +261,4 @@ def _getcategory(category):
 
 # Module initialization
 _processoptions(sys.warnoptions)
-# XXX OverflowWarning should go away for Python 2.5.
-simplefilter("ignore", category=OverflowWarning, append=1)
 simplefilter("ignore", category=PendingDeprecationWarning, append=1)

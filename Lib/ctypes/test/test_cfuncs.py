@@ -7,7 +7,7 @@ from ctypes import *
 import _ctypes_test
 
 class CFunctions(unittest.TestCase):
-    _dll = cdll.load(_ctypes_test.__file__)
+    _dll = CDLL(_ctypes_test.__file__)
 
     def S(self):
         return c_longlong.in_dll(self._dll, "last_tf_arg_s").value

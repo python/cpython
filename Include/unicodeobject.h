@@ -184,11 +184,13 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_GetMax PyUnicodeUCS2_GetMax
 # define PyUnicode_GetSize PyUnicodeUCS2_GetSize
 # define PyUnicode_Join PyUnicodeUCS2_Join
+# define PyUnicode_Partition PyUnicodeUCS2_Partition
+# define PyUnicode_RPartition PyUnicodeUCS2_RPartition
+# define PyUnicode_RSplit PyUnicodeUCS2_RSplit
 # define PyUnicode_Replace PyUnicodeUCS2_Replace
 # define PyUnicode_Resize PyUnicodeUCS2_Resize
 # define PyUnicode_SetDefaultEncoding PyUnicodeUCS2_SetDefaultEncoding
 # define PyUnicode_Split PyUnicodeUCS2_Split
-# define PyUnicode_RSplit PyUnicodeUCS2_RSplit
 # define PyUnicode_Splitlines PyUnicodeUCS2_Splitlines
 # define PyUnicode_Tailmatch PyUnicodeUCS2_Tailmatch
 # define PyUnicode_Translate PyUnicodeUCS2_Translate
@@ -259,6 +261,9 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_GetMax PyUnicodeUCS4_GetMax
 # define PyUnicode_GetSize PyUnicodeUCS4_GetSize
 # define PyUnicode_Join PyUnicodeUCS4_Join
+# define PyUnicode_Partition PyUnicodeUCS4_Partition
+# define PyUnicode_RPartition PyUnicodeUCS4_RPartition
+# define PyUnicode_RSplit PyUnicodeUCS4_RSplit
 # define PyUnicode_Replace PyUnicodeUCS4_Replace
 # define PyUnicode_Resize PyUnicodeUCS4_Resize
 # define PyUnicode_SetDefaultEncoding PyUnicodeUCS4_SetDefaultEncoding
@@ -352,17 +357,27 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
         Py_UNICODE_ISDIGIT(ch) || \
         Py_UNICODE_ISNUMERIC(ch))
 
-#define Py_UNICODE_COPY(target, source, length)\
-    (memcpy((target), (source), (length)*sizeof(Py_UNICODE)))
+/* memcpy has a considerable setup overhead on many platforms; use a
+   loop for short strings (the "16" below is pretty arbitary) */
+#define Py_UNICODE_COPY(target, source, length) do\
+    {Py_ssize_t i_; Py_UNICODE *t_ = (target); const Py_UNICODE *s_ = (source);\
+      if (length > 16)\
+        memcpy(t_, s_, (length)*sizeof(Py_UNICODE));\
+      else\
+        for (i_ = 0; i_ < (length); i_++) t_[i_] = s_[i_];\
+    } while (0)
 
 #define Py_UNICODE_FILL(target, value, length) do\
-    {int i; for (i = 0; i < (length); i++) (target)[i] = (value);}\
-    while (0)
+    {Py_ssize_t i_; Py_UNICODE *t_ = (target); Py_UNICODE v_ = (value);\
+        for (i_ = 0; i_ < (length); i_++) t_[i_] = v_;\
+    } while (0)
 
-#define Py_UNICODE_MATCH(string, offset, substring)\
-    ((*((string)->str + (offset)) == *((substring)->str)) &&\
-     !memcmp((string)->str + (offset), (substring)->str,\
-             (substring)->length*sizeof(Py_UNICODE)))
+/* check if substring matches at given offset.  the offset must be
+   valid, and the substring must not be empty */
+#define Py_UNICODE_MATCH(string, offset, substring) \
+    ((*((string)->str + (offset)) == *((substring)->str)) && \
+    ((*((string)->str + (offset) + (substring)->length-1) == *((substring)->str + (substring)->length-1))) && \
+     !memcmp((string)->str + (offset), (substring)->str, (substring)->length*sizeof(Py_UNICODE)))
 
 #ifdef __cplusplus
 extern "C" {
@@ -1006,6 +1021,21 @@ PyAPI_FUNC(PyObject*) PyUnicode_Split(
 PyAPI_FUNC(PyObject*) PyUnicode_Splitlines(
     PyObject *s,		/* String to split */
     int keepends		/* If true, line end markers are included */
+    );		
+
+/* Partition a string using a given separator. */
+
+PyAPI_FUNC(PyObject*) PyUnicode_Partition(
+    PyObject *s,		/* String to partition */
+    PyObject *sep		/* String separator */
+    );		
+
+/* Partition a string using a given separator, searching from the end of the
+   string. */
+
+PyAPI_FUNC(PyObject*) PyUnicode_RPartition(
+    PyObject *s,		/* String to partition */
+    PyObject *sep		/* String separator */
     );		
 
 /* Split a string giving a list of Unicode strings.

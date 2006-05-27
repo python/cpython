@@ -407,4 +407,3 @@ class Recursion(Test):
 
         for i in xrange(self.rounds):
             pass
-

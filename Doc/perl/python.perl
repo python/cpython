@@ -530,7 +530,6 @@ sub add_index_entry($$){
 
 sub new_link_name_info(){
     my $name = "l2h-" . ++$globals{'max_id'};
-    my $aname = "<a id='$name' xml:id='$name'>";
     my $ahref = gen_link($CURRENT_FILE, $name);
     return ($name, $ahref);
 }

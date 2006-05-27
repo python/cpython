@@ -524,7 +524,7 @@ static void CFArrayRefObj_dealloc(CFArrayRefObject *self)
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 		self->ob_itself = NULL;
 	}
-	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
+	CFTypeRef_Type.tp_dealloc((PyObject *)self);
 }
 
 static PyObject *CFArrayRefObj_CFArrayCreateCopy(CFArrayRefObject *_self, PyObject *_args)
@@ -735,7 +735,7 @@ static void CFMutableArrayRefObj_dealloc(CFMutableArrayRefObject *self)
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 		self->ob_itself = NULL;
 	}
-	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
+	CFArrayRef_Type.tp_dealloc((PyObject *)self);
 }
 
 static PyObject *CFMutableArrayRefObj_CFArrayRemoveValueAtIndex(CFMutableArrayRefObject *_self, PyObject *_args)
@@ -975,7 +975,7 @@ static void CFDictionaryRefObj_dealloc(CFDictionaryRefObject *self)
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 		self->ob_itself = NULL;
 	}
-	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
+	CFTypeRef_Type.tp_dealloc((PyObject *)self);
 }
 
 static PyObject *CFDictionaryRefObj_CFDictionaryCreateCopy(CFDictionaryRefObject *_self, PyObject *_args)
@@ -1168,7 +1168,7 @@ static void CFMutableDictionaryRefObj_dealloc(CFMutableDictionaryRefObject *self
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 		self->ob_itself = NULL;
 	}
-	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
+	CFDictionaryRef_Type.tp_dealloc((PyObject *)self);
 }
 
 static PyObject *CFMutableDictionaryRefObj_CFDictionaryRemoveAllValues(CFMutableDictionaryRefObject *_self, PyObject *_args)
@@ -1351,7 +1351,7 @@ static void CFDataRefObj_dealloc(CFDataRefObject *self)
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 		self->ob_itself = NULL;
 	}
-	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
+	CFTypeRef_Type.tp_dealloc((PyObject *)self);
 }
 
 static PyObject *CFDataRefObj_CFDataCreateCopy(CFDataRefObject *_self, PyObject *_args)
@@ -1576,7 +1576,7 @@ static void CFMutableDataRefObj_dealloc(CFMutableDataRefObject *self)
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 		self->ob_itself = NULL;
 	}
-	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
+	CFDataRef_Type.tp_dealloc((PyObject *)self);
 }
 
 static PyObject *CFMutableDataRefObj_CFDataSetLength(CFMutableDataRefObject *_self, PyObject *_args)
@@ -1856,7 +1856,7 @@ static void CFStringRefObj_dealloc(CFStringRefObject *self)
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 		self->ob_itself = NULL;
 	}
-	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
+	CFTypeRef_Type.tp_dealloc((PyObject *)self);
 }
 
 static PyObject *CFStringRefObj_CFStringCreateWithSubstring(CFStringRefObject *_self, PyObject *_args)
@@ -2583,7 +2583,7 @@ static void CFMutableStringRefObj_dealloc(CFMutableStringRefObject *self)
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 		self->ob_itself = NULL;
 	}
-	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
+	CFStringRef_Type.tp_dealloc((PyObject *)self);
 }
 
 static PyObject *CFMutableStringRefObj_CFStringAppend(CFMutableStringRefObject *_self, PyObject *_args)
@@ -2971,7 +2971,7 @@ static void CFURLRefObj_dealloc(CFURLRefObject *self)
 		self->ob_freeit((CFTypeRef)self->ob_itself);
 		self->ob_itself = NULL;
 	}
-	self->ob_type->tp_base->tp_dealloc((PyObject *)self);
+	CFTypeRef_Type.tp_dealloc((PyObject *)self);
 }
 
 static PyObject *CFURLRefObj_CFURLCreateData(CFURLRefObject *_self, PyObject *_args)

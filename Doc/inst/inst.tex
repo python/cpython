@@ -726,8 +726,8 @@ There are two environment variables that can modify \code{sys.path}.
 \envvar{PYTHONHOME} sets an alternate value for the prefix of the
 Python installation.  For example, if \envvar{PYTHONHOME} is set to
 \samp{/www/python}, the search path will be set to \code{['',
-'/www/python/lib/python2.2/', '/www/python/lib/python2.3/plat-linux2',
-...]}.  
+'/www/python/lib/python\shortversion/',
+'/www/python/lib/python\shortversion/plat-linux2', ...]}.  
 
 The \envvar{PYTHONPATH} variable can be set to a list of paths that
 will be added to the beginning of \code{sys.path}.  For example, if
@@ -981,15 +981,15 @@ different from the format used by the Python version you can download
 from the Python or ActiveState Web site.  (Python is built with
 Microsoft Visual \Cpp, which uses COFF as the object file format.)
 For this reason you have to convert Python's library
-\file{python24.lib} into the Borland format.  You can do this as
+\file{python25.lib} into the Borland format.  You can do this as
 follows:
 
 \begin{verbatim}
-coff2omf python24.lib python24_bcpp.lib
+coff2omf python25.lib python25_bcpp.lib
 \end{verbatim}
 
 The \file{coff2omf} program comes with the Borland compiler.  The file
-\file{python24.lib} is in the \file{Libs} directory of your Python
+\file{python25.lib} is in the \file{Libs} directory of your Python
 installation.  If your extension uses other libraries (zlib,...) you
 have to convert them too.
 
@@ -1053,17 +1053,23 @@ First you have to create a list of symbols which the Python DLL exports.
 PExports 0.42h there.)
 
 \begin{verbatim}
-pexports python24.dll >python24.def
+pexports python25.dll >python25.def
 \end{verbatim}
+
+The location of an installed \file{python25.dll} will depend on the
+installation options and the version and language of Windows.  In a
+``just for me'' installation, it will appear in the root of the
+installation directory.  In a shared installation, it will be located
+in the system directory.
 
 Then you can create from these information an import library for gcc.
  
 \begin{verbatim}
-dlltool --dllname python24.dll --def python24.def --output-lib libpython24.a
+/cygwin/bin/dlltool --dllname python25.dll --def python25.def --output-lib libpython25.a
 \end{verbatim}
 
 The resulting library has to be placed in the same directory as 
-\file{python24.lib}. (Should be the \file{libs} directory under your
+\file{python25.lib}. (Should be the \file{libs} directory under your
 Python installation directory.)
 
 If your extension uses other libraries (zlib,...) you might 

@@ -7,7 +7,7 @@
     TODO:
 
     * Incorporate the changes made by (see Inbox)
-    * Add number range option using srange() 
+    * Add number range option using srange()
 
 """
 
@@ -194,7 +194,7 @@ class ArgumentOption(Option):
     """ Option that takes an argument.
 
         An optional default argument can be given.
-        
+
     """
     def __init__(self,name,help=None,default=None):
 
@@ -299,7 +299,7 @@ class Application:
     values = None       # Dictionary of passed options (or default values)
                         # indexed by the options name, e.g. '-h'
     files = None        # List of passed filenames
-    optionlist = None	# List of passed options
+    optionlist = None   # List of passed options
 
     def __init__(self,argv=None):
 
@@ -318,15 +318,15 @@ class Application:
 
         # Init .arguments list
         self.arguments = argv[1:]
-        
+
         # Setup Option mapping
         self.option_map = option_dict(self.options)
-        
+
         # Append preset options
         for option in self.preset_options:
             if not self.option_map.has_key(option.name):
                 self.add_option(option)
-                
+
         # Init .files list
         self.files = []
 
@@ -336,12 +336,12 @@ class Application:
             rc = self.startup()
             if rc is not None:
                 raise SystemExit,rc
-            
+
             # Parse command line
             rc = self.parse()
             if rc is not None:
                 raise SystemExit,rc
-            
+
             # Start application
             rc = self.main()
             if rc is None:
@@ -375,7 +375,7 @@ class Application:
 
             Note that this has to be done *before* .parse() is being
             executed.
-        
+
         """
         self.options.append(option)
         self.option_map[option.name] = option
@@ -481,10 +481,10 @@ class Application:
 
             This may modify filelist in place. A typical application
             is checking that at least n files are given.
-            
+
             If this method returns anything other than None, the
             process is terminated with the return value as exit code.
-            
+
         """
         return None
 
@@ -554,19 +554,19 @@ class Application:
         """ This may process the files list in place.
         """
         return None
-        
+
     # Short option handler
     def handle_h(self,arg):
 
         self.help()
         return 0
-    
+
     def handle_v(self, value):
 
         """ Turn on verbose output.
         """
         self.verbose = 1
-        
+
     # Handlers for long options have two underscores in their name
     def handle__help(self,arg):
 
@@ -607,7 +607,7 @@ class Application:
             it is None, 0 is assumed (meaning OK). Unhandled
             exceptions are reported with exit status code 1 (see
             __init__ for further details).
-            
+
         """
         return None
 
@@ -620,7 +620,7 @@ def _test():
         header = 'Test Application'
         version = __version__
         options = [Option('-v','verbose')]
-        
+
         def handle_v(self,arg):
             print 'VERBOSE, Yeah !'
 

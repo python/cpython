@@ -384,7 +384,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 	if (PyFloat_Check(w))
 		j = PyFloat_AS_DOUBLE(w);
 
-	else if (Py_IS_INFINITY(i) || Py_IS_NAN(i)) {
+	else if (!Py_IS_FINITE(i)) {
 		if (PyInt_Check(w) || PyLong_Check(w))
 			/* If i is an infinity, its magnitude exceeds any
 			 * finite integer, so it doesn't matter which int we
@@ -783,10 +783,7 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 		 * bug; we let that slide in math.pow() (which currently
 		 * reflects all platform accidents), but not for Python's **.
 		 */
-		 if (iv == -1.0 && !Py_IS_INFINITY(iw) && iw == iw) {
-		 	/* XXX the "iw == iw" was to weed out NaNs.  This
-		 	 * XXX doesn't actually work on all platforms.
-		 	 */
+		 if (iv == -1.0 && Py_IS_FINITE(iw)) {
 		 	/* Return 1 if iw is even, -1 if iw is odd; there's
 		 	 * no guarantee that any C integral type is big
 		 	 * enough to hold iw, so we have to check this

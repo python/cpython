@@ -377,7 +377,7 @@ right type (but even this is determined by the sliced object).
 \begin{productionlist}
   \production{print_stmt}
              {"print" ( \optional{\token{expression} ("," \token{expression})* \optional{","}}}
-  \productioncont{| ">\code{>}" \token{expression}
+  \productioncont{| ">>" \token{expression}
                   \optional{("," \token{expression})+ \optional{","}} )}
 \end{productionlist}
 
@@ -417,7 +417,7 @@ exception is raised.
 \keyword{print} also has an extended\index{extended print statement}
 form, defined by the second portion of the syntax described above.
 This form is sometimes referred to as ``\keyword{print} chevron.''
-In this form, the first expression after the \code{>}\code{>} must
+In this form, the first expression after the \code{>>} must
 evaluate to a ``file-like'' object, specifically an object that has a
 \method{write()} method as described above.  With this extended form,
 the subsequent expressions are printed to this file object.  If the
@@ -809,13 +809,14 @@ import __future__ [as name]
 That is not a future statement; it's an ordinary import statement with
 no special semantics or syntax restrictions.
 
-Code compiled by an exec statement or calls to the builtin functions
+Code compiled by an \keyword{exec} statement or calls to the builtin functions
 \function{compile()} and \function{execfile()} that occur in a module
 \module{M} containing a future statement will, by default, use the new 
 syntax or semantics associated with the future statement.  This can,
 starting with Python 2.2 be controlled by optional arguments to
-\function{compile()} --- see the documentation of that function in the 
-library reference for details.
+\function{compile()} --- see the documentation of that function in the
+\citetitle[../lib/built-in-funcs.html]{Python Library Reference} for
+details.
 
 A future statement typed at an interactive interpreter prompt will
 take effect for the rest of the interpreter session.  If an

@@ -3,7 +3,6 @@
 # test_codecencodings_cn.py
 #   Codec encoding tests for PRC encodings.
 #
-# $CJKCodecs: test_codecencodings_cn.py,v 1.2 2004/06/19 06:09:55 perky Exp $
 
 from test import test_support
 from test import test_multibytecodec_support

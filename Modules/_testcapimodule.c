@@ -486,8 +486,8 @@ test_u_code(PyObject *self)
 	return Py_None;
 }
 
-static
-PyObject *codec_incrementalencoder(PyObject *self, PyObject *args)
+static PyObject *
+codec_incrementalencoder(PyObject *self, PyObject *args)
 {
 	const char *encoding, *errors = NULL;
 	if (!PyArg_ParseTuple(args, "s|s:test_incrementalencoder",
@@ -496,8 +496,8 @@ PyObject *codec_incrementalencoder(PyObject *self, PyObject *args)
 	return PyCodec_IncrementalEncoder(encoding, errors);
 }
 
-static
-PyObject *codec_incrementaldecoder(PyObject *self, PyObject *args)
+static PyObject *
+codec_incrementaldecoder(PyObject *self, PyObject *args)
 {
 	const char *encoding, *errors = NULL;
 	if (!PyArg_ParseTuple(args, "s|s:test_incrementaldecoder",
@@ -660,6 +660,42 @@ test_thread_state(PyObject *self, PyObject *args)
 }
 #endif
 
+/* Some tests of PyString_FromFormat().  This needs more tests. */
+static PyObject *
+test_string_from_format(PyObject *self, PyObject *args)
+{
+	PyObject *result;
+	char *msg;
+
+#define CHECK_1_FORMAT(FORMAT, TYPE) 			\
+	result = PyString_FromFormat(FORMAT, (TYPE)1);	\
+	if (result == NULL)				\
+		return NULL;				\
+	if (strcmp(PyString_AsString(result), "1")) {	\
+		msg = FORMAT " failed at 1";		\
+		goto Fail;				\
+	}						\
+	Py_DECREF(result)
+
+	CHECK_1_FORMAT("%d", int);
+	CHECK_1_FORMAT("%ld", long);
+	/* The z width modifier was added in Python 2.5. */
+	CHECK_1_FORMAT("%zd", Py_ssize_t);
+
+	/* The u type code was added in Python 2.5. */
+	CHECK_1_FORMAT("%u", unsigned int);
+	CHECK_1_FORMAT("%lu", unsigned long);
+	CHECK_1_FORMAT("%zu", size_t);
+
+	Py_RETURN_NONE;
+
+ Fail:
+ 	Py_XDECREF(result);
+	return raiseTestError("test_string_from_format", msg);
+
+#undef CHECK_1_FORMAT
+}
+
 static PyMethodDef TestMethods[] = {
 	{"raise_exception",	raise_exception,		 METH_VARARGS},
 	{"test_config",		(PyCFunction)test_config,	 METH_NOARGS},
@@ -669,6 +705,7 @@ static PyMethodDef TestMethods[] = {
 	{"test_long_numbits",	(PyCFunction)test_long_numbits,	 METH_NOARGS},
 	{"test_k_code",		(PyCFunction)test_k_code,	 METH_NOARGS},
 	{"test_null_strings",	(PyCFunction)test_null_strings,	 METH_NOARGS},
+	{"test_string_from_format", (PyCFunction)test_string_from_format, METH_NOARGS},
 
 	{"getargs_b",		getargs_b,			 METH_VARARGS},
 	{"getargs_B",		getargs_B,			 METH_VARARGS},

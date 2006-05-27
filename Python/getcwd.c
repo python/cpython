@@ -14,7 +14,11 @@
 #endif
 
 #ifndef MAXPATHLEN
+#if defined(PATH_MAX) && PATH_MAX > 1024
+#define MAXPATHLEN PATH_MAX
+#else
 #define MAXPATHLEN 1024
+#endif
 #endif
 
 extern char *getwd(char *);

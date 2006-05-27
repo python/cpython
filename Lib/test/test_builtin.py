@@ -1,7 +1,8 @@
 # Python test set -- built-in functions
 
 import test.test_support, unittest
-from test.test_support import fcmp, have_unicode, TESTFN, unlink, run_unittest
+from test.test_support import fcmp, have_unicode, TESTFN, unlink, \
+                              run_unittest, run_with_locale
 from operator import neg
 
 import sys, warnings, cStringIO, random, UserDict
@@ -528,33 +529,20 @@ class BuiltinTest(unittest.TestCase):
             # Implementation limitation in PyFloat_FromString()
             self.assertRaises(ValueError, float, unicode("1"*10000))
 
+    @run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
     def test_float_with_comma(self):
         # set locale to something that doesn't use '.' for the decimal point
-        try:
-            import locale
-            orig_locale = locale.setlocale(locale.LC_NUMERIC)
-            locale.setlocale(locale.LC_NUMERIC, 'fr_FR')
-        except:
-            # if we can't set the locale, just ignore this test
+        import locale
+        if not locale.localeconv()['decimal_point'] == ',':
             return
 
-        try:
-            self.assertEqual(locale.localeconv()['decimal_point'], ',')
-        except:
-            # this test is worthless, just skip it and reset the locale
-            locale.setlocale(locale.LC_NUMERIC, orig_locale)
-            return
-
-        try:
-            self.assertEqual(float("  3,14  "), 3.14)
-            self.assertEqual(float("  +3,14  "), 3.14)
-            self.assertEqual(float("  -3,14  "), -3.14)
-            self.assertRaises(ValueError, float, "  0x3.1  ")
-            self.assertRaises(ValueError, float, "  -0x3.p-1  ")
-            self.assertEqual(float("  25.e-1  "), 2.5)
-            self.assertEqual(fcmp(float("  .25e-1  "), .025), 0)
-        finally:
-            locale.setlocale(locale.LC_NUMERIC, orig_locale)
+        self.assertEqual(float("  3,14  "), 3.14)
+        self.assertEqual(float("  +3,14  "), 3.14)
+        self.assertEqual(float("  -3,14  "), -3.14)
+        self.assertRaises(ValueError, float, "  0x3.1  ")
+        self.assertRaises(ValueError, float, "  -0x3.p-1  ")
+        self.assertEqual(float("  25.e-1  "), 2.5)
+        self.assertEqual(fcmp(float("  .25e-1  "), .025), 0)
 
     def test_floatconversion(self):
         # Make sure that calls to __float__() work properly
@@ -692,6 +680,84 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertEqual(int('0123', 0), 83)
         self.assertEqual(int('0x123', 16), 291)
+
+        # SF bug 1334662: int(string, base) wrong answers
+        # Various representations of 2**32 evaluated to 0
+        # rather than 2**32 in previous versions
+
+        self.assertEqual(int('100000000000000000000000000000000', 2), 4294967296L)
+        self.assertEqual(int('102002022201221111211', 3), 4294967296L)
+        self.assertEqual(int('10000000000000000', 4), 4294967296L)
+        self.assertEqual(int('32244002423141', 5), 4294967296L)
+        self.assertEqual(int('1550104015504', 6), 4294967296L)
+        self.assertEqual(int('211301422354', 7), 4294967296L)
+        self.assertEqual(int('40000000000', 8), 4294967296L)
+        self.assertEqual(int('12068657454', 9), 4294967296L)
+        self.assertEqual(int('4294967296', 10), 4294967296L)
+        self.assertEqual(int('1904440554', 11), 4294967296L)
+        self.assertEqual(int('9ba461594', 12), 4294967296L)
+        self.assertEqual(int('535a79889', 13), 4294967296L)
+        self.assertEqual(int('2ca5b7464', 14), 4294967296L)
+        self.assertEqual(int('1a20dcd81', 15), 4294967296L)
+        self.assertEqual(int('100000000', 16), 4294967296L)
+        self.assertEqual(int('a7ffda91', 17), 4294967296L)
+        self.assertEqual(int('704he7g4', 18), 4294967296L)
+        self.assertEqual(int('4f5aff66', 19), 4294967296L)
+        self.assertEqual(int('3723ai4g', 20), 4294967296L)
+        self.assertEqual(int('281d55i4', 21), 4294967296L)
+        self.assertEqual(int('1fj8b184', 22), 4294967296L)
+        self.assertEqual(int('1606k7ic', 23), 4294967296L)
+        self.assertEqual(int('mb994ag', 24), 4294967296L)
+        self.assertEqual(int('hek2mgl', 25), 4294967296L)
+        self.assertEqual(int('dnchbnm', 26), 4294967296L)
+        self.assertEqual(int('b28jpdm', 27), 4294967296L)
+        self.assertEqual(int('8pfgih4', 28), 4294967296L)
+        self.assertEqual(int('76beigg', 29), 4294967296L)
+        self.assertEqual(int('5qmcpqg', 30), 4294967296L)
+        self.assertEqual(int('4q0jto4', 31), 4294967296L)
+        self.assertEqual(int('4000000', 32), 4294967296L)
+        self.assertEqual(int('3aokq94', 33), 4294967296L)
+        self.assertEqual(int('2qhxjli', 34), 4294967296L)
+        self.assertEqual(int('2br45qb', 35), 4294967296L)
+        self.assertEqual(int('1z141z4', 36), 4294967296L)
+
+        # SF bug 1334662: int(string, base) wrong answers
+        # Checks for proper evaluation of 2**32 + 1
+        self.assertEqual(int('100000000000000000000000000000001', 2), 4294967297L)
+        self.assertEqual(int('102002022201221111212', 3), 4294967297L)
+        self.assertEqual(int('10000000000000001', 4), 4294967297L)
+        self.assertEqual(int('32244002423142', 5), 4294967297L)
+        self.assertEqual(int('1550104015505', 6), 4294967297L)
+        self.assertEqual(int('211301422355', 7), 4294967297L)
+        self.assertEqual(int('40000000001', 8), 4294967297L)
+        self.assertEqual(int('12068657455', 9), 4294967297L)
+        self.assertEqual(int('4294967297', 10), 4294967297L)
+        self.assertEqual(int('1904440555', 11), 4294967297L)
+        self.assertEqual(int('9ba461595', 12), 4294967297L)
+        self.assertEqual(int('535a7988a', 13), 4294967297L)
+        self.assertEqual(int('2ca5b7465', 14), 4294967297L)
+        self.assertEqual(int('1a20dcd82', 15), 4294967297L)
+        self.assertEqual(int('100000001', 16), 4294967297L)
+        self.assertEqual(int('a7ffda92', 17), 4294967297L)
+        self.assertEqual(int('704he7g5', 18), 4294967297L)
+        self.assertEqual(int('4f5aff67', 19), 4294967297L)
+        self.assertEqual(int('3723ai4h', 20), 4294967297L)
+        self.assertEqual(int('281d55i5', 21), 4294967297L)
+        self.assertEqual(int('1fj8b185', 22), 4294967297L)
+        self.assertEqual(int('1606k7id', 23), 4294967297L)
+        self.assertEqual(int('mb994ah', 24), 4294967297L)
+        self.assertEqual(int('hek2mgm', 25), 4294967297L)
+        self.assertEqual(int('dnchbnn', 26), 4294967297L)
+        self.assertEqual(int('b28jpdn', 27), 4294967297L)
+        self.assertEqual(int('8pfgih5', 28), 4294967297L)
+        self.assertEqual(int('76beigh', 29), 4294967297L)
+        self.assertEqual(int('5qmcpqh', 30), 4294967297L)
+        self.assertEqual(int('4q0jto5', 31), 4294967297L)
+        self.assertEqual(int('4000001', 32), 4294967297L)
+        self.assertEqual(int('3aokq95', 33), 4294967297L)
+        self.assertEqual(int('2qhxjlj', 34), 4294967297L)
+        self.assertEqual(int('2br45qc', 35), 4294967297L)
+        self.assertEqual(int('1z141z5', 36), 4294967297L)
 
     def test_intconversion(self):
         # Test __int__()
@@ -885,6 +951,81 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, long, '123\0')
         self.assertRaises(ValueError, long, '53', 40)
         self.assertRaises(TypeError, long, 1, 12)
+
+        self.assertEqual(long('100000000000000000000000000000000', 2),
+                         4294967296)
+        self.assertEqual(long('102002022201221111211', 3), 4294967296)
+        self.assertEqual(long('10000000000000000', 4), 4294967296)
+        self.assertEqual(long('32244002423141', 5), 4294967296)
+        self.assertEqual(long('1550104015504', 6), 4294967296)
+        self.assertEqual(long('211301422354', 7), 4294967296)
+        self.assertEqual(long('40000000000', 8), 4294967296)
+        self.assertEqual(long('12068657454', 9), 4294967296)
+        self.assertEqual(long('4294967296', 10), 4294967296)
+        self.assertEqual(long('1904440554', 11), 4294967296)
+        self.assertEqual(long('9ba461594', 12), 4294967296)
+        self.assertEqual(long('535a79889', 13), 4294967296)
+        self.assertEqual(long('2ca5b7464', 14), 4294967296)
+        self.assertEqual(long('1a20dcd81', 15), 4294967296)
+        self.assertEqual(long('100000000', 16), 4294967296)
+        self.assertEqual(long('a7ffda91', 17), 4294967296)
+        self.assertEqual(long('704he7g4', 18), 4294967296)
+        self.assertEqual(long('4f5aff66', 19), 4294967296)
+        self.assertEqual(long('3723ai4g', 20), 4294967296)
+        self.assertEqual(long('281d55i4', 21), 4294967296)
+        self.assertEqual(long('1fj8b184', 22), 4294967296)
+        self.assertEqual(long('1606k7ic', 23), 4294967296)
+        self.assertEqual(long('mb994ag', 24), 4294967296)
+        self.assertEqual(long('hek2mgl', 25), 4294967296)
+        self.assertEqual(long('dnchbnm', 26), 4294967296)
+        self.assertEqual(long('b28jpdm', 27), 4294967296)
+        self.assertEqual(long('8pfgih4', 28), 4294967296)
+        self.assertEqual(long('76beigg', 29), 4294967296)
+        self.assertEqual(long('5qmcpqg', 30), 4294967296)
+        self.assertEqual(long('4q0jto4', 31), 4294967296)
+        self.assertEqual(long('4000000', 32), 4294967296)
+        self.assertEqual(long('3aokq94', 33), 4294967296)
+        self.assertEqual(long('2qhxjli', 34), 4294967296)
+        self.assertEqual(long('2br45qb', 35), 4294967296)
+        self.assertEqual(long('1z141z4', 36), 4294967296)
+
+        self.assertEqual(long('100000000000000000000000000000001', 2),
+                         4294967297)
+        self.assertEqual(long('102002022201221111212', 3), 4294967297)
+        self.assertEqual(long('10000000000000001', 4), 4294967297)
+        self.assertEqual(long('32244002423142', 5), 4294967297)
+        self.assertEqual(long('1550104015505', 6), 4294967297)
+        self.assertEqual(long('211301422355', 7), 4294967297)
+        self.assertEqual(long('40000000001', 8), 4294967297)
+        self.assertEqual(long('12068657455', 9), 4294967297)
+        self.assertEqual(long('4294967297', 10), 4294967297)
+        self.assertEqual(long('1904440555', 11), 4294967297)
+        self.assertEqual(long('9ba461595', 12), 4294967297)
+        self.assertEqual(long('535a7988a', 13), 4294967297)
+        self.assertEqual(long('2ca5b7465', 14), 4294967297)
+        self.assertEqual(long('1a20dcd82', 15), 4294967297)
+        self.assertEqual(long('100000001', 16), 4294967297)
+        self.assertEqual(long('a7ffda92', 17), 4294967297)
+        self.assertEqual(long('704he7g5', 18), 4294967297)
+        self.assertEqual(long('4f5aff67', 19), 4294967297)
+        self.assertEqual(long('3723ai4h', 20), 4294967297)
+        self.assertEqual(long('281d55i5', 21), 4294967297)
+        self.assertEqual(long('1fj8b185', 22), 4294967297)
+        self.assertEqual(long('1606k7id', 23), 4294967297)
+        self.assertEqual(long('mb994ah', 24), 4294967297)
+        self.assertEqual(long('hek2mgm', 25), 4294967297)
+        self.assertEqual(long('dnchbnn', 26), 4294967297)
+        self.assertEqual(long('b28jpdn', 27), 4294967297)
+        self.assertEqual(long('8pfgih5', 28), 4294967297)
+        self.assertEqual(long('76beigh', 29), 4294967297)
+        self.assertEqual(long('5qmcpqh', 30), 4294967297)
+        self.assertEqual(long('4q0jto5', 31), 4294967297)
+        self.assertEqual(long('4000001', 32), 4294967297)
+        self.assertEqual(long('3aokq95', 33), 4294967297)
+        self.assertEqual(long('2qhxjlj', 34), 4294967297)
+        self.assertEqual(long('2br45qc', 35), 4294967297)
+        self.assertEqual(long('1z141z5', 36), 4294967297)
+
 
     def test_longconversion(self):
         # Test __long__()

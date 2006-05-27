@@ -22,6 +22,7 @@
  */
 
 #include "cache.h"
+#include <limits.h>
 
 /* only used internally */
 Node* new_node(PyObject* key, PyObject* data)
@@ -60,11 +61,11 @@ int cache_init(Cache* self, PyObject* args, PyObject* kwargs)
 
     self->factory = NULL;
 
-    if (!PyArg_ParseTuple(args, "O|i", &factory, &size))
-    {
-        return -1; 
+    if (!PyArg_ParseTuple(args, "O|i", &factory, &size)) {
+        return -1;
     }
 
+    /* minimum cache size is 5 entries */
     if (size < 5) {
         size = 5;
     }
@@ -95,6 +96,7 @@ void cache_dealloc(Cache* self)
         return;
     }
 
+    /* iterate over all nodes and deallocate them */
     node = self->first;
     while (node) {
         delete_node = node;
@@ -119,7 +121,14 @@ PyObject* cache_get(Cache* self, PyObject* args)
 
     node = (Node*)PyDict_GetItem(self->mapping, key);
     if (node) {
-        node->count++;
+        /* an entry for this key already exists in the cache */
+
+        /* increase usage counter of the node found */
+        if (node->count < LONG_MAX) {
+            node->count++;
+        }
+
+        /* if necessary, reorder entries in the cache by swapping positions */
         if (node->prev && node->count > node->prev->count) {
             ptr = node->prev;
 
@@ -149,6 +158,10 @@ PyObject* cache_get(Cache* self, PyObject* args)
             ptr->prev = node;
         }
     } else {
+        /* There is no entry for this key in the cache, yet. We'll insert a new
+         * entry in the cache, and make space if necessary by throwing the
+         * least used item out of the cache. */
+
         if (PyDict_Size(self->mapping) == self->size) {
             if (self->last) {
                 node = self->last;
@@ -253,7 +266,7 @@ PyObject* cache_display(Cache* self, PyObject* args)
 
 static PyMethodDef cache_methods[] = {
     {"get", (PyCFunction)cache_get, METH_O,
-        PyDoc_STR("Gets an entry from the cache.")},
+        PyDoc_STR("Gets an entry from the cache or calls the factory function to produce one.")},
     {"display", (PyCFunction)cache_display, METH_NOARGS,
         PyDoc_STR("For debugging only.")},
     {NULL, NULL}

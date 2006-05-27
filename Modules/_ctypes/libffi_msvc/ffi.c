@@ -26,8 +26,6 @@
    OTHER DEALINGS IN THE SOFTWARE.
    ----------------------------------------------------------------------- */
 
-#ifndef __x86_64__
-
 #include <ffi.h>
 #include <ffi_common.h>
 
@@ -143,11 +141,7 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
 
 /*@-declundef@*/
 /*@-exportheader@*/
-#ifdef _MSC_VER
 extern int
-#else
-extern void
-#endif
 ffi_call_SYSV(void (*)(char *, extended_cif *), 
 	      /*@out@*/ extended_cif *, 
 	      unsigned, unsigned, 
@@ -156,14 +150,9 @@ ffi_call_SYSV(void (*)(char *, extended_cif *),
 /*@=declundef@*/
 /*@=exportheader@*/
 
-#if defined(X86_WIN32) || defined(_MSC_VER)
 /*@-declundef@*/
 /*@-exportheader@*/
-#ifdef _MSC_VER
 extern int
-#else
-extern void
-#endif
 ffi_call_STDCALL(void (*)(char *, extended_cif *),
 		 /*@out@*/ extended_cif *,
 		 unsigned, unsigned,
@@ -171,13 +160,8 @@ ffi_call_STDCALL(void (*)(char *, extended_cif *),
 		 void (*fn)());
 /*@=declundef@*/
 /*@=exportheader@*/
-#endif /* X86_WIN32 || _MSC_VER*/
 
-#ifdef _MSC_VER
 int
-#else
-void
-#endif
 ffi_call(/*@dependent@*/ ffi_cif *cif, 
 	 void (*fn)(), 
 	 /*@out@*/ void *rvalue, 
@@ -206,24 +190,18 @@ ffi_call(/*@dependent@*/ ffi_cif *cif,
     {
     case FFI_SYSV:
       /*@-usedef@*/
-#ifdef _MSC_VER
-      return
-#endif
-	      ffi_call_SYSV(ffi_prep_args, &ecif, cif->bytes, 
-			    cif->flags, ecif.rvalue, fn);
+      return ffi_call_SYSV(ffi_prep_args, &ecif, cif->bytes, 
+			   cif->flags, ecif.rvalue, fn);
       /*@=usedef@*/
       break;
-#if defined(X86_WIN32) || defined(_MSC_VER)
+
     case FFI_STDCALL:
       /*@-usedef@*/
-#ifdef _MSC_VER
-      return
-#endif
-	      ffi_call_STDCALL(ffi_prep_args, &ecif, cif->bytes,
-			       cif->flags, ecif.rvalue, fn);
+      return ffi_call_STDCALL(ffi_prep_args, &ecif, cif->bytes,
+			      cif->flags, ecif.rvalue, fn);
       /*@=usedef@*/
       break;
-#endif /* X86_WIN32 */
+
     default:
       FFI_ASSERT(0);
       break;
@@ -236,23 +214,10 @@ ffi_call(/*@dependent@*/ ffi_cif *cif,
 
 static void ffi_prep_incoming_args_SYSV (char *stack, void **ret,
 					 void** args, ffi_cif* cif);
-#ifndef _MSC_VER
-static void ffi_closure_SYSV (ffi_closure *)
-     __attribute__ ((regparm(1)));
-static void ffi_closure_raw_SYSV (ffi_raw_closure *)
-     __attribute__ ((regparm(1)));
-#endif
-
 /* This function is jumped to by the trampoline */
 
-#ifdef _MSC_VER
 static void __fastcall
 ffi_closure_SYSV (ffi_closure *closure, int *argp)
-#else
-static void
-ffi_closure_SYSV (closure)
-     ffi_closure *closure;
-#endif
 {
   // this is our return value storage
   long double    res;
@@ -262,11 +227,11 @@ ffi_closure_SYSV (closure)
   void         **arg_area;
   unsigned short rtype;
   void          *resp = (void*)&res;
-#ifdef _MSC_VER
+//#ifdef _MSC_VER
   void *args = &argp[1];
-#else
-  void *args = __builtin_dwarf_cfa ();
-#endif
+//#else
+//  void *args = __builtin_dwarf_cfa ();
+//#endif
 
   cif         = closure->cif;
   arg_area    = (void**) alloca (cif->nargs * sizeof (void*));  
@@ -390,7 +355,7 @@ ffi_prep_incoming_args_SYSV(char *stack, void **rvalue,
 
 /* MOV EDX, ESP is 0x8b 0xd4 */
 
-#ifdef _MSC_VER
+//#ifdef _MSC_VER
 
 #define FFI_INIT_TRAMPOLINE(TRAMP,FUN,CTX,BYTES) \
 { unsigned char *__tramp = (unsigned char*)(TRAMP); \
@@ -407,18 +372,18 @@ ffi_prep_incoming_args_SYSV(char *stack, void **rvalue,
    *(unsigned short*) &__tramp[13] = BYTES; \
  }
 
-#else
-#define FFI_INIT_TRAMPOLINE(TRAMP,FUN,CTX,BYTES) \
-({ unsigned char *__tramp = (unsigned char*)(TRAMP); \
-   unsigned int  __fun = (unsigned int)(FUN); \
-   unsigned int  __ctx = (unsigned int)(CTX); \
-   unsigned int  __dis = __fun - ((unsigned int) __tramp + FFI_TRAMPOLINE_SIZE); \
-   *(unsigned char*) &__tramp[0] = 0xb8; \
-   *(unsigned int*)  &__tramp[1] = __ctx; /* movl __ctx, %eax */ \
-   *(unsigned char *)  &__tramp[5] = 0xe9; \
-   *(unsigned int*)  &__tramp[6] = __dis; /* jmp __fun  */ \
- })
-#endif
+//#else
+//#define FFI_INIT_TRAMPOLINE(TRAMP,FUN,CTX,BYTES) \
+//({ unsigned char *__tramp = (unsigned char*)(TRAMP); \
+//   unsigned int  __fun = (unsigned int)(FUN); \
+//   unsigned int  __ctx = (unsigned int)(CTX); \
+//   unsigned int  __dis = __fun - ((unsigned int) __tramp + FFI_TRAMPOLINE_SIZE); \
+//   *(unsigned char*) &__tramp[0] = 0xb8; \
+//   *(unsigned int*)  &__tramp[1] = __ctx; /* movl __ctx, %eax */ \
+//   *(unsigned char *)  &__tramp[5] = 0xe9; \
+//   *(unsigned int*)  &__tramp[6] = __dis; /* jmp __fun  */ \
+// })
+//#endif
 
 /* the cif must already be prep'ed */
 
@@ -433,10 +398,8 @@ ffi_prep_closure (ffi_closure* closure,
   
   if (cif->abi == FFI_SYSV)
     bytes = 0;
-#ifdef _MSC_VER
   else if (cif->abi == FFI_STDCALL)
     bytes = cif->bytes;
-#endif
   else
     return FFI_BAD_ABI;
 
@@ -450,5 +413,3 @@ ffi_prep_closure (ffi_closure* closure,
 
   return FFI_OK;
 }
-
-#endif /* __x86_64__  */

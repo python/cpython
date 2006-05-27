@@ -45,6 +45,7 @@ def get_platform ():
     osname = string.lower(osname)
     osname = string.replace(osname, '/', '')
     machine = string.replace(machine, ' ', '_')
+    machine = string.replace(machine, '/', '-')
 
     if osname[:5] == "linux":
         # At least on Linux/Intel, 'machine' is the processor --
@@ -66,6 +67,54 @@ def get_platform ():
         m = rel_re.match(release)
         if m:
             release = m.group()
+    elif osname[:6] == "darwin":
+        #
+        # For our purposes, we'll assume that the system version from
+        # distutils' perspective is what MACOSX_DEPLOYMENT_TARGET is set
+        # to. This makes the compatibility story a bit more sane because the
+        # machine is going to compile and link as if it were
+        # MACOSX_DEPLOYMENT_TARGET.
+        from distutils.sysconfig import get_config_vars
+        cfgvars = get_config_vars()
+
+        macver = os.environ.get('MACOSX_DEPLOYMENT_TARGET')
+        if not macver:
+            macver = cfgvars.get('MACOSX_DEPLOYMENT_TARGET')
+
+        if not macver:
+            # Get the system version. Reading this plist is a documented
+            # way to get the system version (see the documentation for
+            # the Gestalt Manager)
+            try:
+                f = open('/System/Library/CoreServices/SystemVersion.plist')
+            except IOError:
+                # We're on a plain darwin box, fall back to the default
+                # behaviour.
+                pass
+            else:
+                m = re.search(
+                        r'<key>ProductUserVisibleVersion</key>\s*' +
+                        r'<string>(.*?)</string>', f.read())
+                f.close()
+                if m is not None:
+                    macver = '.'.join(m.group(1).split('.')[:2])
+                # else: fall back to the default behaviour
+
+        if macver:
+            from distutils.sysconfig import get_config_vars
+            release = macver
+            osname = "macosx"
+
+
+            if (release + '.') < '10.4.' and \
+                    get_config_vars().get('UNIVERSALSDK', '').strip():
+                # The universal build will build fat binaries, but not on
+                # systems before 10.4
+                machine = 'fat'
+
+            elif machine in ('PowerPC', 'Power_Macintosh'):
+                # Pick a sane name for the PPC architecture.
+                machine = 'ppc'
 
     return "%s-%s-%s" % (osname, release, machine)
 

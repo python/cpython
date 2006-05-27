@@ -1079,6 +1079,25 @@ output to match any substring in the actual output:
     ...                 # doctest: +NORMALIZE_WHITESPACE
     [0,    1, ...,   18,    19]
 
+The SKIP flag causes an example to be skipped entirely.  I.e., the
+example is not run.  It can be useful in contexts where doctest
+examples serve as both documentation and test cases, and an example
+should be included for documentation purposes, but should not be
+checked (e.g., because its output is random, or depends on resources
+which would be unavailable.)  The SKIP flag can also be used for
+'commenting out' broken examples.
+
+    >>> import unavailable_resource           # doctest: +SKIP
+    >>> unavailable_resource.do_something()   # doctest: +SKIP
+    >>> unavailable_resource.blow_up()        # doctest: +SKIP
+    Traceback (most recent call last):
+        ...
+    UncheckedBlowUpError:  Nobody checks me.
+
+    >>> import random
+    >>> print random.random() # doctest: +SKIP
+    0.721216923889
+
 The REPORT_UDIFF flag causes failures that involve multi-line expected
 and actual outputs to be displayed using a unified diff:
 
@@ -1280,6 +1299,26 @@ count as failures:
         ...
         ValueError: 2
     (3, 5)
+
+New option flags can also be registered, via register_optionflag().  Here
+we reach into doctest's internals a bit.
+
+    >>> unlikely = "UNLIKELY_OPTION_NAME"
+    >>> unlikely in doctest.OPTIONFLAGS_BY_NAME
+    False
+    >>> new_flag_value = doctest.register_optionflag(unlikely)
+    >>> unlikely in doctest.OPTIONFLAGS_BY_NAME
+    True
+
+Before 2.4.4/2.5, registering a name more than once erroneously created
+more than one flag value.  Here we verify that's fixed:
+
+    >>> redundant_flag_value = doctest.register_optionflag(unlikely)
+    >>> redundant_flag_value == new_flag_value
+    True
+
+Clean up.
+    >>> del doctest.OPTIONFLAGS_BY_NAME[unlikely]
 
     """
 

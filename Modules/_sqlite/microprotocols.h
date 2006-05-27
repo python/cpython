@@ -54,6 +54,6 @@ extern PyObject *microprotocols_adapt(
 extern PyObject *
     psyco_microprotocols_adapt(Cursor* self, PyObject *args);   
 #define psyco_microprotocols_adapt_doc \
-    "adapt(obj, protocol, alternate) -> adapt obj to given protocol"
-    
+    "adapt(obj, protocol, alternate) -> adapt obj to given protocol. Non-standard."
+
 #endif /* !defined(PSYCOPG_MICROPROTOCOLS_H) */

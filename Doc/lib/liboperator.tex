@@ -320,7 +320,7 @@ and \var{b} sequences.
 
 \begin{funcdesc}{irshift}{a, b}
 \funcline{__irshift__}{a, b}
-\code{a = irshift(a, b)} is equivalent to \code{a >}\code{>= b}.
+\code{a = irshift(a, b)} is equivalent to \code{a >>= b}.
 \versionadded{2.5}
 \end{funcdesc}
 
@@ -499,7 +499,7 @@ symbols in the Python syntax and the functions in the
           {\code{neg(\var{a})}}
   \lineiii{Negation (Logical)}{\code{not \var{a}}}
           {\code{not_(\var{a})}}
-  \lineiii{Right Shift}{\code{\var{a} >\code{>} \var{b}}}
+  \lineiii{Right Shift}{\code{\var{a} >> \var{b}}}
           {\code{rshift(\var{a}, \var{b})}}
   \lineiii{Sequence Repitition}{\code{\var{seq} * \var{i}}}
           {\code{repeat(\var{seq}, \var{i})}}

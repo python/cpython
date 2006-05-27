@@ -1078,7 +1078,8 @@ PyErr_PrintEx(int set_sys_last_vars)
 	Py_XDECREF(tb);
 }
 
-void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
+void
+PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 {
 	int err = 0;
 	PyObject *f = PySys_GetObject("stderr");
@@ -1126,19 +1127,22 @@ void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 		}
 		else if (PyExceptionClass_Check(exception)) {
 			char* className = PyExceptionClass_Name(exception);
-			PyObject* moduleName =
-			      PyObject_GetAttrString(exception, "__module__");
+			char *dot = strrchr(className, '.');
+			PyObject* moduleName;
+			if (dot != NULL)
+				className = dot+1;
+			moduleName = PyObject_GetAttrString(exception, "__module__");
 
 			if (moduleName == NULL)
 				err = PyFile_WriteString("<unknown>", f);
 			else {
 				char* modstr = PyString_AsString(moduleName);
-				Py_DECREF(moduleName);
 				if (modstr && strcmp(modstr, "exceptions"))
 				{
 					err = PyFile_WriteString(modstr, f);
 					err += PyFile_WriteString(".", f);
 				}
+				Py_DECREF(moduleName);
 			}
 			if (err == 0) {
 				if (className == NULL)

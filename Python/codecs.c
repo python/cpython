@@ -70,7 +70,7 @@ PyObject *normalizestring(const char *string)
         if (ch == ' ')
             ch = '-';
         else
-            ch = tolower(ch);
+            ch = tolower(Py_CHARMASK(ch));
 	p[i] = ch;
     }
     return v;
@@ -95,7 +95,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
 {
     PyInterpreterState *interp;
     PyObject *result, *args = NULL, *v;
-    int i, len;
+    Py_ssize_t i, len;
 
     if (encoding == NULL) {
 	PyErr_BadArgument();

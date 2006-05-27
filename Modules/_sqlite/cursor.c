@@ -27,8 +27,12 @@
 #include "sqlitecompat.h"
 
 /* used to decide wether to call PyInt_FromLong or PyLong_FromLongLong */
+#ifndef INT32_MIN
 #define INT32_MIN (-2147483647 - 1)
+#endif
+#ifndef INT32_MAX
 #define INT32_MAX 2147483647
+#endif
 
 PyObject* cursor_iternext(Cursor *self);
 
@@ -157,24 +161,24 @@ int build_row_cast_map(Cursor* self)
 
         if (self->connection->detect_types | PARSE_COLNAMES) {
             colname = sqlite3_column_name(self->statement->st, i);
+            if (colname) {
+                for (pos = colname; *pos != 0; pos++) {
+                    if (*pos == '[') {
+                        type_start = pos + 1;
+                    } else if (*pos == ']' && type_start != (const char*)-1) {
+                        key = PyString_FromStringAndSize(type_start, pos - type_start);
+                        if (!key) {
+                            /* creating a string failed, but it is too complicated
+                             * to propagate the error here, we just assume there is
+                             * no converter and proceed */
+                            break;
+                        }
 
-            for (pos = colname; *pos != 0; pos++) {
-                if (*pos == '[') {
-                    type_start = pos + 1;
-                } else if (*pos == ']' && type_start != (const char*)-1) {
-                    key = PyString_FromStringAndSize(type_start, pos - type_start);
-                    if (!key) {
-                        /* creating a string failed, but it is too complicated
-                         * to propagate the error here, we just assume there is
-                         * no converter and proceed */
+                        converter = PyDict_GetItem(converters, key);
+                        Py_DECREF(key);
                         break;
                     }
-
-                    converter = PyDict_GetItem(converters, key);
-                    Py_DECREF(key);
-                    break;
                 }
-
             }
         }
 
@@ -276,6 +280,7 @@ PyObject* _fetch_one_row(Cursor* self)
     void* raw_buffer;
     const char* val_str;
     char buf[200];
+    const char* colname;
 
     Py_BEGIN_ALLOW_THREADS
     numcols = sqlite3_data_count(self->statement->st);
@@ -340,8 +345,12 @@ PyObject* _fetch_one_row(Cursor* self)
                         self->connection->text_factory == OptimizedUnicode ? 1 : 0);
 
                     if (!converted) {
+                        colname = sqlite3_column_name(self->statement->st, i);
+                        if (colname) {
+                            colname = "<unknown column name>";
+                        }
                         PyOS_snprintf(buf, sizeof(buf) - 1, "Could not decode to UTF-8 column %s with text %s",
-                                    sqlite3_column_name(self->statement->st, i), val_str);
+                                     colname , val_str);
                         PyErr_SetString(OperationalError, buf);
                     }
                 } else if (self->connection->text_factory == (PyObject*)&PyString_Type) {
@@ -419,8 +428,7 @@ PyObject* _query_execute(Cursor* self, int multiple, PyObject* args)
         } else {
             /* sequence */
             parameters_iter = PyObject_GetIter(second_argument);
-            if (!parameters_iter)
-            {
+            if (!parameters_iter) {
                 return NULL;
             }
         }
@@ -506,12 +514,7 @@ PyObject* _query_execute(Cursor* self, int multiple, PyObject* args)
                 /* it's a DDL statement or something similar
                    - we better COMMIT first so it works for all cases */
                 if (self->connection->inTransaction) {
-                    func_args = PyTuple_New(0);
-                    if (!func_args) {
-                        goto error;
-                    }
-                    result = connection_commit(self->connection, func_args);
-                    Py_DECREF(func_args);
+                    result = connection_commit(self->connection, NULL);
                     if (!result) {
                         goto error;
                     }
@@ -701,7 +704,6 @@ PyObject* cursor_executescript(Cursor* self, PyObject* args)
     const char* script_cstr;
     sqlite3_stmt* statement;
     int rc;
-    PyObject* func_args;
     PyObject* result;
     int statement_completed = 0;
 
@@ -728,12 +730,7 @@ PyObject* cursor_executescript(Cursor* self, PyObject* args)
     }
 
     /* commit first */
-    func_args = PyTuple_New(0);
-    if (!func_args) {
-        goto error;
-    }
-    result = connection_commit(self->connection, func_args);
-    Py_DECREF(func_args);
+    result = connection_commit(self->connection, NULL);
     if (!result) {
         goto error;
     }
@@ -977,6 +974,9 @@ static struct PyMemberDef cursor_members[] =
     {NULL}
 };
 
+static char cursor_doc[] =
+PyDoc_STR("SQLite database cursor class.");
+
 PyTypeObject CursorType = {
         PyObject_HEAD_INIT(NULL)
         0,                                              /* ob_size */
@@ -999,7 +999,7 @@ PyTypeObject CursorType = {
         0,                                              /* tp_setattro */
         0,                                              /* tp_as_buffer */
         Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_ITER|Py_TPFLAGS_BASETYPE, /* tp_flags */
-        0,                                              /* tp_doc */
+        cursor_doc,                                     /* tp_doc */
         0,                                              /* tp_traverse */
         0,                                              /* tp_clear */
         0,                                              /* tp_richcompare */

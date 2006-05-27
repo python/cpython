@@ -4,7 +4,7 @@
  *
  * It's a dict-like data structure that works best when accesses are not
  * random, but follow a strong pattern.  The one implemented here is for
- * accesses patterns where the same small set of keys is looked up over
+ * access patterns where the same small set of keys is looked up over
  * and over again, and this set of keys evolves slowly over time.
  */
 

@@ -80,7 +80,6 @@ text message explaining why the exception had been raised.  If more data needs
 to be attached to the exception, attach it through arbitrary attributes on the
 instance.  All arguments are also stored in \member{args} as a tuple, but it will
 eventually be deprecated and thus its use is discouraged.
-\versionchanged[Changed to inherit from \exception{BaseException}]{2.5}
 \versionadded{2.5}
 \end{excdesc}
 
@@ -88,6 +87,7 @@ eventually be deprecated and thus its use is discouraged.
 All built-in, non-system-exiting exceptions are derived
 from this class.  All user-defined exceptions should also be derived
 from this class.
+\versionchanged[Changed to inherit from \exception{BaseException}]{2.5}
 \end{excdesc}
 
 \begin{excdesc}{StandardError}
@@ -394,11 +394,15 @@ Raised when an \keyword{assert} statement fails.
 \begin{excdesc}{WindowsError}
   Raised when a Windows-specific error occurs or when the error number
   does not correspond to an \cdata{errno} value.  The
-  \member{errno} and \member{strerror} values are created from the
+  \member{winerror} and \member{strerror} values are created from the
   return values of the \cfunction{GetLastError()} and
   \cfunction{FormatMessage()} functions from the Windows Platform API.
+  The \member{errno} value maps the \member{winerror} value to 
+  corresponding \code{errno.h} values.
   This is a subclass of \exception{OSError}.
 \versionadded{2.0}
+\versionchanged[Previous versions put the \cfunction{GetLastError()}
+codes into \member{errno}]{2.5}
 \end{excdesc}
 
 \begin{excdesc}{ZeroDivisionError}
@@ -440,6 +444,11 @@ Base class for warnings about dubious runtime behavior.
 \begin{excdesc}{FutureWarning}
 Base class for warnings about constructs that will change semantically
 in the future.
+\end{excdesc}
+
+\begin{excdesc}{ImportWarning}
+Base class for warnings about probable mistakes in module imports.
+\versionadded{2.5}
 \end{excdesc}
 
 The class hierarchy for built-in exceptions is:

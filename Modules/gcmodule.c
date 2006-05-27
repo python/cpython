@@ -75,6 +75,7 @@ static PyObject *delstr = NULL;
 				DEBUG_OBJECTS | \
 				DEBUG_SAVEALL
 static int debug;
+static PyObject *tmod = NULL;
 
 /*--------------------------------------------------------------------------
 gc_refs values.
@@ -602,7 +603,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
 		assert(callback != NULL);
 
 		/* copy-paste of weakrefobject.c's handle_callback() */
-		temp = PyObject_CallFunction(callback, "O", wr);
+		temp = PyObject_CallFunctionObjArgs(callback, wr, NULL);
 		if (temp == NULL)
 			PyErr_WriteUnraisable(callback);
 		else
@@ -734,19 +735,12 @@ collect(int generation)
 	PyGC_Head unreachable; /* non-problematic unreachable trash */
 	PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
 	PyGC_Head *gc;
-	static PyObject *tmod = NULL;
 	double t1 = 0.0;
 
 	if (delstr == NULL) {
 		delstr = PyString_InternFromString("__del__");
 		if (delstr == NULL)
 			Py_FatalError("gc couldn't allocate \"__del__\"");
-	}
-
-	if (tmod == NULL) {
-		tmod = PyImport_ImportModule("time");
-		if (tmod == NULL)
-			PyErr_Clear();
 	}
 
 	if (debug & DEBUG_STATS) {
@@ -1233,6 +1227,19 @@ initgc(void)
 	Py_INCREF(garbage);
 	if (PyModule_AddObject(m, "garbage", garbage) < 0)
 		return;
+
+	/* Importing can't be done in collect() because collect()
+	 * can be called via PyGC_Collect() in Py_Finalize().
+	 * This wouldn't be a problem, except that <initialized> is
+	 * reset to 0 before calling collect which trips up
+	 * the import and triggers an assertion.
+	 */
+	if (tmod == NULL) {
+		tmod = PyImport_ImportModule("time");
+		if (tmod == NULL)
+			PyErr_Clear();
+	}
+
 #define ADD_INT(NAME) if (PyModule_AddIntConstant(m, #NAME, NAME) < 0) return
 	ADD_INT(DEBUG_STATS);
 	ADD_INT(DEBUG_COLLECTABLE);

@@ -841,17 +841,15 @@ class Transformer:
             names.append(self.com_fpdef(node))
 
             i = i + 1
-            if i >= len(nodelist):
-                break
-
-            if nodelist[i][0] == token.EQUAL:
+            if i < len(nodelist) and nodelist[i][0] == token.EQUAL:
                 defaults.append(self.com_node(nodelist[i + 1]))
                 i = i + 2
             elif len(defaults):
-                # XXX This should be a syntax error.
-                # Treat "(a=1, b)" as "(a=1, b=None)"
-                defaults.append(Const(None))
+                # we have already seen an argument with default, but here
+                # came one without
+                raise SyntaxError, "non-default argument follows default argument"
 
+            # skip the comma
             i = i + 1
 
         return names, defaults, flags

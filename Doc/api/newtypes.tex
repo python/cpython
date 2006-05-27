@@ -883,8 +883,39 @@ The following three fields only exist if the
 \begin{cmemberdesc}{PyTypeObject}{traverseproc}{tp_traverse}
   An optional pointer to a traversal function for the garbage
   collector.  This is only used if the \constant{Py_TPFLAGS_HAVE_GC}
-  flag bit is set.  More information in section
-  \ref{supporting-cycle-detection} about garbage collection.
+  flag bit is set.  More information about Python's garbage collection
+  scheme can be found in section \ref{supporting-cycle-detection}.
+
+  The \member{tp_traverse} pointer is used by the garbage collector
+  to detect reference cycles. A typical implementation of a
+  \member{tp_traverse} function simply calls \cfunction{Py_VISIT()} on
+  each of the instance's members that are Python objects.  For exampe, this
+  is function \cfunction{local_traverse} from the \module{thread} extension
+  module:
+
+  \begin{verbatim}
+  static int
+  local_traverse(localobject *self, visitproc visit, void *arg)
+  {
+      Py_VISIT(self->args);
+      Py_VISIT(self->kw);
+      Py_VISIT(self->dict);
+      return 0;
+  }
+  \end{verbatim}
+
+  Note that \cfunction{Py_VISIT()} is called only on those members that can
+  participate in reference cycles.  Although there is also a
+  \samp{self->key} member, it can only be \NULL{} or a Python string and
+  therefore cannot be part of a reference cycle.
+
+  On the other hand, even if you know a member can never be part of a cycle,
+  as a debugging aid you may want to visit it anyway just so the
+  \module{gc} module's \function{get_referents()} function will include it.
+
+  Note that \cfunction{Py_VISIT()} requires the \var{visit} and \var{arg}
+  parameters to \cfunction{local_traverse} to have these specific names;
+  don't name them just anything.
 
   This field is inherited by subtypes together with \member{tp_clear}
   and the \constant{Py_TPFLAGS_HAVE_GC} flag bit: the flag bit,
@@ -896,8 +927,57 @@ The following three fields only exist if the
 \begin{cmemberdesc}{PyTypeObject}{inquiry}{tp_clear}
   An optional pointer to a clear function for the garbage collector.
   This is only used if the \constant{Py_TPFLAGS_HAVE_GC} flag bit is
-  set.  More information in section
-  \ref{supporting-cycle-detection} about garbage collection.
+  set.
+
+  The \member{tp_clear} member function is used to break reference
+  cycles in cyclic garbage detected by the garbage collector.  Taken
+  together, all \member{tp_clear} functions in the system must combine to
+  break all reference cycles.  This is subtle, and if in any doubt supply a
+  \member{tp_clear} function.  For example, the tuple type does not
+  implement a \member{tp_clear} function, because it's possible to prove
+  that no reference cycle can be composed entirely of tuples.  Therefore
+  the \member{tp_clear} functions of other types must be sufficient to
+  break any cycle containing a tuple.  This isn't immediately obvious, and
+  there's rarely a good reason to avoid implementing \member{tp_clear}.
+
+  Implementations of \member{tp_clear} should drop the instance's
+  references to those of its members that may be Python objects, and set
+  its pointers to those members to \NULL{}, as in the following example:
+
+  \begin{verbatim}
+  static int
+  local_clear(localobject *self)
+  {
+      Py_CLEAR(self->key);
+      Py_CLEAR(self->args);
+      Py_CLEAR(self->kw);
+      Py_CLEAR(self->dict);
+      return 0;
+  }
+  \end{verbatim}
+
+  The \cfunction{Py_CLEAR()} macro should be used, because clearing
+  references is delicate:  the reference to the contained object must not be
+  decremented until after the pointer to the contained object is set to
+  \NULL{}.  This is because decrementing the reference count may cause
+  the contained object to become trash, triggering a chain of reclamation
+  activity that may include invoking arbitrary Python code (due to
+  finalizers, or weakref callbacks, associated with the contained object).
+  If it's possible for such code to reference \var{self} again, it's
+  important that the pointer to the contained object be \NULL{} at that
+  time, so that \var{self} knows the contained object can no longer be
+  used.  The \cfunction{Py_CLEAR()} macro performs the operations in a
+  safe order.
+
+  Because the goal of \member{tp_clear} functions is to break reference
+  cycles, it's not necessary to clear contained objects like Python strings
+  or Python integers, which can't participate in reference cycles.
+  On the other hand, it may be convenient to clear all contained Python
+  objects, and write the type's \member{tp_dealloc} function to
+  invoke \member{tp_clear}.
+
+  More information about Python's garbage collection
+  scheme can be found in section \ref{supporting-cycle-detection}.
 
   This field is inherited by subtypes together with \member{tp_clear}
   and the \constant{Py_TPFLAGS_HAVE_GC} flag bit: the flag bit,
@@ -910,10 +990,10 @@ The following three fields only exist if the
   An optional pointer to the rich comparison function.
 
   The signature is the same as for \cfunction{PyObject_RichCompare()}.
-  The function should return \code{1} if the requested comparison
-  returns true, \code{0} if it returns false.  It should return
-  \code{-1} and set an exception condition when an error occurred
-  during the comparison.
+  The function should return the result of the comparison (usually
+  \code{Py_True} or \code{Py_False}).  If the comparison is undefined,
+  it must return \code{Py_NotImplemented}, if another error occurred
+  it must return \code{NULL} and set an exception condition.
 
   This field is inherited by subtypes together with
   \member{tp_compare} and \member{tp_hash}: a subtype inherits all

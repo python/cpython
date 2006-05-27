@@ -22,6 +22,10 @@ from Calls import *
 from Constructs import *
 from Lookups import *
 from Instances import *
+try:
+    from NewInstances import *
+except:
+    print "Cannot test new-style objects"
 from Lists import *
 from Tuples import *
 from Dict import *

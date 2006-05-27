@@ -14,7 +14,7 @@ class Test(unittest.TestCase):
     def test_checkretval(self):
 
         import _ctypes_test
-        dll = cdll.load(_ctypes_test.__file__)
+        dll = CDLL(_ctypes_test.__file__)
         self.failUnlessEqual(42, dll._testfunc_p_p(42))
 
         dll._testfunc_p_p.restype = CHECKED

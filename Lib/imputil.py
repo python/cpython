@@ -131,9 +131,12 @@ class ImportManager:
         if importer:
             return importer._finish_import(top_module, parts[1:], fromlist)
 
-        # Grrr, some people "import os.path"
+        # Grrr, some people "import os.path" or do "from os.path import ..."
         if len(parts) == 2 and hasattr(top_module, parts[1]):
-            return top_module
+            if fromlist:
+                return getattr(top_module, parts[1])
+            else:
+                return top_module
 
         # If the importer does not exist, then we have to bail. A missing
         # importer means that something else imported the module, and we have

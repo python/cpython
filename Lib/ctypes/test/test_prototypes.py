@@ -22,7 +22,7 @@ import unittest
 # In this case, there would have to be an additional reference to the argument...
 
 import _ctypes_test
-testdll = cdll.load(_ctypes_test.__file__)
+testdll = CDLL(_ctypes_test.__file__)
 
 # Return machine address `a` as a (possibly long) non-negative integer.
 # Starting with Python 2.5, id(anything) is always non-negative, and

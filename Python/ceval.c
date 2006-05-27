@@ -6,6 +6,9 @@
    XXX document it!
    */
 
+/* enable more aggressive intra-module optimizations, where available */
+#define PY_LOCAL_AGGRESSIVE
+
 #include "Python.h"
 
 #include "code.h"
@@ -16,7 +19,7 @@
 
 #include <ctype.h>
 
-#ifndef WITH_TSC 
+#ifndef WITH_TSC
 
 #define READ_TIMESTAMP(var)
 
@@ -41,7 +44,7 @@ ppc_getcounter(uint64 *v)
 	asm volatile ("mftbu %0" : "=r" (tbu2));
 	if (__builtin_expect(tbu != tbu2, 0)) goto loop;
 
-	/* The slightly peculiar way of writing the next lines is 
+	/* The slightly peculiar way of writing the next lines is
 	   compiled better by GCC than any other way I tried. */
 	((long*)(v))[0] = tbu;
 	((long*)(v))[1] = tb;
@@ -54,7 +57,7 @@ ppc_getcounter(uint64 *v)
 
 #endif
 
-void dump_tsc(int opcode, int ticked, uint64 inst0, uint64 inst1, 
+void dump_tsc(int opcode, int ticked, uint64 inst0, uint64 inst1,
 	      uint64 loop0, uint64 loop1, uint64 intr0, uint64 intr1)
 {
 	uint64 intr, inst, loop;
@@ -83,16 +86,16 @@ typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
 #ifdef WITH_TSC
-static PyObject *call_function(PyObject ***, int, uint64*, uint64*);
+static PyObject * call_function(PyObject ***, int, uint64*, uint64*);
 #else
-static PyObject *call_function(PyObject ***, int);
+static PyObject * call_function(PyObject ***, int);
 #endif
-static PyObject *fast_function(PyObject *, PyObject ***, int, int, int);
-static PyObject *do_call(PyObject *, PyObject ***, int, int);
-static PyObject *ext_do_call(PyObject *, PyObject ***, int, int, int);
-static PyObject *update_keyword_args(PyObject *, int, PyObject ***,PyObject *);
-static PyObject *update_star_args(int, int, PyObject *, PyObject ***);
-static PyObject *load_args(PyObject ***, int);
+static PyObject * fast_function(PyObject *, PyObject ***, int, int, int);
+static PyObject * do_call(PyObject *, PyObject ***, int, int);
+static PyObject * ext_do_call(PyObject *, PyObject ***, int, int, int);
+static PyObject * update_keyword_args(PyObject *, int, PyObject ***,PyObject *);
+static PyObject * update_star_args(int, int, PyObject *, PyObject ***);
+static PyObject * load_args(PyObject ***, int);
 #define CALL_FLAG_VAR 1
 #define CALL_FLAG_KW 2
 
@@ -108,19 +111,19 @@ static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
 static int maybe_call_line_trace(Py_tracefunc, PyObject *,
 				  PyFrameObject *, int *, int *, int *);
 
-static PyObject *apply_slice(PyObject *, PyObject *, PyObject *);
+static PyObject * apply_slice(PyObject *, PyObject *, PyObject *);
 static int assign_slice(PyObject *, PyObject *,
 			PyObject *, PyObject *);
-static PyObject *cmp_outcome(int, PyObject *, PyObject *);
-static PyObject *import_from(PyObject *, PyObject *);
+static PyObject * cmp_outcome(int, PyObject *, PyObject *);
+static PyObject * import_from(PyObject *, PyObject *);
 static int import_all_from(PyObject *, PyObject *);
-static PyObject *build_class(PyObject *, PyObject *, PyObject *);
+static PyObject * build_class(PyObject *, PyObject *, PyObject *);
 static int exec_statement(PyFrameObject *,
 			  PyObject *, PyObject *, PyObject *);
 static void set_exc_info(PyThreadState *, PyObject *, PyObject *, PyObject *);
 static void reset_exc_info(PyThreadState *);
 static void format_exc_check_arg(PyObject *, char *, PyObject *);
-static PyObject *string_concatenate(PyObject *, PyObject *,
+static PyObject * string_concatenate(PyObject *, PyObject *,
 				    PyFrameObject *, unsigned char *);
 
 #define NAME_ERROR_MSG \
@@ -559,7 +562,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
    inst0 -- beginning of switch statement for opcode dispatch
    inst1 -- end of switch statement (may be skipped)
    loop0 -- the top of the mainloop
-   loop1 -- place where control returns again to top of mainloop 
+   loop1 -- place where control returns again to top of mainloop
             (may be skipped)
    intr1 -- beginning of long interruption
    intr2 -- end of long interruption
@@ -654,11 +657,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #ifdef LLTRACE
 #define PUSH(v)		{ (void)(BASIC_PUSH(v), \
                                lltrace && prtrace(TOP(), "push")); \
-                               assert(STACK_LEVEL() <= f->f_stacksize); }
+                               assert(STACK_LEVEL() <= co->co_stacksize); }
 #define POP()		((void)(lltrace && prtrace(TOP(), "pop")), BASIC_POP())
 #define STACKADJ(n)	{ (void)(BASIC_STACKADJ(n), \
                                lltrace && prtrace(TOP(), "stackadj")); \
-                               assert(STACK_LEVEL() <= f->f_stacksize); }
+                               assert(STACK_LEVEL() <= co->co_stacksize); }
 #define EXT_POP(STACK_POINTER) (lltrace && prtrace(*(STACK_POINTER), "ext_pop"), *--(STACK_POINTER))
 #else
 #define PUSH(v)		BASIC_PUSH(v)
@@ -729,7 +732,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 	names = co->co_names;
 	consts = co->co_consts;
 	fastlocals = f->f_localsplus;
-	freevars = f->f_localsplus + f->f_nlocals;
+	freevars = f->f_localsplus + co->co_nlocals;
 	first_instr = (unsigned char*) PyString_AS_STRING(co->co_code);
 	/* An explanation is in order for the next line.
 
@@ -760,7 +763,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		why = WHY_EXCEPTION;
 		goto on_error;
 	}
-		
+
 	for (;;) {
 #ifdef WITH_TSC
 		if (inst1 == 0) {
@@ -780,7 +783,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		READ_TIMESTAMP(loop0);
 #endif
 		assert(stack_pointer >= f->f_valuestack); /* else underflow */
-		assert(STACK_LEVEL() <= f->f_stacksize);  /* else overflow */
+		assert(STACK_LEVEL() <= co->co_stacksize);  /* else overflow */
 
 		/* Do periodic things.  Doing this every time through
 		   the loop would add too much overhead, so we do it
@@ -1534,7 +1537,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			    /* XXX move into writeobject() ? */
 			    if (PyString_Check(v)) {
 				char *s = PyString_AS_STRING(v);
-				int len = PyString_GET_SIZE(v);
+				Py_ssize_t len = PyString_GET_SIZE(v);
 				if (len == 0 ||
 				    !isspace(Py_CHARMASK(s[len-1])) ||
 				    s[len-1] == ' ')
@@ -1543,7 +1546,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #ifdef Py_USING_UNICODE
 			    else if (PyUnicode_Check(v)) {
 				Py_UNICODE *s = PyUnicode_AS_UNICODE(v);
-				int len = PyUnicode_GET_SIZE(v);
+				Py_ssize_t len = PyUnicode_GET_SIZE(v);
 				if (len == 0 ||
 				    !Py_UNICODE_ISSPACE(s[len-1]) ||
 				    s[len-1] == ' ')
@@ -1890,17 +1893,17 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			/* Don't stomp existing exception */
 			if (PyErr_Occurred())
 				break;
-			if (oparg < f->f_ncells) {
-				v = PyTuple_GetItem(co->co_cellvars,
+			if (oparg < PyTuple_GET_SIZE(co->co_cellvars)) {
+				v = PyTuple_GET_ITEM(co->co_cellvars,
 						       oparg);
 			       format_exc_check_arg(
 				       PyExc_UnboundLocalError,
 				       UNBOUNDLOCAL_ERROR_MSG,
 				       v);
 			} else {
-			       v = PyTuple_GetItem(
+			       v = PyTuple_GET_ITEM(
 					      co->co_freevars,
-					      oparg - f->f_ncells);
+					      oparg - PyTuple_GET_SIZE(co->co_cellvars));
 			       format_exc_check_arg(
 				       PyExc_NameError,
 				       UNBOUNDFREE_ERROR_MSG,
@@ -2147,6 +2150,10 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 		case CONTINUE_LOOP:
 			retval = PyInt_FromLong(oparg);
+			if (!retval) {
+				x = NULL;
+				break;
+			}
 			why = WHY_CONTINUE;
 			goto fast_block_end;
 
@@ -2180,7 +2187,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			   re-raising the exception.  (But non-local gotos
 			   should still be resumed.)
 			*/
-			
+
 			x = TOP();
 			u = SECOND();
 			if (PyInt_Check(u) || u == Py_None) {
@@ -2543,7 +2550,12 @@ fast_yield:
 		}
 	}
 
-	reset_exc_info(tstate);
+	if (tstate->frame->f_exc_type != NULL)
+		reset_exc_info(tstate);
+	else {
+		assert(tstate->frame->f_exc_value == NULL);
+		assert(tstate->frame->f_exc_traceback == NULL);
+	}
 
 	/* pop frame */
     exit_eval_frame:
@@ -2580,7 +2592,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		return NULL;
 
 	fastlocals = f->f_localsplus;
-	freevars = f->f_localsplus + f->f_nlocals;
+	freevars = f->f_localsplus + co->co_nlocals;
 
 	if (co->co_argcount > 0 ||
 	    co->co_flags & (CO_VARARGS | CO_VARKEYWORDS)) {
@@ -2716,7 +2728,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	}
 	/* Allocate and initialize storage for cell vars, and copy free
 	   vars into frame.  This isn't too efficient right now. */
-	if (f->f_ncells) {
+	if (PyTuple_GET_SIZE(co->co_cellvars)) {
 		int i = 0, j = 0, nargs, found;
 		char *cellname, *argname;
 		PyObject *c;
@@ -2734,7 +2746,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		   that are arguments at the beginning of the cellvars
 		   list so that we can march over it more efficiently?
 		*/
-		for (i = 0; i < f->f_ncells; ++i) {
+		for (i = 0; i < PyTuple_GET_SIZE(co->co_cellvars); ++i) {
 			cellname = PyString_AS_STRING(
 				PyTuple_GET_ITEM(co->co_cellvars, i));
 			found = 0;
@@ -2745,7 +2757,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 					c = PyCell_New(GETLOCAL(j));
 					if (c == NULL)
 						goto fail;
-					GETLOCAL(f->f_nlocals + i) = c;
+					GETLOCAL(co->co_nlocals + i) = c;
 					found = 1;
 					break;
 				}
@@ -2754,16 +2766,16 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				c = PyCell_New(NULL);
 				if (c == NULL)
 					goto fail;
-				SETLOCAL(f->f_nlocals + i, c);
+				SETLOCAL(co->co_nlocals + i, c);
 			}
 		}
 	}
-	if (f->f_nfreevars) {
+	if (PyTuple_GET_SIZE(co->co_freevars)) {
 		int i;
-		for (i = 0; i < f->f_nfreevars; ++i) {
+		for (i = 0; i < PyTuple_GET_SIZE(co->co_freevars); ++i) {
 			PyObject *o = PyTuple_GET_ITEM(closure, i);
 			Py_INCREF(o);
-			freevars[f->f_ncells + i] = o;
+			freevars[PyTuple_GET_SIZE(co->co_cellvars) + i] = o;
 		}
 	}
 
@@ -2808,6 +2820,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 - Once an exception is caught by an except clause, it is transferred
   from tstate->curexc_ZZZ to tstate->exc_ZZZ, from which sys.exc_info()
   can pick it up.  This is the primary task of set_exc_info().
+  XXX That can't be right:  set_exc_info() doesn't look at tstate->curexc_ZZZ.
 
 - Now let me explain the complicated dance with frame->f_exc_ZZZ.
 
@@ -2862,35 +2875,33 @@ static void
 set_exc_info(PyThreadState *tstate,
 	     PyObject *type, PyObject *value, PyObject *tb)
 {
-	PyFrameObject *frame;
+	PyFrameObject *frame = tstate->frame;
 	PyObject *tmp_type, *tmp_value, *tmp_tb;
 
-	frame = tstate->frame;
+	assert(type != NULL);
+	assert(frame != NULL);
 	if (frame->f_exc_type == NULL) {
-		/* This frame didn't catch an exception before */
-		/* Save previous exception of this thread in this frame */
+		assert(frame->f_exc_value == NULL);
+		assert(frame->f_exc_traceback == NULL);
+		/* This frame didn't catch an exception before. */
+		/* Save previous exception of this thread in this frame. */
 		if (tstate->exc_type == NULL) {
+			/* XXX Why is this set to Py_None? */
 			Py_INCREF(Py_None);
 			tstate->exc_type = Py_None;
 		}
-		tmp_type = frame->f_exc_type;
-		tmp_value = frame->f_exc_value;
-		tmp_tb = frame->f_exc_traceback;
-		Py_XINCREF(tstate->exc_type);
+		Py_INCREF(tstate->exc_type);
 		Py_XINCREF(tstate->exc_value);
 		Py_XINCREF(tstate->exc_traceback);
 		frame->f_exc_type = tstate->exc_type;
 		frame->f_exc_value = tstate->exc_value;
 		frame->f_exc_traceback = tstate->exc_traceback;
-		Py_XDECREF(tmp_type);
-		Py_XDECREF(tmp_value);
-		Py_XDECREF(tmp_tb);
 	}
-	/* Set new exception for this thread */
+	/* Set new exception for this thread. */
 	tmp_type = tstate->exc_type;
 	tmp_value = tstate->exc_value;
 	tmp_tb = tstate->exc_traceback;
-	Py_XINCREF(type);
+	Py_INCREF(type);
 	Py_XINCREF(value);
 	Py_XINCREF(tb);
 	tstate->exc_type = type;
@@ -2910,33 +2921,42 @@ reset_exc_info(PyThreadState *tstate)
 {
 	PyFrameObject *frame;
 	PyObject *tmp_type, *tmp_value, *tmp_tb;
+
+	/* It's a precondition that the thread state's frame caught an
+	 * exception -- verify in a debug build.
+	 */
+	assert(tstate != NULL);
 	frame = tstate->frame;
-	if (frame->f_exc_type != NULL) {
-		/* This frame caught an exception */
-		tmp_type = tstate->exc_type;
-		tmp_value = tstate->exc_value;
-		tmp_tb = tstate->exc_traceback;
-		Py_XINCREF(frame->f_exc_type);
-		Py_XINCREF(frame->f_exc_value);
-		Py_XINCREF(frame->f_exc_traceback);
-		tstate->exc_type = frame->f_exc_type;
-		tstate->exc_value = frame->f_exc_value;
-		tstate->exc_traceback = frame->f_exc_traceback;
-		Py_XDECREF(tmp_type);
-		Py_XDECREF(tmp_value);
-		Py_XDECREF(tmp_tb);
-		/* For b/w compatibility */
-		PySys_SetObject("exc_type", frame->f_exc_type);
-		PySys_SetObject("exc_value", frame->f_exc_value);
-		PySys_SetObject("exc_traceback", frame->f_exc_traceback);
-	}
+	assert(frame != NULL);
+	assert(frame->f_exc_type != NULL);
+
+	/* Copy the frame's exception info back to the thread state. */
+	tmp_type = tstate->exc_type;
+	tmp_value = tstate->exc_value;
+	tmp_tb = tstate->exc_traceback;
+	Py_INCREF(frame->f_exc_type);
+	Py_XINCREF(frame->f_exc_value);
+	Py_XINCREF(frame->f_exc_traceback);
+	tstate->exc_type = frame->f_exc_type;
+	tstate->exc_value = frame->f_exc_value;
+	tstate->exc_traceback = frame->f_exc_traceback;
+	Py_XDECREF(tmp_type);
+	Py_XDECREF(tmp_value);
+	Py_XDECREF(tmp_tb);
+
+	/* For b/w compatibility */
+	PySys_SetObject("exc_type", frame->f_exc_type);
+	PySys_SetObject("exc_value", frame->f_exc_value);
+	PySys_SetObject("exc_traceback", frame->f_exc_traceback);
+
+	/* Clear the frame's exception info. */
 	tmp_type = frame->f_exc_type;
 	tmp_value = frame->f_exc_value;
 	tmp_tb = frame->f_exc_traceback;
 	frame->f_exc_type = NULL;
 	frame->f_exc_value = NULL;
 	frame->f_exc_traceback = NULL;
-	Py_XDECREF(tmp_type);
+	Py_DECREF(tmp_type);
 	Py_XDECREF(tmp_value);
 	Py_XDECREF(tmp_tb);
 }
@@ -3800,7 +3820,7 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 		Py_ssize_t x;
 		if (PyInt_Check(v)) {
 			x = PyInt_AsSsize_t(v);
-		} 
+		}
 		else if (v->ob_type->tp_as_number &&
 			 PyType_HasFeature(v->ob_type, Py_TPFLAGS_HAVE_INDEX)
 			 && v->ob_type->tp_as_number->nb_index) {
@@ -4015,10 +4035,10 @@ build_class(PyObject *methods, PyObject *bases, PyObject *name)
 			metaclass = (PyObject *) &PyType_Type;
 		Py_INCREF(metaclass);
 	}
-	result = PyObject_CallFunction(metaclass, "OOO", name, bases, methods);
+	result = PyObject_CallFunctionObjArgs(metaclass, name, bases, methods, NULL);
 	Py_DECREF(metaclass);
 	if (result == NULL && PyErr_ExceptionMatches(PyExc_TypeError)) {
-		/* A type error here likely means that the user passed 
+		/* A type error here likely means that the user passed
 		   in a base that was not a class (such the random module
 		   instead of the random.random type).  Help them out with
 		   by augmenting the error message with more information.*/
@@ -4158,7 +4178,7 @@ string_concatenate(PyObject *v, PyObject *w,
 {
 	/* This function implements 'variable += expr' when both arguments
 	   are strings. */
-	
+
 	if (v->ob_refcnt == 2) {
 		/* In the common case, there are 2 references to the value
 		 * stored in 'variable' when the += is performed: one on the
@@ -4176,7 +4196,7 @@ string_concatenate(PyObject *v, PyObject *w,
 		}
 		case STORE_DEREF:
 		{
-			PyObject **freevars = f->f_localsplus + f->f_nlocals;
+			PyObject **freevars = f->f_localsplus + f->f_code->co_nlocals;
 			PyObject *c = freevars[PEEKARG()];
 			if (PyCell_GET(c) == v)
 				PyCell_Set(c, NULL);

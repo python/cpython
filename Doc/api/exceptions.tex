@@ -132,13 +132,32 @@ error indicator for each thread.
   codes, similar to \cfunction{printf()}. The \code{width.precision}
   before a format code is parsed, but the width part is ignored.
 
-  \begin{tableii}{c|l}{character}{Character}{Meaning}
-    \lineii{c}{Character, as an \ctype{int} parameter}
-    \lineii{d}{Number in decimal, as an \ctype{int} parameter}
-    \lineii{x}{Number in hexadecimal, as an \ctype{int} parameter}
-    \lineii{s}{A string, as a \ctype{char *} parameter}
-    \lineii{p}{A hex pointer, as a \ctype{void *} parameter}
-  \end{tableii}
+  % This should be exactly the same as the table in PyString_FromFormat.
+  % One should just refer to the other.
+
+  % The descriptions for %zd and %zu are wrong, but the truth is complicated
+  % because not all compilers support the %z width modifier -- we fake it
+  % when necessary via interpolating PY_FORMAT_SIZE_T.
+
+  % %u, %lu, %zu should have "new in Python 2.5" blurbs.
+
+  \begin{tableiii}{l|l|l}{member}{Format Characters}{Type}{Comment}
+    \lineiii{\%\%}{\emph{n/a}}{The literal \% character.}
+    \lineiii{\%c}{int}{A single character, represented as an C int.}
+    \lineiii{\%d}{int}{Exactly equivalent to \code{printf("\%d")}.}
+    \lineiii{\%u}{unsigned int}{Exactly equivalent to \code{printf("\%u")}.}
+    \lineiii{\%ld}{long}{Exactly equivalent to \code{printf("\%ld")}.}
+    \lineiii{\%lu}{unsigned long}{Exactly equivalent to \code{printf("\%lu")}.}
+    \lineiii{\%zd}{Py_ssize_t}{Exactly equivalent to \code{printf("\%zd")}.}
+    \lineiii{\%zu}{size_t}{Exactly equivalent to \code{printf("\%zu")}.}
+    \lineiii{\%i}{int}{Exactly equivalent to \code{printf("\%i")}.}
+    \lineiii{\%x}{int}{Exactly equivalent to \code{printf("\%x")}.}
+    \lineiii{\%s}{char*}{A null-terminated C character array.}
+    \lineiii{\%p}{void*}{The hex representation of a C pointer.
+	Mostly equivalent to \code{printf("\%p")} except that it is
+	guaranteed to start with the literal \code{0x} regardless of
+	what the platform's \code{printf} yields.}
+  \end{tableiii}
 
   An unrecognized format character causes all the rest of the format
   string to be copied as-is to the result string, and any extra
@@ -272,8 +291,8 @@ error indicator for each thread.
   command line documentation.  There is no C API for warning control.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyErr_WarnExplicit}{PyObject *category, 
-                const char *message, const char *filename, int lineno, 
+\begin{cfuncdesc}{int}{PyErr_WarnExplicit}{PyObject *category,
+                const char *message, const char *filename, int lineno,
                 const char *module, PyObject *registry}
   Issue a warning message with explicit control over all warning
   attributes.  This is a straightforward wrapper around the Python
@@ -314,12 +333,14 @@ error indicator for each thread.
   The \var{name} argument must be the name of the new exception, a C
   string of the form \code{module.class}.  The \var{base} and
   \var{dict} arguments are normally \NULL.  This creates a class
-  object derived from the root for all exceptions, the built-in name
-  \exception{Exception} (accessible in C as \cdata{PyExc_Exception}).
+  object derived from \exception{Exception} (accessible in C as
+  \cdata{PyExc_Exception}).
+
   The \member{__module__} attribute of the new class is set to the
   first part (up to the last dot) of the \var{name} argument, and the
   class name is set to the last part (after the last dot).  The
-  \var{base} argument can be used to specify an alternate base class.
+  \var{base} argument can be used to specify alternate base classes;
+  it can either be only one class or a tuple of classes.
   The \var{dict} argument can be used to specify a dictionary of class
   variables and methods.
 \end{cfuncdesc}
@@ -399,5 +420,5 @@ are derived from \exception{BaseException}.
 \withsubitem{(built-in exception)}{\ttindex{BaseException}}
 
 String exceptions are still supported in the interpreter to allow
-existing code to run unmodified, but this will also change in a future 
+existing code to run unmodified, but this will also change in a future
 release.

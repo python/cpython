@@ -118,6 +118,18 @@ class WeakValueDictionary(UserDict.UserDict):
     def __iter__(self):
         return self.data.iterkeys()
 
+    def itervaluerefs(self):
+        """Return an iterator that yields the weak references to the values.
+
+        The references are not guaranteed to be 'live' at the time
+        they are used, so the result of calling the references needs
+        to be checked before being used.  This can be used to avoid
+        creating references that will cause the garbage collector to
+        keep the values around longer than needed.
+
+        """
+        return self.data.itervalues()
+
     def itervalues(self):
         for wr in self.data.itervalues():
             obj = wr()
@@ -161,6 +173,18 @@ class WeakValueDictionary(UserDict.UserDict):
                 d[key] = KeyedRef(o, self._remove, key)
         if len(kwargs):
             self.update(kwargs)
+
+    def valuerefs(self):
+        """Return a list of weak references to the values.
+
+        The references are not guaranteed to be 'live' at the time
+        they are used, so the result of calling the references needs
+        to be checked before being used.  This can be used to avoid
+        creating references that will cause the garbage collector to
+        keep the values around longer than needed.
+
+        """
+        return self.data.values()
 
     def values(self):
         L = []
@@ -263,6 +287,18 @@ class WeakKeyDictionary(UserDict.UserDict):
             if key is not None:
                 yield key, value
 
+    def iterkeyrefs(self):
+        """Return an iterator that yields the weak references to the keys.
+
+        The references are not guaranteed to be 'live' at the time
+        they are used, so the result of calling the references needs
+        to be checked before being used.  This can be used to avoid
+        creating references that will cause the garbage collector to
+        keep the keys around longer than needed.
+
+        """
+        return self.data.iterkeys()
+
     def iterkeys(self):
         for wr in self.data.iterkeys():
             obj = wr()
@@ -274,6 +310,18 @@ class WeakKeyDictionary(UserDict.UserDict):
 
     def itervalues(self):
         return self.data.itervalues()
+
+    def keyrefs(self):
+        """Return a list of weak references to the keys.
+
+        The references are not guaranteed to be 'live' at the time
+        they are used, so the result of calling the references needs
+        to be checked before being used.  This can be used to avoid
+        creating references that will cause the garbage collector to
+        keep the keys around longer than needed.
+
+        """
+        return self.data.keys()
 
     def keys(self):
         L = []

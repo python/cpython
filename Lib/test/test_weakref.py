@@ -769,9 +769,53 @@ class MappingTestCase(TestBase):
         dict, objects = self.make_weak_keyed_dict()
         self.check_iters(dict)
 
+        # Test keyrefs()
+        refs = dict.keyrefs()
+        self.assertEqual(len(refs), len(objects))
+        objects2 = list(objects)
+        for wr in refs:
+            ob = wr()
+            self.assert_(dict.has_key(ob))
+            self.assert_(ob in dict)
+            self.assertEqual(ob.arg, dict[ob])
+            objects2.remove(ob)
+        self.assertEqual(len(objects2), 0)
+
+        # Test iterkeyrefs()
+        objects2 = list(objects)
+        self.assertEqual(len(list(dict.iterkeyrefs())), len(objects))
+        for wr in dict.iterkeyrefs():
+            ob = wr()
+            self.assert_(dict.has_key(ob))
+            self.assert_(ob in dict)
+            self.assertEqual(ob.arg, dict[ob])
+            objects2.remove(ob)
+        self.assertEqual(len(objects2), 0)
+
     def test_weak_valued_iters(self):
         dict, objects = self.make_weak_valued_dict()
         self.check_iters(dict)
+
+        # Test valuerefs()
+        refs = dict.valuerefs()
+        self.assertEqual(len(refs), len(objects))
+        objects2 = list(objects)
+        for wr in refs:
+            ob = wr()
+            self.assertEqual(ob, dict[ob.arg])
+            self.assertEqual(ob.arg, dict[ob.arg].arg)
+            objects2.remove(ob)
+        self.assertEqual(len(objects2), 0)
+
+        # Test itervaluerefs()
+        objects2 = list(objects)
+        self.assertEqual(len(list(dict.itervaluerefs())), len(objects))
+        for wr in dict.itervaluerefs():
+            ob = wr()
+            self.assertEqual(ob, dict[ob.arg])
+            self.assertEqual(ob.arg, dict[ob.arg].arg)
+            objects2.remove(ob)
+        self.assertEqual(len(objects2), 0)
 
     def check_iters(self, dict):
         # item iterator:

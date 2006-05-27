@@ -26,6 +26,7 @@ class CompilerTest(unittest.TestCase):
                     next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
                     print >>sys.__stdout__, \
                        '  testCompileLibrary still working, be patient...'
+                    sys.__stdout__.flush()
 
                 if not basename.endswith(".py"):
                     continue
@@ -54,6 +55,9 @@ class CompilerTest(unittest.TestCase):
 
     def testYieldExpr(self):
         compiler.compile("def g(): yield\n\n", "<string>", "exec")
+
+    def testDefaultArgs(self):
+        self.assertRaises(SyntaxError, compiler.parse, "def foo(a=1, b): pass")
 
     def testLineNo(self):
         # Test that all nodes except Module have a correct lineno attribute.

@@ -170,7 +170,7 @@ bootstrap(void *call)
 long
 PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
-	uintptr_t rv;
+	Py_uintptr_t rv;
 	callobj obj;
 
 	dprintf(("%ld: PyThread_start_new_thread called\n",
@@ -186,7 +186,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 		return -1;
 
 	rv = _beginthread(bootstrap, 0, &obj); /* use default stack size */
-	if (rv == (uintptr_t)-1) {
+	if (rv == (Py_uintptr_t)-1) {
 		/* I've seen errno == EAGAIN here, which means "there are
 		 * too many threads".
 		 */

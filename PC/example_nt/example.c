@@ -13,7 +13,7 @@ static PyMethodDef example_methods[] = {
 	{NULL, NULL}
 };
 
-void
+PyMODINIT_FUNC
 initexample(void)
 {
 	Py_InitModule("example", example_methods);

@@ -158,7 +158,7 @@ that are more efficient and convenient.
 Encodings don't have to handle every possible Unicode character, and
 most encodings don't.  For example, Python's default encoding is the
 'ascii' encoding.  The rules for converting a Unicode string into the
-ASCII encoding are are simple; for each code point:
+ASCII encoding are simple; for each code point:
 
 1. If the code point is <128, each byte is the same as the value of the 
    code point.
@@ -721,7 +721,7 @@ Revision History and Acknowledgements
 Thanks to the following people who have noted errors or offered
 suggestions on this article: Nicholas Bastin, 
 Marius Gedminas, Kent Johnson, Ken Krugler,
-Marc-André Lemburg, Martin von Löwis.
+Marc-André Lemburg, Martin von Löwis, Chad Whitacre.
 
 Version 1.0: posted August 5 2005.
 

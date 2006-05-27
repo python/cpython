@@ -20,7 +20,7 @@ class PointersTestCase(unittest.TestCase):
         self.failUnlessRaises(TypeError, A, c_ulong(33))
 
     def test_pass_pointers(self):
-        dll = cdll.load(_ctypes_test.__file__)
+        dll = CDLL(_ctypes_test.__file__)
         func = dll._testfunc_p_p
         func.restype = c_long
 
@@ -35,7 +35,7 @@ class PointersTestCase(unittest.TestCase):
         self.failUnlessEqual(res[0], 12345678)
 
     def test_change_pointers(self):
-        dll = cdll.load(_ctypes_test.__file__)
+        dll = CDLL(_ctypes_test.__file__)
         func = dll._testfunc_p_p
 
         i = c_int(87654)
@@ -70,7 +70,7 @@ class PointersTestCase(unittest.TestCase):
             return 0
         callback = PROTOTYPE(func)
 
-        dll = cdll.load(_ctypes_test.__file__)
+        dll = CDLL(_ctypes_test.__file__)
         # This function expects a function pointer,
         # and calls this with an integer pointer as parameter.
         # The int pointer points to a table containing the numbers 1..10
@@ -133,30 +133,9 @@ class PointersTestCase(unittest.TestCase):
         self.failUnlessEqual(p[0], 42)
         self.failUnlessEqual(p.contents.value, 42)
 
-    def test_incomplete(self):
-        lpcell = POINTER("cell")
-        class cell(Structure):
-            _fields_ = [("value", c_int),
-                        ("next", lpcell)]
-        SetPointerType(lpcell, cell)
-
-        # Make a structure containing a pointer to itself:
-        c = cell()
-        c.value = 42
-        c.next = pointer(c)
-
-        result = []
-        for i in range(8):
-            result.append(c.value)
-            c = c.next[0]
-        self.failUnlessEqual(result, [42] * 8)
-
-        from ctypes import _pointer_type_cache
-        del _pointer_type_cache[cell]
-
     def test_charpp( self ):
         """Test that a character pointer-to-pointer is correctly passed"""
-        dll = cdll.load(_ctypes_test.__file__)
+        dll = CDLL(_ctypes_test.__file__)
         func = dll._testfunc_c_p_p
         func.restype = c_char_p
         argv = (c_char_p * 2)()

@@ -155,6 +155,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/required_2.py \
 	lib/libtempfile.tex \
 	lib/liberrno.tex \
+	lib/libctypes.tex \
 	lib/libsomeos.tex \
 	lib/libsignal.tex \
 	lib/libsocket.tex \
@@ -179,6 +180,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libprofile.tex \
 	lib/libhotshot.tex \
 	lib/libtimeit.tex \
+	lib/libtrace.tex \
 	lib/libcgi.tex \
 	lib/libcgitb.tex \
 	lib/liburllib.tex \
@@ -306,6 +308,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libgetpass.tex \
 	lib/libshutil.tex \
 	lib/librepr.tex \
+	lib/libmsilib.tex \
 	lib/libmsvcrt.tex \
 	lib/libwinreg.tex \
 	lib/libwinsound.tex \
@@ -348,7 +351,8 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libturtle.tex \
 	lib/libtarfile.tex \
 	lib/libcsv.tex \
-	lib/libcfgparser.tex
+	lib/libcfgparser.tex \
+	lib/libsqlite3.tex
 
 # LaTeX source files for Macintosh Library Modules.
 MACFILES= $(HOWTOSTYLES) $(INDEXSTYLES) $(COMMONTEX) \

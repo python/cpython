@@ -17,6 +17,36 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- 2006 Summer of Code entries: Matt Fleming was added on 25 May 2006
+  by AMK; he'll be working on enhancing the Python debugger.  Jackilyn
+  Hoxworth was added on 25 May 2005 by AMK; she'll be adding logging
+  to the standard library.  SoC developers are expected to work
+  primarily in nondist/sandbox or on a branch of their own, and will
+  have their work reviewed before changes are accepted into the trunk.
+
+- SVN access granted to the "Need for Speed" Iceland sprint attendees,
+  between May 17 and 21, 2006, by Tim Peters.  All work is to be done
+  in new sandbox projects or on new branches, with merging to the
+  trunk as approved:
+
+  Andrew Dalke
+  Christian Tismer
+  Jack Diederich
+  John Benediktsson
+  Kristján V. Jónsson
+  Martin Blais
+  Richard Emslie
+  Richard Jones
+  Runar Petursson
+  Steve Holden
+  Richard M. Tew
+
+- Steven Bethard was given SVN access on 27 Apr 2006 by DJG, for PEP
+  update access.
+
+- Talin was given SVN access on 27 Apr 2006 by DJG, for PEP update
+  access.
+
 - George Yoshida (SF name "quiver") added to the SourceForge Python
   project 14 Apr 2006, by Tim Peters, as a tracker admin.  See
   contemporaneous python-checkins thread with the unlikely Subject:
@@ -34,7 +64,7 @@ Permissions History
 
 - Added two new developers for the Summer of Code project. 8 July 2005
   by RDH.  Andrew Kuchling will be mentoring Gregory K Johnson for a
-  project to enchance mailbox.  Brett Cannon requested access for Flovis
+  project to enhance mailbox.  Brett Cannon requested access for Flovis
   Bruynooghe (sirolf) to work on pstats, profile, and hotshot.  Both users
   are expected to work primarily in nondist/sandbox and have their work
   reviewed before making updates to active code.
@@ -102,3 +132,4 @@ GvR:  Guido van Rossum
 NCN:  Neal Norwitz
 RDH:  Raymond Hettinger
 TGP:  Tim Peters
+DJG:  David Goodger

@@ -366,8 +366,8 @@ def _init_posix():
     # MACOSX_DEPLOYMENT_TARGET: configure bases some choices on it so
     # it needs to be compatible.
     # If it isn't set we set it to the configure-time value
-    if sys.platform == 'darwin' and g.has_key('CONFIGURE_MACOSX_DEPLOYMENT_TARGET'):
-        cfg_target = g['CONFIGURE_MACOSX_DEPLOYMENT_TARGET']
+    if sys.platform == 'darwin' and g.has_key('MACOSX_DEPLOYMENT_TARGET'):
+        cfg_target = g['MACOSX_DEPLOYMENT_TARGET']
         cur_target = os.getenv('MACOSX_DEPLOYMENT_TARGET', '')
         if cur_target == '':
             cur_target = cfg_target
@@ -499,6 +499,21 @@ def get_config_vars(*args):
         # Distutils.
         _config_vars['prefix'] = PREFIX
         _config_vars['exec_prefix'] = EXEC_PREFIX
+
+        if sys.platform == 'darwin':
+            kernel_version = os.uname()[2] # Kernel version (8.4.3)
+            major_version = int(kernel_version.split('.')[0])
+
+            if major_version < 8:
+                # On Mac OS X before 10.4, check if -arch and -isysroot
+                # are in CFLAGS or LDFLAGS and remove them if they are.
+                # This is needed when building extensions on a 10.3 system
+                # using a universal build of python.
+                for key in ('LDFLAGS', 'BASECFLAGS'):
+                    flags = _config_vars[key]
+                    flags = re.sub('-arch\s+\w+\s', ' ', flags)
+                    flags = re.sub('-isysroot [^ \t]* ', ' ', flags)
+                    _config_vars[key] = flags
 
     if args:
         vals = []

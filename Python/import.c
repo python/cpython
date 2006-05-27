@@ -1044,7 +1044,7 @@ get_path_importer(PyObject *path_importer_cache, PyObject *path_hooks,
 		PyObject *hook = PyList_GetItem(path_hooks, j);
 		if (hook == NULL)
 			return NULL;
-		importer = PyObject_CallFunction(hook, "O", p);
+		importer = PyObject_CallFunctionObjArgs(hook, p, NULL);
 		if (importer != NULL)
 			break;
 
@@ -1241,7 +1241,33 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 			if (importer == NULL)
 				return NULL;
 			/* Note: importer is a borrowed reference */
-			if (importer != Py_None) {
+			if (importer == Py_False) {
+				/* Cached as not being a valid dir. */
+				Py_XDECREF(copy);
+				continue;
+			}
+			else if (importer == Py_True) {
+				/* Cached as being a valid dir, so just
+				 * continue below. */
+			}
+			else if (importer == Py_None) {
+				/* No importer was found, so it has to be a file.
+				 * Check if the directory is valid. */
+#ifdef HAVE_STAT
+				if (stat(buf, &statbuf) != 0) {
+					/* Directory does not exist. */
+					PyDict_SetItem(path_importer_cache,
+					               v, Py_False);
+					Py_XDECREF(copy);
+					continue;
+				} else {
+					PyDict_SetItem(path_importer_cache,
+					               v, Py_True);
+				}
+#endif
+			}
+			else {
+				/* A real import hook importer was found. */
 				PyObject *loader;
 				loader = PyObject_CallMethod(importer,
 							     "find_module",
@@ -1254,9 +1280,11 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 					return &importhookdescr;
 				}
 				Py_DECREF(loader);
+				Py_XDECREF(copy);
+				continue;
 			}
-			/* no hook was successful, use builtin import */
 		}
+		/* no hook was found, use builtin import */
 
 		if (len > 0 && buf[len-1] != SEP
 #ifdef ALTSEP
@@ -1272,19 +1300,42 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 #ifdef HAVE_STAT
 		if (stat(buf, &statbuf) == 0 &&         /* it exists */
 		    S_ISDIR(statbuf.st_mode) &&         /* it's a directory */
-		    find_init_module(buf) &&            /* it has __init__.py */
-		    case_ok(buf, len, namelen, name)) { /* and case matches */
-			Py_XDECREF(copy);
-			return &fd_package;
+		    case_ok(buf, len, namelen, name)) { /* case matches */
+			if (find_init_module(buf)) { /* and has __init__.py */
+				Py_XDECREF(copy);
+				return &fd_package;
+			}
+			else {
+				char warnstr[MAXPATHLEN+80];
+				sprintf(warnstr, "Not importing directory "
+					"'%.*s': missing __init__.py", 
+					MAXPATHLEN, buf);
+				if (PyErr_Warn(PyExc_ImportWarning,
+					       warnstr)) {
+					Py_XDECREF(copy);
+					return NULL;
+				}
+			}
 		}
 #else
 		/* XXX How are you going to test for directories? */
 #ifdef RISCOS
 		if (isdir(buf) &&
-		    find_init_module(buf) &&
 		    case_ok(buf, len, namelen, name)) {
-			Py_XDECREF(copy);
-			return &fd_package;
+			if (find_init_module(buf)) {
+				Py_XDECREF(copy);
+				return &fd_package;
+			}
+			else {
+				char warnstr[MAXPATHLEN+80];
+				sprintf(warnstr, "Not importing directory "
+					"'%.*s': missing __init__.py", 
+					MAXPATHLEN, buf);
+				if (PyErr_Warn(PyExc_ImportWarning,
+					       warnstr)) {
+					Py_XDECREF(copy);
+					return NULL;
+				}
 		}
 #endif
 #endif
@@ -2477,8 +2528,8 @@ PyImport_Import(PyObject *module_name)
 		goto err;
 
 	/* Call the _import__ function with the proper argument list */
-	r = PyObject_CallFunction(import, "OOOO",
-				  module_name, globals, globals, silly_list);
+	r = PyObject_CallFunctionObjArgs(import, module_name, globals,
+					 globals, silly_list, NULL);
 
   err:
 	Py_XDECREF(globals);

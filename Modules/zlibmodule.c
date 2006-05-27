@@ -653,6 +653,108 @@ PyZlib_flush(compobject *self, PyObject *args)
     return RetVal;
 }
 
+PyDoc_STRVAR(comp_copy__doc__,
+"copy() -- Return a copy of the compression object.");
+
+static PyObject *
+PyZlib_copy(compobject *self)
+{
+    compobject *retval = NULL;
+    int err;
+
+    retval = newcompobject(&Comptype);
+    if (!retval) return NULL;
+
+    /* Copy the zstream state
+     * We use ENTER_ZLIB / LEAVE_ZLIB to make this thread-safe
+     */
+    ENTER_ZLIB
+    err = deflateCopy(&retval->zst, &self->zst);
+    switch(err) {
+    case(Z_OK):
+        break;
+    case(Z_STREAM_ERROR):
+        PyErr_SetString(PyExc_ValueError, "Inconsistent stream state");
+        goto error;
+    case(Z_MEM_ERROR):
+        PyErr_SetString(PyExc_MemoryError,
+                        "Can't allocate memory for compression object");
+        goto error;
+    default:
+        zlib_error(self->zst, err, "while copying compression object");
+        goto error;
+    }
+
+    Py_INCREF(self->unused_data);
+    Py_INCREF(self->unconsumed_tail);
+    Py_XDECREF(retval->unused_data);
+    Py_XDECREF(retval->unconsumed_tail);
+    retval->unused_data = self->unused_data;
+    retval->unconsumed_tail = self->unconsumed_tail;
+
+    /* Mark it as being initialized */
+    retval->is_initialised = 1;
+
+    LEAVE_ZLIB
+    return (PyObject *)retval;
+
+error:
+    LEAVE_ZLIB
+    Py_XDECREF(retval);
+    return NULL;
+}
+
+PyDoc_STRVAR(decomp_copy__doc__,
+"copy() -- Return a copy of the decompression object.");
+
+static PyObject *
+PyZlib_uncopy(compobject *self)
+{
+    compobject *retval = NULL;
+    int err;
+
+    retval = newcompobject(&Decomptype);
+    if (!retval) return NULL;
+
+    /* Copy the zstream state
+     * We use ENTER_ZLIB / LEAVE_ZLIB to make this thread-safe
+     */
+    ENTER_ZLIB
+    err = inflateCopy(&retval->zst, &self->zst);
+    switch(err) {
+    case(Z_OK):
+        break;
+    case(Z_STREAM_ERROR):
+        PyErr_SetString(PyExc_ValueError, "Inconsistent stream state");
+        goto error;
+    case(Z_MEM_ERROR):
+        PyErr_SetString(PyExc_MemoryError,
+                        "Can't allocate memory for decompression object");
+        goto error;
+    default:
+        zlib_error(self->zst, err, "while copying decompression object");
+        goto error;
+    }
+
+    Py_INCREF(self->unused_data);
+    Py_INCREF(self->unconsumed_tail);
+    Py_XDECREF(retval->unused_data);
+    Py_XDECREF(retval->unconsumed_tail);
+    retval->unused_data = self->unused_data;
+    retval->unconsumed_tail = self->unconsumed_tail;
+
+    /* Mark it as being initialized */
+    retval->is_initialised = 1;
+
+    LEAVE_ZLIB
+    return (PyObject *)retval;
+
+error:
+    LEAVE_ZLIB
+    Py_XDECREF(retval);
+    return NULL;
+}
+
 PyDoc_STRVAR(decomp_flush__doc__,
 "flush( [length] ) -- Return a string containing any remaining\n"
 "decompressed data. length, if given, is the initial size of the\n"
@@ -725,6 +827,8 @@ static PyMethodDef comp_methods[] =
                  comp_compress__doc__},
     {"flush", (binaryfunc)PyZlib_flush, METH_VARARGS,
               comp_flush__doc__},
+    {"copy",  (PyCFunction)PyZlib_copy, METH_NOARGS,
+              comp_copy__doc__},
     {NULL, NULL}
 };
 
@@ -734,6 +838,8 @@ static PyMethodDef Decomp_methods[] =
                    decomp_decompress__doc__},
     {"flush", (binaryfunc)PyZlib_unflush, METH_VARARGS,
               decomp_flush__doc__},
+    {"copy",  (PyCFunction)PyZlib_uncopy, METH_NOARGS,
+              decomp_copy__doc__},
     {NULL, NULL}
 };
 

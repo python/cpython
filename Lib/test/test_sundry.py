@@ -50,11 +50,7 @@ import pstats
 import py_compile
 import pydoc
 import rexec
-try:
-    import rlcompleter   # not available on Windows
-except ImportError:
-    if verbose:
-        print "skipping rlcompleter"
+import rlcompleter
 import sched
 import smtplib
 import sndhdr
