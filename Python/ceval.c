@@ -6,7 +6,7 @@
    XXX document it!
    */
 
-/* enable more aggressive local inlining (platform dependent) */
+/* enable more aggressive intra-module optimizations, where available */
 #define PY_LOCAL_AGGRESSIVE
 
 #include "Python.h"
@@ -18,11 +18,6 @@
 #include "structmember.h"
 
 #include <ctype.h>
-
-#if defined(_MSC_VER)
-/* enable more aggressive optimization for visual studio */
-#pragma optimize("agtw", on)
-#endif
 
 #ifndef WITH_TSC
 
@@ -38,7 +33,7 @@ typedef unsigned long long uint64;
 
 #define READ_TIMESTAMP(var) ppc_getcounter(&var)
 
-Py_LOCAL(void)
+static void
 ppc_getcounter(uint64 *v)
 {
 	register unsigned long tbu, tb, tbu2;
@@ -91,44 +86,44 @@ typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
 #ifdef WITH_TSC
-Py_LOCAL(PyObject *) call_function(PyObject ***, int, uint64*, uint64*);
+static PyObject * call_function(PyObject ***, int, uint64*, uint64*);
 #else
-Py_LOCAL(PyObject *) call_function(PyObject ***, int);
+static PyObject * call_function(PyObject ***, int);
 #endif
-Py_LOCAL(PyObject *) fast_function(PyObject *, PyObject ***, int, int, int);
-Py_LOCAL(PyObject *) do_call(PyObject *, PyObject ***, int, int);
-Py_LOCAL(PyObject *) ext_do_call(PyObject *, PyObject ***, int, int, int);
-Py_LOCAL(PyObject *) update_keyword_args(PyObject *, int, PyObject ***,PyObject *);
-Py_LOCAL(PyObject *) update_star_args(int, int, PyObject *, PyObject ***);
-Py_LOCAL(PyObject *) load_args(PyObject ***, int);
+static PyObject * fast_function(PyObject *, PyObject ***, int, int, int);
+static PyObject * do_call(PyObject *, PyObject ***, int, int);
+static PyObject * ext_do_call(PyObject *, PyObject ***, int, int, int);
+static PyObject * update_keyword_args(PyObject *, int, PyObject ***,PyObject *);
+static PyObject * update_star_args(int, int, PyObject *, PyObject ***);
+static PyObject * load_args(PyObject ***, int);
 #define CALL_FLAG_VAR 1
 #define CALL_FLAG_KW 2
 
 #ifdef LLTRACE
 static int lltrace;
-Py_LOCAL(int) prtrace(PyObject *, char *);
+static int prtrace(PyObject *, char *);
 #endif
-Py_LOCAL(int) call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
+static int call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
 		      int, PyObject *);
-Py_LOCAL(void) call_trace_protected(Py_tracefunc, PyObject *,
+static void call_trace_protected(Py_tracefunc, PyObject *,
 				 PyFrameObject *, int, PyObject *);
-Py_LOCAL(void) call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
-Py_LOCAL(int) maybe_call_line_trace(Py_tracefunc, PyObject *,
+static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
+static int maybe_call_line_trace(Py_tracefunc, PyObject *,
 				  PyFrameObject *, int *, int *, int *);
 
-Py_LOCAL(PyObject *) apply_slice(PyObject *, PyObject *, PyObject *);
-Py_LOCAL(int) assign_slice(PyObject *, PyObject *,
+static PyObject * apply_slice(PyObject *, PyObject *, PyObject *);
+static int assign_slice(PyObject *, PyObject *,
 			PyObject *, PyObject *);
-Py_LOCAL(PyObject *) cmp_outcome(int, PyObject *, PyObject *);
-Py_LOCAL(PyObject *) import_from(PyObject *, PyObject *);
-Py_LOCAL(int) import_all_from(PyObject *, PyObject *);
-Py_LOCAL(PyObject *) build_class(PyObject *, PyObject *, PyObject *);
-Py_LOCAL(int) exec_statement(PyFrameObject *,
+static PyObject * cmp_outcome(int, PyObject *, PyObject *);
+static PyObject * import_from(PyObject *, PyObject *);
+static int import_all_from(PyObject *, PyObject *);
+static PyObject * build_class(PyObject *, PyObject *, PyObject *);
+static int exec_statement(PyFrameObject *,
 			  PyObject *, PyObject *, PyObject *);
-Py_LOCAL(void) set_exc_info(PyThreadState *, PyObject *, PyObject *, PyObject *);
-Py_LOCAL(void) reset_exc_info(PyThreadState *);
-Py_LOCAL(void) format_exc_check_arg(PyObject *, char *, PyObject *);
-Py_LOCAL(PyObject *) string_concatenate(PyObject *, PyObject *,
+static void set_exc_info(PyThreadState *, PyObject *, PyObject *, PyObject *);
+static void reset_exc_info(PyThreadState *);
+static void format_exc_check_arg(PyObject *, char *, PyObject *);
+static PyObject * string_concatenate(PyObject *, PyObject *,
 				    PyFrameObject *, unsigned char *);
 
 #define NAME_ERROR_MSG \
@@ -484,8 +479,8 @@ enum why_code {
 		WHY_YIELD =	0x0040	/* 'yield' operator */
 };
 
-Py_LOCAL(enum why_code) do_raise(PyObject *, PyObject *, PyObject *);
-Py_LOCAL(int) unpack_iterable(PyObject *, int, PyObject **);
+static enum why_code do_raise(PyObject *, PyObject *, PyObject *);
+static int unpack_iterable(PyObject *, int, PyObject **);
 
 /* for manipulating the thread switch and periodic "stuff" - used to be
    per thread, now just a pair o' globals */
@@ -2902,7 +2897,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 
 */
 
-Py_LOCAL(void)
+static void
 set_exc_info(PyThreadState *tstate,
 	     PyObject *type, PyObject *value, PyObject *tb)
 {
@@ -2947,7 +2942,7 @@ set_exc_info(PyThreadState *tstate,
 	PySys_SetObject("exc_traceback", tb);
 }
 
-Py_LOCAL(void)
+static void
 reset_exc_info(PyThreadState *tstate)
 {
 	PyFrameObject *frame;
@@ -2994,7 +2989,7 @@ reset_exc_info(PyThreadState *tstate)
 
 /* Logic for the raise statement (too complicated for inlining).
    This *consumes* a reference count to each of its arguments. */
-Py_LOCAL(enum why_code)
+static enum why_code
 do_raise(PyObject *type, PyObject *value, PyObject *tb)
 {
 	if (type == NULL) {
@@ -3103,7 +3098,7 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 /* Iterate v argcnt times and store the results on the stack (via decreasing
    sp).  Return 1 for success, 0 if error. */
 
-Py_LOCAL(int)
+static int
 unpack_iterable(PyObject *v, int argcnt, PyObject **sp)
 {
 	int i = 0;
@@ -3150,7 +3145,7 @@ Error:
 
 
 #ifdef LLTRACE
-Py_LOCAL(int)
+static int
 prtrace(PyObject *v, char *str)
 {
 	printf("%s ", str);
@@ -3161,7 +3156,7 @@ prtrace(PyObject *v, char *str)
 }
 #endif
 
-Py_LOCAL(void)
+static void
 call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
 {
 	PyObject *type, *value, *traceback, *arg;
@@ -3187,7 +3182,7 @@ call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
 	}
 }
 
-Py_LOCAL(void)
+static void
 call_trace_protected(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
 		     int what, PyObject *arg)
 {
@@ -3204,7 +3199,7 @@ call_trace_protected(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
 	}
 }
 
-Py_LOCAL(int)
+static int
 call_trace(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
 	   int what, PyObject *arg)
 {
@@ -3239,7 +3234,7 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
 	return result;
 }
 
-Py_LOCAL(int)
+static int
 maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
 		      PyFrameObject *frame, int *instr_lb, int *instr_ub,
 		      int *instr_prev)
@@ -3467,7 +3462,7 @@ PyEval_GetFuncDesc(PyObject *func)
 	}
 }
 
-Py_LOCAL(void)
+static void
 err_args(PyObject *func, int flags, int nargs)
 {
 	if (flags & METH_NOARGS)
@@ -3514,7 +3509,7 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
 	x = call; \
 	}
 
-Py_LOCAL(PyObject *)
+static PyObject *
 call_function(PyObject ***pp_stack, int oparg
 #ifdef WITH_TSC
 		, uint64* pintr0, uint64* pintr1
@@ -3605,7 +3600,7 @@ call_function(PyObject ***pp_stack, int oparg
    done before evaluating the frame.
 */
 
-Py_LOCAL(PyObject *)
+static PyObject *
 fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 {
 	PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
@@ -3658,7 +3653,7 @@ fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 				 PyFunction_GET_CLOSURE(func));
 }
 
-Py_LOCAL(PyObject *)
+static PyObject *
 update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack,
                     PyObject *func)
 {
@@ -3698,7 +3693,7 @@ update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack,
 	return kwdict;
 }
 
-Py_LOCAL(PyObject *)
+static PyObject *
 update_star_args(int nstack, int nstar, PyObject *stararg,
 		 PyObject ***pp_stack)
 {
@@ -3723,7 +3718,7 @@ update_star_args(int nstack, int nstar, PyObject *stararg,
 	return callargs;
 }
 
-Py_LOCAL(PyObject *)
+static PyObject *
 load_args(PyObject ***pp_stack, int na)
 {
 	PyObject *args = PyTuple_New(na);
@@ -3738,7 +3733,7 @@ load_args(PyObject ***pp_stack, int na)
 	return args;
 }
 
-Py_LOCAL(PyObject *)
+static PyObject *
 do_call(PyObject *func, PyObject ***pp_stack, int na, int nk)
 {
 	PyObject *callargs = NULL;
@@ -3774,7 +3769,7 @@ do_call(PyObject *func, PyObject ***pp_stack, int na, int nk)
 	return result;
 }
 
-Py_LOCAL(PyObject *)
+static PyObject *
 ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 {
 	int nstar = 0;
@@ -3886,7 +3881,7 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
                      PyType_HasFeature((x)->ob_type, Py_TPFLAGS_HAVE_INDEX) \
 		     && (x)->ob_type->tp_as_number->nb_index))
 
-Py_LOCAL(PyObject *)
+static PyObject *
 apply_slice(PyObject *u, PyObject *v, PyObject *w) /* return u[v:w] */
 {
 	PyTypeObject *tp = u->ob_type;
@@ -3912,7 +3907,7 @@ apply_slice(PyObject *u, PyObject *v, PyObject *w) /* return u[v:w] */
 	}
 }
 
-Py_LOCAL(int)
+static int
 assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x)
 	/* u[v:w] = x */
 {
@@ -3946,7 +3941,7 @@ assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x)
 	}
 }
 
-Py_LOCAL(PyObject *)
+static PyObject *
 cmp_outcome(int op, register PyObject *v, register PyObject *w)
 {
 	int res = 0;
@@ -3979,7 +3974,7 @@ cmp_outcome(int op, register PyObject *v, register PyObject *w)
 	return v;
 }
 
-Py_LOCAL(PyObject *)
+static PyObject *
 import_from(PyObject *v, PyObject *name)
 {
 	PyObject *x;
@@ -3993,7 +3988,7 @@ import_from(PyObject *v, PyObject *name)
 	return x;
 }
 
-Py_LOCAL(int)
+static int
 import_all_from(PyObject *locals, PyObject *v)
 {
 	PyObject *all = PyObject_GetAttrString(v, "__all__");
@@ -4050,7 +4045,7 @@ import_all_from(PyObject *locals, PyObject *v)
 	return err;
 }
 
-Py_LOCAL(PyObject *)
+static PyObject *
 build_class(PyObject *methods, PyObject *bases, PyObject *name)
 {
 	PyObject *metaclass = NULL, *result, *base;
@@ -4102,7 +4097,7 @@ build_class(PyObject *methods, PyObject *bases, PyObject *name)
 	return result;
 }
 
-Py_LOCAL(int)
+static int
 exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 	       PyObject *locals)
 {
@@ -4198,7 +4193,7 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 	return 0;
 }
 
-Py_LOCAL(void)
+static void
 format_exc_check_arg(PyObject *exc, char *format_str, PyObject *obj)
 {
 	char *obj_str;
@@ -4213,7 +4208,7 @@ format_exc_check_arg(PyObject *exc, char *format_str, PyObject *obj)
 	PyErr_Format(exc, format_str, obj_str);
 }
 
-Py_LOCAL(PyObject *)
+static PyObject *
 string_concatenate(PyObject *v, PyObject *w,
 		   PyFrameObject *f, unsigned char *next_instr)
 {
@@ -4288,7 +4283,7 @@ string_concatenate(PyObject *v, PyObject *w,
 
 #ifdef DYNAMIC_EXECUTION_PROFILE
 
-Py_LOCAL(PyObject *)
+static PyObject *
 getarray(long a[256])
 {
 	int i;
