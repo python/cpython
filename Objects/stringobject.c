@@ -1846,32 +1846,35 @@ string_adjust_indices(Py_ssize_t *start, Py_ssize_t *end, Py_ssize_t len)
 Py_LOCAL_INLINE(Py_ssize_t)
 string_find_internal(PyStringObject *self, PyObject *args, int dir)
 {
-	const char *s = PyString_AS_STRING(self), *sub;
-	Py_ssize_t len = PyString_GET_SIZE(self);
-	Py_ssize_t n, i = 0, last = PY_SSIZE_T_MAX;
 	PyObject *subobj;
+	const char *sub;
+	Py_ssize_t sub_len;
+	Py_ssize_t start=0, end=PY_SSIZE_T_MAX;
 
 	/* XXX ssize_t i */
-	if (!PyArg_ParseTuple(args, "O|O&O&:find/rfind/index/rindex",
-		&subobj, _PyEval_SliceIndex, &i, _PyEval_SliceIndex, &last))
+	if (!PyArg_ParseTuple(args, "O|O&O&:find/rfind/index/rindex", &subobj,
+		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
 		return -2;
 	if (PyString_Check(subobj)) {
 		sub = PyString_AS_STRING(subobj);
-		n = PyString_GET_SIZE(subobj);
+		sub_len = PyString_GET_SIZE(subobj);
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(subobj))
-		return PyUnicode_Find((PyObject *)self, subobj, i, last, dir);
+		return PyUnicode_Find(
+			(PyObject *)self, subobj, start, end, dir);
 #endif
-	else if (PyObject_AsCharBuffer(subobj, &sub, &n))
+	else if (PyObject_AsCharBuffer(subobj, &sub, &sub_len))
 		return -2;
 
-	string_adjust_indices(&i, &last, len);
-
 	if (dir > 0)
-		return stringlib_find(s+i, last-i, sub, n, i);
+		return stringlib_find_slice(
+			PyString_AS_STRING(self), PyString_GET_SIZE(self),
+			sub, sub_len, start, end);
 	else
-		return stringlib_rfind(s+i, last-i, sub, n, i);
+		return stringlib_rfind_slice(
+			PyString_AS_STRING(self), PyString_GET_SIZE(self),
+			sub, sub_len, start, end);
 }
 
 
