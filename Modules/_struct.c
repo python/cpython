@@ -17,17 +17,6 @@ static PyTypeObject PyStructType;
 typedef int Py_ssize_t;
 #endif
 
-
-/* PY_USE_INT_WHEN_POSSIBLE is a flag that changes the 
-   struct API to return int instead of long when possible. This is
-   often a significant performance improvement. */
-#define PY_USE_INT_WHEN_POSSIBLE 1
-
-/* PY_STRUCT_RANGE_CHECKING performs range checking on all arguments
-   to be packed. This will break some incorrect code that happened
-   to accidentally do the right thing anyway (such as binhex). */
-#define PY_STRUCT_RANGE_CHECKING 1
-
 /* The translation function for each format character is table driven */
 typedef struct _formatdef {
 	char format;
@@ -232,7 +221,6 @@ unpack_double(const char *p,  /* start of 8-byte string */
 	return PyFloat_FromDouble(x);
 }
 
-#ifdef PY_STRUCT_RANGE_CHECKING
 /* Helper to format the range error exceptions */
 static int
 _range_error(char format, Py_ssize_t size, int is_unsigned)
@@ -261,7 +249,6 @@ _range_error(char format, Py_ssize_t size, int is_unsigned)
 	}
 	return -1;
 }
-#endif
 
 
 
@@ -331,10 +318,8 @@ nu_uint(const char *p, const formatdef *f)
 {
 	unsigned int x;
 	memcpy((char *)&x, p, sizeof x);
-#ifdef PY_USE_INT_WHEN_POSSIBLE
 	if (x <= LONG_MAX)
 		return PyInt_FromLong((long)x);
-#endif
 	return PyLong_FromUnsignedLong((unsigned long)x);
 }
 
@@ -351,10 +336,8 @@ nu_ulong(const char *p, const formatdef *f)
 {
 	unsigned long x;
 	memcpy((char *)&x, p, sizeof x);
-#ifdef PY_USE_INT_WHEN_POSSIBLE
 	if (x <= LONG_MAX)
 		return PyInt_FromLong((long)x);
-#endif
 	return PyLong_FromUnsignedLong(x);
 }
 
@@ -368,10 +351,8 @@ nu_longlong(const char *p, const formatdef *f)
 {
 	PY_LONG_LONG x;
 	memcpy((char *)&x, p, sizeof x);
-#ifdef PY_USE_INT_WHEN_POSSIBLE
 	if (x >= LONG_MIN && x <= LONG_MAX)
 		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, PY_LONG_LONG, long));
-#endif
 	return PyLong_FromLongLong(x);
 }
 
@@ -380,10 +361,8 @@ nu_ulonglong(const char *p, const formatdef *f)
 {
 	unsigned PY_LONG_LONG x;
 	memcpy((char *)&x, p, sizeof x);
-#ifdef PY_USE_INT_WHEN_POSSIBLE
 	if (x <= LONG_MAX)
 		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, unsigned PY_LONG_LONG, long));
-#endif
 	return PyLong_FromUnsignedLongLong(x);
 }
 
@@ -497,7 +476,7 @@ np_int(char *p, PyObject *v, const formatdef *f)
 	int y;
 	if (get_long(v, &x) < 0)
 		return -1;
-#if defined(PY_STRUCT_RANGE_CHECKING) && (SIZEOF_LONG > SIZEOF_INT)
+#if (SIZEOF_LONG > SIZEOF_INT)
 	if (x < INT_MIN || x > INT_MAX)
 		return _range_error(f->format, sizeof(y), 0);
 #endif
@@ -512,13 +491,9 @@ np_uint(char *p, PyObject *v, const formatdef *f)
 	unsigned long x;
 	unsigned int y;
 	if (get_ulong(v, &x) < 0)
-#ifdef PY_STRUCT_RANGE_CHECKING
 		return _range_error(f->format, sizeof(y), 1);
-#else
-		return -1;
-#endif
 	y = (unsigned int)x;
-#if defined(PY_STRUCT_RANGE_CHECKING) && (SIZEOF_LONG > SIZEOF_INT)
+#if (SIZEOF_LONG > SIZEOF_INT)
 	if (x > UINT_MAX)
 		return _range_error(f->format, sizeof(y), 1);
 #endif
@@ -541,11 +516,7 @@ np_ulong(char *p, PyObject *v, const formatdef *f)
 {
 	unsigned long x;
 	if (get_ulong(v, &x) < 0)
-#ifdef PY_STRUCT_RANGE_CHECKING
 		return _range_error(f->format, sizeof(x), 1);
-#else
-		return -1;
-#endif
 	memcpy(p, (char *)&x, sizeof x);
 	return 0;
 }
@@ -663,20 +634,15 @@ bu_uint(const char *p, const formatdef *f)
 	do {
 		x = (x<<8) | (*p++ & 0xFF);
 	} while (--i > 0);
-#ifdef PY_USE_INT_WHEN_POSSIBLE
 	if (x <= LONG_MAX)
 		return PyInt_FromLong((long)x);
-#else
-	if (SIZEOF_LONG > f->size)
-		return PyInt_FromLong((long)x);
-#endif
 	return PyLong_FromUnsignedLong(x);
 }
 
 static PyObject *
 bu_longlong(const char *p, const formatdef *f)
 {
-#if HAVE_LONG_LONG
+#ifdef HAVE_LONG_LONG
 	PY_LONG_LONG x = 0;
 	Py_ssize_t i = f->size;
 	do {
@@ -685,10 +651,8 @@ bu_longlong(const char *p, const formatdef *f)
 	/* Extend the sign bit. */
 	if (SIZEOF_LONG_LONG > f->size)
 		x |= -(x & (1L << (8 * f->size - 1)));
-#ifdef PY_USE_INT_WHEN_POSSIBLE
 	if (x >= LONG_MIN && x <= LONG_MAX)
 		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, PY_LONG_LONG, long));
-#endif
 	return PyLong_FromLongLong(x);
 #else
 	return _PyLong_FromByteArray((const unsigned char *)p,
@@ -701,16 +665,14 @@ bu_longlong(const char *p, const formatdef *f)
 static PyObject *
 bu_ulonglong(const char *p, const formatdef *f)
 {
-#if HAVE_LONG_LONG
+#ifdef HAVE_LONG_LONG
 	unsigned PY_LONG_LONG x = 0;
 	Py_ssize_t i = f->size;
 	do {
 		x = (x<<8) | (*p++ & 0xFF);
 	} while (--i > 0);
-#ifdef PY_USE_INT_WHEN_POSSIBLE
 	if (x <= LONG_MAX)
 		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, unsigned PY_LONG_LONG, long));
-#endif
 	return PyLong_FromUnsignedLongLong(x);
 #else
 	return _PyLong_FromByteArray((const unsigned char *)p,
@@ -740,15 +702,13 @@ bp_int(char *p, PyObject *v, const formatdef *f)
 	if (get_long(v, &x) < 0)
 		return -1;
 	i = f->size;
-#ifdef PY_STRUCT_RANGE_CHECKING
 	if (i != SIZEOF_LONG && (
 		(i == 2 && (x < -32768 || x > 32767))
-#if SIZEOF_LONG != 4
+#if (SIZEOF_LONG != 4)
 		|| (i == 4) && (x < -2147483648L || x > -2147483647L)
 #endif
 		))
 		return _range_error(f->format, i, 0);
-#endif
 	do {
 		p[--i] = (char)x;
 		x >>= 8;
@@ -764,10 +724,8 @@ bp_uint(char *p, PyObject *v, const formatdef *f)
 	if (get_ulong(v, &x) < 0)
 		return -1;
 	i = f->size;
-#ifdef PY_STRUCT_RANGE_CHECKING
 	if (i != SIZEOF_LONG && x >= (1U << (((unsigned int)i) * 8)))
 		return _range_error(f->format, f->size, 1);
-#endif
 	do {
 		p[--i] = (char)x;
 		x >>= 8;
@@ -875,20 +833,15 @@ lu_uint(const char *p, const formatdef *f)
 	do {
 		x = (x<<8) | (p[--i] & 0xFF);
 	} while (i > 0);
-#ifdef PY_USE_INT_WHEN_POSSIBLE
 	if (x <= LONG_MAX)
 		return PyInt_FromLong((long)x);
-#else
-	if (SIZEOF_LONG > f->size)
-		return PyInt_FromLong((long)x);
-#endif
 	return PyLong_FromUnsignedLong((long)x);
 }
 
 static PyObject *
 lu_longlong(const char *p, const formatdef *f)
 {
-#if HAVE_LONG_LONG
+#ifdef HAVE_LONG_LONG
 	PY_LONG_LONG x = 0;
 	Py_ssize_t i = f->size;
 	do {
@@ -897,10 +850,8 @@ lu_longlong(const char *p, const formatdef *f)
 	/* Extend the sign bit. */
 	if (SIZEOF_LONG_LONG > f->size)
 		x |= -(x & (1L << (8 * f->size - 1)));
-#ifdef PY_USE_INT_WHEN_POSSIBLE
 	if (x >= LONG_MIN && x <= LONG_MAX)
 		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, PY_LONG_LONG, long));
-#endif
 	return PyLong_FromLongLong(x);
 #else
 	return _PyLong_FromByteArray((const unsigned char *)p,
@@ -913,16 +864,14 @@ lu_longlong(const char *p, const formatdef *f)
 static PyObject *
 lu_ulonglong(const char *p, const formatdef *f)
 {
-#if HAVE_LONG_LONG
+#ifdef HAVE_LONG_LONG
 	unsigned PY_LONG_LONG x = 0;
 	Py_ssize_t i = f->size;
 	do {
 		x = (x<<8) | (p[--i] & 0xFF);
 	} while (i > 0);
-#ifdef PY_USE_INT_WHEN_POSSIBLE
 	if (x <= LONG_MAX)
 		return PyInt_FromLong(Py_SAFE_DOWNCAST(x, unsigned PY_LONG_LONG, long));
-#endif
 	return PyLong_FromUnsignedLongLong(x);
 #else
 	return _PyLong_FromByteArray((const unsigned char *)p,
@@ -952,15 +901,13 @@ lp_int(char *p, PyObject *v, const formatdef *f)
 	if (get_long(v, &x) < 0)
 		return -1;
 	i = f->size;
-#ifdef PY_STRUCT_RANGE_CHECKING
 	if (i != SIZEOF_LONG && (
 		(i == 2 && (x < -32768 || x > 32767))
-#if SIZEOF_LONG != 4
+#if (SIZEOF_LONG != 4)
 		|| (i == 4) && (x < -2147483648L || x > -2147483647L)
 #endif
 		))
 		return _range_error(f->format, i, 0);
-#endif
 	do {
 		*p++ = (char)x;
 		x >>= 8;
@@ -976,10 +923,8 @@ lp_uint(char *p, PyObject *v, const formatdef *f)
 	if (get_ulong(v, &x) < 0)
 		return -1;
 	i = f->size;
-#ifdef PY_STRUCT_RANGE_CHECKING
 	if (i != SIZEOF_LONG && x >= (1U << (((unsigned int)i) * 8)))
 		return _range_error(f->format, f->size, 1);
-#endif
 	do {
 		*p++ = (char)x;
 		x >>= 8;
