@@ -3857,7 +3857,9 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
 
 #define STRINGLIB_CHAR Py_UNICODE
 
+#define STRINGLIB_LEN PyUnicode_GET_SIZE
 #define STRINGLIB_NEW PyUnicode_FromUnicode
+#define STRINGLIB_STR PyUnicode_AS_UNICODE
 
 Py_LOCAL(int)
 STRINGLIB_CMP(const Py_UNICODE* str, const Py_UNICODE* other, Py_ssize_t len)
@@ -3918,67 +3920,33 @@ Py_ssize_t PyUnicode_Count(PyObject *str,
     return result;
 }
 
-static Py_ssize_t findstring(PyUnicodeObject *self,
-	       PyUnicodeObject *substring,
-	       Py_ssize_t start,
-	       Py_ssize_t end,
-	       int direction)
-{
-    FIX_START_END(self);
-
-    if (substring->length == 0)
-	return (direction > 0) ? start : end;
-
-    if (direction > 0) {
-        Py_ssize_t pos = fastsearch(
-            PyUnicode_AS_UNICODE(self) + start, end - start,
-            substring->str, substring->length, FAST_SEARCH
-            );
-        if (pos >= 0)
-            return pos + start;
-    } else {
-        end -= substring->length;
-        for (; end >= start; end--)
-            if (Py_UNICODE_MATCH(self, end, substring))
-                return end;
-    }
-    return -1;
-}
-
 Py_ssize_t PyUnicode_Find(PyObject *str,
-                          PyObject *substr,
+                          PyObject *sub,
                           Py_ssize_t start,
                           Py_ssize_t end,
                           int direction)
 {
     Py_ssize_t result;
-    PyUnicodeObject* str_obj;
-    PyUnicodeObject* sub_obj;
 
-    str_obj = (PyUnicodeObject*) PyUnicode_FromObject(str);
-    if (!str_obj)
+    str = PyUnicode_FromObject(str);
+    if (!str)
 	return -2;
-    sub_obj = (PyUnicodeObject*) PyUnicode_FromObject(substr);
-    if (!sub_obj) {
-	Py_DECREF(str_obj);
+    sub = PyUnicode_FromObject(sub);
+    if (!sub) {
+	Py_DECREF(str);
 	return -2;
     }
 
-    FIX_START_END(str_obj);
+    FIX_START_END((PyUnicodeObject*) str);
 
     if (direction > 0)
-        result = stringlib_find(
-            str_obj->str + start, end - start, sub_obj->str, sub_obj->length,
-            start
-            );
+        result = stringlib_find_obj(str, sub, start, end);
     else
-        result = stringlib_rfind(
-            str_obj->str + start, end - start, sub_obj->str, sub_obj->length,
-            start
-            );
+        result = stringlib_rfind_obj(str, sub, start, end);
 
-    Py_DECREF(str_obj);
-    Py_DECREF(sub_obj);
+    Py_DECREF(str);
+    Py_DECREF(sub);
+
     return result;
 }
 
@@ -5046,39 +5014,29 @@ onError:
 int PyUnicode_Contains(PyObject *container,
 		       PyObject *element)
 {
-    PyUnicodeObject *u, *v;
-    Py_ssize_t size;
-    Py_ssize_t pos;
+    PyObject *str, *sub;
+    int result;
 
     /* Coerce the two arguments */
-    v = (PyUnicodeObject *) PyUnicode_FromObject(element);
-    if (!v) {
+    sub = PyUnicode_FromObject(element);
+    if (!sub) {
 	PyErr_SetString(PyExc_TypeError,
 	    "'in <string>' requires string as left operand");
         return -1;
     }
 
-    u = (PyUnicodeObject *) PyUnicode_FromObject(container);
-    if (!u) {
-        Py_DECREF(v);
+    str = PyUnicode_FromObject(container);
+    if (!str) {
+        Py_DECREF(sub);
         return -1;
     }
 
-    size = PyUnicode_GET_SIZE(v);
-    if (!size) {
-        pos = 0;
-        goto done;
-    }
+    result = stringlib_contains_obj(str, sub);
 
-    pos = fastsearch(
-        PyUnicode_AS_UNICODE(u), PyUnicode_GET_SIZE(u),
-        PyUnicode_AS_UNICODE(v), size, FAST_SEARCH
-        );
+    Py_DECREF(str);
+    Py_DECREF(sub);
 
-done:
-    Py_DECREF(u);
-    Py_DECREF(v);
-    return (pos != -1);
+    return result;
 }
 
 /* Concat to string or Unicode object giving a new Unicode object. */
@@ -5305,23 +5263,26 @@ Return -1 on failure.");
 static PyObject *
 unicode_find(PyUnicodeObject *self, PyObject *args)
 {
-    PyUnicodeObject *substring;
+    PyObject *substring;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
-    PyObject *result;
+    Py_ssize_t result;
 
     if (!PyArg_ParseTuple(args, "O|O&O&:find", &substring,
 		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return NULL;
-    substring = (PyUnicodeObject *)PyUnicode_FromObject(
-						(PyObject *)substring);
-    if (substring == NULL)
+
+    substring = PyUnicode_FromObject(substring);
+    if (!substring)
 	return NULL;
 
-    result = PyInt_FromSsize_t(findstring(self, substring, start, end, 1));
+    FIX_START_END(self);
+
+    result = stringlib_find_obj((PyObject*) self, substring, start, end);
 
     Py_DECREF(substring);
-    return result;
+
+    return PyInt_FromSsize_t(result);
 }
 
 static PyObject *
@@ -5371,7 +5332,7 @@ static PyObject *
 unicode_index(PyUnicodeObject *self, PyObject *args)
 {
     Py_ssize_t result;
-    PyUnicodeObject *substring;
+    PyObject *substring;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
 
@@ -5379,18 +5340,21 @@ unicode_index(PyUnicodeObject *self, PyObject *args)
 		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return NULL;
 
-    substring = (PyUnicodeObject *)PyUnicode_FromObject(
-						(PyObject *)substring);
-    if (substring == NULL)
+    substring = PyUnicode_FromObject(substring);
+    if (!substring)
 	return NULL;
 
-    result = findstring(self, substring, start, end, 1);
+    FIX_START_END(self);
+
+    result = stringlib_find_obj((PyObject*) self, substring, start, end);
 
     Py_DECREF(substring);
+
     if (result < 0) {
         PyErr_SetString(PyExc_ValueError, "substring not found");
         return NULL;
     }
+
     return PyInt_FromSsize_t(result);
 }
 
@@ -6038,23 +6002,25 @@ Return -1 on failure.");
 static PyObject *
 unicode_rfind(PyUnicodeObject *self, PyObject *args)
 {
-    PyUnicodeObject *substring;
+    PyObject *substring;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
-    PyObject *result;
+    Py_ssize_t result;
 
     if (!PyArg_ParseTuple(args, "O|O&O&:rfind", &substring,
 		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return NULL;
-    substring = (PyUnicodeObject *)PyUnicode_FromObject(
-						(PyObject *)substring);
-    if (substring == NULL)
+    substring = PyUnicode_FromObject(substring);
+    if (!substring)
 	return NULL;
 
-    result = PyInt_FromSsize_t(findstring(self, substring, start, end, -1));
+    FIX_START_END(self);
+
+    result = stringlib_rfind_obj((PyObject*)self, substring, start, end);
 
     Py_DECREF(substring);
-    return result;
+
+    return PyInt_FromSsize_t(result);
 }
 
 PyDoc_STRVAR(rindex__doc__,
@@ -6065,22 +6031,24 @@ Like S.rfind() but raise ValueError when the substring is not found.");
 static PyObject *
 unicode_rindex(PyUnicodeObject *self, PyObject *args)
 {
-    Py_ssize_t result;
-    PyUnicodeObject *substring;
+    PyObject *substring;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
+    Py_ssize_t result;
 
     if (!PyArg_ParseTuple(args, "O|O&O&:rindex", &substring,
 		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return NULL;
-    substring = (PyUnicodeObject *)PyUnicode_FromObject(
-						(PyObject *)substring);
-    if (substring == NULL)
+    substring = PyUnicode_FromObject(substring);
+    if (!substring)
 	return NULL;
 
-    result = findstring(self, substring, start, end, -1);
+    FIX_START_END(self);
+
+    result = stringlib_rfind_obj((PyObject*)self, substring, start, end);
 
     Py_DECREF(substring);
+
     if (result < 0) {
         PyErr_SetString(PyExc_ValueError, "substring not found");
         return NULL;

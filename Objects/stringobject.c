@@ -690,6 +690,9 @@ PyObject *PyString_DecodeEscape(const char *s,
 	return NULL;
 }
 
+/* -------------------------------------------------------------------- */
+/* object api */
+
 static Py_ssize_t
 string_getsize(register PyObject *op)
 {
@@ -765,22 +768,23 @@ PyString_AsStringAndSize(register PyObject *obj,
 }
 
 /* -------------------------------------------------------------------- */
-/* stringlib components */
+/* Methods */
 
 #define STRINGLIB_CHAR char
 
-#define STRINGLIB_NEW PyString_FromStringAndSize
 #define STRINGLIB_CMP memcmp
+#define STRINGLIB_LEN PyString_GET_SIZE
+#define STRINGLIB_NEW PyString_FromStringAndSize
+#define STRINGLIB_STR PyString_AS_STRING
 
 #define STRINGLIB_EMPTY nullstring
 
 #include "stringlib/fastsearch.h"
 
+#include "stringlib/count.h"
 #include "stringlib/find.h"
 #include "stringlib/partition.h"
 
-/* -------------------------------------------------------------------- */
-/* Methods */
 
 static int
 string_print(PyStringObject *op, FILE *fp, int flags)
@@ -1048,49 +1052,36 @@ string_slice(register PyStringObject *a, register Py_ssize_t i,
 }
 
 static int
-string_contains(PyObject *a, PyObject *el)
+string_contains(PyObject *str_obj, PyObject *sub_obj)
 {
-	char *s = PyString_AS_STRING(a);
-	const char *sub = PyString_AS_STRING(el);
-	Py_ssize_t len_sub = PyString_GET_SIZE(el);
-	Py_ssize_t pos;
-
-	if (!PyString_CheckExact(el)) {
+	if (!PyString_CheckExact(sub_obj)) {
 #ifdef Py_USING_UNICODE
-		if (PyUnicode_Check(el))
-			return PyUnicode_Contains(a, el);
+		if (PyUnicode_Check(sub_obj))
+			return PyUnicode_Contains(str_obj, sub_obj);
 #endif
-		if (!PyString_Check(el)) {
+		if (!PyString_Check(sub_obj)) {
 			PyErr_SetString(PyExc_TypeError,
 			    "'in <string>' requires string as left operand");
 			return -1;
 		}
 	}
 
-	if (len_sub == 0)
-		return 1;
-
-	pos = fastsearch(
-		s, PyString_GET_SIZE(a),
-		sub, len_sub, FAST_SEARCH
-		);
-
-	return (pos != -1);
+	return stringlib_contains_obj(str_obj, sub_obj);
 }
 
 static PyObject *
 string_item(PyStringObject *a, register Py_ssize_t i)
 {
+	char pchar;
 	PyObject *v;
-	char *pchar;
 	if (i < 0 || i >= a->ob_size) {
 		PyErr_SetString(PyExc_IndexError, "string index out of range");
 		return NULL;
 	}
-	pchar = a->ob_sval + i;
-	v = (PyObject *)characters[*pchar & UCHAR_MAX];
+	pchar = a->ob_sval[i];
+	v = (PyObject *)characters[pchar & UCHAR_MAX];
 	if (v == NULL)
-		v = PyString_FromStringAndSize(pchar, 1);
+		v = PyString_FromStringAndSize(&pchar, 1);
 	else {
 #ifdef COUNT_ALLOCS
 		one_strings++;
@@ -1166,9 +1157,8 @@ string_richcompare(PyStringObject *a, PyStringObject *b, int op)
 int
 _PyString_Eq(PyObject *o1, PyObject *o2)
 {
-	PyStringObject *a, *b;
-	a = (PyStringObject*)o1;
-	b = (PyStringObject*)o2;
+	PyStringObject *a = (PyStringObject*) o1;
+	PyStringObject *b = (PyStringObject*) o2;
         return a->ob_size == b->ob_size
           && *a->ob_sval == *b->ob_sval
           && memcmp(a->ob_sval, b->ob_sval, a->ob_size) == 0;
@@ -2264,43 +2254,37 @@ as in slice notation.");
 static PyObject *
 string_count(PyStringObject *self, PyObject *args)
 {
-	const char *s = PyString_AS_STRING(self), *sub;
-	Py_ssize_t len = PyString_GET_SIZE(self), n;
-	Py_ssize_t i = 0, last = PY_SSIZE_T_MAX;
-	Py_ssize_t m, r;
-	PyObject *subobj;
+	PyObject *sub_obj;
+	const char *str = PyString_AS_STRING(self), *sub;
+	Py_ssize_t sub_len;
+	Py_ssize_t start = 0, end = PY_SSIZE_T_MAX;
 
-	if (!PyArg_ParseTuple(args, "O|O&O&:count", &subobj,
-		_PyEval_SliceIndex, &i, _PyEval_SliceIndex, &last))
+	if (!PyArg_ParseTuple(args, "O|O&O&:count", &sub_obj,
+		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
 		return NULL;
 
-	if (PyString_Check(subobj)) {
-		sub = PyString_AS_STRING(subobj);
-		n = PyString_GET_SIZE(subobj);
+	if (PyString_Check(sub_obj)) {
+		sub = PyString_AS_STRING(sub_obj);
+		sub_len = PyString_GET_SIZE(sub_obj);
 	}
 #ifdef Py_USING_UNICODE
-	else if (PyUnicode_Check(subobj)) {
+	else if (PyUnicode_Check(sub_obj)) {
 		Py_ssize_t count;
-		count = PyUnicode_Count((PyObject *)self, subobj, i, last);
+		count = PyUnicode_Count((PyObject *)self, sub_obj, start, end);
 		if (count == -1)
 			return NULL;
 		else
-		    	return PyInt_FromLong((long) count);
+		    	return PyInt_FromSsize_t(count);
 	}
 #endif
-	else if (PyObject_AsCharBuffer(subobj, &sub, &n))
+	else if (PyObject_AsCharBuffer(sub_obj, &sub, &sub_len))
 		return NULL;
 
-	string_adjust_indices(&i, &last, len);
+	string_adjust_indices(&start, &end, PyString_GET_SIZE(self));
 
-	m = last + 1 - n;
-	if (n == 0)
-		return PyInt_FromSsize_t(m-i);
-
-	r = fastsearch(s + i, last - i, sub, n, FAST_COUNT);
-	if (r < 0)
-		r = 0; /* no match */
-	return PyInt_FromSsize_t(r);
+	return PyInt_FromSsize_t(
+		stringlib_count(str + start, end - start, sub, sub_len)
+		);
 }
 
 PyDoc_STRVAR(swapcase__doc__,
@@ -2477,7 +2461,7 @@ return_self(PyStringObject *self)
 }
 
 Py_LOCAL(Py_ssize_t)
-     countchar(char *target, int target_len, char c, Py_ssize_t maxcount)
+countchar(char *target, int target_len, char c, Py_ssize_t maxcount)
 {
 	Py_ssize_t count=0;
 	char *start=target;
@@ -2580,7 +2564,7 @@ countstring(char *target, Py_ssize_t target_len,
 }
 
 
-/* Algorithms for difference cases of string replacement */
+/* Algorithms for different cases of string replacement */
 
 /* len(self)>=1, from="", len(to)>=1, maxcount>=1 */
 Py_LOCAL(PyStringObject *)
