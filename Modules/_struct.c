@@ -1277,7 +1277,7 @@ fail:
 
 
 PyDoc_STRVAR(s_unpack__doc__,
-"unpack(str) -> (v1, v2, ...)\n\
+"S.unpack(str) -> (v1, v2, ...)\n\
 \n\
 Return tuple containing values unpacked according to this Struct's format.\n\
 Requires len(str) == self.size. See struct.__doc__ for more on format\n\
@@ -1299,7 +1299,7 @@ s_unpack(PyObject *self, PyObject *inputstr)
 }
 
 PyDoc_STRVAR(s_unpack_from__doc__,
-"unpack_from(buffer[, offset]) -> (v1, v2, ...)\n\
+"S.unpack_from(buffer[, offset]) -> (v1, v2, ...)\n\
 \n\
 Return tuple containing values unpacked according to this Struct's format.\n\
 Unlike unpack, unpack_from can unpack values from any object supporting\n\
@@ -1407,7 +1407,7 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 
 
 PyDoc_STRVAR(s_pack__doc__,
-"pack(v1, v2, ...) -> string\n\
+"S.pack(v1, v2, ...) -> string\n\
 \n\
 Return a string containing values v1, v2, ... packed according to this\n\
 Struct's format. See struct.__doc__ for more on format strings.");
@@ -1445,11 +1445,11 @@ s_pack(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(s_pack_to__doc__,
-"pack_to(buffer, offset, v1, v2, ...)\n\
+"S.pack_to(buffer, offset, v1, v2, ...)\n\
 \n\
 Pack the values v2, v2, ... according to this Struct's format, write \n\
-the packed bytes into the given buffer at the given offset.  Note that \n\
-the offset is not an optional argument.  See struct.__doc__ for \n\
+the packed bytes into the writable buffer buf starting at offset.  Note\n\
+that the offset is not an optional argument.  See struct.__doc__ for \n\
 more on format strings.");
 
 static PyObject *
@@ -1530,8 +1530,8 @@ PyDoc_STRVAR(s__doc__, "Compiled struct object");
 #define OFF(x) offsetof(PyStructObject, x)
 
 static PyGetSetDef s_getsetlist[] = {
-	{"format", (getter)s_get_format, (setter)NULL, "buffer's capacity", NULL},
-	{"size", (getter)s_get_size, (setter)NULL, "buffer's position", NULL},
+	{"format", (getter)s_get_format, (setter)NULL, "struct format string", NULL},
+	{"size", (getter)s_get_size, (setter)NULL, "struct size in bytes", NULL},
 	{NULL} /* sentinel */
 };
 

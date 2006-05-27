@@ -62,6 +62,18 @@ def pack(fmt, *args):
         o = _compile(fmt)
     return o.pack(*args)
 
+def pack_to(fmt, buf, offset, *args):
+    """
+    Pack the values v2, v2, ... according to fmt, write
+    the packed bytes into the writable buffer buf starting at offset.
+    See struct.__doc__ for more on format strings.
+    """
+    try:
+        o = _cache[fmt]
+    except KeyError:
+        o = _compile(fmt)
+    return o.pack_to(buf, offset, *args)
+
 def unpack(fmt, s):
     """
     Unpack the string, containing packed C structure data, according
