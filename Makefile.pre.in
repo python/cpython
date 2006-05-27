@@ -240,7 +240,6 @@ PYTHON_OBJS=	\
 		Python/asdl.o \
 		Python/ast.o \
 		Python/bltinmodule.o \
-		Python/exceptions.o \
 		Python/ceval.o \
 		Python/compile.o \
 		Python/codecs.o \
@@ -289,6 +288,7 @@ OBJECT_OBJS=	\
 		Objects/complexobject.o \
 		Objects/descrobject.o \
 		Objects/enumobject.o \
+		Objects/exceptions.o \
 		Objects/genobject.o \
 		Objects/fileobject.o \
 		Objects/floatobject.o \

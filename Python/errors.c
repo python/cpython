@@ -557,9 +557,6 @@ PyErr_NewException(char *name, PyObject *base, PyObject *dict)
 		if (PyDict_SetItemString(dict, "__module__", modulename) != 0)
 			goto failure;
 	}
-	classname = PyString_FromString(dot+1);
-	if (classname == NULL)
-		goto failure;
 	if (PyTuple_Check(base)) {
 		bases = base;
 		/* INCREF as we create a new ref in the else branch */
@@ -569,7 +566,9 @@ PyErr_NewException(char *name, PyObject *base, PyObject *dict)
 		if (bases == NULL)
 			goto failure;
 	}
-	result = PyClass_New(bases, dict, classname);
+	/* Create a real new-style class. */
+	result = PyObject_CallFunction((PyObject *)&PyType_Type, "sOO",
+				       dot+1, bases, dict);
   failure:
 	Py_XDECREF(bases);
 	Py_XDECREF(mydict);
@@ -590,8 +589,11 @@ PyErr_WriteUnraisable(PyObject *obj)
 		PyFile_WriteString("Exception ", f);
 		if (t) {
 			char* className = PyExceptionClass_Name(t);
-			PyObject* moduleName =
-			      PyObject_GetAttrString(t, "__module__");
+			PyObject* moduleName;
+			char *dot = strrchr(className, '.');
+			if (dot != NULL)
+				className = dot+1;
+			moduleName = PyObject_GetAttrString(t, "__module__");
 
 			if (moduleName == NULL)
 				PyFile_WriteString("<unknown>", f);
@@ -641,15 +643,11 @@ PyErr_Warn(PyObject *category, char *message)
 		return 0;
 	}
 	else {
-		PyObject *args, *res;
+		PyObject *res;
 
 		if (category == NULL)
 			category = PyExc_RuntimeWarning;
-		args = Py_BuildValue("(sO)", message, category);
-		if (args == NULL)
-			return -1;
-		res = PyEval_CallObject(func, args);
-		Py_DECREF(args);
+		res = PyObject_CallFunction(func, "sO", message, category);
 		if (res == NULL)
 			return -1;
 		Py_DECREF(res);
@@ -677,18 +675,14 @@ PyErr_WarnExplicit(PyObject *category, const char *message,
 		return 0;
 	}
 	else {
-		PyObject *args, *res;
+		PyObject *res;
 
 		if (category == NULL)
 			category = PyExc_RuntimeWarning;
 		if (registry == NULL)
 			registry = Py_None;
-		args = Py_BuildValue("(sOsizO)", message, category,
-				     filename, lineno, module, registry);
-		if (args == NULL)
-			return -1;
-		res = PyEval_CallObject(func, args);
-		Py_DECREF(args);
+		res = PyObject_CallFunction(func, "sOsizO", message, category,
+					    filename, lineno, module, registry);
 		if (res == NULL)
 			return -1;
 		Py_DECREF(res);
@@ -709,7 +703,8 @@ PyErr_SyntaxLocation(const char *filename, int lineno)
 	/* add attributes for the line number and filename for the error */
 	PyErr_Fetch(&exc, &v, &tb);
 	PyErr_NormalizeException(&exc, &v, &tb);
-	/* XXX check that it is, indeed, a syntax error */
+	/* XXX check that it is, indeed, a syntax error. It might not
+	 * be, though. */
 	tmp = PyInt_FromLong(lineno);
 	if (tmp == NULL)
 		PyErr_Clear();
