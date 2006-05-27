@@ -633,19 +633,7 @@ def test_main():
         if gzip:
             os.remove(tarname("gz"))
         if bz2:
-            # Grrr.  This frequently blows up on the Windows buildbot
-            # slaves.  No idea why.  Adding more output to try to guess
-            # something.  Can't reproduce at will.
-            import time, sys
-            for dummy in range(10):
-                try:
-                    os.remove(tarname("bz2"))
-                except OSError, msg:
-                    print >> sys.stderr, \
-                        "test_tarfile final cleanup crapped out %s" % msg
-                    time.sleep(1)
-                else:
-                    break
+            os.remove(tarname("bz2"))
         if os.path.exists(dirname()):
             shutil.rmtree(dirname())
         if os.path.exists(tmpname()):
