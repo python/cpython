@@ -48,17 +48,48 @@ stringlib_rfind(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
     return pos;
 }
 
-#ifdef STRINGLIB_STR
-
 Py_LOCAL_INLINE(Py_ssize_t)
-stringlib_find_obj(PyObject* str, PyObject* sub,
-                   Py_ssize_t start, Py_ssize_t end)
+stringlib_find_slice(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
+                     const STRINGLIB_CHAR* sub, Py_ssize_t sub_len,
+                     Py_ssize_t start, Py_ssize_t end)
 {
+    if (start < 0)
+        start += str_len;
+    if (start < 0)
+        start = 0;
+    if (end > str_len)
+        end = str_len;
+    if (end < 0)
+        end += str_len;
+    if (end < 0)
+        end = 0;
+
     return stringlib_find(
-        STRINGLIB_STR(str) + start, end - start,
-        STRINGLIB_STR(sub), STRINGLIB_LEN(sub), start
+        str + start, end - start,
+        sub, sub_len, start
         );
 }
+
+Py_LOCAL_INLINE(Py_ssize_t)
+stringlib_rfind_slice(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
+                      const STRINGLIB_CHAR* sub, Py_ssize_t sub_len,
+                      Py_ssize_t start, Py_ssize_t end)
+{
+    if (start < 0)
+        start += str_len;
+    if (start < 0)
+        start = 0;
+    if (end > str_len)
+        end = str_len;
+    if (end < 0)
+        end += str_len;
+    if (end < 0)
+        end = 0;
+
+    return stringlib_rfind(str + start, end - start, sub, sub_len, start);
+}
+
+#ifdef STRINGLIB_STR
 
 Py_LOCAL_INLINE(int)
 stringlib_contains_obj(PyObject* str, PyObject* sub)
@@ -69,19 +100,9 @@ stringlib_contains_obj(PyObject* str, PyObject* sub)
         ) != -1;
 }
 
-Py_LOCAL_INLINE(Py_ssize_t)
-stringlib_rfind_obj(PyObject* str, PyObject* sub,
-                    Py_ssize_t start, Py_ssize_t end)
-{
-    return stringlib_rfind(
-        STRINGLIB_STR(str) + start, end - start,
-        STRINGLIB_STR(sub), STRINGLIB_LEN(sub), start
-        );
-}
+#endif /* STRINGLIB_STR */
 
-#endif
-
-#endif
+#endif /* STRINGLIB_FIND_H */
 
 /*
 Local variables:

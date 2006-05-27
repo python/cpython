@@ -3936,12 +3936,18 @@ Py_ssize_t PyUnicode_Find(PyObject *str,
 	return -2;
     }
 
-    FIX_START_END((PyUnicodeObject*) str);
-
     if (direction > 0)
-        result = stringlib_find_obj(str, sub, start, end);
+        result = stringlib_find_slice(
+            PyUnicode_AS_UNICODE(str), PyUnicode_GET_SIZE(str),
+            PyUnicode_AS_UNICODE(sub), PyUnicode_GET_SIZE(sub),
+            start, end
+            );
     else
-        result = stringlib_rfind_obj(str, sub, start, end);
+        result = stringlib_rfind_slice(
+            PyUnicode_AS_UNICODE(str), PyUnicode_GET_SIZE(str),
+            PyUnicode_AS_UNICODE(sub), PyUnicode_GET_SIZE(sub),
+            start, end
+            );
 
     Py_DECREF(str);
     Py_DECREF(sub);
@@ -5284,14 +5290,15 @@ unicode_find(PyUnicodeObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O|O&O&:find", &substring,
 		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return NULL;
-
     substring = PyUnicode_FromObject(substring);
     if (!substring)
 	return NULL;
 
-    FIX_START_END(self);
-
-    result = stringlib_find_obj((PyObject*) self, substring, start, end);
+    result = stringlib_find_slice(
+        PyUnicode_AS_UNICODE(self), PyUnicode_GET_SIZE(self),
+        PyUnicode_AS_UNICODE(substring), PyUnicode_GET_SIZE(substring),
+        start, end
+        );
 
     Py_DECREF(substring);
 
@@ -5352,14 +5359,15 @@ unicode_index(PyUnicodeObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O|O&O&:index", &substring,
 		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return NULL;
-
     substring = PyUnicode_FromObject(substring);
     if (!substring)
 	return NULL;
 
-    FIX_START_END(self);
-
-    result = stringlib_find_obj((PyObject*) self, substring, start, end);
+    result = stringlib_find_slice(
+        PyUnicode_AS_UNICODE(self), PyUnicode_GET_SIZE(self),
+        PyUnicode_AS_UNICODE(substring), PyUnicode_GET_SIZE(substring),
+        start, end
+        );
 
     Py_DECREF(substring);
 
@@ -6027,9 +6035,11 @@ unicode_rfind(PyUnicodeObject *self, PyObject *args)
     if (!substring)
 	return NULL;
 
-    FIX_START_END(self);
-
-    result = stringlib_rfind_obj((PyObject*)self, substring, start, end);
+    result = stringlib_rfind_slice(
+        PyUnicode_AS_UNICODE(self), PyUnicode_GET_SIZE(self),
+        PyUnicode_AS_UNICODE(substring), PyUnicode_GET_SIZE(substring),
+        start, end
+        );
 
     Py_DECREF(substring);
 
@@ -6056,9 +6066,11 @@ unicode_rindex(PyUnicodeObject *self, PyObject *args)
     if (!substring)
 	return NULL;
 
-    FIX_START_END(self);
-
-    result = stringlib_rfind_obj((PyObject*)self, substring, start, end);
+    result = stringlib_rfind_slice(
+        PyUnicode_AS_UNICODE(self), PyUnicode_GET_SIZE(self),
+        PyUnicode_AS_UNICODE(substring), PyUnicode_GET_SIZE(substring),
+        start, end
+        );
 
     Py_DECREF(substring);
 
