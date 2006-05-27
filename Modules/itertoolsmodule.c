@@ -1621,7 +1621,7 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	/* obtain iterators */
 	assert(PyTuple_Check(args));
 	ittuple = PyTuple_New(tuplesize);
-	if(ittuple == NULL)
+	if (ittuple == NULL)
 		return NULL;
 	for (i=0; i < tuplesize; ++i) {
 		PyObject *item = PyTuple_GET_ITEM(args, i);
@@ -1629,7 +1629,7 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		if (it == NULL) {
 			if (PyErr_ExceptionMatches(PyExc_TypeError))
 				PyErr_Format(PyExc_TypeError,
-				    "chain argument #%d must support iteration",
+				    "chain argument #%zd must support iteration",
 				    i+1);
 			Py_DECREF(ittuple);
 			return NULL;
@@ -2151,7 +2151,7 @@ izip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	/* obtain iterators */
 	ittuple = PyTuple_New(tuplesize);
-	if(ittuple == NULL)
+	if (ittuple == NULL)
 		return NULL;
 	for (i=0; i < tuplesize; ++i) {
 		PyObject *item = PyTuple_GET_ITEM(args, i);
@@ -2159,7 +2159,7 @@ izip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		if (it == NULL) {
 			if (PyErr_ExceptionMatches(PyExc_TypeError))
 				PyErr_Format(PyExc_TypeError,
-				    "izip argument #%d must support iteration",
+				    "izip argument #%zd must support iteration",
 				    i+1);
 			Py_DECREF(ittuple);
 			return NULL;
