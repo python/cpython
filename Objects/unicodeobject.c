@@ -3955,7 +3955,7 @@ Py_ssize_t PyUnicode_Find(PyObject *str,
     PyUnicodeObject* sub_obj;
 
     str_obj = (PyUnicodeObject*) PyUnicode_FromObject(str);
-    if (!str)
+    if (!str_obj)
 	return -2;
     sub_obj = (PyUnicodeObject*) PyUnicode_FromObject(substr);
     if (!sub_obj) {
