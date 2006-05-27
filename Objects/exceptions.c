@@ -381,28 +381,28 @@ SimpleExtendsException(PyExc_BaseException, Exception,
  */
 SimpleExtendsException(PyExc_Exception, StandardError, 
     "Base class for all standard Python exceptions that do not represent\n"
-    "interpreter exiting.");
+    "interpreter exiting.")
 
 
 /*
  *    TypeError extends StandardError
  */
 SimpleExtendsException(PyExc_StandardError, TypeError,
-                       "Inappropriate argument type.");
+                       "Inappropriate argument type.")
 
 
 /*
  *    StopIteration extends Exception
  */
 SimpleExtendsException(PyExc_Exception, StopIteration,
-                       "Signal the end from iterator.next().");
+                       "Signal the end from iterator.next().")
 
 
 /*
  *    GeneratorExit extends Exception
  */
 SimpleExtendsException(PyExc_Exception, GeneratorExit,
-                       "Request that a generator exit.");
+                       "Request that a generator exit.")
 
 
 /*
@@ -470,20 +470,20 @@ static PyMemberDef SystemExit_members[] = {
 
 ComplexExtendsException(PyExc_BaseException, SystemExit, SystemExit,
                         SystemExit_dealloc, 0, SystemExit_members, 0,
-                        "Request to exit from the interpreter."); 
+                        "Request to exit from the interpreter.") 
 
 /*
  *    KeyboardInterrupt extends BaseException
  */
 SimpleExtendsException(PyExc_BaseException, KeyboardInterrupt,
-                       "Program interrupted by user.");
+                       "Program interrupted by user.")
 
 
 /*
  *    ImportError extends StandardError
  */
 SimpleExtendsException(PyExc_StandardError, ImportError,
-          "Import can't find module, or can't find name in module.");
+          "Import can't find module, or can't find name in module.")
 
 
 /*
@@ -700,21 +700,21 @@ ComplexExtendsException(PyExc_StandardError, EnvironmentError,
                         EnvironmentError, EnvironmentError_dealloc,
                         EnvironmentError_methods, EnvironmentError_members,
                         EnvironmentError_str, 
-                        "Base class for I/O related errors.");
+                        "Base class for I/O related errors.")
 
 
 /*
  *    IOError extends EnvironmentError
  */
 MiddlingExtendsException(PyExc_EnvironmentError, IOError, 
-                         EnvironmentError, "I/O operation failed.");
+                         EnvironmentError, "I/O operation failed.")
 
 
 /*
  *    OSError extends EnvironmentError
  */
 MiddlingExtendsException(PyExc_EnvironmentError, OSError,
-                         EnvironmentError, "OS system call failed.");
+                         EnvironmentError, "OS system call failed.")
 
 
 /*
@@ -897,7 +897,7 @@ ComplexExtendsException(PyExc_OSError,
                         0,
                         WindowsError_members,
                         WindowsError_str,
-                        "MS-Windows OS system call failed.");
+                        "MS-Windows OS system call failed.")
 
 #endif /* MS_WINDOWS */
 
@@ -907,7 +907,7 @@ ComplexExtendsException(PyExc_OSError,
  */
 #ifdef __VMS
 MiddlingExtendsException(PyExc_OSError, VMSError, EnvironmentError,
-                         "OpenVMS OS system call failed.");
+                         "OpenVMS OS system call failed.")
 #endif
 
 
@@ -915,39 +915,39 @@ MiddlingExtendsException(PyExc_OSError, VMSError, EnvironmentError,
  *    EOFError extends StandardError
  */
 SimpleExtendsException(PyExc_StandardError, EOFError,
-                       "Read beyond end of file.");
+                       "Read beyond end of file.")
 
 
 /*
  *    RuntimeError extends StandardError
  */
 SimpleExtendsException(PyExc_StandardError, RuntimeError,
-                       "Unspecified run-time error.");
+                       "Unspecified run-time error.")
 
 
 /*
  *    NotImplementedError extends RuntimeError
  */
 SimpleExtendsException(PyExc_RuntimeError, NotImplementedError,
-                       "Method or function hasn't been implemented yet.");
+                       "Method or function hasn't been implemented yet.")
 
 /*
  *    NameError extends StandardError
  */
 SimpleExtendsException(PyExc_StandardError, NameError,
-                       "Name not found globally.");
+                       "Name not found globally.")
 
 /*
  *    UnboundLocalError extends NameError
  */
 SimpleExtendsException(PyExc_NameError, UnboundLocalError,
-                       "Local name referenced but not bound to a value.");
+                       "Local name referenced but not bound to a value.")
 
 /*
  *    AttributeError extends StandardError
  */
 SimpleExtendsException(PyExc_StandardError, AttributeError,
-                       "Attribute not found.");
+                       "Attribute not found.")
 
 
 /*
@@ -1140,35 +1140,35 @@ static PyMemberDef SyntaxError_members[] = {
 
 ComplexExtendsException(PyExc_StandardError, SyntaxError, SyntaxError,
                         SyntaxError_dealloc, 0, SyntaxError_members,
-                        SyntaxError_str, "Invalid syntax.");
+                        SyntaxError_str, "Invalid syntax.")
 
 
 /*
  *    IndentationError extends SyntaxError
  */
 MiddlingExtendsException(PyExc_SyntaxError, IndentationError, SyntaxError,
-                         "Improper indentation.");
+                         "Improper indentation.")
 
 
 /*
  *    TabError extends IndentationError
  */
 MiddlingExtendsException(PyExc_IndentationError, TabError, SyntaxError,
-                         "Improper mixture of spaces and tabs.");
+                         "Improper mixture of spaces and tabs.")
 
 
 /*
  *    LookupError extends StandardError
  */
 SimpleExtendsException(PyExc_StandardError, LookupError,
-                       "Base class for lookup errors.");
+                       "Base class for lookup errors.")
 
 
 /*
  *    IndexError extends LookupError
  */
 SimpleExtendsException(PyExc_LookupError, IndexError,
-                       "Sequence index out of range.");
+                       "Sequence index out of range.")
 
 
 /*
@@ -1194,21 +1194,21 @@ KeyError_str(PyBaseExceptionObject *self)
 }
 
 ComplexExtendsException(PyExc_LookupError, KeyError, BaseException,
-                        0, 0, 0, KeyError_str, "Mapping key not found.");
+                        0, 0, 0, KeyError_str, "Mapping key not found.")
 
 
 /*
  *    ValueError extends StandardError
  */
 SimpleExtendsException(PyExc_StandardError, ValueError,
-                       "Inappropriate argument value (of correct type).");
+                       "Inappropriate argument value (of correct type).")
 
 /*
  *    UnicodeError extends ValueError
  */
 
 SimpleExtendsException(PyExc_ValueError, UnicodeError,
-                       "Unicode related error.");
+                       "Unicode related error.")
 
 #ifdef Py_USING_UNICODE
 static int
@@ -1859,35 +1859,35 @@ PyUnicodeTranslateError_Create(
  *    AssertionError extends StandardError
  */
 SimpleExtendsException(PyExc_StandardError, AssertionError,
-                       "Assertion failed.");
+                       "Assertion failed.")
 
 
 /*
  *    ArithmeticError extends StandardError
  */
 SimpleExtendsException(PyExc_StandardError, ArithmeticError,
-                       "Base class for arithmetic errors.");
+                       "Base class for arithmetic errors.")
 
 
 /*
  *    FloatingPointError extends ArithmeticError
  */
 SimpleExtendsException(PyExc_ArithmeticError, FloatingPointError,
-                       "Floating point operation failed.");
+                       "Floating point operation failed.")
 
 
 /*
  *    OverflowError extends ArithmeticError
  */
 SimpleExtendsException(PyExc_ArithmeticError, OverflowError,
-                       "Result too large to be represented.");
+                       "Result too large to be represented.")
 
 
 /*
  *    ZeroDivisionError extends ArithmeticError
  */
 SimpleExtendsException(PyExc_ArithmeticError, ZeroDivisionError,
-          "Second argument to a division or modulo operation was zero.");
+          "Second argument to a division or modulo operation was zero.")
 
 
 /*
@@ -1897,20 +1897,20 @@ SimpleExtendsException(PyExc_StandardError, SystemError,
     "Internal error in the Python interpreter.\n"
     "\n"
     "Please report this to the Python maintainer, along with the traceback,\n"
-    "the Python version, and the hardware/OS platform and version.");
+    "the Python version, and the hardware/OS platform and version.")
 
 
 /*
  *    ReferenceError extends StandardError
  */
 SimpleExtendsException(PyExc_StandardError, ReferenceError,
-                       "Weak ref proxy used after referent went away.");
+                       "Weak ref proxy used after referent went away.")
 
 
 /*
  *    MemoryError extends StandardError
  */
-SimpleExtendsException(PyExc_StandardError, MemoryError, "Out of memory.");
+SimpleExtendsException(PyExc_StandardError, MemoryError, "Out of memory.")
 
 
 /* Warning category docstrings */
@@ -1919,21 +1919,21 @@ SimpleExtendsException(PyExc_StandardError, MemoryError, "Out of memory.");
  *    Warning extends Exception
  */
 SimpleExtendsException(PyExc_Exception, Warning,
-                       "Base class for warning categories.");
+                       "Base class for warning categories.")
 
 
 /*
  *    UserWarning extends Warning
  */
 SimpleExtendsException(PyExc_Warning, UserWarning,
-                       "Base class for warnings generated by user code.");
+                       "Base class for warnings generated by user code.")
 
 
 /*
  *    DeprecationWarning extends Warning
  */
 SimpleExtendsException(PyExc_Warning, DeprecationWarning,
-                       "Base class for warnings about deprecated features.");
+                       "Base class for warnings about deprecated features.")
 
 
 /*
@@ -1941,21 +1941,21 @@ SimpleExtendsException(PyExc_Warning, DeprecationWarning,
  */
 SimpleExtendsException(PyExc_Warning, PendingDeprecationWarning,
     "Base class for warnings about features which will be deprecated\n"
-    "in the future.");
+    "in the future.")
 
 
 /*
  *    SyntaxWarning extends Warning
  */
 SimpleExtendsException(PyExc_Warning, SyntaxWarning,
-                       "Base class for warnings about dubious syntax.");
+                       "Base class for warnings about dubious syntax.")
 
 
 /*
  *    RuntimeWarning extends Warning
  */
 SimpleExtendsException(PyExc_Warning, RuntimeWarning,
-                 "Base class for warnings about dubious runtime behavior.");
+                 "Base class for warnings about dubious runtime behavior.")
 
 
 /*
@@ -1963,14 +1963,14 @@ SimpleExtendsException(PyExc_Warning, RuntimeWarning,
  */
 SimpleExtendsException(PyExc_Warning, FutureWarning,
     "Base class for warnings about constructs that will change semantically\n"
-    "in the future.");
+    "in the future.")
 
 
 /*
  *    ImportWarning extends Warning
  */
 SimpleExtendsException(PyExc_Warning, ImportWarning,
-          "Base class for warnings about probable mistakes in module imports");
+          "Base class for warnings about probable mistakes in module imports")
 
 
 /* Pre-computed MemoryError instance.  Best to create this as early as
