@@ -141,7 +141,7 @@ static BLOOM_MASK bloom_linebreak;
 #define BLOOM_LINEBREAK(ch)\
     (BLOOM(bloom_linebreak, (ch)) && Py_UNICODE_ISLINEBREAK((ch)))
 
-Py_LOCAL(BLOOM_MASK) make_bloom_mask(Py_UNICODE* ptr, Py_ssize_t len)
+Py_LOCAL_INLINE(BLOOM_MASK) make_bloom_mask(Py_UNICODE* ptr, Py_ssize_t len)
 {
     /* calculate simple bloom-style bitmask for a given unicode string */
 
@@ -155,7 +155,7 @@ Py_LOCAL(BLOOM_MASK) make_bloom_mask(Py_UNICODE* ptr, Py_ssize_t len)
     return mask;
 }
 
-Py_LOCAL(int) unicode_member(Py_UNICODE chr, Py_UNICODE* set, Py_ssize_t setlen)
+Py_LOCAL_INLINE(int) unicode_member(Py_UNICODE chr, Py_UNICODE* set, Py_ssize_t setlen)
 {
     Py_ssize_t i;
 
@@ -2015,7 +2015,7 @@ onError:
 
 */
 
-Py_LOCAL(const Py_UNICODE *) findchar(const Py_UNICODE *s,
+Py_LOCAL_INLINE(const Py_UNICODE *) findchar(const Py_UNICODE *s,
                                       Py_ssize_t size,
                                       Py_UNICODE ch)
 {
@@ -3860,7 +3860,7 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
 #define STRINGLIB_NEW PyUnicode_FromUnicode
 #define STRINGLIB_STR PyUnicode_AS_UNICODE
 
-Py_LOCAL(int)
+Py_LOCAL_INLINE(int)
 STRINGLIB_CMP(const Py_UNICODE* str, const Py_UNICODE* other, Py_ssize_t len)
 {
     if (str[0] != other[0])
@@ -4710,7 +4710,7 @@ PyObject *replace(PyUnicodeObject *self,
         }
     } else {
 
-        Py_ssize_t n, i;
+        Py_ssize_t n, i, j, e;
         Py_ssize_t product, new_size, delta;
         Py_UNICODE *p;
 
@@ -4743,21 +4743,35 @@ PyObject *replace(PyUnicodeObject *self,
             return NULL;
         i = 0;
         p = u->str;
+        e = self->length - str1->length;
         if (str1->length > 0) {
-            while (i <= self->length - str1->length)
-                if (Py_UNICODE_MATCH(self, i, str1)) {
-                    /* replace string segment */
+            while (n-- > 0) {
+                /* look for next match */
+                j = i;
+                while (j <= e) {
+                    if (Py_UNICODE_MATCH(self, j, str1))
+                        break;
+                    j++;
+                }
+		if (j > i) {
+                    if (j > e)
+                        break;
+                    /* copy unchanged part [i:j] */
+                    Py_UNICODE_COPY(p, self->str+i, j-i);
+                    p += j - i;
+                }
+                /* copy substitution string */
+                if (str2->length > 0) {
                     Py_UNICODE_COPY(p, str2->str, str2->length);
                     p += str2->length;
-                    i += str1->length;
-                    if (--n <= 0) {
-                        /* copy remaining part */
-                        Py_UNICODE_COPY(p, self->str+i, self->length-i);
-                        break;
-                    }
-                } else
-                    *p++ = self->str[i++];
+                }
+                i = j + str1->length;
+            }
+            if (i < self->length)
+                /* copy tail [i:] */
+                Py_UNICODE_COPY(p, self->str+i, self->length-i);
         } else {
+            /* interleave */
             while (n > 0) {
                 Py_UNICODE_COPY(p, str2->str, str2->length);
                 p += str2->length;

@@ -1371,7 +1371,7 @@ static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
 #define RSKIP_SPACE(s, i)        { while (i>=0  &&  isspace(Py_CHARMASK(s[i]))) i--; }
 #define RSKIP_NONSPACE(s, i)     { while (i>=0  && !isspace(Py_CHARMASK(s[i]))) i--; }
 
-Py_LOCAL(PyObject *)
+Py_LOCAL_INLINE(PyObject *)
 split_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 {
 	Py_ssize_t i, j, count=0;
@@ -1405,7 +1405,7 @@ split_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 	return NULL;
 }
 
-Py_LOCAL(PyObject *)
+Py_LOCAL_INLINE(PyObject *)
 split_char(const char *s, Py_ssize_t len, char ch, Py_ssize_t maxcount)
 {
 	register Py_ssize_t i, j, count=0;
@@ -1578,7 +1578,7 @@ string_rpartition(PyStringObject *self, PyObject *sep_obj)
 		);
 }
 
-Py_LOCAL(PyObject *)
+Py_LOCAL_INLINE(PyObject *)
 rsplit_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 {
 	Py_ssize_t i, j, count=0;
@@ -1614,7 +1614,7 @@ rsplit_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 	return NULL;
 }
 
-Py_LOCAL(PyObject *)
+Py_LOCAL_INLINE(PyObject *)
 rsplit_char(const char *s, Py_ssize_t len, char ch, Py_ssize_t maxcount)
 {
 	register Py_ssize_t i, j, count=0;
@@ -1828,7 +1828,7 @@ _PyString_Join(PyObject *sep, PyObject *x)
 	return string_join((PyStringObject *)sep, x);
 }
 
-Py_LOCAL(void)
+Py_LOCAL_INLINE(void)
 string_adjust_indices(Py_ssize_t *start, Py_ssize_t *end, Py_ssize_t len)
 {
 	if (*end > len)
@@ -1843,7 +1843,7 @@ string_adjust_indices(Py_ssize_t *start, Py_ssize_t *end, Py_ssize_t len)
 		*start = 0;
 }
 
-Py_LOCAL(Py_ssize_t)
+Py_LOCAL_INLINE(Py_ssize_t)
 string_find_internal(PyStringObject *self, PyObject *args, int dir)
 {
 	const char *s = PyString_AS_STRING(self), *sub;
@@ -1953,7 +1953,7 @@ string_rindex(PyStringObject *self, PyObject *args)
 }
 
 
-Py_LOCAL(PyObject *)
+Py_LOCAL_INLINE(PyObject *)
 do_xstrip(PyStringObject *self, int striptype, PyObject *sepobj)
 {
 	char *s = PyString_AS_STRING(self);
@@ -1986,7 +1986,7 @@ do_xstrip(PyStringObject *self, int striptype, PyObject *sepobj)
 }
 
 
-Py_LOCAL(PyObject *)
+Py_LOCAL_INLINE(PyObject *)
 do_strip(PyStringObject *self, int striptype)
 {
 	char *s = PyString_AS_STRING(self);
@@ -2016,7 +2016,7 @@ do_strip(PyStringObject *self, int striptype)
 }
 
 
-Py_LOCAL(PyObject *)
+Py_LOCAL_INLINE(PyObject *)
 do_argstrip(PyStringObject *self, int striptype, PyObject *args)
 {
 	PyObject *sep = NULL;
@@ -2460,7 +2460,7 @@ return_self(PyStringObject *self)
 		PyString_GET_SIZE(self));
 }
 
-Py_LOCAL(Py_ssize_t)
+Py_LOCAL_INLINE(Py_ssize_t)
 countchar(char *target, int target_len, char c, Py_ssize_t maxcount)
 {
 	Py_ssize_t count=0;
@@ -2514,7 +2514,7 @@ findstring(char *target, Py_ssize_t target_len,
 	return -1;
 }
 
-Py_LOCAL(Py_ssize_t)
+Py_LOCAL_INLINE(Py_ssize_t)
 countstring(char *target, Py_ssize_t target_len,
 	    char *pattern, Py_ssize_t pattern_len,
 	    Py_ssize_t start,
@@ -3335,7 +3335,7 @@ string_expandtabs(PyStringObject *self, PyObject *args)
     return u;
 }
 
-Py_LOCAL(PyObject *)
+Py_LOCAL_INLINE(PyObject *)
 pad(PyStringObject *self, Py_ssize_t left, Py_ssize_t right, char fill)
 {
     PyObject *u;
@@ -4096,7 +4096,7 @@ _PyString_Resize(PyObject **pv, Py_ssize_t newsize)
 
 /* Helpers for formatstring */
 
-Py_LOCAL(PyObject *)
+Py_LOCAL_INLINE(PyObject *)
 getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
 {
 	Py_ssize_t argidx = *p_argidx;
@@ -4125,7 +4125,7 @@ getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
 #define F_ALT	(1<<3)
 #define F_ZERO	(1<<4)
 
-Py_LOCAL(int)
+Py_LOCAL_INLINE(int)
 formatfloat(char *buf, size_t buflen, int flags,
             int prec, int type, PyObject *v)
 {
@@ -4312,7 +4312,7 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 	return result;
 }
 
-Py_LOCAL(int)
+Py_LOCAL_INLINE(int)
 formatint(char *buf, size_t buflen, int flags,
           int prec, int type, PyObject *v)
 {
@@ -4384,7 +4384,7 @@ formatint(char *buf, size_t buflen, int flags,
 	return (int)strlen(buf);
 }
 
-Py_LOCAL(int)
+Py_LOCAL_INLINE(int)
 formatchar(char *buf, size_t buflen, PyObject *v)
 {
 	/* presume that the buffer is at least 2 characters long */
