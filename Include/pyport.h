@@ -137,13 +137,17 @@ typedef Py_intptr_t	Py_ssize_t;
 #   endif
 #endif
 
-/* PY_LOCAL can be used instead of static to get the fastest possible calling
- * convention for functions that are local to a given module.  It also enables
- * inlining, where suitable.
+/* Py_LOCAL can be used instead of static to get the fastest possible calling
+ * convention for functions that are local to a given module.
  *
- * If PY_LOCAL_AGGRESSIVE is defined before python.h is included, a more
- * "aggressive" inlining is enabled.  This may lead to code bloat, and may
- * slow things down for those reasons.  Use with care.
+ * Py_LOCAL_INLINE does the same thing, and also explicitly requests inlining,
+ * for platforms that support that.
+ *
+ * If PY_LOCAL_AGGRESSIVE is defined before python.h is included, more
+ * "aggressive" inlining/optimizaion is enabled for the entire module.  This
+ * may lead to code bloat, and may slow things down for those reasons.  It may
+ * also lead to errors, if the code relies on pointer aliasing.  Use with
+ * care.
  *
  * NOTE: You can only use this for functions that are entirely local to a
  * module; functions that are exported via method tables, callbacks, etc,
@@ -160,11 +164,14 @@ typedef Py_intptr_t	Py_ssize_t;
 /* ignore warnings if the compiler decides not to inline a function */ 
 #pragma warning(disable: 4710)
 /* fastest possible local call under MSVC */
-#define Py_LOCAL(type) static __inline type __fastcall
+#define Py_LOCAL(type) static type __fastcall
+#define Py_LOCAL_INLINE(type) static __inline type __fastcall
 #elif defined(USE_INLINE)
-#define Py_LOCAL(type) static inline type
+#define Py_LOCAL(type) static type
+#define Py_LOCAL_INLINE(type) static inline type
 #else
 #define Py_LOCAL(type) static type
+#define Py_LOCAL_INLINE(type) static type
 #endif
 
 #include <stdlib.h>
