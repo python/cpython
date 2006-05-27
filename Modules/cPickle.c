@@ -5625,7 +5625,6 @@ init_stuff(PyObject *module_dict)
 
 	if (!( t=PyDict_New()))  return -1;
 	if (!( r=PyRun_String(
-		       "def __init__(self, *args): self.args=args\n\n"
 		       "def __str__(self):\n"
 		       "  return self.args and ('%s' % self.args[0]) or '(what)'\n",
 		       Py_file_input,
@@ -5645,7 +5644,6 @@ init_stuff(PyObject *module_dict)
 
 	if (!( t=PyDict_New()))  return -1;
 	if (!( r=PyRun_String(
-		       "def __init__(self, *args): self.args=args\n\n"
 		       "def __str__(self):\n"
 		       "  a=self.args\n"
 		       "  a=a and type(a[0]) or '(what)'\n"
