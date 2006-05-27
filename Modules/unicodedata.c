@@ -209,7 +209,7 @@ unicodedata_numeric(PyObject *self, PyObject *args)
         if (old->category_changed == 0) {
             /* unassigned */
             have_old = 1;
-            rc = -1;
+            rc = -1.0;
         } 
         else if (old->decimal_changed != 0xFF) {
             have_old = 1;
@@ -219,7 +219,7 @@ unicodedata_numeric(PyObject *self, PyObject *args)
 
     if (!have_old)
         rc = Py_UNICODE_TONUMERIC(*PyUnicode_AS_UNICODE(v));
-    if (rc < 0) {
+    if (rc == -1.0) {
 	if (defobj == NULL) {
 	    PyErr_SetString(PyExc_ValueError, "not a numeric character");
 	    return NULL;
