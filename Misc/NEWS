@@ -12,6 +12,10 @@ What's New in Python 2.5 alpha 3?
 Core and builtins
 -----------------
 
+- Builtin exceptions are now full-blown new-style classes instead of
+  instances pretending to be classes, which speeds up exception handling
+  by about 80% in comparison to 2.5a2.
+
 - Patch #1494554: Update unicodedata.numeric and unicode.isnumeric to
   Unicode 4.1.
 
