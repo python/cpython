@@ -1251,9 +1251,11 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 			}
 			else if (importer == Py_None) {
 				/* No importer was found, so it has to be a file.
-				 * Check if the directory is valid. */
+				 * Check if the directory is valid.
+				 * Note that the empty string is a valid path, but
+				 * not stat'able, hence the check for len. */
 #ifdef HAVE_STAT
-				if (stat(buf, &statbuf) != 0) {
+				if (len && stat(buf, &statbuf) != 0) {
 					/* Directory does not exist. */
 					PyDict_SetItem(path_importer_cache,
 					               v, Py_False);
