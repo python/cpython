@@ -1513,7 +1513,7 @@ s_pack_to(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	return Py_None;
+	Py_RETURN_NONE;
 }
 
 static PyObject *
