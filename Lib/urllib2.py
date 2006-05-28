@@ -695,32 +695,45 @@ class HTTPPasswordMgr:
         # uri could be a single URI or a sequence
         if isinstance(uri, basestring):
             uri = [uri]
-        uri = tuple(map(self.reduce_uri, uri))
         if not realm in self.passwd:
             self.passwd[realm] = {}
-        self.passwd[realm][uri] = (user, passwd)
+        for default_port in True, False:
+            reduced_uri = tuple(
+                [self.reduce_uri(u, default_port) for u in uri])
+            self.passwd[realm][reduced_uri] = (user, passwd)
 
     def find_user_password(self, realm, authuri):
         domains = self.passwd.get(realm, {})
-        authuri = self.reduce_uri(authuri)
-        for uris, authinfo in domains.iteritems():
-            for uri in uris:
-                if self.is_suburi(uri, authuri):
-                    return authinfo
+        for default_port in True, False:
+            reduced_authuri = self.reduce_uri(authuri, default_port)
+            for uris, authinfo in domains.iteritems():
+                for uri in uris:
+                    if self.is_suburi(uri, reduced_authuri):
+                        return authinfo
         return None, None
 
-    def reduce_uri(self, uri):
-        """Accept netloc or URI and extract only the netloc and path"""
+    def reduce_uri(self, uri, default_port=True):
+        """Accept authority or URI and extract only the authority and path."""
+        # note HTTP URLs do not have a userinfo component
         parts = urlparse.urlsplit(uri)
         if parts[1]:
             # URI
-            return parts[1], parts[2] or '/'
-        elif parts[0]:
-            # host:port
-            return uri, '/'
+            scheme = parts[0]
+            authority = parts[1]
+            path = parts[2] or '/'
         else:
-            # host
-            return parts[2], '/'
+            # host or host:port
+            scheme = None
+            authority = uri
+            path = '/'
+        host, port = splitport(authority)
+        if default_port and port is None and scheme is not None:
+            dport = {"http": 80,
+                     "https": 443,
+                     }.get(scheme)
+            if dport is not None:
+                authority = "%s:%d" % (host, dport)
+        return authority, path
 
     def is_suburi(self, base, test):
         """Check if test is below base in a URI tree

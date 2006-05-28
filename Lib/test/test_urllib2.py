@@ -76,10 +76,11 @@ def test_password_manager(self):
     >>> mgr.find_user_password("c", "http://example.com/bar")
     ('bar', 'nini')
 
-    Currently, we use the highest-level path where more than one match:
+    Actually, this is really undefined ATM
+##     Currently, we use the highest-level path where more than one match:
 
-    >>> mgr.find_user_password("Some Realm", "http://example.com/ni")
-    ('joe', 'password')
+##     >>> mgr.find_user_password("Some Realm", "http://example.com/ni")
+##     ('joe', 'password')
 
     Use latest add_password() in case of conflict:
 
@@ -109,6 +110,53 @@ def test_password_manager(self):
     """
     pass
 
+
+def test_password_manager_default_port(self):
+    """
+    >>> mgr = urllib2.HTTPPasswordMgr()
+    >>> add = mgr.add_password
+
+    The point to note here is that we can't guess the default port if there's
+    no scheme.  This applies to both add_password and find_user_password.
+
+    >>> add("f", "http://g.example.com:80", "10", "j")
+    >>> add("g", "http://h.example.com", "11", "k")
+    >>> add("h", "i.example.com:80", "12", "l")
+    >>> add("i", "j.example.com", "13", "m")
+    >>> mgr.find_user_password("f", "g.example.com:100")
+    (None, None)
+    >>> mgr.find_user_password("f", "g.example.com:80")
+    ('10', 'j')
+    >>> mgr.find_user_password("f", "g.example.com")
+    (None, None)
+    >>> mgr.find_user_password("f", "http://g.example.com:100")
+    (None, None)
+    >>> mgr.find_user_password("f", "http://g.example.com:80")
+    ('10', 'j')
+    >>> mgr.find_user_password("f", "http://g.example.com")
+    ('10', 'j')
+    >>> mgr.find_user_password("g", "h.example.com")
+    ('11', 'k')
+    >>> mgr.find_user_password("g", "h.example.com:80")
+    ('11', 'k')
+    >>> mgr.find_user_password("g", "http://h.example.com:80")
+    ('11', 'k')
+    >>> mgr.find_user_password("h", "i.example.com")
+    (None, None)
+    >>> mgr.find_user_password("h", "i.example.com:80")
+    ('12', 'l')
+    >>> mgr.find_user_password("h", "http://i.example.com:80")
+    ('12', 'l')
+    >>> mgr.find_user_password("i", "j.example.com")
+    ('13', 'm')
+    >>> mgr.find_user_password("i", "j.example.com:80")
+    (None, None)
+    >>> mgr.find_user_password("i", "http://j.example.com")
+    ('13', 'm')
+    >>> mgr.find_user_password("i", "http://j.example.com:80")
+    (None, None)
+
+    """
 
 class MockOpener:
     addheaders = []
