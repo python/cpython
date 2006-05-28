@@ -1053,8 +1053,8 @@ libreftest = """ Doctest for examples in the library reference: libweakref.tex
 ...
 >>> obj = Dict(red=1, green=2, blue=3)   # this object is weak referencable
 >>> r = weakref.ref(obj)
->>> print r()
-{'blue': 3, 'green': 2, 'red': 1}
+>>> print r() is obj
+True
 
 >>> import weakref
 >>> class Object:

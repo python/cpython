@@ -126,7 +126,9 @@ _b32alphabet = {
     8: 'I', 17: 'R', 26: '2',
     }
 
-_b32tab = [v for v in _b32alphabet.values()]
+_b32tab = _b32alphabet.items()
+_b32tab.sort()
+_b32tab = [v for k, v in _b32tab]
 _b32rev = dict([(v, long(k)) for k, v in _b32alphabet.items()])
 
 

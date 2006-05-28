@@ -611,8 +611,10 @@ class Option:
                 else:
                     setattr(self, attr, None)
         if attrs:
+            attrs = attrs.keys()
+            attrs.sort()
             raise OptionError(
-                "invalid keyword arguments: %s" % ", ".join(attrs.keys()),
+                "invalid keyword arguments: %s" % ", ".join(attrs),
                 self)
 
 
@@ -1661,6 +1663,7 @@ def _match_abbrev(s, wordmap):
             raise BadOptionError(s)
         else:
             # More than one possible completion: ambiguous prefix.
+            possibilities.sort()
             raise AmbiguousOptionError(s, possibilities)
 
 
