@@ -212,7 +212,7 @@ class TestOptionChecks(BaseTest):
 
     def test_attr_invalid(self):
         self.assertOptionError(
-            "option -b: invalid keyword arguments: foo, bar",
+            "option -b: invalid keyword arguments: bar, foo",
             ["-b"], {'foo': None, 'bar': None})
 
     def test_action_invalid(self):
@@ -675,9 +675,8 @@ class TestStandard(BaseTest):
     def test_ambiguous_option(self):
         self.parser.add_option("--foz", action="store",
                                type="string", dest="foo")
-        possibilities = ", ".join({"--foz": None, "--foo": None}.keys())
         self.assertParseFail(["--f=bar"],
-                             "ambiguous option: --f (%s?)" % possibilities)
+                             "ambiguous option: --f (--foo, --foz?)")
 
 
     def test_short_and_long_option_split(self):
@@ -1477,10 +1476,9 @@ class TestMatchAbbrev(BaseTest):
     def test_match_abbrev_error(self):
         s = "--f"
         wordmap = {"--foz": None, "--foo": None, "--fie": None}
-        possibilities = ", ".join(wordmap.keys())
         self.assertRaises(
             _match_abbrev, (s, wordmap), None,
-            BadOptionError, "ambiguous option: --f (%s?)" % possibilities)
+            BadOptionError, "ambiguous option: --f (--fie, --foo, --foz?)")
 
 
 def _testclasses():

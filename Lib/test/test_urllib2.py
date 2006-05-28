@@ -447,6 +447,7 @@ class HandlerTests(unittest.TestCase):
                 self.method = method
                 self.selector = url
                 self.req_headers += headers.items()
+                self.req_headers.sort()
                 if body:
                     self.data = body
                 if self.raise_on_endheaders:
