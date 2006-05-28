@@ -1623,7 +1623,7 @@ static PyObject*pattern_new_match(PatternObject*, SRE_STATE*, int);
 static PyObject*pattern_scanner(PatternObject*, PyObject*);
 
 static PyObject *
-sre_codesize(PyObject* self, PyObject* args)
+sre_codesize(PyObject* self)
 {
     return Py_BuildValue("i", sizeof(SRE_CODE));
 }
@@ -2467,14 +2467,11 @@ pattern_subn(PatternObject* self, PyObject* args, PyObject* kw)
 }
 
 static PyObject*
-pattern_copy(PatternObject* self, PyObject* args)
+pattern_copy(PatternObject* self)
 {
 #ifdef USE_BUILTIN_COPY
     PatternObject* copy;
     int offset;
-
-    if (args != Py_None && !PyArg_ParseTuple(args, ":__copy__"))
-        return NULL;
 
     copy = PyObject_NEW_VAR(PatternObject, &Pattern_Type, self->codesize);
     if (!copy)
@@ -2498,16 +2495,12 @@ pattern_copy(PatternObject* self, PyObject* args)
 }
 
 static PyObject*
-pattern_deepcopy(PatternObject* self, PyObject* args)
+pattern_deepcopy(PatternObject* self, PyObject* memo)
 {
 #ifdef USE_BUILTIN_COPY
     PatternObject* copy;
 
-    PyObject* memo;
-    if (!PyArg_ParseTuple(args, "O:__deepcopy__", &memo))
-        return NULL;
-
-    copy = (PatternObject*) pattern_copy(self, Py_None);
+    copy = (PatternObject*) pattern_copy(self);
     if (!copy)
         return NULL;
 
@@ -2578,8 +2571,8 @@ static PyMethodDef pattern_methods[] = {
 	pattern_finditer_doc},
 #endif
     {"scanner", (PyCFunction) pattern_scanner, METH_VARARGS},
-    {"__copy__", (PyCFunction) pattern_copy, METH_VARARGS},
-    {"__deepcopy__", (PyCFunction) pattern_deepcopy, METH_VARARGS},
+    {"__copy__", (PyCFunction) pattern_copy, METH_NOARGS},
+    {"__deepcopy__", (PyCFunction) pattern_deepcopy, METH_O},
     {NULL, NULL}
 };
 
@@ -2772,12 +2765,8 @@ match_getslice(MatchObject* self, PyObject* index, PyObject* def)
 }
 
 static PyObject*
-match_expand(MatchObject* self, PyObject* args)
+match_expand(MatchObject* self, PyObject* ptemplate)
 {
-    PyObject* ptemplate;
-    if (!PyArg_ParseTuple(args, "O:expand", &ptemplate))
-        return NULL;
-
     /* delegate to Python code */
     return call(
         SRE_PY_MODULE, "_expand",
@@ -3019,14 +3008,11 @@ match_regs(MatchObject* self)
 }
 
 static PyObject*
-match_copy(MatchObject* self, PyObject* args)
+match_copy(MatchObject* self)
 {
 #ifdef USE_BUILTIN_COPY
     MatchObject* copy;
     int slots, offset;
-
-    if (args != Py_None && !PyArg_ParseTuple(args, ":__copy__"))
-        return NULL;
 
     slots = 2 * (self->pattern->groups+1);
 
@@ -3053,16 +3039,12 @@ match_copy(MatchObject* self, PyObject* args)
 }
 
 static PyObject*
-match_deepcopy(MatchObject* self, PyObject* args)
+match_deepcopy(MatchObject* self, PyObject* memo)
 {
 #ifdef USE_BUILTIN_COPY
     MatchObject* copy;
 
-    PyObject* memo;
-    if (!PyArg_ParseTuple(args, "O:__deepcopy__", &memo))
-        return NULL;
-
-    copy = (MatchObject*) match_copy(self, Py_None);
+    copy = (MatchObject*) match_copy(self);
     if (!copy)
         return NULL;
 
@@ -3086,9 +3068,9 @@ static PyMethodDef match_methods[] = {
     {"span", (PyCFunction) match_span, METH_VARARGS},
     {"groups", (PyCFunction) match_groups, METH_VARARGS|METH_KEYWORDS},
     {"groupdict", (PyCFunction) match_groupdict, METH_VARARGS|METH_KEYWORDS},
-    {"expand", (PyCFunction) match_expand, METH_VARARGS},
-    {"__copy__", (PyCFunction) match_copy, METH_VARARGS},
-    {"__deepcopy__", (PyCFunction) match_deepcopy, METH_VARARGS},
+    {"expand", (PyCFunction) match_expand, METH_O},
+    {"__copy__", (PyCFunction) match_copy, METH_NOARGS},
+    {"__deepcopy__", (PyCFunction) match_deepcopy, METH_O},
     {NULL, NULL}
 };
 
@@ -3243,7 +3225,7 @@ scanner_dealloc(ScannerObject* self)
 }
 
 static PyObject*
-scanner_match(ScannerObject* self, PyObject* args)
+scanner_match(ScannerObject* self)
 {
     SRE_STATE* state = &self->state;
     PyObject* match;
@@ -3274,7 +3256,7 @@ scanner_match(ScannerObject* self, PyObject* args)
 
 
 static PyObject*
-scanner_search(ScannerObject* self, PyObject* args)
+scanner_search(ScannerObject* self)
 {
     SRE_STATE* state = &self->state;
     PyObject* match;
@@ -3304,10 +3286,8 @@ scanner_search(ScannerObject* self, PyObject* args)
 }
 
 static PyMethodDef scanner_methods[] = {
-    /* FIXME: use METH_OLDARGS instead of 0 or fix to use METH_VARARGS */
-    /*        METH_OLDARGS is not in Python 1.5.2 */
-    {"match", (PyCFunction) scanner_match, 0},
-    {"search", (PyCFunction) scanner_search, 0},
+    {"match", (PyCFunction) scanner_match, METH_NOARGS},
+    {"search", (PyCFunction) scanner_search, METH_NOARGS},
     {NULL, NULL}
 };
 
@@ -3373,7 +3353,7 @@ pattern_scanner(PatternObject* pattern, PyObject* args)
 
 static PyMethodDef _functions[] = {
     {"compile", _compile, METH_VARARGS},
-    {"getcodesize", sre_codesize, METH_VARARGS},
+    {"getcodesize", sre_codesize, METH_NOARGS},
     {"getlower", sre_getlower, METH_VARARGS},
     {NULL, NULL}
 };
