@@ -1056,12 +1056,13 @@ class DocTestRunner:
 
         >>> tests = DocTestFinder().find(_TestClass)
         >>> runner = DocTestRunner(verbose=False)
+        >>> tests.sort(key = lambda test: test.name)
         >>> for test in tests:
-        ...     print runner.run(test)
-        (0, 2)
-        (0, 1)
-        (0, 2)
-        (0, 2)
+        ...     print test.name, '->', runner.run(test)
+        _TestClass -> (0, 2)
+        _TestClass.__init__ -> (0, 2)
+        _TestClass.get -> (0, 2)
+        _TestClass.square -> (0, 1)
 
     The `summarize` method prints a summary of all the test cases that
     have been run by the runner, and returns an aggregated `(f, t)`
