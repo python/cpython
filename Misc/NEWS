@@ -85,6 +85,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1496206: improve urllib2 handling of passwords with respect to
+  default HTTP and HTTPS ports.
+
 - Patch #1080727: add "encoding" parameter to doctest.DocFileSuite.
 
 - Patch #1281707: speed up gzip.readline.
