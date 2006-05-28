@@ -302,7 +302,7 @@ audioop_getsample(PyObject *self, PyObject *args)
         int len, size, val = 0;
         int i;
 
-        if ( !PyArg_Parse(args, "(s#ii)", &cp, &len, &size, &i) )
+        if ( !PyArg_ParseTuple(args, "s#ii:getsample", &cp, &len, &size, &i) )
                 return 0;
         if ( size != 1 && size != 2 && size != 4 ) {
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
@@ -326,7 +326,7 @@ audioop_max(PyObject *self, PyObject *args)
         int i;
         int max = 0;
 
-        if ( !PyArg_Parse(args, "(s#i)", &cp, &len, &size) )
+        if ( !PyArg_ParseTuple(args, "s#i:max", &cp, &len, &size) )
                 return 0;
         if ( size != 1 && size != 2 && size != 4 ) {
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
@@ -350,7 +350,7 @@ audioop_minmax(PyObject *self, PyObject *args)
         int i;
         int min = 0x7fffffff, max = -0x7fffffff;
 
-        if (!PyArg_Parse(args, "(s#i)", &cp, &len, &size))
+        if (!PyArg_ParseTuple(args, "s#i:minmax", &cp, &len, &size))
                 return NULL;
         if (size != 1 && size != 2 && size != 4) {
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
@@ -374,7 +374,7 @@ audioop_avg(PyObject *self, PyObject *args)
         int i;
         double avg = 0.0;
 
-        if ( !PyArg_Parse(args, "(s#i)", &cp, &len, &size) )
+        if ( !PyArg_ParseTuple(args, "s#i:avg", &cp, &len, &size) )
                 return 0;
         if ( size != 1 && size != 2 && size != 4 ) {
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
@@ -401,7 +401,7 @@ audioop_rms(PyObject *self, PyObject *args)
         int i;
         double sum_squares = 0.0;
 
-        if ( !PyArg_Parse(args, "(s#i)", &cp, &len, &size) )
+        if ( !PyArg_ParseTuple(args, "s#i:rms", &cp, &len, &size) )
                 return 0;
         if ( size != 1 && size != 2 && size != 4 ) {
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
@@ -472,7 +472,8 @@ audioop_findfit(PyObject *self, PyObject *args)
         double aj_m1, aj_lm1;
         double sum_ri_2, sum_aij_2, sum_aij_ri, result, best_result, factor;
 
-        if ( !PyArg_Parse(args, "(s#s#)", &cp1, &len1, &cp2, &len2) )
+        if ( !PyArg_ParseTuple(args, "s#s#:findfit",
+	                       &cp1, &len1, &cp2, &len2) )
                 return 0;
         if ( len1 & 1 || len2 & 1 ) {
                 PyErr_SetString(AudioopError, "Strings should be even-sized");
@@ -528,7 +529,8 @@ audioop_findfactor(PyObject *self, PyObject *args)
         int len1, len2;
         double sum_ri_2, sum_aij_ri, result;
 
-        if ( !PyArg_Parse(args, "(s#s#)", &cp1, &len1, &cp2, &len2) )
+        if ( !PyArg_ParseTuple(args, "s#s#:findfactor",
+	                       &cp1, &len1, &cp2, &len2) )
                 return 0;
         if ( len1 & 1 || len2 & 1 ) {
                 PyErr_SetString(AudioopError, "Strings should be even-sized");
@@ -560,7 +562,7 @@ audioop_findmax(PyObject *self, PyObject *args)
         double aj_m1, aj_lm1;
         double result, best_result;
 
-        if ( !PyArg_Parse(args, "(s#i)", &cp1, &len1, &len2) )
+        if ( !PyArg_ParseTuple(args, "s#i:findmax", &cp1, &len1, &len2) )
                 return 0;
         if ( len1 & 1 ) {
                 PyErr_SetString(AudioopError, "Strings should be even-sized");
@@ -605,7 +607,7 @@ audioop_avgpp(PyObject *self, PyObject *args)
         double avg = 0.0;
         int diff, prevdiff, extremediff, nextreme = 0;
 
-        if ( !PyArg_Parse(args, "(s#i)", &cp, &len, &size) )
+        if ( !PyArg_ParseTuple(args, "s#i:avgpp", &cp, &len, &size) )
                 return 0;
         if ( size != 1 && size != 2 && size != 4 ) {
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
@@ -662,7 +664,7 @@ audioop_maxpp(PyObject *self, PyObject *args)
         int max = 0;
         int diff, prevdiff, extremediff;
 
-        if ( !PyArg_Parse(args, "(s#i)", &cp, &len, &size) )
+        if ( !PyArg_ParseTuple(args, "s#i:maxpp", &cp, &len, &size) )
                 return 0;
         if ( size != 1 && size != 2 && size != 4 ) {
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
@@ -713,7 +715,7 @@ audioop_cross(PyObject *self, PyObject *args)
         int i;
         int prevval, ncross;
 
-        if ( !PyArg_Parse(args, "(s#i)", &cp, &len, &size) )
+        if ( !PyArg_ParseTuple(args, "s#i:cross", &cp, &len, &size) )
                 return 0;
         if ( size != 1 && size != 2 && size != 4 ) {
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
@@ -741,7 +743,7 @@ audioop_mul(PyObject *self, PyObject *args)
         PyObject *rv;
         int i;
 
-        if ( !PyArg_Parse(args, "(s#id)", &cp, &len, &size, &factor ) )
+        if ( !PyArg_ParseTuple(args, "s#id:mul", &cp, &len, &size, &factor ) )
                 return 0;
     
         if ( size == 1 ) maxval = (double) 0x7f;
@@ -782,7 +784,8 @@ audioop_tomono(PyObject *self, PyObject *args)
         PyObject *rv;
         int i;
 
-        if ( !PyArg_Parse(args, "(s#idd)", &cp, &len, &size, &fac1, &fac2 ) )
+        if ( !PyArg_ParseTuple(args, "s#idd:tomono",
+	                       &cp, &len, &size, &fac1, &fac2 ) )
                 return 0;
     
         if ( size == 1 ) maxval = (double) 0x7f;
@@ -826,7 +829,8 @@ audioop_tostereo(PyObject *self, PyObject *args)
         PyObject *rv;
         int i;
 
-        if ( !PyArg_Parse(args, "(s#idd)", &cp, &len, &size, &fac1, &fac2 ) )
+        if ( !PyArg_ParseTuple(args, "s#idd:tostereo",
+	                       &cp, &len, &size, &fac1, &fac2 ) )
                 return 0;
     
         if ( size == 1 ) maxval = (double) 0x7f;
@@ -877,7 +881,7 @@ audioop_add(PyObject *self, PyObject *args)
         PyObject *rv;
         int i;
 
-        if ( !PyArg_Parse(args, "(s#s#i)",
+        if ( !PyArg_ParseTuple(args, "s#s#i:add",
                           &cp1, &len1, &cp2, &len2, &size ) )
                 return 0;
 
@@ -931,7 +935,7 @@ audioop_bias(PyObject *self, PyObject *args)
         int i;
         int bias;
 
-        if ( !PyArg_Parse(args, "(s#ii)",
+        if ( !PyArg_ParseTuple(args, "s#ii:bias",
                           &cp, &len, &size , &bias) )
                 return 0;
 
@@ -967,7 +971,7 @@ audioop_reverse(PyObject *self, PyObject *args)
         PyObject *rv;
         int i, j;
 
-        if ( !PyArg_Parse(args, "(s#i)",
+        if ( !PyArg_ParseTuple(args, "s#i:reverse",
                           &cp, &len, &size) )
                 return 0;
 
@@ -1004,7 +1008,7 @@ audioop_lin2lin(PyObject *self, PyObject *args)
         PyObject *rv;
         int i, j;
 
-        if ( !PyArg_Parse(args, "(s#ii)",
+        if ( !PyArg_ParseTuple(args, "s#ii:lin2lin",
                           &cp, &len, &size, &size2) )
                 return 0;
 
@@ -1053,8 +1057,9 @@ audioop_ratecv(PyObject *self, PyObject *args)
 
         weightA = 1;
         weightB = 0;
-        if (!PyArg_ParseTuple(args, "s#iiiiO|ii:ratecv", &cp, &len, &size, &nchannels,
-                              &inrate, &outrate, &state, &weightA, &weightB))
+        if (!PyArg_ParseTuple(args, "s#iiiiO|ii:ratecv", &cp, &len, &size,
+	                      &nchannels, &inrate, &outrate, &state,
+			      &weightA, &weightB))
                 return NULL;
         if (size != 1 && size != 2 && size != 4) {
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
@@ -1117,7 +1122,8 @@ audioop_ratecv(PyObject *self, PyObject *args)
                 }
                 for (chan = 0; chan < nchannels; chan++) {
                         if (!PyArg_ParseTuple(PyTuple_GetItem(samps, chan),
-                                              "ii:ratecv",&prev_i[chan],&cur_i[chan]))
+                                              "ii:ratecv", &prev_i[chan], 
+					                   &cur_i[chan]))
                                 goto exit;
                 }
         }
@@ -1235,9 +1241,9 @@ audioop_lin2ulaw(PyObject *self, PyObject *args)
         PyObject *rv;
         int i;
 
-        if ( !PyArg_Parse(args, "(s#i)",
-                          &cp, &len, &size) )
-                return 0;
+        if ( !PyArg_ParseTuple(args, "s#i:lin2ulaw",
+                               &cp, &len, &size) )
+                return 0 ;
 
         if ( size != 1 && size != 2 && size != 4) {
                 PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
@@ -1269,8 +1275,8 @@ audioop_ulaw2lin(PyObject *self, PyObject *args)
         PyObject *rv;
         int i;
 
-        if ( !PyArg_Parse(args, "(s#i)",
-                          &cp, &len, &size) )
+        if ( !PyArg_ParseTuple(args, "s#i:ulaw2lin",
+                               &cp, &len, &size) )
                 return 0;
 
         if ( size != 1 && size != 2 && size != 4) {
@@ -1303,8 +1309,8 @@ audioop_lin2alaw(PyObject *self, PyObject *args)
         PyObject *rv;
         int i;
 
-        if ( !PyArg_Parse(args, "(s#i)",
-                          &cp, &len, &size) )
+        if ( !PyArg_ParseTuple(args, "s#i:lin2alaw",
+                               &cp, &len, &size) )
                 return 0;
 
         if ( size != 1 && size != 2 && size != 4) {
@@ -1337,8 +1343,8 @@ audioop_alaw2lin(PyObject *self, PyObject *args)
         PyObject *rv;
         int i;
 
-        if ( !PyArg_Parse(args, "(s#i)",
-                          &cp, &len, &size) )
+        if ( !PyArg_ParseTuple(args, "s#i:alaw2lin",
+                               &cp, &len, &size) )
                 return 0;
 
         if ( size != 1 && size != 2 && size != 4) {
@@ -1372,8 +1378,8 @@ audioop_lin2adpcm(PyObject *self, PyObject *args)
         PyObject *rv, *state, *str;
         int i, outputbuffer = 0, bufferstep;
 
-        if ( !PyArg_Parse(args, "(s#iO)",
-                          &cp, &len, &size, &state) )
+        if ( !PyArg_ParseTuple(args, "s#iO:lin2adpcm",
+                               &cp, &len, &size, &state) )
                 return 0;
     
 
@@ -1393,7 +1399,7 @@ audioop_lin2adpcm(PyObject *self, PyObject *args)
                 valpred = 0;
                 step = 7;
                 index = 0;
-        } else if ( !PyArg_Parse(state, "(ii)", &valpred, &index) )
+        } else if ( !PyArg_ParseTuple(state, "ii", &valpred, &index) )
                 return 0;
 
         step = stepsizeTable[index];
@@ -1480,8 +1486,8 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
         PyObject *rv, *str, *state;
         int i, inputbuffer = 0, bufferstep;
 
-        if ( !PyArg_Parse(args, "(s#iO)",
-                          &cp, &len, &size, &state) )
+        if ( !PyArg_ParseTuple(args, "s#iO:adpcm2lin",
+                               &cp, &len, &size, &state) )
                 return 0;
 
         if ( size != 1 && size != 2 && size != 4) {
@@ -1495,7 +1501,7 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
                 valpred = 0;
                 step = 7;
                 index = 0;
-        } else if ( !PyArg_Parse(state, "(ii)", &valpred, &index) )
+        } else if ( !PyArg_ParseTuple(state, "ii", &valpred, &index) )
                 return 0;
     
         str = PyString_FromStringAndSize(NULL, len*size*2);
@@ -1562,30 +1568,30 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef audioop_methods[] = {
-        { "max", audioop_max, METH_OLDARGS },
-        { "minmax", audioop_minmax, METH_OLDARGS },
-        { "avg", audioop_avg, METH_OLDARGS },
-        { "maxpp", audioop_maxpp, METH_OLDARGS },
-        { "avgpp", audioop_avgpp, METH_OLDARGS },
-        { "rms", audioop_rms, METH_OLDARGS },
-        { "findfit", audioop_findfit, METH_OLDARGS },
-        { "findmax", audioop_findmax, METH_OLDARGS },
-        { "findfactor", audioop_findfactor, METH_OLDARGS },
-        { "cross", audioop_cross, METH_OLDARGS },
-        { "mul", audioop_mul, METH_OLDARGS },
-        { "add", audioop_add, METH_OLDARGS },
-        { "bias", audioop_bias, METH_OLDARGS },
-        { "ulaw2lin", audioop_ulaw2lin, METH_OLDARGS },
-        { "lin2ulaw", audioop_lin2ulaw, METH_OLDARGS },
-        { "alaw2lin", audioop_alaw2lin, METH_OLDARGS },
-        { "lin2alaw", audioop_lin2alaw, METH_OLDARGS },
-        { "lin2lin", audioop_lin2lin, METH_OLDARGS },
-        { "adpcm2lin", audioop_adpcm2lin, METH_OLDARGS },
-        { "lin2adpcm", audioop_lin2adpcm, METH_OLDARGS },
-        { "tomono", audioop_tomono, METH_OLDARGS },
-        { "tostereo", audioop_tostereo, METH_OLDARGS },
-        { "getsample", audioop_getsample, METH_OLDARGS },
-        { "reverse", audioop_reverse, METH_OLDARGS },
+        { "max", audioop_max, METH_VARARGS },
+        { "minmax", audioop_minmax, METH_VARARGS },
+        { "avg", audioop_avg, METH_VARARGS },
+        { "maxpp", audioop_maxpp, METH_VARARGS },
+        { "avgpp", audioop_avgpp, METH_VARARGS },
+        { "rms", audioop_rms, METH_VARARGS },
+        { "findfit", audioop_findfit, METH_VARARGS },
+        { "findmax", audioop_findmax, METH_VARARGS },
+        { "findfactor", audioop_findfactor, METH_VARARGS },
+        { "cross", audioop_cross, METH_VARARGS },
+        { "mul", audioop_mul, METH_VARARGS },
+        { "add", audioop_add, METH_VARARGS },
+        { "bias", audioop_bias, METH_VARARGS },
+        { "ulaw2lin", audioop_ulaw2lin, METH_VARARGS },
+        { "lin2ulaw", audioop_lin2ulaw, METH_VARARGS },
+        { "alaw2lin", audioop_alaw2lin, METH_VARARGS },
+        { "lin2alaw", audioop_lin2alaw, METH_VARARGS },
+        { "lin2lin", audioop_lin2lin, METH_VARARGS },
+        { "adpcm2lin", audioop_adpcm2lin, METH_VARARGS },
+        { "lin2adpcm", audioop_lin2adpcm, METH_VARARGS },
+        { "tomono", audioop_tomono, METH_VARARGS },
+        { "tostereo", audioop_tostereo, METH_VARARGS },
+        { "getsample", audioop_getsample, METH_VARARGS },
+        { "reverse", audioop_reverse, METH_VARARGS },
         { "ratecv", audioop_ratecv, METH_VARARGS },
         { 0,          0 }
 };
