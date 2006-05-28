@@ -1,3 +1,9 @@
+/*
+ * New exceptions.c written in Iceland by Richard Jones and Georg Brandl.
+ *
+ * Thanks go to Tim Peters and Michael Hudson for debugging.
+ */
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include "structmember.h"
@@ -1037,56 +1043,57 @@ SyntaxError_str(PySyntaxErrorObject *self)
 {
     PyObject *str;
     PyObject *result;
+    int have_filename = 0;
+    int have_lineno = 0;
+    char *buffer = NULL;
 
     if (self->msg)
         str = PyObject_Str(self->msg);
     else
         str = PyObject_Str(Py_None);
-    result = str;
+    if (!str) return NULL;
+    /* Don't fiddle with non-string return (shouldn't happen anyway) */
+    if (!PyString_Check(str)) return str;
 
     /* XXX -- do all the additional formatting with filename and
        lineno here */
 
-    if (str != NULL && PyString_Check(str)) {
-        int have_filename = 0;
-        int have_lineno = 0;
-        char *buffer = NULL;
+    have_filename = (self->filename != NULL) &&
+        PyString_Check(self->filename);
+    have_lineno = (self->lineno != NULL) && PyInt_Check(self->lineno);
 
-        have_filename = (self->filename != NULL) &&
-            PyString_Check(self->filename);
-        have_lineno = (self->lineno != NULL) && PyInt_Check(self->lineno);
+    if (!have_filename && !have_lineno)
+        return str;
 
-        if (have_filename || have_lineno) {
-            Py_ssize_t bufsize = PyString_GET_SIZE(str) + 64;
-            if (have_filename)
-                bufsize += PyString_GET_SIZE(self->filename);
+    Py_ssize_t bufsize = PyString_GET_SIZE(str) + 64;
+    if (have_filename)
+        bufsize += PyString_GET_SIZE(self->filename);
 
-            buffer = (char *)PyMem_MALLOC(bufsize);
-            if (buffer != NULL) {
-                if (have_filename && have_lineno)
-                    PyOS_snprintf(buffer, bufsize, "%s (%s, line %ld)",
-                        PyString_AS_STRING(str),
-                        my_basename(PyString_AS_STRING(self->filename)),
-                        PyInt_AsLong(self->lineno));
-                else if (have_filename)
-                    PyOS_snprintf(buffer, bufsize, "%s (%s)",
-                        PyString_AS_STRING(str),
-                        my_basename(PyString_AS_STRING(self->filename)));
-                else if (have_lineno)
-                    PyOS_snprintf(buffer, bufsize, "%s (line %ld)",
-                        PyString_AS_STRING(str),
-                        PyInt_AsLong(self->lineno));
+    buffer = PyMem_MALLOC(bufsize);
+    if (buffer == NULL)
+        return str;
 
-                result = PyString_FromString(buffer);
-                PyMem_FREE(buffer);
+    if (have_filename && have_lineno)
+        PyOS_snprintf(buffer, bufsize, "%s (%s, line %ld)",
+            PyString_AS_STRING(str),
+            my_basename(PyString_AS_STRING(self->filename)),
+            PyInt_AsLong(self->lineno));
+    else if (have_filename)
+        PyOS_snprintf(buffer, bufsize, "%s (%s)",
+            PyString_AS_STRING(str),
+            my_basename(PyString_AS_STRING(self->filename)));
+    else /* only have_lineno */
+        PyOS_snprintf(buffer, bufsize, "%s (line %ld)",
+            PyString_AS_STRING(str),
+            PyInt_AsLong(self->lineno));
 
-                if (result == NULL)
-                    result = str;
-                else
-                    Py_DECREF(str);
-            }
-        }
-    }
+    result = PyString_FromString(buffer);
+    PyMem_FREE(buffer);
+
+    if (result == NULL)
+        result = str;
+    else
+        Py_DECREF(str);
     return result;
 }
 
@@ -1208,7 +1215,7 @@ set_ssize_t(PyObject **attr, Py_ssize_t value)
     PyObject *obj = PyInt_FromSsize_t(value);
     if (!obj)
         return -1;
-    Py_XDECREF(*attr);
+    Py_CLEAR(*attr);
     *attr = obj;
     return 0;
 }
@@ -1236,7 +1243,7 @@ set_string(PyObject **attr, const char *value)
     PyObject *obj = PyString_FromString(value);
     if (!obj)
         return -1;
-    Py_XDECREF(*attr);
+    Py_CLEAR(*attr);
     *attr = obj;
     return 0;
 }
@@ -1302,6 +1309,7 @@ PyUnicodeEncodeError_GetStart(PyObject *exc, Py_ssize_t *start)
             *start = 0; /*XXX check for values <0*/
         if (*start>=size)
             *start = size-1;
+        Py_DECREF(obj);
         return 0;
     }
     return -1;
@@ -1321,6 +1329,7 @@ PyUnicodeDecodeError_GetStart(PyObject *exc, Py_ssize_t *start)
             *start = 0;
         if (*start>=size)
             *start = size-1;
+        Py_DECREF(obj);
         return 0;
     }
     return -1;
@@ -1368,6 +1377,7 @@ PyUnicodeEncodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
             *end = 1;
         if (*end>size)
             *end = size;
+        Py_DECREF(obj);
         return 0;
     }
     return -1;
@@ -1387,6 +1397,7 @@ PyUnicodeDecodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
             *end = 1;
         if (*end>size)
             *end = size;
+        Py_DECREF(obj);
         return 0;
     }
     return -1;
@@ -1630,8 +1641,8 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 UnicodeDecodeError_str(PyObject *self)
 {
-    Py_ssize_t start;
-    Py_ssize_t end;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = 0;
 
     if (PyUnicodeDecodeError_GetStart(self, &start))
     return NULL;
