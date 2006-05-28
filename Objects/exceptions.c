@@ -1046,6 +1046,7 @@ SyntaxError_str(PySyntaxErrorObject *self)
     int have_filename = 0;
     int have_lineno = 0;
     char *buffer = NULL;
+    Py_ssize_t bufsize;
 
     if (self->msg)
         str = PyObject_Str(self->msg);
@@ -1065,7 +1066,7 @@ SyntaxError_str(PySyntaxErrorObject *self)
     if (!have_filename && !have_lineno)
         return str;
 
-    Py_ssize_t bufsize = PyString_GET_SIZE(str) + 64;
+    bufsize = PyString_GET_SIZE(str) + 64;
     if (have_filename)
         bufsize += PyString_GET_SIZE(self->filename);
 
