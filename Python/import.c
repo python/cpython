@@ -2059,7 +2059,7 @@ PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals,
 /* Return the package that an import is being performed in.  If globals comes
    from the module foo.bar.bat (not itself a package), this returns the
    sys.modules entry for foo.bar.  If globals is from a package's __init__.py,
-   the package's entry in sys.modules is returned.
+   the package's entry in sys.modules is returned, as a borrowed reference.
 
    The *name* of the returned package is returned in buf, with the length of
    the name in *p_buflen.

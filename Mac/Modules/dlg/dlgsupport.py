@@ -202,7 +202,7 @@ class MyObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
         Output("SetWRefCon(GetDialogWindow(itself), (long)it);")
 
     def outputCheckNewArg(self):
-        Output("if (itself == NULL) return Py_None;")
+        Output("if (itself == NULL) { Py_INCREF(Py_None); return Py_None; }")
 
     def outputCheckConvertArg(self):
         Output("if (v == Py_None) { *p_itself = NULL; return 1; }")

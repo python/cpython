@@ -475,7 +475,7 @@ class FSCatalogInfoDefinition(PEP253Mixin, ObjectDefinition):
         self.argref = "*"       # Store FSSpecs, but pass them by address
 
     def outputCheckNewArg(self):
-        Output("if (itself == NULL) return Py_None;")
+        Output("if (itself == NULL) { Py_INCREF(Py_None); return Py_None; }")
 
     def output_tp_newBody(self):
         Output("PyObject *self;");
