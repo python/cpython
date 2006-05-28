@@ -1623,7 +1623,7 @@ static PyObject*pattern_new_match(PatternObject*, SRE_STATE*, int);
 static PyObject*pattern_scanner(PatternObject*, PyObject*);
 
 static PyObject *
-sre_codesize(PyObject* self)
+sre_codesize(PyObject* self, PyObject *unused)
 {
     return Py_BuildValue("i", sizeof(SRE_CODE));
 }
@@ -2467,7 +2467,7 @@ pattern_subn(PatternObject* self, PyObject* args, PyObject* kw)
 }
 
 static PyObject*
-pattern_copy(PatternObject* self)
+pattern_copy(PatternObject* self, PyObject *unused)
 {
 #ifdef USE_BUILTIN_COPY
     PatternObject* copy;
@@ -3008,7 +3008,7 @@ match_regs(MatchObject* self)
 }
 
 static PyObject*
-match_copy(MatchObject* self)
+match_copy(MatchObject* self, PyObject *unused)
 {
 #ifdef USE_BUILTIN_COPY
     MatchObject* copy;
@@ -3225,7 +3225,7 @@ scanner_dealloc(ScannerObject* self)
 }
 
 static PyObject*
-scanner_match(ScannerObject* self)
+scanner_match(ScannerObject* self, PyObject *unused)
 {
     SRE_STATE* state = &self->state;
     PyObject* match;
@@ -3256,7 +3256,7 @@ scanner_match(ScannerObject* self)
 
 
 static PyObject*
-scanner_search(ScannerObject* self)
+scanner_search(ScannerObject* self, PyObject *unused)
 {
     SRE_STATE* state = &self->state;
     PyObject* match;
