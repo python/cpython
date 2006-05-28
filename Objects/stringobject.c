@@ -23,7 +23,6 @@ static PyStringObject *nullstring;
 */
 static PyObject *interned;
 
-
 /*
    For both PyString_FromString() and PyString_FromStringAndSize(), the
    parameter `size' denotes number of characters to allocate, not counting any
@@ -80,7 +79,7 @@ PyString_FromStringAndSize(const char *str, Py_ssize_t size)
 	op->ob_shash = -1;
 	op->ob_sstate = SSTATE_NOT_INTERNED;
 	if (str != NULL)
-		memcpy(op->ob_sval, str, size);
+		Py_MEMCPY(op->ob_sval, str, size);
 	op->ob_sval[size] = '\0';
 	/* share short strings */
 	if (size == 0) {
@@ -134,7 +133,7 @@ PyString_FromString(const char *str)
 	PyObject_INIT_VAR(op, &PyString_Type, size);
 	op->ob_shash = -1;
 	op->ob_sstate = SSTATE_NOT_INTERNED;
-	memcpy(op->ob_sval, str, size+1);
+	Py_MEMCPY(op->ob_sval, str, size+1);
 	/* share short strings */
 	if (size == 0) {
 		PyObject *t = (PyObject *)op;
@@ -162,7 +161,7 @@ PyString_FromFormatV(const char *format, va_list vargs)
 	PyObject* string;
 
 #ifdef VA_LIST_IS_ARRAY
-	memcpy(count, vargs, sizeof(va_list));
+	Py_MEMCPY(count, vargs, sizeof(va_list));
 #else
 #ifdef  __va_copy
 	__va_copy(count, vargs);
@@ -304,7 +303,7 @@ PyString_FromFormatV(const char *format, va_list vargs)
 				i = strlen(p);
 				if (n > 0 && i > n)
 					i = n;
-				memcpy(s, p, i);
+				Py_MEMCPY(s, p, i);
 				s += i;
 				break;
 			case 'p':
@@ -583,7 +582,7 @@ PyObject *PyString_DecodeEscape(const char *s,
 				assert(PyString_Check(w));
 				r = PyString_AS_STRING(w);
 				rn = PyString_GET_SIZE(w);
-				memcpy(p, r, rn);
+				Py_MEMCPY(p, r, rn);
 				p += rn;
 				Py_DECREF(w);
 				s = t;
@@ -967,8 +966,8 @@ string_concat(register PyStringObject *a, register PyObject *bb)
 	PyObject_INIT_VAR(op, &PyString_Type, size);
 	op->ob_shash = -1;
 	op->ob_sstate = SSTATE_NOT_INTERNED;
-	memcpy(op->ob_sval, a->ob_sval, a->ob_size);
-	memcpy(op->ob_sval + a->ob_size, b->ob_sval, b->ob_size);
+	Py_MEMCPY(op->ob_sval, a->ob_sval, a->ob_size);
+	Py_MEMCPY(op->ob_sval + a->ob_size, b->ob_sval, b->ob_size);
 	op->ob_sval[size] = '\0';
 	return (PyObject *) op;
 #undef b
@@ -1017,12 +1016,12 @@ string_repeat(register PyStringObject *a, register Py_ssize_t n)
 	}
 	i = 0;
 	if (i < size) {
-		memcpy(op->ob_sval, a->ob_sval, a->ob_size);
+		Py_MEMCPY(op->ob_sval, a->ob_sval, a->ob_size);
 		i = a->ob_size;
 	}
 	while (i < size) {
 		j = (i <= size-i)  ?  i  :  size-i;
-		memcpy(op->ob_sval+i, op->ob_sval, j);
+		Py_MEMCPY(op->ob_sval+i, op->ob_sval, j);
 		i += j;
 	}
 	return (PyObject *) op;
@@ -1808,10 +1807,10 @@ string_join(PyStringObject *self, PyObject *orig)
 		size_t n;
 		item = PySequence_Fast_GET_ITEM(seq, i);
 		n = PyString_GET_SIZE(item);
-		memcpy(p, PyString_AS_STRING(item), n);
+		Py_MEMCPY(p, PyString_AS_STRING(item), n);
 		p += n;
 		if (i < seqlen - 1) {
-			memcpy(p, sep, seplen);
+			Py_MEMCPY(p, sep, seplen);
 			p += seplen;
 		}
 	}
@@ -1851,7 +1850,6 @@ string_find_internal(PyStringObject *self, PyObject *args, int dir)
 	Py_ssize_t sub_len;
 	Py_ssize_t start=0, end=PY_SSIZE_T_MAX;
 
-	/* XXX ssize_t i */
 	if (!PyArg_ParseTuple(args, "O|O&O&:find/rfind/index/rindex", &subobj,
 		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
 		return -2;
@@ -1865,6 +1863,8 @@ string_find_internal(PyStringObject *self, PyObject *args, int dir)
 			(PyObject *)self, subobj, start, end, dir);
 #endif
 	else if (PyObject_AsCharBuffer(subobj, &sub, &sub_len))
+		/* XXX - the "expected a character buffer object" is pretty
+		   confusing for a non-expert.  remap to something else ? */
 		return -2;
 
 	if (dir > 0)
@@ -2131,7 +2131,7 @@ string_lower(PyStringObject *self)
 
 	s = PyString_AS_STRING(newobj);
 
-	memcpy(s, PyString_AS_STRING(self), n);
+	Py_MEMCPY(s, PyString_AS_STRING(self), n);
 
 	for (i = 0; i < n; i++) {
 		int c = Py_CHARMASK(s[i]);
@@ -2164,7 +2164,7 @@ string_upper(PyStringObject *self)
 
 	s = PyString_AS_STRING(newobj);
 
-	memcpy(s, PyString_AS_STRING(self), n);
+	Py_MEMCPY(s, PyString_AS_STRING(self), n);
 
 	for (i = 0; i < n; i++) {
 		int c = Py_CHARMASK(s[i]);
@@ -2615,18 +2615,18 @@ replace_interleave(PyStringObject *self,
 	/* TODO: special case single character, which doesn't need memcpy */
 
 	/* Lay the first one down (guaranteed this will occur) */
-	memcpy(result_s, to_s, to_len);
+	Py_MEMCPY(result_s, to_s, to_len);
 	result_s += to_len;
 	count -= 1;
   
 	for (i=0; i<count; i++) {
 		*result_s++ = *self_s++;
-		memcpy(result_s, to_s, to_len);
+		Py_MEMCPY(result_s, to_s, to_len);
 		result_s += to_len;
 	}
 
 	/* Copy the rest of the original string */
-	memcpy(result_s, self_s, self_len-i);
+	Py_MEMCPY(result_s, self_s, self_len-i);
 
 	return result;
 }
@@ -2665,11 +2665,11 @@ replace_delete_single_character(PyStringObject *self,
 		next = findchar(start, end-start, from_c);
 		if (next == NULL)
 			break;
-		memcpy(result_s, start, next-start);
+		Py_MEMCPY(result_s, start, next-start);
 		result_s += (next-start);
 		start = next+1;
 	}
-	memcpy(result_s, start, end-start);
+	Py_MEMCPY(result_s, start, end-start);
 	
 	return result;
 }
@@ -2719,12 +2719,12 @@ replace_delete_substring(PyStringObject *self, PyStringObject *from,
 			break;
 		next = start + offset;
 		
-		memcpy(result_s, start, next-start);
+		Py_MEMCPY(result_s, start, next-start);
 		
 		result_s += (next-start);
 		start = next+from_len;
 	}
-	memcpy(result_s, start, end-start);
+	Py_MEMCPY(result_s, start, end-start);
 	return result;
 }
 
@@ -2754,7 +2754,7 @@ replace_single_character_in_place(PyStringObject *self,
 	if (result == NULL)
 		return NULL;
 	result_s = PyString_AS_STRING(result);
-	memcpy(result_s, self_s, self_len);
+	Py_MEMCPY(result_s, self_s, self_len);
 	
 	/* change everything in-place, starting with this one */
 	start =  result_s + (next-self_s);
@@ -2808,12 +2808,12 @@ replace_substring_in_place(PyStringObject *self,
 	if (result == NULL)
 		return NULL;
 	result_s = PyString_AS_STRING(result);
-	memcpy(result_s, self_s, self_len);
+	Py_MEMCPY(result_s, self_s, self_len);
 
 	
 	/* change everything in-place, starting with this one */
 	start =  result_s + offset;
-	memcpy(start, to_s, from_len);
+	Py_MEMCPY(start, to_s, from_len);
 	start += from_len;
 	end = result_s + self_len;
 	
@@ -2823,7 +2823,7 @@ replace_substring_in_place(PyStringObject *self,
 				    0, end-start, FORWARD);
 		if (offset==-1)
 			break;
-		memcpy(start+offset, to_s, from_len);
+		Py_MEMCPY(start+offset, to_s, from_len);
 		start += offset+from_len;
 	}
 	
@@ -2883,20 +2883,20 @@ replace_single_character(PyStringObject *self,
 		
 		if (next == start) {
 			/* replace with the 'to' */
-			memcpy(result_s, to_s, to_len);
+			Py_MEMCPY(result_s, to_s, to_len);
 			result_s += to_len;
 			start += 1;
 		} else {
 			/* copy the unchanged old then the 'to' */
-			memcpy(result_s, start, next-start);
+			Py_MEMCPY(result_s, start, next-start);
 			result_s += (next-start);
-			memcpy(result_s, to_s, to_len);
+			Py_MEMCPY(result_s, to_s, to_len);
 			result_s += to_len;
 			start = next+1;
 		}
 	}
 	/* Copy the remainder of the remaining string */
-	memcpy(result_s, start, end-start);
+	Py_MEMCPY(result_s, start, end-start);
 	
 	return result;
 }
@@ -2958,20 +2958,20 @@ replace_substring(PyStringObject *self,
 		next = start+offset;
 		if (next == start) {
 			/* replace with the 'to' */
-			memcpy(result_s, to_s, to_len);
+			Py_MEMCPY(result_s, to_s, to_len);
 			result_s += to_len;
 			start += from_len;
 		} else {
 			/* copy the unchanged old then the 'to' */
-			memcpy(result_s, start, next-start);
+			Py_MEMCPY(result_s, start, next-start);
 			result_s += (next-start);
-			memcpy(result_s, to_s, to_len);
+			Py_MEMCPY(result_s, to_s, to_len);
 			result_s += to_len;
 			start = next+from_len;
 		}
 	}
 	/* Copy the remainder of the remaining string */
-	memcpy(result_s, start, end-start);
+	Py_MEMCPY(result_s, start, end-start);
 	
 	return result;
 }
@@ -3358,7 +3358,7 @@ pad(PyStringObject *self, Py_ssize_t left, Py_ssize_t right, char fill)
     if (u) {
         if (left)
             memset(PyString_AS_STRING(u), fill, left);
-        memcpy(PyString_AS_STRING(u) + left,
+        Py_MEMCPY(PyString_AS_STRING(u) + left,
 	       PyString_AS_STRING(self),
 	       PyString_GET_SIZE(self));
         if (right)
@@ -3896,7 +3896,7 @@ str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	n = PyString_GET_SIZE(tmp);
 	pnew = type->tp_alloc(type, n);
 	if (pnew != NULL) {
-		memcpy(PyString_AS_STRING(pnew), PyString_AS_STRING(tmp), n+1);
+		Py_MEMCPY(PyString_AS_STRING(pnew), PyString_AS_STRING(tmp), n+1);
 		((PyStringObject *)pnew)->ob_shash =
 			((PyStringObject *)tmp)->ob_shash;
 		((PyStringObject *)pnew)->ob_sstate = SSTATE_NOT_INTERNED;
@@ -4792,7 +4792,7 @@ PyString_Format(PyObject *format, PyObject *args)
 					*res++ = *pbuf++;
 				}
 			}
-			memcpy(res, pbuf, len);
+			Py_MEMCPY(res, pbuf, len);
 			res += len;
 			rescnt -= len;
 			while (--width >= len) {
