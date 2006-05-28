@@ -1937,9 +1937,10 @@ def test_DocFileSuite():
 
          >>> import unittest
          >>> suite = doctest.DocFileSuite('test_doctest.txt',
-         ...                              'test_doctest2.txt')
+         ...                              'test_doctest2.txt',
+         ...                              'test_doctest4.txt')
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=2 errors=0 failures=2>
+         <unittest.TestResult run=3 errors=0 failures=3>
 
        The test files are looked for in the directory containing the
        calling module.  A package keyword argument can be provided to
@@ -1948,9 +1949,10 @@ def test_DocFileSuite():
          >>> import unittest
          >>> suite = doctest.DocFileSuite('test_doctest.txt',
          ...                              'test_doctest2.txt',
+         ...                              'test_doctest4.txt',
          ...                              package='test')
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=2 errors=0 failures=2>
+         <unittest.TestResult run=3 errors=0 failures=3>
 
        '/' should be used as a path separator.  It will be converted
        to a native separator at run time:
@@ -1995,19 +1997,21 @@ def test_DocFileSuite():
 
          >>> suite = doctest.DocFileSuite('test_doctest.txt',
          ...                              'test_doctest2.txt',
+         ...                              'test_doctest4.txt',
          ...                              globs={'favorite_color': 'blue'})
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=2 errors=0 failures=1>
+         <unittest.TestResult run=3 errors=0 failures=2>
 
        In this case, we supplied a missing favorite color. You can
        provide doctest options:
 
          >>> suite = doctest.DocFileSuite('test_doctest.txt',
          ...                              'test_doctest2.txt',
+         ...                              'test_doctest4.txt',
          ...                         optionflags=doctest.DONT_ACCEPT_BLANKLINE,
          ...                              globs={'favorite_color': 'blue'})
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=2 errors=0 failures=2>
+         <unittest.TestResult run=3 errors=0 failures=3>
 
        And, you can provide setUp and tearDown functions:
 
@@ -2025,9 +2029,10 @@ def test_DocFileSuite():
 
          >>> suite = doctest.DocFileSuite('test_doctest.txt',
          ...                              'test_doctest2.txt',
+         ...                              'test_doctest4.txt',
          ...                              setUp=setUp, tearDown=tearDown)
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=2 errors=0 failures=1>
+         <unittest.TestResult run=3 errors=0 failures=2>
 
        But the tearDown restores sanity:
 
@@ -2059,6 +2064,17 @@ def test_DocFileSuite():
          >>> suite = doctest.DocFileSuite('test_doctest3.txt')
          >>> suite.run(unittest.TestResult())
          <unittest.TestResult run=1 errors=0 failures=0>
+
+       If the tests contain non-ASCII characters, we have to specify which
+       encoding the file is encoded with. We do so by using the `encoding`
+       parameter:
+
+         >>> suite = doctest.DocFileSuite('test_doctest.txt',
+         ...                              'test_doctest2.txt',
+         ...                              'test_doctest4.txt',
+         ...                              encoding='utf-8')
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=3 errors=0 failures=2>
 
        """
 
@@ -2265,6 +2281,32 @@ debugging):
     ... # doctest: +ELLIPSIS
     Traceback (most recent call last):
     UnexpectedException: ...
+    >>> doctest.master = None  # Reset master.
+
+If the tests contain non-ASCII characters, the tests might fail, since
+it's unknown which encoding is used. The encoding can be specified
+using the optional keyword argument `encoding`:
+
+    >>> doctest.testfile('test_doctest4.txt') # doctest: +ELLIPSIS
+    **********************************************************************
+    File "...", line 7, in test_doctest4.txt
+    Failed example:
+        u'...'
+    Expected:
+        u'f\xf6\xf6'
+    Got:
+        u'f\xc3\xb6\xc3\xb6'
+    **********************************************************************
+    ...
+    **********************************************************************
+    1 items had failures:
+       2 of   4 in test_doctest4.txt
+    ***Test Failed*** 2 failures.
+    (2, 4)
+    >>> doctest.master = None  # Reset master.
+
+    >>> doctest.testfile('test_doctest4.txt', encoding='utf-8')
+    (0, 4)
     >>> doctest.master = None  # Reset master.
 """
 

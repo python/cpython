@@ -85,6 +85,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1080727: add "encoding" parameter to doctest.DocFileSuite.
+
 - Patch #1281707: speed up gzip.readline.
 
 - Patch #1180296: Two new functions were added to the locale module:
