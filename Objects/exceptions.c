@@ -1608,8 +1608,8 @@ static PyTypeObject _PyExc_UnicodeEncodeError = {
     (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     (reprfunc)UnicodeEncodeError_str, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    PyDoc_STR("Unicode encoding error."), (traverseproc)BaseException_traverse,
-    (inquiry)BaseException_clear, 0, 0, 0, 0, 0, UnicodeError_members,
+    PyDoc_STR("Unicode encoding error."), (traverseproc)UnicodeError_traverse,
+    (inquiry)UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
     0, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
     (initproc)UnicodeEncodeError_init, 0, BaseException_new,
 };
@@ -1680,8 +1680,8 @@ static PyTypeObject _PyExc_UnicodeDecodeError = {
     (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     (reprfunc)UnicodeDecodeError_str, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    PyDoc_STR("Unicode decoding error."), (traverseproc)BaseException_traverse,
-    (inquiry)BaseException_clear, 0, 0, 0, 0, 0, UnicodeError_members,
+    PyDoc_STR("Unicode decoding error."), (traverseproc)UnicodeError_traverse,
+    (inquiry)UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
     0, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
     (initproc)UnicodeDecodeError_init, 0, BaseException_new,
 };
