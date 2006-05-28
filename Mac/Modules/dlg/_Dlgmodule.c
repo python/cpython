@@ -139,7 +139,7 @@ typedef struct DialogObject {
 PyObject *DlgObj_New(DialogPtr itself)
 {
 	DialogObject *it;
-	if (itself == NULL) return Py_None;
+	if (itself == NULL) { Py_INCREF(Py_None); return Py_None; }
 	it = PyObject_NEW(DialogObject, &Dialog_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
