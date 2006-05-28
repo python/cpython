@@ -194,12 +194,6 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
         reload(reloadmodule)
         self.failUnless(hasattr(reloadmodule,'reloaded'))
 
-        import hooktestpackage.oldabs
-        self.assertEqual(hooktestpackage.oldabs.get_name(),
-                         "hooktestpackage.oldabs")
-        self.assertEqual(hooktestpackage.oldabs.sub,
-                         hooktestpackage.sub)
-
         import hooktestpackage.newrel
         self.assertEqual(hooktestpackage.newrel.get_name(),
                          "hooktestpackage.newrel")
@@ -220,6 +214,11 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
 
         import sub
         self.assertEqual(sub.get_name(), "sub")
+
+        import hooktestpackage.oldabs
+        self.assertEqual(hooktestpackage.oldabs.get_name(),
+                         "hooktestpackage.oldabs")
+        self.assertEqual(hooktestpackage.oldabs.sub, sub)
 
         import hooktestpackage.newabs
         self.assertEqual(hooktestpackage.newabs.get_name(),
