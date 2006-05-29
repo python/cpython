@@ -4,10 +4,10 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.5 alpha 3?
+What's New in Python 2.5 beta 1?
 =================================
 
-*Release date: XX-MAY-2006*
+*Release date: XX-JUN-2006*
 
 Core and builtins
 -----------------
@@ -62,6 +62,11 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1478788 (modified version): The functional extension module has
+  been renamed to _functools and a functools Python wrapper module added.
+  This provides a home for additional function related utilities that are
+  not specifically about functional programming. See PEP 309.
+
 - Patch #1493701: performance enhancements for struct module.
 
 - Patch #1490224: time.altzone is now set correctly on Cygwin.
@@ -81,6 +86,7 @@ Extension Modules
 
 - Calling Tk_Init twice is refused if the first call failed as that
   may deadlock.
+
 
 Library
 -------
@@ -141,6 +147,8 @@ Tools
 
 Documentation
 -------------
+
+
 
 What's New in Python 2.5 alpha 2?
 =================================

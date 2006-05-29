@@ -515,10 +515,7 @@
 			RelativePath="..\Objects\funcobject.c">
 		</File>
 		<File
-			RelativePath="..\Modules\functionalmodule.c">
-		</File>
-		<File
-			RelativePath="..\Modules\functionalmodule.c">
+			RelativePath="..\Modules\_functoolsmodule.c">
 		</File>
 		<File
 			RelativePath="..\Python\future.c">
