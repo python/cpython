@@ -1136,9 +1136,9 @@ instance_ass_item(PyInstanceObject *inst, Py_ssize_t i, PyObject *item)
 	if (func == NULL)
 		return -1;
 	if (item == NULL)
-		arg = Py_BuildValue("i", i);
+		arg = PyInt_FromSsize_t(i);
 	else
-		arg = Py_BuildValue("(iO)", i, item);
+		arg = Py_BuildValue("(nO)", i, item);
 	if (arg == NULL) {
 		Py_DECREF(func);
 		return -1;

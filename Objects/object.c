@@ -112,7 +112,7 @@ get_counts(void)
 	if (result == NULL)
 		return NULL;
 	for (tp = type_list; tp; tp = tp->tp_next) {
-		v = Py_BuildValue("(siii)", tp->tp_name, tp->tp_allocs,
+		v = Py_BuildValue("(snnn)", tp->tp_name, tp->tp_allocs,
 				  tp->tp_frees, tp->tp_maxalloc);
 		if (v == NULL) {
 			Py_DECREF(result);

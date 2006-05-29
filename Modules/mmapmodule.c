@@ -477,7 +477,7 @@ mmap_tell_method(mmap_object *self, PyObject *args)
 	CHECK_VALID(NULL);
         if (!PyArg_ParseTuple(args, ":tell"))
 		return NULL;
-	return Py_BuildValue("l", (long) self->pos);
+	return PyInt_FromLong((long) self->pos);
 }
 
 static PyObject *
@@ -493,7 +493,7 @@ mmap_flush_method(mmap_object *self, PyObject *args)
 		return NULL;
 	} else {
 #ifdef MS_WINDOWS
-		return Py_BuildValue("l", (long)
+		return PyInt_FromLong((long)
                                       FlushViewOfFile(self->data+offset, size));
 #endif /* MS_WINDOWS */
 #ifdef UNIX
@@ -505,7 +505,7 @@ mmap_flush_method(mmap_object *self, PyObject *args)
 			PyErr_SetFromErrno(mmap_module_error);
 			return NULL;
 		}
-		return Py_BuildValue("l", (long) 0);
+		return PyInt_FromLong(0);
 #endif /* UNIX */
 	}
 }
