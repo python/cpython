@@ -277,12 +277,8 @@ PyDoc_STRVAR(math_log_doc,
 If the base not specified, returns the natural logarithm (base e) of x.");
 
 static PyObject *
-math_log10(PyObject *self, PyObject *args)
+math_log10(PyObject *self, PyObject *arg)
 {
-	PyObject *arg;
-
-	if (!PyArg_UnpackTuple(args, "log10", 1, 1, &arg))
-		return NULL;
 	return loghelper(args, log10, "d:log10", arg);
 }
 
@@ -332,7 +328,7 @@ static PyMethodDef math_methods[] = {
 	{"hypot",	math_hypot,	METH_VARARGS,	math_hypot_doc},
 	{"ldexp",	math_ldexp,	METH_VARARGS,	math_ldexp_doc},
 	{"log",		math_log,	METH_VARARGS,	math_log_doc},
-	{"log10",	math_log10,	METH_VARARGS,	math_log10_doc},
+	{"log10",	math_log10,	METH_O,     	math_log10_doc},
 	{"modf",	math_modf,	METH_VARARGS,	math_modf_doc},
 	{"pow",		math_pow,	METH_VARARGS,	math_pow_doc},
 	{"radians",	math_radians,	METH_VARARGS,	math_radians_doc},
