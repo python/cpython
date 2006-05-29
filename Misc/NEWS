@@ -91,6 +91,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1497027: try HTTP digest auth before basic auth in urllib2
+  (thanks for J. J. Lee).
+
 - Patch #1496206: improve urllib2 handling of passwords with respect to
   default HTTP and HTTPS ports.
 
