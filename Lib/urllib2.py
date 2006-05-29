@@ -297,6 +297,10 @@ class OpenerDirector:
     def add_handler(self, handler):
         added = False
         for meth in dir(handler):
+            if meth in ["redirect_request", "do_open", "proxy_open"]:
+                # oops, coincidental match
+                continue
+
             i = meth.find("_")
             protocol = meth[:i]
             condition = meth[i+1:]
@@ -768,6 +772,10 @@ class AbstractBasicAuthHandler:
     # www-authenticate header.  should probably be a lot more careful
     # in parsing them to extract multiple alternatives
 
+    # XXX could pre-emptively send auth info already accepted (RFC 2617,
+    # end of section 2, and section 1.2 immediately after "credentials"
+    # production).
+
     def __init__(self, password_mgr=None):
         if password_mgr is None:
             password_mgr = HTTPPasswordMgr()
@@ -977,6 +985,7 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
     """
 
     auth_header = 'Authorization'
+    handler_order = 490  # before Basic auth
 
     def http_error_401(self, req, fp, code, msg, headers):
         host = urlparse.urlparse(req.get_full_url())[1]
@@ -989,6 +998,7 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 
     auth_header = 'Proxy-Authorization'
+    handler_order = 490  # before Basic auth
 
     def http_error_407(self, req, fp, code, msg, headers):
         host = req.get_host()

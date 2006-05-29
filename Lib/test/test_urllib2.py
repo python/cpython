@@ -318,6 +318,27 @@ class MockPasswordManager:
 
 class OpenerDirectorTests(unittest.TestCase):
 
+    def test_badly_named_methods(self):
+        # test work-around for three methods that accidentally follow the
+        # naming conventions for handler methods
+        # (*_open() / *_request() / *_response())
+
+        # These used to call the accidentally-named methods, causing a
+        # TypeError in real code; here, returning self from these mock
+        # methods would either cause no exception, or AttributeError.
+
+        from urllib2 import URLError
+
+        o = OpenerDirector()
+        meth_spec = [
+            [("do_open", "return self"), ("proxy_open", "return self")],
+            [("redirect_request", "return self")],
+            ]
+        handlers = add_ordered_mock_handlers(o, meth_spec)
+        o.add_handler(urllib2.UnknownHandler())
+        for scheme in "do", "proxy", "redirect":
+            self.assertRaises(URLError, o.open, scheme+"://example.com/")
+
     def test_handled(self):
         # handler returning non-None means no more handlers will be called
         o = OpenerDirector()
@@ -807,6 +828,8 @@ class HandlerTests(unittest.TestCase):
         realm = "ACME Widget Store"
         http_handler = MockHTTPHandler(
             401, 'WWW-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
+        opener.add_handler(auth_handler)
+        opener.add_handler(http_handler)
         self._test_basic_auth(opener, auth_handler, "Authorization",
                               realm, http_handler, password_manager,
                               "http://acme.example.com/protected",
@@ -822,6 +845,8 @@ class HandlerTests(unittest.TestCase):
         realm = "ACME Networks"
         http_handler = MockHTTPHandler(
             407, 'Proxy-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
+        opener.add_handler(auth_handler)
+        opener.add_handler(http_handler)
         self._test_basic_auth(opener, auth_handler, "Proxy-authorization",
                               realm, http_handler, password_manager,
                               "http://acme.example.com:3128/protected",
@@ -833,29 +858,53 @@ class HandlerTests(unittest.TestCase):
         # response (http://python.org/sf/1479302), where it should instead
         # return None to allow another handler (especially
         # HTTPBasicAuthHandler) to handle the response.
+
+        # Also (http://python.org/sf/14797027, RFC 2617 section 1.2), we must
+        # try digest first (since it's the strongest auth scheme), so we record
+        # order of calls here to check digest comes first:
+        class RecordingOpenerDirector(OpenerDirector):
+            def __init__(self):
+                OpenerDirector.__init__(self)
+                self.recorded = []
+            def record(self, info):
+                self.recorded.append(info)
         class TestDigestAuthHandler(urllib2.HTTPDigestAuthHandler):
-            handler_order = 400  # strictly before HTTPBasicAuthHandler
-        opener = OpenerDirector()
+            def http_error_401(self, *args, **kwds):
+                self.parent.record("digest")
+                urllib2.HTTPDigestAuthHandler.http_error_401(self,
+                                                             *args, **kwds)
+        class TestBasicAuthHandler(urllib2.HTTPBasicAuthHandler):
+            def http_error_401(self, *args, **kwds):
+                self.parent.record("basic")
+                urllib2.HTTPBasicAuthHandler.http_error_401(self,
+                                                            *args, **kwds)
+
+        opener = RecordingOpenerDirector()
         password_manager = MockPasswordManager()
         digest_handler = TestDigestAuthHandler(password_manager)
-        basic_handler = urllib2.HTTPBasicAuthHandler(password_manager)
-        opener.add_handler(digest_handler)
+        basic_handler = TestBasicAuthHandler(password_manager)
         realm = "ACME Networks"
         http_handler = MockHTTPHandler(
             401, 'WWW-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
+        opener.add_handler(basic_handler)
+        opener.add_handler(digest_handler)
+        opener.add_handler(http_handler)
+
+        # check basic auth isn't blocked by digest handler failing
         self._test_basic_auth(opener, basic_handler, "Authorization",
                               realm, http_handler, password_manager,
                               "http://acme.example.com/protected",
                               "http://acme.example.com/protected",
                               )
+        # check digest was tried before basic (twice, because
+        # _test_basic_auth called .open() twice)
+        self.assertEqual(opener.recorded, ["digest", "basic"]*2)
 
     def _test_basic_auth(self, opener, auth_handler, auth_header,
                          realm, http_handler, password_manager,
                          request_url, protected_url):
         import base64, httplib
         user, password = "wile", "coyote"
-        opener.add_handler(auth_handler)
-        opener.add_handler(http_handler)
 
         # .add_password() fed through to password manager
         auth_handler.add_password(realm, request_url, user, password)
