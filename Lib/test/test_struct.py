@@ -3,6 +3,7 @@ import test.test_support
 import struct
 import array
 import unittest
+import warnings
 
 import sys
 ISBIGENDIAN = sys.byteorder == "big"
@@ -10,7 +11,14 @@ del sys
 verify((struct.pack('=i', 1)[0] == chr(0)) == ISBIGENDIAN,
        "bigendian determination appears wrong")
 
-PY_STRUCT_RANGE_CHECKING = 1
+try:
+    import _struct
+except ImportError:
+    PY_STRUCT_RANGE_CHECKING = 0
+    PY_STRUCT_WRAPPING = 1
+else:
+    PY_STRUCT_RANGE_CHECKING = getattr(_struct, '_PY_STRUCT_RANGE_CHECKING', 0)
+    PY_STRUCT_WRAPPING = getattr(_struct, '_PY_STRUCT_WRAPPING', 0)
 
 def string_reverse(s):
     chars = list(s)
@@ -35,12 +43,29 @@ def simple_err(func, *args):
 def any_err(func, *args):
     try:
         func(*args)
-    except (struct.error, OverflowError, TypeError):
+    except (struct.error, TypeError):
         pass
     else:
         raise TestFailed, "%s%s did not raise error" % (
             func.__name__, args)
 
+def deprecated_err(func, *args):
+    warnings.filterwarnings("error", r"""^struct.*""", DeprecationWarning)
+    warnings.filterwarnings("error", r""".*format requires.*""", DeprecationWarning)
+    try:
+        try:
+            func(*args)
+        except (struct.error, TypeError):
+            pass
+        except DeprecationWarning:
+            if not PY_STRUCT_WRAPPING:
+                raise TestFailed, "%s%s expected to raise struct.error" % (
+                    func.__name__, args)
+        else:
+            raise TestFailed, "%s%s did not raise error" % (
+                func.__name__, args)
+    finally:
+        warnings.resetwarnings()
 
 simple_err(struct.calcsize, 'Z')
 
@@ -272,8 +297,8 @@ class IntTester:
                 if verbose:
                     print "Skipping buggy range check for code", code
             else:
-                any_err(pack, ">" + code, x)
-                any_err(pack, "<" + code, x)
+                deprecated_err(pack, ">" + code, x)
+                deprecated_err(pack, "<" + code, x)
 
         # Much the same for unsigned.
         code = self.unsigned_code
@@ -327,8 +352,8 @@ class IntTester:
                 if verbose:
                     print "Skipping buggy range check for code", code
             else:
-                any_err(pack, ">" + code, x)
-                any_err(pack, "<" + code, x)
+                deprecated_err(pack, ">" + code, x)
+                deprecated_err(pack, "<" + code, x)
 
     def run(self):
         from random import randrange
@@ -448,13 +473,13 @@ def test_1229380():
     for endian in ('', '>', '<'):
         for cls in (int, long):
             for fmt in ('B', 'H', 'I', 'L'):
-                any_err(struct.pack, endian + fmt, cls(-1))
+                deprecated_err(struct.pack, endian + fmt, cls(-1))
 
-            any_err(struct.pack, endian + 'B', cls(300))
-            any_err(struct.pack, endian + 'H', cls(70000))
+            deprecated_err(struct.pack, endian + 'B', cls(300))
+            deprecated_err(struct.pack, endian + 'H', cls(70000))
 
-        any_err(struct.pack, endian + 'I', sys.maxint * 4L)
-        any_err(struct.pack, endian + 'L', sys.maxint * 4L)
+        deprecated_err(struct.pack, endian + 'I', sys.maxint * 4L)
+        deprecated_err(struct.pack, endian + 'L', sys.maxint * 4L)
 
 if PY_STRUCT_RANGE_CHECKING:
     test_1229380()
