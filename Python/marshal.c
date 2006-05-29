@@ -1073,12 +1073,10 @@ marshal_dump(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-marshal_load(PyObject *self, PyObject *args)
+marshal_load(PyObject *self, PyObject *f)
 {
 	RFILE rf;
-	PyObject *f, *result;
-	if (!PyArg_ParseTuple(args, "O:load", &f))
-		return NULL;
+	PyObject *result;
 	if (!PyFile_Check(f)) {
 		PyErr_SetString(PyExc_TypeError,
 				"marshal.load() arg must be file");
@@ -1121,7 +1119,7 @@ marshal_loads(PyObject *self, PyObject *args)
 
 static PyMethodDef marshal_methods[] = {
 	{"dump",	marshal_dump,	METH_VARARGS},
-	{"load",	marshal_load,	METH_VARARGS},
+	{"load",	marshal_load,	METH_O},
 	{"dumps",	marshal_dumps,	METH_VARARGS},
 	{"loads",	marshal_loads,	METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
