@@ -48,21 +48,12 @@ one argument, the encoding name in all lower case letters, and return\n\
 a tuple of functions (encoder, decoder, stream_reader, stream_writer).");
 
 static
-PyObject *codec_register(PyObject *self, PyObject *args)
+PyObject *codec_register(PyObject *self, PyObject *search_function)
 {
-    PyObject *search_function;
-
-    if (!PyArg_ParseTuple(args, "O:register", &search_function))
-        goto onError;
-
     if (PyCodec_Register(search_function))
-	goto onError;
+        return NULL;
 
-    Py_INCREF(Py_None);
-    return Py_None;
-
- onError:
-    return NULL;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(lookup__doc__,
@@ -77,12 +68,9 @@ PyObject *codec_lookup(PyObject *self, PyObject *args)
     char *encoding;
 
     if (!PyArg_ParseTuple(args, "s:lookup", &encoding))
-        goto onError;
+        return NULL;
 
     return _PyCodec_Lookup(encoding);
-
- onError:
-    return NULL;
 }
 
 PyDoc_STRVAR(encode__doc__,
@@ -116,13 +104,7 @@ codec_encode(PyObject *self, PyObject *args)
 #endif
 
     /* Encode via the codec registry */
-    v = PyCodec_Encode(v, encoding, errors);
-    if (v == NULL)
-        goto onError;
-    return v;
-
- onError:
-    return NULL;
+    return PyCodec_Encode(v, encoding, errors);
 }
 
 PyDoc_STRVAR(decode__doc__,
@@ -156,13 +138,7 @@ codec_decode(PyObject *self, PyObject *args)
 #endif
 
     /* Decode via the codec registry */
-    v = PyCodec_Decode(v, encoding, errors);
-    if (v == NULL)
-        goto onError;
-    return v;
-
- onError:
-    return NULL;
+    return PyCodec_Decode(v, encoding, errors);
 }
 
 /* --- Helpers ------------------------------------------------------------ */
@@ -171,22 +147,11 @@ static
 PyObject *codec_tuple(PyObject *unicode,
 		      Py_ssize_t len)
 {
-    PyObject *v,*w;
-
+    PyObject *v;
     if (unicode == NULL)
-	return NULL;
-    v = PyTuple_New(2);
-    if (v == NULL) {
-	Py_DECREF(unicode);
-	return NULL;
-    }
-    PyTuple_SET_ITEM(v,0,unicode);
-    w = PyInt_FromSsize_t(len);
-    if (w == NULL) {
-	Py_DECREF(v);
-	return NULL;
-    }
-    PyTuple_SET_ITEM(v,1,w);
+        return NULL;
+    v = Py_BuildValue("On", unicode, len);
+    Py_DECREF(unicode);
     return v;
 }
 
@@ -419,7 +384,7 @@ utf_16_ex_decode(PyObject *self,
 					    final ? NULL : &consumed);
     if (unicode == NULL)
 	return NULL;
-    tuple = Py_BuildValue("Oii", unicode, consumed, byteorder);
+    tuple = Py_BuildValue("Oni", unicode, consumed, byteorder);
     Py_DECREF(unicode);
     return tuple;
 }
@@ -604,8 +569,8 @@ utf_7_encode(PyObject *self,
 	return NULL;
     v = codec_tuple(PyUnicode_EncodeUTF7(PyUnicode_AS_UNICODE(str),
 					 PyUnicode_GET_SIZE(str),
-                     0,
-                     0,
+					 0,
+					 0,
 					 errors),
 		    PyUnicode_GET_SIZE(str));
     Py_DECREF(str);
@@ -876,8 +841,7 @@ static PyObject *register_error(PyObject *self, PyObject *args)
 	return NULL;
     if (PyCodec_RegisterError(name, handler))
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(lookup_error__doc__,
@@ -899,7 +863,7 @@ static PyObject *lookup_error(PyObject *self, PyObject *args)
 /* --- Module API --------------------------------------------------------- */
 
 static PyMethodDef _codecs_functions[] = {
-    {"register",		codec_register,			METH_VARARGS,
+    {"register",		codec_register,			METH_O,
         register__doc__},
     {"lookup",			codec_lookup, 			METH_VARARGS,
         lookup__doc__},

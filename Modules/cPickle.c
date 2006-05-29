@@ -5110,29 +5110,23 @@ noload(Unpicklerobject *self)
 
 
 static PyObject *
-Unpickler_load(Unpicklerobject *self, PyObject *args)
+Unpickler_load(Unpicklerobject *self, PyObject *unused)
 {
-	if (!( PyArg_ParseTuple(args, ":load")))
-		return NULL;
-
 	return load(self);
 }
 
 static PyObject *
-Unpickler_noload(Unpicklerobject *self, PyObject *args)
+Unpickler_noload(Unpicklerobject *self, PyObject *unused)
 {
-	if (!( PyArg_ParseTuple(args, ":noload")))
-		return NULL;
-
 	return noload(self);
 }
 
 
 static struct PyMethodDef Unpickler_methods[] = {
-  {"load",         (PyCFunction)Unpickler_load,   METH_VARARGS,
+  {"load",         (PyCFunction)Unpickler_load,   METH_NOARGS,
    PyDoc_STR("load() -- Load a pickle")
   },
-  {"noload",         (PyCFunction)Unpickler_noload,   METH_VARARGS,
+  {"noload",         (PyCFunction)Unpickler_noload,   METH_NOARGS,
    PyDoc_STR(
    "noload() -- not load a pickle, but go through most of the motions\n"
    "\n"
@@ -5214,12 +5208,8 @@ newUnpicklerobject(PyObject *f)
 
 
 static PyObject *
-get_Unpickler(PyObject *self, PyObject *args)
+get_Unpickler(PyObject *self, PyObject *file)
 {
-	PyObject *file;
-
-	if (!( PyArg_ParseTuple(args, "O:Unpickler", &file)))
-		return NULL;
 	return (PyObject *)newUnpicklerobject(file);
 }
 
@@ -5428,13 +5418,10 @@ cpm_dumps(PyObject *self, PyObject *args, PyObject *kwds)
 
 /* load(fileobj). */
 static PyObject *
-cpm_load(PyObject *self, PyObject *args)
+cpm_load(PyObject *self, PyObject *ob)
 {
 	Unpicklerobject *unpickler = 0;
-	PyObject *ob, *res = NULL;
-
-	if (!( PyArg_ParseTuple(args, "O:load", &ob)))
-		goto finally;
+	PyObject *res = NULL;
 
 	if (!( unpickler = newUnpicklerobject(ob)))
 		goto finally;
@@ -5519,7 +5506,7 @@ static struct PyMethodDef cPickle_methods[] = {
    "See the Pickler docstring for the meaning of optional argument proto.")
   },
 
-  {"load",         (PyCFunction)cpm_load,         METH_VARARGS,
+  {"load",         (PyCFunction)cpm_load,         METH_O,
    PyDoc_STR("load(file) -- Load a pickle from the given file")},
 
   {"loads",        (PyCFunction)cpm_loads,        METH_VARARGS,
@@ -5550,7 +5537,7 @@ static struct PyMethodDef cPickle_methods[] = {
    "object, or any other custom object that meets this interface.\n")
   },
 
-  {"Unpickler",    (PyCFunction)get_Unpickler,    METH_VARARGS,
+  {"Unpickler",    (PyCFunction)get_Unpickler,    METH_O,
    PyDoc_STR("Unpickler(file) -- Create an unpickler.")},
 
   { NULL, NULL }

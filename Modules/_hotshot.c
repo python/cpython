@@ -1058,7 +1058,7 @@ profiler_runcall(ProfilerObject *self, PyObject *args)
     PyObject *callkw = NULL;
     PyObject *callable;
 
-    if (PyArg_ParseTuple(args, "O|OO:runcall",
+    if (PyArg_UnpackTuple(args, "runcall", 1, 3,
                          &callable, &callargs, &callkw)) {
         if (is_available(self)) {
             do_start(self);
@@ -1575,23 +1575,18 @@ PyDoc_STR(
 ;
 
 static PyObject *
-hotshot_resolution(PyObject *unused, PyObject *args)
+hotshot_resolution(PyObject *self, PyObject *unused)
 {
-    PyObject *result = NULL;
-
-    if (PyArg_ParseTuple(args, ":resolution")) {
-        if (timeofday_diff == 0) {
-            calibrate();
-            calibrate();
-            calibrate();
-        }
-#ifdef MS_WINDOWS
-        result = Py_BuildValue("ii", timeofday_diff, frequency.LowPart);
-#else
-        result = Py_BuildValue("ii", timeofday_diff, rusage_diff);
-#endif
+    if (timeofday_diff == 0) {
+        calibrate();
+        calibrate();
+        calibrate();
     }
-    return result;
+#ifdef MS_WINDOWS
+    return Py_BuildValue("ii", timeofday_diff, frequency.LowPart);
+#else
+    return Py_BuildValue("ii", timeofday_diff, rusage_diff);
+#endif
 }
 
 
@@ -1599,7 +1594,7 @@ static PyMethodDef functions[] = {
     {"coverage",   hotshot_coverage,   METH_VARARGS, coverage__doc__},
     {"profiler",   hotshot_profiler,   METH_VARARGS, profiler__doc__},
     {"logreader",  hotshot_logreader,  METH_VARARGS, logreader__doc__},
-    {"resolution", hotshot_resolution, METH_VARARGS, resolution__doc__},
+    {"resolution", hotshot_resolution, METH_NOARGS,  resolution__doc__},
     {NULL, NULL}
 };
 

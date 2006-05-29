@@ -2891,7 +2891,7 @@ match_start(MatchObject* self, PyObject* args)
     int index;
 
     PyObject* index_ = Py_False; /* zero */
-    if (!PyArg_ParseTuple(args, "|O:start", &index_))
+    if (!PyArg_UnpackTuple(args, "start", 0, 1, &index_))
         return NULL;
 
     index = match_getindex(self, index_);
@@ -2914,7 +2914,7 @@ match_end(MatchObject* self, PyObject* args)
     int index;
 
     PyObject* index_ = Py_False; /* zero */
-    if (!PyArg_ParseTuple(args, "|O:end", &index_))
+    if (!PyArg_UnpackTuple(args, "end", 0, 1, &index_))
         return NULL;
 
     index = match_getindex(self, index_);
@@ -2964,7 +2964,7 @@ match_span(MatchObject* self, PyObject* args)
     int index;
 
     PyObject* index_ = Py_False; /* zero */
-    if (!PyArg_ParseTuple(args, "|O:span", &index_))
+    if (!PyArg_UnpackTuple(args, "span", 0, 1, &index_))
         return NULL;
 
     index = match_getindex(self, index_);

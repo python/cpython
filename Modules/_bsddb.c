@@ -1041,7 +1041,7 @@ DB_append(DBObject* self, PyObject* args)
     DBT key, data;
     DB_TXN *txn = NULL;
 
-    if (!PyArg_ParseTuple(args, "O|O:append", &dataobj, &txnobj))
+    if (!PyArg_UnpackTuple(args, "append", 1, 2, &dataobj, &txnobj))
         return NULL;
 
     CHECK_DB_NOT_CLOSED(self);
@@ -2895,7 +2895,7 @@ DB_keys(DBObject* self, PyObject* args)
     PyObject* txnobj = NULL;
     DB_TXN *txn = NULL;
 
-    if (!PyArg_ParseTuple(args,"|O:keys", &txnobj))
+    if (!PyArg_UnpackTuple(args, "keys", 0, 1, &txnobj))
         return NULL;
     if (!checkTxnObj(txnobj, &txn))
         return NULL;
@@ -2909,7 +2909,7 @@ DB_items(DBObject* self, PyObject* args)
     PyObject* txnobj = NULL;
     DB_TXN *txn = NULL;
 
-    if (!PyArg_ParseTuple(args,"|O:items", &txnobj))
+    if (!PyArg_UnpackTuple(args, "items", 0, 1, &txnobj))
         return NULL;
     if (!checkTxnObj(txnobj, &txn))
         return NULL;
@@ -2923,7 +2923,7 @@ DB_values(DBObject* self, PyObject* args)
     PyObject* txnobj = NULL;
     DB_TXN *txn = NULL;
 
-    if (!PyArg_ParseTuple(args,"|O:values", &txnobj))
+    if (!PyArg_UnpackTuple(args, "values", 0, 1, &txnobj))
         return NULL;
     if (!checkTxnObj(txnobj, &txn))
         return NULL;

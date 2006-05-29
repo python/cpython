@@ -189,10 +189,8 @@ PyDoc_STRVAR(dbm_close__doc__,
 Closes the database.");
 
 static PyObject *
-dbm_close(register dbmobject *dp, PyObject *args)
+dbm_close(register dbmobject *dp, PyObject *unused)
 {
-    if (!PyArg_ParseTuple(args, ":close"))
-        return NULL;
     if (dp->di_dbm)
         gdbm_close(dp->di_dbm);
     dp->di_dbm = NULL;
@@ -205,7 +203,7 @@ PyDoc_STRVAR(dbm_keys__doc__,
 Get a list of all keys in the database.");
 
 static PyObject *
-dbm_keys(register dbmobject *dp, PyObject *args)
+dbm_keys(register dbmobject *dp, PyObject *unused)
 {
     register PyObject *v, *item;
     datum key, nextkey;
@@ -215,9 +213,6 @@ dbm_keys(register dbmobject *dp, PyObject *args)
         PyErr_BadInternalCall();
         return NULL;
     }
-    if (!PyArg_ParseTuple(args, ":keys"))
-        return NULL;
-
     check_dbmobject_open(dp);
 
     v = PyList_New(0);
@@ -269,13 +264,11 @@ hash values, and won't be sorted by the key values. This method\n\
 returns the starting key.");
 
 static PyObject *
-dbm_firstkey(register dbmobject *dp, PyObject *args)
+dbm_firstkey(register dbmobject *dp, PyObject *unused)
 {
     register PyObject *v;
     datum key;
 
-    if (!PyArg_ParseTuple(args, ":firstkey"))
-        return NULL;
     check_dbmobject_open(dp);
     key = gdbm_firstkey(dp->di_dbm);
     if (key.dptr) {
@@ -330,10 +323,8 @@ by using this reorganization; otherwise, deleted file space will be\n\
 kept and reused as new (key,value) pairs are added.");
 
 static PyObject *
-dbm_reorganize(register dbmobject *dp, PyObject *args)
+dbm_reorganize(register dbmobject *dp, PyObject *unused)
 {
-    if (!PyArg_ParseTuple(args, ":reorganize"))
-        return NULL;
     check_dbmobject_open(dp);
     errno = 0;
     if (gdbm_reorganize(dp->di_dbm) < 0) {
@@ -353,10 +344,8 @@ When the database has been opened in fast mode, this method forces\n\
 any unwritten data to be written to the disk.");
 
 static PyObject *
-dbm_sync(register dbmobject *dp, PyObject *args)
+dbm_sync(register dbmobject *dp, PyObject *unused)
 {
-    if (!PyArg_ParseTuple(args, ":sync"))
-        return NULL;
     check_dbmobject_open(dp);
     gdbm_sync(dp->di_dbm);
     Py_INCREF(Py_None);
@@ -364,13 +353,13 @@ dbm_sync(register dbmobject *dp, PyObject *args)
 }
 
 static PyMethodDef dbm_methods[] = {
-    {"close",	  (PyCFunction)dbm_close,   METH_VARARGS, dbm_close__doc__},
-    {"keys",	  (PyCFunction)dbm_keys,    METH_VARARGS, dbm_keys__doc__},
+    {"close",	  (PyCFunction)dbm_close,   METH_NOARGS, dbm_close__doc__},
+    {"keys",	  (PyCFunction)dbm_keys,    METH_NOARGS, dbm_keys__doc__},
     {"has_key",   (PyCFunction)dbm_has_key, METH_VARARGS, dbm_has_key__doc__},
-    {"firstkey",  (PyCFunction)dbm_firstkey,METH_VARARGS, dbm_firstkey__doc__},
+    {"firstkey",  (PyCFunction)dbm_firstkey,METH_NOARGS, dbm_firstkey__doc__},
     {"nextkey",	  (PyCFunction)dbm_nextkey, METH_VARARGS, dbm_nextkey__doc__},
-    {"reorganize",(PyCFunction)dbm_reorganize,METH_VARARGS, dbm_reorganize__doc__},
-    {"sync",      (PyCFunction)dbm_sync,    METH_VARARGS, dbm_sync__doc__},
+    {"reorganize",(PyCFunction)dbm_reorganize,METH_NOARGS, dbm_reorganize__doc__},
+    {"sync",      (PyCFunction)dbm_sync,    METH_NOARGS, dbm_sync__doc__},
     {NULL,		NULL}		/* sentinel */
 };
 

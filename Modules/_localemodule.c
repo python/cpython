@@ -281,7 +281,7 @@ PyLocale_strcoll(PyObject* self, PyObject* args)
     wchar_t *ws1 = NULL, *ws2 = NULL;
     int rel1 = 0, rel2 = 0, len1, len2;
     
-    if (!PyArg_ParseTuple(args, "OO:strcoll", &os1, &os2))
+    if (!PyArg_UnpackTuple(args, "strcoll", 2, 2, &os1, &os2))
         return NULL;
     /* If both arguments are byte strings, use strcoll.  */
     if (PyString_Check(os1) && PyString_Check(os2))

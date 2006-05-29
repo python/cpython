@@ -216,7 +216,7 @@ gen_throw(PyGenObject *gen, PyObject *args)
 	PyObject *tb = NULL;
 	PyObject *val = NULL;
 
-	if (!PyArg_ParseTuple(args, "O|OO:throw", &typ, &val, &tb))
+	if (!PyArg_UnpackTuple(args, "throw", 1, 3, &typ, &val, &tb))
 		return NULL;
 
 	/* First, check the traceback argument, replacing None with

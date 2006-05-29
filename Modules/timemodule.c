@@ -123,11 +123,9 @@ _PyTime_DoubleToTimet(double x)
 }
 
 static PyObject *
-time_time(PyObject *self, PyObject *args)
+time_time(PyObject *self, PyObject *unused)
 {
 	double secs;
-	if (!PyArg_ParseTuple(args, ":time"))
-		return NULL;
 	secs = floattime();
 	if (secs == 0.0) {
 		PyErr_SetFromErrno(PyExc_IOError);
@@ -153,10 +151,8 @@ Fractions of a second may be present if the system clock provides them.");
 #endif
 
 static PyObject *
-time_clock(PyObject *self, PyObject *args)
+time_clock(PyObject *self, PyObject *unused)
 {
-	if (!PyArg_ParseTuple(args, ":clock"))
-		return NULL;
 	return PyFloat_FromDouble(((double)clock()) / CLOCKS_PER_SEC);
 }
 #endif /* HAVE_CLOCK */
@@ -164,15 +160,12 @@ time_clock(PyObject *self, PyObject *args)
 #if defined(MS_WINDOWS) && !defined(__BORLANDC__)
 /* Due to Mark Hammond and Tim Peters */
 static PyObject *
-time_clock(PyObject *self, PyObject *args)
+time_clock(PyObject *self, PyObject *unused)
 {
 	static LARGE_INTEGER ctrStart;
 	static double divisor = 0.0;
 	LARGE_INTEGER now;
 	double diff;
-
-	if (!PyArg_ParseTuple(args, ":clock"))
-		return NULL;
 
 	if (divisor == 0.0) {
 		LARGE_INTEGER freq;
@@ -509,7 +502,7 @@ time_asctime(PyObject *self, PyObject *args)
 	PyObject *tup = NULL;
 	struct tm buf;
 	char *p;
-	if (!PyArg_ParseTuple(args, "|O:asctime", &tup))
+	if (!PyArg_UnpackTuple(args, "asctime", 0, 1, &tup))
 		return NULL;
 	if (tup == NULL) {
 		time_t tt = time(NULL);
@@ -536,7 +529,7 @@ time_ctime(PyObject *self, PyObject *args)
 	time_t tt;
 	char *p;
 
-	if (!PyArg_ParseTuple(args, "|O:ctime", &ot))
+	if (!PyArg_UnpackTuple(args, "ctime", 0, 1, &ot))
 		return NULL;
 	if (ot == NULL || ot == Py_None)
 		tt = time(NULL);
@@ -567,13 +560,10 @@ not present, current time as returned by localtime() is used.");
 
 #ifdef HAVE_MKTIME
 static PyObject *
-time_mktime(PyObject *self, PyObject *args)
+time_mktime(PyObject *self, PyObject *tup)
 {
-	PyObject *tup;
 	struct tm buf;
 	time_t tt;
-	if (!PyArg_ParseTuple(args, "O:mktime", &tup))
-		return NULL;
 	tt = time(&tt);
 	buf = *localtime(&tt);
 	if (!gettmarg(tup, &buf))
@@ -597,12 +587,9 @@ Convert a time tuple in local time to seconds since the Epoch.");
 void inittimezone(PyObject *module);
 
 static PyObject *
-time_tzset(PyObject *self, PyObject *args)
+time_tzset(PyObject *self, PyObject *unused)
 {
 	PyObject* m;
-
-	if (!PyArg_ParseTuple(args, ":tzset"))
-		return NULL;
 
 	m = PyImport_ImportModule("time");
 	if (m == NULL) {
@@ -722,9 +709,9 @@ void inittimezone(PyObject *m) {
 
 
 static PyMethodDef time_methods[] = {
-	{"time",	time_time, METH_VARARGS, time_doc},
+	{"time",	time_time, METH_NOARGS, time_doc},
 #ifdef HAVE_CLOCK
-	{"clock",	time_clock, METH_VARARGS, clock_doc},
+	{"clock",	time_clock, METH_NOARGS, clock_doc},
 #endif
 	{"sleep",	time_sleep, METH_VARARGS, sleep_doc},
 	{"gmtime",	time_gmtime, METH_VARARGS, gmtime_doc},
@@ -732,14 +719,14 @@ static PyMethodDef time_methods[] = {
 	{"asctime",	time_asctime, METH_VARARGS, asctime_doc},
 	{"ctime",	time_ctime, METH_VARARGS, ctime_doc},
 #ifdef HAVE_MKTIME
-	{"mktime",	time_mktime, METH_VARARGS, mktime_doc},
+	{"mktime",	time_mktime, METH_O, mktime_doc},
 #endif
 #ifdef HAVE_STRFTIME
 	{"strftime",	time_strftime, METH_VARARGS, strftime_doc},
 #endif
 	{"strptime",	time_strptime, METH_VARARGS, strptime_doc},
 #ifdef HAVE_WORKING_TZSET
-	{"tzset",	time_tzset, METH_VARARGS, tzset_doc},
+	{"tzset",	time_tzset, METH_NOARGS, tzset_doc},
 #endif
 	{NULL,		NULL}		/* sentinel */
 };

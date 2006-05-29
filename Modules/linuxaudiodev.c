@@ -219,24 +219,18 @@ lad_write(lad_t *self, PyObject *args)
 }
 
 static PyObject *
-lad_close(lad_t *self, PyObject *args)
+lad_close(lad_t *self, PyObject *unused)
 {
-    if (!PyArg_ParseTuple(args, ":close"))
-	return NULL;
-
     if (self->x_fd >= 0) {
         close(self->x_fd);
         self->x_fd = -1;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
-lad_fileno(lad_t *self, PyObject *args)
+lad_fileno(lad_t *self, PyObject *unused)
 {
-    if (!PyArg_ParseTuple(args, ":fileno")) 
-	return NULL;
     return PyInt_FromLong(self->x_fd);
 }
 
@@ -341,12 +335,10 @@ _ssize(lad_t *self, int *nchannels, int *ssize)
 /* bufsize returns the size of the hardware audio buffer in number 
    of samples */
 static PyObject *
-lad_bufsize(lad_t *self, PyObject *args)
+lad_bufsize(lad_t *self, PyObject *unused)
 {
     audio_buf_info ai;
     int nchannels=0, ssize=0;
-
-    if (!PyArg_ParseTuple(args, ":bufsize")) return NULL;
 
     if (_ssize(self, &nchannels, &ssize) < 0 || !ssize || !nchannels) {
         PyErr_SetFromErrno(LinuxAudioError);
@@ -362,13 +354,10 @@ lad_bufsize(lad_t *self, PyObject *args)
 /* obufcount returns the number of samples that are available in the 
    hardware for playing */
 static PyObject *
-lad_obufcount(lad_t *self, PyObject *args)
+lad_obufcount(lad_t *self, PyObject *unused)
 {
     audio_buf_info ai;
     int nchannels=0, ssize=0;
-
-    if (!PyArg_ParseTuple(args, ":obufcount"))
-        return NULL;
 
     if (_ssize(self, &nchannels, &ssize) < 0 || !ssize || !nchannels) {
         PyErr_SetFromErrno(LinuxAudioError);
@@ -385,13 +374,10 @@ lad_obufcount(lad_t *self, PyObject *args)
 /* obufcount returns the number of samples that can be played without
    blocking */
 static PyObject *
-lad_obuffree(lad_t *self, PyObject *args)
+lad_obuffree(lad_t *self, PyObject *unused)
 {
     audio_buf_info ai;
     int nchannels=0, ssize=0;
-
-    if (!PyArg_ParseTuple(args, ":obuffree"))
-        return NULL;
 
     if (_ssize(self, &nchannels, &ssize) < 0 || !ssize || !nchannels) {
         PyErr_SetFromErrno(LinuxAudioError);
@@ -406,27 +392,21 @@ lad_obuffree(lad_t *self, PyObject *args)
 
 /* Flush the device */
 static PyObject *
-lad_flush(lad_t *self, PyObject *args)
+lad_flush(lad_t *self, PyObject *unused)
 {
-    if (!PyArg_ParseTuple(args, ":flush")) return NULL;
-
     if (ioctl(self->x_fd, SNDCTL_DSP_SYNC, NULL) == -1) {
         PyErr_SetFromErrno(LinuxAudioError);
         return NULL;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
-lad_getptr(lad_t *self, PyObject *args)
+lad_getptr(lad_t *self, PyObject *unused)
 {
     count_info info;
     int req;
 
-    if (!PyArg_ParseTuple(args, ":getptr"))
-	return NULL;
-    
     if (self->x_mode == O_RDONLY)
 	req = SNDCTL_DSP_GETIPTR;
     else
@@ -443,12 +423,12 @@ static PyMethodDef lad_methods[] = {
     { "write",		(PyCFunction)lad_write, METH_VARARGS },
     { "setparameters",	(PyCFunction)lad_setparameters, METH_VARARGS },
     { "bufsize",	(PyCFunction)lad_bufsize, METH_VARARGS },
-    { "obufcount",	(PyCFunction)lad_obufcount, METH_VARARGS },
-    { "obuffree",	(PyCFunction)lad_obuffree, METH_VARARGS },
-    { "flush",		(PyCFunction)lad_flush, METH_VARARGS },
-    { "close",		(PyCFunction)lad_close, METH_VARARGS },
-    { "fileno",     	(PyCFunction)lad_fileno, METH_VARARGS },
-    { "getptr",         (PyCFunction)lad_getptr, METH_VARARGS },
+    { "obufcount",	(PyCFunction)lad_obufcount, METH_NOARGS },
+    { "obuffree",	(PyCFunction)lad_obuffree, METH_NOARGS },
+    { "flush",		(PyCFunction)lad_flush, METH_NOARGS },
+    { "close",		(PyCFunction)lad_close, METH_NOARGS },
+    { "fileno",     	(PyCFunction)lad_fileno, METH_NOARGS },
+    { "getptr",         (PyCFunction)lad_getptr, METH_NOARGS },
     { NULL,		NULL}		/* sentinel */
 };
 
