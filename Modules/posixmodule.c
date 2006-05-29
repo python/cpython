@@ -5282,14 +5282,11 @@ PyDoc_STRVAR(posix_setgroups__doc__,
 Set the groups of the current process to list.");
 
 static PyObject *
-posix_setgroups(PyObject *self, PyObject *args)
+posix_setgroups(PyObject *self, PyObject *groups)
 {
-	PyObject *groups;
 	int i, len;
         gid_t grouplist[MAX_GROUPS];
 
-	if (!PyArg_ParseTuple(args, "O:setgid", &groups))
-		return NULL;
 	if (!PySequence_Check(groups)) {
 		PyErr_SetString(PyExc_TypeError, "setgroups argument must be a sequence");
 		return NULL;
@@ -8020,7 +8017,7 @@ static PyMethodDef posix_methods[] = {
 	{"setgid",	posix_setgid, METH_VARARGS, posix_setgid__doc__},
 #endif /* HAVE_SETGID */
 #ifdef HAVE_SETGROUPS
-	{"setgroups",	posix_setgroups, METH_VARARGS, posix_setgroups__doc__},
+	{"setgroups",	posix_setgroups, METH_O, posix_setgroups__doc__},
 #endif /* HAVE_SETGROUPS */
 #ifdef HAVE_GETPGID
 	{"getpgid",	posix_getpgid, METH_VARARGS, posix_getpgid__doc__},

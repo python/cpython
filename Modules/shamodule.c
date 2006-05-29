@@ -358,13 +358,10 @@ SHA_dealloc(PyObject *ptr)
 PyDoc_STRVAR(SHA_copy__doc__, "Return a copy of the hashing object.");
 
 static PyObject *
-SHA_copy(SHAobject *self, PyObject *args)
+SHA_copy(SHAobject *self, PyObject *unused)
 {
     SHAobject *newobj;
 
-    if (!PyArg_ParseTuple(args, ":copy")) {
-        return NULL;
-    }
     if ( (newobj = newSHAobject())==NULL)
         return NULL;
 
@@ -376,13 +373,10 @@ PyDoc_STRVAR(SHA_digest__doc__,
 "Return the digest value as a string of binary data.");
 
 static PyObject *
-SHA_digest(SHAobject *self, PyObject *args)
+SHA_digest(SHAobject *self, PyObject *unused)
 {
     unsigned char digest[SHA_DIGESTSIZE];
     SHAobject temp;
-
-    if (!PyArg_ParseTuple(args, ":digest"))
-        return NULL;
 
     SHAcopy(self, &temp);
     sha_final(digest, &temp);
@@ -393,16 +387,13 @@ PyDoc_STRVAR(SHA_hexdigest__doc__,
 "Return the digest value as a string of hexadecimal digits.");
 
 static PyObject *
-SHA_hexdigest(SHAobject *self, PyObject *args)
+SHA_hexdigest(SHAobject *self, PyObject *unused)
 {
     unsigned char digest[SHA_DIGESTSIZE];
     SHAobject temp;
     PyObject *retval;
     char *hex_digest;
     int i, j;
-
-    if (!PyArg_ParseTuple(args, ":hexdigest"))
-        return NULL;
 
     /* Get the raw (binary) digest value */
     SHAcopy(self, &temp);
@@ -450,9 +441,9 @@ SHA_update(SHAobject *self, PyObject *args)
 }
 
 static PyMethodDef SHA_methods[] = {
-    {"copy",	  (PyCFunction)SHA_copy,      METH_VARARGS, SHA_copy__doc__},
-    {"digest",	  (PyCFunction)SHA_digest,    METH_VARARGS, SHA_digest__doc__},
-    {"hexdigest", (PyCFunction)SHA_hexdigest, METH_VARARGS, SHA_hexdigest__doc__},
+    {"copy",	  (PyCFunction)SHA_copy,      METH_NOARGS,  SHA_copy__doc__},
+    {"digest",	  (PyCFunction)SHA_digest,    METH_NOARGS,  SHA_digest__doc__},
+    {"hexdigest", (PyCFunction)SHA_hexdigest, METH_NOARGS,  SHA_hexdigest__doc__},
     {"update",	  (PyCFunction)SHA_update,    METH_VARARGS, SHA_update__doc__},
     {NULL,	  NULL}		/* sentinel */
 };

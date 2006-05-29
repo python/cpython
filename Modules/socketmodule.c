@@ -2889,12 +2889,10 @@ static PyTypeObject sock_type = {
 
 /*ARGSUSED*/
 static PyObject *
-socket_gethostname(PyObject *self, PyObject *args)
+socket_gethostname(PyObject *self, PyObject *unused)
 {
 	char buf[1024];
 	int res;
-	if (!PyArg_ParseTuple(args, ":gethostname"))
-		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = gethostname(buf, (int) sizeof buf - 1);
 	Py_END_ALLOW_THREADS
@@ -3986,13 +3984,13 @@ static PyMethodDef socket_methods[] = {
 	{"gethostbyaddr",	socket_gethostbyaddr,
 	 METH_VARARGS, gethostbyaddr_doc},
 	{"gethostname",		socket_gethostname,
-	 METH_VARARGS, gethostname_doc},
+	 METH_NOARGS,  gethostname_doc},
 	{"getservbyname",	socket_getservbyname,
 	 METH_VARARGS, getservbyname_doc},
 	{"getservbyport",	socket_getservbyport,
 	 METH_VARARGS, getservbyport_doc},
 	{"getprotobyname",	socket_getprotobyname,
-	 METH_VARARGS,getprotobyname_doc},
+	 METH_VARARGS, getprotobyname_doc},
 #ifndef NO_DUP
 	{"fromfd",		socket_fromfd,
 	 METH_VARARGS, fromfd_doc},
