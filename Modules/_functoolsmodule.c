@@ -2,10 +2,10 @@
 #include "Python.h"
 #include "structmember.h"
 
-/* Functional module written and maintained 
+/* _functools module written and maintained 
    by Hye-Shik Chang <perky@FreeBSD.org>
    with adaptations by Raymond Hettinger <python@rcn.com>
-   Copyright (c) 2004, 2005 Python Software Foundation.
+   Copyright (c) 2004, 2005, 2006 Python Software Foundation.
    All rights reserved.
 */
 
@@ -199,7 +199,7 @@ static PyGetSetDef partial_getsetlist[] = {
 static PyTypeObject partial_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
-	"functional.partial",		/* tp_name */
+	"functools.partial",		/* tp_name */
 	sizeof(partialobject),		/* tp_basicsize */
 	0,				/* tp_itemsize */
 	/* methods */
@@ -245,14 +245,14 @@ static PyTypeObject partial_type = {
 /* module level code ********************************************************/
 
 PyDoc_STRVAR(module_doc,
-"Tools for functional programming.");
+"Tools that operate on functions.");
 
 static PyMethodDef module_methods[] = {
  	{NULL,		NULL}		/* sentinel */
 };
 
 PyMODINIT_FUNC
-initfunctional(void)
+init_functools(void)
 {
 	int i;
 	PyObject *m;
@@ -262,7 +262,7 @@ initfunctional(void)
 		NULL
 	};
 
-	m = Py_InitModule3("functional", module_methods, module_doc);
+	m = Py_InitModule3("_functools", module_methods, module_doc);
 	if (m == NULL)
 		return;
 

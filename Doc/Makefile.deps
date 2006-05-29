@@ -262,6 +262,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libsimplexmlrpc.tex \
 	lib/libdocxmlrpc.tex \
 	lib/libpyexpat.tex \
+	lib/libfunctools.tex \
 	lib/xmldom.tex \
 	lib/xmldomminidom.tex \
 	lib/xmldompulldom.tex \

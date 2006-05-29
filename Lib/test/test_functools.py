@@ -1,4 +1,4 @@
-import functional
+import functools
 import unittest
 from test import test_support
 from weakref import proxy
@@ -21,7 +21,7 @@ def capture(*args, **kw):
 
 class TestPartial(unittest.TestCase):
 
-    thetype = functional.partial
+    thetype = functools.partial
 
     def test_basic_examples(self):
         p = self.thetype(capture, 1, 2, a=10, b=20)
@@ -140,7 +140,7 @@ class TestPartial(unittest.TestCase):
         join = self.thetype(''.join)
         self.assertEqual(join(data), '0123456789')
 
-class PartialSubclass(functional.partial):
+class PartialSubclass(functools.partial):
     pass
 
 class TestPartialSubclass(TestPartial):
