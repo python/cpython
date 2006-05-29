@@ -42,7 +42,7 @@ Instances of this class have the following instance variables:
 import sys
 import imp
 import tokenize # Python tokenizer
-from token import NAME, DEDENT, NEWLINE
+from token import NAME, DEDENT, NEWLINE, OP
 from operator import itemgetter
 
 __all__ = ["readmodule", "readmodule_ex", "Class", "Function"]
@@ -219,8 +219,10 @@ def _readmodule(module, path, inpackage=None):
                                 break
                         elif token == ',' and level == 1:
                             pass
-                        else:
+                        # only use NAME and OP (== dot) tokens for type name
+                        elif tokentype in (NAME, OP) and level == 1:
                             super.append(token)
+                        # expressions in the base list are not supported
                     inherit = names
                 cur_class = Class(fullmodule, class_name, inherit, file, lineno)
                 if not stack:
