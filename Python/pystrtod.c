@@ -105,7 +105,7 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 		copy = (char *)PyMem_MALLOC(end - nptr + 1 + decimal_point_len);
 		if (copy == NULL) {
 			if (endptr)
-				*endptr = nptr;
+				*endptr = (char *)nptr;
 			errno = ENOMEM;
 			return val;
 		}
