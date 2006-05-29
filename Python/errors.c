@@ -728,7 +728,8 @@ PyErr_SyntaxLocation(const char *filename, int lineno)
 
 		tmp = PyErr_ProgramText(filename, lineno);
 		if (tmp) {
-			PyObject_SetAttrString(v, "text", tmp);
+			if (PyObject_SetAttrString(v, "text", tmp))
+				PyErr_Clear();
 			Py_DECREF(tmp);
 		}
 	}
