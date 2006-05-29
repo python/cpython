@@ -223,7 +223,7 @@ unpack_double(const char *p,  /* start of 8-byte string */
 
 /* Helper to format the range error exceptions */
 static int
-_range_error(formatdef *f, int is_unsigned)
+_range_error(const formatdef *f, int is_unsigned)
 {
 	if (is_unsigned == 0) {
 		long smallest = 0, largest = 0;
