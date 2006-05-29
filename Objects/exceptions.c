@@ -246,6 +246,7 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val)
     }
     seq = PySequence_Tuple(val);
     if (!seq) return -1;
+    Py_CLEAR(self->args);
     self->args = seq;
     return 0;
 }

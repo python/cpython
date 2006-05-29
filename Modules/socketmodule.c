@@ -2472,7 +2472,7 @@ sock_recvfrom_buf(PySocketSockObject *s, PyObject *args, PyObject* kwds)
 
 	/* Return the number of bytes read and the address.  Note that we do
 	   not do anything special here in the case that readlen < recvlen. */
-	ret = PyTuple_Pack(2, PyInt_FromLong(readlen), addr);
+	ret = Py_BuildValue("lO", readlen, addr);
 	
 finally:
 	Py_XDECREF(addr);
@@ -4364,8 +4364,10 @@ init_socket(void)
 	PyModule_AddIntConstant(m, "BTPROTO_SCO", BTPROTO_SCO);
 #endif
 	PyModule_AddIntConstant(m, "BTPROTO_RFCOMM", BTPROTO_RFCOMM);
-	PyModule_AddObject(m, "BDADDR_ANY", Py_BuildValue("s", "00:00:00:00:00:00"));
-	PyModule_AddObject(m, "BDADDR_LOCAL", Py_BuildValue("s", "00:00:00:FF:FF:FF"));
+	PyModule_AddObject(m, "BDADDR_ANY",
+	                   PyString_FromString("00:00:00:00:00:00"));
+	PyModule_AddObject(m, "BDADDR_LOCAL",
+	                   PyString_FromString("00:00:00:FF:FF:FF"));
 #endif
 
 #ifdef HAVE_NETPACKET_PACKET_H
