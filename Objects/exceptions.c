@@ -141,7 +141,17 @@ BaseException_repr(PyBaseExceptionObject *self)
 static PyObject *
 BaseException_reduce(PyBaseExceptionObject *self)
 {
-    return PyTuple_Pack(3, self->ob_type, self->args, self->dict);
+    if (self->args && self->dict)
+        return PyTuple_Pack(3, self->ob_type, self->args, self->dict);
+    else if (self->args)
+        return PyTuple_Pack(2, self->ob_type, self->args);
+    else {
+        PyObject *res, *tup = PyTuple_New(0);
+        if (!tup) return NULL;
+        res = PyTuple_Pack(2, self->ob_type, tup);
+        Py_DECREF(tup);
+        return res;
+    }
 }
 
 
