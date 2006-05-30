@@ -8,7 +8,7 @@ extern "C" {
 /* Dictionary object type -- mapping from hashable object to object */
 
 /* The distribution includes a separate file, Objects/dictnotes.txt,
-   describing explorations into dictionary design and optimization.  
+   describing explorations into dictionary design and optimization.
    It covers typical dictionary use patterns, the parameters for
    tuning dictionaries, and several ideas for possible optimizations.
 */
@@ -48,7 +48,11 @@ meaning otherwise.
 #define PyDict_MINSIZE 8
 
 typedef struct {
-	long me_hash;      /* cached hash code of me_key */
+	/* Cached hash code of me_key.  Note that hash codes are C longs.
+	 * We have to use Py_ssize_t instead because dict_popitem() abuses
+	 * me_hash to hold a search finger.
+	 */
+	Py_ssize_t me_hash;
 	PyObject *me_key;
 	PyObject *me_value;
 } PyDictEntry;
@@ -65,14 +69,14 @@ it's two-thirds full.
 typedef struct _dictobject PyDictObject;
 struct _dictobject {
 	PyObject_HEAD
-	int ma_fill;  /* # Active + # Dummy */
-	int ma_used;  /* # Active */
+	Py_ssize_t ma_fill;  /* # Active + # Dummy */
+	Py_ssize_t ma_used;  /* # Active */
 
 	/* The table contains ma_mask + 1 slots, and that's a power of 2.
 	 * We store the mask instead of the size because the mask is more
 	 * frequently needed.
 	 */
-	int ma_mask;
+	Py_ssize_t ma_mask;
 
 	/* ma_table points to ma_smalltable for small tables, else to
 	 * additional malloc'ed memory.  ma_table is never NULL!  This rule
