@@ -1939,7 +1939,7 @@ def testfile(filename, module_relative=True, name=None, package=None,
 
     Optional keyword arg "encoding" specifies an encoding that should
     be used to convert the file to unicode.
- 
+
     Advanced tomfoolery:  testmod runs methods of a local instance of
     class doctest.Tester, then merges the results into (or creates)
     global Tester instance doctest.master.  Methods of doctest.master
@@ -2366,7 +2366,7 @@ def DocFileTest(path, module_relative=True, package=None,
 
     # Find the file and read it.
     name = os.path.basename(path)
-  
+
     # If an encoding is specified, use it to convert the file to unicode
     if encoding is not None:
         doc = doc.decode(encoding)
@@ -2427,7 +2427,7 @@ def DocFileSuite(*paths, **kw):
     parser
       A DocTestParser (or subclass) that should be used to extract
       tests from the files.
- 
+
     encoding
       An encoding that will be used to convert the files to unicode.
     """
