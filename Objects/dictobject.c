@@ -578,7 +578,7 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 	 * Quadrupling the size improves average dictionary sparseness
 	 * (reducing collisions) at the cost of some memory and iteration
 	 * speed (which loops over every possible entry).  It also halves
-|	 * the number of expensive resize operations in a growing dictionary.
+	 * the number of expensive resize operations in a growing dictionary.
 	 *
 	 * Very large dictionaries (over 50K items) use doubling instead.
 	 * This may help applications with severe memory constraints.
