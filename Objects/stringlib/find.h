@@ -14,8 +14,11 @@ stringlib_find(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
 {
     Py_ssize_t pos;
 
-    if (sub_len == 0)
+    if (sub_len == 0) {
+        if (str_len < 0)
+            return -1;
         return offset;
+    }
 
     pos = fastsearch(str, str_len, sub, sub_len, FAST_SEARCH);
 
@@ -30,22 +33,20 @@ stringlib_rfind(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
                 const STRINGLIB_CHAR* sub, Py_ssize_t sub_len,
                 Py_ssize_t offset)
 {
-    Py_ssize_t pos;
-
     /* XXX - create reversefastsearch helper! */
-    if (sub_len == 0)
-	pos = str_len + offset;
-    else {
-	Py_ssize_t j;
-        pos = -1;
+    if (sub_len == 0) {
+        if (str_len < 0)
+            return -1;
+	return str_len + offset;
+    } else {
+	Py_ssize_t j, pos = -1;
 	for (j = str_len - sub_len; j >= 0; --j)
             if (STRINGLIB_CMP(str+j, sub, sub_len) == 0) {
                 pos = j + offset;
                 break;
             }
+        return pos;
     }
-
-    return pos;
 }
 
 Py_LOCAL_INLINE(Py_ssize_t)
