@@ -143,15 +143,8 @@ BaseException_reduce(PyBaseExceptionObject *self)
 {
     if (self->args && self->dict)
         return PyTuple_Pack(3, self->ob_type, self->args, self->dict);
-    else if (self->args)
+    else
         return PyTuple_Pack(2, self->ob_type, self->args);
-    else {
-        PyObject *res, *tup = PyTuple_New(0);
-        if (!tup) return NULL;
-        res = PyTuple_Pack(2, self->ob_type, tup);
-        Py_DECREF(tup);
-        return res;
-    }
 }
 
 
@@ -667,6 +660,7 @@ EnvironmentError_reduce(PyEnvironmentErrorObject *self)
 {
     PyObject *args = self->args;
     PyObject *res = NULL, *tmp;
+
     /* self->args is only the first two real arguments if there was a
      * file name given to EnvironmentError. */
     if (PyTuple_GET_SIZE(args) == 2 && self->filename) {
@@ -683,10 +677,13 @@ EnvironmentError_reduce(PyEnvironmentErrorObject *self)
 
         Py_INCREF(self->filename);
         PyTuple_SET_ITEM(args, 2, self->filename);
-    } else {
+    } else
         Py_INCREF(args);
-    }
-    res = PyTuple_Pack(3, self->ob_type, args, self->dict);
+
+    if (self->dict)
+        res = PyTuple_Pack(3, self->ob_type, args, self->dict);
+    else
+        res = PyTuple_Pack(2, self->ob_type, args);
     Py_DECREF(args);
     return res;
 }

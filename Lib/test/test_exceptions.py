@@ -270,6 +270,8 @@ try:
                         'winerror' : 1 }))
 except NameError: pass
 
+import pickle, random
+
 for args in exceptionList:
     expected = args[-1]
     try:
@@ -279,6 +281,17 @@ for args in exceptionList:
         for checkArgName in expected.keys():
             if repr(getattr(e, checkArgName)) != repr(expected[checkArgName]):
                 raise TestFailed('Checking exception arguments, exception '
+                        '"%s", attribute "%s" expected %s got %s.' %
+                        ( repr(e), checkArgName,
+                            repr(expected[checkArgName]),
+                            repr(getattr(e, checkArgName)) ))
+        
+        # test for pickling support
+        new = pickle.loads(pickle.dumps(e, random.randint(0, 2)))
+        for checkArgName in expected.keys():
+            if repr(getattr(e, checkArgName)) != repr(expected[checkArgName]):
+                raise TestFailed('Checking unpickled exception arguments, '
+                        'exception '
                         '"%s", attribute "%s" expected %s got %s.' %
                         ( repr(e), checkArgName,
                             repr(expected[checkArgName]),
