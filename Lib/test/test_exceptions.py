@@ -31,7 +31,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertEquals(exc.__name__, excname)
 
     def testRaising(self):
-        self.raise_catch(AttributeError, "AttributeError")    
+        self.raise_catch(AttributeError, "AttributeError")
         self.assertRaises(AttributeError, getattr, sys, "undefined_attribute")
 
         self.raise_catch(EOFError, "EOFError")
@@ -184,10 +184,10 @@ class ExceptionTests(unittest.TestCase):
         """test that exception attributes are happy."""
         try: str(u'Hello \u00E1')
         except Exception, e: sampleUnicodeEncodeError = e
-        
+
         try: unicode('\xff')
         except Exception, e: sampleUnicodeDecodeError = e
-        
+
         exceptionList = [
                 ( BaseException, (), { 'message' : '', 'args' : () }),
                 ( BaseException, (1, ), { 'message' : 1, 'args' : ( 1, ) }),
@@ -267,7 +267,7 @@ class ExceptionTests(unittest.TestCase):
                                       repr(expected[checkArgName]),
                                       'exception "%s", attribute "%s"' %
                                        (repr(e), checkArgName))
-                
+
                 # test for pickling support
                 new = pickle.loads(pickle.dumps(e, random.randint(0, 2)))
                 for checkArgName in expected.keys():
