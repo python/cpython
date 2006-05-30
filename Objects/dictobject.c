@@ -110,6 +110,16 @@ above, and then shifting perturb can be done while the table index is being
 masked); and the dictobject struct required a member to hold the table's
 polynomial.  In Tim's experiments the current scheme ran faster, produced
 equally good collision statistics, needed less code & used less memory.
+
+Theoretical Python 2.5 headache:  hash codes are only C "long", but
+sizeof(Py_ssize_t) > sizeof(long) may be possible.  In that case, and if a
+dict is genuinely huge, then only the slots directly reachable via indexing
+by a C long can be the first slot in a probe sequence.  The probe sequence
+will still eventually reach every slot in the table, but the collision rate
+on initial probes may be much higher than this scheme was designed for.
+Getting a hash code as fat as Py_ssize_t is the only real cure.  But in
+practice, this probably won't make a lick of difference for many years (at
+which point everyone will have terabytes of RAM on 64-bit boxes).
 */
 
 /* Object used as dummy key to fill deleted entries */
@@ -228,7 +238,7 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	register Py_ssize_t i;
 	register size_t perturb;
 	register dictentry *freeslot;
-	register unsigned int mask = mp->ma_mask;
+	register Py_ssize_t mask = mp->ma_mask;
 	dictentry *ep0 = mp->ma_table;
 	register dictentry *ep;
 	register int restore_error;
@@ -339,7 +349,7 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 	register Py_ssize_t i;
 	register size_t perturb;
 	register dictentry *freeslot;
-	register unsigned int mask = mp->ma_mask;
+	register Py_ssize_t mask = mp->ma_mask;
 	dictentry *ep0 = mp->ma_table;
 	register dictentry *ep;
 
@@ -413,7 +423,7 @@ insertdict(register dictobject *mp, PyObject *key, long hash, PyObject *value)
 			Py_DECREF(dummy);
 		}
 		ep->me_key = key;
-		ep->me_hash = hash;
+		ep->me_hash = (Py_ssize_t)hash;
 		ep->me_value = value;
 		mp->ma_used++;
 	}
@@ -425,11 +435,11 @@ items again.  When entries have been deleted, the new table may
 actually be smaller than the old one.
 */
 static int
-dictresize(dictobject *mp, int minused)
+dictresize(dictobject *mp, Py_ssize_t minused)
 {
-	int newsize;
+	Py_ssize_t newsize;
 	dictentry *oldtable, *newtable, *ep;
-	int i;
+	Py_ssize_t i;
 	int is_oldtable_malloced;
 	dictentry small_copy[PyDict_MINSIZE];
 
@@ -537,7 +547,7 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 {
 	register dictobject *mp;
 	register long hash;
-	register int n_used;
+	register Py_ssize_t n_used;
 
 	if (!PyDict_Check(op)) {
 		PyErr_BadInternalCall();
@@ -568,14 +578,14 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 	 * Quadrupling the size improves average dictionary sparseness
 	 * (reducing collisions) at the cost of some memory and iteration
 	 * speed (which loops over every possible entry).  It also halves
-	 * the number of expensive resize operations in a growing dictionary.
+|	 * the number of expensive resize operations in a growing dictionary.
 	 *
 	 * Very large dictionaries (over 50K items) use doubling instead.
 	 * This may help applications with severe memory constraints.
 	 */
 	if (!(mp->ma_used > n_used && mp->ma_fill*3 >= (mp->ma_mask+1)*2))
 		return 0;
-	return dictresize(mp, (mp->ma_used>50000 ? mp->ma_used*2 : mp->ma_used*4));
+	return dictresize(mp, (mp->ma_used > 50000 ? 2 : 4) * mp->ma_used);
 }
 
 int
@@ -619,10 +629,10 @@ PyDict_Clear(PyObject *op)
 	dictobject *mp;
 	dictentry *ep, *table;
 	int table_is_malloced;
-	int fill;
+	Py_ssize_t fill;
 	dictentry small_copy[PyDict_MINSIZE];
 #ifdef Py_DEBUG
-	int i, n;
+	Py_ssize_t i, n;
 #endif
 
 	if (!PyDict_Check(op))
@@ -685,7 +695,7 @@ PyDict_Clear(PyObject *op)
 /*
  * Iterate over a dict.  Use like so:
  *
- *     int i;
+ *     Py_ssize_t i;
  *     PyObject *key, *value;
  *     i = 0;   # important!  i should not otherwise be changed by you
  *     while (PyDict_Next(yourdict, &i, &key, &value)) {
@@ -701,7 +711,7 @@ int
 PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 {
 	register Py_ssize_t i;
-	register int mask;
+	register Py_ssize_t mask;
 	register dictentry *ep;
 
 	if (!PyDict_Check(op))
@@ -729,7 +739,7 @@ static void
 dict_dealloc(register dictobject *mp)
 {
 	register dictentry *ep;
-	int fill = mp->ma_fill;
+	Py_ssize_t fill = mp->ma_fill;
  	PyObject_GC_UnTrack(mp);
 	Py_TRASHCAN_SAFE_BEGIN(mp)
 	for (ep = mp->ma_table; fill > 0; ep++) {
@@ -751,10 +761,10 @@ dict_dealloc(register dictobject *mp)
 static int
 dict_print(register dictobject *mp, register FILE *fp, register int flags)
 {
-	register int i;
-	register int any;
+	register Py_ssize_t i;
+	register Py_ssize_t any;
 
-	i = Py_ReprEnter((PyObject*)mp);
+	i = (int)Py_ReprEnter((PyObject*)mp);
 	if (i != 0) {
 		if (i < 0)
 			return i;
@@ -896,7 +906,7 @@ dict_subscript(dictobject *mp, register PyObject *key)
 		    	PyObject *missing;
 			static PyObject *missing_str = NULL;
 			if (missing_str == NULL)
-				missing_str = 
+				missing_str =
 				  PyString_InternFromString("__missing__");
 			missing = _PyType_Lookup(mp->ob_type, missing_str);
 			if (missing != NULL)
@@ -930,9 +940,9 @@ static PyObject *
 dict_keys(register dictobject *mp)
 {
 	register PyObject *v;
-	register int i, j;
+	register Py_ssize_t i, j;
 	dictentry *ep;
-	int mask, n;
+	Py_ssize_t mask, n;
 
   again:
 	n = mp->ma_used;
@@ -964,9 +974,9 @@ static PyObject *
 dict_values(register dictobject *mp)
 {
 	register PyObject *v;
-	register int i, j;
+	register Py_ssize_t i, j;
 	dictentry *ep;
-	int mask, n;
+	Py_ssize_t mask, n;
 
   again:
 	n = mp->ma_used;
@@ -998,8 +1008,8 @@ static PyObject *
 dict_items(register dictobject *mp)
 {
 	register PyObject *v;
-	register int i, j, n;
-	int mask;
+	register Py_ssize_t i, j, n;
+	Py_ssize_t mask;
 	PyObject *item, *key, *value;
 	dictentry *ep;
 
@@ -1132,7 +1142,7 @@ int
 PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
 {
 	PyObject *it;	/* iter(seq2) */
-	int i;	/* index into seq2 of current element */
+	Py_ssize_t i;	/* index into seq2 of current element */
 	PyObject *item;	/* seq2[i] */
 	PyObject *fast;	/* item as a 2-tuple or 2-list */
 
@@ -1195,7 +1205,7 @@ Fail:
 	i = -1;
 Return:
 	Py_DECREF(it);
-	return i;
+	return (int)i;
 }
 
 int
@@ -1208,7 +1218,7 @@ int
 PyDict_Merge(PyObject *a, PyObject *b, int override)
 {
 	register PyDictObject *mp, *other;
-	register int i;
+	register Py_ssize_t i;
 	dictentry *entry;
 
 	/* We accept for the argument either a concrete dictionary object,
@@ -1247,7 +1257,8 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
 			     PyDict_GetItem(a, entry->me_key) == NULL)) {
 				Py_INCREF(entry->me_key);
 				Py_INCREF(entry->me_value);
-				insertdict(mp, entry->me_key, entry->me_hash,
+				insertdict(mp, entry->me_key,
+					   (long)entry->me_hash,
 					   entry->me_value);
 			}
 		}
@@ -1376,7 +1387,8 @@ characterize(dictobject *a, dictobject *b, PyObject **pval)
 {
 	PyObject *akey = NULL; /* smallest key in a s.t. a[akey] != b[akey] */
 	PyObject *aval = NULL; /* a[akey] */
-	int i, cmp;
+	Py_ssize_t i;
+	int cmp;
 
 	for (i = 0; i <= a->ma_mask; i++) {
 		PyObject *thiskey, *thisaval, *thisbval;
@@ -1399,7 +1411,7 @@ characterize(dictobject *a, dictobject *b, PyObject **pval)
 				 * find its associated value anymore; or
 				 * maybe it is but the compare deleted the
 				 * a[thiskey] entry.
-				 */
+|				 */
 				Py_DECREF(thiskey);
 				continue;
 			}
@@ -1499,7 +1511,7 @@ Finished:
 static int
 dict_equal(dictobject *a, dictobject *b)
 {
-	int i;
+	Py_ssize_t i;
 
 	if (a->ma_used != b->ma_used)
 		/* can't be equal if # of entries differ */
@@ -1673,7 +1685,7 @@ dict_pop(dictobject *mp, PyObject *args)
 static PyObject *
 dict_popitem(dictobject *mp)
 {
-	int i = 0;
+	Py_ssize_t i = 0;
 	dictentry *ep;
 	PyObject *res;
 
@@ -1683,7 +1695,7 @@ dict_popitem(dictobject *mp)
 	 * happened, the result would be an infinite loop (searching for an
 	 * entry that no longer exists).  Note that the usual popitem()
 	 * idiom is "while d: k, v = d.popitem()". so needing to throw the
-	 * tuple away  if the dict *is* empty isn't a significant
+	 * tuple away if the dict *is* empty isn't a significant
 	 * inefficiency -- possible, but unlikely in practice.
 	 */
 	res = PyTuple_New(2);
@@ -1699,11 +1711,11 @@ dict_popitem(dictobject *mp)
 	 * field of slot 0 to hold a search finger:
 	 * If slot 0 has a value, use slot 0.
 	 * Else slot 0 is being used to hold a search finger,
-	 * and we use its hash value as the first index to look.
+|	 * and we use its hash value as the first index to look.
 	 */
 	ep = &mp->ma_table[0];
 	if (ep->me_value == NULL) {
-		i = (int)ep->me_hash;
+		i = ep->me_hash;
 		/* The hash field may be a real hash value, or it may be a
 		 * legit search finger, or it may be a once-legit search
 		 * finger that's out of bounds now because it wrapped around
@@ -2035,10 +2047,10 @@ PyDict_DelItemString(PyObject *v, const char *key)
 typedef struct {
 	PyObject_HEAD
 	dictobject *di_dict; /* Set to NULL when iterator is exhausted */
-	int di_used;
-	int di_pos;
+	Py_ssize_t di_used;
+	Py_ssize_t di_pos;
 	PyObject* di_result; /* reusable result tuple for iteritems */
-	long len;
+	Py_ssize_t len;
 } dictiterobject;
 
 static PyObject *
@@ -2076,10 +2088,10 @@ dictiter_dealloc(dictiterobject *di)
 static PyObject *
 dictiter_len(dictiterobject *di)
 {
-	long len = 0;
+	Py_ssize_t len = 0;
 	if (di->di_dict != NULL && di->di_used == di->di_dict->ma_used)
 		len = di->len;
-	return PyInt_FromLong(len);
+	return PyInt_FromSize_t(len);
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
@@ -2092,7 +2104,7 @@ static PyMethodDef dictiter_methods[] = {
 static PyObject *dictiter_iternextkey(dictiterobject *di)
 {
 	PyObject *key;
-	register int i, mask;
+	register Py_ssize_t i, mask;
 	register dictentry *ep;
 	dictobject *d = di->di_dict;
 
@@ -2165,7 +2177,7 @@ PyTypeObject PyDictIterKey_Type = {
 static PyObject *dictiter_iternextvalue(dictiterobject *di)
 {
 	PyObject *value;
-	register int i, mask;
+	register Py_ssize_t i, mask;
 	register dictentry *ep;
 	dictobject *d = di->di_dict;
 
@@ -2238,7 +2250,7 @@ PyTypeObject PyDictIterValue_Type = {
 static PyObject *dictiter_iternextitem(dictiterobject *di)
 {
 	PyObject *key, *value, *result = di->di_result;
-	register int i, mask;
+	register Py_ssize_t i, mask;
 	register dictentry *ep;
 	dictobject *d = di->di_dict;
 
