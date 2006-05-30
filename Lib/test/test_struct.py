@@ -15,10 +15,10 @@ try:
     import _struct
 except ImportError:
     PY_STRUCT_RANGE_CHECKING = 0
-    PY_STRUCT_WRAPPING = 1
+    PY_STRUCT_OVERFLOW_MASKING = 1
 else:
     PY_STRUCT_RANGE_CHECKING = getattr(_struct, '_PY_STRUCT_RANGE_CHECKING', 0)
-    PY_STRUCT_WRAPPING = getattr(_struct, '_PY_STRUCT_WRAPPING', 0)
+    PY_STRUCT_OVERFLOW_MASKING = getattr(_struct, '_PY_STRUCT_OVERFLOW_MASKING', 0)
 
 def string_reverse(s):
     chars = list(s)
@@ -62,7 +62,7 @@ def deprecated_err(func, *args):
         except (struct.error, TypeError):
             pass
         except DeprecationWarning:
-            if not PY_STRUCT_WRAPPING:
+            if not PY_STRUCT_OVERFLOW_MASKING:
                 raise TestFailed, "%s%s expected to raise struct.error" % (
                     func.__name__, args)
         else:

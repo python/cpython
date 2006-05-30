@@ -17,16 +17,16 @@ static PyTypeObject PyStructType;
 typedef int Py_ssize_t;
 #endif
 
-/* If PY_STRUCT_WRAPPING is defined, the struct module will wrap all input
+/* If PY_STRUCT_OVERFLOW_MASKING is defined, the struct module will wrap all input
    numbers for explicit endians such that they fit in the given type, much
    like explicit casting in C. A warning will be raised if the number did
    not originally fit within the range of the requested type. If it is
    not defined, then all range errors and overflow will be struct.error
    exceptions. */
 
-#define PY_STRUCT_WRAPPING 1
+#define PY_STRUCT_OVERFLOW_MASKING 1
 
-#ifdef PY_STRUCT_WRAPPING
+#ifdef PY_STRUCT_OVERFLOW_MASKING
 static PyObject *pylong_ulong_mask = NULL;
 static PyObject *pyint_zero = NULL;
 #endif
@@ -209,7 +209,7 @@ get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 
 #endif
 
-#ifdef PY_STRUCT_WRAPPING
+#ifdef PY_STRUCT_OVERFLOW_MASKING
 
 /* Helper routine to get a Python integer and raise the appropriate error
    if it isn't one */
@@ -222,7 +222,7 @@ get_wrapped_long(PyObject *v, long *p)
 			PyObject *wrapped;
 			long x;
 			PyErr_Clear();
-			if (PyErr_Warn(PyExc_DeprecationWarning, "struct integer wrapping is deprecated") < 0)
+			if (PyErr_Warn(PyExc_DeprecationWarning, "struct integer overflow masking is deprecated") < 0)
 				return -1;
 			wrapped = PyNumber_And(v, pylong_ulong_mask);
 			if (wrapped == NULL)
@@ -249,7 +249,7 @@ get_wrapped_ulong(PyObject *v, unsigned long *p)
 		wrapped = PyNumber_And(v, pylong_ulong_mask);
 		if (wrapped == NULL)
 			return -1;
-		if (PyErr_Warn(PyExc_DeprecationWarning, "struct integer wrapping is deprecated") < 0) {
+		if (PyErr_Warn(PyExc_DeprecationWarning, "struct integer overflow masking is deprecated") < 0) {
 			Py_DECREF(wrapped);
 			return -1;
 		}
@@ -330,7 +330,7 @@ _range_error(const formatdef *f, int is_unsigned)
 			f->format,
 			largest);
 	}
-#ifdef PY_STRUCT_WRAPPING
+#ifdef PY_STRUCT_OVERFLOW_MASKING
 	{
 		PyObject *ptype, *pvalue, *ptraceback;
 		PyObject *msg;
@@ -819,7 +819,7 @@ bp_int(char *p, PyObject *v, const formatdef *f)
 		else if ((i == 4) && (x < -2147483648L || x > 2147483647L))
 			RANGE_ERROR(x, f, 0, 0xffffffffL);
 #endif
-#ifdef PY_STRUCT_WRAPPING
+#ifdef PY_STRUCT_OVERFLOW_MASKING
 		else if ((i == 1) && (x < -128 || x > 127))
 			RANGE_ERROR(x, f, 0, 0xffL);
 #endif
@@ -910,8 +910,8 @@ bp_double(char *p, PyObject *v, const formatdef *f)
 
 static formatdef bigendian_table[] = {
 	{'x',	1,		0,		NULL},
-#ifdef PY_STRUCT_WRAPPING
-	/* Native packers do range checking without wrapping. */
+#ifdef PY_STRUCT_OVERFLOW_MASKING
+	/* Native packers do range checking without overflow masking. */
 	{'b',	1,		0,		nu_byte,	bp_int},
 	{'B',	1,		0,		nu_ubyte,	bp_uint},
 #else
@@ -1037,7 +1037,7 @@ lp_int(char *p, PyObject *v, const formatdef *f)
 		else if ((i == 4) && (x < -2147483648L || x > 2147483647L))
 			RANGE_ERROR(x, f, 0, 0xffffffffL);
 #endif
-#ifdef PY_STRUCT_WRAPPING
+#ifdef PY_STRUCT_OVERFLOW_MASKING
 		else if ((i == 1) && (x < -128 || x > 127))
 			RANGE_ERROR(x, f, 0, 0xffL);
 #endif
@@ -1128,8 +1128,8 @@ lp_double(char *p, PyObject *v, const formatdef *f)
 
 static formatdef lilendian_table[] = {
 	{'x',	1,		0,		NULL},
-#ifdef PY_STRUCT_WRAPPING
-	/* Native packers do range checking without wrapping. */
+#ifdef PY_STRUCT_OVERFLOW_MASKING
+	/* Native packers do range checking without overflow masking. */
 	{'b',	1,		0,		nu_byte,	lp_int},
 	{'B',	1,		0,		nu_ubyte,	lp_uint},
 #else
@@ -1740,7 +1740,7 @@ init_struct(void)
 	if (PyType_Ready(&PyStructType) < 0)
 		return;
 
-#ifdef PY_STRUCT_WRAPPING
+#ifdef PY_STRUCT_OVERFLOW_MASKING
 	if (pyint_zero == NULL) {
 		pyint_zero = PyInt_FromLong(0);
 		if (pyint_zero == NULL)
@@ -1757,8 +1757,8 @@ init_struct(void)
 	}
 
 #else	
-	/* This speed trick can't be used until wrapping goes away, because
-	   native endian always raises exceptions instead of wrapping. */
+	/* This speed trick can't be used until overflow masking goes away, because
+	   native endian always raises exceptions instead of overflow masking. */
 	
 	/* Check endian and swap in faster functions */
 	{
@@ -1814,7 +1814,7 @@ init_struct(void)
 	PyModule_AddObject(m, "Struct", (PyObject*)&PyStructType);
 	
 	PyModule_AddIntConstant(m, "_PY_STRUCT_RANGE_CHECKING", 1);
-#ifdef PY_STRUCT_WRAPPING
-	PyModule_AddIntConstant(m, "_PY_STRUCT_WRAPPING", 1);
+#ifdef PY_STRUCT_OVERFLOW_MASKING
+	PyModule_AddIntConstant(m, "_PY_STRUCT_OVERFLOW_MASKING", 1);
 #endif
 }
