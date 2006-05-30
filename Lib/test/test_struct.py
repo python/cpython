@@ -50,8 +50,12 @@ def any_err(func, *args):
             func.__name__, args)
 
 def deprecated_err(func, *args):
+    # The `warnings` module doesn't have an advertised way to restore
+    # its filter list.  Cheat.
+    save_warnings_filters = warnings.filters[:]
     warnings.filterwarnings("error", r"""^struct.*""", DeprecationWarning)
-    warnings.filterwarnings("error", r""".*format requires.*""", DeprecationWarning)
+    warnings.filterwarnings("error", r""".*format requires.*""",
+                            DeprecationWarning)
     try:
         try:
             func(*args)
@@ -65,7 +69,7 @@ def deprecated_err(func, *args):
             raise TestFailed, "%s%s did not raise error" % (
                 func.__name__, args)
     finally:
-        warnings.resetwarnings()
+        warnings.filters[:] = save_warnings_filters[:]
 
 simple_err(struct.calcsize, 'Z')
 
