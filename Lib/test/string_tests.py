@@ -115,7 +115,8 @@ class CommonTest(unittest.TestCase):
         self.checkequal(2, 'aaa', 'count', 'a', 0, -1)
         self.checkequal(0, 'aaa', 'count', 'a', 0, -10)
         self.checkequal(3, 'aaa', 'count', '', 1)
-        self.checkequal(1, 'aaa', 'count', '', 10)
+        self.checkequal(1, 'aaa', 'count', '', 3)
+        self.checkequal(0, 'aaa', 'count', '', 10)
         self.checkequal(2, 'aaa', 'count', '', -1)
         self.checkequal(4, 'aaa', 'count', '', -10)
 

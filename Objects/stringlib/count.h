@@ -15,7 +15,7 @@ stringlib_count(const STRINGLIB_CHAR* str, Py_ssize_t str_len,
 
     if (sub_len == 0) {
         if (str_len < 0)
-            return 1; /* start >= len(str) */
+            return 0; /* start > len(str) */
         return str_len + 1;
     }
 
