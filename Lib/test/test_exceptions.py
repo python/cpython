@@ -296,3 +296,10 @@ for args in exceptionList:
                         ( repr(e), checkArgName,
                             repr(expected[checkArgName]),
                             repr(getattr(e, checkArgName)) ))
+
+try:
+    BaseException(a=1)
+except TypeErrror:
+    pass
+else:
+    raise TestFailed("BaseException shouldn't take keyword args")
