@@ -767,7 +767,7 @@ dict_print(register dictobject *mp, register FILE *fp, register int flags)
 	i = Py_ReprEnter((PyObject*)mp);
 	if (i != 0) {
 		if (i < 0)
-			return i;
+			return (int)i;
 		fprintf(fp, "{...}");
 		return 0;
 	}
