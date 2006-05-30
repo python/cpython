@@ -764,7 +764,7 @@ dict_print(register dictobject *mp, register FILE *fp, register int flags)
 	register Py_ssize_t i;
 	register Py_ssize_t any;
 
-	i = (int)Py_ReprEnter((PyObject*)mp);
+	i = Py_SAFE_DOWNCAST(Py_ReprEnter((PyObject*)mp), Py_ssize_t, int);
 	if (i != 0) {
 		if (i < 0)
 			return i;
@@ -1172,14 +1172,14 @@ PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
 			if (PyErr_ExceptionMatches(PyExc_TypeError))
 				PyErr_Format(PyExc_TypeError,
 					"cannot convert dictionary update "
-					"sequence element #%d to a sequence",
+					"sequence element #%zd to a sequence",
 					i);
 			goto Fail;
 		}
 		n = PySequence_Fast_GET_SIZE(fast);
 		if (n != 2) {
 			PyErr_Format(PyExc_ValueError,
-				     "dictionary update sequence element #%d "
+				     "dictionary update sequence element #%zd "
 				     "has length %zd; 2 is required",
 				     i, n);
 			goto Fail;
@@ -1205,7 +1205,7 @@ Fail:
 	i = -1;
 Return:
 	Py_DECREF(it);
-	return (int)i;
+	return Py_SAFE_DOWNCAST(i, Py_ssize_t, int);
 }
 
 int
@@ -1411,7 +1411,7 @@ characterize(dictobject *a, dictobject *b, PyObject **pval)
 				 * find its associated value anymore; or
 				 * maybe it is but the compare deleted the
 				 * a[thiskey] entry.
-|				 */
+				 */
 				Py_DECREF(thiskey);
 				continue;
 			}
@@ -1711,7 +1711,7 @@ dict_popitem(dictobject *mp)
 	 * field of slot 0 to hold a search finger:
 	 * If slot 0 has a value, use slot 0.
 	 * Else slot 0 is being used to hold a search finger,
-|	 * and we use its hash value as the first index to look.
+	 * and we use its hash value as the first index to look.
 	 */
 	ep = &mp->ma_table[0];
 	if (ep->me_value == NULL) {
