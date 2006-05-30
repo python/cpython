@@ -299,7 +299,7 @@ for args in exceptionList:
 
 try:
     BaseException(a=1)
-except TypeErrror:
+except TypeError:
     pass
 else:
     raise TestFailed("BaseException shouldn't take keyword args")

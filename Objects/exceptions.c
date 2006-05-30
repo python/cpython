@@ -32,9 +32,6 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyBaseExceptionObject *self;
 
-    if (!_PyArg_NoKeywords("BaseException", kwds))
-        return NULL;
-
     self = (PyBaseExceptionObject *)type->tp_alloc(type, 0);
     /* the dict is created on the fly in PyObject_GenericSetAttr */
     self->message = self->dict = NULL;
@@ -57,6 +54,9 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
 {
+    if (!_PyArg_NoKeywords(self->ob_type->tp_name, kwds))
+        return -1;
+
     Py_DECREF(self->args);
     self->args = args;
     Py_INCREF(self->args);
