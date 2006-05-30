@@ -763,11 +763,12 @@ dict_print(register dictobject *mp, register FILE *fp, register int flags)
 {
 	register Py_ssize_t i;
 	register Py_ssize_t any;
+	int status;
 
-	i = Py_ReprEnter((PyObject*)mp);
-	if (i != 0) {
-		if (i < 0)
-			return (int)i;
+	status = Py_ReprEnter((PyObject*)mp);
+	if (status != 0) {
+		if (status < 0)
+			return status;
 		fprintf(fp, "{...}");
 		return 0;
 	}
