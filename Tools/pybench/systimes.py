@@ -179,7 +179,7 @@ def test_workload():
     print 'after:', t1
     print 'differences:', (t1[0] - t0[0], t1[1] - t0[1])
     print
-    
+
 def test_idle():
     print 'Testing systimes() under idle conditions'
     t0 = systimes()
