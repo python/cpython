@@ -4362,10 +4362,8 @@ init_socket(void)
 	PyModule_AddIntConstant(m, "BTPROTO_SCO", BTPROTO_SCO);
 #endif
 	PyModule_AddIntConstant(m, "BTPROTO_RFCOMM", BTPROTO_RFCOMM);
-	PyModule_AddObject(m, "BDADDR_ANY",
-	                   PyString_FromString("00:00:00:00:00:00"));
-	PyModule_AddObject(m, "BDADDR_LOCAL",
-	                   PyString_FromString("00:00:00:FF:FF:FF"));
+	PyModule_AddStringConstant(m, "BDADDR_ANY", "00:00:00:00:00:00");
+	PyModule_AddStringConstant(m, "BDADDR_LOCAL", "00:00:00:FF:FF:FF");
 #endif
 
 #ifdef HAVE_NETPACKET_PACKET_H
