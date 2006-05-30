@@ -764,7 +764,7 @@ dict_print(register dictobject *mp, register FILE *fp, register int flags)
 	register Py_ssize_t i;
 	register Py_ssize_t any;
 
-	i = Py_SAFE_DOWNCAST(Py_ReprEnter((PyObject*)mp), Py_ssize_t, int);
+	i = Py_ReprEnter((PyObject*)mp);
 	if (i != 0) {
 		if (i < 0)
 			return i;
