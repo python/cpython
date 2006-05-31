@@ -594,17 +594,8 @@ testuniversal:	all platform
 		$(RUNSHARED) /usr/libexec/oah/translate ./$(BUILDPYTHON) -E -tt $(TESTPROG) $(TESTOPTS) -uall
 
 
-# These two force rules are only used for buildbottest.
-#  - cleanup tries to cleanup after broken tests.
-#  - setup ensures that we are using the latest version of Modules/Setup.dist.
-forcecleanup:
-		-rm -rf $(srcdir)/@test*
-
-forcesetup:
-		cp $(srcdir)/Modules/Setup.dist $(srcdir)/Modules/Setup
-
 # Like testall, but with a single pass only
-buildbottest:	forcecleanup forcesetup all platform
+buildbottest:	all platform
 		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall -rw
 
 QUICKTESTOPTS=	$(TESTOPTS) -x test_thread test_signal test_strftime \
