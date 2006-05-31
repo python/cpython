@@ -314,7 +314,8 @@ returned by \function{ctime()}.  If \var{string} cannot be parsed
 according to \var{format}, \exception{ValueError} is raised.  If the
 string to be parsed has excess data after parsing,
 \exception{ValueError} is raised.  The default values used to fill in
-any missing data are \code{(1900, 1, 1, 0, 0, 0, 0, 1, -1)} .
+any missing data when more accurate values canot be inferred are
+\code{(1900, 1, 1, 0, 0, 0, 0, 1, -1)} .
 
 Support for the \code{\%Z} directive is based on the values contained in
 \code{tzname} and whether \code{daylight} is true.  Because of this,
