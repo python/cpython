@@ -308,26 +308,27 @@ unpack_double(const char *p,  /* start of 8-byte string */
 static int
 _range_error(const formatdef *f, int is_unsigned)
 {
-	if (is_unsigned == 0) {
-		Py_ssize_t smallest, largest = 0;
-		Py_ssize_t i = f->size * 8;
-		while (--i > 0) {
-			largest = (largest * 2) + 1;
-		}
-		smallest = -largest - 1;
-		PyErr_Format(StructError,
-			"'%c' format requires %zd <= number <= %zd",
-			f->format,
-			smallest,
-			largest);
-	} else {
-		size_t largest = 0;
-		Py_ssize_t i = f->size * 8;
-		while (--i >= 0)
-			largest = (largest * 2) + 1;
+	/* ulargest is the largest unsigned value with f->size bytes.
+	 * Note that the simpler:
+	 *     ((size_t)1 << (f->size * 8)) - 1
+	 * doesn't work when f->size == size_t because C doesn't define what
+	 * happens when a left shift count is >= the number of bits in the
+	 * integer being shifted; e.g., on some boxes it doesn't shift at
+	 * all when they're equal.
+	 */
+	const size_t ulargest = (size_t)-1 >> ((SIZEOF_SIZE_T - f->size)*8);
+	assert(f->size >= 1 && f->size <= SIZEOF_SIZE_T);
+	if (is_unsigned)
 		PyErr_Format(StructError,
 			"'%c' format requires 0 <= number <= %zu",
 			f->format,
+			ulargest);
+	else {
+		const Py_ssize_t largest = (Py_ssize_t)(ulargest >> 1);
+		PyErr_Format(StructError,
+			"'%c' format requires %zd <= number <= %zd",
+			f->format,
+			~ largest,
 			largest);
 	}
 #ifdef PY_STRUCT_OVERFLOW_MASKING
@@ -343,7 +344,8 @@ _range_error(const formatdef *f, int is_unsigned)
 		Py_XDECREF(ptraceback);
 		if (msg == NULL)
 			return -1;
-		rval = PyErr_Warn(PyExc_DeprecationWarning, PyString_AS_STRING(msg));
+		rval = PyErr_Warn(PyExc_DeprecationWarning,
+				  PyString_AS_STRING(msg));
 		Py_DECREF(msg);
 		if (rval == 0)
 			return 0;
