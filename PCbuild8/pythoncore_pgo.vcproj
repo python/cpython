@@ -68,7 +68,7 @@
 			<Tool
 				Name="VCPreLinkEventTool"
 				Description="Generate buildinfo &amp; profile guided optimizations (please be patient)"
-				CommandLine="make_buildinfo.exe $(ConfigurationName)&#x0D;&#x0A;link @$(ProjectName)_link.txt&#x0D;&#x0A;$(OutDir)\python ../Tools/pybench/pybench.py -n 1"
+				CommandLine="make_buildinfo.exe $(ConfigurationName)&#x0D;&#x0A;link @$(ProjectName)_link.txt&#x0D;&#x0A;$(OutDir)\python ../Tools/pybench/pybench.py -n 1&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
@@ -212,6 +212,10 @@
 		</File>
 		<File
 			RelativePath="..\Modules\_csv.c"
+			>
+		</File>
+		<File
+			RelativePath="..\Modules\_functoolsmodule.c"
 			>
 		</File>
 		<File
@@ -383,7 +387,7 @@
 			>
 		</File>
 		<File
-			RelativePath="..\Python\exceptions.c"
+			RelativePath="..\Objects\exceptions.c"
 			>
 		</File>
 		<File
@@ -408,10 +412,6 @@
 		</File>
 		<File
 			RelativePath="..\Objects\funcobject.c"
-			>
-		</File>
-		<File
-			RelativePath="..\Modules\functionalmodule.c"
 			>
 		</File>
 		<File
@@ -638,7 +638,7 @@
 				>
 				<Tool
 					Name="VCCustomBuildTool"
-					CommandLine="xcopy $(InputFileName)* $(OutDir) /F /I /Y"
+					CommandLine="xcopy $(InputFileName)* $(OutDir) /F /I /Y&#x0D;&#x0A;"
 					Outputs="$(OutDir)\$(InputFileName)"
 				/>
 			</FileConfiguration>
