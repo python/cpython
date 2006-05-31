@@ -311,10 +311,10 @@ _range_error(const formatdef *f, int is_unsigned)
 	/* ulargest is the largest unsigned value with f->size bytes.
 	 * Note that the simpler:
 	 *     ((size_t)1 << (f->size * 8)) - 1
-	 * doesn't work when f->size == size_t because C doesn't define what
-	 * happens when a left shift count is >= the number of bits in the
-	 * integer being shifted; e.g., on some boxes it doesn't shift at
-	 * all when they're equal.
+	 * doesn't work when f->size == sizeof(size_t) because C doesn't
+	 * define what happens when a left shift count is >= the number of
+	 * bits in the integer being shifted; e.g., on some boxes it doesn't
+	 * shift at all when they're equal.
 	 */
 	const size_t ulargest = (size_t)-1 >> ((SIZEOF_SIZE_T - f->size)*8);
 	assert(f->size >= 1 && f->size <= SIZEOF_SIZE_T);
