@@ -309,24 +309,24 @@ static int
 _range_error(const formatdef *f, int is_unsigned)
 {
 	if (is_unsigned == 0) {
-		long smallest = 0, largest = 0;
+		Py_ssize_t smallest, largest = 0;
 		Py_ssize_t i = f->size * 8;
 		while (--i > 0) {
-			smallest = (smallest * 2) - 1;
 			largest = (largest * 2) + 1;
 		}
+		smallest = -largest - 1;
 		PyErr_Format(StructError,
-			"'%c' format requires %ld <= number <= %ld",
+			"'%c' format requires %zd <= number <= %zd",
 			f->format,
 			smallest,
 			largest);
 	} else {
-		unsigned long largest = 0;
+		size_t largest = 0;
 		Py_ssize_t i = f->size * 8;
 		while (--i >= 0)
 			largest = (largest * 2) + 1;
 		PyErr_Format(StructError,
-			"'%c' format requires 0 <= number <= %lu",
+			"'%c' format requires 0 <= number <= %zu",
 			f->format,
 			largest);
 	}
