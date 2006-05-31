@@ -1219,7 +1219,7 @@ prepare_s(PyStructObject *self)
 	const formatdef *f;
 	const formatdef *e;
 	formatcode *codes;
-	
+
 	const char *s;
 	const char *fmt;
 	char c;
@@ -1228,7 +1228,7 @@ prepare_s(PyStructObject *self)
 	fmt = PyString_AS_STRING(self->s_format);
 
 	f = whichtable((char **)&fmt);
-	
+
 	s = fmt;
 	size = 0;
 	len = 0;
@@ -1256,7 +1256,7 @@ prepare_s(PyStructObject *self)
 		e = getentry(c, f);
 		if (e == NULL)
 			return -1;
-		
+
 		switch (c) {
 			case 's': /* fall through */
 			case 'p': len++; break;
@@ -1283,7 +1283,7 @@ prepare_s(PyStructObject *self)
 		return -1;
 	}
 	self->s_codes = codes;
-	
+
 	s = fmt;
 	size = 0;
 	while ((c = *s++) != '\0') {
@@ -1300,7 +1300,7 @@ prepare_s(PyStructObject *self)
 			num = 1;
 
 		e = getentry(c, f);
-		
+
 		size = align(size, c, e);
 		if (c == 's' || c == 'p') {
 			codes->offset = size;
@@ -1323,7 +1323,7 @@ prepare_s(PyStructObject *self)
 	codes->fmtdef = NULL;
 	codes->offset = size;
 	codes->size = 0;
-	
+
 	return 0;
 }
 
@@ -1363,7 +1363,7 @@ s_init(PyObject *self, PyObject *args, PyObject *kwds)
 	Py_INCREF(o_format);
 	Py_XDECREF(soself->s_format);
 	soself->s_format = o_format;
-	
+
 	ret = prepare_s(soself);
 	return ret;
 }
@@ -1432,7 +1432,7 @@ s_unpack(PyObject *self, PyObject *inputstr)
 {
 	PyStructObject *soself = (PyStructObject *)self;
 	assert(PyStruct_Check(self));
-	assert(soself->s_codes != NULL);	
+	assert(soself->s_codes != NULL);
 	if (inputstr == NULL || !PyString_Check(inputstr) ||
 		PyString_GET_SIZE(inputstr) != soself->s_size) {
 		PyErr_Format(StructError,
@@ -1474,7 +1474,7 @@ s_unpack_from(PyObject *self, PyObject *args, PyObject *kwds)
 			"unpack_from requires a buffer argument");
 		return NULL;
 	}
-	
+
 	if (offset < 0)
 		offset += buffer_len;
 
@@ -1548,7 +1548,7 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 			}
 		}
 	}
-	
+
 	/* Success */
 	return 0;
 }
@@ -1577,12 +1577,12 @@ s_pack(PyObject *self, PyObject *args)
 			"pack requires exactly %zd arguments", soself->s_len);
 		return NULL;
 	}
-	
+
 	/* Allocate a new string */
 	result = PyString_FromStringAndSize((char *)NULL, soself->s_size);
 	if (result == NULL)
 		return NULL;
-	
+
 	/* Call the guts */
 	if ( s_pack_internal(soself, args, 0, PyString_AS_STRING(result)) != 0 ) {
 		Py_DECREF(result);
@@ -1615,14 +1615,14 @@ s_pack_to(PyObject *self, PyObject *args)
 	    PyTuple_GET_SIZE(args) != (soself->s_len + 2))
 	{
 		PyErr_Format(StructError,
-			     "pack_to requires exactly %zd arguments", 
+			     "pack_to requires exactly %zd arguments",
 			     (soself->s_len + 2));
 		return NULL;
 	}
 
 	/* Extract a writable memory buffer from the first argument */
-	if ( PyObject_AsWriteBuffer(PyTuple_GET_ITEM(args, 0), 
-								(void**)&buffer, &buffer_len) == -1 ) { 
+	if ( PyObject_AsWriteBuffer(PyTuple_GET_ITEM(args, 0),
+								(void**)&buffer, &buffer_len) == -1 ) {
 		return NULL;
 	}
 	assert( buffer_len >= 0 );
@@ -1641,7 +1641,7 @@ s_pack_to(PyObject *self, PyObject *args)
 			     soself->s_size);
 		return NULL;
 	}
-	
+
 	/* Call the guts */
 	if ( s_pack_internal(soself, args, 2, buffer + offset) != 0 ) {
 		return NULL;
@@ -1667,7 +1667,7 @@ s_get_size(PyStructObject *self, void *unused)
 
 static struct PyMethodDef s_methods[] = {
 	{"pack",	(PyCFunction)s_pack,		METH_VARARGS, s_pack__doc__},
-	{"pack_to",	(PyCFunction)s_pack_to,		METH_VARARGS, s_pack_to__doc__}, 
+	{"pack_to",	(PyCFunction)s_pack_to,		METH_VARARGS, s_pack_to__doc__},
 	{"unpack",	(PyCFunction)s_unpack,		METH_O, s_unpack__doc__},
 	{"unpack_from",	(PyCFunction)s_unpack_from,	METH_KEYWORDS, s_unpack_from__doc__},
 	{NULL,	 NULL}		/* sentinel */
@@ -1756,10 +1756,10 @@ init_struct(void)
 			return;
 	}
 
-#else	
+#else
 	/* This speed trick can't be used until overflow masking goes away, because
 	   native endian always raises exceptions instead of overflow masking. */
-	
+
 	/* Check endian and swap in faster functions */
 	{
 		int one = 1;
@@ -1781,7 +1781,7 @@ init_struct(void)
 					   listed in the same order */
 					if (ptr == other)
 						other++;
-					/* Only use the trick if the 
+					/* Only use the trick if the
 					   size matches */
 					if (ptr->size != native->size)
 						break;
@@ -1799,7 +1799,7 @@ init_struct(void)
 		}
 	}
 #endif
-	
+
 	/* Add some symbolic constants to the module */
 	if (StructError == NULL) {
 		StructError = PyErr_NewException("struct.error", NULL, NULL);
@@ -1812,7 +1812,7 @@ init_struct(void)
 
 	Py_INCREF((PyObject*)&PyStructType);
 	PyModule_AddObject(m, "Struct", (PyObject*)&PyStructType);
-	
+
 	PyModule_AddIntConstant(m, "_PY_STRUCT_RANGE_CHECKING", 1);
 #ifdef PY_STRUCT_OVERFLOW_MASKING
 	PyModule_AddIntConstant(m, "_PY_STRUCT_OVERFLOW_MASKING", 1);
