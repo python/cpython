@@ -125,7 +125,7 @@ Wouters.}
 %======================================================================
 \section{PEP 309: Partial Function Application\label{pep-309}}
 
-The \module{functional} module is intended to contain tools for
+The \module{functools} module is intended to contain tools for
 functional-style programming.  Currently it only contains a
 \class{partial()} function, but new functions will probably be added
 in future versions of Python.
@@ -136,7 +136,7 @@ parameters filled in.  Consider a Python function \code{f(a, b, c)};
 you could create a new function \code{g(b, c)} that was equivalent to
 \code{f(1, b, c)}.  This is called ``partial function application'',
 and is provided by the \class{partial} class in the new
-\module{functional} module.
+\module{functools} module.
 
 The constructor for \class{partial} takes the arguments
 \code{(\var{function}, \var{arg1}, \var{arg2}, ...
@@ -147,18 +147,18 @@ with the filled-in arguments.
 Here's a small but realistic example:
 
 \begin{verbatim}
-import functional
+import functools
 
 def log (message, subsystem):
     "Write the contents of 'message' to the specified subsystem."
     print '%s: %s' % (subsystem, message)
     ...
 
-server_log = functional.partial(log, subsystem='server')
+server_log = functools.partial(log, subsystem='server')
 server_log('Unable to open socket')
 \end{verbatim}
 
-Here's another example, from a program that uses PyGTk.  Here a
+Here's another example, from a program that uses PyGTK.  Here a
 context-sensitive pop-up menu is being constructed dynamically.  The
 callback provided for the menu option is a partially applied version
 of the \method{open_item()} method, where the first argument has been
@@ -170,7 +170,7 @@ class Application:
     def open_item(self, path):
        ...
     def init (self):
-        open_func = functional.partial(self.open_item, item_path)
+        open_func = functools.partial(self.open_item, item_path)
         popup_menu.append( ("Open", open_func, 1) )
 \end{verbatim}
 
