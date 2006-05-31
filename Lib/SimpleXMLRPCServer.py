@@ -423,6 +423,17 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     XML-RPC requests.
     """
 
+    # Class attribute listing the accessible path components;
+    # paths not on this list will result in a 404 error.
+    rpc_paths = ('/', '/RPC2')
+
+    def is_rpc_path_valid(self):
+        if self.rpc_paths:
+            return self.path in self.rpc_paths
+        else:
+            # If .rpc_paths is empty, just assume all paths are legal
+            return True
+
     def do_POST(self):
         """Handles the HTTP POST request.
 
@@ -430,6 +441,11 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         which are forwarded to the server's _dispatch method for handling.
         """
 
+        # Check that the path is legal
+        if not self.is_rpc_path_valid():
+            self.report_404()
+            return
+            
         try:
             # Get arguments by reading body of request.
             # We read this in chunks to avoid straining
@@ -464,6 +480,18 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(response)
 
+            # shut down the connection
+            self.wfile.flush()
+            self.connection.shutdown(1)
+
+    def report_404 (self):
+            # Report a 404 error
+            self.send_response(404)
+            response = 'No such page'
+            self.send_header("Content-type", "text/plain")
+            self.send_header("Content-length", str(len(response)))
+            self.end_headers()
+            self.wfile.write(response)
             # shut down the connection
             self.wfile.flush()
             self.connection.shutdown(1)
