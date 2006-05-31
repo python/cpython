@@ -522,6 +522,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\Modules\_functoolsmodule.c"
+			>
+		</File>
+		<File
 			RelativePath="..\Modules\_heapqmodule.c"
 			>
 		</File>
@@ -690,7 +694,7 @@
 			>
 		</File>
 		<File
-			RelativePath="..\Python\exceptions.c"
+			RelativePath="..\Objects\exceptions.c"
 			>
 		</File>
 		<File
@@ -715,14 +719,6 @@
 		</File>
 		<File
 			RelativePath="..\Objects\funcobject.c"
-			>
-		</File>
-		<File
-			RelativePath="..\Modules\functionalmodule.c"
-			>
-		</File>
-		<File
-			RelativePath="..\Modules\functionalmodule.c"
 			>
 		</File>
 		<File
