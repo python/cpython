@@ -59,10 +59,15 @@ Core and builtins
 
 - Patch #1479181: split open() and file() from being aliases for each other.
 
-- Patch #1497053: Exceptions occurring in __eq__() methods were always
-  silently ignored by dictionaries when comparing keys.  They are now
-  passed through (except when using the C API function PyDict_GetItem(),
-  whose semantics did not change).
+- Patch #1497053 & bug #1275608: Exceptions occurring in ``__eq__()``
+  methods were always silently ignored by dictionaries when comparing keys.
+  They are now passed through (except when using the C API function
+  ``PyDict_GetItem()``, whose semantics did not change).
+
+- Bug #1456209: In some obscure cases it was possible for a class with a
+  custom ``__eq__()`` method to confuse dict internals when class instances
+  were used as a dict's keys and the ``__eq__()`` method mutated the dict.
+  No, you don't have any code that did this ;-)
 
 Extension Modules
 -----------------
