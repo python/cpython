@@ -247,10 +247,10 @@ class SimpleXMLRPCDispatcher:
         of changing method dispatch behavior.
         """
 
-        params, method = xmlrpclib.loads(data)
-
-        # generate response
         try:
+            params, method = xmlrpclib.loads(data)
+
+            # generate response
             if dispatch_method is not None:
                 response = dispatch_method(method, params)
             else:
