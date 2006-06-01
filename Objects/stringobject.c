@@ -1363,7 +1363,7 @@ static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
 	count++; }
 
 /* Always force the list to the expected size. */
-#define FIX_PREALLOC_SIZE(list) ((PyListObject *)list)->ob_size = count;	
+#define FIX_PREALLOC_SIZE(list) ((PyListObject *)list)->ob_size = count
 
 #define SKIP_SPACE(s, i, len)    { while (i<len &&  isspace(Py_CHARMASK(s[i]))) i++; }
 #define SKIP_NONSPACE(s, i, len) { while (i<len && !isspace(Py_CHARMASK(s[i]))) i++; }
