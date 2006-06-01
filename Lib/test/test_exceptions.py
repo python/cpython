@@ -189,69 +189,68 @@ class ExceptionTests(unittest.TestCase):
         except Exception, e: sampleUnicodeDecodeError = e
 
         exceptionList = [
-                ( BaseException, (), { 'message' : '', 'args' : () }),
-                ( BaseException, (1, ), { 'message' : 1, 'args' : ( 1, ) }),
-                ( BaseException, ('foo', ), { 'message' : 'foo', 'args' : ( 'foo', ) }),
-                ( BaseException, ('foo', 1), { 'message' : '', 'args' : ( 'foo', 1 ) }),
-                ( SystemExit, ('foo',), { 'message' : 'foo', 'args' : ( 'foo', ),
-                        'code' : 'foo' }),
-                ( IOError, ('foo',), { 'message' : 'foo', 'args' : ( 'foo', ), }),
-                ( IOError, ('foo', 'bar'), { 'message' : '',
-                        'args' : ('foo', 'bar'), }),
-                ( IOError, ('foo', 'bar', 'baz'),
-                         { 'message' : '', 'args' : ('foo', 'bar'), }),
-                ( EnvironmentError, ('errnoStr', 'strErrorStr', 'filenameStr'),
-                        { 'message' : '', 'args' : ('errnoStr', 'strErrorStr'),
-                            'strerror' : 'strErrorStr',
-                            'errno' : 'errnoStr', 'filename' : 'filenameStr' }),
-                ( EnvironmentError, (1, 'strErrorStr', 'filenameStr'),
-                        { 'message' : '', 'args' : (1, 'strErrorStr'),
-                            'strerror' : 'strErrorStr', 'errno' : 1,
-                            'filename' : 'filenameStr' }),
-                ( SyntaxError, ('msgStr',),
-                        { 'message' : 'msgStr', 'args' : ('msgStr', ),
-                            'print_file_and_line' : None, 'msg' : 'msgStr',
-                            'filename' : None, 'lineno' : None, 'offset' : None,
-                            'text' : None }),
-                ( SyntaxError, ('msgStr', ('filenameStr', 'linenoStr', 'offsetStr',
-                                'textStr')),
-                        { 'message' : '', 'args' : ('msgStr', ('filenameStr',
-                                'linenoStr', 'offsetStr', 'textStr' )),
-                            'print_file_and_line' : None, 'msg' : 'msgStr',
-                            'filename' : 'filenameStr', 'lineno' : 'linenoStr',
-                            'offset' : 'offsetStr', 'text' : 'textStr' }),
-                ( SyntaxError, ('msgStr', 'filenameStr', 'linenoStr', 'offsetStr',
-                            'textStr', 'print_file_and_lineStr'),
-                        { 'message' : '', 'args' : ('msgStr', 'filenameStr',
-                                'linenoStr', 'offsetStr', 'textStr',
-                                'print_file_and_lineStr'),
-                            'print_file_and_line' : None, 'msg' : 'msgStr',
-                            'filename' : None, 'lineno' : None, 'offset' : None,
-                            'text' : None }),
-                ( UnicodeError, (),
-                        { 'message' : '', 'args' : (), }),
-                ( sampleUnicodeEncodeError,
-                        { 'message' : '', 'args' : ('ascii', u'Hello \xe1', 6, 7,
-                                'ordinal not in range(128)'),
-                            'encoding' : 'ascii', 'object' : u'Hello \xe1',
-                            'start' : 6, 'reason' : 'ordinal not in range(128)' }),
-                ( sampleUnicodeDecodeError,
-                        { 'message' : '', 'args' : ('ascii', '\xff', 0, 1,
-                                'ordinal not in range(128)'),
-                            'encoding' : 'ascii', 'object' : '\xff',
-                            'start' : 0, 'reason' : 'ordinal not in range(128)' }),
-                ( UnicodeTranslateError, (u"\u3042", 0, 1, "ouch"),
-                        { 'message' : '', 'args' : (u'\u3042', 0, 1, 'ouch'),
-                            'object' : u'\u3042', 'reason' : 'ouch',
-                            'start' : 0, 'end' : 1 }),
-                ]
+            (BaseException, (), {'message' : '', 'args' : ()}),
+            (BaseException, (1, ), {'message' : 1, 'args' : (1,)}),
+            (BaseException, ('foo',),
+                {'message' : 'foo', 'args' : ('foo',)}),
+            (BaseException, ('foo', 1),
+                {'message' : '', 'args' : ('foo', 1)}),
+            (SystemExit, ('foo',),
+                {'message' : 'foo', 'args' : ('foo',), 'code' : 'foo'}),
+            (IOError, ('foo',),
+                {'message' : 'foo', 'args' : ('foo',)}),
+            (IOError, ('foo', 'bar'),
+                {'message' : '', 'args' : ('foo', 'bar')}),
+            (IOError, ('foo', 'bar', 'baz'),
+                {'message' : '', 'args' : ('foo', 'bar')}),
+            (EnvironmentError, ('errnoStr', 'strErrorStr', 'filenameStr'),
+                {'message' : '', 'args' : ('errnoStr', 'strErrorStr'),
+                 'strerror' : 'strErrorStr', 'errno' : 'errnoStr',
+                 'filename' : 'filenameStr'}),
+            (EnvironmentError, (1, 'strErrorStr', 'filenameStr'),
+                {'message' : '', 'args' : (1, 'strErrorStr'), 'errno' : 1,
+                 'strerror' : 'strErrorStr', 'filename' : 'filenameStr'}),
+            (SyntaxError, ('msgStr',),
+                {'message' : 'msgStr', 'args' : ('msgStr',), 'text' : None,
+                 'print_file_and_line' : None, 'msg' : 'msgStr',
+                 'filename' : None, 'lineno' : None, 'offset' : None}),
+            (SyntaxError, ('msgStr', ('filenameStr', 'linenoStr', 'offsetStr',
+                           'textStr')),
+                {'message' : '', 'offset' : 'offsetStr', 'text' : 'textStr',
+                 'args' : ('msgStr', ('filenameStr', 'linenoStr',
+                                      'offsetStr', 'textStr')),
+                 'print_file_and_line' : None, 'msg' : 'msgStr',
+                 'filename' : 'filenameStr', 'lineno' : 'linenoStr'}),
+            (SyntaxError, ('msgStr', 'filenameStr', 'linenoStr', 'offsetStr',
+                           'textStr', 'print_file_and_lineStr'),
+                {'message' : '', 'text' : None,
+                 'args' : ('msgStr', 'filenameStr', 'linenoStr', 'offsetStr',
+                           'textStr', 'print_file_and_lineStr'),
+                 'print_file_and_line' : None, 'msg' : 'msgStr',
+                 'filename' : None, 'lineno' : None, 'offset' : None}),
+            (UnicodeError, (), {'message' : '', 'args' : (),}),
+            (sampleUnicodeEncodeError,
+                {'message' : '', 'args' : ('ascii', u'Hello \xe1', 6, 7,
+                                           'ordinal not in range(128)'),
+                 'encoding' : 'ascii', 'object' : u'Hello \xe1',
+                 'start' : 6, 'reason' : 'ordinal not in range(128)'}),
+            (sampleUnicodeDecodeError,
+                {'message' : '', 'args' : ('ascii', '\xff', 0, 1,
+                                           'ordinal not in range(128)'),
+                 'encoding' : 'ascii', 'object' : '\xff',
+                 'start' : 0, 'reason' : 'ordinal not in range(128)'}),
+            (UnicodeTranslateError, (u"\u3042", 0, 1, "ouch"),
+                {'message' : '', 'args' : (u'\u3042', 0, 1, 'ouch'),
+                 'object' : u'\u3042', 'reason' : 'ouch',
+                 'start' : 0, 'end' : 1}),
+        ]
         try:
             exceptionList.append(
-                    ( WindowsError, (1, 'strErrorStr', 'filenameStr'),
-                            { 'message' : '', 'args' : (1, 'strErrorStr'),
-                                'strerror' : 'strErrorStr',
-                                'errno' : 22, 'filename' : 'filenameStr',
-                                'winerror' : 1 }))
+                (WindowsError, (1, 'strErrorStr', 'filenameStr'),
+                    {'message' : '', 'args' : (1, 'strErrorStr'),
+                     'strerror' : 'strErrorStr', 'winerror' : 1,
+                     'errno' : 22, 'filename' : 'filenameStr'})
+            )
         except NameError: pass
 
         import pickle, random
@@ -259,9 +258,13 @@ class ExceptionTests(unittest.TestCase):
         for args in exceptionList:
             expected = args[-1]
             try:
-                if len(args) == 2: raise args[0]
-                else: raise apply(args[0], args[1])
+                exc = args[0]
+                if len(args) == 2: raise exc
+                else: raise exc(*args[1])
             except BaseException, e:
+                if (e is not exc and     # needed for sampleUnicode errors
+                    type(e) is not exc):
+                    raise
                 for checkArgName in expected.keys():
                     self.assertEquals(repr(getattr(e, checkArgName)),
                                       repr(expected[checkArgName]),
@@ -280,6 +283,7 @@ class ExceptionTests(unittest.TestCase):
         """test that builtin exception don't take keyword args,
            but user-defined subclasses can if they want"""
         self.assertRaises(TypeError, BaseException, a=1)
+
         class DerivedException(BaseException):
             def __init__(self, fancy_arg):
                 BaseException.__init__(self)
