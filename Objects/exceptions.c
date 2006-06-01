@@ -150,6 +150,29 @@ BaseException_reduce(PyBaseExceptionObject *self)
         return PyTuple_Pack(2, self->ob_type, self->args);
 }
 
+/*
+ * Needed for backward compatibility, since exceptions used to store
+ * all their attributes in the __dict__. Code is taken from cPickle's
+ * load_build function.
+ */
+static PyObject *
+BaseException_setstate(PyObject *self, PyObject *state)
+{
+    PyObject *d_key, *d_value;
+    Py_ssize_t i = 0;
+
+    if (state != Py_None) {
+        if (!PyDict_Check(state)) {
+            PyErr_SetString(PyExc_TypeError, "state is not a dictionary");
+            return NULL;
+        }
+        while (PyDict_Next(state, &i, &d_key, &d_value)) {
+            if (PyObject_SetAttr(self, d_key, d_value) < 0)
+                return NULL;
+        }
+    }
+    Py_RETURN_NONE;
+}
 
 #ifdef Py_USING_UNICODE
 /* while this method generates fairly uninspired output, it a least
@@ -168,6 +191,7 @@ BaseException_unicode(PyBaseExceptionObject *self)
 
 static PyMethodDef BaseException_methods[] = {
    {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS },
+   {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
 #ifdef Py_USING_UNICODE
    {"__unicode__", (PyCFunction)BaseException_unicode, METH_NOARGS },
 #endif
