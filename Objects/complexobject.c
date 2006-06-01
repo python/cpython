@@ -188,7 +188,7 @@ complex_subtype_from_c_complex(PyTypeObject *type, Py_complex cval)
 {
 	PyObject *op;
 
-	op = PyType_GenericAlloc(type, 0);
+	op = type->tp_alloc(type, 0);
 	if (op != NULL)
 		((PyComplexObject *)op)->cval = cval;
 	return op;
@@ -1023,7 +1023,7 @@ PyTypeObject PyComplex_Type = {
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
 	0,					/* tp_init */
-	0,					/* tp_alloc */
+	PyType_GenericAlloc,			/* tp_alloc */
 	complex_new,				/* tp_new */
 	PyObject_Del,           		/* tp_free */
 };
