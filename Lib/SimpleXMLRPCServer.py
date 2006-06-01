@@ -445,7 +445,7 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if not self.is_rpc_path_valid():
             self.report_404()
             return
-            
+
         try:
             # Get arguments by reading body of request.
             # We read this in chunks to avoid straining
@@ -486,15 +486,15 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def report_404 (self):
             # Report a 404 error
-            self.send_response(404)
-            response = 'No such page'
-            self.send_header("Content-type", "text/plain")
-            self.send_header("Content-length", str(len(response)))
-            self.end_headers()
-            self.wfile.write(response)
-            # shut down the connection
-            self.wfile.flush()
-            self.connection.shutdown(1)
+        self.send_response(404)
+        response = 'No such page'
+        self.send_header("Content-type", "text/plain")
+        self.send_header("Content-length", str(len(response)))
+        self.end_headers()
+        self.wfile.write(response)
+        # shut down the connection
+        self.wfile.flush()
+        self.connection.shutdown(1)
 
     def log_request(self, code='-', size='-'):
         """Selectively log an accepted request."""
