@@ -494,12 +494,7 @@ class CommonTest(unittest.TestCase):
 
         # Operations on the empty string
         EQ("", "", "replace", "", "")
-
-        #EQ("A", "", "replace", "", "A")
-        # That was the correct result; this is the result we actually get
-        # now (for str, but not for unicode):
-        #EQ("", "", "replace", "", "A")
-
+        EQ("A", "", "replace", "", "A")
         EQ("", "", "replace", "A", "")
         EQ("", "", "replace", "A", "A")
         EQ("", "", "replace", "", "", 100)
