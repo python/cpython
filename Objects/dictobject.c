@@ -227,24 +227,28 @@ All arithmetic on hash should ignore overflow.
 contributions by Reimer Behrends, Jyrki Alakuijala, Vladimir Marangozov and
 Christian Tismer).
 
-This function must never return NULL; failures are indicated by returning
-a dictentry* for which the me_value field is NULL.  Exceptions are never
-reported by this function, and outstanding exceptions are maintained.
+lookdict() is general-purpose, and may return NULL if (and only if) a
+comparison raises an exception (this was new in Python 2.5).
+lookdict_string() below is specialized to string keys, comparison of which can
+never raise an exception; that function can never return NULL.  For both, when
+the key isn't found a dictentry* is returned for which the me_value field is
+NULL; this is the slot in the dict at which the key would have been found, and
+the caller can (if it wishes) add the <key, value> pair to the returned
+dictentry*.
 */
-
 static dictentry *
 lookdict(dictobject *mp, PyObject *key, register long hash)
 {
-	register Py_ssize_t i;
+	register size_t i;
 	register size_t perturb;
 	register dictentry *freeslot;
-	register Py_ssize_t mask = mp->ma_mask;
+	register size_t mask = (size_t)mp->ma_mask;
 	dictentry *ep0 = mp->ma_table;
 	register dictentry *ep;
 	register int cmp;
 	PyObject *startkey;
 
-	i = hash & mask;
+	i = (size_t)hash & mask;
 	ep = &ep0[i];
 	if (ep->me_key == NULL || ep->me_key == key)
 		return ep;
@@ -307,21 +311,20 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 
 /*
  * Hacked up version of lookdict which can assume keys are always strings;
- * this assumption allows testing for errors during PyObject_Compare() to
- * be dropped; string-string comparisons never raise exceptions.  This also
- * means we don't need to go through PyObject_Compare(); we can always use
- * _PyString_Eq directly.
+ * this assumption allows testing for errors during PyObject_RichCompareBool()
+ * to be dropped; string-string comparisons never raise exceptions.  This also
+ * means we don't need to go through PyObject_RichCompareBool(); we can always
+ * use _PyString_Eq() directly.
  *
- * This is valuable because the general-case error handling in lookdict() is
- * expensive, and dicts with pure-string keys are very common.
+ * This is valuable because dicts with only string keys are very common.
  */
 static dictentry *
 lookdict_string(dictobject *mp, PyObject *key, register long hash)
 {
-	register Py_ssize_t i;
+	register size_t i;
 	register size_t perturb;
 	register dictentry *freeslot;
-	register Py_ssize_t mask = mp->ma_mask;
+	register size_t mask = (size_t)mp->ma_mask;
 	dictentry *ep0 = mp->ma_table;
 	register dictentry *ep;
 
@@ -343,10 +346,8 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 	if (ep->me_key == dummy)
 		freeslot = ep;
 	else {
-		if (ep->me_hash == hash
-		    && _PyString_Eq(ep->me_key, key)) {
+		if (ep->me_hash == hash && _PyString_Eq(ep->me_key, key))
 			return ep;
-		}
 		freeslot = NULL;
 	}
 
@@ -371,6 +372,7 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 Internal routine to insert a new item into the table.
 Used both by the internal resize routine and by the public insert routine.
 Eats a reference to key and one to value.
+Returns -1 if an error occurred, or 0 on success.
 */
 static int
 insertdict(register dictobject *mp, PyObject *key, long hash, PyObject *value)
@@ -412,14 +414,16 @@ Internal routine used by dictresize() to insert an item which is
 known to be absent from the dict.  This routine also assumes that
 the dict contains no deleted entries.  Besides the performance benefit,
 using insertdict() in dictresize() is dangerous (SF bug #1456209).
+Note that no refcounts are changed by this routine; if needed, the caller
+is responsible for incref'ing `key` and `value`.
 */
 static void
 insertdict_clean(register dictobject *mp, PyObject *key, long hash,
 		 PyObject *value)
 {
-	register Py_ssize_t i;
+	register size_t i;
 	register size_t perturb;
-	register unsigned int mask = mp->ma_mask;
+	register size_t mask = (size_t)mp->ma_mask;
 	dictentry *ep0 = mp->ma_table;
 	register dictentry *ep;
 
@@ -429,6 +433,7 @@ insertdict_clean(register dictobject *mp, PyObject *key, long hash,
 		i = (i << 2) + i + perturb + 1;
 		ep = &ep0[i & mask];
 	}
+	assert(ep->me_value == NULL);
 	mp->ma_fill++;
 	ep->me_key = key;
 	ep->me_hash = (Py_ssize_t)hash;
@@ -524,6 +529,16 @@ dictresize(dictobject *mp, Py_ssize_t minused)
 	return 0;
 }
 
+/* Note that, for historical reasons, PyDict_GetItem() suppresses all errors
+ * that may occur (originally dicts supported only string keys, and exceptions
+ * weren't possible).  So, while the original intent was that a NULL return
+ * meant the key wasn't present, it reality it can mean that, or that an error
+ * (suppressed) occurred while computing the key's hash, or that some error
+ * (suppressed) occurred when comparing keys in the dict's internal probe
+ * sequence.  A nasty example of the latter is when a Python-coded comparison
+ * function hits a stack-depth error, which can cause this to return NULL
+ * even if the key is present.
+ */
 PyObject *
 PyDict_GetItem(PyObject *op, PyObject *key)
 {
@@ -531,9 +546,8 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 	dictobject *mp = (dictobject *)op;
 	dictentry *ep;
 	PyThreadState *tstate;
-	if (!PyDict_Check(op)) {
+	if (!PyDict_Check(op))
 		return NULL;
-	}
 	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
 	{
@@ -1607,8 +1621,8 @@ static PyObject *
 dict_has_key(register dictobject *mp, PyObject *key)
 {
 	long hash;
-	register long ok;
 	dictentry *ep;
+
 	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
@@ -1618,8 +1632,7 @@ dict_has_key(register dictobject *mp, PyObject *key)
 	ep = (mp->ma_lookup)(mp, key, hash);
 	if (ep == NULL)
 		return NULL;
-	ok = ep->me_value != NULL;
-	return PyBool_FromLong(ok);
+	return PyBool_FromLong(ep->me_value != NULL);
 }
 
 static PyObject *
@@ -1932,6 +1945,7 @@ static PyMethodDef mapp_methods[] = {
 	{NULL,		NULL}	/* sentinel */
 };
 
+/* Return 1 if `key` is in dict `op`, 0 if not, and -1 on error. */
 int
 PyDict_Contains(PyObject *op, PyObject *key)
 {
@@ -1946,9 +1960,7 @@ PyDict_Contains(PyObject *op, PyObject *key)
 			return -1;
 	}
 	ep = (mp->ma_lookup)(mp, key, hash);
-	if (ep == NULL)
-		return -1;
-	return ep->me_value != NULL;
+	return ep == NULL ? -1 : (ep->me_value != NULL);
 }
 
 /* Hack to implement "key in dict" */
