@@ -241,10 +241,7 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	register Py_ssize_t mask = mp->ma_mask;
 	dictentry *ep0 = mp->ma_table;
 	register dictentry *ep;
-	register int restore_error;
-	register int checked_error;
 	register int cmp;
-	PyObject *err_type, *err_value, *err_tb;
 	PyObject *startkey;
 
 	i = hash & mask;
@@ -252,24 +249,17 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	if (ep->me_key == NULL || ep->me_key == key)
 		return ep;
 
-	restore_error = checked_error = 0;
 	if (ep->me_key == dummy)
 		freeslot = ep;
 	else {
 		if (ep->me_hash == hash) {
-			/* error can't have been checked yet */
-			checked_error = 1;
-			if (PyErr_Occurred()) {
-				restore_error = 1;
-				PyErr_Fetch(&err_type, &err_value, &err_tb);
-			}
 			startkey = ep->me_key;
 			cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
 			if (cmp < 0)
-				PyErr_Clear();
+				return NULL;
 			if (ep0 == mp->ma_table && ep->me_key == startkey) {
 				if (cmp > 0)
-					goto Done;
+					return ep;
 			}
 			else {
 				/* The compare did major nasty stuff to the
@@ -277,8 +267,7 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 				 * XXX A clever adversary could prevent this
 				 * XXX from terminating.
  				 */
- 				ep = lookdict(mp, key, hash);
- 				goto Done;
+ 				return lookdict(mp, key, hash);
  			}
 		}
 		freeslot = NULL;
@@ -289,29 +278,18 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
 		i = (i << 2) + i + perturb + 1;
 		ep = &ep0[i & mask];
-		if (ep->me_key == NULL) {
-			if (freeslot != NULL)
-				ep = freeslot;
-			break;
-		}
+		if (ep->me_key == NULL)
+			return freeslot == NULL ? ep : freeslot;
 		if (ep->me_key == key)
-			break;
+			return ep;
 		if (ep->me_hash == hash && ep->me_key != dummy) {
-			if (!checked_error) {
-				checked_error = 1;
-				if (PyErr_Occurred()) {
-					restore_error = 1;
-					PyErr_Fetch(&err_type, &err_value,
-						    &err_tb);
-				}
-			}
 			startkey = ep->me_key;
 			cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
 			if (cmp < 0)
-				PyErr_Clear();
+				return NULL;
 			if (ep0 == mp->ma_table && ep->me_key == startkey) {
 				if (cmp > 0)
-					break;
+					return ep;
 			}
 			else {
 				/* The compare did major nasty stuff to the
@@ -319,18 +297,12 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 				 * XXX A clever adversary could prevent this
 				 * XXX from terminating.
  				 */
- 				ep = lookdict(mp, key, hash);
- 				break;
+ 				return lookdict(mp, key, hash);
  			}
 		}
 		else if (ep->me_key == dummy && freeslot == NULL)
 			freeslot = ep;
 	}
-
-Done:
-	if (restore_error)
-		PyErr_Restore(err_type, err_value, err_tb);
-	return ep;
 }
 
 /*
@@ -400,7 +372,7 @@ Internal routine to insert a new item into the table.
 Used both by the internal resize routine and by the public insert routine.
 Eats a reference to key and one to value.
 */
-static void
+static int
 insertdict(register dictobject *mp, PyObject *key, long hash, PyObject *value)
 {
 	PyObject *old_value;
@@ -409,6 +381,11 @@ insertdict(register dictobject *mp, PyObject *key, long hash, PyObject *value)
 
 	assert(mp->ma_lookup != NULL);
 	ep = mp->ma_lookup(mp, key, hash);
+	if (ep == NULL) {
+		Py_DECREF(key);
+		Py_DECREF(value);
+		return -1;
+	}
 	if (ep->me_value != NULL) {
 		old_value = ep->me_value;
 		ep->me_value = value;
@@ -427,6 +404,36 @@ insertdict(register dictobject *mp, PyObject *key, long hash, PyObject *value)
 		ep->me_value = value;
 		mp->ma_used++;
 	}
+	return 0;
+}
+
+/*
+Internal routine used by dictresize() to insert an item which is
+known to be absent from the dict.  This routine also assumes that
+the dict contains no deleted entries.  Besides the performance benefit,
+using insertdict() in dictresize() is dangerous (SF bug #1456209).
+*/
+static void
+insertdict_clean(register dictobject *mp, PyObject *key, long hash,
+		 PyObject *value)
+{
+	register Py_ssize_t i;
+	register size_t perturb;
+	register unsigned int mask = mp->ma_mask;
+	dictentry *ep0 = mp->ma_table;
+	register dictentry *ep;
+
+	i = hash & mask;
+	ep = &ep0[i];
+	for (perturb = hash; ep->me_key != NULL; perturb >>= PERTURB_SHIFT) {
+		i = (i << 2) + i + perturb + 1;
+		ep = &ep0[i & mask];
+	}
+	mp->ma_fill++;
+	ep->me_key = key;
+	ep->me_hash = (Py_ssize_t)hash;
+	ep->me_value = value;
+	mp->ma_used++;
 }
 
 /*
@@ -501,7 +508,8 @@ dictresize(dictobject *mp, Py_ssize_t minused)
 	for (ep = oldtable; i > 0; ep++) {
 		if (ep->me_value != NULL) {	/* active entry */
 			--i;
-			insertdict(mp, ep->me_key, ep->me_hash, ep->me_value);
+			insertdict_clean(mp, ep->me_key, (long)ep->me_hash,
+					 ep->me_value);
 		}
 		else if (ep->me_key != NULL) {	/* dummy entry */
 			--i;
@@ -521,6 +529,8 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 {
 	long hash;
 	dictobject *mp = (dictobject *)op;
+	dictentry *ep;
+	PyThreadState *tstate;
 	if (!PyDict_Check(op)) {
 		return NULL;
 	}
@@ -533,7 +543,29 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 			return NULL;
 		}
 	}
-	return (mp->ma_lookup)(mp, key, hash)->me_value;
+
+	/* We can arrive here with a NULL tstate during initialization:
+	   try running "python -Wi" for an example related to string
+	   interning.  Let's just hope that no exception occurs then... */
+	tstate = PyThreadState_GET();
+	if (tstate != NULL && tstate->curexc_type != NULL) {
+		/* preserve the existing exception */
+		PyObject *err_type, *err_value, *err_tb;
+		PyErr_Fetch(&err_type, &err_value, &err_tb);
+		ep = (mp->ma_lookup)(mp, key, hash);
+		/* ignore errors */
+		PyErr_Restore(err_type, err_value, err_tb);
+		if (ep == NULL)
+			return NULL;
+	}
+	else {
+		ep = (mp->ma_lookup)(mp, key, hash);
+		if (ep == NULL) {
+			PyErr_Clear();
+			return NULL;
+		}
+	}
+	return ep->me_value;
 }
 
 /* CAUTION: PyDict_SetItem() must guarantee that it won't resize the
@@ -568,7 +600,8 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 	n_used = mp->ma_used;
 	Py_INCREF(value);
 	Py_INCREF(key);
-	insertdict(mp, key, hash, value);
+	if (insertdict(mp, key, hash, value) != 0)
+		return -1;
 	/* If we added a key, we can safely resize.  Otherwise just return!
 	 * If fill >= 2/3 size, adjust size.  Normally, this doubles or
 	 * quaduples the size, but it's also possible for the dict to shrink
@@ -608,6 +641,8 @@ PyDict_DelItem(PyObject *op, PyObject *key)
 	}
 	mp = (dictobject *)op;
 	ep = (mp->ma_lookup)(mp, key, hash);
+	if (ep == NULL)
+		return -1;
 	if (ep->me_value == NULL) {
 		PyErr_SetObject(PyExc_KeyError, key);
 		return -1;
@@ -893,6 +928,7 @@ dict_subscript(dictobject *mp, register PyObject *key)
 {
 	PyObject *v;
 	long hash;
+	dictentry *ep;
 	assert(mp->ma_table != NULL);
 	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
@@ -900,7 +936,10 @@ dict_subscript(dictobject *mp, register PyObject *key)
 		if (hash == -1)
 			return NULL;
 	}
-	v = (mp->ma_lookup)(mp, key, hash) -> me_value;
+	ep = (mp->ma_lookup)(mp, key, hash);
+	if (ep == NULL)
+		return NULL;
+	v = ep->me_value;
 	if (v == NULL) {
 		if (!PyDict_CheckExact(mp)) {
 			/* Look up __missing__ method if we're a subclass. */
@@ -1258,9 +1297,10 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
 			     PyDict_GetItem(a, entry->me_key) == NULL)) {
 				Py_INCREF(entry->me_key);
 				Py_INCREF(entry->me_value);
-				insertdict(mp, entry->me_key,
-					   (long)entry->me_hash,
-					   entry->me_value);
+				if (insertdict(mp, entry->me_key,
+					       (long)entry->me_hash,
+					       entry->me_value) != 0)
+					return -1;
 			}
 		}
 	}
@@ -1568,13 +1608,17 @@ dict_has_key(register dictobject *mp, PyObject *key)
 {
 	long hash;
 	register long ok;
+	dictentry *ep;
 	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
 	}
-	ok = (mp->ma_lookup)(mp, key, hash)->me_value != NULL;
+	ep = (mp->ma_lookup)(mp, key, hash);
+	if (ep == NULL)
+		return NULL;
+	ok = ep->me_value != NULL;
 	return PyBool_FromLong(ok);
 }
 
@@ -1585,6 +1629,7 @@ dict_get(register dictobject *mp, PyObject *args)
 	PyObject *failobj = Py_None;
 	PyObject *val = NULL;
 	long hash;
+	dictentry *ep;
 
 	if (!PyArg_UnpackTuple(args, "get", 1, 2, &key, &failobj))
 		return NULL;
@@ -1595,8 +1640,10 @@ dict_get(register dictobject *mp, PyObject *args)
 		if (hash == -1)
 			return NULL;
 	}
-	val = (mp->ma_lookup)(mp, key, hash)->me_value;
-
+	ep = (mp->ma_lookup)(mp, key, hash);
+	if (ep == NULL)
+		return NULL;
+	val = ep->me_value;
 	if (val == NULL)
 		val = failobj;
 	Py_INCREF(val);
@@ -1611,6 +1658,7 @@ dict_setdefault(register dictobject *mp, PyObject *args)
 	PyObject *failobj = Py_None;
 	PyObject *val = NULL;
 	long hash;
+	dictentry *ep;
 
 	if (!PyArg_UnpackTuple(args, "setdefault", 1, 2, &key, &failobj))
 		return NULL;
@@ -1621,7 +1669,10 @@ dict_setdefault(register dictobject *mp, PyObject *args)
 		if (hash == -1)
 			return NULL;
 	}
-	val = (mp->ma_lookup)(mp, key, hash)->me_value;
+	ep = (mp->ma_lookup)(mp, key, hash);
+	if (ep == NULL)
+		return NULL;
+	val = ep->me_value;
 	if (val == NULL) {
 		val = failobj;
 		if (PyDict_SetItem((PyObject*)mp, key, failobj))
@@ -1665,6 +1716,8 @@ dict_pop(dictobject *mp, PyObject *args)
 			return NULL;
 	}
 	ep = (mp->ma_lookup)(mp, key, hash);
+	if (ep == NULL)
+		return NULL;
 	if (ep->me_value == NULL) {
 		if (deflt) {
 			Py_INCREF(deflt);
@@ -1884,6 +1937,7 @@ PyDict_Contains(PyObject *op, PyObject *key)
 {
 	long hash;
 	dictobject *mp = (dictobject *)op;
+	dictentry *ep;
 
 	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
@@ -1891,7 +1945,10 @@ PyDict_Contains(PyObject *op, PyObject *key)
 		if (hash == -1)
 			return -1;
 	}
-	return (mp->ma_lookup)(mp, key, hash)->me_value != NULL;
+	ep = (mp->ma_lookup)(mp, key, hash);
+	if (ep == NULL)
+		return -1;
+	return ep->me_value != NULL;
 }
 
 /* Hack to implement "key in dict" */
