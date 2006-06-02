@@ -619,7 +619,6 @@ EnvironmentError_str(PyEnvironmentErrorObject *self)
             PyTuple_SET_ITEM(tuple, 1, Py_None);
         }
 
-        Py_INCREF(repr);
         PyTuple_SET_ITEM(tuple, 2, repr);
 
         rtnval = PyString_Format(fmt, tuple);
