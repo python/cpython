@@ -265,7 +265,9 @@ class ExceptionTests(unittest.TestCase):
                 if (e is not exc and     # needed for sampleUnicode errors
                     type(e) is not exc):
                     raise
-                for checkArgName in expected.keys():
+                # Verify no ref leaks in Exc_str()
+                s = str(e)
+                for checkArgName in expected:
                     self.assertEquals(repr(getattr(e, checkArgName)),
                                       repr(expected[checkArgName]),
                                       'exception "%s", attribute "%s"' %
@@ -273,7 +275,7 @@ class ExceptionTests(unittest.TestCase):
 
                 # test for pickling support
                 new = pickle.loads(pickle.dumps(e, random.randint(0, 2)))
-                for checkArgName in expected.keys():
+                for checkArgName in expected:
                     self.assertEquals(repr(getattr(e, checkArgName)),
                                       repr(expected[checkArgName]),
                                       'pickled exception "%s", attribute "%s' %
