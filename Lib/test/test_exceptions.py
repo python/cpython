@@ -112,8 +112,8 @@ class ExceptionTests(unittest.TestCase):
         except Exception, e: pass
 
     def testSyntaxErrorMessage(self):
-        """make sure the right exception message is raised for each of
-           these code fragments"""
+        # make sure the right exception message is raised for each of
+        # these code fragments
 
         def ckmsg(src, msg):
             try:
@@ -143,8 +143,8 @@ class ExceptionTests(unittest.TestCase):
         ckmsg("continue\n", "'continue' not properly in loop")
 
     def testSettingException(self):
-        """test that setting an exception at the C level works even if the
-           exception object can't be constructed."""
+        # test that setting an exception at the C level works even if the
+        # exception object can't be constructed.
 
         class BadException:
             def __init__(self_):
@@ -181,7 +181,7 @@ class ExceptionTests(unittest.TestCase):
             test_capi2()
 
     def testAttributes(self):
-        """test that exception attributes are happy."""
+        # test that exception attributes are happy
         try: str(u'Hello \u00E1')
         except Exception, e: sampleUnicodeEncodeError = e
 
@@ -280,8 +280,8 @@ class ExceptionTests(unittest.TestCase):
                                       (repr(e), checkArgName))
 
     def testKeywordArgs(self):
-        """test that builtin exception don't take keyword args,
-           but user-defined subclasses can if they want"""
+        # test that builtin exception don't take keyword args,
+        # but user-defined subclasses can if they want
         self.assertRaises(TypeError, BaseException, a=1)
 
         class DerivedException(BaseException):
