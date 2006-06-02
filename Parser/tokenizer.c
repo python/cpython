@@ -893,15 +893,17 @@ tok_nextc(register struct tok_state *tok)
 				tok->inp = strchr(tok->inp, '\0');
 				done = tok->inp[-1] == '\n';
 			}
-			tok->cur = tok->buf + cur;
-			tok->line_start = tok->cur;
-			/* replace "\r\n" with "\n" */
-			/* For Mac we leave the \r, giving a syntax error */
-			pt = tok->inp - 2;
-			if (pt >= tok->buf && *pt == '\r') {
-				*pt++ = '\n';
-				*pt = '\0';
-				tok->inp = pt;
+			if (tok->buf != NULL) {
+				tok->cur = tok->buf + cur;
+				tok->line_start = tok->cur;
+				/* replace "\r\n" with "\n" */
+				/* For Mac leave the \r, giving syntax error */
+				pt = tok->inp - 2;
+				if (pt >= tok->buf && *pt == '\r') {
+					*pt++ = '\n';
+					*pt = '\0';
+					tok->inp = pt;
+				}
 			}
 		}
 		if (tok->done != E_OK) {
