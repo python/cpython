@@ -20,6 +20,10 @@ and breaks them onto multiple lines if they don't fit within the
 allowed width.  Construct \class{PrettyPrinter} objects explicitly if
 you need to adjust the width constraint.
 
+\versionchanged[Dictionaries are sorted by key before the display is
+computed; before 2.5, a dictionary was sorted only if its display
+required more than one line, although that wasn't documented]{2.5}
+
 The \module{pprint} module defines one class:
 
 

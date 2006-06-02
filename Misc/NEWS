@@ -101,6 +101,12 @@ Extension Modules
 Library
 -------
 
+- The functions in the ``pprint`` module now sort dictionaries by key
+  before computing the display.  Before 2.5, ``pprint`` sorted a dictionary
+  if and only if its display required more than one line, although that
+  wasn't documented.  The new behavior increases predictability; e.g.,
+  using ``pprint.pprint(a_dict)`` in a doctest is now reliable.
+
 - Patch #1497027: try HTTP digest auth before basic auth in urllib2
   (thanks for J. J. Lee).
 
