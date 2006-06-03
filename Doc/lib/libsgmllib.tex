@@ -208,8 +208,9 @@ preference over \method{do_\var{tag}()}.  The
 \end{methoddescni}
 
 \begin{methoddescni}{do_\var{tag}}{attributes}
-This method is called to process an opening tag \var{tag} that does
-not come with a matching closing tag.  The \var{attributes} argument
+This method is called to process an opening tag \var{tag} 
+for which no \method{start_\var{tag}} method is defined.  
+The \var{attributes} argument
 has the same meaning as described for \method{handle_starttag()} above.
 \end{methoddescni}
 
