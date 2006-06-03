@@ -149,6 +149,8 @@ Library
 Build
 -----
 
+- OpenBSD 3.9 is supported now.
+
 - Patch #1492356: Port to Windows CE.
 
 - Bug/Patch #1481770: Use .so extension for shared libraries on HP-UX for ia64.
