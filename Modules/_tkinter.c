@@ -1274,13 +1274,13 @@ Tkapp_CallProc(Tkapp_CallEvent *e, int flags)
       and perform processing there. */
 
 static PyObject *
-Tkapp_Call(PyObject *_self, PyObject *args)
+Tkapp_Call(PyObject *selfptr, PyObject *args)
 {
 	Tcl_Obj *objStore[ARGSZ];
 	Tcl_Obj **objv = NULL;
 	int objc, i;
 	PyObject *res = NULL;
-	TkappObject *self = (TkappObject*)_self;
+	TkappObject *self = (TkappObject*)selfptr;
 	/* Could add TCL_EVAL_GLOBAL if wrapped by GlobalCall... */
 	int flags = TCL_EVAL_DIRECT;
 
@@ -1326,7 +1326,7 @@ Tkapp_Call(PyObject *_self, PyObject *args)
 		ENTER_OVERLAP
 
 		if (i == TCL_ERROR)
-			Tkinter_Error(_self);
+			Tkinter_Error(selfptr);
 		else
 			res = Tkapp_CallResult(self);
 
@@ -1542,12 +1542,12 @@ var_proc(VarEvent* ev, int flags)
 }
 
 static PyObject*
-var_invoke(EventFunc func, PyObject *_self, PyObject *args, int flags)
+var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
 {
-	TkappObject *self = (TkappObject*)_self;
+	TkappObject *self = (TkappObject*)selfptr;
 #ifdef WITH_THREAD
 	if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
-		TkappObject *self = (TkappObject*)_self;
+		TkappObject *self = (TkappObject*)selfptr;
 		VarEvent *ev;
 		PyObject *res, *exc_type, *exc_val;
 		
@@ -1559,7 +1559,7 @@ var_invoke(EventFunc func, PyObject *_self, PyObject *args, int flags)
 
 		ev = (VarEvent*)ckalloc(sizeof(VarEvent));
 
-		ev->self = _self;
+		ev->self = selfptr;
 		ev->args = args;
 		ev->flags = flags;
 		ev->func = func;
@@ -1579,7 +1579,7 @@ var_invoke(EventFunc func, PyObject *_self, PyObject *args, int flags)
 	}
 #endif
         /* Tcl is not threaded, or this is the interpreter thread. */
-	return func(_self, args, flags);
+	return func(selfptr, args, flags);
 }
 
 static PyObject *
@@ -2079,9 +2079,9 @@ Tkapp_CommandProc(CommandEvent *ev, int flags)
 }
 
 static PyObject *
-Tkapp_CreateCommand(PyObject *_self, PyObject *args)
+Tkapp_CreateCommand(PyObject *selfptr, PyObject *args)
 {
-	TkappObject *self = (TkappObject*)_self;
+	TkappObject *self = (TkappObject*)selfptr;
 	PythonCmd_ClientData *data;
 	char *cmdName;
 	PyObject *func;
@@ -2105,7 +2105,7 @@ Tkapp_CreateCommand(PyObject *_self, PyObject *args)
 		return PyErr_NoMemory();
 	Py_XINCREF(self);
 	Py_XINCREF(func);
-	data->self = _self;
+	data->self = selfptr;
 	data->func = func;
 	
 	if (self->threaded && self->thread_id != Tcl_GetCurrentThread()) {
@@ -2139,9 +2139,9 @@ Tkapp_CreateCommand(PyObject *_self, PyObject *args)
 
 
 static PyObject *
-Tkapp_DeleteCommand(PyObject *_self, PyObject *args)
+Tkapp_DeleteCommand(PyObject *selfptr, PyObject *args)
 {
-	TkappObject *self = (TkappObject*)_self;
+	TkappObject *self = (TkappObject*)selfptr;
 	char *cmdName;
 	int err;
 
@@ -2502,10 +2502,10 @@ Tkapp_CreateTimerHandler(PyObject *self, PyObject *args)
 /** Event Loop **/
 
 static PyObject *
-Tkapp_MainLoop(PyObject *_self, PyObject *args)
+Tkapp_MainLoop(PyObject *selfptr, PyObject *args)
 {
 	int threshold = 0;
-	TkappObject *self = (TkappObject*)_self;
+	TkappObject *self = (TkappObject*)selfptr;
 #ifdef WITH_THREAD
 	PyThreadState *tstate = PyThreadState_Get();
 #endif
