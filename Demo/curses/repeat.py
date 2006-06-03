@@ -2,7 +2,7 @@
 
 """repeat <shell-command>
 
-This simple program repeatedly (with 1-second intervals) executes the
+This simple program repeatedly (at 1-second intervals) executes the
 shell command given on the command line and displays the output (or as
 much of it as fits on the screen).  It uses curses to paint each new
 output on top of the old output, so that if nothing changes, the
@@ -38,7 +38,7 @@ def main():
         sys.exit(sts)
     w = curses.initscr()
     try:
-        while 1:
+        while True:
             w.erase()
             try:
                 w.addstr(text)
