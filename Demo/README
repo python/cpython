@@ -57,8 +57,5 @@ tkinter		Demos using the Tk interface (including Matt Conway's
 
 xml		Some XML demos.
 
-xmlrpc		XML-RPC server framework (but see the standard library
-		module SimpleXMLRPCServer.py for a replacement).
-
 zlib		Some demos for the zlib module (see also the standard
 		library module gzip.py).
