@@ -18,13 +18,13 @@ The \module{urllib2} module defines the following functions:
 Open the URL \var{url}, which can be either a string or a \class{Request}
 object.
 
-\var{data} should be a string, which specifies additional data to send
-to the server. Currently HTTP requests are the only ones that use
-\var{data}.  For HTTP, the request will be a POST instead of a GET
-when the \var{data} parameter is provided.  \var{data} should be a
-buffer in the standard \mimetype{application/x-www-form-urlencoded} format.
-The \function{urllib.urlencode()} function takes a mapping or 
-sequence of 2-tuples and returns a string in this format.
+\var{data} may be a string specifying additional data to send to the
+server. Currently HTTP requests are the only ones that use \var{data};
+the HTTP request will be a POST instead of a GET when the \var{data}
+parameter is provided.  \var{data} should be a buffer in the standard
+\mimetype{application/x-www-form-urlencoded} format.  The
+\function{urllib.urlencode()} function takes a mapping or sequence of
+2-tuples and returns a string in this format.
 
 This function returns a file-like object with two additional methods:
 
