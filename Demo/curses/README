@@ -11,14 +11,11 @@ I wouldn't mind someone else making an effort in that direction, of
 course.
 
 ncurses.py      -- currently only a panels demo
-                   XXX this won't work until panel support is checked in
 rain.py         -- raindrops keep falling on my desktop
 tclock.py       -- ASCII clock, by Howard Jones
 xmas.py         -- I'm dreaming of an ASCII christmas
 
-Please send bugfixes and new contributions to me or, even better,
-submit them to the Python Bug Tracker on SourceForge
-(<URL:http://sourceforge.net/bugs/?group_id=5470>).
+Please submit bugfixes and new contributions to the Python bug tracker.
 
 
 Other demos
