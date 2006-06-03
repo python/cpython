@@ -1476,7 +1476,7 @@ treebuilder_new(void)
 }
 
 static PyObject*
-treebuilder(PyObject* _self, PyObject* args)
+treebuilder(PyObject* self_, PyObject* args)
 {
     if (!PyArg_ParseTuple(args, ":TreeBuilder"))
         return NULL;
@@ -2201,7 +2201,7 @@ expat_unknown_encoding_handler(XMLParserObject *self, const XML_Char *name,
 /* constructor and destructor */
 
 static PyObject*
-xmlparser(PyObject* _self, PyObject* args, PyObject* kw)
+xmlparser(PyObject* self_, PyObject* args, PyObject* kw)
 {
     XMLParserObject* self;
     /* FIXME: does this need to be static? */
