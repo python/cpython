@@ -1,5 +1,0 @@
-"""This script turns the Python debugger on globally, meaning that
-it will then stop at any breakpoint you might have defined."""
-
-import PyDebugger
-PyDebugger.startfrombottom()
