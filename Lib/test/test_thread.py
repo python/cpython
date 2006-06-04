@@ -115,38 +115,3 @@ for i in range(numtasks):
     thread.start_new_thread(task2, (i,))
 done.acquire()
 print 'all tasks done'
-
-# not all platforms support changing thread stack size
-print '\n*** Changing thread stack size ***'
-if thread.stack_size() != 0:
-    raise ValueError, "initial stack_size not 0"
-
-thread.stack_size(0) 
-if thread.stack_size() != 0:
-    raise ValueError, "stack_size not reset to default"
-
-from os import name as os_name
-if os_name in ("nt", "os2", "posix"):
-
-    for tss, ok in ((4096, 0), (32768, 1), (0x400000, 1), (0, 1)):
-        if ok:
-            failed = lambda s, e: s != e
-            fail_msg = "stack_size(%d) failed - should succeed"
-        else:
-            failed = lambda s, e: s == e
-            fail_msg = "stack_size(%d) succeeded - should fail"
-        thread.stack_size(tss)
-        if failed(thread.stack_size(), tss):
-            raise ValueError, fail_msg % tss
-    
-    for tss in (32768, 0x400000):
-        print 'trying stack_size = %d' % tss
-        next_ident = 0
-        for i in range(numtasks):
-            newtask()
-
-        print 'waiting for all tasks to complete'
-        done.acquire()
-        print 'all tasks done'
-
-    thread.stack_size(0)

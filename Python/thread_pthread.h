@@ -12,24 +12,6 @@
 #endif
 #include <signal.h>
 
-/* The POSIX spec requires that use of pthread_attr_setstacksize
-   be conditional on _POSIX_THREAD_ATTR_STACKSIZE being defined. */
-#ifdef _POSIX_THREAD_ATTR_STACKSIZE
-#ifndef THREAD_STACK_SIZE
-#define	THREAD_STACK_SIZE	0	/* use default stack size */
-#endif
-/* for safety, ensure a viable minimum stacksize */
-#define	THREAD_STACK_MIN	0x8000	/* 32kB */
-#if THREAD_STACK_MIN < PTHREAD_STACK_MIN
-#undef THREAD_STACK_MIN
-#define	THREAD_STACK_MIN	PTHREAD_STACK_MIN
-#endif
-#else  /* !_POSIX_THREAD_ATTR_STACKSIZE */
-#ifdef THREAD_STACK_SIZE
-#error "THREAD_STACK_SIZE defined but _POSIX_THREAD_ATTR_STACKSIZE undefined"
-#endif
-#endif
-
 /* The POSIX spec says that implementations supporting the sem_*
    family of functions must indicate this by defining
    _POSIX_SEMAPHORES. */   
@@ -156,10 +138,6 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
 	pthread_attr_t attrs;
 #endif
-#if defined(THREAD_STACK_SIZE)
-	size_t	tss;
-#endif
-
 	dprintf(("PyThread_start_new_thread called\n"));
 	if (!initialized)
 		PyThread_init_thread();
@@ -167,15 +145,8 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
 	pthread_attr_init(&attrs);
 #endif
-#if defined(THREAD_STACK_SIZE)
-	tss = (_pythread_stacksize != 0) ? _pythread_stacksize
-					 : THREAD_STACK_SIZE;
-	if (tss != 0) {
-		if (pthread_attr_setstacksize(&attrs, tss) != 0) {
-			pthread_attr_destroy(&attrs);
-			return -1;
-		}
-	}
+#ifdef THREAD_STACK_SIZE
+	pthread_attr_setstacksize(&attrs, THREAD_STACK_SIZE);
 #endif
 #if defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
         pthread_attr_setscope(&attrs, PTHREAD_SCOPE_SYSTEM);
@@ -489,33 +460,3 @@ PyThread_release_lock(PyThread_type_lock lock)
 }
 
 #endif /* USE_SEMAPHORES */
-
-/* set the thread stack size.
- * Return 1 if an exception is pending, 0 otherwise.
- */
-static int
-_pythread_pthread_set_stacksize(size_t size)
-{
-	/* set to default */
-	if (size == 0) {
-		_pythread_stacksize = 0;
-		return 0;
-	}
-
-	/* valid range? */
-	if (size >= THREAD_STACK_MIN) {
-		_pythread_stacksize = size;
-		return 0;
-	}
-	else {
-		char warning[128];
-		snprintf(warning,
-			 128,
-			 "thread stack size of %#x bytes not supported",
-			 size);
-		return PyErr_Warn(PyExc_RuntimeWarning, warning);
-	}
-}
-
-#undef THREAD_SET_STACKSIZE
-#define THREAD_SET_STACKSIZE(x)	_pythread_pthread_set_stacksize(x)
