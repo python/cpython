@@ -3194,6 +3194,8 @@ PyUnicode_BuildEncodingMap(PyObject* string)
                 goto failed1;
             if (PyDict_SetItem(result, key, value) == -1)
                 goto failed1;
+            Py_DECREF(key);
+            Py_DECREF(value);
         }
         return result;
       failed1:
@@ -3389,6 +3391,7 @@ charmapencode_result charmapencode_output(Py_UNICODE c, PyObject *mapping,
 	    *outpos += repsize;
 	}
     }
+    Py_DECREF(rep);
     return enc_SUCCESS;
 }
 
