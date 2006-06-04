@@ -860,25 +860,25 @@ class BufferIOTest(SocketConnectedTest):
     def __init__(self, methodName='runTest'):
         SocketConnectedTest.__init__(self, methodName=methodName)
 
-    def testRecvBuf(self):
+    def testRecvInto(self):
         buf = array.array('c', ' '*1024)
-        nbytes = self.cli_conn.recv_buf(buf)
+        nbytes = self.cli_conn.recv_into(buf)
         self.assertEqual(nbytes, len(MSG))
         msg = buf.tostring()[:len(MSG)]
         self.assertEqual(msg, MSG)
 
-    def _testRecvBuf(self):
+    def _testRecvInto(self):
         buf = buffer(MSG)
         self.serv_conn.send(buf)
 
-    def testRecvFromBuf(self):
+    def testRecvFromInto(self):
         buf = array.array('c', ' '*1024)
-        nbytes, addr = self.cli_conn.recvfrom_buf(buf)
+        nbytes, addr = self.cli_conn.recvfrom_into(buf)
         self.assertEqual(nbytes, len(MSG))
         msg = buf.tostring()[:len(MSG)]
         self.assertEqual(msg, MSG)
 
-    def _testRecvFromBuf(self):
+    def _testRecvFromInto(self):
         buf = buffer(MSG)
         self.serv_conn.send(buf)
 

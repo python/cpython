@@ -141,7 +141,7 @@ class _socketobject(object):
     __doc__ = _realsocket.__doc__
 
     __slots__ = ["_sock",
-                 "recv", "recv_buf", "recvfrom_buf",
+                 "recv", "recv_into", "recvfrom_into",
                  "send", "sendto", "recvfrom",
                  "__weakref__"]
 
@@ -151,10 +151,10 @@ class _socketobject(object):
         self._sock = _sock
         self.send = self._sock.send
         self.recv = self._sock.recv
-        self.recv_buf = self._sock.recv_buf
+        self.recv_into = self._sock.recv_into
         self.sendto = self._sock.sendto
         self.recvfrom = self._sock.recvfrom
-        self.recvfrom_buf = self._sock.recvfrom_buf
+        self.recvfrom_into = self._sock.recvfrom_into
 
     def close(self):
         self._sock = _closedsocket()

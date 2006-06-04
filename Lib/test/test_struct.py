@@ -529,50 +529,50 @@ def test_unpack_from():
         for i in xrange(6, len(test_string) + 1):
             simple_err(struct.unpack_from, fmt, data, i)
 
-def test_pack_to():
+def test_pack_into():
     test_string = 'Reykjavik rocks, eow!'
     writable_buf = array.array('c', ' '*100)
     fmt = '21s'
     s = struct.Struct(fmt)
 
     # Test without offset
-    s.pack_to(writable_buf, 0, test_string)
+    s.pack_into(writable_buf, 0, test_string)
     from_buf = writable_buf.tostring()[:len(test_string)]
     assert from_buf == test_string
 
     # Test with offset.
-    s.pack_to(writable_buf, 10, test_string)
+    s.pack_into(writable_buf, 10, test_string)
     from_buf = writable_buf.tostring()[:len(test_string)+10]
     assert from_buf == (test_string[:10] + test_string)
 
     # Go beyond boundaries.
     small_buf = array.array('c', ' '*10)
-    assertRaises(struct.error, s.pack_to, small_buf, 0, test_string)
-    assertRaises(struct.error, s.pack_to, small_buf, 2, test_string)
+    assertRaises(struct.error, s.pack_into, small_buf, 0, test_string)
+    assertRaises(struct.error, s.pack_into, small_buf, 2, test_string)
 
-def test_pack_to_fn():
+def test_pack_into_fn():
     test_string = 'Reykjavik rocks, eow!'
     writable_buf = array.array('c', ' '*100)
     fmt = '21s'
-    pack_to = lambda *args: struct.pack_to(fmt, *args)
+    pack_into = lambda *args: struct.pack_into(fmt, *args)
 
     # Test without offset
-    pack_to(writable_buf, 0, test_string)
+    pack_into(writable_buf, 0, test_string)
     from_buf = writable_buf.tostring()[:len(test_string)]
     assert from_buf == test_string
 
     # Test with offset.
-    pack_to(writable_buf, 10, test_string)
+    pack_into(writable_buf, 10, test_string)
     from_buf = writable_buf.tostring()[:len(test_string)+10]
     assert from_buf == (test_string[:10] + test_string)
 
     # Go beyond boundaries.
     small_buf = array.array('c', ' '*10)
-    assertRaises(struct.error, pack_to, small_buf, 0, test_string)
-    assertRaises(struct.error, pack_to, small_buf, 2, test_string)
+    assertRaises(struct.error, pack_into, small_buf, 0, test_string)
+    assertRaises(struct.error, pack_into, small_buf, 2, test_string)
 
 
 # Test methods to pack and unpack from buffers rather than strings.
 test_unpack_from()
-test_pack_to()
-test_pack_to_fn()
+test_pack_into()
+test_pack_into_fn()
