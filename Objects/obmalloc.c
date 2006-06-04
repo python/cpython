@@ -1337,7 +1337,7 @@ _PyObject_DebugMalloc(size_t nbytes)
 	memset(tail, FORBIDDENBYTE, SST);
 	write_size_t(tail + SST, serialno);
 
-	return p+8;
+	return p + 2*SST;
 }
 
 /* The debug free first checks the 2*SST bytes on each end for sanity (in
