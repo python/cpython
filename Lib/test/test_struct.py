@@ -571,9 +571,8 @@ def test_pack_to_fn():
     assertRaises(struct.error, pack_to, small_buf, 0, test_string)
     assertRaises(struct.error, pack_to, small_buf, 2, test_string)
 
-    
+
 # Test methods to pack and unpack from buffers rather than strings.
 test_unpack_from()
 test_pack_to()
 test_pack_to_fn()
-
