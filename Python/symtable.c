@@ -13,6 +13,8 @@
 
 #define IMPORT_STAR_WARNING "import * only allowed at module level"
 
+#define RETURN_VAL_IN_GENERATOR \
+    "'return' with argument inside generator"
 
 /* XXX(nnorwitz): change name since static? */
 static PySTEntryObject *
@@ -66,6 +68,7 @@ PySTEntry_New(struct symtable *st, identifier name, _Py_block_ty block,
 		ste->ste_nested = 1;
 	ste->ste_child_free = 0;
 	ste->ste_generator = 0;
+	ste->ste_returns_value = 0;
 
 	if (PyDict_SetItem(st->st_symbols, ste->ste_id, (PyObject *)ste) < 0)
 	    goto fail;
@@ -944,8 +947,17 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 		break;
 	}
         case Return_kind:
-		if (s->v.Return.value)
+		if (s->v.Return.value) {
 			VISIT(st, expr, s->v.Return.value);
+			st->st_cur->ste_returns_value = 1;
+			if (st->st_cur->ste_generator) {
+				PyErr_SetString(PyExc_SyntaxError,
+					RETURN_VAL_IN_GENERATOR);
+			        PyErr_SyntaxLocation(st->st_filename,
+				             s->lineno);
+				return 0;
+			}
+		}
 		break;
         case Delete_kind:
 		VISIT_SEQ(st, expr, s->v.Delete.targets);
@@ -1136,6 +1148,13 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 		if (e->v.Yield.value)
 			VISIT(st, expr, e->v.Yield.value);
                 st->st_cur->ste_generator = 1;
+		if (st->st_cur->ste_returns_value) {
+			PyErr_SetString(PyExc_SyntaxError,
+				RETURN_VAL_IN_GENERATOR);
+		        PyErr_SyntaxLocation(st->st_filename,
+			             e->lineno);
+			return 0;
+		}
 		break;
         case Compare_kind:
 		VISIT(st, expr, e->v.Compare.left);

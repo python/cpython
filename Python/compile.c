@@ -2148,7 +2148,7 @@ static int
 compiler_if(struct compiler *c, stmt_ty s)
 {
 	basicblock *end, *next;
-
+	int constant;
 	assert(s->kind == If_kind);
 	end = compiler_new_block(c);
 	if (end == NULL)
@@ -2156,15 +2156,27 @@ compiler_if(struct compiler *c, stmt_ty s)
 	next = compiler_new_block(c);
 	if (next == NULL)
 	    return 0;
-	VISIT(c, expr, s->v.If.test);
-	ADDOP_JREL(c, JUMP_IF_FALSE, next);
-	ADDOP(c, POP_TOP);
-	VISIT_SEQ(c, stmt, s->v.If.body);
-	ADDOP_JREL(c, JUMP_FORWARD, end);
-	compiler_use_next_block(c, next);
-	ADDOP(c, POP_TOP);
-	if (s->v.If.orelse)
-	    VISIT_SEQ(c, stmt, s->v.If.orelse);
+	
+	constant = expr_constant(s->v.If.test);
+	/* constant = 0: "if 0"
+	 * constant = 1: "if 1", "if 2", ...
+	 * constant = -1: rest */
+	if (constant == 0) {
+		if (s->v.If.orelse)
+			VISIT_SEQ(c, stmt, s->v.If.orelse);
+	} else if (constant == 1) {
+		VISIT_SEQ(c, stmt, s->v.If.body);
+	} else {
+		VISIT(c, expr, s->v.If.test);
+		ADDOP_JREL(c, JUMP_IF_FALSE, next);
+		ADDOP(c, POP_TOP);
+		VISIT_SEQ(c, stmt, s->v.If.body);
+		ADDOP_JREL(c, JUMP_FORWARD, end);
+		compiler_use_next_block(c, next);
+		ADDOP(c, POP_TOP);
+		if (s->v.If.orelse)
+	    		VISIT_SEQ(c, stmt, s->v.If.orelse);
+	}
 	compiler_use_next_block(c, end);
 	return 1;
 }
@@ -2639,10 +2651,6 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 		if (c->u->u_ste->ste_type != FunctionBlock)
 			return compiler_error(c, "'return' outside function");
 		if (s->v.Return.value) {
-			if (c->u->u_ste->ste_generator) {
-				return compiler_error(c,
-				    "'return' with argument inside generator");
-			}
 			VISIT(c, expr, s->v.Return.value);
 		}
 		else
@@ -3356,6 +3364,13 @@ expr_constant(expr_ty e)
 		return PyObject_IsTrue(e->v.Num.n);
 	case Str_kind:
 		return PyObject_IsTrue(e->v.Str.s);
+	case Name_kind:
+		/* __debug__ is not assignable, so we can optimize
+		 * it away in if and while statements */
+		if (strcmp(PyString_AS_STRING(e->v.Name.id),
+		           "__debug__") == 0)
+			   return ! Py_OptimizeFlag;
+		/* fall through */
 	default:
 		return -1;
 	}
