@@ -464,7 +464,13 @@ Core and builtins
   Note: Codec packages should implement and register their own
   codec search function. PEP 100 has the details.
 
-- PEP 353: Using ssize_t as the index type.
+- PEP 353: Using ``Py_ssize_t`` as the index type.
+
+- ``PYMALLOC_DEBUG`` builds now add ``4*sizeof(size_t)`` bytes of debugging
+  info to each allocated block, since the ``Py_ssize_t`` changes (PEP 353)
+  now allow Python to make use of memory blocks exceeding 2**32 bytes for
+  some purposes on 64-bit boxes.  A ``PYMALLOC_DEBUG`` build was limited
+  to 4-byte allocations before.
 
 - Patch #1400181, fix unicode string formatting to not use the locale.
   This is how string objects work.  u'%f' could use , instead of .
