@@ -270,6 +270,11 @@ def codegen(name, map, encodingname, comments=1):
         comments=comments,
         precisions=(4, 2))
 
+    if decoding_table_code:
+        suffix = 'table'
+    else:
+        suffix = 'map'
+
     l = [
         '''\
 """ Python Character Mapping Codec %s generated from '%s' with gencodec.py.
@@ -283,30 +288,20 @@ import codecs
 class Codec(codecs.Codec):
 
     def encode(self,input,errors='strict'):
-        return codecs.charmap_encode(input,errors,encoding_map)
+        return codecs.charmap_encode(input,errors,encoding_%s)
 
-    def decode(self,input,errors='strict'):''' % (encodingname, name)
-        ]
-    if decoding_table_code:
-        l.append('''\
-        return codecs.charmap_decode(input,errors,decoding_table)''')
-    else:
-        l.append('''\
-        return codecs.charmap_decode(input,errors,decoding_map)''')
-
-    l.append('''
+    def decode(self,input,errors='strict'):
+        return codecs.charmap_decode(input,errors,decoding_%s)
+''' % (encodingname, name, suffix, suffix)]
+    l.append('''\
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def encode(self, input, final=False):
-        return codecs.charmap_encode(input,self.errors,encoding_map)[0]
+        return codecs.charmap_encode(input,self.errors,encoding_%s)[0]
 
 class IncrementalDecoder(codecs.IncrementalDecoder):
-    def decode(self, input, final=False):''')
-    if decoding_table_code:
-        l.append('''\
-        return codecs.charmap_decode(input,self.errors,decoding_table)[0]''')
-    else:
-        l.append('''\
-        return codecs.charmap_decode(input,self.errors,decoding_map)[0]''')
+    def decode(self, input, final=False):
+        return codecs.charmap_decode(input,self.errors,decoding_%s)[0]''' %
+        (suffix, suffix))
 
     l.append('''
 class StreamWriter(Codec,codecs.StreamWriter):
@@ -319,13 +314,13 @@ class StreamReader(Codec,codecs.StreamReader):
 
 def getregentry():
     return codecs.CodecInfo(
-        Codec().encode,
-        Codec().decode,
         name=%r,
-        streamwriter=StreamWriter,
-        streamreader=StreamReader,
+        encode=Codec().encode,
+        decode=Codec().decode,
         incrementalencoder=IncrementalEncoder,
         incrementaldecoder=IncrementalDecoder,
+        streamreader=StreamReader,
+        streamwriter=StreamWriter,
     )
 ''' % encodingname.replace('_', '-'))
 
@@ -342,10 +337,16 @@ def getregentry():
         l.extend(decoding_table_code)
 
     # Add encoding map
-    l.append('''
+    if decoding_table_code:
+        l.append('''
+### Encoding table
+encoding_table=codecs.charmap_build(decoding_table)
+''')
+    else:
+        l.append('''
 ### Encoding Map
 ''')
-    l.extend(encoding_map_code)
+        l.extend(encoding_map_code)
 
     # Final new-line
     l.append('')
