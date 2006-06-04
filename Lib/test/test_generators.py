@@ -733,7 +733,7 @@ syntax_tests = """
 ...     yield 1
 Traceback (most recent call last):
   ..
-SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.syntax[0]>, line 2)
+SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.syntax[0]>, line 3)
 
 >>> def f():
 ...     yield 1
@@ -876,9 +876,9 @@ These are fine:
 ...         if 0:
 ...             return 3        # but *this* sucks (line 8)
 ...     if 0:
-...         yield 2             # because it's a generator
+...         yield 2             # because it's a generator (line 10)
 Traceback (most recent call last):
-SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.syntax[24]>, line 8)
+SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.syntax[24]>, line 10)
 
 This one caused a crash (see SF bug 567538):
 

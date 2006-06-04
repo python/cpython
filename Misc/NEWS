@@ -12,6 +12,9 @@ What's New in Python 2.5 beta 1?
 Core and builtins
 -----------------
 
+- Patch #1346214: Statements like "if 0: suite" are now again optimized
+  away like they were in Python 2.4.
+
 - Builtin exceptions are now full-blown new-style classes instead of
   instances pretending to be classes, which speeds up exception handling
   by about 80% in comparison to 2.5a2.
