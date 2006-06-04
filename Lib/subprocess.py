@@ -369,6 +369,7 @@ if mswindows:
             hStdInput = None
             hStdOutput = None
             hStdError = None
+            wShowWindow = 0
         class pywintypes:
             error = IOError
 else:
@@ -662,18 +663,17 @@ class Popen(object):
                 args = list2cmdline(args)
 
             # Process startup details
-            default_startupinfo = STARTUPINFO()
             if startupinfo == None:
-                startupinfo = default_startupinfo
-            if not None in (p2cread, c2pwrite, errwrite):
+                startupinfo = STARTUPINFO()
+            if None not in (p2cread, c2pwrite, errwrite):
                 startupinfo.dwFlags |= STARTF_USESTDHANDLES
                 startupinfo.hStdInput = p2cread
                 startupinfo.hStdOutput = c2pwrite
                 startupinfo.hStdError = errwrite
 
             if shell:
-                default_startupinfo.dwFlags |= STARTF_USESHOWWINDOW
-                default_startupinfo.wShowWindow = SW_HIDE
+                startupinfo.dwFlags |= STARTF_USESHOWWINDOW
+                startupinfo.wShowWindow = SW_HIDE
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = comspec + " /c " + args
                 if (GetVersion() >= 0x80000000L or
