@@ -78,7 +78,7 @@ cjk:	build/
 ### Cleanup
 
 clean:
-	$(RM) build/*
+	$(RM) -f build/*
 
 distclean:	clean
 	$(RM) -rf MAPPINGS/

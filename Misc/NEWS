@@ -104,6 +104,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1359618: Speed up charmap encoder by using a trie structure
+  for lookup.
+
 - The functions in the ``pprint`` module now sort dictionaries by key
   before computing the display.  Before 2.5, ``pprint`` sorted a dictionary
   if and only if its display required more than one line, although that
