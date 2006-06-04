@@ -491,13 +491,13 @@ static struct arena_object* usable_arenas = NULL;
 #define INITIAL_ARENA_OBJECTS 16
 
 /* Number of arenas allocated that haven't been free()'d. */
-static ulong narenas_currently_allocated = 0;
+static size_t narenas_currently_allocated = 0;
 
 #ifdef PYMALLOC_DEBUG
 /* Total number of times malloc() called to allocate an arena. */
-static ulong ntimes_arena_allocated = 0;
+static size_t ntimes_arena_allocated = 0;
 /* High water mark (max value ever seen) for narenas_currently_allocated. */
-static ulong narenas_highwater = 0;
+static size_t narenas_highwater = 0;
 #endif
 
 /* Allocate a new arena.  If we run out of memory, return NULL.  Else
@@ -1220,39 +1220,45 @@ PyObject_Free(void *p)
 #define DEADBYTE       0xDB    /* dead (newly freed) memory */
 #define FORBIDDENBYTE  0xFB    /* untouchable bytes at each end of a block */
 
-static ulong serialno = 0;	/* incremented on each debug {m,re}alloc */
+static size_t serialno = 0;	/* incremented on each debug {m,re}alloc */
 
 /* serialno is always incremented via calling this routine.  The point is
-   to supply a single place to set a breakpoint.
-*/
+ * to supply a single place to set a breakpoint.
+ */
 static void
 bumpserialno(void)
 {
 	++serialno;
 }
 
+#define SST SIZEOF_SIZE_T
 
-/* Read 4 bytes at p as a big-endian ulong. */
-static ulong
-read4(const void *p)
+/* Read sizeof(size_t) bytes at p as a big-endian size_t. */
+static size_t
+read_size_t(const void *p)
 {
 	const uchar *q = (const uchar *)p;
-	return ((ulong)q[0] << 24) |
-	       ((ulong)q[1] << 16) |
-	       ((ulong)q[2] <<  8) |
-	        (ulong)q[3];
+	size_t result = *q++;
+	int i;
+
+	for (i = SST; --i > 0; ++q)
+		result = (result << 8) | *q;
+	return result;
 }
 
-/* Write the 4 least-significant bytes of n as a big-endian unsigned int,
-   MSB at address p, LSB at p+3. */
+/* Write n as a big-endian size_t, MSB at address p, LSB at
+ * p + sizeof(size_t) - 1.
+ */
 static void
-write4(void *p, ulong n)
+write_size_t(void *p, size_t n)
 {
-	uchar *q = (uchar *)p;
-	q[0] = (uchar)((n >> 24) & 0xff);
-	q[1] = (uchar)((n >> 16) & 0xff);
-	q[2] = (uchar)((n >>  8) & 0xff);
-	q[3] = (uchar)( n        & 0xff);
+	uchar *q = (uchar *)p + SST - 1;
+	int i;
+
+	for (i = SST; --i >= 0; --q) {
+		*q = (uchar)(n & 0xff);
+		n >>= 8;
+	}
 }
 
 #ifdef Py_DEBUG
@@ -1280,25 +1286,25 @@ pool_is_in_list(const poolp target, poolp list)
 
 #endif	/* Py_DEBUG */
 
-/* The debug malloc asks for 16 extra bytes and fills them with useful stuff,
-   here calling the underlying malloc's result p:
+/* Let S = sizeof(size_t).  The debug malloc asks for 4*S extra bytes and
+   fills them with useful stuff, here calling the underlying malloc's result p:
 
-p[0:4]
-    Number of bytes originally asked for.  4-byte unsigned integer,
-    big-endian (easier to read in a memory dump).
-p[4:8]
+p[0: S]
+    Number of bytes originally asked for.  This is a size_t, big-endian (easier
+    to read in a memory dump).
+p[S: 2*S]
     Copies of FORBIDDENBYTE.  Used to catch under- writes and reads.
-p[8:8+n]
+p[2*S: 2*S+n]
     The requested memory, filled with copies of CLEANBYTE.
     Used to catch reference to uninitialized memory.
-    &p[8] is returned.  Note that this is 8-byte aligned if pymalloc
+    &p[2*S] is returned.  Note that this is 8-byte aligned if pymalloc
     handled the request itself.
-p[8+n:8+n+4]
+p[2*S+n: 2*S+n+S]
     Copies of FORBIDDENBYTE.  Used to catch over- writes and reads.
-p[8+n+4:8+n+8]
+p[2*S+n+S: 2*S+n+2*S]
     A serial number, incremented by 1 on each call to _PyObject_DebugMalloc
     and _PyObject_DebugRealloc.
-    4-byte unsigned integer, big-endian.
+    This is a big-endian size_t.
     If "bad memory" is detected later, the serial number gives an
     excellent way to set a breakpoint on the next run, to capture the
     instant at which this block was passed out.
@@ -1308,41 +1314,33 @@ void *
 _PyObject_DebugMalloc(size_t nbytes)
 {
 	uchar *p;	/* base address of malloc'ed block */
-	uchar *tail;	/* p + 8 + nbytes == pointer to tail pad bytes */
-	size_t total;	/* nbytes + 16 */
+	uchar *tail;	/* p + 2*SST + nbytes == pointer to tail pad bytes */
+	size_t total;	/* nbytes + 4*SST */
 
 	bumpserialno();
-	total = nbytes + 16;
-#if SIZEOF_SIZE_T < 8
-	/* XXX do this check only on 32-bit machines */
-	if (total < nbytes || (total >> 31) > 1) {
-		/* overflow, or we can't represent it in 4 bytes */
-		/* Obscure:  can't do (total >> 32) != 0 instead, because
-		   C doesn't define what happens for a right-shift of 32
-		   when size_t is a 32-bit type.  At least C guarantees
-		   size_t is an unsigned type. */
+	total = nbytes + 4*SST;
+	if (total < nbytes)
+		/* overflow:  can't represent total as a size_t */
 		return NULL;
-	}
-#endif
 
 	p = (uchar *)PyObject_Malloc(total);
 	if (p == NULL)
 		return NULL;
 
-	write4(p, (ulong)nbytes);
-	p[4] = p[5] = p[6] = p[7] = FORBIDDENBYTE;
+	write_size_t(p, nbytes);
+	memset(p + SST, FORBIDDENBYTE, SST);
 
 	if (nbytes > 0)
-		memset(p+8, CLEANBYTE, nbytes);
+		memset(p + 2*SST, CLEANBYTE, nbytes);
 
-	tail = p + 8 + nbytes;
-	tail[0] = tail[1] = tail[2] = tail[3] = FORBIDDENBYTE;
-	write4(tail + 4, serialno);
+	tail = p + 2*SST + nbytes;
+	memset(tail, FORBIDDENBYTE, SST);
+	write_size_t(tail + SST, serialno);
 
 	return p+8;
 }
 
-/* The debug free first checks the 8 bytes on each end for sanity (in
+/* The debug free first checks the 2*SST bytes on each end for sanity (in
    particular, that the FORBIDDENBYTEs are still intact).
    Then fills the original bytes with DEADBYTE.
    Then calls the underlying free.
@@ -1350,16 +1348,16 @@ _PyObject_DebugMalloc(size_t nbytes)
 void
 _PyObject_DebugFree(void *p)
 {
-	uchar *q = (uchar *)p;
+	uchar *q = (uchar *)p - 2*SST;  /* address returned from malloc */
 	size_t nbytes;
 
 	if (p == NULL)
 		return;
 	_PyObject_DebugCheckAddress(p);
-	nbytes = read4(q-8);
+	nbytes = read_size_t(q);
 	if (nbytes > 0)
 		memset(q, DEADBYTE, nbytes);
-	PyObject_Free(q-8);
+	PyObject_Free(q);
 }
 
 void *
@@ -1367,20 +1365,20 @@ _PyObject_DebugRealloc(void *p, size_t nbytes)
 {
 	uchar *q = (uchar *)p;
 	uchar *tail;
-	size_t total;	/* nbytes + 16 */
+	size_t total;	/* nbytes + 4*SST */
 	size_t original_nbytes;
+	int i;
 
 	if (p == NULL)
 		return _PyObject_DebugMalloc(nbytes);
 
 	_PyObject_DebugCheckAddress(p);
 	bumpserialno();
-	original_nbytes = read4(q-8);
-	total = nbytes + 16;
-	if (total < nbytes || (total >> 31) > 1) {
-		/* overflow, or we can't represent it in 4 bytes */
+	original_nbytes = read_size_t(q - 2*SST);
+	total = nbytes + 4*SST;
+	if (total < nbytes)
+		/* overflow:  can't represent total as a size_t */
 		return NULL;
-	}
 
 	if (nbytes < original_nbytes) {
 		/* shrinking:  mark old extra memory dead */
@@ -1388,19 +1386,17 @@ _PyObject_DebugRealloc(void *p, size_t nbytes)
 	}
 
 	/* Resize and add decorations. */
-	q = (uchar *)PyObject_Realloc(q-8, total);
+	q = (uchar *)PyObject_Realloc(q - 2*SST, total);
 	if (q == NULL)
 		return NULL;
 
-	write4(q, (ulong)nbytes);
-	assert(q[4] == FORBIDDENBYTE &&
-	       q[5] == FORBIDDENBYTE &&
-	       q[6] == FORBIDDENBYTE &&
-	       q[7] == FORBIDDENBYTE);
-	q += 8;
+	write_size_t(q, nbytes);
+	for (i = 0; i < SST; ++i)
+		assert(q[SST + i] == FORBIDDENBYTE);
+	q += 2*SST;
 	tail = q + nbytes;
-	tail[0] = tail[1] = tail[2] = tail[3] = FORBIDDENBYTE;
-	write4(tail + 4, serialno);
+	memset(tail, FORBIDDENBYTE, SST);
+	write_size_t(tail + SST, serialno);
 
 	if (nbytes > original_nbytes) {
 		/* growing:  mark new extra memory clean */
@@ -1420,7 +1416,7 @@ _PyObject_DebugCheckAddress(const void *p)
 {
 	const uchar *q = (const uchar *)p;
 	char *msg;
-	ulong nbytes;
+	size_t nbytes;
 	const uchar *tail;
 	int i;
 
@@ -1433,16 +1429,16 @@ _PyObject_DebugCheckAddress(const void *p)
 	 * corruption, the number-of-bytes field may be nuts, and checking
 	 * the tail could lead to a segfault then.
 	 */
-	for (i = 4; i >= 1; --i) {
+	for (i = SST; i >= 1; --i) {
 		if (*(q-i) != FORBIDDENBYTE) {
 			msg = "bad leading pad byte";
 			goto error;
 		}
 	}
 
-	nbytes = read4(q-8);
+	nbytes = read_size_t(q - 2*SST);
 	tail = q + nbytes;
-	for (i = 0; i < 4; ++i) {
+	for (i = 0; i < SST; ++i) {
 		if (tail[i] != FORBIDDENBYTE) {
 			msg = "bad trailing pad byte";
 			goto error;
@@ -1462,28 +1458,33 @@ _PyObject_DebugDumpAddress(const void *p)
 {
 	const uchar *q = (const uchar *)p;
 	const uchar *tail;
-	ulong nbytes, serial;
+	size_t nbytes, serial;
 	int i;
+	int ok;
 
 	fprintf(stderr, "Debug memory block at address p=%p:\n", p);
 	if (p == NULL)
 		return;
 
-	nbytes = read4(q-8);
-	fprintf(stderr, "    %lu bytes originally requested\n", nbytes);
+	nbytes = read_size_t(q - 2*SST);
+	fprintf(stderr, "    %" PY_FORMAT_SIZE_T "u bytes originally "
+	                "requested\n", nbytes);
 
 	/* In case this is nuts, check the leading pad bytes first. */
-	fputs("    The 4 pad bytes at p-4 are ", stderr);
-	if (*(q-4) == FORBIDDENBYTE &&
-	    *(q-3) == FORBIDDENBYTE &&
-	    *(q-2) == FORBIDDENBYTE &&
-	    *(q-1) == FORBIDDENBYTE) {
-		fputs("FORBIDDENBYTE, as expected.\n", stderr);
+	fprintf(stderr, "    The %d pad bytes at p-%d are ", SST, SST);
+	ok = 1;
+	for (i = 1; i <= SST; ++i) {
+		if (*(q-i) != FORBIDDENBYTE) {
+			ok = 0;
+			break;
+		}
 	}
+	if (ok)
+		fputs("FORBIDDENBYTE, as expected.\n", stderr);
 	else {
 		fprintf(stderr, "not all FORBIDDENBYTE (0x%02x):\n",
 			FORBIDDENBYTE);
-		for (i = 4; i >= 1; --i) {
+		for (i = SST; i >= 1; --i) {
 			const uchar byte = *(q-i);
 			fprintf(stderr, "        at p-%d: 0x%02x", i, byte);
 			if (byte != FORBIDDENBYTE)
@@ -1498,17 +1499,20 @@ _PyObject_DebugDumpAddress(const void *p)
 	}
 
 	tail = q + nbytes;
-	fprintf(stderr, "    The 4 pad bytes at tail=%p are ", tail);
-	if (tail[0] == FORBIDDENBYTE &&
-	    tail[1] == FORBIDDENBYTE &&
-	    tail[2] == FORBIDDENBYTE &&
-	    tail[3] == FORBIDDENBYTE) {
-		fputs("FORBIDDENBYTE, as expected.\n", stderr);
+	fprintf(stderr, "    The %d pad bytes at tail=%p are ", SST, tail);
+	ok = 1;
+	for (i = 0; i < SST; ++i) {
+		if (tail[i] != FORBIDDENBYTE) {
+			ok = 0;
+			break;
+		}
 	}
+	if (ok)
+		fputs("FORBIDDENBYTE, as expected.\n", stderr);
 	else {
 		fprintf(stderr, "not all FORBIDDENBYTE (0x%02x):\n",
 			FORBIDDENBYTE);
-		for (i = 0; i < 4; ++i) {
+		for (i = 0; i < SST; ++i) {
 			const uchar byte = tail[i];
 			fprintf(stderr, "        at tail+%d: 0x%02x",
 				i, byte);
@@ -1518,12 +1522,12 @@ _PyObject_DebugDumpAddress(const void *p)
 		}
 	}
 
-	serial = read4(tail+4);
-	fprintf(stderr, "    The block was made by call #%lu to "
-	                "debug malloc/realloc.\n", serial);
+	serial = read_size_t(tail + SST);
+	fprintf(stderr, "    The block was made by call #%" PY_FORMAT_SIZE_T
+			"u to debug malloc/realloc.\n", serial);
 
 	if (nbytes > 0) {
-		int i = 0;
+		i = 0;
 		fputs("    Data at p:", stderr);
 		/* print up to 8 bytes at the start */
 		while (q < tail && i < 8) {
@@ -1546,12 +1550,12 @@ _PyObject_DebugDumpAddress(const void *p)
 	}
 }
 
-static ulong
-printone(const char* msg, ulong value)
+static size_t
+printone(const char* msg, size_t value)
 {
 	int i, k;
 	char buf[100];
-	ulong origvalue = value;
+	size_t origvalue = value;
 
 	fputs(msg, stderr);
 	for (i = (int)strlen(msg); i < 35; ++i)
@@ -1564,8 +1568,8 @@ printone(const char* msg, ulong value)
 	buf[i--] = '\n';
 	k = 3;
 	do {
-		ulong nextvalue = value / 10UL;
-		uint digit = value - nextvalue * 10UL;
+		size_t nextvalue = value / 10;
+		uint digit = (uint)(value - nextvalue * 10);
 		value = nextvalue;
 		buf[i--] = (char)(digit + '0');
 		--k;
@@ -1592,28 +1596,28 @@ _PyObject_DebugMallocStats(void)
 	uint i;
 	const uint numclasses = SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT;
 	/* # of pools, allocated blocks, and free blocks per class index */
-	ulong numpools[SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT];
-	ulong numblocks[SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT];
-	ulong numfreeblocks[SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT];
+	size_t numpools[SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT];
+	size_t numblocks[SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT];
+	size_t numfreeblocks[SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT];
 	/* total # of allocated bytes in used and full pools */
-	ulong allocated_bytes = 0;
+	size_t allocated_bytes = 0;
 	/* total # of available bytes in used pools */
-	ulong available_bytes = 0;
+	size_t available_bytes = 0;
 	/* # of free pools + pools not yet carved out of current arena */
 	uint numfreepools = 0;
 	/* # of bytes for arena alignment padding */
-	ulong arena_alignment = 0;
+	size_t arena_alignment = 0;
 	/* # of bytes in used and full pools used for pool_headers */
-	ulong pool_header_bytes = 0;
+	size_t pool_header_bytes = 0;
 	/* # of bytes in used and full pools wasted due to quantization,
 	 * i.e. the necessarily leftover space at the ends of used and
 	 * full pools.
 	 */
-	ulong quantization = 0;
+	size_t quantization = 0;
 	/* # of arenas actually allocated. */
-	ulong narenas = 0;
+	size_t narenas = 0;
 	/* running total -- should equal narenas * ARENA_SIZE */
-	ulong total;
+	size_t total;
 	char buf[128];
 
 	fprintf(stderr, "Small block threshold = %d, in %u size classes.\n",
@@ -1678,15 +1682,18 @@ _PyObject_DebugMallocStats(void)
 		stderr);
 
 	for (i = 0; i < numclasses; ++i) {
-		ulong p = numpools[i];
-		ulong b = numblocks[i];
-		ulong f = numfreeblocks[i];
+		size_t p = numpools[i];
+		size_t b = numblocks[i];
+		size_t f = numfreeblocks[i];
 		uint size = INDEX2SIZE(i);
 		if (p == 0) {
 			assert(b == 0 && f == 0);
 			continue;
 		}
-		fprintf(stderr, "%5u %6u %11lu %15lu %13lu\n",
+		fprintf(stderr, "%5u %6u "
+				"%11" PY_FORMAT_SIZE_T "u "
+				"%15" PY_FORMAT_SIZE_T "u "
+				"%13" PY_FORMAT_SIZE_T "u\n",
 			i, size, p, b, f);
 		allocated_bytes += b * size;
 		available_bytes += f * size;
@@ -1702,7 +1709,8 @@ _PyObject_DebugMallocStats(void)
 	(void)printone("# arenas allocated current", narenas);
 
 	PyOS_snprintf(buf, sizeof(buf),
-		"%lu arenas * %d bytes/arena", narenas, ARENA_SIZE);
+		"%" PY_FORMAT_SIZE_T "u arenas * %d bytes/arena",
+		narenas, ARENA_SIZE);
 	(void)printone(buf, narenas * ARENA_SIZE);
 
 	fputc('\n', stderr);
@@ -1712,7 +1720,7 @@ _PyObject_DebugMallocStats(void)
 
 	PyOS_snprintf(buf, sizeof(buf),
 		"%u unused pools * %d bytes", numfreepools, POOL_SIZE);
-	total += printone(buf, (ulong)numfreepools * POOL_SIZE);
+	total += printone(buf, (size_t)numfreepools * POOL_SIZE);
 
 	total += printone("# bytes lost to pool headers", pool_header_bytes);
 	total += printone("# bytes lost to quantization", quantization);
