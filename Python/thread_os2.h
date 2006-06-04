@@ -14,9 +14,12 @@
 long PyThread_get_thread_ident(void);
 #endif
 
+/* default thread stack size of 64kB */
 #if !defined(THREAD_STACK_SIZE)
 #define	THREAD_STACK_SIZE	0x10000
 #endif
+
+#define OS2_STACKSIZE(x)	(x ? x : THREAD_STACK_SIZE)
 
 /*
  * Initialization of the C package, should not be needed.
@@ -35,7 +38,10 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 	int aThread;
 	int success = 0;
 
-	aThread = _beginthread(func, NULL, THREAD_STACK_SIZE, arg);
+	aThread = _beginthread(func,
+				NULL,
+				OS2_STACKSIZE(_pythread_stacksize),
+				arg);
 
 	if (aThread == -1) {
 		success = -1;
@@ -274,3 +280,37 @@ void PyThread_release_lock(PyThread_type_lock aLock)
 	DosExitCritSec();
 #endif
 }
+
+/* minimum/maximum thread stack sizes supported */
+#define THREAD_MIN_STACKSIZE	0x8000		/* 32kB */
+#define THREAD_MAX_STACKSIZE	0x2000000	/* 32MB */
+
+/* set the thread stack size.
+ * Return 1 if an exception is pending, 0 otherwise.
+ */
+static int
+_pythread_os2_set_stacksize(size_t size)
+{
+	/* set to default */
+	if (size == 0) {
+		_pythread_stacksize = 0;
+		return 0;
+	}
+
+	/* valid range? */
+	if (size >= THREAD_MIN_STACKSIZE && size < THREAD_MAX_STACKSIZE) {
+		_pythread_stacksize = size;
+		return 0;
+	}
+	else {
+		char warning[128];
+		snprintf(warning,
+			 128,
+			 "thread stack size of %#x bytes not supported on OS/2",
+			 size);
+		return PyErr_Warn(PyExc_RuntimeWarning, warning);
+	}
+}
+
+#undef THREAD_SET_STACKSIZE
+#define THREAD_SET_STACKSIZE(x)	_pythread_os2_set_stacksize(x)

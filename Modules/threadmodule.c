@@ -586,6 +586,51 @@ allocated consecutive numbers starting at 1, this behavior should not\n\
 be relied upon, and the number should be seen purely as a magic cookie.\n\
 A thread's identity may be reused for another thread after it exits.");
 
+static PyObject *
+thread_stack_size(PyObject *self, PyObject *args)
+{
+	size_t old_size, new_size;
+	PyObject *set_size = NULL;
+
+	if (!PyArg_UnpackTuple(args, "stack_size", 0, 1, &set_size))
+		return NULL;
+
+	old_size = PyThread_get_stacksize();
+
+	if (set_size != NULL) {
+		if (PyInt_Check(set_size))
+			new_size = (size_t) PyInt_AsLong(set_size);
+		else {
+			PyErr_SetString(PyExc_TypeError,
+					"size must be an integer");
+			return NULL;
+		}
+		if (PyThread_set_stacksize(new_size))
+			return NULL;
+	}
+
+	return PyInt_FromLong((long) old_size);
+}
+
+PyDoc_STRVAR(stack_size_doc,
+"stack_size([size]) -> size\n\
+\n\
+Return the thread stack size used when creating new threads.  The\n\
+optional size argument specifies the stack size (in bytes) to be used\n\
+for subsequently created threads, and must be 0 (use platform or\n\
+configured default) or a positive integer value of at least 32,768 (32kB).\n\
+If changing the thread stack size is unsupported, or the specified size\n\
+is invalid, a RuntimeWarning is issued and the stack size is unmodified.\n\
+32kB is currently the minimum supported stack size value, to guarantee\n\
+sufficient stack space for the interpreter itself.\n\
+\n\
+Note that some platforms may have particular restrictions on values for\n\
+the stack size, such as requiring allocation in multiples of the system\n\
+memory page size - platform documentation should be referred to for more\n\
+information (4kB pages are common; using multiples of 4096 for the\n\
+stack size is the suggested approach in the absence of more specific\n\
+information).");
+
 static PyMethodDef thread_methods[] = {
 	{"start_new_thread",	(PyCFunction)thread_PyThread_start_new_thread,
 	                        METH_VARARGS,
@@ -605,6 +650,9 @@ static PyMethodDef thread_methods[] = {
 	 METH_NOARGS, interrupt_doc},
 	{"get_ident",		(PyCFunction)thread_get_ident, 
 	 METH_NOARGS, get_ident_doc},
+	{"stack_size",		(PyCFunction)thread_stack_size,
+				METH_VARARGS,
+				stack_size_doc},
 #ifndef NO_EXIT_PROG
 	{"exit_prog",		(PyCFunction)thread_PyThread_exit_prog,
 	 METH_VARARGS},
