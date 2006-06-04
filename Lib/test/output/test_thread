@@ -4,11 +4,3 @@ all tasks done
 
 *** Barrier Test ***
 all tasks done
-
-*** Changing thread stack size ***
-trying stack_size = 32768
-waiting for all tasks to complete
-all tasks done
-trying stack_size = 4194304
-waiting for all tasks to complete
-all tasks done
