@@ -250,19 +250,23 @@ static int
 getint(PyObject* obj, char* name)
 {
 	PyObject* value;
+	int ret;
 
 	value = PyObject_GetAttrString(obj, name);
 	if (! value) {
 		PyErr_Clear(); /* FIXME: propagate error? */
 		return 0;
 	}
-	return (int) PyInt_AsLong(value);
+	ret = (int) PyInt_AsLong(value);
+	Py_DECREF(value);
+	return ret;
 }
 
 static HANDLE
 gethandle(PyObject* obj, char* name)
 {
 	sp_handle_object* value;
+	HANDLE ret;
 
 	value = (sp_handle_object*) PyObject_GetAttrString(obj, name);
 	if (! value) {
@@ -270,8 +274,11 @@ gethandle(PyObject* obj, char* name)
 		return NULL;
 	}
 	if (value->ob_type != &sp_handle_type)
-		return NULL;
-	return value->handle;
+		ret = NULL;
+	else
+		ret = value->handle;
+	Py_DECREF(value);
+	return ret;
 }
 
 static PyObject*
