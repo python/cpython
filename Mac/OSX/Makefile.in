@@ -9,6 +9,7 @@ prefix=/Library/Frameworks/Python.framework/Versions/$(VERSION)
 LIBDEST=$(prefix)/lib/python$(VERSION)
 BUILDPYTHON=$(builddir)/python.exe
 DESTDIR=
+LDFLAGS=        @LDFLAGS@
 
 # These are normally glimpsed from the previous set
 bindir=@exec_prefix@/bin
