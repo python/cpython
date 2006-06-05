@@ -92,8 +92,8 @@ class DBEnv:
     def log_archive(self, *args, **kwargs):
         return apply(self._cobj.log_archive, args, kwargs)
     if db.version() >= (4,0):
-      def log_stat(self, *args, **kwargs):
-          return apply(self._cobj.log_stat, args, kwargs)
+        def log_stat(self, *args, **kwargs):
+            return apply(self._cobj.log_stat, args, kwargs)
     def set_get_returns_none(self, *args, **kwargs):
         return apply(self._cobj.set_get_returns_none, args, kwargs)
 
