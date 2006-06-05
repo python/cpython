@@ -4294,6 +4294,71 @@ DBEnv_lock_put(DBEnvObject* self, PyObject* args)
     RETURN_NONE();
 }
 
+#if (DBVER >= 40)
+static PyObject*
+DBEnv_log_stat(DBEnvObject* self, PyObject* args)
+{
+    int err;
+    DB_LOG_STAT* statp = NULL;
+    PyObject* d = NULL;
+    u_int32_t flags = 0;
+
+    if (!PyArg_ParseTuple(args, "|i:log_stat", &flags))
+        return NULL;
+    CHECK_ENV_NOT_CLOSED(self);
+
+    MYDB_BEGIN_ALLOW_THREADS;
+    err = self->db_env->log_stat(self->db_env, &statp, flags);
+    MYDB_END_ALLOW_THREADS;
+    RETURN_IF_ERR();
+
+    /* Turn the stat structure into a dictionary */
+    d = PyDict_New();
+    if (d == NULL) {
+        if (statp)
+            free(statp);
+        return NULL;
+    }
+
+#define MAKE_ENTRY(name)  _addIntToDict(d, #name, statp->st_##name)
+
+    MAKE_ENTRY(magic);
+    MAKE_ENTRY(version);
+    MAKE_ENTRY(mode);
+    MAKE_ENTRY(lg_bsize);
+#if (DBVER >= 44)
+    MAKE_ENTRY(lg_size);
+    MAKE_ENTRY(record);
+#endif
+#if (DBVER <= 40)
+    MAKE_ENTRY(lg_max);
+#endif
+    MAKE_ENTRY(w_mbytes);
+    MAKE_ENTRY(w_bytes);
+    MAKE_ENTRY(wc_mbytes);
+    MAKE_ENTRY(wc_bytes);
+    MAKE_ENTRY(wcount);
+    MAKE_ENTRY(wcount_fill);
+#if (DBVER >= 44)
+    MAKE_ENTRY(rcount);
+#endif
+    MAKE_ENTRY(scount);
+    MAKE_ENTRY(cur_file);
+    MAKE_ENTRY(cur_offset);
+    MAKE_ENTRY(disk_file);
+    MAKE_ENTRY(disk_offset);
+    MAKE_ENTRY(maxcommitperflush);
+    MAKE_ENTRY(mincommitperflush);
+    MAKE_ENTRY(regsize);
+    MAKE_ENTRY(region_wait);
+    MAKE_ENTRY(region_nowait);
+
+#undef MAKE_ENTRY
+    free(statp);
+    return d;
+} /* DBEnv_log_stat */
+#endif /* DBVER >= 4.0 for log_stat method */
+
 
 static PyObject*
 DBEnv_lock_stat(DBEnvObject* self, PyObject* args)
@@ -4781,6 +4846,9 @@ static PyMethodDef DBEnv_methods[] = {
     {"lock_put",        (PyCFunction)DBEnv_lock_put,         METH_VARARGS},
     {"lock_stat",       (PyCFunction)DBEnv_lock_stat,        METH_VARARGS},
     {"log_archive",     (PyCFunction)DBEnv_log_archive,      METH_VARARGS},
+#if (DBVER >= 40)
+    {"log_stat",        (PyCFunction)DBEnv_log_stat,         METH_VARARGS},
+#endif
     {"set_get_returns_none",(PyCFunction)DBEnv_set_get_returns_none, METH_VARARGS},
     {NULL,      NULL}       /* sentinel */
 };
