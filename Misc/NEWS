@@ -17,6 +17,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Fixed a potentially invalid memory access of CJKCodecs' shift-jis decoder.
+
 - Calling Tk_Init twice is refused if the first call failed as that
   may deadlock.
 

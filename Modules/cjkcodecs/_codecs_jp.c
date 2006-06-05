@@ -640,10 +640,11 @@ DECODER(shift_jis_2004)
 		REQUIRE_OUTBUF(1)
 		JISX0201_DECODE(c, **outbuf)
 		else if ((c >= 0x81 && c <= 0x9f) || (c >= 0xe0 && c <= 0xfc)){
-			unsigned char c1, c2 = IN2;
+			unsigned char c1, c2;
 			ucs4_t code;
 
 			REQUIRE_INBUF(2)
+			c2 = IN2;
 			if (c2 < 0x40 || (c2 > 0x7e && c2 < 0x80) || c2 > 0xfc)
 				return 2;
 
