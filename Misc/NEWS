@@ -38,6 +38,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1501223: Possible overflow in _PySys_Init() when reading the code page
+  under Windows.
+
 - Patch #1478292. ``doctest.register_optionflag(name)`` shouldn't create a
   new flag when ``name`` is already the name of an option flag.
 

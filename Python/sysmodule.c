@@ -940,7 +940,7 @@ _PySys_Init(void)
 	PyObject *sysin, *sysout, *syserr;
 	char *s;
 #ifdef MS_WINDOWS
-	char buf[10];
+	char buf[13];
 #endif
 
 	m = Py_InitModule3("sys", sys_methods, sys_doc);
