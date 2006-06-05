@@ -98,7 +98,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.4.2"
+#define PY_BSDDB_VERSION "4.4.4"
 static char *rcs_id = "$Id$";
 
 
@@ -3194,8 +3194,8 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     int dlen = -1;
     int doff = -1;
     DBT key, pkey, data;
-    static char* kwnames[] = { "key","data", "flags", "dlen", "doff",
-                                     NULL };
+    static char* kwnames_keyOnly[] = { "key", "flags", "dlen", "doff", NULL };
+    static char* kwnames[] = { "key", "data", "flags", "dlen", "doff", NULL };
 
     CLEAR_DBT(key);
     CLEAR_DBT(data);
@@ -3204,7 +3204,7 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     {
         PyErr_Clear();
         if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Oi|ii:pget",
-                                         &kwnames[1], 
+                                         kwnames_keyOnly, 
 					 &keyobj, &flags, &dlen, &doff))
         {
             PyErr_Clear();
