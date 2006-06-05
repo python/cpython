@@ -91,11 +91,13 @@ class DBEnv:
         return apply(self._cobj.lock_stat, args, kwargs)
     def log_archive(self, *args, **kwargs):
         return apply(self._cobj.log_archive, args, kwargs)
+
+    def set_get_returns_none(self, *args, **kwargs):
+        return apply(self._cobj.set_get_returns_none, args, kwargs)
+
     if db.version() >= (4,0):
         def log_stat(self, *args, **kwargs):
             return apply(self._cobj.log_stat, args, kwargs)
-    def set_get_returns_none(self, *args, **kwargs):
-        return apply(self._cobj.set_get_returns_none, args, kwargs)
 
     if db.version() >= (4,1):
         def dbremove(self, *args, **kwargs):
@@ -104,6 +106,10 @@ class DBEnv:
             return apply(self._cobj.dbrename, args, kwargs)
         def set_encrypt(self, *args, **kwargs):
             return apply(self._cobj.set_encrypt, args, kwargs)
+
+    if db.version() >= (4,4):
+      def lsn_reset(self, *args, **kwargs):
+          return apply(self._cobj.lsn_reset, args, kwargs)
 
 
 class DB(DictMixin):
