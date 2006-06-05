@@ -4125,7 +4125,7 @@ DBEnv_log_archive(DBEnvObject* self, PyObject* args)
 {
     int flags=0;
     int err;
-    char **log_list_start, **log_list;
+    char **log_list = NULL;
     PyObject* list;
     PyObject* item = NULL;
 
@@ -4146,11 +4146,14 @@ DBEnv_log_archive(DBEnvObject* self, PyObject* args)
 
     list = PyList_New(0);
     if (list == NULL) {
+        if (log_list)
+            free(log_list);
         PyErr_SetString(PyExc_MemoryError, "PyList_New failed");
         return NULL;
     }
 
     if (log_list) {
+        char **log_list_start;
         for (log_list_start = log_list; *log_list != NULL; ++log_list) {
             item = PyString_FromString (*log_list);
             if (item == NULL) {
