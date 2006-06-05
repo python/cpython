@@ -109,6 +109,9 @@ Extension Modules
   assuming BerkeleyDB >= 4.0 and 4.4 respectively.  [pybsddb project SF
   patch numbers 1494885 and 1494902]
 
+- bsddb: added an interface for the BerkeleyDB >= 4.3 DBSequence class
+  [pybsddb project SF patch number 1466734]
+
 Library
 -------
 
