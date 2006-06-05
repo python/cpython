@@ -1,4 +1,4 @@
-from test.test_support import TestFailed, verbose, verify
+from test.test_support import TestFailed, verbose, verify, vereq
 import test.test_support
 import struct
 import array
@@ -16,13 +16,11 @@ except ImportError:
     PY_STRUCT_RANGE_CHECKING = 0
     PY_STRUCT_OVERFLOW_MASKING = 1
 else:
-    PY_STRUCT_RANGE_CHECKING = getattr(_struct, '_PY_STRUCT_RANGE_CHECKING', 0)
-    PY_STRUCT_OVERFLOW_MASKING = getattr(_struct, '_PY_STRUCT_OVERFLOW_MASKING', 0)
+    PY_STRUCT_RANGE_CHECKING = _struct._PY_STRUCT_RANGE_CHECKING
+    PY_STRUCT_OVERFLOW_MASKING = _struct._PY_STRUCT_OVERFLOW_MASKING
 
 def string_reverse(s):
-    chars = list(s)
-    chars.reverse()
-    return "".join(chars)
+    return "".join(reversed(s))
 
 def bigendian_to_native(value):
     if ISBIGENDIAN:
@@ -504,7 +502,7 @@ def assertRaises(excClass, callableObj, *args, **kwargs):
     except excClass:
         return
     else:
-        raise RuntimeError("%s not raised." % excClass)
+        raise TestFailed("%s not raised." % excClass)
 
 def test_unpack_from():
     test_string = 'abcd01234'
@@ -512,20 +510,20 @@ def test_unpack_from():
     s = struct.Struct(fmt)
     for cls in (str, buffer):
         data = cls(test_string)
-        assert s.unpack_from(data) == ('abcd',)
-        assert s.unpack_from(data, 2) == ('cd01',)
-        assert s.unpack_from(data, 4) == ('0123',)
+        vereq(s.unpack_from(data), ('abcd',))
+        vereq(s.unpack_from(data, 2), ('cd01',))
+        vereq(s.unpack_from(data, 4), ('0123',))
         for i in xrange(6):
-            assert s.unpack_from(data, i) == (data[i:i+4],)
+            vereq(s.unpack_from(data, i), (data[i:i+4],))
         for i in xrange(6, len(test_string) + 1):
             simple_err(s.unpack_from, data, i)
     for cls in (str, buffer):
         data = cls(test_string)
-        assert struct.unpack_from(fmt, data) == ('abcd',)
-        assert struct.unpack_from(fmt, data, 2) == ('cd01',)
-        assert struct.unpack_from(fmt, data, 4) == ('0123',)
+        vereq(struct.unpack_from(fmt, data), ('abcd',))
+        vereq(struct.unpack_from(fmt, data, 2), ('cd01',))
+        vereq(struct.unpack_from(fmt, data, 4), ('0123',))
         for i in xrange(6):
-            assert (struct.unpack_from(fmt, data, i) == (data[i:i+4],))
+            vereq(struct.unpack_from(fmt, data, i), (data[i:i+4],))
         for i in xrange(6, len(test_string) + 1):
             simple_err(struct.unpack_from, fmt, data, i)
 
@@ -538,12 +536,12 @@ def test_pack_into():
     # Test without offset
     s.pack_into(writable_buf, 0, test_string)
     from_buf = writable_buf.tostring()[:len(test_string)]
-    assert from_buf == test_string
+    vereq(from_buf, test_string)
 
     # Test with offset.
     s.pack_into(writable_buf, 10, test_string)
     from_buf = writable_buf.tostring()[:len(test_string)+10]
-    assert from_buf == (test_string[:10] + test_string)
+    vereq(from_buf, test_string[:10] + test_string)
 
     # Go beyond boundaries.
     small_buf = array.array('c', ' '*10)
@@ -556,15 +554,15 @@ def test_pack_into_fn():
     fmt = '21s'
     pack_into = lambda *args: struct.pack_into(fmt, *args)
 
-    # Test without offset
+    # Test without offset.
     pack_into(writable_buf, 0, test_string)
     from_buf = writable_buf.tostring()[:len(test_string)]
-    assert from_buf == test_string
+    vereq(from_buf, test_string)
 
     # Test with offset.
     pack_into(writable_buf, 10, test_string)
     from_buf = writable_buf.tostring()[:len(test_string)+10]
-    assert from_buf == (test_string[:10] + test_string)
+    vereq(from_buf, test_string[:10] + test_string)
 
     # Go beyond boundaries.
     small_buf = array.array('c', ' '*10)
