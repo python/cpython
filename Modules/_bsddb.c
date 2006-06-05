@@ -4371,11 +4371,15 @@ DBEnv_log_archive(DBEnvObject* self, PyObject* args)
 {
     int flags=0;
     int err;
-    char **log_list_start, **log_list;
+    char **log_list = NULL;
     PyObject* list;
     PyObject* item = NULL;
 
     if (!PyArg_ParseTuple(args, "|i:log_archive", &flags))
+        return NULL;
+
+    list = PyList_New(0);
+    if (list == NULL)
         return NULL;
 
     CHECK_ENV_NOT_CLOSED(self);
@@ -4390,11 +4394,8 @@ DBEnv_log_archive(DBEnvObject* self, PyObject* args)
     MYDB_END_ALLOW_THREADS;
     RETURN_IF_ERR();
 
-    list = PyList_New(0);
-    if (list == NULL)
-        return NULL;
-
     if (log_list) {
+        char **log_list_start;
         for (log_list_start = log_list; *log_list != NULL; ++log_list) {
             item = PyString_FromString (*log_list);
             if (item == NULL) {
@@ -5247,6 +5248,9 @@ DL_EXPORT(void) init_bsddb(void)
     ADD_INT(d, DB_ARCH_ABS);
     ADD_INT(d, DB_ARCH_DATA);
     ADD_INT(d, DB_ARCH_LOG);
+#if (DBVER >= 42)
+    ADD_INT(d, DB_ARCH_REMOVE);
+#endif
 
     ADD_INT(d, DB_BTREE);
     ADD_INT(d, DB_HASH);
