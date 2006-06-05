@@ -106,6 +106,9 @@ Extension Modules
 Library
 -------
 
+- The optional ``is_private`` argument to ``doctest.testmod()``, deprecated
+  in 2.4, was removed.
+
 - Patch #1359618: Speed up charmap encoder by using a trie structure
   for lookup.
 
