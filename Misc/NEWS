@@ -75,6 +75,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Fixed a potentially invalid memory access of CJKCodecs' shift-jis decoder.
+
 - Patch #1478788 (modified version): The functional extension module has
   been renamed to _functools and a functools Python wrapper module added.
   This provides a home for additional function related utilities that are
