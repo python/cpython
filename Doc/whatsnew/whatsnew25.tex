@@ -1166,12 +1166,13 @@ In 2.5 the internal data structure has been customized for implementing sets,
 and as a result sets will use a third less memory and are somewhat faster.
 (Implemented by Raymond Hettinger.)
 
-\item The speed of some Unicode operations, such as 
-finding substrings, string splitting, and character map decoding, has
-been improved.  (Substring search and splitting improvements were
+\item The speed of some Unicode operations, such as finding
+substrings, string splitting, and character map encoding and decoding,
+has been improved.  (Substring search and splitting improvements were
 added by Fredrik Lundh and Andrew Dalke at the NeedForSpeed
-sprint. Character map decoding was improved by Walter D\"orwald.)
-% Patch 1313939
+sprint. Character maps were improved by Walter D\"orwald and
+Martin von~L\"owis.)
+% Patch 1313939, 1359618 
 
 \item The \function{long(\var{str}, \var{base})} function is now
 faster on long digit strings because fewer intermediate results are
