@@ -108,8 +108,8 @@ class DBEnv:
             return apply(self._cobj.set_encrypt, args, kwargs)
 
     if db.version() >= (4,4):
-      def lsn_reset(self, *args, **kwargs):
-          return apply(self._cobj.lsn_reset, args, kwargs)
+        def lsn_reset(self, *args, **kwargs):
+            return apply(self._cobj.lsn_reset, args, kwargs)
 
 
 class DB(DictMixin):
@@ -251,4 +251,3 @@ class DBSequence:
         return apply(self._cobj.get_flags, args, kwargs)
     def get_range(self, *args, **kwargs):
         return apply(self._cobj.get_range, args, kwargs)
-
