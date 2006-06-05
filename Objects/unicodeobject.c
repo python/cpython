@@ -319,7 +319,9 @@ PyObject *PyUnicode_FromUnicode(const Py_UNICODE *u,
 
 	/* Single character Unicode objects in the Latin-1 range are
 	   shared when using this constructor */
-	if (size == 1 && *u < 256) {
+	/* XXX In Python 2.4, Py_UNICODE can, unfortunately, be a signed
+	   type. */
+	if (size == 1 && *u >= 0 && *u < 256) {
 	    unicode = unicode_latin1[*u];
 	    if (!unicode) {
 		unicode = _PyUnicode_New(1);
