@@ -4378,10 +4378,6 @@ DBEnv_log_archive(DBEnvObject* self, PyObject* args)
     if (!PyArg_ParseTuple(args, "|i:log_archive", &flags))
         return NULL;
 
-    list = PyList_New(0);
-    if (list == NULL)
-        return NULL;
-
     CHECK_ENV_NOT_CLOSED(self);
     MYDB_BEGIN_ALLOW_THREADS;
 #if (DBVER >= 40)
@@ -4393,6 +4389,13 @@ DBEnv_log_archive(DBEnvObject* self, PyObject* args)
 #endif
     MYDB_END_ALLOW_THREADS;
     RETURN_IF_ERR();
+
+    list = PyList_New(0);
+    if (list == NULL) {
+        if (log_list)
+            free(log_list);
+        return NULL;
+    }
 
     if (log_list) {
         char **log_list_start;
