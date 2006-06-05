@@ -102,6 +102,12 @@ Extension Modules
 - Calling Tk_Init twice is refused if the first call failed as that
   may deadlock.
 
+- bsddb: added the DB_ARCH_REMOVE flag and fixed db.DBEnv.log_archive() to
+  accept it without potentially using an uninitialized pointer.
+
+- bsddb: added support for the DBEnv.log_stat() and DBEnv.lsn_reset() methods
+  assuming BerkeleyDB >= 4.0 and 4.4 respectively.  [pybsddb project SF
+  patch numbers 1494885 and 1494902]
 
 Library
 -------
