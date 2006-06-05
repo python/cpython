@@ -2684,7 +2684,7 @@ DB_set_encrypt(DBObject* self, PyObject* args, PyObject* kwargs)
 Py_ssize_t DB_length(DBObject* self)
 {
     int err;
-    long size = 0;
+    Py_ssize_t size = 0;
     int flags = 0;
     void* sp;
 
@@ -2697,10 +2697,11 @@ Py_ssize_t DB_length(DBObject* self)
 
     if (self->haveStat) {  /* Has the stat function been called recently?  If
                               so, we can use the cached value. */
-        flags = DB_CACHED_COUNTS;
+        flags = DB_FAST_STAT;
     }
 
     MYDB_BEGIN_ALLOW_THREADS;
+redo_stat_for_length:
 #if (DBVER >= 43)
     err = self->db->stat(self->db, /*txnid*/ NULL, &sp, flags);
 #elif (DBVER >= 33)
@@ -2708,6 +2709,20 @@ Py_ssize_t DB_length(DBObject* self)
 #else
     err = self->db->stat(self->db, &sp, NULL, flags);
 #endif
+
+    /* All the stat structures have matching fields upto the ndata field,
+       so we can use any of them for the type cast */
+    size = ((DB_BTREE_STAT*)sp)->bt_ndata;
+
+    /* A size of 0 could mean that BerkeleyDB no longer had the stat values cached.
+     * redo a full stat to make sure.
+     *   Fixes SF python bug 1493322, pybsddb bug 1184012
+     */
+    if (size == 0 && (flags & DB_FAST_STAT)) {
+        flags = 0;
+        goto redo_stat_for_length;
+    }
+
     MYDB_END_ALLOW_THREADS;
 
     if (err)
@@ -2715,9 +2730,6 @@ Py_ssize_t DB_length(DBObject* self)
 
     self->haveStat = 1;
 
-    /* All the stat structures have matching fields upto the ndata field,
-       so we can use any of them for the type cast */
-    size = ((DB_BTREE_STAT*)sp)->bt_ndata;
     free(sp);
     return size;
 }
@@ -5252,7 +5264,6 @@ static PyMethodDef DBSequence_methods[] = {
     {"get",             (PyCFunction)DBSequence_get,            METH_VARARGS|METH_KEYWORDS},
     {"get_dbp",         (PyCFunction)DBSequence_get_dbp,        METH_VARARGS},
     {"get_key",         (PyCFunction)DBSequence_get_key,        METH_VARARGS},
-    //should it be called "initial_value" as in c code?
     {"init_value",      (PyCFunction)DBSequence_init_value,     METH_VARARGS},
     {"open",            (PyCFunction)DBSequence_open,           METH_VARARGS|METH_KEYWORDS},
     {"remove",          (PyCFunction)DBSequence_remove,         METH_VARARGS|METH_KEYWORDS},
