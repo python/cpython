@@ -582,7 +582,9 @@ class PyBuildExt(build_ext):
             # The _md5 module implements the RSA Data Security, Inc. MD5
             # Message-Digest Algorithm, described in RFC 1321.  The
             # necessary files md5.c and md5.h are included here.
-            exts.append( Extension('_md5', ['md5module.c', 'md5.c']) )
+            exts.append( Extension('_md5',
+                            sources = ['md5module.c', 'md5.c'],
+                            depends = ['md5.h']) )
 
         if (openssl_ver < 0x00908000):
             # OpenSSL doesn't do these until 0.9.8 so we'll bring our own hash
