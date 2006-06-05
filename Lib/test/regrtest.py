@@ -503,6 +503,7 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
     quiet -- if true, don't print 'skipped' messages (probably redundant)
     testdir -- test directory
     """
+
     test_support.unload(test)
     if not testdir:
         testdir = findtestdir()
@@ -512,11 +513,7 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
         cfp = None
     else:
         cfp = cStringIO.StringIO()
-    if huntrleaks:
-        if not hasattr(sys, 'gettotalrefcount'):
-            raise Exception("Tracking reference leaks requires a debug build "
-                            "of Python")
-        refrep = open(huntrleaks[2], "a")
+
     try:
         save_stdout = sys.stdout
         try:
@@ -538,60 +535,7 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
             if indirect_test is not None:
                 indirect_test()
             if huntrleaks:
-                # This code *is* hackish and inelegant, yes.
-                # But it seems to do the job.
-                import copy_reg
-                fs = warnings.filters[:]
-                ps = copy_reg.dispatch_table.copy()
-                pic = sys.path_importer_cache.copy()
-                import gc
-                def cleanup():
-                    import _strptime, linecache, warnings, dircache
-                    import urlparse, urllib, urllib2, mimetypes, doctest
-                    import struct
-                    from distutils.dir_util import _path_created
-                    _path_created.clear()
-                    warnings.filters[:] = fs
-                    gc.collect()
-                    re.purge()
-                    _strptime._regex_cache.clear()
-                    urlparse.clear_cache()
-                    urllib.urlcleanup()
-                    urllib2.install_opener(None)
-                    copy_reg.dispatch_table.clear()
-                    copy_reg.dispatch_table.update(ps)
-                    sys.path_importer_cache.clear()
-                    sys.path_importer_cache.update(pic)
-                    dircache.reset()
-                    linecache.clearcache()
-                    mimetypes._default_mime_types()
-                    struct._cache.clear()
-                    doctest.master = None
-                if indirect_test:
-                    def run_the_test():
-                        indirect_test()
-                else:
-                    def run_the_test():
-                        reload(the_module)
-                deltas = []
-                repcount = huntrleaks[0] + huntrleaks[1]
-                print >> sys.stderr, "beginning", repcount, "repetitions"
-                print >> sys.stderr, \
-                      ("1234567890"*(repcount//10 + 1))[:repcount]
-                cleanup()
-                for i in range(repcount):
-                    rc = sys.gettotalrefcount()
-                    run_the_test()
-                    sys.stderr.write('.')
-                    cleanup()
-                    deltas.append(sys.gettotalrefcount() - rc - 2)
-                print >>sys.stderr
-                if max(map(abs, deltas[-huntrleaks[1]:])) > 0:
-                    print >>sys.stderr, test, 'leaked', \
-                          deltas[-huntrleaks[1]:], 'references'
-                    print >>refrep, test, 'leaked', \
-                          deltas[-huntrleaks[1]:], 'references'
-                # The end of the huntrleaks hackishness.
+                dash_R(the_module, test, indirect_test, huntrleaks)
         finally:
             sys.stdout = save_stdout
     except test_support.ResourceDenied, msg:
@@ -650,6 +594,76 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
         reportdiff(expected, output)
         sys.stdout.flush()
         return 0
+
+def dash_R(the_module, test, indirect_test, huntrleaks):
+    # This code is hackish and inelegant, but it seems to do the job.
+    import copy_reg
+
+    if not hasattr(sys, 'gettotalrefcount'):
+        raise Exception("Tracking reference leaks requires a debug build "
+                        "of Python")
+
+    # Save current values for dash_R_cleanup() to restore.
+    fs = warnings.filters[:]
+    ps = copy_reg.dispatch_table.copy()
+    pic = sys.path_importer_cache.copy()
+
+    if indirect_test:
+        def run_the_test():
+            indirect_test()
+    else:
+        def run_the_test():
+            reload(the_module)
+
+    deltas = []
+    nwarmup, ntracked, fname = huntrleaks
+    repcount = nwarmup + ntracked
+    print >> sys.stderr, "beginning", repcount, "repetitions"
+    print >> sys.stderr, ("1234567890"*(repcount//10 + 1))[:repcount]
+    dash_R_cleanup(fs, ps, pic)
+    for i in range(repcount):
+        rc = sys.gettotalrefcount()
+        run_the_test()
+        sys.stderr.write('.')
+        dash_R_cleanup(fs, ps, pic)
+        if i >= nwarmup:
+            deltas.append(sys.gettotalrefcount() - rc - 2)
+    print >> sys.stderr
+    if any(deltas):
+        print >> sys.stderr, test, 'leaked', deltas, 'references'
+        refrep = open(fname, "a")
+        print >> refrep, test, 'leaked', deltas, 'references'
+        refrep.close()
+
+def dash_R_cleanup(fs, ps, pic):
+    import gc, copy_reg
+    import _strptime, linecache, warnings, dircache
+    import urlparse, urllib, urllib2, mimetypes, doctest
+    import struct
+    from distutils.dir_util import _path_created
+
+    # Restore some original values.
+    warnings.filters[:] = fs
+    copy_reg.dispatch_table.clear()
+    copy_reg.dispatch_table.update(ps)
+    sys.path_importer_cache.clear()
+    sys.path_importer_cache.update(pic)
+
+    # Clear assorted module caches.
+    _path_created.clear()
+    re.purge()
+    _strptime._regex_cache.clear()
+    urlparse.clear_cache()
+    urllib.urlcleanup()
+    urllib2.install_opener(None)
+    dircache.reset()
+    linecache.clearcache()
+    mimetypes._default_mime_types()
+    struct._cache.clear()
+    doctest.master = None
+
+    # Collect cyclic trash.
+    gc.collect()
 
 def reportdiff(expected, output):
     import difflib
