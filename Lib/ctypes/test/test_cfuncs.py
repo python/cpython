@@ -40,41 +40,49 @@ class CFunctions(unittest.TestCase):
 
     def test_short(self):
         self._dll.tf_h.restype = c_short
+        self._dll.tf_h.argtypes = (c_short,)
         self.failUnlessEqual(self._dll.tf_h(-32766), -10922)
         self.failUnlessEqual(self.S(), -32766)
 
     def test_short_plus(self):
         self._dll.tf_bh.restype = c_short
+        self._dll.tf_bh.argtypes = (c_byte, c_short)
         self.failUnlessEqual(self._dll.tf_bh(0, -32766), -10922)
         self.failUnlessEqual(self.S(), -32766)
 
     def test_ushort(self):
         self._dll.tf_H.restype = c_ushort
+        self._dll.tf_H.argtypes = (c_ushort,)
         self.failUnlessEqual(self._dll.tf_H(65535), 21845)
         self.failUnlessEqual(self.U(), 65535)
 
     def test_ushort_plus(self):
         self._dll.tf_bH.restype = c_ushort
+        self._dll.tf_bH.argtypes = (c_byte, c_ushort)
         self.failUnlessEqual(self._dll.tf_bH(0, 65535), 21845)
         self.failUnlessEqual(self.U(), 65535)
 
     def test_int(self):
         self._dll.tf_i.restype = c_int
+        self._dll.tf_i.argtypes = (c_int,)
         self.failUnlessEqual(self._dll.tf_i(-2147483646), -715827882)
         self.failUnlessEqual(self.S(), -2147483646)
 
     def test_int_plus(self):
         self._dll.tf_bi.restype = c_int
+        self._dll.tf_bi.argtypes = (c_byte, c_int)
         self.failUnlessEqual(self._dll.tf_bi(0, -2147483646), -715827882)
         self.failUnlessEqual(self.S(), -2147483646)
 
     def test_uint(self):
         self._dll.tf_I.restype = c_uint
+        self._dll.tf_I.argtypes = (c_uint,)
         self.failUnlessEqual(self._dll.tf_I(4294967295), 1431655765)
         self.failUnlessEqual(self.U(), 4294967295)
 
     def test_uint_plus(self):
         self._dll.tf_bI.restype = c_uint
+        self._dll.tf_bI.argtypes = (c_byte, c_uint)
         self.failUnlessEqual(self._dll.tf_bI(0, 4294967295), 1431655765)
         self.failUnlessEqual(self.U(), 4294967295)
 
