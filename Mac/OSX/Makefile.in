@@ -10,6 +10,7 @@ LIBDEST=$(prefix)/lib/python$(VERSION)
 BUILDPYTHON=$(builddir)/python.exe
 DESTDIR=
 LDFLAGS=        @LDFLAGS@
+FRAMEWORKUNIXTOOLSPREFIX=@FRAMEWORKUNIXTOOLSPREFIX@
 
 # These are normally glimpsed from the previous set
 bindir=@exec_prefix@/bin
@@ -59,13 +60,29 @@ install_pythonw: pythonw
 # actual installation inside the framework.
 #
 installunixtools:
-	if [ ! -d "$(DESTDIR)/usr/local/bin" ]; then  \
-		$(INSTALL) -d -m $(DIRMODE) "$(DESTDIR)/usr/local/bin" ;\
+	if [ ! -d "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ]; then  \
+		$(INSTALL) -d -m $(DIRMODE) "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ;\
 	fi
-	for fn in `ls "$(DESTDIR)$(prefix)/bin/"` ; \
+	for fn in python pythonw idle pydoc python-config smtpd.py   \
+		  python$(VERSION) pythonw$(VERSION) idle$(VERSION) \
+		  pydoc$(VERSION) python-config$(VERSION) smtpd$(VERSION).py ;\
 	do \
-		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)/usr/local/bin/$${fn}" ;\
+		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
 	done
+
+#
+# Like installunixtools, but only install links to the versioned binaries.
+#
+altinstallunixtools:
+	if [ ! -d "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ]; then  \
+		$(INSTALL) -d -m $(DIRMODE) "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ;\
+	fi
+	for fn in python$(VERSION) pythonw$(VERSION) idle$(VERSION) \
+		  pydoc$(VERSION) python-config$(VERSION) smtpd$(VERSION).py ;\
+	do \
+		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
+	done
+
 
 # By default most tools are installed without a version in their basename, to
 # make it easier to install (and use) several python versions side-by-side move
@@ -215,7 +232,7 @@ installmacsubtree:
 #
 # We use the full name here in stead of $(INSTALLED_PYTHONAPP), because
 # the latter may be overridden by Makefile.jaguar when building for a pre-installed
-$(INSTALLED_PYTHONAPP)/Contents/MacOS/Python: install_Python
+$(APPINSTALLDIR)/Contents/MacOS/Python: install_Python
 
 # $(INSTALLED_PYTHON) has to be done by the main Makefile, we cannot do that here.
 # At least this rule will give an error if it doesn't exist.

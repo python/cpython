@@ -617,8 +617,8 @@ memtest:	all platform
 install:	@FRAMEWORKINSTALLFIRST@ altinstall bininstall maninstall @FRAMEWORKINSTALLLAST@
 
 # Install almost everything without disturbing previous versions
-altinstall:	altbininstall libinstall inclinstall libainstall \
-                sharedinstall oldsharedinstall
+altinstall:	@FRAMEWORKALTINSTALLFIRST@ altbininstall libinstall inclinstall libainstall \
+                sharedinstall oldsharedinstall @FRAMEWORKALTINSTALLLAST@
 
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
@@ -948,6 +948,9 @@ frameworkinstallapps:
 frameworkinstallunixtools:
 	cd Mac/OSX && $(MAKE) installunixtools DESTDIR="$(DESTDIR)"
 
+frameworkaltinstallunixtools:
+	cd Mac/OSX && $(MAKE) altinstallunixtools DESTDIR="$(DESTDIR)"
+
 # This installs the Demos and Tools into the applications directory.
 # It is not part of a normal frameworkinstall
 frameworkinstallextras:
@@ -1081,6 +1084,7 @@ Python/thread.o: @THREADHEADERS@
 .PHONY: maninstall libinstall inclinstall libainstall sharedinstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
-.PHONY: recheck autoconf clean clobber distclean smelly funny
+.PHONY: frameworkaltinstallunixtools recheck autoconf clean clobber distclean 
+.PHONY: smelly funny
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
