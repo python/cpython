@@ -25,11 +25,13 @@ PYTHONAPPSDIR=/Applications/MacPython $(VERSION)
 
 all: IDLE.app
 
-install: IDLE.app
+install: IDLE.app $(srcdir)/config-main.def $(srcdir)/config-extensions.def
 	test -d "$(DESTDIR)$(PYTHONAPPSDIR)" || mkdir -p "$(DESTDIR)$(PYTHONAPPSDIR)"
 	-test -d "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app" && rm -r "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
 	cp -PR IDLE.app "$(DESTDIR)$(PYTHONAPPSDIR)"
 	touch "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
+	cp $(srcdir)/config-main.def "$(DESTDIR)$(prefix)/lib/python$(VERSION)/idlelib/config-main.def"
+	cp $(srcdir)/config-extensions.def "$(DESTDIR)$(prefix)/lib/python$(VERSION)/idlelib/config-extensions.def"
 
 clean:
 	rm -rf IDLE.app
