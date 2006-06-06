@@ -2453,7 +2453,6 @@ sock_recvfrom_into(PySocketSockObject *s, PyObject *args, PyObject* kwds)
 	int buflen;
 
 	PyObject *addr = NULL;
-	PyObject *ret = NULL;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recvfrom", kwlist,
 					 &buf, &buflen, &recvlen, &flags))
