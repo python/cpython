@@ -35,6 +35,11 @@ Extension Modules
 - Bug #1117761: bsddb.*open() no longer raises an exception when using
   the cachesize parameter.
 
+- Bug #1493322: bsddb: the __len__ method of a DB object has been fixed to
+  return correct results.  It could previously incorrectly return 0 in some
+  cases.  Fixes SF bug 1493322 (pybsddb bug 1184012).
+
+
 Library
 -------
 
