@@ -362,7 +362,7 @@ class BuiltinTest(unittest.TestCase):
             _cells = {}
             def __setitem__(self, key, formula):
                 self._cells[key] = formula
-            def __getitem__(self, key ):
+            def __getitem__(self, key):
                 return eval(self._cells[key], globals(), self)
 
         ss = SpreadSheet()
