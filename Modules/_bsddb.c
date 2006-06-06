@@ -4875,7 +4875,7 @@ DBSequence_init_value(DBSequenceObject* self, PyObject* args)
 {
     int err;
     db_seq_t value;
-    if (!PyArg_ParseTuple(args,"L|:init_value", &value))
+    if (!PyArg_ParseTuple(args,"L:init_value", &value))
         return NULL;
     CHECK_SEQUENCE_NOT_CLOSED(self)
 
@@ -4898,7 +4898,7 @@ DBSequence_open(DBSequenceObject* self, PyObject* args, PyObject* kwargs)
     DBT key;
 
     static char* kwnames[] = {"key", "txn", "flags", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Oi:set", kwnames, &keyobj, &txnobj, &flags))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Oi:open", kwnames, &keyobj, &txnobj, &flags))
         return NULL;
 
     if (!checkTxnObj(txnobj, &txn))
@@ -4925,7 +4925,7 @@ DBSequence_remove(DBSequenceObject* self, PyObject* args, PyObject* kwargs)
     DB_TXN *txn = NULL;
 
     static char* kwnames[] = {"txn", "flags", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Oi:set", kwnames, &txnobj, &flags))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Oi:remove", kwnames, &txnobj, &flags))
         return NULL;
 
     if (!checkTxnObj(txnobj, &txn))
@@ -4945,7 +4945,7 @@ static PyObject*
 DBSequence_set_cachesize(DBSequenceObject* self, PyObject* args)
 {
     int err, size;
-    if (!PyArg_ParseTuple(args,"i|:set_cachesize", &size))
+    if (!PyArg_ParseTuple(args,"i:set_cachesize", &size))
         return NULL;
     CHECK_SEQUENCE_NOT_CLOSED(self)
 
@@ -4977,7 +4977,7 @@ static PyObject*
 DBSequence_set_flags(DBSequenceObject* self, PyObject* args)
 {
     int err, flags = 0;
-    if (!PyArg_ParseTuple(args,"i|:set_flags", &flags))
+    if (!PyArg_ParseTuple(args,"i:set_flags", &flags))
         return NULL;
     CHECK_SEQUENCE_NOT_CLOSED(self)
 
@@ -4995,7 +4995,7 @@ DBSequence_get_flags(DBSequenceObject* self, PyObject* args)
 {
     unsigned int flags;
     int err;
-    if (!PyArg_ParseTuple(args,":get_cachesize"))
+    if (!PyArg_ParseTuple(args,":get_flags"))
         return NULL;
     CHECK_SEQUENCE_NOT_CLOSED(self)
 
@@ -5012,7 +5012,7 @@ DBSequence_set_range(DBSequenceObject* self, PyObject* args)
 {
     int err;
     db_seq_t min, max;
-    if (!PyArg_ParseTuple(args,"(LL):set_range", &min, &max))
+    if (!PyArg_ParseTuple(args,"LL:set_range", &min, &max))
         return NULL;
     CHECK_SEQUENCE_NOT_CLOSED(self)
 
