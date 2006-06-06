@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "structmember.h"
 
 #include <ffi.h>
 #ifdef MS_WIN32
@@ -208,14 +207,29 @@ CField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
 			 self->index, self->size, src->b_ptr + self->offset);
 }
 
-static PyMemberDef CField_members[] = {
-	{ "offset", T_UINT,
-	  offsetof(CFieldObject, offset), READONLY,
-	  "offset in bytes of this field"},
-	{ "size", T_UINT,
-	  offsetof(CFieldObject, size), READONLY,
-	  "size in bytes of this field"},
-	{ NULL },
+static PyObject *
+CField_get_offset(PyObject *self, void *data)
+{
+#if (PY_VERSION_HEX < 0x02050000)
+	return PyInt_FromLong(((CFieldObject *)self)->offset);
+#else
+	return PyInt_FromSsize_t(((CFieldObject *)self)->offset);
+#endif
+}
+
+static PyObject *
+CField_get_size(PyObject *self, void *data)
+{
+#if (PY_VERSION_HEX < 0x02050000)
+	return PyInt_FromLong(((CFieldObject *)self)->size);
+#else
+	return PyInt_FromSsize_t(((CFieldObject *)self)->size);
+#endif
+}
+
+static PyGetSetDef CField_getset[] = {
+	{ "offset", CField_get_offset, NULL, "offset in bytes of this field" },
+	{ "size", CField_get_offset, NULL, "size in bytes of this field" },
 };
 
 static int
@@ -298,8 +312,8 @@ PyTypeObject CField_Type = {
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
-	CField_members,				/* tp_members */
-	0,					/* tp_getset */
+	0,					/* tp_members */
+	CField_getset,				/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	(descrgetfunc)CField_get,		/* tp_descr_get */
