@@ -133,7 +133,7 @@ class PointersTestCase(unittest.TestCase):
         self.failUnlessEqual(p[0], 42)
         self.failUnlessEqual(p.contents.value, 42)
 
-    def test_charpp( self ):
+    def test_charpp(self):
         """Test that a character pointer-to-pointer is correctly passed"""
         dll = CDLL(_ctypes_test.__file__)
         func = dll._testfunc_c_p_p

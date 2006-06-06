@@ -150,7 +150,7 @@ class SSLFakeFile:
 
     It only supports what is needed in smtplib.
     """
-    def __init__( self, sslobj):
+    def __init__(self, sslobj):
         self.sslobj = sslobj
 
     def readline(self):
