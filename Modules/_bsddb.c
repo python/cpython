@@ -5012,7 +5012,7 @@ DBSequence_set_range(DBSequenceObject* self, PyObject* args)
 {
     int err;
     db_seq_t min, max;
-    if (!PyArg_ParseTuple(args,"LL:set_range", &min, &max))
+    if (!PyArg_ParseTuple(args,"(LL):set_range", &min, &max))
         return NULL;
     CHECK_SEQUENCE_NOT_CLOSED(self)
 
