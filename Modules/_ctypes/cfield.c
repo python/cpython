@@ -229,7 +229,8 @@ CField_get_size(PyObject *self, void *data)
 
 static PyGetSetDef CField_getset[] = {
 	{ "offset", CField_get_offset, NULL, "offset in bytes of this field" },
-	{ "size", CField_get_offset, NULL, "size in bytes of this field" },
+	{ "size", CField_get_size, NULL, "size in bytes of this field" },
+	{ NULL, NULL, NULL, NULL },
 };
 
 static int
