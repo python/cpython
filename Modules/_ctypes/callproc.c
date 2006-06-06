@@ -964,7 +964,12 @@ PyObject *_CallProc(PPROC pProc,
 	   address cannot simply be used as result pointer, instead we must
 	   adjust the pointer value:
 	 */
-	if (rtype->size < sizeof(ffi_arg))
+	/*
+	  XXX I should find out and clarify why this is needed at all,
+	  especially why adjusting for ffi_type_float must be avoided on
+	  64-bit platforms.
+	 */
+	if (rtype->type != FFI_TYPE_FLOAT && rtype->size < sizeof(ffi_arg))
 		resbuf = (char *)resbuf + sizeof(ffi_arg) - rtype->size;
 #endif
 
