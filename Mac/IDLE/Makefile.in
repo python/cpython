@@ -39,16 +39,21 @@ clean:
 IDLE.app:  \
 		$(srcdir)/../Icons/IDLE.icns $(srcdir)/idlemain.py \
 		$(srcdir)/../Icons/PythonSource.icns \
-		$(srcdir)/../Icons/PythonCompiled.icns
+		$(srcdir)/../Icons/PythonCompiled.icns Info.plist
 	rm -fr IDLE.app
 	$(RUNSHARED) $(BUILDPYTHON) $(BUNDLEBULDER) \
 		--builddir=. \
 		--name=IDLE \
 		--link-exec \
-		--plist=$(srcdir)/Info.plist \
+		--plist=Info.plist \
 		--mainprogram=$(srcdir)/idlemain.py \
 		--iconfile=$(srcdir)/../Icons/IDLE.icns \
 		--resource=$(srcdir)/../Icons/PythonSource.icns \
 		--resource=$(srcdir)/../Icons/PythonCompiled.icns \
 		--python=$(prefix)/Resources/Python.app/Contents/MacOS/Python \
 		build
+
+
+Info.plist: $(srcdir)/Info.plist.in
+	sed 's/%VERSION%/'"`$(RUNSHARED) $(BUILDPYTHON) -c 'import platform; print platform.python_version()'`"'/g' < $(srcdir)/Info.plist.in > Info.plist
+

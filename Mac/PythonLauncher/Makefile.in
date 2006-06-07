@@ -35,7 +35,7 @@ clean:
 	rm -f *.o "Python Launcher"
 	rm -rf "Python Launcher.app"
 
-Python\ Launcher.app:  \
+Python\ Launcher.app:  Info.plist \
 		Python\ Launcher $(srcdir)/../Icons/PythonLauncher.icns \
 		$(srcdir)/../Icons/PythonSource.icns \
 		$(srcdir)/../Icons/PythonCompiled.icns \
@@ -51,7 +51,7 @@ Python\ Launcher.app:  \
 		--resource=$(srcdir)/../Icons/PythonCompiled.icns \
 		--resource=$(srcdir)/English.lproj \
 		--resource=$(srcdir)/factorySettings.plist \
-		--plist=$(srcdir)/Info.plist \
+		--plist Info.plist \
 		build
 	find "Python Launcher.app" -name '.svn' -print0 | xargs -0 rm -r
 		
@@ -76,3 +76,6 @@ main.o: $(srcdir)/main.m
 
 Python\ Launcher: $(OBJECTS)
 	$(CC) $(LDFLAGS) -o "Python Launcher" $(OBJECTS) -framework AppKit -framework Carbon
+
+Info.plist: $(srcdir)/Info.plist.in
+	sed 's/%VERSION%/'"`$(RUNSHARED) $(BUILDPYTHON) -c 'import platform; print platform.python_version()'`"'/g' < $(srcdir)/Info.plist.in > Info.plist
