@@ -6,6 +6,104 @@
 \sectionauthor{Gerhard Häring}{gh@ghaering.de}
 \versionadded{2.5}
 
+SQLite is a C library that provides a SQL-language database that
+stores data in disk files without requiring a separate server process.
+pysqlite was written by Gerhard H\"aring and provides a SQL interface
+compliant with the DB-API 2.0 specification described by
+\pep{249}. This means that it should be possible to write the first
+version of your applications using SQLite for data storage.  If
+switching to a larger database such as PostgreSQL or Oracle is
+later necessary, the switch should be relatively easy.
+
+To use the module, you must first create a \class{Connection} object
+that represents the database.  Here the data will be stored in the 
+\file{/tmp/example} file:
+
+\begin{verbatim}
+conn = sqlite3.connect('/tmp/example')
+\end{verbatim}
+
+You can also supply the special name \samp{:memory:} to create
+a database in RAM.
+
+Once you have a \class{Connection}, you can create a \class{Cursor} 
+object and call its \method{execute()} method to perform SQL commands:
+
+\begin{verbatim}
+c = conn.cursor()
+
+# Create table
+c.execute('''create table stocks
+(date timestamp, trans varchar, symbol varchar,
+ qty decimal, price decimal)''')
+
+# Insert a row of data
+c.execute("""insert into stocks
+          values ('2006-01-05','BUY','RHAT',100,35.14)""")
+\end{verbatim}    
+
+Usually your SQL operations will need to use values from Python
+variables.  You shouldn't assemble your query using Python's string
+operations because doing so is insecure; it makes your program
+vulnerable to an SQL injection attack.  
+
+Instead, use SQLite's parameter substitution.  Put \samp{?} as a
+placeholder wherever you want to use a value, and then provide a tuple
+of values as the second argument to the cursor's \method{execute()}
+method.  For example:
+
+\begin{verbatim}    
+# Never do this -- insecure!
+symbol = 'IBM'
+c.execute("... where symbol = '%s'" % symbol)
+
+# Do this instead
+t = (symbol,)
+c.execute('select * from stocks where symbol=?', t)
+
+# Larger example
+for t in (('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
+          ('2006-04-05', 'BUY', 'MSOFT', 1000, 72.00),
+          ('2006-04-06', 'SELL', 'IBM', 500, 53.00),
+         ):
+    c.execute('insert into stocks values (?,?,?,?,?)', t)
+\end{verbatim}
+
+To retrieve data after executing a SELECT statement, you can either 
+treat the cursor as an iterator, call the cursor's \method{fetchone()}
+method to retrieve a single matching row, 
+or call \method{fetchall()} to get a list of the matching rows.
+
+This example uses the iterator form:
+
+\begin{verbatim}
+>>> c = conn.cursor()
+>>> c.execute('select * from stocks order by price')
+>>> for row in c:
+...    print row
+...
+(u'2006-01-05', u'BUY', u'RHAT', 100, 35.140000000000001)
+(u'2006-03-28', u'BUY', u'IBM', 1000, 45.0)
+(u'2006-04-06', u'SELL', u'IBM', 500, 53.0)
+(u'2006-04-05', u'BUY', u'MSOFT', 1000, 72.0)
+>>>
+\end{verbatim}
+
+\begin{seealso}
+
+\seeurl{http://www.pysqlite.org}
+{The pysqlite web page.}
+
+\seeurl{http://www.sqlite.org}
+{The SQLite web page; the documentation describes the syntax and the
+available data types for the supported SQL dialect.}
+
+\seepep{249}{Database API Specification 2.0}{PEP written by
+Marc-Andr\'e Lemburg.}
+
+\end{seealso}
+
+
 \subsection{Module functions and constants\label{sqlite3-Module-Contents}}
 
 \begin{datadesc}{PARSE_DECLTYPES}
