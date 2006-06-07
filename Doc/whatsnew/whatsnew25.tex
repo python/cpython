@@ -1923,10 +1923,11 @@ variables.  You shouldn't assemble your query using Python's string
 operations because doing so is insecure; it makes your program
 vulnerable to an SQL injection attack.  
 
-Instead, use SQLite's parameter substitution.  Put \samp{?} as a
+Instead, use the DB-API's parameter substitution.  Put \samp{?} as a
 placeholder wherever you want to use a value, and then provide a tuple
 of values as the second argument to the cursor's \method{execute()}
-method.  For example:
+method.  (Other database modules may use a different placeholder,
+such as \samp{%s} or \samp{:1}.) For example:
 
 \begin{verbatim}    
 # Never do this -- insecure!
