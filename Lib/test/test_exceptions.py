@@ -1,9 +1,12 @@
 # Python test set -- part 5, built-in exceptions
 
-from test.test_support import TESTFN, unlink, run_unittest
-import warnings
-import sys, traceback, os
+import os
+import sys
 import unittest
+import warnings
+import pickle, cPickle
+
+from test.test_support import TESTFN, unlink, run_unittest
 
 # XXX This is not really enough, each *operation* should be tested!
 
@@ -182,11 +185,15 @@ class ExceptionTests(unittest.TestCase):
 
     def testAttributes(self):
         # test that exception attributes are happy
-        try: str(u'Hello \u00E1')
-        except Exception, e: sampleUnicodeEncodeError = e
+        try:
+            str(u'Hello \u00E1')
+        except Exception, e:
+            sampleUnicodeEncodeError = e
 
-        try: unicode('\xff')
-        except Exception, e: sampleUnicodeDecodeError = e
+        try:
+            unicode('\xff')
+        except Exception, e:
+            sampleUnicodeDecodeError = e
 
         exceptionList = [
             (BaseException, (), {'message' : '', 'args' : ()}),
@@ -251,19 +258,20 @@ class ExceptionTests(unittest.TestCase):
                      'strerror' : 'strErrorStr', 'winerror' : 1,
                      'errno' : 22, 'filename' : 'filenameStr'})
             )
-        except NameError: pass
-
-        import pickle, random
+        except NameError:
+            pass
 
         for args in exceptionList:
             expected = args[-1]
             try:
                 exc = args[0]
-                if len(args) == 2: raise exc
-                else: raise exc(*args[1])
+                if len(args) == 2:
+                    raise exc
+                else:
+                    raise exc(*args[1])
             except BaseException, e:
                 if (e is not exc and     # needed for sampleUnicode errors
-                    type(e) is not exc):
+                        type(e) is not exc):
                     raise
                 # Verify no ref leaks in Exc_str()
                 s = str(e)
@@ -274,12 +282,15 @@ class ExceptionTests(unittest.TestCase):
                                        (repr(e), checkArgName))
 
                 # test for pickling support
-                new = pickle.loads(pickle.dumps(e, random.randint(0, 2)))
-                for checkArgName in expected:
-                    self.assertEquals(repr(getattr(e, checkArgName)),
-                                      repr(expected[checkArgName]),
-                                      'pickled exception "%s", attribute "%s' %
-                                      (repr(e), checkArgName))
+                for p in pickle, cPickle:
+                    for protocol in range(p.HIGHEST_PROTOCOL + 1):
+                        new = p.loads(p.dumps(e, protocol))
+                        for checkArgName in expected:
+                            got = repr(getattr(new, checkArgName))
+                            want = repr(expected[checkArgName])
+                            self.assertEquals(got, want,
+                                              'pickled "%r", attribute "%s' %
+                                              (e, checkArgName))
 
     def testKeywordArgs(self):
         # test that builtin exception don't take keyword args,
