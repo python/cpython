@@ -1186,6 +1186,11 @@ strings into an internal representation and caches this
 representation, yielding a 20\% speedup.  (Contributed by Bob Ippolito
 at the NeedForSpeed sprint.)
 
+\item The \module{re} module got a 1 or 2\% speedup by switching to 
+Python's allocator functions instead of the system's 
+\cfunction{malloc()} and \cfunction{free()}.
+(Contributed by Jack Diederich at the NeedForSpeed sprint.)
+
 \item The code generator's peephole optimizer now performs
 simple constant folding in expressions.  If you write something like
 \code{a = 2+3}, the code generator will do the arithmetic and produce
@@ -1927,7 +1932,7 @@ Instead, use the DB-API's parameter substitution.  Put \samp{?} as a
 placeholder wherever you want to use a value, and then provide a tuple
 of values as the second argument to the cursor's \method{execute()}
 method.  (Other database modules may use a different placeholder,
-such as \samp{%s} or \samp{:1}.) For example:
+such as \samp{\%s} or \samp{:1}.) For example:
 
 \begin{verbatim}    
 # Never do this -- insecure!
