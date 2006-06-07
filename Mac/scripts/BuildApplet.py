@@ -21,7 +21,7 @@ if not sys.executable.startswith(sys.exec_prefix):
     # sys.executable points inside the current application bundle. Because this
     # path contains blanks (two of them actually) this path isn't usable on
     # #! lines. Reset sys.executable to point to the embedded python interpreter
-    sys.executable = os.path.join(sys.prefix, 
+    sys.executable = os.path.join(sys.prefix,
             'Resources/Python.app/Contents/MacOS/Python')
 
     # Just in case we're not in a framework:
