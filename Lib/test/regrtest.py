@@ -639,7 +639,7 @@ def dash_R_cleanup(fs, ps, pic):
     import gc, copy_reg
     import _strptime, linecache, warnings, dircache
     import urlparse, urllib, urllib2, mimetypes, doctest
-    import struct
+    import struct, filecmp
     from distutils.dir_util import _path_created
 
     # Restore some original values.
@@ -660,6 +660,7 @@ def dash_R_cleanup(fs, ps, pic):
     linecache.clearcache()
     mimetypes._default_mime_types()
     struct._cache.clear()
+    filecmp._cache.clear()
     doctest.master = None
 
     # Collect cyclic trash.
