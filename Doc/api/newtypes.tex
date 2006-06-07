@@ -1472,7 +1472,9 @@ to be able to test for its presence before using it.}
   Before using this slot, the caller should test whether it is present
   by using the
   \cfunction{PyType_HasFeature()}\ttindex{PyType_HasFeature()}
-  function.  If present, it may be \NULL, indicating that the object's
+  function.  If the flag is present, \member{bf_getcharbuffer} may be
+  \NULL,
+  indicating that the object's
   contents cannot be used as \emph{8-bit characters}.
   The slot function may also raise an error if the object's contents
   cannot be interpreted as 8-bit characters.  For example, if the
@@ -1497,12 +1499,13 @@ to be able to test for its presence before using it.}
 
 \begin{ctypedesc}[getreadbufferproc]{int (*getreadbufferproc)
                             (PyObject *self, int segment, void **ptrptr)}
-  Return a pointer to a readable segment of the buffer.  This function
+  Return a pointer to a readable segment of the buffer in
+  \code{*\var{ptrptr}}.  This function
   is allowed to raise an exception, in which case it must return
-  \code{-1}.  The \var{segment} which is passed must be zero or
+  \code{-1}.  The \var{segment} which is specified must be zero or
   positive, and strictly less than the number of segments returned by
   the \member{bf_getsegcount} slot function.  On success, it returns
-  the length of the buffer memory, and sets \code{*\var{ptrptr}} to a
+  the length of the segment, and sets \code{*\var{ptrptr}} to a
   pointer to that memory.
 \end{ctypedesc}
 
@@ -1531,8 +1534,9 @@ to be able to test for its presence before using it.}
 
 \begin{ctypedesc}[getcharbufferproc]{int (*getcharbufferproc)
                             (PyObject *self, int segment, const char **ptrptr)}
-  Return the size of the memory buffer in \var{ptrptr} for segment
-  \var{segment}.  \code{*\var{ptrptr}} is set to the memory buffer.
+  Return the size of the segemnt \var{segment} that \var{ptrptr}
+  is set to.  \code{*\var{ptrpter}} is set to the memory buffer.
+  Returns \code{-1} on error.
 \end{ctypedesc}
 
 

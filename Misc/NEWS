@@ -82,6 +82,8 @@ Build
 Documentation
 -------------
 
+- Clarified documentation for tp_as_buffer->bf_getcharbuffer.
+
 - Bug #1337990: clarified that ``doctest`` does not support examples
   requiring both expected output and an exception.
 
