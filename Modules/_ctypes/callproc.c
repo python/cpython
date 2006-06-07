@@ -969,7 +969,9 @@ PyObject *_CallProc(PPROC pProc,
 	  especially why adjusting for ffi_type_float must be avoided on
 	  64-bit platforms.
 	 */
-	if (rtype->type != FFI_TYPE_FLOAT && rtype->size < sizeof(ffi_arg))
+	if (rtype->type != FFI_TYPE_FLOAT
+	    && rtype->type != FFI_TYPE_STRUCT
+	    && rtype->size < sizeof(ffi_arg))
 		resbuf = (char *)resbuf + sizeof(ffi_arg) - rtype->size;
 #endif
 
