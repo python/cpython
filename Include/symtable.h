@@ -39,6 +39,8 @@ typedef struct _symtable_entry {
 	unsigned ste_generator : 1;   /* true if namespace is a generator */
 	unsigned ste_varargs : 1;     /* true if block has varargs */
 	unsigned ste_varkeywords : 1; /* true if block has varkeywords */
+	unsigned ste_returns_value : 1;  /* true if namespace uses return with
+	                                    an argument */
 	int ste_lineno;          /* first line of block */
 	int ste_opt_lineno;      /* lineno of last exec or import * */
 	int ste_tmpname;         /* counter for listcomp temp vars */

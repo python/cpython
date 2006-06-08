@@ -61,13 +61,14 @@
  *
  * http://www.python.org/peps/pep-0291.html
  *
- * This module contains 5 types:
+ * This module contains 6 types:
  *
  * DB           (Database)
  * DBCursor     (Database Cursor)
  * DBEnv        (database environment)
  * DBTxn        (An explicit database transaction)
  * DBLock       (A lock handle)
+ * DBSequence   (Sequence)
  *
  */
 
@@ -97,7 +98,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.4.2"
+#define PY_BSDDB_VERSION "4.4.4"
 static char *rcs_id = "$Id$";
 
 
@@ -285,7 +286,17 @@ typedef struct {
 #endif
 } DBLockObject;
 
-
+#if (DBVER >= 43)
+typedef struct {
+    PyObject_HEAD
+    DB_SEQUENCE*     sequence;
+    DBObject*        mydb;
+#ifdef HAVE_WEAKREF
+    PyObject        *in_weakreflist; /* List of weak references */
+#endif
+} DBSequenceObject;
+static PyTypeObject DBSequence_Type;
+#endif
 
 static PyTypeObject DB_Type, DBCursor_Type, DBEnv_Type, DBTxn_Type, DBLock_Type;
 
@@ -294,6 +305,9 @@ static PyTypeObject DB_Type, DBCursor_Type, DBEnv_Type, DBTxn_Type, DBLock_Type;
 #define DBEnvObject_Check(v)        ((v)->ob_type == &DBEnv_Type)
 #define DBTxnObject_Check(v)        ((v)->ob_type == &DBTxn_Type)
 #define DBLockObject_Check(v)       ((v)->ob_type == &DBLock_Type)
+#if (DBVER >= 43)
+#define DBSequenceObject_Check(v)   ((v)->ob_type == &DBSequence_Type)
+#endif
 
 
 /* --------------------------------------------------------------------- */
@@ -324,6 +338,10 @@ static PyTypeObject DB_Type, DBCursor_Type, DBEnv_Type, DBTxn_Type, DBLock_Type;
 #define CHECK_CURSOR_NOT_CLOSED(curs) \
         _CHECK_OBJECT_NOT_CLOSED(curs->dbc, DBCursorClosedError, DBCursor)
 
+#if (DBVER >= 43)
+#define CHECK_SEQUENCE_NOT_CLOSED(curs) \
+        _CHECK_OBJECT_NOT_CLOSED(curs->sequence, DBError, DBSequence)
+#endif
 
 #define CHECK_DBFLAG(mydb, flag)    (((mydb)->flags & (flag)) || \
                                      (((mydb)->myenvobj != NULL) && ((mydb)->myenvobj->flags & (flag))))
@@ -724,7 +742,17 @@ static void _addIntToDict(PyObject* dict, char *name, int value)
 
     Py_XDECREF(v);
 }
+#if (DBVER >= 43)
+/* add an db_seq_t to a dictionary using the given name as a key */
+static void _addDb_seq_tToDict(PyObject* dict, char *name, db_seq_t value)
+{
+    PyObject* v = PyLong_FromLongLong(value);
+    if (!v || PyDict_SetItemString(dict, name, v))
+        PyErr_Clear();
 
+    Py_XDECREF(v);
+}
+#endif
 
 
 
@@ -777,7 +805,7 @@ newDBObject(DBEnvObject* arg, int flags)
     MYDB_END_ALLOW_THREADS;
     /* TODO add a weakref(self) to the self->myenvobj->open_child_weakrefs
      * list so that a DBEnv can refuse to close without aborting any open
-     * open DBTxns and closing any open DBs first. */
+     * DBTxns and closing any open DBs first. */
     if (makeDBError(err)) {
         if (self->myenvobj) {
             Py_DECREF(self->myenvobj);
@@ -1028,6 +1056,48 @@ DBLock_dealloc(DBLockObject* self)
     PyObject_Del(self);
 }
 
+
+#if (DBVER >= 43)
+static DBSequenceObject*
+newDBSequenceObject(DBObject* mydb,  int flags)
+{
+    int err;
+    DBSequenceObject* self = PyObject_New(DBSequenceObject, &DBSequence_Type);
+    if (self == NULL)
+        return NULL;
+    Py_INCREF(mydb);
+    self->mydb = mydb;
+#ifdef HAVE_WEAKREF
+    self->in_weakreflist = NULL;
+#endif
+
+
+    MYDB_BEGIN_ALLOW_THREADS;
+    err = db_sequence_create(&self->sequence, self->mydb->db, flags);
+    MYDB_END_ALLOW_THREADS;
+    if (makeDBError(err)) {
+        Py_DECREF(self->mydb);
+        PyObject_Del(self);
+        self = NULL;
+    }
+
+    return self;
+}
+
+
+static void
+DBSequence_dealloc(DBSequenceObject* self)
+{
+#ifdef HAVE_WEAKREF
+    if (self->in_weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject *) self);
+    }
+#endif
+
+    Py_DECREF(self->mydb);
+    PyObject_Del(self);
+}
+#endif
 
 /* --------------------------------------------------------------------- */
 /* DB methods */
@@ -2614,7 +2684,7 @@ DB_set_encrypt(DBObject* self, PyObject* args, PyObject* kwargs)
 Py_ssize_t DB_length(DBObject* self)
 {
     int err;
-    long size = 0;
+    Py_ssize_t size = 0;
     int flags = 0;
     void* sp;
 
@@ -2627,10 +2697,11 @@ Py_ssize_t DB_length(DBObject* self)
 
     if (self->haveStat) {  /* Has the stat function been called recently?  If
                               so, we can use the cached value. */
-        flags = DB_CACHED_COUNTS;
+        flags = DB_FAST_STAT;
     }
 
     MYDB_BEGIN_ALLOW_THREADS;
+redo_stat_for_length:
 #if (DBVER >= 43)
     err = self->db->stat(self->db, /*txnid*/ NULL, &sp, flags);
 #elif (DBVER >= 33)
@@ -2638,6 +2709,20 @@ Py_ssize_t DB_length(DBObject* self)
 #else
     err = self->db->stat(self->db, &sp, NULL, flags);
 #endif
+
+    /* All the stat structures have matching fields upto the ndata field,
+       so we can use any of them for the type cast */
+    size = ((DB_BTREE_STAT*)sp)->bt_ndata;
+
+    /* A size of 0 could mean that BerkeleyDB no longer had the stat values cached.
+     * redo a full stat to make sure.
+     *   Fixes SF python bug 1493322, pybsddb bug 1184012
+     */
+    if (size == 0 && (flags & DB_FAST_STAT)) {
+        flags = 0;
+        goto redo_stat_for_length;
+    }
+
     MYDB_END_ALLOW_THREADS;
 
     if (err)
@@ -2645,9 +2730,6 @@ Py_ssize_t DB_length(DBObject* self)
 
     self->haveStat = 1;
 
-    /* All the stat structures have matching fields upto the ndata field,
-       so we can use any of them for the type cast */
-    size = ((DB_BTREE_STAT*)sp)->bt_ndata;
     free(sp);
     return size;
 }
@@ -3124,8 +3206,8 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     int dlen = -1;
     int doff = -1;
     DBT key, pkey, data;
-    static char* kwnames[] = { "key","data", "flags", "dlen", "doff",
-                                     NULL };
+    static char* kwnames_keyOnly[] = { "key", "flags", "dlen", "doff", NULL };
+    static char* kwnames[] = { "key", "data", "flags", "dlen", "doff", NULL };
 
     CLEAR_DBT(key);
     CLEAR_DBT(data);
@@ -3134,7 +3216,7 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     {
         PyErr_Clear();
         if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Oi|ii:pget",
-                                         &kwnames[1], 
+                                         kwnames_keyOnly, 
 					 &keyobj, &flags, &dlen, &doff))
         {
             PyErr_Clear();
@@ -4294,6 +4376,93 @@ DBEnv_lock_put(DBEnvObject* self, PyObject* args)
     RETURN_NONE();
 }
 
+#if (DBVER >= 44)
+static PyObject*
+DBEnv_lsn_reset(DBEnvObject* self, PyObject* args, PyObject* kwargs)
+{
+    int err;
+    char *file;
+    u_int32_t flags = 0;
+    static char* kwnames[] = { "file", "flags", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "z|i:lsn_reset", kwnames,
+                                     &file, &flags))
+        return NULL;
+    CHECK_ENV_NOT_CLOSED(self);
+
+    MYDB_BEGIN_ALLOW_THREADS;
+    err = self->db_env->lsn_reset(self->db_env, file, flags);
+    MYDB_END_ALLOW_THREADS;
+    RETURN_IF_ERR();
+    RETURN_NONE();
+}
+#endif /* DBVER >= 4.4 */
+
+#if (DBVER >= 40)
+static PyObject*
+DBEnv_log_stat(DBEnvObject* self, PyObject* args)
+{
+    int err;
+    DB_LOG_STAT* statp = NULL;
+    PyObject* d = NULL;
+    u_int32_t flags = 0;
+
+    if (!PyArg_ParseTuple(args, "|i:log_stat", &flags))
+        return NULL;
+    CHECK_ENV_NOT_CLOSED(self);
+
+    MYDB_BEGIN_ALLOW_THREADS;
+    err = self->db_env->log_stat(self->db_env, &statp, flags);
+    MYDB_END_ALLOW_THREADS;
+    RETURN_IF_ERR();
+
+    /* Turn the stat structure into a dictionary */
+    d = PyDict_New();
+    if (d == NULL) {
+        if (statp)
+            free(statp);
+        return NULL;
+    }
+
+#define MAKE_ENTRY(name)  _addIntToDict(d, #name, statp->st_##name)
+
+    MAKE_ENTRY(magic);
+    MAKE_ENTRY(version);
+    MAKE_ENTRY(mode);
+    MAKE_ENTRY(lg_bsize);
+#if (DBVER >= 44)
+    MAKE_ENTRY(lg_size);
+    MAKE_ENTRY(record);
+#endif
+#if (DBVER <= 40)
+    MAKE_ENTRY(lg_max);
+#endif
+    MAKE_ENTRY(w_mbytes);
+    MAKE_ENTRY(w_bytes);
+    MAKE_ENTRY(wc_mbytes);
+    MAKE_ENTRY(wc_bytes);
+    MAKE_ENTRY(wcount);
+    MAKE_ENTRY(wcount_fill);
+#if (DBVER >= 44)
+    MAKE_ENTRY(rcount);
+#endif
+    MAKE_ENTRY(scount);
+    MAKE_ENTRY(cur_file);
+    MAKE_ENTRY(cur_offset);
+    MAKE_ENTRY(disk_file);
+    MAKE_ENTRY(disk_offset);
+    MAKE_ENTRY(maxcommitperflush);
+    MAKE_ENTRY(mincommitperflush);
+    MAKE_ENTRY(regsize);
+    MAKE_ENTRY(region_wait);
+    MAKE_ENTRY(region_nowait);
+
+#undef MAKE_ENTRY
+    free(statp);
+    return d;
+} /* DBEnv_log_stat */
+#endif /* DBVER >= 4.0 for log_stat method */
+
 
 static PyObject*
 DBEnv_lock_stat(DBEnvObject* self, PyObject* args)
@@ -4371,7 +4540,7 @@ DBEnv_log_archive(DBEnvObject* self, PyObject* args)
 {
     int flags=0;
     int err;
-    char **log_list_start, **log_list;
+    char **log_list = NULL;
     PyObject* list;
     PyObject* item = NULL;
 
@@ -4391,10 +4560,14 @@ DBEnv_log_archive(DBEnvObject* self, PyObject* args)
     RETURN_IF_ERR();
 
     list = PyList_New(0);
-    if (list == NULL)
+    if (list == NULL) {
+        if (log_list)
+            free(log_list);
         return NULL;
+    }
 
     if (log_list) {
+        char **log_list_start;
         for (log_list_start = log_list; *log_list != NULL; ++log_list) {
             item = PyString_FromString (*log_list);
             if (item == NULL) {
@@ -4624,6 +4797,294 @@ DBTxn_id(DBTxnObject* self, PyObject* args)
     return PyInt_FromLong(id);
 }
 
+#if (DBVER >= 43)
+/* --------------------------------------------------------------------- */
+/* DBSequence methods */
+
+
+static PyObject*
+DBSequence_close(DBSequenceObject* self, PyObject* args)
+{
+    int err, flags=0;
+    if (!PyArg_ParseTuple(args,"|i:close", &flags))
+        return NULL;
+    CHECK_SEQUENCE_NOT_CLOSED(self)
+
+    MYDB_BEGIN_ALLOW_THREADS
+    err = self->sequence->close(self->sequence, flags);
+    self->sequence = NULL;
+    MYDB_END_ALLOW_THREADS
+
+    RETURN_IF_ERR();
+
+    RETURN_NONE();
+}
+
+static PyObject*
+DBSequence_get(DBSequenceObject* self, PyObject* args, PyObject* kwargs)
+{
+    int err, flags = 0;
+    int delta = 1;
+    db_seq_t value;
+    PyObject *txnobj = NULL;
+    DB_TXN *txn = NULL;
+    static char* kwnames[] = {"delta", "txn", "flags", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iOi:get", kwnames, &delta, &txnobj, &flags))
+        return NULL;
+    CHECK_SEQUENCE_NOT_CLOSED(self)
+
+    if (!checkTxnObj(txnobj, &txn))
+        return NULL;
+
+    MYDB_BEGIN_ALLOW_THREADS
+    err = self->sequence->get(self->sequence, txn, delta, &value, flags);
+    MYDB_END_ALLOW_THREADS
+
+    RETURN_IF_ERR();
+    return PyLong_FromLongLong(value);
+
+}
+
+static PyObject*
+DBSequence_get_dbp(DBSequenceObject* self, PyObject* args)
+{
+    if (!PyArg_ParseTuple(args,":get_dbp"))
+        return NULL;
+    CHECK_SEQUENCE_NOT_CLOSED(self)
+    Py_INCREF(self->mydb);
+    return (PyObject* )self->mydb;
+}
+
+static PyObject*
+DBSequence_get_key(DBSequenceObject* self, PyObject* args)
+{
+    int err;
+    DBT key;
+    CHECK_SEQUENCE_NOT_CLOSED(self)
+    MYDB_BEGIN_ALLOW_THREADS
+    err = self->sequence->get_key(self->sequence, &key);
+    MYDB_END_ALLOW_THREADS
+
+    RETURN_IF_ERR();
+
+    return PyString_FromStringAndSize(key.data, key.size);
+}
+
+static PyObject*
+DBSequence_init_value(DBSequenceObject* self, PyObject* args)
+{
+    int err;
+    db_seq_t value;
+    if (!PyArg_ParseTuple(args,"L:init_value", &value))
+        return NULL;
+    CHECK_SEQUENCE_NOT_CLOSED(self)
+
+    MYDB_BEGIN_ALLOW_THREADS
+    err = self->sequence->initial_value(self->sequence, value);
+    MYDB_END_ALLOW_THREADS
+
+    RETURN_IF_ERR();
+
+    RETURN_NONE();
+}
+
+static PyObject*
+DBSequence_open(DBSequenceObject* self, PyObject* args, PyObject* kwargs)
+{
+    int err, flags = 0;
+    PyObject* keyobj;
+    PyObject *txnobj = NULL;
+    DB_TXN *txn = NULL;
+    DBT key;
+
+    static char* kwnames[] = {"key", "txn", "flags", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Oi:open", kwnames, &keyobj, &txnobj, &flags))
+        return NULL;
+
+    if (!checkTxnObj(txnobj, &txn))
+        return NULL;
+
+    if (!make_key_dbt(self->mydb, keyobj, &key, NULL))
+        return NULL;
+
+    MYDB_BEGIN_ALLOW_THREADS
+    err = self->sequence->open(self->sequence, txn, &key, flags);
+    MYDB_END_ALLOW_THREADS
+
+    CLEAR_DBT(key);
+    RETURN_IF_ERR();
+
+    RETURN_NONE();
+}
+
+static PyObject*
+DBSequence_remove(DBSequenceObject* self, PyObject* args, PyObject* kwargs)
+{
+    int err, flags = 0;
+    PyObject *txnobj = NULL;
+    DB_TXN *txn = NULL;
+
+    static char* kwnames[] = {"txn", "flags", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Oi:remove", kwnames, &txnobj, &flags))
+        return NULL;
+
+    if (!checkTxnObj(txnobj, &txn))
+        return NULL;
+
+    CHECK_SEQUENCE_NOT_CLOSED(self)
+
+    MYDB_BEGIN_ALLOW_THREADS
+    err = self->sequence->remove(self->sequence, txn, flags);
+    MYDB_END_ALLOW_THREADS
+
+    RETURN_IF_ERR();
+    RETURN_NONE();
+}
+
+static PyObject*
+DBSequence_set_cachesize(DBSequenceObject* self, PyObject* args)
+{
+    int err, size;
+    if (!PyArg_ParseTuple(args,"i:set_cachesize", &size))
+        return NULL;
+    CHECK_SEQUENCE_NOT_CLOSED(self)
+
+    MYDB_BEGIN_ALLOW_THREADS
+    err = self->sequence->set_cachesize(self->sequence, size);
+    MYDB_END_ALLOW_THREADS
+
+    RETURN_IF_ERR();
+    RETURN_NONE();
+}
+
+static PyObject*
+DBSequence_get_cachesize(DBSequenceObject* self, PyObject* args)
+{
+    int err, size;
+    if (!PyArg_ParseTuple(args,":get_cachesize"))
+        return NULL;
+    CHECK_SEQUENCE_NOT_CLOSED(self)
+
+    MYDB_BEGIN_ALLOW_THREADS
+    err = self->sequence->get_cachesize(self->sequence, &size);
+    MYDB_END_ALLOW_THREADS
+
+    RETURN_IF_ERR();
+    return PyInt_FromLong(size);
+}
+
+static PyObject*
+DBSequence_set_flags(DBSequenceObject* self, PyObject* args)
+{
+    int err, flags = 0;
+    if (!PyArg_ParseTuple(args,"i:set_flags", &flags))
+        return NULL;
+    CHECK_SEQUENCE_NOT_CLOSED(self)
+
+    MYDB_BEGIN_ALLOW_THREADS
+    err = self->sequence->set_flags(self->sequence, flags);
+    MYDB_END_ALLOW_THREADS
+
+    RETURN_IF_ERR();
+    RETURN_NONE();
+
+}
+
+static PyObject*
+DBSequence_get_flags(DBSequenceObject* self, PyObject* args)
+{
+    unsigned int flags;
+    int err;
+    if (!PyArg_ParseTuple(args,":get_flags"))
+        return NULL;
+    CHECK_SEQUENCE_NOT_CLOSED(self)
+
+    MYDB_BEGIN_ALLOW_THREADS
+    err = self->sequence->get_flags(self->sequence, &flags);
+    MYDB_END_ALLOW_THREADS
+
+    RETURN_IF_ERR();
+    return PyInt_FromLong((int)flags);
+}
+
+static PyObject*
+DBSequence_set_range(DBSequenceObject* self, PyObject* args)
+{
+    int err;
+    db_seq_t min, max;
+    if (!PyArg_ParseTuple(args,"(LL):set_range", &min, &max))
+        return NULL;
+    CHECK_SEQUENCE_NOT_CLOSED(self)
+
+    MYDB_BEGIN_ALLOW_THREADS
+    err = self->sequence->set_range(self->sequence, min, max);
+    MYDB_END_ALLOW_THREADS
+
+    RETURN_IF_ERR();
+    RETURN_NONE();
+}
+
+static PyObject*
+DBSequence_get_range(DBSequenceObject* self, PyObject* args)
+{
+    int err;
+    db_seq_t min, max;
+    if (!PyArg_ParseTuple(args,":get_range"))
+        return NULL;
+    CHECK_SEQUENCE_NOT_CLOSED(self)
+
+    MYDB_BEGIN_ALLOW_THREADS
+    err = self->sequence->get_range(self->sequence, &min, &max);
+    MYDB_END_ALLOW_THREADS
+
+    RETURN_IF_ERR();
+    return Py_BuildValue("(LL)", min, max);
+}
+
+static PyObject*
+DBSequence_stat(DBSequenceObject* self, PyObject* args, PyObject* kwargs)
+{
+    int err, flags = 0;
+    DB_SEQUENCE_STAT* sp = NULL;
+    PyObject* dict_stat;
+    static char* kwnames[] = {"flags", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i:stat", kwnames, &flags))
+        return NULL;
+    CHECK_SEQUENCE_NOT_CLOSED(self);
+
+    MYDB_BEGIN_ALLOW_THREADS;
+    err = self->sequence->stat(self->sequence, &sp, flags);
+    MYDB_END_ALLOW_THREADS;
+    RETURN_IF_ERR();
+
+    if ((dict_stat = PyDict_New()) == NULL) {
+        free(sp);
+        return NULL;
+    }
+
+
+#define MAKE_INT_ENTRY(name)  _addIntToDict(dict_stat, #name, sp->st_##name)
+#define MAKE_LONG_LONG_ENTRY(name)  _addDb_seq_tToDict(dict_stat, #name, sp->st_##name)
+
+    MAKE_INT_ENTRY(wait);
+    MAKE_INT_ENTRY(nowait);
+    MAKE_LONG_LONG_ENTRY(current);
+    MAKE_LONG_LONG_ENTRY(value);
+    MAKE_LONG_LONG_ENTRY(last_value);
+    MAKE_LONG_LONG_ENTRY(min);
+    MAKE_LONG_LONG_ENTRY(max);
+    MAKE_INT_ENTRY(cache_size);
+    MAKE_INT_ENTRY(flags);
+
+#undef MAKE_INT_ENTRY
+#undef MAKE_LONG_LONG_ENTRY
+
+    free(sp);
+    return dict_stat;
+}
+#endif
+
+
 /* --------------------------------------------------------------------- */
 /* Method definition tables and type objects */
 
@@ -4777,6 +5238,12 @@ static PyMethodDef DBEnv_methods[] = {
     {"lock_put",        (PyCFunction)DBEnv_lock_put,         METH_VARARGS},
     {"lock_stat",       (PyCFunction)DBEnv_lock_stat,        METH_VARARGS},
     {"log_archive",     (PyCFunction)DBEnv_log_archive,      METH_VARARGS},
+#if (DBVER >= 40)
+    {"log_stat",        (PyCFunction)DBEnv_log_stat,         METH_VARARGS},
+#endif
+#if (DBVER >= 44)
+    {"lsn_reset",       (PyCFunction)DBEnv_lsn_reset,        METH_VARARGS|METH_KEYWORDS},
+#endif
     {"set_get_returns_none",(PyCFunction)DBEnv_set_get_returns_none, METH_VARARGS},
     {NULL,      NULL}       /* sentinel */
 };
@@ -4789,6 +5256,27 @@ static PyMethodDef DBTxn_methods[] = {
     {"id",              (PyCFunction)DBTxn_id,          METH_VARARGS},
     {NULL,      NULL}       /* sentinel */
 };
+
+
+#if (DBVER >= 43)
+static PyMethodDef DBSequence_methods[] = {
+    {"close",           (PyCFunction)DBSequence_close,          METH_VARARGS},
+    {"get",             (PyCFunction)DBSequence_get,            METH_VARARGS|METH_KEYWORDS},
+    {"get_dbp",         (PyCFunction)DBSequence_get_dbp,        METH_VARARGS},
+    {"get_key",         (PyCFunction)DBSequence_get_key,        METH_VARARGS},
+    {"init_value",      (PyCFunction)DBSequence_init_value,     METH_VARARGS},
+    {"open",            (PyCFunction)DBSequence_open,           METH_VARARGS|METH_KEYWORDS},
+    {"remove",          (PyCFunction)DBSequence_remove,         METH_VARARGS|METH_KEYWORDS},
+    {"set_cachesize",   (PyCFunction)DBSequence_set_cachesize,  METH_VARARGS},
+    {"get_cachesize",   (PyCFunction)DBSequence_get_cachesize,  METH_VARARGS},
+    {"set_flags",       (PyCFunction)DBSequence_set_flags,      METH_VARARGS},
+    {"get_flags",       (PyCFunction)DBSequence_get_flags,      METH_VARARGS},
+    {"set_range",       (PyCFunction)DBSequence_set_range,      METH_VARARGS},
+    {"get_range",       (PyCFunction)DBSequence_get_range,      METH_VARARGS},
+    {"stat",            (PyCFunction)DBSequence_stat,           METH_VARARGS|METH_KEYWORDS},
+    {NULL,      NULL}       /* sentinel */
+};
+#endif
 
 
 static PyObject*
@@ -4830,6 +5318,14 @@ DBLock_getattr(DBLockObject* self, char *name)
 {
     return NULL;
 }
+
+#if (DBVER >= 43)
+static PyObject*
+DBSequence_getattr(DBSequenceObject* self, char *name)
+{
+    return Py_FindMethod(DBSequence_methods, (PyObject* )self, name);
+}
+#endif
 
 static PyTypeObject DB_Type = {
     PyObject_HEAD_INIT(NULL)
@@ -4994,6 +5490,39 @@ static PyTypeObject DBLock_Type = {
 #endif
 };
 
+#if (DBVER >= 43)
+static PyTypeObject DBSequence_Type = {
+    PyObject_HEAD_INIT(NULL)
+    0,          /*ob_size*/
+    "DBSequence",                   /*tp_name*/
+    sizeof(DBSequenceObject),       /*tp_basicsize*/
+    0,          /*tp_itemsize*/
+    /* methods */
+    (destructor)DBSequence_dealloc, /*tp_dealloc*/
+    0,          /*tp_print*/
+    (getattrfunc)DBSequence_getattr,/*tp_getattr*/
+    0,          /*tp_setattr*/
+    0,          /*tp_compare*/
+    0,          /*tp_repr*/
+    0,          /*tp_as_number*/
+    0,          /*tp_as_sequence*/
+    0,          /*tp_as_mapping*/
+    0,          /*tp_hash*/
+#ifdef HAVE_WEAKREF
+    0,			/* tp_call */
+    0,			/* tp_str */
+    0,  		/* tp_getattro */
+    0,          /* tp_setattro */
+    0,			/* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_WEAKREFS,      /* tp_flags */
+    0,          /* tp_doc */
+    0,		    /* tp_traverse */
+    0,			/* tp_clear */
+    0,			/* tp_richcompare */
+    offsetof(DBSequenceObject, in_weakreflist),   /* tp_weaklistoffset */
+#endif
+};
+#endif
 
 /* --------------------------------------------------------------------- */
 /* Module-level functions */
@@ -5027,6 +5556,25 @@ DBEnv_construct(PyObject* self, PyObject* args)
     return (PyObject* )newDBEnvObject(flags);
 }
 
+#if (DBVER >= 43)
+static PyObject*
+DBSequence_construct(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    PyObject* dbobj = NULL;
+    int flags = 0;
+    static char* kwnames[] = { "db", "flags", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|i:DBSequence", kwnames, &dbobj, &flags))
+        return NULL;
+    if (dbobj == Py_None)
+        dbobj = NULL;
+    else if (dbobj && !DBObject_Check(dbobj)) {
+        makeTypeError("DB", dbobj);
+        return NULL;
+    }
+    return (PyObject* )newDBSequenceObject((DBObject*)dbobj, flags);
+}
+#endif
 
 static char bsddb_version_doc[] =
 "Returns a tuple of major, minor, and patch release numbers of the\n\
@@ -5047,9 +5595,12 @@ bsddb_version(PyObject* self, PyObject* args)
 /* List of functions defined in the module */
 
 static PyMethodDef bsddb_methods[] = {
-    {"DB",      (PyCFunction)DB_construct,      METH_VARARGS | METH_KEYWORDS },
-    {"DBEnv",   (PyCFunction)DBEnv_construct,   METH_VARARGS},
-    {"version", (PyCFunction)bsddb_version,     METH_VARARGS, bsddb_version_doc},
+    {"DB",          (PyCFunction)DB_construct,          METH_VARARGS | METH_KEYWORDS },
+    {"DBEnv",       (PyCFunction)DBEnv_construct,       METH_VARARGS},
+#if (DBVER >= 43)    
+    {"DBSequence",  (PyCFunction)DBSequence_construct,  METH_VARARGS | METH_KEYWORDS },
+#endif    
+    {"version",     (PyCFunction)bsddb_version,         METH_VARARGS, bsddb_version_doc},
     {NULL,      NULL}       /* sentinel */
 };
 
@@ -5081,6 +5632,9 @@ DL_EXPORT(void) init_bsddb(void)
     DBEnv_Type.ob_type = &PyType_Type;
     DBTxn_Type.ob_type = &PyType_Type;
     DBLock_Type.ob_type = &PyType_Type;
+#if (DBVER >= 43)    
+    DBSequence_Type.ob_type = &PyType_Type;
+#endif    
 
 
 #if defined(WITH_THREAD) && !defined(MYDB_USE_GILSTATE)
@@ -5247,6 +5801,9 @@ DL_EXPORT(void) init_bsddb(void)
     ADD_INT(d, DB_ARCH_ABS);
     ADD_INT(d, DB_ARCH_DATA);
     ADD_INT(d, DB_ARCH_LOG);
+#if (DBVER >= 42)
+    ADD_INT(d, DB_ARCH_REMOVE);
+#endif
 
     ADD_INT(d, DB_BTREE);
     ADD_INT(d, DB_HASH);
@@ -5368,6 +5925,9 @@ DL_EXPORT(void) init_bsddb(void)
 #if (DBVER >= 43)
     ADD_INT(d, DB_LOG_INMEMORY);
     ADD_INT(d, DB_BUFFER_SMALL);
+    ADD_INT(d, DB_SEQ_DEC);
+    ADD_INT(d, DB_SEQ_INC);
+    ADD_INT(d, DB_SEQ_WRAP);
 #endif
 
 #if (DBVER >= 41)

@@ -65,7 +65,7 @@ fancy_roundup(int n)
  * reported that, with this scheme, 89% of PyObject_REALLOC calls in
  * PyNode_AddChild passed 1 for the size, and 9% passed 4.  So this usually
  * wastes very little memory, but is very effective at sidestepping
- * platform-realloc disasters on vulnernable platforms.
+ * platform-realloc disasters on vulnerable platforms.
  *
  * Note that this would be straightforward if a node stored its current
  * capacity.  The code is tricky to avoid that.

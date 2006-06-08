@@ -582,7 +582,9 @@ class PyBuildExt(build_ext):
             # The _md5 module implements the RSA Data Security, Inc. MD5
             # Message-Digest Algorithm, described in RFC 1321.  The
             # necessary files md5.c and md5.h are included here.
-            exts.append( Extension('_md5', ['md5module.c', 'md5.c']) )
+            exts.append( Extension('_md5',
+                            sources = ['md5module.c', 'md5.c'],
+                            depends = ['md5.h']) )
 
         if (openssl_ver < 0x00908000):
             # OpenSSL doesn't do these until 0.9.8 so we'll bring our own hash
@@ -1095,29 +1097,6 @@ class PyBuildExt(build_ext):
                         extra_link_args=['-framework', 'QuickTime',
                                      '-framework', 'Carbon']) )
 
-            # As there is no standardized place (yet) to put
-            # user-installed Mac libraries on OSX, we search for "waste"
-            # in parent directories of the Python source tree. You
-            # should put a symlink to your Waste installation in the
-            # same folder as your python source tree.  Or modify the
-            # next few lines:-)
-            waste_incs = find_file("WASTE.h", [],
-                    ['../'*n + 'waste/C_C++ Headers' for n in (0,1,2,3,4)])
-            waste_libs = find_library_file(self.compiler, "WASTE", [],
-                    ["../"*n + "waste/Static Libraries" for n in (0,1,2,3,4)])
-            if waste_incs != None and waste_libs != None:
-                exts.append( Extension('waste',
-                               ['waste/wastemodule.c'] + [
-                                os.path.join(srcdir, d) for d in
-                                'Mac/Wastemods/WEObjectHandlers.c',
-                                'Mac/Wastemods/WETabHooks.c',
-                                'Mac/Wastemods/WETabs.c'
-                               ],
-                               include_dirs = waste_incs + [os.path.join(srcdir, 'Mac/Wastemods')],
-                               library_dirs = waste_libs,
-                               libraries = ['WASTE'],
-                               extra_link_args = ['-framework', 'Carbon'],
-                ) )
 
         self.extensions.extend(exts)
 

@@ -3057,6 +3057,221 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
     return NULL;
 }
 
+/* Charmap encoding: the lookup table */
+
+struct encoding_map{
+  PyObject_HEAD
+  unsigned char level1[32];
+  int count2, count3;
+  unsigned char level23[1];
+};
+
+static PyObject*
+encoding_map_size(PyObject *obj, PyObject* args)
+{
+    struct encoding_map *map = (struct encoding_map*)obj;
+    return PyInt_FromLong(sizeof(*map) - 1 + 16*map->count2 + 
+                          128*map->count3);
+}
+
+static PyMethodDef encoding_map_methods[] = {
+	{"size", encoding_map_size, METH_NOARGS, 
+         PyDoc_STR("Return the size (in bytes) of this object") },
+        { 0 }
+};
+
+static void
+encoding_map_dealloc(PyObject* o)
+{
+	PyObject_FREE(o);
+}
+
+static PyTypeObject EncodingMapType = {
+	PyObject_HEAD_INIT(NULL)
+        0,                      /*ob_size*/
+        "EncodingMap",          /*tp_name*/
+        sizeof(struct encoding_map),   /*tp_basicsize*/
+        0,                      /*tp_itemsize*/
+        /* methods */
+        encoding_map_dealloc,   /*tp_dealloc*/
+        0,                      /*tp_print*/
+        0,                      /*tp_getattr*/
+        0,                      /*tp_setattr*/
+        0,                      /*tp_compare*/
+        0,                      /*tp_repr*/
+        0,                      /*tp_as_number*/
+        0,                      /*tp_as_sequence*/
+        0,                      /*tp_as_mapping*/
+        0,                      /*tp_hash*/
+        0,                      /*tp_call*/
+        0,                      /*tp_str*/
+        0,                      /*tp_getattro*/
+        0,                      /*tp_setattro*/
+        0,                      /*tp_as_buffer*/
+        Py_TPFLAGS_DEFAULT,     /*tp_flags*/
+        0,                      /*tp_doc*/
+        0,                      /*tp_traverse*/
+        0,                      /*tp_clear*/
+        0,                      /*tp_richcompare*/
+        0,                      /*tp_weaklistoffset*/
+        0,                      /*tp_iter*/
+        0,                      /*tp_iternext*/
+        encoding_map_methods,   /*tp_methods*/
+        0,                      /*tp_members*/
+        0,                      /*tp_getset*/
+        0,                      /*tp_base*/
+        0,                      /*tp_dict*/
+        0,                      /*tp_descr_get*/
+        0,                      /*tp_descr_set*/
+        0,                      /*tp_dictoffset*/
+        0,                      /*tp_init*/
+        0,                      /*tp_alloc*/
+        0,                      /*tp_new*/
+        0,                      /*tp_free*/
+        0,                      /*tp_is_gc*/
+};
+
+PyObject*
+PyUnicode_BuildEncodingMap(PyObject* string)
+{
+    Py_UNICODE *decode;
+    PyObject *result;
+    struct encoding_map *mresult;
+    int i;
+    int need_dict = 0;
+    unsigned char level1[32];
+    unsigned char level2[512];
+    unsigned char *mlevel1, *mlevel2, *mlevel3;
+    int count2 = 0, count3 = 0;
+
+    if (!PyUnicode_Check(string) || PyUnicode_GetSize(string) != 256) {
+        PyErr_BadArgument();
+        return NULL;
+    }
+    decode = PyUnicode_AS_UNICODE(string);
+    memset(level1, 0xFF, sizeof level1);
+    memset(level2, 0xFF, sizeof level2);
+
+    /* If there isn't a one-to-one mapping of NULL to \0,
+       or if there are non-BMP characters, we need to use
+       a mapping dictionary. */
+    if (decode[0] != 0)
+        need_dict = 1;
+    for (i = 1; i < 256; i++) {
+        int l1, l2;
+        if (decode[i] == 0
+            #ifdef Py_UNICODE_WIDE
+            || decode[i] > 0xFFFF
+            #endif
+        ) {
+            need_dict = 1;
+            break;
+        }
+        if (decode[i] == 0xFFFE)
+            /* unmapped character */
+            continue;
+        l1 = decode[i] >> 11;
+        l2 = decode[i] >> 7;
+        if (level1[l1] == 0xFF)
+            level1[l1] = count2++;
+        if (level2[l2] == 0xFF)
+            level2[l2] = count3++; 
+    }
+
+    if (count2 >= 0xFF || count3 >= 0xFF)
+        need_dict = 1;
+
+    if (need_dict) {
+        PyObject *result = PyDict_New();
+        PyObject *key, *value;
+        if (!result)
+            return NULL;
+        for (i = 0; i < 256; i++) {
+            key = value = NULL;
+            key = PyInt_FromLong(decode[i]);
+            value = PyInt_FromLong(i);
+            if (!key || !value)
+                goto failed1;
+            if (PyDict_SetItem(result, key, value) == -1)
+                goto failed1;
+            Py_DECREF(key);
+            Py_DECREF(value);
+        }
+        return result;
+      failed1:
+        Py_XDECREF(key);
+        Py_XDECREF(value);
+        Py_DECREF(result);
+        return NULL;
+    }
+
+    /* Create a three-level trie */
+    result = PyObject_MALLOC(sizeof(struct encoding_map) +
+                             16*count2 + 128*count3 - 1);
+    if (!result)
+        return PyErr_NoMemory();
+    PyObject_Init(result, &EncodingMapType);
+    mresult = (struct encoding_map*)result;
+    mresult->count2 = count2;
+    mresult->count3 = count3;
+    mlevel1 = mresult->level1;
+    mlevel2 = mresult->level23;
+    mlevel3 = mresult->level23 + 16*count2;
+    memcpy(mlevel1, level1, 32);
+    memset(mlevel2, 0xFF, 16*count2);
+    memset(mlevel3, 0, 128*count3);
+    count3 = 0;
+    for (i = 1; i < 256; i++) {
+        int o1, o2, o3, i2, i3;
+        if (decode[i] == 0xFFFE)
+            /* unmapped character */
+            continue;
+        o1 = decode[i]>>11;
+        o2 = (decode[i]>>7) & 0xF;
+        i2 = 16*mlevel1[o1] + o2;
+        if (mlevel2[i2] == 0xFF)
+            mlevel2[i2] = count3++;
+        o3 = decode[i] & 0x7F;
+        i3 = 128*mlevel2[i2] + o3;
+        mlevel3[i3] = i;
+    }
+    return result;
+}
+
+static int
+encoding_map_lookup(Py_UNICODE c, PyObject *mapping)
+{
+    struct encoding_map *map = (struct encoding_map*)mapping;
+    int l1 = c>>11;
+    int l2 = (c>>7) & 0xF;
+    int l3 = c & 0x7F;
+    int i;
+
+#ifdef Py_UNICODE_WIDE
+    if (c > 0xFFFF) {
+	return -1;
+    }
+#endif
+    if (c == 0)
+        return 0;
+    /* level 1*/
+    i = map->level1[l1];
+    if (i == 0xFF) {
+        return -1;
+    }
+    /* level 2*/
+    i = map->level23[16*i+l2];
+    if (i == 0xFF) {
+        return -1;
+    }
+    /* level 3 */
+    i = map->level23[16*map->count2 + 128*i + l3];
+    if (i == 0) {
+        return -1;
+    }
+    return i;
+}
+
 /* Lookup the character ch in the mapping. If the character
    can't be found, Py_None is returned (or NULL, if another
    error occurred). */
@@ -3102,6 +3317,22 @@ static PyObject *charmapencode_lookup(Py_UNICODE c, PyObject *mapping)
     }
 }
 
+static int
+charmapencode_resize(PyObject **outobj, Py_ssize_t *outpos, Py_ssize_t requiredsize)
+{
+	Py_ssize_t outsize = PyString_GET_SIZE(*outobj);
+	/* exponentially overallocate to minimize reallocations */
+	if (requiredsize < 2*outsize)
+	    requiredsize = 2*outsize;
+	if (_PyString_Resize(outobj, requiredsize)) {
+	    return 0;
+	}
+	return 1;
+}
+
+typedef enum charmapencode_result { 
+  enc_SUCCESS, enc_FAILED, enc_EXCEPTION 
+}charmapencode_result;
 /* lookup the character, put the result in the output string and adjust
    various state variables. Reallocate the output string if not enough
    space is available. Return a new reference to the object that
@@ -3109,51 +3340,59 @@ static PyObject *charmapencode_lookup(Py_UNICODE c, PyObject *mapping)
    (in which case no character was written) or NULL, if a
    reallocation error occurred. The caller must decref the result */
 static
-PyObject *charmapencode_output(Py_UNICODE c, PyObject *mapping,
+charmapencode_result charmapencode_output(Py_UNICODE c, PyObject *mapping,
     PyObject **outobj, Py_ssize_t *outpos)
 {
-    PyObject *rep = charmapencode_lookup(c, mapping);
+    PyObject *rep;
+    char *outstart;
+    Py_ssize_t outsize = PyString_GET_SIZE(*outobj);
 
+    if (mapping->ob_type == &EncodingMapType) {
+        int res = encoding_map_lookup(c, mapping);
+	Py_ssize_t requiredsize = *outpos+1;
+        if (res == -1)
+            return enc_FAILED;
+	if (outsize<requiredsize) 
+	    if (!charmapencode_resize(outobj, outpos, requiredsize))
+		return enc_EXCEPTION;
+        outstart = PyString_AS_STRING(*outobj);
+	outstart[(*outpos)++] = (char)res;
+	return enc_SUCCESS;
+    }
+
+    rep = charmapencode_lookup(c, mapping);
     if (rep==NULL)
-	return NULL;
-    else if (rep==Py_None)
-	return rep;
-    else {
-	char *outstart = PyString_AS_STRING(*outobj);
-	Py_ssize_t outsize = PyString_GET_SIZE(*outobj);
+	return enc_EXCEPTION;
+    else if (rep==Py_None) {
+	Py_DECREF(rep);
+	return enc_FAILED;
+    } else {
 	if (PyInt_Check(rep)) {
 	    Py_ssize_t requiredsize = *outpos+1;
-	    if (outsize<requiredsize) {
-		/* exponentially overallocate to minimize reallocations */
-		if (requiredsize < 2*outsize)
-		    requiredsize = 2*outsize;
-		if (_PyString_Resize(outobj, requiredsize)) {
+	    if (outsize<requiredsize)
+		if (!charmapencode_resize(outobj, outpos, requiredsize)) {
 		    Py_DECREF(rep);
-		    return NULL;
+		    return enc_EXCEPTION;
 		}
-		outstart = PyString_AS_STRING(*outobj);
-	    }
+            outstart = PyString_AS_STRING(*outobj);
 	    outstart[(*outpos)++] = (char)PyInt_AS_LONG(rep);
 	}
 	else {
 	    const char *repchars = PyString_AS_STRING(rep);
 	    Py_ssize_t repsize = PyString_GET_SIZE(rep);
 	    Py_ssize_t requiredsize = *outpos+repsize;
-	    if (outsize<requiredsize) {
-		/* exponentially overallocate to minimize reallocations */
-		if (requiredsize < 2*outsize)
-		    requiredsize = 2*outsize;
-		if (_PyString_Resize(outobj, requiredsize)) {
+	    if (outsize<requiredsize)
+		if (!charmapencode_resize(outobj, outpos, requiredsize)) {
 		    Py_DECREF(rep);
-		    return NULL;
+		    return enc_EXCEPTION;
 		}
-		outstart = PyString_AS_STRING(*outobj);
-	    }
+            outstart = PyString_AS_STRING(*outobj);
 	    memcpy(outstart + *outpos, repchars, repsize);
 	    *outpos += repsize;
 	}
     }
-    return rep;
+    Py_DECREF(rep);
+    return enc_SUCCESS;
 }
 
 /* handle an error in PyUnicode_EncodeCharmap
@@ -3175,18 +3414,27 @@ int charmap_encoding_error(
     Py_ssize_t collpos;
     char *encoding = "charmap";
     char *reason = "character maps to <undefined>";
+    charmapencode_result x;
 
-    PyObject *x;
     /* find all unencodable characters */
     while (collendpos < size) {
-	x = charmapencode_lookup(p[collendpos], mapping);
-	if (x==NULL)
+        PyObject *rep;
+        if (mapping->ob_type == &EncodingMapType) {
+	    int res = encoding_map_lookup(p[collendpos], mapping);
+	    if (res != -1)
+		break;
+	    ++collendpos;
+	    continue;
+	}
+            
+	rep = charmapencode_lookup(p[collendpos], mapping);
+	if (rep==NULL)
 	    return -1;
-	else if (x!=Py_None) {
-	    Py_DECREF(x);
+	else if (rep!=Py_None) {
+	    Py_DECREF(rep);
 	    break;
 	}
-	Py_DECREF(x);
+	Py_DECREF(rep);
 	++collendpos;
     }
     /* cache callback name lookup
@@ -3210,15 +3458,13 @@ int charmap_encoding_error(
 	case 2: /* replace */
 	    for (collpos = collstartpos; collpos<collendpos; ++collpos) {
 		x = charmapencode_output('?', mapping, res, respos);
-		if (x==NULL) {
+		if (x==enc_EXCEPTION) {
 		    return -1;
 		}
-		else if (x==Py_None) {
-		    Py_DECREF(x);
+		else if (x==enc_FAILED) {
 		    raise_encode_exception(exceptionObject, encoding, p, size, collstartpos, collendpos, reason);
 		    return -1;
 		}
-		Py_DECREF(x);
 	    }
 	    /* fall through */
 	case 3: /* ignore */
@@ -3232,14 +3478,12 @@ int charmap_encoding_error(
 		sprintf(buffer, "&#%d;", (int)p[collpos]);
 		for (cp = buffer; *cp; ++cp) {
 		    x = charmapencode_output(*cp, mapping, res, respos);
-		    if (x==NULL)
+		    if (x==enc_EXCEPTION)
 			return -1;
-		    else if (x==Py_None) {
-			Py_DECREF(x);
+		    else if (x==enc_FAILED) {
 			raise_encode_exception(exceptionObject, encoding, p, size, collstartpos, collendpos, reason);
 			return -1;
 		    }
-		    Py_DECREF(x);
 		}
 	    }
 	    *inpos = collendpos;
@@ -3254,17 +3498,14 @@ int charmap_encoding_error(
 	    repsize = PyUnicode_GET_SIZE(repunicode);
 	    for (uni2 = PyUnicode_AS_UNICODE(repunicode); repsize-->0; ++uni2) {
 		x = charmapencode_output(*uni2, mapping, res, respos);
-		if (x==NULL) {
-		    Py_DECREF(repunicode);
+		if (x==enc_EXCEPTION) {
 		    return -1;
 		}
-		else if (x==Py_None) {
+		else if (x==enc_FAILED) {
 		    Py_DECREF(repunicode);
-		    Py_DECREF(x);
 		    raise_encode_exception(exceptionObject, encoding, p, size, collstartpos, collendpos, reason);
 		    return -1;
 		}
-		Py_DECREF(x);
 	    }
 	    *inpos = newpos;
 	    Py_DECREF(repunicode);
@@ -3304,22 +3545,20 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 
     while (inpos<size) {
 	/* try to encode it */
-	PyObject *x = charmapencode_output(p[inpos], mapping, &res, &respos);
-	if (x==NULL) /* error */
+	charmapencode_result x = charmapencode_output(p[inpos], mapping, &res, &respos);
+	if (x==enc_EXCEPTION) /* error */
 	    goto onError;
-	if (x==Py_None) { /* unencodable character */
+	if (x==enc_FAILED) { /* unencodable character */
 	    if (charmap_encoding_error(p, size, &inpos, mapping,
 		&exc,
 		&known_errorHandler, &errorHandler, errors,
 		&res, &respos)) {
-		Py_DECREF(x);
 		goto onError;
 	    }
 	}
 	else
 	    /* done with this character => adjust input position */
 	    ++inpos;
-	Py_DECREF(x);
     }
 
     /* Resize if we allocated to much */

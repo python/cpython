@@ -792,6 +792,15 @@ charmap_encode(PyObject *self,
     return v;
 }
 
+static PyObject*
+charmap_build(PyObject *self, PyObject *args)
+{
+    PyObject *map;
+    if (!PyArg_ParseTuple(args, "U:charmap_build", &map))
+        return NULL;
+    return PyUnicode_BuildEncodingMap(map);
+}
+
 #if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
 
 static PyObject *
@@ -897,6 +906,7 @@ static PyMethodDef _codecs_functions[] = {
     {"ascii_decode", 		ascii_decode,			METH_VARARGS},
     {"charmap_encode", 		charmap_encode,			METH_VARARGS},
     {"charmap_decode", 		charmap_decode,			METH_VARARGS},
+    {"charmap_build", 		charmap_build,			METH_VARARGS},
     {"readbuffer_encode",	readbuffer_encode,		METH_VARARGS},
     {"charbuffer_encode",	charbuffer_encode,		METH_VARARGS},
 #if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)

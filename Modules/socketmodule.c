@@ -104,9 +104,9 @@ gettimeout() -- return timeout or None\n\
 listen(n) -- start listening for incoming connections\n\
 makefile([mode, [bufsize]]) -- return a file object for the socket [*]\n\
 recv(buflen[, flags]) -- receive data\n\
-recv_buf(buffer[, nbytes[, flags]]) -- receive data (into a buffer)\n\
+recv_into(buffer[, nbytes[, flags]]) -- receive data (into a buffer)\n\
 recvfrom(buflen[, flags]) -- receive data and sender\'s address\n\
-recvfrom_buf(buffer[, nbytes, [, flags])\n\
+recvfrom_into(buffer[, nbytes, [, flags])\n\
   -- receive data and sender\'s address (into a buffer)\n\
 sendall(data[, flags]) -- send all data\n\
 send(data[, flags]) -- send data, may not send all of it\n\
@@ -2139,17 +2139,18 @@ The mode and buffersize arguments are as for the built-in open() function.");
 #endif /* NO_DUP */
 
 /*
- * This is the guts of the recv() and recv_buf() methods, which reads into a
+ * This is the guts of the recv() and recv_into() methods, which reads into a
  * char buffer.  If you have any inc/def ref to do to the objects that contain
  * the buffer, do it in the caller.  This function returns the number of bytes
  * succesfully read.  If there was an error, it returns -1.  Note that it is
  * also possible that we return a number of bytes smaller than the request
  * bytes.
  */
-static int
+static ssize_t
 sock_recv_guts(PySocketSockObject *s, char* cbuf, int len, int flags)
 {
-        int timeout, outlen = 0;
+        ssize_t outlen = 0;
+        int timeout;
 #ifdef __VMS
 	int remaining, nread;
 	char *read_buf;
@@ -2225,7 +2226,8 @@ sock_recv_guts(PySocketSockObject *s, char* cbuf, int len, int flags)
 static PyObject *
 sock_recv(PySocketSockObject *s, PyObject *args)
 {
-	int recvlen, flags = 0, outlen;
+	int recvlen, flags = 0;
+        ssize_t outlen;
 	PyObject *buf;
 
 	if (!PyArg_ParseTuple(args, "i|i:recv", &recvlen, &flags))
@@ -2243,7 +2245,7 @@ sock_recv(PySocketSockObject *s, PyObject *args)
 		return NULL;
 
 	/* Call the guts */
-	outlen = sock_recv_guts(s, PyString_AsString(buf), recvlen, flags);
+	outlen = sock_recv_guts(s, PyString_AS_STRING(buf), recvlen, flags);
 	if (outlen < 0) {
 		/* An error occured, release the string and return an
 		   error. */
@@ -2270,19 +2272,20 @@ at least one byte is available or until the remote end is closed.  When\n\
 the remote end is closed and all data is read, return the empty string.");
 
 
-/* s.recv_buf(buffer, [nbytes [,flags]]) method */
+/* s.recv_into(buffer, [nbytes [,flags]]) method */
 
 static PyObject*
-sock_recv_buf(PySocketSockObject *s, PyObject *args, PyObject *kwds)
+sock_recv_into(PySocketSockObject *s, PyObject *args, PyObject *kwds)
 {
 	static char *kwlist[] = {"buffer", "nbytes", "flags", 0};
 
-	int recvlen = 0, flags = 0, readlen;
+	int recvlen = 0, flags = 0;
+        ssize_t readlen;
 	char *buf;
 	int buflen;
 
 	/* Get the buffer's memory */
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "s#|ii:recv", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recv", kwlist,
 					 &buf, &buflen, &recvlen, &flags))
 		return NULL;
 	assert(buf != 0 && buflen > 0);
@@ -2313,11 +2316,11 @@ sock_recv_buf(PySocketSockObject *s, PyObject *args, PyObject *kwds)
 
 	/* Return the number of bytes read.  Note that we do not do anything
 	   special here in the case that readlen < recvlen. */
-	return PyInt_FromLong(readlen);
+	return PyInt_FromSsize_t(readlen);
 }
 
-PyDoc_STRVAR(recv_buf_doc,
-"recv_buf(buffer, [nbytes[, flags]]) -> nbytes_read\n\
+PyDoc_STRVAR(recv_into_doc,
+"recv_into(buffer, [nbytes[, flags]]) -> nbytes_read\n\
 \n\
 A version of recv() that stores its data into a buffer rather than creating \n\
 a new string.  Receive up to buffersize bytes from the socket.  If buffersize \n\
@@ -2327,7 +2330,7 @@ See recv() for documentation about the flags.");
 
 
 /*
- * This is the guts of the recv() and recv_buf() methods, which reads into a
+ * This is the guts of the recv() and recv_into() methods, which reads into a
  * char buffer.  If you have any inc/def ref to do to the objects that contain
  * the buffer, do it in the caller.  This function returns the number of bytes
  * succesfully read.  If there was an error, it returns -1.  Note that it is
@@ -2337,12 +2340,13 @@ See recv() for documentation about the flags.");
  * 'addr' is a return value for the address object.  Note that you must decref
  * it yourself.
  */
-static int
+static ssize_t
 sock_recvfrom_guts(PySocketSockObject *s, char* cbuf, int len, int flags,
 		   PyObject** addr)
 {
 	sock_addr_t addrbuf;
-	int n = 0, timeout;
+	int timeout;
+	ssize_t n = 0;
 	socklen_t addrlen;
 
 	*addr = NULL;
@@ -2398,7 +2402,8 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
 	PyObject *buf = NULL;
 	PyObject *addr = NULL;
 	PyObject *ret = NULL;
-	int recvlen, outlen, flags = 0;
+	int recvlen, flags = 0;
+        ssize_t outlen;
 
 	if (!PyArg_ParseTuple(args, "i|i:recvfrom", &recvlen, &flags))
 		return NULL;
@@ -2435,21 +2440,21 @@ PyDoc_STRVAR(recvfrom_doc,
 Like recv(buffersize, flags) but also return the sender's address info.");
 
 
-/* s.recvfrom_buf(buffer[, nbytes [,flags]]) method */
+/* s.recvfrom_into(buffer[, nbytes [,flags]]) method */
 
 static PyObject *
-sock_recvfrom_buf(PySocketSockObject *s, PyObject *args, PyObject* kwds)
+sock_recvfrom_into(PySocketSockObject *s, PyObject *args, PyObject* kwds)
 {
 	static char *kwlist[] = {"buffer", "nbytes", "flags", 0};
 
-	int recvlen = 0, flags = 0, readlen;
+	int recvlen = 0, flags = 0;
+        ssize_t readlen;
 	char *buf;
 	int buflen;
 
 	PyObject *addr = NULL;
-	PyObject *ret = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "s#|ii:recvfrom", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recvfrom", kwlist,
 					 &buf, &buflen, &recvlen, &flags))
 		return NULL;
 	assert(buf != 0 && buflen > 0);
@@ -2467,22 +2472,19 @@ sock_recvfrom_buf(PySocketSockObject *s, PyObject *args, PyObject* kwds)
 	readlen = sock_recvfrom_guts(s, buf, recvlen, flags, &addr);
 	if (readlen < 0) {
 		/* Return an error */
-		goto finally;
+		Py_XDECREF(addr);
+		return NULL;
 	}
 
 	/* Return the number of bytes read and the address.  Note that we do
 	   not do anything special here in the case that readlen < recvlen. */
-	ret = Py_BuildValue("lO", readlen, addr);
-	
-finally:
-	Py_XDECREF(addr);
-	return ret;
+ 	return Py_BuildValue("lN", readlen, addr);
 }
 
-PyDoc_STRVAR(recvfrom_buf_doc,
-"recvfrom_buf(buffer[, nbytes[, flags]]) -> (nbytes, address info)\n\
+PyDoc_STRVAR(recvfrom_into_doc,
+"recvfrom_into(buffer[, nbytes[, flags]]) -> (nbytes, address info)\n\
 \n\
-Like recv_buf(buffer[, nbytes[, flags]]) but also return the sender's address info.");
+Like recv_into(buffer[, nbytes[, flags]]) but also return the sender's address info.");
 
 
 /* s.send(data [,flags]) method */
@@ -2711,12 +2713,12 @@ static PyMethodDef sock_methods[] = {
 #endif
 	{"recv",	  (PyCFunction)sock_recv, METH_VARARGS,
 			  recv_doc},
-	{"recv_buf",	  (PyCFunction)sock_recv_buf, METH_VARARGS | METH_KEYWORDS,
-			  recv_buf_doc},
+	{"recv_into",	  (PyCFunction)sock_recv_into, METH_VARARGS | METH_KEYWORDS,
+			  recv_into_doc},
 	{"recvfrom",	  (PyCFunction)sock_recvfrom, METH_VARARGS,
 			  recvfrom_doc},
-	{"recvfrom_buf",  (PyCFunction)sock_recvfrom_buf, METH_VARARGS | METH_KEYWORDS,
-			  recvfrom_buf_doc},
+	{"recvfrom_into",  (PyCFunction)sock_recvfrom_into, METH_VARARGS | METH_KEYWORDS,
+			  recvfrom_into_doc},
 	{"send",	  (PyCFunction)sock_send, METH_VARARGS,
 			  send_doc},
 	{"sendall",	  (PyCFunction)sock_sendall, METH_VARARGS,

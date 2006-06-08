@@ -1640,6 +1640,20 @@ file_self(PyFileObject *f)
 	return (PyObject *)f;
 }
 
+static PyObject *
+file_exit(PyFileObject *f, PyObject *args)
+{
+	PyObject *ret = file_close(f);
+	if (!ret)
+		/* If error occurred, pass through */
+		return NULL;
+	Py_DECREF(ret);
+	/* We cannot return the result of close since a true
+	 * value will be interpreted as "yes, swallow the
+	 * exception if one was raised inside the with block". */
+	Py_RETURN_NONE;
+}
+
 PyDoc_STRVAR(readline_doc,
 "readline([size]) -> next line from the file, as a string.\n"
 "\n"
@@ -1721,6 +1735,9 @@ PyDoc_STRVAR(isatty_doc,
 PyDoc_STRVAR(enter_doc,
 	     "__enter__() -> self.");
 
+PyDoc_STRVAR(exit_doc,
+	     "__exit__(*excinfo) -> None.  Closes the file.");
+
 static PyMethodDef file_methods[] = {
 	{"readline",  (PyCFunction)file_readline, METH_VARARGS, readline_doc},
 	{"read",      (PyCFunction)file_read,     METH_VARARGS, read_doc},
@@ -1738,7 +1755,7 @@ static PyMethodDef file_methods[] = {
 	{"close",     (PyCFunction)file_close,    METH_NOARGS,  close_doc},
 	{"isatty",    (PyCFunction)file_isatty,   METH_NOARGS,  isatty_doc},
 	{"__enter__", (PyCFunction)file_self,     METH_NOARGS,  enter_doc},
-	{"__exit__",  (PyCFunction)file_close,    METH_VARARGS, close_doc},
+	{"__exit__",  (PyCFunction)file_exit,     METH_VARARGS, exit_doc},
 	{NULL,	      NULL}		/* sentinel */
 };
 

@@ -1572,8 +1572,7 @@ s_pack(PyObject *self, PyObject *args)
 	soself = (PyStructObject *)self;
 	assert(PyStruct_Check(self));
 	assert(soself->s_codes != NULL);
-	if (args == NULL || !PyTuple_Check(args) ||
-	    PyTuple_GET_SIZE(args) != soself->s_len)
+	if (PyTuple_GET_SIZE(args) != soself->s_len)
 	{
 		PyErr_Format(StructError,
 			"pack requires exactly %zd arguments", soself->s_len);
@@ -1594,16 +1593,16 @@ s_pack(PyObject *self, PyObject *args)
 	return result;
 }
 
-PyDoc_STRVAR(s_pack_to__doc__,
-"S.pack_to(buffer, offset, v1, v2, ...)\n\
+PyDoc_STRVAR(s_pack_into__doc__,
+"S.pack_into(buffer, offset, v1, v2, ...)\n\
 \n\
-Pack the values v2, v2, ... according to this Struct's format, write \n\
+Pack the values v1, v2, ... according to this Struct's format, write \n\
 the packed bytes into the writable buffer buf starting at offset.  Note\n\
 that the offset is not an optional argument.  See struct.__doc__ for \n\
 more on format strings.");
 
 static PyObject *
-s_pack_to(PyObject *self, PyObject *args)
+s_pack_into(PyObject *self, PyObject *args)
 {
 	PyStructObject *soself;
 	char *buffer;
@@ -1613,11 +1612,10 @@ s_pack_to(PyObject *self, PyObject *args)
 	soself = (PyStructObject *)self;
 	assert(PyStruct_Check(self));
 	assert(soself->s_codes != NULL);
-	if (args == NULL || !PyTuple_Check(args) ||
-	    PyTuple_GET_SIZE(args) != (soself->s_len + 2))
+	if (PyTuple_GET_SIZE(args) != (soself->s_len + 2))
 	{
 		PyErr_Format(StructError,
-			     "pack_to requires exactly %zd arguments",
+			     "pack_into requires exactly %zd arguments",
 			     (soself->s_len + 2));
 		return NULL;
 	}
@@ -1630,7 +1628,7 @@ s_pack_to(PyObject *self, PyObject *args)
 	assert( buffer_len >= 0 );
 
 	/* Extract the offset from the first argument */
-	offset = PyInt_AsLong(PyTuple_GET_ITEM(args, 1));
+	offset = PyInt_AsSsize_t(PyTuple_GET_ITEM(args, 1));
 
 	/* Support negative offsets. */
 	if (offset < 0)
@@ -1639,7 +1637,7 @@ s_pack_to(PyObject *self, PyObject *args)
 	/* Check boundaries */
 	if (offset < 0 || (buffer_len - offset) < soself->s_size) {
 		PyErr_Format(StructError,
-			     "pack_to requires a buffer of at least %zd bytes",
+			     "pack_into requires a buffer of at least %zd bytes",
 			     soself->s_size);
 		return NULL;
 	}
@@ -1668,10 +1666,11 @@ s_get_size(PyStructObject *self, void *unused)
 /* List of functions */
 
 static struct PyMethodDef s_methods[] = {
-	{"pack",	(PyCFunction)s_pack,		METH_VARARGS, s_pack__doc__},
-	{"pack_to",	(PyCFunction)s_pack_to,		METH_VARARGS, s_pack_to__doc__},
-	{"unpack",	(PyCFunction)s_unpack,		METH_O, s_unpack__doc__},
-	{"unpack_from",	(PyCFunction)s_unpack_from,	METH_KEYWORDS, s_unpack_from__doc__},
+	{"pack",	s_pack,		METH_VARARGS, s_pack__doc__},
+	{"pack_into",	s_pack_into,	METH_VARARGS, s_pack_into__doc__},
+	{"unpack",	s_unpack,       METH_O, s_unpack__doc__},
+	{"unpack_from",	(PyCFunction)s_unpack_from, METH_KEYWORDS,
+			s_unpack_from__doc__},
 	{NULL,	 NULL}		/* sentinel */
 };
 

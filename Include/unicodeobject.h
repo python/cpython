@@ -650,6 +650,11 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedString(
     const char *errors		/* error handling */
     );
 
+PyAPI_FUNC(PyObject*) PyUnicode_BuildEncodingMap(
+    PyObject* string            /* 256 character map */
+   );
+
+
 /* --- UTF-7 Codecs ------------------------------------------------------- */
 
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeUTF7(

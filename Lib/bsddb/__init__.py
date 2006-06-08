@@ -343,6 +343,7 @@ def _openDBEnv(cachesize):
             e.set_cachesize(0, cachesize)
         else:
             raise error, "cachesize must be >= 20480"
+    e.set_lk_detect(db.DB_LOCK_DEFAULT)
     e.open('.', db.DB_PRIVATE | db.DB_CREATE | db.DB_THREAD | db.DB_INIT_LOCK | db.DB_INIT_MPOOL)
     return e
 

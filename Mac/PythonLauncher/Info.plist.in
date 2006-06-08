@@ -40,7 +40,7 @@
 	<key>CFBundleExecutable</key>
 	<string>PythonLauncher</string>
 	<key>CFBundleGetInfoString</key>
-	<string>2.5, © 001-2006 Python Software Foundation</string>
+	<string>%VERSION%, © 001-2006 Python Software Foundation</string>
 	<key>CFBundleIconFile</key>
 	<string>PythonLauncher.icns</string>
 	<key>CFBundleIdentifier</key>
@@ -52,11 +52,11 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.5</string>
+	<string>%VERSION%</string>
 	<key>CFBundleSignature</key>
 	<string>PytL</string>
 	<key>CFBundleVersion</key>
-	<string>2.5</string>
+	<string>%VERSION%</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>

@@ -16,7 +16,8 @@ typedef struct NRMUTEX {
 typedef PVOID WINAPI interlocked_cmp_xchg_t(PVOID *dest, PVOID exc, PVOID comperand) ;
 
 /* Sorry mate, but we haven't got InterlockedCompareExchange in Win95! */
-static PVOID WINAPI interlocked_cmp_xchg(PVOID *dest, PVOID exc, PVOID comperand)
+static PVOID WINAPI
+interlocked_cmp_xchg(PVOID *dest, PVOID exc, PVOID comperand)
 {
 	static LONG spinlock = 0 ;
 	PVOID result ;
@@ -54,8 +55,10 @@ static PVOID WINAPI interlocked_cmp_xchg(PVOID *dest, PVOID exc, PVOID comperand
 	return result ;
 } ;
 
-static interlocked_cmp_xchg_t *ixchg ;
-BOOL InitializeNonRecursiveMutex(PNRMUTEX mutex)
+static interlocked_cmp_xchg_t *ixchg;
+
+BOOL
+InitializeNonRecursiveMutex(PNRMUTEX mutex)
 {
 	if (!ixchg)
 	{
@@ -76,14 +79,16 @@ BOOL InitializeNonRecursiveMutex(PNRMUTEX mutex)
 #endif
 #define InterlockedCompareExchange(dest,exchange,comperand) (ixchg((dest), (exchange), (comperand)))
 
-VOID DeleteNonRecursiveMutex(PNRMUTEX mutex)
+VOID
+DeleteNonRecursiveMutex(PNRMUTEX mutex)
 {
 	/* No in-use check */
 	CloseHandle(mutex->hevent) ;
 	mutex->hevent = NULL ; /* Just in case */
 }
 
-DWORD EnterNonRecursiveMutex(PNRMUTEX mutex, BOOL wait)
+DWORD
+EnterNonRecursiveMutex(PNRMUTEX mutex, BOOL wait)
 {
 	/* Assume that the thread waits successfully */
 	DWORD ret ;
@@ -104,7 +109,8 @@ DWORD EnterNonRecursiveMutex(PNRMUTEX mutex, BOOL wait)
 	return ret ;
 }
 
-BOOL LeaveNonRecursiveMutex(PNRMUTEX mutex)
+BOOL
+LeaveNonRecursiveMutex(PNRMUTEX mutex)
 {
 	/* We don't own the mutex */
 	mutex->thread_id = 0 ;
@@ -113,7 +119,8 @@ BOOL LeaveNonRecursiveMutex(PNRMUTEX mutex)
 		SetEvent(mutex->hevent) ; /* Other threads are waiting, wake one on them up */
 }
 
-PNRMUTEX AllocNonRecursiveMutex(void)
+PNRMUTEX
+AllocNonRecursiveMutex(void)
 {
 	PNRMUTEX mutex = (PNRMUTEX)malloc(sizeof(NRMUTEX)) ;
 	if (mutex && !InitializeNonRecursiveMutex(mutex))
@@ -124,7 +131,8 @@ PNRMUTEX AllocNonRecursiveMutex(void)
 	return mutex ;
 }
 
-void FreeNonRecursiveMutex(PNRMUTEX mutex)
+void
+FreeNonRecursiveMutex(PNRMUTEX mutex)
 {
 	if (mutex)
 	{
@@ -138,7 +146,8 @@ long PyThread_get_thread_ident(void);
 /*
  * Initialization of the C package, should not be needed.
  */
-static void PyThread__init_thread(void)
+static void
+PyThread__init_thread(void)
 {
 }
 
@@ -209,7 +218,8 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
  * Return the thread Id instead of an handle. The Id is said to uniquely identify the
  * thread in the system
  */
-long PyThread_get_thread_ident(void)
+long
+PyThread_get_thread_ident(void)
 {
 	if (!initialized)
 		PyThread_init_thread();
@@ -217,7 +227,8 @@ long PyThread_get_thread_ident(void)
 	return GetCurrentThreadId();
 }
 
-static void do_PyThread_exit_thread(int no_cleanup)
+static void
+do_PyThread_exit_thread(int no_cleanup)
 {
 	dprintf(("%ld: PyThread_exit_thread called\n", PyThread_get_thread_ident()));
 	if (!initialized)
@@ -228,18 +239,21 @@ static void do_PyThread_exit_thread(int no_cleanup)
 	_endthread();
 }
 
-void PyThread_exit_thread(void)
+void
+PyThread_exit_thread(void)
 {
 	do_PyThread_exit_thread(0);
 }
 
-void PyThread__exit_thread(void)
+void
+PyThread__exit_thread(void)
 {
 	do_PyThread_exit_thread(1);
 }
 
 #ifndef NO_EXIT_PROG
-static void do_PyThread_exit_prog(int status, int no_cleanup)
+static void
+do_PyThread_exit_prog(int status, int no_cleanup)
 {
 	dprintf(("PyThread_exit_prog(%d) called\n", status));
 	if (!initialized)
@@ -249,12 +263,14 @@ static void do_PyThread_exit_prog(int status, int no_cleanup)
 			exit(status);
 }
 
-void PyThread_exit_prog(int status)
+void
+PyThread_exit_prog(int status)
 {
 	do_PyThread_exit_prog(status, 0);
 }
 
-void PyThread__exit_prog(int status)
+void
+PyThread__exit_prog(int status)
 {
 	do_PyThread_exit_prog(status, 1);
 }
@@ -265,7 +281,8 @@ void PyThread__exit_prog(int status)
  * I [Dag] tried to implement it with mutex but I could find a way to
  * tell whether a thread already own the lock or not.
  */
-PyThread_type_lock PyThread_allocate_lock(void)
+PyThread_type_lock
+PyThread_allocate_lock(void)
 {
 	PNRMUTEX aLock;
 
@@ -280,7 +297,8 @@ PyThread_type_lock PyThread_allocate_lock(void)
 	return (PyThread_type_lock) aLock;
 }
 
-void PyThread_free_lock(PyThread_type_lock aLock)
+void
+PyThread_free_lock(PyThread_type_lock aLock)
 {
 	dprintf(("%ld: PyThread_free_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 
@@ -293,7 +311,8 @@ void PyThread_free_lock(PyThread_type_lock aLock)
  * and 0 if the lock was not acquired. This means a 0 is returned
  * if the lock has already been acquired by this thread!
  */
-int PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
+int
+PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
 {
 	int success ;
 
@@ -306,7 +325,8 @@ int PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
 	return success;
 }
 
-void PyThread_release_lock(PyThread_type_lock aLock)
+void
+PyThread_release_lock(PyThread_type_lock aLock)
 {
 	dprintf(("%ld: PyThread_release_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 

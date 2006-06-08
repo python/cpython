@@ -363,3 +363,37 @@ except AttributeError, x:
     pass
 else:
     print "attribute error for I.__init__ got masked"
+
+
+# Test comparison and hash of methods
+class A:
+    def __init__(self, x):
+        self.x = x
+    def f(self):
+        pass
+    def g(self):
+        pass
+    def __eq__(self, other):
+        return self.x == other.x
+    def __hash__(self):
+        return self.x
+class B(A):
+    pass
+
+a1 = A(1)
+a2 = A(2)
+assert a1.f == a1.f
+assert a1.f != a2.f
+assert a1.f != a1.g
+assert a1.f == A(1).f
+assert hash(a1.f) == hash(a1.f)
+assert hash(a1.f) == hash(A(1).f)
+
+assert A.f != a1.f
+assert A.f != A.g
+assert B.f == A.f
+assert hash(B.f) == hash(A.f)
+
+# the following triggers a SystemError in 2.4
+a = A(hash(A.f.im_func)^(-1))
+hash(a.f)

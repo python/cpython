@@ -67,13 +67,12 @@ DEPSRC=os.path.expanduser('~/Universal/other-sources')
 SDKPATH="/Developer/SDKs/MacOSX10.4u.sdk"
 #SDKPATH="/"
 
-# Source directory (asume we're in Mac/OSX/Dist)
+# Source directory (asume we're in Mac/BuildScript)
 SRCDIR=os.path.dirname(
         os.path.dirname(
             os.path.dirname(
-                os.path.dirname(
-                    os.path.abspath(__file__
-        )))))
+                os.path.abspath(__file__
+        ))))
 
 USAGE=textwrap.dedent("""\
     Usage: build_python [options]
@@ -179,9 +178,11 @@ PKG_RECIPES=[
         long_name="GUI Applications",
         source="/Applications/MacPython %(VER)s",
         readme="""\
-            This package installs Python.framework, that is the python
-            interpreter and the standard library. This also includes Python
-            wrappers for lots of Mac OS X API's.
+            This package installs IDLE (an interactive Python IDLE),
+            Python Launcher and Build Applet (create application bundles
+            from python scripts).
+
+            It also installs a number of examples and demos.
             """,
         required=False,
     ),
@@ -227,8 +228,21 @@ PKG_RECIPES=[
         source="/empty-dir",
         required=False,
     ),
+    dict(
+        name="PythonSystemFixes",
+        long_name="Fix system Python",
+        readme="""\
+            This package updates the system python installation on
+            Mac OS X 10.3 to ensure that you can build new python extensions
+            using that copy of python after installing this version of
+            python.
+            """
+        postflight="../Tools/fixapplepython23.py",
+        topdir="/Library/Frameworks/Python.framework",
+        source="/empty-dir",
+        required=False,
+    )
 ]
-
 
 def fatal(msg):
     """
