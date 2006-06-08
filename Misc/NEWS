@@ -127,6 +127,10 @@ Extension Modules
 Library
 -------
 
+- The functions update_wrapper() and wraps() have been added to the functools
+  module. These make it easier to copy relevant metadata from the original
+  function when writing wrapper functions.
+
 - The optional ``isprivate`` argument to ``doctest.testmod()``, and the
   ``doctest.is_private()`` function, both deprecated in 2.4, were removed.
 
