@@ -181,6 +181,8 @@ Library
 Build
 -----
 
+- Bug #1502728: Correctly link against librt library on HP-UX.
+
 - OpenBSD 3.9 is supported now.
 
 - Patch #1492356: Port to Windows CE.
