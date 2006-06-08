@@ -12,6 +12,12 @@ What's New in Python 2.5 beta 1?
 Core and builtins
 -----------------
 
+- Buffer objects, at the C level, never used the char buffer
+  implementation even when the char buffer for the wrapped object was
+  explicitly requested (originally returned the read or write buffer).
+  Now a TypeError is raised if the char buffer is not present but is
+  requested.
+
 - Patch #1346214: Statements like "if 0: suite" are now again optimized
   away like they were in Python 2.4.
 

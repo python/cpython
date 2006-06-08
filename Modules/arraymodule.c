@@ -1787,6 +1787,7 @@ static PyBufferProcs array_as_buffer = {
 	(readbufferproc)array_buffer_getreadbuf,
 	(writebufferproc)array_buffer_getwritebuf,
 	(segcountproc)array_buffer_getsegcount,
+	NULL,
 };
 
 static PyObject *
