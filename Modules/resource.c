@@ -194,12 +194,9 @@ resource_setrlimit(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-resource_getpagesize(PyObject *self, PyObject *args)
+resource_getpagesize(PyObject *self, PyObject *unused)
 {
 	long pagesize = 0;
-	if (!PyArg_ParseTuple(args, ":getpagesize"))
-		return NULL;
-
 #if defined(HAVE_GETPAGESIZE)
 	pagesize = getpagesize();
 #elif defined(HAVE_SYSCONF)
@@ -221,7 +218,7 @@ resource_methods[] = {
 	{"getrusage",    resource_getrusage,   METH_VARARGS},
 	{"getrlimit",    resource_getrlimit,   METH_VARARGS},
 	{"setrlimit",    resource_setrlimit,   METH_VARARGS},
-	{"getpagesize",  resource_getpagesize, METH_VARARGS},
+	{"getpagesize",  resource_getpagesize, METH_NOARGS},
 	{NULL, NULL}			     /* sentinel */
 };
 

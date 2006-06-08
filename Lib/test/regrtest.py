@@ -513,6 +513,9 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
     else:
         cfp = cStringIO.StringIO()
     if huntrleaks:
+        if not hasattr(sys, 'gettotalrefcount'):
+            raise Exception("Tracking reference leaks requires a debug build "
+                            "of Python")
         refrep = open(huntrleaks[2], "a")
     try:
         save_stdout = sys.stdout

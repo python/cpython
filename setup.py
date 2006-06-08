@@ -377,8 +377,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension("_heapq", ["_heapqmodule.c"]) )
         # operator.add() and similar goodies
         exts.append( Extension('operator', ['operator.c']) )
-        # functional
-        exts.append( Extension("functional", ["functionalmodule.c"]) )
+        # _functools
+        exts.append( Extension("_functools", ["_functoolsmodule.c"]) )
         # Python C API test module
         exts.append( Extension('_testcapi', ['_testcapimodule.c']) )
         # profilers (_lsprof is for cProfile.py)

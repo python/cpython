@@ -106,10 +106,19 @@ class CommonTest(unittest.TestCase):
         self.checkequal(3, 'aaa', 'count', 'a')
         self.checkequal(0, 'aaa', 'count', 'b')
         self.checkequal(0, 'aaa', 'count', 'b')
+        self.checkequal(2, 'aaa', 'count', 'a', 1)
+        self.checkequal(0, 'aaa', 'count', 'a', 10)
         self.checkequal(1, 'aaa', 'count', 'a', -1)
         self.checkequal(3, 'aaa', 'count', 'a', -10)
+        self.checkequal(1, 'aaa', 'count', 'a', 0, 1)
+        self.checkequal(3, 'aaa', 'count', 'a', 0, 10)
         self.checkequal(2, 'aaa', 'count', 'a', 0, -1)
         self.checkequal(0, 'aaa', 'count', 'a', 0, -10)
+        self.checkequal(3, 'aaa', 'count', '', 1)
+        self.checkequal(1, 'aaa', 'count', '', 3)
+        self.checkequal(0, 'aaa', 'count', '', 10)
+        self.checkequal(2, 'aaa', 'count', '', -1)
+        self.checkequal(4, 'aaa', 'count', '', -10)
 
         self.checkraises(TypeError, 'hello', 'count')
         self.checkraises(TypeError, 'hello', 'count', 42)
@@ -146,6 +155,10 @@ class CommonTest(unittest.TestCase):
         self.checkequal(9, 'abcdefghiabc', 'find', 'abc', 1)
         self.checkequal(-1, 'abcdefghiabc', 'find', 'def', 4)
 
+        self.checkequal(0, 'abc', 'find', '', 0)
+        self.checkequal(3, 'abc', 'find', '', 3)
+        self.checkequal(-1, 'abc', 'find', '', 4)
+
         self.checkraises(TypeError, 'hello', 'find')
         self.checkraises(TypeError, 'hello', 'find', 42)
 
@@ -179,6 +192,10 @@ class CommonTest(unittest.TestCase):
         self.checkequal(12, 'abcdefghiabc', 'rfind', '')
         self.checkequal(0, 'abcdefghiabc', 'rfind', 'abcd')
         self.checkequal(-1, 'abcdefghiabc', 'rfind', 'abcz')
+
+        self.checkequal(3, 'abc', 'rfind', '', 0)
+        self.checkequal(3, 'abc', 'rfind', '', 3)
+        self.checkequal(-1, 'abc', 'rfind', '', 4)
 
         self.checkraises(TypeError, 'hello', 'rfind')
         self.checkraises(TypeError, 'hello', 'rfind', 42)
@@ -477,12 +494,7 @@ class CommonTest(unittest.TestCase):
 
         # Operations on the empty string
         EQ("", "", "replace", "", "")
-
-        #EQ("A", "", "replace", "", "A")
-        # That was the correct result; this is the result we actually get
-        # now (for str, but not for unicode):
-        #EQ("", "", "replace", "", "A")
-
+        EQ("A", "", "replace", "", "A")
         EQ("", "", "replace", "A", "")
         EQ("", "", "replace", "A", "A")
         EQ("", "", "replace", "", "", 100)

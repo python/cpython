@@ -405,13 +405,9 @@ SHA_dealloc(PyObject *ptr)
 PyDoc_STRVAR(SHA256_copy__doc__, "Return a copy of the hash object.");
 
 static PyObject *
-SHA256_copy(SHAobject *self, PyObject *args)
+SHA256_copy(SHAobject *self, PyObject *unused)
 {
     SHAobject *newobj;
-
-    if (!PyArg_ParseTuple(args, ":copy")) {
-        return NULL;
-    }
 
     if (((PyObject*)self)->ob_type == &SHA256type) {
         if ( (newobj = newSHA256object())==NULL)
@@ -429,13 +425,10 @@ PyDoc_STRVAR(SHA256_digest__doc__,
 "Return the digest value as a string of binary data.");
 
 static PyObject *
-SHA256_digest(SHAobject *self, PyObject *args)
+SHA256_digest(SHAobject *self, PyObject *unused)
 {
     unsigned char digest[SHA_DIGESTSIZE];
     SHAobject temp;
-
-    if (!PyArg_ParseTuple(args, ":digest"))
-        return NULL;
 
     SHAcopy(self, &temp);
     sha_final(digest, &temp);
@@ -446,16 +439,13 @@ PyDoc_STRVAR(SHA256_hexdigest__doc__,
 "Return the digest value as a string of hexadecimal digits.");
 
 static PyObject *
-SHA256_hexdigest(SHAobject *self, PyObject *args)
+SHA256_hexdigest(SHAobject *self, PyObject *unused)
 {
     unsigned char digest[SHA_DIGESTSIZE];
     SHAobject temp;
     PyObject *retval;
     char *hex_digest;
     int i, j;
-
-    if (!PyArg_ParseTuple(args, ":hexdigest"))
-        return NULL;
 
     /* Get the raw (binary) digest value */
     SHAcopy(self, &temp);
@@ -503,9 +493,9 @@ SHA256_update(SHAobject *self, PyObject *args)
 }
 
 static PyMethodDef SHA_methods[] = {
-    {"copy",	  (PyCFunction)SHA256_copy,      METH_VARARGS, SHA256_copy__doc__},
-    {"digest",	  (PyCFunction)SHA256_digest,    METH_VARARGS, SHA256_digest__doc__},
-    {"hexdigest", (PyCFunction)SHA256_hexdigest, METH_VARARGS, SHA256_hexdigest__doc__},
+    {"copy",	  (PyCFunction)SHA256_copy,      METH_NOARGS,  SHA256_copy__doc__},
+    {"digest",	  (PyCFunction)SHA256_digest,    METH_NOARGS,  SHA256_digest__doc__},
+    {"hexdigest", (PyCFunction)SHA256_hexdigest, METH_NOARGS,  SHA256_hexdigest__doc__},
     {"update",	  (PyCFunction)SHA256_update,    METH_VARARGS, SHA256_update__doc__},
     {NULL,	  NULL}		/* sentinel */
 };

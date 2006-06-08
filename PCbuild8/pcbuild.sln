@@ -3,6 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 9.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pythoncore", "pythoncore.vcproj", "{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C73F0EC1-358B-4177-940F-0846AC8B04CD} = {C73F0EC1-358B-4177-940F-0846AC8B04CD}
+		{F0E0541E-F17D-430B-97C4-93ADF0DD284E} = {F0E0541E-F17D-430B-97C4-93ADF0DD284E}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pythonw", "pythonw.vcproj", "{F4229CC3-873C-49AE-9729-DD308ED4CD4A}"
@@ -61,8 +62,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pythoncore_pgo", "pythoncore_pgo.vcproj", "{8B59C1FF-2439-4BE9-9F24-84D4982D28D4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26} = {CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "python", "python.vcproj", "{B11D750F-CD1F-4A96-85CE-E69A5C5259F9}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_versioninfo", "make_versioninfo.vcproj", "{F0E0541E-F17D-430B-97C4-93ADF0DD284E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -178,6 +184,14 @@ Global
 		{B11D750F-CD1F-4A96-85CE-E69A5C5259F9}.ReleaseAMD64|Win32.Build.0 = ReleaseAMD64|Win32
 		{B11D750F-CD1F-4A96-85CE-E69A5C5259F9}.ReleaseItanium|Win32.ActiveCfg = ReleaseItanium|Win32
 		{B11D750F-CD1F-4A96-85CE-E69A5C5259F9}.ReleaseItanium|Win32.Build.0 = ReleaseItanium|Win32
+		{F0E0541E-F17D-430B-97C4-93ADF0DD284E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F0E0541E-F17D-430B-97C4-93ADF0DD284E}.Debug|Win32.Build.0 = Debug|Win32
+		{F0E0541E-F17D-430B-97C4-93ADF0DD284E}.Release|Win32.ActiveCfg = Release|Win32
+		{F0E0541E-F17D-430B-97C4-93ADF0DD284E}.Release|Win32.Build.0 = Release|Win32
+		{F0E0541E-F17D-430B-97C4-93ADF0DD284E}.ReleaseAMD64|Win32.ActiveCfg = Release|Win32
+		{F0E0541E-F17D-430B-97C4-93ADF0DD284E}.ReleaseAMD64|Win32.Build.0 = Release|Win32
+		{F0E0541E-F17D-430B-97C4-93ADF0DD284E}.ReleaseItanium|Win32.ActiveCfg = Release|Win32
+		{F0E0541E-F17D-430B-97C4-93ADF0DD284E}.ReleaseItanium|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

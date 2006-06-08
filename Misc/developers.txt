@@ -17,12 +17,18 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
-- 2006 Summer of Code entries: Matt Fleming was added on 25 May 2006
-  by AMK; he'll be working on enhancing the Python debugger.  Jackilyn
-  Hoxworth was added on 25 May 2005 by AMK; she'll be adding logging
-  to the standard library.  SoC developers are expected to work
+- 2006 Summer of Code entries: SoC developers are expected to work
   primarily in nondist/sandbox or on a branch of their own, and will
   have their work reviewed before changes are accepted into the trunk.
+
+  - Matt Fleming was added on 25 May 2006 by AMK; he'll be working on
+    enhancing the Python debugger.   
+
+  - Jackilyn Hoxworth was added on 25 May 2006 by AMK; she'll be adding logging
+    to the standard library.  
+
+  - Mateusz Rukowicz was added on 30 May 2006 by AMK; he'll be 
+    translating the decimal module into C.
 
 - SVN access granted to the "Need for Speed" Iceland sprint attendees,
   between May 17 and 21, 2006, by Tim Peters.  All work is to be done

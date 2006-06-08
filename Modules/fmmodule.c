@@ -41,7 +41,7 @@ static PyObject *
 fh_scalefont(fhobject *self, PyObject *args)
 {
 	double size;
-	if (!PyArg_Parse(args, "d", &size))
+	if (!PyArg_ParseTuple(args, "d", &size))
 		return NULL;
 	return newfhobject(fmscalefont(self->fh_fh, size));
 }
@@ -112,21 +112,21 @@ static PyObject *
 fh_getstrwidth(fhobject *self, PyObject *args)
 {
 	char *str;
-	if (!PyArg_Parse(args, "s", &str))
+	if (!PyArg_ParseTuple(args, "s", &str))
 		return NULL;
 	return PyInt_FromLong(fmgetstrwidth(self->fh_fh, str));
 }
 
 static PyMethodDef fh_methods[] = {
-	{"scalefont",	(PyCFunction)fh_scalefont,   METH_OLDARGS},
+	{"scalefont",	(PyCFunction)fh_scalefont,   METH_VARARGS},
 	{"setfont",	(PyCFunction)fh_setfont,     METH_NOARGS},
 	{"getfontname",	(PyCFunction)fh_getfontname, METH_NOARGS},
 	{"getcomment",	(PyCFunction)fh_getcomment,  METH_NOARGS},
 	{"getfontinfo",	(PyCFunction)fh_getfontinfo, METH_NOARGS},
 #if 0
-	{"getwholemetrics",	(PyCFunction)fh_getwholemetrics, METH_OLDARGS},
+	{"getwholemetrics",	(PyCFunction)fh_getwholemetrics, METH_VARARGS},
 #endif
-	{"getstrwidth",	(PyCFunction)fh_getstrwidth, METH_OLDARGS},
+	{"getstrwidth",	(PyCFunction)fh_getstrwidth, METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -173,7 +173,7 @@ static PyObject *
 fm_findfont(PyObject *self, PyObject *args)
 {
 	char *str;
-	if (!PyArg_Parse(args, "s", &str))
+	if (!PyArg_ParseTuple(args, "s", &str))
 		return NULL;
 	return newfhobject(fmfindfont(str));
 }
@@ -182,7 +182,7 @@ static PyObject *
 fm_prstr(PyObject *self, PyObject *args)
 {
 	char *str;
-	if (!PyArg_Parse(args, "s", &str))
+	if (!PyArg_ParseTuple(args, "s", &str))
 		return NULL;
 	fmprstr(str);
 	Py_INCREF(Py_None);
@@ -230,7 +230,7 @@ static PyObject *
 fm_setpath(PyObject *self, PyObject *args)
 {
 	char *str;
-	if (!PyArg_Parse(args, "s", &str))
+	if (!PyArg_ParseTuple(args, "s", &str))
 		return NULL;
 	fmsetpath(str);
 	Py_INCREF(Py_None);
@@ -245,10 +245,10 @@ fm_fontpath(PyObject *self)
 
 static PyMethodDef fm_methods[] = {
 	{"init",	fm_init,      METH_NOARGS},
-	{"findfont",	fm_findfont,  METH_OLDARGS},
+	{"findfont",	fm_findfont,  METH_VARARGS},
 	{"enumerate",	fm_enumerate, METH_NOARGS},
-	{"prstr",	fm_prstr,     METH_OLDARGS},
-	{"setpath",	fm_setpath,   METH_OLDARGS},
+	{"prstr",	fm_prstr,     METH_VARARGS},
+	{"setpath",	fm_setpath,   METH_VARARGS},
 	{"fontpath",	fm_fontpath,  METH_NOARGS},
 	{NULL,		NULL}		/* sentinel */
 };

@@ -227,6 +227,10 @@ class DocXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
         Interpret all HTTP GET requests as requests for server
         documentation.
         """
+        # Check that the path is legal
+        if not self.is_rpc_path_valid():
+            self.report_404()
+            return
 
         response = self.server.generate_html_documentation()
         self.send_response(200)

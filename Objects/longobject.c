@@ -1509,6 +1509,57 @@ convmultmax_base[base], the result is "simply"
    (((c0*B + c1)*B + c2)*B + c3)*B + ... ))) + c_n-1
 
 where B = convmultmax_base[base].
+
+Error analysis:  as above, the number of Python digits `n` needed is worst-
+case
+
+    n >= N * log(B)/log(BASE)
+
+where `N` is the number of input digits in base `B`.  This is computed via
+
+    size_z = (Py_ssize_t)((scan - str) * log_base_BASE[base]) + 1;
+
+below.  Two numeric concerns are how much space this can waste, and whether
+the computed result can be too small.  To be concrete, assume BASE = 2**15,
+which is the default (and it's unlikely anyone changes that).
+
+Waste isn't a problem:  provided the first input digit isn't 0, the difference
+between the worst-case input with N digits and the smallest input with N
+digits is about a factor of B, but B is small compared to BASE so at most
+one allocated Python digit can remain unused on that count.  If
+N*log(B)/log(BASE) is mathematically an exact integer, then truncating that
+and adding 1 returns a result 1 larger than necessary.  However, that can't
+happen:  whenever B is a power of 2, long_from_binary_base() is called
+instead, and it's impossible for B**i to be an integer power of 2**15 when
+B is not a power of 2 (i.e., it's impossible for N*log(B)/log(BASE) to be
+an exact integer when B is not a power of 2, since B**i has a prime factor
+other than 2 in that case, but (2**15)**j's only prime factor is 2).
+
+The computed result can be too small if the true value of N*log(B)/log(BASE)
+is a little bit larger than an exact integer, but due to roundoff errors (in
+computing log(B), log(BASE), their quotient, and/or multiplying that by N)
+yields a numeric result a little less than that integer.  Unfortunately, "how
+close can a transcendental function get to an integer over some range?"
+questions are generally theoretically intractable.  Computer analysis via
+continued fractions is practical:  expand log(B)/log(BASE) via continued
+fractions, giving a sequence i/j of "the best" rational approximations.  Then
+j*log(B)/log(BASE) is approximately equal to (the integer) i.  This shows that
+we can get very close to being in trouble, but very rarely.  For example,
+76573 is a denominator in one of the continued-fraction approximations to
+log(10)/log(2**15), and indeed:
+
+    >>> log(10)/log(2**15)*76573
+    16958.000000654003
+
+is very close to an integer.  If we were working with IEEE single-precision,
+rounding errors could kill us.  Finding worst cases in IEEE double-precision
+requires better-than-double-precision log() functions, and Tim didn't bother.
+Instead the code checks to see whether the allocated space is enough as each
+new Python digit is added, and copies the whole thing to a larger long if not.
+This should happen extremely rarely, and in fact I don't have a test case
+that triggers it(!).  Instead the code was tested by artificially allocating
+just 1 digit at the start, so that the copying code was exercised for every
+digit beyond the first.
 ***/
 		register twodigits c;	/* current input character */
 		Py_ssize_t size_z;
@@ -1551,6 +1602,8 @@ where B = convmultmax_base[base].
 		 * being stored into.
 		 */
 		size_z = (Py_ssize_t)((scan - str) * log_base_BASE[base]) + 1;
+		/* Uncomment next line to test exceedingly rare copy code */
+		/* size_z = 1; */
 		assert(size_z > 0);
 		z = _PyLong_New(size_z);
 		if (z == NULL)
@@ -1594,9 +1647,27 @@ where B = convmultmax_base[base].
 			/* carry off the current end? */
 			if (c) {
 				assert(c < BASE);
-				assert(z->ob_size < size_z);
-				*pz = (digit)c;
-				++z->ob_size;
+				if (z->ob_size < size_z) {
+					*pz = (digit)c;
+					++z->ob_size;
+				}
+				else {
+					PyLongObject *tmp;
+					/* Extremely rare.  Get more space. */
+					assert(z->ob_size == size_z);
+					tmp = _PyLong_New(size_z + 1);
+					if (tmp == NULL) {
+						Py_DECREF(z);
+						return NULL;
+					}
+					memcpy(tmp->ob_digit,
+					       z->ob_digit,
+					       sizeof(digit) * size_z);
+					Py_DECREF(z);
+					z = tmp;
+					z->ob_digit[size_z] = (digit)c;
+					++size_z;
+				}
 			}
 		}
 	}

@@ -153,7 +153,7 @@ typedef struct FSCatalogInfoObject {
 static PyObject *FSCatalogInfo_New(FSCatalogInfo *itself)
 {
 	FSCatalogInfoObject *it;
-	if (itself == NULL) return Py_None;
+	if (itself == NULL) { Py_INCREF(Py_None); return Py_None; }
 	it = PyObject_NEW(FSCatalogInfoObject, &FSCatalogInfo_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = *itself;

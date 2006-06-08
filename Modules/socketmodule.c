@@ -2472,7 +2472,7 @@ sock_recvfrom_buf(PySocketSockObject *s, PyObject *args, PyObject* kwds)
 
 	/* Return the number of bytes read and the address.  Note that we do
 	   not do anything special here in the case that readlen < recvlen. */
-	ret = PyTuple_Pack(2, PyInt_FromLong(readlen), addr);
+	ret = Py_BuildValue("lO", readlen, addr);
 	
 finally:
 	Py_XDECREF(addr);
@@ -2889,12 +2889,10 @@ static PyTypeObject sock_type = {
 
 /*ARGSUSED*/
 static PyObject *
-socket_gethostname(PyObject *self, PyObject *args)
+socket_gethostname(PyObject *self, PyObject *unused)
 {
 	char buf[1024];
 	int res;
-	if (!PyArg_ParseTuple(args, ":gethostname"))
-		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = gethostname(buf, (int) sizeof buf - 1);
 	Py_END_ALLOW_THREADS
@@ -3986,13 +3984,13 @@ static PyMethodDef socket_methods[] = {
 	{"gethostbyaddr",	socket_gethostbyaddr,
 	 METH_VARARGS, gethostbyaddr_doc},
 	{"gethostname",		socket_gethostname,
-	 METH_VARARGS, gethostname_doc},
+	 METH_NOARGS,  gethostname_doc},
 	{"getservbyname",	socket_getservbyname,
 	 METH_VARARGS, getservbyname_doc},
 	{"getservbyport",	socket_getservbyport,
 	 METH_VARARGS, getservbyport_doc},
 	{"getprotobyname",	socket_getprotobyname,
-	 METH_VARARGS,getprotobyname_doc},
+	 METH_VARARGS, getprotobyname_doc},
 #ifndef NO_DUP
 	{"fromfd",		socket_fromfd,
 	 METH_VARARGS, fromfd_doc},
@@ -4364,8 +4362,8 @@ init_socket(void)
 	PyModule_AddIntConstant(m, "BTPROTO_SCO", BTPROTO_SCO);
 #endif
 	PyModule_AddIntConstant(m, "BTPROTO_RFCOMM", BTPROTO_RFCOMM);
-	PyModule_AddObject(m, "BDADDR_ANY", Py_BuildValue("s", "00:00:00:00:00:00"));
-	PyModule_AddObject(m, "BDADDR_LOCAL", Py_BuildValue("s", "00:00:00:FF:FF:FF"));
+	PyModule_AddStringConstant(m, "BDADDR_ANY", "00:00:00:00:00:00");
+	PyModule_AddStringConstant(m, "BDADDR_LOCAL", "00:00:00:FF:FF:FF");
 #endif
 
 #ifdef HAVE_NETPACKET_PACKET_H

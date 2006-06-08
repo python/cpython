@@ -280,21 +280,25 @@ PyMODINIT_FUNC init_sqlite3(void)
         goto error;
     }
     PyDict_SetItemString(dict, "PARSE_DECLTYPES", tmp_obj);
+    Py_DECREF(tmp_obj);
 
     if (!(tmp_obj = PyInt_FromLong(PARSE_COLNAMES))) {
         goto error;
     }
     PyDict_SetItemString(dict, "PARSE_COLNAMES", tmp_obj);
+    Py_DECREF(tmp_obj);
 
     if (!(tmp_obj = PyString_FromString(PYSQLITE_VERSION))) {
         goto error;
     }
     PyDict_SetItemString(dict, "version", tmp_obj);
+    Py_DECREF(tmp_obj);
 
     if (!(tmp_obj = PyString_FromString(sqlite3_libversion()))) {
         goto error;
     }
     PyDict_SetItemString(dict, "sqlite_version", tmp_obj);
+    Py_DECREF(tmp_obj);
 
     /* initialize microprotocols layer */
     microprotocols_init(dict);

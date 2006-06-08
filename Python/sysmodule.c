@@ -196,7 +196,7 @@ static PyObject *
 sys_exit(PyObject *self, PyObject *args)
 {
 	PyObject *exit_code = 0;
-	if (!PyArg_ParseTuple(args, "|O:exit", &exit_code))
+	if (!PyArg_UnpackTuple(args, "exit", 0, 1, &exit_code))
 		return NULL;
 	/* Raise SystemExit so callers may catch it or clean up. */
 	PyErr_SetObject(PyExc_SystemExit, exit_code);
@@ -668,7 +668,7 @@ static PyObject *
 sys_call_tracing(PyObject *self, PyObject *args)
 {
 	PyObject *func, *funcargs;
-	if (!PyArg_ParseTuple(args, "OO:call_tracing", &func, &funcargs))
+	if (!PyArg_UnpackTuple(args, "call_tracing", 2, 2, &func, &funcargs))
 		return NULL;
 	return _PyEval_CallTracing(func, funcargs);
 }

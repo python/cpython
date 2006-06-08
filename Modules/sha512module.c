@@ -471,13 +471,9 @@ SHA512_dealloc(PyObject *ptr)
 PyDoc_STRVAR(SHA512_copy__doc__, "Return a copy of the hash object.");
 
 static PyObject *
-SHA512_copy(SHAobject *self, PyObject *args)
+SHA512_copy(SHAobject *self, PyObject *unused)
 {
     SHAobject *newobj;
-
-    if (!PyArg_ParseTuple(args, ":copy")) {
-        return NULL;
-    }
 
     if (((PyObject*)self)->ob_type == &SHA512type) {
         if ( (newobj = newSHA512object())==NULL)
@@ -495,13 +491,10 @@ PyDoc_STRVAR(SHA512_digest__doc__,
 "Return the digest value as a string of binary data.");
 
 static PyObject *
-SHA512_digest(SHAobject *self, PyObject *args)
+SHA512_digest(SHAobject *self, PyObject *unused)
 {
     unsigned char digest[SHA_DIGESTSIZE];
     SHAobject temp;
-
-    if (!PyArg_ParseTuple(args, ":digest"))
-        return NULL;
 
     SHAcopy(self, &temp);
     sha512_final(digest, &temp);
@@ -512,16 +505,13 @@ PyDoc_STRVAR(SHA512_hexdigest__doc__,
 "Return the digest value as a string of hexadecimal digits.");
 
 static PyObject *
-SHA512_hexdigest(SHAobject *self, PyObject *args)
+SHA512_hexdigest(SHAobject *self, PyObject *unused)
 {
     unsigned char digest[SHA_DIGESTSIZE];
     SHAobject temp;
     PyObject *retval;
     char *hex_digest;
     int i, j;
-
-    if (!PyArg_ParseTuple(args, ":hexdigest"))
-        return NULL;
 
     /* Get the raw (binary) digest value */
     SHAcopy(self, &temp);
@@ -538,7 +528,7 @@ SHA512_hexdigest(SHAobject *self, PyObject *args)
     }
 
     /* Make hex version of the digest */
-    for(i=j=0; i<self->digestsize; i++) {
+    for (i=j=0; i<self->digestsize; i++) {
         char c;
         c = (digest[i] >> 4) & 0xf;
 	c = (c>9) ? c+'a'-10 : c + '0';
@@ -569,9 +559,9 @@ SHA512_update(SHAobject *self, PyObject *args)
 }
 
 static PyMethodDef SHA_methods[] = {
-    {"copy",	  (PyCFunction)SHA512_copy,      METH_VARARGS, SHA512_copy__doc__},
-    {"digest",	  (PyCFunction)SHA512_digest,    METH_VARARGS, SHA512_digest__doc__},
-    {"hexdigest", (PyCFunction)SHA512_hexdigest, METH_VARARGS, SHA512_hexdigest__doc__},
+    {"copy",	  (PyCFunction)SHA512_copy,      METH_NOARGS, SHA512_copy__doc__},
+    {"digest",	  (PyCFunction)SHA512_digest,    METH_NOARGS, SHA512_digest__doc__},
+    {"hexdigest", (PyCFunction)SHA512_hexdigest, METH_NOARGS, SHA512_hexdigest__doc__},
     {"update",	  (PyCFunction)SHA512_update,    METH_VARARGS, SHA512_update__doc__},
     {NULL,	  NULL}		/* sentinel */
 };

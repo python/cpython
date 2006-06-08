@@ -77,12 +77,9 @@ EVP_dealloc(PyObject *ptr)
 PyDoc_STRVAR(EVP_copy__doc__, "Return a copy of the hash object.");
 
 static PyObject *
-EVP_copy(EVPobject *self, PyObject *args)
+EVP_copy(EVPobject *self, PyObject *unused)
 {
     EVPobject *newobj;
-
-    if (!PyArg_ParseTuple(args, ":copy"))
-        return NULL;
 
     if ( (newobj = newEVPobject(self->name))==NULL)
         return NULL;
@@ -95,15 +92,12 @@ PyDoc_STRVAR(EVP_digest__doc__,
 "Return the digest value as a string of binary data.");
 
 static PyObject *
-EVP_digest(EVPobject *self, PyObject *args)
+EVP_digest(EVPobject *self, PyObject *unused)
 {
     unsigned char digest[EVP_MAX_MD_SIZE];
     EVP_MD_CTX temp_ctx;
     PyObject *retval;
     unsigned int digest_size;
-
-    if (!PyArg_ParseTuple(args, ":digest"))
-        return NULL;
 
     EVP_MD_CTX_copy(&temp_ctx, &self->ctx);
     digest_size = EVP_MD_CTX_size(&temp_ctx);
@@ -118,16 +112,13 @@ PyDoc_STRVAR(EVP_hexdigest__doc__,
 "Return the digest value as a string of hexadecimal digits.");
 
 static PyObject *
-EVP_hexdigest(EVPobject *self, PyObject *args)
+EVP_hexdigest(EVPobject *self, PyObject *unused)
 {
     unsigned char digest[EVP_MAX_MD_SIZE];
     EVP_MD_CTX temp_ctx;
     PyObject *retval;
     char *hex_digest;
     unsigned int i, j, digest_size;
-
-    if (!PyArg_ParseTuple(args, ":hexdigest"))
-        return NULL;
 
     /* Get the raw (binary) digest value */
     EVP_MD_CTX_copy(&temp_ctx, &self->ctx);
@@ -182,9 +173,9 @@ EVP_update(EVPobject *self, PyObject *args)
 
 static PyMethodDef EVP_methods[] = {
     {"update",	  (PyCFunction)EVP_update,    METH_VARARGS, EVP_update__doc__},
-    {"digest",	  (PyCFunction)EVP_digest,    METH_VARARGS, EVP_digest__doc__},
-    {"hexdigest", (PyCFunction)EVP_hexdigest, METH_VARARGS, EVP_hexdigest__doc__},
-    {"copy",	  (PyCFunction)EVP_copy,      METH_VARARGS, EVP_copy__doc__},
+    {"digest",	  (PyCFunction)EVP_digest,    METH_NOARGS,  EVP_digest__doc__},
+    {"hexdigest", (PyCFunction)EVP_hexdigest, METH_NOARGS,  EVP_hexdigest__doc__},
+    {"copy",	  (PyCFunction)EVP_copy,      METH_NOARGS,  EVP_copy__doc__},
     {NULL,	  NULL}		/* sentinel */
 };
 

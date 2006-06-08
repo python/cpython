@@ -1252,9 +1252,11 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 			}
 			else if (importer == Py_None) {
 				/* No importer was found, so it has to be a file.
-				 * Check if the directory is valid. */
+				 * Check if the directory is valid.
+				 * Note that the empty string is a valid path, but
+				 * not stat'able, hence the check for len. */
 #ifdef HAVE_STAT
-				if (stat(buf, &statbuf) != 0) {
+				if (len && stat(buf, &statbuf) != 0) {
 					/* Directory does not exist. */
 					PyDict_SetItem(path_importer_cache,
 					               v, Py_False);
@@ -2058,7 +2060,7 @@ PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals,
 /* Return the package that an import is being performed in.  If globals comes
    from the module foo.bar.bat (not itself a package), this returns the
    sys.modules entry for foo.bar.  If globals is from a package's __init__.py,
-   the package's entry in sys.modules is returned.
+   the package's entry in sys.modules is returned, as a borrowed reference.
 
    The *name* of the returned package is returned in buf, with the length of
    the name in *p_buflen.
