@@ -552,12 +552,12 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 		ival = PyInt_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<i>", arg, msgbuf, bufsize);
-		else if (ival > LONG_MAX) {
+		else if (ival > INT_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
 				"signed integer is greater than maximum");
 			return converterr("integer<i>", arg, msgbuf, bufsize);
 		}
-		else if (ival < LONG_MIN) {
+		else if (ival < INT_MIN) {
 			PyErr_SetString(PyExc_OverflowError,
 				"signed integer is less than minimum");
 			return converterr("integer<i>", arg, msgbuf, bufsize);
