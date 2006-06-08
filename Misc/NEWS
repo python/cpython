@@ -19,6 +19,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Change binascii.hexlify() to accept any read-only buffer and not just a char
+  buffer.
+
 - Fixed a potentially invalid memory access of CJKCodecs' shift-jis decoder.
 
 - Calling Tk_Init twice is refused if the first call failed as that

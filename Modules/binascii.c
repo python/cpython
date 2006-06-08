@@ -908,7 +908,7 @@ binascii_hexlify(PyObject *self, PyObject *args)
 	char* retbuf;
 	int i, j;
 
-	if (!PyArg_ParseTuple(args, "t#:b2a_hex", &argbuf, &arglen))
+	if (!PyArg_ParseTuple(args, "s#:b2a_hex", &argbuf, &arglen))
 		return NULL;
 
 	retval = PyString_FromStringAndSize(NULL, arglen*2);
