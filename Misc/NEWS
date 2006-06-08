@@ -72,6 +72,8 @@ Tools/Demos
 Build
 -----
 
+- Bug #1502728: Correctly link against librt library on HP-UX.
+
 - OpenBSD 3.9 is now supported.
 
 - Test for sys/statvfs.h before including it, as statvfs is present
