@@ -213,6 +213,9 @@ What's New in Python 2.5 alpha 2?
 Core and builtins
 -----------------
 
+- Bug #1502750: Check bounds integer arguments correctly on 64-bit
+  platforms.
+
 - Bug #1465834: 'bdist_wininst preinstall script support' was fixed
   by converting these apis from macros into exported functions again:
 
