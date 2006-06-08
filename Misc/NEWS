@@ -119,6 +119,10 @@ Extension Modules
   results.  It could previously incorrectly return 0 in some cases.
   Fixes SF bug 1493322 (pybsddb bug 1184012).
 
+- bsddb: the bsddb.dbtables Modify method now raises the proper error and
+  aborts the db transaction safely when a modifier callback fails.
+  Fixes SF python patch/bug #1408584.
+
 
 Library
 -------
