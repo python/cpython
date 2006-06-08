@@ -2478,7 +2478,7 @@ sock_recvfrom_into(PySocketSockObject *s, PyObject *args, PyObject* kwds)
 
 	/* Return the number of bytes read and the address.  Note that we do
 	   not do anything special here in the case that readlen < recvlen. */
- 	return Py_BuildValue("lO", readlen, addr);
+ 	return Py_BuildValue("lN", readlen, addr);
 }
 
 PyDoc_STRVAR(recvfrom_into_doc,
