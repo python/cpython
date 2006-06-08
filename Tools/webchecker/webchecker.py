@@ -784,7 +784,7 @@ class MyHTMLParser(sgmllib.SGMLParser):
         self.url = url
         sgmllib.SGMLParser.__init__(self)
 
-    def check_name_id( self, attributes ):
+    def check_name_id(self, attributes):
         """ Check the name or id attributes on an element.
         """
         # We must rescue the NAME or id (name is deprecated in XHTML)
@@ -799,7 +799,7 @@ class MyHTMLParser(sgmllib.SGMLParser):
                 else: self.names.append(value)
                 break
 
-    def unknown_starttag( self, tag, attributes ):
+    def unknown_starttag(self, tag, attributes):
         """ In XHTML, you can have id attributes on any element.
         """
         self.check_name_id(attributes)

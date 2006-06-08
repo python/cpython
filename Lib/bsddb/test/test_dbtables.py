@@ -339,6 +339,16 @@ class TableDBTestCase(unittest.TestCase):
                         conditions={'Name': dbtables.LikeCond('%')},
                         mappings={'Access': increment_access})
 
+        try:
+            self.tdb.Modify(tabname,
+                            conditions={'Name': dbtables.LikeCond('%')},
+                            mappings={'Access': 'What is your quest?'})
+        except TypeError:
+            # success, the string value in mappings isn't callable
+            pass
+        else:
+            raise RuntimeError, "why was TypeError not raised for bad callable?"
+
         # Delete key in select conditions
         values = self.tdb.Select(
             tabname, None,

@@ -99,6 +99,13 @@ AC_ARG_ENABLE(framework,
 		PYTHONFRAMEWORKINSTALLDIR=
 		FRAMEWORKINSTALLFIRST=
 		FRAMEWORKINSTALLLAST=
+		FRAMEWORKALTINSTALLFIRST=
+		FRAMEWORKALTINSTALLLAST=
+		if test "x${prefix}" = "xNONE"; then
+			FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+		else
+			FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+		fi
 		enable_framework=
 		;;
 	*)
@@ -108,13 +115,20 @@ AC_ARG_ENABLE(framework,
 		PYTHONFRAMEWORKINSTALLDIR=$PYTHONFRAMEWORKPREFIX/$PYTHONFRAMEWORKDIR
 		FRAMEWORKINSTALLFIRST="frameworkinstallstructure"
 		FRAMEWORKINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools"
+		FRAMEWORKALTINSTALLFIRST="${FRAMEWORKINSTALLFIRST} bininstall maninstall"
+		FRAMEWORKALTINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkaltinstallunixtools"
+		if test "x${prefix}" = "xNONE" ; then
+			FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+		else
+			FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+		fi
 		prefix=$PYTHONFRAMEWORKINSTALLDIR/Versions/$VERSION
 
 		# Add makefiles for Mac specific code to the list of output
 		# files:
-		AC_CONFIG_FILES(Mac/OSX/Makefile)
-		AC_CONFIG_FILES(Mac/OSX/PythonLauncher/Makefile)
-		AC_CONFIG_FILES(Mac/OSX/IDLE/Makefile)
+		AC_CONFIG_FILES(Mac/Makefile)
+		AC_CONFIG_FILES(Mac/PythonLauncher/Makefile)
+		AC_CONFIG_FILES(Mac/IDLE/Makefile)
 	esac
 	],[
 	PYTHONFRAMEWORK=
@@ -123,6 +137,13 @@ AC_ARG_ENABLE(framework,
 	PYTHONFRAMEWORKINSTALLDIR=
 	FRAMEWORKINSTALLFIRST=
 	FRAMEWORKINSTALLLAST=
+	FRAMEWORKALTINSTALLFIRST=
+	FRAMEWORKALTINSTALLLAST=
+	if test "x${prefix}" = "xNONE" ; then
+		FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+	else
+		FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+	fi
 	enable_framework=
 ])
 AC_SUBST(PYTHONFRAMEWORK)
@@ -131,6 +152,9 @@ AC_SUBST(PYTHONFRAMEWORKPREFIX)
 AC_SUBST(PYTHONFRAMEWORKINSTALLDIR)
 AC_SUBST(FRAMEWORKINSTALLFIRST)
 AC_SUBST(FRAMEWORKINSTALLLAST)
+AC_SUBST(FRAMEWORKALTINSTALLFIRST)
+AC_SUBST(FRAMEWORKALTINSTALLLAST)
+AC_SUBST(FRAMEWORKUNIXTOOLSPREFIX)
 
 ##AC_ARG_WITH(dyld,
 ##            AC_HELP_STRING(--with-dyld,

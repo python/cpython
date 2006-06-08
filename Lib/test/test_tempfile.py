@@ -390,7 +390,7 @@ test_classes.append(test_gettempdir)
 class test_mkstemp(TC):
     """Test mkstemp()."""
 
-    def do_create(self, dir=None, pre="", suf="", ):
+    def do_create(self, dir=None, pre="", suf=""):
         if dir is None:
             dir = tempfile.gettempdir()
         try:

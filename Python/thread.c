@@ -75,7 +75,8 @@ static int initialized;
 
 static void PyThread__init_thread(void); /* Forward */
 
-void PyThread_init_thread(void)
+void
+PyThread_init_thread(void)
 {
 #ifdef Py_DEBUG
 	char *p = getenv("THREADDEBUG");

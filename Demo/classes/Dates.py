@@ -59,32 +59,32 @@ del dbm, dim
 
 _INT_TYPES = type(1), type(1L)
 
-def _is_leap( year ):           # 1 if leap year, else 0
+def _is_leap(year):           # 1 if leap year, else 0
     if year % 4 != 0: return 0
     if year % 400 == 0: return 1
     return year % 100 != 0
 
-def _days_in_year( year ):      # number of days in year
+def _days_in_year(year):      # number of days in year
     return 365 + _is_leap(year)
 
-def _days_before_year( year ):  # number of days before year
+def _days_before_year(year):  # number of days before year
     return year*365L + (year+3)/4 - (year+99)/100 + (year+399)/400
 
-def _days_in_month( month, year ):      # number of days in month of year
+def _days_in_month(month, year):      # number of days in month of year
     if month == 2 and _is_leap(year): return 29
     return _DAYS_IN_MONTH[month-1]
 
-def _days_before_month( month, year ):  # number of days in year before month
+def _days_before_month(month, year):  # number of days in year before month
     return _DAYS_BEFORE_MONTH[month-1] + (month > 2 and _is_leap(year))
 
-def _date2num( date ):          # compute ordinal of date.month,day,year
-    return _days_before_year( date.year ) + \
-           _days_before_month( date.month, date.year ) + \
+def _date2num(date):          # compute ordinal of date.month,day,year
+    return _days_before_year(date.year) + \
+           _days_before_month(date.month, date.year) + \
            date.day
 
-_DI400Y = _days_before_year( 400 )      # number of days in 400 years
+_DI400Y = _days_before_year(400)      # number of days in 400 years
 
-def _num2date( n ):             # return date with ordinal n
+def _num2date(n):             # return date with ordinal n
     if type(n) not in _INT_TYPES:
         raise TypeError, 'argument must be integer: %r' % type(n)
 
@@ -95,53 +95,53 @@ def _num2date( n ):             # return date with ordinal n
     n400 = (n-1)/_DI400Y                # # of 400-year blocks preceding
     year, n = 400 * n400, n - _DI400Y * n400
     more = n / 365
-    dby = _days_before_year( more )
+    dby = _days_before_year(more)
     if dby >= n:
         more = more - 1
-        dby = dby - _days_in_year( more )
+        dby = dby - _days_in_year(more)
     year, n = year + more, int(n - dby)
 
     try: year = int(year)               # chop to int, if it fits
     except (ValueError, OverflowError): pass
 
-    month = min( n/29 + 1, 12 )
-    dbm = _days_before_month( month, year )
+    month = min(n/29 + 1, 12)
+    dbm = _days_before_month(month, year)
     if dbm >= n:
         month = month - 1
-        dbm = dbm - _days_in_month( month, year )
+        dbm = dbm - _days_in_month(month, year)
 
     ans.month, ans.day, ans.year = month, n-dbm, year
     return ans
 
-def _num2day( n ):      # return weekday name of day with ordinal n
+def _num2day(n):      # return weekday name of day with ordinal n
     return _DAY_NAMES[ int(n % 7) ]
 
 
 class Date:
-    def __init__( self, month, day, year ):
+    def __init__(self, month, day, year):
         if not 1 <= month <= 12:
             raise ValueError, 'month must be in 1..12: %r' % (month,)
-        dim = _days_in_month( month, year )
+        dim = _days_in_month(month, year)
         if not 1 <= day <= dim:
             raise ValueError, 'day must be in 1..%r: %r' % (dim, day)
         self.month, self.day, self.year = month, day, year
-        self.ord = _date2num( self )
+        self.ord = _date2num(self)
 
     # don't allow setting existing attributes
-    def __setattr__( self, name, value ):
+    def __setattr__(self, name, value):
         if self.__dict__.has_key(name):
             raise AttributeError, 'read-only attribute ' + name
         self.__dict__[name] = value
 
-    def __cmp__( self, other ):
-        return cmp( self.ord, other.ord )
+    def __cmp__(self, other):
+        return cmp(self.ord, other.ord)
 
     # define a hash function so dates can be used as dictionary keys
-    def __hash__( self ):
-        return hash( self.ord )
+    def __hash__(self):
+        return hash(self.ord)
 
     # print as, e.g., Mon 16 Aug 1993
-    def __repr__( self ):
+    def __repr__(self):
         return '%.3s %2d %.3s %r' % (
               self.weekday(),
               self.day,
@@ -149,33 +149,33 @@ class Date:
               self.year)
 
     # Python 1.1 coerces neither int+date nor date+int
-    def __add__( self, n ):
+    def __add__(self, n):
         if type(n) not in _INT_TYPES:
             raise TypeError, 'can\'t add %r to date' % type(n)
-        return _num2date( self.ord + n )
+        return _num2date(self.ord + n)
     __radd__ = __add__ # handle int+date
 
     # Python 1.1 coerces neither date-int nor date-date
-    def __sub__( self, other ):
+    def __sub__(self, other):
         if type(other) in _INT_TYPES:           # date-int
-            return _num2date( self.ord - other )
+            return _num2date(self.ord - other)
         else:
             return self.ord - other.ord         # date-date
 
     # complain about int-date
-    def __rsub__( self, other ):
+    def __rsub__(self, other):
         raise TypeError, 'Can\'t subtract date from integer'
 
-    def weekday( self ):
-        return _num2day( self.ord )
+    def weekday(self):
+        return _num2day(self.ord)
 
 def today():
     import time
     local = time.localtime(time.time())
-    return Date( local[1], local[2], local[0] )
+    return Date(local[1], local[2], local[0])
 
 DateTestError = 'DateTestError'
-def test( firstyear, lastyear ):
+def test(firstyear, lastyear):
     a = Date(9,30,1913)
     b = Date(9,30,1914)
     if repr(a) != 'Tue 30 Sep 1913':
@@ -207,7 +207,7 @@ def test( firstyear, lastyear ):
     # verify date<->number conversions for first and last days for
     # all years in firstyear .. lastyear
 
-    lord = _days_before_year( firstyear )
+    lord = _days_before_year(firstyear)
     y = firstyear
     while y <= lastyear:
         ford = lord + 1

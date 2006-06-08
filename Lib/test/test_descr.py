@@ -3866,11 +3866,24 @@ def methodwrapper():
 
     l = []
     vereq(l.__add__, l.__add__)
-    verify(l.__add__ != [].__add__)
+    vereq(l.__add__, [].__add__)
+    verify(l.__add__ != [5].__add__)
+    verify(l.__add__ != l.__mul__)
     verify(l.__add__.__name__ == '__add__')
     verify(l.__add__.__self__ is l)
     verify(l.__add__.__objclass__ is list)
     vereq(l.__add__.__doc__, list.__add__.__doc__)
+    try:
+        hash(l.__add__)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed("no TypeError from hash([].__add__)")
+
+    t = ()
+    t += (7,)
+    vereq(t.__add__, (7,).__add__)
+    vereq(hash(t.__add__), hash((7,).__add__))
 
 def notimplemented():
     # all binary methods should be able to return a NotImplemented

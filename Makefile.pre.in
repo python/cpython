@@ -370,12 +370,12 @@ libpython$(VERSION).so: $(LIBRARY_OBJS)
 	fi
 
 libpython$(VERSION).sl: $(LIBRARY_OBJS)
-	$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(LIBC) $(LIBM)
+	$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(SHLIBS) $(LIBC) $(LIBM)
 
 # This rule is here for OPENSTEP/Rhapsody/MacOSX. It builds a temporary
 # minimal framework (not including the Lib directory and such) in the current
 # directory.
-RESSRCDIR=$(srcdir)/Mac/OSXResources/framework
+RESSRCDIR=$(srcdir)/Mac/Resources/framework
 $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 		$(LIBRARY) \
 		$(RESSRCDIR)/Info.plist \
@@ -619,8 +619,8 @@ memtest:	all platform
 install:	@FRAMEWORKINSTALLFIRST@ altinstall bininstall maninstall @FRAMEWORKINSTALLLAST@
 
 # Install almost everything without disturbing previous versions
-altinstall:	altbininstall libinstall inclinstall libainstall \
-                sharedinstall oldsharedinstall
+altinstall:	@FRAMEWORKALTINSTALLFIRST@ altbininstall libinstall inclinstall libainstall \
+                sharedinstall oldsharedinstall @FRAMEWORKALTINSTALLLAST@
 
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
@@ -899,7 +899,7 @@ sharedinstall:
 # Here are a couple of targets for MacOSX again, to install a full
 # framework-based Python. frameworkinstall installs everything, the
 # subtargets install specific parts. Much of the actual work is offloaded to
-# the Makefile in Mac/OSX
+# the Makefile in Mac
 #
 #
 # This target is here for backward compatiblity, previous versions of Python
@@ -940,22 +940,23 @@ frameworkinstallstructure:	$(LDLIBRARY)
 
 # This installs Mac/Lib into the framework
 frameworkinstallmaclib:
-	cd Mac/OSX && $(MAKE) installmacsubtree DESTDIR="$(DESTDIR)"
+	cd Mac && $(MAKE) installmacsubtree DESTDIR="$(DESTDIR)"
 
 # This installs the IDE, the Launcher and other apps into /Applications
 frameworkinstallapps:
-	cd Mac/OSX && $(MAKE) installapps DESTDIR="$(DESTDIR)"
+	cd Mac && $(MAKE) installapps DESTDIR="$(DESTDIR)"
 
 # This install the unix python and pythonw tools in /usr/local/bin
 frameworkinstallunixtools:
-	cd Mac/OSX && $(MAKE) installunixtools DESTDIR="$(DESTDIR)"
+	cd Mac && $(MAKE) installunixtools DESTDIR="$(DESTDIR)"
+
+frameworkaltinstallunixtools:
+	cd Mac && $(MAKE) altinstallunixtools DESTDIR="$(DESTDIR)"
 
 # This installs the Demos and Tools into the applications directory.
 # It is not part of a normal frameworkinstall
 frameworkinstallextras:
-	$(MAKE) -f Mac/OSX/Makefile installextras \
-		$(RUNSHARED) BUILDPYTHON=./$(BUILDPYTHON) DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
-		srcdir=$(srcdir) builddir=. DESTDIR=$(DESTDIR)
+	cd Mac && Make installextras DESTDIR="$(DESTDIR)"
 
 # This installs a few of the useful scripts in Tools/scripts
 scriptsinstall:
@@ -1083,6 +1084,7 @@ Python/thread.o: @THREADHEADERS@
 .PHONY: maninstall libinstall inclinstall libainstall sharedinstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
-.PHONY: recheck autoconf clean clobber distclean smelly funny
+.PHONY: frameworkaltinstallunixtools recheck autoconf clean clobber distclean 
+.PHONY: smelly funny
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY

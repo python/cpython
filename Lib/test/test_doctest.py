@@ -512,15 +512,11 @@ will only be generated for it once:
     >>> tests[1].name.split('.')[-1] in ['f', 'g']
     True
 
-Filter Functions
-~~~~~~~~~~~~~~~~
-A filter function can be used to restrict which objects get examined,
-but this is temporary, undocumented internal support for testmod's
-deprecated isprivate gimmick.
+Empty Tests
+~~~~~~~~~~~
+By default, an object with no doctests doesn't create any tests:
 
-    >>> def namefilter(prefix, base):
-    ...     return base.startswith('a_')
-    >>> tests = doctest.DocTestFinder(_namefilter=namefilter).find(SampleClass)
+    >>> tests = doctest.DocTestFinder().find(SampleClass)
     >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
@@ -528,6 +524,9 @@ deprecated isprivate gimmick.
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
+     2  SampleClass.a_classmethod
+     1  SampleClass.a_property
+     1  SampleClass.a_staticmethod
      1  SampleClass.double
      1  SampleClass.get
 
@@ -536,8 +535,7 @@ tells it to include (empty) tests for objects with no doctests.  This feature
 is really to support backward compatibility in what doctest.master.summarize()
 displays.
 
-    >>> tests = doctest.DocTestFinder(_namefilter=namefilter,
-    ...                                exclude_empty=False).find(SampleClass)
+    >>> tests = doctest.DocTestFinder(exclude_empty=False).find(SampleClass)
     >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
@@ -547,34 +545,11 @@ displays.
      0  SampleClass.NestedClass.get
      0  SampleClass.NestedClass.square
      1  SampleClass.__init__
-     1  SampleClass.double
-     1  SampleClass.get
-
-If a given object is filtered out, then none of the objects that it
-contains will be added either:
-
-    >>> def namefilter(prefix, base):
-    ...     return base == 'NestedClass'
-    >>> tests = doctest.DocTestFinder(_namefilter=namefilter).find(SampleClass)
-    >>> tests.sort()
-    >>> for t in tests:
-    ...     print '%2s  %s' % (len(t.examples), t.name)
-     3  SampleClass
-     1  SampleClass.__init__
      2  SampleClass.a_classmethod
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
      1  SampleClass.get
-
-The filter function apply to contained objects, and *not* to the
-object explicitly passed to DocTestFinder:
-
-    >>> def namefilter(prefix, base):
-    ...     return base == 'SampleClass'
-    >>> tests = doctest.DocTestFinder(_namefilter=namefilter).find(SampleClass)
-    >>> len(tests)
-    9
 
 Turning off Recursion
 ~~~~~~~~~~~~~~~~~~~~~
@@ -1913,20 +1888,6 @@ def test_DocTestSuite():
        modified the test globals, which are a copy of the
        sample_doctest module dictionary.  The test globals are
        automatically cleared for us after a test.
-
-       Finally, you can provide an alternate test finder.  Here we'll
-       use a custom test_finder to to run just the test named bar.
-       However, the test in the module docstring, and the two tests
-       in the module __test__ dict, aren't filtered, so we actually
-       run three tests besides bar's.  The filtering mechanisms are
-       poorly conceived, and will go away someday.
-
-         >>> finder = doctest.DocTestFinder(
-         ...    _namefilter=lambda prefix, base: base!='bar')
-         >>> suite = doctest.DocTestSuite('test.sample_doctest',
-         ...                              test_finder=finder)
-         >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=4 errors=0 failures=1>
        """
 
 def test_DocFileSuite():

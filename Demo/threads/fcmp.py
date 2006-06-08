@@ -4,14 +4,14 @@ from Coroutine import *
 
 # fringe visits a nested list in inorder, and detaches for each non-list
 # element; raises EarlyExit after the list is exhausted
-def fringe( co, list ):
+def fringe(co, list):
     for x in list:
         if type(x) is type([]):
             fringe(co, x)
         else:
             co.back(x)
 
-def printinorder( list ):
+def printinorder(list):
     co = Coroutine()
     f = co.create(fringe, co, list)
     try:
@@ -27,7 +27,7 @@ x = [0, 1, [2, [3]], [4,5], [[[6]]] ]
 printinorder(x) # 0 1 2 3 4 5 6
 
 # fcmp lexicographically compares the fringes of two nested lists
-def fcmp( l1, l2 ):
+def fcmp(l1, l2):
     co1 = Coroutine(); f1 = co1.create(fringe, co1, l1)
     co2 = Coroutine(); f2 = co2.create(fringe, co2, l2)
     while 1:

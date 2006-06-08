@@ -96,16 +96,16 @@ dynamically allocated memory blocks.  The special bit patterns are:
 Strings of these bytes are unlikely to be valid addresses, floats, or 7-bit
 ASCII strings.
 
-8 bytes are added at each end of each block of N bytes requested.  The
-memory layout is like so, where p represents the address returned by a
-malloc-like or realloc-like function (p[i:j] means the slice of bytes
-from *(p+i) inclusive up to *(p+j) exclusive; note that the treatment
-of negative indices differs from a Python slice):
+Let S = sizeof(size_t). 2*S bytes are added at each end of each block of N
+bytes requested.  The memory layout is like so, where p represents the
+address returned by a malloc-like or realloc-like function (p[i:j] means
+the slice of bytes from *(p+i) inclusive up to *(p+j) exclusive; note that
+the treatment of negative indices differs from a Python slice):
 
-p[-8:-4]
-    Number of bytes originally asked for.  4-byte unsigned integer,
-    big-endian (easier to read in a memory dump).
-p[-4:0]
+p[-2*S:-S]
+    Number of bytes originally asked for.  This is a size_t, big-endian
+    (easier to read in a memory dump).
+p[-S:0]
     Copies of FORBIDDENBYTE.  Used to catch under- writes and reads.
 p[0:N]
     The requested memory, filled with copies of CLEANBYTE, used to catch
@@ -116,12 +116,12 @@ p[0:N]
     DEADBYTE, to catch reference to freed memory.  When a realloc-
     like function is called requesting a smaller memory block, the excess
     old bytes are also filled with DEADBYTE.
-p[N:N+4]
+p[N:N+S]
     Copies of FORBIDDENBYTE.  Used to catch over- writes and reads.
-p[N+4:N+8]
+p[N+S:N+2*S]
     A serial number, incremented by 1 on each call to a malloc-like or
     realloc-like function.
-    4-byte unsigned integer, big-endian.
+    Big-endian size_t.
     If "bad memory" is detected later, the serial number gives an
     excellent way to set a breakpoint on the next run, to capture the
     instant at which this block was passed out.  The static function
@@ -145,6 +145,10 @@ envar PYTHONMALLOCSTATS
     If this envar exists, a report of pymalloc summary statistics is
     printed to stderr whenever a new arena is allocated, and also
     by Py_Finalize().
+
+Changed in 2.5:  The number of extra bytes allocated is 4*sizeof(size_t).
+Before it was 16 on all boxes, reflecting that Python couldn't make use of
+allocations >= 2**32 bytes even on 64-bit boxes before 2.5.
 ---------------------------------------------------------------------------
 Py_DEBUG                                                  introduced in 1.5
                                                      named DEBUG before 1.5
@@ -251,7 +255,7 @@ is not defined by the architecture specification, so you'll need to
 find the manual for your specific processor.  For the 750CX, 750CXe
 and 750FX (all sold as the G3) we find:
 
-    The time base counter is clocked at a frequency that is 
+    The time base counter is clocked at a frequency that is
     one-fourth that of the bus clock.
 
 This build is enabled by the --with-tsc flag to configure.

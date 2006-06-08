@@ -62,7 +62,7 @@ def pack(fmt, *args):
         o = _compile(fmt)
     return o.pack(*args)
 
-def pack_to(fmt, buf, offset, *args):
+def pack_into(fmt, buf, offset, *args):
     """
     Pack the values v2, v2, ... according to fmt, write
     the packed bytes into the writable buffer buf starting at offset.
@@ -72,7 +72,7 @@ def pack_to(fmt, buf, offset, *args):
         o = _cache[fmt]
     except KeyError:
         o = _compile(fmt)
-    return o.pack_to(buf, offset, *args)
+    return o.pack_into(buf, offset, *args)
 
 def unpack(fmt, s):
     """

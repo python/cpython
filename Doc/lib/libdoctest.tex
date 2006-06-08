@@ -952,7 +952,7 @@ sections \ref{doctest-simple-testmod} and
 
 \begin{funcdesc}{testmod}{\optional{m}\optional{, name}\optional{,
                           globs}\optional{, verbose}\optional{,
-                          isprivate}\optional{, report}\optional{,
+                          report}\optional{,
                           optionflags}\optional{, extraglobs}\optional{,
                           raise_on_error}\optional{, exclude_empty}}
 
@@ -990,19 +990,14 @@ sections \ref{doctest-simple-testmod} and
   for function \function{testfile()} above, except that \var{globs}
   defaults to \code{\var{m}.__dict__}.
 
-  Optional argument \var{isprivate} specifies a function used to
-  determine whether a name is private.  The default function treats
-  all names as public.  \var{isprivate} can be set to
-  \code{doctest.is_private} to skip over names that are
-  private according to Python's underscore naming convention.
-  \deprecated{2.4}{\var{isprivate} was a stupid idea -- don't use it.
-  If you need to skip tests based on name, filter the list returned by
-  \code{DocTestFinder.find()} instead.}
-
   \versionchanged[The parameter \var{optionflags} was added]{2.3}
 
   \versionchanged[The parameters \var{extraglobs}, \var{raise_on_error}
                   and \var{exclude_empty} were added]{2.4}
+
+  \versionchanged[The optional argument \var{isprivate}, deprecated
+                  in 2.4, was removed]{2.5}
+
 \end{funcdesc}
 
 There's also a function to run the doctests associated with a single object.

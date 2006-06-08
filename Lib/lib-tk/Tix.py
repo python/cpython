@@ -468,7 +468,7 @@ class DisplayStyle:
     """DisplayStyle - handle configuration options shared by
     (multiple) Display Items"""
 
-    def __init__(self, itemtype, cnf={}, **kw ):
+    def __init__(self, itemtype, cnf={}, **kw):
         master = _default_root              # global from Tkinter
         if not master and cnf.has_key('refwindow'): master=cnf['refwindow']
         elif not master and kw.has_key('refwindow'):  master= kw['refwindow']
@@ -480,7 +480,7 @@ class DisplayStyle:
     def __str__(self):
         return self.stylename
 
-    def _options(self, cnf, kw ):
+    def _options(self, cnf, kw):
         if kw and cnf:
             cnf = _cnfmerge((cnf, kw))
         elif kw:

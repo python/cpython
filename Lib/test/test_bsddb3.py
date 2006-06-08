@@ -44,6 +44,8 @@ def suite():
         'test_queue',
         'test_recno',
         'test_thread',
+        'test_sequence',
+        'test_cursor_pget_bug',
         ]
 
     alltests = unittest.TestSuite()

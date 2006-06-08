@@ -199,45 +199,16 @@ if (x == NULL) _AddTraceback(what, __FILE__, __LINE__ - 1), PyErr_Print()
 
 	result = PyObject_CallObject(callable, arglist);
 	CHECK("'calling callback function'", result);
-	if ((restype != &ffi_type_void)
-	    && result && result != Py_None) { /* XXX What is returned for Py_None ? */
-		/* another big endian hack */
-		union {
-			char c;
-			short s;
-			int i;
-			long l;
-		} r;
+	if ((restype != &ffi_type_void) && result && result != Py_None) {
 		PyObject *keep;
 		assert(setfunc);
-		switch (restype->size) {
-		case 1:
-			keep = setfunc(&r, result, 0);
-			CHECK("'converting callback result'", keep);
-			*(ffi_arg *)mem = r.c;
-			break;
-		case SIZEOF_SHORT:
-			keep = setfunc(&r, result, 0);
-			CHECK("'converting callback result'", keep);
-			*(ffi_arg *)mem = r.s;
-			break;
-		case SIZEOF_INT:
-			keep = setfunc(&r, result, 0);
-			CHECK("'converting callback result'", keep);
-			*(ffi_arg *)mem = r.i;
-			break;
-#if (SIZEOF_LONG != SIZEOF_INT)
-		case SIZEOF_LONG:
-			keep = setfunc(&r, result, 0);
-			CHECK("'converting callback result'", keep);
-			*(ffi_arg *)mem = r.l;
-			break;
+#ifdef WORDS_BIGENDIAN
+		/* See the corresponding code in callproc.c, around line 961 */
+		if (restype->type != FFI_TYPE_FLOAT && restype->size < sizeof(ffi_arg))
+			mem = (char *)mem + sizeof(ffi_arg) - restype->size;
 #endif
-		default:
-			keep = setfunc(mem, result, 0);
-			CHECK("'converting callback result'", keep);
-			break;
-		}
+		keep = setfunc(mem, result, 0);
+		CHECK("'converting callback result'", keep);
 		/* keep is an object we have to keep alive so that the result
 		   stays valid.  If there is no such object, the setfunc will
 		   have returned Py_None.

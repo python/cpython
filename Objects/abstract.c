@@ -216,7 +216,8 @@ PyObject_DelItemString(PyObject *o, char *key)
 	return ret;
 }
 
-int PyObject_AsCharBuffer(PyObject *obj,
+int
+PyObject_AsCharBuffer(PyObject *obj,
 			  const char **buffer,
 			  Py_ssize_t *buffer_len)
 {

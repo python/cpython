@@ -138,8 +138,8 @@ class StructureTestCase(unittest.TestCase):
         self.failUnlessEqual(X.y.size, sizeof(c_char))
 
         # readonly
-        self.assertRaises(TypeError, setattr, X.x, "offset", 92)
-        self.assertRaises(TypeError, setattr, X.x, "size", 92)
+        self.assertRaises(AttributeError, setattr, X.x, "offset", 92)
+        self.assertRaises(AttributeError, setattr, X.x, "size", 92)
 
         class X(Union):
             _fields_ = [("x", c_int),
@@ -152,8 +152,8 @@ class StructureTestCase(unittest.TestCase):
         self.failUnlessEqual(X.y.size, sizeof(c_char))
 
         # readonly
-        self.assertRaises(TypeError, setattr, X.x, "offset", 92)
-        self.assertRaises(TypeError, setattr, X.x, "size", 92)
+        self.assertRaises(AttributeError, setattr, X.x, "offset", 92)
+        self.assertRaises(AttributeError, setattr, X.x, "size", 92)
 
         # XXX Should we check nested data types also?
         # offset is always relative to the class...
