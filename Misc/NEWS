@@ -75,6 +75,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Change binascii.hexlify to accept a read-only buffer instead of only a char
+  buffer and actually follow its documentation.
+
 - Fixed a potentially invalid memory access of CJKCodecs' shift-jis decoder.
 
 - Patch #1478788 (modified version): The functional extension module has
