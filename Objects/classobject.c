@@ -2221,9 +2221,17 @@ instancemethod_dealloc(register PyMethodObject *im)
 static int
 instancemethod_compare(PyMethodObject *a, PyMethodObject *b)
 {
-	if (a->im_self != b->im_self)
+	int cmp;
+	cmp = PyObject_Compare(a->im_func, b->im_func);
+	if (cmp)
+		return cmp;
+
+	if (a->im_self == b->im_self)
+		return 0;
+	if (a->im_self == NULL || b->im_self == NULL)
 		return (a->im_self < b->im_self) ? -1 : 1;
-	return PyObject_Compare(a->im_func, b->im_func);
+	else
+		return PyObject_Compare(a->im_self, b->im_self);
 }
 
 static PyObject *
@@ -2299,7 +2307,10 @@ instancemethod_hash(PyMethodObject *a)
 	y = PyObject_Hash(a->im_func);
 	if (y == -1)
 		return -1;
-	return x ^ y;
+	x = x ^ y;
+	if (x == -1)
+		x = -2;
+	return x;
 }
 
 static int

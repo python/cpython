@@ -901,14 +901,26 @@ wrapper_dealloc(wrapperobject *wp)
 static int
 wrapper_compare(wrapperobject *a, wrapperobject *b)
 {
-	if (a->descr == b->descr) {
-		if (a->self == b->self)
-			return 0;
-		else
-			return (a->self < b->self) ? -1 : 1;
-	}
+	if (a->descr == b->descr)
+		return PyObject_Compare(a->self, b->self);
 	else
 		return (a->descr < b->descr) ? -1 : 1;
+}
+
+static long
+wrapper_hash(wrapperobject *wp)
+{
+	int x, y;
+	x = _Py_HashPointer(wp->descr);
+	if (x == -1)
+		return -1;
+	y = PyObject_Hash(wp->self);
+	if (y == -1)
+		return -1;
+	x = x ^ y;
+	if (x == -1)
+		x = -2;
+	return x;
 }
 
 static PyObject *
@@ -1008,7 +1020,7 @@ static PyTypeObject wrappertype = {
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
 	0,		       			/* tp_as_mapping */
-	0,					/* tp_hash */
+	(hashfunc)wrapper_hash,			/* tp_hash */
 	(ternaryfunc)wrapper_call,		/* tp_call */
 	0,					/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
