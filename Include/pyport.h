@@ -174,6 +174,27 @@ typedef Py_intptr_t	Py_ssize_t;
 #define Py_LOCAL_INLINE(type) static type
 #endif
 
+/* Py_MEMCPY can be used instead of memcpy in cases where the copied blocks
+ * are often very short.  While most platforms have highly optimized code for
+ * large transfers, the setup costs for memcpy are often quite high.  MEMCPY
+ * solves this by doing short copies "in line".
+ */
+
+#if defined(_MSC_VER)
+#define Py_MEMCPY(target, source, length) do {				\
+		size_t i_, n_ = (length);				\
+		char *t_ = (void*) (target);				\
+		const char *s_ = (void*) (source);			\
+		if (n_ >= 16)						\
+			memcpy(t_, s_, n_);				\
+		else							\
+			for (i_ = 0; i_ < n_; i_++)			\
+				t_[i_] = s_[i_];			\
+	} while (0)
+#else
+#define Py_MEMCPY memcpy
+#endif
+
 #include <stdlib.h>
 
 #include <math.h> /* Moved here from the math section, before extern "C" */

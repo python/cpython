@@ -552,14 +552,14 @@ Read count bytes from given address.";
 
 
 static PyMethodDef SwiMethods[]=
-{ { "swi", swi_swi,1},
-  { "block", PyBlock_New,1},
-  { "register", PyRegister,1},
-  { "string", swi_string,METH_VARARGS, swi_string__doc__},
-  { "integer", swi_integer,METH_VARARGS, swi_integer__doc__},
-  { "integers", swi_integers,METH_VARARGS, swi_integers__doc__},
-  { "tuples", swi_tuples,METH_VARARGS, swi_tuples__doc__},
-  { "tuple", swi_tuple,METH_VARARGS, swi_tuple__doc__},
+{ { "swi", swi_swi, METH_VARARGS},
+  { "block", PyBlock_New, METH_VARARGS},
+  { "register", PyRegister, METH_VARARGS},
+  { "string", swi_string, METH_VARARGS, swi_string__doc__},
+  { "integer", swi_integer, METH_VARARGS, swi_integer__doc__},
+  { "integers", swi_integers, METH_VARARGS, swi_integers__doc__},
+  { "tuples", swi_tuples, METH_VARARGS, swi_tuples__doc__},
+  { "tuple", swi_tuple, METH_VARARGS, swi_tuple__doc__},
   { NULL,NULL,0,NULL}		 /* Sentinel */
 };
 

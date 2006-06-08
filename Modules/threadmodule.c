@@ -456,7 +456,8 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 	struct bootstate *boot;
 	long ident;
 
-	if (!PyArg_ParseTuple(fargs, "OO|O:start_new_thread", &func, &args, &keyw))
+	if (!PyArg_UnpackTuple(fargs, "start_new_thread", 2, 3,
+		               &func, &args, &keyw))
 		return NULL;
 	if (!PyCallable_Check(func)) {
 		PyErr_SetString(PyExc_TypeError,

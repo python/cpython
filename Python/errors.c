@@ -597,13 +597,16 @@ PyErr_WriteUnraisable(PyObject *obj)
 	if (f != NULL) {
 		PyFile_WriteString("Exception ", f);
 		if (t) {
-			char* className = PyExceptionClass_Name(t);
 			PyObject* moduleName;
-			char *dot = strrchr(className, '.');
-			if (dot != NULL)
-				className = dot+1;
-			moduleName = PyObject_GetAttrString(t, "__module__");
+			char* className = PyExceptionClass_Name(t);
 
+			if (className != NULL) {
+				char *dot = strrchr(className, '.');
+				if (dot != NULL)
+					className = dot+1;
+			}
+
+			moduleName = PyObject_GetAttrString(t, "__module__");
 			if (moduleName == NULL)
 				PyFile_WriteString("<unknown>", f);
 			else {
@@ -734,7 +737,8 @@ PyErr_SyntaxLocation(const char *filename, int lineno)
 
 		tmp = PyErr_ProgramText(filename, lineno);
 		if (tmp) {
-			PyObject_SetAttrString(v, "text", tmp);
+			if (PyObject_SetAttrString(v, "text", tmp))
+				PyErr_Clear();
 			Py_DECREF(tmp);
 		}
 	}

@@ -1056,12 +1056,13 @@ class DocTestRunner:
 
         >>> tests = DocTestFinder().find(_TestClass)
         >>> runner = DocTestRunner(verbose=False)
+        >>> tests.sort(key = lambda test: test.name)
         >>> for test in tests:
-        ...     print runner.run(test)
-        (0, 2)
-        (0, 1)
-        (0, 2)
-        (0, 2)
+        ...     print test.name, '->', runner.run(test)
+        _TestClass -> (0, 2)
+        _TestClass.__init__ -> (0, 2)
+        _TestClass.get -> (0, 2)
+        _TestClass.square -> (0, 1)
 
     The `summarize` method prints a summary of all the test cases that
     have been run by the runner, and returns an aggregated `(f, t)`
@@ -1869,7 +1870,8 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
 
 def testfile(filename, module_relative=True, name=None, package=None,
              globs=None, verbose=None, report=True, optionflags=0,
-             extraglobs=None, raise_on_error=False, parser=DocTestParser()):
+             extraglobs=None, raise_on_error=False, parser=DocTestParser(),
+             encoding=None):
     """
     Test examples in the given file.  Return (#failures, #tests).
 
@@ -1935,6 +1937,9 @@ def testfile(filename, module_relative=True, name=None, package=None,
     Optional keyword arg "parser" specifies a DocTestParser (or
     subclass) that should be used to extract tests from the files.
 
+    Optional keyword arg "encoding" specifies an encoding that should
+    be used to convert the file to unicode.
+
     Advanced tomfoolery:  testmod runs methods of a local instance of
     class doctest.Tester, then merges the results into (or creates)
     global Tester instance doctest.master.  Methods of doctest.master
@@ -1968,6 +1973,9 @@ def testfile(filename, module_relative=True, name=None, package=None,
         runner = DebugRunner(verbose=verbose, optionflags=optionflags)
     else:
         runner = DocTestRunner(verbose=verbose, optionflags=optionflags)
+
+    if encoding is not None:
+        text = text.decode(encoding)
 
     # Read the file, convert it to a test, and run it.
     test = parser.get_doctest(text, globs, name, filename, 0)
@@ -2339,7 +2347,8 @@ class DocFileCase(DocTestCase):
                 )
 
 def DocFileTest(path, module_relative=True, package=None,
-                globs=None, parser=DocTestParser(), **options):
+                globs=None, parser=DocTestParser(),
+                encoding=None, **options):
     if globs is None:
         globs = {}
     else:
@@ -2357,6 +2366,10 @@ def DocFileTest(path, module_relative=True, package=None,
 
     # Find the file and read it.
     name = os.path.basename(path)
+
+    # If an encoding is specified, use it to convert the file to unicode
+    if encoding is not None:
+        doc = doc.decode(encoding)
 
     # Convert it to a test, and wrap it in a DocFileCase.
     test = parser.get_doctest(doc, globs, name, path, 0)
@@ -2414,6 +2427,9 @@ def DocFileSuite(*paths, **kw):
     parser
       A DocTestParser (or subclass) that should be used to extract
       tests from the files.
+
+    encoding
+      An encoding that will be used to convert the files to unicode.
     """
     suite = unittest.TestSuite()
 

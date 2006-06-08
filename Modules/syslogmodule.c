@@ -98,10 +98,8 @@ syslog_syslog(PyObject * self, PyObject * args)
 }
 
 static PyObject * 
-syslog_closelog(PyObject *self, PyObject *args)
+syslog_closelog(PyObject *self, PyObject *unused)
 {
-	if (!PyArg_ParseTuple(args, ":closelog"))
-		return NULL;
 	closelog();
 	Py_XDECREF(S_ident_o);
 	S_ident_o = NULL;
@@ -146,7 +144,7 @@ syslog_log_upto(PyObject *self, PyObject *args)
 
 static PyMethodDef syslog_methods[] = {
 	{"openlog",	syslog_openlog,		METH_VARARGS},
-	{"closelog",	syslog_closelog,	METH_VARARGS},
+	{"closelog",	syslog_closelog,	METH_NOARGS},
 	{"syslog",	syslog_syslog,		METH_VARARGS},
 	{"setlogmask",	syslog_setlogmask,	METH_VARARGS},
 	{"LOG_MASK",	syslog_log_mask,	METH_VARARGS},

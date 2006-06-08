@@ -218,7 +218,7 @@ select_select(PyObject *self, PyObject *args)
 	int n;
 
 	/* convert arguments */
-	if (!PyArg_ParseTuple(args, "OOO|O:select",
+	if (!PyArg_UnpackTuple(args, "select", 3, 4,
 			      &ifdlist, &ofdlist, &efdlist, &tout))
 		return NULL;
 
@@ -415,15 +415,11 @@ PyDoc_STRVAR(poll_unregister_doc,
 Remove a file descriptor being tracked by the polling object.");
 
 static PyObject *
-poll_unregister(pollObject *self, PyObject *args) 
+poll_unregister(pollObject *self, PyObject *o) 
 {
-	PyObject *o, *key;
+	PyObject *key;
 	int fd;
 
-	if (!PyArg_ParseTuple(args, "O:unregister", &o)) {
-		return NULL;
-	}
-  
 	fd = PyObject_AsFileDescriptor( o );
 	if (fd == -1) 
 		return NULL;
@@ -459,7 +455,7 @@ poll_poll(pollObject *self, PyObject *args)
 	int timeout = 0, poll_result, i, j;
 	PyObject *value = NULL, *num = NULL;
 
-	if (!PyArg_ParseTuple(args, "|O:poll", &tout)) {
+	if (!PyArg_UnpackTuple(args, "poll", 0, 1, &tout)) {
 		return NULL;
 	}
 
@@ -548,7 +544,7 @@ static PyMethodDef poll_methods[] = {
 	{"register",	(PyCFunction)poll_register,	
 	 METH_VARARGS,  poll_register_doc},
 	{"unregister",	(PyCFunction)poll_unregister,	
-	 METH_VARARGS,  poll_unregister_doc},
+	 METH_O,        poll_unregister_doc},
 	{"poll",	(PyCFunction)poll_poll,	
 	 METH_VARARGS,  poll_poll_doc},
 	{NULL,		NULL}		/* sentinel */
@@ -614,16 +610,9 @@ PyDoc_STRVAR(poll_doc,
 unregistering file descriptors, and then polling them for I/O events.");
 
 static PyObject *
-select_poll(PyObject *self, PyObject *args)
+select_poll(PyObject *self, PyObject *unused)
 {
-	pollObject *rv;
-	
-	if (!PyArg_ParseTuple(args, ":poll"))
-		return NULL;
-	rv = newPollObject();
-	if ( rv == NULL )
-		return NULL;
-	return (PyObject *)rv;
+	return (PyObject *)newPollObject();
 }
 
 #ifdef __APPLE__
@@ -684,7 +673,7 @@ On Windows, only sockets are supported; on Unix, all file descriptors.");
 static PyMethodDef select_methods[] = {
     {"select",	select_select, METH_VARARGS, select_doc},
 #if defined(HAVE_POLL) 
-    {"poll",    select_poll,   METH_VARARGS, poll_doc},
+    {"poll",    select_poll,   METH_NOARGS, poll_doc},
 #endif /* HAVE_POLL */
     {0,  	0},			     /* sentinel */
 };

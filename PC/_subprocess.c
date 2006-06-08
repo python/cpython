@@ -108,8 +108,8 @@ sp_handle_dealloc(sp_handle_object* self)
 }
 
 static PyMethodDef sp_handle_methods[] = {
-	{"Detach", (PyCFunction) sp_handle_detach, 1},
-	{"Close", (PyCFunction) sp_handle_close, 1},
+	{"Detach", (PyCFunction) sp_handle_detach, METH_VARARGS},
+	{"Close",  (PyCFunction) sp_handle_close,  METH_VARARGS},
 	{NULL, NULL}
 };
 

@@ -868,7 +868,7 @@ sections \ref{doctest-simple-testmod} and
                           globs}\optional{, verbose}\optional{,
                           report}\optional{, optionflags}\optional{,
                           extraglobs}\optional{, raise_on_error}\optional{,
-                          parser}}
+                          parser}\optional{, encoding}}
 
   All arguments except \var{filename} are optional, and should be
   specified in keyword form.
@@ -941,7 +941,13 @@ sections \ref{doctest-simple-testmod} and
   subclass) that should be used to extract tests from the files.  It
   defaults to a normal parser (i.e., \code{\class{DocTestParser}()}).
 
+  Optional argument \var{encoding} specifies an encoding that should
+  be used to convert the file to unicode.
+
   \versionadded{2.4}
+
+  \versionchanged[The parameter \var{encoding} was added]{2.5}
+
 \end{funcdesc}
 
 \begin{funcdesc}{testmod}{\optional{m}\optional{, name}\optional{,
@@ -1061,7 +1067,8 @@ instances from text files and modules with doctests:
 \begin{funcdesc}{DocFileSuite}{\optional{module_relative}\optional{,
                               package}\optional{, setUp}\optional{,
                               tearDown}\optional{, globs}\optional{,
-                              optionflags}\optional{, parser}}
+                              optionflags}\optional{, parser}\optional{,
+                              encoding}}
 
   Convert doctest tests from one or more text files to a
   \class{\refmodule{unittest}.TestSuite}.
@@ -1128,11 +1135,17 @@ instances from text files and modules with doctests:
   subclass) that should be used to extract tests from the files.  It
   defaults to a normal parser (i.e., \code{\class{DocTestParser}()}).
 
+  Optional argument \var{encoding} specifies an encoding that should
+  be used to convert the file to unicode.
+
   \versionadded{2.4}
 
   \versionchanged[The global \code{__file__} was added to the
   globals provided to doctests loaded from a text file using
   \function{DocFileSuite()}]{2.5}
+
+  \versionchanged[The parameter \var{encoding} was added]{2.5}
+
 \end{funcdesc}
 
 \begin{funcdesc}{DocTestSuite}{\optional{module}\optional{,

@@ -31,39 +31,50 @@ static PyObject *riscos_oserror(void)
 
 /* RISCOS file commands */
 
-static PyObject *riscos_remove(PyObject *self,PyObject *args)
-{       char *path1;
-	if (!PyArg_Parse(args, "s", &path1)) return NULL;
+static PyObject *
+riscos_remove(PyObject *self, PyObject *args)
+{
+    char *path1;
+	if (!PyArg_ParseTuple(args, "s:remove", &path1)) return NULL;
 	if (remove(path1)) return PyErr_SetFromErrno(PyExc_OSError);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
-static PyObject *riscos_rename(PyObject *self,PyObject *args)
-{	char *path1, *path2;
-	if (!PyArg_Parse(args, "(ss)", &path1, &path2)) return NULL;
+static PyObject *
+riscos_rename(PyObject *self, PyObject *args)
+{
+	char *path1, *path2;
+	if (!PyArg_ParseTuple(args, "ss:rename", &path1, &path2))
+        return NULL;
 	if (rename(path1,path2)) return PyErr_SetFromErrno(PyExc_OSError);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
-static PyObject *riscos_system(PyObject *self,PyObject *args)
-{	char *command;
-	if (!PyArg_Parse(args, "s", &command)) return NULL;
+static PyObject *
+riscos_system(PyObject *self, PyObject *args)
+{
+	char *command;
+	if (!PyArg_ParseTuple(args, "s:system", &command)) return NULL;
 	return PyInt_FromLong(system(command));
 }
 
-static PyObject *riscos_chdir(PyObject *self,PyObject *args)
-{	char *path;
-	if (!PyArg_Parse(args, "s", &path)) return NULL;
+static PyObject *
+riscos_chdir(PyObject *self, PyObject *args)
+{
+	char *path;
+	if (!PyArg_ParseTuple(args, "s:chdir", &path)) return NULL;
 	e=xosfscontrol_dir(path);
 	if(e) return riscos_oserror();
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
-static PyObject *canon(char *path)
-{ int len;
+static PyObject *
+canon(char *path)
+{
+  int len;
   PyObject *obj;
   char *buf;
   e=xosfscontrol_canonicalise_path(path,0,0,0,0,&len);
@@ -78,32 +89,39 @@ static PyObject *canon(char *path)
   return riscos_oserror();
 }
 
-static PyObject *riscos_getcwd(PyObject *self,PyObject *args)
-{ 
-  return canon("@");
+static PyObject *
+riscos_getcwd(PyObject *self, PyObject *unused)
+{
+    return canon("@");
 }
 
-static PyObject *riscos_expand(PyObject *self,PyObject *args)
-{	char *path;
-	if (!PyArg_Parse(args, "s", &path)) return NULL;
+static PyObject *
+riscos_expand(PyObject *self, PyObject *args)
+{
+	char *path;
+	if (!PyArg_ParseTuple(args, "s:expand", &path)) return NULL;
         return canon(path);
 }
 
-static PyObject *riscos_mkdir(PyObject *self,PyObject *args)
-{	char *path;
-        int mode;
-        if (!PyArg_ParseTuple(args, "s|i", &path, &mode)) return NULL;
-        e=xosfile_create_dir(path,0);
-        if(e) return riscos_oserror();
+static PyObject *
+riscos_mkdir(PyObject *self, PyObject *args)
+{
+	char *path;
+    int mode;
+    if (!PyArg_ParseTuple(args, "s|i:mkdir", &path, &mode)) return NULL;
+    e=xosfile_create_dir(path,0);
+    if(e) return riscos_oserror();
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
-static PyObject *riscos_listdir(PyObject *self,PyObject *args)
-{	char *path,buf[256];
-        PyObject *d, *v;
-        int c=0,count;
-	if (!PyArg_Parse(args, "s", &path)) return NULL;
+static PyObject *
+riscos_listdir(PyObject *self, PyObject *args)
+{
+	char *path,buf[256];
+    PyObject *d, *v;
+    int c=0,count;
+	if (!PyArg_ParseTuple(args, "s:listdir", &path)) return NULL;
 	d=PyList_New(0);
 	if(!d) return NULL;
 	for(;;)
@@ -158,14 +176,15 @@ static PyStructSequence_Desc stat_result_desc = {
 
 static PyTypeObject StatResultType;
 
-static PyObject *riscos_stat(PyObject *self,PyObject *args)
+static PyObject *
+riscos_stat(PyObject *self, PyObject *args)
 {	
 	PyObject *v;
 	char *path;
         int ob,len;
         bits t=0;
         bits ld,ex,at,ft,mode;
-	if (!PyArg_Parse(args, "s", &path)) return NULL;
+	if (!PyArg_ParseTuple(args, "s:stat", &path)) return NULL;
 	e=xosfile_read_stamped_no_path(path,&ob,&ld,&ex,&len,&at,&ft);
 	if(e) return riscos_oserror();
 	switch (ob)
@@ -207,13 +226,15 @@ static PyObject *riscos_stat(PyObject *self,PyObject *args)
         return v;
 }
 
-static PyObject *riscos_chmod(PyObject *self,PyObject *args)
-{	char *path;
-        bits mode;
-        bits attr;
-        attr=(mode&0x700)>>8;
-        attr|=(mode&7)<<4;
-	if (!PyArg_Parse(args, "(si)", &path,(int*)&mode)) return NULL;
+static PyObject *
+riscos_chmod(PyObject *self,PyObject *args)
+{
+	char *path;
+    bits mode;
+    bits attr;
+    attr=(mode&0x700)>>8;
+    attr|=(mode&7)<<4;
+	if (!PyArg_ParseTuple(args, "si:chmod", &path,(int*)&mode)) return NULL;
         e=xosfile_write_attr(path,attr);
         if(e) return riscos_oserror();
 	Py_INCREF(Py_None);
@@ -221,7 +242,8 @@ static PyObject *riscos_chmod(PyObject *self,PyObject *args)
 }
 
 
-static PyObject *riscos_utime(PyObject *self,PyObject *args)
+static PyObject *
+riscos_utime(PyObject *self, PyObject *args)
 {
 	char *path;
 	long atime, mtime;
@@ -274,35 +296,42 @@ static PyObject *riscos_utime(PyObject *self,PyObject *args)
 	return Py_None;
 }
 
-static PyObject *riscos_settype(PyObject *self,PyObject *args)
-{	char *path,*name;
-        int type;
-	if (!PyArg_Parse(args, "(si)", &path,&type))
-	{ PyErr_Clear();
-	  if (!PyArg_Parse(args, "(ss)", &path,&name)) return NULL;
+static PyObject *
+riscos_settype(PyObject *self, PyObject *args)
+{
+	char *path,*name;
+    int type;
+	if (!PyArg_ParseTuple(args, "si:settype", &path,&type))
+	{
+      PyErr_Clear();
+	  if (!PyArg_ParseTuple(args, "ss:settype", &path,&name)) return NULL;
 	  e=xosfscontrol_file_type_from_string(name,(bits*)&type);
 	  if(e) return riscos_oserror();
 	}
-        e=xosfile_set_type(path,type);
-        if(e) return riscos_oserror();
+    e=xosfile_set_type(path,type);
+    if(e) return riscos_oserror();
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
-static PyObject *riscos_getenv(PyObject *self,PyObject *args)
-{ char *name,*value;
-  if(!PyArg_Parse(args,"s",&name)) return NULL;
+static PyObject *
+riscos_getenv(PyObject *self, PyObject *args)
+{
+  char *name,*value;
+  if(!PyArg_ParseTuple(args,"s:getenv",&name)) return NULL;
   value=getenv(name);
   if(value) return PyString_FromString(value);
   Py_INCREF(Py_None);
   return Py_None;
 }
 
-static PyObject *riscos_putenv(PyObject *self,PyObject *args)
-{ char *name,*value;
+static PyObject *
+riscos_putenv(PyObject *self, PyObject *args)
+{
+  char *name,*value;
   int len;
   os_var_type type=os_VARTYPE_LITERAL_STRING;
-  if(!PyArg_ParseTuple(args,"ss|i",&name,&value,&type)) return NULL;
+  if(!PyArg_ParseTuple(args,"ss|i:putenv",&name,&value,&type)) return NULL;
   if(type!=os_VARTYPE_STRING&&type!=os_VARTYPE_MACRO&&type!=os_VARTYPE_EXPANDED
                             &&type!=os_VARTYPE_LITERAL_STRING)
     return riscos_error("Bad putenv type");
@@ -315,22 +344,26 @@ static PyObject *riscos_putenv(PyObject *self,PyObject *args)
   return Py_None;
 }
 
-static PyObject *riscos_delenv(PyObject *self,PyObject *args)
-{ char *name;
-  if(!PyArg_Parse(args,"s",&name)) return NULL;
+static PyObject *
+riscos_delenv(PyObject *self, PyObject *args)
+{
+  char *name;
+  if(!PyArg_ParseTuple(args,"s:delenv",&name)) return NULL;
   e=xos_set_var_val(name,NULL,-1,0,0,0,0);
   if(e) return riscos_oserror();
   Py_INCREF(Py_None);
   return Py_None;
 }
 
-static PyObject *riscos_getenvdict(PyObject *self,PyObject *args)
-{ PyObject *dict;
+static PyObject *
+riscos_getenvdict(PyObject *self, PyObject *args)
+{
+  PyObject *dict;
   char value[257];
   char *which="*";
   int size;
   char *context=NULL;
-  if(!PyArg_ParseTuple(args,"|s",&which)) return NULL;
+  if(!PyArg_ParseTuple(args,"|s:getenvdict",&which)) return NULL;
   dict = PyDict_New();
   if (!dict) return NULL;
   /* XXX This part ignores errors */
@@ -348,25 +381,25 @@ static PyObject *riscos_getenvdict(PyObject *self,PyObject *args)
 
 static PyMethodDef riscos_methods[] = {
 
-	{"unlink",	riscos_remove},
-        {"remove",      riscos_remove},
-	{"rename",	riscos_rename},
-	{"system",	riscos_system},
-	{"rmdir",	riscos_remove},
-	{"chdir",	riscos_chdir},
+	{"unlink",	riscos_remove, METH_VARARGS},
+    {"remove",  riscos_remove, METH_VARARGS},
+	{"rename",	riscos_rename, METH_VARARGS},
+	{"system",	riscos_system, METH_VARARGS},
+	{"rmdir",	riscos_remove, METH_VARARGS},
+	{"chdir",	riscos_chdir,  METH_VARARGS},
 	{"getcwd",	riscos_getcwd, METH_NOARGS},
-	{"expand",      riscos_expand},
-	{"mkdir",	riscos_mkdir,1},
-	{"listdir",	riscos_listdir},
-	{"stat",	riscos_stat},
-	{"lstat",	riscos_stat},
-        {"chmod",	riscos_chmod},
-	{"utime",	riscos_utime},
-	{"settype",	riscos_settype},
-	{"getenv",      riscos_getenv},
-	{"putenv",      riscos_putenv},
-	{"delenv",      riscos_delenv},
-	{"getenvdict",  riscos_getenvdict,1},
+	{"expand",  riscos_expand, METH_VARARGS},
+	{"mkdir",	riscos_mkdir,  METH_VARARGS},
+	{"listdir",	riscos_listdir, METH_VARARGS},
+	{"stat",	riscos_stat,   METH_VARARGS},
+	{"lstat",	riscos_stat,   METH_VARARGS},
+    {"chmod",	riscos_chmod,  METH_VARARGS},
+	{"utime",	riscos_utime,  METH_VARARGS},
+	{"settype",	riscos_settype, METH_VARARGS},
+	{"getenv",  riscos_getenv, METH_VARARGS},
+	{"putenv",  riscos_putenv, METH_VARARGS},
+	{"delenv",  riscos_delenv, METH_VARARGS},
+	{"getenvdict", riscos_getenvdict, METH_VARARGS},
 	{NULL,		NULL}		 /* Sentinel */
 };
 

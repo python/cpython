@@ -1,3 +1,9 @@
+/*
+ * New exceptions.c written in Iceland by Richard Jones and Georg Brandl.
+ *
+ * Thanks go to Tim Peters and Michael Hudson for debugging.
+ */
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include "structmember.h"
@@ -36,7 +42,7 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    self->message = PyString_FromString(""); 
+    self->message = PyString_FromString("");
     if (!self->message) {
         Py_DECREF(self);
         return NULL;
@@ -48,19 +54,22 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
 {
+    if (!_PyArg_NoKeywords(self->ob_type->tp_name, kwds))
+        return -1;
+
     Py_DECREF(self->args);
     self->args = args;
     Py_INCREF(self->args);
 
     if (PyTuple_GET_SIZE(self->args) == 1) {
-        Py_DECREF(self->message);
+        Py_CLEAR(self->message);
         self->message = PyTuple_GET_ITEM(self->args, 0);
-	Py_INCREF(self->message);
+        Py_INCREF(self->message);
     }
     return 0;
 }
 
-int
+static int
 BaseException_clear(PyBaseExceptionObject *self)
 {
     Py_CLEAR(self->dict);
@@ -76,11 +85,10 @@ BaseException_dealloc(PyBaseExceptionObject *self)
     self->ob_type->tp_free((PyObject *)self);
 }
 
-int
+static int
 BaseException_traverse(PyBaseExceptionObject *self, visitproc visit, void *arg)
 {
-    if (self->dict)
-        Py_VISIT(self->dict);
+    Py_VISIT(self->dict);
     Py_VISIT(self->args);
     Py_VISIT(self->message);
     return 0;
@@ -91,24 +99,13 @@ BaseException_str(PyBaseExceptionObject *self)
 {
     PyObject *out;
 
-    switch (PySequence_Length(self->args)) {
+    switch (PyTuple_GET_SIZE(self->args)) {
     case 0:
         out = PyString_FromString("");
         break;
     case 1:
-    {
-        PyObject *tmp = PySequence_GetItem(self->args, 0);
-        if (tmp) {
-            out = PyObject_Str(tmp);
-            Py_DECREF(tmp);
-        }
-        else
-            out = NULL;
+        out = PyObject_Str(PyTuple_GET_ITEM(self->args, 0));
         break;
-    }
-    case -1:
-        PyErr_Clear();
-        /* Fall through */
     default:
         out = PyObject_Str(self->args);
         break;
@@ -120,28 +117,14 @@ BaseException_str(PyBaseExceptionObject *self)
 static PyObject *
 BaseException_repr(PyBaseExceptionObject *self)
 {
-    Py_ssize_t args_len;
     PyObject *repr_suffix;
     PyObject *repr;
     char *name;
     char *dot;
 
-    args_len = PySequence_Length(self->args);
-    if (args_len < 0) {
+    repr_suffix = PyObject_Repr(self->args);
+    if (!repr_suffix)
         return NULL;
-    }
-    
-    if (args_len == 0) {
-        repr_suffix = PyString_FromString("()");
-        if (!repr_suffix)
-            return NULL;
-    }
-    else {
-        PyObject *args_repr = PyObject_Repr(self->args);
-        if (!args_repr)
-            return NULL;
-        repr_suffix = args_repr;
-    }
 
     name = (char *)self->ob_type->tp_name;
     dot = strrchr(name, '.');
@@ -161,9 +144,35 @@ BaseException_repr(PyBaseExceptionObject *self)
 static PyObject *
 BaseException_reduce(PyBaseExceptionObject *self)
 {
-    return PyTuple_Pack(3, self->ob_type, self->args, self->dict);
+    if (self->args && self->dict)
+        return PyTuple_Pack(3, self->ob_type, self->args, self->dict);
+    else
+        return PyTuple_Pack(2, self->ob_type, self->args);
 }
 
+/*
+ * Needed for backward compatibility, since exceptions used to store
+ * all their attributes in the __dict__. Code is taken from cPickle's
+ * load_build function.
+ */
+static PyObject *
+BaseException_setstate(PyObject *self, PyObject *state)
+{
+    PyObject *d_key, *d_value;
+    Py_ssize_t i = 0;
+
+    if (state != Py_None) {
+        if (!PyDict_Check(state)) {
+            PyErr_SetString(PyExc_TypeError, "state is not a dictionary");
+            return NULL;
+        }
+        while (PyDict_Next(state, &i, &d_key, &d_value)) {
+            if (PyObject_SetAttr(self, d_key, d_value) < 0)
+                return NULL;
+        }
+    }
+    Py_RETURN_NONE;
+}
 
 #ifdef Py_USING_UNICODE
 /* while this method generates fairly uninspired output, it a least
@@ -172,24 +181,17 @@ BaseException_reduce(PyBaseExceptionObject *self)
 static PyObject *
 BaseException_unicode(PyBaseExceptionObject *self)
 {
-    if (PySequence_Length(self->args) == 0)
+    if (PyTuple_GET_SIZE(self->args) == 0)
         return PyUnicode_FromUnicode(NULL, 0);
-    if (PySequence_Length(self->args) == 1) {
-        PyObject *temp = PySequence_GetItem(self->args, 0);
-        PyObject *unicode_obj;
-        if (!temp) {
-            return NULL;
-        }
-        unicode_obj = PyObject_Unicode(temp);
-        Py_DECREF(temp);
-        return unicode_obj;
-    }
+    if (PyTuple_GET_SIZE(self->args) == 1)
+        return PyObject_Unicode(PyTuple_GET_ITEM(self->args, 0));
     return PyObject_Unicode(self->args);
 }
 #endif /* Py_USING_UNICODE */
 
 static PyMethodDef BaseException_methods[] = {
    {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS },
+   {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
 #ifdef Py_USING_UNICODE
    {"__unicode__", (PyCFunction)BaseException_unicode, METH_NOARGS },
 #endif
@@ -274,6 +276,7 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val)
     }
     seq = PySequence_Tuple(val);
     if (!seq) return -1;
+    Py_CLEAR(self->args);
     self->args = seq;
     return 0;
 }
@@ -356,13 +359,13 @@ static PyTypeObject _PyExc_ ## EXCNAME = { \
     0, \
     EXC_MODULE_NAME # EXCNAME, \
     sizeof(Py ## EXCSTORE ## Object), \
-    0, (destructor)BaseException_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
+    0, (destructor)EXCSTORE ## _dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
     0, 0, 0, 0, 0, \
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, \
-    PyDoc_STR(EXCDOC), (traverseproc)BaseException_traverse, \
-    (inquiry)BaseException_clear, 0, 0, 0, 0, 0, 0, 0, &_ ## EXCBASE, \
+    PyDoc_STR(EXCDOC), (traverseproc)EXCSTORE ## _traverse, \
+    (inquiry)EXCSTORE ## _clear, 0, 0, 0, 0, 0, 0, 0, &_ ## EXCBASE, \
     0, 0, 0, offsetof(Py ## EXCSTORE ## Object, dict), \
-    (initproc)EXCSTORE ## _init, 0, EXCSTORE ## _new,\
+    (initproc)EXCSTORE ## _init, 0, BaseException_new,\
 }; \
 PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 
@@ -379,7 +382,7 @@ static PyTypeObject _PyExc_ ## EXCNAME = { \
     (inquiry)EXCSTORE ## _clear, 0, 0, 0, 0, EXCMETHODS, \
     EXCMEMBERS, 0, &_ ## EXCBASE, \
     0, 0, 0, offsetof(Py ## EXCSTORE ## Object, dict), \
-    (initproc)EXCSTORE ## _init, 0, EXCSTORE ## _new,\
+    (initproc)EXCSTORE ## _init, 0, BaseException_new,\
 }; \
 PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 
@@ -394,7 +397,7 @@ SimpleExtendsException(PyExc_BaseException, Exception,
 /*
  *    StandardError extends Exception
  */
-SimpleExtendsException(PyExc_Exception, StandardError, 
+SimpleExtendsException(PyExc_Exception, StandardError,
     "Base class for all standard Python exceptions that do not represent\n"
     "interpreter exiting.");
 
@@ -423,19 +426,6 @@ SimpleExtendsException(PyExc_Exception, GeneratorExit,
 /*
  *    SystemExit extends BaseException
  */
-static PyObject *
-SystemExit_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PySystemExitObject *self;
-
-    self = (PySystemExitObject *)BaseException_new(type, args, kwds);
-    if (!self)
-        return NULL;
-
-    MAKE_IT_NONE(self->code);
-
-    return (PyObject *)self;
-}
 
 static int
 SystemExit_init(PySystemExitObject *self, PyObject *args, PyObject *kwds)
@@ -445,7 +435,9 @@ SystemExit_init(PySystemExitObject *self, PyObject *args, PyObject *kwds)
     if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
         return -1;
 
-    Py_DECREF(self->code);
+    if (size == 0)
+        return 0;
+    Py_CLEAR(self->code);
     if (size == 1)
         self->code = PyTuple_GET_ITEM(args, 0);
     else if (size > 1)
@@ -454,7 +446,7 @@ SystemExit_init(PySystemExitObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
-int
+static int
 SystemExit_clear(PySystemExitObject *self)
 {
     Py_CLEAR(self->code);
@@ -468,7 +460,7 @@ SystemExit_dealloc(PySystemExitObject *self)
     self->ob_type->tp_free((PyObject *)self);
 }
 
-int
+static int
 SystemExit_traverse(PySystemExitObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->code);
@@ -505,25 +497,6 @@ SimpleExtendsException(PyExc_StandardError, ImportError,
  *    EnvironmentError extends StandardError
  */
 
-static PyObject *
-EnvironmentError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PyEnvironmentErrorObject *self = NULL;
-
-    self = (PyEnvironmentErrorObject *)BaseException_new(type, args, kwds);
-    if (!self)
-        return NULL;
-
-    self->myerrno = Py_None;
-    Py_INCREF(Py_None);
-    self->strerror = Py_None;
-    Py_INCREF(Py_None);
-    self->filename = Py_None;
-    Py_INCREF(Py_None);
-
-    return (PyObject *)self;
-}
-
 /* Where a function has a single filename, such as open() or some
  * of the os module functions, PyErr_SetFromErrnoWithFilename() is
  * called, giving a third argument which is the filename.  But, so
@@ -548,22 +521,22 @@ EnvironmentError_init(PyEnvironmentErrorObject *self, PyObject *args,
     if (PyTuple_GET_SIZE(args) <= 1) {
         return 0;
     }
-    
-    if (!PyArg_UnpackTuple(args, "EnvironmentError", 2, 3, 
+
+    if (!PyArg_UnpackTuple(args, "EnvironmentError", 2, 3,
                            &myerrno, &strerror, &filename)) {
         return -1;
     }
-    Py_DECREF(self->myerrno);       /* replacing */
+    Py_CLEAR(self->myerrno);       /* replacing */
     self->myerrno = myerrno;
     Py_INCREF(self->myerrno);
 
-    Py_DECREF(self->strerror);      /* replacing */
+    Py_CLEAR(self->strerror);      /* replacing */
     self->strerror = strerror;
     Py_INCREF(self->strerror);
 
     /* self->filename will remain Py_None otherwise */
     if (filename != NULL) {
-        Py_DECREF(self->filename);      /* replacing */
+        Py_CLEAR(self->filename);      /* replacing */
         self->filename = filename;
         Py_INCREF(self->filename);
 
@@ -577,7 +550,7 @@ EnvironmentError_init(PyEnvironmentErrorObject *self, PyObject *args,
     return 0;
 }
 
-int
+static int
 EnvironmentError_clear(PyEnvironmentErrorObject *self)
 {
     Py_CLEAR(self->myerrno);
@@ -593,7 +566,7 @@ EnvironmentError_dealloc(PyEnvironmentErrorObject *self)
     self->ob_type->tp_free((PyObject *)self);
 }
 
-int
+static int
 EnvironmentError_traverse(PyEnvironmentErrorObject *self, visitproc visit,
         void *arg)
 {
@@ -608,22 +581,44 @@ EnvironmentError_str(PyEnvironmentErrorObject *self)
 {
     PyObject *rtnval = NULL;
 
-    if (self->filename != Py_None) {
-        PyObject *fmt = PyString_FromString("[Errno %s] %s: %s");
-        PyObject *repr = PyObject_Repr(self->filename);
-        PyObject *tuple = PyTuple_New(3);
+    if (self->filename) {
+        PyObject *fmt;
+        PyObject *repr;
+        PyObject *tuple;
 
-        if (!fmt || !repr || !tuple) {
-            Py_XDECREF(fmt);
-            Py_XDECREF(repr);
-            Py_XDECREF(tuple);
+        fmt = PyString_FromString("[Errno %s] %s: %s");
+        if (!fmt)
+            return NULL;
+
+        repr = PyObject_Repr(self->filename);
+        if (!repr) {
+            Py_DECREF(fmt);
             return NULL;
         }
-        Py_INCREF(self->myerrno);
-        PyTuple_SET_ITEM(tuple, 0, self->myerrno);
-        Py_INCREF(self->strerror);
-        PyTuple_SET_ITEM(tuple, 1, self->strerror);
-        Py_INCREF(repr);
+        tuple = PyTuple_New(3);
+        if (!tuple) {
+            Py_DECREF(repr);
+            Py_DECREF(fmt);
+            return NULL;
+        }
+
+        if (self->myerrno) {
+            Py_INCREF(self->myerrno);
+            PyTuple_SET_ITEM(tuple, 0, self->myerrno);
+        }
+        else {
+            Py_INCREF(Py_None);
+            PyTuple_SET_ITEM(tuple, 0, Py_None);
+        }
+        if (self->strerror) {
+            Py_INCREF(self->strerror);
+            PyTuple_SET_ITEM(tuple, 1, self->strerror);
+        }
+        else {
+            Py_INCREF(Py_None);
+            PyTuple_SET_ITEM(tuple, 1, Py_None);
+        }
+
         PyTuple_SET_ITEM(tuple, 2, repr);
 
         rtnval = PyString_Format(fmt, tuple);
@@ -631,20 +626,36 @@ EnvironmentError_str(PyEnvironmentErrorObject *self)
         Py_DECREF(fmt);
         Py_DECREF(tuple);
     }
-    else if (PyObject_IsTrue(self->myerrno) &&
-            PyObject_IsTrue(self->strerror)) {
-        PyObject *fmt = PyString_FromString("[Errno %s] %s");
-        PyObject *tuple = PyTuple_New(2);
+    else if (self->myerrno && self->strerror) {
+        PyObject *fmt;
+        PyObject *tuple;
 
-        if (!fmt || !tuple) {
-            Py_XDECREF(fmt);
-            Py_XDECREF(tuple);
+        fmt = PyString_FromString("[Errno %s] %s");
+        if (!fmt)
+            return NULL;
+
+        tuple = PyTuple_New(2);
+        if (!tuple) {
+            Py_DECREF(fmt);
             return NULL;
         }
-        Py_INCREF(self->myerrno);
-        PyTuple_SET_ITEM(tuple, 0, self->myerrno);
-        Py_INCREF(self->strerror);
-        PyTuple_SET_ITEM(tuple, 1, self->strerror);
+
+        if (self->myerrno) {
+            Py_INCREF(self->myerrno);
+            PyTuple_SET_ITEM(tuple, 0, self->myerrno);
+        }
+        else {
+            Py_INCREF(Py_None);
+            PyTuple_SET_ITEM(tuple, 0, Py_None);
+        }
+        if (self->strerror) {
+            Py_INCREF(self->strerror);
+            PyTuple_SET_ITEM(tuple, 1, self->strerror);
+        }
+        else {
+            Py_INCREF(Py_None);
+            PyTuple_SET_ITEM(tuple, 1, Py_None);
+        }
 
         rtnval = PyString_Format(fmt, tuple);
 
@@ -675,32 +686,30 @@ EnvironmentError_reduce(PyEnvironmentErrorObject *self)
 {
     PyObject *args = self->args;
     PyObject *res = NULL, *tmp;
+
     /* self->args is only the first two real arguments if there was a
      * file name given to EnvironmentError. */
-    if (PyTuple_Check(args) && 
-        PyTuple_GET_SIZE(args) == 2 &&
-        self->filename != Py_None) {  
-
+    if (PyTuple_GET_SIZE(args) == 2 && self->filename) {
         args = PyTuple_New(3);
         if (!args) return NULL;
-        
-        tmp = PyTuple_GetItem(self->args, 0);
-        if (!tmp) goto finish;
+
+        tmp = PyTuple_GET_ITEM(self->args, 0);
         Py_INCREF(tmp);
         PyTuple_SET_ITEM(args, 0, tmp);
-        
-        tmp = PyTuple_GetItem(self->args, 1);
-        if (!tmp) goto finish;
+
+        tmp = PyTuple_GET_ITEM(self->args, 1);
         Py_INCREF(tmp);
         PyTuple_SET_ITEM(args, 1, tmp);
 
         Py_INCREF(self->filename);
         PyTuple_SET_ITEM(args, 2, self->filename);
-    } else {
+    } else
         Py_INCREF(args);
-    }
-    res = PyTuple_Pack(3, self->ob_type, args, self->dict);
-  finish:
+
+    if (self->dict)
+        res = PyTuple_Pack(3, self->ob_type, args, self->dict);
+    else
+        res = PyTuple_Pack(2, self->ob_type, args);
     Py_DECREF(args);
     return res;
 }
@@ -714,14 +723,14 @@ static PyMethodDef EnvironmentError_methods[] = {
 ComplexExtendsException(PyExc_StandardError, EnvironmentError,
                         EnvironmentError, EnvironmentError_dealloc,
                         EnvironmentError_methods, EnvironmentError_members,
-                        EnvironmentError_str, 
+                        EnvironmentError_str,
                         "Base class for I/O related errors.");
 
 
 /*
  *    IOError extends EnvironmentError
  */
-MiddlingExtendsException(PyExc_EnvironmentError, IOError, 
+MiddlingExtendsException(PyExc_EnvironmentError, IOError,
                          EnvironmentError, "I/O operation failed.");
 
 
@@ -738,7 +747,7 @@ MiddlingExtendsException(PyExc_EnvironmentError, OSError,
 #ifdef MS_WINDOWS
 #include "errmap.h"
 
-int
+static int
 WindowsError_clear(PyWindowsErrorObject *self)
 {
     Py_CLEAR(self->myerrno);
@@ -755,7 +764,7 @@ WindowsError_dealloc(PyWindowsErrorObject *self)
     self->ob_type->tp_free((PyObject *)self);
 }
 
-int
+static int
 WindowsError_traverse(PyWindowsErrorObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->myerrno);
@@ -763,50 +772,6 @@ WindowsError_traverse(PyWindowsErrorObject *self, visitproc visit, void *arg)
     Py_VISIT(self->filename);
     Py_VISIT(self->winerror);
     return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
-}
-
-static PyObject *
-WindowsError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PyObject *o_errcode = NULL;
-    long errcode;
-    PyWindowsErrorObject *self;
-    long posix_errno;
-
-    self = (PyWindowsErrorObject *)EnvironmentError_new(type, args, kwds);
-    if (!self)
-        return NULL;
-
-    if (self->myerrno == Py_None) {
-        self->winerror = self->myerrno;
-        Py_INCREF(self->winerror);
-        return (PyObject *)self;
-    }
-
-    /* Set errno to the POSIX errno, and winerror to the Win32
-       error code. */
-    errcode = PyInt_AsLong(self->myerrno);
-    if (errcode == -1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError))
-            /* give a clearer error message */
-            PyErr_SetString(PyExc_TypeError, "errno has to be an integer");
-        goto failed;
-    }
-    posix_errno = winerror_to_errno(errcode);
-
-    self->winerror = self->myerrno;
-
-    o_errcode = PyInt_FromLong(posix_errno);
-    if (!o_errcode)
-        goto failed;
-
-    self->myerrno = o_errcode;
-
-    return (PyObject *)self;
-failed:
-    /* Could not set errno. */
-    Py_DECREF(self);
-    return NULL;
 }
 
 static int
@@ -820,12 +785,8 @@ WindowsError_init(PyWindowsErrorObject *self, PyObject *args, PyObject *kwds)
             == -1)
         return -1;
 
-    if (self->myerrno == Py_None) {
-        Py_DECREF(self->winerror);
-        self->winerror = self->myerrno;
-        Py_INCREF(self->winerror);
+    if (self->myerrno == NULL)
         return 0;
-    }
 
     /* Set errno to the POSIX errno, and winerror to the Win32
        error code. */
@@ -834,7 +795,7 @@ WindowsError_init(PyWindowsErrorObject *self, PyObject *args, PyObject *kwds)
         return -1;
     posix_errno = winerror_to_errno(errcode);
 
-    Py_DECREF(self->winerror);
+    Py_CLEAR(self->winerror);
     self->winerror = self->myerrno;
 
     o_errcode = PyInt_FromLong(posix_errno);
@@ -850,44 +811,93 @@ WindowsError_init(PyWindowsErrorObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 WindowsError_str(PyWindowsErrorObject *self)
 {
-    PyObject *repr = NULL;
-    PyObject *fmt = NULL;
-    PyObject *tuple = NULL;
     PyObject *rtnval = NULL;
 
-    if (self->filename != Py_None) {
-        fmt = PyString_FromString("[Error %s] %s: %s");
-        repr = PyObject_Repr(self->filename);
-        if (!fmt || !repr)
-            goto finally;
+    if (self->filename) {
+        PyObject *fmt;
+        PyObject *repr;
+        PyObject *tuple;
 
-        tuple = PyTuple_Pack(3, self->myerrno, self->strerror, repr);
-        if (!tuple)
-            goto finally;
+        fmt = PyString_FromString("[Error %s] %s: %s");
+        if (!fmt)
+            return NULL;
+
+        repr = PyObject_Repr(self->filename);
+        if (!repr) {
+            Py_DECREF(fmt);
+            return NULL;
+        }
+        tuple = PyTuple_New(3);
+        if (!tuple) {
+            Py_DECREF(repr);
+            Py_DECREF(fmt);
+            return NULL;
+        }
+
+        if (self->myerrno) {
+            Py_INCREF(self->myerrno);
+            PyTuple_SET_ITEM(tuple, 0, self->myerrno);
+        }
+        else {
+            Py_INCREF(Py_None);
+            PyTuple_SET_ITEM(tuple, 0, Py_None);
+        }
+        if (self->strerror) {
+            Py_INCREF(self->strerror);
+            PyTuple_SET_ITEM(tuple, 1, self->strerror);
+        }
+        else {
+            Py_INCREF(Py_None);
+            PyTuple_SET_ITEM(tuple, 1, Py_None);
+        }
+
+        Py_INCREF(repr);
+        PyTuple_SET_ITEM(tuple, 2, repr);
 
         rtnval = PyString_Format(fmt, tuple);
+
+        Py_DECREF(fmt);
         Py_DECREF(tuple);
     }
-    else if (PyObject_IsTrue(self->myerrno) &&
-            PyObject_IsTrue(self->strerror)) {
+    else if (self->myerrno && self->strerror) {
+        PyObject *fmt;
+        PyObject *tuple;
+
         fmt = PyString_FromString("[Error %s] %s");
         if (!fmt)
-            goto finally;
+            return NULL;
 
-        tuple = PyTuple_Pack(2, self->myerrno, self->strerror);
-        if (!tuple)
-            goto finally;
+        tuple = PyTuple_New(2);
+        if (!tuple) {
+            Py_DECREF(fmt);
+            return NULL;
+        }
+
+        if (self->myerrno) {
+            Py_INCREF(self->myerrno);
+            PyTuple_SET_ITEM(tuple, 0, self->myerrno);
+        }
+        else {
+            Py_INCREF(Py_None);
+            PyTuple_SET_ITEM(tuple, 0, Py_None);
+        }
+        if (self->strerror) {
+            Py_INCREF(self->strerror);
+            PyTuple_SET_ITEM(tuple, 1, self->strerror);
+        }
+        else {
+            Py_INCREF(Py_None);
+            PyTuple_SET_ITEM(tuple, 1, Py_None);
+        }
 
         rtnval = PyString_Format(fmt, tuple);
+
+        Py_DECREF(fmt);
         Py_DECREF(tuple);
     }
     else
-    rtnval = EnvironmentError_str((PyEnvironmentErrorObject *)self);
+        rtnval = EnvironmentError_str((PyEnvironmentErrorObject *)self);
 
-  finally:
-    Py_XDECREF(repr);
-    Py_XDECREF(fmt);
-    Py_XDECREF(tuple);
     return rtnval;
 }
 
@@ -963,27 +973,6 @@ SimpleExtendsException(PyExc_StandardError, AttributeError,
 /*
  *    SyntaxError extends StandardError
  */
-static PyObject *
-SyntaxError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PySyntaxErrorObject *self = NULL;
-
-    self = (PySyntaxErrorObject *)BaseException_new(type, args, kwds);
-    if (!self)
-        return NULL;
-
-    MAKE_IT_NONE(self->msg)
-    MAKE_IT_NONE(self->filename)
-    MAKE_IT_NONE(self->lineno)
-    MAKE_IT_NONE(self->offset)
-    MAKE_IT_NONE(self->text)
-
-    /* this is always None - yes, I know it doesn't seem to be used
-       anywhere, but it was in the previous implementation */
-    MAKE_IT_NONE(self->print_file_and_line)
-
-    return (PyObject *)self;
-}
 
 static int
 SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
@@ -995,7 +984,7 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     if (lenargs >= 1) {
-        Py_DECREF(self->msg);
+        Py_CLEAR(self->msg);
         self->msg = PyTuple_GET_ITEM(args, 0);
         Py_INCREF(self->msg);
     }
@@ -1004,26 +993,35 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
         info = PySequence_Tuple(info);
         if (!info) return -1;
 
-        Py_DECREF(self->filename);
+        if (PyTuple_GET_SIZE(info) != 4) {
+            /* not a very good error message, but it's what Python 2.4 gives */
+            PyErr_SetString(PyExc_IndexError, "tuple index out of range");
+            Py_DECREF(info);
+            return -1;
+        }
+
+        Py_CLEAR(self->filename);
         self->filename = PyTuple_GET_ITEM(info, 0);
         Py_INCREF(self->filename);
 
-        Py_DECREF(self->lineno);
+        Py_CLEAR(self->lineno);
         self->lineno = PyTuple_GET_ITEM(info, 1);
         Py_INCREF(self->lineno);
 
-        Py_DECREF(self->offset);
+        Py_CLEAR(self->offset);
         self->offset = PyTuple_GET_ITEM(info, 2);
         Py_INCREF(self->offset);
 
-        Py_DECREF(self->text);
+        Py_CLEAR(self->text);
         self->text = PyTuple_GET_ITEM(info, 3);
         Py_INCREF(self->text);
+
+        Py_DECREF(info);
     }
     return 0;
 }
 
-int
+static int
 SyntaxError_clear(PySyntaxErrorObject *self)
 {
     Py_CLEAR(self->msg);
@@ -1042,7 +1040,7 @@ SyntaxError_dealloc(PySyntaxErrorObject *self)
     self->ob_type->tp_free((PyObject *)self);
 }
 
-int
+static int
 SyntaxError_traverse(PySyntaxErrorObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->msg);
@@ -1079,53 +1077,58 @@ SyntaxError_str(PySyntaxErrorObject *self)
 {
     PyObject *str;
     PyObject *result;
+    int have_filename = 0;
+    int have_lineno = 0;
+    char *buffer = NULL;
+    Py_ssize_t bufsize;
 
-    str = PyObject_Str(self->msg);
-    result = str;
+    if (self->msg)
+        str = PyObject_Str(self->msg);
+    else
+        str = PyObject_Str(Py_None);
+    if (!str) return NULL;
+    /* Don't fiddle with non-string return (shouldn't happen anyway) */
+    if (!PyString_Check(str)) return str;
 
     /* XXX -- do all the additional formatting with filename and
        lineno here */
 
-    if (str != NULL && PyString_Check(str)) {
-        int have_filename = 0;
-        int have_lineno = 0;
-        char *buffer = NULL;
+    have_filename = (self->filename != NULL) &&
+        PyString_Check(self->filename);
+    have_lineno = (self->lineno != NULL) && PyInt_Check(self->lineno);
 
-        have_filename = (self->filename != NULL) && 
-            PyString_Check(self->filename);
-        have_lineno = (self->lineno != NULL) && PyInt_Check(self->lineno);
+    if (!have_filename && !have_lineno)
+        return str;
 
-        if (have_filename || have_lineno) {
-            Py_ssize_t bufsize = PyString_GET_SIZE(str) + 64;
-            if (have_filename)
-                bufsize += PyString_GET_SIZE(self->filename);
+    bufsize = PyString_GET_SIZE(str) + 64;
+    if (have_filename)
+        bufsize += PyString_GET_SIZE(self->filename);
 
-            buffer = (char *)PyMem_MALLOC(bufsize);
-            if (buffer != NULL) {
-                if (have_filename && have_lineno)
-                    PyOS_snprintf(buffer, bufsize, "%s (%s, line %ld)",
-                        PyString_AS_STRING(str),
-                        my_basename(PyString_AS_STRING(self->filename)),
-                        PyInt_AsLong(self->lineno));
-                else if (have_filename)
-                    PyOS_snprintf(buffer, bufsize, "%s (%s)",
-                        PyString_AS_STRING(str),
-                        my_basename(PyString_AS_STRING(self->filename)));
-                else if (have_lineno)
-                    PyOS_snprintf(buffer, bufsize, "%s (line %ld)",
-                        PyString_AS_STRING(str),
-                        PyInt_AsLong(self->lineno));
+    buffer = PyMem_MALLOC(bufsize);
+    if (buffer == NULL)
+        return str;
 
-                result = PyString_FromString(buffer);
-                PyMem_FREE(buffer);
+    if (have_filename && have_lineno)
+        PyOS_snprintf(buffer, bufsize, "%s (%s, line %ld)",
+            PyString_AS_STRING(str),
+            my_basename(PyString_AS_STRING(self->filename)),
+            PyInt_AsLong(self->lineno));
+    else if (have_filename)
+        PyOS_snprintf(buffer, bufsize, "%s (%s)",
+            PyString_AS_STRING(str),
+            my_basename(PyString_AS_STRING(self->filename)));
+    else /* only have_lineno */
+        PyOS_snprintf(buffer, bufsize, "%s (line %ld)",
+            PyString_AS_STRING(str),
+            PyInt_AsLong(self->lineno));
 
-                if (result == NULL)
-                    result = str;
-                else
-                    Py_DECREF(str);
-            }
-        }
-    }
+    result = PyString_FromString(buffer);
+    PyMem_FREE(buffer);
+
+    if (result == NULL)
+        result = str;
+    else
+        Py_DECREF(str);
     return result;
 }
 
@@ -1196,9 +1199,8 @@ KeyError_str(PyBaseExceptionObject *self)
        string, that string will be displayed in quotes.  Too bad.
        If args is anything else, use the default BaseException__str__().
     */
-    if (PyTuple_Check(self->args) && PyTuple_GET_SIZE(self->args) == 1) {
-        PyObject *key = PyTuple_GET_ITEM(self->args, 0);
-        return PyObject_Repr(key);
+    if (PyTuple_GET_SIZE(self->args) == 1) {
+        return PyObject_Repr(PyTuple_GET_ITEM(self->args, 0));
     }
     return BaseException_str(self);
 }
@@ -1248,7 +1250,7 @@ set_ssize_t(PyObject **attr, Py_ssize_t value)
     PyObject *obj = PyInt_FromSsize_t(value);
     if (!obj)
         return -1;
-    Py_XDECREF(*attr);
+    Py_CLEAR(*attr);
     *attr = obj;
     return 0;
 }
@@ -1276,7 +1278,7 @@ set_string(PyObject **attr, const char *value)
     PyObject *obj = PyString_FromString(value);
     if (!obj)
         return -1;
-    Py_XDECREF(*attr);
+    Py_CLEAR(*attr);
     *attr = obj;
     return 0;
 }
@@ -1342,6 +1344,7 @@ PyUnicodeEncodeError_GetStart(PyObject *exc, Py_ssize_t *start)
             *start = 0; /*XXX check for values <0*/
         if (*start>=size)
             *start = size-1;
+        Py_DECREF(obj);
         return 0;
     }
     return -1;
@@ -1361,6 +1364,7 @@ PyUnicodeDecodeError_GetStart(PyObject *exc, Py_ssize_t *start)
             *start = 0;
         if (*start>=size)
             *start = size-1;
+        Py_DECREF(obj);
         return 0;
     }
     return -1;
@@ -1408,6 +1412,7 @@ PyUnicodeEncodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
             *end = 1;
         if (*end>size)
             *end = size;
+        Py_DECREF(obj);
         return 0;
     }
     return -1;
@@ -1427,6 +1432,7 @@ PyUnicodeDecodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
             *end = 1;
         if (*end>size)
             *end = size;
+        Py_DECREF(obj);
         return 0;
     }
     return -1;
@@ -1502,36 +1508,23 @@ PyUnicodeTranslateError_SetReason(PyObject *exc, const char *reason)
 }
 
 
-static PyObject *
-UnicodeError_new(PyTypeObject *type, PyObject *args, PyObject *kwds,
-                 PyTypeObject *objecttype)
-{
-    PyUnicodeErrorObject *self;
-
-    self = (PyUnicodeErrorObject *)BaseException_new(type, args, kwds);
-    if (!self)
-        return NULL;
-
-    MAKE_IT_NONE(self->encoding);
-    MAKE_IT_NONE(self->object);
-    MAKE_IT_NONE(self->start);
-    MAKE_IT_NONE(self->end);
-    MAKE_IT_NONE(self->reason);
-
-    return (PyObject *)self;
-}
-
 static int
 UnicodeError_init(PyUnicodeErrorObject *self, PyObject *args, PyObject *kwds,
                   PyTypeObject *objecttype)
 {
+    Py_CLEAR(self->encoding);
+    Py_CLEAR(self->object);
+    Py_CLEAR(self->start);
+    Py_CLEAR(self->end);
+    Py_CLEAR(self->reason);
+
     if (!PyArg_ParseTuple(args, "O!O!O!O!O!",
         &PyString_Type, &self->encoding,
         objecttype, &self->object,
         &PyInt_Type, &self->start,
         &PyInt_Type, &self->end,
         &PyString_Type, &self->reason)) {
-        self->encoding = self->object = self->start = self->end = 
+        self->encoding = self->object = self->start = self->end =
             self->reason = NULL;
         return -1;
     }
@@ -1545,7 +1538,7 @@ UnicodeError_init(PyUnicodeErrorObject *self, PyObject *args, PyObject *kwds,
     return 0;
 }
 
-int
+static int
 UnicodeError_clear(PyUnicodeErrorObject *self)
 {
     Py_CLEAR(self->encoding);
@@ -1563,7 +1556,7 @@ UnicodeError_dealloc(PyUnicodeErrorObject *self)
     self->ob_type->tp_free((PyObject *)self);
 }
 
-int
+static int
 UnicodeError_traverse(PyUnicodeErrorObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->encoding);
@@ -1594,11 +1587,6 @@ static PyMemberDef UnicodeError_members[] = {
 /*
  *    UnicodeEncodeError extends UnicodeError
  */
-static PyObject *
-UnicodeEncodeError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    return UnicodeError_new(type, args, kwds, &PyUnicode_Type);
-}
 
 static int
 UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1616,27 +1604,27 @@ UnicodeEncodeError_str(PyObject *self)
     Py_ssize_t end;
 
     if (PyUnicodeEncodeError_GetStart(self, &start))
-    return NULL;
+        return NULL;
 
     if (PyUnicodeEncodeError_GetEnd(self, &end))
-    return NULL;
+        return NULL;
 
     if (end==start+1) {
-    int badchar = (int)PyUnicode_AS_UNICODE(((PyUnicodeErrorObject *)self)->object)[start];
-    char badchar_str[20];
-    if (badchar <= 0xff)
-        PyOS_snprintf(badchar_str, sizeof(badchar_str), "x%02x", badchar);
-    else if (badchar <= 0xffff)
-        PyOS_snprintf(badchar_str, sizeof(badchar_str), "u%04x", badchar);
-    else
-        PyOS_snprintf(badchar_str, sizeof(badchar_str), "U%08x", badchar);
-    return PyString_FromFormat(
-        "'%.400s' codec can't encode character u'\\%s' in position %zd: %.400s",
-        PyString_AS_STRING(((PyUnicodeErrorObject *)self)->encoding),
-        badchar_str,
-        start,
-        PyString_AS_STRING(((PyUnicodeErrorObject *)self)->reason)
-    );
+        int badchar = (int)PyUnicode_AS_UNICODE(((PyUnicodeErrorObject *)self)->object)[start];
+        char badchar_str[20];
+        if (badchar <= 0xff)
+            PyOS_snprintf(badchar_str, sizeof(badchar_str), "x%02x", badchar);
+        else if (badchar <= 0xffff)
+            PyOS_snprintf(badchar_str, sizeof(badchar_str), "u%04x", badchar);
+        else
+            PyOS_snprintf(badchar_str, sizeof(badchar_str), "U%08x", badchar);
+        return PyString_FromFormat(
+            "'%.400s' codec can't encode character u'\\%s' in position %zd: %.400s",
+            PyString_AS_STRING(((PyUnicodeErrorObject *)self)->encoding),
+            badchar_str,
+            start,
+            PyString_AS_STRING(((PyUnicodeErrorObject *)self)->reason)
+        );
     }
     return PyString_FromFormat(
         "'%.400s' codec can't encode characters in position %zd-%zd: %.400s",
@@ -1655,10 +1643,10 @@ static PyTypeObject _PyExc_UnicodeEncodeError = {
     (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     (reprfunc)UnicodeEncodeError_str, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    PyDoc_STR("Unicode encoding error."), (traverseproc)BaseException_traverse,
-    (inquiry)BaseException_clear, 0, 0, 0, 0, 0, UnicodeError_members,
+    PyDoc_STR("Unicode encoding error."), (traverseproc)UnicodeError_traverse,
+    (inquiry)UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
     0, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
-    (initproc)UnicodeEncodeError_init, 0, UnicodeEncodeError_new,
+    (initproc)UnicodeEncodeError_init, 0, BaseException_new,
 };
 PyObject *PyExc_UnicodeEncodeError = (PyObject *)&_PyExc_UnicodeEncodeError;
 
@@ -1668,18 +1656,13 @@ PyUnicodeEncodeError_Create(
     Py_ssize_t start, Py_ssize_t end, const char *reason)
 {
     return PyObject_CallFunction(PyExc_UnicodeEncodeError, "su#nns",
-    encoding, object, length, start, end, reason);
+                                 encoding, object, length, start, end, reason);
 }
 
 
 /*
  *    UnicodeDecodeError extends UnicodeError
  */
-static PyObject *
-UnicodeDecodeError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    return UnicodeError_new(type, args, kwds, &PyString_Type);
-}
 
 static int
 UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1693,8 +1676,8 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 UnicodeDecodeError_str(PyObject *self)
 {
-    Py_ssize_t start;
-    Py_ssize_t end;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = 0;
 
     if (PyUnicodeDecodeError_GetStart(self, &start))
     return NULL;
@@ -1703,17 +1686,17 @@ UnicodeDecodeError_str(PyObject *self)
     return NULL;
 
     if (end==start+1) {
-    /* FromFormat does not support %02x, so format that separately */
-    char byte[4];
-    PyOS_snprintf(byte, sizeof(byte), "%02x", 
-              ((int)PyString_AS_STRING(((PyUnicodeErrorObject *)self)->object)[start])&0xff);
-    return PyString_FromFormat(                     
-        "'%.400s' codec can't decode byte 0x%s in position %zd: %.400s",
-        PyString_AS_STRING(((PyUnicodeErrorObject *)self)->encoding),
-        byte,
-        start,
-        PyString_AS_STRING(((PyUnicodeErrorObject *)self)->reason)
-    );
+        /* FromFormat does not support %02x, so format that separately */
+        char byte[4];
+        PyOS_snprintf(byte, sizeof(byte), "%02x",
+                      ((int)PyString_AS_STRING(((PyUnicodeErrorObject *)self)->object)[start])&0xff);
+        return PyString_FromFormat(
+            "'%.400s' codec can't decode byte 0x%s in position %zd: %.400s",
+            PyString_AS_STRING(((PyUnicodeErrorObject *)self)->encoding),
+            byte,
+            start,
+            PyString_AS_STRING(((PyUnicodeErrorObject *)self)->reason)
+        );
     }
     return PyString_FromFormat(
         "'%.400s' codec can't decode bytes in position %zd-%zd: %.400s",
@@ -1732,10 +1715,10 @@ static PyTypeObject _PyExc_UnicodeDecodeError = {
     (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     (reprfunc)UnicodeDecodeError_str, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    PyDoc_STR("Unicode decoding error."), (traverseproc)BaseException_traverse,
-    (inquiry)BaseException_clear, 0, 0, 0, 0, 0, UnicodeError_members,
+    PyDoc_STR("Unicode decoding error."), (traverseproc)UnicodeError_traverse,
+    (inquiry)UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
     0, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
-    (initproc)UnicodeDecodeError_init, 0, UnicodeDecodeError_new,
+    (initproc)UnicodeDecodeError_init, 0, BaseException_new,
 };
 PyObject *PyExc_UnicodeDecodeError = (PyObject *)&_PyExc_UnicodeDecodeError;
 
@@ -1748,30 +1731,13 @@ PyUnicodeDecodeError_Create(
     assert(start < INT_MAX);
     assert(end < INT_MAX);
     return PyObject_CallFunction(PyExc_UnicodeDecodeError, "ss#nns",
-    encoding, object, length, start, end, reason);
+                                 encoding, object, length, start, end, reason);
 }
 
 
 /*
  *    UnicodeTranslateError extends UnicodeError
  */
-static PyObject *
-UnicodeTranslateError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    PyUnicodeErrorObject *self = NULL;
-
-    self = (PyUnicodeErrorObject *)BaseException_new(type, args, kwds);
-    if (!self)
-        return NULL;
-
-    MAKE_IT_NONE(self->encoding);
-    MAKE_IT_NONE(self->object);
-    MAKE_IT_NONE(self->start);
-    MAKE_IT_NONE(self->end);
-    MAKE_IT_NONE(self->reason);
-
-    return (PyObject *)self;
-}
 
 static int
 UnicodeTranslateError_init(PyUnicodeErrorObject *self, PyObject *args,
@@ -1793,7 +1759,7 @@ UnicodeTranslateError_init(PyUnicodeErrorObject *self, PyObject *args,
         self->object = self->start = self->end = self->reason = NULL;
         return -1;
     }
-    
+
     Py_INCREF(self->object);
     Py_INCREF(self->start);
     Py_INCREF(self->end);
@@ -1810,26 +1776,26 @@ UnicodeTranslateError_str(PyObject *self)
     Py_ssize_t end;
 
     if (PyUnicodeTranslateError_GetStart(self, &start))
-    return NULL;
+        return NULL;
 
     if (PyUnicodeTranslateError_GetEnd(self, &end))
-    return NULL;
+        return NULL;
 
     if (end==start+1) {
-    int badchar = (int)PyUnicode_AS_UNICODE(((PyUnicodeErrorObject *)self)->object)[start];
-    char badchar_str[20];
-    if (badchar <= 0xff)
-        PyOS_snprintf(badchar_str, sizeof(badchar_str), "x%02x", badchar);
-    else if (badchar <= 0xffff)
-        PyOS_snprintf(badchar_str, sizeof(badchar_str), "u%04x", badchar);
-    else
-        PyOS_snprintf(badchar_str, sizeof(badchar_str), "U%08x", badchar);
-    return PyString_FromFormat(
+        int badchar = (int)PyUnicode_AS_UNICODE(((PyUnicodeErrorObject *)self)->object)[start];
+        char badchar_str[20];
+        if (badchar <= 0xff)
+            PyOS_snprintf(badchar_str, sizeof(badchar_str), "x%02x", badchar);
+        else if (badchar <= 0xffff)
+            PyOS_snprintf(badchar_str, sizeof(badchar_str), "u%04x", badchar);
+        else
+            PyOS_snprintf(badchar_str, sizeof(badchar_str), "U%08x", badchar);
+        return PyString_FromFormat(
             "can't translate character u'\\%s' in position %zd: %.400s",
-        badchar_str,
-        start,
-        PyString_AS_STRING(((PyUnicodeErrorObject *)self)->reason)
-    );
+            badchar_str,
+            start,
+            PyString_AS_STRING(((PyUnicodeErrorObject *)self)->reason)
+        );
     }
     return PyString_FromFormat(
         "can't translate characters in position %zd-%zd: %.400s",
@@ -1850,7 +1816,7 @@ static PyTypeObject _PyExc_UnicodeTranslateError = {
     PyDoc_STR("Unicode decoding error."), (traverseproc)UnicodeError_traverse,
     (inquiry)UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
     0, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
-    (initproc)UnicodeTranslateError_init, 0, UnicodeTranslateError_new,
+    (initproc)UnicodeTranslateError_init, 0, BaseException_new,
 };
 PyObject *PyExc_UnicodeTranslateError = (PyObject *)&_PyExc_UnicodeTranslateError;
 
@@ -1860,7 +1826,7 @@ PyUnicodeTranslateError_Create(
     Py_ssize_t start, Py_ssize_t end, const char *reason)
 {
     return PyObject_CallFunction(PyExc_UnicodeTranslateError, "u#nns",
-    object, length, start, end, reason);
+                                 object, length, start, end, reason);
 }
 #endif
 
@@ -2003,7 +1969,7 @@ static PyMethodDef functions[] = {
         Py_FatalError("Module dictionary insertion problem.");
 
 PyMODINIT_FUNC
-_PyExc_Init(void) 
+_PyExc_Init(void)
 {
     PyObject *m, *bltinmod, *bdict;
 

@@ -31,6 +31,7 @@
  * is returned (according to the sign of the value), and %ERANGE is
  * stored in %errno. If the correct value would cause underflow,
  * zero is returned and %ERANGE is stored in %errno.
+ * If memory allocation fails, %ENOMEM is stored in %errno.
  * 
  * This function resets %errno before calling strtod() so that
  * you can reliably detect overflow and underflow.
@@ -102,6 +103,12 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 
 		/* We need to convert the '.' to the locale specific decimal point */
 		copy = (char *)PyMem_MALLOC(end - nptr + 1 + decimal_point_len);
+		if (copy == NULL) {
+			if (endptr)
+				*endptr = (char *)nptr;
+			errno = ENOMEM;
+			return val;
+		}
 
 		c = copy;
 		memcpy(c, nptr, decimal_point_pos - nptr);

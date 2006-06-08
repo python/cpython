@@ -659,7 +659,7 @@ initsite(void)
 /* Parse input from a file and execute it */
 
 int
-PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit, 
+PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
 		     PyCompilerFlags *flags)
 {
 	if (filename == NULL)
@@ -738,7 +738,7 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 			ps2 = PyString_AsString(w);
 	}
 	arena = PyArena_New();
-	mod = PyParser_ASTFromFile(fp, filename, 
+	mod = PyParser_ASTFromFile(fp, filename,
 				   Py_single_input, ps1, ps2,
 				   flags, &errcode, arena);
 	Py_XDECREF(v);
@@ -1126,13 +1126,15 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 			/* Don't do anything else */
 		}
 		else if (PyExceptionClass_Check(exception)) {
-			char* className = PyExceptionClass_Name(exception);
-			char *dot = strrchr(className, '.');
 			PyObject* moduleName;
-			if (dot != NULL)
-				className = dot+1;
-			moduleName = PyObject_GetAttrString(exception, "__module__");
+			char* className = PyExceptionClass_Name(exception);
+			if (className != NULL) {
+				char *dot = strrchr(className, '.');
+				if (dot != NULL)
+					className = dot+1;
+			}
 
+			moduleName = PyObject_GetAttrString(exception, "__module__");
 			if (moduleName == NULL)
 				err = PyFile_WriteString("<unknown>", f);
 			else {
@@ -1178,7 +1180,7 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 }
 
 PyObject *
-PyRun_StringFlags(const char *str, int start, PyObject *globals, 
+PyRun_StringFlags(const char *str, int start, PyObject *globals,
 		  PyObject *locals, PyCompilerFlags *flags)
 {
 	PyObject *ret = NULL;
@@ -1225,7 +1227,7 @@ run_mod(mod_ty mod, const char *filename, PyObject *globals, PyObject *locals,
 }
 
 static PyObject *
-run_pyc_file(FILE *fp, const char *filename, PyObject *globals, 
+run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
 	     PyObject *locals, PyCompilerFlags *flags)
 {
 	PyCodeObject *co;
@@ -1294,13 +1296,13 @@ Py_SymtableString(const char *str, const char *filename, int start)
 
 /* Preferred access to parser is through AST. */
 mod_ty
-PyParser_ASTFromString(const char *s, const char *filename, int start, 
+PyParser_ASTFromString(const char *s, const char *filename, int start,
 		       PyCompilerFlags *flags, PyArena *arena)
 {
 	mod_ty mod;
 	perrdetail err;
 	node *n = PyParser_ParseStringFlagsFilename(s, filename,
-					&_PyParser_Grammar, start, &err, 
+					&_PyParser_Grammar, start, &err,
 					PARSER_FLAGS(flags));
 	if (n) {
 		mod = PyAST_FromNode(n, flags, filename, arena);
@@ -1314,7 +1316,7 @@ PyParser_ASTFromString(const char *s, const char *filename, int start,
 }
 
 mod_ty
-PyParser_ASTFromFile(FILE *fp, const char *filename, int start, char *ps1, 
+PyParser_ASTFromFile(FILE *fp, const char *filename, int start, char *ps1,
 		     char *ps2, PyCompilerFlags *flags, int *errcode,
 		     PyArena *arena)
 {
@@ -1345,7 +1347,7 @@ PyParser_SimpleParseFileFlags(FILE *fp, const char *filename, int start, int fla
 					  start, NULL, NULL, &err, flags);
 	if (n == NULL)
 		err_input(&err);
-		
+
 	return n;
 }
 

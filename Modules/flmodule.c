@@ -148,22 +148,21 @@ releaseobjects(FL_FORM *form)
 static PyObject *
 generic_set_call_back(genericobject *g, PyObject *args)
 {
-	if (args == NULL) {
+	if (PyTuple_GET_SIZE(args) == 0) {
 		Py_XDECREF(g->ob_callback);
 		Py_XDECREF(g->ob_callback_arg);
 		g->ob_callback = NULL;
 		g->ob_callback_arg = NULL;
 	}
 	else {
-		if (!PyTuple_Check(args) || PyTuple_Size(args) != 2) {
-			PyErr_BadArgument();
-			return NULL;
-		}
+        PyObject *a, *b;
+        if (!PyArg_UnpackTuple(args, "set_call_back", 2, 2, &a, &b)
+            return NULL;
 		Py_XDECREF(g->ob_callback);
 		Py_XDECREF(g->ob_callback_arg);
-		g->ob_callback = PyTuple_GetItem(args, 0);
+		g->ob_callback = a;
 		Py_INCREF(g->ob_callback);
-		g->ob_callback_arg = PyTuple_GetItem(args, 1);
+		g->ob_callback_arg = b;
 		Py_INCREF(g->ob_callback_arg);
 	}
 	Py_INCREF(Py_None);
@@ -250,7 +249,7 @@ generic_set_object_shortcut(genericobject *g, PyObject *args)
 }
 
 static PyMethodDef generic_methods[] = {
-	{"set_call_back",	(PyCFunction)generic_set_call_back, METH_OLDARGS},
+	{"set_call_back",	(PyCFunction)generic_set_call_back, METH_VARARGS},
 	{"delete_object",	(PyCFunction)generic_delete_object, METH_NOARGS},
 	{"show_object",		(PyCFunction)generic_show_object, METH_NOARGS},
 	{"hide_object",		(PyCFunction)generic_hide_object, METH_NOARGS},
@@ -261,7 +260,7 @@ static PyMethodDef generic_methods[] = {
 #endif
 	{"activate_object",	(PyCFunction)generic_activate_object, METH_NOARGS},
 	{"deactivate_object",	(PyCFunction)generic_deactivate_object, METH_NOARGS},
-	{"set_object_shortcut",	(PyCFunction)generic_set_object_shortcut, METH_OLDARGS},
+	{"set_object_shortcut",	(PyCFunction)generic_set_object_shortcut, METH_VARARGS},
 	{NULL,			NULL}		/* sentinel */
 };
 

@@ -644,7 +644,7 @@ binascii_rledecode_hqx(PyObject *self, PyObject *args)
 
 	/* Empty string is a special case */
 	if ( in_len == 0 )
-		return Py_BuildValue("s", "");
+		return PyString_FromString("");
 
 	/* Allocate a buffer of reasonable size. Resized when needed */
 	out_len = in_len*2;

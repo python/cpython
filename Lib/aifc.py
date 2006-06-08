@@ -201,6 +201,8 @@ def _write_long(f, x):
     f.write(struct.pack('>L', x))
 
 def _write_string(f, s):
+    if len(s) > 255:
+        raise ValueError("string exceeds maximum pstring length")
     f.write(chr(len(s)))
     f.write(s)
     if len(s) & 1 == 0:

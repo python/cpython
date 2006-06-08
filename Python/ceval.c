@@ -1829,15 +1829,26 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				long hash = ((PyStringObject *)w)->ob_shash;
 				if (hash != -1) {
 					PyDictObject *d;
+					PyDictEntry *e;
 					d = (PyDictObject *)(f->f_globals);
-					x = d->ma_lookup(d, w, hash)->me_value;
+					e = d->ma_lookup(d, w, hash);
+					if (e == NULL) {
+						x = NULL;
+						break;
+					}
+					x = e->me_value;
 					if (x != NULL) {
 						Py_INCREF(x);
 						PUSH(x);
 						continue;
 					}
 					d = (PyDictObject *)(f->f_builtins);
-					x = d->ma_lookup(d, w, hash)->me_value;
+					e = d->ma_lookup(d, w, hash);
+					if (e == NULL) {
+						x = NULL;
+						break;
+					}
+					x = e->me_value;
 					if (x != NULL) {
 						Py_INCREF(x);
 						PUSH(x);

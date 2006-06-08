@@ -1302,7 +1302,7 @@ mbstreamreader_read(MultibyteStreamReaderObject *self, PyObject *args)
 	PyObject *sizeobj = NULL;
 	Py_ssize_t size;
 
-	if (!PyArg_ParseTuple(args, "|O:read", &sizeobj))
+	if (!PyArg_UnpackTuple(args, "read", 0, 1, &sizeobj))
 		return NULL;
 
 	if (sizeobj == Py_None || sizeobj == NULL)
@@ -1323,7 +1323,7 @@ mbstreamreader_readline(MultibyteStreamReaderObject *self, PyObject *args)
 	PyObject *sizeobj = NULL;
 	Py_ssize_t size;
 
-	if (!PyArg_ParseTuple(args, "|O:readline", &sizeobj))
+	if (!PyArg_UnpackTuple(args, "readline", 0, 1, &sizeobj))
 		return NULL;
 
 	if (sizeobj == Py_None || sizeobj == NULL)
@@ -1344,7 +1344,7 @@ mbstreamreader_readlines(MultibyteStreamReaderObject *self, PyObject *args)
 	PyObject *sizehintobj = NULL, *r, *sr;
 	Py_ssize_t sizehint;
 
-	if (!PyArg_ParseTuple(args, "|O:readlines", &sizehintobj))
+	if (!PyArg_UnpackTuple(args, "readlines", 0, 1, &sizehintobj))
 		return NULL;
 
 	if (sizehintobj == Py_None || sizehintobj == NULL)
@@ -1532,13 +1532,8 @@ mbstreamwriter_iwrite(MultibyteStreamWriterObject *self,
 }
 
 static PyObject *
-mbstreamwriter_write(MultibyteStreamWriterObject *self, PyObject *args)
+mbstreamwriter_write(MultibyteStreamWriterObject *self, PyObject *strobj)
 {
-	PyObject *strobj;
-
-	if (!PyArg_ParseTuple(args, "O:write", &strobj))
-		return NULL;
-
 	if (mbstreamwriter_iwrite(self, strobj))
 		return NULL;
 	else
@@ -1546,13 +1541,10 @@ mbstreamwriter_write(MultibyteStreamWriterObject *self, PyObject *args)
 }
 
 static PyObject *
-mbstreamwriter_writelines(MultibyteStreamWriterObject *self, PyObject *args)
+mbstreamwriter_writelines(MultibyteStreamWriterObject *self, PyObject *lines)
 {
-	PyObject *lines, *strobj;
+	PyObject *strobj;
 	int i, r;
-
-	if (!PyArg_ParseTuple(args, "O:writelines", &lines))
-		return NULL;
 
 	if (!PySequence_Check(lines)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -1676,9 +1668,9 @@ mbstreamwriter_dealloc(MultibyteStreamWriterObject *self)
 
 static struct PyMethodDef mbstreamwriter_methods[] = {
 	{"write",	(PyCFunction)mbstreamwriter_write,
-			METH_VARARGS, NULL},
+			METH_O, NULL},
 	{"writelines",	(PyCFunction)mbstreamwriter_writelines,
-			METH_VARARGS, NULL},
+			METH_O, NULL},
 	{"reset",	(PyCFunction)mbstreamwriter_reset,
 			METH_NOARGS, NULL},
 	{NULL,		NULL},

@@ -1,4 +1,4 @@
-/OUT:".\pythoncore_pgo/python25.dll" /INCREMENTAL:NO /DLL /MANIFEST /MANIFESTFILE:".\x86-temp-release\pythoncore_pgo\python25.dll.intermediate.manifest" /NODEFAULTLIB:"libc" /DEBUG /PDB:".\pythoncore_pgo/python25.pdb" /SUBSYSTEM:WINDOWS /LTCG:PGINSTRUMENT /PGD:"c:\pydev\PCbuild\pythoncore_pgo\python25.pgd" /BASE:"0x1e000000" /IMPLIB:"pythoncore_pgo/python25.lib" /MACHINE:X86 getbuildinfo.o kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib
+/OUT:".\pythoncore_pgo/python25.dll" /INCREMENTAL:NO /DLL /MANIFEST /MANIFESTFILE:".\x86-temp-release\pythoncore_pgo\python25.dll.intermediate.manifest" /NODEFAULTLIB:"libc" /DEBUG /PDB:".\pythoncore_pgo/python25.pdb" /SUBSYSTEM:WINDOWS /LTCG:PGINSTRUMENT /PGD:".\pythoncore_pgo\python25.pgd" /BASE:"0x1e000000" /IMPLIB:"pythoncore_pgo/python25.lib" /MACHINE:X86 getbuildinfo.o kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib
 
 ".\x86-temp-release\pythoncore_pgo\adler32.obj"
 
@@ -43,6 +43,8 @@
 ".\x86-temp-release\pythoncore_pgo\_codecsmodule.obj"
 
 ".\x86-temp-release\pythoncore_pgo\_csv.obj"
+
+".\x86-temp-release\pythoncore_pgo\_functoolsmodule.obj"
 
 ".\x86-temp-release\pythoncore_pgo\_heapqmodule.obj"
 
@@ -141,8 +143,6 @@
 ".\x86-temp-release\pythoncore_pgo\frozen.obj"
 
 ".\x86-temp-release\pythoncore_pgo\funcobject.obj"
-
-".\x86-temp-release\pythoncore_pgo\functionalmodule.obj"
 
 ".\x86-temp-release\pythoncore_pgo\future.obj"
 

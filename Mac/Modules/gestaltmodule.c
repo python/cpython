@@ -35,7 +35,7 @@ gestalt_gestalt(PyObject *self, PyObject *args)
 	OSErr iErr;
 	OSType selector;
 	long response;
-	if (!PyArg_Parse(args, "O&", PyMac_GetOSType, &selector))
+	if (!PyArg_ParseTuple(args, "O&", PyMac_GetOSType, &selector))
 		return NULL;
 	iErr = Gestalt ( selector, &response );
 	if (iErr != 0) 
@@ -44,7 +44,7 @@ gestalt_gestalt(PyObject *self, PyObject *args)
 }
 
 static struct PyMethodDef gestalt_methods[] = {
-	{"gestalt", gestalt_gestalt},
+	{"gestalt", gestalt_gestalt, METH_VARARGS},
 	{NULL, NULL} /* Sentinel */
 };
 

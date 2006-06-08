@@ -11,16 +11,21 @@ except NameError:
 # list, tuple and dict subclasses that do or don't overwrite __repr__
 class list2(list):
     pass
+
 class list3(list):
     def __repr__(self):
         return list.__repr__(self)
+
 class tuple2(tuple):
     pass
+
 class tuple3(tuple):
     def __repr__(self):
         return tuple.__repr__(self)
+
 class dict2(dict):
     pass
+
 class dict3(dict):
     def __repr__(self):
         return dict.__repr__(self)
@@ -101,7 +106,13 @@ class QueryTestCase(unittest.TestCase):
 
     def test_same_as_repr(self):
         # Simple objects, small containers and classes that overwrite __repr__
-        # For those the result should be the same as repr()
+        # For those the result should be the same as repr().
+        # Ahem.  The docs don't say anything about that -- this appears to
+        # be testing an implementation quirk.  Starting in Python 2.5, it's
+        # not true for dicts:  pprint always sorts dicts by key now; before,
+        # it sorted a dict display if and only if the display required
+        # multiple lines.  For that reason, dicts with more than one element
+        # aren't tested here.
         verify = self.assert_
         for simple in (0, 0L, 0+0j, 0.0, "", uni(""),
                        (), tuple2(), tuple3(),
@@ -112,9 +123,7 @@ class QueryTestCase(unittest.TestCase):
                        (1,2), [3,4], {5: 6, 7: 8},
                        tuple2((1,2)), tuple3((1,2)), tuple3(range(100)),
                        [3,4], list2([3,4]), list3([3,4]), list3(range(100)),
-                       {5: 6, 7: 8}, dict2({5: 6, 7: 8}), dict3({5: 6, 7: 8}),
-                       dict3([(x,x) for x in range(100)]),
-                       {"xy\tab\n": (3,), 5: [[]], (): {}},
+                       {5: 6, 7: 8}, dict2({5: 6}), dict3({5: 6}),
                        range(10, -11, -1)
                       ):
             native = repr(simple)
@@ -159,6 +168,24 @@ class QueryTestCase(unittest.TestCase):
         exp = '[   %s]' % ',\n    '.join(map(str, o))
         for type in [list, list2]:
             self.assertEqual(pprint.pformat(type(o), indent=4), exp)
+
+    def test_sorted_dict(self):
+        # Starting in Python 2.5, pprint sorts dict displays by key regardless
+        # of how small the dictionary may be.
+        # Before the change, on 32-bit Windows pformat() gave order
+        # 'a', 'c', 'b' here, so this test failed.
+        d = {'a': 1, 'b': 1, 'c': 1}
+        self.assertEqual(pprint.pformat(d), "{'a': 1, 'b': 1, 'c': 1}")
+        self.assertEqual(pprint.pformat([d, d]),
+            "[{'a': 1, 'b': 1, 'c': 1}, {'a': 1, 'b': 1, 'c': 1}]")
+
+        # The next one is kind of goofy.  The sorted order depends on the
+        # alphabetic order of type names:  "int" < "str" < "tuple".  Before
+        # Python 2.5, this was in the test_same_as_repr() test.  It's worth
+        # keeping around for now because it's one of few tests of pprint
+        # against a crazy mix of types.
+        self.assertEqual(pprint.pformat({"xy\tab\n": (3,), 5: [[]], (): {}}),
+            r"{5: [[]], 'xy\tab\n': (3,), (): {}}")
 
     def test_subclassing(self):
         o = {'names with spaces': 'should be presented using repr()',

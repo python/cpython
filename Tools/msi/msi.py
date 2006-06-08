@@ -455,10 +455,6 @@ def add_ui(db):
     exit_dialog.cancel("Cancel", "Back", active = 0)
     exit_dialog.text("Acknowledgements", 135, 95, 220, 120, 0x30003,
       "Special Windows thanks to:\n"
-      "    LettError, Erik van Blokland, for the \n"
-      "    Python for Windows graphic.\n"
-      "       http://www.letterror.com/\n"
-      "\n"
       "    Mark Hammond, without whose years of freely \n"
       "    shared Windows expertise, Python for Windows \n"
       "    would still be Python for DOS.")
