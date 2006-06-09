@@ -314,8 +314,8 @@ class OtherFileTests(unittest.TestCase):
 
 
 def test_main():
-    # Historically, these tests have sloppy about removing TESTFN.  So get
-    # rid of it no matter what.
+    # Historically, these tests have been sloppy about removing TESTFN.
+    # So get rid of it no matter what.
     try:
         run_unittest(AutoFileTests, OtherFileTests)
     finally:
