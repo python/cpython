@@ -2,6 +2,7 @@
 \usepackage{distutils}
 % $Id$
 
+% wsgiref section
 % Fix XXX comments
 % Count up the patches and bugs
 
@@ -1098,6 +1099,17 @@ Some examples:
 
 (Implemented by Fredrik Lundh following a suggestion by Raymond Hettinger.)
 
+\item The \method{startswith()} and \method{endswith()} methods
+of string types now accept tuples of strings to check for.
+
+\begin{verbatim}
+def is_image_file (filename):
+    return filename.endswith(('.gif', '.jpg', '.tiff'))
+\end{verbatim}
+
+(Implemented by Georg Brandl following a suggestion by Tom Lynn.)
+% RFE #1491485
+
 \item The \function{min()} and \function{max()} built-in functions
 gained a \code{key} keyword parameter analogous to the \code{key}
 argument for \method{sort()}.  This parameter supplies a function that
@@ -2014,6 +2026,11 @@ Marc-Andr\'e Lemburg.}
 
 \end{seealso}
 
+
+%======================================================================
+%\subsection{The wsgiref package\label{module-wsgiref}}
+
+% XXX write this
 
 % ======================================================================
 \section{Build and C API Changes\label{build-api}}
