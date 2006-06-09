@@ -12,6 +12,12 @@ What's New in Python 2.5 beta 1?
 Core and builtins
 -----------------
 
+- Bug #532646: object.__call__() will continue looking for the __call__
+  attribute on objects until one without one is found.  This leads to recursion
+  when you take a class and set its __call__ attribute to an instance of the
+  class.  Originally fixed for classic classes, but this fix is for new-style.
+  Removes the infinite_rec_3 crasher.
+
 - The string and unicode methods startswith() and endswith() now accept
   a tuple of prefixes/suffixes to look for. Implements RFE #1491485.
 
