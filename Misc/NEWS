@@ -12,6 +12,10 @@ What's New in Python 2.4.4c1?
 Core and builtins
 -----------------
 
+- Bug #532646: The object set to the __call__ attribute has its own __call__
+  attribute checked; this continues until the attribute can no longer be found
+  or segfaulting.  Recursion limit is now followed.
+
 - Bug #1454485: Don't crash on Unicode characters <0.
 
 - Patch #1488312, Fix memory alignment problem on SPARC in unicode

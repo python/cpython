@@ -3116,6 +3116,21 @@ def kwdargs():
     list.__init__(a, sequence=[0, 1, 2])
     vereq(a, [0, 1, 2])
 
+def recursive__call__():
+    if verbose: print ("Testing recursive __call__() by setting to instance of "
+                        "class ...")
+    class A(object):
+        pass
+
+    A.__call__ = A()
+    try:
+        A()()
+    except RuntimeError:
+        pass
+    else:
+        raise TestFailed("Recursion limit should have been reached for "
+                         "__call__()")
+
 def delhook():
     if verbose: print "Testing __del__ hook..."
     log = []
@@ -4118,6 +4133,7 @@ def test_main():
     buffer_inherit()
     str_of_str_subclass()
     kwdargs()
+    recursive__call__()
     delhook()
     hashinherit()
     strops()
