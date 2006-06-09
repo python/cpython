@@ -1227,7 +1227,9 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 
 #define ISSLASHA(c) ((c) == '\\' || (c) == '/')
 #define ISSLASHW(c) ((c) == L'\\' || (c) == L'/')
+#ifndef ARRAYSIZE
 #define ARRAYSIZE(a) (sizeof(a) / sizeof(a[0]))
+#endif
 
 static BOOL
 IsUNCRootA(char *path, int pathlen)
