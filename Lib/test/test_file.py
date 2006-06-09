@@ -98,13 +98,23 @@ class AutoFileTests(unittest.TestCase):
         if sys.platform.startswith('atheos'):
             methods.remove('truncate')
 
-        self.f.close()
+        # __exit__ should close the file
+        self.f.__exit__(None, None, None)
+        self.assert_(self.f.closed)
 
         for methodname in methods:
             method = getattr(self.f, methodname)
             # should raise on closed file
             self.assertRaises(ValueError, method)
         self.assertRaises(ValueError, self.f.writelines, [])
+
+        # file is closed, __exit__ shouldn't do anything
+        self.assertEquals(self.f.__exit__(None, None, None), None)
+        # it must also return None if an exception was given
+        try:
+            1/0
+        except:
+            self.assertEquals(self.f.__exit__(*sys.exc_info()), None)
 
 
 class OtherFileTests(unittest.TestCase):
