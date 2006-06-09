@@ -344,11 +344,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         tests = tests[:1]
     if randomize:
         random.shuffle(tests)
-        # XXX Temporary hack to force test_optparse to run immediately
-        # XXX after test_file.  This should go away as soon as we fix
-        # XXX whatever it is that's causing that to fail.
-        tests.remove("test_file")
-        tests.insert(tests.index("test_optparse"), "test_file")
     if trace:
         import trace
         tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix],
