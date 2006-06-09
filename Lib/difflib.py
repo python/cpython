@@ -1422,8 +1422,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                 num_blanks_pending -= 1
                 yield _make_line(lines,'-',0), None, True
                 continue
-            elif s.startswith('--?+') or s.startswith('--+') or \
-                 s.startswith('- '):
+            elif s.startswith(('--?+', '--+', '- ')):
                 # in delete block and see a intraline change or unchanged line
                 # coming: yield the delete line and then blanks
                 from_line,to_line = _make_line(lines,'-',0), None
@@ -1447,7 +1446,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                 num_blanks_pending += 1
                 yield None, _make_line(lines,'+',1), True
                 continue
-            elif s.startswith('+ ') or s.startswith('+-'):
+            elif s.startswith(('+ ', '+-')):
                 # will be leaving an add block: yield blanks then add line
                 from_line, to_line = None, _make_line(lines,'+',1)
                 num_blanks_to_yield,num_blanks_pending = num_blanks_pending+1,0

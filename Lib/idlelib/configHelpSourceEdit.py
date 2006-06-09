@@ -127,7 +127,7 @@ class GetHelpSourceDialog(Toplevel):
                                    parent=self)
             self.entryPath.focus_set()
             pathOk = False
-        elif path.startswith('www.') or path.startswith('http'):
+        elif path.startswith(('www.', 'http')):
             pass
         else:
             if path[:5] == 'file:':
@@ -146,8 +146,7 @@ class GetHelpSourceDialog(Toplevel):
                            self.path.get().strip())
             if sys.platform == 'darwin':
                 path = self.result[1]
-                if (path.startswith('www') or path.startswith('file:')
-                    or path.startswith('http:')):
+                if path.startswith(('www', 'file:', 'http:')):
                     pass
                 else:
                     # Mac Safari insists on using the URI form for local files

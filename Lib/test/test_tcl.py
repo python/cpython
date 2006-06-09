@@ -130,10 +130,8 @@ class TclTest(unittest.TestCase):
         import os
         old_display = None
         import sys
-        if (sys.platform.startswith('win') or
-                sys.platform.startswith('darwin') or
-                sys.platform.startswith('cygwin')):
-            return # no failure possible on windows?
+        if sys.platform.startswith(('win', 'darwin', 'cygwin')):
+            return  # no failure possible on windows?
         if 'DISPLAY' in os.environ:
             old_display = os.environ['DISPLAY']
             del os.environ['DISPLAY']

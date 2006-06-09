@@ -63,8 +63,7 @@ class MozillaCookieJar(FileCookieJar):
                 if line.endswith("\n"): line = line[:-1]
 
                 # skip comments and blank lines XXX what is $ for?
-                if (line.strip().startswith("#") or
-                    line.strip().startswith("$") or
+                if (line.strip().startswith(("#", "$")) or
                     line.strip() == ""):
                     continue
 
