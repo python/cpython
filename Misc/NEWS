@@ -136,6 +136,8 @@ Extension Modules
 Library
 -------
 
+- The wsgiref package has been added to the standard library.
+
 - The functions update_wrapper() and wraps() have been added to the functools
   module. These make it easier to copy relevant metadata from the original
   function when writing wrapper functions.
