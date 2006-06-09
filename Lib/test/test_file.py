@@ -86,7 +86,7 @@ class AutoFileTests(unittest.TestCase):
         self.assertEquals(f.name, TESTFN)
         self.assert_(not f.isatty())
         self.assert_(not f.closed)
-        
+
         self.assertRaises(TypeError, f.readinto, "")
         f.close()
         self.assert_(f.closed)
