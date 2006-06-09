@@ -126,19 +126,16 @@ Wouters.}
 \section{PEP 309: Partial Function Application\label{pep-309}}
 
 The \module{functools} module is intended to contain tools for
-functional-style programming.  Currently it only contains a
-\class{partial()} function, but new functions will probably be added
-in future versions of Python.
+functional-style programming.  
 
-For programs written in a functional style, it can be useful to
+One useful tool in this module is the \function{partial()} function.
+For programs written in a functional style, you'll sometimes want to
 construct variants of existing functions that have some of the
 parameters filled in.  Consider a Python function \code{f(a, b, c)};
 you could create a new function \code{g(b, c)} that was equivalent to
-\code{f(1, b, c)}.  This is called ``partial function application'',
-and is provided by the \class{partial} class in the new
-\module{functools} module.
+\code{f(1, b, c)}.  This is called ``partial function application''.
 
-The constructor for \class{partial} takes the arguments
+\function{partial} takes the arguments
 \code{(\var{function}, \var{arg1}, \var{arg2}, ...
 \var{kwarg1}=\var{value1}, \var{kwarg2}=\var{value2})}.  The resulting
 object is callable, so you can just call it to invoke \var{function}
@@ -175,11 +172,40 @@ class Application:
 \end{verbatim}
 
 
+Another function in the \module{functools} module is the
+\function{update_wrapper(\var{wrapper, \var{wrapped})} function that
+helps you write well-behaved decorators.  \function{update_wrapper()}
+copies the name, module, and docstring attribute to a wrapper function
+so that tracebacks inside the wrapped function are easier to
+understand.  For example, you might write:
+
+\begin{verbatim}
+def my_decorator(f):
+    def wrapper(*args, **kwds):
+        print 'Calling decorated function'
+        return f(*args, **kwds)
+    functools.update_wrapper(wrapper, f)
+    return wrapper
+\end{verbatim}
+
+\function{wraps()} is a decorator that can be used inside your own
+decorators to copy the wrapped function's information.  An alternate 
+version of the previous example would be:
+
+\begin{verbatim}
+def my_decorator(f):
+    @functools.wraps(f)
+    def wrapper(*args, **kwds):
+        print 'Calling decorated function'
+        return f(*args, **kwds)
+    return wrapper
+\end{verbatim}
+
 \begin{seealso}
 
 \seepep{309}{Partial Function Application}{PEP proposed and written by
-Peter Harris; implemented by Hye-Shik Chang, with adaptations by
-Raymond Hettinger.}
+Peter Harris; implemented by Hye-Shik Chang and Nick Coghlan, with
+adaptations by Raymond Hettinger.}
 
 \end{seealso}
 
