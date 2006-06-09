@@ -59,10 +59,10 @@ def application_uri(environ):
 
         if environ['wsgi.url_scheme'] == 'https':
             if environ['SERVER_PORT'] != '443':
-               url += ':' + environ['SERVER_PORT']
+                url += ':' + environ['SERVER_PORT']
         else:
             if environ['SERVER_PORT'] != '80':
-               url += ':' + environ['SERVER_PORT']
+                url += ':' + environ['SERVER_PORT']
 
     url += quote(environ.get('SCRIPT_NAME') or '/')
     return url
@@ -171,35 +171,3 @@ _hoppish = {
 def is_hop_by_hop(header_name):
     """Return true if 'header_name' is an HTTP/1.1 "Hop-by-Hop" header"""
     return _hoppish(header_name.lower())
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
