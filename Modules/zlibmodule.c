@@ -880,6 +880,8 @@ PyInit_zlib(void)
     m = Py_InitModule4("zlib", zlib_methods,
 		       zlib_module_documentation,
 		       (PyObject*)NULL,PYTHON_API_VERSION);
+    if (m == NULL)
+	return;
 
     ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
     if (ZlibError != NULL) {
