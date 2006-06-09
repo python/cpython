@@ -16,9 +16,9 @@ typedef struct {
 
 
 enum buffer_t {
-    READBUFFER,
-    WRITEBUFFER,
-    CHARBUFFER,
+    READ_BUFFER,
+    WRITE_BUFFER,
+    CHAR_BUFFER,
     ANY_BUFFER,
 };
 
@@ -40,13 +40,13 @@ get_buf(PyBufferObject *self, void **ptr, Py_ssize_t *size,
 				"single-segment buffer object expected");
 			return 0;
 		}
-		if ((buffer_type == READBUFFER) ||
+		if ((buffer_type == READ_BUFFER) ||
 			((buffer_type == ANY_BUFFER) && self->b_readonly))
 		    proc = bp->bf_getreadbuffer;
-		else if ((buffer_type == WRITEBUFFER) ||
+		else if ((buffer_type == WRITE_BUFFER) ||
 			(buffer_type == ANY_BUFFER))
     		    proc = (readbufferproc)bp->bf_getwritebuffer;
-		else if (buffer_type == CHARBUFFER) {
+		else if (buffer_type == CHAR_BUFFER) {
 		    if (!PyType_HasFeature(self->ob_type,
 				Py_TPFLAGS_HAVE_GETCHARBUFFER)) {
 			PyErr_SetString(PyExc_TypeError,
@@ -58,13 +58,13 @@ get_buf(PyBufferObject *self, void **ptr, Py_ssize_t *size,
 		if (!proc) {
 		    char *buffer_type_name;
 		    switch (buffer_type) {
-			case READBUFFER:
+			case READ_BUFFER:
 			    buffer_type_name = "read";
 			    break;
-			case WRITEBUFFER:
+			case WRITE_BUFFER:
 			    buffer_type_name = "write";
 			    break;
-			case CHARBUFFER:
+			case CHAR_BUFFER:
 			    buffer_type_name = "char";
 			    break;
 			default:
@@ -592,7 +592,7 @@ buffer_getreadbuf(PyBufferObject *self, Py_ssize_t idx, void **pp)
 				"accessing non-existent buffer segment");
 		return -1;
 	}
-	if (!get_buf(self, pp, &size, READBUFFER))
+	if (!get_buf(self, pp, &size, READ_BUFFER))
 		return -1;
 	return size;
 }
@@ -613,7 +613,7 @@ buffer_getwritebuf(PyBufferObject *self, Py_ssize_t idx, void **pp)
 				"accessing non-existent buffer segment");
 		return -1;
 	}
-	if (!get_buf(self, pp, &size, WRITEBUFFER))
+	if (!get_buf(self, pp, &size, WRITE_BUFFER))
 		return -1;
 	return size;
 }
@@ -640,7 +640,7 @@ buffer_getcharbuf(PyBufferObject *self, Py_ssize_t idx, const char **pp)
 				"accessing non-existent buffer segment");
 		return -1;
 	}
-	if (!get_buf(self, &ptr, &size, CHARBUFFER))
+	if (!get_buf(self, &ptr, &size, CHAR_BUFFER))
 		return -1;
 	*pp = (const char *)ptr;
 	return size;
