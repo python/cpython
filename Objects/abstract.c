@@ -1792,9 +1792,10 @@ PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw)
         ternaryfunc call;
 
 	if ((call = func->ob_type->tp_call) != NULL) {
+		PyObject *result = NULL;
 		if (Py_EnterRecursiveCall(" in __call__"))
 			return NULL;
-		PyObject *result = (*call)(func, arg, kw);
+		result = (*call)(func, arg, kw);
 		Py_LeaveRecursiveCall();
 		if (result == NULL && !PyErr_Occurred())
 			PyErr_SetString(
