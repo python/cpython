@@ -135,6 +135,7 @@ class OtherFileTests(unittest.TestCase):
         f = open(unicode(TESTFN), "w")
         self.assert_(repr(f).startswith("<open file u'" + TESTFN))
         f.close()
+        os.unlink(TESTFN)
 
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument
@@ -313,7 +314,13 @@ class OtherFileTests(unittest.TestCase):
 
 
 def test_main():
-    run_unittest(AutoFileTests, OtherFileTests)
+    # Historically, these tests have sloppy about removing TESTFN.  So get
+    # rid of it no matter what.
+    try:
+        run_unittest(AutoFileTests, OtherFileTests)
+    finally:
+        if os.path.exists(TESTFN):
+            os.unlink(TESTFN)
 
 if __name__ == '__main__':
     test_main()
