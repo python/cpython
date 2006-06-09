@@ -426,4 +426,3 @@ def check_iterator(iterator):
     assert not isinstance(iterator, str), (
         "You should not return a string as your application iterator, "
         "instead return a single-item list containing that string.")
-
