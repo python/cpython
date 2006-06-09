@@ -191,6 +191,10 @@ Library
 
 - Patch #1470846: fix urllib2 ProxyBasicAuthHandler.
 
+- Bug #1472827: correctly escape newlines and tabs in attribute values in
+  the saxutils.XMLGenerator class.
+
+
 Build
 -----
 
