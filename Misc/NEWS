@@ -12,6 +12,9 @@ What's New in Python 2.5 beta 1?
 Core and builtins
 -----------------
 
+- The string and unicode methods startswith() and endswith() now accept
+  a tuple of prefixes/suffixes to look for. Implements RFE #1491485.
+
 - Buffer objects, at the C level, never used the char buffer
   implementation even when the char buffer for the wrapped object was
   explicitly requested (originally returned the read or write buffer).

@@ -6667,29 +6667,44 @@ PyDoc_STRVAR(startswith__doc__,
 \n\
 Return True if S starts with the specified prefix, False otherwise.\n\
 With optional start, test S beginning at that position.\n\
-With optional end, stop comparing S at that position.");
+With optional end, stop comparing S at that position.\n\
+prefix can also be a tuple of strings to try.");
 
 static PyObject *
 unicode_startswith(PyUnicodeObject *self,
 		   PyObject *args)
 {
+    PyObject *subobj;
     PyUnicodeObject *substring;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
-    PyObject *result;
+    int result;
 
-    if (!PyArg_ParseTuple(args, "O|O&O&:startswith", &substring,
+    if (!PyArg_ParseTuple(args, "O|O&O&:startswith", &subobj,
 		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
 	return NULL;
-    substring = (PyUnicodeObject *)PyUnicode_FromObject(
-						(PyObject *)substring);
+    if (PyTuple_Check(subobj)) {
+        Py_ssize_t i;
+        for (i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+            substring = (PyUnicodeObject *)PyUnicode_FromObject(
+                            PyTuple_GET_ITEM(subobj, i));
+            if (substring == NULL)
+                return NULL;
+            result = tailmatch(self, substring, start, end, -1);
+            Py_DECREF(substring);
+            if (result) {
+                Py_RETURN_TRUE;
+            }
+        }
+        /* nothing matched */
+        Py_RETURN_FALSE;
+    }
+    substring = (PyUnicodeObject *)PyUnicode_FromObject(subobj);
     if (substring == NULL)
-	return NULL;
-
-    result = PyBool_FromLong(tailmatch(self, substring, start, end, -1));
-
+         return NULL;
+    result = tailmatch(self, substring, start, end, -1);
     Py_DECREF(substring);
-    return result;
+    return PyBool_FromLong(result);
 }
 
 
@@ -6698,29 +6713,44 @@ PyDoc_STRVAR(endswith__doc__,
 \n\
 Return True if S ends with the specified suffix, False otherwise.\n\
 With optional start, test S beginning at that position.\n\
-With optional end, stop comparing S at that position.");
+With optional end, stop comparing S at that position.\n\
+suffix can also be a tuple of strings to try.");
 
 static PyObject *
 unicode_endswith(PyUnicodeObject *self,
 		 PyObject *args)
 {
+    PyObject *subobj;
     PyUnicodeObject *substring;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
-    PyObject *result;
+    int result;
 
-    if (!PyArg_ParseTuple(args, "O|O&O&:endswith", &substring,
-		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
+    if (!PyArg_ParseTuple(args, "O|O&O&:endswith", &subobj,
+        _PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
 	return NULL;
-    substring = (PyUnicodeObject *)PyUnicode_FromObject(
-						(PyObject *)substring);
+    if (PyTuple_Check(subobj)) {
+        Py_ssize_t i;
+        for (i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+            substring = (PyUnicodeObject *)PyUnicode_FromObject(
+                            PyTuple_GET_ITEM(subobj, i));
+            if (substring == NULL)
+            return NULL;
+            result = tailmatch(self, substring, start, end, +1);
+            Py_DECREF(substring);
+            if (result) {
+                Py_RETURN_TRUE;
+            }
+        }
+        Py_RETURN_FALSE;
+    }
+    substring = (PyUnicodeObject *)PyUnicode_FromObject(subobj);
     if (substring == NULL)
-	return NULL;
+    return NULL;
 
-    result = PyBool_FromLong(tailmatch(self, substring, start, end, +1));
-
+    result = tailmatch(self, substring, start, end, +1);
     Py_DECREF(substring);
-    return result;
+    return PyBool_FromLong(result);
 }
 
 
