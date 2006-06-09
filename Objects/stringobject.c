@@ -3099,54 +3099,96 @@ string_replace(PyStringObject *self, PyObject *args)
 
 /** End DALKE **/
 
+/* Matches the end (direction > 0) or start (direction < 0) of self
+ * against substr, using the start and end arguments. Returns
+ * -1 on error, 0 if not found and 1 if found.
+ */
+Py_LOCAL(int)
+_string_tailmatch(PyStringObject *self, PyObject *substr, Py_ssize_t start,
+		  Py_ssize_t end, int direction)
+{
+	Py_ssize_t len = PyString_GET_SIZE(self);
+	Py_ssize_t slen;
+	const char* sub;
+	const char* str;
+
+	if (PyString_Check(substr)) {
+		sub = PyString_AS_STRING(substr);
+		slen = PyString_GET_SIZE(substr);
+	}
+#ifdef Py_USING_UNICODE
+	else if (PyUnicode_Check(substr))
+		return PyUnicode_Tailmatch((PyObject *)self,
+					   substr, start, end, direction);
+#endif
+	else if (PyObject_AsCharBuffer(substr, &sub, &slen))
+		return -1;
+	str = PyString_AS_STRING(self);
+
+	string_adjust_indices(&start, &end, len);
+
+	if (direction < 0) {
+		/* startswith */
+		if (start+slen > len)
+			return 0;
+
+		if (end-start >= slen)
+			return ! memcmp(str+start, sub, slen);
+		else
+			return 0;
+	} else {
+		/* endswith */
+		if (end-start < slen || start > len)
+			return 0;
+
+		if (end-slen > start)
+			start = end - slen;
+		if (end-start >= slen)
+			return ! memcmp(str+start, sub, slen);
+		else
+			return 0;
+	}
+}
+
+
 PyDoc_STRVAR(startswith__doc__,
 "S.startswith(prefix[, start[, end]]) -> bool\n\
 \n\
 Return True if S starts with the specified prefix, False otherwise.\n\
 With optional start, test S beginning at that position.\n\
-With optional end, stop comparing S at that position.");
+With optional end, stop comparing S at that position.\n\
+prefix can also be a tuple of strings to try.");
 
 static PyObject *
 string_startswith(PyStringObject *self, PyObject *args)
 {
-	const char* str = PyString_AS_STRING(self);
-	Py_ssize_t len = PyString_GET_SIZE(self);
-	const char* prefix;
-	Py_ssize_t plen;
 	Py_ssize_t start = 0;
 	Py_ssize_t end = PY_SSIZE_T_MAX;
 	PyObject *subobj;
+	int result;
 
 	if (!PyArg_ParseTuple(args, "O|O&O&:startswith", &subobj,
 		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
 		return NULL;
-	if (PyString_Check(subobj)) {
-		prefix = PyString_AS_STRING(subobj);
-		plen = PyString_GET_SIZE(subobj);
+	if (PyTuple_Check(subobj)) {
+		Py_ssize_t i;
+		for (i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+			result = _string_tailmatch(self,
+					PyTuple_GET_ITEM(subobj, i),
+					start, end, -1);
+			if (result == -1)
+				return NULL;
+			else if (result) {
+				Py_RETURN_TRUE;
+			}
+		}
+		Py_RETURN_FALSE;
 	}
-#ifdef Py_USING_UNICODE
-	else if (PyUnicode_Check(subobj)) {
-	    	Py_ssize_t rc;
-		rc = PyUnicode_Tailmatch((PyObject *)self,
-					  subobj, start, end, -1);
-		if (rc == -1)
-			return NULL;
-		else
-			return PyBool_FromLong((long) rc);
-	}
-#endif
-	else if (PyObject_AsCharBuffer(subobj, &prefix, &plen))
+	result = _string_tailmatch(self, subobj, start, end, -1);
+	if (result == -1)
 		return NULL;
-
-	string_adjust_indices(&start, &end, len);
-
-	if (start+plen > len)
-		return PyBool_FromLong(0);
-
-	if (end-start >= plen)
-		return PyBool_FromLong(!memcmp(str+start, prefix, plen));
 	else
-		return PyBool_FromLong(0);
+		return PyBool_FromLong(result);
 }
 
 
@@ -3155,51 +3197,39 @@ PyDoc_STRVAR(endswith__doc__,
 \n\
 Return True if S ends with the specified suffix, False otherwise.\n\
 With optional start, test S beginning at that position.\n\
-With optional end, stop comparing S at that position.");
+With optional end, stop comparing S at that position.\n\
+suffix can also be a tuple of strings to try.");
 
 static PyObject *
 string_endswith(PyStringObject *self, PyObject *args)
 {
-	const char* str = PyString_AS_STRING(self);
-	Py_ssize_t len = PyString_GET_SIZE(self);
-	const char* suffix;
-	Py_ssize_t slen;
 	Py_ssize_t start = 0;
 	Py_ssize_t end = PY_SSIZE_T_MAX;
 	PyObject *subobj;
+	int result;
 
 	if (!PyArg_ParseTuple(args, "O|O&O&:endswith", &subobj,
 		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
 		return NULL;
-	if (PyString_Check(subobj)) {
-		suffix = PyString_AS_STRING(subobj);
-		slen = PyString_GET_SIZE(subobj);
+	if (PyTuple_Check(subobj)) {
+		Py_ssize_t i;
+		for (i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+			result = _string_tailmatch(self,
+					PyTuple_GET_ITEM(subobj, i),
+					start, end, +1);
+			if (result == -1)
+				return NULL;
+			else if (result) {
+				Py_RETURN_TRUE;
+			}
+		}
+		Py_RETURN_FALSE;
 	}
-#ifdef Py_USING_UNICODE
-	else if (PyUnicode_Check(subobj)) {
-	    	Py_ssize_t rc;
-		rc = PyUnicode_Tailmatch((PyObject *)self,
-					  subobj, start, end, +1);
-		if (rc == -1)
-			return NULL;
-		else
-			return PyBool_FromLong((long) rc);
-	}
-#endif
-	else if (PyObject_AsCharBuffer(subobj, &suffix, &slen))
+	result = _string_tailmatch(self, subobj, start, end, +1);
+	if (result == -1)
 		return NULL;
-
-	string_adjust_indices(&start, &end, len);
-
-	if (end-start < slen || start > len)
-		return PyBool_FromLong(0);
-
-	if (end-slen > start)
-		start = end - slen;
-	if (end-start >= slen)
-		return PyBool_FromLong(!memcmp(str+start, suffix, slen));
 	else
-		return PyBool_FromLong(0);
+		return PyBool_FromLong(result);
 }
 
 

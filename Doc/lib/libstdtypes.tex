@@ -618,8 +618,11 @@ For a list of possible encodings, see section~\ref{standard-encodings}.
 
 \begin{methoddesc}[string]{endswith}{suffix\optional{, start\optional{, end}}}
 Return \code{True} if the string ends with the specified \var{suffix},
-otherwise return \code{False}.  With optional \var{start}, test beginning at
+otherwise return \code{False}.  \var{suffix} can also be a tuple of
+suffixes to look for.  With optional \var{start}, test beginning at
 that position.  With optional \var{end}, stop comparing at that position.
+
+\versionchanged[Accept tuples as \var{suffix}]{2.5}
 \end{methoddesc}
 
 \begin{methoddesc}[string]{expandtabs}{\optional{tabsize}}
@@ -829,9 +832,12 @@ boundaries.  Line breaks are not included in the resulting list unless
 \begin{methoddesc}[string]{startswith}{prefix\optional{,
                                        start\optional{, end}}}
 Return \code{True} if string starts with the \var{prefix}, otherwise
-return \code{False}.  With optional \var{start}, test string beginning at
+return \code{False}.  \var{prefix} can also be a tuple of
+suffixes to look for.  With optional \var{start}, test string beginning at
 that position.  With optional \var{end}, stop comparing string at that
 position.
+
+\versionchanged[Accept tuples as \var{prefix}]{2.5}
 \end{methoddesc}
 
 \begin{methoddesc}[string]{strip}{\optional{chars}}
