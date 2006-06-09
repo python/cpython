@@ -175,11 +175,14 @@ def test_xmlgen_attr_escape():
     gen.endElement("e")
     gen.startElement("e", {"a": "'\""})
     gen.endElement("e")
+    gen.startElement("e", {"a": "\n\r\t"})
+    gen.endElement("e")
     gen.endElement("doc")
     gen.endDocument()
 
-    return result.getvalue() == start \
-           + "<doc a='\"'><e a=\"'\"></e><e a=\"'&quot;\"></e></doc>"
+    return result.getvalue() == start + ("<doc a='\"'><e a=\"'\"></e>"
+                                         "<e a=\"'&quot;\"></e>"
+                                         "<e a=\"&#10;&#13;&#9;\"></e></doc>")
 
 def test_xmlgen_ignorable():
     result = StringIO()

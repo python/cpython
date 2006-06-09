@@ -69,6 +69,10 @@ Library
   raise an exception some day.  But dicts have been allowed, and "mostly
   worked", so support for them won't go away without warning.
 
+- Bug #1472827: correctly escape newlines and tabs in attribute values in
+  the saxutils.XMLGenerator class.
+
+
 Tools/Demos
 -----------
 
