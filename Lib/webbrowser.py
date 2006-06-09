@@ -98,8 +98,7 @@ def _synthesize(browser, update_tryorder=1):
 if sys.platform[:3] == "win":
     def _isexecutable(cmd):
         cmd = cmd.lower()
-        if os.path.isfile(cmd) and (cmd.endswith(".exe") or
-                                    cmd.endswith(".bat")):
+        if os.path.isfile(cmd) and cmd.endswith((".exe", ".bat")):
             return True
         for ext in ".exe", ".bat":
             if os.path.isfile(cmd + ext):

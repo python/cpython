@@ -15,7 +15,7 @@ from test import inspect_fodder2 as mod2
 # isdatadescriptor
 
 modfile = mod.__file__
-if modfile.endswith('c') or modfile.endswith('o'):
+if modfile.endswith(('c', 'o')):
     modfile = modfile[:-1]
 
 import __builtin__

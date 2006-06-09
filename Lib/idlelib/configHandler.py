@@ -406,7 +406,7 @@ class IdleConf:
         names=extnNameList
         kbNameIndicies=[]
         for name in names:
-            if name.endswith('_bindings') or name.endswith('_cfgBindings'):
+            if name.endswith(('_bindings', '_cfgBindings')):
                 kbNameIndicies.append(names.index(name))
         kbNameIndicies.sort()
         kbNameIndicies.reverse()

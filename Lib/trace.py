@@ -285,7 +285,7 @@ class CoverageResults:
             if filename == "<string>":
                 continue
 
-            if filename.endswith(".pyc") or filename.endswith(".pyo"):
+            if filename.endswith((".pyc", ".pyo")):
                 filename = filename[:-1]
 
             if coverdir is None:

@@ -649,7 +649,7 @@ class EditorWindow(object):
     def __extra_help_callback(self, helpfile):
         "Create a callback with the helpfile value frozen at definition time"
         def display_extra_help(helpfile=helpfile):
-            if not (helpfile.startswith('www') or helpfile.startswith('http')):
+            if not helpfile.startswith(('www', 'http')):
                 url = os.path.normpath(helpfile)
             if sys.platform[:3] == 'win':
                 os.startfile(helpfile)
