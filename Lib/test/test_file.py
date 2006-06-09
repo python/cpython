@@ -11,14 +11,12 @@ class AutoFileTests(unittest.TestCase):
     # file tests for which a test file is automatically set up
 
     def setUp(self):
-        self.f = file(TESTFN, 'wb')
+        self.f = open(TESTFN, 'wb')
 
     def tearDown(self):
-        try:
-            if self.f:
-                self.f.close()
-        except IOError:
-            pass
+        if self.f:
+            self.f.close()
+        os.remove(TESTFN)
 
     def testWeakRefs(self):
         # verify weak references
@@ -73,9 +71,11 @@ class AutoFileTests(unittest.TestCase):
 
     def testWritelinesNonString(self):
         # verify writelines with non-string object
-        class NonString: pass
+        class NonString:
+            pass
 
-        self.assertRaises(TypeError, self.f.writelines, [NonString(), NonString()])
+        self.assertRaises(TypeError, self.f.writelines,
+                          [NonString(), NonString()])
 
     def testRepr(self):
         # verify repr works
@@ -93,8 +93,8 @@ class AutoFileTests(unittest.TestCase):
 
     def testMethods(self):
         methods = ['fileno', 'flush', 'isatty', 'next', 'read', 'readinto',
-                   'readline', 'readlines', 'seek', 'tell', 'truncate', 'write',
-                   'xreadlines', '__iter__']
+                   'readline', 'readlines', 'seek', 'tell', 'truncate',
+                   'write', 'xreadlines', '__iter__']
         if sys.platform.startswith('atheos'):
             methods.remove('truncate')
 
@@ -113,7 +113,7 @@ class OtherFileTests(unittest.TestCase):
         # check invalid mode strings
         for mode in ("", "aU", "wU+"):
             try:
-                f = file(TESTFN, mode)
+                f = open(TESTFN, mode)
             except ValueError:
                 pass
             else:
@@ -175,11 +175,11 @@ class OtherFileTests(unittest.TestCase):
         def bug801631():
             # SF bug <http://www.python.org/sf/801631>
             # "file.truncate fault on windows"
-            f = file(TESTFN, 'wb')
+            f = open(TESTFN, 'wb')
             f.write('12345678901')   # 11 bytes
             f.close()
 
-            f = file(TESTFN,'rb+')
+            f = open(TESTFN,'rb+')
             data = f.read(5)
             if data != '12345':
                 self.fail("Read on file opened for update failed %r" % data)
@@ -201,14 +201,14 @@ class OtherFileTests(unittest.TestCase):
             os.unlink(TESTFN)
 
     def testIteration(self):
-        # Test the complex interaction when mixing file-iteration and the various
-        # read* methods. Ostensibly, the mixture could just be tested to work
-        # when it should work according to the Python language, instead of fail
-        # when it should fail according to the current CPython implementation.
-        # People don't always program Python the way they should, though, and the
-        # implemenation might change in subtle ways, so we explicitly test for
-        # errors, too; the test will just have to be updated when the
-        # implementation changes.
+        # Test the complex interaction when mixing file-iteration and the
+        # various read* methods. Ostensibly, the mixture could just be tested
+        # to work when it should work according to the Python language,
+        # instead of fail when it should fail according to the current CPython
+        # implementation.  People don't always program Python the way they
+        # should, though, and the implemenation might change in subtle ways,
+        # so we explicitly test for errors, too; the test will just have to
+        # be updated when the implementation changes.
         dataoffset = 16384
         filler = "ham\n"
         assert not dataoffset % len(filler), \
@@ -246,12 +246,13 @@ class OtherFileTests(unittest.TestCase):
                                      (methodname, args))
                 f.close()
 
-            # Test to see if harmless (by accident) mixing of read* and iteration
-            # still works. This depends on the size of the internal iteration
-            # buffer (currently 8192,) but we can test it in a flexible manner.
-            # Each line in the bag o' ham is 4 bytes ("h", "a", "m", "\n"), so
-            # 4096 lines of that should get us exactly on the buffer boundary for
-            # any power-of-2 buffersize between 4 and 16384 (inclusive).
+            # Test to see if harmless (by accident) mixing of read* and
+            # iteration still works. This depends on the size of the internal
+            # iteration buffer (currently 8192,) but we can test it in a
+            # flexible manner.  Each line in the bag o' ham is 4 bytes
+            # ("h", "a", "m", "\n"), so 4096 lines of that should get us
+            # exactly on the buffer boundary for any power-of-2 buffersize
+            # between 4 and 16384 (inclusive).
             f = open(TESTFN)
             for i in range(nchunks):
                 f.next()
