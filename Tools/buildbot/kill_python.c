@@ -42,7 +42,8 @@ int main()
 
 		_strlwr(path);
 		/* printf("%s\n", path); */
-		if (strstr(path, "build\\pcbuild\\python_d.exe") != NULL) {
+		if ((strstr(path, "build\\pcbuild\\python_d.exe") != NULL) ||
+		    (strstr(path, "build\\python.exe") != NULL)) {
 			printf("Terminating %s (pid %d)\n", path, pids[i]);
 			if (!TerminateProcess(hProcess, 1)) {
 				printf("Termination failed: %d\n", GetLastError());
