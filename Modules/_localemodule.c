@@ -16,7 +16,7 @@ This software comes with no warranty. Use at your own risk.
 #include <string.h>
 #include <ctype.h>
 
-#ifndef DONT_HAVE_ERRNO_H
+#ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
 

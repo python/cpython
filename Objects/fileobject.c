@@ -4,9 +4,9 @@
 #include "Python.h"
 #include "structmember.h"
 
-#ifndef DONT_HAVE_SYS_TYPES_H
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
-#endif /* DONT_HAVE_SYS_TYPES_H */
+#endif /* HAVE_SYS_TYPES_H */
 
 #ifdef MS_WINDOWS
 #define fileno _fileno

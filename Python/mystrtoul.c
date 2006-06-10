@@ -17,7 +17,7 @@
 
 
 #include <ctype.h>
-#ifndef DONT_HAVE_ERRNO_H
+#ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
 

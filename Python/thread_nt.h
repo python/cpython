@@ -5,7 +5,9 @@
 
 #include <windows.h>
 #include <limits.h>
+#ifdef HAVE_PROCESS_H
 #include <process.h>
+#endif
 
 typedef struct NRMUTEX {
 	LONG   owned ;

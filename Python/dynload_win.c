@@ -2,7 +2,9 @@
 /* Support for dynamic loading of extension modules */
 
 #include <windows.h>
+#ifdef HAVE_DIRECT_H
 #include <direct.h>
+#endif
 #include <ctype.h>
 
 #include "Python.h"

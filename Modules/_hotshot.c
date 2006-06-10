@@ -14,7 +14,11 @@
  */
 #ifdef MS_WINDOWS
 #include <windows.h>
+
+#ifdef HAVE_DIRECT_H
 #include <direct.h>    /* for getcwd() */
+#endif
+
 typedef __int64 hs_time;
 #define GETTIMEOFDAY(P_HS_TIME) \
 	{ LARGE_INTEGER _temp; \

@@ -240,10 +240,10 @@ typedef Py_intptr_t	Py_ssize_t;
  * to your pyconfig.h. Python code beyond this should check HAVE_STAT and
  * HAVE_FSTAT instead.
  * Also
- *      #define DONT_HAVE_SYS_STAT_H
- * if <sys/stat.h> doesn't exist on your platform, and
+ *      #define HAVE_SYS_STAT_H
+ * if <sys/stat.h> exists on your platform, and
  *      #define HAVE_STAT_H
- * if <stat.h> does (don't look at me -- ths mess is inherited).
+ * if <stat.h> does.
  */
 #ifndef DONT_HAVE_STAT
 #define HAVE_STAT
@@ -258,7 +258,7 @@ typedef Py_intptr_t	Py_ssize_t;
 #include "unixstuff.h"
 #endif
 
-#ifndef DONT_HAVE_SYS_STAT_H
+#ifdef HAVE_SYS_STAT_H
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
 #include <sys/types.h>
 #endif

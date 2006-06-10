@@ -37,7 +37,9 @@
 
 #include <windows.h>
 #include <mmsystem.h>
+#ifdef HAVE_CONIO_H
 #include <conio.h>	/* port functions on Win9x */
+#endif
 #include <Python.h>
 
 PyDoc_STRVAR(sound_playsound_doc,

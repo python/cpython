@@ -64,14 +64,21 @@ corresponding Unix manual entries for more information on calls.");
 #include "osdefs.h"
 #endif
 
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif /* HAVE_SYS_STAT_H */
 
 #ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>		/* For WNOHANG */
 #endif
 
+#ifdef HAVE_SIGNAL_H
 #include <signal.h>
+#endif
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
@@ -246,9 +253,15 @@ extern int lstat(const char *, struct stat *);
 #endif
 
 #ifdef _MSC_VER
+#ifdef HAVE_DIRECT_H
 #include <direct.h>
+#endif
+#ifdef HAVE_IO_H
 #include <io.h>
+#endif
+#ifdef HAVE_PROCESS_H
 #include <process.h>
+#endif
 #include "osdefs.h"
 #define _WIN32_WINNT 0x0400	  /* Needed for CryptoAPI on some systems */
 #include <windows.h>
