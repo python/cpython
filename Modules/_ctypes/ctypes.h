@@ -59,7 +59,7 @@ struct tagCDataObject {
 	Py_ssize_t b_length;	/* number of references we need */
 	Py_ssize_t b_index;	/* index of this object into base's
 				   b_object list */
-	PyObject *b_objects;	/* list of references we need to keep */
+	PyObject *b_objects;	/* dictionary of references we need to keep, or Py_None */
 	union value b_value;
 };
 
@@ -181,6 +181,7 @@ typedef struct {
 	PyObject *proto;		/* a type or NULL */
 	GETFUNC getfunc;		/* getter function if proto is NULL */
 	SETFUNC setfunc;		/* setter function if proto is NULL */
+	int anonymous;
 } CFieldObject;
 
 /* A subclass of PyDictObject, used as the instance dictionary of ctypes
