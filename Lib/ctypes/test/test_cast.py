@@ -30,17 +30,32 @@ class Test(unittest.TestCase):
         ptr = cast(address, POINTER(c_int))
         self.failUnlessEqual([ptr[i] for i in range(3)], [42, 17, 2])
 
+    def test_p2a_objects(self):
+        array = (c_char_p * 5)()
+        self.failUnlessEqual(array._objects, None)
+        array[0] = "foo bar"
+        self.failUnlessEqual(array._objects, {'0': "foo bar"})
 
-    def test_ptr2array(self):
-        array = (c_int * 3)(42, 17, 2)
+        p = cast(array, POINTER(c_char_p))
+        # array and p share a common _objects attribute
+        self.failUnless(p._objects is array._objects)
+        self.failUnlessEqual(array._objects, {'0': "foo bar", id(array): array})
+        p[0] = "spam spam"
+        self.failUnlessEqual(p._objects, {'0': "spam spam", id(array): array})
+        self.failUnless(array._objects is p._objects)
+        p[1] = "foo bar"
+        self.failUnlessEqual(p._objects, {'1': 'foo bar', '0': "spam spam", id(array): array})
+        self.failUnless(array._objects is p._objects)
 
-        from sys import getrefcount
-
-        before = getrefcount(array)
-        ptr = cast(array, POINTER(c_int))
-        self.failUnlessEqual(getrefcount(array), before + 1)
-        del ptr
-        self.failUnlessEqual(getrefcount(array), before)
+    def test_other(self):
+        p = cast((c_int * 4)(1, 2, 3, 4), POINTER(c_int))
+        self.failUnlessEqual(p[:4], [1,2, 3, 4])
+        c_int()
+        self.failUnlessEqual(p[:4], [1, 2, 3, 4])
+        p[2] = 96
+        self.failUnlessEqual(p[:4], [1, 2, 96, 4])
+        c_int()
+        self.failUnlessEqual(p[:4], [1, 2, 96, 4])
 
 if __name__ == "__main__":
     unittest.main()

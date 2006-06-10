@@ -138,8 +138,8 @@ class StructureTestCase(unittest.TestCase):
         self.failUnlessEqual(X.y.size, sizeof(c_char))
 
         # readonly
-        self.assertRaises(AttributeError, setattr, X.x, "offset", 92)
-        self.assertRaises(AttributeError, setattr, X.x, "size", 92)
+        self.assertRaises((TypeError, AttributeError), setattr, X.x, "offset", 92)
+        self.assertRaises((TypeError, AttributeError), setattr, X.x, "size", 92)
 
         class X(Union):
             _fields_ = [("x", c_int),
@@ -152,8 +152,8 @@ class StructureTestCase(unittest.TestCase):
         self.failUnlessEqual(X.y.size, sizeof(c_char))
 
         # readonly
-        self.assertRaises(AttributeError, setattr, X.x, "offset", 92)
-        self.assertRaises(AttributeError, setattr, X.x, "size", 92)
+        self.assertRaises((TypeError, AttributeError), setattr, X.x, "offset", 92)
+        self.assertRaises((TypeError, AttributeError), setattr, X.x, "size", 92)
 
         # XXX Should we check nested data types also?
         # offset is always relative to the class...
@@ -298,7 +298,7 @@ class StructureTestCase(unittest.TestCase):
                                  "expected string or Unicode object, int found")
         else:
             self.failUnlessEqual(msg,
-                                 "(Phone) TypeError: "
+                                 "(Phone) exceptions.TypeError: "
                                  "expected string or Unicode object, int found")
 
         cls, msg = self.get_except(Person, "Someone", ("a", "b", "c"))
@@ -307,7 +307,7 @@ class StructureTestCase(unittest.TestCase):
             self.failUnlessEqual(msg,
                                  "(Phone) <type 'exceptions.ValueError'>: too many initializers")
         else:
-            self.failUnlessEqual(msg, "(Phone) ValueError: too many initializers")
+            self.failUnlessEqual(msg, "(Phone) exceptions.ValueError: too many initializers")
 
 
     def get_except(self, func, *args):
