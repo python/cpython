@@ -553,6 +553,9 @@
 /* Define if you have the waitpid function.  */
 #undef HAVE_WAITPID
 
+/* Define if you have the <conio.h> header file. */
+#undef HAVE_CONIO_H
+
 /* Define if you have the <db.h> header file.  */
 #undef HAVE_DB_H
 
@@ -562,17 +565,26 @@
 /* Define if you have the <db_185.h> header file.  */
 #undef HAVE_DB_185_H
 
+/* Define if you have the <direct.h> header file. */
+#undef HAVE_DIRECT_H
+
 /* Define if you have the <dirent.h> header file.  */
 #undef HAVE_DIRENT_H
 
 /* Define if you have the <dlfcn.h> header file.  */
 #undef HAVE_DLFCN_H
 
+/* Define if you have the <errno.h> header file. */
+#define HAVE_ERRNO_H 1
+
 /* Define if you have the <fcntl.h> header file.  */
 #undef HAVE_FCNTL_H
 
 /* Define if you have the <gdbm/ndbm.h> header file.  */
 #undef HAVE_GDBM_NDBM_H
+
+/* Define if you have the <io.h> header file.  */
+#undef HAVE_IO_H
 
 /* Define if you have the <langinfo.h> header file.  */
 #undef HAVE_LANGINFO_H
@@ -595,11 +607,17 @@
 /* Define if you have the <poll.h> header file.  */
 #undef HAVE_POLL_H
 
+/* Define if you have the <process.h> header file.  */
+#undef HAVE_PROCESS_H
+
 /* Define if you have the <pthread.h> header file.  */
 #undef HAVE_PTHREAD_H
 
 /* Define if you have the <pty.h> header file.  */
 #undef HAVE_PTY_H
+
+/* Define if you have the <signal.h> header file.  */
+#define HAVE_SIGNAL_H
 
 /* Define if you have the <sys/audioio.h> header file.  */
 #undef HAVE_SYS_AUDIOIO_H
@@ -634,11 +652,17 @@
 /* Define if you have the <sys/socket.h> header file.  */
 #undef HAVE_SYS_SOCKET_H
 
+/* Define if you have the <sys/stat.h> header file.  */
+#define HAVE_SYS_STAT_H 1
+
 /* Define if you have the <sys/time.h> header file.  */
 #undef HAVE_SYS_TIME_H
 
 /* Define if you have the <sys/times.h> header file.  */
 #undef HAVE_SYS_TIMES_H
+
+/* Define if you have the <sys/types.h> header file.  */
+#define HAVE_SYS_TYPES_H 1
 
 /* Define if you have the <sys/un.h> header file.  */
 #undef HAVE_SYS_UN_H
@@ -688,7 +712,6 @@
 
 #define DONT_HAVE_FSTAT 1
 #define DONT_HAVE_STAT  1
-#undef DONT_HAVE_SYS_STAT_H
 
 #define PLATFORM "riscos"
 

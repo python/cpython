@@ -36,7 +36,7 @@
 extern void bzero(void *, int);
 #endif
 
-#ifndef DONT_HAVE_SYS_TYPES_H
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
 

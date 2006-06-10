@@ -254,14 +254,32 @@ typedef long intptr_t;
 /* Define if you have the waitpid function. */
 #define HAVE_WAITPID 1
 
+/* Define if you have the <conio.h> header file. */
+#undef HAVE_CONIO_H
+
+/* Define if you have the <direct.h> header file. */
+#undef HAVE_DIRECT_H
+
 /* Define if you have the <dirent.h> header file. */
 #define HAVE_DIRENT_H 1
+
+/* Define if you have the <errno.h> header file. */
+#define HAVE_ERRNO_H 1
 
 /* Define if you have the <fcntl.h> header file. */
 #define HAVE_FCNTL_H 1
 
+/* Define if you have the <io.h> header file. */
+#undef HAVE_IO_H
+
 /* Define if you have the <ncurses.h> header file. */
 #define HAVE_NCURSES_H 1
+
+/* Define to 1 if you have the <process.h> header file. */
+#define HAVE_PROCESS_H 1
+
+/* Define if you have the <signal.h> header file. */
+#define HAVE_SIGNAL_H 1
 
 /* Define if you have the <sys/file.h> header file. */
 #define HAVE_SYS_FILE_H 1
@@ -272,11 +290,17 @@ typedef long intptr_t;
 /* Define if you have the <sys/select.h> header file. */
 #define HAVE_SYS_SELECT_H 1
 
+/* Define if you have the <sys/stat.h> header file. */
+#define HAVE_SYS_STAT_H 1
+
 /* Define if you have the <sys/time.h> header file. */
 #define HAVE_SYS_TIME_H 1
 
 /* Define if you have the <sys/times.h> header file. */
 #define HAVE_SYS_TIMES_H 1
+
+/* Define if you have the <sys/types.h> header file. */
+#define HAVE_SYS_TYPES_H 1
 
 /* Define if you have the <sys/un.h> header file. */
 #define HAVE_SYS_UN_H 1

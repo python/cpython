@@ -234,7 +234,9 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #endif
 
 /* Generic includes */
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
 
 /* Generic socket object definitions and includes */
 #define PySocket_BUILDING_SOCKET
@@ -270,7 +272,9 @@ int h_errno; /* not used */
 #else
 
 /* MS_WINDOWS includes */
-# include <fcntl.h>
+# ifdef HAVE_FCNTL_H
+#  include <fcntl.h>
+# endif
 
 #endif
 
@@ -290,7 +294,7 @@ int h_errno; /* not used */
    * _SS_ALIGNSIZE is defined in sys/socket.h by 6.5.21,
    * for example, but not by 6.5.10.
    */
-#elif defined(_MSC_VER) && _MSC_VER>1200
+#elif defined(_MSC_VER) && _MSC_VER>1201
   /* Do not include addrinfo.h for MSVC7 or greater. 'addrinfo' and
    * EAI_* constants are defined in (the already included) ws2tcpip.h.
    */
