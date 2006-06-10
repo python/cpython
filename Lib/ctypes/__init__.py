@@ -1,9 +1,8 @@
 """create and manipulate C data types in Python"""
 
 import os as _os, sys as _sys
-from itertools import chain as _chain
 
-__version__ = "0.9.9.6"
+__version__ = "0.9.9.7"
 
 from _ctypes import Union, Structure, Array
 from _ctypes import _Pointer
@@ -111,7 +110,7 @@ if _os.name in ("nt", "ce"):
 elif _os.name == "posix":
     from _ctypes import dlopen as _dlopen
 
-from _ctypes import sizeof, byref, addressof, alignment
+from _ctypes import sizeof, byref, addressof, alignment, resize
 from _ctypes import _SimpleCData
 
 class py_object(_SimpleCData):
@@ -293,7 +292,7 @@ class CDLL(object):
         return "<%s '%s', handle %x at %x>" % \
                (self.__class__.__name__, self._name,
                 (self._handle & (_sys.maxint*2 + 1)),
-                id(self))
+                id(self) & (_sys.maxint*2 + 1))
 
     def __getattr__(self, name):
         if name.startswith('__') and name.endswith('__'):
@@ -419,12 +418,10 @@ def PYFUNCTYPE(restype, *argtypes):
         _restype_ = restype
         _flags_ = _FUNCFLAG_CDECL | _FUNCFLAG_PYTHONAPI
     return CFunctionType
-_cast = PYFUNCTYPE(py_object, c_void_p, py_object)(_cast_addr)
 
+_cast = PYFUNCTYPE(py_object, c_void_p, py_object, py_object)(_cast_addr)
 def cast(obj, typ):
-    result = _cast(obj, typ)
-    result.__keepref = obj
-    return result
+    return _cast(obj, obj, typ)
 
 _string_at = CFUNCTYPE(py_object, c_void_p, c_int)(_string_at_addr)
 def string_at(ptr, size=0):
