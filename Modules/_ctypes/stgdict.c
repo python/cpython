@@ -167,7 +167,7 @@ MakeFields(PyObject *type, CFieldObject *descr,
 		PyObject *fname, *ftype;
 		CFieldObject *fdescr;
 		CFieldObject *new_descr;
-		// Convert to PyArg_UnpackTuple...
+		/* Convert to PyArg_UnpackTuple... */
 		if (!PyArg_ParseTuple(pair, "OO", &fname, &ftype)) {
 			Py_DECREF(fieldlist);
 			return -1;
