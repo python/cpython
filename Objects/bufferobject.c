@@ -33,7 +33,7 @@ get_buf(PyBufferObject *self, void **ptr, Py_ssize_t *size,
 	}
 	else {
 		Py_ssize_t count, offset;
-		readbufferproc proc;
+		readbufferproc proc = 0;
 		PyBufferProcs *bp = self->b_base->ob_type->tp_as_buffer;
 		if ((*bp->bf_getsegcount)(self->b_base, NULL) != 1) {
 			PyErr_SetString(PyExc_TypeError,
