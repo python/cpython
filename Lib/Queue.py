@@ -14,11 +14,11 @@ class Full(Exception):
     pass
 
 class Queue:
-    def __init__(self, maxsize=0):
-        """Initialize a queue object with a given maximum size.
+    """Create a queue object with a given maximum size.
 
-        If maxsize is <= 0, the queue size is infinite.
-        """
+    If maxsize is <= 0, the queue size is infinite.
+    """
+    def __init__(self, maxsize=0):
         try:
             import threading
         except ImportError:
