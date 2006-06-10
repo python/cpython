@@ -1444,7 +1444,64 @@ set_conversion_mode(PyObject *self, PyObject *args)
 }
 #endif
 
+static PyObject *
+resize(PyObject *self, PyObject *args)
+{
+	CDataObject *obj;
+	StgDictObject *dict;
+	Py_ssize_t size;
+
+	if (!PyArg_ParseTuple(args,
+#if (PY_VERSION_HEX < 0x02050000)
+			      "Oi:resize",
+#else
+			      "On:resize",
+#endif
+			      (PyObject *)&obj, &size))
+		return NULL;
+
+	dict = PyObject_stgdict((PyObject *)obj);
+	if (dict == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+				"excepted ctypes instance");
+		return NULL;
+	}
+	if (size < dict->size) {
+		PyErr_Format(PyExc_ValueError,
+			     "minimum size is %d", dict->size);
+		return NULL;
+	}
+	if (obj->b_needsfree == 0) {
+		PyErr_Format(PyExc_ValueError,
+			     "Memory cannot be resized because this object doesn't own it");
+		return NULL;
+	}
+	if (size <= sizeof(obj->b_value)) {
+		/* internal default buffer is large enough */
+		obj->b_size = size;
+		goto done;
+	}
+	if (obj->b_size <= sizeof(obj->b_value)) {
+		/* We are currently using the objects default buffer, but it
+		   isn't large enough any more. */
+		void *ptr = PyMem_Malloc(size);
+		if (ptr == NULL)
+			return PyErr_NoMemory();
+		memset(ptr, 0, size);
+		memmove(ptr, obj->b_ptr, obj->b_size);
+		obj->b_ptr = ptr;
+		obj->b_size = size;
+	} else {
+		obj->b_ptr = PyMem_Realloc(obj->b_ptr, size);
+		obj->b_size = size;
+	}
+  done:
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 PyMethodDef module_methods[] = {
+	{"resize", resize, METH_VARARGS, "Resize the memory buffer of a ctypes instance"},
 #ifdef CTYPES_UNICODE
 	{"set_conversion_mode", set_conversion_mode, METH_VARARGS, set_conversion_mode_doc},
 #endif

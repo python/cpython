@@ -342,6 +342,14 @@ static PyMethodDef CDataType_methods[] = {
 static PyObject *
 CDataType_repeat(PyObject *self, Py_ssize_t length)
 {
+	if (length < 0)
+		return PyErr_Format(PyExc_ValueError,
+#if (PY_VERSION_HEX < 0x02050000)
+				    "Array length must be >= 0, not %d",
+#else
+				    "Array length must be >= 0, not %zd",
+#endif
+				    length);
 	return CreateArrayType(self, length);
 }
 
@@ -1809,23 +1817,62 @@ GetKeepedObjects(CDataObject *target)
 }
 
 static PyObject *
-unique_key(CDataObject *target, int index)
+unique_key(CDataObject *target, Py_ssize_t index)
 {
-	char string[256]; /* XXX is that enough? */
+	char string[256];
 	char *cp = string;
-	*cp++ = index + '0';
+	size_t bytes_left;
+
+	assert(sizeof(string) - 1 > sizeof(Py_ssize_t) * 2);
+#if (PY_VERSION_HEX < 0x02050000)
+	cp += sprintf(cp, "%x", index);
+#else
+#ifdef MS_WIN32
+/* MSVC does not understand the 'z' size specifier */
+	cp += sprintf(cp, "%Ix", index);
+#else
+	cp += sprintf(cp, "%zx", index);
+#endif
+#endif
 	while (target->b_base) {
-		*cp++ = target->b_index + '0';
+		bytes_left = sizeof(string) - (cp - string) - 1;
+		/* Hex format needs 2 characters per byte */
+		if (bytes_left < sizeof(Py_ssize_t) * 2) {
+			PyErr_SetString(PyExc_ValueError,
+					"ctypes object structure too deep");
+			return NULL;
+		}
+#if (PY_VERSION_HEX < 0x02050000)
+		cp += sprintf(cp, ":%x", (int)target->b_index);
+#else
+#ifdef MS_WIN32
+		cp += sprintf(cp, ":%Ix", (size_t)target->b_index);
+#else
+		cp += sprintf(cp, ":%zx", (size_t)target->b_index);
+#endif
+#endif
 		target = target->b_base;
 	}
 	return PyString_FromStringAndSize(string, cp-string);
 }
-/* Keep a reference to 'keep' in the 'target', at index 'index' */
+
 /*
- * KeepRef travels the target's b_base pointer down to the root,
- * building a sequence of indexes during the path.  The indexes, which are a
- * couple of small integers, are used to build a byte string usable as
- * key int the root object's _objects dict.
+ * Keep a reference to 'keep' in the 'target', at index 'index'.
+ *
+ * If 'keep' is None, do nothing.
+ *
+ * Otherwise create a dictionary (if it does not yet exist) id the root
+ * objects 'b_objects' item, which will store the 'keep' object under a unique
+ * key.
+ *
+ * The unique_key helper travels the target's b_base pointer down to the root,
+ * building a string containing hex-formatted indexes found during traversal,
+ * separated by colons.
+ *
+ * The index tuple is used as a key into the root object's b_objects dict.
+ *
+ * Note: This function steals a refcount of the third argument, even if it
+ * fails!
  */
 static int
 KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep)
@@ -1846,6 +1893,10 @@ KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep)
 		return 0;
 	}
 	key = unique_key(target, index);
+	if (key == NULL) {
+		Py_DECREF(keep);
+		return -1;
+	}
 	result = PyDict_SetItem(ob->b_objects, key, keep);
 	Py_DECREF(key);
 	Py_DECREF(keep);
@@ -2611,11 +2662,11 @@ CFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	*(void **)self->b_ptr = address;
 
+	Py_INCREF((PyObject *)dll); /* for KeepRef */
 	if (-1 == KeepRef((CDataObject *)self, 0, dll)) {
 		Py_DECREF((PyObject *)self);
 		return NULL;
 	}
-	Py_INCREF((PyObject *)dll); /* for KeepRef above */
 
 	Py_INCREF(self);
 	self->callable = (PyObject *)self;
@@ -2751,11 +2802,11 @@ CFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	   correctly...
 	*/
 
+	Py_INCREF((PyObject *)self); /* for KeepRef */
 	if (-1 == KeepRef((CDataObject *)self, 0, (PyObject *)self)) {
 		Py_DECREF((PyObject *)self);
 		return NULL;
 	}
-	Py_INCREF((PyObject *)self); /* for KeepRef above */
 
 	return (PyObject *)self;
 }
@@ -3520,7 +3571,7 @@ Array_item(PyObject *_self, Py_ssize_t index)
 	int offset, size;
 	StgDictObject *stgdict;
 
-	if (index < 0 || index >= self->b_length) {
+	if (self->b_length == 0 || index < 0 || (self->b_length > 1 && index >= self->b_length)) {
 		PyErr_SetString(PyExc_IndexError,
 				"invalid index");
 		return NULL;
@@ -3549,11 +3600,11 @@ Array_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh)
 
 	if (ilow < 0)
 		ilow = 0;
-	else if (ilow > self->b_length)
+	else if (ilow > self->b_length && self->b_length != 1)
 		ilow = self->b_length;
 	if (ihigh < ilow)
 		ihigh = ilow;
-	else if (ihigh > self->b_length)
+	else if (ihigh > self->b_length && self->b_length != 1)
 		ihigh = self->b_length;
 	len = ihigh - ilow;
 
@@ -3596,7 +3647,8 @@ Array_ass_item(PyObject *_self, Py_ssize_t index, PyObject *value)
 	}
 	
 	stgdict = PyObject_stgdict((PyObject *)self);
-	if (index < 0 || index >= stgdict->length) {
+	if (self->b_length == 0 || index < 0
+	    || (self->b_length > 1 && index >= self->b_length)) {
 		PyErr_SetString(PyExc_IndexError,
 				"invalid index");
 		return -1;
@@ -3623,17 +3675,19 @@ Array_ass_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *va
 
 	if (ilow < 0)
 		ilow = 0;
-	else if (ilow > self->b_length)
+	else if (ilow > self->b_length && self->b_length != 1)
 		ilow = self->b_length;
+
 	if (ihigh < 0)
 		ihigh = 0;
+
 	if (ihigh < ilow)
 		ihigh = ilow;
-	else if (ihigh > self->b_length)
+	else if (ihigh > self->b_length && self->b_length != 1)
 		ihigh = self->b_length;
 
 	len = PySequence_Length(value);
-	if (len != ihigh - ilow) {
+	if (self->b_length != 1 && len != ihigh - ilow) {
 		PyErr_SetString(PyExc_ValueError,
 				"Can only assign sequence of same size");
 		return -1;
@@ -4020,7 +4074,8 @@ static PyObject *
 Pointer_item(PyObject *_self, Py_ssize_t index)
 {
 	CDataObject *self = (CDataObject *)_self;
-	int size, offset;
+	int size;
+	Py_ssize_t offset;
 	StgDictObject *stgdict, *itemdict;
 	PyObject *proto;
 
@@ -4030,9 +4085,9 @@ Pointer_item(PyObject *_self, Py_ssize_t index)
 		return NULL;
 	}
 
-
 	stgdict = PyObject_stgdict((PyObject *)self);
 	assert(stgdict);
+	assert(stgdict->proto);
 	
 	proto = stgdict->proto;
 	/* XXXXXX MAKE SURE PROTO IS NOT NULL! */
@@ -4040,7 +4095,7 @@ Pointer_item(PyObject *_self, Py_ssize_t index)
 	size = itemdict->size;
 	offset = index * itemdict->size;
 
-	return CData_get(stgdict->proto, stgdict->getfunc, (PyObject *)self,
+	return CData_get(proto, stgdict->getfunc, (PyObject *)self,
 			 index, size, (*(char **)self->b_ptr) + offset);
 }
 
@@ -4049,7 +4104,9 @@ Pointer_ass_item(PyObject *_self, Py_ssize_t index, PyObject *value)
 {
 	CDataObject *self = (CDataObject *)_self;
 	int size;
-	StgDictObject *stgdict;
+	Py_ssize_t offset;
+	StgDictObject *stgdict, *itemdict;
+	PyObject *proto;
 
 	if (value == NULL) {
 		PyErr_SetString(PyExc_TypeError,
@@ -4064,16 +4121,17 @@ Pointer_ass_item(PyObject *_self, Py_ssize_t index, PyObject *value)
 	}
 	
 	stgdict = PyObject_stgdict((PyObject *)self);
-	if (index != 0) {
-		PyErr_SetString(PyExc_IndexError,
-				"invalid index");
-		return -1;
-	}
-	size = stgdict->size / stgdict->length;
+	assert(stgdict);
+	assert(stgdict->proto);
 
-	/* XXXXX Make sure proto is NOT NULL! */
-	return CData_set((PyObject *)self, stgdict->proto, stgdict->setfunc, value,
-			 index, size, *(void **)self->b_ptr);
+	proto = stgdict->proto;
+	/* XXXXXX MAKE SURE PROTO IS NOT NULL! */
+	itemdict = PyType_stgdict(proto);
+	size = itemdict->size;
+	offset = index * itemdict->size;
+
+	return CData_set((PyObject *)self, proto, stgdict->setfunc, value,
+			 index, size, (*(char **)self->b_ptr) + offset);
 }
 
 static PyObject *
@@ -4090,8 +4148,8 @@ Pointer_get_contents(CDataObject *self, void *closure)
 	stgdict = PyObject_stgdict((PyObject *)self);
 	assert(stgdict);
 	return CData_FromBaseObj(stgdict->proto,
-				   (PyObject *)self, 0,
-				   *(void **)self->b_ptr);
+				 (PyObject *)self, 0,
+				 *(void **)self->b_ptr);
 }
 
 static int
@@ -4439,7 +4497,7 @@ cast_check_pointertype(PyObject *arg)
 }
 
 static PyObject *
-cast(void *ptr, PyObject *ctype)
+cast(void *ptr, PyObject *src, PyObject *ctype)
 {
 	CDataObject *result;
 	if (0 == cast_check_pointertype(ctype))
@@ -4447,6 +4505,36 @@ cast(void *ptr, PyObject *ctype)
 	result = (CDataObject *)PyObject_CallFunctionObjArgs(ctype, NULL);
 	if (result == NULL)
 		return NULL;
+
+	/*
+	  The casted objects '_objects' member:
+
+	  It must certainly contain the source objects one.
+	  It must contain the source object itself.
+	 */
+	if (CDataObject_Check(src)) {
+		CDataObject *obj = (CDataObject *)src;
+		/* CData_GetContainer will initialize src.b_objects, we need
+		   this so it can be shared */
+		CData_GetContainer(obj);
+		/* But we need a dictionary! */
+		if (obj->b_objects == Py_None) {
+			Py_DECREF(Py_None);
+			obj->b_objects = PyDict_New();
+		}
+		Py_INCREF(obj->b_objects);
+		result->b_objects = obj->b_objects;
+		if (result->b_objects) {
+			PyObject *index = PyLong_FromVoidPtr((void *)src);
+			int rc;
+			if (index == NULL)
+				return NULL;
+			rc = PyDict_SetItem(result->b_objects, index, src);
+			Py_DECREF(index);
+			if (rc == -1)
+				return NULL;
+		}
+	}
 	/* Should we assert that result is a pointer type? */
 	memcpy(result->b_ptr, &ptr, sizeof(void *));
 	return (PyObject *)result;
@@ -4581,7 +4669,7 @@ init_ctypes(void)
 #endif
 	PyModule_AddObject(m, "FUNCFLAG_CDECL", PyInt_FromLong(FUNCFLAG_CDECL));
 	PyModule_AddObject(m, "FUNCFLAG_PYTHONAPI", PyInt_FromLong(FUNCFLAG_PYTHONAPI));
-	PyModule_AddStringConstant(m, "__version__", "0.9.9.6");
+	PyModule_AddStringConstant(m, "__version__", "0.9.9.7");
 
 	PyModule_AddObject(m, "_memmove_addr", PyLong_FromVoidPtr(memmove));
 	PyModule_AddObject(m, "_memset_addr", PyLong_FromVoidPtr(memset));
