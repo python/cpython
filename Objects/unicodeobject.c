@@ -4491,11 +4491,11 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
         /* Make sure we have enough space for the separator and the item. */
 	itemlen = PyUnicode_GET_SIZE(item);
 	new_res_used = res_used + itemlen;
-	if (new_res_used <= 0)
+	if (new_res_used < 0)
 	    goto Overflow;
 	if (i < seqlen - 1) {
 	    new_res_used += seplen;
-	    if (new_res_used <= 0)
+	    if (new_res_used < 0)
 		goto Overflow;
 	}
 	if (new_res_used > res_alloc) {
@@ -4536,7 +4536,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
 
  Overflow:
     PyErr_SetString(PyExc_OverflowError,
-                    "join() is too long for a Python string");
+                    "join() result is too long for a Python string");
     Py_DECREF(item);
     /* fall through */
 

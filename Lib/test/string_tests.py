@@ -938,6 +938,8 @@ class MixinStrUnicodeUserStringTest:
         # test.test_string.StringTest.test_join)
         self.checkequal('a b c d', ' ', 'join', ['a', 'b', 'c', 'd'])
         self.checkequal('abcd', '', 'join', ('a', 'b', 'c', 'd'))
+        self.checkequal('bd', '', 'join', ('', 'b', '', 'd'))
+        self.checkequal('ac', '', 'join', ('a', '', 'c', ''))
         self.checkequal('w x y z', ' ', 'join', Sequence())
         self.checkequal('abc', 'a', 'join', ('abc',))
         self.checkequal('z', 'a', 'join', UserList(['z']))
