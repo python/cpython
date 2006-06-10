@@ -1492,7 +1492,10 @@ resize(PyObject *self, PyObject *args)
 		obj->b_ptr = ptr;
 		obj->b_size = size;
 	} else {
-		obj->b_ptr = PyMem_Realloc(obj->b_ptr, size);
+		void * ptr = PyMem_Realloc(obj->b_ptr, size);
+		if (ptr == NULL)
+			return PyErr_NoMemory();
+		obj->b_ptr = ptr;
 		obj->b_size = size;
 	}
   done:
