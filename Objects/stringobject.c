@@ -1788,7 +1788,7 @@ string_join(PyStringObject *self, PyObject *orig)
 			sz += seplen;
 		if (sz < old_sz || sz > PY_SSIZE_T_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
-				"join() is too long for a Python string");
+				"join() result is too long for a Python string");
 			Py_DECREF(seq);
 			return NULL;
 		}
