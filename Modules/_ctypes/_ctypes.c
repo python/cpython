@@ -1840,11 +1840,7 @@ unique_key(CDataObject *target, Py_ssize_t index)
 #if (PY_VERSION_HEX < 0x02050000)
 		cp += sprintf(cp, ":%x", (int)target->b_index);
 #else
-#ifdef MS_WIN32
-		cp += sprintf(cp, ":%Ix", (size_t)target->b_index);
-#else
-		cp += sprintf(cp, ":%zx", (size_t)target->b_index);
-#endif
+		cp += sprintf(cp, ":%x", Py_SAFE_DOWNCAST(target->b_index, Py_ssize_t, int));
 #endif
 		target = target->b_base;
 	}
