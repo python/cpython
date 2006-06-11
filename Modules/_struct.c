@@ -218,7 +218,8 @@ static int
 get_wrapped_long(PyObject *v, long *p)
 {
 	if (get_long(v, p) < 0) {
-		if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError)) {
+		if (PyLong_Check(v) &&
+		    PyErr_ExceptionMatches(PyExc_OverflowError)) {
 			PyObject *wrapped;
 			long x;
 			PyErr_Clear();
@@ -1396,23 +1397,17 @@ s_unpack_internal(PyStructObject *soself, char *startfrom) {
 		const char *res = startfrom + code->offset;
 		if (e->format == 's') {
 			v = PyString_FromStringAndSize(res, code->size);
-			if (v == NULL)
-				goto fail;
-			PyTuple_SET_ITEM(result, i++, v);
 		} else if (e->format == 'p') {
 			Py_ssize_t n = *(unsigned char*)res;
 			if (n >= code->size)
 				n = code->size - 1;
 			v = PyString_FromStringAndSize(res + 1, n);
-			if (v == NULL)
-				goto fail;
-			PyTuple_SET_ITEM(result, i++, v);
 		} else {
 			v = e->unpack(res, e);
-			if (v == NULL)
-				goto fail;
-			PyTuple_SET_ITEM(result, i++, v);
 		}
+		if (v == NULL)
+			goto fail;
+		PyTuple_SET_ITEM(result, i++, v);
 	}
 
 	return result;
@@ -1438,7 +1433,8 @@ s_unpack(PyObject *self, PyObject *inputstr)
 	if (inputstr == NULL || !PyString_Check(inputstr) ||
 		PyString_GET_SIZE(inputstr) != soself->s_size) {
 		PyErr_Format(StructError,
-			"unpack requires a string argument of length %zd", soself->s_size);
+			"unpack requires a string argument of length %zd",
+			soself->s_size);
 		return NULL;
 	}
 	return s_unpack_internal(soself, PyString_AS_STRING(inputstr));
@@ -1504,17 +1500,18 @@ static int
 s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 {
 	formatcode *code;
+	/* XXX(nnorwitz): why does i need to be a local?  can we use
+	   the offset parameter or do we need the wider width? */
 	Py_ssize_t i;
 
 	memset(buf, '\0', soself->s_size);
 	i = offset;
 	for (code = soself->s_codes; code->fmtdef != NULL; code++) {
 		Py_ssize_t n;
-		PyObject *v;
+		PyObject *v = PyTuple_GET_ITEM(args, i++);
 		const formatdef *e = code->fmtdef;
 		char *res = buf + code->offset;
 		if (e->format == 's') {
-			v = PyTuple_GET_ITEM(args, i++);
 			if (!PyString_Check(v)) {
 				PyErr_SetString(StructError,
 						"argument for 's' must be a string");
@@ -1526,7 +1523,6 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 			if (n > 0)
 				memcpy(res, PyString_AS_STRING(v), n);
 		} else if (e->format == 'p') {
-			v = PyTuple_GET_ITEM(args, i++);
 			if (!PyString_Check(v)) {
 				PyErr_SetString(StructError,
 						"argument for 'p' must be a string");
@@ -1541,7 +1537,6 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 				n = 255;
 			*res = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
 		} else {
-			v = PyTuple_GET_ITEM(args, i++);
 			if (e->pack(res, v, e) < 0) {
 				if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError))
 					PyErr_SetString(StructError,
