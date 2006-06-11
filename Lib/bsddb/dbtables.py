@@ -32,6 +32,12 @@ except ImportError:
     # For Python 2.3
     from bsddb.db import *
 
+# XXX(nnorwitz): is this correct? DBIncompleteError is conditional in _bsddb.c
+try:
+    DBIncompleteError
+except NameError:
+    class DBIncompleteError(Exception):
+        pass
 
 class TableDBError(StandardError):
     pass

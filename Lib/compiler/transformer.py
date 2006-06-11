@@ -729,8 +729,6 @@ class Transformer:
 
     def atom(self, nodelist):
         return self._atom_dispatch[nodelist[0][0]](nodelist)
-        n.lineno = nodelist[0][2]
-        return n
 
     def atom_lpar(self, nodelist):
         if nodelist[1][0] == token.RPAR:
