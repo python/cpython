@@ -145,6 +145,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1361643: fix textwrap.dedent() so it handles tabs appropriately;
+  clarify docs.
+
 - The wsgiref package has been added to the standard library.
 
 - The functions update_wrapper() and wraps() have been added to the functools

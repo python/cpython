@@ -47,12 +47,17 @@ remove indentation from strings that have unwanted whitespace to the
 left of the text.
 
 \begin{funcdesc}{dedent}{text} 
-Remove any whitespace that can be uniformly removed from the left
-of every line in \var{text}.
+Remove any common leading whitespace from every line in \var{text}.
 
-This is typically used to make triple-quoted strings line up with
-the left edge of screen/whatever, while still presenting it in the
-source code in indented form. 
+This can be used to make triple-quoted strings line up with the left
+edge of the display, while still presenting them in the source code
+in indented form.
+
+Note that tabs and spaces are both treated as whitespace, but they are
+not equal: the lines \code{" {} hello"} and \code{"\textbackslash{}thello"}
+are considered to have no common leading whitespace.  (This behaviour is
+new in Python 2.5; older versions of this module incorrectly expanded
+tabs before searching for common leading whitespace.)
 
 For example:
 \begin{verbatim}
