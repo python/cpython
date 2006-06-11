@@ -11,6 +11,7 @@ import time
 import threading
 import traceback
 import types
+import macosxSupport
 
 import linecache
 from code import InteractiveInterpreter
@@ -777,6 +778,11 @@ class PyShell(OutputWindow):
         ("help", "_Help"),
     ]
 
+    if macosxSupport.runningAsOSXApp():
+        del menu_specs[-3]
+        menu_specs[-2] = ("windows", "_Window")
+
+
     # New classes
     from IdleHistory import History
 
@@ -1371,9 +1377,12 @@ def main():
     enable_shell = enable_shell or not edit_start
     # start editor and/or shell windows:
     root = Tk(className="Idle")
+
     fixwordbreaks(root)
     root.withdraw()
     flist = PyShellFileList(root)
+    macosxSupport.setupApp(root, flist)
+
     if enable_edit:
         if not (cmd or script):
             for filename in args:
@@ -1381,8 +1390,17 @@ def main():
             if not args:
                 flist.new()
     if enable_shell:
-        if not flist.open_shell():
+        shell = flist.open_shell()
+        if not shell:
             return # couldn't open shell
+
+        if macosxSupport.runningAsOSXApp() and flist.dict:
+            # On OSX: when the user has double-clicked on a file that causes
+            # IDLE to be launched the shell window will open just in front of 
+            # the file she wants to see. Lower the interpreter window when 
+            # there are open files.
+            shell.top.lower()
+
     shell = flist.pyshell
     # handle remaining options:
     if debug:
@@ -1403,6 +1421,7 @@ def main():
         elif script:
             shell.interp.prepend_syspath(script)
             shell.interp.execfile(script)
+
     root.mainloop()
     root.destroy()
 

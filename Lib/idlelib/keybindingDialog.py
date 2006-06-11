@@ -133,7 +133,7 @@ class GetKeysDialog(Toplevel):
         config-keys.def must use the same ordering.
         """
         import sys
-        if sys.platform == 'darwin' and sys.executable.count('.app'):
+        if sys.platform == 'darwin' and sys.argv[0].count('.app'):
             self.modifiers = ['Shift', 'Control', 'Option', 'Command']
         else:
             self.modifiers = ['Control', 'Alt', 'Shift']

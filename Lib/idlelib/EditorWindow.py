@@ -17,6 +17,7 @@ import ReplaceDialog
 import PyParse
 from configHandler import idleConf
 import aboutDialog, textView, configDialog
+import macosxSupport
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -66,9 +67,18 @@ class EditorWindow(object):
                                        'Python%d%d.chm' % sys.version_info[:2])
                 if os.path.isfile(chmfile):
                     dochome = chmfile
+
+            elif macosxSupport.runningAsOSXApp():
+                # documentation is stored inside the python framework
+                dochome = os.path.join(sys.prefix,
+                        'Resources/English.lproj/Documentation/index.html')
+
             dochome = os.path.normpath(dochome)
             if os.path.isfile(dochome):
                 EditorWindow.help_url = dochome
+                if sys.platform == 'darwin':
+                    # Safari requires real file:-URLs
+                    EditorWindow.help_url = 'file://' + EditorWindow.help_url
             else:
                 EditorWindow.help_url = "http://www.python.org/doc/current"
         currentTheme=idleConf.CurrentTheme()
@@ -278,6 +288,10 @@ class EditorWindow(object):
 
     def set_status_bar(self):
         self.status_bar = self.MultiStatusBar(self.top)
+        if macosxSupport.runningAsOSXApp():
+            # Insert some padding to avoid obscuring some of the statusbar
+            # by the resize widget.
+            self.status_bar.set_label('_padding1', '    ', side=RIGHT)
         self.status_bar.set_label('column', 'Col: ?', side=RIGHT)
         self.status_bar.set_label('line', 'Ln: ?', side=RIGHT)
         self.status_bar.pack(side=BOTTOM, fill=X)
@@ -301,6 +315,11 @@ class EditorWindow(object):
         ("help", "_Help"),
     ]
 
+    if macosxSupport.runningAsOSXApp():
+        del menu_specs[-3]
+        menu_specs[-2] = ("windows", "_Window")
+
+
     def createmenubar(self):
         mbar = self.menubar
         self.menudict = menudict = {}
@@ -308,6 +327,12 @@ class EditorWindow(object):
             underline, label = prepstr(label)
             menudict[name] = menu = Menu(mbar, name=name)
             mbar.add_cascade(label=label, menu=menu, underline=underline)
+
+        if sys.platform == 'darwin' and '.framework' in sys.executable:
+            # Insert the application menu
+            menudict['application'] = menu = Menu(mbar, name='apple')
+            mbar.add_cascade(label='IDLE', menu=menu)
+
         self.fill_menus()
         self.base_helpmenu_length = self.menudict['help'].index(END)
         self.reset_help_menu_entries()
