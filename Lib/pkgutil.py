@@ -208,6 +208,7 @@ class ImpLoader:
 
     def _reopen(self):
         if self.file and self.file.closed:
+            mod_type = self.etc[2]
             if mod_type==imp.PY_SOURCE:
                 self.file = open(self.filename, 'rU')
             elif mod_type in (imp.PY_COMPILED, imp.C_EXTENSION):
