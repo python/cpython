@@ -248,7 +248,7 @@ class PartialIteratorWrapper:
 
     def __iter__(self):
         # We want to make sure __iter__ is called
-        return IteratorWrapper(self.iterator)
+        return IteratorWrapper(self.iterator, None)
 
 class IteratorWrapper:
 
@@ -313,7 +313,7 @@ def check_environ(environ):
             continue
         assert type(environ[key]) is StringType, (
             "Environmental variable %s is not a string: %r (value: %r)"
-            % (type(environ[key]), environ[key]))
+            % (key, type(environ[key]), environ[key]))
 
     assert type(environ['wsgi.version']) is TupleType, (
         "wsgi.version should be a tuple (%r)" % environ['wsgi.version'])
