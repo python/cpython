@@ -653,12 +653,6 @@ bininstall:	altbininstall
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
 altbininstall:	$(BUILDPYTHON)
-	@if test "$(PYTHONFRAMEWORKDIR)" != no-framework; then \
-		if test ! -f $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Versions/Current/Resources/Info.plist; then \
-			echo 'Framework build: use "make frameworkinstall" in stead of "make install"'; \
-			exit 1; \
-		fi; \
-	fi
 	@for i in $(BINDIR) $(LIBDIR); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
