@@ -804,14 +804,20 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 	PyObject *obj;
 	TCHAR *text;
 
+	/* We absolutely have to release the GIL during COM method calls,
+	   otherwise we may get a deadlock!
+	*/
+	Py_BEGIN_ALLOW_THREADS
+
 	hr = pIunk->lpVtbl->QueryInterface(pIunk, &IID_ISupportErrorInfo, (void **)&psei);
 	if (FAILED(hr))
 		goto failed;
+
 	hr = psei->lpVtbl->InterfaceSupportsErrorInfo(psei, riid);
 	psei->lpVtbl->Release(psei);
-
 	if (FAILED(hr))
 		goto failed;
+
 	hr = GetErrorInfo(0, &pei);
 	if (hr != S_OK)
 		goto failed;
@@ -822,9 +828,10 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 	pei->lpVtbl->GetHelpFile(pei, &helpfile);
 	pei->lpVtbl->GetSource(pei, &source);
 
+	pei->lpVtbl->Release(pei);
+
   failed:
-	if (pei)
-		pei->lpVtbl->Release(pei);
+	Py_END_ALLOW_THREADS
 
 	progid = NULL;
 	ProgIDFromCLSID(&guid, &progid);
