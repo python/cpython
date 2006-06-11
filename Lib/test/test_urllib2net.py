@@ -176,7 +176,7 @@ class OtherNetworkTests(unittest.TestCase):
 
                 # XXX bug, should raise URLError
                 #('file://nonsensename/etc/passwd', None, urllib2.URLError)
-                ('file://nonsensename/etc/passwd', None, (OSError, socket.error))
+                ('file://nonsensename/etc/passwd', None, (EnvironmentError, socket.error))
                 ]
             self._test_urls(urls, self._extra_handlers())
         finally:
