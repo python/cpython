@@ -16,7 +16,7 @@ For support, use the optik-users@lists.sourceforge.net mailing list
 # Python developers: please do not make changes to this file, since
 # it is automatically generated from the Optik source code.
 
-__version__ = "1.5.1"
+__version__ = "1.5.1+"
 
 __all__ = ['Option',
            'SUPPRESS_HELP',
@@ -75,8 +75,8 @@ def _repr(self):
 
 
 # This file was generated from:
-#   Id: option_parser.py 509 2006-04-20 00:58:24Z gward
-#   Id: option.py 509 2006-04-20 00:58:24Z gward
+#   Id: option_parser.py 522 2006-06-11 16:22:03Z gward
+#   Id: option.py 522 2006-06-11 16:22:03Z gward
 #   Id: help.py 509 2006-04-20 00:58:24Z gward
 #   Id: errors.py 509 2006-04-20 00:58:24Z gward
 
@@ -256,7 +256,7 @@ class HelpFormatter:
                              text_width,
                              initial_indent=indent,
                              subsequent_indent=indent)
-
+        
     def format_description(self, description):
         if description:
             return self._format_text(description) + "\n"
@@ -1214,7 +1214,7 @@ class OptionParser (OptionContainer):
         """
         Declare that you are done with this OptionParser.  This cleans up
         reference cycles so the OptionParser (and all objects referenced by
-        it) can be garbage-collected promptly.  After calling destroy(), the
+        it) can be garbage-collected promptly.  After calling destroy(), the 
         OptionParser is unusable.
         """
         OptionContainer.destroy(self)
@@ -1629,6 +1629,10 @@ class OptionParser (OptionContainer):
         result.append(self.format_epilog(formatter))
         return "".join(result)
 
+    # used by test suite
+    def _get_encoding(self, file):
+        return getattr(file, "encoding", sys.getdefaultencoding())
+
     def print_help(self, file=None):
         """print_help(file : file = stdout)
 
@@ -1637,7 +1641,8 @@ class OptionParser (OptionContainer):
         """
         if file is None:
             file = sys.stdout
-        file.write(self.format_help())
+        encoding = self._get_encoding(file)
+        file.write(self.format_help().encode(encoding, "replace"))
 
 # class OptionParser
 
