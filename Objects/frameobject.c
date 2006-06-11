@@ -425,7 +425,7 @@ frame_dealloc(PyFrameObject *f)
 	Py_CLEAR(f->f_exc_traceback);
 
         co = f->f_code;
-        if (co != NULL && co->co_zombieframe == NULL)
+        if (co->co_zombieframe == NULL)
                 co->co_zombieframe = f;
 	else if (numfree < MAXFREELIST) {
 		++numfree;
@@ -435,7 +435,7 @@ frame_dealloc(PyFrameObject *f)
 	else 
 		PyObject_GC_Del(f);
 
-        Py_XDECREF(co);
+        Py_DECREF(co);
 	Py_TRASHCAN_SAFE_END(f)
 }
 
