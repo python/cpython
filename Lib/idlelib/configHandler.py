@@ -500,7 +500,7 @@ class IdleConf:
 
         if macosxSupport.runningAsOSXApp():
             # We're using AquaTk, replace all keybingings that use the
-            # Alt key by ones that use the Option key because the former 
+            # Alt key by ones that use the Option key because the former
             # don't work reliably.
             for k, v in result.items():
                 v2 = [ x.replace('<Alt-', '<Option-') for x in v ]

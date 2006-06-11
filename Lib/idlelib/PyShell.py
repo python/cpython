@@ -1396,8 +1396,8 @@ def main():
 
         if macosxSupport.runningAsOSXApp() and flist.dict:
             # On OSX: when the user has double-clicked on a file that causes
-            # IDLE to be launched the shell window will open just in front of 
-            # the file she wants to see. Lower the interpreter window when 
+            # IDLE to be launched the shell window will open just in front of
+            # the file she wants to see. Lower the interpreter window when
             # there are open files.
             shell.top.lower()
 

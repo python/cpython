@@ -49,7 +49,7 @@ class AnonTest(unittest.TestCase):
                         ("_", ANON_U),
                         ("y", c_int)]
             _anonymous_ = ["_"]
-        
+
         self.failUnlessEqual(Y.x.offset, 0)
         self.failUnlessEqual(Y.a.offset, sizeof(c_int))
         self.failUnlessEqual(Y.b.offset, sizeof(c_int))

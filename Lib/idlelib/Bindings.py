@@ -94,7 +94,7 @@ if sys.platform == 'darwin' and '.app' in sys.executable:
     del menudefs[0][1][-3:]
     menudefs[0][1].insert(6, closeItem)
 
-    # Remove the 'About' entry from the help menu, it is in the application 
+    # Remove the 'About' entry from the help menu, it is in the application
     # menu
     del menudefs[-1][1][0:2]
 

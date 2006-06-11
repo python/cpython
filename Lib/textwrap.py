@@ -344,13 +344,13 @@ def dedent(text):
 
         # Current line more deeply indented than previous winner:
         # no change (previous winner is still on top).
-        elif indent.startswith(margin): 
-            pass                        
+        elif indent.startswith(margin):
+            pass
 
         # Current line consistent with and no deeper than previous winner:
         # it's the new winner.
-        elif margin.startswith(indent): 
-            margin = indent             
+        elif margin.startswith(indent):
+            margin = indent
 
         # Current line and previous winner have no common whitespace:
         # there is no margin.
