@@ -5560,15 +5560,13 @@ DBEnv_construct(PyObject* self, PyObject* args)
 static PyObject*
 DBSequence_construct(PyObject* self, PyObject* args, PyObject* kwargs)
 {
-    PyObject* dbobj = NULL;
+    PyObject* dbobj;
     int flags = 0;
     static char* kwnames[] = { "db", "flags", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|i:DBSequence", kwnames, &dbobj, &flags))
         return NULL;
-    if (dbobj == Py_None)
-        dbobj = NULL;
-    else if (dbobj && !DBObject_Check(dbobj)) {
+    if (!DBObject_Check(dbobj)) {
         makeTypeError("DB", dbobj);
         return NULL;
     }
