@@ -548,8 +548,10 @@ if __name__ == '__main__':
             self.prompt = "% "
             if profile is not None:
                 self.stats = Stats(profile)
+                self.stream = self.stats.stream
             else:
                 self.stats = None
+                self.stream = sys.stdout
 
         def generic(self, fn, line):
             args = line.split()
@@ -667,14 +669,15 @@ if __name__ == '__main__':
             return None
 
     import sys
-    print >> self.stream, "Welcome to the profile statistics browser."
     if len(sys.argv) > 1:
         initprofile = sys.argv[1]
     else:
         initprofile = None
     try:
-        ProfileBrowser(initprofile).cmdloop()
-        print >> self.stream, "Goodbye."
+        browser = ProfileBrowser(initprofile)
+        print >> browser.stream, "Welcome to the profile statistics browser."
+        browser.cmdloop()
+        print >> browser.stream, "Goodbye."
     except KeyboardInterrupt:
         pass
 
