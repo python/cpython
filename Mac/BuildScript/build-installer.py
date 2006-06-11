@@ -236,7 +236,7 @@ PKG_RECIPES=[
             Mac OS X 10.3 to ensure that you can build new python extensions
             using that copy of python after installing this version of
             python.
-            """
+            """,
         postflight="../Tools/fixapplepython23.py",
         topdir="/Library/Frameworks/Python.framework",
         source="/empty-dir",
@@ -686,6 +686,9 @@ def patchFile(inPath, outPath):
     data = data.replace('$MACOSX_DEPLOYMENT_TARGET', '10.3 or later')
     data = data.replace('$ARCHITECTURES', "i386, ppc")
     data = data.replace('$INSTALL_SIZE', installSize())
+
+    # This one is not handy as a template variable
+    data = data.replace('$PYTHONFRAMEWORKINSTALLDIR', '/Library/Frameworks/Python.framework')
     fp = open(outPath, 'wb')
     fp.write(data)
     fp.close()
@@ -703,7 +706,10 @@ def patchScript(inPath, outPath):
 def packageFromRecipe(targetDir, recipe):
     curdir = os.getcwd()
     try:
-        pkgname = recipe['name']
+        # The major version (such as 2.5) is included in the pacakge name
+        # because haveing two version of python installed at the same time is
+        # common.
+        pkgname = '%s-%s'%(recipe['name'], getVersion())
         srcdir  = recipe.get('source')
         pkgroot = recipe.get('topdir', srcdir)
         postflight = recipe.get('postflight')
@@ -804,7 +810,7 @@ def makeMpkgPlist(path):
             IFPkgFlagComponentDirectory="Contents/Packages",
             IFPkgFlagPackageList=[
                 dict(
-                    IFPkgFlagPackageLocation='%s.pkg'%(item['name']),
+                    IFPkgFlagPackageLocation='%s-%s.pkg'%(item['name'], getVersion()),
                     IFPkgFlagPackageSelection='selected'
                 )
                 for item in PKG_RECIPES
@@ -812,6 +818,7 @@ def makeMpkgPlist(path):
             IFPkgFormatVersion=0.10000000149011612,
             IFPkgFlagBackgroundScaling="proportional",
             IFPkgFlagBackgroundAlignment="left",
+            IFPkgFlagAuthorizationAction="RootAuthorization",
         )
 
     writePlist(pl, path)
@@ -859,7 +866,7 @@ def buildInstaller():
         else:
             patchFile(os.path.join('resources', fn), os.path.join(rsrcDir, fn))
 
-    shutil.copy("../../../LICENSE", os.path.join(rsrcDir, 'License.txt'))
+    shutil.copy("../../LICENSE", os.path.join(rsrcDir, 'License.txt'))
 
 
 def installSize(clear=False, _saved=[]):
@@ -1005,7 +1012,7 @@ def main():
     patchFile('resources/ReadMe.txt', os.path.join(WORKDIR, 'installer', 'ReadMe.txt'))
 
     # Ditto for the license file.
-    shutil.copy('../../../LICENSE', os.path.join(WORKDIR, 'installer', 'License.txt'))
+    shutil.copy('../../LICENSE', os.path.join(WORKDIR, 'installer', 'License.txt'))
 
     fp = open(os.path.join(WORKDIR, 'installer', 'Build.txt'), 'w')
     print >> fp, "# BUILD INFO"
