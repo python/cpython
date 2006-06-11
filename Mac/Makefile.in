@@ -5,7 +5,7 @@
 VERSION=@VERSION@
 builddir = ..
 srcdir=@srcdir@
-prefix=/Library/Frameworks/Python.framework/Versions/$(VERSION)
+prefix=@prefix@
 LIBDEST=$(prefix)/lib/python$(VERSION)
 RUNSHARED=@RUNSHARED@
 BUILDEXE=@BUILDEXEEXT@
