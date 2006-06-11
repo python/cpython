@@ -447,7 +447,12 @@ class GeneralModuleTests(unittest.TestCase):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind(("0.0.0.0", PORT+1))
         name = sock.getsockname()
-        self.assertEqual(name, ("0.0.0.0", PORT+1))
+        # XXX(nnorwitz): http://tinyurl.com/os5jz seems to indicate
+        # it reasonable to get the host's addr in addition to 0.0.0.0.
+        # At least for eCos.  This is required for the S/390 to pass.
+        my_ip_addr = socket.gethostbyname(socket.gethostname())
+        self.assert_(name[0] in ("0.0.0.0", my_ip_addr), '%s invalid' % name[0])
+        self.assertEqual(name[1], PORT+1)
 
     def testGetSockOpt(self):
         # Testing getsockopt()
