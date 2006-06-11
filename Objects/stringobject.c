@@ -3099,7 +3099,7 @@ string_replace(PyStringObject *self, PyObject *args)
 
 /** End DALKE **/
 
-/* Matches the end (direction > 0) or start (direction < 0) of self
+/* Matches the end (direction >= 0) or start (direction < 0) of self
  * against substr, using the start and end arguments. Returns
  * -1 on error, 0 if not found and 1 if found.
  */
@@ -3131,11 +3131,6 @@ _string_tailmatch(PyStringObject *self, PyObject *substr, Py_ssize_t start,
 		/* startswith */
 		if (start+slen > len)
 			return 0;
-
-		if (end-start >= slen)
-			return ! memcmp(str+start, sub, slen);
-		else
-			return 0;
 	} else {
 		/* endswith */
 		if (end-start < slen || start > len)
@@ -3143,11 +3138,10 @@ _string_tailmatch(PyStringObject *self, PyObject *substr, Py_ssize_t start,
 
 		if (end-slen > start)
 			start = end - slen;
-		if (end-start >= slen)
-			return ! memcmp(str+start, sub, slen);
-		else
-			return 0;
 	}
+	if (end-start >= slen)
+		return ! memcmp(str+start, sub, slen);
+	return 0;
 }
 
 
