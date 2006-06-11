@@ -1197,16 +1197,16 @@ its \method{parse{\_}args()} method:
 where the input parameters are
 \begin{description}
 \item[\code{args}]
-the list of arguments to process (\code{sys.argv{[}1:]} by default)
+the list of arguments to process (default: \code{sys.argv{[}1:]})
 \item[\code{options}]
-object to store option arguments in (a new instance of
-optparse.Values by default)
+object to store option arguments in (default: a new instance of
+optparse.Values)
 \end{description}
 
 and the return values are
 \begin{description}
 \item[\code{options}]
-the same object as was passed in as \code{options}, or the new
+the same object that was passed in as \code{options}, or the
 optparse.Values instance created by \module{optparse}
 \item[\code{args}]
 the leftover positional arguments after all options have been
@@ -1214,9 +1214,9 @@ processed
 \end{description}
 
 The most common usage is to supply neither keyword argument.  If you
-supply a \code{values} object, it will be repeatedly modified with a
-\code{setattr()} call for every option argument written to an option
-destination, and finally returned by \method{parse{\_}args()}.
+supply \code{options}, it will be modified with repeated \code{setattr()}
+calls (roughly one for every option argument stored to an option
+destination) and returned by \method{parse{\_}args()}.
 
 If \method{parse{\_}args()} encounters any errors in the argument list, it calls
 the OptionParser's \method{error()} method with an appropriate end-user error

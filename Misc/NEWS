@@ -145,6 +145,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1366250: minor optparse documentation error.
+
 - Bug #1361643: fix textwrap.dedent() so it handles tabs appropriately;
   clarify docs.
 
