@@ -80,7 +80,7 @@ def run_amock(app=hello_app, data="GET / HTTP/1.0\n\n"):
 
 
 
-def compare_generic_iter(make_it,match):
+def compare_generic_iter(test, make_it, match):
     """Utility to compare a generic 2.1/2.2+ iterator with an iterable
 
     If running under Python 2.2+, this tests the iterator using iter()/next(),
@@ -90,7 +90,7 @@ def compare_generic_iter(make_it,match):
     it = make_it()
     n = 0
     for item in match:
-        assert it[n]==item
+        test.assertEqual(it[n], item)
         n+=1
     try:
         it[n]
@@ -106,15 +106,10 @@ def compare_generic_iter(make_it,match):
     else:
         # Only test iter mode under 2.2+
         it = make_it()
-        assert iter(it) is it
+        test.assert_(iter(it) is it)
         for item in match:
-            assert it.next()==item
-        try:
-            it.next()
-        except StopIteration:
-            pass
-        else:
-            raise AssertionError("Too many items from .next()",it)
+            test.assertEqual(it.next(), item)
+        test.assertRaises(StopIteration, it.next)
 
 
 
@@ -208,7 +203,7 @@ class UtilityTests(TestCase):
         def make_it(text=text,size=size):
             return util.FileWrapper(StringIO(text),size)
 
-        compare_generic_iter(make_it,match)
+        compare_generic_iter(self, make_it, match)
 
         it = make_it()
         self.failIf(it.filelike.closed)
@@ -440,7 +435,7 @@ class HandlerTests(TestCase):
         h = BaseCGIHandler(None,None,None,{})
         h.setup_environ()
         for key in 'wsgi.url_scheme', 'wsgi.input', 'wsgi.errors':
-            assert h.environ.has_key(key)
+            self.assert_(h.environ.has_key(key))
 
     def testScheme(self):
         h=TestHandler(HTTPS="on"); h.setup_environ()
