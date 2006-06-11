@@ -552,7 +552,7 @@ def foo():
 
         text = "  \t  hello there\n  \t  how are you?"
         self.assertEquals(expect, dedent(text))
-        
+
         text = "  \thello there\n  \t  how are you?"
         expect = "hello there\n  how are you?"
         self.assertEquals(expect, dedent(text))
