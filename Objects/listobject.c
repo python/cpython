@@ -108,8 +108,10 @@ PyList_New(Py_ssize_t size)
 		op->ob_item = NULL;
 	else {
 		op->ob_item = (PyObject **) PyMem_MALLOC(nbytes);
-		if (op->ob_item == NULL)
+		if (op->ob_item == NULL) {
+			Py_DECREF(op);
 			return PyErr_NoMemory();
+		}
 		memset(op->ob_item, 0, nbytes);
 	}
 	op->ob_size = size;
