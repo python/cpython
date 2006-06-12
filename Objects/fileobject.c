@@ -241,13 +241,15 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 	}
 
 	if (f->f_fp == NULL) {
-#ifdef _MSC_VER
+#if defined  _MSC_VER && _MSC_VER < 1400
 		/* MSVC 6 (Microsoft) leaves errno at 0 for bad mode strings,
 		 * across all Windows flavors.  When it sets EINVAL varies
 		 * across Windows flavors, the exact conditions aren't
 		 * documented, and the answer lies in the OS's implementation
 		 * of Win32's CreateFile function (whose source is secret).
 		 * Seems the best we can do is map EINVAL to ENOENT.
+		 * Starting with Visual Studio .NET 2005, EINVAL is correctly
+		 * set by our CRT error handler (set in exceptions.c.)
 		 */
 		if (errno == 0)	/* bad mode string */
 			errno = EINVAL;
