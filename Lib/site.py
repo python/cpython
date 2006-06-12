@@ -11,9 +11,10 @@ import, this is no longer necessary (but code that does it still
 works).
 
 This will append site-specific paths to the module search path.  On
-Unix, it starts with sys.prefix and sys.exec_prefix (if different) and
-appends lib/python<version>/site-packages as well as lib/site-python.
-On other platforms (mainly Mac and Windows), it tries each of the
+Unix (including Mac OSX), it starts with sys.prefix and
+sys.exec_prefix (if different) and appends
+lib/python<version>/site-packages as well as lib/site-python.
+On other platforms (such as Windows), it tries each of the
 prefixes directly, as well as with lib/site-packages appended.  The
 resulting directories, if they exist, are appended to sys.path, and
 also inspected for path configuration files.
