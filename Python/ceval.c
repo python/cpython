@@ -2766,7 +2766,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	/* Allocate and initialize storage for cell vars, and copy free
 	   vars into frame.  This isn't too efficient right now. */
 	if (PyTuple_GET_SIZE(co->co_cellvars)) {
-		int i = 0, j = 0, nargs, found;
+		int i, j, nargs, found;
 		char *cellname, *argname;
 		PyObject *c;
 
