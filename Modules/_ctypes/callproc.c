@@ -1,3 +1,8 @@
+/*****************************************************************
+  This file should be kept compatible with Python 2.3, see PEP 291.
+ *****************************************************************/
+
+
 /*
  * History: First version dated from 3/97, derived from my SCMLIB version
  * for win16.
