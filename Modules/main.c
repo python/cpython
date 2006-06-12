@@ -462,9 +462,10 @@ Py_Main(int argc, char **argv)
 	}
 
 	if (module != NULL) {
-		/* Backup _PyOS_optind and force sys.arv[0] = module */
+		/* Backup _PyOS_optind and force sys.argv[0] = '-c'
+		   so that PySys_SetArgv correctly sets sys.path[0] to ''*/
 		_PyOS_optind--;
-        argv[_PyOS_optind] = module;
+		argv[_PyOS_optind] = "-c";
 	}
 
 	PySys_SetArgv(argc-_PyOS_optind, argv+_PyOS_optind);
