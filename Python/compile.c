@@ -3665,7 +3665,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
 	assert(s->kind == AugAssign_kind);
 
 	switch (e->kind) {
-		case Attribute_kind:
+	case Attribute_kind:
 		auge = Attribute(e->v.Attribute.value, e->v.Attribute.attr,
 				 AugLoad, e->lineno, e->col_offset, c->c_arena);
 		if (auge == NULL)
@@ -4195,7 +4195,7 @@ static int
 assemble_emit(struct assembler *a, struct instr *i)
 {
 	int size, arg = 0, ext = 0;
-	int len = PyString_GET_SIZE(a->a_bytecode);
+	Py_ssize_t len = PyString_GET_SIZE(a->a_bytecode);
 	char *code;
 
 	size = instrsize(i);
