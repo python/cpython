@@ -710,6 +710,9 @@
    */
 #undef HAVE_WORKING_TZSET
 
+/* Define if the zlib library has inflateCopy */
+#undef HAVE_ZLIB_COPY
+
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
 

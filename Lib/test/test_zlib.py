@@ -302,63 +302,65 @@ class CompressObjectTestCase(unittest.TestCase):
         dco = zlib.decompressobj()
         self.assertEqual(dco.flush(), "") # Returns nothing
 
-    def test_compresscopy(self):
-        # Test copying a compression object
-        data0 = HAMLET_SCENE
-        data1 = HAMLET_SCENE.swapcase()
-        c0 = zlib.compressobj(zlib.Z_BEST_COMPRESSION)
-        bufs0 = []
-        bufs0.append(c0.compress(data0))
+    if hasattr(zlib.compressobj(), "copy"):
+        def test_compresscopy(self):
+            # Test copying a compression object
+            data0 = HAMLET_SCENE
+            data1 = HAMLET_SCENE.swapcase()
+            c0 = zlib.compressobj(zlib.Z_BEST_COMPRESSION)
+            bufs0 = []
+            bufs0.append(c0.compress(data0))
 
-        c1 = c0.copy()
-        bufs1 = bufs0[:]
+            c1 = c0.copy()
+            bufs1 = bufs0[:]
 
-        bufs0.append(c0.compress(data0))
-        bufs0.append(c0.flush())
-        s0 = ''.join(bufs0)
+            bufs0.append(c0.compress(data0))
+            bufs0.append(c0.flush())
+            s0 = ''.join(bufs0)
 
-        bufs1.append(c1.compress(data1))
-        bufs1.append(c1.flush())
-        s1 = ''.join(bufs1)
+            bufs1.append(c1.compress(data1))
+            bufs1.append(c1.flush())
+            s1 = ''.join(bufs1)
 
-        self.assertEqual(zlib.decompress(s0),data0+data0)
-        self.assertEqual(zlib.decompress(s1),data0+data1)
+            self.assertEqual(zlib.decompress(s0),data0+data0)
+            self.assertEqual(zlib.decompress(s1),data0+data1)
 
-    def test_badcompresscopy(self):
-        # Test copying a compression object in an inconsistent state
-        c = zlib.compressobj()
-        c.compress(HAMLET_SCENE)
-        c.flush()
-        self.assertRaises(ValueError, c.copy)
+        def test_badcompresscopy(self):
+            # Test copying a compression object in an inconsistent state
+            c = zlib.compressobj()
+            c.compress(HAMLET_SCENE)
+            c.flush()
+            self.assertRaises(ValueError, c.copy)
 
-    def test_decompresscopy(self):
-        # Test copying a decompression object
-        data = HAMLET_SCENE
-        comp = zlib.compress(data)
+    if hasattr(zlib.decompressobj(), "copy"):
+        def test_decompresscopy(self):
+            # Test copying a decompression object
+            data = HAMLET_SCENE
+            comp = zlib.compress(data)
 
-        d0 = zlib.decompressobj()
-        bufs0 = []
-        bufs0.append(d0.decompress(comp[:32]))
+            d0 = zlib.decompressobj()
+            bufs0 = []
+            bufs0.append(d0.decompress(comp[:32]))
 
-        d1 = d0.copy()
-        bufs1 = bufs0[:]
+            d1 = d0.copy()
+            bufs1 = bufs0[:]
 
-        bufs0.append(d0.decompress(comp[32:]))
-        s0 = ''.join(bufs0)
+            bufs0.append(d0.decompress(comp[32:]))
+            s0 = ''.join(bufs0)
 
-        bufs1.append(d1.decompress(comp[32:]))
-        s1 = ''.join(bufs1)
+            bufs1.append(d1.decompress(comp[32:]))
+            s1 = ''.join(bufs1)
 
-        self.assertEqual(s0,s1)
-        self.assertEqual(s0,data)
+            self.assertEqual(s0,s1)
+            self.assertEqual(s0,data)
 
-    def test_baddecompresscopy(self):
-        # Test copying a compression object in an inconsistent state
-        data = zlib.compress(HAMLET_SCENE)
-        d = zlib.decompressobj()
-        d.decompress(data)
-        d.flush()
-        self.assertRaises(ValueError, d.copy)
+        def test_baddecompresscopy(self):
+            # Test copying a compression object in an inconsistent state
+            data = zlib.compress(HAMLET_SCENE)
+            d = zlib.decompressobj()
+            d.decompress(data)
+            d.flush()
+            self.assertRaises(ValueError, d.copy)
 
 def genblock(seed, length, step=1024, generator=random):
     """length-byte stream of random data from a seed (in step-byte blocks)."""
