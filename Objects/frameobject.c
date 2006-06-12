@@ -20,7 +20,6 @@ static PyMemberDef frame_memberlist[] = {
 	{"f_builtins",	T_OBJECT,	OFF(f_builtins),RO},
 	{"f_globals",	T_OBJECT,	OFF(f_globals),	RO},
 	{"f_lasti",	T_INT,		OFF(f_lasti),	RO},
-	{"f_restricted",T_INT,		OFF(f_restricted),RO},
 	{"f_exc_type",	T_OBJECT,	OFF(f_exc_type)},
 	{"f_exc_value",	T_OBJECT,	OFF(f_exc_value)},
 	{"f_exc_traceback", T_OBJECT,	OFF(f_exc_traceback)},
@@ -341,11 +340,18 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
 	return 0;
 }
 
+static PyObject *
+frame_getrestricted(PyFrameObject *f, void *closure)
+{
+	return PyBool_FromLong(PyFrame_IsRestricted(f));
+}
+
 static PyGetSetDef frame_getsetlist[] = {
 	{"f_locals",	(getter)frame_getlocals, NULL, NULL},
 	{"f_lineno",	(getter)frame_getlineno,
 			(setter)frame_setlineno, NULL},
 	{"f_trace",	(getter)frame_gettrace, (setter)frame_settrace, NULL},
+	{"f_restricted",(getter)frame_getrestricted,NULL, NULL},
 	{0}
 };
 
@@ -664,7 +670,6 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 
 	f->f_lasti = -1;
 	f->f_lineno = code->co_firstlineno;
-	f->f_restricted = (builtins != tstate->interp->builtins);
 	f->f_iblock = 0;
 
         f->f_stacktop = f->f_valuestack;

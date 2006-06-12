@@ -41,8 +41,6 @@ typedef struct _frame {
     /* As of 2.3 f_lineno is only valid when tracing is active (i.e. when
        f_trace is set) -- at other times use PyCode_Addr2Line instead. */
     int f_lineno;		/* Current line number */
-    int f_restricted;		/* Flag set if restricted operations
-				   in this scope */
     int f_iblock;		/* index in f_blockstack */
     PyTryBlock f_blockstack[CO_MAXBLOCKS]; /* for try and loop blocks */
     PyObject *f_localsplus[1];	/* locals+stack, dynamically sized */
@@ -54,6 +52,8 @@ typedef struct _frame {
 PyAPI_DATA(PyTypeObject) PyFrame_Type;
 
 #define PyFrame_Check(op) ((op)->ob_type == &PyFrame_Type)
+#define PyFrame_IsRestricted(f) \
+	((f)->f_builtins != (f)->f_tstate->interp->builtins)
 
 PyAPI_FUNC(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
                                        PyObject *, PyObject *);

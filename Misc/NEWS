@@ -12,6 +12,9 @@ What's New in Python 2.5 beta 1?
 Core and builtins
 -----------------
 
+- Removed 5 integers from C frame objects (PyFrameObject).
+	f_nlocals, f_ncells, f_nfreevars, f_stack_size, f_restricted.
+
 - Bug #532646: object.__call__() will continue looking for the __call__
   attribute on objects until one without one is found.  This leads to recursion
   when you take a class and set its __call__ attribute to an instance of the
