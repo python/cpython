@@ -103,7 +103,8 @@ static char *rcs_id = "$Id$";
 
 
 #if (PY_VERSION_HEX < 0x02050000)
-#define Py_ssize_t      int
+typedef int Py_ssize_t;
+typedef inquiry lenfunc;
 #endif
 
 #ifdef WITH_THREAD
@@ -5153,11 +5154,7 @@ static PyMethodDef DB_methods[] = {
 
 
 static PyMappingMethods DB_mapping = {
-#if (PY_VERSION_HEX < 0x02050000)
         (inquiry)DB_length,          /*mp_length*/
-#else
-        (lenfunc)DB_length,          /*mp_length*/
-#endif
         (binaryfunc)DB_subscript,    /*mp_subscript*/
         (objobjargproc)DB_ass_sub,   /*mp_ass_subscript*/
 };
