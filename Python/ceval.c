@@ -3354,7 +3354,7 @@ int
 PyEval_GetRestricted(void)
 {
 	PyFrameObject *current_frame = PyEval_GetFrame();
-	return current_frame == NULL ? 0 : current_frame->f_restricted;
+	return current_frame == NULL ? 0 : PyFrame_IsRestricted(current_frame);
 }
 
 int
