@@ -80,7 +80,7 @@ def run_amock(app=hello_app, data="GET / HTTP/1.0\n\n"):
 
 
 
-def compare_generic_iter(test, make_it, match):
+def compare_generic_iter(make_it,match):
     """Utility to compare a generic 2.1/2.2+ iterator with an iterable
 
     If running under Python 2.2+, this tests the iterator using iter()/next(),
@@ -90,7 +90,7 @@ def compare_generic_iter(test, make_it, match):
     it = make_it()
     n = 0
     for item in match:
-        test.assertEqual(it[n], item)
+        if not it[n]==item: raise AssertionError
         n+=1
     try:
         it[n]
@@ -106,10 +106,15 @@ def compare_generic_iter(test, make_it, match):
     else:
         # Only test iter mode under 2.2+
         it = make_it()
-        test.assert_(iter(it) is it)
+        if not iter(it) is it: raise AssertionError
         for item in match:
-            test.assertEqual(it.next(), item)
-        test.assertRaises(StopIteration, it.next)
+            if not it.next()==item: raise AssertionError
+        try:
+            it.next()
+        except StopIteration:
+            pass
+        else:
+            raise AssertionError("Too many items from .next()",it)
 
 
 
@@ -203,7 +208,7 @@ class UtilityTests(TestCase):
         def make_it(text=text,size=size):
             return util.FileWrapper(StringIO(text),size)
 
-        compare_generic_iter(self, make_it, match)
+        compare_generic_iter(make_it,match)
 
         it = make_it()
         self.failIf(it.filelike.closed)

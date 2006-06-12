@@ -473,3 +473,20 @@ class CGIHandler(BaseCGIHandler):
             self, sys.stdin, sys.stdout, sys.stderr, dict(os.environ.items()),
             multithread=False, multiprocess=True
         )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#
