@@ -104,7 +104,6 @@ static char *rcs_id = "$Id$";
 
 #if (PY_VERSION_HEX < 0x02050000)
 typedef int Py_ssize_t;
-typedef inquiry lenfunc;
 #endif
 
 #ifdef WITH_THREAD
@@ -2682,12 +2681,13 @@ DB_set_encrypt(DBObject* self, PyObject* args, PyObject* kwargs)
 /*-------------------------------------------------------------- */
 /* Mapping and Dictionary-like access routines */
 
-Py_ssize_t DB_length(DBObject* self)
+Py_ssize_t DB_length(PyObject* _self)
 {
     int err;
     Py_ssize_t size = 0;
     int flags = 0;
     void* sp;
+    DBObject* self = (DBObject*)_self;
 
     if (self->db == NULL) {
         PyObject *t = Py_BuildValue("(is)", 0, "DB object has been closed");
@@ -5154,7 +5154,7 @@ static PyMethodDef DB_methods[] = {
 
 
 static PyMappingMethods DB_mapping = {
-        (inquiry)DB_length,          /*mp_length*/
+        DB_length,                   /*mp_length*/
         (binaryfunc)DB_subscript,    /*mp_subscript*/
         (objobjargproc)DB_ass_sub,   /*mp_ass_subscript*/
 };
