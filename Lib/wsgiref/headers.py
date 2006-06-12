@@ -187,3 +187,19 @@ class Headers:
             else:
                 parts.append(_formatparam(k.replace('_', '-'), v))
         self._headers.append((_name, "; ".join(parts)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#
