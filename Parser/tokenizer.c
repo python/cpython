@@ -1232,7 +1232,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 		do {
 			*tp++ = c = tok_nextc(tok);
 		} while (c != EOF && c != '\n' &&
-			 (unsigned int)(tp - cbuf + 1) < sizeof(cbuf));
+			 (size_t)(tp - cbuf + 1) < sizeof(cbuf));
 		*tp = '\0';
 		for (cp = tabforms;
 		     cp < tabforms + sizeof(tabforms)/sizeof(tabforms[0]);
