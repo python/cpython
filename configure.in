@@ -2351,6 +2351,9 @@ AC_CHECK_LIB(c, inet_aton, [$ac_cv_prog_TRUE],
   AC_CHECK_LIB(resolv, inet_aton)
 )
 
+dnl Check if system zlib has *Copy() functions
+AC_CHECK_LIB(z, inflateCopy, AC_DEFINE(HAVE_ZLIB_COPY, 1, Define if the zlib library has inflateCopy))
+
 AC_MSG_CHECKING(for hstrerror)
 AC_TRY_LINK([
 #include "confdefs.h" 

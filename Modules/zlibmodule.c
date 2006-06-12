@@ -653,6 +653,7 @@ PyZlib_flush(compobject *self, PyObject *args)
     return RetVal;
 }
 
+#ifdef HAVE_ZLIB_COPY
 PyDoc_STRVAR(comp_copy__doc__,
 "copy() -- Return a copy of the compression object.");
 
@@ -754,6 +755,7 @@ error:
     Py_XDECREF(retval);
     return NULL;
 }
+#endif
 
 PyDoc_STRVAR(decomp_flush__doc__,
 "flush( [length] ) -- Return a string containing any remaining\n"
@@ -827,8 +829,10 @@ static PyMethodDef comp_methods[] =
                  comp_compress__doc__},
     {"flush", (binaryfunc)PyZlib_flush, METH_VARARGS,
               comp_flush__doc__},
+#ifdef HAVE_ZLIB_COPY
     {"copy",  (PyCFunction)PyZlib_copy, METH_NOARGS,
               comp_copy__doc__},
+#endif
     {NULL, NULL}
 };
 
@@ -838,8 +842,10 @@ static PyMethodDef Decomp_methods[] =
                    decomp_decompress__doc__},
     {"flush", (binaryfunc)PyZlib_unflush, METH_VARARGS,
               decomp_flush__doc__},
+#ifdef HAVE_ZLIB_COPY
     {"copy",  (PyCFunction)PyZlib_uncopy, METH_NOARGS,
               decomp_copy__doc__},
+#endif
     {NULL, NULL}
 };
 
