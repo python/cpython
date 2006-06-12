@@ -77,8 +77,8 @@ dl_call(dlobject *xp, PyObject *args)
                      long, long, long, long, long);
 	long alist[10];
 	long res;
-	int i;
-	int n = PyTuple_Size(args);
+	Py_ssize_t i;
+	Py_ssize_t n = PyTuple_Size(args);
 	if (n < 1) {
 		PyErr_SetString(PyExc_TypeError, "at least a name is needed");
 		return NULL;
