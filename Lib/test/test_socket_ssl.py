@@ -71,7 +71,7 @@ def test_rude_shutdown():
         return
 
     # Some random port to connect to.
-    PORT = 9934
+    PORT = [9934]
 
     listener_ready = threading.Event()
     listener_gone = threading.Event()
@@ -82,7 +82,7 @@ def test_rude_shutdown():
     # know the socket is gone.
     def listener():
         s = socket.socket()
-        s.bind(('', PORT))
+        PORT[0] = test_support.bind_port(s, '', PORT[0])
         s.listen(5)
         listener_ready.set()
         s.accept()
@@ -92,7 +92,7 @@ def test_rude_shutdown():
     def connector():
         listener_ready.wait()
         s = socket.socket()
-        s.connect(('localhost', PORT))
+        s.connect(('localhost', PORT[0]))
         listener_gone.wait()
         try:
             ssl_sock = socket.ssl(s)

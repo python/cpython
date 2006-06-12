@@ -12,6 +12,8 @@ What's New in Python 2.5 beta 1?
 Core and builtins
 -----------------
 
+- Fix the socket tests so they can be run concurrently.
+
 - Removed 5 integers from C frame objects (PyFrameObject).
 	f_nlocals, f_ncells, f_nfreevars, f_stack_size, f_restricted.
 

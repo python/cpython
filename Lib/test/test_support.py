@@ -89,6 +89,24 @@ def requires(resource, msg=None):
             msg = "Use of the `%s' resource not enabled" % resource
         raise ResourceDenied(msg)
 
+def bind_port(sock, host='', preferred_port=54321):
+    """Try to bind the sock to a port.  If we are running multiple
+    tests and we don't try multiple ports, the test can fails.  This
+    makes the test more robust."""
+
+    import socket, errno
+    # some random ports that hopefully no one is listening on.
+    for port in [preferred_port, 9907, 10243, 32999]:
+        try:
+            sock.bind((host, port))
+            return port
+        except socket.error, (err, msg):
+            if err != errno.EADDRINUSE:
+                raise
+            print >>sys.__stderr__, \
+                '  WARNING: failed to listen on port %d, trying another' % port
+    raise TestFailed, 'unable to find port to listen on'
+
 FUZZ = 1e-6
 
 def fcmp(x, y): # fuzzy comparison function

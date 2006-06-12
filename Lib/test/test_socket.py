@@ -21,7 +21,8 @@ class SocketTCPTest(unittest.TestCase):
     def setUp(self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.serv.bind((HOST, PORT))
+        global PORT
+        PORT = test_support.bind_port(self.serv, HOST, PORT)
         self.serv.listen(1)
 
     def tearDown(self):
@@ -33,7 +34,8 @@ class SocketUDPTest(unittest.TestCase):
     def setUp(self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.serv.bind((HOST, PORT))
+        global PORT
+        PORT = test_support.bind_port(self.serv, HOST, PORT)
 
     def tearDown(self):
         self.serv.close()
