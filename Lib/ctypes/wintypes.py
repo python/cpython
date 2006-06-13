@@ -9,16 +9,26 @@ BYTE = c_byte
 WORD = c_ushort
 DWORD = c_ulong
 
+WCHAR = c_wchar
+UINT = c_uint
+
+DOUBLE = c_double
+
 BOOLEAN = BYTE
 BOOL = c_long
-VARIANT_BOOL = c_short
+
+from ctypes import _SimpleCData
+class VARIANT_BOOL(_SimpleCData):
+    _type_ = "v"
+    def __repr__(self):
+        return "%s(%r)" % (self.__class__.__name__, self.value)
 
 ULONG = c_ulong
 LONG = c_long
 
 # in the windows header files, these are structures.
-LARGE_INTEGER = c_longlong
-ULARGE_INTEGER = c_ulonglong
+_LARGE_INTEGER = LARGE_INTEGER = c_longlong
+_ULARGE_INTEGER = ULARGE_INTEGER = c_ulonglong
 
 LPCOLESTR = LPOLESTR = OLESTR = c_wchar_p
 LPCWSTR = LPWSTR = c_wchar_p
