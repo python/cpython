@@ -20,7 +20,7 @@ def clockres(timer):
     while 1:
         now = wallclock()
         if now >= stop:
-           break
+            break
         for i in spin_loops:
             d[timer()] = 1
     values = d.keys()
@@ -33,7 +33,7 @@ def clockres(timer):
     return min_diff
 
 if __name__ == '__main__':
-    print 'Clock resolution of various timer implementations:'    
+    print 'Clock resolution of various timer implementations:'
     print 'time.clock:           %10.3fus' % (clockres(time.clock) * 1e6)
     print 'time.time:            %10.3fus' % (clockres(time.time) * 1e6)
     try:
@@ -41,4 +41,3 @@ if __name__ == '__main__':
         print 'systimes.processtime: %10.3fus' % (clockres(systimes.processtime) * 1e6)
     except ImportError:
         pass
-

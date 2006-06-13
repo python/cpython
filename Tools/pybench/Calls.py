@@ -500,5 +500,3 @@ h(i,i,i,2,i,3)
 
         timeit.main(['-s', setup,
                      test])
-                     
-        
