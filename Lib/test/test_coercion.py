@@ -2,7 +2,7 @@ import copy
 import sys
 import warnings
 import unittest
-from test.test_support import run_unittest
+from test.test_support import run_unittest, TestFailed
 
 # Fake a number that implements numeric methods through __coerce__
 class CoerceNumber:
@@ -317,6 +317,24 @@ class CoercionTest(unittest.TestCase):
                 self.assert_(other == 42, 'expected evil_coercer, got %r' % other)
                 return 0
         self.assertEquals(cmp(ClassicWackyComparer(), evil_coercer), 0)
+
+    def test_infinite_rec_classic_classes(self):
+        # if __coerce__() returns its arguments reversed it causes an infinite
+        # recursion for classic classes.
+        class Tester:
+            def __coerce__(self, other):
+                return other, self
+
+        exc = TestFailed("__coerce__() returning its arguments reverse "
+                                "should raise RuntimeError")
+        try:
+            Tester() + 1
+        except (RuntimeError, TypeError):
+            return
+        except:
+            raise exc
+        else:
+            raise exc
 
 def test_main():
     warnings.filterwarnings("ignore",
