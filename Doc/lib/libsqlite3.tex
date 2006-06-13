@@ -195,6 +195,14 @@ This can be used to build a shell for SQLite, like in the following example:
     \verbatiminput{sqlite3/complete_statement.py}
 \end{funcdesc}
 
+\begin{funcdesc}{}enable_callback_tracebacks{flag}
+By default you will not get any tracebacks in user-defined functions,
+aggregates, converters, authorizer callbacks etc. If you want to debug them,
+you can call this function with \var{flag} as True. Afterwards, you will get
+tracebacks from callbacks on \code{sys.stderr}. Use \constant{False} to disable
+the feature again.
+\end{funcdesc}
+
 \subsection{Connection Objects \label{sqlite3-Connection-Objects}}
 
 A \class{Connection} instance has the following attributes and methods:
@@ -237,8 +245,7 @@ of parameters the function accepts, and \var{func} is a Python callable that is
 called as SQL function.
 
 The function can return any of the types supported by SQLite: unicode, str,
-int, long, float, buffer and None.  Exceptions in the function are ignored and
-they are handled as if the function returned None.
+int, long, float, buffer and None.
 
 Example:
 
@@ -254,7 +261,7 @@ number of parameters \var{num_params}, and a \code{finalize} method which
 will return the final result of the aggregate.
 
 The \code{finalize} method can return any of the types supported by SQLite:
-unicode, str, int, long, float, buffer and None. Any exceptions are ignored.
+unicode, str, int, long, float, buffer and None.
 
 Example:
 
@@ -283,6 +290,34 @@ To remove a collation, call \code{create_collation} with None as callable:
 \end{verbatim}
 \end{methoddesc}
 
+\begin{methoddesc}{interrupt}{}
+
+You can call this method from a different thread to abort any queries that
+might be executing on the connection. The query will then abort and the caller
+will get an exception.
+\end{methoddesc}
+
+\begin{methoddesc}{set_authorizer}{authorizer_callback}
+
+This routine registers a callback. The callback is invoked for each attempt to
+access a column of a table in the database. The callback should return
+\constant{SQLITE_OK} if access is allowed, \constant{SQLITE_DENY} if the entire
+SQL statement should be aborted with an error and \constant{SQLITE_IGNORE} if
+the column should be treated as a NULL value. These constants are available in
+the \module{sqlite3} module.
+
+The first argument to the callback signifies what kind of operation is to be
+authorized. The second and third argument will be arguments or \constant{None}
+depending on the first argument. The 4th argument is the name of the database
+("main", "temp", etc.) if applicable. The 5th argument is the name of the
+inner-most trigger or view that is responsible for the access attempt or
+\constant{None} if this access attempt is directly from input SQL code.
+
+Please consult the SQLite documentation about the possible values for the first
+argument and the meaning of the second and third argument depending on the
+first one. All necessary constants are available in the \module{sqlite3}
+module.
+\end{methoddesc}
 
 \begin{memberdesc}{row_factory}
   You can change this attribute to a callable that accepts the cursor and
