@@ -474,30 +474,30 @@ class SequenceMatcher:
         if self.matching_blocks is not None:
             return self.matching_blocks
         la, lb = len(self.a), len(self.b)
+        self.matching_blocks = matching_blocks = []
 
-        indexed_blocks = []
+        # This is most naturally expressed as a recursive algorithm, but
+        # at least one user bumped into extreme use cases that exceeded
+        # the recursion limit on their box.  So, now we maintain a list
+        # ('queue`) of blocks we still need to look at, and append partial
+        # results to `matching_blocks` in a loop; the matches are sorted
+        # at the end.
         queue = [(0, la, 0, lb)]
         while queue:
-            # builds list of matching blocks covering a[alo:ahi] and
-            # b[blo:bhi], appending them in increasing order to answer
             alo, ahi, blo, bhi = queue.pop()
-
+            i, j, k = x = self.find_longest_match(alo, ahi, blo, bhi)
             # a[alo:i] vs b[blo:j] unknown
             # a[i:i+k] same as b[j:j+k]
             # a[i+k:ahi] vs b[j+k:bhi] unknown
-            i, j, k = x = self.find_longest_match(alo, ahi, blo, bhi)
-
-            if k:
+            if k:   # if k is 0, there was no matching block
+                matching_blocks.append(x)
                 if alo < i and blo < j:
                     queue.append((alo, i, blo, j))
-                indexed_blocks.append((i, x))
                 if i+k < ahi and j+k < bhi:
                     queue.append((i+k, ahi, j+k, bhi))
-        indexed_blocks.sort()
-
-        self.matching_blocks = [elem[1] for elem in indexed_blocks]
-        self.matching_blocks.append( (la, lb, 0) )
-        return self.matching_blocks
+        matching_blocks.sort()
+        matching_blocks.append( (la, lb, 0) )
+        return matching_blocks
 
     def get_opcodes(self):
         """Return list of 5-tuples describing how to turn a into b.
