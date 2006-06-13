@@ -63,7 +63,7 @@ class UUID(object):
     six integer fields (with 32-bit, 16-bit, 16-bit, 8-bit, 8-bit, and
     48-bit values respectively) as an argument named 'fields', or a single
     128-bit integer as an argument named 'int'.
-    
+
     UUIDs have these read-only attributes:
 
         bytes       the UUID as a 16-byte string
@@ -203,7 +203,7 @@ class UUID(object):
 
     def get_time_low(self):
         return self.int >> 96L
-   
+
     time_low = property(get_time_low)
 
     def get_time_mid(self):
@@ -213,14 +213,14 @@ class UUID(object):
 
     def get_time_hi_version(self):
         return (self.int >> 64L) & 0xffff
-    
+
     time_hi_version = property(get_time_hi_version)
 
     def get_clock_seq_hi_variant(self):
         return (self.int >> 56L) & 0xff
 
     clock_seq_hi_variant = property(get_clock_seq_hi_variant)
-    
+
     def get_clock_seq_low(self):
         return (self.int >> 48L) & 0xff
 
@@ -237,7 +237,7 @@ class UUID(object):
                 self.clock_seq_low)
 
     clock_seq = property(get_clock_seq)
-    
+
     def get_node(self):
         return self.int & 0xffffffffffff
 

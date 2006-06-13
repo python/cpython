@@ -174,7 +174,7 @@ class TestUUID(TestCase):
     def test_exceptions(self):
         badvalue = lambda f: self.assertRaises(ValueError, f)
         badtype = lambda f: self.assertRaises(TypeError, f)
-        
+
         # Badly formed hex strings.
         badvalue(lambda: uuid.UUID(''))
         badvalue(lambda: uuid.UUID('abc'))
@@ -288,21 +288,21 @@ class TestUUID(TestCase):
         import os
         if os.name == 'posix':
             self.check_node(uuid._ifconfig_getnode(), 'ifconfig')
-            
+
     def test_ipconfig_getnode(self):
         import os
         if os.name == 'nt':
             self.check_node(uuid._ipconfig_getnode(), 'ipconfig')
-            
+
     def test_netbios_getnode(self):
         if importable('win32wnet') and importable('netbios'):
             self.check_node(uuid._netbios_getnode(), 'netbios')
-            
+
     def test_random_getnode(self):
         node = uuid._random_getnode()
         self.assert_(0 <= node)
         self.assert_(node < 1<<48L)
-        
+
     def test_unixdll_getnode(self):
         import os
         if importable('ctypes') and os.name == 'posix':
@@ -341,11 +341,11 @@ class TestUUID(TestCase):
         equal(((u.clock_seq_hi_variant & 0x3f) << 8) | u.clock_seq_low, 0)
         u = uuid.uuid1(0x123456789abc, 0x1234)
         equal(u.node, 0x123456789abc)
-        equal(((u.clock_seq_hi_variant & 0x3f) << 8) | 
+        equal(((u.clock_seq_hi_variant & 0x3f) << 8) |
                          u.clock_seq_low, 0x1234)
         u = uuid.uuid1(0x123456789abc, 0x3fff)
         equal(u.node, 0x123456789abc)
-        equal(((u.clock_seq_hi_variant & 0x3f) << 8) | 
+        equal(((u.clock_seq_hi_variant & 0x3f) << 8) |
                          u.clock_seq_low, 0x3fff)
 
     def test_uuid3(self):
