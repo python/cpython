@@ -7792,6 +7792,8 @@ void _PyUnicode_Init(void)
     bloom_linebreak = make_bloom_mask(
         linebreak, sizeof(linebreak) / sizeof(linebreak[0])
         );
+
+    PyType_Ready(&EncodingMapType);
 }
 
 /* Finalize the Unicode implementation */
