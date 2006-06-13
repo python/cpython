@@ -418,7 +418,7 @@ class Benchmark:
 
     def __init__(self, name, verbose=None, timer=None, warp=None,
                  calibration_runs=None):
-        
+
         if name:
             self.name = name
         else:
@@ -438,7 +438,7 @@ class Benchmark:
         if _debug:
             print 'Getting machine details...'
         self.machine_details = get_machine_details()
-        
+
         # Make .version an instance attribute to have it saved in the
         # Benchmark pickle
         self.version = self.version
