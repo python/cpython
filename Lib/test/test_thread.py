@@ -121,7 +121,7 @@ print '\n*** Changing thread stack size ***'
 if thread.stack_size() != 0:
     raise ValueError, "initial stack_size not 0"
 
-thread.stack_size(0) 
+thread.stack_size(0)
 if thread.stack_size() != 0:
     raise ValueError, "stack_size not reset to default"
 
