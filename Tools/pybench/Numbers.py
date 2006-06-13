@@ -2,7 +2,7 @@ from pybench import Test
 
 class CompareIntegers(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 30 * 5
     rounds = 120000
 
@@ -198,9 +198,9 @@ class CompareIntegers(Test):
 
 class CompareFloats(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 30 * 5
-    rounds = 60000
+    rounds = 80000
 
     def test(self):
 
@@ -394,7 +394,7 @@ class CompareFloats(Test):
 
 class CompareFloatsIntegers(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 30 * 5
     rounds = 60000
 
@@ -590,9 +590,9 @@ class CompareFloatsIntegers(Test):
 
 class CompareLongs(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 30 * 5
-    rounds = 60000
+    rounds = 70000
 
     def test(self):
 

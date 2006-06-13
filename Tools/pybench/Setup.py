@@ -14,7 +14,7 @@
 
 # Defaults
 Number_of_rounds = 10
-Warp_factor = 20
+Warp_factor = 10
 
 # Import tests
 from Arithmetic import *
@@ -24,8 +24,8 @@ from Lookups import *
 from Instances import *
 try:
     from NewInstances import *
-except:
-    print "Cannot test new-style objects"
+except ImportError:
+    pass
 from Lists import *
 from Tuples import *
 from Dict import *

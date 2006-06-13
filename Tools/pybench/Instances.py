@@ -2,9 +2,9 @@ from pybench import Test
 
 class CreateInstances(Test):
 
-    version = 0.2
+    version = 2.0
     operations = 3 + 7 + 4
-    rounds = 60000
+    rounds = 80000
 
     def test(self):
 

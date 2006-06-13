@@ -2,7 +2,7 @@ from pybench import Test
 
 class SimpleIntegerArithmetic(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5 * (3 + 5 + 5 + 3 + 3 + 3)
     rounds = 120000
 
@@ -157,9 +157,9 @@ class SimpleIntegerArithmetic(Test):
 
 class SimpleFloatArithmetic(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5 * (3 + 5 + 5 + 3 + 3 + 3)
-    rounds = 100000
+    rounds = 120000
 
     def test(self):
 
@@ -312,7 +312,7 @@ class SimpleFloatArithmetic(Test):
 
 class SimpleIntFloatArithmetic(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5 * (3 + 5 + 5 + 3 + 3 + 3)
     rounds = 120000
 
@@ -468,9 +468,9 @@ class SimpleIntFloatArithmetic(Test):
 
 class SimpleLongArithmetic(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5 * (3 + 5 + 5 + 3 + 3 + 3)
-    rounds = 30000
+    rounds = 60000
 
     def test(self):
 
@@ -623,9 +623,9 @@ class SimpleLongArithmetic(Test):
 
 class SimpleComplexArithmetic(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5 * (3 + 5 + 5 + 3 + 3 + 3)
-    rounds = 40000
+    rounds = 80000
 
     def test(self):
 
