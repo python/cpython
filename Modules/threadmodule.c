@@ -591,7 +591,6 @@ thread_stack_size(PyObject *self, PyObject *args)
 {
 	size_t old_size;
 	Py_ssize_t new_size = 0;
-	PyObject *set_size = NULL;
 	int rc;
 
 	if (!PyArg_ParseTuple(args, "|n:stack_size", &new_size))
