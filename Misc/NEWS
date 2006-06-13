@@ -112,6 +112,9 @@ Extension Modules
 - Patch #1435422: zlib's compress and decompress objects now have a
   copy() method.
 
+- Patch #1454481: thread stack size is now tunable at runtime for thread
+  enabled builds on Windows and systems with Posix threads support.
+
 - On Win32, os.listdir now supports arbitrarily-long Unicode path names
   (up to the system limit of 32K characters).
 

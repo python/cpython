@@ -85,6 +85,22 @@ class ThreadTests(unittest.TestCase):
             print 'all tasks done'
         self.assertEqual(numrunning.get(), 0)
 
+    # run with a minimum thread stack size (32kB)
+    def test_various_ops_small_stack(self):
+        if verbose:
+            print 'with 32kB thread stack size...'
+        threading.stack_size(0x8000)
+        self.test_various_ops()
+        threading.stack_size(0)
+
+    # run with a large thread stack size (1MB)
+    def test_various_ops_large_stack(self):
+        if verbose:
+            print 'with 1MB thread stack size...'
+        threading.stack_size(0x100000)
+        self.test_various_ops()
+        threading.stack_size(0)
+
     def test_foreign_thread(self):
         # Check that a "foreign" thread can use the threading module.
         def f(mutex):
