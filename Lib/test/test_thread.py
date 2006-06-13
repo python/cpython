@@ -133,7 +133,7 @@ if os_name in ("nt", "os2", "posix"):
         thread.stack_size(4096)
     except ValueError:
         print 'caught expected ValueError setting stack_size(4096)'
-    except thread.ThreadError:
+    except thread.error:
         tss_supported = 0
         print 'platform does not support changing thread stack size'
 

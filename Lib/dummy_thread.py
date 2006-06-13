@@ -79,8 +79,7 @@ def allocate_lock():
 def stack_size(size=None):
     """Dummy implementation of thread.stack_size()."""
     if size is not None:
-        msg = "setting thread stack size not supported on this platform"
-        warnings.warn(msg, RuntimeWarning)
+        raise error("setting thread stack size not supported")
     return 0
 
 class LockType(object):
