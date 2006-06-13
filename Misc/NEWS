@@ -12,6 +12,9 @@ What's New in Python 2.5 beta 1?
 Core and builtins
 -----------------
 
+- Bug #992017: A classic class that defined a __coerce__() method that returned
+  its arguments swapped would infinitely recurse and segfault the interpreter.
+
 - Fix the socket tests so they can be run concurrently.
 
 - Removed 5 integers from C frame objects (PyFrameObject).

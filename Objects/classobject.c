@@ -1368,10 +1368,13 @@ half_binop(PyObject *v, PyObject *w, char *opname, binaryfunc thisfunc,
 		 * argument */
 		result = generic_binary_op(v1, w, opname);
 	} else {
+		if (Py_EnterRecursiveCall(" after coercion"))
+		    return NULL;
 		if (swapped)
 			result = (thisfunc)(w, v1);
 		else
 			result = (thisfunc)(v1, w);
+		Py_LeaveRecursiveCall();
 	}
 	Py_DECREF(coerced);
 	return result;
