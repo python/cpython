@@ -586,6 +586,61 @@ allocated consecutive numbers starting at 1, this behavior should not\n\
 be relied upon, and the number should be seen purely as a magic cookie.\n\
 A thread's identity may be reused for another thread after it exits.");
 
+static PyObject *
+thread_stack_size(PyObject *self, PyObject *args)
+{
+	size_t old_size;
+	Py_ssize_t new_size = 0;
+	PyObject *set_size = NULL;
+	int rc;
+
+	if (!PyArg_ParseTuple(args, "|n:stack_size", &new_size))
+		return NULL;
+
+	if (new_size < 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"size must be 0 or a positive value");
+		return NULL;
+	}
+
+	old_size = PyThread_get_stacksize();
+
+	rc = PyThread_set_stacksize((size_t) new_size);
+	if (rc == -1) {
+		PyErr_Format(PyExc_ValueError,
+			     "size not valid: %zd bytes",
+			     new_size);
+		return NULL;
+	}
+	if (rc == -2) {
+		PyErr_SetString(ThreadError,
+				"setting stack size not supported");
+		return NULL;
+	}
+
+	return PyInt_FromSsize_t((Py_ssize_t) old_size);
+}
+
+PyDoc_STRVAR(stack_size_doc,
+"stack_size([size]) -> size\n\
+\n\
+Return the thread stack size used when creating new threads.  The\n\
+optional size argument specifies the stack size (in bytes) to be used\n\
+for subsequently created threads, and must be 0 (use platform or\n\
+configured default) or a positive integer value of at least 32,768 (32k).\n\
+If changing the thread stack size is unsupported, a ThreadError\n\
+exception is raised.  If the specified size is invalid, a ValueError\n\
+exception is raised, and the stack size is unmodified.  32k bytes\n\
+ currently the minimum supported stack size value to guarantee\n\
+sufficient stack space for the interpreter itself.\n\
+\n\
+Note that some platforms may have particular restrictions on values for\n\
+the stack size, such as requiring a minimum stack size larger than 32kB or\n\
+requiring allocation in multiples of the system memory page size\n\
+- platform documentation should be referred to for more information\n\
+(4kB pages are common; using multiples of 4096 for the stack size is\n\
+the suggested approach in the absence of more specific information).");
+
 static PyMethodDef thread_methods[] = {
 	{"start_new_thread",	(PyCFunction)thread_PyThread_start_new_thread,
 	                        METH_VARARGS,
@@ -605,6 +660,9 @@ static PyMethodDef thread_methods[] = {
 	 METH_NOARGS, interrupt_doc},
 	{"get_ident",		(PyCFunction)thread_get_ident, 
 	 METH_NOARGS, get_ident_doc},
+	{"stack_size",		(PyCFunction)thread_stack_size,
+				METH_VARARGS,
+				stack_size_doc},
 #ifndef NO_EXIT_PROG
 	{"exit_prog",		(PyCFunction)thread_PyThread_exit_prog,
 	 METH_VARARGS},
