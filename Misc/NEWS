@@ -12,6 +12,9 @@ What's New in Python 2.4.4c1?
 Core and builtins
 -----------------
 
+- Bug #992017: A classic class that defined a __coerce__() method that returned
+  its arguments swapped would infinitely recurse and segfault the interpreter.
+
 - Bug #532646: The object set to the __call__ attribute has its own __call__
   attribute checked; this continues until the attribute can no longer be found
   or segfaulting.  Recursion limit is now followed.
