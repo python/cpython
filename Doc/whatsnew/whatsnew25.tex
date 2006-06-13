@@ -1636,6 +1636,37 @@ of the Unicode character database.  Version 3.2.0 is required
 by some specifications, so it's still available as 
 \member{unicodedata.ucd_3_2_0}.
 
+\item New module: the  \module{uuid} module generates 
+universally unique identifiers (UUIDs) according to \rfc{4122}.  The
+RFC defines several different UUID versions that are generated from a
+starting string, from system properties, or purely randomly.  This
+module contains a \class{UUID} class and 
+functions named \function{uuid1()},
+\function{uuid3()}, \function{uuid4()},  and 
+\function{uuid5()} to generate different versions of UUID.  (Version 2 UUIDs 
+are not specified in \rfc{4122} and are not supported by this module.)
+
+\begin{verbatim}
+>>> import uuid
+>>> # make a UUID based on the host ID and current time
+>>> uuid.uuid1()
+UUID('a8098c1a-f86e-11da-bd1a-00112444be1e')
+
+>>> # make a UUID using an MD5 hash of a namespace UUID and a name
+>>> uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org')
+UUID('6fa459ea-ee8a-3ca4-894e-db77e160355e')
+
+>>> # make a random UUID
+>>> uuid.uuid4()
+UUID('16fd2706-8baf-433b-82eb-8c7fada847da')
+
+>>> # make a UUID using a SHA-1 hash of a namespace UUID and a name
+>>> uuid.uuid5(uuid.NAMESPACE_DNS, 'python.org')
+UUID('886313e1-3b8a-5372-9b90-0c9aee199e5d')
+\end{verbatim}
+
+(Contributed by Ka-Ping Yee.)
+
 \item The \module{webbrowser} module received a number of
 enhancements.
 It's now usable as a script with \code{python -m webbrowser}, taking a
