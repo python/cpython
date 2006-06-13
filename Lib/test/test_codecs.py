@@ -1166,6 +1166,12 @@ class BasicUnicodeTest(unittest.TestCase):
             encoder = codecs.getencoder(encoding)
             self.assertRaises(TypeError, encoder)
 
+    def test_encoding_map_type_initialized(self):
+        from encodings import cp1140
+        # This used to crash, we are only verifying there's no crash.
+        table_type = type(cp1140.encoding_table)
+        self.assertEqual(table_type, table_type)
+
 class BasicStrTest(unittest.TestCase):
     def test_basics(self):
         s = "abc123"
