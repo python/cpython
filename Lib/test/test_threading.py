@@ -85,11 +85,11 @@ class ThreadTests(unittest.TestCase):
             print 'all tasks done'
         self.assertEqual(numrunning.get(), 0)
 
-    # run with a minimum thread stack size (32kB)
+    # run with a small(ish) thread stack size (256kB)
     def test_various_ops_small_stack(self):
         if verbose:
-            print 'with 32kB thread stack size...'
-        threading.stack_size(0x8000)
+            print 'with 256kB thread stack size...'
+        threading.stack_size(262144)
         self.test_various_ops()
         threading.stack_size(0)
 
