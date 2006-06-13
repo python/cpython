@@ -1631,6 +1631,15 @@ using the mode \code{'r|*'}.
 % patch 918101
 (Contributed by Lars Gust\"abel.)
 
+\item The \module{threading} module now lets you set the stack size
+used when new threads are created. The
+\function{stack_size(\optional{\var{size}})} function returns the
+currently configured stack size, and supplying the optional \var{size}
+parameter sets a new value.  Not all platforms support changing the
+stack size, but Windows, POSIX threading, and OS/2 all do.
+(Contributed by Andrew MacIntyre.)
+% Patch 1454481
+
 \item The \module{unicodedata} module has been updated to use version 4.1.0
 of the Unicode character database.  Version 3.2.0 is required 
 by some specifications, so it's still available as 
