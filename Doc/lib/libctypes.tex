@@ -66,14 +66,7 @@ calling the constructor:
 <CDLL 'libc.so.6', handle ... at ...>
 >>>
 \end{verbatim}
-
-XXX Add section for Mac OS X.
-
-
-\subsubsection{Finding shared libraries\label{ctypes-finding-shared-libraries}}
-
-XXX Add description of ctypes.util.find{\_}library (once I really
-understand it enough to describe it).
+% XXX Add section for Mac OS X. 
 
 
 \subsubsection{Accessing functions from loaded dlls\label{ctypes-accessing-functions-from-loaded-dlls}}
@@ -1413,62 +1406,199 @@ using \class{c{\_}int} as the base class.
 \subsection{ctypes reference\label{ctypes-ctypes-reference}}
 
 
+\subsubsection{Finding shared libraries\label{ctypes-finding-shared-libraries}}
+
+When programming in a compiled language, shared libraries are accessed
+when compiling/linking a program, and when the program is run.
+
+The purpose of the \code{find{\_}library} function is to locate a library in
+a way similar to what the compiler does (on platforms with several
+versions of a shared library the most recent should be loaded), while
+the ctypes library loaders act like when a program is run, and call
+the runtime loader directly.
+
+The \code{ctypes.util} module provides a function which can help to
+determine the library to load.
+
+\begin{datadescni}{find_library(name)}
+Try to find a library and return a pathname.  \var{name} is the
+library name without any prefix like \var{lib}, suffix like \code{.so},
+\code{.dylib} or version number (this is the form used for the posix
+linker option \programopt{-l}).  If no library can be found, returns
+\code{None}.
+\end{datadescni}
+
+The exact functionality is system dependend.
+
+On Linux, \code{find{\_}library} tries to run external programs
+(/sbin/ldconfig, gcc, and objdump) to find the library file.  It
+returns the filename of the library file.  Here are sone examples:
+\begin{verbatim}
+>>> from ctypes.util import find_library
+>>> find_library("m")
+'libm.so.6'
+>>> find_library("c")
+'libc.so.6'
+>>> find_library("bz2")
+'libbz2.so.1.0'
+>>>
+\end{verbatim}
+
+On OS X, \code{find{\_}library} tries several predefined naming schemes and
+paths to locate the library, and returns a full pathname if successfull:
+\begin{verbatim}
+>>> from ctypes.util import find_library
+>>> find_library("c")
+'/usr/lib/libc.dylib'
+>>> find_library("m")
+'/usr/lib/libm.dylib'
+>>> find_library("bz2")
+'/usr/lib/libbz2.dylib'
+>>> find_library("AGL")
+'/System/Library/Frameworks/AGL.framework/AGL'
+>>>
+\end{verbatim}
+
+On Windows, \code{find{\_}library} searches along the system search path,
+and returns the full pathname, but since there is no predefined naming
+scheme a call like \code{find{\_}library("c")} will fail and return
+\code{None}.
+
+If wrapping a shared library with \code{ctypes}, it \emph{may} be better to
+determine the shared library name at development type, and hardcode
+that into the wrapper module instead of using \code{find{\_}library} to
+locate the library at runtime.
+
+
 \subsubsection{Loading shared libraries\label{ctypes-loading-shared-libraries}}
 
-\begin{classdesc}{LibraryLoader}{dlltype}
-Class which loads shared libraries.
-\end{classdesc}
-
-\begin{methoddesc}{LoadLibrary}{name, mode=RTLD_LOCAL, handle=None}
-Load a shared library.
-\end{methoddesc}
+There are several ways to loaded shared libraries into the Python
+process.  One way is to instantiate one of the following classes:
 
 \begin{classdesc}{CDLL}{name, mode=RTLD_LOCAL, handle=None}
-XXX
+Instances of this class represent loaded shared libraries.
+Functions in these libraries use the standard C calling
+convention, and are assumed to return \code{int}.
 \end{classdesc}
 
-\begin{datadescni}{cdll}
-XXX
-\end{datadescni}
+\begin{classdesc}{OleDLL}{name, mode=RTLD_LOCAL, handle=None}
+Windows only: Instances of this class represent loaded shared
+libraries, functions in these libraries use the \code{stdcall}
+calling convention, and are assumed to return the windows specific
+\class{HRESULT} code.  \class{HRESULT} values contain information
+specifying whether the function call failed or succeeded, together
+with additional error code.  If the return value signals a
+failure, an \class{WindowsError} is automatically raised.
+\end{classdesc}
 
-\begin{funcdesc}{OleDLL}{name, mode=RTLD_LOCAL, handle=None}
-XXX
-\end{funcdesc}
+\begin{classdesc}{WinDLL}{name, mode=RTLD_LOCAL, handle=None}
+Windows only: Instances of this class represent loaded shared
+libraries, functions in these libraries use the \code{stdcall}
+calling convention, and are assumed to return \code{int} by default.
 
-\begin{datadescni}{oledll}
-XXX
-\end{datadescni}
+On Windows CE only the standard calling convention is used, for
+convenience the \class{WinDLL} and \class{OleDLL} use the standard calling
+convention on this platform.
+\end{classdesc}
 
-\begin{classdesc*}{py_object}
-XXX
-\end{classdesc*}
+The Python GIL is released before calling any function exported by
+these libraries, and reaquired afterwards.
 
-\begin{funcdesc}{PyDLL}{name, mode=RTLD_LOCAL, handle=None}
-XXX
-\end{funcdesc}
+\begin{classdesc}{PyDLL}{name, mode=RTLD_LOCAL, handle=None}
+Instances of this class behave like \class{CDLL} instances, except
+that the Python GIL is \emph{not} released during the function call,
+and after the function execution the Python error flag is checked.
+If the error flag is set, a Python exception is raised.
 
-\begin{datadescni}{pydll}
-XXX
-\end{datadescni}
+Thus, this is only useful to call Python C api functions directly.
+\end{classdesc}
+
+All these classes can be instantiated by calling them with at least
+one argument, the pathname of the shared library.  If you have an
+existing handle to an already loaded shard library, it can be passed
+as the \code{handle} named parameter, otherwise the underlying platforms
+\code{dlopen} or \method{LoadLibrary} function is used to load the library
+into the process, and to get a handle to it.
+
+The \var{mode} parameter can be used to specify how the library is
+loaded.  For details, consult the \code{dlopen(3)} manpage, on Windows,
+\var{mode} is ignored.
 
 \begin{datadescni}{RTLD_GLOBAL}
-XXX
+Flag to use as \var{mode} parameter.  On platforms where this flag
+is not available, it is defined as the integer zero.
 \end{datadescni}
 
 \begin{datadescni}{RTLD_LOCAL}
-XXX
+Flag to use as \var{mode} parameter.  On platforms where this is not
+available, it is the same as \var{RTLD{\_}GLOBAL}.
 \end{datadescni}
 
-\begin{funcdesc}{WinDLL}{name, mode=RTLD_LOCAL, handle=None}
-XXX
-\end{funcdesc}
+Instances of these classes have no public methods, however
+\method{{\_}{\_}getattr{\_}{\_}} and \method{{\_}{\_}getitem{\_}{\_}} have special behaviour: functions
+exported by the shared library can be accessed as attributes of by
+index.  Please note that both \method{{\_}{\_}getattr{\_}{\_}} and \method{{\_}{\_}getitem{\_}{\_}}
+cache their result, so calling them repeatedly returns the same object
+each time.
+
+The following public attributes are available, their name starts with
+an underscore to not clash with exported function names:
+
+\begin{datadescni}{_handle: memberdesc}
+The system handle used to access the library.
+\end{datadescni}
+
+\begin{datadescni}{_name: memberdesc}
+The name of the library passed in the contructor.
+\end{datadescni}
+
+Shared libraries can also be loaded by using one of the prefabricated
+objects, which are instances of the \class{LibraryLoader} class, either by
+calling the \method{LoadLibrary} method, or by retrieving the library as
+attribute of the loader instance.
+
+\begin{classdesc}{LibraryLoader}{dlltype}
+Class which loads shared libraries.  \code{dlltype} should be one
+of the \class{CDLL}, \class{PyDLL}, \class{WinDLL}, or \class{OleDLL} types.
+
+\method{{\_}{\_}getattr{\_}{\_}} has special behaviour: It allows to load a shared
+library by accessing it as attribute of a library loader
+instance.  The result is cached, so repeated attribute accesses
+return the same library each time.
+\end{classdesc}
+
+\begin{methoddesc}{LoadLibrary}{name, mode=RTLD_LOCAL, handle=None}
+Load a shared library into the process and return it.  This method
+always creates a new instance of the library.  All three
+parameters are passed to the constructor of the library object.
+\end{methoddesc}
+
+These prefabricated library loaders are available:
+
+\begin{datadescni}{cdll}
+Loads \class{CDLL} instances.
+\end{datadescni}
 
 \begin{datadescni}{windll}
-XXX
+Windows only: Loads \class{WinDLL} instances.
 \end{datadescni}
 
-\begin{datadescni}{pythonapi()}
-XXX
+\begin{datadescni}{oledll}
+Windows only: Loads \class{OleDLL} instances.
+\end{datadescni}
+
+\begin{datadescni}{pydll}
+Loads \class{PyDLL} instances.
+\end{datadescni}
+
+For accessing the C Python api directly, a ready-to-use Python shared
+library object is available:
+
+\begin{datadescni}{pythonapi}
+An instance of \class{PyDLL} that exposes Python C api functions as
+attributes.  Note that all these functions are assumed to return
+integers, which is of course not always the truth, so you have to
+assign the correct \member{restype} attribute.
 \end{datadescni}
 
 
@@ -1647,7 +1777,7 @@ must be a string specifying an encoding, like \code{'utf-8'} or
 on encoding/decoding errors. Examples of possible values are
 \code{"strict"}, \code{"replace"}, or \code{"ignore"}.
 
-set{\_}conversion{\_}mode returns a 2-tuple containing the previous
+\code{set{\_}conversion{\_}mode} returns a 2-tuple containing the previous
 conversion rules. On windows, the initial conversion rules are
 \code{('mbcs', 'ignore')}, on other systems \code{('ascii', 'strict')}.
 \end{funcdesc}
@@ -1915,6 +2045,10 @@ an integer address, or a string.
 \begin{classdesc*}{HRESULT}
 Windows only: Represents a \class{HRESULT} value, which contains success
 or error information for a function or method call.
+\end{classdesc*}
+
+\begin{classdesc*}{py_object}
+Represents the C \code{PyObject *} datatype.
 \end{classdesc*}
 
 
