@@ -140,13 +140,13 @@ if os_name in ("nt", "os2", "posix"):
     if tss_supported:
         failed = lambda s, e: s != e
         fail_msg = "stack_size(%d) failed - should succeed"
-        for tss in (32768, 0x100000, 0):
+        for tss in (262144, 0x100000, 0):
             thread.stack_size(tss)
             if failed(thread.stack_size(), tss):
                 raise ValueError, fail_msg % tss
             print 'successfully set stack_size(%d)' % tss
 
-        for tss in (32768, 0x100000):
+        for tss in (262144, 0x100000):
             print 'trying stack_size = %d' % tss
             next_ident = 0
             for i in range(numtasks):
