@@ -101,16 +101,16 @@ class DeclTypesTests(unittest.TestCase):
         self.cur.execute("create table test(i int, s str, f float, b bool, u unicode, foo foo, bin blob)")
 
         # override float, make them always return the same number
-        sqlite.converters["float"] = lambda x: 47.2
+        sqlite.converters["FLOAT"] = lambda x: 47.2
 
         # and implement two custom ones
-        sqlite.converters["bool"] = lambda x: bool(int(x))
-        sqlite.converters["foo"] = DeclTypesTests.Foo
+        sqlite.converters["BOOL"] = lambda x: bool(int(x))
+        sqlite.converters["FOO"] = DeclTypesTests.Foo
 
     def tearDown(self):
-        del sqlite.converters["float"]
-        del sqlite.converters["bool"]
-        del sqlite.converters["foo"]
+        del sqlite.converters["FLOAT"]
+        del sqlite.converters["BOOL"]
+        del sqlite.converters["FOO"]
         self.cur.close()
         self.con.close()
 
@@ -208,14 +208,14 @@ class ColNamesTests(unittest.TestCase):
         self.cur = self.con.cursor()
         self.cur.execute("create table test(x foo)")
 
-        sqlite.converters["foo"] = lambda x: "[%s]" % x
-        sqlite.converters["bar"] = lambda x: "<%s>" % x
-        sqlite.converters["exc"] = lambda x: 5/0
+        sqlite.converters["FOO"] = lambda x: "[%s]" % x
+        sqlite.converters["BAR"] = lambda x: "<%s>" % x
+        sqlite.converters["EXC"] = lambda x: 5/0
 
     def tearDown(self):
-        del sqlite.converters["foo"]
-        del sqlite.converters["bar"]
-        del sqlite.converters["exc"]
+        del sqlite.converters["FOO"]
+        del sqlite.converters["BAR"]
+        del sqlite.converters["EXC"]
         self.cur.close()
         self.con.close()
 
@@ -228,12 +228,6 @@ class ColNamesTests(unittest.TestCase):
     def CheckNone(self):
         self.cur.execute("insert into test(x) values (?)", (None,))
         self.cur.execute("select x from test")
-        val = self.cur.fetchone()[0]
-        self.failUnlessEqual(val, None)
-
-    def CheckExc(self):
-        # Exceptions in type converters result in returned Nones
-        self.cur.execute('select 5 as "x [exc]"')
         val = self.cur.fetchone()[0]
         self.failUnlessEqual(val, None)
 

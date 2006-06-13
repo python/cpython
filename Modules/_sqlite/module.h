@@ -25,7 +25,7 @@
 #define PYSQLITE_MODULE_H
 #include "Python.h"
 
-#define PYSQLITE_VERSION "2.2.2"
+#define PYSQLITE_VERSION "2.3.0"
 
 extern PyObject* Error;
 extern PyObject* Warning;
@@ -49,6 +49,8 @@ extern PyObject* time_sleep;
  * The key is uppercase.
  */
 extern PyObject* converters;
+
+extern int _enable_callback_tracebacks;
 
 #define PARSE_DECLTYPES 1
 #define PARSE_COLNAMES 2

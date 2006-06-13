@@ -1,25 +1,25 @@
-/* module.c - the module itself
- *
- * Copyright (C) 2004-2006 Gerhard Häring <gh@ghaering.de>
- *
- * This file is part of pysqlite.
- *
- * This software is provided 'as-is', without any express or implied
- * warranty.  In no event will the authors be held liable for any damages
- * arising from the use of this software.
- *
- * Permission is granted to anyone to use this software for any purpose,
- * including commercial applications, and to alter it and redistribute it
- * freely, subject to the following restrictions:
- *
- * 1. The origin of this software must not be misrepresented; you must not
- *    claim that you wrote the original software. If you use this software
- *    in a product, an acknowledgment in the product documentation would be
- *    appreciated but is not required.
- * 2. Altered source versions must be plainly marked as such, and must not be
- *    misrepresented as being the original software.
- * 3. This notice may not be removed or altered from any source distribution.
- */
+    /* module.c - the module itself
+     *
+     * Copyright (C) 2004-2006 Gerhard Häring <gh@ghaering.de>
+     *
+     * This file is part of pysqlite.
+     *
+     * This software is provided 'as-is', without any express or implied
+     * warranty.  In no event will the authors be held liable for any damages
+     * arising from the use of this software.
+     *
+     * Permission is granted to anyone to use this software for any purpose,
+     * including commercial applications, and to alter it and redistribute it
+     * freely, subject to the following restrictions:
+     *
+     * 1. The origin of this software must not be misrepresented; you must not
+     *    claim that you wrote the original software. If you use this software
+     *    in a product, an acknowledgment in the product documentation would be
+     *    appreciated but is not required.
+     * 2. Altered source versions must be plainly marked as such, and must not be
+     *    misrepresented as being the original software.
+     * 3. This notice may not be removed or altered from any source distribution.
+     */
 
 #include "connection.h"
 #include "statement.h"
@@ -40,6 +40,7 @@ PyObject* Error, *Warning, *InterfaceError, *DatabaseError, *InternalError,
     *NotSupportedError, *OptimizedUnicode;
 
 PyObject* converters;
+int _enable_callback_tracebacks;
 
 static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
         kwargs)
@@ -140,14 +141,42 @@ static PyObject* module_register_adapter(PyObject* self, PyObject* args, PyObjec
 
 static PyObject* module_register_converter(PyObject* self, PyObject* args, PyObject* kwargs)
 {
-    PyObject* name;
+    char* orig_name;
+    char* name = NULL;
+    char* c;
     PyObject* callable;
+    PyObject* retval = NULL;
 
-    if (!PyArg_ParseTuple(args, "OO", &name, &callable)) {
+    if (!PyArg_ParseTuple(args, "sO", &orig_name, &callable)) {
         return NULL;
     }
 
-    if (PyDict_SetItem(converters, name, callable) != 0) {
+    /* convert the name to lowercase */
+    name = PyMem_Malloc(strlen(orig_name) + 2);
+    if (!name) {
+        goto error;
+    }
+    strcpy(name, orig_name);
+    for (c = name; *c != (char)0; c++) {
+        *c = (*c) & 0xDF;
+    }
+
+    if (PyDict_SetItemString(converters, name, callable) != 0) {
+        goto error;
+    }
+
+    Py_INCREF(Py_None);
+    retval = Py_None;
+error:
+    if (name) {
+        PyMem_Free(name);
+    }
+    return retval;
+}
+
+static PyObject* enable_callback_tracebacks(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+    if (!PyArg_ParseTuple(args, "i", &_enable_callback_tracebacks)) {
         return NULL;
     }
 
@@ -174,13 +203,64 @@ static PyMethodDef module_methods[] = {
     {"register_adapter", (PyCFunction)module_register_adapter, METH_VARARGS, PyDoc_STR("Registers an adapter with pysqlite's adapter registry. Non-standard.")},
     {"register_converter", (PyCFunction)module_register_converter, METH_VARARGS, PyDoc_STR("Registers a converter with pysqlite. Non-standard.")},
     {"adapt",  (PyCFunction)psyco_microprotocols_adapt, METH_VARARGS, psyco_microprotocols_adapt_doc},
+    {"enable_callback_tracebacks",  (PyCFunction)enable_callback_tracebacks, METH_VARARGS, PyDoc_STR("Enable or disable callback functions throwing errors to stderr.")},
     {NULL, NULL}
+};
+
+struct _IntConstantPair {
+    char* constant_name;
+    int constant_value;
+};
+
+typedef struct _IntConstantPair IntConstantPair;
+
+static IntConstantPair _int_constants[] = {
+    {"PARSE_DECLTYPES", PARSE_DECLTYPES},
+    {"PARSE_COLNAMES", PARSE_COLNAMES},
+
+    {"SQLITE_OK", SQLITE_OK},
+    {"SQLITE_DENY", SQLITE_DENY},
+    {"SQLITE_IGNORE", SQLITE_IGNORE},
+    {"SQLITE_CREATE_INDEX", SQLITE_CREATE_INDEX},
+    {"SQLITE_CREATE_TABLE", SQLITE_CREATE_TABLE},
+    {"SQLITE_CREATE_TEMP_INDEX", SQLITE_CREATE_TEMP_INDEX},
+    {"SQLITE_CREATE_TEMP_TABLE", SQLITE_CREATE_TEMP_TABLE},
+    {"SQLITE_CREATE_TEMP_TRIGGER", SQLITE_CREATE_TEMP_TRIGGER},
+    {"SQLITE_CREATE_TEMP_VIEW", SQLITE_CREATE_TEMP_VIEW},
+    {"SQLITE_CREATE_TRIGGER", SQLITE_CREATE_TRIGGER},
+    {"SQLITE_CREATE_VIEW", SQLITE_CREATE_VIEW},
+    {"SQLITE_DELETE", SQLITE_DELETE},
+    {"SQLITE_DROP_INDEX", SQLITE_DROP_INDEX},
+    {"SQLITE_DROP_TABLE", SQLITE_DROP_TABLE},
+    {"SQLITE_DROP_TEMP_INDEX", SQLITE_DROP_TEMP_INDEX},
+    {"SQLITE_DROP_TEMP_TABLE", SQLITE_DROP_TEMP_TABLE},
+    {"SQLITE_DROP_TEMP_TRIGGER", SQLITE_DROP_TEMP_TRIGGER},
+    {"SQLITE_DROP_TEMP_VIEW", SQLITE_DROP_TEMP_VIEW},
+    {"SQLITE_DROP_TRIGGER", SQLITE_DROP_TRIGGER},
+    {"SQLITE_DROP_VIEW", SQLITE_DROP_VIEW},
+    {"SQLITE_INSERT", SQLITE_INSERT},
+    {"SQLITE_PRAGMA", SQLITE_PRAGMA},
+    {"SQLITE_READ", SQLITE_READ},
+    {"SQLITE_SELECT", SQLITE_SELECT},
+    {"SQLITE_TRANSACTION", SQLITE_TRANSACTION},
+    {"SQLITE_UPDATE", SQLITE_UPDATE},
+    {"SQLITE_ATTACH", SQLITE_ATTACH},
+    {"SQLITE_DETACH", SQLITE_DETACH},
+#if SQLITE_VERSION_NUMBER >= 3002001
+    {"SQLITE_ALTER_TABLE", SQLITE_ALTER_TABLE},
+    {"SQLITE_REINDEX", SQLITE_REINDEX},
+#endif
+#if SQLITE_VERSION_NUMBER >= 3003000
+    {"SQLITE_ANALYZE", SQLITE_ANALYZE},
+#endif
+    {(char*)NULL, 0}
 };
 
 PyMODINIT_FUNC init_sqlite3(void)
 {
     PyObject *module, *dict;
     PyObject *tmp_obj;
+    int i;
 
     module = Py_InitModule("_sqlite3", module_methods);
 
@@ -276,17 +356,15 @@ PyMODINIT_FUNC init_sqlite3(void)
     OptimizedUnicode = (PyObject*)&PyCell_Type;
     PyDict_SetItemString(dict, "OptimizedUnicode", OptimizedUnicode);
 
-    if (!(tmp_obj = PyInt_FromLong(PARSE_DECLTYPES))) {
-        goto error;
+    /* Set integer constants */
+    for (i = 0; _int_constants[i].constant_name != 0; i++) {
+        tmp_obj = PyInt_FromLong(_int_constants[i].constant_value);
+        if (!tmp_obj) {
+            goto error;
+        }
+        PyDict_SetItemString(dict, _int_constants[i].constant_name, tmp_obj);
+        Py_DECREF(tmp_obj);
     }
-    PyDict_SetItemString(dict, "PARSE_DECLTYPES", tmp_obj);
-    Py_DECREF(tmp_obj);
-
-    if (!(tmp_obj = PyInt_FromLong(PARSE_COLNAMES))) {
-        goto error;
-    }
-    PyDict_SetItemString(dict, "PARSE_COLNAMES", tmp_obj);
-    Py_DECREF(tmp_obj);
 
     if (!(tmp_obj = PyString_FromString(PYSQLITE_VERSION))) {
         goto error;
@@ -305,6 +383,8 @@ PyMODINIT_FUNC init_sqlite3(void)
 
     /* initialize the default converters */
     converters_init(dict);
+
+    _enable_callback_tracebacks = 0;
 
     /* Original comment form _bsddb.c in the Python core. This is also still
      * needed nowadays for Python 2.3/2.4.
