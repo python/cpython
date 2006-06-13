@@ -34,20 +34,7 @@ NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
 WITH THE USE OR PERFORMANCE OF THIS SOFTWARE !
 """
 
-# Version number
-__version__ = '1.3'
-
-#
-# NOTE: Use xrange for all test loops unless you want to face
-#       a 20MB process !
-#
-# All tests should have rounds set to values so that a run()
-# takes between 20-50 seconds. This is to get fairly good
-# clock() values. You can use option -w to speedup the tests
-# by a fixed integer factor (the "warp factor").
-#
-
-import sys,time,operator
+import sys, time, operator, string
 from CommandLine import *
 
 try:
@@ -55,6 +42,111 @@ try:
     pickle = cPickle
 except ImportError:
     import pickle
+
+# Version number; version history: see README file !
+__version__ = '2.0'
+
+### Constants
+
+# Second fractions
+MILLI_SECONDS = 1e3
+MICRO_SECONDS = 1e6
+
+# Percent unit
+PERCENT = 100
+
+# Horizontal line length
+LINE = 79
+
+# Minimum test run-time
+MIN_TEST_RUNTIME = 1e-3
+
+# Number of calibration runs to use for calibrating the tests
+CALIBRATION_RUNS = 20
+
+# Number of calibration loops to run for each calibration run
+CALIBRATION_LOOPS = 20
+
+# Allow skipping calibration ?
+ALLOW_SKIPPING_CALIBRATION = 1
+
+# Timer types
+TIMER_TIME_TIME = 'time.time'
+TIMER_TIME_CLOCK = 'time.clock'
+TIMER_SYSTIMES_PROCESSTIME = 'systimes.processtime'
+
+# Choose platform default timer
+if sys.platform[:3] == 'win':
+    # On WinXP this has 2.5ms resolution
+    TIMER_PLATFORM_DEFAULT = TIMER_TIME_CLOCK
+else:
+    # On Linux this has 1ms resolution
+    TIMER_PLATFORM_DEFAULT = TIMER_TIME_TIME
+
+# Print debug information ?
+_debug = 0
+
+### Helpers
+
+def get_timer(timertype):
+
+    if timertype == TIMER_TIME_TIME:
+        return time.time
+    elif timertype == TIMER_TIME_CLOCK:
+        return time.clock
+    elif timertype == TIMER_SYSTIMES_PROCESSTIME:
+        import systimes
+        return systimes.processtime
+    else:
+        raise TypeError('unknown timer type: %s' % timertype)
+
+def get_machine_details():
+
+    import platform
+    if _debug:
+        print 'Getting machine details...'
+    buildno, builddate = platform.python_build()
+    python = platform.python_version()
+    if python > '2.0':
+        try:
+            unichr(100000)
+        except ValueError:
+            # UCS2 build (standard)
+            unicode = 'UCS2'
+        else:
+            # UCS4 build (most recent Linux distros)
+            unicode = 'UCS4'
+    else:
+        unicode = None
+    bits, linkage = platform.architecture()
+    return {
+        'platform': platform.platform(),
+        'processor': platform.processor(),
+        'executable': sys.executable,
+        'python': platform.python_version(),
+        'compiler': platform.python_compiler(),
+        'buildno': buildno,
+        'builddate': builddate,
+        'unicode': unicode,
+        'bits': bits,
+        }
+
+def print_machine_details(d, indent=''):
+
+    l = ['Machine Details:',
+         '   Platform ID:  %s' % d.get('platform', 'n/a'),
+         '   Processor:    %s' % d.get('processor', 'n/a'),
+         '',
+         'Python:',
+         '   Executable:   %s' % d.get('executable', 'n/a'),
+         '   Version:      %s' % d.get('python', 'n/a'),
+         '   Compiler:     %s' % d.get('compiler', 'n/a'),
+         '   Bits:         %s' % d.get('bits', 'n/a'),
+         '   Build:        %s (#%s)' % (d.get('builddate', 'n/a'),
+                                        d.get('buildno', 'n/a')),
+         '   Unicode:      %s' % d.get('unicode', 'n/a'),
+         ]
+    print indent + string.join(l, '\n' + indent) + '\n'
 
 ### Test baseclass
 
@@ -84,7 +176,7 @@ class Test:
     # Version number of the test as float (x.yy); this is important
     # for comparisons of benchmark runs - tests with unequal version
     # number will not get compared.
-    version = 1.0
+    version = 2.0
 
     # The number of abstract operations done in each round of the
     # test. An operation is the basic unit of what you want to
@@ -97,36 +189,125 @@ class Test:
 
     # Number of rounds to execute per test run. This should be
     # adjusted to a figure that results in a test run-time of between
-    # 20-50 seconds.
-    rounds = 10000
+    # 1-2 seconds.
+    rounds = 100000
 
     ### Internal variables
 
     # Mark this class as implementing a test
     is_a_test = 1
 
-    # Misc. internal variables
-    last_timing = (0,0,0) # last timing (real,run,calibration)
-    warp = 1            # warp factor this test uses
-    cruns = 20          # number of calibration runs
-    overhead = None     # list of calibration timings
+    # Last timing: (real, run, overhead)
+    last_timing = (0.0, 0.0, 0.0)
 
-    def __init__(self,warp=1):
+    # Warp factor to use for this test
+    warp = 1
 
-        if warp > 1:
-            self.rounds = self.rounds / warp
+    # Number of calibration runs to use
+    calibration_runs = CALIBRATION_RUNS
+
+    # List of calibration timings
+    overhead_times = None
+
+    # List of test run timings
+    times = []
+
+    # Timer used for the benchmark
+    timer = TIMER_PLATFORM_DEFAULT
+
+    def __init__(self, warp=None, calibration_runs=None, timer=None):
+
+        # Set parameters
+        if warp is not None:
+            self.rounds = int(self.rounds / warp)
             if self.rounds == 0:
-                self.rounds = 1
+                raise ValueError('warp factor set too high')
             self.warp = warp
+        if calibration_runs is not None:
+            if (not ALLOW_SKIPPING_CALIBRATION and
+                calibration_runs < 1):
+                raise ValueError('at least one calibration run is required')
+            self.calibration_runs = calibration_runs
+        if timer is not None:
+            timer = timer
+
+        # Init variables
         self.times = []
-        self.overhead = []
+        self.overhead_times = []
+
         # We want these to be in the instance dict, so that pickle
         # saves them
         self.version = self.version
         self.operations = self.operations
         self.rounds = self.rounds
 
-    def run(self, cruns):
+    def get_timer(self):
+
+        """ Return the timer function to use for the test.
+
+        """
+        return get_timer(self.timer)
+
+    def compatible(self, other):
+
+        """ Return 1/0 depending on whether the test is compatible
+            with the other Test instance or not.
+
+        """
+        if self.version != other.version:
+            return 0
+        if self.rounds != other.rounds:
+            return 0
+        return 1
+
+    def calibrate_test(self):
+
+        if self.calibration_runs == 0:
+            self.overhead_times = [0.0]
+            return
+
+        calibrate = self.calibrate
+        timer = self.get_timer()
+        calibration_loops = range(CALIBRATION_LOOPS)
+
+        # Time the calibration loop overhead
+        prep_times = []
+        for i in range(self.calibration_runs):
+            t = timer()
+            for i in calibration_loops:
+                pass
+            t = timer() - t
+            prep_times.append(t)
+        min_prep_time = min(prep_times)
+        if _debug:
+            print
+            print 'Calib. prep time     = %.6fms' % (
+                min_prep_time * MILLI_SECONDS)
+
+        # Time the calibration runs (doing CALIBRATION_LOOPS loops of
+        # .calibrate() method calls each)
+        for i in range(self.calibration_runs):
+            t = timer()
+            for i in calibration_loops:
+                calibrate()
+            t = timer() - t
+            self.overhead_times.append(t / CALIBRATION_LOOPS
+                                       - min_prep_time)
+
+        # Check the measured times
+        min_overhead = min(self.overhead_times)
+        max_overhead = max(self.overhead_times)
+        if _debug:
+            print 'Calib. overhead time = %.6fms' % (
+                min_overhead * MILLI_SECONDS)
+        if min_overhead < 0.0:
+            raise ValueError('calibration setup did not work')
+        if max_overhead - min_overhead > 0.1:
+            raise ValueError(
+                'overhead calibration timing range too inaccurate: '
+                '%r - %r' % (min_overhead, max_overhead))
+
+    def run(self):
 
         """ Run the test in two phases: first calibrate, then
             do the actual test. Be careful to keep the calibration
@@ -134,27 +315,23 @@ class Test:
 
         """
         test = self.test
-        calibrate = self.calibrate
-        clock = time.clock
-        # first calibrate
-        t = clock()
-        calibrate()
-        offset = clock() - t
-        if cruns:
-            for i in range(cruns-1):
-                t = clock()
-                calibrate()
-                t = clock() - t
-                if t < offset:
-                    offset = t
-        # now the real thing
-        t = clock()
+        timer = self.get_timer()
+
+        # Get calibration
+        min_overhead = min(self.overhead_times)
+
+        # Test run
+        t = timer()
         test()
-        t = clock() - t
-        if t < 0.01:
-            sys.exit("Lower warp required: test times < 10 ms are unreliable")
-        self.last_timing = (t-offset,t,offset)
-        self.times.append(t-offset)
+        t = timer() - t
+        if t < MIN_TEST_RUNTIME:
+            raise ValueError('warp factor too high: '
+                             'test times are < 10ms')
+        eff_time = t - min_overhead
+        if eff_time < 0:
+            raise ValueError('wrong calibration')
+        self.last_timing = (eff_time, t, min_overhead)
+        self.times.append(eff_time)
 
     def calibrate(self):
 
@@ -176,33 +353,33 @@ class Test:
             self.operations number of operations each.
 
         """
-        # do some tests
         return
 
     def stat(self):
 
-        """ Returns four values:
-        minimum round time
-        average time per round
-        average time per operation
-        average overhead time
+        """ Return test run statistics as tuple:
 
-        XXX Should this take warp factors into account?
+            (minimum run time,
+             average run time,
+             total run time,
+             average time per operation,
+             minimum overhead time)
+
         """
         runs = len(self.times)
         if runs == 0:
-            return 0,0
-        mintime = min(self.times)
-        totaltime = reduce(operator.add,self.times,0.0)
-        avg = totaltime / float(runs)
-        op_avg = totaltime / float(runs * self.rounds * self.operations)
-        if self.overhead:
-            totaloverhead = reduce(operator.add,self.overhead,0.0)
-            ov_avg = totaloverhead / float(runs)
+            return 0.0, 0.0, 0.0, 0.0
+        min_time = min(self.times)
+        total_time = reduce(operator.add, self.times, 0.0)
+        avg_time = total_time / float(runs)
+        operation_avg = total_time / float(runs
+                                           * self.rounds
+                                           * self.operations)
+        if self.overhead_times:
+            min_overhead = min(self.overhead_times)
         else:
-            # use self.last_timing - not too accurate
-            ov_avg = self.last_timing[2]
-        return mintime, avg, op_avg, ov_avg
+            min_overhead = self.last_timing[2]
+        return min_time, avg_time, total_time, operation_avg, min_overhead
 
 ### Load Setup
 
@@ -215,153 +392,353 @@ import Setup
 
 class Benchmark:
 
-    name = '?'                  # Name of the benchmark
-    rounds = 1                  # Number of rounds to run
+    # Name of the benchmark
+    name = ''
+
+    # Number of benchmark rounds to run
+    rounds = 1
+
+    # Warp factor use to run the tests
     warp = 1                    # Warp factor
-    roundtime = 0               # Average round time
-    version = None              # Benchmark version number (see __init__)
-                                # as float x.yy
 
-    def __init__(self):
+    # Average benchmark round time
+    roundtime = 0
 
-        self.tests = {}
-        self.version = 0.31
+    # Benchmark version number as float x.yy
+    version = 2.0
 
-    def load_tests(self, setupmod, warp=1, limitnames="", verbose=0):
+    # Produce verbose output ?
+    verbose = 0
 
-        self.warp = warp
-        if limitnames:
-            limitnames = re.compile(limitnames, re.I)
+    # Dictionary with the machine details
+    machine_details = None
+
+    # Timer used for the benchmark
+    timer = TIMER_PLATFORM_DEFAULT
+
+    def __init__(self, name, verbose=None, timer=None, warp=None,
+                 calibration_runs=None):
+        
+        if name:
+            self.name = name
         else:
-            limitnames = None
-        tests = self.tests
-        if verbose:
-            print 'Searching for tests ...',
-        setupmod.__dict__.values()
-        for c in setupmod.__dict__.values():
-            if not hasattr(c,'is_a_test'):
+            self.name = '%04i-%02i-%02i %02i:%02i:%02i' % \
+                        (time.localtime(time.time())[:6])
+        if verbose is not None:
+            self.verbose = verbose
+        if timer is not None:
+            self.timer = timer
+        if warp is not None:
+            self.warp = warp
+        if calibration_runs is not None:
+            self.calibration_runs = calibration_runs
+
+        # Init vars
+        self.tests = {}
+        if _debug:
+            print 'Getting machine details...'
+        self.machine_details = get_machine_details()
+        
+        # Make .version an instance attribute to have it saved in the
+        # Benchmark pickle
+        self.version = self.version
+
+    def get_timer(self):
+
+        """ Return the timer function to use for the test.
+
+        """
+        return get_timer(self.timer)
+
+    def compatible(self, other):
+
+        """ Return 1/0 depending on whether the benchmark is
+            compatible with the other Benchmark instance or not.
+
+        """
+        if self.version != other.version:
+            return 0
+        if (self.machine_details == other.machine_details and
+            self.timer != other.timer):
+            return 0
+        if (self.calibration_runs == 0 and
+            other.calibration_runs != 0):
+            return 0
+        if (self.calibration_runs != 0 and
+            other.calibration_runs == 0):
+            return 0
+        return 1
+
+    def load_tests(self, setupmod, limitnames=None):
+
+        # Add tests
+        if self.verbose:
+            print 'Searching for tests ...'
+            print '--------------------------------------'
+        for testclass in setupmod.__dict__.values():
+            if not hasattr(testclass, 'is_a_test'):
                 continue
-            name = c.__name__
+            name = testclass.__name__
             if  name == 'Test':
                 continue
-            if limitnames is not None and limitnames.search(name) is None:
+            if (limitnames is not None and
+                limitnames.search(name) is None):
                 continue
-            tests[name] = c(warp)
-        l = tests.keys()
+            self.tests[name] = testclass(
+                warp=self.warp,
+                calibration_runs=self.calibration_runs,
+                timer=self.timer)
+        l = self.tests.keys()
         l.sort()
-        if verbose:
+        if self.verbose:
+            for name in l:
+                print '  %s' % name
+            print '--------------------------------------'
+            print '  %i tests found' % len(l)
             print
-            for t in l:
-                print '  ', t
-            print len(l), "tests found"
+
+    def calibrate(self):
+
+        print 'Calibrating tests. Please wait...'
+        if self.verbose:
+            print
+            print 'Test                              min      max'
+            print '-' * LINE
+        tests = self.tests.items()
+        tests.sort()
+        for i in range(len(tests)):
+            name, test = tests[i]
+            test.calibrate_test()
+            if self.verbose:
+                print '%30s:  %6.3fms  %6.3fms' % \
+                      (name,
+                       min(test.overhead_times) * MILLI_SECONDS,
+                       max(test.overhead_times) * MILLI_SECONDS)
         print
 
-    def run(self, verbose, cruns):
+    def run(self):
 
         tests = self.tests.items()
         tests.sort()
-        clock = time.clock
-        print 'Running %i round(s) of the suite at warp factor %i:' % (self.rounds, self.warp)
+        timer = self.get_timer()
+        print 'Running %i round(s) of the suite at warp factor %i:' % \
+              (self.rounds, self.warp)
         print
-        roundtime = clock()
+        self.roundtimes = []
         for i in range(self.rounds):
-            roundstarttime = clock()
-            if verbose:
-                print ' Round %-25i  real   abs    overhead' % (i+1)
+            if self.verbose:
+                print ' Round %-25i  effective   absolute  overhead' % (i+1)
+            total_eff_time = 0.0
             for j in range(len(tests)):
-                name, t = tests[j]
-                if verbose:
+                name, test = tests[j]
+                if self.verbose:
                     print '%30s:' % name,
-                t.run(cruns)
-                if verbose:
-                    print '  %.3fr %.3fa %.3fo' % t.last_timing
-            if verbose:
-                print '                                 ----------------------'
-                print '            Average round time:      %.3f seconds' % \
-                    ((clock() - roundtime)/(i+1))
+                test.run()
+                (eff_time, abs_time, min_overhead) = test.last_timing
+                total_eff_time = total_eff_time + eff_time
+                if self.verbose:
+                    print '    %5.0fms    %5.0fms %7.3fms' % \
+                          (eff_time * MILLI_SECONDS,
+                           abs_time * MILLI_SECONDS,
+                           min_overhead * MILLI_SECONDS)
+            self.roundtimes.append(total_eff_time)
+            if self.verbose:
+                print ('                   '
+                       '               ------------------------------')
+                print ('                   '
+                       '     Totals:    %6.0fms' %
+                       (total_eff_time * MILLI_SECONDS))
                 print
             else:
-                print '%d done in %.3f seconds' % (i+1, (clock() - roundstarttime))
-        self.roundtime = (clock() - roundtime) / self.rounds
+                print '* Round %i done in %.3f seconds.' % (i+1,
+                                                            total_eff_time)
         print
 
-    def print_stat(self, compare_to=None, hidenoise=0):
+    def stat(self):
 
-        if not compare_to:
-            print '%-30s       min run    avg run    per oprn  overhead' % 'Tests:'
-            print '-'*77
-            tests = self.tests.items()
-            tests.sort()
-            totalmintime = 0
-            for name,t in tests:
-                mintime,avg,op_avg,ov_avg = t.stat()
-                totalmintime += mintime
-                print '%30s: %9.2f ms %9.2f ms %6.2f us  %6.2f' % \
-                      (name,mintime*1000.0,avg*1000.0,op_avg*1000000.0,ov_avg*1000.0)
-            print '-'*77
-            print '%30s: %9.2f ms' % \
-                  ('Notional minimum round time', totalmintime * 1000.0)
+        """ Return benchmark run statistics as tuple:
 
-        else:
-            print 'Comparing with: %s (rounds=%i, warp=%i)' % \
-                  (compare_to.name,compare_to.rounds,compare_to.warp)
-            print '%-30s      min run     cmp run     avg run      diff' % \
-                  'Tests:'
-            print '-'*77
-            tests = self.tests.items()
-            tests.sort()
-            compatible = 1
-            totalmintime = other_totalmintime = 0
-            for name, t in tests:
-                mintime, avg, op_avg, ov_avg = t.stat()
-                totalmintime += mintime
-                try:
-                    other = compare_to.tests[name]
-                except KeyError:
-                    other = None
-                if other and other.version == t.version and \
-                   other.operations == t.operations:
-                    mintime1, avg1, op_avg1, ov_avg1 = other.stat()
-                    other_totalmintime += mintime1
-                    diff = ((mintime*self.warp)/(mintime1*other.warp) - 1.0)*100.0
-                    if hidenoise and abs(qop_avg) < 10:
-                        diff = ''
-                    else:
-                        diff = '%+7.2f%%' % diff
-                else:
-                    qavg, diff = 'n/a', 'n/a'
-                    compatible = 0
-                print '%30s: %8.2f ms %8.2f ms %8.2f ms  %8s' % \
-                      (name,mintime*1000.0,mintime1*1000.0 * compare_to.warp/self.warp, avg*1000.0,diff)
-            print '-'*77
-            #
-            # Summarise test results
-            #
-            if compatible and compare_to.roundtime > 0 and \
-               compare_to.version == self.version:
-                print '%30s: %8.2f ms %8.2f ms              %+7.2f%%' % \
-                      ('Notional minimum round time', totalmintime * 1000.0,
-                      other_totalmintime * 1000.0 * compare_to.warp/self.warp,
-                       ((totalmintime*self.warp)/
-                        (other_totalmintime*compare_to.warp)-1.0)*100.0)
+            (minimum round time,
+             average round time,
+             maximum round time)
+
+            XXX Currently not used, since the benchmark does test
+                statistics across all rounds.
+
+        """
+        runs = len(self.roundtimes)
+        if runs == 0:
+            return 0.0, 0.0
+        min_time = min(self.roundtimes)
+        total_time = reduce(operator.add, self.roundtimes, 0.0)
+        avg_time = total_time / float(runs)
+        max_time = max(self.roundtimes)
+        return (min_time, avg_time, max_time)
+
+    def print_header(self, title='Benchmark'):
+
+        print '-' * LINE
+        print '%s: %s' % (title, self.name)
+        print '-' * LINE
+        print
+        print '    Rounds: %s' % self.rounds
+        print '    Warp:   %s' % self.warp
+        print '    Timer:  %s' % self.timer
+        print
+        if self.machine_details:
+            print_machine_details(self.machine_details, indent='    ')
+            print
+
+    def print_benchmark(self, hidenoise=0, limitnames=None):
+
+        print ('Test                          '
+               '   minimum  average  operation  overhead')
+        print '-' * LINE
+        tests = self.tests.items()
+        tests.sort()
+        total_min_time = 0.0
+        total_avg_time = 0.0
+        for name, test in tests:
+            if (limitnames is not None and
+                limitnames.search(name) is None):
+                continue
+            (min_time,
+             avg_time,
+             total_time,
+             op_avg,
+             min_overhead) = test.stat()
+            total_min_time = total_min_time + min_time
+            total_avg_time = total_avg_time + avg_time
+            print '%30s:  %5.0fms  %5.0fms  %6.2fus  %7.3fms' % \
+                  (name,
+                   min_time * MILLI_SECONDS,
+                   avg_time * MILLI_SECONDS,
+                   op_avg * MICRO_SECONDS,
+                   min_overhead *MILLI_SECONDS)
+        print '-' * LINE
+        print ('Totals:                        '
+               ' %6.0fms %6.0fms' %
+               (total_min_time * MILLI_SECONDS,
+                total_avg_time * MILLI_SECONDS,
+                ))
+        print
+
+    def print_comparison(self, compare_to, hidenoise=0, limitnames=None):
+
+        # Check benchmark versions
+        if compare_to.version != self.version:
+            print ('* Benchmark versions differ: '
+                   'cannot compare this benchmark to "%s" !' %
+                   compare_to.name)
+            print
+            self.print_benchmark(hidenoise=hidenoise,
+                                 limitnames=limitnames)
+            return
+
+        # Print header
+        compare_to.print_header('Comparing with')
+        print ('Test                          '
+               '   minimum run-time        average  run-time')
+        print ('                              '
+               '   this    other   diff    this    other   diff')
+        print '-' * LINE
+
+        # Print test comparisons
+        tests = self.tests.items()
+        tests.sort()
+        total_min_time = other_total_min_time = 0.0
+        total_avg_time = other_total_avg_time = 0.0
+        benchmarks_compatible = self.compatible(compare_to)
+        tests_compatible = 1
+        for name, test in tests:
+            if (limitnames is not None and
+                limitnames.search(name) is None):
+                continue
+            (min_time,
+             avg_time,
+             total_time,
+             op_avg,
+             min_overhead) = test.stat()
+            total_min_time = total_min_time + min_time
+            total_avg_time = total_avg_time + avg_time
+            try:
+                other = compare_to.tests[name]
+            except KeyError:
+                other = None
+            if other is None:
+                # Other benchmark doesn't include the given test
+                min_diff, avg_diff = 'n/a', 'n/a'
+                other_min_time = 0.0
+                other_avg_time = 0.0
+                tests_compatible = 0
             else:
-                print '%30s: %9.2f ms                    n/a' % \
-                      ('Notional minimum round time', totalmintime * 1000.0)
+                (other_min_time,
+                 other_avg_time,
+                 other_total_time,
+                 other_op_avg,
+                 other_min_overhead) = other.stat()
+                other_total_min_time = other_total_min_time + other_min_time
+                other_total_avg_time = other_total_avg_time + other_avg_time
+                if (benchmarks_compatible and
+                    test.compatible(other)):
+                    # Both benchmark and tests are comparible
+                    min_diff = ((min_time * self.warp) /
+                                (other_min_time * other.warp) - 1.0)
+                    avg_diff = ((avg_time * self.warp) /
+                                (other_avg_time * other.warp) - 1.0)
+                    if hidenoise and abs(min_diff) < 10.0:
+                        min_diff = ''
+                    else:
+                        min_diff = '%+5.1f%%' % (min_diff * PERCENT)
+                    if hidenoise and abs(avg_diff) < 10.0:
+                        avg_diff = ''
+                    else:
+                        avg_diff = '%+5.1f%%' % (avg_diff * PERCENT)
+                else:
+                    # Benchmark or tests are not comparible
+                    min_diff, avg_diff = 'n/a', 'n/a'
+                    tests_compatible = 0
+            print '%30s: %5.0fms %5.0fms %7s %5.0fms %5.0fms %7s' % \
+                  (name,
+                   min_time * MILLI_SECONDS,
+                   other_min_time * MILLI_SECONDS * compare_to.warp / self.warp,
+                   min_diff,
+                   avg_time * MILLI_SECONDS,
+                   other_avg_time * MILLI_SECONDS * compare_to.warp / self.warp,
+                   avg_diff)
+        print '-' * LINE
+
+        # Summarise test results
+        if not benchmarks_compatible or not tests_compatible:
+            min_diff, avg_diff = 'n/a', 'n/a'
+        else:
+            if other_total_min_time != 0.0:
+                min_diff = '%+5.1f%%' % (
+                    ((total_min_time * self.warp) /
+                     (other_total_min_time * compare_to.warp) - 1.0) * PERCENT)
+            else:
+                min_diff = 'n/a'
+            if other_total_avg_time != 0.0:
+                avg_diff = '%+5.1f%%' % (
+                    ((total_avg_time * self.warp) /
+                     (other_total_avg_time * compare_to.warp) - 1.0) * PERCENT)
+            else:
+                avg_diff = 'n/a'
+        print ('Totals:                       '
+               '  %5.0fms %5.0fms %7s %5.0fms %5.0fms %7s' %
+               (total_min_time * MILLI_SECONDS,
+                (other_total_min_time * compare_to.warp/self.warp
+                 * MILLI_SECONDS),
+                min_diff,
+                total_avg_time * MILLI_SECONDS,
+                (other_total_avg_time * compare_to.warp/self.warp
+                 * MILLI_SECONDS),
+                avg_diff
+               ))
         print
-
-def print_machine():
-
-    import platform
-    print 'Machine Details:'
-    print '   Platform ID:  %s' % platform.platform()
-    print '   Executable:   %s' % sys.executable
-    # There's a bug in Python 2.2b1+...
-    if sys.version[:6] == '2.2b1+':
-        return
-    print '   Python:       %s' % platform.python_version()
-    print '   Compiler:     %s' % platform.python_compiler()
-    buildno, builddate = platform.python_build()
-    print '   Build:        %s (#%s)' % (builddate, buildno)
+        print '(this=%s, other=%s)' % (self.name,
+                                       compare_to.name)
+        print
 
 class PyBenchCmdline(Application):
 
@@ -370,49 +747,63 @@ class PyBenchCmdline(Application):
 
     version = __version__
 
-    options = [ArgumentOption('-n','number of rounds',Setup.Number_of_rounds),
-               ArgumentOption('-f','save benchmark to file arg',''),
-               ArgumentOption('-c','compare benchmark with the one in file arg',''),
-               ArgumentOption('-s','show benchmark in file arg, then exit',''),
-               SwitchOption('-S','show statistics of benchmarks',0),
-               ArgumentOption('-w','set warp factor to arg',Setup.Warp_factor),
-               SwitchOption('-d','hide noise in compares', 0),
-               SwitchOption('-v','verbose output (not recommended)', 0),
-               SwitchOption('--no-gc','disable garbage collection', 0),
-               SwitchOption('--no-syscheck',
-                    '"disable" sys check interval (set to sys.maxint)', 0),
-               ArgumentOption('-t', 'tests containing substring', ''),
-               ArgumentOption('-C', 'number of calibration runs', 20)
+    debug = _debug
+
+    options = [ArgumentOption('-n',
+                              'number of rounds',
+                              Setup.Number_of_rounds),
+               ArgumentOption('-f',
+                              'save benchmark to file arg',
+                              ''),
+               ArgumentOption('-c',
+                              'compare benchmark with the one in file arg',
+                              ''),
+               ArgumentOption('-s',
+                              'show benchmark in file arg, then exit',
+                              ''),
+               ArgumentOption('-w',
+                              'set warp factor to arg',
+                              Setup.Warp_factor),
+               ArgumentOption('-t',
+                              'run only tests with names matching arg',
+                              ''),
+               ArgumentOption('-C',
+                              'set the number of calibration runs to arg',
+                              CALIBRATION_RUNS),
+               SwitchOption('-d',
+                            'hide noise in comparisons',
+                            0),
+               SwitchOption('-v',
+                            'verbose output (not recommended)',
+                            0),
+               SwitchOption('--with-gc',
+                            'enable garbage collection',
+                            0),
+               SwitchOption('--with-syscheck',
+                            'use default sys check interval',
+                            0),
+               ArgumentOption('--timer',
+                            'use given timer',
+                            TIMER_PLATFORM_DEFAULT),
                ]
 
     about = """\
 The normal operation is to run the suite and display the
-results. Use -f to save them for later reuse or comparisms.
+results. Use -f to save them for later reuse or comparisons.
+
+Available timers:
+
+   time.time
+   time.clock
+   systimes.processtime
 
 Examples:
 
-python1.5 pybench.py -w 100 -f p15
-python1.4 pybench.py -w 100 -f p14
-python pybench.py -s p15 -c p14
+python2.1 pybench.py -f p21.pybench
+python2.5 pybench.py -f p25.pybench
+python pybench.py -s p25.pybench -c p21.pybench
 """
     copyright = __copyright__
-
-    def handle_S(self, value):
-
-        """ Display one line stats for each benchmark file given on the
-            command line.
-
-        """
-        for benchmark in self.files:
-            try:
-                f = open(benchmark, 'rb')
-                bench = pickle.load(f)
-                f.close()
-            except IOError:
-                print '* Error opening/reading file %s' % repr(benchmark)
-            else:
-                print '%s,%-.2f,ms' % (benchmark, bench.roundtime*1000.0)
-        return 0
 
     def main(self):
 
@@ -421,37 +812,51 @@ python pybench.py -s p15 -c p14
         show_bench = self.values['-s']
         compare_to = self.values['-c']
         hidenoise = self.values['-d']
-        warp = self.values['-w']
-        nogc = self.values['--no-gc']
+        warp = int(self.values['-w'])
+        withgc = self.values['--with-gc']
         limitnames = self.values['-t']
+        if limitnames:
+            if _debug:
+                print '* limiting test names to one with substring "%s"' % \
+                      limitnames
+            limitnames = re.compile(limitnames, re.I)
+        else:
+            limitnames = None
         verbose = self.verbose
-        nosyscheck = self.values['--no-syscheck']
-        cruns = self.values['-C']
-        print "CRUNS:", cruns
+        withsyscheck = self.values['--with-syscheck']
+        calibration_runs = self.values['-C']
+        timer = self.values['--timer']
 
-        print 'PYBENCH',__version__
+        print '-' * LINE
+        print 'PYBENCH %s' % __version__
+        print '-' * LINE
+        print '* using Python %s' % (string.split(sys.version)[0])
 
-        # Switch off GC
-        if nogc:
+        # Switch off garbage collection
+        if not withgc:
             try:
                 import gc
             except ImportError:
-                nogc = 0
+                print '* Python version doesn\'t support garbage collection'
             else:
-                if self.values['--no-gc']:
-                    gc.disable()
-                    print 'NO GC'
+                gc.disable()
+                print '* disabled garbage collection'
 
-        # maximise sys check interval
-        if nosyscheck:
-            sys.setcheckinterval(sys.maxint)
-            print 'CHECKINTERVAL =', sys.maxint
+        # "Disable" sys check interval
+        if not withsyscheck:
+            # Too bad the check interval uses an int instead of a long...
+            value = 2147483647
+            sys.setcheckinterval(value)
+            print '* system check interval set to maximum: %s' % value
+
+        if timer == TIMER_SYSTIMES_PROCESSTIME:
+            import systimes
+            print '* using timer: systimes.processtime (%s)' % \
+                  systimes.SYSTIMES_IMPLEMENTATION
+        else:
+            print '* using timer: %s' % timer
 
         print
-
-        if not compare_to:
-            print_machine()
-            print
 
         if compare_to:
             try:
@@ -460,8 +865,10 @@ python pybench.py -s p15 -c p14
                 bench.name = compare_to
                 f.close()
                 compare_to = bench
-            except IOError:
-                print '* Error opening/reading file',compare_to
+            except IOError, reason:
+                print '* Error opening/reading file %s: %s' % (
+                    repr(compare_to),
+                    reason)
                 compare_to = None
 
         if show_bench:
@@ -470,37 +877,52 @@ python pybench.py -s p15 -c p14
                 bench = pickle.load(f)
                 bench.name = show_bench
                 f.close()
-                print 'Benchmark: %s (rounds=%i, warp=%i)' % \
-                      (bench.name,bench.rounds,bench.warp)
-                print
-                bench.print_stat(compare_to, hidenoise)
+                bench.print_header()
+                if compare_to:
+                    bench.print_comparison(compare_to,
+                                           hidenoise=hidenoise,
+                                           limitnames=limitnames)
+                else:
+                    bench.print_benchmark(hidenoise=hidenoise,
+                                          limitnames=limitnames)
             except IOError:
-                print '* Error opening/reading file',show_bench
+                print '* Error opening/reading file %s: %s' % (
+                    repr(show_bench),
+                    reason)
                 print
             return
 
         if reportfile:
-            if nogc:
-                print 'Benchmark: %s (rounds=%i, warp=%i, no GC)' % \
-                      (reportfile,rounds,warp)
-            else:
-                print 'Benchmark: %s (rounds=%i, warp=%i)' % \
-                      (reportfile,rounds,warp)
+            print 'Creating benchmark: %s (rounds=%i, warp=%i)' % \
+                  (reportfile, rounds, warp)
             print
 
         # Create benchmark object
-        bench = Benchmark()
+        bench = Benchmark(reportfile,
+                          verbose=verbose,
+                          timer=timer,
+                          warp=warp,
+                          calibration_runs=calibration_runs)
         bench.rounds = rounds
-        bench.load_tests(Setup, warp, limitnames, verbose)
+        bench.load_tests(Setup, limitnames=limitnames)
         try:
-            bench.run(verbose, cruns)
+            bench.calibrate()
+            bench.run()
         except KeyboardInterrupt:
             print
             print '*** KeyboardInterrupt -- Aborting'
             print
             return
-        bench.print_stat(compare_to)
-        # ring bell
+        bench.print_header()
+        if compare_to:
+            bench.print_comparison(compare_to,
+                                   hidenoise=hidenoise,
+                                   limitnames=limitnames)
+        else:
+            bench.print_benchmark(hidenoise=hidenoise,
+                                  limitnames=limitnames)
+
+        # Ring bell
         sys.stderr.write('\007')
 
         if reportfile:

@@ -2,22 +2,23 @@ from pybench import Test
 
 class SimpleListManipulation(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5* (6 + 6 + 6)
-    rounds = 60000
+    rounds = 130000
 
     def test(self):
 
         l = []
+        append = l.append
 
         for i in xrange(self.rounds):
 
-            l.append(2)
-            l.append(3)
-            l.append(4)
-            l.append(2)
-            l.append(3)
-            l.append(4)
+            append(2)
+            append(3)
+            append(4)
+            append(2)
+            append(3)
+            append(4)
 
             l[0] = 3
             l[1] = 4
@@ -33,12 +34,12 @@ class SimpleListManipulation(Test):
             x = l[4]
             x = l[5]
 
-            l.append(2)
-            l.append(3)
-            l.append(4)
-            l.append(2)
-            l.append(3)
-            l.append(4)
+            append(2)
+            append(3)
+            append(4)
+            append(2)
+            append(3)
+            append(4)
 
             l[0] = 3
             l[1] = 4
@@ -54,12 +55,12 @@ class SimpleListManipulation(Test):
             x = l[4]
             x = l[5]
 
-            l.append(2)
-            l.append(3)
-            l.append(4)
-            l.append(2)
-            l.append(3)
-            l.append(4)
+            append(2)
+            append(3)
+            append(4)
+            append(2)
+            append(3)
+            append(4)
 
             l[0] = 3
             l[1] = 4
@@ -75,12 +76,12 @@ class SimpleListManipulation(Test):
             x = l[4]
             x = l[5]
 
-            l.append(2)
-            l.append(3)
-            l.append(4)
-            l.append(2)
-            l.append(3)
-            l.append(4)
+            append(2)
+            append(3)
+            append(4)
+            append(2)
+            append(3)
+            append(4)
 
             l[0] = 3
             l[1] = 4
@@ -96,12 +97,12 @@ class SimpleListManipulation(Test):
             x = l[4]
             x = l[5]
 
-            l.append(2)
-            l.append(3)
-            l.append(4)
-            l.append(2)
-            l.append(3)
-            l.append(4)
+            append(2)
+            append(3)
+            append(4)
+            append(2)
+            append(3)
+            append(4)
 
             l[0] = 3
             l[1] = 4
@@ -124,15 +125,16 @@ class SimpleListManipulation(Test):
     def calibrate(self):
 
         l = []
+        append = l.append
 
         for i in xrange(self.rounds):
             pass
 
 class ListSlicing(Test):
 
-    version = 0.4
+    version = 2.0
     operations = 25*(3+1+2+1)
-    rounds = 400
+    rounds = 800
 
     def test(self):
 
@@ -141,7 +143,7 @@ class ListSlicing(Test):
 
         for i in xrange(self.rounds):
 
-            l = range(100)
+            l = n[:]
 
             for j in r:
 
@@ -159,17 +161,14 @@ class ListSlicing(Test):
         r = range(25)
 
         for i in xrange(self.rounds):
-
-            l = range(100)
-
             for j in r:
                 pass
 
 class SmallLists(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5*(1+ 6 + 6 + 3 + 1)
-    rounds = 60000
+    rounds = 80000
 
     def test(self):
 
@@ -177,12 +176,13 @@ class SmallLists(Test):
 
             l = []
 
-            l.append(2)
-            l.append(3)
-            l.append(4)
-            l.append(2)
-            l.append(3)
-            l.append(4)
+            append = l.append
+            append(2)
+            append(3)
+            append(4)
+            append(2)
+            append(3)
+            append(4)
 
             l[0] = 3
             l[1] = 4
@@ -199,12 +199,13 @@ class SmallLists(Test):
 
             l = []
 
-            l.append(2)
-            l.append(3)
-            l.append(4)
-            l.append(2)
-            l.append(3)
-            l.append(4)
+            append = l.append
+            append(2)
+            append(3)
+            append(4)
+            append(2)
+            append(3)
+            append(4)
 
             l[0] = 3
             l[1] = 4
@@ -221,12 +222,13 @@ class SmallLists(Test):
 
             l = []
 
-            l.append(2)
-            l.append(3)
-            l.append(4)
-            l.append(2)
-            l.append(3)
-            l.append(4)
+            append = l.append
+            append(2)
+            append(3)
+            append(4)
+            append(2)
+            append(3)
+            append(4)
 
             l[0] = 3
             l[1] = 4
@@ -243,12 +245,13 @@ class SmallLists(Test):
 
             l = []
 
-            l.append(2)
-            l.append(3)
-            l.append(4)
-            l.append(2)
-            l.append(3)
-            l.append(4)
+            append = l.append
+            append(2)
+            append(3)
+            append(4)
+            append(2)
+            append(3)
+            append(4)
 
             l[0] = 3
             l[1] = 4
@@ -265,12 +268,13 @@ class SmallLists(Test):
 
             l = []
 
-            l.append(2)
-            l.append(3)
-            l.append(4)
-            l.append(2)
-            l.append(3)
-            l.append(4)
+            append = l.append
+            append(2)
+            append(3)
+            append(4)
+            append(2)
+            append(3)
+            append(4)
 
             l[0] = 3
             l[1] = 4
@@ -288,4 +292,4 @@ class SmallLists(Test):
     def calibrate(self):
 
         for i in xrange(self.rounds):
-            l = []
+            pass

@@ -2,9 +2,9 @@ from pybench import Test
 
 class TryRaiseExcept(Test):
 
-    version = 0.1
-    operations = 2 + 3
-    rounds = 60000
+    version = 2.0
+    operations = 2 + 3 + 3
+    rounds = 80000
 
     def test(self):
 
@@ -29,6 +29,18 @@ class TryRaiseExcept(Test):
                 pass
             try:
                 raise error,"something"
+            except:
+                pass
+            try:
+                raise error("something")
+            except:
+                pass
+            try:
+                raise error("something")
+            except:
+                pass
+            try:
+                raise error("something")
             except:
                 pass
 
@@ -42,9 +54,9 @@ class TryRaiseExcept(Test):
 
 class TryExcept(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 15 * 10
-    rounds = 200000
+    rounds = 150000
 
     def test(self):
 
@@ -677,3 +689,11 @@ class TryExcept(Test):
 
         for i in xrange(self.rounds):
             pass
+
+### Test to make Fredrik happy...
+
+if __name__ == '__main__':
+    import timeit
+    timeit.TestClass = TryRaiseExcept
+    timeit.main(['-s', 'test = TestClass(); test.rounds = 1000',
+                 'test.test()'])

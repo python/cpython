@@ -8,7 +8,7 @@ from string import join
 
 class ConcatUnicode(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 10 * 5
     rounds = 60000
 
@@ -90,7 +90,7 @@ class ConcatUnicode(Test):
 
 class CompareUnicode(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 10 * 5
     rounds = 150000
 
@@ -172,7 +172,7 @@ class CompareUnicode(Test):
 
 class CreateUnicodeWithConcat(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 10 * 5
     rounds = 80000
 
@@ -247,9 +247,9 @@ class CreateUnicodeWithConcat(Test):
 
 class UnicodeSlicing(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 5 * 7
-    rounds = 100000
+    rounds = 140000
 
     def test(self):
 
@@ -308,7 +308,7 @@ class UnicodeSlicing(Test):
 
 class UnicodeMappings(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 3 * (5 + 4 + 2 + 1)
     rounds = 10000
 
@@ -381,9 +381,9 @@ class UnicodeMappings(Test):
 
 class UnicodePredicates(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 5 * 9
-    rounds = 100000
+    rounds = 120000
 
     def test(self):
 
@@ -458,7 +458,7 @@ except ImportError:
 else:
     class UnicodeProperties(Test):
 
-        version = 0.1
+        version = 2.0
         operations = 5 * 8
         rounds = 100000
 

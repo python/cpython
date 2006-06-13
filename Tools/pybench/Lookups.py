@@ -2,7 +2,7 @@ from pybench import Test
 
 class SpecialClassAttribute(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5*(12 + 12)
     rounds = 100000
 
@@ -183,7 +183,7 @@ class SpecialClassAttribute(Test):
 
 class NormalClassAttribute(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5*(12 + 12)
     rounds = 100000
 
@@ -369,7 +369,7 @@ class NormalClassAttribute(Test):
 
 class SpecialInstanceAttribute(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5*(12 + 12)
     rounds = 100000
 
@@ -557,7 +557,7 @@ class SpecialInstanceAttribute(Test):
 
 class NormalInstanceAttribute(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5*(12 + 12)
     rounds = 100000
 
@@ -745,7 +745,7 @@ class NormalInstanceAttribute(Test):
 
 class BuiltinMethodLookup(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5*(3*5 + 3*5)
     rounds = 70000
 
