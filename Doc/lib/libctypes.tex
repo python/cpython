@@ -1615,6 +1615,9 @@ private class:
 Base class for C callable foreign functions.
 \end{classdesc*}
 
+Instances of foreign functions are also C compatible data types; they
+represent C function pointers.
+
 This behaviour can be customized by assigning to special attributes of
 the foreign function object.
 
@@ -1653,7 +1656,7 @@ Assign a Python function or another callable to this attribute.
 The callable will be called with three or more arguments:
 \end{memberdesc}
 
-\begin{funcdescni}{callable}{result, func, arguments, *others}
+\begin{funcdescni}{callable}{result, func, arguments}
 \code{result} is what the foreign function returns, as specified by the
 \member{restype} attribute.
 
@@ -1668,13 +1671,15 @@ behaviour on the arguments used.
 The object that this function returns will be returned from the
 foreign function call, but it can also check the result value and
 raise an exception if the foreign function call failed.
-
-\code{others} will usually be an empty tuple, it is only used in
-combination with \var{paramflags} documented below.
 \end{funcdescni}
 
-Instances of foreign functions are also C compatible data types; they
-represent C function pointers.
+\begin{excdesc}{ArgumentError()}
+This exception is raised when a foreign function call cannot
+convert one of the passed arguments.
+\end{excdesc}
+
+
+\subsubsection{Function prototypes\label{ctypes-function-prototypes}}
 
 Foreign functions can also be created by instantiating function
 prototypes.  Function prototypes are similar to function prototypes in
@@ -1715,15 +1720,12 @@ Create a C callable function (a callback function) from a Python
 \code{callable}.
 \end{funcdescni}
 
-\begin{funcdescni}{prototype}{}{name, library\optional{, paramflags}}
-Returns a foreign function by looking up \var{name} in the shared
-library \code{dll}.
-\end{funcdescni}
-
-\begin{funcdescni}{prototype}{}{ordinal, library\optional{, paramflags}}
-Returns a foreign function which is exported by the ordinal number
-\code{ordinal} in the shared library \code{dll}.  This mechanism only
-exists on Windows.
+\begin{funcdescni}{prototype}{func_spec\optional{, paramflags}}
+Returns a foreign function exported by a shared library.
+\code{func{\_}spec} must be a 2-tuple \code{(name{\_}or{\_}ordinal, library)}.
+The first item is the name of the exported function as string, or
+the ordinal of the exported function as small integer.  The second
+item is the shared library instance.
 \end{funcdescni}
 
 \begin{funcdescni}{prototype}{vtbl_index, name\optional{, paramflags\optional{, iid}}}
@@ -1738,14 +1740,120 @@ pointer to the COM interface as first argument, in addition to
 those parameters that are specified in the \member{argtypes} tuple.
 \end{funcdescni}
 
-XXX Document paramflags.
+The optional \var{paramflags} parameter creates foreign function
+wrappers with much more functionality than the features described
+above.
 
-XXX Where does the exception description belong?
+\var{paramflags} must be a tuple of the same length as \member{argtypes}.
 
-\begin{excdesc}{ArgumentError()}
-This exception is raised when a foreign function call cannot
-convert one of the passed arguments.
-\end{excdesc}
+Each item in this tuple contains further information about a
+parameter, it must be a tuple containing 1, 2, or 3 items.
+
+The first item is an integer containing flags for the parameter.
+
+\begin{datadescni}{1}
+Specifies an input parameter to the function.
+\end{datadescni}
+
+\begin{datadescni}{2}
+Output parameter.  The foreign function fills in a value.
+\end{datadescni}
+
+\begin{datadescni}{4}
+Input parameter which defaults to the integer zero.
+\end{datadescni}
+
+The optional second item is the parameter name as string.  If this is
+specified, the foreign function can be called with named parameters.
+
+The optional third item is the default value for this parameter.
+
+This example demonstrates how to wrap the Windows \code{MessageBoxA}
+function so that it supports default parameters and named arguments.
+The C declaration from the windows header file is this:
+\begin{verbatim}
+WINUSERAPI int WINAPI
+MessageBoxA(
+    HWND hWnd ,
+    LPCSTR lpText,
+    LPCSTR lpCaption,
+    UINT uType);
+\end{verbatim}
+
+Here is the wrapping with \code{ctypes}:
+\begin{quote}
+\begin{verbatim}>>> from ctypes import c_int, WINFUNCTYPE, windll
+>>> from ctypes.wintypes import HWND, LPCSTR, UINT
+>>> prototype = WINFUNCTYPE(c_int, HWND, LPCSTR, LPCSTR, c_uint)
+>>> paramflags = (1, "hwnd", 0), (1, "text", "Hi"), (1, "caption", None), (1, "flags", 0)
+>>> MessageBox = prototype(("MessageBoxA", windll.user32), paramflags)
+>>>\end{verbatim}
+\end{quote}
+
+The MessageBox foreign function can now be called in these ways:
+\begin{verbatim}
+>>> MessageBox()
+>>> MessageBox(text="Spam, spam, spam")
+>>> MessageBox(flags=2, text="foo bar")
+>>>
+\end{verbatim}
+
+A second example demonstrates output parameters.  The win32
+\code{GetWindowRect} function retrieves the dimensions of a specified
+window by copying them into \code{RECT} structure that the caller has to
+supply.  Here is the C declaration:
+\begin{verbatim}
+WINUSERAPI BOOL WINAPI
+GetWindowRect(
+    HWND hWnd,
+    LPRECT lpRect);
+\end{verbatim}
+
+Here is the wrapping with \code{ctypes}:
+\begin{quote}
+\begin{verbatim}>>> from ctypes import POINTER, WINFUNCTYPE, windll
+>>> from ctypes.wintypes import BOOL, HWND, RECT
+>>> prototype = WINFUNCTYPE(BOOL, HWND, POINTER(RECT))
+>>> paramflags = (1, "hwnd"), (2, "lprect")
+>>> GetWindowRect = prototype(("GetWindowRect", windll.user32), paramflags)
+>>>\end{verbatim}
+\end{quote}
+
+Functions with output parameters will automatically return the output
+parameter value if there is a single one, or a tuple containing the
+output parameter values when there are more than one, so the
+GetWindowRect function now returns a RECT instance, when called.
+
+Output parameters can be combined with the \member{errcheck} protocol to do
+further output processing and error checking.  The win32
+\code{GetWindowRect} api function returns a \code{BOOL} to signal success or
+failure, so this function could do the error checking, and raises an
+exception when the api call failed:
+\begin{verbatim}
+>>> def errcheck(result, func, args):
+...     if not result:
+...         raise WinError()
+...     return args
+>>> GetWindowRect.errcheck = errcheck
+>>>
+\end{verbatim}
+
+If the \member{errcheck} function returns the argument tuple it receives
+unchanged, \code{ctypes} continues the normal processing it does on the
+output parameters.  If you want to return a tuple of window
+coordinates instead of a \code{RECT} instance, you can retrieve the
+fields in the function and return them instead, the normal processing
+will no longer take place:
+\begin{verbatim}
+>>> def errcheck(result, func, args):
+...     if not result:
+...         raise WinError()
+...     rc = args[1]
+...     return rc.left, rc.top, rc.bottom, rc.right
+>>>
+>>> GetWindowRect.errcheck = errcheck
+>>>
+\end{verbatim}
 
 
 \subsubsection{Utility functions\label{ctypes-utility-functions}}
