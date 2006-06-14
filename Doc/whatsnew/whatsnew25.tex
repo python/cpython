@@ -1373,6 +1373,12 @@ ts = datetime.strptime('10:13:15 2006-03-07',
                        '%H:%M:%S %Y-%m-%d')
 \end{verbatim}
 
+\item The \method{SequenceMatcher.get_matching_blocks()} method
+in the \module{difflib} module now guarantees to return a minimal list
+of blocks describing matching subsequences.  Previously, the algorithm would
+occasionally break a block of matching elements into two list entries.
+(Enhancement by Tim Peters.)
+
 \item The \module{doctest} module gained a \code{SKIP} option that
 keeps an example from being executed at all.  This is intended for
 code snippets that are usage examples intended for the reader and
