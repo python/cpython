@@ -156,6 +156,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1117556: SimpleHTTPServer now tries to find and use the system's
+  mime.types file for determining MIME types.
+
 - Bug #1339007: Shelf objects now don't raise an exception in their
   __del__ method when initialization failed.
 
