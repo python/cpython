@@ -1576,19 +1576,19 @@ parameters are passed to the constructor of the library object.
 These prefabricated library loaders are available:
 
 \begin{datadescni}{cdll}
-Loads \class{CDLL} instances.
+Creates \class{CDLL} instances.
 \end{datadescni}
 
 \begin{datadescni}{windll}
-Windows only: Loads \class{WinDLL} instances.
+Windows only: Creates \class{WinDLL} instances.
 \end{datadescni}
 
 \begin{datadescni}{oledll}
-Windows only: Loads \class{OleDLL} instances.
+Windows only: Creates \class{OleDLL} instances.
 \end{datadescni}
 
 \begin{datadescni}{pydll}
-Loads \class{PyDLL} instances.
+Creates \class{PyDLL} instances.
 \end{datadescni}
 
 For accessing the C Python api directly, a ready-to-use Python shared
@@ -1598,49 +1598,149 @@ library object is available:
 An instance of \class{PyDLL} that exposes Python C api functions as
 attributes.  Note that all these functions are assumed to return
 integers, which is of course not always the truth, so you have to
-assign the correct \member{restype} attribute.
+assign the correct \member{restype} attribute to use these functions.
 \end{datadescni}
 
 
 \subsubsection{Foreign functions\label{ctypes-foreign-functions}}
 
-The ultimate goal of \code{ctypes} is to call functions in shared
-libraries, aka as foreign functions.  Foreign function instances can
-be created by retrieving them as attributes of loaded shared
-libraries, or by instantiating a \emph{function prototype}.
+As explained in the previous section, foreign functions can be
+accessed as attributes of loaded shared libraries.  The function
+objects created in this way by default accept any number of arguments,
+accept any ctypes data instances as arguments, and return the default
+result type specified by the library loader.  They are instances of a
+private class:
 
-By default, functions got as attributes of loaded shared libraries
-accept any arguments, and have a return type of \class{c{\_}int}.
+\begin{classdesc*}{_FuncPtr}
+Base class for C callable foreign functions.
+\end{classdesc*}
 
-Function prototypes are created by factory functions.
+This behaviour can be customized by assigning to special attributes of
+the foreign function object.
 
-They are created by calling one of the following factory functions:
+\begin{memberdesc}{restype}
+Assign a ctypes type to specify the result type of the foreign
+function.  Use \code{None} for \code{void} a function not returning
+anything.
+
+It is possible to assign a callable Python object that is not a
+ctypes type, in this case the function is assumed to return an
+integer, and the callable will be called with this integer,
+allowing to do further processing or error checking.  Using this
+is deprecated, for more flexible postprocessing or error checking
+use a ctypes data type as \member{restype} and assign a callable to the
+\member{errcheck} attribute.
+\end{memberdesc}
+
+\begin{memberdesc}{argtypes}
+Assign a tuple of ctypes types to specify the argument types that
+the function accepts.  Functions using the \code{stdcall} calling
+convention can only be called with the same number of arguments as
+the length of this tuple; functions using the C calling convention
+accept additional, unspecified arguments as well.
+
+When a foreign function is called, each actual argument is passed
+to the \method{from{\_}param} class method of the items in the
+\member{argtypes} tuple, this method allows to adapt the actual
+argument to an object that the foreign function accepts.  For
+example, a \class{c{\_}char{\_}p} item in the \member{argtypes} tuple will
+convert a unicode string passed as argument into an byte string
+using ctypes conversion rules.
+\end{memberdesc}
+
+\begin{memberdesc}{errcheck}
+Assign a Python function or another callable to this attribute.
+The callable will be called with three or more arguments:
+\end{memberdesc}
+
+\begin{funcdescni}{callable}{result, func, arguments, *others}
+\code{result} is what the foreign function returns, as specified by the
+\member{restype} attribute.
+
+\code{func} is the foreign function object itself, this allows to
+reuse the same callable object to check or postprocess the results
+of several functions.
+
+\code{arguments} is a tuple containing the parameters originally
+passed to the function call, this allows to specialize the
+behaviour on the arguments used.
+
+The object that this function returns will be returned from the
+foreign function call, but it can also check the result value and
+raise an exception if the foreign function call failed.
+
+\code{others} will usually be an empty tuple, it is only used in
+combination with \var{paramflags} documented below.
+\end{funcdescni}
+
+Instances of foreign functions are also C compatible data types; they
+represent C function pointers.
+
+Foreign functions can also be created by instantiating function
+prototypes.  Function prototypes are similar to function prototypes in
+C; they describe a function (return type, argument types, calling
+convention) without defining an implementation.  The factory
+functions must be called with the desired result type and the argument
+types of the function.
 
 \begin{funcdesc}{CFUNCTYPE}{restype, *argtypes}
-This is a factory function that returns a function prototype. The
-function prototype describes a function that has a result type of
-\member{restype}, and accepts arguments as specified by
-\member{argtypes}. The function prototype can be used to construct
-several kinds of functions, depending on how the prototype is
-called.
-
-The prototypes returned by \function{CFUNCTYPE} or \code{PYFUNCTYPE} create
-functions that use the standard C calling convention, prototypes
-returned from \function{WINFUNCTYPE} (on Windows) use the \code{{\_}{\_}stdcall}
-calling convention.
-
-Functions created by calling the \function{CFUNCTYPE} and \function{WINFUNCTYPE}
-prototypes release the Python GIL before entering the foreign
-function, and acquire it back after leaving the function code.
+The returned function prototype creates functions that use the
+standard C calling convention.  The function will release the GIL
+during the call.
 \end{funcdesc}
 
 \begin{funcdesc}{WINFUNCTYPE}{restype, *argtypes}
-TBD
+Windows only: The returned function prototype creates functions
+that use the \code{stdcall} calling convention, except on Windows CE
+where \function{WINFUNCTYPE} is the same as \function{CFUNCTYPE}.  The function
+will release the GIL during the call.
 \end{funcdesc}
 
 \begin{funcdesc}{PYFUNCTYPE}{restype, *argtypes}
-TBD
+The returned function prototype creates functions that use the
+Python calling convention.  The function will \emph{not} release the
+GIL during the call.
 \end{funcdesc}
+
+Function prototypes created by the factory functions can be
+instantiated in different ways, depending on the type and number of
+the parameters in the call.
+
+\begin{funcdescni}{prototype}{address}
+Returns a foreign function at the specified address.
+\end{funcdescni}
+
+\begin{funcdescni}{prototype}{callable}
+Create a C callable function (a callback function) from a Python
+\code{callable}.
+\end{funcdescni}
+
+\begin{funcdescni}{prototype}{}{name, library\optional{, paramflags}}
+Returns a foreign function by looking up \var{name} in the shared
+library \code{dll}.
+\end{funcdescni}
+
+\begin{funcdescni}{prototype}{}{ordinal, library\optional{, paramflags}}
+Returns a foreign function which is exported by the ordinal number
+\code{ordinal} in the shared library \code{dll}.  This mechanism only
+exists on Windows.
+\end{funcdescni}
+
+\begin{funcdescni}{prototype}{vtbl_index, name\optional{, paramflags\optional{, iid}}}
+Returns a foreign function that will call a COM method.
+\code{vtbl{\_}index} is the index into the virtual function table, a
+small nonnegative integer. \var{name} is name of the COM method.
+\var{iid} is an optional pointer to the interface identifier which
+is used in extended error reporting.
+
+COM methods use a special calling convention: They require a
+pointer to the COM interface as first argument, in addition to
+those parameters that are specified in the \member{argtypes} tuple.
+\end{funcdescni}
+
+XXX Document paramflags.
+
+XXX Where does the exception description belong?
 
 \begin{excdesc}{ArgumentError()}
 This exception is raised when a foreign function call cannot
@@ -1826,11 +1926,18 @@ be exact, they are methods of the metaclass):
 
 \begin{methoddesc}{from_address}{address}
 This method returns a ctypes type instance using the memory
-specified by address.
+specified by address which must be an integer.
 \end{methoddesc}
 
 \begin{methoddesc}{from_param}{obj}
-This method adapts obj to a ctypes type.
+This method adapts obj to a ctypes type.  It is called with the
+actual object used in a foreign function call, when the type is
+present in the foreign functions \member{argtypes} tuple; it must
+return an object that can be used as function call parameter.
+
+All ctypes data types have a default implementation of this
+classmethod, normally it returns \code{obj} if that is an instance of
+the type.  Some types accept other objects as well.
 \end{methoddesc}
 
 \begin{methoddesc}{in_dll}{name, library}
@@ -2050,6 +2157,10 @@ or error information for a function or method call.
 \begin{classdesc*}{py_object}
 Represents the C \code{PyObject *} datatype.
 \end{classdesc*}
+
+The \code{ctypes.wintypes} module provides quite some other Windows
+specific data types, for example \code{HWND}, \code{WPARAM}, or \code{DWORD}.
+Some useful structures like \code{MSG} or \code{RECT} are also defined.
 
 
 \subsubsection{Structured data types\label{ctypes-structured-data-types}}
