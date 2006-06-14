@@ -479,15 +479,20 @@ mbcs_decode(PyObject *self,
 	    PyObject *args)
 {
     const char *data;
-    Py_ssize_t size;
+    Py_ssize_t size, consumed;
     const char *errors = NULL;
+    int final = 1;
+    PyObject *decoded;
 
-    if (!PyArg_ParseTuple(args, "t#|z:mbcs_decode",
-			  &data, &size, &errors))
+    if (!PyArg_ParseTuple(args, "t#|zi:mbcs_decode",
+			  &data, &size, &errors, &final))
 	return NULL;
 
-    return codec_tuple(PyUnicode_DecodeMBCS(data, size, errors),
-		       size);
+    decoded = PyUnicode_DecodeMBCSStateful(
+	data, size, errors, final ? NULL : &consumed);
+    if (!decoded)
+	return NULL;
+    return codec_tuple(decoded, final ? size : consumed);
 }
 
 #endif /* MS_WINDOWS */

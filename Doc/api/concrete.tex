@@ -1431,6 +1431,18 @@ machine running the codec.
   raised by the codec.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyUnicode_DecodeMBCSStateful}{const char *s,
+                                               int size,
+                                               const char *errors,
+                                               int *consumed}
+  If \var{consumed} is \NULL{}, behave like
+  \cfunction{PyUnicode_DecodeMBCS()}. If \var{consumed} is not \NULL{},
+  \cfunction{PyUnicode_DecodeMBCSStateful()} will not decode trailing lead
+  byte and the number of bytes that have been decoded will be stored in
+  \var{consumed}.
+  \versionadded{2.5}
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{PyObject*}{PyUnicode_EncodeMBCS}{const Py_UNICODE *s,
                                                Py_ssize_t size,
                                                const char *errors}

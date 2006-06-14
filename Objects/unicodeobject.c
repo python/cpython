@@ -2820,65 +2820,199 @@ PyObject *PyUnicode_AsASCIIString(PyObject *unicode)
 
 /* --- MBCS codecs for Windows -------------------------------------------- */
 
+#if SIZEOF_INT < SIZEOF_SSIZE_T
+#define NEED_RETRY
+#endif
+
+/* XXX This code is limited to "true" double-byte encodings, as
+   a) it assumes an incomplete character consists of a single byte, and
+   b) IsDBCSLeadByte (probably) does not work for non-DBCS multi-byte
+      encodings, see IsDBCSLeadByteEx documentation. */
+
+static int is_dbcs_lead_byte(const char *s, int offset)
+{
+    const char *curr = s + offset;
+
+    if (IsDBCSLeadByte(*curr)) {
+	const char *prev = CharPrev(s, curr);
+	return (prev == curr) || !IsDBCSLeadByte(*prev) || (curr - prev == 2);
+    }
+    return 0;
+}
+
+/*
+ * Decode MBCS string into unicode object. If 'final' is set, converts
+ * trailing lead-byte too. Returns consumed size if succeed, -1 otherwise.
+ */
+static int decode_mbcs(PyUnicodeObject **v,
+			const char *s, /* MBCS string */
+			int size, /* sizeof MBCS string */
+			int final)
+{
+    Py_UNICODE *p;
+    Py_ssize_t n = 0;
+    int usize = 0;
+
+    assert(size >= 0);
+
+    /* Skip trailing lead-byte unless 'final' is set */
+    if (!final && size >= 1 && is_dbcs_lead_byte(s, size - 1))
+	--size;
+
+    /* First get the size of the result */
+    if (size > 0) {
+	usize = MultiByteToWideChar(CP_ACP, 0, s, size, NULL, 0);
+	if (usize == 0) {
+	    PyErr_SetFromWindowsErrWithFilename(0, NULL);
+	    return -1;
+	}
+    }
+
+    if (*v == NULL) {
+	/* Create unicode object */
+	*v = _PyUnicode_New(usize);
+	if (*v == NULL)
+	    return -1;
+    }
+    else {
+	/* Extend unicode object */
+	n = PyUnicode_GET_SIZE(*v);
+	if (_PyUnicode_Resize(v, n + usize) < 0)
+	    return -1;
+    }
+
+    /* Do the conversion */
+    if (size > 0) {
+	p = PyUnicode_AS_UNICODE(*v) + n;
+	if (0 == MultiByteToWideChar(CP_ACP, 0, s, size, p, usize)) {
+	    PyErr_SetFromWindowsErrWithFilename(0, NULL);
+	    return -1;
+	}
+    }
+
+    return size;
+}
+
+PyObject *PyUnicode_DecodeMBCSStateful(const char *s,
+					Py_ssize_t size,
+					const char *errors,
+					Py_ssize_t *consumed)
+{
+    PyUnicodeObject *v = NULL;
+    int done;
+
+    if (consumed)
+	*consumed = 0;
+
+#ifdef NEED_RETRY
+  retry:
+    if (size > INT_MAX)
+	done = decode_mbcs(&v, s, INT_MAX, 0);
+    else
+#endif
+	done = decode_mbcs(&v, s, (int)size, !consumed);
+
+    if (done < 0) {
+        Py_XDECREF(v);
+	return NULL;
+    }
+
+    if (consumed)
+	*consumed += done;
+
+#ifdef NEED_RETRY
+    if (size > INT_MAX) {
+	s += done;
+	size -= done;
+	goto retry;
+    }
+#endif
+
+    return (PyObject *)v;
+}
+
 PyObject *PyUnicode_DecodeMBCS(const char *s,
 				Py_ssize_t size,
 				const char *errors)
 {
-    PyUnicodeObject *v;
-    Py_UNICODE *p;
-    DWORD usize;
+    return PyUnicode_DecodeMBCSStateful(s, size, errors, NULL);
+}
+
+/*
+ * Convert unicode into string object (MBCS).
+ * Returns 0 if succeed, -1 otherwise.
+ */
+static int encode_mbcs(PyObject **repr,
+			const Py_UNICODE *p, /* unicode */
+			int size) /* size of unicode */
+{
+    int mbcssize = 0;
+    Py_ssize_t n = 0;
+
+    assert(size >= 0);
 
     /* First get the size of the result */
-    assert(size < INT_MAX);
-    usize = MultiByteToWideChar(CP_ACP, 0, s, (int)size, NULL, 0);
-    if (size > 0 && usize==0)
-        return PyErr_SetFromWindowsErrWithFilename(0, NULL);
-
-    v = _PyUnicode_New(usize);
-    if (v == NULL)
-        return NULL;
-    if (usize == 0)
-	return (PyObject *)v;
-    p = PyUnicode_AS_UNICODE(v);
-    if (0 == MultiByteToWideChar(CP_ACP, 0, s, (int)size, p, usize)) {
-        Py_DECREF(v);
-        return PyErr_SetFromWindowsErrWithFilename(0, NULL);
+    if (size > 0) {
+	mbcssize = WideCharToMultiByte(CP_ACP, 0, p, size, NULL, 0, NULL, NULL);
+	if (mbcssize == 0) {
+	    PyErr_SetFromWindowsErrWithFilename(0, NULL);
+	    return -1;
+	}
     }
 
-    return (PyObject *)v;
+    if (*repr == NULL) {
+	/* Create string object */
+	*repr = PyString_FromStringAndSize(NULL, mbcssize);
+	if (*repr == NULL)
+	    return -1;
+    }
+    else {
+	/* Extend string object */
+	n = PyString_Size(*repr);
+	if (_PyString_Resize(repr, n + mbcssize) < 0)
+	    return -1;
+    }
+
+    /* Do the conversion */
+    if (size > 0) {
+	char *s = PyString_AS_STRING(*repr) + n;
+	if (0 == WideCharToMultiByte(CP_ACP, 0, p, size, s, mbcssize, NULL, NULL)) {
+	    PyErr_SetFromWindowsErrWithFilename(0, NULL);
+	    return -1;
+	}
+    }
+
+    return 0;
 }
 
 PyObject *PyUnicode_EncodeMBCS(const Py_UNICODE *p,
 				Py_ssize_t size,
 				const char *errors)
 {
-    PyObject *repr;
-    char *s;
-    DWORD mbcssize;
+    PyObject *repr = NULL;
+    int ret;
 
-    /* If there are no characters, bail now! */
-    if (size==0)
-	    return PyString_FromString("");
+#ifdef NEED_RETRY
+ retry:
+    if (size > INT_MAX)
+	ret = encode_mbcs(&repr, p, INT_MAX);
+    else
+#endif
+	ret = encode_mbcs(&repr, p, (int)size);
 
-    /* First get the size of the result */
-    assert(size<INT_MAX);
-    mbcssize = WideCharToMultiByte(CP_ACP, 0, p, (int)size, NULL, 0, NULL, NULL);
-    if (mbcssize==0)
-        return PyErr_SetFromWindowsErrWithFilename(0, NULL);
-
-    repr = PyString_FromStringAndSize(NULL, mbcssize);
-    if (repr == NULL)
-        return NULL;
-    if (mbcssize == 0)
-        return repr;
-
-    /* Do the conversion */
-    s = PyString_AS_STRING(repr);
-    assert(size < INT_MAX);
-    if (0 == WideCharToMultiByte(CP_ACP, 0, p, (int)size, s, mbcssize, NULL, NULL)) {
-        Py_DECREF(repr);
-        return PyErr_SetFromWindowsErrWithFilename(0, NULL);
+    if (ret < 0) {
+	Py_XDECREF(repr);
+	return NULL;
     }
+
+#ifdef NEED_RETRY
+    if (size > INT_MAX) {
+	p += INT_MAX;
+	size -= INT_MAX;
+	goto retry;
+    }
+#endif
+
     return repr;
 }
 
@@ -2892,6 +3026,8 @@ PyObject *PyUnicode_AsMBCSString(PyObject *unicode)
 				PyUnicode_GET_SIZE(unicode),
 				NULL);
 }
+
+#undef NEED_RETRY
 
 #endif /* MS_WINDOWS */
 

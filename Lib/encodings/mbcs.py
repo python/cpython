@@ -22,9 +22,10 @@ class IncrementalEncoder(codecs.IncrementalEncoder):
     def encode(self, input, final=False):
         return codecs.mbcs_encode(input,self.errors)[0]
 
-class IncrementalDecoder(codecs.IncrementalDecoder):
-    def decode(self, input, final=False):
-        return codecs.mbcs_decode(input,self.errors)[0]
+class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
+    def _buffer_decode(self, input, errors, final):
+        return codecs.mbcs_decode(input,self.errors,final)
+
 class StreamWriter(Codec,codecs.StreamWriter):
     pass
 

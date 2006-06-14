@@ -156,6 +156,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1455898: The MBCS codec now supports the incremental mode for
+  double-byte encodings.
+
 - ``difflib``'s ``SequenceMatcher.get_matching_blocks()`` was changed to
   guarantee that adjacent triples in the return list always describe
   non-adjacent blocks.  Previously, a pair of matching blocks could end
