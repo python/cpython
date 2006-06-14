@@ -34,6 +34,17 @@
 
 static int connection_set_isolation_level(Connection* self, PyObject* isolation_level);
 
+
+void _sqlite3_result_error(sqlite3_context* ctx, const char* errmsg, int len)
+{
+    /* in older SQLite versions, calling sqlite3_result_error in callbacks
+     * triggers a bug in SQLite that leads either to irritating results or
+     * segfaults, depending on the SQLite version */
+#if SQLITE_VERSION_NUMBER >= 3003003
+    sqlite3_result_error(ctx, errmsg, len);
+#endif
+}
+
 int connection_init(Connection* self, PyObject* args, PyObject* kwargs)
 {
     static char *kwlist[] = {"database", "timeout", "detect_types", "isolation_level", "check_same_thread", "factory", "cached_statements", NULL, NULL};
@@ -526,7 +537,7 @@ void _func_callback(sqlite3_context* context, int argc, sqlite3_value** argv)
         } else {
             PyErr_Clear();
         }
-        sqlite3_result_error(context, "user-defined function raised exception", -1);
+        _sqlite3_result_error(context, "user-defined function raised exception", -1);
     }
 
     PyGILState_Release(threadstate);
@@ -558,7 +569,7 @@ static void _step_callback(sqlite3_context *context, int argc, sqlite3_value** p
             } else {
                 PyErr_Clear();
             }
-            sqlite3_result_error(context, "user-defined aggregate's '__init__' method raised error", -1);
+            _sqlite3_result_error(context, "user-defined aggregate's '__init__' method raised error", -1);
             goto error;
         }
     }
@@ -582,7 +593,7 @@ static void _step_callback(sqlite3_context *context, int argc, sqlite3_value** p
         } else {
             PyErr_Clear();
         }
-        sqlite3_result_error(context, "user-defined aggregate's 'step' method raised error", -1);
+        _sqlite3_result_error(context, "user-defined aggregate's 'step' method raised error", -1);
     }
 
 error:
@@ -619,7 +630,7 @@ void _final_callback(sqlite3_context* context)
         } else {
             PyErr_Clear();
         }
-        sqlite3_result_error(context, "user-defined aggregate's 'finalize' method raised error", -1);
+        _sqlite3_result_error(context, "user-defined aggregate's 'finalize' method raised error", -1);
     } else {
         _set_result(context, function_result);
     }

@@ -200,6 +200,8 @@ class FunctionTests(unittest.TestCase):
         self.failUnlessEqual(val, buffer("blob"))
 
     def CheckFuncException(self):
+        if sqlite.version_info < (3, 3, 3):     # don't raise bug in earlier SQLite versions
+            return
         cur = self.con.cursor()
         try:
             cur.execute("select raiseexception()")
@@ -283,6 +285,8 @@ class AggregateTests(unittest.TestCase):
             self.failUnlessEqual(e.args[0], "AggrNoStep instance has no attribute 'step'")
 
     def CheckAggrNoFinalize(self):
+        if sqlite.version_info < (3, 3, 3):     # don't raise bug in earlier SQLite versions
+            return
         cur = self.con.cursor()
         try:
             cur.execute("select nofinalize(t) from test")
@@ -292,6 +296,8 @@ class AggregateTests(unittest.TestCase):
             self.failUnlessEqual(e.args[0], "user-defined aggregate's 'finalize' method raised error")
 
     def CheckAggrExceptionInInit(self):
+        if sqlite.version_info < (3, 3, 3):     # don't raise bug in earlier SQLite versions
+            return
         cur = self.con.cursor()
         try:
             cur.execute("select excInit(t) from test")
@@ -301,6 +307,8 @@ class AggregateTests(unittest.TestCase):
             self.failUnlessEqual(e.args[0], "user-defined aggregate's '__init__' method raised error")
 
     def CheckAggrExceptionInStep(self):
+        if sqlite.version_info < (3, 3, 3):     # don't raise bug in earlier SQLite versions
+            return
         cur = self.con.cursor()
         try:
             cur.execute("select excStep(t) from test")
@@ -310,6 +318,8 @@ class AggregateTests(unittest.TestCase):
             self.failUnlessEqual(e.args[0], "user-defined aggregate's 'step' method raised error")
 
     def CheckAggrExceptionInFinalize(self):
+        if sqlite.version_info < (3, 3, 3):     # don't raise bug in earlier SQLite versions
+            return
         cur = self.con.cursor()
         try:
             cur.execute("select excFinalize(t) from test")
