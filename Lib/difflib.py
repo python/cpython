@@ -509,7 +509,7 @@ class SequenceMatcher:
             if i1 + k1 == i2 and j1 + k1 == j2:
                 # Yes, so collapse them -- this just increases the length of
                 # the first block by the length of the second, and the first
-                # block so lengthebd remains the block to compare against.
+                # block so lengthened remains the block to compare against.
                 k1 += k2
             else:
                 # Not adjacent.  Remember the first block (k1==0 means it's
