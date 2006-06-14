@@ -86,8 +86,7 @@ class SequenceMatcher:
     >>> for block in s.get_matching_blocks():
     ...     print "a[%d] and b[%d] match for %d elements" % block
     a[0] and b[0] match for 8 elements
-    a[8] and b[17] match for 6 elements
-    a[14] and b[23] match for 15 elements
+    a[8] and b[17] match for 21 elements
     a[29] and b[38] match for 0 elements
 
     Note that the last tuple returned by .get_matching_blocks() is always a
@@ -101,8 +100,7 @@ class SequenceMatcher:
     ...     print "%6s a[%d:%d] b[%d:%d]" % opcode
      equal a[0:8] b[0:8]
     insert a[8:8] b[8:17]
-     equal a[8:14] b[17:23]
-     equal a[14:29] b[23:38]
+     equal a[8:29] b[17:38]
 
     See the Differ class for a fancy human-friendly file differencer, which
     uses SequenceMatcher both to compare sequences of lines, and to compare
@@ -461,7 +459,11 @@ class SequenceMatcher:
 
         Each triple is of the form (i, j, n), and means that
         a[i:i+n] == b[j:j+n].  The triples are monotonically increasing in
-        i and in j.
+        i and in j.  New in Python 2.5, it's also guaranteed that if
+        (i, j, n) and (i', j', n') are adjacent triples in the list, and
+        the second is not the last triple in the list, then i+n != i' or
+        j+n != j'.  IOW, adjacent triples never describe adjacent equal
+        blocks.
 
         The last triple is a dummy, (len(a), len(b), 0), and is the only
         triple with n==0.
@@ -474,7 +476,6 @@ class SequenceMatcher:
         if self.matching_blocks is not None:
             return self.matching_blocks
         la, lb = len(self.a), len(self.b)
-        self.matching_blocks = matching_blocks = []
 
         # This is most naturally expressed as a recursive algorithm, but
         # at least one user bumped into extreme use cases that exceeded
@@ -483,6 +484,7 @@ class SequenceMatcher:
         # results to `matching_blocks` in a loop; the matches are sorted
         # at the end.
         queue = [(0, la, 0, lb)]
+        matching_blocks = []
         while queue:
             alo, ahi, blo, bhi = queue.pop()
             i, j, k = x = self.find_longest_match(alo, ahi, blo, bhi)
@@ -496,8 +498,32 @@ class SequenceMatcher:
                 if i+k < ahi and j+k < bhi:
                     queue.append((i+k, ahi, j+k, bhi))
         matching_blocks.sort()
-        matching_blocks.append( (la, lb, 0) )
-        return matching_blocks
+
+        # It's possible that we have adjacent equal blocks in the
+        # matching_blocks list now.  Starting with 2.5, this code was added
+        # to collapse them.
+        i1 = j1 = k1 = 0
+        non_adjacent = []
+        for i2, j2, k2 in matching_blocks:
+            # Is this block adjacent to i1, j1, k1?
+            if i1 + k1 == i2 and j1 + k1 == j2:
+                # Yes, so collapse them -- this just increases the length of
+                # the first block by the length of the second, and the first
+                # block so lengthebd remains the block to compare against.
+                k1 += k2
+            else:
+                # Not adjacent.  Remember the first block (k1==0 means it's
+                # the dummy we started with), and make the second block the
+                # new block to compare against.
+                if k1:
+                    non_adjacent.append((i1, j1, k1))
+                i1, j1, k1 = i2, j2, k2
+        if k1:
+            non_adjacent.append((i1, j1, k1))
+
+        non_adjacent.append( (la, lb, 0) )
+        self.matching_blocks = non_adjacent
+        return self.matching_blocks
 
     def get_opcodes(self):
         """Return list of 5-tuples describing how to turn a into b.

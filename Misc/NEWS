@@ -156,6 +156,12 @@ Extension Modules
 Library
 -------
 
+- ``difflib``'s ``SequenceMatcher.get_matching_blocks()`` was changed to
+  guarantee that adjacent triples in the return list always describe
+  non-adjacent blocks.  Previously, a pair of matching blocks could end
+  up being described by multiple adjacent triples that formed a partition
+  of the matching pair.
+
 - Bug #1498146: fix optparse to handle Unicode strings in option help,
   description, and epilog.
 
