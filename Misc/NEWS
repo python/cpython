@@ -156,6 +156,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1339007: Shelf objects now don't raise an exception in their
+  __del__ method when initialization failed.
+
 - Patch #1455898: The MBCS codec now supports the incremental mode for
   double-byte encodings.
 
