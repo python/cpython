@@ -154,3 +154,19 @@ class WIN32_FIND_DATAW(Structure):
                 ("dwReserved1", DWORD),
                 ("cFileName", c_wchar * MAX_PATH),
                 ("cAlternameFileName", c_wchar * 14)]
+
+__all__ = ['ATOM', 'BOOL', 'BOOLEAN', 'BYTE', 'COLORREF', 'DOUBLE',
+           'DWORD', 'FILETIME', 'HACCEL', 'HANDLE', 'HBITMAP', 'HBRUSH',
+           'HCOLORSPACE', 'HDC', 'HDESK', 'HDWP', 'HENHMETAFILE', 'HFONT',
+           'HGDIOBJ', 'HGLOBAL', 'HHOOK', 'HICON', 'HINSTANCE', 'HKEY',
+           'HKL', 'HLOCAL', 'HMENU', 'HMETAFILE', 'HMODULE', 'HMONITOR',
+           'HPALETTE', 'HPEN', 'HRGN', 'HRSRC', 'HSTR', 'HTASK', 'HWINSTA',
+           'HWND', 'LANGID', 'LARGE_INTEGER', 'LCID', 'LCTYPE', 'LGRPID',
+           'LONG', 'LPARAM', 'LPCOLESTR', 'LPCSTR', 'LPCWSTR', 'LPOLESTR',
+           'LPSTR', 'LPWSTR', 'MAX_PATH', 'MSG', 'OLESTR', 'POINT',
+           'POINTL', 'RECT', 'RECTL', 'RGB', 'SC_HANDLE',
+           'SERVICE_STATUS_HANDLE', 'SIZE', 'SIZEL', 'SMALL_RECT', 'UINT',
+           'ULARGE_INTEGER', 'ULONG', 'VARIANT_BOOL', 'WCHAR',
+           'WIN32_FIND_DATAA', 'WIN32_FIND_DATAW', 'WORD', 'WPARAM', '_COORD',
+           '_FILETIME', '_LARGE_INTEGER', '_POINTL', '_RECTL', '_SMALL_RECT',
+           '_ULARGE_INTEGER', 'tagMSG', 'tagPOINT', 'tagRECT', 'tagSIZE']
