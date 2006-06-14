@@ -69,7 +69,7 @@ def CFUNCTYPE(restype, *argtypes):
     restype: the result type
     argtypes: a sequence specifying the argument types
 
-    The function prototype can be called in three ways to create a
+    The function prototype can be called in different ways to create a
     callable object:
 
     prototype(integer address) -> foreign function
