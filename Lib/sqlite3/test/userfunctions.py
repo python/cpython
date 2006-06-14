@@ -403,7 +403,7 @@ class AuthorizerTests(unittest.TestCase):
 def suite():
     function_suite = unittest.makeSuite(FunctionTests, "Check")
     aggregate_suite = unittest.makeSuite(AggregateTests, "Check")
-    authorizer_suite = unittest.makeSuite(AuthorizerTests, "Check") 
+    authorizer_suite = unittest.makeSuite(AuthorizerTests, "Check")
     return unittest.TestSuite((function_suite, aggregate_suite, authorizer_suite))
 
 def test():
