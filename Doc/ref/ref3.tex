@@ -1918,13 +1918,28 @@ called to implement the binary arithmetic operations (\code{+},
 \function{pow()}\bifuncindex{pow}, \code{**}, \code{<<},
 \code{>>}, \code{\&}, \code{\^}, \code{|}) with reflected
 (swapped) operands.  These functions are only called if the left
-operand does not support the corresponding operation.  For instance,
-to evaluate the expression \var{x}\code{-}\var{y}, where \var{y} is an
-instance of a class that has an \method{__rsub__()} method,
-\code{\var{y}.__rsub__(\var{x})} is called.  Note that ternary
+operand does not support the corresponding operation and the
+operands are of different types.\footnote{
+    For operands of the same type, it is assumed that if the
+    non-reflected method (such as \method{__add__()}) fails the
+    operation is not supported, which is why the reflected method
+    is not called.} 
+For instance, to evaluate the expression \var{x}\code{-}\var{y},
+where \var{y} is an instance of a class that has an
+\method{__rsub__()} method, \code{\var{y}.__rsub__(\var{x})}
+is called if \code{\var{x}.__sub__(\var{y})} returns
+\var{NotImplemented}.
+
+Note that ternary
 \function{pow()}\bifuncindex{pow} will not try calling
 \method{__rpow__()} (the coercion rules would become too
 complicated).
+
+\note{If the right operand's type is a subclass of the left operand's
+      type and that subclass provides the reflected method for the
+      operation, this method will be called before the right operand's
+      non-reflected method.  This behavior allows subclasses to
+      override their ancestors' operations.}
 \end{methoddesc}
 
 \begin{methoddesc}[numeric object]{__iadd__}{self, other}
