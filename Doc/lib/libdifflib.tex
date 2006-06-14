@@ -419,6 +419,16 @@ of the other sequences.
   len(\var{b}), 0)}.  It is the only triple with \code{\var{n} == 0}.
   % Explain why a dummy is used!
 
+  If
+  \code{(\var{i}, \var{j}, \var{n})} and
+  \code{(\var{i'}, \var{j'}, \var{n'})} are adjacent triples in the list,
+  and the second is not the last triple in the list, then
+  \code{\var{i}+\var{n} != \var{i'}} or
+  \code{\var{j}+\var{n} != \var{j'}}; in other words, adjacent triples
+  always describe non-adjacent equal blocks.
+  \versionchanged[The guarantee that adjacent triples always describe
+                  non-adjacent blocks was implemented]{2.5}
+
 \begin{verbatim}
 >>> s = SequenceMatcher(None, "abxcd", "abcd")
 >>> s.get_matching_blocks()
