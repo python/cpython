@@ -301,8 +301,8 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
     # that needs to be carefully considered before changing it.
 
     def _test_starttag_end_boundary(self):
-        self.check_events("""<a b='<'>""", [("starttag", "a", [("b", "<")])])
-        self.check_events("""<a b='>'>""", [("starttag", "a", [("b", ">")])])
+        self.check_events("<a b='<'>", [("starttag", "a", [("b", "<")])])
+        self.check_events("<a b='>'>", [("starttag", "a", [("b", ">")])])
 
     def _test_buffer_artefacts(self):
         output = [("starttag", "a", [("b", "<")])]
@@ -322,17 +322,17 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
         self.check_events(["<a b='>'", ">"], output)
 
         output = [("comment", "abc")]
-        self._run_check(["", "<!--abc-->"], output)
-        self._run_check(["<", "!--abc-->"], output)
-        self._run_check(["<!", "--abc-->"], output)
-        self._run_check(["<!-", "-abc-->"], output)
-        self._run_check(["<!--", "abc-->"], output)
-        self._run_check(["<!--a", "bc-->"], output)
-        self._run_check(["<!--ab", "c-->"], output)
-        self._run_check(["<!--abc", "-->"], output)
-        self._run_check(["<!--abc-", "->"], output)
-        self._run_check(["<!--abc--", ">"], output)
-        self._run_check(["<!--abc-->", ""], output)
+        self.check_events(["", "<!--abc-->"], output)
+        self.check_events(["<", "!--abc-->"], output)
+        self.check_events(["<!", "--abc-->"], output)
+        self.check_events(["<!-", "-abc-->"], output)
+        self.check_events(["<!--", "abc-->"], output)
+        self.check_events(["<!--a", "bc-->"], output)
+        self.check_events(["<!--ab", "c-->"], output)
+        self.check_events(["<!--abc", "-->"], output)
+        self.check_events(["<!--abc-", "->"], output)
+        self.check_events(["<!--abc--", ">"], output)
+        self.check_events(["<!--abc-->", ""], output)
 
     def _test_starttag_junk_chars(self):
         self.check_parse_error("<")
