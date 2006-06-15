@@ -46,7 +46,7 @@ class TestsWithSourceFile(unittest.TestCase):
 
         # It will contain enough copies of self.data to reach about 6GB of
         # raw data to store.
-        filecount = 6*1024**2 // len(self.data)
+        filecount = 6*1024**3 // len(self.data)
 
         next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
         for num in range(filecount):
