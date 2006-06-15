@@ -14,6 +14,8 @@ except ImportError:
     zlib = None
 
 import zipfile, os, unittest
+import time
+import sys
 
 from StringIO import StringIO
 from tempfile import TemporaryFile
@@ -21,6 +23,9 @@ from tempfile import TemporaryFile
 from test.test_support import TESTFN, run_unittest
 
 TESTFN2 = TESTFN + "2"
+
+# How much time in seconds can pass before we print a 'Still working' message.
+_PRINT_WORKING_MSG_INTERVAL = 5 * 60
 
 class TestsWithSourceFile(unittest.TestCase):
     def setUp(self):
@@ -37,14 +42,27 @@ class TestsWithSourceFile(unittest.TestCase):
         filecount = int(((1 << 32) / len(self.data)) * 1.5)
         zipfp = zipfile.ZipFile(f, "w", compression, allowZip64=True)
 
+        next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
         for num in range(filecount):
             zipfp.writestr("testfn%d"%(num,), self.data)
+            # Print still working message since this test can be really slow
+            if next_time <= time.time():
+                next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
+                print >>sys.__stdout__, \
+                   '  zipTest still working, be patient...'
+                sys.__stdout__.flush()
         zipfp.close()
 
         # Read the ZIP archive
         zipfp = zipfile.ZipFile(f, "r", compression)
         for num in range(filecount):
             self.assertEqual(zipfp.read("testfn%d"%(num,)), self.data)
+            # Print still working message since this test can be really slow
+            if next_time <= time.time():
+                next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
+                print >>sys.__stdout__, \
+                   '  zipTest still working, be patient...'
+                sys.__stdout__.flush()
         zipfp.close()
 
     def testStored(self):
