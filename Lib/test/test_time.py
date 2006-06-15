@@ -193,13 +193,17 @@ class TimeTestCase(unittest.TestCase):
         time.ctime(None)
 
     def test_gmtime_without_arg(self):
-        t0 = time.mktime(time.gmtime())
-        t1 = time.mktime(time.gmtime(None))
+        gt0 = time.gmtime()
+        gt1 = time.gmtime(None)
+        t0 = time.mktime(gt0)
+        t1 = time.mktime(gt1)
         self.assert_(0 <= (t1-t0) < 0.2)
 
     def test_localtime_without_arg(self):
-        t0 = time.mktime(time.localtime())
-        t1 = time.mktime(time.localtime(None))
+        lt0 = time.localtime()
+        lt1 = time.localtime(None)
+        t0 = time.mktime(lt0)
+        t1 = time.mktime(lt1)
         self.assert_(0 <= (t1-t0) < 0.2)
 
 def test_main():
