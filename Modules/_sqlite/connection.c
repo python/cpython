@@ -42,6 +42,8 @@ void _sqlite3_result_error(sqlite3_context* ctx, const char* errmsg, int len)
      * segfaults, depending on the SQLite version */
 #if SQLITE_VERSION_NUMBER >= 3003003
     sqlite3_result_error(ctx, errmsg, len);
+#else
+    PyErr_SetString(OperationalError, errmsg);
 #endif
 }
 
