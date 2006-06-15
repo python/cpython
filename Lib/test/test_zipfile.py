@@ -46,7 +46,7 @@ class TestsWithSourceFile(unittest.TestCase):
             zipfp.printdir()
         finally:
             sys.stdout = stdout
-        
+
         directory = fp.getvalue()
         lines = directory.splitlines()
         self.assertEquals(len(lines), 4) # Number of files + header
@@ -133,13 +133,13 @@ class TestZip64InSmallFiles(unittest.TestCase):
 
     def largeFileExceptionTest(self, f, compression):
         zipfp = zipfile.ZipFile(f, "w", compression)
-        self.assertRaises(zipfile.LargeZipFile, 
+        self.assertRaises(zipfile.LargeZipFile,
                 zipfp.write, TESTFN, "another"+os.extsep+"name")
         zipfp.close()
 
     def largeFileExceptionTest2(self, f, compression):
         zipfp = zipfile.ZipFile(f, "w", compression)
-        self.assertRaises(zipfile.LargeZipFile, 
+        self.assertRaises(zipfile.LargeZipFile,
                 zipfp.writestr, "another"+os.extsep+"name", self.data)
         zipfp.close()
 
@@ -171,7 +171,7 @@ class TestZip64InSmallFiles(unittest.TestCase):
             zipfp.printdir()
         finally:
             sys.stdout = stdout
-        
+
         directory = fp.getvalue()
         lines = directory.splitlines()
         self.assertEquals(len(lines), 4) # Number of files + header
