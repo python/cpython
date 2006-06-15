@@ -48,8 +48,6 @@ class CollationTests(unittest.TestCase):
             pass
 
     def CheckCollationIsUsed(self):
-        if sqlite.version_info < (3, 2, 1):     # old SQLite versions crash on this test
-            return
         def mycoll(x, y):
             # reverse order
             return -cmp(x, y)
