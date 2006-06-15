@@ -3,7 +3,7 @@
 # from test_zipfile
 from test import test_support
 test_support.requires(
-        'largefile', 
+        'largefile',
         'test requires loads of disk-space bytes and a long time to run'
     )
 
@@ -29,22 +29,28 @@ _PRINT_WORKING_MSG_INTERVAL = 5 * 60
 
 class TestsWithSourceFile(unittest.TestCase):
     def setUp(self):
-        line_gen = ("Test of zipfile line %d." % i for i in range(0, 1000000))
+        # Create test data.
+        # xrange() is important here -- don't want to create immortal space
+        # for a million ints.
+        line_gen = ("Test of zipfile line %d." % i for i in xrange(1000000))
         self.data = '\n'.join(line_gen)
 
-        # Make a source file with some lines
+        # And write it to a file.
         fp = open(TESTFN, "wb")
         fp.write(self.data)
         fp.close()
 
     def zipTest(self, f, compression):
-        # Create the ZIP archive
-        filecount = int(((1 << 32) / len(self.data)) * 1.5)
+        # Create the ZIP archive.
         zipfp = zipfile.ZipFile(f, "w", compression, allowZip64=True)
+
+        # It will contain enough copies of self.data to reach about 6GB of
+        # raw data to store.
+        filecount = 6*1024**2 // len(self.data)
 
         next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
         for num in range(filecount):
-            zipfp.writestr("testfn%d"%(num,), self.data)
+            zipfp.writestr("testfn%d" % num, self.data)
             # Print still working message since this test can be really slow
             if next_time <= time.time():
                 next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
@@ -57,7 +63,7 @@ class TestsWithSourceFile(unittest.TestCase):
         # Read the ZIP archive
         zipfp = zipfile.ZipFile(f, "r", compression)
         for num in range(filecount):
-            self.assertEqual(zipfp.read("testfn%d"%(num,)), self.data)
+            self.assertEqual(zipfp.read("testfn%d" % num), self.data)
             # Print still working message since this test can be really slow
             if next_time <= time.time():
                 next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
@@ -68,17 +74,22 @@ class TestsWithSourceFile(unittest.TestCase):
         zipfp.close()
 
     def testStored(self):
-        for f in (TESTFN2, TemporaryFile()):
+        # Try the temp file first.  If we do TESTFN2 first, then it hogs
+        # gigabytes of disk space for the duration of the test.
+        for f in TemporaryFile(), TESTFN2:
             self.zipTest(f, zipfile.ZIP_STORED)
 
     if zlib:
         def testDeflated(self):
-            for f in (TESTFN2, TemporaryFile()):
+            # Try the temp file first.  If we do TESTFN2 first, then it hogs
+            # gigabytes of disk space for the duration of the test.
+            for f in TemporaryFile(), TESTFN2:
                 self.zipTest(f, zipfile.ZIP_DEFLATED)
 
     def tearDown(self):
-        os.remove(TESTFN)
-        os.remove(TESTFN2)
+        for fname in TESTFN, TESTFN2:
+            if os.path.exists(fname):
+                os.remove(fname)
 
 def test_main():
     run_unittest(TestsWithSourceFile)
