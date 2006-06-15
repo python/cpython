@@ -13,23 +13,29 @@ using the appropriate open call. Bsddb objects behave generally like
 dictionaries.  Keys and values must be strings, however, so to use
 other objects as keys or to store other kinds of objects the user must
 serialize them somehow, typically using \function{marshal.dumps()} or 
-\function{pickle.dumps}.
+\function{pickle.dumps()}.
 
 The \module{bsddb} module requires a Berkeley DB library version from
 3.3 thru 4.4.
 
 \begin{seealso}
-  \seeurl{http://pybsddb.sourceforge.net/}{Website with documentation
-  for the new python Berkeley DB interface that closely mirrors the 
-  sleepycat object oriented interface provided in Berkeley DB 3 and 4.}
+  \seeurl{http://pybsddb.sourceforge.net/}{The website with documentation
+  for the \module{bsddb.db} python Berkeley DB interface that closely mirrors
+  the Sleepycat object oriented interface provided in Berkeley DB 3 and 4.}
   \seeurl{http://www.sleepycat.com/}{Sleepycat Software produces the
-  modern Berkeley DB library.}
+  Berkeley DB library.}
 \end{seealso}
 
+A more modern DB, DBEnv and DBSequence object interface is available in the
+\module{bsddb.db} module which closely matches the Sleepycat Berkeley DB C API
+documented at the above URLs.  Additional features provided by the
+\module{bsddb.db} API include fine tuning, transactions, logging, and
+multiprocess concurrent database access.
+
 The following is a description of the legacy \module{bsddb} interface
-compatible with the old python bsddb module.  For details about the more
-modern Db and DbEnv object oriented interface see the above mentioned
-pybsddb URL.
+compatible with the old python bsddb module.  Starting in Python 2.5 this
+interface should be safe for multithreaded access.  The \module{bsddb.db}
+API is recommended for threading users as it provides better control.
 
 The \module{bsddb} module defines the following functions that create
 objects that access the appropriate type of Berkeley DB file.  The
