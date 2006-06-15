@@ -152,7 +152,13 @@ Extension Modules
   aborts the db transaction safely when a modifier callback fails.
   Fixes SF python patch/bug #1408584.
 
+- bsddb: multithreaded DB access using the simple bsddb module interface
+  now works reliably.  It has been updated to use automatic BerkeleyDB 
+  deadlock detection and the bsddb.dbutils.DeadlockWrap wrapper to retry
+  database calls that would previously deadlock. [SF python bug #775414]
+
 - Patch #1446489: add support for the ZIP64 extensions to zipfile. 
+
 
 Library
 -------
