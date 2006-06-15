@@ -17,12 +17,18 @@ understanding of the format, as defined in
 Note}.
 
 This module does not currently handle ZIP files which have appended
-comments, or multi-disk ZIP files.
+comments, or multi-disk ZIP files. It can handle ZIP files that use the 
+ZIP64 extensions (that is ZIP files that are more than 4 GByte in size).
 
 The available attributes of this module are:
 
 \begin{excdesc}{error}
   The error raised for bad ZIP files.
+\end{excdesc}
+
+\begin{excdesc}{LargeZipFile}
+  The error raised when a ZIP file would require ZIP64 functionality but that
+  has not been enabled.
 \end{excdesc}
 
 \begin{classdesc*}{ZipFile}
@@ -77,7 +83,7 @@ The available attributes of this module are:
 
 \subsection{ZipFile Objects \label{zipfile-objects}}
 
-\begin{classdesc}{ZipFile}{file\optional{, mode\optional{, compression}}} 
+\begin{classdesc}{ZipFile}{file\optional{, mode\optional{, compression\optional{, allowZip64}}}} 
   Open a ZIP file, where \var{file} can be either a path to a file
   (a string) or a file-like object.  The \var{mode} parameter
   should be \code{'r'} to read an existing file, \code{'w'} to
@@ -100,6 +106,12 @@ cat myzip.zip >> python.exe
   is specified but the \refmodule{zlib} module is not available,
   \exception{RuntimeError} is also raised.  The default is
   \constant{ZIP_STORED}. 
+  If \var{allowZip64} is \code{True} zipfile will create zipfiles that use
+  the ZIP64 extensions when the zipfile is larger than 2GBytes. If it is 
+  false (the default) zipfile will raise an exception when the zipfile would
+  require ZIP64 extensions. ZIP64 extensions are disabled by default because
+  the default zip and unzip commands on Unix (the InfoZIP utilities) don't 
+  support these extensions.
 \end{classdesc}
 
 \begin{methoddesc}{close}{}
@@ -132,8 +144,8 @@ cat myzip.zip >> python.exe
 \end{methoddesc}
 
 \begin{methoddesc}{testzip}{}
-  Read all the files in the archive and check their CRC's.  Return the
-  name of the first bad file, or else return \code{None}.
+  Read all the files in the archive and check their CRC's and file
+  headers.  Return the name of the first bad file, or else return \code{None}.
 \end{methoddesc}
 
 \begin{methoddesc}{write}{filename\optional{, arcname\optional{,
@@ -282,10 +294,6 @@ Instances have the following attributes:
 
 \begin{memberdesc}[ZipInfo]{header_offset}
   Byte offset to the file header.
-\end{memberdesc}
-
-\begin{memberdesc}[ZipInfo]{file_offset}
-  Byte offset to the start of the file data.
 \end{memberdesc}
 
 \begin{memberdesc}[ZipInfo]{CRC}

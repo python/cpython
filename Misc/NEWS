@@ -152,6 +152,7 @@ Extension Modules
   aborts the db transaction safely when a modifier callback fails.
   Fixes SF python patch/bug #1408584.
 
+- Patch #1446489: add support for the ZIP64 extensions to zipfile. 
 
 Library
 -------
