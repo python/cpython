@@ -17,7 +17,7 @@ class BadZipfile(Exception):
 
 
 class LargeZipFile(Exception):
-    """ 
+    """
     Raised when writing a zipfile, the zipfile requires ZIP64 extensions
     and those extensions are disabled.
     """
@@ -99,20 +99,20 @@ def _EndRecData64(fpin, offset, endrec):
     fpin.seek(offset - locatorSize, 2)
     data = fpin.read(locatorSize)
     sig, diskno, reloff, disks = struct.unpack(structEndArchive64Locator, data)
-    if sig != stringEndArchive64Locator: 
+    if sig != stringEndArchive64Locator:
         return endrec
 
     if diskno != 0 or disks != 1:
         raise BadZipfile("zipfiles that span multiple disks are not supported")
 
-    # Assume no 'zip64 extensible data' 
+    # Assume no 'zip64 extensible data'
     endArchiveSize = struct.calcsize(structEndArchive64)
     fpin.seek(offset - locatorSize - endArchiveSize, 2)
     data = fpin.read(endArchiveSize)
     sig, sz, create_version, read_version, disk_num, disk_dir, \
             dircount, dircount2, dirsize, diroffset = \
             struct.unpack(structEndArchive64, data)
-    if sig != stringEndArchive64: 
+    if sig != stringEndArchive64:
         return endrec
 
     # Update the original endrec using data from the ZIP64 record
@@ -294,7 +294,7 @@ class ZipInfo (object):
                     idx+=1
 
             extra = extra[ln+4:]
-               
+
 
 class ZipFile:
     """ Class with methods to open, read, write, close, list zip files.
@@ -642,7 +642,7 @@ class ZipFile:
         records."""
         if self.fp is None:
             return
-        
+
         if self.mode in ("w", "a") and self._didModify: # write ending records
             count = 0
             pos1 = self.fp.tell()
@@ -674,7 +674,7 @@ class ZipFile:
                     extra_data = struct.pack(
                             '<hh' + 'q'*len(extra),
                             1, 8*len(extra), *extra) + extra_data
-                    
+
                     extract_version = max(45, zinfo.extract_version)
                     create_version = max(45, zinfo.create_version)
                 else:
@@ -704,7 +704,7 @@ class ZipFile:
                 self.fp.write(zip64endrec)
 
                 zip64locrec = struct.pack(
-                        structEndArchive64Locator, 
+                        structEndArchive64Locator,
                         stringEndArchive64Locator, 0, pos2, 1)
                 self.fp.write(zip64locrec)
 
@@ -862,7 +862,7 @@ def main(args = None):
         zf = ZipFile(args[1], 'r')
         out = args[2]
         for path in zf.namelist():
-            if path.startswith('./'): 
+            if path.startswith('./'):
                 tgt = os.path.join(out, path[2:])
             else:
                 tgt = os.path.join(out, path)
@@ -885,9 +885,9 @@ def main(args = None):
                 zf.write(path, zippath, ZIP_DEFLATED)
             elif os.path.isdir(path):
                 for nm in os.listdir(path):
-                    addToZip(zf, 
+                    addToZip(zf,
                             os.path.join(path, nm), os.path.join(zippath, nm))
-            # else: ignore 
+            # else: ignore
 
         zf = ZipFile(args[1], 'w', allowZip64=True)
         for src in args[2:]:
