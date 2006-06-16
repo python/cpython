@@ -64,6 +64,23 @@ class CDATAEventCollector(EventCollector):
         self.setliteral()
 
 
+class HTMLEntityCollector(EventCollector):
+    import re, htmlentitydefs
+    entity_or_charref = re.compile('(?:&([a-zA-Z][-.a-zA-Z0-9]*)'
+        '|&#(x[0-9a-zA-Z]+|[0-9]+))(;?)')
+
+    def convert_charref(self, name):
+        self.append(("charref", "convert", name))
+        if name.startswith('x'):
+            return unichr(int(name[1:],16))
+        else:
+            return unichr(int(name))
+
+    def convert_entityref(self, name):
+        self.append(("entityref", "convert", name))
+        return unichr(self.htmlentitydefs.name2codepoint[name])
+
+
 class SGMLParserTestCase(unittest.TestCase):
 
     collector = EventCollector
@@ -232,6 +249,16 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
                                 ("j", "&#42;"),
                                 ("k", "&#42;"),
                                 ])])
+
+    def test_convert_overrides(self):
+        self.collector = HTMLEntityCollector
+        self.check_events('<a title="&ldquo;test&#x201d;">foo</a>', [
+            ('entityref', 'convert', 'ldquo'),
+            ('charref', 'convert', 'x201d'),
+            ('starttag', 'a', [('title', u'\u201ctest\u201d')]),
+            ('data', 'foo'),
+            ('endtag', 'a'),
+            ])
 
     def test_attr_funky_names(self):
         self.check_events("""<a a.b='v' c:d=v e-f=v>""", [
