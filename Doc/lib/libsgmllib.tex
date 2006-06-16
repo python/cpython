@@ -132,27 +132,59 @@ nothing.
 
 \begin{methoddesc}{handle_charref}{ref}
 This method is called to process a character reference of the form
-\samp{\&\#\var{ref};}.  In the base implementation, \var{ref} must
-be a decimal number in the
-range 0-255.  It translates the character to \ASCII{} and calls the
-method \method{handle_data()} with the character as argument.  If
-\var{ref} is invalid or out of range, the method
-\code{unknown_charref(\var{ref})} is called to handle the error.  A
-subclass must override this method to provide support for named
-character entities.
+\samp{\&\#\var{ref};}.  The base implementation uses
+\method{convert_charref()} to convert the reference to a string.  If
+that method returns a string, it is passed to \method{handle_data()},
+otherwise \method{unknown_charref(\var{ref})} is called to handle the
+error.
+\versionchanged[Use \method{convert_charref()} instead of hard-coding
+the conversion]{2.5}
+\end{methoddesc}
+
+\begin{methoddesc}{convert_charref}{ref}
+Convert a character reference to a string, or \code{None}.  \var{ref}
+is the reference passed in as a string.  In the base implementation,
+\var{ref} must be a decimal number in the range 0-255.  It converts
+the code point found using the \method{convert_codepoint()} method.
+If \var{ref} is invalid or out of range, this method returns
+\code{None}.  This method is called by the default
+\method{handle_charref()} implementation and by the attribute value
+parser.
+\versionadded{2.5}
+\end{methoddesc}
+
+\begin{methoddesc}{convert_codepoint}{codepoint}
+Convert a codepoint to a \class{str} value.  Encodings can be handled
+here if appropriate, though the rest of \module{sgmllib} is oblivious
+on this matter.
+\versionadded{2.5}
 \end{methoddesc}
 
 \begin{methoddesc}{handle_entityref}{ref}
 This method is called to process a general entity reference of the
 form \samp{\&\var{ref};} where \var{ref} is an general entity
-reference.  It looks for \var{ref} in the instance (or class)
-variable \member{entitydefs} which should be a mapping from entity
-names to corresponding translations.  If a translation is found, it
+reference.  It converts \var{ref} by passing it to
+\method{convert_entityref()}.  If a translation is returned, it
 calls the method \method{handle_data()} with the translation;
 otherwise, it calls the method \code{unknown_entityref(\var{ref})}.
 The default \member{entitydefs} defines translations for
 \code{\&amp;}, \code{\&apos}, \code{\&gt;}, \code{\&lt;}, and
 \code{\&quot;}.
+\versionchanged[Use \method{convert_entityref()} instead of hard-coding
+the conversion]{2.5}
+\end{methoddesc}
+
+\begin{methoddesc}{convert_entityref}{ref}
+Convert a named entity reference to a \class{str} value, or
+\code{None}.  The resulting value will not be parsed.  \var{ref} will
+be only the name of the entity.  The default implementation looks for
+\var{ref} in the instance (or class) variable \member{entitydefs}
+which should be a mapping from entity names to corresponding
+translations.  If no translation is available for \var{ref}, this
+method returns \code{None}.  This method is called by the default
+\method{handle_entityref()} implementation and by the attribute value
+parser.
+\versionadded{2.5}
 \end{methoddesc}
 
 \begin{methoddesc}{handle_comment}{comment}

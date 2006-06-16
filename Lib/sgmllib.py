@@ -53,6 +53,10 @@ class SGMLParseError(RuntimeError):
 # self.handle_entityref() with the entity reference as argument.
 
 class SGMLParser(markupbase.ParserBase):
+    # Definition of entities -- derived classes may override
+    entity_or_charref = re.compile('&(?:'
+      '([a-zA-Z][-.a-zA-Z0-9]*)|#([0-9]+)'
+      ')(;?)')
 
     def __init__(self, verbose=0):
         """Initialize and reset this instance."""
@@ -277,32 +281,8 @@ class SGMLParser(markupbase.ParserBase):
                     attrvalue[:1] == '"' == attrvalue[-1:]):
                     # strip quotes
                     attrvalue = attrvalue[1:-1]
-                l = 0
-                new_attrvalue = ''
-                while l < len(attrvalue):
-                    av_match = entityref.match(attrvalue, l)
-                    if (av_match and av_match.group(1) in self.entitydefs and
-                        attrvalue[av_match.end(1)] == ';'):
-                        # only substitute entityrefs ending in ';' since
-                        # otherwise we may break <a href='?p=x&q=y'>
-                        # which is very common
-                        new_attrvalue += self.entitydefs[av_match.group(1)]
-                        l = av_match.end(0)
-                        continue
-                    ch_match = charref.match(attrvalue, l)
-                    if ch_match:
-                        try:
-                            char = chr(int(ch_match.group(1)))
-                            new_attrvalue += char
-                            l = ch_match.end(0)
-                            continue
-                        except ValueError:
-                            # invalid character reference, don't substitute
-                            pass
-                    # all other cases
-                    new_attrvalue += attrvalue[l]
-                    l += 1
-                attrvalue = new_attrvalue
+                attrvalue = self.entity_or_charref.sub(
+                    self._convert_ref, attrvalue)
             attrs.append((attrname.lower(), attrvalue))
             k = match.end(0)
         if rawdata[j] == '>':
@@ -310,6 +290,17 @@ class SGMLParser(markupbase.ParserBase):
         self.__starttag_text = rawdata[start_pos:j]
         self.finish_starttag(tag, attrs)
         return j
+
+    # Internal -- convert entity or character reference
+    def _convert_ref(self, match):
+        if match.group(2):
+            return self.convert_charref(match.group(2)) or \
+                '&#%s%s' % match.groups()[1:]
+        elif match.group(3):
+            return self.convert_entityref(match.group(1)) or \
+                '&%s;' % match.group(1)
+        else:
+            return '&%s' % match.group(1)
 
     # Internal -- parse endtag
     def parse_endtag(self, i):
@@ -394,34 +385,50 @@ class SGMLParser(markupbase.ParserBase):
             print '*** Unbalanced </' + tag + '>'
             print '*** Stack:', self.stack
 
-    def handle_charref(self, name):
-        """Handle character reference, no need to override."""
+    def convert_charref(self, name):
+        """Convert character reference, may be overridden."""
         try:
             n = int(name)
         except ValueError:
-            self.unknown_charref(name)
             return
         if not 0 <= n <= 255:
-            self.unknown_charref(name)
             return
-        self.handle_data(chr(n))
+        return self.convert_codepoint(n)
+
+    def convert_codepoint(self, codepoint):
+        return chr(codepoint)
+
+    def handle_charref(self, name):
+        """Handle character reference, no need to override."""
+        replacement = convert_charref(name)
+        if replacement is None:
+            self.unknown_charref(name)
+        else:
+            self.handle_data(convert_charref(name))
 
     # Definition of entities -- derived classes may override
     entitydefs = \
             {'lt': '<', 'gt': '>', 'amp': '&', 'quot': '"', 'apos': '\''}
 
-    def handle_entityref(self, name):
-        """Handle entity references.
+    def convert_entityref(self, name):
+        """Convert entity references.
 
-        There should be no need to override this method; it can be
-        tailored by setting up the self.entitydefs mapping appropriately.
+        As an alternative to overriding this method; one can tailor the
+        results by setting up the self.entitydefs mapping appropriately.
         """
         table = self.entitydefs
         if name in table:
-            self.handle_data(table[name])
+            return table[name]
         else:
-            self.unknown_entityref(name)
             return
+
+    def handle_entityref(self, name):
+        """Handle entity references, no need to override."""
+        replacement = convert_entityref(name)
+        if replacement is None:
+            self.unknown_entityref(name)
+        else:
+            self.handle_data(convert_entityref(name))
 
     # Example -- handle data, should be overridden
     def handle_data(self, data):
