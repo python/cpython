@@ -28,7 +28,7 @@ import sys
 #  - While the bigmemtest decorator speaks of 'minsize', all tests will
 #    actually be called with a much smaller number too, in the normal
 #    test run (5Kb currently.) This is so the tests themselves get frequent
-#    testing Consequently, always make all large allocations based on the
+#    testing. Consequently, always make all large allocations based on the
 #    passed-in 'size', and don't rely on the size being very large. Also,
 #    memuse-per-size should remain sane (less than a few thousand); if your
 #    test uses more, adjust 'size' upward, instead.
