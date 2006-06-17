@@ -2721,6 +2721,8 @@ redo_stat_for_length:
      */
     if (size == 0 && (flags & DB_FAST_STAT)) {
         flags = 0;
+        if (!err)
+            free(sp);
         goto redo_stat_for_length;
     }
 
