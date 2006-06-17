@@ -1933,9 +1933,9 @@ class BaseWidget(Misc):
     def destroy(self):
         """Destroy this and all descendants widgets."""
         for c in self.children.values(): c.destroy()
+        self.tk.call('destroy', self._w)
         if self.master.children.has_key(self._name):
             del self.master.children[self._name]
-        self.tk.call('destroy', self._w)
         Misc.destroy(self)
     def _do(self, name, args=()):
         # XXX Obsolete -- better use self.tk.call directly!
