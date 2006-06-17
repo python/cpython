@@ -163,6 +163,8 @@ Extension Modules
 Library
 -------
 
+- Patch #812986: Update turtle output even if not tracing.
+
 - Patch #1494750: Destroy master after deleting children in 
   Tkinter.BaseWidget.
 
