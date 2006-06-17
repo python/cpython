@@ -163,6 +163,9 @@ Extension Modules
 Library
 -------
 
+- Patch #763580: Add name and value arguments to Tkinter variable
+  classes.
+
 - Bug #1117556: SimpleHTTPServer now tries to find and use the system's
   mime.types file for determining MIME types.
 
