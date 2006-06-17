@@ -1500,10 +1500,19 @@ class Wm:
         the group leader of this widget if None is given."""
         return self.tk.call('wm', 'group', self._w, pathName)
     group = wm_group
-    def wm_iconbitmap(self, bitmap=None):
+    def wm_iconbitmap(self, bitmap=None, default=None):
         """Set bitmap for the iconified widget to BITMAP. Return
-        the bitmap if None is given."""
-        return self.tk.call('wm', 'iconbitmap', self._w, bitmap)
+        the bitmap if None is given.
+
+        Under Windows, the DEFAULT parameter can be used to set the icon 
+        for the widget and any descendents that don't have an icon set
+        explicitely.  DEFAULT can be the relative path to a .ico file
+        (example: root.iconbitmap(default='myicon.ico') ).  See Tk
+        documentation for more information."""
+        if default:
+            return self.tk.call('wm', 'iconbitmap', self._w, '-default', default)
+        else:
+            return self.tk.call('wm', 'iconbitmap', self._w, bitmap)
     iconbitmap = wm_iconbitmap
     def wm_iconify(self):
         """Display widget as icon."""
