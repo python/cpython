@@ -634,6 +634,7 @@ class RawPen:
 
     def _draw_turtle(self, position=[]):
         if not self._tracing:
+            self._canvas.update()
             return
         if position == []:
             position = self._position
