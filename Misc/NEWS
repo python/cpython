@@ -163,6 +163,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1494750: Destroy master after deleting children in 
+  Tkinter.BaseWidget.
+
 - Patch #1096231: Add ``default`` argument to Tkinter.Wm.wm_iconbitmap.
 
 - Patch #763580: Add name and value arguments to Tkinter variable
