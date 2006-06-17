@@ -424,11 +424,11 @@ class SGMLParser(markupbase.ParserBase):
 
     def handle_entityref(self, name):
         """Handle entity references, no need to override."""
-        replacement = convert_entityref(name)
+        replacement = self.convert_entityref(name)
         if replacement is None:
             self.unknown_entityref(name)
         else:
-            self.handle_data(convert_entityref(name))
+            self.handle_data(self.convert_entityref(name))
 
     # Example -- handle data, should be overridden
     def handle_data(self, data):
