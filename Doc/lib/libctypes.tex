@@ -118,7 +118,7 @@ identifiers, like \code{"??2@YAPAXI@Z"}. In this case you have to use
 
 On Windows, some dlls export functions not by name but by ordinal.
 These functions can be accessed by indexing the dll object with the
-odinal number:
+ordinal number:
 \begin{verbatim}
 >>> cdll.kernel32[1] # doctest: +WINDOWS
 <_FuncPtr object at 0x...>
@@ -142,8 +142,8 @@ which returns a win32 module handle.
 This example calls both functions with a NULL pointer (\code{None} should
 be used as the NULL pointer):
 \begin{verbatim}
->>> print libc.time(None)
-114...
+>>> print libc.time(None) # doctest: +SKIP
+1150640792
 >>> print hex(windll.kernel32.GetModuleHandleA(None)) # doctest: +WINDOWS
 0x1d000000
 >>>
@@ -571,13 +571,12 @@ None
 >>>
 \end{verbatim}
 
-XXX Mention the \member{errcheck} protocol...
-
 You can also use a callable Python object (a function or a class for
-example) as the \member{restype} attribute.  It will be called with the
-\code{integer} the C function returns, and the result of this call will
-be used as the result of your function call. This is useful to check
-for error return values and automatically raise an exception:
+example) as the \member{restype} attribute, if the foreign function returns
+an integer.  The callable will be called with the \code{integer} the C
+function returns, and the result of this call will be used as the
+result of your function call. This is useful to check for error return
+values and automatically raise an exception:
 \begin{verbatim}
 >>> GetModuleHandle = windll.kernel32.GetModuleHandleA # doctest: +WINDOWS
 >>> def ValidHandle(value):
@@ -601,6 +600,10 @@ WindowsError: [Errno 126] The specified module could not be found.
 api to get the string representation of an error code, and \emph{returns}
 an exception.  \code{WinError} takes an optional error code parameter, if
 no one is used, it calls \function{GetLastError()} to retrieve it.
+
+Please note that a much more powerful error checking mechanism is
+available through the \member{errcheck} attribute; see the reference manual
+for details.
 
 
 \subsubsection{Passing pointers (or: passing parameters by reference)\label{ctypes-passing-pointers}}
@@ -876,22 +879,18 @@ TypeError: expected c_long instead of int
 \subsubsection{Type conversions\label{ctypes-type-conversions}}
 
 Usually, ctypes does strict type checking.  This means, if you have
-\code{POINTER(c{\_}int)} in the \member{argtypes} list of a function or in the
-\member{{\_}fields{\_}} of a structure definition, only instances of exactly the
-same type are accepted.  There are some exceptions to this rule, where
-ctypes accepts other objects.  For example, you can pass compatible
-array instances instead of pointer types.  So, for \code{POINTER(c{\_}int)},
-ctypes accepts an array of c{\_}int values:
+\code{POINTER(c{\_}int)} in the \member{argtypes} list of a function or as the
+type of a member field in a structure definition, only instances of
+exactly the same type are accepted.  There are some exceptions to this
+rule, where ctypes accepts other objects.  For example, you can pass
+compatible array instances instead of pointer types.  So, for
+\code{POINTER(c{\_}int)}, ctypes accepts an array of c{\_}int:
 \begin{verbatim}
 >>> class Bar(Structure):
 ...     _fields_ = [("count", c_int), ("values", POINTER(c_int))]
 ...
 >>> bar = Bar()
->>> print bar._objects
-None
 >>> bar.values = (c_int * 3)(1, 2, 3)
->>> print bar._objects
-{'1': ({}, <ctypes._endian.c_long_Array_3 object at ...>)}
 >>> bar.count = 3
 >>> for i in range(bar.count):
 ...     print bar.values[i]
@@ -912,9 +911,9 @@ XXX list other conversions...
 
 Sometimes you have instances of incompatible types.  In \code{C}, you can
 cast one type into another type.  \code{ctypes} provides a \code{cast}
-function which can be used in the same way.  The Bar structure defined
-above accepts \code{POINTER(c{\_}int)} pointers or \class{c{\_}int} arrays for its
-\code{values} field, but not instances of other types:
+function which can be used in the same way.  The \code{Bar} structure
+defined above accepts \code{POINTER(c{\_}int)} pointers or \class{c{\_}int} arrays
+for its \code{values} field, but not instances of other types:
 \begin{verbatim}
 >>> bar.values = (c_byte * 4)()
 Traceback (most recent call last):
@@ -1161,7 +1160,10 @@ py_cmp_func 5 7
 >>>
 \end{verbatim}
 
-So, our array sorted now:
+It is quite interesting to see that the Windows \function{qsort} function
+needs more comparisons than the linux version!
+
+As we can easily check, our array sorted now:
 \begin{verbatim}
 >>> for i in ia: print i,
 ...
@@ -1172,14 +1174,14 @@ So, our array sorted now:
 \textbf{Important note for callback functions:}
 
 Make sure you keep references to CFUNCTYPE objects as long as they are
-used from C code. ctypes doesn't, and if you don't, they may be
+used from C code. \code{ctypes} doesn't, and if you don't, they may be
 garbage collected, crashing your program when a callback is made.
 
 
 \subsubsection{Accessing values exported from dlls\label{ctypes-accessing-values-exported-from-dlls}}
 
 Sometimes, a dll not only exports functions, it also exports
-values. An example in the Python library itself is the
+variables. An example in the Python library itself is the
 \code{Py{\_}OptimizeFlag}, an integer set to 0, 1, or 2, depending on the
 \programopt{-O} or \programopt{-OO} flag given on startup.
 
@@ -1249,9 +1251,6 @@ None 0
 The fact that standard Python has a frozen module and a frozen package
 (indicated by the negative size member) is not wellknown, it is only
 used for testing. Try it out with \code{import {\_}{\_}hello{\_}{\_}} for example.
-
-XXX Describe how to access the \var{code} member fields, which contain
-the byte code for the modules.
 
 
 \subsubsection{Surprises\label{ctypes-surprises}}
