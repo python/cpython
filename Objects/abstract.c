@@ -14,9 +14,9 @@
 /* Shorthands to return certain errors */
 
 static PyObject *
-type_error(const char *msg)
+type_error(const char *msg, PyObject *obj)
 {
-	PyErr_SetString(PyExc_TypeError, msg);
+	PyErr_Format(PyExc_TypeError, msg, obj->ob_type->tp_name);
 	return NULL;
 }
 
@@ -130,10 +130,11 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 			return PySequence_GetItem(o, key_value);
 		}
 		else if (o->ob_type->tp_as_sequence->sq_item)
-			return type_error("sequence index must be integer");
+			return type_error("sequence index must "
+					  "be integer, not '%.200s'", key);
 	}
 
-	return type_error("unsubscriptable object");
+	return type_error("'%.200s' object is unsubscriptable", o);
 }
 
 int
@@ -158,12 +159,13 @@ PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
 			return PySequence_SetItem(o, key_value, value);
 		}
 		else if (o->ob_type->tp_as_sequence->sq_ass_item) {
-			type_error("sequence index must be integer");
+			type_error("sequence index must be "
+				   "integer, not '%.200s'", key);
 			return -1;
 		}
 	}
 
-	type_error("object does not support item assignment");
+	type_error("'%.200s' object does not support item assignment", o);
 	return -1;
 }
 
@@ -189,12 +191,13 @@ PyObject_DelItem(PyObject *o, PyObject *key)
 			return PySequence_DelItem(o, key_value);
 		}
 		else if (o->ob_type->tp_as_sequence->sq_ass_item) {
-			type_error("sequence index must be integer");
+			type_error("sequence index must be "
+				   "integer, not '%.200s'", key);
 			return -1;
 		}
 	}
 
-	type_error("object does not support item deletion");
+	type_error("'%.200s' object does not support item deletion", o);
 	return -1;
 }
 
@@ -435,7 +438,8 @@ static PyObject *
 binop_type_error(PyObject *v, PyObject *w, const char *op_name)
 {
 	PyErr_Format(PyExc_TypeError,
-		     "unsupported operand type(s) for %s: '%s' and '%s'",
+		     "unsupported operand type(s) for %.100s: "
+		     "'%.100s' and '%.100s'",
 		     op_name,
 		     v->ob_type->tp_name,
 		     w->ob_type->tp_name);
@@ -601,14 +605,14 @@ ternary_op(PyObject *v,
 		PyErr_Format(
 			PyExc_TypeError,
 			"unsupported operand type(s) for ** or pow(): "
-			"'%s' and '%s'",
+			"'%.100s' and '%.100s'",
 			v->ob_type->tp_name,
 			w->ob_type->tp_name);
 	else
 		PyErr_Format(
 			PyExc_TypeError,
 			"unsupported operand type(s) for pow(): "
-			"'%s', '%s', '%s'",
+			"'%.100s', '%.100s', '%.100s'",
 			v->ob_type->tp_name,
 			w->ob_type->tp_name,
 			z->ob_type->tp_name);
@@ -656,8 +660,8 @@ sequence_repeat(ssizeargfunc repeatfunc, PyObject *seq, PyObject *n)
 			return NULL;
 	}
 	else {
-		return type_error(
-			"can't multiply sequence by non-int");
+		return type_error("can't multiply sequence by "
+				  "non-int of type '%.200s'", n);
 	}
 	return (*repeatfunc)(seq, count);
 }
@@ -870,7 +874,7 @@ PyNumber_Negative(PyObject *o)
 	if (m && m->nb_negative)
 		return (*m->nb_negative)(o);
 
-	return type_error("bad operand type for unary -");
+	return type_error("bad operand type for unary -: '%.200s'", o);
 }
 
 PyObject *
@@ -884,7 +888,7 @@ PyNumber_Positive(PyObject *o)
 	if (m && m->nb_positive)
 		return (*m->nb_positive)(o);
 
-	return type_error("bad operand type for unary +");
+	return type_error("bad operand type for unary +: '%.200s'", o);
 }
 
 PyObject *
@@ -898,7 +902,7 @@ PyNumber_Invert(PyObject *o)
 	if (m && m->nb_invert)
 		return (*m->nb_invert)(o);
 
-	return type_error("bad operand type for unary ~");
+	return type_error("bad operand type for unary ~: '%.200s'", o);
 }
 
 PyObject *
@@ -912,7 +916,7 @@ PyNumber_Absolute(PyObject *o)
 	if (m && m->nb_absolute)
 		return m->nb_absolute(o);
 
-	return type_error("bad operand type for abs()");
+	return type_error("bad operand type for abs(): '%.200s'", o);
 }
 
 /* Add a check for embedded NULL-bytes in the argument. */
@@ -992,7 +996,8 @@ PyNumber_Int(PyObject *o)
 	if (!PyObject_AsCharBuffer(o, &buffer, &buffer_len))
 		return int_from_string((char*)buffer, buffer_len);
 
-	return type_error("int() argument must be a string or a number");
+	return type_error("int() argument must be a string or a "
+			  "number, not '%.200s'", o);
 }
 
 /* Add a check for embedded NULL-bytes in the argument. */
@@ -1054,7 +1059,8 @@ PyNumber_Long(PyObject *o)
 	if (!PyObject_AsCharBuffer(o, &buffer, &buffer_len))
 		return long_from_string(buffer, buffer_len);
 
-	return type_error("long() argument must be a string or a number");
+	return type_error("long() argument must be a string or a "
+			  "number, not '%.200s'", o);
 }
 
 PyObject *
@@ -1108,7 +1114,7 @@ PySequence_Size(PyObject *s)
 	if (m && m->sq_length)
 		return m->sq_length(s);
 
-	type_error("len() of unsized object");
+	type_error("non-sequence object of type '%.200s' has no len()", s);
 	return -1;
 }
 
@@ -1141,7 +1147,7 @@ PySequence_Concat(PyObject *s, PyObject *o)
 			return result;
 		Py_DECREF(result);
 	}
-	return type_error("object can't be concatenated");
+	return type_error("'%.200s' object can't be concatenated", s);
 }
 
 PyObject *
@@ -1170,7 +1176,7 @@ PySequence_Repeat(PyObject *o, Py_ssize_t count)
 			return result;
 		Py_DECREF(result);
 	}
-	return type_error("object can't be repeated");
+	return type_error("'%.200s' object can't be repeated", o);
 }
 
 PyObject *
@@ -1194,7 +1200,7 @@ PySequence_InPlaceConcat(PyObject *s, PyObject *o)
 			return result;
 		Py_DECREF(result);
 	}
-	return type_error("object can't be concatenated");
+	return type_error("'%.200s' object can't be concatenated", s);
 }
 
 PyObject *
@@ -1223,7 +1229,7 @@ PySequence_InPlaceRepeat(PyObject *o, Py_ssize_t count)
 			return result;
 		Py_DECREF(result);
 	}
-	return type_error("object can't be repeated");
+	return type_error("'%.200s' object can't be repeated", o);
 }
 
 PyObject *
@@ -1247,7 +1253,7 @@ PySequence_GetItem(PyObject *s, Py_ssize_t i)
 		return m->sq_item(s, i);
 	}
 
-	return type_error("unindexable object");
+	return type_error("'%.200s' object is unindexable", s);
 }
 
 PyObject *
@@ -1282,7 +1288,7 @@ PySequence_GetSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2)
 		return res;
 	}
 
-	return type_error("unsliceable object");
+	return type_error("'%.200s' object is unsliceable", s);
 }
 
 int
@@ -1308,7 +1314,7 @@ PySequence_SetItem(PyObject *s, Py_ssize_t i, PyObject *o)
 		return m->sq_ass_item(s, i, o);
 	}
 
-	type_error("object does not support item assignment");
+	type_error("'%.200s' object does not support item assignment", s);
 	return -1;
 }
 
@@ -1335,7 +1341,7 @@ PySequence_DelItem(PyObject *s, Py_ssize_t i)
 		return m->sq_ass_item(s, i, (PyObject *)NULL);
 	}
 
-	type_error("object doesn't support item deletion");
+	type_error("'%.200s' object doesn't support item deletion", s);
 	return -1;
 }
 
@@ -1374,7 +1380,7 @@ PySequence_SetSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2, PyObject *o)
 		return res;
 	}
 
-	type_error("object doesn't support slice assignment");
+	type_error("'%.200s' object doesn't support slice assignment", s);
 	return -1;
 }
 
@@ -1403,7 +1409,7 @@ PySequence_DelSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2)
 		}
 		return m->sq_ass_slice(s, i1, i2, (PyObject *)NULL);
 	}
-	type_error("object doesn't support slice deletion");
+	type_error("'%.200s' object doesn't support slice deletion", s);
 	return -1;
 }
 
@@ -1534,7 +1540,7 @@ PySequence_Fast(PyObject *v, const char *m)
  	it = PyObject_GetIter(v);
 	if (it == NULL) {
 		if (PyErr_ExceptionMatches(PyExc_TypeError))
-			return type_error(m);
+			PyErr_SetString(PyExc_TypeError, m);
 		return NULL;
 	}
 
@@ -1564,7 +1570,7 @@ _PySequence_IterSearch(PyObject *seq, PyObject *obj, int operation)
 
 	it = PyObject_GetIter(seq);
 	if (it == NULL) {
-		type_error("iterable argument required");
+		type_error("argument of type '%.200s' is not iterable", seq);
 		return -1;
 	}
 
@@ -1699,7 +1705,7 @@ PyMapping_Size(PyObject *o)
 	if (m && m->mp_length)
 		return m->mp_length(o);
 
-	type_error("len() of unsized object");
+	type_error("non-mapping object of type '%.200s' has no len()", o);
 	return -1;
 }
 
@@ -1807,7 +1813,7 @@ PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw)
 				"NULL result without error in PyObject_Call");
 		return result;
 	}
-	PyErr_Format(PyExc_TypeError, "'%s' object is not callable",
+	PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
 		     func->ob_type->tp_name);
 	return NULL;
 }
@@ -1896,7 +1902,7 @@ PyObject_CallMethod(PyObject *o, char *name, char *format, ...)
 	}
 
 	if (!PyCallable_Check(func)) {
-		type_error("call of non-callable attribute"); 
+		type_error("attribute of type '%.200s' is not callable", func); 
 		goto exit;
 	}
 
@@ -1935,7 +1941,7 @@ _PyObject_CallMethod_SizeT(PyObject *o, char *name, char *format, ...)
 	}
 
 	if (!PyCallable_Check(func)) {
-		type_error("call of non-callable attribute"); 
+		type_error("attribute of type '%.200s' is not callable", func); 
 		goto exit;
 	}
 
@@ -2287,9 +2293,7 @@ PyObject_GetIter(PyObject *o)
 	if (f == NULL) {
 		if (PySequence_Check(o))
 			return PySeqIter_New(o);
-		PyErr_SetString(PyExc_TypeError,
-				"iteration over non-sequence");
-		return NULL;
+		return type_error("'%.200s' object is not iterable", o);
 	}
 	else {
 		PyObject *res = (*f)(o);
