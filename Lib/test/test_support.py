@@ -453,3 +453,26 @@ def run_doctest(module, verbosity=None):
     if verbose:
         print 'doctest (%s) ... %d tests with zero failures' % (module.__name__, t)
     return f, t
+
+#=======================================================================
+# Threading support to prevent reporting refleaks when running regrtest.py -R
+
+def threading_setup():
+    import threading
+    return len(threading._active), len(threading._limbo)
+
+def threading_cleanup(num_active, num_limbo):
+    import threading
+    import time
+
+    _MAX_COUNT = 10
+    count = 0
+    while len(threading._active) != num_active and count < _MAX_COUNT:
+        count += 1
+        time.sleep(0.1)
+
+    count = 0
+    while len(threading._limbo) != num_limbo and count < _MAX_COUNT:
+        count += 1
+        time.sleep(0.1)
+
