@@ -60,7 +60,7 @@ REFLOG="build/reflog.txt.out"
 # Note: test_XXX (none currently) really leak, but are disabled
 # so we don't send spam.  Any test which really leaks should only 
 # be listed here if there are also test cases under Lib/test/leakers.
-LEAKY_TESTS="test_(ctypes|filecmp|socket|threadedtempfile|threading|urllib2)"
+LEAKY_TESTS="test_(XXX)"  # Currently no tests should report spurious leaks.
 
 # Skip these tests altogether when looking for leaks.  These tests
 # do not need to be stored above in LEAKY_TESTS too.

@@ -906,7 +906,10 @@ def test_main():
         tests.append(BasicSocketPairTest)
     if sys.platform == 'linux2':
         tests.append(TestLinuxAbstractNamespace)
+
+    thread_info = test_support.threading_setup()
     test_support.run_unittest(*tests)
+    test_support.threading_cleanup(*thread_info)
 
 if __name__ == "__main__":
     test_main()
