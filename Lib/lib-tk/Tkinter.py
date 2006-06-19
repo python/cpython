@@ -170,11 +170,11 @@ class Variable:
     _default = ""
     def __init__(self, master=None, value=None, name=None):
         """Construct a variable
-        
+
         MASTER can be given as master widget.
         VALUE is an optional value (defaults to "")
         NAME is an optional Tcl name (defaults to PY_VARnum).
-         
+
         If NAME matches an existing variable and VALUE is omitted
         then the existing value is retained.
         """
@@ -231,7 +231,7 @@ class Variable:
             self._tk.call("trace", "vinfo", self._name)))
     def __eq__(self, other):
         """Comparison for equality (==).
-        
+
         Note: if the Variable's master matters to behavior
         also compare self._master == other._master
         """
@@ -247,7 +247,7 @@ class StringVar(Variable):
         MASTER can be given as master widget.
         VALUE is an optional value (defaults to "")
         NAME is an optional Tcl name (defaults to PY_VARnum).
-        
+
         If NAME matches an existing variable and VALUE is omitted
         then the existing value is retained.
         """
@@ -269,7 +269,7 @@ class IntVar(Variable):
         MASTER can be given as master widget.
         VALUE is an optional value (defaults to 0)
         NAME is an optional Tcl name (defaults to PY_VARnum).
-        
+
         If NAME matches an existing variable and VALUE is omitted
         then the existing value is retained.
         """
@@ -294,7 +294,7 @@ class DoubleVar(Variable):
         MASTER can be given as master widget.
         VALUE is an optional value (defaults to 0.0)
         NAME is an optional Tcl name (defaults to PY_VARnum).
-        
+
         If NAME matches an existing variable and VALUE is omitted
         then the existing value is retained.
         """
@@ -313,7 +313,7 @@ class BooleanVar(Variable):
         MASTER can be given as master widget.
         VALUE is an optional value (defaults to False)
         NAME is an optional Tcl name (defaults to PY_VARnum).
-        
+
         If NAME matches an existing variable and VALUE is omitted
         then the existing value is retained.
         """
@@ -1504,7 +1504,7 @@ class Wm:
         """Set bitmap for the iconified widget to BITMAP. Return
         the bitmap if None is given.
 
-        Under Windows, the DEFAULT parameter can be used to set the icon 
+        Under Windows, the DEFAULT parameter can be used to set the icon
         for the widget and any descendents that don't have an icon set
         explicitly.  DEFAULT can be the relative path to a .ico file
         (example: root.iconbitmap(default='myicon.ico') ).  See Tk

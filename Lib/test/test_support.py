@@ -475,4 +475,3 @@ def threading_cleanup(num_active, num_limbo):
     while len(threading._limbo) != num_limbo and count < _MAX_COUNT:
         count += 1
         time.sleep(0.1)
-
