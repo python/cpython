@@ -398,6 +398,15 @@
 /* Define to 1 if you have the `realpath' function. */
 #undef HAVE_REALPATH
 
+/* Define to 1 if you have the `is_term_resized' function. */
+#undef HAVE_CURSES_IS_TERM_RESIZED
+
+/* Define to 1 if you have the `resize_term' function. */
+#undef HAVE_CURSES_RESIZE_TERM
+
+/* Define to 1 if you have the `resizeterm' function. */
+#undef HAVE_CURSES_RESIZETERM
+
 /* Define if you have readline 2.1 */
 #undef HAVE_RL_CALLBACK
 
