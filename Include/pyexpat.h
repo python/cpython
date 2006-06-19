@@ -16,8 +16,8 @@ struct PyExpat_CAPI
        the end, if needed */
     const XML_LChar * (*ErrorString)(enum XML_Error code);
     enum XML_Error (*GetErrorCode)(XML_Parser parser);
-    int (*GetErrorColumnNumber)(XML_Parser parser);
-    int (*GetErrorLineNumber)(XML_Parser parser);
+    XML_Size (*GetErrorColumnNumber)(XML_Parser parser);
+    XML_Size (*GetErrorLineNumber)(XML_Parser parser);
     enum XML_Status (*Parse)(
         XML_Parser parser, const char *s, int len, int isFinal);
     XML_Parser (*ParserCreate_MM)(

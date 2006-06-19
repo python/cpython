@@ -19,7 +19,7 @@ NS(XmlGetUtf16InternalEncoding)(void)
 #endif
 }
 
-static const ENCODING *NS(encodings)[] = {
+static const ENCODING * const NS(encodings)[] = {
   &ns(latin1_encoding).enc,
   &ns(ascii_encoding).enc,
   &ns(utf8_encoding).enc,
