@@ -42,8 +42,7 @@ Typical usage:
     # make a UUID from a 16-byte string
     >>> uuid.UUID(bytes=x.bytes)
     UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
-
-This module works with Python 2.3 or higher."""
+"""
 
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 __date__ = '$Date: 2006/06/12 23:15:40 $'.split()[1].replace('/', '-')
