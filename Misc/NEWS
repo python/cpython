@@ -12,6 +12,10 @@ What's New in Python 2.5 beta 1?
 Core and builtins
 -----------------
 
+- Patch #1507676: Error messages returned by invalid abstract object operations
+  (such as iterating over an integer) have been improved and now include the
+  type of the offending object to help with debugging.
+
 - Bug #992017: A classic class that defined a __coerce__() method that returned
   its arguments swapped would infinitely recurse and segfault the interpreter.
 
