@@ -1460,8 +1460,19 @@ class TestHelp(BaseTest):
             make_option("--foo", action="append", type="string", dest='foo',
                         help="store FOO in the foo list for later fooing"),
             ]
+        # The parser constructor looks at the COLUMNS envar.  We need to
+        # restore the original value after the parser is constructed, else
+        # that's a permanent change possibly affecting other tests, and
+        # definitely affecting these tests when they're run multiple times.
+        orig_columns = os.environ.get('COLUMNS')
         os.environ['COLUMNS'] = str(columns)
-        return InterceptingOptionParser(option_list=options)
+        try:
+            return InterceptingOptionParser(option_list=options)
+        finally:
+            if orig_columns is None:
+                del os.environ['COLUMNS']
+            else:
+                os.environ['COLUMNS'] = orig_columns
 
     def assertHelpEquals(self, expected_output):
         if type(expected_output) is types.UnicodeType:
