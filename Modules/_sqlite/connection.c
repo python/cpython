@@ -664,7 +664,7 @@ void _drop_unused_statement_references(Connection* self)
 
     for (i = 0; i < PyList_Size(self->statements); i++) {
         weakref = PyList_GetItem(self->statements, i);
-        if (weakref != Py_None) {
+        if (PyWeakref_GetObject(weakref) != Py_None) {
             if (PyList_Append(new_list, weakref) != 0) {
                 Py_DECREF(new_list);
                 return;
