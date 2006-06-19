@@ -35,14 +35,14 @@ typedef struct _setobject PySetObject;
 struct _setobject {
 	PyObject_HEAD
 
-	int fill;  /* # Active + # Dummy */
-	int used;  /* # Active */
+	Py_ssize_t fill;  /* # Active + # Dummy */
+	Py_ssize_t used;  /* # Active */
 
 	/* The table contains mask + 1 slots, and that's a power of 2.
 	 * We store the mask instead of the size because the mask is more
 	 * frequently needed.
 	 */
-	int mask;
+	Py_ssize_t mask;
 
 	/* table points to smalltable for small tables, else to
 	 * additional malloc'ed memory.  table is never NULL!  This rule
