@@ -1989,7 +1989,7 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
         Py_XDECREF(res);
     } else {
         PyErr_Format(
-            PyExc_SyntaxError, "undefined entity &%s;: line %d, column %d",
+            PyExc_SyntaxError, "undefined entity &%s;: line %ld, column %ld",
             PyString_AS_STRING(key),
             EXPAT(GetErrorLineNumber)(self->parser),
             EXPAT(GetErrorColumnNumber)(self->parser)
@@ -2350,7 +2350,7 @@ expat_parse(XMLParserObject* self, char* data, int data_len, int final)
 
     if (!ok) {
         PyErr_Format(
-            PyExc_SyntaxError, "%s: line %d, column %d",
+            PyExc_SyntaxError, "%s: line %ld, column %ld",
             EXPAT(ErrorString)(EXPAT(GetErrorCode)(self->parser)),
             EXPAT(GetErrorLineNumber)(self->parser),
             EXPAT(GetErrorColumnNumber)(self->parser)
