@@ -3295,6 +3295,27 @@ then
   [Define if WINDOW in curses.h offers a field _flags.])
 fi
 
+AC_MSG_CHECKING(for is_term_resized)
+AC_TRY_COMPILE([#include <curses.h>], void *x=is_term_resized,
+  AC_DEFINE(HAVE_CURSES_IS_TERM_RESIZED, 1, Define if you have the 'is_term_resized' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+
+AC_MSG_CHECKING(for resizeterm)
+AC_TRY_COMPILE([#include <curses.h>], void *x=resizeterm,
+  AC_DEFINE(HAVE_CURSES_RESIZETERM, 1, Define if you have the 'resizeterm' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+
+AC_MSG_CHECKING(for resize_term)
+AC_TRY_COMPILE([#include <curses.h>], void *x=resize_term,
+  AC_DEFINE(HAVE_CURSES_RESIZE_TERM, 1, Define if you have the 'resize_term' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+
 AC_MSG_CHECKING(for /dev/ptmx)
 
 if test -e /dev/ptmx

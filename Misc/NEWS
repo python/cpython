@@ -163,6 +163,8 @@ Extension Modules
 
 - Patch #1446489: add support for the ZIP64 extensions to zipfile. 
 
+- Patch #1506645: add Python wrappers for the curses functions
+  is_term_resized, resize_term and resizeterm.
 
 Library
 -------

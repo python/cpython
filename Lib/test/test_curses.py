@@ -212,6 +212,13 @@ def module_funcs(stdscr):
             m = curses.getmouse()
             curses.ungetmouse(*m)
 
+    if hasattr(curses, 'is_term_resized'):
+        curses.is_term_resized(*stdscr.getmaxyx())
+    if hasattr(curses, 'resizeterm'):
+        curses.resizeterm(*stdscr.getmaxyx())
+    if hasattr(curses, 'resize_term'):
+        curses.resize_term(*stdscr.getmaxyx())
+
 def unit_tests():
     from curses import ascii
     for ch, expected in [('a', 'a'), ('A', 'A'),
