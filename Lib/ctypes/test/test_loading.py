@@ -16,7 +16,7 @@ elif sys.platform == "cygwin":
 else:
     for line in os.popen("ldd %s" % sys.executable):
         if "libc.so" in line:
-            if sys.platform == "openbsd3":
+            if sys.platform.startswith("openbsd3"):
                 libc_name = line.split()[4]
             else:
                 libc_name = line.split()[2]
