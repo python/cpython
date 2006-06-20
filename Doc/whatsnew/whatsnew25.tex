@@ -2074,10 +2074,9 @@ Marc-Andr\'e Lemburg.}
 
 
 %======================================================================
-%\subsection{The wsgiref package\label{module-wsgiref}}
+\subsection{The wsgiref package\label{module-wsgiref}}
 
 % XXX should this be in a PEP 333 section instead?
-\begin{comment}
 
 The Web Server Gateway Interface (WSGI) v1.0 defines a standard
 interface between web servers and Python web applications and is
@@ -2086,10 +2085,7 @@ implementation of the WSGI specification.
 
 The package includes a basic HTTP server that will run a WSGI
 application; this server is useful for debugging but isn't intended for 
-production use.
-
-% XXX structure of WSGI applications?  
-% XXX provide an example using Django or some other framework?
+production use.  Setting up a server takes only a few lines of code:
 
 \begin{verbatim}
 from wsgiref import simple_server
@@ -2102,16 +2098,18 @@ httpd = make_server(host, port, wsgi_app)
 httpd.serve_forever()
 \end{verbatim}
 
+% XXX discuss structure of WSGI applications?  
+% XXX provide an example using Django or some other framework?
 
 \begin{seealso}
+
+\seeurl{http://www.wsgi.org}{A central web site for WSGI-related resources.}
 
 \seepep{333}{Python Web Server Gateway Interface v1.0}{PEP written by
 Phillip J. Eby.}
 
 \end{seealso}
 
-
-\end{comment}
 
 % ======================================================================
 \section{Build and C API Changes\label{build-api}}
