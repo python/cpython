@@ -15,18 +15,41 @@
 \maketitle
 \tableofcontents
 
-This article explains the new features in Python 2.5.  No release date
-for Python 2.5 has been set; it will probably be released in the
-autumn of 2006.  \pep{356} describes the planned release schedule.
+This article explains the new features in Python 2.5.  The final
+release of Python 2.5 is scheduled for August 2006;
+\pep{356} describes the planned release schedule.
 
 Comments, suggestions, and error reports are welcome; please e-mail them 
 to the author or open a bug in the Python bug tracker.
 
 % XXX Compare with previous release in 2 - 3 sentences here.
+The changes in Python 2.5 are an interesting mix of language and library
+changes. The library changes 
+will be more important to Python's user community, I think,
+because several widely-useful packages were added to the standard library;
+the additions include 
+ElementTree for XML processing (section~\ref{module-etree}),
+the SQLite database module (section~\ref{module-sqlite}),
+and the \module{ctypes} module for calling C functions (\section~\ref{module-ctypes}).
 
-This article doesn't attempt to provide a complete specification of
-the new features, but instead provides a convenient overview.  For
-full details, you should refer to the documentation for Python 2.5.
+The language changes are of middling significance.  Some pleasant new
+features were added, but most of them aren't features that you'll use
+every day.  Conditional expressions were finally added to the language
+using a novel syntax; see section~\ref{pep-308}.  The new
+'\keyword{with}' statement will make writing cleanup code easier
+(section~\ref{pep-343}).  Values can now be passed into generators
+(section~\ref{pep-342}).  Imports are now visible as either absolute
+or relative (section~\ref{pep-328}).  Some corner cases of exception
+handling are handled better (section~\ref{pep-341}).  All these
+improvements are worthwhile, but they're improvements to one specific
+language feature or another; none of them are broad modifications to
+Python's semantics.
+
+
+This article doesn't attempt to be a complete specification of the new
+features, but instead is a brief introduction to each new feature.
+For full details, you should refer to the documentation for Python
+2.5.
 % XXX add hyperlink when the documentation becomes available online.
 If you want to understand the complete implementation and design
 rationale, refer to the PEP for a particular new feature.
@@ -36,10 +59,10 @@ rationale, refer to the PEP for a particular new feature.
 \section{PEP 308: Conditional Expressions\label{pep-308}}
 
 For a long time, people have been requesting a way to write
-conditional expressions, expressions that return value A or value B
-depending on whether a Boolean value is true or false.  A conditional
-expression lets you write a single assignment statement that has the
-same effect as the following:
+conditional expressions, which are expressions that return value A or
+value B depending on whether a Boolean value is true or false.  A
+conditional expression lets you write a single assignment statement
+that has the same effect as the following:
 
 \begin{verbatim}
 if condition:
