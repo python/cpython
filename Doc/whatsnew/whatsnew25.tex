@@ -1733,6 +1733,11 @@ Konqueror, and elinks.  (Contributed by Oleg Broytmann and George
 Brandl.)
 % Patch #754022
 
+\item Python's standard library no longer includes 
+a package named \module{xml}; the library's XML-related package
+has been renamed to \module{xmlcore}.    This means 
+it will always be possible to import the standard library's 
+XML support whether or not the PyXML package is installed.
 
 \item The \module{xmlrpclib} module now supports returning 
       \class{datetime} objects for the XML-RPC date type.  Supply 
@@ -2347,6 +2352,10 @@ XML-RPC operations to a limited set of URL paths; the default is
 to allow only \code{'/'} and \code{'/RPC2'}.  Setting 
 \member{rpc_paths} to \code{None} or an empty tuple disables 
 this path checking.
+
+\item Library: the \module{xml} package has been renamed to \module{xmlcore}.
+The PyXML package will therefore be \module{xml}, and the Python
+distribution's code will always be accessible as \module{xmlcore}.
 
 \item C API: Many functions now use \ctype{Py_ssize_t} 
 instead of \ctype{int} to allow processing more data on 64-bit
