@@ -2,7 +2,6 @@
 \usepackage{distutils}
 % $Id$
 
-% wsgiref section
 % Fix XXX comments
 % Count up the patches and bugs
 
@@ -19,18 +18,13 @@ This article explains the new features in Python 2.5.  The final
 release of Python 2.5 is scheduled for August 2006;
 \pep{356} describes the planned release schedule.
 
-Comments, suggestions, and error reports are welcome; please e-mail them 
-to the author or open a bug in the Python bug tracker.
-
-% XXX Compare with previous release in 2 - 3 sentences here.
-The changes in Python 2.5 are an interesting mix of language and library
-changes. The library changes 
-will be more important to Python's user community, I think,
-because several widely-useful packages were added to the standard library;
-the additions include 
-ElementTree for XML processing (section~\ref{module-etree}),
-the SQLite database module (section~\ref{module-sqlite}),
-and the \module{ctypes} module for calling C functions (\section~\ref{module-ctypes}).
+The changes in Python 2.5 are an interesting mix of language and
+library improvements. The library enhancements will be more important
+to Python's user community, I think, because several widely-useful
+packages were added.  New modules include ElementTree for XML
+processing (section~\ref{module-etree}), the SQLite database module
+(section~\ref{module-sqlite}), and the \module{ctypes} module for
+calling C functions (section~\ref{module-ctypes}).
 
 The language changes are of middling significance.  Some pleasant new
 features were added, but most of them aren't features that you'll use
@@ -45,15 +39,17 @@ improvements are worthwhile, but they're improvements to one specific
 language feature or another; none of them are broad modifications to
 Python's semantics.
 
-
-This article doesn't attempt to be a complete specification of the new
-features, but instead is a brief introduction to each new feature.
-For full details, you should refer to the documentation for Python
-2.5.
+This article doesn't try to be a complete specification of the new
+features; instead changes are briefly introduced using helpful
+examples.  For full details, you should always refer to the
+documentation for Python 2.5.
 % XXX add hyperlink when the documentation becomes available online.
 If you want to understand the complete implementation and design
 rationale, refer to the PEP for a particular new feature.
 
+Comments, suggestions, and error reports for this document are
+welcome; please e-mail them to the author or open a bug in the Python
+bug tracker.
 
 %======================================================================
 \section{PEP 308: Conditional Expressions\label{pep-308}}
