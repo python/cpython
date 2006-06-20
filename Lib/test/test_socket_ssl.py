@@ -55,7 +55,7 @@ def test_timeout():
     for.  If this message is seen often, test_timeout should be changed to
     use a more reliable address.""" % (ADDR,)
         return
-    except socket.err, exc:  # In case connection is refused.
+    except socket.error, exc:  # In case connection is refused.
         if (isinstance(exc.message, tuple) and
             exc.message[0] == errno.ECONNREFUSED):
             raise test_support.TestSkipped("test socket connection refused")
