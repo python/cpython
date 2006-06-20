@@ -1384,6 +1384,12 @@ keeps an example from being executed at all.  This is intended for
 code snippets that are usage examples intended for the reader and
 aren't actually test cases.
 
+An \var{encoding} parameter was added to the \function{testfile()}
+function and the \class{DocFileSuite} class to specify the file's
+encoding.  This makes it easier to use non-ASCII characters in 
+tests contained within a docstring.  (Contributed by Bjorn Tillenius.)
+% Patch 1080727
+
 \item The \module{fileinput} module was made more flexible.
 Unicode filenames are now supported, and a \var{mode} parameter that
 defaults to \code{"r"} was added to the
@@ -1540,6 +1546,9 @@ tuple slicing, method lookups, and numeric operations, instead of
 performing many different operations and reducing the result to a
 single number as \file{pystone.py} does.
 
+\item The \module{pyexpat} module now uses version 2.0 of the Expat parser.
+(Contributed by Trent Mick.)
+
 \item The old \module{regex} and \module{regsub} modules, which have been 
 deprecated ever since Python 2.0, have finally been deleted.  
 Other deleted modules: \module{statcache}, \module{tzparse},
@@ -1682,6 +1691,14 @@ UUID('886313e1-3b8a-5372-9b90-0c9aee199e5d')
 
 (Contributed by Ka-Ping Yee.)
 
+\item The \module{weakref} module's \class{WeakKeyDictionary} and
+\class{WeakValueDictionary} types gained new methods for iterating
+over the weak references contained in the dictionary. 
+\method{iterkeyrefs()} and \method{keyrefs()} methods were
+added to \class{WeakKeyDictionary}, and
+\method{itervaluerefs()} and \method{valuerefs()} were added to
+\class{WeakValueDictionary}.  (Contributed by Fred L.~Drake, Jr.)
+
 \item The \module{webbrowser} module received a number of
 enhancements.
 It's now usable as a script with \code{python -m webbrowser}, taking a
@@ -1704,6 +1721,12 @@ Brandl.)
       or the \class{Unmarshaller} class to enable this feature.
       (Contributed by Skip Montanaro.)
 % Patch 1120353
+
+\item The \module{zipfile} module now supports the ZIP64 version of the 
+format, meaning that a .zip archive can now be larger than 4 GiB and
+can contain individual files larger than 4 GiB.  (Contributed by
+Ronald Oussoren.)
+% Patch 1446489
 
 \item The \module{zlib} module's \class{Compress} and \class{Decompress}
 objects now support a \method{copy()} method that makes a copy of the 
