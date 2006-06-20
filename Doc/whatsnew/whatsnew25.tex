@@ -960,7 +960,7 @@ space for a \ctype{PyObject} representing the item.  2147483647*4 is
 already more bytes than a 32-bit address space can contain.
 
 It's possible to address that much memory on a 64-bit platform,
-however.  The pointers for a list that size would only require 16GiB
+however.  The pointers for a list that size would only require 16~GiB
 of space, so it's not unreasonable that Python programmers might
 construct lists that large.  Therefore, the Python interpreter had to
 be changed to use some type other than \ctype{int}, and this will be a
@@ -1723,8 +1723,8 @@ Brandl.)
 % Patch 1120353
 
 \item The \module{zipfile} module now supports the ZIP64 version of the 
-format, meaning that a .zip archive can now be larger than 4 GiB and
-can contain individual files larger than 4 GiB.  (Contributed by
+format, meaning that a .zip archive can now be larger than 4~GiB and
+can contain individual files larger than 4~GiB.  (Contributed by
 Ronald Oussoren.)
 % Patch 1446489
 
