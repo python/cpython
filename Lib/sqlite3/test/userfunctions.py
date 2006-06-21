@@ -365,7 +365,6 @@ def authorizer_cb(action, arg1, arg2, dbname, source):
 
 class AuthorizerTests(unittest.TestCase):
     def setUp(self):
-        sqlite.enable_callback_tracebacks(1)
         self.con = sqlite.connect(":memory:")
         self.con.executescript("""
             create table t1 (c1, c2);
