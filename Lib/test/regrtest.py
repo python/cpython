@@ -1274,6 +1274,37 @@ _expectations = {
         test_winreg
         test_winsound
         """,
+    'netbsd3':
+        """
+        test_aepack
+        test_al
+        test_applesingle
+        test_bsddb
+        test_bsddb185
+        test_bsddb3
+        test_cd
+        test_cl
+        test_ctypes
+        test_curses
+        test_dl
+        test_gdbm
+        test_gl
+        test_imgfile
+        test_linuxaudiodev
+        test_locale
+        test_macfs
+        test_macostools
+        test_nis
+        test_ossaudiodev
+        test_pep277
+        test_sqlite
+        test_startfile
+        test_sunaudiodev
+        test_tcl
+        test_unicode_file
+        test_winreg
+        test_winsound
+        """,
 }
 _expectations['freebsd5'] = _expectations['freebsd4']
 _expectations['freebsd6'] = _expectations['freebsd4']
