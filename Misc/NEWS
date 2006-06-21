@@ -4,8 +4,25 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.5 beta 2?
+================================
+
+*Release date: XX-JUL-2006*
+
+Core and builtins
+-----------------
+
+
+Library
+-------
+
+- The compiler module now correctly compiles the new try-except-finally
+  statement (bug #1509132).
+
+
+
 What's New in Python 2.5 beta 1?
-=================================
+================================
 
 *Release date: 20-JUN-2006*
 
