@@ -209,3 +209,18 @@ if not sys.platform.startswith('java'):
     test_capi2()
 
 unlink(TESTFN)
+
+def test_infinite_recursion():
+    def g():
+        try:
+            return g()
+        except ValueError:
+            return -1
+    try:
+        g()
+    except RuntimeError:
+        pass
+    else:
+        print "Expected exception"
+
+test_infinite_recursion()
