@@ -1409,6 +1409,10 @@ encoding.  This makes it easier to use non-ASCII characters in
 tests contained within a docstring.  (Contributed by Bjorn Tillenius.)
 % Patch 1080727
 
+\item The \module{email} package has been updated to version 4.0.
+% XXX need to provide some more detail here
+(Contributed by Barry Warsaw.)
+
 \item The \module{fileinput} module was made more flexible.
 Unicode filenames are now supported, and a \var{mode} parameter that
 defaults to \code{"r"} was added to the
@@ -1427,6 +1431,7 @@ collector; when these counts reach a specified threshold, a garbage
 collection sweep will be made.  The existing \function{gc.collect()}
 function now takes an optional \var{generation} argument of 0, 1, or 2
 to specify which generation to collect.
+(Contributed by Barry Warsaw.)
 
 \item The \function{nsmallest()} and 
 \function{nlargest()} functions in the \module{heapq} module 
@@ -2392,6 +2397,7 @@ freed with the corresponding family's \cfunction{*_Free()} function.
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Phillip J. Eby, Kent Johnson, Martin von~L\"owis, Fredrik Lundh, 
-Gustavo Niemeyer, James Pryor, Mike Rovner, Scott Weikart, Thomas Wouters.
+Gustavo Niemeyer, James Pryor, Mike Rovner, Scott Weikart, Barry Warsaw,
+Thomas Wouters.
 
 \end{document}
