@@ -1796,17 +1796,7 @@ PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw)
         ternaryfunc call;
 
 	if ((call = func->ob_type->tp_call) != NULL) {
-		PyObject *result = NULL;
-		/* slot_tp_call() will be called and ends up calling
-		   PyObject_Call() if the object returned for __call__ has
-		   __call__ itself defined upon it.  This can be an infinite
-		   recursion if you set __call__ in a class to an instance of
-		   it. */
-		if (Py_EnterRecursiveCall(" in __call__")) {
-		    return NULL;
-		}
-		result = (*call)(func, arg, kw);
-		Py_LeaveRecursiveCall();
+		PyObject *result = (*call)(func, arg, kw);
 		if (result == NULL && !PyErr_Occurred())
 			PyErr_SetString(
 				PyExc_SystemError,

@@ -305,6 +305,18 @@ class ExceptionTests(unittest.TestCase):
         x = DerivedException(fancy_arg=42)
         self.assertEquals(x.fancy_arg, 42)
 
+    def testInfiniteRecursion(self):
+        def f():
+            return f()
+        self.assertRaises(RuntimeError, f)
+
+        def g():
+            try:
+                return g()
+            except ValueError:
+                return -1
+        self.assertRaises(RuntimeError, g)
+
 def test_main():
     run_unittest(ExceptionTests)
 
