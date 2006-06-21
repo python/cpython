@@ -56,11 +56,11 @@ def test_timeout():
     use a more reliable address.""" % (ADDR,)
         return
     except socket.error, exc:  # In case connection is refused.
-        if (isinstance(exc.message, tuple) and
-            exc.message[0] == errno.ECONNREFUSED):
-            raise test_support.TestSkipped("test socket connection refused")
+        if exc.args[0] == errno.ECONNREFUSED:
+            print "Connection refused when connecting to", ADDR
+            return
         else:
-            raise exc
+            raise
 
     ss = socket.ssl(s)
     # Read part of return welcome banner twice.
