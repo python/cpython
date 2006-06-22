@@ -16,6 +16,10 @@ Core and builtins
 Library
 -------
 
+- Bug #1510580: The 'warnings' module improperly required that a Warning
+  category be either a types.ClassType and a subclass of Warning.  The proper
+  check is just that it is a subclass with Warning as the documentation states.
+
 - The compiler module now correctly compiles the new try-except-finally
   statement (bug #1509132).
 
