@@ -1174,6 +1174,16 @@ In Python 2.5, a new \exception{ImportWarning} warning is raised when
 an import would have picked up a directory as a package but no
 \file{__init__.py} was found.  (Implemented by Thomas Wouters.)
 
+To suppress these warnings, you can either supply 
+\command{-W'ignore:Not importing directory'} when running the Python
+interpreter, or use the \module{warnings} module to suppress the
+message:
+
+\begin{verbatim}
+warnings.filterwarnings('ignore', 'Not importing directory',
+                        ImportWarning)
+\end{verbatim}
+
 \item The list of base classes in a class definition can now be empty.  
 As an example, this is now legal:
 
@@ -2396,8 +2406,8 @@ freed with the corresponding family's \cfunction{*_Free()} function.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Phillip J. Eby, Kent Johnson, Martin von~L\"owis, Fredrik Lundh, 
-Gustavo Niemeyer, James Pryor, Mike Rovner, Scott Weikart, Barry Warsaw,
-Thomas Wouters.
+article: Phillip J. Eby, "Ralf W. Grosse-Kunstleve, Kent Johnson,
+Martin von~L\"owis, Fredrik Lundh, Gustavo Niemeyer, James Pryor, Mike
+Rovner, Scott Weikart, Barry Warsaw, Thomas Wouters.
 
 \end{document}
