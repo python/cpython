@@ -941,7 +941,7 @@ class Popen(object):
 
 
         def _close_fds(self, but):
-            for i in range(3, MAXFD):
+            for i in xrange(3, MAXFD):
                 if i == but:
                     continue
                 try:
