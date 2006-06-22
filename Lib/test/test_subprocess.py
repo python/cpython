@@ -384,7 +384,8 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_no_leaking(self):
         # Make sure we leak no resources
-        if test_support.is_resource_enabled("subprocess") and not mswindows:
+        if not hasattr(test_support, "is_resource_enabled") \
+               or test_support.is_resource_enabled("subprocess") and not mswindows:
             max_handles = 1026 # too much for most UNIX systems
         else:
             max_handles = 65
