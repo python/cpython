@@ -727,17 +727,17 @@ class Transformer:
 
     def atom_lpar(self, nodelist):
         if nodelist[1][0] == token.RPAR:
-            return Tuple(())
+            return Tuple((), lineno=nodelist[0][2])
         return self.com_node(nodelist[1])
 
     def atom_lsqb(self, nodelist):
         if nodelist[1][0] == token.RSQB:
-            return List(())
+            return List((), lineno=nodelist[0][2])
         return self.com_list_constructor(nodelist[1])
 
     def atom_lbrace(self, nodelist):
         if nodelist[1][0] == token.RBRACE:
-            return Dict(())
+            return Dict((), lineno=nodelist[0][2])
         return self.com_dictmaker(nodelist[1])
 
     def atom_backquote(self, nodelist):
@@ -1141,7 +1141,7 @@ class Transformer:
             values = []
             for i in range(1, len(nodelist), 2):
                 values.append(self.com_node(nodelist[i]))
-            return List(values)
+            return List(values, lineno=values[0].lineno)
 
     if hasattr(symbol, 'gen_for'):
         def com_generator_expression(self, expr, node):
@@ -1188,7 +1188,7 @@ class Transformer:
         for i in range(1, len(nodelist), 4):
             items.append((self.com_node(nodelist[i]),
                           self.com_node(nodelist[i+2])))
-        return Dict(items)
+        return Dict(items, lineno=items[0][0].lineno)
 
     def com_apply_trailer(self, primaryNode, nodelist):
         t = nodelist[1][0]
