@@ -1543,13 +1543,13 @@ each time.
 The following public attributes are available, their name starts with
 an underscore to not clash with exported function names:
 
-\begin{datadescni}{_handle: memberdesc}
+\begin{memberdesc}{_handle}
 The system handle used to access the library.
-\end{datadescni}
+\end{memberdesc}
 
-\begin{datadescni}{_name: memberdesc}
+\begin{memberdesc}{_name}
 The name of the library passed in the contructor.
-\end{datadescni}
+\end{memberdesc}
 
 Shared libraries can also be loaded by using one of the prefabricated
 objects, which are instances of the \class{LibraryLoader} class, either by
@@ -1748,7 +1748,7 @@ above.
 Each item in this tuple contains further information about a
 parameter, it must be a tuple containing 1, 2, or 3 items.
 
-The first item is an integer containing flags for the parameter.
+The first item is an integer containing flags for the parameter:
 
 \begin{datadescni}{1}
 Specifies an input parameter to the function.
@@ -2374,7 +2374,7 @@ field specifies which one of the union fields is valid.  Since the
 \code{u} field is defined as anonymous field, it is now possible to
 access the members directly off the TYPEDESC instance.
 \code{td.lptdesc} and \code{td.u.lptdesc} are equivalent, but the former
-is faster since it does not need to create a temporary \code{{\_}U}
+is faster since it does not need to create a temporary union
 instance:
 \begin{verbatim}
 td = TYPEDESC()
@@ -2386,7 +2386,7 @@ td.u.lptdesc = POINTER(some_type)
 
 It is possible to defined sub-subclasses of structures, they inherit
 the fields of the base class.  If the subclass definition has a
-separate``{\_}fields{\_}`` variable, the fields specified in this are
+separate \member{{\_}fields{\_}} variable, the fields specified in this are
 appended to the fields of the base class.
 
 
