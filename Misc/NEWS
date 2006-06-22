@@ -19,6 +19,8 @@ Library
 - The compiler module now correctly compiles the new try-except-finally
   statement (bug #1509132).
 
+- The wsgiref package is now installed properly on Unix.
+
 
 
 What's New in Python 2.5 beta 1?

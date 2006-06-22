@@ -708,7 +708,7 @@ LIBSUBDIRS=	lib-old lib-tk site-packages test test/output test/data \
 		encodings compiler hotshot \
 		email email/mime email/test email/test/data \
 		sqlite3 sqlite3/test \
-		logging bsddb bsddb/test csv \
+		logging bsddb bsddb/test csv wsgiref \
 		ctypes ctypes/test ctypes/macholib idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
 		setuptools setuptools/command setuptools/tests setuptools.egg-info \
