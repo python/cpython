@@ -219,6 +219,14 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
             ("starttag", "a", [("a.b", "v"), ("c:d", "v"), ("e-f", "v")]),
             ])
 
+    def test_attr_value_ip6_url(self):
+        # http://www.python.org/sf/853506
+        self.check_events(("<a href='http://[1080::8:800:200C:417A]/'>"
+                           "<a href=http://[1080::8:800:200C:417A]/>"), [
+            ("starttag", "a", [("href", "http://[1080::8:800:200C:417A]/")]),
+            ("starttag", "a", [("href", "http://[1080::8:800:200C:417A]/")]),
+            ])
+
     def test_illegal_declarations(self):
         s = 'abc<!spacer type="block" height="25">def'
         self.check_events(s, [
