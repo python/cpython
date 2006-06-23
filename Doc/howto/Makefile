@@ -1,88 +1,84 @@
+# Makefile for the HOWTO directory
+# LaTeX HOWTOs can be turned into HTML, PDF, PS, DVI or plain text output.
+# reST HOWTOs can only be turned into HTML.
+
+# Variables to change
+
+# Paper size for non-HTML formats (letter or a4)
+PAPER=letter
+
+# Arguments to rst2html.py, and location of the script
+RSTARGS = --input-encoding=utf-8
+RST2HTML = rst2html.py
+
+# List of HOWTOs that aren't to be processed.  This should contain the
+# base name of the HOWTO without any extension (e.g. 'advocacy',
+# 'unicode').
+REMOVE_HOWTOS =
 
 MKHOWTO=../tools/mkhowto
 WEBDIR=.
-RSTARGS = --input-encoding=utf-8
-VPATH=.:dvi:pdf:ps:txt
-
-# List of HOWTOs that aren't to be processed
-
-REMOVE_HOWTO =
+PAPERDIR=../paper-$(PAPER)
+HTMLDIR=../html
 
 # Determine list of files to be built
+TEX_SOURCES = $(wildcard *.tex)
+RST_SOURCES = $(wildcard *.rst)
+TEX_NAMES = $(filter-out $(REMOVE_HOWTOS),$(patsubst %.tex,%,$(TEX_SOURCES)))
 
-HOWTO=$(filter-out $(REMOVE_HOWTO),$(wildcard *.tex))
-RST_SOURCES =	$(shell echo *.rst)
-DVI  =$(patsubst %.tex,%.dvi,$(HOWTO))
-PDF  =$(patsubst %.tex,%.pdf,$(HOWTO))
-PS   =$(patsubst %.tex,%.ps,$(HOWTO))
-TXT  =$(patsubst %.tex,%.txt,$(HOWTO))
-HTML =$(patsubst %.tex,%,$(HOWTO))
+PAPER_PATHS=$(addprefix $(PAPERDIR)/,$(TEX_NAMES))
+DVI  =$(addsuffix .dvi,$(PAPER_PATHS))
+PDF  =$(addsuffix .pdf,$(PAPER_PATHS))
+PS   =$(addsuffix .ps,$(PAPER_PATHS))
+
+ALL_HOWTO_NAMES = $(TEX_NAMES) $(patsubst %.rst,%,$(RST_SOURCES))
+HOWTO_NAMES = $(filter-out $(REMOVE_HOWTOS),$(ALL_HOWTO_NAMES))
+HTML = $(addprefix $(HTMLDIR)/,$(HOWTO_NAMES))
 
 # Rules for building various formats
-%.dvi : %.tex
+
+# reST to HTML
+$(HTMLDIR)/%: %.rst
+	if [ ! -d $@ ] ; then mkdir $@ ; fi
+	$(RST2HTML) $(RSTARGS) $< >$@/index.html
+
+# LaTeX to various output formats
+$(PAPERDIR)/%.dvi : %.tex
 	$(MKHOWTO) --dvi $<
-	mv $@ dvi
+	mv $*.dvi $@
 
-%.pdf : %.tex
+$(PAPERDIR)/%.pdf : %.tex
 	$(MKHOWTO) --pdf $<
-	mv $@ pdf
+	mv $*.pdf $@
 
-%.ps : %.tex
+$(PAPERDIR)/%.ps : %.tex
 	$(MKHOWTO) --ps $<
-	mv $@ ps
+	mv $*.ps $@
 
-%.txt : %.tex
+$(HTMLDIR)/% : %.tex
+	$(MKHOWTO) --html --iconserver="." --dir $@ $<
+
+# Rule that isn't actually used -- we no longer support the 'txt' target.
+$(PAPERDIR)/%.txt : %.tex
 	$(MKHOWTO) --text $<
 	mv $@ txt
 
-% : %.tex
-	$(MKHOWTO) --html --iconserver="." $<
-	tar -zcvf html/$*.tgz $*
-	#zip -r html/$*.zip $*
-
 default:
 	@echo "'all'    -- build all files"
-	@echo "'dvi', 'pdf', 'ps', 'txt', 'html' -- build one format"
+	@echo "'dvi', 'pdf', 'ps', 'html' -- build one format"
 
-all: $(HTML)
+all: dvi pdf ps html
 
-.PHONY : dvi pdf ps txt html rst
-dvi: $(DVI)
-
-pdf: $(PDF)
-ps:  $(PS)
-txt: $(TXT)
-html:$(HTML)
-
-# Rule to build collected tar files
-dist: #all
-	for i in dvi pdf ps txt ; do \
-	    cd $$i ; \
-	    tar -zcf All.tgz *.$$i ;\
-	    cd .. ;\
-	done
-
-# Rule to copy files to the Web tree on AMK's machine
-web: dist
-	cp dvi/* $(WEBDIR)/dvi
-	cp ps/* $(WEBDIR)/ps
-	cp pdf/* $(WEBDIR)/pdf
-	cp txt/* $(WEBDIR)/txt
-	for dir in $(HTML) ; do cp -rp $$dir $(WEBDIR) ; done
-	for ltx in $(HOWTO) ; do cp -p $$ltx $(WEBDIR)/latex ; done
-
-rst: unicode.html
-
-%.html: %.rst
-	rst2html $(RSTARGS) $< >$@
+.PHONY : dvi pdf ps html
+dvi:  $(DVI)
+pdf:  $(PDF)
+ps:   $(PS)
+html: $(HTML)
 
 clean:
-	rm -f *~ *.log *.ind *.l2h *.aux *.toc *.how
-	rm -f *.dvi *.ps *.pdf *.bkm
-	rm -f unicode.html
+	rm -f *~ *.log *.ind *.l2h *.aux *.toc *.how *.bkm
+	rm -f *.dvi *.pdf *.ps
 
 clobber:
-	rm dvi/* ps/* pdf/* txt/* html/*
-
-
-
+	rm -rf $(HTML)
+	rm -rf $(DVI) $(PDF) $(PS)
