@@ -4595,8 +4595,10 @@ slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 	   the object returned for __call__ has __call__ itself defined
 	   upon it.  This can be an infinite recursion if you set
 	   __call__ in a class to an instance of it. */
-	if (Py_EnterRecursiveCall(" in __call__"))
+	if (Py_EnterRecursiveCall(" in __call__")) {
+		Py_DECREF(meth);
 		return NULL;
+	}
 	res = PyObject_Call(meth, args, kwds);
 	Py_LeaveRecursiveCall();
 
