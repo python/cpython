@@ -33,7 +33,7 @@ endbracket = re.compile('[<>]')
 tagfind = re.compile('[a-zA-Z][-_.a-zA-Z0-9]*')
 attrfind = re.compile(
     r'\s*([a-zA-Z_][-:.a-zA-Z_0-9]*)(\s*=\s*'
-    r'(\'[^\']*\'|"[^"]*"|[-a-zA-Z0-9./,:;+*%?!&$\(\)_#=~\'"@]*))?')
+    r'(\'[^\']*\'|"[^"]*"|[][\-a-zA-Z0-9./,:;+*%?!&$\(\)_#=~\'"@]*))?')
 
 
 class SGMLParseError(RuntimeError):
@@ -400,11 +400,11 @@ class SGMLParser(markupbase.ParserBase):
 
     def handle_charref(self, name):
         """Handle character reference, no need to override."""
-        replacement = convert_charref(name)
+        replacement = self.convert_charref(name)
         if replacement is None:
             self.unknown_charref(name)
         else:
-            self.handle_data(convert_charref(name))
+            self.handle_data(replacement)
 
     # Definition of entities -- derived classes may override
     entitydefs = \
