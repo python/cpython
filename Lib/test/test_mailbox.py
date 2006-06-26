@@ -720,6 +720,28 @@ class _TestMboxMMDF(TestMailbox):
         self.assert_(contents == open(self._path, 'rb').read())
         self._box = self._factory(self._path)
 
+    def test_lock_conflict(self):
+        # Fork off a subprocess that will lock the file for 2 seconds,
+        # unlock it, and then exit.
+        pid = os.fork()
+        if pid == 0:
+            # In the child, lock the mailbox.
+            self._box.lock()
+            time.sleep(2)
+            self._box.unlock()
+            os._exit(0)
+
+        # In the parent, sleep a bit to give the child time to acquire
+        # the lock.
+        time.sleep(0.5)
+        self.assertRaises(mailbox.ExternalClashError,
+                          self._box.lock)
+        
+        # Wait for child to exit.  Locking should now succeed.
+        pid, status = os.wait()
+        self._box.lock()
+        self._box.unlock()
+        
 
 class TestMbox(_TestMboxMMDF):
 
