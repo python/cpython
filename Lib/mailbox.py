@@ -1798,7 +1798,7 @@ class _PartialFile(_ProxyFile):
 
 
 def _lock_file(f, dotlock=True):
-    """Lock file f using lockf, flock, and dot locking."""
+    """Lock file f using lockf and dot locking."""
     dotlock_done = False
     try:
         if fcntl:
@@ -1807,14 +1807,6 @@ def _lock_file(f, dotlock=True):
             except IOError, e:
                 if e.errno == errno.EAGAIN:
                     raise ExternalClashError('lockf: lock unavailable: %s' %
-                                             f.name)
-                else:
-                    raise
-            try:
-                fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except IOError, e:
-                if e.errno == errno.EWOULDBLOCK:
-                    raise ExternalClashError('flock: lock unavailable: %s' %
                                              f.name)
                 else:
                     raise
@@ -1845,16 +1837,14 @@ def _lock_file(f, dotlock=True):
     except:
         if fcntl:
             fcntl.lockf(f, fcntl.LOCK_UN)
-            fcntl.flock(f, fcntl.LOCK_UN)
         if dotlock_done:
             os.remove(f.name + '.lock')
         raise
 
 def _unlock_file(f):
-    """Unlock file f using lockf, flock, and dot locking."""
+    """Unlock file f using lockf and dot locking."""
     if fcntl:
         fcntl.lockf(f, fcntl.LOCK_UN)
-        fcntl.flock(f, fcntl.LOCK_UN)
     if os.path.exists(f.name + '.lock'):
         os.remove(f.name + '.lock')
 
