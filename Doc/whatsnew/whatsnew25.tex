@@ -817,7 +817,7 @@ The new \module{contextlib} module provides some functions and a
 decorator that are useful for writing objects for use with the
 '\keyword{with}' statement.
 
-The decorator is called \function{contextfactory}, and lets you write
+The decorator is called \function{contextmanager}, and lets you write
 a single generator function instead of defining a new class.  The generator
 should yield exactly one value.  The code up to the \keyword{yield}
 will be executed as the \method{__enter__()} method, and the value
@@ -831,9 +831,9 @@ Our database example from the previous section could be written
 using this decorator as:
 
 \begin{verbatim}
-from contextlib import contextfactory
+from contextlib import contextmanager
 
-@contextfactory
+@contextmanager
 def db_transaction (connection):
     cursor = connection.cursor()
     try:
@@ -1748,11 +1748,12 @@ Konqueror, and elinks.  (Contributed by Oleg Broytmann and Georg
 Brandl.)
 % Patch #754022
 
-\item Python's standard library no longer includes 
-a package named \module{xml}; the library's XML-related package
-has been renamed to \module{xmlcore}.    This means 
-it will always be possible to import the standard library's 
-XML support whether or not the PyXML package is installed.
+\item The standard library's XML-related package
+has been renamed to \module{xmlcore}.  The \module{xml} module will
+now import either the \module{xmlcore} or PyXML version of subpackages
+such as \module{xml.dom}.  The renaming means it will always be
+possible to import the standard library's XML support whether or not
+the PyXML package is installed.
 
 \item The \module{xmlrpclib} module now supports returning 
       \class{datetime} objects for the XML-RPC date type.  Supply 
@@ -2168,7 +2169,7 @@ wsgi_app = ...
 
 host = ''
 port = 8000
-httpd = make_server(host, port, wsgi_app)
+httpd = simple_server.make_server(host, port, wsgi_app)
 httpd.serve_forever()
 \end{verbatim}
 
@@ -2218,12 +2219,13 @@ assignment = ast.body[0]
 for_loop = ast.body[1]
 \end{verbatim}
 
-No documentation has been written for the AST code yet.  To start
-learning about it, read the definition of the various AST nodes in
-\file{Parser/Python.asdl}.  A Python script reads this file and
-generates a set of C structure definitions in
-\file{Include/Python-ast.h}.  The \cfunction{PyParser_ASTFromString()}
-and \cfunction{PyParser_ASTFromFile()}, defined in
+No official documentation has been written for the AST code yet, but
+\pep{339} discusses the design.  To start learning about the code, read the
+definition of the various AST nodes in \file{Parser/Python.asdl}.  A
+Python script reads this file and generates a set of C structure
+definitions in \file{Include/Python-ast.h}.  The
+\cfunction{PyParser_ASTFromString()} and
+\cfunction{PyParser_ASTFromFile()}, defined in
 \file{Include/pythonrun.h}, take Python source as input and return the
 root of an AST representing the contents.  This AST can then be turned
 into a code object by \cfunction{PyAST_Compile()}.  For more
@@ -2406,8 +2408,8 @@ freed with the corresponding family's \cfunction{*_Free()} function.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Phillip J. Eby, "Ralf W. Grosse-Kunstleve, Kent Johnson,
-Martin von~L\"owis, Fredrik Lundh, Gustavo Niemeyer, James Pryor, Mike
-Rovner, Scott Weikart, Barry Warsaw, Thomas Wouters.
+article: Nick Coghlan, Phillip J. Eby, "Ralf W. Grosse-Kunstleve, Kent
+Johnson, Martin von~L\"owis, Fredrik Lundh, Gustavo Niemeyer, James
+Pryor, Mike Rovner, Scott Weikart, Barry Warsaw, Thomas Wouters.
 
 \end{document}
