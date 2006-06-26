@@ -2276,7 +2276,12 @@ the code can now be compiled with a {\Cpp} compiler without errors.
 
 \item The \cfunction{PyRange_New()} function was removed.  It was
 never documented, never used in the core code, and had dangerously lax
-error checking.
+error checking.  In the unlikely case that your extensions were using
+it, you can replace it by something like the following:
+\begin{verbatim}
+range = PyObject_CallFunction((PyObject*) &PyRange_Type, "lll", 
+                              start, stop, step);
+\end{verbatim}
 
 \end{itemize}
 
@@ -2408,7 +2413,7 @@ freed with the corresponding family's \cfunction{*_Free()} function.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Nick Coghlan, Phillip J. Eby, "Ralf W. Grosse-Kunstleve, Kent
+article: Nick Coghlan, Phillip J. Eby, Ralf W. Grosse-Kunstleve, Kent
 Johnson, Martin von~L\"owis, Fredrik Lundh, Gustavo Niemeyer, James
 Pryor, Mike Rovner, Scott Weikart, Barry Warsaw, Thomas Wouters.
 
