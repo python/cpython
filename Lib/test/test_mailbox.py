@@ -740,7 +740,7 @@ class _TestMboxMMDF(TestMailbox):
                           self._box.lock)
         
         # Wait for child to exit.  Locking should now succeed.
-        pid, status = os.wait()
+        exited_pid, status = os.waitpid(pid, 0)
         self._box.lock()
         self._box.unlock()
         
