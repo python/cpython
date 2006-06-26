@@ -15,7 +15,7 @@ import email.Generator
 import rfc822
 import StringIO
 try:
-    import fnctl
+    import fcntl
 except ImportError:
     fcntl = None
 
