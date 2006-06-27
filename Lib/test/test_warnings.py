@@ -92,7 +92,7 @@ class TestModule(unittest.TestCase):
                           warnings._setoption, 'ignore:2::4:-5')
         warnings._setoption('error::Warning::0')
         self.assertRaises(UserWarning, warnings.warn, 'convert to error')
-        
+
 
 def test_main(verbose=None):
     # Obscure hack so that this test passes after reloads or repeated calls

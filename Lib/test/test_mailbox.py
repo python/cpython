@@ -738,12 +738,12 @@ class _TestMboxMMDF(TestMailbox):
         time.sleep(0.5)
         self.assertRaises(mailbox.ExternalClashError,
                           self._box.lock)
-        
+
         # Wait for child to exit.  Locking should now succeed.
         exited_pid, status = os.waitpid(pid, 0)
         self._box.lock()
         self._box.unlock()
-        
+
 
 class TestMbox(_TestMboxMMDF):
 
