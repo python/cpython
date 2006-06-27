@@ -28,6 +28,11 @@ Library
 
 - The wsgiref package is now installed properly on Unix.
 
+Build
+-----
+
+- Bug #1513032, 'make install' failed on FreeBSD 5.3 due to lib-old
+  trying to be installed even though it's empty.
 
 
 What's New in Python 2.5 beta 1?
