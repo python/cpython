@@ -51,7 +51,7 @@ FAILURE_CC="nnorwitz@gmail.com"
 REMOTE_SYSTEM="neal@dinsdale.python.org"
 REMOTE_DIR="/data/ftp.python.org/pub/docs.python.org/dev/2.4"
 RESULT_FILE="$DIR/build/index.html"
-INSTALL_DIR="/tmp/python-test/local"
+INSTALL_DIR="/tmp/python-test-2.4/local"
 RSYNC_OPTS="-aC -e ssh"
 
 REFLOG="build/reflog.txt.out"
