@@ -44,6 +44,8 @@ DEFAULT_HTTP_LOGGING_PORT   = 9022
 DEFAULT_SOAP_LOGGING_PORT   = 9023
 SYSLOG_UDP_PORT             = 514
 
+_MIDNIGHT = 24 * 60 * 60  # number of seconds in a day
+
 class BaseRotatingHandler(logging.FileHandler):
     """
     Base class for handlers that rotate log files at a certain point.
@@ -126,12 +128,7 @@ class RotatingFileHandler(BaseRotatingHandler):
             dfn = self.baseFilename + ".1"
             if os.path.exists(dfn):
                 os.remove(dfn)
-            try:
-                os.rename(self.baseFilename, dfn)
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except:
-                self.handleError(record)
+            os.rename(self.baseFilename, dfn)
             #print "%s -> %s" % (self.baseFilename, dfn)
         if self.encoding:
             self.stream = codecs.open(self.baseFilename, 'w', self.encoding)
@@ -217,12 +214,8 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             currentMinute = t[4]
             currentSecond = t[5]
             # r is the number of seconds left between now and midnight
-            if (currentMinute == 0) and (currentSecond == 0):
-                r = (24 - currentHour) * 60 * 60 # number of hours in seconds
-            else:
-                r = (23 - currentHour) * 60 * 60
-                r = r + (59 - currentMinute) * 60 # plus the number of minutes (in secs)
-                r = r + (60 - currentSecond) # plus the number of seconds
+            r = _MIDNIGHT - ((currentHour * 60 + currentMinute) * 60 +
+                    currentSecond)
             self.rolloverAt = currentTime + r
             # If we are rolling over on a certain day, add in the number of days until
             # the next rollover, but offset by 1 since we just calculated the time
@@ -275,12 +268,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         dfn = self.baseFilename + "." + time.strftime(self.suffix, timeTuple)
         if os.path.exists(dfn):
             os.remove(dfn)
-        try:
-            os.rename(self.baseFilename, dfn)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except:
-            self.handleError(record)
+        os.rename(self.baseFilename, dfn)
         if self.backupCount > 0:
             # find the oldest log file and delete it
             s = glob.glob(self.baseFilename + ".20*")
