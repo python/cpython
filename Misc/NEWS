@@ -31,7 +31,7 @@ Library
 Build
 -----
 
-- Bug #1513032, 'make install' failed on FreeBSD 5.3 due to lib-old
+- Bug #1513032: 'make install' failed on FreeBSD 5.3 due to lib-old
   trying to be installed even though it's empty.
 
 
