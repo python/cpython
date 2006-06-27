@@ -922,7 +922,7 @@ class Transformer:
             return TryFinally(self.com_node(nodelist[2]),
                               self.com_node(nodelist[5]),
                               lineno=nodelist[0][2])
-        
+
         #tryexcept:  [TryNode, [except_clauses], elseNode)]
         clauses = []
         elseNode = None
