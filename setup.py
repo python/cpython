@@ -638,6 +638,24 @@ class PyBuildExt(build_ext):
             db_inc_paths.append('/pkg/db-3.%d/include' % x)
             db_inc_paths.append('/opt/db-3.%d/include' % x)
 
+        # Add some common subdirectories for Sleepycat DB to the list,
+        # based on the standard include directories. This way DB3/4 gets
+        # picked up when it is installed in a non-standard prefix and
+        # the user has added that prefix into inc_dirs.
+        std_variants = []
+        for dn in inc_dirs:
+            std_variants.append(os.path.join(dn, 'db3'))
+            std_variants.append(os.path.join(dn, 'db4'))
+            for x in (0,1,2,3,4):
+                std_variants.append(os.path.join(dn, "db4%d"%x))
+                std_variants.append(os.path.join(dn, "db4.%d"%x))
+            for x in (2,3):
+                std_variants.append(os.path.join(dn, "db3%d"%x))
+                std_variants.append(os.path.join(dn, "db3.%d"%x))
+
+        db_inc_paths = std_variants + db_inc_paths 
+
+
         db_ver_inc_map = {}
 
         class db_found(Exception): pass
@@ -940,13 +958,23 @@ class PyBuildExt(build_ext):
                     break
             if version >= version_req:
                 if (self.compiler.find_library_file(lib_dirs, 'z')):
+                    if sys.platform == "darwin":
+                        zlib_extra_link_args = ('-Wl,-search_paths_first',)
+                    else:
+                        zlib_extra_link_args = ()
                     exts.append( Extension('zlib', ['zlibmodule.c'],
-                                           libraries = ['z']) )
+                                           libraries = ['z'],
+                                           extra_link_args = zlib_extra_link_args))
 
         # Gustavo Niemeyer's bz2 module.
         if (self.compiler.find_library_file(lib_dirs, 'bz2')):
+            if sys.platform == "darwin":
+                bz2_extra_link_args = ('-Wl,-search_paths_first',)
+            else:
+                bz2_extra_link_args = ()
             exts.append( Extension('bz2', ['bz2module.c'],
-                                   libraries = ['bz2']) )
+                                   libraries = ['bz2'],
+                                   extra_link_args = bz2_extra_link_args) )
 
         # Interface to the Expat XML parser
         #

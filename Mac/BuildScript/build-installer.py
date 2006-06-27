@@ -67,6 +67,8 @@ DEPSRC=os.path.expanduser('~/Universal/other-sources')
 SDKPATH="/Developer/SDKs/MacOSX10.4u.sdk"
 #SDKPATH="/"
 
+ARCHLIST=('i386', 'ppc',)
+
 # Source directory (asume we're in Mac/BuildScript)
 SRCDIR=os.path.dirname(
         os.path.dirname(
@@ -90,6 +92,26 @@ USAGE=textwrap.dedent("""\
 # Instructions for building libraries that are necessary for building a
 # batteries included python.
 LIBRARY_RECIPES=[
+    dict(
+        name="Bzip2 1.0.3",
+        url="http://www.bzip.org/1.0.3/bzip2-1.0.3.tar.gz",
+        configure=None,
+        install='make install PREFIX=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
+            shellQuote(os.path.join(WORKDIR, 'libraries')),
+            ' -arch '.join(ARCHLIST),
+            SDKPATH,
+        ),
+    ),
+    dict(
+        name="ZLib 1.2.3",
+        url="http://www.gzip.org/zlib/zlib-1.2.3.tar.gz",
+        configure=None,
+        install='make install prefix=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
+            shellQuote(os.path.join(WORKDIR, 'libraries')),
+            ' -arch '.join(ARCHLIST),
+            SDKPATH,
+        ),
+    ),
     dict(
         # Note that GNU readline is GPL'd software
         name="GNU Readline 5.1.4",
@@ -486,48 +508,49 @@ def buildRecipe(recipe, basedir, archList):
         runCommand('patch -p%s < %s'%(recipe.get('patchlevel', 1),
             shellQuote(fn),))
 
-    configure_args = [
-        "--prefix=/usr/local",
-        "--enable-static",
-        "--disable-shared",
-        #"CPP=gcc -arch %s -E"%(' -arch '.join(archList,),),
-    ]
+    if configure is not None:
+        configure_args = [
+            "--prefix=/usr/local",
+            "--enable-static",
+            "--disable-shared",
+            #"CPP=gcc -arch %s -E"%(' -arch '.join(archList,),),
+        ]
 
-    if 'configure_pre' in recipe:
-        args = list(recipe['configure_pre'])
-        if '--disable-static' in args:
-            configure_args.remove('--enable-static')
-        if '--enable-shared' in args:
-            configure_args.remove('--disable-shared')
-        configure_args.extend(args)
+        if 'configure_pre' in recipe:
+            args = list(recipe['configure_pre'])
+            if '--disable-static' in args:
+                configure_args.remove('--enable-static')
+            if '--enable-shared' in args:
+                configure_args.remove('--disable-shared')
+            configure_args.extend(args)
 
-    if recipe.get('useLDFlags', 1):
-        configure_args.extend([
-            "CFLAGS=-arch %s -isysroot %s -I%s/usr/local/include"%(
-                    ' -arch '.join(archList),
+        if recipe.get('useLDFlags', 1):
+            configure_args.extend([
+                "CFLAGS=-arch %s -isysroot %s -I%s/usr/local/include"%(
+                        ' -arch '.join(archList),
+                        shellQuote(SDKPATH)[1:-1],
+                        shellQuote(basedir)[1:-1],),
+                "LDFLAGS=-syslibroot,%s -L%s/usr/local/lib -arch %s"%(
                     shellQuote(SDKPATH)[1:-1],
-                    shellQuote(basedir)[1:-1],),
-            "LDFLAGS=-syslibroot,%s -L%s/usr/local/lib -arch %s"%(
-                shellQuote(SDKPATH)[1:-1],
-                shellQuote(basedir)[1:-1],
-                ' -arch '.join(archList)),
-        ])
-    else:
-        configure_args.extend([
-            "CFLAGS=-arch %s -isysroot %s -I%s/usr/local/include"%(
-                    ' -arch '.join(archList),
-                    shellQuote(SDKPATH)[1:-1],
-                    shellQuote(basedir)[1:-1],),
-        ])
+                    shellQuote(basedir)[1:-1],
+                    ' -arch '.join(archList)),
+            ])
+        else:
+            configure_args.extend([
+                "CFLAGS=-arch %s -isysroot %s -I%s/usr/local/include"%(
+                        ' -arch '.join(archList),
+                        shellQuote(SDKPATH)[1:-1],
+                        shellQuote(basedir)[1:-1],),
+            ])
 
-    if 'configure_post' in recipe:
-        configure_args = configure_args = list(recipe['configure_post'])
+        if 'configure_post' in recipe:
+            configure_args = configure_args = list(recipe['configure_post'])
 
-    configure_args.insert(0, configure)
-    configure_args = [ shellQuote(a) for a in configure_args ]
+        configure_args.insert(0, configure)
+        configure_args = [ shellQuote(a) for a in configure_args ]
 
-    print "Running configure for %s"%(name,)
-    runCommand(' '.join(configure_args) + ' 2>&1')
+        print "Running configure for %s"%(name,)
+        runCommand(' '.join(configure_args) + ' 2>&1')
 
     print "Running install for %s"%(name,)
     runCommand('{ ' + install + ' ;} 2>&1')
@@ -550,7 +573,7 @@ def buildLibraries():
     os.makedirs(os.path.join(universal, 'usr', 'local', 'include'))
 
     for recipe in LIBRARY_RECIPES:
-        buildRecipe(recipe, universal, ('i386', 'ppc',))
+        buildRecipe(recipe, universal, ARCHLIST)
 
 
 
@@ -997,7 +1020,7 @@ def main():
     buildPythonDocs()
     fn = os.path.join(WORKDIR, "_root", "Applications",
                 "MacPython %s"%(getVersion(),), "Update Shell Profile.command")
-    shutil.copy("scripts/postflight.patch-profile",  fn)
+    patchFile("scripts/postflight.patch-profile",  fn)
     os.chmod(fn, 0755)
 
     folder = os.path.join(WORKDIR, "_root", "Applications", "MacPython %s"%(
