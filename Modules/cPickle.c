@@ -3628,10 +3628,14 @@ Instance_New(PyObject *cls, PyObject *args)
 
   err:
 	{
-		PyObject *tp, *v, *tb;
+		PyObject *tp, *v, *tb, *tmp_value;
 
 		PyErr_Fetch(&tp, &v, &tb);
-		if ((r=PyTuple_Pack(3,v,cls,args))) {
+		tmp_value = v;
+		/* NULL occurs when there was a KeyboardInterrupt */
+		if (tmp_value == NULL)
+			tmp_value = Py_None;
+		if ((r = PyTuple_Pack(3, tmp_value, cls, args))) {
 			Py_XDECREF(v);
 			v=r;
 		}
