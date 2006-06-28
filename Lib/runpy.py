@@ -21,18 +21,19 @@ __all__ = [
 ]
 
 
-def _run_code(code, run_globals, init_globals,
+def _run_code(code, run_globals, init_globals, run_name,
               mod_name, mod_fname, mod_loader):
     """Helper for _run_module_code"""
     if init_globals is not None:
         run_globals.update(init_globals)
-    run_globals.update(__name__ = mod_name,
+    run_globals.update(__name__ = run_name,
+                       __module_name__ = mod_name,
                        __file__ = mod_fname,
                        __loader__ = mod_loader)
     exec code in run_globals
     return run_globals
 
-def _run_module_code(code, init_globals=None,
+def _run_module_code(code, init_globals=None, run_name=None,
                     mod_name=None, mod_fname=None,
                     mod_loader=None, alter_sys=False):
     """Helper for run_module"""
@@ -42,26 +43,33 @@ def _run_module_code(code, init_globals=None,
         temp_module = imp.new_module(mod_name)
         mod_globals = temp_module.__dict__
         saved_argv0 = sys.argv[0]
-        restore_module = mod_name in sys.modules
-        if restore_module:
-            saved_module = sys.modules[mod_name]
+        sentinel = object()
+        module_mod_name = sys.modules.get(mod_name, sentinel)
+        module_run_name = sys.modules.get(run_name, sentinel)
         sys.argv[0] = mod_fname
         sys.modules[mod_name] = temp_module
+        if run_name != mod_name:
+            sys.modules[run_name] = temp_module
         try:
-            _run_code(code, mod_globals, init_globals,
+            _run_code(code, mod_globals, init_globals, run_name,
                       mod_name, mod_fname, mod_loader)
         finally:
             sys.argv[0] = saved_argv0
-        if restore_module:
-            sys.modules[mod_name] = saved_module
-        else:
-            del sys.modules[mod_name]
+            if module_mod_name is not sentinel:
+                sys.modules[mod_name] = module_mod_name
+            else:
+                del sys.modules[mod_name]
+            if run_name != mod_name:
+                if module_run_name is not sentinel:
+                    sys.modules[run_name] = module_run_name
+                else:
+                    del sys.modules[run_name]
         # Copy the globals of the temporary module, as they
         # may be cleared when the temporary module goes away
         return mod_globals.copy()
     else:
         # Leave the sys module alone
-        return _run_code(code, {}, init_globals,
+        return _run_code(code, {}, init_globals, run_name,
                          mod_name, mod_fname, mod_loader)
 
 
@@ -92,7 +100,7 @@ def run_module(mod_name, init_globals=None,
     if run_name is None:
         run_name = mod_name
     return _run_module_code(code, init_globals, run_name,
-                            filename, loader, alter_sys)
+                            mod_name, filename, loader, alter_sys)
 
 
 if __name__ == "__main__":

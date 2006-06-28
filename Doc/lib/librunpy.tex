@@ -35,16 +35,19 @@ The supplied dictionary will not be modified. If any of the special
 global variables below are defined in the supplied dictionary, those
 definitions are overridden by the \code{run_module} function.
 
-The special global variables \code{__name__}, \code{__file__},
-\code{__loader__} and \code{__builtins__} are set in the globals
-dictionary before the module code is executed.
+The special global variables \code{__name__}, \code{__module_name__},
+\code{__file__}, \code{__loader__} and \code{__builtins__} are
+set in the globals dictionary before the module code is executed.
 
 \code{__name__} is set to \var{run_name} if this optional argument is
 supplied, and the \var{mod_name} argument otherwise.
 
+\code{__module_name__} is always set to \var{mod_name} (this allows
+modules to use imports relative to their package name).
+
 \code{__loader__} is set to the PEP 302 module loader used to retrieve
-the code for the module (This loader may be a wrapper around the
-standard import mechanism).
+the code for the module (This will not be defined if the module was
+found using the standard import mechanism).
 
 \code{__file__} is set to the name provided by the module loader. If
 the loader does not make filename information available, this
@@ -55,10 +58,12 @@ the top level namespace of the \module{__builtin__} module.
 
 If the argument \var{alter_sys} is supplied and evaluates to
 \code{True}, then \code{sys.argv[0]} is updated with the value of
-\code{__file__} and \code{sys.modules[__name__]} is updated with a
+\code{__file__} and \code{sys.modules[mod_name]} is updated with a
 temporary module object for the module being executed. Both
-\code{sys.argv[0]} and \code{sys.modules[__name__]} are restored to
-their original values before the function returns.
+\code{sys.argv[0]} and \code{sys.modules[mod_name]} are restored to
+their original values before the function returns. If \var{run_name}
+differs from \var{mod_name} entries are made in \code{sys.modules}
+for both names.
 
 Note that this manipulation of \module{sys} is not thread-safe. Other
 threads may see the partially initialised module, as well as the
