@@ -26,6 +26,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1512695: cPickle.loads could crash if it was interrupted with
+  a KeyboardInterrupt.
+
 - Change binascii.hexlify() to accept any read-only buffer and not just a char
   buffer.
 
