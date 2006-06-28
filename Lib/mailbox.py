@@ -1805,7 +1805,7 @@ def _lock_file(f, dotlock=True):
             try:
                 fcntl.lockf(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except IOError, e:
-                if e.errno == errno.EAGAIN:
+                if e.errno in (errno.EAGAIN, errno.EACCES):
                     raise ExternalClashError('lockf: lock unavailable: %s' %
                                              f.name)
                 else:
