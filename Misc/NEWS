@@ -141,6 +141,10 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1295808: expat symbols should be namespaced in pyexpat
+
+- Patch #1462338: Upgrade pyexpat to expat 2.0.0
+
 - Change binascii.hexlify to accept a read-only buffer instead of only a char
   buffer and actually follow its documentation.
 
