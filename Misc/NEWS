@@ -19,6 +19,8 @@ Core and builtins
 Library
 -------
 
+- Fix a bug in the turtle module's end_fill function.
+
 - Bug #1510580: The 'warnings' module improperly required that a Warning
   category be either a types.ClassType and a subclass of Warning.  The proper
   check is just that it is a subclass with Warning as the documentation states.
