@@ -48,6 +48,12 @@ Build
 - Bug #1513032: 'make install' failed on FreeBSD 5.3 due to lib-old
   trying to be installed even though it's empty.
 
+Tests
+-----
+
+- Call os.waitpid() at the end of tests that spawn child processes in order
+  to minimize resources (zombies).
+
 
 What's New in Python 2.5 beta 1?
 ================================

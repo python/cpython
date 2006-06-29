@@ -1785,6 +1785,7 @@ def test_main():
              TestMessageConversion, TestProxyFile, TestPartialFile,
              MaildirTestCase)
     test_support.run_unittest(*tests)
+    test_support.reap_children()
 
 
 if __name__ == '__main__':
