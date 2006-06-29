@@ -57,6 +57,11 @@ Tests
 - Call os.waitpid() at the end of tests that spawn child processes in order
   to minimize resources (zombies).
 
+Documentation
+-------------
+
+- Patch #1509163: MS Toolkit Compiler no longer available.
+
 
 What's New in Python 2.5 beta 1?
 ================================
