@@ -286,6 +286,21 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
             ('codepoint', 'convert', 42),
             ])
 
+    def test_attr_values_quoted_markup(self):
+        """Multi-line and markup in attribute values"""
+        self.check_events("""<a title='foo\n<br>bar'>text</a>""",
+            [("starttag", "a", [("title", "foo\n<br>bar")]),
+             ("data", "text"),
+             ("endtag", "a")])
+        self.check_events("""<a title='less < than'>text</a>""",
+            [("starttag", "a", [("title", "less < than")]),
+             ("data", "text"),
+             ("endtag", "a")])
+        self.check_events("""<a title='greater > than'>text</a>""",
+            [("starttag", "a", [("title", "greater > than")]),
+             ("data", "text"),
+             ("endtag", "a")])
+
     def test_attr_funky_names(self):
         self.check_events("""<a a.b='v' c:d=v e-f=v>""", [
             ("starttag", "a", [("a.b", "v"), ("c:d", "v"), ("e-f", "v")]),
