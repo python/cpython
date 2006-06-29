@@ -617,7 +617,9 @@ static int _call_function_pointer(int flags,
 				  void *resmem,
 				  int argcount)
 {
+#ifdef WITH_THREADS
 	PyThreadState *_save = NULL; /* For Py_BLOCK_THREADS and Py_UNBLOCK_THREADS */
+#endif
 	ffi_cif cif;
 	int cc;
 #ifdef MS_WIN32
@@ -649,8 +651,10 @@ static int _call_function_pointer(int flags,
 		return -1;
 	}
 
+#ifdef WITH_THREADS
 	if ((flags & FUNCFLAG_PYTHONAPI) == 0)
 		Py_UNBLOCK_THREADS
+#endif
 #ifdef MS_WIN32
 #ifndef DONT_USE_SEH
 	__try {
@@ -667,8 +671,10 @@ static int _call_function_pointer(int flags,
 	}
 #endif
 #endif
+#ifdef WITH_THREADS
 	if ((flags & FUNCFLAG_PYTHONAPI) == 0)
 		Py_BLOCK_THREADS
+#endif
 #ifdef MS_WIN32
 #ifndef DONT_USE_SEH
 	if (dwExceptionCode) {
