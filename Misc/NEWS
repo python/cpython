@@ -56,6 +56,12 @@ Extension Modules
 Library
 -------
 
+- Bug #1504333: Make sgmllib support angle brackets in quoted attribute
+  values.
+
+- Bug #853506: Fix IPv6 address parsing in unquoted attributes in sgmllib
+  ('[' and ']' were not accepted).
+
 - Bug #1117556: SimpleHTTPServer now tries to find and use the system's
   mime.types file for determining MIME types.
 
