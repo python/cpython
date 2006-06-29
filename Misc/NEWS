@@ -19,6 +19,9 @@ Core and builtins
 Library
 -------
 
+- The '_ctypes' extension module now works when Python is configured
+  with the --without-threads option.
+
 - Bug #1504333: Make sgmllib support angle brackets in quoted
   attribute values.
 

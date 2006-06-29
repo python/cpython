@@ -4555,7 +4555,9 @@ init_ctypes(void)
    ob_type is the metatype (the 'type'), defaults to PyType_Type,
    tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
 */
+#ifdef WITH_THREADS
 	PyEval_InitThreads();
+#endif
 	m = Py_InitModule3("_ctypes", module_methods, module_docs);
 	if (!m)
 		return;
