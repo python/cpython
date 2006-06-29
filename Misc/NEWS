@@ -19,6 +19,12 @@ Core and builtins
 Library
 -------
 
+- Bug #1504333: Make sgmllib support angle brackets in quoted
+  attribute values.
+
+- Bug #853506: Fix IPv6 address parsing in unquoted attributes in
+  sgmllib ('[' and ']' were not accepted).
+
 - Fix a bug in the turtle module's end_fill function.
 
 - Bug #1510580: The 'warnings' module improperly required that a Warning
