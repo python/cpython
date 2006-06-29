@@ -87,6 +87,7 @@ class CmdLineTest(unittest.TestCase):
 
 def test_main():
     test.test_support.run_unittest(CmdLineTest)
+    test.test_support.reap_children()
 
 if __name__ == "__main__":
     test_main()

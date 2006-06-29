@@ -352,6 +352,7 @@ def test_main():
         BZ2DecompressorTest,
         FuncTest
     )
+    test_support.reap_children()
 
 if __name__ == '__main__':
     test_main()

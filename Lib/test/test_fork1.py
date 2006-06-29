@@ -3,7 +3,7 @@
 
 import os
 from test.fork_wait import ForkWait
-from test.test_support import TestSkipped, run_unittest
+from test.test_support import TestSkipped, run_unittest, reap_children
 
 try:
     os.fork
@@ -18,6 +18,7 @@ class ForkTest(ForkWait):
 
 def test_main():
     run_unittest(ForkTest)
+    reap_children()
 
 if __name__ == "__main__":
     test_main()

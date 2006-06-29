@@ -27,6 +27,16 @@ def remove_stderr_debug_decorations(stderr):
     return re.sub(r"\[\d+ refs\]\r?\n?$", "", stderr)
 
 class ProcessTestCase(unittest.TestCase):
+    def setUp(self):
+	# Try to minimize the number of children we have so this test
+	# doesn't crash on some buildbots (Alphas in particular).
+        test_support.reap_children()
+
+    def tearDown(self):
+	# Try to minimize the number of children we have so this test
+	# doesn't crash on some buildbots (Alphas in particular).
+        test_support.reap_children()
+
     def mkstemp(self):
         """wrapper for mkstemp, calling mktemp if mkstemp is not available"""
         if hasattr(tempfile, "mkstemp"):
@@ -600,6 +610,7 @@ class ProcessTestCase(unittest.TestCase):
 
 def test_main():
     test_support.run_unittest(ProcessTestCase)
+    test_support.reap_children()
 
 if __name__ == "__main__":
     test_main()

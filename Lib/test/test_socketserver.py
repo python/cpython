@@ -1,7 +1,8 @@
 # Test suite for SocketServer.py
 
 from test import test_support
-from test.test_support import verbose, verify, TESTFN, TestSkipped
+from test.test_support import (verbose, verify, TESTFN, TestSkipped,
+                               reap_children)
 test_support.requires('network')
 
 from SocketServer import *
@@ -199,6 +200,7 @@ def test_main():
         testall()
     finally:
         cleanup()
+    reap_children()
 
 if __name__ == "__main__":
     test_main()
