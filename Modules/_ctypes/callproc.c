@@ -1490,7 +1490,11 @@ resize(PyObject *self, PyObject *args)
 	}
 	if (size < dict->size) {
 		PyErr_Format(PyExc_ValueError,
-			     "minimum size is %" PY_FORMAT_SIZE_T "d",
+#if PY_VERSION_HEX < 0x02050000
+			     "minimum size is %d",
+#else
+			     "minimum size is %zd",
+#endif
 			     dict->size);
 		return NULL;
 	}
