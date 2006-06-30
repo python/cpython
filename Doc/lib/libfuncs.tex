@@ -781,30 +781,30 @@ class C:
 \begin{verbatim}
 class C(object):
     def __init__(self): self.__x = None
-    def getx(self): return self.__x
-    def setx(self, value): self.__x = value
-    def delx(self): del self.__x
+    def getx(self): return self._x
+    def setx(self, value): self._x = value
+    def delx(self): del self._x
     x = property(getx, setx, delx, "I'm the 'x' property.")
 \end{verbatim}
 
   If given, \var{doc} will be the docstring of the property attribute.
   Otherwise, the property will copy \var{fget}'s docstring (if it
   exists).  This makes it possible to create read-only properties
-  easily using \function{property} as a decorator:
+  easily using \function{property()} as a decorator:
 
 \begin{verbatim}
 class Parrot(object):
     def __init__(self):
-        self.__voltage = 100000
+        self._voltage = 100000
 
     @property
     def voltage(self):
         """Get the current voltage."""
-        return self.__voltage
+        return self._voltage
 \end{verbatim}
 
-  turns the \method{voltage} method into a "getter" for a read-only attribute
-  with the same name.
+  turns the \method{voltage()} method into a ``getter'' for a read-only
+  attribute with the same name.
 
   \versionadded{2.2}
   \versionchanged[Use \var{fget}'s docstring if no \var{doc} given]{2.5}
