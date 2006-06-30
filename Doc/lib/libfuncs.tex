@@ -789,7 +789,22 @@ class C(object):
 
   If given, \var{doc} will be the docstring of the property attribute.
   Otherwise, the property will copy \var{fget}'s docstring (if it
-  exists).
+  exists).  This makes it possible to create read-only properties
+  easily using \function{property} as a decorator:
+
+\begin{verbatim}
+class Parrot(object):
+    def __init__(self):
+        self.__voltage = 100000
+
+    @property
+    def voltage(self):
+        """Get the current voltage."""
+        return self.__voltage
+\end{verbatim}
+
+  turns the \method{voltage} method into a "getter" for a read-only attribute
+  with the same name.
 
   \versionadded{2.2}
   \versionchanged[Use \var{fget}'s docstring if no \var{doc} given]{2.5}
