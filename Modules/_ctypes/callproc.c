@@ -82,10 +82,6 @@
 #define DONT_USE_SEH
 #endif
 
-#ifndef PY_FORMAT_SIZE_T 
-#define PY_FORMAT_SIZE_T ""
-#endif
-
 #ifdef MS_WIN32
 PyObject *ComError;
 
