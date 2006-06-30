@@ -28,13 +28,13 @@ def remove_stderr_debug_decorations(stderr):
 
 class ProcessTestCase(unittest.TestCase):
     def setUp(self):
-	# Try to minimize the number of children we have so this test
-	# doesn't crash on some buildbots (Alphas in particular).
+        # Try to minimize the number of children we have so this test
+        # doesn't crash on some buildbots (Alphas in particular).
         test_support.reap_children()
 
     def tearDown(self):
-	# Try to minimize the number of children we have so this test
-	# doesn't crash on some buildbots (Alphas in particular).
+        # Try to minimize the number of children we have so this test
+        # doesn't crash on some buildbots (Alphas in particular).
         test_support.reap_children()
 
     def mkstemp(self):

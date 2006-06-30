@@ -653,7 +653,7 @@ class PyBuildExt(build_ext):
                 std_variants.append(os.path.join(dn, "db3%d"%x))
                 std_variants.append(os.path.join(dn, "db3.%d"%x))
 
-        db_inc_paths = std_variants + db_inc_paths 
+        db_inc_paths = std_variants + db_inc_paths
 
 
         db_ver_inc_map = {}
