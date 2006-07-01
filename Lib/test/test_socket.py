@@ -582,6 +582,21 @@ class BasicUDPTest(ThreadedUDPSocketTest):
     def _testRecvFrom(self):
         self.cli.sendto(MSG, 0, (HOST, PORT))
 
+class TCPCloserTest(ThreadedTCPSocketTest):
+
+    def testClose(self):
+        conn, addr = self.serv.accept()
+        conn.close()
+
+        sd = self.cli
+        read, write, err = select.select([sd], [], [], 1.0)
+        self.assertEqual(read, [sd])
+        self.assertEqual(sd.recv(1), '')
+
+    def _testClose(self):
+        self.cli.connect((HOST, PORT))
+        time.sleep(1.0)
+
 class BasicSocketPairTest(SocketPairTest):
 
     def __init__(self, methodName='runTest'):
@@ -890,8 +905,8 @@ class BufferIOTest(SocketConnectedTest):
         self.serv_conn.send(buf)
 
 def test_main():
-    tests = [GeneralModuleTests, BasicTCPTest, TCPTimeoutTest, TestExceptions,
-             BufferIOTest]
+    tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
+             TestExceptions, BufferIOTest]
     if sys.platform != 'mac':
         tests.extend([ BasicUDPTest, UDPTimeoutTest ])
 
