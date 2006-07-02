@@ -321,12 +321,13 @@ PyObject* _fetch_one_row(Cursor* self)
         }
 
         if (converter != Py_None) {
-            val_str = (const char*)sqlite3_column_text(self->statement->st, i);
+            nbytes = sqlite3_column_bytes(self->statement->st, i);
+            val_str = (const char*)sqlite3_column_blob(self->statement->st, i);
             if (!val_str) {
                 Py_INCREF(Py_None);
                 converted = Py_None;
             } else {
-                item = PyString_FromString(val_str);
+                item = PyString_FromStringAndSize(val_str, nbytes);
                 if (!item) {
                     return NULL;
                 }

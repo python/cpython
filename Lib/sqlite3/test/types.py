@@ -21,7 +21,7 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import datetime
+import bz2, datetime
 import unittest
 import sqlite3 as sqlite
 
@@ -273,6 +273,23 @@ class ObjectAdaptationTests(unittest.TestCase):
         val = self.cur.fetchone()[0]
         self.failUnlessEqual(type(val), float)
 
+class BinaryConverterTests(unittest.TestCase):
+    def convert(s):
+        return bz2.decompress(s)
+    convert = staticmethod(convert)
+
+    def setUp(self):
+        self.con = sqlite.connect(":memory:", detect_types=sqlite.PARSE_COLNAMES)
+        sqlite.register_converter("bin", BinaryConverterTests.convert)
+
+    def tearDown(self):
+        self.con.close()
+
+    def CheckBinaryInputForConverter(self):
+        testdata = "abcdefg" * 10
+        result = self.con.execute('select ? as "x [bin]"', (buffer(bz2.compress(testdata)),)).fetchone()[0]
+        self.failUnlessEqual(testdata, result)
+
 class DateTimeTests(unittest.TestCase):
     def setUp(self):
         self.con = sqlite.connect(":memory:", detect_types=sqlite.PARSE_DECLTYPES)
@@ -322,8 +339,9 @@ def suite():
     decltypes_type_suite = unittest.makeSuite(DeclTypesTests, "Check")
     colnames_type_suite = unittest.makeSuite(ColNamesTests, "Check")
     adaptation_suite = unittest.makeSuite(ObjectAdaptationTests, "Check")
+    bin_suite = unittest.makeSuite(BinaryConverterTests, "Check")
     date_suite = unittest.makeSuite(DateTimeTests, "Check")
-    return unittest.TestSuite((sqlite_type_suite, decltypes_type_suite, colnames_type_suite, adaptation_suite, date_suite))
+    return unittest.TestSuite((sqlite_type_suite, decltypes_type_suite, colnames_type_suite, adaptation_suite, bin_suite, date_suite))
 
 def test():
     runner = unittest.TextTestRunner()
