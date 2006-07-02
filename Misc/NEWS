@@ -45,6 +45,10 @@ Library
 - A bug was fixed in logging.config.fileConfig() which caused a crash on
   shutdown when fileConfig() was called multiple times.
 
+- The sqlite3 module did cut off data from the SQLite database at the first
+  null character before sending it to a custom converter. This has been fixed
+  now.
+
 Extension Modules
 -----------------
 
