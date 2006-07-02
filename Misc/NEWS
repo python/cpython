@@ -52,6 +52,9 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1513646: os.access on Windows now correctly determines write
+  access, again.
+
 - Bug #1512695: cPickle.loads could crash if it was interrupted with
   a KeyboardInterrupt.
 
