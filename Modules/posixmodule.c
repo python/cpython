@@ -1402,7 +1402,7 @@ finish:
 		return PyBool_FromLong(0);
 	/* Access is possible if either write access wasn't requested, or
 	   the file isn't read-only. */
-	return PyBool_FromLong(!(mode & 2) || !(attr && FILE_ATTRIBUTE_READONLY));
+	return PyBool_FromLong(!(mode & 2) || !(attr & FILE_ATTRIBUTE_READONLY));
 #else
 	int res;
 	if (!PyArg_ParseTuple(args, "eti:access", 

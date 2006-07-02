@@ -11,6 +11,19 @@ from test import test_support
 warnings.filterwarnings("ignore", "tempnam", RuntimeWarning, __name__)
 warnings.filterwarnings("ignore", "tmpnam", RuntimeWarning, __name__)
 
+# Tests creating TESTFN
+class FileTests(unittest.TestCase):
+    def setUp(self):
+        if os.path.exists(test_support.TESTFN):
+            os.unlink(test_support.TESTFN)
+    tearDown = setUp
+
+    def test_access(self):
+        f = os.open(test_support.TESTFN, os.O_CREAT|os.O_RDWR)
+        os.close(f)
+        self.assert_(os.access(test_support.TESTFN, os.W_OK))
+ 
+
 class TemporaryFileTests(unittest.TestCase):
     def setUp(self):
         self.files = []
@@ -393,6 +406,7 @@ if sys.platform != 'win32':
 
 def test_main():
     test_support.run_unittest(
+        FileTests,
         TemporaryFileTests,
         StatAttributeTests,
         EnvironTests,
