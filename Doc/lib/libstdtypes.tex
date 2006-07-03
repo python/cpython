@@ -1101,7 +1101,8 @@ The following operations are defined on mutable sequence types (where
   \lineiii{\var{s}[\var{i}] = \var{x}}
 	{item \var{i} of \var{s} is replaced by \var{x}}{}
   \lineiii{\var{s}[\var{i}:\var{j}] = \var{t}}
-  	{slice of \var{s} from \var{i} to \var{j} is replaced by \var{t}}{}
+  	{slice of \var{s} from \var{i} to \var{j} 
+         is replaced by the contents of the iterable \var{t}}{}
   \lineiii{del \var{s}[\var{i}:\var{j}]}
 	{same as \code{\var{s}[\var{i}:\var{j}] = []}}{}
   \lineiii{\var{s}[\var{i}:\var{j}:\var{k}] = \var{t}}
