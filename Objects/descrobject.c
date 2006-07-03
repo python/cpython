@@ -892,10 +892,12 @@ typedef struct {
 static void
 wrapper_dealloc(wrapperobject *wp)
 {
-	_PyObject_GC_UNTRACK(wp);
+	PyObject_GC_UnTrack(wp);
+	Py_TRASHCAN_SAFE_BEGIN(wp)
 	Py_XDECREF(wp->descr);
 	Py_XDECREF(wp->self);
 	PyObject_GC_Del(wp);
+	Py_TRASHCAN_SAFE_END(wp)
 }
 
 static int
