@@ -30,6 +30,7 @@ class RawPen:
         self._tracing = 1
         self._arrow = 0
         self._delay = 10     # default delay for drawing
+        self._angle = 0.0
         self.degrees()
         self.reset()
 
@@ -39,6 +40,10 @@ class RawPen:
         Example:
         >>> turtle.degrees()
         """
+        # Don't try to change _angle if it is 0, because
+        # _fullcircle might not be set, yet
+        if self._angle:
+            self._angle = (self._angle / self._fullcircle) * fullcircle
         self._fullcircle = fullcircle
         self._invradian = pi / (fullcircle * 0.5)
 
@@ -365,7 +370,7 @@ class RawPen:
         steps = 1+int(min(11+abs(radius)/6.0, 59.0)*frac)
         w = 1.0 * extent / steps
         w2 = 0.5 * w
-        l = 2.0 * radius * sin(w2*self._invradian) 
+        l = 2.0 * radius * sin(w2*self._invradian)
         if radius < 0:
             l, w, w2 = -l, -w, -w2
         self.left(w2)

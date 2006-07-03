@@ -19,8 +19,11 @@ Core and builtins
 Library
 -------
 
+- Bug #1514693: Update turtle's heading when switching between
+  degrees and radians.
+
 - Reimplement turtle.circle using a polyline, to allow correct
-  filling of arcs. Also fixes #1514693.
+  filling of arcs.
 
 - Bug #1514703: Only setup canvas window in turtle when the canvas
   is created.
