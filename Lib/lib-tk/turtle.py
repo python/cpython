@@ -679,7 +679,7 @@ class Pen(RawPen):
             _canvas = Tkinter.Canvas(_root, background="white")
             _canvas.pack(expand=1, fill="both")
 
-        setup(width=_width, height= _height, startx=_startx, starty=_starty)
+            setup(width=_width, height= _height, startx=_startx, starty=_starty)
 
         RawPen.__init__(self, _canvas)
 
