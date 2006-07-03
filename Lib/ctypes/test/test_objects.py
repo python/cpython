@@ -54,13 +54,17 @@ of 'x' ('_b_base_' is either None, or the root object owning the memory block):
 
 '''
 
-import unittest, doctest
+import unittest, doctest, sys
 
 import ctypes.test.test_objects
 
 class TestCase(unittest.TestCase):
-    def test(self):
-        doctest.testmod(ctypes.test.test_objects)
+    if sys.hexversion > 0x02040000:
+        # Python 2.3 has no ELLIPSIS flag, so we don't test with this
+        # version:
+        def test(self):
+            doctest.testmod(ctypes.test.test_objects)
 
 if __name__ == '__main__':
-    doctest.testmod(ctypes.test.test_objects)
+    if sys.hexversion > 0x02040000:
+        doctest.testmod(ctypes.test.test_objects)
