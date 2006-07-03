@@ -1967,7 +1967,7 @@ static PyMethodDef functions[] = {
     if (PyDict_SetItemString(bdict, # TYPE, PyExc_ ## TYPE)) \
         Py_FatalError("Module dictionary insertion problem.");
 
-#if defined _MSC_VER && _MSC_VER >= 1400
+#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
 /* crt variable checking in VisualStudio .NET 2005 */
 #include <crtdbg.h>
 
@@ -2120,7 +2120,7 @@ _PyExc_Init(void)
 
     Py_DECREF(bltinmod);
 
-#if defined _MSC_VER && _MSC_VER >= 1400
+#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
     /* Set CRT argument error handler */
     prevCrtHandler = _set_invalid_parameter_handler(InvalidParameterHandler);
     /* turn off assertions in debug mode */
@@ -2133,7 +2133,7 @@ _PyExc_Fini(void)
 {
     Py_XDECREF(PyExc_MemoryErrorInst);
     PyExc_MemoryErrorInst = NULL;
-#if defined _MSC_VER && _MSC_VER >= 1400
+#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
     /* reset CRT error handling */
     _set_invalid_parameter_handler(prevCrtHandler);
     _CrtSetReportMode(_CRT_ASSERT, prevCrtReportMode);

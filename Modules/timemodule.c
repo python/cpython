@@ -467,7 +467,7 @@ time_strftime(PyObject *self, PyObject *args)
 			return ret;
 		}
 		free(outbuf);
-#if defined _MSC_VER && _MSC_VER >= 1400
+#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
 		/* VisualStudio .NET 2005 does this properly */
 		if (buflen == 0 && errno == EINVAL) {
 			PyErr_SetString(PyExc_ValueError, "Invalid format string");
