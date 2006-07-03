@@ -22,7 +22,7 @@ class FileTests(unittest.TestCase):
         f = os.open(test_support.TESTFN, os.O_CREAT|os.O_RDWR)
         os.close(f)
         self.assert_(os.access(test_support.TESTFN, os.W_OK))
- 
+
 
 class TemporaryFileTests(unittest.TestCase):
     def setUp(self):
