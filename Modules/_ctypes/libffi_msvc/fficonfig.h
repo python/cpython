@@ -3,8 +3,10 @@
 /* fficonfig.h.  Generated automatically by configure.  */
 /* fficonfig.h.in.  Generated automatically from configure.in by autoheader.  */
 
-/* Defines for MSVC */
+/* Define this for MSVC, but not for mingw32! */
+#ifdef _MSC_VER
 #define __attribute__(x) /* */
+#endif
 #define alloca _alloca
 
 /*----------------------------------------------------------------*/
