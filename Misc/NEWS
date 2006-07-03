@@ -12,6 +12,9 @@ What's New in Python 2.4.4c1?
 Core and builtins
 -----------------
 
+- Bug #927248: Recursive method-wrapper objects can now safely
+  be released.
+
 - Bug #992017: A classic class that defined a __coerce__() method that returned
   its arguments swapped would infinitely recurse and segfault the interpreter.
 

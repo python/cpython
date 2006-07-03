@@ -3936,6 +3936,13 @@ def weakref_segfault():
     o.whatever = Provoker(o)
     del o
 
+def wrapper_segfault():
+    # SF 927248: deeply nested wrappers could cause stack overflow
+    f = lambda:None
+    for i in xrange(1000000):
+        f = f.__call__
+    f = None
+
 # Fix SF #762455, segfault when sys.stdout is changed in getattr
 def filefault():
     if verbose:
@@ -4075,6 +4082,7 @@ def notimplemented():
 
 def test_main():
     weakref_segfault() # Must be first, somehow
+    wrapper_segfault()
     do_this_first()
     class_docstrings()
     lists()
