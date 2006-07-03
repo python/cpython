@@ -241,7 +241,7 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 	}
 
 	if (f->f_fp == NULL) {
-#if defined  _MSC_VER && _MSC_VER < 1400
+#if defined  _MSC_VER && (_MSC_VER < 1400 || !defined(__STDC_SECURE_LIB__))
 		/* MSVC 6 (Microsoft) leaves errno at 0 for bad mode strings,
 		 * across all Windows flavors.  When it sets EINVAL varies
 		 * across Windows flavors, the exact conditions aren't
