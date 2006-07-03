@@ -12,6 +12,9 @@ What's New in Python 2.5 beta 2?
 Core and builtins
 -----------------
 
+- Bug #1417699: Reject locale-specific decimal point in float()
+  and atof().
+
 - Bug #1511381: codec_getstreamcodec() in codec.c is corrected to
   omit a default "error" argument for NULL pointer.  This allows
   the parser to take a codec from cjkcodecs again.
