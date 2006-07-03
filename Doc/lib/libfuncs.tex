@@ -1008,8 +1008,30 @@ except NameError:
 \begin{funcdesc}{sorted}{iterable\optional{, cmp\optional{,
                          key\optional{, reverse}}}}
   Return a new sorted list from the items in \var{iterable}.
-  The optional arguments \var{cmp}, \var{key}, and \var{reverse}
-  have the same meaning as those for the \method{list.sort()} method.
+
+  The optional arguments \var{cmp}, \var{key}, and \var{reverse} have
+  the same meaning as those for the \method{list.sort()} method
+  (described in section~\ref{typesseq-mutable}).
+
+  \var{cmp} specifies a custom comparison function of two arguments
+  (iterable elements) which should return a negative, zero or positive
+  number depending on whether the first argument is considered smaller
+  than, equal to, or larger than the second argument:
+  \samp{\var{cmp}=\keyword{lambda} \var{x},\var{y}:
+  \function{cmp}(x.lower(), y.lower())}
+     
+  \var{key} specifies a function of one argument that is used to
+     extract a comparison key from each list element:
+     \samp{\var{key}=\function{str.lower}}
+
+  \var{reverse} is a boolean value.  If set to \code{True}, then the
+     list elements are sorted as if each comparison were reversed.
+
+  In general, the \var{key} and \var{reverse} conversion processes are
+  much faster than specifying an equivalent \var{cmp} function.  This is
+  because \var{cmp} is called multiple times for each list element while
+  \var{key} and \var{reverse} touch each element only once.
+
   \versionadded{2.4}
 \end{funcdesc}
 
