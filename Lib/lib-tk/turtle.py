@@ -344,7 +344,7 @@ class RawPen:
         """
         self.fill(0)
 
-    def circle(self, radius, extent=None):
+    def circle(self, radius, extent = None):
         """ Draw a circle with given radius.
         The center is radius units left of the turtle; extent
         determines which part of the circle is drawn. If not given,
@@ -360,53 +360,19 @@ class RawPen:
         >>> turtle.circle(120, 180)  # half a circle
         """
         if extent is None:
-            extent = self._fullcircle
-        x0, y0 = self._position
-        xc = x0 - radius * sin(self._angle * self._invradian)
-        yc = y0 - radius * cos(self._angle * self._invradian)
-        if radius >= 0.0:
-            start = self._angle - (self._fullcircle / 4.0)
-        else:
-            start = self._angle + (self._fullcircle / 4.0)
-            extent = -extent
-        if self._filling:
-            if abs(extent) >= self._fullcircle:
-                item = self._canvas.create_oval(xc-radius, yc-radius,
-                                                xc+radius, yc+radius,
-                                                width=self._width,
-                                                outline="")
-                self._tofill.append(item)
-            item = self._canvas.create_arc(xc-radius, yc-radius,
-                                           xc+radius, yc+radius,
-                                           style="chord",
-                                           start=start,
-                                           extent=extent,
-                                           width=self._width,
-                                           outline="")
-            self._tofill.append(item)
-        if self._drawing:
-            if abs(extent) >= self._fullcircle:
-                item = self._canvas.create_oval(xc-radius, yc-radius,
-                                                xc+radius, yc+radius,
-                                                width=self._width,
-                                                outline=self._color)
-                self._items.append(item)
-            item = self._canvas.create_arc(xc-radius, yc-radius,
-                                           xc+radius, yc+radius,
-                                           style="arc",
-                                           start=start,
-                                           extent=extent,
-                                           width=self._width,
-                                           outline=self._color)
-            self._items.append(item)
-        angle = start + extent
-        x1 = xc + abs(radius) * cos(angle * self._invradian)
-        y1 = yc - abs(radius) * sin(angle * self._invradian)
-        self._angle = (self._angle + extent) % self._fullcircle
-        self._position = x1, y1
-        if self._filling:
-            self._path.append(self._position)
-        self._draw_turtle()
+            extent = self._fullcircle 
+        frac = abs(extent)/self._fullcircle 
+        steps = 1+int(min(11+abs(radius)/6.0, 59.0)*frac)
+        w = 1.0 * extent / steps
+        w2 = 0.5 * w
+        l = 2.0 * radius * sin(w2*self._invradian) 
+        if radius < 0:
+            l, w, w2 = -l, -w, -w2
+        self.left(w2)
+        for i in range(steps):
+            self.forward(l)
+            self.left(w)
+        self.right(w2)
 
     def heading(self):
         """ Return the turtle's current heading.
