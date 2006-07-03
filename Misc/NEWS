@@ -19,6 +19,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1514703: Only setup canvas window in turtle when the canvas
+  is created.
+
 - Bug #1513223: .close() of a _socketobj now releases the underlying
   socket again, which then gets closed as it becomes unreferenced.
 
