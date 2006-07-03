@@ -558,13 +558,24 @@ class BuiltinTest(unittest.TestCase):
     @run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
     def test_float_with_comma(self):
         # set locale to something that doesn't use '.' for the decimal point
+        # float must not accept the locale specific decimal point but
+        # it still has to accept the normal python syntac
         import locale
         if not locale.localeconv()['decimal_point'] == ',':
             return
 
-        self.assertEqual(float("  3,14  "), 3.14)
-        self.assertEqual(float("  +3,14  "), 3.14)
-        self.assertEqual(float("  -3,14  "), -3.14)
+        self.assertEqual(float("  3.14  "), 3.14)
+        self.assertEqual(float("+3.14  "), 3.14)
+        self.assertEqual(float("-3.14  "), -3.14)
+        self.assertEqual(float(".14  "), .14)
+        self.assertEqual(float("3.  "), 3.0)
+        self.assertEqual(float("3.e3  "), 3000.0)
+        self.assertEqual(float("3.2e3  "), 3200.0)
+        self.assertEqual(float("2.5e-1  "), 0.25)
+        self.assertEqual(float("5e-1"), 0.5)
+        self.assertRaises(ValueError, float, "  3,14  ")
+        self.assertRaises(ValueError, float, "  +3,14  ")
+        self.assertRaises(ValueError, float, "  -3,14  ")
         self.assertRaises(ValueError, float, "  0x3.1  ")
         self.assertRaises(ValueError, float, "  -0x3.p-1  ")
         self.assertEqual(float("  25.e-1  "), 2.5)

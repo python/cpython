@@ -90,6 +90,13 @@ PyOS_ascii_strtod(const char *nptr, char **endptr)
 				p++;
 			end = p;
 		}
+		else if (strncmp(p, decimal_point, decimal_point_len) == 0)
+		{
+			/* Python bug #1417699 */
+			*endptr = (char*)nptr;
+			errno = EINVAL;
+			return val;
+		}
 		/* For the other cases, we need not convert the decimal point */
 	}
 
