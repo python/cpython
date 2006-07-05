@@ -65,10 +65,10 @@ CField_FromDesc(PyObject *desc, int index,
 	}
 	if (bitsize /* this is a bitfield request */
 	    && *pfield_size /* we have a bitfield open */
-#ifdef MS_WIN32
+#if defined(MS_WIN32) && !defined(__MINGW32__)
 	    && dict->size * 8 == *pfield_size /* MSVC */
 #else
-	    && dict->size * 8 <= *pfield_size /* GCC */
+	    && dict->size * 8 <= *pfield_size /* GCC, MINGW */
 #endif
 	    && (*pbitofs + bitsize) <= *pfield_size) {
 		/* continue bit field */
