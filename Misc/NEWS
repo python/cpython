@@ -25,6 +25,10 @@ Core and builtins
 Library
 -------
 
+- string.Template() now correctly handles tuple-values. Previously,
+  multi-value tuples would raise an exception and single-value tuples would
+  be treated as the value they contain, instead.
+
 - Bug #822974: Honor timeout in telnetlib.{expect,read_until}
   even if some data are received.
 

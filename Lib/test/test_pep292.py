@@ -58,6 +58,13 @@ class TestTemplate(unittest.TestCase):
         s = Template('tim has eaten ${count} bags of ham today')
         eq(s.substitute(d), 'tim has eaten 7 bags of ham today')
 
+    def test_tupleargs(self):
+        eq = self.assertEqual
+        s = Template('$who ate ${meal}')
+        d = dict(who=('tim', 'fred'), meal=('ham', 'kung pao'))
+        eq(s.substitute(d), "('tim', 'fred') ate ('ham', 'kung pao')")
+        eq(s.safe_substitute(d), "('tim', 'fred') ate ('ham', 'kung pao')")
+
     def test_SafeTemplate(self):
         eq = self.assertEqual
         s = Template('$who likes ${what} for ${meal}')
