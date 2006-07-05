@@ -468,10 +468,10 @@ class C:
   Construct a list from those elements of \var{list} for which
   \var{function} returns true.  \var{list} may be either a sequence, a
   container which supports iteration, or an iterator,  If \var{list}
-  is a string or a tuple, the result also has that type; otherwise it
-  is always a list.  If \var{function} is \code{None}, the identity
-  function is assumed, that is, all elements of \var{list} that are false
-  (zero or empty) are removed.
+  is a string (either \code{str} or \code{unicode}) or a tuple, the result
+  also has that type; otherwise it is always a list.  If \var{function} is
+  \code{None}, the identity function is assumed, that is, all elements of
+  \var{list} that are false are removed.
 
   Note that \code{filter(function, \var{list})} is equivalent to
   \code{[item for item in \var{list} if function(item)]} if function is
