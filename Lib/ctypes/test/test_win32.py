@@ -30,11 +30,15 @@ if sys.platform == "win32":
             # or wrong calling convention
             self.assertRaises(ValueError, IsWindow, None)
 
-        import _ctypes
-        if _ctypes.uses_seh():
-            def test_SEH(self):
-                # Call functions with invalid arguments, and make sure that access violations
-                # are trapped and raise an exception.
+        def test_SEH(self):
+            # Call functions with invalid arguments, and make sure that access violations
+            # are trapped and raise an exception.
+            #
+            # Normally, in a debug build of the _ctypes extension
+            # module, exceptions are not trapped, so we can only run
+            # this test in a release build.
+            import sys
+            if not hasattr(sys, "getobjects"):
                 self.assertRaises(WindowsError, windll.kernel32.GetModuleHandleA, 32)
 
 class Structures(unittest.TestCase):
