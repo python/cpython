@@ -1648,6 +1648,12 @@ argument to an object that the foreign function accepts.  For
 example, a \class{c{\_}char{\_}p} item in the \member{argtypes} tuple will
 convert a unicode string passed as argument into an byte string
 using ctypes conversion rules.
+
+New: It is now possible to put items in argtypes which are not
+ctypes types, but each item must have a \method{from{\_}param} method
+which returns a value usable as argument (integer, string, ctypes
+instance).  This allows to define adapters that can adapt custom
+objects as function parameters.
 \end{memberdesc}
 
 \begin{memberdesc}{errcheck}
