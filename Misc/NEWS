@@ -25,6 +25,10 @@ Core and builtins
 Library
 -------
 
+- Patch #1517790: It is now possible to use custom objects in the ctypes
+  foreign function argtypes sequence as long as they provide a from_param
+  method, no longer is it required that the object is a ctypes type.
+
 - string.Template() now correctly handles tuple-values. Previously,
   multi-value tuples would raise an exception and single-value tuples would
   be treated as the value they contain, instead.

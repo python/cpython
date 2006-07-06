@@ -1633,9 +1633,8 @@ converters_from_argtypes(PyObject *ob)
 
 	for (i = 0; i < nArgs; ++i) {
 		PyObject *tp = PyTuple_GET_ITEM(ob, i);
-		StgDictObject *dict = PyType_stgdict(tp);
 		PyObject *cnv = PyObject_GetAttrString(tp, "from_param");
-		if (!dict || !cnv)
+		if (!cnv)
 			goto argtypes_error_1;
 		PyTuple_SET_ITEM(converters, i, cnv);
 	}
@@ -1646,7 +1645,7 @@ converters_from_argtypes(PyObject *ob)
 	Py_XDECREF(converters);
 	Py_DECREF(ob);
 	PyErr_Format(PyExc_TypeError,
-		     "item %d in _argtypes_ is not a valid C type", i+1);
+		     "item %d in _argtypes_ has no from_param method", i+1);
 	return NULL;
 }
 
