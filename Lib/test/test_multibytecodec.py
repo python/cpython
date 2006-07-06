@@ -9,15 +9,34 @@ from test import test_multibytecodec_support
 from test.test_support import TESTFN
 import unittest, StringIO, codecs, sys, os
 
+ALL_CJKENCODINGS = [
+# _codecs_cn
+    'gb2312', 'gbk', 'gb18030', 'hz',
+# _codecs_hk
+    'big5hkscs',
+# _codecs_jp
+    'cp932', 'shift_jis', 'euc_jp', 'euc_jisx0213', 'shift_jisx0213',
+    'euc_jis_2004', 'shift_jis_2004',
+# _codecs_kr
+    'cp949', 'euc_kr', 'johab',
+# _codecs_tw
+    'big5', 'cp950',
+# _codecs_iso2022
+    'iso2022_jp', 'iso2022_jp_1', 'iso2022_jp_2', 'iso2022_jp_2004',
+    'iso2022_jp_3', 'iso2022_jp_ext', 'iso2022_kr',
+]
+
 class Test_MultibyteCodec(unittest.TestCase):
 
     def test_nullcoding(self):
-        self.assertEqual(''.decode('gb18030'), u'')
-        self.assertEqual(unicode('', 'gb18030'), u'')
-        self.assertEqual(u''.encode('gb18030'), '')
+        for enc in ALL_CJKENCODINGS:
+            self.assertEqual(''.decode(enc), u'')
+            self.assertEqual(unicode('', enc), u'')
+            self.assertEqual(u''.encode(enc), '')
 
     def test_str_decode(self):
-        self.assertEqual('abcd'.encode('gb18030'), 'abcd')
+        for enc in ALL_CJKENCODINGS:
+            self.assertEqual('abcd'.encode(enc), 'abcd')
 
     def test_errorcallback_longindex(self):
         dec = codecs.getdecoder('euc-kr')
@@ -27,9 +46,10 @@ class Test_MultibyteCodec(unittest.TestCase):
                           'apple\x92ham\x93spam', 'test.cjktest')
 
     def test_codingspec(self):
-        print >> open(TESTFN, 'w'), '# coding: euc-kr'
         try:
-            exec open(TESTFN)
+            for enc in ALL_CJKENCODINGS:
+                print >> open(TESTFN, 'w'), '# coding:', enc
+                exec open(TESTFN)
         finally:
             os.unlink(TESTFN)
 
