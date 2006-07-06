@@ -2919,14 +2919,13 @@ submodules with the same name from different packages.
 
 The submodules often need to refer to each other.  For example, the
 \module{surround} module might use the \module{echo} module.  In fact,
-such references
-are so common that the \keyword{import} statement first looks in the
-containing package before looking in the standard module search path.
-Thus, the surround module can simply use \code{import echo} or
-\code{from echo import echofilter}.  If the imported module is not
-found in the current package (the package of which the current module
-is a submodule), the \keyword{import} statement looks for a top-level
-module with the given name.
+such references are so common that the \keyword{import} statement
+first looks in the containing package before looking in the standard
+module search path. Thus, the \module{surround} module can simply use
+\code{import echo} or \code{from echo import echofilter}.  If the
+imported module is not found in the current package (the package of
+which the current module is a submodule), the \keyword{import}
+statement looks for a top-level module with the given name.
 
 When packages are structured into subpackages (as with the
 \module{Sound} package in the example), there's no shortcut to refer
@@ -2935,6 +2934,24 @@ must be used.  For example, if the module
 \module{Sound.Filters.vocoder} needs to use the \module{echo} module
 in the \module{Sound.Effects} package, it can use \code{from
 Sound.Effects import echo}.
+
+Starting with Python 2.5, in addition to the implicit relative imports
+described above, you can write explicit relative imports with the
+\code{from module import name} form of import statement. These explicit
+relative imports use leading dots to indicate the current and parent
+packages involved in the relative import. From the \module{surround}
+module for example, you might use:
+
+\begin{verbatim}
+from . import echo
+from .. import Formats
+from ..Filters import equalizer
+\end{verbatim}
+
+Note that both explicit and implicit relative imports are based on the
+name of the current module. Since the name of the main module is always
+\code{"__main__"}, modules intended for use as the main module of a
+Python application should always use absolute imports.
 
 \subsection{Packages in Multiple Directories}
 
