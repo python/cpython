@@ -71,6 +71,11 @@ runtime features.}
 \lineii{FutureWarning}{Base category for warnings about constructs
 that will change semantically in the future.}
 
+\lineii{PendingDeprecationWarning}{Base category for warnings about
+features that will be deprecated in the future (ignored by default).}
+
+\lineii{ImportWarning}{Base category for warnings triggered during the
+process of importing a module (ignored by default).}
 \end{tableii}
 
 While these are technically built-in exceptions, they are documented
@@ -143,6 +148,17 @@ arguments for all \programopt{-W} options without interpretation in
 it is first imported (invalid options are ignored, after printing a
 message to \code{sys.stderr}).
 
+The warnings that are ignored by default may be enabled by passing
+ \programopt{-Wd} to the interpreter. This enables default handling
+for all warnings, including those that are normally ignored by
+default. This is particular useful for enabling ImportWarning when
+debugging problems importing a developed package. ImportWarning can
+also be enabled explicitly in Python code using:
+
+\begin{verbatim}
+    warnings.simplefilter('default', ImportWarning)
+\end{verbatim}
+
 
 \subsection{Available Functions \label{warning-functions}}
 
@@ -209,14 +225,26 @@ Insert an entry into the list of warnings filters.  The entry is
 inserted at the front by default; if \var{append} is true, it is
 inserted at the end.
 This checks the types of the arguments, compiles the message and
-module regular expressions, and inserts them as a tuple in front
-of the warnings filter.  Entries inserted later override entries
-inserted earlier, if both match a particular warning.  Omitted
-arguments default to a value that matches everything.
+module regular expressions, and inserts them as a tuple in the 
+list of warnings filters.  Entries closer to the front of the list
+override entries later in the list, if both match a particular
+warning.  Omitted arguments default to a value that matches
+everything.
+\end{funcdesc}
+
+\begin{funcdesc}{simplefilter}{action\optional{,
+                 category\optional{,
+                 lineno\optional{, append}}}}
+Insert a simple entry into the list of warnings filters. The meaning
+of the function parameters is as for \function{filterwarnings()}, but
+regular expressions are not needed as the filter inserted always
+matches any message in any module as long as the category and line
+number match.
 \end{funcdesc}
 
 \begin{funcdesc}{resetwarnings}{}
 Reset the warnings filter.  This discards the effect of all previous
 calls to \function{filterwarnings()}, including that of the
-\programopt{-W} command line options.
+\programopt{-W} command line options and calls to
+\function{simplefilter()}.
 \end{funcdesc}
