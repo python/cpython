@@ -1170,19 +1170,12 @@ a line like this near the top of the source file:
 to include an \file{__init__.py} module in a package directory.
 Debugging this mistake can be confusing, and usually requires running
 Python with the \programopt{-v} switch to log all the paths searched.
-In Python 2.5, a new \exception{ImportWarning} warning is raised when
+In Python 2.5, a new \exception{ImportWarning} warning is triggered when
 an import would have picked up a directory as a package but no
-\file{__init__.py} was found.  (Implemented by Thomas Wouters.)
-
-To suppress these warnings, you can either supply 
-\code{\programopt{-W}'ignore:Not importing directory'} when running the Python
-interpreter, or use the \module{warnings} module to suppress the
-message:
-
-\begin{verbatim}
-warnings.filterwarnings('ignore', 'Not importing directory',
-                        ImportWarning)
-\end{verbatim}
+\file{__init__.py} was found.  This warning is silently ignored by default;
+provide the \programopt{-Wd} option when running the Python executable
+to display the warning message.
+(Implemented by Thomas Wouters.)
 
 \item The list of base classes in a class definition can now be empty.  
 As an example, this is now legal:
