@@ -2352,7 +2352,33 @@ AC_CHECK_LIB(c, inet_aton, [$ac_cv_prog_TRUE],
 )
 
 dnl Check if system zlib has *Copy() functions
+dnl
+dnl On MacOSX the linker will search for dylibs on the entire linker path
+dnl before searching for static libraries. setup.py adds -Wl,-search_paths_first
+dnl to revert to a more traditional unix behaviour and make it possible to
+dnl override the system libz with a local static library of libz. Temporarily
+dnl add that flag to our CFLAGS as well to ensure that we check the version
+dnl of libz that will be used by setup.py. 
+dnl The -L/usr/local/lib is needed as wel to get the same compilation 
+dnl environment as setup.py (and leaving it out can cause configure to use the
+dnl wrong version of the library)
+case $ac_sys_system/$ac_sys_release in
+Darwin/*) 
+	_CUR_CFLAGS="${CFLAGS}"
+	_CUR_LDFLAGS="${LDFLAGS}"
+	CFLAGS="${CFLAGS} -Wl,-search_paths_first"
+	LDFLAGS="${LDFLAGS} -Wl,-search_paths_first -L/usr/local/lib"
+	;;
+esac
+
 AC_CHECK_LIB(z, inflateCopy, AC_DEFINE(HAVE_ZLIB_COPY, 1, Define if the zlib library has inflateCopy))
+
+case $ac_sys_system/$ac_sys_release in
+Darwin/*) 
+	CFLAGS="${_CUR_CFLAGS}"
+	LDFLAGS="${_CUR_LDFLAGS}"
+	;;
+esac
 
 AC_MSG_CHECKING(for hstrerror)
 AC_TRY_LINK([
