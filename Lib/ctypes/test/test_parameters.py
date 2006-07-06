@@ -147,6 +147,41 @@ class SimpleTypesTestCase(unittest.TestCase):
 ##    def test_performance(self):
 ##        check_perf()
 
+    def test_noctypes_argtype(self):
+        import _ctypes_test
+        from ctypes import CDLL, c_void_p, ArgumentError
+
+        func = CDLL(_ctypes_test.__file__)._testfunc_p_p
+        func.restype = c_void_p
+        # TypeError: has no from_param method
+        self.assertRaises(TypeError, setattr, func, "argtypes", (object,))
+
+        class Adapter(object):
+            def from_param(cls, obj):
+                return None
+
+        func.argtypes = (Adapter(),)
+        self.failUnlessEqual(func(None), None)
+        self.failUnlessEqual(func(object()), None)
+
+        class Adapter(object):
+            def from_param(cls, obj):
+                return obj
+
+        func.argtypes = (Adapter(),)
+        # don't know how to convert parameter 1
+        self.assertRaises(ArgumentError, func, object())
+        self.failUnlessEqual(func(c_void_p(42)), 42)
+
+        class Adapter(object):
+            def from_param(cls, obj):
+                raise ValueError(obj)
+
+        func.argtypes = (Adapter(),)
+        # ArgumentError: argument 1: ValueError: 99
+        self.assertRaises(ArgumentError, func, 99)
+
+
 ################################################################
 
 if __name__ == '__main__':
