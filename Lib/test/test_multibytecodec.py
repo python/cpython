@@ -6,7 +6,8 @@
 
 from test import test_support
 from test import test_multibytecodec_support
-import unittest, StringIO, codecs, sys
+from test.test_support import TESTFN
+import unittest, StringIO, codecs, sys, os
 
 class Test_MultibyteCodec(unittest.TestCase):
 
@@ -24,6 +25,13 @@ class Test_MultibyteCodec(unittest.TestCase):
         codecs.register_error('test.cjktest', myreplace)
         self.assertRaises(IndexError, dec,
                           'apple\x92ham\x93spam', 'test.cjktest')
+
+    def test_codingspec(self):
+        print >> open(TESTFN, 'w'), '# coding: euc-kr'
+        try:
+            exec open(TESTFN)
+        finally:
+            os.unlink(TESTFN)
 
 class Test_IncrementalEncoder(unittest.TestCase):
 
