@@ -23,8 +23,6 @@ class RunModuleCodeTest(unittest.TestCase):
         "run_argv0 = sys.argv[0]\n"
         "if __name__ in sys.modules:\n"
         "    run_name = sys.modules[__name__].__name__\n"
-        "if __module_name__ in sys.modules:\n"
-        "    mod_name = sys.modules[__module_name__].__module_name__\n"
         "# Check nested operation\n"
         "import runpy\n"
         "nested = runpy._run_module_code('x=1\\n', mod_name='<run>',\n"
@@ -34,16 +32,14 @@ class RunModuleCodeTest(unittest.TestCase):
 
     def test_run_module_code(self):
         initial = object()
-        run_name = "<Nonsense>"
-        mod_name = "<ModuleNonsense>"
+        name = "<Nonsense>"
         file = "Some other nonsense"
         loader = "Now you're just being silly"
         d1 = dict(initial=initial)
         saved_argv0 = sys.argv[0]
         d2 = _run_module_code(self.test_source,
                               d1,
-                              run_name,
-                              mod_name,
+                              name,
                               file,
                               loader,
                               True)
@@ -51,23 +47,19 @@ class RunModuleCodeTest(unittest.TestCase):
         self.failUnless(d2["initial"] is initial)
         self.failUnless(d2["result"] == self.expected_result)
         self.failUnless(d2["nested"]["x"] == 1)
-        self.failUnless(d2["__name__"] is run_name)
-        self.failUnless(d2["run_name"] is run_name)
-        self.failUnless(d2["__module_name__"] is mod_name)
-        self.failUnless(d2["mod_name"] is mod_name)
+        self.failUnless(d2["__name__"] is name)
+        self.failUnless(d2["run_name"] is name)
         self.failUnless(d2["__file__"] is file)
         self.failUnless(d2["run_argv0"] is file)
         self.failUnless(d2["__loader__"] is loader)
         self.failUnless(sys.argv[0] is saved_argv0)
-        self.failUnless(mod_name not in sys.modules)
-        self.failUnless(run_name not in sys.modules)
+        self.failUnless(name not in sys.modules)
 
     def test_run_module_code_defaults(self):
         saved_argv0 = sys.argv[0]
         d = _run_module_code(self.test_source)
         self.failUnless(d["result"] == self.expected_result)
         self.failUnless(d["__name__"] is None)
-        self.failUnless(d["__module_name__"] is None)
         self.failUnless(d["__file__"] is None)
         self.failUnless(d["__loader__"] is None)
         self.failUnless(d["run_argv0"] is saved_argv0)
