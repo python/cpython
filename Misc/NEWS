@@ -89,6 +89,9 @@ Extension Modules
 Build
 -----
 
+- The MSI compileall step was fixed to also support a TARGETDIR
+  with spaces in it.
+
 - Bug #1517388: sqlite3.dll is now installed on Windows independent
   of Tcl/Tk.
 
