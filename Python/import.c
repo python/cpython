@@ -1237,8 +1237,10 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 
 			importer = get_path_importer(path_importer_cache,
 						     path_hooks, v);
-			if (importer == NULL)
+			if (importer == NULL) {
+				Py_XDECREF(copy);
 				return NULL;
+			}
 			/* Note: importer is a borrowed reference */
 			if (importer == Py_False) {
 				/* Cached as not being a valid dir. */
@@ -1273,6 +1275,7 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 				loader = PyObject_CallMethod(importer,
 							     "find_module",
 							     "s", fullname);
+				Py_XDECREF(copy);
 				if (loader == NULL)
 					return NULL;  /* error */
 				if (loader != Py_None) {
@@ -1281,7 +1284,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 					return &importhookdescr;
 				}
 				Py_DECREF(loader);
-				Py_XDECREF(copy);
 				continue;
 			}
 		}
