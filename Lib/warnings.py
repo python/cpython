@@ -261,3 +261,4 @@ def _getcategory(category):
 # Module initialization
 _processoptions(sys.warnoptions)
 simplefilter("ignore", category=PendingDeprecationWarning, append=1)
+simplefilter("ignore", category=ImportWarning, append=1)
