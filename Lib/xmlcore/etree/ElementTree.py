@@ -84,7 +84,7 @@ __all__ = [
     "tostring",
     "TreeBuilder",
     "VERSION", "XML",
-    "XMLTreeBuilder",
+    "XMLParser", "XMLTreeBuilder",
     ]
 
 ##
@@ -1255,3 +1255,6 @@ class XMLTreeBuilder:
         tree = self._target.close()
         del self._target, self._parser # get rid of circular references
         return tree
+
+# compatibility
+XMLParser = XMLTreeBuilder
