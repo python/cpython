@@ -25,6 +25,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1515998: Properly generate logical ids for files in bdist_msi.
+
 - warnings.py now ignores ImportWarning by default
 
 - Patch #1517790: It is now possible to use custom objects in the ctypes
