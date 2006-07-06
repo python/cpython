@@ -25,6 +25,8 @@ Core and builtins
 Library
 -------
 
+- warnings.py now ignores ImportWarning by default
+
 - Patch #1517790: It is now possible to use custom objects in the ctypes
   foreign function argtypes sequence as long as they provide a from_param
   method, no longer is it required that the object is a ctypes type.
@@ -114,6 +116,9 @@ Tests
 
 Documentation
 -------------
+
+- Cover ImportWarning, PendingDeprecationWarning and simplefilter() in the
+  documentation for the warnings module.
 
 - Patch #1509163: MS Toolkit Compiler no longer available.
 
