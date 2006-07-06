@@ -83,6 +83,9 @@ Extension Modules
 - Bug #1512695: cPickle.loads could crash if it was interrupted with
   a KeyboardInterrupt.
 
+- Bug #1296433: parsing XML with a non-default encoding and
+  a CharacterDataHandler could crash the interpreter in pyexpat.
+
 Build
 -----
 
