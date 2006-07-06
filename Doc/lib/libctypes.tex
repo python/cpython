@@ -2389,6 +2389,13 @@ the fields of the base class.  If the subclass definition has a
 separate \member{{\_}fields{\_}} variable, the fields specified in this are
 appended to the fields of the base class.
 
+Structure and union constructors accept both positional and
+keyword arguments.  Positional arguments are used to initialize member
+fields in the same order as they are appear in \member{{\_}fields{\_}}.  Keyword
+arguments in the constructor are interpreted as attribute assignments,
+so they will initialize \member{{\_}fields{\_}} with the same name, or create new
+attributes for names not present in \member{{\_}fields{\_}}.
+
 
 \subsubsection{Arrays and pointers\label{ctypes-arrays-pointers}}
 
