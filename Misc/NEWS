@@ -93,6 +93,10 @@ Extension Modules
 Build
 -----
 
+- 'configure' now detects the zlib library the same way as distutils. 
+  Previously, the slight difference could cause compilation errors of the
+  'zlib' module on systems with more than one version of zlib.
+
 - The MSI compileall step was fixed to also support a TARGETDIR
   with spaces in it.
 
