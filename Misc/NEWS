@@ -89,6 +89,9 @@ Extension Modules
 Build
 -----
 
+- Bug #1517388: sqlite3.dll is now installed on Windows independent
+  of Tcl/Tk.
+
 - Bug #1513032: 'make install' failed on FreeBSD 5.3 due to lib-old
   trying to be installed even though it's empty.
 
