@@ -261,6 +261,8 @@ if 1:
             'import (os,)',
             'import os As bar',
             'import os.path a bar',
+            'from sys import stdin As stdout',
+            'from sys import stdin a stdout',
             'from (sys) import stdin',
             'from __future__ import (nested_scopes',
             'from __future__ import nested_scopes)',
