@@ -238,6 +238,8 @@ if 1:
         succeed = [
             'import sys',
             'import os, sys',
+            'import os as bar',
+            'import os.path as bar',
             'from __future__ import nested_scopes, generators',
             'from __future__ import (nested_scopes,\ngenerators)',
             'from __future__ import (nested_scopes,\ngenerators,)',
@@ -257,6 +259,8 @@ if 1:
             'import (sys',
             'import sys)',
             'import (os,)',
+            'import os As bar',
+            'import os.path a bar',
             'from (sys) import stdin',
             'from __future__ import (nested_scopes',
             'from __future__ import nested_scopes)',

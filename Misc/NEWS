@@ -22,6 +22,8 @@ Core and builtins
   omit a default "error" argument for NULL pointer.  This allows
   the parser to take a codec from cjkcodecs again.
 
+- Bug #1519018: 'as' is now validated properly in import statements.
+
 Library
 -------
 
