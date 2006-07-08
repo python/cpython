@@ -2142,7 +2142,14 @@ alias_for_import_name(struct compiling *c, const node *n)
  loop:
     switch (TYPE(n)) {
         case import_as_name:
-            str = (NCH(n) == 3) ? NEW_IDENTIFIER(CHILD(n, 2)) : NULL;
+            str = NULL;
+            if (NCH(n) == 3) {
+                if (strcmp(STR(CHILD(n, 1)), "as") != 0) {
+                    ast_error(n, "must use 'as' in import");
+                    return NULL;
+                }
+                str = NEW_IDENTIFIER(CHILD(n, 2));
+            }
             return alias(NEW_IDENTIFIER(CHILD(n, 0)), str, c->c_arena);
         case dotted_as_name:
             if (NCH(n) == 1) {
@@ -2151,6 +2158,10 @@ alias_for_import_name(struct compiling *c, const node *n)
             }
             else {
                 alias_ty a = alias_for_import_name(c, CHILD(n, 0));
+                if (strcmp(STR(CHILD(n, 1)), "as") != 0) {
+                    ast_error(n, "must use 'as' in import");
+                    return NULL;
+                }
                 assert(!a->asname);
                 a->asname = NEW_IDENTIFIER(CHILD(n, 2));
                 return a;
