@@ -365,8 +365,8 @@ class RawPen:
         >>> turtle.circle(120, 180)  # half a circle
         """
         if extent is None:
-            extent = self._fullcircle 
-        frac = abs(extent)/self._fullcircle 
+            extent = self._fullcircle
+        frac = abs(extent)/self._fullcircle
         steps = 1+int(min(11+abs(radius)/6.0, 59.0)*frac)
         w = 1.0 * extent / steps
         w2 = 0.5 * w
