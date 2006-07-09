@@ -3688,7 +3688,8 @@ compiler_augassign(struct compiler *c, stmt_ty s)
 		VISIT(c, expr, auge);
 		break;
 	case Name_kind:
-		VISIT(c, expr, s->v.AugAssign.target);
+		if (!compiler_nameop(c, e->v.Name.id, Load))
+		    return 0;
 		VISIT(c, expr, s->v.AugAssign.value);
 		ADDOP(c, inplace_binop(c, s->v.AugAssign.op));
 		return compiler_nameop(c, e->v.Name.id, Store);

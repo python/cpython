@@ -12,6 +12,9 @@ What's New in Python 2.5 beta 2?
 Core and builtins
 -----------------
 
+- Bug #1501934: The scope of global variables that are locally assigned
+  using augmented assignment is now correctly determined.
+
 - Bug #927248: Recursive method-wrapper objects can now safely
   be released.
 

@@ -339,7 +339,7 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
     /* The ast defines augmented store and load contexts, but the
        implementation here doesn't actually use them.  The code may be
        a little more complex than necessary as a result.  It also means
-       that expressions in an augmented assignment have no context.
+       that expressions in an augmented assignment have a Store context.
        Consider restructuring so that augmented assignment uses
        set_context(), too.
     */
@@ -1901,7 +1901,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 
         if (!expr1)
             return NULL;
-        /* TODO(jhylton): Figure out why set_context() can't be used here. */
+        /* TODO(nas): Remove duplicated error checks (set_context does it) */
         switch (expr1->kind) {
             case GeneratorExp_kind:
                 ast_error(ch, "augmented assignment to generator "
@@ -1923,6 +1923,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
                           "assignment");
                 return NULL;
         }
+	set_context(expr1, Store, ch);
 
 	ch = CHILD(n, 2);
 	if (TYPE(ch) == testlist)
