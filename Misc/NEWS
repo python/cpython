@@ -12,6 +12,9 @@ What's New in Python 2.5 beta 2?
 Core and builtins
 -----------------
 
+- Bug #1441486: The literal representation of -(sys.maxint - 1)
+  again evaluates to a int object, not a long.
+
 - Bug #1501934: The scope of global variables that are locally assigned
   using augmented assignment is now correctly determined.
 

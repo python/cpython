@@ -211,6 +211,10 @@ if 1:
             self.assertEqual(eval("-" + all_one_bits), -18446744073709551615L)
         else:
             self.fail("How many bits *does* this machine have???")
+        # Verify treatment of contant folding on -(sys.maxint+1)
+        # i.e. -2147483648 on 32 bit platforms.  Should return int, not long.
+        self.assertTrue(isinstance(eval("%s" % (-sys.maxint - 1)), int))
+        self.assertTrue(isinstance(eval("%s" % (-sys.maxint - 2)), long))
 
     def test_sequence_unpacking_error(self):
         # Verify sequence packing/unpacking with "or".  SF bug #757818
