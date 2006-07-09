@@ -216,6 +216,21 @@ if 1:
         self.assertTrue(isinstance(eval("%s" % (-sys.maxint - 1)), int))
         self.assertTrue(isinstance(eval("%s" % (-sys.maxint - 2)), long))
 
+    if sys.maxint == 9223372036854775807:
+        def test_32_63_bit_values(self):
+            a = +4294967296  # 1 << 32
+            b = -4294967296  # 1 << 32
+            c = +281474976710656  # 1 << 48
+            d = -281474976710656  # 1 << 48
+            e = +4611686018427387904  # 1 << 62
+            f = -4611686018427387904  # 1 << 62
+            g = +9223372036854775807  # 1 << 63 - 1
+            h = -9223372036854775807  # 1 << 63 - 1
+
+            for variable in self.test_32_63_bit_values.func_code.co_consts:
+                if variable is not None:
+                    self.assertTrue(isinstance(variable, int))
+
     def test_sequence_unpacking_error(self):
         # Verify sequence packing/unpacking with "or".  SF bug #757818
         i,j = (1, -1) or (-1, 1)
