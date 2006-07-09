@@ -30,6 +30,9 @@ Core and builtins
 
 - Bug #1519018: 'as' is now validated properly in import statements.
 
+- On 64 bit systems, int literals that use less than 64 bits are
+  now ints rather than longs.
+
 Library
 -------
 

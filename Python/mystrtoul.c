@@ -69,11 +69,22 @@ static unsigned long smallmax[] = {
  * calculated by [int(math.floor(math.log(2**32, i))) for i in range(2, 37)].
  * Note that this is pessimistic if sizeof(long) > 4.
  */
+#if SIZEOF_LONG == 4
 static int digitlimit[] = {
 	0,  0, 32, 20, 16, 13, 12, 11, 10, 10,  /*  0 -  9 */
 	9,  9,  8,  8,  8,  8,  8,  7,  7,  7,  /* 10 - 19 */
 	7,  7,  7,  7,  6,  6,  6,  6,  6,  6,  /* 20 - 29 */
 	6,  6,  6,  6,  6,  6,  6};             /* 30 - 36 */
+#elif SIZEOF_LONG == 8
+/* [int(math.floor(math.log(2**64, i))) for i in range(2, 37)] */
+static int digitlimit[] = {
+	 0,   0, 64, 40, 32, 27, 24, 22, 21, 20,  /*  0 -  9 */
+	19,  18, 17, 17, 16, 16, 16, 15, 15, 15,  /* 10 - 19 */
+	14,  14, 14, 14, 13, 13, 13, 13, 13, 13,  /* 20 - 29 */
+	13,  12, 12, 12, 12, 12, 12};             /* 30 - 36 */
+#else
+#error "Need table for SIZEOF_LONG"
+#endif
 
 /*
 **	strtoul
