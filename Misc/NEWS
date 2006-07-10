@@ -39,6 +39,9 @@ Core and builtins
 Library
 -------
 
+- Fixed a segfault in _ctypes when ctypes.wintypes were imported
+  on non-Windows platforms.
+
 - Bug #1518190: The ctypes.c_void_p constructor now accepts any
   integer or long, without range checking.
 
