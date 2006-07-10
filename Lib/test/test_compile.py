@@ -166,6 +166,16 @@ if 1:
         pass"""
         compile(s, "<string>", "exec")
 
+    # This test is probably specific to CPython and may not generalize
+    # to other implementations.  We are trying to ensure that when
+    # the first line of code starts after 256, correct line numbers
+    # in tracebacks are still produced.
+    def test_leading_newlines(self):
+        s256 = "".join(["\n"] * 256 + ["spam"])
+        co = compile(s256, 'fn', 'exec')
+        self.assertEqual(co.co_firstlineno, 257)
+        self.assertEqual(co.co_lnotab, '')
+
     def test_literals_with_leading_zeroes(self):
         for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",
                     "080000000000000", "000000000000009", "000000000000008"]:

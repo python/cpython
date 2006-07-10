@@ -33,6 +33,9 @@ Core and builtins
 - On 64 bit systems, int literals that use less than 64 bits are
   now ints rather than longs.
 
+- Bug #1512814, Fix incorrect lineno's when code at module scope
+  started after line 256.
+
 Library
 -------
 

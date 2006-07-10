@@ -1776,7 +1776,8 @@ compiler_mod(struct compiler *c, mod_ty mod)
 		if (!module)
 			return NULL;
 	}
-	if (!compiler_enter_scope(c, module, mod, 1))
+	/* Use 0 for firstlineno initially, will fixup in assemble(). */
+	if (!compiler_enter_scope(c, module, mod, 0))
 		return NULL;
 	switch (mod->kind) {
 	case Module_kind: 
@@ -4446,6 +4447,13 @@ assemble(struct compiler *c, int addNone)
 		entryblock = b; 
 	}
 
+	/* Set firstlineno if it wasn't explicitly set. */
+	if (!c->u->u_firstlineno) {
+		if (entryblock && entryblock->b_instr)
+			c->u->u_firstlineno = entryblock->b_instr->i_lineno;
+		else
+			c->u->u_firstlineno = 1;
+	}
 	if (!assemble_init(&a, nblocks, c->u->u_firstlineno))
 		goto error;
 	dfs(c, entryblock, &a);
