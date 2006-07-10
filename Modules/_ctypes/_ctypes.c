@@ -1384,12 +1384,19 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		Py_DECREF(result);
 		return NULL;
 	}
+	fmt = getentry(PyString_AS_STRING(proto));
+	if (fmt == NULL) {
+		Py_DECREF(result);
+		PyErr_Format(PyExc_ValueError,
+			     "_type_ '%s' not supported",
+			     PyString_AS_STRING(proto));
+		return NULL;
+	}
+
 	stgdict = (StgDictObject *)PyObject_CallObject(
 		(PyObject *)&StgDict_Type, NULL);
 	if (!stgdict)
 		return NULL;
-
-	fmt = getentry(PyString_AS_STRING(proto));
 
 	stgdict->ffi_type_pointer = *fmt->pffi_type;
 	stgdict->align = fmt->pffi_type->alignment;
