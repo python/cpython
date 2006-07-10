@@ -131,7 +131,7 @@ class MacroExpander:
                 self.set_macro("FrameworkSDKDir", net, "sdkinstallroot")
         except KeyError, exc: #
             raise DistutilsPlatformError, \
-                  ("The .NET Framework SDK needs to be installed before "
+                  ("Visual Studio 2003 needs to be installed before "
                    "building extensions for Python.")
 
         p = r"Software\Microsoft\NET Framework Setup\Product"
