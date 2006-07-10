@@ -108,7 +108,9 @@ and call \code{fill(0)} when you finish to draw the path.
 \end{funcdesc}
 
 \begin{funcdesc}{begin\_fill}{}
-Switch turtle into filling mode; equivalent to \code{fill(1)}.
+Switch turtle into filling mode; 
+Must eventually be followed by a corresponding end_fill() call.
+Otherwise it will be ignored.
 \versionadded{2.5}
 \end{funcdesc}
 

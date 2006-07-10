@@ -86,7 +86,6 @@ class RawPen:
         self._color = "black"
         self._filling = 0
         self._path = []
-        self._tofill = []
         self.clear()
         canvas._root().tkraise()
 
@@ -306,19 +305,15 @@ class RawPen:
                                             {'fill': self._color,
                                              'smooth': smooth})
                 self._items.append(item)
-                if self._tofill:
-                    for item in self._tofill:
-                        self._canvas.itemconfigure(item, fill=self._color)
-                        self._items.append(item)
         self._path = []
-        self._tofill = []
         self._filling = flag
         if flag:
             self._path.append(self._position)
-        self.forward(0)
 
     def begin_fill(self):
         """ Called just before drawing a shape to be filled.
+            Must eventually be followed by a corresponding end_fill() call.
+            Otherwise it will be ignored.
 
         Example:
         >>> turtle.begin_fill()
@@ -331,7 +326,8 @@ class RawPen:
         >>> turtle.forward(100)
         >>> turtle.end_fill()
         """
-        self.fill(1)
+        self._path = [self._position]
+        self._filling = 1
 
     def end_fill(self):
         """ Called after drawing a shape to be filled.
@@ -901,15 +897,30 @@ def demo2():
             speed(speeds[sp])
     color(0.25,0,0.75)
     fill(0)
-    color("green")
 
-    left(130)
+    # draw and fill a concave shape
+    left(120)
     up()
-    forward(90)
+    forward(70)
+    right(30)
+    down()
     color("red")
-    speed('fastest')
+    speed("fastest")
+    fill(1)
+    for i in range(4):
+        circle(50,90)
+        right(90)
+        forward(30)
+        right(90)
+    color("yellow")
+    fill(0)
+    left(90)
+    up()
+    forward(30)
     down();
 
+    color("red")
+    
     # create a second turtle and make the original pursue and catch it
     turtle=Turtle()
     turtle.reset()
