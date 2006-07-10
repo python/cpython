@@ -46,14 +46,14 @@ extern void bzero(void *, int);
 #endif
 
 #ifdef MS_WINDOWS
-#include <winsock.h>
+#  include <winsock.h>
 #else
-#ifdef __BEOS__
-#include <net/socket.h>
-#define SOCKET int
-#else
-#define SOCKET int
-#endif
+#  define SOCKET int
+#  ifdef __BEOS__
+#    include <net/socket.h>
+#  elif defined(__VMS)
+#    include <socket.h>
+#  endif
 #endif
 
 
@@ -668,7 +668,7 @@ arguments; each contains the subset of the corresponding file descriptors\n\
 that are ready.\n\
 \n\
 *** IMPORTANT NOTICE ***\n\
-On Windows, only sockets are supported; on Unix, all file descriptors.");
+On Windows and OpenVMS, only sockets are supported; on Unix, all file descriptors.");
 
 static PyMethodDef select_methods[] = {
     {"select",	select_select, METH_VARARGS, select_doc},
@@ -682,7 +682,7 @@ PyDoc_STRVAR(module_doc,
 "This module supports asynchronous I/O on multiple file descriptors.\n\
 \n\
 *** IMPORTANT NOTICE ***\n\
-On Windows, only sockets are supported; on Unix, all file descriptors.");
+On Windows and OpenVMS, only sockets are supported; on Unix, all file descriptors.");
 
 PyMODINIT_FUNC
 initselect(void)

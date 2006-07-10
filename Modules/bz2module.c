@@ -1311,7 +1311,11 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 				break;
 
 			case 'U':
+#ifdef __VMS
+				self->f_univ_newline = 0;
+#else
 				self->f_univ_newline = 1;
+#endif
 				break;
 
 			default:

@@ -5,6 +5,9 @@
 
 #include <sys/types.h>
 
+#ifdef __VMS
+#include <openssl/des.h>
+#endif
 
 /* Module crypt */
 
@@ -12,7 +15,9 @@
 static PyObject *crypt_crypt(PyObject *self, PyObject *args)
 {
 	char *word, *salt; 
+#ifndef __VMS
 	extern char * crypt(const char *, const char *);
+#endif
 
 	if (!PyArg_ParseTuple(args, "ss:crypt", &word, &salt)) {
 		return NULL;
