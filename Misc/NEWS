@@ -39,6 +39,10 @@ Core and builtins
 Library
 -------
 
+- Bug #1508010: msvccompiler now requires the DISTUTILS_USE_SDK 
+  environment variable to be set in order to the SDK environment
+  for finding the compiler, include files, etc.
+
 - Bug #1515998: Properly generate logical ids for files in bdist_msi.
 
 - warnings.py now ignores ImportWarning by default
