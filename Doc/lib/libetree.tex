@@ -1,0 +1,367 @@
+\section{\module{elementtree} --- The xml.etree.ElementTree Module}
+\declaremodule{standard}{elementtree}
+\moduleauthor{Fredrik Lundh}{fredrik@pythonware.com}
+\modulesynopsis{This module provides implementations
+of the Element and ElementTree types, plus support classes.
+
+A C version of this API is available as xml.etree.cElementTree.}
+\versionadded{2.5}
+
+
+\subsection{Overview\label{elementtree-overview}}
+
+The Element type is a flexible container object, designed to store
+hierarchical data structures in memory. The type can be described as a
+cross between a list and a dictionary.
+
+Each element has a number of properties associated with it:
+\begin{itemize}
+\item {} 
+a tag which is a string identifying what kind of data
+this element represents (the element type, in other words).
+
+\item {} 
+a number of attributes, stored in a Python dictionary.
+
+\item {} 
+a text string.
+
+\item {} 
+an optional tail string.
+
+\item {} 
+a number of child elements, stored in a Python sequence
+
+\end{itemize}
+
+To create an element instance, use the Element or SubElement factory
+functions.
+
+The ElementTree class can be used to wrap an element
+structure, and convert it from and to XML.
+
+
+\subsection{Functions\label{elementtree-functions}}
+
+\begin{funcdesc}{Comment}{\optional{text}}
+Comment element factory.  This factory function creates a special
+element that will be serialized as an XML comment.
+The comment string can be either an 8-bit ASCII string or a Unicode
+string.
+\var{text} is a string containing the comment string.
+
+\begin{datadescni}{Returns:}
+An element instance, representing a comment.
+\end{datadescni}
+\end{funcdesc}
+
+\begin{funcdesc}{dump}{elem}
+Writes an element tree or element structure to sys.stdout.  This
+function should be used for debugging only.
+
+The exact output format is implementation dependent.  In this
+version, it's written as an ordinary XML file.
+
+\var{elem} is an element tree or an individual element.
+\end{funcdesc}
+
+\begin{funcdesc}{Element}{tag\optional{, attrib}\optional{, **extra}}
+Element factory.  This function returns an object implementing the
+standard Element interface.  The exact class or type of that object
+is implementation dependent, but it will always be compatible with
+the {\_}ElementInterface class in this module.
+
+The element name, attribute names, and attribute values can be
+either 8-bit ASCII strings or Unicode strings.
+\var{tag} is the element name.
+\var{attrib} is an optional dictionary, containing element attributes.
+\var{extra} contains additional attributes, given as keyword arguments.
+
+\begin{datadescni}{Returns:}
+An element instance.
+\end{datadescni}
+\end{funcdesc}
+
+\begin{funcdesc}{fromstring}{text}
+Parses an XML section from a string constant.  Same as XML.
+\var{text} is a string containing XML data.
+
+\begin{datadescni}{Returns:}
+An Element instance.
+\end{datadescni}
+\end{funcdesc}
+
+\begin{funcdesc}{iselement}{element}
+Checks if an object appears to be a valid element object.
+\var{element} is an element instance.
+
+\begin{datadescni}{Returns:}
+A true value if this is an element object.
+\end{datadescni}
+\end{funcdesc}
+
+\begin{funcdesc}{iterparse}{source\optional{, events}}
+Parses an XML section into an element tree incrementally, and reports
+what's going on to the user.
+\var{source} is a filename or file object containing XML data.
+\var{events} is a list of events to report back.  If omitted, only ``end''
+events are reported.
+
+\begin{datadescni}{Returns:}
+A (event, elem) iterator.
+\end{datadescni}
+\end{funcdesc}
+
+\begin{funcdesc}{parse}{source\optional{, parser}}
+Parses an XML section into an element tree.
+\var{source} is a filename or file object containing XML data.
+\var{parser} is an optional parser instance.  If not given, the
+standard XMLTreeBuilder parser is used.
+
+\begin{datadescni}{Returns:}
+An ElementTree instance
+\end{datadescni}
+\end{funcdesc}
+
+\begin{funcdesc}{ProcessingInstruction}{target\optional{, text}}
+PI element factory.  This factory function creates a special element
+that will be serialized as an XML processing instruction.
+\var{target} is a string containing the PI target.
+\var{text} is a string containing the PI contents, if given.
+
+\begin{datadescni}{Returns:}
+An element instance, representing a PI.
+\end{datadescni}
+\end{funcdesc}
+
+\begin{funcdesc}{SubElement}{parent, tag\optional{, attrib} \optional{, **extra}}
+Subelement factory.  This function creates an element instance, and
+appends it to an existing element.
+
+The element name, attribute names, and attribute values can be
+either 8-bit ASCII strings or Unicode strings.
+\var{parent} is the parent element.
+\var{tag} is the subelement name.
+\var{attrib} is an optional dictionary, containing element attributes.
+\var{extra} contains additional attributes, given as keyword arguments.
+
+\begin{datadescni}{Returns:}
+An element instance.
+\end{datadescni}
+\end{funcdesc}
+
+\begin{funcdesc}{tostring}{element\optional{, encoding}}
+Generates a string representation of an XML element, including all
+subelements.
+\var{element} is an Element instance.
+\var{encoding} is the output encoding (default is US-ASCII).
+
+\begin{datadescni}{Returns:}
+An encoded string containing the XML data.
+\end{datadescni}
+\end{funcdesc}
+
+\begin{funcdesc}{XML}{text}
+Parses an XML section from a string constant.  This function can
+be used to embed ``XML literals'' in Python code.
+\var{text} is a string containing XML data.
+
+\begin{datadescni}{Returns:}
+An Element instance.
+\end{datadescni}
+\end{funcdesc}
+
+\begin{funcdesc}{XMLID}{text}
+Parses an XML section from a string constant, and also returns
+a dictionary which maps from element id:s to elements.
+\var{text} is a string containing XML data.
+
+\begin{datadescni}{Returns:}
+A tuple containing an Element instance and a dictionary.
+\end{datadescni}
+\end{funcdesc}
+
+
+\subsection{ElementTree Objects\label{elementtree-elementtree-objects}}
+
+\begin{classdesc}{ElementTree}{\optional{element,} \optional{file}}
+ElementTree wrapper class.  This class represents an entire element
+hierarchy, and adds some extra support for serialization to and from
+standard XML.
+
+\var{element} is the root element.
+The tree is initialized with the contents of the XML \var{file} if given.
+\end{classdesc}
+
+\begin{methoddesc}{_setroot}{element}
+Replaces the root element for this tree.  This discards the
+current contents of the tree, and replaces it with the given
+element.  Use with care.
+\var{element} is an element instance.
+\end{methoddesc}
+
+\begin{methoddesc}{find}{path}
+Finds the first toplevel element with given tag.
+Same as getroot().find(path).
+\var{path} is the element to look for.
+
+\begin{datadescni}{Returns:}
+The first matching element, or None if no element was found.
+\end{datadescni}
+\end{methoddesc}
+
+\begin{methoddesc}{findall}{path}
+Finds all toplevel elements with the given tag.
+Same as getroot().findall(path).
+\var{path} is the element to look for.
+
+\begin{datadescni}{Returns:}
+A list or iterator containing all matching elements,
+in section order.
+\end{datadescni}
+\end{methoddesc}
+
+\begin{methoddesc}{findtext}{path\optional{, default}}
+Finds the element text for the first toplevel element with given
+tag.  Same as getroot().findtext(path).
+\var{path} is the toplevel element to look for.
+\var{default} is the value to return if the element was not found.
+
+\begin{datadescni}{Returns:}
+The text content of the first matching element, or the
+default value no element was found.  Note that if the element
+has is found, but has no text content, this method returns an
+empty string.
+\end{datadescni}
+\end{methoddesc}
+
+\begin{methoddesc}{getiterator}{\optional{tag}}
+Creates a tree iterator for the root element.  The iterator loops
+over all elements in this tree, in section order.
+\var{tag} is the tag to look for (default is to return all elements)
+
+\begin{datadescni}{Returns:}
+An iterator.
+\end{datadescni}
+\end{methoddesc}
+
+\begin{methoddesc}{getroot}{}
+Gets the root element for this tree.
+
+\begin{datadescni}{Returns:}
+An element instance.
+\end{datadescni}
+\end{methoddesc}
+
+\begin{methoddesc}{parse}{source\optional{, parser}}
+Loads an external XML section into this element tree.
+\var{source} is a file name or file object.
+\var{parser} is an optional parser instance.  If not given, the
+standard XMLTreeBuilder parser is used.
+
+\begin{datadescni}{Returns:}
+The section root element.
+\end{datadescni}
+\end{methoddesc}
+
+\begin{methoddesc}{write}{file\optional{, encoding}}
+Writes the element tree to a file, as XML.
+\var{file} is a file name, or a file object opened for writing.
+\var{encoding} is the output encoding (default is US-ASCII).
+\end{methoddesc}
+
+
+\subsection{QName Objects\label{elementtree-qname-objects}}
+
+\begin{classdesc}{QName}{text_or_uri\optional{, tag}}
+QName wrapper.  This can be used to wrap a QName attribute value, in
+order to get proper namespace handling on output.
+\var{text_or_uri} is a string containing the QName value,
+in the form {\{}uri{\}}local, or, if the tag argument is given,
+the URI part of a QName.
+If \var{tag} is given, the first argument is interpreted as
+an URI, and this argument is interpreted as a local name.
+
+\begin{datadescni}{Returns:}
+An opaque object, representing the QName.
+\end{datadescni}
+\end{classdesc}
+
+
+\subsection{TreeBuilder Objects\label{elementtree-treebuilder-objects}}
+
+\begin{classdesc}{TreeBuilder}{\optional{element_factory}}
+Generic element structure builder.  This builder converts a sequence
+of start, data, and end method calls to a well-formed element structure.
+You can use this class to build an element structure using a custom XML
+parser, or a parser for some other XML-like format.
+The \var{element_factory} is called to create new Element instances when
+given.
+\end{classdesc}
+
+\begin{methoddesc}{close}{}
+Flushes the parser buffers, and returns the toplevel documen
+element.
+
+\begin{datadescni}{Returns:}
+An Element instance.
+\end{datadescni}
+\end{methoddesc}
+
+\begin{methoddesc}{data}{data}
+Adds text to the current element.
+\var{data} is a string.  This should be either an 8-bit string
+containing ASCII text, or a Unicode string.
+\end{methoddesc}
+
+\begin{methoddesc}{end}{tag}
+Closes the current element.
+\var{tag} is the element name.
+
+\begin{datadescni}{Returns:}
+The closed element.
+\end{datadescni}
+\end{methoddesc}
+
+\begin{methoddesc}{start}{tag, attrs}
+Opens a new element.
+\var{tag} is the element name.
+\var{attrs} is a dictionary containing element attributes.
+
+\begin{datadescni}{Returns:}
+The opened element.
+\end{datadescni}
+\end{methoddesc}
+
+
+\subsection{XMLTreeBuilder Objects\label{elementtree-xmltreebuilder-objects}}
+
+\begin{classdesc}{XMLTreeBuilder}{\optional{html,} \optional{target}}
+Element structure builder for XML source data, based on the
+expat parser.
+\var{html} are predefined HTML entities.  This flag is not supported
+by the current implementation.
+\var{target} is the target object.  If omitted, the builder uses an
+instance of the standard TreeBuilder class.
+\end{classdesc}
+
+\begin{methoddesc}{close}{}
+Finishes feeding data to the parser.
+
+\begin{datadescni}{Returns:}
+An element structure.
+\end{datadescni}
+\end{methoddesc}
+
+\begin{methoddesc}{doctype}{name, pubid, system}
+Handles a doctype declaration.
+\var{name} is the doctype name.
+\var{pubid} is the public identifier.
+\var{system} is the system identifier.
+\end{methoddesc}
+
+\begin{methoddesc}{feed}{data}
+Feeds data to the parser.
+
+\var{data} is encoded data.
+\end{methoddesc}
