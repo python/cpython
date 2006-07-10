@@ -39,6 +39,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1518190: The ctypes.c_void_p constructor now accepts any
+  integer or long, without range checking.
+
 - Bug #1508010: msvccompiler now requires the DISTUTILS_USE_SDK 
   environment variable to be set in order to the SDK environment
   for finding the compiler, include files, etc.
