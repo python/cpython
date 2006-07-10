@@ -2187,7 +2187,7 @@ _CData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
 			Py_DECREF(ob);
 			return result;
 		} else if (value == Py_None && PointerTypeObject_Check(type)) {
-			*(void **)dst->b_ptr = NULL;
+			*(void **)ptr = NULL;
 			Py_INCREF(Py_None);
 			return Py_None;
 		} else {
