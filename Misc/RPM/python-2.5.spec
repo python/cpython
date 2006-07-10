@@ -33,7 +33,7 @@
 #################################
 
 %define name python
-%define version 2.5a2
+%define version 2.5b2
 %define libvers 2.5
 %define release 1pydotorg
 %define __prefix /usr
