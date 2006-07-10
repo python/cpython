@@ -178,6 +178,16 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getfile(self):
         self.assertEqual(inspect.getfile(mod.StupidGit), mod.__file__)
 
+    def test_getmodule_recursion(self):
+        from new import module
+        name = '__inspect_dummy'
+        m = sys.modules[name] = module(name)
+        m.__file__ = "<string>" # hopefully not a real filename... 
+        m.__loader__ = "dummy"  # pretend the filename is understood by a loader
+        exec "def x(): pass" in m.__dict__
+        self.assertEqual(inspect.getsourcefile(m.x.func_code), '<string>')
+        del sys.modules[name]
+
 class TestDecorators(GetSourceBase):
     fodderFile = mod2
 
