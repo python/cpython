@@ -171,6 +171,11 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
 */
 PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
+/* The implementation of sys._current_frames()  Returns a dict mapping
+   thread id to that thread's current frame.
+*/
+PyAPI_FUNC(PyObject *) _PyThread_CurrentFrames(void);
+
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);

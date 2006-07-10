@@ -444,15 +444,15 @@ _PyGILState_NoteThreadState(PyThreadState* tstate)
 	/* If autoTLSkey is 0, this must be the very first threadstate created
 	   in Py_Initialize().  Don't do anything for now (we'll be back here
 	   when _PyGILState_Init is called). */
-	if (!autoTLSkey) 
+	if (!autoTLSkey)
 		return;
-	
+
 	/* Stick the thread state for this thread in thread local storage.
 
 	   The only situation where you can legitimately have more than one
 	   thread state for an OS level thread is when there are multiple
 	   interpreters, when:
-	       
+
 	       a) You shouldn't really be using the PyGILState_ APIs anyway,
 	          and:
 
@@ -548,6 +548,54 @@ PyGILState_Release(PyGILState_STATE oldstate)
 	/* Release the lock if necessary */
 	else if (oldstate == PyGILState_UNLOCKED)
 		PyEval_SaveThread();
+}
+
+/* The implementation of sys._current_frames().  This is intended to be
+   called with the GIL held, as it will be when called via
+   sys._current_frames().  It's possible it would work fine even without
+   the GIL held, but haven't thought enough about that.
+*/
+PyObject *
+_PyThread_CurrentFrames(void)
+{
+	PyObject *result;
+	PyInterpreterState *i;
+
+	result = PyDict_New();
+	if (result == NULL)
+		return NULL;
+
+	/* for i in all interpreters:
+	 *     for t in all of i's thread states:
+	 *          if t's frame isn't NULL, map t's id to its frame
+	 * Because these lists can mutute even when the GIL is held, we
+	 * need to grab head_mutex for the duration.
+	 */
+	HEAD_LOCK();
+	for (i = interp_head; i != NULL; i = i->next) {
+		PyThreadState *t;
+		for (t = i->tstate_head; t != NULL; t = t->next) {
+			PyObject *id;
+			int stat;
+			struct _frame *frame = t->frame;
+			if (frame == NULL)
+				continue;
+			id = PyInt_FromLong(t->thread_id);
+			if (id == NULL)
+				goto Fail;
+			stat = PyDict_SetItem(result, id, (PyObject *)frame);
+			Py_DECREF(id);
+			if (stat < 0)
+				goto Fail;
+		}
+	}
+	HEAD_UNLOCK();
+	return result;
+
+ Fail:
+ 	HEAD_UNLOCK();
+ 	Py_DECREF(result);
+ 	return NULL;
 }
 
 #ifdef __cplusplus

@@ -36,10 +36,17 @@ Core and builtins
 - Bug #1512814, Fix incorrect lineno's when code at module scope
   started after line 256.
 
+- New function ``sys._current_frames()`` returns a dict mapping thread
+  id to topmost thread stack frame.  This is for expert use, and is
+  especially useful for debugging application deadlocks.  The functionality
+  was previously available in Fazal Majid's ``threadframe`` extension
+  module, but it wasn't possible to do this in a wholly threadsafe way from
+  an extension.
+
 Library
 -------
 
-- Bug #1508010: msvccompiler now requires the DISTUTILS_USE_SDK 
+- Bug #1508010: msvccompiler now requires the DISTUTILS_USE_SDK
   environment variable to be set in order to the SDK environment
   for finding the compiler, include files, etc.
 
@@ -126,7 +133,7 @@ Extension Modules
 Build
 -----
 
-- 'configure' now detects the zlib library the same way as distutils. 
+- 'configure' now detects the zlib library the same way as distutils.
   Previously, the slight difference could cause compilation errors of the
   'zlib' module on systems with more than one version of zlib.
 

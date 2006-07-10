@@ -660,6 +660,21 @@ sys_getframe(PyObject *self, PyObject *args)
 	return (PyObject*)f;
 }
 
+PyDoc_STRVAR(current_frames_doc,
+"_current_frames() -> dictionary\n\
+\n\
+Return a dictionary mapping each current thread T's thread id to T's\n\
+current stack frame.\n\
+\n\
+This function should be used for specialized purposes only."
+);
+
+static PyObject *
+sys_current_frames(PyObject *self, PyObject *noargs)
+{
+	return _PyThread_CurrentFrames();
+}
+
 PyDoc_STRVAR(call_tracing_doc,
 "call_tracing(func, args) -> object\n\
 \n\
@@ -722,6 +737,8 @@ static PyMethodDef sys_methods[] = {
 	/* Might as well keep this in alphabetic order */
 	{"callstats", (PyCFunction)PyEval_GetCallStats, METH_NOARGS,
 	 callstats_doc},
+	{"_current_frames", sys_current_frames, METH_NOARGS,
+	 current_frames_doc},
 	{"displayhook",	sys_displayhook, METH_O, displayhook_doc},
 	{"exc_info",	sys_exc_info, METH_NOARGS, exc_info_doc},
 	{"exc_clear",	sys_exc_clear, METH_NOARGS, exc_clear_doc},

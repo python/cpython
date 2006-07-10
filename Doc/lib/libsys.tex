@@ -41,7 +41,7 @@ It is always available.
   \code{Include/patchlevel.h} if the branch is a tag. Otherwise,
   it is \code{None}.
   \versionadded{2.5}
-\end{datadesc}  
+\end{datadesc}
 
 \begin{datadesc}{builtin_module_names}
   A tuple of strings giving the names of all modules that are compiled
@@ -54,6 +54,23 @@ It is always available.
   A string containing the copyright pertaining to the Python
   interpreter.
 \end{datadesc}
+
+\begin{funcdesc}{_current_frames}{}
+  Return a dictionary mapping each thread's identifier to the topmost stack
+  frame currently active in that thread at the time the function is called.
+  Note that functions in the \refmodule{traceback} module can build the
+  call stack given such a frame.
+
+  This is most useful for debugging deadlock:  this function does not
+  require the deadlocked threads' cooperation, and such threads' call stacks
+  are frozen for as long as they remain deadlocked.  The frame returned
+  for a non-deadlocked thread may bear no relationship to that thread's
+  current activity by the time calling code examines the frame.
+
+  This function should be used for internal and specialized purposes
+  only.
+  \versionadded{2.5}
+\end{funcdesc}
 
 \begin{datadesc}{dllhandle}
   Integer specifying the handle of the Python DLL.
@@ -142,7 +159,7 @@ It is always available.
   function, \function{exc_info()} will return three \code{None} values until
   another exception is raised in the current thread or the execution stack
   returns to a frame where another exception is being handled.
-  
+
   This function is only needed in only a few obscure situations.  These
   include logging and error handling systems that report information on the
   last or current exception.  This function can also be used to try to free
@@ -241,7 +258,7 @@ It is always available.
 \begin{itemize}
 \item On Windows 9x, the encoding is ``mbcs''.
 \item On Mac OS X, the encoding is ``utf-8''.
-\item On Unix, the encoding is the user's preference 
+\item On Unix, the encoding is the user's preference
       according to the result of nl_langinfo(CODESET), or None if
       the nl_langinfo(CODESET) failed.
 \item On Windows NT+, file names are Unicode natively, so no conversion
@@ -279,8 +296,8 @@ It is always available.
 \end{funcdesc}
 
 \begin{funcdesc}{getwindowsversion}{}
-  Return a tuple containing five components, describing the Windows 
-  version currently running.  The elements are \var{major}, \var{minor}, 
+  Return a tuple containing five components, describing the Windows
+  version currently running.  The elements are \var{major}, \var{minor},
   \var{build}, \var{platform}, and \var{text}.  \var{text} contains
   a string while all other values are integers.
 
@@ -491,7 +508,7 @@ else:
   be registered using \function{settrace()} for each thread being
   debugged.  \note{The \function{settrace()} function is intended only
   for implementing debuggers, profilers, coverage tools and the like.
-  Its behavior is part of the implementation platform, rather than 
+  Its behavior is part of the implementation platform, rather than
   part of the language definition, and thus may not be available in
   all Python implementations.}
 \end{funcdesc}
