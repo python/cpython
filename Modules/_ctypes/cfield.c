@@ -1486,16 +1486,27 @@ P_set(void *ptr, PyObject *value, unsigned size)
 		*(void **)ptr = NULL;
 		_RET(value);
 	}
-	
-	v = PyLong_AsVoidPtr(value);
-	if (PyErr_Occurred()) {
-		/* prevent the SystemError: bad argument to internal function */
-		if (!PyInt_Check(value) && !PyLong_Check(value)) {
-			PyErr_SetString(PyExc_TypeError,
-					"cannot be converted to pointer");
-		}
+
+	if (!PyInt_Check(value) && !PyLong_Check(value)) {
+		PyErr_SetString(PyExc_TypeError,
+				"cannot be converted to pointer");
 		return NULL;
 	}
+
+#if SIZEOF_VOID_P <= SIZEOF_LONG
+	v = (void *)PyInt_AsUnsignedLongMask(value);
+#else
+#ifndef HAVE_LONG_LONG
+#   error "PyLong_AsVoidPtr: sizeof(void*) > sizeof(long), but no long long"
+#elif SIZEOF_LONG_LONG < SIZEOF_VOID_P
+#   error "PyLong_AsVoidPtr: sizeof(PY_LONG_LONG) < sizeof(void*)"
+#endif
+	v = (void *)PyInt_AsUnsignedLongLongMask(value);
+#endif
+
+	if (PyErr_Occurred())
+		return NULL;
+
 	*(void **)ptr = v;
 	_RET(value);
 }
