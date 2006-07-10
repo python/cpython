@@ -140,6 +140,7 @@ Documentation
 
 - Patch #1509163: MS Toolkit Compiler no longer available.
 
+- Patch #1504046: Add documentation for xml.etree.
 
 What's New in Python 2.5 beta 1?
 ================================
