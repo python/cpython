@@ -108,6 +108,8 @@ Extension Modules
 - Bug #1296433: parsing XML with a non-default encoding and
   a CharacterDataHandler could crash the interpreter in pyexpat.
 
+- Patch #1516912: improve Modules support for OpenVMS.
+
 Build
 -----
 

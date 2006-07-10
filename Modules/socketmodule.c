@@ -161,7 +161,8 @@ shutdown(how) -- shut down traffic in one or both directions\n\
    (this includes the getaddrinfo emulation) protect access with a lock. */
 #if defined(WITH_THREAD) && (defined(__APPLE__) || \
     (defined(__FreeBSD__) && __FreeBSD_version+0 < 503000) || \
-    defined(__OpenBSD__) || defined(__NetBSD__) || !defined(HAVE_GETADDRINFO))
+    defined(__OpenBSD__) || defined(__NetBSD__) || \
+    defined(__VMS) || !defined(HAVE_GETADDRINFO))
 #define USE_GETADDRINFO_LOCK
 #endif
 
@@ -186,14 +187,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #endif
 
 #if defined(__VMS)
-#if ! defined(_SOCKADDR_LEN)
-#   ifdef getaddrinfo
-#      undef getaddrinfo
-#   endif
-#  include "TCPIP_IOCTL_ROUTINE"
-#else
 #  include <ioctl.h>
-#endif
 #endif
 
 #if defined(PYOS_OS2)
@@ -363,11 +357,6 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #define SOCKETCLOSE close
 #endif
 
-#ifdef __VMS
-/* TCP/IP Services for VMS uses a maximum send/revc buffer length of 65535 */
-#define SEGMENT_SIZE 65535
-#endif
-
 #if defined(HAVE_BLUETOOTH_H) || defined(HAVE_BLUETOOTH_BLUETOOTH_H)
 #define USE_BLUETOOTH 1
 #if defined(__FreeBSD__)
@@ -384,6 +373,11 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #define _BT_RC_MEMB(sa, memb) ((sa)->rc_##memb)
 #define _BT_SCO_MEMB(sa, memb) ((sa)->sco_##memb)
 #endif
+#endif
+
+#ifdef __VMS
+/* TCP/IP Services for VMS uses a maximum send/recv buffer length */
+#define SEGMENT_SIZE (32 * 1024 -1)
 #endif
 
 /*
@@ -620,6 +614,30 @@ set_gaierror(int error)
 	return NULL;
 }
 
+#ifdef __VMS
+/* Function to send in segments */
+static int
+sendsegmented(int sock_fd, char *buf, int len, int flags)
+{
+	int n = 0;
+	int remaining = len;
+
+	while (remaining > 0) {
+		unsigned int segment;
+
+		segment = (remaining >= SEGMENT_SIZE ? SEGMENT_SIZE : remaining);
+		n = send(sock_fd, buf, segment, flags);
+		if (n < 0) {
+			return n;
+		}
+		remaining -= segment;
+		buf += segment;
+	} /* end while */
+
+	return len;
+}
+#endif
+
 /* Function to perform the setting of socket blocking mode
    internally. block = (1 | 0). */
 static int
@@ -644,8 +662,8 @@ internal_setblocking(PySocketSockObject *s, int block)
 	ioctl(s->sock_fd, FIONBIO, (caddr_t)&block, sizeof(block));
 #elif defined(__VMS)
 	block = !block;
-	ioctl(s->sock_fd, FIONBIO, (char *)&block);
-#else  /* !PYOS_OS2 && !_VMS */
+	ioctl(s->sock_fd, FIONBIO, (unsigned int *)&block);
+#else  /* !PYOS_OS2 && !__VMS */
 	delay_flag = fcntl(s->sock_fd, F_GETFL, 0);
 	if (block)
 		delay_flag &= (~O_NONBLOCK);
@@ -1725,6 +1743,8 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
 		return PyInt_FromLong(flag);
 	}
 #ifdef __VMS
+	/* socklen_t is unsigned so no negative test is needed,
+	   test buflen == 0 is previously done */
 	if (buflen > 1024) {
 #else
 	if (buflen <= 0 || buflen > 1024) {
@@ -2498,9 +2518,6 @@ sock_send(PySocketSockObject *s, PyObject *args)
 {
 	char *buf;
 	int len, n = 0, flags = 0, timeout;
-#ifdef __VMS
-	int send_length;
-#endif
 
 	if (!PyArg_ParseTuple(args, "s#|i:send", &buf, &len, &flags))
 		return NULL;
@@ -2508,11 +2525,14 @@ sock_send(PySocketSockObject *s, PyObject *args)
 	if (!IS_SELECTABLE(s))
 		return select_error();
 
-#ifndef __VMS
 	Py_BEGIN_ALLOW_THREADS
 	timeout = internal_select(s, 1);
 	if (!timeout)
+#ifdef __VMS
+		n = sendsegmented(s->sock_fd, buf, len, flags);
+#else
 		n = send(s->sock_fd, buf, len, flags);
+#endif
 	Py_END_ALLOW_THREADS
 
 	if (timeout) {
@@ -2521,36 +2541,6 @@ sock_send(PySocketSockObject *s, PyObject *args)
 	}
 	if (n < 0)
 		return s->errorhandler();
-#else
-	/* Divide packet into smaller segments for	*/
-	/*  TCP/IP Services for OpenVMS			*/
-	send_length = len;
-	while (send_length != 0) {
-		unsigned int segment;
-
-		segment = send_length / SEGMENT_SIZE;
-		if (segment != 0) {
-			segment = SEGMENT_SIZE;
-		}
-		else {
-			segment = send_length;
-		}
-		Py_BEGIN_ALLOW_THREADS
-		timeout = internal_select(s, 1);
-		if (!timeout)
-			n = send(s->sock_fd, buf, segment, flags);
-		Py_END_ALLOW_THREADS
-		if (timeout) {
-			PyErr_SetString(socket_timeout, "timed out");
-			return NULL;
-		}
-		if (n < 0) {
-			return s->errorhandler();
-		}
-		send_length -= segment;
-		buf += segment;
-	} /* end while */
-#endif /* !__VMS */
 	return PyInt_FromLong((long)n);
 }
 
@@ -2581,7 +2571,11 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
 		timeout = internal_select(s, 1);
 		if (timeout)
 			break;
+#ifdef __VMS
+		n = sendsegmented(s->sock_fd, buf, len, flags);
+#else
 		n = send(s->sock_fd, buf, len, flags);
+#endif
 		if (n < 0)
 			break;
 		buf += n;
