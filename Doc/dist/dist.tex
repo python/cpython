@@ -2873,9 +2873,20 @@ C compiler:
 \modulesynopsis{Microsoft Compiler}
 
 This module provides \class{MSVCCompiler}, an implementation of the abstract 
-\class{CCompiler} class for Microsoft Visual Studio. It should also work using
-the freely available compiler provided as part of the .Net SDK download. XXX
-download link.
+\class{CCompiler} class for Microsoft Visual Studio. Typically, extension
+modules need to be compiled with the same compiler that was used to compile
+Python. For Python 2.3 and earlier, the compiler was Visual Studio 6. For
+Python 2.4 and 2.5, the compiler is Visual Studio .NET 2003. The AMD64
+and Itanium binaries are created using the Platform SDK.
+
+\class{MSVCCompiler} will normally choose the right compiler, linker etc.
+on its own. To override this choice, the environment variables
+\var{DISTUTILS\_USE\_SDK} and \var{MSSdk} must be both set. \var{MSSdk}
+indicates that the current environment has been setup by the SDK's
+\code{SetEnv.Cmd} script, or that the environment variables had been
+registered when the SDK was installed; \var{DISTUTILS\_USE\_SDK} indicates
+that the distutils user has made an explicit choice to override the
+compiler selection by \class{MSVCCompiler}.
 
 \section{\module{distutils.bcppcompiler} --- Borland Compiler}
 \declaremodule{standard}{distutils.bcppcompiler}
