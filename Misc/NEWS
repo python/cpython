@@ -39,15 +39,6 @@ Core and builtins
 Library
 -------
 
-- Assigning None to pointer type fields in ctypes structures possible
-  overwrote the wrong fields, this is fixed now.
-
-- Fixed a segfault in _ctypes when ctypes.wintypes were imported
-  on non-Windows platforms.
-
-- Bug #1518190: The ctypes.c_void_p constructor now accepts any
-  integer or long, without range checking.
-
 - Bug #1508010: msvccompiler now requires the DISTUTILS_USE_SDK 
   environment variable to be set in order to the SDK environment
   for finding the compiler, include files, etc.
@@ -55,10 +46,6 @@ Library
 - Bug #1515998: Properly generate logical ids for files in bdist_msi.
 
 - warnings.py now ignores ImportWarning by default
-
-- Patch #1517790: It is now possible to use custom objects in the ctypes
-  foreign function argtypes sequence as long as they provide a from_param
-  method, no longer is it required that the object is a ctypes type.
 
 - string.Template() now correctly handles tuple-values. Previously,
   multi-value tuples would raise an exception and single-value tuples would
@@ -81,9 +68,6 @@ Library
 
 - Bug #1513223: .close() of a _socketobj now releases the underlying
   socket again, which then gets closed as it becomes unreferenced.
-
-- The '_ctypes' extension module now works when Python is configured
-  with the --without-threads option.
 
 - Bug #1504333: Make sgmllib support angle brackets in quoted
   attribute values.
@@ -111,6 +95,22 @@ Library
 
 Extension Modules
 -----------------
+
+- Assigning None to pointer type fields in ctypes structures possible
+  overwrote the wrong fields, this is fixed now.
+
+- Fixed a segfault in _ctypes when ctypes.wintypes were imported
+  on non-Windows platforms.
+
+- Bug #1518190: The ctypes.c_void_p constructor now accepts any
+  integer or long, without range checking.
+
+- Patch #1517790: It is now possible to use custom objects in the ctypes
+  foreign function argtypes sequence as long as they provide a from_param
+  method, no longer is it required that the object is a ctypes type.
+
+- The '_ctypes' extension module now works when Python is configured
+  with the --without-threads option.
 
 - Bug #1513646: os.access on Windows now correctly determines write
   access, again.
