@@ -46,6 +46,8 @@ Core and builtins
 Library
 -------
 
+- Patch #1519566: Update turtle demo, make begin_fill idempotent.
+
 - Bug #1508010: msvccompiler now requires the DISTUTILS_USE_SDK
   environment variable to be set in order to the SDK environment
   for finding the compiler, include files, etc.
