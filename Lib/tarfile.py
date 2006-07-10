@@ -1750,13 +1750,6 @@ class TarFile(object):
             try:
                 tarinfo = TarInfo.frombuf(buf)
 
-                # We shouldn't rely on this checksum, because some tar programs
-                # calculate it differently and it is merely validating the
-                # header block. We could just as well skip this part, which would
-                # have a slight effect on performance...
-                if tarinfo.chksum not in calc_chksums(buf):
-                    self._dbg(1, "tarfile: Bad Checksum %r" % tarinfo.name)
-
                 # Set the TarInfo object's offset to the current position of the
                 # TarFile and set self.offset to the position where the data blocks
                 # should begin.
