@@ -371,5 +371,15 @@ class PointerMemberTestCase(unittest.TestCase):
         items = [s.array[i] for i in range(3)]
         self.failUnlessEqual(items, [1, 2, 3])
 
+    def test_none_to_pointer_fields(self):
+        class S(Structure):
+            _fields_ = [("x", c_int),
+                        ("p", POINTER(c_int))]
+
+        s = S()
+        s.x = 12345678
+        s.p = None
+        self.failUnlessEqual(s.x, 12345678)
+
 if __name__ == '__main__':
     unittest.main()

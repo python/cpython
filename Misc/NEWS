@@ -39,6 +39,9 @@ Core and builtins
 Library
 -------
 
+- Assigning None to pointer type fields in ctypes structures possible
+  overwrote the wrong fields, this is fixed now.
+
 - Fixed a segfault in _ctypes when ctypes.wintypes were imported
   on non-Windows platforms.
 
