@@ -300,13 +300,14 @@ class CDLL(object):
     def __getattr__(self, name):
         if name.startswith('__') and name.endswith('__'):
             raise AttributeError, name
-        return self.__getitem__(name)
+        func = self.__getitem__(name)
+        setattr(self, name, func)
+        return func
 
     def __getitem__(self, name_or_ordinal):
         func = self._FuncPtr((name_or_ordinal, self))
         if not isinstance(name_or_ordinal, (int, long)):
             func.__name__ = name_or_ordinal
-            setattr(self, name_or_ordinal, func)
         return func
 
 class PyDLL(CDLL):
