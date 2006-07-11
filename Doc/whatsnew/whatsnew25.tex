@@ -6,7 +6,7 @@
 % Count up the patches and bugs
 
 \title{What's New in Python 2.5}
-\release{0.3}
+\release{0.4}
 \author{A.M. Kuchling}
 \authoraddress{\email{amk@amk.ca}}
 
@@ -1662,11 +1662,17 @@ string of build information like this:
 \code{"trunk:45355:45356M, Apr 13 2006, 07:42:19"}.  
 (Contributed by Barry Warsaw.)
 
+\item Another new function, \function{sys._current_frames()}, returns
+the current stack frames for all running threads as a dictionary
+mapping thread identifiers to the topmost stack frame currently active
+in that thread at the time the function is called.  (Contributed by
+Tim Peters.)
+
 \item The \class{TarFile} class in the \module{tarfile} module now has
 an \method{extractall()} method that extracts all members from the
 archive into the current working directory.  It's also possible to set
 a different directory as the extraction target, and to unpack only a
-subset of the archive's members.  
+subset of the archive's members.
 
 A tarfile's compression can be autodetected by 
 using the mode \code{'r|*'}.
