@@ -920,7 +920,7 @@ def demo2():
     down();
 
     color("red")
-    
+
     # create a second turtle and make the original pursue and catch it
     turtle=Turtle()
     turtle.reset()
