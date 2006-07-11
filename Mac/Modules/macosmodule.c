@@ -375,6 +375,7 @@ MacOS_GetErrorString(PyObject *self, PyObject *args)
 				/* And try again... */
 				h = GetResource('Estr', err);
 			}
+			Py_DECREF(m);
 		}
 	}
 	/*
