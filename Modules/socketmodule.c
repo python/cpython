@@ -411,14 +411,24 @@ static int taskwindow;
    there has to be a circular reference. */
 static PyTypeObject sock_type;
 
-/* Can we call select() with this socket without a buffer overrun? */
+#if defined(HAVE_POLL_H)
+#include <poll.h>
+#elif defined(HAVE_SYS_POLL_H)
+#include <sys/poll.h>
+#endif
+
 #ifdef Py_SOCKET_FD_CAN_BE_GE_FD_SETSIZE
 /* Platform can select file descriptors beyond FD_SETSIZE */
 #define IS_SELECTABLE(s) 1
+#elif defined(HAVE_POLL)
+/* Instead of select(), we'll use poll() since poll() works on any fd. */
+#define IS_SELECTABLE(s) 1
+/* Can we call select() with this socket without a buffer overrun? */
 #else
 /* POSIX says selecting file descriptors beyond FD_SETSIZE
-   has undefined behaviour. */
-#define IS_SELECTABLE(s) ((s)->sock_fd < FD_SETSIZE)
+   has undefined behaviour.  If there's no timeout left, we don't have to
+   call select, so it's a safe, little white lie. */
+#define IS_SELECTABLE(s) ((s)->sock_fd < FD_SETSIZE || s->sock_timeout <= 0.0)
 #endif
 
 static PyObject*
@@ -686,7 +696,7 @@ internal_setblocking(PySocketSockObject *s, int block)
 	return 1;
 }
 
-/* Do a select() on the socket, if necessary (sock_timeout > 0).
+/* Do a select()/poll() on the socket, if necessary (sock_timeout > 0).
    The argument writing indicates the direction.
    This does not raise an exception; we'll let our caller do that
    after they've reacquired the interpreter lock.
@@ -694,8 +704,6 @@ internal_setblocking(PySocketSockObject *s, int block)
 static int
 internal_select(PySocketSockObject *s, int writing)
 {
-	fd_set fds;
-	struct timeval tv;
 	int n;
 
 	/* Nothing to do unless we're in timeout mode (not non-blocking) */
@@ -706,17 +714,37 @@ internal_select(PySocketSockObject *s, int writing)
 	if (s->sock_fd < 0)
 		return 0;
 
-	/* Construct the arguments to select */
-	tv.tv_sec = (int)s->sock_timeout;
-	tv.tv_usec = (int)((s->sock_timeout - tv.tv_sec) * 1e6);
-	FD_ZERO(&fds);
-	FD_SET(s->sock_fd, &fds);
+	/* Prefer poll, if available, since you can poll() any fd
+	 * which can't be done with select(). */
+#ifdef HAVE_POLL
+	{
+		struct pollfd pollfd;
+		int timeout;
 
-	/* See if the socket is ready */
-	if (writing)
-		n = select(s->sock_fd+1, NULL, &fds, NULL, &tv);
-	else
-		n = select(s->sock_fd+1, &fds, NULL, NULL, &tv);
+		pollfd.fd = s->sock_fd;
+		pollfd.events = writing ? POLLOUT : POLLIN;
+
+		/* s->sock_timeout is in seconds, timeout in ms */
+		timeout = (int)(s->sock_timeout * 1000 + 0.5); 
+		n = poll(&pollfd, 1, timeout);
+	}
+#else
+	{
+		/* Construct the arguments to select */
+		fd_set fds;
+		struct timeval tv;
+		tv.tv_sec = (int)s->sock_timeout;
+		tv.tv_usec = (int)((s->sock_timeout - tv.tv_sec) * 1e6);
+		FD_ZERO(&fds);
+		FD_SET(s->sock_fd, &fds);
+
+		/* See if the socket is ready */
+		if (writing)
+			n = select(s->sock_fd+1, NULL, &fds, NULL, &tv);
+		else
+			n = select(s->sock_fd+1, &fds, NULL, NULL, &tv);
+	}
+#endif
 	if (n == 0)
 		return 1;
 	return 0;
