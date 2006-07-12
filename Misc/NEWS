@@ -12,6 +12,8 @@ What's New in Python 2.5 beta 2?
 Core and builtins
 -----------------
 
+- Bug #1520864: unpacking singleton tuples in for loop (for x, in) work again.
+
 - Bug #1441486: The literal representation of -(sys.maxint - 1)
   again evaluates to a int object, not a long.
 
