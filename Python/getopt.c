@@ -24,6 +24,9 @@
  * davegottner@delphi.com.
  *---------------------------------------------------------------------------*/
 
+/* Modified to support --help and --version, as well as /? on Windows
+ * by Georg Brandl. */
+
 #include <stdio.h>
 #include <string.h>
 
@@ -43,14 +46,34 @@ int _PyOS_GetOpt(int argc, char **argv, char *optstring)
 
 	if (*opt_ptr == '\0') {
 
-		if (_PyOS_optind >= argc || argv[_PyOS_optind][0] != '-' ||
-		    argv[_PyOS_optind][1] == '\0' /* lone dash */ )
+		if (_PyOS_optind >= argc)
+			return -1;
+#ifdef MS_WINDOWS
+		else if (strcmp(argv[_PyOS_optind], "/?") == 0) {
+			++_PyOS_optind;
+			return 'h';
+		}
+#endif
+
+		else if (argv[_PyOS_optind][0] != '-' ||
+		         argv[_PyOS_optind][1] == '\0' /* lone dash */ )
 			return -1;
 
 		else if (strcmp(argv[_PyOS_optind], "--") == 0) {
 			++_PyOS_optind;
 			return -1;
 		}
+
+		else if (strcmp(argv[_PyOS_optind], "--help") == 0) {
+			++_PyOS_optind;
+			return 'h';
+		}
+
+		else if (strcmp(argv[_PyOS_optind], "--version") == 0) {
+			++_PyOS_optind;
+			return 'V';
+		}
+
 
 		opt_ptr = &argv[_PyOS_optind++][1]; 
 	}
@@ -62,7 +85,7 @@ int _PyOS_GetOpt(int argc, char **argv, char *optstring)
 		if (_PyOS_opterr)
 			fprintf(stderr, "Unknown option: -%c\n", option);
 
-		return '?';
+		return '_';
 	}
 
 	if (*(ptr + 1) == ':') {
@@ -76,7 +99,7 @@ int _PyOS_GetOpt(int argc, char **argv, char *optstring)
 				if (_PyOS_opterr)
 					fprintf(stderr,
 			    "Argument expected for the -%c option\n", option);
-				return '?';
+				return '_';
 			}
 
 			_PyOS_optarg = argv[_PyOS_optind++];

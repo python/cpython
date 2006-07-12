@@ -12,6 +12,9 @@ What's New in Python 2.5 release candidate 1?
 Core and builtins
 -----------------
 
+- Patch #1521179: Python now accepts the standard options ``--help`` and
+  ``--version`` as well as ``/?`` on Windows.
+
 - Bug #1520864: unpacking singleton tuples in for loop (for x, in) work
   again.  Fixing this problem required changing the .pyc magic number.
   This means that .pyc files generated before 2.5c1 will be regenerated.
