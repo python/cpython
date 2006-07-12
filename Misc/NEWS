@@ -4,6 +4,25 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.5 release candidate 1?
+=============================================
+
+*Release date: XX-AUG-2006*
+
+Core and builtins
+-----------------
+
+- Bug #1520864: unpacking singleton tuples in for loop (for x, in) work
+  again.  Fixing this problem required changing the .pyc magic number.
+  This means that .pyc files generated before 2.5c1 will be regenerated.
+
+Library
+-------
+
+Extension Modules
+-----------------
+
+
 What's New in Python 2.5 beta 2?
 ================================
 
@@ -11,8 +30,6 @@ What's New in Python 2.5 beta 2?
 
 Core and builtins
 -----------------
-
-- Bug #1520864: unpacking singleton tuples in for loop (for x, in) work again.
 
 - Bug #1441486: The literal representation of -(sys.maxint - 1)
   again evaluates to a int object, not a long.
