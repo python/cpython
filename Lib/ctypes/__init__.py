@@ -22,6 +22,23 @@ if __version__ != _ctypes_version:
 if _os.name in ("nt", "ce"):
     from _ctypes import FormatError
 
+DEFAULT_MODE = RTLD_LOCAL
+if _os.name == "posix" and _sys.platform == "darwin":
+    import gestalt
+
+    # gestalt.gestalt("sysv") returns the version number of the
+    # currently active system file as BCD.
+    # On OS X 10.4.6 -> 0x1046
+    # On OS X 10.2.8 -> 0x1028
+    # See also http://www.rgaros.nl/gestalt/
+    #
+    # On OS X 10.3, we use RTLD_GLOBAL as default mode
+    # because RTLD_LOCAL does not work at least on some
+    # libraries.
+
+    if gestalt.gestalt("sysv") < 0x1040:
+        DEFAULT_MODE = RTLD_GLOBAL
+
 from _ctypes import FUNCFLAG_CDECL as _FUNCFLAG_CDECL, \
      FUNCFLAG_PYTHONAPI as _FUNCFLAG_PYTHONAPI
 
@@ -284,7 +301,7 @@ class CDLL(object):
         _flags_ = _FUNCFLAG_CDECL
         _restype_ = c_int # default, can be overridden in instances
 
-    def __init__(self, name, mode=RTLD_LOCAL, handle=None):
+    def __init__(self, name, mode=DEFAULT_MODE, handle=None):
         self._name = name
         if handle is None:
             self._handle = _dlopen(self._name, mode)

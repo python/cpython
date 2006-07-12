@@ -22,6 +22,8 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1467450: On Mac OS X 10.3, RTLD_GLOBAL is now used as the
+  default mode for loading shared libraries in ctypes.
 
 What's New in Python 2.5 beta 2?
 ================================
