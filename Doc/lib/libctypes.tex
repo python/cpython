@@ -1474,13 +1474,13 @@ locate the library at runtime.
 There are several ways to loaded shared libraries into the Python
 process.  One way is to instantiate one of the following classes:
 
-\begin{classdesc}{CDLL}{name, mode=RTLD_LOCAL, handle=None}
+\begin{classdesc}{CDLL}{name, mode=DEFAULT_MODE, handle=None}
 Instances of this class represent loaded shared libraries.
 Functions in these libraries use the standard C calling
 convention, and are assumed to return \code{int}.
 \end{classdesc}
 
-\begin{classdesc}{OleDLL}{name, mode=RTLD_LOCAL, handle=None}
+\begin{classdesc}{OleDLL}{name, mode=DEFAULT_MODE, handle=None}
 Windows only: Instances of this class represent loaded shared
 libraries, functions in these libraries use the \code{stdcall}
 calling convention, and are assumed to return the windows specific
@@ -1490,7 +1490,7 @@ with additional error code.  If the return value signals a
 failure, an \class{WindowsError} is automatically raised.
 \end{classdesc}
 
-\begin{classdesc}{WinDLL}{name, mode=RTLD_LOCAL, handle=None}
+\begin{classdesc}{WinDLL}{name, mode=DEFAULT_MODE, handle=None}
 Windows only: Instances of this class represent loaded shared
 libraries, functions in these libraries use the \code{stdcall}
 calling convention, and are assumed to return \code{int} by default.
@@ -1503,7 +1503,7 @@ convention on this platform.
 The Python GIL is released before calling any function exported by
 these libraries, and reaquired afterwards.
 
-\begin{classdesc}{PyDLL}{name, mode=RTLD_LOCAL, handle=None}
+\begin{classdesc}{PyDLL}{name, mode=DEFAULT_MODE, handle=None}
 Instances of this class behave like \class{CDLL} instances, except
 that the Python GIL is \emph{not} released during the function call,
 and after the function execution the Python error flag is checked.
@@ -1531,6 +1531,12 @@ is not available, it is defined as the integer zero.
 \begin{datadescni}{RTLD_LOCAL}
 Flag to use as \var{mode} parameter.  On platforms where this is not
 available, it is the same as \var{RTLD{\_}GLOBAL}.
+\end{datadescni}
+
+\begin{datadescni}{DEFAULT_MODE}
+The default mode which is used to load shared libraries.  On OSX
+10.3, this is \var{RTLD{\_}GLOBAL}, otherwise it is the same as
+\var{RTLD{\_}LOCAL}.
 \end{datadescni}
 
 Instances of these classes have no public methods, however
@@ -1566,10 +1572,9 @@ instance.  The result is cached, so repeated attribute accesses
 return the same library each time.
 \end{classdesc}
 
-\begin{methoddesc}{LoadLibrary}{name, mode=RTLD_LOCAL, handle=None}
+\begin{methoddesc}{LoadLibrary}{name}
 Load a shared library into the process and return it.  This method
-always creates a new instance of the library.  All three
-parameters are passed to the constructor of the library object.
+always returns a new instance of the library.
 \end{methoddesc}
 
 These prefabricated library loaders are available:
