@@ -63,7 +63,7 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        Python 2.5c1: 62101 (fix wrong code: for x, in ...)
 .
 */
-#define MAGIC (62092 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (62101 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
