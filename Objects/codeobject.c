@@ -556,6 +556,7 @@ PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds)
            the line increments here, treating them as byte
            increments gets confusing, to say the least. */
 
+        bounds->ap_lower = 0;
         while (size > 0) {
                 if (addr + *p > lasti)
                         break;
