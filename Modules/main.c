@@ -40,7 +40,7 @@ static char **orig_argv;
 static int  orig_argc;
 
 /* command line options */
-#define BASE_OPTS "c:dEhim:OQ:StuUvVW:xX"
+#define BASE_OPTS "c:dEhim:OQ:StuUvVW:xX?"
 
 #ifndef RISCOS
 #define PROGRAM_OPTS BASE_OPTS
@@ -62,7 +62,7 @@ Options and arguments (and corresponding environment variables):\n\
 -c cmd : program passed in as string (terminates option list)\n\
 -d     : debug output from parser (also PYTHONDEBUG=x)\n\
 -E     : ignore environment variables (such as PYTHONPATH)\n\
--h     : print this help message and exit\n\
+-h     : print this help message and exit (also --help)\n\
 -i     : inspect interactively after running script, (also PYTHONINSPECT=x)\n\
          and force prompts, even if stdin does not appear to be a terminal\n\
 ";
@@ -78,7 +78,7 @@ static char *usage_2 = "\
 static char *usage_3 = "\
          see man page for details on internal buffering relating to '-u'\n\
 -v     : verbose (trace import statements) (also PYTHONVERBOSE=x)\n\
--V     : print the Python version number and exit\n\
+-V     : print the Python version number and exit (also --version)\n\
 -W arg : warning control (arg is action:message:category:module:lineno)\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 file   : program read from script file\n\
@@ -313,6 +313,7 @@ Py_Main(int argc, char **argv)
 			Py_UnicodeFlag++;
 			break;
 		case 'h':
+		case '?':
 			help++;
 			break;
 		case 'V':
