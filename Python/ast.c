@@ -2666,6 +2666,7 @@ ast_for_for_stmt(struct compiling *c, const node *n)
     asdl_seq *_target, *seq = NULL, *suite_seq;
     expr_ty expression;
     expr_ty target;
+    const node *node_target;
     /* for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite] */
     REQ(n, for_stmt);
 
@@ -2675,10 +2676,13 @@ ast_for_for_stmt(struct compiling *c, const node *n)
             return NULL;
     }
 
-    _target = ast_for_exprlist(c, CHILD(n, 1), Store);
+    node_target = CHILD(n, 1);
+    _target = ast_for_exprlist(c, node_target, Store);
     if (!_target)
         return NULL;
-    if (asdl_seq_LEN(_target) == 1)
+    /* Check the # of children rather than the length of _target, since
+       for x, in ... has 1 element in _target, but still requires a Tuple. */
+    if (NCH(node_target) == 1)
 	target = (expr_ty)asdl_seq_GET(_target, 0);
     else
 	target = Tuple(_target, Store, LINENO(n), n->n_col_offset, c->c_arena);
