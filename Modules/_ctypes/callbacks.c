@@ -127,7 +127,7 @@ static void _CallPythonObject(void *mem,
 	PyObject *result;
 	PyObject *arglist = NULL;
 	int nArgs;
-#ifdef WITH_THREADS
+#ifdef WITH_THREAD
 	PyGILState_STATE state = PyGILState_Ensure();
 #endif
 
@@ -237,7 +237,7 @@ if (x == NULL) _AddTraceback(what, __FILE__, __LINE__ - 1), PyErr_Print()
 	Py_XDECREF(result);
   Done:
 	Py_XDECREF(arglist);
-#ifdef WITH_THREADS	
+#ifdef WITH_THREAD
 	PyGILState_Release(state);
 #endif
 }
@@ -400,16 +400,16 @@ STDAPI DllGetClassObject(REFCLSID rclsid,
 			 LPVOID *ppv)
 {
 	long result;
-#ifdef WITH_THREADS
+#ifdef WITH_THREAD
 	PyGILState_STATE state;
 #endif
 
 	LoadPython();
-#ifdef WITH_THREADS
+#ifdef WITH_THREAD
 	state = PyGILState_Ensure();
 #endif
 	result = Call_GetClassObject(rclsid, riid, ppv);
-#ifdef WITH_THREADS
+#ifdef WITH_THREAD
 	PyGILState_Release(state);
 #endif
 	return result;
@@ -463,11 +463,11 @@ long Call_CanUnloadNow(void)
 STDAPI DllCanUnloadNow(void)
 {
 	long result;
-#ifdef WITH_THREADS
+#ifdef WITH_THREAD
 	PyGILState_STATE state = PyGILState_Ensure();
 #endif
 	result = Call_CanUnloadNow();
-#ifdef WITH_THREADS
+#ifdef WITH_THREAD
 	PyGILState_Release(state);
 #endif
 	return result;
