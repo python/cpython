@@ -26,7 +26,7 @@ Extension Modules
 -----------------
 
 - Bug #1521375: When the code in ctypes.util.find_library was
-  run with root priviledges, it could overwrite or delete
+  run with root privileges, it could overwrite or delete
   /dev/null in certain cases; this is now fixed.
 
 - Bug #1467450: On Mac OS X 10.3, RTLD_GLOBAL is now used as the
