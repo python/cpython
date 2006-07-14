@@ -264,7 +264,7 @@ SDK, in particular the 64-bit support. This includes an Itanium compiler
 In addition, you need the Visual Studio plugin for external C compilers,
 from http://sf.net/projects/vsextcomp. The plugin will wrap cl.exe, to
 locate the proper target compiler, and convert compiler options
-accordingly. The project files require atleast version 0.8.
+accordingly. The project files require atleast version 0.9.
 
 Building for AMD64
 ------------------

@@ -170,6 +170,8 @@ Extension Modules
 Build
 -----
 
+- Automate Windows build process for the Win64 SSL module.
+
 - 'configure' now detects the zlib library the same way as distutils.
   Previously, the slight difference could cause compilation errors of the
   'zlib' module on systems with more than one version of zlib.
