@@ -377,8 +377,8 @@ extern char *conversion_mode_errors;
 #  undef PyUnicode_AsWideChar
 #  define PyUnicode_AsWideChar My_PyUnicode_AsWideChar
 
-extern PyObject *My_PyUnicode_FromWideChar(const wchar_t *, int);
-extern int My_PyUnicode_AsWideChar(PyUnicodeObject *, wchar_t *, int);
+extern PyObject *My_PyUnicode_FromWideChar(const wchar_t *, Py_ssize_t);
+extern int My_PyUnicode_AsWideChar(PyUnicodeObject *, wchar_t *, Py_ssize_t);
 
 #endif
 

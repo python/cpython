@@ -4711,13 +4711,14 @@ init_ctypes(void)
 }
 
 /*****************************************************************
- * replacements for broken Python api functions
+ * replacements for broken Python api functions (in Python 2.3).
+ * See #1047269 Buffer overwrite in PyUnicode_AsWideChar
  */
 
 #ifdef HAVE_WCHAR_H
 
 PyObject *My_PyUnicode_FromWideChar(register const wchar_t *w,
-				    int size)
+				    Py_ssize_t size)
 {
     PyUnicodeObject *unicode;
 
@@ -4749,7 +4750,7 @@ PyObject *My_PyUnicode_FromWideChar(register const wchar_t *w,
 
 int My_PyUnicode_AsWideChar(PyUnicodeObject *unicode,
 			    register wchar_t *w,
-			    int size)
+			    Py_ssize_t size)
 {
     if (unicode == NULL) {
 	PyErr_BadInternalCall();
