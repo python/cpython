@@ -140,7 +140,7 @@ The arguments are the same as for the Popen constructor.  Example:
 Run command with arguments.  Wait for command to complete. If the exit
 code was zero then return, otherwise raise \exception{CalledProcessError.}
 The \exception{CalledProcessError} object will have the return code in the
-\member{errno} attribute.
+\member{returncode} attribute.
 
 The arguments are the same as for the Popen constructor.  Example:
 
@@ -164,9 +164,8 @@ should prepare for \exception{OSError} exceptions.
 A \exception{ValueError} will be raised if \class{Popen} is called
 with invalid arguments.
 
-check_call() will raise \exception{CalledProcessError}, which is a
-subclass of \exception{OSError}, if the called process returns a
-non-zero return code.
+check_call() will raise \exception{CalledProcessError}, if the called
+process returns a non-zero return code.
 
 
 \subsubsection{Security}

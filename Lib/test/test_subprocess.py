@@ -68,7 +68,7 @@ class ProcessTestCase(unittest.TestCase):
             subprocess.check_call([sys.executable, "-c",
                                    "import sys; sys.exit(47)"])
         except subprocess.CalledProcessError, e:
-            self.assertEqual(e.errno, 47)
+            self.assertEqual(e.returncode, 47)
         else:
             self.fail("Expected CalledProcessError")
 
