@@ -790,10 +790,6 @@ Initializers of the correct type can also be specified:
 
 \subsubsection{Pointers\label{ctypes-pointers}}
 
-XXX Rewrite this section.  Normally one only uses indexing, not the .contents
-attribute!
-List some recipes with pointers.  bool(ptr),  POINTER(tp)(), ...?
-
 Pointer instances are created by calling the \code{pointer} function on a
 \code{ctypes} type:
 \begin{verbatim}
@@ -826,7 +822,8 @@ Assigning another \class{c{\_}int} instance to the pointer's contents
 attribute would cause the pointer to point to the memory location
 where this is stored:
 \begin{verbatim}
->>> pi.contents = c_int(99)
+>>> i = c_int(99)
+>>> pi.contents = i
 >>> pi.contents
 c_long(99)
 >>>
@@ -855,9 +852,6 @@ memory locations. Generally you only use this feature if you receive a
 pointer from a C function, and you \emph{know} that the pointer actually
 points to an array instead of a single item.
 
-
-\subsubsection{Pointer classes/types\label{ctypes-pointer-classestypes}}
-
 Behind the scenes, the \code{pointer} function does more than simply
 create pointer instances, it has to create pointer \emph{types} first.
 This is done with the \code{POINTER} function, which accepts any
@@ -872,6 +866,31 @@ Traceback (most recent call last):
 TypeError: expected c_long instead of int
 >>> PI(c_int(42))
 <ctypes.LP_c_long object at 0x...>
+>>>
+\end{verbatim}
+
+Calling the pointer type without an argument creates a \code{NULL}
+pointer.  \code{NULL} pointers have a \code{False} boolean value:
+\begin{verbatim}
+>>> null_ptr = POINTER(c_int)()
+>>> print bool(null_ptr)
+False
+>>>
+\end{verbatim}
+
+\code{ctypes} checks for \code{NULL} when dereferencing pointers (but
+dereferencing non-\code{NULL} pointers would crash Python):
+\begin{verbatim}
+>>> null_ptr[0]
+Traceback (most recent call last):
+    ....
+ValueError: NULL pointer access
+>>>
+
+>>> null_ptr[0] = 1234
+Traceback (most recent call last):
+    ....
+ValueError: NULL pointer access
 >>>
 \end{verbatim}
 
@@ -1355,35 +1374,6 @@ Traceback (most recent call last):
     ...
 IndexError: invalid index
 >>>
-\end{verbatim}
-
-The solution is to use 1-element arrays; as a special case ctypes does
-no bounds checking on them:
-\begin{verbatim}
->>> short_array = (c_short * 1)()
->>> print sizeof(short_array)
-2
->>> resize(short_array, 32)
->>> sizeof(short_array)
-32
->>> sizeof(type(short_array))
-2
->>> short_array[0:8]
-[0, 0, 0, 0, 0, 0, 0, 0]
->>> short_array[7] = 42
->>> short_array[0:8]
-[0, 0, 0, 0, 0, 0, 0, 42]
->>>
-\end{verbatim}
-
-Using 1-element arrays as variable sized fields in structures works as
-well, but they should be used as the last field in the structure
-definition.  This example shows a definition from the Windows header
-files:
-\begin{verbatim}
-class SP_DEVICE_INTERFACE_DETAIL_DATA(Structure):
-    _fields_ = [("cbSize", c_int),
-                ("DevicePath", c_char * 1)]
 \end{verbatim}
 
 Another way to use variable-sized data types with \code{ctypes} is to use
