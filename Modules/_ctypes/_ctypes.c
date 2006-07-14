@@ -3573,7 +3573,8 @@ Array_item(PyObject *_self, Py_ssize_t index)
 	int offset, size;
 	StgDictObject *stgdict;
 
-	if (self->b_length == 0 || index < 0 || (self->b_length > 1 && index >= self->b_length)) {
+
+	if (index < 0 || index >= self->b_length) {
 		PyErr_SetString(PyExc_IndexError,
 				"invalid index");
 		return NULL;
@@ -3602,11 +3603,11 @@ Array_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh)
 
 	if (ilow < 0)
 		ilow = 0;
-	else if (ilow > self->b_length && self->b_length != 1)
+	else if (ilow > self->b_length)
 		ilow = self->b_length;
 	if (ihigh < ilow)
 		ihigh = ilow;
-	else if (ihigh > self->b_length && self->b_length != 1)
+	else if (ihigh > self->b_length)
 		ihigh = self->b_length;
 	len = ihigh - ilow;
 
@@ -3649,8 +3650,7 @@ Array_ass_item(PyObject *_self, Py_ssize_t index, PyObject *value)
 	}
 	
 	stgdict = PyObject_stgdict((PyObject *)self);
-	if (self->b_length == 0 || index < 0
-	    || (self->b_length > 1 && index >= self->b_length)) {
+	if (index < 0 || index >= stgdict->length) {
 		PyErr_SetString(PyExc_IndexError,
 				"invalid index");
 		return -1;
@@ -3677,19 +3677,17 @@ Array_ass_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *va
 
 	if (ilow < 0)
 		ilow = 0;
-	else if (ilow > self->b_length && self->b_length != 1)
+	else if (ilow > self->b_length)
 		ilow = self->b_length;
-
 	if (ihigh < 0)
 		ihigh = 0;
-
 	if (ihigh < ilow)
 		ihigh = ilow;
-	else if (ihigh > self->b_length && self->b_length != 1)
+	else if (ihigh > self->b_length)
 		ihigh = self->b_length;
 
 	len = PySequence_Length(value);
-	if (self->b_length != 1 && len != ihigh - ilow) {
+	if (len != ihigh - ilow) {
 		PyErr_SetString(PyExc_ValueError,
 				"Can only assign sequence of same size");
 		return -1;

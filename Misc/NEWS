@@ -25,6 +25,10 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1521817: Index range checking on ctypes arrays containing
+  exactly one element enabled again.  This allows iterating over these
+  arrays, without the need to check the array size before.
+
 - Bug #1521375: When the code in ctypes.util.find_library was
   run with root privileges, it could overwrite or delete
   /dev/null in certain cases; this is now fixed.
