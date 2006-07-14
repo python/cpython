@@ -22,7 +22,7 @@
 			<Tool
 				Name="VCNMakeTool"
 				BuildCommandLine="build_ssl.bat $(ConfigurationName)"
-				ReBuildCommandLine="build_ssl.bat -a $(ConfigurationName)"
+				ReBuildCommandLine="build_ssl.bat $(ConfigurationName) -a"
 				CleanCommandLine="echo Nothing to do"
 				Output="_ssl.pyd"/>
 		</Configuration>
@@ -36,7 +36,7 @@
 			<Tool
 				Name="VCNMakeTool"
 				BuildCommandLine="build_ssl.bat $(ConfigurationName)"
-				ReBuildCommandLine="build_ssl.bat -a $(ConfigurationName)"
+				ReBuildCommandLine="build_ssl.bat $(ConfigurationName) -a"
 				CleanCommandLine="echo Nothing to do"
 				Output="_ssl_d.pyd"/>
 		</Configuration>
@@ -50,7 +50,7 @@
 			<Tool
 				Name="VCNMakeTool"
 				BuildCommandLine="build_ssl.bat $(ConfigurationName)"
-				ReBuildCommandLine="build_ssl.bat -a $(ConfigurationName)"
+				ReBuildCommandLine="build_ssl.bat $(ConfigurationName) -a"
 				CleanCommandLine="echo Nothing to do"
 				Output="_ssl.pyd"/>
 		</Configuration>
@@ -64,7 +64,7 @@
 			<Tool
 				Name="VCNMakeTool"
 				BuildCommandLine="build_ssl.bat $(ConfigurationName)"
-				ReBuildCommandLine="build_ssl.bat -a $(ConfigurationName)"
+				ReBuildCommandLine="build_ssl.bat $(ConfigurationName) -a"
 				CleanCommandLine="echo Nothing to do"
 				Output="_ssl.pyd"/>
 		</Configuration>

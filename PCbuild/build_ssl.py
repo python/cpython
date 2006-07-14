@@ -113,24 +113,24 @@ def run_configure(configure, do_script):
 
 def main():
     build_all = "-a" in sys.argv
-    if sys.argv[-1] == "Release":
+    if sys.argv[1] == "Release":
         arch = "x86"
         debug = False
         configure = "VC-WIN32"
         makefile = "32.mak"
-    elif sys.argv[-1] == "Debug":
+    elif sys.argv[1] == "Debug":
         arch = "x86"
         debug = True
         configure = "VC-WIN32"
         makefile="d32.mak"
-    elif sys.argv[-1] == "ReleaseItanium":
+    elif sys.argv[1] == "ReleaseItanium":
         arch = "ia64"
         debug = False
         configure = "VC-WIN64I"
         do_script = "ms\\do_win64i"
         makefile = "ms\\nt.mak"
         os.environ["VSEXTCOMP_USECL"] = "MS_ITANIUM"
-    elif sys.argv[-1] == "ReleaseAMD64":
+    elif sys.argv[1] == "ReleaseAMD64":
         arch="amd64"
         debug=False
         configure = "VC-WIN64A"
