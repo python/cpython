@@ -576,6 +576,10 @@ Extension Modules
 Library
 -------
 
+- Bug #1223937: subprocess.CalledProcessError reports the exit status
+  of the process using the returncode attribute, instead of
+  abusing errno.
+
 - Patch #1475231: ``doctest`` has a new ``SKIP`` option, which causes
   a doctest to be skipped (the code is not run, and the expected output
   or exception is ignored).
