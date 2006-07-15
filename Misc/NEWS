@@ -22,6 +22,8 @@ Core and builtins
 Library
 -------
 
+- Patch #1220874: Update the binhex module for Mach-O.
+
 Extension Modules
 -----------------
 
