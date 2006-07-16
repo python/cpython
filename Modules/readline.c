@@ -20,6 +20,12 @@
 #include <locale.h>
 #endif
 
+#ifdef SAVE_LOCALE
+#  define RESTORE_LOCALE(sl) { setlocale(LC_CTYPE, sl); free(sl); }
+#else
+#  define RESTORE_LOCALE(sl) 
+#endif
+
 /* GNU readline definitions */
 #undef HAVE_CONFIG_H /* Else readline/chardefs.h includes strings.h */
 #include <readline/readline.h>
@@ -723,10 +729,7 @@ setup_readline(void)
 	 */
 	rl_initialize();
 
-#ifdef SAVE_LOCALE
-	setlocale(LC_CTYPE, saved_locale); /* Restore locale */
-	free(saved_locale);
-#endif
+	RESTORE_LOCALE(saved_locale)
 }
 
 /* Wrapper around GNU readline that handles signals differently. */
@@ -864,7 +867,8 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 	p = readline_until_enter_or_signal(prompt, &signal);
 	
 	/* we got an interrupt signal */
-	if(signal) {
+	if (signal) {
+		RESTORE_LOCALE(saved_locale)
 		return NULL;
 	}
 
@@ -873,6 +877,7 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 		p = PyMem_Malloc(1);
 		if (p != NULL)
 			*p = '\0';
+		RESTORE_LOCALE(saved_locale)
 		return p;
 	}
 
@@ -905,10 +910,7 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 		p[n+1] = '\0';
 	}
 	free(q);
-#ifdef SAVE_LOCALE
-	setlocale(LC_CTYPE, saved_locale); /* Restore locale */
-	free(saved_locale);
-#endif
+	RESTORE_LOCALE(saved_locale)
 	return p;
 }
 
