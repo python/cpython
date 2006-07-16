@@ -3149,9 +3149,8 @@ long_bitwise(PyLongObject *a,
 		: MAX(size_a, size_b);
 	z = _PyLong_New(size_z);
 	if (z == NULL) {
-		Py_XDECREF(a);
-		Py_XDECREF(b);
-		Py_XDECREF(z);
+		Py_DECREF(a);
+		Py_DECREF(b);
 		return NULL;
 	}
 
