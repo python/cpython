@@ -81,6 +81,13 @@ dis_bug1333982 = """\
      bug1333982.func_code.co_firstlineno + 2,
      bug1333982.func_code.co_firstlineno + 3)
 
+_BIG_LINENO_FORMAT = """\
+%3d           0 LOAD_GLOBAL              0 (spam)
+              3 POP_TOP
+              4 LOAD_CONST               0 (None)
+              7 RETURN_VALUE
+"""
+
 class DisTests(unittest.TestCase):
     def do_disassembly_test(self, func, expected):
         s = StringIO.StringIO()
@@ -123,6 +130,23 @@ class DisTests(unittest.TestCase):
         # so fails if the tests are run with -O.  Skip this test then.
         if __debug__:
             self.do_disassembly_test(bug1333982, dis_bug1333982)
+
+    def test_big_linenos(self):
+        def func(count):
+           namespace = {}
+           func = "def foo():\n " + "".join(["\n "] * count + ["spam\n"])
+           exec func in namespace
+           return namespace['foo']
+
+        # Test all small ranges
+        for i in xrange(1, 300):
+            expected = _BIG_LINENO_FORMAT % (i + 2)
+            self.do_disassembly_test(func(i), expected)
+
+        # Test some larger ranges too
+        for i in xrange(300, 5000, 10):
+            expected = _BIG_LINENO_FORMAT % (i + 2)
+            self.do_disassembly_test(func(i), expected)
 
 def test_main():
     run_unittest(DisTests)

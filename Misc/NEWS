@@ -12,6 +12,9 @@ What's New in Python 2.5 release candidate 1?
 Core and builtins
 -----------------
 
+- Bug #1512814, Fix incorrect lineno's when code within a function
+  had more than 255 blank lines.
+
 - Patch #1521179: Python now accepts the standard options ``--help`` and
   ``--version`` as well as ``/?`` on Windows.
 
