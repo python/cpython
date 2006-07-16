@@ -124,7 +124,7 @@ CField_FromDesc(PyObject *desc, int index,
 	self->getfunc = getfunc;
 	self->index = index;
 
-	Py_XINCREF(proto);
+	Py_INCREF(proto);
 	self->proto = proto;
 
 	switch (fieldtype) {
