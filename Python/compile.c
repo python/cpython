@@ -4098,9 +4098,10 @@ corresponding to a bytecode address A should do something like this
 
 In order for this to work, when the addr field increments by more than 255,
 the line # increment in each pair generated must be 0 until the remaining addr
-increment is < 256.  So, in the example above, com_set_lineno should not (as
-was actually done until 2.2) expand 300, 300 to 255, 255,  45, 45, but to
-255, 0,	 45, 255,  0, 45.
+increment is < 256.  So, in the example above, assemble_lnotab (it used
+to be called com_set_lineno) should not (as was actually done until 2.2)
+expand 300, 300 to 255, 255, 45, 45, 
+            but to 255,   0, 45, 255, 0, 45.
 */
 
 static int
@@ -4155,12 +4156,12 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 		}
 		lnotab = (unsigned char *)
 			   PyString_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
-		*lnotab++ = 255;
 		*lnotab++ = d_bytecode;
+		*lnotab++ = 255;
 		d_bytecode = 0;
 		for (j = 1; j < ncodes; j++) {
-			*lnotab++ = 255;
 			*lnotab++ = 0;
+			*lnotab++ = 255;
 		}
 		d_lineno -= ncodes * 255;
 		a->a_lnotab_off += ncodes * 2;
