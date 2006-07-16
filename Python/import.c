@@ -1906,11 +1906,10 @@ PyImport_ImportFrozenModule(char *name)
 	if (co == NULL)
 		return -1;
 	if (!PyCode_Check(co)) {
-		Py_DECREF(co);
 		PyErr_Format(PyExc_TypeError,
 			     "frozen object %.200s is not a code object",
 			     name);
-		return -1;
+		goto err_return;
 	}
 	if (ispackage) {
 		/* Set __path__ to the package name */
@@ -1918,22 +1917,25 @@ PyImport_ImportFrozenModule(char *name)
 		int err;
 		m = PyImport_AddModule(name);
 		if (m == NULL)
-			return -1;
+			goto err_return;
 		d = PyModule_GetDict(m);
 		s = PyString_InternFromString(name);
 		if (s == NULL)
-			return -1;
+			goto err_return;
 		err = PyDict_SetItemString(d, "__path__", s);
 		Py_DECREF(s);
 		if (err != 0)
-			return err;
+			goto err_return;
 	}
 	m = PyImport_ExecCodeModuleEx(name, co, "<frozen>");
-	Py_DECREF(co);
 	if (m == NULL)
-		return -1;
+		goto err_return;
+	Py_DECREF(co);
 	Py_DECREF(m);
 	return 1;
+err_return:
+	Py_DECREF(co);
+	return -1;
 }
 
 
