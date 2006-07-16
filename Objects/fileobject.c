@@ -411,11 +411,11 @@ file_repr(PyFileObject *f)
 	if (PyUnicode_Check(f->f_name)) {
 #ifdef Py_USING_UNICODE
 		PyObject *ret = NULL;
-		PyObject *name;
-		name = PyUnicode_AsUnicodeEscapeString(f->f_name);
+		PyObject *name = PyUnicode_AsUnicodeEscapeString(f->f_name);
+		const char *name_str = name ? PyString_AsString(name) : "?";
 		ret = PyString_FromFormat("<%s file u'%s', mode '%s' at %p>",
 				   f->f_fp == NULL ? "closed" : "open",
-				   PyString_AsString(name),
+				   name_str,
 				   PyString_AsString(f->f_mode),
 				   f);
 		Py_XDECREF(name);
