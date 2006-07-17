@@ -3060,6 +3060,40 @@ Content-Disposition: inline; filename*0=X-UNKNOWN''myfile.txt
         msg = email.message_from_string(m)
         self.assertEqual(msg.get_filename(), 'myfile.txt')
 
+    def test_rfc2231_single_tick_in_filename(self):
+        eq = self.assertEqual
+        m = """\
+Content-Type: application/x-foo; name*0=\"Frank's\"; name*1=\" Document\"
+
+"""
+        msg = email.message_from_string(m)
+        charset, language, s = msg.get_param('name')
+        eq(charset, None)
+        eq(language, None)
+        eq(s, "Frank's Document")
+
+    def test_rfc2231_tick_attack(self):
+        eq = self.assertEqual
+        m = """\
+Content-Type: application/x-foo;
+\tname*0=\"us-ascii'en-us'Frank's\"; name*1=\" Document\"
+
+"""
+        msg = email.message_from_string(m)
+        charset, language, s = msg.get_param('name')
+        eq(charset, 'us-ascii')
+        eq(language, 'en-us')
+        eq(s, "Frank's Document")
+
+    def test_rfc2231_no_extended_values(self):
+        eq = self.assertEqual
+        m = """\
+Content-Type: application/x-foo; name=\"Frank's Document\"
+
+"""
+        msg = email.message_from_string(m)
+        eq(msg.get_param('name'), "Frank's Document")
+
 
 
 def _testclasses():
