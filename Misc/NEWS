@@ -12,6 +12,8 @@ What's New in Python 2.5 release candidate 1?
 Core and builtins
 -----------------
 
+- Fix warnings reported by Klocwork's static analysis tool.
+
 - Bug #1512814, Fix incorrect lineno's when code within a function
   had more than 255 blank lines.
 
