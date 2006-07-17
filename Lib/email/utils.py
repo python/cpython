@@ -45,6 +45,7 @@ COMMASPACE = ', '
 EMPTYSTRING = ''
 UEMPTYSTRING = u''
 CRLF = '\r\n'
+TICK = "'"
 
 specialsre = re.compile(r'[][\\()<>@,:;".]')
 escapesre = re.compile(r'[][\\()"]')
@@ -231,10 +232,14 @@ def unquote(str):
 def decode_rfc2231(s):
     """Decode string according to RFC 2231"""
     import urllib
-    parts = s.split("'", 2)
-    if len(parts) == 1:
+    parts = s.split(TICK, 2)
+    if len(parts) <= 2:
         return None, None, urllib.unquote(s)
-    charset, language, s = parts
+    if len(parts) > 3:
+        charset, language = parts[:2]
+        s = TICK.join(parts[2:])
+    else:
+        charset, language, s = parts
     return charset, language, urllib.unquote(s)
 
 
