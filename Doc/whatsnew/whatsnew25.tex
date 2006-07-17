@@ -74,7 +74,7 @@ but there was no syntax that was preferred by a clear majority.
 Candidates included C's \code{cond ? true_v : false_v},
 \code{if cond then true_v else false_v}, and 16 other variations.
 
-GvR eventually chose a surprising syntax:
+Guido van~Rossum eventually chose a surprising syntax:
 
 \begin{verbatim}
 x = true_value if condition else false_value
@@ -407,7 +407,7 @@ specific exceptions.  You couldn't combine both \keyword{except} blocks and a
 combined version was complicated and it wasn't clear what the
 semantics of the combined should be.  
 
-GvR spent some time working with Java, which does support the
+Guido van~Rossum spent some time working with Java, which does support the
 equivalent of combining \keyword{except} blocks and a
 \keyword{finally} block, and this clarified what the statement should
 mean.  In Python 2.5, you can now write:
@@ -600,7 +600,11 @@ once the generator has been exhausted.
 \seepep{342}{Coroutines via Enhanced Generators}{PEP written by 
 Guido van~Rossum and Phillip J. Eby;
 implemented by Phillip J. Eby.  Includes examples of 
-some fancier uses of generators as coroutines.}
+some fancier uses of generators as coroutines.
+
+Earlier versions of these features were proposed in 
+\pep{288} by Raymond Hettinger and \pep{325} by Samuele Pedroni.
+}
 
 \seeurl{http://en.wikipedia.org/wiki/Coroutine}{The Wikipedia entry for 
 coroutines.}
@@ -1152,8 +1156,8 @@ print max(L)
 false values.  \function{any()} returns \constant{True} if any value
 returned by the iterator is true; otherwise it will return
 \constant{False}.  \function{all()} returns \constant{True} only if
-all of the values returned by the iterator evaluate as being true.
-(Suggested by GvR, and implemented by Raymond Hettinger.)
+all of the values returned by the iterator evaluate as true.
+(Suggested by Guido van~Rossum, and implemented by Raymond Hettinger.)
 
 \item ASCII is now the default encoding for modules.  It's now 
 a syntax error if a module contains string literals with 8-bit
@@ -1259,7 +1263,8 @@ Python's allocator functions instead of the system's
 \item The code generator's peephole optimizer now performs
 simple constant folding in expressions.  If you write something like
 \code{a = 2+3}, the code generator will do the arithmetic and produce
-code corresponding to \code{a = 5}.
+code corresponding to \code{a = 5}.  (Proposed and implemented 
+by Raymond Hettinger.)
 
 \item Function calls are now faster because code objects now keep 
 the most recently finished frame (a ``zombie frame'') in an internal
@@ -1353,10 +1358,13 @@ defaultdict(<type 'list'>, {'c': ['cammin', 'che'], 'e': ['era'],
         'r': ['ritrovai'], 'u': ['una'], 'v': ['vita', 'via']}
 \end{verbatim}
 
-The \class{deque} double-ended queue type supplied by the
+(Contributed by Guido van~Rossum.)
+
+\item The \class{deque} double-ended queue type supplied by the
 \module{collections} module now has a \method{remove(\var{value})}
 method that removes the first occurrence of \var{value} in the queue,
 raising \exception{ValueError} if the value isn't found.
+(Contributed by Raymond Hettinger.)
 
 \item New module: The \module{contextlib} module contains helper functions for use 
 with the new '\keyword{with}' statement.  See
@@ -2197,6 +2205,11 @@ Changes to Python's build process and to the C API include:
 
 \begin{itemize}
 
+\item The Python source tree was converted from CVS to Subversion, 
+in a complex migration procedure that was supervised and flawlessly
+carried out by Martin von~L\"owis.  The procedure was developed as
+\pep{347}.
+
 \item The largest change to the C API came from \pep{353},
 which modifies the interpreter to use a \ctype{Py_ssize_t} type
 definition instead of \ctype{int}.  See the earlier
@@ -2417,8 +2430,9 @@ freed with the corresponding family's \cfunction{*_Free()} function.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Nick Coghlan, Phillip J. Eby, Ralf W. Grosse-Kunstleve, Kent
-Johnson, Martin von~L\"owis, Fredrik Lundh, Gustavo Niemeyer, James
-Pryor, Mike Rovner, Scott Weikart, Barry Warsaw, Thomas Wouters.
+article: Nick Coghlan, Phillip J. Eby, Raymond Hettinger, Ralf
+W. Grosse-Kunstleve, Kent Johnson, Martin von~L\"owis, Fredrik Lundh,
+Gustavo Niemeyer, James Pryor, Mike Rovner, Scott Weikart, Barry
+Warsaw, Thomas Wouters.
 
 \end{document}
