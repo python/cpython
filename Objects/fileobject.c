@@ -103,6 +103,7 @@ static PyObject *
 fill_file_fields(PyFileObject *f, FILE *fp, PyObject *name, char *mode,
 		 int (*close)(FILE *))
 {
+	assert(name != NULL);
 	assert(f != NULL);
 	assert(PyFile_Check(f));
 	assert(f->f_fp == NULL);
@@ -111,7 +112,7 @@ fill_file_fields(PyFileObject *f, FILE *fp, PyObject *name, char *mode,
 	Py_DECREF(f->f_mode);
 	Py_DECREF(f->f_encoding);
 
-        Py_INCREF (name);
+        Py_INCREF(name);
         f->f_name = name;
 
 	f->f_mode = PyString_FromString(mode);
@@ -126,7 +127,7 @@ fill_file_fields(PyFileObject *f, FILE *fp, PyObject *name, char *mode,
 	Py_INCREF(Py_None);
 	f->f_encoding = Py_None;
 
-	if (f->f_name == NULL || f->f_mode == NULL)
+	if (f->f_mode == NULL)
 		return NULL;
 	f->f_fp = fp;
         f = dircheck(f);
@@ -278,7 +279,9 @@ PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE *))
 	PyFileObject *f = (PyFileObject *)PyFile_Type.tp_new(&PyFile_Type,
 							     NULL, NULL);
 	if (f != NULL) {
-                PyObject *o_name = PyString_FromString(name);
+		PyObject *o_name = PyString_FromString(name);
+		if (o_name == NULL)
+			return NULL;
 		if (fill_file_fields(f, fp, o_name, mode, close) == NULL) {
 			Py_DECREF(f);
 			f = NULL;
