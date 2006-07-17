@@ -15,6 +15,17 @@ You may still want to be aware of the \ulink{PyXML add-on
 package}{http://pyxml.sourceforge.net/}; that package provides an
 extended set of XML libraries for Python.
 
+Python 2.5 introduces the \module{xmlcore} package; this package
+provides the implementation of the \module{xml} package as distributed
+with the standard library.  The \module{xml} package, as in earlier
+versions, provides an interface that will provide the PyXML
+implementation of the interfaces when available, and the standard
+library implementation if not.  Applications that can use either the
+PyXML implementation or the standard library's implementation may
+continue to make imports from the \module{xml} package; applications
+that want to only import the standard library's implementation can now
+use the \module{xmlcore} package.
+
 The documentation for the \module{xml.dom} and \module{xml.sax}
 packages are the definition of the Python bindings for the DOM and SAX
 interfaces.
