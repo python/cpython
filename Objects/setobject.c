@@ -1380,12 +1380,12 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 	while (set_next(otherset, &pos, &entry)) {
 		int rv = set_discard_entry(so, entry);
 		if (rv == -1) {
-			Py_XDECREF(otherset);
+			Py_DECREF(otherset);
 			return NULL;
 		}
 		if (rv == DISCARD_NOTFOUND) {
 			if (set_add_entry(so, entry) == -1) {
-				Py_XDECREF(otherset);
+				Py_DECREF(otherset);
 				return NULL;
 			}
 		}
