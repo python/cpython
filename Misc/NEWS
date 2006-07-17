@@ -1208,6 +1208,10 @@ Extension Modules
 
 Library
 -------
+  
+- Patch #1388073: Numerous __-prefixed attributes of unittest.TestCase have
+  been renamed to have only a single underscore prefix.  This was done to
+  make subclassing easier.
 
 - PEP 338: new module runpy defines a run_module function to support
   executing modules which provide access to source code or a code object
