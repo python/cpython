@@ -226,6 +226,8 @@ if any field in \var{t} is outside of the allowed range.
 \versionchanged[Allowed \var{t} to be omitted]{2.1}
 \versionchanged[\exception{ValueError} raised if a field in \var{t} is
 out of range]{2.4}
+\versionchanged[0 is now a legal argument for any position in the time tuple;
+if it is normally illegal the value is forced to a correct one.]{2.5}
 
 
 The following directives can be embedded in the \var{format} string.

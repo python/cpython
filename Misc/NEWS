@@ -27,6 +27,12 @@ Core and builtins
 Library
 -------
 
+- Bug #1520914: Change time.strftime() to accept a zero for any position in its
+  argument tuple.  For arguments where zero is illegal, the value is forced to
+  the minimum value that is correct.  This is to support an undocumented but
+  common way people used  to fill in inconsequential information in the time
+  tuple pre-2.4.
+
 - Patch #1220874: Update the binhex module for Mach-O.
 
 Extension Modules
