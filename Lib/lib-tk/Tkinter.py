@@ -186,7 +186,7 @@ class Variable:
         if name:
             self._name = name
         else:
-            self._name = 'PY_VAR' + `_varnum`
+            self._name = 'PY_VAR' + repr(_varnum)
             _varnum += 1
         if value != None:
             self.set(value)
