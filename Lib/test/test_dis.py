@@ -133,10 +133,10 @@ class DisTests(unittest.TestCase):
 
     def test_big_linenos(self):
         def func(count):
-           namespace = {}
-           func = "def foo():\n " + "".join(["\n "] * count + ["spam\n"])
-           exec func in namespace
-           return namespace['foo']
+            namespace = {}
+            func = "def foo():\n " + "".join(["\n "] * count + ["spam\n"])
+            exec func in namespace
+            return namespace['foo']
 
         # Test all small ranges
         for i in xrange(1, 300):

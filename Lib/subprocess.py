@@ -369,7 +369,7 @@ class CalledProcessError(Exception):
         self.cmd = cmd
     def __str__(self):
         return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
-    
+
 
 if mswindows:
     import threading
