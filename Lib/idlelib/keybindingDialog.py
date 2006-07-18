@@ -202,7 +202,7 @@ class GetKeysDialog(Toplevel):
                 ':':'colon',',':'comma','.':'period','<':'less','>':'greater',
                 '/':'slash','?':'question','Page Up':'Prior','Page Down':'Next',
                 'Left Arrow':'Left','Right Arrow':'Right','Up Arrow':'Up',
-                'Down Arrow': 'Down', 'Tab':'tab'}
+                'Down Arrow': 'Down', 'Tab':'Tab'}
         if key in translateDict.keys():
             key = translateDict[key]
         if 'Shift' in modifiers and key in string.ascii_lowercase:
