@@ -1,3 +1,14 @@
+What's New in IDLE 1.2c1?
+=========================
+
+*Release date: XX-XXX-2006*
+
+- Rebinding Tab key was inserting 'tab' instead of 'Tab'.  Bug 1179168.
+
+- Colorizer now handles #<builtin> correctly, also unicode strings and
+  'as' keyword in comment directly following import command. Closes 1325071.
+  Patch 1479219 Tal Einat
+
 What's New in IDLE 1.2b2?
 =========================
 
