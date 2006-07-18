@@ -165,7 +165,7 @@ class DecimalException(ArithmeticError):
     """
     def handle(self, context, *args):
         """Called when context._raise_error is called and trap_enabler is set.
-        
+
         First argument is self, second is the context.  More arguments can
         be given, those being after the explanation in _raise_error (For
         example, context._raise_error(NewError, '(-x)!', self._sign) would
@@ -2258,9 +2258,9 @@ class Context(object):
         s.append(
           'Context(prec=%(prec)d, rounding=%(rounding)s, Emin=%(Emin)d, Emax=%(Emax)d, capitals=%(capitals)d'
           % vars(self))
-        s.append('flags=[' + ', '.join([f.__name__ for f, v 
+        s.append('flags=[' + ', '.join([f.__name__ for f, v
                                         in self.flags.items() if v]) + ']')
-        s.append('traps=[' + ', '.join([t.__name__ for t, v 
+        s.append('traps=[' + ', '.join([t.__name__ for t, v
                                         in self.traps.items() if v]) + ']')
         return ', '.join(s) + ')'
 
@@ -2281,7 +2281,7 @@ class Context(object):
 
     def copy(self):
         """Returns a deep copy from self."""
-        nc = Context(self.prec, self.rounding, self.traps.copy(), 
+        nc = Context(self.prec, self.rounding, self.traps.copy(),
                      self.flags.copy(), self._rounding_decision,
                      self.Emin, self.Emax, self.capitals,
                      self._clamp, self._ignored_flags)
@@ -2701,7 +2701,7 @@ class Context(object):
         """Returns the remainder from integer division.
 
         The result is the residue of the dividend after the operation of
-        calculating integer division as described for divide-integer, rounded 
+        calculating integer division as described for divide-integer, rounded
         to precision digits if necessary. The sign of the result, if non-zero,
         is the same as that of the original dividend.
 
@@ -3077,7 +3077,7 @@ del re
 
 def _string2exact(s):
     """Return sign, n, p s.t.
-    
+
     Float string value == -1**sign * n * 10**p exactly
     """
     m = _parser(s)
