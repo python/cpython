@@ -24,6 +24,11 @@ Core and builtins
   again.  Fixing this problem required changing the .pyc magic number.
   This means that .pyc files generated before 2.5c1 will be regenerated.
 
+- Bug #1524317:  Compiling Python ``--without-threads`` failed.
+  The Python core compiles again then, and, in a build without threads, the
+  new ``sys._current_frames()`` returns a dictionary with one entry,
+  mapping the faux "thread id" 0 to the current frame.
+
 Library
 -------
 
@@ -155,9 +160,9 @@ Library
 Extension Modules
 -----------------
 
-- #1494314: Fix a regression with high-numbered sockets in 2.4.3. This 
-  means that select() on sockets > FD_SETSIZE (typically 1024) work again. 
-  The patch makes sockets use poll() internally where available. 
+- #1494314: Fix a regression with high-numbered sockets in 2.4.3. This
+  means that select() on sockets > FD_SETSIZE (typically 1024) work again.
+  The patch makes sockets use poll() internally where available.
 
 - Assigning None to pointer type fields in ctypes structures possible
   overwrote the wrong fields, this is fixed now.
@@ -1216,7 +1221,7 @@ Extension Modules
 
 Library
 -------
-  
+
 - Patch #1388073: Numerous __-prefixed attributes of unittest.TestCase have
   been renamed to have only a single underscore prefix.  This was done to
   make subclassing easier.
