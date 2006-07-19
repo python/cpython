@@ -239,6 +239,19 @@ class SysModuleTest(unittest.TestCase):
 
     # sys._current_frames() is a CPython-only gimmick.
     def test_current_frames(self):
+        have_threads = True
+        try:
+            import thread
+        except ImportError:
+            have_threads = False
+
+        if have_threads:
+            self.current_frames_with_threads()
+        else:
+            self.current_frames_without_threads()
+
+    # Test sys._current_frames() in a WITH_THREADS build.
+    def current_frames_with_threads(self):
         import threading, thread
         import traceback
 
@@ -297,6 +310,15 @@ class SysModuleTest(unittest.TestCase):
         # Reap the spawned thread.
         leave_g.set()
         t.join()
+
+    # Test sys._current_frames() when thread support doesn't exist.
+    def current_frames_without_threads(self):
+        # Not much happens here:  there is only one thread, with artificial
+        # "thread id" 0.
+        d = sys._current_frames()
+        self.assertEqual(len(d), 1)
+        self.assert_(0 in d)
+        self.assert_(d[0] is sys._getframe())
 
     def test_attributes(self):
         self.assert_(isinstance(sys.api_version, int))
