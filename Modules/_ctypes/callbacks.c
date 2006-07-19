@@ -348,7 +348,9 @@ void init_callbacks_in_module(PyObject *m)
 static void LoadPython(void)
 {
 	if (!Py_IsInitialized()) {
+#ifdef WITH_THREAD
 		PyEval_InitThreads();
+#endif
 		Py_Initialize();
 	}
 }
