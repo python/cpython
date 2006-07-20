@@ -364,8 +364,9 @@ def getabsfile(object, _filename=None):
 
     The idea is for each object to have a unique origin, so this routine
     normalizes the result as much as possible."""
-    return os.path.normcase(
-        os.path.abspath(_filename or getsourcefile(object) or getfile(object)))
+    if _filename is None:
+        _filename = getsourcefile(object) or getfile(object)
+    return os.path.normcase(os.path.abspath(_filename))
 
 modulesbyfile = {}
 
