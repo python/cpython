@@ -1069,7 +1069,7 @@ list of possible values is, note that they are not case sensitive:
 
 If \var{backupCount} is non-zero, the system will save old log files by
 appending extensions to the filename. The extensions are date-and-time
-based, using the strftime format \code{%Y-%m-%d_%H-%M-%S} or a leading
+based, using the strftime format \code{\%Y-\%m-\%d_\%H-\%M-\%S} or a leading
 portion thereof, depending on the rollover interval. At most \var{backupCount}
 files will be kept, and if more would be created when rollover occurs, the
 oldest one is deleted.
@@ -1537,7 +1537,7 @@ to start the server, and which you can \method{join()} when appropriate.
 To stop the server, call \function{stopListening()}. To send a configuration
 to the socket, read in the configuration file and send it to the socket
 as a string of bytes preceded by a four-byte length packed in binary using
-struct.\code{pack(">L", n)}.
+struct.\code{pack('>L', n)}.
 \end{funcdesc}
 
 \begin{funcdesc}{stopListening}{}
