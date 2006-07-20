@@ -187,6 +187,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         exec "def x(): pass" in m.__dict__
         self.assertEqual(inspect.getsourcefile(m.x.func_code), '<string>')
         del sys.modules[name]
+        inspect.getmodule(compile('a=10','','single'))
 
 class TestDecorators(GetSourceBase):
     fodderFile = mod2
