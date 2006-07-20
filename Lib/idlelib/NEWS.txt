@@ -3,6 +3,9 @@ What's New in IDLE 1.2c1?
 
 *Release date: XX-XXX-2006*
 
+- Avoid occasional failure to detect closing paren properly.
+  Patch 1407280 Tal Einat
+
 - Rebinding Tab key was inserting 'tab' instead of 'Tab'.  Bug 1179168.
 
 - Colorizer now handles #<builtin> correctly, also unicode strings and
