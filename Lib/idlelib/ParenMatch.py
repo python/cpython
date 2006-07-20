@@ -8,7 +8,7 @@ parentheses, square brackets, and curly braces.
 from HyperParser import HyperParser
 from configHandler import idleConf
 
-keysym_opener = {"parenright":'(', "bracketright":'[', "braceright":'{'}
+_openers = {')':'(',']':'[','}':'{'}
 CHECK_DELAY = 100 # miliseconds
 
 class ParenMatch:
@@ -100,12 +100,13 @@ class ParenMatch:
 
     def paren_closed_event(self, event):
         # If it was a shortcut and not really a closing paren, quit.
-        if self.text.get("insert-1c") not in (')',']','}'):
+        closer = self.text.get("insert-1c")
+        if closer not in _openers:
             return
         hp = HyperParser(self.editwin, "insert-1c")
         if not hp.is_in_code():
             return
-        indices = hp.get_surrounding_brackets(keysym_opener[event.keysym], True)
+        indices = hp.get_surrounding_brackets(_openers[closer], True)
         if indices is None:
             self.warn_mismatched()
             return
