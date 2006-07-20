@@ -1068,13 +1068,11 @@ list of possible values is, note that they are not case sensitive:
 \end{tableii}
 
 If \var{backupCount} is non-zero, the system will save old log files by
-appending the extensions ".1", ".2" etc., to the filename. For example,
-with a \var{backupCount} of 5 and a base file name of \file{app.log},
-you would get \file{app.log}, \file{app.log.1}, \file{app.log.2}, up to
-\file{app.log.5}. The file being written to is always \file{app.log}.
-When this file is filled, it is closed and renamed to \file{app.log.1},
-and if files \file{app.log.1}, \file{app.log.2}, etc. exist, then they
-are renamed to \file{app.log.2}, \file{app.log.3} etc. respectively.
+appending extensions to the filename. The extensions are date-and-time
+based, using the strftime format \code{%Y-%m-%d_%H-%M-%S} or a leading
+portion thereof, depending on the rollover interval. At most \var{backupCount}
+files will be kept, and if more would be created when rollover occurs, the
+oldest one is deleted.
 \end{classdesc}
 
 \begin{methoddesc}{doRollover}{}
