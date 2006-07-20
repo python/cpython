@@ -562,6 +562,18 @@ class SysLogHandler(logging.Handler):
         "local7":   LOG_LOCAL7,
         }
 
+    #The map below appears to be trivially lowercasing the key. However,
+    #there's more to it than meets the eye - in some locales, lowercasing
+    #gives unexpected results. See SF #1524081: in the Turkish locale,
+    #"INFO".lower() != "info"
+    priority_map = {
+        "DEBUG" : "debug",
+        "INFO" : "info",
+        "WARNING" : "warning",
+        "ERROR" : "error",
+        "CRITICAL" : "critical"
+    }
+
     def __init__(self, address=('localhost', SYSLOG_UDP_PORT), facility=LOG_USER):
         """
         Initialize a handler.
@@ -598,7 +610,7 @@ class SysLogHandler(logging.Handler):
     #   necessary.
     log_format_string = '<%d>%s\000'
 
-    def encodePriority (self, facility, priority):
+    def encodePriority(self, facility, priority):
         """
         Encode the facility and priority. You can pass in strings or
         integers - if strings are passed, the facility_names and
@@ -619,6 +631,16 @@ class SysLogHandler(logging.Handler):
             self.socket.close()
         logging.Handler.close(self)
 
+    def mapPriority(self, levelName):
+        """
+        Map a logging level name to a key in the priority_names map.
+        This is useful in two scenarios: when custom levels are being
+        used, and in the case where you can't do a straightforward
+        mapping by lowercasing the logging level name because of locale-
+        specific issues (see SF #1524081).
+        """
+        return self.priority_map.get(levelName, "warning")
+
     def emit(self, record):
         """
         Emit a record.
@@ -633,8 +655,8 @@ class SysLogHandler(logging.Handler):
         """
         msg = self.log_format_string % (
             self.encodePriority(self.facility,
-                                string.lower(record.levelname)),
-            msg)
+                                self.mapPriority(record.levelname)),
+                                msg)
         try:
             if self.unixsocket:
                 try:
