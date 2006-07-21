@@ -7918,6 +7918,9 @@ void _PyUnicode_Init(void)
     unicode_freelist = NULL;
     unicode_freelist_size = 0;
     unicode_empty = _PyUnicode_New(0);
+    if (!unicode_empty)
+	return;
+
     strcpy(unicode_default_encoding, "ascii");
     for (i = 0; i < 256; i++)
 	unicode_latin1[i] = NULL;

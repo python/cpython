@@ -3260,6 +3260,8 @@ PyType_Ready(PyTypeObject *type)
 	if (PyDict_GetItemString(type->tp_dict, "__doc__") == NULL) {
 		if (type->tp_doc != NULL) {
 			PyObject *doc = PyString_FromString(type->tp_doc);
+			if (doc == NULL)
+				goto error;
 			PyDict_SetItemString(type->tp_dict, "__doc__", doc);
 			Py_DECREF(doc);
 		} else {

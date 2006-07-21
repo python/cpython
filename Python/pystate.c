@@ -63,6 +63,10 @@ PyInterpreterState_New(void)
 
 	if (interp != NULL) {
 		HEAD_INIT();
+#ifdef WITH_THREAD
+		if (head_mutex == NULL)
+			Py_FatalError("Can't initialize threads for interpreter");
+#endif
 		interp->modules = NULL;
 		interp->sysdict = NULL;
 		interp->builtins = NULL;
