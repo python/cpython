@@ -1204,8 +1204,12 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
 {
 	PyObject *ret = NULL;
 	PyArena *arena = PyArena_New();
-	mod_ty mod = PyParser_ASTFromString(str, "<string>", start, flags,
-					    arena);
+	mod_ty mod;
+
+	if (arena == NULL)
+		return NULL;
+	
+	mod = PyParser_ASTFromString(str, "<string>", start, flags, arena);
 	if (mod != NULL)
 		ret = run_mod(mod, "<string>", globals, locals, flags, arena);
 	PyArena_Free(arena);
@@ -1218,8 +1222,13 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 {
 	PyObject *ret;
 	PyArena *arena = PyArena_New();
-	mod_ty mod = PyParser_ASTFromFile(fp, filename, start, 0, 0,
-					  flags, NULL, arena);
+	mod_ty mod;
+
+	if (arena == NULL)
+		return NULL;
+	
+	mod = PyParser_ASTFromFile(fp, filename, start, 0, 0,
+				   flags, NULL, arena);
 	if (mod == NULL) {
 		PyArena_Free(arena);
 		return NULL;

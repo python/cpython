@@ -267,6 +267,8 @@ find_key(int key, void *value)
 	struct key *p;
 	long id = PyThread_get_thread_ident();
 
+	if (!keymutex)
+		return NULL;
 	PyThread_acquire_lock(keymutex, 1);
 	for (p = keyhead; p != NULL; p = p->next) {
 		if (p->id == id && p->key == key)
