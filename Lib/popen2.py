@@ -72,7 +72,7 @@ class Popen3:
         # In case the child hasn't been waited on, check if it's done.
         self.poll(_deadstate=sys.maxint)
         if self.sts < 0:
-            if _active:
+            if _active is not None:
                 # Child is still running, keep us alive until we can wait on it.
                 _active.append(self)
 
