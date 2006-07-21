@@ -599,6 +599,8 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 		PyErr_BadInternalCall();
 		return -1;
 	}
+	assert(key);
+	assert(value);
 	mp = (dictobject *)op;
 	if (PyString_CheckExact(key)) {
 		hash = ((PyStringObject *)key)->ob_shash;
@@ -647,6 +649,7 @@ PyDict_DelItem(PyObject *op, PyObject *key)
 		PyErr_BadInternalCall();
 		return -1;
 	}
+	assert(key);
 	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
