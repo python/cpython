@@ -116,6 +116,8 @@ _PyImport_Init(void)
 	for (scan = _PyImport_StandardFiletab; scan->suffix != NULL; ++scan)
 		++countS;
 	filetab = PyMem_NEW(struct filedescr, countD + countS + 1);
+	if (filetab == NULL)
+		Py_FatalError("Can't intiialize import file table.");
 	memcpy(filetab, _PyImport_DynLoadFiletab,
 	       countD * sizeof(struct filedescr));
 	memcpy(filetab + countD, _PyImport_StandardFiletab,
@@ -239,8 +241,11 @@ lock_import(void)
 	long me = PyThread_get_thread_ident();
 	if (me == -1)
 		return; /* Too bad */
-	if (import_lock == NULL)
+	if (import_lock == NULL) {
 		import_lock = PyThread_allocate_lock();
+		if (import_lock == NULL)
+			return;  /* Nothing much we can do. */
+	}
 	if (import_lock_thread == me) {
 		import_lock_level++;
 		return;
@@ -259,7 +264,7 @@ static int
 unlock_import(void)
 {
 	long me = PyThread_get_thread_ident();
-	if (me == -1)
+	if (me == -1 || import_lock == NULL)
 		return 0; /* Too bad */
 	if (import_lock_thread != me)
 		return -1;
