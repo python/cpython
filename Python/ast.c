@@ -638,8 +638,10 @@ ast_for_arguments(struct compiling *c, const node *n)
                    anything other than EQUAL or a comma? */
                 /* XXX Should NCH(n) check be made a separate check? */
                 if (i + 1 < NCH(n) && TYPE(CHILD(n, i + 1)) == EQUAL) {
-                    asdl_seq_SET(defaults, j++, 
-				    ast_for_expr(c, CHILD(n, i + 2)));
+                    expr_ty expression = ast_for_expr(c, CHILD(n, i + 2));
+                    if (!expression)
+                            goto error;
+                    asdl_seq_SET(defaults, j++, expression);
                     i += 2;
 		    found_default = 1;
                 }

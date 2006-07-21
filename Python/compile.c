@@ -1105,8 +1105,17 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
 	u->u_name = name;
 	u->u_varnames = list2dict(u->u_ste->ste_varnames);
 	u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
+	if (!u->u_varnames || !u->u_cellvars) {
+		compiler_unit_free(u);
+		return 0;
+	}
+
 	u->u_freevars = dictbytype(u->u_ste->ste_symbols, FREE, DEF_FREE_CLASS,
 				   PyDict_Size(u->u_cellvars));
+	if (!u->u_freevars) {
+		compiler_unit_free(u);
+		return 0;
+	}
 
 	u->u_blocks = NULL;
 	u->u_tmpname = 0;
