@@ -117,7 +117,7 @@ _PyImport_Init(void)
 		++countS;
 	filetab = PyMem_NEW(struct filedescr, countD + countS + 1);
 	if (filetab == NULL)
-		Py_FatalError("Can't intiialize import file table.");
+		Py_FatalError("Can't initialize import file table.");
 	memcpy(filetab, _PyImport_DynLoadFiletab,
 	       countD * sizeof(struct filedescr));
 	memcpy(filetab + countD, _PyImport_StandardFiletab,
