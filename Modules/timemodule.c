@@ -408,7 +408,7 @@ time_strftime(PyObject *self, PyObject *args)
 
 	    Also support values of zero from Python code for arguments in which
 	    that is out of range by forcing that value to the lowest value that
-	    is valid (fixed bug #XXX).
+	    is valid (fixed bug #1520914).
 
 	    Valid ranges based on what is allowed in struct tm:
 
