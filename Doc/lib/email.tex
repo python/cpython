@@ -105,7 +105,7 @@ of the package.
 \lineiii{4.0}{Python 2.5}{Python 2.3 to 2.5}
 \end{tableiii}
 
-Here are the major differences between \module{email} verson 4 and version 3:
+Here are the major differences between \module{email} version 4 and version 3:
 
 \begin{itemize}
 \item All modules have been renamed according to \pep{8} standards.  For
@@ -126,6 +126,15 @@ Here are the major differences between \module{email} verson 4 and version 3:
 \item Methods that were deprecated in version 3 have been removed.  These
       include \method{Generator.__call__()}, \method{Message.get_type()},
       \method{Message.get_main_type()}, \method{Message.get_subtype()}.
+
+\item Fixes have been added for \rfc{2231} support which can change some of
+      the return types for \function{Message.get_param()} and friends.  Under
+      some circumstances, values which used to return a 3-tuple now return
+      simple strings (specifically, if all extended parameter segments were
+      unencoded, there is no language and charset designation expected, so the
+      return type is now a simple string).  Also, \%-decoding used to be done
+      for both encoded and unencoded segments; this decoding is now done only
+      for encoded segments.
 \end{itemize}
 
 Here are the major differences between \module{email} version 3 and version 2:
