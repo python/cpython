@@ -1348,8 +1348,10 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 
 #ifdef WITH_THREAD
 	self->lock = PyThread_allocate_lock();
-	if (!self->lock)
+	if (!self->lock) {
+		PyErr_SetString(PyExc_MemoryError, "unable to allocate lock");
 		goto error;
+	}
 #endif
 
 	if (mode_char == 'r')
@@ -1371,10 +1373,12 @@ BZ2File_init(BZ2FileObject *self, PyObject *args, PyObject *kwargs)
 	return 0;
 
 error:
-	Py_DECREF(self->file);
+	Py_CLEAR(self->file);
 #ifdef WITH_THREAD
-	if (self->lock)
+	if (self->lock) {
 		PyThread_free_lock(self->lock);
+		self->lock = NULL;
+	}
 #endif
 	return -1;
 }
@@ -1682,8 +1686,10 @@ BZ2Comp_init(BZ2CompObject *self, PyObject *args, PyObject *kwargs)
 
 #ifdef WITH_THREAD
 	self->lock = PyThread_allocate_lock();
-	if (!self->lock)
+	if (!self->lock) {
+		PyErr_SetString(PyExc_MemoryError, "unable to allocate lock");
 		goto error;
+	}
 #endif
 
 	memset(&self->bzs, 0, sizeof(bz_stream));
@@ -1698,8 +1704,10 @@ BZ2Comp_init(BZ2CompObject *self, PyObject *args, PyObject *kwargs)
 	return 0;
 error:
 #ifdef WITH_THREAD
-	if (self->lock)
+	if (self->lock) {
 		PyThread_free_lock(self->lock);
+		self->lock = NULL;
+	}
 #endif
 	return -1;
 }
@@ -1894,8 +1902,10 @@ BZ2Decomp_init(BZ2DecompObject *self, PyObject *args, PyObject *kwargs)
 
 #ifdef WITH_THREAD
 	self->lock = PyThread_allocate_lock();
-	if (!self->lock)
+	if (!self->lock) {
+		PyErr_SetString(PyExc_MemoryError, "unable to allocate lock");
 		goto error;
+	}
 #endif
 
 	self->unused_data = PyString_FromString("");
@@ -1915,10 +1925,12 @@ BZ2Decomp_init(BZ2DecompObject *self, PyObject *args, PyObject *kwargs)
 
 error:
 #ifdef WITH_THREAD
-	if (self->lock)
+	if (self->lock) {
 		PyThread_free_lock(self->lock);
+		self->lock = NULL;
+	}
 #endif
-	Py_XDECREF(self->unused_data);
+	Py_CLEAR(self->unused_data);
 	return -1;
 }
 

@@ -746,6 +746,11 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 			ps2 = PyString_AsString(w);
 	}
 	arena = PyArena_New();
+	if (arena == NULL) {
+		Py_XDECREF(v);
+		Py_XDECREF(w);
+		return -1;
+	}
 	mod = PyParser_ASTFromFile(fp, filename,
 				   Py_single_input, ps1, ps2,
 				   flags, &errcode, arena);
@@ -1203,9 +1208,8 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
 		  PyObject *locals, PyCompilerFlags *flags)
 {
 	PyObject *ret = NULL;
-	PyArena *arena = PyArena_New();
 	mod_ty mod;
-
+	PyArena *arena = PyArena_New();
 	if (arena == NULL)
 		return NULL;
 	
@@ -1221,9 +1225,8 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 		  PyObject *locals, int closeit, PyCompilerFlags *flags)
 {
 	PyObject *ret;
-	PyArena *arena = PyArena_New();
 	mod_ty mod;
-
+	PyArena *arena = PyArena_New();
 	if (arena == NULL)
 		return NULL;
 	
@@ -1291,8 +1294,12 @@ Py_CompileStringFlags(const char *str, const char *filename, int start,
 		      PyCompilerFlags *flags)
 {
 	PyCodeObject *co;
+	mod_ty mod;
 	PyArena *arena = PyArena_New();
-	mod_ty mod = PyParser_ASTFromString(str, filename, start, flags, arena);
+	if (arena == NULL)
+		return NULL;
+
+	mod = PyParser_ASTFromString(str, filename, start, flags, arena);
 	if (mod == NULL) {
 		PyArena_Free(arena);
 		return NULL;
@@ -1311,8 +1318,12 @@ struct symtable *
 Py_SymtableString(const char *str, const char *filename, int start)
 {
 	struct symtable *st;
+	mod_ty mod;
 	PyArena *arena = PyArena_New();
-	mod_ty mod = PyParser_ASTFromString(str, filename, start, NULL, arena);
+	if (arena == NULL)
+		return NULL;
+
+	mod = PyParser_ASTFromString(str, filename, start, NULL, arena);
 	if (mod == NULL) {
 		PyArena_Free(arena);
 		return NULL;

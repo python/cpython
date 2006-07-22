@@ -196,7 +196,7 @@ Pdata_clear(Pdata *self, int clearto)
 	for (i = self->length, p = self->data + clearto;
 	     --i >= clearto;
 	     p++) {
-		Py_DECREF(*p);
+		Py_CLEAR(*p);
 	}
 	self->length = clearto;
 
@@ -208,6 +208,7 @@ Pdata_grow(Pdata *self)
 {
 	int bigger;
 	size_t nbytes;
+	PyObject **tmp;
 
 	bigger = self->size << 1;
 	if (bigger <= 0)	/* was 0, or new value overflows */
@@ -217,14 +218,14 @@ Pdata_grow(Pdata *self)
 	nbytes = (size_t)bigger * sizeof(PyObject *);
 	if (nbytes / sizeof(PyObject *) != (size_t)bigger)
 		goto nomemory;
-	self->data = realloc(self->data, nbytes);
-	if (self->data == NULL)
+	tmp = realloc(self->data, nbytes);
+	if (tmp == NULL)
 		goto nomemory;
+	self->data = tmp;
 	self->size = bigger;
 	return 0;
 
   nomemory:
-	self->size = 0;
 	PyErr_NoMemory();
 	return -1;
 }
@@ -4163,6 +4164,7 @@ do_append(Unpicklerobject *self, int  x)
 		int list_len;
 
 		slice=Pdata_popList(self->stack, x);
+		if (! slice) return -1;
 		list_len = PyList_GET_SIZE(list);
 		i=PyList_SetSlice(list, list_len, list_len, slice);
 		Py_DECREF(slice);
@@ -5165,6 +5167,9 @@ newUnpicklerobject(PyObject *f)
 	self->find_class = NULL;
 
 	if (!( self->memo = PyDict_New()))
+		goto err;
+
+	if (!self->stack)
 		goto err;
 
 	Py_INCREF(f);

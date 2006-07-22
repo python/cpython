@@ -727,7 +727,7 @@ symtable_exit_block(struct symtable *st, void *ast)
 {
 	Py_ssize_t end;
 
-	Py_DECREF(st->st_cur);
+	Py_CLEAR(st->st_cur);
 	end = PyList_GET_SIZE(st->st_stack) - 1;
 	if (end >= 0) {
 		st->st_cur = (PySTEntryObject *)PyList_GET_ITEM(st->st_stack, 

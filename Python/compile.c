@@ -300,8 +300,11 @@ PyCodeObject *
 PyNode_Compile(struct _node *n, const char *filename)
 {
 	PyCodeObject *co = NULL;
+	mod_ty mod;
 	PyArena *arena = PyArena_New();
-	mod_ty mod = PyAST_FromNode(n, NULL, filename, arena);
+	if (!arena)
+		return NULL;
+	mod = PyAST_FromNode(n, NULL, filename, arena);
 	if (mod)
 		co = PyAST_Compile(mod, filename, NULL, arena);
 	PyArena_Free(arena);
@@ -615,8 +618,10 @@ markblocks(unsigned char *code, int len)
 	unsigned int *blocks = (unsigned int *)PyMem_Malloc(len*sizeof(int));
 	int i,j, opcode, blockcnt = 0;
 
-	if (blocks == NULL)
+	if (blocks == NULL) {
+		PyErr_NoMemory();
 		return NULL;
+	}
 	memset(blocks, 0, len*sizeof(int));
 
 	/* Mark labels in the first pass */
@@ -1071,14 +1076,14 @@ compiler_unit_free(struct compiler_unit *u)
 		PyObject_Free((void *)b);
 		b = next;
 	}
-	Py_XDECREF(u->u_ste);
-	Py_XDECREF(u->u_name);
-	Py_XDECREF(u->u_consts);
-	Py_XDECREF(u->u_names);
-	Py_XDECREF(u->u_varnames);
-	Py_XDECREF(u->u_freevars);
-	Py_XDECREF(u->u_cellvars);
-	Py_XDECREF(u->u_private);
+	Py_CLEAR(u->u_ste);
+	Py_CLEAR(u->u_name);
+	Py_CLEAR(u->u_consts);
+	Py_CLEAR(u->u_names);
+	Py_CLEAR(u->u_varnames);
+	Py_CLEAR(u->u_freevars);
+	Py_CLEAR(u->u_cellvars);
+	Py_CLEAR(u->u_private);
 	PyObject_Free(u);
 }
 
@@ -1139,7 +1144,8 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
 	/* Push the old compiler_unit on the stack. */
 	if (c->u) {
 		PyObject *wrapper = PyCObject_FromVoidPtr(c->u, NULL);
-		if (PyList_Append(c->c_stack, wrapper) < 0) {
+		if (!wrapper || PyList_Append(c->c_stack, wrapper) < 0) {
+			Py_XDECREF(wrapper);
 			compiler_unit_free(u);
 			return 0;
 		}
@@ -1265,6 +1271,7 @@ compiler_next_instr(struct compiler *c, basicblock *b)
 		       sizeof(struct instr) * DEFAULT_BLOCK_SIZE);
 	}
 	else if (b->b_iused == b->b_ialloc) {
+		struct instr *tmp;
 		size_t oldsize, newsize;
 		oldsize = b->b_ialloc * sizeof(struct instr);
 		newsize = oldsize << 1;
@@ -1273,10 +1280,13 @@ compiler_next_instr(struct compiler *c, basicblock *b)
 			return -1;
 		}
 		b->b_ialloc <<= 1;
-		b->b_instr = (struct instr *)PyObject_Realloc(
+		tmp = (struct instr *)PyObject_Realloc(
                                                 (void *)b->b_instr, newsize);
-		if (b->b_instr == NULL)
+		if (tmp == NULL) {
+			PyErr_NoMemory();
 			return -1;
+		}
+		b->b_instr = tmp;
 		memset((char *)b->b_instr + oldsize, 0, newsize - oldsize);
 	}
 	return b->b_iused++;
