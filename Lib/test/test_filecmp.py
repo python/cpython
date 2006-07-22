@@ -1,5 +1,5 @@
 
-import os, filecmp, shutil, tempfile
+import os, filecmp, shutil, tempfile, shutil
 import unittest
 from test import test_support
 
@@ -49,6 +49,7 @@ class DirCompareTestCase(unittest.TestCase):
         self.caseinsensitive = os.path.normcase('A') == os.path.normcase('a')
         data = 'Contents of file go here.\n'
         for dir in [self.dir, self.dir_same, self.dir_diff]:
+            shutil.rmtree(dir, True)
             os.mkdir(dir)
             if self.caseinsensitive and dir is self.dir_same:
                 fn = 'FiLe'     # Verify case-insensitive comparison
