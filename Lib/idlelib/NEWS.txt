@@ -3,6 +3,8 @@ What's New in IDLE 1.2c1?
 
 *Release date: XX-XXX-2006*
 
+- Tooltips failed on new-syle class __init__ args.  Bug 1027566 Loren Guthrie
+
 - Avoid occasional failure to detect closing paren properly.
   Patch 1407280 Tal Einat
 

@@ -127,7 +127,7 @@ def get_arg_text(ob):
     argText = ""
     if ob is not None:
         argOffset = 0
-        if type(ob)==types.ClassType:
+        if type(ob) in (types.ClassType, types.TypeType):
             # Look for the highest __init__ in the class chain.
             fob = _find_constructor(ob)
             if fob is None:
