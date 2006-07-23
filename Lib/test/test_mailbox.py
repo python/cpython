@@ -461,7 +461,7 @@ class TestMaildir(TestMailbox):
 
     def setUp(self):
         TestMailbox.setUp(self)
-        if os.name == 'nt':
+        if os.name in ('nt', 'os2'):
             self._box.colon = '!'
 
     def test_add_MM(self):
@@ -520,7 +520,7 @@ class TestMaildir(TestMailbox):
         # Initialize an existing mailbox
         self.tearDown()
         for subdir in '', 'tmp', 'new', 'cur':
-            os.mkdir(os.path.join(self._path, subdir))
+            os.mkdir(os.path.normpath(os.path.join(self._path, subdir)))
         self._box = mailbox.Maildir(self._path)
         self._check_basics(factory=rfc822.Message)
         self._box = mailbox.Maildir(self._path, factory=None)
