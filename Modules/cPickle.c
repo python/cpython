@@ -2637,7 +2637,7 @@ Pickle_getvalue(Picklerobject *self, PyObject *args)
 			if (ik >= lm || ik == 0) {
 				PyErr_SetString(PicklingError,
 						"Invalid get data");
-				return NULL;
+				goto err;
 			}
 			if (have_get[ik]) /* with matching get */
 				rsize += ik < 256 ? 2 : 5;
@@ -2649,7 +2649,7 @@ Pickle_getvalue(Picklerobject *self, PyObject *args)
 			) {
 			PyErr_SetString(PicklingError,
 					"Unexpected data in internal list");
-			return NULL;
+			goto err;
 		}
 
 		else { /* put */
