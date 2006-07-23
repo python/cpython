@@ -4521,18 +4521,27 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
 		if (obj->b_objects == Py_None) {
 			Py_DECREF(Py_None);
 			obj->b_objects = PyDict_New();
+			if (!obj->b_objects) {
+				Py_DECREF(result);
+				return NULL;
+			}
 		}
+		/* XXX(nnorwitz): shouldn't the INCREF only be done in an else? */
 		Py_INCREF(obj->b_objects);
 		result->b_objects = obj->b_objects;
 		if (result->b_objects) {
 			PyObject *index = PyLong_FromVoidPtr((void *)src);
 			int rc;
-			if (index == NULL)
+			if (index == NULL) {
+				Py_DECREF(result);
 				return NULL;
+			}
 			rc = PyDict_SetItem(result->b_objects, index, src);
 			Py_DECREF(index);
-			if (rc == -1)
+			if (rc == -1) {
+				Py_DECREF(result);
 				return NULL;
+			}
 		}
 	}
 	/* Should we assert that result is a pointer type? */
