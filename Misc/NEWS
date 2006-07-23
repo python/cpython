@@ -34,6 +34,8 @@ Core and builtins
 Library
 -------
 
+- Resync optparse with Optik 1.5.3: minor tweaks for/to tests.
+
 - Patch #1524429: Use repr() instead of backticks in Tkinter again.
 
 - Bug #1520914: Change time.strftime() to accept a zero for any position in its

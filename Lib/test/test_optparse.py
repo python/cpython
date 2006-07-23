@@ -1460,10 +1460,11 @@ class TestHelp(BaseTest):
             make_option("--foo", action="append", type="string", dest='foo',
                         help="store FOO in the foo list for later fooing"),
             ]
-        # The parser constructor looks at the COLUMNS envar.  We need to
-        # restore the original value after the parser is constructed, else
-        # that's a permanent change possibly affecting other tests, and
-        # definitely affecting these tests when they're run multiple times.
+
+        # We need to set COLUMNS for the OptionParser constructor, but
+        # we must restore its original value -- otherwise, this test
+        # screws things up for other tests when it's part of the Python
+        # test suite.
         orig_columns = os.environ.get('COLUMNS')
         os.environ['COLUMNS'] = str(columns)
         try:
