@@ -121,6 +121,9 @@ class EditorWindow(object):
 
         self.top.protocol("WM_DELETE_WINDOW", self.close)
         self.top.bind("<<close-window>>", self.close_event)
+        if macosxSupport.runningAsOSXApp():
+            # Command-W on editorwindows doesn't work without this.
+            text.bind('<<close-window', self.close_event)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
         text.bind("<<paste>>", self.paste)
