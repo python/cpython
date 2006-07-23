@@ -529,6 +529,8 @@ update_symbols(PyObject *symbols, PyObject *scope,
 		i = PyInt_AS_LONG(w);
 		flags |= (i << SCOPE_OFF);
 		u = PyInt_FromLong(flags);
+		if (!u)
+			return 0;
 		if (PyDict_SetItem(symbols, name, u) < 0) {
 			Py_DECREF(u);
 			return 0;
