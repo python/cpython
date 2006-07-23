@@ -69,14 +69,25 @@ def play_sound_file(data, rate, ssize, nchannels):
         except TypeError:
             pass
 
+    # Compute expected running time of sound sample (in seconds).
+    expected_time = float(len(data)) / (ssize/8) / nchannels / rate
+
     # set parameters based on .au file headers
     dsp.setparameters(AFMT_S16_NE, nchannels, rate)
+    print ("playing test sound file (expected running time: %.2f sec)"
+           % expected_time)
     t1 = time.time()
-    print "playing test sound file..."
     dsp.write(data)
     dsp.close()
     t2 = time.time()
-    print "elapsed time: %.1f sec" % (t2-t1)
+    elapsed_time = t2 - t1
+
+    percent_diff = (abs(elapsed_time - expected_time) / expected_time) * 100
+    #print ("actual running time was %.2f sec (%.1f%% difference)"
+    #       % (elapsed_time, percent_diff))
+    assert percent_diff <= 10.0, \
+           ("elapsed time (%.2f sec) > 10%% off of expected time (%.2f sec)"
+            % (elapsed_time, expected_time))
 
 def test_setparameters(dsp):
     # Two configurations for testing:
