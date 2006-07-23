@@ -4022,6 +4022,8 @@ stackdepth(struct compiler *c)
 		b->b_startdepth = INT_MIN;
 		entryblock = b;
 	}
+	if (!entryblock)
+		return 0;
 	return stackdepth_walk(c, entryblock, 0, 0);
 }
 
