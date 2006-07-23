@@ -15,6 +15,9 @@ import email.Generator
 import rfc822
 import StringIO
 try:
+    if sys.platform == 'os2emx':
+        # OS/2 EMX fcntl() not adequate
+        raise ImportError
     import fcntl
 except ImportError:
     fcntl = None
@@ -565,7 +568,8 @@ class _singlefileMailbox(Mailbox):
         try:
             os.rename(new_file.name, self._path)
         except OSError, e:
-            if e.errno == errno.EEXIST:
+            if e.errno == errno.EEXIST or \
+              (os.name == 'os2' and e.errno == errno.EACCES):
                 os.remove(self._path)
                 os.rename(new_file.name, self._path)
             else:
@@ -1030,6 +1034,9 @@ class MH(Mailbox):
                         if hasattr(os, 'link'):
                             os.link(os.path.join(self._path, str(key)),
                                     os.path.join(self._path, str(prev + 1)))
+                            if sys.platform == 'os2emx':
+                                # cannot unlink an open file on OS/2
+                                f.close()
                             os.unlink(os.path.join(self._path, str(key)))
                         else:
                             f.close()
@@ -1828,7 +1835,8 @@ def _lock_file(f, dotlock=True):
                     os.rename(pre_lock.name, f.name + '.lock')
                     dotlock_done = True
             except OSError, e:
-                if e.errno == errno.EEXIST:
+                if e.errno == errno.EEXIST or \
+                  (os.name == 'os2' and e.errno == errno.EACCES):
                     os.remove(pre_lock.name)
                     raise ExternalClashError('dot lock unavailable: %s' %
                                              f.name)
