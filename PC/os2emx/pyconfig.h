@@ -46,6 +46,7 @@
 #define TCPIPV4		1
 #define USE_SOCKET	1
 #define socklen_t	int
+#define FD_SETSIZE	1024
 
 /* enable the Python object allocator */
 #define	WITH_PYMALLOC	1
@@ -60,6 +61,9 @@
 #define Py_USING_UNICODE 1
 #define PY_UNICODE_TYPE	wchar_t
 #define Py_UNICODE_SIZE SIZEOF_SHORT
+
+/* EMX defines ssize_t */
+#define HAVE_SSIZE_T	1
 
 /* system capabilities */
 #define HAVE_TTYNAME	1
@@ -136,6 +140,9 @@ typedef long intptr_t;
 
 /* The number of bytes in a void *. */
 #define SIZEOF_VOID_P 4
+
+/* The number of bytes in a size_t. */
+#define SIZEOF_SIZE_T 4
 
 /* Define if you have the alarm function. */
 #define HAVE_ALARM 1
