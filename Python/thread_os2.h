@@ -34,7 +34,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
 	int thread_id;
 
-	aThread = _beginthread(func, NULL, THREAD_STACK_SIZE, arg);
+	thread_id = _beginthread(func, NULL, THREAD_STACK_SIZE, arg);
 
 	if (thread_id == -1) {
 		dprintf(("_beginthread failed. return %ld\n", errno));
