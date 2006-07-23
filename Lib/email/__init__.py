@@ -4,7 +4,7 @@
 
 """A package for parsing, handling, and generating email messages."""
 
-__version__ = '3.0.1'
+__version__ = '3.0.2'
 
 __all__ = [
     'base64MIME',
