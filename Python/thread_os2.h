@@ -32,18 +32,15 @@ PyThread__init_thread(void)
 long
 PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
-	int aThread;
-	int success = 0;
+	int thread_id;
 
 	aThread = _beginthread(func, NULL, THREAD_STACK_SIZE, arg);
 
-	if (aThread == -1) {
-		success = -1;
-		fprintf(stderr, "aThread failed == %d", aThread);
+	if (thread_id == -1) {
 		dprintf(("_beginthread failed. return %ld\n", errno));
 	}
 
-	return success;
+	return thread_id;
 }
 
 long
