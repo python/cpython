@@ -3,6 +3,9 @@ What's New in IDLE 1.2c1?
 
 *Release date: XX-XXX-2006*
 
+- EditorWindow failed when used stand-alone if sys.ps1 not set.
+  Bug 1010370 Dave Florek
+
 - Tooltips failed on new-syle class __init__ args.  Bug 1027566 Loren Guthrie
 
 - Avoid occasional failure to detect closing paren properly.

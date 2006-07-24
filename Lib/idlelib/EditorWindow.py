@@ -85,6 +85,10 @@ class EditorWindow(object):
         self.flist = flist
         root = root or flist.root
         self.root = root
+        try:
+            sys.ps1
+        except AttributeError:
+            sys.ps1 = '>>> '
         self.menubar = Menu(root)
         self.top = top = WindowList.ListedToplevel(root, menu=self.menubar)
         if flist:

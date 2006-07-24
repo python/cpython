@@ -1306,10 +1306,6 @@ def main():
     script = None
     startup = False
     try:
-        sys.ps1
-    except AttributeError:
-        sys.ps1 = '>>> '
-    try:
         opts, args = getopt.getopt(sys.argv[1:], "c:deihnr:st:")
     except getopt.error, msg:
         sys.stderr.write("Error: %s\n" % str(msg))
