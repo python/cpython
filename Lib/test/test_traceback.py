@@ -112,7 +112,7 @@ def test():
         self.assertEqual(lst, ['KeyboardInterrupt\n'])
 
     # String exceptions are deprecated, but legal.  The quirky form with
-    # separate "type" and "value" tends to break things, because 
+    # separate "type" and "value" tends to break things, because
     #     not isinstance(value, type)
     # and a string cannot be the first argument to issubclass.
     #
@@ -139,7 +139,7 @@ def test():
         err = traceback.format_exception_only(str_type, str_value)
         self.assert_(len(err) == 1)
         self.assert_(err[0] == str_type + ': ' + str_value + '\n')
-        
+
 
 def test_main():
     run_unittest(TracebackCases)

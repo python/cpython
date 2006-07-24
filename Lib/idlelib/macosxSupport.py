@@ -30,7 +30,7 @@ def overrideRootMenu(root, flist):
     Replace the Tk root menu by something that's more appropriate for
     IDLE.
     """
-    # The menu that is attached to the Tk root (".") is also used by AquaTk for 
+    # The menu that is attached to the Tk root (".") is also used by AquaTk for
     # all windows that don't specify a menu of their own. The default menubar
     # contains a number of menus, none of which are appropriate for IDLE. The
     # Most annoying of those is an 'About Tck/Tk...' menu in the application
@@ -82,7 +82,7 @@ def overrideRootMenu(root, flist):
 
     for mname, entrylist in Bindings.menudefs:
         menu = menudict.get(mname)
-        if not menu: 
+        if not menu:
             continue
         for entry in entrylist:
             if not entry:
@@ -90,14 +90,14 @@ def overrideRootMenu(root, flist):
             else:
                 label, eventname = entry
                 underline, label = prepstr(label)
-                accelerator = get_accelerator(Bindings.default_keydefs, 
+                accelerator = get_accelerator(Bindings.default_keydefs,
                         eventname)
                 def command(text=root, eventname=eventname):
                     text.event_generate(eventname)
                 menu.add_command(label=label, underline=underline,
                         command=command, accelerator=accelerator)
 
-    
+
 
 
 
