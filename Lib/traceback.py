@@ -179,13 +179,14 @@ def format_exception_only(etype, value):
         return [_format_final_exc_line(stype, value)]
 
     # It was a syntax error; show exactly where the problem was found.
+    lines = []
     try:
         msg, (filename, lineno, offset, badline) = value
     except Exception:
         pass
     else:
         filename = filename or "<string>"
-        lines = [('  File "%s", line %d\n' % (filename, lineno))]
+        lines.append('  File "%s", line %d\n' % (filename, lineno))
         if badline is not None:
             lines.append('    %s\n' % badline.strip())
             if offset is not None:
