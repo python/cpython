@@ -1512,6 +1512,13 @@ posix_listdir(PyObject *self, PyObject *args)
 				Py_DECREF(v);
 			} while (FindNextFileW(hFindFile, &wFileData) == TRUE);
 
+			if (d && GetLastError() != ERROR_NO_MORE_FILES) {
+				Py_DECREF(d);
+				win32_error_unicode("FindNextFileW", wnamebuf);
+				FindClose(hFindFile);
+				return NULL;
+			}
+
 			if (FindClose(hFindFile) == FALSE) {
 				Py_DECREF(d);
 				return win32_error_unicode("FindClose", wnamebuf);
@@ -1565,6 +1572,13 @@ posix_listdir(PyObject *self, PyObject *args)
 		}
 		Py_DECREF(v);
 	} while (FindNextFile(hFindFile, &FileData) == TRUE);
+
+	if (d && GetLastError() != ERROR_NO_MORE_FILES) {
+		Py_DECREF(d);
+		win32_error("FindNextFileW", namebuf);
+		FindClose(hFindFile);
+		return NULL;
+	}
 
 	if (FindClose(hFindFile) == FALSE) {
 		Py_DECREF(d);

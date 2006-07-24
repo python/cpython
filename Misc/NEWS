@@ -12,6 +12,8 @@ What's New in Python 2.4.4c1?
 Core and builtins
 -----------------
 
+- Bug #1524310: Properly report errors from FindNextFile in os.listdir.
+
 - Bug #927248: Recursive method-wrapper objects can now safely
   be released.
 
