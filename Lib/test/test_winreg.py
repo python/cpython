@@ -151,3 +151,6 @@ if remote_name is not None:
 else:
     print "Remote registry calls can be tested using",
     print "'test_winreg.py --remote \\\\machine_name'"
+    # perform minimal ConnectRegistry test which just invokes it
+    h = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
+    h.Close()

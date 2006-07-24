@@ -61,6 +61,8 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1448199: Release interpreter lock in _winreg.ConnectRegistry.
+
 - Patch #1521817: Index range checking on ctypes arrays containing
   exactly one element enabled again.  This allows iterating over these
   arrays, without the need to check the array size before.
