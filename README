@@ -226,13 +226,13 @@ compilers from the vendor, or one of the free compilers (gcc).
 Unsupported systems
 -------------------
 
-XXX This section is out of date!
-
-A number of features are not supported in Python 2.3 anymore. Some
-support code is still present, but will be removed in Python 2.4. 
+A number of features are not supported in Python 2.5 anymore. Some
+support code is still present, but will be removed in Python 2.6. 
 If you still need to use current Python versions on these systems,
 please send a message to python-dev@python.org indicating that you
-volunteer to support this system.
+volunteer to support this system. For a more detailed discussion 
+regarding no-longer-supported and resupporting platforms, as well
+as a list of platforms that became or will be unsupported, see PEP 11.
 
 More specifically, the following systems are not supported any
 longer:
@@ -240,6 +240,7 @@ longer:
 - DYNIX
 - dgux
 - Minix
+- NeXT
 - Irix 4 and --with-sgi-dl
 - Linux 1
 - Systems defining __d6_pthread_create (configure.in)
@@ -247,6 +248,25 @@ longer:
   or PY_PTHREAD_D7 in thread_pthread.h
 - Systems using --with-dl-dld
 - Systems using --without-universal-newlines
+- MacOS 9
+
+The following systems are still supported in Python 2.5, but
+support will be dropped in 2.6:
+- Systems using --with-wctype-functions
+- Win9x, WinME
+
+Warning on install in Windows 98 and Windows Me
+-----------------------------------------------
+
+Following Microsoft's closing of Extended Support for
+Windows 98/ME (July 11, 2006), Python 2.6 will stop
+supporting these platforms. Python development and
+maintainability becomes easier (and more reliable) when
+platform specific code targeting OSes with few users
+and no dedicated expert developers is taken out. The
+vendor also warns that the OS versions listed above
+"can expose customers to security risks" and recommends
+upgrade.
 
 Platform specific notes
 -----------------------
@@ -425,14 +445,6 @@ UnixWare: There are known bugs in the math library of the system, as well as
         problems in the handling of threads (calling fork in one
         thread may interrupt system calls in others). Therefore, test_math and
         tests involving threads will fail until those problems are fixed.
-
-SunOS 4.x: When using the SunPro C compiler, you may want to use the
-        '-Xa' option instead of '-Xc', to enable some needed non-ANSI
-        Sunisms.
-        THIS SYSTEM IS NO LONGER SUPPORTED.
-
-NeXT:   Not supported anymore. Start with the MacOSX/Darwin code if you
-        want to revive it.
 
 QNX:    Chris Herborth (chrish@qnx.com) writes:
         configure works best if you use GNU bash; a port is available on
