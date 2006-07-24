@@ -95,11 +95,12 @@ class EditorWindow(object):
             self.tkinter_vars = flist.vars
             #self.top.instance_dict makes flist.inversedict avalable to
             #configDialog.py so it can access all EditorWindow instaces
-            self.top.instance_dict=flist.inversedict
+            self.top.instance_dict = flist.inversedict
         else:
             self.tkinter_vars = {}  # keys: Tkinter event names
                                     # values: Tkinter variable instances
-        self.recent_files_path=os.path.join(idleConf.GetUserCfgDir(),
+            self.top.instance_dict = {}
+        self.recent_files_path = os.path.join(idleConf.GetUserCfgDir(),
                 'recent-files.lst')
         self.vbar = vbar = Scrollbar(top, name='vbar')
         self.text_frame = text_frame = Frame(top)
