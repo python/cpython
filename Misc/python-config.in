@@ -1,4 +1,4 @@
-#!@BINDIR@/python
+#!@EXENAME@
 
 import sys
 import os
@@ -36,13 +36,14 @@ elif opt == '--exec-prefix':
     print sysconfig.EXEC_PREFIX
 
 elif opt in ('--includes', '--cflags'):
-    flags = ['-I'+dir for dir in getvar('INCLDIRSTOMAKE').split()]
+    flags = ['-I' + sysconfig.get_python_inc(),
+             '-I' + sysconfig.get_python_inc(plat_specific=True)]
     if opt == '--cflags':
         flags.extend(getvar('CFLAGS').split())
     print ' '.join(flags)
 
 elif opt in ('--libs', '--ldflags'):
-    libs = sysconfig.get_config_var('LIBS').split()
+    libs = getvar('LIBS').split() + getvar('SYSLIBS').split()
     libs.append('-lpython'+pyver)
     if opt == '--ldflags':
         libs.insert(0, '-L' + getvar('LIBPL'))
