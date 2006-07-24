@@ -1862,6 +1862,15 @@ posix_listdir(PyObject *self, PyObject *args)
 				Py_BEGIN_ALLOW_THREADS
 				result = FindNextFileW(hFindFile, &wFileData);
 				Py_END_ALLOW_THREADS
+				/* FindNextFile sets error to ERROR_NO_MORE_FILES if
+				   it got to the end of the directory. */
+				if (!result && GetLastError() != ERROR_NO_MORE_FILES) {
+				    Py_DECREF(d);
+				    win32_error_unicode("FindNextFileW", wnamebuf);
+				    FindClose(hFindFile);
+				    free(wnamebuf);
+				    return NULL;
+				}
 			} while (result == TRUE);
 
 			if (FindClose(hFindFile) == FALSE) {
@@ -1921,6 +1930,14 @@ posix_listdir(PyObject *self, PyObject *args)
 		Py_BEGIN_ALLOW_THREADS
 		result = FindNextFile(hFindFile, &FileData);
 		Py_END_ALLOW_THREADS
+		/* FindNextFile sets error to ERROR_NO_MORE_FILES if
+		   it got to the end of the directory. */
+		if (!result && GetLastError() != ERROR_NO_MORE_FILES) {
+		    Py_DECREF(d);
+		    win32_error("FindNextFile", namebuf);
+		    FindClose(hFindFile);
+		    return NULL;
+		}
 	} while (result == TRUE);
 
 	if (FindClose(hFindFile) == FALSE) {
