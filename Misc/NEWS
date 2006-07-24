@@ -12,6 +12,8 @@ What's New in Python 2.5 release candidate 1?
 Core and builtins
 -----------------
 
+- Bug #1524310: Properly report errors from FindNextFile in os.listdir.
+
 - Patch #1232023: Stop including current directory in search
   path on Windows.
 
