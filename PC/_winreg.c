@@ -960,7 +960,9 @@ PyConnectRegistry(PyObject *self, PyObject *args)
 		return NULL;
 	if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
 		return NULL;
+	Py_BEGIN_ALLOW_THREADS
 	rc = RegConnectRegistry(szCompName, hKey, &retKey);
+	Py_END_ALLOW_THREADS
 	if (rc != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc,
 							   "ConnectRegistry");
