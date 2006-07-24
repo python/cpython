@@ -12,6 +12,9 @@ What's New in Python 2.5 release candidate 1?
 Core and builtins
 -----------------
 
+- Patch #1232023: Stop including current directory in search
+  path on Windows.
+
 - Fix some potential crashes found with failmalloc.
 
 - Fix warnings reported by Klocwork's static analysis tool.

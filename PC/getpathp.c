@@ -297,6 +297,10 @@ getpythonregpath(HKEY keyBase, int skipcore)
 		}
 		RegCloseKey(subKey);
 	}
+
+	/* return null if no path to return */
+	if (dataSize == 0) goto done;
+
 	/* original datasize from RegQueryInfo doesn't include the \0 */
 	dataBuf = malloc((dataSize+1) * sizeof(TCHAR));
 	if (dataBuf) {
