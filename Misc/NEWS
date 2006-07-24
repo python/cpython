@@ -39,6 +39,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1515343: Fix printing of deprecated string exceptions with a
+  value in the traceback module.
+
 - Resync optparse with Optik 1.5.3: minor tweaks for/to tests.
 
 - Patch #1524429: Use repr() instead of backticks in Tkinter again.
