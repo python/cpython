@@ -172,7 +172,7 @@ def format_exception_only(etype, value):
         isinstance(etype, types.InstanceType) or
         type(etype) is str):
         return [_format_final_exc_line(etype, value)]
-        
+
     stype = etype.__name__
 
     if not issubclass(etype, SyntaxError):
@@ -196,18 +196,18 @@ def format_exception_only(etype, value):
                 # only three spaces to account for offset1 == pos 0
                 lines.append('   %s^\n' % ''.join(caretspace))
             value = msg
-            
+
     lines.append(_format_final_exc_line(stype, value))
     return lines
 
 def _format_final_exc_line(etype, value):
     """Return a list of a single line -- normal case for format_exception_only"""
-    if value is None or not str(value):   
+    if value is None or not str(value):
         line = "%s\n" % etype
     else:
         line = "%s: %s\n" % (etype, _some_str(value))
     return line
-    
+
 def _some_str(value):
     try:
         return str(value)
