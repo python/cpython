@@ -37,10 +37,10 @@
 
 #include <windows.h>
 #include <mmsystem.h>
+#include <Python.h>
 #ifdef HAVE_CONIO_H
 #include <conio.h>	/* port functions on Win9x */
 #endif
-#include <Python.h>
 
 PyDoc_STRVAR(sound_playsound_doc,
 "PlaySound(sound, flags) - a wrapper around the Windows PlaySound API\n"
@@ -147,7 +147,7 @@ sound_beep(PyObject *self, PyObject *args)
 			return NULL;
 		}
 	}
-#ifdef _M_IX86
+#if defined(_M_IX86) && defined(HAVE_CONIO_H)
 	else if (whichOS == Win9X) {
 		int speaker_state;
 		/* Force timer into oscillator mode via timer control port. */
@@ -172,7 +172,7 @@ sound_beep(PyObject *self, PyObject *args)
 		/* Restore speaker control to original state. */
 		_outp(0x61, speaker_state);
 	}
-#endif /* _M_IX86 */
+#endif /* _M_IX86 && HAVE_CONIO_H */
 	else {
 		assert(!"winsound's whichOS has insane value");
 	}
