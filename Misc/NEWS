@@ -36,6 +36,9 @@ Core and builtins
   new ``sys._current_frames()`` returns a dictionary with one entry,
   mapping the faux "thread id" 0 to the current frame.
 
+- Bug #1525447: build on MacOS X on a case-sensitive filesystem.
+  
+
 Library
 -------
 
@@ -67,6 +70,12 @@ Library
 
   Also, whereas % values were decoded in all parameter continuations, they are
   now only decoded in encoded parameter parts.
+
+- Bug #1517990: IDLE keybindings on MacOS X now work correctly
+
+- Bug #1517996: IDLE now longer shows the default Tk menu when a
+  path browser, class browser or debugger is the frontmost window on MacOS X
+
 
 Extension Modules
 -----------------
