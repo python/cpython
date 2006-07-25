@@ -39,6 +39,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1525817: Don't truncate short lines in IDLE's tool tips.
+
 - Patch #1515343: Fix printing of deprecated string exceptions with a
   value in the traceback module.
 
