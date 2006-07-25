@@ -115,10 +115,10 @@ def test_setparameters(dsp):
     # either strict or non-strict mode.
     result = dsp.setparameters(fmt, channels, rate, False)
     _assert(result == (fmt, channels, rate),
-            "setparameters%r: returned %r" % (config + result))
+            "setparameters%r: returned %r" % (config, result))
     result = dsp.setparameters(fmt, channels, rate, True)
     _assert(result == (fmt, channels, rate),
-            "setparameters%r: returned %r" % (config + result))
+            "setparameters%r: returned %r" % (config, result))
 
 def test_bad_setparameters(dsp):
 
