@@ -69,7 +69,28 @@ def simplegeneric(func):
 
 
 def walk_packages(path=None, prefix='', onerror=None):
-    """Yield submodule names+loaders recursively, for path or sys.path"""
+    """Yields (module_loader, name, ispkg) for all modules recursively
+    on path, or, if path is None, all accessible modules.
+    
+    'path' should be either None or a list of paths to look for
+    modules in.
+
+    'prefix' is a string to output on the front of every module name
+    on output.
+
+    Note that this function must import all *packages* (NOT all
+    modules!) on the given path, in order to access the __path__
+    attribute to find submodules.
+    
+    'onerror' is a function which gets called with one argument (the
+    name of the package which was being imported) if an ImportError
+    occurs trying to import a package. By default the ImportError is
+    caught and ignored.
+
+    Examples:
+    walk_packages() : list all modules python can access
+    walk_packages(ctypes.__path__, ctypes.__name__+'.') : list all submodules of ctypes
+    """
 
     def seen(p, m={}):
         if p in m:
@@ -84,19 +105,28 @@ def walk_packages(path=None, prefix='', onerror=None):
                 __import__(name)
             except ImportError:
                 if onerror is not None:
-                    onerror()
+                    onerror(name)
             else:
                 path = getattr(sys.modules[name], '__path__', None) or []
 
                 # don't traverse path items we've seen before
                 path = [p for p in path if not seen(p)]
 
-                for item in walk_packages(path, name+'.'):
+                for item in walk_packages(path, name+'.', onerror):
                     yield item
 
 
 def iter_modules(path=None, prefix=''):
-    """Yield submodule names+loaders for path or sys.path"""
+    """Yields (module_loader, name, ispkg) for all submodules on path,
+    or, if path is None, all top-level modules on sys.path.
+
+    'path' should be either None or a list of paths to look for
+    modules in.
+
+    'prefix' is a string to output on the front of every module name
+    on output.
+    """
+    
     if path is None:
         importers = iter_importers()
     else:
