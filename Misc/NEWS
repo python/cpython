@@ -28,6 +28,18 @@ Core and builtins
 Library
 -------
 
+- The email package has improved RFC 2231 support, specifically for
+  recognizing the difference between encoded (name*0*=<blah>) and non-encoded
+  (name*0=<blah>) parameter continuations.  This may change the types of
+  values returned from email.message.Message.get_param() and friends.
+  Specifically in some cases where non-encoded continuations were used,
+  get_param() used to return a 3-tuple of (None, None, string) whereas now it
+  will just return the string (since non-encoded continuations don't have
+  charset and language parts).
+
+  Also, whereas % values were decoded in all parameter continuations, they are
+  now only decoded in encoded parameter parts.
+
 - Applied a security fix to SimpleXMLRPCserver (PSF-2005-001).  This
   disables recursive traversal through instance attributes, which can
   be exploited in various ways.
