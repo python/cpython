@@ -274,8 +274,9 @@ class SysModuleTest(unittest.TestCase):
         t.start()
         entered_g.wait()
 
-        # At this point, t has finished its entered_g.set(), and is blocked
-        # in its leave_g.wait().
+        # At this point, t has finished its entered_g.set(), although it's
+        # impossible to guess whether it's still on that line or has moved on
+        # to its leave_g.wait().
         self.assertEqual(len(thread_info), 1)
         thread_id = thread_info[0]
 
@@ -305,7 +306,7 @@ class SysModuleTest(unittest.TestCase):
         # And the next record must be for g456().
         filename, lineno, funcname, sourceline = stack[i+1]
         self.assertEqual(funcname, "g456")
-        self.assertEqual(sourceline, "leave_g.wait()")
+        self.assert_(sourceline in ["leave_g.wait()", "entered_g.set()"])
 
         # Reap the spawned thread.
         leave_g.set()
