@@ -87,6 +87,14 @@ Extension Modules
 - Because of a misspelled preprocessor symbol, ctypes was always
   compiled without thread support; this is now fixed.
 
+Tests
+-----
+
+- Bug #1501330: Change test_ossaudiodev to be much more tolerant in terms of
+  how long the test file should take to play.  Now accepts taking 2.93 secs
+  (exact time) +/- 10% instead of the hard-coded 3.1 sec.
+
+
 What's New in Python 2.5 beta 2?
 ================================
 
