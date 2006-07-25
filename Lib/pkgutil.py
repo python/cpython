@@ -71,7 +71,7 @@ def simplegeneric(func):
 def walk_packages(path=None, prefix='', onerror=None):
     """Yields (module_loader, name, ispkg) for all modules recursively
     on path, or, if path is None, all accessible modules.
-    
+
     'path' should be either None or a list of paths to look for
     modules in.
 
@@ -81,7 +81,7 @@ def walk_packages(path=None, prefix='', onerror=None):
     Note that this function must import all *packages* (NOT all
     modules!) on the given path, in order to access the __path__
     attribute to find submodules.
-    
+
     'onerror' is a function which gets called with one argument (the
     name of the package which was being imported) if an ImportError
     occurs trying to import a package. By default the ImportError is
@@ -126,7 +126,7 @@ def iter_modules(path=None, prefix=''):
     'prefix' is a string to output on the front of every module name
     on output.
     """
-    
+
     if path is None:
         importers = iter_importers()
     else:
