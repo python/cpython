@@ -83,13 +83,18 @@ def walk_packages(path=None, prefix='', onerror=None):
     attribute to find submodules.
 
     'onerror' is a function which gets called with one argument (the
-    name of the package which was being imported) if an ImportError
-    occurs trying to import a package. By default the ImportError is
-    caught and ignored.
+    name of the package which was being imported) if any exception
+    occurs while trying to import a package.  If no onerror function is
+    supplied, ImportErrors are caught and ignored, while all other
+    exceptions are propagated, terminating the search.
 
     Examples:
-    walk_packages() : list all modules python can access
-    walk_packages(ctypes.__path__, ctypes.__name__+'.') : list all submodules of ctypes
+
+    # list all modules python can access
+    walk_packages() 
+
+    # list all submodules of ctypes
+    walk_packages(ctypes.__path__, ctypes.__name__+'.')
     """
 
     def seen(p, m={}):
@@ -106,6 +111,11 @@ def walk_packages(path=None, prefix='', onerror=None):
             except ImportError:
                 if onerror is not None:
                     onerror(name)
+            except Exception:
+                if onerror is not None:
+                    onerror(name)
+                else:
+                    raise
             else:
                 path = getattr(sys.modules[name], '__path__', None) or []
 
