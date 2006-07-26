@@ -42,9 +42,6 @@ Core and builtins
 Library
 -------
 
-- Bug #1471938: Fix curses module build problem on Solaris 8; patch by 
-  Paul Eggert.
-
 - Bug #978833: Really close underlying socket in _socketobject.close.
 
 - Bug #1459963: urllib and urllib2 now normalize HTTP header names correctly
@@ -90,6 +87,9 @@ Library
 
 Extension Modules
 -----------------
+
+- Bug #1471938: Fix curses module build problem on Solaris 8; patch by 
+  Paul Eggert.
 
 - Patch #1448199: Release interpreter lock in _winreg.ConnectRegistry.
 
