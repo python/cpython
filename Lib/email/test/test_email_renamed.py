@@ -3092,6 +3092,50 @@ Content-Type: text/plain;
         self.assertEqual(msg.get_content_charset(),
                          'this is even more ***fun*** is it not.pdf')
 
+    def test_rfc2231_bad_encoding_in_filename(self):
+        m = '''\
+Content-Disposition: inline;
+\tfilename*0*="bogus'xx'This%20is%20even%20more%20";
+\tfilename*1*="%2A%2A%2Afun%2A%2A%2A%20";
+\tfilename*2="is it not.pdf"
+
+'''
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_filename(),
+                         'This is even more ***fun*** is it not.pdf')
+
+    def test_rfc2231_bad_encoding_in_charset(self):
+        m = """\
+Content-Type: text/plain; charset*=bogus''utf-8%E2%80%9D
+
+"""
+        msg = email.message_from_string(m)
+        # This should return None because non-ascii characters in the charset
+        # are not allowed.
+        self.assertEqual(msg.get_content_charset(), None)
+
+    def test_rfc2231_bad_character_in_charset(self):
+        m = """\
+Content-Type: text/plain; charset*=ascii''utf-8%E2%80%9D
+
+"""
+        msg = email.message_from_string(m)
+        # This should return None because non-ascii characters in the charset
+        # are not allowed.
+        self.assertEqual(msg.get_content_charset(), None)
+
+    def test_rfc2231_bad_character_in_filename(self):
+        m = '''\
+Content-Disposition: inline;
+\tfilename*0*="ascii'xx'This%20is%20even%20more%20";
+\tfilename*1*="%2A%2A%2Afun%2A%2A%2A%20";
+\tfilename*2*="is it not.pdf%E2"
+
+'''
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_filename(),
+                         u'This is even more ***fun*** is it not.pdf\ufffd')
+
     def test_rfc2231_unknown_encoding(self):
         m = """\
 Content-Transfer-Encoding: 8bit
