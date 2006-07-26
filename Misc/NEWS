@@ -42,6 +42,8 @@ Core and builtins
 Library
 -------
 
+- Bug #978833: Really close underlying socket in _socketobject.close.
+
 - Bug #1459963: urllib and urllib2 now normalize HTTP header names correctly
   with title().
 
