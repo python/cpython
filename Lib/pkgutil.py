@@ -91,7 +91,7 @@ def walk_packages(path=None, prefix='', onerror=None):
     Examples:
 
     # list all modules python can access
-    walk_packages() 
+    walk_packages()
 
     # list all submodules of ctypes
     walk_packages(ctypes.__path__, ctypes.__name__+'.')
