@@ -233,8 +233,25 @@ class LongLong_TestCase(unittest.TestCase):
 
         self.failUnlessEqual(VERY_LARGE & ULLONG_MAX, getargs_K(VERY_LARGE))
 
+
+class Tuple_TestCase(unittest.TestCase):
+    def test_tuple(self):
+        from _testcapi import getargs_tuple
+        
+        ret = getargs_tuple(1, (2, 3))
+        self.assertEquals(ret, (1,2,3))
+
+        # make sure invalid tuple arguments are handled correctly
+        class seq:
+            def __len__(self):
+                return 2
+            def __getitem__(self, n):
+                raise ValueError
+        self.assertRaises(TypeError, getargs_tuple, 1, seq())
+
+
 def test_main():
-    tests = [Signed_TestCase, Unsigned_TestCase]
+    tests = [Signed_TestCase, Unsigned_TestCase, Tuple_TestCase]
     try:
         from _testcapi import getargs_L, getargs_K
     except ImportError:
