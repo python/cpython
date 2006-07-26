@@ -42,6 +42,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1459963: urllib and urllib2 now normalize HTTP header names correctly
+  with title().
+
 - Patch #1525766: In pkgutil.walk_packages, correctly pass the onerror callback
   to recursive calls and call it with the failing package name.
 
