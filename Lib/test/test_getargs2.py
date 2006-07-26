@@ -237,7 +237,7 @@ class LongLong_TestCase(unittest.TestCase):
 class Tuple_TestCase(unittest.TestCase):
     def test_tuple(self):
         from _testcapi import getargs_tuple
-        
+
         ret = getargs_tuple(1, (2, 3))
         self.assertEquals(ret, (1,2,3))
 
