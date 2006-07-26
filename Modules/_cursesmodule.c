@@ -841,7 +841,7 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
 #endif
     break;
   default:
-    PyErr_SetString(PyExc_TypeError, "getstr requires 0 to 2 arguments");
+    PyErr_SetString(PyExc_TypeError, "getstr requires 0 to 3 arguments");
     return NULL;
   }
   if (rtn2 == ERR)
