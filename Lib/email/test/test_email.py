@@ -9,7 +9,7 @@ import difflib
 import unittest
 import warnings
 from cStringIO import StringIO
-from types import StringType, ListType
+from types import StringType, ListType, TupleType
 
 import email
 
@@ -2757,7 +2757,7 @@ Content-Type: text/html; NAME*0=file____C__DOCUMENTS_20AND_20SETTINGS_FABIEN_LOC
 '''
         msg = email.message_from_string(m)
         param = msg.get_param('NAME')
-        self.failIf(isinstance(param, tuple))
+        self.failIf(isinstance(param, TupleType))
         self.assertEqual(
             param,
             'file____C__DOCUMENTS_20AND_20SETTINGS_FABIEN_LOCAL_20SETTINGS_TEMP_nsmail.htm')
@@ -2899,7 +2899,7 @@ Content-Type: application/x-foo; name*0=\"Frank's\"; name*1=\" Document\"
 """
         msg = email.message_from_string(m)
         param = msg.get_param('name')
-        self.failIf(isinstance(param, tuple))
+        self.failIf(isinstance(param, TupleType))
         self.assertEqual(param, "Frank's Document")
 
     def test_rfc2231_tick_attack_extended(self):
@@ -2923,7 +2923,7 @@ Content-Type: application/x-foo;
 """
         msg = email.message_from_string(m)
         param = msg.get_param('name')
-        self.failIf(isinstance(param, tuple))
+        self.failIf(isinstance(param, TupleType))
         self.assertEqual(param, "us-ascii'en-us'Frank's Document")
 
     def test_rfc2231_no_extended_values(self):
