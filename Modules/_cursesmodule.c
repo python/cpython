@@ -43,7 +43,7 @@ unsupported functions:
 	del_curterm delscreen dupwin inchnstr inchstr innstr keyok
 	mcprint mvaddchnstr mvaddchstr mvchgat mvcur mvinchnstr
 	mvinchstr mvinnstr mmvwaddchnstr mvwaddchstr mvwchgat
-	mvwgetnstr mvwinchnstr mvwinchstr mvwinnstr newterm
+	mvwinchnstr mvwinchstr mvwinnstr newterm
 	restartterm ripoffline scr_dump
 	scr_init scr_restore scr_set scrl set_curterm set_term setterm
 	tgetent tgetflag tgetnum tgetstr tgoto timeout tputs
@@ -819,14 +819,17 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
       return NULL;
     Py_BEGIN_ALLOW_THREADS
+#ifdef STRICT_SYSV_CURSES
+    rtn2 = wmove(self->win,y,x)==ERR ? ERR : wgetnstr(self->win, rtn, 1023);
+#else
     rtn2 = mvwgetnstr(self->win,y,x,rtn, 1023);
+#endif
     Py_END_ALLOW_THREADS
     break;
   case 3:
     if (!PyArg_ParseTuple(args,"iii;y,x,n", &y, &x, &n))
       return NULL;
 #ifdef STRICT_SYSV_CURSES
- /* Untested */
     Py_BEGIN_ALLOW_THREADS
     rtn2 = wmove(self->win,y,x)==ERR ? ERR :
       wgetnstr(self->win, rtn, MIN(n, 1023));
