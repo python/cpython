@@ -351,8 +351,8 @@ seterror(int iarg, const char *msg, int *levels, const char *fname,
 				      "argument %d", iarg);
 			i = 0;
 			p += strlen(p);
-			while (levels[i] > 0 && (int)(p-buf) < 220) {
-				PyOS_snprintf(p, sizeof(buf) - (buf - p),
+			while (levels[i] > 0 && i < 32 && (int)(p-buf) < 220) {
+				PyOS_snprintf(p, sizeof(buf) - (p - buf),
 					      ", item %d", levels[i]-1);
 				p += strlen(p);
 				i++;
@@ -439,6 +439,13 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 		char *msg;
 		PyObject *item;
 		item = PySequence_GetItem(arg, i);
+		if (item == NULL) {
+			PyErr_Clear();
+			levels[0] = i+1;
+			levels[1] = 0;
+			strncpy(msgbuf, "is not retrievable", bufsize);
+			return msgbuf;
+		}
 		msg = convertitem(item, &format, p_va, flags, levels+1, 
 				  msgbuf, bufsize, freelist);
 		/* PySequence_GetItem calls tp->sq_item, which INCREFs */
@@ -1509,6 +1516,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
 		else {
 			msg = skipitem(&format, p_va, flags);
 			if (msg) {
+				levels[0] = 0;
 				seterror(i+1, msg, levels, fname, message);
 				return cleanreturn(0, freelist);
 			}

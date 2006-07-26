@@ -294,6 +294,16 @@ test_L_code(PyObject *self)
 
 #endif	/* ifdef HAVE_LONG_LONG */
 
+/* Test tuple argument processing */
+static PyObject *
+getargs_tuple(PyObject *self, PyObject *args)
+{
+	int a, b, c;
+	if (!PyArg_ParseTuple(args, "i(ii)", &a, &b, &c))
+		return NULL;
+	return Py_BuildValue("iii", a, b, c);
+}
+
 /* Functions to call PyArg_ParseTuple with integer format codes,
    and return the result.
 */
@@ -707,6 +717,7 @@ static PyMethodDef TestMethods[] = {
 	{"test_null_strings",	(PyCFunction)test_null_strings,	 METH_NOARGS},
 	{"test_string_from_format", (PyCFunction)test_string_from_format, METH_NOARGS},
 
+	{"getargs_tuple",	getargs_tuple,			 METH_VARARGS},
 	{"getargs_b",		getargs_b,			 METH_VARARGS},
 	{"getargs_B",		getargs_B,			 METH_VARARGS},
 	{"getargs_H",		getargs_H,			 METH_VARARGS},
