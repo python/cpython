@@ -747,7 +747,18 @@ class Message:
         if isinstance(charset, tuple):
             # RFC 2231 encoded, so decode it, and it better end up as ascii.
             pcharset = charset[0] or 'us-ascii'
-            charset = unicode(charset[2], pcharset).encode('us-ascii')
+            try:
+                # LookupError will be raised if the charset isn't known to
+                # Python.  UnicodeError will be raised if the encoded text
+                # contains a character not in the charset.
+                charset = unicode(charset[2], pcharset).encode('us-ascii')
+            except (LookupError, UnicodeError):
+                charset = charset[2]
+        # charset character must be in us-ascii range
+        try:
+            charset = unicode(charset, 'us-ascii').encode('us-ascii')
+        except UnicodeError:
+            return failobj
         # RFC 2046, $4.1.2 says charsets are not case sensitive
         return charset.lower()
 
