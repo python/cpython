@@ -161,6 +161,10 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             make install >& build/$F
             update_status "Installing" "$F" $start
 
+            if [ ! -x $PYTHON ]; then
+                ln -s ${PYTHON}2.* $PYTHON
+            fi
+
             ## make and run basic tests
             F=make-test.out
             start=`current_time`
