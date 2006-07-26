@@ -27,7 +27,7 @@ try:
 except SystemExit, n:
     sys.exit(n)
 except:
-    t, v, tb = sys.exc_type, sys.exc_value, sys.exc_traceback
+    t, v, tb = sys.exc_info()
     print
     import cgi
     cgi.print_exception(t, v, tb)
