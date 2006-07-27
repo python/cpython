@@ -9,10 +9,11 @@
 The \module{binascii} module contains a number of methods to convert
 between binary and various \ASCII-encoded binary
 representations. Normally, you will not use these functions directly
-but use wrapper modules like \refmodule{uu}\refstmodindex{uu} or
-\refmodule{binhex}\refstmodindex{binhex} instead, this module solely
-exists because bit-manipulation of large amounts of data is slow in
-Python.
+but use wrapper modules like \refmodule{uu}\refstmodindex{uu},
+\refmodule{base64}\refstmodindex{base64}, or
+\refmodule{binhex}\refstmodindex{binhex} instead. The \module{binascii} module
+contains low-level functions written in C for greater speed
+that are used by the higher-level modules.
 
 The \module{binascii} module defines the following functions:
 
