@@ -121,6 +121,9 @@ Tests
   how long the test file should take to play.  Now accepts taking 2.93 secs
   (exact time) +/- 10% instead of the hard-coded 3.1 sec.
 
+- Patch #1529686: The standard ``test_defaultdict`` test didn't actually
+  run any tests when run via ``regrtest.py``.  Now it does.
+
 
 What's New in Python 2.5 beta 2?
 ================================
