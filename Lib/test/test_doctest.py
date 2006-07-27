@@ -419,7 +419,6 @@ methods, classmethods, staticmethods, properties, and nested classes.
 
     >>> finder = doctest.DocTestFinder()
     >>> tests = finder.find(SampleClass)
-    >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
      3  SampleClass
@@ -435,7 +434,6 @@ methods, classmethods, staticmethods, properties, and nested classes.
 New-style classes are also supported:
 
     >>> tests = finder.find(SampleNewStyleClass)
-    >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
      1  SampleNewStyleClass
@@ -475,7 +473,6 @@ functions, classes, and the `__test__` dictionary, if it exists:
     >>> # ignoring the objects since they weren't defined in m.
     >>> import test.test_doctest
     >>> tests = finder.find(m, module=test.test_doctest)
-    >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
      1  some_module
@@ -499,7 +496,6 @@ will only be generated for it once:
 
     >>> from test import doctest_aliases
     >>> tests = excl_empty_finder.find(doctest_aliases)
-    >>> tests.sort()
     >>> print len(tests)
     2
     >>> print tests[0].name
@@ -521,7 +517,6 @@ deprecated isprivate gimmick.
     >>> def namefilter(prefix, base):
     ...     return base.startswith('a_')
     >>> tests = doctest.DocTestFinder(_namefilter=namefilter).find(SampleClass)
-    >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
      3  SampleClass
@@ -538,7 +533,6 @@ displays.
 
     >>> tests = doctest.DocTestFinder(_namefilter=namefilter,
     ...                                exclude_empty=False).find(SampleClass)
-    >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
      3  SampleClass
@@ -582,7 +576,6 @@ DocTestFinder can be told not to look for tests in contained objects
 using the `recurse` flag:
 
     >>> tests = doctest.DocTestFinder(recurse=False).find(SampleClass)
-    >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
      3  SampleClass

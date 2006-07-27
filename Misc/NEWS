@@ -31,9 +31,9 @@ Core and builtins
 Extension Modules
 -----------------
 
-- Bug #1471938: Fix curses module build problem on Solaris 8; patch by 
+- Bug #1471938: Fix curses module build problem on Solaris 8; patch by
   Paul Eggert.
- 
+
 - Bug #1512695: cPickle.loads could crash if it was interrupted with
   a KeyboardInterrupt.
 
@@ -63,6 +63,12 @@ Extension Modules
 
 Library
 -------
+
+- Bug #1529297:  The rewrite of doctest for Python 2.4 unintentionally
+  lost that tests are sorted by name before being run.  This rarely
+  matters for well-written tests, but can create baffling symptoms if
+  side effects from one test to the next affect outcomes.  ``DocTestFinder``
+  has been changed to sort the list of tests it returns.
 
 - The email package has improved RFC 2231 support, specifically for
   recognizing the difference between encoded (name*0*=<blah>) and non-encoded
