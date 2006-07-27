@@ -216,7 +216,7 @@ A new module, \module{unicodedata}, provides an interface to Unicode
 character properties.  For example, \code{unicodedata.category(u'A')}
 returns the 2-character string 'Lu', the 'L' denoting it's a letter,
 and 'u' meaning that it's uppercase.
-\code{u.bidirectional(u'\e x0660')} returns 'AN', meaning that U+0660 is
+\code{unicodedata.bidirectional(u'\e u0660')} returns 'AN', meaning that U+0660 is
 an Arabic number.
 
 The \module{codecs} module contains functions to look up existing encodings
