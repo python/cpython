@@ -235,9 +235,7 @@ class TestSeqIterReversed(TestInvariantWithoutMutations):
         self.assertEqual(len(it), 0)
 
 
-
-if __name__ == "__main__":
-
+def test_main():
     unittests = [
         TestRepeat,
         TestXrange,
@@ -255,3 +253,7 @@ if __name__ == "__main__":
         TestSeqIterReversed,
     ]
     test_support.run_unittest(*unittests)
+
+if __name__ == "__main__":
+    test_main()
+
