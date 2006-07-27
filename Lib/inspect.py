@@ -122,7 +122,7 @@ else:
         getset descriptors are specialized descriptors defined in extension
         modules."""
         return False
-        
+
 def isfunction(object):
     """Return true if the object is a user-defined function.
 
