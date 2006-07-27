@@ -47,6 +47,12 @@ Core and builtins
 Library
 -------
 
+- Bug #1529297:  The rewrite of doctest for Python 2.4 unintentionally
+  lost that tests are sorted by name before being run.  This rarely
+  matters for well-written tests, but can create baffling symptoms if
+  side effects from one test to the next affect outcomes.  ``DocTestFinder``
+  has been changed to sort the list of tests it returns.
+
 - The distutils version has been changed to 2.5.0.
 
 - Bug #978833: Really close underlying socket in _socketobject.close.
