@@ -464,52 +464,21 @@ else:
         return _wstring_at(ptr, size)
 
 
-if _os.name == "nt": # COM stuff
+if _os.name in ("nt", "ce"): # COM stuff
     def DllGetClassObject(rclsid, riid, ppv):
-        # First ask ctypes.com.server than comtypes.server for the
-        # class object.
-
-        # trick py2exe by doing dynamic imports
-        result = -2147221231 # CLASS_E_CLASSNOTAVAILABLE
         try:
-            ctcom = __import__("ctypes.com.server", globals(), locals(), ['*'])
+            ccom = __import__("comtypes.server.inprocserver", globals(), locals(), ['*'])
         except ImportError:
-            pass
+            return -2147221231 # CLASS_E_CLASSNOTAVAILABLE
         else:
-            result = ctcom.DllGetClassObject(rclsid, riid, ppv)
-
-        if result == -2147221231: # CLASS_E_CLASSNOTAVAILABLE
-            try:
-                ccom = __import__("comtypes.server", globals(), locals(), ['*'])
-            except ImportError:
-                pass
-            else:
-                result = ccom.DllGetClassObject(rclsid, riid, ppv)
-
-        return result
+            return ccom.DllGetClassObject(rclsid, riid, ppv)
 
     def DllCanUnloadNow():
-        # First ask ctypes.com.server than comtypes.server if we can unload or not.
-        # trick py2exe by doing dynamic imports
-        result = 0 # S_OK
         try:
-            ctcom = __import__("ctypes.com.server", globals(), locals(), ['*'])
+            ccom = __import__("comtypes.server.inprocserver", globals(), locals(), ['*'])
         except ImportError:
-            pass
-        else:
-            result = ctcom.DllCanUnloadNow()
-            if result != 0: # != S_OK
-                return result
-
-        try:
-            ccom = __import__("comtypes.server", globals(), locals(), ['*'])
-        except ImportError:
-            return result
-        try:
-            return ccom.DllCanUnloadNow()
-        except AttributeError:
-            pass
-        return result
+            return 0 # S_OK
+        return ccom.DllCanUnloadNow()
 
 from ctypes._endian import BigEndianStructure, LittleEndianStructure
 
