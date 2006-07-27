@@ -276,7 +276,10 @@ def _ifconfig_getnode():
     import os
     for dir in ['', '/sbin/', '/usr/sbin']:
         try:
-            pipe = os.popen(os.path.join(dir, 'ifconfig'))
+            # LC_ALL to get English output, 2>/dev/null to
+            # prevent output on stderr
+            cmd = 'LC_ALL=C %s 2>/dev/null' % os.path.join(dir, 'ifconfig')
+            pipe = os.popen(cmd)
         except IOError:
             continue
         for line in pipe:
