@@ -18,7 +18,7 @@ this database is based on the \file{UnicodeData.txt} file version
 
 The module uses the same names and symbols as defined by the
 UnicodeData File Format 4.1.0 (see
-\url{http://www.unicode.org/Public/4.1-Update/UnicodeData-4.1.0.html}).  It
+\url{http://www.unicode.org/Public/4.1.0/ucd/UCD.html}).  It
 defines the following functions:
 
 \begin{funcdesc}{lookup}{name}
@@ -140,3 +140,21 @@ the Unicode database (such as IDNA).
 \versionadded{2.5}
 \end{datadesc}
 
+Examples:
+
+\begin{verbatim}
+>>> unicodedata.lookup('LEFT CURLY BRACKET')
+u'{'
+>>> unicodedata.name(u'/')
+'SOLIDUS'
+>>> unicodedata.decimal(u'9')
+9
+>>> unicodedata.decimal(u'a')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+ValueError: not a decimal
+>>> unicodedata.category(u'A')  # 'L'etter, 'u'ppercase
+'Lu'   
+>>> unicodedata.bidirectional(u'\u0660') # 'A'rabic, 'N'umber
+'AN'
+\end{verbatim}
