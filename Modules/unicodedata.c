@@ -395,6 +395,7 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
     PyUnicodeObject *v;
     char decomp[256];
     int code, index, count, i;
+    unsigned int prefix_index;
 
     if (!PyArg_ParseTuple(args, "O!:decomposition",
 			  &PyUnicode_Type, &v))
@@ -428,9 +429,15 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
     /* XXX: could allocate the PyString up front instead
        (strlen(prefix) + 5 * count + 1 bytes) */
 
+    /* Based on how index is calculated above and decomp_data is generated
+       from Tools/unicode/makeunicodedata.py, it should not be possible
+       to overflow decomp_prefix. */
+    prefix_index = decomp_data[index] & 255;
+    assert(prefix_index < (sizeof(decomp_prefix)/sizeof(*decomp_prefix)));
+
     /* copy prefix */
-    i = strlen(decomp_prefix[decomp_data[index] & 255]);
-    memcpy(decomp, decomp_prefix[decomp_data[index] & 255], i);
+    i = strlen(decomp_prefix[prefix_index]);
+    memcpy(decomp, decomp_prefix[prefix_index], i);
 
     while (count-- > 0) {
         if (i)
