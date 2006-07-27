@@ -11,6 +11,7 @@ def importable(name):
 
 class TestUUID(TestCase):
     last_node = None
+    source2node = {}
 
     def test_UUID(self):
         equal = self.assertEqual
@@ -266,7 +267,7 @@ class TestUUID(TestCase):
         badtype(lambda: setattr(u, 'fields', f))
         badtype(lambda: setattr(u, 'int', i))
 
-    def check_node(self, node, source=''):
+    def check_node(self, node, source):
         individual_group_bit = (node >> 40L) & 1
         universal_local_bit = (node >> 40L) & 2
         message = "%012x doesn't look like a real MAC address" % node
@@ -275,13 +276,15 @@ class TestUUID(TestCase):
         self.assertNotEqual(node, 0, message)
         self.assertNotEqual(node, 0xffffffffffffL, message)
         self.assert_(0 <= node, message)
-        self.assert_(node < 1<<48L, message)
+        self.assert_(node < (1L << 48), message)
 
-        import sys
-        if source:
-            sys.stderr.write('(%s: %012x)' % (source, node))
+        TestUUID.source2node[source] = node
         if TestUUID.last_node:
-            self.assertEqual(TestUUID.last_node, node, 'inconsistent node IDs')
+            if TestUUID.last_node != node:
+                msg = "different sources disagree on node:\n"
+                for s, n in TestUUID.source2node.iteritems():
+                    msg += "    from source %r, node was %012x\n" % (s, n)
+                self.fail(msg)
         else:
             TestUUID.last_node = node
 
@@ -319,10 +322,10 @@ class TestUUID(TestCase):
             self.check_node(uuid._windll_getnode(), 'windll')
 
     def test_getnode(self):
-        self.check_node(uuid.getnode())
+        self.check_node(uuid.getnode(), "getnode1")
 
         # Test it again to ensure consistency.
-        self.check_node(uuid.getnode())
+        self.check_node(uuid.getnode(), "getnode2")
 
     def test_uuid1(self):
         equal = self.assertEqual
