@@ -231,7 +231,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         to the prompt.
 
         Checks whether this line is typed at the normal prompt or in
-        a breakpoint command list definition. 
+        a breakpoint command list definition.
         """
         if not self.commands_defining:
             return cmd.Cmd.onecmd(self, line)
