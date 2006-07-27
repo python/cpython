@@ -230,7 +230,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """Interpret the argument as though it had been typed in response
         to the prompt.
 
-        Checks wether  this line is typed in the normal prompt or in a breakpoint command list definition
+        Checks whether this line is typed at the normal prompt or in
+        a breakpoint command list definition. 
         """
         if not self.commands_defining:
             return cmd.Cmd.onecmd(self, line)
