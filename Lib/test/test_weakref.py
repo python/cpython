@@ -713,8 +713,7 @@ class MappingTestCase(TestBase):
         #
         dict, objects = self.make_weak_valued_dict()
         for o in objects:
-            self.assert_(weakref.getweakrefcount(o) == 1,
-                         "wrong number of weak references to %r!" % o)
+            self.assertEqual(weakref.getweakrefcount(o), 1)
             self.assert_(o is dict[o.arg],
                          "wrong object returned by weak dict!")
         items1 = dict.items()

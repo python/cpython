@@ -128,8 +128,6 @@ PyType_stgdict(PyObject *obj)
 	if (!PyType_Check(obj))
 		return NULL;
 	type = (PyTypeObject *)obj;
-	if (!PyType_HasFeature(type, Py_TPFLAGS_HAVE_CLASS))
-		return NULL;
 	if (!type->tp_dict || !StgDict_Check(type->tp_dict))
 		return NULL;
 	return (StgDictObject *)type->tp_dict;

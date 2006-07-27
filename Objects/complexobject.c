@@ -336,43 +336,90 @@ complex_hash(PyComplexObject *v)
 	return combined;
 }
 
+/* This macro may return! */
+#define TO_COMPLEX(obj, c) \
+	if (PyComplex_Check(obj)) \
+		c = ((PyComplexObject *)(obj))->cval; \
+	else if (to_complex(&(obj), &(c)) < 0) \
+		return (obj)
+
+static int
+to_complex(PyObject **pobj, Py_complex *pc)
+{
+    PyObject *obj = *pobj;
+
+    pc->real = pc->imag = 0.0;
+    if (PyInt_Check(obj)) {
+        pc->real = PyInt_AS_LONG(obj);
+        return 0;
+    }
+    if (PyLong_Check(obj)) {
+        pc->real = PyLong_AsDouble(obj);
+        if (pc->real == -1.0 && PyErr_Occurred()) {
+            *pobj = NULL;
+            return -1;
+        }
+        return 0;
+    }
+    if (PyFloat_Check(obj)) {
+        pc->real = PyFloat_AsDouble(obj);
+        return 0;
+    }
+    Py_INCREF(Py_NotImplemented);
+    *pobj = Py_NotImplemented;
+    return -1;
+}
+		
+
 static PyObject *
-complex_add(PyComplexObject *v, PyComplexObject *w)
+complex_add(PyObject *v, PyObject *w)
 {
 	Py_complex result;
+	Py_complex a, b;
+        TO_COMPLEX(v, a);
+        TO_COMPLEX(w, b);
 	PyFPE_START_PROTECT("complex_add", return 0)
-	result = c_sum(v->cval,w->cval);
+	result = c_sum(a, b);
 	PyFPE_END_PROTECT(result)
 	return PyComplex_FromCComplex(result);
 }
 
 static PyObject *
-complex_sub(PyComplexObject *v, PyComplexObject *w)
+complex_sub(PyObject *v, PyObject *w)
 {
 	Py_complex result;
+	Py_complex a, b;
+        TO_COMPLEX(v, a);
+        TO_COMPLEX(w, b);
 	PyFPE_START_PROTECT("complex_sub", return 0)
-	result = c_diff(v->cval,w->cval);
+	result = c_diff(a, b);
 	PyFPE_END_PROTECT(result)
 	return PyComplex_FromCComplex(result);
 }
 
 static PyObject *
-complex_mul(PyComplexObject *v, PyComplexObject *w)
+complex_mul(PyObject *v, PyObject *w)
 {
 	Py_complex result;
+	Py_complex a, b;
+        TO_COMPLEX(v, a);
+        TO_COMPLEX(w, b);
 	PyFPE_START_PROTECT("complex_mul", return 0)
-	result = c_prod(v->cval,w->cval);
+	result = c_prod(a, b);
 	PyFPE_END_PROTECT(result)
 	return PyComplex_FromCComplex(result);
 }
 
 static PyObject *
-complex_div(PyComplexObject *v, PyComplexObject *w)
+complex_div(PyObject *v, PyObject *w)
 {
 	Py_complex quot;
+	Py_complex a, b;
+        TO_COMPLEX(v, a);
+        TO_COMPLEX(w, b);
 	PyFPE_START_PROTECT("complex_div", return 0)
 	errno = 0;
-	quot = c_quot(v->cval,w->cval);
+	quot = c_quot(a, b);
 	PyFPE_END_PROTECT(quot)
 	if (errno == EDOM) {
 		PyErr_SetString(PyExc_ZeroDivisionError, "complex division");
@@ -382,47 +429,53 @@ complex_div(PyComplexObject *v, PyComplexObject *w)
 }
 
 static PyObject *
-complex_remainder(PyComplexObject *v, PyComplexObject *w)
+complex_remainder(PyObject *v, PyObject *w)
 {
         Py_complex div, mod;
+	Py_complex a, b;
+        TO_COMPLEX(v, a);
+        TO_COMPLEX(w, b);
 
 	if (PyErr_Warn(PyExc_DeprecationWarning,
 		       "complex divmod(), // and % are deprecated") < 0)
 		return NULL;
 
 	errno = 0;
-	div = c_quot(v->cval,w->cval); /* The raw divisor value. */
+	div = c_quot(a, b); /* The raw divisor value. */
 	if (errno == EDOM) {
 		PyErr_SetString(PyExc_ZeroDivisionError, "complex remainder");
 		return NULL;
 	}
 	div.real = floor(div.real); /* Use the floor of the real part. */
 	div.imag = 0.0;
-	mod = c_diff(v->cval, c_prod(w->cval, div));
+	mod = c_diff(a, c_prod(b, div));
 
 	return PyComplex_FromCComplex(mod);
 }
 
 
 static PyObject *
-complex_divmod(PyComplexObject *v, PyComplexObject *w)
+complex_divmod(PyObject *v, PyObject *w)
 {
         Py_complex div, mod;
 	PyObject *d, *m, *z;
+	Py_complex a, b;
+        TO_COMPLEX(v, a);
+        TO_COMPLEX(w, b);
 
 	if (PyErr_Warn(PyExc_DeprecationWarning,
 		       "complex divmod(), // and % are deprecated") < 0)
 		return NULL;
 
 	errno = 0;
-	div = c_quot(v->cval,w->cval); /* The raw divisor value. */
+	div = c_quot(a, b); /* The raw divisor value. */
 	if (errno == EDOM) {
 		PyErr_SetString(PyExc_ZeroDivisionError, "complex divmod()");
 		return NULL;
 	}
 	div.real = floor(div.real); /* Use the floor of the real part. */
 	div.imag = 0.0;
-	mod = c_diff(v->cval, c_prod(w->cval, div));
+	mod = c_diff(a, c_prod(b, div));
 	d = PyComplex_FromCComplex(div);
 	m = PyComplex_FromCComplex(mod);
 	z = PyTuple_Pack(2, d, m);
@@ -432,24 +485,27 @@ complex_divmod(PyComplexObject *v, PyComplexObject *w)
 }
 
 static PyObject *
-complex_pow(PyComplexObject *v, PyObject *w, PyComplexObject *z)
+complex_pow(PyObject *v, PyObject *w, PyObject *z)
 {
 	Py_complex p;
 	Py_complex exponent;
 	long int_exponent;
+	Py_complex a, b;
+        TO_COMPLEX(v, a);
+        TO_COMPLEX(w, b);
 
- 	if ((PyObject *)z!=Py_None) {
+ 	if (z != Py_None) {
 		PyErr_SetString(PyExc_ValueError, "complex modulo");
 		return NULL;
 	}
 	PyFPE_START_PROTECT("complex_pow", return 0)
 	errno = 0;
-	exponent = ((PyComplexObject*)w)->cval;
+	exponent = b;
 	int_exponent = (long)exponent.real;
 	if (exponent.imag == 0. && exponent.real == int_exponent)
-		p = c_powi(v->cval,int_exponent);
+		p = c_powi(a, int_exponent);
 	else
-		p = c_pow(v->cval,exponent);
+		p = c_pow(a, exponent);
 
 	PyFPE_END_PROTECT(p)
 	Py_ADJUST_ERANGE2(p.real, p.imag);
@@ -467,7 +523,7 @@ complex_pow(PyComplexObject *v, PyObject *w, PyComplexObject *z)
 }
 
 static PyObject *
-complex_int_div(PyComplexObject *v, PyComplexObject *w)
+complex_int_div(PyObject *v, PyObject *w)
 {
 	PyObject *t, *r;
 	

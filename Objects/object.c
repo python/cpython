@@ -546,8 +546,7 @@ adjust_tp_compare(int c)
 
 
 /* Macro to get the tp_richcompare field of a type if defined */
-#define RICHCOMPARE(t) (PyType_HasFeature((t), Py_TPFLAGS_HAVE_RICHCOMPARE) \
-                         ? (t)->tp_richcompare : NULL)
+#define RICHCOMPARE(t) ((t)->tp_richcompare)
 
 /* Map rich comparison operators to their swapped version, e.g. LT --> GT */
 int _Py_SwappedOp[] = {Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE};
@@ -1224,8 +1223,6 @@ _PyObject_GetDictPtr(PyObject *obj)
 	Py_ssize_t dictoffset;
 	PyTypeObject *tp = obj->ob_type;
 
-	if (!(tp->tp_flags & Py_TPFLAGS_HAVE_CLASS))
-		return NULL;
 	dictoffset = tp->tp_dictoffset;
 	if (dictoffset == 0)
 		return NULL;
@@ -1318,8 +1315,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 	Py_XINCREF(descr);
 
 	f = NULL;
-	if (descr != NULL &&
-	    PyType_HasFeature(descr->ob_type, Py_TPFLAGS_HAVE_CLASS)) {
+	if (descr != NULL) {
 		f = descr->ob_type->tp_descr_get;
 		if (f != NULL && PyDescr_IsData(descr)) {
 			res = f(descr, obj, (PyObject *)obj->ob_type);
@@ -1414,8 +1410,7 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 
 	descr = _PyType_Lookup(tp, name);
 	f = NULL;
-	if (descr != NULL &&
-	    PyType_HasFeature(descr->ob_type, Py_TPFLAGS_HAVE_CLASS)) {
+	if (descr != NULL) {
 		f = descr->ob_type->tp_descr_set;
 		if (f != NULL && PyDescr_IsData(descr)) {
 			res = f(descr, obj, value);
@@ -1518,14 +1513,6 @@ PyNumber_CoerceEx(PyObject **pv, PyObject **pw)
 	register PyObject *w = *pw;
 	int res;
 
-	/* Shortcut only for old-style types */
-	if (v->ob_type == w->ob_type &&
-	    !PyType_HasFeature(v->ob_type, Py_TPFLAGS_CHECKTYPES))
-	{
-		Py_INCREF(v);
-		Py_INCREF(w);
-		return 0;
-	}
 	if (v->ob_type->tp_as_number && v->ob_type->tp_as_number->nb_coerce) {
 		res = (*v->ob_type->tp_as_number->nb_coerce)(pv, pw);
 		if (res <= 0)

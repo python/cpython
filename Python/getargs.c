@@ -1162,9 +1162,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			return converterr(
 				"invalid use of 't' format character", 
 				arg, msgbuf, bufsize);
-		if (!PyType_HasFeature(arg->ob_type,
-				       Py_TPFLAGS_HAVE_GETCHARBUFFER) ||
-		    pb == NULL || pb->bf_getcharbuffer == NULL ||
+		if (pb == NULL || pb->bf_getcharbuffer == NULL ||
 		    pb->bf_getsegcount == NULL)
 			return converterr(
 				"string or read-only character buffer",

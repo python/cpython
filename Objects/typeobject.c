@@ -433,8 +433,7 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		if (!PyType_IsSubtype(obj->ob_type, type))
 			return obj;
 		type = obj->ob_type;
-		if (PyType_HasFeature(type, Py_TPFLAGS_HAVE_CLASS) &&
-		    type->tp_init != NULL &&
+		if (type->tp_init != NULL &&
 		    type->tp_init(obj, args, kwds) < 0) {
 			Py_DECREF(obj);
 			obj = NULL;
@@ -812,9 +811,6 @@ int
 PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
 {
 	PyObject *mro;
-
-	if (!(a->tp_flags & Py_TPFLAGS_HAVE_CLASS))
-		return b == a || b == &PyBaseObject_Type;
 
 	mro = a->tp_mro;
 	if (mro != NULL) {
@@ -1843,12 +1839,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		Py_TPFLAGS_BASETYPE;
 	if (base->tp_flags & Py_TPFLAGS_HAVE_GC)
 		type->tp_flags |= Py_TPFLAGS_HAVE_GC;
-
-	/* It's a new-style number unless it specifically inherits any
-	   old-style numeric behavior */
-	if ((base->tp_flags & Py_TPFLAGS_CHECKTYPES) ||
-	    (base->tp_as_number == NULL))
-		type->tp_flags |= Py_TPFLAGS_CHECKTYPES;
 
 	/* Initialize essential fields */
 	type->tp_as_number = &et->as_number;
@@ -2881,39 +2871,11 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 {
 	Py_ssize_t oldsize, newsize;
 
-	/* Special flag magic */
-	if (!type->tp_as_buffer && base->tp_as_buffer) {
-		type->tp_flags &= ~Py_TPFLAGS_HAVE_GETCHARBUFFER;
-		type->tp_flags |=
-			base->tp_flags & Py_TPFLAGS_HAVE_GETCHARBUFFER;
-	}
-	if (!type->tp_as_sequence && base->tp_as_sequence) {
-		type->tp_flags &= ~Py_TPFLAGS_HAVE_SEQUENCE_IN;
-		type->tp_flags |= base->tp_flags & Py_TPFLAGS_HAVE_SEQUENCE_IN;
-	}
-	if ((type->tp_flags & Py_TPFLAGS_HAVE_INPLACEOPS) !=
-	    (base->tp_flags & Py_TPFLAGS_HAVE_INPLACEOPS)) {
-		if ((!type->tp_as_number && base->tp_as_number) ||
-		    (!type->tp_as_sequence && base->tp_as_sequence)) {
-			type->tp_flags &= ~Py_TPFLAGS_HAVE_INPLACEOPS;
-			if (!type->tp_as_number && !type->tp_as_sequence) {
-				type->tp_flags |= base->tp_flags &
-					Py_TPFLAGS_HAVE_INPLACEOPS;
-			}
-		}
-		/* Wow */
-	}
-	if (!type->tp_as_number && base->tp_as_number) {
-		type->tp_flags &= ~Py_TPFLAGS_CHECKTYPES;
-		type->tp_flags |= base->tp_flags & Py_TPFLAGS_CHECKTYPES;
-	}
-
 	/* Copying basicsize is connected to the GC flags */
 	oldsize = base->tp_basicsize;
 	newsize = type->tp_basicsize ? type->tp_basicsize : oldsize;
 	if (!(type->tp_flags & Py_TPFLAGS_HAVE_GC) &&
 	    (base->tp_flags & Py_TPFLAGS_HAVE_GC) &&
-	    (type->tp_flags & Py_TPFLAGS_HAVE_RICHCOMPARE/*GC slots exist*/) &&
 	    (!type->tp_traverse && !type->tp_clear)) {
 		type->tp_flags |= Py_TPFLAGS_HAVE_GC;
 		if (type->tp_traverse == NULL)
@@ -2921,7 +2883,7 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 		if (type->tp_clear == NULL)
 			type->tp_clear = base->tp_clear;
 	}
-	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_CLASS) {
+	{
 		/* The condition below could use some explanation.
 		   It appears that tp_new is not inherited for static types
 		   whose base class is 'object'; this seems to be a precaution
@@ -2947,12 +2909,8 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 	if (type->SLOT == 0) type->SLOT = base->SLOT
 
 	COPYVAL(tp_itemsize);
-	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_WEAKREFS) {
-		COPYVAL(tp_weaklistoffset);
-	}
-	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_CLASS) {
-		COPYVAL(tp_dictoffset);
-	}
+	COPYVAL(tp_weaklistoffset);
+	COPYVAL(tp_dictoffset);
 }
 
 static void
@@ -3022,10 +2980,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYNUM(nb_floor_divide);
 		COPYNUM(nb_inplace_true_divide);
 		COPYNUM(nb_inplace_floor_divide);
-		/* XXX(nnorwitz): we don't need to check flags do we? */
-		if (base->tp_flags & Py_TPFLAGS_HAVE_INDEX) {
-			COPYNUM(nb_index);
-		}
+		COPYNUM(nb_index);
 	}
 
 	if (type->tp_as_sequence != NULL && base->tp_as_sequence != NULL) {
@@ -3080,7 +3035,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 	/* tp_hash see tp_richcompare */
 	COPYSLOT(tp_call);
 	COPYSLOT(tp_str);
-	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_RICHCOMPARE) {
+	{
 		if (type->tp_compare == NULL &&
 		    type->tp_richcompare == NULL &&
 		    type->tp_hash == NULL)
@@ -3090,14 +3045,11 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 			type->tp_hash = base->tp_hash;
 		}
 	}
-	else {
-		COPYSLOT(tp_compare);
-	}
-	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_ITER) {
+	{
 		COPYSLOT(tp_iter);
 		COPYSLOT(tp_iternext);
 	}
-	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_CLASS) {
+	{
 		COPYSLOT(tp_descr_get);
 		COPYSLOT(tp_descr_set);
 		COPYSLOT(tp_dictoffset);
@@ -3419,11 +3371,6 @@ wrap_binaryfunc_l(PyObject *self, PyObject *args, void *wrapped)
 	if (!check_num_args(args, 1))
 		return NULL;
 	other = PyTuple_GET_ITEM(args, 0);
-	if (!(self->ob_type->tp_flags & Py_TPFLAGS_CHECKTYPES) &&
-	    !PyType_IsSubtype(other->ob_type, self->ob_type)) {
-		Py_INCREF(Py_NotImplemented);
-		return Py_NotImplemented;
-	}
 	return (*func)(self, other);
 }
 
@@ -3436,8 +3383,7 @@ wrap_binaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
 	if (!check_num_args(args, 1))
 		return NULL;
 	other = PyTuple_GET_ITEM(args, 0);
-	if (!(self->ob_type->tp_flags & Py_TPFLAGS_CHECKTYPES) &&
-	    !PyType_IsSubtype(other->ob_type, self->ob_type)) {
+	if (!PyType_IsSubtype(other->ob_type, self->ob_type)) {
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}

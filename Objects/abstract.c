@@ -5,11 +5,6 @@
 #include "structmember.h" /* we need the offsetof() macro from there */
 #include "longintrepr.h"
 
-#define NEW_STYLE_NUMBER(o) PyType_HasFeature((o)->ob_type, \
-				Py_TPFLAGS_CHECKTYPES)
-
-#define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
-
 
 /* Shorthands to return certain errors */
 
@@ -123,7 +118,7 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 
 	if (o->ob_type->tp_as_sequence) {
 		PyNumberMethods *nb = key->ob_type->tp_as_number;
-		if (nb != NULL && HASINDEX(key) && nb->nb_index != NULL) {
+		if (nb != NULL && nb->nb_index != NULL) {
 			Py_ssize_t key_value = nb->nb_index(key);
 			if (key_value == -1 && PyErr_Occurred())
 				return NULL;
@@ -151,7 +146,7 @@ PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
 
 	if (o->ob_type->tp_as_sequence) {
 		PyNumberMethods *nb = key->ob_type->tp_as_number;
-		if (nb != NULL && HASINDEX(key) && nb->nb_index != NULL) {
+		if (nb != NULL && nb->nb_index != NULL) {
 			Py_ssize_t key_value = nb->nb_index(key);
 			if (key_value == -1 && PyErr_Occurred())
 				return -1;
@@ -182,7 +177,7 @@ PyObject_DelItem(PyObject *o, PyObject *key)
 
 	if (o->ob_type->tp_as_sequence) {
 		PyNumberMethods *nb = key->ob_type->tp_as_number;
-		if (nb != NULL && HASINDEX(key) && nb->nb_index != NULL) {
+		if (nb != NULL && nb->nb_index != NULL) {
 			Py_ssize_t key_value = nb->nb_index(key);
 			if (key_value == -1 && PyErr_Occurred())
 				return -1;
@@ -378,10 +373,10 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
 	binaryfunc slotv = NULL;
 	binaryfunc slotw = NULL;
 
-	if (v->ob_type->tp_as_number != NULL && NEW_STYLE_NUMBER(v))
+	if (v->ob_type->tp_as_number != NULL)
 		slotv = NB_BINOP(v->ob_type->tp_as_number, op_slot);
 	if (w->ob_type != v->ob_type &&
-	    w->ob_type->tp_as_number != NULL && NEW_STYLE_NUMBER(w)) {
+	    w->ob_type->tp_as_number != NULL) {
 		slotw = NB_BINOP(w->ob_type->tp_as_number, op_slot);
 		if (slotw == slotv)
 			slotw = NULL;
@@ -404,28 +399,6 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
 		if (x != Py_NotImplemented)
 			return x;
 		Py_DECREF(x); /* can't do it */
-	}
-	if (!NEW_STYLE_NUMBER(v) || !NEW_STYLE_NUMBER(w)) {
-		int err = PyNumber_CoerceEx(&v, &w);
-		if (err < 0) {
-			return NULL;
-		}
-		if (err == 0) {
-			PyNumberMethods *mv = v->ob_type->tp_as_number;
-			if (mv) {
-				binaryfunc slot;
-				slot = NB_BINOP(mv, op_slot);
-				if (slot) {
-					x = slot(v, w);
-					Py_DECREF(v);
-					Py_DECREF(w);
-					return x;
-				}
-			}
-			/* CoerceEx incremented the reference counts */
-			Py_DECREF(v);
-			Py_DECREF(w);
-		}
 	}
 	Py_INCREF(Py_NotImplemented);
 	return Py_NotImplemented;
@@ -497,10 +470,10 @@ ternary_op(PyObject *v,
 
 	mv = v->ob_type->tp_as_number;
 	mw = w->ob_type->tp_as_number;
-	if (mv != NULL && NEW_STYLE_NUMBER(v))
+	if (mv != NULL)
 		slotv = NB_TERNOP(mv, op_slot);
 	if (w->ob_type != v->ob_type &&
-	    mw != NULL && NEW_STYLE_NUMBER(w)) {
+	    mw != NULL) {
 		slotw = NB_TERNOP(mw, op_slot);
 		if (slotw == slotv)
 			slotw = NULL;
@@ -525,7 +498,7 @@ ternary_op(PyObject *v,
 		Py_DECREF(x); /* can't do it */
 	}
 	mz = z->ob_type->tp_as_number;
-	if (mz != NULL && NEW_STYLE_NUMBER(z)) {
+	if (mz != NULL) {
 		slotz = NB_TERNOP(mz, op_slot);
 		if (slotz == slotv || slotz == slotw)
 			slotz = NULL;
@@ -535,66 +508,6 @@ ternary_op(PyObject *v,
 				return x;
 			Py_DECREF(x); /* can't do it */
 		}
-	}
-
-	if (!NEW_STYLE_NUMBER(v) || !NEW_STYLE_NUMBER(w) ||
-			(z != Py_None && !NEW_STYLE_NUMBER(z))) {
-		/* we have an old style operand, coerce */
-		PyObject *v1, *z1, *w2, *z2;
-		int c;
-
-		c = PyNumber_Coerce(&v, &w);
-		if (c != 0)
-			goto error3;
-
-		/* Special case: if the third argument is None, it is
-		   treated as absent argument and not coerced. */
-		if (z == Py_None) {
-			if (v->ob_type->tp_as_number) {
-				slotz = NB_TERNOP(v->ob_type->tp_as_number,
-						  op_slot);
-				if (slotz)
-					x = slotz(v, w, z);
-				else
-					c = -1;
-			}
-			else
-				c = -1;
-			goto error2;
-		}
-		v1 = v;
-		z1 = z;
-		c = PyNumber_Coerce(&v1, &z1);
-		if (c != 0)
-			goto error2;
-		w2 = w;
-		z2 = z1;
-		c = PyNumber_Coerce(&w2, &z2);
-		if (c != 0)
-			goto error1;
-
-		if (v1->ob_type->tp_as_number != NULL) {
-			slotv = NB_TERNOP(v1->ob_type->tp_as_number,
-					  op_slot);
-			if (slotv)
-				x = slotv(v1, w2, z2);
-			else
-				c = -1;
-		}
-		else
-			c = -1;
-
-		Py_DECREF(w2);
-		Py_DECREF(z2);
-	error1:
-		Py_DECREF(v1);
-		Py_DECREF(z1);
-	error2:
-		Py_DECREF(v);
-		Py_DECREF(w);
-	error3:
-		if (c >= 0)
-			return x;
 	}
 
 	if (z == Py_None)
@@ -649,7 +562,7 @@ sequence_repeat(ssizeargfunc repeatfunc, PyObject *seq, PyObject *n)
 {
 	Py_ssize_t count;
 	PyNumberMethods *nb = n->ob_type->tp_as_number;
-	if (nb != NULL && HASINDEX(n) && nb->nb_index != NULL) {
+	if (nb != NULL && nb->nb_index != NULL) {
 		count = nb->nb_index(n);
 		if (count == -1 && PyErr_Occurred())
 			return NULL;
@@ -722,14 +635,11 @@ PyNumber_Power(PyObject *v, PyObject *w, PyObject *z)
 
    */
 
-#define HASINPLACE(t) \
-	PyType_HasFeature((t)->ob_type, Py_TPFLAGS_HAVE_INPLACEOPS)
-
 static PyObject *
 binary_iop1(PyObject *v, PyObject *w, const int iop_slot, const int op_slot)
 {
 	PyNumberMethods *mv = v->ob_type->tp_as_number;
-	if (mv != NULL && HASINPLACE(v)) {
+	if (mv != NULL) {
 		binaryfunc slot = NB_BINOP(mv, iop_slot);
 		if (slot) {
 			PyObject *x = (slot)(v, w);
@@ -793,8 +703,7 @@ PyNumber_InPlaceAdd(PyObject *v, PyObject *w)
 		Py_DECREF(result);
 		if (m != NULL) {
 			binaryfunc f = NULL;
-			if (HASINPLACE(v))
-				f = m->sq_inplace_concat;
+                        f = m->sq_inplace_concat;
 			if (f == NULL)
 				f = m->sq_concat;
 			if (f != NULL)
@@ -816,8 +725,7 @@ PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
 		PySequenceMethods *mw = w->ob_type->tp_as_sequence;
 		Py_DECREF(result);
 		if (mv != NULL) {
-			if (HASINPLACE(v))
-				f = mv->sq_inplace_repeat;
+			f = mv->sq_inplace_repeat;
 			if (f == NULL)
 				f = mv->sq_repeat;
 			if (f != NULL)
@@ -845,7 +753,7 @@ PyNumber_InPlaceRemainder(PyObject *v, PyObject *w)
 PyObject *
 PyNumber_InPlacePower(PyObject *v, PyObject *w, PyObject *z)
 {
-	if (HASINPLACE(v) && v->ob_type->tp_as_number &&
+	if (v->ob_type->tp_as_number &&
 	    v->ob_type->tp_as_number->nb_inplace_power != NULL) {
 		return ternary_op(v, w, z, NB_SLOT(nb_inplace_power), "**=");
 	}
@@ -938,7 +846,7 @@ PyNumber_Index(PyObject *item)
 {
 	Py_ssize_t value = -1;
 	PyNumberMethods *nb = item->ob_type->tp_as_number;
-	if (nb != NULL && HASINDEX(item) && nb->nb_index != NULL) {
+	if (nb != NULL && nb->nb_index != NULL) {
 		value = nb->nb_index(item);
 	}
 	else {
@@ -1180,7 +1088,7 @@ PySequence_InPlaceConcat(PyObject *s, PyObject *o)
 		return null_error();
 
 	m = s->ob_type->tp_as_sequence;
-	if (m && HASINPLACE(s) && m->sq_inplace_concat)
+	if (m && m->sq_inplace_concat)
 		return m->sq_inplace_concat(s, o);
 	if (m && m->sq_concat)
 		return m->sq_concat(s, o);
@@ -1204,7 +1112,7 @@ PySequence_InPlaceRepeat(PyObject *o, Py_ssize_t count)
 		return null_error();
 
 	m = o->ob_type->tp_as_sequence;
-	if (m && HASINPLACE(o) && m->sq_inplace_repeat)
+	if (m && m->sq_inplace_repeat)
 		return m->sq_inplace_repeat(o, count);
 	if (m && m->sq_repeat)
 		return m->sq_repeat(o, count);
@@ -1646,11 +1554,9 @@ int
 PySequence_Contains(PyObject *seq, PyObject *ob)
 {
 	Py_ssize_t result;
-	if (PyType_HasFeature(seq->ob_type, Py_TPFLAGS_HAVE_SEQUENCE_IN)) {
-		PySequenceMethods *sqm = seq->ob_type->tp_as_sequence;
-	        if (sqm != NULL && sqm->sq_contains != NULL)
-			return (*sqm->sq_contains)(seq, ob);
-	}
+	PySequenceMethods *sqm = seq->ob_type->tp_as_sequence;
+        if (sqm != NULL && sqm->sq_contains != NULL)
+		return (*sqm->sq_contains)(seq, ob);
 	result = _PySequence_IterSearch(seq, ob, PY_ITERSEARCH_CONTAINS);
 	return Py_SAFE_DOWNCAST(result, Py_ssize_t, int);
 }
@@ -2260,8 +2166,7 @@ PyObject_GetIter(PyObject *o)
 {
 	PyTypeObject *t = o->ob_type;
 	getiterfunc f = NULL;
-	if (PyType_HasFeature(t, Py_TPFLAGS_HAVE_ITER))
-		f = t->tp_iter;
+	f = t->tp_iter;
 	if (f == NULL) {
 		if (PySequence_Check(o))
 			return PySeqIter_New(o);

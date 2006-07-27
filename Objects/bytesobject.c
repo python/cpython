@@ -743,8 +743,9 @@ bytes_join(PyObject *cls, PyObject *it)
 	if (!PyBytes_Check(obj)) {
 	    PyErr_Format(PyExc_TypeError,
 			 "can only join an iterable of bytes "
-			 "(item %d has type '%.100s')",
-			 i, obj->ob_type->tp_name);
+			 "(item %ld has type '%.100s')",
+                         /* XXX %ld isn't right on Win64 */
+			 (long)i, obj->ob_type->tp_name);
 	    goto error;
 	}
 	totalsize += PyBytes_GET_SIZE(obj);
@@ -838,7 +839,7 @@ PyTypeObject PyBytes_Type = {
     PyObject_GenericGetAttr,            /* tp_getattro */
     0,                                  /* tp_setattro */
     &bytes_as_buffer,                   /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES, /* tp_flags */ 
+    Py_TPFLAGS_DEFAULT,			/* tp_flags */ 
                                         /* bytes is 'final' or 'sealed' */
     bytes_doc,                          /* tp_doc */
     0,                                  /* tp_traverse */

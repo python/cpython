@@ -1570,13 +1570,11 @@ array_repr(arrayobject *a)
 	return s;
 }
 
-#define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
-
 static PyObject*
 array_subscr(arrayobject* self, PyObject* item)
 {
 	PyNumberMethods *nb = item->ob_type->tp_as_number;
-	if (nb != NULL && HASINDEX(item) && nb->nb_index != NULL) {
+	if (nb != NULL && nb->nb_index != NULL) {
 		Py_ssize_t i = nb->nb_index(item);
 		if (i==-1 && PyErr_Occurred()) {
 			return NULL;
@@ -1626,7 +1624,7 @@ static int
 array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
 {
 	PyNumberMethods *nb = item->ob_type->tp_as_number;
-	if (nb != NULL && HASINDEX(item) && nb->nb_index != NULL) {
+	if (nb != NULL && nb->nb_index != NULL) {
 		Py_ssize_t i = nb->nb_index(item);
 		if (i==-1 && PyErr_Occurred()) 
 			return -1;
@@ -1984,7 +1982,7 @@ static PyTypeObject Arraytype = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	&array_as_buffer,			/* tp_as_buffer*/
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_WEAKREFS,  /* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
 	arraytype_doc,				/* tp_doc */
  	0,					/* tp_traverse */
 	0,					/* tp_clear */

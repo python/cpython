@@ -323,9 +323,7 @@ PyAPI_FUNC(void) PyObject_GC_Del(void *);
 
 
 /* Test if a type supports weak references */
-#define PyType_SUPPORTS_WEAKREFS(t) \
-        (PyType_HasFeature((t), Py_TPFLAGS_HAVE_WEAKREFS) \
-         && ((t)->tp_weaklistoffset > 0))
+#define PyType_SUPPORTS_WEAKREFS(t) ((t)->tp_weaklistoffset > 0)
 
 #define PyObject_GET_WEAKREFS_LISTPTR(o) \
 	((PyObject **) (((char *) (o)) + (o)->ob_type->tp_weaklistoffset))

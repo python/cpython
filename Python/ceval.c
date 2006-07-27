@@ -3833,8 +3833,7 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 			x = PyInt_AsSsize_t(v);
 		}
 		else if (v->ob_type->tp_as_number &&
-			 PyType_HasFeature(v->ob_type, Py_TPFLAGS_HAVE_INDEX)
-			 && v->ob_type->tp_as_number->nb_index) {
+			 v->ob_type->tp_as_number->nb_index) {
 			x = v->ob_type->tp_as_number->nb_index(v);
 			if (x == -1 && PyErr_Occurred())
 				return 0;
@@ -3853,8 +3852,7 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 #undef ISINDEX
 #define ISINDEX(x) ((x) == NULL || PyInt_Check(x) || PyLong_Check(x) || \
 		    ((x)->ob_type->tp_as_number && \
-                     PyType_HasFeature((x)->ob_type, Py_TPFLAGS_HAVE_INDEX) \
-		     && (x)->ob_type->tp_as_number->nb_index))
+		     (x)->ob_type->tp_as_number->nb_index))
 
 static PyObject *
 apply_slice(PyObject *u, PyObject *v, PyObject *w) /* return u[v:w] */
