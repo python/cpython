@@ -6818,13 +6818,11 @@ static PySequenceMethods unicode_as_sequence = {
     PyUnicode_Contains, 		/* sq_contains */
 };
 
-#define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
-
 static PyObject*
 unicode_subscript(PyUnicodeObject* self, PyObject* item)
 {
     PyNumberMethods *nb = item->ob_type->tp_as_number;
-    if (nb != NULL && HASINDEX(item) && nb->nb_index != NULL) {
+    if (nb != NULL && nb->nb_index != NULL) {
         Py_ssize_t i = nb->nb_index(item);
         if (i == -1 && PyErr_Occurred())
             return NULL;
@@ -7706,8 +7704,7 @@ PyTypeObject PyUnicode_Type = {
     PyObject_GenericGetAttr, 		/* tp_getattro */
     0,			 		/* tp_setattro */
     &unicode_as_buffer,			/* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES |
-	    Py_TPFLAGS_BASETYPE,	/* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
     unicode_doc,			/* tp_doc */
     0,					/* tp_traverse */
     0,					/* tp_clear */

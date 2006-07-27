@@ -147,11 +147,7 @@ typedef int (*visitproc)(PyObject *, void *);
 typedef int (*traverseproc)(PyObject *, visitproc, void *);
 
 typedef struct {
-	/* For numbers without flag bit Py_TPFLAGS_CHECKTYPES set, all
-	   arguments are guaranteed to be of the object's type (modulo
-	   coercion hacks -- i.e. if the type's coercion function
-	   returns other types, then these are allowed as well).  Numbers that
-	   have the Py_TPFLAGS_CHECKTYPES flag bit set should check *both*
+	/* Number implementations should check *both*
 	   arguments for proper type and implement the necessary conversions
 	   in the slot functions themselves. */
 
@@ -444,41 +440,15 @@ Arbitration of the flag bit positions will need to be coordinated among
 all extension writers who publically release their extensions (this will
 be fewer than you might expect!)..
 
-Python 1.5.2 introduced the bf_getcharbuffer slot into PyBufferProcs.
+Most flags were removed as of Python 3.0 to make room for new flags.  (Some
+flags are not for backwards compatibility but to indicate the presence of an
+optional feature; these flags remain of course.)
 
 Type definitions should use Py_TPFLAGS_DEFAULT for their tp_flags value.
 
 Code can use PyType_HasFeature(type_ob, flag_value) to test whether the
 given type object has a specified feature.
 */
-
-/* PyBufferProcs contains bf_getcharbuffer */
-#define Py_TPFLAGS_HAVE_GETCHARBUFFER  (1L<<0)
-
-/* PySequenceMethods contains sq_contains */
-#define Py_TPFLAGS_HAVE_SEQUENCE_IN (1L<<1)
-
-/* This is here for backwards compatibility.  Extensions that use the old GC
- * API will still compile but the objects will not be tracked by the GC. */
-#define Py_TPFLAGS_GC 0 /* used to be (1L<<2) */
-
-/* PySequenceMethods and PyNumberMethods contain in-place operators */
-#define Py_TPFLAGS_HAVE_INPLACEOPS (1L<<3)
-
-/* PyNumberMethods do their own coercion */
-#define Py_TPFLAGS_CHECKTYPES (1L<<4)
-
-/* tp_richcompare is defined */
-#define Py_TPFLAGS_HAVE_RICHCOMPARE (1L<<5)
-
-/* Objects which are weakly referencable if their tp_weaklistoffset is >0 */
-#define Py_TPFLAGS_HAVE_WEAKREFS (1L<<6)
-
-/* tp_iter is defined */
-#define Py_TPFLAGS_HAVE_ITER (1L<<7)
-
-/* New members introduced by Python 2.2 exist */
-#define Py_TPFLAGS_HAVE_CLASS (1L<<8)
 
 /* Set if the type object is dynamically allocated */
 #define Py_TPFLAGS_HEAPTYPE (1L<<9)
@@ -502,19 +472,8 @@ given type object has a specified feature.
 #define Py_TPFLAGS_HAVE_STACKLESS_EXTENSION 0
 #endif
 
-/* Objects support nb_index in PyNumberMethods */
-#define Py_TPFLAGS_HAVE_INDEX (1L<<17)
-
 #define Py_TPFLAGS_DEFAULT  ( \
-                             Py_TPFLAGS_HAVE_GETCHARBUFFER | \
-                             Py_TPFLAGS_HAVE_SEQUENCE_IN | \
-                             Py_TPFLAGS_HAVE_INPLACEOPS | \
-                             Py_TPFLAGS_HAVE_RICHCOMPARE | \
-                             Py_TPFLAGS_HAVE_WEAKREFS | \
-                             Py_TPFLAGS_HAVE_ITER | \
-                             Py_TPFLAGS_HAVE_CLASS | \
                              Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | \
-                             Py_TPFLAGS_HAVE_INDEX | \
                             0)
 
 #define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)

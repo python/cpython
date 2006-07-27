@@ -534,8 +534,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	is an iterator, this returns itself. */
 
 #define PyIter_Check(obj) \
-    (PyType_HasFeature((obj)->ob_type, Py_TPFLAGS_HAVE_ITER) && \
-     (obj)->ob_type->tp_iternext != NULL)
+    ((obj)->ob_type->tp_iternext != NULL)
 
      PyAPI_FUNC(PyObject *) PyIter_Next(PyObject *);
      /* Takes an iterator object and calls its tp_iternext slot,

@@ -219,7 +219,7 @@ static PyTypeObject partial_type = {
 	PyObject_GenericSetAttr,	/* tp_setattro */
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-		Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_WEAKREFS,	/* tp_flags */
+		Py_TPFLAGS_BASETYPE,	/* tp_flags */
 	partial_doc,			/* tp_doc */
 	(traverseproc)partial_traverse,	/* tp_traverse */
 	0,				/* tp_clear */

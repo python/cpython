@@ -4,8 +4,7 @@
 #include "Python.h"
 #include "structmember.h"
 
-#define TP_DESCR_GET(t) \
-    (PyType_HasFeature(t, Py_TPFLAGS_HAVE_CLASS) ? (t)->tp_descr_get : NULL)
+#define TP_DESCR_GET(t) ((t)->tp_descr_get)
 
 
 /* Forward */
@@ -2045,7 +2044,7 @@ PyTypeObject PyInstance_Type = {
 	(getattrofunc)instance_getattr,		/* tp_getattro */
 	(setattrofunc)instance_setattr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_CHECKTYPES,/*tp_flags*/
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /*tp_flags*/
 	instance_doc,				/* tp_doc */
 	(traverseproc)instance_traverse,	/* tp_traverse */
 	0,					/* tp_clear */
@@ -2149,7 +2148,7 @@ instancemethod_getattro(PyObject *obj, PyObject *name)
 	PyTypeObject *tp = obj->ob_type;
 	PyObject *descr = NULL;
 
-	if (PyType_HasFeature(tp, Py_TPFLAGS_HAVE_CLASS)) {
+	{
 		if (tp->tp_dict == NULL) {
 			if (PyType_Ready(tp) < 0)
 				return NULL;
@@ -2468,7 +2467,7 @@ PyTypeObject PyMethod_Type = {
 	instancemethod_getattro,		/* tp_getattro */
 	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC  | Py_TPFLAGS_HAVE_WEAKREFS, /* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
 	instancemethod_doc,			/* tp_doc */
 	(traverseproc)instancemethod_traverse,	/* tp_traverse */
 	0,					/* tp_clear */

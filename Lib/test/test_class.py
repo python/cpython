@@ -49,7 +49,6 @@ testmeths = [
     ]
 
 # These need to return something other than None
-#    "coerce",
 #    "hash",
 #    "str",
 #    "repr",
@@ -65,10 +64,6 @@ testmeths = [
 #    "delattr",
 
 class AllTests:
-    def __coerce__(self, *args):
-        print "__coerce__:", args
-        return (self,) + args
-
     def __hash__(self, *args):
         print "__hash__:", args
         return hash(id(self))

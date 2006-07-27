@@ -169,7 +169,7 @@ class TalkTo:
             signature = self._signature
         if type(signature) == AEDescType:
             self.target = signature
-        elif type(signature) == InstanceType and hasattr(signature, '__aepack__'):
+        elif hasattr(signature, '__aepack__'):
             self.target = signature.__aepack__()
         elif type(signature) == StringType and len(signature) == 4:
             self.target = AE.AECreateDesc(AppleEvents.typeApplSignature, signature)

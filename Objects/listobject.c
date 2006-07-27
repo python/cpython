@@ -1833,8 +1833,7 @@ static PyTypeObject sortwrapper_type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT |
-	Py_TPFLAGS_HAVE_RICHCOMPARE, 		/* tp_flags */
+	Py_TPFLAGS_DEFAULT,	 		/* tp_flags */
 	sortwrapper_doc,			/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
@@ -2448,13 +2447,11 @@ PyDoc_STRVAR(list_doc,
 "list() -> new list\n"
 "list(sequence) -> new list initialized from sequence's items");
 
-#define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
-
 static PyObject *
 list_subscript(PyListObject* self, PyObject* item)
 {
 	PyNumberMethods *nb = item->ob_type->tp_as_number;	
-	if (nb != NULL && HASINDEX(item) && nb->nb_index != NULL) {
+	if (nb != NULL && nb->nb_index != NULL) {
 		Py_ssize_t i = nb->nb_index(item);
 		if (i == -1 && PyErr_Occurred())
 			return NULL;
@@ -2503,7 +2500,7 @@ static int
 list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 {
 	PyNumberMethods *nb = item->ob_type->tp_as_number;
-	if (nb != NULL && HASINDEX(item) && nb->nb_index != NULL) {
+	if (nb != NULL && nb->nb_index != NULL) {
 		Py_ssize_t i = nb->nb_index(item);
 		if (i == -1 && PyErr_Occurred())
 			return -1;

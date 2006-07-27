@@ -800,12 +800,10 @@ static PyTypeObject mmap_object_type = {
 	0,					/*tp_getattro*/
 	0,					/*tp_setattro*/
 	&mmap_as_buffer,			/*tp_as_buffer*/
-	Py_TPFLAGS_HAVE_GETCHARBUFFER,		/*tp_flags*/
+	Py_TPFLAGS_DEFAULT,			/*tp_flags*/
 	0,					/*tp_doc*/
 };
 
-
-#define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
 
 /* extract the map size from the given PyObject
 
@@ -815,7 +813,7 @@ static Py_ssize_t
 _GetMapSize(PyObject *o)
 {
 	PyNumberMethods *nb = o->ob_type->tp_as_number;
-	if (nb != NULL && HASINDEX(o) && nb->nb_index != NULL) {
+	if (nb != NULL && nb->nb_index != NULL) {
 		Py_ssize_t i = nb->nb_index(o);
 		if (i==-1 && PyErr_Occurred()) 
 			return -1;
