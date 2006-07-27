@@ -91,6 +91,11 @@ Library
 - Bug #1517996: IDLE now longer shows the default Tk menu when a
   path browser, class browser or debugger is the frontmost window on MacOS X
 
+- Patch #1520294: Support for getset and member descriptors in types.py,
+  inspect.py, and pydoc.py.  Specifically, this allows for querying the type
+  of an object against these built-in types and more importantly, for getting
+  their docstrings printed in the interactive interpreter's help() function.
+
 
 Extension Modules
 -----------------
