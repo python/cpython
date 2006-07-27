@@ -1,4 +1,5 @@
-from unittest import TestCase, main
+from unittest import TestCase
+from test import test_support
 import uuid
 
 def importable(name):
@@ -392,5 +393,9 @@ class TestUUID(TestCase):
             equal(u, uuid.UUID(v))
             equal(str(u), v)
 
+
+def test_main():
+    test_support.run_unittest(TestUUID)
+
 if __name__ == '__main__':
-    main()
+    test_main()
