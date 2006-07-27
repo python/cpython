@@ -419,7 +419,6 @@ methods, classmethods, staticmethods, properties, and nested classes.
 
     >>> finder = doctest.DocTestFinder()
     >>> tests = finder.find(SampleClass)
-    >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
      3  SampleClass
@@ -435,7 +434,6 @@ methods, classmethods, staticmethods, properties, and nested classes.
 New-style classes are also supported:
 
     >>> tests = finder.find(SampleNewStyleClass)
-    >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
      1  SampleNewStyleClass
@@ -475,7 +473,6 @@ functions, classes, and the `__test__` dictionary, if it exists:
     >>> # ignoring the objects since they weren't defined in m.
     >>> import test.test_doctest
     >>> tests = finder.find(m, module=test.test_doctest)
-    >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
      1  some_module
@@ -499,7 +496,6 @@ will only be generated for it once:
 
     >>> from test import doctest_aliases
     >>> tests = excl_empty_finder.find(doctest_aliases)
-    >>> tests.sort()
     >>> print len(tests)
     2
     >>> print tests[0].name
@@ -517,7 +513,6 @@ Empty Tests
 By default, an object with no doctests doesn't create any tests:
 
     >>> tests = doctest.DocTestFinder().find(SampleClass)
-    >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
      3  SampleClass
@@ -536,7 +531,6 @@ is really to support backward compatibility in what doctest.master.summarize()
 displays.
 
     >>> tests = doctest.DocTestFinder(exclude_empty=False).find(SampleClass)
-    >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
      3  SampleClass
@@ -557,7 +551,6 @@ DocTestFinder can be told not to look for tests in contained objects
 using the `recurse` flag:
 
     >>> tests = doctest.DocTestFinder(recurse=False).find(SampleClass)
-    >>> tests.sort()
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
      3  SampleClass

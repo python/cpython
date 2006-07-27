@@ -821,6 +821,11 @@ class DocTestFinder:
         # Recursively expore `obj`, extracting DocTests.
         tests = []
         self._find(tests, obj, name, module, source_lines, globs, {})
+        # Sort the tests by alpha order of names, for consistency in
+        # verbose-mode output.  This was a feature of doctest in Pythons
+        # <= 2.3 that got lost by accident in 2.4.  It was repaired in
+        # 2.4.4 and 2.5.
+        tests.sort()
         return tests
 
     def _from_module(self, module, object):
