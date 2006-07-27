@@ -12,6 +12,11 @@ What's New in Python 2.5 release candidate 1?
 Core and builtins
 -----------------
 
+- Bug #1521947: When checking for overflow, ``PyOS_strtol()`` used some
+  operations on signed longs that are formally undefined by C.
+  Unfortunately, at least one compiler now cares about that, so complicated
+  the code to make that compiler happy again.
+
 - Bug #1524310: Properly report errors from FindNextFile in os.listdir.
 
 - Patch #1232023: Stop including current directory in search
@@ -37,7 +42,7 @@ Core and builtins
   mapping the faux "thread id" 0 to the current frame.
 
 - Bug #1525447: build on MacOS X on a case-sensitive filesystem.
-  
+
 
 Library
 -------
@@ -88,7 +93,7 @@ Library
 Extension Modules
 -----------------
 
-- Bug #1471938: Fix curses module build problem on Solaris 8; patch by 
+- Bug #1471938: Fix curses module build problem on Solaris 8; patch by
   Paul Eggert.
 
 - Patch #1448199: Release interpreter lock in _winreg.ConnectRegistry.
