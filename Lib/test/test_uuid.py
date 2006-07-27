@@ -288,12 +288,16 @@ class TestUUID(TestCase):
     def test_ifconfig_getnode(self):
         import os
         if os.name == 'posix':
-            self.check_node(uuid._ifconfig_getnode(), 'ifconfig')
+            node = uuid._ifconfig_getnode()
+            if node is not None:
+                self.check_node(node, 'ifconfig')
 
     def test_ipconfig_getnode(self):
         import os
         if os.name == 'nt':
-            self.check_node(uuid._ipconfig_getnode(), 'ipconfig')
+            node = uuid._ipconfig_getnode()
+            if node is not None:
+                self.check_node(node, 'ipconfig')
 
     def test_netbios_getnode(self):
         if importable('win32wnet') and importable('netbios'):
