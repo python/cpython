@@ -89,6 +89,40 @@ def isdatadescriptor(object):
     is not guaranteed."""
     return (hasattr(object, "__set__") and hasattr(object, "__get__"))
 
+if hasattr(types, 'MemberDescriptorType'):
+    # CPython and equivalent
+    def ismemberdescriptor(object):
+        """Return true if the object is a member descriptor.
+
+        Member descriptors are specialized descriptors defined in extension
+        modules."""
+        return isinstance(object, types.MemberDescriptorType)
+else:
+    # Other implementations
+    def ismemberdescriptor(object):
+        """Return true if the object is a member descriptor.
+
+        Member descriptors are specialized descriptors defined in extension
+        modules."""
+        return False
+
+if hasattr(types, 'GetSetDescriptorType'):
+    # CPython and equivalent
+    def isgetsetdescriptor(object):
+        """Return true if the object is a getset descriptor.
+
+        getset descriptors are specialized descriptors defined in extension
+        modules."""
+        return isinstance(object, types.GetSetDescriptorType)
+else:
+    # Other implementations
+    def isgetsetdescriptor(object):
+        """Return true if the object is a getset descriptor.
+
+        getset descriptors are specialized descriptors defined in extension
+        modules."""
+        return False
+        
 def isfunction(object):
     """Return true if the object is a user-defined function.
 
