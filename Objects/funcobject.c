@@ -141,7 +141,7 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
 	if (closure == Py_None)
 		closure = NULL;
 	else if (PyTuple_Check(closure)) {
-		Py_XINCREF(closure);
+		Py_INCREF(closure);
 	}
 	else {
 		PyErr_Format(PyExc_SystemError, 
