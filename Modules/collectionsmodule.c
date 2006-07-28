@@ -10,7 +10,7 @@
 /* The block length may be set to any number over 1.  Larger numbers
  * reduce the number of calls to the memory allocator but take more
  * memory.  Ideally, BLOCKLEN should be set with an eye to the
- * length of a cache line.  
+ * length of a cache line.
  */
 
 #define BLOCKLEN 62
@@ -22,9 +22,9 @@
  * element is at d.leftblock[leftindex] and its last element is at
  * d.rightblock[rightindex]; note that, unlike as for Python slice
  * indices, these indices are inclusive on both ends.  By being inclusive
- * on both ends, algorithms for left and right operations become 
+ * on both ends, algorithms for left and right operations become
  * symmetrical which simplifies the design.
- * 
+ *
  * The list of blocks is never empty, so d.leftblock and d.rightblock
  * are never equal to NULL.
  *
@@ -37,11 +37,11 @@
  * d.leftindex == CENTER+1; and d.rightindex == CENTER.
  * Checking for d.len == 0 is the intended way to see whether d is empty.
  *
- * Whenever d.leftblock == d.rightblock, 
+ * Whenever d.leftblock == d.rightblock,
  *     d.leftindex + d.len - 1 == d.rightindex.
- * 
+ *
  * However, when d.leftblock != d.rightblock, d.leftindex and d.rightindex
- * become indices into distinct blocks and either may be larger than the 
+ * become indices into distinct blocks and either may be larger than the
  * other.
  */
 
@@ -381,7 +381,7 @@ deque_remove(dequeobject *deque, PyObject *value)
 		int cmp = PyObject_RichCompareBool(item, value, Py_EQ);
 
 		if (deque->len != n) {
-			PyErr_SetString(PyExc_IndexError, 
+			PyErr_SetString(PyExc_IndexError,
 				"deque mutated during remove().");
 			return NULL;
 		}
@@ -920,7 +920,7 @@ dequeiter_next(dequeiterobject *it)
 				"deque mutated during iteration");
 		return NULL;
 	}
-	assert (!(it->b == it->deque->rightblock && 
+	assert (!(it->b == it->deque->rightblock &&
 		  it->index > it->deque->rightindex));
 
 	item = it->b->data[it->index];
@@ -1016,7 +1016,7 @@ dequereviter_next(dequeiterobject *it)
 				"deque mutated during iteration");
 		return NULL;
 	}
-	assert (!(it->b == it->deque->leftblock && 
+	assert (!(it->b == it->deque->leftblock &&
 		  it->index < it->deque->leftindex));
 
 	item = it->b->data[it->index];
@@ -1117,7 +1117,7 @@ defdict_copy(defdictobject *dd)
 static PyObject *
 defdict_reduce(defdictobject *dd)
 {
-	/* __reduce__ must returns a 5-tuple as follows:
+	/* __reduce__ must return a 5-tuple as follows:
 
 	   - factory function
 	   - tuple of args for the factory function
@@ -1155,6 +1155,7 @@ defdict_reduce(defdictobject *dd)
 	}
 	result = PyTuple_Pack(5, dd->dict.ob_type, args,
 			      Py_None, Py_None, items);
+	Py_DECREF(items);
 	Py_DECREF(args);
 	return result;
 }
