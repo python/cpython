@@ -153,6 +153,12 @@ Documentation
 - Bug #1337990: clarified that ``doctest`` does not support examples
   requiring both expected output and an exception.
 
+Tests
+-----
+
+- Patch #1529686: test_iterlen and test_email_codecs are now actually
+  run by regrtest.py.
+
 
 What's New in Python 2.4.3?
 ===========================
