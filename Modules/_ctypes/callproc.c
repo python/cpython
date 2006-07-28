@@ -851,17 +851,17 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 	progid = NULL;
 	ProgIDFromCLSID(&guid, &progid);
 
-/* XXX Is COMError derived from WindowsError or not? */
 	text = FormatError(errcode);
+	obj = Py_BuildValue(
 #ifdef _UNICODE
-	obj = Py_BuildValue("iu(uuuiu)",
+		"iu(uuuiu)",
 #else
-	obj = Py_BuildValue("is(uuuiu)",
+		"is(uuuiu)",
 #endif
-			    errcode,
-			    text,
-			    descr, source, helpfile, helpcontext,
-			    progid);
+		errcode,
+		text,
+		descr, source, helpfile, helpcontext,
+		progid);
 	if (obj) {
 		PyErr_SetObject(ComError, obj);
 		Py_DECREF(obj);
