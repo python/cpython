@@ -43,10 +43,11 @@ class IsTestBase(unittest.TestCase):
 
 class TestPredicates(IsTestBase):
     def test_thirteen(self):
-        # Doc/lib/libinspect.tex claims there are 13 such functions
         count = len(filter(lambda x:x.startswith('is'), dir(inspect)))
-        self.assertEqual(count, 13,
-                         "There are %d (not 12) is* functions" % count)
+        # Doc/lib/libinspect.tex claims there are 13 such functions
+        expected = 13
+        err_msg = "There are %d (not %d) is* functions" % (count, expected)
+        self.assertEqual(count, expected, err_msg)
 
     def test_excluding_predicates(self):
         self.istest(inspect.isbuiltin, 'sys.exit')
