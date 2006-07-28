@@ -128,6 +128,10 @@ Extension Modules
 - Because of a misspelled preprocessor symbol, ctypes was always
   compiled without thread support; this is now fixed.
 
+- pybsddb Bug #1527939: bsddb module DBEnv dbremove and dbrename
+  methods now allow their database parameter to be None as the
+  sleepycat API allows.
+
 Tests
 -----
 
