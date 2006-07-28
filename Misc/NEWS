@@ -132,6 +132,9 @@ Extension Modules
   methods now allow their database parameter to be None as the
   sleepycat API allows.
 
+- Bug #1526460: Fix socketmodule compile on NetBSD as it has a different
+  bluetooth API compared with Linux and FreeBSD.
+
 Tests
 -----
 
