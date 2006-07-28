@@ -97,7 +97,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.3.0.2"
+#define PY_BSDDB_VERSION "4.3.0.3"
 static char *rcs_id = "$Id$";
 
 
@@ -3587,7 +3587,7 @@ DBEnv_dbremove(DBEnvObject* self, PyObject* args, PyObject* kwargs)
     DB_TXN *txn = NULL;
     char* kwnames[] = { "file", "database", "txn", "flags", NULL };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ss|Oi:dbremove", kwnames,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|zOi:dbremove", kwnames,
 		&file, &database, &txnobj, &flags)) {
 	return NULL;
     }
@@ -3614,7 +3614,7 @@ DBEnv_dbrename(DBEnvObject* self, PyObject* args, PyObject* kwargs)
     DB_TXN *txn = NULL;
     char* kwnames[] = { "file", "database", "newname", "txn", "flags", NULL };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sss|Oi:dbrename", kwnames,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "szs|Oi:dbrename", kwnames,
 		&file, &database, &newname, &txnobj, &flags)) {
 	return NULL;
     }

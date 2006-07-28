@@ -60,6 +60,9 @@ Extension Modules
   return correct results.  It could previously incorrectly return 0 in some
   cases.  Fixes SF bug 1493322 (pybsddb bug 1184012).
 
+- pybsddb Bug #1527939: bsddb module DBEnv dbremove and dbrename
+  methods now allow their database parameter to be None as the
+  sleepycat API allows.
 
 Library
 -------
