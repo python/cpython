@@ -271,22 +271,48 @@ class UUID(object):
 
     version = property(get_version)
 
-def _ifconfig_getnode():
-    """Get the hardware address on Unix by running ifconfig."""
+def _find_mac(command, args, hw_identifiers, get_index):
     import os
     for dir in ['', '/sbin/', '/usr/sbin']:
         try:
             # LC_ALL to get English output, 2>/dev/null to
             # prevent output on stderr
-            cmd = 'LC_ALL=C %s 2>/dev/null' % os.path.join(dir, 'ifconfig')
+            executable = os.path.join(dir, command)
+            cmd = 'LC_ALL=C %s %s 2>/dev/null' % (executable, args)
             pipe = os.popen(cmd)
         except IOError:
             continue
+
         for line in pipe:
             words = line.lower().split()
             for i in range(len(words)):
-                if words[i] in ['hwaddr', 'ether']:
-                    return int(words[i + 1].replace(':', ''), 16)
+                if words[i] in hw_identifiers:
+                    return int(words[get_index(i)].replace(':', ''), 16)
+    return None
+
+def _ifconfig_getnode():
+    """Get the hardware address on Unix by running ifconfig."""
+
+    # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
+    for args in ('', '-a', '-av'):
+        mac = _find_mac('ifconfig', args, ['hwaddr', 'ether'], lambda i: i+1)
+        if mac:
+            return mac
+
+    import socket
+    ip_addr = socket.gethostbyname(socket.gethostname())
+
+    # Try getting the MAC addr from arp based on our IP address (Solaris).
+    mac = _find_mac('arp', '-an', [ip_addr], lambda i: -1)
+    if mac:
+        return mac
+
+    # This might work on HP-UX.
+    mac = _find_mac('lanscan', '-ai', ['lan0'], lambda i: 0)
+    if mac:
+        return mac
+
+    return None
 
 def _ipconfig_getnode():
     """Get the hardware address on Windows by running ipconfig.exe."""
