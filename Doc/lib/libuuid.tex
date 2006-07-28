@@ -32,7 +32,7 @@ fields\optional{, int\optional{, version}}}}}}
 
 Create a UUID from either a string of 32 hexadecimal digits,
 a string of 16 bytes as the \var{bytes} argument, a tuple of six
-integers (32-bit \var{time_low}, 16-bit \var{time_mid}, 
+integers (32-bit \var{time_low}, 16-bit \var{time_mid},
 16-bit \var{time_hi_version},
 8-bit \var{clock_seq_hi_variant}, 8-bit \var{clock_seq_low}, 48-bit \var{node})
 as the \var{fields} argument, or a single 128-bit integer as the \var{int}
@@ -109,10 +109,13 @@ when the variant is \constant{RFC_4122}).
 The \module{uuid} module defines the following functions
 
 \begin{funcdesc}{getnode}{}
-Get the hardware address as a 48-bit integer.  The first time this runs,
-it may launch a separate program, which could be quite slow.  If all
+Get the hardware address as a 48-bit positive integer.  The first time this
+runs, it may launch a separate program, which could be quite slow.  If all
 attempts to obtain the hardware address fail, we choose a random 48-bit
-number with its eighth bit set to 1 as recommended in RFC 4122.
+number with its eighth bit set to 1 as recommended in RFC 4122.  "Hardware
+address" means the MAC address of a network interface, and on a machine
+with multiple network interfaces the MAC address of any one of them may
+be returned.
 \end{funcdesc}
 \index{getnode}
 
@@ -126,10 +129,10 @@ otherwise a random 14-bit sequence number is chosen.
 \index{uuid1}
 
 \begin{funcdesc}{uuid3}{namespace, name}
-Generate a UUID based upon a MD5 hash of the \var{name} string value 
-drawn from a specified namespace.   \var{namespace} 
+Generate a UUID based upon a MD5 hash of the \var{name} string value
+drawn from a specified namespace.   \var{namespace}
 must be one of \constant{NAMESPACE_DNS},
-\constant{NAMESPACE_URL}, \constant{NAMESPACE_OID}, 
+\constant{NAMESPACE_URL}, \constant{NAMESPACE_OID},
 or \constant{NAMESPACE_X500}.
 \end{funcdesc}
 \index{uuid3}
@@ -140,15 +143,15 @@ Generate a random UUID.
 \index{uuid4}
 
 \begin{funcdesc}{uuid5}{namespace, name}
-Generate a UUID based upon a SHA-1 hash of the \var{name} string value 
-drawn from a specified namespace.   \var{namespace} 
+Generate a UUID based upon a SHA-1 hash of the \var{name} string value
+drawn from a specified namespace.   \var{namespace}
 must be one of \constant{NAMESPACE_DNS},
-\constant{NAMESPACE_URL}, \constant{NAMESPACE_OID}, 
+\constant{NAMESPACE_URL}, \constant{NAMESPACE_OID},
 or \constant{NAMESPACE_X500}.
 \end{funcdesc}
 \index{uuid5}
 
-The \module{uuid} module defines the following namespace constants 
+The \module{uuid} module defines the following namespace constants
 for use with \function{uuid3()} or \function{uuid5()}.
 
 \begin{datadesc}{NAMESPACE_DNS}
@@ -167,7 +170,7 @@ ISO OID namespace UUID.
 X.500 DN namespace UUID.
 \end{datadesc}
 
-The \module{uuid} module defines the following constants 
+The \module{uuid} module defines the following constants
 for the possible values of the \member{variant} attribute:
 
 \begin{datadesc}{RESERVED_NCS}
