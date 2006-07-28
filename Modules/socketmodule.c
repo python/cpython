@@ -2307,7 +2307,7 @@ sock_recv(PySocketSockObject *s, PyObject *args)
 	/* Call the guts */
 	outlen = sock_recv_guts(s, PyString_AS_STRING(buf), recvlen, flags);
 	if (outlen < 0) {
-		/* An error occured, release the string and return an
+		/* An error occurred, release the string and return an
 		   error. */
 		Py_DECREF(buf);
 		return NULL;

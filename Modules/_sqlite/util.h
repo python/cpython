@@ -32,7 +32,7 @@ int _sqlite_step_with_busyhandler(sqlite3_stmt* statement, Connection* connectio
 
 /**
  * Checks the SQLite error code and sets the appropriate DB-API exception.
- * Returns the error code (0 means no error occured).
+ * Returns the error code (0 means no error occurred).
  */
 int _seterror(sqlite3* db);
 #endif
