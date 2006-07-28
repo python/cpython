@@ -1687,8 +1687,8 @@ archive into the current working directory.  It's also possible to set
 a different directory as the extraction target, and to unpack only a
 subset of the archive's members.
 
-A tarfile's compression can be autodetected by 
-using the mode \code{'r|*'}.
+The compression used for a tarfile opened in stream mode can now be
+autodetected using the mode \code{'r|*'}.
 % patch 918101
 (Contributed by Lars Gust\"abel.)
 
@@ -2430,7 +2430,7 @@ freed with the corresponding family's \cfunction{*_Free()} function.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Nick Coghlan, Phillip J. Eby, Raymond Hettinger, Ralf
+article: Nick Coghlan, Phillip J. Eby, Lars Gust\"abel, Raymond Hettinger, Ralf
 W. Grosse-Kunstleve, Kent Johnson, Martin von~L\"owis, Fredrik Lundh,
 Gustavo Niemeyer, James Pryor, Mike Rovner, Scott Weikart, Barry
 Warsaw, Thomas Wouters.
