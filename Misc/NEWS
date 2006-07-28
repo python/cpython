@@ -111,6 +111,9 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1529514: The _ctypes extension is now compiled on more
+  openbsd target platforms.
+
 - The ``__reduce__()`` method of the new ``collections.defaultdict`` had
   a memory leak, affecting pickles and deep copies.
 
