@@ -725,7 +725,50 @@ source of the strings your application unpickles.
 
 \subsection{Example \label{pickle-example}}
 
-Here's a simple example of how to modify pickling behavior for a
+For the simplest code, use the \function{dump()} and \function{load()}
+functions.  Note that a self-referencing list is pickled and restored
+correctly.
+
+\begin{verbatim}
+import pickle
+
+data1 = {'a': [1, 2.0, 3, 4+6j],
+         'b': ('string', u'Unicode string'),
+         'c': None}
+
+selfref_list = [1, 2, 3]
+selfref_list.append(selfref_list)
+
+output = open('data.pkl', 'wb')
+
+# Pickle dictionary using protocol 0.
+pickle.dump(data1, output)
+
+# Pickle the list using the highest protocol available.
+pickle.dump(selfref_list, output, -1)
+
+output.close()
+\end{verbatim}
+
+The following example reads the resulting pickled data.  When reading
+a pickle-containing file, you should open the file in binary mode
+because you can't be sure if the ASCII or binary format was used.
+
+\begin{verbatim}
+import pprint, pickle
+
+pkl_file = open('data.pkl', 'rb')
+
+data1 = pickle.load(pkl_file)
+pprint.pprint(data1)
+
+data2 = pickle.load(pkl_file)
+pprint.pprint(data2)
+
+pkl_file.close()
+\end{verbatim}
+
+Here's a larger example that shows how to modify pickling behavior for a
 class.  The \class{TextReader} class opens a text file, and returns
 the line number and line contents each time its \method{readline()}
 method is called. If a \class{TextReader} instance is pickled, all
