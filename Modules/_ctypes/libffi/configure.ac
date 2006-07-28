@@ -21,6 +21,12 @@ AC_FUNC_MMAP_BLACKLIST
 
 TARGETDIR="unknown"
 case "$host" in
+mips*-*-openbsd*) TARGET=MIPS; TARGETDIR=mips;;
+sparc-*-openbsd*) TARGET=SPARC; TARGETDIR=sparc;;
+sparc64-*-openbsd*) TARGET=SPARC; TARGETDIR=sparc;;
+alpha*-*-openbsd*) TARGET=ALPHA; TARGETDIR=alpha;;
+m68k-*-openbsd*) TARGET=M68K; TARGETDIR=m68k;;
+powerpc-*-openbsd*) TARGET=POWERPC; TARGETDIR=powerpc;;
 i*86-*-darwin*) TARGET=X86_DARWIN; TARGETDIR=x86;;
 i*86-*-linux*) TARGET=X86; TARGETDIR=x86;;
 i*86-*-gnu*) TARGET=X86; TARGETDIR=x86;;
