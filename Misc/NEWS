@@ -12,6 +12,11 @@ What's New in Python 2.5 release candidate 1?
 Core and builtins
 -----------------
 
+- Bug #1529871: The speed enhancement patch #921466 broke Python's compliance
+  with PEP 302.  This was fixed by adding an ``imp.NullImporter`` type that is
+  used in ``sys.path_importer_cache`` to cache non-directory paths and avoid
+  excessive filesystem operations during imports.
+
 - Bug #1521947: When checking for overflow, ``PyOS_strtol()`` used some
   operations on signed longs that are formally undefined by C.
   Unfortunately, at least one compiler now cares about that, so complicated
@@ -106,10 +111,14 @@ Library
 Extension Modules
 -----------------
 
+<<<<<<< .mine
+- Bug #1471938: Fix curses module build problem on Solaris 8; patch by
+=======
 - The ``__reduce__()`` method of the new ``collections.defaultdict`` had
   a memory leak, affecting pickles and deep copies.
 
 - Bug #1471938: Fix curses module build problem on Solaris 8; patch by
+>>>>>>> .r50915
   Paul Eggert.
 
 - Patch #1448199: Release interpreter lock in _winreg.ConnectRegistry.
