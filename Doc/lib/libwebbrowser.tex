@@ -136,6 +136,18 @@ Library Modules} manual.
 Only on MacOS X platform.
 \end{description}
 
+Here are some simple examples:
+
+\begin{verbatim}
+url = 'http://www.python.org'
+
+# Open URL in a new tab, if a browser window is already open. 
+webbrowser.open_new_tab(url + '/doc')
+
+# Open URL in new window, raising the window if possible.
+webbrowser.open_new(url)
+\end{verbatim}
+
 
 \subsection{Browser Controller Objects \label{browser-controllers}}
 
