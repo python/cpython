@@ -106,6 +106,9 @@ Library
 Extension Modules
 -----------------
 
+- The ``__reduce__()`` method of the new ``collections.defaultdict`` had
+  a memory leak, affecting pickles and deep copies.
+
 - Bug #1471938: Fix curses module build problem on Solaris 8; patch by
   Paul Eggert.
 
