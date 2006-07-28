@@ -284,7 +284,11 @@ class TestUUID(TestCase):
                 msg = "different sources disagree on node:\n"
                 for s, n in TestUUID.source2node.iteritems():
                     msg += "    from source %r, node was %012x\n" % (s, n)
-                self.fail(msg)
+                # There's actually no reason to expect the MAC addresses
+                # to agree across various methods -- e.g., a box may have
+                # multiple network interfaces, and different ways of getting
+                # a MAC address may favor different HW.
+                ##self.fail(msg)
         else:
             TestUUID.last_node = node
 
@@ -309,7 +313,7 @@ class TestUUID(TestCase):
     def test_random_getnode(self):
         node = uuid._random_getnode()
         self.assert_(0 <= node)
-        self.assert_(node < 1<<48L)
+        self.assert_(node < (1L <<48))
 
     def test_unixdll_getnode(self):
         import os
@@ -322,10 +326,14 @@ class TestUUID(TestCase):
             self.check_node(uuid._windll_getnode(), 'windll')
 
     def test_getnode(self):
-        self.check_node(uuid.getnode(), "getnode1")
+        node1 = uuid.getnode()
+        self.check_node(node1, "getnode1")
 
         # Test it again to ensure consistency.
-        self.check_node(uuid.getnode(), "getnode2")
+        node2 = uuid.getnode()
+        self.check_node(node2, "getnode2")
+
+        self.assertEqual(node1, node2)
 
     def test_uuid1(self):
         equal = self.assertEqual

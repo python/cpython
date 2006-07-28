@@ -362,6 +362,10 @@ try:
     # hardware address.  On Windows 2000 and later, UuidCreate makes a
     # random UUID and UuidCreateSequential gives a UUID containing the
     # hardware address.  These routines are provided by the RPC runtime.
+    # NOTE:  at least on Tim's WinXP Pro SP2 desktop box, while the last
+    # 6 bytes returned by UuidCreateSequential are fixed, they don't appear
+    # to bear any relationship to the MAC address of any network device
+    # on the box.
     try:
         lib = ctypes.windll.rpcrt4
     except:
@@ -389,10 +393,13 @@ def _random_getnode():
 _node = None
 
 def getnode():
-    """Get the hardware address as a 48-bit integer.  The first time this
-    runs, it may launch a separate program, which could be quite slow.  If
-    all attempts to obtain the hardware address fail, we choose a random
-    48-bit number with its eighth bit set to 1 as recommended in RFC 4122."""
+    """Get the hardware address as a 48-bit positive integer.
+
+    The first time this runs, it may launch a separate program, which could
+    be quite slow.  If all attempts to obtain the hardware address fail, we
+    choose a random 48-bit number with its eighth bit set to 1 as recommended
+    in RFC 4122.
+    """
 
     global _node
     if _node is not None:
