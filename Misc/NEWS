@@ -111,14 +111,10 @@ Library
 Extension Modules
 -----------------
 
-<<<<<<< .mine
-- Bug #1471938: Fix curses module build problem on Solaris 8; patch by
-=======
 - The ``__reduce__()`` method of the new ``collections.defaultdict`` had
   a memory leak, affecting pickles and deep copies.
 
 - Bug #1471938: Fix curses module build problem on Solaris 8; patch by
->>>>>>> .r50915
   Paul Eggert.
 
 - Patch #1448199: Release interpreter lock in _winreg.ConnectRegistry.
