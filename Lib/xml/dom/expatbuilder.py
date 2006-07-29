@@ -27,13 +27,13 @@ This avoids all the overhead of SAX and pulldom to gain performance.
 #      calling any methods on the node object if it exists.  (A rather
 #      nice speedup is achieved this way as well!)
 
-from xmlcore.dom import xmlbuilder, minidom, Node
-from xmlcore.dom import EMPTY_NAMESPACE, EMPTY_PREFIX, XMLNS_NAMESPACE
-from xmlcore.parsers import expat
-from xmlcore.dom.minidom import _append_child, _set_attribute_node
-from xmlcore.dom.NodeFilter import NodeFilter
+from xml.dom import xmlbuilder, minidom, Node
+from xml.dom import EMPTY_NAMESPACE, EMPTY_PREFIX, XMLNS_NAMESPACE
+from xml.parsers import expat
+from xml.dom.minidom import _append_child, _set_attribute_node
+from xml.dom.NodeFilter import NodeFilter
 
-from xmlcore.dom.minicompat import *
+from xml.dom.minicompat import *
 
 TEXT_NODE = Node.TEXT_NODE
 CDATA_SECTION_NODE = Node.CDATA_SECTION_NODE

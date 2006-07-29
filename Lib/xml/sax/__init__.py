@@ -51,12 +51,12 @@ def parseString(string, handler, errorHandler=ErrorHandler()):
 # this is the parser list used by the make_parser function if no
 # alternatives are given as parameters to the function
 
-default_parser_list = ["xmlcore.sax.expatreader"]
+default_parser_list = ["xml.sax.expatreader"]
 
 # tell modulefinder that importing sax potentially imports expatreader
 _false = 0
 if _false:
-    import xmlcore.sax.expatreader
+    import xml.sax.expatreader
 
 import os, sys
 if os.environ.has_key("PY_SAX_PARSER"):

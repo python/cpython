@@ -38,7 +38,7 @@
 
 __all__ = ["NodeList", "EmptyNodeList", "StringTypes", "defproperty"]
 
-import xmlcore.dom
+import xml.dom
 
 try:
     unicode
@@ -70,6 +70,7 @@ class NodeList(list):
 
     def __setstate__(self, state):
         self[:] = state
+
 
 class EmptyNodeList(tuple):
     __slots__ = ()
