@@ -42,8 +42,11 @@ half of the pair returned by \code{split(\var{path})}.
 \end{funcdesc}
 
 \begin{funcdesc}{exists}{path}
-Return \code{True} if \var{path} refers to an existing path.
-Returns \code{False} for broken symbolic links.
+Return \code{True} if \var{path} refers to an existing path.  Returns
+\code{False} for broken symbolic links. On some platforms, this
+function may return \code{False} if permission is not granted to
+execute \function{os.stat()} on the requested file, even if the
+\var{path} physically exists.
 \end{funcdesc}
 
 \begin{funcdesc}{lexists}{path}
