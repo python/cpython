@@ -27,6 +27,45 @@ Set angle measurement units to degrees.
 Set angle measurement units to radians.
 \end{funcdesc}
 
+\begin{funcdesc}{setup}{**kwargs}
+Sets the size and position of the main window.  Keywords are:
+\begin{itemize}
+  \item \code{width}: either a size in pixels or a fraction of the screen.
+   The default is 50\% of the screen.
+  \item \code{height}: either a size in pixels or a fraction of the screen.
+   The default is 50\% of the screen.
+  \item \code{startx}: starting position in pixels from the left edge
+      of the screen. \code{None} is the default value and 
+      centers the window horizontally on screen.
+  \item \code{starty}: starting position in pixels from the top edge
+      of the screen. \code{None} is the default value and 
+      centers the window vertically on screen.
+\end{itemize}
+
+   Examples:
+
+\begin{verbatim}
+# Uses default geometry: 50% x 50% of screen, centered.
+setup()  
+
+# Sets window to 200x200 pixels, in upper left of screen
+setup (width=200, height=200, startx=0, starty=0)
+
+# Sets window to 75% of screen by 50% of screen, and centers it.
+setup(width=.75, height=0.5, startx=None, starty=None)
+\end{verbatim}
+
+\end{funcdesc}
+
+\begin{funcdesc}{title}{title_str}
+Set the window's title to \var{title}.
+\end{funcdesc}
+
+\begin{funcdesc}{done}{}
+Enters the Tk main loop.  The window will continue to 
+be displayed until the user closes it or the process is killed.
+\end{funcdesc}
+
 \begin{funcdesc}{reset}{}
 Clear the screen, re-center the pen, and set variables to the default
 values.
