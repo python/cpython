@@ -1797,7 +1797,7 @@ static PyNumberMethods set_as_number = {
 PyDoc_STRVAR(set_doc,
 "set(iterable) --> set object\n\
 \n\
-Build an unordered collection.");
+Build an unordered collection of unique elements.");
 
 PyTypeObject PySet_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -1892,7 +1892,7 @@ static PyNumberMethods frozenset_as_number = {
 PyDoc_STRVAR(frozenset_doc,
 "frozenset(iterable) --> frozenset object\n\
 \n\
-Build an immutable unordered collection.");
+Build an immutable unordered collection of unique elements.");
 
 PyTypeObject PyFrozenSet_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
