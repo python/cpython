@@ -480,7 +480,7 @@ this?
   1
 \item when we know that deallocation of the object\footnote{This is
   true when we know that the object is a basic type, like a string or
-  a float} will not cause any
+  a float.} will not cause any
   calls back into our type's code
 \item when decrementing a reference count in a \member{tp_dealloc}
   handler when garbage-collections is not supported\footnote{We relied
@@ -792,9 +792,9 @@ eventually figure out that the list is garbage and free it.
 
 In the second version of the \class{Noddy} example, we allowed any
 kind of object to be stored in the \member{first} or \member{last}
-attributes\footnote{Even in the third version, we aren't guaranteed to
+attributes.\footnote{Even in the third version, we aren't guaranteed to
 avoid cycles.  Instances of string subclasses are allowed and string
-subclasses could allow cycles even if normal strings don't.}. This
+subclasses could allow cycles even if normal strings don't.} This
 means that \class{Noddy} objects can participate in cycles:
 
 \begin{verbatim}
