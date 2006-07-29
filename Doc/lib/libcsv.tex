@@ -70,6 +70,17 @@ Parameters'' for details of these parameters.
 
 All data read are returned as strings.  No automatic data type
 conversion is performed.
+
+\versionchanged[
+If literal newlines are important within a field, users need to read their
+file in a way that preserves the newlines. The behavior before 2.5 would
+introduce spurious characters into quoted fields, with no way for the user
+to control that behavior. The previous behavior caused considerable
+problems, particularly on platforms that did not use the unix line ending
+conventions, or with files that originated on those platforms - users were
+finding mysterious newlines where they didn't expect them.
+]{2.5}
+
 \end{funcdesc}
 
 \begin{funcdesc}{writer}{csvfile\optional{,
