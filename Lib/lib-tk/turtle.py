@@ -713,7 +713,7 @@ for methodname in dir(RawPen):
 def setup(**geometry):
     """ Sets the size and position of the main window.
 
-    Keywords are width, height, startx and starty
+    Keywords are width, height, startx and starty:
 
     width: either a size in pixels or a fraction of the screen.
       Default is 50% of screen.
@@ -788,7 +788,7 @@ def setup(**geometry):
         _root.geometry("%dx%d+%d+%d" % (_width, _height, _startx, _starty))
 
 def title(title):
-    """ set the window title.
+    """Set the window title.
 
     By default this is set to 'Turtle Graphics'
 
