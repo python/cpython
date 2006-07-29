@@ -30,13 +30,16 @@ unbound if \var{instance} is \code{None}.  \var{function} must be
 callable.
 \end{funcdesc}
 
-\begin{funcdesc}{function}{code, globals\optional{, name\optional{, argdefs}}}
+\begin{funcdesc}{function}{code, globals\optional{, name\optional{,
+                           argdefs\optional{, closure}}}}
 Returns a (Python) function with the given code and globals. If
 \var{name} is given, it must be a string or \code{None}.  If it is a
 string, the function will have the given name, otherwise the function
 name will be taken from \code{\var{code}.co_name}.  If
 \var{argdefs} is given, it must be a tuple and will be used to
-determine the default values of parameters.
+determine the default values of parameters.  If \var{closure} is given,
+it must be \code{None} or a tuple of cell objects containing objects
+to bind to the names in \code{\var{code}.co_freevars}.
 \end{funcdesc}
 
 \begin{funcdesc}{code}{argcount, nlocals, stacksize, flags, codestring,
