@@ -1,12 +1,10 @@
-# xmlcore.etree test.  This file contains enough tests to make sure that
+# xml.etree test.  This file contains enough tests to make sure that
 # all included components work as they should.  For a more extensive
 # test suite, see the selftest script in the ElementTree distribution.
 
 import doctest, sys
 
 from test import test_support
-
-from xmlcore.etree import ElementTree as ET
 
 SAMPLE_XML = """
 <body>
@@ -32,9 +30,9 @@ def sanity():
     """
     Import sanity.
 
-    >>> from xmlcore.etree import ElementTree
-    >>> from xmlcore.etree import ElementInclude
-    >>> from xmlcore.etree import ElementPath
+    >>> from xml.etree import ElementTree
+    >>> from xml.etree import ElementInclude
+    >>> from xml.etree import ElementPath
     """
 
 def check_method(method):
@@ -60,6 +58,8 @@ def summarize_list(seq):
 def interface():
     """
     Test element tree interface.
+
+    >>> from xml.etree import ElementTree as ET
 
     >>> element = ET.Element("tag", key="value")
     >>> tree = ET.ElementTree(element)
@@ -107,6 +107,8 @@ def interface():
 def find():
     """
     Test find methods (including xpath syntax).
+
+    >>> from xml.etree import ElementTree as ET
 
     >>> elem = ET.XML(SAMPLE_XML)
     >>> elem.find("tag").tag
@@ -174,6 +176,8 @@ def find():
 def parseliteral():
     r"""
 
+    >>> from xml.etree import ElementTree as ET
+
     >>> element = ET.XML("<html><body>text</body></html>")
     >>> ET.ElementTree(element).write(sys.stdout)
     <html><body>text</body></html>
@@ -194,19 +198,6 @@ def parseliteral():
     >>> ids["body"].tag
     'body'
     """
-
-def check_encoding(encoding):
-    """
-    >>> check_encoding("ascii")
-    >>> check_encoding("us-ascii")
-    >>> check_encoding("iso-8859-1")
-    >>> check_encoding("iso-8859-15")
-    >>> check_encoding("cp437")
-    >>> check_encoding("mac-roman")
-    """
-    ET.XML(
-        "<?xml version='1.0' encoding='%s'?><xml />" % encoding
-        )
 
 #
 # xinclude tests (samples from appendix C of the xinclude specification)
@@ -282,14 +273,16 @@ def xinclude_loader(href, parse="xml", encoding=None):
     except KeyError:
         raise IOError("resource not found")
     if parse == "xml":
-        return ET.XML(data)
+        from xml.etree.ElementTree import XML
+        return XML(data)
     return data
 
 def xinclude():
     r"""
     Basic inclusion example (XInclude C.1)
 
-    >>> from xmlcore.etree import ElementInclude
+    >>> from xml.etree import ElementTree as ET
+    >>> from xml.etree import ElementInclude
 
     >>> document = xinclude_loader("C1.xml")
     >>> ElementInclude.include(document, xinclude_loader)

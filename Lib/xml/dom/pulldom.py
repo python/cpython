@@ -1,5 +1,5 @@
-import xmlcore.sax
-import xmlcore.sax.handler
+import xml.sax
+import xml.sax.handler
 import types
 
 try:
@@ -16,12 +16,12 @@ PROCESSING_INSTRUCTION = "PROCESSING_INSTRUCTION"
 IGNORABLE_WHITESPACE = "IGNORABLE_WHITESPACE"
 CHARACTERS = "CHARACTERS"
 
-class PullDOM(xmlcore.sax.ContentHandler):
+class PullDOM(xml.sax.ContentHandler):
     _locator = None
     document = None
 
     def __init__(self, documentFactory=None):
-        from xmlcore.dom import XML_NAMESPACE
+        from xml.dom import XML_NAMESPACE
         self.documentFactory = documentFactory
         self.firstEvent = [None, None]
         self.lastEvent = self.firstEvent
@@ -164,8 +164,8 @@ class PullDOM(xmlcore.sax.ContentHandler):
 
     def startDocument(self):
         if self.documentFactory is None:
-            import xmlcore.dom.minidom
-            self.documentFactory = xmlcore.dom.minidom.Document.implementation
+            import xml.dom.minidom
+            self.documentFactory = xml.dom.minidom.Document.implementation
 
     def buildDocument(self, uri, tagname):
         # Can't do that in startDocument, since we need the tagname
@@ -219,7 +219,7 @@ class DOMEventStream:
     def reset(self):
         self.pulldom = PullDOM()
         # This content handler relies on namespace support
-        self.parser.setFeature(xmlcore.sax.handler.feature_namespaces, 1)
+        self.parser.setFeature(xml.sax.handler.feature_namespaces, 1)
         self.parser.setContentHandler(self.pulldom)
 
     def __getitem__(self, pos):
@@ -335,7 +335,7 @@ def parse(stream_or_string, parser=None, bufsize=None):
     else:
         stream = stream_or_string
     if not parser:
-        parser = xmlcore.sax.make_parser()
+        parser = xml.sax.make_parser()
     return DOMEventStream(stream, parser, bufsize)
 
 def parseString(string, parser=None):
@@ -347,5 +347,5 @@ def parseString(string, parser=None):
     bufsize = len(string)
     buf = StringIO(string)
     if not parser:
-        parser = xmlcore.sax.make_parser()
+        parser = xml.sax.make_parser()
     return DOMEventStream(buf, parser, bufsize)

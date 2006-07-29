@@ -1,10 +1,10 @@
-# xmlcore.etree test for cElementTree
+# xml.etree test for cElementTree
 
 import doctest, sys
 
 from test import test_support
 
-from xmlcore.etree import cElementTree as ET
+from xml.etree import cElementTree as ET
 
 SAMPLE_XML = """
 <body>
@@ -30,7 +30,7 @@ def sanity():
     """
     Import sanity.
 
-    >>> from xmlcore.etree import cElementTree
+    >>> from xml.etree import cElementTree
     """
 
 def check_method(method):

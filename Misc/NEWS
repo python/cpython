@@ -52,6 +52,10 @@ Core and builtins
 Library
 -------
 
+- Rename of the xml package to xmlcore, and the import hackery done to
+  make it appear at both names, has been removed.  Bug #1511497,
+  #1513611, and probably others.
+
 - Bug #1441397: The compiler module now recognizes module and function
   docstrings correctly as it did in Python 2.4.
 
@@ -1640,8 +1644,8 @@ Library
 - Bug #792570: SimpleXMLRPCServer had problems if the request grew too large.
   Fixed by reading the HTTP body in chunks instead of one big socket.read().
 
-- Patches #893642, #1039083: add allow_none, encoding arguments to constructors of
-  SimpleXMLRPCServer and CGIXMLRPCRequestHandler.
+- Patches #893642, #1039083: add allow_none, encoding arguments to
+  constructors of SimpleXMLRPCServer and CGIXMLRPCRequestHandler.
 
 - Bug #1110478: Revert os.environ.update to do putenv again.
 

@@ -695,7 +695,7 @@ PLATDIR=	plat-$(MACHDEP)
 EXTRAPLATDIR= @EXTRAPLATDIR@
 EXTRAMACHDEPPATH=@EXTRAMACHDEPPATH@
 MACHDEPS=	$(PLATDIR) $(EXTRAPLATDIR)
-XMLLIBSUBDIRS=  xmlcore xmlcore/dom xmlcore/etree xmlcore/parsers xmlcore/sax
+XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
 PLATMACDIRS= plat-mac plat-mac/Carbon plat-mac/lib-scriptpackages \
 	plat-mac/lib-scriptpackages/_builtinSuites \
 	plat-mac/lib-scriptpackages/CodeWarrior \

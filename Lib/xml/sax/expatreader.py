@@ -5,27 +5,27 @@ pyexpat.__version__ == '2.22'.
 
 version = "0.20"
 
-from xmlcore.sax._exceptions import *
-from xmlcore.sax.handler import feature_validation, feature_namespaces
-from xmlcore.sax.handler import feature_namespace_prefixes
-from xmlcore.sax.handler import feature_external_ges, feature_external_pes
-from xmlcore.sax.handler import feature_string_interning
-from xmlcore.sax.handler import property_xml_string, property_interning_dict
+from xml.sax._exceptions import *
+from xml.sax.handler import feature_validation, feature_namespaces
+from xml.sax.handler import feature_namespace_prefixes
+from xml.sax.handler import feature_external_ges, feature_external_pes
+from xml.sax.handler import feature_string_interning
+from xml.sax.handler import property_xml_string, property_interning_dict
 
-# xmlcore.parsers.expat does not raise ImportError in Jython
+# xml.parsers.expat does not raise ImportError in Jython
 import sys
 if sys.platform[:4] == "java":
     raise SAXReaderNotAvailable("expat not available in Java", None)
 del sys
 
 try:
-    from xmlcore.parsers import expat
+    from xml.parsers import expat
 except ImportError:
     raise SAXReaderNotAvailable("expat not supported", None)
 else:
     if not hasattr(expat, "ParserCreate"):
         raise SAXReaderNotAvailable("expat not supported", None)
-from xmlcore.sax import xmlreader, saxutils, handler
+from xml.sax import xmlreader, saxutils, handler
 
 AttributesImpl = xmlreader.AttributesImpl
 AttributesNSImpl = xmlreader.AttributesNSImpl
@@ -407,8 +407,8 @@ def create_parser(*args, **kwargs):
 # ---
 
 if __name__ == "__main__":
-    import xmlcore.sax
+    import xml.sax
     p = create_parser()
-    p.setContentHandler(xmlcore.sax.XMLGenerator())
-    p.setErrorHandler(xmlcore.sax.ErrorHandler())
+    p.setContentHandler(xml.sax.XMLGenerator())
+    p.setErrorHandler(xml.sax.ErrorHandler())
     p.parse("../../../hamlet.xml")
