@@ -55,7 +55,7 @@ The \module{csv} module defines the following functions:
 Return a reader object which will iterate over lines in the given
 {}\var{csvfile}.  \var{csvfile} can be any object which supports the
 iterator protocol and returns a string each time its \method{next}
-method is called - file objects and list objects are both suitable.  
+method is called --- file objects and list objects are both suitable.  
 If \var{csvfile} is a file object, it must be opened with
 the 'b' flag on platforms where that makes a difference.  An optional
 {}\var{dialect} parameter can be given
@@ -77,7 +77,7 @@ file in a way that preserves the newlines. The behavior before 2.5 would
 introduce spurious characters into quoted fields, with no way for the user
 to control that behavior. The previous behavior caused considerable
 problems, particularly on platforms that did not use the unix line ending
-conventions, or with files that originated on those platforms - users were
+conventions, or with files that originated on those platforms --- users were
 finding mysterious newlines where they didn't expect them]{2.5}
 
 \end{funcdesc}
@@ -414,7 +414,7 @@ csv.register_dialect('unixpwd', delimiter=':', quoting=csv.QUOTE_NONE)
 reader = csv.reader(open("passwd", "rb"), 'unixpwd')
 \end{verbatim}
 
-A slightly more advanced use of the reader - catching and reporting errors:
+A slightly more advanced use of the reader --- catching and reporting errors:
 
 \begin{verbatim}
 import csv, sys
