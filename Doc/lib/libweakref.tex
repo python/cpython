@@ -65,10 +65,14 @@ class Dict(dict):
 obj = Dict(red=1, green=2, blue=3)   # this object is weak referencable
 \end{verbatim}
 
-Extension types can easily be made to support weak references; see section
-\ref{weakref-extension}, ``Weak References in Extension Types,'' for more
-information.
-
+Extension types can easily be made to support weak references; see
+``\ulink{Weak Reference Support}{../ext/weakref-support.html}'' in
+\citetitle[../ext/ext.html]{Extending and Embedding the Python
+Interpreter}.
+% The referenced section used to appear in this document with the
+% \label weakref-extension.  It would be good to be able to generate a
+% redirect for the corresponding HTML page (weakref-extension.html)
+% for on-line versions of this document.
 
 \begin{classdesc}{ref}{object\optional{, callback}}
   Return a weak reference to \var{object}.  The original object can be
@@ -329,84 +333,4 @@ def remember(obj):
 
 def id2obj(oid):
     return _id2obj_dict[oid]
-\end{verbatim}
-
-
-\subsection{Weak References in Extension Types
-            \label{weakref-extension}}
-
-One of the goals of the implementation is to allow any type to
-participate in the weak reference mechanism without incurring the
-overhead on those objects which do not benefit by weak referencing
-(such as numbers).
-
-For an object to be weakly referencable, the extension must include a
-\ctype{PyObject*} field in the instance structure for the use of the
-weak reference mechanism; it must be initialized to \NULL{} by the
-object's constructor.  It must also set the \member{tp_weaklistoffset}
-field of the corresponding type object to the offset of the field.
-Also, it needs to add \constant{Py_TPFLAGS_HAVE_WEAKREFS} to the
-tp_flags slot.  For example, the instance type is defined with the
-following structure:
-
-\begin{verbatim}
-typedef struct {
-    PyObject_HEAD
-    PyClassObject *in_class;       /* The class object */
-    PyObject      *in_dict;        /* A dictionary */
-    PyObject      *in_weakreflist; /* List of weak references */
-} PyInstanceObject;
-\end{verbatim}
-
-The statically-declared type object for instances is defined this way:
-
-\begin{verbatim}
-PyTypeObject PyInstance_Type = {
-    PyObject_HEAD_INIT(&PyType_Type)
-    0,
-    "module.instance",
-
-    /* Lots of stuff omitted for brevity... */
-
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_WEAKREFS   /* tp_flags */
-    0,                                          /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    offsetof(PyInstanceObject, in_weakreflist), /* tp_weaklistoffset */
-};
-\end{verbatim}
-
-The type constructor is responsible for initializing the weak reference
-list to \NULL:
-
-\begin{verbatim}
-static PyObject *
-instance_new() {
-    /* Other initialization stuff omitted for brevity */
-
-    self->in_weakreflist = NULL;
-
-    return (PyObject *) self;
-}
-\end{verbatim}
-
-The only further addition is that the destructor needs to call the
-weak reference manager to clear any weak references.  This should be
-done before any other parts of the destruction have occurred, but is
-only required if the weak reference list is non-\NULL:
-
-\begin{verbatim}
-static void
-instance_dealloc(PyInstanceObject *inst)
-{
-    /* Allocate temporaries if needed, but do not begin
-       destruction just yet.
-     */
-
-    if (inst->in_weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) inst);
-
-    /* Proceed with object destruction normally. */
-}
 \end{verbatim}

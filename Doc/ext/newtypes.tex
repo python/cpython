@@ -1564,6 +1564,85 @@ without setting an exception or it may set \exception{StopIteration};
 avoiding the exception can yield slightly better performance.  If an
 actual error occurs, it should set an exception and return \NULL.
 
+
+\subsection{Weak Reference Support\label{weakref-support}}
+
+One of the goals of Python's weak-reference implementation is to allow
+any type to participate in the weak reference mechanism without
+incurring the overhead on those objects which do not benefit by weak
+referencing (such as numbers).
+
+For an object to be weakly referencable, the extension must include a
+\ctype{PyObject*} field in the instance structure for the use of the
+weak reference mechanism; it must be initialized to \NULL{} by the
+object's constructor.  It must also set the \member{tp_weaklistoffset}
+field of the corresponding type object to the offset of the field.
+For example, the instance type is defined with the following
+structure:
+
+\begin{verbatim}
+typedef struct {
+    PyObject_HEAD
+    PyClassObject *in_class;       /* The class object */
+    PyObject      *in_dict;        /* A dictionary */
+    PyObject      *in_weakreflist; /* List of weak references */
+} PyInstanceObject;
+\end{verbatim}
+
+The statically-declared type object for instances is defined this way:
+
+\begin{verbatim}
+PyTypeObject PyInstance_Type = {
+    PyObject_HEAD_INIT(&PyType_Type)
+    0,
+    "module.instance",
+
+    /* Lots of stuff omitted for brevity... */
+
+    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+    0,                                          /* tp_doc */
+    0,                                          /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    offsetof(PyInstanceObject, in_weakreflist), /* tp_weaklistoffset */
+};
+\end{verbatim}
+
+The type constructor is responsible for initializing the weak reference
+list to \NULL:
+
+\begin{verbatim}
+static PyObject *
+instance_new() {
+    /* Other initialization stuff omitted for brevity */
+
+    self->in_weakreflist = NULL;
+
+    return (PyObject *) self;
+}
+\end{verbatim}
+
+The only further addition is that the destructor needs to call the
+weak reference manager to clear any weak references.  This should be
+done before any other parts of the destruction have occurred, but is
+only required if the weak reference list is non-\NULL:
+
+\begin{verbatim}
+static void
+instance_dealloc(PyInstanceObject *inst)
+{
+    /* Allocate temporaries if needed, but do not begin
+       destruction just yet.
+     */
+
+    if (inst->in_weakreflist != NULL)
+        PyObject_ClearWeakRefs((PyObject *) inst);
+
+    /* Proceed with object destruction normally. */
+}
+\end{verbatim}
+
+
 \subsection{More Suggestions}
 
 Remember that you can omit most of these functions, in which case you
