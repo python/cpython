@@ -44,6 +44,19 @@ compile Python sources in directories named on the command line or in
   \function{compile_dir()} function.
 \end{funcdesc}
 
+To force a recompile of all the \file{.py} files in the \file{Lib/}
+subdirectory and all its subdirectories:
+
+\begin{verbatim}
+import compileall
+
+compileall.compile_dir('Lib/', force=True)
+
+# Perform same compilation, excluding files in .svn directories.
+import re
+compileall.compile_dir('Lib/', rx=re.compile('/[.]svn'), force=True)
+\end{verbatim}
+
 
 \begin{seealso}
   \seemodule[pycompile]{py_compile}{Byte-compile a single source file.}
