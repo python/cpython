@@ -68,6 +68,14 @@ class CompilerTest(unittest.TestCase):
     def testDefaultArgs(self):
         self.assertRaises(SyntaxError, compiler.parse, "def foo(a=1, b): pass")
 
+    def testDocstrings(self):
+        c = compiler.compile('"doc"', '<string>', 'exec')
+        self.assert_('__doc__' in c.co_names)
+        c = compiler.compile('def f():\n "doc"', '<string>', 'exec')
+        g = {}
+        exec c in g
+        self.assertEquals(g['f'].__doc__, "doc")
+
     def testLineNo(self):
         # Test that all nodes except Module have a correct lineno attribute.
         filename = __file__

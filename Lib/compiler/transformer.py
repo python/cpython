@@ -1382,6 +1382,7 @@ _doc_nodes = [
     symbol.testlist,
     symbol.testlist_safe,
     symbol.test,
+    symbol.or_test,
     symbol.and_test,
     symbol.not_test,
     symbol.comparison,

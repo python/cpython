@@ -52,6 +52,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1441397: The compiler module now recognizes module and function
+  docstrings correctly as it did in Python 2.4.
+
 - Bug #1529297:  The rewrite of doctest for Python 2.4 unintentionally
   lost that tests are sorted by name before being run.  This rarely
   matters for well-written tests, but can create baffling symptoms if
