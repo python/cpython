@@ -274,10 +274,13 @@ class UUID(object):
 def _find_mac(command, args, hw_identifiers, get_index):
     import os
     for dir in ['', '/sbin/', '/usr/sbin']:
+        executable = os.path.join(dir, command)
+        if not os.path.exists(executable):
+            continue
+
         try:
             # LC_ALL to get English output, 2>/dev/null to
             # prevent output on stderr
-            executable = os.path.join(dir, command)
             cmd = 'LC_ALL=C %s %s 2>/dev/null' % (executable, args)
             pipe = os.popen(cmd)
         except IOError:
