@@ -199,6 +199,21 @@ def parseliteral():
     'body'
     """
 
+
+def check_encoding(ET, encoding):
+    """
+    >>> from xml.etree import ElementTree as ET
+
+    >>> check_encoding(ET, "ascii")
+    >>> check_encoding(ET, "us-ascii")
+    >>> check_encoding(ET, "iso-8859-1")
+    >>> check_encoding(ET, "iso-8859-15")
+    >>> check_encoding(ET, "cp437")
+    >>> check_encoding(ET, "mac-roman")
+    """
+    ET.XML("<?xml version='1.0' encoding='%s'?><xml />" % encoding)
+
+
 #
 # xinclude tests (samples from appendix C of the xinclude specification)
 
