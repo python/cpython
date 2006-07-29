@@ -103,14 +103,14 @@ of an application. Each instance has its own associated Tcl interpreter.
 \end{classdesc}
 
 \begin{funcdesc}{Tcl}{screenName=None, baseName=None, className='Tk', useTk=0}
-The \function{Tcl} function is a factory function which creates an object
-much like that created by the \class{Tk} class, except that it does not
-initialize the Tk subsystem.  This is most often useful when driving the Tcl
-interpreter in an environment where one doesn't want to create extraneous
-toplevel windows, or where one cannot (i.e. Unix/Linux systems without an X
-server).  An object created by the \function{Tcl} object can have a Toplevel
-window created (and the Tk subsystem initialized) by calling its
-\method{loadtk} method.
+The \function{Tcl} function is a factory function which creates an
+object much like that created by the \class{Tk} class, except that it
+does not initialize the Tk subsystem.  This is most often useful when
+driving the Tcl interpreter in an environment where one doesn't want
+to create extraneous toplevel windows, or where one cannot (such as
+\UNIX/Linux systems without an X server).  An object created by the
+\function{Tcl} object can have a Toplevel window created (and the Tk
+subsystem initialized) by calling its \method{loadtk} method.
 \versionadded{2.4}
 \end{funcdesc}
 
@@ -316,10 +316,10 @@ is called \code{.} (period) and children are delimited by more
 periods.  For example, \code{.myApp.controlPanel.okButton} might be
 the name of a widget.
 
-\item[\var{options} ]
+\item[\var{options}]
 configure the widget's appearance and in some cases, its
 behavior.  The options come in the form of a list of flags and values.
-Flags are proceeded by a `-', like Unix shell command flags, and
+Flags are proceeded by a `-', like \UNIX{} shell command flags, and
 values are put in quotes if they are more than one word.
 \end{description}
 
