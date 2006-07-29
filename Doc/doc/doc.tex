@@ -187,6 +187,20 @@ text contributions are more than welcome as well.
   Topics which are not covered in the Apple's style guide will be
   discussed in this document if necessary.
 
+  Footnotes are generally discouraged due to the pain of using
+  footnotes in the HTML conversion of documents.  Footnotes may be
+  used when they are the best way to present specific information.
+  When a footnote reference is added at the end of the sentence, it
+  should follow the sentence-ending punctuation.  The \LaTeX{} markup
+  should appear something like this:
+
+\begin{verbatim}
+This sentence has a footnote reference.%
+  \footnote{This is the footnote text.}
+\end{verbatim}
+
+  Footnotes may appear in the middle of sentences where appropriate.
+
   Many special names are used in the Python documentation, including
   the names of operating systems, programming languages, standards
   bodies, and the like.  Many of these were assigned \LaTeX{} macros
