@@ -711,6 +711,17 @@ If \var{n} is provided, read \var{n} bytes from the SSL connection, otherwise
 read until EOF. The return value is a string of the bytes read.
 \end{methoddesc}
 
+\begin{methoddesc}{server}{}
+Returns a string containing the ASN.1 distinguished name identifying the 
+server's certificate.  (See below for an example
+showing what distinguished names look like.)
+\end{methoddesc}
+
+\begin{methoddesc}{issuer}{}
+Returns a string containing the ASN.1 distinguished name identifying the
+issuer of the server's certificate.
+\end{methoddesc}
+
 \subsection{Example \label{socket-example}}
 
 Here are four minimal example programs using the TCP/IP protocol:\ a
@@ -832,4 +843,45 @@ s.send('Hello, world')
 data = s.recv(1024)
 s.close()
 print 'Received', repr(data)
+\end{verbatim}
+
+This example connects to an SSL server, prints the 
+server and issuer's distinguished names, sends some bytes,
+and reads part of the response:
+
+\begin{verbatim}
+import socket
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect(('www.verisign.com', 443))
+
+ssl_sock = socket.ssl(s)
+
+print repr(ssl_sock.server())
+print repr(ssl_sock.issuer())
+
+# Set a simple HTTP request -- use httplib in actual code.
+ssl_sock.write("""GET / HTTP/1.0\r
+Host: www.verisign.com\r\n\r\n""")
+
+# Read a chunk of data.  Will not necessarily
+# read all the data returned by the server.
+data = ssl_sock.read()
+
+# Note that you need to close the underlying socket, not the SSL object.
+del ssl_sock
+s.close()
+\end{verbatim}
+
+At this writing, this SSL example prints the following output (line
+breaks inserted for readability):
+
+\begin{verbatim}
+'/C=US/ST=California/L=Mountain View/
+ O=VeriSign, Inc./OU=Production Services/
+ OU=Terms of use at www.verisign.com/rpa (c)00/
+ CN=www.verisign.com'
+'/O=VeriSign Trust Network/OU=VeriSign, Inc./
+ OU=VeriSign International Server CA - Class 3/
+ OU=www.verisign.com/CPS Incorp.by Ref. LIABILITY LTD.(c)97 VeriSign'
 \end{verbatim}
