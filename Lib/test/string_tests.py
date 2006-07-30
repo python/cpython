@@ -147,8 +147,8 @@ class CommonTest(unittest.TestCase):
                 else:
                     r2, rem = len(i)+1, 0
                 if rem or r1 != r2:
-                    self.assertEqual(rem, 0)
-                    self.assertEqual(r1, r2)
+                    self.assertEqual(rem, 0, '%s != 0 for %s' % (rem, i))
+                    self.assertEqual(r1, r2, '%s != %s for %s' % (r1, r2, i))
 
     def test_find(self):
         self.checkequal(0, 'abcdefghiabc', 'find', 'abc')
@@ -635,6 +635,11 @@ class CommonTest(unittest.TestCase):
         EQ("bobob", "bobobob", "replace", "bobob", "bob")
         EQ("bobobXbobob", "bobobobXbobobob", "replace", "bobob", "bob")
         EQ("BOBOBOB", "BOBOBOB", "replace", "bob", "bobby")
+
+        ba = buffer('a')
+        bb = buffer('b')
+        EQ("bbc", "abc", "replace", ba, bb)
+        EQ("aac", "abc", "replace", bb, ba)
 
         #
         self.checkequal('one@two!three!', 'one!two!three!', 'replace', '!', '@', 1)

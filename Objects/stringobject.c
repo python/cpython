@@ -2464,11 +2464,11 @@ return_self(PyStringObject *self)
 }
 
 Py_LOCAL_INLINE(Py_ssize_t)
-countchar(char *target, int target_len, char c, Py_ssize_t maxcount)
+countchar(const char *target, int target_len, char c, Py_ssize_t maxcount)
 {
 	Py_ssize_t count=0;
-	char *start=target;
-	char *end=target+target_len;
+	const char *start=target;
+	const char *end=target+target_len;
 
 	while ( (start=findchar(start, end-start, c)) != NULL ) {
 		count++;
@@ -2480,8 +2480,8 @@ countchar(char *target, int target_len, char c, Py_ssize_t maxcount)
 }
 
 Py_LOCAL(Py_ssize_t)
-findstring(char *target, Py_ssize_t target_len,
-	   char *pattern, Py_ssize_t pattern_len,
+findstring(const char *target, Py_ssize_t target_len,
+	   const char *pattern, Py_ssize_t pattern_len,
 	   Py_ssize_t start,
 	   Py_ssize_t end,
 	   int direction)
@@ -2518,8 +2518,8 @@ findstring(char *target, Py_ssize_t target_len,
 }
 
 Py_LOCAL_INLINE(Py_ssize_t)
-countstring(char *target, Py_ssize_t target_len,
-	    char *pattern, Py_ssize_t pattern_len,
+countstring(const char *target, Py_ssize_t target_len,
+	    const char *pattern, Py_ssize_t pattern_len,
 	    Py_ssize_t start,
 	    Py_ssize_t end,
 	    int direction, Py_ssize_t maxcount)
@@ -2572,16 +2572,15 @@ countstring(char *target, Py_ssize_t target_len,
 /* len(self)>=1, from="", len(to)>=1, maxcount>=1 */
 Py_LOCAL(PyStringObject *)
 replace_interleave(PyStringObject *self,
-		   PyStringObject *to,
+		   const char *to_s, Py_ssize_t to_len,
 		   Py_ssize_t maxcount)
 {
-	char *self_s, *to_s, *result_s;
-	Py_ssize_t self_len, to_len, result_len;
+	char *self_s, *result_s;
+	Py_ssize_t self_len, result_len;
 	Py_ssize_t count, i, product;
 	PyStringObject *result;
 
 	self_len = PyString_GET_SIZE(self);
-	to_len = PyString_GET_SIZE(to);
 	
 	/* 1 at the end plus 1 after every character */
 	count = self_len+1;
@@ -2608,8 +2607,6 @@ replace_interleave(PyStringObject *self,
 		return NULL;
 
 	self_s = PyString_AS_STRING(self);
-	to_s = PyString_AS_STRING(to);
-	to_len = PyString_GET_SIZE(to);
 	result_s = PyString_AS_STRING(result);
 
 	/* TODO: special case single character, which doesn't need memcpy */
@@ -2677,18 +2674,17 @@ replace_delete_single_character(PyStringObject *self,
 /* len(self)>=1, len(from)>=2, to="", maxcount>=1 */
 
 Py_LOCAL(PyStringObject *)
-replace_delete_substring(PyStringObject *self, PyStringObject *from,
+replace_delete_substring(PyStringObject *self,
+			 const char *from_s, Py_ssize_t from_len,
 			 Py_ssize_t maxcount) {
-	char *self_s, *from_s, *result_s;
+	char *self_s, *result_s;
 	char *start, *next, *end;
-	Py_ssize_t self_len, from_len, result_len;
+	Py_ssize_t self_len, result_len;
 	Py_ssize_t count, offset;
 	PyStringObject *result;
 
 	self_len = PyString_GET_SIZE(self);
 	self_s = PyString_AS_STRING(self);
-	from_len = PyString_GET_SIZE(from);
-	from_s = PyString_AS_STRING(from);
 
 	count = countstring(self_s, self_len,
 			    from_s, from_len,
@@ -2776,24 +2772,20 @@ replace_single_character_in_place(PyStringObject *self,
 /* len(self)>=1, len(from)==len(to)>=2, maxcount>=1 */
 Py_LOCAL(PyStringObject *)
 replace_substring_in_place(PyStringObject *self,
-			   PyStringObject *from,
-			   PyStringObject *to,
+			   const char *from_s, Py_ssize_t from_len,
+			   const char *to_s, Py_ssize_t to_len,
 			   Py_ssize_t maxcount)
 {
 	char *result_s, *start, *end;
-	char *self_s, *from_s, *to_s;
-	Py_ssize_t self_len, from_len, offset;
+	char *self_s;
+	Py_ssize_t self_len, offset;
 	PyStringObject *result;
 	
 	/* The result string will be the same size */
 	
 	self_s = PyString_AS_STRING(self);
 	self_len = PyString_GET_SIZE(self);
-	
-	from_s = PyString_AS_STRING(from);
-	from_len = PyString_GET_SIZE(from);
-	to_s = PyString_AS_STRING(to);
-	
+
 	offset = findstring(self_s, self_len,
 			    from_s, from_len,
 			    0, self_len, FORWARD);
@@ -2810,7 +2802,6 @@ replace_substring_in_place(PyStringObject *self,
 	result_s = PyString_AS_STRING(result);
 	Py_MEMCPY(result_s, self_s, self_len);
 
-	
 	/* change everything in-place, starting with this one */
 	start =  result_s + offset;
 	Py_MEMCPY(start, to_s, from_len);
@@ -2834,12 +2825,12 @@ replace_substring_in_place(PyStringObject *self,
 Py_LOCAL(PyStringObject *)
 replace_single_character(PyStringObject *self,
 			 char from_c,
-			 PyStringObject *to,
+			 const char *to_s, Py_ssize_t to_len,
 			 Py_ssize_t maxcount)
 {
-	char *self_s, *to_s, *result_s;
+	char *self_s, *result_s;
 	char *start, *next, *end;
-	Py_ssize_t self_len, to_len, result_len;
+	Py_ssize_t self_len, result_len;
 	Py_ssize_t count, product;
 	PyStringObject *result;
 	
@@ -2852,10 +2843,7 @@ replace_single_character(PyStringObject *self,
 		/* no matches, return unchanged */
 		return return_self(self);
 	}
-	
-	to_s = PyString_AS_STRING(to);
-	to_len = PyString_GET_SIZE(to);
-	
+
 	/* use the difference between current and new, hence the "-1" */
 	/*   result_len = self_len + count * (to_len-1)  */
 	product = count * (to_len-1);
@@ -2904,20 +2892,18 @@ replace_single_character(PyStringObject *self,
 /* len(self)>=1, len(from)>=2, len(to)>=2, maxcount>=1 */
 Py_LOCAL(PyStringObject *)
 replace_substring(PyStringObject *self,
-		  PyStringObject *from,
-		  PyStringObject *to,
+		  const char *from_s, Py_ssize_t from_len,
+		  const char *to_s, Py_ssize_t to_len,
 		  Py_ssize_t maxcount) {
-	char *self_s, *from_s, *to_s, *result_s;
+	char *self_s, *result_s;
 	char *start, *next, *end;
-	Py_ssize_t self_len, from_len, to_len, result_len;
+	Py_ssize_t self_len, result_len;
 	Py_ssize_t count, offset, product;
 	PyStringObject *result;
 	
 	self_s = PyString_AS_STRING(self);
 	self_len = PyString_GET_SIZE(self);
-	from_s = PyString_AS_STRING(from);
-	from_len = PyString_GET_SIZE(from);
-	
+
 	count = countstring(self_s, self_len,
 			    from_s, from_len,
 			    0, self_len, FORWARD, maxcount);
@@ -2925,10 +2911,7 @@ replace_substring(PyStringObject *self,
 		/* no matches, return unchanged */
 		return return_self(self);
 	}
-	
-	to_s = PyString_AS_STRING(to);
-	to_len = PyString_GET_SIZE(to);
-	
+
 	/* Check for overflow */
 	/*    result_len = self_len + count * (to_len-from_len) */
 	product = count * (to_len-from_len);
@@ -2979,22 +2962,17 @@ replace_substring(PyStringObject *self,
 
 Py_LOCAL(PyStringObject *)
 replace(PyStringObject *self,
-	PyStringObject *from,
-	PyStringObject *to,
+	const char *from_s, Py_ssize_t from_len,
+	const char *to_s, Py_ssize_t to_len,
 	Py_ssize_t maxcount)
 {
-	Py_ssize_t from_len, to_len;
-	
 	if (maxcount < 0) {
 		maxcount = PY_SSIZE_T_MAX;
 	} else if (maxcount == 0 || PyString_GET_SIZE(self) == 0) {
 		/* nothing to do; return the original string */
 		return return_self(self);
 	}
-	
-	from_len = PyString_GET_SIZE(from);
-	to_len = PyString_GET_SIZE(to);
-	
+
 	if (maxcount == 0 ||
 	    (from_len == 0 && to_len == 0)) {
 		/* nothing to do; return the original string */
@@ -3007,7 +2985,7 @@ replace(PyStringObject *self,
 		/* insert the 'to' string everywhere.   */
 		/*    >>> "Python".replace("", ".")     */
 		/*    '.P.y.t.h.o.n.'                   */
-		return replace_interleave(self, to, maxcount);
+		return replace_interleave(self, to_s, to_len, maxcount);
 	}
 
 	/* Except for "".replace("", "A") == "A" there is no way beyond this */
@@ -3021,9 +2999,9 @@ replace(PyStringObject *self,
 		/* delete all occurances of 'from' string */
 		if (from_len == 1) {
 			return replace_delete_single_character(
-				self, PyString_AS_STRING(from)[0], maxcount);
+				self, from_s[0], maxcount);
 		} else {
-			return replace_delete_substring(self, from, maxcount);
+			return replace_delete_substring(self, from_s, from_len, maxcount);
 		}
 	}
 
@@ -3033,22 +3011,22 @@ replace(PyStringObject *self,
 		if (from_len == 1) {
 			return replace_single_character_in_place(
 				self,
-				PyString_AS_STRING(from)[0],
-				PyString_AS_STRING(to)[0],
+				from_s[0],
+				to_s[0],
 				maxcount);
 		} else {
 			return replace_substring_in_place(
-				self, from, to, maxcount);
+				self, from_s, from_len, to_s, to_len, maxcount);
 		}
 	}
 
 	/* Otherwise use the more generic algorithms */
 	if (from_len == 1) {
-		return replace_single_character(self, PyString_AS_STRING(from)[0],
-						to, maxcount);
+		return replace_single_character(self, from_s[0],
+						to_s, to_len, maxcount);
 	} else {
 		/* len('from')>=2, len('to')>=1 */
-		return replace_substring(self, from, to, maxcount);
+		return replace_substring(self, from_s, from_len, to_s, to_len, maxcount);
 	}
 }
 
@@ -3064,37 +3042,39 @@ string_replace(PyStringObject *self, PyObject *args)
 {
 	Py_ssize_t count = -1;
 	PyObject *from, *to;
-	const char *tmp_s;
-	Py_ssize_t tmp_len;
+	const char *from_s, *to_s;
+	Py_ssize_t from_len, to_len;
 
 	if (!PyArg_ParseTuple(args, "OO|n:replace", &from, &to, &count))
 		return NULL;
 
 	if (PyString_Check(from)) {
-	  /* Can this be made a '!check' after the Unicode check? */
+		from_s = PyString_AS_STRING(from);
+		from_len = PyString_GET_SIZE(from);
 	}
 #ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(from))
 		return PyUnicode_Replace((PyObject *)self,
 					 from, to, count);
 #endif
-	else if (PyObject_AsCharBuffer(from, &tmp_s, &tmp_len))
+	else if (PyObject_AsCharBuffer(from, &from_s, &from_len))
 		return NULL;
 
 	if (PyString_Check(to)) {
-	  /* Can this be made a '!check' after the Unicode check? */
+		to_s = PyString_AS_STRING(to);
+		to_len = PyString_GET_SIZE(to);
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(to))
 		return PyUnicode_Replace((PyObject *)self,
 					 from, to, count);
 #endif
-	else if (PyObject_AsCharBuffer(to, &tmp_s, &tmp_len))
+	else if (PyObject_AsCharBuffer(to, &to_s, &to_len))
 		return NULL;
 
 	return (PyObject *)replace((PyStringObject *) self,
-				   (PyStringObject *) from,
-				   (PyStringObject *) to, count);
+				   from_s, from_len,
+				   to_s, to_len, count);
 }
 
 /** End DALKE **/
