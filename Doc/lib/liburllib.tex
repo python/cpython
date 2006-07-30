@@ -270,10 +270,10 @@ off completely.  Its default value is \code{None}, in which case
 environmental proxy settings will be used if present, as discussed in
 the definition of \function{urlopen()}, above.
 
-Additional keyword parameters, collected in \var{x509}, are used for
-authentication with the \file{https:} scheme.  The keywords
-\var{key_file} and \var{cert_file} are supported; both are needed to
-actually retrieve a resource at an \file{https:} URL.
+Additional keyword parameters, collected in \var{x509}, may be used for
+authentication of the client when using the \file{https:} scheme.  The keywords
+\var{key_file} and \var{cert_file} are supported to provide an 
+SSL key and certificate; both are needed to support client authentication.
 
 \class{URLopener} objects will raise an \exception{IOError} exception
 if the server returns an error code.
