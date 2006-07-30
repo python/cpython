@@ -1492,7 +1492,6 @@ string_split(PyStringObject *self, PyObject *args)
 		j = i+pos;
 		SPLIT_ADD(s, i, j);
 		i = j + n;
-		
 	}
 #else
 	i = j = 0;
@@ -1588,7 +1587,7 @@ rsplit_whitespace(const char *s, Py_ssize_t len, Py_ssize_t maxsplit)
 		return NULL;
 
 	i = j = len-1;
-	
+
 	while (maxsplit-- > 0) {
 		RSKIP_SPACE(s, i);
 		if (i<0) break;
@@ -2581,12 +2580,12 @@ replace_interleave(PyStringObject *self,
 	PyStringObject *result;
 
 	self_len = PyString_GET_SIZE(self);
-	
+
 	/* 1 at the end plus 1 after every character */
 	count = self_len+1;
 	if (maxcount < count) 
 		count = maxcount;
-	
+
 	/* Check for overflow */
 	/*   result_len = count * to_len + self_len; */
 	product = count * to_len;
@@ -2667,7 +2666,7 @@ replace_delete_single_character(PyStringObject *self,
 		start = next+1;
 	}
 	Py_MEMCPY(result_s, start, end-start);
-	
+
 	return result;
 }
 
@@ -2698,13 +2697,13 @@ replace_delete_substring(PyStringObject *self,
 
 	result_len = self_len - (count * from_len);
 	assert (result_len>=0);
-	
+
 	if ( (result = (PyStringObject *)
 	      PyString_FromStringAndSize(NULL, result_len)) == NULL )
 		return NULL;
-	
+
 	result_s = PyString_AS_STRING(result);
-	
+
 	start = self_s;
 	end = self_s + self_len;
 	while (count-- > 0) {
@@ -2714,9 +2713,9 @@ replace_delete_substring(PyStringObject *self,
 		if (offset == -1)
 			break;
 		next = start + offset;
-		
+
 		Py_MEMCPY(result_s, start, next-start);
-		
+
 		result_s += (next-start);
 		start = next+from_len;
 	}
@@ -2733,31 +2732,31 @@ replace_single_character_in_place(PyStringObject *self,
 	char *self_s, *result_s, *start, *end, *next;
 	Py_ssize_t self_len;
 	PyStringObject *result;
-	
+
 	/* The result string will be the same size */
 	self_s = PyString_AS_STRING(self);
 	self_len = PyString_GET_SIZE(self);
-	
+
 	next = findchar(self_s, self_len, from_c);
-	
+
 	if (next == NULL) {
 		/* No matches; return the original string */
 		return return_self(self);
 	}
-	
+
 	/* Need to make a new string */
 	result = (PyStringObject *) PyString_FromStringAndSize(NULL, self_len);
 	if (result == NULL)
 		return NULL;
 	result_s = PyString_AS_STRING(result);
 	Py_MEMCPY(result_s, self_s, self_len);
-	
+
 	/* change everything in-place, starting with this one */
 	start =  result_s + (next-self_s);
 	*start = to_c;
 	start++;
 	end = result_s + self_len;
-	
+
 	while (--maxcount > 0) {
 		next = findchar(start, end-start, from_c);
 		if (next == NULL)
@@ -2765,7 +2764,7 @@ replace_single_character_in_place(PyStringObject *self,
 		*next = to_c;
 		start = next+1;
 	}
-	
+
 	return result;
 }
 
@@ -2780,21 +2779,20 @@ replace_substring_in_place(PyStringObject *self,
 	char *self_s;
 	Py_ssize_t self_len, offset;
 	PyStringObject *result;
-	
+
 	/* The result string will be the same size */
-	
+
 	self_s = PyString_AS_STRING(self);
 	self_len = PyString_GET_SIZE(self);
 
 	offset = findstring(self_s, self_len,
 			    from_s, from_len,
 			    0, self_len, FORWARD);
-	
 	if (offset == -1) {
 		/* No matches; return the original string */
 		return return_self(self);
 	}
-	
+
 	/* Need to make a new string */
 	result = (PyStringObject *) PyString_FromStringAndSize(NULL, self_len);
 	if (result == NULL)
@@ -2807,7 +2805,7 @@ replace_substring_in_place(PyStringObject *self,
 	Py_MEMCPY(start, to_s, from_len);
 	start += from_len;
 	end = result_s + self_len;
-	
+
 	while ( --maxcount > 0) {
 		offset = findstring(start, end-start,
 				    from_s, from_len,
@@ -2817,7 +2815,7 @@ replace_substring_in_place(PyStringObject *self,
 		Py_MEMCPY(start+offset, to_s, from_len);
 		start += offset+from_len;
 	}
-	
+
 	return result;
 }
 
@@ -2833,12 +2831,11 @@ replace_single_character(PyStringObject *self,
 	Py_ssize_t self_len, result_len;
 	Py_ssize_t count, product;
 	PyStringObject *result;
-	
+
 	self_s = PyString_AS_STRING(self);
 	self_len = PyString_GET_SIZE(self);
-	
+
 	count = countchar(self_s, self_len, from_c, maxcount);
-	
 	if (count == 0) {
 		/* no matches, return unchanged */
 		return return_self(self);
@@ -2856,19 +2853,19 @@ replace_single_character(PyStringObject *self,
 		PyErr_SetString(PyExc_OverflowError, "replace string is too long");
 		return NULL;
 	}
-	
+
 	if ( (result = (PyStringObject *)
 	      PyString_FromStringAndSize(NULL, result_len)) == NULL)
 		return NULL;
 	result_s = PyString_AS_STRING(result);
-	
+
 	start = self_s;
 	end = self_s + self_len;
 	while (count-- > 0) {
 		next = findchar(start, end-start, from_c);
 		if (next == NULL) 
 			break;
-		
+
 		if (next == start) {
 			/* replace with the 'to' */
 			Py_MEMCPY(result_s, to_s, to_len);
@@ -2885,7 +2882,7 @@ replace_single_character(PyStringObject *self,
 	}
 	/* Copy the remainder of the remaining string */
 	Py_MEMCPY(result_s, start, end-start);
-	
+
 	return result;
 }
 
@@ -2900,7 +2897,7 @@ replace_substring(PyStringObject *self,
 	Py_ssize_t self_len, result_len;
 	Py_ssize_t count, offset, product;
 	PyStringObject *result;
-	
+
 	self_s = PyString_AS_STRING(self);
 	self_len = PyString_GET_SIZE(self);
 
@@ -2924,12 +2921,12 @@ replace_substring(PyStringObject *self,
 		PyErr_SetString(PyExc_OverflowError, "replace string is too long");
 		return NULL;
 	}
-	
+
 	if ( (result = (PyStringObject *)
 	      PyString_FromStringAndSize(NULL, result_len)) == NULL)
 		return NULL;
 	result_s = PyString_AS_STRING(result);
-	
+
 	start = self_s;
 	end = self_s + self_len;
 	while (count-- > 0) {
@@ -2955,7 +2952,7 @@ replace_substring(PyStringObject *self,
 	}
 	/* Copy the remainder of the remaining string */
 	Py_MEMCPY(result_s, start, end-start);
-	
+
 	return result;
 }
 
@@ -2980,7 +2977,7 @@ replace(PyStringObject *self,
 	}
 
 	/* Handle zero-length special cases */
-	
+
 	if (from_len == 0) {
 		/* insert the 'to' string everywhere.   */
 		/*    >>> "Python".replace("", ".")     */
