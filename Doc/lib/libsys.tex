@@ -258,14 +258,14 @@ It is always available.
 \begin{itemize}
 \item On Windows 9x, the encoding is ``mbcs''.
 \item On Mac OS X, the encoding is ``utf-8''.
-\item On Unix, the encoding is the user's preference
-      according to the result of nl_langinfo(CODESET), or None if
-      the nl_langinfo(CODESET) failed.
+\item On \UNIX, the encoding is the user's preference
+      according to the result of nl_langinfo(CODESET), or \constant{None}
+      if the \code{nl_langinfo(CODESET)} failed.
 \item On Windows NT+, file names are Unicode natively, so no conversion
-      is performed. \code{getfilesystemencoding} still returns ``mbcs'',
-      as this is the encoding that applications should use when they
-      explicitly want to convert Unicode strings to byte strings that
-      are equivalent when used as file names.
+      is performed. \function{getfilesystemencoding()} still returns
+      \code{'mbcs'}, as this is the encoding that applications should use
+      when they explicitly want to convert Unicode strings to byte strings
+      that are equivalent when used as file names.
 \end{itemize}
   \versionadded{2.3}
 \end{funcdesc}
