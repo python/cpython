@@ -12,6 +12,8 @@ What's New in Python 2.5 beta 3?
 Core and builtins
 -----------------
 
+- Bug #1515471: string.replace() accepts character buffers again.
+
 - Add PyErr_WarnEx() so C code can pass the stacklevel to warnings.warn().
   This provides the proper warning for struct.pack().
   PyErr_Warn() is now deprecated in favor of PyErr_WarnEx().
