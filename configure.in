@@ -3342,27 +3342,8 @@ AC_TRY_COMPILE([#include <curses.h>], void *x=resizeterm,
   AC_MSG_RESULT(no)
 )
 
-AC_MSG_CHECKING(for /dev/ptmx)
-
-if test -e /dev/ptmx
-then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_DEV_PTMX, 1,
-  [Define if we have /dev/ptmx.])
-else
-  AC_MSG_RESULT(no)
-fi
-
-AC_MSG_CHECKING(for /dev/ptc)
-
-if test -e /dev/ptc
-then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_DEV_PTC, 1,
-  [Define if we have /dev/ptc.])
-else
-  AC_MSG_RESULT(no)
-fi
+AC_CHECK_FILE(/dev/ptmx, AC_DEFINE(HAVE_DEV_PTMX, 1, [Define if we have /dev/ptmx.]))
+AC_CHECK_FILE(/dev/ptc, AC_DEFINE(HAVE_DEV_PTC, 1, [Define if we have /dev/ptc.]))
 
 AC_MSG_CHECKING(for %zd printf() format support)
 AC_TRY_RUN([#include <stdio.h>

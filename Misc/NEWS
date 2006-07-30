@@ -177,6 +177,11 @@ Tests
   ``test_uuid`` and ``test_email_codecs`` didn't actually run any tests when
   run via ``regrtest.py``. Now they do.
 
+Build
+-----
+
+- Bug #1439538: Drop usage of test -e in configure as it is not portable.
+
 
 What's New in Python 2.5 beta 2?
 ================================
