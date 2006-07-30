@@ -622,10 +622,10 @@ ast_for_arguments(struct compiling *c, const node *n)
     }
     args = (n_args ? asdl_seq_new(n_args, c->c_arena) : NULL);
     if (!args && n_args)
-    	return NULL; /* Don't need to go to NULL; nothing allocated */
+    	return NULL; /* Don't need to goto error; no objects allocated */
     defaults = (n_defaults ? asdl_seq_new(n_defaults, c->c_arena) : NULL);
     if (!defaults && n_defaults)
-        goto error;
+    	return NULL; /* Don't need to goto error; no objects allocated */
 
     /* fpdef: NAME | '(' fplist ')'
        fplist: fpdef (',' fpdef)* [',']
@@ -644,6 +644,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                     expr_ty expression = ast_for_expr(c, CHILD(n, i + 2));
                     if (!expression)
                             goto error;
+                    assert(defaults != NULL);
                     asdl_seq_SET(defaults, j++, expression);
                     i += 2;
 		    found_default = 1;

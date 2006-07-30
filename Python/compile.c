@@ -3031,6 +3031,7 @@ compiler_boolop(struct compiler *c, expr_ty e)
 		return 0;
 	s = e->v.BoolOp.values;
 	n = asdl_seq_LEN(s) - 1;
+	assert(n >= 0);
 	for (i = 0; i < n; ++i) {
 		VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
 		ADDOP_JREL(c, jumpi, end);
