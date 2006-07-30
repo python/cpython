@@ -387,6 +387,9 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
         case GeneratorExp_kind:
             expr_name = "generator expression";
             break;
+        case Yield_kind:
+            expr_name = "yield expression";
+            break;
         case ListComp_kind:
             expr_name = "list comprehension";
             break;
@@ -1928,18 +1931,17 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         operator_ty newoperator;
 	node *ch = CHILD(n, 0);
 
-	if (TYPE(ch) == testlist)
-	    expr1 = ast_for_testlist(c, ch);
-	else
-	    expr1 = Yield(ast_for_expr(c, CHILD(ch, 0)), LINENO(ch), n->n_col_offset,
-                          c->c_arena);
-
+	expr1 = ast_for_testlist(c, ch);
         if (!expr1)
             return NULL;
         /* TODO(nas): Remove duplicated error checks (set_context does it) */
         switch (expr1->kind) {
             case GeneratorExp_kind:
                 ast_error(ch, "augmented assignment to generator "
+                          "expression not possible");
+                return NULL;
+            case Yield_kind:
+                ast_error(ch, "augmented assignment to yield "
                           "expression not possible");
                 return NULL;
             case Name_kind: {
@@ -1964,7 +1966,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 	if (TYPE(ch) == testlist)
 	    expr2 = ast_for_testlist(c, ch);
 	else
-	    expr2 = Yield(ast_for_expr(c, ch), LINENO(ch), ch->n_col_offset, c->c_arena);
+	    expr2 = ast_for_expr(c, ch);
         if (!expr2)
             return NULL;
 
