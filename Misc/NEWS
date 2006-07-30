@@ -61,6 +61,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1525866: Don't copy directory stat times in 
+  shutil.copytree on Windows
+
 - Bug #1002398: The documentation for os.path.sameopenfile now correctly
   refers to file descriptors, not file objects.
 

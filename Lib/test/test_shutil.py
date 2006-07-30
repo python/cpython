@@ -74,6 +74,33 @@ class TestShutil(unittest.TestCase):
             except:
                 pass
 
+                
+    def test_copytree_simple(self):
+        src_dir = tempfile.mkdtemp()
+        dst_dir = os.path.join(tempfile.mkdtemp(), 'destination')
+        open(os.path.join(src_dir, 'test.txt'), 'w').write('123')
+        os.mkdir(os.path.join(src_dir, 'test_dir'))
+        open(os.path.join(src_dir, 'test_dir', 'test.txt'), 'w').write('456')
+        #
+        try:
+            shutil.copytree(src_dir, dst_dir)
+            self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'test.txt')))
+            self.assertTrue(os.path.isdir(os.path.join(dst_dir, 'test_dir')))
+            self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'test_dir', 'test.txt')))
+            self.assertEqual(open(os.path.join(dst_dir, 'test.txt')).read(), '123')
+            self.assertEqual(open(os.path.join(dst_dir, 'test_dir', 'test.txt')).read(), '456')
+        finally:
+            try:
+                os.remove(os.path.join(src_dir, 'test.txt'))
+                os.remove(os.path.join(dst_dir, 'test.txt'))
+                os.remove(os.path.join(src_dir, 'test_dir', 'test.txt'))
+                os.remove(os.path.join(dst_dir, 'test_dir', 'test.txt'))
+                os.removedirs(src_dir)
+                os.removedirs(dst_dir)
+            except:
+                pass
+            
+            
     if hasattr(os, "symlink"):
         def test_dont_copy_file_onto_link_to_itself(self):
             # bug 851123.

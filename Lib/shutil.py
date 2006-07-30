@@ -127,7 +127,13 @@ def copytree(src, dst, symlinks=False):
         # continue with other files
         except Error, err:
             errors.extend(err.args[0])
-    copystat(src, dst)
+    try:
+        copystat(src, dst)
+    except WindowsError:
+        # can't copy file access times on Windows
+        pass
+    except OSError, why:
+        errors.extend((src, dst, str(why)))
     if errors:
         raise Error, errors
 
