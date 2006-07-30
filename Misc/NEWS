@@ -12,6 +12,10 @@ What's New in Python 2.5 beta 3?
 Core and builtins
 -----------------
 
+- Add PyErr_WarnEx() so C code can pass the stacklevel to warnings.warn().
+  This provides the proper warning for struct.pack().
+  PyErr_Warn() is now deprecated in favor of PyErr_WarnEx().
+
 - Patch #1531113: Fix augmented assignment with yield expressions.
   Also fix a SystemError when trying to assign to yield expressions.
 

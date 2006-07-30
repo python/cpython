@@ -214,6 +214,8 @@ get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 /* Helper routine to get a Python integer and raise the appropriate error
    if it isn't one */
 
+#define INT_OVERFLOW "struct integer overflow masking is deprecated"
+
 static int
 get_wrapped_long(PyObject *v, long *p)
 {
@@ -223,7 +225,7 @@ get_wrapped_long(PyObject *v, long *p)
 			PyObject *wrapped;
 			long x;
 			PyErr_Clear();
-			if (PyErr_Warn(PyExc_DeprecationWarning, "struct integer overflow masking is deprecated") < 0)
+			if (PyErr_WarnEx(PyExc_DeprecationWarning, INT_OVERFLOW, 2) < 0)
 				return -1;
 			wrapped = PyNumber_And(v, pylong_ulong_mask);
 			if (wrapped == NULL)
@@ -250,7 +252,7 @@ get_wrapped_ulong(PyObject *v, unsigned long *p)
 		wrapped = PyNumber_And(v, pylong_ulong_mask);
 		if (wrapped == NULL)
 			return -1;
-		if (PyErr_Warn(PyExc_DeprecationWarning, "struct integer overflow masking is deprecated") < 0) {
+		if (PyErr_WarnEx(PyExc_DeprecationWarning, INT_OVERFLOW, 2) < 0) {
 			Py_DECREF(wrapped);
 			return -1;
 		}
@@ -345,8 +347,8 @@ _range_error(const formatdef *f, int is_unsigned)
 		Py_XDECREF(ptraceback);
 		if (msg == NULL)
 			return -1;
-		rval = PyErr_Warn(PyExc_DeprecationWarning,
-				  PyString_AS_STRING(msg));
+		rval = PyErr_WarnEx(PyExc_DeprecationWarning,
+				    PyString_AS_STRING(msg), 2);
 		Py_DECREF(msg);
 		if (rval == 0)
 			return 0;
