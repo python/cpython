@@ -220,6 +220,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1257728: Mention Cygwin in distutils error message about a missing
+  VS 2003.
+
 - Patch #1519566: Update turtle demo, make begin_fill idempotent.
 
 - Bug #1508010: msvccompiler now requires the DISTUTILS_USE_SDK
