@@ -67,6 +67,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1257728: Complain about missing VS 2003 in the error message
+  of msvccompiler, and mention Cygwin as an alternative.
+
 - Bug #1002398: The documentation for os.path.sameopenfile now correctly
   refers to file descriptors, not file objects.
 
