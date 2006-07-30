@@ -64,7 +64,7 @@ def pack(fmt, *args):
 
 def pack_into(fmt, buf, offset, *args):
     """
-    Pack the values v2, v2, ... according to fmt, write
+    Pack the values v1, v2, ... according to fmt, write
     the packed bytes into the writable buffer buf starting at offset.
     See struct.__doc__ for more on format strings.
     """
