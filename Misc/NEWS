@@ -142,6 +142,8 @@ Tools/Demos
 Build
 -----
 
+- Bug #1439538: Drop usage of test -e in configure as it is not portable.
+
 - Bug #1502728: Correctly link against librt library on HP-UX.
 
 - OpenBSD 3.9 is now supported.
