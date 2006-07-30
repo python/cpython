@@ -12,6 +12,9 @@ What's New in Python 2.5 beta 3?
 Core and builtins
 -----------------
 
+- Patch #1531113: Fix augmented assignment with yield expressions.
+  Also fix a SystemError when trying to assign to yield expressions.
+
 - Bug #1529871: The speed enhancement patch #921466 broke Python's compliance
   with PEP 302.  This was fixed by adding an ``imp.NullImporter`` type that is
   used in ``sys.path_importer_cache`` to cache non-directory paths and avoid
