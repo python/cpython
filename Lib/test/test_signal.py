@@ -25,7 +25,11 @@ script = """
  ) &
 """ % vars()
 
+a_called = b_called = False
+
 def handlerA(*args):
+    global a_called
+    a_called = True
     if verbose:
         print "handlerA", args
 
@@ -33,6 +37,8 @@ class HandlerBCalled(Exception):
     pass
 
 def handlerB(*args):
+    global b_called
+    b_called = True
     if verbose:
         print "handlerB", args
     raise HandlerBCalled, args
@@ -87,6 +93,12 @@ try:
     except KeyboardInterrupt:
         if verbose:
             print "KeyboardInterrupt (assume the alarm() went off)"
+
+    if not a_called:
+        print 'HandlerA not called'
+
+    if not b_called:
+        print 'HandlerB not called'
 
 finally:
     signal.signal(signal.SIGHUP, hup)
