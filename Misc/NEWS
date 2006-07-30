@@ -80,7 +80,8 @@ Library
   side effects from one test to the next affect outcomes.  ``DocTestFinder``
   has been changed to sort the list of tests it returns.
 
-- The distutils version has been changed to 2.5.0.
+- The distutils version has been changed to 2.5.0, and are now kept
+  in sync with sys.version_info[:3].
 
 - Bug #978833: Really close underlying socket in _socketobject.close.
 
