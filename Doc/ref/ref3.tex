@@ -1886,6 +1886,9 @@ method should be the equivalent to using \method{__floordiv__()} and
 \method{__pow__()} should be defined to accept an optional third
 argument if the ternary version of the built-in
 \function{pow()}\bifuncindex{pow} function is to be supported.
+
+If one of those methods does not support the operation with the
+supplied arguments, it should return \code{NotImplemented}.
 \end{methoddesc}
 
 \begin{methoddesc}[numeric object]{__div__}{self, other}
