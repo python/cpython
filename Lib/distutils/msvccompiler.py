@@ -131,8 +131,10 @@ class MacroExpander:
                 self.set_macro("FrameworkSDKDir", net, "sdkinstallroot")
         except KeyError, exc: #
             raise DistutilsPlatformError, \
-                  ("Visual Studio 2003 needs to be installed before "
-                   "building extensions for Python.")
+                  ("""Python was built with Visual Studio 2003;
+extensions must be built with a compiler than can generate compatible binaries.
+Visual Studio 2003 was not found on this system. If you have Cygwin installed,
+you can try compiling with MingW32, by passing "-c mingw32" to setup.py.""")
 
         p = r"Software\Microsoft\NET Framework Setup\Product"
         for base in HKEYS:
