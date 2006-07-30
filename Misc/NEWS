@@ -67,6 +67,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1002398: The documentation for os.path.sameopenfile now correctly
+  refers to file descriptors, not file objects.
+
 - Bug #1529297:  The rewrite of doctest for Python 2.4 unintentionally
   lost that tests are sorted by name before being run.  This rarely
   matters for well-written tests, but can create baffling symptoms if
