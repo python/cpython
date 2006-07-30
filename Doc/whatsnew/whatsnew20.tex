@@ -571,7 +571,7 @@ def f(*args, **kw):
 
 The \keyword{print} statement can now have its output directed to a
 file-like object by following the \keyword{print} with 
-\verb|>> file|, similar to the redirection operator in Unix shells.
+\verb|>> file|, similar to the redirection operator in \UNIX{} shells.
 Previously you'd either have to use the \method{write()} method of the
 file-like object, which lacks the convenience and simplicity of
 \keyword{print}, or you could assign a new value to 
@@ -894,7 +894,7 @@ to be added, and a third argument for the value to be assigned to the
 name.  This third argument is, respectively, a Python object, a C
 long, or a C string.
 
-A wrapper API was added for Unix-style signal handlers.
+A wrapper API was added for \UNIX-style signal handlers.
 \function{PyOS_getsig()} gets a signal handler and
 \function{PyOS_setsig()} will set a new handler.
 
@@ -905,7 +905,7 @@ Before Python 2.0, installing modules was a tedious affair -- there
 was no way to figure out automatically where Python is installed, or
 what compiler options to use for extension modules.  Software authors
 had to go through an arduous ritual of editing Makefiles and
-configuration files, which only really work on Unix and leave Windows
+configuration files, which only really work on \UNIX{} and leave Windows
 and MacOS unsupported.  Python users faced wildly differing
 installation instructions which varied between different extension
 packages, which made administering a Python installation something of 
@@ -1222,7 +1222,7 @@ device on Linux, a twin to the existing \module{sunaudiodev} module.
 (Contributed by Peter Bosch, with fixes by Jeremy Hylton.)
 
 \item{\module{mmap}:} An interface to memory-mapped files on both
-Windows and Unix.  A file's contents can be mapped directly into
+Windows and \UNIX.  A file's contents can be mapped directly into
 memory, at which point it behaves like a mutable string, so its
 contents can be read and modified.  They can even be passed to
 functions that expect ordinary strings, such as the \module{re}
@@ -1262,7 +1262,7 @@ distribution, and enhanced to support Unicode.
 
 \item{\module{zipfile}:} A module for reading and writing ZIP-format
 archives.  These are archives produced by \program{PKZIP} on
-DOS/Windows or \program{zip} on Unix, not to be confused with
+DOS/Windows or \program{zip} on \UNIX, not to be confused with
 \program{gzip}-format files (which are supported by the \module{gzip}
 module)
 (Contributed by James C. Ahlstrom.)

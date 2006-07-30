@@ -512,10 +512,10 @@ The type/class to adapt must be a new-style class, i. e. it must have
 \class{object} as one of its bases.
 \end{notice}
 
-The \module{sqlite3} module has two default adapters for Python's builtin
-\class{datetime.date} and \class{datetime.datetime} types. Now let's suppose we
-want to store \class{datetime.datetime} objects not in ISO representation, but
-as Unix timestamp.
+The \module{sqlite3} module has two default adapters for Python's built-in
+\class{datetime.date} and \class{datetime.datetime} types.  Now let's suppose
+we want to store \class{datetime.datetime} objects not in ISO representation,
+but as a \UNIX{} timestamp.
 
     \verbatiminput{sqlite3/adapter_datetime.py}
 
