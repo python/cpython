@@ -651,7 +651,7 @@ bininstall:	altbininstall
 	else true; \
 	fi
 	(cd $(DESTDIR)$(BINDIR); $(LN) python$(VERSION)$(EXE) $(PYTHON))
-	(cd $(DESTDIR)$(BINDIR); $(LN) -sf python-config$(VERSION)$(EXE) python-config$(EXE))
+	(cd $(DESTDIR)$(BINDIR); $(LN) -sf python$(VERSION)-config python-config)
 
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
@@ -853,7 +853,7 @@ libainstall:	all
 	# Substitution happens here, as the completely-expanded BINDIR
 	# is not available in configure
 	sed -e "s,@EXENAME@,$(BINDIR)/python$(VERSION)$(EXE)," < $(srcdir)/Misc/python-config.in >python-config
-	$(INSTALL_SCRIPT) python-config $(DESTDIR)$(BINDIR)/python-config$(VERSION)$(EXE)
+	$(INSTALL_SCRIPT) python-config $(DESTDIR)$(BINDIR)/python$(VERSION)-config
 	rm python-config
 	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
