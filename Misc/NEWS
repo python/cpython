@@ -61,6 +61,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1002398: The documentation for os.path.sameopenfile now correctly
+  refers to file descriptors, not file objects.
+
 - Rename of the xml package to xmlcore, and the import hackery done to
   make it appear at both names, has been removed.  Bug #1511497,
   #1513611, and probably others.
