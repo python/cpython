@@ -75,12 +75,12 @@ conversion is performed.
 The parser is now stricter with respect to multi-line quoted
 fields. Previously, if a line ended within a quoted field without a
 terminating newline character, a newline would be inserted into the
-returned field. This behaviour caused problems when reading files
-that embed carriage-return characters within fields, so in 2.5 the
-behaviour was changed to return the field without inserting newlines. As
+returned field. This behavior caused problems when reading files
+which embedded carriage return characters within fields, so in 2.5 the
+behavior was changed to return the field without inserting newlines. As
 a consequence, if newlines embedded within fields are important, the
 input should be split into lines in a manner which preserves the newline
-characters.]{2.5}
+characters]{2.5}
 
 \end{funcdesc}
 
