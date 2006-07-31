@@ -2280,6 +2280,13 @@ Lundh at the NeedForSpeed sprint.)
 \var{dict})} can now accept a tuple of base classes as its \var{base}
 argument.  (Contributed by Georg Brandl.)
 
+\item The \cfunction{PyErr_Warn()} function for issuing warnings
+is now deprecated in favour of \cfunction{PyErr_WarnEx(category,
+message, stacklevel)} which lets you specify the number of stack
+frames separating this function and the caller.  A \var{stacklevel} of
+1 is the function calling \cfunction{PyErr_WarnEx()}, 2 is the
+function above that, and so forth.  (Added by Neal Norwitz.)
+
 \item The CPython interpreter is still written in C, but 
 the code can now be compiled with a {\Cpp} compiler without errors.  
 (Implemented by Anthony Baxter, Martin von~L\"owis, Skip Montanaro.)
