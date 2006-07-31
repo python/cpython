@@ -664,7 +664,7 @@ class ZipFile:
 
                 if zinfo.header_offset > ZIP64_LIMIT:
                     extra.append(zinfo.header_offset)
-                    header_offset = 0xffffffff #-1
+                    header_offset = -1  # struct "l" format:  32 one bits
                 else:
                     header_offset = zinfo.header_offset
 
