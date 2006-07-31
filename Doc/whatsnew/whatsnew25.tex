@@ -1393,6 +1393,17 @@ currently-set limit.  The \class{reader} class now has a
 \member{line_num} attribute that counts the number of physical lines
 read from the source; records can span multiple physical lines, so
 \member{line_num} is not the same as the number of records read.
+
+The CSV parser is now stricter about multi-line quoted
+fields. Previously, if a line ended within a quoted field without a
+terminating newline character, a newline would be inserted into the
+returned field. This behavior caused problems when reading files that
+contained carriage return characters within fields, so the code was
+changed to return the field without inserting newlines. As a
+consequence, if newlines embedded within fields are important, the
+input should be split into lines in a manner that preserves the
+newline characters.
+
 (Contributed by Skip Montanaro and Andrew McNamara.)
 
 \item The \class{datetime} class in the \module{datetime} 
@@ -2390,6 +2401,10 @@ was always a frame object.  Because of the \pep{342} changes
 described in section~\ref{pep-342}, it's now possible
 for \member{gi_frame} to be \code{None}.
 
+\item Library: the \module{csv} module is now stricter about multi-line quoted
+fields.  If your files contain newlines embedded within fields, the
+input should be split into lines in a manner which preserves the
+newline characters.
 
 \item Library: The \module{pickle} and \module{cPickle} modules no
 longer accept a return value of \code{None} from the
@@ -2428,6 +2443,7 @@ The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Nick Coghlan, Phillip J. Eby, Lars Gust\"abel, Raymond Hettinger, Ralf
 W. Grosse-Kunstleve, Kent Johnson, Martin von~L\"owis, Fredrik Lundh,
+Andrew McNamara, Skip Montanaro,
 Gustavo Niemeyer, James Pryor, Mike Rovner, Scott Weikart, Barry
 Warsaw, Thomas Wouters.
 
