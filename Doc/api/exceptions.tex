@@ -303,7 +303,7 @@ for each thread.
   category (see below) or \NULL; the \var{message} argument is a
   message string.  The warning will appear to be issued from the function
   calling \cfunction{PyErr_Warn()}, equivalent to calling
-  \cfunction{PyErr_Warn()} with a \var{stacklevel} of 1.
+  \cfunction{PyErr_WarnEx()} with a \var{stacklevel} of 1.
   
   Deprecated; use \cfunction{PyErr_WarnEx()} instead.
 \end{cfuncdesc}
