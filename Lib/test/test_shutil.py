@@ -74,7 +74,7 @@ class TestShutil(unittest.TestCase):
             except:
                 pass
 
-                
+
     def test_copytree_simple(self):
         src_dir = tempfile.mkdtemp()
         dst_dir = os.path.join(tempfile.mkdtemp(), 'destination')
@@ -99,8 +99,8 @@ class TestShutil(unittest.TestCase):
                 os.removedirs(dst_dir)
             except:
                 pass
-            
-            
+
+
     if hasattr(os, "symlink"):
         def test_dont_copy_file_onto_link_to_itself(self):
             # bug 851123.
