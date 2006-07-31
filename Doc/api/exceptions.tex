@@ -259,10 +259,14 @@ for each thread.
   argument.  It is mostly for internal use.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyErr_Warn}{PyObject *category, char *message}
+\begin{cfuncdesc}{int}{PyErr_WarnEx}{PyObject *category, char *message, int stacklevel}
   Issue a warning message.  The \var{category} argument is a warning
   category (see below) or \NULL; the \var{message} argument is a
-  message string.
+  message string.  \var{stacklevel} is a positive number giving a
+  number of stack frames; the warning will be issued from the 
+  currently executing line of code in that stack frame.  A \var{stacklevel}
+  of 1 is the function calling \cfunction{PyErr_WarnEx()}, 2 is 
+  the function above that, and so forth.
 
   This function normally prints a warning message to \var{sys.stderr};
   however, it is also possible that the user has specified that
@@ -292,6 +296,16 @@ for each thread.
   For information about warning control, see the documentation for the
   \module{warnings} module and the \programopt{-W} option in the
   command line documentation.  There is no C API for warning control.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyErr_Warn}{PyObject *category, char *message}
+  Issue a warning message.  The \var{category} argument is a warning
+  category (see below) or \NULL; the \var{message} argument is a
+  message string.  The warning will appear to be issued from the function
+  calling \cfunction{PyErr_Warn()}, equivalent to calling
+  \cfunction{PyErr_Warn()} with a \var{stacklevel} of 1.
+  
+  Deprecated; use \cfunction{PyErr_WarnEx()} instead.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyErr_WarnExplicit}{PyObject *category,
