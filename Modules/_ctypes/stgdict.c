@@ -134,16 +134,25 @@ PyType_stgdict(PyObject *obj)
 	type = (PyTypeObject *)obj;
 	if (!PyType_HasFeature(type, Py_TPFLAGS_HAVE_CLASS))
 		return NULL;
-	if (!type->tp_dict || !StgDict_Check(type->tp_dict))
+	if (!type->tp_dict || !StgDict_CheckExact(type->tp_dict))
 		return NULL;
 	return (StgDictObject *)type->tp_dict;
 }
 
 /* May return NULL, but does not set an exception! */
+/*
+  This function should be as fast as possible, so we don't call PyType_stgdict
+  above but inline the code, and avoid the PyType_Check().
+*/
 StgDictObject *
 PyObject_stgdict(PyObject *self)
 {
-	return PyType_stgdict((PyObject *)self->ob_type);
+	PyTypeObject *type = self->ob_type;
+	if (!PyType_HasFeature(type, Py_TPFLAGS_HAVE_CLASS))
+		return NULL;
+	if (!type->tp_dict || !StgDict_CheckExact(type->tp_dict))
+		return NULL;
+	return (StgDictObject *)type->tp_dict;
 }
 
 /* descr is the descriptor for a field marked as anonymous.  Get all the
