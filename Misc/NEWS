@@ -61,6 +61,9 @@ Core and builtins
 Library
 -------
 
+- os.urandom no longer masks unrelated exceptions like SystemExit or
+  KeyboardInterrupt.
+
 - Bug #1525866: Don't copy directory stat times in 
   shutil.copytree on Windows
 
