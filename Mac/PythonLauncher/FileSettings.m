@@ -245,12 +245,26 @@
     if (value) with_terminal = [value boolValue];
 }
 
+- (NSString*)_replaceSingleQuotes: (NSString*)string
+{
+	/* Replace all single-quotes by '"'"', that way shellquoting will
+	 * be correct when the result value is delimited  using single quotes.
+	 */
+	NSArray* components = [string componentsSeparatedByString:@"'"];
+
+	return [components componentsJoinedByString:@"'\"'\"'"];
+}
+
 - (NSString *)commandLineForScript: (NSString *)script
 {
     NSString *cur_interp = NULL;
+    NSString* script_dir = NULL;
     char hashbangbuf[1024];
     FILE *fp;
     char *p;
+
+    script_dir = [script substringToIndex:
+	    [script length]-[[script lastPathComponent] length]];
     
     if (honourhashbang &&
        (fp=fopen([script cString], "r")) &&
@@ -266,8 +280,9 @@
         cur_interp = interpreter;
         
     return [NSString stringWithFormat:
-        @"\"%@\"%s%s%s%s%s%s %@ \"%@\" %@ %s",
-        cur_interp,
+        @"cd '%@' && '%@'%s%s%s%s%s%s %@ '%@' %@ %s",
+    	[self _replaceSingleQuotes:script_dir],
+        [self _replaceSingleQuotes:cur_interp],
         debug?" -d":"",
         verbose?" -v":"",
         inspect?" -i":"",
@@ -275,7 +290,7 @@
         nosite?" -S":"",
         tabs?" -t":"",
         others,
-        script,
+        [self _replaceSingleQuotes:script],
         scriptargs,
         with_terminal? "&& echo Exit status: $? && exit 1" : " &"];
 }

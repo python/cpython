@@ -185,6 +185,17 @@ Build
 
 - Bug #1439538: Drop usage of test -e in configure as it is not portable.
 
+Mac
+---
+
+- PythonLauncher now works correctly when the path to the script contains
+  characters that are treated specially by the shell (such as quotes).
+
+- Bug #1527397: PythonLauncher now launches scripts with the working directory
+  set to the directory that contains the script instead of the user home
+  directory. That latter was an implementation accident and not what users 
+  expect.
+
 
 What's New in Python 2.5 beta 2?
 ================================
