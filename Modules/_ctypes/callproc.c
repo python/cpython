@@ -1160,7 +1160,7 @@ call_commethod(PyObject *self, PyObject *args)
 }
 
 static char copy_com_pointer_doc[] =
-"CopyComPointer(a, b) -> integer\n";
+"CopyComPointer(src, dst) -> HRESULT value\n";
 
 static PyObject *
 copy_com_pointer(PyObject *self, PyObject *args)
