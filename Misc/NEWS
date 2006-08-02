@@ -140,6 +140,10 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1519025 and bug #926423: If a KeyboardInterrupt occurs during
+  a socket operation on a socket with a timeout, the exception will be
+  caught correctly.  Previously, the exception was not caught.
+
 - Patch #1529514: The _ctypes extension is now compiled on more
   openbsd target platforms.
 

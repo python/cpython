@@ -708,7 +708,7 @@ internal_setblocking(PySocketSockObject *s, int block)
    The argument writing indicates the direction.
    This does not raise an exception; we'll let our caller do that
    after they've reacquired the interpreter lock.
-   Returns 1 on timeout, 0 otherwise. */
+   Returns 1 on timeout, -1 on error, 0 otherwise. */
 static int
 internal_select(PySocketSockObject *s, int writing)
 {
@@ -753,6 +753,9 @@ internal_select(PySocketSockObject *s, int writing)
 			n = select(s->sock_fd+1, &fds, NULL, NULL, &tv);
 	}
 #endif
+	
+	if (n < 0)
+		return -1;
 	if (n == 0)
 		return 1;
 	return 0;
@@ -1552,7 +1555,7 @@ sock_accept(PySocketSockObject *s)
 			       &addrlen);
 	Py_END_ALLOW_THREADS
 
-	if (timeout) {
+	if (timeout == 1) {
 		PyErr_SetString(socket_timeout, "timed out");
 		return NULL;
 	}
@@ -1923,9 +1926,15 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 	if (s->sock_timeout > 0.0) {
 		if (res < 0 && errno == EINPROGRESS && IS_SELECTABLE(s)) {
 			timeout = internal_select(s, 1);
-			res = connect(s->sock_fd, addr, addrlen);
-			if (res < 0 && errno == EISCONN)
-				res = 0;
+			if (timeout == 0) {
+				res = connect(s->sock_fd, addr, addrlen);
+				if (res < 0 && errno == EISCONN)
+					res = 0;
+			}
+			else if (timeout == -1)
+				res = errno;		/* had error */
+			else
+				res = EWOULDBLOCK;	/* timed out */
 		}
 	}
 
@@ -1955,7 +1964,7 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
 	res = internal_connect(s, addr, addrlen, &timeout);
 	Py_END_ALLOW_THREADS
 
-	if (timeout) {
+	if (timeout == 1) {
 		PyErr_SetString(socket_timeout, "timed out");
 		return NULL;
 	}
@@ -1988,6 +1997,13 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
 	Py_BEGIN_ALLOW_THREADS
 	res = internal_connect(s, addr, addrlen, &timeout);
 	Py_END_ALLOW_THREADS
+
+	/* Signals are not errors (though they may raise exceptions).  Adapted
+	   from PyErr_SetFromErrnoWithFilenameObject(). */
+#ifdef EINTR
+	if (res == EINTR && PyErr_CheckSignals())
+		return NULL;
+#endif
 
 	return PyInt_FromLong((long) res);
 }
@@ -2209,10 +2225,10 @@ The mode and buffersize arguments are as for the built-in open() function.");
 static ssize_t
 sock_recv_guts(PySocketSockObject *s, char* cbuf, int len, int flags)
 {
-        ssize_t outlen = 0;
+        ssize_t outlen = -1;
         int timeout;
 #ifdef __VMS
-	int remaining, nread;
+	int remaining;
 	char *read_buf;
 #endif
 
@@ -2228,7 +2244,7 @@ sock_recv_guts(PySocketSockObject *s, char* cbuf, int len, int flags)
 		outlen = recv(s->sock_fd, cbuf, len, flags);
 	Py_END_ALLOW_THREADS
 
-	if (timeout) {
+	if (timeout == 1) {
 		PyErr_SetString(socket_timeout, "timed out");
 		return -1;
 	}
@@ -2243,6 +2259,7 @@ sock_recv_guts(PySocketSockObject *s, char* cbuf, int len, int flags)
 	remaining = len;
 	while (remaining != 0) {
 		unsigned int segment;
+		int nread = -1;
 
 		segment = remaining /SEGMENT_SIZE;
 		if (segment != 0) {
@@ -2258,7 +2275,7 @@ sock_recv_guts(PySocketSockObject *s, char* cbuf, int len, int flags)
 			nread = recv(s->sock_fd, read_buf, segment, flags);
 		Py_END_ALLOW_THREADS
 
-		if (timeout) {
+		if (timeout == 1) {
 			PyErr_SetString(socket_timeout, "timed out");
 			return -1;
 		}
@@ -2406,7 +2423,7 @@ sock_recvfrom_guts(PySocketSockObject *s, char* cbuf, int len, int flags,
 {
 	sock_addr_t addrbuf;
 	int timeout;
-	ssize_t n = 0;
+	ssize_t n = -1;
 	socklen_t addrlen;
 
 	*addr = NULL;
@@ -2438,7 +2455,7 @@ sock_recvfrom_guts(PySocketSockObject *s, char* cbuf, int len, int flags,
 	}
 	Py_END_ALLOW_THREADS
 
-	if (timeout) {
+	if (timeout == 1) {
 		PyErr_SetString(socket_timeout, "timed out");
 		return -1;
 	}
@@ -2553,7 +2570,7 @@ static PyObject *
 sock_send(PySocketSockObject *s, PyObject *args)
 {
 	char *buf;
-	int len, n = 0, flags = 0, timeout;
+	int len, n = -1, flags = 0, timeout;
 
 	if (!PyArg_ParseTuple(args, "s#|i:send", &buf, &len, &flags))
 		return NULL;
@@ -2571,7 +2588,7 @@ sock_send(PySocketSockObject *s, PyObject *args)
 #endif
 	Py_END_ALLOW_THREADS
 
-	if (timeout) {
+	if (timeout == 1) {
 		PyErr_SetString(socket_timeout, "timed out");
 		return NULL;
 	}
@@ -2594,7 +2611,7 @@ static PyObject *
 sock_sendall(PySocketSockObject *s, PyObject *args)
 {
 	char *buf;
-	int len, n = 0, flags = 0, timeout;
+	int len, n = -1, flags = 0, timeout;
 
 	if (!PyArg_ParseTuple(args, "s#|i:sendall", &buf, &len, &flags))
 		return NULL;
@@ -2605,6 +2622,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
 	Py_BEGIN_ALLOW_THREADS
 	do {
 		timeout = internal_select(s, 1);
+		n = -1;
 		if (timeout)
 			break;
 #ifdef __VMS
@@ -2619,7 +2637,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
 	} while (len > 0);
 	Py_END_ALLOW_THREADS
 
-	if (timeout) {
+	if (timeout == 1) {
 		PyErr_SetString(socket_timeout, "timed out");
 		return NULL;
 	}
@@ -2647,7 +2665,7 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
 	PyObject *addro;
 	char *buf;
 	struct sockaddr *addr;
-	int addrlen, len, n = 0, flags, timeout;
+	int addrlen, len, n = -1, flags, timeout;
 
 	flags = 0;
 	if (!PyArg_ParseTuple(args, "s#O:sendto", &buf, &len, &addro)) {
@@ -2669,7 +2687,7 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
 		n = sendto(s->sock_fd, buf, len, flags, addr, addrlen);
 	Py_END_ALLOW_THREADS
 
-	if (timeout) {
+	if (timeout == 1) {
 		PyErr_SetString(socket_timeout, "timed out");
 		return NULL;
 	}
