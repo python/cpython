@@ -91,7 +91,7 @@ static PyObject *mkspent(struct spwd *p)
 #undef SETI
 
 	if (PyErr_Occurred()) {
-		Py_XDECREF(v);
+		Py_DECREF(v);
 		return NULL;
 	}
 
