@@ -17,7 +17,7 @@ weakref_getweakrefcount(PyObject *self, PyObject *object)
     if (PyType_SUPPORTS_WEAKREFS(object->ob_type)) {
         PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
 
-        result = PyInt_FromLong(_PyWeakref_GetWeakrefCount(*list));
+        result = PyInt_FromSsize_t(_PyWeakref_GetWeakrefCount(*list));
     }
     else
         result = PyInt_FromLong(0);
@@ -37,12 +37,12 @@ weakref_getweakrefs(PyObject *self, PyObject *object)
 
     if (PyType_SUPPORTS_WEAKREFS(object->ob_type)) {
         PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
-        long count = _PyWeakref_GetWeakrefCount(*list);
+        Py_ssize_t count = _PyWeakref_GetWeakrefCount(*list);
 
         result = PyList_New(count);
         if (result != NULL) {
             PyWeakReference *current = *list;
-            long i;
+            Py_ssize_t i;
             for (i = 0; i < count; ++i) {
                 PyList_SET_ITEM(result, i, (PyObject *) current);
                 Py_INCREF(current);

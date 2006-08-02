@@ -12,6 +12,9 @@ What's New in Python 2.5 beta 3?
 Core and builtins
 -----------------
 
+- _PyWeakref_GetWeakrefCount() now returns a Py_ssize_t, it previously
+  returned a long (see PEP 353).
+
 - Bug #1515471: string.replace() accepts character buffers again.
 
 - Add PyErr_WarnEx() so C code can pass the stacklevel to warnings.warn().
