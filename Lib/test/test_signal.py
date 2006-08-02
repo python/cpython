@@ -87,6 +87,7 @@ def force_test_exit():
             # time for the normal sequence of events to occur.  This is
             # just a stop-gap to prevent the test from hanging.
             time.sleep(MAX_DURATION + 5)
+            print >> sys.__stdout__, '  child should not have to kill parent'
             for i in range(3):
                 os.kill(pid, signal.SIGALARM)
         finally:
