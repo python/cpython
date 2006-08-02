@@ -315,7 +315,13 @@ class GzipFile:
     def close(self):
         if self.mode == WRITE:
             self.fileobj.write(self.compress.flush())
-            write32(self.fileobj, self.crc)
+            # The native zlib crc is an unsigned 32-bit integer, but
+            # the Python wrapper implicitly casts that to a signed C
+            # long.  So, on a 32-bit box self.crc may "look negative",
+            # while the same crc on a 64-bit box may "look positive".
+            # To avoid irksome warnings from the `struct` module, force
+            # it to look positive on all boxes.
+            write32u(self.fileobj, LOWU32(self.crc))
             # self.size may exceed 2GB, or even 4GB
             write32u(self.fileobj, LOWU32(self.size))
             self.fileobj = None
