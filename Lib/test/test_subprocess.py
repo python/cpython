@@ -497,7 +497,7 @@ class ProcessTestCase(unittest.TestCase):
                 resource.setrlimit(resource.RLIMIT_CORE, old_limit)
             except (ImportError, ValueError, resource.error):
                 return
-            
+
         def test_run_abort(self):
             # returncode handles signal termination
             old_limit = self._suppress_core_files()
