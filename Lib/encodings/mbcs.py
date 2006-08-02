@@ -15,39 +15,31 @@ import codecs
 
 ### Codec APIs
 
-class Codec(codecs.Codec):
+encode = mbcs_encode
 
-    # Note: Binding these as C functions will result in the class not
-    # converting them to methods. This is intended.
-    encode = mbcs_encode
-    decode = mbcs_decode
+def decode(input, errors='strict'):
+    return mbcs_decode(input, errors, True)
 
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def encode(self, input, final=False):
-        return mbcs_encode(input,self.errors)[0]
+        return mbcs_encode(input, self.errors)[0]
 
 class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
-    def _buffer_decode(self, input, errors, final):
-        return mbcs_decode(input,self.errors,final)
+    _buffer_decode = mbcs_decode
 
-class StreamWriter(Codec,codecs.StreamWriter):
-    pass
+class StreamWriter(codecs.StreamWriter):
+    encode = mbcs_encode
 
-class StreamReader(Codec,codecs.StreamReader):
-    pass
-
-class StreamConverter(StreamWriter,StreamReader):
-
-    encode = codecs.mbcs_decode
-    decode = codecs.mbcs_encode
+class StreamReader(codecs.StreamReader):
+    decode = mbcs_decode
 
 ### encodings module API
 
 def getregentry():
     return codecs.CodecInfo(
         name='mbcs',
-        encode=Codec.encode,
-        decode=Codec.decode,
+        encode=encode,
+        decode=decode,
         incrementalencoder=IncrementalEncoder,
         incrementaldecoder=IncrementalDecoder,
         streamreader=StreamReader,
