@@ -481,7 +481,7 @@ mbcs_decode(PyObject *self,
     const char *data;
     Py_ssize_t size, consumed;
     const char *errors = NULL;
-    int final = 1;
+    int final = 0;
     PyObject *decoded;
 
     if (!PyArg_ParseTuple(args, "t#|zi:mbcs_decode",
