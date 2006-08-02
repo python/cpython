@@ -11,6 +11,7 @@ import Queue
 import sys
 import array
 from weakref import proxy
+import signal
 
 PORT = 50007
 HOST = 'localhost'
@@ -816,6 +817,37 @@ class TCPTimeoutTest(SocketTCPTest):
             self.fail("caught unexpected exception (TCP)")
         if not ok:
             self.fail("accept() returned success when we did not expect it")
+
+    def testInterruptedTimeout(self):
+        # XXX I don't know how to do this test on MSWindows or any other
+        # plaform that doesn't support signal.alarm() or os.kill(), though
+        # the bug should have existed on all platforms.
+        if not hasattr(signal, "alarm"):
+            return                  # can only test on *nix
+        self.serv.settimeout(5.0)   # must be longer than alarm
+        class Alarm(Exception):
+            pass
+        def alarm_handler(signal, frame):
+            raise Alarm
+        old_alarm = signal.signal(signal.SIGALRM, alarm_handler)
+        try:
+            signal.alarm(2)    # POSIX allows alarm to be up to 1 second early
+            try:
+                foo = self.serv.accept()
+            except socket.timeout:
+                self.fail("caught timeout instead of Alarm")
+            except Alarm:
+                pass
+            except:
+                self.fail("caught other exception instead of Alarm")
+            else:
+                self.fail("nothing caught")
+            signal.alarm(0)         # shut off alarm
+        except Alarm:
+            self.fail("got Alarm in wrong place")
+        finally:
+            # no alarm can be pending.  Safe to restore old handler.
+            signal.signal(signal.SIGALRM, old_alarm)
 
 class UDPTimeoutTest(SocketTCPTest):
 
