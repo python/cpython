@@ -62,7 +62,7 @@ PyAPI_FUNC(PyObject *) PyWeakref_NewProxy(PyObject *ob,
                                                 PyObject *callback);
 PyAPI_FUNC(PyObject *) PyWeakref_GetObject(PyObject *ref);
 
-PyAPI_FUNC(long) _PyWeakref_GetWeakrefCount(PyWeakReference *head);
+PyAPI_FUNC(Py_ssize_t) _PyWeakref_GetWeakrefCount(PyWeakReference *head);
 
 PyAPI_FUNC(void) _PyWeakref_ClearRef(PyWeakReference *self);
 

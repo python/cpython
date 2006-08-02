@@ -6,10 +6,10 @@
         ((PyWeakReference **) PyObject_GET_WEAKREFS_LISTPTR(o))
 
 
-long
+Py_ssize_t
 _PyWeakref_GetWeakrefCount(PyWeakReference *head)
 {
-    long count = 0;
+    Py_ssize_t count = 0;
 
     while (head != NULL) {
         ++count;
