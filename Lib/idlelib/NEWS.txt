@@ -1,7 +1,7 @@
-What's New in IDLE 1.2c1?
+What's New in IDLE 1.2b3?
 =========================
 
-*Release date: XX-XXX-2006*
+*Release date: 03-AUG-2006*
 
 - EditorWindow.test() was failing.  Bug 1417598
 
