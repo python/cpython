@@ -6,12 +6,12 @@
 \modulesynopsis{A foreign function library for Python.}
 \versionadded{2.5}
 
-\code{ctypes} is a foreign function library for Python.
+\code{ctypes} is a foreign function library for Python.  It provides C
+compatible data types, and allows to call functions in dlls/shared
+libraries.  It can be used to wrap these libraries in pure Python.
 
 
 \subsection{ctypes tutorial\label{ctypes-ctypes-tutorial}}
-
-This tutorial describes version 0.9.9 of \code{ctypes}.
 
 Note: The code samples in this tutorial uses \code{doctest} to make sure
 that they actually work.  Since some code samples behave differently
@@ -150,8 +150,10 @@ be used as the NULL pointer):
 \end{verbatim}
 
 \code{ctypes} tries to protect you from calling functions with the wrong
-number of arguments.  Unfortunately this only works on Windows.  It
-does this by examining the stack after the function returns:
+number of arguments or the wrong calling convention.  Unfortunately
+this only works on Windows, for \code{stdcall} functions.  It does this
+by examining the stack after the function returns, so although an
+error is raised the function \emph{has} been called:
 \begin{verbatim}
 >>> windll.kernel32.GetModuleHandleA() # doctest: +WINDOWS
 Traceback (most recent call last):
@@ -163,6 +165,25 @@ Traceback (most recent call last):
 ValueError: Procedure probably called with too many arguments (4 bytes in excess)
 >>>
 \end{verbatim}
+
+The same exception is raised when you call an \code{stdcall} function
+with the \code{cdecl} calling convention, or vice versa:
+\begin{verbatim}
+>>> cdll.kernel32.GetModuleHandleA(None) # doctest: +WINDOWS
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+ValueError: Procedure probably called with not enough arguments (4 bytes missing)
+>>>
+
+>>> windll.msvcrt.printf("spam") # doctest: +WINDOWS
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+ValueError: Procedure probably called with too many arguments (4 bytes in excess)
+>>>
+\end{verbatim}
+
+To find out the correct calling convention you have to look into the C
+header file or the documentation for the function you want to call.
 
 On Windows, \code{ctypes} uses win32 structured exception handling to
 prevent crashes from general protection faults when functions are
@@ -1805,8 +1826,8 @@ supply.  Here is the C declaration:
 \begin{verbatim}
 WINUSERAPI BOOL WINAPI
 GetWindowRect(
-    HWND hWnd,
-    LPRECT lpRect);
+     HWND hWnd,
+     LPRECT lpRect);
 \end{verbatim}
 
 Here is the wrapping with \code{ctypes}:
