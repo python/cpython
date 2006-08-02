@@ -151,9 +151,9 @@ be used as the NULL pointer):
 
 \code{ctypes} tries to protect you from calling functions with the wrong
 number of arguments or the wrong calling convention.  Unfortunately
-this only works on Windows, for \code{stdcall} functions.  It does this
-by examining the stack after the function returns, so although an
-error is raised the function \emph{has} been called:
+this only works on Windows.  It does this by examining the stack after
+the function returns, so although an error is raised the function
+\emph{has} been called:
 \begin{verbatim}
 >>> windll.kernel32.GetModuleHandleA() # doctest: +WINDOWS
 Traceback (most recent call last):
