@@ -3401,11 +3401,11 @@ load_string(Unpicklerobject *self)
 	/********************************************/
 
 	str = PyString_DecodeEscape(p, len, NULL, 0, NULL);
+	free(s);
 	if (str) {
 		PDATA_PUSH(self->stack, str, -1);
 		res = 0;
 	}
-	free(s);
 	return res;
 
   insecure:
