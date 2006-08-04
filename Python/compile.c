@@ -143,7 +143,7 @@ struct compiler {
 	PyFutureFeatures *c_future; /* pointer to module's __future__ */
 	PyCompilerFlags *c_flags;
 
-	int c_interactive;
+	int c_interactive;	 /* true if in interactive mode */
 	int c_nestlevel;
 
 	struct compiler_unit *u; /* compiler state for current block */
@@ -1990,11 +1990,8 @@ compiler_function(struct compiler *c, stmt_ty s)
 	n = asdl_seq_LEN(s->v.FunctionDef.body);
 	/* if there was a docstring, we need to skip the first statement */
 	for (i = docstring; i < n; i++) {
-		stmt_ty s2 = (stmt_ty)asdl_seq_GET(s->v.FunctionDef.body, i);
-		if (i == 0 && s2->kind == Expr_kind &&
-		    s2->v.Expr.value->kind == Str_kind)
-			continue;
-		VISIT_IN_SCOPE(c, stmt, s2);
+		st = (stmt_ty)asdl_seq_GET(s->v.FunctionDef.body, i);
+		VISIT_IN_SCOPE(c, stmt, st);
 	}
 	co = assemble(c, 1);
 	compiler_exit_scope(c);
@@ -2217,6 +2214,10 @@ compiler_for(struct compiler *c, stmt_ty s)
 	VISIT(c, expr, s->v.For.iter);
 	ADDOP(c, GET_ITER);
 	compiler_use_next_block(c, start);
+	/* XXX(nnorwitz): is there a better way to handle this?
+	   for loops are special, we want to be able to trace them
+	   each time around, so we need to set an extra line number. */
+	c->u->u_lineno_set = false;
 	ADDOP_JREL(c, FOR_ITER, cleanup);
 	VISIT(c, expr, s->v.For.target);
 	VISIT_SEQ(c, stmt, s->v.For.body);
@@ -4139,7 +4140,10 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 	assert(d_bytecode >= 0);
 	assert(d_lineno >= 0);
 
-	if (d_lineno == 0)
+	/* XXX(nnorwitz): is there a better way to handle this?
+	   for loops are special, we want to be able to trace them
+	   each time around, so we need to set an extra line number. */
+	if (d_lineno == 0 && i->i_opcode != FOR_ITER)
 		return 1;
 
 	if (d_bytecode > 255) {
@@ -4443,6 +4447,41 @@ makecode(struct compiler *c, struct assembler *a)
 	Py_XDECREF(bytecode);
 	return co;
 }
+
+
+/* For debugging purposes only */
+#if 0
+static void
+dump_instr(const struct instr *i)
+{
+	const char *jrel = i->i_jrel ? "jrel " : "";
+	const char *jabs = i->i_jabs ? "jabs " : "";
+	char arg[128];
+
+	*arg = '\0';
+	if (i->i_hasarg)
+		sprintf(arg, "arg: %d ", i->i_oparg);
+
+	fprintf(stderr, "line: %d, opcode: %d %s%s%s\n", 
+			i->i_lineno, i->i_opcode, arg, jabs, jrel);
+}
+
+static void
+dump_basicblock(const basicblock *b)
+{
+	const char *seen = b->b_seen ? "seen " : "";
+	const char *b_return = b->b_return ? "return " : "";
+	fprintf(stderr, "used: %d, depth: %d, offset: %d %s%s\n",
+		b->b_iused, b->b_startdepth, b->b_offset, seen, b_return);
+	if (b->b_instr) {
+		int i;
+		for (i = 0; i < b->b_iused; i++) {
+			fprintf(stderr, "  [%02d] ", i);
+			dump_instr(b->b_instr + i);
+		}
+	}
+}
+#endif
 
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)

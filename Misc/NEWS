@@ -12,6 +12,11 @@ What's New in Python 2.5 release candidate 1?
 Core and builtins
 -----------------
 
+- Bug #1191458: tracing over for loops now produces a line event
+  on each iteration.  Fixing this problem required changing the .pyc
+  magic number.  This means that .pyc files generated before 2.5c1
+  will be regenerated.
+
 
 Library
 -------
@@ -83,7 +88,7 @@ Core and builtins
 
 - Bug #1520864: unpacking singleton tuples in a 'for' loop (for x, in) works
   again.  Fixing this problem required changing the .pyc magic number.
-  This means that .pyc files generated before 2.5c1 will be regenerated.
+  This means that .pyc files generated before 2.5b3 will be regenerated.
 
 - Bug #1524317:  Compiling Python ``--without-threads`` failed.
   The Python core compiles again then, and, in a build without threads, the
