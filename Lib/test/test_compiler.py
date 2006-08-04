@@ -116,7 +116,7 @@ class CompilerTest(unittest.TestCase):
         exec c in dct
         self.assertEquals(dct.get('result'), 3)
 
-        
+
 NOLINENO = (compiler.ast.Module, compiler.ast.Stmt, compiler.ast.Discard)
 
 ###############################################################################
