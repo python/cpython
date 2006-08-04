@@ -31,6 +31,17 @@ static PyObject *pylong_ulong_mask = NULL;
 static PyObject *pyint_zero = NULL;
 #endif
 
+/* If PY_STRUCT_FLOAT_COERCE is defined, the struct module will allow float
+   arguments for integer formats with a warning for backwards
+   compatibility. */
+
+#define PY_STRUCT_FLOAT_COERCE 1
+
+#ifdef PY_STRUCT_FLOAT_COERCE
+#define FLOAT_COERCE "integer argument expected, got float"
+#endif
+
+
 /* The translation function for each format character is table driven */
 typedef struct _formatdef {
 	char format;
@@ -135,6 +146,21 @@ get_long(PyObject *v, long *p)
 {
 	long x = PyInt_AsLong(v);
 	if (x == -1 && PyErr_Occurred()) {
+#ifdef PY_STRUCT_FLOAT_COERCE
+		if (PyFloat_Check(v)) {
+			PyObject *o;
+			int res;
+			PyErr_Clear();
+			if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
+				return -1;
+			o = PyNumber_Int(v);
+			if (o == NULL)
+				return -1;
+			res = get_long(o, p);
+			Py_DECREF(o);
+			return res;
+		}
+#endif
 		if (PyErr_ExceptionMatches(PyExc_TypeError))
 			PyErr_SetString(StructError,
 					"required argument is not an integer");
@@ -225,6 +251,21 @@ get_wrapped_long(PyObject *v, long *p)
 			PyObject *wrapped;
 			long x;
 			PyErr_Clear();
+#ifdef PY_STRUCT_FLOAT_COERCE
+			if (PyFloat_Check(v)) {
+				PyObject *o;
+				int res;
+				PyErr_Clear();
+				if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
+					return -1;
+				o = PyNumber_Int(v);
+				if (o == NULL)
+					return -1;
+				res = get_wrapped_long(o, p);
+				Py_DECREF(o);
+				return res;
+			}
+#endif
 			if (PyErr_WarnEx(PyExc_DeprecationWarning, INT_OVERFLOW, 2) < 0)
 				return -1;
 			wrapped = PyNumber_And(v, pylong_ulong_mask);
@@ -249,6 +290,21 @@ get_wrapped_ulong(PyObject *v, unsigned long *p)
 	if (x == -1 && PyErr_Occurred()) {
 		PyObject *wrapped;
 		PyErr_Clear();
+#ifdef PY_STRUCT_FLOAT_COERCE
+		if (PyFloat_Check(v)) {
+			PyObject *o;
+			int res;
+			PyErr_Clear();
+			if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
+				return -1;
+			o = PyNumber_Int(v);
+			if (o == NULL)
+				return -1;
+			res = get_wrapped_ulong(o, p);
+			Py_DECREF(o);
+			return res;
+		}
+#endif
 		wrapped = PyNumber_And(v, pylong_ulong_mask);
 		if (wrapped == NULL)
 			return -1;
@@ -1815,4 +1871,8 @@ init_struct(void)
 #ifdef PY_STRUCT_OVERFLOW_MASKING
 	PyModule_AddIntConstant(m, "_PY_STRUCT_OVERFLOW_MASKING", 1);
 #endif
+#ifdef PY_STRUCT_FLOAT_COERCE
+	PyModule_AddIntConstant(m, "_PY_STRUCT_FLOAT_COERCE", 1);
+#endif
+
 }
