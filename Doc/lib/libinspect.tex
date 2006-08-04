@@ -291,18 +291,18 @@ Note:
 \end{funcdesc}
 
 \begin{funcdesc}{formatargspec}{args\optional{, varargs, varkw, defaults,
-      argformat, varargsformat, varkwformat, defaultformat}}
+      formatarg, formatvarargs, formatvarkw, formatvalue, join}}
 
   Format a pretty argument spec from the four values returned by
-  \function{getargspec()}.  The other four arguments are the
+  \function{getargspec()}.  The format* arguments are the
   corresponding optional formatting functions that are called to turn
   names and values into strings.
 \end{funcdesc}
 
 \begin{funcdesc}{formatargvalues}{args\optional{, varargs, varkw, locals,
-      argformat, varargsformat, varkwformat, valueformat}}
+      formatarg, formatvarargs, formatvarkw, formatvalue, join}}
   Format a pretty argument spec from the four values returned by
-  \function{getargvalues()}.  The other four arguments are the
+  \function{getargvalues()}.  The format* arguments are the
   corresponding optional formatting functions that are called to turn
   names and values into strings.
 \end{funcdesc}
