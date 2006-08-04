@@ -48,6 +48,8 @@ Tests
 Build
 -----
 
+- Bug #1534738, win32 debug version of _msi should be _msi_d.pyd.
+
 - Bug #1530448, ctypes buld failure on Solaris 10 was fixed.
 
 
