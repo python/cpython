@@ -2745,11 +2745,13 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 	case Global_kind:
 		break;
 	case Expr_kind:
-		VISIT(c, expr, s->v.Expr.value);
 		if (c->c_interactive && c->c_nestlevel <= 1) {
+			VISIT(c, expr, s->v.Expr.value);
 			ADDOP(c, PRINT_EXPR);
 		}
-		else {
+		else if (s->v.Expr.value->kind != Str_kind &&
+			 s->v.Expr.value->kind != Num_kind) {
+			VISIT(c, expr, s->v.Expr.value);
 			ADDOP(c, POP_TOP);
 		}
 		break;

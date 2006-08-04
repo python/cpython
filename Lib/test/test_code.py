@@ -61,6 +61,23 @@ nlocals: 1
 flags: 67
 consts: ('None',)
 
+>>> def optimize_away():
+...     'doc string'
+...     'not a docstring'
+...     53
+...     53L
+
+>>> dump(optimize_away.func_code)
+name: optimize_away
+argcount: 0
+names: ()
+varnames: ()
+cellvars: ()
+freevars: ()
+nlocals: 0
+flags: 67
+consts: ("'doc string'", 'None')
+
 """
 
 def consts(t):
