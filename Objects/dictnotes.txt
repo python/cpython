@@ -243,7 +243,7 @@ kept just for iteration.
 Caching Lookups
 ---------------
 The idea is to exploit key access patterns by anticipating future lookups
-based of previous lookups.
+based on previous lookups.
 
 The simplest incarnation is to save the most recently accessed entry.
 This gives optimal performance for use cases where every get is followed
