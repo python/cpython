@@ -40,6 +40,10 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1530559, struct.pack raises TypeError where it used to convert.
+  Passing float arguments to struct.pack when integers are expected
+  now triggers a DeprecationWarning.
+
 
 Tests
 -----
