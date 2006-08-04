@@ -1190,19 +1190,21 @@ property_init(PyObject *self, PyObject *args, PyObject *kwds)
 	if (del == Py_None)
 		del = NULL;
 
-	/* if no docstring given and the getter has one, use that one */
-	if ((doc == NULL || doc == Py_None) && get != NULL && 
-	    PyObject_HasAttrString(get, "__doc__")) {
-		doc = PyObject_GetAttrString(get, "__doc__");
-		if (doc == NULL)
-			return -1;
-	} else {
-		Py_XINCREF(doc);
-	}
-
 	Py_XINCREF(get);
 	Py_XINCREF(set);
 	Py_XINCREF(del);
+	Py_XINCREF(doc);
+
+	/* if no docstring given and the getter has one, use that one */
+	if ((doc == NULL || doc == Py_None) && get != NULL) {
+		PyObject *get_doc = PyObject_GetAttrString(get, "__doc__");
+		if (get_doc != NULL) {
+			Py_XDECREF(doc);
+			doc = get_doc;  /* get_doc already INCREF'd by GetAttr */
+		} else {
+			PyErr_Clear();
+		}
+	}
 
 	gs->prop_get = get;
 	gs->prop_set = set;
