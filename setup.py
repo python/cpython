@@ -1349,6 +1349,7 @@ class PyBuildExt(build_ext):
         self.use_system_libffi = False
         include_dirs = []
         extra_compile_args = []
+        extra_link_args = []
         sources = ['_ctypes/_ctypes.c',
                    '_ctypes/callbacks.c',
                    '_ctypes/callproc.c',
@@ -1363,9 +1364,13 @@ class PyBuildExt(build_ext):
 # XXX Is this still needed?
 ##            extra_link_args.extend(['-read_only_relocs', 'warning'])
 
+        elif sys.platform == 'sunos5':
+            extra_link_args.append('-mimpure-text')
+
         ext = Extension('_ctypes',
                         include_dirs=include_dirs,
                         extra_compile_args=extra_compile_args,
+                        extra_link_args=extra_link_args,
                         libraries=[],
                         sources=sources,
                         depends=depends)
