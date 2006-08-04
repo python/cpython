@@ -130,15 +130,24 @@ def test():
     def test_string_exception1(self):
         str_type = "String Exception"
         err = traceback.format_exception_only(str_type, None)
-        self.assert_(len(err) == 1)
-        self.assert_(err[0] == str_type + '\n')
+        self.assertEqual(len(err), 1)
+        self.assertEqual(err[0], str_type + '\n')
 
     def test_string_exception2(self):
         str_type = "String Exception"
         str_value = "String Value"
         err = traceback.format_exception_only(str_type, str_value)
-        self.assert_(len(err) == 1)
-        self.assert_(err[0] == str_type + ': ' + str_value + '\n')
+        self.assertEqual(len(err), 1)
+        self.assertEqual(err[0], str_type + ': ' + str_value + '\n')
+
+    def test_format_exception_only_bad__str__(self):
+        class X(Exception):
+            def __str__(self):
+                1/0
+        err = traceback.format_exception_only(X, X())
+        self.assertEqual(len(err), 1)
+        str_value = '<unprintable %s object>' % X.__name__
+        self.assertEqual(err[0], X.__name__ + ': ' + str_value + '\n')
 
 
 def test_main():

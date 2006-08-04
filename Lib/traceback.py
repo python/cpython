@@ -202,7 +202,12 @@ def format_exception_only(etype, value):
 
 def _format_final_exc_line(etype, value):
     """Return a list of a single line -- normal case for format_exception_only"""
-    if value is None or not str(value):
+    try:
+        printable = value is None or not str(value)
+    except:
+        printable = False
+
+    if printable:
         line = "%s\n" % etype
     else:
         line = "%s: %s\n" % (etype, _some_str(value))
