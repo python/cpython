@@ -1176,7 +1176,6 @@ static int
 property_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	PyObject *get = NULL, *set = NULL, *del = NULL, *doc = NULL;
-	PyObject *get_doc = NULL;
 	static char *kwlist[] = {"fget", "fset", "fdel", "doc", 0};
 	propertyobject *gs = (propertyobject *)self;
 
@@ -1194,16 +1193,16 @@ property_init(PyObject *self, PyObject *args, PyObject *kwds)
 	/* if no docstring given and the getter has one, use that one */
 	if ((doc == NULL || doc == Py_None) && get != NULL && 
 	    PyObject_HasAttrString(get, "__doc__")) {
-		if (!(get_doc = PyObject_GetAttrString(get, "__doc__")))
+		doc = PyObject_GetAttrString(get, "__doc__");
+		if (doc == NULL)
 			return -1;
-		Py_DECREF(get_doc); /* it is INCREF'd again below */
-		doc = get_doc;
+	} else {
+		Py_XINCREF(doc);
 	}
 
 	Py_XINCREF(get);
 	Py_XINCREF(set);
 	Py_XINCREF(del);
-	Py_XINCREF(doc);
 
 	gs->prop_get = get;
 	gs->prop_set = set;
