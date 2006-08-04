@@ -17,6 +17,10 @@ Core and builtins
   magic number.  This means that .pyc files generated before 2.5c1
   will be regenerated.
 
+- Bug #1333982: string/number constants were inappropriately stored
+  in the byte code and co_consts even if they were not used, ie
+  immediately popped off the stack.
+
 
 Library
 -------
