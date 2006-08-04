@@ -2024,6 +2024,16 @@ def properties():
         prop2 = property(fset=setter)
         vereq(prop2.__doc__, None)
 
+    # this segfaulted in 2.5b2
+    try:
+        import _testcapi
+    except ImportError:
+        pass
+    else:
+        class X(object):
+            p = property(_testcapi.test_with_docstring)
+
+
 def supers():
     if verbose: print "Testing super..."
 
