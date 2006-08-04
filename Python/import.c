@@ -62,9 +62,10 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        Python 2.5a0: 62092 (changed WITH_CLEANUP opcode)
        Python 2.5b3: 62101 (fix wrong code: for x, in ...)
        Python 2.5b3: 62111 (fix wrong code: x += yield)
+       Python 2.5c1: 62121 (fix wrong lnotab with for loops)
 .
 */
-#define MAGIC (62111 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (62121 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
