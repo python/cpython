@@ -1490,7 +1490,7 @@ subtype_getweakref(PyObject *obj, void *context)
 
 	if (obj->ob_type->tp_weaklistoffset == 0) {
 		PyErr_SetString(PyExc_AttributeError,
-				"This object has no __weaklist__");
+				"This object has no __weakref__");
 		return NULL;
 	}
 	assert(obj->ob_type->tp_weaklistoffset > 0);
