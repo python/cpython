@@ -664,7 +664,7 @@ PyErr_WarnEx(PyObject *category, const char *message, Py_ssize_t stack_level)
 
 #undef PyErr_Warn
 
-int
+PyAPI_FUNC(int)
 PyErr_Warn(PyObject *category, char *message)
 {
 	return PyErr_WarnEx(category, message, 1);
