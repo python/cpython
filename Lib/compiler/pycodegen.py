@@ -382,16 +382,7 @@ class CodeGenerator:
         self.set_lineno(node)
         for default in node.defaults:
             self.visit(default)
-        frees = gen.scope.get_free_vars()
-        if frees:
-            for name in frees:
-                self.emit('LOAD_CLOSURE', name)
-            self.emit('LOAD_CONST', gen)
-            self.emit('MAKE_CLOSURE', len(node.defaults))
-        else:
-            self.emit('LOAD_CONST', gen)
-            self.emit('MAKE_FUNCTION', len(node.defaults))
-
+        self._makeClosure(gen, len(node.defaults))
         for i in range(ndecorators):
             self.emit('CALL_FUNCTION', 1)
 
@@ -405,14 +396,7 @@ class CodeGenerator:
         for base in node.bases:
             self.visit(base)
         self.emit('BUILD_TUPLE', len(node.bases))
-        frees = gen.scope.get_free_vars()
-        for name in frees:
-            self.emit('LOAD_CLOSURE', name)
-        self.emit('LOAD_CONST', gen)
-        if frees:
-            self.emit('MAKE_CLOSURE', 0)
-        else:
-            self.emit('MAKE_FUNCTION', 0)
+        self._makeClosure(gen, 0)
         self.emit('CALL_FUNCTION', 0)
         self.emit('BUILD_CLASS')
         self.storeName(node.name)
@@ -644,22 +628,25 @@ class CodeGenerator:
         self.newBlock()
         self.emit('POP_TOP')
 
+    def _makeClosure(self, gen, args):
+        frees = gen.scope.get_free_vars()
+        if frees:
+            for name in frees:
+                self.emit('LOAD_CLOSURE', name)
+            self.emit('BUILD_TUPLE', len(frees))
+            self.emit('LOAD_CONST', gen)
+            self.emit('MAKE_CLOSURE', args)
+        else:
+            self.emit('LOAD_CONST', gen)
+            self.emit('MAKE_FUNCTION', args)
+
     def visitGenExpr(self, node):
         gen = GenExprCodeGenerator(node, self.scopes, self.class_name,
                                    self.get_module())
         walk(node.code, gen)
         gen.finish()
         self.set_lineno(node)
-        frees = gen.scope.get_free_vars()
-        if frees:
-            for name in frees:
-                self.emit('LOAD_CLOSURE', name)
-            self.emit('LOAD_CONST', gen)
-            self.emit('MAKE_CLOSURE', 0)
-        else:
-            self.emit('LOAD_CONST', gen)
-            self.emit('MAKE_FUNCTION', 0)
-
+        self._makeClosure(gen, 0)
         # precomputation of outmost iterable
         self.visit(node.code.quals[0].iter)
         self.emit('GET_ITER')

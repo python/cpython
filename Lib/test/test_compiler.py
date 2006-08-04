@@ -104,6 +104,19 @@ class CompilerTest(unittest.TestCase):
         self.assertEquals(flatten([1, [2]]), [1, 2])
         self.assertEquals(flatten((1, (2,))), [1, 2])
 
+    def testNestedScope(self):
+        c = compiler.compile('def g():\n'
+                             '    a = 1\n'
+                             '    def f(): return a + 2\n'
+                             '    return f()\n'
+                             'result = g()',
+                             '<string>',
+                             'exec')
+        dct = {}
+        exec c in dct
+        self.assertEquals(dct.get('result'), 3)
+
+        
 NOLINENO = (compiler.ast.Module, compiler.ast.Stmt, compiler.ast.Discard)
 
 ###############################################################################

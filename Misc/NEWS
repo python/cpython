@@ -28,6 +28,9 @@ Library
 - Bug #1531405, format_exception no longer raises an exception if
   str(exception) raised an exception.
 
+- Fix a bug in the ``compiler`` package that caused invalid code to be
+  generated for nested functions.
+
 
 Extension Modules
 -----------------
