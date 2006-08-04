@@ -532,7 +532,7 @@ dictresize(dictobject *mp, Py_ssize_t minused)
 /* Note that, for historical reasons, PyDict_GetItem() suppresses all errors
  * that may occur (originally dicts supported only string keys, and exceptions
  * weren't possible).  So, while the original intent was that a NULL return
- * meant the key wasn't present, it reality it can mean that, or that an error
+ * meant the key wasn't present, in reality it can mean that, or that an error
  * (suppressed) occurred while computing the key's hash, or that some error
  * (suppressed) occurred when comparing keys in the dict's internal probe
  * sequence.  A nasty example of the latter is when a Python-coded comparison
