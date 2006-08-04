@@ -4,6 +4,38 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.5 release candidate 1?
+=============================================
+
+*Release date: XX-AUG-2006*
+
+Core and builtins
+-----------------
+
+
+Library
+-------
+
+- Bug #1531405, format_exception no longer raises an exception if
+  str(exception) raised an exception.
+
+
+Extension Modules
+-----------------
+
+
+Tests
+-----
+
+
+Build
+-----
+
+
+Mac
+---
+
+
 What's New in Python 2.5 beta 3?
 ================================
 
