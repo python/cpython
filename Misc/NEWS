@@ -49,6 +49,12 @@ Tests
 -----
 
 
+Documentation
+-------------
+
+- Patch #1534922: unittest docs were corrected and enhanced.
+
+
 Build
 -----
 
@@ -432,6 +438,7 @@ Documentation
 - Patch #1509163: MS Toolkit Compiler no longer available.
 
 - Patch #1504046: Add documentation for xml.etree.
+
 
 What's New in Python 2.5 beta 1?
 ================================
