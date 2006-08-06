@@ -53,6 +53,9 @@ Tests
 
 - Bug #1535182: really test the xreadlines() method of bz2 objects.
 
+- test_threading now skips testing alternate thread stack sizes on
+  platforms that don't support changing thread stack size.
+
 
 Documentation
 -------------
