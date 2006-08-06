@@ -59,7 +59,7 @@
 #
 # In addition, *static* explicitly declares the following modules to
 # be static.  Lines containing "*static*" and "*shared*" may thus
-# alternate thoughout this file.
+# alternate throughout this file.
 
 # NOTE: As a standard policy, as many modules as can be supported by a
 # platform should be present.  The distribution comes with all modules
@@ -234,16 +234,19 @@ GLHACK=-Dclear=__GLclear
 #rgbimg rgbimgmodule.c	# Read SGI RGB image files (but coded portably)
 
 
-# The md5 module implements the RSA Data Security, Inc. MD5
+# Note that the _md5 and _sha modules are normally only built if the
+# system does not have the OpenSSL libs containing an optimized version.
+
+# The _md5 module implements the RSA Data Security, Inc. MD5
 # Message-Digest Algorithm, described in RFC 1321.  The necessary files
 # md5.c and md5.h are included here.
 
-#md5 md5module.c md5.c
+#_md5 md5module.c md5.c
 
 
-# The sha module implements the SHA checksum algorithm.
+# The _sha module implements the SHA checksum algorithm.
 # (NIST's Secure Hash Algorithm.)
-#sha shamodule.c
+#_sha shamodule.c
 
 
 # SGI IRIX specific modules -- off by default.
