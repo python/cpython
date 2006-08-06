@@ -164,6 +164,8 @@ Documentation
 Tests
 -----
 
+- Bug #1535182: really test the xreadlines() method of bz2 objects.
+
 - Patch #1529686: test_iterlen and test_email_codecs are now actually
   run by regrtest.py.
 
