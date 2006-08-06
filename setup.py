@@ -902,8 +902,12 @@ class PyBuildExt(build_ext):
 
         # Curses support, requiring the System V version of curses, often
         # provided by the ncurses library.
+        panel_library = 'panel'
         if (self.compiler.find_library_file(lib_dirs, 'ncursesw')):
             curses_libs = ['ncursesw']
+            # Bug 1464056: If _curses.so links with ncursesw,
+            # _curses_panel.so must link with panelw.
+            panel_library = 'panelw'
             exts.append( Extension('_curses', ['_cursesmodule.c'],
                                    libraries = curses_libs) )
         elif (self.compiler.find_library_file(lib_dirs, 'ncurses')):
@@ -926,9 +930,9 @@ class PyBuildExt(build_ext):
 
         # If the curses module is enabled, check for the panel module
         if (module_enabled(exts, '_curses') and
-            self.compiler.find_library_file(lib_dirs, 'panel')):
+            self.compiler.find_library_file(lib_dirs, panel_library)):
             exts.append( Extension('_curses_panel', ['_curses_panel.c'],
-                                   libraries = ['panel'] + curses_libs) )
+                                   libraries = [panel_library] + curses_libs) )
 
 
         # Andrew Kuchling's zlib module.  Note that some versions of zlib
