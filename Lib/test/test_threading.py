@@ -89,7 +89,12 @@ class ThreadTests(unittest.TestCase):
     def test_various_ops_small_stack(self):
         if verbose:
             print 'with 256kB thread stack size...'
-        threading.stack_size(262144)
+        try:
+            threading.stack_size(262144)
+        except thread.error:
+            if verbose:
+                print 'platform does not support changing thread stack size'
+            return
         self.test_various_ops()
         threading.stack_size(0)
 
@@ -97,7 +102,12 @@ class ThreadTests(unittest.TestCase):
     def test_various_ops_large_stack(self):
         if verbose:
             print 'with 1MB thread stack size...'
-        threading.stack_size(0x100000)
+        try:
+            threading.stack_size(0x100000)
+        except thread.error:
+            if verbose:
+                print 'platform does not support changing thread stack size'
+            return
         self.test_various_ops()
         threading.stack_size(0)
 
