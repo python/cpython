@@ -48,6 +48,8 @@ Extension Modules
 Tests
 -----
 
+- Bug #1535182: really test the xreadlines() method of bz2 objects.
+
 
 Documentation
 -------------
