@@ -272,7 +272,7 @@ buffer_compare(PyBufferObject *self, PyBufferObject *other)
 	if (min_len > 0) {
 		cmp = memcmp(p1, p2, min_len);
 		if (cmp != 0)
-			return cmp;
+			return cmp < 0 ? -1 : 1;
 	}
 	return (len_self < len_other) ? -1 : (len_self > len_other) ? 1 : 0;
 }

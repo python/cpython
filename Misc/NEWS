@@ -12,6 +12,8 @@ What's New in Python 2.5 release candidate 1?
 Core and builtins
 -----------------
 
+- Bug #1536786: buffer comparison could emit a RuntimeWarning.
+
 - Bug #1535165: fixed a segfault in input() and raw_input() when
   sys.stdin is closed.
 
