@@ -39,6 +39,12 @@ improvements are worthwhile, but they're improvements to one specific
 language feature or another; none of them are broad modifications to
 Python's semantics.
 
+As well as the language and library additions, other improvements and
+bugfixes were made throughout the source tree.  A search through the
+SVN change logs finds there were 334 patches applied and 443 bugs
+fixed between Python 2.4 and 2.5.  (Both figures are likely to be
+underestimates.)  
+
 This article doesn't try to be a complete specification of the new
 features; instead changes are briefly introduced using helpful
 examples.  For full details, you should always refer to the
@@ -2214,6 +2220,13 @@ in a complex migration procedure that was supervised and flawlessly
 carried out by Martin von~L\"owis.  The procedure was developed as
 \pep{347}.
 
+\item Coverity, a company that markets a source code analysis tool
+called Prevent, provided the results of their examination of the Python
+source code.  The analysis found about 60 bugs that 
+were quickly fixed.  Many of the bugs were refcounting problems, often
+occurring in error-handling code.  See
+\url{http://scan.coverity.com} for the statistics.
+
 \item The largest change to the C API came from \pep{353},
 which modifies the interpreter to use a \ctype{Py_ssize_t} type
 definition instead of \ctype{int}.  See the earlier
@@ -2357,28 +2370,6 @@ universal binary able to run on both PowerPC and Intel processors.
 \item Windows: \file{.dll} is no longer supported as a filename extension for 
 extension modules.  \file{.pyd} is now the only filename extension that will
 be searched for.
-
-\end{itemize}
-
-
-%======================================================================
-\section{Other Changes and Fixes \label{section-other}}
-
-As usual, there were a bunch of other improvements and bugfixes
-scattered throughout the source tree.  A search through the SVN change
-logs finds there were 334 patches applied and 443 bugs fixed between
-Python 2.4 and 2.5.  Both figures are likely to be underestimates.
-
-Some of the more notable changes are:
-
-\begin{itemize}
-
-\item Coverity, a company that markets a source code analysis tool
-  called Prevent, provided the results of their examination of the Python
-  source code.  The analysis found about 60 bugs that 
-  were quickly fixed.  Many of the bugs were refcounting problems, often
-  occurring in error-handling code.  See
-  \url{http://scan.coverity.com} for the statistics.
 
 \end{itemize}
 
