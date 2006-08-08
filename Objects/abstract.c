@@ -1114,7 +1114,7 @@ PySequence_Size(PyObject *s)
 	if (m && m->sq_length)
 		return m->sq_length(s);
 
-	type_error("non-sequence object of type '%.200s' has no len()", s);
+	type_error("object of type '%.200s' has no len()", s);
 	return -1;
 }
 
@@ -1705,7 +1705,7 @@ PyMapping_Size(PyObject *o)
 	if (m && m->mp_length)
 		return m->mp_length(o);
 
-	type_error("non-mapping object of type '%.200s' has no len()", o);
+	type_error("object of type '%.200s' has no len()", o);
 	return -1;
 }
 
