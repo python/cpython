@@ -2219,8 +2219,8 @@ which modifies the interpreter to use a \ctype{Py_ssize_t} type
 definition instead of \ctype{int}.  See the earlier
 section~\ref{pep-353} for a discussion of this change.
 
-\item The design of the bytecode compiler has changed a great deal, to
-no longer generate bytecode by traversing the parse tree.  Instead
+\item The design of the bytecode compiler has changed a great deal, 
+no longer generating bytecode by traversing the parse tree.  Instead
 the parse tree is converted to an abstract syntax tree (or AST), and it is 
 the abstract syntax tree that's traversed to produce the bytecode.
 
@@ -2261,6 +2261,32 @@ Grant Edwards, John Ehresman, Kurt Kaiser, Neal Norwitz, Tim Peters,
 Armin Rigo, and Neil Schemenauer, plus the participants in a number of
 AST sprints at conferences such as PyCon.
  
+\item Evan Jones's patch to obmalloc, first described in a talk
+at PyCon DC 2005, was applied.  Python 2.4 allocated small objects in
+256K-sized arenas, but never freed arenas.  With this patch, Python
+will free arenas when they're empty.  The net effect is that on some
+platforms, when you allocate many objects, Python's memory usage may
+actually drop when you delete them and the memory may be returned to
+the operating system.  (Implemented by Evan Jones, and reworked by Tim
+Peters.)
+
+Note that this change means extension modules must be more careful
+when allocating memory.  Python's API has many different
+functions for allocating memory that are grouped into families.  For
+example, \cfunction{PyMem_Malloc()}, \cfunction{PyMem_Realloc()}, and
+\cfunction{PyMem_Free()} are one family that allocates raw memory,
+while \cfunction{PyObject_Malloc()}, \cfunction{PyObject_Realloc()},
+and \cfunction{PyObject_Free()} are another family that's supposed to
+be used for creating Python objects.  
+
+Previously these different families all reduced to the platform's
+\cfunction{malloc()} and \cfunction{free()} functions.  This meant 
+it didn't matter if you got things wrong and allocated memory with the
+\cfunction{PyMem} function but freed it with the \cfunction{PyObject}
+function.  With 2.5's changes to obmalloc, these families now do different
+things and mismatches will probably result in a segfault.  You should
+carefully test your C extension modules with Python 2.5.
+
 \item The built-in set types now have an official C API.  Call
 \cfunction{PySet_New()} and \cfunction{PyFrozenSet_New()} to create a
 new set, \cfunction{PySet_Add()} and \cfunction{PySet_Discard()} to
@@ -2347,32 +2373,6 @@ Some of the more notable changes are:
 
 \begin{itemize}
 
-\item Evan Jones's patch to obmalloc, first described in a talk
-at PyCon DC 2005, was applied.  Python 2.4 allocated small objects in
-256K-sized arenas, but never freed arenas.  With this patch, Python
-will free arenas when they're empty.  The net effect is that on some
-platforms, when you allocate many objects, Python's memory usage may
-actually drop when you delete them, and the memory may be returned to
-the operating system.  (Implemented by Evan Jones, and reworked by Tim
-Peters.)
-
-Note that this change means extension modules need to be more careful
-with how they allocate memory.  Python's API has many different
-functions for allocating memory that are grouped into families.  For
-example, \cfunction{PyMem_Malloc()}, \cfunction{PyMem_Realloc()}, and
-\cfunction{PyMem_Free()} are one family that allocates raw memory,
-while \cfunction{PyObject_Malloc()}, \cfunction{PyObject_Realloc()},
-and \cfunction{PyObject_Free()} are another family that's supposed to
-be used for creating Python objects.  
-
-Previously these different families all reduced to the platform's
-\cfunction{malloc()} and \cfunction{free()} functions.  This meant 
-it didn't matter if you got things wrong and allocated memory with the
-\cfunction{PyMem} function but freed it with the \cfunction{PyObject}
-function.  With the obmalloc change, these families now do different
-things, and mismatches will probably result in a segfault.  You should
-carefully test your C extension modules with Python 2.5.
-
 \item Coverity, a company that markets a source code analysis tool
   called Prevent, provided the results of their examination of the Python
   source code.  The analysis found about 60 bugs that 
@@ -2444,7 +2444,7 @@ suggestions, corrections and assistance with various drafts of this
 article: Nick Coghlan, Phillip J. Eby, Lars Gust\"abel, Raymond Hettinger, Ralf
 W. Grosse-Kunstleve, Kent Johnson, Martin von~L\"owis, Fredrik Lundh,
 Andrew McNamara, Skip Montanaro,
-Gustavo Niemeyer, James Pryor, Mike Rovner, Scott Weikart, Barry
+Gustavo Niemeyer, Paul Prescod, James Pryor, Mike Rovner, Scott Weikart, Barry
 Warsaw, Thomas Wouters.
 
 \end{document}
