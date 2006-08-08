@@ -235,8 +235,6 @@ except ValueError: pass
 else: raise TestFailed, "buffer('asdf', -1) should raise ValueError"
 cmp(buffer("abc"), buffer("def")) # used to raise a warning: tp_compare didn't return -1, 0, or 1
 
-cmp(buffer('abc'), buffer('def'))
-
 try: buffer(None)
 except TypeError: pass
 else: raise TestFailed, "buffer(None) should raise TypeError"
