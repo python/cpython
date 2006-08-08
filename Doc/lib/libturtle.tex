@@ -253,12 +253,13 @@ you want to use the module to create graphics in a ``real'' program.
 
 \subsection{Turtle, Pen and RawPen Objects \label{pen-rawpen-objects}}
 
-\class{Turtle}, \class{Pen} and \class{RawPen} objects have all the
-global functions described above, except for \function{demo()} as
-methods, which manipulate the given pen.
+Most of the global functions available in the module are also
+available as methods of the \class{Turtle}, \class{Pen} and
+\class{RawPen} classes, affecting only the state of the given pen.
 
 The only method which is more powerful as a method is
-\function{degrees()}.
+\function{degrees()}, which takes an optional argument letting 
+you specify the number of units corresponding to a full circle:
 
 \begin{methoddesc}{degrees}{\optional{fullcircle}}
 \var{fullcircle} is by default 360. This can cause the pen to have any
