@@ -434,13 +434,13 @@ def register_X_browsers():
     # The default Gnome browser
     if _iscommand("gconftool-2"):
         # get the web browser string from gconftool
-        gc = 'gconftool-2 -g /desktop/gnome/url-handlers/http/command'
+        gc = 'gconftool-2 -g /desktop/gnome/url-handlers/http/command 2>/dev/null'
         out = os.popen(gc)
         commd = out.read().strip()
         retncode = out.close()
 
         # if successful, register it
-        if retncode == None and len(commd) != 0:
+        if retncode is None and commd:
             register("gnome", None, BackgroundBrowser(commd))
 
     # First, the Mozilla/Netscape browsers
