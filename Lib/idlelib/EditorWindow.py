@@ -1277,13 +1277,13 @@ class EditorWindow(object):
               "Toggle tabs",
               "Turn tabs " + ("on", "off")[self.usetabs] +
               "?\nIndent width " +
-              ("will be", "remains at")[self.usetabs] + " 8.",
+              ("will be", "remains at")[self.usetabs] + " 8." +
+              "\n Note: a tab is always 8 columns",
               parent=self.text):
             self.usetabs = not self.usetabs
-        # Try to prevent mixed tabs/spaces.
-        # User must reset indent width manually after using tabs
-        #      if he insists on getting into trouble.
-        self.indentwidth = 8
+            # Try to prevent inconsistent indentation.
+            # User must change indent width manually after using tabs.
+            self.indentwidth = 8
         return "break"
 
     # XXX this isn't bound to anything -- see tabwidth comments
