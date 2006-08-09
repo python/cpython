@@ -649,6 +649,10 @@ class BuiltinTest(unittest.TestCase):
             def __hash__(self):
                 return 2**100
         self.assertEquals(type(hash(Y())), int)
+        class Z(long):
+            def __hash__(self):
+                return self
+        self.assertEquals(hash(Z(42)), hash(42L))
 
     def test_hex(self):
         self.assertEqual(hex(16), '0x10')
