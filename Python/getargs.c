@@ -206,6 +206,9 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
 			if (level == 0)
 				max++;
 			level++;
+			if (level >= 30)
+				Py_FatalError("too many tuple nesting levels "
+					      "in argument format string");
 			break;
 		case ')':
 			if (level == 0)
