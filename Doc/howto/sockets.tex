@@ -213,37 +213,39 @@ Assuming you don't want to end the connection, the simplest solution
 is a fixed length message:
 
 \begin{verbatim}
-    class mysocket:
-        '''demonstration class only 
-          - coded for clarity, not efficiency'''
-        def __init__(self, sock=None):
-            if sock is None:
-                self.sock = socket.socket(
-                    socket.AF_INET, socket.SOCK_STREAM)
-            else:
-                self.sock = sock
+class mysocket:
+    '''demonstration class only 
+      - coded for clarity, not efficiency
+    '''
 
-        def connect(self, host, port):
-            self.sock.connect((host, port))
+    def __init__(self, sock=None):
+	if sock is None:
+	    self.sock = socket.socket(
+		socket.AF_INET, socket.SOCK_STREAM)
+	else:
+	    self.sock = sock
 
-        def mysend(self, msg):
-            totalsent = 0
-            while totalsent < MSGLEN:
-                sent = self.sock.send(msg[totalsent:])
-                if sent == 0:
-                    raise RuntimeError, \\
-                        "socket connection broken"
-                totalsent = totalsent + sent
+    def connect(self, host, port):
+	self.sock.connect((host, port))
 
-        def myreceive(self):
-            msg = ''
-            while len(msg) < MSGLEN:
-                chunk = self.sock.recv(MSGLEN-len(msg))
-                if chunk == '':
-                    raise RuntimeError, \\
-                        "socket connection broken"
-                msg = msg + chunk
-            return msg
+    def mysend(self, msg):
+	totalsent = 0
+	while totalsent < MSGLEN:
+	    sent = self.sock.send(msg[totalsent:])
+	    if sent == 0:
+		raise RuntimeError, \\
+		    "socket connection broken"
+	    totalsent = totalsent + sent
+
+    def myreceive(self):
+	msg = ''
+	while len(msg) < MSGLEN:
+	    chunk = self.sock.recv(MSGLEN-len(msg))
+	    if chunk == '':
+		raise RuntimeError, \\
+		    "socket connection broken"
+	    msg = msg + chunk
+	return msg
 \end{verbatim}
 
 The sending code here is usable for almost any messaging scheme - in
