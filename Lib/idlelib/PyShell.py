@@ -722,9 +722,12 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 else:
                     self.showtraceback()
             except:
-                if self.rpcclt:
-                    print>>sys.stderr, "IDLE internal error in runcode()"
+                if use_subprocess:
+                    print >> self.tkconsole.stderr, \
+                             "IDLE internal error in runcode()"
                 self.showtraceback()
+                if use_subprocess:
+                    self.tkconsole.endexecuting()
         finally:
             if not use_subprocess:
                 self.tkconsole.endexecuting()
