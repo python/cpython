@@ -4559,7 +4559,10 @@ slot_tp_hash(PyObject *self)
 		Py_DECREF(func);
 		if (res == NULL)
 			return -1;
-		h = PyInt_AsLong(res);
+		if (PyLong_Check(res))
+			h = res->ob_type->tp_hash(res);
+		else
+			h = PyInt_AsLong(res);
 		Py_DECREF(res);
 	}
 	else {

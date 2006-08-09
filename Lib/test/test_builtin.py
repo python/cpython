@@ -640,6 +640,15 @@ class BuiltinTest(unittest.TestCase):
         def f(): pass
         self.assertRaises(TypeError, hash, [])
         self.assertRaises(TypeError, hash, {})
+        # Bug 1536021: Allow hash to return long objects
+        class X:
+            def __hash__(self):
+                return 2**100
+        self.assertEquals(type(hash(X())), int)
+        class Y(object):
+            def __hash__(self):
+                return 2**100
+        self.assertEquals(type(hash(Y())), int)
 
     def test_hex(self):
         self.assertEqual(hex(16), '0x10')
