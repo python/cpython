@@ -1307,6 +1307,11 @@ defines mutable objects and implements a \method{__cmp__()} or
 since the dictionary implementation requires that a key's hash value
 is immutable (if the object's hash value changes, it will be in the
 wrong hash bucket).
+
+\versionchanged[\method{__hash__()} may now also return a long
+integer object; the 32-bit integer is then derived from the hash
+of that object]{2.5}
+
 \withsubitem{(object method)}{\ttindex{__cmp__()}}
 \end{methoddesc}
 

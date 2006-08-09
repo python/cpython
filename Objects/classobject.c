@@ -934,11 +934,9 @@ instance_hash(PyInstanceObject *inst)
 	Py_DECREF(func);
 	if (res == NULL)
 		return -1;
-	if (PyInt_Check(res)) {
-		outcome = PyInt_AsLong(res);
-		if (outcome == -1)
-			outcome = -2;
-	}
+	if (PyInt_Check(res) || PyLong_Check(res))
+		/* This already converts a -1 result to -2. */
+		outcome = res->ob_type->tp_hash(res);
 	else {
 		PyErr_SetString(PyExc_TypeError,
 				"__hash__() should return an int");
