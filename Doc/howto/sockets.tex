@@ -222,9 +222,11 @@ is a fixed length message:
                     socket.AF_INET, socket.SOCK_STREAM)
             else:
                 self.sock = sock
-        def connect(host, port):
+
+        def connect(self, host, port):
             self.sock.connect((host, port))
-        def mysend(msg):
+
+        def mysend(self, msg):
             totalsent = 0
             while totalsent < MSGLEN:
                 sent = self.sock.send(msg[totalsent:])
@@ -232,7 +234,8 @@ is a fixed length message:
                     raise RuntimeError, \\
                         "socket connection broken"
                 totalsent = totalsent + sent
-        def myreceive():
+
+        def myreceive(self):
             msg = ''
             while len(msg) < MSGLEN:
                 chunk = self.sock.recv(MSGLEN-len(msg))
