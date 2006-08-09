@@ -722,7 +722,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 else:
                     self.showtraceback()
             except:
-                print>>sys.stderr, "IDLE internal error in runcode()"
+                if self.rpcclt:
+                    print>>sys.stderr, "IDLE internal error in runcode()"
                 self.showtraceback()
         finally:
             if not use_subprocess:

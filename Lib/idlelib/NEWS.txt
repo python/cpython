@@ -1,3 +1,11 @@
+What's New in IDLE 1.2c1?
+=========================
+
+*Release date: XX-AUG-2006*
+
+- When used w/o subprocess, all exceptions were preceeded by an error
+  message claiming they were IDLE internal errors (since 1.2a1).
+
 What's New in IDLE 1.2b3?
 =========================
 
