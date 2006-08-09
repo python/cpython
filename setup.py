@@ -1369,6 +1369,14 @@ class PyBuildExt(build_ext):
 ##            extra_link_args.extend(['-read_only_relocs', 'warning'])
 
         elif sys.platform == 'sunos5':
+            # XXX This shouldn't be necessary; it appears that some
+            # of the assembler code is non-PIC (i.e. it has relocations
+            # when it shouldn't. The proper fix would be to rewrite
+            # the assembler code to be PIC.
+            # This only works with GCC; the Sun compiler likely refuses
+            # this option. If you want to compile ctypes with the Sun
+            # compiler, please research a proper solution, instead of
+            # finding some -z option for the Sun compiler.
             extra_link_args.append('-mimpure-text')
 
         ext = Extension('_ctypes',
