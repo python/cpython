@@ -19,9 +19,9 @@ the integration of the RPC and remote debugger, implemented the threaded
 subprocess, and made a number of usability enhancements.
 
 Other contributors include Raymond Hettinger, Tony Lownds (Mac integration),
-Neal Norwitz (code check and clean-up), Noam Raphael (Code Context, Call Tips,
-many other patches), and Chui Tey (RPC integration, debugger integration and
-persistent breakpoints).
+Neal Norwitz (code check and clean-up), Ronald Oussoren (Mac integration),
+Noam Raphael (Code Context, Call Tips, many other patches), and Chui Tey (RPC
+integration, debugger integration and persistent breakpoints).
 
 Scott David Daniels, Tal Einat, Hernan Foffani, Christos Georgiou,
 Martin v. Löwis, Jason Orendorff, Josh Robb, Nigel Rowe, Bruce Sherwood,
