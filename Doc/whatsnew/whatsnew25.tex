@@ -3,7 +3,6 @@
 % $Id$
 
 % Fix XXX comments
-% Count up the patches and bugs
 
 \title{What's New in Python 2.5}
 \release{0.9}
@@ -1100,10 +1099,10 @@ print d[3], d[4]   # Prints 0, 0
 
 \item Both 8-bit and Unicode strings have new \method{partition(sep)} 
 and \method{rpartition(sep)} methods that simplify a common use case.
+
 The \method{find(S)} method is often used to get an index which is
 then used to slice the string and obtain the pieces that are before
 and after the separator.  
-
 \method{partition(sep)} condenses this
 pattern into a single method call that returns a 3-tuple containing
 the substring before the separator, the separator itself, and the
@@ -1164,6 +1163,15 @@ returned by the iterator is true; otherwise it will return
 \constant{False}.  \function{all()} returns \constant{True} only if
 all of the values returned by the iterator evaluate as true.
 (Suggested by Guido van~Rossum, and implemented by Raymond Hettinger.)
+
+\item The result of a class's \method{__hash__()} method can now 
+be either a long integer or a regular integer.  If a long integer is
+returned, the hash of that value is taken.  In earlier versions the
+hash value was required to be a regular integer, but in 2.5 the
+\function{id()} built-in was changed to always return non-negative
+numbers, and users often seem to use \code{id(self)} in
+\method{__hash__()} methods (though this is discouraged).
+% Bug #1536021
 
 \item ASCII is now the default encoding for modules.  It's now 
 a syntax error if a module contains string literals with 8-bit
