@@ -4225,6 +4225,14 @@ string_concatenate(PyObject *v, PyObject *w,
 {
 	/* This function implements 'variable += expr' when both arguments
 	   are strings. */
+	Py_ssize_t v_len = PyString_GET_SIZE(v);
+	Py_ssize_t w_len = PyString_GET_SIZE(w);
+	Py_ssize_t new_len = v_len + w_len;
+	if (new_len < 0) {
+		PyErr_SetString(PyExc_OverflowError,
+				"strings are too large to concat");
+		return NULL;
+	}
 
 	if (v->ob_refcnt == 2) {
 		/* In the common case, there are 2 references to the value
@@ -4269,9 +4277,7 @@ string_concatenate(PyObject *v, PyObject *w,
 		/* Now we own the last reference to 'v', so we can resize it
 		 * in-place.
 		 */
-		Py_ssize_t v_len = PyString_GET_SIZE(v);
-		Py_ssize_t w_len = PyString_GET_SIZE(w);
-		if (_PyString_Resize(&v, v_len + w_len) != 0) {
+		if (_PyString_Resize(&v, new_len) != 0) {
 			/* XXX if _PyString_Resize() fails, 'v' has been
 			 * deallocated so it cannot be put back into 'variable'.
 			 * The MemoryError is raised when there is no value in

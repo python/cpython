@@ -314,6 +314,12 @@ _1M = 1024*1024
 _1G = 1024 * _1M
 _2G = 2 * _1G
 
+# Hack to get at the maximum value an internal index can take.
+class _Dummy:
+    def __getslice__(self, i, j):
+        return j
+MAX_Py_ssize_t = _Dummy()[:]
+
 def set_memlimit(limit):
     import re
     global max_memuse
@@ -328,7 +334,9 @@ def set_memlimit(limit):
     if m is None:
         raise ValueError('Invalid memory limit %r' % (limit,))
     memlimit = int(float(m.group(1)) * sizes[m.group(3).lower()])
-    if memlimit < 2.5*_1G:
+    if memlimit > MAX_Py_ssize_t:
+        memlimit = MAX_Py_ssize_t
+    if memlimit < _2G - 1:
         raise ValueError('Memory limit %r too low to be useful' % (limit,))
     max_memuse = memlimit
 
@@ -370,6 +378,17 @@ def bigmemtest(minsize, memuse, overhead=5*_1M):
         wrapper.overhead = overhead
         return wrapper
     return decorator
+
+def bigaddrspacetest(f):
+    """Decorator for tests that fill the address space."""
+    def wrapper(self):
+        if max_memuse < MAX_Py_ssize_t:
+            if verbose:
+                sys.stderr.write("Skipping %s because of memory "
+                                 "constraint\n" % (f.__name__,))
+        else:
+            return f(self)
+    return wrapper
 
 #=======================================================================
 # Preliminary PyUNIT integration.
