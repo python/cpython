@@ -236,7 +236,7 @@ case $ac_sys_system/$ac_sys_release in
   # disables platform specific features beyond repair.
   # On Mac OS X 10.3, defining _POSIX_C_SOURCE or _XOPEN_SOURCE 
   # has no effect, don't bother defining them
-  Darwin/@<:@78@:>@.*)
+  Darwin/@<:@789@:>@.*)
     define_xopen_source=no
     ;;
 
