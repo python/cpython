@@ -1503,6 +1503,29 @@ itertools.islice(iterable, s.start, s.stop, s.step)
 
 (Contributed by Raymond Hettinger.)
 
+\item The \function{format()} function in the \module{locale} module
+has been modified and two new functions were added,
+\function{format_string()} and \function{currency()}.
+
+The \function{format()} function's \var{val} parameter could
+previously be a string as long as no more than one \%char specifier
+appeared; now the parameter must be exactly one \%char specifier with
+no surrounding text.  An optional \var{monetary} parameter was also
+added which, if \code{True}, will use the locale's rules for
+formatting currency in placing a separator between groups of three
+digits.
+
+To format strings with multiple \%char specifiers, use the new
+\function{format_string()} function that works like \function{format()}
+but also supports mixing \%char specifiers with
+arbitrary text.
+
+A new \function{currency()} function was also added that formats a
+number according to the current locale's settings.
+
+(Contributed by Georg Brandl.)
+% Patch 1180296
+
 \item The \module{mailbox} module underwent a massive rewrite to add
 the capability to modify mailboxes in addition to reading them.  A new
 set of classes that include \class{mbox}, \class{MH}, and
@@ -2405,6 +2428,12 @@ fields.  If your files contain newlines embedded within fields, the
 input should be split into lines in a manner which preserves the
 newline characters.
 
+\item Library: the \module{locale} module's 
+\function{format()} function's would previously 
+accept any string as long as no more than one \%char specifier
+appeared.  In Python 2.5, the argument must be exactly one \%char
+specifier with no surrounding text. 
+
 \item Library: The \module{pickle} and \module{cPickle} modules no
 longer accept a return value of \code{None} from the
 \method{__reduce__()} method; the method must return a tuple of
@@ -2440,10 +2469,10 @@ freed with the corresponding family's \cfunction{*_Free()} function.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Nick Coghlan, Phillip J. Eby, Lars Gust\"abel, Raymond Hettinger, Ralf
-W. Grosse-Kunstleve, Kent Johnson, Martin von~L\"owis, Fredrik Lundh,
-Andrew McNamara, Skip Montanaro,
-Gustavo Niemeyer, Paul Prescod, James Pryor, Mike Rovner, Scott Weikart, Barry
-Warsaw, Thomas Wouters.
+article: Georg Brandl, Nick Coghlan, Phillip J. Eby, Lars Gust\"abel,
+Raymond Hettinger, Ralf W. Grosse-Kunstleve, Kent Johnson, Iain Lowe,
+Martin von~L\"owis, Fredrik Lundh, Andrew McNamara, Skip Montanaro,
+Gustavo Niemeyer, Paul Prescod, James Pryor, Mike Rovner, Scott
+Weikart, Barry Warsaw, Thomas Wouters.
 
 \end{document}
