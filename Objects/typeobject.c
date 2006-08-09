@@ -4560,7 +4560,7 @@ slot_tp_hash(PyObject *self)
 		if (res == NULL)
 			return -1;
 		if (PyLong_Check(res))
-			h = res->ob_type->tp_hash(res);
+			h = PyLong_Type.tp_hash(res);
 		else
 			h = PyInt_AsLong(res);
 		Py_DECREF(res);
