@@ -342,28 +342,43 @@ PyThreadState_GetDict(void)
 /* Asynchronously raise an exception in a thread.
    Requested by Just van Rossum and Alex Martelli.
    To prevent naive misuse, you must write your own extension
-   to call this.  Must be called with the GIL held.
-   Returns the number of tstates modified; if it returns a number
-   greater than one, you're in trouble, and you should call it again
-   with exc=NULL to revert the effect.  This raises no exceptions. */
+   to call this, or use ctypes.  Must be called with the GIL held.
+   Returns the number of tstates modified (normally 1, but 0 if `id` didn't
+   match any known thread id).  Can be called with exc=NULL to clear an
+   existing async exception.  This raises no exceptions. */
 
 int
 PyThreadState_SetAsyncExc(long id, PyObject *exc) {
 	PyThreadState *tstate = PyThreadState_GET();
 	PyInterpreterState *interp = tstate->interp;
 	PyThreadState *p;
-	int count = 0;
+
+	/* Although the GIL is held, a few C API functions can be called
+	 * without the GIL held, and in particular some that create and
+	 * destroy thread and interpreter states.  Those can mutate the
+	 * list of thread states we're traversing, so to prevent that we lock
+	 * head_mutex for the duration.
+	 */
 	HEAD_LOCK();
 	for (p = interp->tstate_head; p != NULL; p = p->next) {
-		if (p->thread_id != id)
-			continue;
-		Py_CLEAR(p->async_exc);
-		Py_XINCREF(exc);
-		p->async_exc = exc;
-		count += 1;
+		if (p->thread_id == id) {
+			/* Tricky:  we need to decref the current value
+			 * (if any) in p->async_exc, but that can in turn
+			 * allow arbitrary Python code to run, including
+			 * perhaps calls to this function.  To prevent
+			 * deadlock, we need to release head_mutex before
+			 * the decref.
+			 */
+			PyObject *old_exc = p->async_exc;
+			Py_XINCREF(exc);
+			p->async_exc = exc;
+			HEAD_UNLOCK();
+			Py_XDECREF(old_exc);
+			return 1;
+		}
 	}
 	HEAD_UNLOCK();
-	return count;
+	return 0;
 }
 
 

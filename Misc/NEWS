@@ -78,6 +78,15 @@ Build
 - Bug #1530448, ctypes buld failure on Solaris 10 was fixed.
 
 
+C API
+-----
+
+- Bug #1069160.  Internal correctness changes were made to
+  ``PyThreadState_SetAsyncExc()``.  A test case was added, and
+  the documentation was changed to state that the return value
+  is always 1 (normal) or 0 (if the specified thread wasn't found).
+
+
 Mac
 ---
 
@@ -148,7 +157,7 @@ Library
 - os.urandom no longer masks unrelated exceptions like SystemExit or
   KeyboardInterrupt.
 
-- Bug #1525866: Don't copy directory stat times in 
+- Bug #1525866: Don't copy directory stat times in
   shutil.copytree on Windows
 
 - Bug #1002398: The documentation for os.path.sameopenfile now correctly
@@ -281,7 +290,7 @@ Mac
 
 - Bug #1527397: PythonLauncher now launches scripts with the working directory
   set to the directory that contains the script instead of the user home
-  directory. That latter was an implementation accident and not what users 
+  directory. That latter was an implementation accident and not what users
   expect.
 
 
