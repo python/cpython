@@ -3,6 +3,8 @@ What's New in IDLE 1.2c1?
 
 *Release date: XX-AUG-2006*
 
+- Changing tokenize (39046) to detect dedent broke tabnanny check (since 1.2a1)
+
 - ToggleTab dialog was setting indent to 8 even if cancelled (since 1.2a1).
 
 - When used w/o subprocess, all exceptions were preceded by an error
