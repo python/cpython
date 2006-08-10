@@ -258,7 +258,7 @@ Testing 123.
 -----------------------------721837373350705526688164684
 Content-Disposition: form-data; name="submit"
 
- Add 
+ Add
 -----------------------------721837373350705526688164684--
 """
     fs = cgi.FieldStorage(fp=StringIO(postdata), environ=env)
