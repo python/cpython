@@ -593,7 +593,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 source = source.encode(IOBinding.encoding)
             except UnicodeError:
                 self.tkconsole.resetoutput()
-                self.write("Unsupported characters in input")
+                self.write("Unsupported characters in input\n")
                 return
         try:
             # InteractiveInterpreter.runsource() calls its runcode() method,
@@ -1138,21 +1138,27 @@ class PyShell(OutputWindow):
         return "break"
 
     def recall(self, s, event):
+        # remove leading and trailing empty or whitespace lines
+        s = re.sub(r'^\s*\n', '' , s)
+        s = re.sub(r'\n\s*$', '', s)
+        lines = s.split('\n')
         self.text.undo_block_start()
         try:
             self.text.tag_remove("sel", "1.0", "end")
             self.text.mark_set("insert", "end-1c")
-            s = s.strip()
-            lines = s.split('\n')
-            prefix = self.text.get("insert linestart","insert").rstrip()
-            if prefix and prefix[-1]==':':
+            prefix = self.text.get("insert linestart", "insert")
+            if prefix.rstrip().endswith(':'):
                 self.newline_and_indent_event(event)
-            self.text.insert("insert",lines[0].strip())
+                prefix = self.text.get("insert linestart", "insert")
+            self.text.insert("insert", lines[0].strip())
             if len(lines) > 1:
-                self.newline_and_indent_event(event)
+                orig_base_indent = re.search(r'^([ \t]*)', lines[0]).group(0)
+                new_base_indent  = re.search(r'^([ \t]*)', prefix).group(0)
                 for line in lines[1:]:
-                    self.text.insert("insert", line.strip())
-                    self.newline_and_indent_event(event)
+                    if line.startswith(orig_base_indent):
+                        # replace orig base indentation with new indentation
+                        line = new_base_indent + line[len(orig_base_indent):]
+                    self.text.insert('insert', '\n'+line.rstrip())
         finally:
             self.text.see("insert")
             self.text.undo_block_stop()
