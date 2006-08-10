@@ -241,7 +241,7 @@ def main():
 
     print "Test basic FieldStorage multipart parsing"
     env = {'REQUEST_METHOD':'POST', 'CONTENT_TYPE':'multipart/form-data; boundary=---------------------------721837373350705526688164684', 'CONTENT_LENGTH':'558'}
-    postdata = r"""-----------------------------721837373350705526688164684
+    postdata = """-----------------------------721837373350705526688164684
 Content-Disposition: form-data; name="id"
 
 1234
@@ -258,7 +258,7 @@ Testing 123.
 -----------------------------721837373350705526688164684
 Content-Disposition: form-data; name="submit"
 
- Add
+ Add\x20
 -----------------------------721837373350705526688164684--
 """
     fs = cgi.FieldStorage(fp=StringIO(postdata), environ=env)
