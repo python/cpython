@@ -76,6 +76,9 @@ class ScriptBinding:
             self.editwin.gotoline(nag.get_lineno())
             self.errorbox("Tab/space error", indent_message)
             return False
+        except IndentationError:
+            # From tokenize(), let compile() in checksyntax find it again.
+            pass
         return True
 
     def checksyntax(self, filename):
