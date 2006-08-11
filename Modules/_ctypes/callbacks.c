@@ -205,14 +205,24 @@ if (x == NULL) _AddTraceback(what, __FILE__, __LINE__ - 1), PyErr_Print()
 
 	result = PyObject_CallObject(callable, arglist);
 	CHECK("'calling callback function'", result);
+#ifdef WORDS_BIGENDIAN
+	/* See the corresponding code in callproc.c, around line 961 */
+	if (restype->type != FFI_TYPE_FLOAT && restype->size < sizeof(ffi_arg))
+		mem = (char *)mem + sizeof(ffi_arg) - restype->size;
+#endif
+	/* The code that converts 'result' into C data is not executed when
+	   'callable' returns Py_None, so we zero out the memory that will
+	   receive the C return data to not return random data.
+
+	   Cleaner would be to call 'setfunc' anyway and complain with
+	   PyErr_WriteUnraisable(), but ctypes has always accepted a Py_None
+	   return value for *any* 'restype' and it would probably break too
+	   much code if this is changed now.
+	 */
+	memset(mem, 0, restype->size);
 	if ((restype != &ffi_type_void) && result && result != Py_None) {
 		PyObject *keep;
 		assert(setfunc);
-#ifdef WORDS_BIGENDIAN
-		/* See the corresponding code in callproc.c, around line 961 */
-		if (restype->type != FFI_TYPE_FLOAT && restype->size < sizeof(ffi_arg))
-			mem = (char *)mem + sizeof(ffi_arg) - restype->size;
-#endif
 		keep = setfunc(mem, result, 0);
 		CHECK("'converting callback result'", keep);
 		/* keep is an object we have to keep alive so that the result
@@ -225,13 +235,13 @@ if (x == NULL) _AddTraceback(what, __FILE__, __LINE__ - 1), PyErr_Print()
 		   itself knows how to manage the refcount of these objects.
 		*/
 		if (keep == NULL) /* Could not convert callback result. */
-			PyErr_WriteUnraisable(Py_None);
+			PyErr_WriteUnraisable(callable);
 		else if (keep == Py_None) /* Nothing to keep */
 			Py_DECREF(keep);
 		else if (setfunc != getentry("O")->setfunc) {
 			if (-1 == PyErr_Warn(PyExc_RuntimeWarning,
 					     "memory leak in callback function."))
-				PyErr_WriteUnraisable(Py_None);
+				PyErr_WriteUnraisable(callable);
 		}
 	}
 	Py_XDECREF(result);
