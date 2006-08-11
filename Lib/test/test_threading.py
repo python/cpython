@@ -169,14 +169,15 @@ class ThreadTests(unittest.TestCase):
                     worker_saw_exception.set()
 
         t = Worker()
+        t.setDaemon(True) # so if this fails, we don't hang Python at shutdown
+        t.start()
         if verbose:
             print "    started worker thread"
-        t.start()
 
         # Try a thread id that doesn't make sense.
         if verbose:
             print "    trying nonsensical thread id"
-        result = set_async_exc(-1, exception)
+        result = set_async_exc(ctypes.c_long(-1), exception)
         self.assertEqual(result, 0)  # no thread states modified
 
         # Now raise an exception in the worker thread.
@@ -188,7 +189,7 @@ class ThreadTests(unittest.TestCase):
         self.assert_(not t.finished)
         if verbose:
             print "    attempting to raise asynch exception in worker"
-        result = set_async_exc(t.id, exception)
+        result = set_async_exc(ctypes.c_long(t.id), exception)
         self.assertEqual(result, 1) # one thread state modified
         if verbose:
             print "    waiting for worker to say it caught the exception"
