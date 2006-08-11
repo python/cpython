@@ -38,6 +38,9 @@ Core and builtins
 Library
 -------
 
+- logging's atexit hook now runs even if the rest of the module has
+  already been cleaned up.
+
 - Bug #1112549, DoS attack on cgi.FieldStorage.
 
 - Bug #1531405, format_exception no longer raises an exception if
