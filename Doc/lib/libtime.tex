@@ -226,6 +226,8 @@ if any field in \var{t} is outside of the allowed range.
 \versionchanged[Allowed \var{t} to be omitted]{2.1}
 \versionchanged[\exception{ValueError} raised if a field in \var{t} is
 out of range]{2.4}
+\versionchanged[0 is now a legal argument for any position in the time tuple;
+if it is normally illegal the value is forced to a correct one.]{2.5}
 
 
 The following directives can be embedded in the \var{format} string.
@@ -425,7 +427,7 @@ Where:
 '16:08:12 05/08/03 AEST'
 \end{verbatim}
 
-On many Unix systems (including *BSD, Linux, Solaris, and Darwin), it
+On many \UNIX{} systems (including *BSD, Linux, Solaris, and Darwin), it
 is more convenient to use the system's zoneinfo (\manpage{tzfile}{5}) 
 database to specify the timezone rules. To do this, set the 
 \envvar{TZ} environment variable to the path of the required timezone 

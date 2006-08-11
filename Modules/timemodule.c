@@ -19,7 +19,9 @@
 
 #include <ctype.h>
 
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
 
 #ifdef QUICKWIN
 #include <io.h>
@@ -404,13 +406,35 @@ time_strftime(PyObject *self, PyObject *args)
             indexing blindly into some array for a textual representation
             by some bad index (fixes bug #897625).
 
-            No check for year since handled in gettmarg().
+	    Also support values of zero from Python code for arguments in which
+	    that is out of range by forcing that value to the lowest value that
+	    is valid (fixed bug #1520914).
+
+	    Valid ranges based on what is allowed in struct tm:
+
+	    - tm_year: [0, max(int)] (1)
+	    - tm_mon: [0, 11] (2)
+	    - tm_mday: [1, 31]
+	    - tm_hour: [0, 23]
+	    - tm_min: [0, 59]
+	    - tm_sec: [0, 60]
+	    - tm_wday: [0, 6] (1)
+	    - tm_yday: [0, 365] (2)
+	    - tm_isdst: [-max(int), max(int)]
+
+	    (1) gettmarg() handles bounds-checking.
+	    (2) Python's acceptable range is one greater than the range in C,
+	        thus need to check against automatic decrement by gettmarg().
         */
-        if (buf.tm_mon < 0 || buf.tm_mon > 11) {
+	if (buf.tm_mon == -1)
+	    buf.tm_mon = 0;
+	else if (buf.tm_mon < 0 || buf.tm_mon > 11) {
             PyErr_SetString(PyExc_ValueError, "month out of range");
                         return NULL;
         }
-        if (buf.tm_mday < 1 || buf.tm_mday > 31) {
+	if (buf.tm_mday == 0)
+	    buf.tm_mday = 1;
+	else if (buf.tm_mday < 0 || buf.tm_mday > 31) {
             PyErr_SetString(PyExc_ValueError, "day of month out of range");
                         return NULL;
         }
@@ -432,7 +456,9 @@ time_strftime(PyObject *self, PyObject *args)
             PyErr_SetString(PyExc_ValueError, "day of week out of range");
             return NULL;
         }
-        if (buf.tm_yday < 0 || buf.tm_yday > 365) {
+	if (buf.tm_yday == -1)
+	    buf.tm_yday = 0;
+	else if (buf.tm_yday < 0 || buf.tm_yday > 365) {
             PyErr_SetString(PyExc_ValueError, "day of year out of range");
             return NULL;
         }
@@ -465,6 +491,14 @@ time_strftime(PyObject *self, PyObject *args)
 			return ret;
 		}
 		free(outbuf);
+#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
+		/* VisualStudio .NET 2005 does this properly */
+		if (buflen == 0 && errno == EINVAL) {
+			PyErr_SetString(PyExc_ValueError, "Invalid format string");
+			return 0;
+		}
+#endif
+		
 	}
 }
 

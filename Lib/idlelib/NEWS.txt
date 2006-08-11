@@ -1,3 +1,46 @@
+What's New in IDLE 1.2c1?
+=========================
+
+*Release date: XX-AUG-2006*
+
+- Changing tokenize (39046) to detect dedent broke tabnanny check (since 1.2a1)
+
+- ToggleTab dialog was setting indent to 8 even if cancelled (since 1.2a1).
+
+- When used w/o subprocess, all exceptions were preceded by an error
+  message claiming they were IDLE internal errors (since 1.2a1).
+
+What's New in IDLE 1.2b3?
+=========================
+
+*Release date: 03-AUG-2006*
+
+- EditorWindow.test() was failing.  Bug 1417598
+
+- EditorWindow failed when used stand-alone if sys.ps1 not set.
+  Bug 1010370 Dave Florek
+
+- Tooltips failed on new-syle class __init__ args.  Bug 1027566 Loren Guthrie
+
+- Avoid occasional failure to detect closing paren properly.
+  Patch 1407280 Tal Einat
+
+- Rebinding Tab key was inserting 'tab' instead of 'Tab'.  Bug 1179168.
+
+- Colorizer now handles #<builtin> correctly, also unicode strings and
+  'as' keyword in comment directly following import command. Closes 1325071.
+  Patch 1479219 Tal Einat
+
+What's New in IDLE 1.2b2?
+=========================
+
+*Release date: 11-JUL-2006*
+
+What's New in IDLE 1.2b1?
+=========================
+
+*Release date: 20-JUN-2006*
+
 What's New in IDLE 1.2a2?
 =========================
 

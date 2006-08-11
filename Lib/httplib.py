@@ -3,7 +3,7 @@
 <intro stuff goes here>
 <other stuff, too>
 
-HTTPConnection go through a number of "states", which defines when a client
+HTTPConnection goes through a number of "states", which define when a client
 may legally make another request or fetch the response for a particular
 request. This diagram details these state transitions:
 
@@ -926,15 +926,15 @@ class HTTPConnection:
         self.__state = _CS_IDLE
 
         if response.will_close:
-            # this effectively passes the connection to the response
-            self.close()
+            # Pass the socket to the response
+            self.sock = None
         else:
             # remember this, so we can tell when it is complete
             self.__response = response
 
         return response
 
-# The next several classes are used to define FakeSocket,a socket-like
+# The next several classes are used to define FakeSocket, a socket-like
 # interface to an SSL connection.
 
 # The primary complexity comes from faking a makefile() method.  The

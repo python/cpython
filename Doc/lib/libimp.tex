@@ -232,6 +232,24 @@ properly matching byte-compiled file (with suffix \file{.pyc} or
 source file.
 \end{funcdesc}
 
+\begin{classdesc}{NullImporter}{path_string}
+The \class{NullImporter} type is a \pep{302} import hook that handles
+non-directory path strings by failing to find any modules.  Calling this
+type with an existing directory or empty string raises
+\exception{ImportError}.  Otherwise, a \class{NullImporter} instance is
+returned.
+
+Python adds instances of this type to \code{sys.path_importer_cache} for
+any path entries that are not directories and are not handled by any other
+path hooks on \code{sys.path_hooks}.  Instances have only one method:
+
+\begin{methoddesc}{find_module}{fullname \optional{, path}}
+This method always returns \code{None}, indicating that the requested
+module could not be found.
+\end{methoddesc}
+
+\versionadded{2.5}
+\end{classdesc}
 
 \subsection{Examples}
 \label{examples-imp}
@@ -257,7 +275,7 @@ def __import__(name, globals=None, locals=None, fromlist=None):
     # there's a problem we can't handle -- let the caller handle it.
 
     fp, pathname, description = imp.find_module(name)
-    
+
     try:
         return imp.load_module(name, fp, pathname, description)
     finally:

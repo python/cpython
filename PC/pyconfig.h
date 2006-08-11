@@ -78,8 +78,15 @@ MS_CORE_DLL.
 #endif
 
 #ifdef MS_WINCE
-#define DONT_HAVE_SYS_STAT_H
-#define DONT_HAVE_ERRNO_H
+/* Python uses GetVersion() to distinguish between
+ * Windows NT and 9x/ME where OS Unicode support is concerned.
+ * Windows CE supports Unicode in the same way as NT so we
+ * define the missing GetVersion() accordingly.
+ */
+#define GetVersion() (4)
+/* Windows CE does not support environment variables */
+#define getenv(v) (NULL)
+#define environ (NULL)
 #endif
 
 /* Compiler specific defines */
@@ -163,6 +170,12 @@ typedef int pid_t;
 #define Py_IS_NAN _isnan
 #define Py_IS_INFINITY(X) (!_finite(X) && !_isnan(X))
 #define Py_IS_FINITE(X) _finite(X)
+
+/* Turn off warnings about deprecated C runtime functions in 
+   VisualStudio .NET 2005 */
+#if _MSC_VER >= 1400 && !defined _CRT_SECURE_NO_DEPRECATE
+#define _CRT_SECURE_NO_DEPRECATE
+#endif
 
 #endif /* _MSC_VER */
 
@@ -349,6 +362,16 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define to empty if the keyword does not work.  */
 /* #define const  */
+
+/* Define to 1 if you have the <conio.h> header file. */
+#ifndef MS_WINCE
+#define HAVE_CONIO_H 1
+#endif
+
+/* Define to 1 if you have the <direct.h> header file. */
+#ifndef MS_WINCE
+#define HAVE_DIRECT_H 1
+#endif
 
 /* Define if you have dirent.h.  */
 /* #define DIRENT 1 */
@@ -555,9 +578,24 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have the <dlfcn.h> header file.  */
 /* #undef HAVE_DLFCN_H */
 
+/* Define to 1 if you have the <errno.h> header file. */
+#ifndef MS_WINCE
+#define HAVE_ERRNO_H 1
+#endif
+
 /* Define if you have the <fcntl.h> header file.  */
 #ifndef MS_WINCE
 #define HAVE_FCNTL_H 1
+#endif
+
+/* Define to 1 if you have the <process.h> header file. */
+#ifndef MS_WINCE
+#define HAVE_PROCESS_H 1
+#endif
+
+/* Define to 1 if you have the <signal.h> header file. */
+#ifndef MS_WINCE
+#define HAVE_SIGNAL_H 1
 #endif
 
 /* Define if you have the <stdarg.h> prototypes.  */
@@ -575,11 +613,21 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have the <sys/select.h> header file.  */
 /* #define HAVE_SYS_SELECT_H 1 */
 
+/* Define to 1 if you have the <sys/stat.h> header file.  */
+#ifndef MS_WINCE
+#define HAVE_SYS_STAT_H 1
+#endif
+
 /* Define if you have the <sys/time.h> header file.  */
 /* #define HAVE_SYS_TIME_H 1 */
 
 /* Define if you have the <sys/times.h> header file.  */
 /* #define HAVE_SYS_TIMES_H 1 */
+
+/* Define to 1 if you have the <sys/types.h> header file.  */
+#ifndef MS_WINCE
+#define HAVE_SYS_TYPES_H 1
+#endif
 
 /* Define if you have the <sys/un.h> header file.  */
 /* #define HAVE_SYS_UN_H 1 */

@@ -6,6 +6,8 @@
 #include "winconfig.h"
 #elif defined(MACOS_CLASSIC)
 #include "macconfig.h"
+#elif defined(__amigaos4__)
+#include "amigaconfig.h"
 #else
 #ifdef HAVE_EXPAT_CONFIG_H
 #include <expat_config.h>
@@ -793,7 +795,7 @@ attlist2(PROLOG_STATE *state,
     return XML_ROLE_ATTLIST_NONE;
   case XML_TOK_NAME:
     {
-      static const char *types[] = {
+      static const char * const types[] = {
         KW_CDATA,
         KW_ID,
         KW_IDREF,

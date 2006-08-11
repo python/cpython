@@ -118,7 +118,7 @@ class URLopener:
         self.proxies = proxies
         self.key_file = x509.get('key_file')
         self.cert_file = x509.get('cert_file')
-        self.addheaders = [('User-agent', self.version)]
+        self.addheaders = [('User-Agent', self.version)]
         self.__tempfiles = []
         self.__unlink = os.unlink # See cleanup()
         self.tempcache = None
@@ -314,8 +314,8 @@ class URLopener:
         h = httplib.HTTP(host)
         if data is not None:
             h.putrequest('POST', selector)
-            h.putheader('Content-type', 'application/x-www-form-urlencoded')
-            h.putheader('Content-length', '%d' % len(data))
+            h.putheader('Content-Type', 'application/x-www-form-urlencoded')
+            h.putheader('Content-Length', '%d' % len(data))
         else:
             h.putrequest('GET', selector)
         if proxy_auth: h.putheader('Proxy-Authorization', 'Basic %s' % proxy_auth)
@@ -400,9 +400,9 @@ class URLopener:
                               cert_file=self.cert_file)
             if data is not None:
                 h.putrequest('POST', selector)
-                h.putheader('Content-type',
+                h.putheader('Content-Type',
                             'application/x-www-form-urlencoded')
-                h.putheader('Content-length', '%d' % len(data))
+                h.putheader('Content-Length', '%d' % len(data))
             else:
                 h.putrequest('GET', selector)
             if proxy_auth: h.putheader('Proxy-Authorization: Basic %s' % proxy_auth)
@@ -584,7 +584,7 @@ class URLopener:
             data = base64.decodestring(data)
         else:
             data = unquote(data)
-        msg.append('Content-length: %d' % len(data))
+        msg.append('Content-Length: %d' % len(data))
         msg.append('')
         msg.append(data)
         msg = '\n'.join(msg)

@@ -1,3 +1,6 @@
+######################################################################
+#  This file should be kept compatible with Python 2.3, see PEP 291. #
+######################################################################
 """
 Enough Mach-O to make your head spin.
 

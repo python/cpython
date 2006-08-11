@@ -365,3 +365,24 @@ parser.Parse('''<a>
   <c/>
  </b>
 </a>''', 1)
+
+
+def test_parse_only_xml_data():
+    # http://python.org/sf/1296433
+    #
+    xml = "<?xml version='1.0' encoding='iso8859'?><s>%s</s>" % ('a' * 1025)
+    # this one doesn't crash
+    #xml = "<?xml version='1.0'?><s>%s</s>" % ('a' * 10000)
+
+    def handler(text):
+        raise Exception
+
+    parser = expat.ParserCreate()
+    parser.CharacterDataHandler = handler
+
+    try:
+        parser.Parse(xml)
+    except:
+        pass
+
+test_parse_only_xml_data()

@@ -1466,8 +1466,9 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
 		return -1;
 	}
 	if (value != NULL && !PyDict_Check(value)) {
-		PyErr_SetString(PyExc_TypeError,
-				"__dict__ must be set to a dictionary");
+		PyErr_Format(PyExc_TypeError,
+			     "__dict__ must be set to a dictionary, "
+			     "not a '%.200s'", value->ob_type->tp_name);
 		return -1;
 	}
 	dict = *dictptr;
@@ -1485,7 +1486,7 @@ subtype_getweakref(PyObject *obj, void *context)
 
 	if (obj->ob_type->tp_weaklistoffset == 0) {
 		PyErr_SetString(PyExc_AttributeError,
-				"This object has no __weaklist__");
+				"This object has no __weakref__");
 		return NULL;
 	}
 	assert(obj->ob_type->tp_weaklistoffset > 0);
@@ -1530,8 +1531,9 @@ valid_identifier(PyObject *s)
 	Py_ssize_t i, n;
 
 	if (!PyString_Check(s)) {
-		PyErr_SetString(PyExc_TypeError,
-				"__slots__ must be strings");
+		PyErr_Format(PyExc_TypeError,
+			     "__slots__ items must be strings, not '%.200s'",
+			     s->ob_type->tp_name);
 		return 0;
 	}
 	p = (unsigned char *) PyString_AS_STRING(s);
@@ -2565,8 +2567,9 @@ reduce_2(PyObject *obj)
 		args = PyObject_CallObject(getnewargs, NULL);
 		Py_DECREF(getnewargs);
 		if (args != NULL && !PyTuple_Check(args)) {
-			PyErr_SetString(PyExc_TypeError,
-				"__getnewargs__ should return a tuple");
+			PyErr_Format(PyExc_TypeError,
+				"__getnewargs__ should return a tuple, "
+				"not '%.200s'", args->ob_type->tp_name);
 			goto end;
 		}
 	}
@@ -3206,6 +3209,8 @@ PyType_Ready(PyTypeObject *type)
 	if (PyDict_GetItemString(type->tp_dict, "__doc__") == NULL) {
 		if (type->tp_doc != NULL) {
 			PyObject *doc = PyString_FromString(type->tp_doc);
+			if (doc == NULL)
+				goto error;
 			PyDict_SetItemString(type->tp_dict, "__doc__", doc);
 			Py_DECREF(doc);
 		} else {
@@ -4294,8 +4299,9 @@ slot_nb_index(PyObject *self)
 		result = temp->ob_type->tp_as_number->nb_index(temp);
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError, 
-				"__index__ must return an int or a long");
+		PyErr_Format(PyExc_TypeError, 
+			     "__index__ must return an int or a long, "
+			     "not '%.200s'", temp->ob_type->tp_name);
 		result = -1;
 	}
 	Py_DECREF(temp);
@@ -4494,7 +4500,10 @@ slot_tp_hash(PyObject *self)
 		Py_DECREF(func);
 		if (res == NULL)
 			return -1;
-		h = PyInt_AsLong(res);
+		if (PyLong_Check(res))
+			h = PyLong_Type.tp_hash(res);
+		else
+			h = PyInt_AsLong(res);
 		Py_DECREF(res);
 	}
 	else {
@@ -4505,8 +4514,9 @@ slot_tp_hash(PyObject *self)
 			func = lookup_method(self, "__cmp__", &cmp_str);
 		}
 		if (func != NULL) {
+			PyErr_Format(PyExc_TypeError, "unhashable type: '%.200s'",
+				     self->ob_type->tp_name);
 			Py_DECREF(func);
-			PyErr_SetString(PyExc_TypeError, "unhashable type");
 			return -1;
 		}
 		PyErr_Clear();
@@ -4526,7 +4536,18 @@ slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 
 	if (meth == NULL)
 		return NULL;
+
+	/* PyObject_Call() will end up calling slot_tp_call() again if
+	   the object returned for __call__ has __call__ itself defined
+	   upon it.  This can be an infinite recursion if you set
+	   __call__ in a class to an instance of it. */
+	if (Py_EnterRecursiveCall(" in __call__")) {
+		Py_DECREF(meth);
+		return NULL;
+	}
 	res = PyObject_Call(meth, args, kwds);
+	Py_LeaveRecursiveCall();
+
 	Py_DECREF(meth);
 	return res;
 }
@@ -4683,8 +4704,9 @@ slot_tp_iter(PyObject *self)
 	PyErr_Clear();
 	func = lookup_method(self, "__getitem__", &getitem_str);
 	if (func == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-				"iteration over non-sequence");
+		PyErr_Format(PyExc_TypeError,
+			     "'%.200s' object is not iterable",
+			     self->ob_type->tp_name);
 		return NULL;
 	}
 	Py_DECREF(func);
@@ -4757,8 +4779,9 @@ slot_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 	if (res == NULL)
 		return -1;
 	if (res != Py_None) {
-		PyErr_SetString(PyExc_TypeError,
-			   "__init__() should return None");
+		PyErr_Format(PyExc_TypeError,
+			     "__init__() should return None, not '%.200s'",
+			     res->ob_type->tp_name);
 		Py_DECREF(res);
 		return -1;
 	}

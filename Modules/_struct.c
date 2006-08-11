@@ -31,6 +31,17 @@ static PyObject *pylong_ulong_mask = NULL;
 static PyObject *pyint_zero = NULL;
 #endif
 
+/* If PY_STRUCT_FLOAT_COERCE is defined, the struct module will allow float
+   arguments for integer formats with a warning for backwards
+   compatibility. */
+
+#define PY_STRUCT_FLOAT_COERCE 1
+
+#ifdef PY_STRUCT_FLOAT_COERCE
+#define FLOAT_COERCE "integer argument expected, got float"
+#endif
+
+
 /* The translation function for each format character is table driven */
 typedef struct _formatdef {
 	char format;
@@ -135,6 +146,21 @@ get_long(PyObject *v, long *p)
 {
 	long x = PyInt_AsLong(v);
 	if (x == -1 && PyErr_Occurred()) {
+#ifdef PY_STRUCT_FLOAT_COERCE
+		if (PyFloat_Check(v)) {
+			PyObject *o;
+			int res;
+			PyErr_Clear();
+			if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
+				return -1;
+			o = PyNumber_Int(v);
+			if (o == NULL)
+				return -1;
+			res = get_long(o, p);
+			Py_DECREF(o);
+			return res;
+		}
+#endif
 		if (PyErr_ExceptionMatches(PyExc_TypeError))
 			PyErr_SetString(StructError,
 					"required argument is not an integer");
@@ -214,15 +240,33 @@ get_ulonglong(PyObject *v, unsigned PY_LONG_LONG *p)
 /* Helper routine to get a Python integer and raise the appropriate error
    if it isn't one */
 
+#define INT_OVERFLOW "struct integer overflow masking is deprecated"
+
 static int
 get_wrapped_long(PyObject *v, long *p)
 {
 	if (get_long(v, p) < 0) {
-		if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError)) {
+		if (PyLong_Check(v) &&
+		    PyErr_ExceptionMatches(PyExc_OverflowError)) {
 			PyObject *wrapped;
 			long x;
 			PyErr_Clear();
-			if (PyErr_Warn(PyExc_DeprecationWarning, "struct integer overflow masking is deprecated") < 0)
+#ifdef PY_STRUCT_FLOAT_COERCE
+			if (PyFloat_Check(v)) {
+				PyObject *o;
+				int res;
+				PyErr_Clear();
+				if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
+					return -1;
+				o = PyNumber_Int(v);
+				if (o == NULL)
+					return -1;
+				res = get_wrapped_long(o, p);
+				Py_DECREF(o);
+				return res;
+			}
+#endif
+			if (PyErr_WarnEx(PyExc_DeprecationWarning, INT_OVERFLOW, 2) < 0)
 				return -1;
 			wrapped = PyNumber_And(v, pylong_ulong_mask);
 			if (wrapped == NULL)
@@ -246,10 +290,25 @@ get_wrapped_ulong(PyObject *v, unsigned long *p)
 	if (x == -1 && PyErr_Occurred()) {
 		PyObject *wrapped;
 		PyErr_Clear();
+#ifdef PY_STRUCT_FLOAT_COERCE
+		if (PyFloat_Check(v)) {
+			PyObject *o;
+			int res;
+			PyErr_Clear();
+			if (PyErr_WarnEx(PyExc_DeprecationWarning, FLOAT_COERCE, 2) < 0)
+				return -1;
+			o = PyNumber_Int(v);
+			if (o == NULL)
+				return -1;
+			res = get_wrapped_ulong(o, p);
+			Py_DECREF(o);
+			return res;
+		}
+#endif
 		wrapped = PyNumber_And(v, pylong_ulong_mask);
 		if (wrapped == NULL)
 			return -1;
-		if (PyErr_Warn(PyExc_DeprecationWarning, "struct integer overflow masking is deprecated") < 0) {
+		if (PyErr_WarnEx(PyExc_DeprecationWarning, INT_OVERFLOW, 2) < 0) {
 			Py_DECREF(wrapped);
 			return -1;
 		}
@@ -344,8 +403,8 @@ _range_error(const formatdef *f, int is_unsigned)
 		Py_XDECREF(ptraceback);
 		if (msg == NULL)
 			return -1;
-		rval = PyErr_Warn(PyExc_DeprecationWarning,
-				  PyString_AS_STRING(msg));
+		rval = PyErr_WarnEx(PyExc_DeprecationWarning,
+				    PyString_AS_STRING(msg), 2);
 		Py_DECREF(msg);
 		if (rval == 0)
 			return 0;
@@ -1396,23 +1455,17 @@ s_unpack_internal(PyStructObject *soself, char *startfrom) {
 		const char *res = startfrom + code->offset;
 		if (e->format == 's') {
 			v = PyString_FromStringAndSize(res, code->size);
-			if (v == NULL)
-				goto fail;
-			PyTuple_SET_ITEM(result, i++, v);
 		} else if (e->format == 'p') {
 			Py_ssize_t n = *(unsigned char*)res;
 			if (n >= code->size)
 				n = code->size - 1;
 			v = PyString_FromStringAndSize(res + 1, n);
-			if (v == NULL)
-				goto fail;
-			PyTuple_SET_ITEM(result, i++, v);
 		} else {
 			v = e->unpack(res, e);
-			if (v == NULL)
-				goto fail;
-			PyTuple_SET_ITEM(result, i++, v);
 		}
+		if (v == NULL)
+			goto fail;
+		PyTuple_SET_ITEM(result, i++, v);
 	}
 
 	return result;
@@ -1438,7 +1491,8 @@ s_unpack(PyObject *self, PyObject *inputstr)
 	if (inputstr == NULL || !PyString_Check(inputstr) ||
 		PyString_GET_SIZE(inputstr) != soself->s_size) {
 		PyErr_Format(StructError,
-			"unpack requires a string argument of length %zd", soself->s_size);
+			"unpack requires a string argument of length %zd",
+			soself->s_size);
 		return NULL;
 	}
 	return s_unpack_internal(soself, PyString_AS_STRING(inputstr));
@@ -1504,17 +1558,18 @@ static int
 s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 {
 	formatcode *code;
+	/* XXX(nnorwitz): why does i need to be a local?  can we use
+	   the offset parameter or do we need the wider width? */
 	Py_ssize_t i;
 
 	memset(buf, '\0', soself->s_size);
 	i = offset;
 	for (code = soself->s_codes; code->fmtdef != NULL; code++) {
 		Py_ssize_t n;
-		PyObject *v;
+		PyObject *v = PyTuple_GET_ITEM(args, i++);
 		const formatdef *e = code->fmtdef;
 		char *res = buf + code->offset;
 		if (e->format == 's') {
-			v = PyTuple_GET_ITEM(args, i++);
 			if (!PyString_Check(v)) {
 				PyErr_SetString(StructError,
 						"argument for 's' must be a string");
@@ -1526,7 +1581,6 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 			if (n > 0)
 				memcpy(res, PyString_AS_STRING(v), n);
 		} else if (e->format == 'p') {
-			v = PyTuple_GET_ITEM(args, i++);
 			if (!PyString_Check(v)) {
 				PyErr_SetString(StructError,
 						"argument for 'p' must be a string");
@@ -1541,7 +1595,6 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
 				n = 255;
 			*res = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
 		} else {
-			v = PyTuple_GET_ITEM(args, i++);
 			if (e->pack(res, v, e) < 0) {
 				if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError))
 					PyErr_SetString(StructError,
@@ -1818,4 +1871,8 @@ init_struct(void)
 #ifdef PY_STRUCT_OVERFLOW_MASKING
 	PyModule_AddIntConstant(m, "_PY_STRUCT_OVERFLOW_MASKING", 1);
 #endif
+#ifdef PY_STRUCT_FLOAT_COERCE
+	PyModule_AddIntConstant(m, "_PY_STRUCT_FLOAT_COERCE", 1);
+#endif
+
 }

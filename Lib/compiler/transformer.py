@@ -536,12 +536,7 @@ class Transformer:
                    lineno=nodelist[0][2])
 
     def try_stmt(self, nodelist):
-        # 'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite]
-        # | 'try' ':' suite 'finally' ':' suite
-        if nodelist[3][0] != symbol.except_clause:
-            return self.com_try_finally(nodelist)
-
-        return self.com_try_except(nodelist)
+        return self.com_try_except_finally(nodelist)
 
     def with_stmt(self, nodelist):
         return self.com_with(nodelist)
@@ -729,22 +724,20 @@ class Transformer:
 
     def atom(self, nodelist):
         return self._atom_dispatch[nodelist[0][0]](nodelist)
-        n.lineno = nodelist[0][2]
-        return n
 
     def atom_lpar(self, nodelist):
         if nodelist[1][0] == token.RPAR:
-            return Tuple(())
+            return Tuple((), lineno=nodelist[0][2])
         return self.com_node(nodelist[1])
 
     def atom_lsqb(self, nodelist):
         if nodelist[1][0] == token.RSQB:
-            return List(())
+            return List((), lineno=nodelist[0][2])
         return self.com_list_constructor(nodelist[1])
 
     def atom_lbrace(self, nodelist):
         if nodelist[1][0] == token.RBRACE:
-            return Dict(())
+            return Dict((), lineno=nodelist[0][2])
         return self.com_dictmaker(nodelist[1])
 
     def atom_backquote(self, nodelist):
@@ -919,18 +912,21 @@ class Transformer:
             bases.append(self.com_node(node[i]))
         return bases
 
-    def com_try_finally(self, nodelist):
-        # try_fin_stmt: "try" ":" suite "finally" ":" suite
-        return TryFinally(self.com_node(nodelist[2]),
-                       self.com_node(nodelist[5]),
-                       lineno=nodelist[0][2])
+    def com_try_except_finally(self, nodelist):
+        # ('try' ':' suite
+        #  ((except_clause ':' suite)+ ['else' ':' suite] ['finally' ':' suite]
+        #   | 'finally' ':' suite))
 
-    def com_try_except(self, nodelist):
-        # try_except: 'try' ':' suite (except_clause ':' suite)* ['else' suite]
+        if nodelist[3][0] == token.NAME:
+            # first clause is a finally clause: only try-finally
+            return TryFinally(self.com_node(nodelist[2]),
+                              self.com_node(nodelist[5]),
+                              lineno=nodelist[0][2])
+
         #tryexcept:  [TryNode, [except_clauses], elseNode)]
-        stmt = self.com_node(nodelist[2])
         clauses = []
         elseNode = None
+        finallyNode = None
         for i in range(3, len(nodelist), 3):
             node = nodelist[i]
             if node[0] == symbol.except_clause:
@@ -946,9 +942,16 @@ class Transformer:
                 clauses.append((expr1, expr2, self.com_node(nodelist[i+2])))
 
             if node[0] == token.NAME:
-                elseNode = self.com_node(nodelist[i+2])
-        return TryExcept(self.com_node(nodelist[2]), clauses, elseNode,
-                         lineno=nodelist[0][2])
+                if node[1] == 'else':
+                    elseNode = self.com_node(nodelist[i+2])
+                elif node[1] == 'finally':
+                    finallyNode = self.com_node(nodelist[i+2])
+        try_except = TryExcept(self.com_node(nodelist[2]), clauses, elseNode,
+                               lineno=nodelist[0][2])
+        if finallyNode:
+            return TryFinally(try_except, finallyNode, lineno=nodelist[0][2])
+        else:
+            return try_except
 
     def com_with(self, nodelist):
         # with_stmt: 'with' expr [with_var] ':' suite
@@ -1138,7 +1141,7 @@ class Transformer:
             values = []
             for i in range(1, len(nodelist), 2):
                 values.append(self.com_node(nodelist[i]))
-            return List(values)
+            return List(values, lineno=values[0].lineno)
 
     if hasattr(symbol, 'gen_for'):
         def com_generator_expression(self, expr, node):
@@ -1185,7 +1188,7 @@ class Transformer:
         for i in range(1, len(nodelist), 4):
             items.append((self.com_node(nodelist[i]),
                           self.com_node(nodelist[i+2])))
-        return Dict(items)
+        return Dict(items, lineno=items[0][0].lineno)
 
     def com_apply_trailer(self, primaryNode, nodelist):
         t = nodelist[1][0]
@@ -1379,6 +1382,7 @@ _doc_nodes = [
     symbol.testlist,
     symbol.testlist_safe,
     symbol.test,
+    symbol.or_test,
     symbol.and_test,
     symbol.not_test,
     symbol.comparison,

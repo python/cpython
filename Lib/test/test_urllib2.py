@@ -676,11 +676,11 @@ class HandlerTests(unittest.TestCase):
             r = MockResponse(200, "OK", {}, "")
             newreq = h.do_request_(req)
             if data is None:  # GET
-                self.assert_("Content-length" not in req.unredirected_hdrs)
-                self.assert_("Content-type" not in req.unredirected_hdrs)
+                self.assert_("Content-Length" not in req.unredirected_hdrs)
+                self.assert_("Content-Type" not in req.unredirected_hdrs)
             else:  # POST
-                self.assertEqual(req.unredirected_hdrs["Content-length"], "0")
-                self.assertEqual(req.unredirected_hdrs["Content-type"],
+                self.assertEqual(req.unredirected_hdrs["Content-Length"], "0")
+                self.assertEqual(req.unredirected_hdrs["Content-Type"],
                              "application/x-www-form-urlencoded")
             # XXX the details of Host could be better tested
             self.assertEqual(req.unredirected_hdrs["Host"], "example.com")
@@ -692,8 +692,8 @@ class HandlerTests(unittest.TestCase):
             req.add_unredirected_header("Host", "baz")
             req.add_unredirected_header("Spam", "foo")
             newreq = h.do_request_(req)
-            self.assertEqual(req.unredirected_hdrs["Content-length"], "foo")
-            self.assertEqual(req.unredirected_hdrs["Content-type"], "bar")
+            self.assertEqual(req.unredirected_hdrs["Content-Length"], "foo")
+            self.assertEqual(req.unredirected_hdrs["Content-Type"], "bar")
             self.assertEqual(req.unredirected_hdrs["Host"], "baz")
             self.assertEqual(req.unredirected_hdrs["Spam"], "foo")
 
@@ -847,7 +847,7 @@ class HandlerTests(unittest.TestCase):
             407, 'Proxy-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
         opener.add_handler(auth_handler)
         opener.add_handler(http_handler)
-        self._test_basic_auth(opener, auth_handler, "Proxy-authorization",
+        self._test_basic_auth(opener, auth_handler, "Proxy-Authorization",
                               realm, http_handler, password_manager,
                               "http://acme.example.com:3128/protected",
                               "proxy.example.com:3128",

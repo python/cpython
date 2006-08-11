@@ -1497,22 +1497,55 @@ And a more sane, but still weird usage:
 <type 'generator'>
 
 
+A yield expression with augmented assignment.
+
+>>> def coroutine(seq):
+...     count = 0
+...     while count < 200:
+...         count += yield
+...         seq.append(count)
+>>> seq = []
+>>> c = coroutine(seq)
+>>> c.next()
+>>> print seq
+[]
+>>> c.send(10)
+>>> print seq
+[10]
+>>> c.send(10)
+>>> print seq
+[10, 20]
+>>> c.send(10)
+>>> print seq
+[10, 20, 30]
+
+
 Check some syntax errors for yield expressions:
 
 >>> f=lambda: (yield 1),(yield 2)
 Traceback (most recent call last):
   ...
-SyntaxError: 'yield' outside function (<doctest test.test_generators.__test__.coroutine[10]>, line 1)
+SyntaxError: 'yield' outside function (<doctest test.test_generators.__test__.coroutine[21]>, line 1)
 
 >>> def f(): return lambda x=(yield): 1
 Traceback (most recent call last):
   ...
-SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.coroutine[11]>, line 1)
+SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.coroutine[22]>, line 1)
 
 >>> def f(): x = yield = y
 Traceback (most recent call last):
   ...
-SyntaxError: assignment to yield expression not possible (<doctest test.test_generators.__test__.coroutine[12]>, line 1)
+SyntaxError: assignment to yield expression not possible (<doctest test.test_generators.__test__.coroutine[23]>, line 1)
+
+>>> def f(): (yield bar) = y
+Traceback (most recent call last):
+  ...
+SyntaxError: can't assign to yield expression (<doctest test.test_generators.__test__.coroutine[24]>, line 1)
+
+>>> def f(): (yield bar) += y
+Traceback (most recent call last):
+  ...
+SyntaxError: augmented assignment to yield expression not possible (<doctest test.test_generators.__test__.coroutine[25]>, line 1)
 
 
 Now check some throw() conditions:

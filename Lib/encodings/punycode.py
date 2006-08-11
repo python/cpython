@@ -214,9 +214,9 @@ class IncrementalEncoder(codecs.IncrementalEncoder):
 
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def decode(self, input, final=False):
-        if errors not in ('strict', 'replace', 'ignore'):
-            raise UnicodeError, "Unsupported error handling "+errors
-        return punycode_decode(input, errors)
+        if self.errors not in ('strict', 'replace', 'ignore'):
+            raise UnicodeError, "Unsupported error handling "+self.errors
+        return punycode_decode(input, self.errors)
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass

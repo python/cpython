@@ -94,6 +94,10 @@ def updatecache(filename, module_globals=None):
                     except (ImportError, IOError):
                         pass
                     else:
+                        if data is None:
+                            # No luck, the PEP302 loader cannot find the source
+                            # for this module.
+                            return []
                         cache[filename] = (
                             len(data), None,
                             [line+'\n' for line in data.splitlines()], fullname

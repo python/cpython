@@ -84,4 +84,16 @@ EllipsisType = type(Ellipsis)
 DictProxyType = type(TypeType.__dict__)
 NotImplementedType = type(NotImplemented)
 
-del sys, _f, _g, _C                 # Not for export
+# Extension types defined in a C helper module.  XXX There may be no
+# equivalent in implementations other than CPython, so it seems better to
+# leave them undefined then to set them to e.g. None.
+try:
+    import _types
+except ImportError:
+    pass
+else:
+    GetSetDescriptorType = type(_types.Helper.getter)
+    MemberDescriptorType = type(_types.Helper.member)
+    del _types
+
+del sys, _f, _g, _C,                              # Not for export

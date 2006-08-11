@@ -907,7 +907,10 @@ The operators \code{<}, \code{>}, \code{==}, \code{>=}, \code{<=}, and
 the values of two objects.  The objects need not have the same type.
 If both are numbers, they are converted to a common type.  Otherwise,
 objects of different types \emph{always} compare unequal, and are
-ordered consistently but arbitrarily.
+ordered consistently but arbitrarily.  You can control comparison
+behavior of objects of non-builtin types by defining a \code{__cmp__}
+method or rich comparison methods like \code{__gt__}, described in
+section~\ref{specialnames}.
 
 (This unusual definition of comparison was used to simplify the
 definition of operations like sorting and the \keyword{in} and
@@ -952,7 +955,8 @@ otherwise defined.\footnote{Earlier versions of Python used
   a dictionary for emptiness by comparing it to \code{\{\}}.}
 
 \item
-Most other types compare unequal unless they are the same object;
+Most other objects of builtin types compare unequal unless they are
+the same object;
 the choice whether one object is considered smaller or larger than
 another one is made arbitrarily but consistently within one
 execution of a program.

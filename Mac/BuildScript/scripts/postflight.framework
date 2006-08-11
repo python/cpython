@@ -4,7 +4,7 @@
 #
 
 PYVER="@PYVER@"
-FWK="/Library/Frameworks/Python.framework/Versions/@PYVER@/"
+FWK="/Library/Frameworks/Python.framework/Versions/@PYVER@"
 
 "${FWK}/bin/python" -Wi -tt \
     "${FWK}/lib/python${PYVER}/compileall.py" \

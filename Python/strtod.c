@@ -54,7 +54,7 @@ static	double	HUGE		= 1.7976931348623157e308;
 
 extern	double	atof(const char *);		/* Only called when result known to be ok */
 
-#ifndef DONT_HAVE_ERRNO_H
+#ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
 extern	int	errno;

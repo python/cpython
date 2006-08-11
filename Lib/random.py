@@ -29,13 +29,12 @@
 General notes on the underlying Mersenne Twister core generator:
 
 * The period is 2**19937-1.
-* It is one of the most extensively tested generators in existence
-* Without a direct way to compute N steps forward, the
-  semantics of jumpahead(n) are weakened to simply jump
-  to another distant state and rely on the large period
-  to avoid overlapping sequences.
-* The random() method is implemented in C, executes in
-  a single Python step, and is, therefore, threadsafe.
+* It is one of the most extensively tested generators in existence.
+* Without a direct way to compute N steps forward, the semantics of
+  jumpahead(n) are weakened to simply jump to another distant state and rely
+  on the large period to avoid overlapping sequences.
+* The random() method is implemented in C, executes in a single Python step,
+  and is, therefore, threadsafe.
 
 """
 
@@ -253,11 +252,6 @@ class Random(_random.Random):
 
         Optional arg random is a 0-argument function returning a random
         float in [0.0, 1.0); by default, the standard random.random.
-
-        Note that for even rather small len(x), the total number of
-        permutations of x is larger than the period of most random number
-        generators; this implies that "most" permutations of a long
-        sequence can never be generated.
         """
 
         if random is None:

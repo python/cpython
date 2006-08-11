@@ -317,41 +317,58 @@ def fill(text, width=70, **kwargs):
 
 # -- Loosely related functionality -------------------------------------
 
+_whitespace_only_re = re.compile('^[ \t]+$', re.MULTILINE)
+_leading_whitespace_re = re.compile('(^[ \t]*)(?:[^ \t\n])', re.MULTILINE)
+
 def dedent(text):
-    """dedent(text : string) -> string
+    """Remove any common leading whitespace from every line in `text`.
 
-    Remove any whitespace than can be uniformly removed from the left
-    of every line in `text`.
+    This can be used to make triple-quoted strings line up with the left
+    edge of the display, while still presenting them in the source code
+    in indented form.
 
-    This can be used e.g. to make triple-quoted strings line up with
-    the left edge of screen/whatever, while still presenting it in the
-    source code in indented form.
-
-    For example:
-
-        def test():
-            # end first line with \ to avoid the empty line!
-            s = '''\
-            hello
-              world
-            '''
-            print repr(s)          # prints '    hello\n      world\n    '
-            print repr(dedent(s))  # prints 'hello\n  world\n'
+    Note that tabs and spaces are both treated as whitespace, but they
+    are not equal: the lines "  hello" and "\thello" are
+    considered to have no common leading whitespace.  (This behaviour is
+    new in Python 2.5; older versions of this module incorrectly
+    expanded tabs before searching for common leading whitespace.)
     """
-    lines = text.expandtabs().split('\n')
+    # Look for the longest leading string of spaces and tabs common to
+    # all lines.
     margin = None
-    for line in lines:
-        content = line.lstrip()
-        if not content:
-            continue
-        indent = len(line) - len(content)
+    text = _whitespace_only_re.sub('', text)
+    indents = _leading_whitespace_re.findall(text)
+    for indent in indents:
         if margin is None:
             margin = indent
+
+        # Current line more deeply indented than previous winner:
+        # no change (previous winner is still on top).
+        elif indent.startswith(margin):
+            pass
+
+        # Current line consistent with and no deeper than previous winner:
+        # it's the new winner.
+        elif margin.startswith(indent):
+            margin = indent
+
+        # Current line and previous winner have no common whitespace:
+        # there is no margin.
         else:
-            margin = min(margin, indent)
+            margin = ""
+            break
 
-    if margin is not None and margin > 0:
-        for i in range(len(lines)):
-            lines[i] = lines[i][margin:]
+    # sanity check (testing/debugging only)
+    if 0 and margin:
+        for line in text.split("\n"):
+            assert not line or line.startswith(margin), \
+                   "line = %r, margin = %r" % (line, margin)
 
-    return '\n'.join(lines)
+    if margin:
+        text = re.sub(r'(?m)^' + margin, '', text)
+    return text
+
+if __name__ == "__main__":
+    #print dedent("\tfoo\n\tbar")
+    #print dedent("  \thello there\n  \t  how are you?")
+    print dedent("Hello there.\n  This is indented.")

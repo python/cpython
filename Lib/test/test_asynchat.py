@@ -13,7 +13,8 @@ class echo_server(threading.Thread):
     def run(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind((HOST, PORT))
+        global PORT
+        PORT = test_support.bind_port(sock, HOST, PORT)
         sock.listen(1)
         conn, client = sock.accept()
         buffer = ""

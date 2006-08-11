@@ -157,6 +157,23 @@ class PointersTestCase(unittest.TestCase):
         q = pointer(y)
         pp[0] = q         # <==
         self.failUnlessEqual(p[0], 6)
+    def test_c_void_p(self):
+        # http://sourceforge.net/tracker/?func=detail&aid=1518190&group_id=5470&atid=105470
+        if sizeof(c_void_p) == 4:
+            self.failUnlessEqual(c_void_p(0xFFFFFFFFL).value,
+                                 c_void_p(-1).value)
+            self.failUnlessEqual(c_void_p(0xFFFFFFFFFFFFFFFFL).value,
+                                 c_void_p(-1).value)
+        elif sizeof(c_void_p) == 8:
+            self.failUnlessEqual(c_void_p(0xFFFFFFFFL).value,
+                                 0xFFFFFFFFL)
+            self.failUnlessEqual(c_void_p(0xFFFFFFFFFFFFFFFFL).value,
+                                 c_void_p(-1).value)
+            self.failUnlessEqual(c_void_p(0xFFFFFFFFFFFFFFFFFFFFFFFFL).value,
+                                 c_void_p(-1).value)
+
+        self.assertRaises(TypeError, c_void_p, 3.14) # make sure floats are NOT accepted
+        self.assertRaises(TypeError, c_void_p, object()) # nor other objects
 
 if __name__ == '__main__':
     unittest.main()

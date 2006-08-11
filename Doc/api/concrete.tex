@@ -31,7 +31,7 @@ This section describes Python type objects and the singleton object
 
 \begin{cvardesc}{PyObject*}{PyType_Type}
   This is the type object for type objects; it is the same object as
-  \code{types.TypeType} in the Python layer.
+  \code{type} and \code{types.TypeType} in the Python layer.
   \withsubitem{(in module types)}{\ttindex{TypeType}}
 \end{cvardesc}
 
@@ -117,7 +117,8 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
 
 \begin{cvardesc}{PyTypeObject}{PyInt_Type}
   This instance of \ctype{PyTypeObject} represents the Python plain
-  integer type.  This is the same object as \code{types.IntType}.
+  integer type.  This is the same object as \code{int} and
+  \code{types.IntType}.
   \withsubitem{(in modules types)}{\ttindex{IntType}}
 \end{cvardesc}
 
@@ -260,7 +261,8 @@ booleans.  The following macros are available, however.
 
 \begin{cvardesc}{PyTypeObject}{PyLong_Type}
   This instance of \ctype{PyTypeObject} represents the Python long
-  integer type.  This is the same object as \code{types.LongType}.
+  integer type.  This is the same object as \code{long} and
+  \code{types.LongType}.
   \withsubitem{(in modules types)}{\ttindex{LongType}}
 \end{cvardesc}
 
@@ -376,7 +378,7 @@ booleans.  The following macros are available, however.
   \versionadded{2.3}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{unsigned long}{PyLong_AsUnsignedLongLongMask}{PyObject *io}
+\begin{cfuncdesc}{unsigned PY_LONG_LONG}{PyLong_AsUnsignedLongLongMask}{PyObject *io}
   Return a C \ctype{unsigned long long} from a Python long integer, without
   checking for overflow.
   \versionadded{2.3}
@@ -411,7 +413,8 @@ booleans.  The following macros are available, however.
 
 \begin{cvardesc}{PyTypeObject}{PyFloat_Type}
   This instance of \ctype{PyTypeObject} represents the Python floating
-  point type.  This is the same object as \code{types.FloatType}.
+  point type.  This is the same object as \code{float} and
+  \code{types.FloatType}.
   \withsubitem{(in modules types)}{\ttindex{FloatType}}
 \end{cvardesc}
 
@@ -520,7 +523,8 @@ typedef struct {
 
 \begin{cvardesc}{PyTypeObject}{PyComplex_Type}
   This instance of \ctype{PyTypeObject} represents the Python complex
-  number type.
+  number type. It is the same object as \code{complex} and
+  \code{types.ComplexType}.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyComplex_Check}{PyObject *p}
@@ -580,8 +584,8 @@ parameter and are called with a non-string parameter.
 
 \begin{cvardesc}{PyTypeObject}{PyString_Type}
   This instance of \ctype{PyTypeObject} represents the Python string
-  type; it is the same object as \code{types.TypeType} in the Python
-  layer.
+  type; it is the same object as \code{str} and \code{types.StringType}
+  in the Python layer.
   \withsubitem{(in module types)}{\ttindex{StringType}}.
 \end{cvardesc}
 
@@ -850,7 +854,8 @@ Please keep this in mind when writing extensions or interfaces.
 
 \begin{cvardesc}{PyTypeObject}{PyUnicode_Type}
   This instance of \ctype{PyTypeObject} represents the Python Unicode
-  type.
+  type.  It is exposed to Python code as \code{unicode} and
+  \code{types.UnicodeType}.
 \end{cvardesc}
 
 The following APIs are really C macros and can be used to do fast
@@ -1001,21 +1006,14 @@ use these APIs:
                                                       const char *errors}
   Coerce an encoded object \var{obj} to an Unicode object and return a
   reference with incremented refcount.
+  
+  String and other char buffer compatible objects are decoded
+  according to the given encoding and using the error handling
+  defined by errors.  Both can be \NULL{} to have the interface
+  use the default values (see the next section for details).
 
-  Coercion is done in the following way:
-
-\begin{enumerate}
-\item  Unicode objects are passed back as-is with incremented
-       refcount. \note{These cannot be decoded; passing a non-\NULL{}
-       value for encoding will result in a \exception{TypeError}.}
-
-\item String and other char buffer compatible objects are decoded
-      according to the given encoding and using the error handling
-      defined by errors.  Both can be \NULL{} to have the interface
-      use the default values (see the next section for details).
-
-\item All other objects cause an exception.
-\end{enumerate}
+  All other objects, including Unicode objects, cause a
+  \exception{TypeError} to be set.
 
   The API returns \NULL{} if there was an error.  The caller is
   responsible for decref'ing the returned objects.
@@ -1431,6 +1429,18 @@ machine running the codec.
   raised by the codec.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyUnicode_DecodeMBCSStateful}{const char *s,
+                                               int size,
+                                               const char *errors,
+                                               int *consumed}
+  If \var{consumed} is \NULL{}, behave like
+  \cfunction{PyUnicode_DecodeMBCS()}. If \var{consumed} is not \NULL{},
+  \cfunction{PyUnicode_DecodeMBCSStateful()} will not decode trailing lead
+  byte and the number of bytes that have been decoded will be stored in
+  \var{consumed}.
+  \versionadded{2.5}
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{PyObject*}{PyUnicode_EncodeMBCS}{const Py_UNICODE *s,
                                                Py_ssize_t size,
                                                const char *errors}
@@ -1618,8 +1628,9 @@ format.
 
 \begin{cvardesc}{PyTypeObject}{PyBuffer_Type}
   The instance of \ctype{PyTypeObject} which represents the Python
-  buffer type; it is the same object as \code{types.BufferType} in the
-  Python layer.\withsubitem{(in module types)}{\ttindex{BufferType}}.
+  buffer type; it is the same object as \code{buffer} and 
+  \code{types.BufferType} in the Python layer.
+  \withsubitem{(in module types)}{\ttindex{BufferType}}.
 \end{cvardesc}
 
 \begin{cvardesc}{int}{Py_END_OF_BUFFER}
@@ -1693,8 +1704,8 @@ format.
 
 \begin{cvardesc}{PyTypeObject}{PyTuple_Type}
   This instance of \ctype{PyTypeObject} represents the Python tuple
-  type; it is the same object as \code{types.TupleType} in the Python
-  layer.\withsubitem{(in module types)}{\ttindex{TupleType}}.
+  type; it is the same object as \code{tuple} and \code{types.TupleType}
+  in the Python layer.\withsubitem{(in module types)}{\ttindex{TupleType}}.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyTuple_Check}{PyObject *p}
@@ -1790,8 +1801,8 @@ format.
 
 \begin{cvardesc}{PyTypeObject}{PyList_Type}
   This instance of \ctype{PyTypeObject} represents the Python list
-  type.  This is the same object as \code{types.ListType}.
-  \withsubitem{(in module types)}{\ttindex{ListType}}
+  type.  This is the same object as \code{list} and \code{types.ListType}
+  in the Python layer.\withsubitem{(in module types)}{\ttindex{ListType}}
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyList_Check}{PyObject *p}
@@ -1919,7 +1930,7 @@ format.
 \begin{cvardesc}{PyTypeObject}{PyDict_Type}
   This instance of \ctype{PyTypeObject} represents the Python
   dictionary type.  This is exposed to Python programs as
-  \code{types.DictType} and \code{types.DictionaryType}.
+  \code{dict} and \code{types.DictType}.
   \withsubitem{(in module types)}{\ttindex{DictType}\ttindex{DictionaryType}}
 \end{cvardesc}
 
@@ -2134,7 +2145,8 @@ implementation detail and may change in future releases of Python.
 
 \begin{cvardesc}{PyTypeObject}{PyFile_Type}
   This instance of \ctype{PyTypeObject} represents the Python file
-  type.  This is exposed to Python programs as \code{types.FileType}.
+  type.  This is exposed to Python programs as \code{file} and
+  \code{types.FileType}.
   \withsubitem{(in module types)}{\ttindex{FileType}}
 \end{cvardesc}
 
@@ -2583,7 +2595,7 @@ They are found in the dictionary of type objects.
 
 \begin{cvardesc}{PyTypeObject}{PySlice_Type}
   The type object for slice objects.  This is the same as
-  \code{types.SliceType}.
+  \code{slice} and \code{types.SliceType}.
   \withsubitem{(in module types)}{\ttindex{SliceType}}
 \end{cvardesc}
 

@@ -62,8 +62,14 @@
 #include <tchar.h>
 #endif
 
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif /* HAVE_SYS_STAT_H */
+
 #include <string.h>
 
 /* Search in some common locations for the associated Python libraries.
@@ -291,6 +297,10 @@ getpythonregpath(HKEY keyBase, int skipcore)
 		}
 		RegCloseKey(subKey);
 	}
+
+	/* return null if no path to return */
+	if (dataSize == 0) goto done;
+
 	/* original datasize from RegQueryInfo doesn't include the \0 */
 	dataBuf = malloc((dataSize+1) * sizeof(TCHAR));
 	if (dataBuf) {

@@ -109,8 +109,8 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
 	}
 	if (defaults == Py_None)
 		defaults = NULL;
-	else if (PyTuple_Check(defaults)) {
-		Py_XINCREF(defaults);
+	else if (defaults && PyTuple_Check(defaults)) {
+		Py_INCREF(defaults);
 	}
 	else {
 		PyErr_SetString(PyExc_SystemError, "non-tuple default args");
@@ -141,7 +141,7 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
 	if (closure == Py_None)
 		closure = NULL;
 	else if (PyTuple_Check(closure)) {
-		Py_XINCREF(closure);
+		Py_INCREF(closure);
 	}
 	else {
 		PyErr_Format(PyExc_SystemError, 

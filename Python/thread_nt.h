@@ -5,7 +5,9 @@
 
 #include <windows.h>
 #include <limits.h>
+#ifdef HAVE_PROCESS_H
 #include <process.h>
+#endif
 
 typedef struct NRMUTEX {
 	LONG   owned ;
@@ -194,7 +196,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 	if (obj.done == NULL)
 		return -1;
 
-	rv = _beginthread(bootstrap, 0, &obj); /* use default stack size */
+	rv = _beginthread(bootstrap, _pythread_stacksize, &obj);
 	if (rv == (Py_uintptr_t)-1) {
 		/* I've seen errno == EAGAIN here, which means "there are
 		 * too many threads".
@@ -333,3 +335,30 @@ PyThread_release_lock(PyThread_type_lock aLock)
 	if (!(aLock && LeaveNonRecursiveMutex((PNRMUTEX) aLock)))
 		dprintf(("%ld: Could not PyThread_release_lock(%p) error: %l\n", PyThread_get_thread_ident(), aLock, GetLastError()));
 }
+
+/* minimum/maximum thread stack sizes supported */
+#define THREAD_MIN_STACKSIZE	0x8000		/* 32kB */
+#define THREAD_MAX_STACKSIZE	0x10000000	/* 256MB */
+
+/* set the thread stack size.
+ * Return 0 if size is valid, -1 otherwise.
+ */
+static int
+_pythread_nt_set_stacksize(size_t size)
+{
+	/* set to default */
+	if (size == 0) {
+		_pythread_stacksize = 0;
+		return 0;
+	}
+
+	/* valid range? */
+	if (size >= THREAD_MIN_STACKSIZE && size < THREAD_MAX_STACKSIZE) {
+		_pythread_stacksize = size;
+		return 0;
+	}
+
+	return -1;
+}
+
+#define THREAD_SET_STACKSIZE(x)	_pythread_nt_set_stacksize(x)

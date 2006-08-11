@@ -39,9 +39,9 @@ class TimeTestCase(unittest.TestCase):
 
     def test_strftime_bounds_checking(self):
         # Make sure that strftime() checks the bounds of the various parts
-        #of the time tuple.
+        #of the time tuple (0 is valid for *all* values).
 
-        # Check year
+        # Check year [1900, max(int)]
         self.assertRaises(ValueError, time.strftime, '',
                             (1899, 1, 1, 0, 0, 0, 0, 1, -1))
         if time.accept2dyear:
@@ -49,27 +49,27 @@ class TimeTestCase(unittest.TestCase):
                                 (-1, 1, 1, 0, 0, 0, 0, 1, -1))
             self.assertRaises(ValueError, time.strftime, '',
                                 (100, 1, 1, 0, 0, 0, 0, 1, -1))
-        # Check month
+        # Check month [1, 12] + zero support
         self.assertRaises(ValueError, time.strftime, '',
-                            (1900, 0, 1, 0, 0, 0, 0, 1, -1))
+                            (1900, -1, 1, 0, 0, 0, 0, 1, -1))
         self.assertRaises(ValueError, time.strftime, '',
                             (1900, 13, 1, 0, 0, 0, 0, 1, -1))
-        # Check day of month
+        # Check day of month [1, 31] + zero support
         self.assertRaises(ValueError, time.strftime, '',
-                            (1900, 1, 0, 0, 0, 0, 0, 1, -1))
+                            (1900, 1, -1, 0, 0, 0, 0, 1, -1))
         self.assertRaises(ValueError, time.strftime, '',
                             (1900, 1, 32, 0, 0, 0, 0, 1, -1))
-        # Check hour
+        # Check hour [0, 23]
         self.assertRaises(ValueError, time.strftime, '',
                             (1900, 1, 1, -1, 0, 0, 0, 1, -1))
         self.assertRaises(ValueError, time.strftime, '',
                             (1900, 1, 1, 24, 0, 0, 0, 1, -1))
-        # Check minute
+        # Check minute [0, 59]
         self.assertRaises(ValueError, time.strftime, '',
                             (1900, 1, 1, 0, -1, 0, 0, 1, -1))
         self.assertRaises(ValueError, time.strftime, '',
                             (1900, 1, 1, 0, 60, 0, 0, 1, -1))
-        # Check second
+        # Check second [0, 61]
         self.assertRaises(ValueError, time.strftime, '',
                             (1900, 1, 1, 0, 0, -1, 0, 1, -1))
         # C99 only requires allowing for one leap second, but Python's docs say
@@ -82,16 +82,24 @@ class TimeTestCase(unittest.TestCase):
         #  modulo.
         self.assertRaises(ValueError, time.strftime, '',
                             (1900, 1, 1, 0, 0, 0, -2, 1, -1))
-        # Check day of the year
+        # Check day of the year [1, 366] + zero support
         self.assertRaises(ValueError, time.strftime, '',
-                            (1900, 1, 1, 0, 0, 0, 0, 0, -1))
+                            (1900, 1, 1, 0, 0, 0, 0, -1, -1))
         self.assertRaises(ValueError, time.strftime, '',
                             (1900, 1, 1, 0, 0, 0, 0, 367, -1))
-        # Check daylight savings flag
+        # Check daylight savings flag [-1, 1]
         self.assertRaises(ValueError, time.strftime, '',
                             (1900, 1, 1, 0, 0, 0, 0, 1, -2))
         self.assertRaises(ValueError, time.strftime, '',
                             (1900, 1, 1, 0, 0, 0, 0, 1, 2))
+
+    def test_default_values_for_zero(self):
+        # Make sure that using all zeros uses the proper default values.
+        # No test for daylight savings since strftime() does not change output
+        # based on its value.
+        expected = "2000 01 01 00 00 00 1 001"
+        result = time.strftime("%Y %m %d %H %M %S %w %j", (0,)*9)
+        self.assertEquals(expected, result)
 
     def test_strptime(self):
         tt = time.gmtime(self.t)
@@ -193,13 +201,17 @@ class TimeTestCase(unittest.TestCase):
         time.ctime(None)
 
     def test_gmtime_without_arg(self):
-        t0 = time.mktime(time.gmtime())
-        t1 = time.mktime(time.gmtime(None))
+        gt0 = time.gmtime()
+        gt1 = time.gmtime(None)
+        t0 = time.mktime(gt0)
+        t1 = time.mktime(gt1)
         self.assert_(0 <= (t1-t0) < 0.2)
 
     def test_localtime_without_arg(self):
-        t0 = time.mktime(time.localtime())
-        t1 = time.mktime(time.localtime(None))
+        lt0 = time.localtime()
+        lt1 = time.localtime(None)
+        t0 = time.mktime(lt0)
+        t1 = time.mktime(lt1)
         self.assert_(0 <= (t1-t0) < 0.2)
 
 def test_main():

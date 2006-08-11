@@ -79,6 +79,7 @@ def fileConfig(fname, defaults=None):
     logging._acquireLock()
     try:
         logging._handlers.clear()
+        logging._handlerList = []
         # Handlers add themselves to logging._handlers
         handlers = _install_handlers(cp, formatters)
         _install_loggers(cp, handlers)

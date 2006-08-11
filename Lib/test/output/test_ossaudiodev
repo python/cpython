@@ -1,3 +1,2 @@
 test_ossaudiodev
-playing test sound file...
-elapsed time: 3.1 sec
+playing test sound file (expected running time: 2.93 sec)

@@ -28,11 +28,36 @@ and then print out a report to stdout.
 Micro-Manual
 ------------
 
-Run 'pybench.py -h' to see the help screen.
-Run 'pybench.py' to just let the benchmark suite do it's thing and
-'pybench.py -f <file>' to have it store the results in a file too.
+Run 'pybench.py -h' to see the help screen.  Run 'pybench.py' to run
+the benchmark suite using default settings and 'pybench.py -f <file>'
+to have it store the results in a file too.
+
+It is usually a good idea to run pybench.py multiple times to see
+whether the environment, timers and benchmark run-times are suitable
+for doing benchmark tests. 
+
+You can use the comparison feature of pybench.py ('pybench.py -c
+<file>') to check how well the system behaves in comparison to a
+reference run. 
+
+If the differences are well below 10% for each test, then you have a
+system that is good for doing benchmark testings.  Of you get random
+differences of more than 10% or significant differences between the
+values for minimum and average time, then you likely have some
+background processes running which cause the readings to become
+inconsistent. Examples include: web-browsers, email clients, RSS
+readers, music players, backup programs, etc.
+
+If you are only interested in a few tests of the whole suite, you can
+use the filtering option, e.g. 'pybench.py -t string' will only
+run/show the tests that have 'string' in their name.
 
 This is the current output of pybench.py --help:
+
+"""
+------------------------------------------------------------------------
+PYBENCH - a benchmark test suite for Python interpreters/compilers.
+------------------------------------------------------------------------
 
 Synopsis:
  pybench.py [option] files...
@@ -42,14 +67,14 @@ Options and default settings:
   -f arg           save benchmark to file arg ()
   -c arg           compare benchmark with the one in file arg ()
   -s arg           show benchmark in file arg, then exit ()
-  -S               show statistics of benchmarks (0)
-  -w arg           set warp factor to arg (20)
-  -d               hide noise in compares (0)
-  --no-gc          disable garbage collection (0)
-  --no-syscheck    "disable" sys check interval (set to sys.maxint) (0)
-  -t arg           tests containing substring ()
-  -C arg           number of calibration runs (20)
-  -v               generate verbose output
+  -w arg           set warp factor to arg (10)
+  -t arg           run only tests with names matching arg ()
+  -C arg           set the number of calibration runs to arg (20)
+  -d               hide noise in comparisons (0)
+  -v               verbose output (not recommended) (0)
+  --with-gc        enable garbage collection (0)
+  --with-syscheck  use default sys check interval (0)
+  --timer arg      use given timer (time.time)
   -h               show this help text
   --help           show this help text
   --debug          enable debugging
@@ -57,17 +82,23 @@ Options and default settings:
   --examples       show examples of usage
 
 Version:
- 1.3
+ 2.0
 
 The normal operation is to run the suite and display the
-results. Use -f to save them for later reuse or comparisms.
+results. Use -f to save them for later reuse or comparisons.
+
+Available timers:
+
+   time.time
+   time.clock
+   systimes.processtime
 
 Examples:
 
-python1.5 pybench.py -w 100 -f p15
-python1.4 pybench.py -w 100 -f p14
-python pybench.py -s p15 -c p14
-
+python2.1 pybench.py -f p21.pybench
+python2.5 pybench.py -f p25.pybench
+python pybench.py -s p25.pybench -c p21.pybench
+"""
 
 License
 -------
@@ -78,184 +109,103 @@ See LICENSE file.
 Sample output
 -------------
 
-PYBENCH 1.3
+"""
+-------------------------------------------------------------------------------
+PYBENCH 2.0
+-------------------------------------------------------------------------------
+* using Python 2.4.2
+* disabled garbage collection
+* system check interval set to maximum: 2147483647
+* using timer: time.time
 
-Machine Details:
-   Platform ID:  Linux-2.6.8-24.19-default-x86_64-with-SuSE-9.2-x86-64
-   Executable:   /home/lemburg/projects/Python/Installation/bin/python
-   Python:       2.5a1.0
-   Compiler:     GCC 3.3.4 (pre 3.3.5 20040809)
-   Build:        Apr  9 2006 01:50:57 (#trunk)
+Calibrating tests. Please wait...
 
-Searching for tests...
-   BuiltinFunctionCalls
-   BuiltinMethodLookup
-   CompareFloats
-   CompareFloatsIntegers
-   CompareIntegers
-   CompareInternedStrings
-   CompareLongs
-   CompareStrings
-   CompareUnicode
-   ConcatStrings
-   ConcatUnicode
-   CreateInstances
-   CreateStringsWithConcat
-   CreateUnicodeWithConcat
-   DictCreation
-   DictWithFloatKeys
-   DictWithIntegerKeys
-   DictWithStringKeys
-   ForLoops
-   IfThenElse
-   ListSlicing
-   NestedForLoops
-   NormalClassAttribute
-   NormalInstanceAttribute
-   PythonFunctionCalls
-   PythonMethodCalls
-   Recursion
-   SecondImport
-   SecondPackageImport
-   SecondSubmoduleImport
-   SimpleComplexArithmetic
-   SimpleDictManipulation
-   SimpleFloatArithmetic
-   SimpleIntFloatArithmetic
-   SimpleIntegerArithmetic
-   SimpleListManipulation
-   SimpleLongArithmetic
-   SmallLists
-   SmallTuples
-   SpecialClassAttribute
-   SpecialInstanceAttribute
-   StringMappings
-   StringPredicates
-   StringSlicing
-   TryExcept
-   TryRaiseExcept
-   TupleSlicing
-   UnicodeMappings
-   UnicodePredicates
-   UnicodeProperties
-   UnicodeSlicing
+Running 10 round(s) of the suite at warp factor 10:
 
-Running 10 round(s) of the suite:
-
+* Round 1 done in 6.388 seconds.
+* Round 2 done in 6.485 seconds.
+* Round 3 done in 6.786 seconds.
 ...
+* Round 10 done in 6.546 seconds.
 
- Round 10                         real   abs    overhead
-          BuiltinFunctionCalls:   0.030r 0.030a 0.000o
-           BuiltinMethodLookup:   0.059r 0.060a 0.001o
-                 CompareFloats:   0.050r 0.050a 0.000o
-         CompareFloatsIntegers:   0.050r 0.050a 0.000o
-               CompareIntegers:   0.070r 0.070a 0.000o
-        CompareInternedStrings:   0.039r 0.040a 0.001o
-                  CompareLongs:   0.050r 0.050a 0.000o
-                CompareStrings:   0.060r 0.060a 0.000o
-                CompareUnicode:   0.060r 0.060a 0.000o
-                 ConcatStrings:   0.040r 0.040a 0.000o
-                 ConcatUnicode:   0.050r 0.050a 0.000o
-               CreateInstances:   0.050r 0.050a 0.000o
-       CreateStringsWithConcat:   0.029r 0.030a 0.001o
-       CreateUnicodeWithConcat:   0.060r 0.060a 0.000o
-                  DictCreation:   0.040r 0.040a 0.000o
-             DictWithFloatKeys:   0.089r 0.090a 0.000o
-           DictWithIntegerKeys:   0.059r 0.060a 0.001o
-            DictWithStringKeys:   0.070r 0.070a 0.001o
-                      ForLoops:   0.050r 0.050a 0.000o
-                    IfThenElse:   0.070r 0.070a 0.000o
-                   ListSlicing:   0.030r 0.030a 0.000o
-                NestedForLoops:   0.030r 0.030a 0.000o
-          NormalClassAttribute:   0.060r 0.060a 0.000o
-       NormalInstanceAttribute:   0.060r 0.060a 0.000o
-           PythonFunctionCalls:   0.060r 0.060a 0.000o
-             PythonMethodCalls:   0.050r 0.050a 0.000o
-                     Recursion:   0.050r 0.050a 0.000o
-                  SecondImport:   0.030r 0.030a 0.000o
-           SecondPackageImport:   0.030r 0.030a 0.000o
-         SecondSubmoduleImport:   0.040r 0.040a 0.000o
-       SimpleComplexArithmetic:   0.030r 0.030a 0.000o
-        SimpleDictManipulation:   0.040r 0.040a 0.000o
-         SimpleFloatArithmetic:   0.050r 0.050a 0.001o
-      SimpleIntFloatArithmetic:   0.060r 0.060a 0.000o
-       SimpleIntegerArithmetic:   0.060r 0.060a 0.000o
-        SimpleListManipulation:   0.030r 0.030a 0.000o
-          SimpleLongArithmetic:   0.030r 0.030a 0.000o
-                    SmallLists:   0.050r 0.050a 0.000o
-                   SmallTuples:   0.050r 0.050a 0.000o
-         SpecialClassAttribute:   0.060r 0.060a 0.000o
-      SpecialInstanceAttribute:   0.079r 0.080a 0.001o
-                StringMappings:   0.060r 0.060a 0.000o
-              StringPredicates:   0.049r 0.050a 0.001o
-                 StringSlicing:   0.039r 0.040a 0.000o
-                     TryExcept:   0.079r 0.080a 0.001o
-                TryRaiseExcept:   0.059r 0.060a 0.001o
-                  TupleSlicing:   0.050r 0.050a 0.000o
-               UnicodeMappings:   0.070r 0.070a 0.001o
-             UnicodePredicates:   0.059r 0.060a 0.001o
-             UnicodeProperties:   0.059r 0.060a 0.001o
-                UnicodeSlicing:   0.050r 0.050a 0.000o
-                                 ----------------------
-            Average round time:      2.937 seconds
+-------------------------------------------------------------------------------
+Benchmark: 2006-06-12 12:09:25
+-------------------------------------------------------------------------------
+
+    Rounds: 10
+    Warp:   10
+    Timer:  time.time
+
+    Machine Details:
+       Platform ID:  Linux-2.6.8-24.19-default-x86_64-with-SuSE-9.2-x86-64
+       Processor:    x86_64
+
+    Python:
+       Executable:   /usr/local/bin/python
+       Version:      2.4.2
+       Compiler:     GCC 3.3.4 (pre 3.3.5 20040809)
+       Bits:         64bit
+       Build:        Oct  1 2005 15:24:35 (#1)
+       Unicode:      UCS2
 
 
-Tests:                              per run    per oper.   overhead
-------------------------------------------------------------------------
-          BuiltinFunctionCalls:      29.85 ms    0.23 us    0.00 ms
-           BuiltinMethodLookup:      66.85 ms    0.13 us    0.50 ms
-                 CompareFloats:      43.00 ms    0.10 us    0.00 ms
-         CompareFloatsIntegers:      51.80 ms    0.12 us    0.00 ms
-               CompareIntegers:      70.70 ms    0.08 us    0.50 ms
-        CompareInternedStrings:      41.40 ms    0.08 us    0.50 ms
-                  CompareLongs:      47.90 ms    0.11 us    0.00 ms
-                CompareStrings:      58.50 ms    0.12 us    0.50 ms
-                CompareUnicode:      56.55 ms    0.15 us    0.50 ms
-                 ConcatStrings:      44.75 ms    0.30 us    0.00 ms
-                 ConcatUnicode:      54.55 ms    0.36 us    0.50 ms
-               CreateInstances:      50.95 ms    1.21 us    0.00 ms
-       CreateStringsWithConcat:      28.85 ms    0.14 us    0.50 ms
-       CreateUnicodeWithConcat:      53.75 ms    0.27 us    0.00 ms
-                  DictCreation:      41.90 ms    0.28 us    0.00 ms
-             DictWithFloatKeys:      88.50 ms    0.15 us    0.50 ms
-           DictWithIntegerKeys:      62.55 ms    0.10 us    0.50 ms
-            DictWithStringKeys:      60.50 ms    0.10 us    0.50 ms
-                      ForLoops:      46.90 ms    4.69 us    0.00 ms
-                    IfThenElse:      60.55 ms    0.09 us    0.00 ms
-                   ListSlicing:      29.90 ms    8.54 us    0.00 ms
-                NestedForLoops:      33.95 ms    0.10 us    0.00 ms
-          NormalClassAttribute:      62.75 ms    0.10 us    0.50 ms
-       NormalInstanceAttribute:      61.80 ms    0.10 us    0.50 ms
-           PythonFunctionCalls:      60.00 ms    0.36 us    0.00 ms
-             PythonMethodCalls:      50.00 ms    0.67 us    0.00 ms
-                     Recursion:      46.85 ms    3.75 us    0.00 ms
-                  SecondImport:      35.00 ms    1.40 us    0.00 ms
-           SecondPackageImport:      32.00 ms    1.28 us    0.00 ms
-         SecondSubmoduleImport:      38.00 ms    1.52 us    0.00 ms
-       SimpleComplexArithmetic:      26.85 ms    0.12 us    0.00 ms
-        SimpleDictManipulation:      40.85 ms    0.14 us    0.00 ms
-         SimpleFloatArithmetic:      48.70 ms    0.09 us    0.50 ms
-      SimpleIntFloatArithmetic:      57.70 ms    0.09 us    0.00 ms
-       SimpleIntegerArithmetic:      58.75 ms    0.09 us    0.50 ms
-        SimpleListManipulation:      34.80 ms    0.13 us    0.00 ms
-          SimpleLongArithmetic:      30.95 ms    0.19 us    0.50 ms
-                    SmallLists:      47.60 ms    0.19 us    0.00 ms
-                   SmallTuples:      48.80 ms    0.20 us    0.50 ms
-         SpecialClassAttribute:      61.70 ms    0.10 us    0.00 ms
-      SpecialInstanceAttribute:      76.70 ms    0.13 us    0.50 ms
-                StringMappings:      58.70 ms    0.47 us    0.00 ms
-              StringPredicates:      50.00 ms    0.18 us    1.00 ms
-                 StringSlicing:      39.65 ms    0.23 us    0.50 ms
-                     TryExcept:      84.45 ms    0.06 us    0.50 ms
-                TryRaiseExcept:      61.75 ms    4.12 us    0.50 ms
-                  TupleSlicing:      48.95 ms    0.47 us    0.00 ms
-               UnicodeMappings:      71.50 ms    3.97 us    0.50 ms
-             UnicodePredicates:      52.75 ms    0.23 us    1.00 ms
-             UnicodeProperties:      61.90 ms    0.31 us    1.00 ms
-                UnicodeSlicing:      53.75 ms    0.31 us    0.50 ms
-------------------------------------------------------------------------
-            Average round time:    2937.00 ms
-
+Test                             minimum  average  operation  overhead
+-------------------------------------------------------------------------------
+          BuiltinFunctionCalls:    126ms    145ms    0.28us    0.274ms
+           BuiltinMethodLookup:    124ms    130ms    0.12us    0.316ms
+                 CompareFloats:    109ms    110ms    0.09us    0.361ms
+         CompareFloatsIntegers:    100ms    104ms    0.12us    0.271ms
+               CompareIntegers:    137ms    138ms    0.08us    0.542ms
+        CompareInternedStrings:    124ms    127ms    0.08us    1.367ms
+                  CompareLongs:    100ms    104ms    0.10us    0.316ms
+                CompareStrings:    111ms    115ms    0.12us    0.929ms
+                CompareUnicode:    108ms    128ms    0.17us    0.693ms
+                 ConcatStrings:    142ms    155ms    0.31us    0.562ms
+                 ConcatUnicode:    119ms    127ms    0.42us    0.384ms
+               CreateInstances:    123ms    128ms    1.14us    0.367ms
+            CreateNewInstances:    121ms    126ms    1.49us    0.335ms
+       CreateStringsWithConcat:    130ms    135ms    0.14us    0.916ms
+       CreateUnicodeWithConcat:    130ms    135ms    0.34us    0.361ms
+                  DictCreation:    108ms    109ms    0.27us    0.361ms
+             DictWithFloatKeys:    149ms    153ms    0.17us    0.678ms
+           DictWithIntegerKeys:    124ms    126ms    0.11us    0.915ms
+            DictWithStringKeys:    114ms    117ms    0.10us    0.905ms
+                      ForLoops:    110ms    111ms    4.46us    0.063ms
+                    IfThenElse:    118ms    119ms    0.09us    0.685ms
+                   ListSlicing:    116ms    120ms    8.59us    0.103ms
+                NestedForLoops:    125ms    137ms    0.09us    0.019ms
+          NormalClassAttribute:    124ms    136ms    0.11us    0.457ms
+       NormalInstanceAttribute:    110ms    117ms    0.10us    0.454ms
+           PythonFunctionCalls:    107ms    113ms    0.34us    0.271ms
+             PythonMethodCalls:    140ms    149ms    0.66us    0.141ms
+                     Recursion:    156ms    166ms    3.32us    0.452ms
+                  SecondImport:    112ms    118ms    1.18us    0.180ms
+           SecondPackageImport:    118ms    127ms    1.27us    0.180ms
+         SecondSubmoduleImport:    140ms    151ms    1.51us    0.180ms
+       SimpleComplexArithmetic:    128ms    139ms    0.16us    0.361ms
+        SimpleDictManipulation:    134ms    136ms    0.11us    0.452ms
+         SimpleFloatArithmetic:    110ms    113ms    0.09us    0.571ms
+      SimpleIntFloatArithmetic:    106ms    111ms    0.08us    0.548ms
+       SimpleIntegerArithmetic:    106ms    109ms    0.08us    0.544ms
+        SimpleListManipulation:    103ms    113ms    0.10us    0.587ms
+          SimpleLongArithmetic:    112ms    118ms    0.18us    0.271ms
+                    SmallLists:    105ms    116ms    0.17us    0.366ms
+                   SmallTuples:    108ms    128ms    0.24us    0.406ms
+         SpecialClassAttribute:    119ms    136ms    0.11us    0.453ms
+      SpecialInstanceAttribute:    143ms    155ms    0.13us    0.454ms
+                StringMappings:    115ms    121ms    0.48us    0.405ms
+              StringPredicates:    120ms    129ms    0.18us    2.064ms
+                 StringSlicing:    111ms    127ms    0.23us    0.781ms
+                     TryExcept:    125ms    126ms    0.06us    0.681ms
+                TryRaiseExcept:    133ms    137ms    2.14us    0.361ms
+                  TupleSlicing:    117ms    120ms    0.46us    0.066ms
+               UnicodeMappings:    156ms    160ms    4.44us    0.429ms
+             UnicodePredicates:    117ms    121ms    0.22us    2.487ms
+             UnicodeProperties:    115ms    153ms    0.38us    2.070ms
+                UnicodeSlicing:    126ms    129ms    0.26us    0.689ms
+-------------------------------------------------------------------------------
+Totals:                           6283ms   6673ms
+"""
 ________________________________________________________________________
 
 Writing New Tests
@@ -293,7 +243,7 @@ class IntegerCounting(Test):
 
     # Number of rounds to execute per test run. This should be
     # adjusted to a figure that results in a test run-time of between
-    # 20-50 seconds.
+    # 1-2 seconds (at warp 1).
     rounds = 100000
 
     def test(self):
@@ -376,6 +326,41 @@ If a change is made to any individual test that means it is no
 longer strictly comparable with previous runs, the '.version' class
 variable should be updated. Therefafter, comparisons with previous
 versions of the test will list as "n/a" to reflect the change.
+
+
+Version History
+---------------
+
+  2.0: rewrote parts of pybench which resulted in more repeatable
+       timings:
+        - made timer a parameter
+        - changed the platform default timer to use high-resolution
+          timers rather than process timers (which have a much lower
+          resolution)
+        - added option to select timer
+        - added process time timer (using systimes.py)
+        - changed to use min() as timing estimator (average
+          is still taken as well to provide an idea of the difference)
+        - garbage collection is turned off per default
+        - sys check interval is set to the highest possible value
+        - calibration is now a separate step and done using
+          a different strategy that allows measuring the test
+          overhead more accurately
+        - modified the tests to each give a run-time of between
+          100-200ms using warp 10
+        - changed default warp factor to 10 (from 20)
+        - compared results with timeit.py and confirmed measurements
+        - bumped all test versions to 2.0
+        - updated platform.py to the latest version
+        - changed the output format a bit to make it look
+          nicer
+        - refactored the APIs somewhat
+  1.3+: Steve Holden added the NewInstances test and the filtering 
+       option during the NeedForSpeed sprint; this also triggered a long 
+       discussion on how to improve benchmark timing and finally
+       resulted in the release of 2.0
+  1.3: initial checkin into the Python SVN repository
+
 
 Have fun,
 --

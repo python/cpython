@@ -531,6 +531,11 @@ n = 0
 for x in Squares(10): n = n+x
 if n != 285: raise TestFailed, 'for over growing sequence'
 
+result = []
+for x, in [(1,), (2,), (3,)]:
+    result.append(x)
+vereq(result, [1, 2, 3])
+
 print 'try_stmt'
 ### try_stmt: 'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite]
 ###         | 'try' ':' suite 'finally' ':' suite

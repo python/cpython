@@ -6,7 +6,7 @@
 
 import os
 import sys
-from test.test_support import TestSkipped
+from test.test_support import TestSkipped, reap_children
 from os import popen
 
 # Test that command-lines get down as we expect.
@@ -35,5 +35,6 @@ def _test_commandline():
 def main():
     print "Test popen:"
     _test_commandline()
+    reap_children()
 
 main()

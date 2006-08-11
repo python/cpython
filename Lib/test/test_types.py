@@ -233,6 +233,7 @@ print 'Buffers'
 try: buffer('asdf', -1)
 except ValueError: pass
 else: raise TestFailed, "buffer('asdf', -1) should raise ValueError"
+cmp(buffer("abc"), buffer("def")) # used to raise a warning: tp_compare didn't return -1, 0, or 1
 
 try: buffer(None)
 except TypeError: pass
@@ -276,3 +277,10 @@ else: raise TestFailed, "buffer assignment should raise TypeError"
 try: a[0:1] = 'g'
 except TypeError: pass
 else: raise TestFailed, "buffer slice assignment should raise TypeError"
+
+# array.array() returns an object that does not implement a char buffer,
+# something which int() uses for conversion.
+import array
+try: int(buffer(array.array('c')))
+except TypeError :pass
+else: raise TestFailed, "char buffer (at C level) not working"

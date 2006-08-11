@@ -1,6 +1,8 @@
 import sys
+import types
 import unittest
 import inspect
+import datetime
 
 from test.test_support import TESTFN, run_unittest
 
@@ -15,7 +17,7 @@ from test import inspect_fodder2 as mod2
 # isdatadescriptor
 
 modfile = mod.__file__
-if modfile.endswith('c') or modfile.endswith('o'):
+if modfile.endswith(('c', 'o')):
     modfile = modfile[:-1]
 
 import __builtin__
@@ -40,10 +42,12 @@ class IsTestBase(unittest.TestCase):
             self.failIf(other(obj), 'not %s(%s)' % (other.__name__, exp))
 
 class TestPredicates(IsTestBase):
-    def test_eleven(self):
-        # Doc/lib/libinspect.tex claims there are 11 such functions
+    def test_thirteen(self):
         count = len(filter(lambda x:x.startswith('is'), dir(inspect)))
-        self.assertEqual(count, 11, "There are %d (not 11) is* functions" % count)
+        # Doc/lib/libinspect.tex claims there are 13 such functions
+        expected = 13
+        err_msg = "There are %d (not %d) is* functions" % (count, expected)
+        self.assertEqual(count, expected, err_msg)
 
     def test_excluding_predicates(self):
         self.istest(inspect.isbuiltin, 'sys.exit')
@@ -58,6 +62,15 @@ class TestPredicates(IsTestBase):
         self.istest(inspect.istraceback, 'tb')
         self.istest(inspect.isdatadescriptor, '__builtin__.file.closed')
         self.istest(inspect.isdatadescriptor, '__builtin__.file.softspace')
+        if hasattr(types, 'GetSetDescriptorType'):
+            self.istest(inspect.isgetsetdescriptor,
+                        'type(tb.tb_frame).f_locals')
+        else:
+            self.failIf(inspect.isgetsetdescriptor(type(tb.tb_frame).f_locals))
+        if hasattr(types, 'MemberDescriptorType'):
+            self.istest(inspect.ismemberdescriptor, 'datetime.timedelta.days')
+        else:
+            self.failIf(inspect.ismemberdescriptor(datetime.timedelta.days))
 
     def test_isroutine(self):
         self.assert_(inspect.isroutine(mod.spam))
@@ -179,6 +192,17 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     def test_getfile(self):
         self.assertEqual(inspect.getfile(mod.StupidGit), mod.__file__)
+
+    def test_getmodule_recursion(self):
+        from new import module
+        name = '__inspect_dummy'
+        m = sys.modules[name] = module(name)
+        m.__file__ = "<string>" # hopefully not a real filename...
+        m.__loader__ = "dummy"  # pretend the filename is understood by a loader
+        exec "def x(): pass" in m.__dict__
+        self.assertEqual(inspect.getsourcefile(m.x.func_code), '<string>')
+        del sys.modules[name]
+        inspect.getmodule(compile('a=10','','single'))
 
 class TestDecorators(GetSourceBase):
     fodderFile = mod2

@@ -86,8 +86,7 @@ class SequenceMatcher:
     >>> for block in s.get_matching_blocks():
     ...     print "a[%d] and b[%d] match for %d elements" % block
     a[0] and b[0] match for 8 elements
-    a[8] and b[17] match for 6 elements
-    a[14] and b[23] match for 15 elements
+    a[8] and b[17] match for 21 elements
     a[29] and b[38] match for 0 elements
 
     Note that the last tuple returned by .get_matching_blocks() is always a
@@ -101,8 +100,7 @@ class SequenceMatcher:
     ...     print "%6s a[%d:%d] b[%d:%d]" % opcode
      equal a[0:8] b[0:8]
     insert a[8:8] b[8:17]
-     equal a[8:14] b[17:23]
-     equal a[14:29] b[23:38]
+     equal a[8:29] b[17:38]
 
     See the Differ class for a fancy human-friendly file differencer, which
     uses SequenceMatcher both to compare sequences of lines, and to compare
@@ -461,7 +459,11 @@ class SequenceMatcher:
 
         Each triple is of the form (i, j, n), and means that
         a[i:i+n] == b[j:j+n].  The triples are monotonically increasing in
-        i and in j.
+        i and in j.  New in Python 2.5, it's also guaranteed that if
+        (i, j, n) and (i', j', n') are adjacent triples in the list, and
+        the second is not the last triple in the list, then i+n != i' or
+        j+n != j'.  IOW, adjacent triples never describe adjacent equal
+        blocks.
 
         The last triple is a dummy, (len(a), len(b), 0), and is the only
         triple with n==0.
@@ -475,28 +477,52 @@ class SequenceMatcher:
             return self.matching_blocks
         la, lb = len(self.a), len(self.b)
 
-        indexed_blocks = []
+        # This is most naturally expressed as a recursive algorithm, but
+        # at least one user bumped into extreme use cases that exceeded
+        # the recursion limit on their box.  So, now we maintain a list
+        # ('queue`) of blocks we still need to look at, and append partial
+        # results to `matching_blocks` in a loop; the matches are sorted
+        # at the end.
         queue = [(0, la, 0, lb)]
+        matching_blocks = []
         while queue:
-            # builds list of matching blocks covering a[alo:ahi] and
-            # b[blo:bhi], appending them in increasing order to answer
             alo, ahi, blo, bhi = queue.pop()
-
+            i, j, k = x = self.find_longest_match(alo, ahi, blo, bhi)
             # a[alo:i] vs b[blo:j] unknown
             # a[i:i+k] same as b[j:j+k]
             # a[i+k:ahi] vs b[j+k:bhi] unknown
-            i, j, k = x = self.find_longest_match(alo, ahi, blo, bhi)
-
-            if k:
+            if k:   # if k is 0, there was no matching block
+                matching_blocks.append(x)
                 if alo < i and blo < j:
                     queue.append((alo, i, blo, j))
-                indexed_blocks.append((i, x))
                 if i+k < ahi and j+k < bhi:
                     queue.append((i+k, ahi, j+k, bhi))
-        indexed_blocks.sort()
+        matching_blocks.sort()
 
-        self.matching_blocks = [elem[1] for elem in indexed_blocks]
-        self.matching_blocks.append( (la, lb, 0) )
+        # It's possible that we have adjacent equal blocks in the
+        # matching_blocks list now.  Starting with 2.5, this code was added
+        # to collapse them.
+        i1 = j1 = k1 = 0
+        non_adjacent = []
+        for i2, j2, k2 in matching_blocks:
+            # Is this block adjacent to i1, j1, k1?
+            if i1 + k1 == i2 and j1 + k1 == j2:
+                # Yes, so collapse them -- this just increases the length of
+                # the first block by the length of the second, and the first
+                # block so lengthened remains the block to compare against.
+                k1 += k2
+            else:
+                # Not adjacent.  Remember the first block (k1==0 means it's
+                # the dummy we started with), and make the second block the
+                # new block to compare against.
+                if k1:
+                    non_adjacent.append((i1, j1, k1))
+                i1, j1, k1 = i2, j2, k2
+        if k1:
+            non_adjacent.append((i1, j1, k1))
+
+        non_adjacent.append( (la, lb, 0) )
+        self.matching_blocks = non_adjacent
         return self.matching_blocks
 
     def get_opcodes(self):
@@ -1422,8 +1448,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                 num_blanks_pending -= 1
                 yield _make_line(lines,'-',0), None, True
                 continue
-            elif s.startswith('--?+') or s.startswith('--+') or \
-                 s.startswith('- '):
+            elif s.startswith(('--?+', '--+', '- ')):
                 # in delete block and see a intraline change or unchanged line
                 # coming: yield the delete line and then blanks
                 from_line,to_line = _make_line(lines,'-',0), None
@@ -1447,7 +1472,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                 num_blanks_pending += 1
                 yield None, _make_line(lines,'+',1), True
                 continue
-            elif s.startswith('+ ') or s.startswith('+-'):
+            elif s.startswith(('+ ', '+-')):
                 # will be leaving an add block: yield blanks then add line
                 from_line, to_line = None, _make_line(lines,'+',1)
                 num_blanks_to_yield,num_blanks_pending = num_blanks_pending+1,0

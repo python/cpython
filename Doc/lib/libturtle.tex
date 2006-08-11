@@ -27,6 +27,45 @@ Set angle measurement units to degrees.
 Set angle measurement units to radians.
 \end{funcdesc}
 
+\begin{funcdesc}{setup}{**kwargs}
+Sets the size and position of the main window.  Keywords are:
+\begin{itemize}
+  \item \code{width}: either a size in pixels or a fraction of the screen.
+   The default is 50\% of the screen.
+  \item \code{height}: either a size in pixels or a fraction of the screen.
+   The default is 50\% of the screen.
+  \item \code{startx}: starting position in pixels from the left edge
+      of the screen. \code{None} is the default value and 
+      centers the window horizontally on screen.
+  \item \code{starty}: starting position in pixels from the top edge
+      of the screen. \code{None} is the default value and 
+      centers the window vertically on screen.
+\end{itemize}
+
+   Examples:
+
+\begin{verbatim}
+# Uses default geometry: 50% x 50% of screen, centered.
+setup()  
+
+# Sets window to 200x200 pixels, in upper left of screen
+setup (width=200, height=200, startx=0, starty=0)
+
+# Sets window to 75% of screen by 50% of screen, and centers it.
+setup(width=.75, height=0.5, startx=None, starty=None)
+\end{verbatim}
+
+\end{funcdesc}
+
+\begin{funcdesc}{title}{title_str}
+Set the window's title to \var{title}.
+\end{funcdesc}
+
+\begin{funcdesc}{done}{}
+Enters the Tk main loop.  The window will continue to 
+be displayed until the user closes it or the process is killed.
+\end{funcdesc}
+
 \begin{funcdesc}{reset}{}
 Clear the screen, re-center the pen, and set variables to the default
 values.
@@ -40,6 +79,19 @@ Clear the screen.
 Set tracing on/off (according to whether flag is true or not). Tracing
 means line are drawn more slowly, with an animation of an arrow along the 
 line.
+\end{funcdesc}
+
+\begin{funcdesc}{speed}{speed}
+Set the speed of the turtle. Valid values for the parameter
+\var{speed} are \code{'fastest'} (no delay), \code{'fast'},
+(delay 5ms), \code{'normal'} (delay 10ms), \code{'slow'}
+(delay 15ms), and \code{'slowest'} (delay 20ms).
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{delay}{delay}
+Set the speed of the turtle to \var{delay}, which is given
+in ms. \versionadded{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{forward}{distance}
@@ -94,6 +146,18 @@ usage is: call \code{fill(1)} before drawing a path you want to fill,
 and call \code{fill(0)} when you finish to draw the path.
 \end{funcdesc}
 
+\begin{funcdesc}{begin\_fill}{}
+Switch turtle into filling mode; 
+Must eventually be followed by a corresponding end_fill() call.
+Otherwise it will be ignored.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{end\_fill}{}
+End filling mode, and fill the shape; equivalent to \code{fill(0)}.
+\versionadded{2.5}
+\end{funcdesc}
+
 \begin{funcdesc}{circle}{radius\optional{, extent}}
 Draw a circle with radius \var{radius} whose center-point is
 \var{radius} units left of the turtle.
@@ -111,6 +175,49 @@ by the amount of the \var{extent}.
 \funclineni{goto}{(x, y)}
 Go to co-ordinates \var{x}, \var{y}.  The co-ordinates may be
 specified either as two separate arguments or as a 2-tuple.
+\end{funcdesc}
+
+\begin{funcdesc}{towards}{x, y}
+Return the angle of the line from the turtle's position
+to the point \var{x}, \var{y}. The co-ordinates may be
+specified either as two separate arguments, as a 2-tuple,
+or as another pen object.
+\versionadded{2.5}
+\end{funcdesc}
+
+\begin{funcdesc}{heading}{}
+Return the current orientation of the turtle.
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{setheading}{angle}
+Set the orientation of the turtle to \var{angle}.
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{position}{}
+Return the current location of the turtle as an \code{(x,y)} pair.
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{setx}{x}
+Set the x coordinate of the turtle to \var{x}.
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{sety}{y}
+Set the y coordinate of the turtle to \var{y}.
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{window\_width}{}
+Return the width of the canvas window.
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{window\_height}{}
+Return the height of the canvas window.
+\versionadded{2.3}
 \end{funcdesc}
 
 This module also does \code{from math import *}, so see the
@@ -134,19 +241,25 @@ Define a pen. All above functions can be called as a methods on the given
 pen. The constructor automatically creates a canvas do be drawn on.
 \end{classdesc}
 
+\begin{classdesc}{Turtle}{}
+Define a pen. This is essentially a synonym for \code{Pen()};
+\class{Turtle} is an empty subclass of \class{Pen}.
+\end{classdesc}
+
 \begin{classdesc}{RawPen}{canvas}
 Define a pen which draws on a canvas \var{canvas}. This is useful if 
 you want to use the module to create graphics in a ``real'' program.
 \end{classdesc}
 
-\subsection{Pen and RawPen Objects \label{pen-rawpen-objects}}
+\subsection{Turtle, Pen and RawPen Objects \label{pen-rawpen-objects}}
 
-\class{Pen} and \class{RawPen} objects have all the global functions
-described above, except for \function{demo()} as methods, which
-manipulate the given pen.
+Most of the global functions available in the module are also
+available as methods of the \class{Turtle}, \class{Pen} and
+\class{RawPen} classes, affecting only the state of the given pen.
 
 The only method which is more powerful as a method is
-\function{degrees()}.
+\function{degrees()}, which takes an optional argument letting 
+you specify the number of units corresponding to a full circle:
 
 \begin{methoddesc}{degrees}{\optional{fullcircle}}
 \var{fullcircle} is by default 360. This can cause the pen to have any

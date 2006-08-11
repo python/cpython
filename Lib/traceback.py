@@ -150,50 +150,53 @@ def format_exception_only(etype, value):
 
     The arguments are the exception type and value such as given by
     sys.last_type and sys.last_value. The return value is a list of
-    strings, each ending in a newline.  Normally, the list contains a
-    single string; however, for SyntaxError exceptions, it contains
-    several lines that (when printed) display detailed information
-    about where the syntax error occurred.  The message indicating
-    which exception occurred is the always last string in the list.
+    strings, each ending in a newline.
+
+    Normally, the list contains a single string; however, for
+    SyntaxError exceptions, it contains several lines that (when
+    printed) display detailed information about where the syntax
+    error occurred.
+
+    The message indicating which exception occurred is always the last
+    string in the list.
+
     """
-    list = []
-    if (type(etype) == types.ClassType
-        or (isinstance(etype, type) and issubclass(etype, BaseException))):
-        stype = etype.__name__
+
+    stype = etype.__name__
+
+    if not issubclass(etype, SyntaxError):
+        return [_format_final_exc_line(stype, value)]
+
+    # It was a syntax error; show exactly where the problem was found.
+    lines = []
+    try:
+        msg, (filename, lineno, offset, badline) = value
+    except Exception:
+        pass
     else:
-        stype = etype
-    if value is None:
-        list.append(str(stype) + '\n')
+        filename = filename or "<string>"
+        lines.append('  File "%s", line %d\n' % (filename, lineno))
+        if badline is not None:
+            lines.append('    %s\n' % badline.strip())
+            if offset is not None:
+                caretspace = badline[:offset].lstrip()
+                # non-space whitespace (likes tabs) must be kept for alignment
+                caretspace = ((c.isspace() and c or ' ') for c in caretspace)
+                # only three spaces to account for offset1 == pos 0
+                lines.append('   %s^\n' % ''.join(caretspace))
+            value = msg
+
+    lines.append(_format_final_exc_line(stype, value))
+    return lines
+
+def _format_final_exc_line(etype, value):
+    """Return a list of a single line -- normal case for format_exception_only"""
+    valuestr = _some_str(value)
+    if value is None or not valuestr:
+        line = "%s\n" % etype
     else:
-        if issubclass(etype, SyntaxError):
-            try:
-                msg, (filename, lineno, offset, line) = value
-            except:
-                pass
-            else:
-                if not filename: filename = "<string>"
-                list.append('  File "%s", line %d\n' %
-                            (filename, lineno))
-                if line is not None:
-                    i = 0
-                    while i < len(line) and line[i].isspace():
-                        i = i+1
-                    list.append('    %s\n' % line.strip())
-                    if offset is not None:
-                        s = '    '
-                        for c in line[i:offset-1]:
-                            if c.isspace():
-                                s = s + c
-                            else:
-                                s = s + ' '
-                        list.append('%s^\n' % s)
-                    value = msg
-        s = _some_str(value)
-        if s:
-            list.append('%s: %s\n' % (str(stype), s))
-        else:
-            list.append('%s\n' % str(stype))
-    return list
+        line = "%s: %s\n" % (etype, valuestr)
+    return line
 
 def _some_str(value):
     try:

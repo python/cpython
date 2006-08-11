@@ -16,7 +16,7 @@
     platforms.
 
     If no supported timing methods based on process time can be found,
-    the module reverts to the highest resolution wall-time timer
+    the module reverts to the highest resolution wall-clock timer
     instead. The system time part will then always be 0.0.
 
     The module exports one public API:
@@ -52,8 +52,8 @@ USE_CTYPES_GETPROCESSTIMES = 'cytpes GetProcessTimes() wrapper'
 USE_WIN32PROCESS_GETPROCESSTIMES = 'win32process.GetProcessTimes()'
 USE_RESOURCE_GETRUSAGE = 'resource.getrusage()'
 USE_PROCESS_TIME_CLOCK = 'time.clock() (process time)'
-USE_WALL_TIME_CLOCK = 'time.clock() (wall-time)'
-USE_WALL_TIME_TIME = 'time.time() (wall-time)'
+USE_WALL_TIME_CLOCK = 'time.clock() (wall-clock)'
+USE_WALL_TIME_TIME = 'time.time() (wall-clock)'
 
 if sys.platform[:3] == 'win':
     # Windows platform
@@ -63,7 +63,7 @@ if sys.platform[:3] == 'win':
         try:
             import ctypes
         except ImportError:
-            # Use the wall-time implementation time.clock(), since this
+            # Use the wall-clock implementation time.clock(), since this
             # is the highest resolution clock available on Windows
             SYSTIMES_IMPLEMENTATION = USE_WALL_TIME_CLOCK
         else:
@@ -91,7 +91,7 @@ if SYSTIMES_IMPLEMENTATION is None:
         # time)
         SYSTIMES_IMPLEMENTATION = USE_PROCESS_TIME_CLOCK
     else:
-        # Use wall-time implementation time.time() since this provides
+        # Use wall-clock implementation time.time() since this provides
         # the highest resolution clock on most systems
         SYSTIMES_IMPLEMENTATION = USE_WALL_TIME_TIME
 
@@ -103,24 +103,27 @@ def getrusage_systimes():
 def process_time_clock_systimes():
     return (time.clock(), 0.0)
 
-def wall_time_clock_systimes():
+def wall_clock_clock_systimes():
     return (time.clock(), 0.0)
 
-def wall_time_time_systimes():
+def wall_clock_time_systimes():
     return (time.time(), 0.0)
 
 # Number of clock ticks per second for the values returned
 # by GetProcessTimes() on Windows.
 #
-# Note: Ticks returned by GetProcessTimes() are micro-seconds on
-# Windows XP (though the docs say 100ns intervals)
-WIN32_PROCESS_TIMES_TICKS_PER_SECOND = 10e6
+# Note: Ticks returned by GetProcessTimes() are 100ns intervals on
+# Windows XP. However, the process times are only updated with every
+# clock tick and the frequency of these is somewhat lower: depending
+# on the OS version between 10ms and 15ms. Even worse, the process
+# time seems to be allocated to process currently running when the
+# clock interrupt arrives, ie. it is possible that the current time
+# slice gets accounted to a different process.
+
+WIN32_PROCESS_TIMES_TICKS_PER_SECOND = 1e7
 
 def win32process_getprocesstimes_systimes():
     d = win32process.GetProcessTimes(win32process.GetCurrentProcess())
-    # Note: I'm not sure whether KernelTime on Windows is the same as
-    # system time on Unix - I've yet to see a non-zero value for
-    # KernelTime on Windows.
     return (d['UserTime'] / WIN32_PROCESS_TIMES_TICKS_PER_SECOND,
             d['KernelTime'] / WIN32_PROCESS_TIMES_TICKS_PER_SECOND)
 
@@ -149,10 +152,10 @@ elif SYSTIMES_IMPLEMENTATION is USE_PROCESS_TIME_CLOCK:
     systimes = process_time_clock_systimes
 
 elif SYSTIMES_IMPLEMENTATION is USE_WALL_TIME_CLOCK:
-    systimes = wall_time_clock_systimes
+    systimes = wall_clock_clock_systimes
 
 elif SYSTIMES_IMPLEMENTATION is USE_WALL_TIME_TIME:
-    systimes = wall_time_time_systimes
+    systimes = wall_clock_time_systimes
 
 elif SYSTIMES_IMPLEMENTATION is USE_WIN32PROCESS_GETPROCESSTIMES:
     systimes = win32process_getprocesstimes_systimes
@@ -162,6 +165,17 @@ elif SYSTIMES_IMPLEMENTATION is USE_CTYPES_GETPROCESSTIMES:
 
 else:
     raise TypeError('no suitable systimes() implementation found')
+
+def processtime():
+
+    """ Return the total time spent on the process.
+
+        This is the sum of user and system time as returned by
+        systimes().
+
+    """
+    user, system = systimes()
+    return user + system
 
 ### Testing
 

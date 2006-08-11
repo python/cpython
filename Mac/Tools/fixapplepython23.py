@@ -94,9 +94,19 @@ def main():
     else:
         do_apply = True
     # First check OS version
+    if sys.byteorder == 'little':
+        # All intel macs are fine
+        print "fixapplypython23: no fix is needed on MacOSX on Intel"
+        sys.exit(0)
+
     if gestalt.gestalt('sysv') < 0x1030:
         print 'fixapplepython23: no fix needed on MacOSX < 10.3'
         sys.exit(0)
+
+    if gestalt.gestalt('sysv') >= 0x1040:
+        print 'fixapplepython23: no fix needed on MacOSX >= 10.4'
+        sys.exit(0)
+
     # Test that a framework Python is indeed installed
     if not os.path.exists(MAKEFILE):
         print 'fixapplepython23: Python framework does not appear to be installed (?), nothing fixed'

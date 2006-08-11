@@ -294,6 +294,16 @@ test_L_code(PyObject *self)
 
 #endif	/* ifdef HAVE_LONG_LONG */
 
+/* Test tuple argument processing */
+static PyObject *
+getargs_tuple(PyObject *self, PyObject *args)
+{
+	int a, b, c;
+	if (!PyArg_ParseTuple(args, "i(ii)", &a, &b, &c))
+		return NULL;
+	return Py_BuildValue("iii", a, b, c);
+}
+
 /* Functions to call PyArg_ParseTuple with integer format codes,
    and return the result.
 */
@@ -696,6 +706,13 @@ test_string_from_format(PyObject *self, PyObject *args)
 #undef CHECK_1_FORMAT
 }
 
+/* This is here to provide a docstring for test_descr. */
+static PyObject *
+test_with_docstring(PyObject *self)
+{
+	Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
 	{"raise_exception",	raise_exception,		 METH_VARARGS},
 	{"test_config",		(PyCFunction)test_config,	 METH_NOARGS},
@@ -706,7 +723,10 @@ static PyMethodDef TestMethods[] = {
 	{"test_k_code",		(PyCFunction)test_k_code,	 METH_NOARGS},
 	{"test_null_strings",	(PyCFunction)test_null_strings,	 METH_NOARGS},
 	{"test_string_from_format", (PyCFunction)test_string_from_format, METH_NOARGS},
+	{"test_with_docstring", (PyCFunction)test_with_docstring, METH_NOARGS,
+	 PyDoc_STR("This is a pretty normal docstring.")},
 
+	{"getargs_tuple",	getargs_tuple,			 METH_VARARGS},
 	{"getargs_b",		getargs_b,			 METH_VARARGS},
 	{"getargs_B",		getargs_B,			 METH_VARARGS},
 	{"getargs_H",		getargs_H,			 METH_VARARGS},

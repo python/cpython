@@ -97,10 +97,20 @@ searched.  The global statement must precede all uses of the name.
 The built-in namespace associated with the execution of a code block
 is actually found by looking up the name \code{__builtins__} in its
 global namespace; this should be a dictionary or a module (in the
-latter case the module's dictionary is used).  Normally, the
-\code{__builtins__} namespace is the dictionary of the built-in module
-\module{__builtin__} (note: no `s').  If it isn't, restricted
-execution\indexii{restricted}{execution} mode is in effect.
+latter case the module's dictionary is used).  By default, when in the
+\module{__main__} module, \code{__builtins__} is the built-in module
+\module{__builtin__} (note: no `s'); when in any other module,
+\code{__builtins__} is an alias for the dictionary of the
+\module{__builtin__} module itself.  \code{__builtins__} can be set
+to a user-created dictionary to create a weak form of restricted
+execution\indexii{restricted}{execution}.
+
+\begin{notice}
+  Users should not touch \code{__builtins__}; it is strictly an
+  implementation detail.  Users wanting to override values in the
+  built-in namespace should \keyword{import} the \module{__builtin__}
+  (no `s') module and modify its attributes appropriately.
+\end{notice}
 
 The namespace for a module is automatically created the first time a
 module is imported.  The main module for a script is always called

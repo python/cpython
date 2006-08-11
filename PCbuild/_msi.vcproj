@@ -36,11 +36,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="fci.lib msi.lib rpcrt4.lib"
-				OutputFile="./_msi.pyd"
+				OutputFile="./_msi_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./_msi.pdb"
+				ProgramDatabaseFile=".\./_msi_d.pdb"
 				BaseAddress="0x1D160000"
 				ImportLibrary=".\./_msi.lib"
 				TargetMachine="1"/>

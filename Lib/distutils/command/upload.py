@@ -185,7 +185,7 @@ class upload(Command):
             http.endheaders()
             http.send(body)
         except socket.error, e:
-            self.announce(e.msg, log.ERROR)
+            self.announce(str(e), log.ERROR)
             return
 
         r = http.getresponse()

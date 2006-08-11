@@ -55,7 +55,7 @@ The \module{csv} module defines the following functions:
 Return a reader object which will iterate over lines in the given
 {}\var{csvfile}.  \var{csvfile} can be any object which supports the
 iterator protocol and returns a string each time its \method{next}
-method is called - file objects and list objects are both suitable.  
+method is called --- file objects and list objects are both suitable.  
 If \var{csvfile} is a file object, it must be opened with
 the 'b' flag on platforms where that makes a difference.  An optional
 {}\var{dialect} parameter can be given
@@ -70,6 +70,18 @@ Parameters'' for details of these parameters.
 
 All data read are returned as strings.  No automatic data type
 conversion is performed.
+
+\versionchanged[
+The parser is now stricter with respect to multi-line quoted
+fields. Previously, if a line ended within a quoted field without a
+terminating newline character, a newline would be inserted into the
+returned field. This behavior caused problems when reading files
+which contained carriage return characters within fields.  The
+behavior was changed to return the field without inserting newlines. As
+a consequence, if newlines embedded within fields are important, the
+input should be split into lines in a manner which preserves the newline
+characters]{2.5}
+
 \end{funcdesc}
 
 \begin{funcdesc}{writer}{csvfile\optional{,
@@ -404,7 +416,7 @@ csv.register_dialect('unixpwd', delimiter=':', quoting=csv.QUOTE_NONE)
 reader = csv.reader(open("passwd", "rb"), 'unixpwd')
 \end{verbatim}
 
-A slightly more advanced use of the reader - catching and reporting errors:
+A slightly more advanced use of the reader --- catching and reporting errors:
 
 \begin{verbatim}
 import csv, sys

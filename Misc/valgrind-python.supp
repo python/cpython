@@ -134,6 +134,15 @@
 ###
 
 {
+   Generic gentoo ld problems
+   Memcheck:Cond
+   obj:/lib/ld-2.3.4.so
+   obj:/lib/ld-2.3.4.so
+   obj:/lib/ld-2.3.4.so
+   obj:/lib/ld-2.3.4.so
+}
+
+{
    DBM problems, see test_dbm
    Memcheck:Param
    write(buf)

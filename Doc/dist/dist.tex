@@ -530,7 +530,7 @@ If you need to include header files from some other Python extension,
 you can take advantage of the fact that header files are installed in a
 consistent way by the Distutils \command{install\_header} command.  For
 example, the Numerical Python header files are installed (on a standard
-Unix installation) to \file{/usr/local/include/python1.5/Numerical}.
+\UNIX{} installation) to \file{/usr/local/include/python1.5/Numerical}.
 (The exact location will differ according to your platform and Python
 installation.)  Since the Python include
 directory---\file{/usr/local/include/python1.5} in this case---is always
@@ -2317,7 +2317,7 @@ constructor
 \lineiii{name}{the full name of the extension, including any packages
 --- ie. \emph{not} a filename or pathname, but Python dotted name}{string}
 \lineiii{sources}{list of source filenames, relative to the distribution
-root (where the setup script lives), in Unix form (slash-separated) for
+root (where the setup script lives), in \UNIX{} form (slash-separated) for
 portability. Source files may be C, \Cpp, SWIG (.i), platform-specific
 resource files, or whatever else is recognized by the \command{build_ext}
 command as source for a Python extension.}{string}
@@ -2873,9 +2873,20 @@ C compiler:
 \modulesynopsis{Microsoft Compiler}
 
 This module provides \class{MSVCCompiler}, an implementation of the abstract 
-\class{CCompiler} class for Microsoft Visual Studio. It should also work using
-the freely available compiler provided as part of the .Net SDK download. XXX
-download link.
+\class{CCompiler} class for Microsoft Visual Studio. Typically, extension
+modules need to be compiled with the same compiler that was used to compile
+Python. For Python 2.3 and earlier, the compiler was Visual Studio 6. For
+Python 2.4 and 2.5, the compiler is Visual Studio .NET 2003. The AMD64
+and Itanium binaries are created using the Platform SDK.
+
+\class{MSVCCompiler} will normally choose the right compiler, linker etc.
+on its own. To override this choice, the environment variables
+\var{DISTUTILS\_USE\_SDK} and \var{MSSdk} must be both set. \var{MSSdk}
+indicates that the current environment has been setup by the SDK's
+\code{SetEnv.Cmd} script, or that the environment variables had been
+registered when the SDK was installed; \var{DISTUTILS\_USE\_SDK} indicates
+that the distutils user has made an explicit choice to override the
+compiler selection by \class{MSVCCompiler}.
 
 \section{\module{distutils.bcppcompiler} --- Borland Compiler}
 \declaremodule{standard}{distutils.bcppcompiler}
@@ -3088,7 +3099,7 @@ name of the output file, and \var{copied} is true if the file was copied
 Move file \var{src} to \var{dst}. If \var{dst} is a directory, the file will
 be moved into it with the same name; otherwise, \var{src} is just renamed
 to \var{dst}.  Returns the new full name of the file.
-\warning{Handles cross-device moves on Unix using \function{copy_file()}.  
+\warning{Handles cross-device moves on \UNIX{} using \function{copy_file()}.  
 What about other systems???}
 \end{funcdesc}
 
@@ -3131,7 +3142,7 @@ For non-\POSIX{} platforms, currently just returns \code{sys.platform}.
 Return 'pathname' as a name that will work on the native filesystem,
 i.e. split it on '/' and put it back together again using the current
 directory separator.  Needed because filenames in the setup script are
-always supplied in Unix style, and have to be converted to the local
+always supplied in \UNIX{} style, and have to be converted to the local
 convention before we can actually use them in the filesystem.  Raises
 \exception{ValueError} on non-\UNIX-ish systems if \var{pathname} either 
 starts or ends with a slash.
@@ -3180,7 +3191,7 @@ with \var{prefix}.
 \end{funcdesc}
 
 \begin{funcdesc}{split_quoted}{s}
-Split a string up according to Unix shell-like rules for quotes and
+Split a string up according to \UNIX{} shell-like rules for quotes and
 backslashes.  In short: words are delimited by spaces, as long as those
 spaces are not escaped by a backslash, or inside a quoted string.
 Single and double quotes are equivalent, and the quote characters can

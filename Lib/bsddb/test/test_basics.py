@@ -562,6 +562,9 @@ class BasicTestCase(unittest.TestCase):
         num = d.truncate()
         assert num == 0, "truncate on empty DB returned nonzero (%r)" % (num,)
 
+    #----------------------------------------
+
+
 #----------------------------------------------------------------------
 
 
@@ -583,18 +586,40 @@ class BasicHashWithThreadFlagTestCase(BasicTestCase):
     dbopenflags = db.DB_THREAD
 
 
-class BasicBTreeWithEnvTestCase(BasicTestCase):
+class BasicWithEnvTestCase(BasicTestCase):
+    dbopenflags = db.DB_THREAD
+    useEnv = 1
+    envflags = db.DB_THREAD | db.DB_INIT_MPOOL | db.DB_INIT_LOCK
+
+    #----------------------------------------
+
+    def test07_EnvRemoveAndRename(self):
+        if not self.env:
+            return
+
+        if verbose:
+            print '\n', '-=' * 30
+            print "Running %s.test07_EnvRemoveAndRename..." % self.__class__.__name__
+
+        # can't rename or remove an open DB
+        self.d.close()
+
+        newname = self.filename + '.renamed'
+        self.env.dbrename(self.filename, None, newname)
+        self.env.dbremove(newname)
+
+    # dbremove and dbrename are in 4.1 and later
+    if db.version() < (4,1):
+        del test07_EnvRemoveAndRename
+
+    #----------------------------------------
+
+class BasicBTreeWithEnvTestCase(BasicWithEnvTestCase):
     dbtype = db.DB_BTREE
-    dbopenflags = db.DB_THREAD
-    useEnv = 1
-    envflags = db.DB_THREAD | db.DB_INIT_MPOOL | db.DB_INIT_LOCK
 
 
-class BasicHashWithEnvTestCase(BasicTestCase):
+class BasicHashWithEnvTestCase(BasicWithEnvTestCase):
     dbtype = db.DB_HASH
-    dbopenflags = db.DB_THREAD
-    useEnv = 1
-    envflags = db.DB_THREAD | db.DB_INIT_MPOOL | db.DB_INIT_LOCK
 
 
 #----------------------------------------------------------------------

@@ -7,10 +7,13 @@
 \modulesynopsis{GNU readline support for Python.}
 
 
-The \module{readline} module defines a number of functions used either
-directly or from the \refmodule{rlcompleter} module to facilitate
-completion and history file read and write from the Python
-interpreter.
+The \module{readline} module defines a number of functions to
+facilitate completion and reading/writing of history files from the
+Python interpreter.  This module can be used directly or via the
+\refmodule{rlcompleter} module.  Settings made using 
+this module affect the behaviour of both the interpreter's interactive prompt 
+and the prompts offered by the \function{raw_input()} and \function{input()}
+built-in functions.
 
 The \module{readline} module defines the following functions:
 

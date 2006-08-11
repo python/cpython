@@ -4,6 +4,7 @@ import types
 from Tkinter import *
 from WindowList import ListedToplevel
 from ScrolledList import ScrolledList
+import macosxSupport
 
 
 class Idb(bdb.Bdb):
@@ -322,7 +323,13 @@ class Debugger:
 class StackViewer(ScrolledList):
 
     def __init__(self, master, flist, gui):
-        ScrolledList.__init__(self, master, width=80)
+        if macosxSupport.runningAsOSXApp():
+            # At least on with the stock AquaTk version on OSX 10.4 you'll
+            # get an shaking GUI that eventually kills IDLE if the width
+            # argument is specified.
+            ScrolledList.__init__(self, master)
+        else:
+            ScrolledList.__init__(self, master, width=80)
         self.flist = flist
         self.gui = gui
         self.stack = []

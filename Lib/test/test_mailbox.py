@@ -461,7 +461,7 @@ class TestMaildir(TestMailbox):
 
     def setUp(self):
         TestMailbox.setUp(self)
-        if os.name == 'nt':
+        if os.name in ('nt', 'os2'):
             self._box.colon = '!'
 
     def test_add_MM(self):
@@ -520,7 +520,7 @@ class TestMaildir(TestMailbox):
         # Initialize an existing mailbox
         self.tearDown()
         for subdir in '', 'tmp', 'new', 'cur':
-            os.mkdir(os.path.join(self._path, subdir))
+            os.mkdir(os.path.normpath(os.path.join(self._path, subdir)))
         self._box = mailbox.Maildir(self._path)
         self._check_basics(factory=rfc822.Message)
         self._box = mailbox.Maildir(self._path, factory=None)
@@ -719,6 +719,30 @@ class _TestMboxMMDF(TestMailbox):
         self._box.close()
         self.assert_(contents == open(self._path, 'rb').read())
         self._box = self._factory(self._path)
+
+    def test_lock_conflict(self):
+        # Fork off a subprocess that will lock the file for 2 seconds,
+        # unlock it, and then exit.
+        if not hasattr(os, 'fork'):
+            return
+        pid = os.fork()
+        if pid == 0:
+            # In the child, lock the mailbox.
+            self._box.lock()
+            time.sleep(2)
+            self._box.unlock()
+            os._exit(0)
+
+        # In the parent, sleep a bit to give the child time to acquire
+        # the lock.
+        time.sleep(0.5)
+        self.assertRaises(mailbox.ExternalClashError,
+                          self._box.lock)
+
+        # Wait for child to exit.  Locking should now succeed.
+        exited_pid, status = os.waitpid(pid, 0)
+        self._box.lock()
+        self._box.unlock()
 
 
 class TestMbox(_TestMboxMMDF):
@@ -1761,6 +1785,7 @@ def test_main():
              TestMessageConversion, TestProxyFile, TestPartialFile,
              MaildirTestCase)
     test_support.run_unittest(*tests)
+    test_support.reap_children()
 
 
 if __name__ == '__main__':

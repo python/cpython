@@ -932,12 +932,13 @@ AsObj(PyObject *value)
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(value)) {
 		Py_UNICODE *inbuf = PyUnicode_AS_UNICODE(value);
-		int size = PyUnicode_GET_SIZE(value);
+		Py_ssize_t size = PyUnicode_GET_SIZE(value);
 		/* This #ifdef assumes that Tcl uses UCS-2.
 		   See TCL_UTF_MAX test above. */
 #if defined(Py_UNICODE_WIDE) && TCL_UTF_MAX == 3
 		Tcl_UniChar *outbuf;
-		int i;
+		Py_ssize_t i;
+		assert(size < size * sizeof(Tcl_UniChar));
 		outbuf = (Tcl_UniChar*)ckalloc(size * sizeof(Tcl_UniChar));
 		if (!outbuf) {
 			PyErr_NoMemory();
@@ -2103,8 +2104,8 @@ Tkapp_CreateCommand(PyObject *selfptr, PyObject *args)
 	data = PyMem_NEW(PythonCmd_ClientData, 1);
 	if (!data)
 		return PyErr_NoMemory();
-	Py_XINCREF(self);
-	Py_XINCREF(func);
+	Py_INCREF(self);
+	Py_INCREF(func);
 	data->self = selfptr;
 	data->func = func;
 	

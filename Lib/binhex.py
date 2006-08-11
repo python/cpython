@@ -44,22 +44,14 @@ RUNCHAR=chr(0x90)   # run-length introducer
 
 #
 # Workarounds for non-mac machines.
-if os.name == 'mac':
-    import macfs
-    import MacOS
-    try:
-        openrf = MacOS.openrf
-    except AttributeError:
-        # Backward compatibility
-        openrf = open
-
-    def FInfo():
-        return macfs.FInfo()
+try:
+    from Carbon.File import FSSpec, FInfo
+    from MacOS import openrf
 
     def getfileinfo(name):
-        finfo = macfs.FSSpec(name).GetFInfo()
+        finfo = FSSpec(name).FSpGetFInfo()
         dir, file = os.path.split(name)
-        # XXXX Get resource/data sizes
+        # XXX Get resource/data sizes
         fp = open(name, 'rb')
         fp.seek(0, 2)
         dlen = fp.tell()
@@ -75,7 +67,7 @@ if os.name == 'mac':
             mode = '*' + mode[0]
         return openrf(name, mode)
 
-else:
+except ImportError:
     #
     # Glue code for non-macintosh usage
     #
@@ -183,7 +175,7 @@ class BinHex:
             ofname = ofp
             ofp = open(ofname, 'w')
             if os.name == 'mac':
-                fss = macfs.FSSpec(ofname)
+                fss = FSSpec(ofname)
                 fss.SetCreatorType('BnHq', 'TEXT')
         ofp.write('(This file must be converted with BinHex 4.0)\n\n:')
         hqxer = _Hqxcoderengine(ofp)
@@ -486,7 +478,7 @@ def hexbin(inp, out):
     if not out:
         out = ifp.FName
     if os.name == 'mac':
-        ofss = macfs.FSSpec(out)
+        ofss = FSSpec(out)
         out = ofss.as_pathname()
 
     ofp = open(out, 'wb')
@@ -519,6 +511,7 @@ def hexbin(inp, out):
 
 def _test():
     if os.name == 'mac':
+        import macfs
         fss, ok = macfs.PromptGetFile('File to convert:')
         if not ok:
             sys.exit(0)

@@ -62,7 +62,7 @@ set_lookkey(PySetObject *so, PyObject *key, register long hash)
 	register Py_ssize_t i;
 	register size_t perturb;
 	register setentry *freeslot;
-	register unsigned int mask = so->mask;
+	register size_t mask = so->mask;
 	setentry *table = so->table;
 	register setentry *entry;
 	register int cmp;
@@ -140,7 +140,7 @@ set_lookkey_string(PySetObject *so, PyObject *key, register long hash)
 	register Py_ssize_t i;
 	register size_t perturb;
 	register setentry *freeslot;
-	register unsigned int mask = so->mask;
+	register size_t mask = so->mask;
 	setentry *table = so->table;
 	register setentry *entry;
 
@@ -221,11 +221,11 @@ keys again.  When entries have been deleted, the new table may
 actually be smaller than the old one.
 */
 static int
-set_table_resize(PySetObject *so, int minused)
+set_table_resize(PySetObject *so, Py_ssize_t minused)
 {
-	int newsize;
+	Py_ssize_t newsize;
 	setentry *oldtable, *newtable, *entry;
-	int i;
+	Py_ssize_t i;
 	int is_oldtable_malloced;
 	setentry small_copy[PySet_MINSIZE];
 
@@ -314,7 +314,7 @@ set_table_resize(PySetObject *so, int minused)
 static int
 set_add_entry(register PySetObject *so, setentry *entry)
 {
-	register int n_used;
+	register Py_ssize_t n_used;
 
 	assert(so->fill <= so->mask);  /* at least one empty slot */
 	n_used = so->used;
@@ -330,7 +330,7 @@ static int
 set_add_key(register PySetObject *so, PyObject *key)
 {
 	register long hash;
-	register int n_used;
+	register Py_ssize_t n_used;
 
 	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
@@ -403,10 +403,10 @@ set_clear_internal(PySetObject *so)
 {
 	setentry *entry, *table;
 	int table_is_malloced;
-	int fill;
+	Py_ssize_t fill;
 	setentry small_copy[PySet_MINSIZE];
 #ifdef Py_DEBUG
-	int i, n;
+	Py_ssize_t i, n;
 	assert (PyAnySet_Check(so));
 
 	n = so->mask + 1;
@@ -465,7 +465,7 @@ set_clear_internal(PySetObject *so)
 /*
  * Iterate over a set table.  Use like so:
  *
- *     int pos;
+ *     Py_ssize_t pos;
  *     setentry *entry;
  *     pos = 0;   # important!  pos should not otherwise be changed by you
  *     while (set_next(yourset, &pos, &entry)) {
@@ -479,7 +479,7 @@ static int
 set_next(PySetObject *so, Py_ssize_t *pos_ptr, setentry **entry_ptr)
 {
 	Py_ssize_t i;
-	int mask;
+	Py_ssize_t mask;
 	register setentry *table;
 
 	assert (PyAnySet_Check(so));
@@ -501,7 +501,7 @@ static void
 set_dealloc(PySetObject *so)
 {
 	register setentry *entry;
-	int fill = so->fill;
+	Py_ssize_t fill = so->fill;
 	PyObject_GC_UnTrack(so);
 	Py_TRASHCAN_SAFE_BEGIN(so)
 	if (so->weakreflist != NULL)
@@ -570,7 +570,7 @@ static int
 set_merge(PySetObject *so, PyObject *otherset)
 {
 	PySetObject *other;
-	register int i;
+	register Py_ssize_t i;
 	register setentry *entry;
 
 	assert (PyAnySet_Check(so));
@@ -637,7 +637,7 @@ set_contains_entry(PySetObject *so, setentry *entry)
 static PyObject *
 set_pop(PySetObject *so)
 {
-	register int i = 0;
+	register Py_ssize_t i = 0;
 	register setentry *entry;
 	PyObject *key;
 
@@ -655,7 +655,7 @@ set_pop(PySetObject *so)
 	 */
 	entry = &so->table[0];
 	if (entry->key == NULL || entry->key == dummy) {
-		i = (int)entry->hash;
+		i = entry->hash;
 		/* The hash field may be a real hash value, or it may be a
 		 * legit search finger, or it may be a once-legit search
 		 * finger that's out of bounds now because it wrapped around
@@ -730,9 +730,9 @@ set_nohash(PyObject *self)
 typedef struct {
 	PyObject_HEAD
 	PySetObject *si_set; /* Set to NULL when iterator is exhausted */
-	int si_used;
-	int si_pos;
-	long len;
+	Py_ssize_t si_used;
+	Py_ssize_t si_pos;
+	Py_ssize_t len;
 } setiterobject;
 
 static void
@@ -745,7 +745,7 @@ setiter_dealloc(setiterobject *si)
 static PyObject *
 setiter_len(setiterobject *si)
 {
-	long len = 0;
+	Py_ssize_t len = 0;
 	if (si->si_set != NULL && si->si_used == si->si_set->used)
 		len = si->len;
 	return PyInt_FromLong(len);
@@ -761,7 +761,7 @@ static PyMethodDef setiter_methods[] = {
 static PyObject *setiter_iternext(setiterobject *si)
 {
 	PyObject *key;
-	register int i, mask;
+	register Py_ssize_t i, mask;
 	register setentry *entry;
 	PySetObject *so = si->si_set;
 
@@ -1007,7 +1007,7 @@ set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 set_swap_bodies(PySetObject *a, PySetObject *b)
 {
-	int t;
+	Py_ssize_t t;
 	setentry *u;
 	setentry *(*f)(PySetObject *so, PyObject *key, long hash);
 	setentry tab[PySet_MINSIZE];
@@ -1380,12 +1380,12 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 	while (set_next(otherset, &pos, &entry)) {
 		int rv = set_discard_entry(so, entry);
 		if (rv == -1) {
-			Py_XDECREF(otherset);
+			Py_DECREF(otherset);
 			return NULL;
 		}
 		if (rv == DISCARD_NOTFOUND) {
 			if (set_add_entry(so, entry) == -1) {
-				Py_XDECREF(otherset);
+				Py_DECREF(otherset);
 				return NULL;
 			}
 		}
@@ -1795,7 +1795,7 @@ static PyNumberMethods set_as_number = {
 PyDoc_STRVAR(set_doc,
 "set(iterable) --> set object\n\
 \n\
-Build an unordered collection.");
+Build an unordered collection of unique elements.");
 
 PyTypeObject PySet_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -1889,7 +1889,7 @@ static PyNumberMethods frozenset_as_number = {
 PyDoc_STRVAR(frozenset_doc,
 "frozenset(iterable) --> frozenset object\n\
 \n\
-Build an immutable unordered collection.");
+Build an immutable unordered collection of unique elements.");
 
 PyTypeObject PyFrozenSet_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -2061,7 +2061,7 @@ _PySet_Update(PyObject *set, PyObject *iterable)
 static PyObject *
 test_c_api(PySetObject *so)
 {
-	int count;
+	Py_ssize_t count;
 	char *s;
 	Py_ssize_t i;
 	PyObject *elem, *dup, *t, *f, *dup2;

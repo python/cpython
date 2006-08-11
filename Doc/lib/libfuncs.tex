@@ -401,77 +401,27 @@ class C:
 \end{funcdesc}
 
 \begin{funcdesc}{file}{filename\optional{, mode\optional{, bufsize}}}
-  Return a new file object (described in
-  section~\ref{bltin-file-objects}, ``\ulink{File
-  Objects}{bltin-file-objects.html}'').
-  The first two arguments are the same as for \code{stdio}'s
-  \cfunction{fopen()}: \var{filename} is the file name to be opened,
-  \var{mode} indicates how the file is to be opened: \code{'r'} for
-  reading, \code{'w'} for writing (truncating an existing file), and
-  \code{'a'} opens it for appending (which on \emph{some} \UNIX{}
-  systems means that \emph{all} writes append to the end of the file,
-  regardless of the current seek position).
+  Constructor function for the \class{file} type, described further 
+  in section~\ref{bltin-file-objects}, ``\ulink{File
+  Objects}{bltin-file-objects.html}''.  The constructor's arguments
+  are the same as those of the \function{open()} built-in function
+  described below.
 
-  Modes \code{'r+'}, \code{'w+'} and \code{'a+'} open the file for
-  updating (note that \code{'w+'} truncates the file).  Append
-  \code{'b'} to the mode to open the file in binary mode, on systems
-  that differentiate between binary and text files (else it is
-  ignored).  If the file cannot be opened, \exception{IOError} is
-  raised.
-  
-  In addition to the standard \cfunction{fopen()} values \var{mode}
-  may be \code{'U'} or \code{'rU'}. If Python is built with universal
-  newline support (the default) the file is opened as a text file, but
-  lines may be terminated by any of \code{'\e n'}, the Unix end-of-line
-  convention,
-  \code{'\e r'}, the Macintosh convention or \code{'\e r\e n'}, the Windows
-  convention. All of these external representations are seen as
-  \code{'\e n'}
-  by the Python program. If Python is built without universal newline support
-  \var{mode} \code{'U'} is the same as normal text mode.  Note that
-  file objects so opened also have an attribute called
-  \member{newlines} which has a value of \code{None} (if no newlines
-  have yet been seen), \code{'\e n'}, \code{'\e r'}, \code{'\e r\e n'},
-  or a tuple containing all the newline types seen.
-
-  Python enforces that the mode, after stripping \code{'U'}, begins with
-  \code{'r'}, \code{'w'} or \code{'a'}.
-
-  If \var{mode} is omitted, it defaults to \code{'r'}.  When opening a
-  binary file, you should append \code{'b'} to the \var{mode} value
-  for improved portability.  (It's useful even on systems which don't
-  treat binary and text files differently, where it serves as
-  documentation.)
-  \index{line-buffered I/O}\index{unbuffered I/O}\index{buffer size, I/O}
-  \index{I/O control!buffering}
-  The optional \var{bufsize} argument specifies the
-  file's desired buffer size: 0 means unbuffered, 1 means line
-  buffered, any other positive value means use a buffer of
-  (approximately) that size.  A negative \var{bufsize} means to use
-  the system default, which is usually line buffered for tty
-  devices and fully buffered for other files.  If omitted, the system
-  default is used.\footnote{
-    Specifying a buffer size currently has no effect on systems that
-    don't have \cfunction{setvbuf()}.  The interface to specify the
-    buffer size is not done using a method that calls
-    \cfunction{setvbuf()}, because that may dump core when called
-    after any I/O has been performed, and there's no reliable way to
-    determine whether this is the case.}
+  When opening a file, it's preferable to use \function{open()} instead of 
+  invoking this constructor directly.  \class{file} is more suited to
+  type testing (for example, writing \samp{isinstance(f, file)}).
 
   \versionadded{2.2}
-
-  \versionchanged[Restriction on first letter of mode string
-                  introduced]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{filter}{function, list}
   Construct a list from those elements of \var{list} for which
   \var{function} returns true.  \var{list} may be either a sequence, a
   container which supports iteration, or an iterator,  If \var{list}
-  is a string or a tuple, the result also has that type; otherwise it
-  is always a list.  If \var{function} is \code{None}, the identity
-  function is assumed, that is, all elements of \var{list} that are false
-  (zero or empty) are removed.
+  is a string or a tuple, the result
+  also has that type; otherwise it is always a list.  If \var{function} is
+  \code{None}, the identity function is assumed, that is, all elements of
+  \var{list} that are false are removed.
 
   Note that \code{filter(function, \var{list})} is equivalent to
   \code{[item for item in \var{list} if function(item)]} if function is
@@ -709,10 +659,71 @@ class C:
 \end{funcdesc}
 
 \begin{funcdesc}{open}{filename\optional{, mode\optional{, bufsize}}}
-  A wrapper for the \function{file()} function above.  The intent is
-  for \function{open()} to be preferred for use as a factory function
-  returning a new \class{file} object.  \class{file} is more suited to
-  type testing (for example, writing \samp{isinstance(f, file)}).
+  Open a file, returning an object of the \class{file} type described
+  in section~\ref{bltin-file-objects}, ``\ulink{File
+  Objects}{bltin-file-objects.html}''.  If the file cannot be opened,
+  \exception{IOError} is raised.  When opening a file, it's
+  preferable to use \function{open()} instead of invoking the
+  \class{file} constructor directly.
+
+  The first two arguments are the same as for \code{stdio}'s
+  \cfunction{fopen()}: \var{filename} is the file name to be opened,
+  and \var{mode} is a string indicating how the file is to be opened.
+
+  The most commonly-used values of \var{mode} are \code{'r'} for
+  reading, \code{'w'} for writing (truncating the file if it already
+  exists), and \code{'a'} for appending (which on \emph{some} \UNIX{}
+  systems means that \emph{all} writes append to the end of the file
+  regardless of the current seek position).  If \var{mode} is omitted,
+  it defaults to \code{'r'}.  When opening a binary file, you should
+  append \code{'b'} to the \var{mode} value to open the file in binary
+  mode, which will improve portability.  (Appending \code{'b'} is
+  useful even on systems that don't treat binary and text files
+  differently, where it serves as documentation.)  See below for more
+  possible values of \var{mode}.
+
+  \index{line-buffered I/O}\index{unbuffered I/O}\index{buffer size, I/O}
+  \index{I/O control!buffering}
+  The optional \var{bufsize} argument specifies the
+  file's desired buffer size: 0 means unbuffered, 1 means line
+  buffered, any other positive value means use a buffer of
+  (approximately) that size.  A negative \var{bufsize} means to use
+  the system default, which is usually line buffered for tty
+  devices and fully buffered for other files.  If omitted, the system
+  default is used.\footnote{
+    Specifying a buffer size currently has no effect on systems that
+    don't have \cfunction{setvbuf()}.  The interface to specify the
+    buffer size is not done using a method that calls
+    \cfunction{setvbuf()}, because that may dump core when called
+    after any I/O has been performed, and there's no reliable way to
+    determine whether this is the case.}
+
+  Modes \code{'r+'}, \code{'w+'} and \code{'a+'} open the file for
+  updating (note that \code{'w+'} truncates the file).  Append
+  \code{'b'} to the mode to open the file in binary mode, on systems
+  that differentiate between binary and text files; on systems
+  that don't have this distinction, adding the \code{'b'} has no effect.
+  
+  In addition to the standard \cfunction{fopen()} values \var{mode}
+  may be \code{'U'} or \code{'rU'}.  Python is usually built with universal
+  newline support; supplying \code{'U'} opens the file as a text file, but
+  lines may be terminated by any of the following: the \UNIX{} end-of-line
+  convention \code{'\e n'}, 
+  the Macintosh convention \code{'\e r'}, or the Windows
+  convention \code{'\e r\e n'}. All of these external representations are seen as
+  \code{'\e n'}
+  by the Python program. If Python is built without universal newline support
+  a \var{mode} with \code{'U'} is the same as normal text mode.  Note that
+  file objects so opened also have an attribute called
+  \member{newlines} which has a value of \code{None} (if no newlines
+  have yet been seen), \code{'\e n'}, \code{'\e r'}, \code{'\e r\e n'},
+  or a tuple containing all the newline types seen.
+
+  Python enforces that the mode, after stripping \code{'U'}, begins with
+  \code{'r'}, \code{'w'} or \code{'a'}.
+
+  \versionchanged[Restriction on first letter of mode string
+                  introduced]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{ord}{c}
@@ -764,15 +775,30 @@ class C:
 \begin{verbatim}
 class C(object):
     def __init__(self): self.__x = None
-    def getx(self): return self.__x
-    def setx(self, value): self.__x = value
-    def delx(self): del self.__x
+    def getx(self): return self._x
+    def setx(self, value): self._x = value
+    def delx(self): del self._x
     x = property(getx, setx, delx, "I'm the 'x' property.")
 \end{verbatim}
 
   If given, \var{doc} will be the docstring of the property attribute.
   Otherwise, the property will copy \var{fget}'s docstring (if it
-  exists).
+  exists).  This makes it possible to create read-only properties
+  easily using \function{property()} as a decorator:
+
+\begin{verbatim}
+class Parrot(object):
+    def __init__(self):
+        self._voltage = 100000
+
+    @property
+    def voltage(self):
+        """Get the current voltage."""
+        return self._voltage
+\end{verbatim}
+
+  turns the \method{voltage()} method into a ``getter'' for a read-only
+  attribute with the same name.
 
   \versionadded{2.2}
   \versionchanged[Use \var{fget}'s docstring if no \var{doc} given]{2.5}
@@ -958,8 +984,30 @@ except NameError:
 \begin{funcdesc}{sorted}{iterable\optional{, cmp\optional{,
                          key\optional{, reverse}}}}
   Return a new sorted list from the items in \var{iterable}.
-  The optional arguments \var{cmp}, \var{key}, and \var{reverse}
-  have the same meaning as those for the \method{list.sort()} method.
+
+  The optional arguments \var{cmp}, \var{key}, and \var{reverse} have
+  the same meaning as those for the \method{list.sort()} method
+  (described in section~\ref{typesseq-mutable}).
+
+  \var{cmp} specifies a custom comparison function of two arguments
+  (iterable elements) which should return a negative, zero or positive
+  number depending on whether the first argument is considered smaller
+  than, equal to, or larger than the second argument:
+  \samp{\var{cmp}=\keyword{lambda} \var{x},\var{y}:
+  \function{cmp}(x.lower(), y.lower())}
+     
+  \var{key} specifies a function of one argument that is used to
+     extract a comparison key from each list element:
+     \samp{\var{key}=\function{str.lower}}
+
+  \var{reverse} is a boolean value.  If set to \code{True}, then the
+     list elements are sorted as if each comparison were reversed.
+
+  In general, the \var{key} and \var{reverse} conversion processes are
+  much faster than specifying an equivalent \var{cmp} function.  This is
+  because \var{cmp} is called multiple times for each list element while
+  \var{key} and \var{reverse} touch each element only once.
+
   \versionadded{2.4}
 \end{funcdesc}
 

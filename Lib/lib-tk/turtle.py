@@ -30,6 +30,7 @@ class RawPen:
         self._tracing = 1
         self._arrow = 0
         self._delay = 10     # default delay for drawing
+        self._angle = 0.0
         self.degrees()
         self.reset()
 
@@ -39,6 +40,10 @@ class RawPen:
         Example:
         >>> turtle.degrees()
         """
+        # Don't try to change _angle if it is 0, because
+        # _fullcircle might not be set, yet
+        if self._angle:
+            self._angle = (self._angle / self._fullcircle) * fullcircle
         self._fullcircle = fullcircle
         self._invradian = pi / (fullcircle * 0.5)
 
@@ -81,7 +86,6 @@ class RawPen:
         self._color = "black"
         self._filling = 0
         self._path = []
-        self._tofill = []
         self.clear()
         canvas._root().tkraise()
 
@@ -301,19 +305,15 @@ class RawPen:
                                             {'fill': self._color,
                                              'smooth': smooth})
                 self._items.append(item)
-                if self._tofill:
-                    for item in self._tofill:
-                        self._canvas.itemconfigure(item, fill=self._color)
-                        self._items.append(item)
         self._path = []
-        self._tofill = []
         self._filling = flag
         if flag:
             self._path.append(self._position)
-        self.forward(0)
 
     def begin_fill(self):
         """ Called just before drawing a shape to be filled.
+            Must eventually be followed by a corresponding end_fill() call.
+            Otherwise it will be ignored.
 
         Example:
         >>> turtle.begin_fill()
@@ -326,7 +326,8 @@ class RawPen:
         >>> turtle.forward(100)
         >>> turtle.end_fill()
         """
-        self.fill(1)
+        self._path = [self._position]
+        self._filling = 1
 
     def end_fill(self):
         """ Called after drawing a shape to be filled.
@@ -344,7 +345,7 @@ class RawPen:
         """
         self.fill(0)
 
-    def circle(self, radius, extent=None):
+    def circle(self, radius, extent = None):
         """ Draw a circle with given radius.
         The center is radius units left of the turtle; extent
         determines which part of the circle is drawn. If not given,
@@ -361,52 +362,18 @@ class RawPen:
         """
         if extent is None:
             extent = self._fullcircle
-        x0, y0 = self._position
-        xc = x0 - radius * sin(self._angle * self._invradian)
-        yc = y0 - radius * cos(self._angle * self._invradian)
-        if radius >= 0.0:
-            start = self._angle - (self._fullcircle / 4.0)
-        else:
-            start = self._angle + (self._fullcircle / 4.0)
-            extent = -extent
-        if self._filling:
-            if abs(extent) >= self._fullcircle:
-                item = self._canvas.create_oval(xc-radius, yc-radius,
-                                                xc+radius, yc+radius,
-                                                width=self._width,
-                                                outline="")
-                self._tofill.append(item)
-            item = self._canvas.create_arc(xc-radius, yc-radius,
-                                           xc+radius, yc+radius,
-                                           style="chord",
-                                           start=start,
-                                           extent=extent,
-                                           width=self._width,
-                                           outline="")
-            self._tofill.append(item)
-        if self._drawing:
-            if abs(extent) >= self._fullcircle:
-                item = self._canvas.create_oval(xc-radius, yc-radius,
-                                                xc+radius, yc+radius,
-                                                width=self._width,
-                                                outline=self._color)
-                self._items.append(item)
-            item = self._canvas.create_arc(xc-radius, yc-radius,
-                                           xc+radius, yc+radius,
-                                           style="arc",
-                                           start=start,
-                                           extent=extent,
-                                           width=self._width,
-                                           outline=self._color)
-            self._items.append(item)
-        angle = start + extent
-        x1 = xc + abs(radius) * cos(angle * self._invradian)
-        y1 = yc - abs(radius) * sin(angle * self._invradian)
-        self._angle = (self._angle + extent) % self._fullcircle
-        self._position = x1, y1
-        if self._filling:
-            self._path.append(self._position)
-        self._draw_turtle()
+        frac = abs(extent)/self._fullcircle
+        steps = 1+int(min(11+abs(radius)/6.0, 59.0)*frac)
+        w = 1.0 * extent / steps
+        w2 = 0.5 * w
+        l = 2.0 * radius * sin(w2*self._invradian)
+        if radius < 0:
+            l, w, w2 = -l, -w, -w2
+        self.left(w2)
+        for i in range(steps):
+            self.forward(l)
+            self.left(w)
+        self.right(w2)
 
     def heading(self):
         """ Return the turtle's current heading.
@@ -634,6 +601,7 @@ class RawPen:
 
     def _draw_turtle(self, position=[]):
         if not self._tracing:
+            self._canvas.update()
             return
         if position == []:
             position = self._position
@@ -678,7 +646,7 @@ class Pen(RawPen):
             _canvas = Tkinter.Canvas(_root, background="white")
             _canvas.pack(expand=1, fill="both")
 
-        setup(width=_width, height= _height, startx=_startx, starty=_starty)
+            setup(width=_width, height= _height, startx=_startx, starty=_starty)
 
         RawPen.__init__(self, _canvas)
 
@@ -720,7 +688,7 @@ def color(*args): _getpen().color(*args)
 def write(arg, move=0): _getpen().write(arg, move)
 def fill(flag): _getpen().fill(flag)
 def begin_fill(): _getpen().begin_fill()
-def end_fill(): _getpen.end_fill()
+def end_fill(): _getpen().end_fill()
 def circle(radius, extent=None): _getpen().circle(radius, extent)
 def goto(*args): _getpen().goto(*args)
 def heading(): return _getpen().heading()
@@ -745,7 +713,7 @@ for methodname in dir(RawPen):
 def setup(**geometry):
     """ Sets the size and position of the main window.
 
-    Keywords are width, height, startx and starty
+    Keywords are width, height, startx and starty:
 
     width: either a size in pixels or a fraction of the screen.
       Default is 50% of screen.
@@ -820,7 +788,7 @@ def setup(**geometry):
         _root.geometry("%dx%d+%d+%d" % (_width, _height, _startx, _starty))
 
 def title(title):
-    """ set the window title.
+    """Set the window title.
 
     By default this is set to 'Turtle Graphics'
 
@@ -929,14 +897,29 @@ def demo2():
             speed(speeds[sp])
     color(0.25,0,0.75)
     fill(0)
-    color("green")
 
-    left(130)
+    # draw and fill a concave shape
+    left(120)
     up()
-    forward(90)
+    forward(70)
+    right(30)
+    down()
     color("red")
-    speed('fastest')
+    speed("fastest")
+    fill(1)
+    for i in range(4):
+        circle(50,90)
+        right(90)
+        forward(30)
+        right(90)
+    color("yellow")
+    fill(0)
+    left(90)
+    up()
+    forward(30)
     down();
+
+    color("red")
 
     # create a second turtle and make the original pursue and catch it
     turtle=Turtle()

@@ -235,8 +235,8 @@ case $ac_sys_system/$ac_sys_release in
   # On Mac OS X 10.4, defining _POSIX_C_SOURCE or _XOPEN_SOURCE
   # disables platform specific features beyond repair.
   # On Mac OS X 10.3, defining _POSIX_C_SOURCE or _XOPEN_SOURCE 
-  # has no effect, don't bother defineing them
-  Darwin/@<:@78@:>@.*)
+  # has no effect, don't bother defining them
+  Darwin/@<:@789@:>@.*)
     define_xopen_source=no
     ;;
 
@@ -1066,14 +1066,16 @@ dnl AC_MSG_RESULT($cpp_type)
 
 # checks for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS(asm/types.h curses.h dlfcn.h fcntl.h grp.h \
-shadow.h langinfo.h libintl.h ncurses.h poll.h pthread.h \
-stropts.h termios.h thread.h \
+AC_CHECK_HEADERS(asm/types.h conio.h curses.h direct.h dlfcn.h errno.h \
+fcntl.h grp.h \
+shadow.h io.h langinfo.h libintl.h ncurses.h poll.h process.h pthread.h \
+signal.h stropts.h termios.h thread.h \
 unistd.h utime.h \
 sys/audioio.h sys/bsdtty.h sys/file.h sys/loadavg.h sys/lock.h sys/mkdev.h \
 sys/modem.h \
-sys/param.h sys/poll.h sys/select.h sys/socket.h sys/statvfs.h sys/time.h \
-sys/times.h sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h \
+sys/param.h sys/poll.h sys/select.h sys/socket.h sys/statvfs.h sys/stat.h \
+sys/time.h \
+sys/times.h sys/types.h sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h \
 sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 bluetooth/bluetooth.h)
 AC_HEADER_DIRENT
@@ -2349,6 +2351,35 @@ AC_CHECK_LIB(c, inet_aton, [$ac_cv_prog_TRUE],
   AC_CHECK_LIB(resolv, inet_aton)
 )
 
+dnl Check if system zlib has *Copy() functions
+dnl
+dnl On MacOSX the linker will search for dylibs on the entire linker path
+dnl before searching for static libraries. setup.py adds -Wl,-search_paths_first
+dnl to revert to a more traditional unix behaviour and make it possible to
+dnl override the system libz with a local static library of libz. Temporarily
+dnl add that flag to our CFLAGS as well to ensure that we check the version
+dnl of libz that will be used by setup.py. 
+dnl The -L/usr/local/lib is needed as wel to get the same compilation 
+dnl environment as setup.py (and leaving it out can cause configure to use the
+dnl wrong version of the library)
+case $ac_sys_system/$ac_sys_release in
+Darwin/*) 
+	_CUR_CFLAGS="${CFLAGS}"
+	_CUR_LDFLAGS="${LDFLAGS}"
+	CFLAGS="${CFLAGS} -Wl,-search_paths_first"
+	LDFLAGS="${LDFLAGS} -Wl,-search_paths_first -L/usr/local/lib"
+	;;
+esac
+
+AC_CHECK_LIB(z, inflateCopy, AC_DEFINE(HAVE_ZLIB_COPY, 1, Define if the zlib library has inflateCopy))
+
+case $ac_sys_system/$ac_sys_release in
+Darwin/*) 
+	CFLAGS="${_CUR_CFLAGS}"
+	LDFLAGS="${_CUR_LDFLAGS}"
+	;;
+esac
+
 AC_MSG_CHECKING(for hstrerror)
 AC_TRY_LINK([
 #include "confdefs.h" 
@@ -3290,27 +3321,29 @@ then
   [Define if WINDOW in curses.h offers a field _flags.])
 fi
 
-AC_MSG_CHECKING(for /dev/ptmx)
-
-if test -e /dev/ptmx
-then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_DEV_PTMX, 1,
-  [Define if we have /dev/ptmx.])
-else
+AC_MSG_CHECKING(for is_term_resized)
+AC_TRY_COMPILE([#include <curses.h>], void *x=is_term_resized,
+  AC_DEFINE(HAVE_CURSES_IS_TERM_RESIZED, 1, Define if you have the 'is_term_resized' function.)
+  AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
-fi
+)
 
-AC_MSG_CHECKING(for /dev/ptc)
-
-if test -e /dev/ptc
-then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_DEV_PTC, 1,
-  [Define if we have /dev/ptc.])
-else
+AC_MSG_CHECKING(for resize_term)
+AC_TRY_COMPILE([#include <curses.h>], void *x=resize_term,
+  AC_DEFINE(HAVE_CURSES_RESIZE_TERM, 1, Define if you have the 'resize_term' function.)
+  AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
-fi
+)
+
+AC_MSG_CHECKING(for resizeterm)
+AC_TRY_COMPILE([#include <curses.h>], void *x=resizeterm,
+  AC_DEFINE(HAVE_CURSES_RESIZETERM, 1, Define if you have the 'resizeterm' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+
+AC_CHECK_FILE(/dev/ptmx, AC_DEFINE(HAVE_DEV_PTMX, 1, [Define if we have /dev/ptmx.]))
+AC_CHECK_FILE(/dev/ptc, AC_DEFINE(HAVE_DEV_PTC, 1, [Define if we have /dev/ptc.]))
 
 AC_MSG_CHECKING(for %zd printf() format support)
 AC_TRY_RUN([#include <stdio.h>

@@ -367,7 +367,7 @@ def add_ui(db):
               ("VerdanaRed9", "Verdana", 9, 255, 0),
              ])
 
-    compileargs = r"-Wi [TARGETDIR]Lib\compileall.py -f -x bad_coding|badsyntax|site-packages [TARGETDIR]Lib"
+    compileargs = r'-Wi "[TARGETDIR]Lib\compileall.py" -f -x bad_coding|badsyntax|site-packages "[TARGETDIR]Lib"'
     # See "CustomAction Table"
     add_data(db, "CustomAction", [
         # msidbCustomActionTypeFirstSequence + msidbCustomActionTypeTextData + msidbCustomActionTypeProperty
@@ -962,6 +962,14 @@ def add_files(db):
             continue
         dlls.append(f)
         lib.add_file(f)
+    # Add sqlite
+    if msilib.msi_type=="Intel64;1033":
+        sqlite_arch = "/ia64"
+    elif msilib.msi_type=="x64;1033":
+        sqlite_arch = "/amd64"
+    else:
+        sqlite_arch = ""
+    lib.add_file(srcdir+"/"+sqlite_dir+sqlite_arch+"/sqlite3.dll")
     if have_tcl:
         if not os.path.exists(srcdir+"/PCBuild/_tkinter.pyd"):
             print "WARNING: Missing _tkinter.pyd"
@@ -972,14 +980,6 @@ def add_files(db):
             tcldir = os.path.normpath(srcdir+"/../tcltk/bin")
             for f in glob.glob1(tcldir, "*.dll"):
                 lib.add_file(f, src=os.path.join(tcldir, f))
-    # Add sqlite
-    if msilib.msi_type=="Intel64;1033":
-        sqlite_arch = "/ia64"
-    elif msilib.msi_type=="x64;1033":
-        sqlite_arch = "/amd64"
-    else:
-        sqlite_arch = ""
-    lib.add_file(srcdir+"/"+sqlite_dir+sqlite_arch+"/sqlite3.dll")
     # check whether there are any unknown extensions
     for f in glob.glob1(srcdir+"/PCBuild", "*.pyd"):
         if f.endswith("_d.pyd"): continue # debug version

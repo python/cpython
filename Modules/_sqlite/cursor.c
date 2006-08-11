@@ -137,6 +137,22 @@ void cursor_dealloc(Cursor* self)
     self->ob_type->tp_free((PyObject*)self);
 }
 
+PyObject* _get_converter(PyObject* key)
+{
+    PyObject* upcase_key;
+    PyObject* retval;
+
+    upcase_key = PyObject_CallMethod(key, "upper", "");
+    if (!upcase_key) {
+        return NULL;
+    }
+
+    retval = PyDict_GetItem(converters, upcase_key);
+    Py_DECREF(upcase_key);
+
+    return retval;
+}
+
 int build_row_cast_map(Cursor* self)
 {
     int i;
@@ -174,7 +190,7 @@ int build_row_cast_map(Cursor* self)
                             break;
                         }
 
-                        converter = PyDict_GetItem(converters, key);
+                        converter = _get_converter(key);
                         Py_DECREF(key);
                         break;
                     }
@@ -195,7 +211,7 @@ int build_row_cast_map(Cursor* self)
                     }
                 }
 
-                converter = PyDict_GetItem(converters, py_decltype);
+                converter = _get_converter(py_decltype);
                 Py_DECREF(py_decltype);
             }
         }
@@ -228,7 +244,10 @@ PyObject* _build_column_name(const char* colname)
     }
 
     for (pos = colname;; pos++) {
-        if (*pos == 0 || *pos == ' ') {
+        if (*pos == 0 || *pos == '[') {
+            if ((*pos == '[') && (pos > colname) && (*(pos-1) == ' ')) {
+                pos--;
+            }
             return PyString_FromStringAndSize(colname, pos - colname);
         }
     }
@@ -302,23 +321,21 @@ PyObject* _fetch_one_row(Cursor* self)
         }
 
         if (converter != Py_None) {
-            val_str = (const char*)sqlite3_column_text(self->statement->st, i);
+            nbytes = sqlite3_column_bytes(self->statement->st, i);
+            val_str = (const char*)sqlite3_column_blob(self->statement->st, i);
             if (!val_str) {
                 Py_INCREF(Py_None);
                 converted = Py_None;
             } else {
-                item = PyString_FromString(val_str);
+                item = PyString_FromStringAndSize(val_str, nbytes);
                 if (!item) {
                     return NULL;
                 }
                 converted = PyObject_CallFunction(converter, "O", item);
-                if (!converted) {
-                    /* TODO: have a way to log these errors */
-                    Py_INCREF(Py_None);
-                    converted = Py_None;
-                    PyErr_Clear();
-                }
                 Py_DECREF(item);
+                if (!converted) {
+                    break;
+                }
             }
         } else {
             Py_BEGIN_ALLOW_THREADS
@@ -346,10 +363,10 @@ PyObject* _fetch_one_row(Cursor* self)
 
                     if (!converted) {
                         colname = sqlite3_column_name(self->statement->st, i);
-                        if (colname) {
+                        if (!colname) {
                             colname = "<unknown column name>";
                         }
-                        PyOS_snprintf(buf, sizeof(buf) - 1, "Could not decode to UTF-8 column %s with text %s",
+                        PyOS_snprintf(buf, sizeof(buf) - 1, "Could not decode to UTF-8 column '%s' with text '%s'",
                                      colname , val_str);
                         PyErr_SetString(OperationalError, buf);
                     }
@@ -373,7 +390,12 @@ PyObject* _fetch_one_row(Cursor* self)
             }
         }
 
-        PyTuple_SetItem(row, i, converted);
+        if (converted) {
+            PyTuple_SetItem(row, i, converted);
+        } else {
+            Py_INCREF(Py_None);
+            PyTuple_SetItem(row, i, Py_None);
+        }
     }
 
     if (PyErr_Occurred()) {
@@ -598,6 +620,14 @@ PyObject* _query_execute(Cursor* self, int multiple, PyObject* args)
                     goto error;
                 }
             } else {
+                if (PyErr_Occurred()) {
+                    /* there was an error that occurred in a user-defined callback */
+                    if (_enable_callback_tracebacks) {
+                        PyErr_Print();
+                    } else {
+                        PyErr_Clear();
+                    }
+                }
                 _seterror(self->connection->db);
                 goto error;
             }

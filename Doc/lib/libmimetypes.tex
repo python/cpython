@@ -158,6 +158,20 @@ want more than one MIME-type database:
   \versionadded{2.2}
 \end{classdesc}
 
+An example usage of the module:
+
+\begin{verbatim}
+>>> import mimetypes
+>>> mimetypes.init()
+>>> mimetypes.knownfiles
+['/etc/mime.types', '/etc/httpd/mime.types', ... ]
+>>> mimetypes.suffix_map['.tgz']
+'.tar.gz'
+>>> mimetypes.encodings_map['.gz']
+'gzip'
+>>> mimetypes.types_map['.tgz']
+'application/x-tar-gz'
+\end{verbatim}
 
 \subsection{MimeTypes Objects \label{mimetypes-objects}}
 

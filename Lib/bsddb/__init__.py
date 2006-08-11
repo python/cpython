@@ -33,7 +33,10 @@
 #----------------------------------------------------------------------
 
 
-"""Support for BerkeleyDB 3.2 through 4.2.
+"""Support for BerkeleyDB 3.3 through 4.4 with a simple interface.
+
+For the full featured object oriented interface use the bsddb.db module
+instead.  It mirrors the Sleepycat BerkeleyDB C API.
 """
 
 try:
@@ -43,8 +46,10 @@ try:
         # python as bsddb._bsddb.
         import _pybsddb
         _bsddb = _pybsddb
+        from bsddb3.dbutils import DeadlockWrap as _DeadlockWrap
     else:
         import _bsddb
+        from bsddb.dbutils import DeadlockWrap as _DeadlockWrap
 except ImportError:
     # Remove ourselves from sys.modules
     import sys
@@ -70,7 +75,7 @@ if sys.version >= '2.3':
     exec """
 class _iter_mixin(UserDict.DictMixin):
     def _make_iter_cursor(self):
-        cur = self.db.cursor()
+        cur = _DeadlockWrap(self.db.cursor)
         key = id(cur)
         self._cursor_refs[key] = ref(cur, self._gen_cref_cleaner(key))
         return cur
@@ -90,19 +95,19 @@ class _iter_mixin(UserDict.DictMixin):
 
             # since we're only returning keys, we call the cursor
             # methods with flags=0, dlen=0, dofs=0
-            key = cur.first(0,0,0)[0]
+            key = _DeadlockWrap(cur.first, 0,0,0)[0]
             yield key
 
             next = cur.next
             while 1:
                 try:
-                    key = next(0,0,0)[0]
+                    key = _DeadlockWrap(next, 0,0,0)[0]
                     yield key
                 except _bsddb.DBCursorClosedError:
                     cur = self._make_iter_cursor()
                     # FIXME-20031101-greg: race condition.  cursor could
                     # be closed by another thread before this call.
-                    cur.set(key,0,0,0)
+                    _DeadlockWrap(cur.set, key,0,0,0)
                     next = cur.next
         except _bsddb.DBNotFoundError:
             return
@@ -119,21 +124,21 @@ class _iter_mixin(UserDict.DictMixin):
             # FIXME-20031102-greg: race condition.  cursor could
             # be closed by another thread before this call.
 
-            kv = cur.first()
+            kv = _DeadlockWrap(cur.first)
             key = kv[0]
             yield kv
 
             next = cur.next
             while 1:
                 try:
-                    kv = next()
+                    kv = _DeadlockWrap(next)
                     key = kv[0]
                     yield kv
                 except _bsddb.DBCursorClosedError:
                     cur = self._make_iter_cursor()
                     # FIXME-20031101-greg: race condition.  cursor could
                     # be closed by another thread before this call.
-                    cur.set(key,0,0,0)
+                    _DeadlockWrap(cur.set, key,0,0,0)
                     next = cur.next
         except _bsddb.DBNotFoundError:
             return
@@ -177,9 +182,9 @@ class _DBWithCursor(_iter_mixin):
 
     def _checkCursor(self):
         if self.dbc is None:
-            self.dbc = self.db.cursor()
+            self.dbc = _DeadlockWrap(self.db.cursor)
             if self.saved_dbc_key is not None:
-                self.dbc.set(self.saved_dbc_key)
+                _DeadlockWrap(self.dbc.set, self.saved_dbc_key)
                 self.saved_dbc_key = None
 
     # This method is needed for all non-cursor DB calls to avoid
@@ -192,15 +197,15 @@ class _DBWithCursor(_iter_mixin):
             self.dbc = None
             if save:
                 try:
-                    self.saved_dbc_key = c.current(0,0,0)[0]
+                    self.saved_dbc_key = _DeadlockWrap(c.current, 0,0,0)[0]
                 except db.DBError:
                     pass
-            c.close()
+            _DeadlockWrap(c.close)
             del c
         for cref in self._cursor_refs.values():
             c = cref()
             if c is not None:
-                c.close()
+                _DeadlockWrap(c.close)
 
     def _checkOpen(self):
         if self.db is None:
@@ -211,73 +216,77 @@ class _DBWithCursor(_iter_mixin):
 
     def __len__(self):
         self._checkOpen()
-        return len(self.db)
+        return _DeadlockWrap(lambda: len(self.db))  # len(self.db)
 
     def __getitem__(self, key):
         self._checkOpen()
-        return self.db[key]
+        return _DeadlockWrap(lambda: self.db[key])  # self.db[key]
 
     def __setitem__(self, key, value):
         self._checkOpen()
         self._closeCursors()
-        self.db[key] = value
+        def wrapF():
+            self.db[key] = value
+        _DeadlockWrap(wrapF)  # self.db[key] = value
 
     def __delitem__(self, key):
         self._checkOpen()
         self._closeCursors()
-        del self.db[key]
+        def wrapF():
+            del self.db[key]
+        _DeadlockWrap(wrapF)  # del self.db[key]
 
     def close(self):
         self._closeCursors(save=0)
         if self.dbc is not None:
-            self.dbc.close()
+            _DeadlockWrap(self.dbc.close)
         v = 0
         if self.db is not None:
-            v = self.db.close()
+            v = _DeadlockWrap(self.db.close)
         self.dbc = None
         self.db = None
         return v
 
     def keys(self):
         self._checkOpen()
-        return self.db.keys()
+        return _DeadlockWrap(self.db.keys)
 
     def has_key(self, key):
         self._checkOpen()
-        return self.db.has_key(key)
+        return _DeadlockWrap(self.db.has_key, key)
 
     def set_location(self, key):
         self._checkOpen()
         self._checkCursor()
-        return self.dbc.set_range(key)
+        return _DeadlockWrap(self.dbc.set_range, key)
 
     def next(self):
         self._checkOpen()
         self._checkCursor()
-        rv = self.dbc.next()
+        rv = _DeadlockWrap(self.dbc.next)
         return rv
 
     def previous(self):
         self._checkOpen()
         self._checkCursor()
-        rv = self.dbc.prev()
+        rv = _DeadlockWrap(self.dbc.prev)
         return rv
 
     def first(self):
         self._checkOpen()
         self._checkCursor()
-        rv = self.dbc.first()
+        rv = _DeadlockWrap(self.dbc.first)
         return rv
 
     def last(self):
         self._checkOpen()
         self._checkCursor()
-        rv = self.dbc.last()
+        rv = _DeadlockWrap(self.dbc.last)
         return rv
 
     def sync(self):
         self._checkOpen()
-        return self.db.sync()
+        return _DeadlockWrap(self.db.sync)
 
 
 #----------------------------------------------------------------------
@@ -384,6 +393,5 @@ try:
         db.DB_THREAD = 0
 except ImportError:
     db.DB_THREAD = 0
-
 
 #----------------------------------------------------------------------

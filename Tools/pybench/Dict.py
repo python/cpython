@@ -2,9 +2,9 @@ from pybench import Test
 
 class DictCreation(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5*(5 + 5)
-    rounds = 60000
+    rounds = 80000
 
     def test(self):
 
@@ -77,7 +77,7 @@ class DictCreation(Test):
 
 class DictWithStringKeys(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 5*(6 + 6)
     rounds = 200000
 
@@ -166,9 +166,9 @@ class DictWithStringKeys(Test):
 
 class DictWithFloatKeys(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 5*(6 + 6)
-    rounds = 200000
+    rounds = 150000
 
     def test(self):
 
@@ -255,7 +255,7 @@ class DictWithFloatKeys(Test):
 
 class DictWithIntegerKeys(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 5*(6 + 6)
     rounds = 200000
 
@@ -344,13 +344,14 @@ class DictWithIntegerKeys(Test):
 
 class SimpleDictManipulation(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5*(6 + 6 + 6 + 6)
-    rounds = 50000
+    rounds = 100000
 
     def test(self):
 
         d = {}
+        has_key = d.has_key
 
         for i in xrange(self.rounds):
 
@@ -368,12 +369,12 @@ class SimpleDictManipulation(Test):
             x = d[4]
             x = d[5]
 
-            d.has_key(0)
-            d.has_key(2)
-            d.has_key(4)
-            d.has_key(6)
-            d.has_key(8)
-            d.has_key(10)
+            has_key(0)
+            has_key(2)
+            has_key(4)
+            has_key(6)
+            has_key(8)
+            has_key(10)
 
             del d[0]
             del d[1]
@@ -396,12 +397,12 @@ class SimpleDictManipulation(Test):
             x = d[4]
             x = d[5]
 
-            d.has_key(0)
-            d.has_key(2)
-            d.has_key(4)
-            d.has_key(6)
-            d.has_key(8)
-            d.has_key(10)
+            has_key(0)
+            has_key(2)
+            has_key(4)
+            has_key(6)
+            has_key(8)
+            has_key(10)
 
             del d[0]
             del d[1]
@@ -424,12 +425,12 @@ class SimpleDictManipulation(Test):
             x = d[4]
             x = d[5]
 
-            d.has_key(0)
-            d.has_key(2)
-            d.has_key(4)
-            d.has_key(6)
-            d.has_key(8)
-            d.has_key(10)
+            has_key(0)
+            has_key(2)
+            has_key(4)
+            has_key(6)
+            has_key(8)
+            has_key(10)
 
             del d[0]
             del d[1]
@@ -452,12 +453,12 @@ class SimpleDictManipulation(Test):
             x = d[4]
             x = d[5]
 
-            d.has_key(0)
-            d.has_key(2)
-            d.has_key(4)
-            d.has_key(6)
-            d.has_key(8)
-            d.has_key(10)
+            has_key(0)
+            has_key(2)
+            has_key(4)
+            has_key(6)
+            has_key(8)
+            has_key(10)
 
             del d[0]
             del d[1]
@@ -480,12 +481,12 @@ class SimpleDictManipulation(Test):
             x = d[4]
             x = d[5]
 
-            d.has_key(0)
-            d.has_key(2)
-            d.has_key(4)
-            d.has_key(6)
-            d.has_key(8)
-            d.has_key(10)
+            has_key(0)
+            has_key(2)
+            has_key(4)
+            has_key(6)
+            has_key(8)
+            has_key(10)
 
             del d[0]
             del d[1]
@@ -497,6 +498,7 @@ class SimpleDictManipulation(Test):
     def calibrate(self):
 
         d = {}
+        has_key = d.has_key
 
         for i in xrange(self.rounds):
             pass

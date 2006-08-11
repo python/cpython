@@ -168,18 +168,30 @@ class Variable:
     Subclasses StringVar, IntVar, DoubleVar, BooleanVar are specializations
     that constrain the type of the value returned from get()."""
     _default = ""
-    def __init__(self, master=None):
-        """Construct a variable with an optional MASTER as master widget.
-        The variable is named PY_VAR_number in Tcl.
+    def __init__(self, master=None, value=None, name=None):
+        """Construct a variable
+
+        MASTER can be given as master widget.
+        VALUE is an optional value (defaults to "")
+        NAME is an optional Tcl name (defaults to PY_VARnum).
+
+        If NAME matches an existing variable and VALUE is omitted
+        then the existing value is retained.
         """
         global _varnum
         if not master:
             master = _default_root
         self._master = master
         self._tk = master.tk
-        self._name = 'PY_VAR' + repr(_varnum)
-        _varnum = _varnum + 1
-        self.set(self._default)
+        if name:
+            self._name = name
+        else:
+            self._name = 'PY_VAR' + repr(_varnum)
+            _varnum += 1
+        if value != None:
+            self.set(value)
+        elif not self._tk.call("info", "exists", self._name):
+            self.set(self._default)
     def __del__(self):
         """Unset the variable in Tcl."""
         self._tk.globalunsetvar(self._name)
@@ -217,15 +229,29 @@ class Variable:
         """Return all trace callback information."""
         return map(self._tk.split, self._tk.splitlist(
             self._tk.call("trace", "vinfo", self._name)))
+    def __eq__(self, other):
+        """Comparison for equality (==).
+
+        Note: if the Variable's master matters to behavior
+        also compare self._master == other._master
+        """
+        return self.__class__.__name__ == other.__class__.__name__ \
+            and self._name == other._name
 
 class StringVar(Variable):
     """Value holder for strings variables."""
     _default = ""
-    def __init__(self, master=None):
+    def __init__(self, master=None, value=None, name=None):
         """Construct a string variable.
 
-        MASTER can be given as master widget."""
-        Variable.__init__(self, master)
+        MASTER can be given as master widget.
+        VALUE is an optional value (defaults to "")
+        NAME is an optional Tcl name (defaults to PY_VARnum).
+
+        If NAME matches an existing variable and VALUE is omitted
+        then the existing value is retained.
+        """
+        Variable.__init__(self, master, value, name)
 
     def get(self):
         """Return value of variable as string."""
@@ -237,11 +263,17 @@ class StringVar(Variable):
 class IntVar(Variable):
     """Value holder for integer variables."""
     _default = 0
-    def __init__(self, master=None):
+    def __init__(self, master=None, value=None, name=None):
         """Construct an integer variable.
 
-        MASTER can be given as master widget."""
-        Variable.__init__(self, master)
+        MASTER can be given as master widget.
+        VALUE is an optional value (defaults to 0)
+        NAME is an optional Tcl name (defaults to PY_VARnum).
+
+        If NAME matches an existing variable and VALUE is omitted
+        then the existing value is retained.
+        """
+        Variable.__init__(self, master, value, name)
 
     def set(self, value):
         """Set the variable to value, converting booleans to integers."""
@@ -256,11 +288,17 @@ class IntVar(Variable):
 class DoubleVar(Variable):
     """Value holder for float variables."""
     _default = 0.0
-    def __init__(self, master=None):
+    def __init__(self, master=None, value=None, name=None):
         """Construct a float variable.
 
-        MASTER can be given as a master widget."""
-        Variable.__init__(self, master)
+        MASTER can be given as master widget.
+        VALUE is an optional value (defaults to 0.0)
+        NAME is an optional Tcl name (defaults to PY_VARnum).
+
+        If NAME matches an existing variable and VALUE is omitted
+        then the existing value is retained.
+        """
+        Variable.__init__(self, master, value, name)
 
     def get(self):
         """Return the value of the variable as a float."""
@@ -268,12 +306,18 @@ class DoubleVar(Variable):
 
 class BooleanVar(Variable):
     """Value holder for boolean variables."""
-    _default = "false"
-    def __init__(self, master=None):
+    _default = False
+    def __init__(self, master=None, value=None, name=None):
         """Construct a boolean variable.
 
-        MASTER can be given as a master widget."""
-        Variable.__init__(self, master)
+        MASTER can be given as master widget.
+        VALUE is an optional value (defaults to False)
+        NAME is an optional Tcl name (defaults to PY_VARnum).
+
+        If NAME matches an existing variable and VALUE is omitted
+        then the existing value is retained.
+        """
+        Variable.__init__(self, master, value, name)
 
     def get(self):
         """Return the value of the variable as a bool."""
@@ -1456,10 +1500,19 @@ class Wm:
         the group leader of this widget if None is given."""
         return self.tk.call('wm', 'group', self._w, pathName)
     group = wm_group
-    def wm_iconbitmap(self, bitmap=None):
+    def wm_iconbitmap(self, bitmap=None, default=None):
         """Set bitmap for the iconified widget to BITMAP. Return
-        the bitmap if None is given."""
-        return self.tk.call('wm', 'iconbitmap', self._w, bitmap)
+        the bitmap if None is given.
+
+        Under Windows, the DEFAULT parameter can be used to set the icon
+        for the widget and any descendents that don't have an icon set
+        explicitly.  DEFAULT can be the relative path to a .ico file
+        (example: root.iconbitmap(default='myicon.ico') ).  See Tk
+        documentation for more information."""
+        if default:
+            return self.tk.call('wm', 'iconbitmap', self._w, '-default', default)
+        else:
+            return self.tk.call('wm', 'iconbitmap', self._w, bitmap)
     iconbitmap = wm_iconbitmap
     def wm_iconify(self):
         """Display widget as icon."""
@@ -1880,9 +1933,9 @@ class BaseWidget(Misc):
     def destroy(self):
         """Destroy this and all descendants widgets."""
         for c in self.children.values(): c.destroy()
+        self.tk.call('destroy', self._w)
         if self.master.children.has_key(self._name):
             del self.master.children[self._name]
-        self.tk.call('destroy', self._w)
         Misc.destroy(self)
     def _do(self, name, args=()):
         # XXX Obsolete -- better use self.tk.call directly!

@@ -11,11 +11,10 @@ not open blocks are not shown in the context hints pane.
 """
 import Tkinter
 from configHandler import idleConf
-from sets import Set
 import re
 from sys import maxint as INFINITY
 
-BLOCKOPENERS = Set(["class", "def", "elif", "else", "except", "finally", "for",
+BLOCKOPENERS = set(["class", "def", "elif", "else", "except", "finally", "for",
                     "if", "try", "while"])
 UPDATEINTERVAL = 100 # millisec
 FONTUPDATEINTERVAL = 1000 # millisec

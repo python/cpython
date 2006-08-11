@@ -51,7 +51,7 @@ class ScriptBinding:
         # Provide instance variables referenced by Debugger
         # XXX This should be done differently
         self.flist = self.editwin.flist
-        self.root = self.flist.root
+        self.root = self.editwin.root
 
     def check_module_event(self, event):
         filename = self.getfilename()
@@ -76,6 +76,9 @@ class ScriptBinding:
             self.editwin.gotoline(nag.get_lineno())
             self.errorbox("Tab/space error", indent_message)
             return False
+        except IndentationError:
+            # From tokenize(), let compile() in checksyntax find it again.
+            pass
         return True
 
     def checksyntax(self, filename):

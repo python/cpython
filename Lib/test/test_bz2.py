@@ -250,7 +250,7 @@ class BZ2FileTest(BaseTest):
         bz2f = BZ2File(self.filename)
         xlines = list(bz2f.readlines())
         bz2f.close()
-        self.assertEqual(lines, ['Test'])
+        self.assertEqual(xlines, ['Test'])
 
 
 class BZ2CompressorTest(BaseTest):
@@ -344,6 +344,7 @@ def test_main():
         BZ2DecompressorTest,
         FuncTest
     )
+    test_support.reap_children()
 
 if __name__ == '__main__':
     test_main()

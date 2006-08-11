@@ -1,3 +1,8 @@
+/*****************************************************************
+  This file should be kept compatible with Python 2.3, see PEP 291.
+ *****************************************************************/
+
+
 /*
  * History: First version dated from 3/97, derived from my SCMLIB version
  * for win16.
@@ -612,7 +617,9 @@ static int _call_function_pointer(int flags,
 				  void *resmem,
 				  int argcount)
 {
+#ifdef WITH_THREAD
 	PyThreadState *_save = NULL; /* For Py_BLOCK_THREADS and Py_UNBLOCK_THREADS */
+#endif
 	ffi_cif cif;
 	int cc;
 #ifdef MS_WIN32
@@ -644,8 +651,10 @@ static int _call_function_pointer(int flags,
 		return -1;
 	}
 
+#ifdef WITH_THREAD
 	if ((flags & FUNCFLAG_PYTHONAPI) == 0)
 		Py_UNBLOCK_THREADS
+#endif
 #ifdef MS_WIN32
 #ifndef DONT_USE_SEH
 	__try {
@@ -662,8 +671,10 @@ static int _call_function_pointer(int flags,
 	}
 #endif
 #endif
+#ifdef WITH_THREAD
 	if ((flags & FUNCFLAG_PYTHONAPI) == 0)
 		Py_BLOCK_THREADS
+#endif
 #ifdef MS_WIN32
 #ifndef DONT_USE_SEH
 	if (dwExceptionCode) {
@@ -804,14 +815,22 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 	PyObject *obj;
 	TCHAR *text;
 
+	/* We absolutely have to release the GIL during COM method calls,
+	   otherwise we may get a deadlock!
+	*/
+#ifdef WITH_THREAD
+	Py_BEGIN_ALLOW_THREADS
+#endif
+
 	hr = pIunk->lpVtbl->QueryInterface(pIunk, &IID_ISupportErrorInfo, (void **)&psei);
 	if (FAILED(hr))
 		goto failed;
+
 	hr = psei->lpVtbl->InterfaceSupportsErrorInfo(psei, riid);
 	psei->lpVtbl->Release(psei);
-
 	if (FAILED(hr))
 		goto failed;
+
 	hr = GetErrorInfo(0, &pei);
 	if (hr != S_OK)
 		goto failed;
@@ -822,24 +841,27 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
 	pei->lpVtbl->GetHelpFile(pei, &helpfile);
 	pei->lpVtbl->GetSource(pei, &source);
 
+	pei->lpVtbl->Release(pei);
+
   failed:
-	if (pei)
-		pei->lpVtbl->Release(pei);
+#ifdef WITH_THREAD
+	Py_END_ALLOW_THREADS
+#endif
 
 	progid = NULL;
 	ProgIDFromCLSID(&guid, &progid);
 
-/* XXX Is COMError derived from WindowsError or not? */
 	text = FormatError(errcode);
+	obj = Py_BuildValue(
 #ifdef _UNICODE
-	obj = Py_BuildValue("iu(uuuiu)",
+		"iu(uuuiu)",
 #else
-	obj = Py_BuildValue("is(uuuiu)",
+		"is(uuuiu)",
 #endif
-			    errcode,
-			    text,
-			    descr, source, helpfile, helpcontext,
-			    progid);
+		errcode,
+		text,
+		descr, source, helpfile, helpcontext,
+		progid);
 	if (obj) {
 		PyErr_SetObject(ComError, obj);
 		Py_DECREF(obj);
@@ -1138,7 +1160,7 @@ call_commethod(PyObject *self, PyObject *args)
 }
 
 static char copy_com_pointer_doc[] =
-"CopyComPointer(a, b) -> integer\n";
+"CopyComPointer(src, dst) -> HRESULT value\n";
 
 static PyObject *
 copy_com_pointer(PyObject *self, PyObject *args)
@@ -1444,7 +1466,72 @@ set_conversion_mode(PyObject *self, PyObject *args)
 }
 #endif
 
+static PyObject *
+resize(PyObject *self, PyObject *args)
+{
+	CDataObject *obj;
+	StgDictObject *dict;
+	Py_ssize_t size;
+
+	if (!PyArg_ParseTuple(args,
+#if (PY_VERSION_HEX < 0x02050000)
+			      "Oi:resize",
+#else
+			      "On:resize",
+#endif
+			      (PyObject *)&obj, &size))
+		return NULL;
+
+	dict = PyObject_stgdict((PyObject *)obj);
+	if (dict == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+				"excepted ctypes instance");
+		return NULL;
+	}
+	if (size < dict->size) {
+		PyErr_Format(PyExc_ValueError,
+#if PY_VERSION_HEX < 0x02050000
+			     "minimum size is %d",
+#else
+			     "minimum size is %zd",
+#endif
+			     dict->size);
+		return NULL;
+	}
+	if (obj->b_needsfree == 0) {
+		PyErr_Format(PyExc_ValueError,
+			     "Memory cannot be resized because this object doesn't own it");
+		return NULL;
+	}
+	if (size <= sizeof(obj->b_value)) {
+		/* internal default buffer is large enough */
+		obj->b_size = size;
+		goto done;
+	}
+	if (obj->b_size <= sizeof(obj->b_value)) {
+		/* We are currently using the objects default buffer, but it
+		   isn't large enough any more. */
+		void *ptr = PyMem_Malloc(size);
+		if (ptr == NULL)
+			return PyErr_NoMemory();
+		memset(ptr, 0, size);
+		memmove(ptr, obj->b_ptr, obj->b_size);
+		obj->b_ptr = ptr;
+		obj->b_size = size;
+	} else {
+		void * ptr = PyMem_Realloc(obj->b_ptr, size);
+		if (ptr == NULL)
+			return PyErr_NoMemory();
+		obj->b_ptr = ptr;
+		obj->b_size = size;
+	}
+  done:
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 PyMethodDef module_methods[] = {
+	{"resize", resize, METH_VARARGS, "Resize the memory buffer of a ctypes instance"},
 #ifdef CTYPES_UNICODE
 	{"set_conversion_mode", set_conversion_mode, METH_VARARGS, set_conversion_mode_doc},
 #endif

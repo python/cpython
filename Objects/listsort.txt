@@ -494,7 +494,7 @@ and its followup(s).  An earlier paper called the same strategy
    467-474, Austin, Texas, 25-27 January 1993.
 
 and it probably dates back to an earlier paper by Bentley and Yao.  The
-McIlory paper in particular has good analysis of a mergesort that's
+McIlroy paper in particular has good analysis of a mergesort that's
 probably strongly related to this one in its galloping strategy.
 
 

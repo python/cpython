@@ -691,7 +691,7 @@ distlatex:	bziplatex ziplatex
 # The small amount of additional work is a small price to pay for not
 # having to remember which order to do it in. ;)
 paperdist:	distpdf distps pkglist
-edist:		disthtml distinfo zipisilo pkglist
+edist:		disthtml pkglist
 
 # The pkglist.html file is used as part of the download.html page on
 # python.org; it is not used as intermediate input here or as part of

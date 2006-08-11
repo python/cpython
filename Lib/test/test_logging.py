@@ -480,6 +480,8 @@ def test4():
             f.close()
             try:
                 logging.config.fileConfig(fn)
+                #call again to make sure cleanup is correct
+                logging.config.fileConfig(fn)
             except:
                 t = sys.exc_info()[0]
                 message(str(t))

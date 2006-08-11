@@ -446,7 +446,7 @@ else:
                       prefix=template, dir=None):
         """Create and return a temporary file.
         Arguments:
-        'prefix', 'suffix', 'directory' -- as for mkstemp.
+        'prefix', 'suffix', 'dir' -- as for mkstemp.
         'mode' -- the mode argument to os.fdopen (default "w+b").
         'bufsize' -- the buffer size argument to os.fdopen (default -1).
         The file is created as mkstemp() would do it.

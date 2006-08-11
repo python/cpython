@@ -1125,7 +1125,6 @@ Exception>
               DeprecationWarning
               PendingDeprecationWarning
               SyntaxWarning
-              OverflowWarning
               RuntimeWarning
               FutureWarning
 

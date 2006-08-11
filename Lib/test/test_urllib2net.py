@@ -123,7 +123,7 @@ class urlopenNetworkTests(unittest.TestCase):
                           # domain will be spared to serve its defined
                           # purpose.
                           # urllib2.urlopen, "http://www.sadflkjsasadf.com/")
-                          urllib2.urlopen, "http://www.python.invalid/")
+                          urllib2.urlopen, "http://www.python.invalid./")
 
 
 class OtherNetworkTests(unittest.TestCase):
@@ -160,8 +160,8 @@ class OtherNetworkTests(unittest.TestCase):
                                 "urllib2$")
         urls = [
             # Thanks to Fred for finding these!
-            'gopher://gopher.lib.ncsu.edu/11/library/stacks/Alex',
-            'gopher://gopher.vt.edu:10010/10/33',
+            'gopher://gopher.lib.ncsu.edu./11/library/stacks/Alex',
+            'gopher://gopher.vt.edu.:10010/10/33',
             ]
         self._test_urls(urls, self._extra_handlers())
 
@@ -176,7 +176,7 @@ class OtherNetworkTests(unittest.TestCase):
 
                 # XXX bug, should raise URLError
                 #('file://nonsensename/etc/passwd', None, urllib2.URLError)
-                ('file://nonsensename/etc/passwd', None, (OSError, socket.error))
+                ('file://nonsensename/etc/passwd', None, (EnvironmentError, socket.error))
                 ]
             self._test_urls(urls, self._extra_handlers())
         finally:
@@ -239,7 +239,9 @@ class OtherNetworkTests(unittest.TestCase):
             except (IOError, socket.error, OSError), err:
                 debug(err)
                 if expected_err:
-                    self.assert_(isinstance(err, expected_err))
+                    msg = ("Didn't get expected error(s) %s for %s %s, got %s" %
+                           (expected_err, url, req, err))
+                    self.assert_(isinstance(err, expected_err), msg)
             else:
                 buf = f.read()
                 f.close()
@@ -257,7 +259,6 @@ class OtherNetworkTests(unittest.TestCase):
         handlers.append(cfh)
 
         return handlers
-
 
 
 def test_main():

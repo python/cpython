@@ -147,8 +147,8 @@ class CommonTest(unittest.TestCase):
                 else:
                     r2, rem = len(i)+1, 0
                 if rem or r1 != r2:
-                    self.assertEqual(rem, 0)
-                    self.assertEqual(r1, r2)
+                    self.assertEqual(rem, 0, '%s != 0 for %s' % (rem, i))
+                    self.assertEqual(r1, r2, '%s != %s for %s' % (r1, r2, i))
 
     def test_find(self):
         self.checkequal(0, 'abcdefghiabc', 'find', 'abc')
@@ -636,6 +636,11 @@ class CommonTest(unittest.TestCase):
         EQ("bobobXbobob", "bobobobXbobobob", "replace", "bobob", "bob")
         EQ("BOBOBOB", "BOBOBOB", "replace", "bob", "bobby")
 
+        ba = buffer('a')
+        bb = buffer('b')
+        EQ("bbc", "abc", "replace", ba, bb)
+        EQ("aac", "abc", "replace", bb, ba)
+
         #
         self.checkequal('one@two!three!', 'one!two!three!', 'replace', '!', '@', 1)
         self.checkequal('onetwothree', 'one!two!three!', 'replace', '!', '')
@@ -819,6 +824,21 @@ class MixinStrUnicodeUserStringTest:
         self.checkraises(TypeError, 'hello', 'startswith')
         self.checkraises(TypeError, 'hello', 'startswith', 42)
 
+        # test tuple arguments
+        self.checkequal(True, 'hello', 'startswith', ('he', 'ha'))
+        self.checkequal(False, 'hello', 'startswith', ('lo', 'llo'))
+        self.checkequal(True, 'hello', 'startswith', ('hellox', 'hello'))
+        self.checkequal(False, 'hello', 'startswith', ())
+        self.checkequal(True, 'helloworld', 'startswith', ('hellowo',
+                                                           'rld', 'lowo'), 3)
+        self.checkequal(False, 'helloworld', 'startswith', ('hellowo', 'ello',
+                                                            'rld'), 3)
+        self.checkequal(True, 'hello', 'startswith', ('lo', 'he'), 0, -1)
+        self.checkequal(False, 'hello', 'startswith', ('he', 'hel'), 0, 1)
+        self.checkequal(True, 'hello', 'startswith', ('he', 'hel'), 0, 2)
+
+        self.checkraises(TypeError, 'hello', 'startswith', (42,))
+
     def test_endswith(self):
         self.checkequal(True, 'hello', 'endswith', 'lo')
         self.checkequal(False, 'hello', 'endswith', 'he')
@@ -853,6 +873,21 @@ class MixinStrUnicodeUserStringTest:
         self.checkraises(TypeError, 'hello', 'endswith')
         self.checkraises(TypeError, 'hello', 'endswith', 42)
 
+        # test tuple arguments
+        self.checkequal(False, 'hello', 'endswith', ('he', 'ha'))
+        self.checkequal(True, 'hello', 'endswith', ('lo', 'llo'))
+        self.checkequal(True, 'hello', 'endswith', ('hellox', 'hello'))
+        self.checkequal(False, 'hello', 'endswith', ())
+        self.checkequal(True, 'helloworld', 'endswith', ('hellowo',
+                                                           'rld', 'lowo'), 3)
+        self.checkequal(False, 'helloworld', 'endswith', ('hellowo', 'ello',
+                                                            'rld'), 3, -1)
+        self.checkequal(True, 'hello', 'endswith', ('hell', 'ell'), 0, -1)
+        self.checkequal(False, 'hello', 'endswith', ('he', 'hel'), 0, 1)
+        self.checkequal(True, 'hello', 'endswith', ('he', 'hell'), 0, 4)
+
+        self.checkraises(TypeError, 'hello', 'endswith', (42,))
+
     def test___contains__(self):
         self.checkequal(True, '', '__contains__', '')         # vereq('' in '', True)
         self.checkequal(True, 'abc', '__contains__', '')      # vereq('' in 'abc', True)
@@ -872,7 +907,7 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal(u'abc', 'abc', '__getitem__', slice(0, 1000))
         self.checkequal(u'a', 'abc', '__getitem__', slice(0, 1))
         self.checkequal(u'', 'abc', '__getitem__', slice(0, 0))
-        # FIXME What about negative indizes? This is handled differently by [] and __getitem__(slice)
+        # FIXME What about negative indices? This is handled differently by [] and __getitem__(slice)
 
         self.checkraises(TypeError, 'abc', '__getitem__', 'def')
 
@@ -908,6 +943,8 @@ class MixinStrUnicodeUserStringTest:
         # test.test_string.StringTest.test_join)
         self.checkequal('a b c d', ' ', 'join', ['a', 'b', 'c', 'd'])
         self.checkequal('abcd', '', 'join', ('a', 'b', 'c', 'd'))
+        self.checkequal('bd', '', 'join', ('', 'b', '', 'd'))
+        self.checkequal('ac', '', 'join', ('a', '', 'c', ''))
         self.checkequal('w x y z', ' ', 'join', Sequence())
         self.checkequal('abc', 'a', 'join', ('abc',))
         self.checkequal('z', 'a', 'join', UserList(['z']))

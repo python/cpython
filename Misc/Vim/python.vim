@@ -85,7 +85,7 @@ if exists("python_highlight_exceptions")
   syn keyword pythonException    LookupError OSError DeprecationWarning
   syn keyword pythonException    UnicodeError UnicodeEncodeError
   syn keyword pythonException    FloatingPointError ReferenceError NameError
-  syn keyword pythonException    OverflowWarning IOError SyntaxError
+  syn keyword pythonException    IOError SyntaxError
   syn keyword pythonException    FutureWarning ImportWarning SystemExit
   syn keyword pythonException    Exception EOFError StandardError ValueError
   syn keyword pythonException    TabError KeyError ZeroDivisionError SystemError

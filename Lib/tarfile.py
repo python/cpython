@@ -417,7 +417,13 @@ class _Stream:
             self.fileobj.write(self.buf)
             self.buf = ""
             if self.comptype == "gz":
-                self.fileobj.write(struct.pack("<l", self.crc))
+                # The native zlib crc is an unsigned 32-bit integer, but
+                # the Python wrapper implicitly casts that to a signed C
+                # long.  So, on a 32-bit box self.crc may "look negative",
+                # while the same crc on a 64-bit box may "look positive".
+                # To avoid irksome warnings from the `struct` module, force
+                # it to look positive on all boxes.
+                self.fileobj.write(struct.pack("<L", self.crc & 0xffffffffL))
                 self.fileobj.write(struct.pack("<L", self.pos & 0xffffFFFFL))
 
         if not self._extfileobj:
@@ -1749,13 +1755,6 @@ class TarFile(object):
 
             try:
                 tarinfo = TarInfo.frombuf(buf)
-
-                # We shouldn't rely on this checksum, because some tar programs
-                # calculate it differently and it is merely validating the
-                # header block. We could just as well skip this part, which would
-                # have a slight effect on performance...
-                if tarinfo.chksum not in calc_chksums(buf):
-                    self._dbg(1, "tarfile: Bad Checksum %r" % tarinfo.name)
 
                 # Set the TarInfo object's offset to the current position of the
                 # TarFile and set self.offset to the position where the data blocks

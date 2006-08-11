@@ -5,14 +5,27 @@ echo "of python is not early enough of the PATH of your shell."
 echo "These changes will be effective only in shell windows that you open"
 echo "after running this script."
 
-PYVER=@PYVER@
+PYVER=2.5
 PYTHON_ROOT="/Library/Frameworks/Python.framework/Versions/Current"
 
+if [ `id -ur` = 0 ]; then
+	# Run from the installer, do some trickery to fetch the information
+	# we need.
+	theShell="`finger $USER | grep Shell: | head  -1 | awk '{ print $NF }'`"
+
+else
+	theShell="${SHELL}"
+fi
+
 # Make sure the directory ${PYTHON_ROOT}/bin is on the users PATH.
-BSH="`basename "${SHELL}"`"
+BSH="`basename "${theShell}"`"
 case "${BSH}" in
 bash|ksh|sh|*csh)
-	P="`${SHELL} -c 'echo $PATH'`"
+	if [ `id -ur` = 0 ]; then
+		P=`su - ${USER} -c 'echo A-X-4-X@@$PATH@@X-4-X-A' | grep 'A-X-4-X@@.*@@X-4-X-A' | sed -e 's/^A-X-4-X@@//g' -e 's/@@X-4-X-A$//g'`
+	else
+		P="`(exec -l ${theShell} -c 'echo $PATH')`"
+	fi
 	;;
 *)
 	echo "Sorry, I don't know how to patch $BSH shells"
@@ -42,10 +55,15 @@ case "${BSH}" in
 	echo "# Setting PATH for MacPython ${PYVER}" >> "${HOME}/.cshrc"
 	echo "# The orginal version is saved in .cshrc.pysave" >> "${HOME}/.cshrc"
 	echo "set path=(${PYTHON_ROOT}/bin "'$path'")" >> "${HOME}/.cshrc"
+	if [ `id -ur` = 0 ]; then
+		chown "${USER}" "${HOME}/.cshrc"
+	fi
 	exit 0
 	;;
 bash)
-	if [ -e "${HOME}/.profile" ]; then
+	if [ -e "${HOME}/.bash_profile" ]; then
+		PR="${HOME}/.bash_profile"
+	elif [ -e "${HOME}/.profile" ]; then
 		PR="${HOME}/.profile"
 	else
 		PR="${HOME}/.bash_profile"
@@ -66,6 +84,6 @@ echo "# The orginal version is saved in `basename ${PR}`.pysave" >> "${PR}"
 echo 'PATH="'"${PYTHON_ROOT}/bin"':${PATH}"' >> "${PR}"
 echo 'export PATH' >> "${PR}"
 if [ `id -ur` = 0 ]; then
-	chown "${LOGNAME}" "${PR}"
+	chown "${USER}" "${PR}"
 fi
 exit 0

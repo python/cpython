@@ -35,7 +35,7 @@ class SlicesTestCase(unittest.TestCase):
         self.assertRaises(ValueError, setslice, a, 0, 5, range(32))
 
     def test_char_ptr(self):
-        s = "abcdefghijklmnopqrstuvwxyz\0"
+        s = "abcdefghijklmnopqrstuvwxyz"
 
         dll = CDLL(_ctypes_test.__file__)
         dll.my_strdup.restype = POINTER(c_char)
@@ -50,8 +50,30 @@ class SlicesTestCase(unittest.TestCase):
 
         dll.my_strdup.restype = POINTER(c_byte)
         res = dll.my_strdup(s)
-        self.failUnlessEqual(res[:len(s)-1], range(ord("a"), ord("z")+1))
+        self.failUnlessEqual(res[:len(s)], range(ord("a"), ord("z")+1))
         dll.my_free(res)
+
+    def test_char_ptr_with_free(self):
+        dll = CDLL(_ctypes_test.__file__)
+        s = "abcdefghijklmnopqrstuvwxyz"
+
+        class allocated_c_char_p(c_char_p):
+            pass
+
+        dll.my_free.restype = None
+        def errcheck(result, func, args):
+            retval = result.value
+            dll.my_free(result)
+            return retval
+
+        dll.my_strdup.restype = allocated_c_char_p
+        dll.my_strdup.errcheck = errcheck
+        try:
+            res = dll.my_strdup(s)
+            self.failUnlessEqual(res, s)
+        finally:
+            del dll.my_strdup.errcheck
+
 
     def test_char_array(self):
         s = "abcdefghijklmnopqrstuvwxyz\0"

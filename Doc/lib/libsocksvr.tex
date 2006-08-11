@@ -74,9 +74,9 @@ synchronous servers of four types:
 \end{verbatim}
 
 Note that \class{UnixDatagramServer} derives from \class{UDPServer}, not
-from \class{UnixStreamServer} -- the only difference between an IP and a
-Unix stream server is the address family, which is simply repeated in both
-unix server classes.
+from \class{UnixStreamServer} --- the only difference between an IP and a
+\UNIX{} stream server is the address family, which is simply repeated in both
+\UNIX{} server classes.
 
 Forking and threading versions of each type of server can be created using
 the \class{ForkingMixIn} and \class{ThreadingMixIn} mix-in classes.  For

@@ -31,11 +31,11 @@ Optional \var{mangle_from_} is a flag that, when \code{True}, puts a
 \samp{>} character in front of any line in the body that starts exactly as
 \samp{From }, i.e. \code{From} followed by a space at the beginning of the
 line.  This is the only guaranteed portable way to avoid having such
-lines be mistaken for a Unix mailbox format envelope header separator (see
+lines be mistaken for a \UNIX{} mailbox format envelope header separator (see
 \ulink{WHY THE CONTENT-LENGTH FORMAT IS BAD}
 {http://home.netscape.com/eng/mozilla/2.0/relnotes/demo/content-length.html}
 for details).  \var{mangle_from_} defaults to \code{True}, but you
-might want to set this to \code{False} if you are not writing Unix
+might want to set this to \code{False} if you are not writing \UNIX{}
 mailbox format files.
 
 Optional \var{maxheaderlen} specifies the longest length for a

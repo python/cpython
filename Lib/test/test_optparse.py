@@ -15,7 +15,7 @@ import copy
 import types
 import unittest
 
-from cStringIO import StringIO
+from StringIO import StringIO
 from pprint import pprint
 from test import test_support
 
@@ -164,15 +164,23 @@ and kwargs %(kwargs)r
                      expected_error=None):
         """Assert the parser prints the expected output on stdout."""
         save_stdout = sys.stdout
+        encoding = getattr(save_stdout, 'encoding', None)
         try:
             try:
                 sys.stdout = StringIO()
+                if encoding:
+                    sys.stdout.encoding = encoding
                 self.parser.parse_args(cmdline_args)
             finally:
                 output = sys.stdout.getvalue()
                 sys.stdout = save_stdout
 
         except InterceptedError, err:
+            self.assert_(
+                type(output) is types.StringType,
+                "expected output to be an ordinary string, not %r"
+                % type(output))
+
             if output != expected_output:
                 self.fail("expected: \n'''\n" + expected_output +
                           "'''\nbut got \n'''\n" + output + "'''")
@@ -1452,10 +1460,26 @@ class TestHelp(BaseTest):
             make_option("--foo", action="append", type="string", dest='foo',
                         help="store FOO in the foo list for later fooing"),
             ]
+
+        # We need to set COLUMNS for the OptionParser constructor, but
+        # we must restore its original value -- otherwise, this test
+        # screws things up for other tests when it's part of the Python
+        # test suite.
+        orig_columns = os.environ.get('COLUMNS')
         os.environ['COLUMNS'] = str(columns)
-        return InterceptingOptionParser(option_list=options)
+        try:
+            return InterceptingOptionParser(option_list=options)
+        finally:
+            if orig_columns is None:
+                del os.environ['COLUMNS']
+            else:
+                os.environ['COLUMNS'] = orig_columns
 
     def assertHelpEquals(self, expected_output):
+        if type(expected_output) is types.UnicodeType:
+            encoding = self.parser._get_encoding(sys.stdout)
+            expected_output = expected_output.encode(encoding, "replace")
+
         save_argv = sys.argv[:]
         try:
             # Make optparse believe bar.py is being executed.
@@ -1485,6 +1509,27 @@ class TestHelp(BaseTest):
         # we look at $COLUMNS.
         self.parser = self.make_parser(60)
         self.assertHelpEquals(_expected_help_short_lines)
+
+    def test_help_unicode(self):
+        self.parser = InterceptingOptionParser(usage=SUPPRESS_USAGE)
+        self.parser.add_option("-a", action="store_true", help=u"ol\u00E9!")
+        expect = u"""\
+Options:
+  -h, --help  show this help message and exit
+  -a          ol\u00E9!
+"""
+        self.assertHelpEquals(expect)
+
+    def test_help_unicode_description(self):
+        self.parser = InterceptingOptionParser(usage=SUPPRESS_USAGE,
+                                               description=u"ol\u00E9!")
+        expect = u"""\
+ol\u00E9!
+
+Options:
+  -h, --help  show this help message and exit
+"""
+        self.assertHelpEquals(expect)
 
     def test_help_description_groups(self):
         self.parser.set_description(

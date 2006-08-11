@@ -221,8 +221,12 @@ PySymtable_Build(mod_ty mod, const char *filename, PyFutureFeatures *future)
 		return st;
 	st->st_filename = filename;
 	st->st_future = future;
-	symtable_enter_block(st, GET_IDENTIFIER(top), ModuleBlock, 
-			     (void *)mod, 0);
+	if (!symtable_enter_block(st, GET_IDENTIFIER(top), ModuleBlock, 
+			     (void *)mod, 0)) {
+		PySymtable_Free(st);
+		return NULL;
+	}
+
 	st->st_top = st->st_cur;
 	st->st_cur->ste_unoptimized = OPT_TOPLEVEL;
 	/* Any other top-level initialization? */
@@ -525,6 +529,8 @@ update_symbols(PyObject *symbols, PyObject *scope,
 		i = PyInt_AS_LONG(w);
 		flags |= (i << SCOPE_OFF);
 		u = PyInt_FromLong(flags);
+		if (!u)
+			return 0;
 		if (PyDict_SetItem(symbols, name, u) < 0) {
 			Py_DECREF(u);
 			return 0;
@@ -723,11 +729,13 @@ symtable_exit_block(struct symtable *st, void *ast)
 {
 	Py_ssize_t end;
 
-	Py_DECREF(st->st_cur);
+	Py_CLEAR(st->st_cur);
 	end = PyList_GET_SIZE(st->st_stack) - 1;
 	if (end >= 0) {
 		st->st_cur = (PySTEntryObject *)PyList_GET_ITEM(st->st_stack, 
 								end);
+		if (st->st_cur == NULL)
+			return 0;
 		Py_INCREF(st->st_cur);
 		if (PySequence_DelItem(st->st_stack, end) < 0)
 			return 0;
@@ -749,6 +757,8 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
 		Py_DECREF(st->st_cur);
 	}
 	st->st_cur = PySTEntry_New(st, name, block, ast, lineno);
+	if (st->st_cur == NULL)
+		return 0;
 	if (name == GET_IDENTIFIER(top))
 		st->st_global = st->st_cur->ste_symbols;
 	if (prev) {

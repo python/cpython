@@ -166,6 +166,16 @@ if 1:
         pass"""
         compile(s, "<string>", "exec")
 
+    # This test is probably specific to CPython and may not generalize
+    # to other implementations.  We are trying to ensure that when
+    # the first line of code starts after 256, correct line numbers
+    # in tracebacks are still produced.
+    def test_leading_newlines(self):
+        s256 = "".join(["\n"] * 256 + ["spam"])
+        co = compile(s256, 'fn', 'exec')
+        self.assertEqual(co.co_firstlineno, 257)
+        self.assertEqual(co.co_lnotab, '')
+
     def test_literals_with_leading_zeroes(self):
         for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",
                     "080000000000000", "000000000000009", "000000000000008"]:
@@ -211,6 +221,25 @@ if 1:
             self.assertEqual(eval("-" + all_one_bits), -18446744073709551615L)
         else:
             self.fail("How many bits *does* this machine have???")
+        # Verify treatment of contant folding on -(sys.maxint+1)
+        # i.e. -2147483648 on 32 bit platforms.  Should return int, not long.
+        self.assertTrue(isinstance(eval("%s" % (-sys.maxint - 1)), int))
+        self.assertTrue(isinstance(eval("%s" % (-sys.maxint - 2)), long))
+
+    if sys.maxint == 9223372036854775807:
+        def test_32_63_bit_values(self):
+            a = +4294967296  # 1 << 32
+            b = -4294967296  # 1 << 32
+            c = +281474976710656  # 1 << 48
+            d = -281474976710656  # 1 << 48
+            e = +4611686018427387904  # 1 << 62
+            f = -4611686018427387904  # 1 << 62
+            g = +9223372036854775807  # 1 << 63 - 1
+            h = -9223372036854775807  # 1 << 63 - 1
+
+            for variable in self.test_32_63_bit_values.func_code.co_consts:
+                if variable is not None:
+                    self.assertTrue(isinstance(variable, int))
 
     def test_sequence_unpacking_error(self):
         # Verify sequence packing/unpacking with "or".  SF bug #757818
@@ -238,6 +267,8 @@ if 1:
         succeed = [
             'import sys',
             'import os, sys',
+            'import os as bar',
+            'import os.path as bar',
             'from __future__ import nested_scopes, generators',
             'from __future__ import (nested_scopes,\ngenerators)',
             'from __future__ import (nested_scopes,\ngenerators,)',
@@ -257,6 +288,10 @@ if 1:
             'import (sys',
             'import sys)',
             'import (os,)',
+            'import os As bar',
+            'import os.path a bar',
+            'from sys import stdin As stdout',
+            'from sys import stdin a stdout',
             'from (sys) import stdin',
             'from __future__ import (nested_scopes',
             'from __future__ import nested_scopes)',

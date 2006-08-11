@@ -892,10 +892,12 @@ typedef struct {
 static void
 wrapper_dealloc(wrapperobject *wp)
 {
-	_PyObject_GC_UNTRACK(wp);
+	PyObject_GC_UnTrack(wp);
+	Py_TRASHCAN_SAFE_BEGIN(wp)
 	Py_XDECREF(wp->descr);
 	Py_XDECREF(wp->self);
 	PyObject_GC_Del(wp);
+	Py_TRASHCAN_SAFE_END(wp)
 }
 
 static int
@@ -1174,7 +1176,6 @@ static int
 property_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	PyObject *get = NULL, *set = NULL, *del = NULL, *doc = NULL;
-	PyObject *get_doc = NULL;
 	static char *kwlist[] = {"fget", "fset", "fdel", "doc", 0};
 	propertyobject *gs = (propertyobject *)self;
 
@@ -1189,19 +1190,21 @@ property_init(PyObject *self, PyObject *args, PyObject *kwds)
 	if (del == Py_None)
 		del = NULL;
 
-	/* if no docstring given and the getter has one, use that one */
-	if ((doc == NULL || doc == Py_None) && get != NULL && 
-	    PyObject_HasAttrString(get, "__doc__")) {
-		if (!(get_doc = PyObject_GetAttrString(get, "__doc__")))
-			return -1;
-		Py_DECREF(get_doc); /* it is INCREF'd again below */
-		doc = get_doc;
-	}
-
 	Py_XINCREF(get);
 	Py_XINCREF(set);
 	Py_XINCREF(del);
 	Py_XINCREF(doc);
+
+	/* if no docstring given and the getter has one, use that one */
+	if ((doc == NULL || doc == Py_None) && get != NULL) {
+		PyObject *get_doc = PyObject_GetAttrString(get, "__doc__");
+		if (get_doc != NULL) {
+			Py_XDECREF(doc);
+			doc = get_doc;  /* get_doc already INCREF'd by GetAttr */
+		} else {
+			PyErr_Clear();
+		}
+	}
 
 	gs->prop_get = get;
 	gs->prop_set = set;

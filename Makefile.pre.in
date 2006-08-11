@@ -318,6 +318,7 @@ OBJECT_OBJS=	\
 ##########################################################################
 # objects that get linked into the Python library
 LIBRARY_OBJS=	\
+		Modules/_typesmodule.o \
 		Modules/getbuildinfo.o \
 		$(PARSER_OBJS) \
 		$(OBJECT_OBJS) \
@@ -354,6 +355,7 @@ sharedmods: $(BUILDPYTHON)
 $(LIBRARY): $(LIBRARY_OBJS)
 	-rm -f $@
 	$(AR) cr $@ Modules/getbuildinfo.o
+	$(AR) cr $@ Modules/_typesmodule.o
 	$(AR) cr $@ $(PARSER_OBJS)
 	$(AR) cr $@ $(OBJECT_OBJS)
 	$(AR) cr $@ $(PYTHON_OBJS)
@@ -486,7 +488,7 @@ $(AST_H): $(AST_ASDL) $(ASDLGEN_FILES)
 
 $(AST_C): $(AST_ASDL) $(ASDLGEN_FILES)
 	$(ASDLGEN) -c $(AST_C_DIR) $(AST_ASDL)
-	
+
 Python/compile.o Python/symtable.o: $(GRAMMAR_H) $(AST_H)
 
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
@@ -651,16 +653,11 @@ bininstall:	altbininstall
 	else true; \
 	fi
 	(cd $(DESTDIR)$(BINDIR); $(LN) python$(VERSION)$(EXE) $(PYTHON))
+	(cd $(DESTDIR)$(BINDIR); $(LN) -sf python$(VERSION)-config python-config)
 
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
 altbininstall:	$(BUILDPYTHON)
-	@if test "$(PYTHONFRAMEWORKDIR)" != no-framework; then \
-		if test ! -f $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Versions/Current/Resources/Info.plist; then \
-			echo 'Framework build: use "make frameworkinstall" in stead of "make install"'; \
-			exit 1; \
-		fi; \
-	fi
 	@for i in $(BINDIR) $(LIBDIR); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -700,7 +697,7 @@ PLATDIR=	plat-$(MACHDEP)
 EXTRAPLATDIR= @EXTRAPLATDIR@
 EXTRAMACHDEPPATH=@EXTRAMACHDEPPATH@
 MACHDEPS=	$(PLATDIR) $(EXTRAPLATDIR)
-XMLLIBSUBDIRS=  xmlcore xmlcore/dom xmlcore/etree xmlcore/parsers xmlcore/sax
+XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
 PLATMACDIRS= plat-mac plat-mac/Carbon plat-mac/lib-scriptpackages \
 	plat-mac/lib-scriptpackages/_builtinSuites \
 	plat-mac/lib-scriptpackages/CodeWarrior \
@@ -709,14 +706,14 @@ PLATMACDIRS= plat-mac plat-mac/Carbon plat-mac/lib-scriptpackages \
 	plat-mac/lib-scriptpackages/Netscape \
 	plat-mac/lib-scriptpackages/StdSuites \
 	plat-mac/lib-scriptpackages/SystemEvents \
-	plat-mac/lib-scriptpackages/Terminal
+	plat-mac/lib-scriptpackages/Terminal 
 PLATMACPATH=:plat-mac:plat-mac/lib-scriptpackages
-LIBSUBDIRS=	lib-old lib-tk site-packages test test/output test/data \
+LIBSUBDIRS=	lib-tk site-packages test test/output test/data \
 		test/decimaltestdata \
 		encodings compiler hotshot \
 		email email/mime email/test email/test/data \
 		sqlite3 sqlite3/test \
-		logging bsddb bsddb/test csv \
+		logging bsddb bsddb/test csv wsgiref \
 		ctypes ctypes/test ctypes/macholib idlelib idlelib/Icons \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
 		setuptools setuptools/command setuptools/tests setuptools.egg-info \
@@ -741,7 +738,7 @@ libinstall:	$(BUILDPYTHON) $(srcdir)/Lib/$(PLATDIR)
 		else	true; \
 		fi; \
 	done
-	@for i in $(srcdir)/Lib/*.py $(srcdir)/Lib/*.doc; \
+	@for i in $(srcdir)/Lib/*.py $(srcdir)/Lib/*.doc $(srcdir)/Lib/*.egg-info ; \
 	do \
 		if test -x $$i; then \
 			$(INSTALL_SCRIPT) $$i $(DESTDIR)$(LIBDEST); \
@@ -857,8 +854,8 @@ libainstall:	all
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(DESTDIR)$(LIBPL)/install-sh
 	# Substitution happens here, as the completely-expanded BINDIR
 	# is not available in configure
-	sed -e "s,@BINDIR@,$(BINDIR)," < $(srcdir)/Misc/python-config.in >python-config
-	$(INSTALL_SCRIPT) python-config $(DESTDIR)$(BINDIR)/python-config
+	sed -e "s,@EXENAME@,$(BINDIR)/python$(VERSION)$(EXE)," < $(srcdir)/Misc/python-config.in >python-config
+	$(INSTALL_SCRIPT) python-config $(DESTDIR)$(BINDIR)/python$(VERSION)-config
 	rm python-config
 	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
@@ -939,7 +936,10 @@ frameworkinstallstructure:	$(LDLIBRARY)
 	$(INSTALL_SHARED) $(LDLIBRARY) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
 
 # This installs Mac/Lib into the framework
+# Install a number of symlinks to keep software that expects a normal unix
+# install (which includes python-config) happy.
 frameworkinstallmaclib:
+	ln -fs "../../../Python" "$(DESTDIR)$(prefix)/lib/python$(VERSION)/config/libpython$(VERSION).a"
 	cd Mac && $(MAKE) installmacsubtree DESTDIR="$(DESTDIR)"
 
 # This installs the IDE, the Launcher and other apps into /Applications

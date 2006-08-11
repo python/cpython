@@ -5,7 +5,7 @@
 
 import os
 import sys
-from test.test_support import TestSkipped
+from test.test_support import TestSkipped, reap_children
 
 # popen2 contains its own testing routine
 # which is especially useful to see if open files
@@ -75,3 +75,4 @@ def _test():
 
 main()
 _test()
+reap_children()

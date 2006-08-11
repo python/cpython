@@ -61,6 +61,8 @@ class StructureTestCase(unittest.TestCase):
         r.ul.x = 22
         r.ul.y = 44
         self.assertEquals(r._objects, {'0': {}})
+        r.lr = POINT()
+        self.assertEquals(r._objects, {'0': {}, '1': {}})
 
 class ArrayTestCase(unittest.TestCase):
     def test_cint_array(self):
@@ -86,9 +88,10 @@ class ArrayTestCase(unittest.TestCase):
         self.assertEquals(x._objects, {'1': {}})
 
 class PointerTestCase(unittest.TestCase):
-    def X_test_p_cint(self):
-        x = pointer(c_int(42))
-        print x._objects
+    def test_p_cint(self):
+        i = c_int(42)
+        x = pointer(i)
+        self.failUnlessEqual(x._objects, {'1': i})
 
 class DeletePointerTestCase(unittest.TestCase):
     def X_test(self):

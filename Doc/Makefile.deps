@@ -270,6 +270,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/xmlsaxhandler.tex \
 	lib/xmlsaxutils.tex \
 	lib/xmlsaxreader.tex \
+	lib/libetree.tex \
 	lib/libqueue.tex \
 	lib/liblocale.tex \
 	lib/libgettext.tex \

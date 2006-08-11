@@ -227,11 +227,7 @@ ffi_closure_SYSV (ffi_closure *closure, int *argp)
   void         **arg_area;
   unsigned short rtype;
   void          *resp = (void*)&res;
-//#ifdef _MSC_VER
   void *args = &argp[1];
-//#else
-//  void *args = __builtin_dwarf_cfa ();
-//#endif
 
   cif         = closure->cif;
   arg_area    = (void**) alloca (cif->nargs * sizeof (void*));  
@@ -353,10 +349,6 @@ ffi_prep_incoming_args_SYSV(char *stack, void **rvalue,
 
 /* How to make a trampoline.  Derived from gcc/config/i386/i386.c. */
 
-/* MOV EDX, ESP is 0x8b 0xd4 */
-
-//#ifdef _MSC_VER
-
 #define FFI_INIT_TRAMPOLINE(TRAMP,FUN,CTX,BYTES) \
 { unsigned char *__tramp = (unsigned char*)(TRAMP); \
    unsigned int  __fun = (unsigned int)(FUN); \
@@ -365,25 +357,12 @@ ffi_prep_incoming_args_SYSV(char *stack, void **rvalue,
    *(unsigned char*)  &__tramp[0] = 0xb9; \
    *(unsigned int*)   &__tramp[1] = __ctx; /* mov ecx, __ctx */ \
    *(unsigned char*)  &__tramp[5] = 0x8b; \
-   *(unsigned char*)  &__tramp[6] = 0xd4; \
+   *(unsigned char*)  &__tramp[6] = 0xd4; /* mov edx, esp */ \
    *(unsigned char*)  &__tramp[7] = 0xe8; \
    *(unsigned int*)   &__tramp[8] = __dis; /* call __fun  */ \
    *(unsigned char*)  &__tramp[12] = 0xC2; /* ret BYTES */ \
    *(unsigned short*) &__tramp[13] = BYTES; \
  }
-
-//#else
-//#define FFI_INIT_TRAMPOLINE(TRAMP,FUN,CTX,BYTES) \
-//({ unsigned char *__tramp = (unsigned char*)(TRAMP); \
-//   unsigned int  __fun = (unsigned int)(FUN); \
-//   unsigned int  __ctx = (unsigned int)(CTX); \
-//   unsigned int  __dis = __fun - ((unsigned int) __tramp + FFI_TRAMPOLINE_SIZE); \
-//   *(unsigned char*) &__tramp[0] = 0xb8; \
-//   *(unsigned int*)  &__tramp[1] = __ctx; /* movl __ctx, %eax */ \
-//   *(unsigned char *)  &__tramp[5] = 0xe9; \
-//   *(unsigned int*)  &__tramp[6] = __dis; /* jmp __fun  */ \
-// })
-//#endif
 
 /* the cif must already be prep'ed */
 

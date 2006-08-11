@@ -39,6 +39,8 @@
 static char copyright[] =
     " SRE 2.2.2 Copyright (c) 1997-2002 by Secret Labs AB ";
 
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 #include "structmember.h" /* offsetof */
 
@@ -261,9 +263,9 @@ data_stack_dealloc(SRE_STATE* state)
 }
 
 static int
-data_stack_grow(SRE_STATE* state, int size)
+data_stack_grow(SRE_STATE* state, Py_ssize_t size)
 {
-    int minsize, cursize;
+    Py_ssize_t minsize, cursize;
     minsize = state->data_stack_base+size;
     cursize = state->data_stack_size;
     if (cursize < minsize) {
@@ -335,7 +337,7 @@ SRE_AT(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
 {
     /* check if pointer is at given position */
 
-    int thisp, thatp;
+    Py_ssize_t thisp, thatp;
 
     switch (at) {
 
@@ -476,7 +478,7 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
         case SRE_OP_BIGCHARSET:
             /* <BIGCHARSET> <blockcount> <256 blockindices> <blocks> */
         {
-            int count, block;
+            Py_ssize_t count, block;
             count = *(set++);
 
             if (sizeof(SRE_CODE) == 2) {
@@ -510,15 +512,15 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
     }
 }
 
-LOCAL(int) SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern);
+LOCAL(Py_ssize_t) SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern);
 
-LOCAL(int)
-SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, int maxcount)
+LOCAL(Py_ssize_t)
+SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
 {
     SRE_CODE chr;
     SRE_CHAR* ptr = (SRE_CHAR *)state->ptr;
     SRE_CHAR* end = (SRE_CHAR *)state->end;
-    int i;
+    Py_ssize_t i;
 
     /* adjust end */
     if (maxcount < end - ptr && maxcount != 65535)
@@ -608,7 +610,7 @@ SRE_INFO(SRE_STATE* state, SRE_CODE* pattern)
 
     SRE_CHAR* end = state->end;
     SRE_CHAR* ptr = state->ptr;
-    int i;
+    Py_ssize_t i;
 
     /* check minimal length */
     if (pattern[3] && (end - ptr) < pattern[3])
@@ -785,13 +787,13 @@ do { \
     while (0) /* gcc doesn't like labels at end of scopes */ \
 
 typedef struct {
-    int last_ctx_pos;
-    int jump;
+    Py_ssize_t last_ctx_pos;
+    Py_ssize_t jump;
     SRE_CHAR* ptr;
     SRE_CODE* pattern;
-    int count;
-    int lastmark;
-    int lastindex;
+    Py_ssize_t count;
+    Py_ssize_t lastmark;
+    Py_ssize_t lastindex;
     union {
         SRE_CODE chr;
         SRE_REPEAT* rep;
@@ -800,13 +802,13 @@ typedef struct {
 
 /* check if string matches the given pattern.  returns <0 for
    error, 0 for failure, and 1 for success */
-LOCAL(int)
+LOCAL(Py_ssize_t)
 SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 {
     SRE_CHAR* end = (SRE_CHAR *)state->end;
-    int alloc_pos, ctx_pos = -1;
-    int i, ret = 0;
-    int jump;
+    Py_ssize_t alloc_pos, ctx_pos = -1;
+    Py_ssize_t i, ret = 0;
+    Py_ssize_t jump;
 
     SRE_MATCH_CONTEXT* ctx;
     SRE_MATCH_CONTEXT* nextctx;
@@ -851,7 +853,7 @@ entrance:
                    state->mark array.  If it is increased by more than 1,
                    the intervening marks must be set to NULL to signal
                    that these marks have not been encountered. */
-                int j = state->lastmark + 1;
+                Py_ssize_t j = state->lastmark + 1;
                 while (j < i)
                     state->mark[j++] = NULL;
                 state->lastmark = i;
@@ -1037,7 +1039,7 @@ entrance:
                string.  check if the rest of the pattern matches,
                and backtrack if not. */
 
-            if (ctx->count < (int) ctx->pattern[1])
+            if (ctx->count < (Py_ssize_t) ctx->pattern[1])
                 RETURN_FAILURE;
 
             if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS) {
@@ -1053,12 +1055,12 @@ entrance:
                    the rest of the pattern cannot possibly match */
                 ctx->u.chr = ctx->pattern[ctx->pattern[0]+1];
                 for (;;) {
-                    while (ctx->count >= (int) ctx->pattern[1] &&
+                    while (ctx->count >= (Py_ssize_t) ctx->pattern[1] &&
                            (ctx->ptr >= end || *ctx->ptr != ctx->u.chr)) {
                         ctx->ptr--;
                         ctx->count--;
                     }
-                    if (ctx->count < (int) ctx->pattern[1])
+                    if (ctx->count < (Py_ssize_t) ctx->pattern[1])
                         break;
                     state->ptr = ctx->ptr;
                     DO_JUMP(JUMP_REPEAT_ONE_1, jump_repeat_one_1,
@@ -1076,7 +1078,7 @@ entrance:
 
             } else {
                 /* general case */
-                while (ctx->count >= (int) ctx->pattern[1]) {
+                while (ctx->count >= (Py_ssize_t) ctx->pattern[1]) {
                     state->ptr = ctx->ptr;
                     DO_JUMP(JUMP_REPEAT_ONE_2, jump_repeat_one_2,
                             ctx->pattern+ctx->pattern[0]);
@@ -1116,7 +1118,7 @@ entrance:
                 ret = SRE_COUNT(state, ctx->pattern+3, ctx->pattern[1]);
                 RETURN_ON_ERROR(ret);
                 DATA_LOOKUP_AT(SRE_MATCH_CONTEXT, ctx, ctx_pos);
-                if (ret < (int) ctx->pattern[1])
+                if (ret < (Py_ssize_t) ctx->pattern[1])
                     /* didn't match minimum number of times */
                     RETURN_FAILURE;
                 /* advance past minimum matches of repeat */
@@ -1132,8 +1134,8 @@ entrance:
             } else {
                 /* general case */
                 LASTMARK_SAVE();
-                while ((int)ctx->pattern[2] == 65535
-                       || ctx->count <= (int)ctx->pattern[2]) {
+                while ((Py_ssize_t)ctx->pattern[2] == 65535
+                       || ctx->count <= (Py_ssize_t)ctx->pattern[2]) {
                     state->ptr = ctx->ptr;
                     DO_JUMP(JUMP_MIN_REPEAT_ONE,jump_min_repeat_one,
                             ctx->pattern+ctx->pattern[0]);
@@ -1312,7 +1314,7 @@ entrance:
                    ctx->ptr, ctx->pattern[0]));
             i = ctx->pattern[0];
             {
-                int groupref = i+i;
+                Py_ssize_t groupref = i+i;
                 if (groupref >= state->lastmark) {
                     RETURN_FAILURE;
                 } else {
@@ -1336,7 +1338,7 @@ entrance:
                    ctx->ptr, ctx->pattern[0]));
             i = ctx->pattern[0];
             {
-                int groupref = i+i;
+                Py_ssize_t groupref = i+i;
                 if (groupref >= state->lastmark) {
                     RETURN_FAILURE;
                 } else {
@@ -1361,7 +1363,7 @@ entrance:
             /* <GROUPREF_EXISTS> <group> <skip> codeyes <JUMP> codeno ... */
             i = ctx->pattern[0];
             {
-                int groupref = i+i;
+                Py_ssize_t groupref = i+i;
                 if (groupref >= state->lastmark) {
                     ctx->pattern += ctx->pattern[1];
                     break;
@@ -1474,14 +1476,14 @@ exit:
     return ret; /* should never get here */
 }
 
-LOCAL(int)
+LOCAL(Py_ssize_t)
 SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 {
     SRE_CHAR* ptr = (SRE_CHAR *)state->start;
     SRE_CHAR* end = (SRE_CHAR *)state->end;
-    int status = 0;
-    int prefix_len = 0;
-    int prefix_skip = 0;
+    Py_ssize_t status = 0;
+    Py_ssize_t prefix_len = 0;
+    Py_ssize_t prefix_skip = 0;
     SRE_CODE* prefix = NULL;
     SRE_CODE* charset = NULL;
     SRE_CODE* overlap = NULL;
@@ -1523,7 +1525,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
     if (prefix_len > 1) {
         /* pattern starts with a known prefix.  use the overlap
            table to skip forward as fast as we possibly can */
-        int i = 0;
+        Py_ssize_t i = 0;
         end = (SRE_CHAR *)state->end;
         while (ptr < end) {
             for (;;) {
@@ -1604,7 +1606,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 }
 
 LOCAL(int)
-SRE_LITERAL_TEMPLATE(SRE_CHAR* ptr, int len)
+SRE_LITERAL_TEMPLATE(SRE_CHAR* ptr, Py_ssize_t len)
 {
     /* check if given string is a literal template (i.e. no escapes) */
     while (len-- > 0)
@@ -1625,7 +1627,7 @@ static PyObject*pattern_scanner(PatternObject*, PyObject*);
 static PyObject *
 sre_codesize(PyObject* self, PyObject *unused)
 {
-    return Py_BuildValue("i", sizeof(SRE_CODE));
+    return Py_BuildValue("l", sizeof(SRE_CODE));
 }
 
 static PyObject *
@@ -1660,14 +1662,15 @@ state_reset(SRE_STATE* state)
 }
 
 static void*
-getstring(PyObject* string, int* p_length, int* p_charsize)
+getstring(PyObject* string, Py_ssize_t* p_length, int* p_charsize)
 {
     /* given a python object, return a data pointer, a length (in
        characters), and a character size.  return NULL if the object
        is not a string (or not compatible) */
 
     PyBufferProcs *buffer;
-    int size, bytes, charsize;
+    Py_ssize_t size, bytes;
+    int charsize;
     void* ptr;
 
 #if defined(HAVE_UNICODE)
@@ -1706,7 +1709,7 @@ getstring(PyObject* string, int* p_length, int* p_charsize)
     if (PyString_Check(string) || bytes == size)
         charsize = 1;
 #if defined(HAVE_UNICODE)
-    else if (bytes == (int) (size * sizeof(Py_UNICODE)))
+    else if (bytes == (Py_ssize_t) (size * sizeof(Py_UNICODE)))
         charsize = sizeof(Py_UNICODE);
 #endif
     else {
@@ -1726,11 +1729,11 @@ getstring(PyObject* string, int* p_length, int* p_charsize)
 
 LOCAL(PyObject*)
 state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
-           int start, int end)
+           Py_ssize_t start, Py_ssize_t end)
 {
     /* prepare state object */
 
-    int length;
+    Py_ssize_t length;
     int charsize;
     void* ptr;
 
@@ -1792,9 +1795,9 @@ state_fini(SRE_STATE* state)
     (((char*)(member) - (char*)(state)->beginning) / (state)->charsize)
 
 LOCAL(PyObject*)
-state_getslice(SRE_STATE* state, int index, PyObject* string, int empty)
+state_getslice(SRE_STATE* state, Py_ssize_t index, PyObject* string, int empty)
 {
-    int i, j;
+    Py_ssize_t i, j;
 
     index = (index - 1) * 2;
 
@@ -1854,10 +1857,10 @@ pattern_match(PatternObject* self, PyObject* args, PyObject* kw)
     int status;
 
     PyObject* string;
-    int start = 0;
-    int end = INT_MAX;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
     static char* kwlist[] = { "pattern", "pos", "endpos", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|ii:match", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|nn:match", kwlist,
                                      &string, &start, &end))
         return NULL;
 
@@ -1891,10 +1894,10 @@ pattern_search(PatternObject* self, PyObject* args, PyObject* kw)
     int status;
 
     PyObject* string;
-    int start = 0;
-    int end = INT_MAX;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
     static char* kwlist[] = { "pattern", "pos", "endpos", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|ii:search", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|nn:search", kwlist,
                                      &string, &start, &end))
         return NULL;
 
@@ -2029,13 +2032,13 @@ pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
     SRE_STATE state;
     PyObject* list;
     int status;
-    int i, b, e;
+    Py_ssize_t i, b, e;
 
     PyObject* string;
-    int start = 0;
-    int end = INT_MAX;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
     static char* kwlist[] = { "source", "pos", "endpos", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|ii:findall", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|nn:findall", kwlist,
                                      &string, &start, &end))
         return NULL;
 
@@ -2154,18 +2157,18 @@ pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
     PyObject* list;
     PyObject* item;
     int status;
-    int n;
-    int i;
+    Py_ssize_t n;
+    Py_ssize_t i;
     void* last;
 
     PyObject* string;
-    int maxsplit = 0;
+    Py_ssize_t maxsplit = 0;
     static char* kwlist[] = { "source", "maxsplit", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|i:split", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|n:split", kwlist,
                                      &string, &maxsplit))
         return NULL;
 
-    string = state_init(&state, self, string, 0, INT_MAX);
+    string = state_init(&state, self, string, 0, PY_SSIZE_T_MAX);
     if (!string)
         return NULL;
 
@@ -2259,7 +2262,7 @@ error:
 
 static PyObject*
 pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
-             int count, int subn)
+             Py_ssize_t count, Py_ssize_t subn)
 {
     SRE_STATE state;
     PyObject* list;
@@ -2269,8 +2272,9 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
     PyObject* match;
     void* ptr;
     int status;
-    int n;
-    int i, b, e;
+    Py_ssize_t n;
+    Py_ssize_t i, b, e;
+    int bint;
     int filter_is_callable;
 
     if (PyCallable_Check(ptemplate)) {
@@ -2281,7 +2285,8 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
     } else {
         /* if not callable, check if it's a literal string */
         int literal;
-        ptr = getstring(ptemplate, &n, &b);
+        ptr = getstring(ptemplate, &n, &bint);
+        b = bint;
         if (ptr) {
             if (b == 1) {
 		    literal = sre_literal_template((unsigned char *)ptr, n);
@@ -2310,7 +2315,7 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
         }
     }
 
-    string = state_init(&state, self, string, 0, INT_MAX);
+    string = state_init(&state, self, string, 0, PY_SSIZE_T_MAX);
     if (!string) {
         Py_DECREF(filter);
         return NULL;
@@ -2443,9 +2448,9 @@ pattern_sub(PatternObject* self, PyObject* args, PyObject* kw)
 {
     PyObject* ptemplate;
     PyObject* string;
-    int count = 0;
+    Py_ssize_t count = 0;
     static char* kwlist[] = { "repl", "string", "count", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|i:sub", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|n:sub", kwlist,
                                      &ptemplate, &string, &count))
         return NULL;
 
@@ -2457,9 +2462,9 @@ pattern_subn(PatternObject* self, PyObject* args, PyObject* kw)
 {
     PyObject* ptemplate;
     PyObject* string;
-    int count = 0;
+    Py_ssize_t count = 0;
     static char* kwlist[] = { "repl", "string", "count", NULL };
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|i:subn", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|n:subn", kwlist,
                                      &ptemplate, &string, &count))
         return NULL;
 
@@ -2642,15 +2647,15 @@ _compile(PyObject* self_, PyObject* args)
     /* "compile" pattern descriptor to pattern object */
 
     PatternObject* self;
-    int i, n;
+    Py_ssize_t i, n;
 
     PyObject* pattern;
     int flags = 0;
     PyObject* code;
-    int groups = 0;
+    Py_ssize_t groups = 0;
     PyObject* groupindex = NULL;
     PyObject* indexgroup = NULL;
-    if (!PyArg_ParseTuple(args, "OiO!|iOO", &pattern, &flags,
+    if (!PyArg_ParseTuple(args, "OiO!|nOO", &pattern, &flags,
                           &PyList_Type, &code, &groups,
                           &groupindex, &indexgroup))
         return NULL;
@@ -2711,7 +2716,7 @@ match_dealloc(MatchObject* self)
 }
 
 static PyObject*
-match_getslice_by_index(MatchObject* self, int index, PyObject* def)
+match_getslice_by_index(MatchObject* self, Py_ssize_t index, PyObject* def)
 {
     if (index < 0 || index >= self->groups) {
         /* raise IndexError if we were given a bad group number */
@@ -2735,21 +2740,21 @@ match_getslice_by_index(MatchObject* self, int index, PyObject* def)
         );
 }
 
-static int
+static Py_ssize_t
 match_getindex(MatchObject* self, PyObject* index)
 {
-    int i;
+    Py_ssize_t i;
 
     if (PyInt_Check(index))
-        return (int) PyInt_AS_LONG(index);
+        return PyInt_AsSsize_t(index);
 
     i = -1;
 
     if (self->pattern->groupindex) {
         index = PyObject_GetItem(self->pattern->groupindex, index);
         if (index) {
-            if (PyInt_Check(index))
-                i = (int) PyInt_AS_LONG(index);
+            if (PyInt_Check(index) || PyLong_Check(index))
+                i = PyInt_AsSsize_t(index);
             Py_DECREF(index);
         } else
             PyErr_Clear();
@@ -2778,7 +2783,7 @@ static PyObject*
 match_group(MatchObject* self, PyObject* args)
 {
     PyObject* result;
-    int i, size;
+    Py_ssize_t i, size;
 
     size = PyTuple_GET_SIZE(args);
 
@@ -2813,7 +2818,7 @@ static PyObject*
 match_groups(MatchObject* self, PyObject* args, PyObject* kw)
 {
     PyObject* result;
-    int index;
+    Py_ssize_t index;
 
     PyObject* def = Py_None;
     static char* kwlist[] = { "default", NULL };
@@ -2842,7 +2847,7 @@ match_groupdict(MatchObject* self, PyObject* args, PyObject* kw)
 {
     PyObject* result;
     PyObject* keys;
-    int index;
+    Py_ssize_t index;
 
     PyObject* def = Py_None;
     static char* kwlist[] = { "default", NULL };
@@ -2888,7 +2893,7 @@ failed:
 static PyObject*
 match_start(MatchObject* self, PyObject* args)
 {
-    int index;
+    Py_ssize_t index;
 
     PyObject* index_ = Py_False; /* zero */
     if (!PyArg_UnpackTuple(args, "start", 0, 1, &index_))
@@ -2911,7 +2916,7 @@ match_start(MatchObject* self, PyObject* args)
 static PyObject*
 match_end(MatchObject* self, PyObject* args)
 {
-    int index;
+    Py_ssize_t index;
 
     PyObject* index_ = Py_False; /* zero */
     if (!PyArg_UnpackTuple(args, "end", 0, 1, &index_))
@@ -2932,7 +2937,7 @@ match_end(MatchObject* self, PyObject* args)
 }
 
 LOCAL(PyObject*)
-_pair(int i1, int i2)
+_pair(Py_ssize_t i1, Py_ssize_t i2)
 {
     PyObject* pair;
     PyObject* item;
@@ -2941,12 +2946,12 @@ _pair(int i1, int i2)
     if (!pair)
         return NULL;
 
-    item = PyInt_FromLong(i1);
+    item = PyInt_FromSsize_t(i1);
     if (!item)
         goto error;
     PyTuple_SET_ITEM(pair, 0, item);
 
-    item = PyInt_FromLong(i2);
+    item = PyInt_FromSsize_t(i2);
     if (!item)
         goto error;
     PyTuple_SET_ITEM(pair, 1, item);
@@ -2961,7 +2966,7 @@ _pair(int i1, int i2)
 static PyObject*
 match_span(MatchObject* self, PyObject* args)
 {
-    int index;
+    Py_ssize_t index;
 
     PyObject* index_ = Py_False; /* zero */
     if (!PyArg_UnpackTuple(args, "span", 0, 1, &index_))
@@ -2986,7 +2991,7 @@ match_regs(MatchObject* self)
 {
     PyObject* regs;
     PyObject* item;
-    int index;
+    Py_ssize_t index;
 
     regs = PyTuple_New(self->groups);
     if (!regs)
@@ -3012,7 +3017,7 @@ match_copy(MatchObject* self, PyObject *unused)
 {
 #ifdef USE_BUILTIN_COPY
     MatchObject* copy;
-    int slots, offset;
+    Py_ssize_t slots, offset;
 
     slots = 2 * (self->pattern->groups+1);
 
@@ -3029,7 +3034,7 @@ match_copy(MatchObject* self, PyObject *unused)
     Py_XINCREF(self->regs);
 
     memcpy((char*) copy + offset, (char*) self + offset,
-           sizeof(MatchObject) + slots * sizeof(int) - offset);
+           sizeof(MatchObject) + slots * sizeof(Py_ssize_t) - offset);
 
     return (PyObject*) copy;
 #else
@@ -3144,7 +3149,7 @@ match_getattr(MatchObject* self, char* name)
 static PyTypeObject Match_Type = {
     PyObject_HEAD_INIT(NULL)
     0, "_" SRE_MODULE ".SRE_Match",
-    sizeof(MatchObject), sizeof(int),
+    sizeof(MatchObject), sizeof(Py_ssize_t),
     (destructor)match_dealloc, /*tp_dealloc*/
     0, /*tp_print*/
     (getattrfunc)match_getattr /*tp_getattr*/
@@ -3156,7 +3161,7 @@ pattern_new_match(PatternObject* pattern, SRE_STATE* state, int status)
     /* create match object (from state object) */
 
     MatchObject* match;
-    int i, j;
+    Py_ssize_t i, j;
     char* base;
     int n;
 
@@ -3329,9 +3334,9 @@ pattern_scanner(PatternObject* pattern, PyObject* args)
     ScannerObject* self;
 
     PyObject* string;
-    int start = 0;
-    int end = INT_MAX;
-    if (!PyArg_ParseTuple(args, "O|ii:scanner", &string, &start, &end))
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+    if (!PyArg_ParseTuple(args, "O|nn:scanner", &string, &start, &end))
         return NULL;
 
     /* create scanner object */

@@ -17,6 +17,7 @@ import ReplaceDialog
 import PyParse
 from configHandler import idleConf
 import aboutDialog, textView, configDialog
+import macosxSupport
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -66,26 +67,40 @@ class EditorWindow(object):
                                        'Python%d%d.chm' % sys.version_info[:2])
                 if os.path.isfile(chmfile):
                     dochome = chmfile
+
+            elif macosxSupport.runningAsOSXApp():
+                # documentation is stored inside the python framework
+                dochome = os.path.join(sys.prefix,
+                        'Resources/English.lproj/Documentation/index.html')
+
             dochome = os.path.normpath(dochome)
             if os.path.isfile(dochome):
                 EditorWindow.help_url = dochome
+                if sys.platform == 'darwin':
+                    # Safari requires real file:-URLs
+                    EditorWindow.help_url = 'file://' + EditorWindow.help_url
             else:
                 EditorWindow.help_url = "http://www.python.org/doc/current"
         currentTheme=idleConf.CurrentTheme()
         self.flist = flist
         root = root or flist.root
         self.root = root
+        try:
+            sys.ps1
+        except AttributeError:
+            sys.ps1 = '>>> '
         self.menubar = Menu(root)
         self.top = top = WindowList.ListedToplevel(root, menu=self.menubar)
         if flist:
             self.tkinter_vars = flist.vars
             #self.top.instance_dict makes flist.inversedict avalable to
             #configDialog.py so it can access all EditorWindow instaces
-            self.top.instance_dict=flist.inversedict
+            self.top.instance_dict = flist.inversedict
         else:
             self.tkinter_vars = {}  # keys: Tkinter event names
                                     # values: Tkinter variable instances
-        self.recent_files_path=os.path.join(idleConf.GetUserCfgDir(),
+            self.top.instance_dict = {}
+        self.recent_files_path = os.path.join(idleConf.GetUserCfgDir(),
                 'recent-files.lst')
         self.vbar = vbar = Scrollbar(top, name='vbar')
         self.text_frame = text_frame = Frame(top)
@@ -111,6 +126,9 @@ class EditorWindow(object):
 
         self.top.protocol("WM_DELETE_WINDOW", self.close)
         self.top.bind("<<close-window>>", self.close_event)
+        if macosxSupport.runningAsOSXApp():
+            # Command-W on editorwindows doesn't work without this.
+            text.bind('<<close-window>>', self.close_event)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
         text.bind("<<paste>>", self.paste)
@@ -278,6 +296,10 @@ class EditorWindow(object):
 
     def set_status_bar(self):
         self.status_bar = self.MultiStatusBar(self.top)
+        if macosxSupport.runningAsOSXApp():
+            # Insert some padding to avoid obscuring some of the statusbar
+            # by the resize widget.
+            self.status_bar.set_label('_padding1', '    ', side=RIGHT)
         self.status_bar.set_label('column', 'Col: ?', side=RIGHT)
         self.status_bar.set_label('line', 'Ln: ?', side=RIGHT)
         self.status_bar.pack(side=BOTTOM, fill=X)
@@ -301,6 +323,11 @@ class EditorWindow(object):
         ("help", "_Help"),
     ]
 
+    if macosxSupport.runningAsOSXApp():
+        del menu_specs[-3]
+        menu_specs[-2] = ("windows", "_Window")
+
+
     def createmenubar(self):
         mbar = self.menubar
         self.menudict = menudict = {}
@@ -308,6 +335,12 @@ class EditorWindow(object):
             underline, label = prepstr(label)
             menudict[name] = menu = Menu(mbar, name=name)
             mbar.add_cascade(label=label, menu=menu, underline=underline)
+
+        if sys.platform == 'darwin' and '.framework' in sys.executable:
+            # Insert the application menu
+            menudict['application'] = menu = Menu(mbar, name='apple')
+            mbar.add_cascade(label='IDLE', menu=menu)
+
         self.fill_menus()
         self.base_helpmenu_length = self.menudict['help'].index(END)
         self.reset_help_menu_entries()
@@ -649,7 +682,7 @@ class EditorWindow(object):
     def __extra_help_callback(self, helpfile):
         "Create a callback with the helpfile value frozen at definition time"
         def display_extra_help(helpfile=helpfile):
-            if not (helpfile.startswith('www') or helpfile.startswith('http')):
+            if not helpfile.startswith(('www', 'http')):
                 url = os.path.normpath(helpfile)
             if sys.platform[:3] == 'win':
                 os.startfile(helpfile)
@@ -1244,13 +1277,13 @@ class EditorWindow(object):
               "Toggle tabs",
               "Turn tabs " + ("on", "off")[self.usetabs] +
               "?\nIndent width " +
-              ("will be", "remains at")[self.usetabs] + " 8.",
+              ("will be", "remains at")[self.usetabs] + " 8." +
+              "\n Note: a tab is always 8 columns",
               parent=self.text):
             self.usetabs = not self.usetabs
-        # Try to prevent mixed tabs/spaces.
-        # User must reset indent width manually after using tabs
-        #      if he insists on getting into trouble.
-        self.indentwidth = 8
+            # Try to prevent inconsistent indentation.
+            # User must change indent width manually after using tabs.
+            self.indentwidth = 8
         return "break"
 
     # XXX this isn't bound to anything -- see tabwidth comments

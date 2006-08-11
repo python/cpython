@@ -2,17 +2,16 @@ from pybench import Test
 
 class TupleSlicing(Test):
 
-    version = 0.31
+    version = 2.0
     operations = 3 * 25 * 10 * 7
-    rounds = 400
+    rounds = 500
 
     def test(self):
 
         r = range(25)
+        t = tuple(range(100))
 
         for i in xrange(self.rounds):
-
-            t = tuple(range(100))
 
             for j in r:
 
@@ -259,20 +258,17 @@ class TupleSlicing(Test):
     def calibrate(self):
 
         r = range(25)
+        t = tuple(range(100))
 
         for i in xrange(self.rounds):
-
-            t = tuple(range(100))
-
             for j in r:
-
                 pass
 
 class SmallTuples(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5*(1 + 3 + 6 + 2)
-    rounds = 80000
+    rounds = 90000
 
     def test(self):
 

@@ -532,7 +532,7 @@ dictresize(dictobject *mp, Py_ssize_t minused)
 /* Note that, for historical reasons, PyDict_GetItem() suppresses all errors
  * that may occur (originally dicts supported only string keys, and exceptions
  * weren't possible).  So, while the original intent was that a NULL return
- * meant the key wasn't present, it reality it can mean that, or that an error
+ * meant the key wasn't present, in reality it can mean that, or that an error
  * (suppressed) occurred while computing the key's hash, or that some error
  * (suppressed) occurred when comparing keys in the dict's internal probe
  * sequence.  A nasty example of the latter is when a Python-coded comparison
@@ -561,7 +561,7 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 	/* We can arrive here with a NULL tstate during initialization:
 	   try running "python -Wi" for an example related to string
 	   interning.  Let's just hope that no exception occurs then... */
-	tstate = PyThreadState_GET();
+	tstate = _PyThreadState_Current;
 	if (tstate != NULL && tstate->curexc_type != NULL) {
 		/* preserve the existing exception */
 		PyObject *err_type, *err_value, *err_tb;
@@ -599,6 +599,8 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 		PyErr_BadInternalCall();
 		return -1;
 	}
+	assert(key);
+	assert(value);
 	mp = (dictobject *)op;
 	if (PyString_CheckExact(key)) {
 		hash = ((PyStringObject *)key)->ob_shash;
@@ -647,6 +649,7 @@ PyDict_DelItem(PyObject *op, PyObject *key)
 		PyErr_BadInternalCall();
 		return -1;
 	}
+	assert(key);
 	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);

@@ -3,10 +3,9 @@
 % $Id$
 
 % Fix XXX comments
-% Count up the patches and bugs
 
 \title{What's New in Python 2.5}
-\release{0.2}
+\release{0.9}
 \author{A.M. Kuchling}
 \authoraddress{\email{amk@amk.ca}}
 
@@ -14,31 +13,57 @@
 \maketitle
 \tableofcontents
 
-This article explains the new features in Python 2.5.  No release date
-for Python 2.5 has been set; it will probably be released in the
-autumn of 2006.  \pep{356} describes the planned release schedule.
+This article explains the new features in Python 2.5.  The final
+release of Python 2.5 is scheduled for August 2006;
+\pep{356} describes the planned release schedule.
 
-Comments, suggestions, and error reports are welcome; please e-mail them 
-to the author or open a bug in the Python bug tracker.
+The changes in Python 2.5 are an interesting mix of language and
+library improvements. The library enhancements will be more important
+to Python's user community, I think, because several widely-useful
+packages were added.  New modules include ElementTree for XML
+processing (section~\ref{module-etree}), the SQLite database module
+(section~\ref{module-sqlite}), and the \module{ctypes} module for
+calling C functions (section~\ref{module-ctypes}).
 
-% XXX Compare with previous release in 2 - 3 sentences here.
+The language changes are of middling significance.  Some pleasant new
+features were added, but most of them aren't features that you'll use
+every day.  Conditional expressions were finally added to the language
+using a novel syntax; see section~\ref{pep-308}.  The new
+'\keyword{with}' statement will make writing cleanup code easier
+(section~\ref{pep-343}).  Values can now be passed into generators
+(section~\ref{pep-342}).  Imports are now visible as either absolute
+or relative (section~\ref{pep-328}).  Some corner cases of exception
+handling are handled better (section~\ref{pep-341}).  All these
+improvements are worthwhile, but they're improvements to one specific
+language feature or another; none of them are broad modifications to
+Python's semantics.
 
-This article doesn't attempt to provide a complete specification of
-the new features, but instead provides a convenient overview.  For
-full details, you should refer to the documentation for Python 2.5.
+As well as the language and library additions, other improvements and
+bugfixes were made throughout the source tree.  A search through the
+SVN change logs finds there were 334 patches applied and 443 bugs
+fixed between Python 2.4 and 2.5.  (Both figures are likely to be
+underestimates.)  
+
+This article doesn't try to be a complete specification of the new
+features; instead changes are briefly introduced using helpful
+examples.  For full details, you should always refer to the
+documentation for Python 2.5.
 % XXX add hyperlink when the documentation becomes available online.
 If you want to understand the complete implementation and design
 rationale, refer to the PEP for a particular new feature.
 
+Comments, suggestions, and error reports for this document are
+welcome; please e-mail them to the author or open a bug in the Python
+bug tracker.
 
 %======================================================================
 \section{PEP 308: Conditional Expressions\label{pep-308}}
 
 For a long time, people have been requesting a way to write
-conditional expressions, expressions that return value A or value B
-depending on whether a Boolean value is true or false.  A conditional
-expression lets you write a single assignment statement that has the
-same effect as the following:
+conditional expressions, which are expressions that return value A or
+value B depending on whether a Boolean value is true or false.  A
+conditional expression lets you write a single assignment statement
+that has the same effect as the following:
 
 \begin{verbatim}
 if condition:
@@ -54,7 +79,7 @@ but there was no syntax that was preferred by a clear majority.
 Candidates included C's \code{cond ? true_v : false_v},
 \code{if cond then true_v else false_v}, and 16 other variations.
 
-GvR eventually chose a surprising syntax:
+Guido van~Rossum eventually chose a surprising syntax:
 
 \begin{verbatim}
 x = true_value if condition else false_value
@@ -126,19 +151,16 @@ Wouters.}
 \section{PEP 309: Partial Function Application\label{pep-309}}
 
 The \module{functools} module is intended to contain tools for
-functional-style programming.  Currently it only contains a
-\class{partial()} function, but new functions will probably be added
-in future versions of Python.
+functional-style programming.  
 
-For programs written in a functional style, it can be useful to
+One useful tool in this module is the \function{partial()} function.
+For programs written in a functional style, you'll sometimes want to
 construct variants of existing functions that have some of the
 parameters filled in.  Consider a Python function \code{f(a, b, c)};
 you could create a new function \code{g(b, c)} that was equivalent to
-\code{f(1, b, c)}.  This is called ``partial function application'',
-and is provided by the \class{partial} class in the new
-\module{functools} module.
+\code{f(1, b, c)}.  This is called ``partial function application''.
 
-The constructor for \class{partial} takes the arguments
+\function{partial} takes the arguments
 \code{(\var{function}, \var{arg1}, \var{arg2}, ...
 \var{kwarg1}=\var{value1}, \var{kwarg2}=\var{value2})}.  The resulting
 object is callable, so you can just call it to invoke \var{function}
@@ -175,11 +197,40 @@ class Application:
 \end{verbatim}
 
 
+Another function in the \module{functools} module is the
+\function{update_wrapper(\var{wrapper}, \var{wrapped})} function that
+helps you write well-behaved decorators.  \function{update_wrapper()}
+copies the name, module, and docstring attribute to a wrapper function
+so that tracebacks inside the wrapped function are easier to
+understand.  For example, you might write:
+
+\begin{verbatim}
+def my_decorator(f):
+    def wrapper(*args, **kwds):
+        print 'Calling decorated function'
+        return f(*args, **kwds)
+    functools.update_wrapper(wrapper, f)
+    return wrapper
+\end{verbatim}
+
+\function{wraps()} is a decorator that can be used inside your own
+decorators to copy the wrapped function's information.  An alternate 
+version of the previous example would be:
+
+\begin{verbatim}
+def my_decorator(f):
+    @functools.wraps(f)
+    def wrapper(*args, **kwds):
+        print 'Calling decorated function'
+        return f(*args, **kwds)
+    return wrapper
+\end{verbatim}
+
 \begin{seealso}
 
 \seepep{309}{Partial Function Application}{PEP proposed and written by
-Peter Harris; implemented by Hye-Shik Chang, with adaptations by
-Raymond Hettinger.}
+Peter Harris; implemented by Hye-Shik Chang and Nick Coghlan, with
+adaptations by Raymond Hettinger.}
 
 \end{seealso}
 
@@ -361,7 +412,7 @@ specific exceptions.  You couldn't combine both \keyword{except} blocks and a
 combined version was complicated and it wasn't clear what the
 semantics of the combined should be.  
 
-GvR spent some time working with Java, which does support the
+Guido van~Rossum spent some time working with Java, which does support the
 equivalent of combining \keyword{except} blocks and a
 \keyword{finally} block, and this clarified what the statement should
 mean.  In Python 2.5, you can now write:
@@ -554,7 +605,11 @@ once the generator has been exhausted.
 \seepep{342}{Coroutines via Enhanced Generators}{PEP written by 
 Guido van~Rossum and Phillip J. Eby;
 implemented by Phillip J. Eby.  Includes examples of 
-some fancier uses of generators as coroutines.}
+some fancier uses of generators as coroutines.
+
+Earlier versions of these features were proposed in 
+\pep{288} by Raymond Hettinger and \pep{325} by Samuele Pedroni.
+}
 
 \seeurl{http://en.wikipedia.org/wiki/Coroutine}{The Wikipedia entry for 
 coroutines.}
@@ -771,7 +826,7 @@ The new \module{contextlib} module provides some functions and a
 decorator that are useful for writing objects for use with the
 '\keyword{with}' statement.
 
-The decorator is called \function{contextfactory}, and lets you write
+The decorator is called \function{contextmanager}, and lets you write
 a single generator function instead of defining a new class.  The generator
 should yield exactly one value.  The code up to the \keyword{yield}
 will be executed as the \method{__enter__()} method, and the value
@@ -785,9 +840,9 @@ Our database example from the previous section could be written
 using this decorator as:
 
 \begin{verbatim}
-from contextlib import contextfactory
+from contextlib import contextmanager
 
-@contextfactory
+@contextmanager
 def db_transaction (connection):
     cursor = connection.cursor()
     try:
@@ -933,7 +988,7 @@ space for a \ctype{PyObject} representing the item.  2147483647*4 is
 already more bytes than a 32-bit address space can contain.
 
 It's possible to address that much memory on a 64-bit platform,
-however.  The pointers for a list that size would only require 16GiB
+however.  The pointers for a list that size would only require 16~GiB
 of space, so it's not unreasonable that Python programmers might
 construct lists that large.  Therefore, the Python interpreter had to
 be changed to use some type other than \ctype{int}, and this will be a
@@ -1044,10 +1099,10 @@ print d[3], d[4]   # Prints 0, 0
 
 \item Both 8-bit and Unicode strings have new \method{partition(sep)} 
 and \method{rpartition(sep)} methods that simplify a common use case.
+
 The \method{find(S)} method is often used to get an index which is
 then used to slice the string and obtain the pieces that are before
 and after the separator.  
-
 \method{partition(sep)} condenses this
 pattern into a single method call that returns a 3-tuple containing
 the substring before the separator, the separator itself, and the
@@ -1072,6 +1127,17 @@ Some examples:
 
 (Implemented by Fredrik Lundh following a suggestion by Raymond Hettinger.)
 
+\item The \method{startswith()} and \method{endswith()} methods
+of string types now accept tuples of strings to check for.
+
+\begin{verbatim}
+def is_image_file (filename):
+    return filename.endswith(('.gif', '.jpg', '.tiff'))
+\end{verbatim}
+
+(Implemented by Georg Brandl following a suggestion by Tom Lynn.)
+% RFE #1491485
+
 \item The \function{min()} and \function{max()} built-in functions
 gained a \code{key} keyword parameter analogous to the \code{key}
 argument for \method{sort()}.  This parameter supplies a function that
@@ -1095,8 +1161,17 @@ print max(L)
 false values.  \function{any()} returns \constant{True} if any value
 returned by the iterator is true; otherwise it will return
 \constant{False}.  \function{all()} returns \constant{True} only if
-all of the values returned by the iterator evaluate as being true.
-(Suggested by GvR, and implemented by Raymond Hettinger.)
+all of the values returned by the iterator evaluate as true.
+(Suggested by Guido van~Rossum, and implemented by Raymond Hettinger.)
+
+\item The result of a class's \method{__hash__()} method can now 
+be either a long integer or a regular integer.  If a long integer is
+returned, the hash of that value is taken.  In earlier versions the
+hash value was required to be a regular integer, but in 2.5 the
+\function{id()} built-in was changed to always return non-negative
+numbers, and users often seem to use \code{id(self)} in
+\method{__hash__()} methods (though this is discouraged).
+% Bug #1536021
 
 \item ASCII is now the default encoding for modules.  It's now 
 a syntax error if a module contains string literals with 8-bit
@@ -1113,9 +1188,12 @@ a line like this near the top of the source file:
 to include an \file{__init__.py} module in a package directory.
 Debugging this mistake can be confusing, and usually requires running
 Python with the \programopt{-v} switch to log all the paths searched.
-In Python 2.5, a new \exception{ImportWarning} warning is raised when
+In Python 2.5, a new \exception{ImportWarning} warning is triggered when
 an import would have picked up a directory as a package but no
-\file{__init__.py} was found.  (Implemented by Thomas Wouters.)
+\file{__init__.py} was found.  This warning is silently ignored by default;
+provide the \programopt{-Wd} option when running the Python executable
+to display the warning message.
+(Implemented by Thomas Wouters.)
 
 \item The list of base classes in a class definition can now be empty.  
 As an example, this is now legal:
@@ -1145,6 +1223,11 @@ In Python 2.5, \code{quit} and \code{exit} are now objects that still
 produce string representations of themselves, but are also callable.
 Newbies who try \code{quit()} or \code{exit()} will now exit the
 interpreter as they expect.  (Implemented by Georg Brandl.)
+
+The Python executable now accepts the standard long options 
+\longprogramopt{help} and \longprogramopt{version}; on Windows, 
+it also accepts the \programopt{/?} option for displaying a help message.
+(Implemented by Georg Brandl.)
 
 
 %======================================================================
@@ -1194,7 +1277,8 @@ Python's allocator functions instead of the system's
 \item The code generator's peephole optimizer now performs
 simple constant folding in expressions.  If you write something like
 \code{a = 2+3}, the code generator will do the arithmetic and produce
-code corresponding to \code{a = 5}.
+code corresponding to \code{a = 5}.  (Proposed and implemented 
+by Raymond Hettinger.)
 
 \item Function calls are now faster because code objects now keep 
 the most recently finished frame (a ``zombie frame'') in an internal
@@ -1288,10 +1372,13 @@ defaultdict(<type 'list'>, {'c': ['cammin', 'che'], 'e': ['era'],
         'r': ['ritrovai'], 'u': ['una'], 'v': ['vita', 'via']}
 \end{verbatim}
 
-The \class{deque} double-ended queue type supplied by the
+(Contributed by Guido van~Rossum.)
+
+\item The \class{deque} double-ended queue type supplied by the
 \module{collections} module now has a \method{remove(\var{value})}
 method that removes the first occurrence of \var{value} in the queue,
 raising \exception{ValueError} if the value isn't found.
+(Contributed by Raymond Hettinger.)
 
 \item New module: The \module{contextlib} module contains helper functions for use 
 with the new '\keyword{with}' statement.  See
@@ -1320,6 +1407,17 @@ currently-set limit.  The \class{reader} class now has a
 \member{line_num} attribute that counts the number of physical lines
 read from the source; records can span multiple physical lines, so
 \member{line_num} is not the same as the number of records read.
+
+The CSV parser is now stricter about multi-line quoted
+fields. Previously, if a line ended within a quoted field without a
+terminating newline character, a newline would be inserted into the
+returned field. This behavior caused problems when reading files that
+contained carriage return characters within fields, so the code was
+changed to return the field without inserting newlines. As a
+consequence, if newlines embedded within fields are important, the
+input should be split into lines in a manner that preserves the
+newline characters.
+
 (Contributed by Skip Montanaro and Andrew McNamara.)
 
 \item The \class{datetime} class in the \module{datetime} 
@@ -1335,10 +1433,26 @@ ts = datetime.strptime('10:13:15 2006-03-07',
                        '%H:%M:%S %Y-%m-%d')
 \end{verbatim}
 
+\item The \method{SequenceMatcher.get_matching_blocks()} method
+in the \module{difflib} module now guarantees to return a minimal list
+of blocks describing matching subsequences.  Previously, the algorithm would
+occasionally break a block of matching elements into two list entries.
+(Enhancement by Tim Peters.)
+
 \item The \module{doctest} module gained a \code{SKIP} option that
 keeps an example from being executed at all.  This is intended for
 code snippets that are usage examples intended for the reader and
 aren't actually test cases.
+
+An \var{encoding} parameter was added to the \function{testfile()}
+function and the \class{DocFileSuite} class to specify the file's
+encoding.  This makes it easier to use non-ASCII characters in 
+tests contained within a docstring.  (Contributed by Bjorn Tillenius.)
+% Patch 1080727
+
+\item The \module{email} package has been updated to version 4.0.
+% XXX need to provide some more detail here
+(Contributed by Barry Warsaw.)
 
 \item The \module{fileinput} module was made more flexible.
 Unicode filenames are now supported, and a \var{mode} parameter that
@@ -1358,6 +1472,7 @@ collector; when these counts reach a specified threshold, a garbage
 collection sweep will be made.  The existing \function{gc.collect()}
 function now takes an optional \var{generation} argument of 0, 1, or 2
 to specify which generation to collect.
+(Contributed by Barry Warsaw.)
 
 \item The \function{nsmallest()} and 
 \function{nlargest()} functions in the \module{heapq} module 
@@ -1387,6 +1502,29 @@ itertools.islice(iterable, s.start, s.stop, s.step)
 \end{verbatim}
 
 (Contributed by Raymond Hettinger.)
+
+\item The \function{format()} function in the \module{locale} module
+has been modified and two new functions were added,
+\function{format_string()} and \function{currency()}.
+
+The \function{format()} function's \var{val} parameter could
+previously be a string as long as no more than one \%char specifier
+appeared; now the parameter must be exactly one \%char specifier with
+no surrounding text.  An optional \var{monetary} parameter was also
+added which, if \code{True}, will use the locale's rules for
+formatting currency in placing a separator between groups of three
+digits.
+
+To format strings with multiple \%char specifiers, use the new
+\function{format_string()} function that works like \function{format()}
+but also supports mixing \%char specifiers with
+arbitrary text.
+
+A new \function{currency()} function was also added that formats a
+number according to the current locale's settings.
+
+(Contributed by Georg Brandl.)
+% Patch 1180296
 
 \item The \module{mailbox} module underwent a massive rewrite to add
 the capability to modify mailboxes in addition to reading them.  A new
@@ -1496,6 +1634,9 @@ tuple slicing, method lookups, and numeric operations, instead of
 performing many different operations and reducing the result to a
 single number as \file{pystone.py} does.
 
+\item The \module{pyexpat} module now uses version 2.0 of the Expat parser.
+(Contributed by Trent Mick.)
+
 \item The old \module{regex} and \module{regsub} modules, which have been 
 deprecated ever since Python 2.0, have finally been deleted.  
 Other deleted modules: \module{statcache}, \module{tzparse},
@@ -1560,7 +1701,7 @@ year, number, name = s.unpack(data)
 \end{verbatim}
 
 You can also pack and unpack data to and from buffer objects directly
-using the \method{pack_to(\var{buffer}, \var{offset}, \var{v1},
+using the \method{pack_into(\var{buffer}, \var{offset}, \var{v1},
 \var{v2}, ...)} and \method{unpack_from(\var{buffer}, \var{offset})}
 methods.  This lets you store data directly into an array or a
 memory-mapped file.
@@ -1582,21 +1723,75 @@ string of build information like this:
 \code{"trunk:45355:45356M, Apr 13 2006, 07:42:19"}.  
 (Contributed by Barry Warsaw.)
 
+\item Another new function, \function{sys._current_frames()}, returns
+the current stack frames for all running threads as a dictionary
+mapping thread identifiers to the topmost stack frame currently active
+in that thread at the time the function is called.  (Contributed by
+Tim Peters.)
+
 \item The \class{TarFile} class in the \module{tarfile} module now has
 an \method{extractall()} method that extracts all members from the
 archive into the current working directory.  It's also possible to set
 a different directory as the extraction target, and to unpack only a
-subset of the archive's members.  
+subset of the archive's members.
 
-A tarfile's compression can be autodetected by 
-using the mode \code{'r|*'}.
+The compression used for a tarfile opened in stream mode can now be
+autodetected using the mode \code{'r|*'}.
 % patch 918101
 (Contributed by Lars Gust\"abel.)
+
+\item The \module{threading} module now lets you set the stack size
+used when new threads are created. The
+\function{stack_size(\optional{\var{size}})} function returns the
+currently configured stack size, and supplying the optional \var{size}
+parameter sets a new value.  Not all platforms support changing the
+stack size, but Windows, POSIX threading, and OS/2 all do.
+(Contributed by Andrew MacIntyre.)
+% Patch 1454481
 
 \item The \module{unicodedata} module has been updated to use version 4.1.0
 of the Unicode character database.  Version 3.2.0 is required 
 by some specifications, so it's still available as 
 \member{unicodedata.ucd_3_2_0}.
+
+\item New module: the  \module{uuid} module generates 
+universally unique identifiers (UUIDs) according to \rfc{4122}.  The
+RFC defines several different UUID versions that are generated from a
+starting string, from system properties, or purely randomly.  This
+module contains a \class{UUID} class and 
+functions named \function{uuid1()},
+\function{uuid3()}, \function{uuid4()},  and 
+\function{uuid5()} to generate different versions of UUID.  (Version 2 UUIDs 
+are not specified in \rfc{4122} and are not supported by this module.)
+
+\begin{verbatim}
+>>> import uuid
+>>> # make a UUID based on the host ID and current time
+>>> uuid.uuid1()
+UUID('a8098c1a-f86e-11da-bd1a-00112444be1e')
+
+>>> # make a UUID using an MD5 hash of a namespace UUID and a name
+>>> uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org')
+UUID('6fa459ea-ee8a-3ca4-894e-db77e160355e')
+
+>>> # make a random UUID
+>>> uuid.uuid4()
+UUID('16fd2706-8baf-433b-82eb-8c7fada847da')
+
+>>> # make a UUID using a SHA-1 hash of a namespace UUID and a name
+>>> uuid.uuid5(uuid.NAMESPACE_DNS, 'python.org')
+UUID('886313e1-3b8a-5372-9b90-0c9aee199e5d')
+\end{verbatim}
+
+(Contributed by Ka-Ping Yee.)
+
+\item The \module{weakref} module's \class{WeakKeyDictionary} and
+\class{WeakValueDictionary} types gained new methods for iterating
+over the weak references contained in the dictionary. 
+\method{iterkeyrefs()} and \method{keyrefs()} methods were
+added to \class{WeakKeyDictionary}, and
+\method{itervaluerefs()} and \method{valuerefs()} were added to
+\class{WeakValueDictionary}.  (Contributed by Fred L.~Drake, Jr.)
 
 \item The \module{webbrowser} module received a number of
 enhancements.
@@ -1609,10 +1804,9 @@ to support this.  The module's \function{open()} function supports an
 additional feature, an \var{autoraise} parameter that signals whether
 to raise the open window when possible. A number of additional
 browsers were added to the supported list such as Firefox, Opera,
-Konqueror, and elinks.  (Contributed by Oleg Broytmann and George
+Konqueror, and elinks.  (Contributed by Oleg Broytmann and Georg
 Brandl.)
 % Patch #754022
-
 
 \item The \module{xmlrpclib} module now supports returning 
       \class{datetime} objects for the XML-RPC date type.  Supply 
@@ -1620,6 +1814,12 @@ Brandl.)
       or the \class{Unmarshaller} class to enable this feature.
       (Contributed by Skip Montanaro.)
 % Patch 1120353
+
+\item The \module{zipfile} module now supports the ZIP64 version of the 
+format, meaning that a .zip archive can now be larger than 4~GiB and
+can contain individual files larger than 4~GiB.  (Contributed by
+Ronald Oussoren.)
+% Patch 1446489
 
 \item The \module{zlib} module's \class{Compress} and \class{Decompress}
 objects now support a \method{copy()} method that makes a copy of the 
@@ -1710,6 +1910,9 @@ of extension modules, now that \module{ctypes} is included with core Python.
 
 \seeurl{http://starship.python.net/crew/theller/ctypes/}
 {The ctypes web page, with a tutorial, reference, and FAQ.}
+
+\seeurl{../lib/module-ctypes.html}{The documentation 
+for the \module{ctypes} module.}
 
 \end{seealso}
 
@@ -1822,7 +2025,6 @@ Please read the package's official documentation for more details.
 \seeurl{http://effbot.org/zone/element-index.htm}
 {Official documentation for ElementTree.}
 
-
 \end{seealso}
 
 
@@ -1872,6 +2074,13 @@ Once a hash object has been created, its methods are the same as before:
 current digest state, \method{digest()} and \method{hexdigest()}
 return the digest value as a binary string or a string of hex digits,
 and \method{copy()} returns a new hashing object with the same digest state.
+
+\begin{seealso}
+
+\seeurl{../lib/module-hashlib.html}{The documentation 
+for the \module{hashlib} module.}
+
+\end{seealso}
 
 
 %======================================================================
@@ -1983,8 +2192,49 @@ For more information about the SQL dialect supported by SQLite, see
 {The SQLite web page; the documentation describes the syntax and the
 available data types for the supported SQL dialect.}
 
+\seeurl{../lib/module-sqlite3.html}{The documentation 
+for the \module{sqlite3} module.}
+
 \seepep{249}{Database API Specification 2.0}{PEP written by
 Marc-Andr\'e Lemburg.}
+
+\end{seealso}
+
+
+%======================================================================
+\subsection{The wsgiref package\label{module-wsgiref}}
+
+% XXX should this be in a PEP 333 section instead?
+
+The Web Server Gateway Interface (WSGI) v1.0 defines a standard
+interface between web servers and Python web applications and is
+described in \pep{333}.  The \module{wsgiref} package is a reference
+implementation of the WSGI specification.
+
+The package includes a basic HTTP server that will run a WSGI
+application; this server is useful for debugging but isn't intended for 
+production use.  Setting up a server takes only a few lines of code:
+
+\begin{verbatim}
+from wsgiref import simple_server
+
+wsgi_app = ...
+
+host = ''
+port = 8000
+httpd = simple_server.make_server(host, port, wsgi_app)
+httpd.serve_forever()
+\end{verbatim}
+
+% XXX discuss structure of WSGI applications?  
+% XXX provide an example using Django or some other framework?
+
+\begin{seealso}
+
+\seeurl{http://www.wsgi.org}{A central web site for WSGI-related resources.}
+
+\seepep{333}{Python Web Server Gateway Interface v1.0}{PEP written by
+Phillip J. Eby.}
 
 \end{seealso}
 
@@ -1996,13 +2246,25 @@ Changes to Python's build process and to the C API include:
 
 \begin{itemize}
 
+\item The Python source tree was converted from CVS to Subversion, 
+in a complex migration procedure that was supervised and flawlessly
+carried out by Martin von~L\"owis.  The procedure was developed as
+\pep{347}.
+
+\item Coverity, a company that markets a source code analysis tool
+called Prevent, provided the results of their examination of the Python
+source code.  The analysis found about 60 bugs that 
+were quickly fixed.  Many of the bugs were refcounting problems, often
+occurring in error-handling code.  See
+\url{http://scan.coverity.com} for the statistics.
+
 \item The largest change to the C API came from \pep{353},
 which modifies the interpreter to use a \ctype{Py_ssize_t} type
 definition instead of \ctype{int}.  See the earlier
 section~\ref{pep-353} for a discussion of this change.
 
-\item The design of the bytecode compiler has changed a great deal, to
-no longer generate bytecode by traversing the parse tree.  Instead
+\item The design of the bytecode compiler has changed a great deal, 
+no longer generating bytecode by traversing the parse tree.  Instead
 the parse tree is converted to an abstract syntax tree (or AST), and it is 
 the abstract syntax tree that's traversed to produce the bytecode.
 
@@ -2022,12 +2284,13 @@ assignment = ast.body[0]
 for_loop = ast.body[1]
 \end{verbatim}
 
-No documentation has been written for the AST code yet.  To start
-learning about it, read the definition of the various AST nodes in
-\file{Parser/Python.asdl}.  A Python script reads this file and
-generates a set of C structure definitions in
-\file{Include/Python-ast.h}.  The \cfunction{PyParser_ASTFromString()}
-and \cfunction{PyParser_ASTFromFile()}, defined in
+No official documentation has been written for the AST code yet, but
+\pep{339} discusses the design.  To start learning about the code, read the
+definition of the various AST nodes in \file{Parser/Python.asdl}.  A
+Python script reads this file and generates a set of C structure
+definitions in \file{Include/Python-ast.h}.  The
+\cfunction{PyParser_ASTFromString()} and
+\cfunction{PyParser_ASTFromFile()}, defined in
 \file{Include/pythonrun.h}, take Python source as input and return the
 root of an AST representing the contents.  This AST can then be turned
 into a code object by \cfunction{PyAST_Compile()}.  For more
@@ -2042,6 +2305,32 @@ Grant Edwards, John Ehresman, Kurt Kaiser, Neal Norwitz, Tim Peters,
 Armin Rigo, and Neil Schemenauer, plus the participants in a number of
 AST sprints at conferences such as PyCon.
  
+\item Evan Jones's patch to obmalloc, first described in a talk
+at PyCon DC 2005, was applied.  Python 2.4 allocated small objects in
+256K-sized arenas, but never freed arenas.  With this patch, Python
+will free arenas when they're empty.  The net effect is that on some
+platforms, when you allocate many objects, Python's memory usage may
+actually drop when you delete them and the memory may be returned to
+the operating system.  (Implemented by Evan Jones, and reworked by Tim
+Peters.)
+
+Note that this change means extension modules must be more careful
+when allocating memory.  Python's API has many different
+functions for allocating memory that are grouped into families.  For
+example, \cfunction{PyMem_Malloc()}, \cfunction{PyMem_Realloc()}, and
+\cfunction{PyMem_Free()} are one family that allocates raw memory,
+while \cfunction{PyObject_Malloc()}, \cfunction{PyObject_Realloc()},
+and \cfunction{PyObject_Free()} are another family that's supposed to
+be used for creating Python objects.  
+
+Previously these different families all reduced to the platform's
+\cfunction{malloc()} and \cfunction{free()} functions.  This meant 
+it didn't matter if you got things wrong and allocated memory with the
+\cfunction{PyMem} function but freed it with the \cfunction{PyObject}
+function.  With 2.5's changes to obmalloc, these families now do different
+things and mismatches will probably result in a segfault.  You should
+carefully test your C extension modules with Python 2.5.
+
 \item The built-in set types now have an official C API.  Call
 \cfunction{PySet_New()} and \cfunction{PyFrozenSet_New()} to create a
 new set, \cfunction{PySet_Add()} and \cfunction{PySet_Discard()} to
@@ -2072,13 +2361,25 @@ Lundh at the NeedForSpeed sprint.)
 \var{dict})} can now accept a tuple of base classes as its \var{base}
 argument.  (Contributed by Georg Brandl.)
 
+\item The \cfunction{PyErr_Warn()} function for issuing warnings
+is now deprecated in favour of \cfunction{PyErr_WarnEx(category,
+message, stacklevel)} which lets you specify the number of stack
+frames separating this function and the caller.  A \var{stacklevel} of
+1 is the function calling \cfunction{PyErr_WarnEx()}, 2 is the
+function above that, and so forth.  (Added by Neal Norwitz.)
+
 \item The CPython interpreter is still written in C, but 
 the code can now be compiled with a {\Cpp} compiler without errors.  
 (Implemented by Anthony Baxter, Martin von~L\"owis, Skip Montanaro.)
 
 \item The \cfunction{PyRange_New()} function was removed.  It was
 never documented, never used in the core code, and had dangerously lax
-error checking.
+error checking.  In the unlikely case that your extensions were using
+it, you can replace it by something like the following:
+\begin{verbatim}
+range = PyObject_CallFunction((PyObject*) &PyRange_Type, "lll", 
+                              start, stop, step);
+\end{verbatim}
 
 \end{itemize}
 
@@ -2105,54 +2406,6 @@ be searched for.
 
 
 %======================================================================
-\section{Other Changes and Fixes \label{section-other}}
-
-As usual, there were a bunch of other improvements and bugfixes
-scattered throughout the source tree.  A search through the SVN change
-logs finds there were XXX patches applied and YYY bugs fixed between
-Python 2.4 and 2.5.  Both figures are likely to be underestimates.
-
-Some of the more notable changes are:
-
-\begin{itemize}
-
-\item Evan Jones's patch to obmalloc, first described in a talk
-at PyCon DC 2005, was applied.  Python 2.4 allocated small objects in
-256K-sized arenas, but never freed arenas.  With this patch, Python
-will free arenas when they're empty.  The net effect is that on some
-platforms, when you allocate many objects, Python's memory usage may
-actually drop when you delete them, and the memory may be returned to
-the operating system.  (Implemented by Evan Jones, and reworked by Tim
-Peters.)
-
-Note that this change means extension modules need to be more careful
-with how they allocate memory.  Python's API has many different
-functions for allocating memory that are grouped into families.  For
-example, \cfunction{PyMem_Malloc()}, \cfunction{PyMem_Realloc()}, and
-\cfunction{PyMem_Free()} are one family that allocates raw memory,
-while \cfunction{PyObject_Malloc()}, \cfunction{PyObject_Realloc()},
-and \cfunction{PyObject_Free()} are another family that's supposed to
-be used for creating Python objects.  
-
-Previously these different families all reduced to the platform's
-\cfunction{malloc()} and \cfunction{free()} functions.  This meant 
-it didn't matter if you got things wrong and allocated memory with the
-\cfunction{PyMem} function but freed it with the \cfunction{PyObject}
-function.  With the obmalloc change, these families now do different
-things, and mismatches will probably result in a segfault.  You should
-carefully test your C extension modules with Python 2.5.
-
-\item Coverity, a company that markets a source code analysis tool
-  called Prevent, provided the results of their examination of the Python
-  source code.  The analysis found about 60 bugs that 
-  were quickly fixed.  Many of the bugs were refcounting problems, often
-  occurring in error-handling code.  See
-  \url{http://scan.coverity.com} for the statistics.
-
-\end{itemize}
-
-
-%======================================================================
 \section{Porting to Python 2.5\label{porting}}
 
 This section lists previously described changes that may require
@@ -2170,6 +2423,16 @@ was always a frame object.  Because of the \pep{342} changes
 described in section~\ref{pep-342}, it's now possible
 for \member{gi_frame} to be \code{None}.
 
+\item Library: the \module{csv} module is now stricter about multi-line quoted
+fields.  If your files contain newlines embedded within fields, the
+input should be split into lines in a manner which preserves the
+newline characters.
+
+\item Library: the \module{locale} module's 
+\function{format()} function's would previously 
+accept any string as long as no more than one \%char specifier
+appeared.  In Python 2.5, the argument must be exactly one \%char
+specifier with no surrounding text. 
 
 \item Library: The \module{pickle} and \module{cPickle} modules no
 longer accept a return value of \code{None} from the
@@ -2206,7 +2469,10 @@ freed with the corresponding family's \cfunction{*_Free()} function.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Phillip J. Eby, Kent Johnson, Martin von~L\"owis, Fredrik Lundh, 
-Gustavo Niemeyer, James Pryor, Mike Rovner, Scott Weikart, Thomas Wouters.
+article: Georg Brandl, Nick Coghlan, Phillip J. Eby, Lars Gust\"abel,
+Raymond Hettinger, Ralf W. Grosse-Kunstleve, Kent Johnson, Iain Lowe,
+Martin von~L\"owis, Fredrik Lundh, Andrew McNamara, Skip Montanaro,
+Gustavo Niemeyer, Paul Prescod, James Pryor, Mike Rovner, Scott
+Weikart, Barry Warsaw, Thomas Wouters.
 
 \end{document}

@@ -1,5 +1,7 @@
+######################################################################
+#  This file should be kept compatible with Python 2.3, see PEP 291. #
+######################################################################
 import sys, os
-import ctypes
 
 # find_library(name) returns the pathname of a library, or None.
 if os.name == "nt":
@@ -41,20 +43,28 @@ if os.name == "posix" and sys.platform == "darwin":
 
 elif os.name == "posix":
     # Andreas Degert's find functions, using gcc, /sbin/ldconfig, objdump
-    import re, tempfile
+    import re, tempfile, errno
 
     def _findLib_gcc(name):
         expr = '[^\(\)\s]*lib%s\.[^\(\)\s]*' % name
+        fdout, ccout = tempfile.mkstemp()
+        os.close(fdout)
         cmd = 'if type gcc &>/dev/null; then CC=gcc; else CC=cc; fi;' \
-              '$CC -Wl,-t -o /dev/null 2>&1 -l' + name
+              '$CC -Wl,-t -o ' + ccout + ' 2>&1 -l' + name
         try:
             fdout, outfile =  tempfile.mkstemp()
+            os.close(fdout)
             fd = os.popen(cmd)
             trace = fd.read()
             err = fd.close()
         finally:
             try:
                 os.unlink(outfile)
+            except OSError, e:
+                if e.errno != errno.ENOENT:
+                    raise
+            try:
+                os.unlink(ccout)
             except OSError, e:
                 if e.errno != errno.ENOENT:
                     raise
