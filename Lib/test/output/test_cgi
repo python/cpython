@@ -38,3 +38,5 @@ test_cgi
 Testing log
 Testing initlog 1
 Testing log 2
+Test FieldStorage methods that use readline
+Test basic FieldStorage multipart parsing

@@ -72,6 +72,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1112549, DoS attack on cgi.FieldStorage.
+
 - Bug #1257728: Complain about missing VS 2003 in the error message
   of msvccompiler, and mention Cygwin as an alternative.
 

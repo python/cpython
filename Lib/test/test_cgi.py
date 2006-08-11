@@ -2,6 +2,8 @@ from test.test_support import verify, verbose
 import cgi
 import os
 import sys
+import tempfile
+from StringIO import StringIO
 
 class HackedSysModule:
     # The regression test will have real values in sys.argv, which
@@ -202,5 +204,72 @@ def main():
         cgi.logfile = "/dev/null"
         cgi.initlog("%s", "Testing log 3")
         cgi.log("Testing log 4")
+
+    print "Test FieldStorage methods that use readline"
+    # FieldStorage uses readline, which has the capacity to read all
+    # contents of the input file into memory; we use readline's size argument
+    # to prevent that for files that do not contain any newlines in
+    # non-GET/HEAD requests
+    class TestReadlineFile:
+        def __init__(self, file):
+            self.file = file
+            self.numcalls = 0
+
+        def readline(self, size=None):
+            self.numcalls += 1
+            if size:
+                return self.file.readline(size)
+            else:
+                return self.file.readline()
+
+        def __getattr__(self, name):
+            file = self.__dict__['file']
+            a = getattr(file, name)
+            if not isinstance(a, int):
+                setattr(self, name, a)
+            return a
+
+    f = TestReadlineFile(tempfile.TemporaryFile())
+    f.write('x' * 256 * 1024)
+    f.seek(0)
+    env = {'REQUEST_METHOD':'PUT'}
+    fs = cgi.FieldStorage(fp=f, environ=env)
+    # if we're not chunking properly, readline is only called twice
+    # (by read_binary); if we are chunking properly, it will be called 5 times
+    # as long as the chunksize is 1 << 16.
+    verify(f.numcalls > 2)
+
+    print "Test basic FieldStorage multipart parsing"
+    env = {'REQUEST_METHOD':'POST', 'CONTENT_TYPE':'multipart/form-data; boundary=---------------------------721837373350705526688164684', 'CONTENT_LENGTH':'558'}
+    postdata = r"""-----------------------------721837373350705526688164684
+Content-Disposition: form-data; name="id"
+
+1234
+-----------------------------721837373350705526688164684
+Content-Disposition: form-data; name="title"
+
+
+-----------------------------721837373350705526688164684
+Content-Disposition: form-data; name="file"; filename="test.txt"
+Content-Type: text/plain
+
+Testing 123.
+
+-----------------------------721837373350705526688164684
+Content-Disposition: form-data; name="submit"
+
+ Add 
+-----------------------------721837373350705526688164684--
+"""
+    fs = cgi.FieldStorage(fp=StringIO(postdata), environ=env)
+    verify(len(fs.list) == 4)
+    expect = [{'name':'id', 'filename':None, 'value':'1234'},
+              {'name':'title', 'filename':None, 'value':''},
+              {'name':'file', 'filename':'test.txt','value':'Testing 123.\n'},
+              {'name':'submit', 'filename':None, 'value':' Add '}]
+    for x in range(len(fs.list)):
+        for k, exp in expect[x].items():
+            got = getattr(fs.list[x], k)
+            verify(got == exp)
 
 main()
