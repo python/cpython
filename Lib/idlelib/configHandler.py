@@ -20,6 +20,7 @@ configuration problem notification and resolution.
 import os
 import sys
 import string
+import macosxSupport
 from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 
 class InvalidConfigType(Exception): pass
@@ -406,7 +407,7 @@ class IdleConf:
         names=extnNameList
         kbNameIndicies=[]
         for name in names:
-            if name.endswith('_bindings') or name.endswith('_cfgBindings'):
+            if name.endswith(('_bindings', '_cfgBindings')):
                 kbNameIndicies.append(names.index(name))
         kbNameIndicies.sort()
         kbNameIndicies.reverse()
@@ -495,7 +496,18 @@ class IdleConf:
         return binding
 
     def GetCurrentKeySet(self):
-        return self.GetKeySet(self.CurrentKeys())
+        result = self.GetKeySet(self.CurrentKeys())
+
+        if macosxSupport.runningAsOSXApp():
+            # We're using AquaTk, replace all keybingings that use the
+            # Alt key by ones that use the Option key because the former
+            # don't work reliably.
+            for k, v in result.items():
+                v2 = [ x.replace('<Alt-', '<Option-') for x in v ]
+                if v != v2:
+                    result[k] = v2
+
+        return result
 
     def GetKeySet(self,keySetName):
         """

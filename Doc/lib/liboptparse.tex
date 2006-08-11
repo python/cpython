@@ -1,3 +1,5 @@
+% THIS FILE IS AUTO-GENERATED!  DO NOT EDIT!
+% (Your changes will be lost the next time it is generated.)
 \section{\module{optparse} --- More powerful command line option parser}
 \declaremodule{standard}{optparse}
 \moduleauthor{Greg Ward}{gward@python.net}
@@ -306,7 +308,7 @@ Of these, \member{action} is the most fundamental.
 
 Actions tell \module{optparse} what to do when it encounters an option on the
 command line.  There is a fixed set of actions hard-coded into \module{optparse};
-adding new actions is an advanced topic covered in section~\ref{optparse-extending}, Extending \module{optparse}.
+adding new actions is an advanced topic covered in section~\ref{optparse-extending-optparse}, Extending \module{optparse}.
 Most actions tell \module{optparse} to store a value in some variable{---}for
 example, take a string from the command line and store it in an
 attribute of \code{options}.
@@ -371,7 +373,7 @@ are no long option strings, \module{optparse} looks at the first short option
 string: the default destination for \code{"-f"} is \code{f}.
 
 \module{optparse} also includes built-in \code{long} and \code{complex} types.  Adding
-types is covered in section~\ref{optparse-extending}, Extending \module{optparse}.
+types is covered in section~\ref{optparse-extending-optparse}, Extending \module{optparse}.
 
 
 \subsubsection{Handling boolean (flag) options\label{optparse-handling-boolean-options}}
@@ -566,7 +568,7 @@ argument to OptionParser:
 parser = OptionParser(usage="%prog [-f] [-q]", version="%prog 1.0")
 \end{verbatim}
 
-Note that \code{"{\%}prog"} is expanded just like it is in \code{usage}.  Apart
+\code{"{\%}prog"} is expanded just like it is in \code{usage}.  Apart
 from that, \code{version} can contain anything you like.  When you supply
 it, \module{optparse} automatically adds a \code{"-{}-version"} option to your parser.
 If it encounters this option on the command line, it expands your
@@ -659,7 +661,7 @@ def main():
 if __name__ == "__main__":
     main()
 \end{verbatim}
-% $Id: tutorial.txt 505 2005-07-22 01:52:40Z gward $ 
+% $Id: tutorial.txt 515 2006-06-10 15:37:45Z gward $ 
 
 
 \subsection{Reference Guide\label{optparse-reference-guide}}
@@ -1146,7 +1148,7 @@ See section~\ref{optparse-tutorial}, the tutorial for an example.
 
 \module{optparse} has six built-in option types: \code{string}, \code{int}, \code{long},
 \code{choice}, \code{float} and \code{complex}.  If you need to add new option
-types, see section~\ref{optparse-extending}, Extending \module{optparse}.
+types, see section~\ref{optparse-extending-optparse}, Extending \module{optparse}.
 
 Arguments to string options are not checked or converted in any way: the
 text on the command line is stored in the destination (or passed to the
@@ -1195,16 +1197,16 @@ its \method{parse{\_}args()} method:
 where the input parameters are
 \begin{description}
 \item[\code{args}]
-the list of arguments to process (\code{sys.argv{[}1:]} by default)
+the list of arguments to process (default: \code{sys.argv{[}1:]})
 \item[\code{options}]
-object to store option arguments in (a new instance of
-optparse.Values by default)
+object to store option arguments in (default: a new instance of
+optparse.Values)
 \end{description}
 
 and the return values are
 \begin{description}
 \item[\code{options}]
-the same object as was passed in as \code{options}, or the new
+the same object that was passed in as \code{options}, or the
 optparse.Values instance created by \module{optparse}
 \item[\code{args}]
 the leftover positional arguments after all options have been
@@ -1212,9 +1214,9 @@ processed
 \end{description}
 
 The most common usage is to supply neither keyword argument.  If you
-supply a \code{values} object, it will be repeatedly modified with a
-\code{setattr()} call for every option argument written to an option
-destination, and finally returned by \method{parse{\_}args()}.
+supply \code{options}, it will be modified with repeated \code{setattr()}
+calls (roughly one for every option argument stored to an option
+destination) and returned by \method{parse{\_}args()}.
 
 If \method{parse{\_}args()} encounters any errors in the argument list, it calls
 the OptionParser's \method{error()} method with an appropriate end-user error
@@ -1388,7 +1390,7 @@ parser.add_option("--novice", action="store_const",
 \end{verbatim}
 
 \end{itemize}
-% $Id: reference.txt 505 2005-07-22 01:52:40Z gward $ 
+% $Id: reference.txt 519 2006-06-11 14:39:11Z gward $ 
 
 
 \subsection{Option Callbacks\label{optparse-option-callbacks}}
@@ -1680,4 +1682,207 @@ numbers in the arguments following \code{"-c"} will be interpreted as
 further options (probably causing an error), rather than as arguments to
 \code{"-c"}.  Fixing this is left as an exercise for the reader.
 % $Id: callbacks.txt 415 2004-09-30 02:26:17Z greg $ 
+
+
+\subsection{Extending \module{optparse}\label{optparse-extending-optparse}}
+
+Since the two major controlling factors in how \module{optparse} interprets
+command-line options are the action and type of each option, the most
+likely direction of extension is to add new actions and new types.
+
+
+\subsubsection{Adding new types\label{optparse-adding-new-types}}
+
+To add new types, you need to define your own subclass of \module{optparse}'s Option
+class.  This class has a couple of attributes that define \module{optparse}'s types:
+\member{TYPES} and \member{TYPE{\_}CHECKER}.
+
+\member{TYPES} is a tuple of type names; in your subclass, simply define a new
+tuple \member{TYPES} that builds on the standard one.
+
+\member{TYPE{\_}CHECKER} is a dictionary mapping type names to type-checking
+functions.  A type-checking function has the following signature:
+\begin{verbatim}
+def check_mytype(option, opt, value)
+\end{verbatim}
+
+where \code{option} is an \class{Option} instance, \code{opt} is an option string
+(e.g., \code{"-f"}), and \code{value} is the string from the command line that
+must be checked and converted to your desired type.  \code{check{\_}mytype()}
+should return an object of the hypothetical type \code{mytype}.  The value
+returned by a type-checking function will wind up in the OptionValues
+instance returned by \method{OptionParser.parse{\_}args()}, or be passed to a
+callback as the \code{value} parameter.
+
+Your type-checking function should raise OptionValueError if it
+encounters any problems.  OptionValueError takes a single string
+argument, which is passed as-is to OptionParser's \method{error()} method,
+which in turn prepends the program name and the string \code{"error:"} and
+prints everything to stderr before terminating the process.
+
+Here's a silly example that demonstrates adding a \code{complex} option
+type to parse Python-style complex numbers on the command line.  (This
+is even sillier than it used to be, because \module{optparse} 1.3 added built-in
+support for complex numbers, but never mind.)
+
+First, the necessary imports:
+\begin{verbatim}
+from copy import copy
+from optparse import Option, OptionValueError
+\end{verbatim}
+
+You need to define your type-checker first, since it's referred to later
+(in the \member{TYPE{\_}CHECKER} class attribute of your Option subclass):
+\begin{verbatim}
+def check_complex(option, opt, value):
+    try:
+        return complex(value)
+    except ValueError:
+        raise OptionValueError(
+            "option %s: invalid complex value: %r" % (opt, value))
+\end{verbatim}
+
+Finally, the Option subclass:
+\begin{verbatim}
+class MyOption (Option):
+    TYPES = Option.TYPES + ("complex",)
+    TYPE_CHECKER = copy(Option.TYPE_CHECKER)
+    TYPE_CHECKER["complex"] = check_complex
+\end{verbatim}
+
+(If we didn't make a \function{copy()} of \member{Option.TYPE{\_}CHECKER}, we would end
+up modifying the \member{TYPE{\_}CHECKER} attribute of \module{optparse}'s Option class.
+This being Python, nothing stops you from doing that except good manners
+and common sense.)
+
+That's it!  Now you can write a script that uses the new option type
+just like any other \module{optparse}-based script, except you have to instruct your
+OptionParser to use MyOption instead of Option:
+\begin{verbatim}
+parser = OptionParser(option_class=MyOption)
+parser.add_option("-c", type="complex")
+\end{verbatim}
+
+Alternately, you can build your own option list and pass it to
+OptionParser; if you don't use \method{add{\_}option()} in the above way, you
+don't need to tell OptionParser which option class to use:
+\begin{verbatim}
+option_list = [MyOption("-c", action="store", type="complex", dest="c")]
+parser = OptionParser(option_list=option_list)
+\end{verbatim}
+
+
+\subsubsection{Adding new actions\label{optparse-adding-new-actions}}
+
+Adding new actions is a bit trickier, because you have to understand
+that \module{optparse} has a couple of classifications for actions:
+\begin{description}
+\item[``store'' actions]
+actions that result in \module{optparse} storing a value to an attribute of the
+current OptionValues instance; these options require a \member{dest}
+attribute to be supplied to the Option constructor
+\item[``typed'' actions]
+actions that take a value from the command line and expect it to be
+of a certain type; or rather, a string that can be converted to a
+certain type.  These options require a \member{type} attribute to the
+Option constructor.
+\end{description}
+
+These are overlapping sets: some default ``store'' actions are \code{store},
+\code{store{\_}const}, \code{append}, and \code{count}, while the default ``typed''
+actions are \code{store}, \code{append}, and \code{callback}.
+
+When you add an action, you need to categorize it by listing it in at
+least one of the following class attributes of Option (all are lists of
+strings):
+\begin{description}
+\item[\member{ACTIONS}]
+all actions must be listed in ACTIONS
+\item[\member{STORE{\_}ACTIONS}]
+``store'' actions are additionally listed here
+\item[\member{TYPED{\_}ACTIONS}]
+``typed'' actions are additionally listed here
+\item[\code{ALWAYS{\_}TYPED{\_}ACTIONS}]
+actions that always take a type (i.e. whose options always take a
+value) are additionally listed here.  The only effect of this is
+that \module{optparse} assigns the default type, \code{string}, to options with no
+explicit type whose action is listed in \code{ALWAYS{\_}TYPED{\_}ACTIONS}.
+\end{description}
+
+In order to actually implement your new action, you must override
+Option's \method{take{\_}action()} method and add a case that recognizes your
+action.
+
+For example, let's add an \code{extend} action.  This is similar to the
+standard \code{append} action, but instead of taking a single value from
+the command-line and appending it to an existing list, \code{extend} will
+take multiple values in a single comma-delimited string, and extend an
+existing list with them.  That is, if \code{"-{}-names"} is an \code{extend}
+option of type \code{string}, the command line
+\begin{verbatim}
+--names=foo,bar --names blah --names ding,dong
+\end{verbatim}
+
+would result in a list
+\begin{verbatim}
+["foo", "bar", "blah", "ding", "dong"]
+\end{verbatim}
+
+Again we define a subclass of Option:
+\begin{verbatim}
+class MyOption (Option):
+
+    ACTIONS = Option.ACTIONS + ("extend",)
+    STORE_ACTIONS = Option.STORE_ACTIONS + ("extend",)
+    TYPED_ACTIONS = Option.TYPED_ACTIONS + ("extend",)
+    ALWAYS_TYPED_ACTIONS = Option.ALWAYS_TYPED_ACTIONS + ("extend",)
+
+    def take_action(self, action, dest, opt, value, values, parser):
+        if action == "extend":
+            lvalue = value.split(",")
+            values.ensure_value(dest, []).extend(lvalue)
+        else:
+            Option.take_action(
+                self, action, dest, opt, value, values, parser)
+\end{verbatim}
+
+Features of note:
+\begin{itemize}
+\item {} 
+\code{extend} both expects a value on the command-line and stores that
+value somewhere, so it goes in both \member{STORE{\_}ACTIONS} and
+\member{TYPED{\_}ACTIONS}
+
+\item {} 
+to ensure that \module{optparse} assigns the default type of \code{string} to
+\code{extend} actions, we put the \code{extend} action in
+\code{ALWAYS{\_}TYPED{\_}ACTIONS} as well
+
+\item {} 
+\method{MyOption.take{\_}action()} implements just this one new action, and
+passes control back to \method{Option.take{\_}action()} for the standard
+\module{optparse} actions
+
+\item {} 
+\code{values} is an instance of the optparse{\_}parser.Values class,
+which provides the very useful \method{ensure{\_}value()} method.
+\method{ensure{\_}value()} is essentially \function{getattr()} with a safety valve;
+it is called as
+\begin{verbatim}
+values.ensure_value(attr, value)
+\end{verbatim}
+
+If the \code{attr} attribute of \code{values} doesn't exist or is None, then
+ensure{\_}value() first sets it to \code{value}, and then returns 'value.
+This is very handy for actions like \code{extend}, \code{append}, and
+\code{count}, all of which accumulate data in a variable and expect that
+variable to be of a certain type (a list for the first two, an integer
+for the latter).  Using \method{ensure{\_}value()} means that scripts using
+your action don't have to worry about setting a default value for the
+option destinations in question; they can just leave the default as
+None and \method{ensure{\_}value()} will take care of getting it right when
+it's needed.
+
+\end{itemize}
+% $Id: extending.txt 517 2006-06-10 16:18:11Z gward $ 
 

@@ -139,6 +139,9 @@ class Shelf(UserDict.DictMixin):
         self.dict = 0
 
     def __del__(self):
+        if not hasattr(self, 'writeback'):
+            # __init__ didn't succeed, so don't bother closing
+            return
         self.close()
 
     def sync(self):

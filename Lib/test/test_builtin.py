@@ -532,13 +532,24 @@ class BuiltinTest(unittest.TestCase):
     @run_with_locale('LC_NUMERIC', 'fr_FR', 'de_DE')
     def test_float_with_comma(self):
         # set locale to something that doesn't use '.' for the decimal point
+        # float must not accept the locale specific decimal point but
+        # it still has to accept the normal python syntac
         import locale
         if not locale.localeconv()['decimal_point'] == ',':
             return
 
-        self.assertEqual(float("  3,14  "), 3.14)
-        self.assertEqual(float("  +3,14  "), 3.14)
-        self.assertEqual(float("  -3,14  "), -3.14)
+        self.assertEqual(float("  3.14  "), 3.14)
+        self.assertEqual(float("+3.14  "), 3.14)
+        self.assertEqual(float("-3.14  "), -3.14)
+        self.assertEqual(float(".14  "), .14)
+        self.assertEqual(float("3.  "), 3.0)
+        self.assertEqual(float("3.e3  "), 3000.0)
+        self.assertEqual(float("3.2e3  "), 3200.0)
+        self.assertEqual(float("2.5e-1  "), 0.25)
+        self.assertEqual(float("5e-1"), 0.5)
+        self.assertRaises(ValueError, float, "  3,14  ")
+        self.assertRaises(ValueError, float, "  +3,14  ")
+        self.assertRaises(ValueError, float, "  -3,14  ")
         self.assertRaises(ValueError, float, "  0x3.1  ")
         self.assertRaises(ValueError, float, "  -0x3.p-1  ")
         self.assertEqual(float("  25.e-1  "), 2.5)
@@ -603,6 +614,19 @@ class BuiltinTest(unittest.TestCase):
         def f(): pass
         self.assertRaises(TypeError, hash, [])
         self.assertRaises(TypeError, hash, {})
+        # Bug 1536021: Allow hash to return long objects
+        class X:
+            def __hash__(self):
+                return 2**100
+        self.assertEquals(type(hash(X())), int)
+        class Y(object):
+            def __hash__(self):
+                return 2**100
+        self.assertEquals(type(hash(Y())), int)
+        class Z(long):
+            def __hash__(self):
+                return self
+        self.assertEquals(hash(Z(42)), hash(42L))
 
     def test_hex(self):
         self.assertEqual(hex(16), '0x10')

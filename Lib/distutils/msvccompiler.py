@@ -131,8 +131,10 @@ class MacroExpander:
                 self.set_macro("FrameworkSDKDir", net, "sdkinstallroot")
         except KeyError, exc: #
             raise DistutilsPlatformError, \
-                  ("The .NET Framework SDK needs to be installed before "
-                   "building extensions for Python.")
+                  ("""Python was built with Visual Studio 2003;
+extensions must be built with a compiler than can generate compatible binaries.
+Visual Studio 2003 was not found on this system. If you have Cygwin installed,
+you can try compiling with MingW32, by passing "-c mingw32" to setup.py.""")
 
         p = r"Software\Microsoft\NET Framework Setup\Product"
         for base in HKEYS:
@@ -237,7 +239,7 @@ class MSVCCompiler (CCompiler) :
 
     def initialize(self):
         self.__paths = []
-        if os.environ.has_key("MSSdk") and self.find_exe("cl.exe"):
+        if os.environ.has_key("DISTUTILS_USE_SDK") and os.environ.has_key("MSSdk") and self.find_exe("cl.exe"):
             # Assume that the SDK set up everything alright; don't try to be
             # smarter
             self.cc = "cl.exe"

@@ -39,7 +39,7 @@ static char **orig_argv;
 static int  orig_argc;
 
 /* command line options */
-#define BASE_OPTS "c:dEhim:OStuvVW:xX"
+#define BASE_OPTS "c:dEhim:OStuvVW:xX?"
 
 #ifndef RISCOS
 #define PROGRAM_OPTS BASE_OPTS
@@ -61,7 +61,7 @@ Options and arguments (and corresponding environment variables):\n\
 -c cmd : program passed in as string (terminates option list)\n\
 -d     : debug output from parser (also PYTHONDEBUG=x)\n\
 -E     : ignore environment variables (such as PYTHONPATH)\n\
--h     : print this help message and exit\n\
+-h     : print this help message and exit (also --help)\n\
 -i     : inspect interactively after running script, (also PYTHONINSPECT=x)\n\
          and force prompts, even if stdin does not appear to be a terminal\n\
 ";
@@ -76,7 +76,7 @@ static char *usage_2 = "\
 static char *usage_3 = "\
          see man page for details on internal buffering relating to '-u'\n\
 -v     : verbose (trace import statements) (also PYTHONVERBOSE=x)\n\
--V     : print the Python version number and exit\n\
+-V     : print the Python version number and exit (also --version)\n\
 -W arg : warning control (arg is action:message:category:module:lineno)\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 file   : program read from script file\n\
@@ -281,6 +281,7 @@ Py_Main(int argc, char **argv)
 			break;
 
 		case 'h':
+		case '?':
 			help++;
 			break;
 
@@ -431,9 +432,10 @@ Py_Main(int argc, char **argv)
 	}
 
 	if (module != NULL) {
-		/* Backup _PyOS_optind and force sys.arv[0] = module */
+		/* Backup _PyOS_optind and force sys.argv[0] = '-c'
+		   so that PySys_SetArgv correctly sets sys.path[0] to ''*/
 		_PyOS_optind--;
-        argv[_PyOS_optind] = module;
+		argv[_PyOS_optind] = "-c";
 	}
 
 	PySys_SetArgv(argc-_PyOS_optind, argv+_PyOS_optind);

@@ -67,6 +67,7 @@ extern void init_codecs_tw(void);
 extern void init_subprocess(void);
 extern void init_lsprof(void);
 extern void init_ast(void);
+extern void init_types(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -161,6 +162,8 @@ struct _inittab _PyImport_Inittab[] = {
         {"__builtin__", NULL},
         {"sys", NULL},
 	{"exceptions", NULL},
+        
+        {"_types", init_types},
 
         /* Sentinel */
         {0, 0}

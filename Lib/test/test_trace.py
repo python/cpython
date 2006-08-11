@@ -244,8 +244,8 @@ class TraceTestCase(unittest.TestCase):
         self.run_test(one_instr_line)
     def test_04_no_pop_blocks(self):
         self.run_test(no_pop_blocks)
-##    def test_05_no_pop_tops(self):
-##        self.run_test(no_pop_tops)
+    def test_05_no_pop_tops(self):
+        self.run_test(no_pop_tops)
     def test_06_call(self):
         self.run_test(call)
     def test_07_raise(self):

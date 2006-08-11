@@ -1,4 +1,6 @@
-/******************************************************************/
+/*****************************************************************
+  This file should be kept compatible with Python 2.3, see PEP 291.
+ *****************************************************************/
 
 #if (PY_VERSION_HEX < 0x02050000)
 typedef int Py_ssize_t;
@@ -59,7 +61,7 @@ struct tagCDataObject {
 	Py_ssize_t b_length;	/* number of references we need */
 	Py_ssize_t b_index;	/* index of this object into base's
 				   b_object list */
-	PyObject *b_objects;	/* list of references we need to keep */
+	PyObject *b_objects;	/* dictionary of references we need to keep, or Py_None */
 	union value b_value;
 };
 
@@ -181,6 +183,7 @@ typedef struct {
 	PyObject *proto;		/* a type or NULL */
 	GETFUNC getfunc;		/* getter function if proto is NULL */
 	SETFUNC setfunc;		/* setter function if proto is NULL */
+	int anonymous;
 } CFieldObject;
 
 /* A subclass of PyDictObject, used as the instance dictionary of ctypes
@@ -374,8 +377,8 @@ extern char *conversion_mode_errors;
 #  undef PyUnicode_AsWideChar
 #  define PyUnicode_AsWideChar My_PyUnicode_AsWideChar
 
-extern PyObject *My_PyUnicode_FromWideChar(const wchar_t *, int);
-extern int My_PyUnicode_AsWideChar(PyUnicodeObject *, wchar_t *, int);
+extern PyObject *My_PyUnicode_FromWideChar(const wchar_t *, Py_ssize_t);
+extern int My_PyUnicode_AsWideChar(PyUnicodeObject *, wchar_t *, Py_ssize_t);
 
 #endif
 

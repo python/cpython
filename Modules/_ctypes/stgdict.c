@@ -1,3 +1,7 @@
+/*****************************************************************
+  This file should be kept compatible with Python 2.3, see PEP 291.
+ *****************************************************************/
+
 #include "Python.h"
 #include <ffi.h>
 #ifdef MS_WIN32
@@ -128,42 +132,148 @@ PyType_stgdict(PyObject *obj)
 	if (!PyType_Check(obj))
 		return NULL;
 	type = (PyTypeObject *)obj;
-	if (!type->tp_dict || !StgDict_Check(type->tp_dict))
+	if (!type->tp_dict || !StgDict_CheckExact(type->tp_dict))
 		return NULL;
 	return (StgDictObject *)type->tp_dict;
 }
 
 /* May return NULL, but does not set an exception! */
+/*
+  This function should be as fast as possible, so we don't call PyType_stgdict
+  above but inline the code, and avoid the PyType_Check().
+*/
 StgDictObject *
 PyObject_stgdict(PyObject *self)
 {
-	return PyType_stgdict((PyObject *)self->ob_type);
+	PyTypeObject *type = self->ob_type;
+	if (!type->tp_dict || !StgDict_CheckExact(type->tp_dict))
+		return NULL;
+	return (StgDictObject *)type->tp_dict;
 }
 
-#if 0
-/* work in progress: anonymous structure fields */
-int
-GetFields(PyObject *desc, int *pindex, int *psize, int *poffset, int *palign, int pack);
-
+/* descr is the descriptor for a field marked as anonymous.  Get all the
+ _fields_ descriptors from descr->proto, create new descriptors with offset
+ and index adjusted, and stuff them into type.
+ */
+static int
+MakeFields(PyObject *type, CFieldObject *descr,
+	   Py_ssize_t index, Py_ssize_t offset)
 {
-	int i;
-	PyObject *tuples = PyObject_GetAttrString(desc, "_fields_");
-	if (tuples == NULL)
+	Py_ssize_t i;
+	PyObject *fields;
+	PyObject *fieldlist;
+
+	fields = PyObject_GetAttrString(descr->proto, "_fields_");
+	if (fields == NULL)
 		return -1;
-	if (!PyTuple_Check(tuples))
-		return -1; /* leak */
-	for (i = 0; i < PyTuple_GET_SIZE(tuples); ++i) {
-		char *fname;
-		PyObject *dummy;
-		CFieldObject *field;
-		PyObject *pair = PyTuple_GET_ITEM(tuples, i);
-		if (!PyArg_ParseTuple(pair, "sO", &fname, &dummy))
-			return -1; /* leak */
-		field = PyObject_GetAttrString(desc, fname);
-		Py_DECREF(field);
+	fieldlist = PySequence_Fast(fields, "_fields_ must be a sequence");
+	Py_DECREF(fields);
+	if (fieldlist == NULL)
+		return -1;
+
+	for (i = 0; i < PySequence_Fast_GET_SIZE(fieldlist); ++i) {
+		PyObject *pair = PySequence_Fast_GET_ITEM(fieldlist, i); /* borrowed */
+		PyObject *fname, *ftype;
+		CFieldObject *fdescr;
+		CFieldObject *new_descr;
+		/* Convert to PyArg_UnpackTuple... */
+		if (!PyArg_ParseTuple(pair, "OO", &fname, &ftype)) {
+			Py_DECREF(fieldlist);
+			return -1;
+		}
+		fdescr = (CFieldObject *)PyObject_GetAttr(descr->proto, fname);
+		if (fdescr == NULL) {
+			Py_DECREF(fieldlist);
+			return -1;
+		}
+		if (fdescr->ob_type != &CField_Type) {
+			PyErr_SetString(PyExc_TypeError, "unexpected type");
+			Py_DECREF(fdescr);
+			Py_DECREF(fieldlist);
+			return -1;
+		}
+		if (fdescr->anonymous) {
+			int rc = MakeFields(type, fdescr,
+					    index + fdescr->index,
+					    offset + fdescr->offset);
+			Py_DECREF(fdescr);
+			if (rc == -1) {
+				Py_DECREF(fieldlist);
+				return -1;
+			}
+			continue;
+		}
+ 		new_descr = (CFieldObject *)PyObject_CallObject((PyObject *)&CField_Type, NULL);
+		assert(new_descr->ob_type == &CField_Type);
+		if (new_descr == NULL) {
+			Py_DECREF(fdescr);
+			Py_DECREF(fieldlist);
+			return -1;
+		}
+ 		new_descr->size = fdescr->size;
+ 		new_descr->offset = fdescr->offset + offset;
+ 		new_descr->index = fdescr->index + index;
+ 		new_descr->proto = fdescr->proto;
+ 		Py_XINCREF(new_descr->proto);
+ 		new_descr->getfunc = fdescr->getfunc;
+ 		new_descr->setfunc = fdescr->setfunc;
+
+  		Py_DECREF(fdescr);
+		
+		if (-1 == PyObject_SetAttr(type, fname, (PyObject *)new_descr)) {
+			Py_DECREF(fieldlist);
+			Py_DECREF(new_descr);
+			return -1;
+		}
+		Py_DECREF(new_descr);
 	}
+	Py_DECREF(fieldlist);
+	return 0;
 }
-#endif
+
+/* Iterate over the names in the type's _anonymous_ attribute, if present,
+ */
+static int
+MakeAnonFields(PyObject *type)
+{
+	PyObject *anon;
+	PyObject *anon_names;
+	Py_ssize_t i;
+
+	anon = PyObject_GetAttrString(type, "_anonymous_");
+	if (anon == NULL) {
+		PyErr_Clear();
+		return 0;
+	}
+	anon_names = PySequence_Fast(anon, "_anonymous_ must be a sequence");
+	Py_DECREF(anon);
+	if (anon_names == NULL)
+		return -1;
+
+	for (i = 0; i < PySequence_Fast_GET_SIZE(anon_names); ++i) {
+		PyObject *fname = PySequence_Fast_GET_ITEM(anon_names, i); /* borrowed */
+		CFieldObject *descr = (CFieldObject *)PyObject_GetAttr(type, fname);
+		if (descr == NULL) {
+			Py_DECREF(anon_names);
+			return -1;
+		}
+		assert(descr->ob_type == &CField_Type);
+		descr->anonymous = 1;
+
+		/* descr is in the field descriptor. */
+		if (-1 == MakeFields(type, (CFieldObject *)descr,
+				     ((CFieldObject *)descr)->index,
+				     ((CFieldObject *)descr)->offset)) {
+			Py_DECREF(descr);
+			Py_DECREF(anon_names);
+			return -1;
+		}
+		Py_DECREF(descr);
+	}
+
+	Py_DECREF(anon_names);
+	return 0;
+}
 
 /*
   Retrive the (optional) _pack_ attribute from a type, the _fields_ attribute,
@@ -366,5 +476,5 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 	stgdict->size = size;
 	stgdict->align = total_align;
 	stgdict->length = len;	/* ADD ffi_ofs? */
-	return 0;
+	return MakeAnonFields(type);
 }

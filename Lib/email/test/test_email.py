@@ -3005,10 +3005,50 @@ Content-Type: text/html; NAME*0=file____C__DOCUMENTS_20AND_20SETTINGS_FABIEN_LOC
 
 '''
         msg = email.message_from_string(m)
-        self.assertEqual(msg.get_param('NAME'),
-                         (None, None, 'file____C__DOCUMENTS_20AND_20SETTINGS_FABIEN_LOCAL_20SETTINGS_TEMP_nsmail.htm'))
+        param = msg.get_param('NAME')
+        self.failIf(isinstance(param, tuple))
+        self.assertEqual(
+            param,
+            'file____C__DOCUMENTS_20AND_20SETTINGS_FABIEN_LOCAL_20SETTINGS_TEMP_nsmail.htm')
 
     def test_rfc2231_no_language_or_charset_in_filename(self):
+        m = '''\
+Content-Disposition: inline;
+\tfilename*0*="''This%20is%20even%20more%20";
+\tfilename*1*="%2A%2A%2Afun%2A%2A%2A%20";
+\tfilename*2="is it not.pdf"
+
+'''
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_filename(),
+                         'This is even more ***fun*** is it not.pdf')
+
+    def test_rfc2231_no_language_or_charset_in_filename_encoded(self):
+        m = '''\
+Content-Disposition: inline;
+\tfilename*0*="''This%20is%20even%20more%20";
+\tfilename*1*="%2A%2A%2Afun%2A%2A%2A%20";
+\tfilename*2="is it not.pdf"
+
+'''
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_filename(),
+                         'This is even more ***fun*** is it not.pdf')
+
+    def test_rfc2231_partly_encoded(self):
+        m = '''\
+Content-Disposition: inline;
+\tfilename*0="''This%20is%20even%20more%20";
+\tfilename*1*="%2A%2A%2Afun%2A%2A%2A%20";
+\tfilename*2="is it not.pdf"
+
+'''
+        msg = email.message_from_string(m)
+        self.assertEqual(
+            msg.get_filename(),
+            'This%20is%20even%20more%20***fun*** is it not.pdf')
+
+    def test_rfc2231_partly_nonencoded(self):
         m = '''\
 Content-Disposition: inline;
 \tfilename*0="This%20is%20even%20more%20";
@@ -3017,14 +3057,15 @@ Content-Disposition: inline;
 
 '''
         msg = email.message_from_string(m)
-        self.assertEqual(msg.get_filename(),
-                         'This is even more ***fun*** is it not.pdf')
+        self.assertEqual(
+            msg.get_filename(),
+            'This%20is%20even%20more%20%2A%2A%2Afun%2A%2A%2A%20is it not.pdf')
 
     def test_rfc2231_no_language_or_charset_in_boundary(self):
         m = '''\
 Content-Type: multipart/alternative;
-\tboundary*0="This%20is%20even%20more%20";
-\tboundary*1="%2A%2A%2Afun%2A%2A%2A%20";
+\tboundary*0*="''This%20is%20even%20more%20";
+\tboundary*1*="%2A%2A%2Afun%2A%2A%2A%20";
 \tboundary*2="is it not.pdf"
 
 '''
@@ -3036,8 +3077,8 @@ Content-Type: multipart/alternative;
         # This is a nonsensical charset value, but tests the code anyway
         m = '''\
 Content-Type: text/plain;
-\tcharset*0="This%20is%20even%20more%20";
-\tcharset*1="%2A%2A%2Afun%2A%2A%2A%20";
+\tcharset*0*="This%20is%20even%20more%20";
+\tcharset*1*="%2A%2A%2Afun%2A%2A%2A%20";
 \tcharset*2="is it not.pdf"
 
 '''
@@ -3045,14 +3086,144 @@ Content-Type: text/plain;
         self.assertEqual(msg.get_content_charset(),
                          'this is even more ***fun*** is it not.pdf')
 
+    def test_rfc2231_bad_encoding_in_filename(self):
+        m = '''\
+Content-Disposition: inline;
+\tfilename*0*="bogus'xx'This%20is%20even%20more%20";
+\tfilename*1*="%2A%2A%2Afun%2A%2A%2A%20";
+\tfilename*2="is it not.pdf"
+
+'''
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_filename(),
+                         'This is even more ***fun*** is it not.pdf')
+
+    def test_rfc2231_bad_encoding_in_charset(self):
+        m = """\
+Content-Type: text/plain; charset*=bogus''utf-8%E2%80%9D
+
+"""
+        msg = email.message_from_string(m)
+        # This should return None because non-ascii characters in the charset
+        # are not allowed.
+        self.assertEqual(msg.get_content_charset(), None)
+
+    def test_rfc2231_bad_character_in_charset(self):
+        m = """\
+Content-Type: text/plain; charset*=ascii''utf-8%E2%80%9D
+
+"""
+        msg = email.message_from_string(m)
+        # This should return None because non-ascii characters in the charset
+        # are not allowed.
+        self.assertEqual(msg.get_content_charset(), None)
+
+    def test_rfc2231_bad_character_in_filename(self):
+        m = '''\
+Content-Disposition: inline;
+\tfilename*0*="ascii'xx'This%20is%20even%20more%20";
+\tfilename*1*="%2A%2A%2Afun%2A%2A%2A%20";
+\tfilename*2*="is it not.pdf%E2"
+
+'''
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_filename(),
+                         u'This is even more ***fun*** is it not.pdf\ufffd')
+
     def test_rfc2231_unknown_encoding(self):
         m = """\
 Content-Transfer-Encoding: 8bit
-Content-Disposition: inline; filename*0=X-UNKNOWN''myfile.txt
+Content-Disposition: inline; filename*=X-UNKNOWN''myfile.txt
 
 """
         msg = email.message_from_string(m)
         self.assertEqual(msg.get_filename(), 'myfile.txt')
+
+    def test_rfc2231_single_tick_in_filename_extended(self):
+        eq = self.assertEqual
+        m = """\
+Content-Type: application/x-foo;
+\tname*0*=\"Frank's\"; name*1*=\" Document\"
+
+"""
+        msg = email.message_from_string(m)
+        charset, language, s = msg.get_param('name')
+        eq(charset, None)
+        eq(language, None)
+        eq(s, "Frank's Document")
+
+    def test_rfc2231_single_tick_in_filename(self):
+        m = """\
+Content-Type: application/x-foo; name*0=\"Frank's\"; name*1=\" Document\"
+
+"""
+        msg = email.message_from_string(m)
+        param = msg.get_param('name')
+        self.failIf(isinstance(param, tuple))
+        self.assertEqual(param, "Frank's Document")
+
+    def test_rfc2231_tick_attack_extended(self):
+        eq = self.assertEqual
+        m = """\
+Content-Type: application/x-foo;
+\tname*0*=\"us-ascii'en-us'Frank's\"; name*1*=\" Document\"
+
+"""
+        msg = email.message_from_string(m)
+        charset, language, s = msg.get_param('name')
+        eq(charset, 'us-ascii')
+        eq(language, 'en-us')
+        eq(s, "Frank's Document")
+
+    def test_rfc2231_tick_attack(self):
+        m = """\
+Content-Type: application/x-foo;
+\tname*0=\"us-ascii'en-us'Frank's\"; name*1=\" Document\"
+
+"""
+        msg = email.message_from_string(m)
+        param = msg.get_param('name')
+        self.failIf(isinstance(param, tuple))
+        self.assertEqual(param, "us-ascii'en-us'Frank's Document")
+
+    def test_rfc2231_no_extended_values(self):
+        eq = self.assertEqual
+        m = """\
+Content-Type: application/x-foo; name=\"Frank's Document\"
+
+"""
+        msg = email.message_from_string(m)
+        eq(msg.get_param('name'), "Frank's Document")
+
+    def test_rfc2231_encoded_then_unencoded_segments(self):
+        eq = self.assertEqual
+        m = """\
+Content-Type: application/x-foo;
+\tname*0*=\"us-ascii'en-us'My\";
+\tname*1=\" Document\";
+\tname*2*=\" For You\"
+
+"""
+        msg = email.message_from_string(m)
+        charset, language, s = msg.get_param('name')
+        eq(charset, 'us-ascii')
+        eq(language, 'en-us')
+        eq(s, 'My Document For You')
+
+    def test_rfc2231_unencoded_then_encoded_segments(self):
+        eq = self.assertEqual
+        m = """\
+Content-Type: application/x-foo;
+\tname*0=\"us-ascii'en-us'My\";
+\tname*1*=\" Document\";
+\tname*2*=\" For You\"
+
+"""
+        msg = email.message_from_string(m)
+        charset, language, s = msg.get_param('name')
+        eq(charset, 'us-ascii')
+        eq(language, 'en-us')
+        eq(s, 'My Document For You')
 
 
 

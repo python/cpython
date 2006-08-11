@@ -829,21 +829,19 @@ static PyObject *AEDesc_get_type(AEDescObject *self, void *closure)
 
 static PyObject *AEDesc_get_data(AEDescObject *self, void *closure)
 {
+	PyObject *res;
+	Size size;
+	char *ptr;
+	OSErr err;
 
-	            PyObject *res;
-	            Size size;
-	            char *ptr;
-	            OSErr err;
-
-	            size = AEGetDescDataSize(&self->ob_itself);
-	            if ( (res = PyString_FromStringAndSize(NULL, size)) == NULL )
-	                    return NULL;
-	            if ( (ptr = PyString_AsString(res)) == NULL )
-	                    return NULL;
-	            if ( (err=AEGetDescData(&self->ob_itself, ptr, size)) < 0 )
-	                    return PyMac_Error(err);
-	            return res;
-	            
+	size = AEGetDescDataSize(&self->ob_itself);
+	if ( (res = PyString_FromStringAndSize(NULL, size)) == NULL )
+		return NULL;
+	if ( (ptr = PyString_AsString(res)) == NULL )
+		return NULL;
+	if ( (err=AEGetDescData(&self->ob_itself, ptr, size)) < 0 )
+		return PyMac_Error(err);
+	return res;
 }
 
 #define AEDesc_set_data NULL
@@ -1431,14 +1429,11 @@ void init_AE(void)
 	PyObject *m;
 	PyObject *d;
 
-
-
-	        upp_AEIdleProc = NewAEIdleUPP(AEIdleProc);
-	        upp_GenericEventHandler = NewAEEventHandlerUPP(GenericEventHandler);
-	        PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_New);
-	        PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_NewBorrowed);
-	        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(AEDesc, AEDesc_Convert);
-
+        upp_AEIdleProc = NewAEIdleUPP(AEIdleProc);
+        upp_GenericEventHandler = NewAEEventHandlerUPP(GenericEventHandler);
+        PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_New);
+        PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_NewBorrowed);
+        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(AEDesc, AEDesc_Convert);
 
 	m = Py_InitModule("_AE", AE_methods);
 	d = PyModule_GetDict(m);

@@ -95,6 +95,11 @@ PyThread_init_thread(void)
 	PyThread__init_thread();
 }
 
+/* Support for runtime thread stack size tuning.
+   A value of 0 means using the platform's default stack size
+   or the size specified by the THREAD_STACK_SIZE macro. */
+static size_t _pythread_stacksize = 0;
+
 #ifdef SGI_THREADS
 #include "thread_sgi.h"
 #endif
@@ -149,6 +154,28 @@ PyThread_init_thread(void)
 #include "thread_foobar.h"
 #endif
 */
+
+/* return the current thread stack size */
+size_t
+PyThread_get_stacksize(void)
+{
+	return _pythread_stacksize;
+}
+
+/* Only platforms defining a THREAD_SET_STACKSIZE() macro
+   in thread_<platform>.h support changing the stack size.
+   Return 0 if stack size is valid,
+          -1 if stack size value is invalid,
+          -2 if setting stack size is not supported. */
+int
+PyThread_set_stacksize(size_t size)
+{
+#if defined(THREAD_SET_STACKSIZE)
+	return THREAD_SET_STACKSIZE(size);
+#else
+	return -2;
+#endif
+}
 
 #ifndef Py_HAVE_NATIVE_TLS
 /* If the platform has not supplied a platform specific
@@ -240,6 +267,8 @@ find_key(int key, void *value)
 	struct key *p;
 	long id = PyThread_get_thread_ident();
 
+	if (!keymutex)
+		return NULL;
 	PyThread_acquire_lock(keymutex, 1);
 	for (p = keyhead; p != NULL; p = p->next) {
 		if (p->id == id && p->key == key)

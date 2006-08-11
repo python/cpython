@@ -56,13 +56,30 @@ class CompilerTest(unittest.TestCase):
     def testYieldExpr(self):
         compiler.compile("def g(): yield\n\n", "<string>", "exec")
 
+    def testTryExceptFinally(self):
+        # Test that except and finally clauses in one try stmt are recognized
+        c = compiler.compile("try:\n 1/0\nexcept:\n e = 1\nfinally:\n f = 1",
+                             "<string>", "exec")
+        dct = {}
+        exec c in dct
+        self.assertEquals(dct.get('e'), 1)
+        self.assertEquals(dct.get('f'), 1)
+
     def testDefaultArgs(self):
         self.assertRaises(SyntaxError, compiler.parse, "def foo(a=1, b): pass")
+
+    def testDocstrings(self):
+        c = compiler.compile('"doc"', '<string>', 'exec')
+        self.assert_('__doc__' in c.co_names)
+        c = compiler.compile('def f():\n "doc"', '<string>', 'exec')
+        g = {}
+        exec c in g
+        self.assertEquals(g['f'].__doc__, "doc")
 
     def testLineNo(self):
         # Test that all nodes except Module have a correct lineno attribute.
         filename = __file__
-        if filename.endswith(".pyc") or filename.endswith(".pyo"):
+        if filename.endswith((".pyc", ".pyo")):
             filename = filename[:-1]
         tree = compiler.parseFile(filename)
         self.check_lineno(tree)
@@ -87,6 +104,19 @@ class CompilerTest(unittest.TestCase):
         self.assertEquals(flatten([1, [2]]), [1, 2])
         self.assertEquals(flatten((1, (2,))), [1, 2])
 
+    def testNestedScope(self):
+        c = compiler.compile('def g():\n'
+                             '    a = 1\n'
+                             '    def f(): return a + 2\n'
+                             '    return f()\n'
+                             'result = g()',
+                             '<string>',
+                             'exec')
+        dct = {}
+        exec c in dct
+        self.assertEquals(dct.get('result'), 3)
+
+
 NOLINENO = (compiler.ast.Module, compiler.ast.Stmt, compiler.ast.Discard)
 
 ###############################################################################
@@ -103,6 +133,12 @@ a, b = 2, 3
 l = [(x, y) for x, y in zip(range(5), range(5,10))]
 l[0]
 l[3:4]
+d = {'a': 2}
+d = {}
+t = ()
+t = (1, 2)
+l = []
+l = [1, 2]
 if l:
     pass
 else:

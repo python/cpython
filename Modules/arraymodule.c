@@ -10,9 +10,9 @@
 #ifdef STDC_HEADERS
 #include <stddef.h>
 #else /* !STDC_HEADERS */
-#ifndef DONT_HAVE_SYS_TYPES_H
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>		/* For size_t */
-#endif /* DONT_HAVE_SYS_TYPES_H */
+#endif /* HAVE_SYS_TYPES_H */
 #endif /* !STDC_HEADERS */
 
 struct arrayobject; /* Forward */
@@ -1785,6 +1785,7 @@ static PyBufferProcs array_as_buffer = {
 	(readbufferproc)array_buffer_getreadbuf,
 	(writebufferproc)array_buffer_getwritebuf,
 	(segcountproc)array_buffer_getsegcount,
+	NULL,
 };
 
 static PyObject *

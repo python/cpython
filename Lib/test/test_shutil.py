@@ -74,6 +74,53 @@ class TestShutil(unittest.TestCase):
             except:
                 pass
 
+    def test_copytree_simple(self):
+        def write_data(path, data):
+            f = open(path, "w")
+            f.write(data)
+            f.close()
+
+        def read_data(path):
+            f = open(path)
+            data = f.read()
+            f.close()
+            return data
+
+        src_dir = tempfile.mkdtemp()
+        dst_dir = os.path.join(tempfile.mkdtemp(), 'destination')
+
+        write_data(os.path.join(src_dir, 'test.txt'), '123')
+
+        os.mkdir(os.path.join(src_dir, 'test_dir'))
+        write_data(os.path.join(src_dir, 'test_dir', 'test.txt'), '456')
+
+        try:
+            shutil.copytree(src_dir, dst_dir)
+            self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'test.txt')))
+            self.assertTrue(os.path.isdir(os.path.join(dst_dir, 'test_dir')))
+            self.assertTrue(os.path.isfile(os.path.join(dst_dir, 'test_dir',
+                                                        'test.txt')))
+            actual = read_data(os.path.join(dst_dir, 'test.txt'))
+            self.assertEqual(actual, '123')
+            actual = read_data(os.path.join(dst_dir, 'test_dir', 'test.txt'))
+            self.assertEqual(actual, '456')
+        finally:
+            for path in (
+                    os.path.join(src_dir, 'test.txt'),
+                    os.path.join(dst_dir, 'test.txt'),
+                    os.path.join(src_dir, 'test_dir', 'test.txt'),
+                    os.path.join(dst_dir, 'test_dir', 'test.txt'),
+                ):
+                if os.path.exists(path):
+                    os.remove(path)
+            for path in (
+                    os.path.join(src_dir, 'test_dir'),
+                    os.path.join(dst_dir, 'test_dir'),
+                ):
+                if os.path.exists(path):
+                    os.removedirs(path)
+
+
     if hasattr(os, "symlink"):
         def test_dont_copy_file_onto_link_to_itself(self):
             # bug 851123.

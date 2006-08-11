@@ -717,7 +717,8 @@ element_deepcopy(ElementObject* self, PyObject* args)
 LOCAL(int)
 checkpath(PyObject* tag)
 {
-    int i, check = 1;
+    Py_ssize_t i;
+    int check = 1;
 
     /* check if a tag contains an xpath character */
 
@@ -1180,7 +1181,7 @@ static int
 element_setslice(PyObject* self_, Py_ssize_t start, Py_ssize_t end, PyObject* item)
 {
     ElementObject* self = (ElementObject*) self_;
-    int i, new, old;
+    Py_ssize_t i, new, old;
     PyObject* recycle = NULL;
 
     if (!self->extra)
@@ -1426,7 +1427,7 @@ typedef struct {
     PyObject* data; /* data collector (string or list), or NULL */
 
     PyObject* stack; /* element stack */
-    int index; /* current stack size (0=empty) */
+    Py_ssize_t index; /* current stack size (0=empty) */
 
     /* element tracing */
     PyObject* events; /* list of events, or NULL if not collecting */
@@ -1606,7 +1607,7 @@ treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
             PyString_CheckExact(data) && PyString_GET_SIZE(data) == 1) {
             /* expat often generates single character data sections; handle
                the most common case by resizing the existing string... */
-            int size = PyString_GET_SIZE(self->data);
+            Py_ssize_t size = PyString_GET_SIZE(self->data);
             if (_PyString_Resize(&self->data, size + 1) < 0)
                 return NULL;
             PyString_AS_STRING(self->data)[size] = PyString_AS_STRING(data)[0];
@@ -1988,7 +1989,7 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
         Py_XDECREF(res);
     } else {
         PyErr_Format(
-            PyExc_SyntaxError, "undefined entity &%s;: line %d, column %d",
+            PyExc_SyntaxError, "undefined entity &%s;: line %ld, column %ld",
             PyString_AS_STRING(key),
             EXPAT(GetErrorLineNumber)(self->parser),
             EXPAT(GetErrorColumnNumber)(self->parser)
@@ -2349,7 +2350,7 @@ expat_parse(XMLParserObject* self, char* data, int data_len, int final)
 
     if (!ok) {
         PyErr_Format(
-            PyExc_SyntaxError, "%s: line %d, column %d",
+            PyExc_SyntaxError, "%s: line %ld, column %ld",
             EXPAT(ErrorString)(EXPAT(GetErrorCode)(self->parser)),
             EXPAT(GetErrorLineNumber)(self->parser),
             EXPAT(GetErrorColumnNumber)(self->parser)
@@ -2456,7 +2457,7 @@ xmlparser_setevents(XMLParserObject* self, PyObject* args)
 {
     /* activate element event reporting */
 
-    int i;
+    Py_ssize_t i;
     TreeBuilderObject* target;
 
     PyObject* events; /* event collector */

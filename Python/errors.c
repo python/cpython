@@ -641,7 +641,7 @@ extern PyObject *PyModule_GetWarningsModule(void);
 
 /* Function to issue a warning message; may raise an exception. */
 int
-PyErr_Warn(PyObject *category, char *message)
+PyErr_WarnEx(PyObject *category, const char *message, Py_ssize_t stack_level)
 {
 	PyObject *dict, *func = NULL;
 	PyObject *warnings_module = PyModule_GetWarningsModule();
@@ -659,7 +659,8 @@ PyErr_Warn(PyObject *category, char *message)
 
 		if (category == NULL)
 			category = PyExc_RuntimeWarning;
-		res = PyObject_CallFunction(func, "sO", message, category);
+		res = PyObject_CallFunction(func, "sOn",
+					    message, category, stack_level);
 		if (res == NULL)
 			return -1;
 		Py_DECREF(res);
@@ -667,6 +668,16 @@ PyErr_Warn(PyObject *category, char *message)
 	}
 }
 
+/* PyErr_Warn is only for backwards compatability and will be removed.
+   Use PyErr_WarnEx instead. */
+
+#undef PyErr_Warn
+
+PyAPI_FUNC(int)
+PyErr_Warn(PyObject *category, char *message)
+{
+	return PyErr_WarnEx(category, message, 1);
+}
 
 /* Warning with explicit origin */
 int

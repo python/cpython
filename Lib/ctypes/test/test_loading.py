@@ -9,18 +9,10 @@ if os.name == "nt":
     libc_name = "msvcrt"
 elif os.name == "ce":
     libc_name = "coredll"
-elif sys.platform == "darwin":
-    libc_name = "libc.dylib"
 elif sys.platform == "cygwin":
     libc_name = "cygwin1.dll"
 else:
-    for line in os.popen("ldd %s" % sys.executable):
-        if "libc.so" in line:
-            if sys.platform == "openbsd3":
-                libc_name = line.split()[4]
-            else:
-                libc_name = line.split()[2]
-            break
+    libc_name = find_library("c")
 
 if is_resource_enabled("printing"):
     print "libc_name is", libc_name

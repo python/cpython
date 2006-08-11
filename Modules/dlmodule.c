@@ -5,6 +5,10 @@
 
 #include <dlfcn.h>
 
+#ifdef __VMS
+#include <unistd.h>
+#endif
+
 #ifndef RTLD_LAZY
 #define RTLD_LAZY 1
 #endif
@@ -77,8 +81,8 @@ dl_call(dlobject *xp, PyObject *args)
                      long, long, long, long, long);
 	long alist[10];
 	long res;
-	int i;
-	int n = PyTuple_Size(args);
+	Py_ssize_t i;
+	Py_ssize_t n = PyTuple_Size(args);
 	if (n < 1) {
 		PyErr_SetString(PyExc_TypeError, "at least a name is needed");
 		return NULL;
@@ -186,6 +190,24 @@ dl_open(PyObject *self, PyObject *args)
 		PyErr_SetString(Dlerror, dlerror());
 		return NULL;
 	}
+#ifdef __VMS
+	/*   Under OpenVMS dlopen doesn't do any check, just save the name
+	 * for later use, so we have to check if the file is readable,
+	 * the name can be a logical or a file from SYS$SHARE.
+	 */
+	if (access(name, R_OK)) {
+		char fname[strlen(name) + 20];
+		strcpy(fname, "SYS$SHARE:");
+		strcat(fname, name);
+		strcat(fname, ".EXE");
+		if (access(fname, R_OK)) {
+			dlclose(handle);
+			PyErr_SetString(Dlerror,
+				"File not found or protection violation");
+			return NULL;
+		}
+	}
+#endif
 	return newdlobject(handle);
 }
 

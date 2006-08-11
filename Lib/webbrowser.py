@@ -98,8 +98,7 @@ def _synthesize(browser, update_tryorder=1):
 if sys.platform[:3] == "win":
     def _isexecutable(cmd):
         cmd = cmd.lower()
-        if os.path.isfile(cmd) and (cmd.endswith(".exe") or
-                                    cmd.endswith(".bat")):
+        if os.path.isfile(cmd) and cmd.endswith((".exe", ".bat")):
             return True
         for ext in ".exe", ".bat":
             if os.path.isfile(cmd + ext):
@@ -435,13 +434,13 @@ def register_X_browsers():
     # The default Gnome browser
     if _iscommand("gconftool-2"):
         # get the web browser string from gconftool
-        gc = 'gconftool-2 -g /desktop/gnome/url-handlers/http/command'
+        gc = 'gconftool-2 -g /desktop/gnome/url-handlers/http/command 2>/dev/null'
         out = os.popen(gc)
         commd = out.read().strip()
         retncode = out.close()
 
         # if successful, register it
-        if retncode == None and len(commd) != 0:
+        if retncode is None and commd:
             register("gnome", None, BackgroundBrowser(commd))
 
     # First, the Mozilla/Netscape browsers

@@ -8,7 +8,6 @@ import bsddb
 import dbhash # Just so we know it's imported
 import unittest
 from test import test_support
-from sets import Set
 
 class TestBSDDB(unittest.TestCase):
     openflag = 'c'
@@ -53,7 +52,7 @@ class TestBSDDB(unittest.TestCase):
             self.assertEqual(self.f[k], v)
 
     def assertSetEquals(self, seqn1, seqn2):
-        self.assertEqual(Set(seqn1), Set(seqn2))
+        self.assertEqual(set(seqn1), set(seqn2))
 
     def test_mapping_iteration_methods(self):
         f = self.f

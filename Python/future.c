@@ -121,8 +121,10 @@ PyFuture_FromAST(mod_ty mod, const char *filename)
 	PyFutureFeatures *ff;
 
 	ff = (PyFutureFeatures *)PyObject_Malloc(sizeof(PyFutureFeatures));
-	if (ff == NULL)
+	if (ff == NULL) {
+		PyErr_NoMemory();
 		return NULL;
+	}
 	ff->ff_features = 0;
 	ff->ff_lineno = -1;
 

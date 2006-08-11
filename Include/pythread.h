@@ -25,6 +25,9 @@ PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
 #define NOWAIT_LOCK	0
 PyAPI_FUNC(void) PyThread_release_lock(PyThread_type_lock);
 
+PyAPI_FUNC(size_t) PyThread_get_stacksize(void);
+PyAPI_FUNC(int) PyThread_set_stacksize(size_t);
+
 #ifndef NO_EXIT_PROG
 PyAPI_FUNC(void) PyThread_exit_prog(int);
 PyAPI_FUNC(void) PyThread__PyThread_exit_prog(int);

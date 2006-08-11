@@ -187,7 +187,7 @@ class CAB:
         self.filenames = sets.Set()
         self.index = 0
 
-    def gen_id(self, dir, file):
+    def gen_id(self, file):
         logical = _logical = make_id(file)
         pos = 1
         while logical in self.filenames:
@@ -196,9 +196,11 @@ class CAB:
         self.filenames.add(logical)
         return logical
 
-    def append(self, full, logical):
+    def append(self, full, file, logical):
         if os.path.isdir(full):
             return
+        if not logical:
+            logical = self.gen_id(file)
         self.index += 1
         self.files.append((full, logical))
         return self.index, logical
@@ -328,7 +330,7 @@ class Directory:
             logical = self.keyfiles[file]
         else:
             logical = None
-        sequence, logical = self.cab.append(absolute, logical)
+        sequence, logical = self.cab.append(absolute, file, logical)
         assert logical not in self.ids
         self.ids.add(logical)
         short = self.make_short(file)
@@ -403,7 +405,7 @@ class Control:
                  [(self.dlg.name, self.name, event, argument,
                    condition, ordering)])
 
-    def mapping(self, mapping, attribute):
+    def mapping(self, event, attribute):
         add_data(self.dlg.db, "EventMapping",
                  [(self.dlg.name, self.name, event, attribute)])
 

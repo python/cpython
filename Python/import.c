@@ -60,6 +60,10 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        Python 2.5a0: 62081 (ast-branch)
        Python 2.5a0: 62091 (with)
        Python 2.5a0: 62092 (changed WITH_CLEANUP opcode)
+       Python 2.5b3: 62101 (fix wrong code: for x, in ...)
+       Python 2.5b3: 62111 (fix wrong code: x += yield)
+       Python 2.5c1: 62121 (fix wrong lnotab with for loops and
+       			    storing constants that should have been removed)
        Python 3000:   3000
 .
 */
@@ -98,6 +102,8 @@ static const struct filedescr _PyImport_StandardFiletab[] = {
 };
 #endif
 
+static PyTypeObject NullImporterType;	/* Forward reference */
+
 /* Initialize things */
 
 void
@@ -116,6 +122,8 @@ _PyImport_Init(void)
 	for (scan = _PyImport_StandardFiletab; scan->suffix != NULL; ++scan)
 		++countS;
 	filetab = PyMem_NEW(struct filedescr, countD + countS + 1);
+	if (filetab == NULL)
+		Py_FatalError("Can't initialize import file table.");
 	memcpy(filetab, _PyImport_DynLoadFiletab,
 	       countD * sizeof(struct filedescr));
 	memcpy(filetab + countD, _PyImport_StandardFiletab,
@@ -153,6 +161,8 @@ _PyImportHooks_Init(void)
 
 	/* adding sys.path_hooks and sys.path_importer_cache, setting up
 	   zipimport */
+	if (PyType_Ready(&NullImporterType) < 0)
+		goto error;
 
 	if (Py_VerboseFlag)
 		PySys_WriteStderr("# installing zipimport hook\n");
@@ -178,9 +188,11 @@ _PyImportHooks_Init(void)
 	if (err) {
   error:
 		PyErr_Print();
-		Py_FatalError("initializing sys.meta_path, sys.path_hooks or "
-			      "path_importer_cache failed");
+		Py_FatalError("initializing sys.meta_path, sys.path_hooks, "
+			      "path_importer_cache, or NullImporter failed"
+			      );
 	}
+
 	zimpimport = PyImport_ImportModule("zipimport");
 	if (zimpimport == NULL) {
 		PyErr_Clear(); /* No zip import module -- okay */
@@ -239,8 +251,11 @@ lock_import(void)
 	long me = PyThread_get_thread_ident();
 	if (me == -1)
 		return; /* Too bad */
-	if (import_lock == NULL)
+	if (import_lock == NULL) {
 		import_lock = PyThread_allocate_lock();
+		if (import_lock == NULL)
+			return;  /* Nothing much we can do. */
+	}
 	if (import_lock_thread == me) {
 		import_lock_level++;
 		return;
@@ -259,7 +274,7 @@ static int
 unlock_import(void)
 {
 	long me = PyThread_get_thread_ident();
-	if (me == -1)
+	if (me == -1 || import_lock == NULL)
 		return 0; /* Too bad */
 	if (import_lock_thread != me)
 		return -1;
@@ -1053,9 +1068,18 @@ get_path_importer(PyObject *path_importer_cache, PyObject *path_hooks,
 		}
 		PyErr_Clear();
 	}
-	if (importer == NULL)
-		importer = Py_None;
-	else if (importer != Py_None) {
+	if (importer == NULL) {
+		importer = PyObject_CallFunctionObjArgs(
+			(PyObject *)&NullImporterType, p, NULL
+		);
+		if (importer == NULL) {
+			if (PyErr_ExceptionMatches(PyExc_ImportError)) {
+				PyErr_Clear();
+				return Py_None;
+			}
+		}
+	}
+	if (importer != NULL) {
 		int err = PyDict_SetItem(path_importer_cache, p, importer);
 		Py_DECREF(importer);
 		if (err != 0)
@@ -1238,42 +1262,17 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 
 			importer = get_path_importer(path_importer_cache,
 						     path_hooks, v);
-			if (importer == NULL)
-				return NULL;
-			/* Note: importer is a borrowed reference */
-			if (importer == Py_False) {
-				/* Cached as not being a valid dir. */
+			if (importer == NULL) {
 				Py_XDECREF(copy);
-				continue;
+				return NULL;
 			}
-			else if (importer == Py_True) {
-				/* Cached as being a valid dir, so just
-				 * continue below. */
-			}
-			else if (importer == Py_None) {
-				/* No importer was found, so it has to be a file.
-				 * Check if the directory is valid.
-				 * Note that the empty string is a valid path, but
-				 * not stat'able, hence the check for len. */
-#ifdef HAVE_STAT
-				if (len && stat(buf, &statbuf) != 0) {
-					/* Directory does not exist. */
-					PyDict_SetItem(path_importer_cache,
-					               v, Py_False);
-					Py_XDECREF(copy);
-					continue;
-				} else {
-					PyDict_SetItem(path_importer_cache,
-					               v, Py_True);
-				}
-#endif
-			}
-			else {
-				/* A real import hook importer was found. */
+			/* Note: importer is a borrowed reference */
+			if (importer != Py_None) {
 				PyObject *loader;
 				loader = PyObject_CallMethod(importer,
 							     "find_module",
 							     "s", fullname);
+				Py_XDECREF(copy);
 				if (loader == NULL)
 					return NULL;  /* error */
 				if (loader != Py_None) {
@@ -1282,7 +1281,6 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 					return &importhookdescr;
 				}
 				Py_DECREF(loader);
-				Py_XDECREF(copy);
 				continue;
 			}
 		}
@@ -1904,11 +1902,10 @@ PyImport_ImportFrozenModule(char *name)
 	if (co == NULL)
 		return -1;
 	if (!PyCode_Check(co)) {
-		Py_DECREF(co);
 		PyErr_Format(PyExc_TypeError,
 			     "frozen object %.200s is not a code object",
 			     name);
-		return -1;
+		goto err_return;
 	}
 	if (ispackage) {
 		/* Set __path__ to the package name */
@@ -1916,22 +1913,25 @@ PyImport_ImportFrozenModule(char *name)
 		int err;
 		m = PyImport_AddModule(name);
 		if (m == NULL)
-			return -1;
+			goto err_return;
 		d = PyModule_GetDict(m);
 		s = PyString_InternFromString(name);
 		if (s == NULL)
-			return -1;
+			goto err_return;
 		err = PyDict_SetItemString(d, "__path__", s);
 		Py_DECREF(s);
 		if (err != 0)
-			return err;
+			goto err_return;
 	}
 	m = PyImport_ExecCodeModuleEx(name, co, "<frozen>");
-	Py_DECREF(co);
 	if (m == NULL)
-		return -1;
+		goto err_return;
+	Py_DECREF(co);
 	Py_DECREF(m);
 	return 1;
+err_return:
+	Py_DECREF(co);
+	return -1;
 }
 
 
@@ -2926,10 +2926,119 @@ setint(PyObject *d, char *name, int value)
 	return err;
 }
 
+typedef struct {
+    PyObject_HEAD
+} NullImporter;
+
+static int
+NullImporter_init(NullImporter *self, PyObject *args, PyObject *kwds)
+{
+	char *path;
+
+	if (!_PyArg_NoKeywords("NullImporter()", kwds))
+		return -1;
+
+	if (!PyArg_ParseTuple(args, "s:NullImporter",
+			      &path))
+		return -1;
+
+	if (strlen(path) == 0) {
+		PyErr_SetString(PyExc_ImportError, "empty pathname");
+		return -1;
+	} else {
+#ifndef RISCOS
+		struct stat statbuf;
+		int rv;
+
+		rv = stat(path, &statbuf);
+		if (rv == 0) {
+			/* it exists */
+			if (S_ISDIR(statbuf.st_mode)) {
+				/* it's a directory */
+				PyErr_SetString(PyExc_ImportError,
+						"existing directory");
+				return -1;
+			}
+		}
+#else
+		if (object_exists(path)) {
+			/* it exists */
+			if (isdir(path)) {
+				/* it's a directory */
+				PyErr_SetString(PyExc_ImportError,
+						"existing directory");
+				return -1;
+			}
+		}
+#endif
+	}
+	return 0;
+}
+
+static PyObject *
+NullImporter_find_module(NullImporter *self, PyObject *args)
+{
+	Py_RETURN_NONE;
+}
+
+static PyMethodDef NullImporter_methods[] = {
+	{"find_module", (PyCFunction)NullImporter_find_module, METH_VARARGS,
+	 "Always return None"
+	},
+	{NULL}  /* Sentinel */
+};
+
+
+static PyTypeObject NullImporterType = {
+	PyObject_HEAD_INIT(NULL)
+	0,                         /*ob_size*/
+	"imp.NullImporter",        /*tp_name*/
+	sizeof(NullImporter),      /*tp_basicsize*/
+	0,                         /*tp_itemsize*/
+	0,                         /*tp_dealloc*/
+	0,                         /*tp_print*/
+	0,                         /*tp_getattr*/
+	0,                         /*tp_setattr*/
+	0,                         /*tp_compare*/
+	0,                         /*tp_repr*/
+	0,                         /*tp_as_number*/
+	0,                         /*tp_as_sequence*/
+	0,                         /*tp_as_mapping*/
+	0,                         /*tp_hash */
+	0,                         /*tp_call*/
+	0,                         /*tp_str*/
+	0,                         /*tp_getattro*/
+	0,                         /*tp_setattro*/
+	0,                         /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT,        /*tp_flags*/
+	"Null importer object",    /* tp_doc */
+	0,	                   /* tp_traverse */
+	0,	                   /* tp_clear */
+	0,	                   /* tp_richcompare */
+	0,	                   /* tp_weaklistoffset */
+	0,	                   /* tp_iter */
+	0,	                   /* tp_iternext */
+	NullImporter_methods,      /* tp_methods */
+	0,                         /* tp_members */
+	0,                         /* tp_getset */
+	0,                         /* tp_base */
+	0,                         /* tp_dict */
+	0,                         /* tp_descr_get */
+	0,                         /* tp_descr_set */
+	0,                         /* tp_dictoffset */
+	(initproc)NullImporter_init,      /* tp_init */
+	0,                         /* tp_alloc */
+	PyType_GenericNew          /* tp_new */
+};
+
+
 PyMODINIT_FUNC
 initimp(void)
 {
 	PyObject *m, *d;
+
+	if (PyType_Ready(&NullImporterType) < 0)
+		goto failure;
 
 	m = Py_InitModule4("imp", imp_methods, doc_imp,
 			   NULL, PYTHON_API_VERSION);
@@ -2948,6 +3057,8 @@ initimp(void)
 	if (setint(d, "PY_CODERESOURCE", PY_CODERESOURCE) < 0) goto failure;
 	if (setint(d, "IMP_HOOK", IMP_HOOK) < 0) goto failure;
 
+	Py_INCREF(&NullImporterType);
+	PyModule_AddObject(m, "NullImporter", (PyObject *)&NullImporterType);
   failure:
 	;
 }

@@ -723,7 +723,7 @@ if not _exists("urandom"):
         """
         try:
             _urandomfd = open("/dev/urandom", O_RDONLY)
-        except:
+        except (OSError, IOError):
             raise NotImplementedError("/dev/urandom (or equivalent) not found")
         bytes = ""
         while len(bytes) < n:

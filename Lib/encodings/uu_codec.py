@@ -102,11 +102,11 @@ class Codec(codecs.Codec):
 
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def encode(self, input, final=False):
-        return uu_encode(input, errors)[0]
+        return uu_encode(input, self.errors)[0]
 
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def decode(self, input, final=False):
-        return uu_decode(input, errors)[0]
+        return uu_decode(input, self.errors)[0]
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass

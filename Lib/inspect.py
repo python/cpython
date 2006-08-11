@@ -89,6 +89,40 @@ def isdatadescriptor(object):
     is not guaranteed."""
     return (hasattr(object, "__set__") and hasattr(object, "__get__"))
 
+if hasattr(types, 'MemberDescriptorType'):
+    # CPython and equivalent
+    def ismemberdescriptor(object):
+        """Return true if the object is a member descriptor.
+
+        Member descriptors are specialized descriptors defined in extension
+        modules."""
+        return isinstance(object, types.MemberDescriptorType)
+else:
+    # Other implementations
+    def ismemberdescriptor(object):
+        """Return true if the object is a member descriptor.
+
+        Member descriptors are specialized descriptors defined in extension
+        modules."""
+        return False
+
+if hasattr(types, 'GetSetDescriptorType'):
+    # CPython and equivalent
+    def isgetsetdescriptor(object):
+        """Return true if the object is a getset descriptor.
+
+        getset descriptors are specialized descriptors defined in extension
+        modules."""
+        return isinstance(object, types.GetSetDescriptorType)
+else:
+    # Other implementations
+    def isgetsetdescriptor(object):
+        """Return true if the object is a getset descriptor.
+
+        getset descriptors are specialized descriptors defined in extension
+        modules."""
+        return False
+
 def isfunction(object):
     """Return true if the object is a user-defined function.
 
@@ -355,40 +389,38 @@ def getsourcefile(object):
             return None
     if os.path.exists(filename):
         return filename
-    # Ugly but necessary - '<stdin>' and '<string>' mean that getmodule()
-    # would infinitely recurse, because they're not real files nor loadable
-    # Note that this means that writing a PEP 302 loader that uses '<'
-    # at the start of a filename is now not a good idea.  :(
-    if filename[:1]!='<' and hasattr(getmodule(object), '__loader__'):
+    # only return a non-existent filename if the module has a PEP 302 loader
+    if hasattr(getmodule(object, filename), '__loader__'):
         return filename
 
-def getabsfile(object):
+def getabsfile(object, _filename=None):
     """Return an absolute path to the source or compiled file for an object.
 
     The idea is for each object to have a unique origin, so this routine
     normalizes the result as much as possible."""
-    return os.path.normcase(
-        os.path.abspath(getsourcefile(object) or getfile(object)))
+    if _filename is None:
+        _filename = getsourcefile(object) or getfile(object)
+    return os.path.normcase(os.path.abspath(_filename))
 
 modulesbyfile = {}
 
-def getmodule(object):
+def getmodule(object, _filename=None):
     """Return the module an object was defined in, or None if not found."""
     if ismodule(object):
         return object
     if hasattr(object, '__module__'):
         return sys.modules.get(object.__module__)
     try:
-        file = getabsfile(object)
+        file = getabsfile(object, _filename)
     except TypeError:
         return None
     if file in modulesbyfile:
         return sys.modules.get(modulesbyfile[file])
     for module in sys.modules.values():
         if ismodule(module) and hasattr(module, '__file__'):
-            modulesbyfile[
-                os.path.realpath(
-                        getabsfile(module))] = module.__name__
+            f = getabsfile(module)
+            modulesbyfile[f] = modulesbyfile[
+                os.path.realpath(f)] = module.__name__
     if file in modulesbyfile:
         return sys.modules.get(modulesbyfile[file])
     main = sys.modules['__main__']

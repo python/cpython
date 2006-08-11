@@ -760,7 +760,8 @@ class MyURLopener(urllib.FancyURLopener):
             try:
                 names = os.listdir(path)
             except os.error, msg:
-                raise IOError, msg, sys.exc_traceback
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                raise IOError, msg, exc_tb
             names.sort()
             s = MyStringIO("file:"+url, {'content-type': 'text/html'})
             s.write('<BASE HREF="file:%s">\n' %

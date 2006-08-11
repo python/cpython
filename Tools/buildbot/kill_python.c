@@ -42,7 +42,19 @@ int main()
 
 		_strlwr(path);
 		/* printf("%s\n", path); */
-		if (strstr(path, "build\\pcbuild\\python_d.exe") != NULL) {
+
+		/* Check if we are running a buildbot version of Python.
+
+		   On Windows, this will always be a debug build from the
+		   PCbuild directory.  build\\PCbuild\\python_d.exe
+		   
+		   On Cygwin, the pathname is similar to other Unixes.
+		   Use \\build\\python.exe to ensure we don't match
+		   PCbuild\\python.exe which could be a normal instance
+		   of Python running on vanilla Windows.
+		*/
+		if ((strstr(path, "build\\pcbuild\\python_d.exe") != NULL) ||
+		    (strstr(path, "\\build\\python.exe") != NULL)) {
 			printf("Terminating %s (pid %d)\n", path, pids[i]);
 			if (!TerminateProcess(hProcess, 1)) {
 				printf("Termination failed: %d\n", GetLastError());

@@ -1,8 +1,17 @@
 from pybench import Test
 
+# Check for new-style class support:
+try:
+    class c(object):
+        pass
+except NameError:
+    raise ImportError
+
+###
+
 class CreateNewInstances(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 3 + 7 + 4
     rounds = 60000
 

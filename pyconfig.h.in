@@ -73,6 +73,9 @@
 /* Define to 1 if you have the `confstr' function. */
 #undef HAVE_CONFSTR
 
+/* Define to 1 if you have the <conio.h> header file. */
+#undef HAVE_CONIO_H
+
 /* Define to 1 if you have the `ctermid' function. */
 #undef HAVE_CTERMID
 
@@ -82,6 +85,15 @@
 /* Define to 1 if you have the <curses.h> header file. */
 #undef HAVE_CURSES_H
 
+/* Define if you have the 'is_term_resized' function. */
+#undef HAVE_CURSES_IS_TERM_RESIZED
+
+/* Define if you have the 'resizeterm' function. */
+#undef HAVE_CURSES_RESIZETERM
+
+/* Define if you have the 'resize_term' function. */
+#undef HAVE_CURSES_RESIZE_TERM
+
 /* Define to 1 if you have the device macros. */
 #undef HAVE_DEVICE_MACROS
 
@@ -90,6 +102,9 @@
 
 /* Define if we have /dev/ptmx. */
 #undef HAVE_DEV_PTMX
+
+/* Define to 1 if you have the <direct.h> header file. */
+#undef HAVE_DIRECT_H
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
@@ -106,6 +121,9 @@
 
 /* Defined when any dynamic module loading is enabled. */
 #undef HAVE_DYNAMIC_LOADING
+
+/* Define to 1 if you have the <errno.h> header file. */
+#undef HAVE_ERRNO_H
 
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
@@ -248,6 +266,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the <io.h> header file. */
+#undef HAVE_IO_H
+
 /* Define to 1 if you have the `kill' function. */
 #undef HAVE_KILL
 
@@ -353,6 +374,9 @@
 /* Define to 1 if you have the <poll.h> header file. */
 #undef HAVE_POLL_H
 
+/* Define to 1 if you have the <process.h> header file. */
+#undef HAVE_PROCESS_H
+
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
 
@@ -445,6 +469,9 @@
 
 /* Define to 1 if you have the `siginterrupt' function. */
 #undef HAVE_SIGINTERRUPT
+
+/* Define to 1 if you have the <signal.h> header file. */
+#undef HAVE_SIGNAL_H
 
 /* Define to 1 if you have the `sigrelse' function. */
 #undef HAVE_SIGRELSE
@@ -691,6 +718,9 @@
 /* Define if tzset() actually switches the local timezone in a meaningful way.
    */
 #undef HAVE_WORKING_TZSET
+
+/* Define if the zlib library has inflateCopy */
+#undef HAVE_ZLIB_COPY
 
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY

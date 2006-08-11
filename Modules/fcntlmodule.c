@@ -290,7 +290,7 @@ PyDoc_STRVAR(flock_doc,
 "flock(fd, operation)\n\
 \n\
 Perform the lock operation op on file descriptor fd.  See the Unix \n\
-manual flock(3) for details.  (On some systems, this function is\n\
+manual page for flock(3) for details.  (On some systems, this function is\n\
 emulated using fcntl().)");
 
 
@@ -327,7 +327,7 @@ fcntl_lockf(PyObject *self, PyObject *args)
 			l.l_type = F_WRLCK;
 		else {
 			PyErr_SetString(PyExc_ValueError,
-					"unrecognized flock argument");
+					"unrecognized lockf argument");
 			return NULL;
 		}
 		l.l_start = l.l_len = 0;

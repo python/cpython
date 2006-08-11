@@ -37,6 +37,24 @@ such mixing can cause this method to raise \exception{UnicodeError}.
 Free the memory buffer.
 \end{methoddesc}
 
+Example usage:
+
+\begin{verbatim}
+import StringIO
+
+output = StringIO.StringIO()
+output.write('First line.\n')
+print >>output, 'Second line.'
+
+# Retrieve file contents -- this will be
+# 'First line.\nSecond line.\n'
+contents = output.getvalue()
+
+# Close object and discard memory buffer -- 
+# .getvalue() will now raise an exception.
+output.close()
+\end{verbatim}
+
 
 \section{\module{cStringIO} ---
          Faster version of \module{StringIO}}
@@ -82,3 +100,22 @@ The following data objects are provided as well:
 
 There is a C API to the module as well; refer to the module source for 
 more information.
+
+Example usage:
+
+\begin{verbatim}
+import cStringIO
+
+output = cStringIO.StringIO()
+output.write('First line.\n')
+print >>output, 'Second line.'
+
+# Retrieve file contents -- this will be
+# 'First line.\nSecond line.\n'
+contents = output.getvalue()
+
+# Close object and discard memory buffer -- 
+# .getvalue() will now raise an exception.
+output.close()
+\end{verbatim}
+

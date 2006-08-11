@@ -60,8 +60,9 @@ PyMac_StrError(int err)
 			strncpy(buf, input, sizeof(buf) - 1);
 			buf[sizeof(buf) - 1] = '\0';
 		}
+		Py_DECREF(rv);
 	}
-	
+	Py_XDECREF(m);
 	return buf;
 }
 

@@ -1,5 +1,5 @@
 # Testing select module
-from test.test_support import verbose
+from test.test_support import verbose, reap_children
 import select
 import os
 
@@ -65,5 +65,6 @@ def test():
             continue
         print 'Unexpected return values from select():', rfd, wfd, xfd
     p.close()
+    reap_children()
 
 test()

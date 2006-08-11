@@ -238,6 +238,18 @@ error_external_entity_ref_handler(XML_Parser parser,
     return 0;
 }
 
+/* Dummy character data handler used when an error (exception) has
+   been detected, and the actual parsing can be terminated early.
+   This is needed since character data handler can't be safely removed
+   from within the character data handler, but can be replaced.  It is
+   used only from the character data handler trampoline, and must be
+   used right after `flag_error()` is called. */
+static void
+noop_character_data_handler(void *userData, const XML_Char *data, int len) 
+{
+    /* Do nothing. */
+}
+
 static void
 flag_error(xmlparseobject *self)
 {
@@ -457,6 +469,8 @@ call_character_handler(xmlparseobject *self, const XML_Char *buffer, int len)
     if (temp == NULL) {
         Py_DECREF(args);
         flag_error(self);
+        XML_SetCharacterDataHandler(self->itself,
+                                    noop_character_data_handler);
         return -1;
     }
     PyTuple_SET_ITEM(args, 0, temp);
@@ -469,6 +483,8 @@ call_character_handler(xmlparseobject *self, const XML_Char *buffer, int len)
     Py_DECREF(args);
     if (temp == NULL) {
         flag_error(self);
+        XML_SetCharacterDataHandler(self->itself,
+                                    noop_character_data_handler);
         return -1;
     }
     Py_DECREF(temp);
@@ -1542,8 +1558,22 @@ sethandler(xmlparseobject *self, const char *name, PyObject* v)
         xmlhandler c_handler = NULL;
         PyObject *temp = self->handlers[handlernum];
 
-        if (v == Py_None)
+        if (v == Py_None) {
+            /* If this is the character data handler, and a character
+               data handler is already active, we need to be more
+               careful.  What we can safely do is replace the existing
+               character data handler callback function with a no-op
+               function that will refuse to call Python.  The downside
+               is that this doesn't completely remove the character
+               data handler from the C layer if there's any callback
+               active, so Expat does a little more work than it
+               otherwise would, but that's really an odd case.  A more
+               elaborate system of handlers and state could remove the
+               C handler more effectively. */
+            if (handlernum == CharacterData && self->in_callback)
+                c_handler = noop_character_data_handler;
             v = NULL;
+        }
         else if (v != NULL) {
             Py_INCREF(v);
             c_handler = handler_info[handlernum].handler;

@@ -26,6 +26,12 @@ enum py_ssl_error {
 /* Include symbols from _socket module */
 #include "socketmodule.h"
 
+#if defined(HAVE_POLL_H) 
+#include <poll.h>
+#elif defined(HAVE_SYS_POLL_H)
+#include <sys/poll.h>
+#endif
+
 /* Include OpenSSL header files */
 #include "openssl/rsa.h"
 #include "openssl/crypto.h"
@@ -351,7 +357,7 @@ static void PySSL_dealloc(PySSLObject *self)
 	PyObject_Del(self);
 }
 
-/* If the socket has a timeout, do a select() on the socket.
+/* If the socket has a timeout, do a select()/poll() on the socket.
    The argument writing indicates the direction.
    Returns one of the possibilities in the timeout_state enum (above).
  */
@@ -373,6 +379,26 @@ check_socket_and_wait_for_timeout(PySocketSockObject *s, int writing)
 	if (s->sock_fd < 0)
 		return SOCKET_HAS_BEEN_CLOSED;
 
+	/* Prefer poll, if available, since you can poll() any fd
+	 * which can't be done with select(). */
+#ifdef HAVE_POLL
+	{
+		struct pollfd pollfd;
+		int timeout;
+
+		pollfd.fd = s->sock_fd;
+		pollfd.events = writing ? POLLOUT : POLLIN;
+
+		/* s->sock_timeout is in seconds, timeout in ms */
+		timeout = (int)(s->sock_timeout * 1000 + 0.5);
+		Py_BEGIN_ALLOW_THREADS
+		rc = poll(&pollfd, 1, timeout);
+		Py_END_ALLOW_THREADS
+
+		goto normal_return;
+	}
+#endif
+
 	/* Guard against socket too large for select*/
 #ifndef Py_SOCKET_FD_CAN_BE_GE_FD_SETSIZE
 	if (s->sock_fd >= FD_SETSIZE)
@@ -393,6 +419,7 @@ check_socket_and_wait_for_timeout(PySocketSockObject *s, int writing)
 		rc = select(s->sock_fd+1, &fds, NULL, NULL, &tv);
 	Py_END_ALLOW_THREADS
 
+normal_return:
 	/* Return SOCKET_TIMED_OUT on timeout, SOCKET_OPERATION_OK otherwise
 	   (when we are able to write or when there's something to read) */
 	return rc == 0 ? SOCKET_HAS_TIMED_OUT : SOCKET_OPERATION_OK;

@@ -656,6 +656,21 @@ sys_getframe(PyObject *self, PyObject *args)
 	return (PyObject*)f;
 }
 
+PyDoc_STRVAR(current_frames_doc,
+"_current_frames() -> dictionary\n\
+\n\
+Return a dictionary mapping each current thread T's thread id to T's\n\
+current stack frame.\n\
+\n\
+This function should be used for specialized purposes only."
+);
+
+static PyObject *
+sys_current_frames(PyObject *self, PyObject *noargs)
+{
+	return _PyThread_CurrentFrames();
+}
+
 PyDoc_STRVAR(call_tracing_doc,
 "call_tracing(func, args) -> object\n\
 \n\
@@ -718,6 +733,8 @@ static PyMethodDef sys_methods[] = {
 	/* Might as well keep this in alphabetic order */
 	{"callstats", (PyCFunction)PyEval_GetCallStats, METH_NOARGS,
 	 callstats_doc},
+	{"_current_frames", sys_current_frames, METH_NOARGS,
+	 current_frames_doc},
 	{"displayhook",	sys_displayhook, METH_O, displayhook_doc},
 	{"exc_info",	sys_exc_info, METH_NOARGS, exc_info_doc},
 	{"exc_clear",	sys_exc_clear, METH_NOARGS, exc_clear_doc},
@@ -1116,41 +1133,38 @@ _PySys_Init(void)
 #elif PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_FINAL
 	s = "final";
 #endif
-	PyDict_SetItemString(sysdict, "version_info",
-			     v = Py_BuildValue("iiisi", PY_MAJOR_VERSION,
+
+#define SET_SYS_FROM_STRING(key, value)			\
+	v = value;					\
+	if (v != NULL)					\
+		PyDict_SetItemString(sysdict, key, v);	\
+	Py_XDECREF(v)
+
+	SET_SYS_FROM_STRING("version_info",
+			    Py_BuildValue("iiisi", PY_MAJOR_VERSION,
 					       PY_MINOR_VERSION,
 					       PY_MICRO_VERSION, s,
 					       PY_RELEASE_SERIAL));
-	Py_XDECREF(v);
-	PyDict_SetItemString(sysdict, "api_version",
-			     v = PyInt_FromLong(PYTHON_API_VERSION));
-	Py_XDECREF(v);
-	PyDict_SetItemString(sysdict, "copyright",
-			     v = PyString_FromString(Py_GetCopyright()));
-	Py_XDECREF(v);
-	PyDict_SetItemString(sysdict, "platform",
-			     v = PyString_FromString(Py_GetPlatform()));
-	Py_XDECREF(v);
-	PyDict_SetItemString(sysdict, "executable",
-			     v = PyString_FromString(Py_GetProgramFullPath()));
-	Py_XDECREF(v);
-	PyDict_SetItemString(sysdict, "prefix",
-			     v = PyString_FromString(Py_GetPrefix()));
-	Py_XDECREF(v);
-	PyDict_SetItemString(sysdict, "exec_prefix",
-		   v = PyString_FromString(Py_GetExecPrefix()));
-	Py_XDECREF(v);
-	PyDict_SetItemString(sysdict, "maxint",
-			     v = PyInt_FromLong(PyInt_GetMax()));
-	Py_XDECREF(v);
+	SET_SYS_FROM_STRING("api_version",
+			    PyInt_FromLong(PYTHON_API_VERSION));
+	SET_SYS_FROM_STRING("copyright",
+			    PyString_FromString(Py_GetCopyright()));
+	SET_SYS_FROM_STRING("platform",
+			    PyString_FromString(Py_GetPlatform()));
+	SET_SYS_FROM_STRING("executable",
+			    PyString_FromString(Py_GetProgramFullPath()));
+	SET_SYS_FROM_STRING("prefix",
+			    PyString_FromString(Py_GetPrefix()));
+	SET_SYS_FROM_STRING("exec_prefix",
+		   	    PyString_FromString(Py_GetExecPrefix()));
+	SET_SYS_FROM_STRING("maxint",
+			    PyInt_FromLong(PyInt_GetMax()));
 #ifdef Py_USING_UNICODE
-	PyDict_SetItemString(sysdict, "maxunicode",
-			     v = PyInt_FromLong(PyUnicode_GetMax()));
-	Py_XDECREF(v);
+	SET_SYS_FROM_STRING("maxunicode",
+			    PyInt_FromLong(PyUnicode_GetMax()));
 #endif
-	PyDict_SetItemString(sysdict, "builtin_module_names",
-		   v = list_builtin_module_names());
-	Py_XDECREF(v);
+	SET_SYS_FROM_STRING("builtin_module_names",
+			    list_builtin_module_names());
 	{
 		/* Assumes that longs are at least 2 bytes long.
 		   Should be safe! */
@@ -1162,18 +1176,16 @@ _PySys_Init(void)
 			value = "big";
 		else
 			value = "little";
-		PyDict_SetItemString(sysdict, "byteorder",
-				     v = PyString_FromString(value));
-		Py_XDECREF(v);
+		SET_SYS_FROM_STRING("byteorder",
+				    PyString_FromString(value));
 	}
 #ifdef MS_COREDLL
-	PyDict_SetItemString(sysdict, "dllhandle",
-			     v = PyLong_FromVoidPtr(PyWin_DLLhModule));
-	Py_XDECREF(v);
-	PyDict_SetItemString(sysdict, "winver",
-			     v = PyString_FromString(PyWin_DLLVersionString));
-	Py_XDECREF(v);
+	SET_SYS_FROM_STRING("dllhandle",
+			    PyLong_FromVoidPtr(PyWin_DLLhModule));
+	SET_SYS_FROM_STRING("winver",
+			    PyString_FromString(PyWin_DLLVersionString));
 #endif
+#undef SET_SYS_FROM_STRING
 	if (warnoptions == NULL) {
 		warnoptions = PyList_New(0);
 	}

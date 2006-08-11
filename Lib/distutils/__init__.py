@@ -12,4 +12,6 @@ used from a setup script as
 
 __revision__ = "$Id$"
 
-__version__ = "2.4.0"
+import sys
+__version__ = "%d.%d.%d" % sys.version_info[:3]
+del sys

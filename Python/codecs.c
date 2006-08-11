@@ -249,14 +249,17 @@ PyObject *codec_getstreamcodec(const char *encoding,
 			       const char *errors,
 			       const int index)
 {
-    PyObject *codecs, *streamcodec;
+    PyObject *codecs, *streamcodec, *codeccls;
 
     codecs = _PyCodec_Lookup(encoding);
     if (codecs == NULL)
 	return NULL;
 
-    streamcodec = PyEval_CallFunction(
-	PyTuple_GET_ITEM(codecs, index), "Os", stream, errors);
+    codeccls = PyTuple_GET_ITEM(codecs, index);
+    if (errors != NULL)
+	streamcodec = PyObject_CallFunction(codeccls, "Os", stream, errors);
+    else
+	streamcodec = PyObject_CallFunction(codeccls, "O", stream);
     Py_DECREF(codecs);
     return streamcodec;
 }

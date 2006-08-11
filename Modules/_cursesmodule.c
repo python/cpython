@@ -43,8 +43,8 @@ unsupported functions:
 	del_curterm delscreen dupwin inchnstr inchstr innstr keyok
 	mcprint mvaddchnstr mvaddchstr mvchgat mvcur mvinchnstr
 	mvinchstr mvinnstr mmvwaddchnstr mvwaddchstr mvwchgat
-	mvwgetnstr mvwinchnstr mvwinchstr mvwinnstr newterm
-	resizeterm restartterm ripoffline scr_dump
+	mvwinchnstr mvwinchstr mvwinnstr newterm
+	restartterm ripoffline scr_dump
 	scr_init scr_restore scr_set scrl set_curterm set_term setterm
 	tgetent tgetflag tgetnum tgetstr tgoto timeout tputs
 	vidattr vidputs waddchnstr waddchstr wchgat
@@ -819,14 +819,17 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
       return NULL;
     Py_BEGIN_ALLOW_THREADS
+#ifdef STRICT_SYSV_CURSES
+    rtn2 = wmove(self->win,y,x)==ERR ? ERR : wgetnstr(self->win, rtn, 1023);
+#else
     rtn2 = mvwgetnstr(self->win,y,x,rtn, 1023);
+#endif
     Py_END_ALLOW_THREADS
     break;
   case 3:
     if (!PyArg_ParseTuple(args,"iii;y,x,n", &y, &x, &n))
       return NULL;
 #ifdef STRICT_SYSV_CURSES
- /* Untested */
     Py_BEGIN_ALLOW_THREADS
     rtn2 = wmove(self->win,y,x)==ERR ? ERR :
       wgetnstr(self->win, rtn, MIN(n, 1023));
@@ -838,7 +841,7 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
 #endif
     break;
   default:
-    PyErr_SetString(PyExc_TypeError, "getstr requires 0 to 2 arguments");
+    PyErr_SetString(PyExc_TypeError, "getstr requires 0 to 3 arguments");
     return NULL;
   }
   if (rtn2 == ERR)
@@ -1950,6 +1953,29 @@ PyCurses_IntrFlush(PyObject *self, PyObject *args)
   return PyCursesCheckERR(intrflush(NULL,ch), "intrflush");
 }
 
+#ifdef HAVE_CURSES_IS_TERM_RESIZED
+static PyObject *
+PyCurses_Is_Term_Resized(PyObject *self, PyObject *args)
+{
+  int lines;
+  int columns;
+  int result;
+
+  PyCursesInitialised
+
+  if (!PyArg_ParseTuple(args,"ii:is_term_resized", &lines, &columns))
+    return NULL;
+  result = is_term_resized(lines, columns);
+  if (result == TRUE) {
+    Py_INCREF(Py_True);
+    return Py_True;
+  } else {
+    Py_INCREF(Py_False);
+    return Py_False;
+  }
+}
+#endif /* HAVE_CURSES_IS_TERM_RESIZED */
+
 #if !defined(__NetBSD__)
 static PyObject *
 PyCurses_KeyName(PyObject *self, PyObject *args)
@@ -2169,6 +2195,39 @@ PyCurses_QiFlush(PyObject *self, PyObject *args)
     return NULL;
   }
 }
+
+#ifdef HAVE_CURSES_RESIZETERM
+static PyObject *
+PyCurses_ResizeTerm(PyObject *self, PyObject *args)
+{
+  int lines;
+  int columns;
+
+  PyCursesInitialised
+
+  if (!PyArg_ParseTuple(args,"ii:resizeterm", &lines, &columns))
+    return NULL;
+
+  return PyCursesCheckERR(resizeterm(lines, columns), "resizeterm");
+}
+
+#endif
+
+#ifdef HAVE_CURSES_RESIZE_TERM
+static PyObject *
+PyCurses_Resize_Term(PyObject *self, PyObject *args)
+{
+  int lines;
+  int columns;
+
+  PyCursesInitialised
+
+  if (!PyArg_ParseTuple(args,"ii:resize_term", &lines, &columns))
+    return NULL;
+
+  return PyCursesCheckERR(resize_term(lines, columns), "resize_term");
+}
+#endif /* HAVE_CURSES_RESIZE_TERM */
 
 static PyObject *
 PyCurses_setsyx(PyObject *self, PyObject *args)
@@ -2414,6 +2473,9 @@ static PyMethodDef PyCurses_methods[] = {
   {"initscr",             (PyCFunction)PyCurses_InitScr, METH_NOARGS},
   {"intrflush",           (PyCFunction)PyCurses_IntrFlush, METH_VARARGS},
   {"isendwin",            (PyCFunction)PyCurses_isendwin, METH_NOARGS},
+#ifdef HAVE_CURSES_IS_TERM_RESIZED
+  {"is_term_resized",     (PyCFunction)PyCurses_Is_Term_Resized, METH_VARARGS},
+#endif
 #if !defined(__NetBSD__)
   {"keyname",             (PyCFunction)PyCurses_KeyName, METH_VARARGS},
 #endif
@@ -2441,6 +2503,12 @@ static PyMethodDef PyCurses_methods[] = {
   {"reset_prog_mode",     (PyCFunction)PyCurses_reset_prog_mode, METH_NOARGS},
   {"reset_shell_mode",    (PyCFunction)PyCurses_reset_shell_mode, METH_NOARGS},
   {"resetty",             (PyCFunction)PyCurses_resetty, METH_NOARGS},
+#ifdef HAVE_CURSES_RESIZETERM
+  {"resizeterm",          (PyCFunction)PyCurses_ResizeTerm, METH_VARARGS},
+#endif
+#ifdef HAVE_CURSES_RESIZE_TERM
+  {"resize_term",         (PyCFunction)PyCurses_Resize_Term, METH_VARARGS},
+#endif
   {"savetty",             (PyCFunction)PyCurses_savetty, METH_NOARGS},
   {"setsyx",              (PyCFunction)PyCurses_setsyx, METH_VARARGS},
   {"setupterm",           (PyCFunction)PyCurses_setupterm,

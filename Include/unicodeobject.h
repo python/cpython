@@ -938,6 +938,13 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeMBCS(
     const char *errors          /* error handling */
     );
 
+PyAPI_FUNC(PyObject*) PyUnicode_DecodeMBCSStateful(
+    const char *string,         /* MBCS encoded string */
+    Py_ssize_t length,          /* size of string */
+    const char *errors,         /* error handling */
+    Py_ssize_t *consumed        /* bytes consumed */
+    );
+
 PyAPI_FUNC(PyObject*) PyUnicode_AsMBCSString(
     PyObject *unicode           /* Unicode object */
     );

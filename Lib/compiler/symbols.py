@@ -191,7 +191,7 @@ class GenExprScope(Scope):
         self.add_param('[outmost-iterable]')
 
     def get_names(self):
-        keys = Scope.get_names()
+        keys = Scope.get_names(self)
         return keys
 
 class LambdaScope(FunctionScope):

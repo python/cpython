@@ -113,6 +113,9 @@ class _LocaleTests(unittest.TestCase):
                                 "using eval('3.14') failed for %s" % loc)
             self.assertEquals(int(float('3.14') * 100), 314,
                                 "using float('3.14') failed for %s" % loc)
+            if localeconv()['decimal_point'] != '.':
+                self.assertRaises(ValueError, float,
+                                  localeconv()['decimal_point'].join(['1', '23']))
 
 def test_main():
     run_unittest(_LocaleTests)

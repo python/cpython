@@ -20,6 +20,7 @@ __all__ = ['error', 'start_new_thread', 'exit', 'get_ident', 'allocate_lock',
            'interrupt_main', 'LockType']
 
 import traceback as _traceback
+import warnings
 
 class error(Exception):
     """Dummy implementation of thread.error."""
@@ -74,6 +75,12 @@ def get_ident():
 def allocate_lock():
     """Dummy implementation of thread.allocate_lock()."""
     return LockType()
+
+def stack_size(size=None):
+    """Dummy implementation of thread.stack_size()."""
+    if size is not None:
+        raise error("setting thread stack size not supported")
+    return 0
 
 class LockType(object):
     """Class implementing dummy implementation of thread.LockType.

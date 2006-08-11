@@ -2,7 +2,7 @@ from pybench import Test
 
 class PythonFunctionCalls(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5*(1+4+4+2)
     rounds = 60000
 
@@ -111,9 +111,9 @@ class PythonFunctionCalls(Test):
 
 class BuiltinFunctionCalls(Test):
 
-    version = 0.4
+    version = 2.0
     operations = 5*(2+5+5+5)
-    rounds = 30000
+    rounds = 60000
 
     def test(self):
 
@@ -232,9 +232,9 @@ class BuiltinFunctionCalls(Test):
 
 class PythonMethodCalls(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5*(6 + 5 + 4)
-    rounds = 20000
+    rounds = 30000
 
     def test(self):
 
@@ -374,9 +374,9 @@ class PythonMethodCalls(Test):
 
 class Recursion(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 5
-    rounds = 50000
+    rounds = 100000
 
     def test(self):
 
@@ -407,3 +407,96 @@ class Recursion(Test):
 
         for i in xrange(self.rounds):
             pass
+
+
+### Test to make Fredrik happy...
+
+if __name__ == '__main__':
+    import timeit
+    if 0:
+        timeit.TestClass = PythonFunctionCalls
+        timeit.main(['-s', 'test = TestClass(); test.rounds = 1000',
+                     'test.test()'])
+    else:
+        setup = """\
+global f,f1,g,h
+
+# define functions
+def f():
+    pass
+
+def f1(x):
+    pass
+
+def g(a,b,c):
+    return a,b,c
+
+def h(a,b,c,d=1,e=2,f=3):
+    return d,e,f
+
+i = 1
+"""
+        test = """\
+f()
+f1(i)
+f1(i)
+f1(i)
+f1(i)
+g(i,i,i)
+g(i,i,i)
+g(i,i,i)
+g(i,i,i)
+h(i,i,3,i,i)
+h(i,i,i,2,i,3)
+
+f()
+f1(i)
+f1(i)
+f1(i)
+f1(i)
+g(i,i,i)
+g(i,i,i)
+g(i,i,i)
+g(i,i,i)
+h(i,i,3,i,i)
+h(i,i,i,2,i,3)
+
+f()
+f1(i)
+f1(i)
+f1(i)
+f1(i)
+g(i,i,i)
+g(i,i,i)
+g(i,i,i)
+g(i,i,i)
+h(i,i,3,i,i)
+h(i,i,i,2,i,3)
+
+f()
+f1(i)
+f1(i)
+f1(i)
+f1(i)
+g(i,i,i)
+g(i,i,i)
+g(i,i,i)
+g(i,i,i)
+h(i,i,3,i,i)
+h(i,i,i,2,i,3)
+
+f()
+f1(i)
+f1(i)
+f1(i)
+f1(i)
+g(i,i,i)
+g(i,i,i)
+g(i,i,i)
+g(i,i,i)
+h(i,i,3,i,i)
+h(i,i,i,2,i,3)
+"""
+
+        timeit.main(['-s', setup,
+                     test])

@@ -216,7 +216,7 @@ A new module, \module{unicodedata}, provides an interface to Unicode
 character properties.  For example, \code{unicodedata.category(u'A')}
 returns the 2-character string 'Lu', the 'L' denoting it's a letter,
 and 'u' meaning that it's uppercase.
-\code{u.bidirectional(u'\e x0660')} returns 'AN', meaning that U+0660 is
+\code{unicodedata.bidirectional(u'\e u0660')} returns 'AN', meaning that U+0660 is
 an Arabic number.
 
 The \module{codecs} module contains functions to look up existing encodings
@@ -571,7 +571,7 @@ def f(*args, **kw):
 
 The \keyword{print} statement can now have its output directed to a
 file-like object by following the \keyword{print} with 
-\verb|>> file|, similar to the redirection operator in Unix shells.
+\verb|>> file|, similar to the redirection operator in \UNIX{} shells.
 Previously you'd either have to use the \method{write()} method of the
 file-like object, which lacks the convenience and simplicity of
 \keyword{print}, or you could assign a new value to 
@@ -777,7 +777,7 @@ fact will break in 2.0.
 
 Some work has been done to make integers and long integers a bit more
 interchangeable.  In 1.5.2, large-file support was added for Solaris,
-to allow reading files larger than 2Gb; this made the \method{tell()}
+to allow reading files larger than 2~GiB; this made the \method{tell()}
 method of file objects return a long integer instead of a regular
 integer.  Some code would subtract two file offsets and attempt to use
 the result to multiply a sequence or slice a string, but this raised a
@@ -894,7 +894,7 @@ to be added, and a third argument for the value to be assigned to the
 name.  This third argument is, respectively, a Python object, a C
 long, or a C string.
 
-A wrapper API was added for Unix-style signal handlers.
+A wrapper API was added for \UNIX-style signal handlers.
 \function{PyOS_getsig()} gets a signal handler and
 \function{PyOS_setsig()} will set a new handler.
 
@@ -905,7 +905,7 @@ Before Python 2.0, installing modules was a tedious affair -- there
 was no way to figure out automatically where Python is installed, or
 what compiler options to use for extension modules.  Software authors
 had to go through an arduous ritual of editing Makefiles and
-configuration files, which only really work on Unix and leave Windows
+configuration files, which only really work on \UNIX{} and leave Windows
 and MacOS unsupported.  Python users faced wildly differing
 installation instructions which varied between different extension
 packages, which made administering a Python installation something of 
@@ -1222,7 +1222,7 @@ device on Linux, a twin to the existing \module{sunaudiodev} module.
 (Contributed by Peter Bosch, with fixes by Jeremy Hylton.)
 
 \item{\module{mmap}:} An interface to memory-mapped files on both
-Windows and Unix.  A file's contents can be mapped directly into
+Windows and \UNIX.  A file's contents can be mapped directly into
 memory, at which point it behaves like a mutable string, so its
 contents can be read and modified.  They can even be passed to
 functions that expect ordinary strings, such as the \module{re}
@@ -1262,7 +1262,7 @@ distribution, and enhanced to support Unicode.
 
 \item{\module{zipfile}:} A module for reading and writing ZIP-format
 archives.  These are archives produced by \program{PKZIP} on
-DOS/Windows or \program{zip} on Unix, not to be confused with
+DOS/Windows or \program{zip} on \UNIX, not to be confused with
 \program{gzip}-format files (which are supported by the \module{gzip}
 module)
 (Contributed by James C. Ahlstrom.)

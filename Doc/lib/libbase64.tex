@@ -146,6 +146,18 @@ string containing one or more lines of base64-encoded data
 always including an extra trailing newline (\code{'\e n'}).
 \end{funcdesc}
 
+An example usage of the module:
+
+\begin{verbatim}
+>>> import base64
+>>> encoded = base64.b64encode('data to be encoded')
+>>> encoded
+'ZGF0YSB0byBiZSBlbmNvZGVk'
+>>> data = base64.b64decode(encoded)
+>>> data
+'data to be encoded'
+\end{verbatim}
+
 \begin{seealso}
   \seemodule{binascii}{Support module containing \ASCII-to-binary
                        and binary-to-\ASCII{} conversions.}

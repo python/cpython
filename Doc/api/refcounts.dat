@@ -303,6 +303,11 @@ PyErr_Warn:int:::
 PyErr_Warn:PyObject*:category:0:
 PyErr_Warn:char*:message::
 
+PyErr_WarnEx:int:::
+PyErr_WarnEx:PyObject*:category:0:
+PyErr_WarnEx:const char*:message::
+PyErr_WarnEx:Py_ssize_t:stack_level::
+
 PyEval_AcquireLock:void:::
 
 PyEval_AcquireThread:void:::

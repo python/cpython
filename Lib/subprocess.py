@@ -121,7 +121,7 @@ check_call(*popenargs, **kwargs):
     Run command with arguments.  Wait for command to complete.  If the
     exit code was zero then return, otherwise raise
     CalledProcessError.  The CalledProcessError object will have the
-    return code in the errno attribute.
+    return code in the returncode attribute.
 
     The arguments are the same as for the Popen constructor.  Example:
 
@@ -141,8 +141,8 @@ should prepare for OSErrors.
 
 A ValueError will be raised if Popen is called with invalid arguments.
 
-check_call() will raise CalledProcessError, which is a subclass of
-OSError, if the called process returns a non-zero return code.
+check_call() will raise CalledProcessError, if the called process
+returns a non-zero return code.
 
 
 Security
@@ -234,7 +234,7 @@ Replacing os.system()
 sts = os.system("mycmd" + " myarg")
 ==>
 p = Popen("mycmd" + " myarg", shell=True)
-sts = os.waitpid(p.pid, 0)
+pid, sts = os.waitpid(p.pid, 0)
 
 Note:
 
@@ -360,11 +360,16 @@ import types
 import traceback
 
 # Exception classes used by this module.
-class CalledProcessError(OSError):
+class CalledProcessError(Exception):
     """This exception is raised when a process run by check_call() returns
     a non-zero exit status.  The exit status will be stored in the
-    errno attribute.  This exception is a subclass of
-    OSError."""
+    returncode attribute."""
+    def __init__(self, returncode, cmd):
+        self.returncode = returncode
+        self.cmd = cmd
+    def __str__(self):
+        return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
+
 
 if mswindows:
     import threading
@@ -442,7 +447,7 @@ def check_call(*popenargs, **kwargs):
     """Run command with arguments.  Wait for command to complete.  If
     the exit code was zero then return, otherwise raise
     CalledProcessError.  The CalledProcessError object will have the
-    return code in the errno attribute.
+    return code in the returncode attribute.
 
     The arguments are the same as for the Popen constructor.  Example:
 
@@ -453,7 +458,7 @@ def check_call(*popenargs, **kwargs):
     if cmd is None:
         cmd = popenargs[0]
     if retcode:
-        raise CalledProcessError(retcode, "Command %s returned non-zero exit status" % cmd)
+        raise CalledProcessError(retcode, cmd)
     return retcode
 
 
@@ -613,7 +618,7 @@ class Popen(object):
             return
         # In case the child hasn't been waited on, check if it's done.
         self.poll(_deadstate=sys.maxint)
-        if self.returncode is None:
+        if self.returncode is None and _active is not None:
             # Child is still running, keep us alive until we can wait on it.
             _active.append(self)
 
@@ -941,7 +946,7 @@ class Popen(object):
 
 
         def _close_fds(self, but):
-            for i in range(3, MAXFD):
+            for i in xrange(3, MAXFD):
                 if i == but:
                     continue
                 try:

@@ -933,11 +933,9 @@ instance_hash(PyInstanceObject *inst)
 	Py_DECREF(func);
 	if (res == NULL)
 		return -1;
-	if (PyInt_Check(res)) {
-		outcome = PyInt_AsLong(res);
-		if (outcome == -1)
-			outcome = -2;
-	}
+	if (PyInt_Check(res) || PyLong_Check(res))
+		/* This already converts a -1 result to -2. */
+		outcome = res->ob_type->tp_hash(res);
 	else {
 		PyErr_SetString(PyExc_TypeError,
 				"__hash__() should return an int");
@@ -1367,10 +1365,13 @@ half_binop(PyObject *v, PyObject *w, char *opname, binaryfunc thisfunc,
 		 * argument */
 		result = generic_binary_op(v1, w, opname);
 	} else {
+		if (Py_EnterRecursiveCall(" after coercion"))
+		    return NULL;
 		if (swapped)
 			result = (thisfunc)(w, v1);
 		else
 			result = (thisfunc)(v1, w);
+		Py_LeaveRecursiveCall();
 	}
 	Py_DECREF(coerced);
 	return result;

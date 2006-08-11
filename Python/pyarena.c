@@ -132,19 +132,19 @@ PyArena_New()
 {
 	PyArena* arena = (PyArena *)malloc(sizeof(PyArena));
 	if (!arena)
-		return NULL;
+		return (PyArena*)PyErr_NoMemory();
 
 	arena->a_head = block_new(DEFAULT_BLOCK_SIZE);
 	arena->a_cur = arena->a_head;
         if (!arena->a_head) {
                 free((void *)arena);
-                return NULL;
+                return (PyArena*)PyErr_NoMemory();
         }
         arena->a_objects = PyList_New(0);
         if (!arena->a_objects) {
                 block_free(arena->a_head);
                 free((void *)arena);
-                return NULL;
+                return (PyArena*)PyErr_NoMemory();
         }
 #if defined(Py_DEBUG)
         arena->total_allocs = 0;
@@ -191,7 +191,7 @@ PyArena_Malloc(PyArena *arena, size_t size)
 {
 	void *p = block_alloc(arena->a_cur, size);
 	if (!p)
-		return NULL;
+		return PyErr_NoMemory();
 #if defined(Py_DEBUG)
         arena->total_allocs++;
         arena->total_size += size;

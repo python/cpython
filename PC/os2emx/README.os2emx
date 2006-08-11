@@ -612,22 +612,11 @@ functionality.  Most of the sub-tests pass, but the "ismount" and
 
 test_posixpath should skip these tests on EMX.
 
-24.  I have had a report that attempting to use the Bittorrent package
-(http://bitconjurer.org/BitTorrent/) with this port causes traps not
-long after starting the download; this using the "headless" download
-script on eCS v1.1.  I have not been able to duplicate this myself,
-but the indications I have suggest a failure in the 32 bit TCP/IP
-stack (v4.3.2? on eCS v1.1) - on my v4.0 FP12 system with MPTS fixpack
-WR8425 applied (16 bit TCP/IP stack v4.02), BitTorrent appears to work
-normally in testing on a 100Mbit LAN.  With the curses.panel fix (see
-item 13 above), the BitTorrent curses downloader works too.  I'd
-appreciate any success or failure reports with BitTorrent, though
-I've regretfully recommended that the person who reported the failure
-take this up with eCS support.  Since this report, I have received a 
-followup which suggests that the problem may be addressed by TCP/IP 
-fixes (IC35005+PJ29457, contained in NEWSTACK.ZIP in the Hobbes 
-archive).  I think it suffices to say that BitTorrent is a fair stress 
-test of a system's networking capability.
+24.  I have reports of BitTorrent not working.  It appears that the
+EMX select() emulation, possibly in concert with bugs in the TCP/IP
+stack, runs into problems under the stress imposed by this application.
+I think it suffices to say that BitTorrent is a fair stress test of a
+system's networking capability.
 
 25.  In the absence of an EMX implementation of the link() function, I've 
 implemented a crude Python emulation, in the file 
@@ -659,14 +648,16 @@ test_subprocess has a number of failures as a result.
 
 29.  The default stack size for threads has been 64k.  This is proving
 insufficient for some codebases, such as Zope.  The thread stack size
-still defaults to 64k, but this can now be increased by defining
+still defaults to 64k, but this can now be increased via the stack_size()
+function exposed by the threading & thread modules as well as by defining
 THREAD_STACK_SIZE to an appropriate value in the Makefile (which contains
 a commented out definition for 128kB thread stacks).  I have seen
 references to heavy Zope/Plone usage requiring 1MB thread stacks on
 FreeBSD and Linux, but doubt that for most likely usage on OS/2 that
 more than 256kB is necessary.  The size of the required stacks (main 
 and thread) can vary significantly depending on which version of gcc
-is used along with the compiler optimisations selected.
+is used along with the compiler optimisations selected.  Note that the
+main thread stack size is set during linking and is currently 2MB.
 
 ... probably other issues that I've not encountered, or don't remember :-(
 
@@ -707,4 +698,4 @@ Andrew MacIntyre
 E-mail: andymac@bullseye.apana.org.au, or andymac@pcug.org.au
 Web:    http://www.andymac.org/
 
-17 February, 2005.
+23 July, 2006.

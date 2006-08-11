@@ -17,7 +17,7 @@
 
 
 #include <ctype.h>
-#ifndef DONT_HAVE_ERRNO_H
+#ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
 
@@ -69,11 +69,22 @@ static unsigned long smallmax[] = {
  * calculated by [int(math.floor(math.log(2**32, i))) for i in range(2, 37)].
  * Note that this is pessimistic if sizeof(long) > 4.
  */
+#if SIZEOF_LONG == 4
 static int digitlimit[] = {
 	0,  0, 32, 20, 16, 13, 12, 11, 10, 10,  /*  0 -  9 */
 	9,  9,  8,  8,  8,  8,  8,  7,  7,  7,  /* 10 - 19 */
 	7,  7,  7,  7,  6,  6,  6,  6,  6,  6,  /* 20 - 29 */
 	6,  6,  6,  6,  6,  6,  6};             /* 30 - 36 */
+#elif SIZEOF_LONG == 8
+/* [int(math.floor(math.log(2**64, i))) for i in range(2, 37)] */
+static int digitlimit[] = {
+	 0,   0, 64, 40, 32, 27, 24, 22, 21, 20,  /*  0 -  9 */
+	19,  18, 17, 17, 16, 16, 16, 15, 15, 15,  /* 10 - 19 */
+	14,  14, 14, 14, 13, 13, 13, 13, 13, 13,  /* 20 - 29 */
+	13,  12, 12, 12, 12, 12, 12};             /* 30 - 36 */
+#else
+#error "Need table for SIZEOF_LONG"
+#endif
 
 /*
 **	strtoul
@@ -184,10 +195,19 @@ overflowed:
 	return (unsigned long)-1;
 }
 
+/* Checking for overflow in PyOS_strtol is a PITA since C doesn't define
+ * anything about what happens when a signed integer operation overflows,
+ * and some compilers think they're doing you a favor by being "clever"
+ * then.  Python assumes a 2's-complement representation, so that the bit
+ * pattern for the largest postive signed long is LONG_MAX, and for
+ * the smallest negative signed long is LONG_MAX + 1.
+ */
+
 long
 PyOS_strtol(char *str, char **ptr, int base)
 {
 	long result;
+	unsigned long uresult;
 	char sign;
 
 	while (*str && isspace(Py_CHARMASK(*str)))
@@ -197,17 +217,20 @@ PyOS_strtol(char *str, char **ptr, int base)
 	if (sign == '+' || sign == '-')
 		str++;
 
-	result = (long) PyOS_strtoul(str, ptr, base);
+	uresult = PyOS_strtoul(str, ptr, base);
 
-	/* Signal overflow if the result appears negative,
-	   except for the largest negative integer */
-	if (result < 0 && !(sign == '-' && result == -result)) {
-		errno = ERANGE;
-		result = 0x7fffffff;
+	if (uresult <= (unsigned long)LONG_MAX) {
+		result = (long)uresult;
+		if (sign == '-')
+			result = -result;
 	}
-
-	if (sign == '-')
-		result = -result;
-
+	else if (sign == '-' && uresult == (unsigned long)LONG_MAX + 1) {
+		assert(LONG_MIN == -LONG_MAX-1);
+		result = LONG_MIN;
+	}
+	else {
+		errno = ERANGE;
+		result = LONG_MAX;
+	}
 	return result;
 }

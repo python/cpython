@@ -61,6 +61,14 @@ class RegressionTests(unittest.TestCase):
 
         con.rollback()
 
+    def CheckColumnNameWithSpaces(self):
+        cur = self.con.cursor()
+        cur.execute('select 1 as "foo bar [datetime]"')
+        self.failUnlessEqual(cur.description[0][0], "foo bar")
+
+        cur.execute('select 1 as "foo baz"')
+        self.failUnlessEqual(cur.description[0][0], "foo baz")
+
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
     return unittest.TestSuite((regression_suite,))

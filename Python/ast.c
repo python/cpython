@@ -339,7 +339,7 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
     /* The ast defines augmented store and load contexts, but the
        implementation here doesn't actually use them.  The code may be
        a little more complex than necessary as a result.  It also means
-       that expressions in an augmented assignment have no context.
+       that expressions in an augmented assignment have a Store context.
        Consider restructuring so that augmented assignment uses
        set_context(), too.
     */
@@ -386,6 +386,9 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
             break;
         case GeneratorExp_kind:
             expr_name = "generator expression";
+            break;
+        case Yield_kind:
+            expr_name = "yield expression";
             break;
         case ListComp_kind:
             expr_name = "list comprehension";
@@ -619,10 +622,10 @@ ast_for_arguments(struct compiling *c, const node *n)
     }
     args = (n_args ? asdl_seq_new(n_args, c->c_arena) : NULL);
     if (!args && n_args)
-    	return NULL; /* Don't need to go to NULL; nothing allocated */
+    	return NULL; /* Don't need to goto error; no objects allocated */
     defaults = (n_defaults ? asdl_seq_new(n_defaults, c->c_arena) : NULL);
     if (!defaults && n_defaults)
-        goto error;
+    	return NULL; /* Don't need to goto error; no objects allocated */
 
     /* fpdef: NAME | '(' fplist ')'
        fplist: fpdef (',' fpdef)* [',']
@@ -638,8 +641,11 @@ ast_for_arguments(struct compiling *c, const node *n)
                    anything other than EQUAL or a comma? */
                 /* XXX Should NCH(n) check be made a separate check? */
                 if (i + 1 < NCH(n) && TYPE(CHILD(n, i + 1)) == EQUAL) {
-                    asdl_seq_SET(defaults, j++, 
-				    ast_for_expr(c, CHILD(n, i + 2)));
+                    expr_ty expression = ast_for_expr(c, CHILD(n, i + 2));
+                    if (!expression)
+                            goto error;
+                    assert(defaults != NULL);
+                    asdl_seq_SET(defaults, j++, expression);
                     i += 2;
 		    found_default = 1;
                 }
@@ -1484,6 +1490,57 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
 }
 
 static expr_ty
+ast_for_factor(struct compiling *c, const node *n)
+{
+    node *pfactor, *ppower, *patom, *pnum;
+    expr_ty expression;
+
+    /* If the unary - operator is applied to a constant, don't generate
+       a UNARY_NEGATIVE opcode.  Just store the approriate value as a
+       constant.  The peephole optimizer already does something like
+       this but it doesn't handle the case where the constant is
+       (sys.maxint - 1).  In that case, we want a PyIntObject, not a
+       PyLongObject.
+    */
+    if (TYPE(CHILD(n, 0)) == MINUS
+        && NCH(n) == 2
+        && TYPE((pfactor = CHILD(n, 1))) == factor
+        && NCH(pfactor) == 1
+        && TYPE((ppower = CHILD(pfactor, 0))) == power
+        && NCH(ppower) == 1
+        && TYPE((patom = CHILD(ppower, 0))) == atom
+        && TYPE((pnum = CHILD(patom, 0))) == NUMBER) {
+        char *s = PyObject_MALLOC(strlen(STR(pnum)) + 2);
+        if (s == NULL)
+            return NULL;
+        s[0] = '-';
+        strcpy(s + 1, STR(pnum));
+        PyObject_FREE(STR(pnum));
+        STR(pnum) = s;
+        return ast_for_atom(c, patom);
+    }
+
+    expression = ast_for_expr(c, CHILD(n, 1));
+    if (!expression)
+        return NULL;
+
+    switch (TYPE(CHILD(n, 0))) {
+        case PLUS:
+            return UnaryOp(UAdd, expression, LINENO(n), n->n_col_offset,
+                           c->c_arena);
+        case MINUS:
+            return UnaryOp(USub, expression, LINENO(n), n->n_col_offset,
+                           c->c_arena);
+        case TILDE:
+            return UnaryOp(Invert, expression, LINENO(n),
+                           n->n_col_offset, c->c_arena);
+    }
+    PyErr_Format(PyExc_SystemError, "unhandled factor: %d",
+                 TYPE(CHILD(n, 0)));
+    return NULL;
+}
+
+static expr_ty
 ast_for_power(struct compiling *c, const node *n)
 {
     /* power: atom trailer* ('**' factor)*
@@ -1662,30 +1719,12 @@ ast_for_expr(struct compiling *c, const node *n)
 	    }
 	    return Yield(exp, LINENO(n), n->n_col_offset, c->c_arena);
 	}
-        case factor: {
-            expr_ty expression;
-            
+        case factor:
             if (NCH(n) == 1) {
                 n = CHILD(n, 0);
                 goto loop;
             }
-
-            expression = ast_for_expr(c, CHILD(n, 1));
-            if (!expression)
-                return NULL;
-
-            switch (TYPE(CHILD(n, 0))) {
-                case PLUS:
-                    return UnaryOp(UAdd, expression, LINENO(n), n->n_col_offset, c->c_arena);
-                case MINUS:
-                    return UnaryOp(USub, expression, LINENO(n), n->n_col_offset, c->c_arena);
-                case TILDE:
-                    return UnaryOp(Invert, expression, LINENO(n), n->n_col_offset, c->c_arena);
-            }
-            PyErr_Format(PyExc_SystemError, "unhandled factor: %d",
-	    		 TYPE(CHILD(n, 0)));
-            break;
-        }
+	    return ast_for_factor(c, n);
         case power:
             return ast_for_power(c, n);
         default:
@@ -1893,18 +1932,17 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         operator_ty newoperator;
 	node *ch = CHILD(n, 0);
 
-	if (TYPE(ch) == testlist)
-	    expr1 = ast_for_testlist(c, ch);
-	else
-	    expr1 = Yield(ast_for_expr(c, CHILD(ch, 0)), LINENO(ch), n->n_col_offset,
-                          c->c_arena);
-
+	expr1 = ast_for_testlist(c, ch);
         if (!expr1)
             return NULL;
-        /* TODO(jhylton): Figure out why set_context() can't be used here. */
+        /* TODO(nas): Remove duplicated error checks (set_context does it) */
         switch (expr1->kind) {
             case GeneratorExp_kind:
                 ast_error(ch, "augmented assignment to generator "
+                          "expression not possible");
+                return NULL;
+            case Yield_kind:
+                ast_error(ch, "augmented assignment to yield "
                           "expression not possible");
                 return NULL;
             case Name_kind: {
@@ -1923,12 +1961,13 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
                           "assignment");
                 return NULL;
         }
+	set_context(expr1, Store, ch);
 
 	ch = CHILD(n, 2);
 	if (TYPE(ch) == testlist)
 	    expr2 = ast_for_testlist(c, ch);
 	else
-	    expr2 = Yield(ast_for_expr(c, ch), LINENO(ch), ch->n_col_offset, c->c_arena);
+	    expr2 = ast_for_expr(c, ch);
         if (!expr2)
             return NULL;
 
@@ -2142,7 +2181,14 @@ alias_for_import_name(struct compiling *c, const node *n)
  loop:
     switch (TYPE(n)) {
         case import_as_name:
-            str = (NCH(n) == 3) ? NEW_IDENTIFIER(CHILD(n, 2)) : NULL;
+            str = NULL;
+            if (NCH(n) == 3) {
+                if (strcmp(STR(CHILD(n, 1)), "as") != 0) {
+                    ast_error(n, "must use 'as' in import");
+                    return NULL;
+                }
+                str = NEW_IDENTIFIER(CHILD(n, 2));
+            }
             return alias(NEW_IDENTIFIER(CHILD(n, 0)), str, c->c_arena);
         case dotted_as_name:
             if (NCH(n) == 1) {
@@ -2151,6 +2197,10 @@ alias_for_import_name(struct compiling *c, const node *n)
             }
             else {
                 alias_ty a = alias_for_import_name(c, CHILD(n, 0));
+                if (strcmp(STR(CHILD(n, 1)), "as") != 0) {
+                    ast_error(n, "must use 'as' in import");
+                    return NULL;
+                }
                 assert(!a->asname);
                 a->asname = NEW_IDENTIFIER(CHILD(n, 2));
                 return a;
@@ -2621,6 +2671,7 @@ ast_for_for_stmt(struct compiling *c, const node *n)
     asdl_seq *_target, *seq = NULL, *suite_seq;
     expr_ty expression;
     expr_ty target;
+    const node *node_target;
     /* for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite] */
     REQ(n, for_stmt);
 
@@ -2630,10 +2681,13 @@ ast_for_for_stmt(struct compiling *c, const node *n)
             return NULL;
     }
 
-    _target = ast_for_exprlist(c, CHILD(n, 1), Store);
+    node_target = CHILD(n, 1);
+    _target = ast_for_exprlist(c, node_target, Store);
     if (!_target)
         return NULL;
-    if (asdl_seq_LEN(_target) == 1)
+    /* Check the # of children rather than the length of _target, since
+       for x, in ... has 1 element in _target, but still requires a Tuple. */
+    if (NCH(node_target) == 1)
 	target = (expr_ty)asdl_seq_GET(_target, 0);
     else
 	target = Tuple(_target, Store, LINENO(n), n->n_col_offset, c->c_arena);

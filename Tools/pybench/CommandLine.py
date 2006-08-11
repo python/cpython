@@ -358,7 +358,7 @@ class Application:
 
         except self.InternalError:
             print
-            print '* Internal Error'
+            print '* Internal Error (use --debug to display the traceback)'
             if self.debug:
                 print
                 traceback.print_exc(20, sys.stdout)

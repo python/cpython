@@ -46,7 +46,7 @@ def warn(message, category=None, stacklevel=1):
     filename = globals.get('__file__')
     if filename:
         fnl = filename.lower()
-        if fnl.endswith(".pyc") or fnl.endswith(".pyo"):
+        if fnl.endswith((".pyc", ".pyo")):
             filename = filename[:-1]
     else:
         if module == "__main__":
@@ -254,11 +254,11 @@ def _getcategory(category):
             cat = getattr(m, klass)
         except AttributeError:
             raise _OptionError("unknown warning category: %r" % (category,))
-    if (not isinstance(cat, types.ClassType) or
-        not issubclass(cat, Warning)):
+    if not issubclass(cat, Warning):
         raise _OptionError("invalid warning category: %r" % (category,))
     return cat
 
 # Module initialization
 _processoptions(sys.warnoptions)
 simplefilter("ignore", category=PendingDeprecationWarning, append=1)
+simplefilter("ignore", category=ImportWarning, append=1)

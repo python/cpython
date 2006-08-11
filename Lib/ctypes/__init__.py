@@ -1,9 +1,11 @@
+######################################################################
+#  This file should be kept compatible with Python 2.3, see PEP 291. #
+######################################################################
 """create and manipulate C data types in Python"""
 
 import os as _os, sys as _sys
-from itertools import chain as _chain
 
-__version__ = "0.9.9.6"
+__version__ = "1.0.0"
 
 from _ctypes import Union, Structure, Array
 from _ctypes import _Pointer
@@ -19,6 +21,23 @@ if __version__ != _ctypes_version:
 
 if _os.name in ("nt", "ce"):
     from _ctypes import FormatError
+
+DEFAULT_MODE = RTLD_LOCAL
+if _os.name == "posix" and _sys.platform == "darwin":
+    import gestalt
+
+    # gestalt.gestalt("sysv") returns the version number of the
+    # currently active system file as BCD.
+    # On OS X 10.4.6 -> 0x1046
+    # On OS X 10.2.8 -> 0x1028
+    # See also http://www.rgaros.nl/gestalt/
+    #
+    # On OS X 10.3, we use RTLD_GLOBAL as default mode
+    # because RTLD_LOCAL does not work at least on some
+    # libraries.
+
+    if gestalt.gestalt("sysv") < 0x1040:
+        DEFAULT_MODE = RTLD_GLOBAL
 
 from _ctypes import FUNCFLAG_CDECL as _FUNCFLAG_CDECL, \
      FUNCFLAG_PYTHONAPI as _FUNCFLAG_PYTHONAPI
@@ -67,7 +86,7 @@ def CFUNCTYPE(restype, *argtypes):
     restype: the result type
     argtypes: a sequence specifying the argument types
 
-    The function prototype can be called in three ways to create a
+    The function prototype can be called in different ways to create a
     callable object:
 
     prototype(integer address) -> foreign function
@@ -111,7 +130,7 @@ if _os.name in ("nt", "ce"):
 elif _os.name == "posix":
     from _ctypes import dlopen as _dlopen
 
-from _ctypes import sizeof, byref, addressof, alignment
+from _ctypes import sizeof, byref, addressof, alignment, resize
 from _ctypes import _SimpleCData
 
 class py_object(_SimpleCData):
@@ -282,7 +301,7 @@ class CDLL(object):
         _flags_ = _FUNCFLAG_CDECL
         _restype_ = c_int # default, can be overridden in instances
 
-    def __init__(self, name, mode=RTLD_LOCAL, handle=None):
+    def __init__(self, name, mode=DEFAULT_MODE, handle=None):
         self._name = name
         if handle is None:
             self._handle = _dlopen(self._name, mode)
@@ -293,18 +312,19 @@ class CDLL(object):
         return "<%s '%s', handle %x at %x>" % \
                (self.__class__.__name__, self._name,
                 (self._handle & (_sys.maxint*2 + 1)),
-                id(self))
+                id(self) & (_sys.maxint*2 + 1))
 
     def __getattr__(self, name):
         if name.startswith('__') and name.endswith('__'):
             raise AttributeError, name
-        return self.__getitem__(name)
+        func = self.__getitem__(name)
+        setattr(self, name, func)
+        return func
 
     def __getitem__(self, name_or_ordinal):
         func = self._FuncPtr((name_or_ordinal, self))
         if not isinstance(name_or_ordinal, (int, long)):
             func.__name__ = name_or_ordinal
-            setattr(self, name_or_ordinal, func)
         return func
 
 class PyDLL(CDLL):
@@ -419,12 +439,10 @@ def PYFUNCTYPE(restype, *argtypes):
         _restype_ = restype
         _flags_ = _FUNCFLAG_CDECL | _FUNCFLAG_PYTHONAPI
     return CFunctionType
-_cast = PYFUNCTYPE(py_object, c_void_p, py_object)(_cast_addr)
 
+_cast = PYFUNCTYPE(py_object, c_void_p, py_object, py_object)(_cast_addr)
 def cast(obj, typ):
-    result = _cast(obj, typ)
-    result.__keepref = obj
-    return result
+    return _cast(obj, obj, typ)
 
 _string_at = CFUNCTYPE(py_object, c_void_p, c_int)(_string_at_addr)
 def string_at(ptr, size=0):
@@ -446,52 +464,21 @@ else:
         return _wstring_at(ptr, size)
 
 
-if _os.name == "nt": # COM stuff
+if _os.name in ("nt", "ce"): # COM stuff
     def DllGetClassObject(rclsid, riid, ppv):
-        # First ask ctypes.com.server than comtypes.server for the
-        # class object.
-
-        # trick py2exe by doing dynamic imports
-        result = -2147221231 # CLASS_E_CLASSNOTAVAILABLE
         try:
-            ctcom = __import__("ctypes.com.server", globals(), locals(), ['*'])
+            ccom = __import__("comtypes.server.inprocserver", globals(), locals(), ['*'])
         except ImportError:
-            pass
+            return -2147221231 # CLASS_E_CLASSNOTAVAILABLE
         else:
-            result = ctcom.DllGetClassObject(rclsid, riid, ppv)
-
-        if result == -2147221231: # CLASS_E_CLASSNOTAVAILABLE
-            try:
-                ccom = __import__("comtypes.server", globals(), locals(), ['*'])
-            except ImportError:
-                pass
-            else:
-                result = ccom.DllGetClassObject(rclsid, riid, ppv)
-
-        return result
+            return ccom.DllGetClassObject(rclsid, riid, ppv)
 
     def DllCanUnloadNow():
-        # First ask ctypes.com.server than comtypes.server if we can unload or not.
-        # trick py2exe by doing dynamic imports
-        result = 0 # S_OK
         try:
-            ctcom = __import__("ctypes.com.server", globals(), locals(), ['*'])
+            ccom = __import__("comtypes.server.inprocserver", globals(), locals(), ['*'])
         except ImportError:
-            pass
-        else:
-            result = ctcom.DllCanUnloadNow()
-            if result != 0: # != S_OK
-                return result
-
-        try:
-            ccom = __import__("comtypes.server", globals(), locals(), ['*'])
-        except ImportError:
-            return result
-        try:
-            return ccom.DllCanUnloadNow()
-        except AttributeError:
-            pass
-        return result
+            return 0 # S_OK
+        return ccom.DllCanUnloadNow()
 
 from ctypes._endian import BigEndianStructure, LittleEndianStructure
 

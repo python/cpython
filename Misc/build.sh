@@ -54,13 +54,19 @@ RESULT_FILE="$DIR/build/index.html"
 INSTALL_DIR="/tmp/python-test/local"
 RSYNC_OPTS="-aC -e ssh"
 
+# Always run the installed version of Python.
+PYTHON=$INSTALL_DIR/bin/python
+
+# Python options and regression test program that should always be run.
+REGRTEST_ARGS="-E -tt $INSTALL_DIR/lib/python2.5/test/regrtest.py"
+
 REFLOG="build/reflog.txt.out"
 # These tests are not stable and falsely report leaks sometimes.
 # The entire leak report will be mailed if any test not in this list leaks.
 # Note: test_XXX (none currently) really leak, but are disabled
 # so we don't send spam.  Any test which really leaks should only 
 # be listed here if there are also test cases under Lib/test/leakers.
-LEAKY_TESTS="test_(ctypes|filecmp|socket|threadedtempfile|threading|urllib2)"
+LEAKY_TESTS="test_(XXX)"  # Currently no tests should report spurious leaks.
 
 # Skip these tests altogether when looking for leaks.  These tests
 # do not need to be stored above in LEAKY_TESTS too.
@@ -155,21 +161,31 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             make install >& build/$F
             update_status "Installing" "$F" $start
 
+            if [ ! -x $PYTHON ]; then
+                ln -s ${PYTHON}2.* $PYTHON
+            fi
+
             ## make and run basic tests
             F=make-test.out
             start=`current_time`
-            make test >& build/$F
+            $PYTHON $REGRTEST_ARGS >& build/$F
             NUM_FAILURES=`grep -ic " failed:" build/$F`
             update_status "Testing basics ($NUM_FAILURES failures)" "$F" $start
-            ## FIXME: should mail since -uall below should find same problems
             mail_on_failure "basics" build/$F
+
+            F=make-test-opt.out
+            start=`current_time`
+            $PYTHON -O $REGRTEST_ARGS >& build/$F
+            NUM_FAILURES=`grep -ic " failed:" build/$F`
+            update_status "Testing opt ($NUM_FAILURES failures)" "$F" $start
+            mail_on_failure "opt" build/$F
 
             ## run the tests looking for leaks
             F=make-test-refleak.out
             start=`current_time`
             ## ensure that the reflog exists so the grep doesn't fail
             touch $REFLOG
-            ./python ./Lib/test/regrtest.py -R 4:3:$REFLOG -u network $LEAKY_SKIPS >& build/$F
+            $PYTHON $REGRTEST_ARGS -R 4:3:$REFLOG -u network $LEAKY_SKIPS >& build/$F
             NUM_FAILURES=`egrep -vc "$LEAKY_TESTS" $REFLOG`
             update_status "Testing refleaks ($NUM_FAILURES failures)" "$F" $start
             mail_on_failure "refleak" $REFLOG
@@ -179,7 +195,7 @@ if [ $err = 0 -a "$BUILD_DISABLED" != "yes" ]; then
             start=`current_time`
             ## skip curses when running from cron since there's no terminal
             ## skip sound since it's not setup on the PSF box (/dev/dsp)
-            ./python -E -tt ./Lib/test/regrtest.py -uall -x test_curses test_linuxaudiodev test_ossaudiodev >& build/$F
+            $PYTHON $REGRTEST_ARGS -uall -x test_curses test_linuxaudiodev test_ossaudiodev >& build/$F
             NUM_FAILURES=`grep -ic " failed:" build/$F`
             update_status "Testing all except curses and sound ($NUM_FAILURES failures)" "$F" $start
             mail_on_failure "all" build/$F
@@ -189,7 +205,7 @@ fi
 
 
 ## make doc
-cd Doc
+cd $DIR/Doc
 F="make-doc.out"
 start=`current_time`
 make >& ../build/$F

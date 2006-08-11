@@ -49,7 +49,11 @@ class CallTip:
         """
         # truncate overly long calltip
         if len(text) >= 79:
-            text = text[:75] + ' ...'
+            textlines = text.splitlines()
+            for i, line in enumerate(textlines):
+                if len(line) > 79:
+                    textlines[i] = line[:75] + ' ...'
+            text = '\n'.join(textlines)
         self.text = text
         if self.tipwindow or not self.text:
             return

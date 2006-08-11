@@ -299,6 +299,17 @@ except NameError:
 else:
     raise TestFailed
 
+# test for bug #1501934: incorrect LOAD/STORE_GLOBAL generation
+global_x = 1
+def f():
+    global_x += 1
+try:
+    f()
+except UnboundLocalError:
+    pass
+else:
+    raise TestFailed, 'scope of global_x not correctly determined'
+
 print "14. complex definitions"
 
 def makeReturner(*lst):

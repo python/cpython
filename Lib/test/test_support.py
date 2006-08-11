@@ -89,6 +89,24 @@ def requires(resource, msg=None):
             msg = "Use of the `%s' resource not enabled" % resource
         raise ResourceDenied(msg)
 
+def bind_port(sock, host='', preferred_port=54321):
+    """Try to bind the sock to a port.  If we are running multiple
+    tests and we don't try multiple ports, the test can fails.  This
+    makes the test more robust."""
+
+    import socket, errno
+    # some random ports that hopefully no one is listening on.
+    for port in [preferred_port, 9907, 10243, 32999]:
+        try:
+            sock.bind((host, port))
+            return port
+        except socket.error, (err, msg):
+            if err != errno.EADDRINUSE:
+                raise
+            print >>sys.__stderr__, \
+                '  WARNING: failed to listen on port %d, trying another' % port
+    raise TestFailed, 'unable to find port to listen on'
+
 FUZZ = 1e-6
 
 def fcmp(x, y): # fuzzy comparison function
@@ -296,6 +314,12 @@ _1M = 1024*1024
 _1G = 1024 * _1M
 _2G = 2 * _1G
 
+# Hack to get at the maximum value an internal index can take.
+class _Dummy:
+    def __getslice__(self, i, j):
+        return j
+MAX_Py_ssize_t = _Dummy()[:]
+
 def set_memlimit(limit):
     import re
     global max_memuse
@@ -310,7 +334,9 @@ def set_memlimit(limit):
     if m is None:
         raise ValueError('Invalid memory limit %r' % (limit,))
     memlimit = int(float(m.group(1)) * sizes[m.group(3).lower()])
-    if memlimit < 2.5*_1G:
+    if memlimit > MAX_Py_ssize_t:
+        memlimit = MAX_Py_ssize_t
+    if memlimit < _2G - 1:
         raise ValueError('Memory limit %r too low to be useful' % (limit,))
     max_memuse = memlimit
 
@@ -352,6 +378,17 @@ def bigmemtest(minsize, memuse, overhead=5*_1M):
         wrapper.overhead = overhead
         return wrapper
     return decorator
+
+def bigaddrspacetest(f):
+    """Decorator for tests that fill the address space."""
+    def wrapper(self):
+        if max_memuse < MAX_Py_ssize_t:
+            if verbose:
+                sys.stderr.write("Skipping %s because of memory "
+                                 "constraint\n" % (f.__name__,))
+        else:
+            return f(self)
+    return wrapper
 
 #=======================================================================
 # Preliminary PyUNIT integration.
@@ -435,3 +472,46 @@ def run_doctest(module, verbosity=None):
     if verbose:
         print 'doctest (%s) ... %d tests with zero failures' % (module.__name__, t)
     return f, t
+
+#=======================================================================
+# Threading support to prevent reporting refleaks when running regrtest.py -R
+
+def threading_setup():
+    import threading
+    return len(threading._active), len(threading._limbo)
+
+def threading_cleanup(num_active, num_limbo):
+    import threading
+    import time
+
+    _MAX_COUNT = 10
+    count = 0
+    while len(threading._active) != num_active and count < _MAX_COUNT:
+        count += 1
+        time.sleep(0.1)
+
+    count = 0
+    while len(threading._limbo) != num_limbo and count < _MAX_COUNT:
+        count += 1
+        time.sleep(0.1)
+
+def reap_children():
+    """Use this function at the end of test_main() whenever sub-processes
+    are started.  This will help ensure that no extra children (zombies)
+    stick around to hog resources and create problems when looking
+    for refleaks.
+    """
+
+    # Reap all our dead child processes so we don't leave zombies around.
+    # These hog resources and might be causing some of the buildbots to die.
+    import os
+    if hasattr(os, 'waitpid'):
+        any_process = -1
+        while True:
+            try:
+                # This will raise an exception on Windows.  That's ok.
+                pid, status = os.waitpid(any_process, os.WNOHANG)
+                if pid == 0:
+                    break
+            except:
+                break

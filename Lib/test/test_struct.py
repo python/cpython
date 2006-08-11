@@ -15,9 +15,11 @@ try:
 except ImportError:
     PY_STRUCT_RANGE_CHECKING = 0
     PY_STRUCT_OVERFLOW_MASKING = 1
+    PY_STRUCT_FLOAT_COERCE = 2
 else:
-    PY_STRUCT_RANGE_CHECKING = _struct._PY_STRUCT_RANGE_CHECKING
-    PY_STRUCT_OVERFLOW_MASKING = _struct._PY_STRUCT_OVERFLOW_MASKING
+    PY_STRUCT_RANGE_CHECKING = getattr(_struct, '_PY_STRUCT_RANGE_CHECKING', 0)
+    PY_STRUCT_OVERFLOW_MASKING = getattr(_struct, '_PY_STRUCT_OVERFLOW_MASKING', 0)
+    PY_STRUCT_FLOAT_COERCE = getattr(_struct, '_PY_STRUCT_FLOAT_COERCE', 0)
 
 def string_reverse(s):
     return "".join(reversed(s))
@@ -46,33 +48,40 @@ def any_err(func, *args):
         raise TestFailed, "%s%s did not raise error" % (
             func.__name__, args)
 
-def deprecated_err(func, *args):
-    # The `warnings` module doesn't have an advertised way to restore
-    # its filter list.  Cheat.
-    save_warnings_filters = warnings.filters[:]
-    # Grrr, we need this function to warn every time.  Without removing
-    # the warningregistry, running test_tarfile then test_struct would fail
-    # on 64-bit platforms.
-    globals = func.func_globals
-    if '__warningregistry__' in globals:
-        del globals['__warningregistry__']
-    warnings.filterwarnings("error", r"""^struct.*""", DeprecationWarning)
-    warnings.filterwarnings("error", r""".*format requires.*""",
-                            DeprecationWarning)
-    try:
+def with_warning_restore(func):
+    def _with_warning_restore(*args, **kw):
+        # The `warnings` module doesn't have an advertised way to restore
+        # its filter list.  Cheat.
+        save_warnings_filters = warnings.filters[:]
+        # Grrr, we need this function to warn every time.  Without removing
+        # the warningregistry, running test_tarfile then test_struct would fail
+        # on 64-bit platforms.
+        globals = func.func_globals
+        if '__warningregistry__' in globals:
+            del globals['__warningregistry__']
+        warnings.filterwarnings("error", r"""^struct.*""", DeprecationWarning)
+        warnings.filterwarnings("error", r""".*format requires.*""",
+                                DeprecationWarning)
         try:
-            func(*args)
-        except (struct.error, TypeError):
-            pass
-        except DeprecationWarning:
-            if not PY_STRUCT_OVERFLOW_MASKING:
-                raise TestFailed, "%s%s expected to raise struct.error" % (
-                    func.__name__, args)
-        else:
-            raise TestFailed, "%s%s did not raise error" % (
+            return func(*args, **kw)
+        finally:
+            warnings.filters[:] = save_warnings_filters[:]
+    return _with_warning_restore
+
+def deprecated_err(func, *args):
+    try:
+        func(*args)
+    except (struct.error, TypeError):
+        pass
+    except DeprecationWarning:
+        if not PY_STRUCT_OVERFLOW_MASKING:
+            raise TestFailed, "%s%s expected to raise struct.error" % (
                 func.__name__, args)
-    finally:
-        warnings.filters[:] = save_warnings_filters[:]
+    else:
+        raise TestFailed, "%s%s did not raise error" % (
+            func.__name__, args)
+deprecated_err = with_warning_restore(deprecated_err)
+
 
 simple_err(struct.calcsize, 'Z')
 
@@ -475,6 +484,9 @@ def test_705836():
 
 test_705836()
 
+###########################################################################
+# SF bug 1229380. No struct.pack exception for some out of range integers
+
 def test_1229380():
     import sys
     for endian in ('', '>', '<'):
@@ -491,6 +503,37 @@ def test_1229380():
 if PY_STRUCT_RANGE_CHECKING:
     test_1229380()
 
+###########################################################################
+# SF bug 1530559. struct.pack raises TypeError where it used to convert.
+
+def check_float_coerce(format, number):
+    if PY_STRUCT_FLOAT_COERCE == 2:
+        # Test for pre-2.5 struct module
+        packed = struct.pack(format, number)
+        floored = struct.unpack(format, packed)[0]
+        if floored != int(number):
+            raise TestFailed("did not correcly coerce float to int")
+        return
+    try:
+        func(*args)
+    except (struct.error, TypeError):
+        if PY_STRUCT_FLOAT_COERCE:
+            raise TestFailed("expected DeprecationWarning for float coerce")
+    except DeprecationWarning:
+        if not PY_STRUCT_FLOAT_COERCE:
+            raise TestFailed("expected to raise struct.error for float coerce")
+    else:
+        raise TestFailed("did not raise error for float coerce")
+
+check_float_coerce = with_warning_restore(deprecated_err)
+
+def test_1530559():
+    for endian in ('', '>', '<'):
+        for fmt in ('B', 'H', 'I', 'L', 'b', 'h', 'i', 'l'):
+            check_float_coerce(endian + fmt, 1.0)
+            check_float_coerce(endian + fmt, 1.5)
+
+test_1530559()
 
 ###########################################################################
 # Packing and unpacking to/from buffers.

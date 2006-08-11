@@ -42,8 +42,11 @@ half of the pair returned by \code{split(\var{path})}.
 \end{funcdesc}
 
 \begin{funcdesc}{exists}{path}
-Return \code{True} if \var{path} refers to an existing path.
-Returns \code{False} for broken symbolic links.
+Return \code{True} if \var{path} refers to an existing path.  Returns
+\code{False} for broken symbolic links. On some platforms, this
+function may return \code{False} if permission is not granted to
+execute \function{os.stat()} on the requested file, even if the
+\var{path} physically exists.
 \end{funcdesc}
 
 \begin{funcdesc}{lexists}{path}
@@ -190,9 +193,8 @@ Availability:  Macintosh, \UNIX.
 \end{funcdesc}
 
 \begin{funcdesc}{sameopenfile}{fp1, fp2}
-Return \code{True} if the file objects \var{fp1} and \var{fp2} refer to the
-same file.  The two file objects may represent different file
-descriptors.
+Return \code{True} if the file descriptors \var{fp1} and \var{fp2} refer
+to the same file.
 Availability:  Macintosh, \UNIX.
 \end{funcdesc}
 

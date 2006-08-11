@@ -35,6 +35,13 @@
 #include <fficonfig.h>
 #include <ffi.h>
 
+#ifdef PyObjC_STRICT_DEBUGGING
+  /* XXX: Debugging of stack alignment, to be removed */
+#define ASSERT_STACK_ALIGNED movdqa -16(%esp), %xmm0
+#else
+#define ASSERT_STACK_ALIGNED 
+#endif
+
 .text
 
 .globl _ffi_prep_args
@@ -47,29 +54,40 @@ _ffi_call_SYSV:
         pushl %ebp
 .LCFI0:
         movl  %esp,%ebp
+	subl  $8,%esp
+	ASSERT_STACK_ALIGNED
 .LCFI1:
 	/* Make room for all of the new args.  */
 	movl  16(%ebp),%ecx
 	subl  %ecx,%esp
 
+	ASSERT_STACK_ALIGNED
+
 	movl  %esp,%eax
 
 	/* Place all of the ffi_prep_args in position  */
+	subl  $8,%esp
 	pushl 12(%ebp)
 	pushl %eax
 	call  *8(%ebp)
 
+	ASSERT_STACK_ALIGNED
+
 	/* Return stack to previous state and call the function  */
-	addl  $8,%esp	
+	addl  $16,%esp
+
+	ASSERT_STACK_ALIGNED
 
 	call  *28(%ebp)
-
-	/* Remove the space we pushed for the args  */
+	
+	/* XXX: return returns return with 'ret $4', that upsets the stack! */
 	movl  16(%ebp),%ecx
 	addl  %ecx,%esp
 
+
 	/* Load %ecx with the return type code  */
 	movl  20(%ebp),%ecx	
+
 
 	/* If the return value pointer is NULL, assume no return value.  */
 	cmpl  $0,24(%ebp)
@@ -117,17 +135,47 @@ retlongdouble:
 	
 retint64:	
 	cmpl  $FFI_TYPE_SINT64,%ecx
-        jne   retstruct
+        jne   retstruct1b
 	/* Load %ecx with the pointer to storage for the return value  */
 	movl  24(%ebp),%ecx	
 	movl  %eax,0(%ecx)
 	movl  %edx,4(%ecx)
+	jmp   epilogue
+
+retstruct1b:
+   cmpl $FFI_TYPE_SINT8,%ecx
+   jne  retstruct2b
+   movl 24(%ebp),%ecx
+   movb  %al,0(%ecx)
+   jmp  epilogue
+
+retstruct2b:
+   cmpl $FFI_TYPE_SINT16,%ecx
+   jne  retstruct
+   movl 24(%ebp),%ecx
+   movw %ax,0(%ecx)
+   jmp  epilogue
 	
 retstruct:
+   cmpl $FFI_TYPE_STRUCT,%ecx
+   jne  noretval
 	/* Nothing to do!  */
+
+	subl $4,%esp
+
+	ASSERT_STACK_ALIGNED
+
+	addl $8,%esp
+	movl %ebp, %esp
+	popl %ebp
+	ret
 
 noretval:
 epilogue:
+	ASSERT_STACK_ALIGNED
+	addl $8, %esp
+
+
         movl %ebp,%esp
         popl %ebp
         ret

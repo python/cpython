@@ -78,7 +78,7 @@ def _darwin_compiler_fixup(compiler_so, cc_args):
         try:
             index = compiler_so.index('-isysroot')
             # Strip this argument and the next one:
-            del compiler_so[index:index+1]
+            del compiler_so[index:index+2]
         except ValueError:
             pass
 

@@ -264,7 +264,7 @@ SDK, in particular the 64-bit support. This includes an Itanium compiler
 In addition, you need the Visual Studio plugin for external C compilers,
 from http://sf.net/projects/vsextcomp. The plugin will wrap cl.exe, to
 locate the proper target compiler, and convert compiler options
-accordingly. The project files require atleast version 0.8.
+accordingly. The project files require atleast version 0.9.
 
 Building for AMD64
 ------------------
@@ -280,12 +280,21 @@ The build process for Visual C++ can be used almost unchanged with the free MS
 Toolkit Compiler. This provides a way of building Python using freely
 available software.
 
+Note that Microsoft have withdrawn the free MS Toolkit Compiler, so this can
+no longer be considered a supported option. The instructions are still
+correct, but you need to already have a copy of the compiler in order to use
+them. Microsoft now supply Visual C++ 2005 Express Edition for free, but this
+is NOT compatible with Visual C++ 7.1 (it uses a different C runtime), and so
+cannot be used to build a version of Python compatible with the standard
+python.org build. If you are interested in using Visual C++ 2005 Express
+Edition, however, you should look at the PCBuild8 directory.
+
 Requirements
 
     To build Python, the following tools are required:
 
     * The Visual C++ Toolkit Compiler
-        from http://msdn.microsoft.com/visualc/vctoolkit2003/
+        no longer available for download - see above
     * A recent Platform SDK
         from http://www.microsoft.com/downloads/details.aspx?FamilyID=484269e2-3b89-47e3-8eb7-1f2be6d7123a
     * The .NET 1.1 SDK

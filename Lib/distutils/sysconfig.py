@@ -512,7 +512,7 @@ def get_config_vars(*args):
                 for key in ('LDFLAGS', 'BASECFLAGS'):
                     flags = _config_vars[key]
                     flags = re.sub('-arch\s+\w+\s', ' ', flags)
-                    flags = re.sub('-isysroot [^ \t]* ', ' ', flags)
+                    flags = re.sub('-isysroot [^ \t]*', ' ', flags)
                     _config_vars[key] = flags
 
     if args:

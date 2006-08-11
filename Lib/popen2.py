@@ -72,14 +72,14 @@ class Popen3:
         # In case the child hasn't been waited on, check if it's done.
         self.poll(_deadstate=sys.maxint)
         if self.sts < 0:
-            if _active:
+            if _active is not None:
                 # Child is still running, keep us alive until we can wait on it.
                 _active.append(self)
 
     def _run_child(self, cmd):
         if isinstance(cmd, basestring):
             cmd = ['/bin/sh', '-c', cmd]
-        for i in range(3, MAXFD):
+        for i in xrange(3, MAXFD):
             try:
                 os.close(i)
             except OSError:

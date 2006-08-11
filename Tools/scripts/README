@@ -27,7 +27,6 @@ fixheader.py		Add some cpp magic to a C include file
 fixnotice.py		Fix the copyright notice in source files
 fixps.py		Fix Python scripts' first line (if #!)
 ftpmirror.py		FTP mirror script
-gencodec.py		Create Python codecs from Unicode mapping files
 google.py		Open a webbrowser with Google.
 gprof2html.py		Transform gprof(1) output into useful HTML.
 h2py.py			Translate #define's into Python assignments
@@ -53,14 +52,14 @@ pindent.py		Indent Python code, giving block-closing comments
 ptags.py		Create vi tags file for Python modules
 pydoc			Python documentation browser.
 pysource.py		Find Python source files
-redemo.py		Basic regular expression demostration facility
+redemo.py		Basic regular expression demonstration facility
 reindent.py		Change .py files to use 4-space indents.
 rgrep.py		Reverse grep through a file (useful for big logfiles)
 setup.py		Install all scripts listed here.
 suff.py			Sort a list of files by suffix
+svneol.py		Sets svn:eol-style on all files in directory.
 texcheck.py             Validate Python LaTeX formatting (Raymond Hettinger)
 texi2html.py		Convert GNU texinfo files into HTML
-trace.py		Trace Python program or function execution
 treesync.py		Synchronize source trees (very ideosyncratic)
 untabify.py		Replace tabs with spaces in argument files
 which.py		Find a program in $PATH

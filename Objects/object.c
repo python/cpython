@@ -1067,7 +1067,8 @@ PyObject_Hash(PyObject *v)
 		return _Py_HashPointer(v); /* Use address as hash value */
 	}
 	/* If there's a cmp but no hash defined, the object can't be hashed */
-	PyErr_SetString(PyExc_TypeError, "unhashable type");
+	PyErr_Format(PyExc_TypeError, "unhashable type: '%.200s'",
+		     v->ob_type->tp_name);
 	return -1;
 }
 
@@ -1132,8 +1133,9 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 		else
 #endif
 		{
-			PyErr_SetString(PyExc_TypeError,
-					"attribute name must be string");
+			PyErr_Format(PyExc_TypeError,
+				     "attribute name must be string, not '%.200s'",
+				     name->ob_type->tp_name);
 			return NULL;
 		}
 	}
@@ -1178,8 +1180,9 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 		else
 #endif
 		{
-			PyErr_SetString(PyExc_TypeError,
-					"attribute name must be string");
+			PyErr_Format(PyExc_TypeError,
+				     "attribute name must be string, not '%.200s'",
+				     name->ob_type->tp_name);
 			return -1;
 		}
 	}
@@ -1274,8 +1277,9 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 		else
 #endif
 		{
-			PyErr_SetString(PyExc_TypeError,
-					"attribute name must be string");
+			PyErr_Format(PyExc_TypeError,
+				     "attribute name must be string, not '%.200s'",
+				     name->ob_type->tp_name);
 			return NULL;
 		}
 	}
@@ -1395,8 +1399,9 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 		else
 #endif
 		{
-			PyErr_SetString(PyExc_TypeError,
-					"attribute name must be string");
+			PyErr_Format(PyExc_TypeError,
+				     "attribute name must be string, not '%.200s'",
+				     name->ob_type->tp_name);
 			return -1;
 		}
 	}
@@ -1445,7 +1450,7 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 
 	if (descr == NULL) {
 		PyErr_Format(PyExc_AttributeError,
-			     "'%.50s' object has no attribute '%.400s'",
+			     "'%.100s' object has no attribute '%.200s'",
 			     tp->tp_name, PyString_AS_STRING(name));
 		goto done;
 	}
@@ -1760,8 +1765,9 @@ PyObject_Dir(PyObject *arg)
 
 	assert(result);
 	if (!PyList_Check(result)) {
-		PyErr_SetString(PyExc_TypeError,
-			"Expected keys() to be a list.");
+		PyErr_Format(PyExc_TypeError,
+			"Expected keys() to be a list, not '%.200s'",
+			result->ob_type->tp_name);
 		goto error;
 	}
 	if (PyList_Sort(result) != 0)

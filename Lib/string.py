@@ -161,7 +161,7 @@ class Template:
                 val = mapping[named]
                 # We use this idiom instead of str() because the latter will
                 # fail if val is a Unicode containing non-ASCII characters.
-                return '%s' % val
+                return '%s' % (val,)
             if mo.group('escaped') is not None:
                 return self.delimiter
             if mo.group('invalid') is not None:
@@ -186,13 +186,13 @@ class Template:
                 try:
                     # We use this idiom instead of str() because the latter
                     # will fail if val is a Unicode containing non-ASCII
-                    return '%s' % mapping[named]
+                    return '%s' % (mapping[named],)
                 except KeyError:
                     return self.delimiter + named
             braced = mo.group('braced')
             if braced is not None:
                 try:
-                    return '%s' % mapping[braced]
+                    return '%s' % (mapping[braced],)
                 except KeyError:
                     return self.delimiter + '{' + braced + '}'
             if mo.group('escaped') is not None:

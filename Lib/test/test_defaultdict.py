@@ -4,6 +4,7 @@ import os
 import copy
 import tempfile
 import unittest
+from test import test_support
 
 from collections import defaultdict
 
@@ -131,5 +132,8 @@ class TestDefaultDict(unittest.TestCase):
         self.assertEqual(d2, d1)
 
 
+def test_main():
+    test_support.run_unittest(TestDefaultDict)
+
 if __name__ == "__main__":
-    unittest.main()
+    test_main()

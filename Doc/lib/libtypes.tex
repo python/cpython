@@ -176,6 +176,30 @@ The type of buffer objects created by the
 \function{buffer()}\bifuncindex{buffer} function.
 \end{datadesc}
 
+\begin{datadesc}{DictProxyType}
+The type of dict proxies, such as \code{TypeType.__dict__}.
+\end{datadesc}
+
+\begin{datadesc}{NotImplementedType}
+The type of \code{NotImplemented}
+\end{datadesc}
+
+\begin{datadesc}{GetSetDescriptorType}
+The type of objects defined in extension modules with \code{PyGetSetDef}, such
+as \code{FrameType.f_locals} or \code{array.array.typecode}.  This constant is
+not defined in implementations of Python that do not have such extension
+types, so for portable code use \code{hasattr(types, 'GetSetDescriptorType')}.
+\versionadded{2.5}
+\end{datadesc}
+
+\begin{datadesc}{MemberDescriptorType}
+The type of objects defined in extension modules with \code{PyMemberDef}, such
+as \code {datetime.timedelta.days}.  This constant is not defined in
+implementations of Python that do not have such extension types, so for
+portable code use \code{hasattr(types, 'MemberDescriptorType')}.
+\versionadded{2.5}
+\end{datadesc}
+
 \begin{datadesc}{StringTypes}
 A sequence containing \code{StringType} and \code{UnicodeType} used to
 facilitate easier checking for any string object.  Using this is more

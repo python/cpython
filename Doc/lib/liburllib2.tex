@@ -19,7 +19,8 @@ Open the URL \var{url}, which can be either a string or a \class{Request}
 object.
 
 \var{data} may be a string specifying additional data to send to the
-server. Currently HTTP requests are the only ones that use \var{data};
+server, or \code{None} if no such data is needed. 
+Currently HTTP requests are the only ones that use \var{data};
 the HTTP request will be a POST instead of a GET when the \var{data}
 parameter is provided.  \var{data} should be a buffer in the standard
 \mimetype{application/x-www-form-urlencoded} format.  The
@@ -97,8 +98,17 @@ The following classes are provided:
     \optional{, origin_req_host}\optional{, unverifiable}}
 This class is an abstraction of a URL request.
 
-\var{url} should be a string which is a valid URL.  For a description
-of \var{data} see the \method{add_data()} description.
+\var{url} should be a string containing a valid URL.  
+
+\var{data} may be a string specifying additional data to send to the
+server, or \code{None} if no such data is needed. 
+Currently HTTP requests are the only ones that use \var{data};
+the HTTP request will be a POST instead of a GET when the \var{data}
+parameter is provided.  \var{data} should be a buffer in the standard
+\mimetype{application/x-www-form-urlencoded} format.  The
+\function{urllib.urlencode()} function takes a mapping or sequence of
+2-tuples and returns a string in this format.
+
 \var{headers} should be a dictionary, and will be treated as if
 \method{add_header()} was called with each key and value as arguments.
 

@@ -112,6 +112,10 @@ typedef int pid_t;
 #define HAVE_HYPOT               1 /* hypot()                               */
 #define HAVE_PUTENV              1 /* putenv()                              */
 /* #define VA_LIST_IS_ARRAY   1 */ /* if va_list is an array of some kind   */
+/* #define HAVE_CONIO_H       1 */ /* #include <conio.h>                    */
+#define HAVE_ERRNO_H             1 /* #include <errno.h>                    */
+#define HAVE_SYS_STAT_H          1 /* #include <sys/stat.h>                 */
+#define HAVE_SYS_TYPES_H         1 /* #include <sys/types.h>                */
 
   /* Variable-Arguments/Prototypes */
 #define HAVE_PROTOTYPES          1 /* VAC++ supports C Function Prototypes  */
@@ -124,6 +128,7 @@ typedef int pid_t;
 #define MALLOC_ZERO_RETURNS_NULL 1 /* Our malloc(0) returns a NULL ptr      */
 
   /* Signal Handling */
+#define HAVE_SIGNAL_H            1 /* signal.h                              */
 #define RETSIGTYPE            void /* Return type of handlers (int or void) */
 /* #undef WANT_SIGFPE_HANDLER   */ /* Handle SIGFPE (see Include/pyfpe.h)   */
 /* #define HAVE_ALARM         1 */ /* alarm()                               */
@@ -163,7 +168,9 @@ typedef int pid_t;
 #define HAVE_SETVBUF             1 /* setvbuf()                             */
 #define HAVE_GETCWD              1 /* getcwd()                              */
 #define HAVE_PIPE                1 /* pipe()     [OS/2-specific code added] */
+#define HAVE_IO_H                1 /* #include <io.h>                       */
 #define HAVE_FCNTL_H             1 /* #include <fcntl.h>                    */
+#define HAVE_DIRECT_H            1 /* #include <direct.h>                   */
 /* #define HAVE_FLOCK         1 */ /* flock()                               */
 /* #define HAVE_TRUNCATE      1 */ /* truncate()                            */
 /* #define HAVE_FTRUNCATE     1 */ /* ftruncate()                           */
@@ -172,6 +179,7 @@ typedef int pid_t;
 /* #define HAVE_OPENDIR       1 */ /* opendir()                             */
 
   /* Process Operations */
+#define HAVE_PROCESS_H           1 /* #include <process.h>                  */
 #define HAVE_GETPID              1 /* getpid()                              */
 #define HAVE_SYSTEM              1 /* system()                              */
 #define HAVE_WAIT                1 /* wait()                                */

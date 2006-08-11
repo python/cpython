@@ -27,6 +27,18 @@ def remove_stderr_debug_decorations(stderr):
     return re.sub(r"\[\d+ refs\]\r?\n?$", "", stderr)
 
 class ProcessTestCase(unittest.TestCase):
+    def setUp(self):
+        # Try to minimize the number of children we have so this test
+        # doesn't crash on some buildbots (Alphas in particular).
+        if hasattr(test_support, "reap_children"):
+            test_support.reap_children()
+
+    def tearDown(self):
+        # Try to minimize the number of children we have so this test
+        # doesn't crash on some buildbots (Alphas in particular).
+        if hasattr(test_support, "reap_children"):
+            test_support.reap_children()
+
     def mkstemp(self):
         """wrapper for mkstemp, calling mktemp if mkstemp is not available"""
         if hasattr(tempfile, "mkstemp"):
@@ -56,7 +68,7 @@ class ProcessTestCase(unittest.TestCase):
             subprocess.check_call([sys.executable, "-c",
                                    "import sys; sys.exit(47)"])
         except subprocess.CalledProcessError, e:
-            self.assertEqual(e.errno, 47)
+            self.assertEqual(e.returncode, 47)
         else:
             self.fail("Expected CalledProcessError")
 
@@ -384,7 +396,8 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_no_leaking(self):
         # Make sure we leak no resources
-        if test_support.is_resource_enabled("subprocess") and not mswindows:
+        if not hasattr(test_support, "is_resource_enabled") \
+               or test_support.is_resource_enabled("subprocess") and not mswindows:
             max_handles = 1026 # too much for most UNIX systems
         else:
             max_handles = 65
@@ -463,10 +476,36 @@ class ProcessTestCase(unittest.TestCase):
             else:
                 self.fail("Expected OSError")
 
+        def _suppress_core_files(self):
+            """Try to prevent core files from being created.
+            Returns previous ulimit if successful, else None.
+            """
+            try:
+                import resource
+                old_limit = resource.getrlimit(resource.RLIMIT_CORE)
+                resource.setrlimit(resource.RLIMIT_CORE, (0,0))
+                return old_limit
+            except (ImportError, ValueError, resource.error):
+                return None
+
+        def _unsuppress_core_files(self, old_limit):
+            """Return core file behavior to default."""
+            if old_limit is None:
+                return
+            try:
+                import resource
+                resource.setrlimit(resource.RLIMIT_CORE, old_limit)
+            except (ImportError, ValueError, resource.error):
+                return
+
         def test_run_abort(self):
             # returncode handles signal termination
-            p = subprocess.Popen([sys.executable,
-                                  "-c", "import os; os.abort()"])
+            old_limit = self._suppress_core_files()
+            try:
+                p = subprocess.Popen([sys.executable,
+                                      "-c", "import os; os.abort()"])
+            finally:
+                self._unsuppress_core_files(old_limit)
             p.wait()
             self.assertEqual(-p.returncode, signal.SIGABRT)
 
@@ -599,6 +638,8 @@ class ProcessTestCase(unittest.TestCase):
 
 def test_main():
     test_support.run_unittest(ProcessTestCase)
+    if hasattr(test_support, "reap_children"):
+        test_support.reap_children()
 
 if __name__ == "__main__":
     test_main()

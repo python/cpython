@@ -2,7 +2,7 @@ from pybench import Test
 
 class IfThenElse(Test):
 
-    version = 0.31
+    version = 2.0
     operations = 30*3 # hard to say...
     rounds = 150000
 
@@ -469,9 +469,9 @@ class IfThenElse(Test):
 
 class NestedForLoops(Test):
 
-    version = 0.3
+    version = 2.0
     operations = 1000*10*5
-    rounds = 150
+    rounds = 300
 
     def test(self):
 
@@ -494,9 +494,9 @@ class NestedForLoops(Test):
 
 class ForLoops(Test):
 
-    version = 0.1
+    version = 2.0
     operations = 5 * 5
-    rounds = 8000
+    rounds = 10000
 
     def test(self):
 

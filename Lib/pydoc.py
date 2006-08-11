@@ -318,6 +318,8 @@ class Doc:
         # identifies something in a way that pydoc itself has issues handling;
         # think 'super' and how it is a descriptor (which raises the exception
         # by lacking a __name__ attribute) and an instance.
+        if inspect.isgetsetdescriptor(object): return self.docdata(*args)
+        if inspect.ismemberdescriptor(object): return self.docdata(*args)
         try:
             if inspect.ismodule(object): return self.docmodule(*args)
             if inspect.isclass(object): return self.docclass(*args)
@@ -333,7 +335,7 @@ class Doc:
             name and ' ' + repr(name), type(object).__name__)
         raise TypeError, message
 
-    docmodule = docclass = docroutine = docother = fail
+    docmodule = docclass = docroutine = docother = docproperty = docdata = fail
 
     def getdocloc(self, object):
         """Return the location of module docs or None"""
@@ -915,6 +917,10 @@ class HTMLDoc(Doc):
         lhs = name and '<strong>%s</strong> = ' % name or ''
         return lhs + self.repr(object)
 
+    def docdata(self, object, name=None, mod=None, cl=None):
+        """Produce html documentation for a data descriptor."""
+        return self._docdescriptor(name, object, mod)
+
     def index(self, dir, shadowed=None):
         """Generate an HTML index for a directory of modules."""
         modpkgs = []
@@ -1268,6 +1274,10 @@ class TextDoc(Doc):
         """Produce text documentation for a property."""
         return self._docdescriptor(name, object, mod)
 
+    def docdata(self, object, name=None, mod=None, cl=None):
+        """Produce text documentation for a data descriptor."""
+        return self._docdescriptor(name, object, mod)
+
     def docother(self, object, name=None, mod=None, parent=None, maxlen=None, doc=None):
         """Produce text documentation for a data object."""
         repr = self.repr(object)
@@ -1397,6 +1407,14 @@ def describe(thing):
             return 'module ' + thing.__name__
     if inspect.isbuiltin(thing):
         return 'built-in function ' + thing.__name__
+    if inspect.isgetsetdescriptor(thing):
+        return 'getset descriptor %s.%s.%s' % (
+            thing.__objclass__.__module__, thing.__objclass__.__name__,
+            thing.__name__)
+    if inspect.ismemberdescriptor(thing):
+        return 'member descriptor %s.%s.%s' % (
+            thing.__objclass__.__module__, thing.__objclass__.__name__,
+            thing.__name__)
     if inspect.isclass(thing):
         return 'class ' + thing.__name__
     if inspect.isfunction(thing):
@@ -1453,6 +1471,8 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0):
         if not (inspect.ismodule(object) or
                 inspect.isclass(object) or
                 inspect.isroutine(object) or
+                inspect.isgetsetdescriptor(object) or
+                inspect.ismemberdescriptor(object) or
                 isinstance(object, property)):
             # If the passed object is a piece of data or an instance,
             # document its available methods instead of its value.

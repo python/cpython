@@ -69,7 +69,33 @@ def simplegeneric(func):
 
 
 def walk_packages(path=None, prefix='', onerror=None):
-    """Yield submodule names+loaders recursively, for path or sys.path"""
+    """Yields (module_loader, name, ispkg) for all modules recursively
+    on path, or, if path is None, all accessible modules.
+
+    'path' should be either None or a list of paths to look for
+    modules in.
+
+    'prefix' is a string to output on the front of every module name
+    on output.
+
+    Note that this function must import all *packages* (NOT all
+    modules!) on the given path, in order to access the __path__
+    attribute to find submodules.
+
+    'onerror' is a function which gets called with one argument (the
+    name of the package which was being imported) if any exception
+    occurs while trying to import a package.  If no onerror function is
+    supplied, ImportErrors are caught and ignored, while all other
+    exceptions are propagated, terminating the search.
+
+    Examples:
+
+    # list all modules python can access
+    walk_packages()
+
+    # list all submodules of ctypes
+    walk_packages(ctypes.__path__, ctypes.__name__+'.')
+    """
 
     def seen(p, m={}):
         if p in m:
@@ -84,19 +110,33 @@ def walk_packages(path=None, prefix='', onerror=None):
                 __import__(name)
             except ImportError:
                 if onerror is not None:
-                    onerror()
+                    onerror(name)
+            except Exception:
+                if onerror is not None:
+                    onerror(name)
+                else:
+                    raise
             else:
                 path = getattr(sys.modules[name], '__path__', None) or []
 
                 # don't traverse path items we've seen before
                 path = [p for p in path if not seen(p)]
 
-                for item in walk_packages(path, name+'.'):
+                for item in walk_packages(path, name+'.', onerror):
                     yield item
 
 
 def iter_modules(path=None, prefix=''):
-    """Yield submodule names+loaders for path or sys.path"""
+    """Yields (module_loader, name, ispkg) for all submodules on path,
+    or, if path is None, all top-level modules on sys.path.
+
+    'path' should be either None or a list of paths to look for
+    modules in.
+
+    'prefix' is a string to output on the front of every module name
+    on output.
+    """
+
     if path is None:
         importers = iter_importers()
     else:
@@ -208,6 +248,7 @@ class ImpLoader:
 
     def _reopen(self):
         if self.file and self.file.closed:
+            mod_type = self.etc[2]
             if mod_type==imp.PY_SOURCE:
                 self.file = open(self.filename, 'rU')
             elif mod_type in (imp.PY_COMPILED, imp.C_EXTENSION):
@@ -340,9 +381,7 @@ def get_importer(path_item):
             importer = None
         sys.path_importer_cache.setdefault(path_item, importer)
 
-    # The boolean values are used for caching valid and invalid
-    # file paths for the built-in import machinery
-    if importer in (None, True, False):
+    if importer is None:
         try:
             importer = ImpImporter(path_item)
         except ImportError:

@@ -143,7 +143,7 @@ struct compiler {
 	PyFutureFeatures *c_future; /* pointer to module's __future__ */
 	PyCompilerFlags *c_flags;
 
-	int c_interactive;
+	int c_interactive;	 /* true if in interactive mode */
 	int c_nestlevel;
 
 	struct compiler_unit *u; /* compiler state for current block */
@@ -300,8 +300,11 @@ PyCodeObject *
 PyNode_Compile(struct _node *n, const char *filename)
 {
 	PyCodeObject *co = NULL;
+	mod_ty mod;
 	PyArena *arena = PyArena_New();
-	mod_ty mod = PyAST_FromNode(n, NULL, filename, arena);
+	if (!arena)
+		return NULL;
+	mod = PyAST_FromNode(n, NULL, filename, arena);
 	if (mod)
 		co = PyAST_Compile(mod, filename, NULL, arena);
 	PyArena_Free(arena);
@@ -610,8 +613,10 @@ markblocks(unsigned char *code, int len)
 	unsigned int *blocks = (unsigned int *)PyMem_Malloc(len*sizeof(int));
 	int i,j, opcode, blockcnt = 0;
 
-	if (blocks == NULL)
+	if (blocks == NULL) {
+		PyErr_NoMemory();
 		return NULL;
+	}
 	memset(blocks, 0, len*sizeof(int));
 
 	/* Mark labels in the first pass */
@@ -1066,14 +1071,14 @@ compiler_unit_free(struct compiler_unit *u)
 		PyObject_Free((void *)b);
 		b = next;
 	}
-	Py_XDECREF(u->u_ste);
-	Py_XDECREF(u->u_name);
-	Py_XDECREF(u->u_consts);
-	Py_XDECREF(u->u_names);
-	Py_XDECREF(u->u_varnames);
-	Py_XDECREF(u->u_freevars);
-	Py_XDECREF(u->u_cellvars);
-	Py_XDECREF(u->u_private);
+	Py_CLEAR(u->u_ste);
+	Py_CLEAR(u->u_name);
+	Py_CLEAR(u->u_consts);
+	Py_CLEAR(u->u_names);
+	Py_CLEAR(u->u_varnames);
+	Py_CLEAR(u->u_freevars);
+	Py_CLEAR(u->u_cellvars);
+	Py_CLEAR(u->u_private);
 	PyObject_Free(u);
 }
 
@@ -1100,8 +1105,17 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
 	u->u_name = name;
 	u->u_varnames = list2dict(u->u_ste->ste_varnames);
 	u->u_cellvars = dictbytype(u->u_ste->ste_symbols, CELL, 0, 0);
+	if (!u->u_varnames || !u->u_cellvars) {
+		compiler_unit_free(u);
+		return 0;
+	}
+
 	u->u_freevars = dictbytype(u->u_ste->ste_symbols, FREE, DEF_FREE_CLASS,
 				   PyDict_Size(u->u_cellvars));
+	if (!u->u_freevars) {
+		compiler_unit_free(u);
+		return 0;
+	}
 
 	u->u_blocks = NULL;
 	u->u_tmpname = 0;
@@ -1125,7 +1139,8 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
 	/* Push the old compiler_unit on the stack. */
 	if (c->u) {
 		PyObject *wrapper = PyCObject_FromVoidPtr(c->u, NULL);
-		if (PyList_Append(c->c_stack, wrapper) < 0) {
+		if (!wrapper || PyList_Append(c->c_stack, wrapper) < 0) {
+			Py_XDECREF(wrapper);
 			compiler_unit_free(u);
 			return 0;
 		}
@@ -1251,6 +1266,7 @@ compiler_next_instr(struct compiler *c, basicblock *b)
 		       sizeof(struct instr) * DEFAULT_BLOCK_SIZE);
 	}
 	else if (b->b_iused == b->b_ialloc) {
+		struct instr *tmp;
 		size_t oldsize, newsize;
 		oldsize = b->b_ialloc * sizeof(struct instr);
 		newsize = oldsize << 1;
@@ -1259,10 +1275,13 @@ compiler_next_instr(struct compiler *c, basicblock *b)
 			return -1;
 		}
 		b->b_ialloc <<= 1;
-		b->b_instr = (struct instr *)PyObject_Realloc(
+		tmp = (struct instr *)PyObject_Realloc(
                                                 (void *)b->b_instr, newsize);
-		if (b->b_instr == NULL)
+		if (tmp == NULL) {
+			PyErr_NoMemory();
 			return -1;
+		}
+		b->b_instr = tmp;
 		memset((char *)b->b_instr + oldsize, 0, newsize - oldsize);
 	}
 	return b->b_iused++;
@@ -1769,7 +1788,8 @@ compiler_mod(struct compiler *c, mod_ty mod)
 		if (!module)
 			return NULL;
 	}
-	if (!compiler_enter_scope(c, module, mod, 1))
+	/* Use 0 for firstlineno initially, will fixup in assemble(). */
+	if (!compiler_enter_scope(c, module, mod, 0))
 		return NULL;
 	switch (mod->kind) {
 	case Module_kind: 
@@ -1963,11 +1983,8 @@ compiler_function(struct compiler *c, stmt_ty s)
 	n = asdl_seq_LEN(s->v.FunctionDef.body);
 	/* if there was a docstring, we need to skip the first statement */
 	for (i = docstring; i < n; i++) {
-		stmt_ty s2 = (stmt_ty)asdl_seq_GET(s->v.FunctionDef.body, i);
-		if (i == 0 && s2->kind == Expr_kind &&
-		    s2->v.Expr.value->kind == Str_kind)
-			continue;
-		VISIT_IN_SCOPE(c, stmt, s2);
+		st = (stmt_ty)asdl_seq_GET(s->v.FunctionDef.body, i);
+		VISIT_IN_SCOPE(c, stmt, st);
 	}
 	co = assemble(c, 1);
 	compiler_exit_scope(c);
@@ -2190,6 +2207,10 @@ compiler_for(struct compiler *c, stmt_ty s)
 	VISIT(c, expr, s->v.For.iter);
 	ADDOP(c, GET_ITER);
 	compiler_use_next_block(c, start);
+	/* XXX(nnorwitz): is there a better way to handle this?
+	   for loops are special, we want to be able to trace them
+	   each time around, so we need to set an extra line number. */
+	c->u->u_lineno_set = false;
 	ADDOP_JREL(c, FOR_ITER, cleanup);
 	VISIT(c, expr, s->v.For.target);
 	VISIT_SEQ(c, stmt, s->v.For.body);
@@ -2708,11 +2729,13 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 	case Global_kind:
 		break;
 	case Expr_kind:
-		VISIT(c, expr, s->v.Expr.value);
 		if (c->c_interactive && c->c_nestlevel <= 1) {
+			VISIT(c, expr, s->v.Expr.value);
 			ADDOP(c, PRINT_EXPR);
 		}
-		else {
+		else if (s->v.Expr.value->kind != Str_kind &&
+			 s->v.Expr.value->kind != Num_kind) {
+			VISIT(c, expr, s->v.Expr.value);
 			ADDOP(c, POP_TOP);
 		}
 		break;
@@ -2989,6 +3012,7 @@ compiler_boolop(struct compiler *c, expr_ty e)
 		return 0;
 	s = e->v.BoolOp.values;
 	n = asdl_seq_LEN(s) - 1;
+	assert(n >= 0);
 	for (i = 0; i < n; ++i) {
 		VISIT(c, expr, (expr_ty)asdl_seq_GET(s, i));
 		ADDOP_JREL(c, jumpi, end);
@@ -3643,7 +3667,7 @@ compiler_augassign(struct compiler *c, stmt_ty s)
 	assert(s->kind == AugAssign_kind);
 
 	switch (e->kind) {
-		case Attribute_kind:
+	case Attribute_kind:
 		auge = Attribute(e->v.Attribute.value, e->v.Attribute.attr,
 				 AugLoad, e->lineno, e->col_offset, c->c_arena);
 		if (auge == NULL)
@@ -3666,7 +3690,8 @@ compiler_augassign(struct compiler *c, stmt_ty s)
 		VISIT(c, expr, auge);
 		break;
 	case Name_kind:
-		VISIT(c, expr, s->v.AugAssign.target);
+		if (!compiler_nameop(c, e->v.Name.id, Load))
+		    return 0;
 		VISIT(c, expr, s->v.AugAssign.value);
 		ADDOP(c, inplace_binop(c, s->v.AugAssign.op));
 		return compiler_nameop(c, e->v.Name.id, Store);
@@ -3979,6 +4004,8 @@ stackdepth(struct compiler *c)
 		b->b_startdepth = INT_MIN;
 		entryblock = b;
 	}
+	if (!entryblock)
+		return 0;
 	return stackdepth_walk(c, entryblock, 0, 0);
 }
 
@@ -4074,9 +4101,10 @@ corresponding to a bytecode address A should do something like this
 
 In order for this to work, when the addr field increments by more than 255,
 the line # increment in each pair generated must be 0 until the remaining addr
-increment is < 256.  So, in the example above, com_set_lineno should not (as
-was actually done until 2.2) expand 300, 300 to 255, 255,  45, 45, but to
-255, 0,	 45, 255,  0, 45.
+increment is < 256.  So, in the example above, assemble_lnotab (it used
+to be called com_set_lineno) should not (as was actually done until 2.2)
+expand 300, 300 to 255, 255, 45, 45, 
+            but to 255,   0, 45, 255, 0, 45.
 */
 
 static int
@@ -4092,7 +4120,10 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 	assert(d_bytecode >= 0);
 	assert(d_lineno >= 0);
 
-	if (d_lineno == 0)
+	/* XXX(nnorwitz): is there a better way to handle this?
+	   for loops are special, we want to be able to trace them
+	   each time around, so we need to set an extra line number. */
+	if (d_lineno == 0 && i->i_opcode != FOR_ITER)
 		return 1;
 
 	if (d_bytecode > 255) {
@@ -4131,12 +4162,12 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 		}
 		lnotab = (unsigned char *)
 			   PyString_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
-		*lnotab++ = 255;
 		*lnotab++ = d_bytecode;
+		*lnotab++ = 255;
 		d_bytecode = 0;
 		for (j = 1; j < ncodes; j++) {
-			*lnotab++ = 255;
 			*lnotab++ = 0;
+			*lnotab++ = 255;
 		}
 		d_lineno -= ncodes * 255;
 		a->a_lnotab_off += ncodes * 2;
@@ -4173,7 +4204,7 @@ static int
 assemble_emit(struct assembler *a, struct instr *i)
 {
 	int size, arg = 0, ext = 0;
-	int len = PyString_GET_SIZE(a->a_bytecode);
+	Py_ssize_t len = PyString_GET_SIZE(a->a_bytecode);
 	char *code;
 
 	size = instrsize(i);
@@ -4397,6 +4428,41 @@ makecode(struct compiler *c, struct assembler *a)
 	return co;
 }
 
+
+/* For debugging purposes only */
+#if 0
+static void
+dump_instr(const struct instr *i)
+{
+	const char *jrel = i->i_jrel ? "jrel " : "";
+	const char *jabs = i->i_jabs ? "jabs " : "";
+	char arg[128];
+
+	*arg = '\0';
+	if (i->i_hasarg)
+		sprintf(arg, "arg: %d ", i->i_oparg);
+
+	fprintf(stderr, "line: %d, opcode: %d %s%s%s\n", 
+			i->i_lineno, i->i_opcode, arg, jabs, jrel);
+}
+
+static void
+dump_basicblock(const basicblock *b)
+{
+	const char *seen = b->b_seen ? "seen " : "";
+	const char *b_return = b->b_return ? "return " : "";
+	fprintf(stderr, "used: %d, depth: %d, offset: %d %s%s\n",
+		b->b_iused, b->b_startdepth, b->b_offset, seen, b_return);
+	if (b->b_instr) {
+		int i;
+		for (i = 0; i < b->b_iused; i++) {
+			fprintf(stderr, "  [%02d] ", i);
+			dump_instr(b->b_instr + i);
+		}
+	}
+}
+#endif
+
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
@@ -4423,6 +4489,13 @@ assemble(struct compiler *c, int addNone)
 		entryblock = b; 
 	}
 
+	/* Set firstlineno if it wasn't explicitly set. */
+	if (!c->u->u_firstlineno) {
+		if (entryblock && entryblock->b_instr)
+			c->u->u_firstlineno = entryblock->b_instr->i_lineno;
+		else
+			c->u->u_firstlineno = 1;
+	}
 	if (!assemble_init(&a, nblocks, c->u->u_firstlineno))
 		goto error;
 	dfs(c, entryblock, &a);
