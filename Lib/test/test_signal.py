@@ -10,7 +10,10 @@ if verbose:
     x = '-x'
 else:
     x = '+x'
+
 pid = os.getpid()
+if verbose:
+    print "test runner's pid is", pid
 
 # Shell script that will send us asynchronous signals
 script = """
@@ -89,7 +92,8 @@ def force_test_exit():
             time.sleep(MAX_DURATION + 5)
             print >> sys.__stdout__, '  child should not have to kill parent'
             for i in range(3):
-                os.kill(pid, signal.SIGALARM)
+                os.kill(pid, signal.SIGALRM)
+                print >> sys.__stdout__, "    child sent SIGALRM to", pid
         finally:
             os._exit(0)
     # In parent (or error)
