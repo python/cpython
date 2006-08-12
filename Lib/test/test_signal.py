@@ -126,8 +126,7 @@ try:
     # KeyboardInterrupt, finally getting us out of the loop.
     os.system(script)
     try:
-        if verbose:
-            print "starting pause() loop..."
+        print "starting pause() loop..."
         while 1:
             try:
                 if verbose:
