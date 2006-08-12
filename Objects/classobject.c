@@ -974,24 +974,25 @@ instance_length(PyInstanceObject *inst)
 	if (res == NULL)
 		return -1;
 	if (PyInt_Check(res)) {
-		Py_ssize_t temp = PyInt_AsSsize_t(res);
-		if (temp == -1 && PyErr_Occurred()) {
+		outcome = PyInt_AsSsize_t(res);
+		if (outcome == -1 && PyErr_Occurred()) {
 			Py_DECREF(res);
 			return -1;
 		}
-		outcome = (Py_ssize_t)temp;
-#if SIZEOF_SIZE_T < SIZEOF_LONG
+#if SIZEOF_SIZE_T < SIZEOF_INT
 		/* Overflow check -- range of PyInt is more than C int */
-		if (outcome != temp) {
+		if (outcome != (int)outcome) {
 			PyErr_SetString(PyExc_OverflowError,
 			 "__len__() should return 0 <= outcome < 2**31");
 			outcome = -1;
 		}
 		else
 #endif
-		if (outcome < 0)
+		if (outcome < 0) {
 			PyErr_SetString(PyExc_ValueError,
 					"__len__() should return >= 0");
+			outcome = -1;
+		}
 	}
 	else {
 		PyErr_SetString(PyExc_TypeError,

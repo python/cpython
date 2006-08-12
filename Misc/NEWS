@@ -12,6 +12,12 @@ What's New in Python 2.5 release candidate 1?
 Core and builtins
 -----------------
 
+- Fix bug related to __len__ functions using values > 2**32 on 64-bit machines
+  with new-style classes.
+  
+- Fix bug related to __len__ functions returning negative values with
+  classic classes.
+  
 - Patch #1538606, Fix __index__() clipping.  There were some problems
   discovered with the API and how integers that didn't fit into Py_ssize_t
   were handled.  This patch attempts to provide enough alternatives
