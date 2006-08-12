@@ -1121,6 +1121,8 @@ fill_time(PyObject *v, int index, time_t sec, unsigned long nsec)
 #else
 	ival = PyInt_FromLong((long)sec);
 #endif
+	if (!ival)
+		return;
 	if (_stat_float_times) {
 		fval = PyFloat_FromDouble(sec + 1e-9*nsec);
 	} else {
