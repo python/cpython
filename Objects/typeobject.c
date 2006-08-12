@@ -4110,19 +4110,17 @@ slot_sq_length(PyObject *self)
 {
 	static PyObject *len_str;
 	PyObject *res = call_method(self, "__len__", &len_str, "()");
-	Py_ssize_t temp;
 	Py_ssize_t len;
 
 	if (res == NULL)
 		return -1;
-	temp = PyInt_AsSsize_t(res);
-	len = (int)temp;
+	len = PyInt_AsSsize_t(res);
 	Py_DECREF(res);
 	if (len == -1 && PyErr_Occurred())
 		return -1;
-#if SIZEOF_SIZE_T < SIZEOF_LONG
+#if SIZEOF_SIZE_T < SIZEOF_INT
 	/* Overflow check -- range of PyInt is more than C ssize_t */
-	if (len != temp) {
+	if (len != (int)len) {
 		PyErr_SetString(PyExc_OverflowError,
 			"__len__() should return 0 <= outcome < 2**31");
 		return -1;
