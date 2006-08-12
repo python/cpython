@@ -486,9 +486,10 @@ function_call(PyObject *func, PyObject *arg, PyObject *kw)
 	Py_ssize_t nk, nd;
 
 	argdefs = PyFunction_GET_DEFAULTS(func);
+	/* XXX(nnorwitz): don't we know argdefs is either NULL or a tuple? */
 	if (argdefs != NULL && PyTuple_Check(argdefs)) {
 		d = &PyTuple_GET_ITEM((PyTupleObject *)argdefs, 0);
-		nd = PyTuple_Size(argdefs);
+		nd = PyTuple_GET_SIZE(argdefs);
 	}
 	else {
 		d = NULL;
@@ -517,7 +518,7 @@ function_call(PyObject *func, PyObject *arg, PyObject *kw)
 	result = PyEval_EvalCodeEx(
 		(PyCodeObject *)PyFunction_GET_CODE(func),
 		PyFunction_GET_GLOBALS(func), (PyObject *)NULL,
-		&PyTuple_GET_ITEM(arg, 0), PyTuple_Size(arg),
+		&PyTuple_GET_ITEM(arg, 0), PyTuple_GET_SIZE(arg),
 		k, nk, d, nd,
 		PyFunction_GET_CLOSURE(func));
 

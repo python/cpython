@@ -105,6 +105,12 @@ CField_FromDesc(PyObject *desc, int index,
 		StgDictObject *idict;
 		if (adict && adict->proto) {
 			idict = PyType_stgdict(adict->proto);
+			if (!idict) {
+				PyErr_SetString(PyExc_TypeError,
+						"has no _stginfo_");
+				Py_DECREF(self);
+				return NULL;
+			}
 			if (idict->getfunc == getentry("c")->getfunc) {
 				struct fielddesc *fd = getentry("s");
 				getfunc = fd->getfunc;
