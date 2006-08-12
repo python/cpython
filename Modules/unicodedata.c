@@ -1078,6 +1078,7 @@ unicodedata_lookup(PyObject* self, PyObject* args)
 {
     Py_UCS4 code;
     Py_UNICODE str[1];
+    char errbuf[256];
 
     char* name;
     int namelen;
@@ -1085,11 +1086,19 @@ unicodedata_lookup(PyObject* self, PyObject* args)
         return NULL;
 
     if (!_getcode(self, name, namelen, &code)) {
+	/* XXX(nnorwitz): why are we allocating for the error msg?
+		Why not always use snprintf? */
         char fmt[] = "undefined character name '%s'";
         char *buf = PyMem_MALLOC(sizeof(fmt) + namelen);
-        sprintf(buf, fmt, name);
+        if (buf)
+            sprintf(buf, fmt, name);
+        else {
+            buf = errbuf;
+            PyOS_snprintf(buf, sizeof(errbuf), fmt, name);
+        }
         PyErr_SetString(PyExc_KeyError, buf);
-        PyMem_FREE(buf);
+        if (buf != errbuf)
+        	PyMem_FREE(buf);
         return NULL;
     }
 
