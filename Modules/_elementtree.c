@@ -809,7 +809,7 @@ element_findtext(ElementObject* self, PyObject* args)
             PyObject* text = element_get_text(item);
             if (text == Py_None)
                 return PyString_FromString("");
-            Py_INCREF(text);
+            Py_XINCREF(text);
             return text;
         }
     }

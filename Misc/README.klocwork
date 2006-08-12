@@ -23,4 +23,8 @@ in addition to any analysis.
 False positives were also annotated so that the comments can
 be reviewed and reversed if the analysis was incorrect.
 
+A second run was performed on 10-Aug-2006.  The tool was tuned to remove
+some false positives and perform some additional checks.  ~150 new
+warnings were produced, primarily related to dereferencing NULL pointers.
+
 Contact python-dev@python.org for more information.

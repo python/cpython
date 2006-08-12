@@ -915,6 +915,8 @@ symtable_new_tmpname(struct symtable *st)
 	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]",
 		      ++st->st_cur->ste_tmpname);
 	tmp = PyString_InternFromString(tmpname);
+	if (!tmp)
+		return 0;
 	if (!symtable_add_def(st, tmp, DEF_LOCAL))
 		return 0;
 	Py_DECREF(tmp);
@@ -1323,8 +1325,11 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
 	PyObject *name = (a->asname == NULL) ? a->name : a->asname;
 	const char *base = PyString_AS_STRING(name);
 	char *dot = strchr(base, '.');
-	if (dot)
+	if (dot) {
 		store_name = PyString_FromStringAndSize(base, dot - base);
+		if (!store_name)
+			return 0;
+	}
 	else {
 		store_name = name;
 		Py_INCREF(store_name);
