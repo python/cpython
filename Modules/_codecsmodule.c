@@ -192,7 +192,8 @@ escape_encode(PyObject *self,
 	buf = PyString_AS_STRING (str);
 	len = PyString_GET_SIZE (str);
 	memmove(buf, buf+1, len-2);
-	_PyString_Resize(&str, len-2);
+	if (_PyString_Resize(&str, len-2) < 0)
+		return NULL;
 	
 	return codec_tuple(str, PyString_Size(str));
 }
