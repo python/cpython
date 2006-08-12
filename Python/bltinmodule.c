@@ -759,7 +759,7 @@ builtin_globals(PyObject *self)
 	PyObject *d;
 
 	d = PyEval_GetGlobals();
-	Py_INCREF(d);
+	Py_XINCREF(d);
 	return d;
 }
 
@@ -1190,7 +1190,7 @@ builtin_locals(PyObject *self)
 	PyObject *d;
 
 	d = PyEval_GetLocals();
-	Py_INCREF(d);
+	Py_XINCREF(d);
 	return d;
 }
 
