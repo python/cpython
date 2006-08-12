@@ -224,9 +224,9 @@ deque_popleft(dequeobject *deque, PyObject *unused)
 			deque->leftindex = CENTER + 1;
 			deque->rightindex = CENTER;
 		} else {
+			assert(deque->leftblock != NULL);
 			assert(deque->leftblock != deque->rightblock);
 			prevblock = deque->leftblock->rightlink;
-			assert(deque->leftblock != NULL);
 			PyMem_Free(deque->leftblock);
 			assert(prevblock != NULL);
 			prevblock->leftlink = NULL;
