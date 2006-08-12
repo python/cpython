@@ -204,8 +204,8 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
 	const char *p, *name = PyString_AsString(ident);
 	char *buffer;
 	size_t nlen, plen;
-	if (privateobj == NULL || name == NULL || name[0] != '_' ||
-            name[1] != '_') {
+	if (privateobj == NULL || !PyString_Check(privateobj) ||
+	    name == NULL || name[0] != '_' || name[1] != '_') {
 		Py_INCREF(ident);
 		return ident;
 	}
