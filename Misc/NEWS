@@ -12,6 +12,11 @@ What's New in Python 2.5 release candidate 1?
 Core and builtins
 -----------------
 
+- Patch #1538606, Fix __index__() clipping.  There were some problems
+  discovered with the API and how integers that didn't fit into Py_ssize_t
+  were handled.  This patch attempts to provide enough alternatives
+  to effectively use __index__.
+
 - Bug #1536021: __hash__ may now return long int; the final hash
   value is obtained by invoking hash on the long int.
 
