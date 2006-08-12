@@ -230,15 +230,6 @@ PyEval_InitThreads(void)
 }
 
 void
-_PyEval_FiniThreads(void)
-{
-	if (interpreter_lock)
-		PyThread_free_lock(interpreter_lock);
-	interpreter_lock = 0;
-	main_thread = 0;
-}
-
-void
 PyEval_AcquireLock(void)
 {
 	PyThread_acquire_lock(interpreter_lock, 1);
