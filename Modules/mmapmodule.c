@@ -808,8 +808,6 @@ static PyTypeObject mmap_object_type = {
 };
 
 
-#define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
-
 /* extract the map size from the given PyObject
 
    Returns -1 on error, with an appropriate Python exception raised. On
@@ -817,31 +815,19 @@ static PyTypeObject mmap_object_type = {
 static Py_ssize_t
 _GetMapSize(PyObject *o)
 {
-	PyNumberMethods *nb = o->ob_type->tp_as_number;
-	if (nb != NULL && HASINDEX(o) && nb->nb_index != NULL) {
-		Py_ssize_t i = nb->nb_index(o);
+	if (PyIndex_Check(o)) {
+		Py_ssize_t i = PyNumber_AsSsize_t(o, PyExc_OverflowError);
 		if (i==-1 && PyErr_Occurred()) 
 			return -1;
-		if (i < 0)
-			goto onnegoverflow;
-		if (i==PY_SSIZE_T_MAX)
-			goto onposoverflow;
+		if (i < 0) {	 
+			PyErr_SetString(PyExc_OverflowError,
+					"memory mapped size must be positive");
+			return -1;
+		}
 		return i;
 	}
-	else {
-		PyErr_SetString(PyExc_TypeError,
-				"map size must be an integral value");
-		return -1;
-	}
 
-  onnegoverflow:
-	PyErr_SetString(PyExc_OverflowError,
-			"memory mapped size must be positive");
-	return -1;
-
-  onposoverflow:
-	PyErr_SetString(PyExc_OverflowError,
-			"memory mapped size is too large (limited by C int)");
+	PyErr_SetString(PyExc_TypeError, "map size must be an integral value");
 	return -1;
 }
 

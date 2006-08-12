@@ -3527,7 +3527,7 @@ wrap_indexargfunc(PyObject *self, PyObject *args, void *wrapped)
 
 	if (!PyArg_UnpackTuple(args, "", 1, 1, &o))
 		return NULL;
-	i = PyNumber_Index(o);
+	i = PyNumber_AsSsize_t(o, PyExc_OverflowError);
 	if (i == -1 && PyErr_Occurred())
 		return NULL;
 	return (*func)(self, i);
@@ -3538,7 +3538,7 @@ getindex(PyObject *self, PyObject *arg)
 {
 	Py_ssize_t i;
 
-	i = PyNumber_Index(arg);
+	i = PyNumber_AsSsize_t(arg, PyExc_OverflowError);
 	if (i == -1 && PyErr_Occurred())
 		return -1;
 	if (i < 0) {
@@ -4344,26 +4344,11 @@ slot_nb_nonzero(PyObject *self)
 }
 
 
-static Py_ssize_t 
+static PyObject *
 slot_nb_index(PyObject *self)
 {
 	static PyObject *index_str;
-	PyObject *temp = call_method(self, "__index__", &index_str, "()");
-	Py_ssize_t result;
-
-	if (temp == NULL)
-		return -1;
-	if (PyInt_CheckExact(temp) || PyLong_CheckExact(temp)) {
-		result = temp->ob_type->tp_as_number->nb_index(temp);
-	}
-	else {
-		PyErr_Format(PyExc_TypeError, 
-			     "__index__ must return an int or a long, "
-			     "not '%.200s'", temp->ob_type->tp_name);
-		result = -1;
-	}
-	Py_DECREF(temp);
-	return result;
+	return call_method(self, "__index__", &index_str, "()");
 }
 
 
@@ -5109,7 +5094,7 @@ static slotdef slotdefs[] = {
 	       "oct(x)"),
 	UNSLOT("__hex__", nb_hex, slot_nb_hex, wrap_unaryfunc,
 	       "hex(x)"),
-	NBSLOT("__index__", nb_index, slot_nb_index, wrap_lenfunc, 
+	NBSLOT("__index__", nb_index, slot_nb_index, wrap_unaryfunc, 
 	       "x[y:z] <==> x[y.__index__():z.__index__()]"),
 	IBSLOT("__iadd__", nb_inplace_add, slot_nb_inplace_add,
 	       wrap_binaryfunc, "+"),

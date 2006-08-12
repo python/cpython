@@ -1670,40 +1670,28 @@ instance_nonzero(PyInstanceObject *self)
 	return outcome > 0;
 }
 
-static Py_ssize_t
+static PyObject *
 instance_index(PyInstanceObject *self)
 {
 	PyObject *func, *res;
-	Py_ssize_t outcome;
 	static PyObject *indexstr = NULL;
 
 	if (indexstr == NULL) {
 		indexstr = PyString_InternFromString("__index__");
 		if (indexstr == NULL)
-			return -1;
+			return NULL;
 	}	
 	if ((func = instance_getattr(self, indexstr)) == NULL) {
 		if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-			return -1;
+			return NULL;
 		PyErr_Clear();
 		PyErr_SetString(PyExc_TypeError, 
 				"object cannot be interpreted as an index");
-		return -1;
+		return NULL;
 	}
 	res = PyEval_CallObject(func, (PyObject *)NULL);
 	Py_DECREF(func);
-	if (res == NULL)
-		return -1;
-	if (PyInt_Check(res) || PyLong_Check(res)) {
-		outcome = res->ob_type->tp_as_number->nb_index(res);
-	}
-	else {
-		PyErr_SetString(PyExc_TypeError, 
-				"__index__ must return an int or a long");
-		outcome = -1;
-	}
-	Py_DECREF(res);
-	return outcome;
+	return res;
 }
 
 
@@ -2026,7 +2014,7 @@ static PyNumberMethods instance_as_number = {
 	instance_truediv,		/* nb_true_divide */
 	instance_ifloordiv,		/* nb_inplace_floor_divide */
 	instance_itruediv,		/* nb_inplace_true_divide */
-	(lenfunc)instance_index,	/* nb_index */
+	(unaryfunc)instance_index,	/* nb_index */
 };
 
 PyTypeObject PyInstance_Type = {

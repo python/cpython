@@ -6985,14 +6985,11 @@ static PySequenceMethods unicode_as_sequence = {
     PyUnicode_Contains, 		/* sq_contains */
 };
 
-#define HASINDEX(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_HAVE_INDEX)
-
 static PyObject*
 unicode_subscript(PyUnicodeObject* self, PyObject* item)
 {
-    PyNumberMethods *nb = item->ob_type->tp_as_number;
-    if (nb != NULL && HASINDEX(item) && nb->nb_index != NULL) {
-        Py_ssize_t i = nb->nb_index(item);
+    if (PyIndex_Check(item)) {
+        Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return NULL;
         if (i < 0)
