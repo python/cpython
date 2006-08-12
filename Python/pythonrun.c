@@ -60,6 +60,7 @@ static void call_sys_exitfunc(void);
 static void call_ll_exitfuncs(void);
 extern void _PyUnicode_Init(void);
 extern void _PyUnicode_Fini(void);
+extern void _PyEval_FiniThreads(void);
 
 #ifdef WITH_THREAD
 extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
@@ -460,6 +461,8 @@ Py_Finalize(void)
 	/* Cleanup Unicode implementation */
 	_PyUnicode_Fini();
 #endif
+
+	_PyEval_FiniThreads();
 
 	/* XXX Still allocated:
 	   - various static ad-hoc pointers to interned strings
