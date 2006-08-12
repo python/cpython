@@ -203,12 +203,16 @@ Py_InitializeEx(int install_sigs)
 	if (bimod == NULL)
 		Py_FatalError("Py_Initialize: can't initialize __builtin__");
 	interp->builtins = PyModule_GetDict(bimod);
+	if (interp->builtins == NULL)
+		Py_FatalError("Py_Initialize: can't initialize builtins dict");
 	Py_INCREF(interp->builtins);
 
 	sysmod = _PySys_Init();
 	if (sysmod == NULL)
 		Py_FatalError("Py_Initialize: can't initialize sys");
 	interp->sysdict = PyModule_GetDict(sysmod);
+	if (interp->sysdict == NULL)
+		Py_FatalError("Py_Initialize: can't initialize sys dict");
 	Py_INCREF(interp->sysdict);
 	_PyImport_FixupExtension("sys", "sys");
 	PySys_SetPath(Py_GetPath());
