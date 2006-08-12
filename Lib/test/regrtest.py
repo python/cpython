@@ -123,7 +123,6 @@ option '-uall,-bsddb'.
 
 import os
 import sys
-import signal
 import getopt
 import random
 import warnings
@@ -289,12 +288,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         usage(2, "-g and -v don't go together!")
     if single and fromfile:
         usage(2, "-s and -f don't go together!")
-
-    def handle_signal(*args):
-        raise RuntimeError('signal received %s' % args)
-
-    # Provide a traceback if we are terminated.
-    signal.signal(signal.SIGTERM, handle_signal)
 
     good = []
     bad = []
