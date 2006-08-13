@@ -211,6 +211,7 @@ deque_popleft(dequeobject *deque, PyObject *unused)
 		PyErr_SetString(PyExc_IndexError, "pop from an empty deque");
 		return NULL;
 	}
+	assert(deque->leftblock != NULL);
 	item = deque->leftblock->data[deque->leftindex];
 	deque->leftindex++;
 	deque->len--;
@@ -224,7 +225,6 @@ deque_popleft(dequeobject *deque, PyObject *unused)
 			deque->leftindex = CENTER + 1;
 			deque->rightindex = CENTER;
 		} else {
-			assert(deque->leftblock != NULL);
 			assert(deque->leftblock != deque->rightblock);
 			prevblock = deque->leftblock->rightlink;
 			PyMem_Free(deque->leftblock);
