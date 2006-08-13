@@ -1992,6 +1992,7 @@ If the \module{foo} extension belongs in the root package, the setup
 script for this could be
 \begin{verbatim}
 from distutils.core import setup
+from distutils.extension import Extension
 setup(name='foobar',
       version='1.0',
       ext_modules=[Extension('foo', ['foo.c'])],
@@ -2006,6 +2007,7 @@ the \module{foopkg} package simply by changing the name of the
 extension:
 \begin{verbatim}
 from distutils.core import setup
+from distutils.extension import Extension
 setup(name='foobar',
       version='1.0',
       ext_modules=[Extension('foopkg.foo', ['foo.c'])],
