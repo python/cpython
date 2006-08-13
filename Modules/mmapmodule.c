@@ -1126,6 +1126,15 @@ static struct PyMethodDef mmap_functions[] = {
 	{NULL,		NULL}	     /* Sentinel */
 };
 
+static void
+setint(PyObject *d, const char *name, long value)
+{
+	PyObject *o = PyInt_FromLong(value);
+	if (o)
+	    if (PyDict_SetItemString(d, name, o) == 0)
+		Py_DECREF(o);
+}
+
 PyMODINIT_FUNC
 	initmmap(void)
 {
@@ -1138,47 +1147,40 @@ PyMODINIT_FUNC
 	if (module == NULL)
 		return;
 	dict = PyModule_GetDict(module);
+	if (!dict)
+		return;
 	mmap_module_error = PyExc_EnvironmentError;
-	Py_INCREF(mmap_module_error);
 	PyDict_SetItemString(dict, "error", mmap_module_error);
 #ifdef PROT_EXEC
-	PyDict_SetItemString(dict, "PROT_EXEC", PyInt_FromLong(PROT_EXEC) );
+	setint(dict, "PROT_EXEC", PROT_EXEC);
 #endif
 #ifdef PROT_READ
-	PyDict_SetItemString(dict, "PROT_READ", PyInt_FromLong(PROT_READ) );
+	setint(dict, "PROT_READ", PROT_READ);
 #endif
 #ifdef PROT_WRITE
-	PyDict_SetItemString(dict, "PROT_WRITE", PyInt_FromLong(PROT_WRITE) );
+	setint(dict, "PROT_WRITE", PROT_WRITE);
 #endif
 
 #ifdef MAP_SHARED
-	PyDict_SetItemString(dict, "MAP_SHARED", PyInt_FromLong(MAP_SHARED) );
+	setint(dict, "MAP_SHARED", MAP_SHARED);
 #endif
 #ifdef MAP_PRIVATE
-	PyDict_SetItemString(dict, "MAP_PRIVATE",
-			     PyInt_FromLong(MAP_PRIVATE) );
+	setint(dict, "MAP_PRIVATE", MAP_PRIVATE);
 #endif
 #ifdef MAP_DENYWRITE
-	PyDict_SetItemString(dict, "MAP_DENYWRITE",
-			     PyInt_FromLong(MAP_DENYWRITE) );
+	setint(dict, "MAP_DENYWRITE", MAP_DENYWRITE);
 #endif
 #ifdef MAP_EXECUTABLE
-	PyDict_SetItemString(dict, "MAP_EXECUTABLE",
-			     PyInt_FromLong(MAP_EXECUTABLE) );
+	setint(dict, "MAP_EXECUTABLE", MAP_EXECUTABLE);
 #endif
 #ifdef MAP_ANONYMOUS
-	PyDict_SetItemString(dict, "MAP_ANON", PyInt_FromLong(MAP_ANONYMOUS) );
-	PyDict_SetItemString(dict, "MAP_ANONYMOUS",
-			     PyInt_FromLong(MAP_ANONYMOUS) );
+	setint(dict, "MAP_ANON", MAP_ANONYMOUS);
+	setint(dict, "MAP_ANONYMOUS", MAP_ANONYMOUS);
 #endif
 
-	PyDict_SetItemString(dict, "PAGESIZE",
-			     PyInt_FromLong((long)my_getpagesize()));
+	setint(dict, "PAGESIZE", (long)my_getpagesize());
 
-	PyDict_SetItemString(dict, "ACCESS_READ",
-			     PyInt_FromLong(ACCESS_READ));
-	PyDict_SetItemString(dict, "ACCESS_WRITE",
-			     PyInt_FromLong(ACCESS_WRITE));
-	PyDict_SetItemString(dict, "ACCESS_COPY",
-			     PyInt_FromLong(ACCESS_COPY));
+	setint(dict, "ACCESS_READ", ACCESS_READ);
+	setint(dict, "ACCESS_WRITE", ACCESS_WRITE);
+	setint(dict, "ACCESS_COPY", ACCESS_COPY);
 }
