@@ -1130,9 +1130,9 @@ static void
 setint(PyObject *d, const char *name, long value)
 {
 	PyObject *o = PyInt_FromLong(value);
-	if (o)
-	    if (PyDict_SetItemString(d, name, o) == 0)
+	if (o && PyDict_SetItemString(d, name, o) == 0) {
 		Py_DECREF(o);
+	}
 }
 
 PyMODINIT_FUNC
