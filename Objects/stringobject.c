@@ -4225,12 +4225,15 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 	if (!result)
 		return NULL;
 
+	buf = PyString_AsString(result);
+	if (!buf)
+		return NULL;
+
 	/* To modify the string in-place, there can only be one reference. */
 	if (result->ob_refcnt != 1) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	buf = PyString_AsString(result);
 	llen = PyString_Size(result);
 	if (llen > PY_SSIZE_T_MAX) {
 		PyErr_SetString(PyExc_ValueError, "string too large in _PyString_FormatLong");

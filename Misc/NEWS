@@ -12,6 +12,8 @@ What's New in Python 2.5 release candidate 1?
 Core and builtins
 -----------------
 
+- Fix segfault when doing string formatting on subclasses of long.
+
 - Fix bug related to __len__ functions using values > 2**32 on 64-bit machines
   with new-style classes.
   
