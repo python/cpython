@@ -915,6 +915,10 @@ PyObject *_CallProc(PPROC pProc,
 #endif
 
 	args = (struct argument *)alloca(sizeof(struct argument) * argcount);
+	if (!args) {
+		PyErr_NoMemory();
+		return NULL;
+	}
 	memset(args, 0, sizeof(struct argument) * argcount);
 	argtype_count = argtypes ? PyTuple_GET_SIZE(argtypes) : 0;
 #ifdef MS_WIN32
@@ -968,6 +972,10 @@ PyObject *_CallProc(PPROC pProc,
 
 	avalues = (void **)alloca(sizeof(void *) * argcount);
 	atypes = (ffi_type **)alloca(sizeof(ffi_type *) * argcount);
+	if (!resbuf || !avalues || !atypes) {
+		PyErr_NoMemory();
+		goto cleanup;
+	}
 	for (i = 0; i < argcount; ++i) {
 		atypes[i] = args[i].ffi_type;
 		if (atypes[i]->type == FFI_TYPE_STRUCT)
@@ -1068,6 +1076,11 @@ static PyObject *load_library(PyObject *self, PyObject *args)
 		return NULL;
 #ifdef _UNICODE
 	name = alloca((PyString_Size(nameobj) + 1) * sizeof(WCHAR));
+	if (!name) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+
 	{
 		int r;
 		char *aname = PyString_AsString(nameobj);
