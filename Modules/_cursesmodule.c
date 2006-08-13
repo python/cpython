@@ -1784,7 +1784,6 @@ static PyObject *
 PyCurses_InitScr(PyObject *self)
 {
   WINDOW *win;
-  PyObject *nlines, *cols;
 
   if (initialised == TRUE) {
     wrefresh(stdscr);
@@ -1803,7 +1802,12 @@ PyCurses_InitScr(PyObject *self)
 /* This was moved from initcurses() because it core dumped on SGI,
    where they're not defined until you've called initscr() */
 #define SetDictInt(string,ch) \
-	PyDict_SetItemString(ModDict,string,PyInt_FromLong((long) (ch)));
+    do {							\
+	PyObject *o = PyInt_FromLong((long) (ch));		\
+	if (o && PyDict_SetItemString(ModDict, string, o) == 0)	{ \
+	    Py_DECREF(o);					\
+	}							\
+    } while (0)
 
 	/* Here are some graphic symbols you can use */
         SetDictInt("ACS_ULCORNER",      (ACS_ULCORNER));
@@ -1872,12 +1876,8 @@ PyCurses_InitScr(PyObject *self)
 	SetDictInt("ACS_STERLING",      (ACS_STERLING));
 #endif
 
-  nlines = PyInt_FromLong((long) LINES);
-  PyDict_SetItemString(ModDict, "LINES", nlines);
-  Py_DECREF(nlines);
-  cols = PyInt_FromLong((long) COLS);
-  PyDict_SetItemString(ModDict, "COLS", cols);
-  Py_DECREF(cols);
+  SetDictInt("LINES", LINES);
+  SetDictInt("COLS", COLS);
 
   return (PyObject *)PyCursesWindow_New(win);
 }
@@ -2554,6 +2554,8 @@ init_curses(void)
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
+	if (d == NULL)
+		return;
 	ModDict = d; /* For PyCurses_InitScr to use later */
 
 	/* Add a CObject for the C API */
@@ -2667,6 +2669,10 @@ init_curses(void)
 	    if (strncmp(key_n,"KEY_F(",6)==0) {
 	      char *p1, *p2;
 	      key_n2 = malloc(strlen(key_n)+1);
+	      if (!key_n2) {
+		PyErr_NoMemory();
+		break;
+              }
 	      p1 = key_n;
 	      p2 = key_n2;
 	      while (*p1) {
@@ -2679,7 +2685,7 @@ init_curses(void)
 	      *p2 = (char)0;
 	    } else
 	      key_n2 = key_n;
-	    PyDict_SetItemString(d,key_n2,PyInt_FromLong((long) key));
+	    SetDictInt(key_n2,key);
 	    if (key_n2 != key_n)
 	      free(key_n2);
 	  }
