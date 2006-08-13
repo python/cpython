@@ -933,7 +933,8 @@ load_source_module(char *name, char *pathname, FILE *fp)
 		if (Py_VerboseFlag)
 			PySys_WriteStderr("import %s # from %s\n",
 				name, pathname);
-		write_compiled_module(co, cpathname, mtime);
+		if (cpathname)
+			write_compiled_module(co, cpathname, mtime);
 	}
 	m = PyImport_ExecCodeModuleEx(name, (PyObject *)co, pathname);
 	Py_DECREF(co);
@@ -1232,6 +1233,8 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 	for (i = 0; i < npath; i++) {
 		PyObject *copy = NULL;
 		PyObject *v = PyList_GetItem(path, i);
+		if (!v)
+			return NULL;
 #ifdef Py_USING_UNICODE
 		if (PyUnicode_Check(v)) {
 			copy = PyUnicode_Encode(PyUnicode_AS_UNICODE(v),
@@ -3044,6 +3047,8 @@ initimp(void)
 	if (m == NULL)
 		goto failure;
 	d = PyModule_GetDict(m);
+	if (d == NULL)
+		goto failure;
 
 	if (setint(d, "SEARCH_ERROR", SEARCH_ERROR) < 0) goto failure;
 	if (setint(d, "PY_SOURCE", PY_SOURCE) < 0) goto failure;
