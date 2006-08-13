@@ -2475,6 +2475,8 @@ static PPROC FindAddress(void *handle, char *name, PyObject *type)
 	   where n is 0, 4, 8, 12, ..., 128
 	 */
 	mangled_name = alloca(strlen(name) + 1 + 1 + 1 + 3); /* \0 _ @ %d */
+	if (!mangled_name)
+		return NULL;
 	for (i = 0; i < 32; ++i) {
 		sprintf(mangled_name, "_%s@%d", name, i*4);
 		address = (PPROC)GetProcAddress(handle, mangled_name);
