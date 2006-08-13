@@ -1797,7 +1797,6 @@ DB_join(DBObject* self, PyObject* args)
     DBC** cursors;
     DBC*  dbc;
 
-
     if (!PyArg_ParseTuple(args,"O|i:join", &cursorsObj, &flags))
         return NULL;
 
@@ -1811,6 +1810,11 @@ DB_join(DBObject* self, PyObject* args)
 
     length = PyObject_Length(cursorsObj);
     cursors = malloc((length+1) * sizeof(DBC*));
+    if (!cursors) {
+	PyErr_NoMemory();
+	return NULL;
+    }
+
     cursors[length] = NULL;
     for (x=0; x<length; x++) {
         PyObject* item = PySequence_GetItem(cursorsObj, x);
@@ -2622,11 +2626,13 @@ DB_verify(DBObject* self, PyObject* args, PyObject* kwargs)
     CHECK_DB_NOT_CLOSED(self);
     if (outFileName)
         outFile = fopen(outFileName, "w");
+	/* XXX(nnorwitz): it should probably be an exception if outFile
+	   can't be opened. */
 
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->db->verify(self->db, fileName, dbName, outFile, flags);
     MYDB_END_ALLOW_THREADS;
-    if (outFileName)
+    if (outFile)
         fclose(outFile);
 
     /* DB.verify acts as a DB handle destructor (like close); this was
