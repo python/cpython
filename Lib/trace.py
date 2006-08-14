@@ -179,9 +179,11 @@ def fullmodname(path):
     # looking in sys.path for the longest matching prefix.  We'll
     # assume that the rest is the package name.
 
+    comparepath = os.path.normcase(path)
     longest = ""
     for dir in sys.path:
-        if path.startswith(dir) and path[len(dir)] == os.path.sep:
+        dir = os.path.normcase(dir)
+        if comparepath.startswith(dir) and comparepath[len(dir)] == os.sep:
             if len(dir) > len(longest):
                 longest = dir
 

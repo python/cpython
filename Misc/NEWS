@@ -64,6 +64,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1536071: trace.py should now find the full module name of a
+  file correctly even on Windows.
+
 - logging's atexit hook now runs even if the rest of the module has
   already been cleaned up.
 
