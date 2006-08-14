@@ -4226,8 +4226,10 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 		return NULL;
 
 	buf = PyString_AsString(result);
-	if (!buf)
+	if (!buf) {
+		Py_DECREF(result);
 		return NULL;
+	}
 
 	/* To modify the string in-place, there can only be one reference. */
 	if (result->ob_refcnt != 1) {
