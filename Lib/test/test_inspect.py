@@ -274,6 +274,9 @@ class TestBuggyCases(GetSourceBase):
     def test_with_comment_instead_of_docstring(self):
         self.assertSourceEqual(mod2.func88, 88, 90)
 
+    def test_method_in_dynamic_class(self):
+        self.assertSourceEqual(mod2.method_in_dynamic_class, 95, 97)
+
 # Helper for testing classify_class_attrs.
 def attrs_wo_objs(cls):
     return [t[:3] for t in inspect.classify_class_attrs(cls)]

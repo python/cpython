@@ -273,7 +273,8 @@ def generate_tokens(readline):
             while column < indents[-1]:
                 if column not in indents:
                     raise IndentationError(
-                        "unindent does not match any outer indentation level")
+                        "unindent does not match any outer indentation level",
+                        ("<tokenize>", lnum, pos, line))
                 indents = indents[:-1]
                 yield (DEDENT, '', (lnum, pos), (lnum, pos), line)
 
