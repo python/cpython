@@ -2752,6 +2752,8 @@ CFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		if (ptr == NULL)
 			return NULL;
 		ob = (CDataObject *)GenericCData_new(type, args, kwds);
+		if (ob == NULL)
+			return NULL;
 		*(void **)ob->b_ptr = ptr;
 		return (PyObject *)ob;
 	}
@@ -2799,6 +2801,8 @@ CFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	self = (CFuncPtrObject *)GenericCData_new(type, args, kwds);
+	if (self == NULL)
+		return NULL;
 
 	Py_INCREF(callable);
 	self->callable = callable;
