@@ -1067,6 +1067,8 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
 		struct fielddesc *fd = getentry("Z");
 
 		parg = new_CArgObject();
+		if (parg == NULL)
+			return NULL;
 		parg->pffi_type = &ffi_type_pointer;
 		parg->tag = 'Z';
 		parg->obj = fd->setfunc(&parg->value, value, 0);
@@ -1119,6 +1121,8 @@ c_char_p_from_param(PyObject *type, PyObject *value)
 		struct fielddesc *fd = getentry("z");
 
 		parg = new_CArgObject();
+		if (parg == NULL)
+			return NULL;
 		parg->pffi_type = &ffi_type_pointer;
 		parg->tag = 'z';
 		parg->obj = fd->setfunc(&parg->value, value, 0);
@@ -1176,6 +1180,8 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 		struct fielddesc *fd = getentry("P");
 
 		parg = new_CArgObject();
+		if (parg == NULL)
+			return NULL;
 		parg->pffi_type = &ffi_type_pointer;
 		parg->tag = 'P';
 		parg->obj = fd->setfunc(&parg->value, value, 0);
