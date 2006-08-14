@@ -35,7 +35,6 @@ printable = digits + letters + punctuation + whitespace
 
 # Case conversion helpers
 # Use str to convert Unicode literal in case of -U
-# Note that Cookie.py bogusly uses _idmap :(
 l = map(chr, xrange(256))
 _idmap = str('').join(l)
 del l

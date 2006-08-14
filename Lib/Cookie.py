@@ -304,9 +304,11 @@ _Translator       = {
     '\372' : '\\372',  '\373' : '\\373',  '\374' : '\\374',
     '\375' : '\\375',  '\376' : '\\376',  '\377' : '\\377'
     }
+    
+_idmap = ''.join(chr(x) for x in xrange(256))
 
 def _quote(str, LegalChars=_LegalChars,
-           idmap=string._idmap, translate=string.translate):
+           idmap=_idmap, translate=string.translate):
     #
     # If the string does not need to be double-quoted,
     # then just return the string.  Otherwise, surround
@@ -440,7 +442,7 @@ class Morsel(dict):
 
     def set(self, key, val, coded_val,
             LegalChars=_LegalChars,
-            idmap=string._idmap, translate=string.translate ):
+            idmap=_idmap, translate=string.translate):
         # First we verify that the key isn't a reserved word
         # Second we make sure it only contains legal characters
         if key.lower() in self._reserved:
