@@ -79,6 +79,9 @@ Library
 Extension Modules
 -----------------
 
+- Patch # 1536908: enable building ctypes on OpenBSD/AMD64.  The
+  '-no-stack-protector' compiler flag for OpenBSD has been removed.
+
 - Patch #1532975 was applied, which fixes Bug #1533481: ctypes now
   uses the _as_parameter_ attribute when objects are passed to foreign
   function calls.  The ctypes version number was changed to 1.0.1.
