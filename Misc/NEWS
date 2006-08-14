@@ -12,18 +12,18 @@ What's New in Python 2.5 release candidate 1?
 Core and builtins
 -----------------
 
-- Fix segfault when doing string formatting on subclasses of long.
+- Unicode objects will no longer raise an exception when being
+  compared equal or unequal to a string and causing a
+  UnicodeDecodeError exception, e.g. as result of a decoding failure.
 
-- Fix bug related to __len__ functions using values > 2**32 on 64-bit machines
-  with new-style classes.
-  
-- Fix bug related to __len__ functions returning negative values with
-  classic classes.
-  
-- Patch #1538606, Fix __index__() clipping.  There were some problems
-  discovered with the API and how integers that didn't fit into Py_ssize_t
-  were handled.  This patch attempts to provide enough alternatives
-  to effectively use __index__.
+  Instead, the equal (==) and unequal (!=) comparison operators will
+  now issue a UnicodeWarning and interpret the two objects as
+  unequal. The UnicodeWarning can be filtered as desired using
+  the warning framework, e.g. silenced completely, turned into an
+  exception, logged, etc.
+
+  Note that compare operators other than equal and unequal will still
+  raise UnicodeDecodeError exceptions as they've always done.
 
 - Bug #1536021: __hash__ may now return long int; the final hash
   value is obtained by invoking hash on the long int.
@@ -98,6 +98,8 @@ Build
 
 C API
 -----
+
+- New API for Unicode rich comparisons: PyUnicode_RichCompare()
 
 - Bug #1069160.  Internal correctness changes were made to
   ``PyThreadState_SetAsyncExc()``.  A test case was added, and

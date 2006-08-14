@@ -1560,6 +1560,31 @@ They all return \NULL{} or \code{-1} if an exception occurs.
   greater than, respectively.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PyUnicode_RichCompare}{PyObject *left, 
+                                              PyObject *right, 
+                                              int op}
+
+% This entry could use some polishing - my TeX is too
+% rusty these days... (MAL)
+
+  Rich compare two strings and return one of the following:
+\begin{verbatim}
+   - NULL in case an exception was raised
+   - Py_True or Py_False for successfuly comparisons
+   - Py_NotImplemented in case the type combination is unknown
+\end{verbatim}
+
+   Note that Py_EQ and Py_NE comparisons can cause a UnicodeWarning in
+   case the conversion of the arguments to Unicode fails with a
+   UnicodeDecodeError.
+
+   Possible values for \var{op}:
+\begin{verbatim}
+     Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE
+\end{verbatim}
+
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{PyObject*}{PyUnicode_Format}{PyObject *format,
                                               PyObject *args}
   Return a new string object from \var{format} and \var{args}; this
