@@ -140,6 +140,31 @@ char *conversion_mode_errors = NULL;
   accessible fields somehow.
 */
 
+static PyCArgObject *
+StructUnionType_paramfunc(CDataObject *self)
+{
+	PyCArgObject *parg;
+	StgDictObject *stgdict;
+	
+	parg = new_CArgObject();
+	if (parg == NULL)
+		return NULL;
+
+	parg->tag = 'V';
+	stgdict = PyObject_stgdict((PyObject *)self);
+	assert(stgdict);
+	parg->pffi_type = &stgdict->ffi_type_pointer;
+	/* For structure parameters (by value), parg->value doesn't contain the structure
+	   data itself, instead parg->value.p *points* to the structure's data
+	   See also _ctypes.c, function _call_function_pointer().
+	*/
+	parg->value.p = self->b_ptr;
+	parg->size = self->b_size;
+	Py_INCREF(self);
+	parg->obj = (PyObject *)self;
+	return parg;	
+}
+
 static PyObject *
 StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isStruct)
 {
@@ -171,6 +196,8 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
 	}
 	Py_DECREF(result->tp_dict);
 	result->tp_dict = (PyObject *)dict;
+
+	dict->paramfunc = StructUnionType_paramfunc;
 
 	fields = PyDict_GetItemString((PyObject *)dict, "_fields_");
 	if (!fields) {
@@ -287,6 +314,7 @@ static char from_param_doc[] =
 static PyObject *
 CDataType_from_param(PyObject *type, PyObject *value)
 {
+	PyObject *as_parameter;
 	if (1 == PyObject_IsInstance(value, type)) {
 		Py_INCREF(value);
 		return value;
@@ -330,6 +358,13 @@ CDataType_from_param(PyObject *type, PyObject *value)
 	}
 /* ... and leave the rest */
 #endif
+
+	as_parameter = PyObject_GetAttrString(value, "_as_parameter_");
+	if (as_parameter) {
+		value = CDataType_from_param(type, as_parameter);
+		Py_DECREF(as_parameter);
+		return value;
+	}
 	PyErr_Format(PyExc_TypeError,
 		     "expected %s instance instead of %s",
 		     ((PyTypeObject *)type)->tp_name,
@@ -540,6 +575,23 @@ PointerType_SetProto(StgDictObject *stgdict, PyObject *proto)
 	return 0;
 }
 
+static PyCArgObject *
+PointerType_paramfunc(CDataObject *self)
+{
+	PyCArgObject *parg;
+
+	parg = new_CArgObject();
+	if (parg == NULL)
+		return NULL;
+
+	parg->tag = 'P';
+	parg->pffi_type = &ffi_type_pointer;
+	Py_INCREF(self);
+	parg->obj = (PyObject *)self;
+	parg->value.p = *(void **)self->b_ptr;
+	return parg;
+}
+
 static PyObject *
 PointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -563,6 +615,7 @@ PointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	stgdict->align = getentry("P")->pffi_type->alignment;
 	stgdict->length = 1;
 	stgdict->ffi_type_pointer = ffi_type_pointer;
+	stgdict->paramfunc = PointerType_paramfunc;
 
 	proto = PyDict_GetItemString(typedict, "_type_"); /* Borrowed ref */
 	if (proto && -1 == PointerType_SetProto(stgdict, proto)) {
@@ -906,6 +959,19 @@ add_getset(PyTypeObject *type, PyGetSetDef *gsp)
 	return 0;
 }
 
+static PyCArgObject *
+ArrayType_paramfunc(CDataObject *self)
+{
+	PyCArgObject *p = new_CArgObject();
+	if (p == NULL)
+		return NULL;
+	p->tag = 'P';
+	p->pffi_type = &ffi_type_pointer;
+	p->value.p = (char *)self->b_ptr;
+	Py_INCREF(self);
+	p->obj = (PyObject *)self;
+	return p;
+}
 
 static PyObject *
 ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -960,6 +1026,8 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	stgdict->length = length;
 	Py_INCREF(proto);
 	stgdict->proto = proto;
+
+	stgdict->paramfunc = &ArrayType_paramfunc;
 
 	/* Arrays are passed as pointers to function calls. */
 	stgdict->ffi_type_pointer = ffi_type_pointer;
@@ -1055,6 +1123,7 @@ static char *SIMPLE_TYPE_CHARS = "cbBhHiIlLdfuzZqQPXOv";
 static PyObject *
 c_wchar_p_from_param(PyObject *type, PyObject *value)
 {
+	PyObject *as_parameter;
 #if (PYTHON_API_VERSION < 1012)
 # error not supported
 #endif
@@ -1100,6 +1169,13 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
 			return value;
 		}
 	}
+
+	as_parameter = PyObject_GetAttrString(value, "_as_parameter_");
+	if (as_parameter) {
+		value = c_wchar_p_from_param(type, as_parameter);
+		Py_DECREF(as_parameter);
+		return value;
+	}
 	/* XXX better message */
 	PyErr_SetString(PyExc_TypeError,
 			"wrong type");
@@ -1109,6 +1185,7 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
 static PyObject *
 c_char_p_from_param(PyObject *type, PyObject *value)
 {
+	PyObject *as_parameter;
 #if (PYTHON_API_VERSION < 1012)
 # error not supported
 #endif
@@ -1154,6 +1231,13 @@ c_char_p_from_param(PyObject *type, PyObject *value)
 			return value;
 		}
 	}
+
+	as_parameter = PyObject_GetAttrString(value, "_as_parameter_");
+	if (as_parameter) {
+		value = c_char_p_from_param(type, as_parameter);
+		Py_DECREF(as_parameter);
+		return value;
+	}
 	/* XXX better message */
 	PyErr_SetString(PyExc_TypeError,
 			"wrong type");
@@ -1164,6 +1248,7 @@ static PyObject *
 c_void_p_from_param(PyObject *type, PyObject *value)
 {
 	StgDictObject *stgd;
+	PyObject *as_parameter;
 #if (PYTHON_API_VERSION < 1012)
 # error not supported
 #endif
@@ -1275,6 +1360,13 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 			return (PyObject *)parg;
 		}
 	}
+
+	as_parameter = PyObject_GetAttrString(value, "_as_parameter_");
+	if (as_parameter) {
+		value = c_void_p_from_param(type, as_parameter);
+		Py_DECREF(as_parameter);
+		return value;
+	}
 	/* XXX better message */
 	PyErr_SetString(PyExc_TypeError,
 			"wrong type");
@@ -1361,6 +1453,33 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 	return (PyObject *)result;
 }
 
+static PyCArgObject *
+SimpleType_paramfunc(CDataObject *self)
+{
+	StgDictObject *dict;
+	char *fmt;
+	PyCArgObject *parg;
+	struct fielddesc *fd;
+	
+	dict = PyObject_stgdict((PyObject *)self);
+	assert(dict);
+	fmt = PyString_AsString(dict->proto);
+	assert(fmt);
+
+	fd = getentry(fmt);
+	assert(fd);
+	
+	parg = new_CArgObject();
+	if (parg == NULL)
+		return NULL;
+	
+	parg->tag = fmt[0];
+	parg->pffi_type = fd->pffi_type;
+	Py_INCREF(self);
+	parg->obj = (PyObject *)self;
+	memcpy(&parg->value, self->b_ptr, self->b_size);
+	return parg;	
+}
 
 static PyObject *
 SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -1410,6 +1529,8 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	stgdict->size = fmt->pffi_type->size;
 	stgdict->setfunc = fmt->setfunc;
 	stgdict->getfunc = fmt->getfunc;
+
+	stgdict->paramfunc = SimpleType_paramfunc;
 /*
 	if (result->tp_base != &Simple_Type) {
 		stgdict->setfunc = NULL;
@@ -1508,23 +1629,6 @@ SimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 /*
  * This is a *class method*.
  * Convert a parameter into something that ConvParam can handle.
- *
- * This is either an instance of the requested type, a Python integer, or a
- * 'magic' 3-tuple.
- *
- * (These are somewhat related to Martin v. Loewis 'Enhanced Argument Tuples',
- * described in PEP 286.)
- *
- * The tuple must contain
- *
- * - a format character, currently 'ifdqc' are understood
- *   which will inform ConvParam about how to push the argument on the stack.
- *
- * - a corresponding Python object: i - integer, f - float, d - float,
- *   q - longlong, c - integer
- *
- * - any object which can be used to keep the original parameter alive
- *   as long as the tuple lives.
  */
 static PyObject *
 SimpleType_from_param(PyObject *type, PyObject *value)
@@ -1533,6 +1637,7 @@ SimpleType_from_param(PyObject *type, PyObject *value)
 	char *fmt;
 	PyCArgObject *parg;
 	struct fielddesc *fd;
+	PyObject *as_parameter;
 
 	/* If the value is already an instance of the requested type,
 	   we can use it as is */
@@ -1558,11 +1663,20 @@ SimpleType_from_param(PyObject *type, PyObject *value)
 	parg->tag = fmt[0];
 	parg->pffi_type = fd->pffi_type;
 	parg->obj = fd->setfunc(&parg->value, value, 0);
-	if (parg->obj == NULL) {
-		Py_DECREF(parg);
-		return NULL;
+	if (parg->obj)
+		return (PyObject *)parg;
+	PyErr_Clear();
+	Py_DECREF(parg);
+
+	as_parameter = PyObject_GetAttrString(value, "_as_parameter_");
+	if (as_parameter) {
+		value = SimpleType_from_param(type, as_parameter);
+		Py_DECREF(as_parameter);
+		return value;
 	}
-	return (PyObject *)parg;
+	PyErr_SetString(PyExc_TypeError,
+			"wrong type");
+	return NULL;
 }
 
 static PyMethodDef SimpleType_methods[] = {
@@ -1727,6 +1841,23 @@ make_funcptrtype_dict(StgDictObject *stgdict)
 
 }
 
+static PyCArgObject *
+CFuncPtrType_paramfunc(CDataObject *self)
+{
+	PyCArgObject *parg;
+	
+	parg = new_CArgObject();
+	if (parg == NULL)
+		return NULL;
+	
+	parg->tag = 'P';
+	parg->pffi_type = &ffi_type_pointer;
+	Py_INCREF(self);
+	parg->obj = (PyObject *)self;
+	parg->value.p = *(void **)self->b_ptr;
+	return parg;	
+}
+
 static PyObject *
 CFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -1737,6 +1868,8 @@ CFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		(PyObject *)&StgDict_Type, NULL);
 	if (!stgdict)
 		return NULL;
+
+	stgdict->paramfunc = CFuncPtrType_paramfunc;
 
 	/* create the new instance (which is a class,
 	   since we are a metatype!) */
@@ -2314,23 +2447,6 @@ GenericCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
   CFuncPtr_Type
 */
 
-static PyObject *
-CFuncPtr_as_parameter(CDataObject *self)
-{
-	PyCArgObject *parg;
-	
-	parg = new_CArgObject();
-	if (parg == NULL)
-		return NULL;
-	
-	parg->tag = 'P';
-	parg->pffi_type = &ffi_type_pointer;
-	Py_INCREF(self);
-	parg->obj = (PyObject *)self;
-	parg->value.p = *(void **)self->b_ptr;
-	return (PyObject *)parg;	
-}
-
 static int
 CFuncPtr_set_errcheck(CFuncPtrObject *self, PyObject *ob)
 {
@@ -2450,9 +2566,6 @@ static PyGetSetDef CFuncPtr_getsets[] = {
 	{ "argtypes", (getter)CFuncPtr_get_argtypes,
 	  (setter)CFuncPtr_set_argtypes,
 	  "specify the argument types", NULL },
-	{ "_as_parameter_", (getter)CFuncPtr_as_parameter, NULL,
-	  "return a magic value so that this can be converted to a C parameter (readonly)",
-	  NULL },
 	{ NULL, NULL }
 };
 
@@ -3361,30 +3474,6 @@ IBUG(char *msg)
 	return -1;
 }
 
-static PyObject *
-Struct_as_parameter(CDataObject *self)
-{
-	PyCArgObject *parg;
-	StgDictObject *stgdict;
-	
-	parg = new_CArgObject();
-	if (parg == NULL)
-		return NULL;
-
-	parg->tag = 'V';
-	stgdict = PyObject_stgdict((PyObject *)self);
-	parg->pffi_type = &stgdict->ffi_type_pointer;
-	/* For structure parameters (by value), parg->value doesn't contain the structure
-	   data itself, instead parg->value.p *points* to the structure's data
-	   See also _ctypes.c, function _call_function_pointer().
-	*/
-	parg->value.p = self->b_ptr;
-	parg->size = self->b_size;
-	Py_INCREF(self);
-	parg->obj = (PyObject *)self;
-	return (PyObject *)parg;	
-}
-
 static int
 Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -3459,13 +3548,6 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
-static PyGetSetDef Struct_getsets[] = {
-	{ "_as_parameter_", (getter)Struct_as_parameter, NULL,
-	  "return a magic value so that this can be converted to a C parameter (readonly)",
-	  NULL },
-	{ NULL, NULL }
-};
-
 static PyTypeObject Struct_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,
@@ -3497,7 +3579,7 @@ static PyTypeObject Struct_Type = {
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
 	0,					/* tp_members */
-	Struct_getsets,				/* tp_getset */
+	0,					/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
@@ -3540,7 +3622,7 @@ static PyTypeObject Union_Type = {
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
 	0,					/* tp_members */
-	Struct_getsets,				/* tp_getset */
+	0,					/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
@@ -3738,26 +3820,6 @@ static PySequenceMethods Array_as_sequence = {
 	0,					/* sq_inplace_repeat; */
 };
 
-static PyObject *
-Array_as_parameter(CDataObject *self)
-{
-	PyCArgObject *p = new_CArgObject();
-	if (p == NULL)
-		return NULL;
-	p->tag = 'P';
-	p->pffi_type = &ffi_type_pointer;
-	p->value.p = (char *)self->b_ptr;
-	Py_INCREF(self);
-	p->obj = (PyObject *)self;
-	return (PyObject *)p;
-}
-
-static PyGetSetDef Array_getsets[] = {
-	{ "_as_parameter_", (getter)Array_as_parameter,
-	  (setter)NULL, "convert to a parameter", NULL },
-	{ NULL },
-};
-
 PyTypeObject Array_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,
@@ -3789,7 +3851,7 @@ PyTypeObject Array_Type = {
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
 	0,					/* tp_members */
-	Array_getsets,				/* tp_getset */
+	0,					/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
@@ -3903,35 +3965,9 @@ Simple_get_value(CDataObject *self)
 	return dict->getfunc(self->b_ptr, self->b_size);
 }
 
-static PyObject *
-Simple_as_parameter(CDataObject *self)
-{
-	StgDictObject *dict = PyObject_stgdict((PyObject *)self);
-	char *fmt = PyString_AsString(dict->proto);
-	PyCArgObject *parg;
-	struct fielddesc *fd;
-	
-	fd = getentry(fmt);
-	assert(fd);
-	
-	parg = new_CArgObject();
-	if (parg == NULL)
-		return NULL;
-	
-	parg->tag = fmt[0];
-	parg->pffi_type = fd->pffi_type;
-	Py_INCREF(self);
-	parg->obj = (PyObject *)self;
-	memcpy(&parg->value, self->b_ptr, self->b_size);
-	return (PyObject *)parg;	
-}
-
 static PyGetSetDef Simple_getsets[] = {
 	{ "value", (getter)Simple_get_value, (setter)Simple_set_value,
 	  "current value", NULL },
-	{ "_as_parameter_", (getter)Simple_as_parameter, NULL,
-	  "return a magic value so that this can be converted to a C parameter (readonly)",
-	  NULL },
 	{ NULL, NULL }
 };
 
@@ -4206,30 +4242,10 @@ Pointer_set_contents(CDataObject *self, PyObject *value, void *closure)
 	return KeepRef(self, 0, keep);
 }
 
-static PyObject *
-Pointer_as_parameter(CDataObject *self)
-{
-	PyCArgObject *parg;
-
-	parg = new_CArgObject();
-	if (parg == NULL)
-		return NULL;
-
-	parg->tag = 'P';
-	parg->pffi_type = &ffi_type_pointer;
-	Py_INCREF(self);
-	parg->obj = (PyObject *)self;
-	parg->value.p = *(void **)self->b_ptr;
-	return (PyObject *)parg;
-}
-
 static PyGetSetDef Pointer_getsets[] = {
 	{ "contents", (getter)Pointer_get_contents,
 	  (setter)Pointer_set_contents,
 	  "the object this pointer points to (read-write)", NULL },
-	{ "_as_parameter_", (getter)Pointer_as_parameter, NULL,
-	  "return a magic value so that this can be converted to a C parameter (readonly)",
-	  NULL },
 	{ NULL, NULL }
 };
 
@@ -4690,7 +4706,7 @@ init_ctypes(void)
 #endif
 	PyModule_AddObject(m, "FUNCFLAG_CDECL", PyInt_FromLong(FUNCFLAG_CDECL));
 	PyModule_AddObject(m, "FUNCFLAG_PYTHONAPI", PyInt_FromLong(FUNCFLAG_PYTHONAPI));
-	PyModule_AddStringConstant(m, "__version__", "1.0.0");
+	PyModule_AddStringConstant(m, "__version__", "1.0.1");
 
 	PyModule_AddObject(m, "_memmove_addr", PyLong_FromVoidPtr(memmove));
 	PyModule_AddObject(m, "_memset_addr", PyLong_FromVoidPtr(memset));

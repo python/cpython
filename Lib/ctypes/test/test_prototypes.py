@@ -125,13 +125,18 @@ class CharPointersTestCase(unittest.TestCase):
             self.failUnlessEqual(None, func(c_wchar_p(None)))
             self.failUnlessEqual(u"123", func(c_wchar_p(u"123")))
 
-##    def test_instance(self):
-##        func = testdll._testfunc_p_p
+    def test_instance(self):
+        func = testdll._testfunc_p_p
+        func.restype = c_void_p
 
-##        class X:
-##            _as_parameter_ = 0
+        class X:
+            _as_parameter_ = None
 
-##        self.failUnlessEqual(0, func(X()))
+        func.argtypes = c_void_p,
+        self.failUnlessEqual(None, func(X()))
+
+        func.argtypes = None
+        self.failUnlessEqual(None, func(X()))
 
 try:
     c_wchar
