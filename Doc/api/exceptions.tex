@@ -288,10 +288,11 @@ for each thread.
   names are \samp{PyExc_} followed by the Python exception name.
   These have the type \ctype{PyObject*}; they are all class objects.
   Their names are \cdata{PyExc_Warning}, \cdata{PyExc_UserWarning},
-  \cdata{PyExc_DeprecationWarning}, \cdata{PyExc_SyntaxWarning},
-  \cdata{PyExc_RuntimeWarning}, and \cdata{PyExc_FutureWarning}.
-  \cdata{PyExc_Warning} is a subclass of \cdata{PyExc_Exception}; the
-  other warning categories are subclasses of \cdata{PyExc_Warning}.
+  \cdata{PyExc_UnicodeWarning}, \cdata{PyExc_DeprecationWarning},
+  \cdata{PyExc_SyntaxWarning}, \cdata{PyExc_RuntimeWarning}, and
+  \cdata{PyExc_FutureWarning}.  \cdata{PyExc_Warning} is a subclass of
+  \cdata{PyExc_Exception}; the other warning categories are subclasses
+  of \cdata{PyExc_Warning}.
 
   For information about warning control, see the documentation for the
   \module{warnings} module and the \programopt{-W} option in the

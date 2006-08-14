@@ -731,23 +731,6 @@ default_3way_compare(PyObject *v, PyObject *w)
 		return (vv < ww) ? -1 : (vv > ww) ? 1 : 0;
 	}
 
-#ifdef Py_USING_UNICODE
-	/* Special case for Unicode */
-	if (PyUnicode_Check(v) || PyUnicode_Check(w)) {
-		c = PyUnicode_Compare(v, w);
-		if (!PyErr_Occurred())
-			return c;
-		/* TypeErrors are ignored: if Unicode coercion fails due
-		   to one of the arguments not having the right type, we
-		   continue as defined by the coercion protocol (see
-		   above).  Luckily, decoding errors are reported as
-		   ValueErrors and are not masked by this technique. */
-		if (!PyErr_ExceptionMatches(PyExc_TypeError))
-			return -2;
-		PyErr_Clear();
-	}
-#endif
-
 	/* None is smaller than anything */
 	if (v == Py_None)
 		return -1;
