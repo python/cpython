@@ -1564,25 +1564,20 @@ They all return \NULL{} or \code{-1} if an exception occurs.
                                               PyObject *right, 
                                               int op}
 
-% This entry could use some polishing - my TeX is too
-% rusty these days... (MAL)
+  Rich compare two unicode strings and return one of the following:
+  \begin{itemize}
+    \item \code{NULL} in case an exception was raised
+    \item \constant{Py_True} or \constant{Py_False} for successful comparisons
+    \item \constant{Py_NotImplemented} in case the type combination is unknown
+  \end{itemize}
 
-  Rich compare two strings and return one of the following:
-\begin{verbatim}
-   - NULL in case an exception was raised
-   - Py_True or Py_False for successfuly comparisons
-   - Py_NotImplemented in case the type combination is unknown
-\end{verbatim}
+   Note that \constant{Py_EQ} and \constant{Py_NE} comparisons can cause a
+   \exception{UnicodeWarning} in case the conversion of the arguments to
+   Unicode fails with a \exception{UnicodeDecodeError}.
 
-   Note that Py_EQ and Py_NE comparisons can cause a UnicodeWarning in
-   case the conversion of the arguments to Unicode fails with a
-   UnicodeDecodeError.
-
-   Possible values for \var{op}:
-\begin{verbatim}
-     Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE
-\end{verbatim}
-
+   Possible values for \var{op} are
+   \constant{Py_GT}, \constant{Py_GE}, \constant{Py_EQ},
+   \constant{Py_NE}, \constant{Py_LT}, and \constant{Py_LE}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_Format}{PyObject *format,
