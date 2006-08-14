@@ -79,6 +79,9 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1535500: fix segfault in BZ2File.writelines and make sure it
+  raises the correct exceptions.
+
 - Patch # 1536908: enable building ctypes on OpenBSD/AMD64.  The
   '-no-stack-protector' compiler flag for OpenBSD has been removed.
 

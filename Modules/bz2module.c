@@ -812,12 +812,12 @@ BZ2File_write(BZ2FileObject *self, PyObject *args)
 		case MODE_CLOSED:
 			PyErr_SetString(PyExc_ValueError,
 					"I/O operation on closed file");
-			goto cleanup;;
+			goto cleanup;
 
 		default:
 			PyErr_SetString(PyExc_IOError,
 					"file is not ready for writing");
-			goto cleanup;;
+			goto cleanup;
 	}
 
 	self->f_softspace = 0;
@@ -861,6 +861,21 @@ BZ2File_writelines(BZ2FileObject *self, PyObject *seq)
 	int bzerror;
 
 	ACQUIRE_LOCK(self);
+	switch (self->mode) {
+		case MODE_WRITE:
+			break;
+
+		case MODE_CLOSED:
+			PyErr_SetString(PyExc_ValueError,
+					"I/O operation on closed file");
+			goto error;
+
+		default:
+			PyErr_SetString(PyExc_IOError,
+					"file is not ready for writing");
+			goto error;
+	}
+
 	islist = PyList_Check(seq);
 	if  (!islist) {
 		iter = PyObject_GetIter(seq);
