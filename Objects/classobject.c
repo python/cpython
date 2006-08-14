@@ -624,9 +624,9 @@ instance_dealloc(register PyInstanceObject *inst)
 	if (delstr == NULL) {
 		delstr = PyString_InternFromString("__del__");
 		if (delstr == NULL)
-			return NULL;
+			PyErr_WriteUnraisable((PyObject*)inst);
 	}
-	if ((del = instance_getattr2(inst, delstr)) != NULL) {
+	if (delstr && (del = instance_getattr2(inst, delstr)) != NULL) {
 		PyObject *res = PyEval_CallObject(del, (PyObject *)NULL);
 		if (res == NULL)
 			PyErr_WriteUnraisable(del);
