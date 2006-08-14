@@ -465,7 +465,21 @@ struct argument {
  */
 static int ConvParam(PyObject *obj, int index, struct argument *pa)
 {
+	StgDictObject *dict;
 	pa->keep = NULL; /* so we cannot forget it later */
+
+	dict = PyObject_stgdict(obj);
+	if (dict) {
+		PyCArgObject *carg;
+		assert(dict->paramfunc);
+		/* If it has an stgdict, it is a CDataObject */
+		carg = dict->paramfunc((CDataObject *)obj);
+		pa->ffi_type = carg->pffi_type;
+		memcpy(&pa->value, &carg->value, sizeof(pa->value));
+		pa->keep = (PyObject *)carg;
+		return 0;
+	}
+
 	if (PyCArg_CheckExact(obj)) {
 		PyCArgObject *carg = (PyCArgObject *)obj;
 		pa->ffi_type = carg->pffi_type;
@@ -548,25 +562,12 @@ static int ConvParam(PyObject *obj, int index, struct argument *pa)
 		   as parameters (they have to expose the '_as_parameter_'
 		   attribute)
 		*/
-		if (arg == 0) {
-			PyErr_Format(PyExc_TypeError,
-				     "Don't know how to convert parameter %d", index);
-			return -1;
+		if (arg) {
+			int result;
+			result = ConvParam(arg, index, pa);
+			Py_DECREF(arg);
+			return result;
 		}
-		if (PyCArg_CheckExact(arg)) {
-			PyCArgObject *carg = (PyCArgObject *)arg;
-			pa->ffi_type = carg->pffi_type;
-			memcpy(&pa->value, &carg->value, sizeof(pa->value));
-			pa->keep = arg;
-			return 0;
-		}
-		if (PyInt_Check(arg)) {
-			pa->ffi_type = &ffi_type_sint;
-			pa->value.i = PyInt_AS_LONG(arg);
-			pa->keep = arg;
-			return 0;
-		}
-		Py_DECREF(arg);
 		PyErr_Format(PyExc_TypeError,
 			     "Don't know how to convert parameter %d", index);
 		return -1;

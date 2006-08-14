@@ -23,9 +23,11 @@ typedef int Py_ssize_t;
 #define PY_LONG_LONG LONG_LONG
 #endif
 
+typedef struct tagPyCArgObject PyCArgObject;
 typedef struct tagCDataObject CDataObject;
 typedef PyObject *(* GETFUNC)(void *, unsigned size);
 typedef PyObject *(* SETFUNC)(void *, PyObject *value, unsigned size);
+typedef PyCArgObject *(* PARAMFUNC)(CDataObject *obj);
 
 /* A default buffer in CDataObject, which can be used for small C types.  If
 this buffer is too small, PyMem_Malloc will be called to create a larger one,
@@ -205,6 +207,7 @@ typedef struct {
 	PyObject *proto;	/* Only for Pointer/ArrayObject */
 	SETFUNC setfunc;	/* Only for simple objects */
 	GETFUNC getfunc;	/* Only for simple objects */
+	PARAMFUNC paramfunc;
 
 	/* Following fields only used by CFuncPtrType_Type instances */
 	PyObject *argtypes;	/* tuple of CDataObjects */
@@ -283,7 +286,7 @@ PyObject *_CallProc(PPROC pProc,
 
 #define DICTFLAG_FINAL 0x1000
 
-typedef struct {
+struct tagPyCArgObject {
 	PyObject_HEAD
 	ffi_type *pffi_type;
 	char tag;
@@ -302,7 +305,7 @@ typedef struct {
 	} value;
 	PyObject *obj;
 	int size; /* for the 'V' tag */
-} PyCArgObject;
+};
 
 extern PyTypeObject PyCArg_Type;
 extern PyCArgObject *new_CArgObject(void);
