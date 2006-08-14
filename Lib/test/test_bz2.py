@@ -166,6 +166,8 @@ class BZ2FileTest(BaseTest):
         sio = StringIO(self.TEXT)
         bz2f.writelines(sio.readlines())
         bz2f.close()
+        # patch #1535500
+        self.assertRaises(ValueError, bz2f.writelines, ["a"])
         f = open(self.filename, 'rb')
         self.assertEqual(self.decompress(f.read()), self.TEXT)
         f.close()
