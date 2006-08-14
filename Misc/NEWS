@@ -25,6 +25,19 @@ Core and builtins
   Note that compare operators other than equal and unequal will still
   raise UnicodeDecodeError exceptions as they've always done.
 
+- Fix segfault when doing string formatting on subclasses of long.
+
+- Fix bug related to __len__ functions using values > 2**32 on 64-bit machines
+  with new-style classes.
+
+- Fix bug related to __len__ functions returning negative values with
+  classic classes.
+
+- Patch #1538606, Fix __index__() clipping.  There were some problems
+  discovered with the API and how integers that didn't fit into Py_ssize_t
+  were handled.  This patch attempts to provide enough alternatives
+  to effectively use __index__.
+
 - Bug #1536021: __hash__ may now return long int; the final hash
   value is obtained by invoking hash on the long int.
 
