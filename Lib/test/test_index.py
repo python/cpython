@@ -29,7 +29,7 @@ class BaseTestCase(unittest.TestCase):
         self.n.ind = 2
         self.assertEqual(operator.index(self.o), -2)
         self.assertEqual(operator.index(self.n), 2)
-        
+
     def test_slice(self):
         self.o.ind = 1
         self.n.ind = 2
@@ -53,7 +53,7 @@ class BaseTestCase(unittest.TestCase):
         self.failUnlessRaises(TypeError, operator.index, TrapLong())
         self.failUnless(slice(TrapInt()).indices(0)==(0,0,1))
         self.failUnlessRaises(TypeError, slice(TrapLong()).indices, 0)
-        
+
     def test_error(self):
         self.o.ind = 'dumb'
         self.n.ind = 'bad'
