@@ -104,6 +104,9 @@ Extension Modules
 Tests
 -----
 
+- test_socketserver should now work on cygwin and not fail sporadically
+  on other platforms.
+
 - test_mailbox should now work on cygwin versions 2006-08-10 and later.
 
 - Bug #1535182: really test the xreadlines() method of bz2 objects.
