@@ -64,6 +64,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1224621: make tabnanny recognize IndentationErrors raised by tokenize.
+
 - Patch #1536071: trace.py should now find the full module name of a
   file correctly even on Windows.
 
@@ -81,6 +83,8 @@ Library
 
 Extension Modules
 -----------------
+
+- Patch #1511317: don't crash on invalid hostname (alias) info.
 
 - Patch #1535500: fix segfault in BZ2File.writelines and make sure it
   raises the correct exceptions.
