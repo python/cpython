@@ -48,11 +48,12 @@ class BaseTestCase(unittest.TestCase):
         self.assertEqual(self.o.__index__(), 4)
         self.assertEqual(self.n.__index__(), 5)
 
-    def test_infinite_recursion(self):
-        self.failUnlessRaises(TypeError, operator.index, TrapInt())
-        self.failUnlessRaises(TypeError, operator.index, TrapLong())
-        self.failUnless(slice(TrapInt()).indices(0)==(0,0,1))
-        self.failUnlessRaises(TypeError, slice(TrapLong()).indices, 0)
+    def test_subclasses(self):
+        r = range(10)
+        self.assertEqual(r[TrapInt(5):TrapInt(10)], r[5:10])
+        self.assertEqual(r[TrapLong(5):TrapLong(10)], r[5:10])
+        self.assertEqual(slice(TrapInt()).indices(0), (0,0,1))
+        self.assertEqual(slice(TrapLong(0)).indices(0), (0,0,1))
 
     def test_error(self):
         self.o.ind = 'dumb'
@@ -104,9 +105,9 @@ class SeqTestCase(unittest.TestCase):
         self.assertEqual(self.seq.__mul__(self.n), self.seq * 5)
         self.assertEqual(self.seq.__rmul__(self.n), self.seq * 5)
 
-    def test_infinite_recursion(self):
-        self.failUnlessRaises(TypeError, operator.getitem, self.seq, TrapInt())
-        self.failUnlessRaises(TypeError, operator.getitem, self.seq, TrapLong())
+    def test_subclasses(self):
+        self.assertEqual(self.seq[TrapInt()], self.seq[0])
+        self.assertEqual(self.seq[TrapLong()], self.seq[0])
 
     def test_error(self):
         self.o.ind = 'dumb'
