@@ -945,16 +945,14 @@ PyNumber_Index(PyObject *item)
 	PyObject *result = NULL;
 	if (item == NULL)
 		return null_error();
-	/* XXX(nnorwitz): should these be CheckExact?  Aren't subclasses ok? */
-	if (PyInt_CheckExact(item) || PyLong_CheckExact(item)) {
+	if (PyInt_Check(item) || PyLong_Check(item)) {
 		Py_INCREF(item);
 		return item;
 	}
 	if (PyIndex_Check(item)) {
 		result = item->ob_type->tp_as_number->nb_index(item);
-		/* XXX(nnorwitz): Aren't subclasses ok here too? */
 		if (result &&
-		    !PyInt_CheckExact(result) && !PyLong_CheckExact(result)) {
+		    !PyInt_Check(result) && !PyLong_Check(result)) {
 			PyErr_Format(PyExc_TypeError,
 				     "__index__ returned non-(int,long) " \
 				     "(type %.200s)",
