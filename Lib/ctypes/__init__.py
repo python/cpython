@@ -135,6 +135,11 @@ from _ctypes import _SimpleCData
 
 class py_object(_SimpleCData):
     _type_ = "O"
+    def __repr__(self):
+        try:
+            return super(py_object, self).__repr__()
+        except ValueError:
+            return "%s(<NULL>)" % type(self).__name__
 
 class c_short(_SimpleCData):
     _type_ = "h"
