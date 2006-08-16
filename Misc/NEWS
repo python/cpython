@@ -64,6 +64,9 @@ Core and builtins
 Library
 -------
 
+- Fix a bug in the ``compiler`` package that caused invalid code to be
+  generated for generator expressions.
+
 - The distutils version has been changed to 2.5.0. The change to
   keep it programmatically in sync with the Python version running
   the code (introduced in 2.5b3) has been reverted. It will continue
