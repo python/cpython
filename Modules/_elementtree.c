@@ -48,7 +48,7 @@
 
 #include "Python.h"
 
-#define VERSION "1.0.6-snapshot"
+#define VERSION "1.0.6"
 
 /* -------------------------------------------------------------------- */
 /* configuration */
@@ -1599,6 +1599,10 @@ LOCAL(PyObject*)
 treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
 {
     if (!self->data) {
+        if (self->last == (ElementObject*) Py_None) {
+            /* ignore calls to data before the first call to start */
+            Py_RETURN_NONE;
+        }
         /* store the first item as is */
         Py_INCREF(data); self->data = data;
     } else {
