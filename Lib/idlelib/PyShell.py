@@ -800,7 +800,7 @@ class PyShell(OutputWindow):
         if use_subprocess:
             ms = self.menu_specs
             if ms[2][0] != "shell":
-                ms.insert(2, ("shell", "_Shell"))
+                ms.insert(2, ("shell", "She_ll"))
         self.interp = ModifiedInterpreter(self)
         if flist is None:
             root = Tk()
