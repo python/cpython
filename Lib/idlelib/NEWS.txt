@@ -3,6 +3,10 @@ What's New in IDLE 1.2c1?
 
 *Release date: 17-AUG-2006*
 
+- File menu hotkeys: there were three 'p' assignments.  Reassign the
+  'Save Copy As' and 'Print' hotkeys to 'y' and 't'.  Change the
+  Shell hotkey from 's' to 'l'.
+
 - IDLE honors new quit() and exit() commands from site.py Quitter() object.
   Patch 1540892, Jim Jewett
 
