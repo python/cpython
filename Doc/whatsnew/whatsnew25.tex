@@ -1184,6 +1184,35 @@ a line like this near the top of the source file:
 # -*- coding: latin1 -*-
 \end{verbatim}
 
+\item A new warning, \class{UnicodeWarning}, is triggered when 
+you attempt to compare a Unicode string and an 8-bit string 
+that can't be converted to Unicode using the default ASCII encoding.  
+The result of the comparison is false:
+
+\begin{verbatim}
+>>> chr(128) == unichr(128)   # Can't convert chr(128) to Unicode
+__main__:1: UnicodeWarning: Unicode equal comparison failed 
+  to convert both arguments to Unicode - interpreting them 
+  as being unequal
+False
+>>> chr(127) == unichr(127)   # chr(127) can be converted
+True
+\end{verbatim}
+
+Previously this would raise a \class{UnicodeDecodeError} exception,
+but in 2.5 this could result in puzzling problems when accessing a
+dictionary.  If you looked up \code{unichr(128)} and \code{chr(128)}
+was being used as a key, you'd get a \class{UnicodeDecodeError}
+exception.  Other changes in 2.5 resulted in this exception being
+raised instead of suppressed by the code in \file{dictobject.c} that
+implements dictionaries.
+
+Raising an exception for such a comparison is strictly correct, but
+the change might have broken code, so instead 
+\class{UnicodeWarning} was introduced.
+
+(Implemented by Marc-Andr\'e Lemburg.)
+
 \item One error that Python programmers sometimes make is forgetting
 to include an \file{__init__.py} module in a package directory.
 Debugging this mistake can be confusing, and usually requires running
@@ -2422,6 +2451,11 @@ this triggered a warning, not a syntax error.
 was always a frame object.  Because of the \pep{342} changes
 described in section~\ref{pep-342}, it's now possible
 for \member{gi_frame} to be \code{None}.
+
+\item A new warning, \class{UnicodeWarning}, is triggered when 
+you attempt to compare a Unicode string and an 8-bit string that can't
+be converted to Unicode using the default ASCII encoding.  Previously
+such comparisons would raise a \class{UnicodeDecodeError} exception.
 
 \item Library: the \module{csv} module is now stricter about multi-line quoted
 fields.  If your files contain newlines embedded within fields, the
