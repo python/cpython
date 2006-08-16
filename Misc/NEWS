@@ -64,6 +64,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1540892: site.py Quitter() class attempts to close sys.stdin
+  before raising SystemExit, allowing IDLE to honor quit() and exit().
+
 - Bug #1224621: make tabnanny recognize IndentationErrors raised by tokenize.
 
 - Patch #1536071: trace.py should now find the full module name of a

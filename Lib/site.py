@@ -242,6 +242,12 @@ def setquit():
         def __repr__(self):
             return 'Use %s() or %s to exit' % (self.name, eof)
         def __call__(self, code=None):
+            # Shells like IDLE catch the SystemExit, but listen when their
+            # stdin wrapper is closed.
+            try:
+                sys.stdin.close()
+            except:
+                pass
             raise SystemExit(code)
     __builtin__.quit = Quitter('quit')
     __builtin__.exit = Quitter('exit')
