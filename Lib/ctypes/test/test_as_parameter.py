@@ -61,6 +61,7 @@ class BasicWrapTestCase(unittest.TestCase):
 
         def callback(v):
             args.append(v)
+            return v
 
         CallBack = CFUNCTYPE(c_int, c_int)
 

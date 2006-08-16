@@ -205,7 +205,7 @@ if (x == NULL) _AddTraceback(what, __FILE__, __LINE__ - 1), PyErr_Print()
 
 	result = PyObject_CallObject(callable, arglist);
 	CHECK("'calling callback function'", result);
-	if ((restype != &ffi_type_void) && result && result != Py_None) {
+	if ((restype != &ffi_type_void) && result) {
 		PyObject *keep;
 		assert(setfunc);
 #ifdef WORDS_BIGENDIAN
