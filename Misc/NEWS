@@ -64,6 +64,11 @@ Core and builtins
 Library
 -------
 
+- uuid.UUID now has a bytes_le attribute. This returns the UUID in 
+  little-endian byte order for Windows. In addition, uuid.py had some
+  workarounds for clocks with low resolution, to stop the code yielding
+  duplicate UUIDs.
+
 - Patch #1540892: site.py Quitter() class attempts to close sys.stdin
   before raising SystemExit, allowing IDLE to honor quit() and exit().
 
