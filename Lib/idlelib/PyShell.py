@@ -713,14 +713,17 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 else:
                     exec code in self.locals
             except SystemExit:
-                if tkMessageBox.askyesno(
-                    "Exit?",
-                    "Do you want to exit altogether?",
-                    default="yes",
-                    master=self.tkconsole.text):
-                    raise
+                if not self.tkconsole.closing:
+                    if tkMessageBox.askyesno(
+                        "Exit?",
+                        "Do you want to exit altogether?",
+                        default="yes",
+                        master=self.tkconsole.text):
+                        raise
+                    else:
+                        self.showtraceback()
                 else:
-                    self.showtraceback()
+                    raise
             except:
                 if use_subprocess:
                     print >> self.tkconsole.stderr, \
