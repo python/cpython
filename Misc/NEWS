@@ -69,10 +69,10 @@ Library
   the code (introduced in 2.5b3) has been reverted. It will continue
   to be maintained manually as static string literal.
 
-- If a the Python part of a ctypes callback function returns None,
+- If the Python part of a ctypes callback function returns None,
   and this cannot be converted to the required C type, an exception is
   printed with PyErr_WriteUnraisable.  Before this change, the C
-  callback did return arbitrary values to the calling code.
+  callback returned arbitrary values to the calling code.
 
 - The __repr__ method of a NULL ctypes.py_object() no longer raises
   an exception.
