@@ -127,6 +127,9 @@ Documentation
 Build
 -----
 
+- Bug #1535502, build _hashlib on Windows, and use masm assembler
+  code in OpenSSL.
+
 - Bug #1534738, win32 debug version of _msi should be _msi_d.pyd.
 
 - Bug #1530448, ctypes buld failure on Solaris 10 was fixed.
