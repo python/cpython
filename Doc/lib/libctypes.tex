@@ -199,8 +199,13 @@ WindowsError: exception: access violation reading 0x00000020
 There are, however, enough ways to crash Python with \code{ctypes}, so
 you should be careful anyway.
 
-Python integers, strings and unicode strings are the only objects that
-can directly be used as parameters in these function calls.
+\code{None}, integers, longs, byte strings and unicode strings are the
+only native Python objects that can directly be used as parameters in
+these function calls.  \code{None} is passed as a C \code{NULL} pointer,
+byte strings and unicode strings are passed as pointer to the memory
+block that contains their data (\code{char *} or \code{wchar{\_}t *}).  Python
+integers and Python longs are passed as the platforms default C
+\code{int} type, their value is masked to fit into the C type.
 
 Before we move on calling functions with other parameter types, we
 have to learn more about \code{ctypes} data types.
@@ -227,7 +232,18 @@ Python type
 \code{char}
 }
 {
-character
+1-character
+string
+}
+\lineiii{
+\class{c{\_}wchar}
+}
+{
+\code{wchar{\_}t}
+}
+{
+1-character
+unicode string
 }
 \lineiii{
 \class{c{\_}byte}
@@ -236,7 +252,7 @@ character
 \code{char}
 }
 {
-integer
+int/long
 }
 \lineiii{
 \class{c{\_}ubyte}
@@ -245,7 +261,7 @@ integer
 \code{unsigned char}
 }
 {
-integer
+int/long
 }
 \lineiii{
 \class{c{\_}short}
@@ -254,7 +270,7 @@ integer
 \code{short}
 }
 {
-integer
+int/long
 }
 \lineiii{
 \class{c{\_}ushort}
@@ -263,7 +279,7 @@ integer
 \code{unsigned short}
 }
 {
-integer
+int/long
 }
 \lineiii{
 \class{c{\_}int}
@@ -272,7 +288,7 @@ integer
 \code{int}
 }
 {
-integer
+int/long
 }
 \lineiii{
 \class{c{\_}uint}
@@ -281,7 +297,7 @@ integer
 \code{unsigned int}
 }
 {
-integer
+int/long
 }
 \lineiii{
 \class{c{\_}long}
@@ -290,7 +306,7 @@ integer
 \code{long}
 }
 {
-integer
+int/long
 }
 \lineiii{
 \class{c{\_}ulong}
@@ -299,7 +315,7 @@ integer
 \code{unsigned long}
 }
 {
-long
+int/long
 }
 \lineiii{
 \class{c{\_}longlong}
@@ -309,7 +325,7 @@ long
 \code{long long}
 }
 {
-long
+int/long
 }
 \lineiii{
 \class{c{\_}ulonglong}
@@ -319,7 +335,7 @@ long
 \code{unsigned long long}
 }
 {
-long
+int/long
 }
 \lineiii{
 \class{c{\_}float}
@@ -368,8 +384,8 @@ unicode or
 \code{void *}
 }
 {
-integer or
-\code{None}
+int/long
+or \code{None}
 }
 \end{tableiii}
 \end{quote}
@@ -554,11 +570,11 @@ the \member{{\_}as{\_}parameter{\_}} attribute.
 
 \subsubsection{Return types\label{ctypes-return-types}}
 
-By default functions are assumed to return integers.  Other return
-types can be specified by setting the \member{restype} attribute of the
-function object.
+By default functions are assumed to return the C \code{int} type.  Other
+return types can be specified by setting the \member{restype} attribute of
+the function object.
 
-Here is a more advanced example, it uses the strchr function, which
+Here is a more advanced example, it uses the \code{strchr} function, which
 expects a string pointer and a char, and returns a pointer to a
 string:
 \begin{verbatim}
@@ -1611,8 +1627,8 @@ library object is available:
 
 \begin{datadescni}{pythonapi}
 An instance of \class{PyDLL} that exposes Python C api functions as
-attributes.  Note that all these functions are assumed to return
-integers, which is of course not always the truth, so you have to
+attributes.  Note that all these functions are assumed to return C
+\code{int}, which is of course not always the truth, so you have to
 assign the correct \member{restype} attribute to use these functions.
 \end{datadescni}
 
@@ -1642,8 +1658,8 @@ function.  Use \code{None} for \code{void} a function not returning
 anything.
 
 It is possible to assign a callable Python object that is not a
-ctypes type, in this case the function is assumed to return an
-integer, and the callable will be called with this integer,
+ctypes type, in this case the function is assumed to return a
+C \code{int}, and the callable will be called with this integer,
 allowing to do further processing or error checking.  Using this
 is deprecated, for more flexible postprocessing or error checking
 use a ctypes data type as \member{restype} and assign a callable to the
@@ -2283,9 +2299,12 @@ Windows only: Represents a \class{HRESULT} value, which contains success
 or error information for a function or method call.
 \end{classdesc*}
 
-\begin{classdesc*}{py_object}
-Represents the C \code{PyObject *} datatype.
-\end{classdesc*}
+\code{py{\_}object} : classdesc*
+\begin{quote}
+
+Represents the C \code{PyObject *} datatype.  Calling this with an
+without an argument creates a \code{NULL} \code{PyObject *} pointer.
+\end{quote}
 
 The \code{ctypes.wintypes} module provides quite some other Windows
 specific data types, for example \code{HWND}, \code{WPARAM}, or \code{DWORD}.
@@ -2324,9 +2343,9 @@ A sequence defining the structure fields.  The items must be
 the second item specifies the type of the field; it can be any
 ctypes data type.
 
-For integer type fields, a third optional item can be given.  It
-must be a small positive integer defining the bit width of the
-field.
+For integer type fields like \class{c{\_}int}, a third optional item can
+be given.  It must be a small positive integer defining the bit
+width of the field.
 
 Field names must be unique within one structure or union.  This is
 not checked, only one field can be accessed when names are
