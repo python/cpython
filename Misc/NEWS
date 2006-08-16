@@ -64,6 +64,9 @@ Core and builtins
 Library
 -------
 
+- The __repr__ method a NULL ctypes.py_object() does no longer raise
+  an exception.
+
 - uuid.UUID now has a bytes_le attribute. This returns the UUID in 
   little-endian byte order for Windows. In addition, uuid.py had some
   workarounds for clocks with low resolution, to stop the code yielding

@@ -1100,7 +1100,7 @@ O_get(void *ptr, unsigned size)
 		if (!PyErr_Occurred())
 			/* Set an error if not yet set */
 			PyErr_SetString(PyExc_ValueError,
-					"PyObject is NULL?");
+					"PyObject is NULL");
 		return NULL;
 	}
 	Py_INCREF(ob);
