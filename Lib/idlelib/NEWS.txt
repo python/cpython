@@ -3,6 +3,8 @@ What's New in IDLE 1.2c1?
 
 *Release date: XX-AUG-2006*
 
+- The 'with' statement is now a Code Context block opener
+
 - Retrieval of previous shell command was not always preserving indentation
   (since 1.2a1) Patch 1528468 Tal Einat.
 
