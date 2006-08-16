@@ -3,7 +3,11 @@ What's New in IDLE 1.2c1?
 
 *Release date: 17-AUG-2006*
 
-- The 'with' statement is now a Code Context block opener
+- IDLE honors new quit() and exit() commands from site.py Quitter() object.
+  Patch 1540892, Jim Jewett
+
+- The 'with' statement is now a Code Context block opener.
+  Patch 1540851, Jim Jewett
 
 - Retrieval of previous shell command was not always preserving indentation
   (since 1.2a1) Patch 1528468 Tal Einat.
