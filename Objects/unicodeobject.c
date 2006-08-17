@@ -7969,7 +7969,7 @@ _PyUnicode_Fini(void)
 
 typedef struct {
 	PyObject_HEAD
-	long it_index;
+	Py_ssize_t it_index;
 	PyUnicodeObject *it_seq; /* Set to NULL when iterator is exhausted */
 } unicodeiterobject;
 
@@ -8001,7 +8001,8 @@ unicodeiter_next(unicodeiterobject *it)
 	assert(PyUnicode_Check(seq));
 
 	if (it->it_index < PyUnicode_GET_SIZE(seq)) {
-		item = PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(seq)+it->it_index, 1);
+		item = PyUnicode_FromUnicode(
+                    PyUnicode_AS_UNICODE(seq)+it->it_index, 1);
 		if (item != NULL)
 			++it->it_index;
 		return item;
@@ -8024,7 +8025,8 @@ unicodeiter_len(unicodeiterobject *it)
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyMethodDef unicodeiter_methods[] = {
-	{"__length_hint__", (PyCFunction)unicodeiter_len, METH_NOARGS, length_hint_doc},
+	{"__length_hint__", (PyCFunction)unicodeiter_len, METH_NOARGS,
+         length_hint_doc},
  	{NULL,		NULL}		/* sentinel */
 };
 
@@ -8035,7 +8037,7 @@ PyTypeObject PyUnicodeIter_Type = {
 	sizeof(unicodeiterobject),		/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
-	(destructor)unicodeiter_dealloc,		/* tp_dealloc */
+	(destructor)unicodeiter_dealloc,	/* tp_dealloc */
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */

@@ -4992,7 +4992,7 @@ void _Py_ReleaseInternedStrings(void)
 
 typedef struct {
 	PyObject_HEAD
-	long it_index;
+	Py_ssize_t it_index;
 	PyStringObject *it_seq; /* Set to NULL when iterator is exhausted */
 } striterobject;
 
@@ -5024,7 +5024,8 @@ striter_next(striterobject *it)
 	assert(PyString_Check(seq));
 
 	if (it->it_index < PyString_GET_SIZE(seq)) {
-		item = PyString_FromStringAndSize(PyString_AS_STRING(seq)+it->it_index, 1);
+		item = PyString_FromStringAndSize(
+			PyString_AS_STRING(seq)+it->it_index, 1);
 		if (item != NULL)
 			++it->it_index;
 		return item;
@@ -5044,18 +5045,20 @@ striter_len(striterobject *it)
 	return PyInt_FromSsize_t(len);
 }
 
-PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
+PyDoc_STRVAR(length_hint_doc,
+	     "Private method returning an estimate of len(list(it)).");
 
 static PyMethodDef striter_methods[] = {
-	{"__length_hint__", (PyCFunction)striter_len, METH_NOARGS, length_hint_doc},
+	{"__length_hint__", (PyCFunction)striter_len, METH_NOARGS,
+	 length_hint_doc},
  	{NULL,		NULL}		/* sentinel */
 };
 
 PyTypeObject PyStringIter_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
-	"striterator",			/* tp_name */
-	sizeof(striterobject),		/* tp_basicsize */
+	"striterator",				/* tp_name */
+	sizeof(striterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
 	(destructor)striter_dealloc,		/* tp_dealloc */
