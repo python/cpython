@@ -139,23 +139,26 @@ def main():
     try:
         os.chdir(ssl_dir)
         # If the ssl makefiles do not exist, we invoke Perl to generate them.
-        if not os.path.isfile(makefile):
+        # Due to a bug in this script, the makefile sometimes ended up empty
+        # Force a regeneration if it is.
+        if not os.path.isfile(makefile) or os.path.getsize(makefile)==0:
             print "Creating the makefiles..."
             sys.stdout.flush()
             # Put our working Perl at the front of our path
             os.environ["PATH"] = os.path.dirname(perl) + \
                                           os.pathsep + \
                                           os.environ["PATH"]
+            run_configure(configure, do_script)
             if arch=="x86" and debug:
                 # the do_masm script in openssl doesn't generate a debug
                 # build makefile so we generate it here:
                 os.system("perl util\mk1mf.pl debug "+configure+" >"+makefile)
-            run_configure(configure, do_script)
 
         # Now run make.
-        print "Executing nmake over the ssl makefiles..."
+        makeCommand = "nmake /nologo PERL=\"%s\" -f \"%s\"" %(perl, makefile)
+        print "Executing ssl makefiles:", makeCommand
         sys.stdout.flush()
-        rc = os.system("nmake /nologo PERL=\"%s\" -f \"%s\"" %(perl, makefile))
+        rc = os.system(makeCommand)
         if rc:
             print "Executing "+makefile+" failed"
             print rc
