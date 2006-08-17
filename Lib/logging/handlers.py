@@ -27,7 +27,11 @@ Copyright (C) 2001-2004 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, logging, socket, types, os, string, cPickle, struct, time, glob
+import sys, logging, socket, types, os, string, struct, time, glob
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 try:
     import codecs
@@ -389,7 +393,7 @@ class SocketHandler(logging.Handler):
         if ei:
             dummy = self.format(record) # just to get traceback text into record.exc_text
             record.exc_info = None  # to avoid Unpickleable error
-        s = cPickle.dumps(record.__dict__, 1)
+        s = pickle.dumps(record.__dict__, 1)
         if ei:
             record.exc_info = ei  # for next handler
         slen = struct.pack(">L", len(s))
