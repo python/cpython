@@ -6,8 +6,8 @@ dyld emulation
 """
 
 import os
-from framework import framework_info
-from dylib import dylib_info
+from ctypes.macholib.framework import framework_info
+from ctypes.macholib.dylib import dylib_info
 from itertools import *
 
 __all__ = [

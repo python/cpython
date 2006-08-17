@@ -289,14 +289,23 @@ class BoolTest(unittest.TestCase):
         self.assertIs(pickle.loads(pickle.dumps(False, True)), False)
 
     def test_cpickle(self):
-        import cPickle
+        try:
+            import cPickle
+        except ImportError:
+            return # Just ignore this if cPickle doesn't exist
+
         self.assertIs(cPickle.loads(cPickle.dumps(True)), True)
         self.assertIs(cPickle.loads(cPickle.dumps(False)), False)
         self.assertIs(cPickle.loads(cPickle.dumps(True, True)), True)
         self.assertIs(cPickle.loads(cPickle.dumps(False, True)), False)
 
     def test_mixedpickle(self):
-        import pickle, cPickle
+        import pickle
+        try:
+            import cPickle
+        except ImportError:
+            return # Just ignore this if cPickle doesn't exist
+
         self.assertIs(pickle.loads(cPickle.dumps(True)), True)
         self.assertIs(pickle.loads(cPickle.dumps(False)), False)
         self.assertIs(pickle.loads(cPickle.dumps(True, True)), True)
@@ -308,15 +317,19 @@ class BoolTest(unittest.TestCase):
         self.assertIs(cPickle.loads(pickle.dumps(False, True)), False)
 
     def test_picklevalues(self):
-        import pickle, cPickle
-
         # Test for specific backwards-compatible pickle values
+        import pickle
         self.assertEqual(pickle.dumps(True), "I01\n.")
         self.assertEqual(pickle.dumps(False), "I00\n.")
-        self.assertEqual(cPickle.dumps(True), "I01\n.")
-        self.assertEqual(cPickle.dumps(False), "I00\n.")
         self.assertEqual(pickle.dumps(True, True), "I01\n.")
         self.assertEqual(pickle.dumps(False, True), "I00\n.")
+ 
+        try:
+            import cPickle
+        except ImportError:
+            return # Just ignore the rest if cPickle doesn't exist
+        self.assertEqual(cPickle.dumps(True), "I01\n.")
+        self.assertEqual(cPickle.dumps(False), "I00\n.")
         self.assertEqual(cPickle.dumps(True, True), "I01\n.")
         self.assertEqual(cPickle.dumps(False, True), "I00\n.")
 

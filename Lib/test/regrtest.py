@@ -1033,25 +1033,19 @@ _expectations = {
         """,
     'darwin':
         """
-        test__locale
         test_al
         test_bsddb
         test_bsddb3
         test_cd
         test_cl
-        test_curses
         test_gdbm
         test_gl
         test_imgfile
         test_largefile
         test_linuxaudiodev
         test_locale
-        test_minidom
         test_nis
-        test_ntpath
         test_ossaudiodev
-        test_poll
-        test_sqlite
         test_startfile
         test_sunaudiodev
         """,

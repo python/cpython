@@ -1585,6 +1585,21 @@ Traceback (most recent call last):
   ...
 TypeError: throw() third argument must be a traceback object
 
+>>> g.throw("abc")
+Traceback (most recent call last):
+  ...
+TypeError: exceptions must be classes or instances deriving from BaseException, not str
+
+>>> g.throw(0)
+Traceback (most recent call last):
+  ...
+TypeError: exceptions must be classes or instances deriving from BaseException, not int
+
+>>> g.throw(list)
+Traceback (most recent call last):
+  ...
+TypeError: exceptions must be classes or instances deriving from BaseException, not type
+
 >>> def throw(g,exc):
 ...     try:
 ...         raise exc
@@ -1618,11 +1633,6 @@ ValueError: 6
 Traceback (most recent call last):
   ...
 ValueError: 7
-
->>> f().throw("abc")     # throw on just-opened generator
-Traceback (most recent call last):
-  ...
-abc
 
 Now let's try closing a generator:
 

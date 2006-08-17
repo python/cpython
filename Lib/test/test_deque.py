@@ -3,7 +3,7 @@ import unittest
 from test import test_support, seq_tests
 from weakref import proxy
 import copy
-import cPickle as pickle
+import pickle
 from cStringIO import StringIO
 import random
 import os

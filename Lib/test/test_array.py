@@ -7,7 +7,7 @@ import unittest
 from test import test_support
 from weakref import proxy
 import array, cStringIO, math
-from cPickle import loads, dumps
+from pickle import loads, dumps
 
 class ArraySubclass(array.array):
     pass

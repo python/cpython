@@ -25,7 +25,7 @@ Copyright (C) 2001-2002 Vinay Sajip. All Rights Reserved.
 """
 
 import select
-import os, sys, string, struct, types, cPickle, cStringIO
+import os, sys, string, struct, types, pickle, cStringIO
 import socket, tempfile, threading, time
 import logging, logging.handlers, logging.config
 from test.test_support import run_with_locale
@@ -70,7 +70,7 @@ class LogRecordStreamHandler(StreamRequestHandler):
                 raise
 
     def unPickle(self, data):
-        return cPickle.loads(data)
+        return pickle.loads(data)
 
     def handleLogRecord(self, record):
         logname = "logrecv.tcp." + record.name

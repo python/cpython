@@ -1,6 +1,9 @@
 import unittest
 import pickle
-import cPickle
+try:
+    import cPickle
+except ImportError:
+    cPickle = None
 import pickletools
 import copy_reg
 
@@ -10,7 +13,8 @@ from test.test_support import TestFailed, have_unicode, TESTFN, \
 # Tests that try a number of pickle protocols should have a
 #     for proto in protocols:
 # kind of outer loop.
-assert pickle.HIGHEST_PROTOCOL == cPickle.HIGHEST_PROTOCOL == 2
+if cPickle is not None:
+    assert pickle.HIGHEST_PROTOCOL == cPickle.HIGHEST_PROTOCOL == 2
 protocols = range(pickle.HIGHEST_PROTOCOL + 1)
 
 
