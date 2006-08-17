@@ -26,7 +26,7 @@
 #
 from time import sleep as _sleep
 
-import db
+from . import db
 
 # always sleep at least N seconds between retrys
 _deadlock_MinSleepTime = 1.0/128
