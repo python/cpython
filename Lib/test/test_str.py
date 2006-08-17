@@ -19,6 +19,14 @@ class StrTest(
         string_tests.MixinStrUnicodeUserStringTest.test_formatting(self)
         self.assertRaises(OverflowError, '%c'.__mod__, 0x1234)
 
+    def test_iterators(self):
+        # Make sure str objects have an __iter__ method
+        it = "abc".__iter__()
+        self.assertEqual(it.next(), "a")
+        self.assertEqual(it.next(), "b")
+        self.assertEqual(it.next(), "c")
+        self.assertRaises(StopIteration, it.next)
+
     def test_conversion(self):
         # Make sure __str__() behaves properly
         class Foo0:
