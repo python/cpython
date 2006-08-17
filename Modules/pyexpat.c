@@ -1665,7 +1665,6 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
     return -1;
 }
 
-#ifdef WITH_CYCLE_GC
 static int
 xmlparse_traverse(xmlparseobject *op, visitproc visit, void *arg)
 {
@@ -1682,7 +1681,6 @@ xmlparse_clear(xmlparseobject *op)
     Py_CLEAR(op->intern);
     return 0;
 }
-#endif
 
 PyDoc_STRVAR(Xmlparsetype__doc__, "XML parser");
 
@@ -1714,12 +1712,8 @@ static PyTypeObject Xmlparsetype = {
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/
 #endif
 	Xmlparsetype__doc__, /* tp_doc - Documentation string */
-#ifdef WITH_CYCLE_GC
 	(traverseproc)xmlparse_traverse,	/* tp_traverse */
 	(inquiry)xmlparse_clear		/* tp_clear */
-#else
-	0, 0
-#endif
 };
 
 /* End of code for xmlparser objects */
