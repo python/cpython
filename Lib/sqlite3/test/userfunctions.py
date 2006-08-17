@@ -280,7 +280,7 @@ class AggregateTests(unittest.TestCase):
             cur.execute("select nostep(t) from test")
             self.fail("should have raised an AttributeError")
         except AttributeError, e:
-            self.failUnlessEqual(e.args[0], "AggrNoStep instance has no attribute 'step'")
+            self.failUnlessEqual(e.args[0], "'AggrNoStep' object has no attribute 'step'")
 
     def CheckAggrNoFinalize(self):
         cur = self.con.cursor()

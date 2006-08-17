@@ -39,13 +39,13 @@ Time = datetime.time
 Timestamp = datetime.datetime
 
 def DateFromTicks(ticks):
-    return apply(Date, time.localtime(ticks)[:3])
+    return Date(*time.localtime(ticks)[:3])
 
 def TimeFromTicks(ticks):
-    return apply(Time, time.localtime(ticks)[3:6])
+    return Time(*time.localtime(ticks)[3:6])
 
 def TimestampFromTicks(ticks):
-    return apply(Timestamp, time.localtime(ticks)[:6])
+    return Timestamp(*time.localtime(ticks)[:6])
 
 version_info = tuple([int(x) for x in version.split(".")])
 sqlite_version_info = tuple([int(x) for x in sqlite_version.split(".")])
