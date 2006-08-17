@@ -4420,7 +4420,7 @@ slot_tp_str(PyObject *self)
 static long
 slot_tp_hash(PyObject *self)
 {
-	PyObject *func;
+	PyObject *func, *res;
 	static PyObject *hash_str;
 	long h;
 
@@ -4438,7 +4438,7 @@ slot_tp_hash(PyObject *self)
 		return -1;
         }
 
-	PyObject *res = PyEval_CallObject(func, NULL);
+	res = PyEval_CallObject(func, NULL);
 	Py_DECREF(func);
 	if (res == NULL)
 		return -1;
