@@ -214,7 +214,7 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 	}
 	for (i = 0; i < PyTuple_GET_SIZE(value); i++) {
 		ob = PyTuple_GET_ITEM(value, i);
-		if (!PyClass_Check(ob) && !PyType_Check(ob)) {
+		if (!PyType_Check(ob)) {
 			PyErr_Format(
 				PyExc_TypeError,
 	"%s.__bases__ must be tuple of old- or new-style classes, not '%s'",
@@ -957,47 +957,6 @@ call_maybe(PyObject *o, char *name, PyObject **nameobj, char *format, ...)
 	return retval;
 }
 
-static int
-fill_classic_mro(PyObject *mro, PyObject *cls)
-{
-	PyObject *bases, *base;
-	Py_ssize_t i, n;
-
-	assert(PyList_Check(mro));
-	assert(PyClass_Check(cls));
-	i = PySequence_Contains(mro, cls);
-	if (i < 0)
-		return -1;
-	if (!i) {
-		if (PyList_Append(mro, cls) < 0)
-			return -1;
-	}
-	bases = ((PyClassObject *)cls)->cl_bases;
-	assert(bases && PyTuple_Check(bases));
-	n = PyTuple_GET_SIZE(bases);
-	for (i = 0; i < n; i++) {
-		base = PyTuple_GET_ITEM(bases, i);
-		if (fill_classic_mro(mro, base) < 0)
-			return -1;
-	}
-	return 0;
-}
-
-static PyObject *
-classic_mro(PyObject *cls)
-{
-	PyObject *mro;
-
-	assert(PyClass_Check(cls));
-	mro = PyList_New(0);
-	if (mro != NULL) {
-		if (fill_classic_mro(mro, cls) == 0)
-			return mro;
-		Py_DECREF(mro);
-	}
-	return NULL;
-}
-
 /*
     Method resolution order algorithm C3 described in
     "A Monotonic Superclass Linearization for Dylan",
@@ -1229,11 +1188,7 @@ mro_implementation(PyTypeObject *type)
 	for (i = 0; i < n; i++) {
 		PyObject *base = PyTuple_GET_ITEM(bases, i);
 		PyObject *parentMRO;
-		if (PyType_Check(base))
-			parentMRO = PySequence_List(
-				((PyTypeObject*)base)->tp_mro);
-		else
-			parentMRO = classic_mro(base);
+		parentMRO = PySequence_List(((PyTypeObject*)base)->tp_mro);
 		if (parentMRO == NULL) {
 			Py_DECREF(to_merge);
 			return NULL;
@@ -1315,9 +1270,7 @@ mro_internal(PyTypeObject *type)
 		for (i = 0; i < len; i++) {
 			PyTypeObject *t;
 			cls = PyTuple_GET_ITEM(tuple, i);
-			if (PyClass_Check(cls)) 
-				continue;
-			else if (!PyType_Check(cls)) {
+			if (!PyType_Check(cls)) {
 				PyErr_Format(PyExc_TypeError,
 			     "mro() returned a non-class ('%.500s')",
 					     cls->ob_type->tp_name);
@@ -1356,8 +1309,6 @@ best_base(PyObject *bases)
 	winner = NULL;
 	for (i = 0; i < n; i++) {
 		base_proto = PyTuple_GET_ITEM(bases, i);
-		if (PyClass_Check(base_proto))
-			continue;
 		if (!PyType_Check(base_proto)) {
 			PyErr_SetString(
 				PyExc_TypeError,
@@ -1636,8 +1587,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	for (i = 0; i < nbases; i++) {
 		tmp = PyTuple_GET_ITEM(bases, i);
 		tmptype = tmp->ob_type;
-		if (tmptype == &PyClass_Type)
-			continue; /* Special case classic classes */
 		if (PyType_IsSubtype(winner, tmptype))
 			continue;
 		if (PyType_IsSubtype(tmptype, winner)) {
@@ -1793,14 +1742,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 				tmp = PyTuple_GET_ITEM(bases, i);
 				if (tmp == (PyObject *)base)
 					continue; /* Skip primary base */
-				if (PyClass_Check(tmp)) {
-					/* Classic base class provides both */
-					if (may_add_dict && !add_dict)
-						add_dict++;
-					if (may_add_weak && !add_weak)
-						add_weak++;
-					break;
-				}
 				assert(PyType_Check(tmp));
 				tmptype = (PyTypeObject *)tmp;
 				if (may_add_dict && !add_dict &&
@@ -2006,12 +1947,8 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 	n = PyTuple_GET_SIZE(mro);
 	for (i = 0; i < n; i++) {
 		base = PyTuple_GET_ITEM(mro, i);
-		if (PyClass_Check(base))
-			dict = ((PyClassObject *)base)->cl_dict;
-		else {
-			assert(PyType_Check(base));
-			dict = ((PyTypeObject *)base)->tp_dict;
-		}
+		assert(PyType_Check(base));
+		dict = ((PyTypeObject *)base)->tp_dict;
 		assert(dict && PyDict_Check(dict));
 		res = PyDict_GetItem(dict, name);
 		if (res != NULL)
@@ -2362,12 +2299,6 @@ object_str(PyObject *self)
 	if (f == NULL)
 		f = object_repr;
 	return f(self);
-}
-
-static long
-object_hash(PyObject *self)
-{
-	return _Py_HashPointer(self);
 }
 
 static PyObject *
@@ -2762,7 +2693,7 @@ PyTypeObject PyBaseObject_Type = {
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
-	object_hash,				/* tp_hash */
+	(hashfunc)_Py_HashPointer,		/* tp_hash */
 	0,					/* tp_call */
 	object_str,				/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
@@ -2791,7 +2722,7 @@ PyTypeObject PyBaseObject_Type = {
 };
 
 
-/* Initialize the __dict__ in a type object */
+/* Add the methods from tp_methods to the __dict__ in a type object */
 
 static int
 add_methods(PyTypeObject *type, PyMethodDef *meth)
@@ -3118,7 +3049,7 @@ PyType_Ready(PyTypeObject *type)
          */
 
 	/* Initialize the base class */
-	if (base && base->tp_dict == NULL) {
+	if (base != NULL && base->tp_dict == NULL) {
 		if (PyType_Ready(base) < 0)
 			goto error;
 	}
@@ -4490,41 +4421,35 @@ static long
 slot_tp_hash(PyObject *self)
 {
 	PyObject *func;
-	static PyObject *hash_str, *eq_str, *cmp_str;
+	static PyObject *hash_str;
 	long h;
 
 	func = lookup_method(self, "__hash__", &hash_str);
 
-	if (func != NULL) {
-		PyObject *res = PyEval_CallObject(func, NULL);
+        if (func == Py_None) {
 		Py_DECREF(func);
-		if (res == NULL)
-			return -1;
-		if (PyLong_Check(res))
-			h = PyLong_Type.tp_hash(res);
-		else
-			h = PyInt_AsLong(res);
-		Py_DECREF(res);
+		func = NULL;
 	}
-	else {
+
+	if (func == NULL) {
 		PyErr_Clear();
-		func = lookup_method(self, "__eq__", &eq_str);
-		if (func == NULL) {
-			PyErr_Clear();
-			func = lookup_method(self, "__cmp__", &cmp_str);
-		}
-		if (func != NULL) {
-			PyErr_Format(PyExc_TypeError, "unhashable type: '%.200s'",
-				     self->ob_type->tp_name);
-			Py_DECREF(func);
-			return -1;
-		}
-		PyErr_Clear();
-		h = _Py_HashPointer((void *)self);
-	}
-	if (h == -1 && !PyErr_Occurred())
-		h = -2;
-	return h;
+		PyErr_Format(PyExc_TypeError, "unhashable type: '%.200s'",
+			     self->ob_type->tp_name);
+		return -1;
+        }
+
+	PyObject *res = PyEval_CallObject(func, NULL);
+	Py_DECREF(func);
+	if (res == NULL)
+		return -1;
+	if (PyLong_Check(res))
+		h = PyLong_Type.tp_hash(res);
+	else
+		h = PyInt_AsLong(res);
+	Py_DECREF(res);
+               if (h == -1 && !PyErr_Occurred())
+                   h = -2;
+               return h;
 }
 
 static PyObject *
@@ -5579,8 +5504,6 @@ super_getattro(PyObject *self, PyObject *name)
 			tmp = PyTuple_GET_ITEM(mro, i);
 			if (PyType_Check(tmp))
 				dict = ((PyTypeObject *)tmp)->tp_dict;
-			else if (PyClass_Check(tmp))
-				dict = ((PyClassObject *)tmp)->cl_dict;
 			else
 				continue;
 			res = PyDict_GetItem(dict, name);

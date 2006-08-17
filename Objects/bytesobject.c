@@ -379,13 +379,6 @@ bytes_setitem(PyBytesObject *self, Py_ssize_t i, PyObject *value)
     return 0;
 }
 
-static long
-bytes_nohash(PyObject *self)
-{
-    PyErr_SetString(PyExc_TypeError, "bytes objects are unhashable");
-    return -1;
-}
-
 static int
 bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
 {
@@ -833,7 +826,7 @@ PyTypeObject PyBytes_Type = {
     0,                                  /* tp_as_number */
     &bytes_as_sequence,                 /* tp_as_sequence */
     &bytes_as_mapping,                  /* tp_as_mapping */
-    bytes_nohash,                       /* tp_hash */
+    0,		                       /* tp_hash */
     0,                                  /* tp_call */
     (reprfunc)bytes_str,                /* tp_str */
     PyObject_GenericGetAttr,            /* tp_getattro */

@@ -7848,6 +7848,8 @@ Create a new Unicode object from the given encoded string.\n\
 encoding defaults to the current default string encoding.\n\
 errors can be 'strict', 'replace' or 'ignore' and defaults to 'strict'.");
 
+static PyObject *unicode_iter(PyObject *seq);
+
 PyTypeObject PyUnicode_Type = {
     PyObject_HEAD_INIT(&PyType_Type)
     0, 					/* ob_size */
@@ -7876,7 +7878,7 @@ PyTypeObject PyUnicode_Type = {
     0,					/* tp_clear */
     0,					/* tp_richcompare */
     0,					/* tp_weaklistoffset */
-    0,					/* tp_iter */
+    unicode_iter,			/* tp_iter */
     0,					/* tp_iternext */
     unicode_methods,			/* tp_methods */
     0,					/* tp_members */
@@ -7959,6 +7961,124 @@ _PyUnicode_Fini(void)
     }
     unicode_freelist = NULL;
     unicode_freelist_size = 0;
+}
+
+
+
+/********************* Unicode Iterator **************************/
+
+typedef struct {
+	PyObject_HEAD
+	long it_index;
+	PyUnicodeObject *it_seq; /* Set to NULL when iterator is exhausted */
+} unicodeiterobject;
+
+static void
+unicodeiter_dealloc(unicodeiterobject *it)
+{
+	_PyObject_GC_UNTRACK(it);
+	Py_XDECREF(it->it_seq);
+	PyObject_GC_Del(it);
+}
+
+static int
+unicodeiter_traverse(unicodeiterobject *it, visitproc visit, void *arg)
+{
+	Py_VISIT(it->it_seq);
+	return 0;
+}
+
+static PyObject *
+unicodeiter_next(unicodeiterobject *it)
+{
+	PyUnicodeObject *seq;
+	PyObject *item;
+
+	assert(it != NULL);
+	seq = it->it_seq;
+	if (seq == NULL)
+		return NULL;
+	assert(PyUnicode_Check(seq));
+
+	if (it->it_index < PyUnicode_GET_SIZE(seq)) {
+		item = PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(seq)+it->it_index, 1);
+		if (item != NULL)
+			++it->it_index;
+		return item;
+	}
+
+	Py_DECREF(seq);
+	it->it_seq = NULL;
+	return NULL;
+}
+
+static PyObject *
+unicodeiter_len(unicodeiterobject *it)
+{
+	Py_ssize_t len = 0;
+	if (it->it_seq)
+		len = PyUnicode_GET_SIZE(it->it_seq) - it->it_index;
+	return PyInt_FromSsize_t(len);
+}
+
+PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
+
+static PyMethodDef unicodeiter_methods[] = {
+	{"__length_hint__", (PyCFunction)unicodeiter_len, METH_NOARGS, length_hint_doc},
+ 	{NULL,		NULL}		/* sentinel */
+};
+
+PyTypeObject PyUnicodeIter_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,					/* ob_size */
+	"unicodeiterator",			/* tp_name */
+	sizeof(unicodeiterobject),		/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	(destructor)unicodeiter_dealloc,		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+	0,					/* tp_doc */
+	(traverseproc)unicodeiter_traverse,	/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	PyObject_SelfIter,			/* tp_iter */
+	(iternextfunc)unicodeiter_next,		/* tp_iternext */
+	unicodeiter_methods,			/* tp_methods */
+	0,
+};
+
+static PyObject *
+unicode_iter(PyObject *seq)
+{
+	unicodeiterobject *it;
+
+	if (!PyUnicode_Check(seq)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	it = PyObject_GC_New(unicodeiterobject, &PyUnicodeIter_Type);
+	if (it == NULL)
+		return NULL;
+	it->it_index = 0;
+	Py_INCREF(seq);
+	it->it_seq = (PyUnicodeObject *)seq;
+	_PyObject_GC_TRACK(it);
+	return (PyObject *)it;
 }
 
 #ifdef __cplusplus

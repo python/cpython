@@ -1,4 +1,4 @@
-This is Python 3000 -- unversioned (branched off 2.5 pre alpha 1)
+This is Python 3000 -- unversioned (branched off 2.5 in various beta stages)
 =================================================================
 
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Python Software Foundation.
@@ -28,6 +28,14 @@ are entirely optional.
 
 All trademarks referenced herein are property of their respective
 holders.
+
+
+Python 3000 disclaimer
+----------------------
+
+This README hasn't been updated for Python 3000 yet.  If you see
+anything that should clearly be deleted, let me know (guido@python.org)
+or submit a patch to the Python 3000 category in SourceForge.
 
 
 What's new in this release?
