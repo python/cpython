@@ -4,7 +4,11 @@ import os
 import sys
 import unittest
 import warnings
-import pickle, cPickle
+import pickle
+try:
+    import cPickle
+except ImportError:
+    cPickle = None
 
 from test.test_support import TESTFN, unlink, run_unittest
 
@@ -292,6 +296,8 @@ class ExceptionTests(unittest.TestCase):
 
                 # test for pickling support
                 for p in pickle, cPickle:
+                    if p is None:
+                        continue # cPickle not found -- skip it
                     for protocol in range(p.HIGHEST_PROTOCOL + 1):
                         new = p.loads(p.dumps(e, protocol))
                         for checkArgName in expected:

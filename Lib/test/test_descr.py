@@ -2666,7 +2666,11 @@ def setdict():
 def pickles():
     if verbose:
         print "Testing pickling and copying new-style classes and objects..."
-    import pickle, cPickle
+    import pickle
+    try:
+        import cPickle
+    except ImportError:
+        cPickle = None
 
     def sorteditems(d):
         L = d.items()
@@ -2722,6 +2726,8 @@ def pickles():
         pass
 
     for p in pickle, cPickle:
+        if p is None:
+            continue # cPickle not found -- skip it
         for bin in 0, 1:
             if verbose:
                 print p.__name__, ["text", "binary"][bin]
@@ -2781,7 +2787,7 @@ def pickles():
 
 def pickleslots():
     if verbose: print "Testing pickling of classes with __slots__ ..."
-    import pickle, cPickle
+    import pickle, pickle as cPickle
     # Pickling of classes with __slots__ but without __getstate__ should fail
     global B, C, D, E
     class B(object):

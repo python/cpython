@@ -162,7 +162,7 @@ values, however.)
    7
    >>> C["string"].value
    'seven'
-   >>> C.output()
+   >>> C.output().replace('p0', 'p1') # Hack for cPickle/pickle differences
    'Set-Cookie: number="I7\\012."\r\nSet-Cookie: string="S\'seven\'\\012p1\\012."'
 
 Be warned, however, if SerialCookie cannot de-serialize a value (because

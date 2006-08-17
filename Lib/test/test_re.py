@@ -412,8 +412,12 @@ class ReTests(unittest.TestCase):
     def test_pickling(self):
         import pickle
         self.pickle_test(pickle)
-        import cPickle
-        self.pickle_test(cPickle)
+        try:
+            import cPickle
+        except ImportError:
+            pass # cPickle not found -- skip it
+        else:
+            self.pickle_test(cPickle)
 
     def pickle_test(self, pickle):
         oldpat = re.compile('a(?:b|(c|e){1,2}?|d)+?(.)')

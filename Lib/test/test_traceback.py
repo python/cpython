@@ -111,35 +111,6 @@ def test():
         lst = traceback.format_exception_only(e.__class__, e)
         self.assertEqual(lst, ['KeyboardInterrupt\n'])
 
-    # String exceptions are deprecated, but legal.  The quirky form with
-    # separate "type" and "value" tends to break things, because
-    #     not isinstance(value, type)
-    # and a string cannot be the first argument to issubclass.
-    #
-    # Note that sys.last_type and sys.last_value do not get set if an
-    # exception is caught, so we sort of cheat and just emulate them.
-    #
-    # test_string_exception1 is equivalent to
-    #
-    # >>> raise "String Exception"
-    #
-    # test_string_exception2 is equivalent to
-    #
-    # >>> raise "String Exception", "String Value"
-    #
-    def test_string_exception1(self):
-        str_type = "String Exception"
-        err = traceback.format_exception_only(str_type, None)
-        self.assertEqual(len(err), 1)
-        self.assertEqual(err[0], str_type + '\n')
-
-    def test_string_exception2(self):
-        str_type = "String Exception"
-        str_value = "String Value"
-        err = traceback.format_exception_only(str_type, str_value)
-        self.assertEqual(len(err), 1)
-        self.assertEqual(err[0], str_type + ': ' + str_value + '\n')
-
     def test_format_exception_only_bad__str__(self):
         class X(Exception):
             def __str__(self):
