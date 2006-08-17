@@ -1786,7 +1786,6 @@ save_dict(Picklerobject *self, PyObject *args)
 }
 
 
-
 static int
 save_global(Picklerobject *self, PyObject *args, PyObject *name)
 {
@@ -2276,6 +2275,12 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 			res = save_dict(self, args);
 			goto finally;
 		}
+		break;
+
+        case 'i':
+		break;
+
+        case 'c':
 		break;
 
         case 'f':
@@ -3438,6 +3443,30 @@ load_dict(Unpicklerobject *self)
 	return 0;
 }
 
+static PyObject *
+Instance_New(PyObject *cls, PyObject *args)
+{
+	PyObject *r = 0;
+
+	if ((r=PyObject_CallObject(cls, args))) return r;
+
+	{
+		PyObject *tp, *v, *tb, *tmp_value;
+
+		PyErr_Fetch(&tp, &v, &tb);
+		tmp_value = v;
+		/* NULL occurs when there was a KeyboardInterrupt */
+		if (tmp_value == NULL)
+			tmp_value = Py_None;
+		if ((r = PyTuple_Pack(3, tmp_value, cls, args))) {
+			Py_XDECREF(v);
+			v=r;
+		}
+		PyErr_Restore(tp,v,tb);
+	}
+	return NULL;
+}
+
 
 static int
 load_obj(Unpicklerobject *self)
@@ -3448,6 +3477,10 @@ load_obj(Unpicklerobject *self)
 	if ((i = marker(self)) < 0) return -1;
 	if (!( tup=Pdata_popTuple(self->stack, i+1)))  return -1;
 	PDATA_POP(self->stack, class);
+	if (class) {
+		obj = Instance_New(class, tup);
+		Py_DECREF(class);
+	}
 	Py_DECREF(tup);
 
 	if (! obj) return -1;
@@ -3483,8 +3516,8 @@ load_inst(Unpicklerobject *self)
 	if (! class) return -1;
 
 	if ((tup=Pdata_popTuple(self->stack, i))) {
-		PyErr_SetString(UnpicklingError, "it's dead, Jim");
-		return -1;
+		obj = Instance_New(class, tup);
+		Py_DECREF(tup);
 	}
 	Py_DECREF(class);
 
@@ -4177,6 +4210,10 @@ load_reduce(Unpicklerobject *self)
 	PDATA_POP(self->stack, arg_tup);
 	if (! arg_tup) return -1;
 	PDATA_POP(self->stack, callable);
+	if (callable) {
+		ob = Instance_New(callable, arg_tup);
+		Py_DECREF(callable);
+	}
 	Py_DECREF(arg_tup);
 
 	if (! ob) return -1;
