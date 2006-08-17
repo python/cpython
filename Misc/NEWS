@@ -4,6 +4,16 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.5 ?
+=============================================
+
+*Release date: XX-SEP-2006*
+
+Build
+-----
+
+- Fix OpenSSL debug build process.
+
 What's New in Python 2.5 release candidate 1?
 =============================================
 
