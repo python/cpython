@@ -1786,148 +1786,6 @@ save_dict(Picklerobject *self, PyObject *args)
 }
 
 
-static int
-save_inst(Picklerobject *self, PyObject *args)
-{
-	PyObject *class = 0, *module = 0, *name = 0, *state = 0,
-		*getinitargs_func = 0, *getstate_func = 0, *class_args = 0;
-	char *module_str, *name_str;
-	int module_size, name_size, res = -1;
-
-	static char inst = INST, obj = OBJ, build = BUILD;
-
-	if (self->fast && !fast_save_enter(self, args))
-		goto finally;
-
-	if (self->write_func(self, &MARKv, 1) < 0)
-		goto finally;
-
-	if (!( class = PyObject_GetAttr(args, __class___str)))
-		goto finally;
-
-	if (self->bin) {
-		if (save(self, class, 0) < 0)
-			goto finally;
-	}
-
-	if ((getinitargs_func = PyObject_GetAttr(args, __getinitargs___str))) {
-		PyObject *element = 0;
-		int i, len;
-
-		if (!( class_args =
-		       PyObject_Call(getinitargs_func, empty_tuple, NULL)))
-			goto finally;
-
-		if ((len = PyObject_Size(class_args)) < 0)
-			goto finally;
-
-		for (i = 0; i < len; i++) {
-			if (!( element = PySequence_GetItem(class_args, i)))
-				goto finally;
-
-			if (save(self, element, 0) < 0) {
-				Py_DECREF(element);
-				goto finally;
-			}
-
-			Py_DECREF(element);
-		}
-	}
-	else {
-		if (PyErr_ExceptionMatches(PyExc_AttributeError))
-			PyErr_Clear();
-		else
-			goto finally;
-	}
-
-	if (!self->bin) {
-		if (!( name = ((PyClassObject *)class)->cl_name ))  {
-			PyErr_SetString(PicklingError, "class has no name");
-			goto finally;
-		}
-
-		if (!( module = whichmodule(class, name)))
-			goto finally;
-
-
-		if ((module_size = PyString_Size(module)) < 0 ||
-		    (name_size = PyString_Size(name)) < 0)
-			goto finally;
-
-		module_str = PyString_AS_STRING((PyStringObject *)module);
-		name_str   = PyString_AS_STRING((PyStringObject *)name);
-
-		if (self->write_func(self, &inst, 1) < 0)
-			goto finally;
-
-		if (self->write_func(self, module_str, module_size) < 0)
-			goto finally;
-
-		if (self->write_func(self, "\n", 1) < 0)
-			goto finally;
-
-		if (self->write_func(self, name_str, name_size) < 0)
-			goto finally;
-
-		if (self->write_func(self, "\n", 1) < 0)
-			goto finally;
-	}
-	else if (self->write_func(self, &obj, 1) < 0) {
-		goto finally;
-	}
-
-	if ((getstate_func = PyObject_GetAttr(args, __getstate___str))) {
-		state = PyObject_Call(getstate_func, empty_tuple, NULL);
-		if (!state)
-			goto finally;
-	}
-	else {
-		if (PyErr_ExceptionMatches(PyExc_AttributeError))
-			PyErr_Clear();
-		else
-			goto finally;
-
-		if (!( state = PyObject_GetAttr(args, __dict___str)))  {
-			if (PyErr_ExceptionMatches(PyExc_AttributeError))
-				PyErr_Clear();
-			else
-				goto finally;
-			res = 0;
-			goto finally;
-		}
-	}
-
-	if (!PyDict_Check(state)) {
-		if (put2(self, args) < 0)
-			goto finally;
-	}
-	else {
-		if (put(self, args) < 0)
-			goto finally;
-	}
-
-	if (save(self, state, 0) < 0)
-		goto finally;
-
-	if (self->write_func(self, &build, 1) < 0)
-		goto finally;
-
-	res = 0;
-
-  finally:
-	if (self->fast && !fast_save_leave(self, args))
-		res = -1;
-
-	Py_XDECREF(module);
-	Py_XDECREF(class);
-	Py_XDECREF(state);
-	Py_XDECREF(getinitargs_func);
-	Py_XDECREF(getstate_func);
-	Py_XDECREF(class_args);
-
-	return res;
-}
-
 
 static int
 save_global(Picklerobject *self, PyObject *args, PyObject *name)
@@ -2416,20 +2274,6 @@ save(Picklerobject *self, PyObject *args, int pers_save)
         case 'd':
 		if (type == &PyDict_Type) {
 			res = save_dict(self, args);
-			goto finally;
-		}
-		break;
-
-        case 'i':
-		if (type == &PyInstance_Type) {
-			res = save_inst(self, args);
-			goto finally;
-		}
-		break;
-
-        case 'c':
-		if (type == &PyClass_Type) {
-			res = save_global(self, args, NULL);
 			goto finally;
 		}
 		break;
@@ -3594,57 +3438,6 @@ load_dict(Unpicklerobject *self)
 	return 0;
 }
 
-static PyObject *
-Instance_New(PyObject *cls, PyObject *args)
-{
-	PyObject *r = 0;
-
-	if (PyClass_Check(cls)) {
-		int l;
-
-		if ((l=PyObject_Size(args)) < 0) goto err;
-		if (!( l ))  {
-			PyObject *__getinitargs__;
-
-			__getinitargs__ = PyObject_GetAttr(cls,
-						   __getinitargs___str);
-			if (!__getinitargs__)  {
-				/* We have a class with no __getinitargs__,
-				   so bypass usual construction  */
-				PyObject *inst;
-
-				PyErr_Clear();
-				if (!( inst=PyInstance_NewRaw(cls, NULL)))
-					goto err;
-				return inst;
-			}
-			Py_DECREF(__getinitargs__);
-		}
-
-		if ((r=PyInstance_New(cls, args, NULL))) return r;
-		else goto err;
-	}
-
-	if ((r=PyObject_CallObject(cls, args))) return r;
-
-  err:
-	{
-		PyObject *tp, *v, *tb, *tmp_value;
-
-		PyErr_Fetch(&tp, &v, &tb);
-		tmp_value = v;
-		/* NULL occurs when there was a KeyboardInterrupt */
-		if (tmp_value == NULL)
-			tmp_value = Py_None;
-		if ((r = PyTuple_Pack(3, tmp_value, cls, args))) {
-			Py_XDECREF(v);
-			v=r;
-		}
-		PyErr_Restore(tp,v,tb);
-	}
-	return NULL;
-}
-
 
 static int
 load_obj(Unpicklerobject *self)
@@ -3655,10 +3448,6 @@ load_obj(Unpicklerobject *self)
 	if ((i = marker(self)) < 0) return -1;
 	if (!( tup=Pdata_popTuple(self->stack, i+1)))  return -1;
 	PDATA_POP(self->stack, class);
-	if (class) {
-		obj = Instance_New(class, tup);
-		Py_DECREF(class);
-	}
 	Py_DECREF(tup);
 
 	if (! obj) return -1;
@@ -3694,8 +3483,8 @@ load_inst(Unpicklerobject *self)
 	if (! class) return -1;
 
 	if ((tup=Pdata_popTuple(self->stack, i))) {
-		obj = Instance_New(class, tup);
-		Py_DECREF(tup);
+		PyErr_SetString(UnpicklingError, "it's dead, Jim");
+		return -1;
 	}
 	Py_DECREF(class);
 
@@ -4388,10 +4177,6 @@ load_reduce(Unpicklerobject *self)
 	PDATA_POP(self->stack, arg_tup);
 	if (! arg_tup) return -1;
 	PDATA_POP(self->stack, callable);
-	if (callable) {
-		ob = Instance_New(callable, arg_tup);
-		Py_DECREF(callable);
-	}
 	Py_DECREF(arg_tup);
 
 	if (! ob) return -1;

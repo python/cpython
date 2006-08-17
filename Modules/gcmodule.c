@@ -66,12 +66,10 @@ static PyObject *delstr = NULL;
 #define DEBUG_STATS		(1<<0) /* print collection statistics */
 #define DEBUG_COLLECTABLE	(1<<1) /* print collectable objects */
 #define DEBUG_UNCOLLECTABLE	(1<<2) /* print uncollectable objects */
-#define DEBUG_INSTANCES		(1<<3) /* print instances */
 #define DEBUG_OBJECTS		(1<<4) /* print other objects */
 #define DEBUG_SAVEALL		(1<<5) /* save all garbage in gc.garbage */
 #define DEBUG_LEAK		DEBUG_COLLECTABLE | \
 				DEBUG_UNCOLLECTABLE | \
-				DEBUG_INSTANCES | \
 				DEBUG_OBJECTS | \
 				DEBUG_SAVEALL
 static int debug;
@@ -410,13 +408,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 static int
 has_finalizer(PyObject *op)
 {
-	if (PyInstance_Check(op)) {
-		assert(delstr != NULL);
-		return _PyInstance_Lookup(op, delstr) != NULL;
-	}
-	else if (PyType_HasFeature(op->ob_type, Py_TPFLAGS_HEAPTYPE))
-		return op->ob_type->tp_del != NULL;
-	else if (PyGen_CheckExact(op))
+	if (PyGen_CheckExact(op))
 		return PyGen_NeedsFinalizing((PyGenObject *)op);
 	else
 		return 0;
@@ -633,26 +625,9 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
 }
 
 static void
-debug_instance(char *msg, PyInstanceObject *inst)
-{
-	char *cname;
-	/* simple version of instance_repr */
-	PyObject *classname = inst->in_class->cl_name;
-	if (classname != NULL && PyString_Check(classname))
-		cname = PyString_AsString(classname);
-	else
-		cname = "?";
-	PySys_WriteStderr("gc: %.100s <%.100s instance at %p>\n",
-			  msg, cname, inst);
-}
-
-static void
 debug_cycle(char *msg, PyObject *op)
 {
-	if ((debug & DEBUG_INSTANCES) && PyInstance_Check(op)) {
-		debug_instance(msg, (PyInstanceObject *)op);
-	}
-	else if (debug & DEBUG_OBJECTS) {
+	if (debug & DEBUG_OBJECTS) {
 		PySys_WriteStderr("gc: %.100s <%.100s %p>\n",
 				  msg, op->ob_type->tp_name, op);
 	}
@@ -983,7 +958,6 @@ PyDoc_STRVAR(gc_set_debug__doc__,
 "  DEBUG_STATS - Print statistics during collection.\n"
 "  DEBUG_COLLECTABLE - Print collectable objects found.\n"
 "  DEBUG_UNCOLLECTABLE - Print unreachable but uncollectable objects found.\n"
-"  DEBUG_INSTANCES - Print instance objects.\n"
 "  DEBUG_OBJECTS - Print objects other than instances.\n"
 "  DEBUG_SAVEALL - Save objects to gc.garbage rather than freeing them.\n"
 "  DEBUG_LEAK - Debug leaking programs (everything but STATS).\n");
@@ -1244,7 +1218,6 @@ initgc(void)
 	ADD_INT(DEBUG_STATS);
 	ADD_INT(DEBUG_COLLECTABLE);
 	ADD_INT(DEBUG_UNCOLLECTABLE);
-	ADD_INT(DEBUG_INSTANCES);
 	ADD_INT(DEBUG_OBJECTS);
 	ADD_INT(DEBUG_SAVEALL);
 	ADD_INT(DEBUG_LEAK);

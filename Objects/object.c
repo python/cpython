@@ -2,6 +2,7 @@
 /* Generic object operations; and implementation of None (NoObject) */
 
 #include "Python.h"
+#include "sliceobject.h" /* For PyEllipsis_Type */
 
 #ifdef __cplusplus
 extern "C" {
@@ -663,10 +664,6 @@ try_3way_compare(PyObject *v, PyObject *w)
 	   which has the same return conventions as this function. */
 
 	f = v->ob_type->tp_compare;
-	if (PyInstance_Check(v))
-		return (*f)(v, w);
-	if (PyInstance_Check(w))
-		return (*w->ob_type->tp_compare)(v, w);
 
 	/* If both have the same (non-NULL) tp_compare, use it. */
 	if (f != NULL && f == w->ob_type->tp_compare) {
@@ -789,15 +786,7 @@ do_cmp(PyObject *v, PyObject *w)
 	if (v->ob_type == w->ob_type
 	    && (f = v->ob_type->tp_compare) != NULL) {
 		c = (*f)(v, w);
-		if (PyInstance_Check(v)) {
-			/* Instance tp_compare has a different signature.
-			   But if it returns undefined we fall through. */
-			if (c != 2)
-				return c;
-			/* Else fall through to try_rich_to_3way_compare() */
-		}
-		else
-			return adjust_tp_compare(c);
+		return adjust_tp_compare(c);
 	}
 	/* We only get here if one of the following is true:
 	   a) v and w have different types
@@ -911,7 +900,7 @@ PyObject_RichCompare(PyObject *v, PyObject *w, int op)
 
 	/* If the types are equal, and not old-style instances, try to
 	   get out cheap (don't bother with coercions etc.). */
-	if (v->ob_type == w->ob_type && !PyInstance_Check(v)) {
+	if (v->ob_type == w->ob_type) {
 		cmpfunc fcmp;
 		richcmpfunc frich = RICHCOMPARE(v->ob_type);
 		/* If the type has richcmp, try it first.  try_rich_compare
@@ -1063,10 +1052,7 @@ PyObject_Hash(PyObject *v)
 	PyTypeObject *tp = v->ob_type;
 	if (tp->tp_hash != NULL)
 		return (*tp->tp_hash)(v);
-	if (tp->tp_compare == NULL && RICHCOMPARE(tp) == NULL) {
-		return _Py_HashPointer(v); /* Use address as hash value */
-	}
-	/* If there's a cmp but no hash defined, the object can't be hashed */
+	/* Otherwise, the object can't be hashed */
 	PyErr_Format(PyExc_TypeError, "unhashable type: '%.200s'",
 		     v->ob_type->tp_name);
 	return -1;
@@ -1303,12 +1289,8 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 		n = PyTuple_GET_SIZE(mro);
 		for (i = 0; i < n; i++) {
 			base = PyTuple_GET_ITEM(mro, i);
-			if (PyClass_Check(base))
-				dict = ((PyClassObject *)base)->cl_dict;
-			else {
-				assert(PyType_Check(base));
-				dict = ((PyTypeObject *)base)->tp_dict;
-			}
+			assert(PyType_Check(base));
+			dict = ((PyTypeObject *)base)->tp_dict;
 			assert(dict && PyDict_Check(dict));
 			descr = PyDict_GetItem(dict, name);
 			if (descr != NULL)
@@ -1554,20 +1536,7 @@ PyCallable_Check(PyObject *x)
 {
 	if (x == NULL)
 		return 0;
-	if (PyInstance_Check(x)) {
-		PyObject *call = PyObject_GetAttrString(x, "__call__");
-		if (call == NULL) {
-			PyErr_Clear();
-			return 0;
-		}
-		/* Could test recursively but don't, for fear of endless
-		   recursion if some joker sets self.__call__ = self */
-		Py_DECREF(call);
-		return 1;
-	}
-	else {
-		return x->ob_type->tp_call != NULL;
-	}
+	return x->ob_type->tp_call != NULL;
 }
 
 /* Helper for PyObject_Dir.
@@ -1701,7 +1670,7 @@ PyObject_Dir(PyObject *arg)
 	/* Elif some form of type or class, grab its dict and its bases.
 	   We deliberately don't suck up its __class__, as methods belonging
 	   to the metaclass would probably be more confusing than helpful. */
-	else if (PyType_Check(arg) || PyClass_Check(arg)) {
+	else if (PyType_Check(arg)) {
 		masterdict = PyDict_New();
 		if (masterdict == NULL)
 			goto error;
@@ -1885,6 +1854,9 @@ _Py_ReadyTypes(void)
 
 	if (PyType_Ready(&PyNone_Type) < 0)
 		Py_FatalError("Can't initialize type(None)");
+
+	if (PyType_Ready(Py_Ellipsis->ob_type) < 0)
+		Py_FatalError("Can't initialize type(Ellipsis)");
 
 	if (PyType_Ready(&PyNotImplemented_Type) < 0)
 		Py_FatalError("Can't initialize type(NotImplemented)");

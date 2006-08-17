@@ -147,7 +147,7 @@ typedef int (*visitproc)(PyObject *, void *);
 typedef int (*traverseproc)(PyObject *, visitproc, void *);
 
 typedef struct {
-	/* Number implementations should check *both*
+	/* Number implementations must check *both*
 	   arguments for proper type and implement the necessary conversions
 	   in the slot functions themselves. */
 
@@ -173,7 +173,7 @@ typedef struct {
 	unaryfunc nb_float;
 	unaryfunc nb_oct;
 	unaryfunc nb_hex;
-	/* Added in release 2.0 */
+
 	binaryfunc nb_inplace_add;
 	binaryfunc nb_inplace_subtract;
 	binaryfunc nb_inplace_multiply;
@@ -185,13 +185,11 @@ typedef struct {
 	binaryfunc nb_inplace_xor;
 	binaryfunc nb_inplace_or;
 
-	/* Added in release 2.2 */
 	binaryfunc nb_floor_divide;
 	binaryfunc nb_true_divide;
 	binaryfunc nb_inplace_floor_divide;
 	binaryfunc nb_inplace_true_divide;
 
-	/* Added in release 2.5 */
 	lenfunc nb_index;
 } PyNumberMethods;
 
@@ -204,7 +202,7 @@ typedef struct {
 	ssizeobjargproc sq_ass_item;
 	ssizessizeobjargproc sq_ass_slice;
 	objobjproc sq_contains;
-	/* Added in release 2.0 */
+
 	binaryfunc sq_inplace_concat;
 	ssizeargfunc sq_inplace_repeat;
 } PySequenceMethods;
@@ -292,7 +290,6 @@ typedef struct _typeobject {
 	/* weak reference enabler */
 	Py_ssize_t tp_weaklistoffset;
 
-	/* Added in release 2.2 */
 	/* Iterators */
 	getiterfunc tp_iter;
 	iternextfunc tp_iternext;

@@ -3409,14 +3409,8 @@ PyEval_GetFuncName(PyObject *func)
 		return PyString_AsString(((PyFunctionObject*)func)->func_name);
 	else if (PyCFunction_Check(func))
 		return ((PyCFunctionObject*)func)->m_ml->ml_name;
-	else if (PyClass_Check(func))
-		return PyString_AsString(((PyClassObject*)func)->cl_name);
-	else if (PyInstance_Check(func)) {
-		return PyString_AsString(
-			((PyInstanceObject*)func)->in_class->cl_name);
-	} else {
+	else
 		return func->ob_type->tp_name;
-	}
 }
 
 const char *
@@ -3428,13 +3422,8 @@ PyEval_GetFuncDesc(PyObject *func)
 		return "()";
 	else if (PyCFunction_Check(func))
 		return "()";
-	else if (PyClass_Check(func))
-		return " constructor";
-	else if (PyInstance_Check(func)) {
-		return " instance";
-	} else {
+	else
 		return " object";
-	}
 }
 
 static void

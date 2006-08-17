@@ -3363,19 +3363,19 @@ static PyMethodDef _functions[] = {
     {NULL, NULL}
 };
 
-#if PY_VERSION_HEX < 0x02030000
-DL_EXPORT(void) init_sre(void)
-#else
 PyMODINIT_FUNC init_sre(void)
-#endif
 {
     PyObject* m;
     PyObject* d;
     PyObject* x;
 
-    /* Patch object types */
-    Pattern_Type.ob_type = Match_Type.ob_type =
-        Scanner_Type.ob_type = &PyType_Type;
+    /* Initialize object types */
+    if (PyType_Ready(&Pattern_Type) < 0)
+        return;
+    if (PyType_Ready(&Match_Type) < 0)
+        return;
+    if (PyType_Ready(&Scanner_Type) < 0)
+        return;
 
     m = Py_InitModule("_" SRE_MODULE, _functions);
     if (m == NULL)

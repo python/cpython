@@ -63,7 +63,7 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
 #define METH_CLASS    0x0010
 #define METH_STATIC   0x0020
 
-/* METH_COEXIST allows a method to be entered eventhough a slot has
+/* METH_COEXIST allows a method to be entered even though a slot has
    already filled the entry.  When defined, the flag allows a separate
    method, "__contains__" for example, to coexist with a defined 
    slot like sq_contains. */

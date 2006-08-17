@@ -2112,7 +2112,8 @@ initarray(void)
 {
 	PyObject *m;
 
-	Arraytype.ob_type = &PyType_Type;
+	if (PyType_Ready(&Arraytype) < 0)
+            return;
 	PyArrayIter_Type.ob_type = &PyType_Type;
 	m = Py_InitModule3("array", a_methods, module_doc);
 	if (m == NULL)

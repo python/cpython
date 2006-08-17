@@ -67,8 +67,10 @@ typedef struct PyMemberDef {
 				   converting to None. */
 #ifdef HAVE_LONG_LONG
 #define T_LONGLONG      17  
-#define T_ULONGLONG      18
+#define T_ULONGLONG     18
 #endif /* HAVE_LONG_LONG */
+
+#define T_NONE          19      /* Value is always None */
 
 /* Flags */
 #define READONLY	1

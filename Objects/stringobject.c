@@ -3982,6 +3982,8 @@ PyDoc_STRVAR(string_doc,
 Return a nice string representation of the object.\n\
 If the argument is a string, the return value is the same object.");
 
+static PyObject *str_iter(PyObject *seq);
+
 PyTypeObject PyString_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -4009,7 +4011,7 @@ PyTypeObject PyString_Type = {
 	0,					/* tp_clear */
 	(richcmpfunc)string_richcompare,	/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
-	0,					/* tp_iter */
+	str_iter,				/* tp_iter */
 	0,					/* tp_iternext */
 	string_methods,				/* tp_methods */
 	0,					/* tp_members */
@@ -4983,4 +4985,121 @@ void _Py_ReleaseInternedStrings(void)
 	PyDict_Clear(interned);
 	Py_DECREF(interned);
 	interned = NULL;
+}
+
+
+/*********************** Str Iterator ****************************/
+
+typedef struct {
+	PyObject_HEAD
+	long it_index;
+	PyStringObject *it_seq; /* Set to NULL when iterator is exhausted */
+} striterobject;
+
+static void
+striter_dealloc(striterobject *it)
+{
+	_PyObject_GC_UNTRACK(it);
+	Py_XDECREF(it->it_seq);
+	PyObject_GC_Del(it);
+}
+
+static int
+striter_traverse(striterobject *it, visitproc visit, void *arg)
+{
+	Py_VISIT(it->it_seq);
+	return 0;
+}
+
+static PyObject *
+striter_next(striterobject *it)
+{
+	PyStringObject *seq;
+	PyObject *item;
+
+	assert(it != NULL);
+	seq = it->it_seq;
+	if (seq == NULL)
+		return NULL;
+	assert(PyString_Check(seq));
+
+	if (it->it_index < PyString_GET_SIZE(seq)) {
+		item = PyString_FromStringAndSize(PyString_AS_STRING(seq)+it->it_index, 1);
+		if (item != NULL)
+			++it->it_index;
+		return item;
+	}
+
+	Py_DECREF(seq);
+	it->it_seq = NULL;
+	return NULL;
+}
+
+static PyObject *
+striter_len(striterobject *it)
+{
+	Py_ssize_t len = 0;
+	if (it->it_seq)
+		len = PyString_GET_SIZE(it->it_seq) - it->it_index;
+	return PyInt_FromSsize_t(len);
+}
+
+PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
+
+static PyMethodDef striter_methods[] = {
+	{"__length_hint__", (PyCFunction)striter_len, METH_NOARGS, length_hint_doc},
+ 	{NULL,		NULL}		/* sentinel */
+};
+
+PyTypeObject PyStringIter_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,					/* ob_size */
+	"striterator",			/* tp_name */
+	sizeof(striterobject),		/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	(destructor)striter_dealloc,		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+	0,					/* tp_doc */
+	(traverseproc)striter_traverse,	/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	PyObject_SelfIter,			/* tp_iter */
+	(iternextfunc)striter_next,		/* tp_iternext */
+	striter_methods,			/* tp_methods */
+	0,
+};
+
+static PyObject *
+str_iter(PyObject *seq)
+{
+	striterobject *it;
+
+	if (!PyString_Check(seq)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	it = PyObject_GC_New(striterobject, &PyStringIter_Type);
+	if (it == NULL)
+		return NULL;
+	it->it_index = 0;
+	Py_INCREF(seq);
+	it->it_seq = (PyStringObject *)seq;
+	_PyObject_GC_TRACK(it);
+	return (PyObject *)it;
 }

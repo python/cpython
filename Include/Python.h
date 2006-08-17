@@ -7,14 +7,6 @@
 #include "patchlevel.h"
 #include "pyconfig.h"
 
-/* Cyclic gc is always enabled, starting with release 2.3a1.  Supply the
- * old symbol for the benefit of extension modules written before then
- * that may be conditionalizing on it.  The core doesn't use it anymore.
- */
-#ifndef WITH_CYCLE_GC
-#define WITH_CYCLE_GC 1
-#endif
-
 #include <limits.h>
 
 #ifndef UCHAR_MAX
