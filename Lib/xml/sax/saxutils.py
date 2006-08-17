@@ -4,8 +4,8 @@ convenience of application and driver writers.
 """
 
 import os, urlparse, urllib, types
-import handler
-import xmlreader
+from . import handler
+from . import xmlreader
 
 try:
     _StringTypes = [types.StringType, types.UnicodeType]

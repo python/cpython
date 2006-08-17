@@ -19,9 +19,9 @@ xmlreader -- Base classes and constants which define the SAX 2 API for
 expatreader -- Driver that allows use of the Expat parser with SAX.
 """
 
-from xmlreader import InputSource
-from handler import ContentHandler, ErrorHandler
-from _exceptions import SAXException, SAXNotRecognizedException, \
+from .xmlreader import InputSource
+from .handler import ContentHandler, ErrorHandler
+from ._exceptions import SAXException, SAXNotRecognizedException, \
                         SAXParseException, SAXNotSupportedException, \
                         SAXReaderNotAvailable
 
