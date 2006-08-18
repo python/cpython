@@ -54,12 +54,10 @@ class BasicTestMappingProtocol(unittest.TestCase):
         #len
         self.assertEqual(len(p), 0)
         self.assertEqual(len(d), len(self.reference))
-        #has_key
+        #__contains__
         for k in self.reference:
-            self.assert_(d.has_key(k))
             self.assert_(k in d)
         for k in self.other:
-            self.failIf(d.has_key(k))
             self.failIf(k in d)
         #cmp
         self.assertEqual(cmp(p,p), 0)
@@ -332,16 +330,6 @@ class TestMappingProtocol(BasicTestMappingProtocol):
 
         d = self._full_mapping({1:2})
         self.assertEqual(d.items(), [(1, 2)])
-
-    def test_has_key(self):
-        d = self._empty_mapping()
-        self.assert_(not d.has_key('a'))
-        d = self._full_mapping({'a': 1, 'b': 2})
-        k = d.keys()
-        k.sort()
-        self.assertEqual(k, ['a', 'b'])
-
-        self.assertRaises(TypeError, d.has_key)
 
     def test_contains(self):
         d = self._empty_mapping()

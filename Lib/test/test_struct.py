@@ -266,7 +266,7 @@ class IntTester:
             if x < 0:
                 expected += 1L << self.bitsize
                 assert expected > 0
-            expected = hex(expected)[2:-1] # chop "0x" and trailing 'L'
+            expected = hex(expected)[2:] # chop "0x"
             if len(expected) & 1:
                 expected = "0" + expected
             expected = unhexlify(expected)
@@ -322,7 +322,7 @@ class IntTester:
             # Try big-endian.
             format = ">" + code
             expected = long(x)
-            expected = hex(expected)[2:-1] # chop "0x" and trailing 'L'
+            expected = hex(expected)[2:] # chop "0x"
             if len(expected) & 1:
                 expected = "0" + expected
             expected = unhexlify(expected)

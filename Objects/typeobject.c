@@ -4432,7 +4432,6 @@ slot_tp_hash(PyObject *self)
 	}
 
 	if (func == NULL) {
-		PyErr_Clear();
 		PyErr_Format(PyExc_TypeError, "unhashable type: '%.200s'",
 			     self->ob_type->tp_name);
 		return -1;

@@ -180,7 +180,7 @@ class TimeTestCase(unittest.TestCase):
             # rely on it.
             if org_TZ is not None:
                 environ['TZ'] = org_TZ
-            elif environ.has_key('TZ'):
+            elif 'TZ' in environ:
                 del environ['TZ']
             time.tzset()
 

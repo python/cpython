@@ -517,23 +517,14 @@ def read_decimalnl_long(f):
     r"""
     >>> import StringIO
 
-    >>> read_decimalnl_long(StringIO.StringIO("1234\n56"))
-    Traceback (most recent call last):
-    ...
-    ValueError: trailing 'L' required in '1234'
-
-    Someday the trailing 'L' will probably go away from this output.
-
     >>> read_decimalnl_long(StringIO.StringIO("1234L\n56"))
-    1234L
+    1234
 
     >>> read_decimalnl_long(StringIO.StringIO("123456789012345678901234L\n6"))
-    123456789012345678901234L
+    123456789012345678901234
     """
 
     s = read_stringnl(f, decode=False, stripquotes=False)
-    if not s.endswith("L"):
-        raise ValueError("trailing 'L' required in %r" % s)
     return long(s)
 
 
@@ -625,15 +616,15 @@ def read_long1(f):
     r"""
     >>> import StringIO
     >>> read_long1(StringIO.StringIO("\x00"))
-    0L
+    0
     >>> read_long1(StringIO.StringIO("\x02\xff\x00"))
-    255L
+    255
     >>> read_long1(StringIO.StringIO("\x02\xff\x7f"))
-    32767L
+    32767
     >>> read_long1(StringIO.StringIO("\x02\x00\xff"))
-    -256L
+    -256
     >>> read_long1(StringIO.StringIO("\x02\x00\x80"))
-    -32768L
+    -32768
     """
 
     n = read_uint1(f)
@@ -657,15 +648,15 @@ def read_long4(f):
     r"""
     >>> import StringIO
     >>> read_long4(StringIO.StringIO("\x02\x00\x00\x00\xff\x00"))
-    255L
+    255
     >>> read_long4(StringIO.StringIO("\x02\x00\x00\x00\xff\x7f"))
-    32767L
+    32767
     >>> read_long4(StringIO.StringIO("\x02\x00\x00\x00\x00\xff"))
-    -256L
+    -256
     >>> read_long4(StringIO.StringIO("\x02\x00\x00\x00\x00\x80"))
-    -32768L
+    -32768
     >>> read_long1(StringIO.StringIO("\x00\x00\x00\x00"))
-    0L
+    0
     """
 
     n = read_int4(f)

@@ -133,8 +133,7 @@ class Bdb:
         raise NotImplementedError, "subclass of bdb must implement do_clear()"
 
     def break_anywhere(self, frame):
-        return self.breaks.has_key(
-            self.canonic(frame.f_code.co_filename))
+        return self.canonic(frame.f_code.co_filename) in self.breaks
 
     # Derived classes should override the user_* methods
     # to gain control.
@@ -245,7 +244,7 @@ class Bdb:
         # pair, then remove the breaks entry
         for bp in Breakpoint.bplist[filename, lineno][:]:
             bp.deleteMe()
-        if not Breakpoint.bplist.has_key((filename, lineno)):
+        if (filename, lineno) not in Breakpoint.bplist:
             self.breaks[filename].remove(lineno)
         if not self.breaks[filename]:
             del self.breaks[filename]
@@ -453,7 +452,7 @@ class Breakpoint:
         Breakpoint.next = Breakpoint.next + 1
         # Build the two lists
         self.bpbynumber.append(self)
-        if self.bplist.has_key((file, line)):
+        if (file, line) in self.bplist:
             self.bplist[file, line].append(self)
         else:
             self.bplist[file, line] = [self]

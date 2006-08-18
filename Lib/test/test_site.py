@@ -216,7 +216,7 @@ class ImportSideEffectTests(unittest.TestCase):
 
     def test_sitecustomize_executed(self):
         # If sitecustomize is available, it should have been imported.
-        if not sys.modules.has_key("sitecustomize"):
+        if "sitecustomize" not in sys.modules:
             try:
                 import sitecustomize
             except ImportError:

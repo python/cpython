@@ -472,7 +472,7 @@ def f(x):
     return g
 
 d = f(2)(4)
-verify(d.has_key('h'))
+verify('h' in d)
 del d['h']
 vereq(d, {'x': 2, 'y': 7, 'w': 6})
 

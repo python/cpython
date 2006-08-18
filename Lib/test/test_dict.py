@@ -21,8 +21,8 @@ class DictTest(unittest.TestCase):
         self.assertEqual(d.keys(), [])
         d = {'a': 1, 'b': 2}
         k = d.keys()
-        self.assert_(d.has_key('a'))
-        self.assert_(d.has_key('b'))
+        self.assert_('a' in d)
+        self.assert_('b' in d)
 
         self.assertRaises(TypeError, d.keys, None)
 
@@ -42,16 +42,6 @@ class DictTest(unittest.TestCase):
         self.assertEqual(d.items(), [(1, 2)])
 
         self.assertRaises(TypeError, d.items, None)
-
-    def test_has_key(self):
-        d = {}
-        self.assert_(not d.has_key('a'))
-        d = {'a': 1, 'b': 2}
-        k = d.keys()
-        k.sort()
-        self.assertEqual(k, ['a', 'b'])
-
-        self.assertRaises(TypeError, d.has_key)
 
     def test_contains(self):
         d = {}

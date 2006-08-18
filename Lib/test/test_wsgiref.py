@@ -341,7 +341,7 @@ class HeaderTests(TestCase):
         del h['foo']   # should not raise an error
 
         h['Foo'] = 'bar'
-        for m in h.has_key, h.__contains__, h.get, h.get_all, h.__getitem__:
+        for m in h.__contains__, h.get, h.get_all, h.__getitem__:
             self.failUnless(m('foo'))
             self.failUnless(m('Foo'))
             self.failUnless(m('FOO'))
@@ -424,10 +424,10 @@ class HandlerTests(TestCase):
         env = handler.environ
         from os import environ
         for k,v in environ.items():
-            if not empty.has_key(k):
+            if k not in empty:
                 self.assertEqual(env[k],v)
         for k,v in empty.items():
-            self.failUnless(env.has_key(k))
+            self.failUnless(k in env)
 
     def testEnviron(self):
         h = TestHandler(X="Y")
@@ -440,7 +440,7 @@ class HandlerTests(TestCase):
         h = BaseCGIHandler(None,None,None,{})
         h.setup_environ()
         for key in 'wsgi.url_scheme', 'wsgi.input', 'wsgi.errors':
-            self.assert_(h.environ.has_key(key))
+            self.assert_(key in h.environ)
 
     def testScheme(self):
         h=TestHandler(HTTPS="on"); h.setup_environ()

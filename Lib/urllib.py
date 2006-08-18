@@ -114,7 +114,7 @@ class URLopener:
     def __init__(self, proxies=None, **x509):
         if proxies is None:
             proxies = getproxies()
-        assert hasattr(proxies, 'has_key'), "proxies must be a mapping"
+        assert hasattr(proxies, 'keys'), "proxies must be a mapping"
         self.proxies = proxies
         self.key_file = x509.get('key_file')
         self.cert_file = x509.get('cert_file')

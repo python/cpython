@@ -17,7 +17,7 @@ a = g.keys()
 if verbose:
     print 'Test gdbm file keys: ', a
 
-g.has_key('a')
+'a' in g
 g.close()
 try:
     g['a']

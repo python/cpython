@@ -64,13 +64,6 @@ class WeakValueDictionary(UserDict.UserDict):
             return False
         return o is not None
 
-    def has_key(self, key):
-        try:
-            o = self.data[key]()
-        except KeyError:
-            return False
-        return o is not None
-
     def __repr__(self):
         return "<WeakValueDictionary at %s>" % id(self)
 
@@ -258,13 +251,6 @@ class WeakKeyDictionary(UserDict.UserDict):
 
     def get(self, key, default=None):
         return self.data.get(ref(key),default)
-
-    def has_key(self, key):
-        try:
-            wr = ref(key)
-        except TypeError:
-            return 0
-        return wr in self.data
 
     def __contains__(self, key):
         try:

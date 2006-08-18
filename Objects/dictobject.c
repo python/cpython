@@ -1621,7 +1621,7 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
  }
 
 static PyObject *
-dict_has_key(register dictobject *mp, PyObject *key)
+dict_contains(register dictobject *mp, PyObject *key)
 {
 	long hash;
 	dictentry *ep;
@@ -1856,9 +1856,6 @@ dict_iteritems(dictobject *dict)
 }
 
 
-PyDoc_STRVAR(has_key__doc__,
-"D.has_key(k) -> True if D has a key k, else False");
-
 PyDoc_STRVAR(contains__doc__,
 "D.__contains__(k) -> True if D has a key k, else False");
 
@@ -1911,12 +1908,10 @@ PyDoc_STRVAR(iteritems__doc__,
 "D.iteritems() -> an iterator over the (key, value) items of D");
 
 static PyMethodDef mapp_methods[] = {
-	{"__contains__",(PyCFunction)dict_has_key,      METH_O | METH_COEXIST,
+	{"__contains__",(PyCFunction)dict_contains,     METH_O | METH_COEXIST,
 	 contains__doc__},
 	{"__getitem__", (PyCFunction)dict_subscript,	METH_O | METH_COEXIST,
 	 getitem__doc__},
-	{"has_key",	(PyCFunction)dict_has_key,      METH_O,
-	 has_key__doc__},
 	{"get",         (PyCFunction)dict_get,          METH_VARARGS,
 	 get__doc__},
 	{"setdefault",  (PyCFunction)dict_setdefault,   METH_VARARGS,

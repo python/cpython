@@ -630,9 +630,9 @@ class BuiltinTest(unittest.TestCase):
 
     def test_hex(self):
         self.assertEqual(hex(16), '0x10')
-        self.assertEqual(hex(16L), '0x10L')
+        self.assertEqual(hex(16L), '0x10')
         self.assertEqual(hex(-16), '-0x10')
-        self.assertEqual(hex(-16L), '-0x10L')
+        self.assertEqual(hex(-16L), '-0x10')
         self.assertRaises(TypeError, hex, {})
 
     def test_id(self):
@@ -1240,9 +1240,9 @@ class BuiltinTest(unittest.TestCase):
 
     def test_oct(self):
         self.assertEqual(oct(100), '0144')
-        self.assertEqual(oct(100L), '0144L')
+        self.assertEqual(oct(100L), '0144')
         self.assertEqual(oct(-100), '-0144')
-        self.assertEqual(oct(-100L), '-0144L')
+        self.assertEqual(oct(-100L), '-0144')
         self.assertRaises(TypeError, oct, ())
 
     def write_testfile(self):
@@ -1441,7 +1441,7 @@ class BuiltinTest(unittest.TestCase):
     def test_repr(self):
         self.assertEqual(repr(''), '\'\'')
         self.assertEqual(repr(0), '0')
-        self.assertEqual(repr(0L), '0L')
+        self.assertEqual(repr(0L), '0')
         self.assertEqual(repr(()), '()')
         self.assertEqual(repr([]), '[]')
         self.assertEqual(repr({}), '{}')

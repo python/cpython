@@ -199,7 +199,7 @@ class SequenceMatcher:
         #      DON'T USE!  Only __chain_b uses this.  Use isbjunk.
         # isbjunk
         #      for x in b, isbjunk(x) == isjunk(x) but much faster;
-        #      it's really the has_key method of a hidden dict.
+        #      it's really the __contains__ method of a hidden dict.
         #      DOES NOT WORK for x in a!
         # isbpopular
         #      for x in b, isbpopular(x) is true iff b is reasonably long
@@ -341,8 +341,8 @@ class SequenceMatcher:
         # lot of junk in the sequence, the number of *unique* junk
         # elements is probably small.  So the memory burden of keeping
         # this dict alive is likely trivial compared to the size of b2j.
-        self.isbjunk = junkdict.has_key
-        self.isbpopular = populardict.has_key
+        self.isbjunk = junkdict.__contains__
+        self.isbpopular = populardict.__contains__
 
     def find_longest_match(self, alo, ahi, blo, bhi):
         """Find longest matching block in a[alo:ahi] and b[blo:bhi].
@@ -674,7 +674,7 @@ class SequenceMatcher:
         # avail[x] is the number of times x appears in 'b' less the
         # number of times we've seen it in 'a' so far ... kinda
         avail = {}
-        availhas, matches = avail.has_key, 0
+        availhas, matches = avail.__contains__, 0
         for elt in self.a:
             if availhas(elt):
                 numb = avail[elt]

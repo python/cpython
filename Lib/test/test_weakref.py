@@ -739,7 +739,7 @@ class MappingTestCase(TestBase):
     def test_weak_keys(self):
         #
         #  This exercises d.copy(), d.items(), d[] = v, d[], del d[],
-        #  len(d), d.has_key().
+        #  len(d), k in d.
         #
         dict, objects = self.make_weak_keyed_dict()
         for o in objects:
@@ -761,8 +761,8 @@ class MappingTestCase(TestBase):
                      "deleting the keys did not clear the dictionary")
         o = Object(42)
         dict[o] = "What is the meaning of the universe?"
-        self.assert_(dict.has_key(o))
-        self.assert_(not dict.has_key(34))
+        self.assert_(o in dict)
+        self.assert_(34 not in dict)
 
     def test_weak_keyed_iters(self):
         dict, objects = self.make_weak_keyed_dict()
@@ -774,7 +774,7 @@ class MappingTestCase(TestBase):
         objects2 = list(objects)
         for wr in refs:
             ob = wr()
-            self.assert_(dict.has_key(ob))
+            self.assert_(ob in dict)
             self.assert_(ob in dict)
             self.assertEqual(ob.arg, dict[ob])
             objects2.remove(ob)
@@ -785,7 +785,7 @@ class MappingTestCase(TestBase):
         self.assertEqual(len(list(dict.iterkeyrefs())), len(objects))
         for wr in dict.iterkeyrefs():
             ob = wr()
-            self.assert_(dict.has_key(ob))
+            self.assert_(ob in dict)
             self.assert_(ob in dict)
             self.assertEqual(ob.arg, dict[ob])
             objects2.remove(ob)
@@ -900,13 +900,13 @@ class MappingTestCase(TestBase):
         weakdict = klass()
         o = weakdict.setdefault(key, value1)
         self.assert_(o is value1)
-        self.assert_(weakdict.has_key(key))
+        self.assert_(key in weakdict)
         self.assert_(weakdict.get(key) is value1)
         self.assert_(weakdict[key] is value1)
 
         o = weakdict.setdefault(key, value2)
         self.assert_(o is value1)
-        self.assert_(weakdict.has_key(key))
+        self.assert_(key in weakdict)
         self.assert_(weakdict.get(key) is value1)
         self.assert_(weakdict[key] is value1)
 
@@ -920,20 +920,20 @@ class MappingTestCase(TestBase):
 
     def check_update(self, klass, dict):
         #
-        #  This exercises d.update(), len(d), d.keys(), d.has_key(),
+        #  This exercises d.update(), len(d), d.keys(), k in d,
         #  d.get(), d[].
         #
         weakdict = klass()
         weakdict.update(dict)
         self.assert_(len(weakdict) == len(dict))
         for k in weakdict.keys():
-            self.assert_(dict.has_key(k),
+            self.assert_(k in dict,
                          "mysterious new key appeared in weak dict")
             v = dict.get(k)
             self.assert_(v is weakdict[k])
             self.assert_(v is weakdict.get(k))
         for k in dict.keys():
-            self.assert_(weakdict.has_key(k),
+            self.assert_(k in weakdict,
                          "original key disappeared in weak dict")
             v = dict[k]
             self.assert_(v is weakdict[k])

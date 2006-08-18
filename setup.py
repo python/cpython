@@ -674,7 +674,7 @@ class PyBuildExt(build_ext):
                         db_minor = int(m.group(1))
                         db_ver = (db_major, db_minor)
 
-                        if ( (not db_ver_inc_map.has_key(db_ver)) and
+                        if ( (db_ver not in db_ver_inc_map) and
                            (db_ver <= max_db_ver and db_ver >= min_db_ver) ):
                             # save the include directory with the db.h version
                             # (first occurrance only)

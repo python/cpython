@@ -436,8 +436,6 @@ else:
                 def __delitem__(self, key):
                     unsetenv(key)
                     del self.data[key.upper()]
-            def has_key(self, key):
-                return key.upper() in self.data
             def __contains__(self, key):
                 return key.upper() in self.data
             def get(self, key, failobj=None):

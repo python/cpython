@@ -231,7 +231,7 @@ class BaseSet(object):
             little, big = self, other
         else:
             little, big = other, self
-        common = ifilter(big._data.has_key, little)
+        common = ifilter(big._data.__contains__, little)
         return self.__class__(common)
 
     def __xor__(self, other):
@@ -256,9 +256,9 @@ class BaseSet(object):
             otherdata = other._data
         except AttributeError:
             otherdata = Set(other)._data
-        for elt in ifilterfalse(otherdata.has_key, selfdata):
+        for elt in ifilterfalse(otherdata.__contains__, selfdata):
             data[elt] = value
-        for elt in ifilterfalse(selfdata.has_key, otherdata):
+        for elt in ifilterfalse(selfdata.__contains__, otherdata):
             data[elt] = value
         return result
 
@@ -283,7 +283,7 @@ class BaseSet(object):
         except AttributeError:
             otherdata = Set(other)._data
         value = True
-        for elt in ifilterfalse(otherdata.has_key, self):
+        for elt in ifilterfalse(otherdata.__contains__, self):
             data[elt] = value
         return result
 
@@ -309,7 +309,7 @@ class BaseSet(object):
         self._binary_sanity_check(other)
         if len(self) > len(other):  # Fast check for obvious cases
             return False
-        for elt in ifilterfalse(other._data.has_key, self):
+        for elt in ifilterfalse(other._data.__contains__, self):
             return False
         return True
 
@@ -318,7 +318,7 @@ class BaseSet(object):
         self._binary_sanity_check(other)
         if len(self) < len(other):  # Fast check for obvious cases
             return False
-        for elt in ifilterfalse(self._data.has_key, other):
+        for elt in ifilterfalse(self._data.__contains__, other):
             return False
         return True
 
@@ -501,7 +501,7 @@ class Set(BaseSet):
             other = Set(other)
         if self is other:
             self.clear()
-        for elt in ifilter(data.has_key, other):
+        for elt in ifilter(data.__contains__, other):
             del data[elt]
 
     # Python dict-like mass mutations: update, clear

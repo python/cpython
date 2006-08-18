@@ -174,7 +174,7 @@ class XMLRPCDocGenerator:
         methods = {}
 
         for method_name in self.system_listMethods():
-            if self.funcs.has_key(method_name):
+            if method_name in self.funcs:
                 method = self.funcs[method_name]
             elif self.instance is not None:
                 method_info = [None, None] # argspec, documentation

@@ -242,7 +242,7 @@ class ModuleFinder:
         else:
             self.msgout(3, "import_module ->", m)
             return m
-        if self.badmodules.has_key(fqname):
+        if fqname in self.badmodules:
             self.msgout(3, "import_module -> None")
             return None
         if parent and parent.__path__ is None:
@@ -388,7 +388,7 @@ class ModuleFinder:
         return m
 
     def add_module(self, fqname):
-        if self.modules.has_key(fqname):
+        if fqname in self.modules:
             return self.modules[fqname]
         self.modules[fqname] = m = Module(fqname)
         return m

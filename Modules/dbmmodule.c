@@ -206,12 +206,12 @@ dbm_keys(register dbmobject *dp, PyObject *unused)
 }
 
 static PyObject *
-dbm_has_key(register dbmobject *dp, PyObject *args)
+dbm_contains(register dbmobject *dp, PyObject *args)
 {
 	datum key, val;
 	int tmp_size;
 	
-	if (!PyArg_ParseTuple(args, "s#:has_key", &key.dptr, &tmp_size))
+	if (!PyArg_ParseTuple(args, "s#:__contains__", &key.dptr, &tmp_size))
 		return NULL;
 	key.dsize = tmp_size;
         check_dbmobject_open(dp);
@@ -277,8 +277,8 @@ static PyMethodDef dbm_methods[] = {
 	 "close()\nClose the database."},
 	{"keys",	(PyCFunction)dbm_keys,		METH_NOARGS,
 	 "keys() -> list\nReturn a list of all keys in the database."},
-	{"has_key",	(PyCFunction)dbm_has_key,	METH_VARARGS,
-	 "has_key(key} -> boolean\nReturn true iff key is in the database."},
+	{"__contains__",(PyCFunction)dbm_contains,	METH_VARARGS,
+	 "__contains__(key} -> boolean\True iff key is in the database."},
 	{"get",		(PyCFunction)dbm_get,		METH_VARARGS,
 	 "get(key[, default]) -> value\n"
 	 "Return the value for key if present, otherwise default."},

@@ -686,7 +686,7 @@ class Marshaller:
 
     def dump_array(self, value, write):
         i = id(value)
-        if self.memo.has_key(i):
+        if i in self.memo:
             raise TypeError, "cannot marshal recursive sequences"
         self.memo[i] = None
         dump = self.__dump
@@ -700,7 +700,7 @@ class Marshaller:
 
     def dump_struct(self, value, write, escape=escape):
         i = id(value)
-        if self.memo.has_key(i):
+        if i in self.memo:
             raise TypeError, "cannot marshal recursive dictionaries"
         self.memo[i] = None
         dump = self.__dump

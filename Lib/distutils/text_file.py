@@ -89,7 +89,7 @@ class TextFile:
         # set values for all options -- either from client option hash
         # or fallback to default_options
         for opt in self.default_options.keys():
-            if options.has_key (opt):
+            if opt in options:
                 setattr (self, opt, options[opt])
 
             else:
@@ -97,7 +97,7 @@ class TextFile:
 
         # sanity check client option hash
         for opt in options.keys():
-            if not self.default_options.has_key (opt):
+            if opt not in self.default_options:
                 raise KeyError, "invalid TextFile option '%s'" % opt
 
         if file is None:

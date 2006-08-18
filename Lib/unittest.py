@@ -153,7 +153,7 @@ class TestResult:
         return ''.join(traceback.format_exception(exctype, value, tb))
 
     def _is_relevant_tb_level(self, tb):
-        return tb.tb_frame.f_globals.has_key('__unittest')
+        return '__unittest' in tb.tb_frame.f_globals
 
     def _count_relevant_tb_levels(self, tb):
         length = 0

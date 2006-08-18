@@ -159,7 +159,7 @@ class BaseHandler:
 
         Subclasses can extend this to add other defaults.
         """
-        if not self.headers.has_key('Content-Length'):
+        if 'Content-Length' not in self.headers:
             self.set_content_length()
 
     def start_response(self, status, headers,exc_info=None):
@@ -194,11 +194,11 @@ class BaseHandler:
         if self.origin_server:
             if self.client_is_modern():
                 self._write('HTTP/%s %s\r\n' % (self.http_version,self.status))
-                if not self.headers.has_key('Date'):
+                if 'Date' not in self.headers:
                     self._write(
                         'Date: %s\r\n' % format_date_time(time.time())
                     )
-                if self.server_software and not self.headers.has_key('Server'):
+                if self.server_software and 'Server' not in self.headers:
                     self._write('Server: %s\r\n' % self.server_software)
         else:
             self._write('Status: %s\r\n' % self.status)

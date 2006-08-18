@@ -158,10 +158,10 @@ def main():
             # test individual fields
             for key in expect.keys():
                 expect_val = expect[key]
-                verify(fcd.has_key(key))
+                verify(key in fcd)
                 verify(norm(fcd[key]) == norm(expect[key]))
                 verify(fcd.get(key, "default") == fcd[key])
-                verify(fs.has_key(key))
+                verify(key in fs)
                 if len(expect_val) > 1:
                     single_value = 0
                 else:

@@ -297,7 +297,7 @@ class TestBase_Mapping(unittest.TestCase):
                 continue
 
             unich = unichrs(data[1])
-            if ord(unich) == 0xfffd or urt_wa.has_key(unich):
+            if ord(unich) == 0xfffd or unich in urt_wa:
                 continue
             urt_wa[unich] = csetch
 

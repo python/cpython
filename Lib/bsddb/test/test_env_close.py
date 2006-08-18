@@ -15,7 +15,7 @@ except ImportError:
     # For Python 2.3
     from bsddb import db
 
-from test_all import verbose
+from .test_all import verbose
 
 # We're going to get warnings in this module about trying to close the db when
 # its env is already closed.  Let's just ignore those.

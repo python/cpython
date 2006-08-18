@@ -357,7 +357,7 @@ def test_expat_nsattrs_wattr():
            attrs.getNames() == [(ns_uri, "attr")] and \
            (attrs.getQNames() == [] or attrs.getQNames() == ["ns:attr"]) and \
            len(attrs) == 1 and \
-           attrs.has_key((ns_uri, "attr")) and \
+           (ns_uri, "attr") in attrs and \
            attrs.keys() == [(ns_uri, "attr")] and \
            attrs.get((ns_uri, "attr")) == "val" and \
            attrs.get((ns_uri, "attr"), 25) == "val" and \
@@ -571,7 +571,7 @@ def verify_empty_attrs(attrs):
            attrs.getNames() == [] and \
            attrs.getQNames() == [] and \
            len(attrs) == 0 and \
-           not attrs.has_key("attr") and \
+           "attr" not in  attrs and \
            attrs.keys() == [] and \
            attrs.get("attrs") is None and \
            attrs.get("attrs", 25) == 25 and \
@@ -584,7 +584,7 @@ def verify_attrs_wattr(attrs):
            attrs.getNames() == ["attr"] and \
            attrs.getQNames() == ["attr"] and \
            len(attrs) == 1 and \
-           attrs.has_key("attr") and \
+           "attr" in attrs and \
            attrs.keys() == ["attr"] and \
            attrs.get("attr") == "val" and \
            attrs.get("attr", 25) == "val" and \
@@ -639,7 +639,7 @@ def verify_empty_nsattrs(attrs):
            attrs.getNames() == [] and \
            attrs.getQNames() == [] and \
            len(attrs) == 0 and \
-           not attrs.has_key((ns_uri, "attr")) and \
+           (ns_uri, "attr") not in attrs and \
            attrs.keys() == [] and \
            attrs.get((ns_uri, "attr")) is None and \
            attrs.get((ns_uri, "attr"), 25) == 25 and \
@@ -658,7 +658,7 @@ def test_nsattrs_wattr():
            attrs.getNames() == [(ns_uri, "attr")] and \
            attrs.getQNames() == ["ns:attr"] and \
            len(attrs) == 1 and \
-           attrs.has_key((ns_uri, "attr")) and \
+           (ns_uri, "attr") in attrs and \
            attrs.keys() == [(ns_uri, "attr")] and \
            attrs.get((ns_uri, "attr")) == "val" and \
            attrs.get((ns_uri, "attr"), 25) == "val" and \

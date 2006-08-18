@@ -1115,7 +1115,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        /*
 	 On success, return 1 if the mapping object has the key, key,
 	 and 0 otherwise.  This is equivalent to the Python expression:
-	 o.has_key(key). 
+	 key in o. 
 
 	 This function always succeeds.
        */
@@ -1125,7 +1125,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        /*
 	 Return 1 if the mapping object has the key, key,
 	 and 0 otherwise.  This is equivalent to the Python expression:
-	 o.has_key(key). 
+	 key in o. 
 
 	 This function always succeeds.
 

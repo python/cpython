@@ -183,9 +183,9 @@ class BoolTest(unittest.TestCase):
         self.assertIs(issubclass(bool, int), True)
         self.assertIs(issubclass(int, bool), False)
 
-    def test_haskey(self):
-        self.assertIs({}.has_key(1), False)
-        self.assertIs({1:1}.has_key(1), True)
+    def test_contains(self):
+        self.assertIs(1 in {}, False)
+        self.assertIs(1 in {1:1}, True)
 
     def test_string(self):
         self.assertIs("xyz".endswith("z"), True)

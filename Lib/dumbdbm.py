@@ -195,9 +195,6 @@ class _Database(UserDict.DictMixin):
     def keys(self):
         return self._index.keys()
 
-    def has_key(self, key):
-        return key in self._index
-
     def __contains__(self, key):
         return key in self._index
 

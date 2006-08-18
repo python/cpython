@@ -15,7 +15,7 @@ except ImportError:
     # For Python 2.3
     from bsddb import db, dbshelve
 
-from test_all import verbose
+from .test_all import verbose
 
 
 #----------------------------------------------------------------------

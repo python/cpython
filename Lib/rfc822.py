@@ -428,10 +428,6 @@ class Message:
             self.dict[lowername] = default
             return default
 
-    def has_key(self, name):
-        """Determine whether a message contains the named header."""
-        return name.lower() in self.dict
-
     def __contains__(self, name):
         """Determine whether a message contains the named header."""
         return name.lower() in self.dict

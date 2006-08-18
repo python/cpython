@@ -24,7 +24,7 @@ class AllTest(unittest.TestCase):
                "%s has no __all__ attribute" % modname)
         names = {}
         exec "from %s import *" % modname in names
-        if names.has_key("__builtins__"):
+        if "__builtins__" in names:
             del names["__builtins__"]
         keys = set(names)
         all = set(sys.modules[modname].__all__)

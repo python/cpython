@@ -877,7 +877,7 @@ def architecture(executable=sys.executable,bits='',linkage=''):
        executable == sys.executable:
         # "file" command did not return anything; we'll try to provide
         # some sensible defaults then...
-        if _default_architecture.has_key(sys.platform):
+        if sys.platform in _default_architecture:
             b,l = _default_architecture[sys.platform]
             if b:
                 bits = b
