@@ -251,4 +251,3 @@ class DBSequence:
         return apply(self._cobj.get_flags, args, kwargs)
     def get_range(self, *args, **kwargs):
         return apply(self._cobj.get_range, args, kwargs)
->>>>>>> .merge-right.r46752
