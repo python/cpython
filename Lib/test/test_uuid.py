@@ -429,7 +429,7 @@ class TestUUID(TestCase):
 
         # Make sure the generated UUIDs are actually unique.
         uuids = {}
-        for u in [uuid.uuid1() for i in range(1000)]:
+        for u in [uuid.uuid4() for i in range(1000)]:
             uuids[u] = 1
         equal(len(uuids.keys()), 1000)
 
