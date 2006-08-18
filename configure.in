@@ -1,7 +1,7 @@
 dnl Process this file with autoconf 2.0 or later to make a configure script.
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define(PYTHON_VERSION, 2.5)
+m4_define(PYTHON_VERSION, 2.6)
 
 AC_REVISION($Revision$)
 AC_PREREQ(2.59)
