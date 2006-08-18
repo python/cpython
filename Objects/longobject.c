@@ -35,7 +35,7 @@ static PyLongObject *long_normalize(PyLongObject *);
 static PyLongObject *mul1(PyLongObject *, wdigit);
 static PyLongObject *muladd1(PyLongObject *, wdigit, wdigit);
 static PyLongObject *divrem1(PyLongObject *, digit, digit *);
-static PyObject *long_format(PyObject *aa, int base, int addL);
+static PyObject *long_format(PyObject *aa, int base);
 
 #define SIGCHECK(PyTryBlock) \
 	if (--_Py_Ticker < 0) { \
@@ -1198,7 +1198,7 @@ divrem1(PyLongObject *a, digit n, digit *prem)
    If base is 8 or 16, add the proper prefix '0' or '0x'. */
 
 static PyObject *
-long_format(PyObject *aa, int base, int addL)
+long_format(PyObject *aa, int base)
 {
 	register PyLongObject *a = (PyLongObject *)aa;
 	PyStringObject *str;
@@ -1222,14 +1222,12 @@ long_format(PyObject *aa, int base, int addL)
 		++bits;
 		i >>= 1;
 	}
-	i = 5 + (addL ? 1 : 0) + (size_a*SHIFT + bits-1) / bits;
+	i = 5 + (size_a*SHIFT + bits-1) / bits;
 	str = (PyStringObject *) PyString_FromStringAndSize((char *)0, i);
 	if (str == NULL)
 		return NULL;
 	p = PyString_AS_STRING(str) + i;
 	*p = '\0';
-        if (addL)
-                *--p = 'L';
 	if (a->ob_size < 0)
 		sign = '-';
 
@@ -1890,13 +1888,7 @@ long_dealloc(PyObject *v)
 static PyObject *
 long_repr(PyObject *v)
 {
-	return long_format(v, 10, 1);
-}
-
-static PyObject *
-long_str(PyObject *v)
-{
-	return long_format(v, 10, 0);
+	return long_format(v, 10);
 }
 
 static int
@@ -3255,13 +3247,13 @@ long_float(PyObject *v)
 static PyObject *
 long_oct(PyObject *v)
 {
-	return long_format(v, 8, 1);
+	return long_format(v, 8);
 }
 
 static PyObject *
 long_hex(PyObject *v)
 {
-	return long_format(v, 16, 1);
+	return long_format(v, 16);
 }
 
 static PyObject *
@@ -3407,7 +3399,7 @@ PyTypeObject PyLong_Type = {
 	0,					/* tp_as_mapping */
 	(hashfunc)long_hash,			/* tp_hash */
         0,              			/* tp_call */
-        long_str,				/* tp_str */
+        0,					/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
