@@ -979,7 +979,7 @@ The following three fields only exist if the
   More information about Python's garbage collection
   scheme can be found in section \ref{supporting-cycle-detection}.
 
-  This field is inherited by subtypes together with \member{tp_clear}
+  This field is inherited by subtypes together with \member{tp_traverse}
   and the \constant{Py_TPFLAGS_HAVE_GC} flag bit: the flag bit,
   \member{tp_traverse}, and \member{tp_clear} are all inherited from
   the base type if they are all zero in the subtype \emph{and} the
