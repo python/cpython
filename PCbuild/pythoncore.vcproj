@@ -39,15 +39,15 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python25.dll"
+				OutputFile="./python26.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./python25.pdb"
+				ProgramDatabaseFile=".\./python26.pdb"
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python25.lib"
+				ImportLibrary=".\./python26.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -99,15 +99,15 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python25_d.dll"
+				OutputFile="./python26_d.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./python25_d.pdb"
+				ProgramDatabaseFile=".\./python26_d.pdb"
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python25_d.lib"
+				ImportLibrary=".\./python26_d.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -166,15 +166,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
 				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python25.dll"
+				OutputFile="./python26.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="FALSE"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./python25.pdb"
+				ProgramDatabaseFile=".\./python26.pdb"
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python25.lib"
+				ImportLibrary=".\./python26.lib"
 				TargetMachine="0"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -233,15 +233,15 @@
 				Name="VCLinkerTool"
 				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
 				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python25.dll"
+				OutputFile="./python26.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\./python25.pdb"
+				ProgramDatabaseFile=".\./python26.pdb"
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python25.lib"
+				ImportLibrary=".\./python26.lib"
 				TargetMachine="0"/>
 			<Tool
 				Name="VCMIDLTool"/>
