@@ -31,6 +31,10 @@ Tests
 Documentation
 -------------
 
+- Bug #1541682: Fix example in the "Refcount details" API docs.
+  Additionally, remove a faulty example showing PySequence_SetItem applied
+  to a newly created list object and add notes that this isn't a good idea.
+
 
 Build
 -----
