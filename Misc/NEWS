@@ -9,6 +9,12 @@ What's New in Python 2.5 ?
 
 *Release date: XX-SEP-2006*
 
+Library
+-------
+
+- Bug #1541863: uuid.uuid1 failed to generate unique identifiers
+  on systems with low clock resolution.
+
 Build
 -----
 
