@@ -255,6 +255,8 @@ class _DBWithCursor(_iter_mixin):
         self._checkOpen()
         return _DeadlockWrap(self.db.has_key, key)
 
+    __contains__ = has_key
+
     def set_location(self, key):
         self._checkOpen()
         self._checkCursor()

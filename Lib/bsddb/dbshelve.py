@@ -35,7 +35,7 @@ try:
 except ImportError:
     # DictMixin is new in Python 2.3
     class DictMixin: pass
-import db
+from . import db
 
 #------------------------------------------------------------------------
 
@@ -195,6 +195,10 @@ class DBShelf(DictMixin):
 
     def join(self, cursorList, flags=0):
         raise NotImplementedError
+
+
+    def __contains__(self, key):
+        return self.has_key(key)
 
 
     #----------------------------------------------

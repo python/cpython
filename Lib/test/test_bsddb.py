@@ -135,11 +135,6 @@ class TestBSDDB(unittest.TestCase):
             self.assert_(k in self.f)
         self.assert_('not here' not in self.f)
 
-    def test_has_key(self):
-        for k in self.d:
-            self.assert_(self.f.has_key(k))
-        self.assert_(not self.f.has_key('not here'))
-
     def test_clear(self):
         self.f.clear()
         self.assertEqual(len(self.f), 0)

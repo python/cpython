@@ -140,7 +140,7 @@ class Stats:
             self.total_calls += nc
             self.prim_calls  += cc
             self.total_tt    += tt
-            if callers.has_key(("jprofile", 0, "profiler")):
+            if ("jprofile", 0, "profiler") in callers:
                 self.top_level[func] = None
             if len(func_std_string(func)) > self.max_name_len:
                 self.max_name_len = len(func_std_string(func))

@@ -472,7 +472,7 @@ def f():
 f()
 g = {}
 exec 'z = 1' in g
-if g.has_key('__builtins__'): del g['__builtins__']
+if '__builtins__' in g: del g['__builtins__']
 if g != {'z': 1}: raise TestFailed, 'exec \'z = 1\' in g'
 g = {}
 l = {}
@@ -480,8 +480,8 @@ l = {}
 import warnings
 warnings.filterwarnings("ignore", "global statement", module="<string>")
 exec 'global a; a = 1; b = 2' in g, l
-if g.has_key('__builtins__'): del g['__builtins__']
-if l.has_key('__builtins__'): del l['__builtins__']
+if '__builtins__' in g: del g['__builtins__']
+if '__builtins__' in l: del l['__builtins__']
 if (g, l) != ({'a':1}, {'b':2}): raise TestFailed, 'exec ... in g (%s), l (%s)' %(g,l)
 
 

@@ -1287,19 +1287,19 @@ def decode_long(data):
     r"""Decode a long from a two's complement little-endian binary string.
 
     >>> decode_long('')
-    0L
+    0
     >>> decode_long("\xff\x00")
-    255L
+    255
     >>> decode_long("\xff\x7f")
-    32767L
+    32767
     >>> decode_long("\x00\xff")
-    -256L
+    -256
     >>> decode_long("\x00\x80")
-    -32768L
+    -32768
     >>> decode_long("\x80")
-    -128L
+    -128
     >>> decode_long("\x7f")
-    127L
+    127
     """
 
     nbytes = len(data)

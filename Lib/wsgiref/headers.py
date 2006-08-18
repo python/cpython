@@ -80,11 +80,9 @@ class Headers:
 
 
 
-    def has_key(self, name):
+    def __contains__(self, name):
         """Return true if the message contains the header."""
         return self.get(name) is not None
-
-    __contains__ = has_key
 
 
     def get_all(self, name):

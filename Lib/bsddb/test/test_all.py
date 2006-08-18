@@ -41,8 +41,12 @@ class PrintInfoFakeTest(unittest.TestCase):
 # This little hack is for when this module is run as main and all the
 # other modules import it so they will still be able to get the right
 # verbose setting.  It's confusing but it works.
-import test_all
-test_all.verbose = verbose
+try:
+    import test_all
+except ImportError:
+    pass
+else:
+    test_all.verbose = verbose
 
 
 def suite():

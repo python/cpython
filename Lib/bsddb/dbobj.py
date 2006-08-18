@@ -21,7 +21,7 @@
 # added to _bsddb.c.
 #
 
-import db
+from . import db
 
 try:
     from UserDict import DictMixin
@@ -161,6 +161,8 @@ class DB(DictMixin):
         return self._cobj.key_range(*args, **kwargs)
     def has_key(self, *args, **kwargs):
         return self._cobj.has_key(*args, **kwargs)
+    def __contains__(self, key):
+        return self._cobj.has_key(key)
     def items(self, *args, **kwargs):
         return self._cobj.items(*args, **kwargs)
     def keys(self, *args, **kwargs):

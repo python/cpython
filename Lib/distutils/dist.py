@@ -239,7 +239,7 @@ Common commands: (see '--help-commands' for more)
                     for (opt, val) in cmd_options.items():
                         opt_dict[opt] = ("setup script", val)
 
-            if attrs.has_key('licence'):
+            if 'licence' in attrs:
                 attrs['license'] = attrs['licence']
                 del attrs['licence']
                 msg = "'licence' distribution option is deprecated; use 'license'"
@@ -343,7 +343,7 @@ Common commands: (see '--help-commands' for more)
             user_filename = "pydistutils.cfg"
 
         # And look for the user config file
-        if os.environ.has_key('HOME'):
+        if 'HOME' in os.environ:
             user_file = os.path.join(os.environ.get('HOME'), user_filename)
             if os.path.isfile(user_file):
                 files.append(user_file)
@@ -388,7 +388,7 @@ Common commands: (see '--help-commands' for more)
         # If there was a "global" section in the config file, use it
         # to set Distribution options.
 
-        if self.command_options.has_key('global'):
+        if 'global' in self.command_options:
             for (opt, (src, val)) in self.command_options['global'].items():
                 alias = self.negative_opt.get(opt)
                 try:
@@ -907,7 +907,7 @@ Common commands: (see '--help-commands' for more)
 
             try:
                 is_string = type(value) is StringType
-                if neg_opt.has_key(option) and is_string:
+                if option in neg_opt and is_string:
                     setattr(command_obj, neg_opt[option], not strtobool(value))
                 elif option in bool_opts and is_string:
                     setattr(command_obj, option, strtobool(value))

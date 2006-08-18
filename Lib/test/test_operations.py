@@ -25,7 +25,6 @@ d[x1] = 1
 for stmt in ['d[x2] = 2',
              'z = d[x2]',
              'x2 in d',
-             'd.has_key(x2)',
              'd.get(x2)',
              'd.setdefault(x2, 42)',
              'd.pop(x2)',

@@ -608,14 +608,6 @@ class FieldStorage:
             if item.name not in keys: keys.append(item.name)
         return keys
 
-    def has_key(self, key):
-        """Dictionary style has_key() method."""
-        if self.list is None:
-            raise TypeError, "not indexable"
-        for item in self.list:
-            if item.name == key: return True
-        return False
-
     def __contains__(self, key):
         """Dictionary style __contains__ method."""
         if self.list is None:

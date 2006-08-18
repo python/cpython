@@ -120,12 +120,9 @@ class Mailbox:
         """Return a list of (key, message) tuples. Memory intensive."""
         return list(self.iteritems())
 
-    def has_key(self, key):
+    def __contains__(self, key):
         """Return True if the keyed message exists, False otherwise."""
         raise NotImplementedError('Method must be implemented by subclass')
-
-    def __contains__(self, key):
-        return self.has_key(key)
 
     def __len__(self):
         """Return a count of messages in the mailbox."""
@@ -330,7 +327,7 @@ class Maildir(Mailbox):
                 continue
             yield key
 
-    def has_key(self, key):
+    def __contains__(self, key):
         """Return True if the keyed message exists, False otherwise."""
         self._refresh()
         return key in self._toc
@@ -515,7 +512,7 @@ class _singlefileMailbox(Mailbox):
         for key in self._toc.keys():
             yield key
 
-    def has_key(self, key):
+    def __contains__(self, key):
         """Return True if the keyed message exists, False otherwise."""
         self._lookup()
         return key in self._toc
@@ -902,7 +899,7 @@ class MH(Mailbox):
         return iter(sorted(int(entry) for entry in os.listdir(self._path)
                                       if entry.isdigit()))
 
-    def has_key(self, key):
+    def __contains__(self, key):
         """Return True if the keyed message exists, False otherwise."""
         return os.path.exists(os.path.join(self._path, str(key)))
 

@@ -1034,7 +1034,6 @@ _expectations = {
     'darwin':
         """
         test_al
-        test_bsddb3
         test_cd
         test_cl
         test_gdbm

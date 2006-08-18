@@ -241,16 +241,16 @@ dbm_keys(register dbmobject *dp, PyObject *unused)
     return v;
 }
 
-PyDoc_STRVAR(dbm_has_key__doc__,
-"has_key(key) -> boolean\n\
+PyDoc_STRVAR(dbm_contains__doc__,
+"__contains__(key) -> bool\n\
 Find out whether or not the database contains a given key.");
 
 static PyObject *
-dbm_has_key(register dbmobject *dp, PyObject *args)
+dbm_contains(register dbmobject *dp, PyObject *args)
 {
     datum key;
 
-    if (!PyArg_ParseTuple(args, "s#:has_key", &key.dptr, &key.dsize))
+    if (!PyArg_ParseTuple(args, "s#:contains", &key.dptr, &key.dsize))
         return NULL;
     check_dbmobject_open(dp);
     return PyInt_FromLong((long) gdbm_exists(dp->di_dbm, key));
@@ -355,7 +355,7 @@ dbm_sync(register dbmobject *dp, PyObject *unused)
 static PyMethodDef dbm_methods[] = {
     {"close",	  (PyCFunction)dbm_close,   METH_NOARGS, dbm_close__doc__},
     {"keys",	  (PyCFunction)dbm_keys,    METH_NOARGS, dbm_keys__doc__},
-    {"has_key",   (PyCFunction)dbm_has_key, METH_VARARGS, dbm_has_key__doc__},
+    {"__contains__",(PyCFunction)dbm_contains,METH_VARARGS, dbm_contains__doc__},
     {"firstkey",  (PyCFunction)dbm_firstkey,METH_NOARGS, dbm_firstkey__doc__},
     {"nextkey",	  (PyCFunction)dbm_nextkey, METH_VARARGS, dbm_nextkey__doc__},
     {"reorganize",(PyCFunction)dbm_reorganize,METH_NOARGS, dbm_reorganize__doc__},

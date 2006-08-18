@@ -313,7 +313,7 @@ class SimpleXMLRPCDispatcher:
         Returns a string containing documentation for the specified method."""
 
         method = None
-        if self.funcs.has_key(method_name):
+        if method_name in self.funcs:
             method = self.funcs[method_name]
         elif self.instance is not None:
             # Instance can implement _methodHelp to return help for a method

@@ -461,7 +461,7 @@ bsddb_keys(bsddbobject *dp)
 }
 
 static PyObject *
-bsddb_has_key(bsddbobject *dp, PyObject *args)
+bsddb_contains(bsddbobject *dp, PyObject *args)
 {
 	DBT krec, drec;
 	int status;
@@ -640,7 +640,7 @@ bsddb_sync(bsddbobject *dp)
 static PyMethodDef bsddb_methods[] = {
 	{"close",		(PyCFunction)bsddb_close, METH_NOARGS},
 	{"keys",		(PyCFunction)bsddb_keys, METH_NOARGS},
-	{"has_key",		(PyCFunction)bsddb_has_key, METH_VARARGS},
+	{"__contains__",	(PyCFunction)bsddb_contains, METH_VARARGS},
 	{"set_location",	(PyCFunction)bsddb_set_location, METH_VARARGS},
 	{"next",		(PyCFunction)bsddb_next, METH_NOARGS},
 	{"previous",	(PyCFunction)bsddb_previous, METH_NOARGS},

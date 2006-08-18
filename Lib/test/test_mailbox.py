@@ -229,16 +229,9 @@ class TestMailbox(TestBase):
                 count += 1
             self.assert_(len(values) == count)
 
-    def test_has_key(self):
-        # Check existence of keys using has_key()
-        self._test_has_key_or_contains(self._box.has_key)
-
     def test_contains(self):
         # Check existence of keys using __contains__()
-        self._test_has_key_or_contains(self._box.__contains__)
-
-    def _test_has_key_or_contains(self, method):
-        # (Used by test_has_key() and test_contains().)
+        method = self._box.__contains__
         self.assert_(not method('foo'))
         key0 = self._box.add(self._template % 0)
         self.assert_(method(key0))
@@ -442,7 +435,7 @@ class TestMailboxSuperclass(TestBase):
         self.assertRaises(NotImplementedError, lambda: box.get_message(''))
         self.assertRaises(NotImplementedError, lambda: box.get_string(''))
         self.assertRaises(NotImplementedError, lambda: box.get_file(''))
-        self.assertRaises(NotImplementedError, lambda: box.has_key(''))
+        self.assertRaises(NotImplementedError, lambda: '' in box)
         self.assertRaises(NotImplementedError, lambda: box.__contains__(''))
         self.assertRaises(NotImplementedError, lambda: box.__len__())
         self.assertRaises(NotImplementedError, lambda: box.clear())

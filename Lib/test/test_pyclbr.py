@@ -40,11 +40,11 @@ class PyclbrTest(TestCase):
 
 
     def assertHaskey(self, obj, key, ignore):
-        ''' succeed iff obj.has_key(key) or key in ignore. '''
+        ''' succeed iff key in obj or key in ignore. '''
         if key in ignore: return
-        if not obj.has_key(key):
+        if key not in obj:
             print >>sys.stderr, "***",key
-        self.failUnless(obj.has_key(key))
+        self.failUnless(key) in obj
 
     def assertEqualsOrIgnored(self, a, b, ignore):
         ''' succeed iff a == b or a in ignore or b in ignore '''

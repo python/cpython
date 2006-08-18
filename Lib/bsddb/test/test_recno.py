@@ -8,7 +8,7 @@ import tempfile
 from pprint import pprint
 import unittest
 
-from test_all import verbose
+from .test_all import verbose
 
 try:
     # For Pythons w/distutils pybsddb

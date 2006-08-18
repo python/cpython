@@ -25,7 +25,7 @@ class MessageTestCase(unittest.TestCase):
     def test_setdefault(self):
         msg = self.create_message(
             'To: "last, first" <userid@foo.net>\n\ntest\n')
-        self.assert_(not msg.has_key("New-Header"))
+        self.assert_("New-Header" not in msg)
         self.assert_(msg.setdefault("New-Header", "New-Value") == "New-Value")
         self.assert_(msg.setdefault("New-Header", "Different-Value")
                      == "New-Value")

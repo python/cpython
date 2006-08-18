@@ -20,7 +20,7 @@ object):
                         # access returns a *copy* of the entry!
         del d[key]      # delete data stored at key (raises KeyError
                         # if no such key)
-        flag = d.has_key(key)   # true if the key exists; same as "key in d"
+        flag = key in d # true if the key exists
         list = d.keys() # a list of all existing keys (slow!)
 
         d.close()       # close it
@@ -94,14 +94,11 @@ class Shelf(UserDict.DictMixin):
     def __len__(self):
         return len(self.dict)
 
-    def has_key(self, key):
-        return self.dict.has_key(key)
-
     def __contains__(self, key):
-        return self.dict.has_key(key)
+        return key in self.dict
 
     def get(self, key, default=None):
-        if self.dict.has_key(key):
+        if key in self.dict:
             return self[key]
         return default
 

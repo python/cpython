@@ -602,7 +602,7 @@ class Option:
 
     def _set_attrs(self, attrs):
         for attr in self.ATTRS:
-            if attrs.has_key(attr):
+            if attr in attrs:
                 setattr(self, attr, attrs[attr])
                 del attrs[attr]
             else:
@@ -854,7 +854,7 @@ class Values:
         are silently ignored.
         """
         for attr in dir(self):
-            if dict.has_key(attr):
+            if attr in dict:
                 dval = dict[attr]
                 if dval is not None:
                     setattr(self, attr, dval)
@@ -974,10 +974,10 @@ class OptionContainer:
     def _check_conflict(self, option):
         conflict_opts = []
         for opt in option._short_opts:
-            if self._short_opt.has_key(opt):
+            if opt in self._short_opt:
                 conflict_opts.append((opt, self._short_opt[opt]))
         for opt in option._long_opts:
-            if self._long_opt.has_key(opt):
+            if opt in self._long_opt:
                 conflict_opts.append((opt, self._long_opt[opt]))
 
         if conflict_opts:
@@ -1023,7 +1023,7 @@ class OptionContainer:
         if option.dest is not None:     # option has a dest, we need a default
             if option.default is not NO_DEFAULT:
                 self.defaults[option.dest] = option.default
-            elif not self.defaults.has_key(option.dest):
+            elif option.dest not in self.defaults:
                 self.defaults[option.dest] = None
 
         return option
@@ -1039,8 +1039,8 @@ class OptionContainer:
                 self._long_opt.get(opt_str))
 
     def has_option(self, opt_str):
-        return (self._short_opt.has_key(opt_str) or
-                self._long_opt.has_key(opt_str))
+        return (opt_str in self._short_opt or
+                opt_str) in self._long_opt
 
     def remove_option(self, opt_str):
         option = self._short_opt.get(opt_str)
@@ -1658,7 +1658,7 @@ def _match_abbrev(s, wordmap):
     'words', raise BadOptionError.
     """
     # Is there an exact match?
-    if wordmap.has_key(s):
+    if s in wordmap:
         return s
     else:
         # Isolate all words with s as a prefix.

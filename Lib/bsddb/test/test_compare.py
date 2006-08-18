@@ -3,8 +3,9 @@ TestCases for python DB Btree key comparison function.
 """
 
 import sys, os, re
-import test_all
 from cStringIO import StringIO
+
+from . import test_all
 
 import unittest
 try:

@@ -10,7 +10,7 @@ try:
 except ImportError:
     from bsddb import db
 
-from test_all import verbose
+from .test_all import verbose
 
 
 class DBSequenceTest(unittest.TestCase):

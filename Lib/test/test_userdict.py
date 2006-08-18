@@ -94,13 +94,10 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         self.assertEqual(u2.items(), d2.items())
         self.assertEqual(u2.values(), d2.values())
 
-        # Test has_key and "in".
+        # Test "in".
         for i in u2.keys():
-            self.assert_(u2.has_key(i))
             self.assert_(i in u2)
-            self.assertEqual(u1.has_key(i), d1.has_key(i))
             self.assertEqual(i in u1, i in d1)
-            self.assertEqual(u0.has_key(i), d0.has_key(i))
             self.assertEqual(i in u0, i in d0)
 
         # Test update
@@ -132,7 +129,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         # Test setdefault
         t = UserDict.UserDict()
         self.assertEqual(t.setdefault("x", 42), 42)
-        self.assert_(t.has_key("x"))
+        self.assert_("x" in t)
         self.assertEqual(t.setdefault("x", 23), 42)
 
         # Test pop
@@ -269,9 +266,6 @@ class UserDictMixinTest(mapping_tests.TestMappingProtocol):
         self.assertEqual(s.keys(), [10, 30])
 
         ## Now, test the DictMixin methods one by one
-        # has_key
-        self.assert_(s.has_key(10))
-        self.assert_(not s.has_key(20))
 
         # __contains__
         self.assert_(10 in s)
