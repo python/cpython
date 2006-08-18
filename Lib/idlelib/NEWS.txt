@@ -1,3 +1,12 @@
+What's New in IDLE 2.6a1?
+=========================
+
+*Release date: XX-XXX-200X*
+
+- IDLE's version number takes a big jump to match the version number of
+  the Python release of which it's a part.
+
+
 What's New in IDLE 1.2c1?
 =========================
 
