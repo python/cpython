@@ -4,7 +4,7 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.5 ?
+What's New in Python 2.5?
 =============================================
 
 *Release date: XX-SEP-2006*
@@ -15,10 +15,20 @@ Library
 - Bug #1541863: uuid.uuid1 failed to generate unique identifiers
   on systems with low clock resolution.
 
+
+Documentation
+-------------
+
+- Bug #1541682: Fix example in the "Refcount details" API docs.
+  Additionally, remove a faulty example showing PySequence_SetItem applied
+  to a newly created list object and add notes that this isn't a good idea.
+
+
 Build
 -----
 
 - Fix OpenSSL debug build process.
+
 
 What's New in Python 2.5 release candidate 1?
 =============================================
