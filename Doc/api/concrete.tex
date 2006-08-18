@@ -1842,8 +1842,8 @@ format.
   failure.
   \note{If \var{length} is greater than zero, the returned list object's
         items are set to \code{NULL}.  Thus you cannot use abstract
-        API functions such as \cfunction{PySequence_SetItem()} on it
-        or expose it to Python code before setting all items to a
+        API functions such as \cfunction{PySequence_SetItem()} 
+        or expose the object to Python code before setting all items to a
         real object with \cfunction{PyList_SetItem()}.}
 \end{cfuncdesc}
 
