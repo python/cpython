@@ -196,7 +196,7 @@ class LongTest(unittest.TestCase):
     def slow_format(self, x, base):
         if (x, base) == (0, 8):
             # this is an oddball!
-            return "0L"
+            return "0"
         digits = []
         sign = 0
         if x < 0:
@@ -208,7 +208,7 @@ class LongTest(unittest.TestCase):
         digits = digits or [0]
         return '-'[:sign] + \
                {8: '0', 10: '', 16: '0x'}[base] + \
-               "".join(map(lambda i: "0123456789abcdef"[i], digits)) + "L"
+               "".join(map(lambda i: "0123456789abcdef"[i], digits))
 
     def check_format_1(self, x):
         for base, mapper in (8, oct), (10, repr), (16, hex):
@@ -221,7 +221,7 @@ class LongTest(unittest.TestCase):
         # str() has to be checked a little differently since there's no
         # trailing "L"
         got = str(x)
-        expected = self.slow_format(x, 10)[:-1]
+        expected = self.slow_format(x, 10)
         msg = Frm("%s returned %r but expected %r for %r",
             mapper.__name__, got, expected, x)
         self.assertEqual(got, expected, msg)
