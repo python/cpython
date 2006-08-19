@@ -132,9 +132,9 @@ class dircmp:
     def phase1(self): # Compute common names
         a = dict(izip(imap(os.path.normcase, self.left_list), self.left_list))
         b = dict(izip(imap(os.path.normcase, self.right_list), self.right_list))
-        self.common = map(a.__getitem__, ifilter(b.has_key, a))
-        self.left_only = map(a.__getitem__, ifilterfalse(b.has_key, a))
-        self.right_only = map(b.__getitem__, ifilterfalse(a.has_key, b))
+        self.common = map(a.__getitem__, ifilter(b.__contains__, a))
+        self.left_only = map(a.__getitem__, ifilterfalse(b.__contains__, a))
+        self.right_only = map(b.__getitem__, ifilterfalse(a.__contains__, b))
 
     def phase2(self): # Distinguish files, directories, funnies
         self.common_dirs = []

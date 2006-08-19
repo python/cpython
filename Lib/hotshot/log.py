@@ -31,7 +31,7 @@ class LogReader:
         self._reader = _hotshot.logreader(logfn)
         self._nextitem = self._reader.next
         self._info = self._reader.info
-        if self._info.has_key('current-directory'):
+        if 'current-directory' in self._info:
             self.cwd = self._info['current-directory']
         else:
             self.cwd = None
