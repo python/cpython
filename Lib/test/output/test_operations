@@ -9,8 +9,6 @@ z = d[x2]: caught the RuntimeError outside
 raising error
 x2 in d: caught the RuntimeError outside
 raising error
-d.has_key(x2): caught the RuntimeError outside
-raising error
 d.get(x2): caught the RuntimeError outside
 raising error
 d.setdefault(x2, 42): caught the RuntimeError outside
