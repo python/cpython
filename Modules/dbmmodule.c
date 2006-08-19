@@ -205,19 +205,41 @@ dbm_keys(register dbmobject *dp, PyObject *unused)
 	return v;
 }
 
-static PyObject *
-dbm_contains(register dbmobject *dp, PyObject *args)
+static int
+dbm_contains(PyObject *self, PyObject *arg)
 {
+	dbmobject *dp = (dbmobject *)self;
 	datum key, val;
-	int tmp_size;
-	
-	if (!PyArg_ParseTuple(args, "s#:__contains__", &key.dptr, &tmp_size))
-		return NULL;
-	key.dsize = tmp_size;
-        check_dbmobject_open(dp);
+
+	if ((dp)->di_dbm == NULL) {
+		PyErr_SetString(DbmError,
+				"DBM object has already been closed");
+                 return -1;
+	}
+	if (!PyString_Check(arg)) {
+		PyErr_Format(PyExc_TypeError,
+			     "dbm key must be string, not %.100s",
+			     arg->ob_type->tp_name);
+		return -1;
+	}
+	key.dptr = PyString_AS_STRING(arg);
+	key.dsize = PyString_GET_SIZE(arg);
 	val = dbm_fetch(dp->di_dbm, key);
-	return PyInt_FromLong(val.dptr != NULL);
+	return val.dptr != NULL;
 }
+
+static PySequenceMethods dbm_as_sequence = {
+	0,			/* sq_length */
+	0,			/* sq_concat */
+	0,			/* sq_repeat */
+	0,			/* sq_item */
+	0,			/* sq_slice */
+	0,			/* sq_ass_item */
+	0,			/* sq_ass_slice */
+	dbm_contains,		/* sq_contains */
+	0,			/* sq_inplace_concat */
+	0,			/* sq_inplace_repeat */
+};
 
 static PyObject *
 dbm_get(register dbmobject *dp, PyObject *args)
@@ -277,8 +299,6 @@ static PyMethodDef dbm_methods[] = {
 	 "close()\nClose the database."},
 	{"keys",	(PyCFunction)dbm_keys,		METH_NOARGS,
 	 "keys() -> list\nReturn a list of all keys in the database."},
-	{"__contains__",(PyCFunction)dbm_contains,	METH_VARARGS,
-	 "__contains__(key} -> boolean\True iff key is in the database."},
 	{"get",		(PyCFunction)dbm_get,		METH_VARARGS,
 	 "get(key[, default]) -> value\n"
 	 "Return the value for key if present, otherwise default."},
@@ -308,7 +328,7 @@ static PyTypeObject Dbmtype = {
 	0,			  /*tp_compare*/
 	0,			  /*tp_repr*/
 	0,			  /*tp_as_number*/
-	0,			  /*tp_as_sequence*/
+	&dbm_as_sequence,	  /*tp_as_sequence*/
 	&dbm_as_mapping,	  /*tp_as_mapping*/
 };
 
@@ -353,7 +373,8 @@ PyMODINIT_FUNC
 initdbm(void) {
 	PyObject *m, *d, *s;
 
-	Dbmtype.ob_type = &PyType_Type;
+	if (PyType_Ready(&Dbmtype) < 0)
+		return;
 	m = Py_InitModule("dbm", dbmmodule_methods);
 	if (m == NULL)
 		return;
