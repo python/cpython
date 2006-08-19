@@ -221,8 +221,8 @@ PySymtable_Build(mod_ty mod, const char *filename, PyFutureFeatures *future)
 		return st;
 	st->st_filename = filename;
 	st->st_future = future;
-	if (!symtable_enter_block(st, GET_IDENTIFIER(top), ModuleBlock, 
-			     (void *)mod, 0)) {
+	if (!GET_IDENTIFIER(top) ||
+	    !symtable_enter_block(st, top, ModuleBlock, (void *)mod, 0)) {
 		PySymtable_Free(st);
 		return NULL;
 	}
@@ -1123,12 +1123,13 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 		VISIT(st, expr, e->v.UnaryOp.operand);
 		break;
         case Lambda_kind: {
-		if (!symtable_add_def(st, GET_IDENTIFIER(lambda), DEF_LOCAL))
+		if (!GET_IDENTIFIER(lambda) ||
+		    !symtable_add_def(st, lambda, DEF_LOCAL))
 			return 0;
 		if (e->v.Lambda.args->defaults)
 			VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
 		/* XXX how to get line numbers for expressions */
-		if (!symtable_enter_block(st, GET_IDENTIFIER(lambda),
+		if (!symtable_enter_block(st, lambda,
                                           FunctionBlock, (void *)e, 0))
 			return 0;
 		VISIT_IN_BLOCK(st, arguments, e->v.Lambda.args, (void*)e);
@@ -1404,8 +1405,8 @@ symtable_visit_genexp(struct symtable *st, expr_ty e)
 	/* Outermost iterator is evaluated in current scope */
 	VISIT(st, expr, outermost->iter);
 	/* Create generator scope for the rest */
-	if (!symtable_enter_block(st, GET_IDENTIFIER(genexpr),
-				  FunctionBlock, (void *)e, 0)) {
+	if (!GET_IDENTIFIER(genexpr) ||
+	    !symtable_enter_block(st, genexpr, FunctionBlock, (void *)e, 0)) {
 		return 0;
 	}
 	st->st_cur->ste_generator = 1;
@@ -1419,7 +1420,5 @@ symtable_visit_genexp(struct symtable *st, expr_ty e)
 	VISIT_SEQ_TAIL_IN_BLOCK(st, comprehension,
 				e->v.GeneratorExp.generators, 1, (void*)e);
 	VISIT_IN_BLOCK(st, expr, e->v.GeneratorExp.elt, (void*)e);
-	if (!symtable_exit_block(st, (void *)e))
-		return 0;
-	return 1;
+	return symtable_exit_block(st, (void *)e);
 }
