@@ -245,16 +245,16 @@ class Message:
         # BAW: should we accept strings that can serve as arguments to the
         # Charset constructor?
         self._charset = charset
-        if not self.has_key('MIME-Version'):
+        if 'MIME-Version' not in self:
             self.add_header('MIME-Version', '1.0')
-        if not self.has_key('Content-Type'):
+        if 'Content-Type' not in self:
             self.add_header('Content-Type', 'text/plain',
                             charset=charset.get_output_charset())
         else:
             self.set_param('charset', charset.get_output_charset())
         if str(charset) <> charset.get_output_charset():
             self._payload = charset.body_encode(self._payload)
-        if not self.has_key('Content-Transfer-Encoding'):
+        if 'Content-Transfer-Encoding' not in self:
             cte = charset.get_body_encoding()
             try:
                 cte(self)
@@ -547,7 +547,7 @@ class Message:
         VALUE item in the 3-tuple) is always unquoted, unless unquote is set
         to False.
         """
-        if not self.has_key(header):
+        if header not in self:
             return failobj
         for k, v in self._get_params_preserve(failobj, header):
             if k.lower() == param.lower():
@@ -578,7 +578,7 @@ class Message:
         if not isinstance(value, tuple) and charset:
             value = (charset, language, value)
 
-        if not self.has_key(header) and header.lower() == 'content-type':
+        if header not in self and header.lower() == 'content-type':
             ctype = 'text/plain'
         else:
             ctype = self.get(header)
@@ -613,7 +613,7 @@ class Message:
         False.  Optional header specifies an alternative to the Content-Type
         header.
         """
-        if not self.has_key(header):
+        if header not in self:
             return
         new_ctype = ''
         for p, v in self.get_params(header=header, unquote=requote):
@@ -649,7 +649,7 @@ class Message:
         if header.lower() == 'content-type':
             del self['mime-version']
             self['MIME-Version'] = '1.0'
-        if not self.has_key(header):
+        if header not in self:
             self[header] = type
             return
         params = self.get_params(header=header, unquote=requote)

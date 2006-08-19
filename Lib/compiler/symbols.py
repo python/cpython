@@ -49,9 +49,9 @@ class Scope:
 
     def add_global(self, name):
         name = self.mangle(name)
-        if self.uses.has_key(name) or self.defs.has_key(name):
+        if name in self.uses or name in self.defs:
             pass # XXX warn about global following def/use
-        if self.params.has_key(name):
+        if name in self.params:
             raise SyntaxError, "%s in %s is global and parameter" % \
                   (name, self.name)
         self.globals[name] = 1
@@ -88,14 +88,14 @@ class Scope:
 
         The scope of a name could be LOCAL, GLOBAL, FREE, or CELL.
         """
-        if self.globals.has_key(name):
+        if name in self.globals:
             return SC_GLOBAL
-        if self.cells.has_key(name):
+        if name in self.cells:
             return SC_CELL
-        if self.defs.has_key(name):
+        if name in self.defs:
             return SC_LOCAL
-        if self.nested and (self.frees.has_key(name) or
-                            self.uses.has_key(name)):
+        if self.nested and (name in self.frees or
+                            name in self.uses):
             return SC_FREE
         if self.nested:
             return SC_UNKNOWN
@@ -108,8 +108,8 @@ class Scope:
         free = {}
         free.update(self.frees)
         for name in self.uses.keys():
-            if not (self.defs.has_key(name) or
-                    self.globals.has_key(name)):
+            if not (name in self.defs or
+                    name in self.globals):
                 free[name] = 1
         return free.keys()
 
@@ -134,7 +134,7 @@ class Scope:
         free.
         """
         self.globals[name] = 1
-        if self.frees.has_key(name):
+        if name in self.frees:
             del self.frees[name]
         for child in self.children:
             if child.check_name(name) == SC_FREE:
