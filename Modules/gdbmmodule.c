@@ -241,20 +241,40 @@ dbm_keys(register dbmobject *dp, PyObject *unused)
     return v;
 }
 
-PyDoc_STRVAR(dbm_contains__doc__,
-"__contains__(key) -> bool\n\
-Find out whether or not the database contains a given key.");
-
-static PyObject *
-dbm_contains(register dbmobject *dp, PyObject *args)
+static int
+dbm_contains(PyObject *self, PyObject *arg)
 {
+    dbmobject *dp = (dbmobject *)self;
     datum key;
 
-    if (!PyArg_ParseTuple(args, "s#:contains", &key.dptr, &key.dsize))
-        return NULL;
-    check_dbmobject_open(dp);
-    return PyInt_FromLong((long) gdbm_exists(dp->di_dbm, key));
+    if ((dp)->di_dbm == NULL) {
+	PyErr_SetString(DbmError,
+			"GDBM object has already been closed");
+	return -1;
+    }
+    if (!PyString_Check(arg)) {
+	PyErr_Format(PyExc_TypeError,
+		     "gdbm key must be string, not %.100s",
+		     arg->ob_type->tp_name);
+	return -1;
+    }
+    key.dptr = PyString_AS_STRING(arg);
+    key.dsize = PyString_GET_SIZE(arg);
+    return gdbm_exists(dp->di_dbm, key);
 }
+
+static PySequenceMethods dbm_as_sequence = {
+	0,			/* sq_length */
+	0,			/* sq_concat */
+	0,			/* sq_repeat */
+	0,			/* sq_item */
+	0,			/* sq_slice */
+	0,			/* sq_ass_item */
+	0,			/* sq_ass_slice */
+	dbm_contains,		/* sq_contains */
+	0,			/* sq_inplace_concat */
+	0,			/* sq_inplace_repeat */
+};
 
 PyDoc_STRVAR(dbm_firstkey__doc__,
 "firstkey() -> key\n\
@@ -355,7 +375,6 @@ dbm_sync(register dbmobject *dp, PyObject *unused)
 static PyMethodDef dbm_methods[] = {
     {"close",	  (PyCFunction)dbm_close,   METH_NOARGS, dbm_close__doc__},
     {"keys",	  (PyCFunction)dbm_keys,    METH_NOARGS, dbm_keys__doc__},
-    {"__contains__",(PyCFunction)dbm_contains,METH_VARARGS, dbm_contains__doc__},
     {"firstkey",  (PyCFunction)dbm_firstkey,METH_NOARGS, dbm_firstkey__doc__},
     {"nextkey",	  (PyCFunction)dbm_nextkey, METH_VARARGS, dbm_nextkey__doc__},
     {"reorganize",(PyCFunction)dbm_reorganize,METH_NOARGS, dbm_reorganize__doc__},
@@ -382,7 +401,7 @@ static PyTypeObject Dbmtype = {
     0,                                  /*tp_compare*/
     0,                                  /*tp_repr*/
     0,                                  /*tp_as_number*/
-    0,                                  /*tp_as_sequence*/
+    &dbm_as_sequence,                   /*tp_as_sequence*/
     &dbm_as_mapping,                    /*tp_as_mapping*/
     0,                                  /*tp_hash*/
     0,                                  /*tp_call*/
@@ -498,7 +517,8 @@ PyMODINIT_FUNC
 initgdbm(void) {
     PyObject *m, *d, *s;
 
-    Dbmtype.ob_type = &PyType_Type;
+    if (PyType_Ready(&Dbmtype) < 0)
+	    return;
     m = Py_InitModule4("gdbm", dbmmodule_methods,
                        gdbmmodule__doc__, (PyObject *)NULL,
                        PYTHON_API_VERSION);
