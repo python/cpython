@@ -243,7 +243,7 @@ class Node(xml.dom.Node):
         except AttributeError:
             d = {}
             self._user_data = d
-        if d.has_key(key):
+        if key in d:
             old = d[key][0]
         if data is None:
             # ignore handlers passed for None
@@ -494,11 +494,11 @@ class NamedNodeMap(object):
             L.append(((node.namespaceURI, node.localName), node.value))
         return L
 
-    def has_key(self, key):
+    def __contains__(self, key):
         if isinstance(key, StringTypes):
-            return self._attrs.has_key(key)
+            return key in self._attrs
         else:
-            return self._attrsNS.has_key(key)
+            return key in self._attrsNS
 
     def keys(self):
         return self._attrs.keys()
@@ -560,7 +560,7 @@ class NamedNodeMap(object):
             _clear_id_cache(self._ownerElement)
             del self._attrs[n.nodeName]
             del self._attrsNS[(n.namespaceURI, n.localName)]
-            if n.__dict__.has_key('ownerElement'):
+            if 'ownerElement' in n.__dict__:
                 n.__dict__['ownerElement'] = None
             return n
         else:
@@ -572,7 +572,7 @@ class NamedNodeMap(object):
             _clear_id_cache(self._ownerElement)
             del self._attrsNS[(n.namespaceURI, n.localName)]
             del self._attrs[n.nodeName]
-            if n.__dict__.has_key('ownerElement'):
+            if 'ownerElement' in n.__dict__:
                 n.__dict__['ownerElement'] = None
             return n
         else:
@@ -779,10 +779,10 @@ class Element(Node):
     removeAttributeNodeNS = removeAttributeNode
 
     def hasAttribute(self, name):
-        return self._attrs.has_key(name)
+        return name in self._attrs
 
     def hasAttributeNS(self, namespaceURI, localName):
-        return self._attrsNS.has_key((namespaceURI, localName))
+        return (namespaceURI, localName) in self._attrsNS
 
     def getElementsByTagName(self, name):
         return _get_elements_by_tagName_helper(self, name, NodeList())
@@ -1660,7 +1660,7 @@ class Document(Node, DocumentLS):
         return n
 
     def getElementById(self, id):
-        if self._id_cache.has_key(id):
+        if id in self._id_cache:
             return self._id_cache[id]
         if not (self._elem_info or self._magic_id_count):
             return None
