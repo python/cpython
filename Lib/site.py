@@ -385,6 +385,13 @@ def execsitecustomize():
         import sitecustomize
     except ImportError:
         pass
+    except Exception, err:
+        if os.environ.get("PYTHONVERBOSE"):
+            raise
+        sys.stderr.write(
+            "Error in sitecustomize; set PYTHONVERBOSE for traceback:\n"
+            "%s: %s\n" %
+            (err.__class__.__name__, err))
 
 
 def main():
