@@ -208,12 +208,12 @@ MakeFields(PyObject *type, CFieldObject *descr,
 			continue;
 		}
  		new_descr = (CFieldObject *)PyObject_CallObject((PyObject *)&CField_Type, NULL);
-		assert(new_descr->ob_type == &CField_Type);
 		if (new_descr == NULL) {
 			Py_DECREF(fdescr);
 			Py_DECREF(fieldlist);
 			return -1;
 		}
+		assert(new_descr->ob_type == &CField_Type);
  		new_descr->size = fdescr->size;
  		new_descr->offset = fdescr->offset + offset;
  		new_descr->index = fdescr->index + index;
