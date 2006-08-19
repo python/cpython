@@ -30,6 +30,13 @@ Build
 - Fix OpenSSL debug build process.
 
 
+C API
+-----
+
+- Bug #1542693: remove semi-colon at end of PyImport_ImportModuleEx macro
+  so it can be used as an expression.
+
+
 What's New in Python 2.5 release candidate 1?
 =============================================
 
@@ -191,10 +198,6 @@ C API
   ``PyThreadState_SetAsyncExc()``.  A test case was added, and
   the documentation was changed to state that the return value
   is always 1 (normal) or 0 (if the specified thread wasn't found).
-
-
-Mac
----
 
 
 What's New in Python 2.5 beta 3?
