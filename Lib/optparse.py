@@ -1040,7 +1040,7 @@ class OptionContainer:
 
     def has_option(self, opt_str):
         return (opt_str in self._short_opt or
-                opt_str) in self._long_opt
+                opt_str in self._long_opt)
 
     def remove_option(self, opt_str):
         option = self._short_opt.get(opt_str)
