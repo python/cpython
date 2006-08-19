@@ -22,7 +22,7 @@ PyAPI_FUNC(PyObject *) PyImport_ImportModuleLevel(char *name,
 PyAPI_FUNC(PyObject *) PyImport_ImportModuleEx(
 	char *name, PyObject *globals, PyObject *locals, PyObject *fromlist);
 #define PyImport_ImportModuleEx(n, g, l, f) \
-	PyImport_ImportModuleLevel(n, g, l, f, -1);
+	PyImport_ImportModuleLevel(n, g, l, f, -1)
 
 PyAPI_FUNC(PyObject *) PyImport_Import(PyObject *name);
 PyAPI_FUNC(PyObject *) PyImport_ReloadModule(PyObject *m);
