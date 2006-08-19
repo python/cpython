@@ -265,7 +265,7 @@ def SetPointerType(pointer, cls):
     if _pointer_type_cache.get(cls, None) is not None:
         raise RuntimeError, \
               "This type already exists in the cache"
-    if not _pointer_type_cache.has_key(id(pointer)):
+    if id(pointer) not in _pointer_type_cache:
         raise RuntimeError, \
               "What's this???"
     pointer.set_type(cls)
