@@ -321,7 +321,7 @@ class TixWidget(Tkinter.Widget):
     # We can even do w.ok.invoke() because w.ok is subclassed from the
     # Button class if you go through the proper constructors
     def __getattr__(self, name):
-        if self.subwidget_list.has_key(name):
+        if name in self.subwidget_list:
             return self.subwidget_list[name]
         raise AttributeError, name
 
@@ -446,9 +446,9 @@ class TixSubWidget(TixWidget):
         # also destroys the parent NoteBook thus leading to an exception
         # in Tkinter when it finally calls Tcl to destroy the NoteBook
         for c in self.children.values(): c.destroy()
-        if self.master.children.has_key(self._name):
+        if self._name in self.master.children:
             del self.master.children[self._name]
-        if self.master.subwidget_list.has_key(self._name):
+        if self._name in self.master.subwidget_list:
             del self.master.subwidget_list[self._name]
         if self.destroy_physically:
             # This is bypassed only for a few widgets
@@ -470,8 +470,8 @@ class DisplayStyle:
 
     def __init__(self, itemtype, cnf={}, **kw):
         master = _default_root              # global from Tkinter
-        if not master and cnf.has_key('refwindow'): master=cnf['refwindow']
-        elif not master and kw.has_key('refwindow'):  master= kw['refwindow']
+        if not master and 'refwindow' in cnf: master=cnf['refwindow']
+        elif not master and 'refwindow' in kw:  master= kw['refwindow']
         elif not master: raise RuntimeError, "Too early to create display style: no root window"
         self.tk = master.tk
         self.stylename = self.tk.call('tixDisplayStyle', itemtype,
@@ -553,7 +553,7 @@ class ButtonBox(TixWidget):
         return btn
 
     def invoke(self, name):
-        if self.subwidget_list.has_key(name):
+        if name in self.subwidget_list:
             self.tk.call(self._w, 'invoke', name)
 
 class ComboBox(TixWidget):
@@ -1413,7 +1413,7 @@ class StdButtonBox(TixWidget):
         self.subwidget_list['help'] = _dummyButton(self, 'help')
 
     def invoke(self, name):
-        if self.subwidget_list.has_key(name):
+        if name in self.subwidget_list:
             self.tk.call(self._w, 'invoke', name)
 
 class TList(TixWidget):

@@ -550,7 +550,7 @@ class Misc:
 
         A widget specified for the optional displayof keyword
         argument specifies the target display."""
-        if not kw.has_key('displayof'): kw['displayof'] = self._w
+        if 'displayof' not in kw: kw['displayof'] = self._w
         self.tk.call(('clipboard', 'clear') + self._options(kw))
     def clipboard_append(self, string, **kw):
         """Append STRING to the Tk clipboard.
@@ -558,7 +558,7 @@ class Misc:
         A widget specified at the optional displayof keyword
         argument specifies the target display. The clipboard
         can be retrieved with selection_get."""
-        if not kw.has_key('displayof'): kw['displayof'] = self._w
+        if 'displayof' not in kw: kw['displayof'] = self._w
         self.tk.call(('clipboard', 'append') + self._options(kw)
               + ('--', string))
     # XXX grab current w/o window argument
@@ -619,7 +619,7 @@ class Misc:
         self.tk.call('option', 'readfile', fileName, priority)
     def selection_clear(self, **kw):
         """Clear the current X selection."""
-        if not kw.has_key('displayof'): kw['displayof'] = self._w
+        if 'displayof' not in kw: kw['displayof'] = self._w
         self.tk.call(('selection', 'clear') + self._options(kw))
     def selection_get(self, **kw):
         """Return the contents of the current X selection.
@@ -628,7 +628,7 @@ class Misc:
         the selection and defaults to PRIMARY.  A keyword
         parameter displayof specifies a widget on the display
         to use."""
-        if not kw.has_key('displayof'): kw['displayof'] = self._w
+        if 'displayof' not in kw: kw['displayof'] = self._w
         return self.tk.call(('selection', 'get') + self._options(kw))
     def selection_handle(self, command, **kw):
         """Specify a function COMMAND to call if the X
@@ -659,7 +659,7 @@ class Misc:
         be provided:
         selection - name of the selection (default PRIMARY),
         type - type of the selection (e.g. STRING, FILE_NAME)."""
-        if not kw.has_key('displayof'): kw['displayof'] = self._w
+        if 'displayof' not in kw: kw['displayof'] = self._w
         name = self.tk.call(('selection', 'own') + self._options(kw))
         if not name: return None
         return self._nametowidget(name)
@@ -1692,7 +1692,7 @@ class Tk(Misc, Wm):
         the Tcl Interpreter and calls execfile on BASENAME.py and CLASSNAME.py if
         such a file exists in the home directory."""
         import os
-        if os.environ.has_key('HOME'): home = os.environ['HOME']
+        if 'HOME' in os.environ: home = os.environ['HOME']
         else: home = os.curdir
         class_tcl = os.path.join(home, '.%s.tcl' % className)
         class_py = os.path.join(home, '.%s.py' % className)
@@ -1808,7 +1808,7 @@ class Place:
                                                into account
             """
         for k in ['in_']:
-            if kw.has_key(k):
+            if k in kw:
                 kw[k[:-1]] = kw[k]
                 del kw[k]
         self.tk.call(
@@ -1900,7 +1900,7 @@ class BaseWidget(Misc):
         self.master = master
         self.tk = master.tk
         name = None
-        if cnf.has_key('name'):
+        if 'name' in cnf:
             name = cnf['name']
             del cnf['name']
         if not name:
@@ -1911,7 +1911,7 @@ class BaseWidget(Misc):
         else:
             self._w = master._w + '.' + name
         self.children = {}
-        if self.master.children.has_key(self._name):
+        if self._name in self.master.children:
             self.master.children[self._name].destroy()
         self.master.children[self._name] = self
     def __init__(self, master, widgetName, cnf={}, kw={}, extra=()):
@@ -1934,7 +1934,7 @@ class BaseWidget(Misc):
         """Destroy this and all descendants widgets."""
         for c in self.children.values(): c.destroy()
         self.tk.call('destroy', self._w)
-        if self.master.children.has_key(self._name):
+        if self._name in self.master.children:
             del self.master.children[self._name]
         Misc.destroy(self)
     def _do(self, name, args=()):
@@ -1962,7 +1962,7 @@ class Toplevel(BaseWidget, Wm):
         extra = ()
         for wmkey in ['screen', 'class_', 'class', 'visual',
                   'colormap']:
-            if cnf.has_key(wmkey):
+            if wmkey in cnf:
                 val = cnf[wmkey]
                 # TBD: a hack needed because some keys
                 # are not valid as keyword arguments
@@ -2433,10 +2433,10 @@ class Frame(Widget):
         highlightcolor, highlightthickness, relief, takefocus, visual, width."""
         cnf = _cnfmerge((cnf, kw))
         extra = ()
-        if cnf.has_key('class_'):
+        if 'class_' in cnf:
             extra = ('-class', cnf['class_'])
             del cnf['class_']
-        elif cnf.has_key('class'):
+        elif 'class' in cnf:
             extra = ('-class', cnf['class'])
             del cnf['class']
         Widget.__init__(self, master, 'frame', cnf, {}, extra)
@@ -3179,7 +3179,7 @@ class OptionMenu(Menubutton):
         self.menuname = menu._w
         # 'command' is the only supported keyword
         callback = kwargs.get('command')
-        if kwargs.has_key('command'):
+        if 'command' in kwargs:
             del kwargs['command']
         if kwargs:
             raise TclError, 'unknown option -'+kwargs.keys()[0]

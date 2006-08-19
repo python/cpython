@@ -274,7 +274,7 @@ def askfloat(title, prompt, **kw):
 
 class _QueryString(_QueryDialog):
     def __init__(self, *args, **kw):
-        if kw.has_key("show"):
+        if "show" in kw:
             self.__show = kw["show"]
             del kw["show"]
         else:
