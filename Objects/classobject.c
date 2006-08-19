@@ -91,8 +91,22 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
 		}
 		Py_INCREF(bases);
 	}
+
+	if (getattrstr == NULL) {
+		getattrstr = PyString_InternFromString("__getattr__");
+		if (getattrstr == NULL)
+			goto alloc_error;
+		setattrstr = PyString_InternFromString("__setattr__");
+		if (setattrstr == NULL)
+			goto alloc_error;
+		delattrstr = PyString_InternFromString("__delattr__");
+		if (delattrstr == NULL)
+			goto alloc_error;
+	}
+
 	op = PyObject_GC_New(PyClassObject, &PyClass_Type);
 	if (op == NULL) {
+alloc_error:
 		Py_DECREF(bases);
 		return NULL;
 	}
@@ -101,17 +115,7 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
 	op->cl_dict = dict;
 	Py_XINCREF(name);
 	op->cl_name = name;
-	if (getattrstr == NULL) {
-		getattrstr = PyString_InternFromString("__getattr__");
-		if (getattrstr == NULL)
-			return NULL;
-		setattrstr = PyString_InternFromString("__setattr__");
-		if (setattrstr == NULL)
-			return NULL;
-		delattrstr = PyString_InternFromString("__delattr__");
-		if (delattrstr == NULL)
-			return NULL;
-	}
+
 	op->cl_getattr = class_lookup(op, getattrstr, &dummy);
 	op->cl_setattr = class_lookup(op, setattrstr, &dummy);
 	op->cl_delattr = class_lookup(op, delattrstr, &dummy);
