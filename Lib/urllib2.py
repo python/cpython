@@ -263,11 +263,11 @@ class Request:
 
     def add_header(self, key, val):
         # useful for something like authentication
-        self.headers[key.title()] = val
+        self.headers[key.capitalize()] = val
 
     def add_unredirected_header(self, key, val):
         # will not be added to a redirected request
-        self.unredirected_hdrs[key.title()] = val
+        self.unredirected_hdrs[key.capitalize()] = val
 
     def has_header(self, header_name):
         return (header_name in self.headers or
@@ -286,7 +286,7 @@ class Request:
 class OpenerDirector:
     def __init__(self):
         client_version = "Python-urllib/%s" % __version__
-        self.addheaders = [('User-Agent', client_version)]
+        self.addheaders = [('User-agent', client_version)]
         # manage the individual handlers
         self.handlers = []
         self.handle_open = {}
@@ -675,7 +675,7 @@ class ProxyHandler(BaseHandler):
         if user and password:
             user_pass = '%s:%s' % (unquote(user), unquote(password))
             creds = base64.encodestring(user_pass).strip()
-            req.add_header('Proxy-Authorization', 'Basic ' + creds)
+            req.add_header('Proxy-authorization', 'Basic ' + creds)
         hostport = unquote(hostport)
         req.set_proxy(hostport, proxy_type)
         if orig_type == proxy_type:
@@ -819,7 +819,7 @@ class HTTPBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
 class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
-    auth_header = 'Proxy-Authorization'
+    auth_header = 'Proxy-authorization'
 
     def http_error_407(self, req, fp, code, msg, headers):
         # http_error_auth_reqed requires that there is no userinfo component in
@@ -1022,20 +1022,20 @@ class AbstractHTTPHandler(BaseHandler):
 
         if request.has_data():  # POST
             data = request.get_data()
-            if not request.has_header('Content-Type'):
+            if not request.has_header('Content-type'):
                 request.add_unredirected_header(
-                    'Content-Type',
+                    'Content-type',
                     'application/x-www-form-urlencoded')
-            if not request.has_header('Content-Length'):
+            if not request.has_header('Content-length'):
                 request.add_unredirected_header(
-                    'Content-Length', '%d' % len(data))
+                    'Content-length', '%d' % len(data))
 
         scheme, sel = splittype(request.get_selector())
         sel_host, sel_path = splithost(sel)
         if not request.has_header('Host'):
             request.add_unredirected_header('Host', sel_host or host)
         for name, value in self.parent.addheaders:
-            name = name.title()
+            name = name.capitalize()
             if not request.has_header(name):
                 request.add_unredirected_header(name, value)
 
@@ -1067,6 +1067,8 @@ class AbstractHTTPHandler(BaseHandler):
         # So make sure the connection gets closed after the (only)
         # request.
         headers["Connection"] = "close"
+        headers = dict(
+            (name.title(), val) for name, val in headers.items())
         try:
             h.request(req.get_method(), req.get_selector(), req.data, headers)
             r = h.getresponse()
@@ -1217,7 +1219,7 @@ class FileHandler(BaseHandler):
         modified = email.Utils.formatdate(stats.st_mtime, usegmt=True)
         mtype = mimetypes.guess_type(file)[0]
         headers = mimetools.Message(StringIO(
-            'Content-Type: %s\nContent-Length: %d\nLast-Modified: %s\n' %
+            'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
             (mtype or 'text/plain', size, modified)))
         if host:
             host, port = splitport(host)
@@ -1272,9 +1274,9 @@ class FTPHandler(BaseHandler):
             headers = ""
             mtype = mimetypes.guess_type(req.get_full_url())[0]
             if mtype:
-                headers += "Content-Type: %s\n" % mtype
+                headers += "Content-type: %s\n" % mtype
             if retrlen is not None and retrlen >= 0:
-                headers += "Content-Length: %d\n" % retrlen
+                headers += "Content-length: %d\n" % retrlen
             sf = StringIO(headers)
             headers = mimetools.Message(sf)
             return addinfourl(fp, headers, req.get_full_url())
