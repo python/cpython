@@ -144,7 +144,7 @@ def search_function(encoding):
         pass
     else:
         for alias in codecaliases:
-            if not _aliases.has_key(alias):
+            if alias not in _aliases:
                 _aliases[alias] = modname
 
     # Return the registry entry

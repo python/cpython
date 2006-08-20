@@ -326,7 +326,7 @@ class Directory:
             file = os.path.basename(file)
         absolute = os.path.join(self.absolute, src)
         assert not re.search(r'[\?|><:/*]"', file) # restrictions on long names
-        if self.keyfiles.has_key(file):
+        if file in self.keyfiles:
             logical = self.keyfiles[file]
         else:
             logical = None
