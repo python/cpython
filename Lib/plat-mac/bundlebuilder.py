@@ -481,7 +481,7 @@ class AppBuilder(BundleBuilder):
                 if self.standalone or self.semi_standalone:
                     self.includeModules.append("argvemulator")
                     self.includeModules.append("os")
-                if not self.plist.has_key("CFBundleDocumentTypes"):
+                if "CFBundleDocumentTypes" not in self.plist:
                     self.plist["CFBundleDocumentTypes"] = [
                         { "CFBundleTypeOSTypes" : [
                             "****",

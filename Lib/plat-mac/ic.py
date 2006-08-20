@@ -138,7 +138,7 @@ def _decode(data, key):
         key2 = key[:string.index(key, '\245')+1]
     else:
         key2 = key
-    if _decoder_table.has_key(key2):
+    if key2 in _decoder_table:
         decoder = _decoder_table[key2][0]
     else:
         decoder = _decode_default
@@ -151,7 +151,7 @@ def _code(data, key):
         key2 = key[:string.index(key, '\245')+1]
     else:
         key2 = key
-    if _decoder_table.has_key(key2):
+    if key2 in _decoder_table:
         coder = _decoder_table[key2][1]
     else:
         coder = _code_default
@@ -175,9 +175,6 @@ class IC:
             rv.append(self.ic.ICGetIndPref(i+1))
         self.ic.ICEnd()
         return rv
-
-    def has_key(self, key):
-        return self.__contains__(key)
 
     def __contains__(self, key):
         try:

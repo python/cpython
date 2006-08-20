@@ -577,9 +577,9 @@ def _process_Nav_args(dftflags, **args):
         if args[k] is None:
             del args[k]
     # Set some defaults, and modify some arguments
-    if not args.has_key('dialogOptionFlags'):
+    if 'dialogOptionFlags' not in args:
         args['dialogOptionFlags'] = dftflags
-    if args.has_key('defaultLocation') and \
+    if 'defaultLocation' in args and \
             not isinstance(args['defaultLocation'], Carbon.AE.AEDesc):
         defaultLocation = args['defaultLocation']
         if isinstance(defaultLocation, (Carbon.File.FSSpec, Carbon.File.FSRef)):
@@ -587,7 +587,7 @@ def _process_Nav_args(dftflags, **args):
         else:
             defaultLocation = Carbon.File.FSRef(defaultLocation)
             args['defaultLocation'] = aepack.pack(defaultLocation)
-    if args.has_key('typeList') and not isinstance(args['typeList'], Carbon.Res.ResourceType):
+    if 'typeList' in args and not isinstance(args['typeList'], Carbon.Res.ResourceType):
         typeList = args['typeList'][:]
         # Workaround for OSX typeless files:
         if 'TEXT' in typeList and not '\0\0\0\0' in typeList:
@@ -597,7 +597,7 @@ def _process_Nav_args(dftflags, **args):
             data = data+type
         args['typeList'] = Carbon.Res.Handle(data)
     tpwanted = str
-    if args.has_key('wanted'):
+    if 'wanted' in args:
         tpwanted = args['wanted']
         del args['wanted']
     return args, tpwanted
