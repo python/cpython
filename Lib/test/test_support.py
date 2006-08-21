@@ -110,15 +110,14 @@ def bind_port(sock, host='', preferred_port=54321):
 FUZZ = 1e-6
 
 def fcmp(x, y): # fuzzy comparison function
-    if type(x) == type(0.0) or type(y) == type(0.0):
+    if isinstance(x, float) or isinstance(y, float):
         try:
-            x, y = coerce(x, y)
             fuzz = (abs(x) + abs(y)) * FUZZ
             if abs(x-y) <= fuzz:
                 return 0
         except:
             pass
-    elif type(x) == type(y) and type(x) in (type(()), type([])):
+    elif type(x) == type(y) and isinstance(x, (tuple, list)):
         for i in range(min(len(x), len(y))):
             outcome = fcmp(x[i], y[i])
             if outcome != 0:
@@ -128,9 +127,9 @@ def fcmp(x, y): # fuzzy comparison function
 
 try:
     unicode
-    have_unicode = 1
+    have_unicode = True
 except NameError:
-    have_unicode = 0
+    have_unicode = False
 
 is_jython = sys.platform.startswith('java')
 
