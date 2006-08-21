@@ -22,23 +22,6 @@ Traceback (most recent call last):
     raise TestFailed, "hash() of dict subclass should fail"
 test.test_support.TestFailed: hash() of dict subclass should fail
 
-////////////////////////////////////////////////////////////////////////
-test_gc
-////////////////////////////////////////////////////////////////////////
-
-testing finalizers... restoring automatic collection
-Traceback (most recent call last):
-  File "../Lib/test/test_gc.py", line 636, in <module>
-    test()
-  File "../Lib/test/test_gc.py", line 623, in test
-    test_all()
-  File "../Lib/test/test_gc.py", line 586, in test_all
-    run_test("finalizers", test_finalizer)
-  File "../Lib/test/test_gc.py", line 18, in run_test
-    thunk()
-  File "../Lib/test/test_gc.py", line 125, in test_finalizer
-    raise TestFailed, "didn't find obj in garbage (finalizer)"
-test.test_support.TestFailed: didn't find obj in garbage (finalizer)
 
 ////////////////////////////////////////////////////////////////////////
 test_set
