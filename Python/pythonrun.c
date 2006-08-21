@@ -531,11 +531,15 @@ Py_NewInterpreter(void)
 	bimod = _PyImport_FindExtension("__builtin__", "__builtin__");
 	if (bimod != NULL) {
 		interp->builtins = PyModule_GetDict(bimod);
+		if (interp->builtins == NULL)
+			goto handle_error;
 		Py_INCREF(interp->builtins);
 	}
 	sysmod = _PyImport_FindExtension("sys", "sys");
 	if (bimod != NULL && sysmod != NULL) {
 		interp->sysdict = PyModule_GetDict(sysmod);
+		if (interp->sysdict == NULL)
+			goto handle_error;
 		Py_INCREF(interp->sysdict);
 		PySys_SetPath(Py_GetPath());
 		PyDict_SetItemString(interp->sysdict, "modules",
@@ -549,6 +553,7 @@ Py_NewInterpreter(void)
 	if (!PyErr_Occurred())
 		return tstate;
 
+handle_error:
 	/* Oops, it didn't work.  Undo it all. */
 
 	PyErr_Print();
