@@ -12,6 +12,8 @@ What's New in Python 2.6?
 Core and builtins
 -----------------
 
+- Patch #1542451: disallow continue anywhere under a finally.
+
 
 Library
 -------
