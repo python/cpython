@@ -9,17 +9,6 @@ Also stack blowout, recursing between
 #5922 0x00021124 in PyObject_Call (func=0x5b0c90, arg=0x3384c0, kw=0x134e10) at ../Objects/abstract.c:1791
 
 ////////////////////////////////////////////////////////////////////////
-test_xml_etree
-////////////////////////////////////////////////////////////////////////
-
-3 items had failures:
-  18 of  32 in test.test_xml_etree.find
-   1 of   3 in test.test_xml_etree.sanity
-   8 of  12 in test.test_xml_etree.xinclude
-***Test Failed*** 27 failures.
-test test_xml_etree failed -- 27 of 91 doctests failed
-
-////////////////////////////////////////////////////////////////////////
 test_xml_etree_c
 ////////////////////////////////////////////////////////////////////////
 
