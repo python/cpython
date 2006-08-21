@@ -411,7 +411,7 @@ has_finalizer(PyObject *op)
 	if (PyGen_CheckExact(op))
 		return PyGen_NeedsFinalizing((PyGenObject *)op);
 	else
-		return 0;
+		return op->ob_type->tp_del != NULL;
 }
 
 /* Move the objects in unreachable with __del__ methods into `finalizers`.
