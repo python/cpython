@@ -114,14 +114,14 @@ class BasicTestCase(unittest.TestCase):
     def populateDB(self, _txn=None):
         d = self.d
 
-        for x in range(self._numKeys/2):
+        for x in range(self._numKeys//2):
             key = '%04d' % (self._numKeys - x)  # insert keys in reverse order
             data = self.makeData(key)
             d.put(key, data, _txn)
 
         d.put('empty value', '', _txn)
 
-        for x in range(self._numKeys/2-1):
+        for x in range(self._numKeys//2-1):
             key = '%04d' % x  # and now some in forward order
             data = self.makeData(key)
             d.put(key, data, _txn)
@@ -686,10 +686,10 @@ class BasicTransactionTestCase(BasicTestCase):
 
         if db.version() >= (4,0):
             statDict = self.env.log_stat(0);
-            assert statDict.has_key('magic')
-            assert statDict.has_key('version')
-            assert statDict.has_key('cur_file')
-            assert statDict.has_key('region_nowait')
+            assert 'magic' in statDict
+            assert 'version' in statDict
+            assert 'cur_file' in statDict
+            assert 'region_nowait' in statDict
 
         # must have at least one log file present:
         logs = self.env.log_archive(db.DB_ARCH_ABS | db.DB_ARCH_LOG)

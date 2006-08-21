@@ -323,7 +323,7 @@ class bsdTableDB :
                 # column names
                 newcolumnlist = copy.copy(oldcolumnlist)
                 for c in columns:
-                    if not oldcolumnhash.has_key(c):
+                    if c not in oldcolumnhash:
                         newcolumnlist.append(c)
 
                 # store the table's new extended column list
@@ -389,7 +389,7 @@ class bsdTableDB :
                 raise TableDBError, "unknown table"
 
             # check the validity of each column name
-            if not self.__tablecolumns.has_key(table):
+            if table not in self.__tablecolumns:
                 self.__load_column_info(table)
             for column in rowdict.keys() :
                 if not self.__tablecolumns[table].count(column):
@@ -521,7 +521,7 @@ class bsdTableDB :
           argument and returning a boolean.
         """
         try:
-            if not self.__tablecolumns.has_key(table):
+            if table not in self.__tablecolumns:
                 self.__load_column_info(table)
             if columns is None:
                 columns = self.__tablecolumns[table]
@@ -542,7 +542,7 @@ class bsdTableDB :
         argument and returning a boolean.
         """
         # check the validity of each column name
-        if not self.__tablecolumns.has_key(table):
+        if table not in self.__tablecolumns:
             self.__load_column_info(table)
         if columns is None:
             columns = self.tablecolumns[table]
@@ -601,16 +601,16 @@ class bsdTableDB :
                     # extract the rowid from the key
                     rowid = key[-_rowid_str_len:]
 
-                    if not rejected_rowids.has_key(rowid):
+                    if rowid not in rejected_rowids:
                         # if no condition was specified or the condition
                         # succeeds, add row to our match list.
                         if not condition or condition(data):
-                            if not matching_rowids.has_key(rowid):
+                            if rowid not in matching_rowids:
                                 matching_rowids[rowid] = {}
                             if savethiscolumndata:
                                 matching_rowids[rowid][column] = data
                         else:
-                            if matching_rowids.has_key(rowid):
+                            if rowid in matching_rowids:
                                 del matching_rowids[rowid]
                             rejected_rowids[rowid] = rowid
 
@@ -631,7 +631,7 @@ class bsdTableDB :
         if len(columns) > 0:
             for rowid, rowdata in matching_rowids.items():
                 for column in columns:
-                    if rowdata.has_key(column):
+                    if column in rowdata:
                         continue
                     try:
                         rowdata[column] = self.db.get(
@@ -697,7 +697,7 @@ class bsdTableDB :
             txn.commit()
             txn = None
 
-            if self.__tablecolumns.has_key(table):
+            if table in self.__tablecolumns:
                 del self.__tablecolumns[table]
 
         except DBError, dberror:
