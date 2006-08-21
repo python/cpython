@@ -9,6 +9,13 @@ What's New in Python 2.5?
 
 *Release date: XX-SEP-2006*
 
+Core and builtins
+-----------------
+
+- Patch #1541585: fix buffer overrun when performing repr() on
+  a unicode string in a build with wide unicode (UCS-4) support.
+
+
 Library
 -------
 
