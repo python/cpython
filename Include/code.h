@@ -88,6 +88,9 @@ typedef struct _addr_pair {
 PyAPI_FUNC(int) PyCode_CheckLineNumber(PyCodeObject* co,
                                        int lasti, PyAddrPair *bounds);
 
+PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
+                                      PyObject *names, PyObject *lineno_obj);
+
 #ifdef __cplusplus
 }
 #endif
