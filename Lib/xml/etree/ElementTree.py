@@ -133,9 +133,10 @@ class _SimpleElementPath:
         return result
 
 try:
-    import ElementPath
+    from . import ElementPath
 except ImportError:
     # FIXME: issue warning in this case?
+    # TODO: DEFINITELY issue warning here!!!
     ElementPath = _SimpleElementPath()
 
 # TODO: add support for custom namespace resolvers/default namespaces
