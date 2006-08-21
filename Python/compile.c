@@ -568,6 +568,7 @@ compiler_exit_scope(struct compiler *c)
 	if (n >= 0) {
 		wrapper = PyList_GET_ITEM(c->c_stack, n);
 		c->u = (struct compiler_unit *)PyCObject_AsVoidPtr(wrapper);
+		assert(c->u);
 		/* we are deleting from a list so this really shouldn't fail */
 		if (PySequence_DelItem(c->c_stack, n) < 0)
 			Py_FatalError("compiler_exit_scope()");
