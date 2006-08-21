@@ -576,19 +576,13 @@ complex_nonzero(PyComplexObject *v)
 static PyObject *
 complex_richcompare(PyObject *v, PyObject *w, int op)
 {
-	Py_complex i, j;
 	PyObject *res;
-
-	/* Make sure both arguments are complex. */
-	if (!(PyComplex_Check(v) && PyComplex_Check(w))) {
-		Py_INCREF(Py_NotImplemented);
-		return Py_NotImplemented;
-	}
-
-	i = ((PyComplexObject *)v)->cval;
-	j = ((PyComplexObject *)w)->cval;
+	Py_complex i, j;
+        TO_COMPLEX(v, i);
+        TO_COMPLEX(w, j);
 
 	if (op != Py_EQ && op != Py_NE) {
+		/* XXX Should eventually return NotImplemented */
 		PyErr_SetString(PyExc_TypeError,
 			"no ordering relation is defined for complex numbers");
 		return NULL;
