@@ -681,9 +681,7 @@ try_3way_compare(PyObject *v, PyObject *w)
 	    b) have different types or a type without tp_compare; and
 	    c) don't have a user-defined tp_compare.
 	   tp_compare implementations in C assume that both arguments
-	   have their type, so we give up if the coercion fails or if
-	   it yields types which are still incompatible (which can
-	   happen with a user-defined nb_coerce).
+	   have their type, so we give up if the coercion fails.
 	*/
 	c = PyNumber_CoerceEx(&v, &w);
 	if (c < 0)
@@ -1512,22 +1510,6 @@ PyNumber_CoerceEx(PyObject **pv, PyObject **pw)
 	}
 	return 1;
 }
-
-/* Coerce two numeric types to the "larger" one.
-   Increment the reference count on each argument.
-   Return -1 and raise an exception if no coercion is possible
-   (and then no reference count is incremented).
-*/
-int
-PyNumber_Coerce(PyObject **pv, PyObject **pw)
-{
-	int err = PyNumber_CoerceEx(pv, pw);
-	if (err <= 0)
-		return err;
-	PyErr_SetString(PyExc_TypeError, "number coercion failed");
-	return -1;
-}
-
 
 /* Test whether an object can be called */
 

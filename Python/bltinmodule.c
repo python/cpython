@@ -333,30 +333,6 @@ PyDoc_STRVAR(cmp_doc,
 \n\
 Return negative if x<y, zero if x==y, positive if x>y.");
 
-
-static PyObject *
-builtin_coerce(PyObject *self, PyObject *args)
-{
-	PyObject *v, *w;
-	PyObject *res;
-
-	if (!PyArg_UnpackTuple(args, "coerce", 2, 2, &v, &w))
-		return NULL;
-	if (PyNumber_Coerce(&v, &w) < 0)
-		return NULL;
-	res = PyTuple_Pack(2, v, w);
-	Py_DECREF(v);
-	Py_DECREF(w);
-	return res;
-}
-
-PyDoc_STRVAR(coerce_doc,
-"coerce(x, y) -> (x1, y1)\n\
-\n\
-Return a tuple consisting of the two numeric arguments converted to\n\
-a common type, using the same rules as used by arithmetic operations.\n\
-If coercion is not possible, raise TypeError.");
-
 static PyObject *
 builtin_compile(PyObject *self, PyObject *args)
 {
@@ -2068,7 +2044,6 @@ static PyMethodDef builtin_methods[] = {
  	{"callable",	builtin_callable,   METH_O, callable_doc},
  	{"chr",		builtin_chr,        METH_VARARGS, chr_doc},
  	{"cmp",		builtin_cmp,        METH_VARARGS, cmp_doc},
- 	{"coerce",	builtin_coerce,     METH_VARARGS, coerce_doc},
  	{"compile",	builtin_compile,    METH_VARARGS, compile_doc},
  	{"delattr",	builtin_delattr,    METH_VARARGS, delattr_doc},
  	{"dir",		builtin_dir,        METH_VARARGS, dir_doc},

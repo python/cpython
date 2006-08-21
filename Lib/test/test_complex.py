@@ -92,9 +92,6 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(complex.__floordiv__(3+0j, 1.5+0j), 2)
         self.assertRaises(ZeroDivisionError, complex.__floordiv__, 3+0j, 0+0j)
 
-    def test_coerce(self):
-        self.assertRaises(OverflowError, complex.__coerce__, 1+1j, 1L<<10000)
-
     def test_richcompare(self):
         self.assertRaises(OverflowError, complex.__eq__, 1+1j, 1L<<10000)
         self.assertEqual(complex.__lt__(1+1j, None), NotImplemented)

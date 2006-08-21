@@ -7,6 +7,87 @@ Python News
 What's New in Python 3000?
 ==========================
 
+*Release date: XX-XXX-200X*
+
+TO DO
+-----
+
+- See PEP 3000.
+
+- Test merging certain changes from the 2.5 HEAD code.
+
+- Weed really old/weird stuff from the library.
+
+- Unify range() and xrange().
+
+- Revamp the dict API: keys(), values(), items() return iterators, etc.
+
+- Add the bytes type.
+
+- Rework the standard I/O library to use bytes for binary files.
+
+- Make strings all Unicode.
+
+- Get rid of classic class implementation.
+
+- Get rid of various compatibility-related flags (e.g. division flags).
+
+Core and Builtins
+-----------------
+
+- __coerce__ has been removed.
+
+- Classic classes are a thing of the past.  All classes are new style.
+
+- Exceptions *must* derive from BaseException.
+
+- Integer division always returns a float.  The -Q option is no more.
+  All the following are gone:
+   * PyNumber_Divide and PyNumber_InPlaceDivide
+   * __div__, __rdiv__, and __idiv__
+   * nb_divide, nb_inplace_divide
+   * operator.div, operator.idiv, operator.__div__, operator.__idiv__
+  (Only __truediv__ and __floordiv__ remain, not sure how to handle them
+   if we want to re-use __div__ and friends.  If we do, it will make
+   it harder to write code for both 2.x and 3.x.)
+
+- 'as' and 'with' are keywords.
+
+- Absolute import is the default behavior for 'import foo' etc.
+
+- Removed these Python builtins:
+  apply(), coerce(), input(), raw_input()
+
+- Removed these Python slots:
+  __coerce__, __div__, __idiv__, __rdiv__
+
+- Removed these attributes from Python modules:
+  * operator module: div, idiv, __div__, __idiv__
+
+*** PyNumber_CoerceEx() and nb_coerce still need to be removed.
+
+- Removed these C APIs:
+  PyNumber_Coerce(), 
+
+- Removed these C slots/fields:
+  nb_divide, nb_inplace_divide
+
+- Removed these macros:
+  staticforward, statichere, PyArg_GetInt, PyArg_NoArgs
+
+- Removed these typedefs:
+  intargfunc, intintargfunc, intobjargproc, intintobjargproc,
+  getreadbufferproc, getwritebufferproc, getsegcountproc, getcharbufferproc
+
+- Removed these opcodes:
+  BINARY_DIVIDE, INPLACE_DIVIDE
+
+Extension Modules
+-----------------
+
+Library
+-------
+
 Build
 -----
 

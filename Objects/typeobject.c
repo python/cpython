@@ -3327,34 +3327,6 @@ wrap_binaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
 }
 
 static PyObject *
-wrap_coercefunc(PyObject *self, PyObject *args, void *wrapped)
-{
-	coercion func = (coercion)wrapped;
-	PyObject *other, *res;
-	int ok;
-
-	if (!check_num_args(args, 1))
-		return NULL;
-	other = PyTuple_GET_ITEM(args, 0);
-	ok = func(&self, &other);
-	if (ok < 0)
-		return NULL;
-	if (ok > 0) {
-		Py_INCREF(Py_NotImplemented);
-		return Py_NotImplemented;
-	}
-	res = PyTuple_New(2);
-	if (res == NULL) {
-		Py_DECREF(self);
-		Py_DECREF(other);
-		return NULL;
-	}
-	PyTuple_SET_ITEM(res, 0, self);
-	PyTuple_SET_ITEM(res, 1, other);
-	return res;
-}
-
-static PyObject *
 wrap_ternaryfunc(PyObject *self, PyObject *args, void *wrapped)
 {
 	ternaryfunc func = (ternaryfunc)wrapped;
@@ -4247,64 +4219,6 @@ SLOT1BIN(slot_nb_and, nb_and, "__and__", "__rand__")
 SLOT1BIN(slot_nb_xor, nb_xor, "__xor__", "__rxor__")
 SLOT1BIN(slot_nb_or, nb_or, "__or__", "__ror__")
 
-static int
-slot_nb_coerce(PyObject **a, PyObject **b)
-{
-	static PyObject *coerce_str;
-	PyObject *self = *a, *other = *b;
-
-	if (self->ob_type->tp_as_number != NULL &&
-	    self->ob_type->tp_as_number->nb_coerce == slot_nb_coerce) {
-		PyObject *r;
-		r = call_maybe(
-			self, "__coerce__", &coerce_str, "(O)", other);
-		if (r == NULL)
-			return -1;
-		if (r == Py_NotImplemented) {
-			Py_DECREF(r);
-		}
-		else {
-			if (!PyTuple_Check(r) || PyTuple_GET_SIZE(r) != 2) {
-				PyErr_SetString(PyExc_TypeError,
-					"__coerce__ didn't return a 2-tuple");
-				Py_DECREF(r);
-				return -1;
-			}
-			*a = PyTuple_GET_ITEM(r, 0);
-			Py_INCREF(*a);
-			*b = PyTuple_GET_ITEM(r, 1);
-			Py_INCREF(*b);
-			Py_DECREF(r);
-			return 0;
-		}
-	}
-	if (other->ob_type->tp_as_number != NULL &&
-	    other->ob_type->tp_as_number->nb_coerce == slot_nb_coerce) {
-		PyObject *r;
-		r = call_maybe(
-			other, "__coerce__", &coerce_str, "(O)", self);
-		if (r == NULL)
-			return -1;
-		if (r == Py_NotImplemented) {
-			Py_DECREF(r);
-			return 1;
-		}
-		if (!PyTuple_Check(r) || PyTuple_GET_SIZE(r) != 2) {
-			PyErr_SetString(PyExc_TypeError,
-					"__coerce__ didn't return a 2-tuple");
-			Py_DECREF(r);
-			return -1;
-		}
-		*a = PyTuple_GET_ITEM(r, 1);
-		Py_INCREF(*a);
-		*b = PyTuple_GET_ITEM(r, 0);
-		Py_INCREF(*b);
-		Py_DECREF(r);
-		return 0;
-	}
-	return 1;
-}
-
 SLOT0(slot_nb_int, "__int__")
 SLOT0(slot_nb_long, "__long__")
 SLOT0(slot_nb_float, "__float__")
@@ -4958,8 +4872,6 @@ static slotdef slotdefs[] = {
 	RBINSLOT("__rxor__", nb_xor, slot_nb_xor, "^"),
 	BINSLOT("__or__", nb_or, slot_nb_or, "|"),
 	RBINSLOT("__ror__", nb_or, slot_nb_or, "|"),
-	NBSLOT("__coerce__", nb_coerce, slot_nb_coerce, wrap_coercefunc,
-	       "x.__coerce__(y) <==> coerce(x, y)"),
 	UNSLOT("__int__", nb_int, slot_nb_int, wrap_unaryfunc,
 	       "int(x)"),
 	UNSLOT("__long__", nb_long, slot_nb_long, wrap_unaryfunc,

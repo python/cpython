@@ -339,8 +339,6 @@ PyNumber_Check(PyObject *o)
 
 /* Binary operators */
 
-/* New style number protocol support */
-
 #define NB_SLOT(x) offsetof(PyNumberMethods, x)
 #define NB_BINOP(nb_methods, slot) \
 		(*(binaryfunc*)(& ((char*)nb_methods)[slot]))
@@ -350,23 +348,11 @@ PyNumber_Check(PyObject *o)
 /*
   Calling scheme used for binary operations:
 
-  v	w	Action
-  -------------------------------------------------------------------
-  new	new	w.op(v,w)[*], v.op(v,w), w.op(v,w)
-  new	old	v.op(v,w), coerce(v,w), v.op(v,w)
-  old	new	w.op(v,w), coerce(v,w), v.op(v,w)
-  old	old	coerce(v,w), v.op(v,w)
+  Order operations are tried until either a valid result or error:
+	w.op(v,w)[*], v.op(v,w), w.op(v,w)
 
   [*] only when v->ob_type != w->ob_type && w->ob_type is a subclass of
       v->ob_type
-
-  Legend:
-  -------
-  * new == new style number
-  * old == old style number
-  * Action indicates the order in which operations are tried until either
-    a valid result is produced or an error occurs.
-
  */
 
 static PyObject *
@@ -434,29 +420,8 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
 /*
   Calling scheme used for ternary operations:
 
-  *** In some cases, w.op is called before v.op; see binary_op1. ***
-
-  v	w	z	Action
-  -------------------------------------------------------------------
-  new	new	new	v.op(v,w,z), w.op(v,w,z), z.op(v,w,z)
-  new	old	new	v.op(v,w,z), z.op(v,w,z), coerce(v,w,z), v.op(v,w,z)
-  old	new	new	w.op(v,w,z), z.op(v,w,z), coerce(v,w,z), v.op(v,w,z)
-  old	old	new	z.op(v,w,z), coerce(v,w,z), v.op(v,w,z)
-  new	new	old	v.op(v,w,z), w.op(v,w,z), coerce(v,w,z), v.op(v,w,z)
-  new	old	old	v.op(v,w,z), coerce(v,w,z), v.op(v,w,z)
-  old	new	old	w.op(v,w,z), coerce(v,w,z), v.op(v,w,z)
-  old	old	old	coerce(v,w,z), v.op(v,w,z)
-
-  Legend:
-  -------
-  * new == new style number
-  * old == old style number
-  * Action indicates the order in which operations are tried until either
-    a valid result is produced or an error occurs.
-  * coerce(v,w,z) actually does: coerce(v,w), coerce(v,z), coerce(w,z) and
-    only if z != Py_None; if z == Py_None, then it is treated as absent
-    variable and only coerce(v,w) is tried.
-
+  Order operations are tried until either a valid result or error:
+	v.op(v,w,z), w.op(v,w,z), z.op(v,w,z)
  */
 
 static PyObject *

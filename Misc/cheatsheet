@@ -1188,7 +1188,6 @@ Operators
         int(s)    =  __int__(s)           long(s)    =  __long__(s)
         float(s)  =  __float__(s)         complex(s)    =  __complex__(s)
         oct(s)    =  __oct__(s)           hex(s)     =  __hex__(s)
-        coerce(s,o) = __coerce__(s,o)
         Right-hand-side equivalents for all binary operators exist;
         are called when class instance is on r-h-s of operator:
         a + 3  calls __add__(a, 3)
