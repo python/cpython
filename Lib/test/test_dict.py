@@ -76,6 +76,8 @@ class DictTest(unittest.TestCase):
         class BadEq(object):
             def __eq__(self, other):
                 raise Exc()
+            def __hash__(self):
+                return 24
 
         d = {}
         d[BadEq()] = 42
@@ -375,6 +377,8 @@ class DictTest(unittest.TestCase):
         class BadCmp(object):
             def __eq__(self, other):
                 raise Exc()
+            def __hash__(self):
+                return 42
 
         d1 = {BadCmp(): 1}
         d2 = {1: 1}

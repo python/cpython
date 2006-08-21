@@ -320,9 +320,16 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
 	return internal_print(op, fp, flags, 0);
 }
 
+/* For debugging convenience.  Set a breakpoint here and call it from your DLL */
+void
+_Py_Break(void)
+{
+}
+
 
 /* For debugging convenience.  See Misc/gdbinit for some useful gdb hooks */
-void _PyObject_Dump(PyObject* op)
+void
+_PyObject_Dump(PyObject* op)
 {
 	if (op == NULL)
 		fprintf(stderr, "NULL\n");

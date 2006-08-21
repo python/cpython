@@ -2847,6 +2847,33 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 	COPYVAL(tp_dictoffset);
 }
 
+/* Map rich comparison operators to their __xx__ namesakes */
+static char *name_op[] = {
+	"__lt__",
+	"__le__",
+	"__eq__",
+	"__ne__",
+	"__gt__",
+	"__ge__",
+	/* These are only for overrides_cmp_or_hash(): */ 
+	"__cmp__",
+	"__hash__",
+};
+
+static int
+overrides_cmp_or_hash(PyTypeObject *type)
+{
+	int i;
+	PyObject *dict = type->tp_dict;
+
+	assert(dict != NULL);
+	for (i = 0; i < 8; i++) {
+		if (PyDict_GetItemString(dict, name_op[i]) != NULL)
+			return 1;
+	}
+	return 0;
+}
+
 static void
 inherit_slots(PyTypeObject *type, PyTypeObject *base)
 {
@@ -2970,9 +2997,12 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 	COPYSLOT(tp_call);
 	COPYSLOT(tp_str);
 	{
+		/* Copy comparison-related slots only when
+		   not overriding them anywhere */
 		if (type->tp_compare == NULL &&
 		    type->tp_richcompare == NULL &&
-		    type->tp_hash == NULL)
+		    type->tp_hash == NULL &&
+		    !overrides_cmp_or_hash(type))
 		{
 			type->tp_compare = base->tp_compare;
 			type->tp_richcompare = base->tp_richcompare;
@@ -3019,6 +3049,10 @@ PyType_Ready(PyTypeObject *type)
 	PyObject *dict, *bases;
 	PyTypeObject *base;
 	Py_ssize_t i, n;
+
+	if (strcmp(type->tp_name, "C") == 0) {
+		_Py_Break();
+	}
 
 	if (type->tp_flags & Py_TPFLAGS_READY) {
 		assert(type->tp_dict != NULL);
@@ -3147,6 +3181,18 @@ PyType_Ready(PyTypeObject *type)
 		} else {
 			PyDict_SetItemString(type->tp_dict,
 					     "__doc__", Py_None);
+		}
+	}
+
+	/* Hack for tp_hash and __hash__.
+	   If after all that, tp_hash is still NULL, and __hash__ is not in
+	   tp_dict, set tp_dict['__hash__'] equal to None.
+	   This signals that __hash__ is not inherited.
+	 */
+	if (type->tp_hash == NULL) {
+		if (PyDict_GetItemString(type->tp_dict, "__hash__") == NULL) {
+			if (PyDict_SetItemString(type->tp_dict, "__hash__", Py_None) < 0)
+				goto error;
 		}
 	}
 
@@ -4449,16 +4495,6 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
 	Py_DECREF(res);
 	return 0;
 }
-
-/* Map rich comparison operators to their __xx__ namesakes */
-static char *name_op[] = {
-	"__lt__",
-	"__le__",
-	"__eq__",
-	"__ne__",
-	"__gt__",
-	"__ge__",
-};
 
 static PyObject *
 half_richcompare(PyObject *self, PyObject *other, int op)
