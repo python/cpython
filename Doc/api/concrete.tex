@@ -1560,6 +1560,26 @@ They all return \NULL{} or \code{-1} if an exception occurs.
   greater than, respectively.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PyUnicode_RichCompare}{PyObject *left, 
+                                              PyObject *right, 
+                                              int op}
+
+  Rich compare two unicode strings and return one of the following:
+  \begin{itemize}
+    \item \code{NULL} in case an exception was raised
+    \item \constant{Py_True} or \constant{Py_False} for successful comparisons
+    \item \constant{Py_NotImplemented} in case the type combination is unknown
+  \end{itemize}
+
+   Note that \constant{Py_EQ} and \constant{Py_NE} comparisons can cause a
+   \exception{UnicodeWarning} in case the conversion of the arguments to
+   Unicode fails with a \exception{UnicodeDecodeError}.
+
+   Possible values for \var{op} are
+   \constant{Py_GT}, \constant{Py_GE}, \constant{Py_EQ},
+   \constant{Py_NE}, \constant{Py_LT}, and \constant{Py_LE}.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{PyObject*}{PyUnicode_Format}{PyObject *format,
                                               PyObject *args}
   Return a new string object from \var{format} and \var{args}; this
@@ -1820,6 +1840,11 @@ format.
 \begin{cfuncdesc}{PyObject*}{PyList_New}{Py_ssize_t len}
   Return a new list of length \var{len} on success, or \NULL{} on
   failure.
+  \note{If \var{length} is greater than zero, the returned list object's
+        items are set to \code{NULL}.  Thus you cannot use abstract
+        API functions such as \cfunction{PySequence_SetItem()} 
+        or expose the object to Python code before setting all items to a
+        real object with \cfunction{PyList_SetItem()}.}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{Py_ssize_t}{PyList_Size}{PyObject *list}

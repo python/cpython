@@ -1187,9 +1187,8 @@ string_hash(PyStringObject *a)
 static PyObject*
 string_subscript(PyStringObject* self, PyObject* item)
 {
-	PyNumberMethods *nb = item->ob_type->tp_as_number;
-	if (nb != NULL && nb->nb_index != NULL) {
-		Py_ssize_t i = nb->nb_index(item);
+	if (PyIndex_Check(item)) {
+		Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
 		if (i == -1 && PyErr_Occurred())
 			return NULL;
 		if (i < 0)
@@ -4226,12 +4225,17 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 	if (!result)
 		return NULL;
 
+	buf = PyString_AsString(result);
+	if (!buf) {
+		Py_DECREF(result);
+		return NULL;
+	}
+
 	/* To modify the string in-place, there can only be one reference. */
 	if (result->ob_refcnt != 1) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	buf = PyString_AsString(result);
 	llen = PyString_Size(result);
 	if (llen > PY_SSIZE_T_MAX) {
 		PyErr_SetString(PyExc_ValueError, "string too large in _PyString_FormatLong");

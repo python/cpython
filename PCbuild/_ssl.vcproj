@@ -75,6 +75,9 @@
 		<File
 			RelativePath="..\Modules\_ssl.c">
 		</File>
+		<File
+			RelativePath="..\Modules\_hashopenssl.c">
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

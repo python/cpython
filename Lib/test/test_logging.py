@@ -493,7 +493,7 @@ def test4():
             try:
                 logging._handlers.clear()
                 logging._handlers.update(saved_handlers)
-                logging._handlerList = saved_handler_list
+                logging._handlerList[:] = saved_handler_list
                 loggerDict = logging.getLogger().manager.loggerDict
                 loggerDict.clear()
                 loggerDict.update(saved_loggers)
@@ -560,7 +560,7 @@ def test5():
         try:
             logging._handlers.clear()
             logging._handlers.update(saved_handlers)
-            logging._handlerList = saved_handler_list
+            logging._handlerList[:] = saved_handler_list
             loggerDict = logging.getLogger().manager.loggerDict
             loggerDict.clear()
             loggerDict.update(saved_loggers)

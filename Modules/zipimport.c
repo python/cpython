@@ -950,6 +950,9 @@ normalize_line_endings(PyObject *source)
 	char *buf, *q, *p = PyString_AsString(source);
 	PyObject *fixed_source;
 
+	if (!p)
+		return NULL;
+
 	/* one char extra for trailing \n and one for terminating \0 */
 	buf = (char *)PyMem_Malloc(PyString_Size(source) + 2);
 	if (buf == NULL) {

@@ -251,6 +251,10 @@ def parse_multipart(fp, pdict):
 
     XXX This should really be subsumed by FieldStorage altogether -- no
     point in having two implementations of the same parsing algorithm.
+    Also, FieldStorage protects itself better against certain DoS attacks
+    by limiting the size of the data read in one chunk.  The API here
+    does not support that kind of protection.  This also affects parse()
+    since it can call parse_multipart().
 
     """
     boundary = ""
@@ -691,7 +695,7 @@ class FieldStorage:
     def read_lines_to_eof(self):
         """Internal: read lines until EOF."""
         while 1:
-            line = self.fp.readline()
+            line = self.fp.readline(1<<16)
             if not line:
                 self.done = -1
                 break
@@ -702,12 +706,13 @@ class FieldStorage:
         next = "--" + self.outerboundary
         last = next + "--"
         delim = ""
+        last_line_lfend = True
         while 1:
-            line = self.fp.readline()
+            line = self.fp.readline(1<<16)
             if not line:
                 self.done = -1
                 break
-            if line[:2] == "--":
+            if line[:2] == "--" and last_line_lfend:
                 strippedline = line.strip()
                 if strippedline == next:
                     break
@@ -718,11 +723,14 @@ class FieldStorage:
             if line[-2:] == "\r\n":
                 delim = "\r\n"
                 line = line[:-2]
+                last_line_lfend = True
             elif line[-1] == "\n":
                 delim = "\n"
                 line = line[:-1]
+                last_line_lfend = True
             else:
                 delim = ""
+                last_line_lfend = False
             self.__write(odelim + line)
 
     def skip_lines(self):
@@ -731,18 +739,20 @@ class FieldStorage:
             return
         next = "--" + self.outerboundary
         last = next + "--"
+        last_line_lfend = True
         while 1:
-            line = self.fp.readline()
+            line = self.fp.readline(1<<16)
             if not line:
                 self.done = -1
                 break
-            if line[:2] == "--":
+            if line[:2] == "--" and last_line_lfend:
                 strippedline = line.strip()
                 if strippedline == next:
                     break
                 if strippedline == last:
                     self.done = 1
                     break
+            last_line_lfend = line.endswith('\n')
 
     def make_file(self, binary=None):
         """Overridable: return a readable & writable file.

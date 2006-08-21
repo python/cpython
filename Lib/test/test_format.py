@@ -230,6 +230,14 @@ test_exc(u'no format', '1', TypeError,
 test_exc(u'no format', u'1', TypeError,
          "not all arguments converted during string formatting")
 
+class Foobar(long):
+    def __oct__(self):
+        # Returning a non-string should not blow up.
+        return self + 1
+
+test_exc('%o', Foobar(), TypeError,
+         "expected string or Unicode object, long found")
+
 if sys.maxint == 2**31-1:
     # crashes 2.2.1 and earlier:
     try:

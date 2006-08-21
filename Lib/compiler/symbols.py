@@ -188,7 +188,7 @@ class GenExprScope(Scope):
         i = self.__counter
         self.__counter += 1
         self.__super_init("generator expression<%d>"%i, module, klass)
-        self.add_param('[outmost-iterable]')
+        self.add_param('.0')
 
     def get_names(self):
         keys = Scope.get_names(self)

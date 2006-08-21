@@ -5405,6 +5405,82 @@ onError:
     return -1;
 }
 
+PyObject *PyUnicode_RichCompare(PyObject *left,
+                                PyObject *right,
+                                int op)
+{
+    int result;
+
+    result = PyUnicode_Compare(left, right);
+    if (result == -1 && PyErr_Occurred())
+        goto onError;
+
+    /* Convert the return value to a Boolean */
+    switch (op) {
+    case Py_EQ:
+        result = (result == 0);
+        break;
+    case Py_NE:
+        result = (result != 0);
+        break;
+    case Py_LE:
+        result = (result <= 0);
+        break;
+    case Py_GE:
+        result = (result >= 0);
+        break;
+    case Py_LT:
+        result = (result == -1);
+        break;
+    case Py_GT:
+        result = (result == 1);
+        break;
+    }
+    return PyBool_FromLong(result);
+
+ onError:
+
+    /* Standard case
+
+       Type errors mean that PyUnicode_FromObject() could not convert
+       one of the arguments (usually the right hand side) to Unicode,
+       ie. we can't handle the comparison request. However, it is
+       possible that the other object knows a comparison method, which
+       is why we return Py_NotImplemented to give the other object a
+       chance.
+
+    */
+    if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+        PyErr_Clear();
+        Py_INCREF(Py_NotImplemented);
+        return Py_NotImplemented;
+    }
+    if (op != Py_EQ && op != Py_NE)
+        return NULL;
+
+    /* Equality comparison.
+
+       This is a special case: we silence any PyExc_UnicodeDecodeError
+       and instead turn it into a PyErr_UnicodeWarning.
+
+    */
+    if (!PyErr_ExceptionMatches(PyExc_UnicodeDecodeError))
+        return NULL;
+    PyErr_Clear();
+    if (PyErr_Warn(PyExc_UnicodeWarning, 
+                   (op == Py_EQ) ? 
+                   "Unicode equal comparison "
+                   "failed to convert both arguments to Unicode - "
+                   "interpreting them as being unequal" :
+                   "Unicode unequal comparison "
+                   "failed to convert both arguments to Unicode - "
+                   "interpreting them as being unequal"
+                   ) < 0)
+        return NULL;
+    result = (op == Py_NE);
+    return PyBool_FromLong(result);
+}
+
 int PyUnicode_Contains(PyObject *container,
 		       PyObject *element)
 {
@@ -6987,9 +7063,8 @@ static PySequenceMethods unicode_as_sequence = {
 static PyObject*
 unicode_subscript(PyUnicodeObject* self, PyObject* item)
 {
-    PyNumberMethods *nb = item->ob_type->tp_as_number;
-    if (nb != NULL && nb->nb_index != NULL) {
-        Py_ssize_t i = nb->nb_index(item);
+    if (PyIndex_Check(item)) {
+        Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
         if (i == -1 && PyErr_Occurred())
             return NULL;
         if (i < 0)
@@ -7861,7 +7936,7 @@ PyTypeObject PyUnicode_Type = {
     0, 					/* tp_print */
     0,				 	/* tp_getattr */
     0, 					/* tp_setattr */
-    (cmpfunc) unicode_compare, 		/* tp_compare */
+    0, 					/* tp_compare */
     unicode_repr, 			/* tp_repr */
     &unicode_as_number, 		/* tp_as_number */
     &unicode_as_sequence, 		/* tp_as_sequence */
@@ -7876,7 +7951,7 @@ PyTypeObject PyUnicode_Type = {
     unicode_doc,			/* tp_doc */
     0,					/* tp_traverse */
     0,					/* tp_clear */
-    0,					/* tp_richcompare */
+    PyUnicode_RichCompare,		/* tp_richcompare */
     0,					/* tp_weaklistoffset */
     unicode_iter,			/* tp_iter */
     0,					/* tp_iternext */

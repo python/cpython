@@ -6,7 +6,7 @@
 #  "python2"?
 #WARNING: Commenting out doesn't work.  Last line is what's used.
 %define config_binsuffix none
-%define config_binsuffix 2.5
+%define config_binsuffix 2.6
 
 #  Build tkinter?  "auto" enables it if /usr/bin/wish exists.
 #WARNING: Commenting out doesn't work.  Last line is what's used.
@@ -33,8 +33,8 @@
 #################################
 
 %define name python
-%define version 2.5b3
-%define libvers 2.5
+%define version 2.6a1
+%define libvers 2.6
 %define release 1pydotorg
 %define __prefix /usr
 

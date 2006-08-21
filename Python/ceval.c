@@ -2597,6 +2597,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		return NULL;
 	}
 
+	assert(tstate != NULL);
 	assert(globals != NULL);
 	f = PyFrame_New(tstate, co, globals, locals);
 	if (f == NULL)
@@ -3589,6 +3590,7 @@ fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 		   PyFrame_New() that doesn't take locals, but does
 		   take builtins without sanity checking them.
 		*/
+		assert(tstate != NULL);
 		f = PyFrame_New(tstate, co, globals, NULL);
 		if (f == NULL)
 			return NULL;
@@ -3601,7 +3603,6 @@ fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 			fastlocals[i] = *stack++;
 		}
 		retval = PyEval_EvalFrameEx(f,0);
-		assert(tstate != NULL);
 		++tstate->recursion_depth;
 		Py_DECREF(f);
 		--tstate->recursion_depth;
@@ -3819,11 +3820,14 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 	if (v != NULL) {
 		Py_ssize_t x;
 		if (PyInt_Check(v)) {
-			x = PyInt_AsSsize_t(v);
+			/* XXX(nnorwitz): I think PyInt_AS_LONG is correct,
+			   however, it looks like it should be AsSsize_t.
+			   There should be a comment here explaining why.
+			*/
+			x = PyInt_AS_LONG(v);
 		}
-		else if (v->ob_type->tp_as_number &&
-			 v->ob_type->tp_as_number->nb_index) {
-			x = v->ob_type->tp_as_number->nb_index(v);
+		else if (PyIndex_Check(v)) {
+			x = PyNumber_AsSsize_t(v, NULL);
 			if (x == -1 && PyErr_Occurred())
 				return 0;
 		}
@@ -3839,9 +3843,8 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 }
 
 #undef ISINDEX
-#define ISINDEX(x) ((x) == NULL || PyInt_Check(x) || PyLong_Check(x) || \
-		    ((x)->ob_type->tp_as_number && \
-		     (x)->ob_type->tp_as_number->nb_index))
+#define ISINDEX(x) ((x) == NULL || \
+		    PyInt_Check(x) || PyLong_Check(x) || PyIndex_Check(x))
 
 static PyObject *
 apply_slice(PyObject *u, PyObject *v, PyObject *w) /* return u[v:w] */
@@ -4080,6 +4083,11 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 		if (locals == Py_None) {
 			locals = PyEval_GetLocals();
 			plain = 1;
+		}
+		if (!globals || !locals) {
+			PyErr_SetString(PyExc_SystemError,
+					"globals and locals cannot be NULL");
+			return -1;
 		}
 	}
 	else if (locals == Py_None)

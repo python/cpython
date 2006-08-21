@@ -181,10 +181,19 @@ else:
     if hasattr(os, 'fork') and os.name not in ('os2',):
         dgramservers.append(ForkingUnixDatagramServer)
 
+def sloppy_cleanup():
+    # See http://python.org/sf/1540386
+    # We need to reap children here otherwise a child from one server
+    # can be left running for the next server and cause a test failure.
+    time.sleep(DELAY)
+    reap_children()
+
 def testall():
     testloop(socket.AF_INET, tcpservers, MyStreamHandler, teststream)
+    sloppy_cleanup()
     testloop(socket.AF_INET, udpservers, MyDatagramHandler, testdgram)
     if hasattr(socket, 'AF_UNIX'):
+        sloppy_cleanup()
         testloop(socket.AF_UNIX, streamservers, MyStreamHandler, teststream)
         # Alas, on Linux (at least) recvfrom() doesn't return a meaningful
         # client address so this cannot work:

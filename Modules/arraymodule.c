@@ -702,6 +702,8 @@ array_ass_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
 			/* Special case "a[i:j] = a" -- copy b first */
 			int ret;
 			v = array_slice(b, 0, n);
+			if (!v)
+				return -1;
 			ret = array_ass_slice(a, ilow, ihigh, v);
 			Py_DECREF(v);
 			return ret;
@@ -1573,9 +1575,8 @@ array_repr(arrayobject *a)
 static PyObject*
 array_subscr(arrayobject* self, PyObject* item)
 {
-	PyNumberMethods *nb = item->ob_type->tp_as_number;
-	if (nb != NULL && nb->nb_index != NULL) {
-		Py_ssize_t i = nb->nb_index(item);
+	if (PyIndex_Check(item)) {
+		Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
 		if (i==-1 && PyErr_Occurred()) {
 			return NULL;
 		}
@@ -1623,9 +1624,8 @@ array_subscr(arrayobject* self, PyObject* item)
 static int
 array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
 {
-	PyNumberMethods *nb = item->ob_type->tp_as_number;
-	if (nb != NULL && nb->nb_index != NULL) {
-		Py_ssize_t i = nb->nb_index(item);
+	if (PyIndex_Check(item)) {
+		Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
 		if (i==-1 && PyErr_Occurred()) 
 			return -1;
 		if (i < 0)
@@ -1706,6 +1706,8 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
 			if (self == av) { 
 				value = array_slice(av, 0, av->ob_size);
 				av = (arrayobject*)value;
+				if (!av)
+					return -1;
 			} 
 			else {
 				Py_INCREF(value);

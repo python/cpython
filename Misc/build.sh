@@ -58,7 +58,7 @@ RSYNC_OPTS="-aC -e ssh"
 PYTHON=$INSTALL_DIR/bin/python
 
 # Python options and regression test program that should always be run.
-REGRTEST_ARGS="-E -tt $INSTALL_DIR/lib/python2.5/test/regrtest.py"
+REGRTEST_ARGS="-E -tt $INSTALL_DIR/lib/python2.6/test/regrtest.py"
 
 REFLOG="build/reflog.txt.out"
 # These tests are not stable and falsely report leaks sometimes.

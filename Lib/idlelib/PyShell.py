@@ -478,9 +478,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         import sys as _sys
         _sys.path = %r
         del _sys
-        _msg = 'Use File/Exit or your end-of-file key to quit IDLE'
-        __builtins__.quit = __builtins__.exit = _msg
-        del _msg
         \n""" % (sys.path,))
 
     active_seq = None
@@ -514,7 +511,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 print >>sys.__stderr__, errmsg, what
                 print >>console, errmsg, what
             # we received a response to the currently active seq number:
-            self.tkconsole.endexecuting()
+            try:
+                self.tkconsole.endexecuting()
+            except AttributeError:  # shell may have closed
+                pass
         # Reschedule myself
         if not self.tkconsole.closing:
             self.tkconsole.text.after(self.tkconsole.pollinterval,
@@ -593,7 +593,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 source = source.encode(IOBinding.encoding)
             except UnicodeError:
                 self.tkconsole.resetoutput()
-                self.write("Unsupported characters in input")
+                self.write("Unsupported characters in input\n")
                 return
         try:
             # InteractiveInterpreter.runsource() calls its runcode() method,
@@ -713,14 +713,17 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 else:
                     exec code in self.locals
             except SystemExit:
-                if tkMessageBox.askyesno(
-                    "Exit?",
-                    "Do you want to exit altogether?",
-                    default="yes",
-                    master=self.tkconsole.text):
-                    raise
+                if not self.tkconsole.closing:
+                    if tkMessageBox.askyesno(
+                        "Exit?",
+                        "Do you want to exit altogether?",
+                        default="yes",
+                        master=self.tkconsole.text):
+                        raise
+                    else:
+                        self.showtraceback()
                 else:
-                    self.showtraceback()
+                    raise
             except:
                 if use_subprocess:
                     print >> self.tkconsole.stderr, \
@@ -730,7 +733,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
                     self.tkconsole.endexecuting()
         finally:
             if not use_subprocess:
-                self.tkconsole.endexecuting()
+                try:
+                    self.tkconsole.endexecuting()
+                except AttributeError:  # shell may have closed
+                    pass
 
     def write(self, s):
         "Override base class method"
@@ -794,7 +800,7 @@ class PyShell(OutputWindow):
         if use_subprocess:
             ms = self.menu_specs
             if ms[2][0] != "shell":
-                ms.insert(2, ("shell", "_Shell"))
+                ms.insert(2, ("shell", "She_ll"))
         self.interp = ModifiedInterpreter(self)
         if flist is None:
             root = Tk()
@@ -803,9 +809,6 @@ class PyShell(OutputWindow):
             flist = PyShellFileList(root)
         #
         OutputWindow.__init__(self, flist, None, None)
-        #
-        import __builtin__
-        __builtin__.quit = __builtin__.exit = "To exit, type Ctrl-D."
         #
 ##        self.config(usetabs=1, indentwidth=8, context_use_ps1=1)
         self.usetabs = True
@@ -1138,21 +1141,27 @@ class PyShell(OutputWindow):
         return "break"
 
     def recall(self, s, event):
+        # remove leading and trailing empty or whitespace lines
+        s = re.sub(r'^\s*\n', '' , s)
+        s = re.sub(r'\n\s*$', '', s)
+        lines = s.split('\n')
         self.text.undo_block_start()
         try:
             self.text.tag_remove("sel", "1.0", "end")
             self.text.mark_set("insert", "end-1c")
-            s = s.strip()
-            lines = s.split('\n')
-            prefix = self.text.get("insert linestart","insert").rstrip()
-            if prefix and prefix[-1]==':':
+            prefix = self.text.get("insert linestart", "insert")
+            if prefix.rstrip().endswith(':'):
                 self.newline_and_indent_event(event)
-            self.text.insert("insert",lines[0].strip())
+                prefix = self.text.get("insert linestart", "insert")
+            self.text.insert("insert", lines[0].strip())
             if len(lines) > 1:
-                self.newline_and_indent_event(event)
+                orig_base_indent = re.search(r'^([ \t]*)', lines[0]).group(0)
+                new_base_indent  = re.search(r'^([ \t]*)', prefix).group(0)
                 for line in lines[1:]:
-                    self.text.insert("insert", line.strip())
-                    self.newline_and_indent_event(event)
+                    if line.startswith(orig_base_indent):
+                        # replace orig base indentation with new indentation
+                        line = new_base_indent + line[len(orig_base_indent):]
+                    self.text.insert('insert', '\n'+line.rstrip())
         finally:
             self.text.see("insert")
             self.text.undo_block_stop()

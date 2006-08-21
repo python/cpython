@@ -89,7 +89,8 @@ extensions = [
     '_msi.pyd',
     '_ctypes.pyd',
     '_ctypes_test.pyd',
-    '_sqlite3.pyd'
+    '_sqlite3.pyd',
+    '_hashlib.pyd'
 ]
 
 # Well-known component UUIDs

@@ -45,8 +45,6 @@ Typical usage:
 """
 
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
-__date__ = '$Date: 2006/06/12 23:15:40 $'.split()[1].replace('/', '-')
-__version__ = '$Revision: 1.30 $'.split()[1]
 
 RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
     'reserved for NCS compatibility', 'specified in RFC 4122',
@@ -57,15 +55,21 @@ class UUID(object):
     UUID objects are immutable, hashable, and usable as dictionary keys.
     Converting a UUID to a string with str() yields something in the form
     '12345678-1234-1234-1234-123456789abc'.  The UUID constructor accepts
-    four possible forms: a similar string of hexadecimal digits, or a
-    string of 16 raw bytes as an argument named 'bytes', or a tuple of
-    six integer fields (with 32-bit, 16-bit, 16-bit, 8-bit, 8-bit, and
-    48-bit values respectively) as an argument named 'fields', or a single
-    128-bit integer as an argument named 'int'.
+    five possible forms: a similar string of hexadecimal digits, or a tuple
+    of six integer fields (with 32-bit, 16-bit, 16-bit, 8-bit, 8-bit, and
+    48-bit values respectively) as an argument named 'fields', or a string
+    of 16 bytes (with all the integer fields in big-endian order) as an
+    argument named 'bytes', or a string of 16 bytes (with the first three
+    fields in little-endian order) as an argument named 'bytes_le', or a
+    single 128-bit integer as an argument named 'int'.
 
     UUIDs have these read-only attributes:
 
-        bytes       the UUID as a 16-byte string
+        bytes       the UUID as a 16-byte string (containing the six
+                    integer fields in big-endian byte order)
+
+        bytes_le    the UUID as a 16-byte string (with time_low, time_mid,
+                    and time_hi_version in little-endian byte order)
 
         fields      a tuple of the six integer fields of the UUID,
                     which are also available as six individual attributes
@@ -94,10 +98,11 @@ class UUID(object):
                     when the variant is RFC_4122)
     """
 
-    def __init__(self, hex=None, bytes=None, fields=None, int=None,
-                       version=None):
+    def __init__(self, hex=None, bytes=None, bytes_le=None, fields=None,
+                       int=None, version=None):
         r"""Create a UUID from either a string of 32 hexadecimal digits,
-        a string of 16 bytes as the 'bytes' argument, a tuple of six
+        a string of 16 bytes as the 'bytes' argument, a string of 16 bytes
+        in little-endian order as the 'bytes_le' argument, a tuple of six
         integers (32-bit time_low, 16-bit time_mid, 16-bit time_hi_version,
         8-bit clock_seq_hi_variant, 8-bit clock_seq_low, 48-bit node) as
         the 'fields' argument, or a single 128-bit integer as the 'int'
@@ -109,23 +114,31 @@ class UUID(object):
         UUID('12345678123456781234567812345678')
         UUID('urn:uuid:12345678-1234-5678-1234-567812345678')
         UUID(bytes='\x12\x34\x56\x78'*4)
+        UUID(bytes_le='\x78\x56\x34\x12\x34\x12\x78\x56' +
+                      '\x12\x34\x56\x78\x12\x34\x56\x78')
         UUID(fields=(0x12345678, 0x1234, 0x5678, 0x12, 0x34, 0x567812345678))
         UUID(int=0x12345678123456781234567812345678)
 
-        Exactly one of 'hex', 'bytes', 'fields', or 'int' must be given.
-        The 'version' argument is optional; if given, the resulting UUID
-        will have its variant and version number set according to RFC 4122,
-        overriding bits in the given 'hex', 'bytes', 'fields', or 'int'.
+        Exactly one of 'hex', 'bytes', 'bytes_le', 'fields', or 'int' must
+        be given.  The 'version' argument is optional; if given, the resulting
+        UUID will have its variant and version set according to RFC 4122,
+        overriding the given 'hex', 'bytes', 'bytes_le', 'fields', or 'int'.
         """
 
-        if [hex, bytes, fields, int].count(None) != 3:
-            raise TypeError('need just one of hex, bytes, fields, or int')
+        if [hex, bytes, bytes_le, fields, int].count(None) != 4:
+            raise TypeError('need one of hex, bytes, bytes_le, fields, or int')
         if hex is not None:
             hex = hex.replace('urn:', '').replace('uuid:', '')
             hex = hex.strip('{}').replace('-', '')
             if len(hex) != 32:
                 raise ValueError('badly formed hexadecimal UUID string')
             int = long(hex, 16)
+        if bytes_le is not None:
+            if len(bytes_le) != 16:
+                raise ValueError('bytes_le is not a 16-char string')
+            bytes = (bytes_le[3] + bytes_le[2] + bytes_le[1] + bytes_le[0] +
+                     bytes_le[5] + bytes_le[4] + bytes_le[7] + bytes_le[6] +
+                     bytes_le[8:])
         if bytes is not None:
             if len(bytes) != 16:
                 raise ValueError('bytes is not a 16-char string')
@@ -193,6 +206,13 @@ class UUID(object):
         return bytes
 
     bytes = property(get_bytes)
+
+    def get_bytes_le(self):
+        bytes = self.bytes
+        return (bytes[3] + bytes[2] + bytes[1] + bytes[0] +
+                bytes[5] + bytes[4] + bytes[7] + bytes[6] + bytes[8:])
+
+    bytes_le = property(get_bytes_le)
 
     def get_fields(self):
         return (self.time_low, self.time_mid, self.time_hi_version,
@@ -448,6 +468,8 @@ def getnode():
         if _node is not None:
             return _node
 
+_last_timestamp = None
+
 def uuid1(node=None, clock_seq=None):
     """Generate a UUID from a host ID, sequence number, and the current time.
     If 'node' is not given, getnode() is used to obtain the hardware
@@ -460,11 +482,15 @@ def uuid1(node=None, clock_seq=None):
         _uuid_generate_time(_buffer)
         return UUID(bytes=_buffer.raw)
 
+    global _last_timestamp
     import time
     nanoseconds = int(time.time() * 1e9)
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
     timestamp = int(nanoseconds/100) + 0x01b21dd213814000L
+    if timestamp <= _last_timestamp:
+        timestamp = _last_timestamp + 1
+    _last_timestamp = timestamp
     if clock_seq is None:
         import random
         clock_seq = random.randrange(1<<14L) # instead of stable storage

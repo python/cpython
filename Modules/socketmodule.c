@@ -3041,17 +3041,20 @@ gethost_common(struct hostent *h, struct sockaddr *addr, int alen, int af)
 	if ((addr_list = PyList_New(0)) == NULL)
 		goto err;
 
-	for (pch = h->h_aliases; *pch != NULL; pch++) {
-		int status;
-		tmp = PyString_FromString(*pch);
-		if (tmp == NULL)
-			goto err;
+	/* SF #1511317: h_aliases can be NULL */
+	if (h->h_aliases) {
+		for (pch = h->h_aliases; *pch != NULL; pch++) {
+			int status;
+			tmp = PyString_FromString(*pch);
+			if (tmp == NULL)
+				goto err;
 
-		status = PyList_Append(name_list, tmp);
-		Py_DECREF(tmp);
+			status = PyList_Append(name_list, tmp);
+			Py_DECREF(tmp);
 
-		if (status)
-			goto err;
+			if (status)
+				goto err;
+		}
 	}
 
 	for (pch = h->h_addr_list; *pch != NULL; pch++) {

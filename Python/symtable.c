@@ -221,8 +221,8 @@ PySymtable_Build(mod_ty mod, const char *filename, PyFutureFeatures *future)
 		return st;
 	st->st_filename = filename;
 	st->st_future = future;
-	if (!symtable_enter_block(st, GET_IDENTIFIER(top), ModuleBlock, 
-			     (void *)mod, 0)) {
+	if (!GET_IDENTIFIER(top) ||
+	    !symtable_enter_block(st, top, ModuleBlock, (void *)mod, 0)) {
 		PySymtable_Free(st);
 		return NULL;
 	}
@@ -915,6 +915,8 @@ symtable_new_tmpname(struct symtable *st)
 	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]",
 		      ++st->st_cur->ste_tmpname);
 	tmp = PyString_InternFromString(tmpname);
+	if (!tmp)
+		return 0;
 	if (!symtable_add_def(st, tmp, DEF_LOCAL))
 		return 0;
 	Py_DECREF(tmp);
@@ -1121,12 +1123,13 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 		VISIT(st, expr, e->v.UnaryOp.operand);
 		break;
         case Lambda_kind: {
-		if (!symtable_add_def(st, GET_IDENTIFIER(lambda), DEF_LOCAL))
+		if (!GET_IDENTIFIER(lambda) ||
+		    !symtable_add_def(st, lambda, DEF_LOCAL))
 			return 0;
 		if (e->v.Lambda.args->defaults)
 			VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
 		/* XXX how to get line numbers for expressions */
-		if (!symtable_enter_block(st, GET_IDENTIFIER(lambda),
+		if (!symtable_enter_block(st, lambda,
                                           FunctionBlock, (void *)e, 0))
 			return 0;
 		VISIT_IN_BLOCK(st, arguments, e->v.Lambda.args, (void*)e);
@@ -1323,8 +1326,11 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
 	PyObject *name = (a->asname == NULL) ? a->name : a->asname;
 	const char *base = PyString_AS_STRING(name);
 	char *dot = strchr(base, '.');
-	if (dot)
+	if (dot) {
 		store_name = PyString_FromStringAndSize(base, dot - base);
+		if (!store_name)
+			return 0;
+	}
 	else {
 		store_name = name;
 		Py_INCREF(store_name);
@@ -1399,8 +1405,8 @@ symtable_visit_genexp(struct symtable *st, expr_ty e)
 	/* Outermost iterator is evaluated in current scope */
 	VISIT(st, expr, outermost->iter);
 	/* Create generator scope for the rest */
-	if (!symtable_enter_block(st, GET_IDENTIFIER(genexpr),
-				  FunctionBlock, (void *)e, 0)) {
+	if (!GET_IDENTIFIER(genexpr) ||
+	    !symtable_enter_block(st, genexpr, FunctionBlock, (void *)e, 0)) {
 		return 0;
 	}
 	st->st_cur->ste_generator = 1;
@@ -1414,7 +1420,5 @@ symtable_visit_genexp(struct symtable *st, expr_ty e)
 	VISIT_SEQ_TAIL_IN_BLOCK(st, comprehension,
 				e->v.GeneratorExp.generators, 1, (void*)e);
 	VISIT_IN_BLOCK(st, expr, e->v.GeneratorExp.elt, (void*)e);
-	if (!symtable_exit_block(st, (void *)e))
-		return 0;
-	return 1;
+	return symtable_exit_block(st, (void *)e);
 }
