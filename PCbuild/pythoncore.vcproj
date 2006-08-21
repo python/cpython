@@ -464,6 +464,9 @@
 			RelativePath="..\Python\compile.c">
 		</File>
 		<File
+			RelativePath="..\Python\peephole.c">
+		</File>
+		<File
 			RelativePath="..\Objects\complexobject.c">
 		</File>
 		<File
