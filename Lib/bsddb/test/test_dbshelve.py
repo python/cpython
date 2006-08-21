@@ -187,7 +187,6 @@ class DBShelveTestCase(unittest.TestCase):
             assert value == [x] * 10
 
         elif key[0] == 'O':
-            assert type(value) == InstanceType
             assert value.S == 10 * x
             assert value.I == ord(x)
             assert value.L == [x] * 10

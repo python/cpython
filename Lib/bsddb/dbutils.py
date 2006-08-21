@@ -55,7 +55,7 @@ def DeadlockWrap(function, *_args, **_kwargs):
     """
     sleeptime = _deadlock_MinSleepTime
     max_retries = _kwargs.get('max_retries', -1)
-    if 'max_tries' in _kwargs:
+    if 'max_retries' in _kwargs:
         del _kwargs['max_retries']
     while True:
         try:

@@ -198,7 +198,7 @@ class DBShelf(DictMixin):
 
 
     def __contains__(self, key):
-        return self.has_key(key)
+        return self.db.has_key(key)
 
 
     #----------------------------------------------
