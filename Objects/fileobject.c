@@ -922,7 +922,7 @@ file_readinto(PyFileObject *f, PyObject *args)
 		ndone += nnow;
 		ntodo -= nnow;
 	}
-	return PyInt_FromLong((long)ndone);
+	return PyInt_FromSsize_t(ndone);
 }
 
 /**************************************************************************
