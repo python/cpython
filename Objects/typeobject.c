@@ -3050,10 +3050,6 @@ PyType_Ready(PyTypeObject *type)
 	PyTypeObject *base;
 	Py_ssize_t i, n;
 
-	if (strcmp(type->tp_name, "C") == 0) {
-		_Py_Break();
-	}
-
 	if (type->tp_flags & Py_TPFLAGS_READY) {
 		assert(type->tp_dict != NULL);
 		return 0;
