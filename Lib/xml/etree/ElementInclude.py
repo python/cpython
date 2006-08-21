@@ -49,7 +49,7 @@
 ##
 
 import copy
-import ElementTree
+from . import ElementTree
 
 XINCLUDE = "{http://www.w3.org/2001/XInclude}"
 
