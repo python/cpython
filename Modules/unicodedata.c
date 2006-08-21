@@ -1,8 +1,8 @@
 /* ------------------------------------------------------------------------
 
-   unicodedata -- Provides access to the Unicode 3.2 data base.
+   unicodedata -- Provides access to the Unicode 4.1 data base.
 
-   Data was extracted from the Unicode 3.2 UnicodeData.txt file.
+   Data was extracted from the Unicode 4.1 UnicodeData.txt file.
 
    Written by Marc-Andre Lemburg (mal@lemburg.com).
    Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
@@ -1078,6 +1078,7 @@ unicodedata_lookup(PyObject* self, PyObject* args)
 {
     Py_UCS4 code;
     Py_UNICODE str[1];
+    char errbuf[256];
 
     char* name;
     int namelen;
@@ -1085,11 +1086,19 @@ unicodedata_lookup(PyObject* self, PyObject* args)
         return NULL;
 
     if (!_getcode(self, name, namelen, &code)) {
+	/* XXX(nnorwitz): why are we allocating for the error msg?
+		Why not always use snprintf? */
         char fmt[] = "undefined character name '%s'";
         char *buf = PyMem_MALLOC(sizeof(fmt) + namelen);
-        sprintf(buf, fmt, name);
+        if (buf)
+            sprintf(buf, fmt, name);
+        else {
+            buf = errbuf;
+            PyOS_snprintf(buf, sizeof(errbuf), fmt, name);
+        }
         PyErr_SetString(PyExc_KeyError, buf);
-        PyMem_FREE(buf);
+        if (buf != errbuf)
+        	PyMem_FREE(buf);
         return NULL;
     }
 
@@ -1173,11 +1182,11 @@ PyDoc_STRVAR(unicodedata_docstring,
 "This module provides access to the Unicode Character Database which\n\
 defines character properties for all Unicode characters. The data in\n\
 this database is based on the UnicodeData.txt file version\n\
-3.2.0 which is publically available from ftp://ftp.unicode.org/.\n\
+4.1.0 which is publically available from ftp://ftp.unicode.org/.\n\
 \n\
 The module uses the same names and symbols as defined by the\n\
-UnicodeData File Format 3.2.0 (see\n\
-http://www.unicode.org/Public/3.2-Update/UnicodeData-3.2.0.html).");
+UnicodeData File Format 4.1.0 (see\n\
+http://www.unicode.org/Public/4.1.0/ucd/UCD.html).");
 
 PyMODINIT_FUNC
 initunicodedata(void)

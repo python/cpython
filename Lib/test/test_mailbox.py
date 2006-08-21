@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import stat
 import socket
@@ -454,7 +455,7 @@ class TestMaildir(TestMailbox):
 
     def setUp(self):
         TestMailbox.setUp(self)
-        if os.name in ('nt', 'os2'):
+        if os.name in ('nt', 'os2') or sys.platform == 'cygwin':
             self._box.colon = '!'
 
     def test_add_MM(self):
@@ -729,11 +730,13 @@ class _TestMboxMMDF(TestMailbox):
         # In the parent, sleep a bit to give the child time to acquire
         # the lock.
         time.sleep(0.5)
-        self.assertRaises(mailbox.ExternalClashError,
-                          self._box.lock)
+        try:
+            self.assertRaises(mailbox.ExternalClashError,
+                              self._box.lock)
+        finally:
+            # Wait for child to exit.  Locking should now succeed.
+            exited_pid, status = os.waitpid(pid, 0)
 
-        # Wait for child to exit.  Locking should now succeed.
-        exited_pid, status = os.waitpid(pid, 0)
         self._box.lock()
         self._box.unlock()
 

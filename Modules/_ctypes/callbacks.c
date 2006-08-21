@@ -205,7 +205,7 @@ if (x == NULL) _AddTraceback(what, __FILE__, __LINE__ - 1), PyErr_Print()
 
 	result = PyObject_CallObject(callable, arglist);
 	CHECK("'calling callback function'", result);
-	if ((restype != &ffi_type_void) && result && result != Py_None) {
+	if ((restype != &ffi_type_void) && result) {
 		PyObject *keep;
 		assert(setfunc);
 #ifdef WORDS_BIGENDIAN
@@ -225,13 +225,13 @@ if (x == NULL) _AddTraceback(what, __FILE__, __LINE__ - 1), PyErr_Print()
 		   itself knows how to manage the refcount of these objects.
 		*/
 		if (keep == NULL) /* Could not convert callback result. */
-			PyErr_WriteUnraisable(Py_None);
+			PyErr_WriteUnraisable(callable);
 		else if (keep == Py_None) /* Nothing to keep */
 			Py_DECREF(keep);
 		else if (setfunc != getentry("O")->setfunc) {
 			if (-1 == PyErr_Warn(PyExc_RuntimeWarning,
 					     "memory leak in callback function."))
-				PyErr_WriteUnraisable(Py_None);
+				PyErr_WriteUnraisable(callable);
 		}
 	}
 	Py_XDECREF(result);

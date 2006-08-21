@@ -2197,6 +2197,8 @@ alias_for_import_name(struct compiling *c, const node *n)
             }
             else {
                 alias_ty a = alias_for_import_name(c, CHILD(n, 0));
+                if (!a)
+                    return NULL;
                 if (strcmp(STR(CHILD(n, 1)), "as") != 0) {
                     ast_error(n, "must use 'as' in import");
                     return NULL;

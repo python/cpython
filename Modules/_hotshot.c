@@ -313,6 +313,11 @@ unpack_string(LogReaderObject *self, PyObject **pvalue)
         return err;
 
     buf = (char *)malloc(len);
+    if (!buf) {
+	PyErr_NoMemory();
+	return ERR_EXCEPTION;
+    }
+
     for (i=0; i < len; i++) {
         ch = fgetc(self->logfp);
 	buf[i] = ch;

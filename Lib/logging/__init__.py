@@ -1337,14 +1337,14 @@ def disable(level):
     """
     root.manager.disable = level
 
-def shutdown():
+def shutdown(handlerList=_handlerList):
     """
     Perform any cleanup actions in the logging system (e.g. flushing
     buffers).
 
     Should be called at application exit.
     """
-    for h in _handlerList[:]: # was _handlers.keys():
+    for h in handlerList[:]:
         #errors might occur, for example, if files are locked
         #we just ignore them if raiseExceptions is not set
         try:

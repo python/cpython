@@ -197,18 +197,6 @@ EXPORT(PY_LONG_LONG) _testfunc_callback_q_qf(PY_LONG_LONG value,
 
 #endif
 
-EXPORT(int) _testfunc_ppp(char ***p)
-{
-	static char message[] = "Hello, World";
-	if (p) {
-		*p = (char **)malloc(sizeof(char *));
-		printf("malloc returned %p\n", *p);
-		**p = message;
-		return 1;
-	}
-	return 0;
-}
-
 typedef struct {
 	char *name;
 	char *value;

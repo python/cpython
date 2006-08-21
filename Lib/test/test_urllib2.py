@@ -46,6 +46,69 @@ class TrivialTests(unittest.TestCase):
             self.assertEquals(urllib2.parse_http_list(string), list)
 
 
+def test_request_headers_dict():
+    """
+    The Request.headers dictionary is not a documented interface.  It should
+    stay that way, because the complete set of headers are only accessible
+    through the .get_header(), .has_header(), .header_items() interface.
+    However, .headers pre-dates those methods, and so real code will be using
+    the dictionary.
+
+    The introduction in 2.4 of those methods was a mistake for the same reason:
+    code that previously saw all (urllib2 user)-provided headers in .headers
+    now sees only a subset (and the function interface is ugly and incomplete).
+    A better change would have been to replace .headers dict with a dict
+    subclass (or UserDict.DictMixin instance?)  that preserved the .headers
+    interface and also provided access to the "unredirected" headers.  It's
+    probably too late to fix that, though.
+
+
+    Check .capitalize() case normalization:
+
+    >>> url = "http://example.com"
+    >>> Request(url, headers={"Spam-eggs": "blah"}).headers["Spam-eggs"]
+    'blah'
+    >>> Request(url, headers={"spam-EggS": "blah"}).headers["Spam-eggs"]
+    'blah'
+
+    Currently, Request(url, "Spam-eggs").headers["Spam-Eggs"] raises KeyError,
+    but that could be changed in future.
+
+    """
+
+def test_request_headers_methods():
+    """
+    Note the case normalization of header names here, to .capitalize()-case.
+    This should be preserved for backwards-compatibility.  (In the HTTP case,
+    normalization to .title()-case is done by urllib2 before sending headers to
+    httplib).
+
+    >>> url = "http://example.com"
+    >>> r = Request(url, headers={"Spam-eggs": "blah"})
+    >>> r.has_header("Spam-eggs")
+    True
+    >>> r.header_items()
+    [('Spam-eggs', 'blah')]
+    >>> r.add_header("Foo-Bar", "baz")
+    >>> items = r.header_items()
+    >>> items.sort()
+    >>> items
+    [('Foo-bar', 'baz'), ('Spam-eggs', 'blah')]
+
+    Note that e.g. r.has_header("spam-EggS") is currently False, and
+    r.get_header("spam-EggS") returns None, but that could be changed in
+    future.
+
+    >>> r.has_header("Not-there")
+    False
+    >>> print r.get_header("Not-there")
+    None
+    >>> r.get_header("Not-there", "default")
+    'default'
+
+    """
+
+
 def test_password_manager(self):
     """
     >>> mgr = urllib2.HTTPPasswordMgr()
@@ -676,11 +739,11 @@ class HandlerTests(unittest.TestCase):
             r = MockResponse(200, "OK", {}, "")
             newreq = h.do_request_(req)
             if data is None:  # GET
-                self.assert_("Content-Length" not in req.unredirected_hdrs)
-                self.assert_("Content-Type" not in req.unredirected_hdrs)
+                self.assert_("Content-length" not in req.unredirected_hdrs)
+                self.assert_("Content-type" not in req.unredirected_hdrs)
             else:  # POST
-                self.assertEqual(req.unredirected_hdrs["Content-Length"], "0")
-                self.assertEqual(req.unredirected_hdrs["Content-Type"],
+                self.assertEqual(req.unredirected_hdrs["Content-length"], "0")
+                self.assertEqual(req.unredirected_hdrs["Content-type"],
                              "application/x-www-form-urlencoded")
             # XXX the details of Host could be better tested
             self.assertEqual(req.unredirected_hdrs["Host"], "example.com")
@@ -692,8 +755,8 @@ class HandlerTests(unittest.TestCase):
             req.add_unredirected_header("Host", "baz")
             req.add_unredirected_header("Spam", "foo")
             newreq = h.do_request_(req)
-            self.assertEqual(req.unredirected_hdrs["Content-Length"], "foo")
-            self.assertEqual(req.unredirected_hdrs["Content-Type"], "bar")
+            self.assertEqual(req.unredirected_hdrs["Content-length"], "foo")
+            self.assertEqual(req.unredirected_hdrs["Content-type"], "bar")
             self.assertEqual(req.unredirected_hdrs["Host"], "baz")
             self.assertEqual(req.unredirected_hdrs["Spam"], "foo")
 
@@ -847,7 +910,7 @@ class HandlerTests(unittest.TestCase):
             407, 'Proxy-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
         opener.add_handler(auth_handler)
         opener.add_handler(http_handler)
-        self._test_basic_auth(opener, auth_handler, "Proxy-Authorization",
+        self._test_basic_auth(opener, auth_handler, "Proxy-authorization",
                               realm, http_handler, password_manager,
                               "http://acme.example.com:3128/protected",
                               "proxy.example.com:3128",

@@ -193,16 +193,21 @@ PyInt_AsSsize_t(register PyObject *op)
 	PyIntObject *io;
 	Py_ssize_t val;
 #endif
-	if (op && !PyInt_CheckExact(op) && PyLong_Check(op))
+
+	if (op == NULL) {
+		PyErr_SetString(PyExc_TypeError, "an integer is required");
+		return -1;
+	}
+
+	if (PyInt_Check(op))
+		return PyInt_AS_LONG((PyIntObject*) op);
+	if (PyLong_Check(op))
 		return _PyLong_AsSsize_t(op);
 #if SIZEOF_SIZE_T == SIZEOF_LONG
 	return PyInt_AsLong(op);
 #else
 
-	if (op && PyInt_Check(op))
-		return PyInt_AS_LONG((PyIntObject*) op);
-
-	if (op == NULL || (nb = op->ob_type->tp_as_number) == NULL ||
+	if ((nb = op->ob_type->tp_as_number) == NULL ||
 	    (nb->nb_int == NULL && nb->nb_long == 0)) {
 		PyErr_SetString(PyExc_TypeError, "an integer is required");
 		return -1;
@@ -1045,7 +1050,7 @@ static PyNumberMethods int_as_number = {
 	int_true_divide,	/* nb_true_divide */
 	0,			/* nb_inplace_floor_divide */
 	0,			/* nb_inplace_true_divide */
-	PyInt_AsSsize_t,	/* nb_index */
+	(unaryfunc)int_int,	/* nb_index */
 };
 
 PyTypeObject PyInt_Type = {

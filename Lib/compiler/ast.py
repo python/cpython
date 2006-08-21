@@ -583,10 +583,8 @@ class GenExpr(Node):
     def __init__(self, code, lineno=None):
         self.code = code
         self.lineno = lineno
-        self.argnames = ['[outmost-iterable]']
+        self.argnames = ['.0']
         self.varargs = self.kwargs = None
-
-
 
     def getChildren(self):
         return self.code,

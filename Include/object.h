@@ -190,7 +190,7 @@ typedef struct {
 	binaryfunc nb_inplace_floor_divide;
 	binaryfunc nb_inplace_true_divide;
 
-	lenfunc nb_index;
+	unaryfunc nb_index;
 } PyNumberMethods;
 
 typedef struct {

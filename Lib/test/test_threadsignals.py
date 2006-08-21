@@ -49,7 +49,7 @@ class ThreadSignals(unittest.TestCase):
         # and might be out of order.)  If we haven't seen
         # the signals yet, send yet another signal and
         # wait for it return.
-        if signal_blackboard[signal.SIGUSR2]['tripped'] == 0 \
+        if signal_blackboard[signal.SIGUSR1]['tripped'] == 0 \
            or signal_blackboard[signal.SIGUSR2]['tripped'] == 0:
             signal.alarm(1)
             signal.pause()

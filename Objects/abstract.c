@@ -6,6 +6,7 @@
 #include "longintrepr.h"
 
 
+
 /* Shorthands to return certain errors */
 
 static PyObject *
@@ -117,9 +118,9 @@ PyObject_GetItem(PyObject *o, PyObject *key)
 		return m->mp_subscript(o, key);
 
 	if (o->ob_type->tp_as_sequence) {
-		PyNumberMethods *nb = key->ob_type->tp_as_number;
-		if (nb != NULL && nb->nb_index != NULL) {
-			Py_ssize_t key_value = nb->nb_index(key);
+		if (PyIndex_Check(key)) {
+			Py_ssize_t key_value;
+			key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
 			if (key_value == -1 && PyErr_Occurred())
 				return NULL;
 			return PySequence_GetItem(o, key_value);
@@ -146,9 +147,9 @@ PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
 		return m->mp_ass_subscript(o, key, value);
 
 	if (o->ob_type->tp_as_sequence) {
-		PyNumberMethods *nb = key->ob_type->tp_as_number;
-		if (nb != NULL && nb->nb_index != NULL) {
-			Py_ssize_t key_value = nb->nb_index(key);
+		if (PyIndex_Check(key)) {
+			Py_ssize_t key_value;
+			key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
 			if (key_value == -1 && PyErr_Occurred())
 				return -1;
 			return PySequence_SetItem(o, key_value, value);
@@ -178,9 +179,9 @@ PyObject_DelItem(PyObject *o, PyObject *key)
 		return m->mp_ass_subscript(o, key, (PyObject*)NULL);
 
 	if (o->ob_type->tp_as_sequence) {
-		PyNumberMethods *nb = key->ob_type->tp_as_number;
-		if (nb != NULL && nb->nb_index != NULL) {
-			Py_ssize_t key_value = nb->nb_index(key);
+		if (PyIndex_Check(key)) {
+			Py_ssize_t key_value;
+			key_value = PyNumber_AsSsize_t(key, PyExc_IndexError);
 			if (key_value == -1 && PyErr_Occurred())
 				return -1;
 			return PySequence_DelItem(o, key_value);
@@ -530,9 +531,8 @@ static PyObject *
 sequence_repeat(ssizeargfunc repeatfunc, PyObject *seq, PyObject *n)
 {
 	Py_ssize_t count;
-	PyNumberMethods *nb = n->ob_type->tp_as_number;
-	if (nb != NULL && nb->nb_index != NULL) {
-		count = nb->nb_index(n);
+	if (PyIndex_Check(n)) {
+		count = PyNumber_AsSsize_t(n, PyExc_OverflowError);
 		if (count == -1 && PyErr_Occurred())
 			return NULL;
 	}
@@ -809,22 +809,86 @@ int_from_string(const char *s, Py_ssize_t len)
 	return x;
 }
 
-/* Return a Py_ssize_t integer from the object item */
-Py_ssize_t 
+/* Return a Python Int or Long from the object item 
+   Raise TypeError if the result is not an int-or-long
+   or if the object cannot be interpreted as an index. 
+*/
+PyObject *
 PyNumber_Index(PyObject *item)
 {
-	Py_ssize_t value = -1;
-	PyNumberMethods *nb = item->ob_type->tp_as_number;
-	if (nb != NULL && nb->nb_index != NULL) {
-		value = nb->nb_index(item);
+	PyObject *result = NULL;
+	if (item == NULL)
+		return null_error();
+	if (PyInt_Check(item) || PyLong_Check(item)) {
+		Py_INCREF(item);
+		return item;
+	}
+	if (PyIndex_Check(item)) {
+		result = item->ob_type->tp_as_number->nb_index(item);
+		if (result &&
+		    !PyInt_Check(result) && !PyLong_Check(result)) {
+			PyErr_Format(PyExc_TypeError,
+				     "__index__ returned non-(int,long) " \
+				     "(type %.200s)",
+				     result->ob_type->tp_name);
+			Py_DECREF(result);
+			return NULL;
+		}
 	}
 	else {
 		PyErr_Format(PyExc_TypeError,
 			     "'%.200s' object cannot be interpreted "
 			     "as an index", item->ob_type->tp_name);
 	}
-	return value;
+	return result;
 }
+
+/* Return an error on Overflow only if err is not NULL*/
+
+Py_ssize_t
+PyNumber_AsSsize_t(PyObject *item, PyObject *err)
+{
+	Py_ssize_t result;
+	PyObject *runerr;
+	PyObject *value = PyNumber_Index(item);
+	if (value == NULL)
+		return -1;
+
+	/* We're done if PyInt_AsSsize_t() returns without error. */
+	result = PyInt_AsSsize_t(value);
+	if (result != -1 || !(runerr = PyErr_Occurred()))
+		goto finish;
+
+	/* Error handling code -- only manage OverflowError differently */
+	if (!PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError)) 
+		goto finish;
+
+	PyErr_Clear();
+	/* If no error-handling desired then the default clipping 
+	   is sufficient.
+	 */
+	if (!err) {
+		assert(PyLong_Check(value));
+		/* Whether or not it is less than or equal to 
+		   zero is determined by the sign of ob_size
+		*/
+		if (_PyLong_Sign(value) < 0) 
+			result = PY_SSIZE_T_MIN;
+		else
+			result = PY_SSIZE_T_MAX;
+	}
+	else {
+		/* Otherwise replace the error with caller's error object. */
+		PyErr_Format(err,
+			     "cannot fit '%.200s' into an index-sized integer", 
+			     item->ob_type->tp_name); 
+	}
+	
+ finish:
+	Py_DECREF(value);
+	return result;
+}
+
 
 PyObject *
 PyNumber_Int(PyObject *o)

@@ -225,25 +225,10 @@ immutable data type.  You should only use
 \cfunction{PyTuple_SetItem()} for tuples that you are creating
 yourself.
 
-Equivalent code for populating a list can be written using 
-\cfunction{PyList_New()} and \cfunction{PyList_SetItem()}.  Such code
-can also use \cfunction{PySequence_SetItem()}; this illustrates the
-difference between the two (the extra \cfunction{Py_DECREF()} calls):
+Equivalent code for populating a list can be written using
+\cfunction{PyList_New()} and \cfunction{PyList_SetItem()}.
 
-\begin{verbatim}
-PyObject *l, *x;
-
-l = PyList_New(3);
-x = PyInt_FromLong(1L);
-PySequence_SetItem(l, 0, x); Py_DECREF(x);
-x = PyInt_FromLong(2L);
-PySequence_SetItem(l, 1, x); Py_DECREF(x);
-x = PyString_FromString("three");
-PySequence_SetItem(l, 2, x); Py_DECREF(x);
-\end{verbatim}
-
-You might find it strange that the ``recommended'' approach takes more
-code.  However, in practice, you will rarely use these ways of
+However, in practice, you will rarely use these ways of
 creating and populating a tuple or list.  There's a generic function,
 \cfunction{Py_BuildValue()}, that can create most common objects from
 C values, directed by a \dfn{format string}.  For example, the
@@ -251,10 +236,10 @@ above two blocks of code could be replaced by the following (which
 also takes care of the error checking):
 
 \begin{verbatim}
-PyObject *t, *l;
+PyObject *tuple, *list;
 
-t = Py_BuildValue("(iis)", 1, 2, "three");
-l = Py_BuildValue("[iis]", 1, 2, "three");
+tuple = Py_BuildValue("(iis)", 1, 2, "three");
+list = Py_BuildValue("[iis]", 1, 2, "three");
 \end{verbatim}
 
 It is much more common to use \cfunction{PyObject_SetItem()} and
@@ -276,8 +261,12 @@ set_all(PyObject *target, PyObject *item)
     if (n < 0)
         return -1;
     for (i = 0; i < n; i++) {
-        if (PyObject_SetItem(target, i, item) < 0)
+        PyObject *index = PyInt_FromLong(i);
+        if (!index)
             return -1;
+        if (PyObject_SetItem(target, index, item) < 0)
+            return -1;
+        Py_DECREF(index);
     }
     return 0;
 }

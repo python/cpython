@@ -27,7 +27,7 @@ sys.path more than once.  Blank lines and lines beginning with
 '#' are skipped. Lines starting with 'import' are executed.
 
 For example, suppose sys.prefix and sys.exec_prefix are set to
-/usr/local and there is a directory /usr/local/lib/python1.5/site-packages
+/usr/local and there is a directory /usr/local/lib/python2.5/site-packages
 with three subdirectories, foo, bar and spam, and two path
 configuration files, foo.pth and bar.pth.  Assume foo.pth contains the
 following:
@@ -44,8 +44,8 @@ and bar.pth contains:
 
 Then the following directories are added to sys.path, in this order:
 
-  /usr/local/lib/python1.5/site-packages/bar
-  /usr/local/lib/python1.5/site-packages/foo
+  /usr/local/lib/python2.5/site-packages/bar
+  /usr/local/lib/python2.5/site-packages/foo
 
 Note that bletch is omitted because it doesn't exist; bar precedes foo
 because bar.pth comes alphabetically before foo.pth; and spam is
@@ -242,6 +242,12 @@ def setquit():
         def __repr__(self):
             return 'Use %s() or %s to exit' % (self.name, eof)
         def __call__(self, code=None):
+            # Shells like IDLE catch the SystemExit, but listen when their
+            # stdin wrapper is closed.
+            try:
+                sys.stdin.close()
+            except:
+                pass
             raise SystemExit(code)
     __builtin__.quit = Quitter('quit')
     __builtin__.exit = Quitter('exit')

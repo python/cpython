@@ -131,6 +131,76 @@ class ThreadTests(unittest.TestCase):
                                 threading._DummyThread))
         del threading._active[tid]
 
+    # PyThreadState_SetAsyncExc() is a CPython-only gimmick, not (currently)
+    # exposed at the Python level.  This test relies on ctypes to get at it.
+    def test_PyThreadState_SetAsyncExc(self):
+        try:
+            import ctypes
+        except ImportError:
+            if verbose:
+                print "test_PyThreadState_SetAsyncExc can't import ctypes"
+            return  # can't do anything
+
+        set_async_exc = ctypes.pythonapi.PyThreadState_SetAsyncExc
+
+        class AsyncExc(Exception):
+            pass
+
+        exception = ctypes.py_object(AsyncExc)
+
+        # `worker_started` is set by the thread when it's inside a try/except
+        # block waiting to catch the asynchronously set AsyncExc exception.
+        # `worker_saw_exception` is set by the thread upon catching that
+        # exception.
+        worker_started = threading.Event()
+        worker_saw_exception = threading.Event()
+
+        class Worker(threading.Thread):
+            def run(self):
+                self.id = thread.get_ident()
+                self.finished = False
+
+                try:
+                    while True:
+                        worker_started.set()
+                        time.sleep(0.1)
+                except AsyncExc:
+                    self.finished = True
+                    worker_saw_exception.set()
+
+        t = Worker()
+        t.setDaemon(True) # so if this fails, we don't hang Python at shutdown
+        t.start()
+        if verbose:
+            print "    started worker thread"
+
+        # Try a thread id that doesn't make sense.
+        if verbose:
+            print "    trying nonsensical thread id"
+        result = set_async_exc(ctypes.c_long(-1), exception)
+        self.assertEqual(result, 0)  # no thread states modified
+
+        # Now raise an exception in the worker thread.
+        if verbose:
+            print "    waiting for worker thread to get started"
+        worker_started.wait()
+        if verbose:
+            print "    verifying worker hasn't exited"
+        self.assert_(not t.finished)
+        if verbose:
+            print "    attempting to raise asynch exception in worker"
+        result = set_async_exc(ctypes.c_long(t.id), exception)
+        self.assertEqual(result, 1) # one thread state modified
+        if verbose:
+            print "    waiting for worker to say it caught the exception"
+        worker_saw_exception.wait(timeout=10)
+        self.assert_(t.finished)
+        if verbose:
+            print "    all OK -- joining worker"
+        if t.finished:
+            t.join()
+        # else the thread is still running, and we have no way to kill it
+
 def test_main():
     test.test_support.run_unittest(ThreadTests)
 

@@ -78,5 +78,10 @@ class PythonAPITestCase(unittest.TestCase):
         # not enough arguments
         self.failUnlessRaises(TypeError, PyOS_snprintf, buf)
 
+    def test_pyobject_repr(self):
+        self.failUnlessEqual(repr(py_object()), "py_object(<NULL>)")
+        self.failUnlessEqual(repr(py_object(42)), "py_object(42)")
+        self.failUnlessEqual(repr(py_object(object)), "py_object(%r)" % object)
+
 if __name__ == "__main__":
     unittest.main()

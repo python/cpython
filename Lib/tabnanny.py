@@ -109,6 +109,10 @@ def check(file):
         errprint("%r: Token Error: %s" % (file, msg))
         return
 
+    except IndentationError, msg:
+        errprint("%r: Indentation Error: %s" % (file, msg))
+        return
+
     except NannyNag, nag:
         badline = nag.get_lineno()
         line = nag.get_line()

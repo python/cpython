@@ -204,6 +204,17 @@ def check_encoding(encoding):
         "<?xml version='1.0' encoding='%s'?><xml />" % encoding
         )
 
+def bug_1534630():
+    """
+    >>> bob = ET.TreeBuilder()
+    >>> e = bob.data("data")
+    >>> e = bob.start("tag", {})
+    >>> e = bob.end("tag")
+    >>> e = bob.close()
+    >>> serialize(ET, e)
+    '<tag />'
+    """
+
 def test_main():
     from test import test_xml_etree_c
     test_support.run_doctest(test_xml_etree_c, verbosity=True)

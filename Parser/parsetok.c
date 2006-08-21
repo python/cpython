@@ -225,6 +225,11 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 		}
 	} else if (tok->encoding != NULL) {
 		node* r = PyNode_New(encoding_decl);
+		if (!r) {
+			err_ret->error = E_NOMEM;
+			n = NULL;
+			goto done;
+		}
 		r->n_str = tok->encoding;
 		r->n_nchildren = 1;
 		r->n_child = n;
@@ -232,6 +237,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 		n = r;
 	}
 
+done:
 	PyTokenizer_Free(tok);
 
 	return n;

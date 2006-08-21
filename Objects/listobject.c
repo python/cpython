@@ -1398,7 +1398,7 @@ merge_lo(MergeState *ms, PyObject **pa, Py_ssize_t na,
 	PyObject *compare;
 	PyObject **dest;
 	int result = -1;	/* guilty until proved innocent */
-	Py_ssize_t min_gallop = ms->min_gallop;
+	Py_ssize_t min_gallop;
 
 	assert(ms && pa && pb && na > 0 && nb > 0 && pa + na == pb);
 	if (MERGE_GETMEM(ms, na) < 0)
@@ -1414,6 +1414,7 @@ merge_lo(MergeState *ms, PyObject **pa, Py_ssize_t na,
 	if (na == 1)
 		goto CopyB;
 
+	min_gallop = ms->min_gallop;
 	compare = ms->compare;
 	for (;;) {
 		Py_ssize_t acount = 0;	/* # of times A won in a row */
@@ -1531,7 +1532,7 @@ merge_hi(MergeState *ms, PyObject **pa, Py_ssize_t na, PyObject **pb, Py_ssize_t
 	int result = -1;	/* guilty until proved innocent */
 	PyObject **basea;
 	PyObject **baseb;
-	Py_ssize_t min_gallop = ms->min_gallop;
+	Py_ssize_t min_gallop;
 
 	assert(ms && pa && pb && na > 0 && nb > 0 && pa + na == pb);
 	if (MERGE_GETMEM(ms, nb) < 0)
@@ -1550,6 +1551,7 @@ merge_hi(MergeState *ms, PyObject **pa, Py_ssize_t na, PyObject **pb, Py_ssize_t
 	if (nb == 1)
 		goto CopyA;
 
+	min_gallop = ms->min_gallop;
 	compare = ms->compare;
 	for (;;) {
 		Py_ssize_t acount = 0;	/* # of times A won in a row */
@@ -2445,9 +2447,9 @@ PyDoc_STRVAR(list_doc,
 static PyObject *
 list_subscript(PyListObject* self, PyObject* item)
 {
-	PyNumberMethods *nb = item->ob_type->tp_as_number;	
-	if (nb != NULL && nb->nb_index != NULL) {
-		Py_ssize_t i = nb->nb_index(item);
+	if (PyIndex_Check(item)) {
+		Py_ssize_t i;
+		i = PyNumber_AsSsize_t(item, PyExc_IndexError);
 		if (i == -1 && PyErr_Occurred())
 			return NULL;
 		if (i < 0)
@@ -2494,9 +2496,8 @@ list_subscript(PyListObject* self, PyObject* item)
 static int
 list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 {
-	PyNumberMethods *nb = item->ob_type->tp_as_number;
-	if (nb != NULL && nb->nb_index != NULL) {
-		Py_ssize_t i = nb->nb_index(item);
+	if (PyIndex_Check(item)) {
+		Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
 		if (i == -1 && PyErr_Occurred())
 			return -1;
 		if (i < 0)
@@ -2531,6 +2532,10 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 
 			garbage = (PyObject**)
 				PyMem_MALLOC(slicelength*sizeof(PyObject*));
+			if (!garbage) {
+				PyErr_NoMemory();
+				return -1;
+			}
 
 			/* drawing pictures might help
 			   understand these for loops */
@@ -2579,9 +2584,9 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 			else {
 				seq = PySequence_Fast(value,
 					"must assign iterable to extended slice");
-				if (!seq)
-					return -1;
 			}
+			if (!seq)
+				return -1;
 
 			if (PySequence_Fast_GET_SIZE(seq) != slicelength) {
 				PyErr_Format(PyExc_ValueError,

@@ -252,7 +252,7 @@ slice_indices(PySliceObject* self, PyObject* len)
 {
 	Py_ssize_t ilen, start, stop, step, slicelength;
 
-	ilen = PyInt_AsSsize_t(len);
+	ilen = PyNumber_AsSsize_t(len, PyExc_OverflowError);
 
 	if (ilen == -1 && PyErr_Occurred()) {
 		return NULL;

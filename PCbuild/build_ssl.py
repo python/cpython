@@ -1,7 +1,7 @@
-# Script for building the _ssl module for Windows.
+# Script for building the _ssl and _hashlib modules for Windows.
 # Uses Perl to setup the OpenSSL environment correctly
 # and build OpenSSL, then invokes a simple nmake session
-# for _ssl.pyd itself.
+# for the actual _ssl.pyd and _hashlib.pyd DLLs.
 
 # THEORETICALLY, you can:
 # * Unpack the latest SSL release one level above your main Python source
@@ -10,8 +10,8 @@
 # * Install ActivePerl and ensure it is somewhere on your path.
 # * Run this script from the PCBuild directory.
 #
-# it should configure and build SSL, then build the ssl Python extension
-# without intervention.
+# it should configure and build SSL, then build the _ssl and _hashlib
+# Python extensions without intervention.
 
 import os, sys, re
 
@@ -59,7 +59,8 @@ def find_best_ssl_dir(sources):
     candidates = []
     for s in sources:
         try:
-            s = os.path.abspath(s)
+            # note: do not abspath s; the build will fail if any
+            # higher up directory name has spaces in it.
             fnames = os.listdir(s)
         except os.error:
             fnames = []
@@ -82,30 +83,8 @@ def find_best_ssl_dir(sources):
         print "Found an SSL directory at '%s'" % (best_name,)
     else:
         print "Could not find an SSL directory in '%s'" % (sources,)
+    sys.stdout.flush()
     return best_name
-
-def run_32all_py():
-    # ms\32all.bat will reconfigure OpenSSL and then try to build
-    # all outputs (debug/nondebug/dll/lib).  So we filter the file
-    # to exclude any "nmake" commands and then execute.
-    tempname = "ms\\32all_py.bat"
-
-    in_bat  = open("ms\\32all.bat")
-    temp_bat = open(tempname,"w")
-    while 1:
-        cmd = in_bat.readline()
-        print 'cmd', repr(cmd)
-        if not cmd: break
-        if cmd.strip()[:5].lower() == "nmake":
-            continue
-        temp_bat.write(cmd)
-    in_bat.close()
-    temp_bat.close()
-    os.system(tempname)
-    try:
-        os.remove(tempname)
-    except:
-        pass
 
 def run_configure(configure, do_script):
     os.system("perl Configure "+configure)
@@ -117,12 +96,14 @@ def main():
         arch = "x86"
         debug = False
         configure = "VC-WIN32"
-        makefile = "32.mak"
+        do_script = "ms\\do_masm"
+        makefile = "ms\\nt.mak"
     elif sys.argv[1] == "Debug":
         arch = "x86"
         debug = True
         configure = "VC-WIN32"
-        makefile="d32.mak"
+        do_script = "ms\\do_masm"
+        makefile="ms\\d32.mak"
     elif sys.argv[1] == "ReleaseItanium":
         arch = "ia64"
         debug = False
@@ -148,8 +129,9 @@ def main():
         sys.exit(1)
 
     print "Found a working perl at '%s'" % (perl,)
+    sys.stdout.flush()
     # Look for SSL 2 levels up from pcbuild - ie, same place zlib etc all live.
-    ssl_dir = find_best_ssl_dir(("../..",))
+    ssl_dir = find_best_ssl_dir(("..\\..",))
     if ssl_dir is None:
         sys.exit(1)
 
@@ -157,31 +139,40 @@ def main():
     try:
         os.chdir(ssl_dir)
         # If the ssl makefiles do not exist, we invoke Perl to generate them.
-        if not os.path.isfile(makefile):
+        # Due to a bug in this script, the makefile sometimes ended up empty
+        # Force a regeneration if it is.
+        if not os.path.isfile(makefile) or os.path.getsize(makefile)==0:
             print "Creating the makefiles..."
+            sys.stdout.flush()
             # Put our working Perl at the front of our path
-            os.environ["PATH"] = os.path.split(perl)[0] + \
+            os.environ["PATH"] = os.path.dirname(perl) + \
                                           os.pathsep + \
                                           os.environ["PATH"]
-            if arch=="x86":
-                run_32all_py()
-            else:
-                run_configure(configure, do_script)
+            run_configure(configure, do_script)
+            if arch=="x86" and debug:
+                # the do_masm script in openssl doesn't generate a debug
+                # build makefile so we generate it here:
+                os.system("perl util\mk1mf.pl debug "+configure+" >"+makefile)
 
         # Now run make.
-        print "Executing nmake over the ssl makefiles..."
-        rc = os.system("nmake /nologo -f "+makefile)
+        makeCommand = "nmake /nologo PERL=\"%s\" -f \"%s\"" %(perl, makefile)
+        print "Executing ssl makefiles:", makeCommand
+        sys.stdout.flush()
+        rc = os.system(makeCommand)
         if rc:
-            print "Executing d32.mak failed"
+            print "Executing "+makefile+" failed"
             print rc
             sys.exit(rc)
     finally:
         os.chdir(old_cd)
     # And finally, we can build the _ssl module itself for Python.
-    defs = "SSL_DIR=%s" % (ssl_dir,)
+    defs = "SSL_DIR=\"%s\"" % (ssl_dir,)
     if debug:
         defs = defs + " " + "DEBUG=1"
-    rc = os.system('nmake /nologo -f _ssl.mak ' + defs + " " + make_flags)
+    makeCommand = 'nmake /nologo -f _ssl.mak ' + defs + " " + make_flags
+    print "Executing:", makeCommand
+    sys.stdout.flush()
+    rc = os.system(makeCommand)
     sys.exit(rc)
 
 if __name__=='__main__':

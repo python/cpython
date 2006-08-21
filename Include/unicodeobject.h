@@ -189,6 +189,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_RSplit PyUnicodeUCS2_RSplit
 # define PyUnicode_Replace PyUnicodeUCS2_Replace
 # define PyUnicode_Resize PyUnicodeUCS2_Resize
+# define PyUnicode_RichCompare PyUnicodeUCS2_RichCompare
 # define PyUnicode_SetDefaultEncoding PyUnicodeUCS2_SetDefaultEncoding
 # define PyUnicode_Split PyUnicodeUCS2_Split
 # define PyUnicode_Splitlines PyUnicodeUCS2_Splitlines
@@ -266,6 +267,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_RSplit PyUnicodeUCS4_RSplit
 # define PyUnicode_Replace PyUnicodeUCS4_Replace
 # define PyUnicode_Resize PyUnicodeUCS4_Resize
+# define PyUnicode_RichCompare PyUnicodeUCS4_RichCompare
 # define PyUnicode_SetDefaultEncoding PyUnicodeUCS4_SetDefaultEncoding
 # define PyUnicode_Split PyUnicodeUCS4_Split
 # define PyUnicode_Splitlines PyUnicodeUCS4_Splitlines
@@ -1137,6 +1139,28 @@ PyAPI_FUNC(PyObject *) PyUnicode_Replace(
 PyAPI_FUNC(int) PyUnicode_Compare(
     PyObject *left,		/* Left string */ 
     PyObject *right		/* Right string */
+    );
+
+/* Rich compare two strings and return one of the following:
+
+   - NULL in case an exception was raised
+   - Py_True or Py_False for successfuly comparisons
+   - Py_NotImplemented in case the type combination is unknown
+
+   Note that Py_EQ and Py_NE comparisons can cause a UnicodeWarning in
+   case the conversion of the arguments to Unicode fails with a
+   UnicodeDecodeError.
+
+   Possible values for op:
+
+     Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE
+
+*/
+
+PyAPI_FUNC(PyObject *) PyUnicode_RichCompare(
+    PyObject *left,		/* Left string */ 
+    PyObject *right,		/* Right string */
+    int op			/* Operation: Py_EQ, Py_NE, Py_GT, etc. */
     );
 
 /* Apply a argument tuple or dictionary to a format string and return

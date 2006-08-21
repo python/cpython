@@ -19,7 +19,7 @@ def valid_ranges(*types):
         result.append((min(a, b, c, d), max(a, b, c, d)))
     return result
 
-ArgType = type(c_int(0)._as_parameter_)
+ArgType = type(byref(c_int(0)))
 
 unsigned_types = [c_ubyte, c_ushort, c_uint, c_ulong]
 signed_types = [c_byte, c_short, c_int, c_long, c_longlong]
@@ -79,19 +79,6 @@ class NumberTestCase(unittest.TestCase):
         # returns PyCArgObject instances
         for t in signed_types + unsigned_types + float_types:
             self.failUnlessEqual(ArgType, type(t.from_param(0)))
-
-    def test_as_parameter(self):
-        # The _as_parameter_ property must also
-        # be a PyCArgObject instance
-        for t in signed_types + unsigned_types + float_types:
-            parm = t()._as_parameter_
-            self.failUnlessEqual(ArgType, type(parm))
-
-            # _as_parameter_ is readonly!
-            #
-            # Python 2.3 and 2.4 raise a TypeError when trying to set
-            # a readonly attribute, 2.5 raises an AttributeError.
-            self.assertRaises((AttributeError, TypeError), setattr, t(), "_as_parameter_", None)
 
     def test_byref(self):
         # calling byref returns also a PyCArgObject instance

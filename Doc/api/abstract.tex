@@ -5,6 +5,10 @@ of their type, or with wide classes of object types (e.g. all
 numerical types, or all sequence types).  When used on object types
 for which they do not apply, they will raise a Python exception.
 
+It is not possible to use these functions on objects that are not properly
+initialized, such as a list object that has been created by
+\cfunction{PyList_New()}, but whose items have not been set to some
+non-\code{NULL} value yet.
 
 \section{Object Protocol \label{object}}
 
@@ -673,11 +677,30 @@ determination.
   \samp{float(\var{o})}.\bifuncindex{float}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{Py_ssize_t}{PyNumber_Index}{PyObject *o}
-  Returns the \var{o} converted to a Py_ssize_t integer on success, or
-  -1 with an exception raised on failure.
+\begin{cfuncdesc}{PyObject*}{PyNumber_Index}{PyObject *o}
+  Returns the \var{o} converted to a Python int or long on success or \NULL{}
+  with a TypeError exception raised on failure.
   \versionadded{2.5}
 \end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_ssize_t}{PyNumber_AsSsize_t}{PyObject *o, PyObject *exc}
+  Returns \var{o} converted to a Py_ssize_t value if \var{o}
+  can be interpreted as an integer. If \var{o} can be converted to a Python
+  int or long but the attempt to convert to a Py_ssize_t value
+  would raise an \exception{OverflowError}, then the \var{exc} argument
+  is the type of exception that will be raised (usually \exception{IndexError}
+  or \exception{OverflowError}).  If \var{exc} is \NULL{}, then the exception
+  is cleared and the value is clipped to \var{PY_SSIZE_T_MIN}
+  for a negative integer or \var{PY_SSIZE_T_MAX} for a positive integer.
+  \versionadded{2.5}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyIndex_Check}{PyObject *o}
+  Returns True if \var{o} is an index integer (has the nb_index slot of 
+  the tp_as_number structure filled in).  
+  \versionadded{2.5}
+\end{cfuncdesc}
+
 
 \section{Sequence Protocol \label{sequence}}
 

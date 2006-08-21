@@ -656,18 +656,19 @@ class CodeGenerator:
 
         stack = []
         for i, for_ in zip(range(len(node.quals)), node.quals):
-            start, anchor = self.visit(for_)
+            start, anchor, end = self.visit(for_)
             cont = None
             for if_ in for_.ifs:
                 if cont is None:
                     cont = self.newBlock()
                 self.visit(if_, cont)
-            stack.insert(0, (start, cont, anchor))
+            stack.insert(0, (start, cont, anchor, end))
 
         self.visit(node.expr)
         self.emit('YIELD_VALUE')
+        self.emit('POP_TOP')
 
-        for start, cont, anchor in stack:
+        for start, cont, anchor, end in stack:
             if cont:
                 skip_one = self.newBlock()
                 self.emit('JUMP_FORWARD', skip_one)
@@ -676,14 +677,22 @@ class CodeGenerator:
                 self.nextBlock(skip_one)
             self.emit('JUMP_ABSOLUTE', start)
             self.startBlock(anchor)
+            self.emit('POP_BLOCK')
+            self.setups.pop()
+            self.startBlock(end)
+
         self.emit('LOAD_CONST', None)
 
     def visitGenExprFor(self, node):
         start = self.newBlock()
         anchor = self.newBlock()
+        end = self.newBlock()
+
+        self.setups.push((LOOP, start))
+        self.emit('SETUP_LOOP', end)
 
         if node.is_outmost:
-            self.loadName('[outmost-iterable]')
+            self.loadName('.0')
         else:
             self.visit(node.iter)
             self.emit('GET_ITER')
@@ -693,7 +702,7 @@ class CodeGenerator:
         self.emit('FOR_ITER', anchor)
         self.nextBlock()
         self.visit(node.assign)
-        return start, anchor
+        return start, anchor, end
 
     def visitGenExprIf(self, node, branch):
         self.set_lineno(node, force=True)

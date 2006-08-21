@@ -28,6 +28,7 @@ if not exist tcl8.4.12 (
    cd tk8.4.12\win
    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.12
    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.12 INSTALLDIR=..\..\tcltk install
+   cd ..\..
 )
 
 @rem sqlite

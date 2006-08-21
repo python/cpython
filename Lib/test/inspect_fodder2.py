@@ -88,3 +88,12 @@ extra85 = 'stop'
 def func88():
     # comment
     return 90
+
+# line 92
+def f():
+    class X:
+        def g():
+            "doc"
+            return 42
+    return X
+method_in_dynamic_class = f().g.im_func
