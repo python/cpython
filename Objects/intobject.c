@@ -580,7 +580,7 @@ i_divmod(register long x, register long y,
 }
 
 static PyObject *
-int_div(PyIntObject *x, PyIntObject *y)
+int_floor_div(PyIntObject *x, PyIntObject *y)
 {
 	long xi, yi;
 	long d, m;
@@ -872,17 +872,6 @@ int_or(PyIntObject *v, PyIntObject *w)
 	return PyInt_FromLong(a | b);
 }
 
-static int
-int_coerce(PyObject **pv, PyObject **pw)
-{
-	if (PyInt_Check(*pw)) {
-		Py_INCREF(*pv);
-		Py_INCREF(*pw);
-		return 0;
-	}
-	return 1; /* Can't do it */
-}
-
 static PyObject *
 int_int(PyIntObject *v)
 {
@@ -1036,7 +1025,7 @@ static PyNumberMethods int_as_number = {
 	(binaryfunc)int_and,	/*nb_and*/
 	(binaryfunc)int_xor,	/*nb_xor*/
 	(binaryfunc)int_or,	/*nb_or*/
-	int_coerce,		/*nb_coerce*/
+	0,		/*nb_coerce*/
 	(unaryfunc)int_int,	/*nb_int*/
 	(unaryfunc)int_long,	/*nb_long*/
 	(unaryfunc)int_float,	/*nb_float*/
@@ -1052,7 +1041,7 @@ static PyNumberMethods int_as_number = {
 	0,			/*nb_inplace_and*/
 	0,			/*nb_inplace_xor*/
 	0,			/*nb_inplace_or*/
-	(binaryfunc)int_div,	/* nb_floor_divide */
+	(binaryfunc)int_floor_div,	/* nb_floor_divide */
 	int_true_divide,	/* nb_true_divide */
 	0,			/* nb_inplace_floor_divide */
 	0,			/* nb_inplace_true_divide */

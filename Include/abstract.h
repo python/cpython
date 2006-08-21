@@ -694,24 +694,6 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 expression: o1|o2.
        */
 
-     /* Implemented elsewhere:
-
-     int PyNumber_Coerce(PyObject **p1, PyObject **p2);
-
-	 This function takes the addresses of two variables of type
-	 PyObject*.
-
-	 If the objects pointed to by *p1 and *p2 have the same type,
-	 increment their reference count and return 0 (success).
-	 If the objects can be converted to a common numeric type,
-	 replace *p1 and *p2 by their converted value (with 'new'
-	 reference counts), and return 0.
-	 If no conversion is possible, or if some other error occurs,
-	 return -1 (failure) and don't increment the reference counts.
-	 The call PyNumber_Coerce(&o1, &o2) is equivalent to the Python
-	 statement o1, o2 = coerce(o1, o2).
-       */
-
      PyAPI_FUNC(Py_ssize_t) PyNumber_Index(PyObject *);
 
        /*

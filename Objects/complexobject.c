@@ -573,65 +573,20 @@ complex_nonzero(PyComplexObject *v)
 	return v->cval.real != 0.0 || v->cval.imag != 0.0;
 }
 
-static int
-complex_coerce(PyObject **pv, PyObject **pw)
-{
-	Py_complex cval;
-	cval.imag = 0.;
-	if (PyInt_Check(*pw)) {
-		cval.real = (double)PyInt_AsLong(*pw);
-		*pw = PyComplex_FromCComplex(cval);
-		Py_INCREF(*pv);
-		return 0;
-	}
-	else if (PyLong_Check(*pw)) {
-		cval.real = PyLong_AsDouble(*pw);
-		if (cval.real == -1.0 && PyErr_Occurred())
-			return -1;
-		*pw = PyComplex_FromCComplex(cval);
-		Py_INCREF(*pv);
-		return 0;
-	}
-	else if (PyFloat_Check(*pw)) {
-		cval.real = PyFloat_AsDouble(*pw);
-		*pw = PyComplex_FromCComplex(cval);
-		Py_INCREF(*pv);
-		return 0;
-	}
-	else if (PyComplex_Check(*pw)) {
-		Py_INCREF(*pv);
-		Py_INCREF(*pw);
-		return 0;
-	}
-	return 1; /* Can't do it */
-}
-
 static PyObject *
 complex_richcompare(PyObject *v, PyObject *w, int op)
 {
-	int c;
 	Py_complex i, j;
 	PyObject *res;
 
-	c = PyNumber_CoerceEx(&v, &w);
-	if (c < 0)
-		return NULL;
-	if (c > 0) {
-		Py_INCREF(Py_NotImplemented);
-		return Py_NotImplemented;
-	}
 	/* Make sure both arguments are complex. */
 	if (!(PyComplex_Check(v) && PyComplex_Check(w))) {
-		Py_DECREF(v);
-		Py_DECREF(w);
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
 
 	i = ((PyComplexObject *)v)->cval;
 	j = ((PyComplexObject *)w)->cval;
-	Py_DECREF(v);
-	Py_DECREF(w);
 
 	if (op != Py_EQ && op != Py_NE) {
 		PyErr_SetString(PyExc_TypeError,
@@ -996,7 +951,7 @@ static PyNumberMethods complex_as_number = {
 	0,					/* nb_and */
 	0,					/* nb_xor */
 	0,					/* nb_or */
-	complex_coerce,				/* nb_coerce */
+	(coercion)0,				/* nb_coerce */
 	complex_int,				/* nb_int */
 	complex_long,				/* nb_long */
 	complex_float,				/* nb_float */

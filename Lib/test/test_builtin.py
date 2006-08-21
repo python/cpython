@@ -196,17 +196,6 @@ class BuiltinTest(unittest.TestCase):
         a.pop(); b.pop(); c.pop()
         self.assertRaises(TypeError, cmp)
 
-    def test_coerce(self):
-        self.assert_(not fcmp(coerce(1, 1.1), (1.0, 1.1)))
-        self.assertEqual(coerce(1, 1L), (1L, 1L))
-        self.assert_(not fcmp(coerce(1L, 1.1), (1.0, 1.1)))
-        self.assertRaises(TypeError, coerce)
-        class BadNumber:
-            def __coerce__(self, other):
-                raise ValueError
-        self.assertRaises(ValueError, coerce, 42, BadNumber())
-        self.assertRaises(OverflowError, coerce, 0.5, int("12345" * 1000))
-
     def test_compile(self):
         compile('print 1\n', '', 'exec')
         bom = '\xef\xbb\xbf'

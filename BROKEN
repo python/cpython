@@ -110,3 +110,31 @@ Traceback (most recent call last):
   File "../Lib/test/test_set.py", line 291, in test_remove
     self.assert_(self.thetype(self.word) in s)
 AssertionError
+
+////////////////////////////////////////////////////////////////////////
+test_compare
+////////////////////////////////////////////////////////////////////////
+test test_compare failed -- Traceback (most recent call last):
+  File "/Users/nnorwitz/build/python/py3k.2/Lib/test/test_compare.py", line 28, in test_comparisons
+    self.assertEqual(a, b)
+AssertionError: 2 != (2+0j)
+
+////////////////////////////////////////////////////////////////////////
+test_complex
+////////////////////////////////////////////////////////////////////////
+======================================================================
+FAIL: test_pow (test.test_complex.ComplexTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/nnorwitz/build/python/py3k.2/Lib/test/test_complex.py", line 130, in test_pow
+    self.assertEqual(a ** 0j, 1)
+AssertionError: (1+0j) != 1
+
+======================================================================
+FAIL: test_richcompare (test.test_complex.ComplexTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/nnorwitz/build/python/py3k.2/Lib/test/test_complex.py", line 96, in test_richcompare
+    self.assertRaises(OverflowError, complex.__eq__, 1+1j, 1L<<10000)
+AssertionError: OverflowError not raised
+

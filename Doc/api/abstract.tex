@@ -654,20 +654,6 @@ determination.
   statement \samp{\var{o1} |= \var{o2}}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyNumber_Coerce}{PyObject **p1, PyObject **p2}
-  This function takes the addresses of two variables of type
-  \ctype{PyObject*}.  If the objects pointed to by \code{*\var{p1}}
-  and \code{*\var{p2}} have the same type, increment their reference
-  count and return \code{0} (success). If the objects can be converted
-  to a common numeric type, replace \code{*p1} and \code{*p2} by their
-  converted value (with 'new' reference counts), and return \code{0}.
-  If no conversion is possible, or if some other error occurs, return
-  \code{-1} (failure) and don't increment the reference counts.  The
-  call \code{PyNumber_Coerce(\&o1, \&o2)} is equivalent to the Python
-  statement \samp{\var{o1}, \var{o2} = coerce(\var{o1}, \var{o2})}.
-  \bifuncindex{coerce}
-\end{cfuncdesc}
-
 \begin{cfuncdesc}{PyObject*}{PyNumber_Int}{PyObject *o}
   Returns the \var{o} converted to an integer object on success, or
   \NULL{} on failure.  If the argument is outside the integer range

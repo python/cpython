@@ -393,7 +393,6 @@ PyAPI_FUNC(long) PyObject_Hash(PyObject *);
 PyAPI_FUNC(int) PyObject_IsTrue(PyObject *);
 PyAPI_FUNC(int) PyObject_Not(PyObject *);
 PyAPI_FUNC(int) PyCallable_Check(PyObject *);
-PyAPI_FUNC(int) PyNumber_Coerce(PyObject **, PyObject **);
 PyAPI_FUNC(int) PyNumber_CoerceEx(PyObject **, PyObject **);
 
 PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject *);

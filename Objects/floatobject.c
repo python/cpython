@@ -842,31 +842,6 @@ float_nonzero(PyFloatObject *v)
 	return v->ob_fval != 0.0;
 }
 
-static int
-float_coerce(PyObject **pv, PyObject **pw)
-{
-	if (PyInt_Check(*pw)) {
-		long x = PyInt_AsLong(*pw);
-		*pw = PyFloat_FromDouble((double)x);
-		Py_INCREF(*pv);
-		return 0;
-	}
-	else if (PyLong_Check(*pw)) {
-		double x = PyLong_AsDouble(*pw);
-		if (x == -1.0 && PyErr_Occurred())
-			return -1;
-		*pw = PyFloat_FromDouble(x);
-		Py_INCREF(*pv);
-		return 0;
-	}
-	else if (PyFloat_Check(*pw)) {
-		Py_INCREF(*pv);
-		Py_INCREF(*pw);
-		return 0;
-	}
-	return 1; /* Can't do it */
-}
-
 static PyObject *
 float_long(PyObject *v)
 {
@@ -1119,7 +1094,7 @@ static PyNumberMethods float_as_number = {
 	0,		/*nb_and*/
 	0,		/*nb_xor*/
 	0,		/*nb_or*/
-	float_coerce, 	/*nb_coerce*/
+	(coercion)0,	/*nb_coerce*/
 	float_int, 	/*nb_int*/
 	float_long, 	/*nb_long*/
 	float_float,	/*nb_float*/

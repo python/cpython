@@ -35,21 +35,6 @@ machine'' that calls the subroutines corresponding to each bytecode.
 Any class which does not inherit from \class{object}.  See
 \emph{new-style class}.
 
-\index{coercion}
-\item[coercion]
-The implicit conversion of an instance of one type to another during an
-operation which involves two arguments of the same type.  For example,
-{}\code{int(3.15)} converts the floating point number to the integer
-{}\code{3}, but in {}\code{3+4.5}, each argument is of a different type (one
-int, one float), and both must be converted to the same type before they can
-be added or it will raise a {}\code{TypeError}.  Coercion between two
-operands can be performed with the {}\code{coerce} builtin function; thus,
-{}\code{3+4.5} is equivalent to calling {}\code{operator.add(*coerce(3,
-4.5))} and results in {}\code{operator.add(3.0, 4.5)}.  Without coercion,
-all arguments of even compatible types would have to be normalized to the
-same value by the programmer, e.g., {}\code{float(3)+4.5} rather than just
-{}\code{3+4.5}.
-
 \index{complex number}
 \item[complex number]
 An extension of the familiar real number system in which all numbers are
@@ -106,17 +91,14 @@ fast style is characterized by the presence of many \keyword{try} and
 \index{__future__}
 \item[__future__]
 A pseudo module which programmers can use to enable new language
-features which are not compatible with the current interpreter.  For
-example, the expression \code{11/4} currently evaluates to \code{2}.
-If the module in which it is executed had enabled \emph{true division}
-by executing:
+features which are not compatible with the current interpreter.
+To enable \code{new_feature}
 
 \begin{verbatim}
-from __future__ import division
+from __future__ import new_feature
 \end{verbatim}
 
-the expression \code{11/4} would evaluate to \code{2.75}.  By
-importing the \ulink{\module{__future__}}{../lib/module-future.html}
+By importing the \ulink{\module{__future__}}{../lib/module-future.html}
 module and evaluating its variables, you can see when a new feature
 was first added to the language and when it will become the default:
 
@@ -183,17 +165,10 @@ example as a key in a dictionary.
 
 \index{integer division}
 \item[integer division]
-Mathematical division discarding any remainder.  For example, the
-expression \code{11/4} currently evaluates to \code{2} in contrast
-to the \code{2.75} returned by float division.  Also called
-{}\emph{floor division}.  When dividing two integers the outcome will
-always be another integer (having the floor function applied to it).
-However, if one of the operands is another numeric type (such as a
-{}\class{float}), the result will be coerced (see \emph{coercion}) to
-a common type.  For example, an integer divided by a float will result
-in a float value, possibly with a decimal fraction.  Integer division
-can be forced by using the \code{//} operator instead of the \code{/}
-operator.  See also \emph{__future__}.
+Mathematical division including any remainder.  The result will always
+be a float.  For example, the expression \code{11/4} evaluates to \code{2.75}.
+Integer division can be forced by using the \code{//} operator instead
+of the \code{/} operator.
 
 \index{interactive}
 \item[interactive]
