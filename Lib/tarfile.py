@@ -411,9 +411,6 @@ class _Stream:
             self.buf += self.cmp.flush()
 
         if self.mode == "w" and self.buf:
-            blocks, remainder = divmod(len(self.buf), self.bufsize)
-            if remainder > 0:
-                self.buf += NUL * (self.bufsize - remainder)
             self.fileobj.write(self.buf)
             self.buf = ""
             if self.comptype == "gz":

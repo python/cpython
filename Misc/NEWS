@@ -15,6 +15,8 @@ Library
 - Bug #1541863: uuid.uuid1 failed to generate unique identifiers
   on systems with low clock resolution.
 
+- Bug #1543303, patch #1543897: remove NUL padding from tarfiles.
+
 
 Documentation
 -------------
