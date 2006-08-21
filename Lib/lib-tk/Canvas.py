@@ -37,8 +37,6 @@ class CanvasItem:
                                              'itemconfigure',
                                              (self.id,))))
         return self._keys
-    def has_key(self, key):
-        return key in self.keys()
     def __contains__(self, key):
         return key in self.keys()
     def addtag(self, tag, option='withtag'):
