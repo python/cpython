@@ -324,6 +324,27 @@ class WriteSize0Test(BaseTest):
 class WriteStreamTest(WriteTest):
     sep = '|'
 
+    def test_padding(self):
+        self.dst.close()
+
+        if self.comp == "gz":
+            f = gzip.GzipFile(self.dstname)
+            s = f.read()
+            f.close()
+        elif self.comp == "bz2":
+            f = bz2.BZ2Decompressor()
+            s = file(self.dstname).read()
+            s = f.decompress(s)
+            self.assertEqual(len(f.unused_data), 0, "trailing data")
+        else:
+            f = file(self.dstname)
+            s = f.read()
+            f.close()
+
+        self.assertEqual(s.count("\0"), tarfile.RECORDSIZE,
+                         "incorrect zero padding")
+
+
 class WriteGNULongTest(unittest.TestCase):
     """This testcase checks for correct creation of GNU Longname
        and Longlink extensions.
