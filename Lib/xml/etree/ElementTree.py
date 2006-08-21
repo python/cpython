@@ -111,33 +111,7 @@ __all__ = [
 
 import string, sys, re
 
-class _SimpleElementPath:
-    # emulate pre-1.2 find/findtext/findall behaviour
-    def find(self, element, tag):
-        for elem in element:
-            if elem.tag == tag:
-                return elem
-        return None
-    def findtext(self, element, tag, default=None):
-        for elem in element:
-            if elem.tag == tag:
-                return elem.text or ""
-        return default
-    def findall(self, element, tag):
-        if tag[:3] == ".//":
-            return element.getiterator(tag[3:])
-        result = []
-        for elem in element:
-            if elem.tag == tag:
-                result.append(elem)
-        return result
-
-try:
-    from . import ElementPath
-except ImportError:
-    # FIXME: issue warning in this case?
-    # TODO: DEFINITELY issue warning here!!!
-    ElementPath = _SimpleElementPath()
+from . import ElementPath
 
 # TODO: add support for custom namespace resolvers/default namespaces
 # TODO: add improved support for incremental parsing
