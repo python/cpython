@@ -1682,6 +1682,8 @@ static int
 compiler_continue(struct compiler *c)
 {
 	static const char LOOP_ERROR_MSG[] = "'continue' not properly in loop";
+	static const char IN_FINALLY_ERROR_MSG[] = 
+			"'continue' not supported inside 'finally' clause";
 	int i;
 
 	if (!c->u->u_nfblocks)
@@ -1693,15 +1695,18 @@ compiler_continue(struct compiler *c)
 		break;
 	case EXCEPT:
 	case FINALLY_TRY:
-		while (--i >= 0 && c->u->u_fblock[i].fb_type != LOOP)
-			;
+		while (--i >= 0 && c->u->u_fblock[i].fb_type != LOOP) {
+			/* Prevent continue anywhere under a finally
+			      even if hidden in a sub-try or except. */
+			if (c->u->u_fblock[i].fb_type == FINALLY_END)
+				return compiler_error(c, IN_FINALLY_ERROR_MSG);
+		}
 		if (i == -1)
 			return compiler_error(c, LOOP_ERROR_MSG);
 		ADDOP_JABS(c, CONTINUE_LOOP, c->u->u_fblock[i].fb_block);
 		break;
 	case FINALLY_END:
-		return compiler_error(c,
-			"'continue' not supported inside 'finally' clause");
+		return compiler_error(c, IN_FINALLY_ERROR_MSG);
 	}
 
 	return 1;

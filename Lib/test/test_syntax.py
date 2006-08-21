@@ -235,6 +235,93 @@ SyntaxError: assignment to None (<doctest test.test_syntax[32]>, line 1)
 >>> f() += 1
 Traceback (most recent call last):
 SyntaxError: illegal expression for augmented assignment (<doctest test.test_syntax[33]>, line 1)
+
+
+Test continue in finally in weird combinations.
+
+continue in for loop under finally shouuld be ok.
+
+    >>> def test():
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         for abc in range(10):
+    ...             continue
+    ...     print abc
+    >>> test()
+    9
+
+Start simple, a continue in a finally should not be allowed.
+
+    >>> def test():
+    ...    for abc in range(10):
+    ...        try:
+    ...            pass
+    ...        finally:
+    ...            continue
+    Traceback (most recent call last):
+      ...
+    SyntaxError: 'continue' not supported inside 'finally' clause (<doctest test.test_syntax[36]>, line 6)
+
+This is essentially a continue in a finally which should not be allowed.
+
+    >>> def test():
+    ...    for abc in range(10):
+    ...        try:
+    ...            pass
+    ...        finally:
+    ...            try:
+    ...                continue
+    ...            except:
+    ...                pass
+    Traceback (most recent call last):
+      ...
+    SyntaxError: 'continue' not supported inside 'finally' clause (<doctest test.test_syntax[37]>, line 7)
+
+    >>> def foo():
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         continue
+    Traceback (most recent call last):
+      ...
+    SyntaxError: 'continue' not supported inside 'finally' clause (<doctest test.test_syntax[38]>, line 5)
+
+    >>> def foo():
+    ...     for a in ():
+    ...       try:
+    ...           pass
+    ...       finally:
+    ...           continue
+    Traceback (most recent call last):
+      ...
+    SyntaxError: 'continue' not supported inside 'finally' clause (<doctest test.test_syntax[39]>, line 6)
+
+    >>> def foo():
+    ...     for a in ():
+    ...         try:
+    ...             pass
+    ...         finally:
+    ...             try:
+    ...                 continue
+    ...             finally:
+    ...                 pass
+    Traceback (most recent call last):
+      ...
+    SyntaxError: 'continue' not supported inside 'finally' clause (<doctest test.test_syntax[40]>, line 7)
+
+    >>> def foo():
+    ...  for a in ():
+    ...   try: pass
+    ...   finally:
+    ...    try:
+    ...     pass
+    ...    except:
+    ...     continue
+    Traceback (most recent call last):
+      ...
+    SyntaxError: 'continue' not supported inside 'finally' clause (<doctest test.test_syntax[41]>, line 8)
+
 """
 
 import re
