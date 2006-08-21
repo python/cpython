@@ -359,6 +359,8 @@ class Attr(Node):
         # nodeValue and value are set elsewhere
 
     def _get_localName(self):
+        if 'localName' in self.__dict__:
+          return self.__dict__['localName']
         return self.nodeName.split(":", 1)[-1]
 
     def _get_name(self):
@@ -662,6 +664,8 @@ class Element(Node):
                            # namespaces.
 
     def _get_localName(self):
+        if 'localName' in self.__dict__:
+          return self.__dict__['localName']
         return self.tagName.split(":", 1)[-1]
 
     def _get_tagName(self):
@@ -1118,7 +1122,7 @@ def _get_containing_entref(node):
     return None
 
 
-class Comment(Childless, CharacterData):
+class Comment(CharacterData):
     nodeType = Node.COMMENT_NODE
     nodeName = "#comment"
 
