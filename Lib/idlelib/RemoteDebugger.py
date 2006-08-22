@@ -231,7 +231,7 @@ class FrameProxy:
         return self._get_dict_proxy(did)
 
     def _get_dict_proxy(self, did):
-        if self._dictcache.has_key(did):
+        if did in self._dictcache:
             return self._dictcache[did]
         dp = DictProxy(self._conn, self._oid, did)
         self._dictcache[did] = dp

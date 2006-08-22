@@ -550,7 +550,7 @@ class ConfigDialog(Toplevel):
 
     def AddChangedItem(self,type,section,item,value):
         value=str(value) #make sure we use a string
-        if not self.changedItems[type].has_key(section):
+        if section not in self.changedItems[type]:
             self.changedItems[type][section]={}
         self.changedItems[type][section][item]=value
 
@@ -697,7 +697,7 @@ class ConfigDialog(Toplevel):
             return
         #remove key set from config
         idleConf.userCfg['keys'].remove_section(keySetName)
-        if self.changedItems['keys'].has_key(keySetName):
+        if keySetName in self.changedItems['keys']:
             del(self.changedItems['keys'][keySetName])
         #write changes
         idleConf.userCfg['keys'].Save()
@@ -724,7 +724,7 @@ class ConfigDialog(Toplevel):
             return
         #remove theme from config
         idleConf.userCfg['highlight'].remove_section(themeName)
-        if self.changedItems['highlight'].has_key(themeName):
+        if themeName in self.changedItems['highlight']:
             del(self.changedItems['highlight'][themeName])
         #write changes
         idleConf.userCfg['highlight'].Save()
@@ -859,9 +859,9 @@ class ConfigDialog(Toplevel):
             #handle any unsaved changes to this theme
             if theme in self.changedItems['highlight'].keys():
                 themeDict=self.changedItems['highlight'][theme]
-                if themeDict.has_key(element+'-foreground'):
+                if element+'-foreground' in themeDict:
                     colours['foreground']=themeDict[element+'-foreground']
-                if themeDict.has_key(element+'-background'):
+                if element+'-background' in themeDict:
                     colours['background']=themeDict[element+'-background']
             self.textHighlightSample.tag_config(element, **colours)
         self.SetColourSample()
