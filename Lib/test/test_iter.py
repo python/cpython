@@ -498,19 +498,6 @@ class TestCase(unittest.TestCase):
             for y in NoGuessLen5(), Guess3Len5(), Guess30Len5():
                 self.assertEqual(zip(x, y), expected)
 
-    # Test reduces()'s use of iterators.
-    def test_builtin_reduce(self):
-        from operator import add
-        self.assertEqual(reduce(add, SequenceClass(5)), 10)
-        self.assertEqual(reduce(add, SequenceClass(5), 42), 52)
-        self.assertRaises(TypeError, reduce, add, SequenceClass(0))
-        self.assertEqual(reduce(add, SequenceClass(0), 42), 42)
-        self.assertEqual(reduce(add, SequenceClass(1)), 0)
-        self.assertEqual(reduce(add, SequenceClass(1), 42), 42)
-
-        d = {"one": 1, "two": 2, "three": 3}
-        self.assertEqual(reduce(add, d), "".join(d.keys()))
-
     # This test case will be removed if we don't have Unicode
     def test_unicode_join_endcase(self):
 

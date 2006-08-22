@@ -335,10 +335,8 @@ class AutoCompleteWindow:
             self.userwantswindow = True
             return
 
-        elif reduce(lambda x, y: x or y,
-                    [keysym.find(s) != -1 for s in ("Shift", "Control", "Alt",
-                                                    "Meta", "Command", "Option")
-                     ]):
+        elif any(s in keysym for s in ("Shift", "Control", "Alt",
+                                       "Meta", "Command", "Option")):
             # A modifier key, so ignore
             return
 
