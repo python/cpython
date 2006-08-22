@@ -370,7 +370,7 @@ class Test:
         if runs == 0:
             return 0.0, 0.0, 0.0, 0.0
         min_time = min(self.times)
-        total_time = reduce(operator.add, self.times, 0.0)
+        total_time = sum(self.times)
         avg_time = total_time / float(runs)
         operation_avg = total_time / float(runs
                                            * self.rounds
@@ -570,7 +570,7 @@ class Benchmark:
         if runs == 0:
             return 0.0, 0.0
         min_time = min(self.roundtimes)
-        total_time = reduce(operator.add, self.roundtimes, 0.0)
+        total_time = sum(self.roundtimes)
         avg_time = total_time / float(runs)
         max_time = max(self.roundtimes)
         return (min_time, avg_time, max_time)

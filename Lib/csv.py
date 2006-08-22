@@ -221,12 +221,10 @@ class Sniffer:
             if m[n]:
                 spaces += 1
 
-        quotechar = reduce(lambda a, b, quotes = quotes:
-                           (quotes[a] > quotes[b]) and a or b, quotes.keys())
+        quotechar = max(quotes, key=quotes.get)
 
         if delims:
-            delim = reduce(lambda a, b, delims = delims:
-                           (delims[a] > delims[b]) and a or b, delims.keys())
+            delim = max(delims, key=delims.get)
             skipinitialspace = delims[delim] == spaces
             if delim == '\n': # most likely a file with a single column
                 delim = ''
@@ -285,14 +283,12 @@ class Sniffer:
                     continue
                 # get the mode of the frequencies
                 if len(items) > 1:
-                    modes[char] = reduce(lambda a, b: a[1] > b[1] and a or b,
-                                         items)
+                    modes[char] = max(items, key=lambda x: x[1])
                     # adjust the mode - subtract the sum of all
                     # other frequencies
                     items.remove(modes[char])
                     modes[char] = (modes[char][0], modes[char][1]
-                                   - reduce(lambda a, b: (0, a[1] + b[1]),
-                                            items)[1])
+                                   - sum(item[1] for item in items))
                 else:
                     modes[char] = items[0]
 

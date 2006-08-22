@@ -1393,32 +1393,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(OverflowError, range, -sys.maxint, sys.maxint)
         self.assertRaises(OverflowError, range, 0, 2*sys.maxint)
 
-    def test_reduce(self):
-        self.assertEqual(reduce(lambda x, y: x+y, ['a', 'b', 'c'], ''), 'abc')
-        self.assertEqual(
-            reduce(lambda x, y: x+y, [['a', 'c'], [], ['d', 'w']], []),
-            ['a','c','d','w']
-        )
-        self.assertEqual(reduce(lambda x, y: x*y, range(2,8), 1), 5040)
-        self.assertEqual(
-            reduce(lambda x, y: x*y, range(2,21), 1L),
-            2432902008176640000L
-        )
-        self.assertEqual(reduce(lambda x, y: x+y, Squares(10)), 285)
-        self.assertEqual(reduce(lambda x, y: x+y, Squares(10), 0), 285)
-        self.assertEqual(reduce(lambda x, y: x+y, Squares(0), 0), 0)
-        self.assertRaises(TypeError, reduce)
-        self.assertRaises(TypeError, reduce, 42, 42)
-        self.assertRaises(TypeError, reduce, 42, 42, 42)
-        self.assertEqual(reduce(42, "1"), "1") # func is never called with one item
-        self.assertEqual(reduce(42, "", "1"), "1") # func is never called with one item
-        self.assertRaises(TypeError, reduce, 42, (42, 42))
-
-        class BadSeq:
-            def __getitem__(self, index):
-                raise ValueError
-        self.assertRaises(ValueError, reduce, 42, BadSeq())
-
     def test_reload(self):
         import marshal
         reload(marshal)

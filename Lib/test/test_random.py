@@ -77,7 +77,9 @@ class TestBasicOps(unittest.TestCase):
         pop = range(n)
         trials = 10000  # large num prevents false negatives without slowing normal case
         def factorial(n):
-            return reduce(int.__mul__, xrange(1, n), 1)
+            if n == 0:
+                return 1
+            return n * factorial(n - 1)
         for k in xrange(n):
             expected = factorial(n) // factorial(n-k)
             perms = {}
