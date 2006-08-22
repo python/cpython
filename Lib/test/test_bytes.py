@@ -60,13 +60,13 @@ class BytesTest(unittest.TestCase):
         self.assertRaises(ValueError, bytes, [-1])
         self.assertRaises(ValueError, bytes, [-sys.maxint])
         self.assertRaises(ValueError, bytes, [-sys.maxint-1])
-        self.assertRaises(TypeError, bytes, [-sys.maxint-2])
-        self.assertRaises(TypeError, bytes, [-10**100])
+        self.assertRaises(ValueError, bytes, [-sys.maxint-2])
+        self.assertRaises(ValueError, bytes, [-10**100])
         self.assertRaises(ValueError, bytes, [256])
         self.assertRaises(ValueError, bytes, [257])
         self.assertRaises(ValueError, bytes, [sys.maxint])
-        self.assertRaises(TypeError, bytes, [sys.maxint+1])
-        self.assertRaises(TypeError, bytes, [10**100])
+        self.assertRaises(ValueError, bytes, [sys.maxint+1])
+        self.assertRaises(ValueError, bytes, [10**100])
 
     def test_repr(self):
         self.assertEqual(repr(bytes()), "bytes()")

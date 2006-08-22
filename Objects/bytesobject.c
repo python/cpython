@@ -245,7 +245,7 @@ bytes_contains(PyBytesObject *self, PyObject *value)
     if (PyBytes_Check(value))
         return bytes_substring(self, (PyBytesObject *)value);
 
-    ival = PyNumber_AsSsize_t(value, PyExc_TypeError);
+    ival = PyNumber_AsSsize_t(value, PyExc_ValueError);
     if (ival == -1 && PyErr_Occurred())
         return -1;
     if (ival < 0 || ival >= 256) {
@@ -365,7 +365,7 @@ bytes_setitem(PyBytesObject *self, Py_ssize_t i, PyObject *value)
     if (value == NULL)
         return bytes_setslice(self, i, i+1, NULL);
 
-    ival = PyNumber_AsSsize_t(value, PyExc_TypeError);
+    ival = PyNumber_AsSsize_t(value, PyExc_ValueError);
     if (ival == -1 && PyErr_Occurred())
         return -1;
 
@@ -448,7 +448,7 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
     }
 
     /* Is it an int? */
-    count = PyNumber_AsSsize_t(arg, PyExc_TypeError);
+    count = PyNumber_AsSsize_t(arg, PyExc_ValueError);
     if (count == -1 && PyErr_Occurred())
         PyErr_Clear();
     else {
@@ -500,7 +500,7 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
         }
 
         /* Interpret it as an int (__index__) */
-        value = PyNumber_AsSsize_t(item, PyExc_TypeError);
+        value = PyNumber_AsSsize_t(item, PyExc_ValueError);
         Py_DECREF(item);
         if (value == -1 && PyErr_Occurred())
             goto error;
