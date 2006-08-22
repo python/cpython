@@ -169,7 +169,7 @@ class SocketIO(object):
             how, (oid, methodname, args, kwargs) = request
         except TypeError:
             return ("ERROR", "Bad request format")
-        if not self.objtable.has_key(oid):
+        if oid not in self.objtable:
             return ("ERROR", "Unknown object id: %r" % (oid,))
         obj = self.objtable[oid]
         if methodname == "__methods__":
@@ -304,7 +304,7 @@ class SocketIO(object):
             # wait for notification from socket handling thread
             cvar = self.cvars[myseq]
             cvar.acquire()
-            while not self.responses.has_key(myseq):
+            while myseq not in self.responses:
                 cvar.wait()
             response = self.responses[myseq]
             self.debug("_getresponse:%s: thread woke up: response: %s" %
@@ -552,7 +552,7 @@ class RPCProxy(object):
             return MethodProxy(self.sockio, self.oid, name)
         if self.__attributes is None:
             self.__getattributes()
-        if self.__attributes.has_key(name):
+        if name in self.__attributes:
             value = self.sockio.remotecall(self.oid, '__getattribute__',
                                            (name,), {})
             return value

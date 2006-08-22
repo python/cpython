@@ -648,8 +648,8 @@ class EditorWindow(object):
                     if accel:
                         itemName = menu.entrycget(index, 'label')
                         event = ''
-                        if menuEventDict.has_key(menubarItem):
-                            if menuEventDict[menubarItem].has_key(itemName):
+                        if menubarItem in menuEventDict:
+                            if itemName in menuEventDict[menubarItem]:
                                 event = menuEventDict[menubarItem][itemName]
                         if event:
                             accel = get_accelerator(keydefs, event)
