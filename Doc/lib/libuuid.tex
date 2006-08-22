@@ -18,20 +18,11 @@ may compromise privacy since it creates a UUID containing the computer's
 network address.  \function{uuid4()} creates a random UUID.
 
 \begin{classdesc}{UUID}{\optional{hex\optional{, bytes\optional{,
-fields\optional{, int\optional{, version}}}}}}
-
-%Instances of the UUID class represent UUIDs as specified in RFC 4122.
-%UUID objects are immutable, hashable, and usable as dictionary keys.
-%Converting a UUID to a string with str() yields something in the form
-%'12345678-1234-1234-1234-123456789abc'.  The UUID constructor accepts
-%four possible forms: a similar string of hexadecimal digits, or a
-%string of 16 raw bytes as an argument named 'bytes', or a tuple of
-%six integer fields (with 32-bit, 16-bit, 16-bit, 8-bit, 8-bit, and
-%48-bit values respectively) as an argument named 'fields', or a single
-%128-bit integer as an argument named 'int'.
+bytes_le\optional{, fields\optional{, int\optional{, version}}}}}}}
 
 Create a UUID from either a string of 32 hexadecimal digits,
-a string of 16 bytes as the \var{bytes} argument, a tuple of six
+a string of 16 bytes as the \var{bytes} argument, a string of 16 bytes
+in little-endian order as the \var{bytes_le} argument, a tuple of six
 integers (32-bit \var{time_low}, 16-bit \var{time_mid},
 16-bit \var{time_hi_version},
 8-bit \var{clock_seq_hi_variant}, 8-bit \var{clock_seq_low}, 48-bit \var{node})
@@ -45,22 +36,31 @@ UUID('{12345678-1234-5678-1234-567812345678}')
 UUID('12345678123456781234567812345678')
 UUID('urn:uuid:12345678-1234-5678-1234-567812345678')
 UUID(bytes='\x12\x34\x56\x78'*4)
+UUID(bytes_le='\x78\x56\x34\x12\x34\x12\x78\x56' +
+              '\x12\x34\x56\x78\x12\x34\x56\x78')
 UUID(fields=(0x12345678, 0x1234, 0x5678, 0x12, 0x34, 0x567812345678))
 UUID(int=0x12345678123456781234567812345678)
 \end{verbatim}
 
-Exactly one of \var{hex}, \var{bytes}, \var{fields}, or \var{int} must
+Exactly one of \var{hex}, \var{bytes}, \var{bytes_le}, \var{fields},
+or \var{int} must
 be given.  The \var{version} argument is optional; if given, the
 resulting UUID will have its variant and version number set according to
 RFC 4122, overriding bits in the given \var{hex}, \var{bytes},
-\var{fields}, or \var{int}.
+\var{bytes_le}, \var{fields}, or \var{int}.
 
 \end{classdesc}
 
 \class{UUID} instances have these read-only attributes:
 
 \begin{memberdesc}{bytes}
-The UUID as a 16-byte string.
+The UUID as a 16-byte string (containing the six
+integer fields in big-endian byte order).
+\end{memberdesc}
+
+\begin{memberdesc}{bytes_le}
+The UUID as a 16-byte string (with \var{time_low}, \var{time_mid},
+and \var{time_hi_version} in little-endian byte order).
 \end{memberdesc}
 
 \begin{memberdesc}{fields}
