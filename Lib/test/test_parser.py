@@ -183,6 +183,44 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
     def test_assert(self):
         self.check_suite("assert alo < ahi and blo < bhi\n")
 
+    def test_position(self):
+        # An absolutely minimal test of position information.  Better
+        # tests would be a big project.
+        code = "def f(x):\n    return x + 1\n"
+        st1 = parser.suite(code)
+        st2 = st1.totuple(line_info=1, col_info=1)
+
+        def walk(tree):
+            node_type = tree[0]
+            next = tree[1]
+            if isinstance(next, tuple):
+                for elt in tree[1:]:
+                    for x in walk(elt):
+                        yield x
+            else:
+                yield tree
+            
+        terminals = list(walk(st2))
+        self.assertEqual([
+            (1, 'def', 1, 0),
+            (1, 'f', 1, 4),
+            (7, '(', 1, 5),
+            (1, 'x', 1, 6),
+            (8, ')', 1, 7),
+            (11, ':', 1, 8),
+            (4, '', 1, 9),
+            (5, '', 2, -1),
+            (1, 'return', 2, 4),
+            (1, 'x', 2, 11),
+            (14, '+', 2, 13),
+            (2, '1', 2, 15),
+            (4, '', 2, 16),
+            (6, '', 2, -1),
+            (4, '', 2, -1),
+            (0, '', 2, -1)],
+                         terminals)
+
+
 #
 #  Second, we take *invalid* trees and make sure we get ParserError
 #  rejections for them.
