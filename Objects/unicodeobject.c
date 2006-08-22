@@ -1970,7 +1970,28 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
 
     static const char *hexdigit = "0123456789abcdef";
 
-    repr = PyString_FromStringAndSize(NULL, 2 + 6*size + 1);
+    /* Initial allocation is based on the longest-possible unichr
+       escape.
+
+       In wide (UTF-32) builds '\U00xxxxxx' is 10 chars per source
+       unichr, so in this case it's the longest unichr escape. In
+       narrow (UTF-16) builds this is five chars per source unichr
+       since there are two unichrs in the surrogate pair, so in narrow
+       (UTF-16) builds it's not the longest unichr escape.
+
+       In wide or narrow builds '\uxxxx' is 6 chars per source unichr,
+       so in the narrow (UTF-16) build case it's the longest unichr
+       escape.
+    */
+
+    repr = PyString_FromStringAndSize(NULL,
+        2
+#ifdef Py_UNICODE_WIDE
+        + 10*size
+#else
+        + 6*size
+#endif
+        + 1);
     if (repr == NULL)
         return NULL;
 
@@ -1995,15 +2016,6 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
 #ifdef Py_UNICODE_WIDE
         /* Map 21-bit characters to '\U00xxxxxx' */
         else if (ch >= 0x10000) {
-	    int offset = p - PyString_AS_STRING(repr);
-
-	    /* Resize the string if necessary */
-	    if (offset + 12 > PyString_GET_SIZE(repr)) {
-		if (_PyString_Resize(&repr, PyString_GET_SIZE(repr) + 100))
-		    return NULL;
-		p = PyString_AS_STRING(repr) + offset;
-	    }
-
             *p++ = '\\';
             *p++ = 'U';
             *p++ = hexdigit[(ch >> 28) & 0x0000000F];
@@ -2016,8 +2028,8 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
             *p++ = hexdigit[ch & 0x0000000F];
 	    continue;
         }
-#endif
-	/* Map UTF-16 surrogate pairs to Unicode \UXXXXXXXX escapes */
+#else
+	/* Map UTF-16 surrogate pairs to '\U00xxxxxx' */
 	else if (ch >= 0xD800 && ch < 0xDC00) {
 	    Py_UNICODE ch2;
 	    Py_UCS4 ucs;
@@ -2042,6 +2054,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
 	    s--;
 	    size++;
 	}
+#endif
 
         /* Map 16-bit characters to '\uxxxx' */
         if (ch >= 256) {

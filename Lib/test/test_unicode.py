@@ -92,6 +92,10 @@ class UnicodeTest(
                 "\\xfe\\xff'")
             testrepr = repr(u''.join(map(unichr, xrange(256))))
             self.assertEqual(testrepr, latin1repr)
+            # Test repr works on wide unicode escapes without overflow.
+            self.assertEqual(repr(u"\U00010000" * 39 + u"\uffff" * 4096),
+                             repr(u"\U00010000" * 39 + u"\uffff" * 4096))
+
 
     def test_count(self):
         string_tests.CommonTest.test_count(self)
