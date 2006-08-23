@@ -99,12 +99,25 @@ class IEEEFormatTestCase(unittest.TestCase):
                               ('<f', LE_FLOAT_NAN)]:
                 struct.unpack(fmt, data)
 
+# on an IEEE platform, "overflowing" operations produce infinity
+
+class IEEEOperationsTestCase(unittest.TestCase):
+    if float.__getformat__("double").startswith("IEEE"):
+        def test_double_infinity(self):
+            big = 4.8e159
+            pro = big*big
+            self.assertEquals(repr(pro), 'inf')
+            sqr = big**2
+            self.assertEquals(repr(sqr), 'inf')
+
 
 def test_main():
     test_support.run_unittest(
         FormatFunctionsTestCase,
         UnknownFormatTestCase,
-        IEEEFormatTestCase)
+        IEEEFormatTestCase,
+        IEEEOperationsTestCase,
+        )
 
 if __name__ == '__main__':
     test_main()
