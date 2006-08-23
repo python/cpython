@@ -235,6 +235,9 @@ class BytesTest(unittest.TestCase):
 
         b[3:5] = [3, 4, 5, 6]
         self.assertEqual(b, bytes(range(10)))
+        
+        b[3:0] = [42, 42, 42]
+        self.assertEqual(b, bytes([0, 1, 2, 42, 42, 42, 3, 4, 5, 6, 7, 8, 9]))
 
     def test_setslice_trap(self):
         # This test verifies that we correctly handle assigning self

@@ -310,6 +310,8 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
 
     if (lo < 0)
         lo = 0;
+    if (hi < lo)
+        hi = lo;
     if (hi > self->ob_size)
         hi = self->ob_size;
 
