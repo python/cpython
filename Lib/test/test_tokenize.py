@@ -9,20 +9,73 @@ code, print out a table with the tokens.  The ENDMARK is omitted for
 brevity.
 
 >>> dump_tokens("1 + 1")
-NUMBER      '1'        (1, 0) (1, 1)
-OP          '+'        (1, 2) (1, 3)
-NUMBER      '1'        (1, 4) (1, 5)
+NUMBER      '1'           (1, 0) (1, 1)
+OP          '+'           (1, 2) (1, 3)
+NUMBER      '1'           (1, 4) (1, 5)
+
+A comment generates a token here, unlike in the parser module.  The
+comment token is followed by an NL or a NEWLINE token, depending on
+whether the line contains the completion of a statement.
+
+>>> dump_tokens("if False:\\n"
+...             "    # NL\\n"
+...             "    True = False # NEWLINE\\n")
+NAME        'if'          (1, 0) (1, 2)
+NAME        'False'       (1, 3) (1, 8)
+OP          ':'           (1, 8) (1, 9)
+NEWLINE     '\\n'          (1, 9) (1, 10)
+COMMENT     '# NL'        (2, 4) (2, 8)
+NL          '\\n'          (2, 8) (2, 9)
+INDENT      '    '        (3, 0) (3, 4)
+NAME        'True'        (3, 4) (3, 8)
+OP          '='           (3, 9) (3, 10)
+NAME        'False'       (3, 11) (3, 16)
+COMMENT     '# NEWLINE'   (3, 17) (3, 26)
+NEWLINE     '\\n'          (3, 26) (3, 27)
+DEDENT      ''            (4, 0) (4, 0)
+                                                    
 
 There will be a bunch more tests of specific source patterns.
 
 The tokenize module also defines an untokenize function that should
-regenerate the original program text from the tokens.  (It doesn't
-work very well at the moment.)
+regenerate the original program text from the tokens.
+
+There are some standard formatting practices that are easy to get right.
 
 >>> roundtrip("if x == 1:\\n"
 ...           "    print x\\n")               
-if x ==1 :
-    print x 
+if x == 1:
+    print x
+
+Some people use different formatting conventions, which makes
+untokenize a little trickier.  Note that this test involves trailing
+whitespace after the colon.  You can't see it, but it's there!
+
+>>> roundtrip("if   x  ==  1  :  \\n"
+...           "  print x\\n")
+if   x  ==  1  :  
+  print x
+
+Comments need to go in the right place.
+
+>>> roundtrip("if x == 1:\\n"
+...           "    # A comment by itself.\\n"
+...           "    print x  # Comment here, too.\\n"
+...           "    # Another comment.\\n"
+...           "after_if = True\\n")
+if x == 1:
+    # A comment by itself.
+    print x  # Comment here, too.
+    # Another comment.
+after_if = True
+
+>>> roundtrip("if (x  # The comments need to go in the right place\\n"
+...           "    == 1):\\n"
+...           "    print 'x == 1'\\n")
+if (x  # The comments need to go in the right place
+    == 1):
+    print 'x == 1'
+
 """
 
 import os, glob, random
@@ -30,7 +83,7 @@ from cStringIO import StringIO
 from test.test_support import (verbose, findfile, is_resource_enabled,
                                TestFailed)
 from tokenize import (tokenize, generate_tokens, untokenize, tok_name,
-                      ENDMARKER, NUMBER, NAME, OP, STRING)
+                      ENDMARKER, NUMBER, NAME, OP, STRING, COMMENT)
 
 # Test roundtrip for `untokenize`.  `f` is a file path.  The source code in f
 # is tokenized, converted back to source code via tokenize.untokenize(),
@@ -61,11 +114,12 @@ def dump_tokens(s):
         if type == ENDMARKER:
             break
         type = tok_name[type]
-        print "%(type)-10.10s  %(token)-10.10r %(start)s %(end)s" % locals()
+        print "%(type)-10.10s  %(token)-13.13r %(start)s %(end)s" % locals()
 
 def roundtrip(s):
     f = StringIO(s)
-    print untokenize(generate_tokens(f.readline)),
+    source = untokenize(generate_tokens(f.readline))
+    print source,
 
 # This is an example from the docs, set up as a doctest.
 def decistmt(s):

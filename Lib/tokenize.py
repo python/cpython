@@ -159,14 +159,76 @@ def tokenize_loop(readline, tokeneater):
     for token_info in generate_tokens(readline):
         tokeneater(*token_info)
 
+class Untokenizer:
+
+    def __init__(self):
+        self.tokens = []
+        self.prev_row = 1
+        self.prev_col = 0
+
+    def add_whitespace(self, start):
+        row, col = start
+        while row > self.prev_row:
+            print row, "<", self.prev_row
+            self.tokens.append("\n")
+            self.prev_row += 1
+        col_offset = col - self.prev_col
+        if col_offset:
+            self.tokens.append(" " * col_offset)
+
+    def untokenize(self, iterable):
+        for t in iterable:
+            if len(t) == 2:
+                self.compat(t, iterable)
+                break
+            tok_type, token, start, end, line = t
+            self.add_whitespace(start)
+            self.tokens.append(token)
+            self.prev_row, self.prev_col = end
+            if tok_type in (NEWLINE, NL):
+                self.prev_row += 1
+                self.prev_col = 0
+        return "".join(self.tokens)
+
+    def compat(self, token, iterable):
+        startline = False
+        indents = []
+        toks_append = self.tokens.append
+        toknum, tokval = token
+        if toknum in (NAME, NUMBER):
+            tokval += ' '
+        if toknum in (NEWLINE, NL):
+            startline = True
+        for tok in iterable:
+            toknum, tokval = tok[:2]
+
+            if toknum in (NAME, NUMBER):
+                tokval += ' '
+
+            if toknum == INDENT:
+                indents.append(tokval)
+                continue
+            elif toknum == DEDENT:
+                indents.pop()
+                continue
+            elif toknum in (NEWLINE, NL):
+                startline = True
+            elif startline and indents:
+                toks_append(indents[-1])
+                startline = False
+            toks_append(tokval)
 
 def untokenize(iterable):
     """Transform tokens back into Python source code.
 
     Each element returned by the iterable must be a token sequence
-    with at least two elements, a token number and token value.
+    with at least two elements, a token number and token value.  If
+    only two tokens are passed, the resulting output is poor.
 
-    Round-trip invariant:
+    Round-trip invariant for full input:
+        Untokenized source will match input source exactly
+
+    Round-trip invariant for limited intput:
         # Output text will tokenize the back to the input
         t1 = [tok[:2] for tok in generate_tokens(f.readline)]
         newcode = untokenize(t1)
@@ -174,31 +236,8 @@ def untokenize(iterable):
         t2 = [tok[:2] for tokin generate_tokens(readline)]
         assert t1 == t2
     """
-
-    startline = False
-    indents = []
-    toks = []
-    toks_append = toks.append
-    for tok in iterable:
-        toknum, tokval = tok[:2]
-
-        if toknum in (NAME, NUMBER):
-            tokval += ' '
-
-        if toknum == INDENT:
-            indents.append(tokval)
-            continue
-        elif toknum == DEDENT:
-            indents.pop()
-            continue
-        elif toknum in (NEWLINE, COMMENT, NL):
-            startline = True
-        elif startline and indents:
-            toks_append(indents[-1])
-            startline = False
-        toks_append(tokval)
-    return ''.join(toks)
-
+    ut = Untokenizer()
+    return ut.untokenize(iterable)
 
 def generate_tokens(readline):
     """
@@ -237,7 +276,7 @@ def generate_tokens(readline):
             if endmatch:
                 pos = end = endmatch.end(0)
                 yield (STRING, contstr + line[:end],
-                           strstart, (lnum, end), contline + line)
+                       strstart, (lnum, end), contline + line)
                 contstr, needcont = '', 0
                 contline = None
             elif needcont and line[-2:] != '\\\n' and line[-3:] != '\\\r\n':
@@ -263,7 +302,15 @@ def generate_tokens(readline):
             if pos == max: break
 
             if line[pos] in '#\r\n':           # skip comments or blank lines
-                yield ((NL, COMMENT)[line[pos] == '#'], line[pos:],
+                if line[pos] == '#':
+                    comment_token = line[pos:].rstrip('\r\n')
+                    nl_pos = pos + len(comment_token)
+                    yield (COMMENT, comment_token,
+                           (lnum, pos), (lnum, pos + len(comment_token)), line)
+                    yield (NL, line[nl_pos:],
+                           (lnum, nl_pos), (lnum, len(line)), line)
+                else:
+                    yield ((NL, COMMENT)[line[pos] == '#'], line[pos:],
                            (lnum, pos), (lnum, len(line)), line)
                 continue
 
@@ -294,9 +341,10 @@ def generate_tokens(readline):
                    (initial == '.' and token != '.'):      # ordinary number
                     yield (NUMBER, token, spos, epos, line)
                 elif initial in '\r\n':
-                    yield (parenlev > 0 and NL or NEWLINE,
-                               token, spos, epos, line)
+                    yield (NL if parenlev > 0 else NEWLINE,
+                           token, spos, epos, line)
                 elif initial == '#':
+                    assert not token.endswith("\n")
                     yield (COMMENT, token, spos, epos, line)
                 elif token in triple_quoted:
                     endprog = endprogs[token]
