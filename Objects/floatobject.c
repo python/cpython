@@ -821,12 +821,12 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 	ix = pow(iv, iw);
 	PyFPE_END_PROTECT(ix)
 	Py_ADJUST_ERANGE1(ix);
-        /* we need to ignore ERANGE here and just return inf */
-	if (errno != 0 && errno != ERANGE) {
+	if (errno != 0) {
 		/* We don't expect any errno value other than ERANGE, but
 		 * the range of libm bugs appears unbounded.
 		 */
-		PyErr_SetFromErrno(PyExc_ValueError);
+		PyErr_SetFromErrno(errno == ERANGE ? PyExc_OverflowError :
+						     PyExc_ValueError);
 		return NULL;
 	}
 	return PyFloat_FromDouble(ix);
