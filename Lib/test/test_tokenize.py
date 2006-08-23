@@ -1,9 +1,36 @@
+"""Tests for the tokenize module.
+
+The tests were originally written in the old Python style, where the
+test output was compared to a golden file.  This docstring represents
+the first steps towards rewriting the entire test as a doctest.
+
+The tests can be really simple.  Given a small fragment of source
+code, print out a table with the tokens.  The ENDMARK is omitted for
+brevity.
+
+>>> dump_tokens("1 + 1")
+NUMBER      '1'        (1, 0) (1, 1)
+OP          '+'        (1, 2) (1, 3)
+NUMBER      '1'        (1, 4) (1, 5)
+
+There will be a bunch more tests of specific source patterns.
+
+The tokenize module also defines an untokenize function that should
+regenerate the original program text from the tokens.  (It doesn't
+work very well at the moment.)
+
+>>> roundtrip("if x == 1:\\n"
+...           "    print x\\n")               
+if x ==1 :
+    print x 
+"""
+
 import os, glob, random
 from cStringIO import StringIO
 from test.test_support import (verbose, findfile, is_resource_enabled,
                                TestFailed)
-from tokenize import (tokenize, generate_tokens, untokenize,
-                      NUMBER, NAME, OP, STRING)
+from tokenize import (tokenize, generate_tokens, untokenize, tok_name,
+                      ENDMARKER, NUMBER, NAME, OP, STRING)
 
 # Test roundtrip for `untokenize`.  `f` is a file path.  The source code in f
 # is tokenized, converted back to source code via tokenize.untokenize(),
@@ -23,6 +50,22 @@ def test_roundtrip(f):
     t2 = [tok[:2] for tok in generate_tokens(readline)]
     if t1 != t2:
         raise TestFailed("untokenize() roundtrip failed for %r" % f)
+
+def dump_tokens(s):
+    """Print out the tokens in s in a table format.
+
+    The ENDMARKER is omitted.
+    """
+    f = StringIO(s)
+    for type, token, start, end, line in generate_tokens(f.readline):
+        if type == ENDMARKER:
+            break
+        type = tok_name[type]
+        print "%(type)-10.10s  %(token)-10.10r %(start)s %(end)s" % locals()
+
+def roundtrip(s):
+    f = StringIO(s)
+    print untokenize(generate_tokens(f.readline)),
 
 # This is an example from the docs, set up as a doctest.
 def decistmt(s):
@@ -105,7 +148,7 @@ def foo():
     # Run the doctests in this module.
     from test import test_tokenize  # i.e., this module
     from test.test_support import run_doctest
-    run_doctest(test_tokenize)
+    run_doctest(test_tokenize, verbose)
 
     if verbose:
         print 'finished'
