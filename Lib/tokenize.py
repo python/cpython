@@ -168,10 +168,7 @@ class Untokenizer:
 
     def add_whitespace(self, start):
         row, col = start
-        while row > self.prev_row:
-            print row, "<", self.prev_row
-            self.tokens.append("\n")
-            self.prev_row += 1
+        assert row <= self.prev_row
         col_offset = col - self.prev_col
         if col_offset:
             self.tokens.append(" " * col_offset)
