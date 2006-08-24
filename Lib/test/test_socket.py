@@ -285,7 +285,7 @@ class GeneralModuleTests(unittest.TestCase):
                 orig = sys.getrefcount(__name__)
                 socket.getnameinfo(__name__,0)
             except SystemError:
-                if sys.getrefcount(__name__) <> orig:
+                if sys.getrefcount(__name__) != orig:
                     self.fail("socket.getnameinfo loses a reference")
 
     def testInterpreterCrash(self):

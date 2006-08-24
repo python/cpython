@@ -98,7 +98,7 @@ def shift_path_info(environ):
         return None
 
     path_parts = path_info.split('/')
-    path_parts[1:-1] = [p for p in path_parts[1:-1] if p and p<>'.']
+    path_parts[1:-1] = [p for p in path_parts[1:-1] if p and p != '.']
     name = path_parts[1]
     del path_parts[1]
 

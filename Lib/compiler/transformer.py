@@ -618,7 +618,7 @@ class Transformer:
         for i in range(2, len(nodelist), 2):
             nl = nodelist[i-1]
 
-            # comp_op: '<' | '>' | '=' | '>=' | '<=' | '<>' | '!=' | '=='
+            # comp_op: '<' | '>' | '=' | '>=' | '<=' | '!=' | '=='
             #          | 'in' | 'not' 'in' | 'is' | 'is' 'not'
             n = nl[1]
             if n[0] == token.NAME:
@@ -1396,7 +1396,7 @@ _doc_nodes = [
     symbol.power,
     ]
 
-# comp_op: '<' | '>' | '=' | '>=' | '<=' | '<>' | '!=' | '=='
+# comp_op: '<' | '>' | '=' | '>=' | '<=' | '!=' | '=='
 #             | 'in' | 'not' 'in' | 'is' | 'is' 'not'
 _cmp_types = {
     token.LESS : '<',

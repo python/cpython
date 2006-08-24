@@ -912,7 +912,8 @@ class Manager:
         """
         #for c in ph.loggers:
         for c in ph.loggerMap.keys():
-            if string.find(c.parent.name, alogger.name) <> 0:
+            # XXX Is the following correct?  Shouldn't it be >= 0?
+            if string.find(c.parent.name, alogger.name) != 0:
                 alogger.parent = c.parent
                 c.parent = alogger
 

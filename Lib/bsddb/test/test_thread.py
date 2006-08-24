@@ -58,7 +58,7 @@ class BaseThreadedTestCase(unittest.TestCase):
         try:
             os.mkdir(homeDir)
         except OSError, e:
-            if e.errno <> errno.EEXIST: raise
+            if e.errno != errno.EEXIST: raise
         self.env = db.DBEnv()
         self.setEnvOpts()
         self.env.open(homeDir, self.envflags | db.DB_CREATE)

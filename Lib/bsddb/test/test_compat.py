@@ -120,7 +120,7 @@ class CompatibilityTestCase(unittest.TestCase):
             try:
                 rec = f.next()
             except KeyError:
-                assert rec == f.last(), 'Error, last <> last!'
+                assert rec == f.last(), 'Error, last != last!'
                 f.previous()
                 break
             if verbose:

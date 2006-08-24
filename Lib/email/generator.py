@@ -211,7 +211,7 @@ class Generator:
         # doesn't preserve newlines/continuations in headers.  This is no big
         # deal in practice, but turns out to be inconvenient for the unittest
         # suite.
-        if msg.get_boundary() <> boundary:
+        if msg.get_boundary() != boundary:
             msg.set_boundary(boundary)
         # If there's a preamble, write it out, with a trailing CRLF
         if msg.preamble is not None:

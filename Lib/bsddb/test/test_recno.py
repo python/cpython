@@ -30,7 +30,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         try:
             os.remove(self.filename)
         except OSError, e:
-            if e.errno <> errno.EEXIST: raise
+            if e.errno != errno.EEXIST: raise
 
     def test01_basic(self):
         d = db.DB()

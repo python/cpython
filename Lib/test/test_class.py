@@ -244,12 +244,10 @@ str(testme)
 testme == 1
 testme < 1
 testme > 1
-testme <> 1
 testme != 1
 1 == testme
 1 < testme
 1 > testme
-1 <> testme
 1 != testme
 
 # This test has to be last (duh.)

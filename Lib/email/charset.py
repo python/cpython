@@ -250,7 +250,7 @@ class Charset:
         Returns "base64" if self.body_encoding is BASE64.
         Returns "7bit" otherwise.
         """
-        assert self.body_encoding <> SHORTEST
+        assert self.body_encoding != SHORTEST
         if self.body_encoding == QP:
             return 'quoted-printable'
         elif self.body_encoding == BASE64:
@@ -260,7 +260,7 @@ class Charset:
 
     def convert(self, s):
         """Convert a string from the input_codec to the output_codec."""
-        if self.input_codec <> self.output_codec:
+        if self.input_codec != self.output_codec:
             return unicode(s, self.input_codec).encode(self.output_codec)
         else:
             return s

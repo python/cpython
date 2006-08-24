@@ -73,7 +73,7 @@ class CfrgResource:
                 Res.CloseResFile(resref)
                 Res.UseResFile(currentresref)
             self.parse(data)
-            if self.version <> 1:
+            if self.version != 1:
                 raise error, "unknown 'cfrg' resource format"
 
     def parse(self, data):
@@ -143,7 +143,7 @@ class FragmentDescriptor:
         return data
 
     def getfragment(self):
-        if self.where <> 1:
+        if self.where != 1:
             raise error, "can't read fragment, unsupported location"
         f = open(self.path, "rb")
         f.seek(self.offset)
@@ -155,7 +155,7 @@ class FragmentDescriptor:
         return frag
 
     def copydata(self, outfile):
-        if self.where <> 1:
+        if self.where != 1:
             raise error, "can't read fragment, unsupported location"
         infile = open(self.path, "rb")
         if self.length == 0:
