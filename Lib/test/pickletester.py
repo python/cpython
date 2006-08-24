@@ -65,8 +65,8 @@ class ExtensionSaver:
             copy_reg.add_extension(pair[0], pair[1], code)
 
 class C:
-    def __cmp__(self, other):
-        return cmp(self.__dict__, other.__dict__)
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
 
 import __main__
 __main__.C = C

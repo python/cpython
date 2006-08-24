@@ -60,10 +60,10 @@ class BasicTestMappingProtocol(unittest.TestCase):
         for k in self.other:
             self.failIf(k in d)
         #cmp
-        self.assertEqual(cmp(p,p), 0)
-        self.assertEqual(cmp(d,d), 0)
-        self.assertEqual(cmp(p,d), -1)
-        self.assertEqual(cmp(d,p), 1)
+        self.assertEqual(p, p)
+        self.assertEqual(d, d)
+        self.assertNotEqual(p, d)
+        self.assertNotEqual(d, p)
         #__non__zero__
         if p: self.fail("Empty mapping must compare to False")
         if not d: self.fail("Full mapping must compare to True")
@@ -623,9 +623,10 @@ class TestHashMappingProtocol(TestMappingProtocol):
         d = self._full_mapping({1: BadRepr()})
         self.assertRaises(Exc, repr, d)
 
-    def test_le(self):
-        self.assert_(not (self._empty_mapping() < self._empty_mapping()))
-        self.assert_(not (self._full_mapping({1: 2}) < self._full_mapping({1L: 2L})))
+    def test_eq(self):
+        self.assertEqual(self._empty_mapping(), self._empty_mapping())
+        self.assertEqual(self._full_mapping({1: 2}),
+                         self._full_mapping({1L: 2L}))
 
         class Exc(Exception): pass
 
@@ -633,16 +634,12 @@ class TestHashMappingProtocol(TestMappingProtocol):
             def __eq__(self, other):
                 raise Exc()
             def __hash__(self):
-                return 42
+                return 1
 
         d1 = self._full_mapping({BadCmp(): 1})
         d2 = self._full_mapping({1: 1})
-        try:
-            d1 < d2
-        except Exc:
-            pass
-        else:
-            self.fail("< didn't raise Exc")
+        self.assertRaises(Exc, lambda: BadCmp()==1)
+        self.assertRaises(Exc, lambda: d1==d2)
 
     def test_setdefault(self):
         TestMappingProtocol.test_setdefault(self)

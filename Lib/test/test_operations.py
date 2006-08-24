@@ -12,7 +12,7 @@ class BadDictKey:
     def __hash__(self):
         return hash(self.__class__)
 
-    def __cmp__(self, other):
+    def __eq__(self, other):
         if isinstance(other, self.__class__):
             print "raising error"
             raise RuntimeError, "gotcha"
@@ -34,7 +34,7 @@ for stmt in ['d[x2] = 2',
     except RuntimeError:
         print "%s: caught the RuntimeError outside" % (stmt,)
     else:
-        print "%s: No exception passed through!"     # old CPython behavior
+        print "%s: No exception passed through!" % (stmt,) # old CPython behavior
 
 
 # Dict resizing bug, found by Jack Jansen in 2.2 CVS development.

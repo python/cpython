@@ -25,13 +25,11 @@ class ComparableException:
     def __str__(self):
         return str(self.err)
 
-    def __cmp__(self, anExc):
+    def __eq__(self, anExc):
         if not isinstance(anExc, Exception):
-            return -1
-        x = cmp(self.err.__class__, anExc.__class__)
-        if x != 0:
-            return x
-        return cmp(self.err.args, anExc.args)
+            return NotImplemented
+        return (self.err.__class__ == anExc.__class__ and
+                self.err.args == anExc.args)
 
     def __getattr__(self, attr):
         return getattr(self.err, attr)
@@ -118,10 +116,10 @@ parse_strict_test_cases = [
       })
     ]
 
-def norm(list):
-    if type(list) == type([]):
-        list.sort()
-    return list
+def norm(seq):
+    if isinstance(seq, list):
+        seq.sort(key=repr)
+    return seq
 
 def first_elts(list):
     return map(lambda x:x[0], list)

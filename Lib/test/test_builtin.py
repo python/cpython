@@ -179,7 +179,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, chr, 256)
         self.assertRaises(TypeError, chr)
 
-    def test_cmp(self):
+    def XXX_test_cmp(self):
+        # cmp() is no longer supported
         self.assertEqual(cmp(-1, 1), -1)
         self.assertEqual(cmp(1, -1), 1)
         self.assertEqual(cmp(1, 1), 0)
@@ -1132,8 +1133,14 @@ class BuiltinTest(unittest.TestCase):
             map(None, Squares(3), Squares(2)),
             [(0,0), (1,1), (4,None)]
         )
+        def Max(a, b):
+            if a is None:
+                return b
+            if b is None:
+                return a
+            return max(a, b)
         self.assertEqual(
-            map(max, Squares(3), Squares(2)),
+            map(Max, Squares(3), Squares(2)),
             [0, 1, 4]
         )
         self.assertRaises(TypeError, map)
@@ -1201,7 +1208,7 @@ class BuiltinTest(unittest.TestCase):
         class BadNumber:
             def __cmp__(self, other):
                 raise ValueError
-        self.assertRaises(ValueError, min, (42, BadNumber()))
+        self.assertRaises(TypeError, min, (42, BadNumber()))
 
         for stmt in (
             "min(key=int)",                 # no args
@@ -1379,8 +1386,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, range, a, a + 1, long(0))
 
         class badzero(int):
-            def __cmp__(self, other):
+            def __eq__(self, other):
                 raise RuntimeError
+            __ne__ = __lt__ = __gt__ = __le__ = __ge__ = __eq__
+
+        # XXX This won't (but should!) raise RuntimeError if a is an int...
         self.assertRaises(RuntimeError, range, a, a + 1, badzero(1))
 
         # Reject floats when it would require PyLongs to represent.
@@ -1594,7 +1604,7 @@ class TestSorted(unittest.TestCase):
 
         data.reverse()
         random.shuffle(copy)
-        self.assertEqual(data, sorted(copy, cmp=lambda x, y: cmp(y,x)))
+        self.assertEqual(data, sorted(copy, cmp=lambda x, y: (x < y) - (x > y)))
         self.assertNotEqual(data, copy)
         random.shuffle(copy)
         self.assertEqual(data, sorted(copy, key=lambda x: -x))

@@ -361,16 +361,6 @@ static PyGetSetDef type_getsets[] = {
 	{0}
 };
 
-static int
-type_compare(PyObject *v, PyObject *w)
-{
-	/* This is called with type objects only. So we
-	   can just compare the addresses. */
-	Py_uintptr_t vv = (Py_uintptr_t)v;
-	Py_uintptr_t ww = (Py_uintptr_t)w;
-	return (vv < ww) ? -1 : (vv > ww) ? 1 : 0;
-}
-
 static PyObject *
 type_repr(PyTypeObject *type)
 {
@@ -2192,12 +2182,12 @@ PyTypeObject PyType_Type = {
 	0,					/* tp_print */
 	0,			 		/* tp_getattr */
 	0,					/* tp_setattr */
-	type_compare,				/* tp_compare */
+	0,					/* tp_compare */
 	(reprfunc)type_repr,			/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
-	(hashfunc)_Py_HashPointer,		/* tp_hash */
+	0,					/* tp_hash */
 	(ternaryfunc)type_call,			/* tp_call */
 	0,					/* tp_str */
 	(getattrofunc)type_getattro,		/* tp_getattro */
@@ -2299,6 +2289,30 @@ object_str(PyObject *self)
 	if (f == NULL)
 		f = object_repr;
 	return f(self);
+}
+
+static PyObject *
+object_richcompare(PyObject *self, PyObject *other, int op)
+{
+	PyObject *res;
+
+	switch (op) {
+
+	case Py_EQ:
+		res = (self == other) ? Py_True : Py_False;
+		break;
+
+	case Py_NE:
+		res = (self != other) ? Py_True : Py_False;
+		break;
+
+	default:
+		res = Py_NotImplemented;
+		break;
+	}
+
+	Py_INCREF(res);
+	return res;
 }
 
 static PyObject *
@@ -2703,7 +2717,7 @@ PyTypeObject PyBaseObject_Type = {
 	PyDoc_STR("The most base type"),	/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
-	0,					/* tp_richcompare */
+	object_richcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */

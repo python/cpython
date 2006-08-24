@@ -65,14 +65,11 @@ We can also use the new type in contexts where classic only allows "real"
 dictionaries, such as the locals/globals dictionaries for the exec
 statement or the built-in function eval():
 
-    >>> def sorted(seq):
-    ...     seq.sort()
-    ...     return seq
     >>> print sorted(a.keys())
     [1, 2]
     >>> exec "x = 3; print x" in a
     3
-    >>> print sorted(a.keys())
+    >>> print sorted(a.keys(), key=lambda x: (str(type(x)), x))
     [1, 2, '__builtins__', 'x']
     >>> print a['x']
     3

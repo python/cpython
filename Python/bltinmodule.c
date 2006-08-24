@@ -1324,9 +1324,10 @@ get_len_of_range_longs(PyObject *lo, PyObject *hi, PyObject *step)
 	PyObject *tmp1 = NULL, *tmp2 = NULL, *tmp3 = NULL;
 		/* holds sub-expression evaluations */
 
-	/* if (lo >= hi), return length of 0. */
-	if (PyObject_Compare(lo, hi) >= 0)
-		return 0;
+	/* If (lo >= hi), return length of 0 (or error). */
+	n = PyObject_RichCompareBool(lo, hi, Py_LT);
+	if (n <= 0)
+		return n;
 
 	if ((one = PyLong_FromLong(1L)) == NULL)
 		goto Fail;
@@ -1378,7 +1379,7 @@ handle_range_longs(PyObject *self, PyObject *args)
 	PyObject *v = NULL;
 	long bign;
 	int i, n;
-	int cmp_result;
+	int step_pos;
 
 	PyObject *zero = PyLong_FromLong(0);
 
@@ -1439,17 +1440,20 @@ handle_range_longs(PyObject *self, PyObject *args)
 		goto Fail;
 	}
 
-	if (PyObject_Cmp(istep, zero, &cmp_result) == -1)
+	step_pos = PyObject_RichCompareBool(istep, zero, Py_GT);
+	if (step_pos < 0)
 		goto Fail;
-	if (cmp_result == 0) {
-		PyErr_SetString(PyExc_ValueError,
-				"range() step argument must not be zero");
-		goto Fail;
-	}
-
-	if (cmp_result > 0)
+	if (step_pos)
 		bign = get_len_of_range_longs(ilow, ihigh, istep);
 	else {
+		int step_zero = PyObject_RichCompareBool(istep, zero, Py_EQ);
+		if (step_zero < 0)
+			goto Fail;
+		if (step_zero) {
+			PyErr_SetString(PyExc_ValueError,
+				"range() step argument must not be zero");
+			goto Fail;
+		}
 		PyObject *neg_istep = PyNumber_Negative(istep);
 		if (neg_istep == NULL)
 			goto Fail;

@@ -8,11 +8,16 @@ class UserDict:
         if len(kwargs):
             self.update(kwargs)
     def __repr__(self): return repr(self.data)
-    def __cmp__(self, dict):
+    def __eq__(self, dict):
         if isinstance(dict, UserDict):
-            return cmp(self.data, dict.data)
+            return self.data == dict.data
         else:
-            return cmp(self.data, dict)
+            return self.data == dict
+    def __ne__(self, dict):
+        if isinstance(dict, UserDict):
+            return self.data != dict.data
+        else:
+            return self.data != dict
     def __len__(self): return len(self.data)
     def __getitem__(self, key):
         if key in self.data:
@@ -162,11 +167,13 @@ class DictMixin:
             return default
     def __repr__(self):
         return repr(dict(self.iteritems()))
-    def __cmp__(self, other):
-        if other is None:
-            return 1
+    def __eq__(self, other):
         if isinstance(other, DictMixin):
             other = dict(other.iteritems())
-        return cmp(dict(self.iteritems()), other)
+        return dict(self.iteritems()) == other
+    def __ne__(self, other):
+        if isinstance(other, DictMixin):
+            other = dict(other.iteritems())
+        return dict(self.iteritems()) != other
     def __len__(self):
         return len(self.keys())

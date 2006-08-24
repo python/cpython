@@ -1971,6 +1971,26 @@ build_cmpwrapper(PyObject *cmpfunc)
 	return (PyObject *)co;
 }
 
+static int
+is_default_cmp(PyObject *cmpfunc)
+{
+	PyCFunctionObject *f;
+	if (cmpfunc == NULL || cmpfunc == Py_None)
+		return 1;
+	if (!PyCFunction_Check(cmpfunc))
+		return 0;
+	f = (PyCFunction *)cmpfunc;
+	if (f->m_self != NULL)
+		return 0;
+	if (!PyString_Check(f->m_module))
+		return 0;
+	if (strcmp(PyString_AS_STRING(f->m_module), "__builtin__") != 0)
+		return 0;
+	if (strcmp(f->m_ml->ml_name, "cmp") != 0)
+		return 0;
+	return 1;
+}
+
 /* An adaptive, stable, natural mergesort.  See listsort.txt.
  * Returns Py_None on success, NULL on error.  Even in case of error, the
  * list will be some permutation of its input state (nothing is lost or
@@ -2001,7 +2021,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 			kwlist, &compare, &keyfunc, &reverse))
 			return NULL;
 	}
-	if (compare == Py_None)
+	if (is_default_cmp(compare))
 		compare = NULL;
 	if (keyfunc == Py_None)
 		keyfunc = NULL;

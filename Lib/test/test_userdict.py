@@ -52,7 +52,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         all = [d0, d1, d2, u, u0, u1, u2, uu, uu0, uu1, uu2]
         for a in all:
             for b in all:
-                self.assertEqual(cmp(a, b), cmp(len(a), len(b)))
+                self.assertEqual(a == b, len(a) == len(b))
 
         # Test __getitem__
         self.assertEqual(u2["one"], 1)

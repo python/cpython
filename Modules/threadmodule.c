@@ -696,6 +696,8 @@ initthread(void)
 	/* Initialize types: */
 	if (PyType_Ready(&localtype) < 0)
 		return;
+	if (PyType_Ready(&Locktype) < 0)
+		return;
 
 	/* Create the module and add the functions */
 	m = Py_InitModule3("thread", thread_methods, thread_doc);

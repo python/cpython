@@ -174,8 +174,13 @@ class GetOnly:
 
 class CmpErr:
     "Dummy element that always raises an error during comparison"
-    def __cmp__(self, other):
+    def __lt__(self, other):
         raise ZeroDivisionError
+    __gt__ = __lt__
+    __le__ = __lt__
+    __ge__ = __lt__
+    __eq__ = __lt__
+    __ne__ = __lt__
 
 class TestErrorHandling(unittest.TestCase):
 

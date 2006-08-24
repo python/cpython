@@ -80,7 +80,7 @@ PyMethod_New(PyObject *func, PyObject *self, PyObject *klass)
 
 #define OFF(x) offsetof(PyMethodObject, x)
 
-static PyMemberDef instancemethod_memberlist[] = {
+static PyMemberDef method_memberlist[] = {
 	{"im_class",	T_OBJECT,	OFF(im_class),	READONLY|RESTRICTED,
 	 "the class associated with a method"},
 	{"im_func",	T_OBJECT,	OFF(im_func),	READONLY|RESTRICTED,
@@ -96,7 +96,7 @@ static PyMemberDef instancemethod_memberlist[] = {
    should only be used for the class, not for instances */
 
 static PyObject *
-instancemethod_get_doc(PyMethodObject *im, void *context)
+method_get_doc(PyMethodObject *im, void *context)
 {
 	static PyObject *docstr;
 	if (docstr == NULL) {
@@ -107,13 +107,13 @@ instancemethod_get_doc(PyMethodObject *im, void *context)
 	return PyObject_GetAttr(im->im_func, docstr);
 }
 
-static PyGetSetDef instancemethod_getset[] = {
-	{"__doc__", (getter)instancemethod_get_doc, NULL, NULL},
+static PyGetSetDef method_getset[] = {
+	{"__doc__", (getter)method_get_doc, NULL, NULL},
 	{0}
 };
 
 static PyObject *
-instancemethod_getattro(PyObject *obj, PyObject *name)
+method_getattro(PyObject *obj, PyObject *name)
 {
 	PyMethodObject *im = (PyMethodObject *)obj;
 	PyTypeObject *tp = obj->ob_type;
@@ -140,19 +140,19 @@ instancemethod_getattro(PyObject *obj, PyObject *name)
 	return PyObject_GetAttr(im->im_func, name);
 }
 
-PyDoc_STRVAR(instancemethod_doc,
-"instancemethod(function, instance, class)\n\
+PyDoc_STRVAR(method_doc,
+"method(function, instance, class)\n\
 \n\
 Create an instance method object.");
 
 static PyObject *
-instancemethod_new(PyTypeObject* type, PyObject* args, PyObject *kw)
+method_new(PyTypeObject* type, PyObject* args, PyObject *kw)
 {
 	PyObject *func;
 	PyObject *self;
 	PyObject *classObj = NULL;
 
-	if (!PyArg_UnpackTuple(args, "instancemethod", 2, 3,
+	if (!PyArg_UnpackTuple(args, "method", 2, 3,
 			      &func, &self, &classObj))
 		return NULL;
 	if (!PyCallable_Check(func)) {
@@ -172,7 +172,7 @@ instancemethod_new(PyTypeObject* type, PyObject* args, PyObject *kw)
 }
 
 static void
-instancemethod_dealloc(register PyMethodObject *im)
+method_dealloc(register PyMethodObject *im)
 {
 	_PyObject_GC_UNTRACK(im);
 	if (im->im_weakreflist != NULL)
@@ -184,24 +184,42 @@ instancemethod_dealloc(register PyMethodObject *im)
 	free_list = im;
 }
 
-static int
-instancemethod_compare(PyMethodObject *a, PyMethodObject *b)
+static PyObject *
+method_richcompare(PyObject *self, PyObject *other, int op)
 {
-	int cmp;
-	cmp = PyObject_Compare(a->im_func, b->im_func);
-	if (cmp)
-		return cmp;
+	PyMethodObject *a, *b;
+	PyObject *res;
+	int eq;
 
-	if (a->im_self == b->im_self)
-		return 0;
-	if (a->im_self == NULL || b->im_self == NULL)
-		return (a->im_self < b->im_self) ? -1 : 1;
+	if ((op != Py_EQ && op != Py_NE) ||
+	    !PyMethod_Check(self) ||
+	    !PyMethod_Check(other))
+	{
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+	a = (PyMethodObject *)self;
+	b = (PyMethodObject *)other;
+	eq = PyObject_RichCompareBool(a->im_func, b->im_func, Py_EQ);
+	if (eq == 1) {
+		if (a->im_self == NULL || b->im_self == NULL)
+			eq = a->im_self == b->im_self;
+		else
+			eq = PyObject_RichCompareBool(a->im_self, b->im_self,
+						      Py_EQ);
+	}
+	if (eq < 0)
+		return NULL;
+	if (op == Py_EQ)
+		res = eq ? Py_True : Py_False;
 	else
-		return PyObject_Compare(a->im_self, b->im_self);
+		res = eq ? Py_False : Py_True;
+	Py_INCREF(res);
+	return res;
 }
 
 static PyObject *
-instancemethod_repr(PyMethodObject *a)
+method_repr(PyMethodObject *a)
 {
 	PyObject *self = a->im_self;
 	PyObject *func = a->im_func;
@@ -261,7 +279,7 @@ instancemethod_repr(PyMethodObject *a)
 }
 
 static long
-instancemethod_hash(PyMethodObject *a)
+method_hash(PyMethodObject *a)
 {
 	long x, y;
 	if (a->im_self == NULL)
@@ -280,7 +298,7 @@ instancemethod_hash(PyMethodObject *a)
 }
 
 static int
-instancemethod_traverse(PyMethodObject *im, visitproc visit, void *arg)
+method_traverse(PyMethodObject *im, visitproc visit, void *arg)
 {
 	Py_VISIT(im->im_func);
 	Py_VISIT(im->im_self);
@@ -333,7 +351,7 @@ getinstclassname(PyObject *inst, char *buf, int bufsize)
 }
 
 static PyObject *
-instancemethod_call(PyObject *func, PyObject *arg, PyObject *kw)
+method_call(PyObject *func, PyObject *arg, PyObject *kw)
 {
 	PyObject *self = PyMethod_GET_SELF(func);
 	PyObject *klass = PyMethod_GET_CLASS(func);
@@ -392,7 +410,7 @@ instancemethod_call(PyObject *func, PyObject *arg, PyObject *kw)
 }
 
 static PyObject *
-instancemethod_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
+method_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
 {
 	/* Don't rebind an already bound method, or an unbound method
 	   of a class that's not a base class of cls. */
@@ -420,43 +438,43 @@ instancemethod_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
 PyTypeObject PyMethod_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
-	"instancemethod",
+	"method",
 	sizeof(PyMethodObject),
 	0,
-	(destructor)instancemethod_dealloc,	/* tp_dealloc */
+	(destructor)method_dealloc,		/* tp_dealloc */
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	(cmpfunc)instancemethod_compare,	/* tp_compare */
-	(reprfunc)instancemethod_repr,		/* tp_repr */
+	0,					/* tp_compare */
+	(reprfunc)method_repr,			/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
-	(hashfunc)instancemethod_hash,		/* tp_hash */
-	instancemethod_call,			/* tp_call */
+	(hashfunc)method_hash,			/* tp_hash */
+	method_call,				/* tp_call */
 	0,					/* tp_str */
-	instancemethod_getattro,		/* tp_getattro */
+	method_getattro,			/* tp_getattro */
 	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-	instancemethod_doc,			/* tp_doc */
-	(traverseproc)instancemethod_traverse,	/* tp_traverse */
+	method_doc,				/* tp_doc */
+	(traverseproc)method_traverse,		/* tp_traverse */
 	0,					/* tp_clear */
-	0,					/* tp_richcompare */
+	method_richcompare,			/* tp_richcompare */
  	offsetof(PyMethodObject, im_weakreflist), /* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
-	instancemethod_memberlist,		/* tp_members */
-	instancemethod_getset,			/* tp_getset */
+	method_memberlist,			/* tp_members */
+	method_getset,				/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
-	instancemethod_descr_get,		/* tp_descr_get */
+	method_descr_get,			/* tp_descr_get */
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
 	0,					/* tp_init */
 	0,					/* tp_alloc */
-	instancemethod_new,			/* tp_new */
+	method_new,				/* tp_new */
 };
 
 /* Clear out the free list */

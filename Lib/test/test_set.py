@@ -18,7 +18,7 @@ def check_pass_thru():
 class BadCmp:
     def __hash__(self):
         return 1
-    def __cmp__(self, other):
+    def __eq__(self, other):
         raise RuntimeError
 
 class TestJointOps(unittest.TestCase):
@@ -781,11 +781,8 @@ class TestBinaryOps(unittest.TestCase):
         a, b = set('a'), set('b')
         self.assertRaises(TypeError, cmp, a, b)
 
-        # You can view this as a buglet:  cmp(a, a) does not raise TypeError,
-        # because __eq__ is tried before __cmp__, and a.__eq__(a) returns True,
-        # which Python thinks is good enough to synthesize a cmp() result
-        # without calling __cmp__.
-        self.assertEqual(cmp(a, a), 0)
+        # In py3k, this works!
+        self.assertRaises(TypeError, cmp, a, a)
 
         self.assertRaises(TypeError, cmp, a, 12)
         self.assertRaises(TypeError, cmp, "abc", a)
@@ -1201,8 +1198,8 @@ class TestCopying(unittest.TestCase):
 
     def test_copy(self):
         dup = self.set.copy()
-        dup_list = list(dup); dup_list.sort()
-        set_list = list(self.set); set_list.sort()
+        dup_list = sorted(dup, key=repr)
+        set_list = sorted(self.set, key=repr)
         self.assertEqual(len(dup_list), len(set_list))
         for i in range(len(dup_list)):
             self.failUnless(dup_list[i] is set_list[i])
@@ -1210,8 +1207,8 @@ class TestCopying(unittest.TestCase):
     def test_deep_copy(self):
         dup = copy.deepcopy(self.set)
         ##print type(dup), repr(dup)
-        dup_list = list(dup); dup_list.sort()
-        set_list = list(self.set); set_list.sort()
+        dup_list = sorted(dup, key=repr)
+        set_list = sorted(self.set, key=repr)
         self.assertEqual(len(dup_list), len(set_list))
         for i in range(len(dup_list)):
             self.assertEqual(dup_list[i], set_list[i])
@@ -1374,7 +1371,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
         for cons in (set, frozenset):
             for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
                 for g in (G, I, Ig, S, L, R):
-                    self.assertEqual(sorted(cons(g(s))), sorted(g(s)))
+                    self.assertEqual(sorted(cons(g(s)), key=repr), sorted(g(s), key=repr))
                 self.assertRaises(TypeError, cons , X(s))
                 self.assertRaises(TypeError, cons , N(s))
                 self.assertRaises(ZeroDivisionError, cons , E(s))
@@ -1386,7 +1383,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
                 for g in (G, I, Ig, L, R):
                     expected = meth(data)
                     actual = meth(G(data))
-                    self.assertEqual(sorted(actual), sorted(expected))
+                    self.assertEqual(sorted(actual, key=repr), sorted(expected, key=repr))
                 self.assertRaises(TypeError, meth, X(s))
                 self.assertRaises(TypeError, meth, N(s))
                 self.assertRaises(ZeroDivisionError, meth, E(s))
@@ -1400,7 +1397,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
                     t = s.copy()
                     getattr(s, methname)(list(g(data)))
                     getattr(t, methname)(g(data))
-                    self.assertEqual(sorted(s), sorted(t))
+                    self.assertEqual(sorted(s, key=repr), sorted(t, key=repr))
 
                 self.assertRaises(TypeError, getattr(set('january'), methname), X(data))
                 self.assertRaises(TypeError, getattr(set('january'), methname), N(data))

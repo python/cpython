@@ -446,6 +446,17 @@ int_compare(PyIntObject *v, PyIntObject *w)
 	return (i < j) ? -1 : (i > j) ? 1 : 0;
 }
 
+static PyObject *
+int_richcompare(PyObject *self, PyObject *other, int op)
+{
+	if (!PyInt_Check(self) || !PyInt_Check(other)) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+	return Py_CmpToRich(op, int_compare((PyIntObject *)self, 
+					    (PyIntObject *)other));
+}
+
 static long
 int_hash(PyIntObject *v)
 {
@@ -1063,7 +1074,7 @@ PyTypeObject PyInt_Type = {
 	(printfunc)int_print,			/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	(cmpfunc)int_compare,			/* tp_compare */
+	0,					/* tp_compare */
 	(reprfunc)int_repr,			/* tp_repr */
 	&int_as_number,				/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -1078,7 +1089,7 @@ PyTypeObject PyInt_Type = {
 	int_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
-	0,					/* tp_richcompare */
+	int_richcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */

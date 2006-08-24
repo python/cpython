@@ -177,9 +177,36 @@ class UUID(object):
             int |= version << 76L
         self.__dict__['int'] = int
 
-    def __cmp__(self, other):
+    def __eq__(self, other):
         if isinstance(other, UUID):
-            return cmp(self.int, other.int)
+            return self.int == other.int
+        return NotImplemented
+
+    def __ne__(self, other):
+        if isinstance(other, UUID):
+            return self.int != other.int
+        return NotImplemented
+
+    # XXX What's the value of being able to sort UUIDs?
+
+    def __lt__(self, other):
+        if isinstance(other, UUID):
+            return self.int < other.int
+        return NotImplemented
+
+    def __gt__(self, other):
+        if isinstance(other, UUID):
+            return self.int > other.int
+        return NotImplemented
+
+    def __le__(self, other):
+        if isinstance(other, UUID):
+            return self.int <= other.int
+        return NotImplemented
+
+    def __ge__(self, other):
+        if isinstance(other, UUID):
+            return self.int >= other.int
         return NotImplemented
 
     def __hash__(self):
@@ -488,7 +515,7 @@ def uuid1(node=None, clock_seq=None):
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
     timestamp = int(nanoseconds/100) + 0x01b21dd213814000L
-    if timestamp <= _last_timestamp:
+    if _last_timestamp is not None and timestamp <= _last_timestamp:
         timestamp = _last_timestamp + 1
     _last_timestamp = timestamp
     if clock_seq is None:

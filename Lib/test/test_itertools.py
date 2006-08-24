@@ -132,13 +132,13 @@ class TestBasicOps(unittest.TestCase):
 
         # __cmp__ failure
         class DummyCmp:
-            def __cmp__(self, dst):
+            def __eq__(self, dst):
                 raise ExpectedError
         s = [DummyCmp(), DummyCmp(), None]
 
-        # __cmp__ failure on outer object
+        # __eq__ failure on outer object
         self.assertRaises(ExpectedError, gulp, s, func=id)
-        # __cmp__ failure on inner object
+        # __eq__ failure on inner object
         self.assertRaises(ExpectedError, gulp, s)
 
         # keyfunc failure

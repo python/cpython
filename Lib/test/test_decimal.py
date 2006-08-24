@@ -276,8 +276,8 @@ class DecimalTest(unittest.TestCase):
         myexceptions = self.getexceptions()
         self.context.clear_flags()
 
-        myexceptions.sort()
-        theirexceptions.sort()
+        myexceptions.sort(key=repr)
+        theirexceptions.sort(key=repr)
 
         self.assertEqual(result, ans,
                          'Incorrect answer for ' + s + ' -- got ' + result)

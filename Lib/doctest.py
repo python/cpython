@@ -469,11 +469,12 @@ class DocTest:
 
 
     # This lets us sort tests by name:
-    def __cmp__(self, other):
+    def __lt__(self, other):
         if not isinstance(other, DocTest):
-            return -1
-        return cmp((self.name, self.filename, self.lineno, id(self)),
-                   (other.name, other.filename, other.lineno, id(other)))
+            return NotImplemented
+        return ((self.name, self.filename, self.lineno, id(self))
+                <
+                (other.name, other.filename, other.lineno, id(other)))
 
 ######################################################################
 ## 3. DocTestParser

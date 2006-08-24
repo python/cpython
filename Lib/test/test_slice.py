@@ -35,18 +35,18 @@ class SliceTest(unittest.TestCase):
 
         s1 = slice(BadCmp())
         s2 = slice(BadCmp())
-        self.assertRaises(Exc, cmp, s1, s2)
         self.assertEqual(s1, s1)
+        self.assertRaises(Exc, lambda: s1 == s2)
 
         s1 = slice(1, BadCmp())
         s2 = slice(1, BadCmp())
         self.assertEqual(s1, s1)
-        self.assertRaises(Exc, cmp, s1, s2)
+        self.assertRaises(Exc, lambda: s1 == s2)
 
         s1 = slice(1, 2, BadCmp())
         s2 = slice(1, 2, BadCmp())
         self.assertEqual(s1, s1)
-        self.assertRaises(Exc, cmp, s1, s2)
+        self.assertRaises(Exc, lambda: s1 == s2)
 
     def test_members(self):
         s = slice(1)

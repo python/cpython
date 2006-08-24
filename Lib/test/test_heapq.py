@@ -136,6 +136,7 @@ class CmpErr:
     "Dummy element that always raises an error during comparison"
     def __cmp__(self, other):
         raise ZeroDivisionError
+    __eq__ = __ne__ = __lt__ = __le__ = __gt__ = __ge__ = __cmp__
 
 def R(seqn):
     'Regular generator'
@@ -253,7 +254,7 @@ class TestErrorHandling(unittest.TestCase):
 
     def test_iterable_args(self):
         for f in  (nlargest, nsmallest):
-            for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
+            for s in ("123", "", range(1000), (1, 1.2), xrange(2000,2200,5)):
                 for g in (G, I, Ig, L, R):
                     self.assertEqual(f(2, g(s)), f(2,s))
                 self.assertEqual(f(2, S(s)), [])
