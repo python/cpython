@@ -294,44 +294,60 @@ code_repr(PyCodeObject *co)
 static PyObject *
 code_richcompare(PyObject *self, PyObject *other, int op)
 {
-	/* Temporarily make this unsupported */
-	_Py_Break();
-	Py_INCREF(Py_NotImplemented);
-	return Py_NotImplemented;
+	PyCodeObject *co, *cp;
+	int eq;
+	PyObject *res;
 
-#if 0
-	int cmp;
-	cmp = PyObject_Compare(co->co_name, cp->co_name);
-	if (cmp) return cmp;
-	cmp = co->co_argcount - cp->co_argcount;
-	if (cmp) goto normalize;
-	cmp = co->co_nlocals - cp->co_nlocals;
-	if (cmp) goto normalize;
-	cmp = co->co_flags - cp->co_flags;
-	if (cmp) goto normalize;
-	cmp = co->co_firstlineno - cp->co_firstlineno;
-	if (cmp) goto normalize;
-	cmp = PyObject_Compare(co->co_code, cp->co_code);
-	if (cmp) return cmp;
-	cmp = PyObject_Compare(co->co_consts, cp->co_consts);
-	if (cmp) return cmp;
-	cmp = PyObject_Compare(co->co_names, cp->co_names);
-	if (cmp) return cmp;
-	cmp = PyObject_Compare(co->co_varnames, cp->co_varnames);
-	if (cmp) return cmp;
-	cmp = PyObject_Compare(co->co_freevars, cp->co_freevars);
-	if (cmp) return cmp;
-	cmp = PyObject_Compare(co->co_cellvars, cp->co_cellvars);
-	return cmp;
+	if ((op != Py_EQ && op != Py_NE) ||
+	    !PyCode_Check(self) ||
+	    !PyCode_Check(other)) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
 
- normalize:
-	if (cmp > 0)
-		return 1;
-	else if (cmp < 0)
-		return -1;
+	co = (PyCodeObject *)self;
+	cp = (PyCodeObject *)other;
+
+	eq = PyObject_RichCompare(co->co_name, cp->co_name, Py_EQ);
+	if (eq <= 0) goto unequal;
+	eq = co->co_argcount == cp->co_argcount;
+	if (!eq) goto unequal;
+	eq = co->co_nlocals == cp->co_nlocals;
+	if (!eq) goto unequal;
+	eq = co->co_flags == cp->co_flags;
+	if (!eq) goto unequal;
+	eq = co->co_firstlineno == cp->co_firstlineno;
+	if (!eq) goto unequal;
+	eq = PyObject_RichCompare(co->co_code, cp->co_code, Py_EQ);
+	if (eq <= 0) goto unequal;
+	eq = PyObject_RichCompare(co->co_consts, cp->co_consts, Py_EQ);
+	if (eq <= 0) goto unequal;
+	eq = PyObject_RichCompare(co->co_names, cp->co_names, Py_EQ);
+	if (eq <= 0) goto unequal;
+	eq = PyObject_RichCompare(co->co_varnames, cp->co_varnames, Py_EQ);
+	if (eq <= 0) goto unequal;
+	eq = PyObject_RichCompare(co->co_freevars, cp->co_freevars, Py_EQ);
+	if (eq <= 0) goto unequal;
+	eq = PyObject_RichCompare(co->co_cellvars, cp->co_cellvars, Py_EQ);
+	if (eq <= 0) goto unequal;
+
+	if (op == Py_EQ)
+		res = Py_True;
 	else
-		return 0;
-#endif
+		res = Py_False;
+	goto done;
+
+  unequal:
+	if (eq < 0)
+		return NULL;
+	if (op == Py_NE)
+		res = Py_True;
+	else
+		res = Py_False;
+
+  done:
+	Py_INCREF(res);
+	return res;
 }
 
 static long
@@ -375,7 +391,7 @@ PyTypeObject PyCode_Type = {
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
 	0,				/* tp_as_mapping */
-	0, 		/* tp_hash */
+	(hashfunc)code_hash, 		/* tp_hash */
 	0,				/* tp_call */
 	0,				/* tp_str */
 	PyObject_GenericGetAttr,	/* tp_getattro */
@@ -385,7 +401,7 @@ PyTypeObject PyCode_Type = {
 	code_doc,			/* tp_doc */
 	0,				/* tp_traverse */
 	0,				/* tp_clear */
-	0,				/* tp_richcompare */
+	code_richcompare,		/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
 	0,				/* tp_iter */
 	0,				/* tp_iternext */
