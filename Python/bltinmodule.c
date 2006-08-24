@@ -1447,6 +1447,7 @@ handle_range_longs(PyObject *self, PyObject *args)
 		bign = get_len_of_range_longs(ilow, ihigh, istep);
 	else {
 		int step_zero = PyObject_RichCompareBool(istep, zero, Py_EQ);
+		PyObject *neg_istep;
 		if (step_zero < 0)
 			goto Fail;
 		if (step_zero) {
@@ -1454,7 +1455,7 @@ handle_range_longs(PyObject *self, PyObject *args)
 				"range() step argument must not be zero");
 			goto Fail;
 		}
-		PyObject *neg_istep = PyNumber_Negative(istep);
+		neg_istep = PyNumber_Negative(istep);
 		if (neg_istep == NULL)
 			goto Fail;
 		bign = get_len_of_range_longs(ihigh, ilow, neg_istep);
