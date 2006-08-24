@@ -122,7 +122,7 @@ class TestEmpty(EnumerateTestCase):
 class TestBig(EnumerateTestCase):
 
     seq = range(10,20000,2)
-    res = zip(range(20000), seq)
+    res = list(zip(range(20000), seq))
 
 class TestReversed(unittest.TestCase):
 

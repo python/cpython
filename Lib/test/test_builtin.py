@@ -1554,18 +1554,18 @@ class BuiltinTest(unittest.TestCase):
         a = (1, 2, 3)
         b = (4, 5, 6)
         t = [(1, 4), (2, 5), (3, 6)]
-        self.assertEqual(zip(a, b), t)
+        self.assertEqual(list(zip(a, b)), t)
         b = [4, 5, 6]
-        self.assertEqual(zip(a, b), t)
+        self.assertEqual(list(zip(a, b)), t)
         b = (4, 5, 6, 7)
-        self.assertEqual(zip(a, b), t)
+        self.assertEqual(list(zip(a, b)), t)
         class I:
             def __getitem__(self, i):
                 if i < 0 or i > 2: raise IndexError
                 return i + 4
-        self.assertEqual(zip(a, I()), t)
-        self.assertEqual(zip(), [])
-        self.assertEqual(zip(*[]), [])
+        self.assertEqual(list(zip(a, I())), t)
+        self.assertEqual(list(zip()), [])
+        self.assertEqual(list(zip(*[])), [])
         self.assertRaises(TypeError, zip, None)
         class G:
             pass
@@ -1581,7 +1581,7 @@ class BuiltinTest(unittest.TestCase):
                 else:
                     return i
         self.assertEqual(
-            zip(SequenceWithoutALength(), xrange(2**30)),
+            list(zip(SequenceWithoutALength(), xrange(2**30))),
             list(enumerate(range(5)))
         )
 
@@ -1591,7 +1591,7 @@ class BuiltinTest(unittest.TestCase):
                     raise ValueError
                 else:
                     return i
-        self.assertRaises(ValueError, zip, BadSeq(), BadSeq())
+        self.assertRaises(ValueError, list, zip(BadSeq(), BadSeq()))
 
 class TestSorted(unittest.TestCase):
 

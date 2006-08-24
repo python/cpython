@@ -6,6 +6,9 @@ import sys
 import operator
 import random
 
+def lzip(*args):
+    return list(zip(*args))
+
 def onearg(x):
     'Test function of one argument'
     return 2*x
@@ -47,9 +50,9 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, chain, 2, 3)
 
     def test_count(self):
-        self.assertEqual(zip('abc',count()), [('a', 0), ('b', 1), ('c', 2)])
-        self.assertEqual(zip('abc',count(3)), [('a', 3), ('b', 4), ('c', 5)])
-        self.assertEqual(take(2, zip('abc',count(3))), [('a', 3), ('b', 4)])
+        self.assertEqual(lzip('abc',count()), [('a', 0), ('b', 1), ('c', 2)])
+        self.assertEqual(lzip('abc',count(3)), [('a', 3), ('b', 4), ('c', 5)])
+        self.assertEqual(take(2, lzip('abc',count(3))), [('a', 3), ('b', 4)])
         self.assertRaises(TypeError, count, 2, 3)
         self.assertRaises(TypeError, count, 'a')
         c = count(sys.maxint-2)   # verify that rollover doesn't crash
@@ -176,27 +179,28 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, ifilterfalse(range(6), range(6)).next)
 
     def test_izip(self):
+        # XXX This is rather silly now that builtin zip() calls izip()...
         ans = [(x,y) for x, y in izip('abc',count())]
         self.assertEqual(ans, [('a', 0), ('b', 1), ('c', 2)])
-        self.assertEqual(list(izip('abc', range(6))), zip('abc', range(6)))
-        self.assertEqual(list(izip('abcdef', range(3))), zip('abcdef', range(3)))
-        self.assertEqual(take(3,izip('abcdef', count())), zip('abcdef', range(3)))
-        self.assertEqual(list(izip('abcdef')), zip('abcdef'))
-        self.assertEqual(list(izip()), zip())
+        self.assertEqual(list(izip('abc', range(6))), lzip('abc', range(6)))
+        self.assertEqual(list(izip('abcdef', range(3))), lzip('abcdef', range(3)))
+        self.assertEqual(take(3,izip('abcdef', count())), lzip('abcdef', range(3)))
+        self.assertEqual(list(izip('abcdef')), lzip('abcdef'))
+        self.assertEqual(list(izip()), lzip())
         self.assertRaises(TypeError, izip, 3)
         self.assertRaises(TypeError, izip, range(3), 3)
         # Check tuple re-use (implementation detail)
         self.assertEqual([tuple(list(pair)) for pair in izip('abc', 'def')],
-                         zip('abc', 'def'))
+                         lzip('abc', 'def'))
         self.assertEqual([pair for pair in izip('abc', 'def')],
-                         zip('abc', 'def'))
+                         lzip('abc', 'def'))
         ids = map(id, izip('abc', 'def'))
         self.assertEqual(min(ids), max(ids))
         ids = map(id, list(izip('abc', 'def')))
         self.assertEqual(len(dict.fromkeys(ids)), len(ids))
 
     def test_repeat(self):
-        self.assertEqual(zip(xrange(3),repeat('a')),
+        self.assertEqual(lzip(xrange(3),repeat('a')),
                          [(0, 'a'), (1, 'a'), (2, 'a')])
         self.assertEqual(list(repeat('a', 3)), ['a', 'a', 'a'])
         self.assertEqual(take(3, repeat('a')), ['a', 'a', 'a'])
@@ -320,7 +324,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(b), [])
 
         a, b = tee(irange(n)) # test 100% interleaved
-        self.assertEqual(zip(a,b), zip(range(n),range(n)))
+        self.assertEqual(lzip(a,b), lzip(range(n), range(n)))
 
         a, b = tee(irange(n)) # test 0% interleaved
         self.assertEqual(list(a), range(n))
@@ -601,8 +605,8 @@ class TestVariousIteratorArgs(unittest.TestCase):
     def test_izip(self):
         for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
-                self.assertEqual(list(izip(g(s))), zip(g(s)))
-                self.assertEqual(list(izip(g(s), g(s))), zip(g(s), g(s)))
+                self.assertEqual(list(izip(g(s))), lzip(g(s)))
+                self.assertEqual(list(izip(g(s), g(s))), lzip(g(s), g(s)))
             self.assertRaises(TypeError, izip, X(s))
             self.assertRaises(TypeError, izip, N(s))
             self.assertRaises(ZeroDivisionError, list, izip(E(s)))
@@ -627,7 +631,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
     def test_starmap(self):
         for s in (range(10), range(0), range(100), (7,11), xrange(20,50,5)):
             for g in (G, I, Ig, S, L, R):
-                ss = zip(s, s)
+                ss = lzip(s, s)
                 self.assertEqual(list(starmap(operator.pow, g(ss))), map(operator.pow, g(s), g(s)))
             self.assertRaises(TypeError, starmap, operator.pow, X(ss))
             self.assertRaises(TypeError, starmap, operator.pow, N(ss))

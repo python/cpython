@@ -1855,116 +1855,32 @@ is a shortcut for issubclass(X, A) or issubclass(X, B) or ... (etc.).");
 static PyObject*
 builtin_zip(PyObject *self, PyObject *args)
 {
-	PyObject *ret;
-	const Py_ssize_t itemsize = PySequence_Length(args);
-	Py_ssize_t i;
-	PyObject *itlist;  /* tuple of iterators */
-	Py_ssize_t len;	   /* guess at result length */
+	PyObject *itertools = NULL, *izip = NULL, *result = NULL;
 
-	if (itemsize == 0)
-		return PyList_New(0);
-
-	/* args must be a tuple */
-	assert(PyTuple_Check(args));
-
-	/* Guess at result length:  the shortest of the input lengths.
-	   If some argument refuses to say, we refuse to guess too, lest
-	   an argument like xrange(sys.maxint) lead us astray.*/
-	len = -1;	/* unknown */
-	for (i = 0; i < itemsize; ++i) {
-		PyObject *item = PyTuple_GET_ITEM(args, i);
-		Py_ssize_t thislen = _PyObject_LengthHint(item);
-		if (thislen < 0) {
-			if (!PyErr_ExceptionMatches(PyExc_TypeError)  &&
-			    !PyErr_ExceptionMatches(PyExc_AttributeError)) {
-				return NULL;
-			}
-			PyErr_Clear();
-			len = -1;
-			break;
-		}
-		else if (len < 0 || thislen < len)
-			len = thislen;
-	}
-
-	/* allocate result list */
-	if (len < 0)
-		len = 10;	/* arbitrary */
-	if ((ret = PyList_New(len)) == NULL)
+	itertools = PyImport_ImportModule("itertools");
+	if (itertools == NULL)
 		return NULL;
+	
+	izip = PyObject_GetAttrString(itertools, "izip");
+	if (izip == NULL)
+		goto done;
 
-	/* obtain iterators */
-	itlist = PyTuple_New(itemsize);
-	if (itlist == NULL)
-		goto Fail_ret;
-	for (i = 0; i < itemsize; ++i) {
-		PyObject *item = PyTuple_GET_ITEM(args, i);
-		PyObject *it = PyObject_GetIter(item);
-		if (it == NULL) {
-			if (PyErr_ExceptionMatches(PyExc_TypeError))
-				PyErr_Format(PyExc_TypeError,
-				    "zip argument #%zd must support iteration",
-				    i+1);
-			goto Fail_ret_itlist;
-		}
-		PyTuple_SET_ITEM(itlist, i, it);
-	}
+	result = PyObject_Call(izip, args, NULL);
 
-	/* build result into ret list */
-	for (i = 0; ; ++i) {
-		int j;
-		PyObject *next = PyTuple_New(itemsize);
-		if (!next)
-			goto Fail_ret_itlist;
-
-		for (j = 0; j < itemsize; j++) {
-			PyObject *it = PyTuple_GET_ITEM(itlist, j);
-			PyObject *item = PyIter_Next(it);
-			if (!item) {
-				if (PyErr_Occurred()) {
-					Py_DECREF(ret);
-					ret = NULL;
-				}
-				Py_DECREF(next);
-				Py_DECREF(itlist);
-				goto Done;
-			}
-			PyTuple_SET_ITEM(next, j, item);
-		}
-
-		if (i < len)
-			PyList_SET_ITEM(ret, i, next);
-		else {
-			int status = PyList_Append(ret, next);
-			Py_DECREF(next);
-			++len;
-			if (status < 0)
-				goto Fail_ret_itlist;
-		}
-	}
-
-Done:
-	if (ret != NULL && i < len) {
-		/* The list is too big. */
-		if (PyList_SetSlice(ret, i, len, NULL) < 0)
-			return NULL;
-	}
-	return ret;
-
-Fail_ret_itlist:
-	Py_DECREF(itlist);
-Fail_ret:
-	Py_DECREF(ret);
-	return NULL;
+  done:
+	Py_XDECREF(itertools);
+	Py_XDECREF(izip);
+	return result;
 }
 
 
 PyDoc_STRVAR(zip_doc,
-"zip(seq1 [, seq2 [...]]) -> [(seq1[0], seq2[0] ...), (...)]\n\
+"zip(it1 [, it2 [...]]) -> iter([(it1[0], it2[0] ...), ...])\n\
 \n\
-Return a list of tuples, where each tuple contains the i-th element\n\
-from each of the argument sequences.  The returned list is truncated\n\
-in length to the length of the shortest argument sequence.");
+Return an iterator yielding tuples, where each tuple contains the\n\
+corresponding element from each of the argument iterables.\n\
+The returned iterator ends when the shortest argument iterable is exhausted.\n\
+NOTE: This is implemented using itertools.izip().");
 
 
 static PyMethodDef builtin_methods[] = {
