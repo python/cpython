@@ -27,7 +27,7 @@ class urlopen_FileTests(unittest.TestCase):
     def setUp(self):
         """Setup of a temp file to use for testing"""
         self.text = "test_urllib: %s\n" % self.__class__.__name__
-        FILE = file(test_support.TESTFN, 'wb')
+        FILE = open(test_support.TESTFN, 'wb')
         try:
             FILE.write(self.text)
         finally:
@@ -139,7 +139,7 @@ class urlretrieve_FileTests(unittest.TestCase):
         self.registerFileForCleanUp(test_support.TESTFN)
         self.text = 'testing urllib.urlretrieve'
         try:
-            FILE = file(test_support.TESTFN, 'wb')
+            FILE = open(test_support.TESTFN, 'wb')
             FILE.write(self.text)
             FILE.close()
         finally:
@@ -192,7 +192,7 @@ class urlretrieve_FileTests(unittest.TestCase):
         self.assertEqual(second_temp, result[0])
         self.assert_(os.path.exists(second_temp), "copy of the file was not "
                                                   "made")
-        FILE = file(second_temp, 'rb')
+        FILE = open(second_temp, 'rb')
         try:
             text = FILE.read()
             FILE.close()

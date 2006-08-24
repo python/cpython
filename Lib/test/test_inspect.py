@@ -130,7 +130,7 @@ class GetSourceBase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
 
-        self.source = file(inspect.getsourcefile(self.fodderFile)).read()
+        self.source = open(inspect.getsourcefile(self.fodderFile)).read()
 
     def sourcerange(self, top, bottom):
         lines = self.source.split("\n")

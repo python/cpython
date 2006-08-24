@@ -152,7 +152,7 @@ class TestUnicodeFiles(unittest.TestCase):
     # top-level 'test' functions would be if they could take params
     def _test_single(self, filename):
         remove_if_exists(filename)
-        f = file(filename, "w")
+        f = open(filename, "w")
         f.close()
         try:
             self._do_single(filename)
@@ -170,7 +170,7 @@ class TestUnicodeFiles(unittest.TestCase):
     def _test_equivalent(self, filename1, filename2):
         remove_if_exists(filename1)
         self.failUnless(not os.path.exists(filename2))
-        f = file(filename1, "w")
+        f = open(filename1, "w")
         f.close()
         try:
             self._do_equivilent(filename1, filename2)
