@@ -1387,7 +1387,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
  * Miscellaneous helpers.
  */
 
-/* For obscure reasons, we need to use tp_richcompare instead of tp_compare.
+/* For various reasons, we need to use tp_richcompare instead of tp_compare.
  * The comparisons here all most naturally compute a cmp()-like result.
  * This little helper turns that into a bool result for rich comparisons.
  */
@@ -1705,31 +1705,23 @@ delta_subtract(PyObject *left, PyObject *right)
 	return result;
 }
 
-/* This is more natural as a tp_compare, but doesn't work then:  for whatever
- * reason, Python's try_3way_compare ignores tp_compare unless
- * PyInstance_Check returns true, but these aren't old-style classes.
- */
 static PyObject *
-delta_richcompare(PyDateTime_Delta *self, PyObject *other, int op)
+delta_richcompare(PyObject *self, PyObject *other, int op)
 {
-	int diff = 42;	/* nonsense */
-
 	if (PyDelta_Check(other)) {
-		diff = GET_TD_DAYS(self) - GET_TD_DAYS(other);
+		int diff = GET_TD_DAYS(self) - GET_TD_DAYS(other);
 		if (diff == 0) {
 			diff = GET_TD_SECONDS(self) - GET_TD_SECONDS(other);
 			if (diff == 0)
 				diff = GET_TD_MICROSECONDS(self) -
 				       GET_TD_MICROSECONDS(other);
 		}
+		return diff_to_bool(diff, op);
 	}
-	else if (op == Py_EQ || op == Py_NE)
-		diff = 1;	/* any non-zero value will do */
-
-	else /* stop this from falling back to address comparison */
-		return cmperror((PyObject *)self, other);
-
-	return diff_to_bool(diff, op);
+	else {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
 }
 
 static PyObject *delta_getstate(PyDateTime_Delta *self);
@@ -2145,7 +2137,7 @@ static PyTypeObject PyDateTime_DeltaType = {
 	delta_doc,					/* tp_doc */
 	0,						/* tp_traverse */
 	0,						/* tp_clear */
-	(richcmpfunc)delta_richcompare,			/* tp_richcompare */
+	delta_richcompare,				/* tp_richcompare */
 	0,						/* tp_weaklistoffset */
 	0,						/* tp_iter */
 	0,						/* tp_iternext */
@@ -2499,31 +2491,19 @@ date_isocalendar(PyDateTime_Date *self)
 
 /* Miscellaneous methods. */
 
-/* This is more natural as a tp_compare, but doesn't work then:  for whatever
- * reason, Python's try_3way_compare ignores tp_compare unless
- * PyInstance_Check returns true, but these aren't old-style classes.
- */
 static PyObject *
-date_richcompare(PyDateTime_Date *self, PyObject *other, int op)
+date_richcompare(PyObject *self, PyObject *other, int op)
 {
-	int diff = 42;	/* nonsense */
-
-	if (PyDate_Check(other))
-		diff = memcmp(self->data, ((PyDateTime_Date *)other)->data,
-			      _PyDateTime_DATE_DATASIZE);
-
-	else if (PyObject_HasAttrString(other, "timetuple")) {
-		/* A hook for other kinds of date objects. */
+	if (PyDate_Check(other)) {
+		int diff = memcmp(((PyDateTime_Date *)self)->data,
+				  ((PyDateTime_Date *)other)->data,
+				  _PyDateTime_DATE_DATASIZE);
+		return diff_to_bool(diff, op);
+	}
+	else {
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
-	else if (op == Py_EQ || op == Py_NE)
-		diff = 1;	/* any non-zero value will do */
-
-	else /* stop this from falling back to address comparison */
-		return cmperror((PyObject *)self, other);
-
-	return diff_to_bool(diff, op);
 }
 
 static PyObject *
@@ -2701,7 +2681,7 @@ static PyTypeObject PyDateTime_DateType = {
 	date_doc,					/* tp_doc */
 	0,						/* tp_traverse */
 	0,						/* tp_clear */
-	(richcmpfunc)date_richcompare,			/* tp_richcompare */
+	date_richcompare,				/* tp_richcompare */
 	0,						/* tp_weaklistoffset */
 	0,						/* tp_iter */
 	0,						/* tp_iternext */
@@ -3223,28 +3203,19 @@ time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
  * Miscellaneous methods.
  */
 
-/* This is more natural as a tp_compare, but doesn't work then:  for whatever
- * reason, Python's try_3way_compare ignores tp_compare unless
- * PyInstance_Check returns true, but these aren't old-style classes.
- */
 static PyObject *
-time_richcompare(PyDateTime_Time *self, PyObject *other, int op)
+time_richcompare(PyObject *self, PyObject *other, int op)
 {
 	int diff;
 	naivety n1, n2;
 	int offset1, offset2;
 
 	if (! PyTime_Check(other)) {
-		if (op == Py_EQ || op == Py_NE) {
-			PyObject *result = op == Py_EQ ? Py_False : Py_True;
-			Py_INCREF(result);
-			return result;
-		}
-		/* Stop this from falling back to address comparison. */
-		return cmperror((PyObject *)self, other);
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
 	}
-	if (classify_two_utcoffsets((PyObject *)self, &offset1, &n1, Py_None,
-				     other, &offset2, &n2, Py_None) < 0)
+	if (classify_two_utcoffsets(self, &offset1, &n1, Py_None,
+				    other, &offset2, &n2, Py_None) < 0)
 		return NULL;
 	assert(n1 != OFFSET_UNKNOWN && n2 != OFFSET_UNKNOWN);
 	/* If they're both naive, or both aware and have the same offsets,
@@ -3252,7 +3223,8 @@ time_richcompare(PyDateTime_Time *self, PyObject *other, int op)
 	 * offset2 == 0 at this point.
 	 */
 	if (n1 == n2 && offset1 == offset2) {
-		diff = memcmp(self->data, ((PyDateTime_Time *)other)->data,
+		diff = memcmp(((PyDateTime_Time *)self)->data,
+			      ((PyDateTime_Time *)other)->data,
 			      _PyDateTime_TIME_DATASIZE);
 		return diff_to_bool(diff, op);
 	}
@@ -3474,7 +3446,7 @@ static PyTypeObject PyDateTime_TimeType = {
 	time_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
-	(richcmpfunc)time_richcompare,		/* tp_richcompare */
+	time_richcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
@@ -4115,46 +4087,34 @@ datetime_ctime(PyDateTime_DateTime *self)
 
 /* Miscellaneous methods. */
 
-/* This is more natural as a tp_compare, but doesn't work then:  for whatever
- * reason, Python's try_3way_compare ignores tp_compare unless
- * PyInstance_Check returns true, but these aren't old-style classes.
- */
 static PyObject *
-datetime_richcompare(PyDateTime_DateTime *self, PyObject *other, int op)
+datetime_richcompare(PyObject *self, PyObject *other, int op)
 {
 	int diff;
 	naivety n1, n2;
 	int offset1, offset2;
 
 	if (! PyDateTime_Check(other)) {
-		/* If other has a "timetuple" attr, that's an advertised
-		 * hook for other classes to ask to get comparison control.
-		 * However, date instances have a timetuple attr, and we
-		 * don't want to allow that comparison.  Because datetime
-		 * is a subclass of date, when mixing date and datetime
-		 * in a comparison, Python gives datetime the first shot
-		 * (it's the more specific subtype).  So we can stop that
-		 * combination here reliably.
-		 */
-		if (PyObject_HasAttrString(other, "timetuple") &&
-		    ! PyDate_Check(other)) {
-			/* A hook for other kinds of datetime objects. */
-			Py_INCREF(Py_NotImplemented);
-			return Py_NotImplemented;
+		if (PyDate_Check(other)) {
+			/* Prevent invocation of date_richcompare.  We want to
+			   return NotImplemented here to give the other object
+			   a chance.  But since DateTime is a subclass of
+			   Date, if the other object is a Date, it would
+			   compute an ordering based on the date part alone,
+			   and we don't want that.  So force unequal or
+			   uncomparable here in that case. */
+			if (op == Py_EQ)
+				Py_RETURN_FALSE;
+			if (op == Py_NE)
+				Py_RETURN_TRUE;
+			return cmperror(self, other);
 		}
-		if (op == Py_EQ || op == Py_NE) {
-			PyObject *result = op == Py_EQ ? Py_False : Py_True;
-			Py_INCREF(result);
-			return result;
-		}
-		/* Stop this from falling back to address comparison. */
-		return cmperror((PyObject *)self, other);
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
 	}
 
-	if (classify_two_utcoffsets((PyObject *)self, &offset1, &n1,
-				    (PyObject *)self,
-				     other, &offset2, &n2,
-				     other) < 0)
+	if (classify_two_utcoffsets(self, &offset1, &n1, self,
+				    other, &offset2, &n2, other) < 0)
 		return NULL;
 	assert(n1 != OFFSET_UNKNOWN && n2 != OFFSET_UNKNOWN);
  	/* If they're both naive, or both aware and have the same offsets,
@@ -4162,7 +4122,8 @@ datetime_richcompare(PyDateTime_DateTime *self, PyObject *other, int op)
 	 * offset2 == 0 at this point.
 	 */
 	if (n1 == n2 && offset1 == offset2) {
-		diff = memcmp(self->data, ((PyDateTime_DateTime *)other)->data,
+		diff = memcmp(((PyDateTime_DateTime *)self)->data,
+			      ((PyDateTime_DateTime *)other)->data,
 			      _PyDateTime_DATETIME_DATASIZE);
 		return diff_to_bool(diff, op);
 	}
@@ -4568,7 +4529,7 @@ static PyTypeObject PyDateTime_DateTimeType = {
 	datetime_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
-	(richcmpfunc)datetime_richcompare,	/* tp_richcompare */
+	datetime_richcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
