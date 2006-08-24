@@ -81,6 +81,13 @@ class BaseTest(unittest.TestCase):
         self.assertNotEqual(id(a), id(b))
         self.assertEqual(a, b)
 
+    def test_deepcopy(self):
+        import copy
+        a = array.array(self.typecode, self.example)
+        b = copy.deepcopy(a)
+        self.assertNotEqual(id(a), id(b))
+        self.assertEqual(a, b)
+
     def test_insert(self):
         a = array.array(self.typecode, self.example)
         a.insert(0, self.example[0])
