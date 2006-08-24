@@ -27,7 +27,7 @@ import os
 # ran it.  Indeed, at the start, the driver never got beyond 6 iterations
 # before the test died.
 
-# The dicts are global to make it easy to mutate them from within functions.
+# The dicts are global to make it easy to mutate tham from within functions.
 dict1 = {}
 dict2 = {}
 
@@ -88,14 +88,21 @@ class Horrid:
         # have any systematic relationship between comparison outcomes
         # (based on self.i and other.i) and relative position within the
         # hash vector (based on hashcode).
-        self.hashcode = random.randrange(1000000000)
+        # XXX This is no longer effective.
+        ##self.hashcode = random.randrange(1000000000)
 
     def __hash__(self):
-        return self.hashcode
+        ##return self.hashcode
+        return 42
 
     def __eq__(self, other):
         maybe_mutate()   # The point of the test.
         return self.i == other.i
+
+    def __ne__(self, other):
+        raise RuntimeError("I didn't expect some kind of Spanish inquisition!")
+
+    __lt__ = __le__ = __gt__ = __ge__ = __ne__
 
     def __repr__(self):
         return "Horrid(%d)" % self.i
@@ -133,7 +140,6 @@ def test_one(n):
         if verbose:
             print ".",
         c = dict1 == dict2
-        XXX # Can't figure out how to make this work
     if verbose:
         print
 
