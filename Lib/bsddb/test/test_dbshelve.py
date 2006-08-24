@@ -23,11 +23,24 @@ from .test_all import verbose
 # We want the objects to be comparable so we can test dbshelve.values
 # later on.
 class DataClass:
+
     def __init__(self):
         self.value = random.random()
 
-    def __cmp__(self, other):
-        return cmp(self.value, other)
+    def __repr__(self):
+        return "DataClass(%r)" % self.value
+
+    def __eq__(self, other):
+        value = self.value
+        if isinstance(other, DataClass):
+            other = other.value
+        return value == other
+
+    def __lt__(self, other):
+        value = self.value
+        if isinstance(other, DataClass):
+            other = other.value
+        return value < other
 
 class DBShelveTestCase(unittest.TestCase):
     def setUp(self):
@@ -103,11 +116,10 @@ class DBShelveTestCase(unittest.TestCase):
                 print "%s: %s" % (key, value)
             self.checkrec(key, value)
 
-        dbvalues = d.values()
+        dbvalues = sorted(d.values(), key=lambda x: (str(type(x)), x))
         assert len(dbvalues) == len(d.keys())
-        values.sort()
-        dbvalues.sort()
-        assert values == dbvalues
+        values.sort(key=lambda x: (str(type(x)), x))
+        assert values == dbvalues, "%r != %r" % (values, dbvalues)
 
         items = d.items()
         assert len(items) == len(values)
