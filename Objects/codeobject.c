@@ -308,7 +308,7 @@ code_richcompare(PyObject *self, PyObject *other, int op)
 	co = (PyCodeObject *)self;
 	cp = (PyCodeObject *)other;
 
-	eq = PyObject_RichCompare(co->co_name, cp->co_name, Py_EQ);
+	eq = PyObject_RichCompareBool(co->co_name, cp->co_name, Py_EQ);
 	if (eq <= 0) goto unequal;
 	eq = co->co_argcount == cp->co_argcount;
 	if (!eq) goto unequal;
@@ -318,17 +318,17 @@ code_richcompare(PyObject *self, PyObject *other, int op)
 	if (!eq) goto unequal;
 	eq = co->co_firstlineno == cp->co_firstlineno;
 	if (!eq) goto unequal;
-	eq = PyObject_RichCompare(co->co_code, cp->co_code, Py_EQ);
+	eq = PyObject_RichCompareBool(co->co_code, cp->co_code, Py_EQ);
 	if (eq <= 0) goto unequal;
-	eq = PyObject_RichCompare(co->co_consts, cp->co_consts, Py_EQ);
+	eq = PyObject_RichCompareBool(co->co_consts, cp->co_consts, Py_EQ);
 	if (eq <= 0) goto unequal;
-	eq = PyObject_RichCompare(co->co_names, cp->co_names, Py_EQ);
+	eq = PyObject_RichCompareBool(co->co_names, cp->co_names, Py_EQ);
 	if (eq <= 0) goto unequal;
-	eq = PyObject_RichCompare(co->co_varnames, cp->co_varnames, Py_EQ);
+	eq = PyObject_RichCompareBool(co->co_varnames, cp->co_varnames, Py_EQ);
 	if (eq <= 0) goto unequal;
-	eq = PyObject_RichCompare(co->co_freevars, cp->co_freevars, Py_EQ);
+	eq = PyObject_RichCompareBool(co->co_freevars, cp->co_freevars, Py_EQ);
 	if (eq <= 0) goto unequal;
-	eq = PyObject_RichCompare(co->co_cellvars, cp->co_cellvars, Py_EQ);
+	eq = PyObject_RichCompareBool(co->co_cellvars, cp->co_cellvars, Py_EQ);
 	if (eq <= 0) goto unequal;
 
 	if (op == Py_EQ)
