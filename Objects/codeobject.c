@@ -291,9 +291,15 @@ code_repr(PyCodeObject *co)
 	return PyString_FromString(buf);
 }
 
-static int
-code_compare(PyCodeObject *co, PyCodeObject *cp)
+static PyObject *
+code_richcompare(PyObject *self, PyObject *other, int op)
 {
+	/* Temporarily make this unsupported */
+	_Py_Break();
+	Py_INCREF(Py_NotImplemented);
+	return Py_NotImplemented;
+
+#if 0
 	int cmp;
 	cmp = PyObject_Compare(co->co_name, cp->co_name);
 	if (cmp) return cmp;
@@ -325,6 +331,7 @@ code_compare(PyCodeObject *co, PyCodeObject *cp)
 		return -1;
 	else
 		return 0;
+#endif
 }
 
 static long
@@ -363,12 +370,12 @@ PyTypeObject PyCode_Type = {
 	0,				/* tp_print */
 	0, 				/* tp_getattr */
 	0,				/* tp_setattr */
-	(cmpfunc)code_compare, 		/* tp_compare */
+	0,		 		/* tp_compare */
 	(reprfunc)code_repr,		/* tp_repr */
 	0,				/* tp_as_number */
 	0,				/* tp_as_sequence */
 	0,				/* tp_as_mapping */
-	(hashfunc)code_hash, 		/* tp_hash */
+	0, 		/* tp_hash */
 	0,				/* tp_call */
 	0,				/* tp_str */
 	PyObject_GenericGetAttr,	/* tp_getattro */

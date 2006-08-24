@@ -184,7 +184,9 @@ weakref_repr(PyWeakReference *self)
 static PyObject *
 weakref_richcompare(PyWeakReference* self, PyWeakReference* other, int op)
 {
-    if (op != Py_EQ || self->ob_type != other->ob_type) {
+    if ((op != Py_EQ && op != Py_NE) ||
+	!PyWeakref_Check(self) ||
+	!PyWeakref_Check(other)) {
         Py_INCREF(Py_NotImplemented);
         return Py_NotImplemented;
     }
@@ -458,12 +460,12 @@ proxy_setattr(PyWeakReference *proxy, PyObject *name, PyObject *value)
     return PyObject_SetAttr(PyWeakref_GET_OBJECT(proxy), name, value);
 }
 
-static int
-proxy_compare(PyObject *proxy, PyObject *v)
+static PyObject *
+proxy_richcompare(PyObject *proxy, PyObject *v, int op)
 {
-    UNWRAP_I(proxy);
-    UNWRAP_I(v);
-    return PyObject_Compare(proxy, v);
+    UNWRAP(proxy);
+    UNWRAP(v);
+    return PyObject_RichCompare(proxy, v, op);
 }
 
 /* number slots */
@@ -649,7 +651,7 @@ _PyWeakref_ProxyType = {
     0,				        /* tp_print */
     0,				        /* tp_getattr */
     0, 				        /* tp_setattr */
-    proxy_compare,		        /* tp_compare */
+    0,				        /* tp_compare */
     (reprfunc)proxy_repr,	        /* tp_repr */
     &proxy_as_number,		        /* tp_as_number */
     &proxy_as_sequence,		        /* tp_as_sequence */
@@ -664,7 +666,7 @@ _PyWeakref_ProxyType = {
     0,                                  /* tp_doc */
     (traverseproc)gc_traverse,          /* tp_traverse */
     (inquiry)gc_clear,                  /* tp_clear */
-    0,                                  /* tp_richcompare */
+    proxy_richcompare,                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     (getiterfunc)proxy_iter,            /* tp_iter */
     (iternextfunc)proxy_iternext,       /* tp_iternext */
@@ -683,7 +685,7 @@ _PyWeakref_CallableProxyType = {
     0,				        /* tp_print */
     0,				        /* tp_getattr */
     0, 				        /* tp_setattr */
-    proxy_compare,		        /* tp_compare */
+    0,				        /* tp_compare */
     (unaryfunc)proxy_repr,	        /* tp_repr */
     &proxy_as_number,		        /* tp_as_number */
     &proxy_as_sequence,		        /* tp_as_sequence */
@@ -698,7 +700,7 @@ _PyWeakref_CallableProxyType = {
     0,                                  /* tp_doc */
     (traverseproc)gc_traverse,          /* tp_traverse */
     (inquiry)gc_clear,                  /* tp_clear */
-    0,                                  /* tp_richcompare */
+    proxy_richcompare,                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     (getiterfunc)proxy_iter,            /* tp_iter */
     (iternextfunc)proxy_iternext,       /* tp_iternext */

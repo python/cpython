@@ -681,7 +681,7 @@ d[1,] = 2
 d[1,2] = 3
 d[1,2,3] = 4
 L = list(d)
-L.sort()
+L.sort(key=lambda x: x if isinstance(x, tuple) else ())
 print L
 
 
@@ -741,7 +741,7 @@ print [(i, s) for i in nums for s in [f for f in strs if "n" in f]]
 print [(lambda a:[a**i for i in range(a+1)])(j) for j in range(5)]
 
 def test_in_func(l):
-    return [None < x < 3 for x in l if x > 2]
+    return [0 < x < 3 for x in l if x > 2]
 
 print test_in_func(nums)
 

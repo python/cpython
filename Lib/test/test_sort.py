@@ -68,8 +68,8 @@ class TestBase(unittest.TestCase):
                 self.key = key
                 self.index = i
 
-            def __cmp__(self, other):
-                return cmp(self.key, other.key)
+            def __lt__(self, other):
+                return self.key < other.key
 
             def __repr__(self):
                 return "Stable(%d, %d)" % (self.key, self.index)
@@ -225,6 +225,8 @@ class TestDecorateSortUndecorate(unittest.TestCase):
             def __del__(self):
                 del data[:]
                 data[:] = range(20)
+            def __lt__(self, other):
+                return id(self) < id(other)
         self.assertRaises(ValueError, data.sort, key=SortKiller)
 
     def test_key_with_mutating_del_and_exception(self):

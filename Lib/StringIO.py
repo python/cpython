@@ -116,7 +116,7 @@ class StringIO:
         _complain_ifclosed(self.closed)
         return self.pos
 
-    def read(self, n = -1):
+    def read(self, n=None):
         """Read at most size bytes from the file
         (less if the read hits EOF before obtaining size bytes).
 
@@ -128,6 +128,8 @@ class StringIO:
         if self.buflist:
             self.buf += ''.join(self.buflist)
             self.buflist = []
+        if n is None:
+            n = -1
         if n < 0:
             newpos = self.len
         else:

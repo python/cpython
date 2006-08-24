@@ -234,11 +234,8 @@ class TestBinaryOps(unittest.TestCase):
         a, b = Set('a'), Set('b')
         self.assertRaises(TypeError, cmp, a, b)
 
-        # You can view this as a buglet:  cmp(a, a) does not raise TypeError,
-        # because __eq__ is tried before __cmp__, and a.__eq__(a) returns True,
-        # which Python thinks is good enough to synthesize a cmp() result
-        # without calling __cmp__.
-        self.assertEqual(cmp(a, a), 0)
+        # In py3k, this works!
+        self.assertRaises(TypeError, cmp, a, a)
 
         self.assertRaises(TypeError, cmp, a, 12)
         self.assertRaises(TypeError, cmp, "abc", a)
@@ -675,8 +672,8 @@ class TestCopying(unittest.TestCase):
 
     def test_copy(self):
         dup = self.set.copy()
-        dup_list = list(dup); dup_list.sort()
-        set_list = list(self.set); set_list.sort()
+        dup_list = sorted(dup, key=repr)
+        set_list = sorted(self.set, key=repr)
         self.assertEqual(len(dup_list), len(set_list))
         for i in range(len(dup_list)):
             self.failUnless(dup_list[i] is set_list[i])
@@ -684,8 +681,8 @@ class TestCopying(unittest.TestCase):
     def test_deep_copy(self):
         dup = copy.deepcopy(self.set)
         ##print type(dup), repr(dup)
-        dup_list = list(dup); dup_list.sort()
-        set_list = list(self.set); set_list.sort()
+        dup_list = sorted(dup, key=repr)
+        set_list = sorted(self.set, key=repr)
         self.assertEqual(len(dup_list), len(set_list))
         for i in range(len(dup_list)):
             self.assertEqual(dup_list[i], set_list[i])

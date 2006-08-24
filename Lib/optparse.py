@@ -838,13 +838,13 @@ class Values:
 
     __repr__ = _repr
 
-    def __cmp__(self, other):
+    def __eq__(self, other):
         if isinstance(other, Values):
-            return cmp(self.__dict__, other.__dict__)
+            return self.__dict__ == other.__dict__
         elif isinstance(other, types.DictType):
-            return cmp(self.__dict__, other)
+            return self.__dict__ == other
         else:
-            return -1
+            return NotImplemented
 
     def _update_careful(self, dict):
         """

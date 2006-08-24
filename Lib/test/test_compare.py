@@ -13,8 +13,8 @@ class Cmp:
     def __repr__(self):
         return '<Cmp %s>' % self.arg
 
-    def __cmp__(self, other):
-        return cmp(self.arg, other)
+    def __eq__(self, other):
+        return self.arg == other
 
 class ComparisonTest(unittest.TestCase):
     set1 = [2, 2.0, 2L, 2+0j, Cmp(2.0)]
@@ -36,7 +36,7 @@ class ComparisonTest(unittest.TestCase):
             L.insert(len(L)//2, Empty())
         for a in L:
             for b in L:
-                self.assertEqual(cmp(a, b), cmp(id(a), id(b)),
+                self.assertEqual(a == b, id(a) == id(b),
                                  'a=%r, b=%r' % (a, b))
 
 def test_main():

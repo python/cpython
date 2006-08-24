@@ -701,6 +701,12 @@ class Object:
         self.arg = arg
     def __repr__(self):
         return "<Object %r>" % self.arg
+    def __lt__(self, other):
+        if isinstance(other, Object):
+            return self.arg < other.arg
+        return NotImplemented
+    def __hash__(self):
+        return hash(self.arg)
 
 
 class MappingTestCase(TestBase):

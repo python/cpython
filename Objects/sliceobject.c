@@ -280,25 +280,55 @@ static PyMethodDef slice_methods[] = {
 	{NULL, NULL}
 };
 
-static int
-slice_compare(PySliceObject *v, PySliceObject *w)
+static PyObject *
+slice_richcompare(PyObject *v, PyObject *w, int op)
 {
-	int result = 0;
+	PyObject *t1;
+	PyObject *t2;
+	PyObject *res;
 
-        if (v == w)
-		return 0;
+	if (v == w) {
+		/* XXX Do we really need this shortcut?
+		   There's a unit test for it, but is that fair? */
+		switch (op) {
+		case Py_EQ: 
+		case Py_LE:
+		case Py_GE:
+			res = Py_True; 
+			break;
+		default:
+			res = Py_False; 
+			break;
+		}
+		Py_INCREF(res);
+		return res;
+	}
 
-	if (PyObject_Cmp(v->start, w->start, &result) < 0)
-	    return -2;
-	if (result != 0)
-		return result;
-	if (PyObject_Cmp(v->stop, w->stop, &result) < 0)
-	    return -2;
-	if (result != 0)
-		return result;
-	if (PyObject_Cmp(v->step, w->step, &result) < 0)
-	    return -2;
-	return result;
+	t1 = PyTuple_New(3);
+	t2 = PyTuple_New(3);
+	if (t1 == NULL || t2 == NULL)
+		return NULL;
+
+	PyTuple_SET_ITEM(t1, 0, ((PySliceObject *)v)->start);
+	PyTuple_SET_ITEM(t1, 1, ((PySliceObject *)v)->stop);
+	PyTuple_SET_ITEM(t1, 2, ((PySliceObject *)v)->step);
+	PyTuple_SET_ITEM(t2, 0, ((PySliceObject *)w)->start);
+	PyTuple_SET_ITEM(t2, 1, ((PySliceObject *)w)->stop);
+	PyTuple_SET_ITEM(t2, 2, ((PySliceObject *)w)->step);
+
+	res = PyObject_RichCompare(t1, t2, op);
+
+	PyTuple_SET_ITEM(t1, 0, NULL);
+	PyTuple_SET_ITEM(t1, 1, NULL);
+	PyTuple_SET_ITEM(t1, 2, NULL);
+	PyTuple_SET_ITEM(t2, 0, NULL);
+	PyTuple_SET_ITEM(t2, 1, NULL);
+	PyTuple_SET_ITEM(t2, 2, NULL);
+
+	Py_DECREF(t1);
+	Py_DECREF(t2);
+
+	return res;
 }
 
 static long
@@ -318,7 +348,7 @@ PyTypeObject PySlice_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	(cmpfunc)slice_compare, 		/* tp_compare */
+	0,			 		/* tp_compare */
 	(reprfunc)slice_repr,   		/* tp_repr */
 	0,					/* tp_as_number */
 	0,	    				/* tp_as_sequence */
@@ -333,7 +363,7 @@ PyTypeObject PySlice_Type = {
 	slice_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
-	0,					/* tp_richcompare */
+	slice_richcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */

@@ -122,8 +122,8 @@ def fcmp(x, y): # fuzzy comparison function
             outcome = fcmp(x[i], y[i])
             if outcome != 0:
                 return outcome
-        return cmp(len(x), len(y))
-    return cmp(x, y)
+        return (len(x) > len(y)) - (len(x) < len(y))
+    return (x > y) - (x < y)
 
 try:
     unicode

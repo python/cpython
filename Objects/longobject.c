@@ -1,5 +1,3 @@
-
-
 /* Long (arbitrary precision) integer object implementation */
 
 /* XXX The functional organization of this file is terrible */
@@ -1882,6 +1880,14 @@ long_compare(PyLongObject *a, PyLongObject *b)
 	return sign < 0 ? -1 : sign > 0 ? 1 : 0;
 }
 
+static PyObject *
+long_richcompare(PyObject *self, PyObject *other, int op)
+{
+	PyLongObject *a, *b;
+	CONVERT_BINOP((PyObject *)self, (PyObject *)other, &a, &b);
+	return Py_CmpToRich(op, long_compare(a, b));
+}
+
 static long
 long_hash(PyLongObject *v)
 {
@@ -3357,7 +3363,7 @@ PyTypeObject PyLong_Type = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	(cmpfunc)long_compare,			/* tp_compare */
+	0,					/* tp_compare */
 	long_repr,				/* tp_repr */
 	&long_as_number,			/* tp_as_number */
 	0,					/* tp_as_sequence */
@@ -3372,7 +3378,7 @@ PyTypeObject PyLong_Type = {
 	long_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
-	0,					/* tp_richcompare */
+	long_richcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */

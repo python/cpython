@@ -32,7 +32,8 @@ from types import StringType
 class Version:
     """Abstract base class for version numbering classes.  Just provides
     constructor (__init__) and reproducer (__repr__), because those
-    seem to be the same for all version numbering classes.
+    seem to be the same for all version numbering classes; and route
+    rich comparisons to __cmp__.
     """
 
     def __init__ (self, vstring=None):
@@ -41,6 +42,42 @@ class Version:
 
     def __repr__ (self):
         return "%s ('%s')" % (self.__class__.__name__, str(self))
+
+    def __eq__(self, other):
+        c = self.__cmp__(other)
+        if c is NotImplemented:
+            return c
+        return c == 0
+
+    def __ne__(self, other):
+        c = self.__cmp__(other)
+        if c is NotImplemented:
+            return c
+        return c != 0
+
+    def __lt__(self, other):
+        c = self.__cmp__(other)
+        if c is NotImplemented:
+            return c
+        return c < 0
+
+    def __le__(self, other):
+        c = self.__cmp__(other)
+        if c is NotImplemented:
+            return c
+        return c <= 0
+
+    def __gt__(self, other):
+        c = self.__cmp__(other)
+        if c is NotImplemented:
+            return c
+        return c > 0
+
+    def __ge__(self, other):
+        c = self.__cmp__(other)
+        if c is NotImplemented:
+            return c
+        return c >= 0
 
 
 # Interface for version-number classes -- must be implemented

@@ -706,6 +706,26 @@ class Decimal(object):
             return NotImplemented
         return self.__cmp__(other) != 0
 
+    def __lt__(self, other):
+        if not isinstance(other, (Decimal, int, long)):
+            return NotImplemented
+        return self.__cmp__(other) < 0
+
+    def __le__(self, other):
+        if not isinstance(other, (Decimal, int, long)):
+            return NotImplemented
+        return self.__cmp__(other) <= 0
+
+    def __gt__(self, other):
+        if not isinstance(other, (Decimal, int, long)):
+            return NotImplemented
+        return self.__cmp__(other) > 0
+
+    def __ge__(self, other):
+        if not isinstance(other, (Decimal, int, long)):
+            return NotImplemented
+        return self.__cmp__(other) >= 0
+
     def compare(self, other, context=None):
         """Compares one to another.
 
@@ -1894,6 +1914,7 @@ class Decimal(object):
             ans = self._check_nans(context=context)
             if ans:
                 return ans
+            return self
         if self._exp >= 0:
             return self
         if context is None:

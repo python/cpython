@@ -246,7 +246,12 @@ def _safe_repr(object, context, maxlevels, level):
         append = components.append
         level += 1
         saferepr = _safe_repr
-        for k, v in sorted(object.items()):
+        items = object.items()
+        try:
+            items = sorted(items)
+        except TypeError:
+            items = sorted(items, key=lambda (k, v): (str(type(k)), k, v))
+        for k, v in items:
             krepr, kreadable, krecur = saferepr(k, context, maxlevels, level)
             vrepr, vreadable, vrecur = saferepr(v, context, maxlevels, level)
             append("%s: %s" % (krepr, vrepr))

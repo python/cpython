@@ -27,7 +27,7 @@ import os
 # ran it.  Indeed, at the start, the driver never got beyond 6 iterations
 # before the test died.
 
-# The dicts are global to make it easy to mutate tham from within functions.
+# The dicts are global to make it easy to mutate them from within functions.
 dict1 = {}
 dict2 = {}
 
@@ -93,9 +93,9 @@ class Horrid:
     def __hash__(self):
         return self.hashcode
 
-    def __cmp__(self, other):
+    def __eq__(self, other):
         maybe_mutate()   # The point of the test.
-        return cmp(self.i, other.i)
+        return self.i == other.i
 
     def __repr__(self):
         return "Horrid(%d)" % self.i
@@ -132,7 +132,8 @@ def test_one(n):
     while dict1 and len(dict1) == len(dict2):
         if verbose:
             print ".",
-        c = cmp(dict1, dict2)
+        c = dict1 == dict2
+        XXX # Can't figure out how to make this work
     if verbose:
         print
 

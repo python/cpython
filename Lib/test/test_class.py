@@ -100,6 +100,30 @@ class AllTests:
         print "__cmp__:", args
         return 0
 
+    def __eq__(self, *args):
+        print "__eq__:", args
+        return True
+
+    def __ne__(self, *args):
+        print "__ne__:", args
+        return False
+
+    def __lt__(self, *args):
+        print "__lt__:", args
+        return False
+
+    def __le__(self, *args):
+        print "__le__:", args
+        return True
+
+    def __gt__(self, *args):
+        print "__gt__:", args
+        return False
+
+    def __ge__(self, *args):
+        print "__ge__:", args
+        return True
+
     def __del__(self, *args):
         print "__del__:", args
 

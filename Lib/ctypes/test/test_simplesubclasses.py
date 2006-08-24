@@ -2,10 +2,10 @@ import unittest
 from ctypes import *
 
 class MyInt(c_int):
-    def __cmp__(self, other):
+    def __eq__(self, other):
         if type(other) != MyInt:
-            return -1
-        return cmp(self.value, other.value)
+            return NotImplementedError
+        return self.value == other.value
 
 class Test(unittest.TestCase):
 

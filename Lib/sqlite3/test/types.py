@@ -86,6 +86,12 @@ class DeclTypesTests(unittest.TestCase):
             else:
                 return 1
 
+        def __eq__(self, other):
+            c = self.__cmp__(other)
+            if c is NotImplemented:
+                return c
+            return c == 0
+
         def __conform__(self, protocol):
             if protocol is sqlite.PrepareProtocol:
                 return self.val

@@ -374,13 +374,13 @@ class Data:
     def asBase64(self, maxlinelength=76):
         return _encodeBase64(self.data, maxlinelength)
 
-    def __cmp__(self, other):
+    def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return cmp(self.data, other.data)
+            return self.data == other.data
         elif isinstance(other, str):
-            return cmp(self.data, other)
+            return self.data == other
         else:
-            return cmp(id(self), id(other))
+            return id(self) == id(other)
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, repr(self.data))
