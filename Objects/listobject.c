@@ -1979,7 +1979,7 @@ is_default_cmp(PyObject *cmpfunc)
 		return 1;
 	if (!PyCFunction_Check(cmpfunc))
 		return 0;
-	f = (PyCFunction *)cmpfunc;
+	f = (PyCFunctionObject *)cmpfunc;
 	if (f->m_self != NULL)
 		return 0;
 	if (!PyString_Check(f->m_module))
