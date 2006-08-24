@@ -24,11 +24,11 @@ function, in the sense of simulating randomness.  Python doesn't:  its most
 important hash functions (for strings and ints) are very regular in common
 cases:
 
->>> map(hash, (0, 1, 2, 3))
-[0, 1, 2, 3]
->>> map(hash, ("namea", "nameb", "namec", "named"))
-[-1658398457, -1658398460, -1658398459, -1658398462]
->>>
+  >>> map(hash, (0, 1, 2, 3))
+  [0, 1, 2, 3]
+  >>> map(hash, ("namea", "nameb", "namec", "named"))
+  [-1658398457, -1658398460, -1658398459, -1658398462]
+  >>>
 
 This isn't necessarily bad!  To the contrary, in a table of size 2**i, taking
 the low-order i bits as the initial table index is extremely fast, and there
@@ -39,9 +39,9 @@ gives better-than-random behavior in common cases, and that's very desirable.
 OTOH, when collisions occur, the tendency to fill contiguous slices of the
 hash table makes a good collision resolution strategy crucial.  Taking only
 the last i bits of the hash code is also vulnerable:  for example, consider
-[i << 16 for i in range(20000)] as a set of keys.  Since ints are their own
-hash codes, and this fits in a dict of size 2**15, the last 15 bits of every
-hash code are all 0:  they *all* map to the same table index.
+the list [i << 16 for i in range(20000)] as a set of keys.  Since ints are 
+their own hash codes, and this fits in a dict of size 2**15, the last 15 bits
+ of every hash code are all 0:  they *all* map to the same table index.
 
 But catering to unusual cases should not slow the usual ones, so we just take
 the last i bits anyway.  It's up to collision resolution to do the rest.  If
@@ -97,19 +97,19 @@ the high-order hash bits have an effect on early iterations.  5 was "the
 best" in minimizing total collisions across experiments Tim Peters ran (on
 both normal and pathological cases), but 4 and 6 weren't significantly worse.
 
-Historical:  Reimer Behrends contributed the idea of using a polynomial-based
+Historical: Reimer Behrends contributed the idea of using a polynomial-based
 approach, using repeated multiplication by x in GF(2**n) where an irreducible
 polynomial for each table size was chosen such that x was a primitive root.
 Christian Tismer later extended that to use division by x instead, as an
 efficient way to get the high bits of the hash code into play.  This scheme
-also gave excellent collision statistics, but was more expensive:  two
-if-tests were required inside the loop; computing "the next" index took about
-the same number of operations but without as much potential parallelism
-(e.g., computing 5*j can go on at the same time as computing 1+perturb in the
-above, and then shifting perturb can be done while the table index is being
-masked); and the dictobject struct required a member to hold the table's
-polynomial.  In Tim's experiments the current scheme ran faster, produced
-equally good collision statistics, needed less code & used less memory.
+also gave excellent collision statistics, but was more expensive: two if-tests
+were required inside the loop; computing "the next" index took about the same
+number of operations but without as much potential parallelism (e.g.,
+computing 5*j can go on at the same time as computing 1+perturb in the above,
+and then shifting perturb can be done while the table index is being masked);
+and the dictobject struct required a member to hold the table's polynomial.
+In Tim's experiments the current scheme ran faster, produced equally good
+collision statistics, needed less code & used less memory.
 
 Theoretical Python 2.5 headache:  hash codes are only C "long", but
 sizeof(Py_ssize_t) > sizeof(long) may be possible.  In that case, and if a
@@ -223,9 +223,9 @@ probe indices are computed as explained earlier.
 
 All arithmetic on hash should ignore overflow.
 
-(The details in this version are due to Tim Peters, building on many past
+The details in this version are due to Tim Peters, building on many past
 contributions by Reimer Behrends, Jyrki Alakuijala, Vladimir Marangozov and
-Christian Tismer).
+Christian Tismer.
 
 lookdict() is general-purpose, and may return NULL if (and only if) a
 comparison raises an exception (this was new in Python 2.5).
@@ -1485,7 +1485,10 @@ dict_equal(dictobject *a, dictobject *b)
 			/* temporarily bump aval's refcount to ensure it stays
 			   alive until we're done with it */
 			Py_INCREF(aval);
+			/* ditto for key */
+			Py_INCREF(key);
 			bval = PyDict_GetItemWithError((PyObject *)b, key);
+			Py_DECREF(key);
 			if (bval == NULL) {
 				Py_DECREF(aval);
 				if (PyErr_Occurred())
