@@ -333,11 +333,11 @@ class WriteStreamTest(WriteTest):
             f.close()
         elif self.comp == "bz2":
             f = bz2.BZ2Decompressor()
-            s = file(self.dstname).read()
+            s = open(self.dstname).read()
             s = f.decompress(s)
             self.assertEqual(len(f.unused_data), 0, "trailing data")
         else:
-            f = file(self.dstname)
+            f = open(self.dstname)
             s = f.read()
             f.close()
 

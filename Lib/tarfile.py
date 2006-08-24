@@ -934,7 +934,7 @@ class TarFile(object):
         self.mode = {"r": "rb", "a": "r+b", "w": "wb"}[mode]
 
         if not fileobj:
-            fileobj = file(self.name, self.mode)
+            fileobj = open(self.name, self.mode)
             self._extfileobj = False
         else:
             if self.name is None and hasattr(fileobj, "name"):
@@ -1083,7 +1083,7 @@ class TarFile(object):
         tarname = pre + ext
 
         if fileobj is None:
-            fileobj = file(name, mode + "b")
+            fileobj = open(name, mode + "b")
 
         if mode != "r":
             name = tarname
@@ -1355,7 +1355,7 @@ class TarFile(object):
 
         # Append the tar header and data to the archive.
         if tarinfo.isreg():
-            f = file(name, "rb")
+            f = open(name, "rb")
             self.addfile(tarinfo, f)
             f.close()
 
@@ -1617,7 +1617,7 @@ class TarFile(object):
         """Make a file called targetpath.
         """
         source = self.extractfile(tarinfo)
-        target = file(targetpath, "wb")
+        target = open(targetpath, "wb")
         copyfileobj(source, target)
         source.close()
         target.close()

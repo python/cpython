@@ -243,7 +243,7 @@ class BZ2FileTest(BaseTest):
         self.createTempFile()
         bz2f = BZ2File(self.filename, "U")
         bz2f.close()
-        f = file(self.filename)
+        f = open(self.filename)
         f.seek(0, 2)
         self.assertEqual(f.tell(), len(self.DATA))
         f.close()

@@ -273,7 +273,7 @@ class WalkTests(unittest.TestCase):
         os.makedirs(sub11_path)
         os.makedirs(sub2_path)
         for path in tmp1_path, tmp2_path, tmp3_path:
-            f = file(path, "w")
+            f = open(path, "w")
             f.write("I'm " + path + " and proud of it.  Blame test_os.\n")
             f.close()
 
@@ -361,10 +361,10 @@ class MakedirTests (unittest.TestCase):
 
 class DevNullTests (unittest.TestCase):
     def test_devnull(self):
-        f = file(os.devnull, 'w')
+        f = open(os.devnull, 'w')
         f.write('hello')
         f.close()
-        f = file(os.devnull, 'r')
+        f = open(os.devnull, 'r')
         self.assertEqual(f.read(), '')
         f.close()
 

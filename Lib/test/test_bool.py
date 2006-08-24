@@ -246,7 +246,7 @@ class BoolTest(unittest.TestCase):
 
     def test_fileclosed(self):
         try:
-            f = file(test_support.TESTFN, "w")
+            f = open(test_support.TESTFN, "w")
             self.assertIs(f.closed, False)
             f.close()
             self.assertIs(f.closed, True)

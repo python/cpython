@@ -2338,7 +2338,7 @@ def inherits():
                 self.ateof = 1
             return s
 
-    f = file(name=TESTFN, mode='w')
+    f = open(name=TESTFN, mode='w')
     lines = ['a\n', 'b\n', 'c\n']
     try:
         f.writelines(lines)
@@ -2394,7 +2394,7 @@ def restricted():
     sandbox = rexec.RExec()
 
     code1 = """f = open(%r, 'w')""" % TESTFN
-    code2 = """f = file(%r, 'w')""" % TESTFN
+    code2 = """f = open(%r, 'w')""" % TESTFN
     code3 = """\
 f = open(%r)
 t = type(f)  # a sneaky way to get the file() constructor

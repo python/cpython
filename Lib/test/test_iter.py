@@ -661,7 +661,7 @@ class TestCase(unittest.TestCase):
 
     # Test iterators with file.writelines().
     def test_writelines(self):
-        f = file(TESTFN, "w")
+        f = open(TESTFN, "w")
 
         try:
             self.assertRaises(TypeError, f.writelines, None)
@@ -700,7 +700,7 @@ class TestCase(unittest.TestCase):
             f.writelines(Whatever(6, 6+2000))
             f.close()
 
-            f = file(TESTFN)
+            f = open(TESTFN)
             expected = [str(i) + "\n" for i in range(1, 2006)]
             self.assertEqual(list(f), expected)
 
