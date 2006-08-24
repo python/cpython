@@ -954,41 +954,60 @@ class TestDate(HarmlessMixedComparison):
 
     def test_mixed_compare(self):
         our = self.theclass(2000, 4, 5)
+
+        # Our class can be compared for equality to other classes
+        self.assertEqual(our == 1, False)
+        self.assertEqual(1 == our, False)
+        self.assertEqual(our != 1, True)
+        self.assertEqual(1 != our, True)
+
+        # But the ordering is undefined
+        self.assertRaises(TypeError, lambda: our < 1)
+        self.assertRaises(TypeError, lambda: 1 < our)
         self.assertRaises(TypeError, cmp, our, 1)
         self.assertRaises(TypeError, cmp, 1, our)
 
-        class AnotherDateTimeClass(object):
-            def __cmp__(self, other):
-                # Return "equal" so calling this can't be confused with
-                # compare-by-address (which never says "equal" for distinct
-                # objects).
-                return 0
+        # Repeat those tests with a different class
 
-        # This still errors, because date and datetime comparison raise
-        # TypeError instead of NotImplemented when they don't know what to
-        # do, in order to stop comparison from falling back to the default
-        # compare-by-address.
-        their = AnotherDateTimeClass()
+        class SomeClass:
+            pass
+
+        their = SomeClass()
+        self.assertEqual(our == their, False)
+        self.assertEqual(their == our, False)
+        self.assertEqual(our != their, True)
+        self.assertEqual(their != our, True)
+        self.assertRaises(TypeError, lambda: our < their)
+        self.assertRaises(TypeError, lambda: their < our)
         self.assertRaises(TypeError, cmp, our, their)
-        # Oops:  The next stab raises TypeError in the C implementation,
-        # but not in the Python implementation of datetime.  The difference
-        # is due to that the Python implementation defines __cmp__ but
-        # the C implementation defines tp_richcompare.  This is more pain
-        # to fix than it's worth, so commenting out the test.
-        # self.assertEqual(cmp(their, our), 0)
+        self.assertRaises(TypeError, cmp, their, our)
 
-        # But date and datetime comparison return NotImplemented instead if the
-        # other object has a timetuple attr.  This gives the other object a
-        # chance to do the comparison.
-        class Comparable(AnotherDateTimeClass):
-            def timetuple(self):
-                return ()
+        # However, if the other class explicitly defines ordering
+        # relative to our class, it is allowed to do so
 
-        their = Comparable()
-        self.assertEqual(cmp(our, their), 0)
-        self.assertEqual(cmp(their, our), 0)
-        self.failUnless(our == their)
-        self.failUnless(their == our)
+        class LargerThanAnything:
+            def __lt__(self, other):
+                return False
+            def __le__(self, other):
+                return isinstance(other, LargerThanAnything)
+            def __eq__(self, other):
+                return isinstance(other, LargerThanAnything)
+            def __ne__(self, other):
+                return not isinstance(other, LargerThanAnything)
+            def __gt__(self, other):
+                return not isinstance(other, LargerThanAnything)
+            def __ge__(self, other):
+                return True
+
+        their = LargerThanAnything()
+        self.assertEqual(our == their, False)
+        self.assertEqual(their == our, False)
+        self.assertEqual(our != their, True)
+        self.assertEqual(their != our, True)
+        self.assertEqual(our < their, True)
+        self.assertEqual(their < our, False)
+        self.assertEqual(cmp(our, their), -1)
+        self.assertEqual(cmp(their, our), 1)
 
     def test_bool(self):
         # All dates are considered true.
@@ -3217,10 +3236,10 @@ class Oddballs(unittest.TestCase):
 
         # Neverthelss, comparison should work with the base-class (date)
         # projection if use of a date method is forced.
-        self.assert_(as_date.__eq__(as_datetime))
+        self.assertEqual(as_date.__eq__(as_datetime), True)
         different_day = (as_date.day + 1) % 20 + 1
-        self.assert_(not as_date.__eq__(as_datetime.replace(day=
-                                                     different_day)))
+        as_different = as_datetime.replace(day= different_day)
+        self.assertEqual(as_date.__eq__(as_different), False)
 
         # And date should compare with other subclasses of date.  If a
         # subclass wants to stop this, it's up to the subclass to do so.
