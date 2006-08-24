@@ -98,7 +98,7 @@ class ASDLScanner(spark.GenericScanner, object):
 
     def t_default(self, s):
         r" . +"
-        raise ValueError, "unmatched input: %s" % `s`
+        raise ValueError, "unmatched input: %s" % repr(s)
 
 class ASDLParser(spark.GenericParser, object):
     def __init__(self):
