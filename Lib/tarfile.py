@@ -65,6 +65,8 @@ except ImportError:
 # from tarfile import *
 __all__ = ["TarFile", "TarInfo", "is_tarfile", "TarError"]
 
+from __builtin__ import open as _open # Since 'open' is TarFile.open
+
 #---------------------------------------------------------
 # tar constants
 #---------------------------------------------------------
@@ -934,7 +936,7 @@ class TarFile(object):
         self.mode = {"r": "rb", "a": "r+b", "w": "wb"}[mode]
 
         if not fileobj:
-            fileobj = open(self.name, self.mode)
+            fileobj = _open(self.name, self.mode)
             self._extfileobj = False
         else:
             if self.name is None and hasattr(fileobj, "name"):
@@ -1083,7 +1085,7 @@ class TarFile(object):
         tarname = pre + ext
 
         if fileobj is None:
-            fileobj = open(name, mode + "b")
+            fileobj = _open(name, mode + "b")
 
         if mode != "r":
             name = tarname
@@ -1355,7 +1357,7 @@ class TarFile(object):
 
         # Append the tar header and data to the archive.
         if tarinfo.isreg():
-            f = open(name, "rb")
+            f = _open(name, "rb")
             self.addfile(tarinfo, f)
             f.close()
 
@@ -1617,7 +1619,7 @@ class TarFile(object):
         """Make a file called targetpath.
         """
         source = self.extractfile(tarinfo)
-        target = open(targetpath, "wb")
+        target = _open(targetpath, "wb")
         copyfileobj(source, target)
         source.close()
         target.close()
