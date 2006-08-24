@@ -423,21 +423,21 @@ class TestCase(unittest.TestCase):
 
     # Test zip()'s use of iterators.
     def test_builtin_zip(self):
-        self.assertEqual(zip(), [])
-        self.assertEqual(zip(*[]), [])
-        self.assertEqual(zip(*[(1, 2), 'ab']), [(1, 'a'), (2, 'b')])
+        self.assertEqual(list(zip()), [])
+        self.assertEqual(list(zip(*[])), [])
+        self.assertEqual(list(zip(*[(1, 2), 'ab'])), [(1, 'a'), (2, 'b')])
 
         self.assertRaises(TypeError, zip, None)
         self.assertRaises(TypeError, zip, range(10), 42)
         self.assertRaises(TypeError, zip, range(10), zip)
 
-        self.assertEqual(zip(IteratingSequenceClass(3)),
+        self.assertEqual(list(zip(IteratingSequenceClass(3))),
                          [(0,), (1,), (2,)])
-        self.assertEqual(zip(SequenceClass(3)),
+        self.assertEqual(list(zip(SequenceClass(3))),
                          [(0,), (1,), (2,)])
 
         d = {"one": 1, "two": 2, "three": 3}
-        self.assertEqual(d.items(), zip(d, d.itervalues()))
+        self.assertEqual(d.items(), list(zip(d, d.itervalues())))
 
         # Generate all ints starting at constructor arg.
         class IntsFrom:
@@ -459,7 +459,7 @@ class TestCase(unittest.TestCase):
             f.close()
         f = open(TESTFN, "r")
         try:
-            self.assertEqual(zip(IntsFrom(0), f, IntsFrom(-100)),
+            self.assertEqual(list(zip(IntsFrom(0), f, IntsFrom(-100))),
                              [(0, "a\n", -100),
                               (1, "bbb\n", -99),
                               (2, "cc\n", -98)])
@@ -470,7 +470,7 @@ class TestCase(unittest.TestCase):
             except OSError:
                 pass
 
-        self.assertEqual(zip(xrange(5)), [(i,) for i in range(5)])
+        self.assertEqual(list(zip(xrange(5))), [(i,) for i in range(5)])
 
         # Classes that lie about their lengths.
         class NoGuessLen5:
@@ -487,16 +487,19 @@ class TestCase(unittest.TestCase):
             def __len__(self):
                 return 30
 
+        def lzip(*args):
+            return list(zip(*args))
+
         self.assertEqual(len(Guess3Len5()), 3)
         self.assertEqual(len(Guess30Len5()), 30)
-        self.assertEqual(zip(NoGuessLen5()), zip(range(5)))
-        self.assertEqual(zip(Guess3Len5()), zip(range(5)))
-        self.assertEqual(zip(Guess30Len5()), zip(range(5)))
+        self.assertEqual(lzip(NoGuessLen5()), lzip(range(5)))
+        self.assertEqual(lzip(Guess3Len5()), lzip(range(5)))
+        self.assertEqual(lzip(Guess30Len5()), lzip(range(5)))
 
         expected = [(i, i) for i in range(5)]
         for x in NoGuessLen5(), Guess3Len5(), Guess30Len5():
             for y in NoGuessLen5(), Guess3Len5(), Guess30Len5():
-                self.assertEqual(zip(x, y), expected)
+                self.assertEqual(lzip(x, y), expected)
 
     # This test case will be removed if we don't have Unicode
     def test_unicode_join_endcase(self):
@@ -861,7 +864,7 @@ class TestCase(unittest.TestCase):
         a = range(5)
         e = enumerate(a)
         b = iter(e)
-        self.assertEqual(list(b), zip(range(5), range(5)))
+        self.assertEqual(list(b), list(zip(range(5), range(5))))
         self.assertEqual(list(b), [])
 
 
