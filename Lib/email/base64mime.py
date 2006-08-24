@@ -146,7 +146,7 @@ def encode(s, binary=True, maxlinelen=76, eol=NL):
         # BAW: should encode() inherit b2a_base64()'s dubious behavior in
         # adding a newline to the encoded string?
         enc = b2a_base64(s[i:i + max_unencoded])
-        if enc.endswith(NL) and eol <> NL:
+        if enc.endswith(NL) and eol != NL:
             enc = enc[:-1] + eol
         encvec.append(enc)
     return EMPTYSTRING.join(encvec)

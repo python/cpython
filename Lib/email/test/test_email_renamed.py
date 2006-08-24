@@ -52,7 +52,7 @@ def openfile(filename, mode='r'):
 class TestEmailBase(unittest.TestCase):
     def ndiffAssertEqual(self, first, second):
         """Like failUnlessEqual except use ndiff for readable output."""
-        if first <> second:
+        if first != second:
             sfirst = str(first)
             ssecond = str(second)
             diff = difflib.ndiff(sfirst.splitlines(), ssecond.splitlines())
@@ -2732,7 +2732,7 @@ class TestCharset(unittest.TestCase):
         # Try a charset with None body encoding
         c = Charset('us-ascii')
         eq('hello world', c.body_encode('hello world'))
-        # Try the convert argument, where input codec <> output codec
+        # Try the convert argument, where input codec != output codec
         c = Charset('euc-jp')
         # With apologies to Tokio Kikuchi ;)
         try:

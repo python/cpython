@@ -63,7 +63,7 @@ class Headers:
         Does *not* raise an exception if the header is missing.
         """
         name = name.lower()
-        self._headers[:] = [kv for kv in self._headers if kv[0].lower()<>name]
+        self._headers[:] = [kv for kv in self._headers if kv[0].lower() != name]
 
     def __getitem__(self,name):
         """Get the first header value for 'name'

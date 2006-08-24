@@ -478,7 +478,7 @@ ast_for_augassign(const node *n)
 static cmpop_ty
 ast_for_comp_op(const node *n)
 {
-    /* comp_op: '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|'not' 'in'|'is'
+    /* comp_op: '<'|'>'|'=='|'>='|'<='|'!='|'in'|'not' 'in'|'is'
                |'is' 'not'
     */
     REQ(n, comp_op);

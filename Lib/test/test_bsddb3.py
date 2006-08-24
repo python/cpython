@@ -8,7 +8,7 @@ from test.test_support import requires, verbose, run_suite, unlink
 
 # When running as a script instead of within the regrtest framework, skip the
 # requires test, since it's obvious we want to run them.
-if __name__ <> '__main__':
+if __name__ != '__main__':
     requires('bsddb')
 
 verbose = False

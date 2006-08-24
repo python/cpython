@@ -36,8 +36,8 @@ x = 1 \
 x = 0
 
 # Ordinary integers
-0xff <> 255
-0377 <> 255
+0xff != 255
+0377 != 255
 2147483647   != 017777777777
 -2147483647-1 != 020000000000
 037777777777 != -1
@@ -146,10 +146,10 @@ if 0:
 def d22(a, b, c=1, d=2): pass
 def d01v(a=1, *restt, **restd): pass
 
-(x, y) <> ({'a':1}, {'b':2})
+(x, y) != ({'a':1}, {'b':2})
 
 # comparison
-if 1 < 1 > 1 == 1 >= 1 <= 1 <> 1 != 1 in 1 not in 1 is 1 is not 1: pass
+if 1 < 1 > 1 == 1 >= 1 <= 1 != 1 != 1 in 1 not in 1 is 1 is not 1: pass
 
 # binary
 x = 1 & 1

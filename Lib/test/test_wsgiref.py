@@ -515,7 +515,7 @@ class HandlerTests(TestCase):
             "Content-Length: %d\r\n"
             "\r\n%s" % (h.error_status,len(h.error_body),h.error_body))
 
-        self.failUnless(h.stderr.getvalue().find("AssertionError")<>-1)
+        self.failUnless("AssertionError" in h.stderr.getvalue())
 
     def testErrorAfterOutput(self):
         MSG = "Some output has been sent"
@@ -528,7 +528,7 @@ class HandlerTests(TestCase):
         self.assertEqual(h.stdout.getvalue(),
             "Status: 200 OK\r\n"
             "\r\n"+MSG)
-        self.failUnless(h.stderr.getvalue().find("AssertionError")<>-1)
+        self.failUnless("AssertionError" in h.stderr.getvalue())
 
 
     def testHeaderFormats(self):

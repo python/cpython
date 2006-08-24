@@ -412,7 +412,7 @@ def test_break_continue_loop(extra_burning_oil = 1, count=0):
             continue
         except:
             raise
-    if count > 2 or big_hippo <> 1:
+    if count > 2 or big_hippo != 1:
         print "continue then break in try/except in loop broken!"
 test_break_continue_loop()
 
@@ -586,12 +586,11 @@ if 1 and 1 or 1 and 1 and 1 or not 1 and 1: pass
 
 print 'comparison'
 ### comparison: expr (comp_op expr)*
-### comp_op: '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|'not' 'in'|'is'|'is' 'not'
+### comp_op: '<'|'>'|'=='|'>='|'<='|'!='|'in'|'not' 'in'|'is'|'is' 'not'
 if 1: pass
 x = (1 == 1)
 if 1 == 1: pass
 if 1 != 1: pass
-if 1 <> 1: pass
 if 1 < 1: pass
 if 1 > 1: pass
 if 1 <= 1: pass
@@ -600,7 +599,7 @@ if 1 is 1: pass
 if 1 is not 1: pass
 if 1 in (): pass
 if 1 not in (): pass
-if 1 < 1 > 1 == 1 >= 1 <= 1 <> 1 != 1 in 1 not in 1 is 1 is not 1: pass
+if 1 < 1 > 1 == 1 >= 1 <= 1 != 1 in 1 not in 1 is 1 is not 1: pass
 
 print 'binary mask ops'
 x = 1 & 1

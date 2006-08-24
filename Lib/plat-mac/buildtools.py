@@ -192,7 +192,7 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
             'icl8', 'ics4', 'ics8', 'ICN#', 'ics#']
     if not copy_codefragment:
         skiptypes.append('cfrg')
-##  skipowner = (ownertype <> None)
+##  skipowner = (ownertype != None)
 
     # Copy the resources from the template
 

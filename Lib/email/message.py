@@ -252,7 +252,7 @@ class Message:
                             charset=charset.get_output_charset())
         else:
             self.set_param('charset', charset.get_output_charset())
-        if str(charset) <> charset.get_output_charset():
+        if str(charset) != charset.get_output_charset():
             self._payload = charset.body_encode(self._payload)
         if 'Content-Transfer-Encoding' not in self:
             cte = charset.get_body_encoding()
@@ -301,7 +301,7 @@ class Message:
         name = name.lower()
         newheaders = []
         for k, v in self._headers:
-            if k.lower() <> name:
+            if k.lower() != name:
                 newheaders.append((k, v))
         self._headers = newheaders
 
@@ -438,7 +438,7 @@ class Message:
             return self.get_default_type()
         ctype = paramre.split(value)[0].lower().strip()
         # RFC 2045, section 5.2 says if its invalid, use text/plain
-        if ctype.count('/') <> 1:
+        if ctype.count('/') != 1:
             return 'text/plain'
         return ctype
 
@@ -601,7 +601,7 @@ class Message:
                     ctype = append_param
                 else:
                     ctype = SEMISPACE.join([ctype, append_param])
-        if ctype <> self.get(header):
+        if ctype != self.get(header):
             del self[header]
             self[header] = ctype
 
@@ -617,13 +617,13 @@ class Message:
             return
         new_ctype = ''
         for p, v in self.get_params(header=header, unquote=requote):
-            if p.lower() <> param.lower():
+            if p.lower() != param.lower():
                 if not new_ctype:
                     new_ctype = _formatparam(p, v, requote)
                 else:
                     new_ctype = SEMISPACE.join([new_ctype,
                                                 _formatparam(p, v, requote)])
-        if new_ctype <> self.get(header):
+        if new_ctype != self.get(header):
             del self[header]
             self[header] = new_ctype
 

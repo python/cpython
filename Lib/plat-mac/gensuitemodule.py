@@ -169,7 +169,7 @@ def processfile_fromresource(fullname, output=None, basepkgname=None,
             aete = decode(data, verbose)
             aetelist.append((aete, res.GetResInfo()))
     finally:
-        if rf <> cur:
+        if rf != cur:
             CloseResFile(rf)
             UseResFile(cur)
     # switch back (needed for dialogs in Python)
@@ -332,7 +332,7 @@ def getpstr(f, *args):
 def getalign(f):
     if f.tell() & 1:
         c = f.read(1)
-        ##if c <> '\0':
+        ##if c != '\0':
         ##  print align:', repr(c)
 
 def getlist(f, description, getitem):
@@ -779,7 +779,7 @@ class SuiteCompiler:
             if is_enum(a[2]):
                 kname = a[1]
                 ename = a[2][0]
-                if ename <> '****':
+                if ename != '****':
                     fp.write("        aetools.enumsubst(_arguments, %r, _Enum_%s)\n" %
                         (kname, identify(ename)))
                     self.enumsneeded[ename] = 1
@@ -810,7 +810,7 @@ class SuiteCompiler:
         for a in arguments:
             if is_enum(a[2]):
                 ename = a[2][0]
-                if ename <> '****':
+                if ename != '****':
                     self.enumsneeded[ename] = 1
 
 #

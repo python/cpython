@@ -602,7 +602,7 @@ class Menu:
     def dispatch(self, id, item, window, event):
         title, shortcut, callback, mtype = self.items[item-1]
         if callback:
-            if not self.bar.parent or type(callback) <> types.StringType:
+            if not self.bar.parent or not isinstance(callback, str):
                 menuhandler = callback
             else:
                 # callback is string
@@ -748,7 +748,7 @@ class Window:
         self.parent = parent
 
     def open(self, bounds=(40, 40, 400, 400), resid=None):
-        if resid <> None:
+        if resid is not None:
             self.wid = GetNewWindow(resid, -1)
         else:
             self.wid = NewWindow(bounds, self.__class__.__name__, 1,
@@ -826,7 +826,7 @@ class Window:
         # If we're not frontmost, select ourselves and wait for
         # the activate event.
         #
-        if MyFrontWindow() <> window:
+        if MyFrontWindow() != window:
             window.SelectWindow()
             return
         # We are. Handle the event.
@@ -875,7 +875,7 @@ class ControlsWindow(Window):
         if DEBUG: print "control hit in", window, "on", control, "; pcode =", pcode
 
     def do_inContent(self, partcode, window, event):
-        if MyFrontWindow() <> window:
+        if MyFrontWindow() != window:
             window.SelectWindow()
             return
         (what, message, when, where, modifiers) = event

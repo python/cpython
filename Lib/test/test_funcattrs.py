@@ -19,16 +19,16 @@ try:
 except AttributeError: pass
 else: raise TestFailed, 'expected AttributeError'
 
-if b.__dict__ <> {}:
+if b.__dict__ != {}:
     raise TestFailed, 'expected unassigned func.__dict__ to be {}'
 
 b.publish = 1
-if b.publish <> 1:
+if b.publish != 1:
     raise TestFailed, 'function attribute not set to expected value'
 
 docstring = 'its docstring'
 b.__doc__ = docstring
-if b.__doc__ <> docstring:
+if b.__doc__ != docstring:
     raise TestFailed, 'problem with setting __doc__ attribute'
 
 if 'publish' not in dir(b):
@@ -49,7 +49,7 @@ d = {'hello': 'world'}
 b.__dict__ = d
 if b.func_dict is not d:
     raise TestFailed, 'func.__dict__ assignment to dictionary failed'
-if b.hello <> 'world':
+if b.hello != 'world':
     raise TestFailed, 'attribute after func.__dict__ assignment failed'
 
 f1 = F()
@@ -75,13 +75,13 @@ else: raise TestFailed, 'expected AttributeError or TypeError'
 # But setting it explicitly on the underlying function object is okay.
 F.a.im_func.publish = 1
 
-if F.a.publish <> 1:
+if F.a.publish != 1:
     raise TestFailed, 'unbound method attribute not set to expected value'
 
-if f1.a.publish <> 1:
+if f1.a.publish != 1:
     raise TestFailed, 'bound method attribute access did not work'
 
-if f2.a.publish <> 1:
+if f2.a.publish != 1:
     raise TestFailed, 'bound method attribute access did not work'
 
 if 'publish' not in dir(F.a):
@@ -117,7 +117,7 @@ else: raise TestFailed, 'expected TypeError or AttributeError'
 
 F.a.im_func.__dict__ = {'one': 11, 'two': 22, 'three': 33}
 
-if f1.a.two <> 22:
+if f1.a.two != 22:
     raise TestFailed, 'setting __dict__'
 
 from UserDict import UserDict
@@ -128,7 +128,7 @@ try:
 except (AttributeError, TypeError): pass
 else: raise TestFailed
 
-if f2.a.one <> f1.a.one <> F.a.one <> 11:
+if f2.a.one != f1.a.one != F.a.one != 11:
     raise TestFailed
 
 # im_func may not be a Python method!
@@ -136,7 +136,7 @@ import new
 F.id = new.instancemethod(id, None, F)
 
 eff = F()
-if eff.id() <> id(eff):
+if eff.id() != id(eff):
     raise TestFailed
 
 try:

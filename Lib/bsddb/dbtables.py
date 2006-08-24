@@ -453,7 +453,7 @@ class bsdTableDB :
                              # error
                             dataitem = None
                         dataitem = mappings[column](dataitem)
-                        if dataitem <> None:
+                        if dataitem != None:
                             self.db.put(
                                 _data_key(table, column, rowid),
                                 dataitem, txn=txn)
