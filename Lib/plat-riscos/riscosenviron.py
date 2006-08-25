@@ -31,7 +31,7 @@ class _Environ:
     def values(self): return riscos.getenvdict().values()
     def has_key(self, key):
         value = riscos.getenv(key)
-        return value<>None
+        return value != None
     def __contains__(self, key):
         return riscos.getenv(key) is not None
     def update(self, dict):

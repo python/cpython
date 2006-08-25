@@ -39,7 +39,7 @@ def url2pathname(url):
         elif components[i] == '..':
             components[i] = '^'
             i += 1
-        elif components[i] == '' and i > 0 and components[i-1] <> '':
+        elif components[i] == '' and i > 0 and components[i-1] != '':
             del components[i]
         else:
             i += 1
