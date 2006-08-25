@@ -1855,22 +1855,10 @@ is a shortcut for issubclass(X, A) or issubclass(X, B) or ... (etc.).");
 static PyObject*
 builtin_zip(PyObject *self, PyObject *args)
 {
-	PyObject *itertools = NULL, *izip = NULL, *result = NULL;
+	/* args must be a tuple */
+	assert(PyTuple_Check(args));
 
-	itertools = PyImport_ImportModule("itertools");
-	if (itertools == NULL)
-		return NULL;
-	
-	izip = PyObject_GetAttrString(itertools, "izip");
-	if (izip == NULL)
-		goto done;
-
-	result = PyObject_Call(izip, args, NULL);
-
-  done:
-	Py_XDECREF(itertools);
-	Py_XDECREF(izip);
-	return result;
+	return _PyZip_CreateIter(args);
 }
 
 
