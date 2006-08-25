@@ -189,9 +189,6 @@ fold_unaryops_on_constants(unsigned char *codestr, PyObject *consts)
 			if (PyObject_IsTrue(v) == 1)
 				newconst = PyNumber_Negative(v);
 			break;
-		case UNARY_CONVERT:
-			newconst = PyObject_Repr(v);
-			break;
 		case UNARY_INVERT:
 			newconst = PyNumber_Invert(v);
 			break;
@@ -470,7 +467,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 				/* Fold unary ops on constants.
 				   LOAD_CONST c1  UNARY_OP -->	LOAD_CONST unary_op(c) */
 			case UNARY_NEGATIVE:
-			case UNARY_CONVERT:
 			case UNARY_INVERT:
 				if (lastlc >= 1	 &&
 				    ISBASICBLOCK(blocks, i-3, 4)  &&

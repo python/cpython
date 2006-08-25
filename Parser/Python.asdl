@@ -65,7 +65,6 @@ module Python version "$Revision$"
 	     | Compare(expr left, cmpop* ops, expr* comparators)
 	     | Call(expr func, expr* args, keyword* keywords,
 			 expr? starargs, expr? kwargs)
-	     | Repr(expr value)
 	     | Num(object n) -- a number as a PyObject.
 	     | Str(string s) -- need to specify raw, unicode, etc?
 	     -- other literals? bools?

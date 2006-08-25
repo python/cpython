@@ -401,9 +401,6 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
         case Compare_kind:
             expr_name = "comparison";
             break;
-        case Repr_kind:
-            expr_name = "repr";
-            break;
         case IfExp_kind:
             expr_name = "conditional expression";
             break;

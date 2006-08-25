@@ -206,10 +206,6 @@ static char *Call_fields[]={
         "starargs",
         "kwargs",
 };
-static PyTypeObject *Repr_type;
-static char *Repr_fields[]={
-        "value",
-};
 static PyTypeObject *Num_type;
 static char *Num_fields[]={
         "n",
@@ -532,8 +528,6 @@ static int init_types(void)
         if (!Compare_type) return 0;
         Call_type = make_type("Call", expr_type, Call_fields, 5);
         if (!Call_type) return 0;
-        Repr_type = make_type("Repr", expr_type, Repr_fields, 1);
-        if (!Repr_type) return 0;
         Num_type = make_type("Num", expr_type, Num_fields, 1);
         if (!Num_type) return 0;
         Str_type = make_type("Str", expr_type, Str_fields, 1);
@@ -1553,27 +1547,6 @@ Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty starargs,
 }
 
 expr_ty
-Repr(expr_ty value, int lineno, int col_offset, PyArena *arena)
-{
-        expr_ty p;
-        if (!value) {
-                PyErr_SetString(PyExc_ValueError,
-                                "field value is required for Repr");
-                return NULL;
-        }
-        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
-                return NULL;
-        }
-        p->kind = Repr_kind;
-        p->v.Repr.value = value;
-        p->lineno = lineno;
-        p->col_offset = col_offset;
-        return p;
-}
-
-expr_ty
 Num(object n, int lineno, int col_offset, PyArena *arena)
 {
         expr_ty p;
@@ -2544,15 +2517,6 @@ ast2obj_expr(void* _o)
                         goto failed;
                 Py_DECREF(value);
                 break;
-        case Repr_kind:
-                result = PyType_GenericNew(Repr_type, NULL, NULL);
-                if (!result) goto failed;
-                value = ast2obj_expr(o->v.Repr.value);
-                if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "value", value) == -1)
-                        goto failed;
-                Py_DECREF(value);
-                break;
         case Num_kind:
                 result = PyType_GenericNew(Num_type, NULL, NULL);
                 if (!result) goto failed;
@@ -3113,7 +3077,6 @@ init_ast(void)
         if (PyDict_SetItemString(d, "Compare", (PyObject*)Compare_type) < 0)
             return;
         if (PyDict_SetItemString(d, "Call", (PyObject*)Call_type) < 0) return;
-        if (PyDict_SetItemString(d, "Repr", (PyObject*)Repr_type) < 0) return;
         if (PyDict_SetItemString(d, "Num", (PyObject*)Num_type) < 0) return;
         if (PyDict_SetItemString(d, "Str", (PyObject*)Str_type) < 0) return;
         if (PyDict_SetItemString(d, "Attribute", (PyObject*)Attribute_type) <

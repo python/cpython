@@ -1182,9 +1182,6 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 		if (e->v.Call.kwargs)
 			VISIT(st, expr, e->v.Call.kwargs);
 		break;
-        case Repr_kind:
-		VISIT(st, expr, e->v.Repr.value);
-		break;
         case Num_kind:
         case Str_kind:
 		/* Nothing to do here. */
