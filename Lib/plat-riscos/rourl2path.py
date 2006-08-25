@@ -14,7 +14,7 @@ def url2pathname(url):
     """OS-specific conversion from a relative URL of the 'file' scheme
     to a file system path; not recommended for general use."""
     tp = urllib.splittype(url)[0]
-    if tp and tp <> 'file':
+    if tp and tp != 'file':
         raise RuntimeError, 'Cannot convert non-local URL to pathname'
     # Turn starting /// into /, an empty hostname means current host
     if url[:3] == '///':

@@ -13,7 +13,7 @@ class _Environ:
         return len(riscos.getenvdict())
     def __getitem__(self, key):
         ret = riscos.getenv(key)
-        if ret<>None:
+        if ret != None:
             return ret
         else:
             raise KeyError
