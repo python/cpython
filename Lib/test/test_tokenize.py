@@ -49,11 +49,12 @@ if x == 1:
 
 Some people use different formatting conventions, which makes
 untokenize a little trickier.  Note that this test involves trailing
-whitespace after the colon.  You can't see it, but it's there!
+whitespace after the colon.  Note that we use hex escapes to make the
+two trailing blanks apparent in the expected output.
 
 >>> roundtrip("if   x  ==  1  :  \\n"
 ...           "  print x\\n")
-if   x  ==  1  :
+if   x  ==  1  :\x20\x20
   print x
 
 Comments need to go in the right place.
