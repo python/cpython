@@ -71,7 +71,7 @@ SyntaxError: can't assign to literal (<doctest test.test_syntax[9]>, line 1)
 
 >>> `1` = 1
 Traceback (most recent call last):
-SyntaxError: can't assign to repr (<doctest test.test_syntax[10]>, line 1)
+SyntaxError: invalid syntax
 
 If the left-hand side of an assignment is a list or tuple, an illegal
 expression inside that contain should still cause a syntax error.
