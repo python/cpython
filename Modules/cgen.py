@@ -148,7 +148,7 @@ def checkarg(type, arg):
     #       N*argN
     #       N*retval
     #
-    if rest[:1] <> '[' or rest[-1:] <> ']':
+    if rest[:1] != '[' or rest[-1:] != ']':
         raise arg_error, ('subscript expected', rest)
     sub = rest[1:-1]
     #
