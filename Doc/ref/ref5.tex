@@ -268,49 +268,6 @@ stored for a given key value prevails.
 \indexii{immutable}{object}
 
 
-\subsection{String conversions\label{string-conversions}}
-\indexii{string}{conversion}
-\indexii{reverse}{quotes}
-\indexii{backward}{quotes}
-\index{back-quotes}
-
-A string conversion is an expression list enclosed in reverse (a.k.a.
-backward) quotes:
-
-\begin{productionlist}
-  \production{string_conversion}
-             {"`" \token{expression_list} "`"}
-\end{productionlist}
-
-A string conversion evaluates the contained expression list and
-converts the resulting object into a string according to rules
-specific to its type.
-
-If the object is a string, a number, \code{None}, or a tuple, list or
-dictionary containing only objects whose type is one of these, the
-resulting string is a valid Python expression which can be passed to
-the built-in function \function{eval()} to yield an expression with the
-same value (or an approximation, if floating point numbers are
-involved).
-
-(In particular, converting a string adds quotes around it and converts
-``funny'' characters to escape sequences that are safe to print.)
-
-Recursive objects (for example, lists or dictionaries that contain a
-reference to themselves, directly or indirectly) use \samp{...} to
-indicate a recursive reference, and the result cannot be passed to
-\function{eval()} to get an equal value (\exception{SyntaxError} will
-be raised instead).
-\obindex{recursive}
-
-The built-in function \function{repr()} performs exactly the same
-conversion in its argument as enclosing it in parentheses and reverse
-quotes does.  The built-in function \function{str()} performs a
-similar but more user-friendly conversion.
-\bifuncindex{repr}
-\bifuncindex{str}
-
-
 \section{Primaries\label{primaries}}
 \index{primary}
 

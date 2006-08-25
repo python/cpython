@@ -721,7 +721,6 @@ opcode_stack_effect(int opcode, int oparg)
 		case UNARY_POSITIVE:
 		case UNARY_NEGATIVE:
 		case UNARY_NOT:
-		case UNARY_CONVERT:
 		case UNARY_INVERT:
 			return 0;
 
@@ -2983,10 +2982,6 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 		return compiler_compare(c, e);
 	case Call_kind:
 		return compiler_call(c, e);
-	case Repr_kind:
-		VISIT(c, expr, e->v.Repr.value);
-		ADDOP(c, UNARY_CONVERT);
-		break;
 	case Num_kind:
 		ADDOP_O(c, LOAD_CONST, e->v.Num.n, consts);
 		break;

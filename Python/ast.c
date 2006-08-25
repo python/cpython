@@ -1190,7 +1190,7 @@ static expr_ty
 ast_for_atom(struct compiling *c, const node *n)
 {
     /* atom: '(' [yield_expr|testlist_gexp] ')' | '[' [listmaker] ']'
-       | '{' [dictmaker] '}' | '`' testlist '`' | NAME | NUMBER | STRING+
+       | '{' [dictmaker] '}' | NAME | NUMBER | STRING+
     */
     node *ch = CHILD(n, 0);
     
@@ -1275,13 +1275,6 @@ ast_for_atom(struct compiling *c, const node *n)
 	    asdl_seq_SET(values, i / 4, expression);
 	}
 	return Dict(keys, values, LINENO(n), n->n_col_offset, c->c_arena);
-    }
-    case BACKQUOTE: { /* repr */
-	expr_ty expression = ast_for_testlist(c, CHILD(n, 1));
-	if (!expression)
-	    return NULL;
-
-	return Repr(expression, LINENO(n), n->n_col_offset, c->c_arena);
     }
     default:
 	PyErr_Format(PyExc_SystemError, "unhandled atom %d", TYPE(ch));

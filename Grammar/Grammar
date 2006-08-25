@@ -102,7 +102,6 @@ power: atom trailer* ['**' factor]
 atom: ('(' [yield_expr|testlist_gexp] ')' |
        '[' [listmaker] ']' |
        '{' [dictmaker] '}' |
-       '`' testlist1 '`' |
        NAME | NUMBER | STRING+)
 listmaker: test ( list_for | (',' test)* [','] )
 testlist_gexp: test ( gen_for | (',' test)* [','] )

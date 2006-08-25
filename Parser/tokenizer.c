@@ -67,7 +67,6 @@ char *_PyParser_TokenNames[] = {
 	"EQUAL",
 	"DOT",
 	"PERCENT",
-	"BACKQUOTE",
 	"LBRACE",
 	"RBRACE",
 	"EQEQUAL",
@@ -955,7 +954,6 @@ PyToken_OneChar(int c)
 	case '=':	return EQUAL;
 	case '.':	return DOT;
 	case '%':	return PERCENT;
-	case '`':	return BACKQUOTE;
 	case '{':	return LBRACE;
 	case '}':	return RBRACE;
 	case '^':	return CIRCUMFLEX;
