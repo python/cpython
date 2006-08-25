@@ -135,7 +135,6 @@ class TestTranforms(unittest.TestCase):
 
     def test_folding_of_unaryops_on_constants(self):
         for line, elem in (
-            ('`1`', "('1')"),                       # unary convert
             ('-0.5', '(-0.5)'),                     # unary negative
             ('~-2', '(1)'),                         # unary invert
         ):
