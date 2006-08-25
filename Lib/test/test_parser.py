@@ -199,7 +199,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
                         yield x
             else:
                 yield tree
-            
+
         terminals = list(walk(st2))
         self.assertEqual([
             (1, 'def', 1, 0),
