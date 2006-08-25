@@ -174,12 +174,10 @@ typedef struct {
 
 /* ---- Definitions for the raw API -------------------------------------- */
 
-#ifndef FFI_SIZEOF_ARG
-# if LONG_MAX == 2147483647
-#  define FFI_SIZEOF_ARG        4
-# elif LONG_MAX == 9223372036854775807
-#  define FFI_SIZEOF_ARG        8
-# endif
+#ifdef _WIN64
+#define FFI_SIZEOF_ARG 8
+#else
+#define FFI_SIZEOF_ARG 4
 #endif
 
 typedef union {

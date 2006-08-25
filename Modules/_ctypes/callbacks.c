@@ -300,7 +300,7 @@ ffi_info *AllocFunctionCallback(PyObject *callable,
 	}
 
 	cc = FFI_DEFAULT_ABI;
-#if defined(MS_WIN32) && !defined(_WIN32_WCE)
+#if defined(MS_WIN32) && !defined(_WIN32_WCE) && !defined(MS_WIN64)
 	if (is_cdecl == 0)
 		cc = FFI_STDCALL;
 #endif

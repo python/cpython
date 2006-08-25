@@ -2589,16 +2589,22 @@ static PPROC FindAddress(void *handle, char *name, PyObject *type)
 	PPROC address;
 	char *mangled_name;
 	int i;
-	StgDictObject *dict = PyType_stgdict((PyObject *)type);
+	StgDictObject *dict;
 
 	address = (PPROC)GetProcAddress(handle, name);
+#ifdef _WIN64
+	/* win64 has no stdcall calling conv, so it should
+	   also not have the name mangling of it.
+	*/
+	return address;
+#else
 	if (address)
 		return address;
-
 	if (((size_t)name & ~0xFFFF) == 0) {
 		return NULL;
 	}
 
+	dict = PyType_stgdict((PyObject *)type);
 	/* It should not happen that dict is NULL, but better be safe */
 	if (dict==NULL || dict->flags & FUNCFLAG_CDECL)
 		return address;
@@ -2617,6 +2623,7 @@ static PPROC FindAddress(void *handle, char *name, PyObject *type)
 			return address;
 	}
 	return NULL;
+#endif
 }
 #endif
 

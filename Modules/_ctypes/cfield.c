@@ -1315,7 +1315,11 @@ z_set(void *ptr, PyObject *value, unsigned size)
 		*(char **)ptr = PyString_AS_STRING(str);
 		return str;
 	} else if (PyInt_Check(value) || PyLong_Check(value)) {
+#if SIZEOF_VOID_P == SIZEOF_LONG_LONG
+		*(char **)ptr = (char *)PyInt_AsUnsignedLongLongMask(value);
+#else
 		*(char **)ptr = (char *)PyInt_AsUnsignedLongMask(value);
+#endif
 		_RET(value);
 	}
 	PyErr_Format(PyExc_TypeError,
@@ -1360,7 +1364,11 @@ Z_set(void *ptr, PyObject *value, unsigned size)
 		if (!value)
 			return NULL;
 	} else if (PyInt_Check(value) || PyLong_Check(value)) {
+#if SIZEOF_VOID_P == SIZEOF_LONG_LONG
+		*(wchar_t **)ptr = (wchar_t *)PyInt_AsUnsignedLongLongMask(value);
+#else
 		*(wchar_t **)ptr = (wchar_t *)PyInt_AsUnsignedLongMask(value);
+#endif
 		Py_INCREF(Py_None);
 		return Py_None;
 	} else if (!PyUnicode_Check(value)) {
