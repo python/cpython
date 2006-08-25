@@ -54,7 +54,6 @@ def_op('NOP', 9)
 def_op('UNARY_POSITIVE', 10)
 def_op('UNARY_NEGATIVE', 11)
 def_op('UNARY_NOT', 12)
-def_op('UNARY_CONVERT', 13)
 
 def_op('UNARY_INVERT', 15)
 

@@ -1207,9 +1207,6 @@ class CodeGenerator:
     def visitNot(self, node):
         return self.unaryOp(node, 'UNARY_NOT')
 
-    def visitBackquote(self, node):
-        return self.unaryOp(node, 'UNARY_CONVERT')
-
     # bit ops
 
     def bitOp(self, nodes, op):

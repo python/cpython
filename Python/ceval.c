@@ -1040,14 +1040,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			STACKADJ(-1);
 			break;
 
-		case UNARY_CONVERT:
-			v = TOP();
-			x = PyObject_Repr(v);
-			Py_DECREF(v);
-			SET_TOP(x);
-			if (x != NULL) continue;
-			break;
-
 		case UNARY_INVERT:
 			v = TOP();
 			x = PyNumber_Invert(v);

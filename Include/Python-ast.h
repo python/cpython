@@ -186,9 +186,8 @@ struct _stmt {
 enum _expr_kind {BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
                   IfExp_kind=5, Dict_kind=6, ListComp_kind=7,
                   GeneratorExp_kind=8, Yield_kind=9, Compare_kind=10,
-                  Call_kind=11, Repr_kind=12, Num_kind=13, Str_kind=14,
-                  Attribute_kind=15, Subscript_kind=16, Name_kind=17,
-                  List_kind=18, Tuple_kind=19};
+                  Call_kind=11, Num_kind=12, Str_kind=13, Attribute_kind=14,
+                  Subscript_kind=15, Name_kind=16, List_kind=17, Tuple_kind=18};
 struct _expr {
         enum _expr_kind kind;
         union {
@@ -251,10 +250,6 @@ struct _expr {
                         expr_ty starargs;
                         expr_ty kwargs;
                 } Call;
-                
-                struct {
-                        expr_ty value;
-                } Repr;
                 
                 struct {
                         object n;
@@ -414,7 +409,6 @@ expr_ty Compare(expr_ty left, asdl_int_seq * ops, asdl_seq * comparators, int
 expr_ty Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty
              starargs, expr_ty kwargs, int lineno, int col_offset, PyArena
              *arena);
-expr_ty Repr(expr_ty value, int lineno, int col_offset, PyArena *arena);
 expr_ty Num(object n, int lineno, int col_offset, PyArena *arena);
 expr_ty Str(string s, int lineno, int col_offset, PyArena *arena);
 expr_ty Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int
