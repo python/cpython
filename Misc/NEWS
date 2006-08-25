@@ -36,6 +36,8 @@ Documentation
 Build
 -----
 
+- Patch #1545507: Exclude ctypes package in Win64 MSI file.
+
 - Fix OpenSSL debug build process.
 
 
