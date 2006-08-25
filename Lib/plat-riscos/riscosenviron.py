@@ -39,7 +39,7 @@ class _Environ:
             riscos.putenv(k, v)
     def get(self, key, failobj=None):
         value = riscos.getenv(key)
-        if value<>None:
+        if value != None:
             return value
         else:
             return failobj
