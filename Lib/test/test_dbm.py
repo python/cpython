@@ -6,11 +6,11 @@ import os
 import random
 import dbm
 from dbm import error
-from test.test_support import verbose, verify, TestSkipped
+from test.test_support import verbose, verify, TestSkipped, TESTFN
 
 # make filename unique to allow multiple concurrent tests
 # and to minimize the likelihood of a problem from an old file
-filename = '/tmp/delete_me_' + str(random.random())[-6:]
+filename = TESTFN
 
 def cleanup():
     for suffix in ['', '.pag', '.dir', '.db']:

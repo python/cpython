@@ -5,9 +5,9 @@
 
 import gdbm
 from gdbm import error
-from test.test_support import verbose, verify, TestFailed
+from test.test_support import verbose, verify, TestFailed, TESTFN
 
-filename= '/tmp/delete_me'
+filename = TESTFN
 
 g = gdbm.open(filename, 'c')
 verify(g.keys() == [])
