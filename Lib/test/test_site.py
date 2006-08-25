@@ -164,7 +164,7 @@ class ImportSideEffectTests(unittest.TestCase):
         site.abs__file__()
         for module in (sys, os, __builtin__):
             try:
-                self.failUnless(os.path.isabs(module.__file__), `module`)
+                self.failUnless(os.path.isabs(module.__file__), repr(module))
             except AttributeError:
                 continue
         # We could try everything in sys.modules; however, when regrtest.py

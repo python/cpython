@@ -605,7 +605,7 @@ text:
     ...     if isinstance(piece, doctest.Example):
     ...         print 'Example:', (piece.source, piece.want, piece.lineno)
     ...     else:
-    ...         print '   Text:', `piece`
+    ...         print '   Text:', repr(piece)
        Text: '\n'
     Example: ('x, y = 2, 3  # no output expected\n', '', 1)
        Text: ''

@@ -169,7 +169,7 @@ def demo_app(environ,start_response):
     print >>stdout
     h = environ.items(); h.sort()
     for k,v in h:
-        print >>stdout, k,'=',`v`
+        print >>stdout, k,'=',repr(v)
     start_response("200 OK", [('Content-Type','text/plain')])
     return [stdout.getvalue()]
 
