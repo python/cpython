@@ -16,6 +16,9 @@ PyAPI_DATA(PyTypeObject) PyCallIter_Type;
 #define PyCallIter_Check(op) ((op)->ob_type == &PyCallIter_Type)
 
 PyAPI_FUNC(PyObject *) PyCallIter_New(PyObject *, PyObject *);
+
+PyObject* _PyZip_CreateIter(PyObject* args);
+
 #ifdef __cplusplus
 }
 #endif
