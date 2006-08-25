@@ -33,7 +33,7 @@ NAME        'False'       (3, 11) (3, 16)
 COMMENT     '# NEWLINE'   (3, 17) (3, 26)
 NEWLINE     '\\n'          (3, 26) (3, 27)
 DEDENT      ''            (4, 0) (4, 0)
-                                                    
+
 
 There will be a bunch more tests of specific source patterns.
 
@@ -43,7 +43,7 @@ regenerate the original program text from the tokens.
 There are some standard formatting practices that are easy to get right.
 
 >>> roundtrip("if x == 1:\\n"
-...           "    print x\\n")               
+...           "    print x\\n")
 if x == 1:
     print x
 
@@ -53,7 +53,7 @@ whitespace after the colon.  You can't see it, but it's there!
 
 >>> roundtrip("if   x  ==  1  :  \\n"
 ...           "  print x\\n")
-if   x  ==  1  :  
+if   x  ==  1  :
   print x
 
 Comments need to go in the right place.
