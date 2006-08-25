@@ -46,7 +46,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         # Test __repr__
         self.assertEqual(str(u0), str(d0))
         self.assertEqual(repr(u1), repr(d1))
-        self.assertEqual(`u2`, `d2`)
+        self.assertEqual(repr(u2), repr(d2))
 
         # Test __cmp__ and __len__
         all = [d0, d1, d2, u, u0, u1, u2, uu, uu0, uu1, uu2]

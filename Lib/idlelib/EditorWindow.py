@@ -1138,7 +1138,7 @@ class EditorWindow(object):
             if not self.context_use_ps1:
                 for context in self.num_context_lines:
                     startat = max(lno - context, 1)
-                    startatindex = `startat` + ".0"
+                    startatindex = repr(startat) + ".0"
                     rawtext = text.get(startatindex, "insert")
                     y.set_str(rawtext)
                     bod = y.find_good_parse_start(

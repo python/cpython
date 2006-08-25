@@ -37,7 +37,7 @@ class CommonTest(seq_tests.CommonTest):
 
         self.assertEqual(str(a0), str(l0))
         self.assertEqual(repr(a0), repr(l0))
-        self.assertEqual(`a2`, `l2`)
+        self.assertEqual(repr(a2), repr(l2))
         self.assertEqual(str(a2), "[0, 1, 2]")
         self.assertEqual(repr(a2), "[0, 1, 2]")
 

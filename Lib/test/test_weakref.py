@@ -51,10 +51,10 @@ class ReferencesTestCase(TestBase):
         # Live reference:
         o = C()
         wr = weakref.ref(o)
-        `wr`
+        repr(wr)
         # Dead reference:
         del o
-        `wr`
+        repr(wr)
 
     def test_basic_callback(self):
         self.check_basic_callback(C)

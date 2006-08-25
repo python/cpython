@@ -685,7 +685,7 @@ print L
 
 
 print 'atoms'
-### atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | '`' testlist '`' | NAME | NUMBER | STRING
+### atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | NAME | NUMBER | STRING
 ### dictmaker: test ':' test (',' test ':' test)* [',']
 
 x = (1)
@@ -706,8 +706,6 @@ x = {'one': 1, 'two': 2}
 x = {'one': 1, 'two': 2,}
 x = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6}
 
-x = `x`
-x = `1 or 2 or 3`
 x = x
 x = 'x'
 x = 123
