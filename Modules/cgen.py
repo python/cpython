@@ -167,9 +167,9 @@ def checkarg(type, arg):
             raise arg_error, ('\'*\' expected', sub)
     if sub == 'retval':
         # size is retval -- must be a reply argument
-        if mode <> 'r':
+        if mode != 'r':
             raise arg_error, ('non-r mode with [retval]', mode)
-    elif not isnum(sub) and (sub[:3] <> 'arg' or not isnum(sub[3:])):
+    elif not isnum(sub) and (sub[:3] != 'arg' or not isnum(sub[3:])):
         raise arg_error, ('bad subscript', sub)
     #
     return type, mode, num, sub
@@ -218,7 +218,7 @@ def generate(type, func, database):
     #
     # Declare return value if any
     #
-    if type <> 'void':
+    if type != 'void':
         print '\t' + type, 'retval;'
     #
     # Declare arguments
@@ -283,7 +283,7 @@ def generate(type, func, database):
             print '(!geti' + xtype + 'arraysize(args,',
             print repr(n_in_args) + ',',
             print repr(in_pos[j]) + ',',
-            if xtype <> a_type:
+            if xtype != a_type:
                 print '('+xtype+' *)',
             print '&arg' + repr(i+1) + '))'
             print '\t\treturn NULL;'
@@ -311,21 +311,21 @@ def generate(type, func, database):
                 if a_factor and a_sub: print '*',
                 if a_sub: print a_sub,
                 print ',',
-                if (a_sub and a_factor) or xtype <> a_type:
+                if (a_sub and a_factor) or xtype != a_type:
                     print '('+xtype+' *)',
                 print 'arg' + repr(i+1) + '))'
             else: # Get a simple variable
                 print '(!geti' + xtype + 'arg(args,',
                 print repr(n_in_args) + ',',
                 print repr(in_pos[i]) + ',',
-                if xtype <> a_type:
+                if xtype != a_type:
                     print '('+xtype+' *)',
                 print '&arg' + repr(i+1) + '))'
             print '\t\treturn NULL;'
     #
     # Begin of function call
     #
-    if type <> 'void':
+    if type != 'void':
         print '\tretval =', func + '(',
     else:
         print '\t' + func + '(',
@@ -356,7 +356,7 @@ def generate(type, func, database):
         #
         # Multiple return values -- construct a tuple
         #
-        if type <> 'void':
+        if type != 'void':
             n_out_args = n_out_args + 1
         if n_out_args == 1:
             for i in range(len(database)):
@@ -372,7 +372,7 @@ def generate(type, func, database):
             print n_out_args, ');'
             print '\t  if (v == NULL) return NULL;'
             i_out = 0
-            if type <> 'void':
+            if type != 'void':
                 print '\t  PyTuple_SetItem(v,',
                 print repr(i_out) + ',',
                 print mkobject(type, 'retval') + ');'
@@ -489,7 +489,7 @@ while 1:
     elif len(words) < 2:
         err('Line', lno, ': no funcname :', line)
     else:
-        if len(words) % 2 <> 0:
+        if len(words) % 2 != 0:
             err('Line', lno, ': odd argument list :', words[2:])
         else:
             database = []
