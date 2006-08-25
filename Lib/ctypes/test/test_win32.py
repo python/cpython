@@ -6,7 +6,8 @@ import unittest, sys
 
 import _ctypes_test
 
-if sys.platform == "win32":
+if sys.platform == "win32" and sizeof(c_void_p) == sizeof(c_int):
+    # Only windows 32-bit has different calling conventions.
 
     class WindowsTestCase(unittest.TestCase):
         def test_callconv_1(self):

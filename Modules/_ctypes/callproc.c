@@ -638,7 +638,7 @@ static int _call_function_pointer(int flags,
 	}
 	
 	cc = FFI_DEFAULT_ABI;
-#if defined(MS_WIN32) && !defined(_WIN32_WCE)
+#if defined(MS_WIN32) && !defined(MS_WIN64) && !defined(_WIN32_WCE)
 	if ((flags & FUNCFLAG_CDECL) == 0)
 		cc = FFI_STDCALL;
 #endif
@@ -683,6 +683,14 @@ static int _call_function_pointer(int flags,
 		return -1;
 	}
 #endif
+#ifdef MS_WIN64
+	if (delta != 0) {
+		PyErr_Format(PyExc_RuntimeError,
+			     "ffi_call failed with code %d",
+			     delta);
+		return -1;
+	}
+#else
 	if (delta < 0) {
 		if (flags & FUNCFLAG_CDECL)
 			PyErr_Format(PyExc_ValueError,
@@ -703,6 +711,7 @@ static int _call_function_pointer(int flags,
 			     delta);
 		return -1;
 	}
+#endif
 #endif
 	if ((flags & FUNCFLAG_PYTHONAPI) && PyErr_Occurred())
 		return -1;
@@ -979,7 +988,11 @@ PyObject *_CallProc(PPROC pProc,
 	}
 	for (i = 0; i < argcount; ++i) {
 		atypes[i] = args[i].ffi_type;
-		if (atypes[i]->type == FFI_TYPE_STRUCT)
+		if (atypes[i]->type == FFI_TYPE_STRUCT 
+#ifdef _WIN64
+		    && atypes[i]->size <= sizeof(void *)
+#endif
+		    )
 			avalues[i] = (void *)args[i].value.p;
 		else
 			avalues[i] = (void *)&args[i].value;
@@ -1099,7 +1112,11 @@ static PyObject *load_library(PyObject *self, PyObject *args)
 	hMod = LoadLibrary(name);
 	if (!hMod)
 		return PyErr_SetFromWindowsErr(GetLastError());
+#ifdef _WIN64
+	return PyLong_FromVoidPtr(hMod);
+#else
 	return Py_BuildValue("i", hMod);
+#endif
 }
 
 static char free_library_doc[] =

@@ -34,6 +34,8 @@
 /* ffi_prep_args is called by the assembly routine once stack space
    has been allocated for the function's arguments */
 
+extern void Py_FatalError(char *msg);
+
 /*@-exportheader@*/
 void ffi_prep_args(char *stack, extended_cif *ecif)
 /*@=exportheader@*/
@@ -44,11 +46,10 @@ void ffi_prep_args(char *stack, extended_cif *ecif)
   register ffi_type **p_arg;
 
   argp = stack;
-
   if (ecif->cif->rtype->type == FFI_TYPE_STRUCT)
     {
       *(void **) argp = ecif->rvalue;
-      argp += 4;
+      argp += sizeof(void *);
     }
 
   p_argv = ecif->avalue;
@@ -60,8 +61,8 @@ void ffi_prep_args(char *stack, extended_cif *ecif)
       size_t z;
 
       /* Align if necessary */
-      if ((sizeof(int) - 1) & (unsigned) argp)
-	argp = (char *) ALIGN(argp, sizeof(int));
+      if ((sizeof(void *) - 1) & (size_t) argp)
+	argp = (char *) ALIGN(argp, sizeof(void *));
 
       z = (*p_arg)->size;
       if (z < sizeof(int))
@@ -108,7 +109,11 @@ void ffi_prep_args(char *stack, extended_cif *ecif)
       p_argv++;
       argp += z;
     }
-  
+
+  if (argp - stack > ecif->cif->bytes) 
+    {
+      Py_FatalError("FFI BUG: not enough stack space for arguments");
+    }
   return;
 }
 
@@ -128,6 +133,9 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
       break;
 
     case FFI_TYPE_UINT64:
+#ifdef _WIN64
+    case FFI_TYPE_POINTER:
+#endif
       cif->flags = FFI_TYPE_SINT64;
       break;
 
@@ -139,6 +147,7 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
   return FFI_OK;
 }
 
+#ifdef _WIN32
 /*@-declundef@*/
 /*@-exportheader@*/
 extern int
@@ -160,6 +169,16 @@ ffi_call_STDCALL(void (*)(char *, extended_cif *),
 		 void (*fn)());
 /*@=declundef@*/
 /*@=exportheader@*/
+#endif
+
+#ifdef _WIN64
+extern int
+ffi_call_AMD64(void (*)(char *, extended_cif *),
+		 /*@out@*/ extended_cif *,
+		 unsigned, unsigned,
+		 /*@out@*/ unsigned *,
+		 void (*fn)());
+#endif
 
 int
 ffi_call(/*@dependent@*/ ffi_cif *cif, 
@@ -188,6 +207,7 @@ ffi_call(/*@dependent@*/ ffi_cif *cif,
   
   switch (cif->abi) 
     {
+#if !defined(_WIN64)
     case FFI_SYSV:
       /*@-usedef@*/
       return ffi_call_SYSV(ffi_prep_args, &ecif, cif->bytes, 
@@ -201,6 +221,14 @@ ffi_call(/*@dependent@*/ ffi_cif *cif,
 			      cif->flags, ecif.rvalue, fn);
       /*@=usedef@*/
       break;
+#else
+    case FFI_SYSV:
+      /*@-usedef@*/
+      return ffi_call_AMD64(ffi_prep_args, &ecif, cif->bytes, 
+			   cif->flags, ecif.rvalue, fn);
+      /*@=usedef@*/
+      break;
+#endif
 
     default:
       FFI_ASSERT(0);
@@ -213,10 +241,14 @@ ffi_call(/*@dependent@*/ ffi_cif *cif,
 /** private members **/
 
 static void ffi_prep_incoming_args_SYSV (char *stack, void **ret,
-					 void** args, ffi_cif* cif);
+					  void** args, ffi_cif* cif);
 /* This function is jumped to by the trampoline */
 
+#ifdef _WIN64
+void *
+#else
 static void __fastcall
+#endif
 ffi_closure_SYSV (ffi_closure *closure, int *argp)
 {
   // this is our return value storage
@@ -244,6 +276,7 @@ ffi_closure_SYSV (ffi_closure *closure, int *argp)
 
   rtype = cif->flags;
 
+#if defined(_WIN32) && !defined(_WIN64)
 #ifdef _MSC_VER
   /* now, do a generic return based on the value of rtype */
   if (rtype == FFI_TYPE_INT)
@@ -303,6 +336,15 @@ ffi_closure_SYSV (ffi_closure *closure, int *argp)
 	   : "eax", "edx");
     }
 #endif
+#endif
+
+#ifdef _WIN64
+  /* The result is returned in rax.  This does the right thing for
+     result types except for floats; we have to 'mov xmm0, rax' in the
+     caller to correct this.
+  */
+  return *(void **)resp;
+#endif
 }
 
 /*@-exportheader@*/
@@ -330,8 +372,8 @@ ffi_prep_incoming_args_SYSV(char *stack, void **rvalue,
       size_t z;
 
       /* Align if necessary */
-      if ((sizeof(int) - 1) & (unsigned) argp) {
-	argp = (char *) ALIGN(argp, sizeof(int));
+      if ((sizeof(char *) - 1) & (size_t) argp) {
+	argp = (char *) ALIGN(argp, sizeof(char*));
       }
 
       z = (*p_arg)->size;
@@ -347,24 +389,8 @@ ffi_prep_incoming_args_SYSV(char *stack, void **rvalue,
   return;
 }
 
-/* How to make a trampoline.  Derived from gcc/config/i386/i386.c. */
-
-#define FFI_INIT_TRAMPOLINE(TRAMP,FUN,CTX,BYTES) \
-{ unsigned char *__tramp = (unsigned char*)(TRAMP); \
-   unsigned int  __fun = (unsigned int)(FUN); \
-   unsigned int  __ctx = (unsigned int)(CTX); \
-   unsigned int  __dis = __fun - ((unsigned int) __tramp + 8 + 4); \
-   *(unsigned char*)  &__tramp[0] = 0xb9; \
-   *(unsigned int*)   &__tramp[1] = __ctx; /* mov ecx, __ctx */ \
-   *(unsigned char*)  &__tramp[5] = 0x8b; \
-   *(unsigned char*)  &__tramp[6] = 0xd4; /* mov edx, esp */ \
-   *(unsigned char*)  &__tramp[7] = 0xe8; \
-   *(unsigned int*)   &__tramp[8] = __dis; /* call __fun  */ \
-   *(unsigned char*)  &__tramp[12] = 0xC2; /* ret BYTES */ \
-   *(unsigned short*) &__tramp[13] = BYTES; \
- }
-
 /* the cif must already be prep'ed */
+extern void ffi_closure_OUTER();
 
 ffi_status
 ffi_prep_closure (ffi_closure* closure,
@@ -373,19 +399,78 @@ ffi_prep_closure (ffi_closure* closure,
 		  void *user_data)
 {
   short bytes;
+  char *tramp;
+#ifdef _WIN64
+  int mask;
+#endif
   FFI_ASSERT (cif->abi == FFI_SYSV);
   
   if (cif->abi == FFI_SYSV)
     bytes = 0;
+#if !defined(_WIN64)
   else if (cif->abi == FFI_STDCALL)
     bytes = cif->bytes;
+#endif
   else
     return FFI_BAD_ABI;
 
-  FFI_INIT_TRAMPOLINE (&closure->tramp[0],
-		       &ffi_closure_SYSV,
-		       (void*)closure,
-		       bytes);
+  tramp = &closure->tramp[0];
+
+#define BYTES(text) memcpy(tramp, text, sizeof(text)), tramp += sizeof(text)-1
+#define POINTER(x) *(void**)tramp = (void*)(x), tramp += sizeof(void*)
+#define SHORT(x) *(short*)tramp = x, tramp += sizeof(short)
+#define INT(x) *(int*)tramp = x, tramp += sizeof(int)
+
+#ifdef _WIN64
+  if (cif->nargs >= 1 &&
+      (cif->arg_types[0]->type == FFI_TYPE_FLOAT
+       || cif->arg_types[0]->type == FFI_TYPE_DOUBLE))
+    mask |= 1;
+  if (cif->nargs >= 2 &&
+      (cif->arg_types[1]->type == FFI_TYPE_FLOAT
+       || cif->arg_types[1]->type == FFI_TYPE_DOUBLE))
+    mask |= 2;
+  if (cif->nargs >= 3 &&
+      (cif->arg_types[2]->type == FFI_TYPE_FLOAT
+       || cif->arg_types[2]->type == FFI_TYPE_DOUBLE))
+    mask |= 4;
+  if (cif->nargs >= 4 &&
+      (cif->arg_types[3]->type == FFI_TYPE_FLOAT
+       || cif->arg_types[3]->type == FFI_TYPE_DOUBLE))
+    mask |= 8;
+
+  /* 41 BB ----         mov         r11d,mask */
+  BYTES("\x41\xBB"); INT(mask);
+
+  /* 48 B8 --------     mov         rax, closure			*/
+  BYTES("\x48\xB8"); POINTER(closure);
+
+  /* 49 BA --------     mov         r10, ffi_closure_OUTER */
+  BYTES("\x49\xBA"); POINTER(ffi_closure_OUTER);
+
+  /* 41 FF E2           jmp         r10 */
+  BYTES("\x41\xFF\xE2");
+
+#else
+
+  /* mov ecx, closure */
+  BYTES("\xb9"); POINTER(closure);
+
+  /* mov edx, esp */
+  BYTES("\x8b\xd4");
+
+  /* call ffi_closure_SYSV */
+  BYTES("\xe8"); POINTER((char*)&ffi_closure_SYSV - (tramp + 4));
+
+  /* ret bytes */
+  BYTES("\xc2");
+  SHORT(bytes);
+  
+#endif
+
+  if (tramp - &closure->tramp[0] > FFI_TRAMPOLINE_SIZE)
+    Py_FatalError("FFI_TRAMPOLINE_SIZE too small in " __FILE__);
+
   closure->cif  = cif;
   closure->user_data = user_data;
   closure->fun  = fun;
