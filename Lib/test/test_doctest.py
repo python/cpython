@@ -2234,7 +2234,7 @@ debugging):
     >>> doctest.testfile('test_doctest.txt', raise_on_error=True)
     ... # doctest: +ELLIPSIS
     Traceback (most recent call last):
-    UnexpectedException: ...
+    doctest.UnexpectedException: ...
     >>> doctest.master = None  # Reset master.
 
 If the tests contain non-ASCII characters, the tests might fail, since

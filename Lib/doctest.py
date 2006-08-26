@@ -1581,7 +1581,7 @@ class UnexpectedException(Exception):
 
     - test: the DocTest object being run
 
-    - excample: the Example object that failed
+    - example: the Example object that failed
 
     - exc_info: the exception info
     """
@@ -1664,7 +1664,7 @@ class DebugRunner(DocTestRunner):
          >>> runner.run(test)
          Traceback (most recent call last):
          ...
-         UnexpectedException: <DocTest foo from foo.py:0 (2 examples)>
+         doctest.UnexpectedException: <DocTest foo from foo.py:0 (2 examples)>
 
          >>> del test.globs['__builtins__']
          >>> test.globs
