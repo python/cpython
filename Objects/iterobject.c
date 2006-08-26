@@ -340,8 +340,9 @@ zipiter_next(zipiterobject *zit)
 		Py_INCREF(result);
 		for (i = 0; i < tuplesize; i++) {
 			PyObject *it = PyTuple_GET_ITEM(zit->it_tuple, i);
+			PyObject *item;
 			assert(PyIter_Check(it));
-			PyObject *item = (*it->ob_type->tp_iternext)(it);
+			item = (*it->ob_type->tp_iternext)(it);
 			if (item == NULL) {
 				Py_DECREF(result);
 				return NULL;
@@ -356,8 +357,9 @@ zipiter_next(zipiterobject *zit)
 			return NULL;
 		for (i = 0; i < tuplesize; i++) {
 			PyObject *it = PyTuple_GET_ITEM(zit->it_tuple, i);
+			PyObject *item;
 			assert(PyIter_Check(it));
-			PyObject *item = (*it->ob_type->tp_iternext)(it);
+			item = (*it->ob_type->tp_iternext)(it);
 			if (item == NULL) {
 				Py_DECREF(result);
 				return NULL;
