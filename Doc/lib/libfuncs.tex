@@ -836,19 +836,6 @@ class Parrot(object):
 \end{verbatim}
 \end{funcdesc}
 
-\begin{funcdesc}{reduce}{function, sequence\optional{, initializer}}
-  Apply \var{function} of two arguments cumulatively to the items of
-  \var{sequence}, from left to right, so as to reduce the sequence to
-  a single value.  For example, \code{reduce(lambda x, y: x+y, [1, 2,
-  3, 4, 5])} calculates \code{((((1+2)+3)+4)+5)}.  The left argument,
-  \var{x}, is the accumulated value and the right argument, \var{y},
-  is the update value from the \var{sequence}.  If the optional
-  \var{initializer} is present, it is placed before the items of the
-  sequence in the calculation, and serves as a default when the
-  sequence is empty.  If \var{initializer} is not given and
-  \var{sequence} contains only one item, the first item is returned.
-\end{funcdesc}
-
 \begin{funcdesc}{reload}{module}
   Reload a previously imported \var{module}.  The
   argument must be a module object, so it must have been successfully
@@ -1058,8 +1045,6 @@ class C:
   The \var{sequence}'s items are normally numbers, and are not allowed
   to be strings.  The fast, correct way to concatenate sequence of
   strings is by calling \code{''.join(\var{sequence})}.
-  Note that \code{sum(range(\var{n}), \var{m})} is equivalent to
-  \code{reduce(operator.add, range(\var{n}), \var{m})}
   \versionadded{2.3}
 \end{funcdesc}
 

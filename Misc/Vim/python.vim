@@ -63,7 +63,7 @@ endif
 
 if exists("python_highlight_builtins")
   syn keyword pythonBuiltin    unichr all set abs vars int __import__ unicode
-  syn keyword pythonBuiltin    enumerate reduce exit issubclass
+  syn keyword pythonBuiltin    enumerate exit issubclass
   syn keyword pythonBuiltin    divmod file Ellipsis isinstance open any
   syn keyword pythonBuiltin    locals help filter basestring slice copyright min
   syn keyword pythonBuiltin    super sum tuple hex execfile long id chr

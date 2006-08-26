@@ -1893,8 +1893,8 @@ use \method{pop()} with \code{0} as the index.  For example:
 
 \subsection{Functional Programming Tools \label{functional}}
 
-There are three built-in functions that are very useful when used with
-lists: \function{filter()}, \function{map()}, and \function{reduce()}.
+There are two built-in functions that are very useful when used with
+lists: \function{filter()} and \function{map()}.
 
 \samp{filter(\var{function}, \var{sequence})} returns a sequence
 consisting of those items from the
@@ -1934,42 +1934,6 @@ is shorter than another).  For example:
 >>> map(add, seq, seq)
 [0, 2, 4, 6, 8, 10, 12, 14]
 \end{verbatim}
-
-\samp{reduce(\var{function}, \var{sequence})} returns a single value
-constructed by calling the binary function \var{function} on the first two
-items of the sequence, then on the result and the next item, and so
-on.  For example, to compute the sum of the numbers 1 through 10:
-
-\begin{verbatim}
->>> def add(x,y): return x+y
-...
->>> reduce(add, range(1, 11))
-55
-\end{verbatim}
-
-If there's only one item in the sequence, its value is returned; if
-the sequence is empty, an exception is raised.
-
-A third argument can be passed to indicate the starting value.  In this
-case the starting value is returned for an empty sequence, and the
-function is first applied to the starting value and the first sequence
-item, then to the result and the next item, and so on.  For example,
-
-\begin{verbatim}
->>> def sum(seq):
-...     def add(x,y): return x+y
-...     return reduce(add, seq, 0)
-... 
->>> sum(range(1, 11))
-55
->>> sum([])
-0
-\end{verbatim}
-
-Don't use this example's definition of \function{sum()}: since summing
-numbers is such a common need, a built-in function
-\code{sum(\var{sequence})} is already provided, and works exactly like
-this.
 \versionadded{2.3}
 
 \subsection{List Comprehensions}
@@ -2739,7 +2703,7 @@ standard module \module{__builtin__}\refbimodindex{__builtin__}:
  'id', 'int', 'intern', 'isinstance', 'issubclass', 'iter',
  'len', 'license', 'list', 'locals', 'long', 'map', 'max', 'min',
  'object', 'oct', 'open', 'ord', 'pow', 'property', 'quit', 'range',
- 'reduce', 'reload', 'repr', 'reversed', 'round', 'set',
+ 'reload', 'repr', 'reversed', 'round', 'set',
  'setattr', 'slice', 'sorted', 'staticmethod', 'str', 'sum', 'super',
  'tuple', 'type', 'unichr', 'unicode', 'vars', 'xrange', 'zip']
 \end{verbatim}

@@ -386,7 +386,7 @@ support for features needed by `python-mode'.")
 			  "isinstance" "issubclass" "iter" "len" "license"
 			  "list" "locals" "long" "map" "max" "min" "object"
 			  "oct" "open" "ord" "pow" "property" "range"
-			  "reduce" "reload" "repr" "round"
+			  "reload" "repr" "round"
 			  "setattr" "slice" "staticmethod" "str" "sum"
 			  "super" "tuple" "type" "unichr" "unicode" "vars"
 			  "zip")
