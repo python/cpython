@@ -901,7 +901,7 @@ lambda [param_list]: returnedExpr
                 -- Creates an anonymous function. returnedExpr must be
                    an expression, not a statement (e.g., not "if xx:...",
                    "print xxx", etc.) and thus can't contain newlines.
-                   Used mostly for filter(), map(), reduce() functions, and GUI callbacks..
+                   Used mostly for filter(), map() functions, and GUI callbacks..
 List comprehensions
 result = [expression for item1 in sequence1  [if condition1]
                         [for item2 in sequence2 ... for itemN in sequenceN]
@@ -1005,11 +1005,6 @@ property()          Created a property with access controlled by functions.
 range(start [,end   Returns list of ints from >= start and < end.With 1 arg,
 [, step]])          list from 0..arg-1With 2 args, list from start..end-1With 3
                     args, list from start up to end by step
-reduce(f, list [,   Applies the binary function f to the items oflist so as to
-init])              reduce the list to a single value.If init given, it is
-                    "prepended" to list.
-                    Re-parses and re-initializes an already imported module.
-                    Useful in interactive mode, if you want to reload amodule
 reload(module)      after fixing it. If module was syntacticallycorrect but had
                     an error in initialization, mustimport it one more time
                     before calling reload().

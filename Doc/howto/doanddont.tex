@@ -289,19 +289,7 @@ There are also many useful builtin functions people seem not to be
 aware of for some reason: \function{min()} and \function{max()} can
 find the minimum/maximum of any sequence with comparable semantics,
 for example, yet many people write their own
-\function{max()}/\function{min()}. Another highly useful function is
-\function{reduce()}. A classical use of \function{reduce()}
-is something like
-
-\begin{verbatim}
-import sys, operator
-nums = map(float, sys.argv[1:])
-print reduce(operator.add, nums)/len(nums)
-\end{verbatim}
-
-This cute little script prints the average of all numbers given on the
-command line. The \function{reduce()} adds up all the numbers, and
-the rest is just some pre- and postprocessing.
+\function{max()}/\function{min()}.
 
 On the same note, note that \function{float()}, \function{int()} and
 \function{long()} all accept arguments of type string, and so are
