@@ -118,7 +118,9 @@ def test():
         err = traceback.format_exception_only(X, X())
         self.assertEqual(len(err), 1)
         str_value = '<unprintable %s object>' % X.__name__
-        self.assertEqual(err[0], X.__name__ + ': ' + str_value + '\n')
+        self.assertEqual(err[0], "%s.%s: %s\n" % (X.__module__,
+                                                  X.__name__,
+                                                  str_value))
 
 
 def test_main():
