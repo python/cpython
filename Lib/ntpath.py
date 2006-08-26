@@ -8,6 +8,7 @@ module as os.path.
 import os
 import stat
 import sys
+from genericpath import *
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
@@ -206,85 +207,17 @@ def dirname(p):
     """Returns the directory component of a pathname"""
     return split(p)[0]
 
-
-# Return the longest prefix of all list elements.
-
-def commonprefix(m):
-    "Given a list of pathnames, returns the longest common leading component"
-    if not m: return ''
-    s1 = min(m)
-    s2 = max(m)
-    n = min(len(s1), len(s2))
-    for i in xrange(n):
-        if s1[i] != s2[i]:
-            return s1[:i]
-    return s1[:n]
-
-
-# Get size, mtime, atime of files.
-
-def getsize(filename):
-    """Return the size of a file, reported by os.stat()"""
-    return os.stat(filename).st_size
-
-def getmtime(filename):
-    """Return the last modification time of a file, reported by os.stat()"""
-    return os.stat(filename).st_mtime
-
-def getatime(filename):
-    """Return the last access time of a file, reported by os.stat()"""
-    return os.stat(filename).st_atime
-
-def getctime(filename):
-    """Return the creation time of a file, reported by os.stat()."""
-    return os.stat(filename).st_ctime
-
 # Is a path a symbolic link?
 # This will always return false on systems where posix.lstat doesn't exist.
 
 def islink(path):
-    """Test for symbolic link.  On WindowsNT/95 always returns false"""
+    """Test for symbolic link.
+    On WindowsNT/95 and OS/2 always returns false
+    """
     return False
 
-
-# Does a path exist?
-
-def exists(path):
-    """Test whether a path exists"""
-    try:
-        st = os.stat(path)
-    except os.error:
-        return False
-    return True
-
+# alias exists to lexists
 lexists = exists
-
-
-# Is a path a dos directory?
-# This follows symbolic links, so both islink() and isdir() can be true
-# for the same path.
-
-def isdir(path):
-    """Test whether a path is a directory"""
-    try:
-        st = os.stat(path)
-    except os.error:
-        return False
-    return stat.S_ISDIR(st.st_mode)
-
-
-# Is a path a regular file?
-# This follows symbolic links, so both islink() and isdir() can be true
-# for the same path.
-
-def isfile(path):
-    """Test whether a path is a regular file"""
-    try:
-        st = os.stat(path)
-    except os.error:
-        return False
-    return stat.S_ISREG(st.st_mode)
-
 
 # Is a path a mount point?  Either a root (with or without drive letter)
 # or an UNC path with at most a / or \ after the mount point.
