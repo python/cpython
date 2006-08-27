@@ -203,20 +203,6 @@ class AugAssign(Node):
     def __repr__(self):
         return "AugAssign(%s, %s, %s)" % (repr(self.node), repr(self.op), repr(self.expr))
 
-class Backquote(Node):
-    def __init__(self, expr, lineno=None):
-        self.expr = expr
-        self.lineno = lineno
-
-    def getChildren(self):
-        return self.expr,
-
-    def getChildNodes(self):
-        return self.expr,
-
-    def __repr__(self):
-        return "Backquote(%s)" % (repr(self.expr),)
-
 class Bitand(Node):
     def __init__(self, nodes, lineno=None):
         self.nodes = nodes
