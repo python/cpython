@@ -1147,6 +1147,9 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 		VISIT_SEQ(st, expr, e->v.Dict.keys);
 		VISIT_SEQ(st, expr, e->v.Dict.values);
 		break;
+	case Set_kind:
+		VISIT_SEQ(st, expr, e->v.Set.elts);
+		break;
         case ListComp_kind:
 		if (!symtable_new_tmpname(st))
 			return 0;
