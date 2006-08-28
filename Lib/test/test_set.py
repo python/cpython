@@ -631,7 +631,7 @@ class TestBasicOpsEmpty(TestBasicOps):
         self.set    = set(self.values)
         self.dup    = set(self.values)
         self.length = 0
-        self.repr   = "{}"
+        self.repr   = "set()"
 
 #------------------------------------------------------------------------------
 
