@@ -184,10 +184,10 @@ struct _stmt {
 };
 
 enum _expr_kind {BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
-                  IfExp_kind=5, Dict_kind=6, ListComp_kind=7,
-                  GeneratorExp_kind=8, Yield_kind=9, Compare_kind=10,
-                  Call_kind=11, Num_kind=12, Str_kind=13, Attribute_kind=14,
-                  Subscript_kind=15, Name_kind=16, List_kind=17, Tuple_kind=18};
+                  IfExp_kind=5, Dict_kind=6, Set_kind=7, ListComp_kind=8,
+                  GeneratorExp_kind=9, Yield_kind=10, Compare_kind=11,
+                  Call_kind=12, Num_kind=13, Str_kind=14, Attribute_kind=15,
+                  Subscript_kind=16, Name_kind=17, List_kind=18, Tuple_kind=19};
 struct _expr {
         enum _expr_kind kind;
         union {
@@ -222,6 +222,10 @@ struct _expr {
                         asdl_seq *keys;
                         asdl_seq *values;
                 } Dict;
+                
+                struct {
+                        asdl_seq *elts;
+                } Set;
                 
                 struct {
                         expr_ty elt;
@@ -399,6 +403,7 @@ expr_ty IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, int
               col_offset, PyArena *arena);
 expr_ty Dict(asdl_seq * keys, asdl_seq * values, int lineno, int col_offset,
              PyArena *arena);
+expr_ty Set(asdl_seq * elts, int lineno, int col_offset, PyArena *arena);
 expr_ty ListComp(expr_ty elt, asdl_seq * generators, int lineno, int
                  col_offset, PyArena *arena);
 expr_ty GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, int

@@ -530,14 +530,20 @@ set_tp_print(PySetObject *so, FILE *fp, int flags)
 	char *emit = "";	/* No separator emitted on first pass */
 	char *separator = ", ";
 
-	fprintf(fp, "%s([", so->ob_type->tp_name);
+	if (so->ob_type == &PySet_Type)
+		fprintf(fp, "{");
+	else
+		fprintf(fp, "%s([", so->ob_type->tp_name);
 	while (set_next(so, &pos, &entry)) {
 		fputs(emit, fp);
 		emit = separator;
 		if (PyObject_Print(entry->key, fp, 0) != 0)
 			return -1;
 	}
-	fputs("])", fp);
+	if (so->ob_type == &PySet_Type)
+		fputs("}", fp);
+	else
+		fputs("])", fp);
 	return 0;
 }
 
@@ -554,8 +560,15 @@ set_repr(PySetObject *so)
 	if (listrepr == NULL)
 		return NULL;
 
-	result = PyString_FromFormat("%s(%s)", so->ob_type->tp_name,
-		PyString_AS_STRING(listrepr));
+	if (so->ob_type == &PySet_Type) {
+		char *s = PyString_AS_STRING(listrepr);
+		s += 1;
+		s[strlen(s)-1] = 0;
+		result = PyString_FromFormat("{%s}", s);
+	} else {
+		result = PyString_FromFormat("%s(%s)", so->ob_type->tp_name,
+			 PyString_AS_STRING(listrepr));
+	}
 	Py_DECREF(listrepr);
 	return result;
 }

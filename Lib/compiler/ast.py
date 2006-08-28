@@ -542,7 +542,6 @@ class Function(Node):
             self.kwargs = 1
 
 
-
     def getChildren(self):
         children = []
         children.append(self.decorators)
@@ -572,6 +571,7 @@ class GenExpr(Node):
         self.argnames = ['.0']
         self.varargs = self.kwargs = None
 
+
     def getChildren(self):
         return self.code,
 
@@ -588,7 +588,6 @@ class GenExprFor(Node):
         self.ifs = ifs
         self.lineno = lineno
         self.is_outmost = False
-
 
     def getChildren(self):
         children = []
@@ -764,7 +763,6 @@ class Lambda(Node):
             self.varargs = 1
         if flags & CO_VARKEYWORDS:
             self.kwargs = 1
-
 
 
     def getChildren(self):
@@ -1090,6 +1088,22 @@ class RightShift(Node):
 
     def __repr__(self):
         return "RightShift((%s, %s))" % (repr(self.left), repr(self.right))
+
+class Set(Node):
+    def __init__(self, items, lineno=None):
+        self.items = items
+        self.lineno = lineno
+
+    def getChildren(self):
+        return tuple(flatten(self.items))
+
+    def getChildNodes(self):
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.items))
+        return tuple(nodelist)
+
+    def __repr__(self):
+        return "Set(%s)" % (repr(self.items),)
 
 class Slice(Node):
     def __init__(self, expr, flags, lower, upper, lineno=None):

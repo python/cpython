@@ -178,6 +178,10 @@ static char *Dict_fields[]={
         "keys",
         "values",
 };
+static PyTypeObject *Set_type;
+static char *Set_fields[]={
+        "elts",
+};
 static PyTypeObject *ListComp_type;
 static char *ListComp_fields[]={
         "elt",
@@ -517,6 +521,8 @@ static int init_types(void)
         if (!IfExp_type) return 0;
         Dict_type = make_type("Dict", expr_type, Dict_fields, 2);
         if (!Dict_type) return 0;
+        Set_type = make_type("Set", expr_type, Set_fields, 1);
+        if (!Set_type) return 0;
         ListComp_type = make_type("ListComp", expr_type, ListComp_fields, 2);
         if (!ListComp_type) return 0;
         GeneratorExp_type = make_type("GeneratorExp", expr_type,
@@ -1429,6 +1435,22 @@ Dict(asdl_seq * keys, asdl_seq * values, int lineno, int col_offset, PyArena
         p->kind = Dict_kind;
         p->v.Dict.keys = keys;
         p->v.Dict.values = values;
+        p->lineno = lineno;
+        p->col_offset = col_offset;
+        return p;
+}
+
+expr_ty
+Set(asdl_seq * elts, int lineno, int col_offset, PyArena *arena)
+{
+        expr_ty p;
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p) {
+                PyErr_NoMemory();
+                return NULL;
+        }
+        p->kind = Set_kind;
+        p->v.Set.elts = elts;
         p->lineno = lineno;
         p->col_offset = col_offset;
         return p;
@@ -2424,6 +2446,15 @@ ast2obj_expr(void* _o)
                         goto failed;
                 Py_DECREF(value);
                 break;
+        case Set_kind:
+                result = PyType_GenericNew(Set_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.Set.elts, ast2obj_expr);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "elts", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                break;
         case ListComp_kind:
                 result = PyType_GenericNew(ListComp_type, NULL, NULL);
                 if (!result) goto failed;
@@ -3069,6 +3100,7 @@ init_ast(void)
             return;
         if (PyDict_SetItemString(d, "IfExp", (PyObject*)IfExp_type) < 0) return;
         if (PyDict_SetItemString(d, "Dict", (PyObject*)Dict_type) < 0) return;
+        if (PyDict_SetItemString(d, "Set", (PyObject*)Set_type) < 0) return;
         if (PyDict_SetItemString(d, "ListComp", (PyObject*)ListComp_type) < 0)
             return;
         if (PyDict_SetItemString(d, "GeneratorExp",

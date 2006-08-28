@@ -97,11 +97,12 @@ extern "C" {
 #define LOAD_NAME	101	/* Index in name list */
 #define BUILD_TUPLE	102	/* Number of tuple items */
 #define BUILD_LIST	103	/* Number of list items */
-#define BUILD_MAP	104	/* Always zero for now */
-#define LOAD_ATTR	105	/* Index in name list */
-#define COMPARE_OP	106	/* Comparison operator */
-#define IMPORT_NAME	107	/* Index in name list */
-#define IMPORT_FROM	108	/* Index in name list */
+#define BUILD_SET	104     /* Number of set items */
+#define BUILD_MAP	105	/* Always zero for now */
+#define LOAD_ATTR	106	/* Index in name list */
+#define COMPARE_OP	107	/* Comparison operator */
+#define IMPORT_NAME	108	/* Index in name list */
+#define IMPORT_FROM	109	/* Index in name list */
 
 #define JUMP_FORWARD	110	/* Number of bytes to skip */
 #define JUMP_IF_FALSE	111	/* "" */

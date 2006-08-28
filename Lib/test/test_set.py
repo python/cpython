@@ -261,6 +261,11 @@ class TestSet(TestJointOps):
         t = self.thetype(s)
         self.assertNotEqual(id(s), id(t))
 
+    def test_set_literal(self):
+        s = set([1,2,3])
+        t = {1,2,3}
+        self.assertEqual(s, t)
+
     def test_hash(self):
         self.assertRaises(TypeError, hash, self.s)
 
@@ -626,7 +631,7 @@ class TestBasicOpsEmpty(TestBasicOps):
         self.set    = set(self.values)
         self.dup    = set(self.values)
         self.length = 0
-        self.repr   = "set([])"
+        self.repr   = "{}"
 
 #------------------------------------------------------------------------------
 
@@ -637,7 +642,7 @@ class TestBasicOpsSingleton(TestBasicOps):
         self.set    = set(self.values)
         self.dup    = set(self.values)
         self.length = 1
-        self.repr   = "set([3])"
+        self.repr   = "{3}"
 
     def test_in(self):
         self.failUnless(3 in self.set)
@@ -654,7 +659,7 @@ class TestBasicOpsTuple(TestBasicOps):
         self.set    = set(self.values)
         self.dup    = set(self.values)
         self.length = 1
-        self.repr   = "set([(0, 'zero')])"
+        self.repr   = "{(0, 'zero')}"
 
     def test_in(self):
         self.failUnless((0, "zero") in self.set)
