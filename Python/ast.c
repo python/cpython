@@ -394,6 +394,7 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
             expr_name = "list comprehension";
             break;
         case Dict_kind:
+	case Set_kind:
         case Num_kind:
         case Str_kind:
             expr_name = "literal";
@@ -1187,7 +1188,7 @@ static expr_ty
 ast_for_atom(struct compiling *c, const node *n)
 {
     /* atom: '(' [yield_expr|testlist_gexp] ')' | '[' [listmaker] ']'
-       | '{' [dictmaker] '}' | NAME | NUMBER | STRING+
+       | '{' [dictsetmaker] '}' | NAME | NUMBER | STRING+
     */
     node *ch = CHILD(n, 0);
     
@@ -1242,36 +1243,55 @@ ast_for_atom(struct compiling *c, const node *n)
 	else
 	    return ast_for_listcomp(c, ch);
     case LBRACE: {
-	/* dictmaker: test ':' test (',' test ':' test)* [','] */
+	/* dictsetmaker: test ':' test (',' test ':' test)* [','] |
+	 *               test (',' test)* [',']  */
 	int i, size;
 	asdl_seq *keys, *values;
 	
 	ch = CHILD(n, 1);
-	size = (NCH(ch) + 1) / 4; /* +1 in case no trailing comma */
-	keys = asdl_seq_new(size, c->c_arena);
-	if (!keys)
-	    return NULL;
-	
-	values = asdl_seq_new(size, c->c_arena);
-	if (!values)
-	    return NULL;
-	
-	for (i = 0; i < NCH(ch); i += 4) {
-	    expr_ty expression;
-	    
-	    expression = ast_for_expr(c, CHILD(ch, i));
-	    if (!expression)
-		return NULL;
+	if (NCH(ch) == 1 || (NCH(ch) > 0 && STR(CHILD(ch, 1))[0] == ',')) {
+            /* it's a set */
+            size = (NCH(ch) + 1) / 2; /* +1 in case no trailing comma */
+            keys = asdl_seq_new(size, c->c_arena);
+            if (!keys)
+                return NULL;
 
-	    asdl_seq_SET(keys, i / 4, expression);
+            for (i = 0; i < NCH(ch); i += 2) {
+                expr_ty expression;
+                expression = ast_for_expr(c, CHILD(ch, i));
+                if (!expression)
+                    return NULL;
+                asdl_seq_SET(keys, i / 2, expression);
+            }
+            return Set(keys, LINENO(n), n->n_col_offset, c->c_arena);
+        } else {
+            /* it's a dict */
+            size = (NCH(ch) + 1) / 4; /* +1 in case no trailing comma */
+            keys = asdl_seq_new(size, c->c_arena);
+            if (!keys)
+                return NULL;
+            
+            values = asdl_seq_new(size, c->c_arena);
+            if (!values)
+                return NULL;
+            
+            for (i = 0; i < NCH(ch); i += 4) {
+                expr_ty expression;
+                
+                expression = ast_for_expr(c, CHILD(ch, i));
+                if (!expression)
+                    return NULL;
 
-	    expression = ast_for_expr(c, CHILD(ch, i + 2));
-	    if (!expression)
-		return NULL;
+                asdl_seq_SET(keys, i / 4, expression);
 
-	    asdl_seq_SET(values, i / 4, expression);
-	}
-	return Dict(keys, values, LINENO(n), n->n_col_offset, c->c_arena);
+                expression = ast_for_expr(c, CHILD(ch, i + 2));
+                if (!expression)
+                    return NULL;
+
+                asdl_seq_SET(values, i / 4, expression);
+            }
+            return Dict(keys, values, LINENO(n), n->n_col_offset, c->c_arena);
+        }
     }
     default:
 	PyErr_Format(PyExc_SystemError, "unhandled atom %d", TYPE(ch));

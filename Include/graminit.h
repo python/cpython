@@ -69,7 +69,7 @@
 #define sliceop 324
 #define exprlist 325
 #define testlist 326
-#define dictmaker 327
+#define dictsetmaker 327
 #define classdef 328
 #define arglist 329
 #define argument 330

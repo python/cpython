@@ -793,6 +793,8 @@ class StackDepthTracker:
         return -count+1
     def BUILD_LIST(self, count):
         return -count+1
+    def BUILD_SET(self, count):
+        return -count+1
     def CALL_FUNCTION(self, argc):
         hi, lo = divmod(argc, 256)
         return -(lo + hi * 2)
