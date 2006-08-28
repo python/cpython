@@ -529,10 +529,17 @@ set_tp_print(PySetObject *so, FILE *fp, int flags)
 	Py_ssize_t pos=0;
 	char *emit = "";	/* No separator emitted on first pass */
 	char *separator = ", ";
+	int literalform = 0;
 
-	if (so->ob_type == &PySet_Type)
+	if (!so->used) {
+		fprintf(fp, "%s()", so->ob_type->tp_name);
+		return 0;
+	}
+
+	if (so->ob_type == &PySet_Type) {
+		literalform = 1;
 		fprintf(fp, "{");
-	else
+	} else
 		fprintf(fp, "%s([", so->ob_type->tp_name);
 	while (set_next(so, &pos, &entry)) {
 		fputs(emit, fp);
@@ -540,7 +547,7 @@ set_tp_print(PySetObject *so, FILE *fp, int flags)
 		if (PyObject_Print(entry->key, fp, 0) != 0)
 			return -1;
 	}
-	if (so->ob_type == &PySet_Type)
+	if (literalform)
 		fputs("}", fp);
 	else
 		fputs("])", fp);
@@ -551,6 +558,10 @@ static PyObject *
 set_repr(PySetObject *so)
 {
 	PyObject *keys, *result, *listrepr;
+
+	/* shortcut for the empty set */
+	if (!so->used)
+		return PyString_FromFormat("%s()", so->ob_type->tp_name);
 
 	keys = PySequence_List((PyObject *)so);
 	if (keys == NULL)
@@ -567,7 +578,7 @@ set_repr(PySetObject *so)
 		result = PyString_FromFormat("{%s}", s);
 	} else {
 		result = PyString_FromFormat("%s(%s)", so->ob_type->tp_name,
-			 PyString_AS_STRING(listrepr));
+			 	PyString_AS_STRING(listrepr));
 	}
 	Py_DECREF(listrepr);
 	return result;
