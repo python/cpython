@@ -1185,7 +1185,7 @@ class Transformer:
     def com_dictsetmaker(self, nodelist):
         # dictsetmaker: (test ':' test (',' test ':' value)* [',']) | (test (',' test)* [','])
         items = []
-        if nodelist[2] != ':':
+        if len(nodelist) == 1 or nodelist[1] != ':':
             # it's a set
             for i in range(1, len(nodelist), 2):
                 items.append(self.com_node(nodelist[i]))
