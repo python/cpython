@@ -690,8 +690,6 @@ prospect as debugging continues.")
   ;; Both single quote and double quote are string delimiters
   (modify-syntax-entry ?\' "\"" py-mode-syntax-table)
   (modify-syntax-entry ?\" "\"" py-mode-syntax-table)
-  ;; backquote is open and close paren
-  (modify-syntax-entry ?\` "$"  py-mode-syntax-table)
   ;; comment delimiters
   (modify-syntax-entry ?\# "<"  py-mode-syntax-table)
   (modify-syntax-entry ?\n ">"  py-mode-syntax-table)

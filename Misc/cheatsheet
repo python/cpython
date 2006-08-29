@@ -215,7 +215,6 @@ Highest             Operator                             Comment
         x^y                               Bitwise exclusive or
         x|y                               Bitwise or
         x<y  x<=y  x>y  x>=y  x==y x!=y   Comparison,
-        x<>y                              identity,
         x is y   x is not y               membership
         x in s   x not in s
         not x                             boolean negation
@@ -241,7 +240,7 @@ Comparison         Meaning          Notes
 >          strictly greater than
 >=         greater than or equal to
 ==         equal to
-!= or <>   not equal to
+!=         not equal to
 is         object identity           (2)
 is not     negated object identity   (2)
 
@@ -1009,9 +1008,8 @@ reload(module)      after fixing it. If module was syntacticallycorrect but had
                     an error in initialization, mustimport it one more time
                     before calling reload().
                     Returns a string containing a printable and if possible
-repr(object)        evaluable representation of an object. <=> `object`
-                    (usingbackquotes). Class redefinissable (__repr__). See
-                    also str()
+repr(object)        evaluable representation of an object. 
+                    Class redefinable (__repr__). See also str().
 round(x, n=0)       Returns the floating point value x rounded to n digitsafter
                     the decimal point.
 setattr(object,     This is the counterpart of getattr().setattr(o, 'foobar',

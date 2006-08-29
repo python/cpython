@@ -832,7 +832,7 @@ interpretation that is conventional in mathematics:
   \production{comparison}
              {\token{or_expr} ( \token{comp_operator} \token{or_expr} )*}
   \production{comp_operator}
-             {"<" | ">" | "==" | ">=" | "<=" | "<>" | "!="}
+             {"<" | ">" | "==" | ">=" | "<=" | "!="}
   \productioncont{| "is" ["not"] | ["not"] "in"}
 \end{productionlist}
 
@@ -853,11 +853,6 @@ to \var{a opa b} \keyword{and} \var{b opb c} \keyword{and} \ldots
 Note that \var{a opa b opb c} doesn't imply any kind of comparison
 between \var{a} and \var{c}, so that, e.g., \code{x < y > z} is
 perfectly legal (though perhaps not pretty).
-
-The forms \code{<>} and \code{!=} are equivalent; for consistency with
-C, \code{!=} is preferred; where \code{!=} is mentioned below
-\code{<>} is also accepted.  The \code{<>} spelling is considered
-obsolescent.
 
 The operators \code{<}, \code{>}, \code{==}, \code{>=}, \code{<=}, and
 \code{!=} compare
@@ -1111,7 +1106,7 @@ have the same precedence and chain from left to right --- see section
     \lineii{\keyword{in}, \keyword{not} \keyword{in}}{Membership tests}
     \lineii{\keyword{is}, \keyword{is not}}{Identity tests}
     \lineii{\code{<}, \code{<=}, \code{>}, \code{>=},
-            \code{<>}, \code{!=}, \code{==}}
+            \code{!=}, \code{==}}
 	   {Comparisons}
   \hline
     \lineii{\code{|}}				{Bitwise OR}

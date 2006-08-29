@@ -591,7 +591,7 @@ do_compare(PyObject *v, PyObject *w)
 
 	/* Give up */
 	PyErr_Format(PyExc_TypeError,
-		     "unorderable types: '%.100s' <> '%.100s'",
+		     "unorderable types: '%.100s' != '%.100s'",
 		     v->ob_type->tp_name,
 		     w->ob_type->tp_name);
 	return -1;

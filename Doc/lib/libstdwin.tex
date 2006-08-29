@@ -123,8 +123,8 @@ Return the default foreground color for unknown color names.
 Hint: the following code tests whether you are on a machine that
 supports more than two colors:
 \begin{verbatim}
-if stdwin.fetchcolor('black') <> \
-          stdwin.fetchcolor('red') <> \
+if stdwin.fetchcolor('black') != \
+          stdwin.fetchcolor('red') != \
           stdwin.fetchcolor('white'):
     print 'color machine'
 else:
