@@ -2404,11 +2404,6 @@ validate_atom(node *tree)
             if (res && (nch == 3))
                 res = validate_dictmaker(CHILD(tree, 1));
             break;
-          case BACKQUOTE:
-            res = ((nch == 3)
-                   && validate_testlist1(CHILD(tree, 1))
-                   && validate_ntype(CHILD(tree, 2), BACKQUOTE));
-            break;
           case NAME:
           case NUMBER:
             res = (nch == 1);
