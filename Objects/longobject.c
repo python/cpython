@@ -3158,22 +3158,6 @@ long_or(PyObject *v, PyObject *w)
 	return c;
 }
 
-static int
-long_coerce(PyObject **pv, PyObject **pw)
-{
-	if (PyInt_Check(*pw)) {
-		*pw = PyLong_FromLong(PyInt_AS_LONG(*pw));
-		Py_INCREF(*pv);
-		return 0;
-	}
-	else if (PyLong_Check(*pw)) {
-		Py_INCREF(*pv);
-		Py_INCREF(*pw);
-		return 0;
-	}
-	return 1; /* Can't do it */
-}
-
 static PyObject *
 long_long(PyObject *v)
 {
@@ -3330,7 +3314,7 @@ static PyNumberMethods long_as_number = {
 			long_and,	/*nb_and*/
 			long_xor,	/*nb_xor*/
 			long_or,	/*nb_or*/
-			long_coerce,	/*nb_coerce*/
+			0,		/*nb_coerce*/
 			long_int,	/*nb_int*/
 			long_long,	/*nb_long*/
 			long_float,	/*nb_float*/

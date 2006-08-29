@@ -1273,33 +1273,6 @@ PyObject_Not(PyObject *v)
 	return res == 0;
 }
 
-/* Coerce two numeric types to the "larger" one.
-   Increment the reference count on each argument.
-   Return value:
-   -1 if an error occurred;
-   0 if the coercion succeeded (and then the reference counts are increased);
-   1 if no coercion is possible (and no error is raised).
-*/
-int
-PyNumber_CoerceEx(PyObject **pv, PyObject **pw)
-{
-	register PyObject *v = *pv;
-	register PyObject *w = *pw;
-	int res;
-
-	if (v->ob_type->tp_as_number && v->ob_type->tp_as_number->nb_coerce) {
-		res = (*v->ob_type->tp_as_number->nb_coerce)(pv, pw);
-		if (res <= 0)
-			return res;
-	}
-	if (w->ob_type->tp_as_number && w->ob_type->tp_as_number->nb_coerce) {
-		res = (*w->ob_type->tp_as_number->nb_coerce)(pw, pv);
-		if (res <= 0)
-			return res;
-	}
-	return 1;
-}
-
 /* Test whether an object can be called */
 
 int

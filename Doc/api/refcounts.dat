@@ -712,10 +712,6 @@ PyNumber_And:PyObject*:o2:0:
 PyNumber_Check:PyObject*:o:0:
 PyNumber_Check:int:::
 
-PyNumber_Coerce:int:::
-PyNumber_Coerce:PyObject**:p1:+1:
-PyNumber_Coerce:PyObject**:p2:+1:
-
 PyNumber_Divide:PyObject*::+1:
 PyNumber_Divide:PyObject*:o1:0:
 PyNumber_Divide:PyObject*:o2:0:

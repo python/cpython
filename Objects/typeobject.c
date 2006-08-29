@@ -2935,7 +2935,6 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYNUM(nb_and);
 		COPYNUM(nb_xor);
 		COPYNUM(nb_or);
-		COPYNUM(nb_coerce);
 		COPYNUM(nb_int);
 		COPYNUM(nb_long);
 		COPYNUM(nb_float);
