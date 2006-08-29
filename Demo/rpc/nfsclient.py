@@ -163,7 +163,7 @@ class NFSClient(UDPClient):
         ra = (dir, 0, 2000)
         while 1:
             (status, rest) = self.Readdir(ra)
-            if status <> NFS_OK:
+            if status != NFS_OK:
                 break
             entries, eof = rest
             last_cookie = None

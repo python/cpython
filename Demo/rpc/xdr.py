@@ -78,7 +78,7 @@ class Packer:
         self.pack_uint(0)
 
     def pack_farray(self, n, list, pack_item):
-        if len(list) <> n:
+        if len(list) != n:
             raise ValueError, 'wrong array size'
         for item in list:
             pack_item(item)
@@ -183,7 +183,7 @@ class Unpacker:
         while 1:
             x = self.unpack_uint()
             if x == 0: break
-            if x <> 1:
+            if x != 1:
                 raise RuntimeError, '0 or 1 expected, got %r' % (x, )
             item = unpack_item()
             list.append(item)

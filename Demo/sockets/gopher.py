@@ -246,7 +246,7 @@ def browse_search(selector, host, port):
 def browse_telnet(selector, host, port):
     if selector:
         print 'Log in as', repr(selector)
-    if type(port) <> type(''):
+    if type(port) != type(''):
         port = repr(port)
     sts = os.system('set -x; exec telnet ' + host + ' ' + port)
     if sts:

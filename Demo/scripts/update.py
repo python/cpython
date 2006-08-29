@@ -83,7 +83,7 @@ def main():
             print 'Funny line:', line,
             continue
         filename, lineno = prog.group(1, 2)
-        if not curfile or filename <> curfile.filename:
+        if not curfile or filename != curfile.filename:
             if curfile: curfile.finish()
             curfile = FileObj(filename)
         curfile.process(lineno, line[n:])

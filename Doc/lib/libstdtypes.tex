@@ -126,8 +126,7 @@ This table summarizes the comparison operations:
   \lineiii{>}{strictly greater than}{}
   \lineiii{>=}{greater than or equal}{}
   \lineiii{==}{equal}{}
-  \lineiii{!=}{not equal}{(1)}
-  \lineiii{<>}{not equal}{(1)}
+  \lineiii{!=}{not equal}
   \lineiii{is}{object identity}{}
   \lineiii{is not}{negated object identity}{}
 \end{tableiii}
@@ -135,17 +134,6 @@ This table summarizes the comparison operations:
 \opindex{==} % XXX *All* others have funny characters < ! >
 \opindex{is}
 \opindex{is not}
-
-\noindent
-Notes:
-
-\begin{description}
-
-\item[(1)]
-\code{<>} and \code{!=} are alternate spellings for the same operator.
-\code{!=} is the preferred spelling; \code{<>} is obsolescent.
-
-\end{description}
 
 Objects of different types, except different numeric types and different string types, never
 compare equal; such objects are ordered consistently but arbitrarily

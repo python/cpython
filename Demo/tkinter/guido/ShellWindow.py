@@ -115,11 +115,11 @@ def spawn(prog, args):
                 os.close(i)
             except os.error:
                 pass
-        if os.dup(p2cread) <> 0:
+        if os.dup(p2cread) != 0:
             sys.stderr.write('popen2: bad read dup\n')
-        if os.dup(c2pwrite) <> 1:
+        if os.dup(c2pwrite) != 1:
             sys.stderr.write('popen2: bad write dup\n')
-        if os.dup(c2pwrite) <> 2:
+        if os.dup(c2pwrite) != 2:
             sys.stderr.write('popen2: bad write dup\n')
         for i in range(3, MAXFD):
             try:

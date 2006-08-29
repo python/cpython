@@ -1243,8 +1243,7 @@ follows:
 \code{\var{x}<\var{y}} calls \code{\var{x}.__lt__(\var{y})},
 \code{\var{x}<=\var{y}} calls \code{\var{x}.__le__(\var{y})},
 \code{\var{x}==\var{y}} calls \code{\var{x}.__eq__(\var{y})},
-\code{\var{x}!=\var{y}} and \code{\var{x}<>\var{y}} call
-\code{\var{x}.__ne__(\var{y})},
+\code{\var{x}!=\var{y}} calls \code{\var{x}.__ne__(\var{y})},
 \code{\var{x}>\var{y}} calls \code{\var{x}.__gt__(\var{y})}, and
 \code{\var{x}>=\var{y}} calls \code{\var{x}.__ge__(\var{y})}.
 These methods can return any value, but if the comparison operator is
