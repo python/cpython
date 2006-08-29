@@ -32,10 +32,9 @@ TO DO
 
 - Get rid of various compatibility-related flags (e.g. division flags).
 
+
 Core and Builtins
 -----------------
-
-- __coerce__ has been removed.
 
 - Classic classes are a thing of the past.  All classes are new style.
 
@@ -55,8 +54,14 @@ Core and Builtins
 
 - Absolute import is the default behavior for 'import foo' etc.
 
+- Removed support for syntax:
+  backticks (`x`), <>
+
 - Removed these Python builtins:
   apply(), coerce(), input(), raw_input()
+
+- Removed these Python methods:
+  {}.has_key
 
 - Removed these Python slots:
   __coerce__, __div__, __idiv__, __rdiv__
@@ -64,10 +69,8 @@ Core and Builtins
 - Removed these attributes from Python modules:
   * operator module: div, idiv, __div__, __idiv__
 
-*** PyNumber_CoerceEx() and nb_coerce still need to be removed.
-
 - Removed these C APIs:
-  PyNumber_Coerce(), 
+  PyNumber_Coerce(), PyNumber_CoerceEx() 
 
 - Removed these C slots/fields:
   nb_divide, nb_inplace_divide
@@ -80,7 +83,13 @@ Core and Builtins
   getreadbufferproc, getwritebufferproc, getsegcountproc, getcharbufferproc
 
 - Removed these opcodes:
-  BINARY_DIVIDE, INPLACE_DIVIDE
+  BINARY_DIVIDE, INPLACE_DIVIDE, UNARY_CONVERT
+
+- zip returns an iterator
+
+- Additions:
+  set literals
+
 
 Extension Modules
 -----------------
