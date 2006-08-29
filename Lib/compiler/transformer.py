@@ -111,7 +111,6 @@ class Transformer:
         self._atom_dispatch = {token.LPAR: self.atom_lpar,
                                token.LSQB: self.atom_lsqb,
                                token.LBRACE: self.atom_lbrace,
-                               token.BACKQUOTE: self.atom_backquote,
                                token.NUMBER: self.atom_number,
                                token.STRING: self.atom_string,
                                token.NAME: self.atom_name,
@@ -739,9 +738,6 @@ class Transformer:
         if nodelist[1][0] == token.RBRACE:
             return Dict((), lineno=nodelist[0][2])
         return self.com_dictsetmaker(nodelist[1])
-
-    def atom_backquote(self, nodelist):
-        return Backquote(self.com_node(nodelist[1]))
 
     def atom_number(self, nodelist):
         ### need to verify this matches compile.c

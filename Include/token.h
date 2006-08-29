@@ -32,7 +32,7 @@ extern "C" {
 #define EQUAL		22
 #define DOT		23
 #define PERCENT		24
-#define BACKQUOTE	25
+/* #define BACKQUOTE	25 */
 #define LBRACE		26
 #define RBRACE		27
 #define EQEQUAL		28
