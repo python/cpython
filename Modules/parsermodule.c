@@ -860,7 +860,7 @@ VALIDATER(term);                VALIDATER(factor);
 VALIDATER(atom);                VALIDATER(lambdef);
 VALIDATER(trailer);             VALIDATER(subscript);
 VALIDATER(subscriptlist);       VALIDATER(sliceop);
-VALIDATER(exprlist);            VALIDATER(dictmaker);
+VALIDATER(exprlist);            VALIDATER(dictsetmaker);
 VALIDATER(arglist);             VALIDATER(argument);
 VALIDATER(listmaker);           VALIDATER(yield_stmt);
 VALIDATER(testlist1);           VALIDATER(gen_for);
@@ -2402,7 +2402,7 @@ validate_atom(node *tree)
                    && validate_ntype(CHILD(tree, nch - 1), RBRACE));
 
             if (res && (nch == 3))
-                res = validate_dictmaker(CHILD(tree, 1));
+                res = validate_dictsetmaker(CHILD(tree, 1));
             break;
           case NAME:
           case NUMBER:
@@ -2838,10 +2838,10 @@ validate_exprlist(node *tree)
 
 
 static int
-validate_dictmaker(node *tree)
+validate_dictsetmaker(node *tree)
 {
     int nch = NCH(tree);
-    int res = (validate_ntype(tree, dictmaker)
+    int res = (validate_ntype(tree, dictsetmaker)
                && (nch >= 3)
                && validate_test(CHILD(tree, 0))
                && validate_colon(CHILD(tree, 1))
