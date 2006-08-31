@@ -19,9 +19,10 @@
 " Number of spaces to use for an indent.
 " This will affect Ctrl-T and 'autoindent'.
 " Python: 4 spaces
-" C: 4 spaces
+" C: 8 spaces (pre-existing files) or 4 spaces (new files)
 au BufRead,BufNewFile *.py,*pyw set shiftwidth=4
-au BufRead,BufNewFile *.c,*.h set shiftwidth=4
+au BufRead *.c,*.h set shiftwidth=8
+au BufNewFile *.c,*.h set shiftwidth=4
 
 " Number of spaces that a pre-existing tab is equal to.
 " For the amount of space used for a new tab use shiftwidth.
