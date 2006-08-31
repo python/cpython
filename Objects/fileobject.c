@@ -2016,7 +2016,7 @@ file_init(PyObject *self, PyObject *args, PyObject *kwds)
                 if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|si:file", 
                                                  kwlist, &o_name, &mode, 
                                                  &bufsize))
-                        return -1;
+                        goto Error;
 
 		if (fill_file_fields(foself, NULL, o_name, mode,
 				     fclose) == NULL)
