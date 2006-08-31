@@ -19,7 +19,7 @@
 " Number of spaces to use for an indent.
 " This will affect Ctrl-T and 'autoindent'.
 " Python: 4 spaces
-" C: tab (8 spaces)
+" C: 4 spaces
 au BufRead,BufNewFile *.py,*pyw set shiftwidth=4
 au BufRead,BufNewFile *.c,*.h set shiftwidth=4
 
