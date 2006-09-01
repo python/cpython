@@ -212,8 +212,8 @@ import unittest
 
 class DefaultWidgetSizeTestCase(unittest.TestCase):
     def runTest(self):
-        widget = Widget("The widget")
-        self.failUnless(widget.size() == (50,50), 'incorrect default size')
+        widget = Widget('The widget')
+        self.assertEqual(widget.size(), (50, 50), 'incorrect default size')
 \end{verbatim}
 
 Note that in order to test something, we use the one of the
@@ -247,7 +247,7 @@ import unittest
 
 class SimpleWidgetTestCase(unittest.TestCase):
     def setUp(self):
-        self.widget = Widget("The widget")
+        self.widget = Widget('The widget')
 
 class DefaultWidgetSizeTestCase(SimpleWidgetTestCase):
     def runTest(self):
@@ -273,7 +273,7 @@ import unittest
 
 class SimpleWidgetTestCase(unittest.TestCase):
     def setUp(self):
-        self.widget = Widget("The widget")
+        self.widget = Widget('The widget')
 
     def tearDown(self):
         self.widget.dispose()
@@ -298,7 +298,7 @@ import unittest
 
 class WidgetTestCase(unittest.TestCase):
     def setUp(self):
-        self.widget = Widget("The widget")
+        self.widget = Widget('The widget')
 
     def tearDown(self):
         self.widget.dispose()
@@ -322,8 +322,8 @@ instance we must specify the test method it is to run.  We do this by
 passing the method name in the constructor:
 
 \begin{verbatim}
-defaultSizeTestCase = WidgetTestCase("testDefaultSize")
-resizeTestCase = WidgetTestCase("testResize")
+defaultSizeTestCase = WidgetTestCase('testDefaultSize')
+resizeTestCase = WidgetTestCase('testResize')
 \end{verbatim}
 
 Test case instances are grouped together according to the features
@@ -333,8 +333,8 @@ class:
 
 \begin{verbatim}
 widgetTestSuite = unittest.TestSuite()
-widgetTestSuite.addTest(WidgetTestCase("testDefaultSize"))
-widgetTestSuite.addTest(WidgetTestCase("testResize"))
+widgetTestSuite.addTest(WidgetTestCase('testDefaultSize'))
+widgetTestSuite.addTest(WidgetTestCase('testResize'))
 \end{verbatim}
 
 For the ease of running tests, as we will see later, it is a good
@@ -344,8 +344,8 @@ pre-built test suite:
 \begin{verbatim}
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(WidgetTestCase("testDefaultSize"))
-    suite.addTest(WidgetTestCase("testResize"))
+    suite.addTest(WidgetTestCase('testDefaultSize'))
+    suite.addTest(WidgetTestCase('testResize'))
     return suite
 \end{verbatim}
 
@@ -353,7 +353,7 @@ or even:
 
 \begin{verbatim}
 def suite():
-    tests = ["testDefaultSize", "testResize"]
+    tests = ['testDefaultSize', 'testResize']
 
     return unittest.TestSuite(map(WidgetTestCase, tests))
 \end{verbatim}
@@ -462,7 +462,7 @@ easier.}
 \subsection{Classes and functions
             \label{unittest-contents}}
 
-\begin{classdesc}{TestCase}{}
+\begin{classdesc}{TestCase}{\optional{methodName}}
   Instances of the \class{TestCase} class represent the smallest
   testable units in the \module{unittest} universe.  This class is
   intended to be used as a base class, with specific tests being
@@ -470,6 +470,23 @@ easier.}
   interface needed by the test runner to allow it to drive the
   test, and methods that the test code can use to check for and
   report various kinds of failure.
+  
+  Each instance of \class{TestCase} will run a single test method:
+  the method named \var{methodName}.  If you remember, we had an
+  earlier example that went something like this:
+  
+  \begin{verbatim}
+  def suite():
+      suite = unittest.TestSuite()
+      suite.addTest(WidgetTestCase('testDefaultSize'))
+      suite.addTest(WidgetTestCase('testResize'))
+      return suite
+  \end{verbatim}
+  
+  Here, we create two instances of \class{WidgetTestCase}, each of
+  which runs a single test.
+  
+  \var{methodName} defaults to \code{'runTest'}.
 \end{classdesc}
 
 \begin{classdesc}{FunctionTestCase}{testFunc\optional{,
@@ -500,6 +517,11 @@ easier.}
   criteria and returning them wrapped in a \class{TestSuite}.
   It can load all tests within a given module or \class{TestCase}
   subclass.
+\end{classdesc}
+
+\begin{classdesc}{TestResult}{}
+  This class is used to compile information about which tests have succeeded
+  and which have failed.
 \end{classdesc}
 
 \begin{datadesc}{defaultTestLoader}
@@ -574,8 +596,9 @@ Methods in the first group (running the test) are:
 \begin{methoddesc}[TestCase]{run}{\optional{result}}
   Run the test, collecting the result into the test result object
   passed as \var{result}.  If \var{result} is omitted or \constant{None},
-  a temporary result object is created and used, but is not made
-  available to the caller.
+  a temporary result object is created (by calling the
+  \method{defaultTestCase()} method) and used; this result object is not
+  returned to \method{run()}'s caller.
   
   The same effect may be had by simply calling the \class{TestCase}
   instance.
@@ -684,8 +707,13 @@ information on the test:
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{defaultTestResult}{}
-  Return the default type of test result object to be used to run this
-  test.
+  Return an instance of the test result class that should be used
+  for this test case class (if no other result instance is provided
+  to the \method{run()} method).
+  
+  For \class{TestCase} instances, this will always be an instance of
+  \class{TestResult};  subclasses of \class{TestCase} should
+  override this as necessary.
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{id}{}
@@ -761,26 +789,20 @@ access to the \class{TestResult} object generated by running a set of
 tests for reporting purposes; a \class{TestResult} instance is
 returned by the \method{TestRunner.run()} method for this purpose.
 
-Each instance holds the total number of tests run, and collections of
-failures and errors that occurred among those test runs.  The
-collections contain tuples of \code{(\var{testcase},
-\var{traceback})}, where \var{traceback} is a string containing a
-formatted version of the traceback for the exception.
-
 \class{TestResult} instances have the following attributes that will
 be of interest when inspecting the results of running a set of tests:
 
 \begin{memberdesc}[TestResult]{errors}
   A list containing 2-tuples of \class{TestCase} instances and
-  formatted tracebacks. Each tuple represents a test which raised an
-  unexpected exception.
+  strings holding formatted tracebacks. Each tuple represents a test which
+  raised an unexpected exception.
   \versionchanged[Contains formatted tracebacks instead of
                   \function{sys.exc_info()} results]{2.2}
 \end{memberdesc}
 
 \begin{memberdesc}[TestResult]{failures}
-  A list containing 2-tuples of \class{TestCase} instances and
-  formatted tracebacks. Each tuple represents a test where a failure
+  A list containing 2-tuples of \class{TestCase} instances and strings
+  holding formatted tracebacks. Each tuple represents a test where a failure
   was explicitly signalled using the \method{TestCase.fail*()} or
   \method{TestCase.assert*()} methods.
   \versionchanged[Contains formatted tracebacks instead of
@@ -817,17 +839,25 @@ reporting while tests are being run.
 
 \begin{methoddesc}[TestResult]{startTest}{test}
   Called when the test case \var{test} is about to be run.
+  
+  The default implementation simply increments the instance's
+  \code{testsRun} counter.
 \end{methoddesc}
 
 \begin{methoddesc}[TestResult]{stopTest}{test}
-  Called when the test case \var{test} has been executed, regardless
+  Called after the test case \var{test} has been executed, regardless
   of the outcome.
+  
+  The default implementation does nothing.
 \end{methoddesc}
 
 \begin{methoddesc}[TestResult]{addError}{test, err}
   Called when the test case \var{test} raises an unexpected exception
   \var{err} is a tuple of the form returned by \function{sys.exc_info()}:
   \code{(\var{type}, \var{value}, \var{traceback})}.
+  
+  The default implementation appends \code{(\var{test}, \var{err})} to
+  the instance's \code{errors} attribute.
 \end{methoddesc}
 
 \begin{methoddesc}[TestResult]{addFailure}{test, err}
@@ -835,10 +865,15 @@ reporting while tests are being run.
   \var{err} is a tuple of the form returned by
   \function{sys.exc_info()}:  \code{(\var{type}, \var{value},
   \var{traceback})}.
+  
+  The default implementation appends \code{(\var{test}, \var{err})} to
+  the instance's \code{failures} attribute.
 \end{methoddesc}
 
 \begin{methoddesc}[TestResult]{addSuccess}{test}
   Called when the test case \var{test} succeeds.
+  
+  The default implementation does nothing.
 \end{methoddesc}
 
 
@@ -878,9 +913,12 @@ configurable properties.
   Return a suite of all tests cases given a string specifier.
 
   The specifier \var{name} is a ``dotted name'' that may resolve
-  either to a module, a test case class, a \class{TestSuite} instance,
-  a test method within a test case class, or a callable object which
-  returns a \class{TestCase} or \class{TestSuite} instance.
+  either to a module, a test case class, a test method within a test
+  case class, a \class{TestSuite} instance, or a callable object which
+  returns a \class{TestCase} or \class{TestSuite} instance.  These checks
+  are applied in the order listed here; that is, a method on a possible
+  test case class will be picked up as ``a test method within a test
+  case class'', rather than ``a callable object''.
 
   For example, if you have a module \module{SampleTests} containing a
   \class{TestCase}-derived class \class{SampleTestCase} with three test
@@ -905,7 +943,7 @@ configurable properties.
 
 \begin{methoddesc}[TestLoader]{getTestCaseNames}{testCaseClass}
   Return a sorted sequence of method names found within
-  \var{testCaseClass}.
+  \var{testCaseClass}; this should be a subclass of \class{TestCase}.
 \end{methoddesc}
 
 
