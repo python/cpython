@@ -4381,7 +4381,7 @@ the debugger, and that's one reason why this loophole is not closed.
 makes use of private variables of the base class possible.)
 
 Notice that code passed to \code{exec}, \code{eval()} or
-\code{evalfile()} does not consider the classname of the invoking 
+\code{execfile()} does not consider the classname of the invoking 
 class to be the current class; this is similar to the effect of the 
 \code{global} statement, the effect of which is likewise restricted to 
 code that is byte-compiled together.  The same restriction applies to
