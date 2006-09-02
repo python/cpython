@@ -1068,20 +1068,9 @@ class ContextAPItests(unittest.TestCase):
 class WithStatementTest(unittest.TestCase):
     # Can't do these as docstrings until Python 2.6
     # as doctest can't handle __future__ statements
-    def test_ContextManager(self):
-        # The basic context manager uses the supplied context
-        # without making a copy of it
-        orig_ctx = getcontext()
-        new_ctx = Context()
-        with ContextManager(new_ctx) as enter_ctx:
-            set_ctx = getcontext()
-        final_ctx = getcontext()
-        self.assert_(orig_ctx is final_ctx, 'did not restore context correctly')
-        self.assert_(new_ctx is set_ctx, 'did not set correct context')
-        self.assert_(set_ctx is enter_ctx, '__enter__ returned wrong context')
 
     def test_localcontext(self):
-        # The helper function makes a copy of the supplied context
+        # Use a copy of the current context in the block
         orig_ctx = getcontext()
         with localcontext() as enter_ctx:
             set_ctx = getcontext()
@@ -1091,7 +1080,7 @@ class WithStatementTest(unittest.TestCase):
         self.assert_(set_ctx is enter_ctx, '__enter__ returned wrong context')
 
     def test_localcontextarg(self):
-        # The helper function makes a copy of the supplied context
+        # Use a copy of the supplied context in the block
         orig_ctx = getcontext()
         new_ctx = Context(prec=42)
         with localcontext(new_ctx) as enter_ctx:

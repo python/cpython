@@ -130,9 +130,6 @@ __all__ = [
     'ROUND_DOWN', 'ROUND_HALF_UP', 'ROUND_HALF_EVEN', 'ROUND_CEILING',
     'ROUND_FLOOR', 'ROUND_UP', 'ROUND_HALF_DOWN',
 
-    # helper for context management
-    'ContextManager',
-
     # Functions for manipulating contexts
     'setcontext', 'getcontext', 'localcontext'
 ]
@@ -501,8 +498,8 @@ def localcontext(ctx=None):
     >>> print getcontext().prec
     28
     """
-    if ctx is None: ctx = getcontext().copy()
-    return ContextManager(ctx.copy())
+    if ctx is None: ctx = getcontext()
+    return _ContextManager(ctx)
 
 
 ##### Decimal class ###########################################
@@ -2219,30 +2216,14 @@ for name in rounding_functions:
 
 del name, val, globalname, rounding_functions
 
-class ContextManager(object):
+class _ContextManager(object):
     """Context manager class to support localcontext().
 
-      Sets the supplied context in __enter__() and restores
+      Sets a copy of the supplied context in __enter__() and restores
       the previous decimal context in __exit__()
-
-    """
-    # The below can't be included in the docstring until Python 2.6
-    # as the doctest module doesn't understand __future__ statements
-    """
-    Sample usage:
-    >>> from __future__ import with_statement
-    >>> print getcontext().prec
-    28
-    >>> ctx = Context(prec=15)
-    >>> with ContextManager(ctx):
-    ...     print getcontext().prec
-    ...
-    15
-    >>> print getcontext().prec
-    28
     """
     def __init__(self, new_context):
-        self.new_context = new_context
+        self.new_context = new_context.copy()
     def __enter__(self):
         self.saved_context = getcontext()
         setcontext(self.new_context)
