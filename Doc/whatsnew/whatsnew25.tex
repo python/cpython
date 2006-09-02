@@ -685,20 +685,19 @@ the block is complete.
 
 The \module{decimal} module's contexts, which encapsulate the desired
 precision and rounding characteristics for computations, provide a 
-\method{context_manager()} method for getting a context manager:
+\function{localcontext()} function for getting a context manager:
 
 \begin{verbatim}
-import decimal
+from decimal import Decimal, Context, localcontext
 
 # Displays with default precision of 28 digits
-v1 = decimal.Decimal('578')
-print v1.sqrt()
+v = Decimal('578')
+print v.sqrt()
 
-ctx = decimal.Context(prec=16) 
-with ctx.context_manager():
+with localcontext(Context(prec=16)):
     # All code in this block uses a precision of 16 digits.
     # The original context is restored on exiting the block.
-    print v1.sqrt()
+    print v.sqrt()
 \end{verbatim}
 
 \subsection{Writing Context Managers\label{context-managers}}
