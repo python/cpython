@@ -79,12 +79,15 @@ if (x  # The comments need to go in the right place
 
 """
 
-import os, glob, random
+import os, glob, random, time, sys
 from cStringIO import StringIO
 from test.test_support import (verbose, findfile, is_resource_enabled,
                                TestFailed)
 from tokenize import (tokenize, generate_tokens, untokenize, tok_name,
                       ENDMARKER, NUMBER, NAME, OP, STRING, COMMENT)
+
+# How much time in seconds can pass before we print a 'Still working' message.
+_PRINT_WORKING_MSG_INTERVAL = 5 * 60
 
 # Test roundtrip for `untokenize`.  `f` is a file path.  The source code in f
 # is tokenized, converted back to source code via tokenize.untokenize(),
@@ -164,6 +167,8 @@ def test_main():
     if verbose:
         print 'starting...'
 
+    next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
+
     # This displays the tokenization of tokenize_tests.py to stdout, and
     # regrtest.py checks that this equals the expected output (in the
     # test/output/ directory).
@@ -183,6 +188,12 @@ def test_main():
         testfiles = random.sample(testfiles, 10)
 
     for f in testfiles:
+        # Print still working message since this test can be really slow
+        if next_time <= time.time():
+            next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
+            print >>sys.__stdout__, '  test_main still working, be patient...'
+            sys.__stdout__.flush()
+
         test_roundtrip(f)
 
     # Test detecton of IndentationError.
