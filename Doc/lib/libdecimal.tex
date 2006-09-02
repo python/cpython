@@ -448,27 +448,23 @@ active context.
 
 \begin{funcdesc}{localcontext}{\optional{c}}
   Return a context manager that will set the current context for
-  the active thread to a copy of \var{c} on entry to the with statement
-  and restore the previous context when exiting the with statement. If
+  the active thread to a copy of \var{c} on entry to the with-statement
+  and restore the previous context when exiting the with-statement. If
   no context is specified, a copy of the current context is used.
+  \versionadded{2.5}
 
-  For example the following code increases the current decimal precision
+  For example, the following code increases the current decimal precision
   by 42 places, performs a calculation, and then automatically restores
   the previous context:
 \begin{verbatim}
     from __future__ import with_statement
     import decimal
 
-    with decimal.localcontext() as ctx:
+    with localcontext() as ctx:
         ctx.prec = 42   # Perform a high precision calculation
         s = calculate_something()
     s = +s  # Round the final result back to the default precision
 \end{verbatim}
-
-  The context that is held by the context manager and made active in the
-  body of the \keyword{with} statement is a \emph{copy} of the context
-  you provide to this function, so modifying its attributes doesn't
-  affect anything except that temporary copy.
 \end{funcdesc}
 
 New contexts can also be created using the \class{Context} constructor
