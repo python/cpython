@@ -479,7 +479,7 @@ def localcontext(ctx=None):
              return +s # Convert result to normal context
 
     """
-    # The below can't be included in the docstring until Python 2.6
+    # The string below can't be included in the docstring until Python 2.6
     # as the doctest module doesn't understand __future__ statements
     """
     >>> from __future__ import with_statement
