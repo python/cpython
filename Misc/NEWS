@@ -27,6 +27,8 @@ Extension Modules
 
 - Bug #1548092: fix curses.tparm seg fault on invalid input.
 
+- Bug #1550714: fix SystemError from itertools.tee on negative value for n.
+
 
 Tests
 -----
