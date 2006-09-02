@@ -25,6 +25,8 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1548092: fix curses.tparm seg fault on invalid input.
+
 
 Tests
 -----
