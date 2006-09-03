@@ -19,6 +19,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1550886: Fix decimal module context management implementation
+  to match the localcontext() example from PEP 343
+
 - Bug #1541863: uuid.uuid1 failed to generate unique identifiers
   on systems with low clock resolution.
 
