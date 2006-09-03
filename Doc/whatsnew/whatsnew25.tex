@@ -683,9 +683,10 @@ with lock:
 The lock is acquired before the block is executed and always released once 
 the block is complete.
 
-The \module{decimal} module's contexts, which encapsulate the desired
-precision and rounding characteristics for computations, provide a 
-\function{localcontext()} function for getting a context manager:
+The new \function{localcontext()} function in the \module{decimal} module
+makes it easy to save and restore the current decimal context, which
+encapsulates the desired precision and rounding characteristics for
+computations:
 
 \begin{verbatim}
 from decimal import Decimal, Context, localcontext

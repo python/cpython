@@ -453,12 +453,12 @@ active context.
   no context is specified, a copy of the current context is used.
   \versionadded{2.5}
 
-  For example, the following code increases the current decimal precision
-  by 42 places, performs a calculation, and then automatically restores
+  For example, the following code set the current decimal precision
+  to 42 places, performs a calculation, and then automatically restores
   the previous context:
 \begin{verbatim}
     from __future__ import with_statement
-    import decimal
+    from decimal import localcontext
 
     with localcontext() as ctx:
         ctx.prec = 42   # Perform a high precision calculation
