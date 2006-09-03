@@ -1561,7 +1561,7 @@ class DocTestFailure(Exception):
 
     - test: the DocTest object being run
 
-    - excample: the Example object that failed
+    - example: the Example object that failed
 
     - got: the actual output
     """
@@ -1580,7 +1580,7 @@ class UnexpectedException(Exception):
 
     - test: the DocTest object being run
 
-    - excample: the Example object that failed
+    - example: the Example object that failed
 
     - exc_info: the exception info
     """
