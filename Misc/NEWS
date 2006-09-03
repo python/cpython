@@ -4,8 +4,8 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.6?
-=========================
+What's New in Python 2.6 alpha 1?
+=================================
 
 *Release date: XX-XXX-200X*
 
@@ -17,6 +17,9 @@ Core and builtins
 
 Library
 -------
+
+- Patch #1550886: Fix decimal module context management implementation
+  to match the localcontext() example from PEP 343
 
 - Bug #1541863: uuid.uuid1 failed to generate unique identifiers
   on systems with low clock resolution.
