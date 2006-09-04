@@ -6712,11 +6712,11 @@ unicode_partition(PyUnicodeObject *self, PyObject *separator)
 }
 
 PyDoc_STRVAR(rpartition__doc__,
-"S.rpartition(sep) -> (head, sep, tail)\n\
+"S.rpartition(sep) -> (tail, sep, head)\n\
 \n\
 Searches for the separator sep in S, starting at the end of S, and returns\n\
 the part before it, the separator itself, and the part after it.  If the\n\
-separator is not found, returns S and two empty strings.");
+separator is not found, returns two empty strings and S.");
 
 static PyObject*
 unicode_rpartition(PyUnicodeObject *self, PyObject *separator)

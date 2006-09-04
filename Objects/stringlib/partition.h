@@ -78,12 +78,12 @@ stringlib_rpartition(
             }
 
     if (pos < 0) {
-	Py_INCREF(str_obj);
-	PyTuple_SET_ITEM(out, 0, (PyObject*) str_obj);
+	Py_INCREF(STRINGLIB_EMPTY);
+	PyTuple_SET_ITEM(out, 0, (PyObject*) STRINGLIB_EMPTY);
 	Py_INCREF(STRINGLIB_EMPTY);
 	PyTuple_SET_ITEM(out, 1, (PyObject*) STRINGLIB_EMPTY);
-	Py_INCREF(STRINGLIB_EMPTY);
-	PyTuple_SET_ITEM(out, 2, (PyObject*) STRINGLIB_EMPTY);
+	Py_INCREF(str_obj);        
+	PyTuple_SET_ITEM(out, 2, (PyObject*) str_obj);
 	return out;
     }
 
