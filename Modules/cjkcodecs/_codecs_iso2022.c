@@ -854,7 +854,7 @@ jisx0213_2000_2_encoder(const ucs4_t *data, Py_ssize_t *length)
 	if (coded == MAP_UNMAPPABLE || coded == MAP_MULTIPLE_AVAIL)
 		return coded;
 	else if (coded & 0x8000)
-		return coded;
+		return coded & 0x7fff;
 	else
 		return MAP_UNMAPPABLE;
 }
@@ -901,7 +901,7 @@ jisx0213_2004_2_encoder(const ucs4_t *data, Py_ssize_t *length)
 	if (coded == MAP_UNMAPPABLE || coded == MAP_MULTIPLE_AVAIL)
 		return coded;
 	else if (coded & 0x8000)
-		return coded;
+		return coded & 0x7fff;
 	else
 		return MAP_UNMAPPABLE;
 }
@@ -992,7 +992,10 @@ dummy_encoder(const ucs4_t *data, Py_ssize_t *length)
 
 /*-*- registry tables -*-*/
 
-#define REGISTRY_KSX1001	{ CHARSET_KSX1001, 1, 2,		\
+#define REGISTRY_KSX1001_G0	{ CHARSET_KSX1001, 0, 2,		\
+				  ksx1001_init,				\
+				  ksx1001_decoder, ksx1001_encoder }
+#define REGISTRY_KSX1001_G1	{ CHARSET_KSX1001, 1, 2,		\
 				  ksx1001_init,				\
 				  ksx1001_decoder, ksx1001_encoder }
 #define REGISTRY_JISX0201_R	{ CHARSET_JISX0201_R, 0, 1,		\
@@ -1034,7 +1037,7 @@ dummy_encoder(const ucs4_t *data, Py_ssize_t *length)
 				  jisx0213_init,			\
 				  jisx0213_2004_2_decoder,		\
 				  jisx0213_2004_2_encoder }
-#define REGISTRY_GB2312		{ CHARSET_GB2312, 1, 2,			\
+#define REGISTRY_GB2312		{ CHARSET_GB2312, 0, 2,			\
 				  gb2312_init,				\
 				  gb2312_decoder, gb2312_encoder }
 #define REGISTRY_CNS11643_1	{ CHARSET_CNS11643_1, 1, 2,		\
@@ -1054,7 +1057,7 @@ dummy_encoder(const ucs4_t *data, Py_ssize_t *length)
 	};
 
 static const struct iso2022_designation iso2022_kr_designations[] = {
-	REGISTRY_KSX1001, REGISTRY_SENTINEL
+	REGISTRY_KSX1001_G1, REGISTRY_SENTINEL
 };
 CONFIGDEF(kr, 0)
 
@@ -1071,7 +1074,7 @@ static const struct iso2022_designation iso2022_jp_1_designations[] = {
 CONFIGDEF(jp_1, NO_SHIFT | USE_JISX0208_EXT)
 
 static const struct iso2022_designation iso2022_jp_2_designations[] = {
-	REGISTRY_JISX0208, REGISTRY_JISX0212, REGISTRY_KSX1001,
+	REGISTRY_JISX0208, REGISTRY_JISX0212, REGISTRY_KSX1001_G0,
 	REGISTRY_GB2312, REGISTRY_JISX0201_R, REGISTRY_JISX0208_O,
 	REGISTRY_ISO8859_1, REGISTRY_ISO8859_7, REGISTRY_SENTINEL
 };

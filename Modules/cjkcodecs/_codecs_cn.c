@@ -15,14 +15,26 @@
 #undef hz
 #endif
 
-#define GBK_PREDECODE(dc1, dc2, assi) \
+/* GBK and GB2312 map differently in few codepoints that are listed below:
+ *
+ *		gb2312				gbk
+ * A1A4		U+30FB KATAKANA MIDDLE DOT	U+00B7 MIDDLE DOT
+ * A1AA		U+2015 HORIZONTAL BAR		U+2014 EM DASH
+ * A844		undefined			U+2015 HORIZONTAL BAR
+ */
+
+#define GBK_DECODE(dc1, dc2, assi) \
 	if ((dc1) == 0xa1 && (dc2) == 0xaa) (assi) = 0x2014; \
 	else if ((dc1) == 0xa8 && (dc2) == 0x44) (assi) = 0x2015; \
-	else if ((dc1) == 0xa1 && (dc2) == 0xa4) (assi) = 0x00b7;
-#define GBK_PREENCODE(code, assi) \
+	else if ((dc1) == 0xa1 && (dc2) == 0xa4) (assi) = 0x00b7; \
+	else TRYMAP_DEC(gb2312, assi, dc1 ^ 0x80, dc2 ^ 0x80); \
+	else TRYMAP_DEC(gbkext, assi, dc1, dc2);
+
+#define GBK_ENCODE(code, assi) \
 	if ((code) == 0x2014) (assi) = 0xa1aa; \
 	else if ((code) == 0x2015) (assi) = 0xa844; \
-	else if ((code) == 0x00b7) (assi) = 0xa1a4;
+	else if ((code) == 0x00b7) (assi) = 0xa1a4; \
+	else if ((code) != 0x30fb && TRYMAP_ENC_COND(gbcommon, assi, code));
 
 /*
  * GB2312 codec
@@ -99,8 +111,7 @@ ENCODER(gbk)
 
 		REQUIRE_OUTBUF(2)
 
-		GBK_PREENCODE(c, code)
-		else TRYMAP_ENC(gbcommon, code, c);
+		GBK_ENCODE(c, code)
 		else return 1;
 
 		OUT1((code >> 8) | 0x80)
@@ -129,9 +140,7 @@ DECODER(gbk)
 
 		REQUIRE_INBUF(2)
 
-		GBK_PREDECODE(c, IN2, **outbuf)
-		else TRYMAP_DEC(gb2312, **outbuf, c ^ 0x80, IN2 ^ 0x80);
-		else TRYMAP_DEC(gbkext, **outbuf, c, IN2);
+		GBK_DECODE(c, IN2, **outbuf)
 		else return 2;
 
 		NEXT(2, 1)
@@ -187,9 +196,7 @@ ENCODER(gb18030)
 
 		REQUIRE_OUTBUF(2)
 
-		GBK_PREENCODE(c, code)
-		else TRYMAP_ENC(gbcommon, code, c);
-		else TRYMAP_ENC(gb18030ext, code, c);
+		GBK_ENCODE(c, code)
 		else {
 			const struct _gb18030_to_unibmp_ranges *utrrange;
 
@@ -287,9 +294,7 @@ DECODER(gb18030)
 			return 4;
 		}
 
-		GBK_PREDECODE(c, c2, **outbuf)
-		else TRYMAP_DEC(gb2312, **outbuf, c ^ 0x80, c2 ^ 0x80);
-		else TRYMAP_DEC(gbkext, **outbuf, c, c2);
+		GBK_DECODE(c, c2, **outbuf)
 		else TRYMAP_DEC(gb18030ext, **outbuf, c, c2);
 		else return 2;
 
