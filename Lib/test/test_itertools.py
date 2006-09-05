@@ -371,6 +371,7 @@ class TestBasicOps(unittest.TestCase):
 
         # test values of n
         self.assertRaises(TypeError, tee, 'abc', 'invalid')
+        self.assertRaises(ValueError, tee, [], -1)
         for n in xrange(5):
             result = tee('abc', n)
             self.assertEqual(type(result), tuple)
