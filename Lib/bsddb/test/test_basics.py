@@ -697,7 +697,7 @@ class BasicTransactionTestCase(BasicTestCase):
         for log in logs:
             if verbose:
                 print 'log file: ' + log
-        if db.version >= (4,2):
+        if db.version() >= (4,2):
             logs = self.env.log_archive(db.DB_ARCH_REMOVE)
             assert not logs
 
