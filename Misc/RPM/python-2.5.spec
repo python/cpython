@@ -33,7 +33,7 @@
 #################################
 
 %define name python
-%define version 2.5c1
+%define version 2.5c2
 %define libvers 2.5
 %define release 1pydotorg
 %define __prefix /usr
@@ -52,7 +52,7 @@ Summary: An interpreted, interactive, object-oriented programming language.
 Name: %{name}%{binsuffix}
 Version: %{version}
 Release: %{release}
-Copyright: Modified CNRI Open Source License
+License: Python Software Foundation
 Group: Development/Languages
 Source: Python-%{version}.tar.bz2
 %if %{include_docs}
@@ -239,14 +239,16 @@ make prefix=$RPM_BUILD_ROOT%{__prefix} install
 #  REPLACE PATH IN PYDOC
 if [ ! -z "%{binsuffix}" ]
 then
-   (
-      cd $RPM_BUILD_ROOT%{__prefix}/bin
-      mv pydoc pydoc.old
-      sed 's|#!.*|#!%{__prefix}/bin/env python'%{binsuffix}'|' \
-            pydoc.old >pydoc
-      chmod 755 pydoc
-      rm -f pydoc.old
-   )
+   for file in pydoc python-config; do
+      (
+         cd $RPM_BUILD_ROOT%{__prefix}/bin
+         mv "$file" "$file".old
+         sed 's|#!.*|#!%{__prefix}/bin/env python'%{binsuffix}'|' \
+               "$file".old >"$file"
+         chmod 755 "$file"
+         rm -f "$file".old
+      )
+   done
 fi
 
 #  add the binsuffix
@@ -255,8 +257,10 @@ then
    ( cd $RPM_BUILD_ROOT%{__prefix}/bin; rm -f python[0-9a-zA-Z]*;
          mv -f python python"%{binsuffix}" )
    ( cd $RPM_BUILD_ROOT%{__prefix}/man/man1; mv python.1 python%{binsuffix}.1 )
-   ( cd $RPM_BUILD_ROOT%{__prefix}/bin; mv -f pydoc pydoc"%{binsuffix}" )
-   ( cd $RPM_BUILD_ROOT%{__prefix}/bin; mv -f idle idle"%{binsuffix}" )
+   ( cd $RPM_BUILD_ROOT%{__prefix}/bin; mv -f smtpd.py python-smtpd )
+   for file in pydoc idle python-config python-smtpd; do
+      ( cd $RPM_BUILD_ROOT%{__prefix}/bin; mv -f "$file" "$file""%{binsuffix}" )
+   done
 fi
 
 ########
@@ -276,13 +280,19 @@ find "$RPM_BUILD_ROOT""%{__prefix}"/%{libdirname}/python%{libvers}/lib-dynload -
 	grep -v -e '_tkinter.so$' >mainpkg.files
 find "$RPM_BUILD_ROOT""%{__prefix}"/bin -type f |
 	sed "s|^${RPM_BUILD_ROOT}|/|" |
+	grep -v -e '/bin/setup-config%{binsuffix}$' |
 	grep -v -e '/bin/idle%{binsuffix}$' >>mainpkg.files
 
 rm -f tools.files
 find "$RPM_BUILD_ROOT""%{__prefix}"/%{libdirname}/python%{libvers}/idlelib \
       "$RPM_BUILD_ROOT""%{__prefix}"/%{libdirname}/python%{libvers}/Tools -type f |
+      grep -v -e '\\.pyc$' -e '\\.pyo$' |
       sed "s|^${RPM_BUILD_ROOT}|/|" >tools.files
 echo "%{__prefix}"/bin/idle%{binsuffix} >>tools.files
+grep '\.py$' tools.files | sed 's/$/c/' | grep -v /idlelib/ >tools.files.tmp
+grep '\.py$' tools.files | sed 's/$/o/' | grep -v /idlelib/ >>tools.files.tmp
+cat tools.files.tmp >>tools.files
+rm tools.files.tmp
 
 ######
 # Docs
@@ -346,7 +356,6 @@ rm -f mainpkg.files tools.files
 %{__prefix}/%{libdirname}/python%{libvers}/*.txt
 %{__prefix}/%{libdirname}/python%{libvers}/*.py*
 %{__prefix}/%{libdirname}/python%{libvers}/pdb.doc
-%{__prefix}/%{libdirname}/python%{libvers}/profile.doc
 %{__prefix}/%{libdirname}/python%{libvers}/curses
 %{__prefix}/%{libdirname}/python%{libvers}/distutils
 %{__prefix}/%{libdirname}/python%{libvers}/encodings
@@ -355,13 +364,14 @@ rm -f mainpkg.files tools.files
 %{__prefix}/%{libdirname}/python%{libvers}/test
 %{__prefix}/%{libdirname}/python%{libvers}/xml
 %{__prefix}/%{libdirname}/python%{libvers}/email
-%{__prefix}/%{libdirname}/python%{libvers}/email/mime
 %{__prefix}/%{libdirname}/python%{libvers}/sqlite3
 %{__prefix}/%{libdirname}/python%{libvers}/compiler
 %{__prefix}/%{libdirname}/python%{libvers}/bsddb
 %{__prefix}/%{libdirname}/python%{libvers}/hotshot
 %{__prefix}/%{libdirname}/python%{libvers}/logging
-%{__prefix}/%{libdirname}/python%{libvers}/lib-old
+%{__prefix}/%{libdirname}/python%{libvers}/wsgiref
+%{__prefix}/%{libdirname}/python%{libvers}/ctypes
+%{__prefix}/%{libdirname}/python%{libvers}/wsgiref.egg-info
 
 %files devel
 %defattr(-,root,root)
