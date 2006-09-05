@@ -1585,7 +1585,10 @@ dict_equal(dictobject *a, dictobject *b)
 			/* temporarily bump aval's refcount to ensure it stays
 			   alive until we're done with it */
 			Py_INCREF(aval);
+			/* ditto for key */
+			Py_INCREF(key);
 			bval = PyDict_GetItem((PyObject *)b, key);
+			Py_DECREF(key);
 			if (bval == NULL) {
 				Py_DECREF(aval);
 				return 0;
