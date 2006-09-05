@@ -15,12 +15,6 @@
 
 #include <assert.h>
 
-/* XXX TO DO
-   - re-indent this file (should be done)
-   - internal error checking (freeing memory, etc.)
-   - syntax errors
-*/
-
 /* Data structure used internally */
 struct compiling {
     char *c_encoding; /* source encoding */
@@ -888,6 +882,11 @@ ast_for_ifexpr(struct compiling *c, const node *n)
     return IfExp(expression, body, orelse, LINENO(n), n->n_col_offset,
                  c->c_arena);
 }
+
+/* XXX(nnorwitz): the listcomp and genexpr code should be refactored
+   so there is only a single version.  Possibly for loops can also re-use
+   the code.
+*/
 
 /* Count the number of 'for' loop in a list comprehension.
 
