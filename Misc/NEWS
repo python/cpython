@@ -19,6 +19,9 @@ Core and builtins
 
 - Patch #1546288: fix seg fault in dict_equal due to ref counting bug.
 
+- The return tuple from str.rpartition(sep) is (tail, sep, head) where
+  head is the original string if sep was not found.
+
 
 Library
 -------
