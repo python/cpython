@@ -69,6 +69,8 @@ Documentation
 Build
 -----
 
+- Patch #1540470, for OpenBSD 4.0.
+
 - Patch #1545507: Exclude ctypes package in Win64 MSI file.
 
 - Fix OpenSSL debug build process.
