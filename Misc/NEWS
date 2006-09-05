@@ -43,6 +43,12 @@ Library
 - Bug #1543303, patch #1543897: remove NUL padding from tarfiles.
 
 
+Extension Modules
+-----------------
+
+- Bug #1550714: fix SystemError from itertools.tee on negative value for n.
+
+
 Tests
 -----
 
