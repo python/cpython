@@ -1069,7 +1069,7 @@ class MixinStrUnicodeUserStringTest:
         # from raymond's original specification
         S = 'http://www.python.org'
         self.checkequal(('http', '://', 'www.python.org'), S, 'rpartition', '://')
-        self.checkequal(('http://www.python.org', '', ''), S, 'rpartition', '?')
+        self.checkequal(('', '', 'http://www.python.org'), S, 'rpartition', '?')
         self.checkequal(('', 'http://', 'www.python.org'), S, 'rpartition', 'http://')
         self.checkequal(('http://www.python.', 'org', ''), S, 'rpartition', 'org')
 
