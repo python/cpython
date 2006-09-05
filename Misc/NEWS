@@ -40,6 +40,13 @@ Library
 - Bug #1543303, patch #1543897: remove NUL padding from tarfiles.
 
 
+Tests
+-----
+
+- Fix bsddb test_basics.test06_Transactions to check the version
+  number properly.
+
+
 Documentation
 -------------
 
