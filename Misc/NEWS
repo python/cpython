@@ -49,7 +49,7 @@ Extension Modules
   - gbk and gb18030 codec now handle U+30FB KATAKANA MIDDLE DOT correctly.
   - iso2022_jp_2 codec now encodes into G0 for KS X 1001, GB2312
     codepoints to conform the standard.
-  - iso2022_jp_3 and iso2022_jp_2004 codec can encode JIS X 2013:2
+  - iso2022_jp_3 and iso2022_jp_2004 codec can encode JIS X 0213:2
     codepoints now.
 
 Tests
