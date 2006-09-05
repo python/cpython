@@ -1115,12 +1115,14 @@ Some examples:
 \begin{verbatim}
 >>> ('http://www.python.org').partition('://')
 ('http', '://', 'www.python.org')
->>> (u'Subject: a quick question').partition(':')
-(u'Subject', u':', u' a quick question')
 >>> ('file:/usr/share/doc/index.html').partition('://')
 ('file:/usr/share/doc/index.html', '', '')
+>>> (u'Subject: a quick question').partition(':')
+(u'Subject', u':', u' a quick question')
 >>> 'www.python.org'.rpartition('.')
 ('www.python', '.', 'org')
+>>> 'www.python.org'.rpartition(':')
+('', '', 'www.python.org')
 \end{verbatim}
 
 (Implemented by Fredrik Lundh following a suggestion by Raymond Hettinger.)
