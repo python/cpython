@@ -983,17 +983,21 @@ ast_for_listcomp(struct compiling *c, const node *n)
 	comprehension_ty lc;
 	asdl_seq *t;
         expr_ty expression;
+        node *for_ch;
 
 	REQ(ch, list_for);
 
-	t = ast_for_exprlist(c, CHILD(ch, 1), Store);
+        for_ch = CHILD(ch, 1);
+        t = ast_for_exprlist(c, for_ch, Store);
         if (!t)
             return NULL;
         expression = ast_for_testlist(c, CHILD(ch, 3));
         if (!expression)
             return NULL;
 
-	if (asdl_seq_LEN(t) == 1)
+        /* Check the # of children rather than the length of t, since
+           [x for x, in ... ] has 1 element in t, but still requires a Tuple. */
+	if (NCH(for_ch) == 1)
 	    lc = comprehension((expr_ty)asdl_seq_GET(t, 0), expression, NULL,
                                c->c_arena);
 	else
@@ -1129,17 +1133,21 @@ ast_for_genexp(struct compiling *c, const node *n)
         comprehension_ty ge;
         asdl_seq *t;
         expr_ty expression;
+        node *for_ch;
         
         REQ(ch, gen_for);
         
-        t = ast_for_exprlist(c, CHILD(ch, 1), Store);
+        for_ch = CHILD(ch, 1);
+        t = ast_for_exprlist(c, for_ch, Store);
         if (!t)
             return NULL;
         expression = ast_for_expr(c, CHILD(ch, 3));
         if (!expression)
             return NULL;
 
-        if (asdl_seq_LEN(t) == 1)
+        /* Check the # of children rather than the length of t, since
+           (x for x, in ...) has 1 element in t, but still requires a Tuple. */
+        if (NCH(for_ch) == 1)
             ge = comprehension((expr_ty)asdl_seq_GET(t, 0), expression,
                                NULL, c->c_arena);
         else
