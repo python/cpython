@@ -59,6 +59,8 @@ Documentation
 Build
 -----
 
+- Patch #1540470, for OpenBSD 4.0.
+
 
 C API
 -----
