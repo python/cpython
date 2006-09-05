@@ -4,10 +4,14 @@
 	Version="8,00"
 	Name="_sqlite3"
 	ProjectGUID="{2FF0A312-22F9-4C34-B070-842916DE27A9}"
+	RootNamespace="_sqlite3"
 	>
 	<Platforms>
 		<Platform
 			Name="Win32"
+		/>
+		<Platform
+			Name="x64"
 		/>
 	</Platforms>
 	<ToolFiles>
@@ -15,8 +19,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\."
-			IntermediateDirectory=".\x86-temp-debug\_sqlite3"
+			OutputDirectory="$(PlatformName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\_sqlite3"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -61,15 +65,16 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="..\..\sqlite-source-3.3.4\sqlite3.lib"
-				OutputFile="./_sqlite3_d.pyd"
+				OutputFile="$(OutDir)\_sqlite3_d.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="$(OutDir)"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\./_sqlite3_d.pdb"
+				ProgramDatabaseFile=""
 				SubSystem="2"
 				BaseAddress="0x1e180000"
-				ImportLibrary=".\./_sqlite3_d.lib"
+				ImportLibrary=""
 				TargetMachine="1"
 			/>
 			<Tool
@@ -98,9 +103,95 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\_sqlite"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\Include;..\PC;..\..\sqlite-source-3.3.4"
+				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;MODULE_NAME=\&quot;sqlite3\&quot;"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="..\..\sqlite-source-3.3.4\sqlite3.lib"
+				OutputFile="$(OutDir)\_sqlite3_d.pyd"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="$(OutDir)"
+				IgnoreDefaultLibraryNames=""
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile=""
+				SubSystem="2"
+				BaseAddress="0x1e180000"
+				ImportLibrary=""
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\."
-			IntermediateDirectory=".\x86-temp-release\_sqlite3"
+			OutputDirectory="$(PlatformName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\_sqlite3"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -148,15 +239,16 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="..\..\sqlite-source-3.3.4\sqlite3.lib"
-				OutputFile="./_sqlite3.pyd"
+				OutputFile="$(OutDir)\_sqlite3.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="$(OutDir)"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\./_sqlite3.pdb"
+				ProgramDatabaseFile=""
 				SubSystem="2"
 				BaseAddress="0x1e180000"
-				ImportLibrary=".\./_sqlite3.lib"
+				ImportLibrary=""
 				TargetMachine="1"
 			/>
 			<Tool
@@ -185,9 +277,9 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="ReleaseItanium|Win32"
-			OutputDirectory="./."
-			IntermediateDirectory=".\ia64-temp-release\_sqlite3"
+			Name="Release|x64"
+			OutputDirectory="$(PlatformName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\_sqlite3"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -207,23 +299,20 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions=" /USECL:MS_ITANIUM"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\Include;..\PC;..\..\sqlite-source-3.3.4"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;MODULE_NAME=\&quot;sqlite3\&quot;"
 				StringPooling="true"
-				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
-				BufferSecurityCheck="false"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
-				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
 				CompileAs="0"
 			/>
@@ -238,110 +327,18 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\sqlite-source-3.3.4\ia64\sqlite3.lib"
-				OutputFile="./_sqlite3.pyd"
+				AdditionalDependencies="..\..\sqlite-source-3.3.4\sqlite3.lib"
+				OutputFile="$(OutDir)\_sqlite3.pyd"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="$(OutDir)"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\./_sqlite3.pdb"
+				ProgramDatabaseFile=""
 				SubSystem="2"
 				BaseAddress="0x1e180000"
-				ImportLibrary=".\./_sqlite3.lib"
-				TargetMachine="0"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="ReleaseAMD64|Win32"
-			OutputDirectory="."
-			IntermediateDirectory="amd64-temp-release\_sqlite3"
-			ConfigurationType="2"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalOptions=" /USECL:MS_OPTERON"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\Include;..\PC;..\..\sqlite-source-3.3.4"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;MODULE_NAME=\&quot;sqlite3\&quot;"
-				StringPooling="true"
-				BasicRuntimeChecks="0"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="false"
-				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
-				CompileAs="0"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
-				AdditionalDependencies="..\..\sqlite-source-3.3.4\amd64\sqlite3.lib"
-				OutputFile="./_sqlite3.pyd"
-				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				IgnoreDefaultLibraryNames=""
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\./_sqlite3.pdb"
-				SubSystem="2"
-				BaseAddress="0x1e180000"
-				ImportLibrary=".\./_sqlite3.lib"
-				TargetMachine="0"
+				ImportLibrary=""
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
