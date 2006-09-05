@@ -564,8 +564,14 @@ i_divmod(register long x, register long y,
 				"integer division or modulo by zero");
 		return DIVMOD_ERROR;
 	}
-	/* (-sys.maxint-1)/-1 is the only overflow case. */
-	if (y == -1 && x < 0 && x == -x)
+	/* (-sys.maxint-1)/-1 is the only overflow case.  x is the most
+	 * negative long iff x < 0 and, on a 2's-complement box, x == -x.
+	 * However, -x is undefined (by C) if x /is/ the most negative long
+	 * (it's a signed overflow case), and some compilers care.  So we cast
+	 * x to unsigned long first.  However, then other compilers warn about
+	 * applying unary minus to an unsigned operand.  Hence the weird "0-".
+	 */
+	if (y == -1 && x < 0 && (unsigned long)x == 0-(unsigned long)x)
 		return DIVMOD_OVERFLOW;
 	xdivy = x / y;
 	xmody = x - xdivy * y;
