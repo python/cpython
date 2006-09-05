@@ -12,6 +12,9 @@ What's New in Python 2.5?
 Core and builtins
 -----------------
 
+- Overflow checking code in integer division ran afoul of new gcc
+  optimizations.  Changed to be more standard-conforming.
+
 - Patch #1541585: fix buffer overrun when performing repr() on
   a unicode string in a build with wide unicode (UCS-4) support.
 
@@ -127,7 +130,7 @@ Library
 - The __repr__ method of a NULL ctypes.py_object() no longer raises
   an exception.
 
-- uuid.UUID now has a bytes_le attribute. This returns the UUID in 
+- uuid.UUID now has a bytes_le attribute. This returns the UUID in
   little-endian byte order for Windows. In addition, uuid.py gained some
   workarounds for clocks with low resolution, to stop the code yielding
   duplicate UUIDs.
@@ -286,7 +289,7 @@ Library
 - Bug #1002398: The documentation for os.path.sameopenfile now correctly
   refers to file descriptors, not file objects.
 
-- The renaming of the xml package to xmlcore, and the import hackery done 
+- The renaming of the xml package to xmlcore, and the import hackery done
   to make it appear at both names, has been removed.  Bug #1511497,
   #1513611, and probably others.
 
