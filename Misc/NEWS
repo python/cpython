@@ -22,6 +22,11 @@ Core and builtins
 - The return tuple from str.rpartition(sep) is (tail, sep, head) where
   head is the original string if sep was not found.
 
+- Bug #1520864: unpacking singleton tuples in list comprehensions and
+  generator expressions (x for x, in ... ) works again.  Fixing this problem
+  required changing the .pyc magic number.  This means that .pyc files
+  generated before 2.5c2 will be regenerated.
+
 
 Library
 -------
