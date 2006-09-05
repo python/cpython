@@ -96,6 +96,10 @@ What's New in Python 2.5 release candidate 1?
 Core and builtins
 -----------------
 
+- Fix infinite recursion when subclassing long and overriding __hash__.
+
+- Fix concatenation (+=) of long strings.
+
 - Unicode objects will no longer raise an exception when being
   compared equal or unequal to a string and a UnicodeDecodeError
   exception occurs, e.g. as result of a decoding failure.
