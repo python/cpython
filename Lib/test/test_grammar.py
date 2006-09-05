@@ -825,6 +825,10 @@ verify([(i,j) for i in range(10) for j in range(5)] == list(g))
 verify([ x for x in range(10) if x % 2 if x % 3 ], [1, 5, 7])
 verify((x for x in range(10) if x % 2 if x % 3), [1, 5, 7])
 
+# Verify unpacking single element tuples in listcomp/genexp.
+vereq([x for x, in [(4,), (5,), (6,)]], [4, 5, 6])
+vereq(list(x for x, in [(7,), (8,), (9,)]), [7, 8, 9])
+
 # Test ifelse expressions in various cases
 def _checkeval(msg, ret):
     "helper to check that evaluation of expressions is done correctly"
