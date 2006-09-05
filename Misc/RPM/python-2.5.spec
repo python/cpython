@@ -286,7 +286,7 @@ find "$RPM_BUILD_ROOT""%{__prefix}"/bin -type f |
 rm -f tools.files
 find "$RPM_BUILD_ROOT""%{__prefix}"/%{libdirname}/python%{libvers}/idlelib \
       "$RPM_BUILD_ROOT""%{__prefix}"/%{libdirname}/python%{libvers}/Tools -type f |
-      grep -v -e '\\.pyc$' -e '\\.pyo$' |
+      grep -v -e '\.pyc$' -e '\.pyo$' |
       sed "s|^${RPM_BUILD_ROOT}|/|" >tools.files
 echo "%{__prefix}"/bin/idle%{binsuffix} >>tools.files
 grep '\.py$' tools.files | sed 's/$/c/' | grep -v /idlelib/ >tools.files.tmp
