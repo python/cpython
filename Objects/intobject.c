@@ -565,7 +565,7 @@ i_divmod(register long x, register long y,
 		return DIVMOD_ERROR;
 	}
 	/* (-sys.maxint-1)/-1 is the only overflow case. */
-	if (y == -1 && x < 0 && x == -x)
+	if (y == -1 && x == LONG_MIN)
 		return DIVMOD_OVERFLOW;
 	xdivy = x / y;
 	xmody = x - xdivy * y;
