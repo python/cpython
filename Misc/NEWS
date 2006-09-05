@@ -9,6 +9,13 @@ What's New in Python 2.5?
 
 *Release date: XX-SEP-2006*
 
+(Hopefully nothing.)
+
+What's New in Python 2.5 release candidate 2?
+=============================================
+
+*Release date: XX-SEP-2006*
+
 Core and builtins
 -----------------
 
@@ -18,12 +25,14 @@ Core and builtins
 - Patch #1541585: fix buffer overrun when performing repr() on
   a unicode string in a build with wide unicode (UCS-4) support.
 
+- Patch #1546288: fix seg fault in dict_equal due to ref counting bug.
+
 
 Library
 -------
 
 - Patch #1550886: Fix decimal module context management implementation
-  to match the localcontext() example from PEP 343
+  to match the localcontext() example from PEP 343.
 
 - Bug #1541863: uuid.uuid1 failed to generate unique identifiers
   on systems with low clock resolution.
