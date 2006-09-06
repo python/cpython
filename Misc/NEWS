@@ -81,6 +81,13 @@ Documentation
   to a newly created list object and add notes that this isn't a good idea.
 
 
+Tools
+-----
+
+- Bug #1546372: Fixed small bugglet in pybench that caused a missing
+  file not to get reported properly.
+
+
 Build
 -----
 
