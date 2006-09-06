@@ -234,48 +234,6 @@ class ProcessTestCase(unittest.TestCase):
         stripped = remove_stderr_debug_decorations(output)
         self.assertEqual(stripped, "appleorange")
 
-    def test_stdout_filedes_of_stdout(self):
-        # stdout is set to sys.stdout.fileno() (#1531862).
-        cmd = r"import sys, os; sys.exit(os.write(sys.stderr.fileno(), '.\n'))"
-        rc = subprocess.call([sys.executable, "-c", cmd],
-                             stdout=sys.stdout.fileno())
-        self.assertEquals(rc, 2)
-
-    def test_stdout_fileobj_of_stdout(self):
-        # stdout is set to sys.stdout (#1531862).
-        cmd = r"import sys, os; sys.exit(os.write(sys.stderr.fileno(), '.\n'))"
-        rc = subprocess.call([sys.executable, "-c", cmd],
-                             stdout=sys.stdout)
-        self.assertEquals(rc, 2)
-
-    def test_stdout_fileobj_of_stderr(self):
-        # stdout is set to sys.stderr (#1531862).
-        cmd = r"import sys, os; sys.exit(os.write(sys.stderr.fileno(), '.\n'))"
-        rc = subprocess.call([sys.executable, "-c", cmd],
-                             stdout=sys.stderr)
-        self.assertEquals(rc, 2)
-
-    def test_stderr_filedes_of_stderr(self):
-        # stderr is set to sys.stderr.fileno() (#1531862).
-        cmd = r"import sys, os; sys.exit(os.write(sys.stderr.fileno(), '.\n'))"
-        rc = subprocess.call([sys.executable, "-c", cmd],
-                             stderr=sys.stderr.fileno())
-        self.assertEquals(rc, 2)
-
-    def test_stderr_fileobj_of_stderr(self):
-        # stderr is set to sys.stderr (#1531862).
-        cmd = r"import sys, os; sys.exit(os.write(sys.stderr.fileno(), '.\n'))"
-        rc = subprocess.call([sys.executable, "-c", cmd],
-                             stderr=sys.stderr)
-        self.assertEquals(rc, 2)
-
-    def test_stderr_fileobj_of_stdout(self):
-        # stderr is set to sys.stdout (#1531862).
-        cmd = r"import sys, os; sys.exit(os.write(sys.stderr.fileno(), '.\n'))"
-        rc = subprocess.call([sys.executable, "-c", cmd],
-                             stderr=sys.stdout)
-        self.assertEquals(rc, 2)
-
     def test_cwd(self):
         tmpdir = os.getenv("TEMP", "/tmp")
         # We cannot use os.path.realpath to canonicalize the path,
