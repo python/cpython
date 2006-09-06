@@ -212,6 +212,7 @@ static PyTypeObject *Str_type;
 static char *Str_fields[]={
         "s",
 };
+static PyTypeObject *Ellipsis_type;
 static PyTypeObject *Attribute_type;
 static char *Attribute_fields[]={
         "value",
@@ -251,7 +252,6 @@ static PyTypeObject *AugStore_type;
 static PyTypeObject *Param_type;
 static PyTypeObject *slice_type;
 static PyObject* ast2obj_slice(void*);
-static PyTypeObject *Ellipsis_type;
 static PyTypeObject *Slice_type;
 static char *Slice_fields[]={
         "lower",
@@ -530,6 +530,8 @@ static int init_types(void)
         if (!Num_type) return 0;
         Str_type = make_type("Str", expr_type, Str_fields, 1);
         if (!Str_type) return 0;
+        Ellipsis_type = make_type("Ellipsis", expr_type, NULL, 0);
+        if (!Ellipsis_type) return 0;
         Attribute_type = make_type("Attribute", expr_type, Attribute_fields, 3);
         if (!Attribute_type) return 0;
         Subscript_type = make_type("Subscript", expr_type, Subscript_fields, 3);
@@ -570,8 +572,6 @@ static int init_types(void)
         slice_type = make_type("slice", AST_type, NULL, 0);
         if (!slice_type) return 0;
         if (!add_attributes(slice_type, NULL, 0)) return 0;
-        Ellipsis_type = make_type("Ellipsis", slice_type, NULL, 0);
-        if (!Ellipsis_type) return 0;
         Slice_type = make_type("Slice", slice_type, Slice_fields, 3);
         if (!Slice_type) return 0;
         ExtSlice_type = make_type("ExtSlice", slice_type, ExtSlice_fields, 1);
@@ -1579,6 +1579,21 @@ Str(string s, int lineno, int col_offset, PyArena *arena)
 }
 
 expr_ty
+Ellipsis(int lineno, int col_offset, PyArena *arena)
+{
+        expr_ty p;
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p) {
+                PyErr_NoMemory();
+                return NULL;
+        }
+        p->kind = Ellipsis_kind;
+        p->lineno = lineno;
+        p->col_offset = col_offset;
+        return p;
+}
+
+expr_ty
 Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno, int
           col_offset, PyArena *arena)
 {
@@ -1717,19 +1732,6 @@ Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset, PyArena
         p->v.Tuple.ctx = ctx;
         p->lineno = lineno;
         p->col_offset = col_offset;
-        return p;
-}
-
-slice_ty
-Ellipsis(PyArena *arena)
-{
-        slice_ty p;
-        p = (slice_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
-                return NULL;
-        }
-        p->kind = Ellipsis_kind;
         return p;
 }
 
@@ -2515,6 +2517,10 @@ ast2obj_expr(void* _o)
                         goto failed;
                 Py_DECREF(value);
                 break;
+        case Ellipsis_kind:
+                result = PyType_GenericNew(Ellipsis_type, NULL, NULL);
+                if (!result) goto failed;
+                break;
         case Attribute_kind:
                 result = PyType_GenericNew(Attribute_type, NULL, NULL);
                 if (!result) goto failed;
@@ -2648,10 +2654,6 @@ ast2obj_slice(void* _o)
         }
 
         switch (o->kind) {
-        case Ellipsis_kind:
-                result = PyType_GenericNew(Ellipsis_type, NULL, NULL);
-                if (!result) goto failed;
-                break;
         case Slice_kind:
                 result = PyType_GenericNew(Slice_type, NULL, NULL);
                 if (!result) goto failed;
@@ -3059,6 +3061,8 @@ init_ast(void)
         if (PyDict_SetItemString(d, "Call", (PyObject*)Call_type) < 0) return;
         if (PyDict_SetItemString(d, "Num", (PyObject*)Num_type) < 0) return;
         if (PyDict_SetItemString(d, "Str", (PyObject*)Str_type) < 0) return;
+        if (PyDict_SetItemString(d, "Ellipsis", (PyObject*)Ellipsis_type) < 0)
+            return;
         if (PyDict_SetItemString(d, "Attribute", (PyObject*)Attribute_type) <
             0) return;
         if (PyDict_SetItemString(d, "Subscript", (PyObject*)Subscript_type) <
@@ -3077,8 +3081,6 @@ init_ast(void)
             return;
         if (PyDict_SetItemString(d, "Param", (PyObject*)Param_type) < 0) return;
         if (PyDict_SetItemString(d, "slice", (PyObject*)slice_type) < 0) return;
-        if (PyDict_SetItemString(d, "Ellipsis", (PyObject*)Ellipsis_type) < 0)
-            return;
         if (PyDict_SetItemString(d, "Slice", (PyObject*)Slice_type) < 0) return;
         if (PyDict_SetItemString(d, "ExtSlice", (PyObject*)ExtSlice_type) < 0)
             return;

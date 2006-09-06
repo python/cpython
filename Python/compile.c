@@ -2746,6 +2746,8 @@ static int
 expr_constant(expr_ty e)
 {
 	switch (e->kind) {
+	case Ellipsis_kind:
+		return 1;
 	case Num_kind:
 		return PyObject_IsTrue(e->v.Num.n);
 	case Str_kind:
@@ -2976,6 +2978,9 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 		break;
 	case Str_kind:
 		ADDOP_O(c, LOAD_CONST, e->v.Str.s, consts);
+		break;
+	case Ellipsis_kind:
+		ADDOP_O(c, LOAD_CONST, Py_Ellipsis, consts);
 		break;
 	/* The following exprs can be assignment targets. */
 	case Attribute_kind:
@@ -3255,9 +3260,6 @@ compiler_visit_nested_slice(struct compiler *c, slice_ty s,
 			    expr_context_ty ctx)
 {
 	switch (s->kind) {
-	case Ellipsis_kind:
-		ADDOP_O(c, LOAD_CONST, Py_Ellipsis, consts);
-		break;
 	case Slice_kind:
 		return compiler_slice(c, s, ctx);
 	case Index_kind:
@@ -3282,12 +3284,6 @@ compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 		kindname = "index";
 		if (ctx != AugStore) {
 			VISIT(c, expr, s->v.Index.value);
-		}
-		break;
-	case Ellipsis_kind:
-		kindname = "ellipsis";
-		if (ctx != AugStore) {
-			ADDOP_O(c, LOAD_CONST, Py_Ellipsis, consts);
 		}
 		break;
 	case Slice_kind:
