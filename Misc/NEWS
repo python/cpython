@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1542051: Exceptions now correctly call PyObject_GC_UnTrack.
+  Also make sure that every exception class has __module__ set to
+  'exceptions'.
+
 - Bug #1550983: emit better error messages for erroneous relative
   imports (if not in package and if beyond toplevel package).
 
@@ -35,6 +39,8 @@ Core and builtins
 
 Library
 -------
+
+- Fix missing import of the types module in logging.config.
 
 - Patch #1550886: Fix decimal module context management implementation
   to match the localcontext() example from PEP 343.
