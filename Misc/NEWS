@@ -12,6 +12,10 @@ What's New in Python 2.4.4c1?
 Core and builtins
 -----------------
 
+- Bug #1542051: Exceptions now correctly call PyObject_GC_UnTrack.
+  Also make sure that every exception class has __module__ set to
+  'exceptions'.
+
 - Overflow checking code in integer division ran afoul of new gcc
   optimizations.  Changed to be more standard-conforming.
 
@@ -85,6 +89,8 @@ Extension Modules
 
 Library
 -------
+
+- Fix missing import of the types module in logging.config.
 
 - Bug #1112549, DoS attack on cgi.FieldStorage.
 

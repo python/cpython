@@ -27,7 +27,7 @@ Copyright (C) 2001-2004 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, logging, logging.handlers, string, socket, struct, os, traceback
+import sys, logging, logging.handlers, string, socket, struct, os, traceback, types
 
 try:
     import thread
