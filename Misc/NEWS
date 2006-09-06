@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1550983: emit better error messages for erroneous relative
+  imports (if not in package and if beyond toplevel package).
+
 - Overflow checking code in integer division ran afoul of new gcc
   optimizations.  Changed to be more standard-conforming.
 
