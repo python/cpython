@@ -61,7 +61,7 @@ class CompilerTest(unittest.TestCase):
         c = compiler.compile("try:\n 1/0\nexcept:\n e = 1\nfinally:\n f = 1",
                              "<string>", "exec")
         dct = {}
-        exec c in dct
+        exec(c, dct)
         self.assertEquals(dct.get('e'), 1)
         self.assertEquals(dct.get('f'), 1)
 
@@ -73,7 +73,7 @@ class CompilerTest(unittest.TestCase):
         self.assert_('__doc__' in c.co_names)
         c = compiler.compile('def f():\n "doc"', '<string>', 'exec')
         g = {}
-        exec c in g
+        exec(c, g)
         self.assertEquals(g['f'].__doc__, "doc")
 
     def testLineNo(self):
@@ -113,7 +113,7 @@ class CompilerTest(unittest.TestCase):
                              '<string>',
                              'exec')
         dct = {}
-        exec c in dct
+        exec(c, dct)
         self.assertEquals(dct.get('result'), 3)
 
     def testGenExp(self):

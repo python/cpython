@@ -113,7 +113,7 @@ Notes:
   future division statement.
 
 - Warnings may be issued for code not read from a file, but executed
-  using an exec statement or the eval() function.  These may have
+  using the exec() or eval() functions.  These may have
   <string> in the filename position, in which case the fixdiv script
   will attempt and fail to open a file named '<string>' and issue a
   warning about this failure; or these may be reported as 'Phantom'

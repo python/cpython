@@ -6,5 +6,5 @@ python|Python|py:\
         :pb=^\d?(def|class)\d\p(\d|\\|\(|\:):\
         :cb=#:ce=$:sb=":se=\e":lb=':le=\e':\
         :kw=assert and break class continue def del elif else except\
-         exec finally for from global if import in is lambda not or\
+         finally for from global if import in is lambda not or\
          pass print raise return try while yield:

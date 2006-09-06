@@ -82,11 +82,11 @@ try:
             f = getattr(_hashlib, opensslFuncName)
             f()
             # Use the C function directly (very fast)
-            exec funcName + ' = f'
+            exec(funcName + ' = f')
         except ValueError:
             try:
                 # Use the builtin implementation directly (fast)
-                exec funcName + ' = __get_builtin_constructor(funcName)'
+                exec(funcName + ' = __get_builtin_constructor(funcName)')
             except ValueError:
                 # this one has no builtin implementation, don't define it
                 pass

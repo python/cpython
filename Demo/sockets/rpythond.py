@@ -40,7 +40,7 @@ def execute(request):
     sys.stdout = sys.stderr = fakefile = StringIO.StringIO()
     try:
         try:
-            exec request in {}, {}
+            exec(request, {}, {})
         except:
             print
             traceback.print_exc(100)

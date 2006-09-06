@@ -848,7 +848,7 @@ VALIDATER(raise_stmt);          VALIDATER(import_stmt);
 VALIDATER(import_name);         VALIDATER(import_from);
 VALIDATER(global_stmt);         VALIDATER(list_if);
 VALIDATER(assert_stmt);         VALIDATER(list_for);
-VALIDATER(exec_stmt);           VALIDATER(compound_stmt);
+VALIDATER(compound_stmt);
 VALIDATER(while);               VALIDATER(for);
 VALIDATER(try);                 VALIDATER(except_clause);
 VALIDATER(test);                VALIDATER(and_test);
@@ -1465,8 +1465,7 @@ validate_small_stmt(node *tree)
               || (ntype == flow_stmt)
               || (ntype == import_stmt)
               || (ntype == global_stmt)
-              || (ntype == assert_stmt)
-              || (ntype == exec_stmt))
+              || (ntype == assert_stmt))
             res = validate_node(CHILD(tree, 0));
         else {
             res = 0;
@@ -1883,32 +1882,6 @@ validate_global_stmt(node *tree)
     for (j = 2; res && (j < nch); j += 2)
         res = (validate_comma(CHILD(tree, j))
                && validate_ntype(CHILD(tree, j + 1), NAME));
-
-    return (res);
-}
-
-
-/*  exec_stmt:
- *
- *  'exec' expr ['in' test [',' test]]
- */
-static int
-validate_exec_stmt(node *tree)
-{
-    int nch = NCH(tree);
-    int res = (validate_ntype(tree, exec_stmt)
-               && ((nch == 2) || (nch == 4) || (nch == 6))
-               && validate_name(CHILD(tree, 0), "exec")
-               && validate_expr(CHILD(tree, 1)));
-
-    if (!res && !PyErr_Occurred())
-        err_string("illegal exec statement");
-    if (res && (nch > 2))
-        res = (validate_name(CHILD(tree, 2), "in")
-               && validate_test(CHILD(tree, 3)));
-    if (res && (nch == 6))
-        res = (validate_comma(CHILD(tree, 4))
-               && validate_test(CHILD(tree, 5)));
 
     return (res);
 }
@@ -2914,7 +2887,7 @@ validate_node(node *tree)
           case small_stmt:
             /*
              *  expr_stmt | print_stmt | del_stmt | pass_stmt | flow_stmt
-             *  | import_stmt | global_stmt | exec_stmt | assert_stmt
+             *  | import_stmt | global_stmt | assert_stmt
              */
             res = validate_small_stmt(tree);
             break;
@@ -2983,9 +2956,6 @@ validate_node(node *tree)
 	    break;
           case global_stmt:
             res = validate_global_stmt(tree);
-            break;
-          case exec_stmt:
-            res = validate_exec_stmt(tree);
             break;
           case assert_stmt:
             res = validate_assert_stmt(tree);

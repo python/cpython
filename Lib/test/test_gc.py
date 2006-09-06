@@ -153,7 +153,7 @@ def test_function():
     # Tricky: f -> d -> f, code should call d.clear() after the exec to
     # break the cycle.
     d = {}
-    exec("def f(): pass\n") in d
+    exec("def f(): pass\n", d)
     gc.collect()
     del d
     expect(gc.collect(), 2, "function")

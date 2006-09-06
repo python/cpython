@@ -440,32 +440,6 @@ class Ellipsis(Node):
     def __repr__(self):
         return "Ellipsis()"
 
-class Exec(Node):
-    def __init__(self, expr, locals, globals, lineno=None):
-        self.expr = expr
-        self.locals = locals
-        self.globals = globals
-        self.lineno = lineno
-
-    def getChildren(self):
-        children = []
-        children.append(self.expr)
-        children.append(self.locals)
-        children.append(self.globals)
-        return tuple(children)
-
-    def getChildNodes(self):
-        nodelist = []
-        nodelist.append(self.expr)
-        if self.locals is not None:
-            nodelist.append(self.locals)
-        if self.globals is not None:
-            nodelist.append(self.globals)
-        return tuple(nodelist)
-
-    def __repr__(self):
-        return "Exec(%s, %s, %s)" % (repr(self.expr), repr(self.locals), repr(self.globals))
-
 class FloorDiv(Node):
     def __init__(self, (left, right), lineno=None):
         self.left = left

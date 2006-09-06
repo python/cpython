@@ -408,11 +408,6 @@ to the local namespace. The module is popped after loading all names.
 This opcode implements \code{from module import *}.
 \end{opcodedesc}
 
-\begin{opcodedesc}{EXEC_STMT}{}
-Implements \code{exec TOS2,TOS1,TOS}.  The compiler fills
-missing optional parameters with \code{None}.
-\end{opcodedesc}
-
 \begin{opcodedesc}{POP_BLOCK}{}
 Removes one block from the block stack.  Per frame, there is a 
 stack of blocks, denoting nested loops, try statements, and such.

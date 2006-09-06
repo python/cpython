@@ -67,7 +67,7 @@ statement or the built-in function eval():
 
     >>> print sorted(a.keys())
     [1, 2]
-    >>> exec "x = 3; print x" in a
+    >>> exec("x = 3; print x", a)
     3
     >>> print sorted(a.keys(), key=lambda x: (str(type(x)), x))
     [1, 2, '__builtins__', 'x']

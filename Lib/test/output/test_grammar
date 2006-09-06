@@ -39,7 +39,6 @@ raise_stmt
 import_name
 import_from
 global_stmt
-exec_stmt
 assert_stmt
 if_stmt
 while_stmt

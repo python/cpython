@@ -362,7 +362,7 @@ class Bdb:
             cmd = cmd+'\n'
         try:
             try:
-                exec cmd in globals, locals
+                exec(cmd, globals, locals)
             except BdbQuit:
                 pass
         finally:

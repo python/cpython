@@ -9,7 +9,7 @@ def main():
     words.sort()
     colwidth = 1 + max(map(len, words))
     nwords = len(words)
-    nrows = (nwords + ncols - 1) / ncols
+    nrows = (nwords + ncols - 1) // ncols
     for irow in range(nrows):
         for icol in range(ncols):
             i = irow + icol * nrows

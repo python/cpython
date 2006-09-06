@@ -198,7 +198,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         globals = self.curframe.f_globals
         try:
             code = compile(line + '\n', '<stdin>', 'single')
-            exec code in globals, locals
+            exec(code, globals, locals)
         except:
             t, v = sys.exc_info()[:2]
             if type(t) == type(''):

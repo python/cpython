@@ -2400,37 +2400,6 @@ ast_for_global_stmt(struct compiling *c, const node *n)
 }
 
 static stmt_ty
-ast_for_exec_stmt(struct compiling *c, const node *n)
-{
-    expr_ty expr1, globals = NULL, locals = NULL;
-    int n_children = NCH(n);
-    if (n_children != 2 && n_children != 4 && n_children != 6) {
-        PyErr_Format(PyExc_SystemError,
-                     "poorly formed 'exec' statement: %d parts to statement",
-                     n_children);
-        return NULL;
-    }
-
-    /* exec_stmt: 'exec' expr ['in' test [',' test]] */
-    REQ(n, exec_stmt);
-    expr1 = ast_for_expr(c, CHILD(n, 1));
-    if (!expr1)
-        return NULL;
-    if (n_children >= 4) {
-        globals = ast_for_expr(c, CHILD(n, 3));
-        if (!globals)
-            return NULL;
-    }
-    if (n_children == 6) {
-        locals = ast_for_expr(c, CHILD(n, 5));
-        if (!locals)
-            return NULL;
-    }
-
-    return Exec(expr1, globals, locals, LINENO(n), n->n_col_offset, c->c_arena);
-}
-
-static stmt_ty
 ast_for_assert_stmt(struct compiling *c, const node *n)
 {
     /* assert_stmt: 'assert' test [',' test] */
@@ -2944,8 +2913,7 @@ ast_for_stmt(struct compiling *c, const node *n)
 	REQ(n, small_stmt);
 	n = CHILD(n, 0);
 	/* small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt
-	             | flow_stmt | import_stmt | global_stmt | exec_stmt
-                     | assert_stmt
+	             | flow_stmt | import_stmt | global_stmt | assert_stmt
 	*/
 	switch (TYPE(n)) {
             case expr_stmt:
@@ -2962,8 +2930,6 @@ ast_for_stmt(struct compiling *c, const node *n)
                 return ast_for_import_stmt(c, n);
             case global_stmt:
                 return ast_for_global_stmt(c, n);
-            case exec_stmt:
-                return ast_for_exec_stmt(c, n);
             case assert_stmt:
                 return ast_for_assert_stmt(c, n);
             default:

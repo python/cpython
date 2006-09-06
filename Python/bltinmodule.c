@@ -403,7 +403,7 @@ PyDoc_STRVAR(compile_doc,
 "compile(source, filename, mode[, flags[, dont_inherit]]) -> code object\n\
 \n\
 Compile the source string (a Python module, statement or expression)\n\
-into a code object that can be executed by the exec statement or eval().\n\
+into a code object that can be executed by exec() or eval().\n\
 The filename will be used for run-time error messages.\n\
 The mode must be 'exec' to compile a module, 'single' to compile a\n\
 single (interactive) statement, or 'eval' to compile an expression.\n\
@@ -542,6 +542,114 @@ or a code object as returned by compile().\n\
 The globals must be a dictionary and locals can be any mappping,\n\
 defaulting to the current globals and locals.\n\
 If only globals is given, locals defaults to it.\n");
+
+static PyObject *
+builtin_exec(PyObject *self, PyObject *args)
+{
+	PyObject *v;
+	PyObject *prog, *globals = Py_None, *locals = Py_None;
+	int plain = 0;
+
+	if (!PyArg_ParseTuple(args, "O|OO:exec", &prog, &globals, &locals))
+		return NULL;
+	
+	if (globals == Py_None) {
+		globals = PyEval_GetGlobals();
+		if (locals == Py_None) {
+			locals = PyEval_GetLocals();
+			plain = 1;
+		}
+		if (!globals || !locals) {
+			PyErr_SetString(PyExc_SystemError,
+					"globals and locals cannot be NULL");
+			return NULL;
+		}
+	}
+	else if (locals == Py_None)
+		locals = globals;
+	if (!PyString_Check(prog) &&
+	    !PyUnicode_Check(prog) &&
+	    !PyCode_Check(prog) &&
+	    !PyFile_Check(prog)) {
+		PyErr_Format(PyExc_TypeError,
+			"exec() arg 1 must be a string, file, or code "
+			"object, not %.100s", prog->ob_type->tp_name);
+		return NULL;
+	}
+	if (!PyDict_Check(globals)) {
+		PyErr_Format(PyExc_TypeError, "exec() arg 2 must be a dict, not %.100s",
+			     globals->ob_type->tp_name);
+		return NULL;
+	}
+	if (!PyMapping_Check(locals)) {
+		PyErr_Format(PyExc_TypeError,
+		    "arg 3 must be a mapping or None, not %.100s",
+		    locals->ob_type->tp_name);
+		return NULL;
+	}
+	if (PyDict_GetItemString(globals, "__builtins__") == NULL) {
+		if (PyDict_SetItemString(globals, "__builtins__",
+					 PyEval_GetBuiltins()) != 0)
+			return NULL;
+	}
+
+	if (PyCode_Check(prog)) {
+		if (PyCode_GetNumFree((PyCodeObject *)prog) > 0) {
+			PyErr_SetString(PyExc_TypeError,
+				"code object passed to exec() may not "
+				"contain free variables");
+			return NULL;
+		}
+		v = PyEval_EvalCode((PyCodeObject *) prog, globals, locals);
+	}
+	else if (PyFile_Check(prog)) {
+		FILE *fp = PyFile_AsFile(prog);
+		char *name = PyString_AsString(PyFile_Name(prog));
+		PyCompilerFlags cf;
+		cf.cf_flags = 0;
+		if (PyEval_MergeCompilerFlags(&cf))
+			v = PyRun_FileFlags(fp, name, Py_file_input, globals,
+					    locals, &cf);
+		else
+			v = PyRun_File(fp, name, Py_file_input, globals,
+				       locals);
+	}
+	else {
+		PyObject *tmp = NULL;
+		char *str;
+		PyCompilerFlags cf;
+		cf.cf_flags = 0;
+#ifdef Py_USING_UNICODE
+		if (PyUnicode_Check(prog)) {
+			tmp = PyUnicode_AsUTF8String(prog);
+			if (tmp == NULL)
+				return NULL;
+			prog = tmp;
+			cf.cf_flags |= PyCF_SOURCE_IS_UTF8;
+		}
+#endif
+		if (PyString_AsStringAndSize(prog, &str, NULL))
+			return NULL;
+		if (PyEval_MergeCompilerFlags(&cf))
+			v = PyRun_StringFlags(str, Py_file_input, globals,
+					      locals, &cf);
+		else
+			v = PyRun_String(str, Py_file_input, globals, locals);
+		Py_XDECREF(tmp);
+	}
+	if (v == NULL)
+		return NULL;
+	Py_DECREF(v);
+	Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(exec_doc,
+"exec(object[, globals[, locals]])\n\
+\n\
+Read and execute code from a object, which can be a string, a code\n\
+object or a file object.\n\
+The globals and locals are dictionaries, defaulting to the current\n\
+globals and locals.  If only globals is given, locals defaults to it.");
 
 
 static PyObject *
@@ -1884,6 +1992,7 @@ static PyMethodDef builtin_methods[] = {
  	{"dir",		builtin_dir,        METH_VARARGS, dir_doc},
  	{"divmod",	builtin_divmod,     METH_VARARGS, divmod_doc},
  	{"eval",	builtin_eval,       METH_VARARGS, eval_doc},
+	{"exec",        builtin_exec,       METH_VARARGS, exec_doc},
  	{"execfile",	builtin_execfile,   METH_VARARGS, execfile_doc},
  	{"filter",	builtin_filter,     METH_VARARGS, filter_doc},
  	{"getattr",	builtin_getattr,    METH_VARARGS, getattr_doc},

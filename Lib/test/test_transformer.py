@@ -24,7 +24,7 @@ class Tests(unittest.TestCase):
             # is correct
             c = compile(s, '<string>', 'single')
             vals = {}
-            exec c in vals
+            exec(c, vals)
             assert vals['a'] == 1
             assert vals['b'] == 2
 

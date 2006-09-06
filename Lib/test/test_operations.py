@@ -30,7 +30,7 @@ for stmt in ['d[x2] = 2',
              'd.pop(x2)',
              'd.update({x2: 2})']:
     try:
-        exec stmt
+        exec(stmt)
     except RuntimeError:
         print "%s: caught the RuntimeError outside" % (stmt,)
     else:

@@ -126,7 +126,7 @@ class UI:
         fp = open(fn, 'w')
 
         try:
-            exec pycode
+            exec(pycode)
         except:
             message('An error occurred:-)')
             return
@@ -371,7 +371,7 @@ def main():
         fp = open(sys.argv[1])
         pycode = fp.read()
         try:
-            exec pycode
+            exec(pycode)
         except:
             sys.stderr.write('An error occurred:-)\n')
             sys.exit(1)

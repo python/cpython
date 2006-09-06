@@ -205,15 +205,6 @@ def unoptimized_clash2():
         return f
 """)
 
-# XXX could allow this for exec with const argument, but what's the point
-check_syntax("""\
-def error(y):
-    exec "a = 1"
-    def f(x):
-        return x + y
-    return f
-""")
-
 check_syntax("""\
 def f(x):
     def g():
@@ -230,7 +221,7 @@ def f():
 
 # and verify a few cases that should work
 
-exec """
+exec("""
 def noproblem1():
     from string import *
     f = lambda x:x
@@ -245,7 +236,7 @@ def noproblem3():
     def f(x):
         global y
         y = x
-"""
+""")
 
 print "12. lambdas"
 
@@ -526,7 +517,7 @@ else:
     print "eval() should have failed, because code contained free vars"
 
 try:
-    exec g.func_code
+    exec(g.func_code)
 except TypeError:
     pass
 else:

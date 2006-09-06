@@ -20,8 +20,8 @@ interpreter or specified on the interpreter command line the first
 argument) is a code block.  A script command (a command specified on
 the interpreter command line with the `\strong{-c}' option) is a code
 block.  The file read by the built-in function \function{execfile()}
-is a code block.  The string argument passed to the built-in function
-\function{eval()} and to the \keyword{exec} statement is a code block.
+is a code block.  The string argument passed to the built-in functions
+\function{eval()} and \function{exec()} is a code block.
 The expression read and evaluated by the built-in function
 \function{input()} is a code block.
 
@@ -139,22 +139,16 @@ If the wild card form of import --- \samp{import *} --- is used in a
 function and the function contains or is a nested block with free
 variables, the compiler will raise a \exception{SyntaxError}.
 
-If \keyword{exec} is used in a function and the function contains or
-is a nested block with free variables, the compiler will raise a
-\exception{SyntaxError} unless the exec explicitly specifies the local
-namespace for the \keyword{exec}.  (In other words, \samp{exec obj}
-would be illegal, but \samp{exec obj in ns} would be legal.)
-
-The \function{eval()}, \function{execfile()}, and \function{input()}
-functions and the \keyword{exec} statement do not have access to the
+The \function{eval()}, \function{exec()}, \function{execfile()},
+and \function{input()} functions do not have access to the
 full environment for resolving names.  Names may be resolved in the
 local and global namespaces of the caller.  Free variables are not
 resolved in the nearest enclosing namespace, but in the global
 namespace.\footnote{This limitation occurs because the code that is
     executed by these operations is not available at the time the
     module is compiled.}
-The \keyword{exec} statement and the \function{eval()} and
-\function{execfile()} functions have optional arguments to override
+The \function{exec()}, \function{eval()} and \function{execfile()}
+functions have optional arguments to override
 the global and local namespace.  If only one namespace is specified,
 it is used for both.
 

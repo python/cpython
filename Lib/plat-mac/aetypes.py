@@ -557,12 +557,12 @@ template = """
 class %s(ComponentItem): want = '%s'
 """
 
-exec template % ("Text", 'text')
-exec template % ("Character", 'cha ')
-exec template % ("Word", 'cwor')
-exec template % ("Line", 'clin')
-exec template % ("paragraph", 'cpar')
-exec template % ("Window", 'cwin')
-exec template % ("Document", 'docu')
-exec template % ("File", 'file')
-exec template % ("InsertionPoint", 'cins')
+exec(template % ("Text", 'text'))
+exec(template % ("Character", 'cha '))
+exec(template % ("Word", 'cwor'))
+exec(template % ("Line", 'clin'))
+exec(template % ("paragraph", 'cpar'))
+exec(template % ("Window", 'cwin'))
+exec(template % ("Document", 'docu'))
+exec(template % ("File", 'file'))
+exec(template % ("InsertionPoint", 'cins'))

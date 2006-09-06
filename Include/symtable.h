@@ -88,11 +88,9 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 #define FREE 4
 #define CELL 5
 
-/* The following three names are used for the ste_unoptimized bit field */
+/* The following two names are used for the ste_unoptimized bit field */
 #define OPT_IMPORT_STAR 1
-#define OPT_EXEC 2
-#define OPT_BARE_EXEC 4
-#define OPT_TOPLEVEL 8  /* top-level names, including eval and exec */
+#define OPT_TOPLEVEL 2  /* top-level names, including eval and exec */
 
 #define GENERATOR 1
 #define GENERATOR_EXPRESSION 2

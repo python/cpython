@@ -130,7 +130,7 @@ def assign_members(target, attrlist, exclist, prefix):
                 stmt = lhs + '=' + repr(value)
                 if debug: print 'exec', stmt
                 try:
-                    exec stmt + '\n'
+                    exec(stmt + '\n')
                 except KeyboardInterrupt: # Don't catch this!
                     raise KeyboardInterrupt
                 except:
@@ -186,7 +186,7 @@ def build_subactuators(panel, super_act, al):
         if name:
             stmt = 'panel.' + name + ' = act'
             if debug: print 'exec', stmt
-            exec stmt + '\n'
+            exec(stmt + '\n')
         if is_endgroup(a):
             panel.endgroup()
         sub_al = getattrlist(a, 'al')
@@ -236,7 +236,7 @@ def build_panel(descr):
         act.addact(panel)
         if name:
             stmt = 'panel.' + name + ' = act'
-            exec stmt + '\n'
+            exec(stmt + '\n')
         if is_endgroup(a):
             panel.endgroup()
         sub_al = getattrlist(a, 'al')

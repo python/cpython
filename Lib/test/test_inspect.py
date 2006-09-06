@@ -199,7 +199,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         m = sys.modules[name] = module(name)
         m.__file__ = "<string>" # hopefully not a real filename...
         m.__loader__ = "dummy"  # pretend the filename is understood by a loader
-        exec "def x(): pass" in m.__dict__
+        exec("def x(): pass", m.__dict__)
         self.assertEqual(inspect.getsourcefile(m.x.func_code), '<string>')
         del sys.modules[name]
         inspect.getmodule(compile('a=10','','single'))

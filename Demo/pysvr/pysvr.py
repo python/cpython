@@ -108,7 +108,7 @@ def run_command(code, stdin, stdout, globals):
         sys.stdout = sys.stderr = stdout
         sys.stdin = stdin
         try:
-            exec code in globals
+            exec(code, globals)
         except SystemExit, how:
             raise SystemExit, how, sys.exc_info()[2]
         except:

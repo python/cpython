@@ -25,7 +25,6 @@ kwlist = [
         'elif',
         'else',
         'except',
-        'exec',
         'finally',
         'for',
         'from',

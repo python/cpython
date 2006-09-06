@@ -329,7 +329,7 @@ def _parse_object(file):
 #
 def create_full_form(inst, (fdata, odatalist)):
     form = create_form(fdata)
-    exec 'inst.'+fdata.Name+' = form\n'
+    exec('inst.'+fdata.Name+' = form\n')
     for odata in odatalist:
         create_object_instance(inst, form, odata)
 
@@ -338,7 +338,7 @@ def create_full_form(inst, (fdata, odatalist)):
 # variable.
 #
 def merge_full_form(inst, form, (fdata, odatalist)):
-    exec 'inst.'+fdata.Name+' = form\n'
+    exec('inst.'+fdata.Name+' = form\n')
     if odatalist[0].Class != FL.BOX:
         raise error, 'merge_full_form() expects FL.BOX as first obj'
     for odata in odatalist[1:]:
@@ -374,7 +374,7 @@ def create_object_instance(inst, form, odata):
         cbfunc = eval('inst.'+odata.Callback)
         obj.set_call_back(cbfunc, odata.Argument)
     if odata.Name:
-        exec 'inst.' + odata.Name + ' = obj\n'
+        exec('inst.' + odata.Name + ' = obj\n')
 #
 # Internal _create_object: Create the object and fill options
 #

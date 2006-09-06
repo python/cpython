@@ -55,7 +55,7 @@ def testternop(a, b, c, res, expr="a[b:c]", meth="__getslice__"):
 def testsetop(a, b, res, stmt="a+=b", meth="__iadd__"):
     if verbose: print "checking", stmt
     dict = {'a': deepcopy(a), 'b': b}
-    exec stmt in dict
+    exec(stmt, dict)
     vereq(dict['a'], res)
     t = type(a)
     m = getattr(t, meth)
@@ -73,7 +73,7 @@ def testsetop(a, b, res, stmt="a+=b", meth="__iadd__"):
 def testset2op(a, b, c, res, stmt="a[b]=c", meth="__setitem__"):
     if verbose: print "checking", stmt
     dict = {'a': deepcopy(a), 'b': b, 'c': c}
-    exec stmt in dict
+    exec(stmt, dict)
     vereq(dict['a'], res)
     t = type(a)
     m = getattr(t, meth)
@@ -91,7 +91,7 @@ def testset2op(a, b, c, res, stmt="a[b]=c", meth="__setitem__"):
 def testset3op(a, b, c, d, res, stmt="a[b:c]=d", meth="__setslice__"):
     if verbose: print "checking", stmt
     dict = {'a': deepcopy(a), 'b': b, 'c': c, 'd': d}
-    exec stmt in dict
+    exec(stmt, dict)
     vereq(dict['a'], res)
     t = type(a)
     while meth not in t.__dict__:
@@ -3943,7 +3943,7 @@ def notimplemented():
 
     def check(expr, x, y):
         try:
-            exec expr in {'x': x, 'y': y, 'operator': operator}
+            exec(expr, {'x': x, 'y': y, 'operator': operator})
         except TypeError:
             pass
         else:

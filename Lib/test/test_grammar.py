@@ -449,42 +449,6 @@ def f():
     global a, b
     global one, two, three, four, five, six, seven, eight, nine, ten
 
-print 'exec_stmt' # 'exec' expr ['in' expr [',' expr]]
-def f():
-    z = None
-    del z
-    exec 'z=1+1\n'
-    if z != 2: raise TestFailed, 'exec \'z=1+1\'\\n'
-    del z
-    exec 'z=1+1'
-    if z != 2: raise TestFailed, 'exec \'z=1+1\''
-    z = None
-    del z
-    import types
-    if hasattr(types, "UnicodeType"):
-        exec r"""if 1:
-    exec u'z=1+1\n'
-    if z != 2: raise TestFailed, 'exec u\'z=1+1\'\\n'
-    del z
-    exec u'z=1+1'
-    if z != 2: raise TestFailed, 'exec u\'z=1+1\''
-"""
-f()
-g = {}
-exec 'z = 1' in g
-if '__builtins__' in g: del g['__builtins__']
-if g != {'z': 1}: raise TestFailed, 'exec \'z = 1\' in g'
-g = {}
-l = {}
-
-import warnings
-warnings.filterwarnings("ignore", "global statement", module="<string>")
-exec 'global a; a = 1; b = 2' in g, l
-if '__builtins__' in g: del g['__builtins__']
-if '__builtins__' in l: del l['__builtins__']
-if (g, l) != ({'a':1}, {'b':2}): raise TestFailed, 'exec ... in g (%s), l (%s)' %(g,l)
-
-
 print "assert_stmt" # assert_stmt: 'assert' test [',' test]
 assert 1
 assert 1, 1

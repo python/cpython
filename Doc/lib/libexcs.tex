@@ -293,10 +293,10 @@ Raised when an \keyword{assert} statement fails.
 \begin{excdesc}{SyntaxError}
 % XXXJH xref to these functions?
   Raised when the parser encounters a syntax error.  This may occur in
-  an \keyword{import} statement, in an \keyword{exec} statement, in a call
-  to the built-in function \function{eval()} or \function{input()}, or
-  when reading the initial script or standard input (also
-  interactively).
+  an \keyword{import} statement, in a call to the built-in functions
+  \function{exec()}, \function{execfile()}, \function{eval()} or
+  \function{input()}, or when reading the initial script or standard
+  input (also interactively).
 
   Instances of this class have attributes \member{filename},
   \member{lineno}, \member{offset} and \member{text} for easier access

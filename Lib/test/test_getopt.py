@@ -10,7 +10,7 @@ def expectException(teststr, expected, failure=AssertionError):
     """Executes a statement passed in teststr, and raises an exception
        (failure) if the expected exception is *not* raised."""
     try:
-        exec teststr
+        exec(teststr)
     except expected:
         pass
     else:

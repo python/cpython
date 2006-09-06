@@ -429,7 +429,7 @@ class CompileTestCase(unittest.TestCase):
         st = parser.suite('x = 2; y = x + 3')
         code = parser.compilest(st)
         globs = {}
-        exec code in globs
+        exec(code, globs)
         self.assertEquals(globs['y'], 5)
 
     def test_compile_error(self):

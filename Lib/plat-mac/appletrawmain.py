@@ -57,7 +57,7 @@ else:
         # funny) and go.
         #
         del argvemulator, os, sys, marshal, _dir, _fp
-        exec __code__
+        exec(__code__)
     else:
         sys.stderr.write("%s: neither __main__.py nor __main__.pyc found\n"%sys.argv[0])
         sys.exit(1)

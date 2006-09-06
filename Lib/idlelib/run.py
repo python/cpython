@@ -282,7 +282,7 @@ class Executive(object):
     def runcode(self, code):
         try:
             self.usr_exc_info = None
-            exec code in self.locals
+            exec(code, self.locals)
         except:
             self.usr_exc_info = sys.exc_info()
             if quitting:

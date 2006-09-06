@@ -115,7 +115,7 @@ class Timer:
         self.src = src # Save for traceback display
         code = compile(src, dummy_src_name, "exec")
         ns = {}
-        exec code in globals(), ns
+        exec(code, globals(), ns)
         self.inner = ns["inner"]
 
     def print_exc(self, file=None):

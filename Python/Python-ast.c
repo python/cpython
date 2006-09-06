@@ -123,12 +123,6 @@ static char *ImportFrom_fields[]={
         "names",
         "level",
 };
-static PyTypeObject *Exec_type;
-static char *Exec_fields[]={
-        "body",
-        "globals",
-        "locals",
-};
 static PyTypeObject *Global_type;
 static char *Global_fields[]={
         "names",
@@ -494,8 +488,6 @@ static int init_types(void)
         ImportFrom_type = make_type("ImportFrom", stmt_type, ImportFrom_fields,
                                     3);
         if (!ImportFrom_type) return 0;
-        Exec_type = make_type("Exec", stmt_type, Exec_fields, 3);
-        if (!Exec_type) return 0;
         Global_type = make_type("Global", stmt_type, Global_fields, 1);
         if (!Global_type) return 0;
         Expr_type = make_type("Expr", stmt_type, Expr_fields, 1);
@@ -1164,30 +1156,6 @@ ImportFrom(identifier module, asdl_seq * names, int level, int lineno, int
         p->v.ImportFrom.module = module;
         p->v.ImportFrom.names = names;
         p->v.ImportFrom.level = level;
-        p->lineno = lineno;
-        p->col_offset = col_offset;
-        return p;
-}
-
-stmt_ty
-Exec(expr_ty body, expr_ty globals, expr_ty locals, int lineno, int col_offset,
-     PyArena *arena)
-{
-        stmt_ty p;
-        if (!body) {
-                PyErr_SetString(PyExc_ValueError,
-                                "field body is required for Exec");
-                return NULL;
-        }
-        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
-                return NULL;
-        }
-        p->kind = Exec_kind;
-        p->v.Exec.body = body;
-        p->v.Exec.globals = globals;
-        p->v.Exec.locals = locals;
         p->lineno = lineno;
         p->col_offset = col_offset;
         return p;
@@ -2274,25 +2242,6 @@ ast2obj_stmt(void* _o)
                         goto failed;
                 Py_DECREF(value);
                 break;
-        case Exec_kind:
-                result = PyType_GenericNew(Exec_type, NULL, NULL);
-                if (!result) goto failed;
-                value = ast2obj_expr(o->v.Exec.body);
-                if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "body", value) == -1)
-                        goto failed;
-                Py_DECREF(value);
-                value = ast2obj_expr(o->v.Exec.globals);
-                if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "globals", value) == -1)
-                        goto failed;
-                Py_DECREF(value);
-                value = ast2obj_expr(o->v.Exec.locals);
-                if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "locals", value) == -1)
-                        goto failed;
-                Py_DECREF(value);
-                break;
         case Global_kind:
                 result = PyType_GenericNew(Global_type, NULL, NULL);
                 if (!result) goto failed;
@@ -3082,7 +3031,6 @@ init_ast(void)
             return;
         if (PyDict_SetItemString(d, "ImportFrom", (PyObject*)ImportFrom_type) <
             0) return;
-        if (PyDict_SetItemString(d, "Exec", (PyObject*)Exec_type) < 0) return;
         if (PyDict_SetItemString(d, "Global", (PyObject*)Global_type) < 0)
             return;
         if (PyDict_SetItemString(d, "Expr", (PyObject*)Expr_type) < 0) return;

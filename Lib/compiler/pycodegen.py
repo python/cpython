@@ -1043,18 +1043,6 @@ class CodeGenerator:
             self.emit('ROT_THREE')
             self.emit('STORE_SUBSCR')
 
-    def visitExec(self, node):
-        self.visit(node.expr)
-        if node.locals is None:
-            self.emit('LOAD_CONST', None)
-        else:
-            self.visit(node.locals)
-        if node.globals is None:
-            self.emit('DUP_TOP')
-        else:
-            self.visit(node.globals)
-        self.emit('EXEC_STMT')
-
     def visitCallFunc(self, node):
         pos = 0
         kw = 0
