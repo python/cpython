@@ -672,6 +672,7 @@ PointerType_from_param(PyObject *type, PyObject *value)
 		return PyInt_FromLong(0); /* NULL pointer */
 
 	typedict = PyType_stgdict(type);
+	assert(typedict); /* Cannot be NULL for pointer types */
 
 	/* If we expect POINTER(<type>), but receive a <type> instance, accept
 	   it by calling byref(<type>).
@@ -3129,6 +3130,13 @@ _build_callargs(CFuncPtrObject *self, PyObject *argtypes,
 			}
 			ob = PyTuple_GET_ITEM(argtypes, i);
 			dict = PyType_stgdict(ob);
+			if (dict == NULL) {
+				/* Cannot happen: _validate_paramflags()
+				  would not accept such an object */
+				PyErr_Format(PyExc_RuntimeError,
+					     "NULL stgdict unexpected");
+				goto error;
+			}
 			if (PyString_Check(dict->proto)) {
 				PyErr_Format(
 					PyExc_TypeError,
@@ -3726,6 +3734,8 @@ Array_slice(PyObject *_self, Py_ssize_t ilow, Py_ssize_t ihigh)
 	assert(stgdict); /* Cannot be NULL for array object instances */
 	proto = stgdict->proto;
 	itemdict = PyType_stgdict(proto);
+	assert(itemdict); /* proto is the item type of the array, a ctypes
+			     type, so this cannot be NULL */
 	if (itemdict->getfunc == getentry("c")->getfunc) {
 		char *ptr = (char *)self->b_ptr;
 		return PyString_FromStringAndSize(ptr + ilow, len);
@@ -4159,6 +4169,9 @@ Pointer_item(PyObject *_self, Py_ssize_t index)
 	proto = stgdict->proto;
 	assert(proto);
 	itemdict = PyType_stgdict(proto);
+	assert(itemdict); /* proto is the item type of the pointer, a ctypes
+			     type, so this cannot be NULL */
+
 	size = itemdict->size;
 	offset = index * itemdict->size;
 
@@ -4194,6 +4207,9 @@ Pointer_ass_item(PyObject *_self, Py_ssize_t index, PyObject *value)
 	assert(proto);
 
 	itemdict = PyType_stgdict(proto);
+	assert(itemdict); /* Cannot be NULL because the itemtype of a pointer
+			     is always a ctypes type */
+
 	size = itemdict->size;
 	offset = index * itemdict->size;
 
