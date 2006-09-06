@@ -4,7 +4,7 @@ import _symtable
 from _symtable import USE, DEF_GLOBAL, DEF_LOCAL, DEF_PARAM, \
      DEF_STAR, DEF_DOUBLESTAR, DEF_INTUPLE, DEF_FREE, \
      DEF_FREE_GLOBAL, DEF_FREE_CLASS, DEF_IMPORT, DEF_BOUND, \
-     OPT_IMPORT_STAR, OPT_EXEC, OPT_BARE_EXEC
+     OPT_IMPORT_STAR
 
 import weakref
 
@@ -94,8 +94,8 @@ class SymbolTable:
         return bool(self._table.children)
 
     def has_exec(self):
-        """Return true if the scope uses exec"""
-        return bool(self._table.optimized & (OPT_EXEC | OPT_BARE_EXEC))
+        """Return true if the scope uses exec.  Deprecated method."""
+        return False
 
     def has_import_star(self):
         """Return true if the scope uses import *"""
