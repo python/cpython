@@ -46,6 +46,8 @@ Core and builtins
 Library
 -------
 
+- Fix missing import of the types module in logging.config.
+
 - Patch #1550886: Fix decimal module context management implementation
   to match the localcontext() example from PEP 343.
 
