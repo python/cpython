@@ -180,8 +180,9 @@ struct _stmt {
 enum _expr_kind {BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
                   IfExp_kind=5, Dict_kind=6, Set_kind=7, ListComp_kind=8,
                   GeneratorExp_kind=9, Yield_kind=10, Compare_kind=11,
-                  Call_kind=12, Num_kind=13, Str_kind=14, Attribute_kind=15,
-                  Subscript_kind=16, Name_kind=17, List_kind=18, Tuple_kind=19};
+                  Call_kind=12, Num_kind=13, Str_kind=14, Ellipsis_kind=15,
+                  Attribute_kind=16, Subscript_kind=17, Name_kind=18,
+                  List_kind=19, Tuple_kind=20};
 struct _expr {
         enum _expr_kind kind;
         union {
@@ -289,7 +290,7 @@ struct _expr {
         int col_offset;
 };
 
-enum _slice_kind {Ellipsis_kind=1, Slice_kind=2, ExtSlice_kind=3, Index_kind=4};
+enum _slice_kind {Slice_kind=1, ExtSlice_kind=2, Index_kind=3};
 struct _slice {
         enum _slice_kind kind;
         union {
@@ -408,6 +409,7 @@ expr_ty Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty
              *arena);
 expr_ty Num(object n, int lineno, int col_offset, PyArena *arena);
 expr_ty Str(string s, int lineno, int col_offset, PyArena *arena);
+expr_ty Ellipsis(int lineno, int col_offset, PyArena *arena);
 expr_ty Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int
                   lineno, int col_offset, PyArena *arena);
 expr_ty Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int
@@ -418,7 +420,6 @@ expr_ty List(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset,
              PyArena *arena);
 expr_ty Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset,
               PyArena *arena);
-slice_ty Ellipsis(PyArena *arena);
 slice_ty Slice(expr_ty lower, expr_ty upper, expr_ty step, PyArena *arena);
 slice_ty ExtSlice(asdl_seq * dims, PyArena *arena);
 slice_ty Index(expr_ty value, PyArena *arena);

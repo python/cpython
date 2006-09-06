@@ -1214,9 +1214,6 @@ class CodeGenerator:
 
     # object constructors
 
-    def visitEllipsis(self, node):
-        self.emit('LOAD_CONST', Ellipsis)
-
     def visitTuple(self, node):
         self.set_lineno(node)
         for elt in node.nodes:

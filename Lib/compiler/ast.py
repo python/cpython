@@ -427,19 +427,6 @@ class Div(Node):
     def __repr__(self):
         return "Div((%s, %s))" % (repr(self.left), repr(self.right))
 
-class Ellipsis(Node):
-    def __init__(self, lineno=None):
-        self.lineno = lineno
-
-    def getChildren(self):
-        return ()
-
-    def getChildNodes(self):
-        return ()
-
-    def __repr__(self):
-        return "Ellipsis()"
-
 class FloorDiv(Node):
     def __init__(self, (left, right), lineno=None):
         self.left = left

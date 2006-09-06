@@ -125,6 +125,12 @@ the \'lazy\' dog.\n\
 '; verify(x == y)
 
 
+print '1.1.4 Ellipsis literal'
+
+x = ...
+verify(x == Ellipsis)
+
+
 print '1.2 Grammar'
 
 print 'single_input' # NEWLINE | simple_stmt | compound_stmt NEWLINE

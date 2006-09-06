@@ -113,6 +113,7 @@ class Transformer:
                                token.LBRACE: self.atom_lbrace,
                                token.NUMBER: self.atom_number,
                                token.STRING: self.atom_string,
+                               token.DOT: self.atom_ellipsis,
                                token.NAME: self.atom_name,
                                }
         self.encoding = None
@@ -747,6 +748,9 @@ class Transformer:
             k += self.decode_literal(node[1])
         return Const(k, lineno=nodelist[0][2])
 
+    def atom_ellipsis(self, nodelist):
+        return Const(Ellipsis, lineno=nodelist[0][2])
+
     def atom_name(self, nodelist):
         return Name(nodelist[0][1], lineno=nodelist[0][2])
 
@@ -1276,11 +1280,9 @@ class Transformer:
                          lineno=extractLineNo(nodelist))
 
     def com_subscript(self, node):
-        # slice_item: expression | proper_slice | ellipsis
+        # slice_item: expression | proper_slice
         ch = node[1]
         t = ch[0]
-        if t == token.DOT and node[2][0] == token.DOT:
-            return Ellipsis()
         if t == token.COLON or len(node) > 2:
             return self.com_sliceobj(node)
         return self.com_node(ch)

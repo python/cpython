@@ -399,6 +399,9 @@ set_context(expr_ty e, expr_context_ty ctx, const node *n)
         case Str_kind:
             expr_name = "literal";
             break;
+	case Ellipsis_kind:
+	    expr_name = "Ellipsis";
+	    break;
         case Compare_kind:
             expr_name = "comparison";
             break;
@@ -1213,6 +1216,9 @@ ast_for_atom(struct compiling *c, const node *n)
 	PyArena_AddPyObject(c->c_arena, pynum);
 	return Num(pynum, LINENO(n), n->n_col_offset, c->c_arena);
     }
+    case DOT:
+    	/* Ellipsis */
+	return Ellipsis(LINENO(n), n->n_col_offset, c->c_arena);
     case LPAR: /* some parenthesized expressions */
 	ch = CHILD(n, 1);
 	
@@ -1308,13 +1314,10 @@ ast_for_slice(struct compiling *c, const node *n)
     REQ(n, subscript);
 
     /*
-       subscript: '.' '.' '.' | test | [test] ':' [test] [sliceop]
+       subscript: test | [test] ':' [test] [sliceop]
        sliceop: ':' [test]
     */
     ch = CHILD(n, 0);
-    if (TYPE(ch) == DOT)
-	return Ellipsis(c->c_arena);
-
     if (NCH(n) == 1 && TYPE(ch) == test) {
         /* 'step' variable hold no significance in terms of being used over
            other vars */

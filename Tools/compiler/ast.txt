@@ -58,7 +58,6 @@ Getattr: expr, attrname*
 CallFunc: node, args!, star_args& = None, dstar_args& = None
 Keyword: name*, expr
 Subscript: expr, flags*, subs!
-Ellipsis: 
 Sliceobj: nodes!
 Slice: expr, flags*, lower&, upper&
 Assert: test, fail&
