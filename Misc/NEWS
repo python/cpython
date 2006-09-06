@@ -47,6 +47,8 @@ Library
 
 - Bug #1543303, patch #1543897: remove NUL padding from tarfiles.
 
+- Bug #1531862: Do not close standard file descriptors in subprocess.
+
 
 Extension Modules
 -----------------
