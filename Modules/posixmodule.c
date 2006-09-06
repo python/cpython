@@ -7877,7 +7877,7 @@ win32_urandom(PyObject *self, PyObject *args)
 
 		pCryptGenRandom = (CRYPTGENRANDOM)GetProcAddress(
 						hAdvAPI32, "CryptGenRandom");
-		if (pCryptAcquireContext == NULL)
+		if (pCryptGenRandom == NULL)
 			return PyErr_Format(PyExc_NotImplementedError,
 					    "CryptGenRandom not found");
 

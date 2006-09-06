@@ -41,6 +41,9 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1551427: fix a wrong NULL pointer check in the win32 version
+  of os.urandom().
+
 - Bug #1548092: fix curses.tparm seg fault on invalid input.
 
 - Bug #1550714: fix SystemError from itertools.tee on negative value for n.
