@@ -37,6 +37,8 @@ Library
 - Bug #1541863: uuid.uuid1 failed to generate unique identifiers
   on systems with low clock resolution.
 
+- Bug #1531862: Do not close standard file descriptors in subprocess.
+
 
 Extension Modules
 -----------------
