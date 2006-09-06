@@ -2190,10 +2190,6 @@ alias_for_import_name(struct compiling *c, const node *n)
         case import_as_name:
             str = NULL;
             if (NCH(n) == 3) {
-                if (strcmp(STR(CHILD(n, 1)), "as") != 0) {
-                    ast_error(n, "must use 'as' in import");
-                    return NULL;
-                }
                 str = NEW_IDENTIFIER(CHILD(n, 2));
             }
             return alias(NEW_IDENTIFIER(CHILD(n, 0)), str, c->c_arena);
@@ -2206,10 +2202,6 @@ alias_for_import_name(struct compiling *c, const node *n)
                 alias_ty a = alias_for_import_name(c, CHILD(n, 0));
                 if (!a)
                     return NULL;
-                if (strcmp(STR(CHILD(n, 1)), "as") != 0) {
-                    ast_error(n, "must use 'as' in import");
-                    return NULL;
-                }
                 assert(!a->asname);
                 a->asname = NEW_IDENTIFIER(CHILD(n, 2));
                 return a;
@@ -2848,10 +2840,6 @@ static expr_ty
 ast_for_with_var(struct compiling *c, const node *n)
 {
     REQ(n, with_var);
-    if (strcmp(STR(CHILD(n, 0)), "as") != 0) {
-        ast_error(n, "expected \"with [expr] as [var]\"");
-        return NULL;
-    }
     return ast_for_expr(c, CHILD(n, 1));
 }
 
