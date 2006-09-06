@@ -185,15 +185,6 @@ class ExceptionTests(unittest.TestCase):
 
     def testAttributes(self):
         # test that exception attributes are happy
-        try:
-            str(u'Hello \u00E1')
-        except Exception, e:
-            sampleUnicodeEncodeError = e
-
-        try:
-            unicode('\xff')
-        except Exception, e:
-            sampleUnicodeDecodeError = e
 
         exceptionList = [
             (BaseException, (), {'message' : '', 'args' : ()}),
@@ -236,16 +227,16 @@ class ExceptionTests(unittest.TestCase):
                  'print_file_and_line' : None, 'msg' : 'msgStr',
                  'filename' : None, 'lineno' : None, 'offset' : None}),
             (UnicodeError, (), {'message' : '', 'args' : (),}),
-            (sampleUnicodeEncodeError,
-                {'message' : '', 'args' : ('ascii', u'Hello \xe1', 6, 7,
-                                           'ordinal not in range(128)'),
-                 'encoding' : 'ascii', 'object' : u'Hello \xe1',
-                 'start' : 6, 'reason' : 'ordinal not in range(128)'}),
-            (sampleUnicodeDecodeError,
+            (UnicodeEncodeError, ('ascii', u'a', 0, 1, 'ordinal not in range'),
+                {'message' : '', 'args' : ('ascii', u'a', 0, 1,
+                                           'ordinal not in range'),
+                 'encoding' : 'ascii', 'object' : u'a',
+                 'start' : 0, 'reason' : 'ordinal not in range'}),
+            (UnicodeDecodeError, ('ascii', '\xff', 0, 1, 'ordinal not in range'),
                 {'message' : '', 'args' : ('ascii', '\xff', 0, 1,
-                                           'ordinal not in range(128)'),
+                                           'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : '\xff',
-                 'start' : 0, 'reason' : 'ordinal not in range(128)'}),
+                 'start' : 0, 'reason' : 'ordinal not in range'}),
             (UnicodeTranslateError, (u"\u3042", 0, 1, "ouch"),
                 {'message' : '', 'args' : (u'\u3042', 0, 1, 'ouch'),
                  'object' : u'\u3042', 'reason' : 'ouch',
@@ -261,18 +252,14 @@ class ExceptionTests(unittest.TestCase):
         except NameError:
             pass
 
-        for args in exceptionList:
-            expected = args[-1]
+        for exc, args, expected in exceptionList:
             try:
-                exc = args[0]
-                if len(args) == 2:
-                    raise exc
-                else:
-                    raise exc(*args[1])
+                raise exc(*args)
             except BaseException, e:
-                if (e is not exc and     # needed for sampleUnicode errors
-                        type(e) is not exc):
+                if type(e) is not exc:
                     raise
+                # Verify module name
+                self.assertEquals(type(e).__module__, 'exceptions')
                 # Verify no ref leaks in Exc_str()
                 s = str(e)
                 for checkArgName in expected:

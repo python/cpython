@@ -81,6 +81,7 @@ BaseException_clear(PyBaseExceptionObject *self)
 static void
 BaseException_dealloc(PyBaseExceptionObject *self)
 {
+    _PyObject_GC_UNTRACK(self);
     BaseException_clear(self);
     self->ob_type->tp_free((PyObject *)self);
 }
@@ -456,6 +457,7 @@ SystemExit_clear(PySystemExitObject *self)
 static void
 SystemExit_dealloc(PySystemExitObject *self)
 {
+    _PyObject_GC_UNTRACK(self);
     SystemExit_clear(self);
     self->ob_type->tp_free((PyObject *)self);
 }
@@ -562,6 +564,7 @@ EnvironmentError_clear(PyEnvironmentErrorObject *self)
 static void
 EnvironmentError_dealloc(PyEnvironmentErrorObject *self)
 {
+    _PyObject_GC_UNTRACK(self);
     EnvironmentError_clear(self);
     self->ob_type->tp_free((PyObject *)self);
 }
@@ -760,6 +763,7 @@ WindowsError_clear(PyWindowsErrorObject *self)
 static void
 WindowsError_dealloc(PyWindowsErrorObject *self)
 {
+    _PyObject_GC_UNTRACK(self);
     WindowsError_clear(self);
     self->ob_type->tp_free((PyObject *)self);
 }
@@ -1035,6 +1039,7 @@ SyntaxError_clear(PySyntaxErrorObject *self)
 static void
 SyntaxError_dealloc(PySyntaxErrorObject *self)
 {
+    _PyObject_GC_UNTRACK(self);
     SyntaxError_clear(self);
     self->ob_type->tp_free((PyObject *)self);
 }
@@ -1551,6 +1556,7 @@ UnicodeError_clear(PyUnicodeErrorObject *self)
 static void
 UnicodeError_dealloc(PyUnicodeErrorObject *self)
 {
+    _PyObject_GC_UNTRACK(self);
     UnicodeError_clear(self);
     self->ob_type->tp_free((PyObject *)self);
 }
@@ -1637,7 +1643,7 @@ UnicodeEncodeError_str(PyObject *self)
 static PyTypeObject _PyExc_UnicodeEncodeError = {
     PyObject_HEAD_INIT(NULL)
     0,
-    "UnicodeEncodeError",
+    EXC_MODULE_NAME "UnicodeEncodeError",
     sizeof(PyUnicodeErrorObject), 0,
     (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     (reprfunc)UnicodeEncodeError_str, 0, 0, 0,
@@ -1812,7 +1818,7 @@ static PyTypeObject _PyExc_UnicodeTranslateError = {
     (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     (reprfunc)UnicodeTranslateError_str, 0, 0, 0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-    PyDoc_STR("Unicode decoding error."), (traverseproc)UnicodeError_traverse,
+    PyDoc_STR("Unicode translation error."), (traverseproc)UnicodeError_traverse,
     (inquiry)UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
     0, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
     (initproc)UnicodeTranslateError_init, 0, BaseException_new,
