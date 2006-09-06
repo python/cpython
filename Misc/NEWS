@@ -43,6 +43,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1551427: fix a wrong NULL pointer check in the win32 version
+  of os.urandom().
+
 - Patch #1535500: fix segfault in BZ2File.writelines and make sure it
   raises the correct exceptions.
 
