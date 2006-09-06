@@ -2114,7 +2114,7 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 		size_t len;
 		if (lastdot == NULL && level > 0) {
 			PyErr_SetString(PyExc_ValueError,
-					"Relative importpath too deep");
+				"Attempted relative import in non-package");
 			return NULL;
 		}
 		if (lastdot == NULL)
@@ -2133,7 +2133,8 @@ get_parent(PyObject *globals, char *buf, Py_ssize_t *p_buflen, int level)
 		char *dot = strrchr(buf, '.');
 		if (dot == NULL) {
 			PyErr_SetString(PyExc_ValueError,
-					"Relative importpath too deep");
+				"Attempted relative import beyond "
+				"toplevel package");
 			return NULL;
 		}
 		*dot = '\0';
