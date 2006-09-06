@@ -319,9 +319,9 @@ code for these modules.
 
 \begin{funcdesc}{run}{command\optional{, filename}}
 
-This function takes a single argument that has can be passed to the
-\keyword{exec} statement, and an optional file name.  In all cases this
-routine attempts to \keyword{exec} its first argument, and gather profiling
+This function takes a single argument that can be passed to the
+\function{exec()} function, and an optional file name.  In all cases this
+routine attempts to \function{exec()} its first argument, and gather profiling
 statistics from the execution. If no file name is present, then this
 function automatically prints a simple profiling report, sorted by the
 standard name string (file/line/function-name) that is presented in

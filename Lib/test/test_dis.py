@@ -135,7 +135,7 @@ class DisTests(unittest.TestCase):
         def func(count):
             namespace = {}
             func = "def foo():\n " + "".join(["\n "] * count + ["spam\n"])
-            exec func in namespace
+            exec(func, namespace)
             return namespace['foo']
 
         # Test all small ranges

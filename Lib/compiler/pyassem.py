@@ -762,7 +762,6 @@ class StackDepthTracker:
         'PRINT_ITEM': -1,
         'RETURN_VALUE': -1,
         'YIELD_VALUE': -1,
-        'EXEC_STMT': -3,
         'BUILD_CLASS': -2,
         'STORE_NAME': -1,
         'STORE_ATTR': -2,

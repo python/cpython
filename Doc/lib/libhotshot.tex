@@ -61,7 +61,7 @@ Return the file descriptor of the profiler's log file.
 \end{methoddesc}
 
 \begin{methoddesc}{run}{cmd}
-Profile an \keyword{exec}-compatible string in the script environment.
+Profile an \function{exec()}-compatible string in the script environment.
 The globals from the \refmodule[main]{__main__} module are used as
 both the globals and locals for the script.
 \end{methoddesc}
@@ -76,7 +76,7 @@ disabled on the way out.
 
 
 \begin{methoddesc}{runctx}{cmd, globals, locals}
-Evaluate an \keyword{exec}-compatible string in a specific environment.
+Profile an \function{exec()}-compatible string in a specific environment.
 The string is compiled before profiling begins.
 \end{methoddesc}
 

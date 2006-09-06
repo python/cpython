@@ -137,7 +137,7 @@ class Profile(_lsprof.Profiler):
     def runctx(self, cmd, globals, locals):
         self.enable()
         try:
-            exec cmd in globals, locals
+            exec(cmd, globals, locals)
         finally:
             self.disable()
         return self

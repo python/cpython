@@ -484,7 +484,7 @@ class Trace:
             sys.settrace(self.globaltrace)
             threading.settrace(self.globaltrace)
         try:
-            exec cmd in dict, dict
+            exec(cmd, dict, dict)
         finally:
             if not self.donothing:
                 sys.settrace(None)
@@ -497,7 +497,7 @@ class Trace:
             sys.settrace(self.globaltrace)
             threading.settrace(self.globaltrace)
         try:
-            exec cmd in globals, locals
+            exec(cmd, globals, locals)
         finally:
             if not self.donothing:
                 sys.settrace(None)

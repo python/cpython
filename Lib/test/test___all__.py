@@ -15,7 +15,7 @@ class AllTest(unittest.TestCase):
     def check_all(self, modname):
         names = {}
         try:
-            exec "import %s" % modname in names
+            exec("import %s" % modname, names)
         except ImportError:
             # Silent fail here seems the best route since some modules
             # may not be available in all environments.
@@ -23,7 +23,7 @@ class AllTest(unittest.TestCase):
         verify(hasattr(sys.modules[modname], "__all__"),
                "%s has no __all__ attribute" % modname)
         names = {}
-        exec "from %s import *" % modname in names
+        exec("from %s import *" % modname, names)
         if "__builtins__" in names:
             del names["__builtins__"]
         keys = set(names)

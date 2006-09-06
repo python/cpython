@@ -588,7 +588,7 @@ class PimpPackage:
             }
         installTest = self._dict['Install-test'].strip() + '\n'
         try:
-            exec installTest in namespace
+            exec(installTest, namespace)
         except ImportError, arg:
             return "no", str(arg)
         except _scriptExc_NotInstalled, arg:
@@ -757,7 +757,7 @@ class PimpPackage:
                 if line[0] == '#':
                     continue
                 if line[:6] == 'import':
-                    exec line
+                    exec(line)
                     continue
                 if line[-1] == '\n':
                     line = line[:-1]

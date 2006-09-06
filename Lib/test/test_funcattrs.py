@@ -278,7 +278,7 @@ def test_func_name():
     cantset(f, "__name__", 1)
     # test that you can access func.__name__ in restricted mode
     s = """def f(): pass\nf.__name__"""
-    exec s in {'__builtins__':{}}
+    exec(s, {'__builtins__':{}})
 
 
 def test_func_code():

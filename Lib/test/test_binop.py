@@ -302,7 +302,7 @@ class RatTestCase(unittest.TestCase):
         self.assertEqual(10.0, Rat(10))
 
     def test_future_div(self):
-        exec future_test
+        exec(future_test)
 
     # XXX Ran out of steam; TO DO: divmod, div, future division
 

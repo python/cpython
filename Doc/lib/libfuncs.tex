@@ -178,7 +178,7 @@ class C:
 \begin{funcdesc}{compile}{string, filename, kind\optional{,
                           flags\optional{, dont_inherit}}}
   Compile the \var{string} into a code object.  Code objects can be
-  executed by an \keyword{exec} statement or evaluated by a call to
+  executed by a call to \function{exec()} or evaluated by a call to
   \function{eval()}.  The \var{filename} argument should
   give the file from which the code was read; pass some recognizable value
   if it wasn't read from a file (\code{'<string>'} is commonly used).
@@ -366,7 +366,7 @@ class C:
   compiled passing \code{'eval'} as the \var{kind} argument.
 
   Hints: dynamic execution of statements is supported by the
-  \keyword{exec} statement.  Execution of statements from a file is
+  \function{exec()} function.  Execution of statements from a file is
   supported by the \function{execfile()} function.  The
   \function{globals()} and \function{locals()} functions returns the
   current global and local dictionary, respectively, which may be
@@ -374,13 +374,47 @@ class C:
   \function{execfile()}.
 \end{funcdesc}
 
+
+\begin{funcdesc}{exec}{object\optional{, globals\optional{, locals}}}
+  This function supports dynamic execution of Python code.
+  \var{object} must be either a string, an open file object, or
+  a code object.  If it is a string, the string is parsed as a suite of
+  Python statements which is then executed (unless a syntax error
+  occurs).  If it is an open file, the file is parsed until \EOF{} and
+  executed.  If it is a code object, it is simply executed.  In all
+  cases, the code that's executed is expected to be valid as file
+  input (see the section ``File input'' in the Reference Manual).
+  Be aware that the \keyword{return} and \keyword{yield} statements may
+  not be used outside of function definitions even within the context of
+  code passed to the \function{exec()} function.
+  The return value is \code{None}.
+
+  In all cases, if the optional parts are omitted, the code is executed
+  in the current scope.  If only \var{globals} is provided, it must be
+  a dictionary, which will be used for both the global and the local
+  variables.  If \var{globals} and \var{locals} are given, they are used
+  for the global and local variables, respectively.  If provided,
+  \var{locals} can be any mapping object.
+
+  If the \var{globals} dictionary does not contain a value for the
+  key \code{__builtins__}, a reference to the dictionary of the built-in
+  module \module{__builtin__} is inserted under that key.  That way you
+  can control what builtins are available to the executed code by
+  inserting your own \code{__builtins__} dictionary into \var{globals}
+  before passing it to \function{exec()}.
+
+  \note{The built-in functions \function{globals()} and \function{locals()}
+        return the current global and local dictionary, respectively, which
+	may be useful to pass around for use as the second and third
+	argument to \function{exec()}.}
+\end{funcdesc}
+
 \begin{funcdesc}{execfile}{filename\optional{, globals\optional{, locals}}}
-  This function is similar to the
-  \keyword{exec} statement, but parses a file instead of a string.  It
+  This function is similar to the \function{exec()} function, but parses a
+  file given by the file name instead of a string.  It
   is different from the \keyword{import} statement in that it does not
   use the module administration --- it reads the file unconditionally
-  and does not create a new module.\footnote{It is used relatively
-  rarely so does not warrant being made into a statement.}
+  and does not create a new module.
 
   The arguments are a file name and two optional dictionaries.  The file is
   parsed and evaluated as a sequence of Python statements (similarly to a

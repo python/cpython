@@ -480,25 +480,12 @@ check_unoptimized(const PySTEntryObject* ste) {
 			       "is a nested function");
 
 	switch (ste->ste_unoptimized) {
-	case OPT_TOPLEVEL: /* exec / import * at top-level is fine */
-	case OPT_EXEC: /* qualified exec is fine */
+	case OPT_TOPLEVEL: /* import * at top-level is fine */
 		return 1;
 	case OPT_IMPORT_STAR:
 		PyOS_snprintf(buf, sizeof(buf), 
 			      "import * is not allowed in function '%.100s' "
 			      "because it is %s",
-			      PyString_AS_STRING(ste->ste_name), trailer);
-		break;
-	case OPT_BARE_EXEC:
-		PyOS_snprintf(buf, sizeof(buf),
-			      "unqualified exec is not allowed in function "
-			      "'%.100s' it %s",
-			      PyString_AS_STRING(ste->ste_name), trailer);
-		break;
-	default:
-		PyOS_snprintf(buf, sizeof(buf), 
-			      "function '%.100s' uses import * and bare exec, "
-			      "which are illegal because it %s",
 			      PyString_AS_STRING(ste->ste_name), trailer);
 		break;
 	}
@@ -1044,19 +1031,6 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 		   visit_alias */
 		if (st->st_cur->ste_unoptimized && !st->st_cur->ste_opt_lineno)
 			st->st_cur->ste_opt_lineno = s->lineno;
-		break;
-        case Exec_kind:
-		VISIT(st, expr, s->v.Exec.body);
-		if (!st->st_cur->ste_opt_lineno)
-			st->st_cur->ste_opt_lineno = s->lineno;
-		if (s->v.Exec.globals) {
-			st->st_cur->ste_unoptimized |= OPT_EXEC;
-			VISIT(st, expr, s->v.Exec.globals);
-			if (s->v.Exec.locals) 
-				VISIT(st, expr, s->v.Exec.locals);
-		} else {
-			st->st_cur->ste_unoptimized |= OPT_BARE_EXEC;
-		}
 		break;
         case Global_kind: {
 		int i;

@@ -193,8 +193,9 @@ false or omitted.
 
 \begin{funcdesc}{compileast}{ast\optional{, filename\code{ = '<ast>'}}}
 The Python byte compiler can be invoked on an AST object to produce
-code objects which can be used as part of an \keyword{exec} statement or
-a call to the built-in \function{eval()}\bifuncindex{eval} function.
+code objects which can be used as part of a call to the built-in
+\function{exec()}\bifuncindex{exec} or \function{eval()}
+\bifuncindex{eval} functions.
 This function provides the interface to the compiler, passing the
 internal parse tree from \var{ast} to the parser, using the
 source file name specified by the \var{filename} parameter.

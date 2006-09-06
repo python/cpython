@@ -19,17 +19,17 @@ class TestSpecifics(unittest.TestCase):
         self.assertRaises(SyntaxError, eval, 'lambda a,a=1:0')
         self.assertRaises(SyntaxError, eval, 'lambda a=1,a=1:0')
         try:
-            exec 'def f(a, a): pass'
+            exec('def f(a, a): pass')
             self.fail("duplicate arguments")
         except SyntaxError:
             pass
         try:
-            exec 'def f(a = 0, a = 1): pass'
+            exec('def f(a = 0, a = 1): pass')
             self.fail("duplicate keyword arguments")
         except SyntaxError:
             pass
         try:
-            exec 'def f(a): global a; a = 1'
+            exec('def f(a): global a; a = 1')
             self.fail("variable is global and local")
         except SyntaxError:
             pass
@@ -39,7 +39,7 @@ class TestSpecifics(unittest.TestCase):
 
     def test_duplicate_global_local(self):
         try:
-            exec 'def f(a): global a; a = 1'
+            exec('def f(a): global a; a = 1')
             self.fail("variable is global and local")
         except SyntaxError:
             pass
@@ -59,22 +59,22 @@ class TestSpecifics(unittest.TestCase):
 
         m = M()
         g = globals()
-        exec 'z = a' in g, m
+        exec('z = a', g, m)
         self.assertEqual(m.results, ('z', 12))
         try:
-            exec 'z = b' in g, m
+            exec('z = b', g, m)
         except NameError:
             pass
         else:
             self.fail('Did not detect a KeyError')
-        exec 'z = dir()' in g, m
+        exec('z = dir()', g, m)
         self.assertEqual(m.results, ('z', list('xyz')))
-        exec 'z = globals()' in g, m
+        exec('z = globals()', g, m)
         self.assertEqual(m.results, ('z', g))
-        exec 'z = locals()' in g, m
+        exec('z = locals()', g, m)
         self.assertEqual(m.results, ('z', m))
         try:
-            exec 'z = b' in m
+            exec('z = b', m)
         except TypeError:
             pass
         else:
@@ -85,7 +85,7 @@ class TestSpecifics(unittest.TestCase):
             pass
         m = A()
         try:
-            exec 'z = a' in g, m
+            exec('z = a', g, m)
         except TypeError:
             pass
         else:
@@ -98,11 +98,12 @@ class TestSpecifics(unittest.TestCase):
                     return 12
                 return dict.__getitem__(self, key)
         d = D()
-        exec 'z = a' in g, d
+        exec('z = a', g, d)
         self.assertEqual(d['z'], 12)
 
     def test_extended_arg(self):
         longexpr = 'x = x or ' + '-x' * 2500
+        g = {}
         code = '''
 def f(x):
     %s
@@ -121,8 +122,8 @@ def f(x):
         # EXTENDED_ARG/JUMP_ABSOLUTE here
     return x
 ''' % ((longexpr,)*10)
-        exec code
-        self.assertEqual(f(5), 0)
+        exec(code, g)
+        self.assertEqual(g['f'](5), 0)
 
     def test_complex_args(self):
 
@@ -146,7 +147,7 @@ def f(x):
 
     def test_argument_order(self):
         try:
-            exec 'def f(a=1, (b, c)): pass'
+            exec('def f(a=1, (b, c)): pass')
             self.fail("non-default args after default")
         except SyntaxError:
             pass

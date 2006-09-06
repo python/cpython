@@ -690,7 +690,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         if self.rpcclt:
             self.rpcclt.remotequeue("exec", "runcode", (code,), {})
         else:
-            exec code in self.locals
+            exec(code, self.locals)
         return 1
 
     def runcode(self, code):
@@ -711,7 +711,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 elif debugger:
                     debugger.run(code, self.locals)
                 else:
-                    exec code in self.locals
+                    exec(code, self.locals)
             except SystemExit:
                 if not self.tkconsole.closing:
                     if tkMessageBox.askyesno(

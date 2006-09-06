@@ -23,7 +23,6 @@ While: test, body, else_&
 With: expr, vars&, body
 If: tests!, else_&
 IfExp: test, then, else_
-Exec: expr, locals&, globals&
 From: modname*, names*, level*
 Import: names*
 Raise: expr1&, expr2&, expr3&

@@ -459,7 +459,7 @@ class Profile:
         self.set_cmd(cmd)
         sys.setprofile(self.dispatcher)
         try:
-            exec cmd in globals, locals
+            exec(cmd, globals, locals)
         finally:
             sys.setprofile(None)
         return self

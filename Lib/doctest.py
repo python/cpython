@@ -1209,8 +1209,8 @@ class DocTestRunner:
             # keyboard interrupts.)
             try:
                 # Don't blink!  This is where the user's code gets run.
-                exec compile(example.source, filename, "single",
-                             compileflags, 1) in test.globs
+                exec(compile(example.source, filename, "single",
+                             compileflags, 1), test.globs)
                 self.debugger.set_continue() # ==== Example Finished ====
                 exception = None
             except KeyboardInterrupt:

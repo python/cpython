@@ -81,7 +81,7 @@ class TestImporter:
         mod.__loader__ = self
         if ispkg:
             mod.__path__ = self._get__path__()
-        exec code in mod.__dict__
+        exec(code, mod.__dict__)
         return mod
 
 

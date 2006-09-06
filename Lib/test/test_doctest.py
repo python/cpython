@@ -2366,8 +2366,8 @@ def old_test4(): """
         ...        '''>>> assert 1 < 2
         ...        '''
         ... \"""
-        >>> exec test_data in m1.__dict__
-        >>> exec test_data in m2.__dict__
+        >>> exec(test_data, m1.__dict__)
+        >>> exec(test_data, m2.__dict__)
         >>> m1.__dict__.update({"f2": m2._f, "g2": m2.g, "h2": m2.H})
 
         Tests that objects outside m1 are excluded:

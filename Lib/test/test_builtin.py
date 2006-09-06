@@ -395,6 +395,29 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(IOError, execfile, os.curdir)
         self.assertRaises(IOError, execfile, "I_dont_exist")
 
+    def test_exec(self):
+        g = {}
+        exec('z = 1', g)
+        if '__builtins__' in g:
+            del g['__builtins__']
+        self.assertEqual(g, {'z': 1})
+
+        exec(u'z = 1+1', g)
+        if '__builtins__' in g:
+            del g['__builtins__']
+        self.assertEqual(g, {'z': 2})
+        g = {}
+        l = {}
+
+        import warnings
+        warnings.filterwarnings("ignore", "global statement", module="<string>")
+        exec('global a; a = 1; b = 2', g, l)
+        if '__builtins__' in g:
+            del g['__builtins__']
+        if '__builtins__' in l:
+            del l['__builtins__']
+        self.assertEqual((g, l), ({'a': 1}, {'b': 2}))
+
     def test_filter(self):
         self.assertEqual(filter(lambda c: 'a' <= c <= 'z', 'Hello World'), 'elloorld')
         self.assertEqual(filter(None, [1, 'hello', [], [3], '', None, 9, 0]), [1, 'hello', [3], 9])
@@ -1172,7 +1195,7 @@ class BuiltinTest(unittest.TestCase):
             "max(1, 2, key=1)",             # keyfunc is not callable
             ):
             try:
-                exec(stmt) in globals()
+                exec(stmt, globals())
             except TypeError:
                 pass
             else:
@@ -1218,7 +1241,7 @@ class BuiltinTest(unittest.TestCase):
             "min(1, 2, key=1)",             # keyfunc is not callable
             ):
             try:
-                exec(stmt) in globals()
+                exec(stmt, globals())
             except TypeError:
                 pass
             else:

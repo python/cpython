@@ -814,8 +814,6 @@ opcode_stack_effect(int opcode, int oparg)
 			return -1;
 		case IMPORT_STAR:
 			return -1;
-		case EXEC_STMT:
-			return -3;
 		case YIELD_VALUE:
 			return 0;
 
@@ -2112,21 +2110,6 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 		return compiler_import(c, s);
 	case ImportFrom_kind:
 		return compiler_from_import(c, s);
-	case Exec_kind:
-		VISIT(c, expr, s->v.Exec.body);
-		if (s->v.Exec.globals) {
-			VISIT(c, expr, s->v.Exec.globals);
-			if (s->v.Exec.locals) {
-				VISIT(c, expr, s->v.Exec.locals);
-			} else {
-				ADDOP(c, DUP_TOP);
-			}
-		} else {
-			ADDOP_O(c, LOAD_CONST, Py_None, consts);
-			ADDOP(c, DUP_TOP);
-		}
-		ADDOP(c, EXEC_STMT);
-		break;
 	case Global_kind:
 		break;
 	case Expr_kind:

@@ -29,8 +29,8 @@ class CodeopTests(unittest.TestCase):
                 saved_stdout = sys.stdout
                 sys.stdout = cStringIO.StringIO()
                 try:
-                    exec code in d
-                    exec compile(str,"<input>","single") in r
+                    exec(code, d)
+                    exec(compile(str,"<input>","single"), r)
                 finally:
                     sys.stdout = saved_stdout
             elif symbol == 'eval':

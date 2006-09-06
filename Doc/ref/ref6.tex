@@ -20,7 +20,6 @@ by semicolons.  The syntax for simple statements is:
   \productioncont{| \token{continue_stmt}}
   \productioncont{| \token{import_stmt}}
   \productioncont{| \token{global_stmt}}
-  \productioncont{| \token{exec_stmt}}
 \end{productionlist}
 
 
@@ -809,7 +808,7 @@ import __future__ [as name]
 That is not a future statement; it's an ordinary import statement with
 no special semantics or syntax restrictions.
 
-Code compiled by an \keyword{exec} statement or calls to the builtin functions
+Code compiled by calls to the builtin functions \function{exec()},
 \function{compile()} and \function{execfile()} that occur in a module
 \module{M} containing a future statement will, by default, use the new 
 syntax or semantics associated with the future statement.  This can,
@@ -855,64 +854,14 @@ program.)
 \strong{Programmer's note:}
 the \keyword{global} is a directive to the parser.  It
 applies only to code parsed at the same time as the \keyword{global}
-statement.  In particular, a \keyword{global} statement contained in an
-\keyword{exec} statement does not affect the code block \emph{containing}
-the \keyword{exec} statement, and code contained in an \keyword{exec}
-statement is unaffected by \keyword{global} statements in the code
-containing the \keyword{exec} statement.  The same applies to the
+statement.  In particular, a \keyword{global} statement contained in a
+string or code object supplied to the builtin \function{exec()} function
+does not affect the code block \emph{containing} the function call,
+and code contained in such a string is unaffected by \keyword{global}
+statements in the code containing the function call.  The same applies to the
 \function{eval()}, \function{execfile()} and \function{compile()} functions.
-\stindex{exec}
+\bifuncindex{exec}
 \bifuncindex{eval}
 \bifuncindex{execfile}
 \bifuncindex{compile}
-
-
-\section{The \keyword{exec} statement \label{exec}}
-\stindex{exec}
-
-\begin{productionlist}
-  \production{exec_stmt}
-             {"exec" \token{expression}
-              ["in" \token{expression} ["," \token{expression}]]}
-\end{productionlist}
-
-This statement supports dynamic execution of Python code.  The first
-expression should evaluate to either a string, an open file object, or
-a code object.  If it is a string, the string is parsed as a suite of
-Python statements which is then executed (unless a syntax error
-occurs).  If it is an open file, the file is parsed until \EOF{} and
-executed.  If it is a code object, it is simply executed.  In all
-cases, the code that's executed is expected to be valid as file
-input (see section~\ref{file-input}, ``File input'').  Be aware that
-the \keyword{return} and \keyword{yield} statements may not be used
-outside of function definitions even within the context of code passed
-to the \keyword{exec} statement.
-
-In all cases, if the optional parts are omitted, the code is executed
-in the current scope.  If only the first expression after \keyword{in}
-is specified, it should be a dictionary, which will be used for both
-the global and the local variables.  If two expressions are given,
-they are used for the global and local variables, respectively.
-If provided, \var{locals} can be any mapping object.
-\versionchanged[formerly \var{locals} was required to be a dictionary]{2.4}
-
-As a side effect, an implementation may insert additional keys into
-the dictionaries given besides those corresponding to variable names
-set by the executed code.  For example, the current implementation
-may add a reference to the dictionary of the built-in module
-\module{__builtin__} under the key \code{__builtins__} (!).
-\ttindex{__builtins__}
-\refbimodindex{__builtin__}
-
-\strong{Programmer's hints:}
-dynamic evaluation of expressions is supported by the built-in
-function \function{eval()}.  The built-in functions
-\function{globals()} and \function{locals()} return the current global
-and local dictionary, respectively, which may be useful to pass around
-for use by \keyword{exec}.
-\bifuncindex{eval}
-\bifuncindex{globals}
-\bifuncindex{locals}
-
-  
 

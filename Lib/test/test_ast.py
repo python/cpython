@@ -50,8 +50,6 @@ exec_tests = [
     "import sys",
     # ImportFrom
     "from sys import v",
-    # Exec
-    "exec 'v'",
     # Global
     "global v",
     # Expr
@@ -169,7 +167,6 @@ exec_results = [
 ('Module', [('Assert', (1, 0), ('Name', (1, 7), 'v', ('Load',)), None)]),
 ('Module', [('Import', (1, 0), [('alias', 'sys', None)])]),
 ('Module', [('ImportFrom', (1, 0), 'sys', [('alias', 'v', None)], 0)]),
-('Module', [('Exec', (1, 0), ('Str', (1, 5), 'v'), None, None)]),
 ('Module', [('Global', (1, 0), ['v'])]),
 ('Module', [('Expr', (1, 0), ('Num', (1, 0), 1))]),
 ('Module', [('Pass', (1, 0))]),

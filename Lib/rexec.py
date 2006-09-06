@@ -58,7 +58,7 @@ class FileDelegate(FileBase):
         self.name = name
 
     for m in FileBase.ok_file_methods + ('close',):
-        exec TEMPLATE % (m, m)
+        exec(TEMPLATE % (m, m))
 
 
 class RHooks(ihooks.Hooks):
@@ -310,7 +310,7 @@ class RExec(ihooks._Verbose):
 
         """
         m = self.add_module('__main__')
-        exec code in m.__dict__
+        exec(code, m.__dict__)
 
     def r_eval(self, code):
         """Evaluate code within a restricted environment.

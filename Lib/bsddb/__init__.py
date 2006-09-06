@@ -72,7 +72,7 @@ import sys, os
 if sys.version >= '2.3':
     import UserDict
     from weakref import ref
-    exec """
+    exec("""
 class _iter_mixin(UserDict.DictMixin):
     def _make_iter_cursor(self):
         cur = _DeadlockWrap(self.db.cursor)
@@ -145,7 +145,7 @@ class _iter_mixin(UserDict.DictMixin):
         except _bsddb.DBCursorClosedError:
             # the database was modified during iteration.  abort.
             return
-"""
+""")
 else:
     class _iter_mixin: pass
 

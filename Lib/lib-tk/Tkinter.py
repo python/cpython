@@ -1699,7 +1699,7 @@ class Tk(Misc, Wm):
         base_tcl = os.path.join(home, '.%s.tcl' % baseName)
         base_py = os.path.join(home, '.%s.py' % baseName)
         dir = {'self': self}
-        exec 'from Tkinter import *' in dir
+        exec('from Tkinter import *', dir)
         if os.path.isfile(class_tcl):
             self.tk.call('source', class_tcl)
         if os.path.isfile(class_py):

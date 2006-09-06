@@ -139,7 +139,7 @@ import sys, traceback
 def run_user_code(envdir):
     source = raw_input(">>> ")
     try:
-        exec source in envdir
+        exec(source, envdir)
     except:
         print "Exception in user code:"
         print '-'*60

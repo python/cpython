@@ -910,7 +910,7 @@ def test(environ=os.environ):
         print_environ(environ)
         print_environ_usage()
         def f():
-            exec "testing print_exception() -- <I>italics?</I>"
+            exec("testing print_exception() -- <I>italics?</I>")
         def g(f=f):
             f()
         print "<H3>What follows is a test, not an actual exception:</H3>"

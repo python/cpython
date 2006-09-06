@@ -100,7 +100,7 @@ class InteractiveInterpreter:
 
         """
         try:
-            exec code in self.locals
+            exec(code, self.locals)
         except SystemExit:
             raise
         except:

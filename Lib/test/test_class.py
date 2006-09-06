@@ -136,7 +136,7 @@ def __%(method)s__(self, *args):
 
 d = {}
 for method in testmeths:
-    exec method_template % locals() in d
+    exec(method_template % locals(), d)
 for k in d:
     setattr(AllTests, k, d[k])
 del d, k
@@ -291,7 +291,7 @@ def check_exc(stmt, exception):
     """Raise TestFailed if executing 'stmt' does not raise 'exception'
     """
     try:
-        exec stmt
+        exec(stmt)
     except exception:
         pass
     else:

@@ -107,7 +107,7 @@ def test_module_with_large_stack(module):
     sys.path.append('')
 
     # this used to crash
-    exec 'import ' + module
+    exec('import ' + module)
 
     # cleanup
     del sys.path[-1]

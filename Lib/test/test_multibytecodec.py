@@ -49,7 +49,7 @@ class Test_MultibyteCodec(unittest.TestCase):
         try:
             for enc in ALL_CJKENCODINGS:
                 print >> open(TESTFN, 'w'), '# coding:', enc
-                exec open(TESTFN)
+                execfile(TESTFN)
         finally:
             os.unlink(TESTFN)
 

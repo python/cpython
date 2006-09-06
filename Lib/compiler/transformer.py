@@ -468,20 +468,6 @@ class Transformer:
             names.append(nodelist[i][1])
         return Global(names, lineno=nodelist[0][2])
 
-    def exec_stmt(self, nodelist):
-        # exec_stmt: 'exec' expr ['in' expr [',' expr]]
-        expr1 = self.com_node(nodelist[1])
-        if len(nodelist) >= 4:
-            expr2 = self.com_node(nodelist[3])
-            if len(nodelist) >= 6:
-                expr3 = self.com_node(nodelist[5])
-            else:
-                expr3 = None
-        else:
-            expr2 = expr3 = None
-
-        return Exec(expr1, expr2, expr3, lineno=nodelist[0][2])
-
     def assert_stmt(self, nodelist):
         # 'assert': test, [',' test]
         expr1 = self.com_node(nodelist[1])
@@ -1429,7 +1415,6 @@ _legal_node_types = [
     symbol.raise_stmt,
     symbol.import_stmt,
     symbol.global_stmt,
-    symbol.exec_stmt,
     symbol.assert_stmt,
     symbol.if_stmt,
     symbol.while_stmt,

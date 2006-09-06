@@ -87,7 +87,7 @@ class ExceptionTests(unittest.TestCase):
         self.raise_catch(RuntimeError, "RuntimeError")
 
         self.raise_catch(SyntaxError, "SyntaxError")
-        try: exec '/\n'
+        try: exec('/\n')
         except SyntaxError: pass
 
         self.raise_catch(IndentationError, "IndentationError")

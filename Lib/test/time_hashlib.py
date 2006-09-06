@@ -44,22 +44,22 @@ hName = sys.argv[1]
 # setup our creatorFunc to test the requested hash
 #
 if hName in ('_md5', '_sha'):
-    exec 'import '+hName
-    exec 'creatorFunc = '+hName+'.new'
+    exec('import '+hName)
+    exec('creatorFunc = '+hName+'.new')
     print "testing speed of old", hName, "legacy interface"
 elif hName == '_hashlib' and len(sys.argv) > 3:
     import _hashlib
-    exec 'creatorFunc = _hashlib.%s' % sys.argv[2]
+    exec('creatorFunc = _hashlib.%s' % sys.argv[2])
     print "testing speed of _hashlib.%s" % sys.argv[2], getattr(_hashlib, sys.argv[2])
 elif hName == '_hashlib' and len(sys.argv) == 3:
     import _hashlib
-    exec 'creatorFunc = lambda x=_hashlib.new : x(%r)' % sys.argv[2]
+    exec('creatorFunc = lambda x=_hashlib.new : x(%r)' % sys.argv[2])
     print "testing speed of _hashlib.new(%r)" % sys.argv[2]
 elif hasattr(hashlib, hName) and callable(getattr(hashlib, hName)):
     creatorFunc = getattr(hashlib, hName)
     print "testing speed of hashlib."+hName, getattr(hashlib, hName)
 else:
-    exec "creatorFunc = lambda x=hashlib.new : x(%r)" % hName
+    exec("creatorFunc = lambda x=hashlib.new : x(%r)" % hName)
     print "testing speed of hashlib.new(%r)" % hName
 
 try:
