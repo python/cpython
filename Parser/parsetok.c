@@ -89,9 +89,7 @@ PyParser_ParseFileFlags(FILE *fp, const char *filename, grammar *g, int start,
 	return parsetok(tok, g, start, err_ret, flags);
 }
 
-/* Parse input coming from the given tokenizer structure.
-   Return error code. */
-
+#if 0
 static char with_msg[] =
 "%s:%d: Warning: 'with' will become a reserved keyword in Python 2.6\n";
 
@@ -105,6 +103,10 @@ warn(const char *msg, const char *filename, int lineno)
 		filename = "<string>";
 	PySys_WriteStderr(msg, filename, lineno);
 }
+#endif
+
+/* Parse input coming from the given tokenizer structure.
+   Return error code. */
 
 static node *
 parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,

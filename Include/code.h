@@ -52,7 +52,9 @@ typedef struct {
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.
 */
+#if 0
 #define PY_PARSER_REQUIRES_FUTURE_KEYWORD
+#endif
 
 #define CO_MAXBLOCKS 20 /* Max static block nesting within a function */
 

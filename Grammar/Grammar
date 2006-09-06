@@ -64,8 +64,8 @@ import_stmt: import_name | import_from
 import_name: 'import' dotted_as_names
 import_from: ('from' ('.'* dotted_name | '.'+)
               'import' ('*' | '(' import_as_names ')' | import_as_names))
-import_as_name: NAME [('as' | NAME) NAME]
-dotted_as_name: dotted_name [('as' | NAME) NAME]
+import_as_name: NAME ['as' NAME]
+dotted_as_name: dotted_name ['as' NAME]
 import_as_names: import_as_name (',' import_as_name)* [',']
 dotted_as_names: dotted_as_name (',' dotted_as_name)*
 dotted_name: NAME ('.' NAME)*
@@ -83,7 +83,7 @@ try_stmt: ('try' ':' suite
 	    ['finally' ':' suite] |
 	   'finally' ':' suite))
 with_stmt: 'with' test [ with_var ] ':' suite
-with_var: ('as' | NAME) expr
+with_var: 'as' expr
 # NB compile.c makes sure that the default except clause is last
 except_clause: 'except' [test [',' test]]
 suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT

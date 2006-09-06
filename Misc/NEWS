@@ -30,6 +30,8 @@ Core and builtins
   required changing the .pyc magic number.  This means that .pyc files
   generated before 2.5c2 will be regenerated.
 
+- with and as are now keywords.
+
 
 Library
 -------
