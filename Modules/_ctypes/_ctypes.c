@@ -4597,11 +4597,11 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
 			if (obj->b_objects == NULL)
 				goto failed;
 		}
+		Py_XINCREF(obj->b_objects);
 		result->b_objects = obj->b_objects;
-		if (result->b_objects) {
+		if (result->b_objects && PyDict_Check(result->b_objects)) {
 			PyObject *index;
 			int rc;
-			Py_INCREF(obj->b_objects);
 			index = PyLong_FromVoidPtr((void *)src);
 			if (index == NULL)
 				goto failed;
