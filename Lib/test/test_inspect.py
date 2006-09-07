@@ -178,7 +178,18 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(inspect.getcomments(mod.StupidGit), '# line 20\n')
 
     def test_getmodule(self):
+        # Check actual module
+        self.assertEqual(inspect.getmodule(mod), mod)
+        # Check class (uses __module__ attribute)
         self.assertEqual(inspect.getmodule(mod.StupidGit), mod)
+        # Check a method (no __module__ attribute, falls back to filename)
+        self.assertEqual(inspect.getmodule(mod.StupidGit.abuse), mod)
+        # Do it again (check the caching isn't broken)
+        self.assertEqual(inspect.getmodule(mod.StupidGit.abuse), mod)
+        # Check a builtin
+        self.assertEqual(inspect.getmodule(str), sys.modules["__builtin__"])
+        # Check filename override
+        self.assertEqual(inspect.getmodule(None, modfile), mod)
 
     def test_getsource(self):
         self.assertSourceEqual(git.abuse, 29, 39)
