@@ -202,6 +202,12 @@ class Test_ISO2022(unittest.TestCase):
         uni = u':hu4:unit\xe9 de famille'
         self.assertEqual(iso2022jp2.decode('iso2022-jp-2'), uni)
 
+    def test_iso2022_jp_g0(self):
+        self.failIf('\x0e' in u'\N{SOFT HYPHEN}'.encode('iso-2022-jp-2'))
+        for encoding in ('iso-2022-jp-2004', 'iso-2022-jp-3'):
+            e = u'\u3406'.encode(encoding)
+            self.failIf(filter(lambda x: x >= '\x80', e))
+
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(Test_MultibyteCodec))
