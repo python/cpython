@@ -11679,7 +11679,7 @@ Changes to the build process
 - The way GNU readline is configured is totally different.  The
 --with-readline configure option is gone.  It is now an extension
 module, which may be loaded dynamically.  You must enable it (and
-specify the correct linraries to link with) in the Modules/Setup file.
+specify the correct libraries to link with) in the Modules/Setup file.
 Importing the module installs some hooks which enable command line
 editing.  When the interpreter shell is invoked interactively, it
 attempts to import the readline module; when this fails, the default
