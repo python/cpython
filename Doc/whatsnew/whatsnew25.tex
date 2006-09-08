@@ -2152,8 +2152,8 @@ c = conn.cursor()
 
 # Create table
 c.execute('''create table stocks
-(date timestamp, trans varchar, symbol varchar,
- qty decimal, price decimal)''')
+(date text, trans text, symbol text,
+ qty real, price real)''')
 
 # Insert a row of data
 c.execute("""insert into stocks
