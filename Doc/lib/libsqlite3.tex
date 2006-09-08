@@ -6,14 +6,16 @@
 \sectionauthor{Gerhard Häring}{gh@ghaering.de}
 \versionadded{2.5}
 
-SQLite is a C library that provides a SQL-language database that
-stores data in disk files without requiring a separate server process.
+SQLite is a C library that provides a lightweight disk-based database
+that doesn't require a separate server process and allows accessing
+the database using a nonstandard variant of the SQL query language.
+Some applications can use SQLite for internal data storage.  It's also
+possible to prototype an application using SQLite and then port the
+code to a larger database such as PostgreSQL or Oracle.
+ 
 pysqlite was written by Gerhard H\"aring and provides a SQL interface
 compliant with the DB-API 2.0 specification described by
-\pep{249}. This means that it should be possible to write the first
-version of your applications using SQLite for data storage.  If
-switching to a larger database such as PostgreSQL or Oracle is
-later necessary, the switch should be relatively easy.
+\pep{249}. 
 
 To use the module, you must first create a \class{Connection} object
 that represents the database.  Here the data will be stored in the 
