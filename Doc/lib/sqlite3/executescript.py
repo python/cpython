@@ -17,7 +17,7 @@ cur.executescript("""
 
     insert into book(title, author, published)
     values (
-        'Dirk Gently''s Holistic Detective Agency
+        'Dirk Gently''s Holistic Detective Agency',
         'Douglas Adams',
         1987
     );
