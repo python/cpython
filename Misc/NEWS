@@ -40,6 +40,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1553314: Fix the inspect.py slowdown that was hurting IPython & SAGE
+  by adding smarter caching in inspect.getmodule()
+
 - Fix missing import of the types module in logging.config.
 
 - Patch #1550886: Fix decimal module context management implementation
