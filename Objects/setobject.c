@@ -319,8 +319,10 @@ set_add_entry(register PySetObject *so, setentry *entry)
 	assert(so->fill <= so->mask);  /* at least one empty slot */
 	n_used = so->used;
 	Py_INCREF(entry->key);
-	if (set_insert_key(so, entry->key, entry->hash) == -1)
+	if (set_insert_key(so, entry->key, entry->hash) == -1) {
+		Py_DECREF(entry->key);
 		return -1;
+	}
 	if (!(so->used > n_used && so->fill*3 >= (so->mask+1)*2))
 		return 0;
 	return set_table_resize(so, so->used>50000 ? so->used*2 : so->used*4);
@@ -1138,7 +1140,12 @@ set_intersection(PySetObject *so, PyObject *other)
 		}
 
 		while (set_next((PySetObject *)other, &pos, &entry)) {
-			if (set_contains_entry(so, entry)) {
+			int rv = set_contains_entry(so, entry);
+			if (rv == -1) {
+				Py_DECREF(result);
+				return NULL;
+			}
+			if (rv) {
 				if (set_add_entry(result, entry) == -1) {
 					Py_DECREF(result);
 					return NULL;
@@ -1155,7 +1162,14 @@ set_intersection(PySetObject *so, PyObject *other)
 	}
 
 	while ((key = PyIter_Next(it)) != NULL) {
-		if (set_contains_key(so, key)) {
+		int rv = set_contains_key(so, key);
+		if (rv == -1) {
+			Py_DECREF(it);
+			Py_DECREF(result);
+			Py_DECREF(key);
+			return NULL;
+		}
+		if (rv) {
 			if (set_add_key(result, key) == -1) {
 				Py_DECREF(it);
 				Py_DECREF(result);
@@ -1232,7 +1246,8 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
 		Py_ssize_t pos = 0;
 
 		while (set_next((PySetObject *)other, &pos, &entry))
-			set_discard_entry(so, entry);
+			if (set_discard_entry(so, entry) == -1)
+				return -1;
 	} else {
 		PyObject *key, *it;
 		it = PyObject_GetIter(other);
@@ -1295,17 +1310,26 @@ set_difference(PySetObject *so, PyObject *other)
 			entrycopy.hash = entry->hash;
 			entrycopy.key = entry->key;
 			if (!PyDict_Contains(other, entry->key)) {
-				if (set_add_entry((PySetObject *)result, &entrycopy) == -1)
+				if (set_add_entry((PySetObject *)result, &entrycopy) == -1) {
+					Py_DECREF(result);
 					return NULL;
+				}
 			}
 		}
 		return result;
 	}
 
 	while (set_next(so, &pos, &entry)) {
-		if (!set_contains_entry((PySetObject *)other, entry)) {
-			if (set_add_entry((PySetObject *)result, entry) == -1)
+		int rv = set_contains_entry((PySetObject *)other, entry);
+		if (rv == -1) {
+			Py_DECREF(result);
+			return NULL;
+		}
+		if (!rv) {
+			if (set_add_entry((PySetObject *)result, entry) == -1) {
+				Py_DECREF(result);
 				return NULL;
+			}
 		}
 	}
 	return result;
@@ -1464,7 +1488,10 @@ set_issubset(PySetObject *so, PyObject *other)
 		Py_RETURN_FALSE;
 
 	while (set_next(so, &pos, &entry)) {
-		if (!set_contains_entry((PySetObject *)other, entry))
+		int rv = set_contains_entry((PySetObject *)other, entry);
+		if (rv == -1)
+			return NULL;
+		if (!rv)
 			Py_RETURN_FALSE;
 	}
 	Py_RETURN_TRUE;
