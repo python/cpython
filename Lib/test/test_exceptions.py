@@ -304,6 +304,15 @@ class ExceptionTests(unittest.TestCase):
                 return -1
         self.assertRaises(RuntimeError, g)
 
+    def testUnicodeStrUsage(self):
+        # Make sure both instances and classes have a str and unicode
+        # representation.
+        self.failUnless(str(Exception))
+        self.failUnless(unicode(Exception))
+        self.failUnless(str(Exception('a')))
+        self.failUnless(unicode(Exception(u'a')))
+
+
 def test_main():
     run_unittest(ExceptionTests)
 
