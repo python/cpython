@@ -19,6 +19,9 @@ What's New in Python 2.5 release candidate 2?
 Core and builtins
 -----------------
 
+- Bug #1551432: Exceptions do not define an explicit __unicode__ method.  This
+  allows calling unicode() on exceptions classes directly to succeed.
+
 - Bug #1542051: Exceptions now correctly call PyObject_GC_UnTrack.
   Also make sure that every exception class has __module__ set to
   'exceptions'.

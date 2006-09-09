@@ -175,27 +175,10 @@ BaseException_setstate(PyObject *self, PyObject *state)
     Py_RETURN_NONE;
 }
 
-#ifdef Py_USING_UNICODE
-/* while this method generates fairly uninspired output, it a least
- * guarantees that we can display exceptions that have unicode attributes
- */
-static PyObject *
-BaseException_unicode(PyBaseExceptionObject *self)
-{
-    if (PyTuple_GET_SIZE(self->args) == 0)
-        return PyUnicode_FromUnicode(NULL, 0);
-    if (PyTuple_GET_SIZE(self->args) == 1)
-        return PyObject_Unicode(PyTuple_GET_ITEM(self->args, 0));
-    return PyObject_Unicode(self->args);
-}
-#endif /* Py_USING_UNICODE */
 
 static PyMethodDef BaseException_methods[] = {
    {"__reduce__", (PyCFunction)BaseException_reduce, METH_NOARGS },
    {"__setstate__", (PyCFunction)BaseException_setstate, METH_O },
-#ifdef Py_USING_UNICODE
-   {"__unicode__", (PyCFunction)BaseException_unicode, METH_NOARGS },
-#endif
    {NULL, NULL, 0, NULL},
 };
 
