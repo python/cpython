@@ -50,7 +50,7 @@ Library
 -------
 
 - Patch #1553314: Fix the inspect.py slowdown that was hurting IPython & SAGE
-  by adding smarter caching in inspect.getmodule()
+  by adding smarter caching in inspect.getmodule().
 
 - Fix missing import of the types module in logging.config.
 
@@ -67,6 +67,10 @@ Library
 
 Extension Modules
 -----------------
+
+- Fix bugs in ctypes:
+  - anonymous structure fields that have a bit-width specified did not work
+  - cast function did not accept c_char_p or c_wchar_p instances as first arg
 
 - Bug #1551427: fix a wrong NULL pointer check in the win32 version
   of os.urandom().
