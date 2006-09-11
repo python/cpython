@@ -19,6 +19,9 @@ What's New in Python 2.5 release candidate 2?
 Core and builtins
 -----------------
 
+- Make _PyGILState_NoteThreadState() static, it was not used anywhere
+  outside of pystate.c and should not be necessary.
+
 - Bug #1551432: Exceptions do not define an explicit __unicode__ method.  This
   allows calling unicode() on exceptions classes directly to succeed.
 
