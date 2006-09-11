@@ -177,11 +177,11 @@ MakeFields(PyObject *type, CFieldObject *descr,
 
 	for (i = 0; i < PySequence_Fast_GET_SIZE(fieldlist); ++i) {
 		PyObject *pair = PySequence_Fast_GET_ITEM(fieldlist, i); /* borrowed */
-		PyObject *fname, *ftype;
+		PyObject *fname, *ftype, *bits;
 		CFieldObject *fdescr;
 		CFieldObject *new_descr;
 		/* Convert to PyArg_UnpackTuple... */
-		if (!PyArg_ParseTuple(pair, "OO", &fname, &ftype)) {
+		if (!PyArg_ParseTuple(pair, "OO|O", &fname, &ftype, &bits)) {
 			Py_DECREF(fieldlist);
 			return -1;
 		}
