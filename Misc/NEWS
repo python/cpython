@@ -40,6 +40,8 @@ Core and builtins
 Library
 -------
 
+- Reverted patch #1504333 to sgmllib because it introduced an infinite loop.
+
 - Patch #1553314: Fix the inspect.py slowdown that was hurting IPython & SAGE
   by adding smarter caching in inspect.getmodule()
 
