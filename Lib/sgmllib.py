@@ -29,12 +29,7 @@ starttagopen = re.compile('<[>a-zA-Z]')
 shorttagopen = re.compile('<[a-zA-Z][-.a-zA-Z0-9]*/')
 shorttag = re.compile('<([a-zA-Z][-.a-zA-Z0-9]*)/([^/]*)/')
 piclose = re.compile('>')
-starttag = re.compile(r'<[a-zA-Z][-_.:a-zA-Z0-9]*\s*('
-        r'\s*([a-zA-Z_][-:.a-zA-Z_0-9]*)(\s*=\s*'
-        r'(\'[^\']*\'|"[^"]*"|[-a-zA-Z0-9./,:;+*%?!&$\(\)_#=~@]'
-        r'[][\-a-zA-Z0-9./,:;+*%?!&$\(\)_#=~\'"@]*(?=[\s>/<])))?'
-    r')*\s*/?\s*(?=[<>])')
-endtag = re.compile(r'</?[a-zA-Z][-_.:a-zA-Z0-9]*\s*/?\s*(?=[<>])')
+endbracket = re.compile('[<>]')
 tagfind = re.compile('[a-zA-Z][-_.a-zA-Z0-9]*')
 attrfind = re.compile(
     r'\s*([a-zA-Z_][-:.a-zA-Z_0-9]*)(\s*=\s*'
@@ -254,10 +249,14 @@ class SGMLParser(markupbase.ParserBase):
             self.finish_shorttag(tag, data)
             self.__starttag_text = rawdata[start_pos:match.end(1) + 1]
             return k
-        match = starttag.match(rawdata, i)
+        # XXX The following should skip matching quotes (' or ")
+        # As a shortcut way to exit, this isn't so bad, but shouldn't
+        # be used to locate the actual end of the start tag since the
+        # < or > characters may be embedded in an attribute value.
+        match = endbracket.search(rawdata, i+1)
         if not match:
             return -1
-        j = match.end(0)
+        j = match.start(0)
         # Now parse the data between i+1 and j into a tag and attrs
         attrs = []
         if rawdata[i:i+2] == '<>':
@@ -306,10 +305,10 @@ class SGMLParser(markupbase.ParserBase):
     # Internal -- parse endtag
     def parse_endtag(self, i):
         rawdata = self.rawdata
-        match = endtag.match(rawdata, i)
+        match = endbracket.search(rawdata, i+1)
         if not match:
             return -1
-        j = match.end(0)
+        j = match.start(0)
         tag = rawdata[i+2:j].strip().lower()
         if rawdata[j] == '>':
             j = j+1
