@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Make _PyGILState_NoteThreadState() static, it was not used anywhere
+  outside of pystate.c and should not be necessary.
+
 - Bug #1542051: Exceptions now correctly call PyObject_GC_UnTrack.
   Also make sure that every exception class has __module__ set to
   'exceptions'.

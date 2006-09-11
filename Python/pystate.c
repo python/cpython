@@ -309,9 +309,14 @@ PyThreadState_Swap(PyThreadState *newts)
 	*/
 #if defined(Py_DEBUG) && defined(WITH_THREAD)
 	if (newts) {
+		/* This can be called from PyEval_RestoreThread(). Similar
+		   to it, we need to ensure errno doesn't change.
+		*/
+		int err = errno;
 		PyThreadState *check = PyGILState_GetThisThreadState();
 		if (check && check->interp == newts->interp && check != newts)
 			Py_FatalError("Invalid thread state for this thread");
+		errno = err;
 	}
 #endif
 	return oldts;
@@ -504,7 +509,7 @@ _PyGILState_Fini(void)
    it so it doesn't try to create another thread state for the thread (this is
    a better fix for SF bug #1010677 than the first one attempted).
 */
-void
+static void
 _PyGILState_NoteThreadState(PyThreadState* tstate)
 {
 	/* If autoTLSkey is 0, this must be the very first threadstate created
