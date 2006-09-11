@@ -57,5 +57,21 @@ class Test(unittest.TestCase):
         c_int()
         self.failUnlessEqual(p[:4], [1, 2, 96, 4])
 
+    def test_char_p(self):
+        # This didn't work: bad argument to internal function
+        s = c_char_p("hiho")
+        self.failUnlessEqual(cast(cast(s, c_void_p), c_char_p).value,
+                             "hiho")
+
+    try:
+        c_wchar_p
+    except NameError:
+        pass
+    else:
+        def test_wchar_p(self):
+            s = c_wchar_p("hiho")
+            self.failUnlessEqual(cast(cast(s, c_void_p), c_wchar_p).value,
+                                 "hiho")
+
 if __name__ == "__main__":
     unittest.main()
