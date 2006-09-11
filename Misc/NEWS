@@ -92,6 +92,8 @@ Extension Modules
 Library
 -------
 
+- Reverted patch #1504333 because it introduced an infinite loop.
+
 - Fix missing import of the types module in logging.config.
 
 - Bug #1112549, DoS attack on cgi.FieldStorage.
