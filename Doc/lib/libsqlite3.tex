@@ -146,8 +146,8 @@ committed. The \var{timeout} parameter specifies how long the connection should
 wait for the lock to go away until raising an exception. The default for the
 timeout parameter is 5.0 (five seconds). 
 
-For the \var{isolation_level} parameter, please see \member{isolation_level}
-\ref{sqlite3-Connection-IsolationLevel} property of \class{Connection} objects.
+For the \var{isolation_level} parameter, please see the \member{isolation_level}
+property of \class{Connection} objects in section~\ref{sqlite3-Connection-IsolationLevel}.
 
 SQLite natively supports only the types TEXT, INTEGER, FLOAT, BLOB and NULL. If
 you want to use other types, like you have to add support for them yourself.
@@ -212,13 +212,14 @@ A \class{Connection} instance has the following attributes and methods:
 \label{sqlite3-Connection-IsolationLevel}
 \begin{memberdesc}{isolation_level}
   Get or set the current isolation level. None for autocommit mode or one of
-  "DEFERRED", "IMMEDIATE" or "EXLUSIVE". See  Controlling Transactions
-  \ref{sqlite3-Controlling-Transactions} for a more detailed explanation.
+  "DEFERRED", "IMMEDIATE" or "EXLUSIVE". See ``Controlling Transactions'', 
+  section~\ref{sqlite3-Controlling-Transactions}, for a more detailed explanation.
 \end{memberdesc}
 
 \begin{methoddesc}{cursor}{\optional{cursorClass}}
   The cursor method accepts a single optional parameter \var{cursorClass}.
-  This is a custom cursor class which must extend \class{sqlite3.Cursor}.
+  If supplied, this must be a custom cursor class that extends 
+  \class{sqlite3.Cursor}.
 \end{methoddesc}
 
 \begin{methoddesc}{execute}{sql, \optional{parameters}}
@@ -244,7 +245,7 @@ parameters given.
 Creates a user-defined function that you can later use from within SQL
 statements under the function name \var{name}. \var{num_params} is the number
 of parameters the function accepts, and \var{func} is a Python callable that is
-called as SQL function.
+called as the SQL function.
 
 The function can return any of the types supported by SQLite: unicode, str,
 int, long, float, buffer and None.
@@ -274,7 +275,7 @@ Example:
 
 Creates a collation with the specified \var{name} and \var{callable}. The
 callable will be passed two string arguments. It should return -1 if the first
-is ordered lower than the second, 0 if they are ordered equal and 1 and if the
+is ordered lower than the second, 0 if they are ordered equal and 1 if the
 first is ordered higher than the second.  Note that this controls sorting
 (ORDER BY in SQL) so your comparisons don't affect other SQL operations.
 
@@ -323,20 +324,21 @@ module.
 
 \begin{memberdesc}{row_factory}
   You can change this attribute to a callable that accepts the cursor and
-  the original row as tuple and will return the real result row.  This
-  way, you can implement more advanced ways of returning results, like
-  ones that can also access columns by name.
+  the original row as a tuple and will return the real result row.  This
+  way, you can implement more advanced ways of returning results, such 
+  as returning an object that can also access columns by name.
 
   Example:
 
   \verbatiminput{sqlite3/row_factory.py}
 
-  If the standard tuple types don't suffice for you, and you want name-based
+  If returning a tuple doesn't suffice and you want name-based
   access to columns, you should consider setting \member{row_factory} to the
-  highly-optimized sqlite3.Row type. It provides both
+  highly-optimized \class{sqlite3.Row} type. \class{Row} provides both
   index-based and case-insensitive name-based access to columns with almost
-  no memory overhead. Much better than your own custom dictionary-based
-  approach or even a db_row based solution.
+  no memory overhead. It will probably be better than your own custom 
+  dictionary-based approach or even a db_row based solution.
+  % XXX what's a db_row-based solution?
 \end{memberdesc}
 
 \begin{memberdesc}{text_factory}
@@ -350,7 +352,7 @@ module.
   attribute to \constant{sqlite3.OptimizedUnicode}.
 
   You can also set it to any other callable that accepts a single bytestring
-  parameter and returns the result object.
+  parameter and returns the resulting object.
 
   See the following example code for illustration:
 
@@ -358,7 +360,7 @@ module.
 \end{memberdesc}
 
 \begin{memberdesc}{total_changes}
-  Returns the total number of database rows that have be modified, inserted,
+  Returns the total number of database rows that have been modified, inserted,
   or deleted since the database connection was opened.
 \end{memberdesc}
 
@@ -385,9 +387,9 @@ This example shows how to use the named style:
 
     \verbatiminput{sqlite3/execute_2.py}
 
-    \method{execute} will only execute a single SQL statement. If you try to
+    \method{execute()} will only execute a single SQL statement. If you try to
     execute more than one statement with it, it will raise a Warning. Use
-    \method{executescript} if want to execute multiple SQL statements with one
+    \method{executescript()} if you want to execute multiple SQL statements with one
     call.
 \end{methoddesc}
 
@@ -395,7 +397,7 @@ This example shows how to use the named style:
 \begin{methoddesc}{executemany}{sql, seq_of_parameters}
 Executes a SQL command against all parameter sequences or mappings found in the
 sequence \var{sql}. The \module{sqlite3} module also allows
-to use an iterator yielding parameters instead of a sequence.
+using an iterator yielding parameters instead of a sequence.
 
 \verbatiminput{sqlite3/executemany_1.py}
 
@@ -407,7 +409,7 @@ Here's a shorter example using a generator:
 \begin{methoddesc}{executescript}{sql_script}
 
 This is a nonstandard convenience method for executing multiple SQL statements
-at once. It issues a COMMIT statement before, then executes the SQL script it
+at once. It issues a COMMIT statement first, then executes the SQL script it
 gets as a parameter.
 
 \var{sql_script} can be a bytestring or a Unicode string.
@@ -558,8 +560,8 @@ database is actually a point. There are two ways of doing this:
  \item Explicitly via the column name
 \end{itemize}
 
-Both ways are described in section~\ref{sqlite3-Module-Contents}, in
-the text explaining the constants \constant{PARSE_DECLTYPES} and
+Both ways are described in ``Module Constants'', section~\ref{sqlite3-Module-Contents}, in
+the entries for the constants \constant{PARSE_DECLTYPES} and
 \constant{PARSE_COLNAMES}.
 
 
@@ -619,17 +621,17 @@ the connection yourself.
 
 Using the nonstandard \method{execute}, \method{executemany} and
 \method{executescript} methods of the \class{Connection} object, your code can
-be written more concisely, because you don't have to create the - often
-superfluous \class{Cursor} objects explicitly. Instead, the \class{Cursor}
+be written more concisely because you don't have to create the (often
+superfluous) \class{Cursor} objects explicitly. Instead, the \class{Cursor}
 objects are created implicitly and these shortcut methods return the cursor
-objects. This way, you can for example execute a SELECT statement and iterate
+objects. This way, you can execute a SELECT statement and iterate
 over it directly using only a single call on the \class{Connection} object.
 
     \verbatiminput{sqlite3/shortcut_methods.py}
 
 \subsubsection{Accessing columns by name instead of by index}
 
-One cool feature of the \module{sqlite3} module is the builtin \class{sqlite3.Row} class
+One useful feature of the \module{sqlite3} module is the builtin \class{sqlite3.Row} class
 designed to be used as a row factory.
 
 Rows wrapped with this class can be accessed both by index (like tuples) and
