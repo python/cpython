@@ -464,20 +464,19 @@ This is how SQLite types are converted to Python types by default:
 \lineii{BLOB}{buffer}
 \end{tableii}
 
-The type system of the \module{sqlite3} module is extensible in both ways: you can store
+The type system of the \module{sqlite3} module is extensible in two ways: you can store
 additional Python types in a SQLite database via object adaptation, and you can
 let the \module{sqlite3} module convert SQLite types to different Python types via
 converters.
 
 \subsubsection{Using adapters to store additional Python types in SQLite databases}
 
-Like described before, SQLite supports only a limited set of types natively. To
+As described before, SQLite supports only a limited set of types natively. To
 use other Python types with SQLite, you must \strong{adapt} them to one of the sqlite3
-module's supported types for SQLite. So, one of NoneType, int, long, float,
+module's supported types for SQLite: one of NoneType, int, long, float,
 str, unicode, buffer.
 
-The \module{sqlite3} module uses the Python object adaptation, like described in PEP 246
-for this.  The protocol to use is \class{PrepareProtocol}.
+The \module{sqlite3} module uses Python object adaptation, as described in \pep{246} for this.  The protocol to use is \class{PrepareProtocol}.
 
 There are two ways to enable the \module{sqlite3} module to adapt a custom Python type
 to one of the supported ones.
@@ -493,8 +492,8 @@ class Point(object):
         self.x, self.y = x, y
 \end{verbatim}
 
-Now you want to store the point in a single SQLite column. You'll have to
-choose one of the supported types first that you use to represent the point in.
+Now you want to store the point in a single SQLite column.  First you'll have to
+choose one of the supported types first to be used for representing the point.
 Let's just use str and separate the coordinates using a semicolon. Then you
 need to give your class a method \code{__conform__(self, protocol)} which must
 return the converted value. The parameter \var{protocol} will be
@@ -507,12 +506,12 @@ return the converted value. The parameter \var{protocol} will be
 The other possibility is to create a function that converts the type to the
 string representation and register the function with \method{register_adapter}.
 
-    \verbatiminput{sqlite3/adapter_point_2.py}
-
 \begin{notice}
 The type/class to adapt must be a new-style class, i. e. it must have
 \class{object} as one of its bases.
 \end{notice}
+
+    \verbatiminput{sqlite3/adapter_point_2.py}
 
 The \module{sqlite3} module has two default adapters for Python's built-in
 \class{datetime.date} and \class{datetime.datetime} types.  Now let's suppose
@@ -523,16 +522,17 @@ but as a \UNIX{} timestamp.
 
 \subsubsection{Converting SQLite values to custom Python types}
 
-Now that's all nice and dandy that you can send custom Python types to SQLite.
+Writing an adapter lets you send custom Python types to SQLite.
 But to make it really useful we need to make the Python to SQLite to Python
-roundtrip work.
+roundtrip work.  
 
 Enter converters.
 
-Let's go back to the Point class. We stored the x and y coordinates separated
-via semicolons as strings in SQLite.
+Let's go back to the \class{Point} class. We stored the x and y
+coordinates separated via semicolons as strings in SQLite.
 
-Let's first define a converter function that accepts the string as a parameter and constructs a Point object from it.
+First, we'll define a converter function that accepts the string as a
+parameter and constructs a \class{Point} object from it.
 
 \begin{notice}
 Converter functions \strong{always} get called with a string, no matter
@@ -558,11 +558,12 @@ database is actually a point. There are two ways of doing this:
  \item Explicitly via the column name
 \end{itemize}
 
-Both ways are described at \ref{sqlite3-Module-Contents} in the text explaining
-the constants \constant{PARSE_DECLTYPES} and \constant{PARSE_COlNAMES}.
+Both ways are described in section~\ref{sqlite3-Module-Contents}, in
+the text explaining the constants \constant{PARSE_DECLTYPES} and
+\constant{PARSE_COLNAMES}.
 
 
-The following example illustrates both ways.
+The following example illustrates both approaches.
 
     \verbatiminput{sqlite3/converter_point.py}
 
@@ -571,8 +572,8 @@ The following example illustrates both ways.
 There are default adapters for the date and datetime types in the datetime
 module. They will be sent as ISO dates/ISO timestamps to SQLite.
 
-The default converters are registered under the name "date" for datetime.date
-and under the name "timestamp" for datetime.datetime.
+The default converters are registered under the name "date" for \class{datetime.date}
+and under the name "timestamp" for \class{datetime.datetime}.
 
 This way, you can use date/timestamps from Python without any additional
 fiddling in most cases. The format of the adapters is also compatible with the
@@ -584,12 +585,12 @@ The following example demonstrates this.
 
 \subsection{Controlling Transactions \label{sqlite3-Controlling-Transactions}}
 
-By default, the \module{sqlite3} module opens transactions implicitly before a DML
-statement (INSERT/UPDATE/DELETE/REPLACE), and commits transactions implicitly
-before a non-DML, non-DQL statement (i. e. anything other than
+By default, the \module{sqlite3} module opens transactions implicitly before a Data Modification Language (DML) 
+statement (i.e. INSERT/UPDATE/DELETE/REPLACE), and commits transactions implicitly
+before a non-DML, non-query statement (i. e. anything other than
 SELECT/INSERT/UPDATE/DELETE/REPLACE).
 
-So if you are within a transaction, and issue a command like \code{CREATE TABLE
+So if you are within a transaction and issue a command like \code{CREATE TABLE
 ...}, \code{VACUUM}, \code{PRAGMA}, the \module{sqlite3} module will commit implicitly
 before executing that command. There are two reasons for doing that. The first
 is that some of these commands don't work within transactions. The other reason
