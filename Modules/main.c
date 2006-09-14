@@ -78,6 +78,7 @@ static char *usage_2 = "\
 static char *usage_3 = "\
          see man page for details on internal buffering relating to '-u'\n\
 -v     : verbose (trace import statements) (also PYTHONVERBOSE=x)\n\
+         (can be supplied multiple times to increase verbosity)\n\
 -V     : print the Python version number and exit (also --version)\n\
 -W arg : warning control (arg is action:message:category:module:lineno)\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
