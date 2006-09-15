@@ -95,10 +95,10 @@ The UUID as a URN as specified in RFC 4122.
 
 \begin{memberdesc}{variant}
 The UUID variant, which determines the internal layout of the UUID.
-This will be an integer equal to one of the constants
+This will be one of the integer constants
 \constant{RESERVED_NCS},
 \constant{RFC_4122}, \constant{RESERVED_MICROSOFT}, or
-\constant{RESERVED_FUTURE}).
+\constant{RESERVED_FUTURE}.
 \end{memberdesc}
 
 \begin{memberdesc}{version}
@@ -106,7 +106,7 @@ The UUID version number (1 through 5, meaningful only
 when the variant is \constant{RFC_4122}).
 \end{memberdesc}
 
-The \module{uuid} module defines the following functions
+The \module{uuid} module defines the following functions:
 
 \begin{funcdesc}{getnode}{}
 Get the hardware address as a 48-bit positive integer.  The first time this
@@ -129,11 +129,8 @@ otherwise a random 14-bit sequence number is chosen.
 \index{uuid1}
 
 \begin{funcdesc}{uuid3}{namespace, name}
-Generate a UUID based upon a MD5 hash of the \var{name} string value
-drawn from a specified namespace.   \var{namespace}
-must be one of \constant{NAMESPACE_DNS},
-\constant{NAMESPACE_URL}, \constant{NAMESPACE_OID},
-or \constant{NAMESPACE_X500}.
+Generate a UUID based on the MD5 hash
+of a namespace identifier (which is a UUID) and a name (which is a string).
 \end{funcdesc}
 \index{uuid3}
 
@@ -143,31 +140,32 @@ Generate a random UUID.
 \index{uuid4}
 
 \begin{funcdesc}{uuid5}{namespace, name}
-Generate a UUID based upon a SHA-1 hash of the \var{name} string value
-drawn from a specified namespace.   \var{namespace}
-must be one of \constant{NAMESPACE_DNS},
-\constant{NAMESPACE_URL}, \constant{NAMESPACE_OID},
-or \constant{NAMESPACE_X500}.
+Generate a UUID based on the SHA-1 hash
+of a namespace identifier (which is a UUID) and a name (which is a string).
 \end{funcdesc}
 \index{uuid5}
 
-The \module{uuid} module defines the following namespace constants
+The \module{uuid} module defines the following namespace identifiers
 for use with \function{uuid3()} or \function{uuid5()}.
 
 \begin{datadesc}{NAMESPACE_DNS}
-Fully-qualified domain name namespace UUID.
+When this namespace is specified,
+the \var{name} string is a fully-qualified domain name.
 \end{datadesc}
 
 \begin{datadesc}{NAMESPACE_URL}
-URL namespace UUID.
+When this namespace is specified,
+the \var{name} string is a URL.
 \end{datadesc}
 
 \begin{datadesc}{NAMESPACE_OID}
-ISO OID namespace UUID.
+When this namespace is specified,
+the \var{name} string is an ISO OID.
 \end{datadesc}
 
 \begin{datadesc}{NAMESPACE_X500}
-X.500 DN namespace UUID.
+When this namespace is specified,
+the \var{name} string is an X.500 DN in DER or a text output format.
 \end{datadesc}
 
 The \module{uuid} module defines the following constants
@@ -178,11 +176,11 @@ Reserved for NCS compatibility.
 \end{datadesc}
 
 \begin{datadesc}{RFC_4122}
-Uses UUID layout specified in \rfc{4122}.
+Specifies the UUID layout given in \rfc{4122}.
 \end{datadesc}
 
 \begin{datadesc}{RESERVED_MICROSOFT}
-Reserved for Microsoft backward compatibility.
+Reserved for Microsoft compatibility.
 \end{datadesc}
 
 \begin{datadesc}{RESERVED_FUTURE}
@@ -192,12 +190,13 @@ Reserved for future definition.
 
 \begin{seealso}
   \seerfc{4122}{A Universally Unique IDentifier (UUID) URN Namespace}{
-          This specifies a Uniform Resource Name namespace for UUIDs.}
+This specification defines a Uniform Resource Name namespace for UUIDs,
+the internal format of UUIDs, and methods of generating UUIDs.}
 \end{seealso}
 
 \subsection{Example \label{uuid-example}}
 
-Here is a typical usage:
+Here are some examples of typical usage of the \module{uuid} module:
 \begin{verbatim}
 >>> import uuid
 
