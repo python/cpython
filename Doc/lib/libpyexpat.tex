@@ -216,9 +216,10 @@ any time.
 
 \begin{memberdesc}[xmlparser]{returns_unicode} 
 If this attribute is set to a non-zero integer, the handler functions
-will be passed Unicode strings.  If \member{returns_unicode} is 0,
-8-bit strings containing UTF-8 encoded data will be passed to the
-handlers.
+will be passed Unicode strings.  If \member{returns_unicode} is
+\constant{False}, 8-bit strings containing UTF-8 encoded data will be
+passed to the handlers.  This is \constant{True} by default when
+Python is built with Unicode support.
 \versionchanged[Can be changed at any time to affect the result
   type]{1.6}
 \end{memberdesc}
