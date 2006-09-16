@@ -62,6 +62,8 @@ Library
 Extension Modules
 -----------------
 
+- RLIMIT_SBSIZE was added to the resource module where available.
+
 - Bug #1551427: fix a wrong NULL pointer check in the win32 version
   of os.urandom().
 
