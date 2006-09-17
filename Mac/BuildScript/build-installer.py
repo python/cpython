@@ -945,6 +945,10 @@ def setIcon(filePath, icnsPath):
     ref, isDirectory = Carbon.File.FSPathMakeRef(filePath)
 
     if isDirectory:
+        # There is a problem with getting this into the pax(1) archive,
+        # just ignore directory icons for now.
+        return
+
         tmpPath = os.path.join(filePath, "Icon\r")
         if not os.path.exists(tmpPath):
             fp = open(tmpPath, 'w')
