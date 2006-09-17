@@ -101,7 +101,7 @@ install_versionedtools:
 	fi
 
 
-pythonw: $(srcdir)/Tools/pythonw.c
+pythonw: $(srcdir)/Tools/pythonw.c Makefile
 	$(CC) $(LDFLAGS) -o $@ $(srcdir)/Tools/pythonw.c \
 		-DPYTHONWEXECUTABLE='"$(APPINSTALLDIR)/Contents/MacOS/Python"'
 
@@ -249,3 +249,6 @@ clean:
 	rm pythonw
 	cd PythonLauncher && make clean
 	cd IDLE && make clean
+
+Makefile: $(srcdir)/Makefile.in ../config.status
+	cd .. && CONFIG_FILES=Mac/Makefile CONFIG_HEADERS= $(SHELL) ./config.status
