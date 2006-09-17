@@ -945,6 +945,7 @@ def setIcon(filePath, icnsPath):
     ref, isDirectory = Carbon.File.FSPathMakeRef(filePath)
 
     if isDirectory:
+        return
         tmpPath = os.path.join(filePath, "Icon\r")
         if not os.path.exists(tmpPath):
             fp = open(tmpPath, 'w')
