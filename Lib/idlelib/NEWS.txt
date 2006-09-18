@@ -1,3 +1,8 @@
+What's New in IDLE 1.2?
+=======================
+
+*Release date: 19-SEP-2006*
+
 What's New in IDLE 1.2c2?
 =========================
 
