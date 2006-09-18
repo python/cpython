@@ -278,13 +278,15 @@ above) so we can remove them!)
 
 GCC 4.1,
 GCC 4.2: There is a known incompatibility between Python and GCC,
-         where GCC 4.1 takes an interpretation of C different from
-	 prior GCC releases, in an area where C has undefined behaviour
-	 (namely, integer arithmetic involving -sys.maxint-1).
+         where GCC 4.1 and later uses an interpretation of C 
+         different to earlier GCC releases in an area where the C 
+         specification has undefined behaviour (namely, integer arithmetic 
+         involving -sys.maxint-1).
+
 	 As a consequence, compiling Python with GCC 4.1/4.2 is not
-	 recommend. It is likely that this problem will be resolved
+	 recommended. It is likely that this problem will be resolved
 	 in future Python releases. As a work-around, it seems that
-	 adding -fwrapv to the compiler option restores the earlier
+	 adding -fwrapv to the compiler options restores the earlier
 	 GCC behaviour.
 
 Unix platforms: If your vendor still ships (and you still use) Berkeley DB
@@ -604,7 +606,7 @@ MacOSX: The tests will crash on both 10.1 and 10.2 with SEGV in
 
 	You may also want to try the configure option "--enable-universalsdk"
 	which builds Python as a universal binary with support for the 
-	i386 and PPC architetures. This requires Xcode 2.1 or later to build.
+	i386 and PPC architectures. This requires Xcode 2.1 or later to build.
 
         See Mac/OSX/README for more information on framework and 
 	universal builds.
