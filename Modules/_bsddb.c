@@ -2172,7 +2172,7 @@ DB_stat(DBObject* self, PyObject* args, PyObject* kwargs)
 #if (DBVER >= 43)
     PyObject* txnobj = NULL;
     DB_TXN *txn = NULL;
-    char* kwnames[] = { "txn", "flags", NULL };
+    char* kwnames[] = { "flags", "txn", NULL };
 #else
     char* kwnames[] = { "flags", NULL };
 #endif

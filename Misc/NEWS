@@ -46,6 +46,9 @@ Core and builtins
   - iso2022_jp_3 and iso2022_jp_2004 codec can encode JIS X 2013:2
     codepoints now.
 
+- fixed a bug with bsddb.DB.stat: its flags and txn keyword arguments
+  were transposed.
+
 Extension Modules
 -----------------
 
