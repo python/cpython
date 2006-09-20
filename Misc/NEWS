@@ -103,6 +103,10 @@ Documentation
 Tools
 -----
 
+- Make auto-generated python.vim file list built-ins and exceptions in
+  alphatbetical order.  Makes output more deterministic and easier to tell if
+  the file is stale or not.
+
 - Bug #1546372: Fixed small bugglet in pybench that caused a missing
   file not to get reported properly.
 
