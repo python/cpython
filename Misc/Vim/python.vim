@@ -62,39 +62,39 @@ endif
 
 
 if exists("python_highlight_builtins")
-  syn keyword pythonBuiltin    unichr all set abs vars int __import__ unicode
-  syn keyword pythonBuiltin    enumerate reduce coerce intern exit issubclass
-  syn keyword pythonBuiltin    divmod file Ellipsis apply isinstance open any
-  syn keyword pythonBuiltin    locals help filter basestring slice copyright min
-  syn keyword pythonBuiltin    super sum tuple hex execfile long id xrange chr
-  syn keyword pythonBuiltin    complex bool zip pow dict True oct NotImplemented
-  syn keyword pythonBuiltin    map None float hash getattr buffer max reversed
-  syn keyword pythonBuiltin    object quit len repr callable credits setattr
-  syn keyword pythonBuiltin    eval frozenset sorted ord __debug__ hasattr
-  syn keyword pythonBuiltin    delattr False input license classmethod type
-  syn keyword pythonBuiltin    raw_input list iter compile reload range globals
-  syn keyword pythonBuiltin    staticmethod str property round dir cmp
+  syn keyword pythonBuiltin    Ellipsis False None NotImplemented True __debug__
+  syn keyword pythonBuiltin    __import__ abs all any apply basestring bool
+  syn keyword pythonBuiltin    buffer callable chr classmethod cmp coerce
+  syn keyword pythonBuiltin    compile complex copyright credits delattr dict
+  syn keyword pythonBuiltin    dir divmod enumerate eval execfile exit file
+  syn keyword pythonBuiltin    filter float frozenset getattr globals hasattr
+  syn keyword pythonBuiltin    hash help hex id input int intern isinstance
+  syn keyword pythonBuiltin    issubclass iter len license list locals long map
+  syn keyword pythonBuiltin    max min object oct open ord pow property quit
+  syn keyword pythonBuiltin    range raw_input reduce reload repr reversed round
+  syn keyword pythonBuiltin    set setattr slice sorted staticmethod str sum
+  syn keyword pythonBuiltin    super tuple type unichr unicode vars xrange zip
 
 endif
 
 
 if exists("python_highlight_exceptions")
-  syn keyword pythonException    GeneratorExit ImportError RuntimeError
-  syn keyword pythonException    UnicodeTranslateError MemoryError StopIteration
-  syn keyword pythonException    PendingDeprecationWarning EnvironmentError
-  syn keyword pythonException    LookupError OSError DeprecationWarning
-  syn keyword pythonException    UnicodeError UnicodeEncodeError
-  syn keyword pythonException    FloatingPointError ReferenceError NameError
-  syn keyword pythonException    IOError SyntaxError
-  syn keyword pythonException    FutureWarning ImportWarning SystemExit
-  syn keyword pythonException    Exception EOFError StandardError ValueError
-  syn keyword pythonException    TabError KeyError ZeroDivisionError SystemError
-  syn keyword pythonException    UnicodeDecodeError IndentationError
-  syn keyword pythonException    AssertionError TypeError IndexError
-  syn keyword pythonException    RuntimeWarning KeyboardInterrupt UserWarning
-  syn keyword pythonException    SyntaxWarning UnboundLocalError ArithmeticError
-  syn keyword pythonException    Warning NotImplementedError AttributeError
-  syn keyword pythonException    OverflowError BaseException
+  syn keyword pythonException    ArithmeticError AssertionError AttributeError
+  syn keyword pythonException    BaseException DeprecationWarning EOFError
+  syn keyword pythonException    EnvironmentError Exception FloatingPointError
+  syn keyword pythonException    FutureWarning GeneratorExit IOError ImportError
+  syn keyword pythonException    ImportWarning IndentationError IndexError
+  syn keyword pythonException    KeyError KeyboardInterrupt LookupError
+  syn keyword pythonException    MemoryError NameError NotImplementedError
+  syn keyword pythonException    OSError OverflowError PendingDeprecationWarning
+  syn keyword pythonException    ReferenceError RuntimeError RuntimeWarning
+  syn keyword pythonException    StandardError StopIteration SyntaxError
+  syn keyword pythonException    SyntaxWarning SystemError SystemExit TabError
+  syn keyword pythonException    TypeError UnboundLocalError UnicodeDecodeError
+  syn keyword pythonException    UnicodeEncodeError UnicodeError
+  syn keyword pythonException    UnicodeTranslateError UnicodeWarning
+  syn keyword pythonException    UserWarning ValueError Warning
+  syn keyword pythonException    ZeroDivisionError
 
 endif
 
