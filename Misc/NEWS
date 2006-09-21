@@ -14,6 +14,11 @@ Core and builtins
 
 - Allow exception instances to be directly sliced again.
 
+Extension Modules
+-----------------
+
+- Fix itertools.count(n) to work with negative numbers again.
+
 
 What's New in Python 2.5 (final)
 ================================
