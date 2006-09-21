@@ -1747,7 +1747,7 @@ PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t m
 /* For type constructors that don't take keyword args
  *
  * Sets a TypeError and returns 0 if the kwds dict is 
- * not emtpy, returns 1 otherwise
+ * not empty, returns 1 otherwise
  */
 int
 _PyArg_NoKeywords(const char *funcname, PyObject *kw)
