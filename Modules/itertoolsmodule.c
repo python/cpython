@@ -2072,7 +2072,7 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 count_next(countobject *lz)
 {
-	return PyInt_FromSize_t(lz->cnt++);
+	return PyInt_FromSsize_t(lz->cnt++);
 }
 
 static PyObject *
