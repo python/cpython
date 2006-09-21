@@ -4,6 +4,17 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.5.1c1?
+=============================
+
+*Release date: XX-XXX-XXXX*
+
+Core and builtins
+-----------------
+
+- Allow exception instances to be directly sliced again.
+
+
 What's New in Python 2.5 (final)
 ================================
 
