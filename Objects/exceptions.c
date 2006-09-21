@@ -190,12 +190,19 @@ BaseException_getitem(PyBaseExceptionObject *self, Py_ssize_t index)
     return PySequence_GetItem(self->args, index);
 }
 
+static PyObject *
+BaseException_getslice(PyBaseExceptionObject *self,
+			Py_ssize_t start, Py_ssize_t stop)
+{
+    return PySequence_GetSlice(self->args, start, stop);
+}
+
 static PySequenceMethods BaseException_as_sequence = {
     0,                      /* sq_length; */
     0,                      /* sq_concat; */
     0,                      /* sq_repeat; */
     (ssizeargfunc)BaseException_getitem,  /* sq_item; */
-    0,                      /* sq_slice; */
+    (ssizessizeargfunc)BaseException_getslice,  /* sq_slice; */
     0,                      /* sq_ass_item; */
     0,                      /* sq_ass_slice; */
     0,                      /* sq_contains; */
