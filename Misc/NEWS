@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Fix %zd string formatting on Mac OS X so it prints negative numbers.
+
 - Allow exception instances to be directly sliced again.
 
 - Bug #1551432: Exceptions do not define an explicit __unicode__ method.  This
