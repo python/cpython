@@ -560,10 +560,17 @@ compiler_complex_args(struct compiling *c, const node *n)
     if (!args)
         return NULL;
 
+    /* fpdef: NAME | '(' fplist ')'
+       fplist: fpdef (',' fpdef)* [',']
+    */
     REQ(n, fplist);
     for (i = 0; i < len; i++) {
-        const node *child = CHILD(CHILD(n, 2*i), 0);
+        const node *fpdef_node = CHILD(n, 2*i);
+        const node *child;
         expr_ty arg;
+set_name:
+        /* fpdef_node is either a NAME or an fplist */
+        child = CHILD(fpdef_node, 0);
         if (TYPE(child) == NAME) {
                 if (!strcmp(STR(child), "None")) {
                         ast_error(child, "assignment to None");
@@ -573,7 +580,17 @@ compiler_complex_args(struct compiling *c, const node *n)
                        child->n_col_offset, c->c_arena);
             }
         else {
-            arg = compiler_complex_args(c, CHILD(CHILD(n, 2*i), 1));
+            assert(TYPE(fpdef_node) == fpdef);
+            /* fpdef_node[0] is not a name, so it must be a '(', get CHILD[1] */
+            child = CHILD(fpdef_node, 1);
+            assert(TYPE(child) == fplist);
+            /* NCH == 1 means we have (x), we need to elide the extra parens */
+            if (NCH(child) == 1) {
+                fpdef_node = CHILD(child, 0);
+                assert(TYPE(fpdef_node) == fpdef);
+                goto set_name;
+            }
+            arg = compiler_complex_args(c, child);
         }
         asdl_seq_SET(args, i, arg);
     }
@@ -631,6 +648,7 @@ ast_for_arguments(struct compiling *c, const node *n)
         ch = CHILD(n, i);
         switch (TYPE(ch)) {
             case fpdef:
+            handle_fpdef:
                 /* XXX Need to worry about checking if TYPE(CHILD(n, i+1)) is
                    anything other than EQUAL or a comma? */
                 /* XXX Should NCH(n) check be made a separate check? */
@@ -656,7 +674,11 @@ ast_for_arguments(struct compiling *c, const node *n)
                         asdl_seq_SET(args, k++, compiler_complex_args(c, ch));
                     } else {
                         /* def foo((x)): setup for checking NAME below. */
+                        /* Loop because there can be many parens and tuple
+                           unpacking mixed in. */
                         ch = CHILD(ch, 0);
+                        assert(TYPE(ch) == fpdef);
+                        goto handle_fpdef;
                     }
                 }
                 if (TYPE(CHILD(ch, 0)) == NAME) {
