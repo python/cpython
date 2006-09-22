@@ -126,10 +126,10 @@ typedef Py_intptr_t	Py_ssize_t;
  * Py_ssize_t on the platform.
  */
 #ifndef PY_FORMAT_SIZE_T
-#   if SIZEOF_SIZE_T == SIZEOF_INT
-#       define PY_FORMAT_SIZE_T ""
-#   elif SIZEOF_SIZE_T == SIZEOF_LONG
+#   if SIZEOF_SIZE_T == SIZEOF_LONG
 #       define PY_FORMAT_SIZE_T "l"
+#   elif SIZEOF_SIZE_T == SIZEOF_INT
+#       define PY_FORMAT_SIZE_T ""
 #   elif defined(MS_WINDOWS)
 #       define PY_FORMAT_SIZE_T "I"
 #   else
