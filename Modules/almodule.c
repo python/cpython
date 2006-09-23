@@ -1686,7 +1686,7 @@ al_GetParamInfo(PyObject *self, PyObject *args)
 {
 	int res, param;
 	ALparamInfo pinfo;
-	PyObject *v, *item;;
+	PyObject *v, *item;
 
 	if (!PyArg_ParseTuple(args, "ii:GetParamInfo", &res, &param))
 		return NULL;
