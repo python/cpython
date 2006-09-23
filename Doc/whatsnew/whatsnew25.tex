@@ -540,10 +540,10 @@ Traceback (most recent call last):
 StopIteration
 \end{verbatim}
 
-Because \keyword{yield} will often be returning \constant{None}, you
+\keyword{yield} will usually return \constant{None}, you
 should always check for this case.  Don't just use its value in
 expressions unless you're sure that the \method{send()} method
-will be the only method used resume your generator function.
+will be the only method used to resume your generator function.
 
 In addition to \method{send()}, there are two other new methods on
 generators:
