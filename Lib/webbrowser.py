@@ -165,7 +165,10 @@ class GenericBrowser(BaseBrowser):
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
         try:
-            p = subprocess.Popen(cmdline, close_fds=True)
+            if sys.platform[:3] == 'win':
+                p = subprocess.Popen(cmdline)
+            else:
+                p = subprocess.Popen(cmdline, close_fds=True)
             return not p.wait()
         except OSError:
             return False
@@ -178,11 +181,14 @@ class BackgroundBrowser(GenericBrowser):
     def open(self, url, new=0, autoraise=1):
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
-        setsid = getattr(os, 'setsid', None)
-        if not setsid:
-            setsid = getattr(os, 'setpgrp', None)
         try:
-            p = subprocess.Popen(cmdline, close_fds=True, preexec_fn=setsid)
+            if sys.platform[:3] == 'win':
+                p = subprocess.Popen(cmdline)
+            else:
+                setsid = getattr(os, 'setsid', None)
+                if not setsid:
+                    setsid = getattr(os, 'setpgrp', None)
+                p = subprocess.Popen(cmdline, close_fds=True, preexec_fn=setsid)
             return (p.poll() is None)
         except OSError:
             return False

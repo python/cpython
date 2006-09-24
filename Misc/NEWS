@@ -14,10 +14,19 @@ Core and builtins
 
 - Allow exception instances to be directly sliced again.
 
+
 Extension Modules
 -----------------
 
 - Fix itertools.count(n) to work with negative numbers again.
+
+
+Library
+-------
+
+- Make webbrowser.BackgroundBrowser usable in Windows (it wasn't because
+  the close_fds arg to subprocess.Popen is not supported).
+
 
 
 What's New in Python 2.5 (final)
@@ -26,6 +35,7 @@ What's New in Python 2.5 (final)
 *Release date: 19-SEP-2006*
 
 No changes since release candidate 2.
+
 
 What's New in Python 2.5 release candidate 2?
 =============================================
