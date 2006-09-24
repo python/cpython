@@ -170,7 +170,7 @@ def format_exception_only(etype, value):
     # would throw another exception and mask the original problem.
     if (isinstance(etype, BaseException) or
         isinstance(etype, types.InstanceType) or
-        type(etype) is str):
+        etype is None or type(etype) is str):
         return [_format_final_exc_line(etype, value)]
 
     stype = etype.__name__
