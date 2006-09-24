@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Fix a bug in the parser's future statement handling that led to "with"
+  not being recognized as a keyword after, e.g., this statement:
+  from __future__ import division, with_statement
+
 - Bug #1557232: fix seg fault with def f((((x)))) and def f(((x),)).
 
 - Fix %zd string formatting on Mac OS X so it prints negative numbers.
