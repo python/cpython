@@ -56,6 +56,10 @@ Core and builtins
 Library
 -------
 
+- Fix a bug in traceback.format_exception_only() that led to an error
+  being raised when print_exc() was called without an exception set.
+  In version 2.4, this printed "None", restored that behavior.
+
 - Make webbrowser.BackgroundBrowser usable in Windows (it wasn't because
   the close_fds arg to subprocess.Popen is not supported).
 

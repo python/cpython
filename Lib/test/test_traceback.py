@@ -149,6 +149,10 @@ def test():
         str_value = '<unprintable %s object>' % X.__name__
         self.assertEqual(err[0], X.__name__ + ': ' + str_value + '\n')
 
+    def test_without_exception(self):
+        err = traceback.format_exception_only(None, None)
+        self.assertEqual(err, ['None\n'])
+
 
 def test_main():
     run_unittest(TracebackCases)
