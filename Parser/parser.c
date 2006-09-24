@@ -181,7 +181,7 @@ static void
 future_hack(parser_state *ps)
 {
 	node *n = ps->p_stack.s_top->s_parent;
-	node *ch;
+	node *ch, *cch;
 	int i;
 
 	/* from __future__ import ..., must have at least 4 children */
@@ -195,15 +195,17 @@ future_hack(parser_state *ps)
 	if (NCH(ch) == 1 && STR(CHILD(ch, 0)) &&
 	    strcmp(STR(CHILD(ch, 0)), "__future__") != 0)
 		return;
-	for (i = 3; i < NCH(n); i += 2) {
-		/* XXX: assume we don't have parentheses in import:
-		        from __future__ import (x, y, z)
-		*/
-		ch = CHILD(n, i);
-		if (NCH(ch) == 1)
-			ch = CHILD(ch, 0);
-		if (NCH(ch) >= 1 && TYPE(CHILD(ch, 0)) == NAME &&
-		    strcmp(STR(CHILD(ch, 0)), "with_statement") == 0) {
+	ch = CHILD(n, 3);
+	/* ch can be a star, a parenthesis or import_as_names */
+	if (TYPE(ch) == STAR)
+		return;
+	if (TYPE(ch) == LPAR)
+		ch = CHILD(n, 4);
+	
+	for (i = 0; i < NCH(ch); i += 2) {
+		cch = CHILD(ch, i);
+		if (NCH(cch) >= 1 && TYPE(CHILD(cch, 0)) == NAME &&
+		    strcmp(STR(CHILD(cch, 0)), "with_statement") == 0) {
 			ps->p_flags |= CO_FUTURE_WITH_STATEMENT;
 			break;
 		}
