@@ -52,6 +52,9 @@ Core and builtins
 Library
 -------
 
+- Make webbrowser.BackgroundBrowser usable in Windows (it wasn't because
+  the close_fds arg to subprocess.Popen is not supported).
+
 - Reverted patch #1504333 to sgmllib because it introduced an infinite loop.
 
 - Patch #1553314: Fix the inspect.py slowdown that was hurting IPython & SAGE
