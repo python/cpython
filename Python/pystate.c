@@ -501,7 +501,7 @@ _PyGILState_Fini(void)
 {
 	PyThread_delete_key(autoTLSkey);
 	autoTLSkey = 0;
-	autoInterpreterState = NULL;;
+	autoInterpreterState = NULL;
 }
 
 /* When a thread state is created for a thread by some mechanism other than
