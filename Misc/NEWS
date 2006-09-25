@@ -16,6 +16,8 @@ Core and builtins
   not being recognized as a keyword after, e.g., this statement:
   from __future__ import division, with_statement
 
+- Bug #1557232: fix seg fault with def f((((x)))) and def f(((x),)).
+
 - Fix %zd string formatting on Mac OS X so it prints negative numbers.
 
 - Allow exception instances to be directly sliced again.
