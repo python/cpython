@@ -56,6 +56,9 @@ Core and builtins
 Library
 -------
 
+- Made the error message for time.strptime when the data data and format do
+  match be more clear.
+
 - Fix a bug in traceback.format_exception_only() that led to an error
   being raised when print_exc() was called without an exception set.
   In version 2.4, this printed "None", restored that behavior.
