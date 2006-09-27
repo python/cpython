@@ -4846,6 +4846,8 @@ DL_EXPORT(void) init_bsddb(void)
 
     /* Create the module and add the functions */
     m = Py_InitModule(_bsddbModuleName, bsddb_methods);
+    if (m == NULL)
+    	return;
 
     /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);

@@ -1853,6 +1853,8 @@ MODULE_INITFUNC(void)
     /* Create the module and add the functions */
     m = Py_InitModule3(MODULE_NAME, pyexpat_methods,
                        pyexpat_module_documentation);
+    if (m == NULL)
+	return;
 
     /* Add some symbolic constants to the module */
     if (ErrorObject == NULL) {

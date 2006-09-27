@@ -1210,6 +1210,8 @@ initstrop(void)
 	int c, n;
 	m = Py_InitModule4("strop", strop_methods, strop_module__doc__,
 			   (PyObject*)NULL, PYTHON_API_VERSION);
+	if (m == NULL)
+		return;
 
 	/* Create 'whitespace' object */
 	n = 0;

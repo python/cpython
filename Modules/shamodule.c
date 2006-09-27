@@ -532,6 +532,8 @@ initsha(void)
 
     SHAtype.ob_type = &PyType_Type;
     m = Py_InitModule("sha", SHA_functions);
+    if (m == NULL)
+	return;
 
     /* Add some symbolic constants to the module */
     insint("blocksize", 1);  /* For future use, in case some hash

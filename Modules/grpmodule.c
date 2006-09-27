@@ -171,6 +171,8 @@ initgrp(void)
 {
     PyObject *m, *d;
     m = Py_InitModule3("grp", grp_methods, grp__doc__);
+    if (m == NULL)
+        return;
     d = PyModule_GetDict(m);
     PyStructSequence_InitType(&StructGrpType, &struct_group_type_desc);
     PyDict_SetItemString(d, "struct_group", (PyObject *) &StructGrpType);

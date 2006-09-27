@@ -856,6 +856,8 @@ init_testcapi(void)
 	Copyable_Type.ob_type = &PyType_Type;
 
 	m = Py_InitModule("_testcapi", TestMethods);
+	if (m == NULL)
+		return;
 
 	PyModule_AddObject(m, "UCHAR_MAX", PyInt_FromLong(UCHAR_MAX));
 	PyModule_AddObject(m, "USHRT_MAX", PyInt_FromLong(USHRT_MAX));

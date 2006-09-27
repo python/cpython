@@ -417,6 +417,8 @@ initcmath(void)
 	PyObject *m;
 
 	m = Py_InitModule3("cmath", cmath_methods, module_doc);
+	if (m == NULL)
+		return;
 
 	PyModule_AddObject(m, "pi",
                            PyFloat_FromDouble(atan(1.0) * 4.0));

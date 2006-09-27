@@ -1036,6 +1036,8 @@ initcollections(void)
 	PyObject *m;
 
 	m = Py_InitModule3("collections", NULL, module_doc);
+	if (m == NULL)
+		return;
 
 	if (PyType_Ready(&deque_type) < 0)
 		return;

@@ -51,6 +51,8 @@ init_symtable(void)
 	PyObject *m;
 
 	m = Py_InitModule("_symtable", symtable_methods);
+	if (m == NULL)
+		return;
 	PyModule_AddIntConstant(m, "USE", USE);
 	PyModule_AddIntConstant(m, "DEF_GLOBAL", DEF_GLOBAL);
 	PyModule_AddIntConstant(m, "DEF_LOCAL", DEF_LOCAL);

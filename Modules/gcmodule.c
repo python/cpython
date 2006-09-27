@@ -1161,6 +1161,8 @@ initgc(void)
 			      gc__doc__,
 			      NULL,
 			      PYTHON_API_VERSION);
+	if (m == NULL)
+		return;
 
 	if (garbage == NULL) {
 		garbage = PyList_New(0);

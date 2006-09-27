@@ -952,6 +952,8 @@ initpure()
 	PyObject *m, *d;
 
 	m = Py_InitModule("pure", pure_methods);
+	if (m == NULL)
+    		return;
 	d = PyModule_GetDict(m);
 
         /* this is bogus because we should be able to find this information

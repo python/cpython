@@ -261,6 +261,8 @@ initmd5(void)
 
         MD5type.ob_type = &PyType_Type;
 	m = Py_InitModule3("md5", md5_functions, module_doc);
+	if (m == NULL)
+	    return;
 	d = PyModule_GetDict(m);
 	PyDict_SetItemString(d, "MD5Type", (PyObject *)&MD5type);
 	PyModule_AddIntConstant(m, "digest_size", 16);

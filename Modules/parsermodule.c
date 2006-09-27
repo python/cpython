@@ -3106,6 +3106,8 @@ initparser(void)
 
     PyST_Type.ob_type = &PyType_Type;
     module = Py_InitModule("parser", parser_functions);
+    if (module == NULL)
+    	return;
 
     if (parser_error == 0)
         parser_error = PyErr_NewException("parser.ParserError", NULL, NULL);

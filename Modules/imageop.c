@@ -776,6 +776,8 @@ initimageop(void)
 {
 	PyObject *m;
 	m = Py_InitModule("imageop", imageop_methods);
+	if (m == NULL)
+		return;
 	ImageopDict = PyModule_GetDict(m);
 	ImageopError = PyErr_NewException("imageop.error", NULL, NULL);
 	if (ImageopError != NULL)

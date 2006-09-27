@@ -956,6 +956,8 @@ initsv(void)
 	PyObject *m, *d;
 
 	m = Py_InitModule("sv", sv_methods);
+	if (m == NULL)
+		return;
 	d = PyModule_GetDict(m);
 
 	SvError = PyErr_NewException("sv.error", NULL, NULL);

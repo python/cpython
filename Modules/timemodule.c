@@ -785,6 +785,8 @@ inittime(void)
 	PyObject *m;
 	char *p;
 	m = Py_InitModule3("time", time_methods, module_doc);
+	if (m == NULL)
+		return;
 
 	/* Accept 2-digit dates unless PYTHONY2K is set and non-empty */
 	p = Py_GETENV("PYTHONY2K");

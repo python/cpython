@@ -4581,6 +4581,8 @@ initdatetime(void)
 
 	m = Py_InitModule3("datetime", module_methods,
 			   "Fast implementation of the datetime type.");
+	if (m == NULL)
+		return;
 
 	if (PyType_Ready(&PyDateTime_DateType) < 0)
 		return;

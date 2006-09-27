@@ -5741,6 +5741,8 @@ initcPickle(void)
 	m = Py_InitModule4("cPickle", cPickle_methods,
 			   cPickle_module_documentation,
 			   (PyObject*)NULL,PYTHON_API_VERSION);
+	if (m == NULL)
+		return;
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);

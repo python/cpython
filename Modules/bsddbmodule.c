@@ -849,6 +849,8 @@ initbsddb185(void) {
 
 	Bsddbtype.ob_type = &PyType_Type;
 	m = Py_InitModule("bsddb185", bsddbmodule_methods);
+	if (m == NULL)
+		return;
 	d = PyModule_GetDict(m);
 	BsddbError = PyErr_NewException("bsddb.error", NULL, NULL);
 	if (BsddbError != NULL)

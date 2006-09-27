@@ -650,6 +650,8 @@ initthread(void)
 
 	/* Create the module and add the functions */
 	m = Py_InitModule3("thread", thread_methods, thread_doc);
+	if (m == NULL)
+		return;
 
 	/* Add a symbolic constant */
 	d = PyModule_GetDict(m);

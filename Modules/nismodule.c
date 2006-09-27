@@ -379,6 +379,8 @@ initnis (void)
 {
 	PyObject *m, *d;
 	m = Py_InitModule("nis", nis_methods);
+	if (m == NULL)
+		return;
 	d = PyModule_GetDict(m);
 	NisError = PyErr_NewException("nis.error", NULL, NULL);
 	if (NisError != NULL)

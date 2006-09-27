@@ -2822,6 +2822,8 @@ initimp(void)
 
 	m = Py_InitModule4("imp", imp_methods, doc_imp,
 			   NULL, PYTHON_API_VERSION);
+	if (m == NULL)
+		goto failure;
 	d = PyModule_GetDict(m);
 
 	if (setint(d, "SEARCH_ERROR", SEARCH_ERROR) < 0) goto failure;

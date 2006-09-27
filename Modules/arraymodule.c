@@ -2096,6 +2096,8 @@ initarray(void)
 	Arraytype.ob_type = &PyType_Type;
 	PyArrayIter_Type.ob_type = &PyType_Type;
 	m = Py_InitModule3("array", a_methods, module_doc);
+	if (m == NULL)
+		return;
 
         Py_INCREF((PyObject *)&Arraytype);
 	PyModule_AddObject(m, "ArrayType", (PyObject *)&Arraytype);

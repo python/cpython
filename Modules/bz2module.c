@@ -2197,6 +2197,8 @@ initbz2(void)
 	BZ2Decomp_Type.ob_type = &PyType_Type;
 
 	m = Py_InitModule3("bz2", bz2_methods, bz2__doc__);
+	if (m == NULL)
+		return;
 
 	PyModule_AddObject(m, "__author__", PyString_FromString(__author__));
 

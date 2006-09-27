@@ -183,6 +183,8 @@ initpwd(void)
 {
 	PyObject *m;
 	m = Py_InitModule3("pwd", pwd_methods, pwd__doc__);
+	if (m == NULL)
+    		return;
 
 	PyStructSequence_InitType(&StructPwdType, &struct_pwd_type_desc);
 	Py_INCREF((PyObject *) &StructPwdType);

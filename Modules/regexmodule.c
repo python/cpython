@@ -652,6 +652,8 @@ initregex(void)
 	Regextype.ob_type = &PyType_Type;
 
 	m = Py_InitModule("regex", regex_global_methods);
+	if (m == NULL)
+		return;
 	d = PyModule_GetDict(m);
 
 	if (PyErr_Warn(PyExc_DeprecationWarning,
