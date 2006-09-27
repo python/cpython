@@ -176,6 +176,7 @@ Library
 - Bug #1472827: correctly escape newlines and tabs in attribute values in
   the saxutils.XMLGenerator class.
 
+- Patch #1110248: SYNC_FLUSH the zlib buffer for GZipFile.flush.
 
 Tools/Demos
 -----------
