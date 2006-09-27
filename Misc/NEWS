@@ -105,6 +105,12 @@ Extension Modules
   - iso2022_jp_3 and iso2022_jp_2004 codec can encode JIS X 0213:2
     codepoints now.
 
+- Bug #1552726: in readline.c, avoid repeatedly polling in interactive
+  mode by only placing a timeout on the select() if an input hook has
+  been defined.  This prevents an interactive Python from waking up 10
+  times per second.  Patch by Richard Boulton.
+
+
 Tests
 -----
 
