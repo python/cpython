@@ -61,6 +61,8 @@ Extension Modules
 - Bug #1471938: Fix curses module build problem on Solaris 8; patch by
   Paul Eggert.
 
+- Bug #1548092: fix curses.tparm() segfault on invalid input.
+
 - cursesmodule: fix a number of reference leaks with 'python -v'; handle
   failure from PyModule_GetDict (Klocwork 208).
 
