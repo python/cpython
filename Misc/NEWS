@@ -61,6 +61,9 @@ Extension Modules
 - Bug #1471938: Fix curses module build problem on Solaris 8; patch by
   Paul Eggert.
 
+- cursesmodule: fix a number of reference leaks with 'python -v'; handle
+  failure from PyModule_GetDict (Klocwork 208).
+
 - Bug #1512695: cPickle.loads could crash if it was interrupted with
   a KeyboardInterrupt.
 
