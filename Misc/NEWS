@@ -54,6 +54,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- gcmodule: add a missing incref.
+
 - threadmodule: add a missing incref.
 
 - Bug #1551427: fix a wrong NULL pointer check in the win32 version
