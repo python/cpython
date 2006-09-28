@@ -54,6 +54,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- threadmodule: add a missing incref.
+
 - Bug #1551427: fix a wrong NULL pointer check in the win32 version
   of os.urandom().
 
