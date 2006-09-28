@@ -27,6 +27,9 @@ Core and builtins
 
 - Bug #1524310: Properly report errors from FindNextFile in os.listdir.
 
+- Bug #1232517: An overflow error was not detected properly when
+  attempting to convert a large float to an int in os.utime().
+
 - Bug #927248: Recursive method-wrapper objects can now safely
   be released.
 
