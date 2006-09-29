@@ -72,10 +72,10 @@ def test_rude_shutdown():
         return
 
     # some random port to connect to
-    PORT = 9934
+    PORT = [9934]
     def listener():
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind(('', PORT))
+        PORT[0] = test_support.bind_port(s, '', PORT[0])
         s.listen(5)
         s.accept()
         del s
@@ -83,7 +83,7 @@ def test_rude_shutdown():
 
     def connector():
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(('localhost', PORT))
+        s.connect(('localhost', PORT[0]))
         try:
             ssl_sock = socket.ssl(s)
         except socket.sslerror:
