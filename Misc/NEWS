@@ -12,6 +12,8 @@ What's New in Python 2.4.4c1?
 Core and builtins
 -----------------
 
+- Fix memory leak of coding spec in Parser/tokenizer.c.
+ 
 - Overflow checking code in integer division ran afoul of new gcc
   optimizations.  Changed to be more standard-conforming.
 
