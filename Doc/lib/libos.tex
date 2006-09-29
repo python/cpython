@@ -1462,7 +1462,7 @@ Availability: Macintosh, Some flavors of \UNIX.
 \begin{funcdesc}{kill}{pid, sig}
 \index{process!killing}
 \index{process!signalling}
-Kill the process \var{pid} with signal \var{sig}.  Constants for the
+Send signal \var{sig} to the process \var{pid}.  Constants for the
 specific signals available on the host platform are defined in the
 \refmodule{signal} module.
 Availability: Macintosh, \UNIX.
@@ -1471,7 +1471,7 @@ Availability: Macintosh, \UNIX.
 \begin{funcdesc}{killpg}{pgid, sig}
 \index{process!killing}
 \index{process!signalling}
-Kill the process group \var{pgid} with the signal \var{sig}.
+Send the signal \var{sig} to the process group \var{pgid}.
 Availability: Macintosh, \UNIX.
 \versionadded{2.3}
 \end{funcdesc}
