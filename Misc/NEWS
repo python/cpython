@@ -12,6 +12,8 @@ What's New in Python 2.4.4c1?
 Core and builtins
 -----------------
 
+- Bug #1365916: Fix an int/long mismatch in the sorted() built-in.
+
 - Fix memory leak of coding spec in Parser/tokenizer.c.
  
 - Overflow checking code in integer division ran afoul of new gcc
