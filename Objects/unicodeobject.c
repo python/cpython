@@ -845,15 +845,23 @@ char utf7_special[128] = {
 
 };
 
+/* Note: The comparison (c) <= 0 is a trick to work-around gcc
+   warnings about the comparison always being false; since
+   utf7_special[0] is 1, we can safely make that one comparison
+   true  */
+
 #define SPECIAL(c, encodeO, encodeWS) \
-	(((c)>127 || utf7_special[(c)] == 1) || \
+    ((c) > 127 || (c) <= 0 || utf7_special[(c)] == 1 || \
 	 (encodeWS && (utf7_special[(c)] == 2)) || \
      (encodeO && (utf7_special[(c)] == 3)))
 
-#define B64(n)  ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[(n) & 0x3f])
-#define B64CHAR(c) (isalnum(c) || (c) == '+' || (c) == '/')
-#define UB64(c)        ((c) == '+' ? 62 : (c) == '/' ? 63 : (c) >= 'a' ? \
-                        (c) - 71 : (c) >= 'A' ? (c) - 65 : (c) + 4)
+#define B64(n)  \
+    ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[(n) & 0x3f])
+#define B64CHAR(c) \
+    (isalnum(c) || (c) == '+' || (c) == '/')
+#define UB64(c) \
+    ((c) == '+' ? 62 : (c) == '/' ? 63 : (c) >= 'a' ?                   \
+     (c) - 71 : (c) >= 'A' ? (c) - 65 : (c) + 4 )
 
 #define ENCODE(out, ch, bits) \
     while (bits >= 6) { \
@@ -866,8 +874,8 @@ char utf7_special[128] = {
         Py_UNICODE outCh = (Py_UNICODE) ((ch >> (bits-16)) & 0xffff); \
         bits -= 16; \
 		if (surrogate) { \
-			/* We have already generated an error for the high surrogate
-               so let's not bother seeing if the low surrogate is correct or not */\
+            /* We have already generated an error for the high surrogate \
+               so let's not bother seeing if the low surrogate is correct or not */ \
 			surrogate = 0; \
 		} else if (0xDC00 <= outCh && outCh <= 0xDFFF) { \
             /* This is a surrogate pair. Unfortunately we can't represent \
@@ -878,7 +886,7 @@ char utf7_special[128] = {
 		} else { \
 				*out++ = outCh; \
 		} \
-    } \
+    }
 
 PyObject *PyUnicode_DecodeUTF7(const char *s,
 			       int size,

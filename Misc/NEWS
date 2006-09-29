@@ -12,6 +12,8 @@ What's New in Python 2.4.4c1?
 Core and builtins
 -----------------
 
+- Bug #1331062: Fix error in UTF-7 codec.
+
 - Bug #1365916: Fix an int/long mismatch in the sorted() built-in.
 
 - Fix memory leak of coding spec in Parser/tokenizer.c.
