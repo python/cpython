@@ -510,7 +510,7 @@ EnvironmentError_init(PyEnvironmentErrorObject *self, PyObject *args,
     if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
         return -1;
 
-    if (PyTuple_GET_SIZE(args) <= 1) {
+    if (PyTuple_GET_SIZE(args) <= 1 || PyTuple_GET_SIZE(args) > 3) {
         return 0;
     }
 

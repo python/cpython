@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1566800: make sure that EnvironmentError can be called with any
+  number of arguments, as was the case in Python 2.4.
+
 - Patch #1567691: super() and new.instancemethod() now don't accept
   keyword arguments any more (previously they accepted them, but didn't
   use them).
