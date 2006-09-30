@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1567691: super() and new.instancemethod() now don't accept
+  keyword arguments any more (previously they accepted them, but didn't
+  use them).
+
 - Fix a bug in the parser's future statement handling that led to "with"
   not being recognized as a keyword after, e.g., this statement:
   from __future__ import division, with_statement

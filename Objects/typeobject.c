@@ -5762,6 +5762,8 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
 	PyObject *obj = NULL;
 	PyTypeObject *obj_type = NULL;
 
+	if (!_PyArg_NoKeywords("super", kwds))
+		return -1;
 	if (!PyArg_ParseTuple(args, "O!|O:super", &PyType_Type, &type, &obj))
 		return -1;
 	if (obj == Py_None)
