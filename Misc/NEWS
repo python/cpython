@@ -81,7 +81,7 @@ Library
 
 - Bug #1531862: Do not close standard file descriptors in subprocess.
 
-- fixed a bug with bsddb.DB.stat: its flags and txn keyword arguments
+- fixed a bug with bsddb.DB.stat: the flags and txn keyword arguments
   were transposed.
 
 Extension Modules
