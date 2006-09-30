@@ -146,6 +146,9 @@ Tests
 Documentation
 -------------
 
+- Bug #1546052: clarify that PyString_FromString(AndSize) copies the
+  string pointed to by its parameter.
+
 - Bug #1566663: remove obsolete example from datetime docs.
 
 - Bug #1541682: Fix example in the "Refcount details" API docs.
