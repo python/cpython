@@ -63,6 +63,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1566602: correct failure of posixpath unittest when $HOME ends
+  with a slash.
+
 - Bug #1565661: in webbrowser, split() the command for the default
   GNOME browser in case it is a command with args.
 
