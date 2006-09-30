@@ -172,7 +172,7 @@ def _readmodule(module, path, inpackage=None):
                     # else it's a nested def
                 else:
                     # it's a function
-                    dict[meth_name] = Function(module, meth_name, file, lineno)
+                    dict[meth_name] = Function(fullmodule, meth_name, file, lineno)
                 stack.append((None, thisindent)) # Marker for nested fns
             elif token == 'class':
                 lineno, thisindent = start
