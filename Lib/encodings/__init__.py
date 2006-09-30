@@ -90,7 +90,7 @@ def search_function(encoding):
     else:
         modnames = [norm_encoding]
     for modname in modnames:
-        if not modname:
+        if not modname or '.' in modname:
             continue
         try:
             mod = __import__('encodings.' + modname,
