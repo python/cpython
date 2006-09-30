@@ -22,6 +22,8 @@ Core and builtins
 
 - Allow exception instances to be directly sliced again.
 
+- fixed a bug with bsddb.DB.stat: the flags and txn keyword arguments
+  were transposed.
 
 Extension Modules
 -----------------
