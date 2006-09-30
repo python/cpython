@@ -56,6 +56,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1565661: in webbrowser, split() the command for the default
+  GNOME browser in case it is a command with args.
+
 - Made the error message for time.strptime when the data data and format do
   match be more clear.
 

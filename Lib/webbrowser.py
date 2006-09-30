@@ -447,7 +447,7 @@ def register_X_browsers():
 
         # if successful, register it
         if retncode is None and commd:
-            register("gnome", None, BackgroundBrowser(commd))
+            register("gnome", None, BackgroundBrowser(commd.split()))
 
     # First, the Mozilla/Netscape browsers
     for browser in ("mozilla-firefox", "firefox",
