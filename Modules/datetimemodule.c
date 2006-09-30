@@ -1149,9 +1149,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 
 	PyObject *newfmt = NULL;	/* py string, the output format */
 	char *pnew;	/* pointer to available byte in output format */
-	char totalnew;	/* number bytes total in output format buffer,
+	int totalnew;	/* number bytes total in output format buffer,
 			   exclusive of trailing \0 */
-	char usednew;	/* number bytes used so far in output format buffer */
+	int usednew;	/* number bytes used so far in output format buffer */
 
 	char *ptoappend; /* pointer to string to append to output buffer */
 	int ntoappend;	/* # of bytes to append to output buffer */

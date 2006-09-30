@@ -67,6 +67,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1556784: allow format strings longer than 127 characters in
+  datetime's strftime function.
+
 - gcmodule: add a missing incref.
 
 - threadmodule: add a missing incref.
