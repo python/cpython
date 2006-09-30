@@ -1421,19 +1421,21 @@ The exact range of years for which \method{strftime()} works also
 varies across platforms.  Regardless of platform, years before 1900
 cannot be used.
 
-\subsection{Examples}
-
-\subsubsection{Creating Datetime Objects from Formatted Strings}
-
-The \class{datetime} class does not directly support parsing formatted time
-strings.  You can use \function{time.strptime} to do the parsing and create
-a \class{datetime} object from the tuple it returns:
-
-\begin{verbatim}
->>> s = "2005-12-06T12:13:14"
->>> from datetime import datetime
->>> from time import strptime
->>> datetime(*strptime(s, "%Y-%m-%dT%H:%M:%S")[0:6])
-datetime.datetime(2005, 12, 6, 12, 13, 14)
-\end{verbatim}
-
+%%% This example is obsolete, since strptime is now supported by datetime.
+% 
+% \subsection{Examples}
+% 
+% \subsubsection{Creating Datetime Objects from Formatted Strings}
+% 
+% The \class{datetime} class does not directly support parsing formatted time
+% strings.  You can use \function{time.strptime} to do the parsing and create
+% a \class{datetime} object from the tuple it returns:
+% 
+% \begin{verbatim}
+% >>> s = "2005-12-06T12:13:14"
+% >>> from datetime import datetime
+% >>> from time import strptime
+% >>> datetime(*strptime(s, "%Y-%m-%dT%H:%M:%S")[0:6])
+% datetime.datetime(2005, 12, 6, 12, 13, 14)
+% \end{verbatim}
+% 
