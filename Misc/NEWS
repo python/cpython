@@ -63,6 +63,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1560617: in pyclbr, return full module name not only for classes,
+  but also for functions.
+
 - Bug #1457823: cgi.(Sv)FormContentDict's constructor now takes
   keep_blank_values and strict_parsing keyword arguments.
 
