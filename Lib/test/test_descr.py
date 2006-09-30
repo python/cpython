@@ -2142,6 +2142,13 @@ def supers():
 
     veris(Sub.test(), Base.aProp)
 
+    # Verify that super() doesn't allow keyword args
+    try:
+        super(Base, kw=1)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "super shouldn't accept keyword args"
 
 def inherits():
     if verbose: print "Testing inheritance from basic types..."
