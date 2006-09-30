@@ -3060,6 +3060,7 @@ Here are two ways to write a table of squares and cubes:
  8  64  512
  9  81  729
 10 100 1000
+
 >>> for x in range(1,11):
 ...     print '%2d %3d %4d' % (x, x*x, x*x*x)
 ... 
@@ -3075,8 +3076,9 @@ Here are two ways to write a table of squares and cubes:
 10 100 1000
 \end{verbatim}
 
-(Note that one space between each column was added by the way
-\keyword{print} works: it always adds spaces between its arguments.)
+(Note that in the first example, one space between each column was
+added by the way \keyword{print} works: it always adds spaces between
+its arguments.)
 
 This example demonstrates the \method{rjust()} method of string objects,
 which right-justifies a string in a field of a given width by padding
