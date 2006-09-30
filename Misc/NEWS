@@ -63,6 +63,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1457823: cgi.(Sv)FormContentDict's constructor now takes
+  keep_blank_values and strict_parsing keyword arguments.
+
 - Bug #1566602: correct failure of posixpath unittest when $HOME ends
   with a slash.
 
