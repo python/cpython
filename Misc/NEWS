@@ -119,6 +119,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1566602: correct failure of posixpath unittest when $HOME ends
+  with a slash.
+
 - Reverted patch #1504333 because it introduced an infinite loop.
 
 - Fix missing import of the types module in logging.config.
