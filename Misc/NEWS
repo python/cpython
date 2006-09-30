@@ -106,6 +106,9 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1556784: allow format strings longer than 127 characters in
+  datetime's strftime function.
+
 - Fix itertools.count(n) to work with negative numbers again.
 
 - RLIMIT_SBSIZE was added to the resource module where available.
