@@ -3,6 +3,10 @@ What's New in IDLE 2.6a1?
 
 *Release date: XX-XXX-200X*
 
+- Some syntax errors were being caught by tokenize during the tabnanny
+  check, resulting in obscure error messages.  Do the syntax check
+  first.  Bug 1562716, 1562719
+
 - IDLE's version number takes a big jump to match the version number of
   the Python release of which it's a part.
 
