@@ -726,6 +726,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
                     raise
             except:
                 if use_subprocess:
+                    # When run w/o subprocess, both user and IDLE errors
+                    # are printed here; skip message in that case.
                     print >> self.tkconsole.stderr, \
                              "IDLE internal error in runcode()"
                 self.showtraceback()
