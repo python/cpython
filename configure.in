@@ -1068,8 +1068,8 @@ dnl AC_MSG_RESULT($cpp_type)
 AC_HEADER_STDC
 AC_CHECK_HEADERS(asm/types.h conio.h curses.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
-shadow.h io.h langinfo.h libintl.h ncurses.h poll.h process.h pthread.h \
-signal.h stropts.h termios.h thread.h \
+io.h langinfo.h libintl.h ncurses.h poll.h process.h pthread.h \
+shadow.h signal.h stdint.h stropts.h termios.h thread.h \
 unistd.h utime.h \
 sys/audioio.h sys/bsdtty.h sys/file.h sys/loadavg.h sys/lock.h sys/mkdev.h \
 sys/modem.h \
@@ -1199,7 +1199,9 @@ fi
 
 AC_CHECK_TYPES(uintptr_t, 
    [AC_CHECK_SIZEOF(uintptr_t, 4)], 
-   [], [#include <stdint.h>])
+   [], [#ifdef HAVE_STDINT_H
+        #include <stdint.h>
+        #endif])
 
 
 # Hmph. AC_CHECK_SIZEOF() doesn't include <sys/types.h>.
