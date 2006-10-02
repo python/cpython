@@ -3,6 +3,10 @@
 
 #include "pyconfig.h" /* include for defines */
 
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic
 C language & library operations whose spellings vary across platforms.
