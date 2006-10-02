@@ -170,6 +170,8 @@ Tools
 Build
 -----
 
+- Bug #1568842: Fix test for uintptr_t.
+
 - Patch #1540470, for OpenBSD 4.0.
 
 
