@@ -684,6 +684,8 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 	if (!PyArg_UnpackTuple(args, "classmethod", 1, 1, &callable))
 		return -1;
+	if (!_PyArg_NoKeywords("classmethod", kwds))
+		return -1;
 	if (!PyCallable_Check(callable)) {
 		PyErr_Format(PyExc_TypeError, "'%s' object is not callable",
 		     callable->ob_type->tp_name);
@@ -839,6 +841,8 @@ sm_init(PyObject *self, PyObject *args, PyObject *kwds)
 	PyObject *callable;
 
 	if (!PyArg_UnpackTuple(args, "staticmethod", 1, 1, &callable))
+		return -1;
+	if (!_PyArg_NoKeywords("staticmethod", kwds))
 		return -1;
 	Py_INCREF(callable);
 	sm->sm_callable = callable;

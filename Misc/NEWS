@@ -16,6 +16,9 @@ Core and builtins
   keyword arguments any more (previously they accepted them, but didn't
   use them).
 
+- staticmethod() and classmethod() also now complain about keyword args
+  instead of silently ignoring them.
+
 - Bug #1331062: Fix error in UTF-7 codec.
 
 - Bug #1365916: Fix an int/long mismatch in the sorted() built-in.
