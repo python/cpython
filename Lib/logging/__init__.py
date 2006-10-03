@@ -214,7 +214,7 @@ class LogRecord:
     information to be logged.
     """
     def __init__(self, name, level, pathname, lineno,
-                 msg, args, exc_info, func):
+                 msg, args, exc_info, func=None):
         """
         Initialize a logging record with interesting information.
         """
