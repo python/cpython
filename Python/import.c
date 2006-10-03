@@ -1801,7 +1801,7 @@ load_module(char *name, FILE *fp, char *buf, int type, PyObject *loader)
 
 
 /* Initialize a built-in module.
-   Return 1 for succes, 0 if the module is not found, and -1 with
+   Return 1 for success, 0 if the module is not found, and -1 with
    an exception set if the initialization failed. */
 
 static int
