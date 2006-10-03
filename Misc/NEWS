@@ -25,7 +25,7 @@ Core and builtins
 - Overflow checking code in integer division ran afoul of new gcc
   optimizations.  Changed to be more standard-conforming.
 
-- Fix warnings reported by Klocwork's static analysis tool.
+- Fix warnings reported by the Coverity and Klocwork static analysis tools.
 
 - Patch #1541585: fix buffer overrun when performing repr() on
   a unicode string in a build with wide unicode (UCS-4) support.
