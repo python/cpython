@@ -246,8 +246,10 @@ PyNode_Future(node *n, const char *filename)
 	PyFutureFeatures *ff;
 
 	ff = (PyFutureFeatures *)PyMem_Malloc(sizeof(PyFutureFeatures));
-	if (ff == NULL)
+	if (ff == NULL) {
+		PyErr_NoMemory();
 		return NULL;
+	}
 	ff->ff_found_docstring = 0;
 	ff->ff_last_lineno = -1;
 	ff->ff_features = 0;
