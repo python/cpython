@@ -195,6 +195,10 @@ translabel(grammar *g, label *lb)
 			else
 				name_len = strlen(src);
 			dest = malloc(name_len + 1);
+			if (!dest) {
+				printf("Can't alloc dest '%s'\n", src);
+				return;
+			}
 			strncpy(dest, src, name_len);
 			dest[name_len] = '\0';
 			free(lb->lb_str);
