@@ -356,7 +356,7 @@ teedataobject_jumplink(teedataobject *tdo)
 {
 	if (tdo->nextlink == NULL)
 		tdo->nextlink = teedataobject_new(tdo->it);
-	Py_INCREF(tdo->nextlink);
+	Py_XINCREF(tdo->nextlink);
 	return tdo->nextlink;
 }
 
@@ -432,7 +432,7 @@ tee_next(teeobject *to)
 
 	if (to->index >= LINKCELLS) {
 		link = teedataobject_jumplink(to->dataobj);
-		Py_XDECREF(to->dataobj);
+		Py_DECREF(to->dataobj);
 		to->dataobj = (teedataobject *)link;
 		to->index = 0;
 	}
@@ -478,6 +478,12 @@ tee_fromiterable(PyObject *iterable)
 	if (to == NULL) 
 		goto done;
 	to->dataobj = (teedataobject *)teedataobject_new(it);
+	if (!to->dataobj) {
+		PyObject_GC_Del(to);
+		to = NULL;
+		goto done;
+	}
+
 	to->index = 0;
 	to->weakreflist = NULL;
 done:
