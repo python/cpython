@@ -2550,6 +2550,10 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 
 			garbage = (PyObject**)
 				PyMem_MALLOC(slicelength*sizeof(PyObject*));
+			if (!garbage) {
+				PyErr_NoMemory();
+				return -1;
+			}
 
 			/* drawing pictures might help
 			   understand these for loops */
@@ -2598,9 +2602,9 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 			else {
 				seq = PySequence_Fast(value,
 					"must assign iterable to extended slice");
-				if (!seq)
-					return -1;
 			}
+			if (!seq)
+				return -1;
 
 			if (PySequence_Fast_GET_SIZE(seq) != slicelength) {
 				PyErr_Format(PyExc_ValueError,
