@@ -1479,7 +1479,7 @@ source line where the logging call was made, and any exception
 information to be logged.
 
 \begin{classdesc}{LogRecord}{name, lvl, pathname, lineno, msg, args,
-                             exc_info}
+                             exc_info, func}
 Returns an instance of \class{LogRecord} initialized with interesting
 information. The \var{name} is the logger name; \var{lvl} is the
 numeric level; \var{pathname} is the absolute pathname of the source
@@ -1489,7 +1489,9 @@ user-supplied message (a format string); \var{args} is the tuple
 which, together with \var{msg}, makes up the user message; and
 \var{exc_info} is the exception tuple obtained by calling
 \function{sys.exc_info() }(or \constant{None}, if no exception information
-is available).
+is available). The \var{func} is the name of the function from which the
+logging call was made.
+\versionchanged[\var{func} was added]{2.5}
 \end{classdesc}
 
 \begin{methoddesc}{getMessage}{}
