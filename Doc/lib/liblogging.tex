@@ -528,8 +528,8 @@ as those created locally. Logger-level filtering is applied using
 \method{filter()}.
 \end{methoddesc}
 
-\begin{methoddesc}{makeRecord}{name, lvl, fn, lno, msg, args, exc_info,
-                               func, extra}
+\begin{methoddesc}{makeRecord}{name, lvl, fn, lno, msg, args, exc_info
+                               \optional{, func, extra}}
 This is a factory method which can be overridden in subclasses to create
 specialized \class{LogRecord} instances.
 \versionchanged[\var{func} and \var{extra} were added]{2.5}
@@ -1479,7 +1479,7 @@ source line where the logging call was made, and any exception
 information to be logged.
 
 \begin{classdesc}{LogRecord}{name, lvl, pathname, lineno, msg, args,
-                             exc_info, func}
+                             exc_info \optional{, func}}
 Returns an instance of \class{LogRecord} initialized with interesting
 information. The \var{name} is the logger name; \var{lvl} is the
 numeric level; \var{pathname} is the absolute pathname of the source
@@ -1490,7 +1490,7 @@ which, together with \var{msg}, makes up the user message; and
 \var{exc_info} is the exception tuple obtained by calling
 \function{sys.exc_info() }(or \constant{None}, if no exception information
 is available). The \var{func} is the name of the function from which the
-logging call was made.
+logging call was made. If not specified, it defaults to \var{None}.
 \versionchanged[\var{func} was added]{2.5}
 \end{classdesc}
 
