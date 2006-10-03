@@ -139,6 +139,8 @@ Extension Modules
 Tests
 -----
 
+- Converted test_imp to use unittest.
+
 - Fix bsddb test_basics.test06_Transactions to check the version
   number properly.
 
