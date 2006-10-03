@@ -2482,8 +2482,10 @@ Tkapp_CreateTimerHandler(PyObject *self, PyObject *args)
 	}
 
 	v = Tktt_New(func);
-	v->token = Tcl_CreateTimerHandler(milliseconds, TimerHandler,
-					  (ClientData)v);
+	if (v) {
+		v->token = Tcl_CreateTimerHandler(milliseconds, TimerHandler,
+						  (ClientData)v);
+	}
 
 	return (PyObject *) v;
 }
