@@ -218,7 +218,7 @@ Build
 
 - Bug #1502728: Correctly link against librt library on HP-UX.
 
-- OpenBSD 3.9 is now supported.
+- OpenBSD 3.9 and 4.0 are now supported.
 
 - Test for sys/statvfs.h before including it, as statvfs is present
   on some OSX installation, but its header file is not.

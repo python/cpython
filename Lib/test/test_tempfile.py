@@ -27,7 +27,7 @@ has_spawnl = hasattr(os, 'spawnl')
 # number of files that can be opened at one time (see ulimit -n)
 if sys.platform == 'mac':
     TEST_FILES = 32
-elif sys.platform == 'openbsd3':
+elif sys.platform in ('openbsd3', 'openbsd4'):
     TEST_FILES = 48
 else:
     TEST_FILES = 100
