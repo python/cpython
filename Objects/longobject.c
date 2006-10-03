@@ -1043,7 +1043,7 @@ long_format(PyObject *aa, int base, int addL)
 	register PyLongObject *a = (PyLongObject *)aa;
 	PyStringObject *str;
 	int i;
-	const int size_a = ABS(a->ob_size);
+	int size_a;
 	char *p;
 	int bits;
 	char sign = '\0';
@@ -1053,6 +1053,7 @@ long_format(PyObject *aa, int base, int addL)
 		return NULL;
 	}
 	assert(base >= 2 && base <= 36);
+	size_a = ABS(a->ob_size);
 
 	/* Compute a rough upper bound for the length of the string */
 	i = base;
