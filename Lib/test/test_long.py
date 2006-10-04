@@ -253,16 +253,22 @@ def test_misc(maxdigits=MAXDIGITS):
         "long(-sys.maxint-1) != -sys.maxint-1")
 
     # long -> int should not fail for hugepos_aslong or hugeneg_aslong
+    x = int(hugepos_aslong)
     try:
-        check(int(hugepos_aslong) == hugepos,
+        check(x == hugepos,
               "converting sys.maxint to long and back to int fails")
     except OverflowError:
         raise TestFailed, "int(long(sys.maxint)) overflowed!"
+    if not isinstance(x, int):
+        raise TestFailed("int(long(sys.maxint)) should have returned int")
+    x = int(hugeneg_aslong)
     try:
-        check(int(hugeneg_aslong) == hugeneg,
+        check(x == hugeneg,
               "converting -sys.maxint-1 to long and back to int fails")
     except OverflowError:
         raise TestFailed, "int(long(-sys.maxint-1)) overflowed!"
+    if not isinstance(x, int):
+        raise TestFailed("int(long(-sys.maxint-1)) should have returned int")
 
     # but long -> int should overflow for hugepos+1 and hugeneg-1
     x = hugepos_aslong + 1

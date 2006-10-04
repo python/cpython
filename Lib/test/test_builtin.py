@@ -113,6 +113,11 @@ class BuiltinTest(unittest.TestCase):
         # str
         self.assertRaises(TypeError, abs, 'a')
 
+    def test_neg(self):
+        x = -sys.maxint-1
+        self.assert_(isinstance(x, int))
+        self.assertEqual(-x, sys.maxint+1)
+
     def test_apply(self):
         def f0(*args):
             self.assertEqual(args, ())
@@ -574,9 +579,11 @@ class BuiltinTest(unittest.TestCase):
                         pass
 
         s = repr(-1-sys.maxint)
-        self.assertEqual(int(s)+1, -sys.maxint)
+        x = int(s)
+        self.assertEqual(x+1, -sys.maxint)
+        self.assert_(isinstance(x, int))
         # should return long
-        int(s[1:])
+        self.assertEqual(int(s[1:]), sys.maxint+1)
 
         # should return long
         x = int(1e100)

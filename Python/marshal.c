@@ -451,6 +451,11 @@ r_object(RFILE *p)
 			int size;
 			PyLongObject *ob;
 			n = r_long(p);
+			if (n < -INT_MAX || n > INT_MAX) {
+				PyErr_SetString(PyExc_ValueError,
+						"bad marshal data");
+				return NULL;
+			}
 			size = n<0 ? -n : n;
 			ob = _PyLong_New(size);
 			if (ob == NULL)
@@ -518,7 +523,7 @@ r_object(RFILE *p)
 	case TYPE_INTERNED:
 	case TYPE_STRING:
 		n = r_long(p);
-		if (n < 0) {
+		if (n < 0 || n > INT_MAX) {
 			PyErr_SetString(PyExc_ValueError, "bad marshal data");
 			return NULL;
 		}
@@ -539,6 +544,10 @@ r_object(RFILE *p)
 
 	case TYPE_STRINGREF:
 		n = r_long(p);
+		if (n < 0 || n >= PyList_GET_SIZE(p->strings)) {
+			PyErr_SetString(PyExc_ValueError, "bad marshal data");
+			return NULL;
+		}
 		v = PyList_GET_ITEM(p->strings, n);
 		Py_INCREF(v);
 		return v;
@@ -549,7 +558,7 @@ r_object(RFILE *p)
 		char *buffer;
 
 		n = r_long(p);
-		if (n < 0) {
+		if (n < 0 || n > INT_MAX) {
 			PyErr_SetString(PyExc_ValueError, "bad marshal data");
 			return NULL;
 		}
@@ -570,7 +579,7 @@ r_object(RFILE *p)
 
 	case TYPE_TUPLE:
 		n = r_long(p);
-		if (n < 0) {
+		if (n < 0 || n > INT_MAX) {
 			PyErr_SetString(PyExc_ValueError, "bad marshal data");
 			return NULL;
 		}
@@ -593,7 +602,7 @@ r_object(RFILE *p)
 
 	case TYPE_LIST:
 		n = r_long(p);
-		if (n < 0) {
+		if (n < 0 || n > INT_MAX) {
 			PyErr_SetString(PyExc_ValueError, "bad marshal data");
 			return NULL;
 		}
@@ -643,10 +652,11 @@ r_object(RFILE *p)
 			return NULL;
 		}
 		else {
-			int argcount = r_long(p);
-			int nlocals = r_long(p);
-			int stacksize = r_long(p);
-			int flags = r_long(p);
+			/* XXX ignore long->int overflows for now */
+			int argcount = (int)r_long(p);
+			int nlocals = (int)r_long(p);
+			int stacksize = (int)r_long(p);
+			int flags = (int)r_long(p);
 			PyObject *code = r_object(p);
 			PyObject *consts = r_object(p);
 			PyObject *names = r_object(p);
@@ -655,7 +665,7 @@ r_object(RFILE *p)
 			PyObject *cellvars = r_object(p);
 			PyObject *filename = r_object(p);
 			PyObject *name = r_object(p);
-			int firstlineno = r_long(p);
+			int firstlineno = (int)r_long(p);
 			PyObject *lnotab = r_object(p);
 
 			if (!PyErr_Occurred()) {
@@ -821,10 +831,16 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
 	wf.strings = (version > 0) ? PyDict_New() : NULL;
 	w_object(x, &wf);
 	Py_XDECREF(wf.strings);
-	if (wf.str != NULL)
-		_PyString_Resize(&wf.str,
-		    (int) (wf.ptr -
-			   PyString_AS_STRING((PyStringObject *)wf.str)));
+	if (wf.str != NULL) {
+		char *base = PyString_AS_STRING((PyStringObject *)wf.str);
+		if (wf.ptr - base > INT_MAX) {
+			Py_DECREF(wf.str);
+			PyErr_SetString(PyExc_OverflowError,
+					"too much marshall data for a string");
+			return NULL;
+		}
+		_PyString_Resize(&wf.str, (int)(wf.ptr - base));
+	}
 	if (wf.error) {
 		Py_XDECREF(wf.str);
 		PyErr_SetString(PyExc_ValueError,

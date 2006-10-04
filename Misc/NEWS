@@ -12,8 +12,9 @@ What's New in Python 2.4.4c1?
 Core and builtins
 -----------------
 
-- Integer negation and absolute value were fixed to not rely
-  on undefined behaviour of the C compiler anymore.
+- A number of places, including integer negation and absolute value,
+  were fixed to not rely on undefined behaviour of the C compiler
+  anymore.
 
 - Patch #1567691: super() and new.instancemethod() now don't accept
   keyword arguments any more (previously they accepted them, but didn't

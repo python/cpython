@@ -860,7 +860,8 @@ list_inplace_concat(PyListObject *self, PyObject *other)
 static PyObject *
 listpop(PyListObject *self, PyObject *args)
 {
-	int i = -1;
+	long ii = -1;
+	int i;
 	PyObject *v, *arg = NULL;
 	int status;
 
@@ -868,8 +869,8 @@ listpop(PyListObject *self, PyObject *args)
 		return NULL;
 	if (arg != NULL) {
 		if (PyInt_Check(arg))
-			i = (int)(PyInt_AS_LONG((PyIntObject*) arg));
-		else if (!PyArg_ParseTuple(args, "|i:pop", &i))
+			ii = PyInt_AS_LONG((PyIntObject*) arg);
+		else if (!PyArg_ParseTuple(args, "|l:pop", &ii))
    			return NULL;
 	}
 	if (self->ob_size == 0) {
@@ -877,12 +878,13 @@ listpop(PyListObject *self, PyObject *args)
 		PyErr_SetString(PyExc_IndexError, "pop from empty list");
 		return NULL;
 	}
-	if (i < 0)
-		i += self->ob_size;
-	if (i < 0 || i >= self->ob_size) {
+	if (ii < 0)
+		ii += self->ob_size;
+	if (ii < 0 || ii >= self->ob_size) {
 		PyErr_SetString(PyExc_IndexError, "pop index out of range");
 		return NULL;
 	}
+	i = (int)ii;
 	v = self->ob_item[i];
 	if (i == self->ob_size - 1) {
 		status = list_resize(self, self->ob_size - 1);

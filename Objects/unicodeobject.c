@@ -2316,6 +2316,7 @@ PyObject *_PyUnicode_DecodeUnicodeInternal(const char *s,
     PyObject *exc = NULL;
 
     unimax = PyUnicode_GetMax();
+    /* XXX overflow detection missing */
     v = _PyUnicode_New((size+Py_UNICODE_SIZE-1)/ Py_UNICODE_SIZE);
     if (v == NULL)
 	goto onError;
@@ -2931,6 +2932,7 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 		    int needed = (targetsize - extrachars) + \
 			         (targetsize << 2);
 		    extrachars += needed;
+                    /* XXX overflow detection missing */
 		    if (_PyUnicode_Resize(&v,
 					 PyUnicode_GET_SIZE(v) + needed) < 0) {
 			Py_DECREF(x);

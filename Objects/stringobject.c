@@ -799,7 +799,7 @@ PyString_Repr(PyObject *obj, int smartquotes)
 	register PyStringObject* op = (PyStringObject*) obj;
 	size_t newsize = 2 + 4 * op->ob_size;
 	PyObject *v;
-	if (newsize > INT_MAX) {
+	if (newsize > INT_MAX || newsize / 4 != op->ob_size) {
 		PyErr_SetString(PyExc_OverflowError,
 			"string is too large to make repr");
 	}

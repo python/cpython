@@ -188,6 +188,17 @@ PyLong_FromDouble(double dval)
 	return (PyObject *)v;
 }
 
+/* Checking for overflow in PyLong_AsLong is a PITA since C doesn't define
+ * anything about what happens when a signed integer operation overflows,
+ * and some compilers think they're doing you a favor by being "clever"
+ * then.  The bit pattern for the largest postive signed long is
+ * (unsigned long)LONG_MAX, and for the smallest negative signed long
+ * it is abs(LONG_MIN), which we could write -(unsigned long)LONG_MIN.
+ * However, some other compilers warn about applying unary minus to an
+ * unsigned operand.  Hence the weird "0-".
+ */
+#define Py_ABS_LONG_MIN		(0-(unsigned long)LONG_MIN)
+
 /* Get a C long int from a long int object.
    Returns -1 and sets an error condition if overflow occurs. */
 
@@ -219,14 +230,16 @@ PyLong_AsLong(PyObject *vv)
 		if ((x >> SHIFT) != prev)
 			goto overflow;
 	}
-	/* Haven't lost any bits, but if the sign bit is set we're in
-	 * trouble *unless* this is the min negative number.  So,
-	 * trouble iff sign bit set && (positive || some bit set other
-	 * than the sign bit).
+	/* Haven't lost any bits, but casting to long requires extra care
+	 * (see comment above).
 	 */
-	if ((long)x < 0 && (sign > 0 || (x << 1) != 0))
-		goto overflow;
-	return (long)x * sign;
+	if (x <= (unsigned long)LONG_MAX) {
+		return (long)x * sign;
+	}
+	else if (sign < 0 && x == Py_ABS_LONG_MIN) {
+		return LONG_MIN;
+	}
+	/* else overflow */
 
  overflow:
 	PyErr_SetString(PyExc_OverflowError,
@@ -1042,7 +1055,7 @@ long_format(PyObject *aa, int base, int addL)
 {
 	register PyLongObject *a = (PyLongObject *)aa;
 	PyStringObject *str;
-	int i;
+	int i, j, sz;
 	int size_a;
 	char *p;
 	int bits;
@@ -1062,11 +1075,18 @@ long_format(PyObject *aa, int base, int addL)
 		++bits;
 		i >>= 1;
 	}
-	i = 5 + (addL ? 1 : 0) + (size_a*SHIFT + bits-1) / bits;
-	str = (PyStringObject *) PyString_FromStringAndSize((char *)0, i);
+	i = 5 + (addL ? 1 : 0);
+	j = size_a*SHIFT + bits-1;
+	sz = i + j / bits;
+	if (j / SHIFT < size_a || sz < i) {
+		PyErr_SetString(PyExc_OverflowError,
+				"long is too large to format");
+		return NULL;
+	}
+	str = (PyStringObject *) PyString_FromStringAndSize((char *)0, sz);
 	if (str == NULL)
 		return NULL;
-	p = PyString_AS_STRING(str) + i;
+	p = PyString_AS_STRING(str) + sz;
 	*p = '\0';
         if (addL)
                 *--p = 'L';
@@ -1224,14 +1244,14 @@ long_from_binary_base(char **str, int base)
 		++p;
 	}
 	*str = p;
-	n = (p - start) * bits_per_char;
-	if (n / bits_per_char != p - start) {
+	/* n <- # of Python digits needed, = ceiling(n/SHIFT). */
+	n = (p - start) * bits_per_char + SHIFT - 1;
+	if (n / bits_per_char < p - start) {
 		PyErr_SetString(PyExc_ValueError,
 				"long string too large to convert");
 		return NULL;
 	}
-	/* n <- # of Python digits needed, = ceiling(n/SHIFT). */
-	n = (n + SHIFT - 1) / SHIFT;
+	n = n / SHIFT;
 	z = _PyLong_New(n);
 	if (z == NULL)
 		return NULL;

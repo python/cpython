@@ -1591,12 +1591,12 @@ _PySequence_IterSearch(PyObject *seq, PyObject *obj, int operation)
 		if (cmp > 0) {
 			switch (operation) {
 			case PY_ITERSEARCH_COUNT:
-				++n;
-				if (n <= 0) {
+				if (n == INT_MAX) {
 					PyErr_SetString(PyExc_OverflowError,
 				                "count exceeds C int size");
 					goto Fail;
 				}
+				++n;
 				break;
 
 			case PY_ITERSEARCH_INDEX:
@@ -1617,9 +1617,9 @@ _PySequence_IterSearch(PyObject *seq, PyObject *obj, int operation)
 		}
 
 		if (operation == PY_ITERSEARCH_INDEX) {
-			++n;
-			if (n <= 0)
+			if (n == INT_MAX)
 				wrapped = 1;
+			++n;
 		}
 	}
 
