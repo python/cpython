@@ -551,7 +551,8 @@ PyErr_NewException(char *name, PyObject *base, PyObject *dict)
 			goto failure;
 	}
 	if (PyDict_GetItemString(dict, "__module__") == NULL) {
-		modulename = PyString_FromStringAndSize(name, (int)(dot-name));
+		modulename = PyString_FromStringAndSize(name,
+						     (Py_ssize_t)(dot-name));
 		if (modulename == NULL)
 			goto failure;
 		if (PyDict_SetItemString(dict, "__module__", modulename) != 0)

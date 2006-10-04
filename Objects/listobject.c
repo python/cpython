@@ -863,17 +863,12 @@ static PyObject *
 listpop(PyListObject *self, PyObject *args)
 {
 	Py_ssize_t i = -1;
-	PyObject *v, *arg = NULL;
+	PyObject *v;
 	int status;
 
-	if (!PyArg_UnpackTuple(args, "pop", 0, 1, &arg))
+	if (!PyArg_ParseTuple(args, "|n:pop", &i))
 		return NULL;
-	if (arg != NULL) {
-		if (PyInt_Check(arg))
-			i = PyInt_AS_LONG((PyIntObject*) arg);
-		else if (!PyArg_ParseTuple(args, "|n:pop", &i))
-   			return NULL;
-	}
+
 	if (self->ob_size == 0) {
 		/* Special-case most common failure cause */
 		PyErr_SetString(PyExc_IndexError, "pop from empty list");
