@@ -215,12 +215,13 @@ initwinsound(void)
 {
 	OSVERSIONINFO version;
 
+	PyObject *dict;
 	PyObject *module = Py_InitModule3("winsound",
 					  sound_methods,
 					  sound_module_doc);
 	if (module == NULL)
 		return;
-	PyObject *dict = PyModule_GetDict(module);
+	dict = PyModule_GetDict(module);
 
 	ADD_DEFINE(SND_ASYNC);
 	ADD_DEFINE(SND_NODEFAULT);
