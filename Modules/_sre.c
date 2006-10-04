@@ -1162,6 +1162,9 @@ entrance:
 
             /* install new repeat context */
             ctx->u.rep = (SRE_REPEAT*) malloc(sizeof(*ctx->u.rep));
+            /* XXX(nnorwitz): anything else we need to do on error? */
+            if (!ctx->u.rep)
+                RETURN_FAILURE;
             ctx->u.rep->count = -1;
             ctx->u.rep->pattern = ctx->pattern;
             ctx->u.rep->prev = state->repeat;
