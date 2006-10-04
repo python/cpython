@@ -2380,6 +2380,7 @@ PyObject *_PyUnicode_DecodeUnicodeInternal(const char *s,
     Py_UNICODE unimax = PyUnicode_GetMax();
 #endif
 
+    /* XXX overflow detection missing */
     v = _PyUnicode_New((size+Py_UNICODE_SIZE-1)/ Py_UNICODE_SIZE);
     if (v == NULL)
 	goto onError;
@@ -3166,6 +3167,7 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 			Py_ssize_t needed = (targetsize - extrachars) + \
 				     (targetsize << 2);
 			extrachars += needed;
+			/* XXX overflow detection missing */
 			if (_PyUnicode_Resize(&v,
 					     PyUnicode_GET_SIZE(v) + needed) < 0) {
 			    Py_DECREF(x);
@@ -7758,10 +7760,11 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    default:
 		PyErr_Format(PyExc_ValueError,
 			     "unsupported format character '%c' (0x%x) "
-			     "at index %i",
+			     "at index %zd",
 			     (31<=c && c<=126) ? (char)c : '?',
                              (int)c,
-			     (int)(fmt -1 - PyUnicode_AS_UNICODE(uformat)));
+			     (Py_ssize_t)(fmt - 1 -
+					  PyUnicode_AS_UNICODE(uformat)));
 		goto onError;
 	    }
 	    if (sign) {

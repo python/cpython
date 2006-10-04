@@ -546,6 +546,11 @@ r_object(RFILE *p)
 			int size;
 			PyLongObject *ob;
 			n = r_long(p);
+			if (n < -INT_MAX || n > INT_MAX) {
+				PyErr_SetString(PyExc_ValueError,
+						"bad marshal data");
+				return NULL;
+			}
 			size = n<0 ? -n : n;
 			ob = _PyLong_New(size);
 			if (ob == NULL)
@@ -654,7 +659,7 @@ r_object(RFILE *p)
 	case TYPE_INTERNED:
 	case TYPE_STRING:
 		n = r_long(p);
-		if (n < 0) {
+		if (n < 0 || n > INT_MAX) {
 			PyErr_SetString(PyExc_ValueError, "bad marshal data");
 			return NULL;
 		}
@@ -689,7 +694,7 @@ r_object(RFILE *p)
 		char *buffer;
 
 		n = r_long(p);
-		if (n < 0) {
+		if (n < 0 || n > INT_MAX) {
 			PyErr_SetString(PyExc_ValueError, "bad marshal data");
 			return NULL;
 		}
@@ -710,7 +715,7 @@ r_object(RFILE *p)
 
 	case TYPE_TUPLE:
 		n = r_long(p);
-		if (n < 0) {
+		if (n < 0 || n > INT_MAX) {
 			PyErr_SetString(PyExc_ValueError, "bad marshal data");
 			return NULL;
 		}
@@ -733,7 +738,7 @@ r_object(RFILE *p)
 
 	case TYPE_LIST:
 		n = r_long(p);
-		if (n < 0) {
+		if (n < 0 || n > INT_MAX) {
 			PyErr_SetString(PyExc_ValueError, "bad marshal data");
 			return NULL;
 		}
@@ -831,10 +836,11 @@ r_object(RFILE *p)
 			
 			v = NULL;
 
-			argcount = r_long(p);
-			nlocals = r_long(p);
-			stacksize = r_long(p);
-			flags = r_long(p);
+                        /* XXX ignore long->int overflows for now */
+			argcount = (int)r_long(p);
+			nlocals = (int)r_long(p);
+			stacksize = (int)r_long(p);
+			flags = (int)r_long(p);
 			code = r_object(p);
 			if (code == NULL)
 				goto code_error;
@@ -859,7 +865,7 @@ r_object(RFILE *p)
 			name = r_object(p);
 			if (name == NULL)
 				goto code_error;
-			firstlineno = r_long(p);
+			firstlineno = (int)r_long(p);
 			lnotab = r_object(p);
 			if (lnotab == NULL)
 				goto code_error;
@@ -1031,10 +1037,16 @@ PyMarshal_WriteObjectToString(PyObject *x, int version)
 	wf.strings = (version > 0) ? PyDict_New() : NULL;
 	w_object(x, &wf);
 	Py_XDECREF(wf.strings);
-	if (wf.str != NULL)
-		_PyString_Resize(&wf.str,
-		    (int) (wf.ptr -
-			   PyString_AS_STRING((PyStringObject *)wf.str)));
+	if (wf.str != NULL) {
+		char *base = PyString_AS_STRING((PyStringObject *)wf.str);
+		if (wf.ptr - base > PY_SSIZE_T_MAX) {
+			Py_DECREF(wf.str);
+			PyErr_SetString(PyExc_OverflowError,
+					"too much marshall data for a string");
+			return NULL;
+		}
+		_PyString_Resize(&wf.str, (Py_ssize_t)(wf.ptr - base));
+	}
 	if (wf.error) {
 		Py_XDECREF(wf.str);
 		PyErr_SetString(PyExc_ValueError,
