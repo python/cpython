@@ -2524,6 +2524,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		return NULL;
 	}
 
+	assert(tstate != NULL);
 	assert(globals != NULL);
 	f = PyFrame_New(tstate, co, globals, locals);
 	if (f == NULL)
@@ -3631,6 +3632,7 @@ fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 		   PyFrame_New() that doesn't take locals, but does
 		   take builtins without sanity checking them.
 		*/
+		assert(tstate != NULL);
 		f = PyFrame_New(tstate, co, globals, NULL);
 		if (f == NULL)
 			return NULL;
@@ -3643,7 +3645,6 @@ fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 			fastlocals[i] = *stack++;
 		}
 		retval = PyEval_EvalFrame(f);
-		assert(tstate != NULL);
 		++tstate->recursion_depth;
 		Py_DECREF(f);
 		--tstate->recursion_depth;
@@ -4152,6 +4153,11 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 		if (locals == Py_None) {
 			locals = PyEval_GetLocals();
 			plain = 1;
+		}
+		if (!globals || !locals) {
+			PyErr_SetString(PyExc_SystemError,
+					"globals and locals cannot be NULL");
+			return -1;
 		}
 	}
 	else if (locals == Py_None)
