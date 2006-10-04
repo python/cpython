@@ -421,7 +421,7 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
 							"string too long for Python string");
 						return NULL;
 					}
-					n = (int)m;
+					n = (Py_ssize_t)m;
 				}
 				v = PyString_FromStringAndSize(str, n);
 			}

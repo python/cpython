@@ -804,10 +804,22 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 		return ret;
 	}
 	if (flags & Py_PRINT_RAW) {
+		char *data = op->ob_sval;
+		Py_ssize_t size = op->ob_size;
+		while (size > INT_MAX) {
+			/* Very long strings cannot be written atomically.
+			 * But don't write exactly INT_MAX bytes at a time
+			 * to avoid memory aligment issues.
+			 */
+			const int chunk_size = INT_MAX & ~0x3FFF;
+			fwrite(data, 1, chunk_size, fp);
+			data += chunk_size;
+			size -= chunk_size;
+		}
 #ifdef __VMS
-                if (op->ob_size) fwrite(op->ob_sval, (int) op->ob_size, 1, fp);
+                if (size) fwrite(data, (int)size, 1, fp);
 #else
-                fwrite(op->ob_sval, 1, (int) op->ob_size, fp);
+                fwrite(data, 1, (int)size, fp);
 #endif
 		return 0;
 	}
@@ -844,7 +856,7 @@ PyString_Repr(PyObject *obj, int smartquotes)
 	register PyStringObject* op = (PyStringObject*) obj;
 	size_t newsize = 2 + 4 * op->ob_size;
 	PyObject *v;
-	if (newsize > PY_SSIZE_T_MAX) {
+	if (newsize > PY_SSIZE_T_MAX || newsize / 4 != op->ob_size) {
 		PyErr_SetString(PyExc_OverflowError,
 			"string is too large to make repr");
 	}
@@ -4237,7 +4249,7 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 		return NULL;
 	}
 	llen = PyString_Size(result);
-	if (llen > PY_SSIZE_T_MAX) {
+	if (llen > INT_MAX) {
 		PyErr_SetString(PyExc_ValueError, "string too large in _PyString_FormatLong");
 		return NULL;
 	}
@@ -4726,9 +4738,10 @@ PyString_Format(PyObject *format, PyObject *args)
 			default:
 				PyErr_Format(PyExc_ValueError,
 				  "unsupported format character '%c' (0x%x) "
-				  "at index %i",
+				  "at index %zd",
 				  c, c,
-				  (int)(fmt - 1 - PyString_AsString(format)));
+				  (Py_ssize_t)(fmt - 1 -
+					       PyString_AsString(format)));
 				goto error;
 			}
 			if (sign) {

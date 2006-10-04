@@ -12,8 +12,14 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
-- Integer negation and absolute value were fixed to not rely
-  on undefined behaviour of the C compiler anymore.
+- list.pop(x) accepts any object x following the __index__ protocol.
+
+- Fix some leftovers from the conversion from int to Py_ssize_t
+  (relevant to strings and sequences of more than 2**31 items).
+
+- A number of places, including integer negation and absolute value,
+  were fixed to not rely on undefined behaviour of the C compiler
+  anymore.
 
 - Bug #1566800: make sure that EnvironmentError can be called with any
   number of arguments, as was the case in Python 2.4.
