@@ -34,7 +34,9 @@
 
 #if defined(linux)
 
+#ifndef HAVE_STDINT_H
 typedef unsigned long uint32_t;
+#endif
 
 #elif defined(__FreeBSD__)
 
