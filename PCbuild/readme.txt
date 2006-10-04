@@ -250,17 +250,8 @@ __bsddb - 0 error(s), 5 warning(s)
 _ssl
     Python wrapper for the secure sockets library.
 
-    Get the latest source code for OpenSSL from
-        http://www.openssl.org
-
-    You (probably) don't want the "engine" code.  For example, get
-        openssl-0.9.7d.tar.gz
-    not
-        openssl-engine-0.9.7d.tar.gz
-
-    Unpack into the "dist" directory, retaining the folder name from
-    the archive - for example, the latest stable OpenSSL will install as
-        dist/openssl-0.9.7d
+    Download the source from the python.org copy:
+    svn export http://svn.python.org/projects/external/openssl-0.9.7l
 
     You can (theoretically) use any version of OpenSSL you like - the
     build process will automatically select the latest version.
