@@ -72,6 +72,8 @@ Core and builtins
 Library
 -------
 
+- Support for MSVC 8 was added to bdist_wininst.
+
 - Bug #1446043: correctly raise a LookupError if an encoding name given
   to encodings.search_function() contains a dot.
 
