@@ -322,6 +322,20 @@ This is essentially a continue in a finally which should not be allowed.
       ...
     SyntaxError: 'continue' not supported inside 'finally' clause (<doctest test.test_syntax[41]>, line 8)
 
+There is one test for a break that is not in a loop.  The compiler
+uses a single data structure to keep track of try-finally and loops,
+so we need to be sure that a break is actually inside a loop.  If it
+isn't, there should be a syntax error.
+
+   >>> try:
+   ...     print 1
+   ...     break
+   ...     print 2
+   ... finally:
+   ...     print 3
+   Traceback (most recent call last):
+     ...
+   SyntaxError: 'break' outside loop (<doctest test.test_syntax[42]>, line 3)
 """
 
 import re
