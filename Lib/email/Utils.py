@@ -220,10 +220,6 @@ def decode_rfc2231(s):
     parts = s.split(TICK, 2)
     if len(parts) <= 2:
         return None, None, urllib.unquote(s)
-    if len(parts) > 3:
-        charset, language = pars[:2]
-        s = TICK.join(parts[2:])
-        return charset, language, s
     return parts
 
 
