@@ -754,10 +754,9 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
 static PyObject *
 int_neg(PyIntObject *v)
 {
-	register long a, x;
+	register long a;
 	a = v->ob_ival;
-	x = -a;
-	if (a < 0 && x < 0) {
+	if (a < 0 && (unsigned long)a == 0-(unsigned long)a) {
 		PyObject *o = PyLong_FromLong(a);
 		if (o != NULL) {
 			PyObject *result = PyNumber_Negative(o);
@@ -766,7 +765,7 @@ int_neg(PyIntObject *v)
 		}
 		return NULL;
 	}
-	return PyInt_FromLong(x);
+	return PyInt_FromLong(-a);
 }
 
 static PyObject *
