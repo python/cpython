@@ -177,6 +177,10 @@ w_object(PyObject *v, WFILE *p)
 		w_byte(TYPE_COMPLEX, p);
 		temp = (PyFloatObject*)PyFloat_FromDouble(
 			PyComplex_RealAsDouble(v));
+		if (!temp) {
+			p->error = 1;
+			return;
+		}
 		PyFloat_AsReprString(buf, temp);
 		Py_DECREF(temp);
 		n = strlen(buf);
@@ -184,6 +188,10 @@ w_object(PyObject *v, WFILE *p)
 		w_string(buf, n, p);
 		temp = (PyFloatObject*)PyFloat_FromDouble(
 			PyComplex_ImagAsDouble(v));
+		if (!temp) {
+			p->error = 1;
+			return;
+		}
 		PyFloat_AsReprString(buf, temp);
 		Py_DECREF(temp);
 		n = strlen(buf);
