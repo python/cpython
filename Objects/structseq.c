@@ -215,6 +215,8 @@ structseq_contains(PyStructSequence *obj, PyObject *o)
 	PyObject *tup;
 	int result;
 	tup = make_tuple(obj);
+	if (!tup)
+		return -1;
 	result = PySequence_Contains(tup, o);
 	Py_DECREF(tup);
 	return result;
@@ -226,6 +228,8 @@ structseq_hash(PyObject *obj)
 	PyObject *tup;
 	long result;
 	tup = make_tuple((PyStructSequence*) obj);
+	if (!tup)
+		return -1;
 	result = PyObject_Hash(tup);
 	Py_DECREF(tup);
 	return result;

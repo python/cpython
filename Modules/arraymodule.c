@@ -701,6 +701,8 @@ array_ass_slice(arrayobject *a, int ilow, int ihigh, PyObject *v)
 			/* Special case "a[i:j] = a" -- copy b first */
 			int ret;
 			v = array_slice(b, 0, n);
+			if (!v)
+				return -1;
 			ret = array_ass_slice(a, ilow, ihigh, v);
 			Py_DECREF(v);
 			return ret;
@@ -1687,6 +1689,8 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
 			if (self == av) { 
 				value = array_slice(av, 0, av->ob_size);
 				av = (arrayobject*)value;
+				if (!av)
+					return -1;
 			} 
 			else {
 				Py_INCREF(value);
