@@ -3665,12 +3665,15 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 	if (!result)
 		return NULL;
 
+	buf = PyString_AsString(result);
+	if (!buf)
+		return NULL;
+
 	/* To modify the string in-place, there can only be one reference. */
 	if (result->ob_refcnt != 1) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	buf = PyString_AsString(result);
 	len = PyString_Size(result);
 	if (buf[len-1] == 'L') {
 		--len;

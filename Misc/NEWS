@@ -30,7 +30,9 @@ Core and builtins
 - Fix memory leak of coding spec in Parser/tokenizer.c.
 
 - Fix memory leak in file_init.
- 
+
+- Fix segfault when doing string formatting on subclasses of long.
+
 - Overflow checking code in integer division ran afoul of new gcc
   optimizations.  Changed to be more standard-conforming.
 
