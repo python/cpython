@@ -36,6 +36,8 @@ Core and builtins
 - Overflow checking code in integer division ran afoul of new gcc
   optimizations.  Changed to be more standard-conforming.
 
+- Fix some potential crashes found with failmalloc.
+
 - Fix warnings reported by the Coverity and Klocwork static analysis tools.
 
 - Patch #1541585: fix buffer overrun when performing repr() on
