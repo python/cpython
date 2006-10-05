@@ -91,6 +91,8 @@ Extension Modules
 - Patch #1535500: fix segfault in BZ2File.writelines and make sure it
   raises the correct exceptions.
 
+- Make regex engine raise MemoryError if allocating memory fails.
+
 - Bug #1471938: Fix curses module build problem on Solaris 8; patch by
   Paul Eggert.
 
