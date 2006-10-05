@@ -109,8 +109,8 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
 	}
 	if (defaults == Py_None)
 		defaults = NULL;
-	else if (PyTuple_Check(defaults)) {
-		Py_XINCREF(defaults);
+	else if (defaults && PyTuple_Check(defaults)) {
+		Py_INCREF(defaults);
 	}
 	else {
 		PyErr_SetString(PyExc_SystemError, "non-tuple default args");
