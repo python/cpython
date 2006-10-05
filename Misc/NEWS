@@ -49,6 +49,7 @@ Extension Modules
 
 - Fix itertools.count(n) to work with negative numbers again.
 
+- Make regex engine raise MemoryError if allocating memory fails.
 
 Library
 -------
