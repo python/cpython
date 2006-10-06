@@ -5,7 +5,7 @@
 Usage: nocoding.py dir1 [dir2...]
 """
 
-__author__ = "Oleg Broytmann, Reinhold Birkenfeld"
+__author__ = "Oleg Broytmann, Georg Brandl"
 
 import sys, os, re, getopt
 
