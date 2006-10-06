@@ -2142,6 +2142,10 @@ PyEval_EvalFrame(PyFrameObject *f)
 
 		case CONTINUE_LOOP:
 			retval = PyInt_FromLong(oparg);
+			if (!retval) {
+				x = NULL;
+				break;
+			}
 			why = WHY_CONTINUE;
 			goto fast_block_end;
 
