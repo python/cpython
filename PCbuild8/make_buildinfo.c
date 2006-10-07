@@ -3,19 +3,23 @@
 #include <sys/stat.h>
 #include <stdio.h>
 
-/* This file creates the getbuildinfo.o object, by first
-   invoking subwcrev.exe (if found), and then invoking cl.exe.
-   As a side effect, it might generate PCBuild\getbuildinfo2.c
-   also. If this isn't a subversion checkout, or subwcrev isn't
-   found, it compiles ..\\Modules\\getbuildinfo.c instead.
+/* This file creates the getbuildinfo2.c file, by
+   invoking subwcrev.exe (if found).
+   If this isn't a subversion checkout, or subwcrev isn't
+   found, it copies ..\\Modules\\getbuildinfo.c instead.
+
+   A file, getbuildinfo2.h is then updated to define
+   SUBWCREV if it was a subversion checkout.
+
+   getbuildinfo2.c is part of the pythoncore project with
+   getbuildinfo2.h as a forced include.  This helps
+   VisualStudio refrain from unnecessary compiles much of the
+   time.
 
    Currently, subwcrev.exe is found from the registry entries
    of TortoiseSVN.
 
-   No attempt is made to place getbuildinfo.o into the proper
-   binary directory. This isn't necessary, as this tool is
-   invoked as a pre-link step for pythoncore, so that overwrites
-   any previous getbuildinfo.o.
+   make_buildinfo.exe is called as a pre-build step for pythoncore.
 
 */
 
@@ -40,11 +44,11 @@ int make_buildinfo2()
 	    type != REG_SZ)
 		/* Registry corrupted */
 		return 0;
-	strcat(command, "bin\\subwcrev.exe");
+	strcat_s(command, sizeof(command), "bin\\subwcrev.exe");
 	if (_stat(command+1, &st) < 0)
 		/* subwcrev.exe not part of the release */
 		return 0;
-	strcat(command, "\" .. ..\\Modules\\getbuildinfo.c getbuildinfo2.c");
+	strcat_s(command, sizeof(command), "\" .. ..\\Modules\\getbuildinfo.c getbuildinfo2.c");
 	puts(command); fflush(stdout);
 	if (system(command) < 0)
 		return 0;
@@ -53,40 +57,25 @@ int make_buildinfo2()
 
 int main(int argc, char*argv[])
 {
-	char command[500] = "cl.exe -c -D_WIN32 -DUSE_DL_EXPORT -D_WINDOWS -DWIN32 -D_WINDLL ";
-	int do_unlink, result;
-	if (argc != 2) {
-		fprintf(stderr, "make_buildinfo $(ConfigurationName)\n");
-		return EXIT_FAILURE;
-	}
-	if (strcmp(argv[1], "Release") == 0) {
-		strcat(command, "-MD ");
-	}
-	else if (strcmp(argv[1], "Debug") == 0) {
-		strcat(command, "-D_DEBUG -MDd ");
-	}
-	else if (strcmp(argv[1], "ReleaseItanium") == 0) {
-		strcat(command, "-MD /USECL:MS_ITANIUM ");
-	}
-	else if (strcmp(argv[1], "ReleaseAMD64") == 0) {
-		strcat(command, "-MD ");
-		strcat(command, "-MD /USECL:MS_OPTERON ");
-	}
-	else {
-		fprintf(stderr, "unsupported configuration %s\n", argv[1]);
-		return EXIT_FAILURE;
-	}
+	char command[500] = "";
+	int svn;
+	FILE *f;
 
-	if ((do_unlink = make_buildinfo2()))
-		strcat(command, "getbuildinfo2.c -DSUBWCREV ");
-	else
-		strcat(command, "..\\Modules\\getbuildinfo.c");
-	strcat(command, " -Fogetbuildinfo.o -I..\\Include -I..\\PC");
-	puts(command); fflush(stdout);
-	result = system(command);
-	if (do_unlink)
-		unlink("getbuildinfo2.c");
-	if (result < 0)
+	if (fopen_s(&f, "getbuildinfo2.h", "w"))
 		return EXIT_FAILURE;
+	/* Get getbuildinfo.c from svn as getbuildinfo2.c */
+	svn = make_buildinfo2();
+	if (svn) {
+		puts("got getbuildinfo2.c from svn.  Updating getbuildinfo2.h");
+		/* yes.  make sure SUBWCREV is defined */
+		fprintf(f, "#define SUBWCREV\n");
+	} else {
+		puts("didn't get getbuildinfo2.c from svn.  Copying from Modules and clearing getbuildinfo2.h");
+		strcat_s(command, sizeof(command), "copy ..\\Modules\\getbuildinfo.c getbuildinfo2.c");
+		puts(command); fflush(stdout);
+		if (system(command) < 0)
+			return EXIT_FAILURE;
+	}
+	fclose(f);
 	return 0;
 }
