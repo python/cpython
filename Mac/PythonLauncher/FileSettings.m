@@ -207,7 +207,7 @@
             [NSNumber numberWithBool: inspect], @"inspect",
             [NSNumber numberWithBool: optimize], @"optimize",
             [NSNumber numberWithBool: nosite], @"nosite",
-            [NSNumber numberWithBool: nosite], @"nosite",
+            [NSNumber numberWithBool: tabs], @"tabs",
             others, @"others",
             scriptargs, @"scriptargs",
             [NSNumber numberWithBool: with_terminal], @"with_terminal",
@@ -235,7 +235,7 @@
     if (value) optimize = [value boolValue];
     value = [dict objectForKey: @"nosite"];
     if (value) nosite = [value boolValue];
-    value = [dict objectForKey: @"nosite"];
+    value = [dict objectForKey: @"tabs"];
     if (value) tabs = [value boolValue];
     value = [dict objectForKey: @"others"];
     if (value) others = [value retain];
@@ -291,7 +291,7 @@
         tabs?" -t":"",
         others,
         [self _replaceSingleQuotes:script],
-        scriptargs,
+        scriptargs ? scriptargs : @"",
         with_terminal? "&& echo Exit status: $? && exit 1" : " &"];
 }
 
