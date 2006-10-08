@@ -12,6 +12,8 @@ What's New in Python 2.5.1c1?
 Core and builtins
 -----------------
 
+- Patch #1542451: disallow continue anywhere under a finally.
+
 - list.pop(x) accepts any object x following the __index__ protocol.
 
 - Fix some leftovers from the conversion from int to Py_ssize_t
