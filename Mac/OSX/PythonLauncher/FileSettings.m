@@ -291,7 +291,7 @@
         tabs?" -t":"",
         others,
         [self _replaceSingleQuotes:script],
-        scriptargs,
+        scriptargs?scriptargs:@"",
         with_terminal? "&& echo Exit status: $? && exit 1" : " &"];
 }
 
