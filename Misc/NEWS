@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1569998: break inside a try statement (outside a loop) is now
+  recognized and rejected.
+
 - list.pop(x) accepts any object x following the __index__ protocol.
 
 - Fix some leftovers from the conversion from int to Py_ssize_t
