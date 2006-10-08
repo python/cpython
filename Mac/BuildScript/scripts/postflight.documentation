@@ -1,6 +1,5 @@
 #!/bin/sh
 
-# FIXME
 PYVER="@PYVER@"
 
 if [ -d /Developer/Documentation ]; then
@@ -8,5 +7,5 @@ if [ -d /Developer/Documentation ]; then
 		mkdir -p /Developer/Documentation/Python
 	fi
 
-	ln -fhs /Library/Frameworks/Python.framework/Versions/${PYVER}/Resources/English.lproj/Documentation "/Developer/Documentation/Python/Reference Documentation"
+	ln -fhs /Library/Frameworks/Python.framework/Versions/${PYVER}/Resources/English.lproj/Documentation "/Developer/Documentation/Python/Reference Documentation @PYVER@"
 fi
