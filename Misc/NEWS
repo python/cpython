@@ -12,6 +12,9 @@ What's New in Python 2.5.1c1?
 Core and builtins
 -----------------
 
+- Bug #1569998: break inside a try statement (outside a loop) is now
+  recognized and rejected.
+
 - Patch #1542451: disallow continue anywhere under a finally.
 
 - list.pop(x) accepts any object x following the __index__ protocol.
