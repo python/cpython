@@ -592,9 +592,11 @@ ksx1001_encoder(const ucs4_t *data, Py_ssize_t *length)
 {
 	DBCHAR coded;
 	assert(*length == 1);
-	TRYMAP_ENC(cp949, coded, *data)
-		if (!(coded & 0x8000))
-			return coded;
+	if (*data < 0x10000) {
+		TRYMAP_ENC(cp949, coded, *data)
+			if (!(coded & 0x8000))
+				return coded;
+	}
 	return MAP_UNMAPPABLE;
 }
 
@@ -628,11 +630,13 @@ jisx0208_encoder(const ucs4_t *data, Py_ssize_t *length)
 {
 	DBCHAR coded;
 	assert(*length == 1);
-	if (*data == 0xff3c) /* F/W REVERSE SOLIDUS */
-		return 0x2140;
-	else TRYMAP_ENC(jisxcommon, coded, *data) {
-		if (!(coded & 0x8000))
-			return coded;
+	if (*data < 0x10000) {
+		if (*data == 0xff3c) /* F/W REVERSE SOLIDUS */
+			return 0x2140;
+		else TRYMAP_ENC(jisxcommon, coded, *data) {
+			if (!(coded & 0x8000))
+				return coded;
+		}
 	}
 	return MAP_UNMAPPABLE;
 }
@@ -665,9 +669,11 @@ jisx0212_encoder(const ucs4_t *data, Py_ssize_t *length)
 {
 	DBCHAR coded;
 	assert(*length == 1);
-	TRYMAP_ENC(jisxcommon, coded, *data) {
-		if (coded & 0x8000)
-			return coded & 0x7fff;
+	if (*data < 0x10000) {
+		TRYMAP_ENC(jisxcommon, coded, *data) {
+			if (coded & 0x8000)
+				return coded & 0x7fff;
+		}
 	}
 	return MAP_UNMAPPABLE;
 }
@@ -970,9 +976,11 @@ gb2312_encoder(const ucs4_t *data, Py_ssize_t *length)
 {
 	DBCHAR coded;
 	assert(*length == 1);
-	TRYMAP_ENC(gbcommon, coded, *data) {
-		if (!(coded & 0x8000))
-			return coded;
+	if (*data < 0x10000) {
+		TRYMAP_ENC(gbcommon, coded, *data) {
+			if (!(coded & 0x8000))
+				return coded;
+		}
 	}
 	return MAP_UNMAPPABLE;
 }
