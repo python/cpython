@@ -47,22 +47,29 @@ done
 echo "${PYTHON_ROOT}/bin is not on your PATH or at least not early enough"
 case "${BSH}" in
 *csh)
-	# Create backup copy before patching
-	if [ -f "${HOME}/.cshrc" ]; then
-		cp -fp "${HOME}/.cshrc" "${HOME}/.cshrc.pysave"
+	if [ -f "${HOME}/.tcshrc" ]; then
+		RC="${HOME}/.tcshrc"
+	else
+		RC="${HOME}/.cshrc"
 	fi
-	echo "" >> "${HOME}/.cshrc"
-	echo "# Setting PATH for MacPython ${PYVER}" >> "${HOME}/.cshrc"
-	echo "# The orginal version is saved in .cshrc.pysave" >> "${HOME}/.cshrc"
-	echo "set path=(${PYTHON_ROOT}/bin "'$path'")" >> "${HOME}/.cshrc"
+	# Create backup copy before patching
+	if [ -f "${RC}" ]; then
+		cp -fp "${RC}" "${RC}.pysave"
+	fi
+	echo "" >> "${RC}"
+	echo "# Setting PATH for MacPython ${PYVER}" >> "${RC}"
+	echo "# The orginal version is saved in .cshrc.pysave" >> "${RC}"
+	echo "set path=(${PYTHON_ROOT}/bin "'$path'")" >> "${RC}"
 	if [ `id -ur` = 0 ]; then
-		chown "${USER}" "${HOME}/.cshrc"
+		chown "${USER}" "${RC}"
 	fi
 	exit 0
 	;;
 bash)
 	if [ -e "${HOME}/.bash_profile" ]; then
 		PR="${HOME}/.bash_profile"
+	elif [ -e "${HOME}/.bash_login" ]; then
+		PR="${HOME}/.bash_login"
 	elif [ -e "${HOME}/.profile" ]; then
 		PR="${HOME}/.profile"
 	else
