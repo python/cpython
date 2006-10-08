@@ -7,7 +7,7 @@
 
 from test import test_support
 from test import test_multibytecodec_support
-import unittest, StringIO, codecs
+import unittest, StringIO, codecs, sys
 
 class Test_StreamWriter(unittest.TestCase):
     if len(u'\U00012345') == 2: # UCS2
@@ -86,6 +86,16 @@ class Test_ISO2022(unittest.TestCase):
         for encoding in ('iso-2022-jp-2004', 'iso-2022-jp-3'):
             e = u'\u3406'.encode(encoding)
             self.failIf(filter(lambda x: x >= '\x80', e))
+
+    def test_bug1572832(self):
+        if sys.maxunicode >= 0x10000:
+            myunichr = unichr
+        else:
+            myunichr = lambda x: unichr(0xD7C0+(x>>10)) + unichr(0xDC00+(x&0x3FF))
+
+        for x in xrange(0x10000, 0x110000):
+            # Any ISO 2022 codec will cause the segfault
+            myunichr(x).encode('iso_2022_jp', 'ignore')
 
 def test_main():
     suite = unittest.TestSuite()
