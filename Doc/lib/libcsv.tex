@@ -64,9 +64,9 @@ dialect.  It may be an instance of a subclass of the \class{Dialect}
 class or one of the strings returned by the \function{list_dialects}
 function.  The other optional {}\var{fmtparam} keyword arguments can be
 given to override individual formatting parameters in the current
-dialect.  For more information about the dialect and formatting
+dialect.  For full details about the dialect and formatting
 parameters, see section~\ref{csv-fmt-params}, ``Dialects and Formatting
-Parameters'' for details of these parameters.
+Parameters''.
 
 All data read are returned as strings.  No automatic data type
 conversion is performed.
@@ -96,10 +96,10 @@ parameters specific to a particular CSV dialect.  It may be an instance
 of a subclass of the \class{Dialect} class or one of the strings
 returned by the \function{list_dialects} function.  The other optional
 {}\var{fmtparam} keyword arguments can be given to override individual
-formatting parameters in the current dialect.  For more information
+formatting parameters in the current dialect.  For full details
 about the dialect and formatting parameters, see
-section~\ref{csv-fmt-params}, ``Dialects and Formatting Parameters'' for
-details of these parameters.  To make it as easy as possible to
+section~\ref{csv-fmt-params}, ``Dialects and Formatting Parameters''.
+To make it as easy as possible to
 interface with modules which implement the DB API, the value
 \constant{None} is written as the empty string.  While this isn't a
 reversible transformation, it makes it easier to dump SQL NULL data values
@@ -113,9 +113,8 @@ Associate \var{dialect} with \var{name}.  \var{name} must be a string
 or Unicode object. The dialect can be specified either by passing a
 sub-class of \class{Dialect}, or by \var{fmtparam} keyword arguments,
 or both, with keyword arguments overriding parameters of the dialect.
-For more information about the dialect and formatting parameters, see
-section~\ref{csv-fmt-params}, ``Dialects and Formatting Parameters''
-for details of these parameters.
+For full details about the dialect and formatting parameters, see
+section~\ref{csv-fmt-params}, ``Dialects and Formatting Parameters''.
 \end{funcdesc}
 
 \begin{funcdesc}{unregister_dialect}{name}
@@ -197,12 +196,13 @@ attributes, which are used to define the parameters for a specific
 
 \begin{classdesc}{excel}{}
 The \class{excel} class defines the usual properties of an Excel-generated
-CSV file.
+CSV file.  It is registered with the dialect name \code{'excel'}.
 \end{classdesc}
 
 \begin{classdesc}{excel_tab}{}
 The \class{excel_tab} class defines the usual properties of an
-Excel-generated TAB-delimited file.
+Excel-generated TAB-delimited file.  It is registered with the dialect name
+\code{'excel-tab'}.
 \end{classdesc}
 
 \begin{classdesc}{Sniffer}{}
