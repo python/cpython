@@ -15,8 +15,8 @@ AS_VERSION=0x00020000
 dataforkdata = 'hello\r\0world\n'
 resourceforkdata = 'goodbye\ncruel\0world\r'
 
-applesingledata = struct.pack("ll16sh", AS_MAGIC, AS_VERSION, "foo", 2) + \
-    struct.pack("llllll", 1, 50, len(dataforkdata),
+applesingledata = struct.pack(">ll16sh", AS_MAGIC, AS_VERSION, "foo", 2) + \
+    struct.pack(">llllll", 1, 50, len(dataforkdata),
         2, 50+len(dataforkdata), len(resourceforkdata)) + \
     dataforkdata + \
     resourceforkdata

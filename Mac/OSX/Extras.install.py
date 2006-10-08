@@ -9,6 +9,7 @@ verbose = 1
 debug = 0
 
 def isclean(name):
+    if name == '.svn': return 0
     if name == 'CVS': return 0
     if name == '.cvsignore': return 0
     if name == '.DS_store': return 0

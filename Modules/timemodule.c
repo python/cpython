@@ -5,6 +5,19 @@
 #include "structseq.h"
 #include "timefuncs.h"
 
+#ifdef __APPLE__
+#if defined(HAVE_GETTIMEOFDAY) && defined(HAVE_FTIME)
+  /*
+   * floattime falls back to ftime when getttimeofday fails because the latter
+   * might fail on some platforms. This fallback is unwanted on MacOSX because
+   * that makes it impossible to use a binary build on OSX 10.4 on earlier
+   * releases of the OS. Therefore claim we don't support ftime.
+   */
+# undef HAVE_FTIME
+#endif
+#endif
+
+
 #include <ctype.h>
 
 #include <sys/types.h>
@@ -830,14 +843,16 @@ floattime(void)
 	{
 		struct timeval t;
 #ifdef GETTIMEOFDAY_NO_TZ
-		if (gettimeofday(&t) == 0)
-			return (double)t.tv_sec + t.tv_usec*0.000001;
+		gettimeofday(&t);
+		return (double)t.tv_sec + t.tv_usec*0.000001;
 #else /* !GETTIMEOFDAY_NO_TZ */
-		if (gettimeofday(&t, (struct timezone *)NULL) == 0)
-			return (double)t.tv_sec + t.tv_usec*0.000001;
+		gettimeofday(&t, (struct timezone *)NULL);
+		return (double)t.tv_sec + t.tv_usec*0.000001;
 #endif /* !GETTIMEOFDAY_NO_TZ */
 	}
-#endif /* !HAVE_GETTIMEOFDAY */
+
+#else /* !HAVE_GETTIMEOFDAY */
+
 	{
 #if defined(HAVE_FTIME)
 		struct timeb t;
@@ -849,6 +864,8 @@ floattime(void)
 		return (double)secs;
 #endif /* !HAVE_FTIME */
 	}
+
+#endif /* !HAVE_GETTIMEOFDAY */
 }
 
 

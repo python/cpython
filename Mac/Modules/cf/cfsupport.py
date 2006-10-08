@@ -427,7 +427,7 @@ class CFStringRefObjectDefinition(MyGlobalObjectDefinition):
         if (PyString_Check(v)) {
             char *cStr;
             if (!PyArg_Parse(v, "es", "ascii", &cStr))
-                return NULL;
+                return 0;
                 *p_itself = CFStringCreateWithCString((CFAllocatorRef)NULL, cStr, kCFStringEncodingASCII);
                 return 1;
         }

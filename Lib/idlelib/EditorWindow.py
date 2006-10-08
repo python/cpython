@@ -65,9 +65,16 @@ class EditorWindow:
                                        'Python%d%d.chm' % sys.version_info[:2])
                 if os.path.isfile(chmfile):
                     dochome = chmfile
+
+            elif sys.platform == 'darwin':
+                dochome = os.path.join(sys.prefix,
+                        'Resources/English.lproj/Documentation/index.html')
             dochome = os.path.normpath(dochome)
             if os.path.isfile(dochome):
                 EditorWindow.help_url = dochome
+                if sys.platform == 'darwin':
+                    # Safari requires real file:-URLs
+                    EditorWindow.help_url = 'file://' + EditorWindow.help_url
             else:
                 EditorWindow.help_url = "http://www.python.org/doc/current"
         currentTheme=idleConf.CurrentTheme()

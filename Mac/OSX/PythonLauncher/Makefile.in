@@ -1,0 +1,81 @@
+CC=@CC@
+LD=@CC@
+BASECFLAGS=@BASECFLAGS@
+OPT=@OPT@
+CFLAGS=$(BASECFLAGS) $(OPT)
+LDFLAGS=@LDFLAGS@
+srcdir=         @srcdir@
+VERSION=	@VERSION@
+UNIVERSALSDK=@UNIVERSALSDK@
+builddir=	../../..
+
+RUNSHARED=      @RUNSHARED@
+BUILDEXE=       @BUILDEXEEXT@
+BUILDPYTHON=    ../../../python$(BUILDEXE)
+
+# Deployment target selected during configure, to be checked
+# by distutils  
+MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
+@EXPORT_MACOSX_DEPLOYMENT_TARGET@export MACOSX_DEPLOYMENT_TARGET
+
+BUNDLEBULDER=$(srcdir)/../../../Lib/plat-mac/bundlebuilder.py
+
+PYTHONAPPSDIR=/Applications/MacPython $(VERSION)
+OBJECTS=FileSettings.o MyAppDelegate.o MyDocument.o PreferencesWindowController.o doscript.o main.o
+
+all: PythonLauncher.app
+
+install: PythonLauncher.app
+	test -d "$(DESTDIR)$(PYTHONAPPSDIR)" || mkdir -p "$(DESTDIR)$(PYTHONAPPSDIR)"
+	-test -d "$(DESTDIR)$(PYTHONAPPSDIR)/PythonLauncher.app" && rm -r "$(DESTDIR)$(PYTHONAPPSDIR)/PythonLauncher.app"
+	cp -r "PythonLauncher.app" "$(DESTDIR)$(PYTHONAPPSDIR)"
+	touch "$(DESTDIR)$(PYTHONAPPSDIR)/PythonLauncher.app"
+
+clean:
+	rm -f *.o "PythonLauncher"
+	rm -rf "PythonLauncher.app"
+
+PythonLauncher.app:  \
+		PythonLauncher $(srcdir)/PythonInterpreter.icns \
+		$(srcdir)/PythonSource.icns \
+		$(srcdir)/PythonWSource.icns \
+		$(srcdir)/PythonCompiled.icns \
+		$(srcdir)/factorySettings.plist
+	rm -fr "PythonLauncher.app"
+	$(RUNSHARED) $(BUILDPYTHON) $(BUNDLEBULDER) \
+		--builddir=. \
+		--name="PythonLauncher" \
+		--executable="PythonLauncher" \
+		--iconfile=$(srcdir)/PythonInterpreter.icns \
+		--bundle-id=org.python.PythonLauncher \
+		--resource=$(srcdir)/PythonSource.icns \
+		--resource=$(srcdir)/PythonWSource.icns \
+		--resource=$(srcdir)/PythonCompiled.icns \
+		--resource=$(srcdir)/English.lproj \
+		--resource=$(srcdir)/PreferenceWindow.nib \
+		--resource=$(srcdir)/factorySettings.plist \
+		--plist=$(srcdir)/Info.plist \
+		build
+	find "PythonLauncher.app" -name '.svn' -print0 | xargs -0 rm -r
+		
+
+FileSettings.o: $(srcdir)/FileSettings.m
+	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/FileSettings.m
+
+MyAppDelegate.o: $(srcdir)/MyAppDelegate.m
+	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/MyAppDelegate.m
+
+MyDocument.o: $(srcdir)/MyDocument.m
+	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/MyDocument.m
+
+PreferencesWindowController.o: $(srcdir)/PreferencesWindowController.m
+	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/PreferencesWindowController.m
+
+doscript.o: $(srcdir)/doscript.m
+	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/doscript.m
+
+main.o: $(srcdir)/main.m
+	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/main.m
+
+PythonLauncher: $(OBJECTS)
+	$(CC) $(LDFLAGS) -o "PythonLauncher" $(OBJECTS) -framework AppKit -framework Carbon

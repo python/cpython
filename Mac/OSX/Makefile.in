@@ -1,0 +1,294 @@
+# This file can be invoked from the various frameworkinstall... targets in the 
+# main Makefile. The next couple of variables are overridden on the 
+# commandline in that case.
+
+VERSION=@VERSION@
+builddir = ../..
+srcdir = @srcdir@
+prefix=/Library/Frameworks/Python.framework/Versions/$(VERSION)
+LIBDEST=$(prefix)/lib/python$(VERSION)
+BUILDPYTHON=$(builddir)/python.exe
+RUNSHARED=       @RUNSHARED@
+DESTDIR=
+LDFLAGS=@LDFLAGS@
+FRAMEWORKUNIXTOOLSPREFIX=@FRAMEWORKUNIXTOOLSPREFIX@
+
+
+# These are normally glimpsed from the previous set
+bindir=@exec_prefix@/bin
+PYTHONAPPSPATH=/Applications/MacPython $(VERSION)
+PYTHONAPPSDIR=$(PYTHONAPPSPATH)
+APPINSTALLDIR=$(prefix)/Resources/Python.app
+
+# Variables for installing the "normal" unix binaries
+INSTALLED_PYDOC=$(prefix)/bin/pydoc
+INSTALLED_PYTHON=$(prefix)/bin/python
+INSTALLED_PYTHONW=$(prefix)/bin/pythonw
+INSTALLED_PYTHONAPP=$(APPINSTALLDIR)/Contents/MacOS/Python
+
+# Items more-or-less copied from the main Makefile
+DIRMODE=755
+FILEMODE=644
+INSTALL=@INSTALL@
+INSTALL_SYMLINK=ln -fsn
+INSTALL_PROGRAM=@INSTALL_PROGRAM@
+INSTALL_SCRIPT=@INSTALL_SCRIPT@
+INSTALL_DATA=@INSTALL_DATA@
+LN=@LN@
+STRIPFLAG=-s
+CPMAC=/Developer/Tools/CpMac
+
+APPTEMPLATE=$(srcdir)/../OSXResources/app
+APPSUBDIRS=MacOS Resources Resources/English.lproj \
+	Resources/English.lproj/Documentation \
+	Resources/English.lproj/Documentation/doc \
+	Resources/English.lproj/Documentation/ide
+DOCDIR=$(srcdir)/../OSXResources/app/Resources/English.lproj/Documentation
+DOCINDEX=$(DOCDIR)/"Documentation idx"
+CACHERSRC=$(srcdir)/../scripts/cachersrc.py
+compileall=$(srcdir)/../../Lib/compileall.py
+
+installapps: install_PythonLauncher install_Python install_BuildApplet install_IDE \
+	install_IDLE install_PackageManager checkapplepython install_pythonw \
+	install_versionedtools
+
+install_pythonw: pythonw
+	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)"
+	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/python$(VERSION)"
+	ln -sf python$(VERSION) "$(DESTDIR)$(prefix)/bin/python"
+	ln -sf pythonw$(VERSION) "$(DESTDIR)$(prefix)/bin/pythonw"
+
+pythonw: $(srcdir)/pythonw.c
+	$(CC) $(LDFLAGS) -o $@ $(srcdir)/pythonw.c \
+	-DPYTHONWEXECUTABLE='"$(APPINSTALLDIR)/Contents/MacOS/Python"'
+
+install_PythonLauncher:
+	cd PythonLauncher && make install
+
+install_Python:
+	@if test ! -f $(DOCINDEX); then \
+		echo WARNING: you should run Apple Help Indexing Tool on $(DOCDIR); \
+	fi
+	@for i in "$(PYTHONAPPSDIR)" "$(APPINSTALLDIR)" "$(APPINSTALLDIR)/Contents"; do \
+		if test ! -d $(DESTDIR)$$i; then \
+			echo "Creating directory $(DESTDIR)$$i"; \
+			$(INSTALL) -d -m $(DIRMODE) "$(DESTDIR)$$i"; \
+		fi;\
+	done
+	@for i in $(APPSUBDIRS); do \
+		if test ! -d $(DESTDIR)$(APPINSTALLDIR)/Contents/$$i; then \
+			echo "Creating directory $(DESTDIR)$(APPINSTALLDIR)/Contents/$$i"; \
+			$(INSTALL) -d -m $(DIRMODE) "$(DESTDIR)$(APPINSTALLDIR)/Contents/$$i"; \
+		else	true; \
+		fi; \
+	done
+	@for d in . $(APPSUBDIRS); \
+	do \
+		a=$(APPTEMPLATE)/$$d; \
+		if test ! -d $$a; then continue; else true; fi; \
+		b="$(DESTDIR)$(APPINSTALLDIR)/Contents/$$d"; \
+		for i in $$a/*; \
+		do \
+			case $$i in \
+			*CVS) ;; \
+			*.py[co]) ;; \
+			*.orig) ;; \
+			*~) ;; \
+			*idx) \
+				echo $(CPMAC) "$$i" $$b; \
+				$(CPMAC) "$$i" $$b; \
+				;; \
+			*) \
+				if test -d "$$i"; then continue; fi; \
+				if test -x "$$i"; then \
+				    echo $(INSTALL_SCRIPT) "$$i" "$$b"; \
+				    $(INSTALL_SCRIPT) "$$i" "$$b"; \
+				else \
+				    echo $(INSTALL_DATA) "$$i" "$$b"; \
+				    $(INSTALL_DATA) "$$i" "$$b"; \
+				fi;; \
+			esac; \
+		done; \
+	done
+	$(INSTALL_PROGRAM) $(STRIPFLAG) "$(BUILDPYTHON)" "$(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/Python"
+
+install_IDE:
+	@if ! $(RUNSHARED) $(BUILDPYTHON) -c "import waste"; then  \
+		echo PythonIDE needs the \"waste\" extension module; \
+		echo See Mac/OSX/README for details; \
+	else \
+		echo $(RUNSHARED) $(BUILDPYTHON) $(srcdir)/../scripts/BuildApplet.py \
+		    --destroot "$(DESTDIR)" \
+			--python "$(INSTALLED_PYTHONAPP)" \
+			--output "$(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app" --noargv \
+			$(srcdir)/Mac/Tools/IDE/PythonIDE.py ; \
+		$(RUNSHARED) $(BUILDPYTHON) $(srcdir)/../scripts/BuildApplet.py \
+		    --destroot "$(DESTDIR)" \
+			--python "$(INSTALLED_PYTHONAPP)" \
+			--output "$(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app" --noargv \
+			$(srcdir)/Mac/Tools/IDE/PythonIDE.py; \
+	fi
+
+install_PackageManager:
+	@if ! $(RUNSHARED) $(BUILDPYTHON) -c "import waste"; then  \
+		echo PackageManager needs the \"waste\" extension module; \
+		echo See Mac/OSX/README for details; \
+	else \
+		echo $(RUNSHARED) $(BUILDPYTHON) $(bundlebuilder) \
+			--builddir $(DESTDIR)$(PYTHONAPPSDIR)/ \
+		    --destroot "$(DESTDIR)" \
+			--python $(INSTALLED_PYTHONAPP) \
+			--resource $(srcdir)/Mac/Tools/IDE/PythonIDE.rsrc \
+			--mainprogram $(srcdir)/Mac/Tools/IDE/PackageManager.py \
+			--iconfile $(srcdir)/Mac/Tools/IDE/PackageManager.icns \
+			--creator Pimp build; \
+		$(RUNSHARED) $(BUILDPYTHON) $(bundlebuilder) \
+			--builddir $(DESTDIR)$(PYTHONAPPSDIR)/ \
+		    --destroot "$(DESTDIR)" \
+			--python $(INSTALLED_PYTHONAPP) \
+			--resource $(srcdir)/Mac/Tools/IDE/PythonIDE.rsrc \
+			--mainprogram $(srcdir)/Mac/Tools/IDE/PackageManager.py \
+			--iconfile $(srcdir)/Mac/Tools/IDE/PackageManager.icns \
+			--creator Pimp build; \
+	fi
+
+install_IDLE:
+	@if ! $(RUNSHARED) $(BUILDPYTHON) -c "import _tkinter"; then \
+		echo IDLE needs the \"Tkinter\" extension module; \
+		echo See Mac/OSX/README for details; \
+	else \
+		cd IDLE && make install ;\
+	fi
+
+
+install_BuildApplet:
+	$(RUNSHARED) $(BUILDPYTHON) $(srcdir)/../scripts/BuildApplet.py \
+		--destroot "$(DESTDIR)" \
+		--python "$(INSTALLED_PYTHONAPP)" \
+		--output "$(DESTDIR)$(PYTHONAPPSDIR)/BuildApplet.app" \
+		"$(srcdir)/../scripts/BuildApplet.py"
+
+MACLIBDEST=$(LIBDEST)/plat-mac
+MACTOOLSDEST=$(prefix)/Mac/Tools
+MACTOOLSSRC=$(srcdir)/Mac/Tools
+MACTOOLSSUBDIRS=IDE
+installmacsubtree:
+	@for i in $(MACTOOLSDEST); \
+	do \
+		if test ! -d $(DESTDIR)$$i; then \
+			echo "Creating directory $(DESTDIR)$$i"; \
+			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$$i; \
+		else	true; \
+		fi; \
+	done
+	@for d in $(MACTOOLSSUBDIRS); \
+	do \
+		a=$(MACTOOLSSRC)/$$d; \
+		if test ! -d $$a; then continue; else true; fi; \
+		b=$(DESTDIR)$(MACTOOLSDEST)/$$d; \
+		if test ! -d $$b; then \
+			echo "Creating directory $$b"; \
+			$(INSTALL) -d -m $(DIRMODE) $$b; \
+		else	true; \
+		fi; \
+	done
+	@for d in $(MACTOOLSSUBDIRS); \
+	do \
+		a=$(MACTOOLSSRC)/$$d; \
+		if test ! -d $$a; then continue; else true; fi; \
+		b=$(DESTDIR)$(MACTOOLSDEST)/$$d; \
+		for i in $$a/*; \
+		do \
+			case $$i in \
+			*CVS) ;; \
+			*.py[co]) ;; \
+			*.orig) ;; \
+			*~) ;; \
+			*.rsrc) \
+				echo $(CPMAC) $$i $$b ; \
+				$(CPMAC) $$i $$b ; \
+				;; \
+			*) \
+				if test -d $$i; then continue; fi; \
+				if test -x $$i; then \
+				    echo $(INSTALL_SCRIPT) $$i $$b; \
+				    $(INSTALL_SCRIPT) $$i $$b; \
+				else \
+				    echo $(INSTALL_DATA) $$i $$b; \
+				    $(INSTALL_DATA) $$i $$b; \
+				fi;; \
+			esac; \
+		done; \
+	done
+
+
+	$(RUNSHARED) $(BUILDPYTHON) $(CACHERSRC) -v $(DESTDIR)$(MACLIBDEST) $(DESTDIR)$(MACTOOLSDEST)
+	$(RUNSHARED) $(BUILDPYTHON) -Wi -tt $(compileall) -d $(MACTOOLSDEST) -x badsyntax $(DESTDIR)$(MACTOOLSDEST)
+	$(RUNSHARED) $(BUILDPYTHON) -O -Wi -tt $(compileall) -d $(MACTOOLSDEST) -x badsyntax $(DESTDIR)$(MACTOOLSDEST)
+
+#
+# We use the full name here in stead of $(INSTALLED_PYTHONAPP), because
+# the latter may be overridden by Makefile.jaguar when building for a pre-installed
+# /usr/bin/python
+$(APPINSTALLDIR)/Contents/MacOS/Python: install_Python
+
+# $(INSTALLED_PYTHON) has to be done by the main Makefile, we cannot do that here.
+# At least this rule will give an error if it doesn't exist.
+
+installunixtools:
+	if [ ! -d "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ]; then  \
+		$(INSTALL) -d -m $(DIRMODE) "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ;\
+	fi
+	for fn in python pythonw idle pydoc smtpd.py   \
+		python$(VERSION) pythonw$(VERSION) idle$(VERSION) \
+		pydoc$(VERSION) smtpd$(VERSION).py ;\
+	do \
+		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
+	done
+
+#
+# Like installunixtools, but only install links to the versioned binaries.
+
+altinstallunixtools:
+	if [ ! -d "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ]; then  \
+		$(INSTALL) -d -m $(DIRMODE) "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ;\
+	fi        
+	for fn in python$(VERSION) pythonw$(VERSION) idle$(VERSION) \
+		pydoc$(VERSION) smtpd$(VERSION).py ;\
+	do \
+		  ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
+	done
+
+
+
+installextras:$(srcdir)/Extras.ReadMe.txt $(srcdir)/Extras.install.py
+	$(INSTALL) -d "$(DESTDIR)$(PYTHONAPPSDIR)/Extras"
+	$(INSTALL) $(srcdir)/Extras.ReadMe.txt "$(DESTDIR)$(PYTHONAPPSDIR)/Extras/ReadMe"
+	$(RUNSHARED) $(BUILDPYTHON) $(srcdir)/Extras.install.py $(srcdir)/../Demo \
+		"$(DESTDIR)$(PYTHONAPPSDIR)/Extras/Demo.Mac"
+	$(RUNSHARED) $(BUILDPYTHON) $(srcdir)/Extras.install.py $(srcdir)/../../Demo \
+		"$(DESTDIR)$(PYTHONAPPSDIR)/Extras/Demo"
+
+checkapplepython:
+	@if ! $(RUNSHARED) $(BUILDPYTHON) $(srcdir)/fixapplepython23.py -n; then \
+		echo "* WARNING: Apple-installed Python 2.3 will have trouble building extensions from now on."; \
+		echo "* WARNING: Run $(srcdir)/fixapplepython23.py with \"sudo\" to fix this."; \
+	fi
+
+# By default most tools are installed without a version in their basename, to
+# make it easier to install (and use) several python versions side-by-side move
+# the tools to a version-specific name and add the non-versioned name as an
+# alias.
+install_versionedtools:
+	for fn in idle pydoc ;\
+	do \
+		if [ -h "$(DESTDIR)$(prefix)/bin/$${fn}" ]; then \
+			continue ;\
+		fi ;\
+		mv "$(DESTDIR)$(prefix)/bin/$${fn}" "$(DESTDIR)$(prefix)/bin/$${fn}$(VERSION)"  ;\
+		ln -sf "$${fn}$(VERSION)" "$(DESTDIR)$(prefix)/bin/$${fn}" ;\
+	done
+	if [ ! -h "$(DESTDIR)$(prefix)/bin/smtpd.py" ]; then \
+		mv "$(DESTDIR)$(prefix)/bin/smtpd.py" "$(DESTDIR)$(prefix)/bin/smtpd$(VERSION).py"  ;\
+		ln -sf "smtpd$(VERSION).py" "$(DESTDIR)$(prefix)/bin/smtpd.py" ;\
+	fi

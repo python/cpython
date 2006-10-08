@@ -249,8 +249,8 @@ class PyBuildExt(build_ext):
             add_dir_to_list(self.compiler.library_dirs, '/sw/lib')
             add_dir_to_list(self.compiler.include_dirs, '/sw/include')
             # DarwinPorts installs into /opt/local by default
-            add_dir_to_list(self.compiler.library_dirs, '/opt/local/lib')
-            add_dir_to_list(self.compiler.include_dirs, '/opt/local/include')
+            #add_dir_to_list(self.compiler.library_dirs, '/opt/local/lib')
+            #add_dir_to_list(self.compiler.include_dirs, '/opt/local/include')
 
         if os.path.normpath(sys.prefix) != '/usr':
             add_dir_to_list(self.compiler.library_dirs,
@@ -286,6 +286,23 @@ class PyBuildExt(build_ext):
         # OSF/1 and Unixware have some stuff in /usr/ccs/lib (like -ldb)
         if platform in ['osf1', 'unixware7', 'openunix8']:
             lib_dirs += ['/usr/ccs/lib']
+
+        if platform == 'darwin':
+            # This should work on any unixy platform ;-)
+            # If the user has bothered specifying additional -I and -L flags
+            # in OPT and LDFLAGS we might as well use them here.
+            #   NOTE: using shlex.split would technically be more correct, but
+            # also gives a bootstrap problem. Let's hope nobody uses directories
+            # with whitespace in the name to store libraries.
+            cflags, ldflags = sysconfig.get_config_vars(
+                    'CFLAGS', 'LDFLAGS')
+            for item in cflags.split():
+                if item.startswith('-I'):
+                    inc_dirs.append(item[2:])
+
+            for item in ldflags.split():
+                if item.startswith('-L'):
+                    lib_dirs.append(item[2:])
 
         # Check for MacOS X, which doesn't need libm.a at all
         math_libs = ['m']
@@ -436,8 +453,20 @@ class PyBuildExt(build_ext):
                                                ['/usr/lib/termcap'],
                                                'termcap'):
                 readline_libs.append('termcap')
+
+            if sys.platform == 'darwin':
+                # In every directory on the search path search for a dynamic
+                # library and then a static library, instead of first looking
+                # for dynamic libraries on the entiry path.
+                # This way a staticly linked custom readline gets picked up
+                # before the (broken) dynamic library in /usr/lib.
+                readline_extra_link_args = ('-Wl,-search_paths_first',)
+            else:
+                readline_extra_link_args = ()
+
             exts.append( Extension('readline', ['readline.c'],
                                    library_dirs=['/usr/lib/termcap'],
+                                   extra_link_args=readline_extra_link_args,
                                    libraries=readline_libs) )
         if platform not in ['mac']:
             # crypt module.
@@ -524,6 +553,23 @@ class PyBuildExt(build_ext):
             db_inc_paths.append('/usr/local/include/db3%d' % x)
             db_inc_paths.append('/pkg/db-3.%d/include' % x)
             db_inc_paths.append('/opt/db-3.%d/include' % x)
+
+        # Add some common subdirectories for Sleepycat DB to the list,
+        # based on the standard include directories. This way DB3/4 gets
+        # picked up when it is installed in a non-standard prefix and
+        # the user has added that prefix into inc_dirs.
+        std_variants = []
+        for dn in inc_dirs:
+            std_variants.append(os.path.join(dn, 'db3'))
+            std_variants.append(os.path.join(dn, 'db4'))
+            for x in (0,1,2,3,4):
+                std_variants.append(os.path.join(dn, "db4%d"%x))
+                std_variants.append(os.path.join(dn, "db4.%d"%x))
+            for x in (2,3):
+                std_variants.append(os.path.join(dn, "db3%d"%x))
+                std_variants.append(os.path.join(dn, "db3.%d"%x))
+
+        db_inc_paths = std_variants + db_inc_paths
 
         db_ver_inc_map = {}
 
@@ -760,22 +806,10 @@ class PyBuildExt(build_ext):
         #
         # More information on Expat can be found at www.libexpat.org.
         #
-        if sys.byteorder == "little":
-            xmlbo = "1234"
-        else:
-            xmlbo = "4321"
         expatinc = os.path.join(os.getcwd(), srcdir, 'Modules', 'expat')
         define_macros = [
-            ('XML_NS', '1'),
-            ('XML_DTD', '1'),
-            ('BYTEORDER', xmlbo),
-            ('XML_CONTEXT_BYTES','1024'),
+            ('HAVE_EXPAT_CONFIG_H', '1'),
             ]
-        config_h = sysconfig.get_config_h_filename()
-        config_h_vars = sysconfig.parse_config_h(open(config_h))
-        for feature_macro in ['HAVE_MEMMOVE', 'HAVE_BCOPY']:
-            if config_h_vars.has_key(feature_macro):
-                define_macros.append((feature_macro, '1'))
         exts.append(Extension('pyexpat',
                               define_macros = define_macros,
                               include_dirs = [expatinc],

@@ -1,3 +1,4 @@
+#!/usr/bin/python
 """fixapplepython23 - Fix Apple-installed Python 2.3 (on Mac OS X 10.3)
 
 Python 2.3 (and 2.3.X for X<5) have the problem that building an extension
@@ -93,9 +94,19 @@ def main():
     else:
         do_apply = True
     # First check OS version
+    if sys.byteorder == 'little':
+        # All intel macs are fine
+        print "fixapplypython23: no fix is needed on MacOSX on Intel"
+        sys.exit(0)
+
     if gestalt.gestalt('sysv') < 0x1030:
         print 'fixapplepython23: no fix needed on MacOSX < 10.3'
         sys.exit(0)
+
+    if gestalt.gestalt('sysv') >= 0x1040:
+        print 'fixapplepython23: no fix needed on MacOSX >= 10.4'
+        sys.exit(0)
+
     # Test that a framework Python is indeed installed
     if not os.path.exists(MAKEFILE):
         print 'fixapplepython23: Python framework does not appear to be installed (?), nothing fixed'
@@ -112,7 +123,8 @@ def main():
             makescript(GXX_SCRIPT, "g++")
     #  Finally fix the makefile
     rv = fix(MAKEFILE, do_apply)
-    sys.exit(rv)
+    #sys.exit(rv)
+    sys.exit(0)
 
 if __name__ == '__main__':
     main()

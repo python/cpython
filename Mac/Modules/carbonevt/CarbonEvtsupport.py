@@ -86,11 +86,13 @@ PyObject *EventHandlerCallRef_New(EventHandlerCallRef itself);
 PyObject *EventRef_New(EventRef itself);
 
 /********** EventTypeSpec *******/
+#if 0
 static PyObject*
 EventTypeSpec_New(EventTypeSpec *in)
 {
         return Py_BuildValue("ll", in->eventClass, in->eventKind);
 }
+#endif
 
 static int
 EventTypeSpec_Convert(PyObject *v, EventTypeSpec *out)
@@ -99,7 +101,7 @@ EventTypeSpec_Convert(PyObject *v, EventTypeSpec *out)
                         PyMac_GetOSType, &(out->eventClass),
                         &(out->eventKind)))
                 return 1;
-        return NULL;
+        return 0;
 }
 
 /********** end EventTypeSpec *******/
@@ -118,19 +120,20 @@ HIPoint_Convert(PyObject *v, HIPoint *out)
 {
         if (PyArg_ParseTuple(v, "ff", &(out->x), &(out->y)))
                 return 1;
-        return NULL;
+        return 0;
 }
 #endif
 
 /********** end HIPoint *******/
 
 /********** EventHotKeyID *******/
-
+#if 0
 static PyObject*
 EventHotKeyID_New(EventHotKeyID *in)
 {
         return Py_BuildValue("ll", in->signature, in->id);
 }
+#endif
 
 static int
 EventHotKeyID_Convert(PyObject *v, EventHotKeyID *out)

@@ -1,0 +1,36 @@
+diff -r -u ncurses-5.5-orig/test/Makefile.in ncurses-5.5/test/Makefile.in
+--- ncurses-5.5-orig/test/Makefile.in	2006-03-24 12:47:40.000000000 +0100
++++ ncurses-5.5/test/Makefile.in	2006-03-24 12:47:50.000000000 +0100
+@@ -75,7 +75,7 @@
+ MATH_LIB	= @MATH_LIB@
+ 
+ LD		= @LD@
+-LINK		= @LINK_TESTS@ $(LIBTOOL_LINK) $(CC) $(CFLAGS)
++LINK		= @LINK_TESTS@ $(LIBTOOL_LINK) $(CC) 
+ 
+ usFLAGS		= @LD_MODEL@ @LOCAL_LDFLAGS@ @LDFLAGS@
+ 
+diff -ru ncurses-5.5-orig/ncurses/tinfo/read_entry.c ncurses-5.5/ncurses/tinfo/read_entry.c
+--- ncurses-5.5-orig/ncurses/tinfo/read_entry.c 2004-01-11 02:57:05.000000000 +0100
++++ ncurses-5.5/ncurses/tinfo/read_entry.c      2006-03-25 22:49:39.000000000 +0100
+@@ -474,7 +474,7 @@
+     }
+ 
+     /* truncate the terminal name to prevent buffer overflow */
+-    (void) sprintf(ttn, "%c/%.*s", *tn, (int) sizeof(ttn) - 3, tn);
++    (void) sprintf(ttn, "%x/%.*s", *tn, (int) sizeof(ttn) - 3, tn);
+ 
+     /* This is System V behavior, in conjunction with our requirements for
+      * writing terminfo entries.
+diff -ru ncurses-5.5-orig/configure ncurses-5.5/configure
+--- ncurses-5.5-orig/configure	2005-09-24 23:50:50.000000000 +0200
++++ ncurses-5.5/configure	2006-03-26 22:24:59.000000000 +0200
+@@ -5027,7 +5027,7 @@
+ 	darwin*)
+ 		EXTRA_CFLAGS="-no-cpp-precomp"
+ 		CC_SHARED_OPTS="-dynamic"
+-		MK_SHARED_LIB='$(CC) -dynamiclib -install_name $(DESTDIR)$(libdir)/`basename $@` -compatibility_version $(ABI_VERSION) -current_version $(ABI_VERSION) -o $@'
++		MK_SHARED_LIB='$(CC) $(CFLAGS) -dynamiclib -install_name $(DESTDIR)$(libdir)/`basename $@` -compatibility_version $(ABI_VERSION) -current_version $(ABI_VERSION) -o $@'
+ 		test "$cf_cv_shlib_version" = auto && cf_cv_shlib_version=abi
+ 		cf_cv_shlib_version_infix=yes
+ 		;;

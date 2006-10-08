@@ -1,0 +1,49 @@
+prefix=@prefix@
+CC=@CC@
+LD=@CC@
+BASECFLAGS=@BASECFLAGS@
+OPT=@OPT@
+CFLAGS=$(BASECFLAGS) $(OPT)
+LDFLAGS=@LDFLAGS@
+srcdir=         @srcdir@
+VERSION=	@VERSION@
+UNIVERSALSDK=@UNIVERSALSDK@
+builddir=	../../..
+
+RUNSHARED=      @RUNSHARED@
+BUILDEXE=       @BUILDEXEEXT@
+BUILDPYTHON=    ../../../python$(BUILDEXE)
+
+# Deployment target selected during configure, to be checked
+# by distutils  
+MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
+@EXPORT_MACOSX_DEPLOYMENT_TARGET@export MACOSX_DEPLOYMENT_TARGET
+
+BUNDLEBULDER=$(srcdir)/../../../Lib/plat-mac/bundlebuilder.py
+
+PYTHONAPPSDIR=/Applications/MacPython $(VERSION)
+
+all: IDLE.app
+
+install: IDLE.app
+	test -d "$(DESTDIR)$(PYTHONAPPSDIR)" || mkdir -p "$(DESTDIR)$(PYTHONAPPSDIR)"
+	-test -d "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app" && rm -r "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
+	cp -PR IDLE.app "$(DESTDIR)$(PYTHONAPPSDIR)"
+	touch "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
+
+clean:
+	rm -rf IDLE.app
+
+IDLE.app:  \
+		$(srcdir)/../../OSXResources/app/Resources/PythonApplet.icns \
+		$(srcdir)/idlemain.py
+	rm -fr PythonLauncher.app
+	$(RUNSHARED) $(BUILDPYTHON) $(BUNDLEBULDER) \
+		--builddir=. \
+		--name=IDLE \
+		--link-exec \
+		--plist=$(srcdir)/Info.plist \
+		--mainprogram=$(srcdir)/idlemain.py \
+		--iconfile=$(srcdir)/IDLE.icns \
+		--python=$(prefix)/Resources/Python.app/Contents/MacOS/Python \
+		build
