@@ -126,6 +126,8 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1572724: fix typo ('=' instead of '==') in _msi.c.
+
 - Bug #1572832: fix a bug in ISO-2022 codecs which may cause segfault
   when encoding non-BMP unicode characters.
 
