@@ -112,6 +112,9 @@ Library
 - Patch #1550886: Fix decimal module context management implementation
   to match the localcontext() example from PEP 343.
 
+- Bug #1545341: The 'classifier' keyword argument to the Distutils setup() 
+  function now accepts tuples as well as lists.
+
 - Bug #1541863: uuid.uuid1 failed to generate unique identifiers
   on systems with low clock resolution.
 
