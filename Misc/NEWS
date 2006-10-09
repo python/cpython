@@ -65,6 +65,9 @@ Library
 - Bug #1446043: correctly raise a LookupError if an encoding name given
   to encodings.search_function() contains a dot.
 
+- Bug #1545341: The 'classifier' keyword argument to the Distutils setup() 
+  function now accepts tuples as well as lists.
+
 - Bug #1560617: in pyclbr, return full module name not only for classes,
   but also for functions.
 
