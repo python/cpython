@@ -223,6 +223,14 @@ class StatAttributeTests(unittest.TestCase):
         except TypeError:
             pass
 
+    # Restrict test to Win32, since there is no guarantee other
+    # systems support centiseconds
+    if sys.platform == 'win32':
+        def test_1565150(self):
+            t1 = 1159195039.25
+            os.utime(self.fname, (t1, t1))
+            self.assertEquals(os.stat(self.fname).st_mtime, t1)
+
 from test import mapping_tests
 
 class EnvironTests(mapping_tests.BasicTestMappingProtocol):

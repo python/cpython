@@ -792,7 +792,7 @@ time_t_to_FILE_TIME(int time_in, int nsec_in, FILETIME *out_ptr)
 	/* XXX endianness */
 	__int64 out;
 	out = time_in + secs_between_epochs;
-	out = out * 10000000 + nsec_in;
+	out = out * 10000000 + nsec_in / 100;
 	memcpy(out_ptr, &out, sizeof(out));
 }
 
@@ -2501,11 +2501,11 @@ posix_utime(PyObject *self, PyObject *args)
 		if (extract_time(PyTuple_GET_ITEM(arg, 0),
 				 &atimesec, &ausec) == -1)
 			goto done;
-		time_t_to_FILE_TIME(atimesec, ausec, &atime);
+		time_t_to_FILE_TIME(atimesec, 1000*ausec, &atime);
 		if (extract_time(PyTuple_GET_ITEM(arg, 1),
 				 &mtimesec, &musec) == -1)
 			goto done;
-		time_t_to_FILE_TIME(mtimesec, musec, &mtime);
+		time_t_to_FILE_TIME(mtimesec, 1000*musec, &mtime);
 	}
 	if (!SetFileTime(hFile, NULL, &atime, &mtime)) {
 		/* Avoid putting the file name into the error here,

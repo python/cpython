@@ -49,6 +49,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1565150: Fix subsecond processing for os.utime on Windows.
+
 - Patch #1572724: fix typo ('=' instead of '==') in _msi.c.
 
 - Bug #1572832: fix a bug in ISO-2022 codecs which may cause segfault
