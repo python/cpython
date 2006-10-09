@@ -3743,7 +3743,7 @@ hackcheck(PyObject *self, setattrofunc func, char *what)
 	while (type && type->tp_flags & Py_TPFLAGS_HEAPTYPE)
 		type = type->tp_base;
         /* If type is NULL now, this is a really weird type.
-           In the same of backwards compatibility (?), just shut up. */
+           In the spirit of backwards compatibility (?), just shut up. */
 	if (type && type->tp_setattro != func) {
 		PyErr_Format(PyExc_TypeError,
 			     "can't apply this %s to %s object",
@@ -3960,7 +3960,7 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
 	while (staticbase && (staticbase->tp_flags & Py_TPFLAGS_HEAPTYPE))
 		staticbase = staticbase->tp_base;
         /* If staticbase is NULL now, it is a really weird type.
-           In the same of backwards compatibility (?), just shut up. */
+           In the spirit of backwards compatibility (?), just shut up. */
 	if (staticbase && staticbase->tp_new != type->tp_new) {
 		PyErr_Format(PyExc_TypeError,
 			     "%s.__new__(%s) is not safe, use %s.__new__()",
