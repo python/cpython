@@ -1179,6 +1179,7 @@ PyDoc_STRVAR(gc__doc__,
 "disable() -- Disable automatic garbage collection.\n"
 "isenabled() -- Returns true if automatic collection is enabled.\n"
 "collect() -- Do a full collection right now.\n"
+"get_count() -- Return the current collection counts.\n"
 "set_debug() -- Set debugging flags.\n"
 "get_debug() -- Get debugging flags.\n"
 "set_threshold() -- Set the collection thresholds.\n"
