@@ -7,9 +7,6 @@ print 'XXX Mostly not yet implemented'
 
 print '3.1 Dictionary lookups succeed even if __cmp__() raises an exception'
 
-# SourceForge bug #112558:
-# http://sourceforge.net/bugs/?func=detailbug&bug_id=112558&group_id=5470
-
 class BadDictKey:
     already_printed_raising_error = 0
 
@@ -50,3 +47,27 @@ for i in range(5):
     del d[i]
 for i in range(5, 9):  # i==8 was the problem
     d[i] = i
+
+
+# Another dict resizing bug (SF bug #1456209).
+# This caused Segmentation faults or Illegal instructions.
+
+class X(object):
+    def __hash__(self):
+        return 5
+    def __eq__(self, other):
+        if resizing:
+            d.clear()
+        return False
+d = {}
+resizing = False
+d[X()] = 1
+d[X()] = 2
+d[X()] = 3
+d[X()] = 4
+d[X()] = 5
+# now trigger a resize
+resizing = True
+d[9] = 6
+
+print 'resize bugs not triggered.'

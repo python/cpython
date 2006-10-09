@@ -4,3 +4,4 @@ XXX Mostly not yet implemented
 3.1 Dictionary lookups succeed even if __cmp__() raises an exception
 raising error
 No exception passed through.
+resize bugs not triggered.

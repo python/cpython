@@ -418,6 +418,35 @@ insertdict(register dictobject *mp, PyObject *key, long hash, PyObject *value)
 }
 
 /*
+Internal routine used by dictresize() to insert an item which is
+known to be absent from the dict.  This routine also assumes that
+the dict contains no deleted entries.  Besides the performance benefit,
+using insertdict() in dictresize() is dangerous (SF bug #1456209).
+*/
+static void
+insertdict_clean(register dictobject *mp, PyObject *key, long hash,
+		 PyObject *value)
+{
+	register unsigned int i;
+	register unsigned int perturb;
+	register unsigned int mask = mp->ma_mask;
+	dictentry *ep0 = mp->ma_table;
+	register dictentry *ep;
+
+	i = hash & mask;
+	ep = &ep0[i];
+	for (perturb = hash; ep->me_key != NULL; perturb >>= PERTURB_SHIFT) {
+		i = (i << 2) + i + perturb + 1;
+		ep = &ep0[i & mask];
+	}
+	mp->ma_fill++;
+	ep->me_key = key;
+	ep->me_hash = hash;
+	ep->me_value = value;
+	mp->ma_used++;
+}
+
+/*
 Restructure the table by allocating a new table and reinserting all
 items again.  When entries have been deleted, the new table may
 actually be smaller than the old one.
@@ -489,7 +518,8 @@ dictresize(dictobject *mp, int minused)
 	for (ep = oldtable; i > 0; ep++) {
 		if (ep->me_value != NULL) {	/* active entry */
 			--i;
-			insertdict(mp, ep->me_key, ep->me_hash, ep->me_value);
+			insertdict_clean(mp, ep->me_key, ep->me_hash,
+					 ep->me_value);
 		}
 		else if (ep->me_key != NULL) {	/* dummy entry */
 			--i;
