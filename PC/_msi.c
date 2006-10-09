@@ -495,7 +495,7 @@ summary_getproperty(msiobj* si, PyObject *args)
 
     status = MsiSummaryInfoGetProperty(si->h, field, &type, &ival, 
 	&fval, sval, &ssize);
-    if (status = ERROR_MORE_DATA) {
+    if (status == ERROR_MORE_DATA) {
 	sval = malloc(ssize);
         status = MsiSummaryInfoGetProperty(si->h, field, &type, &ival, 
     	    &fval, sval, &ssize);
