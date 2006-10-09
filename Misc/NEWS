@@ -75,6 +75,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1565150: Fix subsecond processing for os.utime on Windows.
+
 - Support for MSVC 8 was added to bdist_wininst.
 
 - Bug #1446043: correctly raise a LookupError if an encoding name given
