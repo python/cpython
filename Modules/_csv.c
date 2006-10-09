@@ -1051,6 +1051,8 @@ join_append_lineterminator(WriterObj *self)
 	int terminator_len;
 
 	terminator_len = PyString_Size(self->dialect->lineterminator);
+	if (terminator_len == -1)
+		return 0;
 
 	/* grow record buffer if necessary */
 	if (!join_check_rec_size(self, self->rec_len + terminator_len))
