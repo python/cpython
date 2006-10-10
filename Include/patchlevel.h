@@ -23,10 +23,10 @@
 #define PY_MINOR_VERSION	4
 #define PY_MICRO_VERSION	4
 #define PY_RELEASE_LEVEL	PY_RELEASE_LEVEL_GAMMA
-#define PY_RELEASE_SERIAL	0
+#define PY_RELEASE_SERIAL	1
 
 /* Version as a string */
-#define PY_VERSION		"2.4.4c0"
+#define PY_VERSION		"2.4.4c1"
 
 /* Version as a single 4-byte hex number, e.g. 0x010502B2 == 1.5.2b2.
    Use this for numeric comparisons, e.g. #if PY_VERSION_HEX >= ... */
