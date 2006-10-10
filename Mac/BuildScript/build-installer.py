@@ -10,6 +10,7 @@ bootstrap issues (/usr/bin/python is Python 2.3 on OSX 10.4)
 Usage: see USAGE variable in the script.
 """
 import platform, os, sys, getopt, textwrap, shutil, urllib2, stat, time, pwd
+import grp
 
 INCLUDE_TIMESTAMP=1
 VERBOSE=1
@@ -657,9 +658,13 @@ def buildPython():
 
     print "Fix file modes"
     frmDir = os.path.join(rootDir, 'Library', 'Frameworks', 'Python.framework')
+    gid = grp.getgrnam('admin').gr_gid
+
     for dirpath, dirnames, filenames in os.walk(frmDir):
         for dn in dirnames:
             os.chmod(os.path.join(dirpath, dn), 0775)
+            os.chown(os.path.join(dirpath, dn), -1, gid)
+            
 
         for fn in filenames:
             if os.path.islink(fn):
@@ -668,7 +673,8 @@ def buildPython():
             # "chmod g+w $fn"
             p = os.path.join(dirpath, fn)
             st = os.stat(p)
-            os.chmod(p, stat.S_IMODE(st.st_mode) | stat.S_IXGRP)
+            os.chmod(p, stat.S_IMODE(st.st_mode) | stat.S_IWGRP)
+            os.chown(p, -1, gid)
 
     # We added some directories to the search path during the configure
     # phase. Remove those because those directories won't be there on
@@ -945,7 +951,10 @@ def setIcon(filePath, icnsPath):
     ref, isDirectory = Carbon.File.FSPathMakeRef(filePath)
 
     if isDirectory:
+        # There is a problem with getting this into the pax(1) archive,
+        # just ignore directory icons for now.
         return
+
         tmpPath = os.path.join(filePath, "Icon\r")
         if not os.path.exists(tmpPath):
             fp = open(tmpPath, 'w')
