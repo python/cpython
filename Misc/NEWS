@@ -241,6 +241,9 @@ Build
 - The Windows binaries for the _ssl module are now linked with
   OpenSSL 0.9.7l.
 
+- On Windows, there are no longer linker warnings when building the
+  ``_bsddb`` project.
+
 - Bug #1568842: Fix test for uintptr_t.
 
 - Bug #1439538: Drop usage of test -e in configure as it is not portable.
