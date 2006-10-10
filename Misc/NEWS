@@ -7,7 +7,7 @@ Python News
 What's New in Python 2.4.4c1?
 =============================
 
-*Release date: DD-MMM-2006*
+*Release date: 11-SEP-2006*
 
 Core and builtins
 -----------------
@@ -77,6 +77,9 @@ Core and builtins
 
 Extension Modules
 -----------------
+- #1494314: Fix a regression with high-numbered sockets in 2.4.3. This
+  means that select() on sockets > FD_SETSIZE (typically 1024) work again.
+  The patch makes sockets use poll() internally where available.
 
 - Fix buffer handling in posix.confstr.
 
