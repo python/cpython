@@ -10,6 +10,7 @@ bootstrap issues (/usr/bin/python is Python 2.3 on OSX 10.4)
 Usage: see USAGE variable in the script.
 """
 import platform, os, sys, getopt, textwrap, shutil, urllib2, stat, time, pwd
+import grp
 
 INCLUDE_TIMESTAMP=1
 VERBOSE=1
@@ -56,7 +57,7 @@ def getFullVersion():
     raise RuntimeError, "Cannot find full version??"
 
 # The directory we'll use to create the build, will be erased and recreated
-WORKDIR="/tmp/_py"
+WORKDIR="/tmp/_py24"
 
 # The directory we'll use to store third-party sources, set this to something
 # else if you don't want to re-fetch required libraries every time.
@@ -643,10 +644,12 @@ def buildPython():
                 'lib'))))
 
     print "Fix file modes"
+    gid = grp.getgrnam('admin').gr_gid
     frmDir = os.path.join(rootDir, 'Library', 'Frameworks', 'Python.framework')
     for dirpath, dirnames, filenames in os.walk(frmDir):
         for dn in dirnames:
             os.chmod(os.path.join(dirpath, dn), 0775)
+            os.chown(os.path.join(dirpath, dn), -1, gid)
 
         for fn in filenames:
             if os.path.islink(fn):
@@ -655,7 +658,8 @@ def buildPython():
             # "chmod g+w $fn"
             p = os.path.join(dirpath, fn)
             st = os.stat(p)
-            os.chmod(p, stat.S_IMODE(st.st_mode) | stat.S_IXGRP)
+            os.chmod(p, stat.S_IMODE(st.st_mode) | stat.S_IWGRP)
+            os.chown(p, -1, gid)
 
     # We added some directories to the search path during the configure
     # phase. Remove those because those directories won't be there on
