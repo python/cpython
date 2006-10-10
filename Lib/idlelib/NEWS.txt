@@ -1,7 +1,7 @@
 What's New in IDLE 1.1.4c1?
 ===========================
 
-*Release date: 11-SEP-2006*
+*Release date: 11-OCT-2006*
 
 What's New in IDLE 1.1.3?
 =========================
