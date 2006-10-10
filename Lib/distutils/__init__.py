@@ -12,4 +12,4 @@ used from a setup script as
 
 __revision__ = "$Id$"
 
-__version__ = "2.4.1"
+__version__ = "2.4.4"
