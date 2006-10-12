@@ -472,9 +472,24 @@ def findsource(object):
 
     if isclass(object):
         name = object.__name__
-        pat = re.compile(r'^\s*class\s*' + name + r'\b')
+        pat = re.compile(r'^(\s*)class\s*' + name + r'\b')
+        # make some effort to find the best matching class definition:
+        # use the one with the least indentation, which is the one
+        # that's most probably not inside a function definition.
+        candidates = []
         for i in range(len(lines)):
-            if pat.match(lines[i]): return lines, i
+            match = pat.match(lines[i])
+            if match:
+                # if it's at toplevel, it's already the best one
+                if lines[i][0] == 'c':
+                    return lines, i
+                # else add whitespace to candidate list
+                candidates.append((match.group(1), i))
+        if candidates:
+            # this will sort by whitespace, and by line number,
+            # less whitespace first
+            candidates.sort()
+            return lines, candidates[0][1]
         else:
             raise IOError('could not find class definition')
 
