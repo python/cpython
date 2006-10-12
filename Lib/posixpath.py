@@ -106,18 +106,23 @@ def splitdrive(p):
     return '', p
 
 
-# Return the tail (basename) part of a path.
+# Return the tail (basename) part of a path, same as split(path)[1].
 
 def basename(p):
     """Returns the final component of a pathname"""
-    return split(p)[1]
+    i = p.rfind('/') + 1
+    return p[i:]
 
 
-# Return the head (dirname) part of a path.
+# Return the head (dirname) part of a path, same as split(path)[0].
 
 def dirname(p):
     """Returns the directory component of a pathname"""
-    return split(p)[0]
+    i = p.rfind('/') + 1
+    head = p[:i]
+    if head and head != '/'*len(head):
+        head = head.rstrip('/')
+    return head
 
 
 # Is a path a symbolic link?
