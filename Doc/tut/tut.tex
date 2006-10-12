@@ -2855,7 +2855,7 @@ Now what happens when the user writes \code{from Sound.Effects import
 *}?  Ideally, one would hope that this somehow goes out to the
 filesystem, finds which submodules are present in the package, and
 imports them all.  Unfortunately, this operation does not work very
-well on Mac and Windows platforms, where the filesystem does not
+well on Windows platforms, where the filesystem does not
 always have accurate information about the case of a filename!  On
 these platforms, there is no guaranteed way to know whether a file
 \file{ECHO.PY} should be imported as a module \module{echo},
