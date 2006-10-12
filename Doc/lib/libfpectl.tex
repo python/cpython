@@ -7,6 +7,11 @@
 \sectionauthor{Lee Busby}{busby1@llnl.gov}
 \modulesynopsis{Provide control for floating point exception handling.}
 
+\note{The \module{fpectl} module is not built by default, and its usage
+      is discouraged and may be dangerous except in the hand of
+      experts.  See also the section \ref{fpectl-limitations} on
+      limitations for more details.}
+
 Most computers carry out floating point operations\index{IEEE-754}
 in conformance with the so-called IEEE-754 standard.
 On any real computer,
@@ -95,7 +100,7 @@ FloatingPointError: in math_1
 \end{verbatim}
 
 
-\subsection{Limitations and other considerations}
+\subsection{Limitations and other considerations \label{fpectl-limitations}}
 
 Setting up a given processor to trap IEEE-754 floating point
 errors currently requires custom code on a per-architecture basis.
