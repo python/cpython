@@ -66,6 +66,9 @@ Extension Modules
 Library
 -------
 
+- Bug #813342: Start the IDLE subprocess with -Qnew if the parent
+  is started with that option.
+
 - Bug #1446043: correctly raise a LookupError if an encoding name given
   to encodings.search_function() contains a dot.
 
