@@ -175,6 +175,8 @@ Tests
 Documentation
 -------------
 
+- Bug #1565919: document set types in the Language Reference.
+
 - Bug #1546052: clarify that PyString_FromString(AndSize) copies the
   string pointed to by its parameter.
 
