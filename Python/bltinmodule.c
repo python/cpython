@@ -2055,10 +2055,11 @@ builtin_sum(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(sum_doc,
-"sum(sequence, start=0) -> value\n\
+"sum(sequence[, start]) -> value\n\
 \n\
 Returns the sum of a sequence of numbers (NOT strings) plus the value\n\
-of parameter 'start'.  When the sequence is empty, returns start.");
+of parameter 'start' (which defaults to 0).  When the sequence is\n\
+empty, returns start.");
 
 
 static PyObject *
