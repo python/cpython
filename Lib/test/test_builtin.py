@@ -729,6 +729,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, int, '123\0')
         self.assertRaises(ValueError, int, '53', 40)
 
+        # SF bug 1545497: embedded NULs were not detected with
+        # explicit base
+        self.assertRaises(ValueError, int, '123\0', 10)
+        self.assertRaises(ValueError, int, '123\x00 245', 20)
+
         x = int('1' * 600)
         self.assert_(isinstance(x, long))
 

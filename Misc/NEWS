@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1545497: when given an explicit base, int() did ignore NULs
+  embedded in the string to convert.
+
 - Bug #1569998: break inside a try statement (outside a loop) is now
   recognized and rejected.
 
