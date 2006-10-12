@@ -49,6 +49,10 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1548891: The cStringIO.StringIO() constructor now encodes unicode
+  arguments with the system default encoding just like the write()
+  method does, instead of converting it to a raw buffer.
+
 - Bug #1565150: Fix subsecond processing for os.utime on Windows.
 
 - Patch #1572724: fix typo ('=' instead of '==') in _msi.c.
