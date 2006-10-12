@@ -144,7 +144,7 @@ def nti(s):
     # There are two possible encodings for a number field, see
     # itn() below.
     if s[0] != chr(0200):
-        n = int(s.rstrip(NUL) or "0", 8)
+        n = int(s.rstrip(NUL + " ") or "0", 8)
     else:
         n = 0L
         for i in xrange(len(s) - 1):
