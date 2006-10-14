@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Update the peephole optimizer to remove more dead code (jumps after returns)
+  and inline unconditional jumps to returns.
+
 - Bug #1545497: when given an explicit base, int() did ignore NULs
   embedded in the string to convert.
 
