@@ -137,6 +137,8 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1576166: Support os.utime for directories on Windows NT+.
+
 - Bug #1548891: The cStringIO.StringIO() constructor now encodes unicode
   arguments with the system default encoding just like the write()
   method does, instead of converting it to a raw buffer.

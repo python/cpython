@@ -2458,7 +2458,8 @@ posix_utime(PyObject *self, PyObject *args)
 			wpath = PyUnicode_AS_UNICODE(obwpath);
 			Py_BEGIN_ALLOW_THREADS
 			hFile = CreateFileW(wpath, FILE_WRITE_ATTRIBUTES, 0,
-					    NULL, OPEN_EXISTING, 0, NULL);
+					    NULL, OPEN_EXISTING,
+					    FILE_FLAG_BACKUP_SEMANTICS, NULL);
 			Py_END_ALLOW_THREADS
 			if (hFile == INVALID_HANDLE_VALUE)
 				return win32_error_unicode("utime", wpath);
@@ -2473,7 +2474,8 @@ posix_utime(PyObject *self, PyObject *args)
 			return NULL;
 		Py_BEGIN_ALLOW_THREADS
 		hFile = CreateFileA(apath, FILE_WRITE_ATTRIBUTES, 0,
-				    NULL, OPEN_EXISTING, 0, NULL);
+				    NULL, OPEN_EXISTING,
+				    FILE_FLAG_BACKUP_SEMANTICS, NULL);
 		Py_END_ALLOW_THREADS
 		if (hFile == INVALID_HANDLE_VALUE) {
 			win32_error("utime", apath);
@@ -8616,4 +8618,5 @@ INITFUNC(void)
 #ifdef __cplusplus
 }
 #endif
+
 
