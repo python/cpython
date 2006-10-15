@@ -223,6 +223,13 @@ class StatAttributeTests(unittest.TestCase):
         except TypeError:
             pass
 
+    def test_utime_dir(self):
+        delta = 1000000
+        st = os.stat(test_support.TESTFN)
+        os.utime(test_support.TESTFN, (st.st_atime, st.st_mtime-delta))
+        st2 = os.stat(test_support.TESTFN)
+        self.assertEquals(st2.st_mtime, st.st_mtime-delta)
+
     # Restrict test to Win32, since there is no guarantee other
     # systems support centiseconds
     if sys.platform == 'win32':
