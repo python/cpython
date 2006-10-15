@@ -99,6 +99,12 @@ Library
   the close_fds arg to subprocess.Popen is not supported).
 
 
+Build
+-----
+
+- Patch #1576954: Update VC6 build directory; remove redundant
+  files in VC7.
+
 
 What's New in Python 2.5 (final)
 ================================

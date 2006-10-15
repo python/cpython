@@ -725,13 +725,7 @@
 			RelativePath="..\Modules\sha512module.c">
 		</File>
 		<File
-			RelativePath="..\Modules\sha512module.c">
-		</File>
-		<File
 			RelativePath="..\Modules\shamodule.c">
-		</File>
-		<File
-			RelativePath="..\Modules\signalmodule.c">
 		</File>
 		<File
 			RelativePath="..\Modules\signalmodule.c">
