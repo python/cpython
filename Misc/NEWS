@@ -52,6 +52,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1567666: Emulate GetFileAttributesExA for Win95.
+
 - Bug #1548891: The cStringIO.StringIO() constructor now encodes unicode
   arguments with the system default encoding just like the write()
   method does, instead of converting it to a raw buffer.
