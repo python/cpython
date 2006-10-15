@@ -137,6 +137,8 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1567666: Emulate GetFileAttributesExA for Win95.
+
 - Patch #1576166: Support os.utime for directories on Windows NT+.
 
 - Bug #1548891: The cStringIO.StringIO() constructor now encodes unicode
