@@ -211,6 +211,9 @@ Tools
 Build
 -----
 
+- Patch #1576954: Update VC6 build directory; remove redundant
+  files in VC7.
+
 - Bug #1568842: Fix test for uintptr_t.
 
 - Patch #1540470, for OpenBSD 4.0.

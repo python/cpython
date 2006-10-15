@@ -464,9 +464,6 @@
 			RelativePath="..\Python\compile.c">
 		</File>
 		<File
-			RelativePath="..\Python\peephole.c">
-		</File>
-		<File
 			RelativePath="..\Objects\complexobject.c">
 		</File>
 		<File
@@ -686,6 +683,9 @@
 			RelativePath="..\Parser\parsetok.c">
 		</File>
 		<File
+			RelativePath="..\Python\peephole.c">
+		</File>
+		<File
 			RelativePath="..\Modules\posixmodule.c">
 		</File>
 		<File
@@ -728,13 +728,7 @@
 			RelativePath="..\Modules\sha512module.c">
 		</File>
 		<File
-			RelativePath="..\Modules\sha512module.c">
-		</File>
-		<File
 			RelativePath="..\Modules\shamodule.c">
-		</File>
-		<File
-			RelativePath="..\Modules\signalmodule.c">
 		</File>
 		<File
 			RelativePath="..\Modules\signalmodule.c">
