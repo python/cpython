@@ -228,7 +228,7 @@ class StatAttributeTests(unittest.TestCase):
         st = os.stat(test_support.TESTFN)
         os.utime(test_support.TESTFN, (st.st_atime, st.st_mtime-delta))
         st2 = os.stat(test_support.TESTFN)
-        self.assertEquals(st2.st_mtime, st.st_mtime-delta)
+        self.assertAlmostEquals(st2.st_mtime, st.st_mtime-delta, 2)
 
     # Restrict test to Win32, since there is no guarantee other
     # systems support centiseconds
