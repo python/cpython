@@ -81,6 +81,10 @@ Core and builtins
 Library
 -------
 
+- Fix turtle so that time.sleep is imported for the entire library.  Allows
+  the demo2 function to be executed on its own instead of only when the
+  module is run as a script.
+
 - Bug #813342: Start the IDLE subprocess with -Qnew if the parent
   is started with that option.
 
