@@ -219,6 +219,9 @@ Tools
 Build
 -----
 
+- Bug #1578513: Cross compilation was broken by a change to configure. 
+  Repair so that it's back to how it was in 2.4.3.
+
 - Patch #1576954: Update VC6 build directory; remove redundant
   files in VC7.
 
