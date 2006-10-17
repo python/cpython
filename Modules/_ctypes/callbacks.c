@@ -293,8 +293,11 @@ ffi_info *AllocFunctionCallback(PyObject *callable,
 		p->restype = &ffi_type_void;
 	} else {
 		StgDictObject *dict = PyType_stgdict(restype);
-		if (dict == NULL)
-			goto error;
+		if (dict == NULL || dict->setfunc == NULL) {
+		  PyErr_SetString(PyExc_TypeError,
+				  "invalid result type for callback function");
+		  goto error;
+		}
 		p->setfunc = dict->setfunc;
 		p->restype = &dict->ffi_type_pointer;
 	}

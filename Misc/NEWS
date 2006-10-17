@@ -81,6 +81,10 @@ Core and builtins
 Library
 -------
 
+- ctypes callback functions only support 'fundamental' data types as
+  result type.  Raise an error when something else is used.  This is a
+  partial fix for Bug #1574584.
+
 - Fix turtle so that time.sleep is imported for the entire library.  Allows
   the demo2 function to be executed on its own instead of only when the
   module is run as a script.
