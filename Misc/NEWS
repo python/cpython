@@ -9,6 +9,17 @@ What's New in Python 2.4.4c1?
 
 *Release date: 11-OCT-2006*
 
+Build
+-----
+
+- Bug #1578513: Cross compilation was broken by a change to configure. 
+Repair so that it's back to how it was in 2.4.3.
+
+What's New in Python 2.4.4c1?
+=============================
+
+*Release date: 11-OCT-2006*
+
 Core and builtins
 -----------------
 
