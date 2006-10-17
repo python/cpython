@@ -101,6 +101,19 @@ class Callbacks(unittest.TestCase):
             after = grc(o)
             self.failUnlessEqual((after, o), (before, o))
 
+    def test_unsupported_restype_1(self):
+        # Only "fundamental" result types are supported for callback
+        # functions, the type must have a non-NULL stgdict->setfunc.
+        # POINTER(c_double), for example, is not supported.
+
+        prototype = self.functype.im_func(POINTER(c_double))
+        # The type is checked when the prototype is called
+        self.assertRaises(TypeError, prototype, lambda: None)
+
+    def test_unsupported_restype_2(self):
+        prototype = self.functype.im_func(object)
+        self.assertRaises(TypeError, prototype, lambda: None)
+
 try:
     WINFUNCTYPE
 except NameError:
