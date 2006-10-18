@@ -657,7 +657,7 @@ newIobject(PyObject *s) {
   char *buf;
   Py_ssize_t size;
 
-  if (PyObject_AsCharBuffer(s, (const void **)&buf, &size) != 0)
+  if (PyObject_AsCharBuffer(s, (const char **)&buf, &size) != 0)
       return NULL;
 
   self = PyObject_New(Iobject, &Itype);
