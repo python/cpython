@@ -664,7 +664,7 @@ def buildPython():
         for dn in dirnames:
             os.chmod(os.path.join(dirpath, dn), 0775)
             os.chown(os.path.join(dirpath, dn), -1, gid)
-            
+
 
         for fn in filenames:
             if os.path.islink(fn):
