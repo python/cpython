@@ -18,7 +18,7 @@ def remove_files(name):
 
 
 class ImportTest(unittest.TestCase):
-    
+
     def testCaseSensitivity(self):
         # Brief digression to test that import is case-sensitive:  if we got this
         # far, we know for sure that "random" exists.
@@ -56,7 +56,7 @@ class ImportTest(unittest.TestCase):
                     mod = __import__(TESTFN)
                 except ImportError, err:
                     self.fail("import from %s failed: %s" % (ext, err))
-                
+
                 self.assertEquals(mod.a, a,
                     "module loaded (%s) but contents invalid" % mod)
                 self.assertEquals(mod.b, b,
