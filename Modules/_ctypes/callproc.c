@@ -1247,11 +1247,11 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
 
 static PyObject *py_dl_close(PyObject *self, PyObject *args)
 {
-	void * handle;
+	int handle;
 
 	if (!PyArg_ParseTuple(args, "i:dlclose", &handle))
 		return NULL;
-	if (dlclose(handle)) {
+	if (dlclose((void*)handle)) {
 		PyErr_SetString(PyExc_OSError,
 				       ctypes_dlerror());
 		return NULL;
@@ -1263,12 +1263,12 @@ static PyObject *py_dl_close(PyObject *self, PyObject *args)
 static PyObject *py_dl_sym(PyObject *self, PyObject *args)
 {
 	char *name;
-	void *handle;
+	int handle;
 	void *ptr;
 
 	if (!PyArg_ParseTuple(args, "is:dlsym", &handle, &name))
 		return NULL;
-	ptr = ctypes_dlsym(handle, name);
+	ptr = ctypes_dlsym((void*)handle, name);
 	if (!ptr) {
 		PyErr_SetString(PyExc_OSError,
 				       ctypes_dlerror());
@@ -1286,7 +1286,7 @@ static PyObject *py_dl_sym(PyObject *self, PyObject *args)
 static PyObject *
 call_function(PyObject *self, PyObject *args)
 {
-	PPROC func;
+	int func;
 	PyObject *arguments;
 	PyObject *result;
 
@@ -1296,7 +1296,7 @@ call_function(PyObject *self, PyObject *args)
 			      &PyTuple_Type, &arguments))
 		return NULL;
 
-	result =  _CallProc(func,
+	result =  _CallProc((PPROC)func,
 			    arguments,
 #ifdef MS_WIN32
 			    NULL,
@@ -1317,7 +1317,7 @@ call_function(PyObject *self, PyObject *args)
 static PyObject *
 call_cdeclfunction(PyObject *self, PyObject *args)
 {
-	PPROC func;
+	int func;
 	PyObject *arguments;
 	PyObject *result;
 
@@ -1327,7 +1327,7 @@ call_cdeclfunction(PyObject *self, PyObject *args)
 			      &PyTuple_Type, &arguments))
 		return NULL;
 
-	result =  _CallProc(func,
+	result =  _CallProc((PPROC)func,
 			    arguments,
 #ifdef MS_WIN32
 			    NULL,
@@ -1510,7 +1510,7 @@ resize(PyObject *self, PyObject *args)
 #else
 			      "On:resize",
 #endif
-			      (PyObject *)&obj, &size))
+			      &obj, &size))
 		return NULL;
 
 	dict = PyObject_stgdict((PyObject *)obj);
