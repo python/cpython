@@ -24,7 +24,7 @@ PyAPI_FUNC(PyObject *) _Py_VaBuildValue_SizeT(const char *, va_list);
 #endif
 
 PyAPI_FUNC(int) PyArg_Parse(PyObject *, const char *, ...);
-PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, const char *, ...);
+PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, const char *, ...) Py_FORMAT_PARSETUPLE(PyArg_ParseTuple, 2, 3);
 PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
                                                   const char *, char **, ...);
 PyAPI_FUNC(int) PyArg_UnpackTuple(PyObject *, const char *, Py_ssize_t, Py_ssize_t, ...);
