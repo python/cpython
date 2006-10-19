@@ -903,6 +903,7 @@ then
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
   )
+  CFLAGS=$save_CFLAGS
 fi
 
 # On some compilers, pthreads are available without further options
