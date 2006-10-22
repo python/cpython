@@ -11,6 +11,13 @@ except nis.error, msg:
     # only do this if running under the regression suite
     raise TestSkipped, msg
 
+try:
+    # On some systems, this map is only accessible to the
+    # super user
+    maps.remove("passwd.adjunct.byname")
+except ValueError:
+    pass
+
 done = 0
 for nismap in maps:
     if verbose:
