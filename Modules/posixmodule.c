@@ -5687,17 +5687,53 @@ Return a string representing the path to which the symbolic link points.");
 static PyObject *
 posix_readlink(PyObject *self, PyObject *args)
 {
+	PyObject* v;
 	char buf[MAXPATHLEN];
 	char *path;
 	int n;
-	if (!PyArg_ParseTuple(args, "s:readlink", &path))
+#ifdef Py_USING_UNICODE
+	int arg_is_unicode = 0;
+#endif
+
+	if (!PyArg_ParseTuple(args, "et:readlink", 
+				Py_FileSystemDefaultEncoding, &path))
 		return NULL;
+#ifdef Py_USING_UNICODE
+	v = PySequence_GetItem(args, 0);
+	if (v == NULL) return NULL;
+
+	if (PyUnicode_Check(v)) {
+		arg_is_unicode = 1;
+	}
+	Py_DECREF(v);
+#endif
+
 	Py_BEGIN_ALLOW_THREADS
 	n = readlink(path, buf, (int) sizeof buf);
 	Py_END_ALLOW_THREADS
 	if (n < 0)
 		return posix_error_with_filename(path);
-	return PyString_FromStringAndSize(buf, n);
+
+	v = PyString_FromStringAndSize(buf, n);
+#ifdef Py_USING_UNICODE
+	if (arg_is_unicode) {
+		PyObject *w;
+
+		w = PyUnicode_FromEncodedObject(v,
+				Py_FileSystemDefaultEncoding,
+				"strict");
+		if (w != NULL) {
+			Py_DECREF(v);
+			v = w;
+		}
+		else {
+			/* fall back to the original byte string, as
+			   discussed in patch #683592 */
+			PyErr_Clear();
+		}
+	}
+#endif
+	return v;
 }
 #endif /* HAVE_READLINK */
 
