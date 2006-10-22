@@ -108,6 +108,13 @@ Library
   the close_fds arg to subprocess.Popen is not supported).
 
 
+Tests
+-----
+
+- Remove passwd.adjunct.byname from list of maps
+  for test_nis.
+
+
 Build
 -----
 
