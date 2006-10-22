@@ -920,6 +920,8 @@ Return a string representing the path to which the symbolic link
 points.  The result may be either an absolute or relative pathname; if
 it is relative, it may be converted to an absolute pathname using
 \code{os.path.join(os.path.dirname(\var{path}), \var{result})}.
+\versionchanged [If the \var{path} is a Unicode object the result will also
+be a Unicode object]{2.6}
 Availability: Macintosh, \UNIX.
 \end{funcdesc}
 
