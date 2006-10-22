@@ -52,6 +52,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1560695: Add .note.GNU-stack to ctypes' sysv.S so that
+  ctypes isn't considered as requiring executable stacks.
+
 - Bug #1567666: Emulate GetFileAttributesExA for Win95.
 
 - Bug #1548891: The cStringIO.StringIO() constructor now encodes unicode
