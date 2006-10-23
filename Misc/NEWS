@@ -4,26 +4,22 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.3.6rc1?
-==============================
+What's New in Python 2.3.6c1?
+=============================
 
-*Release date: XX-XXX-200X*
+*Release date: 25-OCT-2006*
+
+Core and builtins
+-----------------
+
+- Patch #1541585: fix buffer overrun when performing repr() on
+  a unicode string in a build with wide unicode (UCS-4) support.
+  This is the problem described in security advisory PSF-2006-001.
 
 Extension modules
 -----------------
 
 - Apply fix for potential heap overflow in PCRE code (CAN-2005-2491).
-
-
-What's New in Python 2.3.5?
-==============================
-
-*Release date: 08-FEB-2005*
-
-Core and builtins
------------------
-
-- Partially revert the fix for #1074011; don't try to fflush stdin anymore.
 
 Library
 -------
@@ -39,6 +35,19 @@ Library
 
   Also, whereas % values were decoded in all parameter continuations, they are
   now only decoded in encoded parameter parts.
+
+What's New in Python 2.3.5?
+==============================
+
+*Release date: 08-FEB-2005*
+
+Core and builtins
+-----------------
+
+- Partially revert the fix for #1074011; don't try to fflush stdin anymore.
+
+Library
+-------
 
 - Applied a security fix to SimpleXMLRPCserver (PSF-2005-001).  This
   disables recursive traversal through instance attributes, which can
