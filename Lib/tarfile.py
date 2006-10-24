@@ -136,7 +136,7 @@ TOEXEC  = 0001           # execute/search by other
 def stn(s, length):
     """Convert a python string to a null-terminated string buffer.
     """
-    return s[:length-1] + (length - len(s) - 1) * NUL + NUL
+    return s[:length] + (length - len(s)) * NUL
 
 def nti(s):
     """Convert a number field to a python number.
