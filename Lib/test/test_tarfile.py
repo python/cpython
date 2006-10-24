@@ -280,6 +280,32 @@ class WriteTest(BaseTest):
             else:
                 self.dst.addfile(tarinfo, f)
 
+
+class Write100Test(BaseTest):
+    # The name field in a tar header stores strings of at most 100 chars.
+    # If a string is shorter than 100 chars it has to be padded with '\0',
+    # which implies that a string of exactly 100 chars is stored without
+    # a trailing '\0'.
+
+    def setUp(self):
+        self.name = "01234567890123456789012345678901234567890123456789"
+        self.name += "01234567890123456789012345678901234567890123456789"
+
+        self.tar = tarfile.open(tmpname(), "w")
+        t = tarfile.TarInfo(self.name)
+        self.tar.addfile(t)
+        self.tar.close()
+
+        self.tar = tarfile.open(tmpname())
+
+    def tearDown(self):
+        self.tar.close()
+
+    def test(self):
+        self.assertEqual(self.tar.getnames()[0], self.name,
+                "failed to store 100 char filename")
+
+
 class WriteSize0Test(BaseTest):
     mode = 'w'
 
@@ -623,6 +649,7 @@ def test_main():
         ReadAsteriskTest,
         ReadStreamAsteriskTest,
         WriteTest,
+        Write100Test,
         WriteSize0Test,
         WriteStreamTest,
         WriteGNULongTest,
