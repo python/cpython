@@ -25,7 +25,7 @@ def update_wrapper(wrapper,
        assigned is a tuple naming the attributes assigned directly
        from the wrapped function to the wrapper function (defaults to
        functools.WRAPPER_ASSIGNMENTS)
-       updated is a tuple naming the attributes off the wrapper that
+       updated is a tuple naming the attributes of the wrapper that
        are updated with the corresponding attribute from the wrapped
        function (defaults to functools.WRAPPER_UPDATES)
     """
