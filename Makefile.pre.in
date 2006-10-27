@@ -345,7 +345,7 @@ platform: $(BUILDPYTHON)
 
 # Build the shared modules
 sharedmods: $(BUILDPYTHON)
-	case $$MAKEFLAGS in \
+	@case $$MAKEFLAGS in \
 	*-s*) $(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py -q build;; \
 	*) $(RUNSHARED) CC='$(CC)' LDSHARED='$(BLDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py build;; \
 	esac
