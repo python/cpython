@@ -6,9 +6,7 @@
  */
 
 #include "Python.h"
-#ifdef HAVE_VALUES_H
-#include <values.h>
-#endif
+#include <float.h>
 #include "structmember.h"
 
 #ifdef WITH_THREAD
