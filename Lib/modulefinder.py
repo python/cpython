@@ -1,13 +1,14 @@
 """Find modules used by a script, using introspection."""
-
 # This module should be kept compatible with Python 2.2, see PEP 291.
 
+from __future__ import generators
 import dis
 import imp
 import marshal
 import os
 import sys
 import new
+import struct
 
 if hasattr(sys.__stdout__, "newlines"):
     READ_MODE = "U"  # universal line endings
@@ -15,11 +16,12 @@ else:
     # remain compatible with Python  < 2.3
     READ_MODE = "r"
 
-LOAD_CONST = dis.opname.index('LOAD_CONST')
-IMPORT_NAME = dis.opname.index('IMPORT_NAME')
-STORE_NAME = dis.opname.index('STORE_NAME')
-STORE_GLOBAL = dis.opname.index('STORE_GLOBAL')
+LOAD_CONST = chr(dis.opname.index('LOAD_CONST'))
+IMPORT_NAME = chr(dis.opname.index('IMPORT_NAME'))
+STORE_NAME = chr(dis.opname.index('STORE_NAME'))
+STORE_GLOBAL = chr(dis.opname.index('STORE_GLOBAL'))
 STORE_OPS = [STORE_NAME, STORE_GLOBAL]
+HAVE_ARGUMENT = chr(dis.HAVE_ARGUMENT)
 
 # Modulefinder does a good job at simulating Python's, but it can not
 # handle __path__ modifications packages make at runtime.  Therefore there
@@ -118,9 +120,9 @@ class ModuleFinder:
         stuff = (ext, "r", imp.PY_SOURCE)
         self.load_module(name, fp, pathname, stuff)
 
-    def import_hook(self, name, caller=None, fromlist=None):
-        self.msg(3, "import_hook", name, caller, fromlist)
-        parent = self.determine_parent(caller)
+    def import_hook(self, name, caller=None, fromlist=None, level=-1):
+        self.msg(3, "import_hook", name, caller, fromlist, level)
+        parent = self.determine_parent(caller, level=level)
         q, tail = self.find_head_package(parent, name)
         m = self.load_tail(q, tail)
         if not fromlist:
@@ -129,12 +131,26 @@ class ModuleFinder:
             self.ensure_fromlist(m, fromlist)
         return None
 
-    def determine_parent(self, caller):
-        self.msgin(4, "determine_parent", caller)
-        if not caller:
+    def determine_parent(self, caller, level=-1):
+        self.msgin(4, "determine_parent", caller, level)
+        if not caller or level == 0:
             self.msgout(4, "determine_parent -> None")
             return None
         pname = caller.__name__
+        if level >= 1: # relative import
+            if caller.__path__:
+                level -= 1
+            if level == 0:
+                parent = self.modules[pname]
+                assert parent is caller
+                self.msgout(4, "determine_parent ->", parent)
+                return parent
+            if pname.count(".") < level:
+                raise ImportError, "relative importpath too deep"
+            pname = ".".join(pname.split(".")[:-level])
+            parent = self.modules[pname]
+            self.msgout(4, "determine_parent ->", parent)
+            return parent
         if caller.__path__:
             parent = self.modules[pname]
             assert caller is parent
@@ -294,13 +310,13 @@ class ModuleFinder:
             self.badmodules[name] = {}
         self.badmodules[name][caller.__name__] = 1
 
-    def _safe_import_hook(self, name, caller, fromlist):
+    def _safe_import_hook(self, name, caller, fromlist, level=-1):
         # wrapper for self.import_hook() that won't raise ImportError
         if name in self.badmodules:
             self._add_badmodule(name, caller)
             return
         try:
-            self.import_hook(name, caller)
+            self.import_hook(name, caller, level=level)
         except ImportError, msg:
             self.msg(2, "ImportError:", str(msg))
             self._add_badmodule(name, caller)
@@ -311,38 +327,87 @@ class ModuleFinder:
                         self._add_badmodule(sub, caller)
                         continue
                     try:
-                        self.import_hook(name, caller, [sub])
+                        self.import_hook(name, caller, [sub], level=level)
                     except ImportError, msg:
                         self.msg(2, "ImportError:", str(msg))
                         fullname = name + "." + sub
                         self._add_badmodule(fullname, caller)
 
+    def scan_opcodes(self, co,
+                     unpack = struct.unpack):
+        # Scan the code, and yield 'interesting' opcode combinations
+        # Version for Python 2.4 and older
+        code = co.co_code
+        names = co.co_names
+        consts = co.co_consts
+        while code:
+            c = code[0]
+            if c in STORE_OPS:
+                oparg, = unpack('<H', code[1:3])
+                yield "store", (names[oparg],)
+                code = code[3:]
+                continue
+            if c == LOAD_CONST and code[3] == IMPORT_NAME:
+                oparg_1, oparg_2 = unpack('<xHxH', code[:6])
+                yield "import", (consts[oparg_1], names[oparg_2])
+                code = code[6:]
+                continue
+            if c >= HAVE_ARGUMENT:
+                code = code[3:]
+            else:
+                code = code[1:]
+
+    def scan_opcodes_25(self, co,
+                     unpack = struct.unpack):
+        # Scan the code, and yield 'interesting' opcode combinations
+        # Python 2.5 version (has absolute and relative imports)
+        code = co.co_code
+        names = co.co_names
+        consts = co.co_consts
+        LOAD_LOAD_AND_IMPORT = LOAD_CONST + LOAD_CONST + IMPORT_NAME
+        while code:
+            c = code[0]
+            if c in STORE_OPS:
+                oparg, = unpack('<H', code[1:3])
+                yield "store", (names[oparg],)
+                code = code[3:]
+                continue
+            if code[:9:3] == LOAD_LOAD_AND_IMPORT:
+                oparg_1, oparg_2, oparg_3 = unpack('<xHxHxH', code[:9])
+                level = consts[oparg_1]
+                if level == -1: # normal import
+                    yield "import", (consts[oparg_2], names[oparg_3])
+                elif level == 0: # absolute import
+                    yield "absolute_import", (consts[oparg_2], names[oparg_3])
+                else: # relative import
+                    yield "relative_import", (level, consts[oparg_2], names[oparg_3])
+                code = code[9:]
+                continue
+            if c >= HAVE_ARGUMENT:
+                code = code[3:]
+            else:
+                code = code[1:]
+
     def scan_code(self, co, m):
         code = co.co_code
-        n = len(code)
-        i = 0
-        fromlist = None
-        while i < n:
-            c = code[i]
-            i = i+1
-            op = ord(c)
-            if op >= dis.HAVE_ARGUMENT:
-                oparg = ord(code[i]) + ord(code[i+1])*256
-                i = i+2
-            if op == LOAD_CONST:
-                # An IMPORT_NAME is always preceded by a LOAD_CONST, it's
-                # a tuple of "from" names, or None for a regular import.
-                # The tuple may contain "*" for "from <mod> import *"
-                fromlist = co.co_consts[oparg]
-            elif op == IMPORT_NAME:
-                assert fromlist is None or type(fromlist) is tuple
-                name = co.co_names[oparg]
+        if sys.version_info >= (2, 5):
+            scanner = self.scan_opcodes_25
+        else:
+            scanner = self.scan_opcodes
+        for what, args in scanner(co):
+            if what == "store":
+                name, = args
+                m.globalnames[name] = 1
+            elif what in ("import", "absolute_import"):
+                fromlist, name = args
                 have_star = 0
                 if fromlist is not None:
                     if "*" in fromlist:
                         have_star = 1
                     fromlist = [f for f in fromlist if f != "*"]
-                self._safe_import_hook(name, m, fromlist)
+                if what == "absolute_import": level = 0
+                else: level = -1
+                self._safe_import_hook(name, m, fromlist, level=level)
                 if have_star:
                     # We've encountered an "import *". If it is a Python module,
                     # the code has already been parsed and we can suck out the
@@ -362,10 +427,17 @@ class ModuleFinder:
                             m.starimports[name] = 1
                     else:
                         m.starimports[name] = 1
-            elif op in STORE_OPS:
-                # keep track of all global names that are assigned to
-                name = co.co_names[oparg]
-                m.globalnames[name] = 1
+            elif what == "relative_import":
+                level, fromlist, name = args
+                if name:
+                    self._safe_import_hook(name, m, fromlist, level=level)
+                else:
+                    parent = self.determine_parent(m, level=level)
+                    self._safe_import_hook(parent.__name__, None, fromlist, level=0)
+            else:
+                # We don't expect anything else from the generator.
+                raise RuntimeError(what)
+
         for c in co.co_consts:
             if isinstance(c, type(co)):
                 self.scan_code(c, m)
