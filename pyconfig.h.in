@@ -703,9 +703,6 @@
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
 
-/* Define to 1 if you have the <values.h> header file. */
-#undef HAVE_VALUES_H
-
 /* Define to 1 if you have the `wait3' function. */
 #undef HAVE_WAIT3
 
