@@ -156,6 +156,7 @@ Library
 - fixed a bug with bsddb.DB.stat: the flags and txn keyword arguments
   were transposed.
 
+
 Extension Modules
 -----------------
 
@@ -225,8 +226,10 @@ Documentation
   to a newly created list object and add notes that this isn't a good idea.
 
 
-Tools
------
+Tools/Demos
+-----------
+
+- Patch #1552024: add decorator support to unparse.py demo script.
 
 - Make auto-generated python.vim file list built-ins and exceptions in
   alphatbetical order.  Makes output more deterministic and easier to tell if
