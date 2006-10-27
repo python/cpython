@@ -712,14 +712,15 @@ read until EOF. The return value is a string of the bytes read.
 \end{methoddesc}
 
 \begin{methoddesc}{server}{}
-Returns a string containing the ASN.1 distinguished name identifying the 
-server's certificate.  (See below for an example
-showing what distinguished names look like.)
+Returns a string describing the server's certificate.
+Useful for debugging purposes; do not parse the content of this string
+because its format can't be parsed unambiguously.
 \end{methoddesc}
 
 \begin{methoddesc}{issuer}{}
-Returns a string containing the ASN.1 distinguished name identifying the
-issuer of the server's certificate.
+Returns a string describing the issuer of the server's certificate.
+Useful for debugging purposes; do not parse the content of this string
+because its format can't be parsed unambiguously.
 \end{methoddesc}
 
 \subsection{Example \label{socket-example}}
