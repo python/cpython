@@ -67,9 +67,10 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        Python 3000:   3000
        	              3010 (removed UNARY_CONVERT)
 		      3020 (added BUILD_SET)
+		      3030 (added keyword-only parameters)
 .
 */
-#define MAGIC (3020 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (3030 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the

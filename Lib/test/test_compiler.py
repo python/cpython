@@ -19,36 +19,51 @@ class CompilerTest(unittest.TestCase):
         libdir = os.path.dirname(unittest.__file__)
         testdir = os.path.dirname(test.test_support.__file__)
 
-        for dir in [libdir, testdir]:
-            for basename in os.listdir(dir):
-                # Print still working message since this test can be really slow
-                if next_time <= time.time():
-                    next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
-                    print >>sys.__stdout__, \
-                       '  testCompileLibrary still working, be patient...'
-                    sys.__stdout__.flush()
+##        for dir in [libdir, testdir]:
+##            for basename in os.listdir(dir):
+##                # Print still working message since this test can be really slow
+##                if next_time <= time.time():
+##                    next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
+##                    print >>sys.__stdout__, \
+##                       '  testCompileLibrary still working, be patient...'
+##                    sys.__stdout__.flush()
+##
+##                if not basename.endswith(".py"):
+##                    continue
+##                if not TEST_ALL and random() < 0.98:
+##                    continue
+##                path = os.path.join(dir, basename)
+##                if test.test_support.verbose:
+##                    print "compiling", path
+##                f = open(path, "U")
+##                buf = f.read()
+##                f.close()
+##                if "badsyntax" in basename or "bad_coding" in basename:
+##                    self.assertRaises(SyntaxError, compiler.compile,
+##                                      buf, basename, "exec")
+##                else:
+##                    try:
+##                        compiler.compile(buf, basename, "exec")
+##                    except Exception, e:
+##                        args = list(e.args)
+##                        args[0] += "[in file %s]" % basename
+##                        e.args = tuple(args)
+##                        raise
 
-                if not basename.endswith(".py"):
-                    continue
-                if not TEST_ALL and random() < 0.98:
-                    continue
-                path = os.path.join(dir, basename)
-                if test.test_support.verbose:
-                    print "compiling", path
-                f = open(path, "U")
-                buf = f.read()
-                f.close()
-                if "badsyntax" in basename or "bad_coding" in basename:
-                    self.assertRaises(SyntaxError, compiler.compile,
-                                      buf, basename, "exec")
-                else:
-                    try:
-                        compiler.compile(buf, basename, "exec")
-                    except Exception, e:
-                        args = list(e.args)
-                        args[0] += "[in file %s]" % basename
-                        e.args = tuple(args)
-                        raise
+        path = "/home/jiwon/p3yk/Lib/test/test_keywordonlyarg.py"
+        if test.test_support.verbose:
+            print "compiling", path
+        f = open(path, "U")
+        buf = f.read()
+        f.close()
+        #try:
+        compiler.compile(buf, "test_keywordonlyarg.py", "exec")
+        #except Exception, e:
+        #    args = list(e.args)
+        #    args[0] += "[in file %s]" % path
+        #    e.args = tuple(args)
+        #    raise
+
 
     def testNewClassSyntax(self):
         compiler.compile("class foo():pass\n\n","<string>","exec")

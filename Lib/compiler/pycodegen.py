@@ -378,6 +378,12 @@ class CodeGenerator:
         walk(node.code, gen)
         gen.finish()
         self.set_lineno(node)
+        for keyword in node.kwonlyargs:
+            default = keyword.expr
+            if isinstance(default, ast.EmptyNode):
+                continue
+            self.emit('LOAD_CONST', keyword.name)
+            self.visit(default)
         for default in node.defaults:
             self.visit(default)
         self._makeClosure(gen, len(node.defaults))
@@ -1320,7 +1326,9 @@ class AbstractFunctionCode:
             name = func.name
 
         args, hasTupleArg = generateArgList(func.argnames)
+        kwonlyargs = generateKwonlyArgList(func.kwonlyargs)
         self.graph = pyassem.PyFlowGraph(name, func.filename, args,
+                                         kwonlyargs=kwonlyargs,
                                          optimized=1)
         self.isLambda = isLambda
         self.super_init()
@@ -1456,6 +1464,13 @@ def generateArgList(arglist):
             raise ValueError, "unexpect argument type:", elt
     return args + extra, count
 
+def generateKwonlyArgList(keywordOnlyArgs):
+    kwonlyargs = {}
+    for elt in keywordOnlyArgs:
+        assert isinstance(elt, ast.Keyword)
+        kwonlyargs[elt.name] = elt.expr
+    return kwonlyargs
+    
 def findOp(node):
     """Find the op (DELETE, LOAD, STORE) in an AssTuple tree"""
     v = OpFinder()

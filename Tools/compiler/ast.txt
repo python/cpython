@@ -12,8 +12,8 @@
 Module: doc*, node
 Stmt: nodes!
 Decorators: nodes!
-Function: decorators&, name*, argnames*, defaults!, flags*, doc*, code
-Lambda: argnames*, defaults!, flags*, code
+Function: decorators&, name*, argnames*, defaults!, kwonlyargs*, flags*, doc*, code
+Lambda: argnames*, defaults!, kwonlyargs*, flags*, code
 Class: name*, bases!, doc*, code
 Pass: 
 Break: 
@@ -97,6 +97,7 @@ init(Lambda):
 init(GenExpr):
     self.argnames = ['.0']
     self.varargs = self.kwargs = None
+    self.kwonlyargs = ()
 
 init(GenExprFor):
     self.is_outmost = False

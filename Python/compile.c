@@ -115,6 +115,7 @@ struct compiler_unit {
 	PyObject *u_private;	/* for private name mangling */
 
 	int u_argcount;	   /* number of arguments for block */ 
+	int u_kwonlyargcount; /* number of keyword only arguments for block */
     /* Pointer to the most recently allocated block.  By following b_list
        members, you can reach all early allocated blocks. */
 	basicblock *u_blocks;
@@ -494,6 +495,7 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
 	}
 	memset(u, 0, sizeof(struct compiler_unit));
 	u->u_argcount = 0;
+	u->u_kwonlyargcount = 0;
 	u->u_ste = PySymtable_Lookup(c->c_st, key);
 	if (!u->u_ste) {
 		compiler_unit_free(u);
@@ -896,9 +898,9 @@ opcode_stack_effect(int opcode, int oparg)
 			return -NARGS(oparg)-1;
 		case CALL_FUNCTION_VAR_KW:
 			return -NARGS(oparg)-2;
-#undef NARGS
 		case MAKE_FUNCTION:
-			return -oparg;
+			return -NARGS(oparg);
+#undef NARGS
 		case BUILD_SLICE:
 			if (oparg == 3)
 				return -2;
@@ -1347,6 +1349,25 @@ compiler_arguments(struct compiler *c, arguments_ty args)
 }
 
 static int
+compiler_visit_kwonlydefaults(struct compiler *c, asdl_seq *kwonlyargs,
+	                      asdl_seq *kw_defaults)
+{
+	int i, default_count = 0;
+	for (i = 0; i < asdl_seq_LEN(kwonlyargs); i++) {
+		expr_ty arg = asdl_seq_GET(kwonlyargs, i);
+		expr_ty default_ = asdl_seq_GET(kw_defaults, i);
+		if (default_) {
+			ADDOP_O(c, LOAD_CONST, arg->v.Name.id, consts);
+			if (!compiler_visit_expr(c, default_)) {
+			    return -1;
+			}
+			default_count++;
+		}
+	}
+	return default_count;
+}
+
+static int
 compiler_function(struct compiler *c, stmt_ty s)
 {
 	PyCodeObject *co;
@@ -1354,14 +1375,22 @@ compiler_function(struct compiler *c, stmt_ty s)
 	arguments_ty args = s->v.FunctionDef.args;
 	asdl_seq* decos = s->v.FunctionDef.decorators;
 	stmt_ty st;
-	int i, n, docstring;
+	int i, n, docstring, kw_default_count = 0, arglength;
 
 	assert(s->kind == FunctionDef_kind);
 
 	if (!compiler_decorators(c, decos))
 		return 0;
+	if (args->kwonlyargs) {
+		int res = compiler_visit_kwonlydefaults(c, args->kwonlyargs,
+						        args->kw_defaults);
+		if (res < 0)
+			return 0;
+		kw_default_count = res;
+	}
 	if (args->defaults)
 		VISIT_SEQ(c, expr, args->defaults);
+
 	if (!compiler_enter_scope(c, s->v.FunctionDef.name, (void *)s,
 				  s->lineno))
 		return 0;
@@ -1379,6 +1408,7 @@ compiler_function(struct compiler *c, stmt_ty s)
 	compiler_arguments(c, args);
 
 	c->u->u_argcount = asdl_seq_LEN(args->args);
+	c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
 	n = asdl_seq_LEN(s->v.FunctionDef.body);
 	/* if there was a docstring, we need to skip the first statement */
 	for (i = docstring; i < n; i++) {
@@ -1390,7 +1420,9 @@ compiler_function(struct compiler *c, stmt_ty s)
 	if (co == NULL)
 		return 0;
 
-	compiler_make_closure(c, co, asdl_seq_LEN(args->defaults));
+	arglength = asdl_seq_LEN(args->defaults);
+	arglength |= kw_default_count << 8;
+	compiler_make_closure(c, co, arglength);
 	Py_DECREF(co);
 
 	for (i = 0; i < asdl_seq_LEN(decos); i++) {
@@ -1485,6 +1517,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
 {
 	PyCodeObject *co;
 	static identifier name;
+	int kw_default_count = 0, arglength;
 	arguments_ty args = e->v.Lambda.args;
 	assert(e->kind == Lambda_kind);
 
@@ -1494,6 +1527,12 @@ compiler_lambda(struct compiler *c, expr_ty e)
 			return 0;
 	}
 
+	if (args->kwonlyargs) {
+		int res = compiler_visit_kwonlydefaults(c, args->kwonlyargs,
+						        args->kw_defaults);
+		if (res < 0) return 0;
+		kw_default_count = res;
+	}
 	if (args->defaults)
 		VISIT_SEQ(c, expr, args->defaults);
 	if (!compiler_enter_scope(c, name, (void *)e, e->lineno))
@@ -1503,6 +1542,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
 	compiler_arguments(c, args);
 	
 	c->u->u_argcount = asdl_seq_LEN(args->args);
+	c->u->u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
 	VISIT_IN_SCOPE(c, expr, e->v.Lambda.body);
 	ADDOP_IN_SCOPE(c, RETURN_VALUE);
 	co = assemble(c, 1);
@@ -1510,7 +1550,9 @@ compiler_lambda(struct compiler *c, expr_ty e)
 	if (co == NULL)
 		return 0;
 
-	compiler_make_closure(c, co, asdl_seq_LEN(args->defaults));
+	arglength = asdl_seq_LEN(args->defaults);
+	arglength |= kw_default_count << 8;
+	compiler_make_closure(c, co, arglength);
 	Py_DECREF(co);
 
 	return 1;
@@ -3791,7 +3833,8 @@ makecode(struct compiler *c, struct assembler *a)
 	Py_DECREF(consts);
 	consts = tmp;
 
-	co = PyCode_New(c->u->u_argcount, nlocals, stackdepth(c), flags,
+	co = PyCode_New(c->u->u_argcount, c->u->u_kwonlyargcount,
+			nlocals, stackdepth(c), flags,
 			bytecode, consts, names, varnames,
 			freevars, cellvars,
 			filename, c->u->u_name,

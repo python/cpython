@@ -24,6 +24,7 @@ PyFunction_New(PyObject *code, PyObject *globals)
 		op->func_name = ((PyCodeObject *)code)->co_name;
 		Py_INCREF(op->func_name);
 		op->func_defaults = NULL; /* No default arguments */
+		op->func_kwdefaults = NULL; /* No keyword only defaults */
 		op->func_closure = NULL;
 		consts = ((PyCodeObject *)code)->co_consts;
 		if (PyTuple_Size(consts) >= 1) {
@@ -118,6 +119,38 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
 	}
 	Py_XDECREF(((PyFunctionObject *) op) -> func_defaults);
 	((PyFunctionObject *) op) -> func_defaults = defaults;
+	return 0;
+}
+
+PyObject *
+PyFunction_GetKwDefaults(PyObject *op)
+{
+	if (!PyFunction_Check(op)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	return ((PyFunctionObject *) op) -> func_kwdefaults;
+}
+
+int
+PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
+{
+	if (!PyFunction_Check(op)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	if (defaults == Py_None)
+		defaults = NULL;
+	else if (defaults && PyDict_Check(defaults)) {
+		Py_INCREF(defaults);
+	}
+	else {
+		PyErr_SetString(PyExc_SystemError,
+				"non-dict keyword only default args");
+		return -1;
+	}
+	Py_XDECREF(((PyFunctionObject *)op) -> func_kwdefaults);
+	((PyFunctionObject *) op) -> func_kwdefaults = defaults;
 	return 0;
 }
 
@@ -325,10 +358,49 @@ func_set_defaults(PyFunctionObject *op, PyObject *value)
 	return 0;
 }
 
+static PyObject *
+func_get_kwdefaults(PyFunctionObject *op)
+{
+	if (restricted())
+		return NULL;
+	if (op->func_kwdefaults == NULL) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	Py_INCREF(op->func_kwdefaults);
+	return op->func_kwdefaults;
+}
+
+static int
+func_set_kwdefaults(PyFunctionObject *op, PyObject *value)
+{
+	PyObject *tmp;
+    
+	if (restricted())
+		return -1;
+
+	if (value == Py_None)
+		value = NULL;
+	/* Legal to del f.func_defaults.
+	 * Can only set func_kwdefaults to NULL or a dict. */
+	if (value != NULL && !PyDict_Check(value)) {
+		PyErr_SetString(PyExc_TypeError,
+			"func_kwdefaults must be set to a dict object");
+		return -1;
+	}
+	tmp = op->func_kwdefaults;
+	Py_XINCREF(value);
+	op->func_kwdefaults = value;
+	Py_XDECREF(tmp);
+	return 0;
+}
+
 static PyGetSetDef func_getsetlist[] = {
         {"func_code", (getter)func_get_code, (setter)func_set_code},
         {"func_defaults", (getter)func_get_defaults,
 	 (setter)func_set_defaults},
+	{"func_kwdefaults", (getter)func_get_kwdefaults,
+	 (setter)func_set_kwdefaults},
 	{"func_dict", (getter)func_get_dict, (setter)func_set_dict},
 	{"__dict__", (getter)func_get_dict, (setter)func_set_dict},
 	{"func_name", (getter)func_get_name, (setter)func_set_name},
@@ -519,6 +591,7 @@ function_call(PyObject *func, PyObject *arg, PyObject *kw)
 		PyFunction_GET_GLOBALS(func), (PyObject *)NULL,
 		&PyTuple_GET_ITEM(arg, 0), PyTuple_Size(arg),
 		k, nk, d, nd,
+		PyFunction_GET_KW_DEFAULTS(func),
 		PyFunction_GET_CLOSURE(func));
 
 	if (k != NULL)

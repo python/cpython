@@ -349,6 +349,7 @@ w_object(PyObject *v, WFILE *p)
 		PyCodeObject *co = (PyCodeObject *)v;
 		w_byte(TYPE_CODE, p);
 		w_long(co->co_argcount, p);
+		w_long(co->co_kwonlyargcount, p);
 		w_long(co->co_nlocals, p);
 		w_long(co->co_stacksize, p);
 		w_long(co->co_flags, p);
@@ -815,6 +816,7 @@ r_object(RFILE *p)
 		}
 		else {
 			int argcount;
+			int kwonlyargcount;
 			int nlocals;
 			int stacksize;
 			int flags;
@@ -832,6 +834,7 @@ r_object(RFILE *p)
 			v = NULL;
 
 			argcount = r_long(p);
+			kwonlyargcount = r_long(p);
 			nlocals = r_long(p);
 			stacksize = r_long(p);
 			flags = r_long(p);
@@ -865,7 +868,8 @@ r_object(RFILE *p)
 				goto code_error;
 
 			v = (PyObject *) PyCode_New(
-					argcount, nlocals, stacksize, flags,
+					argcount, kwonlyargcount,
+					nlocals, stacksize, flags,
 					code, consts, names, varnames,
 					freevars, cellvars, filename, name,
 					firstlineno, lnotab);

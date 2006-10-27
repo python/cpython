@@ -9,6 +9,7 @@
 >>> dump(f.func_code)
 name: f
 argcount: 1
+kwonlyargcount: 0
 names: ()
 varnames: ('x', 'g')
 cellvars: ('x',)
@@ -20,6 +21,7 @@ consts: ('None', '<code object g>')
 >>> dump(f(4).func_code)
 name: g
 argcount: 1
+kwonlyargcount: 0
 names: ()
 varnames: ('y',)
 cellvars: ()
@@ -34,9 +36,11 @@ consts: ('None',)
 ...     c = a * b
 ...     return c
 ...
+
 >>> dump(h.func_code)
 name: h
 argcount: 2
+kwonlyargcount: 0
 names: ()
 varnames: ('x', 'y', 'a', 'b', 'c')
 cellvars: ()
@@ -53,6 +57,7 @@ consts: ('None',)
 >>> dump(attrs.func_code)
 name: attrs
 argcount: 1
+kwonlyargcount: 0
 names: ('attr1', 'attr2', 'attr3')
 varnames: ('obj',)
 cellvars: ()
@@ -70,6 +75,7 @@ consts: ('None',)
 >>> dump(optimize_away.func_code)
 name: optimize_away
 argcount: 0
+kwonlyargcount: 0
 names: ()
 varnames: ()
 cellvars: ()
@@ -77,6 +83,22 @@ freevars: ()
 nlocals: 0
 flags: 67
 consts: ("'doc string'", 'None')
+
+>>> def keywordonly_args(a,b,*,k1):
+...     return a,b,k1
+...
+
+>>> dump(keywordonly_args.func_code)
+name: keywordonly_args
+argcount: 2
+kwonlyargcount: 1
+names: ()
+varnames: ('a', 'b', 'k1')
+cellvars: ()
+freevars: ()
+nlocals: 3
+flags: 67
+consts: ('None',)
 
 """
 
@@ -91,8 +113,8 @@ def consts(t):
 
 def dump(co):
     """Print out a text representation of a code object."""
-    for attr in ["name", "argcount", "names", "varnames", "cellvars",
-                 "freevars", "nlocals", "flags"]:
+    for attr in ["name", "argcount", "kwonlyargcount", "names", "varnames",
+                 "cellvars", "freevars", "nlocals", "flags"]:
         print "%s: %s" % (attr, getattr(co, "co_" + attr))
     print "consts:", tuple(consts(co.co_consts))
 

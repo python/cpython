@@ -313,13 +313,15 @@ DONE = "DONE"
 class PyFlowGraph(FlowGraph):
     super_init = FlowGraph.__init__
 
-    def __init__(self, name, filename, args=(), optimized=0, klass=None):
+    def __init__(self, name, filename,
+                 args=(), kwonlyargs={}, optimized=0, klass=None):
         self.super_init()
         self.name = name
         self.filename = filename
         self.docstring = None
         self.args = args # XXX
         self.argcount = getArgCount(args)
+        self.kwonlyargs = kwonlyargs
         self.klass = klass
         if optimized:
             self.flags = CO_OPTIMIZED | CO_NEWLOCALS
@@ -595,7 +597,9 @@ class PyFlowGraph(FlowGraph):
         argcount = self.argcount
         if self.flags & CO_VARKEYWORDS:
             argcount = argcount - 1
-        return new.code(argcount, nlocals, self.stacksize, self.flags,
+        kwonlyargcount = len(self.kwonlyargs)
+        return new.code(argcount, kwonlyargcount,
+                        nlocals, self.stacksize, self.flags,
                         self.lnotab.getCode(), self.getConsts(),
                         tuple(self.names), tuple(self.varnames),
                         self.filename, self.name, self.lnotab.firstline,
@@ -804,7 +808,8 @@ class StackDepthTracker:
     def CALL_FUNCTION_VAR_KW(self, argc):
         return self.CALL_FUNCTION(argc)-2
     def MAKE_FUNCTION(self, argc):
-        return -argc
+        hi, lo = divmod(argc, 256)
+        return -(lo + hi * 2)
     def MAKE_CLOSURE(self, argc):
         # XXX need to account for free variables too!
         return -argc

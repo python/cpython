@@ -15,7 +15,7 @@ PyAPI_FUNC(PyObject *) PyEval_EvalCodeEx(PyCodeObject *co,
 					PyObject **args, int argc,
 					PyObject **kwds, int kwdc,
 					PyObject **defs, int defc,
-					PyObject *closure);
+					PyObject *kwdefs, PyObject *closure);
 
 PyAPI_FUNC(PyObject *) _PyEval_CallTracing(PyObject *func, PyObject *args);
 

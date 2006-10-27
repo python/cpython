@@ -1,4 +1,11 @@
 # Test the frozen module defined in frozen.c.
+# Currently test_frozen fails:
+#   Implementing pep3102(keyword only argument) needs changes in
+#   code object, which needs modification to marshal.
+#   However, to regenerate hard-coded marshal data in frozen.c,
+#   we need to run Tools/freeze/freeze.py, which currently doesn't work
+#   because Lib/modulefinder.py cannot handle relative module import
+#   This test will keep failing until Lib/modulefinder.py is fixed
 
 from test.test_support import TestFailed
 import sys, os

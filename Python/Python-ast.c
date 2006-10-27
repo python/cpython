@@ -333,8 +333,10 @@ static PyObject* ast2obj_arguments(void*);
 static char *arguments_fields[]={
         "args",
         "vararg",
+        "kwonlyargs",
         "kwarg",
         "defaults",
+        "kw_defaults",
 };
 static PyTypeObject *keyword_type;
 static PyObject* ast2obj_keyword(void*);
@@ -708,7 +710,7 @@ static int init_types(void)
         excepthandler_type = make_type("excepthandler", AST_type,
                                        excepthandler_fields, 5);
         if (!excepthandler_type) return 0;
-        arguments_type = make_type("arguments", AST_type, arguments_fields, 4);
+        arguments_type = make_type("arguments", AST_type, arguments_fields, 6);
         if (!arguments_type) return 0;
         keyword_type = make_type("keyword", AST_type, keyword_fields, 2);
         if (!keyword_type) return 0;
@@ -1828,8 +1830,8 @@ excepthandler(expr_ty type, expr_ty name, asdl_seq * body, int lineno, int
 }
 
 arguments_ty
-arguments(asdl_seq * args, identifier vararg, identifier kwarg, asdl_seq *
-          defaults, PyArena *arena)
+arguments(asdl_seq * args, identifier vararg, asdl_seq * kwonlyargs, identifier
+          kwarg, asdl_seq * defaults, asdl_seq * kw_defaults, PyArena *arena)
 {
         arguments_ty p;
         p = (arguments_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1839,8 +1841,10 @@ arguments(asdl_seq * args, identifier vararg, identifier kwarg, asdl_seq *
         }
         p->args = args;
         p->vararg = vararg;
+        p->kwonlyargs = kwonlyargs;
         p->kwarg = kwarg;
         p->defaults = defaults;
+        p->kw_defaults = kw_defaults;
         return p;
 }
 
@@ -2907,6 +2911,11 @@ ast2obj_arguments(void* _o)
         if (PyObject_SetAttrString(result, "vararg", value) == -1)
                 goto failed;
         Py_DECREF(value);
+        value = ast2obj_list(o->kwonlyargs, ast2obj_expr);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "kwonlyargs", value) == -1)
+                goto failed;
+        Py_DECREF(value);
         value = ast2obj_identifier(o->kwarg);
         if (!value) goto failed;
         if (PyObject_SetAttrString(result, "kwarg", value) == -1)
@@ -2915,6 +2924,11 @@ ast2obj_arguments(void* _o)
         value = ast2obj_list(o->defaults, ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttrString(result, "defaults", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_list(o->kw_defaults, ast2obj_expr);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "kw_defaults", value) == -1)
                 goto failed;
         Py_DECREF(value);
         return result;
@@ -2994,7 +3008,7 @@ init_ast(void)
         if (PyDict_SetItemString(d, "AST", (PyObject*)AST_type) < 0) return;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return;
-        if (PyModule_AddStringConstant(m, "__version__", "51631") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "51773") < 0)
                 return;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return;
         if (PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0)

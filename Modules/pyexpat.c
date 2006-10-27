@@ -279,6 +279,7 @@ getcode(enum HandlerTypes slot, char* func_name, int lineno)
         filename = PyString_FromString(__FILE__);
         handler_info[slot].tb_code =
             PyCode_New(0,		/* argcount */
+                       0,       /* kwonlyargcount */
                        0,		/* nlocals */
                        0,		/* stacksize */
                        0,		/* flags */

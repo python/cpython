@@ -151,9 +151,9 @@ def run_tests():
 
 #### EVERYTHING BELOW IS GENERATED #####
 exec_results = [
-('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, None, []), [('Pass', (1, 9))], [])]),
+('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, [], None, [], []), [('Pass', (1, 9))], [])]),
 ('Module', [('ClassDef', (1, 0), 'C', [], [('Pass', (1, 8))])]),
-('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, None, []), [('Return', (1, 8), ('Num', (1, 15), 1))], [])]),
+('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, [], None, [], []), [('Return', (1, 8), ('Num', (1, 15), 1))], [])]),
 ('Module', [('Delete', (1, 0), [('Name', (1, 4), 'v', ('Del',))])]),
 ('Module', [('Assign', (1, 0), [('Name', (1, 0), 'v', ('Store',))], ('Num', (1, 4), 1))]),
 ('Module', [('AugAssign', (1, 0), ('Name', (1, 0), 'v', ('Store',)), ('Add',), ('Num', (1, 5), 1))]),
@@ -180,7 +180,7 @@ eval_results = [
 ('Expression', ('BoolOp', (1, 0), ('And',), [('Name', (1, 0), 'a', ('Load',)), ('Name', (1, 6), 'b', ('Load',))])),
 ('Expression', ('BinOp', (1, 0), ('Name', (1, 0), 'a', ('Load',)), ('Add',), ('Name', (1, 4), 'b', ('Load',)))),
 ('Expression', ('UnaryOp', (1, 0), ('Not',), ('Name', (1, 4), 'v', ('Load',)))),
-('Expression', ('Lambda', (1, 0), ('arguments', [], None, None, []), ('Name', (1, 7), 'None', ('Load',)))),
+('Expression', ('Lambda', (1, 0), ('arguments', [], None, [], None, [], []), ('Name', (1, 7), 'None', ('Load',)))),
 ('Expression', ('Dict', (1, 0), [('Num', (1, 2), 1)], [('Num', (1, 4), 2)])),
 ('Expression', ('ListComp', (1, 1), ('Name', (1, 1), 'a', ('Load',)), [('comprehension', ('Name', (1, 7), 'b', ('Store',)), ('Name', (1, 12), 'c', ('Load',)), [('Name', (1, 17), 'd', ('Load',))])])),
 ('Expression', ('GeneratorExp', (1, 1), ('Name', (1, 1), 'a', ('Load',)), [('comprehension', ('Name', (1, 7), 'b', ('Store',)), ('Name', (1, 12), 'c', ('Load',)), [('Name', (1, 17), 'd', ('Load',))])])),
