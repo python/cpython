@@ -84,6 +84,8 @@ Core and builtins
 Library
 -------
 
+- Patch #1567274: Support SMTP over TLS.
+
 - Patch #1560695: Add .note.GNU-stack to ctypes' sysv.S so that
   ctypes isn't considered as requiring executable stacks.
 
