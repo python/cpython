@@ -105,6 +105,9 @@ Library
 - Bug #1565661: in webbrowser, split() the command for the default
   GNOME browser in case it is a command with args.
 
+- Bug #1575506: Single-file mailboxes didn't re-lock properly in
+  their flush() method.
+
 - Bug #1576241: fix functools.wraps() to work on built-in functions.
 
 - Fix a bug in traceback.format_exception_only() that led to an error
