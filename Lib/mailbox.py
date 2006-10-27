@@ -578,7 +578,7 @@ class _singlefileMailbox(Mailbox):
         self._toc = new_toc
         self._pending = False
         if self._locked:
-            _lock_file(new_file, dotlock=False)
+            _lock_file(self._file, dotlock=False)
 
     def _pre_mailbox_hook(self, f):
         """Called before writing the mailbox to file f."""
