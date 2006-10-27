@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1549049: Support long values in structmember, issue warnings
+  if the assigned value for structmember fields gets truncated.
+
 - Update the peephole optimizer to remove more dead code (jumps after returns)
   and inline unconditional jumps to returns.
 
