@@ -747,6 +747,22 @@ class _TestMboxMMDF(TestMailbox):
         self._box.lock()
         self._box.unlock()
 
+    def test_relock(self):
+        # Test case for bug #1575506: the mailbox class was locking the
+        # wrong file object in its flush() method.
+        msg = "Subject: sub\n\nbody\n"
+        key1 = self._box.add(msg)
+        self._box.flush()
+        self._box.close()
+        
+        self._box = self._factory(self._path)
+        self._box.lock()
+        key2 = self._box.add(msg)
+        self._box.flush()
+        self.assert_(self._box._locked)
+        self._box.close()
+        
+        
 
 class TestMbox(_TestMboxMMDF):
 
