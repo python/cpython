@@ -87,6 +87,9 @@ Core and builtins
 Library
 -------
 
+- Lib/modulefinder.py now handles absolute and relative imports
+  correctly.
+
 - Patch #1567274: Support SMTP over TLS.
 
 - Patch #1560695: Add .note.GNU-stack to ctypes' sysv.S so that
@@ -198,6 +201,8 @@ Extension Modules
 
 Tests
 -----
+
+- Added some tests for modulefinder.
 
 - Converted test_imp to use unittest.
 
