@@ -41,7 +41,8 @@ intern_strings(PyObject *tuple)
 
 
 PyCodeObject *
-PyCode_New(int argcount, int nlocals, int stacksize, int flags,
+PyCode_New(int argcount, int kwonlyargcount,
+	   int nlocals, int stacksize, int flags,
 	   PyObject *code, PyObject *consts, PyObject *names,
 	   PyObject *varnames, PyObject *freevars, PyObject *cellvars,
 	   PyObject *filename, PyObject *name, int firstlineno,
@@ -80,6 +81,7 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 	co = PyObject_NEW(PyCodeObject, &PyCode_Type);
 	if (co != NULL) {
 		co->co_argcount = argcount;
+		co->co_kwonlyargcount = kwonlyargcount;
 		co->co_nlocals = nlocals;
 		co->co_stacksize = stacksize;
 		co->co_flags = flags;
@@ -112,6 +114,7 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 
 static PyMemberDef code_memberlist[] = {
 	{"co_argcount",	T_INT,		OFF(co_argcount),	READONLY},
+	{"co_kwonlyargcount",	T_INT,	OFF(co_kwonlyargcount),	READONLY},
 	{"co_nlocals",	T_INT,		OFF(co_nlocals),	READONLY},
 	{"co_stacksize",T_INT,		OFF(co_stacksize),	READONLY},
 	{"co_flags",	T_INT,		OFF(co_flags),		READONLY},
@@ -182,6 +185,7 @@ static PyObject *
 code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
 	int argcount;
+	int kwonlyargcount;
 	int nlocals;
 	int stacksize;
 	int flags;
@@ -197,8 +201,9 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	int firstlineno;
 	PyObject *lnotab;
 
-	if (!PyArg_ParseTuple(args, "iiiiSO!O!O!SSiS|O!O!:code",
-			      &argcount, &nlocals, &stacksize, &flags,
+	if (!PyArg_ParseTuple(args, "iiiiiSO!O!O!SSiS|O!O!:code",
+			      &argcount, &kwonlyargcount,
+				  &nlocals, &stacksize, &flags,
 			      &code,
 			      &PyTuple_Type, &consts,
 			      &PyTuple_Type, &names,
@@ -216,6 +221,12 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 		goto cleanup;
 	}
 
+	if (kwonlyargcount < 0) {
+		PyErr_SetString(
+			PyExc_ValueError,
+			"code: kwonlyargcount must not be negative");
+		goto cleanup;
+	}
 	if (nlocals < 0) {
 		PyErr_SetString(
 			PyExc_ValueError,
@@ -242,7 +253,8 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	if (ourcellvars == NULL)
 		goto cleanup;
 
-	co = (PyObject *)PyCode_New(argcount, nlocals, stacksize, flags,
+	co = (PyObject *)PyCode_New(argcount, kwonlyargcount,
+				    nlocals, stacksize, flags,
 				    code, consts, ournames, ourvarnames,
 				    ourfreevars, ourcellvars, filename,
 				    name, firstlineno, lnotab);
@@ -312,6 +324,8 @@ code_richcompare(PyObject *self, PyObject *other, int op)
 	if (eq <= 0) goto unequal;
 	eq = co->co_argcount == cp->co_argcount;
 	if (!eq) goto unequal;
+	eq = co->co_kwonlyargcount == cp->co_kwonlyargcount;
+	if (!eq) goto unequal;
 	eq = co->co_nlocals == cp->co_nlocals;
 	if (!eq) goto unequal;
 	eq = co->co_flags == cp->co_flags;
@@ -369,7 +383,8 @@ code_hash(PyCodeObject *co)
 	h6 = PyObject_Hash(co->co_cellvars);
 	if (h6 == -1) return -1;
 	h = h0 ^ h1 ^ h2 ^ h3 ^ h4 ^ h5 ^ h6 ^
-		co->co_argcount ^ co->co_nlocals ^ co->co_flags;
+		co->co_argcount ^ co->co_kwonlyargcount ^
+		co->co_nlocals ^ co->co_flags;
 	if (h == -1) h = -2;
 	return h;
 }

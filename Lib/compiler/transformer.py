@@ -250,9 +250,9 @@ class Transformer:
         args = nodelist[-3][2]
 
         if args[0] == symbol.varargslist:
-            names, defaults, flags = self.com_arglist(args[1:])
+            names, defaults, kwonlyargs, flags = self.com_arglist(args[1:])
         else:
-            names = defaults = ()
+            names = defaults = kwonlyargs = ()
             flags = 0
         doc = self.get_docstring(nodelist[-1])
 
@@ -263,21 +263,23 @@ class Transformer:
             assert isinstance(code, Stmt)
             assert isinstance(code.nodes[0], Discard)
             del code.nodes[0]
-        return Function(decorators, name, names, defaults, flags, doc, code,
-                     lineno=lineno)
+        return Function(decorators, name, names, defaults,
+                        kwonlyargs, flags, doc, code, lineno=lineno)
 
     def lambdef(self, nodelist):
         # lambdef: 'lambda' [varargslist] ':' test
         if nodelist[2][0] == symbol.varargslist:
-            names, defaults, flags = self.com_arglist(nodelist[2][1:])
+            names, defaults, kwonlyargs, flags = \
+                                self.com_arglist(nodelist[2][1:])
         else:
-            names = defaults = ()
+            names = defaults = kwonlyargs = ()
             flags = 0
 
         # code for lambda
         code = self.com_node(nodelist[-1])
 
-        return Lambda(names, defaults, flags, code, lineno=nodelist[1][2])
+        return Lambda(names, defaults, kwonlyargs,
+                      flags, code, lineno=nodelist[1][2])
     old_lambdef = lambdef
 
     def classdef(self, nodelist):
@@ -783,13 +785,37 @@ class Transformer:
         # ('const', xxxx)) Nodes)
         return Discard(Const(None))
 
+    def keywordonlyargs(self, nodelist):
+        # (',' NAME ['=' test])*
+        #      ^^^
+        # ------+
+        kwonlyargs = []
+        i = 0
+        while i < len(nodelist):
+            default = EmptyNode()
+            node = nodelist[i]
+            #assert node[0] == token.COMMA
+            #node = nodelist[i+1]
+            if i+1 < len(nodelist) and nodelist[i+1][0] == token.EQUAL:
+                assert i+2 < len(nodelist)
+                default = self.com_node(nodelist[i+2])
+                i += 2
+            if node[0] == token.DOUBLESTAR:
+                return kwonlyargs, i
+            elif node[0] == token.NAME:
+                kwonlyargs.append(Keyword(node[1], default, lineno=node[2]))
+                i += 2
+        return kwonlyargs, i
+        
     def com_arglist(self, nodelist):
         # varargslist:
-        #     (fpdef ['=' test] ',')* ('*' NAME [',' '**' NAME] | '**' NAME)
-        #   | fpdef ['=' test] (',' fpdef ['=' test])* [',']
+        #     (fpdef ['=' test] ',')*
+        #      ('*' [NAME] (',' NAME '=' test)* [',' '**' NAME] | '**' NAME)
+        #      | fpdef ['=' test] (',' fpdef ['=' test])* [',']
         # fpdef: NAME | '(' fplist ')'
         # fplist: fpdef (',' fpdef)* [',']
         names = []
+        kwonlyargs = []
         defaults = []
         flags = 0
 
@@ -799,10 +825,22 @@ class Transformer:
             if node[0] == token.STAR or node[0] == token.DOUBLESTAR:
                 if node[0] == token.STAR:
                     node = nodelist[i+1]
-                    if node[0] == token.NAME:
+                    if node[0] == token.NAME: # vararg
                         names.append(node[1])
                         flags = flags | CO_VARARGS
                         i = i + 3
+                    else: # no vararg
+                        assert node[0] == token.COMMA
+                        i += 1
+                    #elif node[0] == token.COMMA:
+                    #    i += 1
+                    #    kwonlyargs, skip = self.keywordonlyargs(nodelist[i:])
+                    #    i += skip
+                    if nodelist[i][0] == token.NAME:
+                        kwonlyargs, skip = self.keywordonlyargs(nodelist[i:])
+                        i += skip
+
+                print "kwonlyargs:", kwonlyargs
 
                 if i < len(nodelist):
                     # should be DOUBLESTAR
@@ -831,7 +869,8 @@ class Transformer:
             # skip the comma
             i = i + 1
 
-        return names, defaults, flags
+        print "names:", names, "defaults:", defaults, "kwonlyargs:", kwonlyargs, "flags:", flags
+        return names, defaults, kwonlyargs, flags
 
     def com_fpdef(self, node):
         # fpdef: NAME | '(' fplist ')'

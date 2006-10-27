@@ -1105,13 +1105,13 @@ validate_testlist_safe(node *tree)
 }
 
 
-/* '*' NAME [',' '**' NAME] | '**' NAME
+/* '*' [NAME] (',' NAME ['=' test])* [',' '**' NAME] | '**' NAME
  */
 static int
 validate_varargslist_trailer(node *tree, int start)
 {
     int nch = NCH(tree);
-    int res = 0;
+    int res = 0, i;
     int sym;
 
     if (nch <= start) {
@@ -1121,15 +1121,40 @@ validate_varargslist_trailer(node *tree, int start)
     sym = TYPE(CHILD(tree, start));
     if (sym == STAR) {
         /*
-         *  ('*' NAME [',' '**' NAME]
+         * '*' [NAME] (',' NAME ['=' test])* [',' '**' NAME] | '**' NAME
          */
         if (nch-start == 2)
             res = validate_name(CHILD(tree, start+1), NULL);
-        else if (nch-start == 5)
+        else if (nch-start == 5 && TYPE(CHILD(tree, start+2)) == COMMA)
             res = (validate_name(CHILD(tree, start+1), NULL)
                    && validate_comma(CHILD(tree, start+2))
                    && validate_doublestar(CHILD(tree, start+3))
                    && validate_name(CHILD(tree, start+4), NULL));
+        else {
+            /* skip over [NAME] (',' NAME ['=' test])*  */
+            i = start + 1;
+	    if (TYPE(CHILD(tree, i)) == NAME) { /* skip over [NAME] */
+		i += 1;
+	    }
+            while (res && i+1 < nch) { /* validate  (',' NAME ['=' test])* */
+                res = validate_comma(CHILD(tree, i));
+                if (TYPE(CHILD(tree, i+1)) == DOUBLESTAR) 
+                    break;
+                res = res && validate_name(CHILD(tree, i+1), NULL);
+                if (res && i+2 < nch && TYPE(CHILD(tree, i+2)) == EQUAL) {
+                    res = res && (i+3 < nch) 
+                          && validate_test(CHILD(tree, i+3));
+                    i += 4;
+                }
+                else {
+                    i += 2;
+                }
+            }
+            /* [',' '**' NAME] */
+            if (res && i+1 < nch && TYPE(CHILD(tree, i+1)) == DOUBLESTAR) {
+                res = validate_name(CHILD(tree, i+2), NULL);
+            }
+        }
     }
     else if (sym == DOUBLESTAR) {
         /*
@@ -1148,9 +1173,8 @@ validate_varargslist_trailer(node *tree, int start)
  *
  *  varargslist:
  *      (fpdef ['=' test] ',')*
- *           ('*' NAME [',' '**' NAME]
- *         | '**' NAME)
- *    | fpdef ['=' test] (',' fpdef ['=' test])* [',']
+ *      ('*' [NAME] (',' NAME ['=' test])* [',' '**' NAME] | '**' NAME)
+ *      | fpdef ['=' test] (',' fpdef ['=' test])* [',']
  *
  */
 static int
@@ -1169,7 +1193,7 @@ validate_varargslist(node *tree)
     sym = TYPE(CHILD(tree, 0));
     if (sym == STAR || sym == DOUBLESTAR)
         /* whole thing matches:
-         *      '*' NAME [',' '**' NAME] | '**' NAME
+         *    '*' [NAME] (',' NAME ['=' test])* [',' '**' NAME] | '**' NAME
          */
         res = validate_varargslist_trailer(tree, 0);
     else if (sym == fpdef) {
@@ -1201,7 +1225,7 @@ validate_varargslist(node *tree)
                         break;
                 }
             }
-            /* ... '*' NAME [',' '**' NAME] | '**' NAME
+            /* .. ('*' [NAME] (',' NAME ['=' test])* [',' '**' NAME] | '**' NAME)
              * i --^^^
              */
             if (res)

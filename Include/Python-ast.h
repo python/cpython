@@ -328,8 +328,10 @@ struct _excepthandler {
 struct _arguments {
         asdl_seq *args;
         identifier vararg;
+        asdl_seq *kwonlyargs;
         identifier kwarg;
         asdl_seq *defaults;
+        asdl_seq *kw_defaults;
 };
 
 struct _keyword {
@@ -427,8 +429,9 @@ comprehension_ty comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs,
                                PyArena *arena);
 excepthandler_ty excepthandler(expr_ty type, expr_ty name, asdl_seq * body, int
                                lineno, int col_offset, PyArena *arena);
-arguments_ty arguments(asdl_seq * args, identifier vararg, identifier kwarg,
-                       asdl_seq * defaults, PyArena *arena);
+arguments_ty arguments(asdl_seq * args, identifier vararg, asdl_seq *
+                       kwonlyargs, identifier kwarg, asdl_seq * defaults,
+                       asdl_seq * kw_defaults, PyArena *arena);
 keyword_ty keyword(identifier arg, expr_ty value, PyArena *arena);
 alias_ty alias(identifier name, identifier asname, PyArena *arena);
 

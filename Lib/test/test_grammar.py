@@ -148,7 +148,8 @@ x = eval('1, 0 or 1')
 print 'funcdef'
 ### 'def' NAME parameters ':' suite
 ### parameters: '(' [varargslist] ')'
-### varargslist: (fpdef ['=' test] ',')* ('*' NAME [',' ('**'|'*' '*') NAME]
+### varargslist: (fpdef ['=' test] ',')* 
+###           ('*' (NAME|',' fpdef ['=' test]) [',' ('**'|'*' '*') NAME]
 ###            | ('**'|'*' '*') NAME)
 ###            | fpdef ['=' test] (',' fpdef ['=' test])* [',']
 ### fpdef: NAME | '(' fplist ')'
@@ -265,6 +266,16 @@ def d31v((x)): pass
 d31v(1)
 def d32v((x,)): pass
 d32v((1,))
+#keyword only argument tests
+def pos0key1(*, key): return key
+pos0key1(key=100)
+def pos2key2(p1, p2, *, k1, k2=100): return p1,p2,k1,k2
+pos2key2(1, 2, k1=100)
+pos2key2(1, 2, k1=100, k2=200)
+pos2key2(1, 2, k2=100, k1=200)
+def pos2key2dict(p1, p2, *, k1=100, k2, **kwarg): return p1,p2,k1,k2,kwarg
+pos2key2dict(1,2,k2=100,tokwarg1=100,tokwarg2=200)
+pos2key2dict(1,2,tokwarg1=100,tokwarg2=200, k2=100)
 
 ### lambdef: 'lambda' [varargslist] ':' test
 print 'lambdef'
@@ -279,6 +290,9 @@ l5 = lambda x, y, z=2: x + y + z
 verify(l5(1, 2) == 5)
 verify(l5(1, 2, 3) == 6)
 check_syntax("lambda x: x = 2")
+l6 = lambda x, y, *, k=20: x+y+k
+verify(l6(1,2) == 1+2+20)
+verify(l6(1,2,k=10) == 1+2+10)
 
 ### stmt: simple_stmt | compound_stmt
 # Tested below

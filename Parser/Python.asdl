@@ -100,8 +100,8 @@ module Python version "$Revision$"
 	excepthandler = (expr? type, expr? name, stmt* body, int lineno,
 	                 int col_offset)
 
-	arguments = (expr* args, identifier? vararg, 
-		     identifier? kwarg, expr* defaults)
+	arguments = (expr* args, identifier? vararg, expr* kwonlyargs,
+		         identifier? kwarg, expr* defaults, expr* kw_defaults)
 
         -- keyword arguments supplied to call
         keyword = (identifier arg, expr value)

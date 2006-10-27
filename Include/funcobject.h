@@ -23,6 +23,7 @@ typedef struct {
     PyObject *func_code;	/* A code object */
     PyObject *func_globals;	/* A dictionary (other mappings won't do) */
     PyObject *func_defaults;	/* NULL or a tuple */
+    PyObject *func_kwdefaults;	/* NULL or a dict */
     PyObject *func_closure;	/* NULL or a tuple of cell objects */
     PyObject *func_doc;		/* The __doc__ attribute, can be anything */
     PyObject *func_name;	/* The __name__ attribute, a string object */
@@ -47,6 +48,8 @@ PyAPI_FUNC(PyObject *) PyFunction_GetGlobals(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetModule(PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetDefaults(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetDefaults(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyFunction_GetKwDefaults(PyObject *);
+PyAPI_FUNC(int) PyFunction_SetKwDefaults(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetClosure(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetClosure(PyObject *, PyObject *);
 
@@ -60,6 +63,8 @@ PyAPI_FUNC(int) PyFunction_SetClosure(PyObject *, PyObject *);
 	(((PyFunctionObject *)func) -> func_module)
 #define PyFunction_GET_DEFAULTS(func) \
 	(((PyFunctionObject *)func) -> func_defaults)
+#define PyFunction_GET_KW_DEFAULTS(func) \
+	(((PyFunctionObject *)func) -> func_kwdefaults)
 #define PyFunction_GET_CLOSURE(func) \
 	(((PyFunctionObject *)func) -> func_closure)
 

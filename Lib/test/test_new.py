@@ -103,6 +103,7 @@ if hasattr(new, 'code'):
 
     c = f.func_code
     argcount = c.co_argcount
+    kwonlyargcount = c.co_kwonlyargcount
     nlocals = c.co_nlocals
     stacksize = c.co_stacksize
     flags = c.co_flags
@@ -117,17 +118,20 @@ if hasattr(new, 'code'):
     freevars = c.co_freevars
     cellvars = c.co_cellvars
 
-    d = new.code(argcount, nlocals, stacksize, flags, codestring,
+    d = new.code(argcount, kwonlyargcount,
+                 nlocals, stacksize, flags, codestring,
                  constants, names, varnames, filename, name,
                  firstlineno, lnotab, freevars, cellvars)
 
     # test backwards-compatibility version with no freevars or cellvars
-    d = new.code(argcount, nlocals, stacksize, flags, codestring,
+    d = new.code(argcount, kwonlyargcount,
+                 nlocals, stacksize, flags, codestring,
                  constants, names, varnames, filename, name,
                  firstlineno, lnotab)
 
     try: # this used to trigger a SystemError
-        d = new.code(-argcount, nlocals, stacksize, flags, codestring,
+        d = new.code(-argcount, kwonlyargcount,
+                     nlocals, stacksize, flags, codestring,
                      constants, names, varnames, filename, name,
                      firstlineno, lnotab)
     except ValueError:
@@ -136,7 +140,8 @@ if hasattr(new, 'code'):
         raise TestFailed, "negative co_argcount didn't trigger an exception"
 
     try: # this used to trigger a SystemError
-        d = new.code(argcount, -nlocals, stacksize, flags, codestring,
+        d = new.code(argcount, kwonlyargcount,
+                     -nlocals, stacksize, flags, codestring,
                      constants, names, varnames, filename, name,
                      firstlineno, lnotab)
     except ValueError:
@@ -145,7 +150,8 @@ if hasattr(new, 'code'):
         raise TestFailed, "negative co_nlocals didn't trigger an exception"
 
     try: # this used to trigger a Py_FatalError!
-        d = new.code(argcount, nlocals, stacksize, flags, codestring,
+        d = new.code(argcount, kwonlyargcount,
+                     nlocals, stacksize, flags, codestring,
                      constants, (5,), varnames, filename, name,
                      firstlineno, lnotab)
     except TypeError:
@@ -156,7 +162,8 @@ if hasattr(new, 'code'):
     # new.code used to be a way to mutate a tuple...
     class S(str): pass
     t = (S("ab"),)
-    d = new.code(argcount, nlocals, stacksize, flags, codestring,
+    d = new.code(argcount, kwonlyargcount,
+                 nlocals, stacksize, flags, codestring,
                  constants, t, varnames, filename, name,
                  firstlineno, lnotab)
     verify(type(t[0]) is S, "eek, tuple changed under us!")
