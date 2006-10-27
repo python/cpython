@@ -679,7 +679,8 @@ class PyBuildExt(build_ext):
                             # save the include directory with the db.h version
                             # (first occurrance only)
                             db_ver_inc_map[db_ver] = d
-                            print "db.h: found", db_ver, "in", d
+                            if db_setup_debug:
+                                print "db.h: found", db_ver, "in", d
                         else:
                             # we already found a header for this library version
                             if db_setup_debug: print "db.h: ignoring", d
@@ -719,8 +720,9 @@ class PyBuildExt(build_ext):
                         if db_setup_debug: print "db lib: ", dblib, "not found"
 
         except db_found:
-            print "db lib: using", db_ver, dblib
-            if db_setup_debug: print "db: lib dir", dblib_dir, "inc dir", db_incdir
+            if db_setup_debug:
+                print "db lib: using", db_ver, dblib
+                print "db: lib dir", dblib_dir, "inc dir", db_incdir
             db_incs = [db_incdir]
             dblibs = [dblib]
             # We add the runtime_library_dirs argument because the
@@ -741,7 +743,7 @@ class PyBuildExt(build_ext):
             dblib_dir = None
 
         # The sqlite interface
-        sqlite_setup_debug = True   # verbose debug prints from this script?
+        sqlite_setup_debug = False   # verbose debug prints from this script?
 
         # We hunt for #define SQLITE_VERSION "n.n.n"
         # We need to find >= sqlite version 3.0.8
@@ -773,7 +775,8 @@ class PyBuildExt(build_ext):
                                         for x in sqlite_version.split(".")])
                     if sqlite_version_tuple >= MIN_SQLITE_VERSION_NUMBER:
                         # we win!
-                        print "%s/sqlite3.h: version %s"%(d, sqlite_version)
+                        if sqlite_setup_debug:
+                            print "%s/sqlite3.h: version %s"%(d, sqlite_version)
                         sqlite_incdir = d
                         break
                     else:
