@@ -828,9 +828,9 @@ WindowsError_str(PyWindowsErrorObject *self)
             return NULL;
         }
 
-        if (self->myerrno) {
-            Py_INCREF(self->myerrno);
-            PyTuple_SET_ITEM(tuple, 0, self->myerrno);
+        if (self->winerror) {
+            Py_INCREF(self->winerror);
+            PyTuple_SET_ITEM(tuple, 0, self->winerror);
         }
         else {
             Py_INCREF(Py_None);
@@ -852,7 +852,7 @@ WindowsError_str(PyWindowsErrorObject *self)
         Py_DECREF(fmt);
         Py_DECREF(tuple);
     }
-    else if (self->myerrno && self->strerror) {
+    else if (self->winerror && self->strerror) {
         PyObject *fmt;
         PyObject *tuple;
 
@@ -866,9 +866,9 @@ WindowsError_str(PyWindowsErrorObject *self)
             return NULL;
         }
 
-        if (self->myerrno) {
-            Py_INCREF(self->myerrno);
-            PyTuple_SET_ITEM(tuple, 0, self->myerrno);
+        if (self->winerror) {
+            Py_INCREF(self->winerror);
+            PyTuple_SET_ITEM(tuple, 0, self->winerror);
         }
         else {
             Py_INCREF(Py_None);
