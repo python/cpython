@@ -183,6 +183,19 @@ class ExceptionTests(unittest.TestCase):
             test_capi1()
             test_capi2()
 
+    def test_WindowsError(self):
+        try:
+            WindowsError
+        except NameError:
+            pass
+        else:
+            self.failUnlessEqual(str(WindowsError(1001)),
+                                 "1001")
+            self.failUnlessEqual(str(WindowsError(1001, "message")),
+                                 "[Error 1001] message")
+            self.failUnlessEqual(WindowsError(1001, "message").errno, 22)
+            self.failUnlessEqual(WindowsError(1001, "message").winerror, 1001)
+
     def testAttributes(self):
         # test that exception attributes are happy
 
