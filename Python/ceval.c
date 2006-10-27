@@ -186,10 +186,10 @@ static int pcall[PCALL_NUM];
 PyObject *
 PyEval_GetCallStats(PyObject *self)
 {
-	return Py_BuildValue("iiiiiiiiii",
+	return Py_BuildValue("iiiiiiiiiii",
 			     pcall[0], pcall[1], pcall[2], pcall[3],
 			     pcall[4], pcall[5], pcall[6], pcall[7],
-			     pcall[8], pcall[9]);
+			     pcall[8], pcall[9], pcall[10]);
 }
 #else
 #define PCALL(O)
