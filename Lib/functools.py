@@ -32,7 +32,7 @@ def update_wrapper(wrapper,
     for attr in assigned:
         setattr(wrapper, attr, getattr(wrapped, attr))
     for attr in updated:
-        getattr(wrapper, attr).update(getattr(wrapped, attr))
+        getattr(wrapper, attr).update(getattr(wrapped, attr, {}))
     # Return the wrapper so this can be used as a decorator via partial()
     return wrapper
 
