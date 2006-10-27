@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1576174: WindowsError now displays the windows error code
+  again, no longer the posix error code.
+
 - Patch #1549049: Support long values in structmember, issue warnings
   if the assigned value for structmember fields gets truncated.
 
