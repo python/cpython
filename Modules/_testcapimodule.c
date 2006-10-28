@@ -667,6 +667,9 @@ test_thread_state(PyObject *self, PyObject *args)
 	PyThread_acquire_lock(thread_done, 1);  /* wait for thread to finish */
 	Py_END_ALLOW_THREADS
 
+	/* Release lock we acquired above.  This is required on HP-UX. */
+	PyThread_release_lock(thread_done);
+
 	PyThread_free_lock(thread_done);
 	Py_RETURN_NONE;
 }
