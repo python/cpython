@@ -307,6 +307,8 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 		else if (ep->me_key == dummy && freeslot == NULL)
 			freeslot = ep;
 	}
+	assert(0);	/* NOT REACHED */
+	return 0;
 }
 
 /*
@@ -366,6 +368,8 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 		if (ep->me_key == dummy && freeslot == NULL)
 			freeslot = ep;
 	}
+	assert(0);	/* NOT REACHED */
+	return 0;
 }
 
 /*
