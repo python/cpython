@@ -3131,8 +3131,11 @@ static int
 compiler_push_fblock(struct compiler *c, enum fblocktype t, basicblock *b)
 {
 	struct fblockinfo *f;
-	if (c->u->u_nfblocks >= CO_MAXBLOCKS)
+	if (c->u->u_nfblocks >= CO_MAXBLOCKS) {
+		PyErr_SetString(PyExc_SystemError,
+				"too many statically nested blocks");
 		return 0;
+	}
 	f = &c->u->u_fblock[c->u->u_nfblocks++];
 	f->fb_type = t;
 	f->fb_block = b;
