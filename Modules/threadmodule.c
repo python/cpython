@@ -25,6 +25,7 @@ typedef struct {
 static void
 lock_dealloc(lockobject *self)
 {
+	assert(self->lock_lock);
 	/* Unlock the lock so it's safe to free it */
 	PyThread_acquire_lock(self->lock_lock, 0);
 	PyThread_release_lock(self->lock_lock);
