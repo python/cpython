@@ -379,8 +379,8 @@ test_support provides the following useful objects:
       point numbers when you expect them to only be approximately equal
       withing a fuzz factor (``test_support.FUZZ``, which defaults to 1e-6).
 
-    * ``check_syntax(statement)`` - make sure that the statement is *not*
-      correct Python syntax.
+    * ``check_syntax_error(testcase, statement)`` - make sure that the
+      statement is *not* correct Python syntax.
 
 
 Python and C statement coverage results are currently available at
