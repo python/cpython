@@ -2608,6 +2608,11 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 
 			garbage = (PyObject**)
 				PyMem_MALLOC(slicelength*sizeof(PyObject*));
+			if (!garbage) {
+				Py_DECREF(seq);
+				PyErr_NoMemory();
+				return -1;
+			}
 
 			selfitems = self->ob_item;
 			seqitems = PySequence_Fast_ITEMS(seq);
