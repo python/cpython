@@ -691,7 +691,8 @@ extremely desirable that it be this fast.
 
 #undef Py_ADDRESS_IN_RANGE
 
-#if defined(__GNUC__) && (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)
+#if defined(__GNUC__) && ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1) || \
+			  (__GNUC__ >= 4))
 #define Py_NO_INLINE __attribute__((__noinline__))
 #else
 #define Py_NO_INLINE
