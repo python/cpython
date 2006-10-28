@@ -257,6 +257,7 @@ class ModuleFinderTest(unittest.TestCase):
             self._do_test(relative_import_test_2)
 
 def test_main():
+    distutils.log.set_threshold(distutils.log.WARN)
     test_support.run_unittest(ModuleFinderTest)
 
 if __name__ == "__main__":
