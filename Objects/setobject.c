@@ -179,6 +179,8 @@ set_lookkey_string(PySetObject *so, PyObject *key, register long hash)
 		if (entry->key == dummy && freeslot == NULL)
 			freeslot = entry;
 	}
+	assert(0);	/* NOT REACHED */
+	return 0;
 }
 
 /*
