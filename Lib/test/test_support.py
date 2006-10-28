@@ -245,13 +245,13 @@ def sortdict(dict):
     withcommas = ", ".join(reprpairs)
     return "{%s}" % withcommas
 
-def check_syntax(statement):
+def check_syntax_error(testcase, statement):
     try:
-        compile(statement, '<string>', 'exec')
+        compile(statement, '<test string>', 'exec')
     except SyntaxError:
         pass
     else:
-        print 'Missing SyntaxError: "%s"' % statement
+        testcase.fail('Missing SyntaxError: "%s"' % statement)
 
 def open_urlresource(url):
     import urllib, urlparse
