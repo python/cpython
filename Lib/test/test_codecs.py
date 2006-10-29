@@ -910,6 +910,18 @@ class StreamReaderTest(unittest.TestCase):
         f = self.reader(self.stream)
         self.assertEquals(f.readlines(), [u'\ud55c\n', u'\uae00'])
 
+class EncodedFileTest(unittest.TestCase):
+    
+    def test_basic(self):
+        f = StringIO.StringIO('\xed\x95\x9c\n\xea\xb8\x80')
+        ef = codecs.EncodedFile(f, 'utf-16', 'utf-8')
+        self.assertEquals(ef.read(), '\xff\xfe\\\xd5\n\x00\x00\xae')
+
+        f = StringIO.StringIO()
+        ef = codecs.EncodedFile(f, 'utf-8', 'latin1')
+        ef.write('\xc3\xbc')
+        self.assertEquals(f.getvalue(), '\xfc')
+
 class Str2StrTest(unittest.TestCase):
 
     def test_read(self):
@@ -1214,6 +1226,19 @@ class CharmapTest(unittest.TestCase):
             (u"", len(allbytes))
         )
 
+class WithStmtTest(unittest.TestCase):
+    def test_encodedfile(self):
+        f = StringIO.StringIO("\xc3\xbc")
+        with codecs.EncodedFile(f, "latin-1", "utf-8") as ef:
+            self.assertEquals(ef.read(), "\xfc")
+
+    def test_streamreaderwriter(self):
+        f = StringIO.StringIO("\xc3\xbc")
+        info = codecs.lookup("utf-8")
+        with codecs.StreamReaderWriter(f, info.streamreader,
+                                       info.streamwriter, 'strict') as srw:
+            self.assertEquals(srw.read(), u"\xfc")
+
 
 def test_main():
     test_support.run_unittest(
@@ -1234,10 +1259,12 @@ def test_main():
         IDNACodecTest,
         CodecsModuleTest,
         StreamReaderTest,
+        EncodedFileTest,
         Str2StrTest,
         BasicUnicodeTest,
         BasicStrTest,
-        CharmapTest
+        CharmapTest,
+        WithStmtTest,
     )
 
 
