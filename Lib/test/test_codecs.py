@@ -915,7 +915,7 @@ class EncodedFileTest(unittest.TestCase):
     
     def test_basic(self):
         f = StringIO.StringIO('\xed\x95\x9c\n\xea\xb8\x80')
-        ef = codecs.EncodedFile(f, 'utf-16', 'utf-8')
+        ef = codecs.EncodedFile(f, 'utf-16-le', 'utf-8')
         self.assertEquals(ef.read(), '\xff\xfe\\\xd5\n\x00\x00\xae')
 
         f = StringIO.StringIO()
