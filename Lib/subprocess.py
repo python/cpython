@@ -965,6 +965,8 @@ class Popen(object):
 
             if isinstance(args, types.StringTypes):
                 args = [args]
+            else:
+                args = list(args)
 
             if shell:
                 args = ["/bin/sh", "-c"] + args
