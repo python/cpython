@@ -3,13 +3,13 @@
 import os, unittest
 from test.test_support import run_unittest, TestSkipped
 
+if not hasattr(os, "openpty"):
+    raise TestSkipped, "No openpty() available."
+
+
 class OpenptyTest(unittest.TestCase):
     def test(self):
-        try:
-            master, slave = os.openpty()
-        except AttributeError:
-            raise TestSkipped, "No openpty() available."
-
+        master, slave = os.openpty()
         if not os.isatty(slave):
             self.fail("Slave-end of pty is not a terminal.")
 
