@@ -52,14 +52,35 @@ class Codec(codecs.Codec):
         return bz2_decode(input, errors)
 
 class IncrementalEncoder(codecs.IncrementalEncoder):
+    def __init__(self, errors='strict'):
+        assert errors == 'strict'
+        self.errors = errors
+        self.compressobj = bz2.BZ2Compressor()
+
     def encode(self, input, final=False):
-        assert self.errors == 'strict'
-        return bz2.compress(input)
+        if final:
+            c = self.compressobj.compress(input)
+            return c + self.compressobj.flush()
+        else:
+            return self.compressobj.compress(input)
+
+    def reset(self):
+        self.compressobj = bz2.BZ2Compressor()
 
 class IncrementalDecoder(codecs.IncrementalDecoder):
+    def __init__(self, errors='strict'):
+        assert errors == 'strict'
+        self.errors = errors
+        self.decompressobj = bz2.BZ2Decompressor()
+
     def decode(self, input, final=False):
-        assert self.errors == 'strict'
-        return bz2.decompress(input)
+        try:
+            return self.decompressobj.decompress(input)
+        except EOFError:
+            return ''
+
+    def reset(self):
+        self.decompressobj = bz2.BZ2Decompressor()
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass
