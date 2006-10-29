@@ -329,6 +329,12 @@ class StreamWriter(Codec):
         """
         return getattr(self.stream, name)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, tb):
+        self.stream.close()
+
 ###
 
 class StreamReader(Codec):
@@ -568,6 +574,12 @@ class StreamReader(Codec):
         """
         return getattr(self.stream, name)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, tb):
+        self.stream.close()
+
 ###
 
 class StreamReaderWriter:
@@ -640,6 +652,14 @@ class StreamReaderWriter:
         """ Inherit all other methods from the underlying stream.
         """
         return getattr(self.stream, name)
+
+    # these are needed to make "with codecs.open(...)" work properly
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, tb):
+        self.stream.close()
 
 ###
 
@@ -751,6 +771,12 @@ class StreamRecoder:
         """
         return getattr(self.stream, name)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, tb):
+        self.stream.close()
+
 ### Shortcuts
 
 def open(filename, mode='rb', encoding=None, errors='strict', buffering=1):
@@ -824,9 +850,10 @@ def EncodedFile(file, data_encoding, file_encoding=None, errors='strict'):
     """
     if file_encoding is None:
         file_encoding = data_encoding
-    info = lookup(data_encoding)
-    sr = StreamRecoder(file, info.encode, info.decode,
-                       info.streamreader, info.streamwriter, errors)
+    data_info = lookup(data_encoding)
+    file_info = lookup(file_encoding)
+    sr = StreamRecoder(file, data_info.encode, data_info.decode,
+                       file_info.streamreader, file_info.streamwriter, errors)
     # Add attributes to simplify introspection
     sr.data_encoding = data_encoding
     sr.file_encoding = file_encoding
