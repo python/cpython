@@ -1068,6 +1068,7 @@ broken_incremental_coders = broken_unicode_with_streams[:]
 only_strict_mode = [
     "idna",
     "zlib_codec",
+    "bz2_codec",
 ]
 
 try:
