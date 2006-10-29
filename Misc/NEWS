@@ -89,6 +89,10 @@ Core and builtins
 Library
 -------
 
+- Bug #1586448: the compiler module now emits the same bytecode for
+  list comprehensions as the builtin compiler, using the LIST_APPEND
+  opcode.
+
 - Fix codecs.EncodedFile which did not use file_encoding in 2.5.0, and
   fix all codecs file wrappers to work correctly with the "with"
   statement (bug #1586513).
