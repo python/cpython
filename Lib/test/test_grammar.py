@@ -544,10 +544,9 @@ hello world
             assert 0, "msg"
         except AssertionError, e:
             self.assertEquals(e.args[0], "msg")
-        # we can not expect an assertion error to be raised
-        # if the tests are run in an optimized python
-        #else:
-        #    self.fail("AssertionError not raised by assert 0")
+        else:
+            if __debug__:
+                self.fail("AssertionError not raised by assert 0")
 
     ### compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
     # Tested below
