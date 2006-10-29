@@ -1064,6 +1064,12 @@ broken_unicode_with_streams = [
 ]
 broken_incremental_coders = broken_unicode_with_streams[:]
 
+# The following encodings only support "strict" mode
+only_strict_mode = [
+    "idna",
+    "zlib_codec",
+]
+
 try:
     import bz2
 except ImportError:
@@ -1152,6 +1158,24 @@ class BasicUnicodeTest(unittest.TestCase):
                     # check iterencode()/iterdecode() with empty string
                     result = u"".join(codecs.iterdecode(codecs.iterencode(u"", encoding), encoding))
                     self.assertEqual(result, u"")
+
+                if encoding not in only_strict_mode:
+                    # check incremental decoder/encoder with errors argument
+                    try:
+                        encoder = codecs.getincrementalencoder(encoding)("ignore")
+                        cencoder = _testcapi.codec_incrementalencoder(encoding, "ignore")
+                    except LookupError: # no IncrementalEncoder
+                        pass
+                    else:
+                        encodedresult = "".join(encoder.encode(c) for c in s)
+                        decoder = codecs.getincrementaldecoder(encoding)("ignore")
+                        decodedresult = u"".join(decoder.decode(c) for c in encodedresult)
+                        self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
+    
+                        encodedresult = "".join(cencoder.encode(c) for c in s)
+                        cdecoder = _testcapi.codec_incrementaldecoder(encoding, "ignore")
+                        decodedresult = u"".join(cdecoder.decode(c) for c in encodedresult)
+                        self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
 
     def test_seek(self):
         # all codecs should be able to encode these
