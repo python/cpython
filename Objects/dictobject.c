@@ -23,6 +23,7 @@ set_key_error(PyObject *arg)
 	if (!tup)
 		return; /* caller will expect error to be set anyway */
 	PyErr_SetObject(PyExc_KeyError, tup);
+	Py_DECREF(tup);
 }
 
 /* Define this out if you don't want conversion statistics on exit. */
