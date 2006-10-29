@@ -6,9 +6,10 @@
  * object:
  *   1. Checks for future statements.  See future.c
  *   2. Builds a symbol table.	See symtable.c.
- *   3. Generate code for basic blocks.	 See compiler_mod() in this file.
+ *   3. Generate code for basic blocks.  See compiler_mod() in this file.
  *   4. Assemble the basic blocks into final code.  See assemble() in
- *   this file.	 
+ *      this file.	 
+ *   5. Optimize the byte code (peephole optimizations).  See peephole.c
  *
  * Note that compiler_mod() suggests module, but the module ast type
  * (mod_ty) has cases for expressions and interactive statements.
@@ -16,7 +17,8 @@
  * CAUTION: The VISIT_* macros abort the current function when they
  * encounter a problem. So don't invoke them when there is memory
  * which needs to be released. Code blocks are OK, as the compiler
- * structure takes care of releasing those.
+ * structure takes care of releasing those.  Use the arena to manage
+ * objects.
  */
 
 #include "Python.h"
@@ -31,16 +33,6 @@
 #include "opcode.h"
 
 int Py_OptimizeFlag = 0;
-
-/*
-  ISSUES:
-
-  opcode_stack_effect() function should be reviewed since stack depth bugs
-  could be really hard to find later.
-
-  Dead code is being generated (i.e. after unconditional jumps).
-    XXX(nnorwitz): not sure this is still true
-*/
 
 #define DEFAULT_BLOCK_SIZE 16
 #define DEFAULT_BLOCKS 8
@@ -115,11 +107,11 @@ struct compiler_unit {
 	PyObject *u_private;	/* for private name mangling */
 
 	int u_argcount;	   /* number of arguments for block */ 
-    /* Pointer to the most recently allocated block.  By following b_list
-       members, you can reach all early allocated blocks. */
+	/* Pointer to the most recently allocated block.  By following b_list
+	   members, you can reach all early allocated blocks. */
 	basicblock *u_blocks;
 	basicblock *u_curblock; /* pointer to current block */
-	int u_tmpname;	   /* temporary variables for list comps */
+	int u_tmpname;		/* temporary variables for list comps */
 
 	int u_nfblocks;
 	struct fblockinfo u_fblock[CO_MAXBLOCKS];
@@ -150,17 +142,6 @@ struct compiler {
 	PyObject *c_stack;	 /* Python list holding compiler_unit ptrs */
 	char *c_encoding;	 /* source encoding (a borrowed reference) */
 	PyArena *c_arena;	 /* pointer to memory allocation arena */
-};
-
-struct assembler {
-	PyObject *a_bytecode;  /* string containing bytecode */
-	int a_offset;	       /* offset into bytecode */
-	int a_nblocks;	       /* number of reachable blocks */
-	basicblock **a_postorder; /* list of blocks in dfs postorder */
-	PyObject *a_lnotab;    /* string containing lnotab */
-	int a_lnotab_off;      /* offset into lnotab */
-	int a_lineno;	       /* last lineno of emitted instruction */
-	int a_lineno_off;      /* bytecode offset of last lineno */
 };
 
 static int compiler_enter_scope(struct compiler *, identifier, void *, int);
@@ -396,47 +377,6 @@ dictbytype(PyObject *src, int scope_type, int flag, int offset)
 	return dest;
 }
 
-/*
-
-Leave this debugging code for just a little longer.
-
-static void
-compiler_display_symbols(PyObject *name, PyObject *symbols)
-{
-PyObject *key, *value;
-int flags;
-Py_ssize_t pos = 0;
-
-fprintf(stderr, "block %s\n", PyString_AS_STRING(name));
-while (PyDict_Next(symbols, &pos, &key, &value)) {
-flags = PyInt_AsLong(value);
-fprintf(stderr, "var %s:", PyString_AS_STRING(key));
-if (flags & DEF_GLOBAL)
-fprintf(stderr, " declared_global");
-if (flags & DEF_LOCAL)
-fprintf(stderr, " local");
-if (flags & DEF_PARAM)
-fprintf(stderr, " param");
-if (flags & DEF_STAR)
-fprintf(stderr, " stararg");
-if (flags & DEF_DOUBLESTAR)
-fprintf(stderr, " starstar");
-if (flags & DEF_INTUPLE)
-fprintf(stderr, " tuple");
-if (flags & DEF_FREE)
-fprintf(stderr, " free");
-if (flags & DEF_FREE_GLOBAL)
-fprintf(stderr, " global");
-if (flags & DEF_FREE_CLASS)
-fprintf(stderr, " free/class");
-if (flags & DEF_IMPORT)
-fprintf(stderr, " import");
-fprintf(stderr, "\n");
-}
-	fprintf(stderr, "\n");
-}
-*/
-
 static void
 compiler_unit_check(struct compiler_unit *u)
 {
@@ -610,7 +550,7 @@ compiler_new_block(struct compiler *c)
 		return NULL;
 	}
 	memset((void *)b, 0, sizeof(basicblock));
-    /* Extend the singly linked list of blocks with new block. */
+	/* Extend the singly linked list of blocks with new block. */
 	b->b_list = u->u_blocks;
 	u->u_blocks = b;
 	return b;
@@ -649,7 +589,7 @@ compiler_use_next_block(struct compiler *c, basicblock *block)
 /* Returns the offset of the next instruction in the current block's
    b_instr array.  Resizes the b_instr as necessary.
    Returns -1 on failure.
- */
+*/
 
 static int
 compiler_next_instr(struct compiler *c, basicblock *b)
@@ -693,7 +633,7 @@ compiler_next_instr(struct compiler *c, basicblock *b)
    already been set.  If it has been set, the call has no effect.
 
    Every time a new node is b
-   */
+*/
 
 static void
 compiler_set_lineno(struct compiler *c, int off)
@@ -1055,8 +995,8 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
    from the current block to the new block.
 */
 
-/* XXX The returns inside these macros make it impossible to decref
-   objects created in the local function.
+/* The returns inside these macros make it impossible to decref objects
+   created in the local function.  Local objects should use the arena.
 */
 
 
@@ -2060,7 +2000,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 {
 	int i, n;
 
-    /* Always assign a lineno to the next instruction for a stmt. */
+	/* Always assign a lineno to the next instruction for a stmt. */
 	c->u->u_lineno = s->lineno;
 	c->u->u_lineno_set = false;
 
@@ -2519,7 +2459,6 @@ compiler_compare(struct compiler *c, expr_ty e)
 	}
 	return 1;
 }
-#undef CMPCAST
 
 static int
 compiler_call(struct compiler *c, expr_ty e)
@@ -2933,9 +2872,9 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 {
 	int i, n;
 
-    /* If expr e has a different line number than the last expr/stmt,
-       set a new line number for the next instruction.
-       */
+	/* If expr e has a different line number than the last expr/stmt,
+           set a new line number for the next instruction.
+        */
 	if (e->lineno > c->u->u_lineno) {
 		c->u->u_lineno = e->lineno;
 		c->u->u_lineno_set = false;
@@ -2979,14 +2918,6 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 	case Yield_kind:
 		if (c->u->u_ste->ste_type != FunctionBlock)
 			return compiler_error(c, "'yield' outside function");
-		/*
-		for (i = 0; i < c->u->u_nfblocks; i++) {
-			if (c->u->u_fblock[i].fb_type == FINALLY_TRY)
-				return compiler_error(
-					c, "'yield' not allowed in a 'try' "
-					"block with a 'finally' clause");
-		}
-		*/
 		if (e->v.Yield.value) {
 			VISIT(c, expr, e->v.Yield.value);
 		}
@@ -3317,7 +3248,6 @@ compiler_visit_nested_slice(struct compiler *c, slice_ty s,
 	return 1;
 }
 
-
 static int
 compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 {
@@ -3365,11 +3295,25 @@ compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 	return compiler_handle_subscr(c, kindname, ctx);
 }
 
+
+/* End of the compiler section, beginning of the assembler section */
+
 /* do depth-first search of basic block graph, starting with block.
    post records the block indices in post-order.
 
    XXX must handle implicit jumps from one block to next
 */
+
+struct assembler {
+	PyObject *a_bytecode;  /* string containing bytecode */
+	int a_offset;	       /* offset into bytecode */
+	int a_nblocks;	       /* number of reachable blocks */
+	basicblock **a_postorder; /* list of blocks in dfs postorder */
+	PyObject *a_lnotab;    /* string containing lnotab */
+	int a_lnotab_off;      /* offset into lnotab */
+	int a_lineno;	       /* last lineno of emitted instruction */
+	int a_lineno_off;      /* bytecode offset of last lineno */
+};
 
 static void
 dfs(struct compiler *c, basicblock *b, struct assembler *a)
