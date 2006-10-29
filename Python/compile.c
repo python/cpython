@@ -2619,7 +2619,7 @@ compiler_listcomp_generator(struct compiler *c, PyObject *tmpname,
 	} 
 	ADDOP_JABS(c, JUMP_ABSOLUTE, start);
 	compiler_use_next_block(c, anchor);
-	/* delete the append method added to locals */
+	/* delete the temporary list name added to locals */
 	if (gen_index == 1)
 	    if (!compiler_nameop(c, tmpname, Del))
 		return 0;
@@ -2632,15 +2632,9 @@ compiler_listcomp(struct compiler *c, expr_ty e)
 {
 	identifier tmp;
 	int rc = 0;
-	static identifier append;
 	asdl_seq *generators = e->v.ListComp.generators;
 
 	assert(e->kind == ListComp_kind);
-	if (!append) {
-		append = PyString_InternFromString("append");
-		if (!append)
-			return 0;
-	}
 	tmp = compiler_new_tmpname(c);
 	if (!tmp)
 		return 0;
