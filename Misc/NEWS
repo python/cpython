@@ -89,6 +89,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1586613: fix zlib and bz2 codecs' incremental en/decoders.
+
 - Patch #1583880: fix tarfile's problems with long names and posix/
   GNU modes.
 

@@ -1062,6 +1062,7 @@ broken_unicode_with_streams = [
     "punycode",
     "unicode_internal"
 ]
+broken_incremental_coders = broken_unicode_with_streams[:]
 
 try:
     import bz2
@@ -1111,6 +1112,7 @@ class BasicUnicodeTest(unittest.TestCase):
                     decodedresult += reader.read()
                 self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
 
+            if encoding not in broken_incremental_coders:
                 # check incremental decoder/encoder (fetched via the Python
                 # and C API) and iterencode()/iterdecode()
                 try:
