@@ -12,6 +12,19 @@
 typedef PyDictEntry dictentry;
 typedef PyDictObject dictobject;
 
+/* Set a key error with the specified argument, wrapping it in a
+ * tuple automatically so that tuple keys are not unpacked as the
+ * exception arguments. */
+static void
+set_key_error(PyObject *arg)
+{
+	PyObject *tup;
+	tup = PyTuple_Pack(1, arg);
+	if (!tup)
+		return; /* caller will expect error to be set anyway */
+	PyErr_SetObject(PyExc_KeyError, tup);
+}
+
 /* Define this out if you don't want conversion statistics on exit. */
 #undef SHOW_CONVERSION_COUNTS
 
@@ -665,7 +678,7 @@ PyDict_DelItem(PyObject *op, PyObject *key)
 	if (ep == NULL)
 		return -1;
 	if (ep->me_value == NULL) {
-		PyErr_SetObject(PyExc_KeyError, key);
+		set_key_error(key);
 		return -1;
 	}
 	old_key = ep->me_key;
@@ -974,7 +987,7 @@ dict_subscript(dictobject *mp, register PyObject *key)
 				return PyObject_CallFunctionObjArgs(missing,
 					(PyObject *)mp, key, NULL);
 		}
-		PyErr_SetObject(PyExc_KeyError, key);
+		set_key_error(key);
 		return NULL;
 	}
 	else
@@ -1746,7 +1759,7 @@ dict_pop(dictobject *mp, PyObject *args)
 			Py_INCREF(deflt);
 			return deflt;
 		}
-		PyErr_SetObject(PyExc_KeyError, key);
+		set_key_error(key);
 		return NULL;
 	}
 	old_key = ep->me_key;
