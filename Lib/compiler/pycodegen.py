@@ -591,7 +591,7 @@ class CodeGenerator:
 
         self._implicitNameOp('LOAD', tmpname)
         self.visit(node.expr)
-        self.emit('LIST_APPEND',)
+        self.emit('LIST_APPEND')
 
         for start, cont, anchor in stack:
             if cont:
