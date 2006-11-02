@@ -1848,7 +1848,7 @@ GetWindowRect(
 
 Here is the wrapping with \code{ctypes}:
 \begin{quote}
-\begin{verbatim}>>> from ctypes import POINTER, WINFUNCTYPE, windll
+\begin{verbatim}>>> from ctypes import POINTER, WINFUNCTYPE, windll, WinError
 >>> from ctypes.wintypes import BOOL, HWND, RECT
 >>> prototype = WINFUNCTYPE(BOOL, HWND, POINTER(RECT))
 >>> paramflags = (1, "hwnd"), (2, "lprect")
