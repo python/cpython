@@ -43,11 +43,11 @@ class TestWarnings(test.test_warnings.TestModule):
     def has_warned(self):
         self.assertEqual(test.test_warnings.msg.category,
                          exceptions.RuntimeWarning.__name__)
-        
+
     def test_byte_max(self):
         ts.T_BYTE=CHAR_MAX+1
         self.has_warned()
-        
+
     def test_byte_min(self):
         ts.T_BYTE=CHAR_MIN-1
         self.has_warned()
@@ -68,7 +68,7 @@ class TestWarnings(test.test_warnings.TestModule):
         ts.T_USHORT=USHRT_MAX+1
         self.has_warned()
 
-        
+
 
 def test_main(verbose=None):
     test_support.run_unittest(

@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore", r"import \*", SyntaxWarning, "<string>")
 class ScopeTests(unittest.TestCase):
 
     def testSimpleNesting(self):
-        
+
         def make_adder(x):
             def adder(y):
                 return x + y

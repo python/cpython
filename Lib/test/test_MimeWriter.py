@@ -192,7 +192,7 @@ __kp__.__setup__(500)
 '''
 
 class MimewriterTest(unittest.TestCase):
-    
+
     def test(self):
         buf = StringIO.StringIO()
 
