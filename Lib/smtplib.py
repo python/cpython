@@ -729,7 +729,7 @@ class SMTP_SSL(SMTP):
     support). If host is not specified, '' (the local host) is used. If port is
     omitted, the standard SMTP-over-SSL port (465) is used. keyfile and certfile
     are also optional - they can contain a PEM formatted private key and
-    certificate chain file for the SSL connection.   
+    certificate chain file for the SSL connection.
     """
     def __init__(self, host = '', port = 0, local_hostname = None,
                  keyfile = None, certfile = None):

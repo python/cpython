@@ -152,7 +152,7 @@ class MathTests(unittest.TestCase):
 
         testmodf('modf(1.5)', math.modf(1.5), (0.5, 1.0))
         testmodf('modf(-1.5)', math.modf(-1.5), (-0.5, -1.0))
-    
+
     def testPow(self):
         self.assertRaises(TypeError, math.pow)
         self.ftest('pow(0,1)', math.pow(0,1), 0)

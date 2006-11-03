@@ -36,7 +36,7 @@ class BufferSizeTest(unittest.TestCase):
                 os.unlink(test_support.TESTFN)
             except:
                 pass
-    
+
     def drive_one(self, pattern):
         for length in lengths:
             # Repeat string 'pattern' as often as needed to reach total length

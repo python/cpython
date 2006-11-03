@@ -218,7 +218,7 @@ class MmapTests(unittest.TestCase):
         # Ensuring copy-on-write maps cannot be resized
         self.assertRaises(TypeError, m.resize, 2*mapsize)
         del m, f
-    
+
         # Ensuring invalid access parameter raises exception
         f = open(TESTFN, "r+b")
         self.assertRaises(ValueError, mmap.mmap, f.fileno(), mapsize, access=4)

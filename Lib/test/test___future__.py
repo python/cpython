@@ -50,7 +50,7 @@ class FutureTest(unittest.TestCase):
                 check(mandatory, "mandatory")
                 a(optional < mandatory,
                        "optional not less than mandatory, and mandatory not None")
-        
+
             a(hasattr(value, "compiler_flag"),
                    "feature is missing a .compiler_flag attr")
             a(isinstance(getattr(value, "compiler_flag"), int),

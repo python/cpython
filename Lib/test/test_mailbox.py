@@ -754,15 +754,15 @@ class _TestMboxMMDF(TestMailbox):
         key1 = self._box.add(msg)
         self._box.flush()
         self._box.close()
-        
+
         self._box = self._factory(self._path)
         self._box.lock()
         key2 = self._box.add(msg)
         self._box.flush()
         self.assert_(self._box._locked)
         self._box.close()
-        
-        
+
+
 
 class TestMbox(_TestMboxMMDF):
 

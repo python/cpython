@@ -911,7 +911,7 @@ class StreamReaderTest(unittest.TestCase):
         self.assertEquals(f.readlines(), [u'\ud55c\n', u'\uae00'])
 
 class EncodedFileTest(unittest.TestCase):
-    
+
     def test_basic(self):
         f = StringIO.StringIO('\xed\x95\x9c\n\xea\xb8\x80')
         ef = codecs.EncodedFile(f, 'utf-16-le', 'utf-8')
@@ -1172,7 +1172,7 @@ class BasicUnicodeTest(unittest.TestCase):
                         decoder = codecs.getincrementaldecoder(encoding)("ignore")
                         decodedresult = u"".join(decoder.decode(c) for c in encodedresult)
                         self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
-    
+
                         encodedresult = "".join(cencoder.encode(c) for c in s)
                         cdecoder = _testcapi.codec_incrementaldecoder(encoding, "ignore")
                         decodedresult = u"".join(cdecoder.decode(c) for c in encodedresult)

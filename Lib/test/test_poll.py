@@ -21,7 +21,7 @@ class PollTests(unittest.TestCase):
     def test_poll1(self):
         # Basic functional test of poll object
         # Create a bunch of pipe and test that poll works with them.
-        
+
         p = select.poll()
 
         NUM_PIPES = 12

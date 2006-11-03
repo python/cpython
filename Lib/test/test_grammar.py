@@ -123,10 +123,10 @@ class GrammarTests(unittest.TestCase):
 
     # single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
     # XXX can't test in a script -- this rule is only used when interactive
-    
+
     # file_input: (NEWLINE | stmt)* ENDMARKER
     # Being tested as this very moment this very module
-    
+
     # expr_input: testlist NEWLINE
     # XXX Hard to test -- used only in calls to input()
 
@@ -329,7 +329,7 @@ class GrammarTests(unittest.TestCase):
         # which is not available in unittest.
         save_stdout = sys.stdout
         sys.stdout = StringIO.StringIO()
-        
+
         print 1, 2, 3
         print 1, 2, 3,
         print
@@ -563,7 +563,7 @@ hello world
         elif 0: pass
         elif 0: pass
         else: pass
-    
+
     def testWhile(self):
         # 'while' test ':' suite ['else' ':' suite]
         while 0: pass
@@ -696,7 +696,7 @@ hello world
     def testSelectors(self):
         ### trailer: '(' [testlist] ')' | '[' subscript ']' | '.' NAME
         ### subscript: expr | [expr] ':' [expr]
-        
+
         import sys, time
         c = sys.path[0]
         x = time.time()
