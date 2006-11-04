@@ -532,6 +532,7 @@ seq_for_testlist(struct compiling *c, const node *n)
            || TYPE(n) == listmaker
            || TYPE(n) == testlist_gexp
            || TYPE(n) == testlist_safe
+           || TYPE(n) == testlist1
            );
 
     seq = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
