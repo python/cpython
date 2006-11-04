@@ -747,6 +747,8 @@ hello world
 
         x = `x`
         x = `1 or 2 or 3`
+        self.assertEqual(`1,2`, '(1, 2)')
+
         x = x
         x = 'x'
         x = 123
