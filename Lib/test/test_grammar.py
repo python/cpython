@@ -709,6 +709,7 @@ x = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6}
 
 x = `x`
 x = `1 or 2 or 3`
+x = `1,2`
 x = x
 x = 'x'
 x = 123
