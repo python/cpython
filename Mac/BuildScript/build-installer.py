@@ -12,8 +12,8 @@ Usage: see USAGE variable in the script.
 import platform, os, sys, getopt, textwrap, shutil, urllib2, stat, time, pwd
 import grp
 
-INCLUDE_TIMESTAMP=1
-VERBOSE=1
+INCLUDE_TIMESTAMP = 1
+VERBOSE = 1
 
 from plistlib import Plist
 
@@ -57,27 +57,27 @@ def getFullVersion():
     raise RuntimeError, "Cannot find full version??"
 
 # The directory we'll use to create the build (will be erased and recreated)
-WORKDIR="/tmp/_py"
+WORKDIR = "/tmp/_py"
 
 # The directory we'll use to store third-party sources. Set this to something
 # else if you don't want to re-fetch required libraries every time.
-DEPSRC=os.path.join(WORKDIR, 'third-party')
-DEPSRC=os.path.expanduser('~/Universal/other-sources')
+DEPSRC = os.path.join(WORKDIR, 'third-party')
+DEPSRC = os.path.expanduser('~/Universal/other-sources')
 
 # Location of the preferred SDK
-SDKPATH="/Developer/SDKs/MacOSX10.4u.sdk"
-#SDKPATH="/"
+SDKPATH = "/Developer/SDKs/MacOSX10.4u.sdk"
+#SDKPATH = "/"
 
-ARCHLIST=('i386', 'ppc',)
+ARCHLIST = ('i386', 'ppc',)
 
 # Source directory (asume we're in Mac/BuildScript)
-SRCDIR=os.path.dirname(
+SRCDIR = os.path.dirname(
         os.path.dirname(
             os.path.dirname(
                 os.path.abspath(__file__
         ))))
 
-USAGE=textwrap.dedent("""\
+USAGE = textwrap.dedent("""\
     Usage: build_python [options]
 
     Options:
@@ -92,7 +92,7 @@ USAGE=textwrap.dedent("""\
 
 # Instructions for building libraries that are necessary for building a
 # batteries included python.
-LIBRARY_RECIPES=[
+LIBRARY_RECIPES = [
     dict(
         name="Bzip2 1.0.3",
         url="http://www.bzip.org/1.0.3/bzip2-1.0.3.tar.gz",
@@ -184,7 +184,7 @@ LIBRARY_RECIPES=[
 
 
 # Instructions for building packages inside the .mpkg.
-PKG_RECIPES=[
+PKG_RECIPES = [
     dict(
         name="PythonFramework",
         long_name="Python Framework",
@@ -323,7 +323,7 @@ def checkEnvironment():
 
 
 
-def parseOptions(args = None):
+def parseOptions(args=None):
     """
     Parse arguments and update global settings.
     """
