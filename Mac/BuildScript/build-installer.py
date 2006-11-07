@@ -33,7 +33,7 @@ except ImportError:
 
 def shellQuote(value):
     """
-    Return the string value in a form that can savely be inserted into
+    Return the string value in a form that can safely be inserted into
     a shell command.
     """
     return "'%s'"%(value.replace("'", "'\"'\"'"))
@@ -56,10 +56,10 @@ def getFullVersion():
 
     raise RuntimeError, "Cannot find full version??"
 
-# The directory we'll use to create the build, will be erased and recreated
+# The directory we'll use to create the build (will be erased and recreated)
 WORKDIR="/tmp/_py"
 
-# The directory we'll use to store third-party sources, set this to something
+# The directory we'll use to store third-party sources. Set this to something
 # else if you don't want to re-fetch required libraries every time.
 DEPSRC=os.path.join(WORKDIR, 'third-party')
 DEPSRC=os.path.expanduser('~/Universal/other-sources')
@@ -201,7 +201,7 @@ PKG_RECIPES=[
         long_name="GUI Applications",
         source="/Applications/MacPython %(VER)s",
         readme="""\
-            This package installs IDLE (an interactive Python IDLE),
+            This package installs IDLE (an interactive Python IDE),
             Python Launcher and Build Applet (create application bundles
             from python scripts).
 
@@ -257,8 +257,7 @@ PKG_RECIPES=[
         readme="""\
             This package updates the system python installation on
             Mac OS X 10.3 to ensure that you can build new python extensions
-            using that copy of python after installing this version of
-            python.
+            using that copy of python after installing this version.
             """,
         postflight="../Tools/fixapplepython23.py",
         topdir="/Library/Frameworks/Python.framework",
@@ -637,15 +636,15 @@ def buildPython():
     print "Running make"
     runCommand("make")
 
-    print "Runing make frameworkinstall"
+    print "Running make frameworkinstall"
     runCommand("make frameworkinstall DESTDIR=%s"%(
         shellQuote(rootDir)))
 
-    print "Runing make frameworkinstallextras"
+    print "Running make frameworkinstallextras"
     runCommand("make frameworkinstallextras DESTDIR=%s"%(
         shellQuote(rootDir)))
 
-    print "Copy required shared libraries"
+    print "Copying required shared libraries"
     if os.path.exists(os.path.join(WORKDIR, 'libraries', 'Library')):
         runCommand("mv %s/* %s"%(
             shellQuote(os.path.join(
@@ -735,8 +734,8 @@ def patchScript(inPath, outPath):
 def packageFromRecipe(targetDir, recipe):
     curdir = os.getcwd()
     try:
-        # The major version (such as 2.5) is included in the pacakge name
-        # because haveing two version of python installed at the same time is
+        # The major version (such as 2.5) is included in the package name
+        # because having two version of python installed at the same time is
         # common.
         pkgname = '%s-%s'%(recipe['name'], getVersion())
         srcdir  = recipe.get('source')
@@ -910,7 +909,7 @@ def installSize(clear=False, _saved=[]):
 
 def buildDMG():
     """
-    Create DMG containing the rootDir
+    Create DMG containing the rootDir.
     """
     outdir = os.path.join(WORKDIR, 'diskimage')
     if os.path.exists(outdir):
@@ -923,7 +922,7 @@ def buildDMG():
     imagepath = imagepath + '.dmg'
 
     os.mkdir(outdir)
-    runCommand("hdiutil create -volname 'Univeral MacPython %s' -srcfolder %s %s"%(
+    runCommand("hdiutil create -volname 'Universal MacPython %s' -srcfolder %s %s"%(
             getFullVersion(),
             shellQuote(os.path.join(WORKDIR, 'installer')),
             shellQuote(imagepath)))
