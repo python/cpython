@@ -900,6 +900,16 @@ The ``itertools`` module contains a number of commonly-used iterators
 as well as functions for combining several iterators.  This section
 will introduce the module's contents by showing small examples.
 
+The module's functions fall into a few broad classes:
+
+* Functions that create a new iterator based on an existing iterator.
+* Functions for treating an iterator's elements as function arguments.
+* Functions for selecting portions of an iterator's output.
+* A function for grouping an iterator's output.
+
+Creating new iterators
+''''''''''''''''''''''
+
 ``itertools.count(n)`` returns an infinite stream of
 integers, increasing by 1 each time.  You can optionally supply the
 starting number, which defaults to 0::
@@ -1000,6 +1010,9 @@ and one of the new iterators is consumed more than the others.
            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...
 
 
+Calling functions on elements
+'''''''''''''''''''''''''''''
+
 Two functions are used for calling other functions on the contents of an
 iterable.
 
@@ -1027,6 +1040,10 @@ arguments::
                        ('/usr', 'bin', 'perl'),('/usr', 'bin', 'ruby')])
     =>
       /usr/bin/java, /bin/python, /usr/bin/perl, /usr/bin/ruby
+
+
+Selecting elements
+''''''''''''''''''
 
 Another group of functions chooses a subset of an iterator's elements
 based on a predicate.
@@ -1074,6 +1091,9 @@ results.
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...
 
 
+Grouping elements
+'''''''''''''''''
+
 The last function I'll discuss, ``itertools.groupby(iter,
 key_func=None)``, is the most complicated.  ``key_func(elem)`` is a
 function that can compute a key value for each element returned by the
@@ -1119,15 +1139,16 @@ The functools module
 ----------------------------------------------
 
 The ``functools`` module in Python 2.5 contains some higher-order
-functions.  A **higher-order function** takes functions as input and
-returns new functions.  The most useful tool in this module is the
-``partial()`` function.
+functions.  A **higher-order function** takes one or more functions as
+input and returns a new function.  The most useful tool in this module
+is the ``partial()`` function.
 
 For programs written in a functional style, you'll sometimes want to
 construct variants of existing functions that have some of the
 parameters filled in.  Consider a Python function ``f(a, b, c)``; you
-may wish to create a new function ``g(b, c)`` that was equivalent to
-``f(1, b, c)``.  This is called "partial function application".
+may wish to create a new function ``g(b, c)`` that's equivalent to
+``f(1, b, c)``; you're filling in a value for one of ``f()``'s parameters.  
+This is called "partial function application".
 
 The constructor for ``partial`` takes the arguments ``(function, arg1,
 arg2, ... kwarg1=value1, kwarg2=value2)``.  The resulting object is
@@ -1145,11 +1166,6 @@ Here's a small but realistic example::
 
     server_log = functools.partial(log, subsystem='server')
     server_log('Unable to open socket')
-
-There are also third-party modules, such as Collin Winter's
-`functional package <http://cheeseshop.python.org/pypi/functional>`__,
-that are intended for use in functional-style programs.  See below
-for a section describing the ``functional`` mdoule.
 
 
 The operator module
