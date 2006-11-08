@@ -1,7 +1,7 @@
 Functional Programming HOWTO
 ================================
 
-**Version 0.21**
+**Version 0.30**
 
 (This is a first draft.  Please send comments/error
 reports/suggestions to amk@amk.ca.  This URL is probably not going to
@@ -1141,6 +1141,144 @@ There are also third-party modules, such as Collin Winter's
 that are intended for use in functional-style programs.
 
 
+The functional module
+=====================
+
+Collin Winter's `functional module <http://oakwinter.com/code/functional/>`__ 
+provides a number of more
+advanced tools for functional programming. It also reimplements
+several Python built-ins, trying to make them more intuitive to those
+used to functional programming in other languages.
+
+This section contains an introduction to some of the most important
+functions in ``functional``; full documentation can be found at `the
+project's website <http://oakwinter.com/code/functional/documentation/>`__.
+
+``compose(outer, inner, unpack=False)``
+
+The ``compose()`` function implements function composition.
+In other words, it returns a wrapper around the ``outer`` and ``inner`` callables, such
+that the return value from ``inner`` is fed directly to ``outer``.  That is,
+
+::
+
+        >>> def add(a, b):
+        ...     return a + b
+        ...
+        >>> def double(a):
+        ...     return 2 * a
+        ...
+        >>> compose(double, add)(5, 6)
+        22
+
+is equivalent to
+
+::
+
+        >>> double(add(5, 6))
+        22
+                    
+The ``unpack`` keyword is provided to work around the fact that Python functions are not always
+`fully curried <http://en.wikipedia.org/wiki/Currying>`__.
+By default, it is expected that the ``inner`` function will return a single object and that the ``outer``
+function will take a single argument. Setting the ``unpack`` argument causes ``compose`` to expect a
+tuple from ``inner`` which will be expanded before being passed to ``outer``. Put simply,
+
+::
+
+        compose(f, g)(5, 6)
+                    
+is equivalent to::
+
+        f(g(5, 6))
+                    
+while
+
+::
+
+        compose(f, g, unpack=True)(5, 6)
+                    
+is equivalent to::
+
+        f(*g(5, 6))
+
+Even though ``compose()`` only accepts two functions, it's trivial to
+build up a version that will compose any number of functions. We'll
+use ``reduce()``, ``compose()`` and ``partial()`` (the last of which
+is provided by both ``functional`` and ``functools``).
+
+::
+
+        from functional import compose, partial
+        
+        multi_compose = partial(reduce, compose)
+        
+    
+We can also use ``map()``, ``compose()`` and ``partial()`` to craft a
+version of ``"".join(...)`` that converts its arguments to string::
+
+        from functional import compose, partial
+        
+        join = compose("".join, partial(map, str))
+
+
+``flip(func)``
+                    
+``flip()`` wraps the callable in ``func`` and  
+causes it to receive its non-keyword arguments in reverse order.
+
+::
+
+        >>> def triple(a, b, c):
+        ...     return (a, b, c)
+        ...
+        >>> triple(5, 6, 7)
+        (5, 6, 7)
+        >>>
+        >>> flipped_triple = flip(triple)
+        >>> flipped_triple(5, 6, 7)
+        (7, 6, 5)
+
+``foldl(func, start, iterable)``
+                    
+``foldl()`` takes a binary function, a starting value (usually some kind of 'zero'), and an iterable.
+The function is applied to the starting value and the first element of the list, then the result of
+that and the second element of the list, then the result of that and the third element of the list,
+and so on.
+
+This means that a call such as::
+
+        foldl(f, 0, [1, 2, 3])
+
+is equivalent to::
+
+        f(f(f(0, 1), 2), 3)
+
+    
+``foldl()`` is roughly equivalent to the following recursive function::
+
+        def foldl(func, start, seq):
+            if len(seq) == 0:
+                return start
+
+            return foldl(func, func(start, seq[0]), seq[1:])
+
+Speaking of equivalence, the above ``foldl`` call can be expressed in terms of the built-in ``reduce`` like
+so::
+
+        reduce(f, [1, 2, 3], 0)
+
+
+We can use ``foldl()``, ``operator.concat()`` and ``partial()`` to
+write a cleaner, more aesthetically-pleasing version of Python's
+``"".join(...)`` idiom::
+
+        from functional import foldl, partial
+        from operator import concat
+        
+        join = partial(foldl, concat, "")
+
+
 Revision History and Acknowledgements
 ------------------------------------------------
 
@@ -1158,6 +1296,9 @@ Version 0.2: posted July 10 2006.  Merged genexp and listcomp
 sections into one.  Typo fixes.
 
 Version 0.21: Added more references suggested on the tutor mailing list.
+
+Version 0.30: Adds a section on the ``functional`` module written by 
+Collin Winter.
 
 
 References
@@ -1185,6 +1326,8 @@ General Wikipedia entry describing functional programming.
 http://en.wikipedia.org/wiki/Coroutine:
 Entry for coroutines.
 
+http://en.wikipedia.org/wiki/Currying:
+Entry for the concept of currying.
 
 Python-specific
 '''''''''''''''''''''''''''
