@@ -1318,15 +1318,17 @@ instance_contains(PyInstanceObject *inst, PyObject *member)
 
 	/* Couldn't find __contains__. */
 	if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+		Py_ssize_t rc;
 		/* Assume the failure was simply due to that there is no
 		 * __contains__ attribute, and try iterating instead.
 		 */
 		PyErr_Clear();
-		return _PySequence_IterSearch((PyObject *)inst, member,
-					      PY_ITERSEARCH_CONTAINS) > 0;
+		rc = _PySequence_IterSearch((PyObject *)inst, member,
+					    PY_ITERSEARCH_CONTAINS);
+		if (rc >= 0)
+			return rc > 0;
 	}
-	else
-		return -1;
+	return -1;
 }
 
 static PySequenceMethods
