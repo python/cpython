@@ -96,6 +96,8 @@ Core and builtins
 Library
 -------
 
+- Patch #1351744: Add askyesnocancel helper for tkMessageBox.
+
 - Patch #1060577: Extract list of RPM files from spec file in
   bdist_rpm
 
