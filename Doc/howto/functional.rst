@@ -15,6 +15,8 @@ features such as iterators and generators and relevant library modules
 such as ``itertools`` and ``functools``.
 
 
+.. contents::
+
 Introduction
 ----------------------
 
@@ -658,7 +660,7 @@ Let's look in more detail at built-in functions often used with iterators.
 
 Two Python's built-in functions, ``map()`` and ``filter()``, are
 somewhat obsolete; they duplicate the features of list comprehensions
-and return actual lists instead of iterators.  
+but return actual lists instead of iterators.  
 
 ``map(f, iterA, iterB, ...)`` returns a list containing ``f(iterA[0],
 iterB[0]), f(iterA[1], iterB[1]), f(iterA[2], iterB[2]), ...``.  
@@ -675,7 +677,7 @@ iterB[0]), f(iterA[1], iterB[1]), f(iterA[2], iterB[2]), ...``.
 
 As shown above, you can achieve the same effect with a list
 comprehension.  The ``itertools.imap()`` function does the same thing
-but can handle infinite iterators; it'll be discussed in the section on 
+but can handle infinite iterators; it'll be discussed later, in the section on 
 the ``itertools`` module.
 
 ``filter(predicate, iter)`` returns a list 
@@ -705,7 +707,7 @@ can therefore handle infinite sequences just as ``itertools.imap()`` can.
 ``reduce(func, iter, [initial_value])`` doesn't have a counterpart in
 the ``itertools`` module because it cumulatively performs an operation
 on all the iterable's elements and therefore can't be applied to
-infinite ones.  ``func`` must be a function that takes two elements
+infinite iterables.  ``func`` must be a function that takes two elements
 and returns a single value.  ``reduce()`` takes the first two elements
 A and B returned by the iterator and calculates ``func(A, B)``.  It
 then requests the third element, C, calculates ``func(func(A, B),
@@ -821,7 +823,7 @@ don't need to define a new function at all::
 If the function you need doesn't exist, you need to write it.  One way
 to write small functions is to use the ``lambda`` statement.  ``lambda``
 takes a number of parameters and an expression combining these parameters,
-and creates a small function that returns the value of the expression:
+and creates a small function that returns the value of the expression::
 
         lowercase = lambda x: x.lower()
 
@@ -842,14 +844,15 @@ function in the usual way::
             return x + y
 
 Which alternative is preferable?  That's a style question; my usual
-view is to avoid using ``lambda``.
+course is to avoid using ``lambda``.
 
-``lambda`` is quite limited in the functions it can define.  The
-result has to be computable as a single expression, which means you
-can't have multiway ``if... elif... else`` comparisons or
-``try... except`` statements.  If you try to do too much in a
-``lambda`` statement, you'll end up with an overly complicated
-expression that's hard to read.  Quick, what's the following code doing?
+One reason for my preference is that ``lambda`` is quite limited in
+the functions it can define.  The result has to be computable as a
+single expression, which means you can't have multiway
+``if... elif... else`` comparisons or ``try... except`` statements.
+If you try to do too much in a ``lambda`` statement, you'll end up
+with an overly complicated expression that's hard to read.  Quick,
+what's the following code doing?
 
 ::
 
@@ -886,8 +889,8 @@ uses of ``lambda``:
 4) Convert the lambda to a def statement, using that name.
 5) Remove the comment.
 
-I really like these rules, but you're free to disagree that this style
-is better.
+I really like these rules, but you're free to disagree that this 
+lambda-free style is better.
 
 
 The itertools module
@@ -962,9 +965,10 @@ to use the iterators further because you risk skipping a discarded
 element.
 
 ``itertools.islice(iter, [start], stop, [step])`` returns a stream
-that's a slice of the iterator.  It can return the first ``stop``
+that's a slice of the iterator.  With a single ``stop`` argument, 
+it will return the first ``stop``
 elements.  If you supply a starting index, you'll get ``stop-start``
-elements, and if you supply a value for ``step` elements will be
+elements, and if you supply a value for ``step`, elements will be
 skipped accordingly.  Unlike Python's string and list slicing, you
 can't use negative values for ``start``, ``stop``, or ``step``.
 
@@ -1149,7 +1153,7 @@ for a section describing the ``functional`` mdoule.
 
 
 The operator module
-===================
+-------------------
 
 The ``operator`` module was mentioned earlier.  It contains a set of
 functions corresponding to Python's operators.  These functions 
@@ -1171,7 +1175,7 @@ list.
 
 
 The functional module
-=====================
+---------------------
 
 Collin Winter's `functional module <http://oakwinter.com/code/functional/>`__ 
 provides a number of more
