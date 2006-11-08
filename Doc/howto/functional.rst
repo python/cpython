@@ -339,11 +339,11 @@ the set's elements::
 Generator expressions and list comprehensions
 ----------------------------------------------------
 
-Two common operations on a stream are 1) performing some operation for
-every element, 2) selecting a subset of elements that meet some
-condition.  For example, given a list of strings, you might want to
-strip off trailing whitespace from each line or extract all the
-strings containing a given substring.
+Two common operations on an iterator's output are 1) performing some
+operation for every element, 2) selecting a subset of elements that
+meet some condition.  For example, given a list of strings, you might
+want to strip off trailing whitespace from each line or extract all
+the strings containing a given substring.
 
 List comprehensions and generator expressions (short form: "listcomps"
 and "genexps") are a concise notation for such operations, borrowed
@@ -941,6 +941,12 @@ and returns them in a tuple::
     itertools.izip(['a', 'b', 'c'], (1, 2, 3)) =>
       ('a', 1), ('b', 2), ('c', 3)
 
+It's similiar to the built-in ``zip()`` function, but doesn't
+construct an in-memory list and exhaust all the input iterators before
+returning; instead tuples are constructed and returned only if they're
+requested.  (The technical term for this behaviour is 
+`lazy evaluation <http://en.wikipedia.org/wiki/Lazy_evaluation>`__.)
+
 This iterator is intended to be used with iterables that are all of
 the same length.  If the iterables are of different lengths, the
 resulting stream will be the same length as the shortest iterable.
@@ -1138,7 +1144,30 @@ Here's a small but realistic example::
 
 There are also third-party modules, such as Collin Winter's
 `functional package <http://cheeseshop.python.org/pypi/functional>`__,
-that are intended for use in functional-style programs.
+that are intended for use in functional-style programs.  See below
+for a section describing the ``functional`` mdoule.
+
+
+The operator module
+===================
+
+The ``operator`` module was mentioned earlier.  It contains a set of
+functions corresponding to Python's operators.  These functions 
+are often useful in functional-style code because they save you 
+from writing trivial functions that perform a single operation.
+
+Some of the functions in this module are:
+
+* Math operations: ``add()``, ``sub()``, ``mul()``, ``div()``, ``floordiv()``,
+  ``abs()``, ...
+* Logical operations: ``not_()``, ``truth()``.
+* Bitwise operations: ``and_()``, ``or_()``, ``invert()``.
+* Comparisons: ``eq()``, ``ne()``, ``lt()``, ``le()``, ``gt()``, and ``ge()``.
+* Object identity: ``is_()``, ``is_not()``.
+
+Consult `the operator module's documentation <http://docs.python.org/lib/module-operator.html>`__ for a complete
+list.
+
 
 
 The functional module
@@ -1297,8 +1326,9 @@ sections into one.  Typo fixes.
 
 Version 0.21: Added more references suggested on the tutor mailing list.
 
-Version 0.30: Adds a section on the ``functional`` module written by 
-Collin Winter.
+Version 0.30: Adds a section on the ``functional`` module written by
+Collin Winter; adds short section on the operator module; a few other
+edits.
 
 
 References
