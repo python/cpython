@@ -76,14 +76,14 @@ Example of use:
 >>> for item in data:
 ...     heappush(heap, item)
 ...
->>> sorted = []
+>>> ordered = []
 >>> while heap:
-...     sorted.append(heappop(heap))
+...     ordered.append(heappop(heap))
 ...
->>> print sorted
+>>> print ordered
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 >>> data.sort()
->>> print data == sorted
+>>> print data == ordered
 True
 >>>
 \end{verbatim}
