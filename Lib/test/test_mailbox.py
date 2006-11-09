@@ -673,6 +673,19 @@ class TestMaildir(TestMailbox):
         self._box.lock()
         self._box.unlock()
 
+    def test_folder (self):
+        # Test for bug #1569790: verify that folders returned by .get_folder()
+        # use the same factory function.
+        def dummy_factory (s):
+            return None
+        box = self._factory(self._path, factory=dummy_factory)
+        folder = box.add_folder('folder1')
+        self.assert_(folder._factory is dummy_factory)
+        
+        folder1_alias = box.get_folder('folder1')
+        self.assert_(folder1_alias._factory is dummy_factory)
+
+        
 
 class _TestMboxMMDF(TestMailbox):
 
@@ -789,13 +802,22 @@ class TestMH(TestMailbox):
 
     def test_get_folder(self):
         # Open folders
-        self._box.add_folder('foo.bar')
+        def dummy_factory (s):
+            return None
+        self._box = self._factory(self._path, dummy_factory)
+        
+        new_folder = self._box.add_folder('foo.bar')
         folder0 = self._box.get_folder('foo.bar')
         folder0.add(self._template % 'bar')
         self.assert_(os.path.isdir(os.path.join(self._path, 'foo.bar')))
         folder1 = self._box.get_folder('foo.bar')
         self.assert_(folder1.get_string(folder1.keys()[0]) == \
                      self._template % 'bar')
+
+        # Test for bug #1569790: verify that folders returned by .get_folder()
+        # use the same factory function.
+        self.assert_(new_folder._factory is self._box._factory)
+        self.assert_(folder0._factory is self._box._factory)
 
     def test_add_and_remove_folders(self):
         # Delete folders
