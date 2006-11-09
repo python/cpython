@@ -96,6 +96,8 @@ Core and builtins
 Library
 -------
 
+- Patch #1592250: Add elidge argument to Tkinter.Text.search.
+
 - Patch #838546: Make terminal become controlling in pty.fork()
 
 - Patch #1351744: Add askyesnocancel helper for tkMessageBox.
