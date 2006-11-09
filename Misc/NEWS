@@ -100,6 +100,10 @@ Library
   weren't passing the message factory on to newly created Maildir/MH
   objects.
 
+- Patch #1514543: In the Maildir clash, report errors if there's 
+  a name clash instead of possibly losing a message.  (Patch by David
+  Watson.)
+
 - Patch #1514544: Try to ensure that messages/indexes have been physically
   written to disk after calling .flush() or .close(). (Patch by David
   Watson.)
