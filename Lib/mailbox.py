@@ -367,12 +367,14 @@ class Maildir(Mailbox):
 
     def get_folder(self, folder):
         """Return a Maildir instance for the named folder."""
-        return Maildir(os.path.join(self._path, '.' + folder), create=False)
+        return Maildir(os.path.join(self._path, '.' + folder),
+                       factory=self._factory,
+                       create=False)
 
     def add_folder(self, folder):
         """Create a folder and return a Maildir instance representing it."""
         path = os.path.join(self._path, '.' + folder)
-        result = Maildir(path)
+        result = Maildir(path, factory=self._factory)
         maildirfolder_path = os.path.join(path, 'maildirfolder')
         if not os.path.exists(maildirfolder_path):
             os.close(os.open(maildirfolder_path, os.O_CREAT | os.O_WRONLY))
@@ -944,11 +946,13 @@ class MH(Mailbox):
 
     def get_folder(self, folder):
         """Return an MH instance for the named folder."""
-        return MH(os.path.join(self._path, folder), create=False)
+        return MH(os.path.join(self._path, folder),
+                  factory=self._factory, create=False)
 
     def add_folder(self, folder):
         """Create a folder and return an MH instance representing it."""
-        return MH(os.path.join(self._path, folder))
+        return MH(os.path.join(self._path, folder),
+                  factory=self._factory)
 
     def remove_folder(self, folder):
         """Delete the named folder, which must be empty."""
