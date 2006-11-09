@@ -96,6 +96,8 @@ Core and builtins
 Library
 -------
 
+- Patch #838546: Make terminal become controlling in pty.fork()
+
 - Patch #1351744: Add askyesnocancel helper for tkMessageBox.
 
 - Patch #1060577: Extract list of RPM files from spec file in
