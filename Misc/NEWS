@@ -70,6 +70,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #838546: Make terminal become controlling in pty.fork()
+
 - Patch #1560695: Add .note.GNU-stack to ctypes' sysv.S so that
   ctypes isn't considered as requiring executable stacks.
 
