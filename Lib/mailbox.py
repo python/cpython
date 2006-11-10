@@ -255,7 +255,19 @@ class Maildir(Mailbox):
             suffix = ''
         uniq = os.path.basename(tmp_file.name).split(self.colon)[0]
         dest = os.path.join(self._path, subdir, uniq + suffix)
-        os.rename(tmp_file.name, dest)
+        try:
+            if hasattr(os, 'link'):
+                os.link(tmp_file.name, dest)
+                os.remove(tmp_file.name)
+            else:
+                os.rename(tmp_file.name, dest)
+        except OSError, e:
+            os.remove(tmp_file.name)
+            if e.errno == errno.EEXIST:
+                raise ExternalClashError('Name clash with existing message: %s'
+                                         % dest)
+            else:
+                raise
         if isinstance(message, MaildirMessage):
             os.utime(dest, (os.path.getatime(dest), message.get_date()))
         return uniq
@@ -431,12 +443,17 @@ class Maildir(Mailbox):
         except OSError, e:
             if e.errno == errno.ENOENT:
                 Maildir._count += 1
-                return open(path, 'wb+')
+                try:
+                    return _create_carefully(path)
+                except OSError, e:
+                    if e.errno != errno.EEXIST:
+                        raise
             else:
                 raise
-        else:
-            raise ExternalClashError('Name clash prevented file creation: %s' %
-                                     path)
+
+        # Fall through to here if stat succeeded or open raised EEXIST.
+        raise ExternalClashError('Name clash prevented file creation: %s' %
+                                 path)
 
     def _refresh(self):
         """Update table of contents mapping."""

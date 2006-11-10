@@ -140,6 +140,10 @@ Library
 - Bug #1575506: mailbox.py: Single-file mailboxes didn't re-lock
   properly in their flush() method.
 
+- Patch #1514543: mailbox.py: In the Maildir class, report errors if there's 
+  a filename clash instead of possibly losing a message.  (Patch by David
+  Watson.)
+
 - Patch #1514544: mailbox.py: Try to ensure that messages/indexes have
   been physically written to disk after calling .flush() or
   .close(). (Patch by David Watson.)
