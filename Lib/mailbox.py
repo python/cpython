@@ -2,6 +2,12 @@
 
 """Read/write support for Maildir, mbox, MH, Babyl, and MMDF mailboxes."""
 
+# Notes for authors of new mailbox subclasses:
+#
+# Remember to fsync() changes to disk before closing a modified file
+# or returning from a flush() method.  See functions _sync_flush() and
+# _sync_close().
+
 import sys
 import os
 import time
@@ -238,7 +244,7 @@ class Maildir(Mailbox):
         try:
             self._dump_message(message, tmp_file)
         finally:
-            tmp_file.close()
+            _sync_close(tmp_file)
         if isinstance(message, MaildirMessage):
             subdir = message.get_subdir()
             suffix = self.colon + message.get_info()
@@ -565,7 +571,8 @@ class _singlefileMailbox(Mailbox):
             new_file.close()
             os.remove(new_file.name)
             raise
-        new_file.close()
+        _sync_close(new_file)
+        # self._file is about to get replaced, so no need to sync.
         self._file.close()
         try:
             os.rename(new_file.name, self._path)
@@ -599,7 +606,7 @@ class _singlefileMailbox(Mailbox):
         self.flush()
         if self._locked:
             self.unlock()
-        self._file.close()
+        self._file.close()  # Sync has been done by self.flush() above.
 
     def _lookup(self, key=None):
         """Return (start, stop) or raise KeyError."""
@@ -789,7 +796,7 @@ class MH(Mailbox):
                 if self._locked:
                     _unlock_file(f)
         finally:
-            f.close()
+            _sync_close(f)
         return new_key
 
     def remove(self, key):
@@ -836,7 +843,7 @@ class MH(Mailbox):
                 if self._locked:
                     _unlock_file(f)
         finally:
-            f.close()
+            _sync_close(f)
 
     def get_message(self, key):
         """Return a Message representation or raise a KeyError."""
@@ -923,7 +930,7 @@ class MH(Mailbox):
         """Unlock the mailbox if it is locked."""
         if self._locked:
             _unlock_file(self._file)
-            self._file.close()
+            _sync_close(self._file)
             del self._file
             self._locked = False
 
@@ -1020,7 +1027,7 @@ class MH(Mailbox):
                 else:
                     f.write('\n')
         finally:
-            f.close()
+            _sync_close(f)
 
     def pack(self):
         """Re-name messages to eliminate numbering gaps. Invalidates keys."""
@@ -1874,6 +1881,15 @@ def _create_temporary(path):
                                               socket.gethostname(),
                                               os.getpid()))
 
+def _sync_flush(f):
+    """Ensure changes to file f are physically on disk."""
+    f.flush()
+    os.fsync(f.fileno())
+
+def _sync_close(f):
+    """Close file f, ensuring all changes are physically on disk."""
+    _sync_flush(f)
+    f.close()
 
 ## Start: classes from the original module (for backward compatibility).
 
