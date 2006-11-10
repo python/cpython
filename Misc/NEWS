@@ -137,8 +137,12 @@ Library
   weren't passing the message factory on to newly created Maildir/MH
   objects.
 
-- Bug #1575506: Single-file mailboxes didn't re-lock properly in
-  their flush() method.
+- Bug #1575506: mailbox.py: Single-file mailboxes didn't re-lock
+  properly in their flush() method.
+
+- Patch #1514544: mailbox.py: Try to ensure that messages/indexes have
+  been physically written to disk after calling .flush() or
+  .close(). (Patch by David Watson.)
 
 - Bug #1576241: fix functools.wraps() to work on built-in functions.
 
