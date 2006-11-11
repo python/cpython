@@ -1424,7 +1424,8 @@ arbitrary objects):
           {(3)}
   \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(3)}
   \lineiii{\var{a}.update(\optional{\var{b}})}
-          {updates (and overwrites) key/value pairs from \var{b}}
+          {updates \var{a} with key/value pairs from \var{b}, overwriting
+	   existing keys, returns \code{None}}
           {(9)}
   \lineiii{\var{a}.fromkeys(\var{seq}\optional{, \var{value}})}
           {Creates a new dictionary with keys from \var{seq} and values set to \var{value}}
