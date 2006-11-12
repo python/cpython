@@ -98,6 +98,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1359217: Process 2xx response in an ftplib transfer
+  that precedes an 1xx response.
+
 - Patch #1355023: support whence argument for GzipFile.seek.
 
 - Patch #1065257: Support passing open files as body in 
