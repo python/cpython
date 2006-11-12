@@ -99,6 +99,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1359217: Process 2xx response in an ftplib transfer
+  that precedes an 1xx response.
+
 - Patch #1060577: Extract list of RPM files from spec file in
   bdist_rpm
 
