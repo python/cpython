@@ -391,6 +391,7 @@ class bdist_rpm (Command):
         spec_file = [
             '%define name ' + self.distribution.get_name(),
             '%define version ' + self.distribution.get_version().replace('-','_'),
+            '%define unmangled_version ' + self.distribution.get_version(),
             '%define release ' + self.release.replace('-','_'),
             '',
             'Summary: ' + self.distribution.get_description(),
@@ -412,9 +413,9 @@ class bdist_rpm (Command):
         # but only after it has run: and we create the spec file before
         # running "sdist", in case of --spec-only.
         if self.use_bzip2:
-            spec_file.append('Source0: %{name}-%{version}.tar.bz2')
+            spec_file.append('Source0: %{name}-%{unmangled_version}.tar.bz2')
         else:
-            spec_file.append('Source0: %{name}-%{version}.tar.gz')
+            spec_file.append('Source0: %{name}-%{unmangled_version}.tar.gz')
 
         spec_file.extend([
             'License: ' + self.distribution.get_license(),
@@ -489,7 +490,7 @@ class bdist_rpm (Command):
         # are just text that we drop in as-is.  Hmmm.
 
         script_options = [
-            ('prep', 'prep_script', "%setup"),
+            ('prep', 'prep_script', "%setup -n %{name}-%{unmangled_version}"),
             ('build', 'build_script', def_build),
             ('install', 'install_script',
              ("%s install "
