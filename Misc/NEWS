@@ -98,6 +98,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1360200: Use unmangled_version RPM spec field to deal with
+  file name mangling.
+
 - Patch #1359217: Process 2xx response in an ftplib transfer
   that precedes an 1xx response.
 
