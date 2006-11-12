@@ -704,7 +704,15 @@ class HTTPConnection:
         if self.debuglevel > 0:
             print "send:", repr(str)
         try:
-            self.sock.sendall(str)
+            blocksize=8192
+            if hasattr(str,'read') :
+                if self.debuglevel > 0: print "sendIng a read()able"
+                data=str.read(blocksize)
+                while data:
+                    self.sock.sendall(data)
+                    data=str.read(blocksize)
+            else:
+                self.sock.sendall(str)
         except socket.error, v:
             if v[0] == 32:      # Broken pipe
                 self.close()
@@ -879,7 +887,21 @@ class HTTPConnection:
         self.putrequest(method, url, **skips)
 
         if body and ('content-length' not in header_names):
-            self.putheader('Content-Length', str(len(body)))
+            thelen=None
+            try:
+                thelen=str(len(body))
+            except TypeError, te:
+                # If this is a file-like object, try to
+                # fstat its file descriptor
+                import os
+                try:
+                    thelen = str(os.fstat(body.fileno()).st_size)
+                except (AttributeError, OSError):
+                    # Don't send a length if this failed
+                    if self.debuglevel > 0: print "Cannot stat!!"
+                    
+            if thelen is not None:
+                self.putheader('Content-Length',thelen)
         for hdr, value in headers.iteritems():
             self.putheader(hdr, value)
         self.endheaders()

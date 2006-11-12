@@ -96,6 +96,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1065257: Support passing open files as body in 
+  HTTPConnection.request().
+
 - Bug #1569790: mailbox.py: Maildir.get_folder() and MH.get_folder()
   weren't passing the message factory on to newly created Maildir/MH
   objects.

@@ -10,9 +10,10 @@ class FakeSocket:
     def __init__(self, text, fileclass=StringIO.StringIO):
         self.text = text
         self.fileclass = fileclass
+        self.data = ''
 
     def sendall(self, data):
-        self.data = data
+        self.data += data
 
     def makefile(self, mode, bufsize=None):
         if mode != 'r' and mode != 'rb':
@@ -133,6 +134,16 @@ class BasicTest(TestCase):
             self.fail("Did not expect response from HEAD request")
         resp.close()
 
+    def test_send_file(self):
+        expected = 'GET /foo HTTP/1.1\r\nHost: example.com\r\n' \
+                   'Accept-Encoding: identity\r\nContent-Length:'
+
+        body = open(__file__, 'rb')
+        conn = httplib.HTTPConnection('example.com')
+        sock = FakeSocket(body)
+        conn.sock = sock
+        conn.request('GET', '/foo', body)
+        self.assertTrue(sock.data.startswith(expected))
 
 class OfflineTest(TestCase):
     def test_responses(self):
