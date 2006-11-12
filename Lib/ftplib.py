@@ -325,6 +325,14 @@ class FTP:
             if rest is not None:
                 self.sendcmd("REST %s" % rest)
             resp = self.sendcmd(cmd)
+            # Some servers apparently send a 200 reply to
+            # a LIST or STOR command, before the 150 reply
+            # (and way before the 226 reply). This seems to
+            # be in violation of the protocol (which only allows
+            # 1xx or error messages for LIST), so we just discard
+            # this response.
+            if resp[0] == '2':
+               resp = self.getresp()
             if resp[0] != '1':
                 raise error_reply, resp
         else:
@@ -332,6 +340,9 @@ class FTP:
             if rest is not None:
                 self.sendcmd("REST %s" % rest)
             resp = self.sendcmd(cmd)
+            # See above.
+            if resp[0] == '2':
+               resp = self.getresp()
             if resp[0] != '1':
                 raise error_reply, resp
             conn, sockaddr = sock.accept()
