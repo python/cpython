@@ -540,7 +540,7 @@ file_seek(PyFileObject *f, PyObject *args)
 	int whence;
 	int ret;
 	Py_off_t offset;
-	PyObject *offobj;
+	PyObject *offobj, *off_index;
 
 	if (f->f_fp == NULL)
 		return err_closed();
@@ -548,12 +548,25 @@ file_seek(PyFileObject *f, PyObject *args)
 	whence = 0;
 	if (!PyArg_ParseTuple(args, "O|i:seek", &offobj, &whence))
 		return NULL;
+	off_index = PyNumber_Index(offobj);
+	if (!off_index) {
+		if (!PyFloat_Check(offobj))
+			return NULL;
+		/* Deprecated in 2.6 */
+		PyErr_Clear();
+		if (PyErr_Warn(PyExc_DeprecationWarning,
+			       "integer argument expected, got float"))
+			return NULL;
+		off_index = offobj;
+		Py_INCREF(offobj);
+	}
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-	offset = PyInt_AsLong(offobj);
+	offset = PyInt_AsLong(off_index);
 #else
-	offset = PyLong_Check(offobj) ?
-		PyLong_AsLongLong(offobj) : PyInt_AsLong(offobj);
+	offset = PyLong_Check(off_index) ?
+		PyLong_AsLongLong(off_index) : PyInt_AsLong(off_index);
 #endif
+	Py_DECREF(off_index);
 	if (PyErr_Occurred())
 		return NULL;
 
