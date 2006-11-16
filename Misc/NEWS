@@ -219,6 +219,10 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1588217: don't parse "= " as a soft line break in binascii's
+  a2b_qp() function, instead leave it in the string as quopri.decode()
+  does.
+
 - Bug #1567666: Emulate GetFileAttributesExA for Win95.
 
 - Patch #1576166: Support os.utime for directories on Windows NT+.
