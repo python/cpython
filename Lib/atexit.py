@@ -40,8 +40,11 @@ def register(func, *targs, **kargs):
     func - function to be called at exit
     targs - optional arguments to pass to func
     kargs - optional keyword arguments to pass to func
+
+    func is returned to facilitate usage as a decorator.
     """
     _exithandlers.append((func, targs, kargs))
+    return func
 
 if hasattr(sys, "exitfunc"):
     # Assume it's another registered exit function - append it to our list
