@@ -134,7 +134,7 @@ class BinASCIITest(unittest.TestCase):
             pass
         else:
             self.fail("binascii.a2b_qp(**{1:1}) didn't raise TypeError")
-        self.assertEqual(binascii.a2b_qp("= "), "")
+        self.assertEqual(binascii.a2b_qp("= "), "= ")
         self.assertEqual(binascii.a2b_qp("=="), "=")
         self.assertEqual(binascii.a2b_qp("=AX"), "=AX")
         self.assertRaises(TypeError, binascii.b2a_qp, foo="bar")

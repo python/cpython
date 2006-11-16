@@ -1057,8 +1057,7 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
 			in++;
 			if (in >= datalen) break;
 			/* Soft line breaks */
-			if ((data[in] == '\n') || (data[in] == '\r') ||
-			    (data[in] == ' ') || (data[in] == '\t')) {
+			if ((data[in] == '\n') || (data[in] == '\r')) {
 				if (data[in] != '\n') {
 					while (in < datalen && data[in] != '\n') in++;
 				}

@@ -70,6 +70,10 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1588217: don't parse "= " as a soft line break in binascii's
+  a2b_qp() function, instead leave it in the string as quopri.decode()
+  does.
+
 - Patch #838546: Make terminal become controlling in pty.fork()
 
 - Patch #1560695: Add .note.GNU-stack to ctypes' sysv.S so that
