@@ -887,6 +887,21 @@ class TestMH(TestMailbox):
         self.assert_(self._box.get_sequences() ==
                      {'foo':[1, 2, 3], 'unseen':[1], 'bar':[3], 'replied':[3]})
 
+        # Test case for packing while holding the mailbox locked.
+        key0 = self._box.add(msg1)
+        key1 = self._box.add(msg1)
+        key2 = self._box.add(msg1)
+        key3 = self._box.add(msg1)
+
+        self._box.remove(key0)
+        self._box.remove(key2)
+        self._box.lock()
+        self._box.pack()
+        self._box.unlock()
+        self.assert_(self._box.get_sequences() ==
+                     {'foo':[1, 2, 3, 4, 5],
+                      'unseen':[1], 'bar':[3], 'replied':[3]})
+        
     def _get_lock_path(self):
         return os.path.join(self._path, '.mh_sequences.lock')
 
