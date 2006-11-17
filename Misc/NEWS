@@ -158,6 +158,10 @@ Library
   been physically written to disk after calling .flush() or
   .close(). (Patch by David Watson.)
 
+- mailbox.py: Change MH.pack() to not lock individual message files; this
+  wasn't consistent with existing implementations of message packing, and
+  was buggy on some platforms.
+  
 - Bug #1576241: fix functools.wraps() to work on built-in functions.
 
 - Patch #1574068: fix urllib/urllib2 to not insert line breaks when

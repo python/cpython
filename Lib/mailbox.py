@@ -1054,27 +1054,13 @@ class MH(Mailbox):
         for key in self.iterkeys():
             if key - 1 != prev:
                 changes.append((key, prev + 1))
-                f = open(os.path.join(self._path, str(key)), 'r+')
-                try:
-                    if self._locked:
-                        _lock_file(f)
-                    try:
-                        if hasattr(os, 'link'):
-                            os.link(os.path.join(self._path, str(key)),
-                                    os.path.join(self._path, str(prev + 1)))
-                            if sys.platform == 'os2emx':
-                                # cannot unlink an open file on OS/2
-                                f.close()
-                            os.unlink(os.path.join(self._path, str(key)))
-                        else:
-                            f.close()
-                            os.rename(os.path.join(self._path, str(key)),
-                                      os.path.join(self._path, str(prev + 1)))
-                    finally:
-                        if self._locked:
-                            _unlock_file(f)
-                finally:
-                    f.close()
+                if hasattr(os, 'link'):
+                    os.link(os.path.join(self._path, str(key)),
+                            os.path.join(self._path, str(prev + 1)))
+                    os.unlink(os.path.join(self._path, str(key)))
+                else:
+                    os.rename(os.path.join(self._path, str(key)),
+                              os.path.join(self._path, str(prev + 1)))
             prev += 1
         self._next_key = prev + 1
         if len(changes) == 0:
