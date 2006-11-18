@@ -103,6 +103,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1538878: Don't make tkSimpleDialog dialogs transient if
+  the parent window is withdrawn.
+
 - Patch #1360200: Use unmangled_version RPM spec field to deal with
   file name mangling.
 
