@@ -98,6 +98,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1538878: Don't make tkSimpleDialog dialogs transient if
+  the parent window is withdrawn.
+
 - Bug #1597824: return the registered function from atexit.register()
   to facilitate usage as a decorator.
 
