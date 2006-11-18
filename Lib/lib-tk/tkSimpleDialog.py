@@ -129,9 +129,10 @@ class Dialog(Toplevel):
         self.withdraw()
         self.update_idletasks()
 
-        self.apply()
-
-        self.cancel()
+        try:
+            self.apply()
+        finally:
+            self.cancel()
 
     def cancel(self, event=None):
 
