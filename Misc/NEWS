@@ -103,6 +103,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1594554: Always close a tkSimpleDialog on ok(), even
+  if an exception occurs.
+
 - Patch #1538878: Don't make tkSimpleDialog dialogs transient if
   the parent window is withdrawn.
 
