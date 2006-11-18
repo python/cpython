@@ -11,8 +11,22 @@ from test import test_support
 
 class SHATestCase(unittest.TestCase):
     def check(self, data, digest):
-        computed = sha.new(data).hexdigest()
+        # Check digest matches the expected value
+        obj = sha.new(data)
+        computed = obj.hexdigest()
         self.assert_(computed == digest)
+
+        # Verify that the value doesn't change between two consecutive
+        # digest operations.
+        computed_again = obj.hexdigest()
+        self.assert_(computed == computed_again)
+
+        # Check hexdigest() output matches digest()'s output
+        digest = obj.digest()
+        hexd = ""
+        for c in digest:
+            hexd += '%02x' % ord(c)
+        self.assert_(computed == hexd)
 
     def test_case_1(self):
         self.check("abc",
