@@ -98,6 +98,8 @@ Core and builtins
 Library
 -------
 
+- Patch #1472877: Fix Tix subwidget name resolution.
+
 - Patch #1594554: Always close a tkSimpleDialog on ok(), even
   if an exception occurs.
 
