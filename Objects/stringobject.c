@@ -1071,8 +1071,9 @@ string_contains(PyObject *str_obj, PyObject *sub_obj)
 			return PyUnicode_Contains(str_obj, sub_obj);
 #endif
 		if (!PyString_Check(sub_obj)) {
-			PyErr_SetString(PyExc_TypeError,
-			    "'in <string>' requires string as left operand");
+			PyErr_Format(PyExc_TypeError,
+			    "'in <string>' requires string as left operand, "
+			    "not %.200s", sub_obj->ob_type->tp_name);
 			return -1;
 		}
 	}
@@ -1240,8 +1241,9 @@ string_subscript(PyStringObject* self, PyObject* item)
 		}
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError,
-				"string indices must be integers");
+		PyErr_Format(PyExc_TypeError,
+			     "string indices must be integers, not %.200s",
+			     item->ob_type->tp_name);
 		return NULL;
 	}
 }
@@ -4148,7 +4150,8 @@ formatfloat(char *buf, size_t buflen, int flags,
 	double x;
 	x = PyFloat_AsDouble(v);
 	if (x == -1.0 && PyErr_Occurred()) {
-		PyErr_SetString(PyExc_TypeError, "float argument required");
+		PyErr_Format(PyExc_TypeError, "float argument required, "
+			     "not %.200s", v->ob_type->tp_name);
 		return -1;
 	}
 	if (prec < 0)
@@ -4343,7 +4346,8 @@ formatint(char *buf, size_t buflen, int flags,
 
 	x = PyInt_AsLong(v);
 	if (x == -1 && PyErr_Occurred()) {
-		PyErr_SetString(PyExc_TypeError, "int argument required");
+		PyErr_Format(PyExc_TypeError, "int argument required, not %.200s",
+			     v->ob_type->tp_name);
 		return -1;
 	}
 	if (x < 0 && type == 'u') {
