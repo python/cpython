@@ -946,9 +946,10 @@ islt(PyObject *x, PyObject *y, PyObject *compare)
 	if (res == NULL)
 		return -1;
 	if (!PyInt_Check(res)) {
+		PyErr_Format(PyExc_TypeError,
+			     "comparison function must return int, not %.200s",
+			     res->ob_type->tp_name);
 		Py_DECREF(res);
-		PyErr_SetString(PyExc_TypeError,
-				"comparison function must return int");
 		return -1;
 	}
 	i = PyInt_AsLong(res);
@@ -2491,8 +2492,9 @@ list_subscript(PyListObject* self, PyObject* item)
 		}
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError,
-				"list indices must be integers");
+		PyErr_Format(PyExc_TypeError,
+			     "list indices must be integers, not %.200s",
+			     item->ob_type->tp_name);
 		return NULL;
 	}
 }
@@ -2635,8 +2637,9 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 		}
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError,
-				"list indices must be integers");
+		PyErr_Format(PyExc_TypeError,
+			     "list indices must be integers, not %.200s",
+			     item->ob_type->tp_name);
 		return -1;
 	}
 }
