@@ -40,6 +40,9 @@ class SHATestCase(unittest.TestCase):
         self.check("a" * 1000000,
                    "34aa973cd4c4daa4f61eeb2bdbad27316534016f")
 
+    def test_case_4(self):
+        self.check(chr(0xAA) * 80,
+                   '4ca0ef38f1794b28a8f8ee110ee79d48ce13be25')
 
 def test_main():
     test_support.run_unittest(SHATestCase)
