@@ -68,7 +68,10 @@ Python type):
   \lineii{arrays}{Any Python sequence type containing conformable
                   elements. Arrays are returned as lists}
   \lineii{structures}{A Python dictionary. Keys must be strings,
-                      values may be any conformable type.}
+                      values may be any conformable type. Objects
+                      of user-defined classes can be passed in;
+                      only their \var{__dict__} attribute is 
+                      transmitted.}
   \lineii{dates}{in seconds since the epoch (pass in an instance of the
                  \class{DateTime} class) or a
                  \class{\refmodule{datetime}.datetime},
@@ -100,6 +103,10 @@ described below.
 compatibility.  New code should use \class{ServerProxy}.
 
 \versionchanged[The \var{use_datetime} flag was added]{2.5}
+
+\versionchanged[Instances of new-style classes can be passed in
+if they have an \var{__dict__} attribute and don't have a base class
+that is marshalled in a special way.}{2.6}
 \end{classdesc}
 
 
