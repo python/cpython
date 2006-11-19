@@ -236,6 +236,8 @@ Library
 Extension Modules
 -----------------
 
+- Speed up function calls into the math module.
+
 - Bug #1588217: don't parse "= " as a soft line break in binascii's
   a2b_qp() function, instead leave it in the string as quopri.decode()
   does.
