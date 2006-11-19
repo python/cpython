@@ -289,7 +289,17 @@ IO_truncate(IOobject *self, PyObject *args) {
 	
         if (!IO__opencheck(self)) return NULL;
         if (!PyArg_ParseTuple(args, "|n:truncate", &pos)) return NULL;
-        if (pos < 0) pos = self->pos;
+
+	if (PyTuple_Size(args) == 0) {
+		/* No argument passed, truncate to current position */
+		pos = self->pos;
+	}
+
+        if (pos < 0) {
+		errno = EINVAL;
+		PyErr_SetFromErrno(PyExc_IOError);
+		return NULL;
+	}
 
         if (self->string_size > pos) self->string_size = pos;
         self->pos = self->string_size;
