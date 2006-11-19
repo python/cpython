@@ -101,6 +101,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1070046: Marshal new-style objects like InstanceType
+  in xmlrpclib.
+
 - cStringIO.truncate(-1) now raises an IOError, like StringIO and
   regular files.
 
