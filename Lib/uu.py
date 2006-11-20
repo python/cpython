@@ -115,6 +115,7 @@ def decode(in_file, out_file=None, mode=None, quiet=0):
     #
     # Open the output file
     #
+    opened = False
     if out_file == '-':
         out_file = sys.stdout
     elif isinstance(out_file, StringType):
@@ -124,6 +125,7 @@ def decode(in_file, out_file=None, mode=None, quiet=0):
         except AttributeError:
             pass
         out_file = fp
+        opened = True
     #
     # Main decoding loop
     #
@@ -141,6 +143,8 @@ def decode(in_file, out_file=None, mode=None, quiet=0):
         s = in_file.readline()
     if not s:
         raise Error, 'Truncated input file'
+    if opened:
+        out_file.close()
 
 def test():
     """uuencode/uudecode main program"""
