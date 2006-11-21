@@ -1779,9 +1779,7 @@ DB_get_type(DBObject* self, PyObject* args)
         return NULL;
     CHECK_DB_NOT_CLOSED(self);
 
-    MYDB_BEGIN_ALLOW_THREADS;
     type = _DB_get_type(self);
-    MYDB_END_ALLOW_THREADS;
     if (type == -1)
         return NULL;
     return PyInt_FromLong(type);
