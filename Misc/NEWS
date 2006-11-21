@@ -206,6 +206,13 @@ Build
   files in VC7.
 
 
+Windows
+-------
+
+- Conditionalize definition of _CRT_SECURE_NO_DEPRECATE
+  and _CRT_NONSTDC_NO_DEPRECATE.
+
+
 What's New in Python 2.5 (final)
 ================================
 
