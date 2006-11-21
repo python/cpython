@@ -242,6 +242,8 @@ Extension Modules
   a2b_qp() function, instead leave it in the string as quopri.decode()
   does.
 
+- Bug #1599782: Fix segfault on bsddb.db.DB().type().
+
 - Bug #1567666: Emulate GetFileAttributesExA for Win95.
 
 - Patch #1576166: Support os.utime for directories on Windows NT+.
