@@ -70,8 +70,8 @@ class dbobjTestCase(unittest.TestCase):
         self.env.close()
 
     def test03_dbobj_type_before_open(self):
-	# Ensure this doesn't cause a segfault.
-	self.assertRaises(db.DBInvalidArgError, db.DB().type)
+        # Ensure this doesn't cause a segfault.
+        self.assertRaises(db.DBInvalidArgError, db.DB().type)
 
 #----------------------------------------------------------------------
 
