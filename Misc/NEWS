@@ -276,6 +276,8 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1599782: fix segfault on bsddb.db.DB().type().
+
 - Fix bugs in ctypes:
   - anonymous structure fields that have a bit-width specified did not work
   - cast function did not accept c_char_p or c_wchar_p instances as first arg
