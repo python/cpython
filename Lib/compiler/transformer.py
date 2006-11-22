@@ -831,16 +831,10 @@ class Transformer:
                         i = i + 3
                     else: # no vararg
                         assert node[0] == token.COMMA
-                        i += 1
-                    #elif node[0] == token.COMMA:
-                    #    i += 1
-                    #    kwonlyargs, skip = self.keywordonlyargs(nodelist[i:])
-                    #    i += skip
-                    if nodelist[i][0] == token.NAME:
+                        i += 2
+                    if i < len(nodelist) and nodelist[i][0] == token.NAME:
                         kwonlyargs, skip = self.keywordonlyargs(nodelist[i:])
                         i += skip
-
-                print "kwonlyargs:", kwonlyargs
 
                 if i < len(nodelist):
                     # should be DOUBLESTAR
@@ -869,7 +863,6 @@ class Transformer:
             # skip the comma
             i = i + 1
 
-        print "names:", names, "defaults:", defaults, "kwonlyargs:", kwonlyargs, "flags:", flags
         return names, defaults, kwonlyargs, flags
 
     def com_fpdef(self, node):
