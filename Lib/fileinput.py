@@ -301,7 +301,9 @@ class FileInput:
                     self._file = open(self._backupfilename, "r")
                     try:
                         perm = os.fstat(self._file.fileno()).st_mode
-                    except OSError:
+                    except (AttributeError, OSError):
+			# AttributeError occurs in Jython, where there's no
+			# os.fstat.
                         self._output = open(self._filename, "w")
                     else:
                         fd = os.open(self._filename,
