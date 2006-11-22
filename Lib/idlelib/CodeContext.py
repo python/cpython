@@ -54,25 +54,68 @@ class CodeContext:
 
     def toggle_code_context_event(self, event=None):
         if not self.label:
-            self.pad_frame = Tkinter.Frame(self.editwin.top,
-                                           bg=self.bgcolor, border=2,
-                                           relief="sunken")
-            self.label = Tkinter.Label(self.pad_frame,
-                                      text="\n" * (self.context_depth - 1),
-                                      anchor="w", justify="left",
-                                      font=self.textfont,
-                                      bg=self.bgcolor, fg=self.fgcolor,
-                                      border=0,
-                                      width=1, # Don't request more than we get
-                                      )
-            self.label.pack(side="top", fill="x", expand=True,
-                            padx=4, pady=0)
-            self.pad_frame.pack(side="top", fill="x", expand=False,
-                                padx=0, pady=0,
-                                after=self.editwin.status_bar)
+            # The following code attempts to figure out the required border
+            # width and vertical padding required for the CodeContext widget
+            # to be perfectly aligned with the text in the main Text widget.
+            # This is done by retrieving the appropriate attributes from the
+            # editwin.text and editwin.text_frame widgets.
+            #
+            # All values are passed through int(str(<value>)), since some
+            # values may be pixel objects, which can't simply be added added
+            # to ints.
+            #
+            # This code is considered somewhat unstable since it relies on
+            # some of Tk's inner workings. However its effect is merely
+            # cosmetic; failure will only cause the CodeContext text to be
+            # somewhat misaligned with the text in the main Text widget.
+            #
+            # To avoid possible errors, all references to the inner workings
+            # of Tk are executed inside try/except blocks.
+            
+            widgets_for_width_calc = self.editwin.text, self.editwin.text_frame
+
+            # calculate the required vertical padding
+            padx = 0
+            for widget in widgets_for_width_calc:
+                try:
+                    # retrieve the "padx" attribte from widget's pack info
+                    padx += int(str( widget.pack_info()['padx'] ))
+                except:
+                    pass
+                try:
+                    # retrieve the widget's "padx" attribte
+                    padx += int(str( widget.cget('padx') ))
+                except:
+                    pass
+
+            # calculate the required border width
+            border_width = 0
+            for widget in widgets_for_width_calc:
+                try:
+                    # retrieve the widget's "border" attribte
+                    border_width += int(str( widget.cget('border') ))
+                except:
+                    pass
+
+            self.label = Tkinter.Label(self.editwin.top,
+                                       text="\n" * (self.context_depth - 1),
+                                       anchor="w", justify="left",
+                                       font=self.textfont,
+                                       bg=self.bgcolor, fg=self.fgcolor,
+                                       width=1, #don't request more than we get
+                                       padx=padx, #line up with text widget
+                                       border=border_width, #match border width
+                                       relief="sunken",
+                                       )
+
+            # CodeContext's label widget is packed before and above the
+            # text_frame widget, thus ensuring that it will appear directly
+            # above it.
+            self.label.pack(side="top", fill="x", expand=False,
+                            before=self.editwin.text_frame)
+            
         else:
             self.label.destroy()
-            self.pad_frame.destroy()
             self.label = None
         idleConf.SetOption("extensions", "CodeContext", "visible",
                            str(self.label is not None))
