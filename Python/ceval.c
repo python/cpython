@@ -2721,11 +2721,11 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			for (i = co->co_argcount;
 			     i < co->co_argcount + co->co_kwonlyargcount;
 			     i++) {
+				PyObject *name, *def;
 				if (GETLOCAL(i) != NULL)
 					continue;
-				PyObject *name =
-				    PyTuple_GET_ITEM(co->co_varnames, i);
-				PyObject *def = NULL;
+				name = PyTuple_GET_ITEM(co->co_varnames, i);
+				def = NULL;
 				if (kwdefs != NULL)
 					def = PyDict_GetItem(kwdefs, name);
 				if (def != NULL) {
