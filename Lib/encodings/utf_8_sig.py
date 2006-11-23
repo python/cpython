@@ -16,7 +16,7 @@ def encode(input, errors='strict'):
 
 def decode(input, errors='strict'):
     prefix = 0
-    if input.startswith(codecs.BOM_UTF8):
+    if input[:3] == codecs.BOM_UTF8:
         input = input[3:]
         prefix = 3
     (output, consumed) = codecs.utf_8_decode(input, errors, True)
