@@ -425,6 +425,10 @@ class UTF8SigTest(ReadTest):
             ]
         )
 
+    def test_bug1601501(self):
+        # SF bug #1601501: check that the codec works with a buffer
+        unicode("\xef\xbb\xbf", "utf-8-sig")
+
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
         self.assertEquals(codecs.escape_decode(""), ("", 0))
