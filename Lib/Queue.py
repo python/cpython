@@ -26,7 +26,7 @@ class Queue:
         self._init(maxsize)
         # mutex must be held whenever the queue is mutating.  All methods
         # that acquire mutex must release it before returning.  mutex
-        # is shared between the two conditions, so acquiring and
+        # is shared between the three conditions, so acquiring and
         # releasing the conditions also acquires and releases mutex.
         self.mutex = threading.Lock()
         # Notify not_empty whenever an item is added to the queue; a
