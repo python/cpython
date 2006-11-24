@@ -101,6 +101,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1598620: A ctypes Structure cannot contain itself.
+
 - Patch #1362975: Rework CodeContext indentation algorithm to
   avoid hard-coding pixel widths.
 
