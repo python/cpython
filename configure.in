@@ -203,6 +203,11 @@ case $ac_sys_system/$ac_sys_release in
   # Reconfirmed for OpenBSD 3.3 by Zachary Hamm, for 3.4 by Jason Ish.
   OpenBSD/2.* | OpenBSD/3.@<:@0123456789@:>@ | OpenBSD/4.@<:@0@:>@) 
     define_xopen_source=no;;
+  # Defining _XOPEN_SOURCE on NetBSD version prior to the introduction of
+  # _NETBSD_SOURCE disables certain features (eg. setgroups). Reported by
+  # Marc Recht
+  NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6[A-S])
+    define_xopen_source=no;;
   # On Solaris 2.6, sys/wait.h is inconsistent in the usage
   # of union __?sigval. Reported by Stuart Bishop.
   SunOS/5.6)
