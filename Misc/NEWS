@@ -331,6 +331,8 @@ Tools/Demos
 Build
 -----
 
+- Disable _XOPEN_SOURCE on NetBSD 1.x.
+
 - configure now checks whether gcc supports the PyArg_ParseTuple format
   attribute.
 
