@@ -51,7 +51,7 @@ class Vector:
     def __hash__(self):
         raise TypeError, "Vectors cannot be hashed"
 
-    def __nonzero__(self):
+    def __bool__(self):
         raise TypeError, "Vectors cannot be used in Boolean contexts"
 
     def __cmp__(self, other):
@@ -133,7 +133,7 @@ class VectorTest(unittest.TestCase):
 
             for ops in opmap.itervalues():
                 for op in ops:
-                    # calls __nonzero__, which should fail
+                    # calls __bool__, which should fail
                     self.assertRaises(TypeError, bool, op(a, b))
 
 class NumberTest(unittest.TestCase):
@@ -208,13 +208,13 @@ class MiscTest(unittest.TestCase):
         self.assertRaises(RuntimeError, cmp, a, b)
 
     def test_not(self):
-        # Check that exceptions in __nonzero__ are properly
+        # Check that exceptions in __bool__ are properly
         # propagated by the not operator
         import operator
         class Exc(Exception):
             pass
         class Bad:
-            def __nonzero__(self):
+            def __bool__(self):
                 raise Exc
 
         def do(bad):

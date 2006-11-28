@@ -2928,7 +2928,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYNUM(nb_negative);
 		COPYNUM(nb_positive);
 		COPYNUM(nb_absolute);
-		COPYNUM(nb_nonzero);
+		COPYNUM(nb_bool);
 		COPYNUM(nb_invert);
 		COPYNUM(nb_lshift);
 		COPYNUM(nb_rshift);
@@ -4206,32 +4206,39 @@ SLOT0(slot_nb_positive, "__pos__")
 SLOT0(slot_nb_absolute, "__abs__")
 
 static int
-slot_nb_nonzero(PyObject *self)
+slot_nb_bool(PyObject *self)
 {
 	PyObject *func, *args;
-	static PyObject *nonzero_str, *len_str;
+	static PyObject *bool_str, *len_str;
 	int result = -1;
+	int from_len = 0;
 
-	func = lookup_maybe(self, "__nonzero__", &nonzero_str);
+	func = lookup_maybe(self, "__bool__", &bool_str);
 	if (func == NULL) {
 		if (PyErr_Occurred())
 			return -1;
 		func = lookup_maybe(self, "__len__", &len_str);
 		if (func == NULL)
 			return PyErr_Occurred() ? -1 : 1;
+		from_len = 1;
  	}
 	args = PyTuple_New(0);
 	if (args != NULL) {
 		PyObject *temp = PyObject_Call(func, args, NULL);
 		Py_DECREF(args);
 		if (temp != NULL) {
-			if (PyInt_CheckExact(temp) || PyBool_Check(temp))
+			if (from_len) {
+				/* enforced by slot_nb_len */
 				result = PyObject_IsTrue(temp);
+			}
+			else if (PyBool_Check(temp)) {
+				result = PyObject_IsTrue(temp);
+			}
 			else {
 				PyErr_Format(PyExc_TypeError,
-					     "__nonzero__ should return "
-					     "bool or int, returned %s",
-					     temp->ob_type->tp_name);
+					 "__bool__ should return "
+					 "bool, returned %s",
+					 temp->ob_type->tp_name);
 				result = -1;
 			}
 			Py_DECREF(temp);
@@ -4887,7 +4894,7 @@ static slotdef slotdefs[] = {
 	UNSLOT("__pos__", nb_positive, slot_nb_positive, wrap_unaryfunc, "+x"),
 	UNSLOT("__abs__", nb_absolute, slot_nb_absolute, wrap_unaryfunc,
 	       "abs(x)"),
-	UNSLOT("__nonzero__", nb_nonzero, slot_nb_nonzero, wrap_inquirypred,
+	UNSLOT("__bool__", nb_bool, slot_nb_bool, wrap_inquirypred,
 	       "x != 0"),
 	UNSLOT("__invert__", nb_invert, slot_nb_invert, wrap_unaryfunc, "~x"),
 	BINSLOT("__lshift__", nb_lshift, slot_nb_lshift, "<<"),

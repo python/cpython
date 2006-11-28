@@ -633,14 +633,14 @@ class Decimal(object):
             return other
         return 0
 
-    def __nonzero__(self):
+    def __bool__(self):
         """Is the number non-zero?
 
         0 if self == 0
         1 if self != 0
         """
         if self._is_special:
-            return 1
+            return True
         return sum(self._int) != 0
 
     def __cmp__(self, other, context=None):
@@ -759,7 +759,7 @@ class Decimal(object):
         i = int(self)
         if self == Decimal(i):
             return hash(i)
-        assert self.__nonzero__()   # '-0' handled by integer case
+        assert self.__bool__()   # '-0' handled by integer case
         return hash(str(self.normalize()))
 
     def as_tuple(self):

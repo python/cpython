@@ -4017,7 +4017,7 @@ static PyMethodDef Simple_methods[] = {
 	{ NULL, NULL },
 };
 
-static int Simple_nonzero(CDataObject *self)
+static int Simple_bool(CDataObject *self)
 {
 	return memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
 }
@@ -4032,7 +4032,7 @@ static PyNumberMethods Simple_as_number = {
 	0, /* nb_negative */
 	0, /* nb_positive */
 	0, /* nb_absolute */
-	(inquiry)Simple_nonzero, /* nb_nonzero */
+	(inquiry)Simple_bool, /* nb_bool */
 };
 
 #if (PY_VERSION_HEX < 0x02040000)
@@ -4364,7 +4364,7 @@ static PySequenceMethods Pointer_as_sequence = {
 };
 
 static int
-Pointer_nonzero(CDataObject *self)
+Pointer_bool(CDataObject *self)
 {
 	return *(void **)self->b_ptr != NULL;
 }
@@ -4379,7 +4379,7 @@ static PyNumberMethods Pointer_as_number = {
 	0, /* nb_negative */
 	0, /* nb_positive */
 	0, /* nb_absolute */
-	(inquiry)Pointer_nonzero, /* nb_nonzero */
+	(inquiry)Pointer_bool, /* nb_bool */
 };
 
 PyTypeObject Pointer_Type = {

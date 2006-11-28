@@ -780,7 +780,7 @@ int_abs(PyIntObject *v)
 }
 
 static int
-int_nonzero(PyIntObject *v)
+int_bool(PyIntObject *v)
 {
 	return v->ob_ival != 0;
 }
@@ -1034,14 +1034,14 @@ static PyNumberMethods int_as_number = {
 	(unaryfunc)int_neg,	/*nb_negative*/
 	(unaryfunc)int_pos,	/*nb_positive*/
 	(unaryfunc)int_abs,	/*nb_absolute*/
-	(inquiry)int_nonzero,	/*nb_nonzero*/
+	(inquiry)int_bool,	/*nb_bool*/
 	(unaryfunc)int_invert,	/*nb_invert*/
 	(binaryfunc)int_lshift,	/*nb_lshift*/
 	(binaryfunc)int_rshift,	/*nb_rshift*/
 	(binaryfunc)int_and,	/*nb_and*/
 	(binaryfunc)int_xor,	/*nb_xor*/
 	(binaryfunc)int_or,	/*nb_or*/
-	0,		/*nb_coerce*/
+	0,			/*nb_coerce*/
 	(unaryfunc)int_int,	/*nb_int*/
 	(unaryfunc)int_long,	/*nb_long*/
 	(unaryfunc)int_float,	/*nb_float*/

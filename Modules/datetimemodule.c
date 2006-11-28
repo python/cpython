@@ -1958,7 +1958,7 @@ Done:
 }
 
 static int
-delta_nonzero(PyDateTime_Delta *self)
+delta_bool(PyDateTime_Delta *self)
 {
 	return (GET_TD_DAYS(self) != 0
 		|| GET_TD_SECONDS(self) != 0
@@ -2083,7 +2083,7 @@ static PyNumberMethods delta_as_number = {
 	(unaryfunc)delta_negative,		/* nb_negative */
 	(unaryfunc)delta_positive,		/* nb_positive */
 	(unaryfunc)delta_abs,			/* nb_absolute */
-	(inquiry)delta_nonzero,			/* nb_nonzero */
+	(inquiry)delta_bool,			/* nb_bool */
 	0,					/*nb_invert*/
 	0,					/*nb_lshift*/
 	0,					/*nb_rshift*/
@@ -2653,7 +2653,7 @@ static PyNumberMethods date_as_number = {
 	0,						/* nb_negative */
 	0,						/* nb_positive */
 	0,						/* nb_absolute */
-	0,						/* nb_nonzero */
+	0,						/* nb_bool */
 };
 
 static PyTypeObject PyDateTime_DateType = {
@@ -3324,7 +3324,7 @@ time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 }
 
 static int
-time_nonzero(PyDateTime_Time *self)
+time_bool(PyDateTime_Time *self)
 {
 	int offset;
 	int none;
@@ -3418,7 +3418,7 @@ static PyNumberMethods time_as_number = {
 	0,					/* nb_negative */
 	0,					/* nb_positive */
 	0,					/* nb_absolute */
-	(inquiry)time_nonzero,			/* nb_nonzero */
+	(inquiry)time_bool,			/* nb_bool */
 };
 
 static PyTypeObject PyDateTime_TimeType = {
@@ -4501,7 +4501,7 @@ static PyNumberMethods datetime_as_number = {
 	0,					/* nb_negative */
 	0,					/* nb_positive */
 	0,					/* nb_absolute */
-	0,					/* nb_nonzero */
+	0,					/* nb_bool */
 };
 
 static PyTypeObject PyDateTime_DateTimeType = {

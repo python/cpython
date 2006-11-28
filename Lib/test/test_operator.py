@@ -319,7 +319,7 @@ class OperatorTestCase(unittest.TestCase):
 
     def test_truth(self):
         class C(object):
-            def __nonzero__(self):
+            def __bool__(self):
                 raise SyntaxError
         self.failUnlessRaises(TypeError, operator.truth)
         self.failUnlessRaises(SyntaxError, operator.truth, C())

@@ -837,7 +837,7 @@ float_abs(PyFloatObject *v)
 }
 
 static int
-float_nonzero(PyFloatObject *v)
+float_bool(PyFloatObject *v)
 {
 	return v->ob_fval != 0.0;
 }
@@ -1087,7 +1087,7 @@ static PyNumberMethods float_as_number = {
 	(unaryfunc)float_neg, /*nb_negative*/
 	(unaryfunc)float_pos, /*nb_positive*/
 	(unaryfunc)float_abs, /*nb_absolute*/
-	(inquiry)float_nonzero, /*nb_nonzero*/
+	(inquiry)float_bool, /*nb_bool*/
 	0,		/*nb_invert*/
 	0,		/*nb_lshift*/
 	0,		/*nb_rshift*/

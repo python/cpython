@@ -160,7 +160,7 @@ typedef struct {
 	unaryfunc nb_negative;
 	unaryfunc nb_positive;
 	unaryfunc nb_absolute;
-	inquiry nb_nonzero;
+	inquiry nb_bool;
 	unaryfunc nb_invert;
 	binaryfunc nb_lshift;
 	binaryfunc nb_rshift;

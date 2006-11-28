@@ -51,7 +51,7 @@ The following values are considered false:
 \item	any empty mapping, for example, \code{\{\}}.
 
 \item	instances of user-defined classes, if the class defines a
-        \method{__nonzero__()} or \method{__len__()} method, when that
+        \method{__bool__()} or \method{__len__()} method, when that
         method returns the integer zero or \class{bool} value
         \code{False}.\footnote{Additional 
 information on these special methods may be found in the
