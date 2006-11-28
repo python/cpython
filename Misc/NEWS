@@ -70,6 +70,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1563807: _ctypes built on AIX fails with ld ffi error.
+
 - Bug #1598620: A ctypes Structure cannot contain itself.
  
 - Bug #1588217: don't parse "= " as a soft line break in binascii's
