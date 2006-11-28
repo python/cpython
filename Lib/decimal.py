@@ -634,10 +634,10 @@ class Decimal(object):
         return 0
 
     def __bool__(self):
-        """Is the number non-zero?
+        """return True if the number is non-zero.
 
-        0 if self == 0
-        1 if self != 0
+        False if self == 0
+        True if self != 0
         """
         if self._is_special:
             return True
