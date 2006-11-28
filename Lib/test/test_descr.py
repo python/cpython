@@ -417,8 +417,8 @@ def ints():
     if verbose: print "Testing int operations..."
     numops(100, 3)
     # The following crashes in Python 2.2
-    vereq((1).__nonzero__(), 1)
-    vereq((0).__nonzero__(), 0)
+    vereq((1).__bool__(), True)
+    vereq((0).__bool__(), False)
     # This returns 'NotImplemented' in Python 2.2
     class C(int):
         def __add__(self, other):
@@ -1682,7 +1682,7 @@ def specials():
     class Proxy(object):
         def __init__(self, x):
             self.x = x
-        def __nonzero__(self):
+        def __bool__(self):
             return not not self.x
         def __hash__(self):
             return hash(self.x)
@@ -1722,7 +1722,7 @@ def specials():
     class DProxy(object):
         def __init__(self, x):
             self.x = x
-        def __nonzero__(self):
+        def __bool__(self):
             return not not self.x
         def __hash__(self):
             return hash(self.x)

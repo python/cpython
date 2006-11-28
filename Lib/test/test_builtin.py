@@ -94,7 +94,7 @@ if have_unicode:
 ]
 
 class TestFailingBool:
-    def __nonzero__(self):
+    def __bool__(self):
         raise RuntimeError
 
 class TestFailingIter:

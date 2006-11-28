@@ -499,7 +499,7 @@ WRAP_BINARY(proxy_ixor, PyNumber_InPlaceXor)
 WRAP_BINARY(proxy_ior, PyNumber_InPlaceOr)
 
 static int
-proxy_nonzero(PyWeakReference *proxy)
+proxy_bool(PyWeakReference *proxy)
 {
     PyObject *o = PyWeakref_GET_OBJECT(proxy);
     if (!proxy_checkref(proxy))
@@ -596,7 +596,7 @@ static PyNumberMethods proxy_as_number = {
     proxy_neg,              /*nb_negative*/
     proxy_pos,              /*nb_positive*/
     proxy_abs,              /*nb_absolute*/
-    (inquiry)proxy_nonzero, /*nb_nonzero*/
+    (inquiry)proxy_bool,    /*nb_bool*/
     proxy_invert,           /*nb_invert*/
     proxy_lshift,           /*nb_lshift*/
     proxy_rshift,           /*nb_rshift*/

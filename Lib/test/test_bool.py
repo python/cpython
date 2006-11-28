@@ -335,24 +335,51 @@ class BoolTest(unittest.TestCase):
 
     def test_convert_to_bool(self):
         # Verify that TypeError occurs when bad things are returned
-        # from __nonzero__().  This isn't really a bool test, but
+        # from __bool__().  This isn't really a bool test, but
         # it's related.
         check = lambda o: self.assertRaises(TypeError, bool, o)
         class Foo(object):
-            def __nonzero__(self):
+            def __bool__(self):
                 return self
         check(Foo())
 
         class Bar(object):
-            def __nonzero__(self):
+            def __bool__(self):
                 return "Yes"
         check(Bar())
 
         class Baz(int):
-            def __nonzero__(self):
+            def __bool__(self):
                 return self
         check(Baz())
 
+        # __bool__() must return a bool not an int
+        class Spam(int):
+            def __bool__(self):
+                return 1
+        check(Spam())
+
+        class Eggs:
+            def __len__(self):
+                return -1
+        self.assertRaises(ValueError, bool, Eggs())
+
+    def test_sane_len(self):
+        # this test just tests our assumptions about __len__
+        # this will start failing if __len__ changes assertions
+        for badval in ['illegal', -1, 1 << 32]:
+            class A:
+                def __len__(self):
+                    return badval
+            try:
+                bool(A())
+            except (Exception), e_bool:
+                pass
+            try:
+                len(A())
+            except (Exception), e_len:
+                pass
+            self.assertEqual(str(e_bool), str(e_len))
 
 def test_main():
     test_support.run_unittest(BoolTest)

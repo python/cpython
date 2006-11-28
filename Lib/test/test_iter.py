@@ -327,10 +327,10 @@ class TestCase(unittest.TestCase):
         class Boolean:
             def __init__(self, truth):
                 self.truth = truth
-            def __nonzero__(self):
+            def __bool__(self):
                 return self.truth
-        bTrue = Boolean(1)
-        bFalse = Boolean(0)
+        bTrue = Boolean(True)
+        bFalse = Boolean(False)
 
         class Seq:
             def __init__(self, *args):

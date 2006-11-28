@@ -38,7 +38,7 @@ class Node(xml.dom.Node):
 
     prefix = EMPTY_PREFIX # non-null only for NS elements and attributes
 
-    def __nonzero__(self):
+    def __bool__(self):
         return True
 
     def toxml(self, encoding = None):

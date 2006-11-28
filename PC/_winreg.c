@@ -305,7 +305,7 @@ PyDoc_STRVAR(PyHKEY_doc,
 "handle - The integer Win32 handle.\n"
 "\n"
 "Operations:\n"
-"__nonzero__ - Handles with an open object return true, otherwise false.\n"
+"__bool__ - Handles with an open object return true, otherwise false.\n"
 "__int__ - Converting a handle to an integer returns the Win32 handle.\n"
 "__cmp__ - Handle objects are compared using the handle value.");
 
@@ -375,7 +375,7 @@ PyHKEY_deallocFunc(PyObject *ob)
 }
 
 static int
-PyHKEY_nonzeroFunc(PyObject *ob)
+PyHKEY_boolFunc(PyObject *ob)
 {
 	return ((PyHKEYObject *)ob)->hkey != 0;
 }
@@ -437,7 +437,7 @@ static PyNumberMethods PyHKEY_NumberMethods =
 	PyHKEY_unaryFailureFunc,	/* nb_negative */
 	PyHKEY_unaryFailureFunc,	/* nb_positive */
 	PyHKEY_unaryFailureFunc,	/* nb_absolute */
-	PyHKEY_nonzeroFunc,		/* nb_nonzero */
+	PyHKEY_boolFunc,		/* nb_bool */
 	PyHKEY_unaryFailureFunc,	/* nb_invert */
 	PyHKEY_binaryFailureFunc,	/* nb_lshift */
 	PyHKEY_binaryFailureFunc,	/* nb_rshift */

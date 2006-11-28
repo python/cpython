@@ -568,7 +568,7 @@ complex_abs(PyComplexObject *v)
 }
 
 static int
-complex_nonzero(PyComplexObject *v)
+complex_bool(PyComplexObject *v)
 {
 	return v->cval.real != 0.0 || v->cval.imag != 0.0;
 }
@@ -938,7 +938,7 @@ static PyNumberMethods complex_as_number = {
 	(unaryfunc)complex_neg,			/* nb_negative */
 	(unaryfunc)complex_pos,			/* nb_positive */
 	(unaryfunc)complex_abs,			/* nb_absolute */
-	(inquiry)complex_nonzero,		/* nb_nonzero */
+	(inquiry)complex_bool,			/* nb_bool */
 	0,					/* nb_invert */
 	0,					/* nb_lshift */
 	0,					/* nb_rshift */

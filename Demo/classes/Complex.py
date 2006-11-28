@@ -165,7 +165,7 @@ class Complex:
         other = ToComplex(other)
         return cmp(other, self)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return not (self.re == self.im == 0)
 
     abs = radius = __abs__

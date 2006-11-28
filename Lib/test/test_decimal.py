@@ -990,7 +990,7 @@ class DecimalUsabilityTest(unittest.TestCase):
         checkSameDec("__mod__", True)
         checkSameDec("__mul__", True)
         checkSameDec("__neg__")
-        checkSameDec("__nonzero__")
+        checkSameDec("__bool__")
         checkSameDec("__pos__")
         checkSameDec("__pow__", True)
         checkSameDec("__radd__", True)

@@ -36,6 +36,8 @@ TO DO
 Core and Builtins
 -----------------
 
+- Renamed nb_nonzero to nb_bool and __nonzero__ to __bool__
+
 - Classic classes are a thing of the past.  All classes are new style.
 
 - Exceptions *must* derive from BaseException.

@@ -223,7 +223,7 @@ class Rat:
         return cmp(Rat(a), b)
 
     # a != 0
-    def __nonzero__(a):
+    def __bool__(a):
         return a.__num != 0
 
     # coercion

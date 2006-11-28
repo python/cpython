@@ -1313,13 +1313,13 @@ of that object]{2.5}
 \withsubitem{(object method)}{\ttindex{__cmp__()}}
 \end{methoddesc}
 
-\begin{methoddesc}[object]{__nonzero__}{self}
+\begin{methoddesc}[object]{__bool__}{self}
 Called to implement truth value testing, and the built-in operation
-\code{bool()}; should return \code{False} or \code{True}, or their
-integer equivalents \code{0} or \code{1}.
+\code{bool()}; should return \code{False} or \code{True}.
 When this method is not defined, \method{__len__()} is
-called, if it is defined (see below).  If a class defines neither
-\method{__len__()} nor \method{__nonzero__()}, all its instances are
+called, if it is defined (see below) and \code{True} is returned when
+the length is not zero.  If a class defines neither
+\method{__len__()} nor \method{__bool__()}, all its instances are
 considered true.
 \withsubitem{(mapping object method)}{\ttindex{__len__()}}
 \end{methoddesc}
@@ -1693,9 +1693,9 @@ through the values.
 Called to implement the built-in function
 \function{len()}\bifuncindex{len}.  Should return the length of the
 object, an integer \code{>=} 0.  Also, an object that doesn't define a
-\method{__nonzero__()} method and whose \method{__len__()} method
+\method{__bool__()} method and whose \method{__len__()} method
 returns zero is considered to be false in a Boolean context.
-\withsubitem{(object method)}{\ttindex{__nonzero__()}}
+\withsubitem{(object method)}{\ttindex{__bool__()}}
 \end{methoddesc}
 
 \begin{methoddesc}[container object]{__getitem__}{self, key}
