@@ -101,6 +101,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1563807: _ctypes built on AIX fails with ld ffi error.
+
 - Bug #1598620: A ctypes Structure cannot contain itself.
 
 - Patch #1362975: Rework CodeContext indentation algorithm to
