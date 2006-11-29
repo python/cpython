@@ -4046,8 +4046,10 @@ import_all_from(PyObject *locals, PyObject *v)
 		value = PyObject_GetAttr(v, name);
 		if (value == NULL)
 			err = -1;
-		else
+		else if (PyDict_CheckExact(locals))
 			err = PyDict_SetItem(locals, name, value);
+		else
+			err = PyObject_SetItem(locals, name, value);
 		Py_DECREF(name);
 		Py_XDECREF(value);
 		if (err != 0)
