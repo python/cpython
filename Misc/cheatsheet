@@ -269,7 +269,7 @@ x and y                                       if x is False then x, else   (1)
 
 Notes :
     Truth testing behavior can be overridden for a given class by defining
-special method __nonzero__.
+special method __bool__.
     (1) Evaluate second arg only if necessary to determine outcome.
 
 None
@@ -1143,7 +1143,7 @@ Special methods for any class
         __cmp__(s, o)     Compares s to o and returns <0, 0, or >0.
                           Implements >, <, == etc...
         __hash__(s)       Compute a 32 bit hash code; hash() and dictionary ops
-        __nonzero__(s)    Returns False or True for truth value testing
+        __bool__(s)    Returns False or True for truth value testing
         __getattr__(s, name)  called when attr lookup doesn't find <name>
         __setattr__(s, name, val) called when setting an attr
                                   (inside, don't use "self.name = value"
@@ -1167,7 +1167,7 @@ Operators
         s&o       =  __and__(s,o)
         s^o       =  __xor__(s,o)         s|o        =  __or__(s,o)
         s<<o      =  __lshift__(s,o)      s>>o       =  __rshift__(s,o)
-        nonzero(s) = __nonzero__(s) (used in boolean testing)
+        bool(s) = __bool__(s) (used in boolean testing)
         -s        =  __neg__(s)           +s         =  __pos__(s)
         abs(s)    =  __abs__(s)           ~s         =  __invert__(s)  (bitwise)
         s+=o      =  __iadd__(s,o)        s-=o       =  __isub__(s,o)
