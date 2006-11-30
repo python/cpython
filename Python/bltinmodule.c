@@ -1429,7 +1429,20 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 	if (file == NULL || file == Py_None)
 		file = PySys_GetObject("stdout");
 
-	/* XXX Verify that sep and end are None, NULL or strings. */
+	if (sep && sep != Py_None && !PyString_Check(sep) &&
+	    !PyUnicode_Check(sep)) {
+		PyErr_Format(PyExc_TypeError,
+			     "sep must be None, str or unicode, not %.200s",
+			     sep->ob_type->tp_name);
+		return NULL;
+	}
+	if (end && end != Py_None && !PyString_Check(end) &&
+	    !PyUnicode_Check(end)) {
+		PyErr_Format(PyExc_TypeError,
+			     "end must be None, str or unicode, not %.200s",
+			     end->ob_type->tp_name);
+		return NULL;
+	}
 
 	for (i = 0; i < PyTuple_Size(args); i++) {
 		if (i > 0) {
