@@ -24,7 +24,7 @@ each time a new token is found."""
 
 __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __credits__ = \
-    'GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, Skip Montanaro'
+    'GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, Skip Montanaro, Raymond Hettinger'
 
 import string, re
 from token import *
