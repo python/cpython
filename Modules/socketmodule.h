@@ -114,7 +114,6 @@ typedef struct {
 	int sock_family;	/* Address family, e.g., AF_INET */
 	int sock_type;		/* Socket type, e.g., SOCK_STREAM */
 	int sock_proto;		/* Protocol type, usually 0 */
-	sock_addr_t sock_addr;	/* Socket address */
 	PyObject *(*errorhandler)(void); /* Error handler; checks
 					    errno, returns NULL and
 					    sets a Python exception */
