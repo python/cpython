@@ -101,6 +101,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1371075: Make ConfigParser accept optional dict type
+  for ordering, sorting, etc.
+
 - Bug #1563807: _ctypes built on AIX fails with ld ffi error.
 
 - Bug #1598620: A ctypes Structure cannot contain itself.
