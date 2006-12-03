@@ -105,9 +105,6 @@ Library
 
 - Bug #1598620: A ctypes Structure cannot contain itself.
 
-- Patch #1362975: Rework CodeContext indentation algorithm to
-  avoid hard-coding pixel widths.
-
 - Patch #1070046: Marshal new-style objects like InstanceType
   in xmlrpclib.
 

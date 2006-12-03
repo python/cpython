@@ -3,6 +3,9 @@ What's New in IDLE 2.6a1?
 
 *Release date: XX-XXX-200X*
 
+- Patch #1362975: Rework CodeContext indentation algorithm to
+  avoid hard-coding pixel widths.
+
 - Some syntax errors were being caught by tokenize during the tabnanny
   check, resulting in obscure error messages.  Do the syntax check
   first.  Bug 1562716, 1562719
