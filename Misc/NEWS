@@ -351,6 +351,8 @@ Build
 
 - Patch #1540470, for OpenBSD 4.0.
 
+- Fix build failure on kfreebsd and on the hurd.
+
 
 C API
 -----
