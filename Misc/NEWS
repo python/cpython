@@ -110,6 +110,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1610437: fix a tarfile bug with long filename headers.
+
 - Patch #1472877: Fix Tix subwidget name resolution.
 
 - Patch #1594554: Always close a tkSimpleDialog on ok(), even
