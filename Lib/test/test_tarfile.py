@@ -388,13 +388,6 @@ class WriteGNULongTest(unittest.TestCase):
        is tested as well.
     """
 
-    def setUp(self):
-        self.tar = tarfile.open(tmpname(), "w")
-        self.tar.posix = False
-
-    def tearDown(self):
-        self.tar.close()
-
     def _length(self, s):
         blocks, remainder = divmod(len(s) + 1, 512)
         if remainder:
@@ -423,11 +416,22 @@ class WriteGNULongTest(unittest.TestCase):
             tarinfo.linkname = link
             tarinfo.type = tarfile.LNKTYPE
 
-        self.tar.addfile(tarinfo)
+        tar = tarfile.open(tmpname(), "w")
+        tar.posix = False
+        tar.addfile(tarinfo)
 
         v1 = self._calc_size(name, link)
-        v2 = self.tar.offset
+        v2 = tar.offset
         self.assertEqual(v1, v2, "GNU longname/longlink creation failed")
+
+        tar.close()
+
+        tar = tarfile.open(tmpname())
+        member = tar.next()
+        self.failIf(member is None, "unable to read longname member")
+        self.assert_(tarinfo.name == member.name and \
+                     tarinfo.linkname == member.linkname, \
+                     "unable to read longname member")
 
     def test_longname_1023(self):
         self._test(("longnam/" * 127) + "longnam")
