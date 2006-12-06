@@ -857,7 +857,11 @@ class TarInfo(object):
         if self.name.endswith("/"):
             type = DIRTYPE
 
-        name = normpath(self.name)
+        if type in (GNUTYPE_LONGNAME, GNUTYPE_LONGLINK):
+            # Prevent "././@LongLink" from being normalized.
+            name = self.name
+        else:
+            name = normpath(self.name)
 
         if type == DIRTYPE:
             # directories should end with '/'
@@ -913,7 +917,7 @@ class TarInfo(object):
         ]
 
         buf += struct.pack("%ds" % BLOCKSIZE, "".join(parts))
-        chksum = calc_chksums(buf)[0]
+        chksum = calc_chksums(buf[-BLOCKSIZE:])[0]
         buf = buf[:-364] + "%06o\0" % chksum + buf[-357:]
         self.buf = buf
         return buf
