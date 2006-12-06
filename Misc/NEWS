@@ -101,6 +101,8 @@ Core and builtins
 Library
 -------
 
+- Patch #1610437: fix a tarfile bug with long filename headers.
+
 - Patch #1371075: Make ConfigParser accept optional dict type
   for ordering, sorting, etc.
 
