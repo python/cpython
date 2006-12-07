@@ -876,6 +876,9 @@ optional argument \var{deletechars} are removed, and the remaining
 characters have been mapped through the given translation table, which
 must be a string of length 256.
 
+You can use the \function{maketrans()} helper function in the
+\refmodule{string} module to create a translation table.
+
 For Unicode objects, the \method{translate()} method does not
 accept the optional \var{deletechars} argument.  Instead, it
 returns a copy of the \var{s} where all characters have been mapped
