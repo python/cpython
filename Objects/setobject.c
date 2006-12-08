@@ -185,7 +185,7 @@ set_lookkey_string(PySetObject *so, PyObject *key, register long hash)
 
 /*
 Internal routine to insert a new key into the table.
-Used both by the internal resize routine and by the public insert routine.
+Used by the public insert routine.
 Eats a reference to key.
 */
 static int
@@ -215,6 +215,35 @@ set_insert_key(register PySetObject *so, PyObject *key, long hash)
 		Py_DECREF(key);
 	}
 	return 0;
+}
+
+/*
+Internal routine used by set_table_resize() to insert an item which is
+known to be absent from the set.  This routine also assumes that
+the set contains no deleted entries.  Besides the performance benefit,
+using set_insert_clean() in set_table_resize() is dangerous (SF bug #1456209).
+Note that no refcounts are changed by this routine; if needed, the caller
+is responsible for incref'ing `key`.
+*/
+static void
+set_insert_clean(register PySetObject *so, PyObject *key, long hash)
+{
+	register size_t i;
+	register size_t perturb;
+	register size_t mask = (size_t)so->mask;
+	setentry *table = so->table;
+	register setentry *entry;
+
+	i = hash & mask;
+	entry = &table[i];
+	for (perturb = hash; entry->key != NULL; perturb >>= PERTURB_SHIFT) {
+		i = (i << 2) + i + perturb + 1;
+		entry = &table[i & mask];
+	}
+	so->fill++;
+	entry->key = key;
+	entry->hash = hash;
+	so->used++;
 }
 
 /*
@@ -298,11 +327,7 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
 		} else {
 			/* ACTIVE */
 			--i;
-			if(set_insert_key(so, entry->key, entry->hash) == -1) {
-				if (is_oldtable_malloced)
-					PyMem_DEL(oldtable);
-				return -1;
-			}
+			set_insert_clean(so, entry->key, entry->hash);
 		}
 	}
 
