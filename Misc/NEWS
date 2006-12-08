@@ -12,12 +12,20 @@ What's New in Python 2.5.1c1?
 Core and builtins
 -----------------
 
+- Bug #1456209: In some obscure cases it was possible for a class with a
+  custom ``__eq__()`` method to confuse set internals when class instances
+  were used as a set's elements and the ``__eq__()`` method mutated the set.
+
+- Eliminated unnecessary repeated calls to hash() by set.intersection() and
+  set.symmetric_difference_update().
+
 - Bug #1591996: Correctly forward exception in instance_contains().
 
 - Bug #1588287: fix invalid assertion for `1,2` in debug builds.
 
 - Bug #1576657: when setting a KeyError for a tuple key, make sure that
-  the tuple isn't used as the "exception arguments tuple".
+  the tuple isn't used as the "exception arguments tuple".  Applied to
+  both sets and dictionaries.
 
 - Bug #1565514, SystemError not raised on too many nested blocks.
 
