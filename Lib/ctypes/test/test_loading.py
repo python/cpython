@@ -14,8 +14,9 @@ elif sys.platform == "cygwin":
 else:
     libc_name = find_library("c")
 
-if is_resource_enabled("printing"):
-    print "libc_name is", libc_name
+if True or is_resource_enabled("printing"):
+    print >> sys.stderr, "\tfind_library('c') -> ", find_library('c')
+    print >> sys.stderr, "\tfind_library('m') -> ", find_library('m')
 
 class LoaderTest(unittest.TestCase):
 
