@@ -1164,7 +1164,19 @@ set_intersection(PySetObject *so, PyObject *other)
 	}
 
 	while ((key = PyIter_Next(it)) != NULL) {
-		int rv = set_contains_key(so, key);
+		int rv;
+		setentry entry;
+		long hash = PyObject_Hash(key);
+
+		if (hash == -1) {
+			Py_DECREF(it);
+			Py_DECREF(result);
+			Py_DECREF(key);
+			return NULL;
+		}
+		entry.hash = hash;
+		entry.key = key;
+		rv = set_contains_entry(so, &entry);
 		if (rv == -1) {
 			Py_DECREF(it);
 			Py_DECREF(result);
@@ -1172,7 +1184,7 @@ set_intersection(PySetObject *so, PyObject *other)
 			return NULL;
 		}
 		if (rv) {
-			if (set_add_key(result, key) == -1) {
+			if (set_add_entry(result, &entry) == -1) {
 				Py_DECREF(it);
 				Py_DECREF(result);
 				Py_DECREF(key);
@@ -1383,11 +1395,18 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 		PyObject *value;
 		int rv;
 		while (PyDict_Next(other, &pos, &key, &value)) {
-			rv = set_discard_key(so, key);
+			setentry an_entry;
+			long hash = PyObject_Hash(key);
+
+			if (hash == -1)
+				return NULL;
+			an_entry.hash = hash;
+			an_entry.key = key;
+			rv = set_discard_entry(so, &an_entry);
 			if (rv == -1)
 				return NULL;
 			if (rv == DISCARD_NOTFOUND) {
-				if (set_add_key(so, key) == -1)
+				if (set_add_entry(so, &an_entry) == -1)
 					return NULL;
 			}
 		}
