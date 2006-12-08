@@ -10,6 +10,20 @@
 #include "Python.h"
 #include "structmember.h"
 
+/* Set a key error with the specified argument, wrapping it in a
+ * tuple automatically so that tuple keys are not unpacked as the
+ * exception arguments. */
+static void
+set_key_error(PyObject *arg)
+{
+	PyObject *tup;
+	tup = PyTuple_Pack(1, arg);
+	if (!tup)
+		return; /* caller will expect error to be set anyway */
+	PyErr_SetObject(PyExc_KeyError, tup);
+	Py_DECREF(tup);
+}
+
 /* This must be >= 1. */
 #define PERTURB_SHIFT 5
 
@@ -1684,7 +1698,7 @@ set_remove(PySetObject *so, PyObject *key)
 		Py_DECREF(tmpkey);
 		return result;
 	} else if (rv == DISCARD_NOTFOUND) {
-		PyErr_SetObject(PyExc_KeyError, key);
+		set_key_error(key);
 		return NULL;
 	}
 	Py_RETURN_NONE;
