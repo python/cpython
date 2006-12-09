@@ -101,6 +101,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1608267: fix a race condition in os.makedirs() is the directory
+  to be created is already there.
+
 - Patch #1610437: fix a tarfile bug with long filename headers.
 
 - Patch #1371075: Make ConfigParser accept optional dict type
