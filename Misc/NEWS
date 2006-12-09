@@ -358,6 +358,8 @@ Build
 
 - Fix build failure on kfreebsd and on the hurd.
 
+- Fix the build of the library reference in info format.
+
 
 C API
 -----
