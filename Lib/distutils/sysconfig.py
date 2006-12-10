@@ -119,6 +119,11 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
                 return os.path.join(prefix, "Lib")
             else:
                 return os.path.join(prefix, "Lib", "site-packages")
+    elif os.name == "java":
+        if standard_lib:
+            return os.path.join(prefix, "Lib")
+        else:
+            return os.path.join(prefix, "Lib", "site-packages")
     else:
         raise DistutilsPlatformError(
             "I don't know where Python installs its library "

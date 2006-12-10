@@ -130,7 +130,8 @@ class Distribution:
         self.metadata = DistributionMetadata()
         for basename in self.metadata._METHOD_BASENAMES:
             method_name = "get_" + basename
-            setattr(self, method_name, getattr(self.metadata, method_name))
+            if hasattr(self.metadata, method_name):
+                setattr(self, method_name, getattr(self.metadata, method_name))
 
         # 'cmdclass' maps command names to class objects, so we
         # can 1) quickly figure out which class to instantiate when

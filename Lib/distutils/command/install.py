@@ -55,7 +55,14 @@ INSTALL_SCHEMES = {
         'headers': '$base/Include/$dist_name',
         'scripts': '$base/Scripts',
         'data'   : '$base',
-        }
+        },
+    'java': {
+        'purelib': '$base/Lib',
+        'platlib': '$base/Lib',
+        'headers': '$base/Include/$dist_name',
+        'scripts': '$base/Scripts',
+        'data'   : '$base',
+        },
     }
 
 # The keys to an installation scheme; if any new types of files are to be
