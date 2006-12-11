@@ -25,8 +25,6 @@ and opendir), and leave all pathname manipulation to os.path
 
 import sys
 
-from errno import ENOENT, ENOTDIR, EEXIST
-
 _names = sys.builtin_module_names
 
 # Note:  more names are added to __all__ later.
@@ -158,6 +156,7 @@ def makedirs(name, mode=0777):
     recursive.
 
     """
+    from errno import EEXIST
     head, tail = path.split(name)
     if not tail:
         head, tail = path.split(head)
@@ -366,6 +365,8 @@ def execvpe(file, args, env):
 __all__.extend(["execl","execle","execlp","execlpe","execvp","execvpe"])
 
 def _execvpe(file, args, env=None):
+    from errno import ENOENT, ENOTDIR
+
     if env is not None:
         func = execve
         argrest = (args, env)
