@@ -78,7 +78,7 @@ def fileConfig(fname, defaults=None):
         flist = string.split(flist, ",")
         formatters = {}
         for form in flist:
-            sectname = "formatter_%s" % form
+            sectname = "formatter_%s" % string.strip(form)
             opts = cp.options(sectname)
             if "format" in opts:
                 fs = cp.get(sectname, "format", 1)
@@ -105,7 +105,7 @@ def fileConfig(fname, defaults=None):
                 fixups = [] #for inter-handler references
                 for hand in hlist:
                     try:
-                        sectname = "handler_%s" % hand
+                        sectname = "handler_%s" % string.strip(hand)
                         klass = cp.get(sectname, "class")
                         opts = cp.options(sectname)
                         if "formatter" in opts:
@@ -140,6 +140,7 @@ def fileConfig(fname, defaults=None):
             #at last, the loggers...first the root...
             llist = cp.get("loggers", "keys")
             llist = string.split(llist, ",")
+            llist = map(lambda x: string.strip(x), llist)
             llist.remove("root")
             sectname = "logger_root"
             root = logging.root
@@ -154,7 +155,7 @@ def fileConfig(fname, defaults=None):
             if len(hlist):
                 hlist = string.split(hlist, ",")
                 for hand in hlist:
-                    log.addHandler(handlers[hand])
+                    log.addHandler(handlers[string.strip(hand)])
             #and now the others...
             #we don't want to lose the existing loggers,
             #since other threads may have pointers to them.
@@ -188,7 +189,7 @@ def fileConfig(fname, defaults=None):
                 if len(hlist):
                     hlist = string.split(hlist, ",")
                     for hand in hlist:
-                        logger.addHandler(handlers[hand])
+                        logger.addHandler(handlers[string.strip(hand)])
             #Disable any old loggers. There's no point deleting
             #them as other threads may continue to hold references
             #and by disabling them, you stop them doing any logging.
