@@ -189,7 +189,7 @@ class ReferencesTestCase(TestBase):
     # None as the value for the callback, where either means "no
     # callback".  The "no callback" ref and proxy objects are supposed
     # to be shared so long as they exist by all callers so long as
-    # they are active.  In Python 2.3.3 and earlier, this guaranttee
+    # they are active.  In Python 2.3.3 and earlier, this guarantee
     # was not honored, and was broken in different ways for
     # PyWeakref_NewRef() and PyWeakref_NewProxy().  (Two tests.)
 
