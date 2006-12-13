@@ -178,10 +178,9 @@ class WichmannHill_TestBasicOps(TestBasicOps):
 
     def test_bigrand(self):
         # Verify warnings are raised when randrange is too large for random()
-        oldfilters = warnings.filters[:]
-        warnings.filterwarnings("error", "Underlying random")
-        self.assertRaises(UserWarning, self.gen.randrange, 2**60)
-        warnings.filters[:] = oldfilters
+        with test_support.guard_warnings_filter():
+            warnings.filterwarnings("error", "Underlying random")
+            self.assertRaises(UserWarning, self.gen.randrange, 2**60)
 
 class SystemRandom_TestBasicOps(TestBasicOps):
     gen = random.SystemRandom()
