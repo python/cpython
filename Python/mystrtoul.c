@@ -195,13 +195,10 @@ overflowed:
 	return (unsigned long)-1;
 }
 
-/* Checking for overflow in PyOS_strtol is a PITA since C doesn't define
- * anything about what happens when a signed integer operation overflows,
- * and some compilers think they're doing you a favor by being "clever"
- * then.  Python assumes a 2's-complement representation, so that the bit
- * pattern for the largest postive signed long is LONG_MAX, and for
- * the smallest negative signed long is LONG_MAX + 1.
+/* Checking for overflow in PyOS_strtol is a PITA; see comments
+ * about PY_ABS_LONG_MIN in longobject.c.
  */
+#define PY_ABS_LONG_MIN		(0-(unsigned long)LONG_MIN)
 
 long
 PyOS_strtol(char *str, char **ptr, int base)
@@ -224,8 +221,7 @@ PyOS_strtol(char *str, char **ptr, int base)
 		if (sign == '-')
 			result = -result;
 	}
-	else if (sign == '-' && uresult == (unsigned long)LONG_MAX + 1) {
-		assert(LONG_MIN == -LONG_MAX-1);
+	else if (sign == '-' && uresult == PY_ABS_LONG_MIN) {
 		result = LONG_MIN;
 	}
 	else {

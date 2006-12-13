@@ -330,32 +330,6 @@ class LockContextTestCase(unittest.TestCase):
                 return True
         self.boilerPlate(lock, locked)
 
-class DecimalContextTestCase(unittest.TestCase):
-
-    # XXX Somebody should write more thorough tests for this
-
-    def testBasic(self):
-        ctx = decimal.getcontext()
-        orig_context = ctx.copy()
-        try:
-            ctx.prec = save_prec = decimal.ExtendedContext.prec + 5
-            with decimal.ExtendedContext.get_manager():
-                self.assertEqual(decimal.getcontext().prec,
-                                 decimal.ExtendedContext.prec)
-            self.assertEqual(decimal.getcontext().prec, save_prec)
-            try:
-                with decimal.ExtendedContext.get_manager():
-                    self.assertEqual(decimal.getcontext().prec,
-                                     decimal.ExtendedContext.prec)
-                    1/0
-            except ZeroDivisionError:
-                self.assertEqual(decimal.getcontext().prec, save_prec)
-            else:
-                self.fail("Didn't raise ZeroDivisionError")
-        finally:
-            decimal.setcontext(orig_context)
-
-
 # This is needed to make the test actually run under regrtest.py!
 def test_main():
     run_suite(

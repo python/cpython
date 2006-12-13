@@ -816,7 +816,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 #endif
 			else
 				return converterr("string", arg, msgbuf, bufsize);
-			if ((int)strlen(*p) != PyString_Size(arg))
+			if ((Py_ssize_t)strlen(*p) != PyString_Size(arg))
 				return converterr("string without null bytes",
 						  arg, msgbuf, bufsize);
 		}
@@ -883,7 +883,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 				format++;
 			}
 			else if (*p != NULL &&
-				 (int)strlen(*p) != PyString_Size(arg))
+				 (Py_ssize_t)strlen(*p) != PyString_Size(arg))
 				return converterr(
 					"string without null bytes or None", 
 					arg, msgbuf, bufsize);
@@ -1030,7 +1030,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 			   PyMem_Free()ing it after usage
 
 			*/
-			if ((int)strlen(PyString_AS_STRING(s)) != size) {
+			if ((Py_ssize_t)strlen(PyString_AS_STRING(s))
+								!= size) {
 				Py_DECREF(s);
 				return converterr(
 					"(encoded string without NULL bytes)",
@@ -1746,7 +1747,7 @@ PyArg_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t m
 /* For type constructors that don't take keyword args
  *
  * Sets a TypeError and returns 0 if the kwds dict is 
- * not emtpy, returns 1 otherwise
+ * not empty, returns 1 otherwise
  */
 int
 _PyArg_NoKeywords(const char *funcname, PyObject *kw)

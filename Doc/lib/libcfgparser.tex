@@ -48,11 +48,20 @@ Default values can be specified by passing them into the
 may be passed into the \method{get()} method which will override all
 others.
 
-\begin{classdesc}{RawConfigParser}{\optional{defaults}}
+Sections are normally stored in a builtin dictionary. An alternative
+dictionary type can be passed to the \class{ConfigParser} constructor.
+For example, if a dictionary type is passed that sorts its keys,
+the sections will be sorted on write-back, as will be the keys within
+each section.
+
+\begin{classdesc}{RawConfigParser}{\optional{defaults\optional{, dict_type}}}
 The basic configuration object.  When \var{defaults} is given, it is
-initialized into the dictionary of intrinsic defaults.  This class
-does not support the magical interpolation behavior.
+initialized into the dictionary of intrinsic defaults.  When \var{dict_type}
+is given, it will be used to create the dictionary objects for the list
+of sections, for the options within a section, and for the default values.
+This class does not support the magical interpolation behavior.
 \versionadded{2.3}
+\versionchanged[\var{dict_type} was added]{2.6}
 \end{classdesc}
 
 \begin{classdesc}{ConfigParser}{\optional{defaults}}

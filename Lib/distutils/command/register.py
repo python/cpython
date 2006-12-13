@@ -256,7 +256,7 @@ Your selection [default 1]: ''',
         body = StringIO.StringIO()
         for key, value in data.items():
             # handle multiple entries for the same name
-            if type(value) != type([]):
+            if type(value) not in (type([]), type( () )):
                 value = [value]
             for value in value:
                 value = unicode(value).encode("utf-8")

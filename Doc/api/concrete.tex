@@ -602,15 +602,15 @@ parameter and are called with a non-string parameter.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_FromString}{const char *v}
-  Return a new string object with the value \var{v} on success, and
-  \NULL{} on failure.  The parameter \var{v} must not be \NULL{}; it
-  will not be checked.
+  Return a new string object with a copy of the string \var{v} as value
+  on success, and \NULL{} on failure.  The parameter \var{v} must not be
+  \NULL{}; it will not be checked.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_FromStringAndSize}{const char *v,
                                                          Py_ssize_t len}
-  Return a new string object with the value \var{v} and length
-  \var{len} on success, and \NULL{} on failure.  If \var{v} is
+  Return a new string object with a copy of the string \var{v} as value
+  and length \var{len} on success, and \NULL{} on failure.  If \var{v} is
   \NULL{}, the contents of the string are uninitialized.
 \end{cfuncdesc}
 
@@ -2879,10 +2879,10 @@ rather than explicitly calling \cfunction{PyGen_New}.
 Various date and time objects are supplied by the \module{datetime}
 module.  Before using any of these functions, the header file
 \file{datetime.h} must be included in your source (note that this is
-not include by \file{Python.h}), and macro \cfunction{PyDateTime_IMPORT()}
-must be invoked.  The macro arranges to put a pointer to a C structure
-in a static variable \code{PyDateTimeAPI}, which is used by the following
-macros.
+not included by \file{Python.h}), and the macro
+\cfunction{PyDateTime_IMPORT} must be invoked.  The macro puts a
+pointer to a C structure into a static variable, 
+\code{PyDateTimeAPI}, that is used by the following macros.
 
 Type-check macros:
 
@@ -3080,9 +3080,9 @@ either the abstract object protocol (including
 \cfunction{PyObject_IsTrue()}, \cfunction{PyObject_Print()}, and
 \cfunction{PyObject_GetIter()})
 or the abstract number protocol (including
-\cfunction{PyNumber_Add()}, \cfunction{PyNumber_Subtract()},
+\cfunction{PyNumber_And()}, \cfunction{PyNumber_Subtract()},
 \cfunction{PyNumber_Or()}, \cfunction{PyNumber_Xor()},
-\cfunction{PyNumber_InPlaceAdd()}, \cfunction{PyNumber_InPlaceSubtract()},
+\cfunction{PyNumber_InPlaceAnd()}, \cfunction{PyNumber_InPlaceSubtract()},
 \cfunction{PyNumber_InPlaceOr()}, and \cfunction{PyNumber_InPlaceXor()}).
 
 \begin{ctypedesc}{PySetObject}

@@ -620,8 +620,9 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
 		}
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError, 
-				"tuple indices must be integers");
+		PyErr_Format(PyExc_TypeError, 
+			     "tuple indices must be integers, not %.200s",
+			     item->ob_type->tp_name);
 		return NULL;
 	}
 }

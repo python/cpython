@@ -220,6 +220,8 @@ initspam(void)
     PyObject *m;
 
     m = Py_InitModule("spam", SpamMethods);
+    if (m == NULL)
+        return;
 
     SpamError = PyErr_NewException("spam.error", NULL, NULL);
     Py_INCREF(SpamError);
@@ -364,9 +366,9 @@ is inserted in the dictionary \code{sys.modules} under the key
 created module based upon the table (an array of \ctype{PyMethodDef}
 structures) that was passed as its second argument.
 \cfunction{Py_InitModule()} returns a pointer to the module object
-that it creates (which is unused here).  It aborts with a fatal error
-if the module could not be initialized satisfactorily, so the caller
-doesn't need to check for errors.
+that it creates (which is unused here).  It may abort with a fatal error
+for certain errors, or return \NULL{} if the module could not be
+initialized satisfactorily.
 
 When embedding Python, the \cfunction{initspam()} function is not
 called automatically unless there's an entry in the
@@ -1275,6 +1277,8 @@ initspam(void)
     PyObject *c_api_object;
 
     m = Py_InitModule("spam", SpamMethods);
+    if (m == NULL)
+        return;
 
     /* Initialize the C API pointer array */
     PySpam_API[PySpam_System_NUM] = (void *)PySpam_System;
@@ -1361,7 +1365,9 @@ initclient(void)
 {
     PyObject *m;
 
-    Py_InitModule("client", ClientMethods);
+    m = Py_InitModule("client", ClientMethods);
+    if (m == NULL)
+        return;
     if (import_spam() < 0)
         return;
     /* additional initialization can happen here */

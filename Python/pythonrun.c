@@ -527,11 +527,15 @@ Py_NewInterpreter(void)
 	bimod = _PyImport_FindExtension("__builtin__", "__builtin__");
 	if (bimod != NULL) {
 		interp->builtins = PyModule_GetDict(bimod);
+		if (interp->builtins == NULL)
+			goto handle_error;
 		Py_INCREF(interp->builtins);
 	}
 	sysmod = _PyImport_FindExtension("sys", "sys");
 	if (bimod != NULL && sysmod != NULL) {
 		interp->sysdict = PyModule_GetDict(sysmod);
+		if (interp->sysdict == NULL)
+			goto handle_error;
 		Py_INCREF(interp->sysdict);
 		PySys_SetPath(Py_GetPath());
 		PyDict_SetItemString(interp->sysdict, "modules",
@@ -545,6 +549,7 @@ Py_NewInterpreter(void)
 	if (!PyErr_Occurred())
 		return tstate;
 
+handle_error:
 	/* Oops, it didn't work.  Undo it all. */
 
 	PyErr_Print();
@@ -717,6 +722,15 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
 #define PARSER_FLAGS(flags) \
 	((flags) ? ((((flags)->cf_flags & PyCF_DONT_IMPLY_DEDENT) ? \
 		      PyPARSE_DONT_IMPLY_DEDENT : 0)) : 0)
+
+#if 0
+/* Keep an example of flags with future keyword support. */
+#define PARSER_FLAGS(flags) \
+	((flags) ? ((((flags)->cf_flags & PyCF_DONT_IMPLY_DEDENT) ? \
+		      PyPARSE_DONT_IMPLY_DEDENT : 0) \
+		    | ((flags)->cf_flags & CO_FUTURE_WITH_STATEMENT ? \
+		       PyPARSE_WITH_IS_KEYWORD : 0)) : 0)
+#endif
 
 int
 PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)

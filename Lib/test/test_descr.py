@@ -2017,6 +2017,13 @@ def supers():
 
     veris(Sub.test(), Base.aProp)
 
+    # Verify that super() doesn't allow keyword args
+    try:
+        super(Base, kw=1)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "super shouldn't accept keyword args"
 
 def inherits():
     if verbose: print "Testing inheritance from basic types..."
@@ -3499,6 +3506,13 @@ def test_mutable_bases():
         pass
     else:
         raise TestFailed, "shouldn't be able to assign to list.__bases__"
+
+    try:
+        D.__bases__ = (C2, list)
+    except TypeError:
+        pass
+    else:
+        assert 0, "best_base calculation found wanting"
 
     try:
         del D.__bases__

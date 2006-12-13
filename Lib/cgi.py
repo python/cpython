@@ -799,8 +799,10 @@ class FormContentDict(UserDict.UserDict):
     form.dict == {key: [val, val, ...], ...}
 
     """
-    def __init__(self, environ=os.environ):
-        self.dict = self.data = parse(environ=environ)
+    def __init__(self, environ=os.environ, keep_blank_values=0, strict_parsing=0):
+        self.dict = self.data = parse(environ=environ,
+                                      keep_blank_values=keep_blank_values,
+                                      strict_parsing=strict_parsing)
         self.query_string = environ['QUERY_STRING']
 
 

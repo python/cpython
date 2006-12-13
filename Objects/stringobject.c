@@ -804,10 +804,22 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 		return ret;
 	}
 	if (flags & Py_PRINT_RAW) {
+		char *data = op->ob_sval;
+		Py_ssize_t size = op->ob_size;
+		while (size > INT_MAX) {
+			/* Very long strings cannot be written atomically.
+			 * But don't write exactly INT_MAX bytes at a time
+			 * to avoid memory aligment issues.
+			 */
+			const int chunk_size = INT_MAX & ~0x3FFF;
+			fwrite(data, 1, chunk_size, fp);
+			data += chunk_size;
+			size -= chunk_size;
+		}
 #ifdef __VMS
-                if (op->ob_size) fwrite(op->ob_sval, (int) op->ob_size, 1, fp);
+                if (size) fwrite(data, (int)size, 1, fp);
 #else
-                fwrite(op->ob_sval, 1, (int) op->ob_size, fp);
+                fwrite(data, 1, (int)size, fp);
 #endif
 		return 0;
 	}
@@ -844,7 +856,7 @@ PyString_Repr(PyObject *obj, int smartquotes)
 	register PyStringObject* op = (PyStringObject*) obj;
 	size_t newsize = 2 + 4 * op->ob_size;
 	PyObject *v;
-	if (newsize > PY_SSIZE_T_MAX) {
+	if (newsize > PY_SSIZE_T_MAX || newsize / 4 != op->ob_size) {
 		PyErr_SetString(PyExc_OverflowError,
 			"string is too large to make repr");
 	}
@@ -1059,8 +1071,9 @@ string_contains(PyObject *str_obj, PyObject *sub_obj)
 			return PyUnicode_Contains(str_obj, sub_obj);
 #endif
 		if (!PyString_Check(sub_obj)) {
-			PyErr_SetString(PyExc_TypeError,
-			    "'in <string>' requires string as left operand");
+			PyErr_Format(PyExc_TypeError,
+			    "'in <string>' requires string as left operand, "
+			    "not %.200s", sub_obj->ob_type->tp_name);
 			return -1;
 		}
 	}
@@ -1228,8 +1241,9 @@ string_subscript(PyStringObject* self, PyObject* item)
 		}
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError,
-				"string indices must be integers");
+		PyErr_Format(PyExc_TypeError,
+			     "string indices must be integers, not %.200s",
+			     item->ob_type->tp_name);
 		return NULL;
 	}
 }
@@ -1543,11 +1557,11 @@ string_partition(PyStringObject *self, PyObject *sep_obj)
 }
 
 PyDoc_STRVAR(rpartition__doc__,
-"S.rpartition(sep) -> (head, sep, tail)\n\
+"S.rpartition(sep) -> (tail, sep, head)\n\
 \n\
 Searches for the separator sep in S, starting at the end of S, and returns\n\
 the part before it, the separator itself, and the part after it.  If the\n\
-separator is not found, returns S and two empty strings.");
+separator is not found, returns two empty strings and S.");
 
 static PyObject *
 string_rpartition(PyStringObject *self, PyObject *sep_obj)
@@ -4136,7 +4150,8 @@ formatfloat(char *buf, size_t buflen, int flags,
 	double x;
 	x = PyFloat_AsDouble(v);
 	if (x == -1.0 && PyErr_Occurred()) {
-		PyErr_SetString(PyExc_TypeError, "float argument required");
+		PyErr_Format(PyExc_TypeError, "float argument required, "
+			     "not %.200s", v->ob_type->tp_name);
 		return -1;
 	}
 	if (prec < 0)
@@ -4237,7 +4252,7 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 		return NULL;
 	}
 	llen = PyString_Size(result);
-	if (llen > PY_SSIZE_T_MAX) {
+	if (llen > INT_MAX) {
 		PyErr_SetString(PyExc_ValueError, "string too large in _PyString_FormatLong");
 		return NULL;
 	}
@@ -4331,7 +4346,8 @@ formatint(char *buf, size_t buflen, int flags,
 
 	x = PyInt_AsLong(v);
 	if (x == -1 && PyErr_Occurred()) {
-		PyErr_SetString(PyExc_TypeError, "int argument required");
+		PyErr_Format(PyExc_TypeError, "int argument required, not %.200s",
+			     v->ob_type->tp_name);
 		return -1;
 	}
 	if (x < 0 && type == 'u') {
@@ -4726,9 +4742,10 @@ PyString_Format(PyObject *format, PyObject *args)
 			default:
 				PyErr_Format(PyExc_ValueError,
 				  "unsupported format character '%c' (0x%x) "
-				  "at index %i",
+				  "at index %zd",
 				  c, c,
-				  (int)(fmt - 1 - PyString_AsString(format)));
+				  (Py_ssize_t)(fmt - 1 -
+					       PyString_AsString(format)));
 				goto error;
 			}
 			if (sign) {

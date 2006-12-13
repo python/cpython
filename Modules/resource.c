@@ -298,6 +298,10 @@ initresource(void)
 	PyModule_AddIntConstant(m, "RLIMIT_MEMLOCK", RLIMIT_MEMLOCK);
 #endif
 
+#ifdef RLIMIT_SBSIZE
+	PyModule_AddIntConstant(m, "RLIMIT_SBSIZE", RLIMIT_SBSIZE);
+#endif
+
 #ifdef RUSAGE_SELF
 	PyModule_AddIntConstant(m, "RUSAGE_SELF", RUSAGE_SELF);
 #endif

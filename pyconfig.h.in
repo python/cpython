@@ -40,6 +40,9 @@
 /* Define to 1 if you have the <asm/types.h> header file. */
 #undef HAVE_ASM_TYPES_H
 
+/* Define if GCC supports __attribute__((format(PyArg_ParseTuple, 2, 3))) */
+#undef HAVE_ATTRIBUTE_FORMAT_PARSETUPLE
+
 /* Define to 1 if you have the `bind_textdomain_codeset' function. */
 #undef HAVE_BIND_TEXTDOMAIN_CODESET
 
@@ -677,7 +680,7 @@
 /* Define this if you have tcl and TCL_UTF_MAX==6 */
 #undef HAVE_UCS4_TCL
 
-/* Define this if you have the type uintptr_t. */
+/* Define to 1 if the system has the type `uintptr_t'. */
 #undef HAVE_UINTPTR_T
 
 /* Define to 1 if you have the `uname' function. */

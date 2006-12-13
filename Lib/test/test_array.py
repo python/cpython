@@ -85,6 +85,13 @@ class BaseTest(unittest.TestCase):
         self.assertNotEqual(id(a), id(b))
         self.assertEqual(a, b)
 
+    def test_deepcopy(self):
+        import copy
+        a = array.array(self.typecode, self.example)
+        b = copy.deepcopy(a)
+        self.assertNotEqual(id(a), id(b))
+        self.assertEqual(a, b)
+
     def test_pickle(self):
         for protocol in (0, 1, 2):
             a = array.array(self.typecode, self.example)

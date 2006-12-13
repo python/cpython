@@ -44,6 +44,10 @@ If an exception is raised during execution of the exit handlers, a
 traceback is printed (unless \exception{SystemExit} is raised) and the
 exception information is saved.  After all exit handlers have had a
 chance to run the last exception to be raised is re-raised.
+
+\versionchanged[This function now returns \var{func} which makes it
+                possible to use it as a decorator without binding the
+		original name to \code{None}]{2.6}
 \end{funcdesc}
 
 
@@ -92,3 +96,15 @@ atexit.register(goodbye, 'Donny', 'nice')
 # or:
 atexit.register(goodbye, adjective='nice', name='Donny')
 \end{verbatim}
+
+Usage as a decorator:
+
+\begin{verbatim}
+import atexit
+
+@atexit.register
+def goodbye():
+    print "You are now leaving the Python sector."
+\end{verbatim}
+
+This obviously only works with functions that don't take arguments.

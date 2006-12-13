@@ -6,6 +6,8 @@
  */
 
 #include "Python.h"
+#include <float.h>
+#include "structmember.h"
 
 #ifdef WITH_THREAD
 #include "pythread.h"
@@ -35,13 +37,13 @@ raiseTestError(const char* test_name, const char* msg)
    platforms have these hardcoded.  Better safe than sorry.
 */
 static PyObject*
-sizeof_error(const char* fatname, const char* typename,
+sizeof_error(const char* fatname, const char* typname,
         int expected, int got)
 {
 	char buf[1024];
 	PyOS_snprintf(buf, sizeof(buf),
 		"%.200s #define == %d but sizeof(%.200s) == %d",
-		fatname, expected, typename, got);
+		fatname, expected, typname, got);
 	PyErr_SetString(TestError, buf);
 	return (PyObject*)NULL;
 }
@@ -615,7 +617,7 @@ _make_call(void *callable)
 {
 	PyObject *rc;
 	PyGILState_STATE s = PyGILState_Ensure();
-	rc = PyObject_CallFunction(callable, "");
+	rc = PyObject_CallFunction((PyObject *)callable, "");
 	Py_XDECREF(rc);
 	PyGILState_Release(s);
 }
@@ -664,6 +666,9 @@ test_thread_state(PyObject *self, PyObject *args)
 	_make_call(fn);
 	PyThread_acquire_lock(thread_done, 1);  /* wait for thread to finish */
 	Py_END_ALLOW_THREADS
+
+	/* Release lock we acquired above.  This is required on HP-UX. */
+	PyThread_release_lock(thread_done);
 
 	PyThread_free_lock(thread_done);
 	Py_RETURN_NONE;
@@ -756,6 +761,105 @@ static PyMethodDef TestMethods[] = {
 
 #define AddSym(d, n, f, v) {PyObject *o = f(v); PyDict_SetItemString(d, n, o); Py_DECREF(o);}
 
+typedef struct {
+	char byte_member;
+	unsigned char ubyte_member;
+	short short_member;
+	unsigned short ushort_member;
+	int int_member;
+	unsigned int uint_member;
+	long long_member;
+	unsigned long ulong_member;
+	float float_member;
+	double double_member;
+} all_structmembers;
+
+typedef struct {
+    PyObject_HEAD
+	all_structmembers structmembers;
+} test_structmembers;
+
+static struct PyMemberDef test_members[] = {
+	{"T_BYTE", T_BYTE, offsetof(test_structmembers, structmembers.byte_member), 0, NULL},
+	{"T_UBYTE", T_UBYTE, offsetof(test_structmembers, structmembers.ubyte_member), 0, NULL},
+	{"T_SHORT", T_SHORT, offsetof(test_structmembers, structmembers.short_member), 0, NULL},
+	{"T_USHORT", T_USHORT, offsetof(test_structmembers, structmembers.ushort_member), 0, NULL},
+	{"T_INT", T_INT, offsetof(test_structmembers, structmembers.int_member), 0, NULL},
+	{"T_UINT", T_UINT, offsetof(test_structmembers, structmembers.uint_member), 0, NULL},
+	{"T_LONG", T_LONG, offsetof(test_structmembers, structmembers.long_member), 0, NULL},
+	{"T_ULONG", T_ULONG, offsetof(test_structmembers, structmembers.ulong_member), 0, NULL},
+	{"T_FLOAT", T_FLOAT, offsetof(test_structmembers, structmembers.float_member), 0, NULL},
+	{"T_DOUBLE", T_DOUBLE, offsetof(test_structmembers, structmembers.double_member), 0, NULL},
+	{NULL}
+};
+
+
+static PyObject *test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs){
+	static char *keywords[]={"T_BYTE", "T_UBYTE", "T_SHORT", "T_USHORT", "T_INT", "T_UINT",
+		"T_LONG", "T_ULONG", "T_FLOAT", "T_DOUBLE", NULL};
+	test_structmembers *ob=PyObject_New(test_structmembers, type);
+	if (ob==NULL)
+		return NULL;
+	memset(&ob->structmembers, 0, sizeof(all_structmembers));
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|bBhHiIlkfd", keywords,
+		&ob->structmembers.byte_member, &ob->structmembers.ubyte_member,
+		&ob->structmembers.short_member, &ob->structmembers.ushort_member,
+		&ob->structmembers.int_member, &ob->structmembers.uint_member, 
+		&ob->structmembers.long_member, &ob->structmembers.ulong_member,
+		&ob->structmembers.float_member, &ob->structmembers.double_member)){
+		Py_DECREF(ob);
+		return NULL;
+		}
+	return (PyObject *)ob;
+}
+
+static void test_structmembers_free(PyObject *ob){
+	PyObject_FREE(ob);
+}
+
+static PyTypeObject test_structmembersType = {
+    PyObject_HEAD_INIT(NULL)
+    0,
+	"test_structmembersType",
+	sizeof(test_structmembers),	/* tp_basicsize */
+	0,				/* tp_itemsize */
+	test_structmembers_free,	/* destructor tp_dealloc */
+	0,				/* tp_print */
+	0,				/* tp_getattr */
+	0,				/* tp_setattr */
+	0,				/* tp_compare */
+	0,				/* tp_repr */
+	0,				/* tp_as_number */
+	0,				/* tp_as_sequence */
+	0,				/* tp_as_mapping */
+	0,				/* tp_hash */
+	0,				/* tp_call */
+	0,				/* tp_str */
+	PyObject_GenericGetAttr,
+	PyObject_GenericSetAttr,
+	0,				/* tp_as_buffer */
+	0,				/* tp_flags */
+	"Type containing all structmember types",
+	0,				/* traverseproc tp_traverse */
+	0,				/* tp_clear */
+	0,				/* tp_richcompare */
+	0,				/* tp_weaklistoffset */
+	0,				/* tp_iter */
+	0,				/* tp_iternext */
+	0,				/* tp_methods */
+	test_members,	/* tp_members */
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	test_structmembers_new,			/* tp_new */
+};
+
+
 PyMODINIT_FUNC
 init_testcapi(void)
 {
@@ -765,16 +869,28 @@ init_testcapi(void)
 	if (m == NULL)
 		return;
 
+	test_structmembersType.ob_type=&PyType_Type;
+	Py_INCREF(&test_structmembersType);
+	PyModule_AddObject(m, "test_structmembersType", (PyObject *)&test_structmembersType);
+
+	PyModule_AddObject(m, "CHAR_MAX", PyInt_FromLong(CHAR_MAX));
+	PyModule_AddObject(m, "CHAR_MIN", PyInt_FromLong(CHAR_MIN));
 	PyModule_AddObject(m, "UCHAR_MAX", PyInt_FromLong(UCHAR_MAX));
+	PyModule_AddObject(m, "SHRT_MAX", PyInt_FromLong(SHRT_MAX));
+	PyModule_AddObject(m, "SHRT_MIN", PyInt_FromLong(SHRT_MIN));
 	PyModule_AddObject(m, "USHRT_MAX", PyInt_FromLong(USHRT_MAX));
+	PyModule_AddObject(m, "INT_MAX",  PyLong_FromLong(INT_MAX));
+	PyModule_AddObject(m, "INT_MIN",  PyLong_FromLong(INT_MIN));
 	PyModule_AddObject(m, "UINT_MAX",  PyLong_FromUnsignedLong(UINT_MAX));
-	PyModule_AddObject(m, "ULONG_MAX", PyLong_FromUnsignedLong(ULONG_MAX));
-	PyModule_AddObject(m, "INT_MIN", PyInt_FromLong(INT_MIN));
-	PyModule_AddObject(m, "LONG_MIN", PyInt_FromLong(LONG_MIN));
-	PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyInt_FromSsize_t(PY_SSIZE_T_MIN));
-	PyModule_AddObject(m, "INT_MAX", PyInt_FromLong(INT_MAX));
 	PyModule_AddObject(m, "LONG_MAX", PyInt_FromLong(LONG_MAX));
+	PyModule_AddObject(m, "LONG_MIN", PyInt_FromLong(LONG_MIN));
+	PyModule_AddObject(m, "ULONG_MAX", PyLong_FromUnsignedLong(ULONG_MAX));
+	PyModule_AddObject(m, "FLT_MAX", PyFloat_FromDouble(FLT_MAX));
+	PyModule_AddObject(m, "FLT_MIN", PyFloat_FromDouble(FLT_MIN));
+	PyModule_AddObject(m, "DBL_MAX", PyFloat_FromDouble(DBL_MAX));
+	PyModule_AddObject(m, "DBL_MIN", PyFloat_FromDouble(DBL_MIN));
 	PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyInt_FromSsize_t(PY_SSIZE_T_MAX));
+	PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyInt_FromSsize_t(PY_SSIZE_T_MIN));
 
 	TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
 	Py_INCREF(TestError);

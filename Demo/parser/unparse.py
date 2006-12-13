@@ -213,6 +213,9 @@ class Unparser:
 
     def _FunctionDef(self, t):
         self.write("\n")
+        for deco in t.decorators:
+            self.fill("@")
+            self.dispatch(deco)
         self.fill("def "+t.name + "(")
         self.dispatch(t.args)
         self.write(")")

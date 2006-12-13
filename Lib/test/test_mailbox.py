@@ -666,6 +666,19 @@ class TestMaildir(TestMailbox):
         self._box.lock()
         self._box.unlock()
 
+    def test_folder (self):
+        # Test for bug #1569790: verify that folders returned by .get_folder()
+        # use the same factory function.
+        def dummy_factory (s):
+            return None
+        box = self._factory(self._path, factory=dummy_factory)
+        folder = box.add_folder('folder1')
+        self.assert_(folder._factory is dummy_factory)
+        
+        folder1_alias = box.get_folder('folder1')
+        self.assert_(folder1_alias._factory is dummy_factory)
+
+        
 
 class _TestMboxMMDF(TestMailbox):
 
@@ -740,6 +753,22 @@ class _TestMboxMMDF(TestMailbox):
         self._box.lock()
         self._box.unlock()
 
+    def test_relock(self):
+        # Test case for bug #1575506: the mailbox class was locking the
+        # wrong file object in its flush() method.
+        msg = "Subject: sub\n\nbody\n"
+        key1 = self._box.add(msg)
+        self._box.flush()
+        self._box.close()
+
+        self._box = self._factory(self._path)
+        self._box.lock()
+        key2 = self._box.add(msg)
+        self._box.flush()
+        self.assert_(self._box._locked)
+        self._box.close()
+
+
 
 class TestMbox(_TestMboxMMDF):
 
@@ -766,13 +795,22 @@ class TestMH(TestMailbox):
 
     def test_get_folder(self):
         # Open folders
-        self._box.add_folder('foo.bar')
+        def dummy_factory (s):
+            return None
+        self._box = self._factory(self._path, dummy_factory)
+        
+        new_folder = self._box.add_folder('foo.bar')
         folder0 = self._box.get_folder('foo.bar')
         folder0.add(self._template % 'bar')
         self.assert_(os.path.isdir(os.path.join(self._path, 'foo.bar')))
         folder1 = self._box.get_folder('foo.bar')
         self.assert_(folder1.get_string(folder1.keys()[0]) == \
                      self._template % 'bar')
+
+        # Test for bug #1569790: verify that folders returned by .get_folder()
+        # use the same factory function.
+        self.assert_(new_folder._factory is self._box._factory)
+        self.assert_(folder0._factory is self._box._factory)
 
     def test_add_and_remove_folders(self):
         # Delete folders
@@ -842,6 +880,21 @@ class TestMH(TestMailbox):
         self.assert_(self._box.get_sequences() ==
                      {'foo':[1, 2, 3], 'unseen':[1], 'bar':[3], 'replied':[3]})
 
+        # Test case for packing while holding the mailbox locked.
+        key0 = self._box.add(msg1)
+        key1 = self._box.add(msg1)
+        key2 = self._box.add(msg1)
+        key3 = self._box.add(msg1)
+
+        self._box.remove(key0)
+        self._box.remove(key2)
+        self._box.lock()
+        self._box.pack()
+        self._box.unlock()
+        self.assert_(self._box.get_sequences() ==
+                     {'foo':[1, 2, 3, 4, 5],
+                      'unseen':[1], 'bar':[3], 'replied':[3]})
+        
     def _get_lock_path(self):
         return os.path.join(self._path, '.mh_sequences.lock')
 

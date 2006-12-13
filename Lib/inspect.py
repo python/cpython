@@ -403,6 +403,7 @@ def getabsfile(object, _filename=None):
     return os.path.normcase(os.path.abspath(_filename))
 
 modulesbyfile = {}
+_filesbymodname = {}
 
 def getmodule(object, _filename=None):
     """Return the module an object was defined in, or None if not found."""
@@ -410,19 +411,32 @@ def getmodule(object, _filename=None):
         return object
     if hasattr(object, '__module__'):
         return sys.modules.get(object.__module__)
+    # Try the filename to modulename cache
+    if _filename is not None and _filename in modulesbyfile:
+        return sys.modules.get(modulesbyfile[_filename])
+    # Try the cache again with the absolute file name
     try:
         file = getabsfile(object, _filename)
     except TypeError:
         return None
     if file in modulesbyfile:
         return sys.modules.get(modulesbyfile[file])
-    for module in sys.modules.values():
+    # Update the filename to module name cache and check yet again
+    # Copy sys.modules in order to cope with changes while iterating
+    for modname, module in sys.modules.items():
         if ismodule(module) and hasattr(module, '__file__'):
+            f = module.__file__
+            if f == _filesbymodname.get(modname, None):
+                # Have already mapped this module, so skip it
+                continue
+            _filesbymodname[modname] = f
             f = getabsfile(module)
+            # Always map to the name the module knows itself by
             modulesbyfile[f] = modulesbyfile[
                 os.path.realpath(f)] = module.__name__
     if file in modulesbyfile:
         return sys.modules.get(modulesbyfile[file])
+    # Check the main module
     main = sys.modules['__main__']
     if not hasattr(object, '__name__'):
         return None
@@ -430,6 +444,7 @@ def getmodule(object, _filename=None):
         mainobject = getattr(main, object.__name__)
         if mainobject is object:
             return main
+    # Check builtins
     builtin = sys.modules['__builtin__']
     if hasattr(builtin, object.__name__):
         builtinobject = getattr(builtin, object.__name__)
@@ -444,7 +459,7 @@ def findsource(object):
     in the file and the line number indexes a line in that list.  An IOError
     is raised if the source code cannot be retrieved."""
     file = getsourcefile(object) or getfile(object)
-    module = getmodule(object)
+    module = getmodule(object, file)
     if module:
         lines = linecache.getlines(file, module.__dict__)
     else:
@@ -457,9 +472,24 @@ def findsource(object):
 
     if isclass(object):
         name = object.__name__
-        pat = re.compile(r'^\s*class\s*' + name + r'\b')
+        pat = re.compile(r'^(\s*)class\s*' + name + r'\b')
+        # make some effort to find the best matching class definition:
+        # use the one with the least indentation, which is the one
+        # that's most probably not inside a function definition.
+        candidates = []
         for i in range(len(lines)):
-            if pat.match(lines[i]): return lines, i
+            match = pat.match(lines[i])
+            if match:
+                # if it's at toplevel, it's already the best one
+                if lines[i][0] == 'c':
+                    return lines, i
+                # else add whitespace to candidate list
+                candidates.append((match.group(1), i))
+        if candidates:
+            # this will sort by whitespace, and by line number,
+            # less whitespace first
+            candidates.sort()
+            return lines, candidates[0][1]
         else:
             raise IOError('could not find class definition')
 

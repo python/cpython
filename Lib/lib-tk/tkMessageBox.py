@@ -102,6 +102,15 @@ def askyesno(title=None, message=None, **options):
     s = _show(title, message, QUESTION, YESNO, **options)
     return s == YES
 
+def askyesnocancel(title=None, message=None, **options):
+    "Ask a question; return true if the answer is yes, None if cancelled."
+    s = _show(title, message, QUESTION, YESNOCANCEL, **options)
+    # s might be a Tcl index object, so convert it to a string
+    s = str(s)
+    if s == CANCEL:
+        return None
+    return s == YES
+
 def askretrycancel(title=None, message=None, **options):
     "Ask if operation should be retried; return true if the answer is yes"
     s = _show(title, message, WARNING, RETRYCANCEL, **options)
@@ -119,4 +128,5 @@ if __name__ == "__main__":
     print "question", askquestion("Spam", "Question?")
     print "proceed", askokcancel("Spam", "Proceed?")
     print "yes/no", askyesno("Spam", "Got it?")
+    print "yes/no/cancel", askyesnocancel("Spam", "Want it?")
     print "try again", askretrycancel("Spam", "Try again?")

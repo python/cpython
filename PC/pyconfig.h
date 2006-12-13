@@ -39,8 +39,12 @@ MS_CORE_DLL.
    would be ISO C conforming). Neither renaming is feasible, so
    we just silence the warnings. */
 
+#ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE 1
+#endif
+#ifndef _CRT_NONSTDC_NO_DEPRECATE
 #define _CRT_NONSTDC_NO_DEPRECATE 1
+#endif
 
 /* Windows CE does not have these */
 #ifndef MS_WINCE

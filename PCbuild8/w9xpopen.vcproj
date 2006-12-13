@@ -4,10 +4,14 @@
 	Version="8,00"
 	Name="w9xpopen"
 	ProjectGUID="{E9E0A1F6-0009-4E8C-B8F8-1B8F5D49A058}"
+	RootNamespace="w9xpopen"
 	>
 	<Platforms>
 		<Platform
 			Name="Win32"
+		/>
+		<Platform
+			Name="x64"
 		/>
 	</Platforms>
 	<ToolFiles>
@@ -15,8 +19,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\."
-			IntermediateDirectory=".\x86-temp-debug\w9xpopen"
+			OutputDirectory="$(PlatformName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\w9xpopen"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -60,11 +64,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="./w9xpopen_d.exe"
+				OutputFile="$(OutDir)\w9xpopen_d.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="$(OutDir)"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\./w9xpopen_d.pdb"
+				ProgramDatabaseFile=""
 				TargetMachine="1"
 			/>
 			<Tool
@@ -93,9 +98,89 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\w9xpopen"
+			ConfigurationType="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\w9xpopen_d.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile=""
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\."
-			IntermediateDirectory=".\x86-temp-release\w9xpopen"
+			OutputDirectory="$(PlatformName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\w9xpopen"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -140,11 +225,94 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile=".\./w9xpopen.exe"
+				OutputFile="$(OutDir)\w9xpopen.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\./w9xpopen.pdb"
+				AdditionalLibraryDirectories="$(OutDir)"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile=""
 				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(PlatformName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\w9xpopen"
+			ConfigurationType="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\w9xpopen.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile=""
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"

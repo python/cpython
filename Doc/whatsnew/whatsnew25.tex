@@ -409,7 +409,7 @@ is always executed, or one or more \keyword{except} blocks to catch
 specific exceptions.  You couldn't combine both \keyword{except} blocks and a
 \keyword{finally} block, because generating the right bytecode for the
 combined version was complicated and it wasn't clear what the
-semantics of the combined should be.  
+semantics of the combined statement should be.  
 
 Guido van~Rossum spent some time working with Java, which does support the
 equivalent of combining \keyword{except} blocks and a
@@ -540,10 +540,10 @@ Traceback (most recent call last):
 StopIteration
 \end{verbatim}
 
-Because \keyword{yield} will often be returning \constant{None}, you
+\keyword{yield} will usually return \constant{None}, so you
 should always check for this case.  Don't just use its value in
 expressions unless you're sure that the \method{send()} method
-will be the only method used resume your generator function.
+will be the only method used to resume your generator function.
 
 In addition to \method{send()}, there are two other new methods on
 generators:
@@ -683,22 +683,22 @@ with lock:
 The lock is acquired before the block is executed and always released once 
 the block is complete.
 
-The \module{decimal} module's contexts, which encapsulate the desired
-precision and rounding characteristics for computations, provide a 
-\method{context_manager()} method for getting a context manager:
+The new \function{localcontext()} function in the \module{decimal} module
+makes it easy to save and restore the current decimal context, which
+encapsulates the desired precision and rounding characteristics for
+computations:
 
 \begin{verbatim}
-import decimal
+from decimal import Decimal, Context, localcontext
 
 # Displays with default precision of 28 digits
-v1 = decimal.Decimal('578')
-print v1.sqrt()
+v = Decimal('578')
+print v.sqrt()
 
-ctx = decimal.Context(prec=16) 
-with ctx.context_manager():
+with localcontext(Context(prec=16)):
     # All code in this block uses a precision of 16 digits.
     # The original context is restored on exiting the block.
-    print v1.sqrt()
+    print v.sqrt()
 \end{verbatim}
 
 \subsection{Writing Context Managers\label{context-managers}}
@@ -1115,12 +1115,14 @@ Some examples:
 \begin{verbatim}
 >>> ('http://www.python.org').partition('://')
 ('http', '://', 'www.python.org')
->>> (u'Subject: a quick question').partition(':')
-(u'Subject', u':', u' a quick question')
 >>> ('file:/usr/share/doc/index.html').partition('://')
 ('file:/usr/share/doc/index.html', '', '')
+>>> (u'Subject: a quick question').partition(':')
+(u'Subject', u':', u' a quick question')
 >>> 'www.python.org'.rpartition('.')
 ('www.python', '.', 'org')
+>>> 'www.python.org'.rpartition(':')
+('', '', 'www.python.org')
 \end{verbatim}
 
 (Implemented by Fredrik Lundh following a suggestion by Raymond Hettinger.)
@@ -2114,14 +2116,16 @@ The pysqlite module (\url{http://www.pysqlite.org}), a wrapper for the
 SQLite embedded database, has been added to the standard library under
 the package name \module{sqlite3}.  
 
-SQLite is a C library that provides a SQL-language database that
-stores data in disk files without requiring a separate server process.
+SQLite is a C library that provides a lightweight disk-based database
+that doesn't require a separate server process and allows accessing
+the database using a nonstandard variant of the SQL query language.
+Some applications can use SQLite for internal data storage.  It's also
+possible to prototype an application using SQLite and then port the
+code to a larger database such as PostgreSQL or Oracle.
+ 
 pysqlite was written by Gerhard H\"aring and provides a SQL interface
 compliant with the DB-API 2.0 specification described by
-\pep{249}. This means that it should be possible to write the first
-version of your applications using SQLite for data storage.  If
-switching to a larger database such as PostgreSQL or Oracle is
-later necessary, the switch should be relatively easy.
+\pep{249}. 
 
 If you're compiling the Python source yourself, note that the source
 tree doesn't include the SQLite code, only the wrapper module.
@@ -2148,8 +2152,8 @@ c = conn.cursor()
 
 # Create table
 c.execute('''create table stocks
-(date timestamp, trans varchar, symbol varchar,
- qty decimal, price decimal)''')
+(date text, trans text, symbol text,
+ qty real, price real)''')
 
 # Insert a row of data
 c.execute("""insert into stocks

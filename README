@@ -231,6 +231,11 @@ old K&R-C-only compilers is no longer possible.  ANSI C compilers are
 available for all modern systems, either in the form of updated
 compilers from the vendor, or one of the free compilers (gcc).
 
+If "make install" fails mysteriously during the "compiling the library"
+step, make sure that you don't have any of the PYTHONPATH or PYTHONHOME
+environment variables set, as they may interfere with the newly built
+executable which is compiling the library.
+
 Unsupported systems
 -------------------
 

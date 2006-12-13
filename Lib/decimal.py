@@ -131,7 +131,7 @@ __all__ = [
     'ROUND_FLOOR', 'ROUND_UP', 'ROUND_HALF_DOWN',
 
     # Functions for manipulating contexts
-    'setcontext', 'getcontext'
+    'setcontext', 'getcontext', 'localcontext'
 ]
 
 import copy as _copy
@@ -457,6 +457,49 @@ else:
         _local.__decimal_context__ = context
 
     del threading, local        # Don't contaminate the namespace
+
+def localcontext(ctx=None):
+    """Return a context manager for a copy of the supplied context
+
+    Uses a copy of the current context if no context is specified
+    The returned context manager creates a local decimal context
+    in a with statement:
+        def sin(x):
+             with localcontext() as ctx:
+                 ctx.prec += 2
+                 # Rest of sin calculation algorithm
+                 # uses a precision 2 greater than normal
+             return +s # Convert result to normal precision
+
+         def sin(x):
+             with localcontext(ExtendedContext):
+                 # Rest of sin calculation algorithm
+                 # uses the Extended Context from the
+                 # General Decimal Arithmetic Specification
+             return +s # Convert result to normal context
+
+    """
+    # The string below can't be included in the docstring until Python 2.6
+    # as the doctest module doesn't understand __future__ statements
+    """
+    >>> from __future__ import with_statement
+    >>> print getcontext().prec
+    28
+    >>> with localcontext():
+    ...     ctx = getcontext()
+    ...     ctx.prec() += 2
+    ...     print ctx.prec
+    ...
+    30
+    >>> with localcontext(ExtendedContext):
+    ...     print getcontext().prec
+    ...
+    9
+    >>> print getcontext().prec
+    28
+    """
+    if ctx is None: ctx = getcontext()
+    return _ContextManager(ctx)
 
 
 ##### Decimal class ###########################################
@@ -2192,23 +2235,14 @@ for name in rounding_functions:
 
 del name, val, globalname, rounding_functions
 
-class ContextManager(object):
-    """Helper class to simplify Context management.
+class _ContextManager(object):
+    """Context manager class to support localcontext().
 
-    Sample usage:
-
-    with decimal.ExtendedContext:
-        s = ...
-    return +s # Convert result to normal precision
-
-    with decimal.getcontext() as ctx:
-        ctx.prec += 2
-        s = ...
-    return +s
-
+      Sets a copy of the supplied context in __enter__() and restores
+      the previous decimal context in __exit__()
     """
     def __init__(self, new_context):
-        self.new_context = new_context
+        self.new_context = new_context.copy()
     def __enter__(self):
         self.saved_context = getcontext()
         setcontext(self.new_context)
@@ -2266,9 +2300,6 @@ class Context(object):
         s.append('flags=[' + ', '.join([f.__name__ for f, v in self.flags.items() if v]) + ']')
         s.append('traps=[' + ', '.join([t.__name__ for t, v in self.traps.items() if v]) + ']')
         return ', '.join(s) + ')'
-
-    def get_manager(self):
-        return ContextManager(self.copy())
 
     def clear_flags(self):
         """Reset all flags to zero"""

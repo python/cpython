@@ -514,6 +514,13 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 			case SETUP_EXCEPT:
 			case SETUP_FINALLY:
 				tgt = GETJUMPTGT(codestr, i);
+				/* Replace JUMP_* to a RETURN into just a RETURN */
+				if (UNCONDITIONAL_JUMP(opcode) &&
+				    codestr[tgt] == RETURN_VALUE) {
+					codestr[i] = RETURN_VALUE;
+					memset(codestr+i+1, NOP, 2);
+					continue;
+				}
 				if (!UNCONDITIONAL_JUMP(codestr[tgt]))
 					continue;
 				tgttgt = GETJUMPTGT(codestr, tgt);
@@ -531,12 +538,16 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 				goto exitUnchanged;
 
 				/* Replace RETURN LOAD_CONST None RETURN with just RETURN */
+				/* Remove unreachable JUMPs after RETURN */
 			case RETURN_VALUE:
-				if (i+4 >= codelen  ||
-				    codestr[i+4] != RETURN_VALUE	 ||
-				    !ISBASICBLOCK(blocks,i,5))
+				if (i+4 >= codelen)
 					continue;
-				memset(codestr+i+1, NOP, 4);
+				if (codestr[i+4] == RETURN_VALUE &&
+				    ISBASICBLOCK(blocks,i,5))
+					memset(codestr+i+1, NOP, 4);
+				else if (UNCONDITIONAL_JUMP(codestr[i+1]) &&
+				         ISBASICBLOCK(blocks,i,4))
+					memset(codestr+i+1, NOP, 3);
 				break;
 		}
 	}

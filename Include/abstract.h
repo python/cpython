@@ -288,9 +288,10 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
+       /* Declared elsewhere
+
      PyAPI_FUNC(int) PyCallable_Check(PyObject *o);
 
-       /*
 	 Determine if the object, o, is callable.  Return 1 if the
 	 object is callable and 0 otherwise.
 

@@ -1,44 +1,33 @@
-\section{\module{elementtree} --- The xml.etree.ElementTree Module}
-\declaremodule{standard}{elementtree}
+\section{\module{xml.etree.ElementTree} --- The ElementTree XML API}
+\declaremodule{standard}{xml.etree.ElementTree}
 \moduleauthor{Fredrik Lundh}{fredrik@pythonware.com}
-\modulesynopsis{This module provides implementations
-of the Element and ElementTree types, plus support classes.
+\modulesynopsis{Implementation of the ElementTree API.}
 
-A C version of this API is available as xml.etree.cElementTree.}
 \versionadded{2.5}
-
-
-\subsection{Overview\label{elementtree-overview}}
 
 The Element type is a flexible container object, designed to store
 hierarchical data structures in memory. The type can be described as a
 cross between a list and a dictionary.
 
 Each element has a number of properties associated with it:
+
 \begin{itemize}
-\item {} 
-a tag which is a string identifying what kind of data
-this element represents (the element type, in other words).
-
-\item {} 
-a number of attributes, stored in a Python dictionary.
-
-\item {} 
-a text string.
-
-\item {} 
-an optional tail string.
-
-\item {} 
-a number of child elements, stored in a Python sequence
-
+  \item a tag which is a string identifying what kind of data
+        this element represents (the element type, in other words).
+  \item a number of attributes, stored in a Python dictionary.
+  \item a text string.
+  \item an optional tail string.
+  \item a number of child elements, stored in a Python sequence
 \end{itemize}
 
 To create an element instance, use the Element or SubElement factory
 functions.
 
-The ElementTree class can be used to wrap an element
+The \class{ElementTree} class can be used to wrap an element
 structure, and convert it from and to XML.
+
+A C implementation of this API is available as
+\module{xml.etree.cElementTree}.
 
 
 \subsection{Functions\label{elementtree-functions}}

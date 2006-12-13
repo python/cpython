@@ -593,9 +593,21 @@ class Marshaller:
         try:
             f = self.dispatch[type(value)]
         except KeyError:
-            raise TypeError, "cannot marshal %s objects" % type(value)
-        else:
-            f(self, value, write)
+            # check if this object can be marshalled as a structure
+            try:
+                value.__dict__
+            except:
+                raise TypeError, "cannot marshal %s objects" % type(value)
+            # check if this class is a sub-class of a basic type,
+            # because we don't know how to marshal these types
+            # (e.g. a string sub-class)
+            for type_ in type(value).__mro__:
+                if type_ in self.dispatch.keys():
+                    raise TypeError, "cannot marshal %s objects" % type(value)
+            # XXX(twouters): using "_arbitrary_instance" as key as a quick-fix
+            # for the p3yk merge, this should probably be fixed more neatly.
+            f = self.dispatch["_arbitrary_instance"]
+        f(self, value, write)
 
     def dump_nil (self, value, write):
         if not self.allow_none:
@@ -713,6 +725,9 @@ class Marshaller:
             self.dump_struct(value.__dict__, write)
     dispatch[DateTime] = dump_instance
     dispatch[Binary] = dump_instance
+    # XXX(twouters): using "_arbitrary_instance" as key as a quick-fix
+    # for the p3yk merge, this should probably be fixed more neatly.
+    dispatch["_arbitrary_instance"] = dump_instance
 
 ##
 # XML-RPC unmarshaller.

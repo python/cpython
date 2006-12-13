@@ -91,7 +91,7 @@ dynamically allocated memory blocks.  The special bit patterns are:
 
 #define CLEANBYTE     0xCB   /* clean (newly allocated) memory */
 #define DEADBYTE      0xDB   /* dead (newly freed) memory */
-#define FORBIDDENBYTE 0xFB   /* fordidden -- untouchable bytes */
+#define FORBIDDENBYTE 0xFB   /* forbidden -- untouchable bytes */
 
 Strings of these bytes are unlikely to be valid addresses, floats, or 7-bit
 ASCII strings.

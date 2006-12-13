@@ -62,6 +62,7 @@ class TestGenericStringIO(unittest.TestCase):
         eq(f.getvalue(), 'abcde')
         f.write('xyz')
         eq(f.getvalue(), 'abcdexyz')
+        self.assertRaises(IOError, f.truncate, -1)
         f.close()
         self.assertRaises(ValueError, f.write, 'frobnitz')
 
@@ -119,6 +120,28 @@ class TestStringIO(TestGenericStringIO):
 
 class TestcStringIO(TestGenericStringIO):
     MODULE = cStringIO
+
+    def test_unicode(self):
+
+        if not test_support.have_unicode: return
+
+        # The cStringIO module converts Unicode strings to character
+        # strings when writing them to cStringIO objects.
+        # Check that this works.
+
+        f = self.MODULE.StringIO()
+        f.write(unicode(self._line[:5]))
+        s = f.getvalue()
+        self.assertEqual(s, 'abcde')
+        self.assertEqual(type(s), types.StringType)
+
+        f = self.MODULE.StringIO(unicode(self._line[:5]))
+        s = f.getvalue()
+        self.assertEqual(s, 'abcde')
+        self.assertEqual(type(s), types.StringType)
+
+        self.assertRaises(UnicodeEncodeError, self.MODULE.StringIO,
+                          unicode('\xf4', 'latin-1'))
 
 import sys
 if sys.platform.startswith('java'):

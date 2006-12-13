@@ -86,8 +86,8 @@ arguments: \code{m.update(a); m.update(b)} is equivalent to
 
 \begin{methoddesc}[hash]{digest}{}
 Return the digest of the strings passed to the \method{update()}
-method so far.  This is a 16-byte string which may contain
-non-\ASCII{} characters, including null bytes.
+method so far.  This is a string of \member{digest_size} bytes which may
+contain non-\ASCII{} characters, including null bytes.
 \end{methoddesc}
 
 \begin{methoddesc}[hash]{hexdigest}{}

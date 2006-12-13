@@ -474,8 +474,8 @@ def iteritems(mapping):
     return izip(mapping.iterkeys(), mapping.itervalues())
 
 def nth(iterable, n):
-    "Returns the nth item"
-    return list(islice(iterable, n, n+1))
+    "Returns the nth item or raise IndexError"
+    return list(islice(iterable, n, n+1))[0]
 
 def all(seq, pred=None):
     "Returns True if pred(x) is true for every element in the iterable"

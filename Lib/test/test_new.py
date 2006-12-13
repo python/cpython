@@ -47,6 +47,14 @@ except TypeError:
 else:
     raise TestFailed, "dangerous instance method creation allowed"
 
+# Verify that instancemethod() doesn't allow keyword args
+try:
+    new.instancemethod(break_yolks, c, kw=1)
+except TypeError:
+    pass
+else:
+    raise TestFailed, "instancemethod shouldn't accept keyword args"
+
 # It's unclear what the semantics should be for a code object compiled at
 # module scope, but bound and run in a function.  In CPython, `c' is global
 # (by accident?) while in Jython, `c' is local.  The intent of the test

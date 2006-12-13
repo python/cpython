@@ -116,6 +116,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(abs(0), 0)
         self.assertEqual(abs(1234), 1234)
         self.assertEqual(abs(-1234), 1234)
+        self.assertTrue(abs(-sys.maxint-1) > 0)
         # float
         self.assertEqual(abs(0.0), 0.0)
         self.assertEqual(abs(3.14), 3.14)
@@ -154,6 +155,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(any(x > 42 for x in S), True)
         S = [10, 20, 30]
         self.assertEqual(any(x > 42 for x in S), False)
+
+    def test_neg(self):
+        x = -sys.maxint-1
+        self.assert_(isinstance(x, int))
+        self.assertEqual(-x, sys.maxint+1)
 
     def test_callable(self):
         self.assert_(callable(len))
@@ -686,9 +692,11 @@ class BuiltinTest(unittest.TestCase):
                         pass
 
         s = repr(-1-sys.maxint)
-        self.assertEqual(int(s)+1, -sys.maxint)
+        x = int(s)
+        self.assertEqual(x+1, -sys.maxint)
+        self.assert_(isinstance(x, int))
         # should return long
-        int(s[1:])
+        self.assertEqual(int(s[1:]), sys.maxint+1)
 
         # should return long
         x = int(1e100)
@@ -705,6 +713,11 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertRaises(ValueError, int, '123\0')
         self.assertRaises(ValueError, int, '53', 40)
+
+        # SF bug 1545497: embedded NULs were not detected with
+        # explicit base
+        self.assertRaises(ValueError, int, '123\0', 10)
+        self.assertRaises(ValueError, int, '123\x00 245', 20)
 
         x = int('1' * 600)
         self.assert_(isinstance(x, long))

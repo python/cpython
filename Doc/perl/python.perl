@@ -883,6 +883,12 @@ sub process_grammar_files(){
             $filename = 'grammar.txt';
         }
         open(GRAMMAR, ">$filename") || die "\n$!\n";
+        print GRAMMAR "##################################################\n";
+        print GRAMMAR "#     This file is only meant to be a guide,     #\n";
+        print GRAMMAR "#    and differs in small ways from the real     #\n";
+        print GRAMMAR "#   grammar.  The exact reference is the file    #\n";
+        print GRAMMAR "#  Grammar/Grammar distributed with the source.  #\n";
+        print GRAMMAR "##################################################\n";
         print GRAMMAR strip_grammar_markup($DefinedGrammars{$lang});
         close(GRAMMAR);
         print "Wrote grammar file $filename\n";

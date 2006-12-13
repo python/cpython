@@ -160,6 +160,41 @@ class TestTranforms(unittest.TestCase):
         self.assert_('(None)' not in asm)
         self.assertEqual(asm.split().count('RETURN_VALUE'), 1)
 
+    def test_elim_jump_to_return(self):
+        # JUMP_FORWARD to RETURN -->  RETURN
+        def f(cond, true_value, false_value):
+            return true_value if cond else false_value
+        asm = disassemble(f)
+        self.assert_('JUMP_FORWARD' not in asm)
+        self.assert_('JUMP_ABSOLUTE' not in asm)
+        self.assertEqual(asm.split().count('RETURN_VALUE'), 2)
+
+    def test_elim_jump_after_return1(self):
+        # Eliminate dead code: jumps immediately after returns can't be reached
+        def f(cond1, cond2):
+            if cond1: return 1
+            if cond2: return 2
+            while 1:
+                return 3
+            while 1:
+                if cond1: return 4
+                return 5
+            return 6
+        asm = disassemble(f)
+        self.assert_('JUMP_FORWARD' not in asm)
+        self.assert_('JUMP_ABSOLUTE' not in asm)
+        self.assertEqual(asm.split().count('RETURN_VALUE'), 6)
+
+    def test_elim_jump_after_return2(self):
+        # Eliminate dead code: jumps immediately after returns can't be reached
+        def f(cond1, cond2):
+            while 1:
+                if cond1: return 4
+        asm = disassemble(f)
+        self.assert_('JUMP_FORWARD' not in asm)
+        # There should be one jump for the while loop.
+        self.assertEqual(asm.split().count('JUMP_ABSOLUTE'), 1)
+        self.assertEqual(asm.split().count('RETURN_VALUE'), 2)
 
 
 def test_main(verbose=None):

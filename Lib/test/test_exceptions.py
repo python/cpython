@@ -196,17 +196,21 @@ class ExceptionTests(unittest.TestCase):
             test_capi2()
             test_capi3()
 
+    def test_WindowsError(self):
+        try:
+            WindowsError
+        except NameError:
+            pass
+        else:
+            self.failUnlessEqual(str(WindowsError(1001)),
+                                 "1001")
+            self.failUnlessEqual(str(WindowsError(1001, "message")),
+                                 "[Error 1001] message")
+            self.failUnlessEqual(WindowsError(1001, "message").errno, 22)
+            self.failUnlessEqual(WindowsError(1001, "message").winerror, 1001)
+
     def testAttributes(self):
         # test that exception attributes are happy
-        try:
-            str(u'Hello \u00E1')
-        except Exception, e:
-            sampleUnicodeEncodeError = e
-
-        try:
-            unicode('\xff')
-        except Exception, e:
-            sampleUnicodeDecodeError = e
 
         exceptionList = [
             (BaseException, (), {'message' : '', 'args' : ()}),
@@ -218,11 +222,16 @@ class ExceptionTests(unittest.TestCase):
             (SystemExit, ('foo',),
                 {'message' : 'foo', 'args' : ('foo',), 'code' : 'foo'}),
             (IOError, ('foo',),
-                {'message' : 'foo', 'args' : ('foo',)}),
+                {'message' : 'foo', 'args' : ('foo',), 'filename' : None,
+                 'errno' : None, 'strerror' : None}),
             (IOError, ('foo', 'bar'),
-                {'message' : '', 'args' : ('foo', 'bar')}),
+                {'message' : '', 'args' : ('foo', 'bar'), 'filename' : None,
+                 'errno' : 'foo', 'strerror' : 'bar'}),
             (IOError, ('foo', 'bar', 'baz'),
-                {'message' : '', 'args' : ('foo', 'bar')}),
+                {'message' : '', 'args' : ('foo', 'bar'), 'filename' : 'baz',
+                 'errno' : 'foo', 'strerror' : 'bar'}),
+            (IOError, ('foo', 'bar', 'baz', 'quux'),
+                {'message' : '', 'args' : ('foo', 'bar', 'baz', 'quux')}),
             (EnvironmentError, ('errnoStr', 'strErrorStr', 'filenameStr'),
                 {'message' : '', 'args' : ('errnoStr', 'strErrorStr'),
                  'strerror' : 'strErrorStr', 'errno' : 'errnoStr',
@@ -249,16 +258,16 @@ class ExceptionTests(unittest.TestCase):
                  'print_file_and_line' : None, 'msg' : 'msgStr',
                  'filename' : None, 'lineno' : None, 'offset' : None}),
             (UnicodeError, (), {'message' : '', 'args' : (),}),
-            (sampleUnicodeEncodeError,
-                {'message' : '', 'args' : ('ascii', u'Hello \xe1', 6, 7,
-                                           'ordinal not in range(128)'),
-                 'encoding' : 'ascii', 'object' : u'Hello \xe1',
-                 'start' : 6, 'reason' : 'ordinal not in range(128)'}),
-            (sampleUnicodeDecodeError,
+            (UnicodeEncodeError, ('ascii', u'a', 0, 1, 'ordinal not in range'),
+                {'message' : '', 'args' : ('ascii', u'a', 0, 1,
+                                           'ordinal not in range'),
+                 'encoding' : 'ascii', 'object' : u'a',
+                 'start' : 0, 'reason' : 'ordinal not in range'}),
+            (UnicodeDecodeError, ('ascii', '\xff', 0, 1, 'ordinal not in range'),
                 {'message' : '', 'args' : ('ascii', '\xff', 0, 1,
-                                           'ordinal not in range(128)'),
+                                           'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : '\xff',
-                 'start' : 0, 'reason' : 'ordinal not in range(128)'}),
+                 'start' : 0, 'reason' : 'ordinal not in range'}),
             (UnicodeTranslateError, (u"\u3042", 0, 1, "ouch"),
                 {'message' : '', 'args' : (u'\u3042', 0, 1, 'ouch'),
                  'object' : u'\u3042', 'reason' : 'ouch',
@@ -274,18 +283,14 @@ class ExceptionTests(unittest.TestCase):
         except NameError:
             pass
 
-        for args in exceptionList:
-            expected = args[-1]
+        for exc, args, expected in exceptionList:
             try:
-                exc = args[0]
-                if len(args) == 2:
-                    raise exc
-                else:
-                    raise exc(*args[1])
+                raise exc(*args)
             except BaseException, e:
-                if (e is not exc and     # needed for sampleUnicode errors
-                        type(e) is not exc):
+                if type(e) is not exc:
                     raise
+                # Verify module name
+                self.assertEquals(type(e).__module__, 'exceptions')
                 # Verify no ref leaks in Exc_str()
                 s = str(e)
                 for checkArgName in expected:
@@ -331,6 +336,15 @@ class ExceptionTests(unittest.TestCase):
             except ValueError:
                 return -1
         self.assertRaises(RuntimeError, g)
+
+    def testUnicodeStrUsage(self):
+        # Make sure both instances and classes have a str and unicode
+        # representation.
+        self.failUnless(str(Exception))
+        self.failUnless(unicode(Exception))
+        self.failUnless(str(Exception('a')))
+        self.failUnless(unicode(Exception(u'a')))
+
 
 def test_main():
     run_unittest(ExceptionTests)

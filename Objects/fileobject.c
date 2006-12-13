@@ -540,7 +540,7 @@ file_seek(PyFileObject *f, PyObject *args)
 	int whence;
 	int ret;
 	Py_off_t offset;
-	PyObject *offobj;
+	PyObject *offobj, *off_index;
 
 	if (f->f_fp == NULL)
 		return err_closed();
@@ -548,12 +548,25 @@ file_seek(PyFileObject *f, PyObject *args)
 	whence = 0;
 	if (!PyArg_ParseTuple(args, "O|i:seek", &offobj, &whence))
 		return NULL;
+	off_index = PyNumber_Index(offobj);
+	if (!off_index) {
+		if (!PyFloat_Check(offobj))
+			return NULL;
+		/* Deprecated in 2.6 */
+		PyErr_Clear();
+		if (PyErr_Warn(PyExc_DeprecationWarning,
+			       "integer argument expected, got float"))
+			return NULL;
+		off_index = offobj;
+		Py_INCREF(offobj);
+	}
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-	offset = PyInt_AsLong(offobj);
+	offset = PyInt_AsLong(off_index);
 #else
-	offset = PyLong_Check(offobj) ?
-		PyLong_AsLongLong(offobj) : PyInt_AsLong(offobj);
+	offset = PyLong_Check(off_index) ?
+		PyLong_AsLongLong(off_index) : PyInt_AsLong(off_index);
 #endif
+	Py_DECREF(off_index);
 	if (PyErr_Occurred())
 		return NULL;
 
@@ -927,7 +940,7 @@ file_readinto(PyFileObject *f, PyObject *args)
 		ndone += nnow;
 		ntodo -= nnow;
 	}
-	return PyInt_FromLong((long)ndone);
+	return PyInt_FromSsize_t(ndone);
 }
 
 /**************************************************************************
@@ -1006,6 +1019,7 @@ getline_via_fgets(FILE *fp)
 	size_t nfree;	/* # of free buffer slots; pvend-pvfree */
 	size_t total_v_size;  /* total # of slots in buffer */
 	size_t increment;	/* amount to increment the buffer */
+	size_t prev_v_size;
 
 	/* Optimize for normal case:  avoid _PyString_Resize if at all
 	 * possible via first reading into stack buffer "buf".
@@ -1120,8 +1134,11 @@ getline_via_fgets(FILE *fp)
 		/* expand buffer and try again */
 		assert(*(pvend-1) == '\0');
 		increment = total_v_size >> 2;	/* mild exponential growth */
+		prev_v_size = total_v_size;
 		total_v_size += increment;
-		if (total_v_size > PY_SSIZE_T_MAX) {
+		/* check for overflow */
+		if (total_v_size <= prev_v_size ||
+		    total_v_size > PY_SSIZE_T_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
 			    "line is longer than a Python string can hold");
 			Py_DECREF(v);
@@ -1130,7 +1147,7 @@ getline_via_fgets(FILE *fp)
 		if (_PyString_Resize(&v, (int)total_v_size) < 0)
 			return NULL;
 		/* overwrite the trailing null byte */
-		pvfree = BUF(v) + (total_v_size - increment - 1);
+		pvfree = BUF(v) + (prev_v_size - 1);
 	}
 	if (BUF(v) + total_v_size != p)
 		_PyString_Resize(&v, p - BUF(v));
@@ -2014,7 +2031,7 @@ file_init(PyObject *self, PyObject *args, PyObject *kwds)
                 if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|si:file", 
                                                  kwlist, &o_name, &mode, 
                                                  &bufsize))
-                        return -1;
+                        goto Error;
 
 		if (fill_file_fields(foself, NULL, o_name, mode,
 				     fclose) == NULL)

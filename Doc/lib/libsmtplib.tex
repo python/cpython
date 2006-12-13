@@ -28,6 +28,18 @@ For normal use, you should only require the initialization/connect,
 included below.
 \end{classdesc}
 
+\begin{classdesc}{SMTP_SSL}{\optional{host\optional{, port\optional{,
+                        local_hostname\optional{,
+                        keyfile\optional{,
+                        certfile}}}}}}
+A \class{SMTP_SSL} instance behaves exactly the same as instances of \class{SMTP}.
+\class{SMTP_SSL} should be used for situations where SSL is required from 
+the beginning of the connection and using \method{starttls()} is not appropriate.
+If \var{host} is not specified, the local host is used. If \var{port} is
+omitted, the standard SMTP-over-SSL port (465) is used. \var{keyfile} and \var{certfile}
+are also optional, and can contain a PEM formatted private key and
+certificate chain file for the SSL connection.
+\end{classdesc}
 
 A nice selection of exceptions is defined as well:
 

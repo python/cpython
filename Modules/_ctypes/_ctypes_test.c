@@ -25,6 +25,16 @@
 
 /* some functions handy for testing */
 
+EXPORT(int)myprintf(char *fmt, ...)
+{
+	int result;
+	va_list argptr;
+	va_start(argptr, fmt);
+	result = vprintf(fmt, argptr);
+	va_end(argptr);
+	return result;
+}
+
 EXPORT(char *)my_strtok(char *token, const char *delim)
 {
 	return strtok(token, delim);

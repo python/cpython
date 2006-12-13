@@ -52,9 +52,10 @@ from sys import stderr
 __all__ = ["SMTPException","SMTPServerDisconnected","SMTPResponseException",
            "SMTPSenderRefused","SMTPRecipientsRefused","SMTPDataError",
            "SMTPConnectError","SMTPHeloError","SMTPAuthenticationError",
-           "quoteaddr","quotedata","SMTP"]
+           "quoteaddr","quotedata","SMTP","SMTP_SSL"]
 
 SMTP_PORT = 25
+SMTP_SSL_PORT = 465
 CRLF="\r\n"
 
 OLDSTYLE_AUTH = re.compile(r"auth=(.*)", re.I)
@@ -240,6 +241,7 @@ class SMTP:
 
         """
         self.esmtp_features = {}
+        self.default_port = SMTP_PORT
         if host:
             (code, msg) = self.connect(host, port)
             if code != 220:
@@ -271,6 +273,13 @@ class SMTP:
         """
         self.debuglevel = debuglevel
 
+    def _get_socket(self,af, socktype, proto,sa):
+        # This makes it simpler for SMTP_SSL to use the SMTP connect code
+        # and just alter the socket connection bit.
+        self.sock = socket.socket(af, socktype, proto)
+        if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
+        self.sock.connect(sa)
+
     def connect(self, host='localhost', port = 0):
         """Connect to a host on a given port.
 
@@ -289,16 +298,14 @@ class SMTP:
                 try: port = int(port)
                 except ValueError:
                     raise socket.error, "nonnumeric port"
-        if not port: port = SMTP_PORT
+        if not port: port = self.default_port
         if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
         msg = "getaddrinfo returns an empty list"
         self.sock = None
         for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
             af, socktype, proto, canonname, sa = res
             try:
-                self.sock = socket.socket(af, socktype, proto)
-                if self.debuglevel > 0: print>>stderr, 'connect:', sa
-                self.sock.connect(sa)
+                self._get_socket(af,socktype,proto,sa)
             except socket.error, msg:
                 if self.debuglevel > 0: print>>stderr, 'connect fail:', msg
                 if self.sock:
@@ -716,6 +723,28 @@ class SMTP:
         self.docmd("quit")
         self.close()
 
+class SMTP_SSL(SMTP):
+    """ This is a subclass derived from SMTP that connects over an SSL encrypted
+    socket (to use this class you need a socket module that was compiled with SSL
+    support). If host is not specified, '' (the local host) is used. If port is
+    omitted, the standard SMTP-over-SSL port (465) is used. keyfile and certfile
+    are also optional - they can contain a PEM formatted private key and
+    certificate chain file for the SSL connection.
+    """
+    def __init__(self, host = '', port = 0, local_hostname = None,
+                 keyfile = None, certfile = None):
+        self.keyfile = keyfile
+        self.certfile = certfile
+        SMTP.__init__(self,host,port,local_hostname)
+        self.default_port = SMTP_SSL_PORT
+
+    def _get_socket(self,af, socktype, proto,sa):
+        self.sock = socket.socket(af, socktype, proto)
+        if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
+        self.sock.connect(sa)
+        sslobj = socket.ssl(self.sock, self.keyfile, self.certfile)
+        self.sock = SSLFakeSocket(self.sock, sslobj)
+        self.file = SSLFakeFile(sslobj)
 
 # Test the sendmail method, which tests most of the others.
 # Note: This always sends to localhost.

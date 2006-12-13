@@ -161,10 +161,10 @@ Unused.
 
 \begin{funcdesc}{init_builtin}{name}
 Initialize the built-in module called \var{name} and return its module
-object.  If the module was already initialized, it will be initialized
-\emph{again}.  A few modules cannot be initialized twice --- attempting
-to initialize these again will raise an \exception{ImportError}
-exception.  If there is no
+object along with storing it in \code{sys.modules}.  If the module was already
+initialized, it will be initialized \emph{again}.  Re-initialization involves
+the copying of the built-in module's \code{__dict__} from the cached
+module over the module's entry in \code{sys.modules}.  If there is no
 built-in module called \var{name}, \code{None} is returned.
 \end{funcdesc}
 
@@ -208,14 +208,15 @@ user-defined class emulating a file.
 \begin{funcdesc}{load_dynamic}{name, pathname\optional{, file}}
 Load and initialize a module implemented as a dynamically loadable
 shared library and return its module object.  If the module was
-already initialized, it will be initialized \emph{again}.  Some modules
-don't like that and may raise an exception.  The \var{pathname}
-argument must point to the shared library.  The \var{name} argument is
-used to construct the name of the initialization function: an external
-C function called \samp{init\var{name}()} in the shared library is
-called.  The optional \var{file} argument is ignored.  (Note: using
-shared libraries is highly system dependent, and not all systems
-support it.)
+already initialized, it will be initialized \emph{again}.
+Re-initialization involves copying the \code{__dict__} attribute of the cached
+instance of the module over the value used in the module cached in
+\code{sys.modules}.  The \var{pathname} argument must point to the shared
+library.  The \var{name} argument is used to construct the name of the
+initialization function: an external C function called
+\samp{init\var{name}()} in the shared library is called.  The optional
+\var{file} argument is ignored.  (Note: using shared libraries is highly
+system dependent, and not all systems support it.)
 \end{funcdesc}
 
 \begin{funcdesc}{load_source}{name, pathname\optional{, file}}

@@ -159,29 +159,32 @@ static const struct dbcs_map *mapping_list;
 #endif
 
 #define _TRYMAP_ENC(m, assi, val)				\
-	if ((m)->map != NULL && (val) >= (m)->bottom &&		\
+	((m)->map != NULL && (val) >= (m)->bottom &&		\
 	    (val)<= (m)->top && ((assi) = (m)->map[(val) -	\
 	    (m)->bottom]) != NOCHAR)
-#define TRYMAP_ENC(charset, assi, uni)				\
+#define TRYMAP_ENC_COND(charset, assi, uni)			\
 	_TRYMAP_ENC(&charset##_encmap[(uni) >> 8], assi, (uni) & 0xff)
+#define TRYMAP_ENC(charset, assi, uni)				\
+	if TRYMAP_ENC_COND(charset, assi, uni)
+
 #define _TRYMAP_DEC(m, assi, val)				\
-	if ((m)->map != NULL && (val) >= (m)->bottom &&		\
+	((m)->map != NULL && (val) >= (m)->bottom &&		\
 	    (val)<= (m)->top && ((assi) = (m)->map[(val) -	\
 	    (m)->bottom]) != UNIINV)
 #define TRYMAP_DEC(charset, assi, c1, c2)			\
-	_TRYMAP_DEC(&charset##_decmap[c1], assi, c2)
+	if _TRYMAP_DEC(&charset##_decmap[c1], assi, c2)
 
 #define _TRYMAP_ENC_MPLANE(m, assplane, asshi, asslo, val)	\
-	if ((m)->map != NULL && (val) >= (m)->bottom &&		\
+	((m)->map != NULL && (val) >= (m)->bottom &&		\
 	    (val)<= (m)->top &&					\
 	    ((assplane) = (m)->map[((val) - (m)->bottom)*3]) != 0 && \
 	    (((asshi) = (m)->map[((val) - (m)->bottom)*3 + 1]), 1) && \
 	    (((asslo) = (m)->map[((val) - (m)->bottom)*3 + 2]), 1))
 #define TRYMAP_ENC_MPLANE(charset, assplane, asshi, asslo, uni)	\
-	_TRYMAP_ENC_MPLANE(&charset##_encmap[(uni) >> 8], \
+	if _TRYMAP_ENC_MPLANE(&charset##_encmap[(uni) >> 8], \
 			   assplane, asshi, asslo, (uni) & 0xff)
 #define TRYMAP_DEC_MPLANE(charset, assi, plane, c1, c2)		\
-	_TRYMAP_DEC(&charset##_decmap[plane][c1], assi, c2)
+	if _TRYMAP_DEC(&charset##_decmap[plane][c1], assi, c2)
 
 #if Py_UNICODE_SIZE == 2
 #define DECODE_SURROGATE(c)					\

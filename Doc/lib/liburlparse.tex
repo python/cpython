@@ -142,7 +142,7 @@ a ? with an empty query; the RFC states that these are equivalent).
 
 \begin{funcdesc}{urljoin}{base, url\optional{, allow_fragments}}
 Construct a full (``absolute'') URL by combining a ``base URL''
-(\var{base}) with a ``relative URL'' (\var{url}).  Informally, this
+(\var{base}) with another URL (\var{url}).  Informally, this
 uses components of the base URL, in particular the addressing scheme,
 the network location and (part of) the path, to provide missing
 components in the relative URL.  For example:
@@ -155,6 +155,20 @@ components in the relative URL.  For example:
 
 The \var{allow_fragments} argument has the same meaning and default as
 for \function{urlparse()}.
+
+\note{If \var{url} is an absolute URL (that is, starting with \code{//}
+      or \code{scheme://}, the \var{url}'s host name and/or scheme
+      will be present in the result.  For example:}
+
+\begin{verbatim}
+>>> urljoin('http://www.cwi.nl/%7Eguido/Python.html',
+...         '//www.python.org/%7Eguido')
+'http://www.python.org/%7Eguido'
+\end{verbatim}
+      
+If you do not want that behavior, preprocess
+the \var{url} with \function{urlsplit()} and \function{urlunsplit()},
+removing possible \em{scheme} and \em{netloc} parts.
 \end{funcdesc}
 
 \begin{funcdesc}{urldefrag}{url}

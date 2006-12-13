@@ -896,7 +896,7 @@ tok_nextc(register struct tok_state *tok)
 				tok->cur = tok->buf + cur;
 				tok->line_start = tok->cur;
 				/* replace "\r\n" with "\n" */
-				/* For Mac leave the \r, giving syntax error */
+				/* For Mac leave the \r, giving a syntax error */
 				pt = tok->inp - 2;
 				if (pt >= tok->buf && *pt == '\r') {
 					*pt++ = '\n';

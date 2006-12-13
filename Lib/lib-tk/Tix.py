@@ -421,7 +421,7 @@ class TixSubWidget(TixWidget):
             except:
                 plist = []
 
-        if (not check_intermediate) or len(plist) < 2:
+        if not check_intermediate:
             # immediate descendant
             TixWidget.__init__(self, master, None, None, {'name' : name})
         else:
@@ -437,6 +437,9 @@ class TixSubWidget(TixWidget):
                     parent = TixSubWidget(parent, plist[i],
                                           destroy_physically=0,
                                           check_intermediate=0)
+            # The Tk widget name is in plist, not in name
+            if plist:
+                name = plist[-1]
             TixWidget.__init__(self, parent, None, None, {'name' : name})
         self.destroy_physically = destroy_physically
 

@@ -246,11 +246,13 @@ dbm_get(register dbmobject *dp, PyObject *args)
 {
 	datum key, val;
 	PyObject *defvalue = Py_None;
+	char *tmp_ptr;
 	int tmp_size;
 
 	if (!PyArg_ParseTuple(args, "s#|O:get",
-                              &key.dptr, &tmp_size, &defvalue))
+                              &tmp_ptr, &tmp_size, &defvalue))
 		return NULL;
+	key.dptr = tmp_ptr;
 	key.dsize = tmp_size;
         check_dbmobject_open(dp);
 	val = dbm_fetch(dp->di_dbm, key);
@@ -267,11 +269,13 @@ dbm_setdefault(register dbmobject *dp, PyObject *args)
 {
 	datum key, val;
 	PyObject *defvalue = NULL;
+	char *tmp_ptr;
 	int tmp_size;
 
 	if (!PyArg_ParseTuple(args, "s#|S:setdefault",
-                              &key.dptr, &tmp_size, &defvalue))
+                              &tmp_ptr, &tmp_size, &defvalue))
 		return NULL;
+	key.dptr = tmp_ptr;
 	key.dsize = tmp_size;
         check_dbmobject_open(dp);
 	val = dbm_fetch(dp->di_dbm, key);

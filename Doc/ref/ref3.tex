@@ -378,6 +378,41 @@ additional example of a mutable sequence type.
 
 \end{description} % Sequences
 
+
+\item[Set types]
+These represent unordered, finite sets of unique, immutable objects.
+As such, they cannot be indexed by any subscript. However, they can be
+iterated over, and the built-in function \function{len()} returns the
+number of items in a set. Common uses for sets are
+fast membership testing, removing duplicates from a sequence, and
+computing mathematical operations such as intersection, union, difference,
+and symmetric difference.
+\bifuncindex{len}
+\obindex{set type}
+
+For set elements, the same immutability rules apply as for dictionary
+keys. Note that numeric types obey the normal rules for numeric
+comparison: if two numbers compare equal (e.g., \code{1} and
+\code{1.0}), only one of them can be contained in a set.
+
+There are currently two intrinsic set types:
+
+\begin{description}
+
+\item[Sets]
+These\obindex{set} represent a mutable set. They are created by the
+built-in \function{set()} constructor and can be modified afterwards
+by several methods, such as \method{add()}.
+
+\item[Frozen sets]
+These\obindex{frozenset} represent an immutable set. They are created by
+the built-in \function{frozenset()} constructor. As a frozenset is
+immutable and hashable, it can be used again as an element of another set,
+or as a dictionary key.
+
+\end{description} % Set types
+
+
 \item[Mappings]
 These represent finite sets of objects indexed by arbitrary index sets.
 The subscript notation \code{a[k]} selects the item indexed
@@ -761,7 +796,7 @@ user-defined method object whose associated class is the class
 (call it~\class{C}) of the instance for which the attribute reference
 was initiated or one of its bases,
 it is transformed into a bound user-defined method object whose
-\member{im_class} attribute is~\class{C} whose \member{im_self} attribute
+\member{im_class} attribute is~\class{C} and whose \member{im_self} attribute
 is the instance. Static method and class method objects are also
 transformed, as if they had been retrieved from class~\class{C};
 see above under ``Classes''. See section~\ref{descriptors} for

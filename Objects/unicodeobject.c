@@ -2040,7 +2040,32 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
 
     static const char *hexdigit = "0123456789abcdef";
 
-    repr = PyString_FromStringAndSize(NULL, 2 + 6*size + 1);
+    /* XXX(nnorwitz): rather than over-allocating, it would be
+       better to choose a different scheme.  Perhaps scan the
+       first N-chars of the string and allocate based on that size.
+    */
+    /* Initial allocation is based on the longest-possible unichr
+       escape.
+
+       In wide (UTF-32) builds '\U00xxxxxx' is 10 chars per source
+       unichr, so in this case it's the longest unichr escape. In
+       narrow (UTF-16) builds this is five chars per source unichr
+       since there are two unichrs in the surrogate pair, so in narrow
+       (UTF-16) builds it's not the longest unichr escape.
+
+       In wide or narrow builds '\uxxxx' is 6 chars per source unichr,
+       so in the narrow (UTF-16) build case it's the longest unichr
+       escape.
+    */
+
+    repr = PyString_FromStringAndSize(NULL,
+        2
+#ifdef Py_UNICODE_WIDE
+        + 10*size
+#else
+        + 6*size
+#endif
+        + 1);
     if (repr == NULL)
         return NULL;
 
@@ -2065,15 +2090,6 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
 #ifdef Py_UNICODE_WIDE
         /* Map 21-bit characters to '\U00xxxxxx' */
         else if (ch >= 0x10000) {
-	    Py_ssize_t offset = p - PyString_AS_STRING(repr);
-
-	    /* Resize the string if necessary */
-	    if (offset + 12 > PyString_GET_SIZE(repr)) {
-		if (_PyString_Resize(&repr, PyString_GET_SIZE(repr) + 100))
-		    return NULL;
-		p = PyString_AS_STRING(repr) + offset;
-	    }
-
             *p++ = '\\';
             *p++ = 'U';
             *p++ = hexdigit[(ch >> 28) & 0x0000000F];
@@ -2086,8 +2102,8 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
             *p++ = hexdigit[ch & 0x0000000F];
 	    continue;
         }
-#endif
-	/* Map UTF-16 surrogate pairs to Unicode \UXXXXXXXX escapes */
+#else
+	/* Map UTF-16 surrogate pairs to '\U00xxxxxx' */
 	else if (ch >= 0xD800 && ch < 0xDC00) {
 	    Py_UNICODE ch2;
 	    Py_UCS4 ucs;
@@ -2112,6 +2128,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
 	    s--;
 	    size++;
 	}
+#endif
 
         /* Map 16-bit characters to '\uxxxx' */
         if (ch >= 256) {
@@ -2367,6 +2384,7 @@ PyObject *_PyUnicode_DecodeUnicodeInternal(const char *s,
     Py_UNICODE unimax = PyUnicode_GetMax();
 #endif
 
+    /* XXX overflow detection missing */
     v = _PyUnicode_New((size+Py_UNICODE_SIZE-1)/ Py_UNICODE_SIZE);
     if (v == NULL)
 	goto onError;
@@ -3153,6 +3171,7 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 			Py_ssize_t needed = (targetsize - extrachars) + \
 				     (targetsize << 2);
 			extrachars += needed;
+			/* XXX overflow detection missing */
 			if (_PyUnicode_Resize(&v,
 					     PyUnicode_GET_SIZE(v) + needed) < 0) {
 			    Py_DECREF(x);
@@ -6695,11 +6714,11 @@ unicode_partition(PyUnicodeObject *self, PyObject *separator)
 }
 
 PyDoc_STRVAR(rpartition__doc__,
-"S.rpartition(sep) -> (head, sep, tail)\n\
+"S.rpartition(sep) -> (tail, sep, head)\n\
 \n\
 Searches for the separator sep in S, starting at the end of S, and returns\n\
 the part before it, the separator itself, and the part after it.  If the\n\
-separator is not found, returns S and two empty strings.");
+separator is not found, returns two empty strings and S.");
 
 static PyObject*
 unicode_rpartition(PyUnicodeObject *self, PyObject *separator)
@@ -7744,10 +7763,11 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    default:
 		PyErr_Format(PyExc_ValueError,
 			     "unsupported format character '%c' (0x%x) "
-			     "at index %i",
+			     "at index %zd",
 			     (31<=c && c<=126) ? (char)c : '?',
                              (int)c,
-			     (int)(fmt -1 - PyUnicode_AS_UNICODE(uformat)));
+			     (Py_ssize_t)(fmt - 1 -
+					  PyUnicode_AS_UNICODE(uformat)));
 		goto onError;
 	    }
 	    if (sign) {

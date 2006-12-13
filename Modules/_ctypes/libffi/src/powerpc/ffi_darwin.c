@@ -1,4 +1,4 @@
-#ifdef __ppc__
+#if !(defined(__APPLE__) && !defined(__ppc__))
 /* -----------------------------------------------------------------------
    ffi.c - Copyright (c) 1998 Geoffrey Keating
 

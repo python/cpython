@@ -98,7 +98,7 @@ type_module(PyTypeObject *type, void *context)
 		s = strrchr(type->tp_name, '.');
 		if (s != NULL)
 			return PyString_FromStringAndSize(
-				type->tp_name, (int)(s - type->tp_name));
+			    type->tp_name, (Py_ssize_t)(s - type->tp_name));
 		return PyString_FromString("__builtin__");
 	}
 }
@@ -3644,7 +3644,7 @@ hackcheck(PyObject *self, setattrofunc func, char *what)
 	while (type && type->tp_flags & Py_TPFLAGS_HEAPTYPE)
 		type = type->tp_base;
         /* If type is NULL now, this is a really weird type.
-           In the same of backwards compatibility (?), just shut up. */
+           In the spirit of backwards compatibility (?), just shut up. */
 	if (type && type->tp_setattro != func) {
 		PyErr_Format(PyExc_TypeError,
 			     "can't apply this %s to %s object",
@@ -3861,7 +3861,7 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
 	while (staticbase && (staticbase->tp_flags & Py_TPFLAGS_HEAPTYPE))
 		staticbase = staticbase->tp_base;
         /* If staticbase is NULL now, it is a really weird type.
-           In the same of backwards compatibility (?), just shut up. */
+           In the spirit of backwards compatibility (?), just shut up. */
 	if (staticbase && staticbase->tp_new != type->tp_new) {
 		PyErr_Format(PyExc_TypeError,
 			     "%s.__new__(%s) is not safe, use %s.__new__()",
@@ -4017,19 +4017,10 @@ slot_sq_length(PyObject *self)
 		return -1;
 	len = PyInt_AsSsize_t(res);
 	Py_DECREF(res);
-	if (len == -1 && PyErr_Occurred())
-		return -1;
-#if SIZEOF_SIZE_T < SIZEOF_INT
-	/* Overflow check -- range of PyInt is more than C ssize_t */
-	if (len != (int)len) {
-		PyErr_SetString(PyExc_OverflowError,
-			"__len__() should return 0 <= outcome < 2**31");
-		return -1;
-	}
-#endif
 	if (len < 0) {
-		PyErr_SetString(PyExc_ValueError,
-				"__len__() should return >= 0");
+		if (!PyErr_Occurred())
+			PyErr_SetString(PyExc_ValueError,
+					"__len__() should return >= 0");
 		return -1;
 	}
 	return len;
@@ -5583,6 +5574,8 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
 	PyObject *obj = NULL;
 	PyTypeObject *obj_type = NULL;
 
+	if (!_PyArg_NoKeywords("super", kwds))
+		return -1;
 	if (!PyArg_ParseTuple(args, "O!|O:super", &PyType_Type, &type, &obj))
 		return -1;
 	if (obj == Py_None)

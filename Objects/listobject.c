@@ -863,17 +863,12 @@ static PyObject *
 listpop(PyListObject *self, PyObject *args)
 {
 	Py_ssize_t i = -1;
-	PyObject *v, *arg = NULL;
+	PyObject *v;
 	int status;
 
-	if (!PyArg_UnpackTuple(args, "pop", 0, 1, &arg))
+	if (!PyArg_ParseTuple(args, "|n:pop", &i))
 		return NULL;
-	if (arg != NULL) {
-		if (PyInt_Check(arg))
-			i = PyInt_AS_LONG((PyIntObject*) arg);
-		else if (!PyArg_ParseTuple(args, "|n:pop", &i))
-   			return NULL;
-	}
+
 	if (self->ob_size == 0) {
 		/* Special-case most common failure cause */
 		PyErr_SetString(PyExc_IndexError, "pop from empty list");
@@ -951,9 +946,10 @@ islt(PyObject *x, PyObject *y, PyObject *compare)
 	if (res == NULL)
 		return -1;
 	if (!PyInt_Check(res)) {
+		PyErr_Format(PyExc_TypeError,
+			     "comparison function must return int, not %.200s",
+			     res->ob_type->tp_name);
 		Py_DECREF(res);
-		PyErr_SetString(PyExc_TypeError,
-				"comparison function must return int");
 		return -1;
 	}
 	i = PyInt_AsLong(res);
@@ -2507,8 +2503,9 @@ list_subscript(PyListObject* self, PyObject* item)
 		}
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError,
-				"list indices must be integers");
+		PyErr_Format(PyExc_TypeError,
+			     "list indices must be integers, not %.200s",
+			     item->ob_type->tp_name);
 		return NULL;
 	}
 }
@@ -2624,6 +2621,11 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 
 			garbage = (PyObject**)
 				PyMem_MALLOC(slicelength*sizeof(PyObject*));
+			if (!garbage) {
+				Py_DECREF(seq);
+				PyErr_NoMemory();
+				return -1;
+			}
 
 			selfitems = self->ob_item;
 			seqitems = PySequence_Fast_ITEMS(seq);
@@ -2646,8 +2648,9 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 		}
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError,
-				"list indices must be integers");
+		PyErr_Format(PyExc_TypeError,
+			     "list indices must be integers, not %.200s",
+			     item->ob_type->tp_name);
 		return -1;
 	}
 }

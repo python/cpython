@@ -12,7 +12,7 @@ the "Standard" toolbar"), and build the projects.
 The proper order to build subprojects:
 
 1) pythoncore (this builds the main Python DLL and library files,
-               python25.{dll, lib} in Release mode)
+               python26.{dll, lib} in Release mode)
               NOTE:  in previous releases, this subproject was
               named after the release number, e.g. python20.
 
@@ -25,8 +25,21 @@ The proper order to build subprojects:
    to the subsystems they implement, or are running a Python core buildbot
    test slave; see SUBPROJECTS below)
 
+Binary files go into PCBuild8\Win32 or \x64 directories and don't
+interfere with each other.
+
 When using the Debug setting, the output files have a _d added to
-their name:  python25_d.dll, python_d.exe, parser_d.pyd, and so on.
+their name:  python26_d.dll, python_d.exe, parser_d.pyd, and so on.
+
+There are two special configurations for the pythoncore project and
+the solution.  These are PGIRelease and PGORelease.  They are for
+createing profile-guided optimized versions of python.dll.
+The former creates the instrumented binaries, and the latter
+runs python.exe with the instrumented python.dll on the performance
+testsuite, and creates a new, optimized, python.dll in
+PCBuild8\Win32\PGORelease, or in the x64 folder.  Note that although
+we can cross-compile x64 binaries on a 32 bit machine, we cannot
+create the PGO binaries, since they require actually running the code.
 
 SUBPROJECTS
 -----------
@@ -37,12 +50,6 @@ supporting that module unless they import the module.
 
 pythoncore
     .dll and .lib
-pythoncore_pgo
-	.dll and .lib, a variant of pythoncore that is optimized through a 
-	Profile Guided Optimization (PGO), employing pybench as the profile
-	case to optimize for. The results are produced as a python25.{dll,lib}
-	in the subfolder 'pythoncore_pgo'. To use this instead of the 
-	standard Python dll place this dll with the python.exe.
 python
     .exe
 pythonw

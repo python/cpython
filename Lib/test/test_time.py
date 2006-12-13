@@ -102,15 +102,19 @@ class TimeTestCase(unittest.TestCase):
         self.assertEquals(expected, result)
 
     def test_strptime(self):
+        # Should be able to go round-trip from strftime to strptime without
+        # throwing an exception.
         tt = time.gmtime(self.t)
         for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
                           'j', 'm', 'M', 'p', 'S',
                           'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
-            format = ' %' + directive
+            format = '%' + directive
+            strf_output = time.strftime(format, tt)
             try:
-                time.strptime(time.strftime(format, tt), format)
+                time.strptime(strf_output, format)
             except ValueError:
-                self.fail('conversion specifier: %r failed.' % format)
+                self.fail("conversion specifier %r failed with '%s' input." %
+                          (format, strf_output))
 
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))

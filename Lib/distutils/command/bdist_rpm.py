@@ -337,37 +337,47 @@ class bdist_rpm (Command):
         if not self.keep_temp:
             rpm_cmd.append('--clean')
         rpm_cmd.append(spec_path)
+        # Determine the binary rpm names that should be built out of this spec
+        # file
+        # Note that some of these may not be really built (if the file
+        # list is empty)
+        nvr_string = "%{name}-%{version}-%{release}"
+        src_rpm = nvr_string + ".src.rpm"
+        non_src_rpm = "%{arch}/" + nvr_string + ".%{arch}.rpm"
+        q_cmd = r"rpm -q --qf '%s %s\n' --specfile '%s'" % (
+            src_rpm, non_src_rpm, spec_path)
+
+        out = os.popen(q_cmd)
+        binary_rpms = []
+        source_rpm = None
+        while 1:
+            line = out.readline()
+            if not line:
+                break
+            l = string.split(string.strip(line))
+            assert(len(l) == 2)
+            binary_rpms.append(l[1])
+            # The source rpm is named after the first entry in the spec file
+            if source_rpm is None:
+                source_rpm = l[0]
+
+        status = out.close()
+        if status:
+            raise DistutilsExecError("Failed to execute: %s" % repr(q_cmd))
+
         self.spawn(rpm_cmd)
 
-        # XXX this is a nasty hack -- we really should have a proper way to
-        # find out the names of the RPM files created; also, this assumes
-        # that RPM creates exactly one source and one binary RPM.
         if not self.dry_run:
             if not self.binary_only:
-                srpms = glob.glob(os.path.join(rpm_dir['SRPMS'], "*.rpm"))
-                assert len(srpms) == 1, \
-                       "unexpected number of SRPM files found: %s" % srpms
-                dist_file = ('bdist_rpm', 'any',
-                             self._dist_path(srpms[0]))
-                self.distribution.dist_files.append(dist_file)
-                self.move_file(srpms[0], self.dist_dir)
+                srpm = os.path.join(rpm_dir['SRPMS'], source_rpm)
+                assert(os.path.exists(srpm))
+                self.move_file(srpm, self.dist_dir)
 
             if not self.source_only:
-                rpms = glob.glob(os.path.join(rpm_dir['RPMS'], "*/*.rpm"))
-                debuginfo = glob.glob(os.path.join(rpm_dir['RPMS'],
-                                                   "*/*debuginfo*.rpm"))
-                if debuginfo:
-                    rpms.remove(debuginfo[0])
-                assert len(rpms) == 1, \
-                       "unexpected number of RPM files found: %s" % rpms
-                dist_file = ('bdist_rpm', get_python_version(),
-                             self._dist_path(rpms[0]))
-                self.distribution.dist_files.append(dist_file)
-                self.move_file(rpms[0], self.dist_dir)
-                if debuginfo:
-                    dist_file = ('bdist_rpm', get_python_version(),
-                                 self._dist_path(debuginfo[0]))
-                    self.move_file(debuginfo[0], self.dist_dir)
+                for rpm in binary_rpms:
+                    rpm = os.path.join(rpm_dir['RPMS'], rpm)
+                    if os.path.exists(rpm):
+                        self.move_file(rpm, self.dist_dir)
     # run()
 
     def _dist_path(self, path):
@@ -381,6 +391,7 @@ class bdist_rpm (Command):
         spec_file = [
             '%define name ' + self.distribution.get_name(),
             '%define version ' + self.distribution.get_version().replace('-','_'),
+            '%define unmangled_version ' + self.distribution.get_version(),
             '%define release ' + self.release.replace('-','_'),
             '',
             'Summary: ' + self.distribution.get_description(),
@@ -402,9 +413,9 @@ class bdist_rpm (Command):
         # but only after it has run: and we create the spec file before
         # running "sdist", in case of --spec-only.
         if self.use_bzip2:
-            spec_file.append('Source0: %{name}-%{version}.tar.bz2')
+            spec_file.append('Source0: %{name}-%{unmangled_version}.tar.bz2')
         else:
-            spec_file.append('Source0: %{name}-%{version}.tar.gz')
+            spec_file.append('Source0: %{name}-%{unmangled_version}.tar.gz')
 
         spec_file.extend([
             'License: ' + self.distribution.get_license(),
@@ -479,7 +490,7 @@ class bdist_rpm (Command):
         # are just text that we drop in as-is.  Hmmm.
 
         script_options = [
-            ('prep', 'prep_script', "%setup"),
+            ('prep', 'prep_script', "%setup -n %{name}-%{unmangled_version}"),
             ('build', 'build_script', def_build),
             ('install', 'install_script',
              ("%s install "

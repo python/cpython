@@ -117,7 +117,8 @@ def hsv_to_rgb(h, s, v):
     p = v*(1.0 - s)
     q = v*(1.0 - s*f)
     t = v*(1.0 - s*(1.0-f))
-    if i%6 == 0: return v, t, p
+    i = i%6
+    if i == 0: return v, t, p
     if i == 1: return q, v, p
     if i == 2: return p, v, t
     if i == 3: return p, q, v

@@ -86,6 +86,15 @@ class XMLRPCTestCase(unittest.TestCase):
         s = xmlrpclib.dumps((new_d,), methodresponse=True)
         self.assert_(isinstance(s, str))
 
+    def test_newstyle_class(self):
+        class T(object):
+            pass
+        t = T()
+        t.x = 100
+        t.y = "Hello"
+        ((t2,), dummy) = xmlrpclib.loads(xmlrpclib.dumps((t,)))
+        self.assertEquals(t2, t.__dict__)
+
     def test_dump_big_long(self):
         self.assertRaises(OverflowError, xmlrpclib.dumps, (2L**99,))
 

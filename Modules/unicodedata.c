@@ -75,7 +75,7 @@ static PyMemberDef DB_members[] = {
         {NULL}
 };
 
-// forward declaration
+/* forward declaration */
 static PyTypeObject UCD_Type;
 
 static PyObject*

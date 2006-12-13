@@ -590,11 +590,11 @@ class SysLogHandler(logging.Handler):
         self.address = address
         self.facility = facility
         if type(address) == types.StringType:
-            self._connect_unixsocket(address)
             self.unixsocket = 1
+            self._connect_unixsocket(address)
         else:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.unixsocket = 0
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         self.formatter = None
 

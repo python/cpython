@@ -219,8 +219,8 @@ if have_unicode:
     test_exc(unicode('abc %\u3000','raw-unicode-escape'), 1, ValueError,
              "unsupported format character '?' (0x3000) at index 5")
 
-test_exc('%d', '1', TypeError, "int argument required")
-test_exc('%g', '1', TypeError, "float argument required")
+test_exc('%d', '1', TypeError, "int argument required, not str")
+test_exc('%g', '1', TypeError, "float argument required, not str")
 test_exc('no format', '1', TypeError,
          "not all arguments converted during string formatting")
 test_exc('no format', u'1', TypeError,

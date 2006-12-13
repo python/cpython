@@ -186,6 +186,14 @@ testme ^ 1
 
 # List/dict operations
 
+class Empty: pass
+
+try:
+    1 in Empty()
+    print 'failed, should have raised TypeError'
+except TypeError:
+    pass
+
 1 in testme
 
 testme[1]
