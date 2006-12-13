@@ -3,7 +3,9 @@
 if __name__ != 'test.test_support':
     raise ImportError, 'test_support must be imported from the test package'
 
+from contextlib import contextmanager
 import sys
+import warnings
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -268,6 +270,16 @@ def open_urlresource(url):
     print >> get_original_stdout(), '\tfetching %s ...' % url
     fn, _ = urllib.urlretrieve(url, filename)
     return open(fn)
+    
+@contextmanager
+def guard_warnings_filter():
+    """Guard the warnings filter from being permanently changed."""
+    original_filters = warnings.filters[:]
+    try:
+        yield
+    finally:
+        warnings.filters = original_filters
+    
 
 #=======================================================================
 # Decorator for running a function in a different locale, correctly resetting

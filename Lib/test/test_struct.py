@@ -50,22 +50,17 @@ def any_err(func, *args):
 
 def with_warning_restore(func):
     def _with_warning_restore(*args, **kw):
-        # The `warnings` module doesn't have an advertised way to restore
-        # its filter list.  Cheat.
-        save_warnings_filters = warnings.filters[:]
-        # Grrr, we need this function to warn every time.  Without removing
-        # the warningregistry, running test_tarfile then test_struct would fail
-        # on 64-bit platforms.
-        globals = func.func_globals
-        if '__warningregistry__' in globals:
-            del globals['__warningregistry__']
-        warnings.filterwarnings("error", r"""^struct.*""", DeprecationWarning)
-        warnings.filterwarnings("error", r""".*format requires.*""",
-                                DeprecationWarning)
-        try:
+        with test.test_support.guard_warnings_filter():
+            # Grrr, we need this function to warn every time.  Without removing
+            # the warningregistry, running test_tarfile then test_struct would fail
+            # on 64-bit platforms.
+            globals = func.func_globals
+            if '__warningregistry__' in globals:
+                del globals['__warningregistry__']
+            warnings.filterwarnings("error", r"""^struct.*""", DeprecationWarning)
+            warnings.filterwarnings("error", r""".*format requires.*""",
+                                    DeprecationWarning)
             return func(*args, **kw)
-        finally:
-            warnings.filters[:] = save_warnings_filters[:]
     return _with_warning_restore
 
 def deprecated_err(func, *args):
