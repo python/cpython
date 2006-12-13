@@ -3,7 +3,6 @@
 import os
 import sys
 import unittest
-import warnings
 import pickle, cPickle
 
 from test.test_support import TESTFN, unlink, run_unittest
