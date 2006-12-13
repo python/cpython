@@ -298,6 +298,17 @@ class TestSet(TestJointOps):
         self.assert_(self.thetype(self.word) not in s)
         self.assertRaises(KeyError, self.s.remove, self.thetype(self.word))
 
+    def test_remove_keyerror_unpacking(self):
+        # bug:  www.python.org/sf/1576657
+        for v1 in ['Q', (1,)]:
+            try:
+                self.s.remove(v1)
+            except KeyError, e:
+                v2 = e.args[0]
+                self.assertEqual(v1, v2)
+            else:
+                self.fail()
+
     def test_discard(self):
         self.s.discard('a')
         self.assert_('a' not in self.s)

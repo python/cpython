@@ -18,20 +18,11 @@ may compromise privacy since it creates a UUID containing the computer's
 network address.  \function{uuid4()} creates a random UUID.
 
 \begin{classdesc}{UUID}{\optional{hex\optional{, bytes\optional{,
-fields\optional{, int\optional{, version}}}}}}
-
-%Instances of the UUID class represent UUIDs as specified in RFC 4122.
-%UUID objects are immutable, hashable, and usable as dictionary keys.
-%Converting a UUID to a string with str() yields something in the form
-%'12345678-1234-1234-1234-123456789abc'.  The UUID constructor accepts
-%four possible forms: a similar string of hexadecimal digits, or a
-%string of 16 raw bytes as an argument named 'bytes', or a tuple of
-%six integer fields (with 32-bit, 16-bit, 16-bit, 8-bit, 8-bit, and
-%48-bit values respectively) as an argument named 'fields', or a single
-%128-bit integer as an argument named 'int'.
+bytes_le\optional{, fields\optional{, int\optional{, version}}}}}}}
 
 Create a UUID from either a string of 32 hexadecimal digits,
-a string of 16 bytes as the \var{bytes} argument, a tuple of six
+a string of 16 bytes as the \var{bytes} argument, a string of 16 bytes
+in little-endian order as the \var{bytes_le} argument, a tuple of six
 integers (32-bit \var{time_low}, 16-bit \var{time_mid},
 16-bit \var{time_hi_version},
 8-bit \var{clock_seq_hi_variant}, 8-bit \var{clock_seq_low}, 48-bit \var{node})
@@ -45,22 +36,31 @@ UUID('{12345678-1234-5678-1234-567812345678}')
 UUID('12345678123456781234567812345678')
 UUID('urn:uuid:12345678-1234-5678-1234-567812345678')
 UUID(bytes='\x12\x34\x56\x78'*4)
+UUID(bytes_le='\x78\x56\x34\x12\x34\x12\x78\x56' +
+              '\x12\x34\x56\x78\x12\x34\x56\x78')
 UUID(fields=(0x12345678, 0x1234, 0x5678, 0x12, 0x34, 0x567812345678))
 UUID(int=0x12345678123456781234567812345678)
 \end{verbatim}
 
-Exactly one of \var{hex}, \var{bytes}, \var{fields}, or \var{int} must
+Exactly one of \var{hex}, \var{bytes}, \var{bytes_le}, \var{fields},
+or \var{int} must
 be given.  The \var{version} argument is optional; if given, the
 resulting UUID will have its variant and version number set according to
 RFC 4122, overriding bits in the given \var{hex}, \var{bytes},
-\var{fields}, or \var{int}.
+\var{bytes_le}, \var{fields}, or \var{int}.
 
 \end{classdesc}
 
 \class{UUID} instances have these read-only attributes:
 
 \begin{memberdesc}{bytes}
-The UUID as a 16-byte string.
+The UUID as a 16-byte string (containing the six
+integer fields in big-endian byte order).
+\end{memberdesc}
+
+\begin{memberdesc}{bytes_le}
+The UUID as a 16-byte string (with \var{time_low}, \var{time_mid},
+and \var{time_hi_version} in little-endian byte order).
 \end{memberdesc}
 
 \begin{memberdesc}{fields}
@@ -95,10 +95,10 @@ The UUID as a URN as specified in RFC 4122.
 
 \begin{memberdesc}{variant}
 The UUID variant, which determines the internal layout of the UUID.
-This will be an integer equal to one of the constants
+This will be one of the integer constants
 \constant{RESERVED_NCS},
 \constant{RFC_4122}, \constant{RESERVED_MICROSOFT}, or
-\constant{RESERVED_FUTURE}).
+\constant{RESERVED_FUTURE}.
 \end{memberdesc}
 
 \begin{memberdesc}{version}
@@ -106,7 +106,7 @@ The UUID version number (1 through 5, meaningful only
 when the variant is \constant{RFC_4122}).
 \end{memberdesc}
 
-The \module{uuid} module defines the following functions
+The \module{uuid} module defines the following functions:
 
 \begin{funcdesc}{getnode}{}
 Get the hardware address as a 48-bit positive integer.  The first time this
@@ -129,11 +129,8 @@ otherwise a random 14-bit sequence number is chosen.
 \index{uuid1}
 
 \begin{funcdesc}{uuid3}{namespace, name}
-Generate a UUID based upon a MD5 hash of the \var{name} string value
-drawn from a specified namespace.   \var{namespace}
-must be one of \constant{NAMESPACE_DNS},
-\constant{NAMESPACE_URL}, \constant{NAMESPACE_OID},
-or \constant{NAMESPACE_X500}.
+Generate a UUID based on the MD5 hash
+of a namespace identifier (which is a UUID) and a name (which is a string).
 \end{funcdesc}
 \index{uuid3}
 
@@ -143,31 +140,32 @@ Generate a random UUID.
 \index{uuid4}
 
 \begin{funcdesc}{uuid5}{namespace, name}
-Generate a UUID based upon a SHA-1 hash of the \var{name} string value
-drawn from a specified namespace.   \var{namespace}
-must be one of \constant{NAMESPACE_DNS},
-\constant{NAMESPACE_URL}, \constant{NAMESPACE_OID},
-or \constant{NAMESPACE_X500}.
+Generate a UUID based on the SHA-1 hash
+of a namespace identifier (which is a UUID) and a name (which is a string).
 \end{funcdesc}
 \index{uuid5}
 
-The \module{uuid} module defines the following namespace constants
+The \module{uuid} module defines the following namespace identifiers
 for use with \function{uuid3()} or \function{uuid5()}.
 
 \begin{datadesc}{NAMESPACE_DNS}
-Fully-qualified domain name namespace UUID.
+When this namespace is specified,
+the \var{name} string is a fully-qualified domain name.
 \end{datadesc}
 
 \begin{datadesc}{NAMESPACE_URL}
-URL namespace UUID.
+When this namespace is specified,
+the \var{name} string is a URL.
 \end{datadesc}
 
 \begin{datadesc}{NAMESPACE_OID}
-ISO OID namespace UUID.
+When this namespace is specified,
+the \var{name} string is an ISO OID.
 \end{datadesc}
 
 \begin{datadesc}{NAMESPACE_X500}
-X.500 DN namespace UUID.
+When this namespace is specified,
+the \var{name} string is an X.500 DN in DER or a text output format.
 \end{datadesc}
 
 The \module{uuid} module defines the following constants
@@ -178,11 +176,11 @@ Reserved for NCS compatibility.
 \end{datadesc}
 
 \begin{datadesc}{RFC_4122}
-Uses UUID layout specified in \rfc{4122}.
+Specifies the UUID layout given in \rfc{4122}.
 \end{datadesc}
 
 \begin{datadesc}{RESERVED_MICROSOFT}
-Reserved for Microsoft backward compatibility.
+Reserved for Microsoft compatibility.
 \end{datadesc}
 
 \begin{datadesc}{RESERVED_FUTURE}
@@ -192,12 +190,13 @@ Reserved for future definition.
 
 \begin{seealso}
   \seerfc{4122}{A Universally Unique IDentifier (UUID) URN Namespace}{
-          This specifies a Uniform Resource Name namespace for UUIDs.}
+This specification defines a Uniform Resource Name namespace for UUIDs,
+the internal format of UUIDs, and methods of generating UUIDs.}
 \end{seealso}
 
 \subsection{Example \label{uuid-example}}
 
-Here is a typical usage:
+Here are some examples of typical usage of the \module{uuid} module:
 \begin{verbatim}
 >>> import uuid
 

@@ -381,5 +381,35 @@ class PointerMemberTestCase(unittest.TestCase):
         s.p = None
         self.failUnlessEqual(s.x, 12345678)
 
+class TestRecursiveStructure(unittest.TestCase):
+    def test_contains_itself(self):
+        class Recursive(Structure):
+            pass
+
+        try:
+            Recursive._fields_ = [("next", Recursive)]
+        except AttributeError, details:
+            self.failUnless("Structure or union cannot contain itself" in
+                            str(details))
+        else:
+            self.fail("Structure or union cannot contain itself")
+
+
+    def test_vice_versa(self):
+        class First(Structure):
+            pass
+        class Second(Structure):
+            pass
+
+        First._fields_ = [("second", Second)]
+
+        try:
+            Second._fields_ = [("first", First)]
+        except AttributeError, details:
+            self.failUnless("_fields_ is final" in
+                            str(details))
+        else:
+            self.fail("AttributeError not raised")
+
 if __name__ == '__main__':
     unittest.main()

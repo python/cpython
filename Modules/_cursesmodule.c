@@ -2334,6 +2334,10 @@ PyCurses_tparm(PyObject *self, PyObject *args)
 	}
 
 	result = tparm(fmt,i1,i2,i3,i4,i5,i6,i7,i8,i9);
+	if (!result) {
+		PyErr_SetString(PyCursesError, "tparm() returned NULL");
+  		return NULL;
+	}
 
 	return PyString_FromString(result);
 }

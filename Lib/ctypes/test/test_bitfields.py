@@ -215,5 +215,14 @@ class BitFieldTest(unittest.TestCase):
                         ("b", c_ubyte, 4)]
         self.failUnlessEqual(sizeof(X), sizeof(c_byte))
 
+    def test_anon_bitfields(self):
+        # anonymous bit-fields gave a strange error message
+        class X(Structure):
+            _fields_ = [("a", c_byte, 4),
+                        ("b", c_ubyte, 4)]
+        class Y(Structure):
+            _anonymous_ = ["_"]
+            _fields_ = [("_", X)]
+
 if __name__ == "__main__":
     unittest.main()

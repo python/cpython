@@ -173,11 +173,11 @@ MakeFields(PyObject *type, CFieldObject *descr,
 
 	for (i = 0; i < PySequence_Fast_GET_SIZE(fieldlist); ++i) {
 		PyObject *pair = PySequence_Fast_GET_ITEM(fieldlist, i); /* borrowed */
-		PyObject *fname, *ftype;
+		PyObject *fname, *ftype, *bits;
 		CFieldObject *fdescr;
 		CFieldObject *new_descr;
 		/* Convert to PyArg_UnpackTuple... */
-		if (!PyArg_ParseTuple(pair, "OO", &fname, &ftype)) {
+		if (!PyArg_ParseTuple(pair, "OO|O", &fname, &ftype, &bits)) {
 			Py_DECREF(fieldlist);
 			return -1;
 		}
@@ -335,14 +335,14 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 	stgdict = PyType_stgdict(type);
 	if (!stgdict)
 		return -1;
+	/* If this structure/union is already marked final we cannot assign
+	   _fields_ anymore. */
+
 	if (stgdict->flags & DICTFLAG_FINAL) {/* is final ? */
 		PyErr_SetString(PyExc_AttributeError,
 				"_fields_ is final");
 		return -1;
 	}
-	/* XXX This should probably be moved to a point when all this
-	   stuff is sucessfully finished. */
-	stgdict->flags |= DICTFLAG_FINAL;	/* set final */
 
 	if (stgdict->ffi_type_pointer.elements)
 		PyMem_Free(stgdict->ffi_type_pointer.elements);
@@ -476,5 +476,15 @@ StructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct)
 	stgdict->size = size;
 	stgdict->align = total_align;
 	stgdict->length = len;	/* ADD ffi_ofs? */
+
+	/* We did check that this flag was NOT set above, it must not
+	   have been set until now. */
+	if (stgdict->flags & DICTFLAG_FINAL) {
+		PyErr_SetString(PyExc_AttributeError,
+				"Structure or union cannot contain itself");
+		return -1;
+	}
+	stgdict->flags |= DICTFLAG_FINAL;
+
 	return MakeAnonFields(type);
 }

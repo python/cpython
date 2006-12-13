@@ -979,6 +979,8 @@ svnversion_init(void)
 
 	br_start = python + 8;
 	br_end = strchr(br_start, '/');
+	assert(br_end);
+
 	/* Works even for trunk,
 	   as we are in trunk/Python/sysmodule.c */
 	br_end2 = strchr(br_end+1, '/');
@@ -991,6 +993,8 @@ svnversion_init(void)
 	}
 	else if (istag || strncmp(br_start, "branches", 8) == 0) {
 		len = br_end2 - br_start;
+		assert(len >= 13);
+		assert(len < (sizeof(patchlevel_revision) - 13));
 		strncpy(branch, br_start, len);
 		branch[len] = '\0';
 
@@ -1221,7 +1225,7 @@ makepathobject(char *path, int delim)
 		p = strchr(path, delim);
 		if (p == NULL)
 			p = strchr(path, '\0'); /* End of string */
-		w = PyString_FromStringAndSize(path, (int) (p - path));
+		w = PyString_FromStringAndSize(path, (Py_ssize_t) (p - path));
 		if (w == NULL) {
 			Py_DECREF(v);
 			return NULL;

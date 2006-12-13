@@ -162,6 +162,11 @@ def format_exception_only(etype, value):
 
     """
 
+    # Gracefully handle (the way Python 2.4 and earlier did) the case of
+    # being called with (None, None).
+    if etype is None:
+        return [_format_final_exc_line(etype, value)]
+
     stype = etype.__name__
     smod = etype.__module__
     if smod not in ("exceptions", "__main__", "__builtin__"):

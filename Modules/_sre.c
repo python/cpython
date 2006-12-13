@@ -1166,9 +1166,10 @@ entrance:
 
             /* install new repeat context */
             ctx->u.rep = (SRE_REPEAT*) PyObject_MALLOC(sizeof(*ctx->u.rep));
-            /* XXX(nnorwitz): anything else we need to do on error? */
-            if (!ctx->u.rep)
+            if (!ctx->u.rep) {
+                PyErr_NoMemory();
                 RETURN_FAILURE;
+            }
             ctx->u.rep->count = -1;
             ctx->u.rep->pattern = ctx->pattern;
             ctx->u.rep->prev = state->repeat;
@@ -1884,6 +1885,8 @@ pattern_match(PatternObject* self, PyObject* args, PyObject* kw)
     }
 
     TRACE(("|%p|%p|END\n", PatternObject_GetCode(self), state.ptr));
+    if (PyErr_Occurred())
+        return NULL;
 
     state_fini(&state);
 
@@ -1921,6 +1924,9 @@ pattern_search(PatternObject* self, PyObject* args, PyObject* kw)
     TRACE(("|%p|%p|END\n", PatternObject_GetCode(self), state.ptr));
 
     state_fini(&state);
+
+    if (PyErr_Occurred())
+        return NULL;
 
     return pattern_new_match(self, &state, status);
 }
@@ -2071,6 +2077,9 @@ pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
 #endif
         }
 
+	if (PyErr_Occurred())
+	    goto error;
+
         if (status <= 0) {
             if (status == 0)
                 break;
@@ -2197,6 +2206,9 @@ pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
             status = sre_usearch(&state, PatternObject_GetCode(self));
 #endif
         }
+
+	if (PyErr_Occurred())
+	    goto error;
 
         if (status <= 0) {
             if (status == 0)
@@ -2346,6 +2358,9 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
             status = sre_usearch(&state, PatternObject_GetCode(self));
 #endif
         }
+
+	if (PyErr_Occurred())
+	    goto error;
 
         if (status <= 0) {
             if (status == 0)
@@ -3250,6 +3265,8 @@ scanner_match(ScannerObject* self, PyObject *unused)
         status = sre_umatch(state, PatternObject_GetCode(self->pattern));
 #endif
     }
+    if (PyErr_Occurred())
+        return NULL;
 
     match = pattern_new_match((PatternObject*) self->pattern,
                                state, status);
@@ -3281,6 +3298,8 @@ scanner_search(ScannerObject* self, PyObject *unused)
         status = sre_usearch(state, PatternObject_GetCode(self->pattern));
 #endif
     }
+    if (PyErr_Occurred())
+        return NULL;
 
     match = pattern_new_match((PatternObject*) self->pattern,
                                state, status);

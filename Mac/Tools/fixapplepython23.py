@@ -123,7 +123,8 @@ def main():
             makescript(GXX_SCRIPT, "g++")
     #  Finally fix the makefile
     rv = fix(MAKEFILE, do_apply)
-    sys.exit(rv)
+    #sys.exit(rv)
+    sys.exit(0)
 
 if __name__ == '__main__':
     main()

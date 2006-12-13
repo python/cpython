@@ -289,7 +289,17 @@ IO_truncate(IOobject *self, PyObject *args) {
 	
         if (!IO__opencheck(self)) return NULL;
         if (!PyArg_ParseTuple(args, "|n:truncate", &pos)) return NULL;
-        if (pos < 0) pos = self->pos;
+
+	if (PyTuple_Size(args) == 0) {
+		/* No argument passed, truncate to current position */
+		pos = self->pos;
+	}
+
+        if (pos < 0) {
+		errno = EINVAL;
+		PyErr_SetFromErrno(PyExc_IOError);
+		return NULL;
+	}
 
         if (self->string_size > pos) self->string_size = pos;
         self->pos = self->string_size;
@@ -657,11 +667,9 @@ newIobject(PyObject *s) {
   char *buf;
   Py_ssize_t size;
 
-  if (PyObject_AsReadBuffer(s, (const void **)&buf, &size)) {
-      PyErr_Format(PyExc_TypeError, "expected read buffer, %.200s found",
-		   s->ob_type->tp_name);
+  if (PyObject_AsCharBuffer(s, (const char **)&buf, &size) != 0)
       return NULL;
-  }
+
   self = PyObject_New(Iobject, &Itype);
   if (!self) return NULL;
   Py_INCREF(s);

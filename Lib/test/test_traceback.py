@@ -122,6 +122,10 @@ def test():
                                                   X.__name__,
                                                   str_value))
 
+    def test_without_exception(self):
+        err = traceback.format_exception_only(None, None)
+        self.assertEqual(err, ['None\n'])
+
 
 def test_main():
     run_unittest(TracebackCases)

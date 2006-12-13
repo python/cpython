@@ -302,13 +302,13 @@ class URLopener:
 
         if proxy_passwd:
             import base64
-            proxy_auth = base64.encodestring(proxy_passwd).strip()
+            proxy_auth = base64.b64encode(proxy_passwd).strip()
         else:
             proxy_auth = None
 
         if user_passwd:
             import base64
-            auth = base64.encodestring(user_passwd).strip()
+            auth = base64.b64encode(user_passwd).strip()
         else:
             auth = None
         h = httplib.HTTP(host)
@@ -387,12 +387,12 @@ class URLopener:
             if not host: raise IOError, ('https error', 'no host given')
             if proxy_passwd:
                 import base64
-                proxy_auth = base64.encodestring(proxy_passwd).strip()
+                proxy_auth = base64.b64encode(proxy_passwd).strip()
             else:
                 proxy_auth = None
             if user_passwd:
                 import base64
-                auth = base64.encodestring(user_passwd).strip()
+                auth = base64.b64encode(user_passwd).strip()
             else:
                 auth = None
             h = httplib.HTTPS(host, 0,

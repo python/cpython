@@ -10,14 +10,17 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\."
-			IntermediateDirectory=".\x86-temp-release\pythoncore"
+			OutputDirectory="$(PlatformName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\pythoncore"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -25,6 +28,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -66,22 +70,20 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="make_buildinfo.exe $(ConfigurationName)&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python25.dll"
+				OutputFile="$(OutDir)\python26.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\./python25.pdb"
+				ProgramDatabaseFile=""
 				SubSystem="2"
 				LinkTimeCodeGeneration="0"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python25.lib"
+				ImportLibrary=""
 				TargetMachine="1"
 			/>
 			<Tool
@@ -110,9 +112,106 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(PlatformName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\pythoncore"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/Zm200 "
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				WholeProgramOptimization="false"
+				AdditionalIncludeDirectories="..\Include,..\PC"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;_CRT_SECURE_NO_DEPRECATE"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="false"
+				EnableFunctionLevelLinking="true"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="..\Include"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\python26.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				IgnoreDefaultLibraryNames="libc"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile=""
+				SubSystem="2"
+				LinkTimeCodeGeneration="0"
+				BaseAddress="0x1e000000"
+				ImportLibrary=""
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\."
-			IntermediateDirectory=".\x86-temp-debug\pythoncore"
+			OutputDirectory="$(PlatformName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\pythoncore"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -162,16 +261,15 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python25_d.dll"
+				OutputFile="$(OutDir)\python26_d.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\./python25_d.pdb"
+				ProgramDatabaseFile=""
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python25_d.lib"
+				ImportLibrary=""
 				TargetMachine="1"
 			/>
 			<Tool
@@ -200,9 +298,9 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="ReleaseItanium|Win32"
-			OutputDirectory="./."
-			IntermediateDirectory=".\ia64-temp-release\pythoncore"
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\pythoncore"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -222,23 +320,18 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions=" /USECL:MS_ITANIUM"
-				Optimization="2"
-				InlineFunctionExpansion="1"
+				AdditionalOptions="/Zm200 "
+				Optimization="0"
 				AdditionalIncludeDirectories="..\Include,..\PC"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT"
-				StringPooling="true"
-				BasicRuntimeChecks="0"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="false"
-				EnableFunctionLevelLinking="true"
+				PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE"
+				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
-				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
 				CompileAs="0"
 			/>
@@ -247,29 +340,26 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
+				PreprocessorDefinitions="_DEBUG"
 				Culture="1033"
 				AdditionalIncludeDirectories="..\Include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="make_buildinfo.exe $(ConfigurationName)"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
-				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python25.dll"
+				OutputFile="$(OutDir)\python26_d.dll"
 				LinkIncremental="1"
-				SuppressStartupBanner="false"
+				SuppressStartupBanner="true"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\./python25.pdb"
+				ProgramDatabaseFile=""
 				SubSystem="2"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python25.lib"
-				TargetMachine="0"
+				ImportLibrary=""
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -297,13 +387,208 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="ReleaseAMD64|Win32"
-			OutputDirectory="./."
-			IntermediateDirectory=".\amd64-temp-release\pythoncore"
+			Name="PGIRelease|Win32"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)\pythoncore"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\pythoncore"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				Description="Get getbuildinfo2.c"
+				CommandLine="make_buildinfo.exe"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/Zm200 "
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				WholeProgramOptimization="true"
+				AdditionalIncludeDirectories="..\Include,..\PC"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;_CRT_SECURE_NO_DEPRECATE"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="..\Include"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)/python26.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				IgnoreDefaultLibraryNames="libc"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile=""
+				SubSystem="2"
+				LinkTimeCodeGeneration="2"
+				BaseAddress="0x1e000000"
+				ImportLibrary=""
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGIRelease|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)\pythoncore"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\pythoncore"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				Description="Get getbuildinfo2.c"
+				CommandLine="make_buildinfo.exe"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/Zm200 "
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				WholeProgramOptimization="true"
+				AdditionalIncludeDirectories="..\Include,..\PC"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;_CRT_SECURE_NO_DEPRECATE"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="..\Include"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)/python26.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				IgnoreDefaultLibraryNames="libc"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile=""
+				SubSystem="2"
+				LinkTimeCodeGeneration="2"
+				BaseAddress="0x1e000000"
+				ImportLibrary=""
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGORelease|Win32"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\PGIRelease\pythoncore"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			BuildLogFile="$(OutDir)\BuildLog.htm"
+			ExcludeBuckets="7"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -322,20 +607,18 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/Zm200  /USECL:MS_OPTERON /GS-"
+				AdditionalOptions="/Zm200 "
 				Optimization="2"
 				InlineFunctionExpansion="1"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="..\Include,..\PC"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
-				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
-				BufferSecurityCheck="false"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
-				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
 				CompileAs="0"
 			/>
@@ -350,23 +633,119 @@
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
-				Description="generate buildinfo"
-				CommandLine="make_buildinfo.exe $(ConfigurationName)"
+				CommandLine="copy $(PlatformName)\python.exe $(IntDir)&#x0D;&#x0A;$(IntDir)\python.exe ../Tools/pybench/pybench.py -n 1&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions=" /MACHINE:AMD64 /USELINK:MS_SDK"
-				AdditionalDependencies="getbuildinfo.o"
-				OutputFile="./python25.dll"
+				OutputFile="$(OutDir)\python26.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				IgnoreDefaultLibraryNames="libc"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\./python25.pdb"
+				ProgramDatabaseFile=""
 				SubSystem="2"
+				LinkTimeCodeGeneration="3"
+				ProfileGuidedDatabase="$(IntDir)\$(TargetName).pgd"
 				BaseAddress="0x1e000000"
-				ImportLibrary=".\./python25.lib"
-				TargetMachine="0"
+				ImportLibrary=""
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="PGORelease|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)\pythoncore"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			BuildLogFile="$(OutDir)\BuildLog.htm"
+			ExcludeBuckets="7"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/Zm200 "
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				WholeProgramOptimization="true"
+				AdditionalIncludeDirectories="..\Include,..\PC"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;_CRT_SECURE_NO_DEPRECATE"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="..\Include"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+				CommandLine="copy $(PlatformName)\python.exe $(IntDir)&#x0D;&#x0A;$(IntDir)\python.exe ../Tools/pybench/pybench.py -n 1&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="$(OutDir)\python26.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				IgnoreDefaultLibraryNames="libc"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile=""
+				SubSystem="2"
+				LinkTimeCodeGeneration="3"
+				ProfileGuidedDatabase="$(IntDir)\$(TargetName).pgd"
+				BaseAddress="0x1e000000"
+				ImportLibrary=""
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -456,6 +835,14 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\Modules\zlib"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Debug|Win32"
 					>
 					<Tool
@@ -464,7 +851,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseItanium|Win32"
+					Name="Debug|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -472,7 +859,31 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="ReleaseAMD64|Win32"
+					Name="PGIRelease|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\Modules\zlib"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGIRelease|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\Modules\zlib"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGORelease|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="..\Modules\zlib"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="PGORelease|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -482,6 +893,334 @@
 			</File>
 			<File
 				RelativePath="..\Modules\zlib\zutil.c"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="include files"
+			>
+			<File
+				RelativePath="..\Include\abstract.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\asdl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\ast.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\bitset.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\boolobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\bufferobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\cellobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\ceval.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\classobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\cobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\code.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\codecs.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\compile.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\complexobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\cStringIO.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\datetime.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\descrobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\dictobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\enumobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\errcode.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\eval.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\fileobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\floatobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\frameobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\funcobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\genobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\graminit.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\grammar.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\import.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\intobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\intrcheck.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\iterobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\listobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\longintrepr.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\longobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\marshal.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\metagrammar.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\methodobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\modsupport.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\moduleobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\node.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\object.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\objimpl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\opcode.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\osdefs.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\parsetok.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\patchlevel.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pgen.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pgenheaders.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\py_curses.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pyarena.h"
+				>
+			</File>
+			<File
+				RelativePath="..\PC\pyconfig.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pydebug.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pyerrors.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pyexpat.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pyfpe.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pygetopt.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pymactoolbox.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pymem.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pyport.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pystate.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pystrtod.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\Python-ast.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\Python.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pythonrun.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\pythread.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\rangeobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\setobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\sliceobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\stringobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\structmember.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\structseq.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\symtable.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\sysmodule.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\timefuncs.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\token.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\traceback.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\tupleobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\ucnhash.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\unicodeobject.h"
+				>
+			</File>
+			<File
+				RelativePath="..\Include\weakrefobject.h"
 				>
 			</File>
 		</Filter>
@@ -555,6 +1294,10 @@
 		</File>
 		<File
 			RelativePath="..\Pc\_subprocess.c"
+			>
+		</File>
+		<File
+			RelativePath="..\Modules\_typesmodule.c"
 			>
 		</File>
 		<File
@@ -738,6 +1481,74 @@
 			>
 		</File>
 		<File
+			RelativePath=".\getbuildinfo2.c"
+			>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					ForcedIncludeFiles="getbuildinfo2.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|x64"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					ForcedIncludeFiles="getbuildinfo2.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					ForcedIncludeFiles="getbuildinfo2.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug|x64"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					ForcedIncludeFiles="getbuildinfo2.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="PGIRelease|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					ForcedIncludeFiles="getbuildinfo2.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="PGIRelease|x64"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					ForcedIncludeFiles="getbuildinfo2.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="PGORelease|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					ForcedIncludeFiles="getbuildinfo2.h"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="PGORelease|x64"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					ForcedIncludeFiles="getbuildinfo2.h"
+				/>
+			</FileConfiguration>
+		</File>
+		<File
 			RelativePath="..\Python\getcompiler.c"
 			>
 		</File>
@@ -797,6 +1608,14 @@
 				/>
 			</FileConfiguration>
 			<FileConfiguration
+				Name="Release|x64"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					AdditionalIncludeDirectories="..\Python"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
 				Name="Debug|Win32"
 				>
 				<Tool
@@ -805,7 +1624,7 @@
 				/>
 			</FileConfiguration>
 			<FileConfiguration
-				Name="ReleaseItanium|Win32"
+				Name="Debug|x64"
 				>
 				<Tool
 					Name="VCCLCompilerTool"
@@ -813,7 +1632,31 @@
 				/>
 			</FileConfiguration>
 			<FileConfiguration
-				Name="ReleaseAMD64|Win32"
+				Name="PGIRelease|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					AdditionalIncludeDirectories="..\Python"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="PGIRelease|x64"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					AdditionalIncludeDirectories="..\Python"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="PGORelease|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+					AdditionalIncludeDirectories="..\Python"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="PGORelease|x64"
 				>
 				<Tool
 					Name="VCCLCompilerTool"
@@ -935,6 +1778,10 @@
 		</File>
 		<File
 			RelativePath="..\Parser\parsetok.c"
+			>
+		</File>
+		<File
+			RelativePath="..\Python\peephole.c"
 			>
 		</File>
 		<File

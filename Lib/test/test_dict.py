@@ -439,6 +439,16 @@ class DictTest(unittest.TestCase):
         else:
             self.fail_("g[42] didn't raise KeyError")
 
+    def test_tuple_keyerror(self):
+        # SF #1576657
+        d = {}
+        try:
+            d[(1,)]
+        except KeyError, e:
+            self.assertEqual(e.args, ((1,),))
+        else:
+            self.fail("missing KeyError")
+
 
 from test import mapping_tests
 

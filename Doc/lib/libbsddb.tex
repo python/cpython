@@ -19,21 +19,23 @@ The \module{bsddb} module requires a Berkeley DB library version from
 3.3 thru 4.4.
 
 \begin{seealso}
-  \seeurl{http://pybsddb.sourceforge.net/}{The website with documentation
-  for the \module{bsddb.db} python Berkeley DB interface that closely mirrors
-  the Sleepycat object oriented interface provided in Berkeley DB 3 and 4.}
-  \seeurl{http://www.sleepycat.com/}{Sleepycat Software produces the
-  Berkeley DB library.}
+  \seeurl{http://pybsddb.sourceforge.net/}
+         {The website with documentation for the \module{bsddb.db}
+          Python Berkeley DB interface that closely mirrors the object
+          oriented interface provided in Berkeley DB 3 and 4.}
+
+  \seeurl{http://www.oracle.com/database/berkeley-db/}
+         {The Berkeley DB library.}
 \end{seealso}
 
 A more modern DB, DBEnv and DBSequence object interface is available in the
-\module{bsddb.db} module which closely matches the Sleepycat Berkeley DB C API
+\module{bsddb.db} module which closely matches the Berkeley DB C API
 documented at the above URLs.  Additional features provided by the
 \module{bsddb.db} API include fine tuning, transactions, logging, and
 multiprocess concurrent database access.
 
 The following is a description of the legacy \module{bsddb} interface
-compatible with the old python bsddb module.  Starting in Python 2.5 this
+compatible with the old Python bsddb module.  Starting in Python 2.5 this
 interface should be safe for multithreaded access.  The \module{bsddb.db}
 API is recommended for threading users as it provides better control.
 

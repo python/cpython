@@ -3,6 +3,10 @@
 
 #include "pyconfig.h" /* include for defines */
 
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic
 C language & library operations whose spellings vary across platforms.
@@ -126,7 +130,7 @@ typedef Py_intptr_t	Py_ssize_t;
  * Py_ssize_t on the platform.
  */
 #ifndef PY_FORMAT_SIZE_T
-#   if SIZEOF_SIZE_T == SIZEOF_INT
+#   if SIZEOF_SIZE_T == SIZEOF_INT && !defined(__APPLE__)
 #       define PY_FORMAT_SIZE_T ""
 #   elif SIZEOF_SIZE_T == SIZEOF_LONG
 #       define PY_FORMAT_SIZE_T "l"
@@ -743,6 +747,15 @@ typedef	struct fd_set {
 #define Py_GCC_ATTRIBUTE(x)
 #else
 #define Py_GCC_ATTRIBUTE(x) __attribute__(x)
+#endif
+
+/*
+ * Add PyArg_ParseTuple format where available.
+ */
+#ifdef HAVE_ATTRIBUTE_FORMAT_PARSETUPLE
+#define Py_FORMAT_PARSETUPLE(func,p1,p2) __attribute__((format(func,p1,p2)))
+#else
+#define Py_FORMAT_PARSETUPLE(func,p1,p2)
 #endif
 
 /* Eliminate end-of-loop code not reached warnings from SunPro C

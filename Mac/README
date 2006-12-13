@@ -48,7 +48,7 @@ will have to do the work yourself if you really want this.
 
 A second reason for using frameworks is that they put Python-related items in
 only two places: "/Library/Framework/Python.framework" and 
-"/Applications/MacPython 2.5".  This simplifies matters for users installing 
+"/Applications/MacPython 2.6".  This simplifies matters for users installing 
 Python from a binary distribution if they want to get rid of it again. Moreover,
 due to the way frameworks work a user without admin privileges can install a 
 binary distribution in his or her home directory without recompilation.
@@ -75,7 +75,7 @@ PyObjC.
 
 This directory contains a Makefile that will create a couple of python-related
 applications (fullblown OSX .app applications, that is) in
-"/Applications/MacPython 2.3", and a hidden helper application Python.app 
+"/Applications/MacPython 2.6", and a hidden helper application Python.app 
 inside the Python.framework, and unix tools "python" and "pythonw" into 
 /usr/local/bin.  In addition it has a target "installmacsubtree" that installs 
 the relevant portions of the Mac subtree into the Python.framework.
@@ -90,20 +90,16 @@ in the sequence
  3. make install
 
 This sequence will put the framework in /Library/Framework/Python.framework,
-the applications in /Applications/MacPython 2.5 and the unix tools in 
+the applications in "/Applications/MacPython 2.6" and the unix tools in 
 /usr/local/bin.
 
 Installing in another place, for instance $HOME/Library/Frameworks if you have
 no admin privileges on your machine, has only been tested very lightly. This
 can be done by configuring with --enable-framework=$HOME/Library/Frameworks.
-The other two directories, /Applications/MacPython-2.3 and /usr/local/bin, will 
-then also be deposited in $HOME. This is sub-optimal for the unix tools, which 
-you would want in $HOME/bin, but there is no easy way to fix this right now.
-
-Note that there are no references to the actual locations in the code or
-resource files, so you are free to move things around afterwards. For example,
-you could use --enable-framework=/tmp/newversion/Library/Frameworks and use
-/tmp/newversion as the basis for an installer or something.
+The other two directories, "/Applications/MacPython-2.6" and /usr/local/bin, 
+will then also be deposited in $HOME. This is sub-optimal for the unix tools, 
+which you would want in $HOME/bin, but there is no easy way to fix this right 
+now.
 
 If you want to install some part, but not all, read the main Makefile. The
 frameworkinstall is composed of a couple of sub-targets that install the
@@ -111,7 +107,7 @@ framework itself, the Mac subtree, the applications and the unix tools.
 
 There is an extra target frameworkinstallextras that is not part of the
 normal frameworkinstall which installs the Demo and Tools directories
-into /Applications/MacPython-2.3, this is useful for binary distributions.
+into "/Applications/MacPython 2.6", this is useful for binary distributions.
 
 What do all these programs do?
 ===============================

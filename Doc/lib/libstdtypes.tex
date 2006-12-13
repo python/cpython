@@ -759,8 +759,8 @@ The original string is returned if
 Split the string at the last occurrence of \var{sep}, and return
 a 3-tuple containing the part before the separator, the separator
 itself, and the part after the separator.  If the separator is not
-found, return a 3-tuple containing the string itself, followed by
-two empty strings.
+found, return a 3-tuple containing two empty strings, followed by
+the string itself.
 \versionadded{2.5}
 \end{methoddesc}
 
@@ -822,7 +822,7 @@ boundaries.  Line breaks are not included in the resulting list unless
                                        start\optional{, end}}}
 Return \code{True} if string starts with the \var{prefix}, otherwise
 return \code{False}.  \var{prefix} can also be a tuple of
-suffixes to look for.  With optional \var{start}, test string beginning at
+prefixes to look for.  With optional \var{start}, test string beginning at
 that position.  With optional \var{end}, stop comparing string at that
 position.
 
@@ -863,6 +863,9 @@ Return a copy of the string where all characters occurring in the
 optional argument \var{deletechars} are removed, and the remaining
 characters have been mapped through the given translation table, which
 must be a string of length 256.
+
+You can use the \function{maketrans()} helper function in the
+\refmodule{string} module to create a translation table.
 
 For Unicode objects, the \method{translate()} method does not
 accept the optional \var{deletechars} argument.  Instead, it
@@ -1398,21 +1401,22 @@ arbitrary objects):
           {(1)}
   \lineiii{\var{a}.clear()}{remove all items from \code{a}}{}
   \lineiii{\var{a}.copy()}{a (shallow) copy of \code{a}}{}
-  \lineiii{\var{a}.has_key(\var{k})}
+  \lineiii{\var{k} in \var{a}}
           {\code{True} if \var{a} has a key \var{k}, else \code{False}}
-          {}
-  \lineiii{\var{k} \code{in} \var{a}}
-          {Equivalent to \var{a}.has_key(\var{k})}
           {(2)}
   \lineiii{\var{k} not in \var{a}}
-          {Equivalent to \code{not} \var{a}.has_key(\var{k})}
+          {Equivalent to \code{not} \var{k} in \var{a}}
           {(2)}
+  \lineiii{\var{a}.has_key(\var{k})}
+          {Equivalent to \var{k} \code{in} \var{a}, use that form in new code}
+          {}
   \lineiii{\var{a}.items()}
           {a copy of \var{a}'s list of (\var{key}, \var{value}) pairs}
           {(3)}
   \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(3)}
   \lineiii{\var{a}.update(\optional{\var{b}})}
-          {updates (and overwrites) key/value pairs from \var{b}}
+          {updates \var{a} with key/value pairs from \var{b}, overwriting
+	   existing keys, returns \code{None}}
           {(9)}
   \lineiii{\var{a}.fromkeys(\var{seq}\optional{, \var{value}})}
           {Creates a new dictionary with keys from \var{seq} and values set to \var{value}}
@@ -1670,6 +1674,7 @@ flush the read-ahead buffer.
   behavior.
 
   Note that not all file objects are seekable.
+  \versionchanged{Passing float values as offset has been deprecated}[2.6]
 \end{methoddesc}
 
 \begin{methoddesc}[file]{tell}{}

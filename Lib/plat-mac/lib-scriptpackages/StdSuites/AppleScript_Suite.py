@@ -301,7 +301,7 @@ class AppleScript_Suite_Events:
             return _arguments['----']
 
     def as_(self, _object, _attributes={}, **_arguments):
-        """as_: Coercion
+        """as: Coercion
         Required argument: an AE object reference
         Keyword argument _attributes: AppleEvent attribute dictionary
         Returns: anything

@@ -86,7 +86,12 @@ If \var{prefix} is specified, the file name will begin with that
 prefix; otherwise, a default prefix is used.
 
 If \var{dir} is specified, the file will be created in that directory;
-otherwise, a default directory is used.
+otherwise, a default directory is used.  The default directory is chosen
+from a platform-dependent list, but the user of the application can control
+the directory location by setting the \var{TMPDIR}, \var{TEMP} or \var{TMP}
+environment variables.  There is thus no guarantee that the generated
+filename will have any nice properties, such as not requiring quoting when
+passed to external commands via \code{os.popen()}.
 
 If \var{text} is specified, it indicates whether to open the file in
 binary mode (the default) or text mode.  On some platforms, this makes

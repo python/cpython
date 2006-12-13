@@ -28,7 +28,7 @@ def raw_input(prompt):
     return sys.stdin.readline()
 
 def find_function(funcname, filename):
-    cre = re.compile(r'def\s+%s\s*[(]' % funcname)
+    cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
     try:
         fp = open(filename)
     except IOError:

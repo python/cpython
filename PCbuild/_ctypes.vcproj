@@ -4,6 +4,7 @@
 	Version="7.10"
 	Name="_ctypes"
 	ProjectGUID="{F22F40F4-D318-40DC-96B3-88DC81CE0894}"
+	RootNamespace="_ctypes"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -128,7 +129,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions=" /USECL:MS_OPTERON"
+				AdditionalOptions=" /USECL:MS_OPTERON /GS-"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\Include,..\PC,..\Modules\_ctypes\libffi_msvc"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
@@ -268,6 +269,41 @@
 		</File>
 		<File
 			RelativePath="..\Modules\_ctypes\libffi_msvc\win32.c">
+			<FileConfiguration
+				Name="ReleaseAMD64|Win32"
+				ExcludedFromBuild="TRUE">
+				<Tool
+					Name="VCCLCompilerTool"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\Modules\_ctypes\libffi_msvc\win64.asm">
+			<FileConfiguration
+				Name="Debug|Win32"
+				ExcludedFromBuild="TRUE">
+				<Tool
+					Name="VCCustomBuildTool"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				ExcludedFromBuild="TRUE">
+				<Tool
+					Name="VCCustomBuildTool"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="ReleaseAMD64|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					CommandLine="amd64_ml64 /nologo /c /Fo &quot;$(IntDir)\win64.obj&quot; &quot;$(InputPath)&quot;
+"
+					Outputs="&quot;$(IntDir)\win64.obj&quot;"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="ReleaseItanium|Win32"
+				ExcludedFromBuild="TRUE">
+				<Tool
+					Name="VCCustomBuildTool"/>
+			</FileConfiguration>
 		</File>
 	</Files>
 	<Globals>

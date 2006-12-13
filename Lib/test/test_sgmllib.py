@@ -286,21 +286,6 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
             ('codepoint', 'convert', 42),
             ])
 
-    def test_attr_values_quoted_markup(self):
-        """Multi-line and markup in attribute values"""
-        self.check_events("""<a title='foo\n<br>bar'>text</a>""",
-            [("starttag", "a", [("title", "foo\n<br>bar")]),
-             ("data", "text"),
-             ("endtag", "a")])
-        self.check_events("""<a title='less < than'>text</a>""",
-            [("starttag", "a", [("title", "less < than")]),
-             ("data", "text"),
-             ("endtag", "a")])
-        self.check_events("""<a title='greater > than'>text</a>""",
-            [("starttag", "a", [("title", "greater > than")]),
-             ("data", "text"),
-             ("endtag", "a")])
-
     def test_attr_funky_names(self):
         self.check_events("""<a a.b='v' c:d=v e-f=v>""", [
             ("starttag", "a", [("a.b", "v"), ("c:d", "v"), ("e-f", "v")]),
@@ -375,6 +360,19 @@ DOCTYPE html PUBLIC '-//W3C//DTD HTML 4.01//EN'
         self.check_events(s, [
             ('decl', 'DOCTYPE doc [<!ATTLIST doc attr (a | b) >]'),
             ])
+
+    def test_read_chunks(self):
+        # SF bug #1541697, this caused sgml parser to hang
+        # Just verify this code doesn't cause a hang.
+        CHUNK = 1024  # increasing this to 8212 makes the problem go away
+
+        f = open(test_support.findfile('sgml_input.html'))
+        fp = sgmllib.SGMLParser()
+        while 1:
+            data = f.read(CHUNK)
+            fp.feed(data)
+            if len(data) != CHUNK:
+                break
 
     # XXX These tests have been disabled by prefixing their names with
     # an underscore.  The first two exercise outstanding bugs in the

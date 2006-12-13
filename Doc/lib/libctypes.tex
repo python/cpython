@@ -1821,7 +1821,7 @@ Here is the wrapping with \code{ctypes}:
 \begin{quote}
 \begin{verbatim}>>> from ctypes import c_int, WINFUNCTYPE, windll
 >>> from ctypes.wintypes import HWND, LPCSTR, UINT
->>> prototype = WINFUNCTYPE(c_int, HWND, LPCSTR, LPCSTR, c_uint)
+>>> prototype = WINFUNCTYPE(c_int, HWND, LPCSTR, LPCSTR, UINT)
 >>> paramflags = (1, "hwnd", 0), (1, "text", "Hi"), (1, "caption", None), (1, "flags", 0)
 >>> MessageBox = prototype(("MessageBoxA", windll.user32), paramflags)
 >>>\end{verbatim}
@@ -1848,7 +1848,7 @@ GetWindowRect(
 
 Here is the wrapping with \code{ctypes}:
 \begin{quote}
-\begin{verbatim}>>> from ctypes import POINTER, WINFUNCTYPE, windll
+\begin{verbatim}>>> from ctypes import POINTER, WINFUNCTYPE, windll, WinError
 >>> from ctypes.wintypes import BOOL, HWND, RECT
 >>> prototype = WINFUNCTYPE(BOOL, HWND, POINTER(RECT))
 >>> paramflags = (1, "hwnd"), (2, "lprect")
@@ -2299,12 +2299,10 @@ Windows only: Represents a \class{HRESULT} value, which contains success
 or error information for a function or method call.
 \end{classdesc*}
 
-\code{py{\_}object} : classdesc*
-\begin{quote}
-
-Represents the C \code{PyObject *} datatype.  Calling this with an
-without an argument creates a \code{NULL} \code{PyObject *} pointer.
-\end{quote}
+\begin{classdesc*}{py_object}
+Represents the C \code{PyObject *} datatype.  Calling this without an
+argument creates a \code{NULL} \code{PyObject *} pointer.
+\end{classdesc*}
 
 The \code{ctypes.wintypes} module provides quite some other Windows
 specific data types, for example \code{HWND}, \code{WPARAM}, or \code{DWORD}.
@@ -2440,5 +2438,6 @@ attributes for names not present in \member{{\_}fields{\_}}.
 
 \subsubsection{Arrays and pointers\label{ctypes-arrays-pointers}}
 
-XXX
+Not yet written - please see section~\ref{ctypes-pointers}, pointers and
+section~\ref{ctypes-arrays}, arrays in the tutorial.
 

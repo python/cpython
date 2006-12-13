@@ -15,8 +15,7 @@ class ExceptionClassTests(unittest.TestCase):
         self.failUnless(issubclass(Exception, object))
 
     def verify_instance_interface(self, ins):
-        for attr in ("args", "message", "__str__", "__unicode__", "__repr__",
-                "__getitem__"):
+        for attr in ("args", "message", "__str__", "__repr__", "__getitem__"):
             self.failUnless(hasattr(ins, attr), "%s missing %s attribute" %
                     (ins.__class__.__name__, attr))
 

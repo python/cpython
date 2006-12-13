@@ -577,12 +577,11 @@ class CodeGenerator:
     def visitListComp(self, node):
         self.set_lineno(node)
         # setup list
-        append = "$append%d" % self.__list_count
+        tmpname = "$list%d" % self.__list_count
         self.__list_count = self.__list_count + 1
         self.emit('BUILD_LIST', 0)
         self.emit('DUP_TOP')
-        self.emit('LOAD_ATTR', 'append')
-        self._implicitNameOp('STORE', append)
+        self._implicitNameOp('STORE', tmpname)
 
         stack = []
         for i, for_ in zip(range(len(node.quals)), node.quals):
@@ -594,10 +593,9 @@ class CodeGenerator:
                 self.visit(if_, cont)
             stack.insert(0, (start, cont, anchor))
 
-        self._implicitNameOp('LOAD', append)
+        self._implicitNameOp('LOAD', tmpname)
         self.visit(node.expr)
-        self.emit('CALL_FUNCTION', 1)
-        self.emit('POP_TOP')
+        self.emit('LIST_APPEND')
 
         for start, cont, anchor in stack:
             if cont:
@@ -608,7 +606,7 @@ class CodeGenerator:
                 self.nextBlock(skip_one)
             self.emit('JUMP_ABSOLUTE', start)
             self.startBlock(anchor)
-        self._implicitNameOp('DELETE', append)
+        self._implicitNameOp('DELETE', tmpname)
 
         self.__list_count = self.__list_count - 1
 

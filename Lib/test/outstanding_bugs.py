@@ -9,19 +9,14 @@
 import unittest
 from test import test_support
 
-class TestBug1385040(unittest.TestCase):
-    def testSyntaxError(self):
-        import compiler
-
-        # The following snippet gives a SyntaxError in the interpreter
-        #
-        # If you compile and exec it, the call foo(7) returns (7, 1)
-        self.assertRaises(SyntaxError, compiler.compile,
-                          "def foo(a=1, b): return a, b\n\n", "<string>", "exec")
+#
+# No test cases for outstanding bugs at the moment.
+#
 
 
 def test_main():
-    test_support.run_unittest(TestBug1385040)
+    #test_support.run_unittest()
+    pass
 
 if __name__ == "__main__":
     test_main()

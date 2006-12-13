@@ -2831,7 +2831,7 @@ Now what happens when the user writes \code{from Sound.Effects import
 *}?  Ideally, one would hope that this somehow goes out to the
 filesystem, finds which submodules are present in the package, and
 imports them all.  Unfortunately, this operation does not work very
-well on Mac and Windows platforms, where the filesystem does not
+well on Windows platforms, where the filesystem does not
 always have accurate information about the case of a filename!  On
 these platforms, there is no guaranteed way to know whether a file
 \file{ECHO.PY} should be imported as a module \module{echo},
@@ -3036,6 +3036,7 @@ Here are two ways to write a table of squares and cubes:
  8  64  512
  9  81  729
 10 100 1000
+
 >>> for x in range(1,11):
 ...     print '%2d %3d %4d' % (x, x*x, x*x*x)
 ... 
@@ -3051,8 +3052,9 @@ Here are two ways to write a table of squares and cubes:
 10 100 1000
 \end{verbatim}
 
-(Note that one space between each column was added by the way
-\keyword{print} works: it always adds spaces between its arguments.)
+(Note that in the first example, one space between each column was
+added by the way \keyword{print} works: it always adds spaces between
+its arguments.)
 
 This example demonstrates the \method{rjust()} method of string objects,
 which right-justifies a string in a field of a given width by padding
@@ -3521,7 +3523,7 @@ be accessed or printed directly without having to reference \code{.args}.
 
 But use of \code{.args} is discouraged.  Instead, the preferred use is to pass
 a single argument to an exception (which can be a tuple if multiple arguments
-are needed) and have it bound to the \code{message} attribute.  One my also
+are needed) and have it bound to the \code{message} attribute.  One may also
 instantiate an exception first before raising it and add any attributes to it
 as desired.
 

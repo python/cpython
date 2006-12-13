@@ -1016,12 +1016,12 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 		case MODE_CLOSED:
 			PyErr_SetString(PyExc_ValueError,
 					"I/O operation on closed file");
-			goto cleanup;;
+			goto cleanup;
 
 		default:
 			PyErr_SetString(PyExc_IOError,
 					"seek works only while reading");
-			goto cleanup;;
+			goto cleanup;
 	}
 
 	if (where == 2) {

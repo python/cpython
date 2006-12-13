@@ -618,11 +618,15 @@ static PyTypeObject tee_type = {
 static PyObject *
 tee(PyObject *self, PyObject *args)
 {
-	int i, n=2;
+	Py_ssize_t i, n=2;
 	PyObject *it, *iterable, *copyable, *result;
 
-	if (!PyArg_ParseTuple(args, "O|i", &iterable, &n))
+	if (!PyArg_ParseTuple(args, "O|n", &iterable, &n))
 		return NULL;
+	if (n < 0) {
+		PyErr_SetString(PyExc_ValueError, "n must be >= 0");
+		return NULL;
+	}
 	result = PyTuple_New(n);
 	if (result == NULL)
 		return NULL;
@@ -2068,7 +2072,7 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 count_next(countobject *lz)
 {
-	return PyInt_FromSize_t(lz->cnt++);
+	return PyInt_FromSsize_t(lz->cnt++);
 }
 
 static PyObject *

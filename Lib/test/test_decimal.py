@@ -23,6 +23,7 @@ or Behaviour) to test each part, or without parameter to test both parts. If
 you're working through IDLE, you can import this test module and call test_main()
 with the corresponding argument.
 """
+from __future__ import with_statement
 
 import unittest
 import glob
@@ -1057,6 +1058,32 @@ class ContextAPItests(unittest.TestCase):
         self.assertNotEqual(id(c.flags), id(d.flags))
         self.assertNotEqual(id(c.traps), id(d.traps))
 
+class WithStatementTest(unittest.TestCase):
+    # Can't do these as docstrings until Python 2.6
+    # as doctest can't handle __future__ statements
+
+    def test_localcontext(self):
+        # Use a copy of the current context in the block
+        orig_ctx = getcontext()
+        with localcontext() as enter_ctx:
+            set_ctx = getcontext()
+        final_ctx = getcontext()
+        self.assert_(orig_ctx is final_ctx, 'did not restore context correctly')
+        self.assert_(orig_ctx is not set_ctx, 'did not copy the context')
+        self.assert_(set_ctx is enter_ctx, '__enter__ returned wrong context')
+
+    def test_localcontextarg(self):
+        # Use a copy of the supplied context in the block
+        orig_ctx = getcontext()
+        new_ctx = Context(prec=42)
+        with localcontext(new_ctx) as enter_ctx:
+            set_ctx = getcontext()
+        final_ctx = getcontext()
+        self.assert_(orig_ctx is final_ctx, 'did not restore context correctly')
+        self.assert_(set_ctx.prec == new_ctx.prec, 'did not set correct context')
+        self.assert_(new_ctx is not set_ctx, 'did not copy the context')
+        self.assert_(set_ctx is enter_ctx, '__enter__ returned wrong context')
+
 def test_main(arith=False, verbose=None):
     """ Execute the tests.
 
@@ -1077,6 +1104,7 @@ def test_main(arith=False, verbose=None):
         DecimalPythonAPItests,
         ContextAPItests,
         DecimalTest,
+        WithStatementTest,
     ]
 
     try:

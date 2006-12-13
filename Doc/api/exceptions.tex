@@ -325,7 +325,7 @@ error indicator for each thread.
   default effect for \constant{SIGINT}\ttindex{SIGINT} is to raise the
   \withsubitem{(built-in exception)}{\ttindex{KeyboardInterrupt}}
   \exception{KeyboardInterrupt} exception.  If an exception is raised
-  the error indicator is set and the function returns \code{1};
+  the error indicator is set and the function returns \code{-1};
   otherwise the function returns \code{0}.  The error indicator may or
   may not be cleared if it was previously set.
 \end{cfuncdesc}

@@ -74,7 +74,8 @@ static PyObject*
 node2tuple(node *n,                     /* node to convert               */
            SeqMaker mkseq,              /* create sequence               */
            SeqInserter addelem,         /* func. to add elem. in seq.    */
-           int lineno)                  /* include line numbers?         */
+           int lineno,                  /* include line numbers?         */
+           int col_offset)              /* include column offsets?       */
 {
     if (n == NULL) {
         Py_INCREF(Py_None);
@@ -95,7 +96,7 @@ node2tuple(node *n,                     /* node to convert               */
         }
         (void) addelem(v, 0, w);
         for (i = 0; i < NCH(n); i++) {
-            w = node2tuple(CHILD(n, i), mkseq, addelem, lineno);
+            w = node2tuple(CHILD(n, i), mkseq, addelem, lineno, col_offset);
             if (w == NULL) {
                 Py_DECREF(v);
                 return ((PyObject*) NULL);
@@ -108,12 +109,14 @@ node2tuple(node *n,                     /* node to convert               */
         return (v);
     }
     else if (ISTERMINAL(TYPE(n))) {
-        PyObject *result = mkseq(2 + lineno);
+        PyObject *result = mkseq(2 + lineno + col_offset);
         if (result != NULL) {
             (void) addelem(result, 0, PyInt_FromLong(TYPE(n)));
             (void) addelem(result, 1, PyString_FromString(STR(n)));
             if (lineno == 1)
                 (void) addelem(result, 2, PyInt_FromLong(n->n_lineno));
+            if (col_offset == 1)
+                (void) addelem(result, 3, PyInt_FromLong(n->n_col_offset));
         }
         return (result);
     }
@@ -289,29 +292,35 @@ static PyObject*
 parser_st2tuple(PyST_Object *self, PyObject *args, PyObject *kw)
 {
     PyObject *line_option = 0;
+    PyObject *col_option = 0;
     PyObject *res = 0;
     int ok;
 
-    static char *keywords[] = {"ast", "line_info", NULL};
+    static char *keywords[] = {"ast", "line_info", "col_info", NULL};
 
     if (self == NULL) {
-        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|O:st2tuple", keywords,
-                                         &PyST_Type, &self, &line_option);
+        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|OO:st2tuple", keywords,
+                                         &PyST_Type, &self, &line_option,
+                                         &col_option);
     }
     else
-        ok = PyArg_ParseTupleAndKeywords(args, kw, "|O:totuple", &keywords[1],
-                                         &line_option);
+        ok = PyArg_ParseTupleAndKeywords(args, kw, "|OO:totuple", &keywords[1],
+                                         &line_option, &col_option);
     if (ok != 0) {
         int lineno = 0;
+        int col_offset = 0;
         if (line_option != NULL) {
             lineno = (PyObject_IsTrue(line_option) != 0) ? 1 : 0;
+        }
+        if (col_option != NULL) {
+            col_offset = (PyObject_IsTrue(col_option) != 0) ? 1 : 0;
         }
         /*
          *  Convert ST into a tuple representation.  Use Guido's function,
          *  since it's known to work already.
          */
         res = node2tuple(((PyST_Object*)self)->st_node,
-                         PyTuple_New, PyTuple_SetItem, lineno);
+                         PyTuple_New, PyTuple_SetItem, lineno, col_offset);
     }
     return (res);
 }
@@ -327,28 +336,34 @@ static PyObject*
 parser_st2list(PyST_Object *self, PyObject *args, PyObject *kw)
 {
     PyObject *line_option = 0;
+    PyObject *col_option = 0;
     PyObject *res = 0;
     int ok;
 
-    static char *keywords[] = {"ast", "line_info", NULL};
+    static char *keywords[] = {"ast", "line_info", "col_info", NULL};
 
     if (self == NULL)
-        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|O:st2list", keywords,
-                                         &PyST_Type, &self, &line_option);
+        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|OO:st2list", keywords,
+                                         &PyST_Type, &self, &line_option,
+                                         &col_option);
     else
-        ok = PyArg_ParseTupleAndKeywords(args, kw, "|O:tolist", &keywords[1],
-                                         &line_option);
+        ok = PyArg_ParseTupleAndKeywords(args, kw, "|OO:tolist", &keywords[1],
+                                         &line_option, &col_option);
     if (ok) {
         int lineno = 0;
+        int col_offset = 0;
         if (line_option != 0) {
             lineno = PyObject_IsTrue(line_option) ? 1 : 0;
+        }
+        if (col_option != NULL) {
+            col_offset = (PyObject_IsTrue(col_option) != 0) ? 1 : 0;
         }
         /*
          *  Convert ST into a tuple representation.  Use Guido's function,
          *  since it's known to work already.
          */
         res = node2tuple(self->st_node,
-                         PyList_New, PyList_SetItem, lineno);
+                         PyList_New, PyList_SetItem, lineno, col_offset);
     }
     return (res);
 }

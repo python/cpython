@@ -152,6 +152,8 @@ method_new(PyTypeObject* type, PyObject* args, PyObject *kw)
 	PyObject *self;
 	PyObject *classObj = NULL;
 
+	if (!_PyArg_NoKeywords("instancemethod", kw))
+		return NULL;
 	if (!PyArg_UnpackTuple(args, "method", 2, 3,
 			      &func, &self, &classObj))
 		return NULL;

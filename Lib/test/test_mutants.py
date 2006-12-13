@@ -92,8 +92,8 @@ class Horrid:
         ##self.hashcode = random.randrange(1000000000)
 
     def __hash__(self):
-        ##return self.hashcode
         return 42
+        return self.hashcode
 
     def __eq__(self, other):
         maybe_mutate()   # The point of the test.

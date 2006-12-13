@@ -61,6 +61,10 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(repr(c), 'count(3)')
         c.next()
         self.assertEqual(repr(c), 'count(4)')
+        c = count(-9)
+        self.assertEqual(repr(c), 'count(-9)')
+        c.next()
+        self.assertEqual(c.next(), -8)
 
     def test_cycle(self):
         self.assertEqual(take(10, cycle('abc')), list('abcabcabca'))
@@ -375,6 +379,7 @@ class TestBasicOps(unittest.TestCase):
 
         # test values of n
         self.assertRaises(TypeError, tee, 'abc', 'invalid')
+        self.assertRaises(ValueError, tee, [], -1)
         for n in xrange(5):
             result = tee('abc', n)
             self.assertEqual(type(result), tuple)

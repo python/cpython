@@ -1024,7 +1024,7 @@ save_int(Picklerobject *self, PyObject *args)
 static int
 save_long(Picklerobject *self, PyObject *args)
 {
-	int size;
+	Py_ssize_t size;
 	int res = -1;
 	PyObject *repr = NULL;
 
@@ -1066,7 +1066,7 @@ save_long(Picklerobject *self, PyObject *args)
 		 * byte at the start, and cut it back later if possible.
 		 */
 		nbytes = (nbits >> 3) + 1;
-		if ((int)nbytes < 0 || (size_t)(int)nbytes != nbytes) {
+		if (nbytes > INT_MAX) {
 			PyErr_SetString(PyExc_OverflowError, "long too large "
 				"to pickle");
 			goto finally;
@@ -1208,12 +1208,14 @@ save_string(Picklerobject *self, PyObject *args, int doput)
 			c_str[1] = size;
 			len = 2;
 		}
-		else {
+		else if (size <= INT_MAX) {
 			c_str[0] = BINSTRING;
 			for (i = 1; i < 5; i++)
 				c_str[i] = (int)(size >> ((i - 1) * 8));
 			len = 5;
 		}
+		else
+			return -1;    /* string too large */
 
 		if (self->write_func(self, c_str, len) < 0)
 			return -1;
@@ -1286,7 +1288,7 @@ modified_EncodeRawUnicodeEscape(const Py_UNICODE *s, int size)
 static int
 save_unicode(Picklerobject *self, PyObject *args, int doput)
 {
-	int size, len;
+	Py_ssize_t size, len;
 	PyObject *repr=0;
 
 	if (!PyUnicode_Check(args))
@@ -1325,6 +1327,8 @@ save_unicode(Picklerobject *self, PyObject *args, int doput)
 
 		if ((size = PyString_Size(repr)) < 0)
 			goto err;
+		if (size > INT_MAX)
+			return -1;   /* string too large */
 
 		c_str[0] = BINUNICODE;
 		for (i = 1; i < 5; i++)

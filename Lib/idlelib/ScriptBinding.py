@@ -57,9 +57,10 @@ class ScriptBinding:
         filename = self.getfilename()
         if not filename:
             return
+        if not self.checksyntax(filename):
+            return
         if not self.tabnanny(filename):
             return
-        self.checksyntax(filename)
 
     def tabnanny(self, filename):
         f = open(filename, 'r')
@@ -76,9 +77,6 @@ class ScriptBinding:
             self.editwin.gotoline(nag.get_lineno())
             self.errorbox("Tab/space error", indent_message)
             return False
-        except IndentationError:
-            # From tokenize(), let compile() in checksyntax find it again.
-            pass
         return True
 
     def checksyntax(self, filename):
@@ -139,10 +137,10 @@ class ScriptBinding:
         filename = self.getfilename()
         if not filename:
             return
-        if not self.tabnanny(filename):
-            return
         code = self.checksyntax(filename)
         if not code:
+            return
+        if not self.tabnanny(filename):
             return
         shell = self.shell
         interp = shell.interp

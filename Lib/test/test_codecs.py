@@ -425,6 +425,10 @@ class UTF8SigTest(ReadTest):
             ]
         )
 
+    def test_bug1601501(self):
+        # SF bug #1601501: check that the codec works with a buffer
+        unicode("\xef\xbb\xbf", "utf-8-sig")
+
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
         self.assertEquals(codecs.escape_decode(""), ("", 0))
@@ -910,6 +914,18 @@ class StreamReaderTest(unittest.TestCase):
         f = self.reader(self.stream)
         self.assertEquals(f.readlines(), [u'\ud55c\n', u'\uae00'])
 
+class EncodedFileTest(unittest.TestCase):
+
+    def test_basic(self):
+        f = StringIO.StringIO('\xed\x95\x9c\n\xea\xb8\x80')
+        ef = codecs.EncodedFile(f, 'utf-16-le', 'utf-8')
+        self.assertEquals(ef.read(), '\\\xd5\n\x00\x00\xae')
+
+        f = StringIO.StringIO()
+        ef = codecs.EncodedFile(f, 'utf-8', 'latin1')
+        ef.write('\xc3\xbc')
+        self.assertEquals(f.getvalue(), '\xfc')
+
 class Str2StrTest(unittest.TestCase):
 
     def test_read(self):
@@ -1050,6 +1066,14 @@ broken_unicode_with_streams = [
     "punycode",
     "unicode_internal"
 ]
+broken_incremental_coders = broken_unicode_with_streams[:]
+
+# The following encodings only support "strict" mode
+only_strict_mode = [
+    "idna",
+    "zlib_codec",
+    "bz2_codec",
+]
 
 try:
     import bz2
@@ -1099,6 +1123,7 @@ class BasicUnicodeTest(unittest.TestCase):
                     decodedresult += reader.read()
                 self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
 
+            if encoding not in broken_incremental_coders:
                 # check incremental decoder/encoder (fetched via the Python
                 # and C API) and iterencode()/iterdecode()
                 try:
@@ -1138,6 +1163,24 @@ class BasicUnicodeTest(unittest.TestCase):
                     # check iterencode()/iterdecode() with empty string
                     result = u"".join(codecs.iterdecode(codecs.iterencode(u"", encoding), encoding))
                     self.assertEqual(result, u"")
+
+                if encoding not in only_strict_mode:
+                    # check incremental decoder/encoder with errors argument
+                    try:
+                        encoder = codecs.getincrementalencoder(encoding)("ignore")
+                        cencoder = _testcapi.codec_incrementalencoder(encoding, "ignore")
+                    except LookupError: # no IncrementalEncoder
+                        pass
+                    else:
+                        encodedresult = "".join(encoder.encode(c) for c in s)
+                        decoder = codecs.getincrementaldecoder(encoding)("ignore")
+                        decodedresult = u"".join(decoder.decode(c) for c in encodedresult)
+                        self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
+
+                        encodedresult = "".join(cencoder.encode(c) for c in s)
+                        cdecoder = _testcapi.codec_incrementaldecoder(encoding, "ignore")
+                        decodedresult = u"".join(cdecoder.decode(c) for c in encodedresult)
+                        self.assertEqual(decodedresult, s, "%r != %r (encoding=%r)" % (decodedresult, s, encoding))
 
     def test_seek(self):
         # all codecs should be able to encode these
@@ -1214,6 +1257,19 @@ class CharmapTest(unittest.TestCase):
             (u"", len(allbytes))
         )
 
+class WithStmtTest(unittest.TestCase):
+    def test_encodedfile(self):
+        f = StringIO.StringIO("\xc3\xbc")
+        with codecs.EncodedFile(f, "latin-1", "utf-8") as ef:
+            self.assertEquals(ef.read(), "\xfc")
+
+    def test_streamreaderwriter(self):
+        f = StringIO.StringIO("\xc3\xbc")
+        info = codecs.lookup("utf-8")
+        with codecs.StreamReaderWriter(f, info.streamreader,
+                                       info.streamwriter, 'strict') as srw:
+            self.assertEquals(srw.read(), u"\xfc")
+
 
 def test_main():
     test_support.run_unittest(
@@ -1234,10 +1290,12 @@ def test_main():
         IDNACodecTest,
         CodecsModuleTest,
         StreamReaderTest,
+        EncodedFileTest,
         Str2StrTest,
         BasicUnicodeTest,
         BasicStrTest,
-        CharmapTest
+        CharmapTest,
+        WithStmtTest,
     )
 
 

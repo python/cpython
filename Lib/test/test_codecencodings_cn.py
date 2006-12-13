@@ -32,6 +32,7 @@ class Test_GBK(test_multibytecodec_support.TestBase, unittest.TestCase):
         ("abc\x80\x80\xc1\xc4\xc8", "replace", u"abc\ufffd\u804a\ufffd"),
         ("abc\x80\x80\xc1\xc4", "ignore",  u"abc\u804a"),
         ("\x83\x34\x83\x31", "strict", None),
+        (u"\u30fb", "strict", None),
     )
 
 class Test_GB18030(test_multibytecodec_support.TestBase, unittest.TestCase):
@@ -45,6 +46,7 @@ class Test_GB18030(test_multibytecodec_support.TestBase, unittest.TestCase):
         ("abc\x80\x80\xc1\xc4\xc8", "replace", u"abc\ufffd\u804a\ufffd"),
         ("abc\x80\x80\xc1\xc4", "ignore",  u"abc\u804a"),
         ("abc\x84\x39\x84\x39\xc1\xc4", "replace", u"abc\ufffd\u804a"),
+        (u"\u30fb", "strict", "\x819\xa79"),
     )
     has_iso10646 = True
 

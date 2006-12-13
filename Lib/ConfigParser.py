@@ -199,11 +199,11 @@ class MissingSectionHeaderError(ParsingError):
         self.line = line
 
 
-
 class RawConfigParser:
-    def __init__(self, defaults=None):
-        self._sections = {}
-        self._defaults = {}
+    def __init__(self, defaults=None, dict_type=dict):
+        self._dict = dict_type
+        self._sections = self._dict()
+        self._defaults = self._dict()
         if defaults:
             for key, value in defaults.items():
                 self._defaults[self.optionxform(key)] = value
@@ -224,7 +224,7 @@ class RawConfigParser:
         """
         if section in self._sections:
             raise DuplicateSectionError(section)
-        self._sections[section] = {}
+        self._sections[section] = self._dict()
 
     def has_section(self, section):
         """Indicate whether the named section is present in the configuration.
@@ -307,7 +307,7 @@ class RawConfigParser:
         except KeyError:
             if section != DEFAULTSECT:
                 raise NoSectionError(section)
-            d2 = {}
+            d2 = self._dict()
         d = self._defaults.copy()
         d.update(d2)
         if "__name__" in d:
@@ -453,7 +453,8 @@ class RawConfigParser:
                     elif sectname == DEFAULTSECT:
                         cursect = self._defaults
                     else:
-                        cursect = {'__name__': sectname}
+                        cursect = self._dict()
+                        cursect['__name__'] = sectname
                         self._sections[sectname] = cursect
                     # So sections can't start with a continuation line
                     optname = None

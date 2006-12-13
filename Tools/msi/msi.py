@@ -872,6 +872,12 @@ def add_files(db):
                     version=version, language=lang)
     tmpfiles.append("msvcr71.dll")
 
+    # Check if _ctypes.pyd exists
+    have_ctypes = os.path.exists(srcdir+"/PCBuild/_ctypes.pyd")
+    if not have_ctypes:
+        print "WARNING: _ctypes.pyd not found, ctypes will not be included"
+        extensions.remove("_ctypes.pyd")
+
     # Add all .py files in Lib, except lib-tk, test
     dirs={}
     pydirs = [(root,"Lib")]
@@ -889,6 +895,8 @@ def add_files(db):
             # data: Lib/email/test
             # output: Lib/test
             testsuite.set_current()
+        elif not have_ctypes and dir == "ctypes":
+            continue
         else:
             default_feature.set_current()
         lib = PyDirectory(db, cab, parent, dir, dir, "%s|%s" % (parent.make_short(dir), dir))
@@ -913,6 +921,7 @@ def add_files(db):
             lib.add_file("185test.db")
             lib.add_file("audiotest.au")
             lib.add_file("cfgparser.1")
+            lib.add_file("sgml_input.html")
             lib.add_file("test.xml")
             lib.add_file("test.xml.out")
             lib.add_file("testtar.tar")

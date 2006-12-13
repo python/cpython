@@ -50,7 +50,7 @@ b/__init__.py
 maybe_test_new = [
     "a.module",
     ["a", "a.module", "sys",
-     "b"],
+     "b", "__future__"],
     ["c"], ["b.something"],
     """\
 a/__init__.py
@@ -58,6 +58,7 @@ a/module.py
                                 from b import something
                                 from c import something
 b/__init__.py
+                                from __future__ import absolute_import
                                 from sys import *
 """]
 
@@ -86,12 +87,13 @@ absolute_import_test = [
     "a.module",
     ["a", "a.module",
      "b", "b.x", "b.y", "b.z",
-     "sys", "exceptions"],
+     "__future__", "sys", "exceptions"],
     ["blahblah", "z"], [],
     """\
 mymodule.py
 a/__init__.py
 a/module.py
+                                from __future__ import absolute_import
                                 import sys # sys
                                 import blahblah # fails
                                 import exceptions # exceptions
@@ -115,7 +117,8 @@ b/z.py
 
 relative_import_test = [
     "a.module",
-    ["a", "a.module",
+    ["__future__",
+     "a", "a.module",
      "a.b", "a.b.y", "a.b.z",
      "a.b.c", "a.b.c.moduleC",
      "a.b.c.d", "a.b.c.e",
@@ -127,6 +130,7 @@ mymodule.py
 a/__init__.py
                                 from .b import y, z # a.b.y, a.b.z
 a/module.py
+                                from __future__ import absolute_import # __future__
                                 import exceptions # exceptions
 a/exceptions.py
 a/sys.py
@@ -253,6 +257,7 @@ class ModuleFinderTest(unittest.TestCase):
             self._do_test(relative_import_test_2)
 
 def test_main():
+    distutils.log.set_threshold(distutils.log.WARN)
     test_support.run_unittest(ModuleFinderTest)
 
 if __name__ == "__main__":

@@ -371,7 +371,12 @@ class GzipFile:
         self.extrasize = 0
         self.offset = 0
 
-    def seek(self, offset):
+    def seek(self, offset, whence=0):
+        if whence:
+            if whence == 1:
+                offset = self.offset + offset
+            else:
+                raise ValueError('Seek from end not supported')
         if self.mode == WRITE:
             if offset < self.offset:
                 raise IOError('Negative seek in write mode')

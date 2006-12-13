@@ -15,7 +15,7 @@ The file also must be of appropriate size - not bigger than a megabyte.
 
 walk_python_files() recursively lists all Python files under the given directories.
 """
-__author__ = "Oleg Broytmann, Reinhold Birkenfeld"
+__author__ = "Oleg Broytmann, Georg Brandl"
 
 __all__ = ["has_python_ext", "looks_like_python", "can_be_compiled", "walk_python_files"]
 

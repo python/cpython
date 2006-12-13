@@ -241,8 +241,8 @@ If you want to know the current machine's IP address, you may want to use
 This operation assumes that there is a valid address-to-host mapping for
 the host, and the assumption does not always hold.
 Note: \function{gethostname()} doesn't always return the fully qualified
-domain name; use \code{gethostbyaddr(gethostname())}
-(see below).
+domain name; use \code{getfqdn()}
+(see above).
 \end{funcdesc}
 
 \begin{funcdesc}{gethostbyaddr}{ip_address}
@@ -712,14 +712,15 @@ read until EOF. The return value is a string of the bytes read.
 \end{methoddesc}
 
 \begin{methoddesc}{server}{}
-Returns a string containing the ASN.1 distinguished name identifying the 
-server's certificate.  (See below for an example
-showing what distinguished names look like.)
+Returns a string describing the server's certificate.
+Useful for debugging purposes; do not parse the content of this string
+because its format can't be parsed unambiguously.
 \end{methoddesc}
 
 \begin{methoddesc}{issuer}{}
-Returns a string containing the ASN.1 distinguished name identifying the
-issuer of the server's certificate.
+Returns a string describing the issuer of the server's certificate.
+Useful for debugging purposes; do not parse the content of this string
+because its format can't be parsed unambiguously.
 \end{methoddesc}
 
 \subsection{Example \label{socket-example}}

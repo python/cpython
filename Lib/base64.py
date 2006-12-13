@@ -308,7 +308,7 @@ def decode(input, output):
 
 
 def encodestring(s):
-    """Encode a string."""
+    """Encode a string into multiple lines of base-64 data."""
     pieces = []
     for i in range(0, len(s), MAXBINSIZE):
         chunk = s[i : i + MAXBINSIZE]

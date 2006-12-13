@@ -98,7 +98,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.4.5"
+#define PY_BSDDB_VERSION "4.4.6"
 static char *rcs_id = "$Id$";
 
 
@@ -1779,9 +1779,7 @@ DB_get_type(DBObject* self, PyObject* args)
         return NULL;
     CHECK_DB_NOT_CLOSED(self);
 
-    MYDB_BEGIN_ALLOW_THREADS;
     type = _DB_get_type(self);
-    MYDB_END_ALLOW_THREADS;
     if (type == -1)
         return NULL;
     return PyInt_FromLong(type);
@@ -2430,7 +2428,7 @@ DB_stat(DBObject* self, PyObject* args, PyObject* kwargs)
 #if (DBVER >= 43)
     PyObject* txnobj = NULL;
     DB_TXN *txn = NULL;
-    static char* kwnames[] = { "txn", "flags", NULL };
+    static char* kwnames[] = { "flags", "txn", NULL };
 #else
     static char* kwnames[] = { "flags", NULL };
 #endif

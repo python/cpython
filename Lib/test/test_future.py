@@ -82,6 +82,27 @@ class FutureTest(unittest.TestCase):
         else:
             self.fail("expected exception didn't occur")
 
+    def test_parserhack(self):
+        # test that the parser.c::future_hack function works as expected
+        # Note: although this test must pass, it's not testing the original
+        #       bug as of 2.6 since the with statement is not optional and
+        #       the parser hack disabled. If a new keyword is introduced in
+        #       2.6, change this to refer to the new future import.
+        try:
+            exec("from __future__ import division, with_statement; with = 0")
+        except SyntaxError:
+            pass
+        else:
+            self.fail("syntax error didn't occur")
+
+        try:
+            exec("from __future__ import (with_statement, division); with = 0")
+        except SyntaxError:
+            pass
+        else:
+            self.fail("syntax error didn't occur")
+
+
 def test_main():
     test_support.run_unittest(FutureTest)
 

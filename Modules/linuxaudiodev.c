@@ -28,7 +28,9 @@
 #if defined(linux)
 #include <linux/soundcard.h>
 
+#ifndef HAVE_STDINT_H
 typedef unsigned long uint32_t;
+#endif
 
 #elif defined(__FreeBSD__)
 #include <machine/soundcard.h>

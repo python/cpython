@@ -470,7 +470,7 @@ static PyObject *
 mmap_tell_method(mmap_object *self, PyObject *unused)
 {
 	CHECK_VALID(NULL);
-	return PyInt_FromLong((long) self->pos);
+	return PyInt_FromSize_t(self->pos);
 }
 
 static PyObject *

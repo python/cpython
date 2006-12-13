@@ -674,7 +674,7 @@ class ProxyHandler(BaseHandler):
             proxy_type = orig_type
         if user and password:
             user_pass = '%s:%s' % (unquote(user), unquote(password))
-            creds = base64.encodestring(user_pass).strip()
+            creds = base64.b64encode(user_pass).strip()
             req.add_header('Proxy-authorization', 'Basic ' + creds)
         hostport = unquote(hostport)
         req.set_proxy(hostport, proxy_type)
@@ -798,7 +798,7 @@ class AbstractBasicAuthHandler:
         user, pw = self.passwd.find_user_password(realm, host)
         if pw is not None:
             raw = "%s:%s" % (user, pw)
-            auth = 'Basic %s' % base64.encodestring(raw).strip()
+            auth = 'Basic %s' % base64.b64encode(raw).strip()
             if req.headers.get(self.auth_header, None) == auth:
                 return None
             req.add_header(self.auth_header, auth)

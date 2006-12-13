@@ -210,6 +210,13 @@ class TestUpdateWrapper(unittest.TestCase):
         self.assertEqual(wrapper.attr, 'This is a different test')
         self.assertEqual(wrapper.dict_attr, f.dict_attr)
 
+    def test_builtin_update(self):
+        # Test for bug #1576241
+        def wrapper():
+            pass
+        functools.update_wrapper(wrapper, max)
+        self.assertEqual(wrapper.__name__, 'max')
+        self.assert_(wrapper.__doc__.startswith('max('))
 
 class TestWraps(TestUpdateWrapper):
 

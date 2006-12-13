@@ -1,5 +1,6 @@
 ;;; py2texi.el -- Conversion of Python LaTeX documentation to Texinfo
 
+;; Copyright (C) 2006  Jeroen Dekkers <jeroen@dekkers.cx>
 ;; Copyright (C) 1998, 1999, 2001, 2002 Milan Zamazal
 
 ;; Author: Milan Zamazal <pdm@zamazal.org>
@@ -168,6 +169,7 @@ Otherwise a generated Info file name is used.")
      "@end table\n")
     ("productionlist" 0 "\n@table @code\n" "@end table\n")
     ("quotation" 0 "@quotation" "@end quotation")
+    ("quote" 0 "@quotation" "@end quotation")
     ("seealso" 0 "See also:\n@table @emph\n" "@end table\n")
     ("seealso*" 0 "@table @emph\n" "@end table\n")
     ("sloppypar" 0 "" "")
@@ -246,11 +248,12 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("env" 1 "@code{\\1}")
     ("EOF" 0 "@code{EOF}")
     ("email" 1 "@email{\\1}")
+    ("em" 1 "@emph{\\1}")
     ("emph" 1 "@emph{\\1}")
     ("envvar" 1 "@env{\\1}")
     ("exception" 1 "@code{\\1}")
     ("exindex" 1 (progn (setq obindex t) "@obindex{\\1}"))
-    ("fi" 0 (concat "@end " last-if))
+    ("fi" 0 (if (equal last-if "ifx") "" (concat "@end " last-if)))
     ("file" 1 "@file{\\1}")
     ("filenq" 1 "@file{\\1}")
     ("filevar" 1 "@file{@var{\\1}}")
@@ -262,6 +265,7 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("grammartoken" 1 "@code{\\1}")
     ("guilabel" 1 "@strong{\\1}")
     ("hline" 0 "")
+    ("ifx" 0 (progn (setq last-if "ifx") ""))
     ("ifhtml" 0 (concat "@" (setq last-if "ifinfo")))
     ("iftexi" 0 (concat "@" (setq last-if "ifinfo")))
     ("index" 1 (progn (setq cindex t) "@cindex{\\1}"))
@@ -284,6 +288,7 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("lineiii" 3 "@item \\1 @tab \\2 @tab \\3")
     ("lineiv" 4 "@item \\1 @tab \\2 @tab \\3 @tab \\4")
     ("linev" 5 "@item \\1 @tab \\2 @tab \\3 @tab \\4 @tab \\5")
+    ("locallinewidth" 0 "")
     ("localmoduletable" 0 "")
     ("longprogramopt" 1 "@option{--\\1}")
     ("macro" 1 "@code{@backslash{}\\1}")
@@ -307,6 +312,7 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("moreargs" 0 "@dots{}")
     ("n" 0 "@backslash{}n")
     ("newcommand" 2 "")
+    ("newlength" 1 "")
     ("newsgroup" 1 "@samp{\\1}")
     ("nodename" 1
      (save-excursion
@@ -322,6 +328,7 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("opindex" 1 (progn (setq cindex t) "@cindex{\\1}"))
     ("option" 1 "@option{\\1}")
     ("optional" 1 "[\\1]")
+    ("paragraph" 1 "@subsubheading \\1")
     ("pep" 1 (progn (setq cindex t) "PEP@ \\1@cindex PEP \\1\n"))
     ("pi" 0 "pi")
     ("platform" 1 "")
@@ -363,6 +370,7 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("seetitle" 1 "@cite{\\1}")
     ("seeurl" 2 "\n@table @url\n@item \\1\n\\2\n@end table\n")
     ("setindexsubitem" 1 (progn (setq cindex t) "@cindex \\1"))
+    ("setlength" 2 "")
     ("setreleaseinfo" 1 (progn (setq py2texi-releaseinfo "")))
     ("setshortversion" 1
      (progn (setq py2texi-python-short-version (match-string 1 string)) ""))
@@ -382,8 +390,8 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("textasciicircum" 0 "^")
     ("textbackslash" 0 "@backslash{}")
     ("textbar" 0 "|")
-    ; Some common versions of Texinfo don't support @euro yet:
-    ; ("texteuro" 0 "@euro{}")
+    ("textbf" 1 "@strong{\\1}")
+    ("texteuro" 0 "@euro{}")
     ; Unfortunately, this alternate spelling doesn't actually apply to
     ; the usage found in Python Tutorial, which actually requires a
     ; Euro symbol to make sense, so this is commented out as well.
@@ -394,6 +402,7 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("textrm" 1 "\\1")
     ("texttt" 1 "@code{\\1}")
     ("textunderscore" 0 "_")
+    ("tilde" 0 "~")
     ("title" 1 (progn (setq title (match-string 1 string)) "@settitle \\1"))
     ("today" 0 "@today{}")
     ("token" 1 "@code{\\1}")
@@ -402,6 +411,7 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("u" 0 "@backslash{}u")
     ("ulink" 2 "\\1")
     ("UNIX" 0 "UNIX")
+    ("undefined" 0 "")
     ("unspecified" 0 "@dots{}")
     ("url" 1 "@url{\\1}")
     ("usepackage" 1 "")
@@ -534,15 +544,20 @@ Each list item is of the form (COMMAND ARGNUM SUBSTITUTION) where:
 	beg
 	end)
     (py2texi-search-safe "\\\\begin{\\(verbatim\\|displaymath\\)}"
-      (replace-match "@example")
-      (setq beg (copy-marker (point) nil))
-      (re-search-forward "\\\\end{\\(verbatim\\|displaymath\\)}")
-      (setq end (copy-marker (match-beginning 0) nil))
-      (replace-match "@end example")
-      (py2texi-texinfo-escape beg end)
-      (put-text-property (- beg (length "@example"))
-			 (+ end (length "@end example"))
-			 'py2texi-protected t))
+      (when (save-excursion
+	      ; Make sure we aren't looking at a commented out version
+	      ; of a verbatim environment
+	      (beginning-of-line)
+	      (not (looking-at "%")))
+	(replace-match "@example ")
+	(setq beg (copy-marker (point) nil))
+	(re-search-forward "\\\\end{\\(verbatim\\|displaymath\\)}")
+	(setq end (copy-marker (match-beginning 0) nil))
+	(replace-match "@end example")
+	(py2texi-texinfo-escape beg end)
+	(put-text-property (- beg (length "@example "))
+			   (+ end (length "@end example"))
+			   'py2texi-protected t)))
     (py2texi-search-safe "\\\\verb\\([^a-z]\\)"
       (setq delimiter (match-string 1))
       (replace-match "@code{")
@@ -883,6 +898,10 @@ Do not include .ind files."
 
 (defun py2texi-fix-braces ()
   "Escape braces for Texinfo."
+  (py2texi-search "{@{}"
+    (replace-match "@{"))
+  (py2texi-search "{@}}"
+    (replace-match "@}"))
   (let (string)
     (py2texi-search "{"
        (unless (or (py2texi-protected)

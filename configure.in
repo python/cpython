@@ -201,7 +201,12 @@ case $ac_sys_system/$ac_sys_release in
   # On OpenBSD, select(2) is not available if _XOPEN_SOURCE is defined,
   # even though select is a POSIX function. Reported by J. Ribbens.
   # Reconfirmed for OpenBSD 3.3 by Zachary Hamm, for 3.4 by Jason Ish.
-  OpenBSD/2.* | OpenBSD/3.@<:@0123456789@:>@) 
+  OpenBSD/2.* | OpenBSD/3.@<:@0123456789@:>@ | OpenBSD/4.@<:@0@:>@) 
+    define_xopen_source=no;;
+  # Defining _XOPEN_SOURCE on NetBSD version prior to the introduction of
+  # _NETBSD_SOURCE disables certain features (eg. setgroups). Reported by
+  # Marc Recht
+  NetBSD/1.5 | NetBSD/1.5.* | NetBSD/1.6 | NetBSD/1.6.* | NetBSD/1.6[A-S])
     define_xopen_source=no;;
   # On Solaris 2.6, sys/wait.h is inconsistent in the usage
   # of union __?sigval. Reported by Stuart Bishop.
@@ -890,6 +895,22 @@ else
   fi
 fi
 
+# Check whether GCC supports PyArg_ParseTuple format
+if test "$GCC" = "yes"
+then
+  AC_MSG_CHECKING(whether gcc supports ParseTuple __format__)
+  save_CFLAGS=$CFLAGS
+  CFLAGS="$CFLAGS -Werror"
+  AC_TRY_COMPILE([
+    void f(char*,...)__attribute((format(PyArg_ParseTuple, 1, 2)));
+  ],,
+  AC_DEFINE(HAVE_ATTRIBUTE_FORMAT_PARSETUPLE, 1, [Define if GCC supports __attribute__((format(PyArg_ParseTuple, 2, 3)))])
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+  )
+  CFLAGS=$save_CFLAGS
+fi
+
 # On some compilers, pthreads are available without further options
 # (e.g. MacOS X). On some of these systems, the compiler will not
 # complain if unaccepted options are passed (e.g. gcc on Mac OS X).
@@ -1068,8 +1089,8 @@ dnl AC_MSG_RESULT($cpp_type)
 AC_HEADER_STDC
 AC_CHECK_HEADERS(asm/types.h conio.h curses.h direct.h dlfcn.h errno.h \
 fcntl.h grp.h \
-shadow.h io.h langinfo.h libintl.h ncurses.h poll.h process.h pthread.h \
-signal.h stropts.h termios.h thread.h \
+io.h langinfo.h libintl.h ncurses.h poll.h process.h pthread.h \
+shadow.h signal.h stdint.h stropts.h termios.h thread.h \
 unistd.h utime.h \
 sys/audioio.h sys/bsdtty.h sys/file.h sys/loadavg.h sys/lock.h sys/mkdev.h \
 sys/modem.h \
@@ -1197,16 +1218,12 @@ if test "$have_long_long" = yes ; then
 AC_CHECK_SIZEOF(long long, 8)
 fi
 
-AC_MSG_CHECKING(for uintptr_t support)
-have_uintptr_t=no
-AC_TRY_COMPILE([], [uintptr_t x; x = (uintptr_t)0;], [
-  AC_DEFINE(HAVE_UINTPTR_T, 1, [Define this if you have the type uintptr_t.]) 
-  have_uintptr_t=yes
-])
-AC_MSG_RESULT($have_uintptr_t)
-if test "$have_uintptr_t" = yes ; then
-AC_CHECK_SIZEOF(uintptr_t, 4)
-fi
+AC_CHECK_TYPES(uintptr_t, 
+   [AC_CHECK_SIZEOF(uintptr_t, 4)], 
+   [], [#ifdef HAVE_STDINT_H
+        #include <stdint.h>
+        #endif])
+
 
 # Hmph. AC_CHECK_SIZEOF() doesn't include <sys/types.h>.
 AC_MSG_CHECKING(size of off_t)
@@ -3342,8 +3359,27 @@ AC_TRY_COMPILE([#include <curses.h>], void *x=resizeterm,
   AC_MSG_RESULT(no)
 )
 
-AC_CHECK_FILE(/dev/ptmx, AC_DEFINE(HAVE_DEV_PTMX, 1, [Define if we have /dev/ptmx.]))
-AC_CHECK_FILE(/dev/ptc, AC_DEFINE(HAVE_DEV_PTC, 1, [Define if we have /dev/ptc.]))
+AC_MSG_CHECKING(for /dev/ptmx)
+
+if test -r /dev/ptmx
+then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(HAVE_DEV_PTMX, 1,
+  [Define if we have /dev/ptmx.])
+else
+  AC_MSG_RESULT(no)
+fi
+
+AC_MSG_CHECKING(for /dev/ptc)
+
+if test -r /dev/ptc
+then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(HAVE_DEV_PTC, 1,
+  [Define if we have /dev/ptc.])
+else
+  AC_MSG_RESULT(no)
+fi
 
 AC_MSG_CHECKING(for %zd printf() format support)
 AC_TRY_RUN([#include <stdio.h>
@@ -3352,14 +3388,28 @@ AC_TRY_RUN([#include <stdio.h>
 
 int main()
 {
-    char buffer[4];
+    char buffer[256];
+
+#ifdef HAVE_SSIZE_T
+typedef ssize_t Py_ssize_t;
+#elif SIZEOF_VOID_P == SIZEOF_LONG
+typedef long Py_ssize_t;
+#else
+typedef int Py_ssize_t;
+#endif
 
     if(sprintf(buffer, "%zd", (size_t)123) < 0)
        	return 1;
 
-    if (strncmp(buffer, "123", 3))
+    if (strcmp(buffer, "123"))
 	return 1;
-    
+
+    if (sprintf(buffer, "%zd", (Py_ssize_t)-123) < 0)
+       	return 1;
+
+    if (strcmp(buffer, "-123"))
+	return 1;
+
     return 0;
 }],
 [AC_MSG_RESULT(yes)

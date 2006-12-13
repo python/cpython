@@ -234,6 +234,12 @@ class ProcessTestCase(unittest.TestCase):
         stripped = remove_stderr_debug_decorations(output)
         self.assertEqual(stripped, "appleorange")
 
+    def test_stdout_filedes_of_stdout(self):
+        # stdout is set to 1 (#1531862).
+        cmd = r"import sys, os; sys.exit(os.write(sys.stdout.fileno(), '.\n'))"
+        rc = subprocess.call([sys.executable, "-c", cmd], stdout=1)
+        self.assertEquals(rc, 2)
+
     def test_cwd(self):
         tmpdir = os.getenv("TEMP", "/tmp")
         # We cannot use os.path.realpath to canonicalize the path,

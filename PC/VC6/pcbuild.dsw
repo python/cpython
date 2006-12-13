@@ -3,7 +3,7 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "_bsddb"=.\_bsddb.dsp - Package Owner=<4>
+Project: "_bsddb"=".\_bsddb.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -18,7 +18,43 @@ Package=<4>
 
 ###############################################################################
 
-Project: "_socket"=.\_socket.dsp - Package Owner=<4>
+Project: "_ctypes"=".\_ctypes.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "_ctypes_test"=".\_ctypes_test.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "_elementtree"=".\_elementtree.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "_socket"=".\_socket.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -33,7 +69,19 @@ Package=<4>
 
 ###############################################################################
 
-Project: "_ssl"=.\_ssl.dsp - Package Owner=<4>
+Project: "_sqlite3"=".\_sqlite3.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "_ssl"=".\_ssl.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -54,7 +102,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "_testcapi"=.\_testcapi.dsp - Package Owner=<4>
+Project: "_testcapi"=".\_testcapi.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -69,7 +117,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "_tkinter"=.\_tkinter.dsp - Package Owner=<4>
+Project: "_tkinter"=".\_tkinter.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -84,7 +132,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "bz2"=.\bz2.dsp - Package Owner=<4>
+Project: "bz2"=".\bz2.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -96,7 +144,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "make_versioninfo"=.\make_versioninfo.dsp - Package Owner=<4>
+Project: "make_versioninfo"=".\make_versioninfo.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -108,22 +156,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "pyexpat"=.\pyexpat.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name pythoncore
-    End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "python"=.\python.dsp - Package Owner=<4>
+Project: "pyexpat"=".\pyexpat.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -138,7 +171,22 @@ Package=<4>
 
 ###############################################################################
 
-Project: "pythoncore"=.\pythoncore.dsp - Package Owner=<4>
+Project: "python"=".\python.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name pythoncore
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "pythoncore"=".\pythoncore.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -153,7 +201,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "pythonw"=.\pythonw.dsp - Package Owner=<4>
+Project: "pythonw"=".\pythonw.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -168,7 +216,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "select"=.\select.dsp - Package Owner=<4>
+Project: "select"=".\select.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -183,7 +231,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "unicodedata"=.\unicodedata.dsp - Package Owner=<4>
+Project: "unicodedata"=".\unicodedata.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -198,7 +246,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "w9xpopen"=.\w9xpopen.dsp - Package Owner=<4>
+Project: "w9xpopen"=".\w9xpopen.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -210,22 +258,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "winsound"=.\winsound.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name pythoncore
-    End Project Dependency
-}}}
-
-###############################################################################
-
-Project: "zlib"=.\zlib.dsp - Package Owner=<4>
+Project: "winsound"=".\winsound.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
