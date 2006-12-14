@@ -101,6 +101,12 @@ Core and builtins
 Library
 -------
 
+- Bug #1503765: Fix a problem in logging.config with spaces in comma-
+  separated lists read from logging config files.
+
+- Patch #1604907: Fix problems in logging.handlers caused at logging shutdown
+  when syslog handlers fail to initialize because of syslogd problems.
+
 - Patch #1608267: fix a race condition in os.makedirs() is the directory
   to be created is already there.
 
@@ -138,14 +144,14 @@ Library
 
 - Patch #1355023: support whence argument for GzipFile.seek.
 
-- Patch #1065257: Support passing open files as body in 
+- Patch #1065257: Support passing open files as body in
   HTTPConnection.request().
 
 - Bug #1569790: mailbox.py: Maildir.get_folder() and MH.get_folder()
   weren't passing the message factory on to newly created Maildir/MH
   objects.
 
-- Patch #1514543: mailbox.py: In the Maildir class, report errors if there's 
+- Patch #1514543: mailbox.py: In the Maildir class, report errors if there's
   a filename clash instead of possibly losing a message.  (Patch by David
   Watson.)
 
@@ -233,7 +239,7 @@ Library
 - Patch #1550886: Fix decimal module context management implementation
   to match the localcontext() example from PEP 343.
 
-- Bug #1545341: The 'classifier' keyword argument to the Distutils setup() 
+- Bug #1545341: The 'classifier' keyword argument to the Distutils setup()
   function now accepts tuples as well as lists.
 
 - Bug #1541863: uuid.uuid1 failed to generate unique identifiers
@@ -350,7 +356,7 @@ Build
 - configure now checks whether gcc supports the PyArg_ParseTuple format
   attribute.
 
-- Bug #1578513: Cross compilation was broken by a change to configure. 
+- Bug #1578513: Cross compilation was broken by a change to configure.
   Repair so that it's back to how it was in 2.4.3.
 
 - Patch #1576954: Update VC6 build directory; remove redundant
