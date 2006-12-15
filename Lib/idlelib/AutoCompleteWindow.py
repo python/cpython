@@ -118,8 +118,11 @@ class AutoCompleteWindow:
             i = 0
             while i < len(lts) and i < len(selstart) and lts[i] == selstart[i]:
                 i += 1
-            while cursel > 0 and selstart[:i] <= self.completions[cursel-1]:
+            previous_completion = self.completions[cursel - 1]
+            while cursel > 0 and selstart[:i] <= previous_completion:
                 i += 1
+                if selstart == previous_completion:
+                    break  # maybe we have a duplicate?
             newstart = selstart[:i]
         self._change_start(newstart)
 
