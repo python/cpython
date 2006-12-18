@@ -556,13 +556,14 @@ generators:
   where the generator's execution is paused.
 
   \item \method{close()} raises a new \exception{GeneratorExit}
-  exception inside the generator to terminate the iteration.  
-  On receiving this
-  exception, the generator's code must either raise
-  \exception{GeneratorExit} or \exception{StopIteration}; catching the 
-  exception and doing anything else is illegal and will trigger
-  a \exception{RuntimeError}.  \method{close()} will also be called by 
-  Python's garbage collector when the generator is garbage-collected.
+  exception inside the generator to terminate the iteration.  On
+  receiving this exception, the generator's code must either raise
+  \exception{GeneratorExit} or \exception{StopIteration}.  Catching
+  the \exception{GeneratorExit} exception and returning a value is
+  illegal and will trigger a \exception{RuntimeError}; if the function
+  raises some other exception, that exception is propagated to the
+  caller.  \method{close()} will also be called by Python's garbage
+  collector when the generator is garbage-collected.
 
   If you need to run cleanup code when a \exception{GeneratorExit} occurs,
   I suggest using a \code{try: ... finally:} suite instead of 
