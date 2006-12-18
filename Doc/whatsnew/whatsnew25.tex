@@ -1664,6 +1664,13 @@ single number as \file{pystone.py} does.
 \item The \module{pyexpat} module now uses version 2.0 of the Expat parser.
 (Contributed by Trent Mick.)
 
+\item The \class{Queue} class provided by the \module{Queue} module
+gained two new methods.  \method{join()} blocks until all items in
+the queue have been retrieved and all processing work on the items 
+have been completed.  Worker threads call the other new method, 
+\method{task_done()}, to signal that processing for an item has been
+completed.  (Contributed by Raymond Hettinger.)
+
 \item The old \module{regex} and \module{regsub} modules, which have been 
 deprecated ever since Python 2.0, have finally been deleted.  
 Other deleted modules: \module{statcache}, \module{tzparse},
