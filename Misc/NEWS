@@ -81,6 +81,8 @@ Extension Modules
 - Patch #1544279: Improve thread-safety of the socket module by moving
   the sock_addr_t storage out of the socket object.
 
+- Patch #1615868: make bz2.BZFile.seek() work for offsets >2GiB.
+
 - Bug #1563807: _ctypes built on AIX fails with ld ffi error.
 
 - Bug #1598620: A ctypes Structure cannot contain itself.
