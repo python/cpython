@@ -124,6 +124,11 @@ Some facts and figures:
     only if \member{TarFile.errorlevel}\code{ == 2}.
 \end{excdesc}
 
+\begin{excdesc}{HeaderError}
+    Is raised by \method{frombuf()} if the buffer it gets is invalid.
+    \versionadded{2.6}
+\end{excdesc}
+
 \begin{seealso}
     \seemodule{zipfile}{Documentation of the \refmodule{zipfile}
     standard module.}
@@ -332,6 +337,8 @@ the file's data itself.
 
 \begin{methoddesc}{frombuf}{}
     Create and return a \class{TarInfo} object from a string buffer.
+    \versionadded[Raises \exception{HeaderError} if the buffer is
+    invalid.]{2.6}
 \end{methoddesc}
 
 \begin{methoddesc}{tobuf}{posix}

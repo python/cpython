@@ -101,6 +101,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1484695: The tarfile module now raises a HeaderError exception
+  if a buffer given to frombuf() is invalid.
+
 - Bug #1503765: Fix a problem in logging.config with spaces in comma-
   separated lists read from logging config files.
 

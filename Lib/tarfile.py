@@ -280,6 +280,9 @@ class CompressionError(TarError):
 class StreamError(TarError):
     """Exception for unsupported operations on stream-like TarFiles."""
     pass
+class HeaderError(TarError):
+    """Exception for invalid headers."""
+    pass
 
 #---------------------------
 # internal stream interface
@@ -819,9 +822,17 @@ class TarInfo(object):
         """Construct a TarInfo object from a 512 byte string buffer.
         """
         if len(buf) != BLOCKSIZE:
-            raise ValueError("truncated header")
+            raise HeaderError("truncated header")
         if buf.count(NUL) == BLOCKSIZE:
-            raise ValueError("empty header")
+            raise HeaderError("empty header")
+
+        try:
+            chksum = nti(buf[148:156])
+        except ValueError:
+            raise HeaderError("invalid header")
+
+        if chksum not in calc_chksums(buf):
+            raise HeaderError("bad checksum")
 
         tarinfo = cls()
         tarinfo.buf = buf
@@ -831,7 +842,7 @@ class TarInfo(object):
         tarinfo.gid = nti(buf[116:124])
         tarinfo.size = nti(buf[124:136])
         tarinfo.mtime = nti(buf[136:148])
-        tarinfo.chksum = nti(buf[148:156])
+        tarinfo.chksum = chksum
         tarinfo.type = buf[156:157]
         tarinfo.linkname = buf[157:257].rstrip(NUL)
         tarinfo.uname = buf[265:297].rstrip(NUL)
@@ -843,8 +854,6 @@ class TarInfo(object):
         if prefix and not tarinfo.issparse():
             tarinfo.name = prefix + "/" + tarinfo.name
 
-        if tarinfo.chksum not in calc_chksums(buf):
-            raise ValueError("invalid header")
         return tarinfo
 
     def tobuf(self, posix=False):
@@ -1793,16 +1802,14 @@ class TarFile(object):
 
                 tarinfo = self.proc_member(tarinfo)
 
-            except ValueError, e:
+            except HeaderError, e:
                 if self.ignore_zeros:
-                    self._dbg(2, "0x%X: empty or invalid block: %s" %
-                              (self.offset, e))
+                    self._dbg(2, "0x%X: %s" % (self.offset, e))
                     self.offset += BLOCKSIZE
                     continue
                 else:
                     if self.offset == 0:
-                        raise ReadError("empty, unreadable or compressed "
-                                        "file: %s" % e)
+                        raise ReadError(str(e))
                     return None
             break
 
