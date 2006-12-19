@@ -12,7 +12,7 @@ What's New in Python 3000?
 TO DO
 -----
 
-- See PEP 3000.
+- See PEP 3000, 3100.
 
 - Test merging certain changes from the 2.5 HEAD code.
 
@@ -36,7 +36,11 @@ TO DO
 Core and Builtins
 -----------------
 
-- Renamed nb_nonzero to nb_bool and __nonzero__ to __bool__
+- Moved intern() to sys.intern().
+
+- exec is now a function.
+
+- Renamed nb_nonzero to nb_bool and __nonzero__ to __bool__.
 
 - Classic classes are a thing of the past.  All classes are new style.
 
@@ -90,7 +94,7 @@ Core and Builtins
 - zip returns an iterator
 
 - Additions:
-  set literals
+  set literals, ellipsis literal
 
 
 Extension Modules
