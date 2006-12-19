@@ -99,6 +99,9 @@ div.note                { background-color: #fffaf0;
 div.note .label         { margin-right: 0.5em;
                           font-family: sans-serif; }
 
+.versionnote1           { display: none; }
+.versionnote2           { display: none; }
+
 address                 { font-size: 80%; }
 .release-info           { font-style: italic;
                           font-size: 80%; }
