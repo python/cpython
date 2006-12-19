@@ -422,11 +422,15 @@ sub versionnote($$){
     local $_ = $_[1];
     my $explanation = next_optional_argument();
     my $release = next_argument();
+    my $classes = "versionnote";
+    if ($release =~ /^(\d+)\./) {
+        $classes .= " versionnote$1";
+    }
     my $text = "$type in version $release.";
     if ($explanation) {
         $text = "$type in version $release:\n$explanation.";
     }
-    return "\n<span class=\"versionnote\">$text</span>\n" . $_;
+    return "\n<span class=\"$classes\"  \n>$text</span>\n" . $_;
 }
 
 sub do_cmd_versionadded{
