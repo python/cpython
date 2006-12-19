@@ -516,8 +516,10 @@ Removes the specified handler \var{hdlr} from this logger.
 \end{methoddesc}
 
 \begin{methoddesc}{findCaller}{}
-Finds the caller's source filename and line number. Returns the filename
-and line number as a 2-element tuple.
+Finds the caller's source filename and line number. Returns the filename,
+line number and function name as a 3-element tuple.
+\versionchanged[The function name was added. In earlier versions, the
+filename and line number were returned as a 2-element tuple.]{2.5}
 \end{methoddesc}
 
 \begin{methoddesc}{handle}{record}
