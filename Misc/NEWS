@@ -197,6 +197,9 @@ Library
 - Patch #1574068: fix urllib/urllib2 to not insert line breaks when
   HTTP authentication data was very long.
 
+- Patch #1617413: fix urllib's support for  HTTP Basic authentication via HTTPS
+  (patch by Dug Song).
+
 - Fix a bug in traceback.format_exception_only() that led to an error
   being raised when print_exc() was called without an exception set.
   In version 2.4, this printed "None", restored that behavior.
