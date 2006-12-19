@@ -163,6 +163,17 @@ class BytesTest(unittest.TestCase):
         self.assertEqual(b[-5:100], by("world"))
         self.assertEqual(b[-100:5], by("Hello"))
 
+    def test_extended_getslice(self):
+        # Test extended slicing by comparing with list slicing.
+        L = list(range(255))
+        b = bytes(L)
+        indices = (0, None, 1, 3, 19, 100, -1, -2, -31, -100)
+        for start in indices:
+            for stop in indices:
+                # Skip step 0 (invalid)
+                for step in indices[1:]:
+                    self.assertEqual(b[start:stop:step], bytes(L[start:stop:step]))
+        
     def test_regexps(self):
         def by(s):
             return bytes(map(ord, s))
@@ -238,6 +249,26 @@ class BytesTest(unittest.TestCase):
         
         b[3:0] = [42, 42, 42]
         self.assertEqual(b, bytes([0, 1, 2, 42, 42, 42, 3, 4, 5, 6, 7, 8, 9]))
+
+    def test_extended_set_del_slice(self):
+        indices = (0, None, 1, 3, 19, 300, -1, -2, -31, -300)
+        for start in indices:
+            for stop in indices:
+                # Skip invalid step 0
+                for step in indices[1:]:
+                    L = list(range(255))
+                    b = bytes(L)
+                    # Make sure we have a slice of exactly the right length,
+                    # but with different data.
+                    data = L[start:stop:step]
+                    data.reverse()
+                    L[start:stop:step] = data
+                    b[start:stop:step] = data
+                    self.assertEquals(b, bytes(L))
+                    
+                    del L[start:stop:step]
+                    del b[start:stop:step]
+                    self.assertEquals(b, bytes(L))
 
     def test_setslice_trap(self):
         # This test verifies that we correctly handle assigning self
