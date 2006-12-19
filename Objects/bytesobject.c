@@ -269,19 +269,62 @@ bytes_getitem(PyBytesObject *self, Py_ssize_t i)
 }
 
 static PyObject *
-bytes_getslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi)
+bytes_subscript(PyBytesObject *self, PyObject *item)
 {
-    if (lo < 0)
-        lo = 0;
-    if (hi > self->ob_size)
-        hi = self->ob_size;
-    if (lo >= hi)
-        lo = hi = 0;
-    return PyBytes_FromStringAndSize(self->ob_bytes + lo, hi - lo);
-}
+    if (PyIndex_Check(item)) {
+        Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
 
+        if (i == -1 && PyErr_Occurred())
+            return NULL;
+
+        if (i < 0)
+            i += PyBytes_GET_SIZE(self);
+
+        if (i < 0 || i >= self->ob_size) {
+            PyErr_SetString(PyExc_IndexError, "bytes index out of range");
+            return NULL;
+        }
+        return PyInt_FromLong((unsigned char)(self->ob_bytes[i]));
+    }
+    else if (PySlice_Check(item)) {
+        Py_ssize_t start, stop, step, slicelength, cur, i;
+        if (PySlice_GetIndicesEx((PySliceObject *)item,
+                                 PyBytes_GET_SIZE(self),
+                                 &start, &stop, &step, &slicelength) < 0) {
+            return NULL;
+        }
+        
+        if (slicelength <= 0)
+            return PyBytes_FromStringAndSize("", 0);
+        else if (step == 1) {
+            return PyBytes_FromStringAndSize(self->ob_bytes + start,
+                                             slicelength);
+        }
+        else {
+            char *source_buf = PyBytes_AS_STRING(self);
+            char *result_buf = (char *)PyMem_Malloc(slicelength);
+            PyObject *result;
+            
+            if (result_buf == NULL)
+                return PyErr_NoMemory();
+            
+            for (cur = start, i = 0; i < slicelength;
+                 cur += step, i++) {
+                     result_buf[i] = source_buf[cur];
+            }
+            result = PyBytes_FromStringAndSize(result_buf, slicelength);
+            PyMem_Free(result_buf);
+            return result;
+        }
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError, "bytes indices must be integers");
+        return NULL;
+    }
+}
+ 
 static int
-bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi, 
+bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
                PyObject *values)
 {
     int avail;
@@ -330,7 +373,7 @@ bytes_setslice(PyBytesObject *self, Py_ssize_t lo, Py_ssize_t hi,
             memmove(self->ob_bytes + lo + needed, self->ob_bytes + hi,
                     self->ob_size - hi);
         }
-        if (PyBytes_Resize((PyObject *)self, 
+        if (PyBytes_Resize((PyObject *)self,
                            self->ob_size + needed - avail) < 0)
             return -1;
         if (avail < needed) {
@@ -378,6 +421,164 @@ bytes_setitem(PyBytesObject *self, Py_ssize_t i, PyObject *value)
 
     self->ob_bytes[i] = ival;
     return 0;
+}
+
+static int
+bytes_ass_subscript(PyBytesObject *self, PyObject *item, PyObject *values)
+{
+    Py_ssize_t start, stop, step, slicelen, needed;
+    char *bytes;
+    
+    if (PyIndex_Check(item)) {
+        Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
+
+        if (i == -1 && PyErr_Occurred())
+            return -1;
+
+        if (i < 0)
+            i += PyBytes_GET_SIZE(self);
+
+        if (i < 0 || i >= self->ob_size) {
+            PyErr_SetString(PyExc_IndexError, "bytes index out of range");
+            return -1;
+        }
+        
+        if (values == NULL) {
+            /* Fall through to slice assignment */
+            start = i;
+            stop = i + 1;
+            step = 1;
+            slicelen = 1;
+        }
+        else {
+            Py_ssize_t ival = PyNumber_AsSsize_t(values, PyExc_ValueError);
+            if (ival == -1 && PyErr_Occurred())
+                return -1;
+            if (ival < 0 || ival >= 256) {
+                PyErr_SetString(PyExc_ValueError,
+                                "byte must be in range(0, 256)");
+                return -1;
+            }
+            self->ob_bytes[i] = (char)ival;
+            return 0;
+        }
+    }
+    else if (PySlice_Check(item)) {
+        if (PySlice_GetIndicesEx((PySliceObject *)item,
+                                 PyBytes_GET_SIZE(self),
+                                 &start, &stop, &step, &slicelen) < 0) {
+            return -1;
+        }
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError, "bytes indices must be integer");
+        return -1;
+    }
+
+    if (values == NULL) {
+        bytes = NULL;
+        needed = 0;
+    }
+    else if (values == (PyObject *)self || !PyBytes_Check(values)) {
+        /* Make a copy an call this function recursively */
+        int err;
+        values = PyBytes_FromObject(values);
+        if (values == NULL)
+            return -1;
+        err = bytes_ass_subscript(self, item, values);
+        Py_DECREF(values);
+        return err;
+    }
+    else {
+        assert(PyBytes_Check(values));
+        bytes = ((PyBytesObject *)values)->ob_bytes;
+        needed = ((PyBytesObject *)values)->ob_size;
+    }
+    /* Make sure b[5:2] = ... inserts before 5, not before 2. */
+    if ((step < 0 && start < stop) ||
+        (step > 0 && start > stop))
+        stop = start;
+    if (step == 1) {
+        if (slicelen != needed) {
+            if (slicelen > needed) {
+                /*
+                  0   start           stop              old_size
+                  |   |<---slicelen--->|<-----tomove------>|
+                  |   |<-needed->|<-----tomove------>|
+                  0   lo      new_hi              new_size
+                */
+                memmove(self->ob_bytes + start + needed, self->ob_bytes + stop,
+                        self->ob_size - stop);
+            }
+            if (PyBytes_Resize((PyObject *)self,
+                               self->ob_size + needed - slicelen) < 0)
+                return -1;
+            if (slicelen < needed) {
+                /*
+                  0   lo        hi               old_size
+                  |   |<-avail->|<-----tomove------>|
+                  |   |<----needed---->|<-----tomove------>|
+                  0   lo            new_hi              new_size
+                 */
+                memmove(self->ob_bytes + start + needed, self->ob_bytes + stop,
+                        self->ob_size - start - needed);
+            }
+        }
+
+        if (needed > 0)
+            memcpy(self->ob_bytes + start, bytes, needed);
+
+        return 0;
+    }
+    else {
+        if (needed == 0) {
+            /* Delete slice */
+            Py_ssize_t cur, i;
+            
+            if (step < 0) {
+                stop = start + 1;
+                start = stop + step * (slicelen - 1) - 1;
+                step = -step;
+            }
+            for (cur = start, i = 0;
+                 i < slicelen; cur += step, i++) {
+                Py_ssize_t lim = step - 1;
+
+                if (cur + step >= PyBytes_GET_SIZE(self))
+                    lim = PyBytes_GET_SIZE(self) - cur - 1;
+                
+                memmove(self->ob_bytes + cur - i,
+                        self->ob_bytes + cur + 1, lim);
+            }
+            /* Move the tail of the bytes, in one chunk */
+            cur = start + slicelen*step;
+            if (cur < PyBytes_GET_SIZE(self)) {
+                memmove(self->ob_bytes + cur - slicelen,
+                        self->ob_bytes + cur,
+                        PyBytes_GET_SIZE(self) - cur);
+            }
+            if (PyBytes_Resize((PyObject *)self,
+                               PyBytes_GET_SIZE(self) - slicelen) < 0)
+                return -1;
+
+            return 0;
+        }
+        else {
+            /* Assign slice */
+            Py_ssize_t cur, i;
+            
+            if (needed != slicelen) {
+                PyErr_Format(PyExc_ValueError,
+                             "attempt to assign bytes of size %zd "
+                             "to extended slice of size %zd",
+                             needed, slicelen);
+                return -1;
+            }
+            for (cur = start, i = 0; i < slicelen; cur += step, i++)
+                self->ob_bytes[cur] = bytes[i];
+            return 0;
+        }
+    }
 }
 
 static int
@@ -776,9 +977,9 @@ static PySequenceMethods bytes_as_sequence = {
     (binaryfunc)bytes_concat,           /*sq_concat*/
     (ssizeargfunc)bytes_repeat,         /*sq_repeat*/
     (ssizeargfunc)bytes_getitem,        /*sq_item*/
-    (ssizessizeargfunc)bytes_getslice,  /*sq_slice*/
+    0,                                  /*sq_slice*/
     (ssizeobjargproc)bytes_setitem,     /*sq_ass_item*/
-    (ssizessizeobjargproc)bytes_setslice, /* sq_ass_slice */
+    0, 					/* sq_ass_slice */
     (objobjproc)bytes_contains,         /* sq_contains */
     (binaryfunc)bytes_iconcat,   /* sq_inplace_concat */
     (ssizeargfunc)bytes_irepeat, /* sq_inplace_repeat */
@@ -786,8 +987,8 @@ static PySequenceMethods bytes_as_sequence = {
 
 static PyMappingMethods bytes_as_mapping = {
     (lenfunc)bytes_length,
-    (binaryfunc)0,
-    0,
+    (binaryfunc)bytes_subscript,
+    (objobjargproc)bytes_ass_subscript,
 };
 
 static PyBufferProcs bytes_as_buffer = {
@@ -833,7 +1034,7 @@ PyTypeObject PyBytes_Type = {
     PyObject_GenericGetAttr,            /* tp_getattro */
     0,                                  /* tp_setattro */
     &bytes_as_buffer,                   /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,			/* tp_flags */ 
+    Py_TPFLAGS_DEFAULT,			/* tp_flags */
                                         /* bytes is 'final' or 'sealed' */
     bytes_doc,                          /* tp_doc */
     0,                                  /* tp_traverse */
