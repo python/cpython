@@ -3,10 +3,8 @@
 Implements the HMAC algorithm as described by RFC 2104.
 """
 
-def _strxor(s1, s2):
-    """Utility method. XOR the two strings s1 and s2 (must have same length).
-    """
-    return "".join(map(lambda x, y: chr(ord(x) ^ ord(y)), s1, s2))
+trans_5C = "".join ([chr (x ^ 0x5C) for x in xrange(256)])
+trans_36 = "".join ([chr (x ^ 0x36) for x in xrange(256)])
 
 # The size of the digests returned by HMAC depends on the underlying
 # hashing module used.
@@ -50,15 +48,12 @@ class HMAC:
         self.digest_size = self.inner.digest_size
 
         blocksize = 64
-        ipad = "\x36" * blocksize
-        opad = "\x5C" * blocksize
-
         if len(key) > blocksize:
             key = self.digest_cons(key).digest()
 
         key = key + chr(0) * (blocksize - len(key))
-        self.outer.update(_strxor(key, opad))
-        self.inner.update(_strxor(key, ipad))
+        self.outer.update(key.translate(trans_5C))
+        self.inner.update(key.translate(trans_36))
         if msg is not None:
             self.update(msg)
 
