@@ -405,8 +405,8 @@ class URLopener:
                 h.putheader('Content-Length', '%d' % len(data))
             else:
                 h.putrequest('GET', selector)
-            if proxy_auth: h.putheader('Proxy-Authorization: Basic %s' % proxy_auth)
-            if auth: h.putheader('Authorization: Basic %s' % auth)
+            if proxy_auth: h.putheader('Proxy-Authorization', 'Basic %s' % proxy_auth)
+            if auth: h.putheader('Authorization', 'Basic %s' % auth)
             if realhost: h.putheader('Host', realhost)
             for args in self.addheaders: h.putheader(*args)
             h.endheaders()
