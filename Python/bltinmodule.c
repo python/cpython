@@ -1119,31 +1119,6 @@ Return the hexadecimal representation of an integer or long integer.");
 
 
 static PyObject *
-builtin_intern(PyObject *self, PyObject *args)
-{
-	PyObject *s;
-	if (!PyArg_ParseTuple(args, "S:intern", &s))
-		return NULL;
-	if (!PyString_CheckExact(s)) {
-		PyErr_SetString(PyExc_TypeError,
-				"can't intern subclass of string");
-		return NULL;
-	}
-	Py_INCREF(s);
-	PyString_InternInPlace(&s);
-	return s;
-}
-
-PyDoc_STRVAR(intern_doc,
-"intern(string) -> string\n\
-\n\
-``Intern'' the given string.  This enters the string in the (global)\n\
-table of interned strings whose purpose is to speed up dictionary lookups.\n\
-Return the string itself or the previously interned string object with the\n\
-same value.");
-
-
-static PyObject *
 builtin_iter(PyObject *self, PyObject *args)
 {
 	PyObject *v, *w = NULL;
@@ -2069,7 +2044,6 @@ static PyMethodDef builtin_methods[] = {
  	{"hash",	builtin_hash,       METH_O, hash_doc},
  	{"hex",		builtin_hex,        METH_O, hex_doc},
  	{"id",		builtin_id,         METH_O, id_doc},
- 	{"intern",	builtin_intern,     METH_VARARGS, intern_doc},
  	{"isinstance",  builtin_isinstance, METH_VARARGS, isinstance_doc},
  	{"issubclass",  builtin_issubclass, METH_VARARGS, issubclass_doc},
  	{"iter",	builtin_iter,       METH_VARARGS, iter_doc},

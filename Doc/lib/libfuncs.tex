@@ -1262,17 +1262,3 @@ bypass these functions without concerns about missing something important.
   argument).
 \end{funcdesc}
 
-\begin{funcdesc}{intern}{string}
-  Enter \var{string} in the table of ``interned'' strings and return
-  the interned string -- which is \var{string} itself or a copy.
-  Interning strings is useful to gain a little performance on
-  dictionary lookup -- if the keys in a dictionary are interned, and
-  the lookup key is interned, the key comparisons (after hashing) can
-  be done by a pointer compare instead of a string compare.  Normally,
-  the names used in Python programs are automatically interned, and
-  the dictionaries used to hold module, class or instance attributes
-  have interned keys.  \versionchanged[Interned strings are not
-  immortal (like they used to be in Python 2.2 and before);
-  you must keep a reference to the return value of \function{intern()}
-  around to benefit from it]{2.3}
-\end{funcdesc}

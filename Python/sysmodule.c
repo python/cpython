@@ -264,6 +264,32 @@ operating system filenames."
 
 #endif
 
+
+static PyObject *
+sys_intern(PyObject *self, PyObject *args)
+{
+	PyObject *s;
+	if (!PyArg_ParseTuple(args, "S:intern", &s))
+		return NULL;
+	if (!PyString_CheckExact(s)) {
+		PyErr_SetString(PyExc_TypeError,
+				"can't intern subclass of string");
+		return NULL;
+	}
+	Py_INCREF(s);
+	PyString_InternInPlace(&s);
+	return s;
+}
+
+PyDoc_STRVAR(intern_doc,
+"intern(string) -> string\n\
+\n\
+``Intern'' the given string.  This enters the string in the (global)\n\
+table of interned strings whose purpose is to speed up dictionary lookups.\n\
+Return the string itself or the previously interned string object with the\n\
+same value.");
+
+
 /*
  * Cached interned string objects used for calling the profile and
  * trace functions.  Initialized by trace_init().
@@ -772,6 +798,7 @@ static PyMethodDef sys_methods[] = {
 	{"getwindowsversion", (PyCFunction)sys_getwindowsversion, METH_NOARGS,
 	 getwindowsversion_doc},
 #endif /* MS_WINDOWS */
+ 	{"intern",	sys_intern,     METH_VARARGS, intern_doc},
 #ifdef USE_MALLOPT
 	{"mdebug",	sys_mdebug, METH_VARARGS},
 #endif

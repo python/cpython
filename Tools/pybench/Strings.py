@@ -1,5 +1,6 @@
 from pybench import Test
 from string import join
+import sys
 
 class ConcatStrings(Test):
 
@@ -174,7 +175,7 @@ class CompareInternedStrings(Test):
     def test(self):
 
         # Make sure the strings *are* interned
-        s = intern(join(map(str,range(10))))
+        s = sys.intern(join(map(str,range(10))))
         t = s
 
         for i in xrange(self.rounds):
@@ -240,7 +241,7 @@ class CompareInternedStrings(Test):
 
     def calibrate(self):
 
-        s = intern(join(map(str,range(10))))
+        s = sys.intern(join(map(str,range(10))))
         t = s
 
         for i in xrange(self.rounds):

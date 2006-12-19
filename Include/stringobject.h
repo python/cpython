@@ -28,7 +28,7 @@ functions should be applied to nil objects.
    Interning strings (ob_sstate) tries to ensure that only one string
    object with a given value exists, so equality tests can be one pointer
    comparison.  This is generally restricted to strings that "look like"
-   Python identifiers, although the intern() builtin can be used to force
+   Python identifiers, although the sys.intern() function can be used to force
    interning of any string.
    Together, these sped the interpreter by up to 20%. */
 

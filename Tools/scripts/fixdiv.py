@@ -198,7 +198,7 @@ def readwarnings(warningsfile):
         list = warnings.get(filename)
         if list is None:
             warnings[filename] = list = []
-        list.append((int(lineno), intern(what)))
+        list.append((int(lineno), sys.intern(what)))
     f.close()
     return warnings
 

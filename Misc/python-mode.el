@@ -382,7 +382,7 @@ support for features needed by `python-mode'.")
 			  "delattr" "dict" "dir" "divmod"
 			  "enumerate" "eval" "execfile" "exit" "file"
 			  "filter" "float" "getattr" "globals" "hasattr"
-			  "hash" "hex" "id" "int" "intern"
+			  "hash" "hex" "id" "int"
 			  "isinstance" "issubclass" "iter" "len" "license"
 			  "list" "locals" "long" "map" "max" "min" "object"
 			  "oct" "open" "ord" "pow" "property" "range"
