@@ -619,7 +619,7 @@ PyObject_Compare(PyObject *v, PyObject *w)
 /* Map rich comparison operators to their swapped version, e.g. LT <--> GT */
 int _Py_SwappedOp[] = {Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE};
 
-static char *opstrings[] = {">", ">=", "==", "!=", "<", "<="};
+static char *opstrings[] = {"<", "<=", "==", "!=", ">", ">="};
 
 /* Perform a rich comparison, raising TypeError when the requested comparison
    operator is not supported. */
@@ -659,6 +659,7 @@ do_richcompare(PyObject *v, PyObject *w, int op)
 		res = (v != w) ? Py_True : Py_False;
 		break;
 	default:
+		/* XXX Special-case None so it doesn't show as NoneType() */
 		PyErr_Format(PyExc_TypeError,
 			     "unorderable types: %.100s() %s %.100s()",
 			     v->ob_type->tp_name,
