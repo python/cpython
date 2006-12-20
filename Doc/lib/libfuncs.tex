@@ -237,11 +237,11 @@ class C:
   \code{del \var{x}.\var{foobar}}.
 \end{funcdesc}
 
-\begin{funcdesc}{dict}{\optional{mapping-or-sequence}}
+\begin{funcdesc}{dict}{\optional{arg}}
   Return a new dictionary initialized from an optional positional
   argument or from a set of keyword arguments.
   If no arguments are given, return a new empty dictionary.
-  If the positional argument is a mapping object, return a dictionary
+  If the positional argument \var{arg} is a mapping object, return a dictionary
   mapping the same keys to the same values as does the mapping object.
   Otherwise the positional argument must be a sequence, a container that
   supports iteration, or an iterator object.  The elements of the argument
@@ -414,18 +414,18 @@ class C:
   \versionadded{2.2}
 \end{funcdesc}
 
-\begin{funcdesc}{filter}{function, list}
-  Construct a list from those elements of \var{list} for which
-  \var{function} returns true.  \var{list} may be either a sequence, a
-  container which supports iteration, or an iterator,  If \var{list}
+\begin{funcdesc}{filter}{function, iterable}
+  Construct a list from those elements of \var{iterable} for which
+  \var{function} returns true.  \var{iterable} may be either a sequence, a
+  container which supports iteration, or an iterator,  If \var{iterable}
   is a string or a tuple, the result
   also has that type; otherwise it is always a list.  If \var{function} is
   \code{None}, the identity function is assumed, that is, all elements of
-  \var{list} that are false are removed.
+  \var{iterable} that are false are removed.
 
-  Note that \code{filter(function, \var{list})} is equivalent to
-  \code{[item for item in \var{list} if function(item)]} if function is
-  not \code{None} and \code{[item for item in \var{list} if item]} if
+  Note that \code{filter(function, \var{iterable})} is equivalent to
+  \code{[item for item in \var{iterable} if function(item)]} if function is
+  not \code{None} and \code{[item for item in \var{iterable} if item]} if
   function is \code{None}.
 \end{funcdesc}
 
@@ -591,12 +591,12 @@ class C:
   may be a sequence (string, tuple or list) or a mapping (dictionary).
 \end{funcdesc}
 
-\begin{funcdesc}{list}{\optional{sequence}}
+\begin{funcdesc}{list}{\optional{iterable}}
   Return a list whose items are the same and in the same order as
-  \var{sequence}'s items.  \var{sequence} may be either a sequence, a
+  \var{iterable}'s items.  \var{iterable} may be either a sequence, a
   container that supports iteration, or an iterator object.  If
-  \var{sequence} is already a list, a copy is made and returned,
-  similar to \code{\var{sequence}[:]}.  For instance,
+  \var{iterable} is already a list, a copy is made and returned,
+  similar to \code{\var{iterable}[:]}.  For instance,
   \code{list('abc')} returns \code{['a', 'b', 'c']} and \code{list(
   (1, 2, 3) )} returns \code{[1, 2, 3]}.  If no argument is given,
   returns a new empty list, \code{[]}.
@@ -622,22 +622,22 @@ class C:
   are given, returns \code{0L}.
 \end{funcdesc}
 
-\begin{funcdesc}{map}{function, list, ...}
-  Apply \var{function} to every item of \var{list} and return a list
-  of the results.  If additional \var{list} arguments are passed,
+\begin{funcdesc}{map}{function, iterable, ...}
+  Apply \var{function} to every item of \var{iterable} and return a list
+  of the results.  If additional \var{iterable} arguments are passed,
   \var{function} must take that many arguments and is applied to the
-  items of all lists in parallel; if a list is shorter than another it
+  items from all iterables in parallel.  If one iterable is shorter than another it
   is assumed to be extended with \code{None} items.  If \var{function}
   is \code{None}, the identity function is assumed; if there are
-  multiple list arguments, \function{map()} returns a list consisting
-  of tuples containing the corresponding items from all lists (a kind
-  of transpose operation).  The \var{list} arguments may be any kind
-  of sequence; the result is always a list.
+  multiple arguments, \function{map()} returns a list consisting
+  of tuples containing the corresponding items from all iterables (a kind
+  of transpose operation).  The \var{iterable} arguments may be a sequence 
+  or any iterable object; the result is always a list.
 \end{funcdesc}
 
-\begin{funcdesc}{max}{s\optional{, args...}\optional{key}}
-  With a single argument \var{s}, return the largest item of a
-  non-empty sequence (such as a string, tuple or list).  With more
+\begin{funcdesc}{max}{iterable\optional{, args...}\optional{key}}
+  With a single argument \var{iterable}, return the largest item of a
+  non-empty iterable (such as a string, tuple or list).  With more
   than one argument, return the largest of the arguments.
 
   The optional \var{key} argument specifies a one-argument ordering
@@ -647,16 +647,16 @@ class C:
   \versionchanged[Added support for the optional \var{key} argument]{2.5}
 \end{funcdesc}
 
-\begin{funcdesc}{min}{s\optional{, args...}\optional{key}}
-  With a single argument \var{s}, return the smallest item of a
-  non-empty sequence (such as a string, tuple or list).  With more
+\begin{funcdesc}{min}{iterable\optional{, args...}\optional{key}}
+  With a single argument \var{iterable}, return the smallest item of a
+  non-empty iterable (such as a string, tuple or list).  With more
   than one argument, return the smallest of the arguments.
 
   The optional \var{key} argument specifies a one-argument ordering
   function like that used for \method{list.sort()}.  The \var{key}
   argument, if supplied, must be in keyword form (for example,
   \samp{min(a,b,c,key=func)}).
-  \versionchanged[Added support for the optional \var{key} argument]{2.5}           
+  \versionchanged[Added support for the optional \var{key} argument]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{object}{}
@@ -871,17 +871,17 @@ class Parrot(object):
   line editing and history features.
 \end{funcdesc}
 
-\begin{funcdesc}{reduce}{function, sequence\optional{, initializer}}
+\begin{funcdesc}{reduce}{function, iterable\optional{, initializer}}
   Apply \var{function} of two arguments cumulatively to the items of
-  \var{sequence}, from left to right, so as to reduce the sequence to
+  \var{iterable}, from left to right, so as to reduce the iterable to
   a single value.  For example, \code{reduce(lambda x, y: x+y, [1, 2,
   3, 4, 5])} calculates \code{((((1+2)+3)+4)+5)}.  The left argument,
   \var{x}, is the accumulated value and the right argument, \var{y},
-  is the update value from the \var{sequence}.  If the optional
+  is the update value from the \var{iterable}.  If the optional
   \var{initializer} is present, it is placed before the items of the
-  sequence in the calculation, and serves as a default when the
-  sequence is empty.  If \var{initializer} is not given and
-  \var{sequence} contains only one item, the first item is returned.
+  iterable in the calculation, and serves as a default when the
+  iterable is empty.  If \var{initializer} is not given and
+  \var{iterable} contains only one item, the first item is returned.
 \end{funcdesc}
 
 \begin{funcdesc}{reload}{module}
@@ -1121,11 +1121,11 @@ class C(B):
 \versionadded{2.2}
 \end{funcdesc}
 
-\begin{funcdesc}{tuple}{\optional{sequence}}
+\begin{funcdesc}{tuple}{\optional{iterable}}
   Return a tuple whose items are the same and in the same order as
-  \var{sequence}'s items.  \var{sequence} may be a sequence, a
+  \var{iterable}'s items.  \var{iterable} may be a sequence, a
   container that supports iteration, or an iterator object.
-  If \var{sequence} is already a tuple, it
+  If \var{iterable} is already a tuple, it
   is returned unchanged.  For instance, \code{tuple('abc')} returns
   \code{('a', 'b', 'c')} and \code{tuple([1, 2, 3])} returns
   \code{(1, 2, 3)}.  If no argument is given, returns a new empty
