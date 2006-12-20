@@ -145,7 +145,10 @@ def nti(s):
     # There are two possible encodings for a number field, see
     # itn() below.
     if s[0] != chr(0200):
-        n = int(s.rstrip(NUL + " ") or "0", 8)
+        try:
+            n = int(s.rstrip(NUL + " ") or "0", 8)
+        except ValueError:
+            raise HeaderError("invalid header")
     else:
         n = 0L
         for i in xrange(len(s) - 1):
@@ -826,11 +829,7 @@ class TarInfo(object):
         if buf.count(NUL) == BLOCKSIZE:
             raise HeaderError("empty header")
 
-        try:
-            chksum = nti(buf[148:156])
-        except ValueError:
-            raise HeaderError("invalid header")
-
+        chksum = nti(buf[148:156])
         if chksum not in calc_chksums(buf):
             raise HeaderError("bad checksum")
 
