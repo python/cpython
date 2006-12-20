@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1590891: random.randrange don't return correct value for big number
+
 - Patch #1586791: Better exception messages for some operations on strings,
   tuples and lists.
 
