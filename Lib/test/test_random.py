@@ -438,6 +438,14 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
             self.assertEqual(k, numbits)        # note the stronger assertion
             self.assert_(2**k > n > 2**(k-1))   # note the stronger assertion
 
+    def test_randrange_bug_1590891(self):
+        start = 1000000000000
+        stop = -100000000000000000000
+        step = -200
+        x = self.gen.randrange(start, stop, step)
+        self.assert_(stop < x <= start)
+        self.assertEqual((x+stop)%step, 0)
+
 _gammacoeff = (0.9999999999995183, 676.5203681218835, -1259.139216722289,
               771.3234287757674,  -176.6150291498386, 12.50734324009056,
               -0.1385710331296526, 0.9934937113930748e-05, 0.1659470187408462e-06)
