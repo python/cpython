@@ -601,6 +601,28 @@ class FileModeTest(unittest.TestCase):
         self.assertEqual(tarfile.filemode(0755), '-rwxr-xr-x')
         self.assertEqual(tarfile.filemode(07111), '---s--s--t')
 
+class HeaderErrorTest(unittest.TestCase):
+
+    def test_truncated_header(self):
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, "")
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, "filename\0")
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, "\0" * 511)
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, "\0" * 513)
+
+    def test_empty_header(self):
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, "\0" * 512)
+
+    def test_invalid_header(self):
+        buf = tarfile.TarInfo("filename").tobuf()
+        buf = buf[:148] + "foo\0\0\0\0\0" + buf[156:] # invalid number field.
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, buf)
+
+    def test_bad_checksum(self):
+        buf = tarfile.TarInfo("filename").tobuf()
+        b = buf[:148] + "        " + buf[156:] # clear the checksum field.
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, b)
+        b = "a" + buf[1:] # manipulate the buffer, so checksum won't match.
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, b)
 
 if bz2:
     # Bzip2 TestCases
@@ -646,6 +668,7 @@ def test_main():
 
     tests = [
         FileModeTest,
+        HeaderErrorTest,
         ReadTest,
         ReadStreamTest,
         ReadDetectTest,
