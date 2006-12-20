@@ -1087,11 +1087,11 @@ class C:
   string, \code{''}.
 \end{funcdesc}
 
-\begin{funcdesc}{sum}{sequence\optional{, start}}
-  Sums \var{start} and the items of a \var{sequence}, from left to
-  right, and returns the total.  \var{start} defaults to \code{0}.
-  The \var{sequence}'s items are normally numbers, and are not allowed
-  to be strings.  The fast, correct way to concatenate sequence of
+\begin{funcdesc}{sum}{iterable\optional{, start}}
+  Sums \var{start} and the items of an \var{iterable} from left to
+  right and returns the total.  \var{start} defaults to \code{0}.
+  The \var{iterable}'s items are normally numbers, and are not allowed
+  to be strings.  The fast, correct way to concatenate a sequence of
   strings is by calling \code{''.join(\var{sequence})}.
   Note that \code{sum(range(\var{n}), \var{m})} is equivalent to
   \code{reduce(operator.add, range(\var{n}), \var{m})}
