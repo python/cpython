@@ -89,7 +89,7 @@ information on the result object.
 
 \begin{funcdesc}{urlunparse}{parts}
 Construct a URL from a tuple as returned by \code{urlparse()}.
-The \var{parts} argument be any six-item iterable.
+The \var{parts} argument can be any six-item iterable.
 This may result in a slightly different, but equivalent URL, if the
 URL that was parsed originally had unnecessary delimiters (for example,
 a ? with an empty query; the RFC states that these are equivalent).
@@ -133,7 +133,7 @@ information on the result object.
 \begin{funcdesc}{urlunsplit}{parts}
 Combine the elements of a tuple as returned by \function{urlsplit()}
 into a complete URL as a string.
-The \var{parts} argument be any five-item iterable.
+The \var{parts} argument can be any five-item iterable.
 This may result in a slightly different, but equivalent URL, if the
 URL that was parsed originally had unnecessary delimiters (for example,
 a ? with an empty query; the RFC states that these are equivalent).
