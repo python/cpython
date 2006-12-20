@@ -12,6 +12,8 @@ What's New in Python 2.5.1c1?
 Core and builtins
 -----------------
 
+- Bug #1590891: random.randrange don't return correct value for big number
+
 - Bug #1456209: In some obscure cases it was possible for a class with a
   custom ``__eq__()`` method to confuse set internals when class instances
   were used as a set's elements and the ``__eq__()`` method mutated the set.
