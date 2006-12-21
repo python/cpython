@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Lars Gustaebel was given SVN access on 20 Dec 2006 by NCN, for tarfile.py
+  related work.
+
 - 2006 Summer of Code entries: SoC developers are expected to work
   primarily in nondist/sandbox or on a branch of their own, and will
   have their work reviewed before changes are accepted into the trunk.
