@@ -90,10 +90,10 @@ performance optimizations previously implemented in the
 
 \begin{methoddesc}[BZ2File]{seek}{offset\optional{, whence}}
 Move to new file position. Argument \var{offset} is a byte count. Optional
-argument \var{whence} defaults to \code{0} (offset from start of file,
-offset should be \code{>= 0}); other values are \code{1} (move relative to
-current position, positive or negative), and \code{2} (move relative to end
-of file, usually negative, although many platforms allow seeking beyond
+argument \var{whence} defaults to \code{os.SEEK_SET} or \code{0} (offset from start of file;
+offset should be \code{>= 0}); other values are \code{os.SEEK_CUR} or \code{1} (move relative to
+current position; offset can be positive or negative), and \code{os.SEEK_END} or \code{2} (move relative to end
+of file; offset is usually negative, although many platforms allow seeking beyond
 the end of a file).
 
 Note that seeking of bz2 files is emulated, and depending on the parameters
