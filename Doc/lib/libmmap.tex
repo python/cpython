@@ -140,8 +140,9 @@ Memory-mapped file objects support the following methods:
 
 \begin{methoddesc}{seek}{pos\optional{, whence}}
   Set the file's current position.  \var{whence} argument is optional
-  and defaults to \code{0} (absolute file positioning); other values
-  are \code{1} (seek relative to the current position) and \code{2}
+  and defaults to \code{os.SEEK_SET} or \code{0} (absolute file
+  positioning); other values are \code{os.SEEK_CUR} or \code{1} (seek
+  relative to the current position) and \code{os.SEEK_END} or \code{2}
   (seek relative to the file's end).
 \end{methoddesc}
 
