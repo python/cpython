@@ -68,7 +68,8 @@ class _Database(UserDict.DictMixin):
         try:
             f = _open(self._datfile, 'r')
         except IOError:
-            f = _open(self._datfile, 'w', self._mode)
+            f = _open(self._datfile, 'w')
+            self._chmod(self._datfile)
         f.close()
         self._update()
 
@@ -106,7 +107,8 @@ class _Database(UserDict.DictMixin):
         except self._os.error:
             pass
 
-        f = self._open(self._dirfile, 'w', self._mode)
+        f = self._open(self._dirfile, 'w')
+        self._chmod(self._dirfile)
         for key, pos_and_siz_pair in self._index.iteritems():
             f.write("%r, %r\n" % (key, pos_and_siz_pair))
         f.close()
@@ -152,7 +154,8 @@ class _Database(UserDict.DictMixin):
     # the in-memory index dict, and append one to the directory file.
     def _addkey(self, key, pos_and_siz_pair):
         self._index[key] = pos_and_siz_pair
-        f = _open(self._dirfile, 'a', self._mode)
+        f = _open(self._dirfile, 'a')
+        self._chmod(self._dirfile)
         f.write("%r, %r\n" % (key, pos_and_siz_pair))
         f.close()
 
@@ -214,6 +217,9 @@ class _Database(UserDict.DictMixin):
 
     __del__ = close
 
+    def _chmod (self, file):
+        if hasattr(self._os, 'chmod'):
+            self._os.chmod(file, self._mode)
 
 
 def open(file, flag=None, mode=0666):
