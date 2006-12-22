@@ -122,6 +122,9 @@ Extension Modules
 Library
 -------
 
+- Bug #737202: Make CGIHTTPServer work for scripts in subdirectories.
+  Fix by Titus Brown.
+
 - Patch #1608267: fix a race condition in os.makedirs() is the directory
   to be created is already there.
 
