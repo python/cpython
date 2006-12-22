@@ -125,6 +125,10 @@ Library
 - Bug #737202: Make CGIHTTPServer work for scripts in subdirectories.
   Fix by Titus Brown.
 
+- Patch #827559: Make SimpleHTTPServer redirect when a directory URL
+  is missing the trailing slash, so that relative links work correctly.
+  Patch by Chris Gonnerman.
+
 - Patch #1608267: fix a race condition in os.makedirs() is the directory
   to be created is already there.
 
