@@ -40,17 +40,21 @@ class DumbDBMTestCase(unittest.TestCase):
 
     def test_dumbdbm_creation_mode(self):
         # On platforms without chmod, don't do anything.
-        if not hasattr(os, 'chmod'):
+        if not (hasattr(os, 'chmod') and hasattr(os, 'umask')):
             return
 
-        f = dumbdbm.open(_fname, 'c', 0632)
-        f.close()
-
+        try:
+            old_umask = os.umask(0002)
+            f = dumbdbm.open(_fname, 'c', 0637)
+            f.close()
+        finally:
+            os.umask(old_umask)
+            
         import stat
         st = os.stat(_fname + '.dat')
-        self.assertEqual(stat.S_IMODE(st.st_mode), 0632)
+        self.assertEqual(stat.S_IMODE(st.st_mode), 0635)
         st = os.stat(_fname + '.dir')
-        self.assertEqual(stat.S_IMODE(st.st_mode), 0632)
+        self.assertEqual(stat.S_IMODE(st.st_mode), 0635)
         
     def test_close_twice(self):
         f = dumbdbm.open(_fname)

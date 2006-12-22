@@ -236,4 +236,15 @@ def open(file, flag=None, mode=0666):
 
     """
     # flag argument is currently ignored
+
+    # Modify mode depending on the umask
+    try:
+        um = _os.umask(0)
+        _os.umask(um)
+    except AttributeError:
+        pass
+    else:
+        # Turn off any bits that are set in the umask
+        mode = mode & (~um)
+        
     return _Database(file, mode)
