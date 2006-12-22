@@ -44,7 +44,7 @@ Uniquification
             d.setdefault(word, []).append(pagenumber)
 
     Note, the second example is a use case characterized by a get and set
-    to the same key.  There are similar used cases with a __contains__
+    to the same key.  There are similar use cases with a __contains__
     followed by a get, set, or del to the same key.  Part of the
     justification for d.setdefault is combining the two lookups into one.
 
