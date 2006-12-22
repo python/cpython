@@ -115,6 +115,12 @@ if pid == pty.CHILD:
     os._exit(4)
 else:
     debug("Waiting for child (%d) to finish."%pid)
+    line = os.read(master_fd, 80)
+    lines = line.replace('\r\n', '\n').split('\n')
+    if lines != ['In child, calling os.setsid()',
+                 'Good: OSError was raised.', '']:
+        raise TestFailed("Unexpected output from child: %r" % line)
+            
     (pid, status) = os.waitpid(pid, 0)
     res = status >> 8
     debug("Child (%d) exited with status %d (%d)."%(pid, res, status))
@@ -127,6 +133,15 @@ else:
     elif res != 4:
         raise TestFailed, "pty.fork() failed for unknown reasons."
 
+    debug("Reading from master_fd now that the child has exited")
+    try:
+        s1 = os.read(master_fd, 1024)
+    except os.error:
+        pass
+    else:
+        raise TestFailed("Read from master_fd did not raise exception")
+    
+    
 os.close(master_fd)
 
 # pty.fork() passed.
