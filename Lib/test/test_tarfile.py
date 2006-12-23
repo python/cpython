@@ -110,7 +110,7 @@ class ReadTest(BaseTest):
         """Test seek() method of _FileObject, incl. random reading.
         """
         if self.sep != "|":
-            filename = "0-REGTYPE"
+            filename = "0-REGTYPE-TEXT"
             self.tar.extract(filename, dirname())
             f = open(os.path.join(dirname(), filename), "rb")
             data = f.read()
@@ -149,6 +149,16 @@ class ReadTest(BaseTest):
             s2 = fobj.readlines()
             self.assert_(s1 == s2,
                          "readlines() after seek failed")
+            fobj.seek(0)
+            self.assert_(len(fobj.readline()) == fobj.tell(),
+                         "tell() after readline() failed")
+            fobj.seek(512)
+            self.assert_(len(fobj.readline()) + 512 == fobj.tell(),
+                         "tell() after seek() and readline() failed")
+            fobj.seek(0)
+            line = fobj.readline()
+            self.assert_(fobj.read() == data[len(line):],
+                         "read() after readline() failed")
             fobj.close()
 
     def test_old_dirtype(self):

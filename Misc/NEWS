@@ -103,6 +103,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1230446: tarfile.py: fix ExFileObject so that read() and tell()
+  work correctly together with readline().
+
 - Patch #1484695: The tarfile module now raises a HeaderError exception
   if a buffer given to frombuf() is invalid.
 
