@@ -122,6 +122,12 @@ Extension Modules
 Library
 -------
 
+- Patch #1262036: Prevent TarFiles from being added to themselves under
+  certain conditions.
+
+- Patch #1230446: tarfile.py: fix ExFileObject so that read() and tell()
+  work correctly together with readline().
+
 - Bug #737202: Make CGIHTTPServer work for scripts in subdirectories.
   Fix by Titus Brown.
 
@@ -619,9 +625,6 @@ Core and builtins
 
 Library
 -------
-
-- Patch #1230446: tarfile.py: fix ExFileObject so that read() and tell()
-  work correctly together with readline().
 
 - Correction of patch #1455898: In the mbcs decoder, set final=False
   for stream decoder, but final=True for the decode function.
