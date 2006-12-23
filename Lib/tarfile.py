@@ -1044,7 +1044,7 @@ class TarFile(object):
            can be determined, `mode' is overridden by `fileobj's mode.
            `fileobj' is not closed, when TarFile is closed.
         """
-        self.name = name
+        self.name = os.path.abspath(name)
 
         if len(mode) > 1 or mode not in "raw":
             raise ValueError("mode must be 'r', 'a' or 'w'")
@@ -1056,7 +1056,7 @@ class TarFile(object):
             self._extfileobj = False
         else:
             if self.name is None and hasattr(fileobj, "name"):
-                self.name = fileobj.name
+                self.name = os.path.abspath(fileobj.name)
             if hasattr(fileobj, "mode"):
                 self.mode = fileobj.mode
             self._extfileobj = True
@@ -1192,24 +1192,12 @@ class TarFile(object):
         except (ImportError, AttributeError):
             raise CompressionError("gzip module is not available")
 
-        pre, ext = os.path.splitext(name)
-        pre = os.path.basename(pre)
-        if ext == ".tgz":
-            ext = ".tar"
-        if ext == ".gz":
-            ext = ""
-        tarname = pre + ext
-
         if fileobj is None:
             fileobj = file(name, mode + "b")
 
-        if mode != "r":
-            name = tarname
-
         try:
-            t = cls.taropen(tarname, mode,
-                gzip.GzipFile(name, mode, compresslevel, fileobj)
-            )
+            t = cls.taropen(name, mode,
+                gzip.GzipFile(name, mode, compresslevel, fileobj))
         except IOError:
             raise ReadError("not a gzip file")
         t._extfileobj = False
@@ -1228,21 +1216,13 @@ class TarFile(object):
         except ImportError:
             raise CompressionError("bz2 module is not available")
 
-        pre, ext = os.path.splitext(name)
-        pre = os.path.basename(pre)
-        if ext == ".tbz2":
-            ext = ".tar"
-        if ext == ".bz2":
-            ext = ""
-        tarname = pre + ext
-
         if fileobj is not None:
             fileobj = _BZ2Proxy(fileobj, mode)
         else:
             fileobj = bz2.BZ2File(name, mode, compresslevel=compresslevel)
 
         try:
-            t = cls.taropen(tarname, mode, fileobj)
+            t = cls.taropen(name, mode, fileobj)
         except IOError:
             raise ReadError("not a bzip2 file")
         t._extfileobj = False
@@ -1447,8 +1427,7 @@ class TarFile(object):
             arcname = name
 
         # Skip if somebody tries to archive the archive...
-        if self.name is not None \
-            and os.path.abspath(name) == os.path.abspath(self.name):
+        if self.name is not None and os.path.abspath(name) == self.name:
             self._dbg(2, "tarfile: Skipped %r" % name)
             return
 
