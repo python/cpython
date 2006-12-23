@@ -290,6 +290,20 @@ class WriteTest(BaseTest):
             else:
                 self.dst.addfile(tarinfo, f)
 
+    def test_add_self(self):
+        dstname = os.path.abspath(self.dstname)
+
+        self.assertEqual(self.dst.name, dstname, "archive name must be absolute")
+
+        self.dst.add(dstname)
+        self.assertEqual(self.dst.getnames(), [], "added the archive to itself")
+
+        cwd = os.getcwd()
+        os.chdir(dirname())
+        self.dst.add(dstname)
+        os.chdir(cwd)
+        self.assertEqual(self.dst.getnames(), [], "added the archive to itself")
+
 
 class Write100Test(BaseTest):
     # The name field in a tar header stores strings of at most 100 chars.

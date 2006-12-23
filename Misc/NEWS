@@ -103,6 +103,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1262036: Prevent TarFiles from being added to themselves under
+  certain conditions.
+
 - Patch #1230446: tarfile.py: fix ExFileObject so that read() and tell()
   work correctly together with readline().
 
