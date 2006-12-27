@@ -648,6 +648,16 @@ class HeaderErrorTest(unittest.TestCase):
         b = "a" + buf[1:] # manipulate the buffer, so checksum won't match.
         self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, b)
 
+class OpenFileobjTest(BaseTest):
+    # Test for SF bug #1496501.
+
+    def test_opener(self):
+        fobj = StringIO.StringIO("foo\n")
+        try:
+            tarfile.open("", "r", fileobj=fobj)
+        except tarfile.ReadError:
+            self.assertEqual(fobj.tell(), 0, "fileobj's position has moved")
+
 if bz2:
     # Bzip2 TestCases
     class ReadTestBzip2(ReadTestGzip):
@@ -693,6 +703,7 @@ def test_main():
     tests = [
         FileModeTest,
         HeaderErrorTest,
+        OpenFileobjTest,
         ReadTest,
         ReadStreamTest,
         ReadDetectTest,
