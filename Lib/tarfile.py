@@ -1133,9 +1133,13 @@ class TarFile(object):
             # Find out which *open() is appropriate for opening the file.
             for comptype in cls.OPEN_METH:
                 func = getattr(cls, cls.OPEN_METH[comptype])
+                if fileobj is not None:
+                    saved_pos = fileobj.tell()
                 try:
                     return func(name, "r", fileobj)
                 except (ReadError, CompressionError):
+                    if fileobj is not None:
+                        fileobj.seek(saved_pos)
                     continue
             raise ReadError("file could not be opened successfully")
 
