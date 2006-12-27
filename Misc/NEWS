@@ -122,6 +122,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1504073: Fix tarfile.open() for mode "r" with a fileobj argument.
+
 - Patch #1262036: Prevent TarFiles from being added to themselves under
   certain conditions.
 
