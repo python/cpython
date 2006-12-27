@@ -7,7 +7,7 @@ trans_5C = "".join ([chr (x ^ 0x5C) for x in xrange(256)])
 trans_36 = "".join ([chr (x ^ 0x36) for x in xrange(256)])
 
 # The size of the digests returned by HMAC depends on the underlying
-# hashing module used.
+# hashing module used.  Use digest_size from the instance of HMAC instead.
 digest_size = None
 
 # A unique object passed by HMAC.copy() to the HMAC constructor, in order
@@ -20,6 +20,7 @@ class HMAC:
 
     This supports the API for Cryptographic Hash Functions (PEP 247).
     """
+    blocksize = 64  # 512-bit HMAC; can be changed in subclasses.
 
     def __init__(self, key, msg = None, digestmod = None):
         """Create a new HMAC object.
@@ -47,7 +48,7 @@ class HMAC:
         self.inner = self.digest_cons()
         self.digest_size = self.inner.digest_size
 
-        blocksize = 64
+        blocksize = self.blocksize
         if len(key) > blocksize:
             key = self.digest_cons(key).digest()
 
@@ -70,7 +71,7 @@ class HMAC:
 
         An update to this copy won't affect the original object.
         """
-        other = HMAC(_secret_backdoor_key)
+        other = self.__class__(_secret_backdoor_key)
         other.digest_cons = self.digest_cons
         other.digest_size = self.digest_size
         other.inner = self.inner.copy()
