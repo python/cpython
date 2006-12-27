@@ -78,6 +78,15 @@ class HMAC:
         other.outer = self.outer.copy()
         return other
 
+    def _current(self):
+        """Return a hash object for the current state.
+
+        To be used only internally with digest() and hexdigest().
+        """
+        h = self.outer.copy()
+        h.update(self.inner.digest())
+        return h
+
     def digest(self):
         """Return the hash value of this hashing object.
 
@@ -85,15 +94,14 @@ class HMAC:
         not altered in any way by this function; you can continue
         updating the object after calling this function.
         """
-        h = self.outer.copy()
-        h.update(self.inner.digest())
+        h = self._current()
         return h.digest()
 
     def hexdigest(self):
         """Like digest(), but returns a string of hexadecimal digits instead.
         """
-        return "".join([hex(ord(x))[2:].zfill(2)
-                        for x in tuple(self.digest())])
+        h = self._current()
+        return h.hexdigest()
 
 def new(key, msg = None, digestmod = None):
     """Create a new hashing object and return it.

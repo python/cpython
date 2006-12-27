@@ -103,6 +103,8 @@ Core and builtins
 Library
 -------
 
+- Patch #1182394 from Shane Holloway: speed up HMAC.hexdigest.
+
 - Patch #1262036: Prevent TarFiles from being added to themselves under
   certain conditions.
 
