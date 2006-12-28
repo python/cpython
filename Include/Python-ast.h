@@ -30,6 +30,8 @@ typedef struct _excepthandler *excepthandler_ty;
 
 typedef struct _arguments *arguments_ty;
 
+typedef struct _arg *arg_ty;
+
 typedef struct _keyword *keyword_ty;
 
 typedef struct _alias *alias_ty;
@@ -74,6 +76,7 @@ struct _stmt {
                         arguments_ty args;
                         asdl_seq *body;
                         asdl_seq *decorators;
+                        expr_ty returns;
                 } FunctionDef;
                 
                 struct {
@@ -328,10 +331,28 @@ struct _excepthandler {
 struct _arguments {
         asdl_seq *args;
         identifier vararg;
+        expr_ty varargannotation;
         asdl_seq *kwonlyargs;
         identifier kwarg;
+        expr_ty kwargannotation;
         asdl_seq *defaults;
         asdl_seq *kw_defaults;
+};
+
+enum _arg_kind {SimpleArg_kind=1, NestedArgs_kind=2};
+struct _arg {
+        enum _arg_kind kind;
+        union {
+                struct {
+                        identifier arg;
+                        expr_ty annotation;
+                } SimpleArg;
+                
+                struct {
+                        asdl_seq *args;
+                } NestedArgs;
+                
+        } v;
 };
 
 struct _keyword {
@@ -350,8 +371,8 @@ mod_ty Interactive(asdl_seq * body, PyArena *arena);
 mod_ty Expression(expr_ty body, PyArena *arena);
 mod_ty Suite(asdl_seq * body, PyArena *arena);
 stmt_ty FunctionDef(identifier name, arguments_ty args, asdl_seq * body,
-                    asdl_seq * decorators, int lineno, int col_offset, PyArena
-                    *arena);
+                    asdl_seq * decorators, expr_ty returns, int lineno, int
+                    col_offset, PyArena *arena);
 stmt_ty ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int
                  lineno, int col_offset, PyArena *arena);
 stmt_ty Return(expr_ty value, int lineno, int col_offset, PyArena *arena);
@@ -429,9 +450,12 @@ comprehension_ty comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs,
                                PyArena *arena);
 excepthandler_ty excepthandler(expr_ty type, expr_ty name, asdl_seq * body, int
                                lineno, int col_offset, PyArena *arena);
-arguments_ty arguments(asdl_seq * args, identifier vararg, asdl_seq *
-                       kwonlyargs, identifier kwarg, asdl_seq * defaults,
+arguments_ty arguments(asdl_seq * args, identifier vararg, expr_ty
+                       varargannotation, asdl_seq * kwonlyargs, identifier
+                       kwarg, expr_ty kwargannotation, asdl_seq * defaults,
                        asdl_seq * kw_defaults, PyArena *arena);
+arg_ty SimpleArg(identifier arg, expr_ty annotation, PyArena *arena);
+arg_ty NestedArgs(asdl_seq * args, PyArena *arena);
 keyword_ty keyword(identifier arg, expr_ty value, PyArena *arena);
 alias_ty alias(identifier name, identifier asname, PyArena *arena);
 

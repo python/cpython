@@ -30,6 +30,7 @@ typedef struct {
     PyObject *func_dict;	/* The __dict__ attribute, a dict or NULL */
     PyObject *func_weakreflist;	/* List of weak references */
     PyObject *func_module;	/* The __module__ attribute, can be anything */
+    PyObject *func_annotations;	/* Annotations, a dict or NULL */
 
     /* Invariant:
      *     func_closure contains the bindings for func_code->co_freevars, so
@@ -52,6 +53,8 @@ PyAPI_FUNC(PyObject *) PyFunction_GetKwDefaults(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetKwDefaults(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetClosure(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetClosure(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyFunction_GetAnnotations(PyObject *);
+PyAPI_FUNC(int) PyFunction_SetAnnotations(PyObject *, PyObject *);
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
@@ -67,6 +70,8 @@ PyAPI_FUNC(int) PyFunction_SetClosure(PyObject *, PyObject *);
 	(((PyFunctionObject *)func) -> func_kwdefaults)
 #define PyFunction_GET_CLOSURE(func) \
 	(((PyFunctionObject *)func) -> func_closure)
+#define PyFunction_GET_ANNOTATIONS(func) \
+	(((PyFunctionObject *)func) -> func_annotations)
 
 /* The classmethod and staticmethod types lives here, too */
 PyAPI_DATA(PyTypeObject) PyClassMethod_Type;

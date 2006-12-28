@@ -266,7 +266,10 @@ class Node:
         pass # implemented by subclasses
 
 class EmptyNode(Node):
-    pass
+    def getChildNodes(self):
+        return ()
+    def getChildren(self):
+        return ()
 
 class Expression(Node):
     # Expression is an artificial node class to support "eval"

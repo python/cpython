@@ -10,7 +10,7 @@ module Python version "$Revision$"
 	    | Suite(stmt* body)
 
 	stmt = FunctionDef(identifier name, arguments args, 
-                           stmt* body, expr* decorators)
+                           stmt* body, expr* decorators, expr? returns)
 	      | ClassDef(identifier name, expr* bases, stmt* body)
 	      | Return(expr? value)
 
@@ -100,8 +100,12 @@ module Python version "$Revision$"
 	excepthandler = (expr? type, expr? name, stmt* body, int lineno,
 	                 int col_offset)
 
-	arguments = (expr* args, identifier? vararg, expr* kwonlyargs,
-		         identifier? kwarg, expr* defaults, expr* kw_defaults)
+	arguments = (arg* args, identifier? vararg, expr? varargannotation,
+                     arg* kwonlyargs, identifier? kwarg,
+                     expr? kwargannotation, expr* defaults,
+                     expr* kw_defaults)
+	arg = SimpleArg(identifier arg, expr? annotation)
+            | NestedArgs(arg* args)
 
         -- keyword arguments supplied to call
         keyword = (identifier arg, expr value)

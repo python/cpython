@@ -92,6 +92,7 @@ char *_PyParser_TokenNames[] = {
 	"DOUBLESLASH",
 	"DOUBLESLASHEQUAL",
 	"AT",
+	"RARROW",
 	/* This table must match the #defines in token.h! */
 	"OP",
 	"<ERRORTOKEN>",
@@ -998,6 +999,7 @@ PyToken_TwoChars(int c1, int c2)
 	case '-':
 		switch (c2) {
 		case '=':	return MINEQUAL;
+		case '>':	return RARROW;
 		}
 		break;
 	case '*':

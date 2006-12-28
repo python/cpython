@@ -2293,10 +2293,37 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		{
 		    int posdefaults = oparg & 0xff;
 		    int kwdefaults = (oparg>>8) & 0xff;
+		    int num_annotations = (oparg >> 16) & 0x7fff;
 
 			v = POP(); /* code object */
 			x = PyFunction_New(v, f->f_globals);
 			Py_DECREF(v);
+
+			if (x != NULL && num_annotations > 0) {
+				Py_ssize_t name_ix;
+				u = POP(); /* names of args with annotations */
+				v = PyDict_New();
+				if (v == NULL) {
+					Py_DECREF(x);
+					x = NULL;
+					break;
+				}
+				name_ix = PyTuple_Size(u);
+				assert(num_annotations == name_ix+1);
+				while (name_ix > 0) {
+					--name_ix;
+					t = PyTuple_GET_ITEM(u, name_ix);
+					w = POP();
+					/* XXX(nnorwitz): check for errors */
+					PyDict_SetItem(v, t, w);
+					Py_DECREF(w);
+				}
+
+				err = PyFunction_SetAnnotations(x, v);
+				Py_DECREF(v);
+				Py_DECREF(u);
+			}
+
 			/* XXX Maybe this should be a separate opcode? */
 			if (x != NULL && posdefaults > 0) {
 				v = PyTuple_New(posdefaults);
@@ -2322,6 +2349,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				while (--kwdefaults >= 0) {
 					w = POP(); /* default value */
 					u = POP(); /* kw only arg name */
+					/* XXX(nnorwitz): check for errors */
 					PyDict_SetItem(v, u, w);
 				}
 				err = PyFunction_SetKwDefaults(x, v);

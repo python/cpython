@@ -234,25 +234,24 @@ class Transformer:
         return Decorators(items)
 
     def funcdef(self, nodelist):
-        #                    -6   -5    -4         -3  -2    -1
-        # funcdef: [decorators] 'def' NAME parameters ':' suite
-        # parameters: '(' [varargslist] ')'
-
-        if len(nodelist) == 6:
-            assert nodelist[0][0] == symbol.decorators
+        #                         0    1    2                4         -1
+        # funcdef: [decorators] 'def' NAME parameters ['->' test] ':' suite
+        # parameters: '(' [typedargslist] ')'
+        if nodelist[0][0] == symbol.decorators:
             decorators = self.decorators(nodelist[0][1:])
+            nodelist = nodelist[1:]
         else:
-            assert len(nodelist) == 5
             decorators = None
+        assert len(nodelist) in (5, 7)
 
-        lineno = nodelist[-4][2]
-        name = nodelist[-4][1]
-        args = nodelist[-3][2]
+        lineno = nodelist[0][2]
+        name = nodelist[1][1]
+        args = nodelist[2][2]
 
-        if args[0] == symbol.varargslist:
-            names, defaults, kwonlyargs, flags = self.com_arglist(args[1:])
+        if args[0] == symbol.varargslist or args[0] == symbol.typedargslist:
+            arguments, defaults, kwonly, flags = self.com_arglist(args[1:])
         else:
-            names = defaults = kwonlyargs = ()
+            arguments = defaults = kwonly = ()
             flags = 0
         doc = self.get_docstring(nodelist[-1])
 
@@ -263,22 +262,28 @@ class Transformer:
             assert isinstance(code, Stmt)
             assert isinstance(code.nodes[0], Discard)
             del code.nodes[0]
-        return Function(decorators, name, names, defaults,
-                        kwonlyargs, flags, doc, code, lineno=lineno)
+
+        if len(nodelist) == 7:
+            returns = self.com_node(nodelist[4])
+        else:
+            returns = None
+
+        return Function(decorators, name, arguments, defaults,
+                        kwonly, returns, flags, doc, code, lineno=lineno)
 
     def lambdef(self, nodelist):
         # lambdef: 'lambda' [varargslist] ':' test
         if nodelist[2][0] == symbol.varargslist:
-            names, defaults, kwonlyargs, flags = \
+            arguments, defaults, kwonlyargs, flags = \
                                 self.com_arglist(nodelist[2][1:])
         else:
-            names = defaults = kwonlyargs = ()
+            arguments = defaults = kwonlyargs = ()
             flags = 0
 
         # code for lambda
         code = self.com_node(nodelist[-1])
 
-        return Lambda(names, defaults, kwonlyargs,
+        return Lambda(arguments, defaults, kwonlyargs,
                       flags, code, lineno=nodelist[1][2])
     old_lambdef = lambdef
 
@@ -324,10 +329,25 @@ class Transformer:
     def varargslist(self, nodelist):
         raise WalkerError
 
-    def fpdef(self, nodelist):
+    def vfpdef(self, nodelist):
         raise WalkerError
 
-    def fplist(self, nodelist):
+    def vfplist(self, nodelist):
+        raise WalkerError
+
+    def vname(self, nodelist):
+        raise WalkerError
+
+    def typedargslist(self, nodelist):
+        raise WalkerError
+
+    def tfpdef(self, nodelist):
+        raise WalkerError
+
+    def tfplist(self, nodelist):
+        raise WalkerError
+
+    def tname(self, nodelist):
         raise WalkerError
 
     def dotted_name(self, nodelist):
@@ -786,9 +806,10 @@ class Transformer:
         return Discard(Const(None))
 
     def keywordonlyargs(self, nodelist):
-        # (',' NAME ['=' test])*
+        # (',' tname ['=' test])*
         #      ^^^
         # ------+
+        # tname and vname are handled.
         kwonlyargs = []
         i = 0
         while i < len(nodelist):
@@ -802,10 +823,25 @@ class Transformer:
                 i += 2
             if node[0] == token.DOUBLESTAR:
                 return kwonlyargs, i
-            elif node[0] == token.NAME:
-                kwonlyargs.append(Keyword(node[1], default, lineno=node[2]))
+            elif node[0] in (symbol.vname, symbol.tname):
+                lineno = extractLineNo(node)
+                kwarg = Kwarg(self._simplearg(node), default, lineno=lineno)
+                kwonlyargs.append(kwarg)
                 i += 2
         return kwonlyargs, i
+
+    def _simplearg(self, node):
+        # tname: NAME [':' test]
+        # vname: NAME
+        assert node[0] == symbol.vname or node[0] == symbol.tname
+        name = node[1][1]
+        lineno = node[1][2]
+        assert isinstance(name, str)
+        if len(node) > 2:
+            annotation = self.com_node(node[3])
+        else:
+            annotation = None
+        return SimpleArg(name, annotation, lineno)
         
     def com_arglist(self, nodelist):
         # varargslist:
@@ -814,7 +850,7 @@ class Transformer:
         #      | fpdef ['=' test] (',' fpdef ['=' test])* [',']
         # fpdef: NAME | '(' fplist ')'
         # fplist: fpdef (',' fpdef)* [',']
-        names = []
+        arguments = []
         kwonlyargs = []
         defaults = []
         flags = 0
@@ -825,14 +861,15 @@ class Transformer:
             if node[0] == token.STAR or node[0] == token.DOUBLESTAR:
                 if node[0] == token.STAR:
                     node = nodelist[i+1]
-                    if node[0] == token.NAME: # vararg
-                        names.append(node[1])
+                    if node[0] in (symbol.tname, symbol.vname): # vararg
+                        arguments.append(self._simplearg(node))
                         flags = flags | CO_VARARGS
                         i = i + 3
                     else: # no vararg
                         assert node[0] == token.COMMA
                         i += 2
-                    if i < len(nodelist) and nodelist[i][0] == token.NAME:
+                    if i < len(nodelist) and \
+                       nodelist[i][0] in (symbol.tname, symbol.vname):
                         kwonlyargs, skip = self.keywordonlyargs(nodelist[i:])
                         i += skip
 
@@ -843,13 +880,13 @@ class Transformer:
                         node = nodelist[i+1]
                     else:
                         raise ValueError, "unexpected token: %s" % t
-                    names.append(node[1])
+                    arguments.append(self._simplearg(node))
                     flags = flags | CO_VARKEYWORDS
 
                 break
 
-            # fpdef: NAME | '(' fplist ')'
-            names.append(self.com_fpdef(node))
+            # tfpdef: tname | '(' tfplist ')'
+            arguments.append(self.com_tfpdef(node))
 
             i = i + 1
             if i < len(nodelist) and nodelist[i][0] == token.EQUAL:
@@ -863,21 +900,24 @@ class Transformer:
             # skip the comma
             i = i + 1
 
-        return names, defaults, kwonlyargs, flags
+        return arguments, defaults, kwonlyargs, flags
 
-    def com_fpdef(self, node):
-        # fpdef: NAME | '(' fplist ')'
+    def com_tfpdef(self, node):
+        # tfpdef: tname | '(' tfplist ')'
+        # def f((x)): -- x is not nested
+        while node[1][0] == token.LPAR and len(node[2]) == 2:
+            node = node[2][1]
         if node[1][0] == token.LPAR:
-            return self.com_fplist(node[2])
-        return node[1][1]
+            return NestedArgs(self.com_tfplist(node[2]))
+        return self._simplearg(node[1])
 
-    def com_fplist(self, node):
-        # fplist: fpdef (',' fpdef)* [',']
+    def com_tfplist(self, node):
+        # tfplist: tfpdef (',' tfpdef)* [',']
         if len(node) == 2:
-            return self.com_fpdef(node[1])
+            return self.com_tfpdef(node[1]),
         list = []
         for i in range(1, len(node), 2):
-            list.append(self.com_fpdef(node[i]))
+            list.append(self.com_tfpdef(node[i]))
         return tuple(list)
 
     def com_dotted_name(self, node):

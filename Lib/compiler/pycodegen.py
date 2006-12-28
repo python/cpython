@@ -378,17 +378,56 @@ class CodeGenerator:
         walk(node.code, gen)
         gen.finish()
         self.set_lineno(node)
+        num_kwargs = 0
         for keyword in node.kwonlyargs:
             default = keyword.expr
             if isinstance(default, ast.EmptyNode):
                 continue
-            self.emit('LOAD_CONST', keyword.name)
+            self.emit('LOAD_CONST', keyword.arg.name)
             self.visit(default)
+            num_kwargs += 1
         for default in node.defaults:
             self.visit(default)
-        self._makeClosure(gen, len(node.defaults))
+
+        num_annotations = self._visit_annotations(node)
+
+        oparg = len(node.defaults)
+        oparg |= num_kwargs << 8
+        oparg |= num_annotations << 16
+
+        self._makeClosure(gen, oparg)
         for i in range(ndecorators):
             self.emit('CALL_FUNCTION', 1)
+
+    def _visit_annotations(self, node):
+        # emit code, return num_annotations
+        annotations = []
+        annotations.extend(self._visit_argument_annotations(node.arguments))
+        annotations.extend(self._visit_kwarg_annotations(node.kwonlyargs))
+        if node.returns:
+            self.visit(node.returns)
+            annotations.append('return')
+        if not annotations:
+            return 0
+        self.emit('LOAD_CONST', tuple(annotations))
+        return len(annotations) + 1
+
+    def _visit_argument_annotations(self, arguments):
+        for arg in arguments:
+            if isinstance(arg, ast.SimpleArg):
+                if arg.annotation:
+                    self.visit(arg.annotation)
+                    yield arg.name
+            else:
+                for name in self._visit_argument_annotations(arg.args):
+                    yield name
+
+    def _visit_kwarg_annotations(self, kwargs):
+        for kwarg in kwargs:
+            arg = kwarg.arg
+            if arg.annotation:
+                self.visit(arg.annotation)
+                yield arg.name
 
     def visitClass(self, node):
         gen = self.ClassGen(node, self.scopes,
@@ -1323,7 +1362,7 @@ class AbstractFunctionCode:
         else:
             name = func.name
 
-        args, hasTupleArg = generateArgList(func.argnames)
+        args, hasTupleArg = generateArgList(func.arguments)
         kwonlyargs = generateKwonlyArgList(func.kwonlyargs)
         self.graph = pyassem.PyFlowGraph(name, func.filename, args,
                                          kwonlyargs=kwonlyargs,
@@ -1334,7 +1373,7 @@ class AbstractFunctionCode:
         if not isLambda and func.doc:
             self.setDocstring(func.doc)
 
-        lnf = walk(func.code, self.NameFinder(args), verbose=0)
+        lnf = walk(func.code, self.NameFinder(args+kwonlyargs), verbose=0)
         self.locals.push(lnf.getLocals())
         if func.varargs:
             self.graph.setFlag(CO_VARARGS)
@@ -1342,7 +1381,7 @@ class AbstractFunctionCode:
             self.graph.setFlag(CO_VARKEYWORDS)
         self.set_lineno(func)
         if hasTupleArg:
-            self.generateArgUnpack(func.argnames)
+            self.generateArgUnpack(func.arguments)
 
     def get_module(self):
         return self.module
@@ -1356,9 +1395,9 @@ class AbstractFunctionCode:
     def generateArgUnpack(self, args):
         for i in range(len(args)):
             arg = args[i]
-            if isinstance(arg, tuple):
+            if isinstance(arg, ast.NestedArgs):
                 self.emit('LOAD_FAST', '.%d' % (i * 2))
-                self.unpackSequence(arg)
+                self.unpackSequence(tuple(_nested_names(arg)))
 
     def unpackSequence(self, tup):
         if VERSION > 1:
@@ -1452,21 +1491,29 @@ def generateArgList(arglist):
     count = 0
     for i in range(len(arglist)):
         elt = arglist[i]
-        if isinstance(elt, str):
-            args.append(elt)
-        elif isinstance(elt, tuple):
-            args.append(TupleArg(i * 2, elt))
-            extra.extend(misc.flatten(elt))
+        if isinstance(elt, ast.SimpleArg):
+            args.append(elt.name)
+        elif isinstance(elt, ast.NestedArgs):
+            t = tuple(_nested_names(elt))
+            args.append(TupleArg(i * 2, t))
+            extra.extend(misc.flatten(t))
             count = count + 1
         else:
             raise ValueError, "unexpect argument type:", elt
     return args + extra, count
 
+def _nested_names(elt):
+  for arg in elt.args:
+    if isinstance(arg, ast.SimpleArg):
+      yield arg.name
+    elif isinstance(arg, ast.NestedArgs):
+      yield tuple(_nested_names(arg))
+
 def generateKwonlyArgList(keywordOnlyArgs):
-    kwonlyargs = {}
+    kwonlyargs = []
     for elt in keywordOnlyArgs:
-        assert isinstance(elt, ast.Keyword)
-        kwonlyargs[elt.name] = elt.expr
+        assert isinstance(elt, ast.Kwarg)
+        kwonlyargs.append(elt.arg.name)
     return kwonlyargs
     
 def findOp(node):

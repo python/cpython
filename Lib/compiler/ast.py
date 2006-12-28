@@ -33,7 +33,10 @@ class Node:
         pass # implemented by subclasses
 
 class EmptyNode(Node):
-    pass
+    def getChildNodes(self):
+        return ()
+    def getChildren(self):
+        return ()
 
 class Expression(Node):
     # Expression is an artificial node class to support "eval"
@@ -487,12 +490,13 @@ class From(Node):
         return "From(%s, %s, %s)" % (repr(self.modname), repr(self.names), repr(self.level))
 
 class Function(Node):
-    def __init__(self, decorators, name, argnames, defaults, kwonlyargs, flags, doc, code, lineno=None):
+    def __init__(self, decorators, name, arguments, defaults, kwonlyargs, returns, flags, doc, code, lineno=None):
         self.decorators = decorators
         self.name = name
-        self.argnames = argnames
+        self.arguments = arguments
         self.defaults = defaults
         self.kwonlyargs = kwonlyargs
+        self.returns = returns
         self.flags = flags
         self.doc = doc
         self.code = code
@@ -508,9 +512,10 @@ class Function(Node):
         children = []
         children.append(self.decorators)
         children.append(self.name)
-        children.append(self.argnames)
+        children.extend(flatten(self.arguments))
         children.extend(flatten(self.defaults))
-        children.append(self.kwonlyargs)
+        children.extend(flatten(self.kwonlyargs))
+        children.append(self.returns)
         children.append(self.flags)
         children.append(self.doc)
         children.append(self.code)
@@ -520,18 +525,22 @@ class Function(Node):
         nodelist = []
         if self.decorators is not None:
             nodelist.append(self.decorators)
+        nodelist.extend(flatten_nodes(self.arguments))
         nodelist.extend(flatten_nodes(self.defaults))
+        nodelist.extend(flatten_nodes(self.kwonlyargs))
+        if self.returns is not None:
+            nodelist.append(self.returns)
         nodelist.append(self.code)
         return tuple(nodelist)
 
     def __repr__(self):
-        return "Function(%s, %s, %s, %s, %s, %s, %s, %s)" % (repr(self.decorators), repr(self.name), repr(self.argnames), repr(self.defaults), repr(self.kwonlyargs), repr(self.flags), repr(self.doc), repr(self.code))
+        return "Function(%s, %s, %s, %s, %s, %s, %s, %s, %s)" % (repr(self.decorators), repr(self.name), repr(self.arguments), repr(self.defaults), repr(self.kwonlyargs), repr(self.returns), repr(self.flags), repr(self.doc), repr(self.code))
 
 class GenExpr(Node):
     def __init__(self, code, lineno=None):
         self.code = code
         self.lineno = lineno
-        self.argnames = ['.0']
+        self.arguments = [SimpleArg('.0', None)]
         self.varargs = self.kwargs = None
         self.kwonlyargs = ()
 
@@ -715,9 +724,24 @@ class Keyword(Node):
     def __repr__(self):
         return "Keyword(%s, %s)" % (repr(self.name), repr(self.expr))
 
+class Kwarg(Node):
+    def __init__(self, arg, expr, lineno=None):
+        self.arg = arg
+        self.expr = expr
+        self.lineno = lineno
+
+    def getChildren(self):
+        return self.arg, self.expr
+
+    def getChildNodes(self):
+        return self.arg, self.expr
+
+    def __repr__(self):
+        return "Kwarg(%s, %s)" % (repr(self.arg), repr(self.expr))
+
 class Lambda(Node):
-    def __init__(self, argnames, defaults, kwonlyargs, flags, code, lineno=None):
-        self.argnames = argnames
+    def __init__(self, arguments, defaults, kwonlyargs, flags, code, lineno=None):
+        self.arguments = arguments
         self.defaults = defaults
         self.kwonlyargs = kwonlyargs
         self.flags = flags
@@ -728,25 +752,28 @@ class Lambda(Node):
             self.varargs = 1
         if flags & CO_VARKEYWORDS:
             self.kwargs = 1
+        self.returns = None
 
 
     def getChildren(self):
         children = []
-        children.append(self.argnames)
+        children.extend(flatten(self.arguments))
         children.extend(flatten(self.defaults))
-        children.append(self.kwonlyargs)
+        children.extend(flatten(self.kwonlyargs))
         children.append(self.flags)
         children.append(self.code)
         return tuple(children)
 
     def getChildNodes(self):
         nodelist = []
+        nodelist.extend(flatten_nodes(self.arguments))
         nodelist.extend(flatten_nodes(self.defaults))
+        nodelist.extend(flatten_nodes(self.kwonlyargs))
         nodelist.append(self.code)
         return tuple(nodelist)
 
     def __repr__(self):
-        return "Lambda(%s, %s, %s, %s, %s)" % (repr(self.argnames), repr(self.defaults), repr(self.kwonlyargs), repr(self.flags), repr(self.code))
+        return "Lambda(%s, %s, %s, %s, %s)" % (repr(self.arguments), repr(self.defaults), repr(self.kwonlyargs), repr(self.flags), repr(self.code))
 
 class LeftShift(Node):
     def __init__(self, (left, right), lineno=None):
@@ -896,6 +923,22 @@ class Name(Node):
 
     def __repr__(self):
         return "Name(%s)" % (repr(self.name),)
+
+class NestedArgs(Node):
+    def __init__(self, args, lineno=None):
+        self.args = args
+        self.lineno = lineno
+
+    def getChildren(self):
+        return tuple(flatten(self.args))
+
+    def getChildNodes(self):
+        nodelist = []
+        nodelist.extend(flatten_nodes(self.args))
+        return tuple(nodelist)
+
+    def __repr__(self):
+        return "NestedArgs(%s)" % (repr(self.args),)
 
 class Not(Node):
     def __init__(self, expr, lineno=None):
@@ -1070,6 +1113,27 @@ class Set(Node):
 
     def __repr__(self):
         return "Set(%s)" % (repr(self.items),)
+
+class SimpleArg(Node):
+    def __init__(self, name, annotation, lineno=None):
+        self.name = name
+        self.annotation = annotation
+        self.lineno = lineno
+
+    def getChildren(self):
+        children = []
+        children.append(self.name)
+        children.append(self.annotation)
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodelist = []
+        if self.annotation is not None:
+            nodelist.append(self.annotation)
+        return tuple(nodelist)
+
+    def __repr__(self):
+        return "SimpleArg(%s, %s)" % (repr(self.name), repr(self.annotation))
 
 class Slice(Node):
     def __init__(self, expr, flags, lower, upper, lineno=None):

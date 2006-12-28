@@ -176,3 +176,6 @@ x = sys.modules['time'].time()
 @staticmethod
 def foo(): pass
 
+@staticmethod
+def foo(x:1)->1: pass
+
