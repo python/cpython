@@ -330,7 +330,7 @@ struct BITS {
 	short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
 };
 
-DL_EXPORT(void) set_bitfields(struct BITS *bits, char name, int value)
+PyAPI_FUNC(void) set_bitfields(struct BITS *bits, char name, int value)
 {
 	switch (name) {
 	case 'A': bits->A = value; break;
@@ -353,7 +353,7 @@ DL_EXPORT(void) set_bitfields(struct BITS *bits, char name, int value)
 	}
 }
 
-DL_EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
+PyAPI_FUNC(int) unpack_bitfields(struct BITS *bits, char name)
 {
 	switch (name) {
 	case 'A': return bits->A;
@@ -547,7 +547,7 @@ EXPORT (HRESULT) KeepObject(IUnknown *punk)
 
 #endif
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 init_ctypes_test(void)
 {
 	Py_InitModule("_ctypes_test", module_methods);

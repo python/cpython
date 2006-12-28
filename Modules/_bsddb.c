@@ -5627,7 +5627,7 @@ static PyMethodDef bsddb_methods[] = {
 #define MODULE_NAME_MAX_LEN     11
 static char _bsddbModuleName[MODULE_NAME_MAX_LEN+1] = "_bsddb";
 
-DL_EXPORT(void) init_bsddb(void)
+PyMODINIT_FUNC init_bsddb(void)
 {
     PyObject* m;
     PyObject* d;
@@ -6032,7 +6032,7 @@ DL_EXPORT(void) init_bsddb(void)
 /* allow this module to be named _pybsddb so that it can be installed
  * and imported on top of python >= 2.3 that includes its own older
  * copy of the library named _bsddb without importing the old version. */
-DL_EXPORT(void) init_pybsddb(void)
+PyMODINIT_FUNC init_pybsddb(void)
 {
     strncpy(_bsddbModuleName, "_pybsddb", MODULE_NAME_MAX_LEN);
     init_bsddb();

@@ -35,17 +35,6 @@ Used in:  PY_LONG_LONG
 
 **************************************************************************/
 
-
-/* For backward compatibility only. Obsolete, do not use. */
-#ifdef HAVE_PROTOTYPES
-#define Py_PROTO(x) x
-#else
-#define Py_PROTO(x) ()
-#endif
-#ifndef Py_FPROTO
-#define Py_FPROTO(x) Py_PROTO(x)
-#endif
-
 /* typedefs for some C9X-defined synonyms for integral types.
  *
  * The names in Python are exactly the same as the C9X names, except with a
@@ -226,9 +215,7 @@ typedef Py_intptr_t	Py_ssize_t;
 /* NB caller must include <sys/types.h> */
 
 #ifdef HAVE_SYS_SELECT_H
-
 #include <sys/select.h>
-
 #endif /* !HAVE_SYS_SELECT_H */
 
 /*******************************
@@ -504,7 +491,7 @@ extern int gethostname(char *, int);
 #ifdef __BEOS__
 /* Unchecked */
 /* It's in the libs, but not the headers... - [cjh] */
-int shutdown( int, int );
+int shutdown(int, int);
 #endif
 
 #ifdef HAVE__GETPTY
@@ -521,25 +508,6 @@ extern int openpty(int *, int *, char *, struct termios *, struct winsize *);
 extern int forkpty(int *, char *, struct termios *, struct winsize *);
 #endif /* !defined(HAVE_PTY_H) && !defined(HAVE_LIBUTIL_H) */
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) */
-
-
-/* These are pulled from various places. It isn't obvious on what platforms
-   they are necessary, nor what the exact prototype should look like (which
-   is likely to vary between platforms!) If you find you need one of these
-   declarations, please move them to a platform-specific block and include
-   proper prototypes. */
-#if 0
-
-/* From Modules/resource.c */
-extern int getrusage();
-extern int getpagesize();
-
-/* From Python/sysmodule.c and Modules/posixmodule.c */
-extern int fclose(FILE *);
-
-/* From Modules/posixmodule.c */
-extern int fdatasync(int);
-#endif /* 0 */
 
 
 /************************
@@ -650,56 +618,6 @@ extern double hypot(double, double);
 #		define PyMODINIT_FUNC void
 #	endif /* __cplusplus */
 #endif
-
-/* Deprecated DL_IMPORT and DL_EXPORT macros */
-#if defined(Py_ENABLE_SHARED) && defined (HAVE_DECLSPEC_DLL)
-#	if defined(Py_BUILD_CORE)
-#		define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
-#		define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
-#	else
-#		define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
-#		define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
-#	endif
-#endif
-#ifndef DL_EXPORT
-#	define DL_EXPORT(RTYPE) RTYPE
-#endif
-#ifndef DL_IMPORT
-#	define DL_IMPORT(RTYPE) RTYPE
-#endif
-/* End of deprecated DL_* macros */
-
-/* If the fd manipulation macros aren't defined,
-   here is a set that should do the job */
-
-#if 0 /* disabled and probably obsolete */
-
-#ifndef	FD_SETSIZE
-#define	FD_SETSIZE	256
-#endif
-
-#ifndef FD_SET
-
-typedef long fd_mask;
-
-#define NFDBITS	(sizeof(fd_mask) * NBBY)	/* bits per mask */
-#ifndef howmany
-#define	howmany(x, y)	(((x)+((y)-1))/(y))
-#endif /* howmany */
-
-typedef	struct fd_set {
-	fd_mask	fds_bits[howmany(FD_SETSIZE, NFDBITS)];
-} fd_set;
-
-#define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
-#define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
-#define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
-#define FD_ZERO(p)	memset((char *)(p), '\0', sizeof(*(p)))
-
-#endif /* FD_SET */
-
-#endif /* fd manipulation macros */
-
 
 /* limits.h constants that may be missing */
 
