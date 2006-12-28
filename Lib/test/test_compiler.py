@@ -115,6 +115,24 @@ class CompilerTest(unittest.TestCase):
         dct = {}
         exec(c, dct)
         self.assertEquals(dct.get('result'), 3)
+        c = compiler.compile('def g(a):\n'
+                             '    def f(): return a + 2\n'
+                             '    return f()\n'
+                             'result = g(1)',
+                             '<string>',
+                             'exec')
+        dct = {}
+        exec(c, dct)
+        self.assertEquals(dct.get('result'), 3)
+        c = compiler.compile('def g((a, b)):\n'
+                             '    def f(): return a + b\n'
+                             '    return f()\n'
+                             'result = g((1, 2))',
+                             '<string>',
+                             'exec')
+        dct = {}
+        exec(c, dct)
+        self.assertEquals(dct.get('result'), 3)
 
     def testGenExp(self):
         c = compiler.compile('list((i,j) for i in range(3) if i < 3'
@@ -122,6 +140,22 @@ class CompilerTest(unittest.TestCase):
                              '<string>',
                              'eval')
         self.assertEquals(eval(c), [(0, 3), (1, 3), (2, 3)])
+
+    def testFuncAnnotations(self):
+        testdata = [
+            ('def f(a: 1): pass', {'a': 1}),
+            ('''def f(a, (b:1, c:2, d), e:3=4, f=5,
+                    *g:6, h:7, i=8, j:9=10, **k:11) -> 12: pass
+             ''', {'b': 1, 'c': 2, 'e': 3, 'g': 6, 'h': 7, 'j': 9,
+                   'k': 11, 'return': 12}),
+        ]
+        for sourcecode, expected in testdata:
+            # avoid IndentationError: unexpected indent from trailing lines
+            sourcecode = sourcecode.rstrip()+'\n'
+            c = compiler.compile(sourcecode, '<string>', 'exec')
+            dct = {}
+            exec(c, dct)
+            self.assertEquals(dct['f'].func_annotations, expected)
 
 
 NOLINENO = (compiler.ast.Module, compiler.ast.Stmt, compiler.ast.Discard)
@@ -167,10 +201,11 @@ from math import *
 
 ###############################################################################
 
-def test_main():
+def test_main(all=False):
     global TEST_ALL
-    TEST_ALL = test.test_support.is_resource_enabled("compiler")
+    TEST_ALL = all or test.test_support.is_resource_enabled("compiler")
     test.test_support.run_unittest(CompilerTest)
 
 if __name__ == "__main__":
-    test_main()
+    import sys
+    test_main('all' in sys.argv)

@@ -34,6 +34,7 @@ static char *FunctionDef_fields[]={
         "args",
         "body",
         "decorators",
+        "returns",
 };
 static PyTypeObject *ClassDef_type;
 static char *ClassDef_fields[]={
@@ -333,10 +334,23 @@ static PyObject* ast2obj_arguments(void*);
 static char *arguments_fields[]={
         "args",
         "vararg",
+        "varargannotation",
         "kwonlyargs",
         "kwarg",
+        "kwargannotation",
         "defaults",
         "kw_defaults",
+};
+static PyTypeObject *arg_type;
+static PyObject* ast2obj_arg(void*);
+static PyTypeObject *SimpleArg_type;
+static char *SimpleArg_fields[]={
+        "arg",
+        "annotation",
+};
+static PyTypeObject *NestedArgs_type;
+static char *NestedArgs_fields[]={
+        "args",
 };
 static PyTypeObject *keyword_type;
 static PyObject* ast2obj_keyword(void*);
@@ -454,7 +468,7 @@ static int init_types(void)
         if (!stmt_type) return 0;
         if (!add_attributes(stmt_type, stmt_attributes, 2)) return 0;
         FunctionDef_type = make_type("FunctionDef", stmt_type,
-                                     FunctionDef_fields, 4);
+                                     FunctionDef_fields, 5);
         if (!FunctionDef_type) return 0;
         ClassDef_type = make_type("ClassDef", stmt_type, ClassDef_fields, 3);
         if (!ClassDef_type) return 0;
@@ -710,8 +724,16 @@ static int init_types(void)
         excepthandler_type = make_type("excepthandler", AST_type,
                                        excepthandler_fields, 5);
         if (!excepthandler_type) return 0;
-        arguments_type = make_type("arguments", AST_type, arguments_fields, 6);
+        arguments_type = make_type("arguments", AST_type, arguments_fields, 8);
         if (!arguments_type) return 0;
+        arg_type = make_type("arg", AST_type, NULL, 0);
+        if (!arg_type) return 0;
+        if (!add_attributes(arg_type, NULL, 0)) return 0;
+        SimpleArg_type = make_type("SimpleArg", arg_type, SimpleArg_fields, 2);
+        if (!SimpleArg_type) return 0;
+        NestedArgs_type = make_type("NestedArgs", arg_type, NestedArgs_fields,
+                                    1);
+        if (!NestedArgs_type) return 0;
         keyword_type = make_type("keyword", AST_type, keyword_fields, 2);
         if (!keyword_type) return 0;
         alias_type = make_type("alias", AST_type, alias_fields, 2);
@@ -783,7 +805,8 @@ Suite(asdl_seq * body, PyArena *arena)
 
 stmt_ty
 FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
-            decorators, int lineno, int col_offset, PyArena *arena)
+            decorators, expr_ty returns, int lineno, int col_offset, PyArena
+            *arena)
 {
         stmt_ty p;
         if (!name) {
@@ -806,6 +829,7 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
         p->v.FunctionDef.args = args;
         p->v.FunctionDef.body = body;
         p->v.FunctionDef.decorators = decorators;
+        p->v.FunctionDef.returns = returns;
         p->lineno = lineno;
         p->col_offset = col_offset;
         return p;
@@ -1830,8 +1854,9 @@ excepthandler(expr_ty type, expr_ty name, asdl_seq * body, int lineno, int
 }
 
 arguments_ty
-arguments(asdl_seq * args, identifier vararg, asdl_seq * kwonlyargs, identifier
-          kwarg, asdl_seq * defaults, asdl_seq * kw_defaults, PyArena *arena)
+arguments(asdl_seq * args, identifier vararg, expr_ty varargannotation,
+          asdl_seq * kwonlyargs, identifier kwarg, expr_ty kwargannotation,
+          asdl_seq * defaults, asdl_seq * kw_defaults, PyArena *arena)
 {
         arguments_ty p;
         p = (arguments_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1841,10 +1866,46 @@ arguments(asdl_seq * args, identifier vararg, asdl_seq * kwonlyargs, identifier
         }
         p->args = args;
         p->vararg = vararg;
+        p->varargannotation = varargannotation;
         p->kwonlyargs = kwonlyargs;
         p->kwarg = kwarg;
+        p->kwargannotation = kwargannotation;
         p->defaults = defaults;
         p->kw_defaults = kw_defaults;
+        return p;
+}
+
+arg_ty
+SimpleArg(identifier arg, expr_ty annotation, PyArena *arena)
+{
+        arg_ty p;
+        if (!arg) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field arg is required for SimpleArg");
+                return NULL;
+        }
+        p = (arg_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p) {
+                PyErr_NoMemory();
+                return NULL;
+        }
+        p->kind = SimpleArg_kind;
+        p->v.SimpleArg.arg = arg;
+        p->v.SimpleArg.annotation = annotation;
+        return p;
+}
+
+arg_ty
+NestedArgs(asdl_seq * args, PyArena *arena)
+{
+        arg_ty p;
+        p = (arg_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p) {
+                PyErr_NoMemory();
+                return NULL;
+        }
+        p->kind = NestedArgs_kind;
+        p->v.NestedArgs.args = args;
         return p;
 }
 
@@ -1979,6 +2040,11 @@ ast2obj_stmt(void* _o)
                 value = ast2obj_list(o->v.FunctionDef.decorators, ast2obj_expr);
                 if (!value) goto failed;
                 if (PyObject_SetAttrString(result, "decorators", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.FunctionDef.returns);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "returns", value) == -1)
                         goto failed;
                 Py_DECREF(value);
                 break;
@@ -2901,7 +2967,7 @@ ast2obj_arguments(void* _o)
 
         result = PyType_GenericNew(arguments_type, NULL, NULL);
         if (!result) return NULL;
-        value = ast2obj_list(o->args, ast2obj_expr);
+        value = ast2obj_list(o->args, ast2obj_arg);
         if (!value) goto failed;
         if (PyObject_SetAttrString(result, "args", value) == -1)
                 goto failed;
@@ -2911,7 +2977,12 @@ ast2obj_arguments(void* _o)
         if (PyObject_SetAttrString(result, "vararg", value) == -1)
                 goto failed;
         Py_DECREF(value);
-        value = ast2obj_list(o->kwonlyargs, ast2obj_expr);
+        value = ast2obj_expr(o->varargannotation);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "varargannotation", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_list(o->kwonlyargs, ast2obj_arg);
         if (!value) goto failed;
         if (PyObject_SetAttrString(result, "kwonlyargs", value) == -1)
                 goto failed;
@@ -2919,6 +2990,11 @@ ast2obj_arguments(void* _o)
         value = ast2obj_identifier(o->kwarg);
         if (!value) goto failed;
         if (PyObject_SetAttrString(result, "kwarg", value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->kwargannotation);
+        if (!value) goto failed;
+        if (PyObject_SetAttrString(result, "kwargannotation", value) == -1)
                 goto failed;
         Py_DECREF(value);
         value = ast2obj_list(o->defaults, ast2obj_expr);
@@ -2931,6 +3007,48 @@ ast2obj_arguments(void* _o)
         if (PyObject_SetAttrString(result, "kw_defaults", value) == -1)
                 goto failed;
         Py_DECREF(value);
+        return result;
+failed:
+        Py_XDECREF(value);
+        Py_XDECREF(result);
+        return NULL;
+}
+
+PyObject*
+ast2obj_arg(void* _o)
+{
+        arg_ty o = (arg_ty)_o;
+        PyObject *result = NULL, *value = NULL;
+        if (!o) {
+                Py_INCREF(Py_None);
+                return Py_None;
+        }
+
+        switch (o->kind) {
+        case SimpleArg_kind:
+                result = PyType_GenericNew(SimpleArg_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_identifier(o->v.SimpleArg.arg);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "arg", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.SimpleArg.annotation);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "annotation", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                break;
+        case NestedArgs_kind:
+                result = PyType_GenericNew(NestedArgs_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.NestedArgs.args, ast2obj_arg);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "args", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                break;
+        }
         return result;
 failed:
         Py_XDECREF(value);
@@ -3008,7 +3126,7 @@ init_ast(void)
         if (PyDict_SetItemString(d, "AST", (PyObject*)AST_type) < 0) return;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return;
-        if (PyModule_AddStringConstant(m, "__version__", "51773") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "52491") < 0)
                 return;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return;
         if (PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0)
@@ -3145,6 +3263,11 @@ init_ast(void)
         if (PyDict_SetItemString(d, "excepthandler",
             (PyObject*)excepthandler_type) < 0) return;
         if (PyDict_SetItemString(d, "arguments", (PyObject*)arguments_type) <
+            0) return;
+        if (PyDict_SetItemString(d, "arg", (PyObject*)arg_type) < 0) return;
+        if (PyDict_SetItemString(d, "SimpleArg", (PyObject*)SimpleArg_type) <
+            0) return;
+        if (PyDict_SetItemString(d, "NestedArgs", (PyObject*)NestedArgs_type) <
             0) return;
         if (PyDict_SetItemString(d, "keyword", (PyObject*)keyword_type) < 0)
             return;

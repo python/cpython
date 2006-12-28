@@ -233,7 +233,12 @@ class SymbolVisitor:
         if parent.nested or isinstance(parent, FunctionScope):
             scope.nested = 1
         self.scopes[node] = scope
-        self._do_args(scope, node.argnames)
+
+        args = node.arguments
+        for kwonly in node.kwonlyargs:
+            args.append(kwonly.arg)
+        self._do_arguments(scope, args)
+
         self.visit(node.code, scope)
         self.handle_free_vars(scope, parent)
 
@@ -275,16 +280,18 @@ class SymbolVisitor:
         if parent.nested or isinstance(parent, FunctionScope):
             scope.nested = 1
         self.scopes[node] = scope
-        self._do_args(scope, node.argnames)
+        self._do_arguments(scope, node.arguments)
         self.visit(node.code, scope)
         self.handle_free_vars(scope, parent)
 
-    def _do_args(self, scope, args):
-        for name in args:
-            if type(name) == types.TupleType:
-                self._do_args(scope, name)
+    def _do_arguments(self, scope, arguments):
+        for node in arguments:
+            if isinstance(node, ast.SimpleArg):
+                scope.add_param(node.name)
+                if node.annotation:
+                    self.visit(node.annotation, scope)
             else:
-                scope.add_param(name)
+                self._do_arguments(scope, node.args)
 
     def handle_free_vars(self, scope, parent):
         parent.add_child(scope)

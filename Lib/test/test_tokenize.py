@@ -219,5 +219,15 @@ def foo():
     if verbose:
         print 'finished'
 
+def test_rarrow():
+    """
+    This function exists solely to test the tokenization of the RARROW
+    operator.
+
+    >>> tokenize(iter(['->']).next)   #doctest: +NORMALIZE_WHITESPACE
+    1,0-1,2:\tOP\t'->'
+    2,0-2,0:\tENDMARKER\t''
+    """
+
 if __name__ == "__main__":
     test_main()

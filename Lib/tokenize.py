@@ -78,7 +78,7 @@ String = group(r"[uU]?[rR]?'[^\n'\\]*(?:\\.[^\n'\\]*)*'",
 # longest operators first (e.g., if = came before ==, == would get
 # recognized as two instances of =).
 Operator = group(r"\*\*=?", r">>=?", r"<<=?", r"!=",
-                 r"//=?",
+                 r"//=?", r"->",
                  r"[+\-*/%&|^=<>]=?",
                  r"~")
 

@@ -12,8 +12,11 @@
 Module: doc*, node
 Stmt: nodes!
 Decorators: nodes!
-Function: decorators&, name*, argnames*, defaults!, kwonlyargs*, flags*, doc*, code
-Lambda: argnames*, defaults!, kwonlyargs*, flags*, code
+Function: decorators&, name*, arguments!, defaults!, kwonlyargs!, returns&, flags*, doc*, code
+Lambda: arguments!, defaults!, kwonlyargs!, flags*, code
+SimpleArg: name*, annotation&
+NestedArgs: args!
+Kwarg: arg, expr
 Class: name*, bases!, doc*, code
 Pass: 
 Break: 
@@ -93,9 +96,10 @@ init(Lambda):
         self.varargs = 1
     if flags & CO_VARKEYWORDS:
         self.kwargs = 1
+    self.returns = None
 
 init(GenExpr):
-    self.argnames = ['.0']
+    self.arguments = [SimpleArg('.0', None)]
     self.varargs = self.kwargs = None
     self.kwonlyargs = ()
 

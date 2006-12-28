@@ -832,7 +832,7 @@ opcode_stack_effect(int opcode, int oparg)
 
 		case RAISE_VARARGS:
 			return -oparg;
-#define NARGS(o) (((o) % 256) + 2*((o) / 256))
+#define NARGS(o) (((o) % 256) + 2*(((o) / 256) % 256))
 		case CALL_FUNCTION:
 			return -NARGS(oparg);
 		case CALL_FUNCTION_VAR:
@@ -841,7 +841,7 @@ opcode_stack_effect(int opcode, int oparg)
 		case CALL_FUNCTION_VAR_KW:
 			return -NARGS(oparg)-2;
 		case MAKE_FUNCTION:
-			return -NARGS(oparg);
+			return -NARGS(oparg) - ((oparg >> 16) & 0xffff);
 #undef NARGS
 		case BUILD_SLICE:
 			if (oparg == 3)
@@ -1267,14 +1267,37 @@ compiler_decorators(struct compiler *c, asdl_seq* decos)
 }
 
 static int
+compiler_unpack_nested(struct compiler *c, asdl_seq *args) {
+	int i, len;
+	len = asdl_seq_LEN(args);
+	ADDOP_I(c, UNPACK_SEQUENCE, len);
+	for (i = 0; i < len; i++) {
+		arg_ty elt = (arg_ty)asdl_seq_GET(args, i);
+		switch (elt->kind) {
+		case SimpleArg_kind:
+			if (!compiler_nameop(c, elt->v.SimpleArg.arg, Store))
+				return 0;
+			break;
+		case NestedArgs_kind:
+			if (!compiler_unpack_nested(c, elt->v.NestedArgs.args))
+				return 0;
+			break;
+		default:
+			return 0;
+		}
+    }
+    return 1;
+}
+
+static int
 compiler_arguments(struct compiler *c, arguments_ty args)
 {
 	int i;
 	int n = asdl_seq_LEN(args->args);
-	/* Correctly handle nested argument lists */
+
 	for (i = 0; i < n; i++) {
-		expr_ty arg = (expr_ty)asdl_seq_GET(args->args, i);
-		if (arg->kind == Tuple_kind) {
+		arg_ty arg = (arg_ty)asdl_seq_GET(args->args, i);
+		if (arg->kind == NestedArgs_kind) {
 			PyObject *id = PyString_FromFormat(".%d", i);
 			if (id == NULL) {
 				return 0;
@@ -1284,7 +1307,8 @@ compiler_arguments(struct compiler *c, arguments_ty args)
 				return 0;
 			}
 			Py_DECREF(id);
-			VISIT(c, expr, arg);
+			if (!compiler_unpack_nested(c, arg->v.NestedArgs.args))
+				return 0;
 		}
 	}
 	return 1;
@@ -1296,10 +1320,10 @@ compiler_visit_kwonlydefaults(struct compiler *c, asdl_seq *kwonlyargs,
 {
 	int i, default_count = 0;
 	for (i = 0; i < asdl_seq_LEN(kwonlyargs); i++) {
-		expr_ty arg = asdl_seq_GET(kwonlyargs, i);
+		arg_ty arg = asdl_seq_GET(kwonlyargs, i);
 		expr_ty default_ = asdl_seq_GET(kw_defaults, i);
 		if (default_) {
-			ADDOP_O(c, LOAD_CONST, arg->v.Name.id, consts);
+			ADDOP_O(c, LOAD_CONST, arg->v.SimpleArg.arg, consts);
 			if (!compiler_visit_expr(c, default_)) {
 			    return -1;
 			}
@@ -1310,14 +1334,112 @@ compiler_visit_kwonlydefaults(struct compiler *c, asdl_seq *kwonlyargs,
 }
 
 static int
+compiler_visit_argannotation(struct compiler *c, identifier id,
+    expr_ty annotation, PyObject *names)
+{
+	if (annotation) {
+		VISIT(c, expr, annotation);
+		if (PyList_Append(names, id))
+			return -1;
+	}
+	return 0;
+}
+
+static int
+compiler_visit_argannotations(struct compiler *c, asdl_seq* args,
+                              PyObject *names)
+{
+	int i, error;
+	for (i = 0; i < asdl_seq_LEN(args); i++) {
+		arg_ty arg = (arg_ty)asdl_seq_GET(args, i);
+		if (arg->kind == NestedArgs_kind)
+			error = compiler_visit_argannotations(
+			           c,
+			           arg->v.NestedArgs.args,
+			           names);
+		else
+			error = compiler_visit_argannotation(
+			           c,
+			           arg->v.SimpleArg.arg,
+			           arg->v.SimpleArg.annotation,
+			           names);
+		if (error)
+			return error;
+	}
+	return 0;
+}
+
+static int
+compiler_visit_annotations(struct compiler *c, arguments_ty args,
+                           expr_ty returns)
+{
+	/* push arg annotations and a list of the argument names. return the #
+	   of items pushed. this is out-of-order wrt the source code. */
+	static identifier return_str;
+	PyObject *names;
+	int len;
+	names = PyList_New(0);
+	if (!names)
+		return -1;
+
+	if (compiler_visit_argannotations(c, args->args, names))
+		goto error;
+	if (args->varargannotation &&
+	    compiler_visit_argannotation(c, args->vararg,
+	                                 args->varargannotation, names))
+		goto error;
+	if (compiler_visit_argannotations(c, args->kwonlyargs, names))
+		goto error;
+	if (args->kwargannotation &&
+	    compiler_visit_argannotation(c, args->kwarg,
+	                                 args->kwargannotation, names))
+		goto error;
+
+	if (!return_str) {
+		return_str = PyString_InternFromString("return");
+		if (!return_str)
+			goto error;
+	}
+	if (compiler_visit_argannotation(c, return_str, returns, names)) {
+		goto error;
+	}
+
+	len = PyList_GET_SIZE(names);
+	if (len) {
+		/* convert names to a tuple and place on stack */
+		PyObject *elt;
+		int i;
+		PyObject *s = PyTuple_New(len);
+		if (!s)
+			goto error;
+		for (i = 0; i < len; i++) {
+			elt = PyList_GET_ITEM(names, i);
+			Py_INCREF(elt);
+			PyTuple_SET_ITEM(s, i, elt);
+		}
+		ADDOP_O(c, LOAD_CONST, s, consts);
+		Py_DECREF(s);
+		len++; /* include the just-pushed tuple */
+	}
+	Py_DECREF(names);
+	return len;
+
+error:
+	Py_DECREF(names);
+	return -1;
+}
+
+static int
 compiler_function(struct compiler *c, stmt_ty s)
 {
 	PyCodeObject *co;
 	PyObject *first_const = Py_None;
 	arguments_ty args = s->v.FunctionDef.args;
+	expr_ty returns = s->v.FunctionDef.returns;
 	asdl_seq* decos = s->v.FunctionDef.decorators;
 	stmt_ty st;
 	int i, n, docstring, kw_default_count = 0, arglength;
+	int num_annotations;
 
 	assert(s->kind == FunctionDef_kind);
 
@@ -1332,6 +1454,7 @@ compiler_function(struct compiler *c, stmt_ty s)
 	}
 	if (args->defaults)
 		VISIT_SEQ(c, expr, args->defaults);
+	num_annotations = compiler_visit_annotations(c, args, returns);
 
 	if (!compiler_enter_scope(c, s->v.FunctionDef.name, (void *)s,
 				  s->lineno))
@@ -1364,9 +1487,11 @@ compiler_function(struct compiler *c, stmt_ty s)
 
 	arglength = asdl_seq_LEN(args->defaults);
 	arglength |= kw_default_count << 8;
+	arglength |= num_annotations << 16;
 	compiler_make_closure(c, co, arglength);
 	Py_DECREF(co);
 
+        /* decorators */
 	for (i = 0; i < asdl_seq_LEN(decos); i++) {
 		ADDOP_I(c, CALL_FUNCTION, 1);
 	}

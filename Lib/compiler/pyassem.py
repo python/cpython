@@ -314,7 +314,7 @@ class PyFlowGraph(FlowGraph):
     super_init = FlowGraph.__init__
 
     def __init__(self, name, filename,
-                 args=(), kwonlyargs={}, optimized=0, klass=None):
+                 args=(), kwonlyargs=(), optimized=0, klass=None):
         self.super_init()
         self.name = name
         self.filename = filename
@@ -338,24 +338,40 @@ class PyFlowGraph(FlowGraph):
         # The offsets used by LOAD_CLOSURE/LOAD_DEREF refer to both
         # kinds of variables.
         self.closure = []
-        self.varnames = list(args) or []
-        for i in range(len(self.varnames)):
+        # The varnames list needs to be computed after flags have been set
+        self.varnames = []
+        self.stage = RAW
+
+    def computeVarnames(self):
+        # self.args is positional, vararg, kwarg, kwonly, unpacked. This
+        # order is due to the visit order in symbol module and could change.
+        # argcount is # len(self.args) - len(unpacked). We want
+        # self.varnames to be positional, kwonly, vararg, kwarg, unpacked
+        # and argcount to be len(positional).
+
+        # determine starting index of unpacked, kwonly, vararg
+        u = self.argcount    # starting index of unpacked
+        k = u - len(self.kwonlyargs)  # starting index of kwonly
+        v = k - self.checkFlag(CO_VARARGS) - self.checkFlag(CO_VARKEYWORDS)
+
+        vars = list(self.args)
+        self.varnames = vars[:v] + vars[k:u] + vars[v:k] + vars[u:]
+        self.argcount = v
+
+        # replace TupleArgs with calculated var name
+        for i in range(self.argcount):
             var = self.varnames[i]
             if isinstance(var, TupleArg):
                 self.varnames[i] = var.getName()
-        self.stage = RAW
 
     def setDocstring(self, doc):
         self.docstring = doc
 
     def setFlag(self, flag):
         self.flags = self.flags | flag
-        if flag == CO_VARARGS:
-            self.argcount = self.argcount - 1
 
     def checkFlag(self, flag):
-        if self.flags & flag:
-            return 1
+        return (self.flags & flag) == flag
 
     def setFreeVars(self, names):
         self.freevars = list(names)
@@ -366,6 +382,7 @@ class PyFlowGraph(FlowGraph):
     def getCode(self):
         """Get a Python code object"""
         assert self.stage == RAW
+        self.computeVarnames()
         self.computeStackDepth()
         self.flattenGraph()
         assert self.stage == FLAT
@@ -575,6 +592,12 @@ class PyFlowGraph(FlowGraph):
                     lnotab.nextLine(oparg)
                     continue
                 hi, lo = twobyte(oparg)
+
+                extended, hi = twobyte(hi)
+                if extended:
+                  ehi, elo = twobyte(extended)
+                  lnotab.addCode(self.opnum['EXTENDED_ARG'], elo, ehi)
+
                 try:
                     lnotab.addCode(self.opnum[opname], lo, hi)
                 except ValueError:
@@ -595,8 +618,6 @@ class PyFlowGraph(FlowGraph):
         else:
             nlocals = len(self.varnames)
         argcount = self.argcount
-        if self.flags & CO_VARKEYWORDS:
-            argcount = argcount - 1
         kwonlyargcount = len(self.kwonlyargs)
         return new.code(argcount, kwonlyargcount,
                         nlocals, self.stacksize, self.flags,
@@ -809,7 +830,8 @@ class StackDepthTracker:
         return self.CALL_FUNCTION(argc)-2
     def MAKE_FUNCTION(self, argc):
         hi, lo = divmod(argc, 256)
-        return -(lo + hi * 2)
+        ehi, hi = divmod(hi, 256)
+        return -(lo + hi * 2 + ehi)
     def MAKE_CLOSURE(self, argc):
         # XXX need to account for free variables too!
         return -argc

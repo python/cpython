@@ -36,6 +36,8 @@ TO DO
 Core and Builtins
 -----------------
 
+- Added function annotations per PEP 3107.
+
 - Moved intern() to sys.intern().
 
 - exec is now a function.
