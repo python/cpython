@@ -2612,7 +2612,7 @@ static PyMethodDef _functions[] = {
     {NULL, NULL}
 };
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 init_elementtree(void)
 {
     PyObject* m;

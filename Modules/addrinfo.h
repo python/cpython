@@ -170,7 +170,7 @@ struct sockaddr_storage {
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern void freehostent Py_PROTO((struct hostent *));
+extern void freehostent(struct hostent *);
 #ifdef __cplusplus
 }
 #endif
