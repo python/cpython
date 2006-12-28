@@ -182,8 +182,8 @@ w_object(PyObject *v, WFILE *p)
 		}
 		else {
 			char buf[256]; /* Plenty to format any double */
-			PyFloat_AsReprString(buf, (PyFloatObject *)v);
-			n = strlen(buf);
+			n = _PyFloat_Repr(PyFloat_AS_DOUBLE(v),
+					  buf, sizeof(buf));
 			w_byte(TYPE_FLOAT, p);
 			w_byte((int)n, p);
 			w_string(buf, (int)n, p);
@@ -209,28 +209,14 @@ w_object(PyObject *v, WFILE *p)
 		}
 		else {
 			char buf[256]; /* Plenty to format any double */
-			PyFloatObject *temp;
 			w_byte(TYPE_COMPLEX, p);
-			temp = (PyFloatObject*)PyFloat_FromDouble(
-				PyComplex_RealAsDouble(v));
-			if (!temp) {
-				p->error = 1;
-				return;
-			}
-			PyFloat_AsReprString(buf, temp);
-			Py_DECREF(temp);
+			n = _PyFloat_Repr(PyComplex_RealAsDouble(v),
+					  buf, sizeof(buf));
 			n = strlen(buf);
 			w_byte((int)n, p);
 			w_string(buf, (int)n, p);
-			temp = (PyFloatObject*)PyFloat_FromDouble(
-				PyComplex_ImagAsDouble(v));
-			if (!temp) {
-				p->error = 1;
-				return;
-			}
-			PyFloat_AsReprString(buf, temp);
-			Py_DECREF(temp);
-			n = strlen(buf);
+			n = _PyFloat_Repr(PyComplex_ImagAsDouble(v),
+					  buf, sizeof(buf));
 			w_byte((int)n, p);
 			w_string(buf, (int)n, p);
 		}

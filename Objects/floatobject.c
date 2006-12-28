@@ -220,19 +220,18 @@ PyFloat_AsDouble(PyObject *op)
 /* Methods */
 
 static void
-format_float(char *buf, size_t buflen, PyFloatObject *v, int precision)
+format_double(char *buf, size_t buflen, double ob_fval, int precision)
 {
 	register char *cp;
 	char format[32];
-	/* Subroutine for float_repr and float_print.
+	/* Subroutine for float_repr, float_str, float_print and others.
 	   We want float numbers to be recognizable as such,
 	   i.e., they should contain a decimal point or an exponent.
 	   However, %g may print the number as an integer;
 	   in such cases, we append ".0" to the string. */
 
-	assert(PyFloat_Check(v));
 	PyOS_snprintf(format, 32, "%%.%ig", precision);
-	PyOS_ascii_formatd(buf, buflen, format, v->ob_fval);
+	PyOS_ascii_formatd(buf, buflen, format, ob_fval);
 	cp = buf;
 	if (*cp == '-')
 		cp++;
@@ -249,14 +248,11 @@ format_float(char *buf, size_t buflen, PyFloatObject *v, int precision)
 	}
 }
 
-/* XXX PyFloat_AsStringEx should not be a public API function (for one
-   XXX thing, its signature passes a buffer without a length; for another,
-   XXX it isn't useful outside this file).
-*/
-void
-PyFloat_AsStringEx(char *buf, PyFloatObject *v, int precision)
+static void
+format_float(char *buf, size_t buflen, PyFloatObject *v, int precision)
 {
-	format_float(buf, 100, v, precision);
+	assert(PyFloat_Check(v));
+	format_double(buf, buflen, PyFloat_AS_DOUBLE(v), precision);
 }
 
 /* Macro and helper that convert PyObject obj to a C double and store
@@ -311,21 +307,6 @@ convert_to_double(PyObject **v, double *dbl)
 
 #define PREC_REPR	17
 #define PREC_STR	12
-
-/* XXX PyFloat_AsString and PyFloat_AsReprString should be deprecated:
-   XXX they pass a char buffer without passing a length.
-*/
-void
-PyFloat_AsString(char *buf, PyFloatObject *v)
-{
-	format_float(buf, 100, v, PREC_STR);
-}
-
-void
-PyFloat_AsReprString(char *buf, PyFloatObject *v)
-{
-	format_float(buf, 100, v, PREC_REPR);
-}
 
 /* ARGSUSED */
 static int
@@ -1275,7 +1256,7 @@ PyFloat_Fini(void)
 				if (PyFloat_CheckExact(p) &&
 				    p->ob_refcnt != 0) {
 					char buf[100];
-					PyFloat_AsString(buf, p);
+					format_float(buf, sizeof(buf), p, PREC_STR);
 					/* XXX(twouters) cast refcount to
 					   long until %zd is universally
 					   available
@@ -1525,6 +1506,14 @@ _PyFloat_Pack8(double x, unsigned char *p, int le)
 		}
 		return 0;
 	}
+}
+
+/* Should only be used by marshal. */
+int
+_PyFloat_Repr(double x, char *p, size_t len)
+{
+	format_double(p, len, x, PREC_REPR);
+	return (int)strlen(p);
 }
 
 double
