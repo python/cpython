@@ -373,7 +373,7 @@ def check(mod):
     v.visit(mod)
 
     for t in v.types:
-        if not mod.types.has_key(t) and not t in builtin_types:
+        if t not in mod.types and not t in builtin_types:
             v.errors += 1
             uses = ", ".join(v.types[t])
             print "Undefined type %s, used in %s" % (t, uses)
