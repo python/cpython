@@ -166,7 +166,7 @@ wait()
 communicate(input=None)
     Interact with process: Send data to stdin.  Read data from stdout
     and stderr, until end-of-file is reached.  Wait for process to
-    terminate.  The optional stdin argument should be a string to be
+    terminate.  The optional input argument should be a string to be
     sent to the child process, or None, if no data should be sent to
     the child.
 
