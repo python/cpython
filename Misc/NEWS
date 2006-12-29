@@ -18,6 +18,9 @@ Core and builtins
   custom ``__eq__()`` method to confuse set internals when class instances
   were used as a set's elements and the ``__eq__()`` method mutated the set.
 
+- The repr for self-referential sets and fronzensets now shows "..." instead
+  of falling into infinite recursion.
+
 - Eliminated unnecessary repeated calls to hash() by set.intersection() and
   set.symmetric_difference_update().
 
