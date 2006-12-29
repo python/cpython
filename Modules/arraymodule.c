@@ -1495,7 +1495,7 @@ PyMethodDef array_methods[] = {
 	 copy_doc},
 	{"count",	(PyCFunction)array_count,	METH_O,
 	 count_doc},
-	{"__deepcopy__",(PyCFunction)array_copy,	METH_NOARGS,
+	{"__deepcopy__",(PyCFunction)array_copy,	METH_O,
 	 copy_doc},
 	{"extend",      (PyCFunction)array_extend,	METH_O,
 	 extend_doc},
