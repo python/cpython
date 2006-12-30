@@ -21,6 +21,11 @@ class BadCmp:
     def __cmp__(self, other):
         raise RuntimeError
 
+class ReprWrapper:
+    'Used to test self-referential repr() calls'
+    def __repr__(self):
+        return repr(self.value)
+
 class TestJointOps(unittest.TestCase):
     # Tests common to both set and frozenset
 
@@ -243,6 +248,27 @@ class TestJointOps(unittest.TestCase):
             self.assertRaises(RuntimeError, s.add, BadCmp())
             self.assertRaises(RuntimeError, s.discard, BadCmp())
             self.assertRaises(RuntimeError, s.remove, BadCmp())
+
+    def test_cyclical_repr(self):
+        w = ReprWrapper()
+        s = self.thetype([w])
+        w.value = s
+        name = repr(s).partition('(')[0]    # strip class name from repr string
+        self.assertEqual(repr(s), '%s([%s(...)])' % (name, name))
+
+    def test_cyclical_print(self):
+        w = ReprWrapper()
+        s = self.thetype([w])
+        w.value = s
+        try:
+            fo = open(test_support.TESTFN, "wb")
+            print >> fo, s,
+            fo.close()
+            fo = open(test_support.TESTFN, "rb")
+            self.assertEqual(fo.read(), repr(s))
+        finally:
+            fo.close()
+            os.remove(test_support.TESTFN)
 
 class TestSet(TestJointOps):
     thetype = set
