@@ -130,7 +130,7 @@ __all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'nlargest',
            'nsmallest']
 
 from itertools import islice, repeat, count, imap, izip, tee
-from operator import itemgetter
+from operator import itemgetter, neg
 import bisect
 
 def heappush(heap, item):
@@ -315,8 +315,6 @@ def nsmallest(n, iterable, key=None):
 
     Equivalent to:  sorted(iterable, key=key)[:n]
     """
-    if key is None:
-        return _nsmallest(n, iterable)
     in1, in2 = tee(iterable)
     it = izip(imap(key, in1), count(), in2)                 # decorate
     result = _nsmallest(n, it)
@@ -328,10 +326,8 @@ def nlargest(n, iterable, key=None):
 
     Equivalent to:  sorted(iterable, key=key, reverse=True)[:n]
     """
-    if key is None:
-        return _nlargest(n, iterable)
     in1, in2 = tee(iterable)
-    it = izip(imap(key, in1), count(), in2)                 # decorate
+    it = izip(imap(key, in1), imap(neg, count()), in2)      # decorate
     result = _nlargest(n, it)
     return map(itemgetter(2), result)                       # undecorate
 
