@@ -104,20 +104,20 @@ class TestHeap(unittest.TestCase):
             self.assertEqual(heap_sorted, sorted(data))
 
     def test_nsmallest(self):
-        data = [random.randrange(2000) for i in range(1000)]
-        f = lambda x:  x * 547 % 2000
-        for n in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
-            self.assertEqual(nsmallest(n, data), sorted(data)[:n])
-            self.assertEqual(nsmallest(n, data, key=f),
-                             sorted(data, key=f)[:n])
+        data = [(random.randrange(2000), i) for i in range(1000)]
+        for f in (None, lambda x:  x[0] * 547 % 2000):
+            for n in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
+                self.assertEqual(nsmallest(n, data), sorted(data)[:n])
+                self.assertEqual(nsmallest(n, data, key=f),
+                                 sorted(data, key=f)[:n])
 
     def test_nlargest(self):
-        data = [random.randrange(2000) for i in range(1000)]
-        f = lambda x:  x * 547 % 2000
-        for n in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
-            self.assertEqual(nlargest(n, data), sorted(data, reverse=True)[:n])
-            self.assertEqual(nlargest(n, data, key=f),
-                             sorted(data, key=f, reverse=True)[:n])
+        data = [(random.randrange(2000), i) for i in range(1000)]
+        for f in (None, lambda x:  x[0] * 547 % 2000):
+            for n in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
+                self.assertEqual(nlargest(n, data), sorted(data, reverse=True)[:n])
+                self.assertEqual(nlargest(n, data, key=f),
+                                 sorted(data, key=f, reverse=True)[:n])
 
 
 #==============================================================================
