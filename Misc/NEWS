@@ -323,6 +323,10 @@ Extension Modules
 Tests
 -----
 
+- Added test.test_support.EnvironmentVarGuard.  It's a class that provides a
+  context manager so that one can temporarily set or unset environment
+  variables.
+
 - Added guard_warnings_filter to test.test_support.  It returns a context
   manager that protects the 'warnings' module's filter from being mutated
   once the context has been exited.
