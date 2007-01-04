@@ -636,13 +636,11 @@ class _MainThread(Thread):
         _active_limbo_lock.acquire()
         _active[_get_ident()] = self
         _active_limbo_lock.release()
-        import atexit
-        atexit.register(self.__exitfunc)
 
     def _set_daemon(self):
         return False
 
-    def __exitfunc(self):
+    def _exitfunc(self):
         self._Thread__stop()
         t = _pickSomeNonDaemonThread()
         if t:
@@ -715,9 +713,11 @@ def enumerate():
 
 from thread import stack_size
 
-# Create the main thread object
+# Create the main thread object,
+# and make it available for the interpreter
+# (Py_Main) as threading._shutdown.
 
-_MainThread()
+_shutdown = _MainThread()._exitfunc
 
 # get thread-local implementation, either from the thread
 # module, or from the python fallback
