@@ -281,4 +281,22 @@ Execute the \class{unittest.TestSuite} instance \var{suite}.
 The optional argument \var{testclass} accepts one of the test classes in the
 suite so as to print out more detailed information on where the testing suite
 originated from.
+
+The \module{test.test_support} module defines the following classes:
+
+\begin{classdesc}{EnvironmentVarGuard}{}
+Class used to temporarily set or unset environment variables.  Instances can be
+used as a context manager.
+\versionadded{2.6}
+\end{classdesc}
+
+\begin{methoddesc}{set}{envvar, value}
+Temporarily set the environment variable \code{envvar} to the value of
+\code{value}.
+\end{methoddesc}
+
+\begin{methoddesc}{unset}{envvar}
+Temporarily unset the environment variable \code{envvar}.
+\end{methoddesc}
+
 \end{funcdesc}

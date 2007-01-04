@@ -279,7 +279,39 @@ def guard_warnings_filter():
         yield
     finally:
         warnings.filters = original_filters
-    
+
+class EnvironmentVarGuard(object):
+
+    """Class to help protect the environment variable properly.  Can be used as
+    a context manager."""
+
+    def __init__(self):
+        from os import environ
+        self._environ = environ
+        self._unset = set()
+        self._reset = dict()
+
+    def set(self, envvar, value):
+        if envvar not in self._environ:
+            self._unset.add(envvar)
+        else:
+            self._reset[envvar] = self._environ[envvar]
+        self._environ[envvar] = value
+
+    def unset(self, envvar):
+        if envvar in self._environ:
+            self._reset[envvar] = self._environ[envvar]
+            del self._environ[envvar]
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *ignore_exc):
+        for envvar, value in self._reset.iteritems():
+            self._environ[envvar] = value
+        for unset in self._unset:
+            del self._environ[unset]
+
 
 #=======================================================================
 # Decorator for running a function in a different locale, correctly resetting
