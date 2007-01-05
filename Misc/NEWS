@@ -124,6 +124,8 @@ Extension Modules
 
 - Make regex engine raise MemoryError if allocating memory fails.
 
+- Added support for linking the bsddb module against BerkeleyDB 4.5.x.
+
 
 Library
 -------
