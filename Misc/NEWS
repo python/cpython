@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Prevent seg fault on shutdown which could occur if an object
+  raised a warning.
+
 - Bug #1566280: Explicitly invoke threading._shutdown from Py_Main,
   to avoid relying on atexit.
 
