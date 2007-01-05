@@ -33,7 +33,7 @@ else:
 
 class DBEnvClosedEarlyCrash(unittest.TestCase):
     def setUp(self):
-        self.homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
+        self.homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
         try: os.mkdir(self.homeDir)
         except os.error: pass
         tempfile.tempdir = self.homeDir
