@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Collin Winter was given SVN access on 05 Jan 2007 by NCN, for PEP
+  update access.
+
 - Lars Gustaebel was given SVN access on 20 Dec 2006 by NCN, for tarfile.py
   related work.
 
