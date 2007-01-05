@@ -49,7 +49,7 @@ class JoinTestCase(unittest.TestCase):
 
     def setUp(self):
         self.filename = self.__class__.__name__ + '.db'
-        homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
+        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
         self.homeDir = homeDir
         try: os.mkdir(homeDir)
         except os.error: pass
