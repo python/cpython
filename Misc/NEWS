@@ -322,6 +322,8 @@ Extension Modules
   been defined.  This prevents an interactive Python from waking up 10
   times per second.  Patch by Richard Boulton.
 
+- Added support for linking the bsddb module against BerkeleyDB 4.5.x.
+
 
 Tests
 -----
