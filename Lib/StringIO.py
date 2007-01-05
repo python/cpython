@@ -137,7 +137,7 @@ class StringIO:
         return r
 
     def readline(self, length=None):
-        """Read one entire line from the file.
+        r"""Read one entire line from the file.
 
         A trailing newline character is kept in the string (but may be absent
         when a file ends with an incomplete line). If the size argument is
