@@ -640,7 +640,8 @@ PyErr_WarnEx(PyObject *category, const char *message, Py_ssize_t stack_level)
 
 	if (warnings_module != NULL) {
 		dict = PyModule_GetDict(warnings_module);
-		func = PyDict_GetItemString(dict, "warn");
+		if (dict != NULL)
+			func = PyDict_GetItemString(dict, "warn");
 	}
 	if (func == NULL) {
 		PySys_WriteStderr("warning: %s\n", message);
