@@ -24,8 +24,8 @@ item: Global
   Dialogs Version=8
   Version File=2.4a1
   Version Description=Python Programming Language
-  Version Copyright=©2001-2006 Python Software Foundation
-  Version Company=PythonLabs at Zope Corporation
+  Version Copyright=©2001-2007 Python Software Foundation
+  Version Company=Python Software Foundation
   Crystal Format=10111100101100000010001001001001
   Step View=&All
   Variable Name1=_WISE_
