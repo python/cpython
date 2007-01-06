@@ -437,6 +437,9 @@
 			RelativePath="..\Objects\bufferobject.c">
 		</File>
 		<File
+			RelativePath="..\Objects\bytesobject.c">
+		</File>
+		<File
 			RelativePath="..\Objects\cellobject.c">
 		</File>
 		<File
