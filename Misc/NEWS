@@ -109,6 +109,15 @@ Core and builtins
 Library
 -------
 
+- Bug #411881: logging.handlers: bare except clause removed from
+  SMTPHandler.emit. Now, only ImportError is trapped.
+
+- Bug #411881: logging.handlers: bare except clause removed from
+  SocketHandler.createSocket. Now, only socket.error is trapped.
+
+- Bug #411881: logging: bare except clause removed from LogRecord.__init__.
+  Now, only ValueError, TypeError and AttributeError are trapped.
+
 - Patch #1504073: Fix tarfile.open() for mode "r" with a fileobj argument.
 
 - Patch #1182394 from Shane Holloway: speed up HMAC.hexdigest.
