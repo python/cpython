@@ -911,15 +911,14 @@ dequeiter_next(dequeiterobject *it)
 {
 	PyObject *item;
 
-	if (it->counter == 0)
-		return NULL;
-
 	if (it->deque->state != it->state) {
 		it->counter = 0;
 		PyErr_SetString(PyExc_RuntimeError,
 				"deque mutated during iteration");
 		return NULL;
 	}
+	if (it->counter == 0)
+		return NULL;        
 	assert (!(it->b == it->deque->rightblock &&
 		  it->index > it->deque->rightindex));
 
