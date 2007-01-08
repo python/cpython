@@ -129,6 +129,9 @@ Extension Modules
 
 - Added support for linking the bsddb module against BerkeleyDB 4.5.x.
 
+- Modifying an empty deque during iteration now raises RuntimeError
+  instead of StopIteration.
+
 
 Library
 -------
