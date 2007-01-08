@@ -214,7 +214,7 @@ class LogRecord:
     information to be logged.
     """
     def __init__(self, name, level, pathname, lineno,
-                 msg, args, exc_info, func):
+                 msg, args, exc_info, func=None):
         """
         Initialize a logging record with interesting information.
         """
@@ -910,9 +910,12 @@ class Manager:
         Ensure that children of the placeholder ph are connected to the
         specified logger.
         """
-        #for c in ph.loggers:
+        name = alogger.name
+        namelen = len(name)
         for c in ph.loggerMap.keys():
-            if string.find(c.parent.name, alogger.name) <> 0:
+            #The if means ... if not c.parent.name.startswith(nm)
+            #if string.find(c.parent.name, nm) <> 0:
+            if c.parent.name[:namelen] != name:
                 alogger.parent = c.parent
                 c.parent = alogger
 
