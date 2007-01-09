@@ -109,6 +109,10 @@ Core and builtins
 Library
 -------
 
+- Bug #1627575: logging: Added _open() method to FileHandler which can
+  be used to reopen files. The FileHandler instance now saves the
+  encoding (which can be None) in an attribute called "encoding".
+
 - Bug #411881: logging.handlers: bare except clause removed from
   SMTPHandler.emit. Now, only ImportError is trapped.
 
