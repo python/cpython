@@ -396,6 +396,12 @@ class TestVariousIteratorArgs(unittest.TestCase):
         d.pop()
         self.assertRaises(RuntimeError, it.next)
 
+    def test_runtime_error_on_empty_deque(self):
+        d = deque()
+        it = iter(d)
+        d.append(10)
+        self.assertRaises(RuntimeError, it.next)
+
 class Deque(deque):
     pass
 

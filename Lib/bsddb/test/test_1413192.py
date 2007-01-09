@@ -14,7 +14,7 @@ except ImportError:
 env_name = '.'
 
 env = db.DBEnv()
-env.open(env_name, db.DB_CREATE | db.DB_INIT_TXN)
+env.open(env_name, db.DB_CREATE | db.DB_INIT_TXN | db.DB_INIT_MPOOL)
 the_txn = env.txn_begin()
 
 map = db.DB(env)

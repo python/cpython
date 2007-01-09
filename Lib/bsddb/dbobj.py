@@ -55,8 +55,9 @@ class DBEnv:
         return self._cobj.set_lg_max(*args, **kwargs)
     def set_lk_detect(self, *args, **kwargs):
         return self._cobj.set_lk_detect(*args, **kwargs)
-    def set_lk_max(self, *args, **kwargs):
-        return self._cobj.set_lk_max(*args, **kwargs)
+    if db.version() < (4,5):
+        def set_lk_max(self, *args, **kwargs):
+            return self._cobj.set_lk_max(*args, **kwargs)
     def set_lk_max_locks(self, *args, **kwargs):
         return self._cobj.set_lk_max_locks(*args, **kwargs)
     def set_lk_max_lockers(self, *args, **kwargs):

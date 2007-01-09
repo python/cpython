@@ -510,6 +510,7 @@ class _singlefileMailbox(Mailbox):
         self._next_key = 0
         self._pending = False   # No changes require rewriting the file.
         self._locked = False
+        self._file_length = None        # Used to record mailbox size
 
     def add(self, message):
         """Add message and return assigned key."""
@@ -563,7 +564,21 @@ class _singlefileMailbox(Mailbox):
         """Write any pending changes to disk."""
         if not self._pending:
             return
-        self._lookup()
+
+        # In order to be writing anything out at all, self._toc must
+        # already have been generated (and presumably has been modified
+        # by adding or deleting an item).
+        assert self._toc is not None
+        
+        # Check length of self._file; if it's changed, some other process
+        # has modified the mailbox since we scanned it.
+        self._file.seek(0, 2)
+        cur_len = self._file.tell()
+        if cur_len != self._file_length:
+            raise ExternalClashError('Size of mailbox file changed '
+                                     '(expected %i, found %i)' %
+                                     (self._file_length, cur_len))
+        
         new_file = _create_temporary(self._path)
         try:
             new_toc = {}
@@ -639,6 +654,7 @@ class _singlefileMailbox(Mailbox):
         offsets = self._install_message(message)
         self._post_message_hook(self._file)
         self._file.flush()
+        self._file_length = self._file.tell()  # Record current length of mailbox
         return offsets
 
 
@@ -730,6 +746,7 @@ class mbox(_mboxMMDF):
                 break
         self._toc = dict(enumerate(zip(starts, stops)))
         self._next_key = len(self._toc)
+        self._file_length = self._file.tell()
 
 
 class MMDF(_mboxMMDF):
@@ -773,6 +790,8 @@ class MMDF(_mboxMMDF):
                 break
         self._toc = dict(enumerate(zip(starts, stops)))
         self._next_key = len(self._toc)
+        self._file.seek(0, 2)
+        self._file_length = self._file.tell()
 
 
 class MH(Mailbox):
@@ -1198,7 +1217,9 @@ class Babyl(_singlefileMailbox):
         self._toc = dict(enumerate(zip(starts, stops)))
         self._labels = dict(enumerate(label_lists))
         self._next_key = len(self._toc)
-
+        self._file.seek(0, 2)
+        self._file_length = self._file.tell()
+        
     def _pre_mailbox_hook(self, f):
         """Called before writing the mailbox to file f."""
         f.write('BABYL OPTIONS:%sVersion: 5%sLabels:%s%s\037' %
@@ -1884,7 +1905,8 @@ def _create_temporary(path):
 def _sync_flush(f):
     """Ensure changes to file f are physically on disk."""
     f.flush()
-    os.fsync(f.fileno())
+    if hasattr(os, 'fsync'):
+        os.fsync(f.fileno())
 
 def _sync_close(f):
     """Close file f, ensuring all changes are physically on disk."""

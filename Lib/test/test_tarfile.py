@@ -110,7 +110,7 @@ class ReadTest(BaseTest):
         """Test seek() method of _FileObject, incl. random reading.
         """
         if self.sep != "|":
-            filename = "0-REGTYPE"
+            filename = "0-REGTYPE-TEXT"
             self.tar.extract(filename, dirname())
             f = open(os.path.join(dirname(), filename), "rb")
             data = f.read()
@@ -149,6 +149,16 @@ class ReadTest(BaseTest):
             s2 = fobj.readlines()
             self.assert_(s1 == s2,
                          "readlines() after seek failed")
+            fobj.seek(0)
+            self.assert_(len(fobj.readline()) == fobj.tell(),
+                         "tell() after readline() failed")
+            fobj.seek(512)
+            self.assert_(len(fobj.readline()) + 512 == fobj.tell(),
+                         "tell() after seek() and readline() failed")
+            fobj.seek(0)
+            line = fobj.readline()
+            self.assert_(fobj.read() == data[len(line):],
+                         "read() after readline() failed")
             fobj.close()
 
     def test_old_dirtype(self):
@@ -279,6 +289,20 @@ class WriteTest(BaseTest):
                                  tarinfo, f)
             else:
                 self.dst.addfile(tarinfo, f)
+
+    def test_add_self(self):
+        dstname = os.path.abspath(self.dstname)
+
+        self.assertEqual(self.dst.name, dstname, "archive name must be absolute")
+
+        self.dst.add(dstname)
+        self.assertEqual(self.dst.getnames(), [], "added the archive to itself")
+
+        cwd = os.getcwd()
+        os.chdir(dirname())
+        self.dst.add(dstname)
+        os.chdir(cwd)
+        self.assertEqual(self.dst.getnames(), [], "added the archive to itself")
 
 
 class Write100Test(BaseTest):
@@ -601,6 +625,38 @@ class FileModeTest(unittest.TestCase):
         self.assertEqual(tarfile.filemode(0755), '-rwxr-xr-x')
         self.assertEqual(tarfile.filemode(07111), '---s--s--t')
 
+class HeaderErrorTest(unittest.TestCase):
+
+    def test_truncated_header(self):
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, "")
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, "filename\0")
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, "\0" * 511)
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, "\0" * 513)
+
+    def test_empty_header(self):
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, "\0" * 512)
+
+    def test_invalid_header(self):
+        buf = tarfile.TarInfo("filename").tobuf()
+        buf = buf[:148] + "foo\0\0\0\0\0" + buf[156:] # invalid number field.
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, buf)
+
+    def test_bad_checksum(self):
+        buf = tarfile.TarInfo("filename").tobuf()
+        b = buf[:148] + "        " + buf[156:] # clear the checksum field.
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, b)
+        b = "a" + buf[1:] # manipulate the buffer, so checksum won't match.
+        self.assertRaises(tarfile.HeaderError, tarfile.TarInfo.frombuf, b)
+
+class OpenFileobjTest(BaseTest):
+    # Test for SF bug #1496501.
+
+    def test_opener(self):
+        fobj = StringIO.StringIO("foo\n")
+        try:
+            tarfile.open("", "r", fileobj=fobj)
+        except tarfile.ReadError:
+            self.assertEqual(fobj.tell(), 0, "fileobj's position has moved")
 
 if bz2:
     # Bzip2 TestCases
@@ -646,6 +702,8 @@ def test_main():
 
     tests = [
         FileModeTest,
+        HeaderErrorTest,
+        OpenFileobjTest,
         ReadTest,
         ReadStreamTest,
         ReadDetectTest,

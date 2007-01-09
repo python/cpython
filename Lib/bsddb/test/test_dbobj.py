@@ -2,6 +2,7 @@
 import sys, os, string
 import unittest
 import glob
+import tempfile
 
 try:
     # For Pythons w/distutils pybsddb
@@ -19,7 +20,7 @@ class dbobjTestCase(unittest.TestCase):
     db_name = 'test-dbobj.db'
 
     def setUp(self):
-        homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
+        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
         self.homeDir = homeDir
         try: os.mkdir(homeDir)
         except os.error: pass

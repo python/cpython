@@ -2210,7 +2210,7 @@ The mode and buffersize arguments are as for the built-in open() function.");
 
 /*
  * This is the guts of the recv() and recv_into() methods, which reads into a
- * char buffer.  If you have any inc/def ref to do to the objects that contain
+ * char buffer.  If you have any inc/dec ref to do to the objects that contain
  * the buffer, do it in the caller.  This function returns the number of bytes
  * succesfully read.  If there was an error, it returns -1.  Note that it is
  * also possible that we return a number of bytes smaller than the request

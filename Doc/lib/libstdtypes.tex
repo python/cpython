@@ -1660,9 +1660,12 @@ flush the read-ahead buffer.
 
 \begin{methoddesc}[file]{seek}{offset\optional{, whence}}
   Set the file's current position, like \code{stdio}'s \cfunction{fseek()}.
-  The \var{whence} argument is optional and defaults to \code{0}
-  (absolute file positioning); other values are \code{1} (seek
-  relative to the current position) and \code{2} (seek relative to the
+  The \var{whence} argument is optional and defaults to 
+  \code{os.SEEK_SET} or \code{0}
+  (absolute file positioning); other values are \code{os.SEEK_CUR} or \code{1}
+  (seek
+  relative to the current position) and \code{os.SEEK_END} or \code{2} 
+  (seek relative to the
   file's end).  There is no return value.  Note that if the file is
   opened for appending (mode \code{'a'} or \code{'a+'}), any
   \method{seek()} operations will be undone at the next write.  If the

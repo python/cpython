@@ -180,10 +180,9 @@ class WichmannHill_TestBasicOps(TestBasicOps):
 
     def test_bigrand(self):
         # Verify warnings are raised when randrange is too large for random()
-        oldfilters = warnings.filters[:]
-        warnings.filterwarnings("error", "Underlying random")
-        self.assertRaises(UserWarning, self.gen.randrange, 2**60)
-        warnings.filters[:] = oldfilters
+        with test_support.guard_warnings_filter():
+            warnings.filterwarnings("error", "Underlying random")
+            self.assertRaises(UserWarning, self.gen.randrange, 2**60)
 
 class SystemRandom_TestBasicOps(TestBasicOps):
     gen = random.SystemRandom()
@@ -440,6 +439,14 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
             k = int(1.00001 + _log(n, 2))
             self.assertEqual(k, numbits)        # note the stronger assertion
             self.assert_(2**k > n > 2**(k-1))   # note the stronger assertion
+
+    def test_randrange_bug_1590891(self):
+        start = 1000000000000
+        stop = -100000000000000000000
+        step = -200
+        x = self.gen.randrange(start, stop, step)
+        self.assert_(stop < x <= start)
+        self.assertEqual((x+stop)%step, 0)
 
 _gammacoeff = (0.9999999999995183, 676.5203681218835, -1259.139216722289,
               771.3234287757674,  -176.6150291498386, 12.50734324009056,

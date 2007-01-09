@@ -1310,7 +1310,7 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
 
 def _mdiff(fromlines, tolines, context=None, linejunk=None,
            charjunk=IS_CHARACTER_JUNK):
-    """Returns generator yielding marked up from/to side by side differences.
+    r"""Returns generator yielding marked up from/to side by side differences.
 
     Arguments:
     fromlines -- list of text lines to compared to tolines

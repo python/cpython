@@ -53,7 +53,7 @@ class BaseThreadedTestCase(unittest.TestCase):
         if verbose:
             dbutils._deadlock_VerboseFile = sys.stdout
 
-        homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
+        homeDir = os.path.join(tempfile.gettempdir(), 'db_home')
         self.homeDir = homeDir
         try:
             os.mkdir(homeDir)
