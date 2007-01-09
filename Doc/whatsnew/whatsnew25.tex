@@ -5,7 +5,7 @@
 % Fix XXX comments
 
 \title{What's New in Python 2.5}
-\release{1.0}
+\release{1.01}
 \author{A.M. Kuchling}
 \authoraddress{\email{amk@amk.ca}}
 
@@ -556,13 +556,14 @@ generators:
   where the generator's execution is paused.
 
   \item \method{close()} raises a new \exception{GeneratorExit}
-  exception inside the generator to terminate the iteration.  
-  On receiving this
-  exception, the generator's code must either raise
-  \exception{GeneratorExit} or \exception{StopIteration}; catching the 
-  exception and doing anything else is illegal and will trigger
-  a \exception{RuntimeError}.  \method{close()} will also be called by 
-  Python's garbage collector when the generator is garbage-collected.
+  exception inside the generator to terminate the iteration.  On
+  receiving this exception, the generator's code must either raise
+  \exception{GeneratorExit} or \exception{StopIteration}.  Catching
+  the \exception{GeneratorExit} exception and returning a value is
+  illegal and will trigger a \exception{RuntimeError}; if the function
+  raises some other exception, that exception is propagated to the
+  caller.  \method{close()} will also be called by Python's garbage
+  collector when the generator is garbage-collected.
 
   If you need to run cleanup code when a \exception{GeneratorExit} occurs,
   I suggest using a \code{try: ... finally:} suite instead of 
@@ -1662,6 +1663,13 @@ single number as \file{pystone.py} does.
 
 \item The \module{pyexpat} module now uses version 2.0 of the Expat parser.
 (Contributed by Trent Mick.)
+
+\item The \class{Queue} class provided by the \module{Queue} module
+gained two new methods.  \method{join()} blocks until all items in
+the queue have been retrieved and all processing work on the items 
+have been completed.  Worker threads call the other new method, 
+\method{task_done()}, to signal that processing for an item has been
+completed.  (Contributed by Raymond Hettinger.)
 
 \item The old \module{regex} and \module{regsub} modules, which have been 
 deprecated ever since Python 2.0, have finally been deleted.  

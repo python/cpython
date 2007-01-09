@@ -569,9 +569,30 @@ at once is specified by \var{bufsize}.  See the \UNIX{} manual page
 Receive data from the socket.  The return value is a pair
 \code{(\var{string}, \var{address})} where \var{string} is a string
 representing the data received and \var{address} is the address of the
-socket sending the data.  The optional \var{flags} argument has the
-same meaning as for \method{recv()} above.
+socket sending the data.  See the \UNIX{} manual page
+\manpage{recv}{2} for the meaning of the optional argument
+\var{flags}; it defaults to zero.
 (The format of \var{address} depends on the address family --- see above.)
+\end{methoddesc}
+
+\begin{methoddesc}[socket]{recvfrom_into}{buffer\optional{, nbytes\optional{, flags}}}
+Receive data from the socket, writing it into \var{buffer} instead of 
+creating a new string.  The return value is a pair
+\code{(\var{nbytes}, \var{address})} where \var{nbytes} is the number
+of bytes received and \var{address} is the address of the socket
+sending the data.  See the \UNIX{} manual page
+\manpage{recv}{2} for the meaning of the optional argument
+\var{flags}; it defaults to zero.  (The format of \var{address}
+depends on the address family --- see above.)
+\end{methoddesc}
+
+\begin{methoddesc}[socket]{recv_into}{buffer\optional{, nbytes\optional{, flags}}}
+Receive up to \var{nbytes} bytes from the socket,
+storing the data into a buffer rather than creating a new string.    
+If \var{nbytes} is not specified (or 0), 
+receive up to the size available in the given buffer.
+See the \UNIX{} manual page \manpage{recv}{2} for the meaning of the
+optional argument \var{flags}; it defaults to zero.
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{send}{string\optional{, flags}}

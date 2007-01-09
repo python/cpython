@@ -175,6 +175,33 @@ static int RunModule(char *module)
 	return 0;
 }
 
+/* Wait until threading._shutdown completes, provided
+   the threading module was imported in the first place.
+   The shutdown routine will wait until all non-daemon
+   "threading" threads have completed. */
+#include "abstract.h"
+static void
+WaitForThreadShutdown(void)
+{
+#ifdef WITH_THREAD
+	PyObject *result;
+	PyThreadState *tstate = PyThreadState_GET();
+	PyObject *threading = PyMapping_GetItemString(tstate->interp->modules,
+						      "threading");
+	if (threading == NULL) {
+		/* threading not imported */
+		PyErr_Clear();
+		return;
+	}
+	result = PyObject_CallMethod(threading, "_shutdown", "");
+	if (result == NULL)
+		PyErr_WriteUnraisable(threading);
+	else
+		Py_DECREF(result);
+	Py_DECREF(threading);
+#endif
+}
+
 /* Main program */
 
 int
@@ -482,6 +509,8 @@ Py_Main(int argc, char **argv)
 	    (filename != NULL || command != NULL || module != NULL))
 		/* XXX */
 		sts = PyRun_AnyFileFlags(stdin, "<stdin>", &cf) != 0;
+
+	WaitForThreadShutdown();
 
 	Py_Finalize();
 #ifdef RISCOS

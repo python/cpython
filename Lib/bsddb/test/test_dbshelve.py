@@ -242,7 +242,7 @@ class ThreadHashShelveTestCase(BasicShelveTestCase):
 class BasicEnvShelveTestCase(DBShelveTestCase):
     def do_open(self):
         self.homeDir = homeDir = os.path.join(
-            os.path.dirname(sys.argv[0]), 'db_home')
+            tempfile.gettempdir(), 'db_home')
         try: os.mkdir(homeDir)
         except os.error: pass
         self.env = db.DBEnv()

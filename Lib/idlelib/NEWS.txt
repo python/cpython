@@ -3,8 +3,13 @@ What's New in IDLE 2.6a1?
 
 *Release date: XX-XXX-200X*
 
+- Avoid hang when encountering a duplicate in a completion list. Bug 1571112.
+
 - Patch #1362975: Rework CodeContext indentation algorithm to
   avoid hard-coding pixel widths.
+
+- Bug #813342: Start the IDLE subprocess with -Qnew if the parent
+  is started with that option.
 
 - Some syntax errors were being caught by tokenize during the tabnanny
   check, resulting in obscure error messages.  Do the syntax check
@@ -12,6 +17,12 @@ What's New in IDLE 2.6a1?
 
 - IDLE's version number takes a big jump to match the version number of
   the Python release of which it's a part.
+
+
+What's New in IDLE 1.2?
+=======================
+
+*Release date: 19-SEP-2006*
 
 
 What's New in IDLE 1.2c1?
@@ -43,6 +54,13 @@ What's New in IDLE 1.2b3?
 =========================
 
 *Release date: 03-AUG-2006*
+
+- Bug #1525817: Don't truncate short lines in IDLE's tool tips.
+
+- Bug #1517990: IDLE keybindings on MacOS X now work correctly
+
+- Bug #1517996: IDLE now longer shows the default Tk menu when a
+  path browser, class browser or debugger is the frontmost window on MacOS X
 
 - EditorWindow.test() was failing.  Bug 1417598
 
@@ -79,6 +97,8 @@ What's New in IDLE 1.2a1?
 =========================
 
 *Release date: 05-APR-2006*
+
+- Patch #1162825: Support non-ASCII characters in IDLE window titles.
 
 - Source file f.flush() after writing; trying to avoid lossage if user
   kills GUI.

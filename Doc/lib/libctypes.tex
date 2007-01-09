@@ -2085,10 +2085,10 @@ classmethod, normally it returns \code{obj} if that is an instance of
 the type.  Some types accept other objects as well.
 \end{methoddesc}
 
-\begin{methoddesc}{in_dll}{name, library}
+\begin{methoddesc}{in_dll}{library, name}
 This method returns a ctypes type instance exported by a shared
 library. \var{name} is the name of the symbol that exports the data,
-\code{library} is the loaded shared library.
+\var{library} is the loaded shared library.
 \end{methoddesc}
 
 Common instance variables of ctypes data types:

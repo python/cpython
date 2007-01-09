@@ -989,7 +989,7 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 	char small_buffer[SMALLCHUNK];
 	char *buffer = small_buffer;
 	size_t buffersize = SMALLCHUNK;
-	int bytesread = 0;
+	Py_off_t bytesread = 0;
 	size_t readsize;
 	int chunksize;
 	int bzerror;

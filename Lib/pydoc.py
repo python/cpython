@@ -1741,6 +1741,9 @@ Here is a list of available topics.  Enter any topic name to get more help.
 Sorry, topic and keyword documentation is not available because the Python
 HTML documentation files could not be found.  If you have installed them,
 please set the environment variable PYTHONDOCS to indicate their location.
+
+On the Microsoft Windows operating system, the files can be built by
+running "hh -decompile . PythonNN.chm" in the C:\PythonNN\Doc> directory.
 ''')
             return
         target = self.topics.get(topic, self.keywords.get(topic))

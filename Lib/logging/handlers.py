@@ -347,7 +347,7 @@ class SocketHandler(logging.Handler):
             try:
                 self.sock = self.makeSocket()
                 self.retryTime = None # next time, no delay before trying
-            except:
+            except socket.error:
                 #Creation failed, so set the retry time and return.
                 if self.retryTime is None:
                     self.retryPeriod = self.retryStart
@@ -738,7 +738,7 @@ class SMTPHandler(logging.Handler):
             import smtplib
             try:
                 from email.Utils import formatdate
-            except:
+            except ImportError:
                 formatdate = self.date_time
             port = self.mailport
             if not port:

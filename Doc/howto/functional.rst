@@ -1398,10 +1398,10 @@ Python documentation
 '''''''''''''''''''''''''''
 
 http://docs.python.org/lib/module-itertools.html:
-Documentation ``for the itertools`` module.
+Documentation for the ``itertools`` module.
 
 http://docs.python.org/lib/module-operator.html:
-Documentation ``for the operator`` module.
+Documentation for the ``operator`` module.
 
 http://www.python.org/dev/peps/pep-0289/:
 PEP 289: "Generator Expressions"

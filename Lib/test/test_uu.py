@@ -114,11 +114,11 @@ class UUFileTest(unittest.TestCase):
 
     def test_encode(self):
         try:
-            fin = open(self.tmpin, 'wb')
+            fin = open(self.tmpin, 'w')
             fin.write(plaintext)
             fin.close()
 
-            fin = open(self.tmpin, 'rb')
+            fin = open(self.tmpin, 'r')
             fout = open(self.tmpout, 'w')
             uu.encode(fin, fout, self.tmpin, mode=0644)
             fin.close()
@@ -130,7 +130,7 @@ class UUFileTest(unittest.TestCase):
             self.assertEqual(s, encodedtextwrapped % (0644, self.tmpin))
 
             # in_file and out_file as filenames
-            uu.encode(self.tmpin, self.tmpout, mode=0644)
+            uu.encode(self.tmpin, self.tmpout, self.tmpin, mode=0644)
             fout = open(self.tmpout, 'r')
             s = fout.read()
             fout.close()
@@ -142,11 +142,11 @@ class UUFileTest(unittest.TestCase):
 
     def test_decode(self):
         try:
-            f = open(self.tmpin, 'wb')
+            f = open(self.tmpin, 'w')
             f.write(encodedtextwrapped % (0644, self.tmpout))
             f.close()
 
-            f = open(self.tmpin, 'rb')
+            f = open(self.tmpin, 'r')
             uu.decode(f)
             f.close()
 
@@ -163,11 +163,11 @@ class UUFileTest(unittest.TestCase):
         try:
             f = cStringIO.StringIO(encodedtextwrapped % (0644, self.tmpout))
 
-            f = open(self.tmpin, 'rb')
+            f = open(self.tmpin, 'r')
             uu.decode(f)
             f.close()
 
-            f = open(self.tmpin, 'rb')
+            f = open(self.tmpin, 'r')
             self.assertRaises(uu.Error, uu.decode, f)
             f.close()
         finally:

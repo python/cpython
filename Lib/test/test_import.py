@@ -1,10 +1,11 @@
-from test.test_support import TESTFN, run_unittest
+from test.test_support import TESTFN, run_unittest, guard_warnings_filter
 
 import unittest
 import os
 import random
 import sys
 import py_compile
+import warnings
 
 
 def remove_files(name):
@@ -204,15 +205,11 @@ class ImportTest(unittest.TestCase):
         self.assert_(y is test.test_support, y.__name__)
 
     def test_import_initless_directory_warning(self):
-        import warnings
-        oldfilters = warnings.filters[:]
-        warnings.simplefilter('error', ImportWarning);
-        try:
+        with guard_warnings_filter():
             # Just a random non-package directory we always expect to be
             # somewhere in sys.path...
+            warnings.simplefilter('error', ImportWarning)
             self.assertRaises(ImportWarning, __import__, "site-packages")
-        finally:
-            warnings.filters = oldfilters
 
 def test_main(verbose=None):
     run_unittest(ImportTest)

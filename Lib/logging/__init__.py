@@ -41,8 +41,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
-__version__ = "0.4.9.9"
-__date__    = "06 February 2006"
+__version__ = "0.5.0.0"
+__date__    = "08 January 2007"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -243,7 +243,7 @@ class LogRecord:
         try:
             self.filename = os.path.basename(pathname)
             self.module = os.path.splitext(self.filename)[0]
-        except:
+        except (TypeError, ValueError, AttributeError):
             self.filename = pathname
             self.module = "Unknown module"
         self.exc_info = exc_info
