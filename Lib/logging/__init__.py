@@ -783,6 +783,10 @@ class FileHandler(StreamHandler):
         StreamHandler.close(self)
 
     def _open(self):
+        """
+        Open the current base file with the (original) mode and encoding.
+        Return the resulting stream.
+        """
         if self.encoding is None:
             stream = open(self.baseFilename, self.mode)
         else:
