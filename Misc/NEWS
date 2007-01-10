@@ -105,6 +105,8 @@ Extension Modules
 Library
 -------
 
+- Removed all traces of the sets module.
+
 Build
 -----
 
