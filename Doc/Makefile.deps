@@ -109,7 +109,6 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libplatform.tex \
 	lib/libfpectl.tex \
 	lib/libgc.tex \
-	lib/libsets.tex \
 	lib/libweakref.tex \
 	lib/libinspect.tex \
 	lib/libpydoc.tex \
