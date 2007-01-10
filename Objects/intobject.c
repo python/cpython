@@ -1070,7 +1070,7 @@ Convert a string or number to an integer, if possible.  A floating point\n\
 argument will be truncated towards zero (this does not include a string\n\
 representation of a floating point number!)  When converting a string, use\n\
 the optional base.  It is an error to supply a base when converting a\n\
-non-string. If base is zero, the proper base is guessed based on the\n\
+non-string.  If base is zero, the proper base is guessed based on the\n\
 string content.  If the argument is outside the integer range a\n\
 long object will be returned instead.");
 
