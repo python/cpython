@@ -1836,7 +1836,7 @@ comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs, PyArena *arena)
 }
 
 excepthandler_ty
-excepthandler(expr_ty type, expr_ty name, asdl_seq * body, int lineno, int
+excepthandler(expr_ty type, identifier name, asdl_seq * body, int lineno, int
               col_offset, PyArena *arena)
 {
         excepthandler_ty p;
@@ -2928,7 +2928,7 @@ ast2obj_excepthandler(void* _o)
         if (PyObject_SetAttrString(result, "type", value) == -1)
                 goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(o->name);
+        value = ast2obj_identifier(o->name);
         if (!value) goto failed;
         if (PyObject_SetAttrString(result, "name", value) == -1)
                 goto failed;

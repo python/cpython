@@ -825,11 +825,33 @@ class CodeGenerator:
                 self.emit('POP_TOP')
             self.emit('POP_TOP')
             if target:
-                self.visit(target)
+                cleanup_body = self.newBlock()
+                cleanup_final = self.newBlock()
+                target_name = target[1]
+            
+                self.storeName(target_name)
+                self.emit('POP_TOP')
+                self.emit('SETUP_FINALLY', cleanup_final)
+                self.nextBlock(cleanup_body)
+                self.setups.push((TRY_FINALLY, cleanup_body))
+                self.visit(body)
+                self.emit('POP_BLOCK')
+                self.setups.pop()
+                self.emit('LOAD_CONST', None)
+                self.nextBlock(cleanup_final)
+                self.setups.push((END_FINALLY, cleanup_final))
+                
+                
+                self.emit('LOAD_CONST', None)
+                self.storeName(target_name)
+                self._implicitNameOp('DELETE', target_name)
+                
+                self.emit('END_FINALLY')
+                self.setups.pop()
             else:
                 self.emit('POP_TOP')
-            self.emit('POP_TOP')
-            self.visit(body)
+                self.emit('POP_TOP')
+                self.visit(body)
             self.emit('JUMP_FORWARD', end)
             if expr:
                 self.nextBlock(next)

@@ -988,16 +988,16 @@ class Transformer:
         for i in range(3, len(nodelist), 3):
             node = nodelist[i]
             if node[0] == symbol.except_clause:
-                # except_clause: 'except' [expr [',' expr]] */
+                # except_clause: 'except' [expr ['as' NAME]] */
                 if len(node) > 2:
-                    expr1 = self.com_node(node[2])
+                    expr = self.com_node(node[2])
                     if len(node) > 4:
-                        expr2 = self.com_assign(node[4], OP_ASSIGN)
+                        expr_name = node[4]
                     else:
-                        expr2 = None
+                        expr_name = None
                 else:
-                    expr1 = expr2 = None
-                clauses.append((expr1, expr2, self.com_node(nodelist[i+2])))
+                    expr = expr_name = None
+                clauses.append((expr, expr_name, self.com_node(nodelist[i+2])))
 
             if node[0] == token.NAME:
                 if node[1] == 'else':

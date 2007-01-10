@@ -1335,7 +1335,8 @@ symtable_visit_excepthandler(struct symtable *st, excepthandler_ty eh)
 	if (eh->type)
 		VISIT(st, expr, eh->type);
 	if (eh->name)
-		VISIT(st, expr, eh->name);
+        if (!symtable_add_def(st, eh->name, DEF_LOCAL))
+			return 0;
 	VISIT_SEQ(st, stmt, eh->body);
 	return 1;
 }
