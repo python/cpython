@@ -23,7 +23,7 @@ while 1:
         tk.record(line)
         try:
             result = tk.call('eval', cmd)
-        except _tkinter.TclError, msg:
+        except _tkinter.TclError as msg:
             print 'TclError:', msg
         else:
             if result: print result

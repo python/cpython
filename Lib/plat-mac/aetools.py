@@ -57,7 +57,7 @@ aekeywords = [
 def missed(ae):
     try:
         desc = ae.AEGetAttributeDesc('miss', 'keyw')
-    except AE.Error, msg:
+    except AE.Error as msg:
         return None
     return desc.data
 
@@ -86,7 +86,7 @@ def unpackevent(ae, formodulename=""):
     for key in aekeywords:
         try:
             desc = ae.AEGetAttributeDesc(key, '****')
-        except (AE.Error, MacOS.Error), msg:
+        except (AE.Error, MacOS.Error) as msg:
             if msg[0] != -1701 and msg[0] != -1704:
                 raise
             continue

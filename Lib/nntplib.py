@@ -127,7 +127,7 @@ class NNTP:
             except NNTPPermanentError:
                 # error 500, probably 'not implemented'
                 pass
-            except NNTPTemporaryError, e:
+            except NNTPTemporaryError as e:
                 if user and e.response[:3] == '480':
                     # Need authorization before 'mode reader'
                     readermode_afterauth = 1

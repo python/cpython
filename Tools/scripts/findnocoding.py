@@ -78,7 +78,7 @@ usage = """Usage: %s [-cd] paths...
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], 'cd')
-except getopt.error, msg:
+except getopt.error as msg:
     print >>sys.stderr, msg
     print >>sys.stderr, usage
     sys.exit(1)

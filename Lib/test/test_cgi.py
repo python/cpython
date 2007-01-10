@@ -50,7 +50,7 @@ def do_test(buf, method):
         raise ValueError, "unknown method: %s" % method
     try:
         return cgi.parse(fp, env, strict_parsing=1)
-    except StandardError, err:
+    except StandardError as err:
         return ComparableException(err)
 
 # A list of test cases.  Each test case is a a two-tuple that contains

@@ -330,7 +330,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             arg = arg[colon+1:].lstrip()
             try:
                 lineno = int(arg)
-            except ValueError, msg:
+            except ValueError as msg:
                 print >>self.stdout, '*** Bad lineno:', arg
                 return
         else:
@@ -618,7 +618,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.curframe.f_lineno = arg
                 self.stack[self.curindex] = self.stack[self.curindex][0], arg
                 self.print_stack_entry(self.stack[self.curindex])
-            except ValueError, e:
+            except ValueError as e:
                 print >>self.stdout, '*** Jump failed:', e
     do_j = do_jump
 

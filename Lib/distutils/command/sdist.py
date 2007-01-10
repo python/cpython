@@ -333,7 +333,7 @@ class sdist (Command):
 
             try:
                 self.filelist.process_template_line(line)
-            except DistutilsTemplateError, msg:
+            except DistutilsTemplateError as msg:
                 self.warn("%s, line %d: %s" % (template.filename,
                                                template.current_line,
                                                msg))

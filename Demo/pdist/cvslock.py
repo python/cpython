@@ -129,7 +129,7 @@ class Lock:
                 self.lockdir = self.cvslck
                 os.mkdir(self.cvslck, 0777)
                 return
-            except os.error, msg:
+            except os.error as msg:
                 self.lockdir = None
                 if msg[0] == EEXIST:
                     try:
@@ -234,7 +234,7 @@ def MultipleWriteLock(repositories, delay = DELAY):
         for r in repositories:
             try:
                 locks.append(WriteLock(r, 0))
-            except Locked, instance:
+            except Locked as instance:
                 del locks
                 break
         else:

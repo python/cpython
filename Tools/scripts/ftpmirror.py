@@ -45,7 +45,7 @@ def main():
     global verbose, interactive, mac, rmok, nologin
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'a:bil:mnp:qrs:v')
-    except getopt.error, msg:
+    except getopt.error as msg:
         usage(msg)
     login = ''
     passwd = ''
@@ -108,13 +108,13 @@ def mirrorsubdir(f, localdir):
         if verbose: print 'Creating local directory', repr(localdir)
         try:
             makedir(localdir)
-        except os.error, msg:
+        except os.error as msg:
             print "Failed to establish local directory", repr(localdir)
             return
     infofilename = os.path.join(localdir, '.mirrorinfo')
     try:
         text = open(infofilename, 'r').read()
-    except IOError, msg:
+    except IOError as msg:
         text = '{}'
     try:
         info = eval(text)
@@ -190,13 +190,13 @@ def mirrorsubdir(f, localdir):
                 print "Creating symlink %r -> %r" % (filename, linkto)
             try:
                 os.symlink(linkto, tempname)
-            except IOError, msg:
+            except IOError as msg:
                 print "Can't create %r: %s" % (tempname, msg)
                 continue
         else:
             try:
                 fp = open(tempname, 'wb')
-            except IOError, msg:
+            except IOError as msg:
                 print "Can't create %r: %s" % (tempname, msg)
                 continue
             if verbose:
@@ -209,7 +209,7 @@ def mirrorsubdir(f, localdir):
             try:
                 f.retrbinary('RETR ' + filename,
                              fp1.write, 8*1024)
-            except ftplib.error_perm, msg:
+            except ftplib.error_perm as msg:
                 print msg
             t1 = time.time()
             bytes = fp.tell()
@@ -222,7 +222,7 @@ def mirrorsubdir(f, localdir):
             pass            # Ignore the error
         try:
             os.rename(tempname, fullname)
-        except os.error, msg:
+        except os.error as msg:
             print "Can't rename %r to %r: %s" % (tempname, fullname, msg)
             continue
         info[filename] = infostuff
@@ -292,7 +292,7 @@ def mirrorsubdir(f, localdir):
             print 'Remote cwd', repr(subdir)
         try:
             f.cwd(subdir)
-        except ftplib.error_perm, msg:
+        except ftplib.error_perm as msg:
             print "Can't chdir to", repr(subdir), ":", repr(msg)
         else:
             if verbose: print 'Mirroring as', repr(localsubdir)
@@ -322,13 +322,13 @@ def remove(fullname):
             return 0
         try:
             os.rmdir(fullname)
-        except os.error, msg:
+        except os.error as msg:
             print "Can't remove local directory %r: %s" % (fullname, msg)
             return 0
     else:
         try:
             os.unlink(fullname)
-        except os.error, msg:
+        except os.error as msg:
             print "Can't remove local file %r: %s" % (fullname, msg)
             return 0
     return 1

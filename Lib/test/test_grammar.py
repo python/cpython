@@ -554,7 +554,7 @@ hello world
         assert 1, lambda x:x+1
         try:
             assert 0, "msg"
-        except AssertionError, e:
+        except AssertionError as e:
             self.assertEquals(e.args[0], "msg")
         else:
             if __debug__:
@@ -612,7 +612,7 @@ hello world
     def testTry(self):
         ### try_stmt: 'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite]
         ###         | 'try' ':' suite 'finally' ':' suite
-        ### except_clause: 'except' [expr [',' expr]]
+        ### except_clause: 'except' [expr ['as' expr]]
         try:
             1/0
         except ZeroDivisionError:
@@ -621,14 +621,14 @@ hello world
             pass
         try: 1/0
         except EOFError: pass
-        except TypeError, msg: pass
-        except RuntimeError, msg: pass
+        except TypeError as msg: pass
+        except RuntimeError as msg: pass
         except: pass
         else: pass
         try: 1/0
         except (EOFError, TypeError, ZeroDivisionError): pass
         try: 1/0
-        except (EOFError, TypeError, ZeroDivisionError), msg: pass
+        except (EOFError, TypeError, ZeroDivisionError) as msg: pass
         try: pass
         finally: pass
 

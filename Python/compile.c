@@ -1955,13 +1955,66 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 		}
 		ADDOP(c, POP_TOP);
 		if (handler->name) {
+            basicblock *cleanup_end, *cleanup_body;
+            expr_context_ty orig_ctx;
+            
+            assert(handler->name->kind == Name_kind);
+
+            cleanup_end = compiler_new_block(c);
+            cleanup_body = compiler_new_block(c);
+            if(!(cleanup_end || cleanup_body))
+                return 0;
+
 			VISIT(c, expr, handler->name);
+            ADDOP(c, POP_TOP);
+
+            /*
+                try:
+                    # body
+                except type as name:
+                    try:
+                        # body
+                    finally:
+                        name = None
+                        del name
+            */
+
+            /* second try: */
+            ADDOP_JREL(c, SETUP_FINALLY, cleanup_end);
+	        compiler_use_next_block(c, cleanup_body);
+	        if (!compiler_push_fblock(c, FINALLY_TRY, cleanup_body))
+		        return 0;
+
+            /* second # body */
+	        VISIT_SEQ(c, stmt, handler->body);
+	        ADDOP(c, POP_BLOCK);
+	        compiler_pop_fblock(c, FINALLY_TRY, cleanup_body);
+
+            /* finally: */
+	        ADDOP_O(c, LOAD_CONST, Py_None, consts);
+	        compiler_use_next_block(c, cleanup_end);
+	        if (!compiler_push_fblock(c, FINALLY_END, cleanup_end))
+		        return 0;
+
+            /* name = None */
+            ADDOP_O(c, LOAD_CONST, Py_None, consts);
+            orig_ctx = handler->name->v.Name.ctx;
+            handler->name->v.Name.ctx = Store;
+            VISIT(c, expr, handler->name);
+
+            /* del name */            
+            handler->name->v.Name.ctx = Del;
+            VISIT(c, expr, handler->name);
+            handler->name->v.Name.ctx = orig_ctx;
+
+	        ADDOP(c, END_FINALLY);
+	        compiler_pop_fblock(c, FINALLY_END, cleanup_end);
 		}
 		else {
-			ADDOP(c, POP_TOP);
+            ADDOP(c, POP_TOP);
+            ADDOP(c, POP_TOP);
+		    VISIT_SEQ(c, stmt, handler->body);
 		}
-		ADDOP(c, POP_TOP);
-		VISIT_SEQ(c, stmt, handler->body);
 		ADDOP_JREL(c, JUMP_FORWARD, end);
 		compiler_use_next_block(c, except);
 		if (handler->type)

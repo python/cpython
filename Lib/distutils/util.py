@@ -229,7 +229,7 @@ def subst_vars (s, local_vars):
 
     try:
         return re.sub(r'\$([a-zA-Z_][a-zA-Z_0-9]*)', _subst, s)
-    except KeyError, var:
+    except KeyError as var:
         raise ValueError, "invalid variable '$%s'" % var
 
 # subst_vars ()

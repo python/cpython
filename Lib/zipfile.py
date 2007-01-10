@@ -812,7 +812,7 @@ class PyZipFile(ZipFile):
                 print "Compiling", file_py
             try:
                 py_compile.compile(file_py, file_pyc, None, True)
-            except py_compile.PyCompileError,err:
+            except py_compile.PyCompileError as err:
                 print err.msg
             fname = file_pyc
         else:

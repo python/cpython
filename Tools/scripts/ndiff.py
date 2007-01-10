@@ -61,7 +61,7 @@ def fail(msg):
 def fopen(fname):
     try:
         return open(fname, 'U')
-    except IOError, detail:
+    except IOError as detail:
         return fail("couldn't open " + fname + ": " + str(detail))
 
 # open two files & spray the diff to stdout; return false iff a problem
@@ -85,7 +85,7 @@ def main(args):
     import getopt
     try:
         opts, args = getopt.getopt(args, "qr:")
-    except getopt.error, detail:
+    except getopt.error as detail:
         return fail(str(detail))
     noisy = 1
     qseen = rseen = 0

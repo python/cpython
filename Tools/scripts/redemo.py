@@ -104,7 +104,7 @@ class ReDemo:
                                        self.getflags())
             bg = self.promptdisplay['background']
             self.statusdisplay.config(text="", background=bg)
-        except re.error, msg:
+        except re.error as msg:
             self.compiled = None
             self.statusdisplay.config(
                     text="re.error: %s" % str(msg),

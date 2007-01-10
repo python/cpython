@@ -78,7 +78,7 @@ def _spawn_nt (cmd,
         # spawn for NT requires a full path to the .exe
         try:
             rc = os.spawnv(os.P_WAIT, executable, cmd)
-        except OSError, exc:
+        except OSError as exc:
             # this seems to happen when the command isn't found
             raise DistutilsExecError, \
                   "command '%s' failed: %s" % (cmd[0], exc[-1])
@@ -103,7 +103,7 @@ def _spawn_os2 (cmd,
         # spawnv for OS/2 EMX requires a full path to the .exe
         try:
             rc = os.spawnv(os.P_WAIT, executable, cmd)
-        except OSError, exc:
+        except OSError as exc:
             # this seems to happen when the command isn't found
             raise DistutilsExecError, \
                   "command '%s' failed: %s" % (cmd[0], exc[-1])
@@ -131,7 +131,7 @@ def _spawn_posix (cmd,
             #print "cmd[0] =", cmd[0]
             #print "cmd =", cmd
             exec_fn(cmd[0], cmd)
-        except OSError, e:
+        except OSError as e:
             sys.stderr.write("unable to execute %s: %s\n" %
                              (cmd[0], e.strerror))
             os._exit(1)
@@ -146,7 +146,7 @@ def _spawn_posix (cmd,
         while 1:
             try:
                 (pid, status) = os.waitpid(pid, 0)
-            except OSError, exc:
+            except OSError as exc:
                 import errno
                 if exc.errno == errno.EINTR:
                     continue

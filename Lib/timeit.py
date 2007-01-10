@@ -209,7 +209,7 @@ def main(args=None):
         opts, args = getopt.getopt(args, "n:s:r:tcvh",
                                    ["number=", "setup=", "repeat=",
                                     "time", "clock", "verbose", "help"])
-    except getopt.error, err:
+    except getopt.error as err:
         print err
         print "use -h/--help for command line help"
         return 2

@@ -97,7 +97,7 @@ def raises():
 def test_raise():
     try:
         raises()
-    except Exception, exc:
+    except Exception as exc:
         x = 1
 
 test_raise.events = [(0, 'call'),
@@ -127,7 +127,7 @@ def _settrace_and_raise(tracefunc):
 def settrace_and_raise(tracefunc):
     try:
         _settrace_and_raise(tracefunc)
-    except RuntimeError, exc:
+    except RuntimeError as exc:
         pass
 
 settrace_and_raise.events = [(2, 'exception'),
@@ -432,7 +432,7 @@ def no_jump_too_far_forwards(output):
     try:
         output.append(2)
         output.append(3)
-    except ValueError, e:
+    except ValueError as e:
         output.append('after' in str(e))
 
 no_jump_too_far_forwards.jump = (3, 6)
@@ -442,7 +442,7 @@ def no_jump_too_far_backwards(output):
     try:
         output.append(2)
         output.append(3)
-    except ValueError, e:
+    except ValueError as e:
         output.append('before' in str(e))
 
 no_jump_too_far_backwards.jump = (3, -1)
@@ -472,7 +472,7 @@ no_jump_to_except_2.output = [True]
 def no_jump_to_except_3(output):
     try:
         output.append(2)
-    except ValueError, e:
+    except ValueError as e:
         output.append('except' in str(e))
 
 no_jump_to_except_3.jump = (2, 3)
@@ -481,7 +481,7 @@ no_jump_to_except_3.output = [True]
 def no_jump_to_except_4(output):
     try:
         output.append(2)
-    except (ValueError, RuntimeError), e:
+    except (ValueError, RuntimeError) as e:
         output.append('except' in str(e))
 
 no_jump_to_except_4.jump = (2, 3)
@@ -492,7 +492,7 @@ def no_jump_forwards_into_block(output):
         output.append(2)
         for i in 1, 2:
             output.append(4)
-    except ValueError, e:
+    except ValueError as e:
         output.append('into' in str(e))
 
 no_jump_forwards_into_block.jump = (2, 4)
@@ -503,7 +503,7 @@ def no_jump_backwards_into_block(output):
         for i in 1, 2:
             output.append(3)
         output.append(4)
-    except ValueError, e:
+    except ValueError as e:
         output.append('into' in str(e))
 
 no_jump_backwards_into_block.jump = (4, 3)
@@ -516,7 +516,7 @@ def no_jump_into_finally_block(output):
             x = 1
         finally:
             output.append(6)
-    except ValueError, e:
+    except ValueError as e:
         output.append('finally' in str(e))
 
 no_jump_into_finally_block.jump = (4, 6)
@@ -529,7 +529,7 @@ def no_jump_out_of_finally_block(output):
         finally:
             output.append(5)
             output.append(6)
-    except ValueError, e:
+    except ValueError as e:
         output.append('finally' in str(e))
 
 no_jump_out_of_finally_block.jump = (5, 1)
@@ -539,7 +539,7 @@ no_jump_out_of_finally_block.output = [3, True]
 def no_jump_to_non_integers(output):
     try:
         output.append(2)
-    except ValueError, e:
+    except ValueError as e:
         output.append('integer' in str(e))
 
 no_jump_to_non_integers.jump = (2, "Spam")
@@ -551,7 +551,7 @@ def no_jump_without_trace_function():
     try:
         previous_frame = sys._getframe().f_back
         previous_frame.f_lineno = previous_frame.f_lineno
-    except ValueError, e:
+    except ValueError as e:
         # This is the exception we wanted; make sure the error message
         # talks about trace functions.
         if 'trace' not in str(e):

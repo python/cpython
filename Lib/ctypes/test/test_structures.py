@@ -313,7 +313,7 @@ class StructureTestCase(unittest.TestCase):
     def get_except(self, func, *args):
         try:
             func(*args)
-        except Exception, detail:
+        except Exception as detail:
             return detail.__class__, str(detail)
 
 
@@ -388,7 +388,7 @@ class TestRecursiveStructure(unittest.TestCase):
 
         try:
             Recursive._fields_ = [("next", Recursive)]
-        except AttributeError, details:
+        except AttributeError as details:
             self.failUnless("Structure or union cannot contain itself" in
                             str(details))
         else:
@@ -405,7 +405,7 @@ class TestRecursiveStructure(unittest.TestCase):
 
         try:
             Second._fields_ = [("first", First)]
-        except AttributeError, details:
+        except AttributeError as details:
             self.failUnless("_fields_ is final" in
                             str(details))
         else:

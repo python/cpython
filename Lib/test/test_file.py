@@ -159,7 +159,7 @@ class OtherFileTests(unittest.TestCase):
         bad_mode = "qwerty"
         try:
             f = open(TESTFN, bad_mode)
-        except ValueError, msg:
+        except ValueError as msg:
             if msg[0] != 0:
                 s = str(msg)
                 if s.find(TESTFN) != -1 or s.find(bad_mode) == -1:
@@ -183,7 +183,7 @@ class OtherFileTests(unittest.TestCase):
                 d = int(f.read())
                 f.close()
                 f.close()
-            except IOError, msg:
+            except IOError as msg:
                 self.fail('error setting buffer size %d: %s' % (s, str(msg)))
             self.assertEquals(d, s)
 

@@ -19,7 +19,7 @@ class FileObj:
         self.changed = 0
         try:
             self.lines = open(filename, 'r').readlines()
-        except IOError, msg:
+        except IOError as msg:
             print '*** Can\'t open "%s":' % filename, msg
             self.lines = None
             return
@@ -32,7 +32,7 @@ class FileObj:
         try:
             os.rename(self.filename, self.filename + '~')
             fp = open(self.filename, 'w')
-        except (os.error, IOError), msg:
+        except (os.error, IOError) as msg:
             print '*** Can\'t rewrite "%s":' % self.filename, msg
             return
         print 'writing', self.filename
@@ -67,7 +67,7 @@ def main():
     if sys.argv[1:]:
         try:
             fp = open(sys.argv[1], 'r')
-        except IOError, msg:
+        except IOError as msg:
             print 'Can\'t open "%s":' % sys.argv[1], msg
             sys.exit(1)
     else:

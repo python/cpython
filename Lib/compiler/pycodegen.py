@@ -227,7 +227,7 @@ class CodeGenerator:
             assert getattr(self, 'NameFinder')
             assert getattr(self, 'FunctionGen')
             assert getattr(self, 'ClassGen')
-        except AssertionError, msg:
+        except AssertionError as msg:
             intro = "Bad class construction for %s" % self.__class__.__name__
             raise AssertionError, intro
 

@@ -255,7 +255,8 @@ def main():
         if xml and xmldecl:
             opf.write('<?xml version="1.0" encoding="iso8859-1"?>\n')
         convert(ifp, ofp, xml=xml, autoclose=autoclose, verbatims=verbatims)
-    except IOError, (err, msg):
+    except IOError as e:
+        (err, msg) = e
         if err != errno.EPIPE:
             raise
 

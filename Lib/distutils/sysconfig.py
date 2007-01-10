@@ -344,7 +344,7 @@ def _init_posix():
     try:
         filename = get_makefile_filename()
         parse_makefile(filename, g)
-    except IOError, msg:
+    except IOError as msg:
         my_msg = "invalid Python installation: unable to open %s" % filename
         if hasattr(msg, "strerror"):
             my_msg = my_msg + " (%s)" % msg.strerror
@@ -355,7 +355,7 @@ def _init_posix():
     try:
         filename = get_config_h_filename()
         parse_config_h(open(filename), g)
-    except IOError, msg:
+    except IOError as msg:
         my_msg = "invalid Python installation: unable to open %s" % filename
         if hasattr(msg, "strerror"):
             my_msg = my_msg + " (%s)" % msg.strerror

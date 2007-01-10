@@ -370,7 +370,7 @@ class Folder:
                 count = len(all)
             try:
                 anchor = self._parseindex(head, all)
-            except Error, msg:
+            except Error as msg:
                 seqs = self.getsequences()
                 if not head in seqs:
                     if not msg:
@@ -407,7 +407,7 @@ class Folder:
         # Neither X:Y nor X-Y; must be a number or a (pseudo-)sequence
         try:
             n = self._parseindex(seq, all)
-        except Error, msg:
+        except Error as msg:
             seqs = self.getsequences()
             if not seq in seqs:
                 if not msg:
@@ -471,7 +471,7 @@ class Folder:
                 pass
             try:
                 os.rename(path, commapath)
-            except os.error, msg:
+            except os.error as msg:
                 errors.append(msg)
             else:
                 deleted.append(n)
@@ -499,7 +499,7 @@ class Folder:
                 try:
                     shutil.copy2(path, topath)
                     os.unlink(path)
-                except (IOError, os.error), msg:
+                except (IOError, os.error) as msg:
                     errors.append(msg)
                     try:
                         os.unlink(topath)
@@ -989,7 +989,7 @@ def test():
                 'all'):
         try:
             do('f.parsesequence(%r)' % (seq,))
-        except Error, msg:
+        except Error as msg:
             print "Error:", msg
         stuff = os.popen("pick %r 2>/dev/null" % (seq,)).read()
         list = map(int, stuff.split())

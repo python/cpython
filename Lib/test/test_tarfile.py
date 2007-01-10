@@ -545,7 +545,7 @@ class ExtractHardlinkTest(BaseTest):
         try:
             # Extract 1-LNKTYPE which is a hardlink to 0-REGTYPE
             self.tar.extract("1-LNKTYPE", dirname())
-        except EnvironmentError, e:
+        except EnvironmentError as e:
             import errno
             if e.errno == errno.ENOENT:
                 self.fail("hardlink not extracted properly")

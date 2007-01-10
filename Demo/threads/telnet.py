@@ -56,7 +56,7 @@ def main():
     #
     try:
         s.connect((host, port))
-    except error, msg:
+    except error as msg:
         sys.stderr.write('connect failed: %r\n' % (msg,))
         sys.exit(1)
     #

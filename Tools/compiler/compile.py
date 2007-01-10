@@ -40,7 +40,7 @@ def main():
                 else:
                     compileFile(filename, DISPLAY)
 
-            except SyntaxError, err:
+            except SyntaxError as err:
                 print err
                 if err.lineno is not None:
                     print err.lineno

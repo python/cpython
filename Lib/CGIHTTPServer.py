@@ -320,7 +320,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     sys.stdout = save_stdout
                     sys.stderr = save_stderr
                     os.chdir(save_cwd)
-            except SystemExit, sts:
+            except SystemExit as sts:
                 self.log_error("CGI script exit status %s", str(sts))
             else:
                 self.log_message("CGI script exited OK")

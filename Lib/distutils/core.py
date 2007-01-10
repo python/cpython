@@ -110,7 +110,7 @@ def setup (**attrs):
     # (ie. everything except distclass) to initialize it
     try:
         _setup_distribution = dist = klass(attrs)
-    except DistutilsSetupError, msg:
+    except DistutilsSetupError as msg:
         if 'name' not in attrs:
             raise SystemExit, "error in %s setup command: %s" % \
                   (attrs['name'], msg)
@@ -135,7 +135,7 @@ def setup (**attrs):
     # fault, so turn them into SystemExit to suppress tracebacks.
     try:
         ok = dist.parse_command_line()
-    except DistutilsArgError, msg:
+    except DistutilsArgError as msg:
         raise SystemExit, gen_usage(dist.script_name) + "\nerror: %s" % msg
 
     if DEBUG:
@@ -151,7 +151,7 @@ def setup (**attrs):
             dist.run_commands()
         except KeyboardInterrupt:
             raise SystemExit, "interrupted"
-        except (IOError, os.error), exc:
+        except (IOError, os.error) as exc:
             error = grok_environment_error(exc)
 
             if DEBUG:
@@ -161,7 +161,7 @@ def setup (**attrs):
                 raise SystemExit, error
 
         except (DistutilsError,
-                CCompilerError), msg:
+                CCompilerError) as msg:
             if DEBUG:
                 raise
             else:

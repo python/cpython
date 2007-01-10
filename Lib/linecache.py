@@ -78,7 +78,7 @@ def updatecache(filename, module_globals=None):
     fullname = filename
     try:
         stat = os.stat(fullname)
-    except os.error, msg:
+    except os.error as msg:
         basename = os.path.split(filename)[1]
 
         # Try for a __loader__, if available
@@ -128,7 +128,7 @@ def updatecache(filename, module_globals=None):
         fp = open(fullname, 'rU')
         lines = fp.readlines()
         fp.close()
-    except IOError, msg:
+    except IOError as msg:
 ##      print '*** Cannot open', fullname, ':', msg
         return []
     size, mtime = stat.st_size, stat.st_mtime

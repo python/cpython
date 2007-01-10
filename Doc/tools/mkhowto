@@ -599,7 +599,7 @@ def main():
     options = Options()
     try:
         args = options.parse(sys.argv[1:])
-    except getopt.error, msg:
+    except getopt.error as msg:
         error(options, msg)
     if not args:
         # attempt to locate single .tex file in current directory:

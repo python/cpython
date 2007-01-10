@@ -70,7 +70,7 @@ class MiniApplication:
             msg = "High Level Event: %r %r" % (code(message), code(h | (v<<16)))
             try:
                 AE.AEProcessAppleEvent(event)
-            except AE.Error, err:
+            except AE.Error as err:
                 print 'AE error: ', err
                 print 'in', msg
                 traceback.print_exc()

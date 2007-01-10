@@ -29,7 +29,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
     def tearDown(self):
         try:
             os.remove(self.filename)
-        except OSError, e:
+        except OSError as e:
             if e.errno != errno.EEXIST: raise
 
     def test01_basic(self):
@@ -63,7 +63,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
 
         try:
             data = d[0]  # This should raise a KeyError!?!?!
-        except db.DBInvalidArgError, val:
+        except db.DBInvalidArgError as val:
             assert val[0] == db.EINVAL
             if verbose: print val
         else:
@@ -72,7 +72,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         # test that has_key raises DB exceptions (fixed in pybsddb 4.3.2)
         try:
             d.has_key(0)
-        except db.DBError, val:
+        except db.DBError as val:
             pass
         else:
             self.fail("has_key did not raise a proper exception")
@@ -86,7 +86,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
 
         try:
             data = d.get(100)
-        except db.DBNotFoundError, val:
+        except db.DBNotFoundError as val:
             if get_returns_none:
                 self.fail("unexpected exception")
         else:
@@ -177,7 +177,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
 
         try:
             d.get(99)
-        except db.DBKeyEmptyError, val:
+        except db.DBKeyEmptyError as val:
             if get_returns_none:
                 self.fail("unexpected DBKeyEmptyError exception")
             else:
@@ -267,7 +267,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
 
         try:                    # this one will fail
             d.append('bad' * 20)
-        except db.DBInvalidArgError, val:
+        except db.DBInvalidArgError as val:
             assert val[0] == db.EINVAL
             if verbose: print val
         else:

@@ -142,7 +142,7 @@ def browser(*args):
         raise RuntimeError, 'too many args'
     try:
         browse_menu(selector, host, port)
-    except socket.error, msg:
+    except socket.error as msg:
         print 'Socket error:', msg
         sys.exit(1)
     except KeyboardInterrupt:
@@ -202,7 +202,7 @@ def browse_textfile(selector, host, port):
         p = os.popen('${PAGER-more}', 'w')
         x = SaveLines(p)
         get_alt_textfile(selector, host, port, x.writeln)
-    except IOError, msg:
+    except IOError as msg:
         print 'IOError:', msg
     if x:
         x.close()
@@ -213,7 +213,7 @@ def browse_textfile(selector, host, port):
     try:
         get_alt_textfile(selector, host, port, x.writeln)
         print 'Done.'
-    except IOError, msg:
+    except IOError as msg:
         print 'IOError:', msg
     x.close()
 
@@ -311,7 +311,7 @@ def open_savefile():
         cmd = savefile[1:].strip()
         try:
             p = os.popen(cmd, 'w')
-        except IOError, msg:
+        except IOError as msg:
             print repr(cmd), ':', msg
             return None
         print 'Piping through', repr(cmd), '...'
@@ -320,7 +320,7 @@ def open_savefile():
         savefile = os.path.expanduser(savefile)
     try:
         f = open(savefile, 'w')
-    except IOError, msg:
+    except IOError as msg:
         print repr(savefile), ':', msg
         return None
     print 'Saving to', repr(savefile), '...'

@@ -60,12 +60,12 @@ elif os.name == "posix":
         finally:
             try:
                 os.unlink(outfile)
-            except OSError, e:
+            except OSError as e:
                 if e.errno != errno.ENOENT:
                     raise
             try:
                 os.unlink(ccout)
-            except OSError, e:
+            except OSError as e:
                 if e.errno != errno.ENOENT:
                     raise
         res = re.search(expr, trace)

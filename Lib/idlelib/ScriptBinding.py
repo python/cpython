@@ -66,13 +66,13 @@ class ScriptBinding:
         f = open(filename, 'r')
         try:
             tabnanny.process_tokens(tokenize.generate_tokens(f.readline))
-        except tokenize.TokenError, msg:
+        except tokenize.TokenError as msg:
             msgtxt, (lineno, start) = msg
             self.editwin.gotoline(lineno)
             self.errorbox("Tabnanny Tokenizing Error",
                           "Token Error: %s" % msgtxt)
             return False
-        except tabnanny.NannyNag, nag:
+        except tabnanny.NannyNag as nag:
             # The error messages from tabnanny are too confusing...
             self.editwin.gotoline(nag.get_lineno())
             self.errorbox("Tab/space error", indent_message)
@@ -97,7 +97,7 @@ class ScriptBinding:
             try:
                 # If successful, return the compiled code
                 return compile(source, filename, "exec")
-            except (SyntaxError, OverflowError), err:
+            except (SyntaxError, OverflowError) as err:
                 try:
                     msg, (errorfilename, lineno, offset, line) = err
                     if not errorfilename:

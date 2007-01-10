@@ -117,7 +117,7 @@ class RunModuleTest(unittest.TestCase):
             entry = parts[0]
             try:
                 del sys.modules[entry]
-            except KeyError, ex:
+            except KeyError as ex:
                 if verbose: print ex # Persist with cleaning up
         if verbose: print "  Removed sys.modules entries"
         del sys.path[0]
@@ -126,18 +126,18 @@ class RunModuleTest(unittest.TestCase):
             for name in files:
                 try:
                     os.remove(os.path.join(root, name))
-                except OSError, ex:
+                except OSError as ex:
                     if verbose: print ex # Persist with cleaning up
             for name in dirs:
                 fullname = os.path.join(root, name)
                 try:
                     os.rmdir(fullname)
-                except OSError, ex:
+                except OSError as ex:
                     if verbose: print ex # Persist with cleaning up
         try:
             os.rmdir(top)
             if verbose: print "  Removed package tree"
-        except OSError, ex:
+        except OSError as ex:
             if verbose: print ex # Persist with cleaning up
 
     def _check_module(self, depth):

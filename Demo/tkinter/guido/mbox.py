@@ -27,7 +27,7 @@ def main():
     seq = 'all'
     try:
         opts, args = getopt.getopt(sys.argv[1:], '')
-    except getopt.error, msg:
+    except getopt.error as msg:
         print msg
         sys.exit(2)
     for arg in args:

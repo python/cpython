@@ -119,5 +119,5 @@ class WikiPage:
                 f.write('\n')
             f.close()
             return ""
-        except IOError, err:
+        except IOError as err:
             return "IOError: %s" % str(err)

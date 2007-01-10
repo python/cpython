@@ -114,7 +114,7 @@ Args were %(args)s.""" % locals ())
 
         try:
             func(*args, **kwargs)
-        except expected_exception, err:
+        except expected_exception as err:
             actual_message = str(err)
             if isinstance(expected_message, retype):
                 self.assert_(expected_message.search(actual_message),
@@ -152,7 +152,7 @@ and kwargs %(kwargs)r
         """
         try:
             self.parser.parse_args(cmdline_args)
-        except InterceptedError, err:
+        except InterceptedError as err:
             self.assertEqual(err.error_message, expected_output)
         else:
             self.assertFalse("expected parse failure")
@@ -175,7 +175,7 @@ and kwargs %(kwargs)r
                 output = sys.stdout.getvalue()
                 sys.stdout = save_stdout
 
-        except InterceptedError, err:
+        except InterceptedError as err:
             self.assert_(
                 type(output) is types.StringType,
                 "expected output to be an ordinary string, not %r"
@@ -460,7 +460,7 @@ def _check_duration(option, opt, value):
             return int(value)
         else:
             return int(value[:-1]) * _time_units[value[-1]]
-    except ValueError, IndexError:
+    except ValueError as IndexError:
         raise OptionValueError(
             'option %s: invalid duration: %r' % (opt, value))
 

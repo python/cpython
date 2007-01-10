@@ -236,7 +236,7 @@ class OtherNetworkTests(unittest.TestCase):
             debug(url)
             try:
                 f = urllib2.urlopen(url, req)
-            except (IOError, socket.error, OSError), err:
+            except (IOError, socket.error, OSError) as err:
                 debug(err)
                 if expected_err:
                     msg = ("Didn't get expected error(s) %s for %s %s, got %s" %

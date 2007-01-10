@@ -31,7 +31,7 @@ if not sys.executable.startswith(sys.exec_prefix):
 def main():
     try:
         buildapplet()
-    except buildtools.BuildError, detail:
+    except buildtools.BuildError as detail:
         EasyDialogs.Message(detail)
 
 

@@ -58,7 +58,7 @@ def test_timeout():
     except socket.timeout:
         error_msg('timed out')
         return
-    except socket.error, exc:  # In case connection is refused.
+    except socket.error as exc:  # In case connection is refused.
         if exc.args[0] == errno.ECONNREFUSED:
             error_msg('was refused')
             return

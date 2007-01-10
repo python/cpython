@@ -49,7 +49,7 @@ def _check1version(package, url, version, verbose=0):
         print '  Checking %s'%url
     try:
         fp = urllib.urlopen(url)
-    except IOError, arg:
+    except IOError as arg:
         if verbose >= VERBOSE_EACHFILE:
             print '    Cannot open:', arg
         return -1, None, None

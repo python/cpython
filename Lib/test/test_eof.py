@@ -11,7 +11,7 @@ class EOFTestCase(unittest.TestCase):
         try:
             eval("""'this is a test\
             """)
-        except SyntaxError, msg:
+        except SyntaxError as msg:
             self.assertEqual(str(msg), expect)
         else:
             raise test_support.TestFailed
@@ -20,7 +20,7 @@ class EOFTestCase(unittest.TestCase):
         expect = "EOF while scanning triple-quoted string (<string>, line 1)"
         try:
             eval("""'''this is a test""")
-        except SyntaxError, msg:
+        except SyntaxError as msg:
             self.assertEqual(str(msg), expect)
         else:
             raise test_support.TestFailed

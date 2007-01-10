@@ -28,7 +28,7 @@ def main():
     for file in sys.argv[1:]:
         try:
             fp = open(file, 'r')
-        except IOError, msg:
+        except IOError as msg:
             print "%s: %s" % (file, msg)
             continue
         lineno = 0

@@ -16,7 +16,7 @@ def play_sound_file(path):
     fp.close()
     try:
         a = sunaudiodev.open('w')
-    except sunaudiodev.error, msg:
+    except sunaudiodev.error as msg:
         raise TestFailed, msg
     else:
         a.write(data)

@@ -80,7 +80,7 @@ def _torgb(filename, temps):
         fname = filename
     try:
         ftype = imghdr.what(fname)
-    except IOError, msg:
+    except IOError as msg:
         if type(msg) == type(()) and len(msg) == 2 and \
                 type(msg[0]) == type(0) and type(msg[1]) == type(''):
             msg = msg[1]

@@ -845,7 +845,7 @@ class IMAP4:
 
         try:
             self.send('%s%s' % (data, CRLF))
-        except (socket.error, OSError), val:
+        except (socket.error, OSError) as val:
             raise self.abort('socket error: %s' % val)
 
         if literal is None:
@@ -870,7 +870,7 @@ class IMAP4:
             try:
                 self.send(literal)
                 self.send(CRLF)
-            except (socket.error, OSError), val:
+            except (socket.error, OSError) as val:
                 raise self.abort('socket error: %s' % val)
 
             if not literator:
@@ -883,9 +883,9 @@ class IMAP4:
         self._check_bye()
         try:
             typ, data = self._get_tagged_response(tag)
-        except self.abort, val:
+        except self.abort as val:
             raise self.abort('command: %s => %s' % (name, val))
-        except self.error, val:
+        except self.error as val:
             raise self.error('command: %s => %s' % (name, val))
         self._check_bye()
         if typ == 'BAD':
@@ -984,7 +984,7 @@ class IMAP4:
 
             try:
                 self._get_response()
-            except self.abort, val:
+            except self.abort as val:
                 if __debug__:
                     if self.debug >= 1:
                         self.print_log()
@@ -1402,7 +1402,7 @@ if __name__ == '__main__':
 
     try:
         optlist, args = getopt.getopt(sys.argv[1:], 'd:s:')
-    except getopt.error, val:
+    except getopt.error as val:
         optlist, args = (), ()
 
     stream_command = None

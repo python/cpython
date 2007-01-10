@@ -74,7 +74,7 @@ if sys.platform == 'mac':
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 't:m:qva')
-    except getopt.error, msg:
+    except getopt.error as msg:
         sys.stdout = sys.stderr
         print msg
         print __doc__%vars(webchecker)

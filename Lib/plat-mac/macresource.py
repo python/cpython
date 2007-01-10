@@ -76,14 +76,14 @@ def open_pathname(pathname, verbose=0):
     AppleSingle file"""
     try:
         refno = Res.FSpOpenResFile(pathname, 1)
-    except Res.Error, arg:
+    except Res.Error as arg:
         if arg[0] in (-37, -39):
             # No resource fork. We may be on OSX, and this may be either
             # a data-fork based resource file or a AppleSingle file
             # from the CVS repository.
             try:
                 refno = Res.FSOpenResourceFile(pathname, u'', 1)
-            except Res.Error, arg:
+            except Res.Error as arg:
                 if arg[0] != -199:
                     # -199 is "bad resource map"
                     raise
@@ -103,14 +103,14 @@ def resource_pathname(pathname, verbose=0):
     try:
         refno = Res.FSpOpenResFile(pathname, 1)
         Res.CloseResFile(refno)
-    except Res.Error, arg:
+    except Res.Error as arg:
         if arg[0] in (-37, -39):
             # No resource fork. We may be on OSX, and this may be either
             # a data-fork based resource file or a AppleSingle file
             # from the CVS repository.
             try:
                 refno = Res.FSOpenResourceFile(pathname, u'', 1)
-            except Res.Error, arg:
+            except Res.Error as arg:
                 if arg[0] != -199:
                     # -199 is "bad resource map"
                     raise

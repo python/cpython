@@ -52,7 +52,7 @@ class ArgvCollector:
         if what == kHighLevelEvent:
             try:
                 AE.AEProcessAppleEvent(event)
-            except AE.Error, err:
+            except AE.Error as err:
                 msg = "High Level Event: %r %r" % (hex(message), hex(h | (v<<16)))
                 print 'AE error: ', err
                 print 'in', msg
@@ -77,7 +77,7 @@ class ArgvCollector:
                 fsref = alias.FSResolveAlias(None)[0]
                 pathname = fsref.as_pathname()
                 sys.argv.append(pathname)
-        except  Exception, e:
+        except  Exception as e:
             print "argvemulator.py warning: can't unpack an open document event"
             import traceback
             traceback.print_exc()

@@ -330,7 +330,7 @@ def main():
         else:
             s = NNTP(newshost)
         connected = 1
-    except (nntplib.error_temp, nntplib.error_perm), x:
+    except (nntplib.error_temp, nntplib.error_perm) as x:
         print 'Error connecting to host:', x
         print 'I\'ll try to use just the local list.'
         connected = 0

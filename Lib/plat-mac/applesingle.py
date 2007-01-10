@@ -48,7 +48,7 @@ class AppleSingle(object):
         header = fileobj.read(AS_HEADER_LENGTH)
         try:
             magic, version, ig, nentry = struct.unpack(AS_HEADER_FORMAT, header)
-        except ValueError, arg:
+        except ValueError as arg:
             raise Error, "Unpack header error: %s" % (arg,)
         if verbose:
             print 'Magic:   0x%8.8x' % (magic,)
@@ -65,7 +65,7 @@ class AppleSingle(object):
         for hdr in headers:
             try:
                 restype, offset, length = struct.unpack(AS_ENTRY_FORMAT, hdr)
-            except ValueError, arg:
+            except ValueError as arg:
                 raise Error, "Unpack entry error: %s" % (arg,)
             if verbose:
                 print "Fork %d, offset %d, length %d" % (restype, offset, length)

@@ -35,21 +35,21 @@ else:
 
 try:
     g()
-except TypeError, err:
+except TypeError as err:
     print "TypeError:", err
 else:
     print "should raise TypeError: not enough arguments; expected 1, got 0"
 
 try:
     g(*())
-except TypeError, err:
+except TypeError as err:
     print "TypeError:", err
 else:
     print "should raise TypeError: not enough arguments; expected 1, got 0"
 
 try:
     g(*(), **{})
-except TypeError, err:
+except TypeError as err:
     print "TypeError:", err
 else:
     print "should raise TypeError: not enough arguments; expected 1, got 0"
@@ -61,7 +61,7 @@ g(1, 2, 3, *(4, 5))
 class Nothing: pass
 try:
     g(*Nothing())
-except TypeError, attr:
+except TypeError as attr:
     pass
 else:
     print "should raise TypeError"
@@ -71,7 +71,7 @@ class Nothing:
         return 5
 try:
     g(*Nothing())
-except TypeError, attr:
+except TypeError as attr:
     pass
 else:
     print "should raise TypeError"
@@ -93,7 +93,7 @@ class Nothing:
         return self
 try:
     g(*Nothing())
-except TypeError, attr:
+except TypeError as attr:
     pass
 else:
     print "should raise TypeError"
@@ -132,77 +132,77 @@ del kw['x']
 
 try:
     g(1, 2, 3, **{'x':4, 'y':5})
-except TypeError, err:
+except TypeError as err:
     print err
 else:
     print "should raise TypeError: keyword parameter redefined"
 
 try:
     g(1, 2, 3, a=4, b=5, *(6, 7), **{'a':8, 'b':9})
-except TypeError, err:
+except TypeError as err:
     print err
 else:
     print "should raise TypeError: keyword parameter redefined"
 
 try:
     f(**{1:2})
-except TypeError, err:
+except TypeError as err:
     print err
 else:
     print "should raise TypeError: keywords must be strings"
 
 try:
     h(**{'e': 2})
-except TypeError, err:
+except TypeError as err:
     print err
 else:
     print "should raise TypeError: unexpected keyword argument: e"
 
 try:
     h(*h)
-except TypeError, err:
+except TypeError as err:
     print err
 else:
     print "should raise TypeError: * argument must be a tuple"
 
 try:
     dir(*h)
-except TypeError, err:
+except TypeError as err:
     print err
 else:
     print "should raise TypeError: * argument must be a tuple"
 
 try:
     None(*h)
-except TypeError, err:
+except TypeError as err:
     print err
 else:
     print "should raise TypeError: * argument must be a tuple"
 
 try:
     h(**h)
-except TypeError, err:
+except TypeError as err:
     print err
 else:
     print "should raise TypeError: ** argument must be a dictionary"
 
 try:
     dir(**h)
-except TypeError, err:
+except TypeError as err:
     print err
 else:
     print "should raise TypeError: ** argument must be a dictionary"
 
 try:
     None(**h)
-except TypeError, err:
+except TypeError as err:
     print err
 else:
     print "should raise TypeError: ** argument must be a dictionary"
 
 try:
     dir(b=1,**{'b':1})
-except TypeError, err:
+except TypeError as err:
     print err
 else:
     print "should raise TypeError: dir() got multiple values for keyword argument 'b'"
@@ -226,13 +226,13 @@ print Foo.method(*(x, 1, 2))
 print Foo.method(x, *(1, 2))
 try:
     print Foo.method(*(1, 2, 3))
-except TypeError, err:
+except TypeError as err:
     pass
 else:
     print 'expected a TypeError for unbound method call'
 try:
     print Foo.method(1, *(2, 3))
-except TypeError, err:
+except TypeError as err:
     pass
 else:
     print 'expected a TypeError for unbound method call'
@@ -276,4 +276,4 @@ for name in ['za', 'zade', 'zabk', 'zabdv', 'zabdevk']:
             for k in kwargs: kwdict[k] = k + k
             print func.func_name, args, sortdict(kwdict), '->',
             try: func(*args, **kwdict)
-            except TypeError, err: print err
+            except TypeError as err: print err

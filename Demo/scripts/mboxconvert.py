@@ -16,7 +16,7 @@ def main():
     dofile = mmdf
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'f')
-    except getopt.error, msg:
+    except getopt.error as msg:
         sys.stderr.write('%s\n' % msg)
         sys.exit(2)
     for o, a in opts:
@@ -33,7 +33,7 @@ def main():
         elif os.path.isfile(arg):
             try:
                 f = open(arg)
-            except IOError, msg:
+            except IOError as msg:
                 sys.stderr.write('%s: %s\n' % (arg, msg))
                 sts = 1
                 continue
@@ -56,7 +56,7 @@ def mh(dir):
         fn = os.path.join(dir, msg)
         try:
             f = open(fn)
-        except IOError, msg:
+        except IOError as msg:
             sys.stderr.write('%s: %s\n' % (fn, msg))
             sts = 1
             continue

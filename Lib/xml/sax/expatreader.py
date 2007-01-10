@@ -205,7 +205,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             # document. When feeding chunks, they are not normally final -
             # except when invoked from close.
             self._parser.Parse(data, isFinal)
-        except expat.error, e:
+        except expat.error as e:
             exc = SAXParseException(expat.ErrorString(e.code), e, self)
             # FIXME: when to invoke error()?
             self._err_handler.fatalError(exc)

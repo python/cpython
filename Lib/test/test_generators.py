@@ -1554,7 +1554,7 @@ Now check some throw() conditions:
 ...     while True:
 ...         try:
 ...             print (yield)
-...         except ValueError,v:
+...         except ValueError as v:
 ...             print "caught ValueError (%s)" % (v),
 >>> import sys
 >>> g = f()

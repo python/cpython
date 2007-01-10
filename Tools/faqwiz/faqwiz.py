@@ -348,7 +348,7 @@ class FaqDir:
             raise InvalidFile(file)
         try:
             fp = open(file)
-        except IOError, msg:
+        except IOError as msg:
             raise NoSuchFile(file, msg)
         try:
             return self.entryclass(fp, file, sec_num)
@@ -387,11 +387,11 @@ class FaqWizard:
         else:
             try:
                 meth()
-            except InvalidFile, exc:
+            except InvalidFile as exc:
                 self.error("Invalid entry file name %s" % exc.file)
-            except NoSuchFile, exc:
+            except NoSuchFile as exc:
                 self.error("No entry with file name %s" % exc.file)
-            except NoSuchSection, exc:
+            except NoSuchSection as exc:
                 self.error("No section number %s" % exc.section)
         self.epilogue()
 
@@ -796,7 +796,7 @@ class FaqWizard:
             pass
         try:
             f = open(file, 'w')
-        except IOError, why:
+        except IOError as why:
             self.error(CANTWRITE, file=file, why=why)
             return
         date = time.ctime(now)

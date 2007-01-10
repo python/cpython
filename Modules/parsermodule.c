@@ -2110,8 +2110,8 @@ validate_except_clause(node *tree)
     if (res && (nch > 1))
         res = validate_test(CHILD(tree, 1));
     if (res && (nch == 4))
-        res = (validate_comma(CHILD(tree, 2))
-               && validate_test(CHILD(tree, 3)));
+        res = (validate_name(CHILD(tree, 2), "as")
+               && validate_ntype(CHILD(tree, 3), NAME));
 
     return (res);
 }

@@ -206,7 +206,7 @@ class StrptimeTests(unittest.TestCase):
                 _strptime.strptime("2005", bad_format)
             except ValueError:
                 continue
-            except Exception, err:
+            except Exception as err:
                 self.fail("'%s' raised %s, not ValueError" %
                             (bad_format, err.__class__.__name__))
             else:

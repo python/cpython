@@ -52,7 +52,7 @@ class imgbrowse(FrameWork.Application):
         bar = EasyDialogs.ProgressBar('Reading and converting...')
         try:
             rdr = img.reader(imgformat.macrgb16, pathname)
-        except img.error, arg:
+        except img.error as arg:
             EasyDialogs.Message(repr(arg))
             return
         w, h = rdr.width, rdr.height

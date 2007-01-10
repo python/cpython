@@ -257,7 +257,7 @@ class FileCookieJarTests(TestCase):
             try:
                 c.load(filename="for this test to work, a file with this "
                                 "filename should not exist")
-            except IOError, exc:
+            except IOError as exc:
                 # exactly IOError, not LoadError
                 self.assertEqual(exc.__class__, IOError)
             else:

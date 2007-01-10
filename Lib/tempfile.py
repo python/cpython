@@ -201,7 +201,7 @@ def _get_default_tempdir():
                 _os.unlink(filename)
                 del fp, fd
                 return dir
-            except (OSError, IOError), e:
+            except (OSError, IOError) as e:
                 if e[0] != _errno.EEXIST:
                     break # no point trying more names in this directory
                 pass
@@ -236,7 +236,7 @@ def _mkstemp_inner(dir, pre, suf, flags):
             fd = _os.open(file, flags, 0600)
             _set_cloexec(fd)
             return (fd, _os.path.abspath(file))
-        except OSError, e:
+        except OSError as e:
             if e.errno == _errno.EEXIST:
                 continue # try again
             raise
@@ -327,7 +327,7 @@ def mkdtemp(suffix="", prefix=template, dir=None):
         try:
             _os.mkdir(file, 0700)
             return file
-        except OSError, e:
+        except OSError as e:
             if e.errno == _errno.EEXIST:
                 continue # try again
             raise

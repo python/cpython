@@ -180,6 +180,6 @@ def format_output(database):
 if __name__ == '__main__':
     try:
         main()
-    except IOError, e:
+    except IOError as e:
         if e.errno != errno.EPIPE:
             raise

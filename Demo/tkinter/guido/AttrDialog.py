@@ -156,7 +156,7 @@ class PackDialog(Dialog):
             self.current = self.var.get()
             try:
                 self.dialog.widget.pack(**{self.option: self.current})
-            except TclError, msg:
+            except TclError as msg:
                 print msg
                 self.refresh()
 
@@ -212,7 +212,7 @@ class RemotePackDialog(PackDialog):
                                      'pack',
                                      'info',
                                      self.widget))
-        except TclError, msg:
+        except TclError as msg:
             print msg
             return
         dict = {}
@@ -239,7 +239,7 @@ class RemotePackDialog(PackDialog):
                         '-'+self.option,
                         self.dialog.master.tk.merge(
                                 self.current))
-            except TclError, msg:
+            except TclError as msg:
                 print msg
                 self.refresh()
 
@@ -285,7 +285,7 @@ class WidgetDialog(Dialog):
             self.current = self.var.get()
             try:
                 self.dialog.widget[self.option] = self.current
-            except TclError, msg:
+            except TclError as msg:
                 print msg
                 self.refresh()
 
@@ -374,7 +374,7 @@ class RemoteWidgetDialog(WidgetDialog):
                     self.master.send(self.app,
                                      self.widget,
                                      'config'))
-        except TclError, msg:
+        except TclError as msg:
             print msg
             return
         dict = {}
@@ -398,7 +398,7 @@ class RemoteWidgetDialog(WidgetDialog):
                         'config',
                         '-'+self.option,
                         self.current)
-            except TclError, msg:
+            except TclError as msg:
                 print msg
                 self.refresh()
 
@@ -445,7 +445,7 @@ def opendialogs(e):
         if widget == '.': continue
         try:
             RemotePackDialog(list, list.app, widget)
-        except TclError, msg:
+        except TclError as msg:
             print msg
 
 test()

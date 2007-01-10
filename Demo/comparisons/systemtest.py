@@ -41,7 +41,7 @@ def main():
 def reportboguslinks(prefix):
     try:
         names = os.listdir('.')
-    except os.error, msg:
+    except os.error as msg:
         print "%s%s: can't list: %s" % (prefix, '.', msg)
         return
     names.sort()
@@ -62,7 +62,7 @@ def reportboguslinks(prefix):
         elif S_ISDIR(mode):
             try:
                 os.chdir(name)
-            except os.error, msg:
+            except os.error as msg:
                 print "%s%s: can't chdir: %s" % \
                       (prefix, name, msg)
                 continue

@@ -35,7 +35,7 @@ def run(command):
 
     try:
         theEvent.AESend(SEND_MODE, kAENormalPriority, kAEDefaultTimeout)
-    except AE.Error, why:
+    except AE.Error as why:
         if why[0] != -600:  # Terminal.app not yet running
             raise
         os.system(START_TERMINAL)

@@ -19,7 +19,7 @@ def main(logfile):
     stats.sort_stats('time', 'calls')
     try:
         stats.print_stats(20)
-    except IOError, e:
+    except IOError as e:
         if e.errno != errno.EPIPE:
             raise
 

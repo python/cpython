@@ -14,7 +14,7 @@ def main():
         opts, args = getopt.getopt(sys.argv[1:], '')
         if len(args) < 2:
             raise getopt.GetoptError('not enough arguments', None)
-    except getopt.GetoptError, msg:
+    except getopt.GetoptError as msg:
         sys.stdout = sys.stderr
         print msg
         print 'usage: findlinksto pattern directory ...'

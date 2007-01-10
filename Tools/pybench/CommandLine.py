@@ -347,7 +347,7 @@ class Application:
             if rc is None:
                 rc = 0
 
-        except SystemExit,rc:
+        except SystemExit as rc:
             pass
 
         except KeyboardInterrupt:
@@ -433,7 +433,7 @@ class Application:
                 files = l
             self.optionlist = optlist
             self.files = files + self.files
-        except getopt.error,why:
+        except getopt.error as why:
             self.help(why)
             sys.exit(1)
 

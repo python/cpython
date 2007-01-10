@@ -33,7 +33,7 @@ def print_debug(msg):
 def _open(fullpath):
     try:
         size = os.stat(fullpath).st_size
-    except OSError, err: # Permission denied - ignore the file
+    except OSError as err: # Permission denied - ignore the file
         print_debug("%s: permission denied: %s" % (fullpath, err))
         return None
 
@@ -43,7 +43,7 @@ def _open(fullpath):
 
     try:
         return open(fullpath, 'rU')
-    except IOError, err: # Access denied, or a special file - ignore it
+    except IOError as err: # Access denied, or a special file - ignore it
         print_debug("%s: access denied: %s" % (fullpath, err))
         return None
 
@@ -81,7 +81,7 @@ def can_be_compiled(fullpath):
 
     try:
         compile(code, fullpath, "exec")
-    except Exception, err:
+    except Exception as err:
         print_debug("%s: cannot compile: %s" % (fullpath, err))
         return False
 

@@ -62,7 +62,7 @@ def main():
         opts, args = getopt.getopt(sys.argv[1:], 'hv',
                                    ['help', 'oldnotice=', 'newnotice=',
                                     'dry-run', 'verbose'])
-    except getopt.error, msg:
+    except getopt.error as msg:
         usage(1, msg)
 
     for opt, arg in opts:

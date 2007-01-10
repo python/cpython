@@ -373,13 +373,11 @@ class BoolTest(unittest.TestCase):
                     return badval
             try:
                 bool(A())
-            except (Exception), e_bool:
-                pass
-            try:
-                len(A())
-            except (Exception), e_len:
-                pass
-            self.assertEqual(str(e_bool), str(e_len))
+            except (Exception) as e_bool:
+                try:
+                    len(A())
+                except (Exception) as e_len:
+                    self.assertEqual(str(e_bool), str(e_len))
 
 def test_main():
     test_support.run_unittest(BoolTest)

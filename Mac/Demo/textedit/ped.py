@@ -273,7 +273,7 @@ class Ped(Application):
                 fp = open(path, 'rb') # NOTE binary, we need cr as end-of-line
                 data = fp.read()
                 fp.close()
-            except IOError, arg:
+            except IOError as arg:
                 EasyDialogs.Message("IOERROR: %r" % (arg,))
                 return
         else:

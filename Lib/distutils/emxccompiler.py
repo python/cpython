@@ -79,13 +79,13 @@ class EMXCCompiler (UnixCCompiler):
             # gcc requires '.rc' compiled to binary ('.res') files !!!
             try:
                 self.spawn(["rc", "-r", src])
-            except DistutilsExecError, msg:
+            except DistutilsExecError as msg:
                 raise CompileError, msg
         else: # for other files use the C-compiler
             try:
                 self.spawn(self.compiler_so + cc_args + [src, '-o', obj] +
                            extra_postargs)
-            except DistutilsExecError, msg:
+            except DistutilsExecError as msg:
                 raise CompileError, msg
 
     def link (self,
@@ -275,7 +275,7 @@ def check_config_h():
         s = f.read()
         f.close()
 
-    except IOError, exc:
+    except IOError as exc:
         # if we can't read this file, we cannot say it is wrong
         # the compiler will complain later about this file as missing
         return (CONFIG_H_UNCERTAIN,

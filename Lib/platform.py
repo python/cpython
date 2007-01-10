@@ -404,10 +404,10 @@ def _syscmd_ver(system='',release='',version='',
                 raise os.error,'command failed'
             # XXX How can I supress shell errors from being written
             #     to stderr ?
-        except os.error,why:
+        except os.error as why:
             #print 'Command %s failed: %s' % (cmd,why)
             continue
-        except IOError,why:
+        except IOError as why:
             #print 'Command %s failed: %s' % (cmd,why)
             continue
         else:

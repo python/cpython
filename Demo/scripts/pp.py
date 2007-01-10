@@ -35,7 +35,7 @@ PFLAG = 0
 
 try:
     optlist, ARGS = getopt.getopt(sys.argv[1:], 'acde:F:np')
-except getopt.error, msg:
+except getopt.error as msg:
     sys.stderr.write(sys.argv[0] + ': ' + msg + '\n')
     sys.exit(2)
 

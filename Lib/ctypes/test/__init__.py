@@ -57,12 +57,12 @@ def get_tests(package, mask, verbosity):
     for modname in find_package_modules(package, mask):
         try:
             mod = __import__(modname, globals(), locals(), ['*'])
-        except ResourceDenied, detail:
+        except ResourceDenied as detail:
             skipped.append(modname)
             if verbosity > 1:
                 print >> sys.stderr, "Skipped %s: %s" % (modname, detail)
             continue
-        except Exception, detail:
+        except Exception as detail:
             print >> sys.stderr, "Warning: could not import %s: %s" % (modname, detail)
             continue
         for name in dir(mod):

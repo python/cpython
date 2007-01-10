@@ -58,7 +58,7 @@ class BasicTestCase(unittest.TestCase):
             self.homeDir = homeDir
             try:
                 shutil.rmtree(homeDir)
-            except OSError, e:
+            except OSError as e:
                 # unix returns ENOENT, windows returns ESRCH
                 if e.errno not in (errno.ENOENT, errno.ESRCH): raise
             os.mkdir(homeDir)
@@ -162,7 +162,7 @@ class BasicTestCase(unittest.TestCase):
         # set_get_returns_none() to change it.
         try:
             d.delete('abcd')
-        except db.DBNotFoundError, val:
+        except db.DBNotFoundError as val:
             assert val[0] == db.DB_NOTFOUND
             if verbose: print val
         else:
@@ -181,7 +181,7 @@ class BasicTestCase(unittest.TestCase):
 
         try:
             d.put('abcd', 'this should fail', flags=db.DB_NOOVERWRITE)
-        except db.DBKeyExistError, val:
+        except db.DBKeyExistError as val:
             assert val[0] == db.DB_KEYEXIST
             if verbose: print val
         else:
@@ -313,7 +313,7 @@ class BasicTestCase(unittest.TestCase):
                 print rec
             try:
                 rec = c.next()
-            except db.DBNotFoundError, val:
+            except db.DBNotFoundError as val:
                 if get_raises_error:
                     assert val[0] == db.DB_NOTFOUND
                     if verbose: print val
@@ -333,7 +333,7 @@ class BasicTestCase(unittest.TestCase):
                 print rec
             try:
                 rec = c.prev()
-            except db.DBNotFoundError, val:
+            except db.DBNotFoundError as val:
                 if get_raises_error:
                     assert val[0] == db.DB_NOTFOUND
                     if verbose: print val
@@ -357,7 +357,7 @@ class BasicTestCase(unittest.TestCase):
 
         try:
             n = c.set('bad key')
-        except db.DBNotFoundError, val:
+        except db.DBNotFoundError as val:
             assert val[0] == db.DB_NOTFOUND
             if verbose: print val
         else:
@@ -371,7 +371,7 @@ class BasicTestCase(unittest.TestCase):
 
         try:
             n = c.get_both('0404', 'bad data')
-        except db.DBNotFoundError, val:
+        except db.DBNotFoundError as val:
             assert val[0] == db.DB_NOTFOUND
             if verbose: print val
         else:
@@ -399,7 +399,7 @@ class BasicTestCase(unittest.TestCase):
         c.delete()
         try:
             rec = c.current()
-        except db.DBKeyEmptyError, val:
+        except db.DBKeyEmptyError as val:
             if get_raises_error:
                 assert val[0] == db.DB_KEYEMPTY
                 if verbose: print val
@@ -445,7 +445,7 @@ class BasicTestCase(unittest.TestCase):
                           method
                 # a bug may cause a NULL pointer dereference...
                 getattr(c, method)(*args)
-            except db.DBError, val:
+            except db.DBError as val:
                 assert val[0] == 0
                 if verbose: print val
             else:
@@ -730,7 +730,7 @@ class BasicTransactionTestCase(BasicTestCase):
         txn.abort()
         try:
             txn.abort()
-        except db.DBError, e:
+        except db.DBError as e:
             pass
         else:
             raise RuntimeError, "DBTxn.abort() called after DB_TXN no longer valid w/o an exception"
@@ -739,7 +739,7 @@ class BasicTransactionTestCase(BasicTestCase):
         txn.commit()
         try:
             txn.commit()
-        except db.DBError, e:
+        except db.DBError as e:
             pass
         else:
             raise RuntimeError, "DBTxn.commit() called after DB_TXN no longer valid w/o an exception"

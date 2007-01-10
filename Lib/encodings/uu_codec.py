@@ -81,7 +81,7 @@ def uu_decode(input,errors='strict'):
             break
         try:
             data = a2b_uu(s)
-        except binascii.Error, v:
+        except binascii.Error as v:
             # Workaround for broken uuencoders by /Fredrik Lundh
             nbytes = (((ord(s[0])-32) & 63) * 4 + 5) / 3
             data = a2b_uu(s[:nbytes])

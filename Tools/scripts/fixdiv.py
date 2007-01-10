@@ -140,7 +140,7 @@ multi_ok = 0
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hm")
-    except getopt.error, msg:
+    except getopt.error as msg:
         usage(msg)
         return 2
     for o, a in opts:
@@ -181,7 +181,7 @@ def readwarnings(warningsfile):
     prog = re.compile(PATTERN)
     try:
         f = open(warningsfile)
-    except IOError, msg:
+    except IOError as msg:
         sys.stderr.write("can't open: %s\n" % msg)
         return
     warnings = {}
@@ -207,7 +207,7 @@ def process(filename, list):
     assert list # if this fails, readwarnings() is broken
     try:
         fp = open(filename)
-    except IOError, msg:
+    except IOError as msg:
         sys.stderr.write("can't open: %s\n" % msg)
         return 1
     print "Index:", filename

@@ -37,7 +37,7 @@ def randfloats(n):
                         os.unlink(fn)
                     except os.error:
                         pass
-        except IOError, msg:
+        except IOError as msg:
             print "can't write", fn, ":", msg
     else:
         result = marshal.load(fp)

@@ -16,7 +16,8 @@ def cleanup():
     for suffix in ['', '.pag', '.dir', '.db']:
         try:
             os.unlink(filename + suffix)
-        except OSError, (errno, strerror):
+        except OSError as e:
+            (errno, strerror) = e
             # if we can't delete the file because of permissions,
             # nothing will work, so skip the test
             if errno == 1:

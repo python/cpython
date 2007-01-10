@@ -816,7 +816,7 @@ class Unpickler:
             while 1:
                 key = read(1)
                 dispatch[key](self)
-        except _Stop, stopinst:
+        except _Stop as stopinst:
             return stopinst.value
 
     # Return largest index k such that self.stack[k] is self.mark.
@@ -1018,7 +1018,7 @@ class Unpickler:
         if not instantiated:
             try:
                 value = klass(*args)
-            except TypeError, err:
+            except TypeError as err:
                 raise TypeError, "in constructor for %s: %s" % (
                     klass.__name__, str(err)), sys.exc_info()[2]
         self.append(value)

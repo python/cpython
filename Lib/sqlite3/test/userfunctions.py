@@ -205,7 +205,7 @@ class FunctionTests(unittest.TestCase):
             cur.execute("select raiseexception()")
             cur.fetchone()
             self.fail("should have raised OperationalError")
-        except sqlite.OperationalError, e:
+        except sqlite.OperationalError as e:
             self.failUnlessEqual(e.args[0], 'user-defined function raised exception')
 
     def CheckParamString(self):
@@ -279,7 +279,7 @@ class AggregateTests(unittest.TestCase):
         try:
             cur.execute("select nostep(t) from test")
             self.fail("should have raised an AttributeError")
-        except AttributeError, e:
+        except AttributeError as e:
             self.failUnlessEqual(e.args[0], "'AggrNoStep' object has no attribute 'step'")
 
     def CheckAggrNoFinalize(self):
@@ -288,7 +288,7 @@ class AggregateTests(unittest.TestCase):
             cur.execute("select nofinalize(t) from test")
             val = cur.fetchone()[0]
             self.fail("should have raised an OperationalError")
-        except sqlite.OperationalError, e:
+        except sqlite.OperationalError as e:
             self.failUnlessEqual(e.args[0], "user-defined aggregate's 'finalize' method raised error")
 
     def CheckAggrExceptionInInit(self):
@@ -297,7 +297,7 @@ class AggregateTests(unittest.TestCase):
             cur.execute("select excInit(t) from test")
             val = cur.fetchone()[0]
             self.fail("should have raised an OperationalError")
-        except sqlite.OperationalError, e:
+        except sqlite.OperationalError as e:
             self.failUnlessEqual(e.args[0], "user-defined aggregate's '__init__' method raised error")
 
     def CheckAggrExceptionInStep(self):
@@ -306,7 +306,7 @@ class AggregateTests(unittest.TestCase):
             cur.execute("select excStep(t) from test")
             val = cur.fetchone()[0]
             self.fail("should have raised an OperationalError")
-        except sqlite.OperationalError, e:
+        except sqlite.OperationalError as e:
             self.failUnlessEqual(e.args[0], "user-defined aggregate's 'step' method raised error")
 
     def CheckAggrExceptionInFinalize(self):
@@ -315,7 +315,7 @@ class AggregateTests(unittest.TestCase):
             cur.execute("select excFinalize(t) from test")
             val = cur.fetchone()[0]
             self.fail("should have raised an OperationalError")
-        except sqlite.OperationalError, e:
+        except sqlite.OperationalError as e:
             self.failUnlessEqual(e.args[0], "user-defined aggregate's 'finalize' method raised error")
 
     def CheckAggrCheckParamStr(self):
@@ -384,7 +384,7 @@ class AuthorizerTests(unittest.TestCase):
     def CheckTableAccess(self):
         try:
             self.con.execute("select * from t2")
-        except sqlite.DatabaseError, e:
+        except sqlite.DatabaseError as e:
             if not e.args[0].endswith("prohibited"):
                 self.fail("wrong exception text: %s" % e.args[0])
             return
@@ -393,7 +393,7 @@ class AuthorizerTests(unittest.TestCase):
     def CheckColumnAccess(self):
         try:
             self.con.execute("select c2 from t1")
-        except sqlite.DatabaseError, e:
+        except sqlite.DatabaseError as e:
             if not e.args[0].endswith("prohibited"):
                 self.fail("wrong exception text: %s" % e.args[0])
             return

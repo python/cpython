@@ -22,7 +22,7 @@ def main():
             raise getopt.error, "unknown command"
         coptset, func = commands[cmd]
         copts, files = getopt.getopt(rest, coptset)
-    except getopt.error, msg:
+    except getopt.error as msg:
         print msg
         print "usage: rrcs [options] command [options] [file] ..."
         print "where command can be:"
@@ -41,7 +41,7 @@ def main():
     for fn in files:
         try:
             func(x, copts, fn)
-        except (IOError, os.error), msg:
+        except (IOError, os.error) as msg:
             print "%s: %s" % (fn, msg)
 
 def checkin(x, copts, fn):

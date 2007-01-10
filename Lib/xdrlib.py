@@ -68,12 +68,12 @@ class Packer:
 
     def pack_float(self, x):
         try: self.__buf.write(struct.pack('>f', x))
-        except struct.error, msg:
+        except struct.error as msg:
             raise ConversionError, msg
 
     def pack_double(self, x):
         try: self.__buf.write(struct.pack('>d', x))
-        except struct.error, msg:
+        except struct.error as msg:
             raise ConversionError, msg
 
     def pack_fstring(self, n, s):

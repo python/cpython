@@ -24,7 +24,7 @@ class Stats:
         self.addstats("<dir>", "dirs", 1)
         try:
             names = os.listdir(dir)
-        except os.error, err:
+        except os.error as err:
             sys.stderr.write("Can't list %s: %s\n" % (dir, err))
             self.addstats("<dir>", "unlistable", 1)
             return
@@ -53,7 +53,7 @@ class Stats:
         self.addstats(ext, "files", 1)
         try:
             f = open(filename, "rb")
-        except IOError, err:
+        except IOError as err:
             sys.stderr.write("Can't open %s: %s\n" % (filename, err))
             self.addstats(ext, "unopenable", 1)
             return

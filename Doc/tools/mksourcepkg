@@ -45,7 +45,7 @@ def main():
           opts, args = getopt.getopt(sys.argv[1:], "Aabgtzq",
                                      ["all", "bzip2", "gzip", "tools", "zip",
                                       "quiet", "anonymous"])
-     except getopt.error, e:
+     except getopt.error as e:
           usage(warning=str(e))
           sys.exit(2)
      if len(args) not in (1, 2):

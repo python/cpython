@@ -95,7 +95,7 @@ class EditableManPage(ScrolledText):
             self._parseline('')
         try:
             self.tk.deletefilehandler(self.fp)
-        except TclError, msg:
+        except TclError as msg:
             pass
         self.fp.close()
         self.fp = None

@@ -119,7 +119,7 @@ def strftest(now):
     for e in expectations:
         try:
             result = time.strftime(e[0], now)
-        except ValueError, error:
+        except ValueError as error:
             print "Standard '%s' format gave error:" % e[0], error
             continue
         if re.match(escapestr(e[1], ampm), result): continue
@@ -132,7 +132,7 @@ def strftest(now):
     for e in nonstandard_expectations:
         try:
             result = time.strftime(e[0], now)
-        except ValueError, result:
+        except ValueError as result:
             if verbose:
                 print "Error for nonstandard '%s' format (%s): %s" % \
                       (e[0], e[2], str(result))

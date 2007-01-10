@@ -127,7 +127,7 @@ class PyBuildExt(build_ext):
 
         try:
             build_ext.build_extension(self, ext)
-        except (CCompilerError, DistutilsError), why:
+        except (CCompilerError, DistutilsError) as why:
             self.announce('WARNING: building of extension "%s" failed: %s' %
                           (ext.name, sys.exc_info()[1]))
 

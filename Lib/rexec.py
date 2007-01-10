@@ -551,7 +551,7 @@ def test():
     if args and args[0] != '-':
         try:
             fp = open(args[0])
-        except IOError, msg:
+        except IOError as msg:
             print "%s: can't open file %r" % (sys.argv[0], args[0])
             return 1
     if fp.isatty():
@@ -566,7 +566,7 @@ def test():
                 r.s_apply(code.InteractiveConsole.runcode, (self, co))
         try:
             RestrictedConsole(r.modules['__main__'].__dict__).interact()
-        except SystemExit, n:
+        except SystemExit as n:
             return n
     else:
         text = fp.read()
@@ -574,7 +574,7 @@ def test():
         c = compile(text, fp.name, 'exec')
         try:
             r.s_exec(c)
-        except SystemExit, n:
+        except SystemExit as n:
             return n
         except:
             traceback.print_exc()

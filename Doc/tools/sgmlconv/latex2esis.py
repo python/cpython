@@ -397,7 +397,8 @@ def convert(ifp, ofp, table):
     c = Conversion(ifp, ofp, table)
     try:
         c.convert()
-    except IOError, (err, msg):
+    except IOError as e:
+        (err, msg) = e
         if err != errno.EPIPE:
             raise
 

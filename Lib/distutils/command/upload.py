@@ -184,7 +184,7 @@ class upload(Command):
             http.putheader('Authorization', auth)
             http.endheaders()
             http.send(body)
-        except socket.error, e:
+        except socket.error as e:
             self.announce(str(e), log.ERROR)
             return
 

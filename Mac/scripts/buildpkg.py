@@ -451,7 +451,7 @@ def main():
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortOpts, longOpts)
-    except getopt.GetoptError, details:
+    except getopt.GetoptError as details:
         print details
         printUsage()
         return

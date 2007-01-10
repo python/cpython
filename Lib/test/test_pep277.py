@@ -50,7 +50,7 @@ class UnicodeFileTests(unittest.TestCase):
             fn(filename)
             raise test_support.TestFailed("Expected to fail calling '%s(%r)'"
                              % (fn.__name__, filename))
-        except expected_exception, details:
+        except expected_exception as details:
             if check_fn_in_exception and details.filename != filename:
                 raise test_support.TestFailed("Function '%s(%r) failed with "
                                  "bad filename in the exception: %r"

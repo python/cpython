@@ -12,7 +12,7 @@ def main():
 def process(filename):
     try:
         f = open(filename, 'r')
-    except IOError, msg:
+    except IOError as msg:
         sys.stderr.write('%s: can\'t open: %s\n' % (filename, str(msg)))
         return
     data = f.read()
@@ -22,7 +22,7 @@ def process(filename):
         return
     try:
         f = open(filename, 'w')
-    except IOError, msg:
+    except IOError as msg:
         sys.stderr.write('%s: can\'t write: %s\n' % (filename, str(msg)))
         return
     sys.stderr.write('Processing %s ...\n' % filename)

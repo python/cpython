@@ -21,14 +21,14 @@ def main():
         opts, args = getopt.getopt(sys.argv[1:], "")
         if len(args) > 1:
             raise getopt.error, "Too many arguments."
-    except getopt.error, msg:
+    except getopt.error as msg:
         usage(msg)
     for o, a in opts:
         pass
     if args:
         try:
             port = string.atoi(args[0])
-        except ValueError, msg:
+        except ValueError as msg:
             usage(msg)
     else:
         port = PORT
@@ -83,7 +83,7 @@ def run_interpreter(stdin, stdout):
         source = source + line
         try:
             code = compile_command(source)
-        except SyntaxError, err:
+        except SyntaxError as err:
             source = ""
             traceback.print_exception(SyntaxError, err, None, file=stdout)
             continue
@@ -92,7 +92,7 @@ def run_interpreter(stdin, stdout):
         source = ""
         try:
             run_command(code, stdin, stdout, globals)
-        except SystemExit, how:
+        except SystemExit as how:
             if how:
                 try:
                     how = str(how)
@@ -109,7 +109,7 @@ def run_command(code, stdin, stdout, globals):
         sys.stdin = stdin
         try:
             exec(code, globals)
-        except SystemExit, how:
+        except SystemExit as how:
             raise SystemExit, how, sys.exc_info()[2]
         except:
             type, value, tb = sys.exc_info()

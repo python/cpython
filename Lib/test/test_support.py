@@ -102,7 +102,8 @@ def bind_port(sock, host='', preferred_port=54321):
         try:
             sock.bind((host, port))
             return port
-        except socket.error, (err, msg):
+        except socket.error as e:
+            (err, msg) = e
             if err != errno.EADDRINUSE:
                 raise
             print >>sys.__stderr__, \

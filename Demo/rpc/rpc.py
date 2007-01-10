@@ -330,7 +330,8 @@ def bindresvport(sock, host):
         try:
             sock.bind((host, i))
             return last_resv_port_tried
-        except socket.error, (errno, msg):
+        except socket.error as e:
+            (errno, msg) = e
             if errno != 114:
                 raise socket.error, (errno, msg)
     raise RuntimeError, 'can\'t assign reserved port'
@@ -765,7 +766,7 @@ class TCPServer(Server):
                 call = recvrecord(sock)
             except EOFError:
                 break
-            except socket.error, msg:
+            except socket.error as msg:
                 print 'socket error:', msg
                 break
             reply = self.handle(call)
@@ -866,7 +867,7 @@ def testsvr():
     s = S('', 0x20000000, 1, 0)
     try:
         s.unregister()
-    except RuntimeError, msg:
+    except RuntimeError as msg:
         print 'RuntimeError:', msg, '(ignored)'
     s.register()
     print 'Service started...'

@@ -23,11 +23,11 @@ def main():
     pattern, filename = args
     try:
         prog = re.compile(pattern, reflags)
-    except re.error, msg:
+    except re.error as msg:
         usage("error in regular expression: %s" % str(msg))
     try:
         f = open(filename)
-    except IOError, msg:
+    except IOError as msg:
         usage("can't open %s: %s" % (repr(filename), str(msg)), 1)
     f.seek(0, 2)
     pos = f.tell()

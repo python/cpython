@@ -667,7 +667,7 @@ class HTTPConnection:
                 if self.debuglevel > 0:
                     print "connect: (%s, %s)" % (self.host, self.port)
                 self.sock.connect(sa)
-            except socket.error, msg:
+            except socket.error as msg:
                 if self.debuglevel > 0:
                     print 'connect fail:', (self.host, self.port)
                 if self.sock:
@@ -713,7 +713,7 @@ class HTTPConnection:
                     data=str.read(blocksize)
             else:
                 self.sock.sendall(str)
-        except socket.error, v:
+        except socket.error as v:
             if v[0] == 32:      # Broken pipe
                 self.close()
             raise
@@ -868,7 +868,7 @@ class HTTPConnection:
 
         try:
             self._send_request(method, url, body, headers)
-        except socket.error, v:
+        except socket.error as v:
             # trap 'Broken pipe' if we're allowed to automatically reconnect
             if v[0] != 32 or not self.auto_open:
                 raise
@@ -890,7 +890,7 @@ class HTTPConnection:
             thelen=None
             try:
                 thelen=str(len(body))
-            except TypeError, te:
+            except TypeError as te:
                 # If this is a file-like object, try to
                 # fstat its file descriptor
                 import os
@@ -1019,7 +1019,7 @@ class SSLFile(SharedSocketClient):
         while True:
             try:
                 buf = self._ssl.read(self._bufsize)
-            except socket.sslerror, err:
+            except socket.sslerror as err:
                 if (err[0] == socket.SSL_ERROR_WANT_READ
                     or err[0] == socket.SSL_ERROR_WANT_WRITE):
                     continue
@@ -1027,7 +1027,7 @@ class SSLFile(SharedSocketClient):
                     or err[0] == socket.SSL_ERROR_EOF):
                     break
                 raise
-            except socket.error, err:
+            except socket.error as err:
                 if err[0] == errno.EINTR:
                     continue
                 if err[0] == errno.EBADF:
@@ -1215,7 +1215,7 @@ class HTTP:
         """
         try:
             response = self._conn.getresponse()
-        except BadStatusLine, e:
+        except BadStatusLine as e:
             ### hmm. if getresponse() ever closes the socket on a bad request,
             ### then we are going to have problems with self.sock
 

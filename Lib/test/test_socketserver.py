@@ -155,7 +155,8 @@ class ForgivingTCPServer(TCPServer):
                 self.server_address = host, port
                 TCPServer.server_bind(self)
                 break
-            except socket.error, (err, msg):
+            except socket.error as e:
+                (err, msg) = e
                 if err != errno.EADDRINUSE:
                     raise
                 print >>sys.__stderr__, \

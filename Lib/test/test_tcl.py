@@ -107,7 +107,7 @@ class TclTest(unittest.TestCase):
         filename = "doesnotexists"
         try:
             os.remove(filename)
-        except Exception,e:
+        except Exception as e:
             pass
         self.assertRaises(TclError,tcl.evalfile,filename)
 

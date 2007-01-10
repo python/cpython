@@ -146,7 +146,7 @@ class DecimalTest(unittest.TestCase):
                 print 'Error in test cases:'
                 print line
                 continue
-            except DecimalException, exception:
+            except DecimalException as exception:
                 #Exception raised where there shoudn't have been one.
                 self.fail('Exception "'+exception.__class__.__name__ + '" raised on line '+line)
 
@@ -238,7 +238,7 @@ class DecimalTest(unittest.TestCase):
                             funct(self.context.create_decimal(v))
                         except error:
                             pass
-                        except Signals, e:
+                        except Signals as e:
                             self.fail("Raised %s in %s when %s disabled" % \
                                       (e, s, error))
                         else:
@@ -258,7 +258,7 @@ class DecimalTest(unittest.TestCase):
                     funct(*vals)
                 except error:
                     pass
-                except Signals, e:
+                except Signals as e:
                     self.fail("Raised %s in %s when %s disabled" % \
                               (e, s, error))
                 else:
@@ -268,7 +268,7 @@ class DecimalTest(unittest.TestCase):
             result = str(funct(*vals))
             if fname == 'same_quantum':
                 result = str(int(eval(result))) # 'True', 'False' -> '1', '0'
-        except Signals, error:
+        except Signals as error:
             self.fail("Raised %s in %s" % (error, s))
         except: #Catch any error long enough to state the test case.
             print "ERROR:", s

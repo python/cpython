@@ -186,7 +186,7 @@ def main():
             sys.argv[1:],
             'hd:i:Xv',
             ['database=', 'initfile=', 'ignore', 'help', 'version'])
-    except getopt.error, msg:
+    except getopt.error as msg:
         usage(1, msg)
 
     if len(args) == 0:

@@ -66,7 +66,7 @@ class SearchEngine:
             flags = flags | re.IGNORECASE
         try:
             prog = re.compile(pat, flags)
-        except re.error, what:
+        except re.error as what:
             try:
                 msg, col = what
             except:

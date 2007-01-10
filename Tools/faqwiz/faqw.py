@@ -24,7 +24,7 @@ try:
     os.chdir(FAQDIR)
     sys.path.insert(0, SRCDIR)
     import faqwiz
-except SystemExit, n:
+except SystemExit as n:
     sys.exit(n)
 except:
     t, v, tb = sys.exc_info()

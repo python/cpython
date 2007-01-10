@@ -114,7 +114,7 @@ def main_interactive(interact=0, basepkgname='StdSuites'):
     try:
         processfile(filename, edit_modnames=edit_modnames, basepkgname=basepkgname,
         verbose=sys.stderr)
-    except MacOS.Error, arg:
+    except MacOS.Error as arg:
         print "Error getting terminology:", arg
         print "Retry, manually parsing resources"
         processfile_fromresource(filename, edit_modnames=edit_modnames,
@@ -190,7 +190,7 @@ def processfile(fullname, output=None, basepkgname=None,
         print >>verbose, "\nASKING FOR aete DICTIONARY IN", repr(fullname)
     try:
         aedescobj, launched = OSATerminology.GetAppTerminology(fullname)
-    except MacOS.Error, arg:
+    except MacOS.Error as arg:
         if arg[0] in (-1701, -192): # errAEDescNotFound, resNotFound
             if verbose:
                 print >>verbose, "GetAppTerminology failed with errAEDescNotFound/resNotFound, trying manually"
@@ -244,7 +244,7 @@ def getappterminology(fullname, verbose=None):
     talker = aetools.TalkTo(cr)
     try:
         talker._start()
-    except (MacOS.Error, aetools.Error), arg:
+    except (MacOS.Error, aetools.Error) as arg:
         if verbose:
             print >>verbose, 'Warning: start() failed, continuing anyway:', arg
     reply = talker.send("ascr", "gdte")

@@ -585,7 +585,7 @@ class AbstractPickleTests(unittest.TestCase):
         badpickle = pickle.PROTO + chr(oob) + build_none
         try:
             self.loads(badpickle)
-        except ValueError, detail:
+        except ValueError as detail:
             self.failUnless(str(detail).startswith(
                                             "unsupported pickle protocol"))
         else:

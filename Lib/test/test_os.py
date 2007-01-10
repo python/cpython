@@ -179,7 +179,7 @@ class StatAttributeTests(unittest.TestCase):
         import statvfs
         try:
             result = os.statvfs(self.fname)
-        except OSError, e:
+        except OSError as e:
             # On AtheOS, glibc always returns ENOSYS
             import errno
             if e.errno == errno.ENOSYS:

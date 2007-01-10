@@ -23,7 +23,7 @@ import tokenize
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "lh")
-    except getopt.error, msg:
+    except getopt.error as msg:
         usage(msg)
         return 2
     if not args:
@@ -52,7 +52,7 @@ def process(filename, listnames):
         return processdir(filename, listnames)
     try:
         fp = open(filename)
-    except IOError, msg:
+    except IOError as msg:
         sys.stderr.write("Can't open: %s\n" % msg)
         return 1
     g = tokenize.generate_tokens(fp.readline)
@@ -70,7 +70,7 @@ def process(filename, listnames):
 def processdir(dir, listnames):
     try:
         names = os.listdir(dir)
-    except os.error, msg:
+    except os.error as msg:
         sys.stderr.write("Can't list directory: %s\n" % dir)
         return 1
     files = []

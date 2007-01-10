@@ -284,11 +284,11 @@ Your selection [default 1]: ''',
         data = ''
         try:
             result = opener.open(req)
-        except urllib2.HTTPError, e:
+        except urllib2.HTTPError as e:
             if self.show_response:
                 data = e.fp.read()
             result = e.code, e.msg
-        except urllib2.URLError, e:
+        except urllib2.URLError as e:
             result = 500, str(e)
         else:
             if self.show_response:

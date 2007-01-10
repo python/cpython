@@ -21,7 +21,7 @@ def main():
     verbose = webchecker.VERBOSE
     try:
         opts, args = getopt.getopt(sys.argv[1:], "qv")
-    except getopt.error, msg:
+    except getopt.error as msg:
         print msg
         print "usage:", sys.argv[0], "[-qv] ... [rooturl] ..."
         return 2
@@ -83,7 +83,7 @@ class Sucker(webchecker.Checker):
             f.write(text)
             f.close()
             self.message("saved %s", path)
-        except IOError, msg:
+        except IOError as msg:
             self.message("didn't save %s: %s", path, str(msg))
 
     def savefilename(self, url):

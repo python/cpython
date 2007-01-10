@@ -945,7 +945,7 @@ def mro_disagreement():
     def raises(exc, expected, callable, *args):
         try:
             callable(*args)
-        except exc, msg:
+        except exc as msg:
             if not str(msg).startswith(expected):
                 raise TestFailed, "Message %r, expected %r" % (str(msg),
                                                                expected)
@@ -1813,7 +1813,7 @@ def weakrefs():
     no = NoWeak()
     try:
         weakref.ref(no)
-    except TypeError, msg:
+    except TypeError as msg:
         verify(str(msg).find("weak reference") >= 0)
     else:
         verify(0, "weakref.ref(no) should be illegal")
@@ -1866,7 +1866,7 @@ def properties():
     for attr in "__doc__", "fget", "fset", "fdel":
         try:
             setattr(raw, attr, 42)
-        except TypeError, msg:
+        except TypeError as msg:
             if str(msg).find('readonly') < 0:
                 raise TestFailed("when setting readonly attr %r on a "
                                  "property, got unexpected TypeError "
@@ -2416,7 +2416,7 @@ f = t(%r, 'w')  # rexec can't catch this by itself
         for code in code1, code2, code3:
             try:
                 sandbox.r_exec(code)
-            except IOError, msg:
+            except IOError as msg:
                 if str(msg).find("restricted") >= 0:
                     outcome = "OK"
                 else:
@@ -3523,7 +3523,7 @@ def test_mutable_bases():
 
     try:
         D.__bases__ = ()
-    except TypeError, msg:
+    except TypeError as msg:
         if str(msg) == "a new-style class can't have only classic bases":
             raise TestFailed, "wrong error message for .__bases__ = ()"
     else:
