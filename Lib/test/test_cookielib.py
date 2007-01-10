@@ -1723,7 +1723,6 @@ class LWPCookieTests(TestCase):
 
 
 def test_main(verbose=None):
-    from test import test_sets
     test_support.run_unittest(
         DateTimeTests,
         HeaderTests,
