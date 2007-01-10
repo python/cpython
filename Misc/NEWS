@@ -89,6 +89,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- The version number of the ctypes package was changed to "1.0.2".
+
 - Patch #1544279: Improve thread-safety of the socket module by moving
   the sock_addr_t storage out of the socket object.
 
