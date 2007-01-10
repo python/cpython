@@ -57,7 +57,7 @@ class BaseThreadedTestCase(unittest.TestCase):
         self.homeDir = homeDir
         try:
             os.mkdir(homeDir)
-        except OSError, e:
+        except OSError as e:
             if e.errno != errno.EEXIST: raise
         self.env = db.DBEnv()
         self.setEnvOpts()
@@ -247,7 +247,7 @@ class SimpleThreadedBase(BaseThreadedTestCase):
         # flush them
         try:
             dbutils.DeadlockWrap(d.sync, max_retries=12)
-        except db.DBIncompleteError, val:
+        except db.DBIncompleteError as val:
             if verbose:
                 print "could not complete sync()..."
 
@@ -360,7 +360,7 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
                         print "%s: records %d - %d finished" % (name, start, x)
                 txn.commit()
                 finished = True
-            except (db.DBLockDeadlockError, db.DBLockNotGrantedError), val:
+            except (db.DBLockDeadlockError, db.DBLockNotGrantedError) as val:
                 if verbose:
                     print "%s: Aborting transaction (%s)" % (name, val[1])
                 txn.abort()
@@ -398,7 +398,7 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
                 finished = True
                 if verbose:
                     print "%s: deleted records %s" % (name, recs)
-            except (db.DBLockDeadlockError, db.DBLockNotGrantedError), val:
+            except (db.DBLockDeadlockError, db.DBLockNotGrantedError) as val:
                 if verbose:
                     print "%s: Aborting transaction (%s)" % (name, val[1])
                 txn.abort()
@@ -428,7 +428,7 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
                     c.close()
                     txn.commit()
                     finished = True
-                except (db.DBLockDeadlockError, db.DBLockNotGrantedError), val:
+                except (db.DBLockDeadlockError, db.DBLockNotGrantedError) as val:
                     if verbose:
                         print "%s: Aborting transaction (%s)" % (name, val[1])
                     c.close()

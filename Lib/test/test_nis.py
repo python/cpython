@@ -6,7 +6,7 @@ class NisTests(unittest.TestCase):
     def test_maps(self):
         try:
             maps = nis.maps()
-        except nis.error, msg:
+        except nis.error as msg:
             # NIS is probably not active, so this test isn't useful
             if verbose:
                 self.fail("(failing because of verbose mode) %s" % msg)

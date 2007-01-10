@@ -896,7 +896,7 @@ def test(args = None):
     else:
         try:
             f = open(file, 'r')
-        except IOError, msg:
+        except IOError as msg:
             print file, ":", msg
             sys.exit(1)
 
@@ -914,7 +914,7 @@ def test(args = None):
             for c in data:
                 x.feed(c)
             x.close()
-    except Error, msg:
+    except Error as msg:
         t1 = time()
         print msg
         if do_time:

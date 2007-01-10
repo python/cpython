@@ -229,7 +229,7 @@ def _compile(*key):
         raise TypeError, "first argument must be string or compiled pattern"
     try:
         p = sre_compile.compile(pattern, flags)
-    except error, v:
+    except error as v:
         raise error, v # invalid expression
     if len(_cache) >= _MAXCACHE:
         _cache.clear()
@@ -244,7 +244,7 @@ def _compile_repl(*key):
     repl, pattern = key
     try:
         p = sre_parse.parse_template(repl, pattern)
-    except error, v:
+    except error as v:
         raise error, v # invalid expression
     if len(_cache_repl) >= _MAXCACHE:
         _cache_repl.clear()

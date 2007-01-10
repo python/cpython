@@ -32,27 +32,31 @@ def _copy_file_contents (src, dst, buffer_size=16*1024):
     try:
         try:
             fsrc = open(src, 'rb')
-        except os.error, (errno, errstr):
+        except os.error as e:
+            (errno, errstr) = e
             raise DistutilsFileError, \
                   "could not open '%s': %s" % (src, errstr)
 
         if os.path.exists(dst):
             try:
                 os.unlink(dst)
-            except os.error, (errno, errstr):
+            except os.error as e:
+                (errno, errstr) = e
                 raise DistutilsFileError, \
                       "could not delete '%s': %s" % (dst, errstr)
 
         try:
             fdst = open(dst, 'wb')
-        except os.error, (errno, errstr):
+        except os.error as e:
+            (errno, errstr) = e
             raise DistutilsFileError, \
                   "could not create '%s': %s" % (dst, errstr)
 
         while 1:
             try:
                 buf = fsrc.read(buffer_size)
-            except os.error, (errno, errstr):
+            except os.error as e:
+                (errno, errstr) = e
                 raise DistutilsFileError, \
                       "could not read from '%s': %s" % (src, errstr)
 
@@ -61,7 +65,8 @@ def _copy_file_contents (src, dst, buffer_size=16*1024):
 
             try:
                 fdst.write(buf)
-            except os.error, (errno, errstr):
+            except os.error as e:
+                (errno, errstr) = e
                 raise DistutilsFileError, \
                       "could not write to '%s': %s" % (dst, errstr)
 
@@ -146,7 +151,7 @@ def copy_file (src, dst,
         import macostools
         try:
             macostools.copy(src, dst, 0, preserve_times)
-        except os.error, exc:
+        except os.error as exc:
             raise DistutilsFileError, \
                   "could not copy '%s' to '%s': %s" % (src, dst, exc[-1])
 
@@ -217,7 +222,8 @@ def move_file (src, dst,
     copy_it = 0
     try:
         os.rename(src, dst)
-    except os.error, (num, msg):
+    except os.error as e:
+        (num, msg) = e
         if num == errno.EXDEV:
             copy_it = 1
         else:
@@ -228,7 +234,8 @@ def move_file (src, dst,
         copy_file(src, dst)
         try:
             os.unlink(src)
-        except os.error, (num, msg):
+        except os.error as e:
+            (num, msg) = e
             try:
                 os.unlink(dst)
             except os.error:

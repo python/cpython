@@ -246,7 +246,7 @@ class IOBinding:
             f = open(filename,'rb')
             chars = f.read()
             f.close()
-        except IOError, msg:
+        except IOError as msg:
             tkMessageBox.showerror("I/O Error", str(msg), master=self.text)
             return False
 
@@ -289,7 +289,7 @@ class IOBinding:
         # Next look for coding specification
         try:
             enc = coding_spec(chars)
-        except LookupError, name:
+        except LookupError as name:
             tkMessageBox.showerror(
                 title="Error loading the file",
                 message="The encoding '%s' is not known to this Python "\
@@ -380,7 +380,7 @@ class IOBinding:
             f.flush()
             f.close()
             return True
-        except IOError, msg:
+        except IOError as msg:
             tkMessageBox.showerror("I/O Error", str(msg),
                                    master=self.text)
             return False
@@ -400,7 +400,7 @@ class IOBinding:
         try:
             enc = coding_spec(chars)
             failed = None
-        except LookupError, msg:
+        except LookupError as msg:
             failed = msg
             enc = None
         if enc:

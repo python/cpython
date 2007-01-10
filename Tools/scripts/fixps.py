@@ -11,7 +11,7 @@ def main():
     for filename in sys.argv[1:]:
         try:
             f = open(filename, 'r')
-        except IOError, msg:
+        except IOError as msg:
             print filename, ': can\'t open :', msg
             continue
         line = f.readline()

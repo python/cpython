@@ -211,7 +211,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
                                     'coverdir=', 'nocoverdir', 'runleaks',
                                     'huntrleaks=', 'verbose2', 'memlimit=',
                                     ])
-    except getopt.error, msg:
+    except getopt.error as msg:
         usage(2, msg)
 
     # Defaults
@@ -556,19 +556,19 @@ def runtest_inner(test, generate, verbose, quiet,
                 dash_R(the_module, test, indirect_test, huntrleaks)
         finally:
             sys.stdout = save_stdout
-    except test_support.ResourceDenied, msg:
+    except test_support.ResourceDenied as msg:
         if not quiet:
             print test, "skipped --", msg
             sys.stdout.flush()
         return -2
-    except (ImportError, test_support.TestSkipped), msg:
+    except (ImportError, test_support.TestSkipped) as msg:
         if not quiet:
             print test, "skipped --", msg
             sys.stdout.flush()
         return -1
     except KeyboardInterrupt:
         raise
-    except test_support.TestFailed, msg:
+    except test_support.TestFailed as msg:
         print "test", test, "failed --", msg
         sys.stdout.flush()
         return 0
@@ -640,7 +640,7 @@ def cleanup_test_droppings(testname, verbose):
             print "%r left behind %s %r" % (testname, kind, name)
         try:
             nuker(name)
-        except Exception, msg:
+        except Exception as msg:
             print >> sys.stderr, ("%r left behind %s %r and it couldn't be "
                 "removed: %s" % (testname, kind, name, msg))
 

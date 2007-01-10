@@ -139,7 +139,7 @@ class ESISReader(xml.sax.xmlreader.XMLReader):
     def _get_token(self, fp):
         try:
             line = fp.readline()
-        except IOError, e:
+        except IOError as e:
             e = SAXException("I/O error reading input stream", e)
             self.getErrorHandler().fatalError(e)
             return

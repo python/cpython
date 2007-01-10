@@ -479,7 +479,7 @@ def test_expat_inpsource_location():
     source.setSystemId(name)
     try:
         parser.parse(source)
-    except SAXException, e:
+    except SAXException as e:
         return e.getSystemId() == name
 
 def test_expat_incomplete():

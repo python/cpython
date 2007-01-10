@@ -199,7 +199,7 @@ if verbose:
 def test_exc(formatstr, args, exception, excmsg):
     try:
         testformat(formatstr, args)
-    except exception, exc:
+    except exception as exc:
         if str(exc) == excmsg:
             if verbose:
                 print "yes"

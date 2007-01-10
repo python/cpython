@@ -326,7 +326,7 @@ class CursorTests(unittest.TestCase):
             self.fail("should have raised a TypeError")
         except TypeError:
             return
-        except Exception, e:
+        except Exception as e:
             print "raised", e.__class__
             self.fail("raised wrong exception.")
 

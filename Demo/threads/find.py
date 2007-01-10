@@ -131,7 +131,7 @@ def selector(dir, name, fullname, stat):
 def find(dir, pred, wq):
     try:
         names = os.listdir(dir)
-    except os.error, msg:
+    except os.error as msg:
         print repr(dir), ':', msg
         return
     for name in names:
@@ -139,7 +139,7 @@ def find(dir, pred, wq):
             fullname = os.path.join(dir, name)
             try:
                 stat = os.lstat(fullname)
-            except os.error, msg:
+            except os.error as msg:
                 print repr(fullname), ':', msg
                 continue
             if pred(dir, name, fullname, stat):

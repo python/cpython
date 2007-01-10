@@ -177,7 +177,7 @@ expat.ParserCreate(namespace_separator=' ')
 print "Legal values tested o.k."
 try:
     expat.ParserCreate(namespace_separator=42)
-except TypeError, e:
+except TypeError as e:
     print "Caught expected TypeError:"
     print e
 else:
@@ -185,7 +185,7 @@ else:
 
 try:
     expat.ParserCreate(namespace_separator='too long')
-except ValueError, e:
+except ValueError as e:
     print "Caught expected ValueError:"
     print e
 else:
@@ -321,7 +321,7 @@ parser.StartElementHandler = StartElementHandler
 
 try:
     parser.Parse("<a><b><c/></b></a>", 1)
-except RuntimeError, e:
+except RuntimeError as e:
     if e.args[0] != "a":
         print "Expected RuntimeError for element 'a'; found %r" % e.args[0]
 else:

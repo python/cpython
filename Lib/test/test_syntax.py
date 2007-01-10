@@ -387,7 +387,7 @@ class SyntaxTestCase(unittest.TestCase):
         """
         try:
             compile(code, filename, mode)
-        except SyntaxError, err:
+        except SyntaxError as err:
             if subclass and not isinstance(err, subclass):
                 self.fail("SyntaxError is not a %s" % subclass.__name__)
             mo = re.search(errtext, str(err))

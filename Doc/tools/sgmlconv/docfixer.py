@@ -1039,7 +1039,8 @@ def convert(ifp, ofp):
     #
     try:
         write_esis(fragment, ofp, knownempty)
-    except IOError, (err, msg):
+    except IOError as e:
+        (err, msg) = e
         # Ignore EPIPE; it just means that whoever we're writing to stopped
         # reading.  The rest of the output would be ignored.  All other errors
         # should still be reported,

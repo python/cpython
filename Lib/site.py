@@ -391,7 +391,7 @@ def execsitecustomize():
         import sitecustomize
     except ImportError:
         pass
-    except Exception, err:
+    except Exception as err:
         if os.environ.get("PYTHONVERBOSE"):
             raise
         sys.stderr.write(

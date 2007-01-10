@@ -129,7 +129,7 @@ class MacroExpander:
                 self.set_macro("FrameworkSDKDir", net, "sdkinstallrootv1.1")
             else:
                 self.set_macro("FrameworkSDKDir", net, "sdkinstallroot")
-        except KeyError, exc: #
+        except KeyError as exc: #
             raise DistutilsPlatformError, \
                   ("""Python was built with Visual Studio 2003;
 extensions must be built with a compiler than can generate compatible binaries.
@@ -371,7 +371,7 @@ class MSVCCompiler (CCompiler) :
                 try:
                     self.spawn ([self.rc] + pp_opts +
                                 [output_opt] + [input_opt])
-                except DistutilsExecError, msg:
+                except DistutilsExecError as msg:
                     raise CompileError, msg
                 continue
             elif ext in self._mc_extensions:
@@ -400,7 +400,7 @@ class MSVCCompiler (CCompiler) :
                     self.spawn ([self.rc] +
                                 ["/fo" + obj] + [rc_file])
 
-                except DistutilsExecError, msg:
+                except DistutilsExecError as msg:
                     raise CompileError, msg
                 continue
             else:
@@ -414,7 +414,7 @@ class MSVCCompiler (CCompiler) :
                 self.spawn ([self.cc] + compile_opts + pp_opts +
                             [input_opt, output_opt] +
                             extra_postargs)
-            except DistutilsExecError, msg:
+            except DistutilsExecError as msg:
                 raise CompileError, msg
 
         return objects
@@ -440,7 +440,7 @@ class MSVCCompiler (CCompiler) :
                 pass                    # XXX what goes here?
             try:
                 self.spawn ([self.lib] + lib_args)
-            except DistutilsExecError, msg:
+            except DistutilsExecError as msg:
                 raise LibError, msg
 
         else:
@@ -519,7 +519,7 @@ class MSVCCompiler (CCompiler) :
             self.mkpath (os.path.dirname (output_filename))
             try:
                 self.spawn ([self.linker] + ld_args)
-            except DistutilsExecError, msg:
+            except DistutilsExecError as msg:
                 raise LinkError, msg
 
         else:

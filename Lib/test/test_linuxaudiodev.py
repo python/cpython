@@ -27,7 +27,7 @@ def play_sound_file(path):
 
     try:
         a = linuxaudiodev.open('w')
-    except linuxaudiodev.error, msg:
+    except linuxaudiodev.error as msg:
         if msg[0] in (errno.EACCES, errno.ENOENT, errno.ENODEV, errno.EBUSY):
             raise TestSkipped, msg
         raise TestFailed, msg
@@ -62,27 +62,27 @@ def test_errors():
     nchannels = 1
     try:
         a.setparameters(-1, size, nchannels, fmt)
-    except ValueError, msg:
+    except ValueError as msg:
         print msg
     try:
         a.setparameters(rate, -2, nchannels, fmt)
-    except ValueError, msg:
+    except ValueError as msg:
         print msg
     try:
         a.setparameters(rate, size, 3, fmt)
-    except ValueError, msg:
+    except ValueError as msg:
         print msg
     try:
         a.setparameters(rate, size, nchannels, 177)
-    except ValueError, msg:
+    except ValueError as msg:
         print msg
     try:
         a.setparameters(rate, size, nchannels, linuxaudiodev.AFMT_U16_LE)
-    except ValueError, msg:
+    except ValueError as msg:
         print msg
     try:
         a.setparameters(rate, 16, nchannels, fmt)
-    except ValueError, msg:
+    except ValueError as msg:
         print msg
 
 def test():

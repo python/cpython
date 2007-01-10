@@ -32,13 +32,13 @@ def main():
         return 1
     try:
         os.mkdir(newtree, 0777)
-    except os.error, msg:
+    except os.error as msg:
         print newtree + ': cannot mkdir:', msg
         return 1
     linkname = os.path.join(newtree, link)
     try:
         os.symlink(os.path.join(os.pardir, oldtree), linkname)
-    except os.error, msg:
+    except os.error as msg:
         if not link_may_fail:
             print linkname + ': cannot symlink:', msg
             return 1
@@ -51,7 +51,7 @@ def linknames(old, new, link):
     if debug: print 'linknames', (old, new, link)
     try:
         names = os.listdir(old)
-    except os.error, msg:
+    except os.error as msg:
         print old + ': warning: cannot listdir:', msg
         return
     for name in names:

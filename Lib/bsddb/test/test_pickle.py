@@ -11,7 +11,7 @@ import glob
 try:
     # For Pythons w/distutils pybsddb
     from bsddb3 import db
-except ImportError, e:
+except ImportError as e:
     # For Python 2.3
     from bsddb import db
 
@@ -47,7 +47,7 @@ class pickleTestCase(unittest.TestCase):
         assert self.db['spam'] == 'eggs'
         try:
             self.db.put('spam', 'ham', flags=db.DB_NOOVERWRITE)
-        except db.DBError, egg:
+        except db.DBError as egg:
             pickledEgg = pickle.dumps(egg)
             #print repr(pickledEgg)
             rottenEgg = pickle.loads(pickledEgg)

@@ -62,7 +62,7 @@ def usage():
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'crs:')
-    except getopt.error, msg:
+    except getopt.error as msg:
         err('Options error: ' + str(msg) + '\n')
         usage()
         sys.exit(2)
@@ -97,7 +97,7 @@ def recursedown(dirname):
     bad = 0
     try:
         names = os.listdir(dirname)
-    except os.error, msg:
+    except os.error as msg:
         err(dirname + ': cannot list directory: ' + str(msg) + '\n')
         return 1
     names.sort()
@@ -124,7 +124,7 @@ def fix(filename):
         # File replacement mode
         try:
             f = open(filename, 'r')
-        except IOError, msg:
+        except IOError as msg:
             err(filename + ': cannot open: ' + str(msg) + '\n')
             return 1
         head, tail = os.path.split(filename)
@@ -148,7 +148,7 @@ def fix(filename):
             if g is None:
                 try:
                     g = open(tempname, 'w')
-                except IOError, msg:
+                except IOError as msg:
                     f.close()
                     err(tempname+': cannot create: '+
                         str(msg)+'\n')
@@ -175,17 +175,17 @@ def fix(filename):
     try:
         statbuf = os.stat(filename)
         os.chmod(tempname, statbuf[ST_MODE] & 07777)
-    except os.error, msg:
+    except os.error as msg:
         err(tempname + ': warning: chmod failed (' + str(msg) + ')\n')
     # Then make a backup of the original file as filename~
     try:
         os.rename(filename, filename + '~')
-    except os.error, msg:
+    except os.error as msg:
         err(filename + ': warning: backup failed (' + str(msg) + ')\n')
     # Now move the temp file to the original file
     try:
         os.rename(tempname, filename)
-    except os.error, msg:
+    except os.error as msg:
         err(filename + ': rename failed (' + str(msg) + ')\n')
         return 1
     # Return succes
@@ -276,7 +276,7 @@ NotInComment = {}
 def addsubst(substfile):
     try:
         fp = open(substfile, 'r')
-    except IOError, msg:
+    except IOError as msg:
         err(substfile + ': cannot read substfile: ' + str(msg) + '\n')
         sys.exit(1)
     lineno = 0

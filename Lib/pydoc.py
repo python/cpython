@@ -1479,7 +1479,7 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0):
             object = type(object)
             desc += ' object'
         pager(title % desc + '\n\n' + text.document(object, name))
-    except (ImportError, ErrorDuringImport), value:
+    except (ImportError, ErrorDuringImport) as value:
         print value
 
 def writedoc(thing, forceload=0):
@@ -1491,7 +1491,7 @@ def writedoc(thing, forceload=0):
         file.write(page)
         file.close()
         print 'wrote', name + '.html'
-    except (ImportError, ErrorDuringImport), value:
+    except (ImportError, ErrorDuringImport) as value:
         print value
 
 def writedocs(dir, pkgpath='', done=None):
@@ -1920,7 +1920,7 @@ def serve(port, callback=None, completer=None):
             if path and path != '.':
                 try:
                     obj = locate(path, forceload=1)
-                except ErrorDuringImport, value:
+                except ErrorDuringImport as value:
                     self.send_document(path, html.escape(str(value)))
                     return
                 if obj:
@@ -2223,7 +2223,7 @@ def cli():
                         writedoc(arg)
                 else:
                     help.help(arg)
-            except ErrorDuringImport, value:
+            except ErrorDuringImport as value:
                 print value
 
     except (getopt.error, BadUsage):

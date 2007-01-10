@@ -65,12 +65,12 @@ def compile_dir(dir, maxlevels=10, ddir=None,
                     ok = py_compile.compile(fullname, None, dfile, True)
                 except KeyboardInterrupt:
                     raise KeyboardInterrupt
-                except py_compile.PyCompileError,err:
+                except py_compile.PyCompileError as err:
                     if quiet:
                         print 'Compiling', fullname, '...'
                     print err.msg
                     success = 0
-                except IOError, e:
+                except IOError as e:
                     print "Sorry", e
                     success = 0
                 else:
@@ -109,7 +109,7 @@ def main():
     import getopt
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'lfqd:x:')
-    except getopt.error, msg:
+    except getopt.error as msg:
         print msg
         print "usage: python compileall.py [-l] [-f] [-q] [-d destdir] " \
               "[-x regexp] [directory ...]"

@@ -94,7 +94,7 @@ class ModuleBrowserTreeItem(TreeItem):
             return []
         try:
             dict = pyclbr.readmodule_ex(name, [dir] + sys.path)
-        except ImportError, msg:
+        except ImportError as msg:
             return []
         items = []
         self.classes = {}

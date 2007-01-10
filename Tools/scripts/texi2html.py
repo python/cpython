@@ -554,7 +554,7 @@ class TexinfoParser:
         file = os.path.join(self.includedir, file)
         try:
             fp = open(file, 'r')
-        except IOError, msg:
+        except IOError as msg:
             print '*** Can\'t open include file', repr(file)
             return
         print '!'*self.debugging, '--> file', repr(file)
@@ -1797,7 +1797,7 @@ class HTMLHelp:
             print>>fp, ''
             self.dumpfiles(fp)
             fp.close()
-        except IOError, msg:
+        except IOError as msg:
             print projectfile, ':', msg
             sys.exit(1)
 
@@ -1822,7 +1822,7 @@ class HTMLHelp:
             print>>fp, '</BODY>'
             print>>fp, '</HTML>'
             fp.close()
-        except IOError, msg:
+        except IOError as msg:
             print contentfile, ':', msg
             sys.exit(1)
 
@@ -1844,7 +1844,7 @@ class HTMLHelp:
             print>>fp, '</BODY>'
             print>>fp, '</HTML>'
             fp.close()
-        except IOError, msg:
+        except IOError as msg:
             print indexfile  , ':', msg
             sys.exit(1)
 
@@ -2063,7 +2063,7 @@ def test():
 
     try:
         fp = open(file, 'r')
-    except IOError, msg:
+    except IOError as msg:
         print file, ':', msg
         sys.exit(1)
 

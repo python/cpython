@@ -3480,8 +3480,9 @@ try:
     f = open('myfile.txt')
     s = f.readline()
     i = int(s.strip())
-except IOError, (errno, strerror):
-    print "I/O error(%s): %s" % (errno, strerror)
+except IOError as e:
+    (errno, strerror) = e
+    print "I/O error(%s): %s" % (e.errno, e.strerror)
 except ValueError:
     print "Could not convert data to an integer."
 except:
@@ -3530,7 +3531,7 @@ as desired.
 \begin{verbatim}
 >>> try:
 ...    raise Exception('spam', 'eggs')
-... except Exception, inst:
+... except Exception as inst:
 ...    print type(inst)     # the exception instance
 ...    print inst.args      # arguments stored in .args
 ...    print inst           # __str__ allows args to printed directly
@@ -3559,7 +3560,7 @@ For example:
 ... 
 >>> try:
 ...     this_fails()
-... except ZeroDivisionError, detail:
+... except ZeroDivisionError as detail:
 ...     print 'Handling run-time error:', detail
 ... 
 Handling run-time error: integer division or modulo by zero
@@ -3619,7 +3620,7 @@ example:
 ... 
 >>> try:
 ...     raise MyError(2*2)
-... except MyError, e:
+... except MyError as e:
 ...     print 'My exception occurred, value:', e.value
 ... 
 My exception occurred, value: 4

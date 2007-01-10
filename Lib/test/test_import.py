@@ -55,7 +55,7 @@ class ImportTest(unittest.TestCase):
             try:
                 try:
                     mod = __import__(TESTFN)
-                except ImportError, err:
+                except ImportError as err:
                     self.fail("import from %s failed: %s" % (ext, err))
 
                 self.assertEquals(mod.a, a,
@@ -68,7 +68,7 @@ class ImportTest(unittest.TestCase):
             try:
                 try:
                     reload(mod)
-                except ImportError, err:
+                except ImportError as err:
                     self.fail("import from .pyc/.pyo failed: %s" % err)
             finally:
                 try:

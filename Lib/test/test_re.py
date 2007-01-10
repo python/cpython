@@ -633,7 +633,7 @@ def run_re_tests():
         else:
             try:
                 result = obj.search(s)
-            except re.error, msg:
+            except re.error as msg:
                 print '=== Unexpected exception', t, repr(msg)
             if outcome == SYNTAX_ERROR:
                 # This should have been a syntax error; forget it.

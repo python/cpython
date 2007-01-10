@@ -12,7 +12,7 @@ class TracebackCases(unittest.TestCase):
     def get_exception_format(self, func, exc):
         try:
             func()
-        except exc, value:
+        except exc as value:
             return traceback.format_exception_only(exc, value)
         else:
             raise ValueError, "call did not raise exception"

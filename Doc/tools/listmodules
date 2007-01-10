@@ -53,7 +53,7 @@ def main():
         opts, args = getopt.getopt(
             args, "abchi:",
             ["annotate", "built-in", "categorize", "help", "ignore-from="])
-    except getopt.error, msg:
+    except getopt.error as msg:
         sys.stdout = sys.stderr
         print msg
         print

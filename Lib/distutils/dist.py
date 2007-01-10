@@ -398,7 +398,7 @@ Common commands: (see '--help-commands' for more)
                         setattr(self, opt, strtobool(val))
                     else:
                         setattr(self, opt, val)
-                except ValueError, msg:
+                except ValueError as msg:
                     raise DistutilsOptionError, msg
 
     # parse_config_files ()
@@ -515,7 +515,7 @@ Common commands: (see '--help-commands' for more)
         # it takes.
         try:
             cmd_class = self.get_command_class(command)
-        except DistutilsModuleError, msg:
+        except DistutilsModuleError as msg:
             raise DistutilsArgError, msg
 
         # Require that the command class be derived from Command -- want
@@ -917,7 +917,7 @@ Common commands: (see '--help-commands' for more)
                     raise DistutilsOptionError, \
                           ("error in %s: command '%s' has no such option '%s'"
                            % (source, command_name, option))
-            except ValueError, msg:
+            except ValueError as msg:
                 raise DistutilsOptionError, msg
 
     def reinitialize_command (self, command, reinit_subcommands=0):

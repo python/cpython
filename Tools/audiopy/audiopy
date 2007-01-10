@@ -309,7 +309,7 @@ Email:   bwarsaw@python.org''' % __version__)
         info.o_gain = self.__scalevar.get()
         try:
             self.__devctl.setinfo(info)
-        except sunaudiodev.error, msg:
+        except sunaudiodev.error as msg:
             # TBD: what to do?  it's probably temporary.
             pass
 
@@ -496,7 +496,8 @@ Version: %s''' % __version__
     # now set the values
     try:
         device.setinfo(info)
-    except sunaudiodev.error, (code, msg):
+    except sunaudiodev.error as e:
+        (code, msg) = e
         if code <> errno.EINVAL:
             raise
     device.close()

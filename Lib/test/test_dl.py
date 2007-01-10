@@ -18,7 +18,7 @@ for s, func in sharedlibs:
         if verbose:
             print 'trying to open:', s,
         l = dl.open(s)
-    except dl.error, err:
+    except dl.error as err:
         if verbose:
             print 'failed', repr(str(err))
         pass

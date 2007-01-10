@@ -25,7 +25,7 @@ def main():
     search = None
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'm:s:')
-    except getopt.error, msg:
+    except getopt.error as msg:
         print msg
         print 'usage: ftpstats [-m maxitems] [file]'
         sys.exit(2)
@@ -41,7 +41,7 @@ def main():
     else:
         try:
             f = open(file, 'r')
-        except IOError, msg:
+        except IOError as msg:
             print file, ':', msg
             sys.exit(1)
     bydate = {}

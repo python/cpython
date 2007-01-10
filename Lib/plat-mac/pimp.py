@@ -76,7 +76,7 @@ def getDefaultDatabase(experimental=False):
         url = DEFAULT_PIMPDATABASE_FMT % (PIMP_VERSION, status, pyvers, osname, rel, machine)
         try:
             urllib2.urlopen(url)
-        except urllib2.HTTPError, arg:
+        except urllib2.HTTPError as arg:
             pass
         else:
             break
@@ -589,13 +589,13 @@ class PimpPackage:
         installTest = self._dict['Install-test'].strip() + '\n'
         try:
             exec(installTest, namespace)
-        except ImportError, arg:
+        except ImportError as arg:
             return "no", str(arg)
-        except _scriptExc_NotInstalled, arg:
+        except _scriptExc_NotInstalled as arg:
             return "no", str(arg)
-        except _scriptExc_OldInstalled, arg:
+        except _scriptExc_OldInstalled as arg:
             return "old", str(arg)
-        except _scriptExc_BadInstalled, arg:
+        except _scriptExc_BadInstalled as arg:
             return "bad", str(arg)
         except:
             sys.stderr.write("-------------------------------------\n")

@@ -293,7 +293,7 @@ if missing: raise "Missing Types"
     def openrepairfile(self, filename = "REPAIR"):
         try:
             return open(filename, "rU")
-        except IOError, msg:
+        except IOError as msg:
             print repr(filename), ":", msg
             print "Cannot open repair file -- assume no repair needed"
             return None
@@ -419,7 +419,7 @@ if missing: raise "Missing Types"
     def openoutput(self, filename):
         try:
             file = open(filename, 'w')
-        except IOError, arg:
+        except IOError as arg:
             raise IOError, (filename, arg)
         self.setfiletype(filename)
         return file
@@ -460,7 +460,7 @@ if missing: raise "Missing Types"
         # If not on the path, or absolute, try default open()
         try:
             return open(filename, 'rU')
-        except IOError, arg:
+        except IOError as arg:
             raise IOError, (arg, filename)
 
     def getline(self):

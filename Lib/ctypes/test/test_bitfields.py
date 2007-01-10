@@ -191,7 +191,7 @@ class BitFieldTest(unittest.TestCase):
     def get_except(self, func, *args, **kw):
         try:
             func(*args, **kw)
-        except Exception, detail:
+        except Exception as detail:
             return detail.__class__, str(detail)
 
     def test_mixed_1(self):

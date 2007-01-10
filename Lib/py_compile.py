@@ -123,7 +123,7 @@ def compile(file, cfile=None, dfile=None, doraise=False):
         codestring = codestring + '\n'
     try:
         codeobject = __builtin__.compile(codestring, dfile or file,'exec')
-    except Exception,err:
+    except Exception as err:
         py_exc = PyCompileError(err.__class__,err.args,dfile or file)
         if doraise:
             raise py_exc
@@ -157,7 +157,7 @@ def main(args=None):
     for filename in args:
         try:
             compile(filename, doraise=True)
-        except PyCompileError,err:
+        except PyCompileError as err:
             sys.stderr.write(err.msg)
 
 if __name__ == "__main__":

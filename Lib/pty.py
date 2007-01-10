@@ -56,7 +56,7 @@ def _open_terminal():
     else:
         try:
             tty_name, master_fd = sgi._getpty(os.O_RDWR, 0666, 0)
-        except IOError, msg:
+        except IOError as msg:
             raise os.error, msg
         return master_fd, tty_name
     for x in 'pqrstuvwxyzPQRST':

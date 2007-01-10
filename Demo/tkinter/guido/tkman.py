@@ -216,7 +216,7 @@ class SelectionBox:
                 prog = re.compile(search, map)
             else:
                 prog = re.compile(search)
-        except re.error, msg:
+        except re.error as msg:
             self.frame.bell()
             print 'Regex error:', msg
             return

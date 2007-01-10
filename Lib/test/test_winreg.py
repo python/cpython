@@ -142,7 +142,7 @@ except (IndexError, ValueError):
 if remote_name is not None:
     try:
         remote_key = ConnectRegistry(remote_name, HKEY_CURRENT_USER)
-    except EnvironmentError, exc:
+    except EnvironmentError as exc:
         print "Could not connect to the remote machine -", exc.strerror
         remote_key = None
     if remote_key is not None:

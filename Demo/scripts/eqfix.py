@@ -62,7 +62,7 @@ def recursedown(dirname):
     bad = 0
     try:
         names = os.listdir(dirname)
-    except os.error, msg:
+    except os.error as msg:
         err('%s: cannot list directory: %r\n' % (dirname, msg))
         return 1
     names.sort()
@@ -83,7 +83,7 @@ def fix(filename):
 ##      dbg('fix(%r)\n' % (dirname,))
     try:
         f = open(filename, 'r')
-    except IOError, msg:
+    except IOError as msg:
         err('%s: cannot open: %r\n' % (filename, msg))
         return 1
     head, tail = os.path.split(filename)
@@ -120,7 +120,7 @@ def fix(filename):
             if g is None:
                 try:
                     g = open(tempname, 'w')
-                except IOError, msg:
+                except IOError as msg:
                     f.close()
                     err('%s: cannot create: %r\n' % (tempname, msg))
                     return 1
@@ -144,17 +144,17 @@ def fix(filename):
     try:
         statbuf = os.stat(filename)
         os.chmod(tempname, statbuf[ST_MODE] & 07777)
-    except os.error, msg:
+    except os.error as msg:
         err('%s: warning: chmod failed (%r)\n' % (tempname, msg))
     # Then make a backup of the original file as filename~
     try:
         os.rename(filename, filename + '~')
-    except os.error, msg:
+    except os.error as msg:
         err('%s: warning: backup failed (%r)\n' % (filename, msg))
     # Now move the temp file to the original file
     try:
         os.rename(tempname, filename)
-    except os.error, msg:
+    except os.error as msg:
         err('%s: rename failed (%r)\n' % (filename, msg))
         return 1
     # Return succes

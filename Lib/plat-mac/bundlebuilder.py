@@ -764,7 +764,7 @@ def makedirs(dir):
     directory. Don't moan if any path element already exists."""
     try:
         os.makedirs(dir)
-    except OSError, why:
+    except OSError as why:
         if why.errno != errno.EEXIST:
             raise
 

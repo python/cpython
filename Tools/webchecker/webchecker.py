@@ -153,7 +153,7 @@ def main():
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'Rd:m:nqr:t:vxa')
-    except getopt.error, msg:
+    except getopt.error as msg:
         sys.stdout = sys.stderr
         print msg
         print __doc__%globals()
@@ -335,7 +335,7 @@ class Checker:
         rp.set_url(url)
         try:
             rp.read()
-        except (OSError, IOError), msg:
+        except (OSError, IOError) as msg:
             self.note(1, "I/O error parsing %s: %s", url, msg)
 
     def run(self):
@@ -402,7 +402,7 @@ class Checker:
             return
         try:
             page = self.getpage(url_pair)
-        except sgmllib.SGMLParseError, msg:
+        except sgmllib.SGMLParseError as msg:
             msg = self.sanitize(msg)
             self.note(0, "Error parsing %s: %s",
                           self.format_url(url_pair), msg)
@@ -541,7 +541,7 @@ class Checker:
         url, fragment = url_pair
         try:
             return self.urlopener.open(url)
-        except (OSError, IOError), msg:
+        except (OSError, IOError) as msg:
             msg = self.sanitize(msg)
             self.note(0, "Error %s", msg)
             if self.verbose > 0:
@@ -759,7 +759,7 @@ class MyURLopener(urllib.FancyURLopener):
                 return self.open_file(url + "index.html")
             try:
                 names = os.listdir(path)
-            except os.error, msg:
+            except os.error as msg:
                 exc_type, exc_value, exc_tb = sys.exc_info()
                 raise IOError, msg, exc_tb
             names.sort()

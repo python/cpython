@@ -22,7 +22,7 @@ def listcodecs(dir):
         except LookupError:
             # Codec not found
             continue
-        except Exception, reason:
+        except Exception as reason:
             # Probably an error from importing the codec; still it's
             # a valid code name
             if _debug:

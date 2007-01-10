@@ -129,7 +129,7 @@ class ThreadableTest:
             raise TypeError, "test_func must be a callable function"
         try:
             test_func()
-        except Exception, strerror:
+        except Exception as strerror:
             self.queue.put(strerror)
         self.clientTearDown()
 

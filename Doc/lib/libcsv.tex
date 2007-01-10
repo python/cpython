@@ -426,7 +426,7 @@ reader = csv.reader(open(filename, "rb"))
 try:
     for row in reader:
         print row
-except csv.Error, e:
+except csv.Error as e:
     sys.exit('file %s, line %d: %s' % (filename, reader.line_num, e))
 \end{verbatim}
 

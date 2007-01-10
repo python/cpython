@@ -260,7 +260,7 @@ class bsdTableDB :
 
             txn.commit()
             txn = None
-        except DBError, dberror:
+        except DBError as dberror:
             if txn:
                 txn.abort()
             raise TableDBError, dberror[1]
@@ -338,7 +338,7 @@ class bsdTableDB :
                 txn = None
 
                 self.__load_column_info(table)
-            except DBError, dberror:
+            except DBError as dberror:
                 if txn:
                     txn.abort()
                 raise TableDBError, dberror[1]
@@ -407,7 +407,7 @@ class bsdTableDB :
             txn.commit()
             txn = None
 
-        except DBError, dberror:
+        except DBError as dberror:
             # WIBNI we could just abort the txn and re-raise the exception?
             # But no, because TableDBError is not related to DBError via
             # inheritance, so it would be backwards incompatible.  Do the next
@@ -466,7 +466,7 @@ class bsdTableDB :
                         txn.abort()
                     raise
 
-        except DBError, dberror:
+        except DBError as dberror:
             raise TableDBError, dberror[1]
 
     def Delete(self, table, conditions={}):
@@ -502,11 +502,11 @@ class bsdTableDB :
                         pass
                     txn.commit()
                     txn = None
-                except DBError, dberror:
+                except DBError as dberror:
                     if txn:
                         txn.abort()
                     raise
-        except DBError, dberror:
+        except DBError as dberror:
             raise TableDBError, dberror[1]
 
 
@@ -526,7 +526,7 @@ class bsdTableDB :
             if columns is None:
                 columns = self.__tablecolumns[table]
             matching_rowids = self.__Select(table, columns, conditions)
-        except DBError, dberror:
+        except DBError as dberror:
             raise TableDBError, dberror[1]
         # return the matches as a list of dictionaries
         return matching_rowids.values()
@@ -616,7 +616,7 @@ class bsdTableDB :
 
                     key, data = cur.next()
 
-            except DBError, dberror:
+            except DBError as dberror:
                 if dberror[0] != DB_NOTFOUND:
                     raise
                 continue
@@ -636,7 +636,7 @@ class bsdTableDB :
                     try:
                         rowdata[column] = self.db.get(
                             _data_key(table, column, rowid))
-                    except DBError, dberror:
+                    except DBError as dberror:
                         if dberror[0] != DB_NOTFOUND:
                             raise
                         rowdata[column] = None
@@ -700,7 +700,7 @@ class bsdTableDB :
             if table in self.__tablecolumns:
                 del self.__tablecolumns[table]
 
-        except DBError, dberror:
+        except DBError as dberror:
             if txn:
                 txn.abort()
             raise TableDBError, dberror[1]

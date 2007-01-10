@@ -595,7 +595,7 @@ class UnicodeInternalTest(unittest.TestCase):
         if sys.maxunicode > 0xffff:
             try:
                 "\x00\x00\x00\x00\x00\x11\x11\x00".decode("unicode_internal")
-            except UnicodeDecodeError, ex:
+            except UnicodeDecodeError as ex:
                 self.assertEquals("unicode_internal", ex.encoding)
                 self.assertEquals("\x00\x00\x00\x00\x00\x11\x11\x00", ex.object)
                 self.assertEquals(4, ex.start)
@@ -782,7 +782,7 @@ class NameprepTest(unittest.TestCase):
                 prepped = unicode(prepped, "utf-8")
                 try:
                     self.assertEquals(nameprep(orig), prepped)
-                except Exception,e:
+                except Exception as e:
                     raise test_support.TestFailed("Test 3.%d: %s" % (pos+1, str(e)))
 
 class IDNACodecTest(unittest.TestCase):

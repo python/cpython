@@ -567,7 +567,7 @@ class ConfigParser(RawConfigParser):
                 value = self._KEYCRE.sub(self._interpolation_replace, value)
                 try:
                     value = value % vars
-                except KeyError, e:
+                except KeyError as e:
                     raise InterpolationMissingOptionError(
                         option, section, rawval, e[0])
             else:

@@ -357,10 +357,10 @@ class PureProxy(SMTPServer):
                 refused = s.sendmail(mailfrom, rcpttos, data)
             finally:
                 s.quit()
-        except smtplib.SMTPRecipientsRefused, e:
+        except smtplib.SMTPRecipientsRefused as e:
             print >> DEBUGSTREAM, 'got SMTPRecipientsRefused'
             refused = e.recipients
-        except (socket.error, smtplib.SMTPException), e:
+        except (socket.error, smtplib.SMTPException) as e:
             print >> DEBUGSTREAM, 'got', e.__class__
             # All recipients were refused.  If the exception had an associated
             # error code, use it.  Otherwise,fake it with a non-triggering
@@ -464,7 +464,7 @@ def parseargs():
         opts, args = getopt.getopt(
             sys.argv[1:], 'nVhc:d',
             ['class=', 'nosetuid', 'version', 'help', 'debug'])
-    except getopt.error, e:
+    except getopt.error as e:
         usage(1, e)
 
     options = Options()
@@ -528,7 +528,7 @@ if __name__ == '__main__':
         nobody = pwd.getpwnam('nobody')[2]
         try:
             os.setuid(nobody)
-        except OSError, e:
+        except OSError as e:
             if e.errno != errno.EPERM: raise
             print >> sys.stderr, \
                   'Cannot setuid "nobody"; try running with -n option.'

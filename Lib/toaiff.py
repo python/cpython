@@ -87,7 +87,7 @@ def _toaiff(filename, temps):
         ftype = sndhdr.whathdr(fname)
         if ftype:
             ftype = ftype[0] # All we're interested in
-    except IOError, msg:
+    except IOError as msg:
         if type(msg) == type(()) and len(msg) == 2 and \
                 type(msg[0]) == type(0) and type(msg[1]) == type(''):
             msg = msg[1]

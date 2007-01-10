@@ -75,7 +75,7 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
             try:
                 os.mkdir(head)
                 created_dirs.append(head)
-            except OSError, exc:
+            except OSError as exc:
                 raise DistutilsFileError, \
                       "could not create '%s': %s" % (head, exc[-1])
 
@@ -142,7 +142,8 @@ def copy_tree (src, dst,
               "cannot copy tree '%s': not a directory" % src
     try:
         names = os.listdir(src)
-    except os.error, (errno, errstr):
+    except os.error as e:
+        (errno, errstr) = e
         if dry_run:
             names = []
         else:
@@ -209,7 +210,7 @@ def remove_tree (directory, verbose=0, dry_run=0):
             abspath = os.path.abspath(cmd[1])
             if abspath in _path_created:
                 del _path_created[abspath]
-        except (IOError, OSError), exc:
+        except (IOError, OSError) as exc:
             log.warn(grok_environment_error(
                     exc, "error removing %s: " % directory))
 

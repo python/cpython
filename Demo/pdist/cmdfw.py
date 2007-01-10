@@ -42,7 +42,7 @@ class CommandFrameWork:
         if args is None: args = sys.argv[1:]
         try:
             opts, args = getopt.getopt(args, self.GlobalFlags)
-        except getopt.error, msg:
+        except getopt.error as msg:
             return self.usage(msg)
         self.options(opts)
         if not args:
@@ -62,7 +62,7 @@ class CommandFrameWork:
                 flags = ''
             try:
                 opts, args = getopt.getopt(args[1:], flags)
-            except getopt.error, msg:
+            except getopt.error as msg:
                 return self.usage(
                         "subcommand %s: " % cmd + str(msg))
             self.ready()

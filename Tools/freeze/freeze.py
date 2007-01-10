@@ -145,7 +145,7 @@ def main():
         if sys.argv[pos] == '-i':
             try:
                 options = open(sys.argv[pos+1]).read().split()
-            except IOError, why:
+            except IOError as why:
                 usage("File name '%s' specified with the -i option "
                       "can not be read - %s" % (sys.argv[pos+1], why) )
             # Replace the '-i' and the filename with the read params.
@@ -156,7 +156,7 @@ def main():
     # Now parse the command line with the extras inserted.
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'r:a:dEe:hmo:p:P:qs:wX:x:l:')
-    except getopt.error, msg:
+    except getopt.error as msg:
         usage('getopt error: ' + str(msg))
 
     # proces option arguments
@@ -311,7 +311,7 @@ def main():
         try:
             os.mkdir(odir)
             print "Created output directory", odir
-        except os.error, msg:
+        except os.error as msg:
             usage('%s: mkdir failed (%s)' % (odir, str(msg)))
     base = ''
     if odir:
@@ -333,7 +333,7 @@ def main():
         try:
             custom_entry_point, python_entry_is_main = \
                 winmakemakefile.get_custom_entry_point(subsystem)
-        except ValueError, why:
+        except ValueError as why:
             usage(why)
 
 

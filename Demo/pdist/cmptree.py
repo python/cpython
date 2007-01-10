@@ -135,7 +135,7 @@ def compare(local, remote, mode):
 def sendfile(local, remote, name):
     try:
         remote.create(name)
-    except (IOError, os.error), msg:
+    except (IOError, os.error) as msg:
         print "cannot create:", msg
         return
 
@@ -171,7 +171,7 @@ def recvfile(local, remote, name):
 def recvfile_real(local, remote, name):
     try:
         local.create(name)
-    except (IOError, os.error), msg:
+    except (IOError, os.error) as msg:
         print "cannot create:", msg
         return
 

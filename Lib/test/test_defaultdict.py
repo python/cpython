@@ -43,7 +43,7 @@ class TestDefaultDict(unittest.TestCase):
         self.assertEqual(d2.default_factory, None)
         try:
             d2[15]
-        except KeyError, err:
+        except KeyError as err:
             self.assertEqual(err.args, (15,))
         else:
             self.fail("d2[15] didn't raise KeyError")

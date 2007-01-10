@@ -115,7 +115,7 @@ class BCPPCompiler(CCompiler) :
                 # This needs to be compiled to a .res file -- do it now.
                 try:
                     self.spawn (["brcc32", "-fo", obj, src])
-                except DistutilsExecError, msg:
+                except DistutilsExecError as msg:
                     raise CompileError, msg
                 continue # the 'for' loop
 
@@ -139,7 +139,7 @@ class BCPPCompiler(CCompiler) :
                 self.spawn ([self.cc] + compile_opts + pp_opts +
                             [input_opt, output_opt] +
                             extra_postargs + [src])
-            except DistutilsExecError, msg:
+            except DistutilsExecError as msg:
                 raise CompileError, msg
 
         return objects
@@ -164,7 +164,7 @@ class BCPPCompiler(CCompiler) :
                 pass                    # XXX what goes here?
             try:
                 self.spawn ([self.lib] + lib_args)
-            except DistutilsExecError, msg:
+            except DistutilsExecError as msg:
                 raise LibError, msg
         else:
             log.debug("skipping %s (up-to-date)", output_filename)
@@ -298,7 +298,7 @@ class BCPPCompiler(CCompiler) :
             self.mkpath (os.path.dirname (output_filename))
             try:
                 self.spawn ([self.linker] + ld_args)
-            except DistutilsExecError, msg:
+            except DistutilsExecError as msg:
                 raise LinkError, msg
 
         else:
@@ -391,7 +391,7 @@ class BCPPCompiler(CCompiler) :
                 self.mkpath(os.path.dirname(output_file))
             try:
                 self.spawn(pp_args)
-            except DistutilsExecError, msg:
+            except DistutilsExecError as msg:
                 print msg
                 raise CompileError, msg
 

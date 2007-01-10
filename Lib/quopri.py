@@ -194,7 +194,7 @@ def main():
     import getopt
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'td')
-    except getopt.error, msg:
+    except getopt.error as msg:
         sys.stdout = sys.stderr
         print msg
         print "usage: quopri [-t | -d] [file] ..."
@@ -218,7 +218,7 @@ def main():
         else:
             try:
                 fp = open(file)
-            except IOError, msg:
+            except IOError as msg:
                 sys.stderr.write("%s: can't open (%s)\n" % (file, msg))
                 sts = 1
                 continue

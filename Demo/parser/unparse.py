@@ -492,7 +492,7 @@ def testdir(a):
                 print 'Testing %s' % fullname
                 try:
                     roundtrip(fullname, output)
-                except Exception, e:
+                except Exception as e:
                     print '  Failed to compile, exception is %s' % repr(e)
             elif os.path.isdir(fullname):
                 testdir(fullname)

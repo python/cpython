@@ -50,7 +50,7 @@ def main():
     global verbose
     try:
         opts, args = getopt.getopt(sys.argv[1:], "v")
-    except getopt.error, msg:
+    except getopt.error as msg:
         errprint(str(msg) + "\n\n" + __doc__)
         return
     for opt, optarg in opts:
@@ -77,7 +77,7 @@ def check(file):
 
     try:
         f = open(file)
-    except IOError, msg:
+    except IOError as msg:
         errprint("%r: I/O Error: %s" % (file, msg))
         return
 
@@ -104,7 +104,7 @@ class AppendChecker:
     def run(self):
         try:
             tokenize.tokenize(self.file.readline, self.tokeneater)
-        except tokenize.TokenError, msg:
+        except tokenize.TokenError as msg:
             errprint("%r: Token Error: %s" % (self.fname, msg))
             self.nerrors = self.nerrors + 1
         return self.nerrors == 0

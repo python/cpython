@@ -194,8 +194,7 @@ def test():
     fh = sf[1]
     if fh:
         ncl = NFSClient(host)
-        as = ncl.Getattr(fh)
-        print as
+        print ncl.Getattr(fh)
         list = ncl.Listdir(fh)
         for item in list: print item
         mcl.Umnt(filesys)

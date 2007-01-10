@@ -190,7 +190,7 @@ class URLopener:
                 return getattr(self, name)(url)
             else:
                 return getattr(self, name)(url, data)
-        except socket.error, msg:
+        except socket.error as msg:
             raise IOError, ('socket error', msg), sys.exc_info()[2]
 
     def open_unknown(self, fullurl, data=None):
@@ -217,7 +217,7 @@ class URLopener:
                 hdrs = fp.info()
                 del fp
                 return url2pathname(splithost(url1)[1]), hdrs
-            except IOError, msg:
+            except IOError as msg:
                 pass
         fp = self.open(url, data)
         headers = fp.info()
@@ -461,7 +461,7 @@ class URLopener:
         localname = url2pathname(file)
         try:
             stats = os.stat(localname)
-        except OSError, e:
+        except OSError as e:
             raise IOError(e.errno, e.strerror, e.filename)
         size = stats.st_size
         modified = email.Utils.formatdate(stats.st_mtime, usegmt=True)
@@ -544,7 +544,7 @@ class URLopener:
                 headers += "Content-Length: %d\n" % retrlen
             headers = mimetools.Message(StringIO(headers))
             return addinfourl(fp, headers, "ftp:" + url)
-        except ftperrors(), msg:
+        except ftperrors() as msg:
             raise IOError, ('ftp error', msg), sys.exc_info()[2]
 
     def open_data(self, url, data=None):
@@ -861,7 +861,7 @@ class ftpwrapper:
             try:
                 cmd = 'RETR ' + file
                 conn = self.ftp.ntransfercmd(cmd)
-            except ftplib.error_perm, reason:
+            except ftplib.error_perm as reason:
                 if str(reason)[:3] != '550':
                     raise IOError, ('ftp error', reason), sys.exc_info()[2]
         if not conn:
@@ -1503,7 +1503,7 @@ def main():
     import getopt, sys
     try:
         opts, args = getopt.getopt(sys.argv[1:], "th")
-    except getopt.error, msg:
+    except getopt.error as msg:
         print msg
         print "Use -h for help"
         return

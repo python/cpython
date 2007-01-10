@@ -288,7 +288,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
                     except:
                         traceback.print_exc()
                     os.remove(file)
-            except socket.error, e:
+            except socket.error as e:
                 if type(e.args) != types.TupleType:
                     raise
                 else:

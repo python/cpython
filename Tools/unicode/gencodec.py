@@ -130,7 +130,7 @@ def hexrepr(t, precision=4):
     try:
         return '(' + ', '.join(['0x%0*X' % (precision, item)
                                 for item in t]) + ')'
-    except TypeError, why:
+    except TypeError as why:
         print '* failed to convert %r: %s' % (t, why)
         raise
 
@@ -393,7 +393,7 @@ def convertdir(dir, dirprefix='', nameprefix='', comments=1):
             else:
                 pymap(mappathname, map, dirprefix + codefile,name,comments)
                 marshalmap(mappathname, map, dirprefix + marshalfile)
-        except ValueError, why:
+        except ValueError as why:
             print '* conversion failed: %s' % why
             raise
 
@@ -414,7 +414,7 @@ def rewritepythondir(dir, dirprefix='', comments=1):
                 print '* map is empty; skipping'
             else:
                 pymap(mapname, map, dirprefix + codefile,name,comments)
-        except ValueError, why:
+        except ValueError as why:
             print '* conversion failed: %s' % why
 
 if __name__ == '__main__':

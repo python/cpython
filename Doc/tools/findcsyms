@@ -127,7 +127,7 @@ def main():
                 print_list(undocumented, "Undocumented symbols")
         else:
             print_list(L)
-    except IOError, e:
+    except IOError as e:
         if e.errno != errno.EPIPE:
             raise
 

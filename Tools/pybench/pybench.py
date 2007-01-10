@@ -865,7 +865,7 @@ python pybench.py -s p25.pybench -c p21.pybench
                 bench.name = compare_to
                 f.close()
                 compare_to = bench
-            except IOError, reason:
+            except IOError as reason:
                 print '* Error opening/reading file %s: %s' % (
                     repr(compare_to),
                     reason)
@@ -885,7 +885,7 @@ python pybench.py -s p25.pybench -c p21.pybench
                 else:
                     bench.print_benchmark(hidenoise=hidenoise,
                                           limitnames=limitnames)
-            except IOError, reason:
+            except IOError as reason:
                 print '* Error opening/reading file %s: %s' % (
                     repr(show_bench),
                     reason)
@@ -931,9 +931,9 @@ python pybench.py -s p25.pybench -c p21.pybench
                 bench.name = reportfile
                 pickle.dump(bench,f)
                 f.close()
-            except IOError, reason:
+            except IOError as reason:
                 print '* Error opening/writing reportfile'
-            except IOError, reason:
+            except IOError as reason:
                 print '* Error opening/writing reportfile %s: %s' % (
                     reportfile,
                     reason)

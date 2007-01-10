@@ -372,7 +372,7 @@ class A:
     a = property(booh)
 try:
     A().a # Raised AttributeError: A instance has no attribute 'a'
-except AttributeError, x:
+except AttributeError as x:
     if str(x) != "booh":
         print "attribute error for A().a got masked:", str(x)
 
@@ -384,7 +384,7 @@ class I:
     __init__ = property(booh)
 try:
     I() # In debug mode, printed XXX undetected error and raises AttributeError
-except AttributeError, x:
+except AttributeError as x:
     pass
 else:
     print "attribute error for I.__init__ got masked"

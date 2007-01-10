@@ -18,7 +18,7 @@ def main():
         total, d = store(size, comps, total, d)
     try:
         display(total, d)
-    except IOError, e:
+    except IOError as e:
         if e.errno != errno.EPIPE:
             raise
 

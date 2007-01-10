@@ -335,7 +335,7 @@ def parseOptions(args=None):
     try:
         options, args = getopt.getopt(args, '?hb',
                 [ 'build-dir=', 'third-party=', 'sdk-path=' , 'src-dir='])
-    except getopt.error, msg:
+    except getopt.error as msg:
         print msg
         sys.exit(1)
 

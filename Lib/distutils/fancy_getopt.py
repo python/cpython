@@ -256,7 +256,7 @@ class FancyGetopt:
         short_opts = string.join(self.short_opts)
         try:
             opts, args = getopt.getopt(args, short_opts, self.long_opts)
-        except getopt.error, msg:
+        except getopt.error as msg:
             raise DistutilsArgError, msg
 
         for opt, val in opts:

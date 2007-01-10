@@ -21,17 +21,17 @@ class ExceptionTests(unittest.TestCase):
         try:
             import exceptions
             reload(exceptions)
-        except ImportError, e:
+        except ImportError as e:
             self.fail("reloading exceptions: %s" % e)
 
     def raise_catch(self, exc, excname):
         try:
             raise exc, "spam"
-        except exc, err:
+        except exc as err:
             buf1 = str(err)
         try:
             raise exc("spam")
-        except exc, err:
+        except exc as err:
             buf2 = str(err)
         self.assertEquals(buf1, buf2)
         self.assertEquals(exc.__name__, excname)
@@ -115,7 +115,7 @@ class ExceptionTests(unittest.TestCase):
 
         self.raise_catch(Exception, "Exception")
         try: x = 1/0
-        except Exception, e: pass
+        except Exception as e: pass
 
     def testSyntaxErrorMessage(self):
         # make sure the right exception message is raised for each of
@@ -124,7 +124,7 @@ class ExceptionTests(unittest.TestCase):
         def ckmsg(src, msg):
             try:
                 compile(src, '<fragment>', 'exec')
-            except SyntaxError, e:
+            except SyntaxError as e:
                 if e.msg != msg:
                     self.fail("expected %s, got %s" % (msg, e.msg))
             else:
@@ -163,7 +163,7 @@ class ExceptionTests(unittest.TestCase):
             import _testcapi
             try:
                 _testcapi.raise_exception(BadException, 1)
-            except TypeError, err:
+            except TypeError as err:
                 exc, err, tb = sys.exc_info()
                 co = tb.tb_frame.f_code
                 self.assertEquals(co.co_name, "test_capi1")
@@ -175,7 +175,7 @@ class ExceptionTests(unittest.TestCase):
             import _testcapi
             try:
                 _testcapi.raise_exception(BadException, 0)
-            except RuntimeError, err:
+            except RuntimeError as err:
                 exc, err, tb = sys.exc_info()
                 co = tb.tb_frame.f_code
                 self.assertEquals(co.co_name, "__init__")
@@ -285,7 +285,7 @@ class ExceptionTests(unittest.TestCase):
         for exc, args, expected in exceptionList:
             try:
                 raise exc(*args)
-            except BaseException, e:
+            except BaseException as e:
                 if type(e) is not exc:
                     raise
                 # Verify module name
@@ -343,6 +343,16 @@ class ExceptionTests(unittest.TestCase):
         self.failUnless(unicode(Exception))
         self.failUnless(str(Exception('a')))
         self.failUnless(unicode(Exception(u'a')))
+
+    def testExceptionCleanup(self):
+        # Make sure "except V as N" exceptions are cleaned up properly
+        
+        try:
+            raise Exception()
+        except Exception as e:
+            self.failUnless(e)
+            del e
+        self.failIf('e' in locals())
 
 
 def test_main():

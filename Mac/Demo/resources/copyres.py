@@ -39,7 +39,7 @@ def copyres(src, dst):
             UseResFile(output)
             try:
                 res2 = Get1Resource(type, id)
-            except (RuntimeError, Res.Error), msg:
+            except (RuntimeError, Res.Error) as msg:
                 res2 = None
             if res2:
                 print "Duplicate type+id, not copied"

@@ -7,7 +7,7 @@ talker.activate()
 filespec = macfs.FSSpec('my disk image.img')
 try:
     objref = talker.create('my disk image', saving_as=filespec, leave_image_mounted=1)
-except Disk_Copy.Error, arg:
+except Disk_Copy.Error as arg:
     print "ERROR: my disk image:", arg
 else:
     print 'objref=', objref

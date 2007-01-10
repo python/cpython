@@ -18,11 +18,11 @@ def compare_codecs(encoding1, encoding2):
         u = unichr(i)
         try:
             c1 = u.encode(encoding1)
-        except UnicodeError, reason:
+        except UnicodeError as reason:
             c1 = '<undefined>'
         try:
             c2 = u.encode(encoding2)
-        except UnicodeError, reason:
+        except UnicodeError as reason:
             c2 = '<undefined>'
         if c1 != c2:
             print ' * encoding mismatch for 0x%04X: %-14r != %r' % \

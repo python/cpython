@@ -119,7 +119,7 @@ class FTP:
             try:
                 self.sock = socket.socket(af, socktype, proto)
                 self.sock.connect(sa)
-            except socket.error, msg:
+            except socket.error as msg:
                 if self.sock:
                     self.sock.close()
                 self.sock = None
@@ -277,7 +277,7 @@ class FTP:
             try:
                 sock = socket.socket(af, socktype, proto)
                 sock.bind(sa)
-            except socket.error, msg:
+            except socket.error as msg:
                 if sock:
                     sock.close()
                 sock = None
@@ -496,7 +496,7 @@ class FTP:
         if dirname == '..':
             try:
                 return self.voidcmd('CDUP')
-            except error_perm, msg:
+            except error_perm as msg:
                 if msg.args[0][:3] != '500':
                     raise
         elif dirname == '':

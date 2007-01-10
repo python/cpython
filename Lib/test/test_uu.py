@@ -50,7 +50,7 @@ class UUTest(unittest.TestCase):
         try:
             uu.decode(inp, out)
             self.fail("No exception thrown")
-        except uu.Error, e:
+        except uu.Error as e:
             self.assertEqual(str(e), "Truncated input file")
 
     def test_missingbegin(self):
@@ -59,7 +59,7 @@ class UUTest(unittest.TestCase):
         try:
             uu.decode(inp, out)
             self.fail("No exception thrown")
-        except uu.Error, e:
+        except uu.Error as e:
             self.assertEqual(str(e), "No valid begin line found in input file")
 
 class UUStdIOTest(unittest.TestCase):

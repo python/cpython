@@ -54,7 +54,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, eh)
         try:
             raise ValueError(42)
-        except ValueError, exc:
+        except ValueError as exc:
             eh(*sys.exc_info())
 
         sys.stderr = savestderr
@@ -84,7 +84,7 @@ class SysModuleTest(unittest.TestCase):
         def clear():
             try:
                 raise ValueError, 42
-            except ValueError, exc:
+            except ValueError as exc:
                 clear_check(exc)
 
         # Raise an exception and check that it can be cleared
@@ -94,7 +94,7 @@ class SysModuleTest(unittest.TestCase):
         # unaffected by calling exc_clear in a nested frame.
         try:
             raise ValueError, 13
-        except ValueError, exc:
+        except ValueError as exc:
             typ1, value1, traceback1 = sys.exc_info()
             clear()
             typ2, value2, traceback2 = sys.exc_info()
@@ -104,16 +104,13 @@ class SysModuleTest(unittest.TestCase):
             self.assert_(value1 is value2)
             self.assert_(traceback1 is traceback2)
 
-        # Check that an exception can be cleared outside of an except block
-        clear_check(exc)
-
     def test_exit(self):
         self.assertRaises(TypeError, sys.exit, 42, 42)
 
         # call without argument
         try:
             sys.exit(0)
-        except SystemExit, exc:
+        except SystemExit as exc:
             self.assertEquals(exc.code, 0)
         except:
             self.fail("wrong exception")
@@ -124,7 +121,7 @@ class SysModuleTest(unittest.TestCase):
         # entry will be unpacked
         try:
             sys.exit(42)
-        except SystemExit, exc:
+        except SystemExit as exc:
             self.assertEquals(exc.code, 42)
         except:
             self.fail("wrong exception")
@@ -134,7 +131,7 @@ class SysModuleTest(unittest.TestCase):
         # call with integer argument
         try:
             sys.exit((42,))
-        except SystemExit, exc:
+        except SystemExit as exc:
             self.assertEquals(exc.code, 42)
         except:
             self.fail("wrong exception")
@@ -144,7 +141,7 @@ class SysModuleTest(unittest.TestCase):
         # call with string argument
         try:
             sys.exit("exit")
-        except SystemExit, exc:
+        except SystemExit as exc:
             self.assertEquals(exc.code, "exit")
         except:
             self.fail("wrong exception")
@@ -154,7 +151,7 @@ class SysModuleTest(unittest.TestCase):
         # call with tuple argument with two entries
         try:
             sys.exit((17, 23))
-        except SystemExit, exc:
+        except SystemExit as exc:
             self.assertEquals(exc.code, (17, 23))
         except:
             self.fail("wrong exception")

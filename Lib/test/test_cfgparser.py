@@ -181,7 +181,7 @@ class TestCaseBase(unittest.TestCase):
     def get_error(self, exc, section, option):
         try:
             self.cf.get(section, option)
-        except exc, e:
+        except exc as e:
             return e
         else:
             self.fail("expected exception type %s.%s"

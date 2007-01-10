@@ -85,7 +85,7 @@ def _cnfmerge(cnfs):
         for c in _flatten(cnfs):
             try:
                 cnf.update(c)
-            except (AttributeError, TypeError), msg:
+            except (AttributeError, TypeError) as msg:
                 print "_cnfmerge: fallback due to:", msg
                 for k, v in c.items():
                     cnf[k] = v
@@ -1401,7 +1401,7 @@ class CallWrapper:
             if self.subst:
                 args = self.subst(*args)
             return self.func(*args)
-        except SystemExit, msg:
+        except SystemExit as msg:
             raise SystemExit, msg
         except:
             self.widget._report_exception()

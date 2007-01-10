@@ -17,7 +17,7 @@ def testChunk(t, fileName):
         # against a large source file like Tkinter.py.
         ast = None
         new = parser.tuple2ast(tup)
-    except parser.ParserError, err:
+    except parser.ParserError as err:
         print
         print 'parser module raised exception on input file', fileName + ':'
         traceback.print_exc()

@@ -42,7 +42,7 @@ def compile_files(dir):
             print file,
             try:
                 compileFile(source)
-            except SyntaxError, err:
+            except SyntaxError as err:
                 print err
                 continue
             # make sure the .pyc file is not over-written
