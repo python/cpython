@@ -1956,16 +1956,13 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 		ADDOP(c, POP_TOP);
 		if (handler->name) {
             basicblock *cleanup_end, *cleanup_body;
-            expr_context_ty orig_ctx;
-            
-            assert(handler->name->kind == Name_kind);
 
             cleanup_end = compiler_new_block(c);
             cleanup_body = compiler_new_block(c);
             if(!(cleanup_end || cleanup_body))
                 return 0;
 
-			VISIT(c, expr, handler->name);
+            compiler_nameop(c, handler->name, Store);
             ADDOP(c, POP_TOP);
 
             /*
@@ -1998,14 +1995,10 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
             /* name = None */
             ADDOP_O(c, LOAD_CONST, Py_None, consts);
-            orig_ctx = handler->name->v.Name.ctx;
-            handler->name->v.Name.ctx = Store;
-            VISIT(c, expr, handler->name);
+            compiler_nameop(c, handler->name, Store);
 
-            /* del name */            
-            handler->name->v.Name.ctx = Del;
-            VISIT(c, expr, handler->name);
-            handler->name->v.Name.ctx = orig_ctx;
+            /* del name */
+            compiler_nameop(c, handler->name, Del);
 
 	        ADDOP(c, END_FINALLY);
 	        compiler_pop_fblock(c, FINALLY_END, cleanup_end);

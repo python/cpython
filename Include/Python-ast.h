@@ -322,7 +322,7 @@ struct _comprehension {
 
 struct _excepthandler {
         expr_ty type;
-        expr_ty name;
+        identifier name;
         asdl_seq *body;
         int lineno;
         int col_offset;
@@ -448,8 +448,8 @@ slice_ty ExtSlice(asdl_seq * dims, PyArena *arena);
 slice_ty Index(expr_ty value, PyArena *arena);
 comprehension_ty comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs,
                                PyArena *arena);
-excepthandler_ty excepthandler(expr_ty type, expr_ty name, asdl_seq * body, int
-                               lineno, int col_offset, PyArena *arena);
+excepthandler_ty excepthandler(expr_ty type, identifier name, asdl_seq * body,
+                               int lineno, int col_offset, PyArena *arena);
 arguments_ty arguments(asdl_seq * args, identifier vararg, expr_ty
                        varargannotation, asdl_seq * kwonlyargs, identifier
                        kwarg, expr_ty kwargannotation, asdl_seq * defaults,

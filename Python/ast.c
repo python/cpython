@@ -2899,10 +2899,8 @@ ast_for_except_clause(struct compiling *c, const node *exc, node *body)
     else if (NCH(exc) == 4) {
         asdl_seq *suite_seq;
         expr_ty expression;
-        expr_ty e = ast_for_expr(c, CHILD(exc, 3));
+        identifier e = NEW_IDENTIFIER(CHILD(exc, 3));
         if (!e)
-            return NULL;
-        if (!set_context(e, Store, CHILD(exc, 3)))
             return NULL;
         expression = ast_for_expr(c, CHILD(exc, 1));
         if (!expression)

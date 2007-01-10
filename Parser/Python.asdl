@@ -97,7 +97,7 @@ module Python version "$Revision$"
 	-- TODO(jhylton): Figure out if there is a better way to handle
 	--                lineno and col_offset fields, particularly when
         --                ast is exposed to Python.
-	excepthandler = (expr? type, expr? name, stmt* body, int lineno,
+	excepthandler = (expr? type, identifier? name, stmt* body, int lineno,
 	                 int col_offset)
 
 	arguments = (arg* args, identifier? vararg, expr? varargannotation,
