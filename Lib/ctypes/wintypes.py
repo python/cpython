@@ -34,8 +34,8 @@ LPCOLESTR = LPOLESTR = OLESTR = c_wchar_p
 LPCWSTR = LPWSTR = c_wchar_p
 LPCSTR = LPSTR = c_char_p
 
-# WPARAM is defined as UINT_PTR (which is signed)
-# LPARAM is defined as LONG_PTR (which is unsigned)
+# WPARAM is defined as UINT_PTR (unsigned type)
+# LPARAM is defined as LONG_PTR (signed type)
 if sizeof(c_long) == sizeof(c_void_p):
     WPARAM = c_ulong
     LPARAM = c_long
