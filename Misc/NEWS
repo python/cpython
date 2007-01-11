@@ -248,6 +248,8 @@ Tools/Demos
 
 - Patch #1552024: add decorator support to unparse.py demo script.
 
+- idle: Honor the "Cancel" action in the save dialog (Debian bug #299092).
+
 
 Tests
 -----
