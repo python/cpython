@@ -109,6 +109,10 @@ Core and builtins
 Library
 -------
 
+- Fixes for 64-bit Windows: In ctypes.wintypes, correct the
+  definitions of HANDLE, WPARAM, LPARAM data types.  Make
+  parameterless foreign function calls work.
+
 - The version number of the ctypes package changed to "1.1.0".
 
 - Bug #1627575: logging: Added _open() method to FileHandler which can
