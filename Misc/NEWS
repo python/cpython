@@ -24,6 +24,8 @@ Extension Modules
 Library
 -------
 
+- idle: Honor the "Cancel" action in the save dialog (Debian bug #299092).
+
 Tests
 -----
 
