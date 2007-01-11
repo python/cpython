@@ -286,6 +286,8 @@ Library
 - fixed a bug with bsddb.DB.stat: the flags and txn keyword arguments
   were transposed.
 
+- idle: Honor the "Cancel" action in the save dialog (Debian bug #299092).
+
 
 Extension Modules
 -----------------
