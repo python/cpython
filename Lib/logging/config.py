@@ -97,6 +97,7 @@ def fileConfig(fname, defaults=None):
         try:
             #first, lose the existing handlers...
             logging._handlers.clear()
+            del logging._handlerList[:]
             #now set up the new ones...
             hlist = cp.get("handlers", "keys")
             if len(hlist):
