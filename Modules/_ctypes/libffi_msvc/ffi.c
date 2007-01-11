@@ -224,7 +224,8 @@ ffi_call(/*@dependent@*/ ffi_cif *cif,
 #else
     case FFI_SYSV:
       /*@-usedef@*/
-      return ffi_call_AMD64(ffi_prep_args, &ecif, cif->bytes, 
+      /* Function call needs at least 40 bytes stack size, on win64 AMD64 */
+      return ffi_call_AMD64(ffi_prep_args, &ecif, cif->bytes ? cif->bytes : 40,
 			   cif->flags, ecif.rvalue, fn);
       /*@=usedef@*/
       break;
