@@ -483,6 +483,8 @@ Parser/metagrammar.o:	$(srcdir)/Parser/metagrammar.c
 
 Parser/tokenizer_pgen.o:	$(srcdir)/Parser/tokenizer.c
 
+Parser/pgenmain.o:	$(srcdir)/Include/parsetok.h
+
 $(AST_H): $(AST_ASDL) $(ASDLGEN_FILES)
 	$(ASDLGEN) -h $(AST_H_DIR) $(AST_ASDL)
 
@@ -535,6 +537,7 @@ PYTHON_HEADERS= \
 		Include/moduleobject.h \
 		Include/object.h \
 		Include/objimpl.h \
+		Include/parsetok.h \
 		Include/patchlevel.h \
 		Include/pyarena.h \
 		Include/pydebug.h \
