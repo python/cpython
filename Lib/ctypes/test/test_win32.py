@@ -3,7 +3,6 @@
 from ctypes import *
 from ctypes.test import is_resource_enabled
 import unittest, sys
-from ctypes import wintypes
 
 import _ctypes_test
 
@@ -49,9 +48,11 @@ if sys.platform == "win32":
 
     class TestWintypes(unittest.TestCase):
         def test_HWND(self):
+            from ctypes import wintypes
             self.failUnlessEqual(sizeof(wintypes.HWND), sizeof(c_void_p))
 
         def test_PARAM(self):
+            from ctypes import wintypes
             self.failUnlessEqual(sizeof(wintypes.WPARAM),
                                  sizeof(c_void_p))
             self.failUnlessEqual(sizeof(wintypes.LPARAM),
