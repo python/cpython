@@ -109,6 +109,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1610795: make ctypes.util.find_library work on BSD systems.
+
 - Fixes for 64-bit Windows: In ctypes.wintypes, correct the
   definitions of HANDLE, WPARAM, LPARAM data types.  Make
   parameterless foreign function calls work.
