@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+import warnings
+warnings.filterwarnings("ignore", "the sets module is deprecated",
+                        DeprecationWarning, "test\.test_sets")
+
 import unittest, operator, copy, pickle, random
 from sets import Set, ImmutableSet
 from test import test_support

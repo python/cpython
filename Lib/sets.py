@@ -80,6 +80,10 @@ except ImportError:
 
 __all__ = ['BaseSet', 'Set', 'ImmutableSet']
 
+import warnings
+warnings.warn("the sets module is deprecated", DeprecationWarning,
+                stacklevel=2)
+
 class BaseSet(object):
     """Common base class for mutable and immutable sets."""
 
