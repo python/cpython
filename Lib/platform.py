@@ -963,7 +963,10 @@ def architecture(executable=sys.executable,bits='',linkage=''):
         bits = str(size*8) + 'bit'
 
     # Get data from the 'file' system command
-    output = _syscmd_file(executable,'')
+    if executable:
+        output = _syscmd_file(executable, '')
+    else:
+        output = ''
 
     if not output and \
        executable == sys.executable:
