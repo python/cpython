@@ -1316,7 +1316,7 @@ def python_version_tuple():
 
 def python_branch():
 
-    """ Returns a strings identifying the Python implementation
+    """ Returns a string identifying the Python implementation
         branch.
 
         For CPython this is the Subversion branch from which the
@@ -1329,7 +1329,7 @@ def python_branch():
 
 def python_revision():
 
-    """ Returns a strings identifying the Python implementation
+    """ Returns a string identifying the Python implementation
         revision.
 
         For CPython this is the Subversion revision from which the
