@@ -1201,9 +1201,10 @@ _ironpython_sys_version_parser = re.compile(
     '([\d\.]+)'
     '(?: \(([\d\.]+)\))?'
     ' on (.NET [\d\.]+)')
-_sys_version_cache = None
 
-def _sys_version():
+_sys_version_cache = {}
+
+def _sys_version(sys_version=None):
 
     """ Returns a parsed version of Python's sys.version as tuple
        (name, version, branch, revision, buildno, builddate, compiler)
@@ -1218,21 +1219,30 @@ def _sys_version():
         The function returns empty strings for tuple entries that
         cannot be determined.
 
+        sys_version may be given to parse an alternative version
+        string, e.g. if the version was read from a different Python
+        interpreter.
+
     """
-    global _sys_version_cache
+    # Get the Python version
+    if sys_version is None:
+        sys_version = sys.version
 
-    if _sys_version_cache is not None:
-        return _sys_version_cache
+    # Try the cache first
+    result = _sys_version_cache.get(sys_version, None)
+    if result is not None:
+        return result
 
-    if sys.version[:10] == 'IronPython':
+    # Parse it
+    if sys_version[:10] == 'IronPython':
         # IronPython
         name = 'IronPython'
-        match = _ironpython_sys_version_parser.match(sys.version)
+        match = _ironpython_sys_version_parser.match(sys_version)
         if match is None:
             raise ValueError(
                 'failed to parse IronPython sys.version: %s' %
-                repr(sys.version))
-        version, compiler = match.groups()
+                repr(sys_version))
+        version, alt_version, compiler = match.groups()
         branch = ''
         revision = ''
         buildno = ''
@@ -1241,11 +1251,11 @@ def _sys_version():
     elif sys.platform[:4] == 'java':
         # Jython
         name = 'Jython'
-        match = _jython_sys_version_parser.match(sys.version)
+        match = _jython_sys_version_parser.match(sys_version)
         if match is None:
             raise ValueError(
                 'failed to parse Jython sys.version: %s' %
-                repr(sys.version))
+                repr(sys_version))
         version, = match.groups()
         branch = ''
         revision = ''
@@ -1255,27 +1265,47 @@ def _sys_version():
 
     else:
         # CPython
-        match = _sys_version_parser.match(sys.version)
+        match = _sys_version_parser.match(sys_version)
         if match is None:
             raise ValueError(
                 'failed to parse CPython sys.version: %s' %
-                repr(sys.version))
+                repr(sys_version))
         version, buildno, builddate, buildtime, compiler = \
               match.groups()
         if hasattr(sys, 'subversion'):
+            # sys.subversion was added in Python 2.5
             name, branch, revision = sys.subversion
         else:
             name = 'CPython'
             branch = ''
             revision = ''
         builddate = builddate + ' ' + buildtime
+
+    # Add the patchlevel version if missing
     l = string.split(version, '.')
     if len(l) == 2:
         l.append('0')
         version = string.join(l, '.')
-    _sys_version_cache = (name, version, branch, revision, buildno,
-                          builddate, compiler)
-    return _sys_version_cache
+
+    # Build and cache the result
+    result = (name, version, branch, revision, buildno, builddate, compiler)
+    _sys_version_cache[sys_version] = result
+    return result
+
+def _test_sys_version():
+
+    _sys_version_cache.clear()
+    for input, output in (
+        ('2.4.3 (#1, Jun 21 2006, 13:54:21) \n[GCC 3.3.4 (pre 3.3.5 20040809)]',
+         ('CPython', '2.4.3', '', '', '1', 'Jun 21 2006 13:54:21', 'GCC 3.3.4 (pre 3.3.5 20040809)')),
+        ('IronPython 1.0.60816 on .NET 2.0.50727.42',
+         ('IronPython', '1.0.60816', '', '', '', '', '.NET 2.0.50727.42')),
+        ('IronPython 1.0 (1.0.61005.1977) on .NET 2.0.50727.42',
+         ('IronPython', '1.0.0', '', '', '', '', '.NET 2.0.50727.42')),
+        ):
+        parsed = _sys_version(input)
+        if parsed != output:
+            print (input, parsed)
 
 def python_implementation():
 
@@ -1325,6 +1355,7 @@ def python_branch():
         If not available, an empty string is returned.
 
     """
+    
     return _sys_version()[2]
 
 def python_revision():
