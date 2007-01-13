@@ -430,6 +430,8 @@ class ProcessTestCase(unittest.TestCase):
                          '"a\\\\b c" d e')
         self.assertEqual(subprocess.list2cmdline(['a\\\\b\\ c', 'd', 'e']),
                          '"a\\\\b\\ c" d e')
+        self.assertEqual(subprocess.list2cmdline(['ab', '']),
+                         'ab ""')
 
 
     def test_poll(self):
