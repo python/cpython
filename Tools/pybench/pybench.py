@@ -860,7 +860,7 @@ python pybench.py -s p25.pybench -c p21.pybench
             value = 2147483647
             try:
                 sys.setcheckinterval(value)
-            except NotImplementedError:
+            except (AttributeError, NotImplementedError):
                 print '* Python version doesn\'t support sys.setcheckinterval'
             else:
                 print '* system check interval set to maximum: %s' % value
