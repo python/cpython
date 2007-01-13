@@ -165,7 +165,7 @@ class Option:
     def __init__(self,name,help=None):
 
         if not name[:1] == '-':
-            raise TypeError,'option names must start with "-"'
+            raise TypeError('option names must start with "-"')
         if name[1:2] == '-':
             self.prefix = '--'
             self.name = name[2:]
@@ -324,30 +324,32 @@ class Application:
 
         # Append preset options
         for option in self.preset_options:
-            if not self.option_map.has_key(option.name):
+            if not option.name in self.option_map:
                 self.add_option(option)
 
         # Init .files list
         self.files = []
 
         # Start Application
+        rc = 0
         try:
             # Process startup
             rc = self.startup()
             if rc is not None:
-                raise SystemExit,rc
+                raise SystemExit(rc)
 
             # Parse command line
             rc = self.parse()
             if rc is not None:
-                raise SystemExit,rc
+                raise SystemExit(rc)
 
             # Start application
             rc = self.main()
             if rc is None:
                 rc = 0
 
-        except SystemExit as rc:
+        except SystemExit as rcException:
+            rc = rcException
             pass
 
         except KeyboardInterrupt:
@@ -367,7 +369,7 @@ class Application:
             print
             rc = 1
 
-        raise SystemExit,rc
+        raise SystemExit(rc)
 
     def add_option(self, option):
 
@@ -398,7 +400,7 @@ class Application:
             program. It defaults to 0 which usually means: OK.
 
         """
-        raise SystemExit, rc
+        raise SystemExit(rc)
 
     def parse(self):
 
@@ -459,7 +461,7 @@ class Application:
             except AttributeError:
                 if value == '':
                     # count the number of occurances
-                    if values.has_key(optionname):
+                    if optionname in values:
                         values[optionname] = values[optionname] + 1
                     else:
                         values[optionname] = 1
@@ -468,7 +470,7 @@ class Application:
             else:
                 rc = handler(value)
                 if rc is not None:
-                    raise SystemExit, rc
+                    raise SystemExit(rc)
 
         # Apply final file check (for backward compatibility)
         rc = self.check_files(self.files)

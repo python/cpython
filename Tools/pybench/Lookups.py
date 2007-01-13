@@ -774,11 +774,11 @@ class BuiltinMethodLookup(Test):
             l.sort
             l.sort
 
-            d.has_key
-            d.has_key
-            d.has_key
-            d.has_key
-            d.has_key
+            # d.has_key
+            # d.has_key
+            # d.has_key
+            # d.has_key
+            # d.has_key
 
             d.items
             d.items
@@ -810,11 +810,11 @@ class BuiltinMethodLookup(Test):
             l.sort
             l.sort
 
-            d.has_key
-            d.has_key
-            d.has_key
-            d.has_key
-            d.has_key
+            # d.has_key
+            # d.has_key
+            # d.has_key
+            # d.has_key
+            # d.has_key
 
             d.items
             d.items
@@ -846,11 +846,11 @@ class BuiltinMethodLookup(Test):
             l.sort
             l.sort
 
-            d.has_key
-            d.has_key
-            d.has_key
-            d.has_key
-            d.has_key
+            # d.has_key
+            # d.has_key
+            # d.has_key
+            # d.has_key
+            # d.has_key
 
             d.items
             d.items
@@ -882,11 +882,11 @@ class BuiltinMethodLookup(Test):
             l.sort
             l.sort
 
-            d.has_key
-            d.has_key
-            d.has_key
-            d.has_key
-            d.has_key
+            # d.has_key
+            # d.has_key
+            # d.has_key
+            # d.has_key
+            # d.has_key
 
             d.items
             d.items
@@ -918,11 +918,11 @@ class BuiltinMethodLookup(Test):
             l.sort
             l.sort
 
-            d.has_key
-            d.has_key
-            d.has_key
-            d.has_key
-            d.has_key
+            # d.has_key
+            # d.has_key
+            # d.has_key
+            # d.has_key
+            # d.has_key
 
             d.items
             d.items

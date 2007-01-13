@@ -20,15 +20,15 @@ class TryRaiseExcept(Test):
             except:
                 pass
             try:
-                raise error,"something"
+                raise error("something")
             except:
                 pass
             try:
-                raise error,"something"
+                raise error("something")
             except:
                 pass
             try:
-                raise error,"something"
+                raise error("something")
             except:
                 pass
             try:
