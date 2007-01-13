@@ -351,7 +351,7 @@ class SimpleDictManipulation(Test):
     def test(self):
 
         d = {}
-        has_key = d.has_key
+        has_key = lambda key: key in d
 
         for i in xrange(self.rounds):
 
@@ -498,7 +498,7 @@ class SimpleDictManipulation(Test):
     def calibrate(self):
 
         d = {}
-        has_key = d.has_key
+        has_key = lambda key: key in d
 
         for i in xrange(self.rounds):
             pass
