@@ -109,6 +109,9 @@ Core and builtins
 Library
 -------
 
+- The sets module has been deprecated.  Use the built-in set/frozenset types
+  instead.
+
 - Bug #1610795: make ctypes.util.find_library work on BSD systems.
 
 - Fixes for 64-bit Windows: In ctypes.wintypes, correct the

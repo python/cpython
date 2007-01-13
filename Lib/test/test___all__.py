@@ -9,6 +9,8 @@ warnings.filterwarnings("ignore",
                         "the gopherlib module is deprecated",
                         DeprecationWarning,
                         "<string>")
+warnings.filterwarnings("ignore", "the sets module is deprecated",
+                        DeprecationWarning, "<string>")
 
 class AllTest(unittest.TestCase):
 
