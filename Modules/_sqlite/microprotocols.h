@@ -52,7 +52,7 @@ extern PyObject *microprotocols_adapt(
     PyObject *obj, PyObject *proto, PyObject *alt);
 
 extern PyObject *
-    psyco_microprotocols_adapt(Cursor* self, PyObject *args);   
+    psyco_microprotocols_adapt(pysqlite_Cursor* self, PyObject *args);   
 #define psyco_microprotocols_adapt_doc \
     "adapt(obj, protocol, alternate) -> adapt obj to given protocol. Non-standard."
 
