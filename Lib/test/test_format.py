@@ -236,7 +236,7 @@ class Foobar(long):
         return self + 1
 
 test_exc('%o', Foobar(), TypeError,
-         "expected string or Unicode object, long found")
+         "expected string or Unicode object, int found")
 
 if sys.maxint == 2**31-1:
     # crashes 2.2.1 and earlier:
