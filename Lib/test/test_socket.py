@@ -310,6 +310,20 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(swapped & mask, mask)
             self.assertRaises(OverflowError, func, 1L<<34)
 
+    def testNtoHErrors(self):
+        good_values = [ 1, 2, 3, 1L, 2L, 3L ]
+        bad_values = [ -1, -2, -3, -1L, -2L, -3L ]
+        for k in good_values:
+            socket.ntohl(k)
+            socket.ntohs(k)
+            socket.htonl(k)
+            socket.htons(k)
+        for k in bad_values:
+            self.assertRaises(OverflowError, socket.ntohl, k)
+            self.assertRaises(OverflowError, socket.ntohs, k)
+            self.assertRaises(OverflowError, socket.htonl, k)
+            self.assertRaises(OverflowError, socket.htons, k)
+
     def testGetServBy(self):
         eq = self.assertEqual
         # Find one service that exists, then check all the related interfaces.

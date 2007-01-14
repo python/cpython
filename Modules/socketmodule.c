@@ -3468,7 +3468,12 @@ socket_ntohs(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "i:ntohs", &x1)) {
 		return NULL;
 	}
-	x2 = (int)ntohs((short)x1);
+	if (x1 < 0) {
+		PyErr_SetString(PyExc_OverflowError,
+			"can't convert negative number to unsigned long");
+		return NULL;
+	}
+	x2 = (unsigned int)ntohs((unsigned short)x1);
 	return PyInt_FromLong(x2);
 }
 
@@ -3487,6 +3492,11 @@ socket_ntohl(PyObject *self, PyObject *arg)
 		x = PyInt_AS_LONG(arg);
 		if (x == (unsigned long) -1 && PyErr_Occurred())
 			return NULL;
+		if ((long)x < 0) {
+			PyErr_SetString(PyExc_OverflowError,
+			  "can't convert negative number to unsigned long");
+			return NULL;
+		}
 	}
 	else if (PyLong_Check(arg)) {
 		x = PyLong_AsUnsignedLong(arg);
@@ -3510,7 +3520,7 @@ socket_ntohl(PyObject *self, PyObject *arg)
 				    arg->ob_type->tp_name);
 	if (x == (unsigned long) -1 && PyErr_Occurred())
 		return NULL;
-	return PyInt_FromLong(ntohl(x));
+	return PyLong_FromUnsignedLong(ntohl(x));
 }
 
 PyDoc_STRVAR(ntohl_doc,
@@ -3527,7 +3537,12 @@ socket_htons(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "i:htons", &x1)) {
 		return NULL;
 	}
-	x2 = (int)htons((short)x1);
+	if (x1 < 0) {
+		PyErr_SetString(PyExc_OverflowError,
+			"can't convert negative number to unsigned long");
+		return NULL;
+	}
+	x2 = (unsigned int)htons((unsigned short)x1);
 	return PyInt_FromLong(x2);
 }
 
@@ -3546,6 +3561,11 @@ socket_htonl(PyObject *self, PyObject *arg)
 		x = PyInt_AS_LONG(arg);
 		if (x == (unsigned long) -1 && PyErr_Occurred())
 			return NULL;
+		if ((long)x < 0) {
+			PyErr_SetString(PyExc_OverflowError,
+			  "can't convert negative number to unsigned long");
+			return NULL;
+		}
 	}
 	else if (PyLong_Check(arg)) {
 		x = PyLong_AsUnsignedLong(arg);
@@ -3567,7 +3587,7 @@ socket_htonl(PyObject *self, PyObject *arg)
 		return PyErr_Format(PyExc_TypeError,
 				    "expected int/long, %s found",
 				    arg->ob_type->tp_name);
-	return PyInt_FromLong(htonl(x));
+	return PyLong_FromUnsignedLong(htonl((unsigned long)x));
 }
 
 PyDoc_STRVAR(htonl_doc,
