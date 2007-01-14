@@ -36,6 +36,13 @@ TO DO
 Core and Builtins
 -----------------
 
+- Int/Long unification is halfway complete.  There are a few broken tests,
+  the 'long' built-in hasn't been removed yet, and literals with trailing
+  'L' or 'l' are still recognized.  Performance may be sub-optimal.
+
+- 'except E, V' must now be spelled as 'except E as V' and deletes V
+  at the end of the except clause; V must be a simple name.
+
 - Added function annotations per PEP 3107.
 
 - Moved intern() to sys.intern().
