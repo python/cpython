@@ -119,7 +119,8 @@ class FTP:
             try:
                 self.sock = socket.socket(af, socktype, proto)
                 self.sock.connect(sa)
-            except socket.error as msg:
+            except socket.error as err:
+                msg = err
                 if self.sock:
                     self.sock.close()
                 self.sock = None
