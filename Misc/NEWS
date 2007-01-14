@@ -301,6 +301,9 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1635058: ensure that htonl and friends never accept or
+  return negative numbers, per the underlying C implementation.
+
 - Patch #1544279: Improve thread-safety of the socket module by moving
   the sock_addr_t storage out of the socket object.
 
