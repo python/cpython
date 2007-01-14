@@ -1,3 +1,5 @@
+test_format -- '%o' % 0 works? ... no # Unexpected  <type 'exceptions.TypeError'> : 'expected string or Unicode object, int found'
 test_pickletools -- Test probably needs to be fixed
+test_repr -- test_numbers() fails
 test_socket -- OverflowError: can't convert negative value to unsigned int
-test_sqlite -- ???
+test_sqlite -- CheckLargeInt (sqlite3.test.types.SqliteTypeTests, sqlite3.test.types.DeclTypesTests)
