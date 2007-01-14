@@ -20,34 +20,31 @@ _Py_TrueStruct and _Py_ZeroStruct in boolobject.h; don't use this.
 extern "C" {
 #endif
 
+/*
 typedef struct {
     PyObject_HEAD
     long ob_ival;
 } PyIntObject;
 
 PyAPI_DATA(PyTypeObject) PyInt_Type;
+*/
 
-#define PyInt_Check(op) PyObject_TypeCheck(op, &PyInt_Type)
-#define PyInt_CheckExact(op) ((op)->ob_type == &PyInt_Type)
+#define PyInt_Check(op) PyLong_Check(op)
+#define PyInt_CheckExact(op) (PyLong_CheckExact(op) && _PyLong_FitsInLong(op))
 
-PyAPI_FUNC(PyObject *) PyInt_FromString(char*, char**, int);
-#ifdef Py_USING_UNICODE
-PyAPI_FUNC(PyObject *) PyInt_FromUnicode(Py_UNICODE*, Py_ssize_t, int);
-#endif
-PyAPI_FUNC(PyObject *) PyInt_FromLong(long);
-PyAPI_FUNC(PyObject *) PyInt_FromSize_t(size_t);
-PyAPI_FUNC(PyObject *) PyInt_FromSsize_t(Py_ssize_t);
-PyAPI_FUNC(long) PyInt_AsLong(PyObject *);
-PyAPI_FUNC(Py_ssize_t) PyInt_AsSsize_t(PyObject *);
-PyAPI_FUNC(unsigned long) PyInt_AsUnsignedLongMask(PyObject *);
-#ifdef HAVE_LONG_LONG
-PyAPI_FUNC(unsigned PY_LONG_LONG) PyInt_AsUnsignedLongLongMask(PyObject *);
-#endif
+#define PyInt_FromString PyLong_FromString
+#define PyInt_FromUnicode PyLong_FromUnicode
+#define PyInt_FromLong PyLong_FromLong
+#define PyInt_FromSize_t PyLong_FromSize_t
+#define PyInt_FromSsize_t PyLong_FromSsize_t
+#define PyInt_AsLong PyLong_AsLong
+#define PyInt_AsSsize_t PyLong_AsSsize_t
+#define PyInt_AsUnsignedLongMask PyLong_AsUnsignedLongMask
+#define PyInt_AsUnsignedLongLongMask PyLong_AsUnsignedLongLongMask
 
 PyAPI_FUNC(long) PyInt_GetMax(void);
 
-/* Macro, trading safety for speed */
-#define PyInt_AS_LONG(op) (((PyIntObject *)(op))->ob_ival)
+#define PyInt_AS_LONG(op) PyLong_AsLong(op)
 
 /* These aren't really part of the Int object, but they're handy; the protos
  * are necessary for systems that need the magic of PyAPI_FUNC and that want

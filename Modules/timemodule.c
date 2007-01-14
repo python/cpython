@@ -357,7 +357,7 @@ gettmarg(PyObject *args, struct tm *p)
 	if (y < 1900) {
 		PyObject *accept = PyDict_GetItemString(moddict,
 							"accept2dyear");
-		if (accept == NULL || !PyInt_Check(accept) ||
+		if (accept == NULL || !PyInt_CheckExact(accept) ||
 		    PyInt_AsLong(accept) == 0) {
 			PyErr_SetString(PyExc_ValueError,
 					"year >= 1900 required");

@@ -144,30 +144,33 @@ w_object(PyObject *v, WFILE *p)
 	else if (v == Py_True) {
 	        w_byte(TYPE_TRUE, p);
 	}
-	else if (PyInt_Check(v)) {
-		long x = PyInt_AS_LONG((PyIntObject *)v);
+	else if (PyLong_Check(v)) {
+		long x = PyLong_AsLong(v);
+		if ((x == -1)  && PyErr_Occurred()) {
+			PyLongObject *ob = (PyLongObject *)v;
+			PyErr_Clear();
+			w_byte(TYPE_LONG, p);
+			n = ob->ob_size;
+			w_long((long)n, p);
+			if (n < 0)
+				n = -n;
+			for (i = 0; i < n; i++)
+				w_short(ob->ob_digit[i], p);
+		} 
+		else {
 #if SIZEOF_LONG > 4
-		long y = Py_ARITHMETIC_RIGHT_SHIFT(long, x, 31);
-		if (y && y != -1) {
-			w_byte(TYPE_INT64, p);
-			w_long64(x, p);
-		}
-		else
+			long y = Py_ARITHMETIC_RIGHT_SHIFT(long, x, 31);
+			if (y && y != -1) {
+				w_byte(TYPE_INT64, p);
+				w_long64(x, p);
+			}
+			else
 #endif
 			{
-			w_byte(TYPE_INT, p);
-			w_long(x, p);
+				w_byte(TYPE_INT, p);
+				w_long(x, p);
+			}
 		}
-	}
-	else if (PyLong_Check(v)) {
-		PyLongObject *ob = (PyLongObject *)v;
-		w_byte(TYPE_LONG, p);
-		n = ob->ob_size;
-		w_long((long)n, p);
-		if (n < 0)
-			n = -n;
-		for (i = 0; i < n; i++)
-			w_short(ob->ob_digit[i], p);
 	}
 	else if (PyFloat_Check(v)) {
 		if (p->version > 1) {

@@ -219,7 +219,7 @@ _set_int(const char *name, int *target, PyObject *src, int dflt)
 	if (src == NULL)
 		*target = dflt;
 	else {
-		if (!PyInt_Check(src)) {
+		if (!PyInt_CheckExact(src)) {
 			PyErr_Format(PyExc_TypeError, 
 				     "\"%s\" must be an integer", name);
 			return -1;
@@ -1410,7 +1410,7 @@ csv_field_size_limit(PyObject *module, PyObject *args)
 	if (!PyArg_UnpackTuple(args, "field_size_limit", 0, 1, &new_limit))
 		return NULL;
 	if (new_limit != NULL) {
-		if (!PyInt_Check(new_limit)) {
+		if (!PyInt_CheckExact(new_limit)) {
 			PyErr_Format(PyExc_TypeError, 
 				     "limit must be an integer");
 			return NULL;

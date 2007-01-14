@@ -945,7 +945,7 @@ islt(PyObject *x, PyObject *y, PyObject *compare)
 	Py_DECREF(args);
 	if (res == NULL)
 		return -1;
-	if (!PyInt_Check(res)) {
+	if (!PyInt_CheckExact(res)) {
 		PyErr_Format(PyExc_TypeError,
 			     "comparison function must return int, not %.200s",
 			     res->ob_type->tp_name);

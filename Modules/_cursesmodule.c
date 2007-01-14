@@ -193,7 +193,7 @@ PyCursesCheckERR(int code, char *fname)
 static int 
 PyCurses_ConvertToChtype(PyObject *obj, chtype *ch)
 {
-  if (PyInt_Check(obj)) {
+  if (PyInt_CheckExact(obj)) {
     *ch = (chtype) PyInt_AsLong(obj);
   } else if(PyString_Check(obj) 
 	    && (PyString_Size(obj) == 1)) {
@@ -2364,7 +2364,7 @@ PyCurses_UnCtrl(PyObject *self, PyObject *args)
 
   if (!PyArg_ParseTuple(args,"O;ch or int",&temp)) return NULL;
 
-  if (PyInt_Check(temp))
+  if (PyInt_CheckExact(temp))
     ch = (chtype) PyInt_AsLong(temp);
   else if (PyString_Check(temp))
     ch = (chtype) *PyString_AsString(temp);
@@ -2386,7 +2386,7 @@ PyCurses_UngetCh(PyObject *self, PyObject *args)
 
   if (!PyArg_ParseTuple(args,"O;ch or int",&temp)) return NULL;
 
-  if (PyInt_Check(temp))
+  if (PyInt_CheckExact(temp))
     ch = (int) PyInt_AsLong(temp);
   else if (PyString_Check(temp))
     ch = (int) *PyString_AsString(temp);

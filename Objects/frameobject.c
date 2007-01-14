@@ -88,7 +88,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 	int setup_op = 0;               /* (ditto) */
 
 	/* f_lineno must be an integer. */
-	if (!PyInt_Check(p_new_lineno)) {
+	if (!PyInt_CheckExact(p_new_lineno)) {
 		PyErr_SetString(PyExc_ValueError,
 				"lineno must be an integer");
 		return -1;

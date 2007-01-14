@@ -1844,10 +1844,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
 		 * lose a little info.
 		 */
 		assert(PyInt_Check(factor) || PyLong_Check(factor));
-		if (PyInt_Check(factor))
-			dnum = (double)PyInt_AsLong(factor);
-		else
-			dnum = PyLong_AsDouble(factor);
+		dnum = PyLong_AsDouble(factor);
 
 		dnum *= fracpart;
 		fracpart = modf(dnum, &intpart);
@@ -3800,7 +3797,7 @@ datetime_strptime(PyObject *cls, PyObject *args)
 					Py_DECREF(obj);
 					return NULL;
 				}
-				if (PyInt_Check(p))
+				if (PyInt_CheckExact(p))
 					ia[i] = PyInt_AsLong(p);
 				else
 					good_timetuple = 0;

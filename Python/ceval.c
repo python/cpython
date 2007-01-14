@@ -3900,7 +3900,7 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
 {
 	if (v != NULL) {
 		Py_ssize_t x;
-		if (PyInt_Check(v)) {
+		if (PyInt_CheckExact(v)) {
 			/* XXX(nnorwitz): I think PyInt_AS_LONG is correct,
 			   however, it looks like it should be AsSsize_t.
 			   There should be a comment here explaining why.

@@ -107,9 +107,11 @@ dl_call(dlobject *xp, PyObject *args)
 	}
 	for (i = 1; i < n; i++) {
 		PyObject *v = PyTuple_GetItem(args, i);
-		if (PyInt_Check(v))
+		if (PyInt_Check(v)) {
 			alist[i-1] = PyInt_AsLong(v);
-		else if (PyString_Check(v))
+			if (alist[i-1] == -1 && PyErr_Occurred())
+				return NULL;
+		} else if (PyString_Check(v))
 			alist[i-1] = (long)PyString_AsString(v);
 		else if (v == Py_None)
 			alist[i-1] = (long) ((char *)NULL);

@@ -204,7 +204,7 @@ class BugsTestCase(unittest.TestCase):
     def test_patch_873224(self):
         self.assertRaises(Exception, marshal.loads, '0')
         self.assertRaises(Exception, marshal.loads, 'f')
-        self.assertRaises(Exception, marshal.loads, marshal.dumps(5L)[:-1])
+        self.assertRaises(Exception, marshal.loads, marshal.dumps(2**65L)[:-1])
 
     def test_version_argument(self):
         # Python 2.4.0 crashes for any call to marshal.dumps(x, y)

@@ -430,13 +430,6 @@ def ints():
         pass
     else:
         raise TestFailed, "NotImplemented should have caused TypeError"
-    import sys
-    try:
-        C(sys.maxint+1)
-    except OverflowError:
-        pass
-    else:
-        raise TestFailed, "should have raised OverflowError"
 
 def longs():
     if verbose: print "Testing long operations..."

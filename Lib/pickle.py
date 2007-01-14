@@ -456,9 +456,29 @@ class Pickler:
                 return
         # Text pickle, or int too big to fit in signed 4-byte format.
         self.write(INT + repr(obj) + '\n')
-    dispatch[IntType] = save_int
+    # XXX save_int is merged into save_long
+    # dispatch[IntType] = save_int
 
     def save_long(self, obj, pack=struct.pack):
+        if self.bin:
+            # If the int is small enough to fit in a signed 4-byte 2's-comp
+            # format, we can store it more efficiently than the general
+            # case.
+            # First one- and two-byte unsigned ints:
+            if obj >= 0:
+                if obj <= 0xff:
+                    self.write(BININT1 + chr(obj))
+                    return
+                if obj <= 0xffff:
+                    self.write("%c%c%c" % (BININT2, obj&0xff, obj>>8))
+                    return
+            # Next check for 4-byte signed ints:
+            high_bits = obj >> 31  # note that Python shift sign-extends
+            if high_bits == 0 or high_bits == -1:
+                # All high bits are copies of bit 2**31, so the value
+                # fits in a 4-byte signed int.
+                self.write(BININT + pack("<i", obj))
+                return
         if self.proto >= 2:
             bytes = encode_long(obj)
             n = len(bytes)

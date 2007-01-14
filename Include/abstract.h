@@ -716,7 +716,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
         is cleared and the value is clipped. 
        */
 
-     PyAPI_FUNC(PyObject *) PyNumber_Int(PyObject *o);
+     #define PyNumber_Int PyNumber_Long
 
        /*
 	 Returns the o converted to an integer object on success, or

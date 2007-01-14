@@ -991,7 +991,7 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	proto = PyDict_GetItemString(typedict, "_length_"); /* Borrowed ref */
-	if (!proto || !PyInt_Check(proto)) {
+	if (!proto || !PyInt_CheckExact(proto)) {
 		PyErr_SetString(PyExc_AttributeError,
 				"class must define a '_length_' attribute, "
 				"which must be a positive integer");

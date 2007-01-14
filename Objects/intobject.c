@@ -10,6 +10,7 @@ PyInt_GetMax(void)
 	return LONG_MAX;	/* To initialize sys.maxint */
 }
 
+#if 0
 /* Integers are quite normal objects, to make object handling uniform.
    (Using odd pointers to represent integers would save much space
    but require extra checks for this special case throughout the code.)
@@ -1254,3 +1255,4 @@ PyInt_Fini(void)
 		}
 	}
 }
+#endif /* if 0 */

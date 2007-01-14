@@ -1600,7 +1600,7 @@ class TestParseNumber(BaseTest):
         self.assertRaises(
             _parse_num, ("0xOoops", long), {},
             ValueError,
-            re.compile(r"invalid literal for long().*: '?0xOoops'?"))
+            re.compile(r"invalid literal for int().*: '?0xOoops'?"))
 
     def test_parse_num_ok(self):
         self.assertEqual(_parse_num("0", int), 0)
@@ -1618,9 +1618,9 @@ class TestParseNumber(BaseTest):
         self.assertParseFail(["-n008"],
                              "option -n: invalid integer value: '008'")
         self.assertParseFail(["-l0b0123"],
-                             "option -l: invalid long integer value: '0b0123'")
+                             "option -l: invalid integer value: '0b0123'")
         self.assertParseFail(["-l", "0x12x"],
-                             "option -l: invalid long integer value: '0x12x'")
+                             "option -l: invalid integer value: '0x12x'")
 
 
 def _testclasses():

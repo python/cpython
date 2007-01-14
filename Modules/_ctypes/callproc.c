@@ -496,12 +496,6 @@ static int ConvParam(PyObject *obj, int index, struct argument *pa)
 		return 0;
 	}
 
-	if (PyInt_Check(obj)) {
-		pa->ffi_type = &ffi_type_sint;
-		pa->value.i = PyInt_AS_LONG(obj);
-		return 0;
-	}
-
 	if (PyLong_Check(obj)) {
 		pa->ffi_type = &ffi_type_sint;
 		pa->value.i = (long)PyLong_AsUnsignedLong(obj);
