@@ -1,4 +1,3 @@
-test_descr -- can't pickle int objects?!?!
-test_pickletools -- ???
+test_pickletools -- Test probably needs to be fixed
 test_socket -- OverflowError: can't convert negative value to unsigned int
 test_sqlite -- ???

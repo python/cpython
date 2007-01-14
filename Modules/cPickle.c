@@ -2191,7 +2191,7 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 			goto finally;
 		}
 		break;
-        case 'l':
+        case 'i':
 		if (type == &PyLong_Type) {
 			res = save_long(self, args);
 			goto finally;
