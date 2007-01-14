@@ -7585,6 +7585,8 @@ PyObject *PyUnicode_Format(PyObject *format,
 		    goto onError;
 		}
 		width = PyInt_AsLong(v);
+		if (width == -1 && PyErr_Occurred())
+			goto onError;
 		if (width < 0) {
 		    flags |= F_LJUST;
 		    width = -width;
@@ -7620,6 +7622,8 @@ PyObject *PyUnicode_Format(PyObject *format,
 			goto onError;
 		    }
 		    prec = PyInt_AsLong(v);
+		    if (prec == -1 && PyErr_Occurred())
+			goto onError;
 		    if (prec < 0)
 			prec = 0;
 		    if (--fmtcnt >= 0)

@@ -349,10 +349,6 @@ to_complex(PyObject **pobj, Py_complex *pc)
     PyObject *obj = *pobj;
 
     pc->real = pc->imag = 0.0;
-    if (PyInt_Check(obj)) {
-        pc->real = PyInt_AS_LONG(obj);
-        return 0;
-    }
     if (PyLong_Check(obj)) {
         pc->real = PyLong_AsDouble(obj);
         if (pc->real == -1.0 && PyErr_Occurred()) {

@@ -60,6 +60,8 @@ static void call_sys_exitfunc(void);
 static void call_ll_exitfuncs(void);
 extern void _PyUnicode_Init(void);
 extern void _PyUnicode_Fini(void);
+extern int _PyLong_Init(void);
+extern void PyLong_Fini(void);
 
 #ifdef WITH_THREAD
 extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
@@ -181,8 +183,8 @@ Py_InitializeEx(int install_sigs)
 	if (!_PyFrame_Init())
 		Py_FatalError("Py_Initialize: can't init frames");
 
-	if (!_PyInt_Init())
-		Py_FatalError("Py_Initialize: can't init ints");
+	if (!_PyLong_Init())
+		Py_FatalError("Py_Initialize: can't init longs");
 
 	_PyFloat_Init();
 
@@ -453,7 +455,7 @@ Py_Finalize(void)
 	PyList_Fini();
 	PySet_Fini();
 	PyString_Fini();
-	PyInt_Fini();
+	PyLong_Fini();
 	PyFloat_Fini();
 
 #ifdef Py_USING_UNICODE

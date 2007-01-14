@@ -1314,6 +1314,9 @@ mbstreamreader_read(MultibyteStreamReaderObject *self, PyObject *args)
 		return NULL;
 	}
 
+	if (size == -1 && PyErr_Occurred())
+		return NULL;
+
 	return mbstreamreader_iread(self, "read", size);
 }
 
@@ -1335,6 +1338,9 @@ mbstreamreader_readline(MultibyteStreamReaderObject *self, PyObject *args)
 		return NULL;
 	}
 
+	if (size == -1 && PyErr_Occurred())
+		return NULL;
+
 	return mbstreamreader_iread(self, "readline", size);
 }
 
@@ -1355,6 +1361,9 @@ mbstreamreader_readlines(MultibyteStreamReaderObject *self, PyObject *args)
 		PyErr_SetString(PyExc_TypeError, "arg 1 must be an integer");
 		return NULL;
 	}
+
+	if (sizehint == -1 && PyErr_Occurred())
+		return NULL;
 
 	r = mbstreamreader_iread(self, "read", sizehint);
 	if (r == NULL)

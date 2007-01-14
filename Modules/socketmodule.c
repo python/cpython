@@ -3483,12 +3483,7 @@ socket_ntohl(PyObject *self, PyObject *arg)
 {
 	unsigned long x;
 
-	if (PyInt_Check(arg)) {
-		x = PyInt_AS_LONG(arg);
-		if (x == (unsigned long) -1 && PyErr_Occurred())
-			return NULL;
-	}
-	else if (PyLong_Check(arg)) {
+	if (PyLong_Check(arg)) {
 		x = PyLong_AsUnsignedLong(arg);
 		if (x == (unsigned long) -1 && PyErr_Occurred())
 			return NULL;
@@ -3542,12 +3537,7 @@ socket_htonl(PyObject *self, PyObject *arg)
 {
 	unsigned long x;
 
-	if (PyInt_Check(arg)) {
-		x = PyInt_AS_LONG(arg);
-		if (x == (unsigned long) -1 && PyErr_Occurred())
-			return NULL;
-	}
-	else if (PyLong_Check(arg)) {
+	if (PyLong_Check(arg)) {
 		x = PyLong_AsUnsignedLong(arg);
 		if (x == (unsigned long) -1 && PyErr_Occurred())
 			return NULL;
@@ -3827,7 +3817,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 				"getaddrinfo() argument 1 must be string or None");
 		return NULL;
 	}
-	if (PyInt_Check(pobj)) {
+	if (PyInt_CheckExact(pobj)) {
 		PyOS_snprintf(pbuf, sizeof(pbuf), "%ld", PyInt_AsLong(pobj));
 		pptr = pbuf;
 	} else if (PyString_Check(pobj)) {

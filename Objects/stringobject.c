@@ -4221,6 +4221,14 @@ _PyString_FormatLong(PyObject *val, int flags, int prec, int type,
 	int numdigits;	/* len == numnondigits + numdigits */
 	int numnondigits = 0;
 
+	/* Avoid exceeding SSIZE_T_MAX */
+	if (prec > PY_SSIZE_T_MAX-3) {
+		PyErr_SetString(PyExc_OverflowError,
+				"precision too large");
+		return NULL;
+	}
+
+
 	switch (type) {
 	case 'd':
 	case 'u':
@@ -4565,6 +4573,8 @@ PyString_Format(PyObject *format, PyObject *args)
 					goto error;
 				}
 				width = PyInt_AsLong(v);
+				if (width == -1 && PyErr_Occurred())
+					goto error;
 				if (width < 0) {
 					flags |= F_LJUST;
 					width = -width;
@@ -4602,6 +4612,8 @@ PyString_Format(PyObject *format, PyObject *args)
 						goto error;
 					}
 					prec = PyInt_AsLong(v);
+					if (prec == -1 && PyErr_Occurred())
+						goto error;
 					if (prec < 0)
 						prec = 0;
 					if (--fmtcnt >= 0)

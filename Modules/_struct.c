@@ -118,8 +118,6 @@ get_pylong(PyObject *v)
 	PyNumberMethods *m;
 
 	assert(v != NULL);
-	if (PyInt_Check(v))
-		return PyLong_FromLong(PyInt_AS_LONG(v));
 	if (PyLong_Check(v)) {
 		Py_INCREF(v);
 		return v;

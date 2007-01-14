@@ -913,7 +913,7 @@ AsObj(PyObject *value)
 					PyString_GET_SIZE(value));
 	else if (PyBool_Check(value))
 		return Tcl_NewBooleanObj(PyObject_IsTrue(value));
-	else if (PyInt_Check(value))
+	else if (PyInt_CheckExact(value))
 		return Tcl_NewLongObj(PyInt_AS_LONG(value));
 	else if (PyFloat_Check(value))
 		return Tcl_NewDoubleObj(PyFloat_AS_DOUBLE(value));

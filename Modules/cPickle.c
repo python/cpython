@@ -711,7 +711,9 @@ get(Picklerobject *self, PyObject *id)
 		PyErr_SetString(PicklingError, "no int where int expected in memo");
 		return -1;
 	}
-	c_value = PyInt_AS_LONG((PyIntObject*)value);
+	c_value = PyInt_AsLong(value);
+	if (c_value == -1 && PyErr_Occurred())
+		return -1;
 
 	if (!self->bin) {
 		s[0] = GET;
@@ -958,7 +960,7 @@ save_bool(Picklerobject *self, PyObject *args)
 {
 	static const char *buf[2] = {FALSE, TRUE};
 	static char len[2] = {sizeof(FALSE)-1, sizeof(TRUE)-1};
-	long l = PyInt_AS_LONG((PyIntObject *)args);
+	long l = args == Py_True;
 
 	if (self->proto >= 2) {
 		char opcode = l ? NEWTRUE : NEWFALSE;
@@ -971,10 +973,9 @@ save_bool(Picklerobject *self, PyObject *args)
 }
 
 static int
-save_int(Picklerobject *self, PyObject *args)
+save_int(Picklerobject *self, long l)
 {
 	char c_str[32];
-	long l = PyInt_AS_LONG((PyIntObject *)args);
 	int len = 0;
 
 	if (!self->bin
@@ -1027,8 +1028,15 @@ save_long(Picklerobject *self, PyObject *args)
 	Py_ssize_t size;
 	int res = -1;
 	PyObject *repr = NULL;
-
+	int val = PyInt_AsLong(args);
 	static char l = LONG;
+
+	if (val == -1 && PyErr_Occurred()) {
+		/* out of range for int pickling */
+		PyErr_Clear();
+	}
+	else
+		return save_int(self, val);
 
 	if (self->proto >= 2) {
 		/* Linear-time pickling. */
@@ -2183,13 +2191,6 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 			goto finally;
 		}
 		break;
-        case 'i':
-		if (type == &PyInt_Type) {
-			res = save_int(self, args);
-			goto finally;
-		}
-		break;
-
         case 'l':
 		if (type == &PyLong_Type) {
 			res = save_long(self, args);
@@ -2486,7 +2487,9 @@ Pickle_getvalue(Picklerobject *self, PyObject *args)
 			rsize += PyString_GET_SIZE(k);
 
 		else if (PyInt_Check(k)) { /* put */
-			ik = PyInt_AS_LONG((PyIntObject*)k);
+			ik = PyInt_AsLong(k);
+			if (ik == -1 && PyErr_Occurred())
+				goto err;
 			if (ik >= lm || ik == 0) {
 				PyErr_SetString(PicklingError,
 						"Invalid get data");
@@ -2506,7 +2509,9 @@ Pickle_getvalue(Picklerobject *self, PyObject *args)
 		}
 
 		else { /* put */
-			ik = PyInt_AS_LONG((PyIntObject *)k);
+			ik = PyInt_AsLong(k);
+			if (ik == -1 && PyErr_Occurred())
+				goto err;
 			if (ik >= lm || ik == 0) {
 				PyErr_SetString(PicklingError,
 						"Invalid get data");
@@ -2535,8 +2540,9 @@ Pickle_getvalue(Picklerobject *self, PyObject *args)
 		}
 
 		else if (PyTuple_Check(k)) { /* get */
-			ik = PyInt_AS_LONG((PyIntObject *)
-					    PyTuple_GET_ITEM(k, 0));
+			ik = PyLong_AsLong(PyTuple_GET_ITEM(k, 0));
+			if (ik == -1 && PyErr_Occurred())
+				goto err;
 			if (ik < 256) {
 				*s++ = BINGET;
 				*s++ = (int)(ik & 0xff);
@@ -2551,7 +2557,9 @@ Pickle_getvalue(Picklerobject *self, PyObject *args)
 		}
 
 		else { /* put */
-			ik = PyInt_AS_LONG((PyIntObject*)k);
+			ik = PyLong_AsLong(k);
+			if (ik == -1 && PyErr_Occurred())
+				goto err;
 
 			if (have_get[ik]) { /* with matching get */
 				if (ik < 256) {

@@ -543,7 +543,7 @@ summary_setproperty(msiobj* si, PyObject *args)
     if (PyString_Check(data)) {
 	status = MsiSummaryInfoSetProperty(si->h, field, VT_LPSTR,
 	    0, NULL, PyString_AsString(data));
-    } else if (PyInt_Check(data)) {
+    } else if (PyInt_CheckExact(data)) {
 	status = MsiSummaryInfoSetProperty(si->h, field, VT_I4,
 	    PyInt_AsLong(data), NULL, NULL);
     } else {

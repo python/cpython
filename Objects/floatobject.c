@@ -273,10 +273,7 @@ convert_to_double(PyObject **v, double *dbl)
 {
 	register PyObject *obj = *v;
 
-	if (PyInt_Check(obj)) {
-		*dbl = (double)PyInt_AS_LONG(obj);
-	}
-	else if (PyLong_Check(obj)) {
+	if (PyLong_Check(obj)) {
 		*dbl = PyLong_AsDouble(obj);
 		if (*dbl == -1.0 && PyErr_Occurred()) {
 			*v = NULL;
@@ -374,32 +371,6 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 			j = 0.0;
 		else
 			goto Unimplemented;
-	}
-
-	else if (PyInt_Check(w)) {
-		long jj = PyInt_AS_LONG(w);
-		/* In the worst realistic case I can imagine, C double is a
-		 * Cray single with 48 bits of precision, and long has 64
-		 * bits.
-		 */
-#if SIZEOF_LONG > 6
-		unsigned long abs = (unsigned long)(jj < 0 ? -jj : jj);
-		if (abs >> 48) {
-			/* Needs more than 48 bits.  Make it take the
-			 * PyLong path.
-			 */
-			PyObject *result;
-			PyObject *ww = PyLong_FromLong(jj);
-
-			if (ww == NULL)
-				return NULL;
-			result = float_richcompare(v, ww, op);
-			Py_DECREF(ww);
-			return result;
-		}
-#endif
-		j = (double)jj;
-		assert((long)j == jj);
 	}
 
 	else if (PyLong_Check(w)) {

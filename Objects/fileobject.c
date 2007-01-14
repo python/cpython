@@ -2136,7 +2136,7 @@ PyFile_SoftSpace(PyObject *f, int newflag)
 		if (v == NULL)
 			PyErr_Clear();
 		else {
-			if (PyInt_Check(v))
+			if (PyInt_CheckExact(v))
 				oldflag = PyInt_AsLong(v);
 			assert(oldflag < INT_MAX);
 			Py_DECREF(v);
@@ -2301,6 +2301,8 @@ int PyObject_AsFileDescriptor(PyObject *o)
 		return -1;
 	}
 
+	if (fd == -1 && PyErr_Occurred())
+		return -1;
 	if (fd < 0) {
 		PyErr_Format(PyExc_ValueError,
 			     "file descriptor cannot be a negative integer (%i)",
