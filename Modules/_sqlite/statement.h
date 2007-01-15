@@ -39,21 +39,21 @@ typedef struct
     PyObject* sql;
     int in_use;
     PyObject* in_weakreflist; /* List of weak references */
-} Statement;
+} pysqlite_Statement;
 
-extern PyTypeObject StatementType;
+extern PyTypeObject pysqlite_StatementType;
 
-int statement_create(Statement* self, Connection* connection, PyObject* sql);
-void statement_dealloc(Statement* self);
+int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* connection, PyObject* sql);
+void pysqlite_statement_dealloc(pysqlite_Statement* self);
 
-int statement_bind_parameter(Statement* self, int pos, PyObject* parameter);
-void statement_bind_parameters(Statement* self, PyObject* parameters);
+int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter);
+void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* parameters);
 
-int statement_recompile(Statement* self, PyObject* parameters);
-int statement_finalize(Statement* self);
-int statement_reset(Statement* self);
-void statement_mark_dirty(Statement* self);
+int pysqlite_statement_recompile(pysqlite_Statement* self, PyObject* parameters);
+int pysqlite_statement_finalize(pysqlite_Statement* self);
+int pysqlite_statement_reset(pysqlite_Statement* self);
+void pysqlite_statement_mark_dirty(pysqlite_Statement* self);
 
-int statement_setup_types(void);
+int pysqlite_statement_setup_types(void);
 
 #endif

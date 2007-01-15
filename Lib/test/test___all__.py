@@ -132,7 +132,6 @@ class AllTest(unittest.TestCase):
         self.check_all("rlcompleter")
         self.check_all("robotparser")
         self.check_all("sched")
-        self.check_all("sets")
         self.check_all("sgmllib")
         self.check_all("shelve")
         self.check_all("shlex")

@@ -29,15 +29,15 @@
  * dictionary. The list items are of type 'Node' and the dictionary has the
  * nodes as values. */
 
-typedef struct _Node
+typedef struct _pysqlite_Node
 {
     PyObject_HEAD
     PyObject* key;
     PyObject* data;
     long count;
-    struct _Node* prev;
-    struct _Node* next;
-} Node;
+    struct _pysqlite_Node* prev;
+    struct _pysqlite_Node* next;
+} pysqlite_Node;
 
 typedef struct
 {
@@ -50,24 +50,24 @@ typedef struct
     /* the factory callable */
     PyObject* factory;
 
-    Node* first;
-    Node* last;
+    pysqlite_Node* first;
+    pysqlite_Node* last;
 
     /* if set, decrement the factory function when the Cache is deallocated.
      * this is almost always desirable, but not in the pysqlite context */
     int decref_factory;
-} Cache;
+} pysqlite_Cache;
 
-extern PyTypeObject NodeType;
-extern PyTypeObject CacheType;
+extern PyTypeObject pysqlite_NodeType;
+extern PyTypeObject pysqlite_CacheType;
 
-int node_init(Node* self, PyObject* args, PyObject* kwargs);
-void node_dealloc(Node* self);
+int pysqlite_node_init(pysqlite_Node* self, PyObject* args, PyObject* kwargs);
+void pysqlite_node_dealloc(pysqlite_Node* self);
 
-int cache_init(Cache* self, PyObject* args, PyObject* kwargs);
-void cache_dealloc(Cache* self);
-PyObject* cache_get(Cache* self, PyObject* args);
+int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs);
+void pysqlite_cache_dealloc(pysqlite_Cache* self);
+PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* args);
 
-int cache_setup_types(void);
+int pysqlite_cache_setup_types(void);
 
 #endif

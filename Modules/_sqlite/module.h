@@ -25,20 +25,20 @@
 #define PYSQLITE_MODULE_H
 #include "Python.h"
 
-#define PYSQLITE_VERSION "2.3.2"
+#define PYSQLITE_VERSION "2.3.3"
 
-extern PyObject* Error;
-extern PyObject* Warning;
-extern PyObject* InterfaceError;
-extern PyObject* DatabaseError;
-extern PyObject* InternalError;
-extern PyObject* OperationalError;
-extern PyObject* ProgrammingError;
-extern PyObject* IntegrityError;
-extern PyObject* DataError;
-extern PyObject* NotSupportedError;
+extern PyObject* pysqlite_Error;
+extern PyObject* pysqlite_Warning;
+extern PyObject* pysqlite_InterfaceError;
+extern PyObject* pysqlite_DatabaseError;
+extern PyObject* pysqlite_InternalError;
+extern PyObject* pysqlite_OperationalError;
+extern PyObject* pysqlite_ProgrammingError;
+extern PyObject* pysqlite_IntegrityError;
+extern PyObject* pysqlite_DataError;
+extern PyObject* pysqlite_NotSupportedError;
 
-extern PyObject* OptimizedUnicode;
+extern PyObject* pysqlite_OptimizedUnicode;
 
 /* the functions time.time() and time.sleep() */
 extern PyObject* time_time;

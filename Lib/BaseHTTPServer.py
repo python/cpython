@@ -396,7 +396,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
         self.log_message('"%s" %s %s',
                          self.requestline, str(code), str(size))
 
-    def log_error(self, *args):
+    def log_error(self, format, *args):
         """Log an error.
 
         This is called when a request cannot be fulfilled.  By
@@ -408,7 +408,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
 
         """
 
-        self.log_message(*args)
+        self.log_message(format, *args)
 
     def log_message(self, format, *args):
         """Log an arbitrary message.

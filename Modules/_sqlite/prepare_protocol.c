@@ -23,23 +23,23 @@
 
 #include "prepare_protocol.h"
 
-int prepare_protocol_init(SQLitePrepareProtocol* self, PyObject* args, PyObject* kwargs)
+int pysqlite_prepare_protocol_init(pysqlite_PrepareProtocol* self, PyObject* args, PyObject* kwargs)
 {
     return 0;
 }
 
-void prepare_protocol_dealloc(SQLitePrepareProtocol* self)
+void pysqlite_prepare_protocol_dealloc(pysqlite_PrepareProtocol* self)
 {
     self->ob_type->tp_free((PyObject*)self);
 }
 
-PyTypeObject SQLitePrepareProtocolType= {
+PyTypeObject pysqlite_PrepareProtocolType= {
         PyObject_HEAD_INIT(NULL)
         0,                                              /* ob_size */
         MODULE_NAME ".PrepareProtocol",                 /* tp_name */
-        sizeof(SQLitePrepareProtocol),                  /* tp_basicsize */
+        sizeof(pysqlite_PrepareProtocol),               /* tp_basicsize */
         0,                                              /* tp_itemsize */
-        (destructor)prepare_protocol_dealloc,           /* tp_dealloc */
+        (destructor)pysqlite_prepare_protocol_dealloc,  /* tp_dealloc */
         0,                                              /* tp_print */
         0,                                              /* tp_getattr */
         0,                                              /* tp_setattr */
@@ -70,15 +70,15 @@ PyTypeObject SQLitePrepareProtocolType= {
         0,                                              /* tp_descr_get */
         0,                                              /* tp_descr_set */
         0,                                              /* tp_dictoffset */
-        (initproc)prepare_protocol_init,                /* tp_init */
+        (initproc)pysqlite_prepare_protocol_init,       /* tp_init */
         0,                                              /* tp_alloc */
         0,                                              /* tp_new */
         0                                               /* tp_free */
 };
 
-extern int prepare_protocol_setup_types(void)
+extern int pysqlite_prepare_protocol_setup_types(void)
 {
-    SQLitePrepareProtocolType.tp_new = PyType_GenericNew;
-    SQLitePrepareProtocolType.ob_type= &PyType_Type;
-    return PyType_Ready(&SQLitePrepareProtocolType);
+    pysqlite_PrepareProtocolType.tp_new = PyType_GenericNew;
+    pysqlite_PrepareProtocolType.ob_type= &PyType_Type;
+    return PyType_Ready(&pysqlite_PrepareProtocolType);
 }

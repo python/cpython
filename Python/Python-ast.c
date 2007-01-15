@@ -3126,7 +3126,7 @@ init_ast(void)
         if (PyDict_SetItemString(d, "AST", (PyObject*)AST_type) < 0) return;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return;
-        if (PyModule_AddStringConstant(m, "__version__", "53170") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "53349") < 0)
                 return;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return;
         if (PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0)

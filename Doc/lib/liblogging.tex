@@ -989,10 +989,11 @@ The \class{FileHandler} class, located in the core \module{logging}
 package, sends logging output to a disk file.  It inherits the output
 functionality from \class{StreamHandler}.
 
-\begin{classdesc}{FileHandler}{filename\optional{, mode}}
+\begin{classdesc}{FileHandler}{filename\optional{, mode\optional{, encoding}}}
 Returns a new instance of the \class{FileHandler} class. The specified
 file is opened and used as the stream for logging. If \var{mode} is
-not specified, \constant{'a'} is used. By default, the file grows
+not specified, \constant{'a'} is used.  If \var{encoding} is not \var{None},
+it is used to open the file with that encoding.  By default, the file grows
 indefinitely.
 \end{classdesc}
 
@@ -1002,6 +1003,41 @@ Closes the file.
 
 \begin{methoddesc}{emit}{record}
 Outputs the record to the file.
+\end{methoddesc}
+
+\subsubsection{WatchedFileHandler}
+
+\versionadded{2.6}
+The \class{WatchedFileHandler} class, located in the \module{logging.handlers}
+module, is a \class{FileHandler} which watches the file it is logging to.
+If the file changes, it is closed and reopened using the file name.
+
+A file change can happen because of usage of programs such as \var{newsyslog}
+and \var{logrotate} which perform log file rotation. This handler, intended
+for use under Unix/Linux, watches the file to see if it has changed since the
+last emit. (A file is deemed to have changed if its device or inode have
+changed.) If the file has changed, the old file stream is closed, and the file
+opened to get a new stream.
+
+This handler is not appropriate for use under Windows, because under Windows
+open log files cannot be moved or renamed - logging opens the files with
+exclusive locks - and so there is no need for such a handler. Furthermore,
+\var{ST_INO} is not supported under Windows; \function{stat()} always returns
+zero for this value.
+
+\begin{classdesc}{WatchedFileHandler}{filename\optional{,mode\optional{,
+                                      encoding}}}
+Returns a new instance of the \class{WatchedFileHandler} class. The specified
+file is opened and used as the stream for logging. If \var{mode} is
+not specified, \constant{'a'} is used.  If \var{encoding} is not \var{None},
+it is used to open the file with that encoding.  By default, the file grows
+indefinitely.
+\end{classdesc}
+
+\begin{methoddesc}{emit}{record}
+Outputs the record to the file, but first checks to see if the file has
+changed. If it has, the existing stream is flushed and closed and the file
+opened again, before outputting the record to the file.
 \end{methoddesc}
 
 \subsubsection{RotatingFileHandler}

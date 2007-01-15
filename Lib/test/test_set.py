@@ -476,6 +476,16 @@ class SetSubclass(set):
 class TestSetSubclass(TestSet):
     thetype = SetSubclass
 
+class SetSubclassWithKeywordArgs(set):
+    def __init__(self, iterable=[], newarg=None):
+        set.__init__(self, iterable)
+
+class TestSetSubclassWithKeywordArgs(TestSet):
+    
+    def test_keywords_in_subclass(self):
+        'SF bug #1486663 -- this used to erroneously raise a TypeError'
+        SetSubclassWithKeywordArgs(newarg=1)
+
 class TestFrozenSet(TestJointOps):
     thetype = frozenset
 
@@ -1454,6 +1464,7 @@ def test_main(verbose=None):
     test_classes = (
         TestSet,
         TestSetSubclass,
+        TestSetSubclassWithKeywordArgs,        
         TestFrozenSet,
         TestFrozenSetSubclass,
         TestSetOfSets,

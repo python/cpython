@@ -41,8 +41,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
-__version__ = "0.5.0.0"
-__date__    = "08 January 2007"
+__version__ = "0.5.0.1"
+__date__    = "09 January 2007"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -764,17 +764,15 @@ class FileHandler(StreamHandler):
         """
         Open the specified file and use it as the stream for logging.
         """
-        if codecs is None:
-            encoding = None
-        if encoding is None:
-            stream = open(filename, mode)
-        else:
-            stream = codecs.open(filename, mode, encoding)
-        StreamHandler.__init__(self, stream)
         #keep the absolute path, otherwise derived classes which use this
         #may come a cropper when the current directory changes
+        if codecs is None:
+            encoding = None
         self.baseFilename = os.path.abspath(filename)
         self.mode = mode
+        self.encoding = encoding
+        stream = self._open()
+        StreamHandler.__init__(self, stream)
 
     def close(self):
         """
@@ -783,6 +781,17 @@ class FileHandler(StreamHandler):
         self.flush()
         self.stream.close()
         StreamHandler.close(self)
+
+    def _open(self):
+        """
+        Open the current base file with the (original) mode and encoding.
+        Return the resulting stream.
+        """
+        if self.encoding is None:
+            stream = open(self.baseFilename, self.mode)
+        else:
+            stream = codecs.open(self.baseFilename, self.mode, self.encoding)
+        return stream
 
 #---------------------------------------------------------------------------
 #   Manager classes and functions
