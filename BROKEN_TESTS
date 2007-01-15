@@ -1,2 +1,1 @@
-test_pickletools -- Test probably needs to be fixed
 test_sqlite -- CheckLargeInt (sqlite3.test.types.SqliteTypeTests, sqlite3.test.types.DeclTypesTests)
