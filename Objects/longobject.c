@@ -364,7 +364,7 @@ PyLong_AsLong(PyObject *vv)
 		Py_DECREF(vv);
 	}
 	PyErr_SetString(PyExc_OverflowError,
-			"int too large to convert to int");
+			"Python int too large to convert to C long");
 	return -1;
 }
 
@@ -427,7 +427,7 @@ PyLong_AsSsize_t(PyObject *vv) {
 
  overflow:
 	PyErr_SetString(PyExc_OverflowError,
-			"int too large to convert to ");
+			"Python int too large to convert to C ssize_t");
 	return -1;
 }
 
@@ -462,7 +462,7 @@ PyLong_AsUnsignedLong(PyObject *vv)
 		x = (x << SHIFT) + v->ob_digit[i];
 		if ((x >> SHIFT) != prev) {
 			PyErr_SetString(PyExc_OverflowError,
-				"int too large to convert");
+			 "python int too large to convert to C unsigned long");
 			return (unsigned long) -1;
 		}
 	}
@@ -500,7 +500,7 @@ PyLong_AsSize_t(PyObject *vv)
 		x = (x << SHIFT) + v->ob_digit[i];
 		if ((x >> SHIFT) != prev) {
 			PyErr_SetString(PyExc_OverflowError,
-				"int too large to convert");
+			    "Python int too large to convert to C size_t");
 			return (unsigned long) -1;
 		}
 	}
@@ -943,7 +943,7 @@ PyLong_AsDouble(PyObject *vv)
 
 overflow:
 	PyErr_SetString(PyExc_OverflowError,
-		"int too large to convert to float");
+		"Python int too large to convert to C double");
 	return -1.0;
 }
 

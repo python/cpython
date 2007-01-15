@@ -100,7 +100,7 @@ int statement_bind_parameter(Statement* self, int pos, PyObject* parameter)
 
     if (parameter == Py_None) {
         rc = sqlite3_bind_null(self->st, pos);
-    } else if (PyInt_Check(parameter)) {
+    } else if (PyInt_CheckExact(parameter)) {
         longval = PyInt_AsLong(parameter);
         rc = sqlite3_bind_int64(self->st, pos, (sqlite_int64)longval);
 #ifdef HAVE_LONG_LONG
