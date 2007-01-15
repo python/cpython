@@ -43,7 +43,7 @@ FD_SETSIZE = 1024
 __NBBY = 8
 
 # Included from string.h
-NULL = 0L
+NULL = 0
 NBBY = 8
 
 # Included from sys/cpumask.h
@@ -332,9 +332,9 @@ CTX_FS5 = 30
 SV_ONSTACK = 0x0001
 SV_INTERRUPT = 0x0002
 NUMBSDSIGS = (32)
-def sigmask(sig): return (1L << ((sig)-1))
+def sigmask(sig): return (1 << ((sig)-1))
 
-def sigmask(sig): return (1L << ((sig)-1))
+def sigmask(sig): return (1 << ((sig)-1))
 
 SIG_ERR = (-1)
 SIG_IGN = (1)
@@ -356,7 +356,7 @@ BRK_PSEUDO_OP_BIT = 0x80
 BRK_PSEUDO_OP_MAX = 0x3
 BRK_CACHE_SYNC = 0x80
 BRK_MULOVF = 1023
-_POSIX_VERSION = 199506L
+_POSIX_VERSION = 199506
 _POSIX_VERSION = 199506
 _POSIX_VDISABLE = 0
 MAX_INPUT = 512
@@ -414,7 +414,7 @@ BPCSHIFT = 14
 CPSSHIFT = 12
 CPSSHIFT = 11
 BPSSHIFT = (BPCSHIFT+CPSSHIFT)
-NULL = 0L
+NULL = 0
 CMASK = 022
 NODEV = (-1)
 NOPAGE = (-1)
@@ -464,7 +464,7 @@ def DELAY(n): return us_delay(n)
 
 def DELAYBUS(n): return us_delaybus(n)
 
-TIMEPOKE_NOW = -100L
+TIMEPOKE_NOW = -100
 MUTEX_DEFAULT = 0x0
 METER_NAMSZ = 16
 METER_NO_SEQ = -1

@@ -148,7 +148,7 @@ class PimpUrllibDownloader(PimpDownloader):
         keepgoing = True
         download = urllib2.urlopen(url)
         if "content-length" in download.headers:
-            length = long(download.headers['content-length'])
+            length = int(download.headers['content-length'])
         else:
             length = -1
 

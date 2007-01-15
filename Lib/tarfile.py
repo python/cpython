@@ -80,7 +80,7 @@ VERSION    = "00"               # version number
 LENGTH_NAME    = 100            # maximum length of a filename
 LENGTH_LINK    = 100            # maximum length of a linkname
 LENGTH_PREFIX  = 155            # maximum length of the prefix field
-MAXSIZE_MEMBER = 077777777777L  # maximum size of a file (11 octal digits)
+MAXSIZE_MEMBER = 077777777777  # maximum size of a file (11 octal digits)
 
 REGTYPE  = "0"                  # regular file
 AREGTYPE = "\0"                 # regular file
@@ -152,7 +152,7 @@ def nti(s):
         except ValueError:
             raise HeaderError("invalid header")
     else:
-        n = 0L
+        n = 0
         for i in xrange(len(s) - 1):
             n <<= 8
             n += ord(s[i + 1])
@@ -347,7 +347,7 @@ class _Stream:
         self.fileobj  = fileobj
         self.bufsize  = bufsize
         self.buf      = ""
-        self.pos      = 0L
+        self.pos      = 0
         self.closed   = False
 
         if comptype == "gz":
@@ -384,7 +384,7 @@ class _Stream:
                                             -self.zlib.MAX_WBITS,
                                             self.zlib.DEF_MEM_LEVEL,
                                             0)
-        timestamp = struct.pack("<L", long(time.time()))
+        timestamp = struct.pack("<L", int(time.time()))
         self.__write("\037\213\010\010%s\002\377" % timestamp)
         if self.name.endswith(".gz"):
             self.name = self.name[:-3]
@@ -429,8 +429,8 @@ class _Stream:
                 # while the same crc on a 64-bit box may "look positive".
                 # To avoid irksome warnings from the `struct` module, force
                 # it to look positive on all boxes.
-                self.fileobj.write(struct.pack("<L", self.crc & 0xffffffffL))
-                self.fileobj.write(struct.pack("<L", self.pos & 0xffffFFFFL))
+                self.fileobj.write(struct.pack("<L", self.crc & 0xffffffff))
+                self.fileobj.write(struct.pack("<L", self.pos & 0xffffFFFF))
 
         if not self._extfileobj:
             self.fileobj.close()
@@ -1076,7 +1076,7 @@ class TarFile(object):
         self.closed = False
         self.members = []       # list of members as TarInfo objects
         self._loaded = False    # flag if all members have been read
-        self.offset = 0L        # current position in the archive file
+        self.offset = 0        # current position in the archive file
         self.inodes = {}        # dictionary caching the inodes of
                                 # archive members already added
 
@@ -1378,7 +1378,7 @@ class TarFile(object):
         if stat.S_ISREG(stmd):
             tarinfo.size = statres.st_size
         else:
-            tarinfo.size = 0L
+            tarinfo.size = 0
         tarinfo.mtime = statres.st_mtime
         tarinfo.type = type
         tarinfo.linkname = linkname
@@ -1924,8 +1924,8 @@ class TarFile(object):
         buf = tarinfo.buf
         sp = _ringbuffer()
         pos = 386
-        lastpos = 0L
-        realpos = 0L
+        lastpos = 0
+        realpos = 0
         # There are 4 possible sparse structs in the
         # first header.
         for i in xrange(4):

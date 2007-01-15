@@ -43,10 +43,10 @@ class ChecksumTestCase(unittest.TestCase):
     def assertEqual32(self, seen, expected):
         # 32-bit values masked -- checksums on 32- vs 64- bit machines
         # This is important if bit 31 (0x08000000L) is set.
-        self.assertEqual(seen & 0x0FFFFFFFFL, expected & 0x0FFFFFFFFL)
+        self.assertEqual(seen & 0x0FFFFFFFF, expected & 0x0FFFFFFFF)
 
     def test_penguins(self):
-        self.assertEqual32(zlib.crc32("penguin", 0), 0x0e5c1a120L)
+        self.assertEqual32(zlib.crc32("penguin", 0), 0x0e5c1a120)
         self.assertEqual32(zlib.crc32("penguin", 1), 0x43b6aa94)
         self.assertEqual32(zlib.adler32("penguin", 0), 0x0bcf02f6)
         self.assertEqual32(zlib.adler32("penguin", 1), 0x0bd602f7)

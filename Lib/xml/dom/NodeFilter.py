@@ -9,7 +9,7 @@ class NodeFilter:
     FILTER_REJECT = 2
     FILTER_SKIP   = 3
 
-    SHOW_ALL                    = 0xFFFFFFFFL
+    SHOW_ALL                    = 0xFFFFFFFF
     SHOW_ELEMENT                = 0x00000001
     SHOW_ATTRIBUTE              = 0x00000002
     SHOW_TEXT                   = 0x00000004

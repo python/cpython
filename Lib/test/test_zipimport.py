@@ -31,7 +31,7 @@ def make_pyc(co, mtime):
         if mtime < 0x7fffffff:
             mtime = int(mtime)
         else:
-            mtime = int(-0x100000000L + long(mtime))
+            mtime = int(-0x100000000 + int(mtime))
     pyc = imp.get_magic() + struct.pack("<i", int(mtime)) + data
     return pyc
 

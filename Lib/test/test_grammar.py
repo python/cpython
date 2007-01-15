@@ -55,14 +55,14 @@ class TokenTests(unittest.TestCase):
             self.fail('Weird maxint value %r' % maxint)
 
     def testLongIntegers(self):
-        x = 0L
-        x = 0l
-        x = 0xffffffffffffffffL
-        x = 0xffffffffffffffffl
-        x = 077777777777777777L
-        x = 077777777777777777l
-        x = 123456789012345678901234567890L
-        x = 123456789012345678901234567890l
+        x = 0
+        x = 0
+        x = 0xffffffffffffffff
+        x = 0xffffffffffffffff
+        x = 077777777777777777
+        x = 077777777777777777
+        x = 123456789012345678901234567890
+        x = 123456789012345678901234567890
 
     def testFloats(self):
         x = 3.14
@@ -327,7 +327,7 @@ class GrammarTests(unittest.TestCase):
         l1 = lambda : 0
         self.assertEquals(l1(), 0)
         l2 = lambda : a[d] # XXX just testing the expression
-        l3 = lambda : [2 < x for x in [-1, 3, 0L]]
+        l3 = lambda : [2 < x for x in [-1, 3, 0]]
         self.assertEquals(l3(), [0, 1, 0])
         l4 = lambda x = lambda y = lambda z=1 : z : y() : x()
         self.assertEquals(l4(), 1)

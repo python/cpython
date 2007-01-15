@@ -68,7 +68,7 @@ FD_SETSIZE = 1024
 __NBBY = 8
 
 # Included from string.h
-NULL = 0L
+NULL = 0
 NBBY = 8
 
 # Included from sys/procset.h
@@ -286,9 +286,9 @@ CXT_SR = CTX_SR
 SV_ONSTACK = 0x0001
 SV_INTERRUPT = 0x0002
 NUMBSDSIGS = (32)
-def sigmask(sig): return (1L << ((sig)-1))
+def sigmask(sig): return (1 << ((sig)-1))
 
-def sigmask(sig): return (1L << ((sig)-1))
+def sigmask(sig): return (1 << ((sig)-1))
 
 SIG_ERR = (-1)
 SIG_IGN = (1)

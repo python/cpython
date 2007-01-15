@@ -18,14 +18,14 @@ class PowTest(unittest.TestCase):
                 self.assertEquals(pow(2, i), pow2)
                 if i != 30 : pow2 = pow2*2
 
-            for othertype in int, long:
+            for othertype in int, int:
                 for i in range(-10, 0) + range(1, 10):
                     ii = type(i)
                     for j in range(1, 11):
                         jj = -othertype(j)
                         pow(ii, jj)
 
-        for othertype in int, long, float:
+        for othertype in int, int, float:
             for i in range(1, 100):
                 zero = type(0)
                 exp = -othertype(i/10.0)
@@ -42,7 +42,7 @@ class PowTest(unittest.TestCase):
             asseq = self.assertAlmostEqual
         elif type == int:
             jl = 0
-        elif type == long:
+        elif type == int:
             jl, jh = 0, 15
         for i in range(il, ih+1):
             for j in range(jl, jh+1):
@@ -60,7 +60,7 @@ class PowTest(unittest.TestCase):
         self.powtest(int)
 
     def test_powlong(self):
-        self.powtest(long)
+        self.powtest(int)
 
     def test_powfloat(self):
         self.powtest(float)
@@ -74,12 +74,12 @@ class PowTest(unittest.TestCase):
         self.assertEquals(pow(-3,3) % -8, pow(-3,3,-8))
         self.assertEquals(pow(5,2) % -8, pow(5,2,-8))
 
-        self.assertEquals(pow(3L,3L) % 8, pow(3L,3L,8))
-        self.assertEquals(pow(3L,3L) % -8, pow(3L,3L,-8))
-        self.assertEquals(pow(3L,2) % -2, pow(3L,2,-2))
-        self.assertEquals(pow(-3L,3L) % 8, pow(-3L,3L,8))
-        self.assertEquals(pow(-3L,3L) % -8, pow(-3L,3L,-8))
-        self.assertEquals(pow(5L,2) % -8, pow(5L,2,-8))
+        self.assertEquals(pow(3,3) % 8, pow(3,3,8))
+        self.assertEquals(pow(3,3) % -8, pow(3,3,-8))
+        self.assertEquals(pow(3,2) % -2, pow(3,2,-2))
+        self.assertEquals(pow(-3,3) % 8, pow(-3,3,8))
+        self.assertEquals(pow(-3,3) % -8, pow(-3,3,-8))
+        self.assertEquals(pow(5,2) % -8, pow(5,2,-8))
 
         for i in range(-10, 11):
             for j in range(0, 6):
@@ -91,8 +91,8 @@ class PowTest(unittest.TestCase):
                         )
                     if j >= 0 and k != 0:
                         self.assertEquals(
-                            pow(long(i),j) % k,
-                            pow(long(i),j,k)
+                            pow(int(i),j) % k,
+                            pow(int(i),j,k)
                         )
 
     def test_bug643260(self):

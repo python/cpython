@@ -682,7 +682,7 @@ def mac_ver(release='',versioninfo=('','',''),machine=''):
         patch = (sysv & 0x000F)
         release = '%s.%i.%i' % (_bcd2str(major),minor,patch)
     if sysu:
-        major =  int((sysu & 0xFF000000L) >> 24)
+        major =  int((sysu & 0xFF000000) >> 24)
         minor =  (sysu & 0x00F00000) >> 20
         bugfix = (sysu & 0x000F0000) >> 16
         stage =  (sysu & 0x0000FF00) >> 8

@@ -15,7 +15,7 @@ class StropFunctionTestCase(unittest.TestCase):
         self.assertRaises(ValueError, strop.atoi, " x1 ")
 
     def test_atol(self):
-        self.assert_(strop.atol(" 1 ") == 1L)
+        self.assert_(strop.atol(" 1 ") == 1)
         self.assertRaises(ValueError, strop.atol, " 1x")
         self.assertRaises(ValueError, strop.atol, " x1 ")
 

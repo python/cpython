@@ -1323,17 +1323,13 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 					return ERRORTOKEN;
 				}
 			}
-			if (c == 'l' || c == 'L')
-				c = tok_nextc(tok);
 		}
 		else {
 			/* Decimal */
 			do {
 				c = tok_nextc(tok);
 			} while (isdigit(c));
-			if (c == 'l' || c == 'L')
-				c = tok_nextc(tok);
-			else {
+			{
 				/* Accept floating point numbers. */
 				if (c == '.') {
 		fraction:

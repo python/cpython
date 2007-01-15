@@ -369,7 +369,7 @@ class Sniffer:
 
             for col in columnTypes.keys():
 
-                for thisType in [int, long, float, complex]:
+                for thisType in [int, int, float, complex]:
                     try:
                         thisType(row[col])
                         break
@@ -380,7 +380,7 @@ class Sniffer:
                     thisType = len(row[col])
 
                 # treat longs as ints
-                if thisType == long:
+                if thisType == int:
                     thisType = int
 
                 if thisType != columnTypes[col]:

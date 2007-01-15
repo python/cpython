@@ -66,7 +66,7 @@ def create_string_buffer(init, size=None):
         buf = buftype()
         buf.value = init
         return buf
-    elif isinstance(init, (int, long)):
+    elif isinstance(init, (int, int)):
         buftype = c_char * init
         buf = buftype()
         return buf
@@ -285,7 +285,7 @@ else:
             buf = buftype()
             buf.value = init
             return buf
-        elif isinstance(init, (int, long)):
+        elif isinstance(init, (int, int)):
             buftype = c_wchar * init
             buf = buftype()
             return buf
@@ -356,7 +356,7 @@ class CDLL(object):
 
     def __getitem__(self, name_or_ordinal):
         func = self._FuncPtr((name_or_ordinal, self))
-        if not isinstance(name_or_ordinal, (int, long)):
+        if not isinstance(name_or_ordinal, (int, int)):
             func.__name__ = name_or_ordinal
         return func
 

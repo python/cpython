@@ -70,7 +70,7 @@ consts: ('None',)
 ...     'doc string'
 ...     'not a docstring'
 ...     53
-...     53L
+...     0x53
 
 >>> dump(optimize_away.func_code)
 name: optimize_away

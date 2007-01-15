@@ -514,7 +514,7 @@ class FTP:
             try:
                 return int(s)
             except (OverflowError, ValueError):
-                return long(s)
+                return int(s)
 
     def mkd(self, dirname):
         '''Make a directory, return its full pathname.'''
@@ -564,7 +564,7 @@ def parse150(resp):
     try:
         return int(s)
     except (OverflowError, ValueError):
-        return long(s)
+        return int(s)
 
 
 _227_re = None

@@ -82,7 +82,7 @@ class TestCopy(unittest.TestCase):
             pass
         def f():
             pass
-        tests = [None, 42, 2L**100, 3.14, True, False, 1j,
+        tests = [None, 42, 2**100, 3.14, True, False, 1j,
                  "hello", u"hello\u1234", f.func_code,
                  NewStyle, xrange(10), Classic, max]
         for x in tests:
@@ -255,7 +255,7 @@ class TestCopy(unittest.TestCase):
             pass
         def f():
             pass
-        tests = [None, 42, 2L**100, 3.14, True, False, 1j,
+        tests = [None, 42, 2**100, 3.14, True, False, 1j,
                  "hello", u"hello\u1234", f.func_code,
                  NewStyle, xrange(10), Classic, max]
         for x in tests:

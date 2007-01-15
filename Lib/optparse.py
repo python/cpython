@@ -407,7 +407,7 @@ def _parse_int(val):
     return _parse_num(val, int)
 
 def _parse_long(val):
-    return _parse_num(val, long)
+    return _parse_num(val, int)
 
 _builtin_cvt = { "int" : (_parse_int, _("integer")),
                  "long" : (_parse_long, _("long integer")),

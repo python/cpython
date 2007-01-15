@@ -93,7 +93,7 @@ class NumberTestCase(unittest.TestCase):
         for t in float_types:
             self.failUnlessEqual(t(2.0).value, 2.0)
             self.failUnlessEqual(t(2).value, 2.0)
-            self.failUnlessEqual(t(2L).value, 2.0)
+            self.failUnlessEqual(t(2).value, 2.0)
 
     def test_integers(self):
         # integers cannot be constructed from floats

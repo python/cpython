@@ -45,7 +45,7 @@ finally:
     resource.setrlimit(resource.RLIMIT_FSIZE, (cur, max))
 
 # And be sure that setrlimit is checking for really large values
-too_big = 10L**50
+too_big = 10**50
 try:
     resource.setrlimit(resource.RLIMIT_FSIZE, (too_big, max))
 except (OverflowError, ValueError):

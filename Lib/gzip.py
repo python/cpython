@@ -21,12 +21,12 @@ def U32(i):
     If it's >= 2GB when viewed as a 32-bit unsigned int, return a long.
     """
     if i < 0:
-        i += 1L << 32
+        i += 1 << 32
     return i
 
 def LOWU32(i):
     """Return the low-order 32 bits of an int, as a non-negative int."""
-    return i & 0xFFFFFFFFL
+    return i & 0xFFFFFFFF
 
 def write32(output, value):
     output.write(struct.pack("<l", value))
@@ -148,7 +148,7 @@ class GzipFile:
         if fname:
             flags = FNAME
         self.fileobj.write(chr(flags))
-        write32u(self.fileobj, long(time.time()))
+        write32u(self.fileobj, int(time.time()))
         self.fileobj.write('\002')
         self.fileobj.write('\377')
         if fname:

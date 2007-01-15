@@ -41,8 +41,8 @@ Hello World! =?iso-2022-jp?b?GyRCJU8lbSE8JW8hPCVrJUkhKhsoQg==?=
            [('Hello World!', None),
             ('\x1b$B%O%m!<%o!<%k%I!*\x1b(B', 'iso-2022-jp'),
             ('Gr\xfc\xdf Gott!', 'iso-8859-1')])
-        long = 'test-ja \xa4\xd8\xc5\xea\xb9\xc6\xa4\xb5\xa4\xec\xa4\xbf\xa5\xe1\xa1\xbc\xa5\xeb\xa4\xcf\xbb\xca\xb2\xf1\xbc\xd4\xa4\xce\xbe\xb5\xc7\xa7\xa4\xf2\xc2\xd4\xa4\xc3\xa4\xc6\xa4\xa4\xa4\xde\xa4\xb9'
-        h = Header(long, j, header_name="Subject")
+        int = 'test-ja \xa4\xd8\xc5\xea\xb9\xc6\xa4\xb5\xa4\xec\xa4\xbf\xa5\xe1\xa1\xbc\xa5\xeb\xa4\xcf\xbb\xca\xb2\xf1\xbc\xd4\xa4\xce\xbe\xb5\xc7\xa7\xa4\xf2\xc2\xd4\xa4\xc3\xa4\xc6\xa4\xa4\xa4\xde\xa4\xb9'
+        h = Header(int, j, header_name="Subject")
         # test a very long header
         enc = h.encode()
         # TK: splitting point may differ by codec design and/or Header encoding
@@ -50,7 +50,7 @@ Hello World! =?iso-2022-jp?b?GyRCJU8lbSE8JW8hPCVrJUkhKhsoQg==?=
 =?iso-2022-jp?b?dGVzdC1qYSAbJEIkWEVqOUYkNSRsJD8lYSE8JWskTztKGyhC?=
  =?iso-2022-jp?b?GyRCMnE8VCROPjVHJyRyQlQkQyRGJCQkXiQ5GyhC?=""")
         # TK: full decode comparison
-        eq(h.__unicode__().encode('euc-jp'), long)
+        eq(h.__unicode__().encode('euc-jp'), int)
 
     def test_payload_encoding(self):
         jhello = '\xa5\xcf\xa5\xed\xa1\xbc\xa5\xef\xa1\xbc\xa5\xeb\xa5\xc9\xa1\xaa'

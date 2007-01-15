@@ -17,14 +17,14 @@ class HashEqualityTestCase(unittest.TestCase):
                 self.fail("hashed values differ: %r" % (objlist,))
 
     def test_numeric_literals(self):
-        self.same_hash(1, 1L, 1.0, 1.0+0.0j)
+        self.same_hash(1, 1, 1.0, 1.0+0.0j)
 
     def test_coerced_integers(self):
-        self.same_hash(int(1), long(1), float(1), complex(1),
+        self.same_hash(int(1), int(1), float(1), complex(1),
                        int('1'), float('1.0'))
 
     def test_coerced_floats(self):
-        self.same_hash(long(1.23e300), float(1.23e300))
+        self.same_hash(int(1.23e300), float(1.23e300))
         self.same_hash(float(0.5), complex(0.5, 0.0))
 
 

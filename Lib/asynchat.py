@@ -105,7 +105,7 @@ class async_chat (asyncore.dispatcher):
                 # no terminator, collect it all
                 self.collect_incoming_data (self.ac_in_buffer)
                 self.ac_in_buffer = ''
-            elif isinstance(terminator, int) or isinstance(terminator, long):
+            elif isinstance(terminator, int) or isinstance(terminator, int):
                 # numeric terminator
                 n = terminator
                 if lb < n:

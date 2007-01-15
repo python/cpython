@@ -61,8 +61,8 @@ class Packer:
         else: self.__buf.write('\0\0\0\0')
 
     def pack_uhyper(self, x):
-        self.pack_uint(x>>32 & 0xffffffffL)
-        self.pack_uint(x & 0xffffffffL)
+        self.pack_uint(x>>32 & 0xffffffff)
+        self.pack_uint(x & 0xffffffff)
 
     pack_hyper = pack_uhyper
 
@@ -164,12 +164,12 @@ class Unpacker:
     def unpack_uhyper(self):
         hi = self.unpack_uint()
         lo = self.unpack_uint()
-        return long(hi)<<32 | lo
+        return int(hi)<<32 | lo
 
     def unpack_hyper(self):
         x = self.unpack_uhyper()
-        if x >= 0x8000000000000000L:
-            x = x - 0x10000000000000000L
+        if x >= 0x8000000000000000:
+            x = x - 0x10000000000000000
         return x
 
     def unpack_float(self):

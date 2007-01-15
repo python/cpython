@@ -1057,9 +1057,9 @@ class Queens:
         # generates the possiblities for the columns in that row.
         self.rowgenerators = []
         for i in rangen:
-            rowuses = [(1L << j) |                  # column ordinal
-                       (1L << (n + i-j + n-1)) |    # NW-SE ordinal
-                       (1L << (n + 2*n-1 + i+j))    # NE-SW ordinal
+            rowuses = [(1 << j) |                  # column ordinal
+                       (1 << (n + i-j + n-1)) |    # NW-SE ordinal
+                       (1 << (n + 2*n-1 + i+j))    # NE-SW ordinal
                             for j in rangen]
 
             def rowgen(rowuses=rowuses):

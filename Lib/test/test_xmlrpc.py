@@ -14,7 +14,7 @@ else:
 alist = [{'astring': 'foo@bar.baz.spam',
           'afloat': 7283.43,
           'anint': 2**20,
-          'ashortlong': 2L,
+          'ashortlong': 2,
           'anotherlist': ['.zyx.41'],
           'abase64': xmlrpclib.Binary("my dog has fleas"),
           'boolean': xmlrpclib.False,
@@ -96,15 +96,15 @@ class XMLRPCTestCase(unittest.TestCase):
         self.assertEquals(t2, t.__dict__)
 
     def test_dump_big_long(self):
-        self.assertRaises(OverflowError, xmlrpclib.dumps, (2L**99,))
+        self.assertRaises(OverflowError, xmlrpclib.dumps, (2**99,))
 
     def test_dump_bad_dict(self):
         self.assertRaises(TypeError, xmlrpclib.dumps, ({(1,2,3): 1},))
 
     def test_dump_big_int(self):
-        if sys.maxint > 2L**31-1:
+        if sys.maxint > 2**31-1:
             self.assertRaises(OverflowError, xmlrpclib.dumps,
-                              (int(2L**34),))
+                              (int(2**34),))
 
     def test_dump_none(self):
         value = alist + [None]

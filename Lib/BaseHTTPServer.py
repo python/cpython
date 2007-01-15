@@ -331,12 +331,12 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
         """
 
         try:
-            short, long = self.responses[code]
+            shortmsg, longmsg = self.responses[code]
         except KeyError:
-            short, long = '???', '???'
+            shortmsg, longmsg = '???', '???'
         if message is None:
-            message = short
-        explain = long
+            message = shortmsg
+        explain = longmsg
         self.log_error("code %d, message %s", code, message)
         # using _quote_html to prevent Cross Site Scripting attacks (see bug #1100201)
         content = (self.error_message_format %

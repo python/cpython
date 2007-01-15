@@ -545,7 +545,7 @@ class Decimal(object):
             return self
 
         # From an integer
-        if isinstance(value, (int,long)):
+        if isinstance(value, (int,int)):
             if value >= 0:
                 self._sign = 0
             else:
@@ -561,7 +561,7 @@ class Decimal(object):
             if value[0] not in (0,1):
                 raise ValueError, 'Invalid sign'
             for digit in value[1]:
-                if not isinstance(digit, (int,long)) or digit < 0:
+                if not isinstance(digit, (int,int)) or digit < 0:
                     raise ValueError, "The second value in the tuple must be composed of non negative integer elements."
 
             self._sign = value[0]
@@ -740,32 +740,32 @@ class Decimal(object):
         return 1
 
     def __eq__(self, other):
-        if not isinstance(other, (Decimal, int, long)):
+        if not isinstance(other, (Decimal, int, int)):
             return NotImplemented
         return self.__cmp__(other) == 0
 
     def __ne__(self, other):
-        if not isinstance(other, (Decimal, int, long)):
+        if not isinstance(other, (Decimal, int, int)):
             return NotImplemented
         return self.__cmp__(other) != 0
 
     def __lt__(self, other):
-        if not isinstance(other, (Decimal, int, long)):
+        if not isinstance(other, (Decimal, int, int)):
             return NotImplemented
         return self.__cmp__(other) < 0
 
     def __le__(self, other):
-        if not isinstance(other, (Decimal, int, long)):
+        if not isinstance(other, (Decimal, int, int)):
             return NotImplemented
         return self.__cmp__(other) <= 0
 
     def __gt__(self, other):
-        if not isinstance(other, (Decimal, int, long)):
+        if not isinstance(other, (Decimal, int, int)):
             return NotImplemented
         return self.__cmp__(other) > 0
 
     def __ge__(self, other):
-        if not isinstance(other, (Decimal, int, long)):
+        if not isinstance(other, (Decimal, int, int)):
             return NotImplemented
         return self.__cmp__(other) >= 0
 
@@ -1529,7 +1529,7 @@ class Decimal(object):
 
         Equivalent to long(int(self))
         """
-        return long(self.__int__())
+        return int(self.__int__())
 
     def _fix(self, context):
         """Round if it is necessary to keep self within prec precision.
@@ -2986,7 +2986,7 @@ def _convert_other(other):
     """
     if isinstance(other, Decimal):
         return other
-    if isinstance(other, (int, long)):
+    if isinstance(other, (int, int)):
         return Decimal(other)
     return NotImplemented
 

@@ -189,13 +189,13 @@ def unpack(desc, formodulename=""):
         return struct.unpack('l', desc.data)[0]
     if t == typeLongDateTime:
         a, b = struct.unpack('lL', desc.data)
-        return (long(a) << 32) + b
+        return (int(a) << 32) + b
     if t == typeNull:
         return None
     if t == typeMagnitude:
         v = struct.unpack('l', desc.data)
         if v < 0:
-            v = 0x100000000L + v
+            v = 0x100000000 + v
         return v
     if t == typeObjectSpecifier:
         record = desc.AECoerceDesc('reco')

@@ -99,7 +99,7 @@ _copy_dispatch = d = {}
 
 def _copy_immutable(x):
     return x
-for t in (type(None), int, long, float, bool, str, tuple,
+for t in (type(None), int, int, float, bool, str, tuple,
           frozenset, type, xrange, types.ClassType,
           types.BuiltinFunctionType,
           types.FunctionType):
@@ -178,7 +178,7 @@ def _deepcopy_atomic(x, memo):
     return x
 d[type(None)] = _deepcopy_atomic
 d[int] = _deepcopy_atomic
-d[long] = _deepcopy_atomic
+d[int] = _deepcopy_atomic
 d[float] = _deepcopy_atomic
 d[bool] = _deepcopy_atomic
 try:
@@ -315,7 +315,7 @@ class _EmptyClass:
     pass
 
 def _test():
-    l = [None, 1, 2L, 3.14, 'xyzzy', (1, 2L), [3.14, 'abc'],
+    l = [None, 1, 2, 3.14, 'xyzzy', (1, 2), [3.14, 'abc'],
          {'abc': 'ABC'}, (), [], {}]
     l1 = copy(l)
     print l1==l

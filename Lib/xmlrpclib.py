@@ -183,8 +183,8 @@ else:
 __version__ = "1.0.1"
 
 # xmlrpc integer limits
-MAXINT =  2L**31-1
-MININT = -2L**31
+MAXINT =  2**31-1
+MININT = -2**31
 
 # --------------------------------------------------------------------
 # Error constants (from Dan Libby's specification at

@@ -14,7 +14,7 @@ TypeType = type
 ObjectType = object
 
 IntType = int
-LongType = long
+LongType = int
 FloatType = float
 BooleanType = bool
 try:

@@ -84,10 +84,6 @@ class AllTests:
         print "__float__:", args
         return 1.0
 
-    def __long__(self, *args):
-        print "__long__:", args
-        return 1L
-
     def __oct__(self, *args):
         print "__oct__:", args
         return '01'
@@ -238,7 +234,7 @@ else:
 +testme
 abs(testme)
 int(testme)
-long(testme)
+int(testme)
 float(testme)
 oct(testme)
 hex(testme)
@@ -289,7 +285,6 @@ class BadTypeClass:
     def __int__(self):
         return None
     __float__ = __int__
-    __long__ = __int__
     __str__ = __int__
     __repr__ = __int__
     __oct__ = __int__
@@ -307,30 +302,10 @@ def check_exc(stmt, exception):
 
 check_exc("int(BadTypeClass())", TypeError)
 check_exc("float(BadTypeClass())", TypeError)
-check_exc("long(BadTypeClass())", TypeError)
 check_exc("str(BadTypeClass())", TypeError)
 check_exc("repr(BadTypeClass())", TypeError)
 check_exc("oct(BadTypeClass())", TypeError)
 check_exc("hex(BadTypeClass())", TypeError)
-
-# mixing up ints and longs is okay
-class IntLongMixClass:
-    def __int__(self):
-        return 0L
-
-    def __long__(self):
-        return 0
-
-try:
-    int(IntLongMixClass())
-except TypeError:
-    raise TestFailed, "TypeError should not be raised"
-
-try:
-    long(IntLongMixClass())
-except TypeError:
-    raise TestFailed, "TypeError should not be raised"
-
 
 # Test correct errors from hash() on objects with comparisons but no __hash__
 

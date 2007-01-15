@@ -149,7 +149,7 @@ class SubPattern:
         # determine the width (min, max) for this subpattern
         if self.width:
             return self.width
-        lo = hi = 0L
+        lo = hi = 0
         UNITCODES = (ANY, RANGE, IN, LITERAL, NOT_LITERAL, CATEGORY)
         REPEATCODES = (MIN_REPEAT, MAX_REPEAT)
         for op, av in self.data:
@@ -172,8 +172,8 @@ class SubPattern:
                 hi = hi + j
             elif op in REPEATCODES:
                 i, j = av[2].getwidth()
-                lo = lo + long(i) * av[0]
-                hi = hi + long(j) * av[1]
+                lo = lo + int(i) * av[0]
+                hi = hi + int(j) * av[1]
             elif op in UNITCODES:
                 lo = lo + 1
                 hi = hi + 1

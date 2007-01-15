@@ -138,10 +138,10 @@ class CommonTest(unittest.TestCase):
         u = self.type2test([0, 1, 2, 3, 4])
         for i in xrange(len(u)):
             self.assertEqual(u[i], i)
-            self.assertEqual(u[long(i)], i)
+            self.assertEqual(u[int(i)], i)
         for i in xrange(-len(u), -1):
             self.assertEqual(u[i], len(u)+i)
-            self.assertEqual(u[long(i)], len(u)+i)
+            self.assertEqual(u[int(i)], len(u)+i)
         self.assertRaises(IndexError, u.__getitem__, -len(u)-1)
         self.assertRaises(IndexError, u.__getitem__, len(u))
         self.assertRaises(ValueError, u.__getitem__, slice(0,10,0))
@@ -189,12 +189,12 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(u[-100:100:], u)
         self.assertEqual(u[100:-100:-1], u[::-1])
         self.assertEqual(u[-100:100:-1], self.type2test([]))
-        self.assertEqual(u[-100L:100L:2L], self.type2test([0, 2, 4]))
+        self.assertEqual(u[-100:100:2], self.type2test([0, 2, 4]))
 
         # Test extreme cases with long ints
         a = self.type2test([0,1,2,3,4])
-        self.assertEqual(a[ -pow(2,128L): 3 ], self.type2test([0,1,2]))
-        self.assertEqual(a[ 3: pow(2,145L) ], self.type2test([3,4]))
+        self.assertEqual(a[ -pow(2,128): 3 ], self.type2test([0,1,2]))
+        self.assertEqual(a[ 3: pow(2,145) ], self.type2test([3,4]))
 
         self.assertRaises(TypeError, u.__getslice__)
 
@@ -254,16 +254,16 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(self.type2test([-1]) + u1, self.type2test([-1, 0]))
         self.assertEqual(self.type2test(), u2*0)
         self.assertEqual(self.type2test(), 0*u2)
-        self.assertEqual(self.type2test(), u2*0L)
-        self.assertEqual(self.type2test(), 0L*u2)
+        self.assertEqual(self.type2test(), u2*0)
+        self.assertEqual(self.type2test(), 0*u2)
         self.assertEqual(u2, u2*1)
         self.assertEqual(u2, 1*u2)
-        self.assertEqual(u2, u2*1L)
-        self.assertEqual(u2, 1L*u2)
+        self.assertEqual(u2, u2*1)
+        self.assertEqual(u2, 1*u2)
         self.assertEqual(u2+u2, u2*2)
         self.assertEqual(u2+u2, 2*u2)
-        self.assertEqual(u2+u2, u2*2L)
-        self.assertEqual(u2+u2, 2L*u2)
+        self.assertEqual(u2+u2, u2*2)
+        self.assertEqual(u2+u2, 2*u2)
         self.assertEqual(u2+u2+u2, u2*3)
         self.assertEqual(u2+u2+u2, 3*u2)
 
@@ -308,10 +308,10 @@ class CommonTest(unittest.TestCase):
 
     def test_subscript(self):
         a = self.type2test([10, 11])
-        self.assertEqual(a.__getitem__(0L), 10)
-        self.assertEqual(a.__getitem__(1L), 11)
-        self.assertEqual(a.__getitem__(-2L), 10)
-        self.assertEqual(a.__getitem__(-1L), 11)
+        self.assertEqual(a.__getitem__(0), 10)
+        self.assertEqual(a.__getitem__(1), 11)
+        self.assertEqual(a.__getitem__(-2), 10)
+        self.assertEqual(a.__getitem__(-1), 11)
         self.assertRaises(IndexError, a.__getitem__, -3)
         self.assertRaises(IndexError, a.__getitem__, 3)
         self.assertEqual(a.__getitem__(slice(0,1)), self.type2test([10]))

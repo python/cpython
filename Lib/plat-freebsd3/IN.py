@@ -101,33 +101,33 @@ IPPORT_USERRESERVED = 5000
 IPPORT_HIFIRSTAUTO = 49152
 IPPORT_HILASTAUTO = 65535
 IPPORT_RESERVEDSTART = 600
-def IN_CLASSA(i): return (((long)(i) & 0x80000000) == 0)
+def IN_CLASSA(i): return (((int)(i) & 0x80000000) == 0)
 
 IN_CLASSA_NET = 0xff000000
 IN_CLASSA_NSHIFT = 24
 IN_CLASSA_HOST = 0x00ffffff
 IN_CLASSA_MAX = 128
-def IN_CLASSB(i): return (((long)(i) & 0xc0000000) == 0x80000000)
+def IN_CLASSB(i): return (((int)(i) & 0xc0000000) == 0x80000000)
 
 IN_CLASSB_NET = 0xffff0000
 IN_CLASSB_NSHIFT = 16
 IN_CLASSB_HOST = 0x0000ffff
 IN_CLASSB_MAX = 65536
-def IN_CLASSC(i): return (((long)(i) & 0xe0000000) == 0xc0000000)
+def IN_CLASSC(i): return (((int)(i) & 0xe0000000) == 0xc0000000)
 
 IN_CLASSC_NET = 0xffffff00
 IN_CLASSC_NSHIFT = 8
 IN_CLASSC_HOST = 0x000000ff
-def IN_CLASSD(i): return (((long)(i) & 0xf0000000) == 0xe0000000)
+def IN_CLASSD(i): return (((int)(i) & 0xf0000000) == 0xe0000000)
 
 IN_CLASSD_NET = 0xf0000000
 IN_CLASSD_NSHIFT = 28
 IN_CLASSD_HOST = 0x0fffffff
 def IN_MULTICAST(i): return IN_CLASSD(i)
 
-def IN_EXPERIMENTAL(i): return (((long)(i) & 0xf0000000) == 0xf0000000)
+def IN_EXPERIMENTAL(i): return (((int)(i) & 0xf0000000) == 0xf0000000)
 
-def IN_BADCLASS(i): return (((long)(i) & 0xf0000000) == 0xf0000000)
+def IN_BADCLASS(i): return (((int)(i) & 0xf0000000) == 0xf0000000)
 
 INADDR_ANY = 0x00000000
 INADDR_LOOPBACK = 0x7f000001

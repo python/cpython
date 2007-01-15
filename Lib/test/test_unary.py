@@ -9,7 +9,7 @@ class UnaryOpTestCase(unittest.TestCase):
         self.assert_(-2 == 0 - 2)
         self.assert_(-0 == 0)
         self.assert_(--2 == 2)
-        self.assert_(-2L == 0 - 2L)
+        self.assert_(-2 == 0 - 2)
         self.assert_(-2.0 == 0 - 2.0)
         self.assert_(-2j == 0 - 2j)
 
@@ -17,7 +17,7 @@ class UnaryOpTestCase(unittest.TestCase):
         self.assert_(+2 == 2)
         self.assert_(+0 == 0)
         self.assert_(++2 == 2)
-        self.assert_(+2L == 2L)
+        self.assert_(+2 == 2)
         self.assert_(+2.0 == 2.0)
         self.assert_(+2j == 2j)
 
@@ -25,13 +25,13 @@ class UnaryOpTestCase(unittest.TestCase):
         self.assert_(-2 == 0 - 2)
         self.assert_(-0 == 0)
         self.assert_(--2 == 2)
-        self.assert_(-2L == 0 - 2L)
+        self.assert_(-2 == 0 - 2)
 
     def test_no_overflow(self):
         nines = "9" * 32
-        self.assert_(eval("+" + nines) == eval("+" + nines + "L"))
-        self.assert_(eval("-" + nines) == eval("-" + nines + "L"))
-        self.assert_(eval("~" + nines) == eval("~" + nines + "L"))
+        self.assert_(eval("+" + nines) == 10**32-1)
+        self.assert_(eval("-" + nines) == -(10**32-1))
+        self.assert_(eval("~" + nines) == ~(10**32-1))
 
     def test_negation_of_exponentiation(self):
         # Make sure '**' does the right thing; these form a

@@ -2,7 +2,7 @@ import sys, itertools
 import _ast
 
 def to_tuple(t):
-    if t is None or isinstance(t, (basestring, int, long, complex)):
+    if t is None or isinstance(t, (basestring, int, int, complex)):
         return t
     elif isinstance(t, list):
         return [to_tuple(e) for e in t]
@@ -93,7 +93,7 @@ eval_tests = [
   # Call
   "f(1,2,c=3,*d,**e)",
   # Num
-  "10L",
+  "10",
   # Str
   "'string'",
   # Attribute

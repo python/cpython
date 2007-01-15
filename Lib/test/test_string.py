@@ -83,7 +83,7 @@ class ModuleTest(unittest.TestCase):
         self.assertRaises(ValueError, string.atoi, " x1 ")
 
     def test_atol(self):
-        self.assertEqual(string.atol("  1  "), 1L)
+        self.assertEqual(string.atol("  1  "), 1)
         self.assertRaises(ValueError, string.atol, "  1x ")
         self.assertRaises(ValueError, string.atol, "  x1 ")
 

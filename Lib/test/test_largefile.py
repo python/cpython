@@ -19,7 +19,7 @@ except (ImportError, AttributeError):
 
 
 # create >2GB file (2GB = 2147483648 bytes)
-size = 2500000000L
+size = 2500000000
 name = test_support.TESTFN
 
 
@@ -37,7 +37,7 @@ else:
     f = open(test_support.TESTFN, 'wb')
     try:
         # 2**31 == 2147483648
-        f.seek(2147483649L)
+        f.seek(2147483649)
         # Seeking is not enough of a test: you must write and flush, too!
         f.write("x")
         f.flush()

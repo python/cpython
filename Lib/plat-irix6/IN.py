@@ -37,7 +37,7 @@ FD_SETSIZE = 1024
 __NBBY = 8
 
 # Included from string.h
-NULL = 0L
+NULL = 0
 NBBY = 8
 
 # Included from sys/endian.h

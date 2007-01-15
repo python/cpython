@@ -142,7 +142,7 @@ __all__ = ["Error","open","openfp"]
 class Error(Exception):
     pass
 
-_AIFC_version = 0xA2805140L     # Version 1 of AIFF-C
+_AIFC_version = 0xA2805140     # Version 1 of AIFF-C
 
 _skiplist = 'COMT', 'INST', 'MIDI', 'AESD', \
       'APPL', 'NAME', 'AUTH', '(c) ', 'ANNO'
@@ -191,7 +191,7 @@ def _read_float(f): # 10 bytes
         f = _HUGE_VAL
     else:
         expon = expon - 16383
-        f = (himant * 0x100000000L + lomant) * pow(2.0, expon - 63)
+        f = (himant * 0x100000000 + lomant) * pow(2.0, expon - 63)
     return sign * f
 
 def _write_short(f, x):
@@ -233,10 +233,10 @@ def _write_float(f, x):
             expon = expon | sign
             fmant = math.ldexp(fmant, 32)
             fsmant = math.floor(fmant)
-            himant = long(fsmant)
+            himant = int(fsmant)
             fmant = math.ldexp(fmant - fsmant, 32)
             fsmant = math.floor(fmant)
-            lomant = long(fsmant)
+            lomant = int(fsmant)
     _write_short(f, expon)
     _write_long(f, himant)
     _write_long(f, lomant)
