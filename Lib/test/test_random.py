@@ -34,7 +34,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(randseq, self.randomlist(N))
 
     def test_seedargs(self):
-        for arg in [None, 0, 0L, 1, 1L, -1, -1L, 10**20, -(10**20),
+        for arg in [None, 0, 0, 1, 1, -1, -1, 10**20, -(10**20),
                     3.14, 1+2j, 'a', tuple('abc')]:
             self.gen.seed(arg)
         for arg in [range(3), dict(one=1)]:
@@ -268,7 +268,7 @@ class SystemRandom_TestBasicOps(TestBasicOps):
         # show that: k = int(1.001 + _log(n, 2))
         # is equal to or one greater than the number of bits in n
         for i in xrange(1, 1000):
-            n = 1L << i # check an exact power of two
+            n = 1 << i # check an exact power of two
             numbits = i+1
             k = int(1.00001 + _log(n, 2))
             self.assertEqual(k, numbits)
@@ -327,7 +327,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
                     0.089215024911993401,
                     0.78486196105372907]
 
-        self.gen.seed(61731L + (24903L<<32) + (614L<<64) + (42143L<<96))
+        self.gen.seed(61731 + (24903<<32) + (614<<64) + (42143<<96))
         actual = self.randomlist(2000)[-10:]
         for a, e in zip(actual, expected):
             self.assertAlmostEqual(a,e,places=14)
@@ -339,20 +339,20 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         # no rounding errors -- all results are exact).
         from math import ldexp
 
-        expected = [0x0eab3258d2231fL,
-                    0x1b89db315277a5L,
-                    0x1db622a5518016L,
-                    0x0b7f9af0d575bfL,
-                    0x029e4c4db82240L,
-                    0x04961892f5d673L,
-                    0x02b291598e4589L,
-                    0x11388382c15694L,
-                    0x02dad977c9e1feL,
-                    0x191d96d4d334c6L]
-        self.gen.seed(61731L + (24903L<<32) + (614L<<64) + (42143L<<96))
+        expected = [0x0eab3258d2231f,
+                    0x1b89db315277a5,
+                    0x1db622a5518016,
+                    0x0b7f9af0d575bf,
+                    0x029e4c4db82240,
+                    0x04961892f5d673,
+                    0x02b291598e4589,
+                    0x11388382c15694,
+                    0x02dad977c9e1fe,
+                    0x191d96d4d334c6]
+        self.gen.seed(61731 + (24903<<32) + (614<<64) + (42143<<96))
         actual = self.randomlist(2000)[-10:]
         for a, e in zip(actual, expected):
-            self.assertEqual(long(ldexp(a, 53)), e)
+            self.assertEqual(int(ldexp(a, 53)), e)
 
     def test_long_seed(self):
         # This is most interesting to run in debug mode, just to make sure
@@ -360,7 +360,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         # is allocated, consuming space proportional to the number of bits
         # in the seed.  Unfortunately, that's a quadratic-time algorithm,
         # so don't make this horribly big.
-        seed = (1L << (10000 * 8)) - 1  # about 10K bytes
+        seed = (1 << (10000 * 8)) - 1  # about 10K bytes
         self.gen.seed(seed)
 
     def test_53_bits_per_float(self):
@@ -399,7 +399,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         # Verify cross-platform repeatability
         self.gen.seed(1234567)
         self.assertEqual(self.gen.getrandbits(100),
-                         97904845777343510404718956115L)
+                         97904845777343510404718956115)
         # Verify ranges
         for k in xrange(1, 1000):
             self.assert_(0 <= self.gen.getrandbits(k) < 2**k)
@@ -424,7 +424,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         # show that: k = int(1.001 + _log(n, 2))
         # is equal to or one greater than the number of bits in n
         for i in xrange(1, 1000):
-            n = 1L << i # check an exact power of two
+            n = 1 << i # check an exact power of two
             numbits = i+1
             k = int(1.00001 + _log(n, 2))
             self.assertEqual(k, numbits)

@@ -41,7 +41,7 @@ def escapestr(text, ampm):
 def strftest(now):
     if verbose:
         print "strftime test for", time.ctime(now)
-    nowsecs = str(long(now))[:-1]
+    nowsecs = str(int(now))[:-1]
     gmt = time.gmtime(now)
     now = time.localtime(now)
 

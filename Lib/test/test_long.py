@@ -23,11 +23,11 @@ KARATSUBA_CUTOFF = 70   # from longobject.c
 MAXDIGITS = 15
 
 # build some special values
-special = map(long, [0, 1, 2, BASE, BASE >> 1])
-special.append(0x5555555555555555L)
-special.append(0xaaaaaaaaaaaaaaaaL)
+special = map(int, [0, 1, 2, BASE, BASE >> 1])
+special.append(0x5555555555555555)
+special.append(0xaaaaaaaaaaaaaaaa)
 #  some solid strings of one bits
-p2 = 4L  # 0 and 1 already added
+p2 = 4  # 0 and 1 already added
 for i in range(2*SHIFT):
     special.append(p2 - 1)
     p2 = p2 << 1
@@ -49,7 +49,7 @@ class LongTest(unittest.TestCase):
         self.assert_(ndigits > 0)
         nbits_hi = ndigits * SHIFT
         nbits_lo = nbits_hi - SHIFT + 1
-        answer = 0L
+        answer = 0
         nbits = 0
         r = int(random.random() * (SHIFT * 2)) | 1  # force 1 bits to start
         while nbits < nbits_lo:
@@ -70,7 +70,7 @@ class LongTest(unittest.TestCase):
     # BASE).  The sign bit is also random.
 
     def getran2(ndigits):
-        answer = 0L
+        answer = 0
         for i in xrange(ndigits):
             answer = (answer << SHIFT) | random.randint(0, MASK)
         if random.random() < 0.5:
@@ -98,7 +98,7 @@ class LongTest(unittest.TestCase):
         for lenx in digits:
             x = self.getran(lenx)
             for leny in digits:
-                y = self.getran(leny) or 1L
+                y = self.getran(leny) or 1
                 self.check_division(x, y)
 
     def test_karatsuba(self):
@@ -110,15 +110,15 @@ class LongTest(unittest.TestCase):
         # Test products of long strings of 1 bits -- (2**x-1)*(2**y-1) ==
         # 2**(x+y) - 2**x - 2**y + 1, so the proper result is easy to check.
         for abits in bits:
-            a = (1L << abits) - 1
+            a = (1 << abits) - 1
             for bbits in bits:
                 if bbits < abits:
                     continue
-                b = (1L << bbits) - 1
+                b = (1 << bbits) - 1
                 x = a * b
-                y = ((1L << (abits + bbits)) -
-                     (1L << abits) -
-                     (1L << bbits) +
+                y = ((1 << (abits + bbits)) -
+                     (1 << abits) -
+                     (1 << bbits) +
                      1)
                 self.assertEqual(x, y,
                     Frm("bad result for a*b: a=%r, b=%r, x=%r, y=%r", a, b, x, y))
@@ -141,7 +141,7 @@ class LongTest(unittest.TestCase):
         eq(-x, 1 + ~x, Frm("not -x == 1 + ~x for x=%r", x))
         eq(-x, ~(x-1), Frm("not -x == ~(x-1) forx =%r", x))
         for n in xrange(2*SHIFT):
-            p2 = 2L ** n
+            p2 = 2 ** n
             eq(x << n >> n, x,
                 Frm("x << n >> n != x for x=%r, n=%r", (x, n)))
             eq(x // p2, x >> n,
@@ -217,7 +217,7 @@ class LongTest(unittest.TestCase):
             msg = Frm("%s returned %r but expected %r for %r",
                 mapper.__name__, got, expected, x)
             self.assertEqual(got, expected, msg)
-            self.assertEqual(long(got, 0), x, Frm('long("%s", 0) != %r', got, x))
+            self.assertEqual(int(got, 0), x, Frm('long("%s", 0) != %r', got, x))
         # str() has to be checked a little differently since there's no
         # trailing "L"
         got = str(x)
@@ -240,8 +240,8 @@ class LongTest(unittest.TestCase):
         # check the extremes in int<->long conversion
         hugepos = sys.maxint
         hugeneg = -hugepos - 1
-        hugepos_aslong = long(hugepos)
-        hugeneg_aslong = long(hugeneg)
+        hugepos_aslong = int(hugepos)
+        hugeneg_aslong = int(hugeneg)
         self.assertEqual(hugepos, hugepos_aslong, "long(sys.maxint) != sys.maxint")
         self.assertEqual(hugeneg, hugeneg_aslong,
             "long(-sys.maxint-1) != -sys.maxint-1")
@@ -270,7 +270,7 @@ class LongTest(unittest.TestCase):
             y = int(x)
         except OverflowError:
             self.fail("int(long(sys.maxint) + 1) mustn't overflow")
-        self.assert_(isinstance(y, long),
+        self.assert_(isinstance(y, int),
             "int(long(sys.maxint) + 1) should have returned long")
 
         x = hugeneg_aslong - 1
@@ -278,14 +278,14 @@ class LongTest(unittest.TestCase):
             y = int(x)
         except OverflowError:
             self.fail("int(long(-sys.maxint-1) - 1) mustn't overflow")
-        self.assert_(isinstance(y, long),
+        self.assert_(isinstance(y, int),
                "int(long(-sys.maxint-1) - 1) should have returned long")
 
-        class long2(long):
+        class long2(int):
             pass
-        x = long2(1L<<100)
+        x = long2(1<<100)
         y = int(x)
-        self.assert_(type(y) is long,
+        self.assert_(type(y) is int,
             "overflowing int conversion must return long not long subtype")
 
         # long -> Py_ssize_t conversion
@@ -293,10 +293,10 @@ class LongTest(unittest.TestCase):
             def __getslice__(self, i, j):
                 return i, j
 
-        self.assertEqual(X()[-5L:7L], (-5, 7))
+        self.assertEqual(X()[-5:7], (-5, 7))
         # use the clamping effect to test the smallest and largest longs
         # that fit a Py_ssize_t
-        slicemin, slicemax = X()[-2L**100:2L**100]
+        slicemin, slicemax = X()[-2**100:2**100]
         self.assertEqual(X()[slicemin:slicemax], (slicemin, slicemax))
 
 # ----------------------------------- tests of auto int->long conversion
@@ -315,14 +315,14 @@ class LongTest(unittest.TestCase):
                 Frm("for %r expected %r got %r", args, expected, got))
 
         for x in special:
-            longx = long(x)
+            longx = int(x)
 
             expected = -longx
             got = -x
             checkit('-', x)
 
             for y in special:
-                longy = long(y)
+                longy = int(y)
 
                 expected = longx + longy
                 got = x + y
@@ -357,20 +357,20 @@ class LongTest(unittest.TestCase):
                     for z in special:
                         if z != 0 :
                             if y >= 0:
-                                expected = pow(longx, longy, long(z))
+                                expected = pow(longx, longy, int(z))
                                 got = pow(x, y, z)
                                 checkit('pow', x, y, '%', z)
                             else:
-                                self.assertRaises(TypeError, pow,longx, longy, long(z))
+                                self.assertRaises(TypeError, pow,longx, longy, int(z))
 
     def test_float_overflow(self):
         import math
 
         for x in -2.0, -1.0, 0.0, 1.0, 2.0:
-            self.assertEqual(float(long(x)), x)
+            self.assertEqual(float(int(x)), x)
 
         shuge = '12345' * 120
-        huge = 1L << 30000
+        huge = 1 << 30000
         mhuge = -huge
         namespace = {'huge': huge, 'mhuge': mhuge, 'shuge': shuge, 'math': math}
         for test in ["float(huge)", "float(mhuge)",
@@ -410,7 +410,7 @@ class LongTest(unittest.TestCase):
             log = math.log(value)
             self.assertAlmostEqual(log, expected)
 
-        for bad in -(1L << 10000), -2L, 0L:
+        for bad in -(1 << 10000), -2, 0:
             self.assertRaises(ValueError, math.log, bad)
             self.assertRaises(ValueError, math.log10, bad)
 
@@ -426,7 +426,7 @@ class LongTest(unittest.TestCase):
         # represents all Python ints, longs and floats exactly).
         class Rat:
             def __init__(self, value):
-                if isinstance(value, (int, long)):
+                if isinstance(value, (int, int)):
                     self.n = value
                     self.d = 1
                 elif isinstance(value, float):
@@ -475,12 +475,12 @@ class LongTest(unittest.TestCase):
         # important boundary for IEEE double precision.
         for t in 2.0**48, 2.0**50, 2.0**53:
             cases.extend([t - 1.0, t - 0.3, t, t + 0.3, t + 1.0,
-                          long(t-1), long(t), long(t+1)])
+                          int(t-1), int(t), int(t+1)])
         cases.extend([0, 1, 2, sys.maxint, float(sys.maxint)])
         # 1L<<20000 should exceed all double formats.  long(1e200) is to
         # check that we get equality with 1e200 above.
-        t = long(1e200)
-        cases.extend([0L, 1L, 2L, 1L << 20000, t-1, t, t+1])
+        t = int(1e200)
+        cases.extend([0, 1, 2, 1 << 20000, t-1, t, t+1])
         cases.extend([-x for x in cases])
         for x in cases:
             Rx = Rat(x)

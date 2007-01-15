@@ -3,7 +3,7 @@
 def FOUR_CHAR_CODE(x): return x
 true = True
 false = False
-kOnSystemDisk = -32768L
+kOnSystemDisk = -32768
 kOnAppropriateDisk = -32767
 kSystemDomain = -32766
 kLocalDomain = -32765

@@ -184,7 +184,7 @@ def rfind(s, *args):
 # for a bit of speed
 _float = float
 _int = int
-_long = long
+_long = int
 _StringType = type('')
 
 # Convert string to float

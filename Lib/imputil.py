@@ -500,7 +500,7 @@ def _timestamp(pathname):
         s = _os_stat(pathname)
     except OSError:
         return None
-    return long(s.st_mtime)
+    return int(s.st_mtime)
 
 
 ######################################################################
@@ -583,7 +583,7 @@ class _FilesystemImporter(Importer):
 
 def py_suffix_importer(filename, finfo, fqname):
     file = filename[:-3] + _suffix
-    t_py = long(finfo[8])
+    t_py = int(finfo[8])
     t_pyc = _timestamp(file)
 
     code = None

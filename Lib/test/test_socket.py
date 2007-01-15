@@ -302,17 +302,17 @@ class GeneralModuleTests(unittest.TestCase):
         sizes = {socket.htonl: 32, socket.ntohl: 32,
                  socket.htons: 16, socket.ntohs: 16}
         for func, size in sizes.items():
-            mask = (1L<<size) - 1
+            mask = (1<<size) - 1
             for i in (0, 1, 0xffff, ~0xffff, 2, 0x01234567, 0x76543210):
                 self.assertEqual(i & mask, func(func(i&mask)) & mask)
 
             swapped = func(mask)
             self.assertEqual(swapped & mask, mask)
-            self.assertRaises(OverflowError, func, 1L<<34)
+            self.assertRaises(OverflowError, func, 1<<34)
 
     def testNtoHErrors(self):
-        good_values = [ 1, 2, 3, 1L, 2L, 3L ]
-        bad_values = [ -1, -2, -3, -1L, -2L, -3L ]
+        good_values = [ 1, 2, 3, 1, 2, 3 ]
+        bad_values = [ -1, -2, -3, -1, -2, -3 ]
         for k in good_values:
             socket.ntohl(k)
             socket.ntohs(k)

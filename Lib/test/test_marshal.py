@@ -33,7 +33,7 @@ class IntTestCase(unittest.TestCase):
                 value >>= 8
             return ''.join(bytes)
 
-        maxint64 = (1L << 63) - 1
+        maxint64 = (1 << 63) - 1
         minint64 = -maxint64-1
 
         for base in maxint64, minint64, -maxint64, -(minint64 >> 1):
@@ -152,7 +152,7 @@ class ContainerTestCase(unittest.TestCase):
     d = {'astring': 'foo@bar.baz.spam',
          'afloat': 7283.43,
          'anint': 2**20,
-         'ashortlong': 2L,
+         'ashortlong': 2,
          'alist': ['.zyx.41'],
          'atuple': ('.zyx.41',)*10,
          'aboolean': False,
@@ -204,7 +204,7 @@ class BugsTestCase(unittest.TestCase):
     def test_patch_873224(self):
         self.assertRaises(Exception, marshal.loads, '0')
         self.assertRaises(Exception, marshal.loads, 'f')
-        self.assertRaises(Exception, marshal.loads, marshal.dumps(2**65L)[:-1])
+        self.assertRaises(Exception, marshal.loads, marshal.dumps(2**65)[:-1])
 
     def test_version_argument(self):
         # Python 2.4.0 crashes for any call to marshal.dumps(x, y)

@@ -33,7 +33,7 @@ def positive_address(a):
     # View the bits in `a` as unsigned instead.
     import struct
     num_bits = struct.calcsize("P") * 8 # num bits in native machine address
-    a += 1L << num_bits
+    a += 1 << num_bits
     assert a >= 0
     return a
 

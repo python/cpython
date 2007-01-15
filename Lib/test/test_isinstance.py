@@ -242,7 +242,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(False, issubclass(NewChild, ()))
         self.assertEqual(True, issubclass(NewSuper, (NewChild, (NewSuper,))))
 
-        self.assertEqual(True, issubclass(int, (long, (float, int))))
+        self.assertEqual(True, issubclass(int, (int, (float, int))))
         if test_support.have_unicode:
             self.assertEqual(True, issubclass(str, (unicode, (Child, NewChild, basestring))))
 

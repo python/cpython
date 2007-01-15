@@ -361,9 +361,9 @@ class BytesTest(unittest.TestCase):
     def test_contains(self):
         b = bytes("abc")
         self.failUnless(ord('a') in b)
-        self.failUnless(long(ord('a')) in b)
+        self.failUnless(int(ord('a')) in b)
         self.failIf(200 in b)
-        self.failIf(200L in b)
+        self.failIf(200 in b)
         self.assertRaises(ValueError, lambda: 300 in b)
         self.assertRaises(ValueError, lambda: -1 in b)
         self.assertRaises(TypeError, lambda: None in b)

@@ -907,8 +907,8 @@ class DecimalUsabilityTest(unittest.TestCase):
         self.assertEqual(int(d2), 15)
 
         #long
-        self.assertEqual(long(d1), 66)
-        self.assertEqual(long(d2), 15)
+        self.assertEqual(int(d1), 66)
+        self.assertEqual(int(d2), 15)
 
         #float
         self.assertEqual(float(d1), 66)

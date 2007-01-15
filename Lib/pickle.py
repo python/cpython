@@ -898,7 +898,7 @@ class Unpickler:
             try:
                 val = int(data)
             except ValueError:
-                val = long(data)
+                val = int(data)
         self.append(val)
     dispatch[INT] = load_int
 
@@ -915,7 +915,7 @@ class Unpickler:
     dispatch[BININT2] = load_binint2
 
     def load_long(self):
-        self.append(long(self.readline()[:-1], 0))
+        self.append(int(self.readline()[:-1], 0))
     dispatch[LONG] = load_long
 
     def load_long1(self):
@@ -1239,22 +1239,22 @@ import binascii as _binascii
 
 def encode_long(x):
     r"""Encode a long to a two's complement little-endian binary string.
-    Note that 0L is a special case, returning an empty string, to save a
+    Note that 0 is a special case, returning an empty string, to save a
     byte in the LONG1 pickling context.
 
-    >>> encode_long(0L)
+    >>> encode_long(0)
     ''
-    >>> encode_long(255L)
+    >>> encode_long(255)
     '\xff\x00'
-    >>> encode_long(32767L)
+    >>> encode_long(32767)
     '\xff\x7f'
-    >>> encode_long(-256L)
+    >>> encode_long(-256)
     '\x00\xff'
-    >>> encode_long(-32768L)
+    >>> encode_long(-32768)
     '\x00\x80'
-    >>> encode_long(-128L)
+    >>> encode_long(-128)
     '\x80'
-    >>> encode_long(127L)
+    >>> encode_long(127)
     '\x7f'
     >>>
     """
@@ -1284,7 +1284,7 @@ def encode_long(x):
             # Extend to a full byte.
             nibbles += 1
         nbits = nibbles * 4
-        x += 1L << nbits
+        x += 1 << nbits
         assert x > 0
         ashex = hex(x)
         njunkchars = 2 + ashex.endswith('L')
@@ -1324,11 +1324,11 @@ def decode_long(data):
 
     nbytes = len(data)
     if nbytes == 0:
-        return 0L
+        return 0
     ashex = _binascii.hexlify(data[::-1])
-    n = long(ashex, 16) # quadratic time before Python 2.3; linear now
+    n = int(ashex, 16) # quadratic time before Python 2.3; linear now
     if data[-1] >= '\x80':
-        n -= 1L << (nbytes * 8)
+        n -= 1 << (nbytes * 8)
     return n
 
 # Shorthands

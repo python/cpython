@@ -103,7 +103,7 @@ class HeaderTests(TestCase):
         from cookielib import parse_ns_headers
 
         # quotes should be stripped
-        expected = [[('foo', 'bar'), ('expires', 2209069412L), ('version', '0')]]
+        expected = [[('foo', 'bar'), ('expires', 2209069412), ('version', '0')]]
         for hdr in [
             'foo=bar; expires=01 Jan 2040 22:23:32 GMT',
             'foo=bar; expires="01 Jan 2040 22:23:32 GMT"',

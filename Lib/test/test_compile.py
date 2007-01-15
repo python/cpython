@@ -182,10 +182,8 @@ if 1:
             self.assertRaises(SyntaxError, eval, arg)
 
         self.assertEqual(eval("0777"), 511)
-        self.assertEqual(eval("0777L"), 511)
         self.assertEqual(eval("000777"), 511)
         self.assertEqual(eval("0xff"), 255)
-        self.assertEqual(eval("0xffL"), 255)
         self.assertEqual(eval("0XfF"), 255)
         self.assertEqual(eval("0777."), 777)
         self.assertEqual(eval("0777.0"), 777)
@@ -212,19 +210,19 @@ if 1:
         if sys.maxint == 2147483647:
             # 32-bit machine
             all_one_bits = '0xffffffff'
-            self.assertEqual(eval(all_one_bits), 4294967295L)
-            self.assertEqual(eval("-" + all_one_bits), -4294967295L)
+            self.assertEqual(eval(all_one_bits), 4294967295)
+            self.assertEqual(eval("-" + all_one_bits), -4294967295)
         elif sys.maxint == 9223372036854775807:
             # 64-bit machine
             all_one_bits = '0xffffffffffffffff'
-            self.assertEqual(eval(all_one_bits), 18446744073709551615L)
-            self.assertEqual(eval("-" + all_one_bits), -18446744073709551615L)
+            self.assertEqual(eval(all_one_bits), 18446744073709551615)
+            self.assertEqual(eval("-" + all_one_bits), -18446744073709551615)
         else:
             self.fail("How many bits *does* this machine have???")
         # Verify treatment of contant folding on -(sys.maxint+1)
         # i.e. -2147483648 on 32 bit platforms.  Should return int, not long.
         self.assertTrue(isinstance(eval("%s" % (-sys.maxint - 1)), int))
-        self.assertTrue(isinstance(eval("%s" % (-sys.maxint - 2)), long))
+        self.assertTrue(isinstance(eval("%s" % (-sys.maxint - 2)), int))
 
     if sys.maxint == 9223372036854775807:
         def test_32_63_bit_values(self):

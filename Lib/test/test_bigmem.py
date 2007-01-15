@@ -866,13 +866,13 @@ class ListTest(unittest.TestCase):
 
     @bigmemtest(minsize=_2G // 5 + 2, memuse=8 * 5)
     def test_index(self, size):
-        l = [1L, 2L, 3L, 4L, 5L] * size
+        l = [1, 2, 3, 4, 5] * size
         size *= 5
         self.assertEquals(l.index(1), 0)
         self.assertEquals(l.index(5, size - 5), size - 1)
         self.assertEquals(l.index(5, size - 5, size), size - 1)
         self.assertRaises(ValueError, l.index, 1, size - 4, size)
-        self.assertRaises(ValueError, l.index, 6L)
+        self.assertRaises(ValueError, l.index, 6)
 
     # This tests suffers from overallocation, just like test_append.
     @bigmemtest(minsize=_2G + 10, memuse=9)

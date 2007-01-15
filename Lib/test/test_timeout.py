@@ -46,7 +46,7 @@ class CreationTestCase(unittest.TestCase):
     def testTypeCheck(self):
         # Test type checking by settimeout()
         self.sock.settimeout(0)
-        self.sock.settimeout(0L)
+        self.sock.settimeout(0)
         self.sock.settimeout(0.0)
         self.sock.settimeout(None)
         self.assertRaises(TypeError, self.sock.settimeout, "")
@@ -59,7 +59,7 @@ class CreationTestCase(unittest.TestCase):
     def testRangeCheck(self):
         # Test range checking by settimeout()
         self.assertRaises(ValueError, self.sock.settimeout, -1)
-        self.assertRaises(ValueError, self.sock.settimeout, -1L)
+        self.assertRaises(ValueError, self.sock.settimeout, -1)
         self.assertRaises(ValueError, self.sock.settimeout, -1.0)
 
     def testTimeoutThenBlocking(self):

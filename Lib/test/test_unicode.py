@@ -483,7 +483,7 @@ class UnicodeTest(
                          UnicodeCompat(u"u'%s' % obj falls back to obj.__str__()"),
                          u"u'%s' % obj falls back to obj.__str__()")
 
-        for obj in (123, 123.45, 123L):
+        for obj in (123, 123.45, 123):
             self.assertEqual(unicode(obj), unicode(str(obj)))
 
         # unicode(obj, encoding, error) tests (this maps to

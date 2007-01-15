@@ -19,7 +19,7 @@ assert _sre.MAGIC == MAGIC, "SRE module mismatch"
 if _sre.CODESIZE == 2:
     MAXCODE = 65535
 else:
-    MAXCODE = 0xFFFFFFFFL
+    MAXCODE = 0xFFFFFFFF
 
 def _identityfunction(x):
     return x
@@ -267,7 +267,7 @@ def _mk_bitmap(bits):
     if _sre.CODESIZE == 2:
         start = (1, 0)
     else:
-        start = (1L, 0L)
+        start = (1, 0)
     m, v = start
     for c in bits:
         if c:

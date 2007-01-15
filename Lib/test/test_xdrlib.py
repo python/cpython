@@ -15,7 +15,7 @@ class XDRTest(unittest.TestCase):
         p.pack_uint(9)
         p.pack_bool(True)
         p.pack_bool(False)
-        p.pack_uhyper(45L)
+        p.pack_uhyper(45)
         p.pack_float(1.9)
         p.pack_double(1.9)
         p.pack_string(s)
@@ -40,7 +40,7 @@ class XDRTest(unittest.TestCase):
         up.set_position(pos)
         self.assert_(up.unpack_bool() is False)
 
-        self.assertEqual(up.unpack_uhyper(), 45L)
+        self.assertEqual(up.unpack_uhyper(), 45)
         self.assertAlmostEqual(up.unpack_float(), 1.9)
         self.assertAlmostEqual(up.unpack_double(), 1.9)
         self.assertEqual(up.unpack_string(), s)

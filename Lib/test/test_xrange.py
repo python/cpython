@@ -21,7 +21,7 @@ class XrangeTest(unittest.TestCase):
         c = 50
 
         self.assertEqual(list(xrange(a, a+2)), [a, a+1])
-        self.assertEqual(list(xrange(a+2, a, -1L)), [a+2, a+1])
+        self.assertEqual(list(xrange(a+2, a, -1)), [a+2, a+1])
         self.assertEqual(list(xrange(a+4, a, -2)), [a+4, a+2])
 
         seq = list(xrange(a, b, c))

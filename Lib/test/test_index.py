@@ -15,7 +15,7 @@ class TrapInt(int):
     def __index__(self):
         return self
 
-class TrapLong(long):
+class TrapLong(int):
     def __index__(self):
         return self
 
@@ -44,7 +44,7 @@ class BaseTestCase(unittest.TestCase):
         self.o.ind = 4
         self.n.ind = 5
         self.assertEqual(6 .__index__(), 6)
-        self.assertEqual(-7L.__index__(), -7)
+        self.assertEqual(-7 .__index__(), -7)
         self.assertEqual(self.o.__index__(), 4)
         self.assertEqual(self.n.__index__(), 5)
 

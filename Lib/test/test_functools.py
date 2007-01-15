@@ -293,8 +293,8 @@ class TestReduce(unittest.TestCase):
         )
         self.assertEqual(self.func(lambda x, y: x*y, range(2,8), 1), 5040)
         self.assertEqual(
-            self.func(lambda x, y: x*y, range(2,21), 1L),
-            2432902008176640000L
+            self.func(lambda x, y: x*y, range(2,21), 1),
+            2432902008176640000
         )
         self.assertEqual(self.func(lambda x, y: x+y, Squares(10)), 285)
         self.assertEqual(self.func(lambda x, y: x+y, Squares(10), 0), 285)

@@ -114,9 +114,9 @@ def compile(file, cfile=None, dfile=None, doraise=False):
     """
     f = open(file, 'U')
     try:
-        timestamp = long(os.fstat(f.fileno()).st_mtime)
+        timestamp = int(os.fstat(f.fileno()).st_mtime)
     except AttributeError:
-        timestamp = long(os.stat(file).st_mtime)
+        timestamp = int(os.stat(file).st_mtime)
     codestring = f.read()
     f.close()
     if codestring and codestring[-1] != '\n':

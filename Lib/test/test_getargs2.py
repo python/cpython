@@ -45,7 +45,7 @@ long long (if that exists).
 """
 
 LARGE = 0x7FFFFFFF
-VERY_LARGE = 0xFF0000121212121212121242L
+VERY_LARGE = 0xFF0000121212121212121242
 
 from _testcapi import UCHAR_MAX, USHRT_MAX, UINT_MAX, ULONG_MAX, INT_MAX, \
      INT_MIN, LONG_MIN, LONG_MAX, PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
@@ -57,7 +57,7 @@ ULLONG_MAX = 2**64-1
 
 class Long:
     def __int__(self):
-        return 99L
+        return 99
 
 class Int:
     def __int__(self):
@@ -77,7 +77,7 @@ class Unsigned_TestCase(unittest.TestCase):
         self.assertRaises(OverflowError, getargs_b, UCHAR_MAX + 1)
 
         self.failUnlessEqual(42, getargs_b(42))
-        self.failUnlessEqual(42, getargs_b(42L))
+        self.failUnlessEqual(42, getargs_b(42))
         self.assertRaises(OverflowError, getargs_b, VERY_LARGE)
 
     def test_B(self):
@@ -88,13 +88,13 @@ class Unsigned_TestCase(unittest.TestCase):
         self.failUnlessEqual(99, getargs_B(Int()))
 
         self.failUnlessEqual(UCHAR_MAX, getargs_B(-1))
-        self.failUnlessEqual(UCHAR_MAX, getargs_B(-1L))
+        self.failUnlessEqual(UCHAR_MAX, getargs_B(-1))
         self.failUnlessEqual(0, getargs_B(0))
         self.failUnlessEqual(UCHAR_MAX, getargs_B(UCHAR_MAX))
         self.failUnlessEqual(0, getargs_B(UCHAR_MAX+1))
 
         self.failUnlessEqual(42, getargs_B(42))
-        self.failUnlessEqual(42, getargs_B(42L))
+        self.failUnlessEqual(42, getargs_B(42))
         self.failUnlessEqual(UCHAR_MAX & VERY_LARGE, getargs_B(VERY_LARGE))
 
     def test_H(self):
@@ -110,7 +110,7 @@ class Unsigned_TestCase(unittest.TestCase):
         self.failUnlessEqual(0, getargs_H(USHRT_MAX+1))
 
         self.failUnlessEqual(42, getargs_H(42))
-        self.failUnlessEqual(42, getargs_H(42L))
+        self.failUnlessEqual(42, getargs_H(42))
 
         self.failUnlessEqual(VERY_LARGE & USHRT_MAX, getargs_H(VERY_LARGE))
 
@@ -127,7 +127,7 @@ class Unsigned_TestCase(unittest.TestCase):
         self.failUnlessEqual(0, getargs_I(UINT_MAX+1))
 
         self.failUnlessEqual(42, getargs_I(42))
-        self.failUnlessEqual(42, getargs_I(42L))
+        self.failUnlessEqual(42, getargs_I(42))
 
         self.failUnlessEqual(VERY_LARGE & UINT_MAX, getargs_I(VERY_LARGE))
 
@@ -145,7 +145,7 @@ class Unsigned_TestCase(unittest.TestCase):
         self.failUnlessEqual(0, getargs_k(ULONG_MAX+1))
 
         self.failUnlessEqual(42, getargs_k(42))
-        self.failUnlessEqual(42, getargs_k(42L))
+        self.failUnlessEqual(42, getargs_k(42))
 
         self.failUnlessEqual(VERY_LARGE & ULONG_MAX, getargs_k(VERY_LARGE))
 
@@ -163,7 +163,7 @@ class Signed_TestCase(unittest.TestCase):
         self.assertRaises(OverflowError, getargs_i, INT_MAX+1)
 
         self.failUnlessEqual(42, getargs_i(42))
-        self.failUnlessEqual(42, getargs_i(42L))
+        self.failUnlessEqual(42, getargs_i(42))
         self.assertRaises(OverflowError, getargs_i, VERY_LARGE)
 
     def test_l(self):
@@ -179,7 +179,7 @@ class Signed_TestCase(unittest.TestCase):
         self.assertRaises(OverflowError, getargs_l, LONG_MAX+1)
 
         self.failUnlessEqual(42, getargs_l(42))
-        self.failUnlessEqual(42, getargs_l(42L))
+        self.failUnlessEqual(42, getargs_l(42))
         self.assertRaises(OverflowError, getargs_l, VERY_LARGE)
 
     def test_n(self):
@@ -196,7 +196,7 @@ class Signed_TestCase(unittest.TestCase):
         self.assertRaises(OverflowError, getargs_n, PY_SSIZE_T_MAX+1)
 
         self.failUnlessEqual(42, getargs_n(42))
-        self.failUnlessEqual(42, getargs_n(42L))
+        self.failUnlessEqual(42, getargs_n(42))
         self.assertRaises(OverflowError, getargs_n, VERY_LARGE)
 
 
@@ -215,7 +215,7 @@ class LongLong_TestCase(unittest.TestCase):
         self.assertRaises(OverflowError, getargs_L, LLONG_MAX+1)
 
         self.failUnlessEqual(42, getargs_L(42))
-        self.failUnlessEqual(42, getargs_L(42L))
+        self.failUnlessEqual(42, getargs_L(42))
         self.assertRaises(OverflowError, getargs_L, VERY_LARGE)
 
     def test_K(self):
@@ -229,7 +229,7 @@ class LongLong_TestCase(unittest.TestCase):
         self.failUnlessEqual(0, getargs_K(ULLONG_MAX+1))
 
         self.failUnlessEqual(42, getargs_K(42))
-        self.failUnlessEqual(42, getargs_K(42L))
+        self.failUnlessEqual(42, getargs_K(42))
 
         self.failUnlessEqual(VERY_LARGE & ULLONG_MAX, getargs_K(VERY_LARGE))
 

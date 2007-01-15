@@ -90,10 +90,10 @@ class ReprTests(unittest.TestCase):
     def test_numbers(self):
         eq = self.assertEquals
         eq(r(123), repr(123))
-        eq(r(123L), repr(123L))
+        eq(r(123), repr(123))
         eq(r(1.0/3), repr(1.0/3))
 
-        n = 10L**100
+        n = 10**100
         expected = repr(n)[:18] + "..." + repr(n)[-19:]
         eq(r(n), expected)
 

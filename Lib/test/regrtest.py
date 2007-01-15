@@ -1324,7 +1324,7 @@ class _ExpectedSkips:
             if test_timeout.skip_expected:
                 self.expected.add('test_timeout')
 
-            if sys.maxint == 9223372036854775807L:
+            if sys.maxint == 9223372036854775807:
                 self.expected.add('test_rgbimg')
                 self.expected.add('test_imageop')
 

@@ -105,10 +105,10 @@ class Random(_random.Random):
 
         if a is None:
             try:
-                a = long(_hexlify(_urandom(16)), 16)
+                a = int(_hexlify(_urandom(16)), 16)
             except NotImplementedError:
                 import time
-                a = long(time.time() * 256) # use fractional seconds
+                a = int(time.time() * 256) # use fractional seconds
 
         super(Random, self).seed(a)
         self.gauss_next = None
@@ -145,7 +145,7 @@ class Random(_random.Random):
 ## -------------------- integer methods  -------------------
 
     def randrange(self, start, stop=None, step=1, int=int, default=None,
-                  maxwidth=1L<<BPF):
+                  maxwidth=1<<BPF):
         """Choose a random item from range(start, stop[, step]).
 
         This fixes the problem with randint() which includes the
@@ -214,7 +214,7 @@ class Random(_random.Random):
 
         return self.randrange(a, b+1)
 
-    def _randbelow(self, n, _log=_log, int=int, _maxwidth=1L<<BPF,
+    def _randbelow(self, n, _log=_log, int=int, _maxwidth=1<<BPF,
                    _Method=_MethodType, _BuiltinMethod=_BuiltinMethodType):
         """Return a random int in the range [0,n)
 
@@ -626,12 +626,12 @@ class WichmannHill(Random):
 
         if a is None:
             try:
-                a = long(_hexlify(_urandom(16)), 16)
+                a = int(_hexlify(_urandom(16)), 16)
             except NotImplementedError:
                 import time
-                a = long(time.time() * 256) # use fractional seconds
+                a = int(time.time() * 256) # use fractional seconds
 
-        if not isinstance(a, (int, long)):
+        if not isinstance(a, (int, int)):
             a = hash(a)
 
         a, x = divmod(a, 30268)
@@ -721,7 +721,7 @@ class WichmannHill(Random):
         if 0 == x == y == z:
             # Initialize from current time
             import time
-            t = long(time.time() * 256)
+            t = int(time.time() * 256)
             t = int((t&0xffffff) ^ (t>>24))
             t, x = divmod(t, 256)
             t, y = divmod(t, 256)
@@ -766,7 +766,7 @@ class SystemRandom(Random):
 
     def random(self):
         """Get the next random number in the range [0.0, 1.0)."""
-        return (long(_hexlify(_urandom(7)), 16) >> 3) * RECIP_BPF
+        return (int(_hexlify(_urandom(7)), 16) >> 3) * RECIP_BPF
 
     def getrandbits(self, k):
         """getrandbits(k) -> x.  Generates a long int with k random bits."""
@@ -775,7 +775,7 @@ class SystemRandom(Random):
         if k != int(k):
             raise TypeError('number of bits should be an integer')
         bytes = (k + 7) // 8                    # bits / 8 and rounded up
-        x = long(_hexlify(_urandom(bytes)), 16)
+        x = int(_hexlify(_urandom(bytes)), 16)
         return x >> (bytes * 8 - k)             # trim excess bits
 
     def _stub(self, *args, **kwds):

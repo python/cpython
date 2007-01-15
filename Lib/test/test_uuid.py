@@ -32,19 +32,19 @@ class TestUUID(TestCase):
              '000102030405060708090a0b0c0d0e0f',
              '\0\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\x0d\x0e\x0f',
              '\x03\x02\x01\0\x05\x04\x07\x06\x08\t\n\x0b\x0c\x0d\x0e\x0f',
-             (0x00010203L, 0x0405, 0x0607, 8, 9, 0x0a0b0c0d0e0fL),
-             0x000102030405060708090a0b0c0d0e0fL,
+             (0x00010203, 0x0405, 0x0607, 8, 9, 0x0a0b0c0d0e0f),
+             0x000102030405060708090a0b0c0d0e0f,
              'urn:uuid:00010203-0405-0607-0809-0a0b0c0d0e0f',
-             0x607040500010203L, 0x809, uuid.RESERVED_NCS, None),
+             0x607040500010203, 0x809, uuid.RESERVED_NCS, None),
             ('02d9e6d5-9467-382e-8f9b-9300a64ac3cd',
              '{02d9e6d5-9467-382e-8f9b-9300a64ac3cd}',
              '02d9e6d59467382e8f9b9300a64ac3cd',
              '\x02\xd9\xe6\xd5\x94\x67\x38\x2e\x8f\x9b\x93\x00\xa6\x4a\xc3\xcd',
              '\xd5\xe6\xd9\x02\x67\x94\x2e\x38\x8f\x9b\x93\x00\xa6\x4a\xc3\xcd',
-             (0x02d9e6d5L, 0x9467, 0x382e, 0x8f, 0x9b, 0x9300a64ac3cdL),
-             0x02d9e6d59467382e8f9b9300a64ac3cdL,
+             (0x02d9e6d5, 0x9467, 0x382e, 0x8f, 0x9b, 0x9300a64ac3cd),
+             0x02d9e6d59467382e8f9b9300a64ac3cd,
              'urn:uuid:02d9e6d5-9467-382e-8f9b-9300a64ac3cd',
-             0x82e946702d9e6d5L, 0xf9b, uuid.RFC_4122, 3),
+             0x82e946702d9e6d5, 0xf9b, uuid.RFC_4122, 3),
             ('12345678-1234-5678-1234-567812345678',
              '{12345678-1234-5678-1234-567812345678}',
              '12345678123456781234567812345678',
@@ -53,97 +53,97 @@ class TestUUID(TestCase):
              (0x12345678, 0x1234, 0x5678, 0x12, 0x34, 0x567812345678),
              0x12345678123456781234567812345678,
              'urn:uuid:12345678-1234-5678-1234-567812345678',
-             0x678123412345678L, 0x1234, uuid.RESERVED_NCS, None),
+             0x678123412345678, 0x1234, uuid.RESERVED_NCS, None),
             ('6ba7b810-9dad-11d1-80b4-00c04fd430c8',
              '{6ba7b810-9dad-11d1-80b4-00c04fd430c8}',
              '6ba7b8109dad11d180b400c04fd430c8',
              '\x6b\xa7\xb8\x10\x9d\xad\x11\xd1\x80\xb4\x00\xc0\x4f\xd4\x30\xc8',
              '\x10\xb8\xa7\x6b\xad\x9d\xd1\x11\x80\xb4\x00\xc0\x4f\xd4\x30\xc8',
-             (0x6ba7b810L, 0x9dad, 0x11d1, 0x80, 0xb4, 0x00c04fd430c8L),
-             0x6ba7b8109dad11d180b400c04fd430c8L,
+             (0x6ba7b810, 0x9dad, 0x11d1, 0x80, 0xb4, 0x00c04fd430c8),
+             0x6ba7b8109dad11d180b400c04fd430c8,
              'urn:uuid:6ba7b810-9dad-11d1-80b4-00c04fd430c8',
-             0x1d19dad6ba7b810L, 0xb4, uuid.RFC_4122, 1),
+             0x1d19dad6ba7b810, 0xb4, uuid.RFC_4122, 1),
             ('6ba7b811-9dad-11d1-80b4-00c04fd430c8',
              '{6ba7b811-9dad-11d1-80b4-00c04fd430c8}',
              '6ba7b8119dad11d180b400c04fd430c8',
              '\x6b\xa7\xb8\x11\x9d\xad\x11\xd1\x80\xb4\x00\xc0\x4f\xd4\x30\xc8',
              '\x11\xb8\xa7\x6b\xad\x9d\xd1\x11\x80\xb4\x00\xc0\x4f\xd4\x30\xc8',
-             (0x6ba7b811L, 0x9dad, 0x11d1, 0x80, 0xb4, 0x00c04fd430c8L),
-             0x6ba7b8119dad11d180b400c04fd430c8L,
+             (0x6ba7b811, 0x9dad, 0x11d1, 0x80, 0xb4, 0x00c04fd430c8),
+             0x6ba7b8119dad11d180b400c04fd430c8,
              'urn:uuid:6ba7b811-9dad-11d1-80b4-00c04fd430c8',
-             0x1d19dad6ba7b811L, 0xb4, uuid.RFC_4122, 1),
+             0x1d19dad6ba7b811, 0xb4, uuid.RFC_4122, 1),
             ('6ba7b812-9dad-11d1-80b4-00c04fd430c8',
              '{6ba7b812-9dad-11d1-80b4-00c04fd430c8}',
              '6ba7b8129dad11d180b400c04fd430c8',
              '\x6b\xa7\xb8\x12\x9d\xad\x11\xd1\x80\xb4\x00\xc0\x4f\xd4\x30\xc8',
              '\x12\xb8\xa7\x6b\xad\x9d\xd1\x11\x80\xb4\x00\xc0\x4f\xd4\x30\xc8',
-             (0x6ba7b812L, 0x9dad, 0x11d1, 0x80, 0xb4, 0x00c04fd430c8L),
-             0x6ba7b8129dad11d180b400c04fd430c8L,
+             (0x6ba7b812, 0x9dad, 0x11d1, 0x80, 0xb4, 0x00c04fd430c8),
+             0x6ba7b8129dad11d180b400c04fd430c8,
              'urn:uuid:6ba7b812-9dad-11d1-80b4-00c04fd430c8',
-             0x1d19dad6ba7b812L, 0xb4, uuid.RFC_4122, 1),
+             0x1d19dad6ba7b812, 0xb4, uuid.RFC_4122, 1),
             ('6ba7b814-9dad-11d1-80b4-00c04fd430c8',
              '{6ba7b814-9dad-11d1-80b4-00c04fd430c8}',
              '6ba7b8149dad11d180b400c04fd430c8',
              '\x6b\xa7\xb8\x14\x9d\xad\x11\xd1\x80\xb4\x00\xc0\x4f\xd4\x30\xc8',
              '\x14\xb8\xa7\x6b\xad\x9d\xd1\x11\x80\xb4\x00\xc0\x4f\xd4\x30\xc8',
-             (0x6ba7b814L, 0x9dad, 0x11d1, 0x80, 0xb4, 0x00c04fd430c8L),
-             0x6ba7b8149dad11d180b400c04fd430c8L,
+             (0x6ba7b814, 0x9dad, 0x11d1, 0x80, 0xb4, 0x00c04fd430c8),
+             0x6ba7b8149dad11d180b400c04fd430c8,
              'urn:uuid:6ba7b814-9dad-11d1-80b4-00c04fd430c8',
-             0x1d19dad6ba7b814L, 0xb4, uuid.RFC_4122, 1),
+             0x1d19dad6ba7b814, 0xb4, uuid.RFC_4122, 1),
             ('7d444840-9dc0-11d1-b245-5ffdce74fad2',
              '{7d444840-9dc0-11d1-b245-5ffdce74fad2}',
              '7d4448409dc011d1b2455ffdce74fad2',
              '\x7d\x44\x48\x40\x9d\xc0\x11\xd1\xb2\x45\x5f\xfd\xce\x74\xfa\xd2',
              '\x40\x48\x44\x7d\xc0\x9d\xd1\x11\xb2\x45\x5f\xfd\xce\x74\xfa\xd2',
-             (0x7d444840L, 0x9dc0, 0x11d1, 0xb2, 0x45, 0x5ffdce74fad2L),
-             0x7d4448409dc011d1b2455ffdce74fad2L,
+             (0x7d444840, 0x9dc0, 0x11d1, 0xb2, 0x45, 0x5ffdce74fad2),
+             0x7d4448409dc011d1b2455ffdce74fad2,
              'urn:uuid:7d444840-9dc0-11d1-b245-5ffdce74fad2',
-             0x1d19dc07d444840L, 0x3245, uuid.RFC_4122, 1),
+             0x1d19dc07d444840, 0x3245, uuid.RFC_4122, 1),
             ('e902893a-9d22-3c7e-a7b8-d6e313b71d9f',
              '{e902893a-9d22-3c7e-a7b8-d6e313b71d9f}',
              'e902893a9d223c7ea7b8d6e313b71d9f',
              '\xe9\x02\x89\x3a\x9d\x22\x3c\x7e\xa7\xb8\xd6\xe3\x13\xb7\x1d\x9f',
              '\x3a\x89\x02\xe9\x22\x9d\x7e\x3c\xa7\xb8\xd6\xe3\x13\xb7\x1d\x9f',
-             (0xe902893aL, 0x9d22, 0x3c7e, 0xa7, 0xb8, 0xd6e313b71d9fL),
-             0xe902893a9d223c7ea7b8d6e313b71d9fL,
+             (0xe902893a, 0x9d22, 0x3c7e, 0xa7, 0xb8, 0xd6e313b71d9f),
+             0xe902893a9d223c7ea7b8d6e313b71d9f,
              'urn:uuid:e902893a-9d22-3c7e-a7b8-d6e313b71d9f',
-             0xc7e9d22e902893aL, 0x27b8, uuid.RFC_4122, 3),
+             0xc7e9d22e902893a, 0x27b8, uuid.RFC_4122, 3),
             ('eb424026-6f54-4ef8-a4d0-bb658a1fc6cf',
              '{eb424026-6f54-4ef8-a4d0-bb658a1fc6cf}',
              'eb4240266f544ef8a4d0bb658a1fc6cf',
              '\xeb\x42\x40\x26\x6f\x54\x4e\xf8\xa4\xd0\xbb\x65\x8a\x1f\xc6\xcf',
              '\x26\x40\x42\xeb\x54\x6f\xf8\x4e\xa4\xd0\xbb\x65\x8a\x1f\xc6\xcf',
-             (0xeb424026L, 0x6f54, 0x4ef8, 0xa4, 0xd0, 0xbb658a1fc6cfL),
-             0xeb4240266f544ef8a4d0bb658a1fc6cfL,
+             (0xeb424026, 0x6f54, 0x4ef8, 0xa4, 0xd0, 0xbb658a1fc6cf),
+             0xeb4240266f544ef8a4d0bb658a1fc6cf,
              'urn:uuid:eb424026-6f54-4ef8-a4d0-bb658a1fc6cf',
-             0xef86f54eb424026L, 0x24d0, uuid.RFC_4122, 4),
+             0xef86f54eb424026, 0x24d0, uuid.RFC_4122, 4),
             ('f81d4fae-7dec-11d0-a765-00a0c91e6bf6',
              '{f81d4fae-7dec-11d0-a765-00a0c91e6bf6}',
              'f81d4fae7dec11d0a76500a0c91e6bf6',
              '\xf8\x1d\x4f\xae\x7d\xec\x11\xd0\xa7\x65\x00\xa0\xc9\x1e\x6b\xf6',
              '\xae\x4f\x1d\xf8\xec\x7d\xd0\x11\xa7\x65\x00\xa0\xc9\x1e\x6b\xf6',
-             (0xf81d4faeL, 0x7dec, 0x11d0, 0xa7, 0x65, 0x00a0c91e6bf6L),
-             0xf81d4fae7dec11d0a76500a0c91e6bf6L,
+             (0xf81d4fae, 0x7dec, 0x11d0, 0xa7, 0x65, 0x00a0c91e6bf6),
+             0xf81d4fae7dec11d0a76500a0c91e6bf6,
              'urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6',
-             0x1d07decf81d4faeL, 0x2765, uuid.RFC_4122, 1),
+             0x1d07decf81d4fae, 0x2765, uuid.RFC_4122, 1),
             ('fffefdfc-fffe-fffe-fffe-fffefdfcfbfa',
              '{fffefdfc-fffe-fffe-fffe-fffefdfcfbfa}',
              'fffefdfcfffefffefffefffefdfcfbfa',
              '\xff\xfe\xfd\xfc\xff\xfe\xff\xfe\xff\xfe\xff\xfe\xfd\xfc\xfb\xfa',
              '\xfc\xfd\xfe\xff\xfe\xff\xfe\xff\xff\xfe\xff\xfe\xfd\xfc\xfb\xfa',
-             (0xfffefdfcL, 0xfffe, 0xfffe, 0xff, 0xfe, 0xfffefdfcfbfaL),
-             0xfffefdfcfffefffefffefffefdfcfbfaL,
+             (0xfffefdfc, 0xfffe, 0xfffe, 0xff, 0xfe, 0xfffefdfcfbfa),
+             0xfffefdfcfffefffefffefffefdfcfbfa,
              'urn:uuid:fffefdfc-fffe-fffe-fffe-fffefdfcfbfa',
-             0xffefffefffefdfcL, 0x3ffe, uuid.RESERVED_FUTURE, None),
+             0xffefffefffefdfc, 0x3ffe, uuid.RESERVED_FUTURE, None),
             ('ffffffff-ffff-ffff-ffff-ffffffffffff',
              '{ffffffff-ffff-ffff-ffff-ffffffffffff}',
              'ffffffffffffffffffffffffffffffff',
              '\xff'*16,
              '\xff'*16,
-             (0xffffffffL, 0xffffL, 0xffffL, 0xff, 0xff, 0xffffffffffffL),
-             0xffffffffffffffffffffffffffffffffL,
+             (0xffffffff, 0xffff, 0xffff, 0xff, 0xff, 0xffffffffffff),
+             0xffffffffffffffffffffffffffffffff,
              'urn:uuid:ffffffff-ffff-ffff-ffff-ffffffffffff',
-             0xfffffffffffffffL, 0x3fff, uuid.RESERVED_FUTURE, None),
+             0xfffffffffffffff, 0x3fff, uuid.RESERVED_FUTURE, None),
             ]:
             equivalents = []
             # Construct each UUID in several different ways.
@@ -217,17 +217,17 @@ class TestUUID(TestCase):
 
         # Field values out of range.
         badvalue(lambda: uuid.UUID(fields=(-1, 0, 0, 0, 0, 0)))
-        badvalue(lambda: uuid.UUID(fields=(0x100000000L, 0, 0, 0, 0, 0)))
+        badvalue(lambda: uuid.UUID(fields=(0x100000000, 0, 0, 0, 0, 0)))
         badvalue(lambda: uuid.UUID(fields=(0, -1, 0, 0, 0, 0)))
-        badvalue(lambda: uuid.UUID(fields=(0, 0x10000L, 0, 0, 0, 0)))
+        badvalue(lambda: uuid.UUID(fields=(0, 0x10000, 0, 0, 0, 0)))
         badvalue(lambda: uuid.UUID(fields=(0, 0, -1, 0, 0, 0)))
-        badvalue(lambda: uuid.UUID(fields=(0, 0, 0x10000L, 0, 0, 0)))
+        badvalue(lambda: uuid.UUID(fields=(0, 0, 0x10000, 0, 0, 0)))
         badvalue(lambda: uuid.UUID(fields=(0, 0, 0, -1, 0, 0)))
-        badvalue(lambda: uuid.UUID(fields=(0, 0, 0, 0x100L, 0, 0)))
+        badvalue(lambda: uuid.UUID(fields=(0, 0, 0, 0x100, 0, 0)))
         badvalue(lambda: uuid.UUID(fields=(0, 0, 0, 0, -1, 0)))
-        badvalue(lambda: uuid.UUID(fields=(0, 0, 0, 0, 0x100L, 0)))
+        badvalue(lambda: uuid.UUID(fields=(0, 0, 0, 0, 0x100, 0)))
         badvalue(lambda: uuid.UUID(fields=(0, 0, 0, 0, 0, -1)))
-        badvalue(lambda: uuid.UUID(fields=(0, 0, 0, 0, 0, 0x1000000000000L)))
+        badvalue(lambda: uuid.UUID(fields=(0, 0, 0, 0, 0, 0x1000000000000)))
 
         # Version number out of range.
         badvalue(lambda: uuid.UUID('00'*16, version=0))
@@ -235,7 +235,7 @@ class TestUUID(TestCase):
 
         # Integer value out of range.
         badvalue(lambda: uuid.UUID(int=-1))
-        badvalue(lambda: uuid.UUID(int=1<<128L))
+        badvalue(lambda: uuid.UUID(int=1<<128))
 
         # Must supply exactly one of hex, bytes, fields, int.
         h, b, f, i = '00'*16, '\0'*16, (0, 0, 0, 0, 0, 0), 0
@@ -281,15 +281,15 @@ class TestUUID(TestCase):
         badtype(lambda: setattr(u, 'node', 0))
 
     def check_node(self, node, source):
-        individual_group_bit = (node >> 40L) & 1
-        universal_local_bit = (node >> 40L) & 2
+        individual_group_bit = (node >> 40) & 1
+        universal_local_bit = (node >> 40) & 2
         message = "%012x doesn't look like a real MAC address" % node
         self.assertEqual(individual_group_bit, 0, message)
         self.assertEqual(universal_local_bit, 0, message)
         self.assertNotEqual(node, 0, message)
-        self.assertNotEqual(node, 0xffffffffffffL, message)
+        self.assertNotEqual(node, 0xffffffffffff, message)
         self.assert_(0 <= node, message)
-        self.assert_(node < (1L << 48), message)
+        self.assert_(node < (1 << 48), message)
 
         TestUUID.source2node[source] = node
         if TestUUID.last_node:
@@ -332,7 +332,7 @@ class TestUUID(TestCase):
     def test_random_getnode(self):
         node = uuid._random_getnode()
         self.assert_(0 <= node)
-        self.assert_(node < (1L <<48))
+        self.assert_(node < (1 <<48))
 
     def test_unixdll_getnode(self):
         import sys

@@ -511,7 +511,7 @@ def read_decimalnl_short(f):
     try:
         return int(s)
     except OverflowError:
-        return long(s)
+        return int(s)
 
 def read_decimalnl_long(f):
     r"""
@@ -525,7 +525,7 @@ def read_decimalnl_long(f):
     """
 
     s = read_stringnl(f, decode=False, stripquotes=False)
-    return long(s)
+    return int(s)
 
 
 decimalnl_short = ArgumentDescriptor(
@@ -676,7 +676,7 @@ long4 = ArgumentDescriptor(
     This first reads four bytes as a signed size (but requires the
     size to be >= 0), then reads that many bytes and interprets them
     as a little-endian 2's-complement long.  If the size is 0, that's taken
-    as a shortcut for the long 0L, although LONG1 should really be used
+    as a shortcut for the int 0, although LONG1 should really be used
     then instead (and in any case where # of bytes < 256).
     """)
 
@@ -724,12 +724,12 @@ pyint = StackObject(
 
 pylong = StackObject(
              name='long',
-             obtype=long,
+             obtype=int,
              doc="A long (as opposed to short) Python integer object.")
 
 pyinteger_or_bool = StackObject(
                         name='int_or_bool',
-                        obtype=(int, long, bool),
+                        obtype=(int, int, bool),
                         doc="A Python integer object (short or long), or "
                             "a Python bool.")
 

@@ -50,6 +50,8 @@ RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
     'reserved for NCS compatibility', 'specified in RFC 4122',
     'reserved for Microsoft compatibility', 'reserved for future definition']
 
+int_ = int # The built-in int function
+
 class UUID(object):
     """Instances of the UUID class represent UUIDs as specified in RFC 4122.
     UUID objects are immutable, hashable, and usable as dictionary keys.
@@ -132,7 +134,7 @@ class UUID(object):
             hex = hex.strip('{}').replace('-', '')
             if len(hex) != 32:
                 raise ValueError('badly formed hexadecimal UUID string')
-            int = long(hex, 16)
+            int = int_(hex, 16)
         if bytes_le is not None:
             if len(bytes_le) != 16:
                 raise ValueError('bytes_le is not a 16-char string')
@@ -142,39 +144,39 @@ class UUID(object):
         if bytes is not None:
             if len(bytes) != 16:
                 raise ValueError('bytes is not a 16-char string')
-            int = long(('%02x'*16) % tuple(map(ord, bytes)), 16)
+            int = int_(('%02x'*16) % tuple(map(ord, bytes)), 16)
         if fields is not None:
             if len(fields) != 6:
                 raise ValueError('fields is not a 6-tuple')
             (time_low, time_mid, time_hi_version,
              clock_seq_hi_variant, clock_seq_low, node) = fields
-            if not 0 <= time_low < 1<<32L:
+            if not 0 <= time_low < 1<<32:
                 raise ValueError('field 1 out of range (need a 32-bit value)')
-            if not 0 <= time_mid < 1<<16L:
+            if not 0 <= time_mid < 1<<16:
                 raise ValueError('field 2 out of range (need a 16-bit value)')
-            if not 0 <= time_hi_version < 1<<16L:
+            if not 0 <= time_hi_version < 1<<16:
                 raise ValueError('field 3 out of range (need a 16-bit value)')
-            if not 0 <= clock_seq_hi_variant < 1<<8L:
+            if not 0 <= clock_seq_hi_variant < 1<<8:
                 raise ValueError('field 4 out of range (need an 8-bit value)')
-            if not 0 <= clock_seq_low < 1<<8L:
+            if not 0 <= clock_seq_low < 1<<8:
                 raise ValueError('field 5 out of range (need an 8-bit value)')
-            if not 0 <= node < 1<<48L:
+            if not 0 <= node < 1<<48:
                 raise ValueError('field 6 out of range (need a 48-bit value)')
-            clock_seq = (clock_seq_hi_variant << 8L) | clock_seq_low
-            int = ((time_low << 96L) | (time_mid << 80L) |
-                   (time_hi_version << 64L) | (clock_seq << 48L) | node)
+            clock_seq = (clock_seq_hi_variant << 8) | clock_seq_low
+            int = ((time_low << 96) | (time_mid << 80) |
+                   (time_hi_version << 64) | (clock_seq << 48) | node)
         if int is not None:
-            if not 0 <= int < 1<<128L:
+            if not 0 <= int < 1<<128:
                 raise ValueError('int is out of range (need a 128-bit value)')
         if version is not None:
             if not 1 <= version <= 5:
                 raise ValueError('illegal version number')
             # Set the variant to RFC 4122.
-            int &= ~(0xc000 << 48L)
-            int |= 0x8000 << 48L
+            int &= ~(0xc000 << 48)
+            int |= 0x8000 << 48
             # Set the version number.
-            int &= ~(0xf000 << 64L)
-            int |= version << 76L
+            int &= ~(0xf000 << 64)
+            int |= version << 76
         self.__dict__['int'] = int
 
     def __eq__(self, other):
@@ -248,38 +250,38 @@ class UUID(object):
     fields = property(get_fields)
 
     def get_time_low(self):
-        return self.int >> 96L
+        return self.int >> 96
 
     time_low = property(get_time_low)
 
     def get_time_mid(self):
-        return (self.int >> 80L) & 0xffff
+        return (self.int >> 80) & 0xffff
 
     time_mid = property(get_time_mid)
 
     def get_time_hi_version(self):
-        return (self.int >> 64L) & 0xffff
+        return (self.int >> 64) & 0xffff
 
     time_hi_version = property(get_time_hi_version)
 
     def get_clock_seq_hi_variant(self):
-        return (self.int >> 56L) & 0xff
+        return (self.int >> 56) & 0xff
 
     clock_seq_hi_variant = property(get_clock_seq_hi_variant)
 
     def get_clock_seq_low(self):
-        return (self.int >> 48L) & 0xff
+        return (self.int >> 48) & 0xff
 
     clock_seq_low = property(get_clock_seq_low)
 
     def get_time(self):
-        return (((self.time_hi_version & 0x0fffL) << 48L) |
-                (self.time_mid << 32L) | self.time_low)
+        return (((self.time_hi_version & 0x0fff) << 48) |
+                (self.time_mid << 32) | self.time_low)
 
     time = property(get_time)
 
     def get_clock_seq(self):
-        return (((self.clock_seq_hi_variant & 0x3fL) << 8L) |
+        return (((self.clock_seq_hi_variant & 0x3f) << 8) |
                 self.clock_seq_low)
 
     clock_seq = property(get_clock_seq)
@@ -300,11 +302,11 @@ class UUID(object):
     urn = property(get_urn)
 
     def get_variant(self):
-        if not self.int & (0x8000 << 48L):
+        if not self.int & (0x8000 << 48):
             return RESERVED_NCS
-        elif not self.int & (0x4000 << 48L):
+        elif not self.int & (0x4000 << 48):
             return RFC_4122
-        elif not self.int & (0x2000 << 48L):
+        elif not self.int & (0x2000 << 48):
             return RESERVED_MICROSOFT
         else:
             return RESERVED_FUTURE
@@ -314,7 +316,7 @@ class UUID(object):
     def get_version(self):
         # The version bits are only meaningful for RFC 4122 UUIDs.
         if self.variant == RFC_4122:
-            return int((self.int >> 76L) & 0xf)
+            return int((self.int >> 76) & 0xf)
 
     version = property(get_version)
 
@@ -411,8 +413,8 @@ def _netbios_getnode():
             continue
         status._unpack()
         bytes = map(ord, status.adapter_address)
-        return ((bytes[0]<<40L) + (bytes[1]<<32L) + (bytes[2]<<24L) +
-                (bytes[3]<<16L) + (bytes[4]<<8L) + bytes[5])
+        return ((bytes[0]<<40) + (bytes[1]<<32) + (bytes[2]<<24) +
+                (bytes[3]<<16) + (bytes[4]<<8) + bytes[5])
 
 # Thanks to Thomas Heller for ctypes and for his help with its use here.
 
@@ -464,7 +466,7 @@ def _windll_getnode():
 def _random_getnode():
     """Get a random node ID, with eighth bit set as suggested by RFC 4122."""
     import random
-    return random.randrange(0, 1<<48L) | 0x010000000000L
+    return random.randrange(0, 1<<48) | 0x010000000000
 
 _node = None
 
@@ -514,18 +516,18 @@ def uuid1(node=None, clock_seq=None):
     nanoseconds = int(time.time() * 1e9)
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
-    timestamp = int(nanoseconds/100) + 0x01b21dd213814000L
+    timestamp = int(nanoseconds/100) + 0x01b21dd213814000
     if _last_timestamp is not None and timestamp <= _last_timestamp:
         timestamp = _last_timestamp + 1
     _last_timestamp = timestamp
     if clock_seq is None:
         import random
-        clock_seq = random.randrange(1<<14L) # instead of stable storage
-    time_low = timestamp & 0xffffffffL
-    time_mid = (timestamp >> 32L) & 0xffffL
-    time_hi_version = (timestamp >> 48L) & 0x0fffL
-    clock_seq_low = clock_seq & 0xffL
-    clock_seq_hi_variant = (clock_seq >> 8L) & 0x3fL
+        clock_seq = random.randrange(1<<14) # instead of stable storage
+    time_low = timestamp & 0xffffffff
+    time_mid = (timestamp >> 32) & 0xffff
+    time_hi_version = (timestamp >> 48) & 0x0fff
+    clock_seq_low = clock_seq & 0xff
+    clock_seq_hi_variant = (clock_seq >> 8) & 0x3f
     if node is None:
         node = getnode()
     return UUID(fields=(time_low, time_mid, time_hi_version,

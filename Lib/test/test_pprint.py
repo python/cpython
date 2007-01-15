@@ -114,12 +114,12 @@ class QueryTestCase(unittest.TestCase):
         # multiple lines.  For that reason, dicts with more than one element
         # aren't tested here.
         verify = self.assert_
-        for simple in (0, 0L, 0+0j, 0.0, "", uni(""),
+        for simple in (0, 0, 0+0j, 0.0, "", uni(""),
                        (), tuple2(), tuple3(),
                        [], list2(), list3(),
                        {}, dict2(), dict3(),
                        verify, pprint,
-                       -6, -6L, -6-6j, -1.5, "x", uni("x"), (3,), [3], {3: 6},
+                       -6, -6, -6-6j, -1.5, "x", uni("x"), (3,), [3], {3: 6},
                        (1,2), [3,4], {5: 6, 7: 8},
                        tuple2((1,2)), tuple3((1,2)), tuple3(range(100)),
                        [3,4], list2([3,4]), list3([3,4]), list3(range(100)),

@@ -86,11 +86,11 @@ class SliceTest(unittest.TestCase):
             slice(100,  -100,  -1).indices(10),
             slice(None, None, -1).indices(10)
         )
-        self.assertEqual(slice(-100L, 100L, 2L).indices(10), (0, 10,  2))
+        self.assertEqual(slice(-100, 100, 2).indices(10), (0, 10,  2))
 
         self.assertEqual(range(10)[::sys.maxint - 1], [0])
 
-        self.assertRaises(OverflowError, slice(None).indices, 1L<<100)
+        self.assertRaises(OverflowError, slice(None).indices, 1<<100)
 
 def test_main():
     test_support.run_unittest(SliceTest)

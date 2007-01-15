@@ -8,16 +8,16 @@ from test.test_support import TestFailed, verify, verbose
 def test_true_division():
     if verbose:
         print "long true division"
-    huge = 1L << 40000
+    huge = 1 << 40000
     mhuge = -huge
     verify(huge / huge == 1.0)
     verify(mhuge / mhuge == 1.0)
     verify(huge / mhuge == -1.0)
     verify(mhuge / huge == -1.0)
     verify(1 / huge == 0.0)
-    verify(1L / huge == 0.0)
+    verify(1 / huge == 0.0)
     verify(1 / mhuge == 0.0)
-    verify(1L / mhuge == 0.0)
+    verify(1 / mhuge == 0.0)
     verify((666 * huge + (huge >> 1)) / huge == 666.5)
     verify((666 * mhuge + (mhuge >> 1)) / mhuge == 666.5)
     verify((666 * huge + (huge >> 1)) / mhuge == -666.5)
@@ -28,8 +28,8 @@ def test_true_division():
     namespace = {'huge': huge, 'mhuge': mhuge}
 
     for overflow in ["float(huge)", "float(mhuge)",
-                     "huge / 1", "huge / 2L", "huge / -1", "huge / -2L",
-                     "mhuge / 100", "mhuge / 100L"]:
+                     "huge / 1", "huge / 2", "huge / -1", "huge / -2",
+                     "mhuge / 100", "mhuge / 100"]:
         try:
             eval(overflow, namespace)
         except OverflowError:
@@ -37,14 +37,14 @@ def test_true_division():
         else:
             raise TestFailed("expected OverflowError from %r" % overflow)
 
-    for underflow in ["1 / huge", "2L / huge", "-1 / huge", "-2L / huge",
-                     "100 / mhuge", "100L / mhuge"]:
+    for underflow in ["1 / huge", "2 / huge", "-1 / huge", "-2 / huge",
+                     "100 / mhuge", "100 / mhuge"]:
         result = eval(underflow, namespace)
         if result != 0.0:
             raise TestFailed("expected underflow to 0 from %r" % underflow)
 
-    for zero in ["huge / 0", "huge / 0L",
-                 "mhuge / 0", "mhuge / 0L"]:
+    for zero in ["huge / 0", "huge / 0",
+                 "mhuge / 0", "mhuge / 0"]:
         try:
             eval(zero, namespace)
         except ZeroDivisionError:

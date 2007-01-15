@@ -2043,7 +2043,7 @@ class MHMailbox:
         # list = map(long, filter(pat.match, os.listdir(self.dirname)))
         list = os.listdir(self.dirname)
         list = filter(pat.match, list)
-        list = map(long, list)
+        list = map(int, list)
         list.sort()
         # This only works in Python 1.6 or later;
         # before that str() added 'L':

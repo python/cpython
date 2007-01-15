@@ -77,7 +77,7 @@ class TestAsynchat(unittest.TestCase):
         s = echo_server()
         s.start()
         time.sleep(1) # Give server time to initialize
-        c = echo_client(6L)
+        c = echo_client(6)
         c.push("hello ")
         c.push("world\n")
         asyncore.loop()

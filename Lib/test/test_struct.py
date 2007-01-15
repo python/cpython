@@ -146,12 +146,12 @@ tests = [
     ('H', 0x10000-700, '\375D', 'D\375', 0),
     ('i', 70000000, '\004,\035\200', '\200\035,\004', 0),
     ('i', -70000000, '\373\323\342\200', '\200\342\323\373', 0),
-    ('I', 70000000L, '\004,\035\200', '\200\035,\004', 0),
-    ('I', 0x100000000L-70000000, '\373\323\342\200', '\200\342\323\373', 0),
+    ('I', 70000000, '\004,\035\200', '\200\035,\004', 0),
+    ('I', 0x100000000-70000000, '\373\323\342\200', '\200\342\323\373', 0),
     ('l', 70000000, '\004,\035\200', '\200\035,\004', 0),
     ('l', -70000000, '\373\323\342\200', '\200\342\323\373', 0),
-    ('L', 70000000L, '\004,\035\200', '\200\035,\004', 0),
-    ('L', 0x100000000L-70000000, '\373\323\342\200', '\200\342\323\373', 0),
+    ('L', 70000000, '\004,\035\200', '\200\035,\004', 0),
+    ('L', 0x100000000-70000000, '\373\323\342\200', '\200\342\323\373', 0),
     ('f', 2.0, '@\000\000\000', '\000\000\000@', 0),
     ('d', 2.0, '@\000\000\000\000\000\000\000',
                '\000\000\000\000\000\000\000@', 0),
@@ -203,9 +203,9 @@ def test_native_qQ():
             ('q', -1, '\xff' * bytes),
             ('q', 0, '\x00' * bytes),
             ('Q', 0, '\x00' * bytes),
-            ('q', 1L, '\x00' * (bytes-1) + '\x01'),
-            ('Q', (1L << (8*bytes))-1, '\xff' * bytes),
-            ('q', (1L << (8*bytes-1))-1, '\x7f' + '\xff' * (bytes - 1))):
+            ('q', 1, '\x00' * (bytes-1) + '\x01'),
+            ('Q', (1 << (8*bytes))-1, '\xff' * bytes),
+            ('q', (1 << (8*bytes-1))-1, '\x7f' + '\xff' * (bytes - 1))):
         got = struct.pack(format, input)
         native_expected = bigendian_to_native(expected)
         verify(got == native_expected,
@@ -243,9 +243,9 @@ class IntTester:
         self.bitsize = bytesize * 8
         self.signed_code, self.unsigned_code = formatpair
         self.unsigned_min = 0
-        self.unsigned_max = 2L**self.bitsize - 1
-        self.signed_min = -(2L**(self.bitsize-1))
-        self.signed_max = 2L**(self.bitsize-1) - 1
+        self.unsigned_max = 2**self.bitsize - 1
+        self.signed_min = -(2**(self.bitsize-1))
+        self.signed_max = 2**(self.bitsize-1) - 1
 
     def test_one(self, x, pack=struct.pack,
                           unpack=struct.unpack,
@@ -257,9 +257,9 @@ class IntTester:
         code = self.signed_code
         if self.signed_min <= x <= self.signed_max:
             # Try big-endian.
-            expected = long(x)
+            expected = int(x)
             if x < 0:
-                expected += 1L << self.bitsize
+                expected += 1 << self.bitsize
                 assert expected > 0
             expected = hex(expected)[2:] # chop "0x"
             if len(expected) & 1:
@@ -316,7 +316,7 @@ class IntTester:
         if self.unsigned_min <= x <= self.unsigned_max:
             # Try big-endian.
             format = ">" + code
-            expected = long(x)
+            expected = int(x)
             expected = hex(expected)[2:] # chop "0x"
             if len(expected) & 1:
                 expected = "0" + expected
@@ -372,11 +372,11 @@ class IntTester:
         # Create all interesting powers of 2.
         values = []
         for exp in range(self.bitsize + 3):
-            values.append(1L << exp)
+            values.append(1 << exp)
 
         # Add some random values.
         for i in range(self.bitsize):
-            val = 0L
+            val = 0
             for j in range(self.bytesize):
                 val = (val << 8) | randrange(256)
             values.append(val)
@@ -485,15 +485,15 @@ test_705836()
 def test_1229380():
     import sys
     for endian in ('', '>', '<'):
-        for cls in (int, long):
+        for cls in (int, int):
             for fmt in ('B', 'H', 'I', 'L'):
                 deprecated_err(struct.pack, endian + fmt, cls(-1))
 
             deprecated_err(struct.pack, endian + 'B', cls(300))
             deprecated_err(struct.pack, endian + 'H', cls(70000))
 
-        deprecated_err(struct.pack, endian + 'I', sys.maxint * 4L)
-        deprecated_err(struct.pack, endian + 'L', sys.maxint * 4L)
+        deprecated_err(struct.pack, endian + 'I', sys.maxint * 4)
+        deprecated_err(struct.pack, endian + 'L', sys.maxint * 4)
 
 if PY_STRUCT_RANGE_CHECKING:
     test_1229380()

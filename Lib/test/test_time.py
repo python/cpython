@@ -20,8 +20,8 @@ class TimeTestCase(unittest.TestCase):
     def test_conversions(self):
         self.assert_(time.ctime(self.t)
                      == time.asctime(time.localtime(self.t)))
-        self.assert_(long(time.mktime(time.localtime(self.t)))
-                     == long(self.t))
+        self.assert_(int(time.mktime(time.localtime(self.t)))
+                     == int(self.t))
 
     def test_sleep(self):
         time.sleep(1.2)

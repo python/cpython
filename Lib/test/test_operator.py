@@ -199,7 +199,7 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnlessRaises(TypeError, operator.isNumberType)
         self.failUnless(operator.isNumberType(8))
         self.failUnless(operator.isNumberType(8j))
-        self.failUnless(operator.isNumberType(8L))
+        self.failUnless(operator.isNumberType(8))
         self.failUnless(operator.isNumberType(8.3))
         self.failIf(operator.isNumberType(dir()))
 

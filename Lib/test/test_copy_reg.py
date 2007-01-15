@@ -96,7 +96,7 @@ class CopyRegTestCase(unittest.TestCase):
                 e.restore()
 
         # Ensure invalid codes blow up.
-        for code in -1, 0, 0x80000000L:
+        for code in -1, 0, 0x80000000:
             self.assertRaises(ValueError, copy_reg.add_extension,
                               mod, func, code)
 

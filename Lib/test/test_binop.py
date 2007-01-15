@@ -11,11 +11,11 @@ def gcd(a, b):
 
 def isint(x):
     """Test whether an object is an instance of int or long."""
-    return isinstance(x, int) or isinstance(x, long)
+    return isinstance(x, int) or isinstance(x, int)
 
 def isnum(x):
     """Test whether an object is an instance of a built-in numeric type."""
-    for T in int, long, float, complex:
+    for T in int, int, float, complex:
         if isinstance(x, T):
             return 1
     return 0
@@ -30,7 +30,7 @@ class Rat(object):
 
     __slots__ = ['_Rat__num', '_Rat__den']
 
-    def __init__(self, num=0L, den=1L):
+    def __init__(self, num=0, den=1):
         """Constructor: Rat([num[, den]]).
 
         The arguments must be ints or longs, and default to (0, 1)."""
@@ -42,8 +42,8 @@ class Rat(object):
         if den == 0:
             raise ZeroDivisionError, "zero denominator"
         g = gcd(den, num)
-        self.__num = long(num//g)
-        self.__den = long(den//g)
+        self.__num = int(num//g)
+        self.__den = int(den//g)
 
     def _get_num(self):
         """Accessor function for read-only 'num' attribute of Rat."""
@@ -80,7 +80,7 @@ class Rat(object):
     def __long__(self):
         """Convert a Rat to an long; self.den must be 1."""
         if self.__den == 1:
-            return long(self.__num)
+            return int(self.__num)
         raise ValueError, "can't convert %s to long" % repr(self)
 
     def __add__(self, other):
@@ -225,7 +225,7 @@ class RatTestCase(unittest.TestCase):
         a = Rat(10, 15)
         self.assertEqual(a.num, 2)
         self.assertEqual(a.den, 3)
-        a = Rat(10L, 15L)
+        a = Rat(10, 15)
         self.assertEqual(a.num, 2)
         self.assertEqual(a.den, 3)
         a = Rat(10, -15)

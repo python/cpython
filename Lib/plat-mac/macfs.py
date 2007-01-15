@@ -28,24 +28,24 @@ smAllScripts = -3
 # Find the epoch conversion for file dates in a way that works on OS9 and OSX
 import time
 if time.gmtime(0)[0] == 1970:
-    _EPOCHCONVERT = -((1970-1904)*365 + 17) * (24*60*60) + 0x100000000L
+    _EPOCHCONVERT = -((1970-1904)*365 + 17) * (24*60*60) + 0x100000000
     def _utc2time(utc):
         t = utc[1] + _EPOCHCONVERT
         return int(t)
     def _time2utc(t):
         t = int(t) - _EPOCHCONVERT
         if t < -0x7fffffff:
-            t = t + 0x10000000L
+            t = t + 0x10000000
         return (0, int(t), 0)
 else:
     def _utc2time(utc):
         t = utc[1]
         if t < 0:
-            t = t + 0x100000000L
+            t = t + 0x100000000
         return t
     def _time2utc(t):
         if t > 0x7fffffff:
-            t = t - 0x100000000L
+            t = t - 0x100000000
         return (0, int(t), 0)
 
 # The old name of the error object:

@@ -191,7 +191,7 @@ def dict_constructor():
     vereq(d, dict([("two", 2)], one=1))
     vereq(d, dict([("one", 100), ("two", 200)], **d))
     verify(d is not dict(**d))
-    for badarg in 0, 0L, 0j, "0", [0], (0,):
+    for badarg in 0, 0, 0j, "0", [0], (0,):
         try:
             dict(badarg)
         except TypeError:
@@ -264,7 +264,7 @@ def test_dir():
     del junk
 
     # Just make sure these don't blow up!
-    for arg in 2, 2L, 2j, 2e0, [2], "2", u"2", (2,), {2:2}, type, test_dir:
+    for arg in 2, 2, 2j, 2e0, [2], "2", u"2", (2,), {2:2}, type, test_dir:
         dir(arg)
 
     # Test dir on custom classes. Since these have object as a
@@ -385,7 +385,6 @@ unops = {
     'abs': 'abs',
     'invert': '~',
     'int': 'int',
-    'long': 'long',
     'float': 'float',
     'oct': 'oct',
     'hex': 'hex',
@@ -423,7 +422,7 @@ def ints():
     class C(int):
         def __add__(self, other):
             return NotImplemented
-    vereq(C(5L), 5)
+    vereq(C(5), 5)
     try:
         C() + ""
     except TypeError:
@@ -433,7 +432,7 @@ def ints():
 
 def longs():
     if verbose: print "Testing long operations..."
-    numops(100L, 3L)
+    numops(100, 3)
 
 def floats():
     if verbose: print "Testing float operations..."
@@ -1263,10 +1262,10 @@ def dynamics():
     vereq(I(3)*I(2), 6)
 
     # Test handling of long*seq and seq*long
-    class L(long):
+    class L(int):
         pass
-    vereq("a"*L(2L), "aa")
-    vereq(L(2L)*"a", "aa")
+    vereq("a"*L(2), "aa")
+    vereq(L(2)*"a", "aa")
     vereq(2*L(3), 6)
     vereq(L(3)*2, 6)
     vereq(L(3)*L(2), 6)
@@ -2041,7 +2040,7 @@ def inherits():
     verify((hexint(0) << 12).__class__ is int)
     verify((hexint(0) >> 12).__class__ is int)
 
-    class octlong(long):
+    class octlong(int):
         __slots__ = []
         def __str__(self):
             s = oct(self)
@@ -2056,39 +2055,39 @@ def inherits():
     # because the example uses a short int left argument.)
     vereq(str(5 + octlong(3000)), "05675")
     a = octlong(12345)
-    vereq(a, 12345L)
-    vereq(long(a), 12345L)
-    vereq(hash(a), hash(12345L))
-    verify(long(a).__class__ is long)
-    verify((+a).__class__ is long)
-    verify((-a).__class__ is long)
-    verify((-octlong(0)).__class__ is long)
-    verify((a >> 0).__class__ is long)
-    verify((a << 0).__class__ is long)
-    verify((a - 0).__class__ is long)
-    verify((a * 1).__class__ is long)
-    verify((a ** 1).__class__ is long)
-    verify((a // 1).__class__ is long)
-    verify((1 * a).__class__ is long)
-    verify((a | 0).__class__ is long)
-    verify((a ^ 0).__class__ is long)
-    verify((a & -1L).__class__ is long)
-    verify((octlong(0) << 12).__class__ is long)
-    verify((octlong(0) >> 12).__class__ is long)
-    verify(abs(octlong(0)).__class__ is long)
+    vereq(a, 12345)
+    vereq(int(a), 12345)
+    vereq(hash(a), hash(12345))
+    verify(int(a).__class__ is int)
+    verify((+a).__class__ is int)
+    verify((-a).__class__ is int)
+    verify((-octlong(0)).__class__ is int)
+    verify((a >> 0).__class__ is int)
+    verify((a << 0).__class__ is int)
+    verify((a - 0).__class__ is int)
+    verify((a * 1).__class__ is int)
+    verify((a ** 1).__class__ is int)
+    verify((a // 1).__class__ is int)
+    verify((1 * a).__class__ is int)
+    verify((a | 0).__class__ is int)
+    verify((a ^ 0).__class__ is int)
+    verify((a & -1).__class__ is int)
+    verify((octlong(0) << 12).__class__ is int)
+    verify((octlong(0) >> 12).__class__ is int)
+    verify(abs(octlong(0)).__class__ is int)
 
     # Because octlong overrides __add__, we can't check the absence of +0
     # optimizations using octlong.
-    class longclone(long):
+    class longclone(int):
         pass
     a = longclone(1)
-    verify((a + 0).__class__ is long)
-    verify((0 + a).__class__ is long)
+    verify((a + 0).__class__ is int)
+    verify((0 + a).__class__ is int)
 
     # Check that negative clones don't segfault
     a = longclone(-1)
     vereq(a.__dict__, {})
-    vereq(long(a), -1)  # verify PyNumber_Long() copies the sign bit
+    vereq(int(a), -1)  # verify PyNumber_Long() copies the sign bit
 
     class precfloat(float):
         __slots__ = ['prec']
@@ -2366,7 +2365,7 @@ def keywords():
         print "Testing keyword args to basic type constructors ..."
     vereq(int(x=1), 1)
     vereq(float(x=2), 2.0)
-    vereq(long(x=3), 3L)
+    vereq(int(x=3), 3)
     vereq(complex(imag=42, real=666), complex(666, 42))
     vereq(str(object=500), '500')
     vereq(unicode(string='abc', errors='strict'), u'abc')
@@ -2374,7 +2373,7 @@ def keywords():
     vereq(list(sequence=(0, 1, 2)), range(3))
     # note: as of Python 2.3, dict() no longer has an "items" keyword arg
 
-    for constructor in (int, float, long, complex, str, unicode,
+    for constructor in (int, float, int, complex, str, unicode,
                         tuple, list, file):
         try:
             constructor(bogus_keyword_arg=1)
@@ -2472,37 +2471,37 @@ def classic_comparisons():
             def __eq__(self, other):
                 if isinstance(other, C):
                     return self.value == other.value
-                if isinstance(other, int) or isinstance(other, long):
+                if isinstance(other, int) or isinstance(other, int):
                     return self.value == other
                 return NotImplemented
             def __ne__(self, other):
                 if isinstance(other, C):
                     return self.value != other.value
-                if isinstance(other, int) or isinstance(other, long):
+                if isinstance(other, int) or isinstance(other, int):
                     return self.value != other
                 return NotImplemented
             def __lt__(self, other):
                 if isinstance(other, C):
                     return self.value < other.value
-                if isinstance(other, int) or isinstance(other, long):
+                if isinstance(other, int) or isinstance(other, int):
                     return self.value < other
                 return NotImplemented
             def __le__(self, other):
                 if isinstance(other, C):
                     return self.value <= other.value
-                if isinstance(other, int) or isinstance(other, long):
+                if isinstance(other, int) or isinstance(other, int):
                     return self.value <= other
                 return NotImplemented
             def __gt__(self, other):
                 if isinstance(other, C):
                     return self.value > other.value
-                if isinstance(other, int) or isinstance(other, long):
+                if isinstance(other, int) or isinstance(other, int):
                     return self.value > other
                 return NotImplemented
             def __ge__(self, other):
                 if isinstance(other, C):
                     return self.value >= other.value
-                if isinstance(other, int) or isinstance(other, long):
+                if isinstance(other, int) or isinstance(other, int):
                     return self.value >= other
                 return NotImplemented
 
@@ -2550,37 +2549,37 @@ def rich_comparisons():
             def __eq__(self, other):
                 if isinstance(other, C):
                     return self.value == other.value
-                if isinstance(other, int) or isinstance(other, long):
+                if isinstance(other, int) or isinstance(other, int):
                     return self.value == other
                 return NotImplemented
             def __ne__(self, other):
                 if isinstance(other, C):
                     return self.value != other.value
-                if isinstance(other, int) or isinstance(other, long):
+                if isinstance(other, int) or isinstance(other, int):
                     return self.value != other
                 return NotImplemented
             def __lt__(self, other):
                 if isinstance(other, C):
                     return self.value < other.value
-                if isinstance(other, int) or isinstance(other, long):
+                if isinstance(other, int) or isinstance(other, int):
                     return self.value < other
                 return NotImplemented
             def __le__(self, other):
                 if isinstance(other, C):
                     return self.value <= other.value
-                if isinstance(other, int) or isinstance(other, long):
+                if isinstance(other, int) or isinstance(other, int):
                     return self.value <= other
                 return NotImplemented
             def __gt__(self, other):
                 if isinstance(other, C):
                     return self.value > other.value
-                if isinstance(other, int) or isinstance(other, long):
+                if isinstance(other, int) or isinstance(other, int):
                     return self.value > other
                 return NotImplemented
             def __ge__(self, other):
                 if isinstance(other, C):
                     return self.value >= other.value
-                if isinstance(other, int) or isinstance(other, long):
+                if isinstance(other, int) or isinstance(other, int):
                     return self.value >= other
                 return NotImplemented
         c1 = C(1)
@@ -3250,11 +3249,11 @@ def imulbug():
     y *= 2
     vereq(y, (x, 2))
     y = x
-    y *= 3L
-    vereq(y, (x, 3L))
+    y *= 3
+    vereq(y, (x, 3))
     y = x
-    y *= 1L<<100
-    vereq(y, (x, 1L<<100))
+    y *= 1<<100
+    vereq(y, (x, 1<<100))
     y = x
     y *= None
     vereq(y, (x, None))
@@ -3444,7 +3443,7 @@ def do_this_first():
         def __pow__(self, *args):
             pass
     try:
-        pow(0L, UserLong(), 0L)
+        pow(0, UserLong(), 0)
     except:
         pass
 
@@ -3956,7 +3955,7 @@ def notimplemented():
         else:
             raise TestFailed("no TypeError from %r" % (expr,))
 
-    N1 = sys.maxint + 1L    # might trigger OverflowErrors instead of TypeErrors
+    N1 = sys.maxint + 1    # might trigger OverflowErrors instead of TypeErrors
     N2 = sys.maxint         # if sizeof(int) < sizeof(long), might trigger
                             #   ValueErrors instead of TypeErrors
     for metaclass in [type, types.ClassType]:

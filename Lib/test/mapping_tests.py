@@ -526,7 +526,7 @@ class TestMappingProtocol(BasicTestMappingProtocol):
 
         # verify longs/ints get same value when key > 32 bits (for 64-bit archs)
         # see SF bug #689659
-        x = 4503599627370496L
+        x = 4503599627370496
         y = 4503599627370496
         h = self._full_mapping({x: 'anything', y: 'something else'})
         self.assertEqual(h[x], h[y])
@@ -626,7 +626,7 @@ class TestHashMappingProtocol(TestMappingProtocol):
     def test_eq(self):
         self.assertEqual(self._empty_mapping(), self._empty_mapping())
         self.assertEqual(self._full_mapping({1: 2}),
-                         self._full_mapping({1L: 2L}))
+                         self._full_mapping({1: 2}))
 
         class Exc(Exception): pass
 

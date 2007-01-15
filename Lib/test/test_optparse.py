@@ -1598,7 +1598,7 @@ class TestParseNumber(BaseTest):
     def setUp(self):
         self.parser = InterceptingOptionParser()
         self.parser.add_option("-n", type=int)
-        self.parser.add_option("-l", type=long)
+        self.parser.add_option("-l", type=int)
 
     def test_parse_num_fail(self):
         self.assertRaises(
@@ -1606,17 +1606,17 @@ class TestParseNumber(BaseTest):
             ValueError,
             re.compile(r"invalid literal for int().*: '?'?"))
         self.assertRaises(
-            _parse_num, ("0xOoops", long), {},
+            _parse_num, ("0xOoops", int), {},
             ValueError,
             re.compile(r"invalid literal for int().*: '?0xOoops'?"))
 
     def test_parse_num_ok(self):
         self.assertEqual(_parse_num("0", int), 0)
         self.assertEqual(_parse_num("0x10", int), 16)
-        self.assertEqual(_parse_num("0XA", long), 10L)
-        self.assertEqual(_parse_num("010", long), 8L)
+        self.assertEqual(_parse_num("0XA", int), 10)
+        self.assertEqual(_parse_num("010", int), 8)
         self.assertEqual(_parse_num("0b11", int), 3)
-        self.assertEqual(_parse_num("0b", long), 0L)
+        self.assertEqual(_parse_num("0b", int), 0)
 
     def test_numeric_options(self):
         self.assertParseOK(["-n", "42", "-l", "0x20"],

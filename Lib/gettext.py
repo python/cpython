@@ -256,8 +256,8 @@ class NullTranslations:
 
 class GNUTranslations(NullTranslations):
     # Magic number of .mo files
-    LE_MAGIC = 0x950412deL
-    BE_MAGIC = 0xde120495L
+    LE_MAGIC = 0x950412de
+    BE_MAGIC = 0xde120495
 
     def _parse(self, fp):
         """Override this method to support alternative .mo formats."""

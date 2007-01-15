@@ -2126,7 +2126,6 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("property",		&PyProperty_Type);
 	SETBUILTIN("int",		&PyLong_Type);
 	SETBUILTIN("list",		&PyList_Type);
-	SETBUILTIN("long",		&PyLong_Type);
 	SETBUILTIN("object",		&PyBaseObject_Type);
 	SETBUILTIN("reversed",		&PyReversed_Type);
 	SETBUILTIN("set",		&PySet_Type);

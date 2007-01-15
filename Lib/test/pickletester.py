@@ -349,7 +349,7 @@ def create_data():
     c = C()
     c.foo = 1
     c.bar = 2
-    x = [0, 1L, 2.0, 3.0+0j]
+    x = [0, 1, 2.0, 3.0+0j]
     # Append some integer test cases at cPickle.c's internal size
     # cutoffs.
     uint1max = 0xff
@@ -504,7 +504,7 @@ class AbstractPickleTests(unittest.TestCase):
                 n = n >> 1
 
     def test_maxint64(self):
-        maxint64 = (1L << 63) - 1
+        maxint64 = (1 << 63) - 1
         data = 'I' + str(maxint64) + '\n.'
         got = self.loads(data)
         self.assertEqual(got, maxint64)
@@ -517,7 +517,7 @@ class AbstractPickleTests(unittest.TestCase):
         for proto in protocols:
             # 256 bytes is where LONG4 begins.
             for nbits in 1, 8, 8*254, 8*255, 8*256, 8*257:
-                nbase = 1L << nbits
+                nbase = 1 << nbits
                 for npos in nbase-1, nbase, nbase+1:
                     for n in npos, -npos:
                         pickle = self.dumps(n, proto)
@@ -525,7 +525,7 @@ class AbstractPickleTests(unittest.TestCase):
                         self.assertEqual(n, got)
         # Try a monster.  This is quadratic-time in protos 0 & 1, so don't
         # bother with those.
-        nbase = long("deadbeeffeedface", 16)
+        nbase = int("deadbeeffeedface", 16)
         nbase += nbase << 1000000
         for n in nbase, -nbase:
             p = self.dumps(n, 2)
@@ -592,7 +592,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.fail("expected bad protocol number to raise ValueError")
 
     def test_long1(self):
-        x = 12345678910111213141516178920L
+        x = 12345678910111213141516178920
         for proto in protocols:
             s = self.dumps(x, proto)
             y = self.loads(s)
@@ -600,7 +600,7 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(opcode_in_pickle(pickle.LONG1, s), proto >= 2)
 
     def test_long4(self):
-        x = 12345678910111213141516178920L << (256*8)
+        x = 12345678910111213141516178920 << (256*8)
         for proto in protocols:
             s = self.dumps(x, proto)
             y = self.loads(s)
@@ -864,8 +864,8 @@ class REX_three(object):
 class MyInt(int):
     sample = 1
 
-class MyLong(long):
-    sample = 1L
+class MyLong(int):
+    sample = 1
 
 class MyFloat(float):
     sample = 1.0

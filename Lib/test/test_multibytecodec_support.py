@@ -98,7 +98,7 @@ class TestBase:
 
     def test_callback_long_index(self):
         def myreplace(exc):
-            return (u'x', long(exc.end))
+            return (u'x', int(exc.end))
         codecs.register_error("test.cjktest", myreplace)
         self.assertEqual(self.encode(u'abcd' + self.unmappedunicode + u'efgh',
                                      'test.cjktest'), ('abcdxefgh', 9))
