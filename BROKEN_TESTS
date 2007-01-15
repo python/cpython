@@ -1,4 +1,2 @@
 test_pickletools -- Test probably needs to be fixed
-test_repr -- test_numbers() fails
-test_socket -- ntol problems, see SF patch 1635058
 test_sqlite -- CheckLargeInt (sqlite3.test.types.SqliteTypeTests, sqlite3.test.types.DeclTypesTests)
