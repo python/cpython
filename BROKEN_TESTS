@@ -1,1 +1,0 @@
-test_sqlite -- CheckLargeInt (sqlite3.test.types.SqliteTypeTests, sqlite3.test.types.DeclTypesTests)
