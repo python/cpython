@@ -2000,13 +2000,13 @@ _dis_test = r"""
     0: (    MARK
     1: l        LIST       (MARK at 0)
     2: p    PUT        0
-    5: I    INT        1
+    5: L    LONG       1
     8: a    APPEND
-    9: I    INT        2
+    9: L    LONG       2
    12: a    APPEND
    13: (    MARK
-   14: I        INT        3
-   17: I        INT        4
+   14: L        LONG       3
+   17: L        LONG       4
    20: t        TUPLE      (MARK at 13)
    21: p    PUT        1
    24: a    APPEND
@@ -2079,7 +2079,7 @@ highest protocol among opcodes = 0
    93: p    PUT        6
    96: S    STRING     'value'
   105: p    PUT        7
-  108: I    INT        42
+  108: L    LONG       42
   112: s    SETITEM
   113: b    BUILD
   114: a    APPEND
