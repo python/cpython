@@ -92,7 +92,7 @@ class Repr:
             s = s[:i] + '...' + s[len(s)-j:]
         return s
 
-    def repr_long(self, x, level):
+    def repr_int(self, x, level):
         s = __builtin__.repr(x) # XXX Hope this isn't too slow...
         if len(s) > self.maxlong:
             i = max(0, (self.maxlong-3)//2)
