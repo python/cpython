@@ -1024,7 +1024,7 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *iterable = NULL, *result;
 
-	if (!_PyArg_NoKeywords("frozenset()", kwds))
+	if (type == &PyFrozenSet_Type && !_PyArg_NoKeywords("frozenset()", kwds))
 		return NULL;
 
 	if (!PyArg_UnpackTuple(args, type->tp_name, 0, 1, &iterable))
@@ -1068,7 +1068,7 @@ PySet_Fini(void)
 static PyObject *
 set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	if (!_PyArg_NoKeywords("set()", kwds))
+	if (type == &PySet_Type && !_PyArg_NoKeywords("set()", kwds))
 		return NULL;
 	
 	return make_new_set(type, NULL);

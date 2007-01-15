@@ -32,11 +32,31 @@ if sys.platform == "win32" and sizeof(c_void_p) == sizeof(c_int):
             # or wrong calling convention
             self.assertRaises(ValueError, IsWindow, None)
 
+if sys.platform == "win32":
+    class FunctionCallTestCase(unittest.TestCase):
+
         if is_resource_enabled("SEH"):
             def test_SEH(self):
-                # Call functions with invalid arguments, and make sure that access violations
-                # are trapped and raise an exception.
+                # Call functions with invalid arguments, and make sure
+                # that access violations are trapped and raise an
+                # exception.
                 self.assertRaises(WindowsError, windll.kernel32.GetModuleHandleA, 32)
+
+        def test_noargs(self):
+            # This is a special case on win32 x64
+            windll.user32.GetDesktopWindow()
+
+    class TestWintypes(unittest.TestCase):
+        def test_HWND(self):
+            from ctypes import wintypes
+            self.failUnlessEqual(sizeof(wintypes.HWND), sizeof(c_void_p))
+
+        def test_PARAM(self):
+            from ctypes import wintypes
+            self.failUnlessEqual(sizeof(wintypes.WPARAM),
+                                 sizeof(c_void_p))
+            self.failUnlessEqual(sizeof(wintypes.LPARAM),
+                                 sizeof(c_void_p))
 
 class Structures(unittest.TestCase):
 

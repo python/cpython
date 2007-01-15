@@ -500,7 +500,7 @@ def list2cmdline(seq):
         if result:
             result.append(' ')
 
-        needquote = (" " in arg) or ("\t" in arg)
+        needquote = (" " in arg) or ("\t" in arg) or arg == ""
         if needquote:
             result.append('"')
 

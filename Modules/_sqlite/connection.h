@@ -66,7 +66,7 @@ typedef struct
     /* thread identification of the thread the connection was created in */
     long thread_ident;
 
-    Cache* statement_cache;
+    pysqlite_Cache* statement_cache;
 
     /* A list of weak references to statements used within this connection */
     PyObject* statements;
@@ -106,24 +106,23 @@ typedef struct
     PyObject* InternalError;
     PyObject* ProgrammingError;
     PyObject* NotSupportedError;
-} Connection;
+} pysqlite_Connection;
 
-extern PyTypeObject ConnectionType;
+extern PyTypeObject pysqlite_ConnectionType;
 
-PyObject* connection_alloc(PyTypeObject* type, int aware);
-void connection_dealloc(Connection* self);
-PyObject* connection_cursor(Connection* self, PyObject* args, PyObject* kwargs);
-PyObject* connection_close(Connection* self, PyObject* args);
-PyObject* _connection_begin(Connection* self);
-PyObject* connection_begin(Connection* self, PyObject* args);
-PyObject* connection_commit(Connection* self, PyObject* args);
-PyObject* connection_rollback(Connection* self, PyObject* args);
-PyObject* connection_new(PyTypeObject* type, PyObject* args, PyObject* kw);
-int connection_init(Connection* self, PyObject* args, PyObject* kwargs);
+PyObject* pysqlite_connection_alloc(PyTypeObject* type, int aware);
+void pysqlite_connection_dealloc(pysqlite_Connection* self);
+PyObject* pysqlite_connection_cursor(pysqlite_Connection* self, PyObject* args, PyObject* kwargs);
+PyObject* pysqlite_connection_close(pysqlite_Connection* self, PyObject* args);
+PyObject* _pysqlite_connection_begin(pysqlite_Connection* self);
+PyObject* pysqlite_connection_commit(pysqlite_Connection* self, PyObject* args);
+PyObject* pysqlite_connection_rollback(pysqlite_Connection* self, PyObject* args);
+PyObject* pysqlite_connection_new(PyTypeObject* type, PyObject* args, PyObject* kw);
+int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject* kwargs);
 
-int check_thread(Connection* self);
-int check_connection(Connection* con);
+int pysqlite_check_thread(pysqlite_Connection* self);
+int pysqlite_check_connection(pysqlite_Connection* con);
 
-int connection_setup_types(void);
+int pysqlite_connection_setup_types(void);
 
 #endif

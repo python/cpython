@@ -34,8 +34,14 @@ LPCOLESTR = LPOLESTR = OLESTR = c_wchar_p
 LPCWSTR = LPWSTR = c_wchar_p
 LPCSTR = LPSTR = c_char_p
 
-WPARAM = c_uint
-LPARAM = c_long
+# WPARAM is defined as UINT_PTR (unsigned type)
+# LPARAM is defined as LONG_PTR (signed type)
+if sizeof(c_long) == sizeof(c_void_p):
+    WPARAM = c_ulong
+    LPARAM = c_long
+elif sizeof(c_longlong) == sizeof(c_void_p):
+    WPARAM = c_ulonglong
+    LPARAM = c_longlong
 
 ATOM = WORD
 LANGID = WORD
@@ -48,7 +54,7 @@ LCID = DWORD
 
 ################################################################
 # HANDLE types
-HANDLE = c_ulong # in the header files: void *
+HANDLE = c_void_p # in the header files: void *
 
 HACCEL = HANDLE
 HBITMAP = HANDLE

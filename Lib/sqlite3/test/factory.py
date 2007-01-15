@@ -91,7 +91,7 @@ class RowFactoryTests(unittest.TestCase):
                                    list),
                         "row is not instance of list")
 
-    def CheckSqliteRow(self):
+    def CheckSqliteRowIndex(self):
         self.con.row_factory = sqlite.Row
         row = self.con.execute("select 1 as a, 2 as b").fetchone()
         self.failUnless(isinstance(row,
@@ -109,6 +109,27 @@ class RowFactoryTests(unittest.TestCase):
         col1, col2 = row[0], row[1]
         self.failUnless(col1 == 1, "by index: wrong result for column 0")
         self.failUnless(col2 == 2, "by index: wrong result for column 1")
+
+    def CheckSqliteRowIter(self):
+        """Checks if the row object is iterable"""
+        self.con.row_factory = sqlite.Row
+        row = self.con.execute("select 1 as a, 2 as b").fetchone()
+        for col in row:
+            pass
+
+    def CheckSqliteRowAsTuple(self):
+        """Checks if the row object can be converted to a tuple"""
+        self.con.row_factory = sqlite.Row
+        row = self.con.execute("select 1 as a, 2 as b").fetchone()
+        t = tuple(row)
+
+    def CheckSqliteRowAsDict(self):
+        """Checks if the row object can be correctly converted to a dictionary"""
+        self.con.row_factory = sqlite.Row
+        row = self.con.execute("select 1 as a, 2 as b").fetchone()
+        d = dict(row)
+        self.failUnlessEqual(d["a"], row["a"])
+        self.failUnlessEqual(d["b"], row["b"])
 
     def tearDown(self):
         self.con.close()
