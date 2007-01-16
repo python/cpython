@@ -109,6 +109,8 @@ Core and builtins
 Library
 -------
 
+- Bug #494589: make ntpath.expandvars behave according to its docstring.
+
 - Changed platform module API python_version_tuple() to actually
   return a tuple (it used to return a list)
 
