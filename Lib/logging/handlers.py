@@ -1,4 +1,4 @@
-# Copyright 2001-2005 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2007 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -22,7 +22,7 @@ Apache's log4j system.
 Should work under Python versions >= 1.5.2, except that source line
 information is not available unless 'sys._getframe()' is.
 
-Copyright (C) 2001-2004 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2007 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -131,10 +131,8 @@ class RotatingFileHandler(BaseRotatingHandler):
                 os.remove(dfn)
             os.rename(self.baseFilename, dfn)
             #print "%s -> %s" % (self.baseFilename, dfn)
-        if self.encoding:
-            self.stream = codecs.open(self.baseFilename, 'w', self.encoding)
-        else:
-            self.stream = open(self.baseFilename, 'w')
+        self.mode = 'w'
+        self.stream = self._open()
 
     def shouldRollover(self, record):
         """
@@ -277,10 +275,8 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 s.sort()
                 os.remove(s[0])
         #print "%s -> %s" % (self.baseFilename, dfn)
-        if self.encoding:
-            self.stream = codecs.open(self.baseFilename, 'w', self.encoding)
-        else:
-            self.stream = open(self.baseFilename, 'w')
+        self.mode = 'w'
+        self.stream = self._open()
         self.rolloverAt = self.rolloverAt + self.interval
 
 class WatchedFileHandler(logging.FileHandler):
