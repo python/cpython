@@ -403,6 +403,9 @@ Tools
 Documentation
 -------------
 
+- Bug #1629125: fix wrong data type (int -> Py_ssize_t) in PyDict_Next
+  docs.
+
 - Bug #1565919: document set types in the Language Reference.
 
 - Bug #1546052: clarify that PyString_FromString(AndSize) copies the
