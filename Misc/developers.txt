@@ -17,6 +17,9 @@ the format to accommodate documentation needs as they arise.
 Permissions History
 -------------------
 
+- Calvin Spealman was given SVN access on 16 Jan 2007 by NCN
+  for updating the python-dev summaries.
+
 - Josiah Carlson (SF name "josiahcarlson") added to the SourceForge Python
   project 06 Jan 2007, by NCN, as a tracker tech.  He will maintain asyncore.
 
