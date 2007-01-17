@@ -68,22 +68,25 @@ EXPORT(void) _testfunc_v(int a, int b, int *presult)
 
 EXPORT(int) _testfunc_i_bhilfd(signed char b, short h, int i, long l, float f, double d)
 {
-//	printf("_testfunc_i_bhilfd got %d %d %d %ld %f %f\n",
-//	       b, h, i, l, f, d);
+/*	printf("_testfunc_i_bhilfd got %d %d %d %ld %f %f\n",
+	       b, h, i, l, f, d);
+*/
 	return (int)(b + h + i + l + f + d);
 }
 
 EXPORT(float) _testfunc_f_bhilfd(signed char b, short h, int i, long l, float f, double d)
 {
-//	printf("_testfunc_f_bhilfd got %d %d %d %ld %f %f\n",
-//	       b, h, i, l, f, d);
+/*	printf("_testfunc_f_bhilfd got %d %d %d %ld %f %f\n",
+	       b, h, i, l, f, d);
+*/
 	return (float)(b + h + i + l + f + d);
 }
 
 EXPORT(double) _testfunc_d_bhilfd(signed char b, short h, int i, long l, float f, double d)
 {
-//	printf("_testfunc_d_bhilfd got %d %d %d %ld %f %f\n",
-//	       b, h, i, l, f, d);
+/*	printf("_testfunc_d_bhilfd got %d %d %d %ld %f %f\n",
+	       b, h, i, l, f, d);
+*/
 	return (double)(b + h + i + l + f + d);
 }
 
@@ -378,8 +381,9 @@ DL_EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
 }
 
 PyMethodDef module_methods[] = {
-//	{"get_last_tf_arg_s", get_last_tf_arg_s, METH_NOARGS},
-//	{"get_last_tf_arg_u", get_last_tf_arg_u, METH_NOARGS},
+/*	{"get_last_tf_arg_s", get_last_tf_arg_s, METH_NOARGS},
+	{"get_last_tf_arg_u", get_last_tf_arg_u, METH_NOARGS},
+*/
 	{"func_si", py_func_si, METH_VARARGS},
 	{"func", py_func, METH_NOARGS},
 	{ NULL, NULL, 0, NULL},
