@@ -25,22 +25,29 @@ Maildir, mbox, MH, Babyl, and MMDF.
 A mailbox, which may be inspected and modified.
 \end{classdesc*}
 
+The \class{Mailbox} class defines an interface and
+is not intended to be instantiated.  Instead, format-specific
+subclasses should inherit from \class{Mailbox} and your code
+should instantiate a particular subclass.
+
 The \class{Mailbox} interface is dictionary-like, with small keys
-corresponding to messages. Keys are issued by the \class{Mailbox} instance
-with which they will be used and are only meaningful to that \class{Mailbox}
-instance. A key continues to identify a message even if the corresponding
-message is modified, such as by replacing it with another message. Messages may
-be added to a \class{Mailbox} instance using the set-like method
-\method{add()} and removed using a \code{del} statement or the set-like methods
-\method{remove()} and \method{discard()}.
+corresponding to messages. Keys are issued by the \class{Mailbox}
+instance with which they will be used and are only meaningful to that
+\class{Mailbox} instance. A key continues to identify a message even
+if the corresponding message is modified, such as by replacing it with
+another message.
+
+Messages may be added to a \class{Mailbox} instance using the set-like
+method \method{add()} and removed using a \code{del} statement or the
+set-like methods \method{remove()} and \method{discard()}.
 
 \class{Mailbox} interface semantics differ from dictionary semantics in some
-noteworthy ways. Each time a message is requested, a new representation
-(typically a \class{Message} instance) is generated, based upon the current
-state of the mailbox. Similarly, when a message is added to a \class{Mailbox}
-instance, the provided message representation's contents are copied. In neither
-case is a reference to the message representation kept by the \class{Mailbox}
-instance.
+noteworthy ways. Each time a message is requested, a new
+representation (typically a \class{Message} instance) is generated
+based upon the current state of the mailbox. Similarly, when a message
+is added to a \class{Mailbox} instance, the provided message
+representation's contents are copied. In neither case is a reference
+to the message representation kept by the \class{Mailbox} instance.
 
 The default \class{Mailbox} iterator iterates over message representations, not
 keys as the default dictionary iterator does. Moreover, modification of a
@@ -51,9 +58,14 @@ skipped, though using a key from an iterator may result in a
 \exception{KeyError} exception if the corresponding message is subsequently
 removed.
 
-\class{Mailbox} itself is intended to define an interface and to be inherited
-from by format-specific subclasses but is not intended to be instantiated.
-Instead, you should instantiate a subclass.
+Be very cautious when modifying mailboxes that might also be changed
+by some other process.  The safest mailbox format to use for such
+tasks is Maildir; try to avoid using single-file formats such as mbox
+for concurrent writing.  If you're modifying a mailbox, no matter what
+the format, you must lock it by calling the \method{lock()} and
+\method{unlock()} methods before making any changes.  Failing to lock
+the mailbox runs the risk of losing data if some other process makes
+changes to the mailbox while your Python code is running.
 
 \class{Mailbox} instances have the following methods:
 
@@ -202,15 +214,16 @@ general it is incorrect for \var{arg} to be a \class{Mailbox} instance.
 
 \begin{methoddesc}{flush}{}
 Write any pending changes to the filesystem. For some \class{Mailbox}
-subclasses, changes are always written immediately and this method does
-nothing.
+subclasses, changes are always written immediately and \method{flush()} does
+nothing, but you should still make a habit of calling this method.
 \end{methoddesc}
 
 \begin{methoddesc}{lock}{}
 Acquire an exclusive advisory lock on the mailbox so that other processes know
 not to modify it. An \exception{ExternalClashError} is raised if the lock is
 not available. The particular locking mechanisms used depend upon the mailbox
-format.
+format.  You should \emph{always} lock the mailbox before making any 
+modifications to its contents.
 \end{methoddesc}
 
 \begin{methoddesc}{unlock}{}
@@ -1373,36 +1386,55 @@ of the format-specific information that can be converted:
 \begin{verbatim}
 import mailbox
 destination = mailbox.MH('~/Mail')
+destination.lock()
 for message in mailbox.Babyl('~/RMAIL'):
     destination.add(MHMessage(message))
+destination.flush()
+destination.unlock()
 \end{verbatim}
 
-An example of sorting mail from numerous mailing lists, being careful to avoid
-mail corruption due to concurrent modification by other programs, mail loss due
-to interruption of the program, or premature termination due to malformed
-messages in the mailbox:
+This example sorts mail from several mailing lists into different
+mailboxes, being careful to avoid mail corruption due to concurrent
+modification by other programs, mail loss due to interruption of the
+program, or premature termination due to malformed messages in the
+mailbox:
 
 \begin{verbatim}
 import mailbox
 import email.Errors
+
 list_names = ('python-list', 'python-dev', 'python-bugs')
+
 boxes = dict((name, mailbox.mbox('~/email/%s' % name)) for name in list_names)
-inbox = mailbox.Maildir('~/Maildir', None)
+inbox = mailbox.Maildir('~/Maildir', factory=None)
+
 for key in inbox.iterkeys():
     try:
         message = inbox[key]
     except email.Errors.MessageParseError:
         continue                # The message is malformed. Just leave it.
+
     for name in list_names:
         list_id = message['list-id']
         if list_id and name in list_id:
+            # Get mailbox to use
             box = boxes[name]
+
+            # Write copy to disk before removing original.
+            # If there's a crash, you might duplicate a message, but
+            # that's better than losing a message completely.
             box.lock()
             box.add(message)
-            box.flush()         # Write copy to disk before removing original.
+            box.flush()         
             box.unlock()
+
+            # Remove original message
+            inbox.lock()
             inbox.discard(key)
+            inbox.flush()
+            inbox.unlock()
             break               # Found destination, so stop looking.
+
 for box in boxes.itervalues():
     box.close()
 \end{verbatim}
