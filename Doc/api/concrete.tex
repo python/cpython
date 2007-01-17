@@ -2082,7 +2082,7 @@ format.
 
 \begin{verbatim}
 PyObject *key, *value;
-int pos = 0;
+Py_ssize_t pos = 0;
 
 while (PyDict_Next(self->dict, &pos, &key, &value)) {
     /* do something interesting with the values... */
@@ -2097,7 +2097,7 @@ while (PyDict_Next(self->dict, &pos, &key, &value)) {
 
 \begin{verbatim}
 PyObject *key, *value;
-int pos = 0;
+Py_ssize_t pos = 0;
 
 while (PyDict_Next(self->dict, &pos, &key, &value)) {
     int i = PyInt_AS_LONG(value) + 1;
