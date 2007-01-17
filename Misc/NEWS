@@ -138,6 +138,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1610795: ctypes.util.find_library works now on BSD systems.
+
 - Fix sort stability in heapq.nlargest() and nsmallest().
 
 - Patch #1504073: Fix tarfile.open() for mode "r" with a fileobj argument.
