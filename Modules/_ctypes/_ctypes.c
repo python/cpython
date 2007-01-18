@@ -2199,6 +2199,7 @@ static void CData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
 	if ((size_t)dict->size <= sizeof(obj->b_value)) {
 		/* No need to call malloc, can use the default buffer */
 		obj->b_ptr = (char *)&obj->b_value;
+		/* XXX(nnorwitz): shouldn't b_needsfree be 0? */
 		obj->b_needsfree = 1;
 	} else {
 		/* In python 2.4, and ctypes 0.9.6, the malloc call took about
