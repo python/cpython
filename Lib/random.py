@@ -569,7 +569,7 @@ class Random(_random.Random):
     def betavariate(self, alpha, beta):
         """Beta distribution.
 
-        Conditions on the parameters are alpha > -1 and beta} > -1.
+        Conditions on the parameters are alpha > 0 and beta > 0.
         Returned values range between 0 and 1.
 
         """
