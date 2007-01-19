@@ -12,6 +12,8 @@ What's New in Python 2.5.1c1?
 Core and builtins
 -----------------
 
+- Bug #1637022: Prefix AST symbols with _Py_.
+
 - Prevent seg fault on shutdown which could occur if an object
   raised a warning.
 
