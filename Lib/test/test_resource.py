@@ -86,7 +86,7 @@ class ResourceTest(unittest.TestCase):
         # May not be available on all systems.
         try:
             usageboth = resource.getrusage(resource.RUSAGE_BOTH)
-        except ValueError:
+        except (ValueError, AttributeError):
             pass
 
 def test_main(verbose=None):
