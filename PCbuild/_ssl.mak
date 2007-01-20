@@ -31,7 +31,7 @@ _ssl$(SUFFIX): $(SSL_SOURCE) $(SSL_LIB_DIR)/libeay32.lib $(SSL_LIB_DIR)/ssleay32
 
 _hashlib$(SUFFIX): $(HASH_SOURCE) $(SSL_LIB_DIR)/libeay32.lib ../PC/*.h ../Include/*.h
     @if not exist "$(TEMP)/_hashlib/." mkdir "$(TEMP)/_hashlib"
-    cl /nologo /c $(HASH_SOURCE) $(CFLAGS) /Fo$(TEMP)\_hashlib\$*.obj $(INCLUDES) 
+    cl /nologo /c $(HASH_SOURCE) $(CFLAGS) $(EXTRA_CFLAGS) /Fo$(TEMP)\_hashlib\$*.obj $(INCLUDES) 
     link /nologo @<<
 	/dll /out:_hashlib$(SUFFIX) $(HASH_LIBS) $(TEMP)\_hashlib\$*.obj
 <<
