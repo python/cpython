@@ -7,6 +7,13 @@ import os, resource
 # This test is checking a few specific problem spots with the resource module.
 
 class ResourceTest(unittest.TestCase):
+
+    def test_args(self):
+        self.assertRaises(TypeError, resource.getrlimit)
+        self.assertRaises(TypeError, resource.getrlimit, 42, 42)
+        self.assertRaises(TypeError, resource.setrlimit)
+        self.assertRaises(TypeError, resource.setrlimit, 42, 42, 42)
+
     def test_fsize_ismax(self):
        
         try:
@@ -70,6 +77,17 @@ class ResourceTest(unittest.TestCase):
                 resource.setrlimit(resource.RLIMIT_FSIZE, (max, too_big))
             except (OverflowError, ValueError):
                 pass
+
+    def test_getrusage(self):
+        self.assertRaises(TypeError, resource.getrusage)
+        self.assertRaises(TypeError, resource.getrusage, 42, 42)
+        usageself = resource.getrusage(resource.RUSAGE_SELF)
+        usagechildren = resource.getrusage(resource.RUSAGE_CHILDREN)
+        # May not be available on all systems.
+        try:
+            usageboth = resource.getrusage(resource.RUSAGE_BOTH)
+        except ValueError:
+            pass
 
 def test_main(verbose=None):
     test_support.run_unittest(ResourceTest)
