@@ -1,7 +1,0 @@
-test_new
-new.module()
-new.classobj()
-new.instance()
-new.instancemethod()
-new.function()
-new.code()
