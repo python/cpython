@@ -95,7 +95,7 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	dequeobject *deque;
 	block *b;
 
-	if (!_PyArg_NoKeywords("deque()", kwds))
+	if (type == &deque_type && !_PyArg_NoKeywords("deque()", kwds))
 		return NULL;
 
 	/* create dequeobject structure */

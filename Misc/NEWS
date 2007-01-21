@@ -91,6 +91,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1486663: don't reject keyword arguments for subclasses of builtin
+  types.
+
 - The version number of the ctypes package was changed to "1.0.2".
 
 - Patch #1544279: Improve thread-safety of the socket module by moving
