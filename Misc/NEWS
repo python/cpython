@@ -143,6 +143,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1598181: Avoid O(N**2) bottleneck in subprocess communicate(). 
+
 - Patch #1627441: close sockets properly in urllib2.
 
 - Bug #1610795: ctypes.util.find_library works now on BSD systems.
