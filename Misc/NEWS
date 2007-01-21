@@ -313,6 +313,9 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1486663: don't reject keyword arguments for subclasses of builtin
+  types.
+
 - Patch #1610575: The struct module now supports the 't' code, for
   C99 _Bool.
 
