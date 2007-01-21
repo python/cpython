@@ -84,8 +84,8 @@ sz = struct.calcsize('i')
 if sz * 3 != struct.calcsize('iii'):
     raise TestFailed, 'inconsistent sizes'
 
-fmt = 'cbxxxxxxhhhhiillffd'
-fmt3 = '3c3b18x12h6i6l6f3d'
+fmt = 'cbxxxxxxhhhhiillffdt'
+fmt3 = '3c3b18x12h6i6l6f3d3t'
 sz = struct.calcsize(fmt)
 sz3 = struct.calcsize(fmt3)
 if sz * 3 != sz3:
@@ -108,19 +108,21 @@ i = 65535
 l = 65536
 f = 3.1415
 d = 3.1415
+t = True
 
 for prefix in ('', '@', '<', '>', '=', '!'):
-    for format in ('xcbhilfd', 'xcBHILfd'):
+    for format in ('xcbhilfdt', 'xcBHILfdt'):
         format = prefix + format
         if verbose:
             print "trying:", format
-        s = struct.pack(format, c, b, h, i, l, f, d)
-        cp, bp, hp, ip, lp, fp, dp = struct.unpack(format, s)
+        s = struct.pack(format, c, b, h, i, l, f, d, t)
+        cp, bp, hp, ip, lp, fp, dp, tp = struct.unpack(format, s)
         if (cp != c or bp != b or hp != h or ip != i or lp != l or
-            int(100 * fp) != int(100 * f) or int(100 * dp) != int(100 * d)):
+            int(100 * fp) != int(100 * f) or int(100 * dp) != int(100 * d) or
+			tp != t):
             # ^^^ calculate only to two decimal places
             raise TestFailed, "unpack/pack not transitive (%s, %s)" % (
-                str(format), str((cp, bp, hp, ip, lp, fp, dp)))
+                str(format), str((cp, bp, hp, ip, lp, fp, dp, tp)))
 
 # Test some of the new features in detail
 
@@ -158,6 +160,11 @@ tests = [
     ('f', -2.0, '\300\000\000\000', '\000\000\000\300', 0),
     ('d', -2.0, '\300\000\000\000\000\000\000\000',
                '\000\000\000\000\000\000\000\300', 0),
+	('t', 0, '\0', '\0', 0),
+	('t', 3, '\1', '\1', 1),
+	('t', True, '\1', '\1', 0),
+	('t', [], '\0', '\0', 1),
+	('t', (1,), '\1', '\1', 1),
 ]
 
 for fmt, arg, big, lil, asy in tests:
@@ -612,3 +619,50 @@ def test_pack_into_fn():
 test_unpack_from()
 test_pack_into()
 test_pack_into_fn()
+
+def test_bool():
+	for prefix in tuple("<>!=")+('',):
+		false = (), [], [], '', 0
+		true = [1], 'test', 5, -1, 0xffffffffL+1, 0xffffffff/2
+		
+		falseFormat = prefix + 't' * len(false)
+		if verbose:
+			print 'trying bool pack/unpack on', false, 'using format', falseFormat
+		packedFalse = struct.pack(falseFormat, *false)
+		unpackedFalse = struct.unpack(falseFormat, packedFalse)
+		
+		trueFormat = prefix + 't' * len(true)
+		if verbose:
+			print 'trying bool pack/unpack on', true, 'using format', trueFormat
+		packedTrue = struct.pack(trueFormat, *true)
+		unpackedTrue = struct.unpack(trueFormat, packedTrue)
+		
+		if len(true) != len(unpackedTrue):
+			raise TestFailed('unpacked true array is not of same size as input')
+		if len(false) != len(unpackedFalse):
+			raise TestFailed('unpacked false array is not of same size as input')
+		
+		for t in unpackedFalse:
+			if t is not False:
+				raise TestFailed('%r did not unpack as False' % t)
+		for t in unpackedTrue:
+			if t is not True:
+				raise TestFailed('%r did not unpack as false' % t)
+	
+		if prefix and verbose:
+			print 'trying size of bool with format %r' % (prefix+'t')
+		packed = struct.pack(prefix+'t', 1)
+		
+		if len(packed) != struct.calcsize(prefix+'t'):
+			raise TestFailed('packed length is not equal to calculated size')
+		
+		if len(packed) != 1 and prefix:
+			raise TestFailed('encoded bool is not one byte: %r' % packed)
+		elif not prefix and verbose:
+			print 'size of bool in native format is %i' % (len(packed))
+		
+		for c in '\x01\x7f\xff\x0f\xf0':
+			if struct.unpack('>t', c)[0] is not True:
+				raise TestFailed('%c did not unpack as True' % c)
+
+test_bool()

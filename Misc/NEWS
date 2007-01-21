@@ -313,6 +313,9 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1610575: The struct module now supports the 't' code, for
+  C99 _Bool.
+
 - Patch #1635058: ensure that htonl and friends never accept or
   return negative numbers, per the underlying C implementation.
 
