@@ -111,6 +111,8 @@ Core and builtins
 Library
 -------
 
+- Patch #1627441: close sockets properly in urllib2.
+
 - Bug #494589: make ntpath.expandvars behave according to its docstring.
 
 - Changed platform module API python_version_tuple() to actually
