@@ -64,6 +64,9 @@
 /* Define if pthread_sigmask() does not work on your system. */
 #undef HAVE_BROKEN_PTHREAD_SIGMASK
 
+/* Define this if you have the type _Bool. */
+#undef HAVE_C99_BOOL
+
 /* Define to 1 if you have the `chown' function. */
 #undef HAVE_CHOWN
 
@@ -834,6 +837,9 @@
 
 /* The size of a `wchar_t', as computed by sizeof. */
 #undef SIZEOF_WCHAR_T
+
+/* The size of a `_Bool', as computed by sizeof. */
+#undef SIZEOF__BOOL
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
