@@ -64,6 +64,27 @@ class AuthTests(unittest.TestCase):
 #                          urllib2.urlopen, "http://evil:thing@example.com")
 
 
+class CloseSocketTest(unittest.TestCase):
+
+    def test_close(self):
+        import socket, httplib, gc
+
+        # calling .close() on urllib2's response objects should close the
+        # underlying socket
+
+        # delve deep into response to fetch socket._socketobject
+        response = urllib2.urlopen("http://www.python.org/")
+        abused_fileobject = response.fp
+        self.assert_(abused_fileobject.__class__ is socket._fileobject)
+        httpresponse = abused_fileobject._sock
+        self.assert_(httpresponse.__class__ is httplib.HTTPResponse)
+        fileobject = httpresponse.fp
+        self.assert_(fileobject.__class__ is socket._fileobject)
+
+        self.assert_(not fileobject.closed)
+        response.close()
+        self.assert_(fileobject.closed)
+
 class urlopenNetworkTests(unittest.TestCase):
     """Tests urllib2.urlopen using the network.
 
@@ -263,8 +284,12 @@ class OtherNetworkTests(unittest.TestCase):
 
 def test_main():
     test_support.requires("network")
-    test_support.run_unittest(URLTimeoutTest, urlopenNetworkTests,
-                              AuthTests, OtherNetworkTests)
+    test_support.run_unittest(URLTimeoutTest,
+                              urlopenNetworkTests,
+                              AuthTests,
+                              OtherNetworkTests,
+                              CloseSocketTest,
+                              )
 
 if __name__ == "__main__":
     test_main()
