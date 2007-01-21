@@ -740,6 +740,21 @@ class RegressionTests(unittest.TestCase):
         self.assertRaises(AssertionError, list, cycle(gen1()))
         self.assertEqual(hist, [0,1])
 
+class SubclassWithKwargsTest(unittest.TestCase):
+    def test_keywords_in_subclass(self):
+        # count is not subclassable...
+        for cls in (repeat, izip, ifilter, ifilterfalse, chain, imap,
+                    starmap, islice, takewhile, dropwhile, cycle):
+            class Subclass(cls):
+                def __init__(self, newarg=None, *args):
+                    cls.__init__(self, *args)
+            try:
+                Subclass(newarg=1)
+            except TypeError, err:
+                # we expect type errors because of wrong argument count
+                self.failIf("does not take keyword arguments" in err.args[0])
+
+
 libreftest = """ Doctest for examples in the library reference: libitertools.tex
 
 
@@ -934,7 +949,8 @@ __test__ = {'libreftest' : libreftest}
 
 def test_main(verbose=None):
     test_classes = (TestBasicOps, TestVariousIteratorArgs, TestGC,
-                    RegressionTests, LengthTransparency)
+                    RegressionTests, LengthTransparency,
+                    SubclassWithKwargsTest)
     test_support.run_unittest(*test_classes)
 
     # verify reference counting
