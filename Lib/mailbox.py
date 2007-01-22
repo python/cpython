@@ -1993,7 +1993,7 @@ class UnixMailbox(_Mailbox):
     # that the two characters preceding "From " are \n\n or the beginning of
     # the file.  Fixing this would require a more extensive rewrite than is
     # necessary.  For convenience, we've added a PortableUnixMailbox class
-    # which uses the more lenient _fromlinepattern regular expression.
+    # which does no checking of the format of the 'From' line.
 
     _fromlinepattern = (r"From \s*[^\s]+\s+\w\w\w\s+\w\w\w\s+\d?\d\s+"
                         r"\d?\d:\d\d(:\d\d)?(\s+[^\s]+)?\s+\d\d\d\d\s*"
