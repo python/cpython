@@ -139,6 +139,8 @@ Extension Modules
 - Modifying an empty deque during iteration now raises RuntimeError
   instead of StopIteration.
 
+- Bug #1552726: fix polling at the interpreter prompt when certain
+  versions of the readline library are in use.
 
 Library
 -------
