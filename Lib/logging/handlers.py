@@ -778,7 +778,7 @@ class SMTPHandler(logging.Handler):
         try:
             import smtplib
             try:
-                from email.Utils import formatdate
+                from email.utils import formatdate
             except ImportError:
                 formatdate = self.date_time
             port = self.mailport
