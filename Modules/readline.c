@@ -768,10 +768,16 @@ readline_until_enter_or_signal(char *prompt, int *signal)
 
 		while (!has_input)
 		{	struct timeval timeout = {0, 100000}; /* 0.1 seconds */
+
+			/* [Bug #1552726] Only limit the pause if an input hook has been 
+			   defined.  */
+		 	struct timeval *timeoutp = NULL;
+			if (PyOS_InputHook) 
+				timeoutp = &timeout;
 			FD_SET(fileno(rl_instream), &selectset);
 			/* select resets selectset if no input was available */
 			has_input = select(fileno(rl_instream) + 1, &selectset,
-					   NULL, NULL, &timeout);
+					   NULL, NULL, timeoutp);
 			if(PyOS_InputHook) PyOS_InputHook();
 		}
 
