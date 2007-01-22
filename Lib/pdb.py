@@ -474,7 +474,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_condition(self, arg):
         # arg is breakpoint number and condition
         args = arg.split(' ', 1)
-        bpnum = int(args[0].strip())
+        try:
+            bpnum = int(args[0].strip())
+        except ValueError:
+            # something went wrong
+            print >>self.stdout, \
+                'Breakpoint index %r is not a number' % args[0]
         try:
             cond = args[1]
         except:
@@ -489,7 +494,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_ignore(self,arg):
         """arg is bp number followed by ignore count."""
         args = arg.split()
-        bpnum = int(args[0].strip())
+        try:
+            bpnum = int(args[0].strip())
+        except ValueError:
+            # something went wrong
+            print >>self.stdout, \
+                'Breakpoint index %r is not a number' % args[0]
         try:
             count = int(args[1].strip())
         except:
