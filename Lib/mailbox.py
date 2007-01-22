@@ -1995,8 +1995,10 @@ class UnixMailbox(_Mailbox):
     # necessary.  For convenience, we've added a PortableUnixMailbox class
     # which uses the more lenient _fromlinepattern regular expression.
 
-    _fromlinepattern = r"From \s*[^\s]+\s+\w\w\w\s+\w\w\w\s+\d?\d\s+" \
-                       r"\d?\d:\d\d(:\d\d)?(\s+[^\s]+)?\s+\d\d\d\d\s*$"
+    _fromlinepattern = (r"From \s*[^\s]+\s+\w\w\w\s+\w\w\w\s+\d?\d\s+"
+                        r"\d?\d:\d\d(:\d\d)?(\s+[^\s]+)?\s+\d\d\d\d\s*"
+                        r"[^\s]*\s*"
+                        "$")
     _regexp = None
 
     def _strict_isrealfromline(self, line):
