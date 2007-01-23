@@ -972,12 +972,12 @@ _PySys_Init(void)
 	if (PyErr_Occurred())
 		return NULL;
 #ifdef MS_WINDOWS
-	if(isatty(_fileno(stdin))){
+	if(isatty(_fileno(stdin)) && PyFile_Check(sysin)) {
 		sprintf(buf, "cp%d", GetConsoleCP());
 		if (!PyFile_SetEncoding(sysin, buf))
 			return NULL;
 	}
-	if(isatty(_fileno(stdout))) {
+	if(isatty(_fileno(stdout)) && PyFile_Check(sysout)) {
 		sprintf(buf, "cp%d", GetConsoleOutputCP());
 		if (!PyFile_SetEncoding(sysout, buf))
 			return NULL;
