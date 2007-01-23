@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1507247: tarfile.py: use current umask for intermediate
+  directories.
+
 - Bug #1637022: Prefix AST symbols with _Py_.
 
 - Prevent seg fault on shutdown which could occur if an object
