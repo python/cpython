@@ -354,6 +354,8 @@ PyFile_SetEncoding(PyObject *f, const char *enc)
 {
 	PyFileObject *file = (PyFileObject*)f;
 	PyObject *str = PyString_FromString(enc);
+
+	assert(PyFile_Check(f));
 	if (!str)
 		return 0;
 	Py_DECREF(file->f_encoding);
