@@ -12,6 +12,9 @@ What's New in Python 2.5.1c1?
 Core and builtins
 -----------------
 
+- Bug #1377858: Fix the segfaulting of the interpreter when an object created
+  a weakref on itself during a __del__ call.
+
 - Bug #1579370: Make PyTraceBack_Here use the current thread, not the
   frame's thread state.
 
