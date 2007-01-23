@@ -113,7 +113,7 @@ newtracebackobject(PyTracebackObject *next, PyFrameObject *frame)
 int
 PyTraceBack_Here(PyFrameObject *frame)
 {
-	PyThreadState *tstate = frame->f_tstate;
+	PyThreadState *tstate = PyThreadState_GET();
 	PyTracebackObject *oldtb = (PyTracebackObject *) tstate->curexc_traceback;
 	PyTracebackObject *tb = newtracebackobject(oldtb, frame);
 	if (tb == NULL)

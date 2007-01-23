@@ -12,6 +12,9 @@ What's New in Python 2.5.1c1?
 Core and builtins
 -----------------
 
+- Bug #1579370: Make PyTraceBack_Here use the current thread, not the
+  frame's thread state.
+
 - patch #1630975: Fix crash when replacing sys.stdout in sitecustomize.py
 
 - Bug #1637022: Prefix AST symbols with _Py_.
