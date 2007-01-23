@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1579370: Make PyTraceBack_Here use the current thread, not the
+  frame's thread state.
+
 - patch #1630975: Fix crash when replacing sys.stdout in sitecustomize.py
 
 - Patch #1507247: tarfile.py: use current umask for intermediate
