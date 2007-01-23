@@ -57,6 +57,9 @@ clear_weakref(PyWeakReference *self)
             PyWeakref_GET_OBJECT(self));
 
         if (*list == self)
+	    /* If 'self' is the end of the list (and thus self->wr_next == NULL)
+	       then the weakref list itself (and thus the value of *list) will
+	       end up being set to NULL. */
             *list = self->wr_next;
         self->wr_object = Py_None;
         if (self->wr_prev != NULL)

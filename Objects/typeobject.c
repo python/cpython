@@ -666,6 +666,17 @@ subtype_dealloc(PyObject *self)
 			goto endlabel;	/* resurrected */
 		else
 			_PyObject_GC_UNTRACK(self);
+		/* New weakrefs could be created during the finalizer call.
+		    If this occurs, clear them out without calling their
+		    finalizers since they might rely on part of the object
+		    being finalized that has already been destroyed. */
+		if (type->tp_weaklistoffset && !base->tp_weaklistoffset) {
+			/* Modeled after GET_WEAKREFS_LISTPTR() */
+			PyWeakReference **list = (PyWeakReference **) \
+				PyObject_GET_WEAKREFS_LISTPTR(self);
+			while (*list)
+				_PyWeakref_ClearRef(*list);
+		}
 	}
 
 	/*  Clear slots up to the nearest base with a different tp_dealloc */
