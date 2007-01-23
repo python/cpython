@@ -6,6 +6,8 @@ import weakref
 
 from test import test_support
 
+# Used in ReferencesTestCase.test_ref_created_during_del() .
+ref_from_del = None
 
 class C:
     def method(self):
@@ -629,6 +631,18 @@ class ReferencesTestCase(TestBase):
 
         finally:
             gc.set_threshold(*thresholds)
+
+    def test_ref_created_during_del(self):
+        # Bug #1377858
+        # A weakref created in an object's __del__() would crash the
+        # interpreter when the weakref was cleaned up since it would refer to
+        # non-existent memory.  This test should not segfault the interpreter.
+        class Target(object):
+            def __del__(self):
+                global ref_from_del
+                ref_from_del = weakref.ref(self)
+
+        w = Target()
 
 
 class SubclassableWeakrefTestCase(unittest.TestCase):
