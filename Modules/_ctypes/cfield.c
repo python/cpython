@@ -1432,10 +1432,19 @@ Z_get(void *ptr, unsigned size)
 #endif
 
 #ifdef MS_WIN32
+/* We cannot use SysFreeString as the PyCObject_FromVoidPtr
+   because of different calling convention
+*/
+static void _my_SysFreeString(void *p)
+{
+	SysFreeString((BSTR)p);
+}
+
 static PyObject *
 BSTR_set(void *ptr, PyObject *value, unsigned size)
 {
 	BSTR bstr;
+	PyObject *result;
 
 	/* convert value into a PyUnicodeObject or NULL */
 	if (Py_None == value) {
@@ -1463,15 +1472,19 @@ BSTR_set(void *ptr, PyObject *value, unsigned size)
 	} else
 		bstr = NULL;
 
-	/* free the previous contents, if any */
-	if (*(BSTR *)ptr)
-		SysFreeString(*(BSTR *)ptr);
-	
-	/* and store it */
-	*(BSTR *)ptr = bstr;
+	if (bstr) {
+		result = PyCObject_FromVoidPtr((void *)bstr, _my_SysFreeString);
+		if (result == NULL) {
+			SysFreeString(bstr);
+			return NULL;
+		}
+	} else {
+		result = Py_None;
+		Py_INCREF(result);
+	}
 
-	/* We don't need to keep any other object */
-	_RET(value);
+	*(BSTR *)ptr = bstr;
+	return result;
 }
 
 
