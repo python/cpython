@@ -154,6 +154,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1643943: Fix %U handling for time.strptime.
+
 - Patch #1643874: memory leak in ctypes fixed.
 
 - Bug #1598181: Avoid O(N**2) bottleneck in subprocess communicate(). 
