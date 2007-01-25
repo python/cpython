@@ -123,6 +123,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1643943: Fix time.strptime's support for the %U directive.
+
 - Patch #1643874: memory leak in ctypes fixed.
 
 - Patch #1627441: close sockets properly in urllib2.
@@ -130,12 +132,12 @@ Library
 - Bug #494589: make ntpath.expandvars behave according to its docstring.
 
 - Changed platform module API python_version_tuple() to actually
-  return a tuple (it used to return a list)
+  return a tuple (it used to return a list).
 
 - Added new platform module APIs python_branch(), python_revision(),
-  python_implementation() and linux_distribution()
+  python_implementation() and linux_distribution().
 
-- Added support for IronPython and Jython to the platform module
+- Added support for IronPython and Jython to the platform module.
 
 - The sets module has been deprecated.  Use the built-in set/frozenset types
   instead.
