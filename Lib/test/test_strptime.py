@@ -463,6 +463,10 @@ class CalculationTests(unittest.TestCase):
                                         "of the year")
         test_helper((1917, 12, 31), "Dec 31 on Monday with year starting and "
                                         "ending on Monday")
+        test_helper((2007, 01, 07), "First Sunday of 2007")
+        test_helper((2007, 01, 14), "Second Sunday of 2007")
+        test_helper((2006, 12, 31), "Last Sunday of 2006")
+        test_helper((2006, 12, 24), "Second to last Sunday of 2006")
 
 
 class CacheTests(unittest.TestCase):
