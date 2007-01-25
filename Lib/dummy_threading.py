@@ -5,11 +5,6 @@ to not have ``threading`` considered imported.  Had ``threading`` been
 directly imported it would have made all subsequent imports succeed
 regardless of whether ``thread`` was available which is not desired.
 
-:Author: Brett Cannon
-:Contact: brett@python.org
-
-XXX: Try to get rid of ``_dummy_threading``.
-
 """
 from sys import modules as sys_modules
 

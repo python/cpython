@@ -22,9 +22,6 @@ try:
 except:
     from dummy_thread import allocate_lock as _thread_allocate_lock
 
-__author__ = "Brett Cannon"
-__email__ = "brett@python.org"
-
 __all__ = ['strptime']
 
 def _getlang():
