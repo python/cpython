@@ -123,6 +123,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1634778: add missing encoding aliases for iso8859_15 and
+  iso8859_16.
+
 - Patch #1638243: the compiler package is now able to correctly compile
   a with statement; previously, executing code containing a with statement
   compiled by the compiler package crashed the interpreter.
