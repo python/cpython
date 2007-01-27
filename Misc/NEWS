@@ -123,6 +123,10 @@ Core and builtins
 Library
 -------
 
+- Patch #1638243: the compiler package is now able to correctly compile
+  a with statement; previously, executing code containing a with statement
+  compiled by the compiler package crashed the interpreter.
+
 - Bug #1643943: Fix time.strptime's support for the %U directive.
 
 - Patch #1643874: memory leak in ctypes fixed.
