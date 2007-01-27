@@ -1462,7 +1462,7 @@ posix_do_stat(PyObject *self, PyObject *args,
 /* POSIX methods */
 
 PyDoc_STRVAR(posix_access__doc__,
-"access(path, mode) -> 1 if granted, 0 otherwise\n\n\
+"access(path, mode) -> True if granted, False otherwise\n\n\
 Use the real uid/gid to test for access to a path.  Note that most\n\
 operations will use the effective uid/gid, therefore this routine can\n\
 be used in a suid/sgid environment to test if the invoking user has the\n\
