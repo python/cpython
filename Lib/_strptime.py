@@ -294,8 +294,7 @@ def _calc_julian_from_U_or_W(year, week_of_year, day_of_week, week_starts_Mon):
 def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a time struct based on the input string and the format string."""
     global _TimeRE_cache, _regex_cache
-    _cache_lock.acquire()
-    try:
+    with _cache_lock:
         time_re = _TimeRE_cache
         locale_time = time_re.locale_time
         if _getlang() != locale_time.lang:
@@ -320,8 +319,6 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             except IndexError:
                 raise ValueError("stray %% in format '%s'" % format)
             _regex_cache[format] = format_regex
-    finally:
-        _cache_lock.release()
     found = format_regex.match(data_string)
     if not found:
         raise ValueError("time data %r does not match format %r" %
