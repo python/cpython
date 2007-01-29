@@ -403,6 +403,8 @@ Extension Modules
 Tests
 -----
 
+- Added a test for slicing of an exception.
+
 - Added test.test_support.EnvironmentVarGuard.  It's a class that provides a
   context manager so that one can temporarily set or unset environment
   variables.
