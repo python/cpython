@@ -34,17 +34,18 @@ This document is available from
 The \module{re} module was added in Python 1.5, and provides
 Perl-style regular expression patterns.  Earlier versions of Python
 came with the \module{regex} module, which provided Emacs-style
-patterns.  \module{regex} module was removed in Python 2.5.
+patterns.  The \module{regex} module was removed completely in Python 2.5.
 
-Regular expressions (or REs) are essentially a tiny, highly
-specialized programming language embedded inside Python and made
-available through the \module{re} module.  Using this little language,
-you specify the rules for the set of possible strings that you want to
-match; this set might contain English sentences, or e-mail addresses,
-or TeX commands, or anything you like.  You can then ask questions
-such as ``Does this string match the pattern?'', or ``Is there a match
-for the pattern anywhere in this string?''.  You can also use REs to
-modify a string or to split it apart in various ways.
+Regular expressions (called REs, or regexes, or regex patterns) are
+essentially a tiny, highly specialized programming language embedded
+inside Python and made available through the \module{re} module.
+Using this little language, you specify the rules for the set of
+possible strings that you want to match; this set might contain
+English sentences, or e-mail addresses, or TeX commands, or anything
+you like.  You can then ask questions such as ``Does this string match
+the pattern?'', or ``Is there a match for the pattern anywhere in this
+string?''.  You can also use REs to modify a string or to split it
+apart in various ways.
 
 Regular expression patterns are compiled into a series of bytecodes
 which are then executed by a matching engine written in C.  For
@@ -80,11 +81,12 @@ example, the regular expression \regexp{test} will match the string
 would let this RE match \samp{Test} or \samp{TEST} as well; more
 about this later.)  
 
-There are exceptions to this rule; some characters are
-special, and don't match themselves.  Instead, they signal that some
-out-of-the-ordinary thing should be matched, or they affect other
-portions of the RE by repeating them.  Much of this document is
-devoted to discussing various metacharacters and what they do.
+There are exceptions to this rule; some characters are special
+\dfn{metacharacters}, and don't match themselves.  Instead, they
+signal that some out-of-the-ordinary thing should be matched, or they
+affect other portions of the RE by repeating them or changing their
+meaning.  Much of this document is devoted to discussing various
+metacharacters and what they do.
 
 Here's a complete list of the metacharacters; their meanings will be
 discussed in the rest of this HOWTO.
@@ -111,9 +113,10 @@ Metacharacters are not active inside classes.  For example,
 usually a metacharacter, but inside a character class it's stripped of
 its special nature.
 
-You can match the characters not within a range by \dfn{complementing}
-the set.  This is indicated by including a \character{\^} as the first
-character of the class; \character{\^} elsewhere will simply match the
+You can match the characters not listed within the class by
+\dfn{complementing} the set.  This is indicated by including a
+\character{\^} as the first character of the class; \character{\^}
+outside a character class will simply match the
 \character{\^} character.  For example, \verb|[^5]| will match any
 character except \character{5}.
 
@@ -176,7 +179,7 @@ or more times, instead of exactly once.
 For example, \regexp{ca*t} will match \samp{ct} (0 \samp{a}
 characters), \samp{cat} (1 \samp{a}), \samp{caaat} (3 \samp{a}
 characters), and so forth.  The RE engine has various internal
-limitations stemming from the size of C's \code{int} type, that will
+limitations stemming from the size of C's \code{int} type that will
 prevent it from matching over 2 billion \samp{a} characters; you
 probably don't have enough memory to construct a string that large, so
 you shouldn't run into that limit.
@@ -238,9 +241,9 @@ will match \samp{a/b}, \samp{a//b}, and \samp{a///b}.  It won't match
 
 You can omit either \var{m} or \var{n}; in that case, a reasonable
 value is assumed for the missing value.  Omitting \var{m} is
-interpreted as a lower limit of 0, while omitting \var{n} results in  an
-upper bound of infinity --- actually, the 2 billion limit mentioned
-earlier, but that might as well be infinity.  
+interpreted as a lower limit of 0, while omitting \var{n} results in
+an upper bound of infinity --- actually, the upper bound is the
+2-billion limit mentioned earlier, but that might as well be infinity.
 
 Readers of a reductionist bent may notice that the three other qualifiers
 can all be expressed using this notation.  \regexp{\{0,\}} is the same
@@ -285,7 +288,7 @@ them.  (There are applications that don't need REs at all, so there's
 no need to bloat the language specification by including them.)
 Instead, the \module{re} module is simply a C extension module
 included with Python, just like the \module{socket} or \module{zlib}
-module.
+modules.
 
 Putting REs in strings keeps the Python language simpler, but has one
 disadvantage which is the topic of the next section.
@@ -326,7 +329,7 @@ expressions; backslashes are not handled in any special way in
 a string literal prefixed with \character{r}, so \code{r"\e n"} is a
 two-character string containing \character{\e} and \character{n},
 while \code{"\e n"} is a one-character string containing a newline.
-Frequently regular expressions will be expressed in Python
+Regular expressions will often be written in Python
 code using this raw string notation.  
 
 \begin{tableii}{c|c}{code}{Regular String}{Raw string}
@@ -368,9 +371,9 @@ strings, and displays whether the RE matches or fails.
 \file{redemo.py} can be quite useful when trying to debug a
 complicated RE.  Phil Schwartz's
 \ulink{Kodos}{http://www.phil-schwartz.com/kodos.spy} is also an interactive
-tool for developing and testing RE patterns.  This HOWTO will use the
-standard Python interpreter for its examples.
+tool for developing and testing RE patterns.  
 
+This HOWTO uses the standard Python interpreter for its examples.
 First, run the Python interpreter, import the \module{re} module, and
 compile a RE:
 
@@ -401,7 +404,7 @@ Now, let's try it on a string that it should match, such as
 later use.
 
 \begin{verbatim}
->>> m = p.match( 'tempo')
+>>> m = p.match('tempo')
 >>> print m
 <_sre.SRE_Match object at 80c4f68>
 \end{verbatim}
@@ -472,9 +475,9 @@ Two \class{RegexObject} methods return all of the matches for a pattern.
 \end{verbatim}
 
 \method{findall()} has to create the entire list before it can be
-returned as the result.  In Python 2.2, the \method{finditer()} method
-is also available, returning a sequence of \class{MatchObject} instances 
-as an iterator.
+returned as the result.  The \method{finditer()} method returns a
+sequence of \class{MatchObject} instances as an
+iterator.\footnote{Introduced in Python 2.2.2.}
 
 \begin{verbatim}
 >>> iterator = p.finditer('12 drummers drumming, 11 ... 10 ...')
@@ -491,13 +494,13 @@ as an iterator.
 
 \subsection{Module-Level Functions}
 
-You don't have to produce a \class{RegexObject} and call its methods;
+You don't have to create a \class{RegexObject} and call its methods;
 the \module{re} module also provides top-level functions called
-\function{match()}, \function{search()}, \function{sub()}, and so
-forth.  These functions take the same arguments as the corresponding
-\class{RegexObject} method, with the RE string added as the first
-argument, and still return either \code{None} or a \class{MatchObject}
-instance.
+\function{match()}, \function{search()}, \function{findall()},
+\function{sub()}, and so forth.  These functions take the same
+arguments as the corresponding \class{RegexObject} method, with the RE
+string added as the first argument, and still return either
+\code{None} or a \class{MatchObject} instance.
 
 \begin{verbatim}
 >>> print re.match(r'From\s+', 'Fromage amk')
@@ -514,7 +517,7 @@ RE are faster.
 Should you use these module-level functions, or should you get the
 \class{RegexObject} and call its methods yourself?  That choice
 depends on how frequently the RE will be used, and on your personal
-coding style.  If a RE is being used at only one point in the code,
+coding style.  If the RE is being used at only one point in the code,
 then the module functions are probably more convenient.  If a program
 contains a lot of regular expressions, or re-uses the same ones in
 several locations, then it might be worthwhile to collect all the
@@ -537,7 +540,7 @@ as I am.
 
 Compilation flags let you modify some aspects of how regular
 expressions work.  Flags are available in the \module{re} module under
-two names, a long name such as \constant{IGNORECASE}, and a short,
+two names, a long name such as \constant{IGNORECASE} and a short,
 one-letter form such as \constant{I}.  (If you're familiar with Perl's
 pattern modifiers, the one-letter forms use the same letters; the
 short form of \constant{re.VERBOSE} is \constant{re.X}, for example.)
@@ -617,7 +620,7 @@ that are more readable by granting you more flexibility in how you can
 format them.  When this flag has been specified, whitespace within the
 RE string is ignored, except when the whitespace is in a character
 class or preceded by an unescaped backslash; this lets you organize
-and indent the RE more clearly.  It also enables you to put comments
+and indent the RE more clearly.  This flag also lets you put comments
 within a RE that will be ignored by the engine; comments are marked by
 a \character{\#} that's neither in a character class or preceded by an
 unescaped backslash.
@@ -629,18 +632,19 @@ much easier it is to read?
 charref = re.compile(r"""
  &[#]		     # Start of a numeric entity reference
  (
-   [0-9]+[^0-9]      # Decimal form
-   | 0[0-7]+[^0-7]   # Octal form
-   | x[0-9a-fA-F]+[^0-9a-fA-F] # Hexadecimal form
+     0[0-7]+         # Octal form
+   | [0-9]+          # Decimal form
+   | x[0-9a-fA-F]+   # Hexadecimal form
  )
+ ;                   # Trailing semicolon
 """, re.VERBOSE)
 \end{verbatim}
 
 Without the verbose setting, the RE would look like this:
 \begin{verbatim}
-charref = re.compile("&#([0-9]+[^0-9]"
-                     "|0[0-7]+[^0-7]"
-                     "|x[0-9a-fA-F]+[^0-9a-fA-F])")
+charref = re.compile("&#(0[0-7]+"
+                     "|[0-9]+"
+                     "|x[0-9a-fA-F]+);")
 \end{verbatim}
 
 In the above example, Python's automatic concatenation of string
@@ -722,12 +726,12 @@ inside a character class, as in  \regexp{[\$]}.
 
 \item[\regexp{\e A}] Matches only at the start of the string.  When
 not in \constant{MULTILINE} mode, \regexp{\e A} and \regexp{\^} are
-effectively the same.  In \constant{MULTILINE} mode, however, they're
-different; \regexp{\e A} still matches only at the beginning of the
+effectively the same.  In \constant{MULTILINE} mode, they're
+different: \regexp{\e A} still matches only at the beginning of the
 string, but \regexp{\^} may match at any location inside the string
 that follows a newline character.
 
-\item[\regexp{\e Z}]Matches only at the end of the string.  
+\item[\regexp{\e Z}] Matches only at the end of the string.  
 
 \item[\regexp{\e b}] Word boundary.  
 This is a zero-width assertion that matches only at the
@@ -782,14 +786,23 @@ RE matched or not.  Regular expressions are often used to dissect
 strings by writing a RE divided into several subgroups which
 match different components of interest.  For example, an RFC-822
 header line is divided into a header name and a value, separated by a
-\character{:}.  This can be handled by writing a regular expression
+\character{:}, like this:
+
+\begin{verbatim}
+From: author@example.com
+User-Agent: Thunderbird 1.5.0.9 (X11/20061227)
+MIME-Version: 1.0
+To: editor@example.com
+\end{verbatim}
+
+This can be handled by writing a regular expression
 which matches an entire header line, and has one group which matches the
 header name, and another group which matches the header's value.
 
 Groups are marked by the \character{(}, \character{)} metacharacters.
 \character{(} and \character{)} have much the same meaning as they do
 in mathematical expressions; they group together the expressions
-contained inside them. For example, you can repeat the contents of a
+contained inside them, and you can repeat the contents of a
 group with a repeating qualifier, such as \regexp{*}, \regexp{+},
 \regexp{?}, or \regexp{\{\var{m},\var{n}\}}.  For example,
 \regexp{(ab)*} will match zero or more repetitions of \samp{ab}.
@@ -881,12 +894,13 @@ two features which help with this problem.  Both of them use a common
 syntax for regular expression extensions, so we'll look at that first.
 
 Perl 5 added several additional features to standard regular
-expressions, and the Python \module{re} module supports most of them.
-It would have been difficult to choose new single-keystroke
-metacharacters or new special sequences beginning with \samp{\e} to
-represent the new features without making Perl's regular expressions
-confusingly different from standard REs.  If you chose \samp{\&} as a
-new metacharacter, for example, old expressions would be assuming that
+expressions, and the Python \module{re} module supports most of them.  
+It would have been difficult to choose new
+single-keystroke metacharacters or new special sequences beginning
+with \samp{\e} to represent the new features without making Perl's
+regular expressions confusingly different from standard REs.  If you
+chose \samp{\&} as a new metacharacter, for example, old expressions
+would be assuming that
 \samp{\&} was a regular character and wouldn't have escaped it by
 writing \regexp{\e \&} or \regexp{[\&]}.  
 
