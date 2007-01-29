@@ -927,15 +927,15 @@ Now that we've looked at the general extension syntax, we can return
 to the features that simplify working with groups in complex REs.
 Since groups are numbered from left to right and a complex expression
 may use many groups, it can become difficult to keep track of the
-correct numbering, and modifying such a complex RE is annoying.
-Insert a new group near the beginning, and you change the numbers of
+correct numbering.  Modifying such a complex RE is annoying, too:
+insert a new group near the beginning and you change the numbers of
 everything that follows it.
 
-First, sometimes you'll want to use a group to collect a part of a
-regular expression, but aren't interested in retrieving the group's
-contents.  You can make this fact explicit by using a non-capturing
-group: \regexp{(?:...)}, where you can put any other regular
-expression inside the parentheses.  
+Sometimes you'll want to use a group to collect a part of a regular
+expression, but aren't interested in retrieving the group's contents.
+You can make this fact explicit by using a non-capturing group:
+\regexp{(?:...)}, where you can replace the \regexp{...}
+with any other regular expression.
 
 \begin{verbatim}
 >>> m = re.match("([abc])+", "abc")
@@ -951,23 +951,23 @@ group matched, a non-capturing group behaves exactly the same as a
 capturing group; you can put anything inside it, repeat it with a
 repetition metacharacter such as \samp{*}, and nest it within other
 groups (capturing or non-capturing).  \regexp{(?:...)} is particularly
-useful when modifying an existing group, since you can add new groups
+useful when modifying an existing pattern, since you can add new groups
 without changing how all the other groups are numbered.  It should be
 mentioned that there's no performance difference in searching between
 capturing and non-capturing groups; neither form is any faster than
 the other.
 
-The second, and more significant, feature is named groups; instead of
+A more significant feature is named groups: instead of
 referring to them by numbers, groups can be referenced by a name.
 
 The syntax for a named group is one of the Python-specific extensions:
 \regexp{(?P<\var{name}>...)}.  \var{name} is, obviously, the name of
-the group.  Except for associating a name with a group, named groups
-also behave identically to capturing groups.  The \class{MatchObject}
-methods that deal with capturing groups all accept either integers, to
-refer to groups by number, or a string containing the group name.
-Named groups are still given numbers, so you can retrieve information
-about a group in two ways:
+the group.  Named groups also behave exactly like capturing groups,
+and additionally associate a name with a group.  The
+\class{MatchObject} methods that deal with capturing groups all accept
+either integers that refer to the group by number or strings that
+contain the desired group's name.  Named groups are still given
+numbers, so you can retrieve information about a group in two ways:
 
 \begin{verbatim}
 >>> p = re.compile(r'(?P<word>\b\w+\b)')
@@ -994,11 +994,11 @@ InternalDate = re.compile(r'INTERNALDATE "'
 It's obviously much easier to retrieve \code{m.group('zonem')},
 instead of having to remember to retrieve group 9.
 
-Since the syntax for backreferences, in an expression like
-\regexp{(...)\e 1}, refers to the number of the group there's
+The syntax for backreferences in an expression such as
+\regexp{(...)\e 1} refers to the number of the group.  There's
 naturally a variant that uses the group name instead of the number.
-This is also a Python extension: \regexp{(?P=\var{name})} indicates
-that the contents of the group called \var{name} should again be found
+This is another Python extension: \regexp{(?P=\var{name})} indicates
+that the contents of the group called \var{name} should again be matched
 at the current point.  The regular expression for finding doubled
 words, \regexp{(\e b\e w+)\e s+\e 1} can also be written as
 \regexp{(?P<word>\e b\e w+)\e s+(?P=word)}:
@@ -1028,11 +1028,11 @@ opposite of the positive assertion; it succeeds if the contained expression
 \emph{doesn't} match at the current position in the string.
 \end{itemize}
 
-An example will help make this concrete by demonstrating a case
-where a lookahead is useful.  Consider a simple pattern to match a
-filename and split it apart into a base name and an extension,
-separated by a \samp{.}.  For example, in \samp{news.rc}, \samp{news}
-is the base name, and \samp{rc} is the filename's extension.  
+To make this concrete, let's look at a case where a lookahead is
+useful.  Consider a simple pattern to match a filename and split it
+apart into a base name and an extension, separated by a \samp{.}.  For
+example, in \samp{news.rc}, \samp{news} is the base name, and
+\samp{rc} is the filename's extension.
 
 The pattern to match this is quite simple: 
 
@@ -1079,12 +1079,12 @@ read and understand.  Worse, if the problem changes and you want to
 exclude both \samp{bat} and \samp{exe} as extensions, the pattern
 would get even more complicated and confusing.
 
-A negative lookahead cuts through all this:
+A negative lookahead cuts through all this confusion:
 
 \regexp{.*[.](?!bat\$).*\$}
 % $
 
-The lookahead means: if the expression \regexp{bat} doesn't match at
+The negative lookahead means: if the expression \regexp{bat} doesn't match at
 this point, try the rest of the pattern; if \regexp{bat\$} does match,
 the whole pattern will fail.  The trailing \regexp{\$} is required to
 ensure that something like \samp{sample.batch}, where the extension
@@ -1101,7 +1101,7 @@ filenames that end in either \samp{bat} or \samp{exe}:
 \section{Modifying Strings}
 
 Up to this point, we've simply performed searches against a static
-string.  Regular expressions are also commonly used to modify a string
+string.  Regular expressions are also commonly used to modify strings
 in various ways, using the following \class{RegexObject} methods:
 
 \begin{tableii}{c|l}{code}{Method/Attribute}{Purpose}
