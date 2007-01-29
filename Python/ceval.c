@@ -2772,7 +2772,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				}
 				PyErr_Format(PyExc_TypeError,
 					"%.200s() needs "
-					"keyword only argument %s",
+					"keyword-only argument %s",
 					PyString_AsString(co->co_name),
 					PyString_AsString(name));
 				goto fail;
