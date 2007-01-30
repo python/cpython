@@ -332,7 +332,7 @@ class FTP:
             # 1xx or error messages for LIST), so we just discard
             # this response.
             if resp[0] == '2':
-               resp = self.getresp()
+                resp = self.getresp()
             if resp[0] != '1':
                 raise error_reply, resp
         else:
@@ -342,7 +342,7 @@ class FTP:
             resp = self.sendcmd(cmd)
             # See above.
             if resp[0] == '2':
-               resp = self.getresp()
+                resp = self.getresp()
             if resp[0] != '1':
                 raise error_reply, resp
             conn, sockaddr = sock.accept()

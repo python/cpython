@@ -120,7 +120,7 @@ else:
     ##if False and lines != ['In child, calling os.setsid()',
     ##             'Good: OSError was raised.', '']:
     ##    raise TestFailed("Unexpected output from child: %r" % line)
-            
+
     (pid, status) = os.waitpid(pid, 0)
     res = status >> 8
     debug("Child (%d) exited with status %d (%d)."%(pid, res, status))
@@ -140,8 +140,8 @@ else:
     ##    pass
     ##else:
     ##    raise TestFailed("Read from master_fd did not raise exception")
-    
-    
+
+
 os.close(master_fd)
 
 # pty.fork() passed.

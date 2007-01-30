@@ -15,7 +15,7 @@ class ResourceTest(unittest.TestCase):
         self.assertRaises(TypeError, resource.setrlimit, 42, 42, 42)
 
     def test_fsize_ismax(self):
-       
+
         try:
             (cur, max) = resource.getrlimit(resource.RLIMIT_FSIZE)
         except AttributeError:
@@ -39,7 +39,7 @@ class ResourceTest(unittest.TestCase):
             # versions of Python were terminated by an uncaught SIGXFSZ, but
             # pythonrun.c has been fixed to ignore that exception.  If so, the
             # write() should return EFBIG when the limit is exceeded.
-            
+
             # At least one platform has an unlimited RLIMIT_FSIZE and attempts
             # to change it raise ValueError instead.
             try:

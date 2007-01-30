@@ -473,7 +473,7 @@ class SetSubclassWithKeywordArgs(set):
         set.__init__(self, iterable)
 
 class TestSetSubclassWithKeywordArgs(TestSet):
-    
+
     def test_keywords_in_subclass(self):
         'SF bug #1486663 -- this used to erroneously raise a TypeError'
         SetSubclassWithKeywordArgs(newarg=1)
@@ -1460,7 +1460,7 @@ def test_main(verbose=None):
     test_classes = (
         TestSet,
         TestSetSubclass,
-        TestSetSubclassWithKeywordArgs,        
+        TestSetSubclassWithKeywordArgs,
         TestFrozenSet,
         TestFrozenSetSubclass,
         TestSetOfSets,

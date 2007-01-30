@@ -1318,26 +1318,26 @@ class CookieJar:
         self._cookies_lock.acquire()
         try:
 
-           self._policy._now = self._now = int(time.time())
+            self._policy._now = self._now = int(time.time())
 
-           cookies = self._cookies_for_request(request)
+            cookies = self._cookies_for_request(request)
 
-           attrs = self._cookie_attrs(cookies)
-           if attrs:
-               if not request.has_header("Cookie"):
-                   request.add_unredirected_header(
-                       "Cookie", "; ".join(attrs))
+            attrs = self._cookie_attrs(cookies)
+            if attrs:
+                if not request.has_header("Cookie"):
+                    request.add_unredirected_header(
+                        "Cookie", "; ".join(attrs))
 
-           # if necessary, advertise that we know RFC 2965
-           if (self._policy.rfc2965 and not self._policy.hide_cookie2 and
-               not request.has_header("Cookie2")):
-               for cookie in cookies:
-                   if cookie.version != 1:
-                       request.add_unredirected_header("Cookie2", '$Version="1"')
-                       break
-   
+            # if necessary, advertise that we know RFC 2965
+            if (self._policy.rfc2965 and not self._policy.hide_cookie2 and
+                not request.has_header("Cookie2")):
+                for cookie in cookies:
+                    if cookie.version != 1:
+                        request.add_unredirected_header("Cookie2", '$Version="1"')
+                        break
+
         finally:
-           self._cookies_lock.release()
+            self._cookies_lock.release()
 
         self.clear_expired_cookies()
 
@@ -1609,7 +1609,7 @@ class CookieJar:
 
             if self._policy.set_ok(cookie, request):
                 self.set_cookie(cookie)
-         
+
 
         finally:
             self._cookies_lock.release()
@@ -1632,14 +1632,14 @@ class CookieJar:
         _debug("extract_cookies: %s", response.info())
         self._cookies_lock.acquire()
         try:
-           self._policy._now = self._now = int(time.time())
+            self._policy._now = self._now = int(time.time())
 
-           for cookie in self.make_cookies(response, request):
-               if self._policy.set_ok(cookie, request):
-                   _debug(" setting cookie: %s", cookie)
-                   self.set_cookie(cookie)
+            for cookie in self.make_cookies(response, request):
+                if self._policy.set_ok(cookie, request):
+                    _debug(" setting cookie: %s", cookie)
+                    self.set_cookie(cookie)
         finally:
-           self._cookies_lock.release()
+            self._cookies_lock.release()
 
     def clear(self, domain=None, path=None, name=None):
         """Clear some cookies.
@@ -1677,11 +1677,11 @@ class CookieJar:
         """
         self._cookies_lock.acquire()
         try:
-           for cookie in self:
-               if cookie.discard:
-                   self.clear(cookie.domain, cookie.path, cookie.name)
+            for cookie in self:
+                if cookie.discard:
+                    self.clear(cookie.domain, cookie.path, cookie.name)
         finally:
-           self._cookies_lock.release()
+            self._cookies_lock.release()
 
     def clear_expired_cookies(self):
         """Discard all expired cookies.
@@ -1695,12 +1695,12 @@ class CookieJar:
         """
         self._cookies_lock.acquire()
         try:
-           now = time.time()
-           for cookie in self:
-               if cookie.is_expired(now):
-                   self.clear(cookie.domain, cookie.path, cookie.name)
+            now = time.time()
+            for cookie in self:
+                if cookie.is_expired(now):
+                    self.clear(cookie.domain, cookie.path, cookie.name)
         finally:
-           self._cookies_lock.release()
+            self._cookies_lock.release()
 
     def __iter__(self):
         return deepvalues(self._cookies)
@@ -1774,16 +1774,16 @@ class FileCookieJar(CookieJar):
         self._cookies_lock.acquire()
         try:
 
-           old_state = copy.deepcopy(self._cookies)
-           self._cookies = {}
-           try:
-               self.load(filename, ignore_discard, ignore_expires)
-           except (LoadError, IOError):
-               self._cookies = old_state
-               raise
+            old_state = copy.deepcopy(self._cookies)
+            self._cookies = {}
+            try:
+                self.load(filename, ignore_discard, ignore_expires)
+            except (LoadError, IOError):
+                self._cookies = old_state
+                raise
 
         finally:
-           self._cookies_lock.release()
+            self._cookies_lock.release()
 
 from _LWPCookieJar import LWPCookieJar, lwp_cookie_str
 from _MozillaCookieJar import MozillaCookieJar

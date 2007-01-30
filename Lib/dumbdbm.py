@@ -246,5 +246,5 @@ def open(file, flag=None, mode=0666):
     else:
         # Turn off any bits that are set in the umask
         mode = mode & (~um)
-        
+
     return _Database(file, mode)
