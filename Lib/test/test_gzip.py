@@ -138,7 +138,7 @@ class TestGzip(unittest.TestCase):
         y = f.read(10)
         f.close()
         self.assertEquals(y, data1[20:30])
-        
+
     def test_seek_write(self):
         # Try seek, write test
         f = gzip.GzipFile(self.filename, 'w')
