@@ -38,9 +38,9 @@ Core and Builtins
 
 - PEP 3102: keyword-only arguments.
 
-- Int/Long unification is halfway complete.  The 'long' built-in type
-  hasn't been removed yet, and literals with trailing 'L' or 'l' are
-  still recognized.  Performance may be sub-optimal.
+- Int/Long unification is mostly complete.  The 'long' built-in type
+  and literals with trailing 'L' or 'l' have been removed.
+  Performance may be sub-optimal (haven't really benchmarked).
 
 - 'except E, V' must now be spelled as 'except E as V' and deletes V
   at the end of the except clause; V must be a simple name.
