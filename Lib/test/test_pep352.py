@@ -2,7 +2,7 @@ import unittest
 import __builtin__
 import exceptions
 import warnings
-from test.test_support import run_unittest
+from test.test_support import run_unittest, guard_warnings_filter
 import os
 from platform import system as platform_system
 
@@ -113,13 +113,8 @@ class UsageTests(unittest.TestCase):
 
     """Test usage of exceptions"""
 
-    def setUp(self):
-        self._filters = warnings.filters[:]
-
-    def tearDown(self):
-        warnings.filters = self._filters[:]
-
     def test_raise_classic(self):
+        # Raising a classic class is okay (for now).
         class ClassicClass:
             pass
         try:
@@ -136,6 +131,10 @@ class UsageTests(unittest.TestCase):
             self.fail("unable to raise class class instance")
 
     def test_raise_new_style_non_exception(self):
+        # You cannot raise a new-style class that does not inherit from
+        # BaseException; the ability was not possible until BaseException's
+        # introduction so no need to support new-style objects that do not
+        # inherit from it.
         class NewStyleClass(object):
             pass
         try:
@@ -143,35 +142,52 @@ class UsageTests(unittest.TestCase):
         except TypeError:
             pass
         except:
-            self.fail("unable to raise new-style class")
+            self.fail("able to raise new-style class")
         try:
             raise NewStyleClass()
         except TypeError:
             pass
         except:
-            self.fail("unable to raise new-style class instance")
+            self.fail("able to raise new-style class instance")
 
     def test_raise_string(self):
-        warnings.resetwarnings()
-        warnings.filterwarnings("error")
+        # Raising a string raises TypeError.
         try:
             raise "spam"
-        except DeprecationWarning:
+        except TypeError:
             pass
         except:
-            self.fail("raising a string did not cause a DeprecationWarning")
+            self.fail("was able to raise a string exception")
 
     def test_catch_string(self):
-        # Test will be pertinent when catching exceptions raises a
-        #   DeprecationWarning
-        warnings.filterwarnings("ignore", "raising")
-        str_exc = "spam"
-        try:
-            raise str_exc
-        except str_exc:
-            pass
-        except:
-            self.fail("catching a string exception failed")
+        # Catching a string should trigger a DeprecationWarning.
+        with guard_warnings_filter():
+            warnings.resetwarnings()
+            warnings.filterwarnings("error")
+            str_exc = "spam"
+            try:
+                try:
+                    raise StandardError
+                except str_exc:
+                    pass
+            except DeprecationWarning:
+                pass
+            except StandardError:
+                self.fail("catching a string exception did not raise "
+                            "DeprecationWarning")
+            # Make sure that even if the string exception is listed in a tuple
+            # that a warning is raised.
+            try:
+                try:
+                    raise StandardError
+                except (AssertionError, str_exc):
+                    pass
+            except DeprecationWarning:
+                pass
+            except StandardError:
+                self.fail("catching a string exception specified in a tuple did "
+                            "not raise DeprecationWarning")
+
 
 def test_main():
     run_unittest(ExceptionClassTests, UsageTests)

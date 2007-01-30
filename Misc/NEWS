@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- PEP 352: Raising a string exception now triggers a TypeError.  Attempting to
+  catch a string exception raises DeprecationWarning.
+
 - Bug #1377858: Fix the segfaulting of the interpreter when an object created
   a weakref on itself during a __del__ call for new-style classes (classic
   classes still have the bug).
