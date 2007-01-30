@@ -2206,8 +2206,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		case SETUP_LOOP:
 		case SETUP_EXCEPT:
 		case SETUP_FINALLY:
-			/* NOTE: If you add any new block-setup opcodes that are not try/except/finally
-			   handlers, you may need to update the PyGen_NeedsFinalizing() function. */
+			/* NOTE: If you add any new block-setup opcodes that are
+		           not try/except/finally handlers, you may need to
+			   update the PyGen_NeedsFinalizing() function. */
 
 			PyFrame_BlockSetup(f, opcode, INSTR_OFFSET() + oparg,
 					   STACK_LEVEL());
@@ -3069,15 +3070,7 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 		Py_DECREF(tmp);
 	}
 
-	if (PyString_CheckExact(type)) {
-		/* Raising builtin string is deprecated but still allowed --
-		 * do nothing.  Raising an instance of a new-style str
-		 * subclass is right out. */
-		if (PyErr_Warn(PyExc_DeprecationWarning,
-			   "raising a string exception is deprecated"))
-			goto raise_error;
-	}
-	else if (PyExceptionClass_Check(type))
+	if (PyExceptionClass_Check(type))
 		PyErr_NormalizeException(&type, &value, &tb);
 
 	else if (PyExceptionInstance_Check(type)) {
@@ -3099,8 +3092,7 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 		/* Not something you can raise.  You get an exception
 		   anyway, just not what you specified :-) */
 		PyErr_Format(PyExc_TypeError,
-			     "exceptions must be classes, instances, or "
-			     "strings (deprecated), not %s",
+			     "exceptions must be classes or instances, not %s",
 			     type->ob_type->tp_name);
 		goto raise_error;
 	}
@@ -3985,6 +3977,35 @@ cmp_outcome(int op, register PyObject *v, register PyObject *w)
 		res = !res;
 		break;
 	case PyCmp_EXC_MATCH:
+		if (PyTuple_Check(w)) {
+			Py_ssize_t i, length;
+			length = PyTuple_Size(w);
+			for (i = 0; i < length; i += 1) {
+				PyObject *exc = PyTuple_GET_ITEM(w, i);
+				if (PyString_Check(exc)) {
+					int ret_val;
+					ret_val = PyErr_WarnEx(
+							PyExc_DeprecationWarning,
+							"catching of string "
+							"exceptions is "
+							"deprecated", 1);
+					if (ret_val == -1)
+						return NULL;
+				}
+			}
+		}
+		else {
+			if (PyString_Check(w)) {
+				int ret_val;
+				ret_val = PyErr_WarnEx(
+						PyExc_DeprecationWarning,
+						"catching of string "
+						"exceptions is deprecated",
+						1);
+				if (ret_val == -1)
+					return NULL;
+			}
+		}
 		res = PyErr_GivenExceptionMatches(v, w);
 		break;
 	default:
