@@ -154,6 +154,9 @@ Extension Modules
 Library
 -------
 
+- Patch #783050: the pty.fork() function now closes the slave fd
+  correctly.
+
 - Patch #1638243: the compiler package is now able to correctly compile
   a with statement; previously, executing code containing a with statement
   compiled by the compiler package crashed the interpreter.
