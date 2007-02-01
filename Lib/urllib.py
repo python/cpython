@@ -452,7 +452,7 @@ class URLopener:
 
     def open_local_file(self, url):
         """Use local file."""
-        import mimetypes, mimetools, email.Utils
+        import mimetypes, mimetools, email.utils
         try:
             from cStringIO import StringIO
         except ImportError:
@@ -464,7 +464,7 @@ class URLopener:
         except OSError as e:
             raise IOError(e.errno, e.strerror, e.filename)
         size = stats.st_size
-        modified = email.Utils.formatdate(stats.st_mtime, usegmt=True)
+        modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
         mtype = mimetypes.guess_type(url)[0]
         headers = mimetools.Message(StringIO(
             'Content-Type: %s\nContent-Length: %d\nLast-modified: %s\n' %

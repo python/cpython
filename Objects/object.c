@@ -314,7 +314,7 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
 
 /* For debugging convenience.  Set a breakpoint here and call it from your DLL */
 void
-_Py_Break(void)
+_Py_BreakPoint(void)
 {
 }
 

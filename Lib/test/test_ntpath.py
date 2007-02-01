@@ -115,6 +115,28 @@ tester("ntpath.normpath('K:../.././..')", r'K:..\..\..')
 tester("ntpath.normpath('C:////a/b')", r'C:\a\b')
 tester("ntpath.normpath('//machine/share//a/b')", r'\\machine\share\a\b')
 
+oldenv = os.environ.copy()
+try:
+    os.environ.clear()
+    os.environ["foo"] = "bar"
+    os.environ["{foo"] = "baz1"
+    os.environ["{foo}"] = "baz2"
+    tester('ntpath.expandvars("foo")', "foo")
+    tester('ntpath.expandvars("$foo bar")', "bar bar")
+    tester('ntpath.expandvars("${foo}bar")', "barbar")
+    tester('ntpath.expandvars("$[foo]bar")', "$[foo]bar")
+    tester('ntpath.expandvars("$bar bar")', "$bar bar")
+    tester('ntpath.expandvars("$?bar")', "$?bar")
+    tester('ntpath.expandvars("${foo}bar")', "barbar")
+    tester('ntpath.expandvars("$foo}bar")', "bar}bar")
+    tester('ntpath.expandvars("${foo")', "${foo")
+    tester('ntpath.expandvars("${{foo}}")', "baz1}")
+    tester('ntpath.expandvars("$foo$foo")', "barbar")
+    tester('ntpath.expandvars("$bar$bar")', "$bar$bar")
+finally:
+    os.environ.clear()
+    os.environ.update(oldenv)
+
 # ntpath.abspath() can only be used on a system with the "nt" module
 # (reasonably), so we protect this test with "import nt".  This allows
 # the rest of the tests for the ntpath module to be run to completion

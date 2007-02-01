@@ -109,11 +109,44 @@ class MaildirTestCase(unittest.TestCase):
             self.assertEqual(len(str(msg)), len(FROM_)+len(DUMMY_MESSAGE))
         self.assertEqual(n, 1)
 
+class MboxTestCase(unittest.TestCase):
+    def setUp(self):
+        # create a new maildir mailbox to work with:
+        self._path = test_support.TESTFN
+
+    def tearDown(self):
+        os.unlink(self._path)
+    
+    def test_from_regex (self):
+        # Testing new regex from bug #1633678
+        f = open(self._path, 'w')
+        f.write("""From fred@example.com Mon May 31 13:24:50 2004 +0200
+Subject: message 1
+
+body1
+From fred@example.com Mon May 31 13:24:50 2004 -0200
+Subject: message 2
+
+body2
+From fred@example.com Mon May 31 13:24:50 2004
+Subject: message 3
+
+body3
+From fred@example.com Mon May 31 13:24:50 2004
+Subject: message 4
+
+body4
+""")
+        f.close()
+        box = mailbox.UnixMailbox(open(self._path, 'r'))
+        self.assert_(len(list(iter(box))) == 4)
+
+
     # XXX We still need more tests!
 
 
 def test_main():
-    test_support.run_unittest(MaildirTestCase)
+    test_support.run_unittest(MaildirTestCase, MboxTestCase)
 
 
 if __name__ == "__main__":

@@ -4,10 +4,9 @@
   Particularly useful for platforms that fake popen.
 """
 
-import os
-import sys
-from test.test_support import TestSkipped, reap_children
-from os import popen
+import unittest
+from test import test_support
+import os, sys
 
 # Test that command-lines get down as we expect.
 # To do this we execute:
@@ -17,24 +16,32 @@ from os import popen
 python = sys.executable
 if ' ' in python:
     python = '"' + python + '"'     # quote embedded space for cmdline
-def _do_test_commandline(cmdline, expected):
-    cmd = '%s -c "import sys;print sys.argv" %s' % (python, cmdline)
-    data = popen(cmd).read()
-    got = eval(data)[1:] # strip off argv[0]
-    if got != expected:
-        print "Error in popen commandline handling."
-        print " executed '%s', expected '%r', but got '%r'" \
-                                                    % (cmdline, expected, got)
 
-def _test_commandline():
-    _do_test_commandline("foo bar", ["foo", "bar"])
-    _do_test_commandline('foo "spam and eggs" "silly walk"', ["foo", "spam and eggs", "silly walk"])
-    _do_test_commandline('foo "a \\"quoted\\" arg" bar', ["foo", 'a "quoted" arg', "bar"])
-    print "popen seemed to process the command-line correctly"
+class PopenTest(unittest.TestCase):
+    def _do_test_commandline(self, cmdline, expected):
+        cmd = '%s -c "import sys;print sys.argv" %s' % (python, cmdline)
+        data = os.popen(cmd).read()
+        got = eval(data)[1:] # strip off argv[0]
+        self.assertEqual(got, expected)
 
-def main():
-    print "Test popen:"
-    _test_commandline()
-    reap_children()
+    def test_popen(self):
+        self.assertRaises(TypeError, os.popen)
+        self._do_test_commandline(
+            "foo bar",
+            ["foo", "bar"]
+        )
+        self._do_test_commandline(
+            'foo "spam and eggs" "silly walk"',
+            ["foo", "spam and eggs", "silly walk"]
+        )
+        self._do_test_commandline(
+            'foo "a \\"quoted\\" arg" bar',
+            ["foo", 'a "quoted" arg', "bar"]
+        )
+        test_support.reap_children()
 
-main()
+def test_main():
+    test_support.run_unittest(PopenTest)
+
+if __name__ == "__main__":
+    test_main()

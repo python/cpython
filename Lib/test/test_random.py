@@ -517,6 +517,14 @@ class TestModule(unittest.TestCase):
         # tests validity but not completeness of the __all__ list
         self.failUnless(set(random.__all__) <= set(dir(random)))
 
+    def test_random_subclass_with_kwargs(self):
+        # SF bug #1486663 -- this used to erroneously raise a TypeError
+        class Subclass(random.Random):
+            def __init__(self, newarg=None):
+                random.Random.__init__(self)
+        Subclass(newarg=1)
+
+
 def test_main(verbose=None):
     testclasses =    [WichmannHill_TestBasicOps,
                       MersenneTwister_TestBasicOps,

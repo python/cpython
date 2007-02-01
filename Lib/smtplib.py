@@ -43,10 +43,10 @@ Example:
 
 import socket
 import re
-import email.Utils
+import email.utils
 import base64
 import hmac
-from email.base64MIME import encode as encode_base64
+from email.base64mime import encode as encode_base64
 from sys import stderr
 
 __all__ = ["SMTPException","SMTPServerDisconnected","SMTPResponseException",
@@ -172,7 +172,7 @@ def quoteaddr(addr):
     """
     m = (None, None)
     try:
-        m = email.Utils.parseaddr(addr)[1]
+        m = email.utils.parseaddr(addr)[1]
     except AttributeError:
         pass
     if m == (None, None): # Indicates parse failure or AttributeError

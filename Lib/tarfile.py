@@ -1632,19 +1632,7 @@ class TarFile(object):
         # Create all upper directories.
         upperdirs = os.path.dirname(targetpath)
         if upperdirs and not os.path.exists(upperdirs):
-            ti = TarInfo()
-            ti.name  = upperdirs
-            ti.type  = DIRTYPE
-            ti.mode  = 0777
-            ti.mtime = tarinfo.mtime
-            ti.uid   = tarinfo.uid
-            ti.gid   = tarinfo.gid
-            ti.uname = tarinfo.uname
-            ti.gname = tarinfo.gname
-            try:
-                self._extract_member(ti, ti.name)
-            except:
-                pass
+            os.makedirs(upperdirs)
 
         if tarinfo.islnk() or tarinfo.issym():
             self._dbg(1, "%s -> %s" % (tarinfo.name, tarinfo.linkname))

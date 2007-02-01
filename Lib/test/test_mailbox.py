@@ -4,7 +4,7 @@ import time
 import stat
 import socket
 import email
-import email.Message
+import email.message
 import rfc822
 import re
 import StringIO
@@ -22,7 +22,7 @@ class TestBase(unittest.TestCase):
 
     def _check_sample(self, msg):
         # Inspect a mailbox.Message representation of the sample message
-        self.assert_(isinstance(msg, email.Message.Message))
+        self.assert_(isinstance(msg, email.message.Message))
         self.assert_(isinstance(msg, mailbox.Message))
         for key, value in _sample_headers.iteritems():
             self.assert_(value in msg.get_all(key))
@@ -30,7 +30,7 @@ class TestBase(unittest.TestCase):
         self.assert_(len(msg.get_payload()) == len(_sample_payloads))
         for i, payload in enumerate(_sample_payloads):
             part = msg.get_payload(i)
-            self.assert_(isinstance(part, email.Message.Message))
+            self.assert_(isinstance(part, email.message.Message))
             self.assert_(not isinstance(part, mailbox.Message))
             self.assert_(part.get_payload() == payload)
 
@@ -939,7 +939,7 @@ class TestMessage(TestBase):
         self._delete_recursively(self._path)
 
     def test_initialize_with_eMM(self):
-        # Initialize based on email.Message.Message instance
+        # Initialize based on email.message.Message instance
         eMM = email.message_from_string(_sample_message)
         msg = self._factory(eMM)
         self._post_initialize_hook(msg)
@@ -965,7 +965,7 @@ class TestMessage(TestBase):
         # Initialize without arguments
         msg = self._factory()
         self._post_initialize_hook(msg)
-        self.assert_(isinstance(msg, email.Message.Message))
+        self.assert_(isinstance(msg, email.message.Message))
         self.assert_(isinstance(msg, mailbox.Message))
         self.assert_(isinstance(msg, self._factory))
         self.assert_(msg.keys() == [])
@@ -992,7 +992,7 @@ class TestMessage(TestBase):
                        mailbox.BabylMessage, mailbox.MMDFMessage):
             other_msg = class_()
             msg._explain_to(other_msg)
-        other_msg = email.Message.Message()
+        other_msg = email.message.Message()
         self.assertRaises(TypeError, lambda: msg._explain_to(other_msg))
 
     def _post_initialize_hook(self, msg):
@@ -1732,11 +1732,11 @@ class MaildirTestCase(unittest.TestCase):
 
     def test_unix_mbox(self):
         ### should be better!
-        import email.Parser
+        import email.parser
         fname = self.createMessage("cur", True)
         n = 0
         for msg in mailbox.PortableUnixMailbox(open(fname),
-                                               email.Parser.Parser().parse):
+                                               email.parser.Parser().parse):
             n += 1
             self.assertEqual(msg["subject"], "Simple Test")
             self.assertEqual(len(str(msg)), len(FROM_)+len(DUMMY_MESSAGE))
