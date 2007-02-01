@@ -114,11 +114,11 @@ class UUFileTest(unittest.TestCase):
 
     def test_encode(self):
         try:
-            fin = open(self.tmpin, 'w')
+            fin = open(self.tmpin, 'wb')
             fin.write(plaintext)
             fin.close()
 
-            fin = open(self.tmpin, 'r')
+            fin = open(self.tmpin, 'rb')
             fout = open(self.tmpout, 'w')
             uu.encode(fin, fout, self.tmpin, mode=0644)
             fin.close()

@@ -681,7 +681,7 @@ cycle_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *saved;
 	cycleobject *lz;
 
-	if (!_PyArg_NoKeywords("cycle()", kwds))
+	if (type == &cycle_type && !_PyArg_NoKeywords("cycle()", kwds))
 		return NULL;
 
 	if (!PyArg_UnpackTuple(args, "cycle", 1, 1, &iterable))
@@ -831,7 +831,7 @@ dropwhile_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *it;
 	dropwhileobject *lz;
 
-	if (!_PyArg_NoKeywords("dropwhile()", kwds))
+	if (type == &dropwhile_type && !_PyArg_NoKeywords("dropwhile()", kwds))
 		return NULL;
 
 	if (!PyArg_UnpackTuple(args, "dropwhile", 2, 2, &func, &seq))
@@ -975,7 +975,7 @@ takewhile_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *it;
 	takewhileobject *lz;
 
-	if (!_PyArg_NoKeywords("takewhile()", kwds))
+	if (type == &takewhile_type && !_PyArg_NoKeywords("takewhile()", kwds))
 		return NULL;
 
 	if (!PyArg_UnpackTuple(args, "takewhile", 2, 2, &func, &seq))
@@ -1120,7 +1120,7 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	Py_ssize_t numargs;
 	isliceobject *lz;
 
-	if (!_PyArg_NoKeywords("islice()", kwds))
+	if (type == &islice_type && !_PyArg_NoKeywords("islice()", kwds))
 		return NULL;
 
 	if (!PyArg_UnpackTuple(args, "islice", 2, 4, &seq, &a1, &a2, &a3))
@@ -1311,7 +1311,7 @@ starmap_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *it;
 	starmapobject *lz;
 
-	if (!_PyArg_NoKeywords("starmap()", kwds))
+	if (type == &starmap_type && !_PyArg_NoKeywords("starmap()", kwds))
 		return NULL;
 
 	if (!PyArg_UnpackTuple(args, "starmap", 2, 2, &func, &seq))
@@ -1443,7 +1443,7 @@ imap_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	imapobject *lz;
 	Py_ssize_t numargs, i;
 
-	if (!_PyArg_NoKeywords("imap()", kwds))
+	if (type == &imap_type && !_PyArg_NoKeywords("imap()", kwds))
 		return NULL;
 
 	numargs = PyTuple_Size(args);
@@ -1625,7 +1625,7 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	Py_ssize_t i;
 	PyObject *ittuple;
 
-	if (!_PyArg_NoKeywords("chain()", kwds))
+	if (type == &chain_type && !_PyArg_NoKeywords("chain()", kwds))
 		return NULL;
 
 	/* obtain iterators */
@@ -1768,7 +1768,7 @@ ifilter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *it;
 	ifilterobject *lz;
 
-	if (!_PyArg_NoKeywords("ifilter()", kwds))
+	if (type == &ifilter_type && !_PyArg_NoKeywords("ifilter()", kwds))
 		return NULL;
 
 	if (!PyArg_UnpackTuple(args, "ifilter", 2, 2, &func, &seq))
@@ -1912,7 +1912,8 @@ ifilterfalse_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *it;
 	ifilterfalseobject *lz;
 
-	if (!_PyArg_NoKeywords("ifilterfalse()", kwds))
+	if (type == &ifilterfalse_type &&
+	    !_PyArg_NoKeywords("ifilterfalse()", kwds))
 		return NULL;
 
 	if (!PyArg_UnpackTuple(args, "ifilterfalse", 2, 2, &func, &seq))
@@ -2054,7 +2055,7 @@ count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	countobject *lz;
 	Py_ssize_t cnt = 0;
 
-	if (!_PyArg_NoKeywords("count()", kwds))
+	if (type == &count_type && !_PyArg_NoKeywords("count()", kwds))
 		return NULL;
 
 	if (!PyArg_ParseTuple(args, "|n:count", &cnt))
@@ -2153,7 +2154,7 @@ izip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *result;
 	Py_ssize_t tuplesize = PySequence_Length(args);
 
-	if (!_PyArg_NoKeywords("izip()", kwds))
+	if (type == &izip_type && !_PyArg_NoKeywords("izip()", kwds))
 		return NULL;
 
 	/* args must be a tuple */
@@ -2336,7 +2337,7 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *element;
 	Py_ssize_t cnt = -1;
 
-	if (!_PyArg_NoKeywords("repeat()", kwds))
+	if (type == &repeat_type && !_PyArg_NoKeywords("repeat()", kwds))
 		return NULL;
 
 	if (!PyArg_ParseTuple(args, "O|n:repeat", &element, &cnt))

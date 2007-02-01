@@ -1087,7 +1087,7 @@ class AbstractHTTPHandler(BaseHandler):
         # out of socket._fileobject() and into a base class.
 
         r.recv = r.read
-        fp = socket._fileobject(r)
+        fp = socket._fileobject(r, close=True)
 
         resp = addinfourl(fp, r.msg, req.get_full_url())
         resp.code = r.status
@@ -1209,14 +1209,14 @@ class FileHandler(BaseHandler):
 
     # not entirely sure what the rules are here
     def open_local_file(self, req):
-        import email.Utils
+        import email.utils
         import mimetypes
         host = req.get_host()
         file = req.get_selector()
         localfile = url2pathname(file)
         stats = os.stat(localfile)
         size = stats.st_size
-        modified = email.Utils.formatdate(stats.st_mtime, usegmt=True)
+        modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
         mtype = mimetypes.guess_type(file)[0]
         headers = mimetools.Message(StringIO(
             'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %

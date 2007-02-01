@@ -366,97 +366,157 @@ struct _alias {
 };
 
 
-mod_ty Module(asdl_seq * body, PyArena *arena);
-mod_ty Interactive(asdl_seq * body, PyArena *arena);
-mod_ty Expression(expr_ty body, PyArena *arena);
-mod_ty Suite(asdl_seq * body, PyArena *arena);
-stmt_ty FunctionDef(identifier name, arguments_ty args, asdl_seq * body,
-                    asdl_seq * decorators, expr_ty returns, int lineno, int
-                    col_offset, PyArena *arena);
-stmt_ty ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int
-                 lineno, int col_offset, PyArena *arena);
-stmt_ty Return(expr_ty value, int lineno, int col_offset, PyArena *arena);
-stmt_ty Delete(asdl_seq * targets, int lineno, int col_offset, PyArena *arena);
-stmt_ty Assign(asdl_seq * targets, expr_ty value, int lineno, int col_offset,
-               PyArena *arena);
-stmt_ty AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno,
-                  int col_offset, PyArena *arena);
-stmt_ty Print(expr_ty dest, asdl_seq * values, bool nl, int lineno, int
-              col_offset, PyArena *arena);
-stmt_ty For(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse,
-            int lineno, int col_offset, PyArena *arena);
-stmt_ty While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, int
-              col_offset, PyArena *arena);
-stmt_ty If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, int
-           col_offset, PyArena *arena);
-stmt_ty With(expr_ty context_expr, expr_ty optional_vars, asdl_seq * body, int
-             lineno, int col_offset, PyArena *arena);
-stmt_ty Raise(expr_ty type, expr_ty inst, expr_ty tback, int lineno, int
-              col_offset, PyArena *arena);
-stmt_ty TryExcept(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse, int
-                  lineno, int col_offset, PyArena *arena);
-stmt_ty TryFinally(asdl_seq * body, asdl_seq * finalbody, int lineno, int
+#define Module(a0, a1) _Py_Module(a0, a1)
+mod_ty _Py_Module(asdl_seq * body, PyArena *arena);
+#define Interactive(a0, a1) _Py_Interactive(a0, a1)
+mod_ty _Py_Interactive(asdl_seq * body, PyArena *arena);
+#define Expression(a0, a1) _Py_Expression(a0, a1)
+mod_ty _Py_Expression(expr_ty body, PyArena *arena);
+#define Suite(a0, a1) _Py_Suite(a0, a1)
+mod_ty _Py_Suite(asdl_seq * body, PyArena *arena);
+#define FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7) _Py_FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7)
+stmt_ty _Py_FunctionDef(identifier name, arguments_ty args, asdl_seq * body,
+                        asdl_seq * decorators, expr_ty returns, int lineno, int
+                        col_offset, PyArena *arena);
+#define ClassDef(a0, a1, a2, a3, a4, a5) _Py_ClassDef(a0, a1, a2, a3, a4, a5)
+stmt_ty _Py_ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int
+                     lineno, int col_offset, PyArena *arena);
+#define Return(a0, a1, a2, a3) _Py_Return(a0, a1, a2, a3)
+stmt_ty _Py_Return(expr_ty value, int lineno, int col_offset, PyArena *arena);
+#define Delete(a0, a1, a2, a3) _Py_Delete(a0, a1, a2, a3)
+stmt_ty _Py_Delete(asdl_seq * targets, int lineno, int col_offset, PyArena
+                   *arena);
+#define Assign(a0, a1, a2, a3, a4) _Py_Assign(a0, a1, a2, a3, a4)
+stmt_ty _Py_Assign(asdl_seq * targets, expr_ty value, int lineno, int
                    col_offset, PyArena *arena);
-stmt_ty Assert(expr_ty test, expr_ty msg, int lineno, int col_offset, PyArena
-               *arena);
-stmt_ty Import(asdl_seq * names, int lineno, int col_offset, PyArena *arena);
-stmt_ty ImportFrom(identifier module, asdl_seq * names, int level, int lineno,
-                   int col_offset, PyArena *arena);
-stmt_ty Global(asdl_seq * names, int lineno, int col_offset, PyArena *arena);
-stmt_ty Expr(expr_ty value, int lineno, int col_offset, PyArena *arena);
-stmt_ty Pass(int lineno, int col_offset, PyArena *arena);
-stmt_ty Break(int lineno, int col_offset, PyArena *arena);
-stmt_ty Continue(int lineno, int col_offset, PyArena *arena);
-expr_ty BoolOp(boolop_ty op, asdl_seq * values, int lineno, int col_offset,
-               PyArena *arena);
-expr_ty BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, int
-              col_offset, PyArena *arena);
-expr_ty UnaryOp(unaryop_ty op, expr_ty operand, int lineno, int col_offset,
-                PyArena *arena);
-expr_ty Lambda(arguments_ty args, expr_ty body, int lineno, int col_offset,
-               PyArena *arena);
-expr_ty IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, int
-              col_offset, PyArena *arena);
-expr_ty Dict(asdl_seq * keys, asdl_seq * values, int lineno, int col_offset,
-             PyArena *arena);
-expr_ty Set(asdl_seq * elts, int lineno, int col_offset, PyArena *arena);
-expr_ty ListComp(expr_ty elt, asdl_seq * generators, int lineno, int
+#define AugAssign(a0, a1, a2, a3, a4, a5) _Py_AugAssign(a0, a1, a2, a3, a4, a5)
+stmt_ty _Py_AugAssign(expr_ty target, operator_ty op, expr_ty value, int
+                      lineno, int col_offset, PyArena *arena);
+#define Print(a0, a1, a2, a3, a4, a5) _Py_Print(a0, a1, a2, a3, a4, a5)
+stmt_ty _Py_Print(expr_ty dest, asdl_seq * values, bool nl, int lineno, int
+                  col_offset, PyArena *arena);
+#define For(a0, a1, a2, a3, a4, a5, a6) _Py_For(a0, a1, a2, a3, a4, a5, a6)
+stmt_ty _Py_For(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq *
+                orelse, int lineno, int col_offset, PyArena *arena);
+#define While(a0, a1, a2, a3, a4, a5) _Py_While(a0, a1, a2, a3, a4, a5)
+stmt_ty _Py_While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno,
+                  int col_offset, PyArena *arena);
+#define If(a0, a1, a2, a3, a4, a5) _Py_If(a0, a1, a2, a3, a4, a5)
+stmt_ty _Py_If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno,
+               int col_offset, PyArena *arena);
+#define With(a0, a1, a2, a3, a4, a5) _Py_With(a0, a1, a2, a3, a4, a5)
+stmt_ty _Py_With(expr_ty context_expr, expr_ty optional_vars, asdl_seq * body,
+                 int lineno, int col_offset, PyArena *arena);
+#define Raise(a0, a1, a2, a3, a4, a5) _Py_Raise(a0, a1, a2, a3, a4, a5)
+stmt_ty _Py_Raise(expr_ty type, expr_ty inst, expr_ty tback, int lineno, int
+                  col_offset, PyArena *arena);
+#define TryExcept(a0, a1, a2, a3, a4, a5) _Py_TryExcept(a0, a1, a2, a3, a4, a5)
+stmt_ty _Py_TryExcept(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse,
+                      int lineno, int col_offset, PyArena *arena);
+#define TryFinally(a0, a1, a2, a3, a4) _Py_TryFinally(a0, a1, a2, a3, a4)
+stmt_ty _Py_TryFinally(asdl_seq * body, asdl_seq * finalbody, int lineno, int
+                       col_offset, PyArena *arena);
+#define Assert(a0, a1, a2, a3, a4) _Py_Assert(a0, a1, a2, a3, a4)
+stmt_ty _Py_Assert(expr_ty test, expr_ty msg, int lineno, int col_offset,
+                   PyArena *arena);
+#define Import(a0, a1, a2, a3) _Py_Import(a0, a1, a2, a3)
+stmt_ty _Py_Import(asdl_seq * names, int lineno, int col_offset, PyArena
+                   *arena);
+#define ImportFrom(a0, a1, a2, a3, a4, a5) _Py_ImportFrom(a0, a1, a2, a3, a4, a5)
+stmt_ty _Py_ImportFrom(identifier module, asdl_seq * names, int level, int
+                       lineno, int col_offset, PyArena *arena);
+#define Global(a0, a1, a2, a3) _Py_Global(a0, a1, a2, a3)
+stmt_ty _Py_Global(asdl_seq * names, int lineno, int col_offset, PyArena
+                   *arena);
+#define Expr(a0, a1, a2, a3) _Py_Expr(a0, a1, a2, a3)
+stmt_ty _Py_Expr(expr_ty value, int lineno, int col_offset, PyArena *arena);
+#define Pass(a0, a1, a2) _Py_Pass(a0, a1, a2)
+stmt_ty _Py_Pass(int lineno, int col_offset, PyArena *arena);
+#define Break(a0, a1, a2) _Py_Break(a0, a1, a2)
+stmt_ty _Py_Break(int lineno, int col_offset, PyArena *arena);
+#define Continue(a0, a1, a2) _Py_Continue(a0, a1, a2)
+stmt_ty _Py_Continue(int lineno, int col_offset, PyArena *arena);
+#define BoolOp(a0, a1, a2, a3, a4) _Py_BoolOp(a0, a1, a2, a3, a4)
+expr_ty _Py_BoolOp(boolop_ty op, asdl_seq * values, int lineno, int col_offset,
+                   PyArena *arena);
+#define BinOp(a0, a1, a2, a3, a4, a5) _Py_BinOp(a0, a1, a2, a3, a4, a5)
+expr_ty _Py_BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, int
+                  col_offset, PyArena *arena);
+#define UnaryOp(a0, a1, a2, a3, a4) _Py_UnaryOp(a0, a1, a2, a3, a4)
+expr_ty _Py_UnaryOp(unaryop_ty op, expr_ty operand, int lineno, int col_offset,
+                    PyArena *arena);
+#define Lambda(a0, a1, a2, a3, a4) _Py_Lambda(a0, a1, a2, a3, a4)
+expr_ty _Py_Lambda(arguments_ty args, expr_ty body, int lineno, int col_offset,
+                   PyArena *arena);
+#define IfExp(a0, a1, a2, a3, a4, a5) _Py_IfExp(a0, a1, a2, a3, a4, a5)
+expr_ty _Py_IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, int
+                  col_offset, PyArena *arena);
+#define Dict(a0, a1, a2, a3, a4) _Py_Dict(a0, a1, a2, a3, a4)
+expr_ty _Py_Dict(asdl_seq * keys, asdl_seq * values, int lineno, int
                  col_offset, PyArena *arena);
-expr_ty GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, int
+#define Set(a0, a1, a2, a3) _Py_Set(a0, a1, a2, a3)
+expr_ty _Py_Set(asdl_seq * elts, int lineno, int col_offset, PyArena *arena);
+#define ListComp(a0, a1, a2, a3, a4) _Py_ListComp(a0, a1, a2, a3, a4)
+expr_ty _Py_ListComp(expr_ty elt, asdl_seq * generators, int lineno, int
                      col_offset, PyArena *arena);
-expr_ty Yield(expr_ty value, int lineno, int col_offset, PyArena *arena);
-expr_ty Compare(expr_ty left, asdl_int_seq * ops, asdl_seq * comparators, int
-                lineno, int col_offset, PyArena *arena);
-expr_ty Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty
-             starargs, expr_ty kwargs, int lineno, int col_offset, PyArena
-             *arena);
-expr_ty Num(object n, int lineno, int col_offset, PyArena *arena);
-expr_ty Str(string s, int lineno, int col_offset, PyArena *arena);
-expr_ty Ellipsis(int lineno, int col_offset, PyArena *arena);
-expr_ty Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int
-                  lineno, int col_offset, PyArena *arena);
-expr_ty Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int
-                  lineno, int col_offset, PyArena *arena);
-expr_ty Name(identifier id, expr_context_ty ctx, int lineno, int col_offset,
-             PyArena *arena);
-expr_ty List(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset,
-             PyArena *arena);
-expr_ty Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset,
-              PyArena *arena);
-slice_ty Slice(expr_ty lower, expr_ty upper, expr_ty step, PyArena *arena);
-slice_ty ExtSlice(asdl_seq * dims, PyArena *arena);
-slice_ty Index(expr_ty value, PyArena *arena);
-comprehension_ty comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs,
-                               PyArena *arena);
-excepthandler_ty excepthandler(expr_ty type, identifier name, asdl_seq * body,
-                               int lineno, int col_offset, PyArena *arena);
-arguments_ty arguments(asdl_seq * args, identifier vararg, expr_ty
-                       varargannotation, asdl_seq * kwonlyargs, identifier
-                       kwarg, expr_ty kwargannotation, asdl_seq * defaults,
-                       asdl_seq * kw_defaults, PyArena *arena);
-arg_ty SimpleArg(identifier arg, expr_ty annotation, PyArena *arena);
-arg_ty NestedArgs(asdl_seq * args, PyArena *arena);
-keyword_ty keyword(identifier arg, expr_ty value, PyArena *arena);
-alias_ty alias(identifier name, identifier asname, PyArena *arena);
+#define GeneratorExp(a0, a1, a2, a3, a4) _Py_GeneratorExp(a0, a1, a2, a3, a4)
+expr_ty _Py_GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, int
+                         col_offset, PyArena *arena);
+#define Yield(a0, a1, a2, a3) _Py_Yield(a0, a1, a2, a3)
+expr_ty _Py_Yield(expr_ty value, int lineno, int col_offset, PyArena *arena);
+#define Compare(a0, a1, a2, a3, a4, a5) _Py_Compare(a0, a1, a2, a3, a4, a5)
+expr_ty _Py_Compare(expr_ty left, asdl_int_seq * ops, asdl_seq * comparators,
+                    int lineno, int col_offset, PyArena *arena);
+#define Call(a0, a1, a2, a3, a4, a5, a6, a7) _Py_Call(a0, a1, a2, a3, a4, a5, a6, a7)
+expr_ty _Py_Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty
+                 starargs, expr_ty kwargs, int lineno, int col_offset, PyArena
+                 *arena);
+#define Num(a0, a1, a2, a3) _Py_Num(a0, a1, a2, a3)
+expr_ty _Py_Num(object n, int lineno, int col_offset, PyArena *arena);
+#define Str(a0, a1, a2, a3) _Py_Str(a0, a1, a2, a3)
+expr_ty _Py_Str(string s, int lineno, int col_offset, PyArena *arena);
+#define Ellipsis(a0, a1, a2) _Py_Ellipsis(a0, a1, a2)
+expr_ty _Py_Ellipsis(int lineno, int col_offset, PyArena *arena);
+#define Attribute(a0, a1, a2, a3, a4, a5) _Py_Attribute(a0, a1, a2, a3, a4, a5)
+expr_ty _Py_Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int
+                      lineno, int col_offset, PyArena *arena);
+#define Subscript(a0, a1, a2, a3, a4, a5) _Py_Subscript(a0, a1, a2, a3, a4, a5)
+expr_ty _Py_Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int
+                      lineno, int col_offset, PyArena *arena);
+#define Name(a0, a1, a2, a3, a4) _Py_Name(a0, a1, a2, a3, a4)
+expr_ty _Py_Name(identifier id, expr_context_ty ctx, int lineno, int
+                 col_offset, PyArena *arena);
+#define List(a0, a1, a2, a3, a4) _Py_List(a0, a1, a2, a3, a4)
+expr_ty _Py_List(asdl_seq * elts, expr_context_ty ctx, int lineno, int
+                 col_offset, PyArena *arena);
+#define Tuple(a0, a1, a2, a3, a4) _Py_Tuple(a0, a1, a2, a3, a4)
+expr_ty _Py_Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, int
+                  col_offset, PyArena *arena);
+#define Slice(a0, a1, a2, a3) _Py_Slice(a0, a1, a2, a3)
+slice_ty _Py_Slice(expr_ty lower, expr_ty upper, expr_ty step, PyArena *arena);
+#define ExtSlice(a0, a1) _Py_ExtSlice(a0, a1)
+slice_ty _Py_ExtSlice(asdl_seq * dims, PyArena *arena);
+#define Index(a0, a1) _Py_Index(a0, a1)
+slice_ty _Py_Index(expr_ty value, PyArena *arena);
+#define comprehension(a0, a1, a2, a3) _Py_comprehension(a0, a1, a2, a3)
+comprehension_ty _Py_comprehension(expr_ty target, expr_ty iter, asdl_seq *
+                                   ifs, PyArena *arena);
+#define excepthandler(a0, a1, a2, a3, a4, a5) _Py_excepthandler(a0, a1, a2, a3, a4, a5)
+excepthandler_ty _Py_excepthandler(expr_ty type, identifier name, asdl_seq *
+                                   body, int lineno, int col_offset, PyArena
+                                   *arena);
+#define arguments(a0, a1, a2, a3, a4, a5, a6, a7, a8) _Py_arguments(a0, a1, a2, a3, a4, a5, a6, a7, a8)
+arguments_ty _Py_arguments(asdl_seq * args, identifier vararg, expr_ty
+                           varargannotation, asdl_seq * kwonlyargs, identifier
+                           kwarg, expr_ty kwargannotation, asdl_seq * defaults,
+                           asdl_seq * kw_defaults, PyArena *arena);
+#define SimpleArg(a0, a1, a2) _Py_SimpleArg(a0, a1, a2)
+arg_ty _Py_SimpleArg(identifier arg, expr_ty annotation, PyArena *arena);
+#define NestedArgs(a0, a1) _Py_NestedArgs(a0, a1)
+arg_ty _Py_NestedArgs(asdl_seq * args, PyArena *arena);
+#define keyword(a0, a1, a2) _Py_keyword(a0, a1, a2)
+keyword_ty _Py_keyword(identifier arg, expr_ty value, PyArena *arena);
+#define alias(a0, a1, a2) _Py_alias(a0, a1, a2)
+alias_ty _Py_alias(identifier name, identifier asname, PyArena *arena);
 
 PyObject* PyAST_mod2obj(mod_ty t);

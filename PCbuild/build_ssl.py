@@ -169,6 +169,8 @@ def main():
     defs = "SSL_DIR=\"%s\"" % (ssl_dir,)
     if debug:
         defs = defs + " " + "DEBUG=1"
+    if arch in ('amd64', 'ia64'):
+        defs = defs + " EXTRA_CFLAGS=/GS-"
     makeCommand = 'nmake /nologo -f _ssl.mak ' + defs + " " + make_flags
     print "Executing:", makeCommand
     sys.stdout.flush()

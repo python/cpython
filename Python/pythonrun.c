@@ -273,7 +273,8 @@ Py_InitializeEx(int install_sigs)
 		sys_isatty = PyObject_CallMethod(sys_stream, "isatty", "");
 		if (!sys_isatty)
 			PyErr_Clear();
-		if(sys_isatty && PyObject_IsTrue(sys_isatty)) {
+		if(sys_isatty && PyObject_IsTrue(sys_isatty) &&
+		   PyFile_Check(sys_stream)) {
 			if (!PyFile_SetEncoding(sys_stream, codeset))
 				Py_FatalError("Cannot set codeset of stdin");
 		}
@@ -283,7 +284,8 @@ Py_InitializeEx(int install_sigs)
 		sys_isatty = PyObject_CallMethod(sys_stream, "isatty", "");
 		if (!sys_isatty)
 			PyErr_Clear();
-		if(sys_isatty && PyObject_IsTrue(sys_isatty)) {
+		if(sys_isatty && PyObject_IsTrue(sys_isatty) &&
+		   PyFile_Check(sys_stream)) {
 			if (!PyFile_SetEncoding(sys_stream, codeset))
 				Py_FatalError("Cannot set codeset of stdout");
 		}
@@ -293,7 +295,8 @@ Py_InitializeEx(int install_sigs)
 		sys_isatty = PyObject_CallMethod(sys_stream, "isatty", "");
 		if (!sys_isatty)
 			PyErr_Clear();
-		if(sys_isatty && PyObject_IsTrue(sys_isatty)) {
+		if(sys_isatty && PyObject_IsTrue(sys_isatty) &&
+		   PyFile_Check(sys_stream)) {
 			if (!PyFile_SetEncoding(sys_stream, codeset))
 				Py_FatalError("Cannot set codeset of stderr");
 		}

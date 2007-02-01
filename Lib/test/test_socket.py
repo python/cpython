@@ -809,6 +809,31 @@ class SmallBufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
     bufsize = 2 # Exercise the buffering code
 
+
+class Urllib2FileobjectTest(unittest.TestCase):
+
+    # urllib2.HTTPHandler has "borrowed" socket._fileobject, and requires that
+    # it close the socket if the close c'tor argument is true
+
+    def testClose(self):
+        class MockSocket:
+            closed = False
+            def flush(self): pass
+            def close(self): self.closed = True
+
+        # must not close unless we request it: the original use of _fileobject
+        # by module socket requires that the underlying socket not be closed until
+        # the _socketobject that created the _fileobject is closed
+        s = MockSocket()
+        f = socket._fileobject(s)
+        f.close()
+        self.assert_(not s.closed)
+
+        s = MockSocket()
+        f = socket._fileobject(s, close=True)
+        f.close()
+        self.assert_(s.closed)
+
 class TCPTimeoutTest(SocketTCPTest):
 
     def testTCPTimeout(self):
@@ -961,7 +986,8 @@ def test_main():
         FileObjectClassTestCase,
         UnbufferedFileObjectClassTestCase,
         LineBufferedFileObjectClassTestCase,
-        SmallBufferedFileObjectClassTestCase
+        SmallBufferedFileObjectClassTestCase,
+        Urllib2FileobjectTest,
     ])
     if hasattr(socket, "socketpair"):
         tests.append(BasicSocketPairTest)

@@ -12,6 +12,10 @@ from pickle import loads, dumps
 class ArraySubclass(array.array):
     pass
 
+class ArraySubclassWithKwargs(array.array):
+    def __init__(self, typecode, newarg=None):
+        array.array.__init__(typecode)
+
 tests = [] # list to accumulate all tests
 typecodes = "cubBhHiIlLfd"
 
@@ -683,6 +687,9 @@ class BaseTest(unittest.TestCase):
                 b = array.array('B', range(64))
             self.assertEqual(rc, sys.getrefcount(10))
 
+    def test_subclass_with_kwargs(self):
+        # SF bug #1486663 -- this used to erroneously raise a TypeError
+        ArraySubclassWithKwargs('b', newarg=1)
 
 
 class StringTest(BaseTest):

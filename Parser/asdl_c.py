@@ -260,7 +260,12 @@ class PrototypeVisitor(EmitVisitor):
             argstr += ", PyArena *arena"
         else:
             argstr = "PyArena *arena"
-        self.emit("%s %s(%s);" % (ctype, name, argstr), 0)
+        margs = "a0"
+        for i in range(1, len(args)+1):
+            margs += ", a%d" % i
+        self.emit("#define %s(%s) _Py_%s(%s)" % (name, margs, name, margs), 0,
+                reflow = 0)
+        self.emit("%s _Py_%s(%s);" % (ctype, name, argstr), 0)
 
     def visitProduct(self, prod, name):
         self.emit_function(name, get_c_type(name),

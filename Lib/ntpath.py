@@ -344,8 +344,10 @@ def expandvars(path):
                     var = path[:index]
                     if var in os.environ:
                         res = res + os.environ[var]
+                    else:
+                        res = res + '${' + var + '}'
                 except ValueError:
-                    res = res + path
+                    res = res + '${' + path
                     index = pathlen - 1
             else:
                 var = ''
@@ -357,8 +359,10 @@ def expandvars(path):
                     c = path[index:index + 1]
                 if var in os.environ:
                     res = res + os.environ[var]
+                else:
+                    res = res + '$' + var
                 if c != '':
-                    res = res + c
+                    index = index - 1
         else:
             res = res + c
         index = index + 1

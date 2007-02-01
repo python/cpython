@@ -850,6 +850,11 @@ def parsedate_tz(data):
     if data[0][-1] in (',', '.') or data[0].lower() in _daynames:
         # There's a dayname here. Skip it
         del data[0]
+    else:
+        # no space after the "weekday,"?
+        i = data[0].rfind(',')
+        if i >= 0:
+            data[0] = data[0][i+1:]
     if len(data) == 3: # RFC 850 date, deprecated
         stuff = data[0].split('-')
         if len(stuff) == 3:

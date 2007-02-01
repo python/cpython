@@ -324,6 +324,12 @@ Support for the \code{\%Z} directive is based on the values contained in
 it is platform-specific except for recognizing UTC and GMT which are
 always known (and are considered to be non-daylight savings
 timezones).
+
+Only the directives specified in the documentation are supported.  Because
+\code{strftime()} is implemented per platform it can sometimes offer more
+directives than those listed.  But \code{strptime()} is independent of any
+platform and thus does not necessarily support all directives available that
+are not documented as supported.
 \end{funcdesc}
 
 \begin{datadesc}{struct_time}

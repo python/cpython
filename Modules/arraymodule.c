@@ -1797,7 +1797,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *initial = NULL, *it = NULL;
 	struct arraydescr *descr;
 	
-	if (!_PyArg_NoKeywords("array.array()", kwds))
+	if (type == &Arraytype && !_PyArg_NoKeywords("array.array()", kwds))
 		return NULL;
 
 	if (!PyArg_ParseTuple(args, "c|O:array", &c, &initial))

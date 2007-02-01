@@ -374,6 +374,8 @@ class PosixPathTest(unittest.TestCase):
             self.assertEqual(posixpath.expandvars("$foo}bar"), "bar}bar")
             self.assertEqual(posixpath.expandvars("${foo"), "${foo")
             self.assertEqual(posixpath.expandvars("${{foo}}"), "baz1}")
+            self.assertEqual(posixpath.expandvars("$foo$foo"), "barbar")
+            self.assertEqual(posixpath.expandvars("$bar$bar"), "$bar$bar")
         finally:
             os.environ.clear()
             os.environ.update(oldenv)
