@@ -915,7 +915,7 @@ set_update_internal(PySetObject *so, PyObject *other)
 	if (PyAnySet_Check(other))
 		return set_merge(so, other);
 
-	if (PyDict_Check(other)) {
+	if (PyDict_CheckExact(other)) {
 		PyObject *value;
 		Py_ssize_t pos = 0;
 		while (PyDict_Next(other, &pos, &key, &value)) {
@@ -1363,7 +1363,7 @@ set_difference(PySetObject *so, PyObject *other)
 	setentry *entry;
 	Py_ssize_t pos = 0;
 
-	if (!PyAnySet_Check(other)  && !PyDict_Check(other)) {
+	if (!PyAnySet_Check(other)  && !PyDict_CheckExact(other)) {
 		result = set_copy(so);
 		if (result == NULL)
 			return NULL;
@@ -1377,7 +1377,7 @@ set_difference(PySetObject *so, PyObject *other)
 	if (result == NULL)
 		return NULL;
 
-	if (PyDict_Check(other)) {
+	if (PyDict_CheckExact(other)) {
 		while (set_next(so, &pos, &entry)) {
 			setentry entrycopy;
 			entrycopy.hash = entry->hash;
@@ -1450,7 +1450,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 	if ((PyObject *)so == other)
 		return set_clear(so);
 
-	if (PyDict_Check(other)) {
+	if (PyDict_CheckExact(other)) {
 		PyObject *value;
 		int rv;
 		while (PyDict_Next(other, &pos, &key, &value)) {
