@@ -592,14 +592,14 @@ class Popen(object):
                             c2pread, c2pwrite,
                             errread, errwrite)
 
-        if p2cwrite:
+        if p2cwrite is not None:
             self.stdin = os.fdopen(p2cwrite, 'wb', bufsize)
-        if c2pread:
+        if c2pread is not None:
             if universal_newlines:
                 self.stdout = os.fdopen(c2pread, 'rU', bufsize)
             else:
                 self.stdout = os.fdopen(c2pread, 'rb', bufsize)
-        if errread:
+        if errread is not None:
             if universal_newlines:
                 self.stderr = os.fdopen(errread, 'rU', bufsize)
             else:
@@ -986,29 +986,29 @@ class Popen(object):
                 # Child
                 try:
                     # Close parent's pipe ends
-                    if p2cwrite:
+                    if p2cwrite is not None:
                         os.close(p2cwrite)
-                    if c2pread:
+                    if c2pread is not None:
                         os.close(c2pread)
-                    if errread:
+                    if errread is not None:
                         os.close(errread)
                     os.close(errpipe_read)
 
                     # Dup fds for child
-                    if p2cread:
+                    if p2cread is not None:
                         os.dup2(p2cread, 0)
-                    if c2pwrite:
+                    if c2pwrite is not None:
                         os.dup2(c2pwrite, 1)
-                    if errwrite:
+                    if errwrite is not None:
                         os.dup2(errwrite, 2)
 
                     # Close pipe fds.  Make sure we don't close the same
                     # fd more than once, or standard fds.
-                    if p2cread and p2cread not in (0,):
+                    if p2cread is not None and p2cread not in (0,):
                         os.close(p2cread)
-                    if c2pwrite and c2pwrite not in (p2cread, 1):
+                    if c2pwrite is not None and c2pwrite not in (p2cread, 1):
                         os.close(c2pwrite)
-                    if errwrite and errwrite not in (p2cread, c2pwrite, 2):
+                    if errwrite is not None and errwrite not in (p2cread, c2pwrite, 2):
                         os.close(errwrite)
 
                     # Close all other fds, if asked for
@@ -1041,11 +1041,11 @@ class Popen(object):
 
             # Parent
             os.close(errpipe_write)
-            if p2cread and p2cwrite:
+            if p2cread is not None and p2cwrite is not None:
                 os.close(p2cread)
-            if c2pwrite and c2pread:
+            if c2pwrite is not None and c2pread is not None:
                 os.close(c2pwrite)
-            if errwrite and errread:
+            if errwrite is not None and errread is not None:
                 os.close(errwrite)
 
             # Wait for exec to fail or succeed; possibly raising exception
