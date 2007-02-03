@@ -44,7 +44,7 @@ class PyclbrTest(TestCase):
         if key in ignore: return
         if key not in obj:
             print >>sys.stderr, "***",key
-        self.failUnless(key) in obj
+        self.failUnless(key in obj)
 
     def assertEqualsOrIgnored(self, a, b, ignore):
         ''' succeed iff a == b or a in ignore or b in ignore '''
