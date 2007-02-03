@@ -1448,9 +1448,6 @@ def locate(path, forceload=0):
 text = TextDoc()
 html = HTMLDoc()
 
-class _OldStyleClass: pass
-_OLD_INSTANCE_TYPE = type(_OldStyleClass())
-
 def resolve(thing, forceload=0):
     """Given an object or a path to an object, get the object and its name."""
     if isinstance(thing, str):
@@ -1471,10 +1468,6 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0):
             desc += ' in ' + name[:name.rfind('.')]
         elif module and module is not object:
             desc += ' in module ' + module.__name__
-        if type(object) is _OLD_INSTANCE_TYPE:
-            # If the passed object is an instance of an old-style class,
-            # document its available methods instead of its value.
-            object = object.__class__
         elif not (inspect.ismodule(object) or
                   inspect.isclass(object) or
                   inspect.isroutine(object) or
