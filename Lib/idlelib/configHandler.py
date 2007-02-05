@@ -39,22 +39,19 @@ class IdleConfParser(ConfigParser):
         self.file=cfgFile
         ConfigParser.__init__(self,defaults=cfgDefaults)
 
-    def Get(self, section, option, type=None, default=None):
+    def Get(self, section, option, type=None, default=None, raw=False):
         """
         Get an option value for given section/option or return default.
         If type is specified, return as type.
         """
-        if type=='bool':
-            getVal=self.getboolean
-        elif type=='int':
-            getVal=self.getint
-        else:
-            getVal=self.get
-        if self.has_option(section,option):
-            #return getVal(section, option, raw, vars, default)
-            return getVal(section, option)
-        else:
+        if not self.has_option(section, option):
             return default
+        if type=='bool':
+            return self.getboolean(section, option)
+        elif type=='int':
+            return self.getint(section, option)
+        else:
+            return self.get(section, option, raw=raw)
 
     def GetOptionList(self,section):
         """
@@ -219,7 +216,7 @@ class IdleConf:
         return userDir
 
     def GetOption(self, configType, section, option, default=None, type=None,
-                  warn_on_default=True):
+                  warn_on_default=True, raw=False):
         """
         Get an option value for given config type and given general
         configuration section/option or return a default. If type is specified,
@@ -233,9 +230,11 @@ class IdleConf:
 
         """
         if self.userCfg[configType].has_option(section,option):
-            return self.userCfg[configType].Get(section, option, type=type)
+            return self.userCfg[configType].Get(section, option,
+                                                type=type, raw=raw)
         elif self.defaultCfg[configType].has_option(section,option):
-            return self.defaultCfg[configType].Get(section, option, type=type)
+            return self.defaultCfg[configType].Get(section, option,
+                                                   type=type, raw=raw)
         else: #returning default, print warning
             if warn_on_default:
                 warning = ('\n Warning: configHandler.py - IdleConf.GetOption -\n'
