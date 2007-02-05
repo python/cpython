@@ -270,7 +270,7 @@ def open_urlresource(url):
     print >> get_original_stdout(), '\tfetching %s ...' % url
     fn, _ = urllib.urlretrieve(url, filename)
     return open(fn)
-    
+
 @contextmanager
 def guard_warnings_filter():
     """Guard the warnings filter from being permanently changed."""

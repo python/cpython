@@ -10,22 +10,6 @@ module never needs to be imported explicitly: the exceptions are
 provided in the built-in namespace as well as the \module{exceptions}
 module.
 
-\begin{notice}
-In past versions of Python string exceptions were supported.  In
-Python 1.5 and newer versions, all standard exceptions have been
-converted to class objects and users are encouraged to do the same.
-String exceptions will raise a \code{DeprecationWarning} in Python 2.5 and
-newer.
-In future versions, support for string exceptions will be removed.
-
-Two distinct string objects with the same value are considered different
-exceptions.  This is done to force programmers to use exception names
-rather than their string value when specifying exception handlers.
-The string value of all built-in exceptions is their name, but this is
-not a requirement for user-defined exceptions or exceptions defined by
-library modules.
-\end{notice}
-
 For class exceptions, in a \keyword{try}\stindex{try} statement with
 an \keyword{except}\stindex{except} clause that mentions a particular
 class, that clause also handles any exception classes derived from

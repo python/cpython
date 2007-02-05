@@ -72,6 +72,12 @@ SSL thanks to the addition of the \class{SMTP_SSL} class.
 This class supports an interface identical to the existing \class{SMTP} 
 class. (Contributed by Monty Taylor.)
 
+\item The \module{test.test_support} module now contains a
+\function{EnvironmentVarGuard} context manager that 
+supports temporarily changing environment variables and 
+automatically restores them to their old values.
+(Contributed by Brett Cannon.)
+
 \end{itemize}
 
 

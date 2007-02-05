@@ -71,7 +71,7 @@ class CodeContext:
             #
             # To avoid possible errors, all references to the inner workings
             # of Tk are executed inside try/except blocks.
-            
+
             widgets_for_width_calc = self.editwin.text, self.editwin.text_frame
 
             # calculate the required vertical padding
@@ -113,7 +113,7 @@ class CodeContext:
             # above it.
             self.label.pack(side="top", fill="x", expand=False,
                             before=self.editwin.text_frame)
-            
+
         else:
             self.label.destroy()
             self.label = None

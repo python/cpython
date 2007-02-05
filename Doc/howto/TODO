@@ -1,7 +1,7 @@
 
 Short-term tasks:
-  Quick revision pass to make HOWTOs match the current state of Python:
-curses doanddont regex sockets sorting
+  Quick revision pass to make HOWTOs match the current state of Python
+doanddont regex sockets
 
 Medium-term tasks:
  Revisit the regex howto.  

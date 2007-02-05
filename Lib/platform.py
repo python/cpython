@@ -236,7 +236,7 @@ _release_version = re.compile(r'([^0-9]+)'
                                '[^(]*(?:\((.+)\))?')
 
 # See also http://www.novell.com/coolsolutions/feature/11251.html
-# and http://linuxmafia.com/faq/Admin/release-files.html 
+# and http://linuxmafia.com/faq/Admin/release-files.html
 # and http://data.linux-ntfs.org/rpm/whichrpm
 # and http://www.die.net/doc/linux/man/man1/lsb_release.1.html
 
@@ -245,7 +245,7 @@ _supported_dists = ('SuSE', 'debian', 'fedora', 'redhat', 'centos',
                     'gentoo', 'UnitedLinux')
 
 def _parse_release_file(firstline):
-    
+
     # Parse the first line
     m = _lsb_release_version.match(firstline)
     if m is not None:
@@ -268,7 +268,7 @@ def _parse_release_file(firstline):
     return '', version, id
 
 def _test_parse_release_file():
-    
+
     for input, output in (
         # Examples of release file contents:
         ('SuSE Linux 9.3 (x86-64)', ('SuSE Linux ', '9.3', 'x86-64'))
@@ -324,7 +324,7 @@ def linux_distribution(distname='', version='', id='',
                 break
     else:
         return _dist_try_harder(distname,version,id)
-    
+
     # Read the first line
     f = open('/etc/'+file, 'r')
     firstline = f.readline()
@@ -340,7 +340,7 @@ def linux_distribution(distname='', version='', id='',
     return distname, version, id
 
 # To maintain backwards compatibility:
-    
+
 def dist(distname='',version='',id='',
 
          supported_dists=_supported_dists):
@@ -1358,7 +1358,7 @@ def python_branch():
         If not available, an empty string is returned.
 
     """
-    
+
     return _sys_version()[2]
 
 def python_revision():

@@ -58,14 +58,18 @@ skipped, though using a key from an iterator may result in a
 \exception{KeyError} exception if the corresponding message is subsequently
 removed.
 
-Be very cautious when modifying mailboxes that might also be changed
-by some other process.  The safest mailbox format to use for such
-tasks is Maildir; try to avoid using single-file formats such as mbox
-for concurrent writing.  If you're modifying a mailbox, no matter what
-the format, you must lock it by calling the \method{lock()} and
-\method{unlock()} methods before making any changes.  Failing to lock
-the mailbox runs the risk of losing data if some other process makes
-changes to the mailbox while your Python code is running.
+\begin{notice}[warning]
+Be very cautious when modifying mailboxes that might be
+simultaneously changed by some other process.  The safest mailbox
+format to use for such tasks is Maildir; try to avoid using
+single-file formats such as mbox for concurrent writing.  If you're
+modifying a mailbox, you
+\emph{must} lock it by calling the \method{lock()} and
+\method{unlock()} methods \emph{before} reading any messages in the file
+or making any changes by adding or deleting a message.  Failing to
+lock the mailbox runs the risk of losing messages or corrupting the entire
+mailbox.
+\end{notice}
 
 \class{Mailbox} instances have the following methods:
 

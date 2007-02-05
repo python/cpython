@@ -50,9 +50,9 @@ class Dialog(Toplevel):
         # If the master is not viewable, don't
         # make the child transient, or else it
         # would be opened withdrawn
-        if parent.winfo_viewable():  
+        if parent.winfo_viewable():
             self.transient(parent)
- 
+
         if title:
             self.title(title)
 

@@ -569,7 +569,7 @@ class _singlefileMailbox(Mailbox):
         # already have been generated (and presumably has been modified
         # by adding or deleting an item).
         assert self._toc is not None
-        
+
         # Check length of self._file; if it's changed, some other process
         # has modified the mailbox since we scanned it.
         self._file.seek(0, 2)
@@ -578,7 +578,7 @@ class _singlefileMailbox(Mailbox):
             raise ExternalClashError('Size of mailbox file changed '
                                      '(expected %i, found %i)' %
                                      (self._file_length, cur_len))
-        
+
         new_file = _create_temporary(self._path)
         try:
             new_toc = {}
@@ -1219,7 +1219,7 @@ class Babyl(_singlefileMailbox):
         self._next_key = len(self._toc)
         self._file.seek(0, 2)
         self._file_length = self._file.tell()
-        
+
     def _pre_mailbox_hook(self, f):
         """Called before writing the mailbox to file f."""
         f.write('BABYL OPTIONS:%sVersion: 5%sLabels:%s%s\037' %

@@ -311,6 +311,13 @@ class ExceptionTests(unittest.TestCase):
                                               'pickled "%r", attribute "%s' %
                                               (e, checkArgName))
 
+    def testSlicing(self):
+        # Test that you can slice an exception directly instead of requiring
+        # going through the 'args' attribute.
+        args = (1, 2, 3)
+        exc = BaseException(*args)
+        self.failUnlessEqual(exc[:], args)
+
     def testKeywordArgs(self):
         # test that builtin exception don't take keyword args,
         # but user-defined subclasses can if they want

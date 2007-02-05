@@ -1121,7 +1121,7 @@ class Popen(object):
                     # we can write up to PIPE_BUF bytes without risk
                     # blocking.  POSIX defines PIPE_BUF >= 512
                     bytes_written = os.write(self.stdin.fileno(), buffer(input, input_offset, 512))
-                    input_offset += bytes_written 
+                    input_offset += bytes_written
                     if input_offset >= len(input):
                         self.stdin.close()
                         write_set.remove(self.stdin)
