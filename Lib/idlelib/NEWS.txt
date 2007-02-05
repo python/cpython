@@ -3,6 +3,9 @@ What's New in IDLE 2.6a1?
 
 *Release date: XX-XXX-200X*
 
+- Calltips now 'handle' tuples in the argument list (display '<tuple>' :)
+  Suggested solution by Christos Georgiou, Bug 791968.
+
 - Add 'raw' support to configHandler. Patch 1650174 Tal Einat.
 
 - Avoid hang when encountering a duplicate in a completion list. Bug 1571112.
