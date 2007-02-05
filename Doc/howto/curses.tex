@@ -2,7 +2,7 @@
 
 \title{Curses Programming with Python}
 
-\release{2.01}
+\release{2.02}
 
 \author{A.M. Kuchling, Eric S. Raymond}
 \authoraddress{\email{amk@amk.ca}, \email{esr@thyrsus.com}}
@@ -147,10 +147,10 @@ makes using the shell difficult.
 
 In Python you can avoid these complications and make debugging much
 easier by importing the module \module{curses.wrapper}.  It supplies a
-function \function{wrapper} that takes a hook argument.  It does the
+\function{wrapper()} function that takes a callable.  It does the
 initializations described above, and also initializes colors if color
-support is present.  It then runs your hook, and then finally
-deinitializes appropriately.  The hook is called inside a try-catch
+support is present.  It then runs your provided callable and finally
+deinitializes appropriately.  The callable is called inside a try-catch
 clause which catches exceptions, performs curses deinitialization, and
 then passes the exception upwards.  Thus, your terminal won't be left
 in a funny state on exception.
@@ -159,7 +159,7 @@ in a funny state on exception.
 
 Windows are the basic abstraction in curses.  A window object
 represents a rectangular area of the screen, and supports various
- methods to display text, erase it, allow the user to input strings,
+methods to display text, erase it, allow the user to input strings,
 and so forth.
 
 The \code{stdscr} object returned by the \function{initscr()} function
@@ -223,14 +223,14 @@ pad.refresh( 0,0, 5,5, 20,75)
 
 The \function{refresh()} call displays a section of the pad in the
 rectangle extending from coordinate (5,5) to coordinate (20,75) on the
-screen;the upper left corner of the displayed section is coordinate
+screen; the upper left corner of the displayed section is coordinate
 (0,0) on the pad.  Beyond that difference, pads are exactly like
 ordinary windows and support the same methods.
 
 If you have multiple windows and pads on screen there is a more
 efficient way to go, which will prevent annoying screen flicker at
-refresh time.  Use the methods \method{noutrefresh()} and/or
-\method{noutrefresh()} of each window to update the data structure
+refresh time.  Use the \method{noutrefresh()} method
+of each window to update the data structure
 representing the desired state of the screen; then change the physical
 screen to match the desired state in one go with the function
 \function{doupdate()}.  The normal \method{refresh()} method calls
@@ -254,9 +254,9 @@ four different forms.
 
 \begin{tableii}{|c|l|}{textrm}{Form}{Description}
 \lineii{\var{str} or \var{ch}}{Display the string \var{str} or
-character \var{ch}}
+character \var{ch} at the current position}
 \lineii{\var{str} or \var{ch}, \var{attr}}{Display the string \var{str} or
-character \var{ch}, using attribute \var{attr}}
+character \var{ch}, using attribute \var{attr} at the current position}
 \lineii{\var{y}, \var{x}, \var{str} or \var{ch}}
 {Move to position \var{y,x} within the window, and display \var{str}
 or \var{ch}}
@@ -271,7 +271,7 @@ in more detail in the next subsection.
 
 The \function{addstr()} function takes a Python string as the value to
 be displayed, while the \function{addch()} functions take a character,
-which can be either a Python string of length 1, or an integer.  If
+which can be either a Python string of length 1 or an integer.  If
 it's a string, you're limited to displaying characters between 0 and
 255.  SVr4 curses provides constants for extension characters; these
 constants are integers greater than 255.  For example,
@@ -331,15 +331,15 @@ The curses library also supports color on those terminals that
 provide it, The most common such terminal is probably the Linux
 console, followed by color xterms.
 
-To use color, you must call the \function{start_color()} function
-soon after calling \function{initscr()}, to initialize the default
-color set (the \function{curses.wrapper.wrapper()} function does this
+To use color, you must call the \function{start_color()} function soon
+after calling \function{initscr()}, to initialize the default color
+set (the \function{curses.wrapper.wrapper()} function does this
 automatically).  Once that's done, the \function{has_colors()}
 function returns TRUE if the terminal in use can actually display
-color.  (Note from AMK:  curses uses the American spelling
-'color', instead of the Canadian/British spelling 'colour'.  If you're
-like me, you'll have to resign yourself to misspelling it for the sake
-of these functions.)
+color.  (Note: curses uses the American spelling 'color', instead of
+the Canadian/British spelling 'colour'.  If you're used to the British
+spelling, you'll have to resign yourself to misspelling it for the
+sake of these functions.)
 
 The curses library maintains a finite number of color pairs,
 containing a foreground (or text) color and a background color.  You
@@ -400,18 +400,19 @@ Python's support adds a text-input widget that makes up some of the
 lack.
 
 The most common way to get input to a window is to use its
-\method{getch()} method. that pauses, and waits for the user to hit
-a key, displaying it if \function{echo()} has been called earlier.
-You can optionally specify a coordinate to which the cursor should be
-moved before pausing.
+\method{getch()} method.  \method{getch()} pauses and waits for the
+user to hit a key, displaying it if \function{echo()} has been called
+earlier.  You can optionally specify a coordinate to which the cursor
+should be moved before pausing.
 
 It's possible to change this behavior with the method
 \method{nodelay()}. After \method{nodelay(1)}, \method{getch()} for
-the window becomes non-blocking and returns ERR (-1) when no input is
-ready.  There's also a \function{halfdelay()} function, which can be
-used to (in effect) set a timer on each \method{getch()}; if no input
-becomes available within the number of milliseconds specified as the
-argument to \function{halfdelay()}, curses throws an exception.
+the window becomes non-blocking and returns \code{curses.ERR} (a value
+of -1) when no input is ready.  There's also a \function{halfdelay()}
+function, which can be used to (in effect) set a timer on each
+\method{getch()}; if no input becomes available within the number of
+milliseconds specified as the argument to \function{halfdelay()},
+curses raises an exception.
 
 The \method{getch()} method returns an integer; if it's between 0 and
 255, it represents the ASCII code of the key pressed.  Values greater

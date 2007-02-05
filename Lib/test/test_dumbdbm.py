@@ -49,7 +49,7 @@ class DumbDBMTestCase(unittest.TestCase):
             f.close()
         finally:
             os.umask(old_umask)
-            
+
         expected_mode = 0635
         if os.name != 'posix':
             # Windows only supports setting the read-only attribute.
@@ -61,7 +61,7 @@ class DumbDBMTestCase(unittest.TestCase):
         self.assertEqual(stat.S_IMODE(st.st_mode), expected_mode)
         st = os.stat(_fname + '.dir')
         self.assertEqual(stat.S_IMODE(st.st_mode), expected_mode)
-        
+
     def test_close_twice(self):
         f = dumbdbm.open(_fname)
         f['a'] = 'b'

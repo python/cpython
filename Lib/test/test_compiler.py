@@ -7,6 +7,12 @@ from random import random
 # How much time in seconds can pass before we print a 'Still working' message.
 _PRINT_WORKING_MSG_INTERVAL = 5 * 60
 
+class TrivialContext(object):
+    def __enter__(self):
+        return self
+    def __exit__(self, *exc_info):
+        pass
+
 class CompilerTest(unittest.TestCase):
 
     def testCompileLibrary(self):
@@ -156,6 +162,31 @@ class CompilerTest(unittest.TestCase):
             dct = {}
             exec(c, dct)
             self.assertEquals(dct['f'].func_annotations, expected)
+
+    def testWith(self):
+        # SF bug 1638243
+        c = compiler.compile('from __future__ import with_statement\n'
+                             'def f():\n'
+                             '    with TrivialContext():\n'
+                             '        return 1\n'
+                             'result = f()',
+                             '<string>',
+                             'exec' )
+        dct = {'TrivialContext': TrivialContext}
+        exec(c, dct)
+        self.assertEquals(dct.get('result'), 1)
+
+    def testWithAss(self):
+        c = compiler.compile('from __future__ import with_statement\n'
+                             'def f():\n'
+                             '    with TrivialContext() as tc:\n'
+                             '        return 1\n'
+                             'result = f()',
+                             '<string>',
+                             'exec' )
+        dct = {'TrivialContext': TrivialContext}
+        exec(c, dct)
+        self.assertEquals(dct.get('result'), 1)
 
 
 NOLINENO = (compiler.ast.Module, compiler.ast.Stmt, compiler.ast.Discard)

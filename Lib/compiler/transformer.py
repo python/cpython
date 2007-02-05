@@ -1018,7 +1018,7 @@ class Transformer:
         if nodelist[2][0] == token.COLON:
             var = None
         else:
-            var = self.com_node(nodelist[2])
+            var = self.com_assign(nodelist[2][2], OP_ASSIGN)
         return With(expr, var, body, lineno=nodelist[0][2])
 
     def com_with_var(self, nodelist):

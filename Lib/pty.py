@@ -123,7 +123,7 @@ def fork():
         os.close(tmp_fd)
     else:
         os.close(slave_fd)
-        
+
     # Parent and child process.
     return pid, master_fd
 

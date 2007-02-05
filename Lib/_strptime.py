@@ -22,9 +22,6 @@ try:
 except:
     from dummy_thread import allocate_lock as _thread_allocate_lock
 
-__author__ = "Brett Cannon"
-__email__ = "brett@python.org"
-
 __all__ = ['strptime']
 
 def _getlang():
@@ -273,11 +270,31 @@ _TimeRE_cache = TimeRE()
 _CACHE_MAX_SIZE = 5 # Max number of regexes stored in _regex_cache
 _regex_cache = {}
 
+def _calc_julian_from_U_or_W(year, week_of_year, day_of_week, week_starts_Mon):
+    """Calculate the Julian day based on the year, week of the year, and day of
+    the week, with week_start_day representing whether the week of the year
+    assumes the week starts on Sunday or Monday (6 or 0)."""
+    first_weekday = datetime_date(year, 1, 1).weekday()
+    # If we are dealing with the %U directive (week starts on Sunday), it's
+    # easier to just shift the view to Sunday being the first day of the
+    # week.
+    if not week_starts_Mon:
+        first_weekday = (first_weekday + 1) % 7
+        day_of_week = (day_of_week + 1) % 7
+    # Need to watch out for a week 0 (when the first day of the year is not
+    # the same as that specified by %U or %W).
+    week_0_length = (7 - first_weekday) % 7
+    if week_of_year == 0:
+        return 1 + day_of_week - first_weekday
+    else:
+        days_to_week = week_0_length + (7 * (week_of_year - 1))
+        return 1 + days_to_week + day_of_week
+
+
 def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a time struct based on the input string and the format string."""
     global _TimeRE_cache, _regex_cache
-    _cache_lock.acquire()
-    try:
+    with _cache_lock:
         time_re = _TimeRE_cache
         locale_time = time_re.locale_time
         if _getlang() != locale_time.lang:
@@ -302,8 +319,6 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             except IndexError:
                 raise ValueError("stray %% in format '%s'" % format)
             _regex_cache[format] = format_regex
-    finally:
-        _cache_lock.release()
     found = format_regex.match(data_string)
     if not found:
         raise ValueError("time data %r does not match format %r" %
@@ -385,10 +400,10 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         elif group_key in ('U', 'W'):
             week_of_year = int(found_dict[group_key])
             if group_key == 'U':
-                # U starts week on Sunday
+                # U starts week on Sunday.
                 week_of_year_start = 6
             else:
-                # W starts week on Monday
+                # W starts week on Monday.
                 week_of_year_start = 0
         elif group_key == 'Z':
             # Since -1 is default value only need to worry about setting tz if
@@ -406,42 +421,20 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                         tz = value
                         break
     # If we know the week of the year and what day of that week, we can figure
-    # out the Julian day of the year
-    # Calculations below assume 0 is a Monday
+    # out the Julian day of the year.
     if julian == -1 and week_of_year != -1 and weekday != -1:
-        # Calculate how many days in week 0
-        first_weekday = datetime_date(year, 1, 1).weekday()
-        preceeding_days = 7 - first_weekday
-        if preceeding_days == 7:
-            preceeding_days = 0
-        # Adjust for U directive so that calculations are not dependent on
-        # directive used to figure out week of year
-        if weekday == 6 and week_of_year_start == 6:
-            week_of_year -= 1
-        # If a year starts and ends on a Monday but a week is specified to
-        # start on a Sunday we need to up the week to counter-balance the fact
-        # that with %W that first Monday starts week 1 while with %U that is
-        # week 0 and thus shifts everything by a week
-        if weekday == 0 and first_weekday == 0 and week_of_year_start == 6:
-            week_of_year += 1
-        # If in week 0, then just figure out how many days from Jan 1 to day of
-        # week specified, else calculate by multiplying week of year by 7,
-        # adding in days in week 0, and the number of days from Monday to the
-        # day of the week
-        if week_of_year == 0:
-            julian = 1 + weekday - first_weekday
-        else:
-            days_to_week = preceeding_days + (7 * (week_of_year - 1))
-            julian = 1 + days_to_week + weekday
+        week_starts_Mon = True if week_of_year_start == 0 else False
+        julian = _calc_julian_from_U_or_W(year, week_of_year, weekday,
+                                            week_starts_Mon)
     # Cannot pre-calculate datetime_date() since can change in Julian
-    #calculation and thus could have different value for the day of the week
-    #calculation
+    # calculation and thus could have different value for the day of the week
+    # calculation.
     if julian == -1:
         # Need to add 1 to result since first day of the year is 1, not 0.
         julian = datetime_date(year, month, day).toordinal() - \
                   datetime_date(year, 1, 1).toordinal() + 1
     else:  # Assume that if they bothered to include Julian day it will
-           #be accurate
+           # be accurate.
         datetime_result = datetime_date.fromordinal((julian - 1) + datetime_date(year, 1, 1).toordinal())
         year = datetime_result.year
         month = datetime_result.month

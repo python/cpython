@@ -116,7 +116,7 @@ class MboxTestCase(unittest.TestCase):
 
     def tearDown(self):
         os.unlink(self._path)
-    
+
     def test_from_regex (self):
         # Testing new regex from bug #1633678
         f = open(self._path, 'w')

@@ -674,11 +674,11 @@ class TestMaildir(TestMailbox):
         box = self._factory(self._path, factory=dummy_factory)
         folder = box.add_folder('folder1')
         self.assert_(folder._factory is dummy_factory)
-        
+
         folder1_alias = box.get_folder('folder1')
         self.assert_(folder1_alias._factory is dummy_factory)
 
-        
+
 
 class _TestMboxMMDF(TestMailbox):
 
@@ -798,7 +798,7 @@ class TestMH(TestMailbox):
         def dummy_factory (s):
             return None
         self._box = self._factory(self._path, dummy_factory)
-        
+
         new_folder = self._box.add_folder('foo.bar')
         folder0 = self._box.get_folder('foo.bar')
         folder0.add(self._template % 'bar')
@@ -894,7 +894,7 @@ class TestMH(TestMailbox):
         self.assert_(self._box.get_sequences() ==
                      {'foo':[1, 2, 3, 4, 5],
                       'unseen':[1], 'bar':[3], 'replied':[3]})
-        
+
     def _get_lock_path(self):
         return os.path.join(self._path, '.mh_sequences.lock')
 

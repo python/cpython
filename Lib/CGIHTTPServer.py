@@ -107,7 +107,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         """Execute a CGI script."""
         path = self.path
         dir, rest = self.cgi_info
-        
+
         i = path.find('/', len(dir) + 1)
         while i >= 0:
             nextdir = path[:i]

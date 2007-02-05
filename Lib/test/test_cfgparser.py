@@ -15,7 +15,7 @@ class SortedDict(UserDict.UserDict):
         result = self.data.keys()
         result.sort()
         return result
-    
+
     def values(self):
         result = self.items()
         return [i[1] for i in values]
@@ -446,12 +446,12 @@ class SortedTestCase(RawConfigParserTestCase):
                         "o2=3\n"
                         "o1=4\n"
                         "[a]\n"
-                        "k=v\n")        
+                        "k=v\n")
         output = StringIO.StringIO()
         self.cf.write(output)
         self.assertEquals(output.getvalue(),
                           "[a]\n"
-                          "k = v\n\n"       
+                          "k = v\n\n"
                           "[b]\n"
                           "o1 = 4\n"
                           "o2 = 3\n"

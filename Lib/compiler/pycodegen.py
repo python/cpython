@@ -914,6 +914,8 @@ class CodeGenerator:
         self.emit('LOAD_CONST', None)
         self.nextBlock(final)
         self.setups.push((END_FINALLY, final))
+        self._implicitNameOp('LOAD', exitvar)
+        self._implicitNameOp('DELETE', exitvar)
         self.emit('WITH_CLEANUP')
         self.emit('END_FINALLY')
         self.setups.pop()
