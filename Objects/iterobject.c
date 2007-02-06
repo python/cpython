@@ -302,7 +302,6 @@ _PyZip_CreateIter(PyObject* args)
 
 	zipiter->result = (PyTupleObject*) result;
         zipiter->resultsize = tuplesize;
-	Py_INCREF(ziptuple);
 	zipiter->it_tuple = (PyTupleObject *) ziptuple;
 	_PyObject_GC_TRACK(zipiter);
 	return (PyObject *)zipiter;
