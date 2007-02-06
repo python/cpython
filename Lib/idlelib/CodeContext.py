@@ -10,6 +10,7 @@ not open blocks are not shown in the context hints pane.
 
 """
 import Tkinter
+from Tkconstants import TOP, LEFT, X, W, SUNKEN
 from configHandler import idleConf
 import re
 from sys import maxint as INFINITY
@@ -24,7 +25,6 @@ getspacesfirstword =\
 
 class CodeContext:
     menudefs = [('options', [('!Code Conte_xt', '<<toggle-code-context>>')])]
-
     context_depth = idleConf.GetOption("extensions", "CodeContext",
                                        "numlines", type="int", default=3)
     bgcolor = idleConf.GetOption("extensions", "CodeContext",
@@ -54,66 +54,33 @@ class CodeContext:
 
     def toggle_code_context_event(self, event=None):
         if not self.label:
-            # The following code attempts to figure out the required border
-            # width and vertical padding required for the CodeContext widget
-            # to be perfectly aligned with the text in the main Text widget.
-            # This is done by retrieving the appropriate attributes from the
-            # editwin.text and editwin.text_frame widgets.
+            # Calculate the border width and horizontal padding required to
+            # align the context with the text in the main Text widget.
             #
             # All values are passed through int(str(<value>)), since some
-            # values may be pixel objects, which can't simply be added added
-            # to ints.
-            #
-            # This code is considered somewhat unstable since it relies on
-            # some of Tk's inner workings. However its effect is merely
-            # cosmetic; failure will only cause the CodeContext text to be
-            # somewhat misaligned with the text in the main Text widget.
-            #
-            # To avoid possible errors, all references to the inner workings
-            # of Tk are executed inside try/except blocks.
-
-            widgets_for_width_calc = self.editwin.text, self.editwin.text_frame
-
-            # calculate the required vertical padding
+            # values may be pixel objects, which can't simply be added to ints.
+            widgets = self.editwin.text, self.editwin.text_frame
+            # Calculate the required vertical padding
             padx = 0
-            for widget in widgets_for_width_calc:
-                try:
-                    # retrieve the "padx" attribte from widget's pack info
-                    padx += int(str( widget.pack_info()['padx'] ))
-                except:
-                    pass
-                try:
-                    # retrieve the widget's "padx" attribte
-                    padx += int(str( widget.cget('padx') ))
-                except:
-                    pass
-
-            # calculate the required border width
-            border_width = 0
-            for widget in widgets_for_width_calc:
-                try:
-                    # retrieve the widget's "border" attribte
-                    border_width += int(str( widget.cget('border') ))
-                except:
-                    pass
-
+            for widget in widgets:
+                padx += int(str( widget.pack_info()['padx'] ))
+                padx += int(str( widget.cget('padx') ))
+            # Calculate the required border width
+            border = 0
+            for widget in widgets:
+                border += int(str( widget.cget('border') ))
             self.label = Tkinter.Label(self.editwin.top,
                                        text="\n" * (self.context_depth - 1),
-                                       anchor="w", justify="left",
+                                       anchor=W, justify=LEFT,
                                        font=self.textfont,
                                        bg=self.bgcolor, fg=self.fgcolor,
                                        width=1, #don't request more than we get
-                                       padx=padx, #line up with text widget
-                                       border=border_width, #match border width
-                                       relief="sunken",
-                                       )
-
-            # CodeContext's label widget is packed before and above the
-            # text_frame widget, thus ensuring that it will appear directly
-            # above it.
-            self.label.pack(side="top", fill="x", expand=False,
+                                       padx=padx, border=border,
+                                       relief=SUNKEN)
+            # Pack the label widget before and above the text_frame widget,
+            # thus ensuring that it will appear directly above text_frame
+            self.label.pack(side=TOP, fill=X, expand=False,
                             before=self.editwin.text_frame)
-
         else:
             self.label.destroy()
             self.label = None
@@ -190,7 +157,6 @@ class CodeContext:
                                                  stopindent)
         self.info.extend(lines)
         self.topvisible = new_topvisible
-
         # empty lines in context pane:
         context_strings = [""] * max(0, self.context_depth - len(self.info))
         # followed by the context hint lines:
