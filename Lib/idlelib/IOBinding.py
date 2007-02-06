@@ -209,7 +209,7 @@ class IOBinding:
                 # gets set to "not modified" at every new prompt.
                 try:
                     interp = self.editwin.interp
-                except:
+                except AttributeError:
                     interp = None
                 if not self.filename and self.get_saved() and not interp:
                     self.editwin.flist.open(filename, self.loadfile)
