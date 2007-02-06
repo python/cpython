@@ -305,6 +305,61 @@ class WriteTest(BaseTest):
         self.assertEqual(self.dst.getnames(), [], "added the archive to itself")
 
 
+class AppendTest(unittest.TestCase):
+    # Test append mode (cp. patch #1652681).
+
+    def setUp(self):
+        self.tarname = tmpname()
+        if os.path.exists(self.tarname):
+            os.remove(self.tarname)
+
+    def _add_testfile(self, fileobj=None):
+        tar = tarfile.open(self.tarname, "a", fileobj=fileobj)
+        tar.addfile(tarfile.TarInfo("bar"))
+        tar.close()
+
+    def _create_testtar(self):
+        src = tarfile.open(tarname())
+        t = src.getmember("0-REGTYPE")
+        t.name = "foo"
+        f = src.extractfile(t)
+        tar = tarfile.open(self.tarname, "w")
+        tar.addfile(t, f)
+        tar.close()
+
+    def _test(self, names=["bar"], fileobj=None):
+        tar = tarfile.open(self.tarname, fileobj=fileobj)
+        self.assert_(tar.getnames() == names)
+
+    def test_non_existing(self):
+        self._add_testfile()
+        self._test()
+
+    def test_empty(self):
+        open(self.tarname, "w").close()
+        self._add_testfile()
+        self._test()
+
+    def test_empty_fileobj(self):
+        fobj = StringIO.StringIO()
+        self._add_testfile(fobj)
+        fobj.seek(0)
+        self._test(fileobj=fobj)
+
+    def test_fileobj(self):
+        self._create_testtar()
+        data = open(self.tarname).read()
+        fobj = StringIO.StringIO(data)
+        self._add_testfile(fobj)
+        fobj.seek(0)
+        self._test(names=["foo", "bar"], fileobj=fobj)
+
+    def test_existing(self):
+        self._create_testtar()
+        self._add_testfile()
+        self._test(names=["foo", "bar"])
+
+
 class Write100Test(BaseTest):
     # The name field in a tar header stores strings of at most 100 chars.
     # If a string is shorter than 100 chars it has to be padded with '\0',
@@ -711,6 +766,7 @@ def test_main():
         ReadAsteriskTest,
         ReadStreamAsteriskTest,
         WriteTest,
+        AppendTest,
         Write100Test,
         WriteSize0Test,
         WriteStreamTest,
