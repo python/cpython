@@ -126,6 +126,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1652681: tarfile.py: create nonexistent files in append mode and
+  allow appending to empty files.
+
 - Bug #1124861: Automatically create pipes if GetStdHandle fails in
   subprocess. 
 
