@@ -592,6 +592,22 @@ class Popen(object):
                             c2pread, c2pwrite,
                             errread, errwrite)
 
+        # On Windows, you cannot just redirect one or two handles: You
+        # either have to redirect all three or none. If the subprocess
+        # user has only redirected one or two handles, we are
+        # automatically creating PIPEs for the rest. We should close
+        # these after the process is started. See bug #1124861. 
+        if mswindows:
+            if stdin is None and p2cwrite is not None:
+                os.close(p2cwrite)
+                p2cwrite = None
+            if stdout is None and c2pread is not None:
+                os.close(c2pread)
+                c2pread = None
+            if stderr is None and errread is not None:
+                os.close(errread)
+                errread = None
+
         if p2cwrite is not None:
             self.stdin = os.fdopen(p2cwrite, 'wb', bufsize)
         if c2pread is not None:
@@ -668,7 +684,9 @@ class Popen(object):
 
             if stdin is None:
                 p2cread = GetStdHandle(STD_INPUT_HANDLE)
-            elif stdin == PIPE:
+            if p2cread is not None:
+                pass
+            elif stdin is None or stdin == PIPE:
                 p2cread, p2cwrite = CreatePipe(None, 0)
                 # Detach and turn into fd
                 p2cwrite = p2cwrite.Detach()
@@ -682,7 +700,9 @@ class Popen(object):
 
             if stdout is None:
                 c2pwrite = GetStdHandle(STD_OUTPUT_HANDLE)
-            elif stdout == PIPE:
+            if c2pwrite is not None:
+                pass
+            elif stdout is None or stdout == PIPE:
                 c2pread, c2pwrite = CreatePipe(None, 0)
                 # Detach and turn into fd
                 c2pread = c2pread.Detach()
@@ -696,7 +716,9 @@ class Popen(object):
 
             if stderr is None:
                 errwrite = GetStdHandle(STD_ERROR_HANDLE)
-            elif stderr == PIPE:
+            if errwrite is not None:
+                pass
+            elif stderr is None or stderr == PIPE:
                 errread, errwrite = CreatePipe(None, 0)
                 # Detach and turn into fd
                 errread = errread.Detach()
