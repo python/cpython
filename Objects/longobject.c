@@ -2147,8 +2147,12 @@ static PyObject *
 long_richcompare(PyObject *self, PyObject *other, int op)
 {
 	PyLongObject *a, *b;
+	PyObject *result;
 	CONVERT_BINOP((PyObject *)self, (PyObject *)other, &a, &b);
-	return Py_CmpToRich(op, long_compare(a, b));
+	result = Py_CmpToRich(op, long_compare(a, b));
+	Py_DECREF(a);
+	Py_DECREF(b);
+	return result;
 }
 
 static long
@@ -2283,9 +2287,13 @@ long_add(PyLongObject *v, PyLongObject *w)
 
 	CONVERT_BINOP((PyObject *)v, (PyObject *)w, &a, &b);
 
-	if (ABS(a->ob_size) <= 1 && ABS(b->ob_size) <= 1)
-		return PyInt_FromLong(MEDIUM_VALUE(a) +
-				      MEDIUM_VALUE(b));
+	if (ABS(a->ob_size) <= 1 && ABS(b->ob_size) <= 1) {
+		PyObject *result = PyInt_FromLong(MEDIUM_VALUE(a) +
+						  MEDIUM_VALUE(b));
+		Py_DECREF(a);
+		Py_DECREF(b);
+		return result;
+	}
 	if (a->ob_size < 0) {
 		if (b->ob_size < 0) {
 			z = x_add(a, b);
@@ -2313,8 +2321,13 @@ long_sub(PyLongObject *v, PyLongObject *w)
 
 	CONVERT_BINOP((PyObject *)v, (PyObject *)w, &a, &b);
 
-	if (ABS(a->ob_size) <= 1 && ABS(b->ob_size) <= 1)
-		return PyLong_FromLong(MEDIUM_VALUE(a)-MEDIUM_VALUE(b));
+	if (ABS(a->ob_size) <= 1 && ABS(b->ob_size) <= 1) {
+		PyObject* r;
+		r = PyLong_FromLong(MEDIUM_VALUE(a)-MEDIUM_VALUE(b));
+		Py_DECREF(a);
+		Py_DECREF(b);
+		return r;
+	}
 	if (a->ob_size < 0) {
 		if (b->ob_size < 0)
 			z = x_sub(a, b);
@@ -2744,8 +2757,13 @@ long_mul(PyLongObject *v, PyLongObject *w)
 		return Py_NotImplemented;
 	}
 
-	if (ABS(v->ob_size) <= 1 && ABS(w->ob_size) <= 1)
-		return PyLong_FromLong(MEDIUM_VALUE(v)*MEDIUM_VALUE(w));
+	if (ABS(v->ob_size) <= 1 && ABS(w->ob_size) <= 1) {
+		PyObject *r;
+		r = PyLong_FromLong(MEDIUM_VALUE(v)*MEDIUM_VALUE(w));
+		Py_DECREF(a);
+		Py_DECREF(b);
+		return r;
+	}
 
 	z = k_mul(a, b);
 	/* Negate if exactly one of the inputs is negative. */
