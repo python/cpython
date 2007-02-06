@@ -126,6 +126,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1124861: Automatically create pipes if GetStdHandle fails in
+  subprocess. 
+
 - Patch #1634778: add missing encoding aliases for iso8859_15 and
   iso8859_16.
 
