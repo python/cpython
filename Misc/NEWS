@@ -157,6 +157,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1124861: Automatically create pipes if GetStdHandle fails in
+  subprocess. 
+
 - Patch #783050: the pty.fork() function now closes the slave fd
   correctly.
 
