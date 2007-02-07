@@ -52,8 +52,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(2, zip('abc',count(3))), [('a', 3), ('b', 4)])
         self.assertRaises(TypeError, count, 2, 3)
         self.assertRaises(TypeError, count, 'a')
-        c = count(sys.maxint-2)   # verify that rollover doesn't crash
-        c.next(); c.next(); c.next(); c.next(); c.next()
+        self.assertRaises(OverflowError, list, islice(count(sys.maxint-5), 10))
         c = count(3)
         self.assertEqual(repr(c), 'count(3)')
         c.next()
