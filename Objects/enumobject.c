@@ -62,6 +62,12 @@ enum_next(enumobject *en)
 	PyObject *result = en->en_result;
 	PyObject *it = en->en_sit;
 
+	if (en->en_index == LONG_MAX) {
+		PyErr_SetString(PyExc_OverflowError,
+			"enumerate() is limited to LONG_MAX items");                
+		return NULL;         
+	}
+
 	next_item = (*it->ob_type->tp_iternext)(it);
 	if (next_item == NULL)
 		return NULL;
