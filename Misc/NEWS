@@ -103,6 +103,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- collections.defaultdict() now verifies that the factory function is callable.
+
 - Bug #1486663: don't reject keyword arguments for subclasses of builtin
   types.
 
