@@ -215,13 +215,22 @@ class AutoCompleteWindow:
         if not self.is_active():
             return
         # Position the completion list window
+        text = self.widget
+        text.see(self.startindex)
+        x, y, cx, cy = text.bbox(self.startindex)
         acw = self.autocompletewindow
-        self.widget.see(self.startindex)
-        x, y, cx, cy = self.widget.bbox(self.startindex)
-        acw.wm_geometry("+%d+%d" % (x + self.widget.winfo_rootx(),
-                                    y + self.widget.winfo_rooty() \
-                                    -acw.winfo_height()))
-
+        acw_width, acw_height = acw.winfo_width(), acw.winfo_height()
+        text_width, text_height = text.winfo_width(), text.winfo_height()
+        new_x = text.winfo_rootx() + min(x, max(0, text_width - acw_width))
+        new_y = text.winfo_rooty() + y
+        if (text_height - (y + cy) >= acw_height # enough height below
+            or y < acw_height): # not enough height above
+            # place acw below current line
+            new_y += cy
+        else:
+            # place acw above current line
+            new_y -= acw_height
+        acw.wm_geometry("+%d+%d" % (new_x, new_y))
 
     def hide_event(self, event):
         if not self.is_active():

@@ -3,6 +3,9 @@ What's New in IDLE 2.6a1?
 
 *Release date: XX-XXX-200X*
 
+- AutoCompleteWindow moved below input line, will move above if there
+  isn't enough space.  Patch 1621265 Tal Einat
+
 - Calltips now 'handle' tuples in the argument list (display '<tuple>' :)
   Suggested solution by Christos Georgiou, Bug 791968.
 
