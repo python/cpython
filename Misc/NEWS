@@ -103,6 +103,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1575169: operator.isSequenceType() now returns False for subclasses of dict.
+
 - collections.defaultdict() now verifies that the factory function is callable.
 
 - Bug #1486663: don't reject keyword arguments for subclasses of builtin
