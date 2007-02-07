@@ -112,7 +112,7 @@ class CallTips:
             namespace.update(__main__.__dict__)
             try:
                 return eval(name, namespace)
-            except NameError:
+            except (NameError, AttributeError):
                 return None
 
 def _find_constructor(class_ob):
