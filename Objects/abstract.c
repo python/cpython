@@ -1157,6 +1157,8 @@ PySequence_Check(PyObject *s)
 {
 	if (s && PyInstance_Check(s))
 		return PyObject_HasAttrString(s, "__getitem__");
+	if (PyObject_IsInstance(s, &PyDict_Type))
+		return 0;
 	return s != NULL && s->ob_type->tp_as_sequence &&
 		s->ob_type->tp_as_sequence->sq_item != NULL;
 }
