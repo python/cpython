@@ -1252,8 +1252,14 @@ defdict_init(PyObject *self, PyObject *args, PyObject *kwds)
 		newargs = PyTuple_New(0);
 	else {
 		Py_ssize_t n = PyTuple_GET_SIZE(args);
-		if (n > 0)
+		if (n > 0) {
 			newdefault = PyTuple_GET_ITEM(args, 0);
+			if (!PyCallable_Check(newdefault)) {
+				PyErr_SetString(PyExc_TypeError,
+					"first argument must be callable");                           
+				return -1;
+			}
+		}
 		newargs = PySequence_GetSlice(args, 1, n);
 	}
 	if (newargs == NULL)
