@@ -3167,7 +3167,7 @@ time_str(PyDateTime_Time *self)
 }
 
 static PyObject *
-time_isoformat(PyDateTime_Time *self)
+time_isoformat(PyDateTime_Time *self, PyObject *unused)
 {
 	char buf[100];
 	PyObject *result;
@@ -3411,7 +3411,7 @@ time_reduce(PyDateTime_Time *self, PyObject *arg)
 
 static PyMethodDef time_methods[] = {
 
-	{"isoformat",   (PyCFunction)time_isoformat,	METH_KEYWORDS,
+	{"isoformat",   (PyCFunction)time_isoformat,	METH_NOARGS,
 	 PyDoc_STR("Return string in ISO 8601 format, HH:MM:SS[.mmmmmm]"
 	 	   "[+HH:MM].")},
 
