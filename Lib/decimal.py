@@ -487,7 +487,7 @@ def localcontext(ctx=None):
     28
     >>> with localcontext():
     ...     ctx = getcontext()
-    ...     ctx.prec() += 2
+    ...     ctx.prec += 2
     ...     print ctx.prec
     ...
     30
