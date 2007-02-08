@@ -347,6 +347,8 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1653736: Complain about keyword arguments to time.isoformat.
+
 - Bug #1486663: don't reject keyword arguments for subclasses of builtin
   types.
 
