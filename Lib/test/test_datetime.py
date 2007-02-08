@@ -1740,6 +1740,11 @@ class TestTime(HarmlessMixedComparison):
         self.assertEqual(t.isoformat(), "00:00:00.100000")
         self.assertEqual(t.isoformat(), str(t))
 
+    def test_1653736(self):
+        # verify it doesn't accept extra keyword arguments
+        t = self.theclass(second=1)
+        self.assertRaises(TypeError, t.isoformat, foo=3)
+
     def test_strftime(self):
         t = self.theclass(1, 2, 3, 4)
         self.assertEqual(t.strftime('%H %M %S'), "01 02 03")
