@@ -325,7 +325,7 @@ continuation lines, then `DocTest` will raise a ValueError:
     ...     '''
     >>> parser.get_doctest(docstring, globs, 'some_test', 'filename', 0)
     Traceback (most recent call last):
-    ValueError: line 2 of the docstring for some_test has inconsistent leading whitespace: '...          2)'
+    ValueError: line 2 of the docstring for some_test has inconsistent leading whitespace: '...          2))'
 
 If there's no blank space after a PS1 prompt ('>>>'), then `DocTest`
 will raise a ValueError:
@@ -1028,14 +1028,18 @@ output to match any substring in the actual output:
 
     ... also matches nothing:
 
-    >>> for i in range(100):
-    ...     print(i**2, end=' ') #doctest: +ELLIPSIS
-    0 1...4...9 16 ... 36 49 64 ... 9801
+    >>> if 1:
+    ...     for i in range(100):
+    ...         print(i**2, end=' ') #doctest: +ELLIPSIS
+    ...     print('!')
+    0 1...4...9 16 ... 36 49 64 ... 9801 !
 
     ... can be surprising; e.g., this test passes:
 
-    >>> for i in range(21): #doctest: +ELLIPSIS
-    ...     print(i, end=' ')
+    >>> if 1:  #doctest: +ELLIPSIS
+    ...     for i in range(20):
+    ...         print(i, end=' ')
+    ...     print(20)
     0 1 2 ...1...2...0
 
     Examples from the docs:
