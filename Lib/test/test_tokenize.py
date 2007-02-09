@@ -123,7 +123,7 @@ def dump_tokens(s):
 def roundtrip(s):
     f = StringIO(s)
     source = untokenize(generate_tokens(f.readline))
-    print(source, end=' ')
+    print(source, end="")
 
 # This is an example from the docs, set up as a doctest.
 def decistmt(s):
