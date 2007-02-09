@@ -36,7 +36,15 @@ TO DO
 Core and Builtins
 -----------------
 
-- PEP 3105: print is now a function.
+- PEP 3105: print is now a function.  Also (not in the PEP) the
+  'softspace' attribute of files is now gone (since print() doesn't use
+  it).  A side effect of this change is that you can get incomplete
+  output lines in interactive sessions:
+
+  >>> print(42, end="")
+  42>>> 
+
+  We may be able to fix this after the I/O library rewrite.
 
 - PEP 3102: keyword-only arguments.
 
