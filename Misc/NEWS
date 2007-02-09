@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1653736: Properly discard third argument to slot_nb_inplace_power.
+
 - PEP 352: Raising a string exception now triggers a TypeError.  Attempting to
   catch a string exception raises DeprecationWarning.
 
