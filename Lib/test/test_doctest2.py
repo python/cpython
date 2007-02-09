@@ -2,7 +2,7 @@
 u"""A module to test whether doctest recognizes some 2.2 features,
 like static and class methods.
 
->>> print 'yup'  # 1
+>>> print('yup')  # 1
 yup
 
 We include some (random) encoded (utf-8) text in the text surrounding
@@ -17,7 +17,7 @@ from test import test_support
 class C(object):
     u"""Class C.
 
-    >>> print C()  # 2
+    >>> print(C())  # 2
     42
 
 
@@ -31,13 +31,13 @@ class C(object):
     def __init__(self):
         """C.__init__.
 
-        >>> print C() # 3
+        >>> print(C()) # 3
         42
         """
 
     def __str__(self):
         """
-        >>> print C() # 4
+        >>> print(C()) # 4
         42
         """
         return "42"
@@ -45,13 +45,13 @@ class C(object):
     class D(object):
         """A nested D class.
 
-        >>> print "In D!"   # 5
+        >>> print("In D!")   # 5
         In D!
         """
 
         def nested(self):
             """
-            >>> print 3 # 6
+            >>> print(3) # 6
             3
             """
 
@@ -59,7 +59,7 @@ class C(object):
         """
         >>> c = C()    # 7
         >>> c.x = 12   # 8
-        >>> print c.x  # 9
+        >>> print(c.x)  # 9
         -12
         """
         return -self._x
@@ -68,7 +68,7 @@ class C(object):
         """
         >>> c = C()     # 10
         >>> c.x = 12    # 11
-        >>> print c.x   # 12
+        >>> print(c.x)   # 12
         -12
         """
         self._x = value
@@ -76,7 +76,7 @@ class C(object):
     x = property(getx, setx, doc="""\
         >>> c = C()    # 13
         >>> c.x = 12   # 14
-        >>> print c.x  # 15
+        >>> print(c.x)  # 15
         -12
         """)
 
@@ -85,9 +85,9 @@ class C(object):
         """
         A static method.
 
-        >>> print C.statm()    # 16
+        >>> print(C.statm())    # 16
         666
-        >>> print C().statm()  # 17
+        >>> print(C().statm())  # 17
         666
         """
         return 666
@@ -97,9 +97,9 @@ class C(object):
         """
         A class method.
 
-        >>> print C.clsm(22)    # 18
+        >>> print(C.clsm(22))    # 18
         22
-        >>> print C().clsm(23)  # 19
+        >>> print(C().clsm(23))  # 19
         23
         """
         return val

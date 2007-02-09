@@ -15,7 +15,7 @@ Example:
 
   >>> import smtplib
   >>> s=smtplib.SMTP("localhost")
-  >>> print s.help()
+  >>> print(s.help())
   This is Sendmail version 8.8.4
   Topics:
       HELO    EHLO    MAIL    RCPT    DATA

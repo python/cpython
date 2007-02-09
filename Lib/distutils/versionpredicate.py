@@ -40,7 +40,7 @@ class VersionPredicate:
     The str() of a `VersionPredicate` provides a normalized
     human-readable version of the expression::
 
-    >>> print v
+    >>> print(v)
     pyepat.abc (> 1.0, < 3333.3a1, != 1555.1b3)
 
     The `satisfied_by()` method can be used to determine with a given

@@ -176,9 +176,9 @@ def parseliteral():
     >>> element = ET.fromstring("<html><body>text</body></html>")
     >>> ET.ElementTree(element).write(sys.stdout)
     <html><body>text</body></html>
-    >>> print ET.tostring(element)
+    >>> print(ET.tostring(element))
     <html><body>text</body></html>
-    >>> print ET.tostring(element, "ascii")
+    >>> print(ET.tostring(element, "ascii"))
     <?xml version='1.0' encoding='ascii'?>
     <html><body>text</body></html>
     >>> _, ids = ET.XMLID("<html><body>text</body></html>")

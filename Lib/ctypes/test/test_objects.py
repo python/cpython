@@ -13,7 +13,7 @@ Here is an array of string pointers:
 
 >>> from ctypes import *
 >>> array = (c_char_p * 5)()
->>> print array._objects
+>>> print(array._objects)
 None
 >>>
 
@@ -34,14 +34,14 @@ in a 'base' object.
 ...     _fields_ = [("x", c_int), ("y", c_int), ("array", c_char_p * 5)]
 ...
 >>> x = X()
->>> print x._objects
+>>> print(x._objects)
 None
 >>>
 
 The'array' attribute of the 'x' object shares part of the memory buffer
 of 'x' ('_b_base_' is either None, or the root object owning the memory block):
 
->>> print x.array._b_base_ # doctest: +ELLIPSIS
+>>> print(x.array._b_base_) # doctest: +ELLIPSIS
 <ctypes.test.test_objects.X object at 0x...>
 >>>
 

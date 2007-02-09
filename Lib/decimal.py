@@ -56,31 +56,31 @@ Decimal("2.60")
 >>> Decimal("12.34") + Decimal("3.87") - Decimal("18.41")
 Decimal("-2.20")
 >>> dig = Decimal(1)
->>> print dig / Decimal(3)
+>>> print(dig / Decimal(3))
 0.333333333
 >>> getcontext().prec = 18
->>> print dig / Decimal(3)
+>>> print(dig / Decimal(3))
 0.333333333333333333
->>> print dig.sqrt()
+>>> print(dig.sqrt())
 1
->>> print Decimal(3).sqrt()
+>>> print(Decimal(3).sqrt())
 1.73205080756887729
->>> print Decimal(3) ** 123
+>>> print(Decimal(3) ** 123)
 4.85192780976896427E+58
 >>> inf = Decimal(1) / Decimal(0)
->>> print inf
+>>> print(inf)
 Infinity
 >>> neginf = Decimal(-1) / Decimal(0)
->>> print neginf
+>>> print(neginf)
 -Infinity
->>> print neginf + inf
+>>> print(neginf + inf)
 NaN
->>> print neginf * inf
+>>> print(neginf * inf)
 -Infinity
->>> print dig / 0
+>>> print(dig / 0)
 Infinity
 >>> getcontext().traps[DivisionByZero] = 1
->>> print dig / 0
+>>> print(dig / 0)
 Traceback (most recent call last):
   ...
   ...
@@ -88,29 +88,29 @@ Traceback (most recent call last):
 decimal.DivisionByZero: x / 0
 >>> c = Context()
 >>> c.traps[InvalidOperation] = 0
->>> print c.flags[InvalidOperation]
+>>> print(c.flags[InvalidOperation])
 0
 >>> c.divide(Decimal(0), Decimal(0))
 Decimal("NaN")
 >>> c.traps[InvalidOperation] = 1
->>> print c.flags[InvalidOperation]
+>>> print(c.flags[InvalidOperation])
 1
 >>> c.flags[InvalidOperation] = 0
->>> print c.flags[InvalidOperation]
+>>> print(c.flags[InvalidOperation])
 0
->>> print c.divide(Decimal(0), Decimal(0))
+>>> print(c.divide(Decimal(0), Decimal(0)))
 Traceback (most recent call last):
   ...
   ...
   ...
 decimal.InvalidOperation: 0 / 0
->>> print c.flags[InvalidOperation]
+>>> print(c.flags[InvalidOperation])
 1
 >>> c.flags[InvalidOperation] = 0
 >>> c.traps[InvalidOperation] = 0
->>> print c.divide(Decimal(0), Decimal(0))
+>>> print(c.divide(Decimal(0), Decimal(0)))
 NaN
->>> print c.flags[InvalidOperation]
+>>> print(c.flags[InvalidOperation])
 1
 >>>
 """
@@ -483,19 +483,19 @@ def localcontext(ctx=None):
     # as the doctest module doesn't understand __future__ statements
     """
     >>> from __future__ import with_statement
-    >>> print getcontext().prec
+    >>> print(getcontext().prec)
     28
     >>> with localcontext():
     ...     ctx = getcontext()
     ...     ctx.prec() += 2
-    ...     print ctx.prec
-    ...
+    ...     print(ctx.prec)
+    ... 
     30
     >>> with localcontext(ExtendedContext):
-    ...     print getcontext().prec
-    ...
+    ...     print(getcontext().prec)
+    ... 
     9
-    >>> print getcontext().prec
+    >>> print(getcontext().prec)
     28
     """
     if ctx is None: ctx = getcontext()
