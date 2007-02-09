@@ -128,6 +128,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1600860: Search for shared python library in LIBDIR, not lib/python/config,
+  on "linux" and "gnu" systems.
+
 - Patch #1652681: tarfile.py: create nonexistent files in append mode and
   allow appending to empty files.
 
