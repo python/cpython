@@ -265,7 +265,7 @@ class TestJointOps(unittest.TestCase):
         w.value = s
         try:
             fo = open(test_support.TESTFN, "wb")
-            print >> fo, s,
+            fo.write(str(s))
             fo.close()
             fo = open(test_support.TESTFN, "rb")
             self.assertEqual(fo.read(), repr(s))
@@ -594,7 +594,7 @@ class TestBasicOps(unittest.TestCase):
     def test_print(self):
         try:
             fo = open(test_support.TESTFN, "wb")
-            print >> fo, self.set,
+            fo.write(str(self.set))
             fo.close()
             fo = open(test_support.TESTFN, "rb")
             self.assertEqual(fo.read(), repr(self.set))
@@ -1506,7 +1506,7 @@ def test_main(verbose=None):
             test_support.run_unittest(*test_classes)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
-        print counts
+        print(counts)
 
 if __name__ == "__main__":
     test_main(verbose=True)
