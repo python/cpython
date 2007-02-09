@@ -857,7 +857,7 @@ VALIDATER(testlist);            VALIDATER(varargslist);
 VALIDATER(vfpdef);              VALIDATER(vfplist);
 VALIDATER(stmt);                VALIDATER(simple_stmt);
 VALIDATER(expr_stmt);           VALIDATER(power);
-VALIDATER(print_stmt);          VALIDATER(del_stmt);
+VALIDATER(del_stmt);
 VALIDATER(return_stmt);         VALIDATER(list_iter);
 VALIDATER(raise_stmt);          VALIDATER(import_stmt);
 VALIDATER(import_name);         VALIDATER(import_from);
@@ -1545,7 +1545,6 @@ validate_small_stmt(node *tree)
         int ntype = TYPE(CHILD(tree, 0));
 
         if (  (ntype == expr_stmt)
-              || (ntype == print_stmt)
               || (ntype == del_stmt)
               || (ntype == pass_stmt)
               || (ntype == flow_stmt)
@@ -1645,54 +1644,6 @@ validate_expr_stmt(node *tree)
         for (j = 1; res && (j < nch); j += 2)
             res = validate_equal(CHILD(tree, j))
                    && validate_yield_or_testlist(CHILD(tree, j + 1));
-    }
-    return (res);
-}
-
-
-/*  print_stmt:
- *
- *      'print' ( [ test (',' test)* [','] ]
- *              | '>>' test [ (',' test)+ [','] ] )
- */
-static int
-validate_print_stmt(node *tree)
-{
-    int nch = NCH(tree);
-    int res = (validate_ntype(tree, print_stmt)
-               && (nch > 0)
-               && validate_name(CHILD(tree, 0), "print"));
-
-    if (res && nch > 1) {
-        int sym = TYPE(CHILD(tree, 1));
-        int i = 1;
-        int allow_trailing_comma = 1;
-
-        if (sym == test)
-            res = validate_test(CHILD(tree, i++));
-        else {
-            if (nch < 3)
-                res = validate_numnodes(tree, 3, "print_stmt");
-            else {
-                res = (validate_ntype(CHILD(tree, i), RIGHTSHIFT)
-                       && validate_test(CHILD(tree, i+1)));
-                i += 2;
-                allow_trailing_comma = 0;
-            }
-        }
-        if (res) {
-            /*  ... (',' test)* [',']  */
-            while (res && i+2 <= nch) {
-                res = (validate_comma(CHILD(tree, i))
-                       && validate_test(CHILD(tree, i+1)));
-                allow_trailing_comma = 1;
-                i += 2;
-            }
-            if (res && !allow_trailing_comma)
-                res = validate_numnodes(tree, i, "print_stmt");
-            else if (res && i < nch)
-                res = validate_comma(CHILD(tree, i));
-        }
     }
     return (res);
 }
@@ -2977,7 +2928,7 @@ validate_node(node *tree)
             break;
           case small_stmt:
             /*
-             *  expr_stmt | print_stmt | del_stmt | pass_stmt | flow_stmt
+             *  expr_stmt | del_stmt | pass_stmt | flow_stmt
              *  | import_stmt | global_stmt | assert_stmt
              */
             res = validate_small_stmt(tree);
@@ -3011,9 +2962,6 @@ validate_node(node *tree)
              */
           case expr_stmt:
             res = validate_expr_stmt(tree);
-            break;
-          case print_stmt:
-            res = validate_print_stmt(tree);
             break;
           case del_stmt:
             res = validate_del_stmt(tree);

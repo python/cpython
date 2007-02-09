@@ -664,7 +664,7 @@ class PyBuildExt(build_ext):
             # search path.
             for d in inc_dirs + db_inc_paths:
                 f = os.path.join(d, "db.h")
-                if db_setup_debug: print "db: looking for db.h in", f
+                if db_setup_debug: print("db: looking for db.h in", f)
                 if os.path.exists(f):
                     f = open(f).read()
                     m = re.search(r"#define\WDB_VERSION_MAJOR\W(\d+)", f)
@@ -680,13 +680,13 @@ class PyBuildExt(build_ext):
                             # (first occurrance only)
                             db_ver_inc_map[db_ver] = d
                             if db_setup_debug:
-                                print "db.h: found", db_ver, "in", d
+                                print("db.h: found", db_ver, "in", d)
                         else:
                             # we already found a header for this library version
-                            if db_setup_debug: print "db.h: ignoring", d
+                            if db_setup_debug: print("db.h: ignoring", d)
                     else:
                         # ignore this header, it didn't contain a version number
-                        if db_setup_debug: print "db.h: unsupported version", db_ver, "in", d
+                        if db_setup_debug: print("db.h: unsupported version", db_ver, "in", d)
 
             db_found_vers = db_ver_inc_map.keys()
             db_found_vers.sort()
@@ -717,12 +717,12 @@ class PyBuildExt(build_ext):
                         dblib_dir = [ os.path.abspath(os.path.dirname(dblib_file)) ]
                         raise db_found
                     else:
-                        if db_setup_debug: print "db lib: ", dblib, "not found"
+                        if db_setup_debug: print("db lib: ", dblib, "not found")
 
         except db_found:
             if db_setup_debug:
-                print "db lib: using", db_ver, dblib
-                print "db: lib dir", dblib_dir, "inc dir", db_incdir
+                print("db lib: using", db_ver, dblib)
+                print("db: lib dir", dblib_dir, "inc dir", db_incdir)
             db_incs = [db_incdir]
             dblibs = [dblib]
             # We add the runtime_library_dirs argument because the
@@ -737,7 +737,7 @@ class PyBuildExt(build_ext):
                                   include_dirs=db_incs,
                                   libraries=dblibs))
         else:
-            if db_setup_debug: print "db: no appropriate library found"
+            if db_setup_debug: print("db: no appropriate library found")
             db_incs = None
             dblibs = []
             dblib_dir = None
@@ -765,7 +765,7 @@ class PyBuildExt(build_ext):
         for d in inc_dirs + sqlite_inc_paths:
             f = os.path.join(d, "sqlite3.h")
             if os.path.exists(f):
-                if sqlite_setup_debug: print "sqlite: found %s"%f
+                if sqlite_setup_debug: print("sqlite: found %s"%f)
                 incf = open(f).read()
                 m = re.search(
                     r'\s*.*#\s*.*define\s.*SQLITE_VERSION\W*"(.*)"', incf)
@@ -776,15 +776,15 @@ class PyBuildExt(build_ext):
                     if sqlite_version_tuple >= MIN_SQLITE_VERSION_NUMBER:
                         # we win!
                         if sqlite_setup_debug:
-                            print "%s/sqlite3.h: version %s"%(d, sqlite_version)
+                            print("%s/sqlite3.h: version %s"%(d, sqlite_version))
                         sqlite_incdir = d
                         break
                     else:
                         if sqlite_setup_debug:
-                            print "%s: version %d is too old, need >= %s"%(d,
-                                        sqlite_version, MIN_SQLITE_VERSION)
+                            print("%s: version %d is too old, need >= %s"%(d,
+                                        sqlite_version, MIN_SQLITE_VERSION))
                 elif sqlite_setup_debug:
-                    print "sqlite: %s had no SQLITE_VERSION"%(f,)
+                    print("sqlite: %s had no SQLITE_VERSION"%(f,))
 
         if sqlite_incdir:
             sqlite_dirs_to_check = [
@@ -1333,7 +1333,7 @@ class PyBuildExt(build_ext):
 
                 res = os.system(cmd)
                 if res or not os.path.exists(ffi_configfile):
-                    print "Failed to configure _ctypes module"
+                    print("Failed to configure _ctypes module")
                     return False
 
             fficonfig = {}
