@@ -25,7 +25,6 @@ class _BkFile:
         self.readline = self.__file.readline
         self.readlines = self.__file.readlines
         self.seek = self.__file.seek
-        self.softspace = self.__file.softspace
         self.tell = self.__file.tell
         self.truncate = self.__file.truncate
         self.write = self.__file.write
