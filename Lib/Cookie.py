@@ -80,9 +80,9 @@ attributes by using the .output() function
    >>> C = Cookie.SmartCookie()
    >>> C["rocky"] = "road"
    >>> C["rocky"]["path"] = "/cookie"
-   >>> print((C.output(header="Cookie:")))
+   >>> print(C.output(header="Cookie:"))
    Cookie: rocky=road; Path=/cookie
-   >>> print((C.output(attrs=[], header="Cookie:")))
+   >>> print(C.output(attrs=[], header="Cookie:"))
    Cookie: rocky=road
 
 The load() method of a Cookie extracts cookies from a string.  In a
@@ -100,7 +100,7 @@ such trickeries do not confuse it.
 
    >>> C = Cookie.SmartCookie()
    >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
-   >>> print((C))
+   >>> print(C)
    Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;"
 
 Each element of the Cookie also supports all of the RFC 2109
@@ -110,7 +110,7 @@ attribute.
    >>> C = Cookie.SmartCookie()
    >>> C["oreo"] = "doublestuff"
    >>> C["oreo"]["path"] = "/"
-   >>> print((C))
+   >>> print(C)
    Set-Cookie: oreo=doublestuff; Path=/
 
 Each dictionary element has a 'value' attribute, which gives you
@@ -198,7 +198,7 @@ it is still possible to use Cookie.Cookie() to create a Cookie.  In
 fact, this simply returns a SmartCookie.
 
    >>> C = Cookie.Cookie()
-   >>> print((C.__class__.__name__))
+   >>> print(C.__class__.__name__)
    SmartCookie
 
 
