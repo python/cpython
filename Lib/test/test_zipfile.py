@@ -282,11 +282,11 @@ class PyZipFileTests(unittest.TestCase):
         os.mkdir(TESTFN2)
         try:
             fp = open(os.path.join(TESTFN2, "mod1.py"), "w")
-            fp.write("print 42\n")
+            fp.write("print(42)\n")
             fp.close()
 
             fp = open(os.path.join(TESTFN2, "mod2.py"), "w")
-            fp.write("print 42 * 42\n")
+            fp.write("print(42 * 42)\n")
             fp.close()
 
             fp = open(os.path.join(TESTFN2, "mod2.txt"), "w")
