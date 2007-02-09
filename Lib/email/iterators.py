@@ -63,9 +63,9 @@ def _structure(msg, fp=None, level=0, include_default=False):
     if fp is None:
         fp = sys.stdout
     tab = ' ' * (level * 4)
-    print(tab + msg.get_content_type(), end=' ', file=fp)
+    print(tab + msg.get_content_type(), end='', file=fp)
     if include_default:
-        print('[%s]' % msg.get_default_type(), file=fp)
+        print(' [%s]' % msg.get_default_type(), file=fp)
     else:
         print(file=fp)
     if msg.is_multipart():

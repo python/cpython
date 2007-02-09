@@ -54,10 +54,9 @@ class TestEmailBase(unittest.TestCase):
         if first != second:
             sfirst = str(first)
             ssecond = str(second)
-            diff = difflib.ndiff(sfirst.splitlines(), ssecond.splitlines())
-            fp = StringIO()
-            print(NL, NL.join(diff), file=fp)
-            raise self.failureException, fp.getvalue()
+            diff = difflib.ndiff(sfirst.splitlines(True),
+                                 ssecond.splitlines(True))
+            raise self.failureException(NL + "".join(diff))
 
     def _msgobj(self, filename):
         fp = openfile(findfile(filename))
