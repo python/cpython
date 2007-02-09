@@ -998,50 +998,6 @@ class Power(Node):
     def __repr__(self):
         return "Power((%s, %s))" % (repr(self.left), repr(self.right))
 
-class Print(Node):
-    def __init__(self, nodes, dest, lineno=None):
-        self.nodes = nodes
-        self.dest = dest
-        self.lineno = lineno
-
-    def getChildren(self):
-        children = []
-        children.extend(flatten(self.nodes))
-        children.append(self.dest)
-        return tuple(children)
-
-    def getChildNodes(self):
-        nodelist = []
-        nodelist.extend(flatten_nodes(self.nodes))
-        if self.dest is not None:
-            nodelist.append(self.dest)
-        return tuple(nodelist)
-
-    def __repr__(self):
-        return "Print(%s, %s)" % (repr(self.nodes), repr(self.dest))
-
-class Printnl(Node):
-    def __init__(self, nodes, dest, lineno=None):
-        self.nodes = nodes
-        self.dest = dest
-        self.lineno = lineno
-
-    def getChildren(self):
-        children = []
-        children.extend(flatten(self.nodes))
-        children.append(self.dest)
-        return tuple(children)
-
-    def getChildNodes(self):
-        nodelist = []
-        nodelist.extend(flatten_nodes(self.nodes))
-        if self.dest is not None:
-            nodelist.append(self.dest)
-        return tuple(nodelist)
-
-    def __repr__(self):
-        return "Printnl(%s, %s)" % (repr(self.nodes), repr(self.dest))
-
 class Raise(Node):
     def __init__(self, expr1, expr2, expr3, lineno=None):
         self.expr1 = expr1

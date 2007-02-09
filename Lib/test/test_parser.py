@@ -85,14 +85,6 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_expr("(x for x in range(10))")
         self.check_expr("foo(x for x in range(10))")
 
-    def test_print(self):
-        self.check_suite("print")
-        self.check_suite("print 1")
-        self.check_suite("print 1,")
-        self.check_suite("print >>fp")
-        self.check_suite("print >>fp, 1")
-        self.check_suite("print >>fp, 1,")
-
     def test_simple_expression(self):
         # expr_stmt
         self.check_suite("a")
@@ -358,29 +350,6 @@ class IllegalSyntaxTestCase(unittest.TestCase):
            (4, ''),
            (0, ''))))
         self.check_bad_tree(tree, "def f():\n  return 1\n  yield 1")
-
-    def test_print_chevron_comma(self):
-        # Illegal input: print >>fp,
-        tree = \
-        (257,
-         (264,
-          (265,
-           (266,
-            (268,
-             (1, 'print'),
-             (35, '>>'),
-             (290,
-              (291,
-               (292,
-                (293,
-                 (295,
-                  (296,
-                   (297,
-                    (298, (299, (300, (301, (302, (303, (1, 'fp')))))))))))))),
-             (12, ','))),
-           (4, ''))),
-         (0, ''))
-        self.check_bad_tree(tree, "print >>fp,")
 
     def test_a_comma_comma_c(self):
         # Illegal input: a,,c

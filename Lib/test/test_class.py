@@ -127,7 +127,7 @@ class AllTests:
 
 method_template = """\
 def __%(method)s__(self, *args):
-    print "__%(method)s__:", args
+    print("__%(method)s__:", args)
 """
 
 d = {}

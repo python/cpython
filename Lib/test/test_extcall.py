@@ -260,8 +260,8 @@ for args in ['', 'a', 'ab']:
                     lambda x: '%s="%s"' % (x, x), defargs)
                 if vararg: arglist.append('*' + vararg)
                 if kwarg: arglist.append('**' + kwarg)
-                decl = (('def %s(%s): print "ok %s", a, b, d, e, v, ' +
-                         'type(k) is type ("") and k or sortdict(k)')
+                decl = (('def %s(%s): print("ok %s", a, b, d, e, v, ' +
+                         'type(k) is type ("") and k or sortdict(k))')
                          % (name, ', '.join(arglist), name))
                 exec(decl)
                 func = eval(name)

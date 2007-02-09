@@ -58,7 +58,7 @@ consts: ('None',)
 name: attrs
 argcount: 1
 kwonlyargcount: 0
-names: ('attr1', 'attr2', 'attr3')
+names: ('print', 'attr1', 'attr2', 'attr3')
 varnames: ('obj',)
 cellvars: ()
 freevars: ()

@@ -1130,29 +1130,6 @@ class CodeGenerator:
         opcode = callfunc_opcode_info[have_star, have_dstar]
         self.emit(opcode, kw << 8 | pos)
 
-    def visitPrint(self, node, newline=0):
-        self.set_lineno(node)
-        if node.dest:
-            self.visit(node.dest)
-        for child in node.nodes:
-            if node.dest:
-                self.emit('DUP_TOP')
-            self.visit(child)
-            if node.dest:
-                self.emit('ROT_TWO')
-                self.emit('PRINT_ITEM_TO')
-            else:
-                self.emit('PRINT_ITEM')
-        if node.dest and not newline:
-            self.emit('POP_TOP')
-
-    def visitPrintnl(self, node):
-        self.visitPrint(node, newline=1)
-        if node.dest:
-            self.emit('PRINT_NEWLINE_TO')
-        else:
-            self.emit('PRINT_NEWLINE')
-
     def visitReturn(self, node):
         self.set_lineno(node)
         self.visit(node.value)

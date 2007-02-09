@@ -36,28 +36,28 @@ test_1 = """
 
 Here's the new type at work:
 
-    >>> print(defaultdict)               # show our type
+    >>> print(defaultdict)              # show our type
     <class 'test.test_descrtut.defaultdict'>
-    >>> print(type(defaultdict))         # its metatype
+    >>> print(type(defaultdict))        # its metatype
     <type 'type'>
     >>> a = defaultdict(default=0.0)    # create an instance
-    >>> print(a)                         # show the instance
+    >>> print(a)                        # show the instance
     {}
-    >>> print(type(a))                   # show its type
+    >>> print(type(a))                  # show its type
     <class 'test.test_descrtut.defaultdict'>
-    >>> print(a.__class__)               # show its class
+    >>> print(a.__class__)              # show its class
     <class 'test.test_descrtut.defaultdict'>
-    >>> print(type(a) is a.__class__)    # its type is its class
+    >>> print(type(a) is a.__class__)   # its type is its class
     True
     >>> a[1] = 3.25                     # modify the instance
-    >>> print(a)                         # show the new value
+    >>> print(a)                        # show the new value
     {1: 3.25}
-    >>> print(a[1])                      # show the new item
+    >>> print(a[1])                     # show the new item
     3.25
-    >>> print(a[0])                      # a non-existant item
+    >>> print(a[0])                     # a non-existant item
     0.0
     >>> a.merge({1:100, 2:200})         # use a dict method
-    >>> print(sortdict(a))               # show the result
+    >>> print(sortdict(a))              # show the result
     {1: 3.25, 2: 200}
     >>>
 
@@ -67,10 +67,11 @@ statement or the built-in function eval():
 
     >>> print(sorted(a.keys()))
     [1, 2]
-    >>> exec("x = 3; print x", a)
+    >>> a['print'] = print              # need the print function here
+    >>> exec("x = 3; print(x)", a)
     3
     >>> print(sorted(a.keys(), key=lambda x: (str(type(x)), x)))
-    [1, 2, '__builtins__', 'x']
+    [1, 2, '__builtins__', 'print', 'x']
     >>> print(a['x'])
     3
     >>>

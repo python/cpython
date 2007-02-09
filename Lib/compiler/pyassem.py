@@ -783,8 +783,7 @@ class StackDepthTracker:
         'DELETE_SLICE+3': -3,
         'STORE_SUBSCR': -3,
         'DELETE_SUBSCR': -2,
-        # PRINT_EXPR?
-        'PRINT_ITEM': -1,
+        'PRINT_EXPR': -1,
         'RETURN_VALUE': -1,
         'YIELD_VALUE': -1,
         'BUILD_CLASS': -2,
