@@ -1012,7 +1012,7 @@ class DocTestRunner:
         >>> runner = DocTestRunner(verbose=False)
         >>> tests.sort(key = lambda test: test.name)
         >>> for test in tests:
-        ...     print test.name, '->', runner.run(test)
+        ...     print(test.name, '->', runner.run(test))
         _TestClass -> (0, 2)
         _TestClass.__init__ -> (0, 2)
         _TestClass.get -> (0, 2)
@@ -2419,7 +2419,7 @@ def script_from_examples(s):
        ...           Ho hum
        ...           '''
 
-       >>> print script_from_examples(text)
+       >>> print(script_from_examples(text))
        # Here are examples of simple math.
        #
        #     Python has super accurate integer addition
@@ -2554,7 +2554,7 @@ class _TestClass:
         """val -> _TestClass object with associated value val.
 
         >>> t = _TestClass(123)
-        >>> print t.get()
+        >>> print(t.get())
         123
         """
 
@@ -2574,7 +2574,7 @@ class _TestClass:
         """get() -> return TestClass's associated value.
 
         >>> x = _TestClass(-42)
-        >>> print x.get()
+        >>> print(x.get())
         -42
         """
 
@@ -2606,7 +2606,7 @@ __test__ = {"_TestClass": _TestClass,
 
             "blank lines": r"""
                 Blank lines can be marked with <BLANKLINE>:
-                    >>> print 'foo\n\nbar\n'
+                    >>> print('foo\n\nbar\n')
                     foo
                     <BLANKLINE>
                     bar
@@ -2616,14 +2616,14 @@ __test__ = {"_TestClass": _TestClass,
             "ellipsis": r"""
                 If the ellipsis flag is used, then '...' can be used to
                 elide substrings in the desired output:
-                    >>> print range(1000) #doctest: +ELLIPSIS
+                    >>> print(range(1000)) #doctest: +ELLIPSIS
                     [0, 1, 2, ..., 999]
             """,
 
             "whitespace normalization": r"""
                 If the whitespace normalization flag is used, then
                 differences in whitespace are ignored.
-                    >>> print range(30) #doctest: +NORMALIZE_WHITESPACE
+                    >>> print(range(30)) #doctest: +NORMALIZE_WHITESPACE
                     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
                      15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
                      27, 28, 29]

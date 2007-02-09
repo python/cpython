@@ -764,24 +764,24 @@ libreftest = """ Doctest for examples in the library reference: libitertools.tex
 
 >>> amounts = [120.15, 764.05, 823.14]
 >>> for checknum, amount in izip(count(1200), amounts):
-...     print 'Check %d is for $%.2f' % (checknum, amount)
-...
+...     print('Check %d is for $%.2f' % (checknum, amount))
+... 
 Check 1200 is for $120.15
 Check 1201 is for $764.05
 Check 1202 is for $823.14
 
 >>> import operator
 >>> for cube in imap(operator.pow, xrange(1,4), repeat(3)):
-...    print cube
-...
+...    print(cube)
+... 
 1
 8
 27
 
 >>> reportlines = ['EuroPython', 'Roster', '', 'alex', '', 'laura', '', 'martin', '', 'walter', '', 'samuele']
 >>> for name in islice(reportlines, 3, None, 2):
-...    print name.title()
-...
+...    print(name.title())
+... 
 Alex
 Laura
 Martin
@@ -792,8 +792,8 @@ Samuele
 >>> d = dict(a=1, b=2, c=1, d=2, e=1, f=2, g=3)
 >>> di = sorted(sorted(d.iteritems()), key=itemgetter(1))
 >>> for k, g in groupby(di, itemgetter(1)):
-...     print k, map(itemgetter(0), g)
-...
+...     print(k, map(itemgetter(0), g))
+... 
 1 ['a', 'c', 'e']
 2 ['b', 'd', 'f']
 3 ['g']
@@ -803,8 +803,8 @@ Samuele
 # same group.
 >>> data = [ 1,  4,5,6, 10, 15,16,17,18, 22, 25,26,27,28]
 >>> for k, g in groupby(enumerate(data), lambda (i,x):i-x):
-...     print map(operator.itemgetter(1), g)
-...
+...     print(map(operator.itemgetter(1), g))
+... 
 [1]
 [4, 5, 6]
 [10]

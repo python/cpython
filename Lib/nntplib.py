@@ -5,7 +5,7 @@ Example:
 >>> from nntplib import NNTP
 >>> s = NNTP('news')
 >>> resp, count, first, last, name = s.group('comp.lang.python')
->>> print 'Group', name, 'has', count, 'articles, range', first, 'to', last
+>>> print('Group', name, 'has', count, 'articles, range', first, 'to', last)
 Group comp.lang.python has 51 articles, range 5770 to 5821
 >>> resp, subs = s.xhdr('subject', first + '-' + last)
 >>> resp = s.quit()

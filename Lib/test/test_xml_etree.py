@@ -184,9 +184,9 @@ def parseliteral():
     >>> element = ET.fromstring("<html><body>text</body></html>")
     >>> ET.ElementTree(element).write(sys.stdout)
     <html><body>text</body></html>
-    >>> print ET.tostring(element)
+    >>> print(ET.tostring(element))
     <html><body>text</body></html>
-    >>> print ET.tostring(element, "ascii")
+    >>> print(ET.tostring(element, "ascii"))
     <?xml version='1.0' encoding='ascii'?>
     <html><body>text</body></html>
     >>> _, ids = ET.XMLID("<html><body>text</body></html>")
@@ -301,7 +301,7 @@ def xinclude():
 
     >>> document = xinclude_loader("C1.xml")
     >>> ElementInclude.include(document, xinclude_loader)
-    >>> print serialize(ET, document) # C1
+    >>> print(serialize(ET, document)) # C1
     <document>
       <p>120 Mz is adequate for an average home user.</p>
       <disclaimer>
@@ -315,7 +315,7 @@ def xinclude():
 
     >>> document = xinclude_loader("C2.xml")
     >>> ElementInclude.include(document, xinclude_loader)
-    >>> print serialize(ET, document) # C2
+    >>> print(serialize(ET, document)) # C2
     <document>
       <p>This document has been accessed
       324387 times.</p>
@@ -325,7 +325,7 @@ def xinclude():
 
     >>> document = xinclude_loader("C3.xml")
     >>> ElementInclude.include(document, xinclude_loader)
-    >>> print serialize(ET, document) # C3
+    >>> print(serialize(ET, document)) # C3
     <document>
       <p>The following is the source of the "data.xml" resource:</p>
       <example>&lt;?xml version='1.0'?&gt;

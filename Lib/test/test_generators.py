@@ -6,7 +6,7 @@ Let's try a simple generator:
     ...    yield 2
 
     >>> for i in f():
-    ...     print i
+    ...     print(i)
     1
     2
     >>> g = f()
@@ -78,7 +78,7 @@ However, they are not exactly equivalent:
     ...         raise StopIteration
     ...     except:
     ...         yield 42
-    >>> print list(g2())
+    >>> print(list(g2()))
     [42]
 
 This may be surprising at first:
@@ -105,14 +105,14 @@ Generators always return to the most recent caller:
 
     >>> def creator():
     ...     r = yrange(5)
-    ...     print "creator", r.next()
+    ...     print("creator", r.next())
     ...     return r
-    ...
+    ... 
     >>> def caller():
     ...     r = creator()
     ...     for i in r:
-    ...             print "caller", i
-    ...
+    ...             print("caller", i)
+    ... 
     >>> caller()
     creator 0
     caller 1
@@ -161,7 +161,7 @@ Specification: Return
         ...         return
         ...     except:
         ...        yield 1
-        >>> print list(f1())
+        >>> print(list(f1()))
         []
 
     because, as in any function, return simply exits, but
@@ -171,7 +171,7 @@ Specification: Return
         ...         raise StopIteration
         ...     except:
         ...         yield 42
-        >>> print list(f2())
+        >>> print(list(f2()))
         [42]
 
     because StopIteration is captured by a bare "except", as is any
@@ -221,7 +221,7 @@ Specification: Try/Except/Finally
     ...     finally:
     ...         yield 10
     ...     yield 11
-    >>> print list(f())
+    >>> print(list(f()))
     [1, 2, 4, 5, 8, 9, 10, 11]
     >>>
 
@@ -270,7 +270,7 @@ Guido's binary tree example.
     >>> t = tree("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
     >>> # Print the nodes of the tree in in-order.
     >>> for x in t:
-    ...     print x,
+    ...     print(x, end=' ')
     A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
 
     >>> # A non-recursive generator.
@@ -291,7 +291,7 @@ Guido's binary tree example.
 
     >>> # Exercise the non-recursive generator.
     >>> for x in t:
-    ...     print x,
+    ...     print(x, end=' ')
     A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
 
 """
@@ -345,9 +345,9 @@ Next one was posted to c.l.py.
 
 >>> seq = range(1, 5)
 >>> for k in range(len(seq) + 2):
-...     print "%d-combs of %s:" % (k, seq)
+...     print("%d-combs of %s:" % (k, seq))
 ...     for c in gcomb(seq, k):
-...         print "   ", c
+...         print("   ", c)
 0-combs of [1, 2, 3, 4]:
     []
 1-combs of [1, 2, 3, 4]:
@@ -383,7 +383,7 @@ From the Iterators list, about the types of these things.
 <type 'generator'>
 >>> [s for s in dir(i) if not s.startswith('_')]
 ['close', 'gi_frame', 'gi_running', 'next', 'send', 'throw']
->>> print i.next.__doc__
+>>> print(i.next.__doc__)
 x.next() -> the next value, or raise StopIteration
 >>> iter(i) is i
 True
@@ -447,14 +447,14 @@ Subject: Re: PEP 255: Simple Generators
 >>> gen = random.WichmannHill(42)
 >>> while 1:
 ...     for s in sets:
-...         print "%s->%s" % (s, s.find()),
-...     print
+...         print("%s->%s" % (s, s.find()), end=' ')
+...     print()
 ...     if len(roots) > 1:
 ...         s1 = gen.choice(roots)
 ...         roots.remove(s1)
 ...         s2 = gen.choice(roots)
 ...         s1.union(s2)
-...         print "merged", s1, "into", s2
+...         print("merged", s1, "into", s2)
 ...     else:
 ...         break
 A->A B->B C->C D->D E->E F->F G->G H->H I->I J->J K->K L->L M->M
@@ -576,7 +576,7 @@ address space, and it *looked* like a very slow leak.
 
 >>> result = m235()
 >>> for i in range(3):
-...     print firstn(result, 15)
+...     print(firstn(result, 15))
 [1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20, 24]
 [25, 27, 30, 32, 36, 40, 45, 48, 50, 54, 60, 64, 72, 75, 80]
 [81, 90, 96, 100, 108, 120, 125, 128, 135, 144, 150, 160, 162, 180, 192]
@@ -613,7 +613,7 @@ efficient.
 
 >>> m235 = LazyList(m235())
 >>> for i in range(5):
-...     print [m235[j] for j in range(15*i, 15*(i+1))]
+...     print([m235[j] for j in range(15*i, 15*(i+1))])
 [1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20, 24]
 [25, 27, 30, 32, 36, 40, 45, 48, 50, 54, 60, 64, 72, 75, 80]
 [81, 90, 96, 100, 108, 120, 125, 128, 135, 144, 150, 160, 162, 180, 192]
@@ -684,7 +684,7 @@ m235 to share a single generator".
 
 >>> it = m235()
 >>> for i in range(5):
-...     print firstn(it, 15)
+...     print(firstn(it, 15))
 [1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20, 24]
 [25, 27, 30, 32, 36, 40, 45, 48, 50, 54, 60, 64, 72, 75, 80]
 [81, 90, 96, 100, 108, 120, 125, 128, 135, 144, 150, 160, 162, 180, 192]
@@ -890,13 +890,13 @@ This one caused a crash (see SF bug 567538):
 ...             yield i
 ...
 >>> g = f()
->>> print g.next()
+>>> print(g.next())
 0
->>> print g.next()
+>>> print(g.next())
 1
->>> print g.next()
+>>> print(g.next())
 2
->>> print g.next()
+>>> print(g.next())
 Traceback (most recent call last):
 StopIteration
 """
@@ -1291,7 +1291,7 @@ Generate the 3-bit binary numbers in order.  This illustrates dumbest-
 possible use of conjoin, just to generate the full cross-product.
 
 >>> for c in conjoin([lambda: iter((0, 1))] * 3):
-...     print c
+...     print(c)
 [0, 0, 0]
 [0, 0, 1]
 [0, 1, 0]
@@ -1311,7 +1311,7 @@ generated sequence, you need to copy its results.
 
 >>> for n in range(10):
 ...     all = list(gencopy(conjoin([lambda: iter((0, 1))] * n)))
-...     print n, len(all), all[0] == [0] * n, all[-1] == [1] * n
+...     print(n, len(all), all[0] == [0] * n, all[-1] == [1] * n)
 0 1 True True
 1 2 True True
 2 4 True True
@@ -1331,7 +1331,7 @@ And run an 8-queens solver.
 >>> for row2col in q.solve():
 ...     count += 1
 ...     if count <= LIMIT:
-...         print "Solution", count
+...         print("Solution", count)
 ...         q.printsolution(row2col)
 Solution 1
 +-+-+-+-+-+-+-+-+
@@ -1370,7 +1370,7 @@ Solution 2
 | | | | |Q| | | |
 +-+-+-+-+-+-+-+-+
 
->>> print count, "solutions in all."
+>>> print(count, "solutions in all.")
 92 solutions in all.
 
 And run a Knight's Tour on a 10x10 board.  Note that there are about
@@ -1382,7 +1382,7 @@ And run a Knight's Tour on a 10x10 board.  Note that there are about
 >>> for x in k.solve():
 ...     count += 1
 ...     if count <= LIMIT:
-...         print "Solution", count
+...         print("Solution", count)
 ...         k.printsolution(x)
 ...     else:
 ...         break
@@ -1460,7 +1460,7 @@ coroutine_tests = """\
 Sending a value into a started generator:
 
 >>> def f():
-...     print (yield 1)
+...     print((yield 1))
 ...     yield 2
 >>> g = f()
 >>> g.next()
@@ -1507,16 +1507,16 @@ A yield expression with augmented assignment.
 >>> seq = []
 >>> c = coroutine(seq)
 >>> c.next()
->>> print seq
+>>> print(seq)
 []
 >>> c.send(10)
->>> print seq
+>>> print(seq)
 [10]
 >>> c.send(10)
->>> print seq
+>>> print(seq)
 [10, 20]
 >>> c.send(10)
->>> print seq
+>>> print(seq)
 [10, 20, 30]
 
 
@@ -1553,9 +1553,9 @@ Now check some throw() conditions:
 >>> def f():
 ...     while True:
 ...         try:
-...             print (yield)
+...             print((yield))
 ...         except ValueError as v:
-...             print "caught ValueError (%s)" % (v),
+...             print("caught ValueError (%s)" % (v), end=' ')
 >>> import sys
 >>> g = f()
 >>> g.next()
@@ -1616,7 +1616,7 @@ Traceback (most recent call last):
   ...
 TypeError
 
->>> print g.gi_frame
+>>> print(g.gi_frame)
 None
 
 >>> g.send(2)
@@ -1639,7 +1639,7 @@ Now let's try closing a generator:
 >>> def f():
 ...     try: yield
 ...     except GeneratorExit:
-...         print "exiting"
+...         print("exiting")
 
 >>> g = f()
 >>> g.next()
@@ -1660,7 +1660,7 @@ And finalization:
 >>> def f():
 ...     try: yield
 ...     finally:
-...         print "exiting"
+...         print("exiting")
 
 >>> g = f()
 >>> g.next()

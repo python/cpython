@@ -14,7 +14,7 @@ def sample_func(v):
     """
     Blah blah
 
-    >>> print sample_func(22)
+    >>> print(sample_func(22))
     44
 
     Yee ha!
@@ -23,7 +23,7 @@ def sample_func(v):
 
 class SampleClass:
     """
-    >>> print 1
+    >>> print(1)
     1
 
     >>> # comments get ignored.  so are empty PS1 and PS2 prompts:
@@ -34,33 +34,33 @@ class SampleClass:
     >>> sc = SampleClass(3)
     >>> for i in range(10):
     ...     sc = sc.double()
-    ...     print sc.get(),
+    ...     print(sc.get(), end=' ')
     6 12 24 48 96 192 384 768 1536 3072
     """
     def __init__(self, val):
         """
-        >>> print SampleClass(12).get()
+        >>> print(SampleClass(12).get())
         12
         """
         self.val = val
 
     def double(self):
         """
-        >>> print SampleClass(12).double().get()
+        >>> print(SampleClass(12).double().get())
         24
         """
         return SampleClass(self.val + self.val)
 
     def get(self):
         """
-        >>> print SampleClass(-5).get()
+        >>> print(SampleClass(-5).get())
         -5
         """
         return self.val
 
     def a_staticmethod(v):
         """
-        >>> print SampleClass.a_staticmethod(10)
+        >>> print(SampleClass.a_staticmethod(10))
         11
         """
         return v+1
@@ -68,16 +68,16 @@ class SampleClass:
 
     def a_classmethod(cls, v):
         """
-        >>> print SampleClass.a_classmethod(10)
+        >>> print(SampleClass.a_classmethod(10))
         12
-        >>> print SampleClass(0).a_classmethod(10)
+        >>> print(SampleClass(0).a_classmethod(10))
         12
         """
         return v+2
     a_classmethod = classmethod(a_classmethod)
 
     a_property = property(get, doc="""
-        >>> print SampleClass(22).a_property
+        >>> print(SampleClass(22).a_property)
         22
         """)
 
@@ -85,12 +85,12 @@ class SampleClass:
         """
         >>> x = SampleClass.NestedClass(5)
         >>> y = x.square()
-        >>> print y.get()
+        >>> print(y.get())
         25
         """
         def __init__(self, val=0):
             """
-            >>> print SampleClass.NestedClass().get()
+            >>> print(SampleClass.NestedClass().get())
             0
             """
             self.val = val
@@ -101,28 +101,28 @@ class SampleClass:
 
 class SampleNewStyleClass(object):
     r"""
-    >>> print '1\n2\n3'
+    >>> print('1\n2\n3')
     1
     2
     3
     """
     def __init__(self, val):
         """
-        >>> print SampleNewStyleClass(12).get()
+        >>> print(SampleNewStyleClass(12).get())
         12
         """
         self.val = val
 
     def double(self):
         """
-        >>> print SampleNewStyleClass(12).double().get()
+        >>> print(SampleNewStyleClass(12).double().get())
         24
         """
         return SampleNewStyleClass(self.val + self.val)
 
     def get(self):
         """
-        >>> print SampleNewStyleClass(-5).get()
+        >>> print(SampleNewStyleClass(-5).get())
         -5
         """
         return self.val
@@ -278,7 +278,7 @@ constructor:
     >>> parser = doctest.DocTestParser()
     >>> test = parser.get_doctest(docstring, globs, 'some_test',
     ...                           'some_file', 20)
-    >>> print test
+    >>> print(test)
     <DocTest some_test from some_file:20 (2 examples)>
     >>> len(test.examples)
     2
@@ -368,7 +368,7 @@ We'll simulate a __file__ attr that ends in pyc:
 
     >>> tests = finder.find(sample_func)
 
-    >>> print tests  # doctest: +ELLIPSIS
+    >>> print(tests)  # doctest: +ELLIPSIS
     [<DocTest sample_func from ...:13 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
@@ -420,7 +420,7 @@ methods, classmethods, staticmethods, properties, and nested classes.
     >>> finder = doctest.DocTestFinder()
     >>> tests = finder.find(SampleClass)
     >>> for t in tests:
-    ...     print '%2s  %s' % (len(t.examples), t.name)
+    ...     print('%2s  %s' % (len(t.examples), t.name))
      3  SampleClass
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
@@ -435,7 +435,7 @@ New-style classes are also supported:
 
     >>> tests = finder.find(SampleNewStyleClass)
     >>> for t in tests:
-    ...     print '%2s  %s' % (len(t.examples), t.name)
+    ...     print('%2s  %s' % (len(t.examples), t.name))
      1  SampleNewStyleClass
      1  SampleNewStyleClass.__init__
      1  SampleNewStyleClass.double
@@ -474,7 +474,7 @@ functions, classes, and the `__test__` dictionary, if it exists:
     >>> import test.test_doctest
     >>> tests = finder.find(m, module=test.test_doctest)
     >>> for t in tests:
-    ...     print '%2s  %s' % (len(t.examples), t.name)
+    ...     print('%2s  %s' % (len(t.examples), t.name))
      1  some_module
      3  some_module.SampleClass
      3  some_module.SampleClass.NestedClass
@@ -496,9 +496,9 @@ will only be generated for it once:
 
     >>> from test import doctest_aliases
     >>> tests = excl_empty_finder.find(doctest_aliases)
-    >>> print len(tests)
+    >>> print(len(tests))
     2
-    >>> print tests[0].name
+    >>> print(tests[0].name)
     test.doctest_aliases.TwoNames
 
     TwoNames.f and TwoNames.g are bound to the same object.
@@ -514,7 +514,7 @@ By default, an object with no doctests doesn't create any tests:
 
     >>> tests = doctest.DocTestFinder().find(SampleClass)
     >>> for t in tests:
-    ...     print '%2s  %s' % (len(t.examples), t.name)
+    ...     print('%2s  %s' % (len(t.examples), t.name))
      3  SampleClass
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
@@ -532,7 +532,7 @@ displays.
 
     >>> tests = doctest.DocTestFinder(exclude_empty=False).find(SampleClass)
     >>> for t in tests:
-    ...     print '%2s  %s' % (len(t.examples), t.name)
+    ...     print('%2s  %s' % (len(t.examples), t.name))
      3  SampleClass
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
@@ -552,7 +552,7 @@ using the `recurse` flag:
 
     >>> tests = doctest.DocTestFinder(recurse=False).find(SampleClass)
     >>> for t in tests:
-    ...     print '%2s  %s' % (len(t.examples), t.name)
+    ...     print('%2s  %s' % (len(t.examples), t.name))
      3  SampleClass
 
 Line numbers
@@ -603,9 +603,9 @@ text:
     >>> parser = doctest.DocTestParser()
     >>> for piece in parser.parse(s):
     ...     if isinstance(piece, doctest.Example):
-    ...         print 'Example:', (piece.source, piece.want, piece.lineno)
+    ...         print('Example:', (piece.source, piece.want, piece.lineno))
     ...     else:
-    ...         print '   Text:', repr(piece)
+    ...         print('   Text:', repr(piece))
        Text: '\n'
     Example: ('x, y = 2, 3  # no output expected\n', '', 1)
        Text: ''
@@ -617,7 +617,7 @@ text:
 The `get_examples` method returns just the examples:
 
     >>> for piece in parser.get_examples(s):
-    ...     print (piece.source, piece.want, piece.lineno)
+    ...     print((piece.source, piece.want, piece.lineno))
     ('x, y = 2, 3  # no output expected\n', '', 1)
     ('if 1:\n    print x\n    print y\n', '2\n3\n', 2)
     ('x+y\n', '5\n', 9)
@@ -629,7 +629,7 @@ given arguments:
     >>> (test.name, test.filename, test.lineno)
     ('name', 'filename', 5)
     >>> for piece in test.examples:
-    ...     print (piece.source, piece.want, piece.lineno)
+    ...     print((piece.source, piece.want, piece.lineno))
     ('x, y = 2, 3  # no output expected\n', '', 1)
     ('if 1:\n    print x\n    print y\n', '2\n3\n', 2)
     ('x+y\n', '5\n', 9)
@@ -996,7 +996,7 @@ treated as equal:
     (0, 1)
 
     An example from the docs:
-    >>> print range(20) #doctest: +NORMALIZE_WHITESPACE
+    >>> print(range(20)) #doctest: +NORMALIZE_WHITESPACE
     [0,   1,  2,  3,  4,  5,  6,  7,  8,  9,
     10,  11, 12, 13, 14, 15, 16, 17, 18, 19]
 
@@ -1029,21 +1029,21 @@ output to match any substring in the actual output:
     ... also matches nothing:
 
     >>> for i in range(100):
-    ...     print i**2, #doctest: +ELLIPSIS
+    ...     print(i**2, end=' ') #doctest: +ELLIPSIS
     0 1...4...9 16 ... 36 49 64 ... 9801
 
     ... can be surprising; e.g., this test passes:
 
     >>> for i in range(21): #doctest: +ELLIPSIS
-    ...     print i,
+    ...     print(i, end=' ')
     0 1 2 ...1...2...0
 
     Examples from the docs:
 
-    >>> print range(20) # doctest:+ELLIPSIS
+    >>> print(range(20)) # doctest:+ELLIPSIS
     [0, 1, ..., 18, 19]
 
-    >>> print range(20) # doctest: +ELLIPSIS
+    >>> print(range(20)) # doctest: +ELLIPSIS
     ...                 # doctest: +NORMALIZE_WHITESPACE
     [0,    1, ...,   18,    19]
 
@@ -1063,7 +1063,7 @@ which would be unavailable.)  The SKIP flag can also be used for
     UncheckedBlowUpError:  Nobody checks me.
 
     >>> import random
-    >>> print random.random() # doctest: +SKIP
+    >>> print(random.random()) # doctest: +SKIP
     0.721216923889
 
 The REPORT_UDIFF flag causes failures that involve multi-line expected
@@ -1516,7 +1516,7 @@ words and expected output are converted to comments:
 
     >>> import test.test_doctest
     >>> name = 'test.test_doctest.sample_func'
-    >>> print doctest.testsource(test.test_doctest, name)
+    >>> print(doctest.testsource(test.test_doctest, name))
     # Blah blah
     #
     print sample_func(22)
@@ -1527,7 +1527,7 @@ words and expected output are converted to comments:
     <BLANKLINE>
 
     >>> name = 'test.test_doctest.SampleNewStyleClass'
-    >>> print doctest.testsource(test.test_doctest, name)
+    >>> print(doctest.testsource(test.test_doctest, name))
     print '1\n2\n3'
     # Expected:
     ## 1
@@ -1536,7 +1536,7 @@ words and expected output are converted to comments:
     <BLANKLINE>
 
     >>> name = 'test.test_doctest.SampleClass.a_classmethod'
-    >>> print doctest.testsource(test.test_doctest, name)
+    >>> print(doctest.testsource(test.test_doctest, name))
     print SampleClass.a_classmethod(10)
     # Expected:
     ## 12
@@ -2037,7 +2037,7 @@ def test_trailing_space_in_test():
     Trailing spaces in expected output are significant:
 
       >>> x, y = 'foo', ''
-      >>> print x, y
+      >>> print(x, y)
       foo \n
     """
 
@@ -2054,7 +2054,7 @@ def test_unittest_reportflags():
       ...                          optionflags=doctest.DONT_ACCEPT_BLANKLINE)
       >>> import unittest
       >>> result = suite.run(unittest.TestResult())
-      >>> print result.failures[0][1] # doctest: +ELLIPSIS
+      >>> print(result.failures[0][1]) # doctest: +ELLIPSIS
       Traceback ...
       Failed example:
           favorite_color
@@ -2071,7 +2071,7 @@ def test_unittest_reportflags():
     Now, when we run the test:
 
       >>> result = suite.run(unittest.TestResult())
-      >>> print result.failures[0][1] # doctest: +ELLIPSIS
+      >>> print(result.failures[0][1]) # doctest: +ELLIPSIS
       Traceback ...
       Failed example:
           favorite_color
@@ -2092,7 +2092,7 @@ def test_unittest_reportflags():
     Then the default eporting options are ignored:
 
       >>> result = suite.run(unittest.TestResult())
-      >>> print result.failures[0][1] # doctest: +ELLIPSIS
+      >>> print(result.failures[0][1]) # doctest: +ELLIPSIS
       Traceback ...
       Failed example:
           favorite_color

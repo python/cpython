@@ -76,7 +76,7 @@ class SequenceMatcher:
     sequences.  As a rule of thumb, a .ratio() value over 0.6 means the
     sequences are close matches:
 
-    >>> print(round(s.ratio(), 3))
+    >>> print((round(s.ratio(), 3)))
     0.866
     >>>
 
@@ -84,7 +84,7 @@ class SequenceMatcher:
     .get_matching_blocks() is handy:
 
     >>> for block in s.get_matching_blocks():
-    ...     print("a[%d] and b[%d] match for %d elements" % block)
+    ...     print(("a[%d] and b[%d] match for %d elements" % block))
     a[0] and b[0] match for 8 elements
     a[8] and b[17] match for 21 elements
     a[29] and b[38] match for 0 elements
@@ -97,7 +97,7 @@ class SequenceMatcher:
     use .get_opcodes():
 
     >>> for opcode in s.get_opcodes():
-    ...     print("%6s a[%d:%d] b[%d:%d]" % opcode)
+    ...     print(("%6s a[%d:%d] b[%d:%d]" % opcode))
      equal a[0:8] b[0:8]
     insert a[8:8] b[8:17]
      equal a[8:29] b[17:38]
@@ -545,8 +545,8 @@ class SequenceMatcher:
         >>> b = "abycdf"
         >>> s = SequenceMatcher(None, a, b)
         >>> for tag, i1, i2, j1, j2 in s.get_opcodes():
-        ...    print(("%7s a[%d:%d] (%s) b[%d:%d] (%s)" %
-        ...           (tag, i1, i2, a[i1:i2], j1, j2, b[j1:j2])))
+        ...    print((("%7s a[%d:%d] (%s) b[%d:%d] (%s)" %
+        ...           (tag, i1, i2, a[i1:i2], j1, j2, b[j1:j2]))))
          delete a[0:1] (q) b[0:0] ()
           equal a[1:3] (ab) b[0:2] (ab)
         replace a[3:4] (x) b[2:3] (y)
@@ -1059,8 +1059,8 @@ class Differ:
         >>> d = Differ()
         >>> results = d._qformat('\tabcDefghiJkl\n', '\t\tabcdefGhijkl\n',
         ...                      '  ^ ^  ^      ', '+  ^ ^  ^      ')
-        >>> for line in results: print(repr(line))
-        ...
+        >>> for line in results: print((repr(line)))
+        ... 
         '- \tabcDefghiJkl\n'
         '? \t ^ ^  ^\n'
         '+ \t\tabcdefGhijkl\n'
@@ -1165,7 +1165,7 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
     ...             'zero one tree four'.split(), 'Original', 'Current',
     ...             'Sat Jan 26 23:30:50 1991', 'Fri Jun 06 10:20:52 2003',
     ...             lineterm=''):
-    ...     print(line)
+    ...     print((line))
     --- Original Sat Jan 26 23:30:50 1991
     +++ Current Fri Jun 06 10:20:52 2003
     @@ -1,4 +1,4 @@

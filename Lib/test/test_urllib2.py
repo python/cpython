@@ -101,7 +101,7 @@ def test_request_headers_methods():
 
     >>> r.has_header("Not-there")
     False
-    >>> print r.get_header("Not-there")
+    >>> print(r.get_header("Not-there"))
     None
     >>> r.get_header("Not-there", "default")
     'default'

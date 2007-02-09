@@ -247,7 +247,7 @@ continue in for loop under finally shouuld be ok.
     ...     finally:
     ...         for abc in range(10):
     ...             continue
-    ...     print abc
+    ...     print(abc)
     >>> test()
     9
 
@@ -328,11 +328,11 @@ so we need to be sure that a break is actually inside a loop.  If it
 isn't, there should be a syntax error.
 
    >>> try:
-   ...     print 1
+   ...     print(1)
    ...     break
-   ...     print 2
+   ...     print(2)
    ... finally:
-   ...     print 3
+   ...     print(3)
    Traceback (most recent call last):
      ...
    SyntaxError: 'break' outside loop (<doctest test.test_syntax[42]>, line 3)

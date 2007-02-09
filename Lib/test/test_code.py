@@ -50,9 +50,9 @@ flags: 67
 consts: ('None',)
 
 >>> def attrs(obj):
-...     print obj.attr1
-...     print obj.attr2
-...     print obj.attr3
+...     print(obj.attr1)
+...     print(obj.attr2)
+...     print(obj.attr3)
 
 >>> dump(attrs.func_code)
 name: attrs

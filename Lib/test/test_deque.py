@@ -504,7 +504,7 @@ Example from the Library Reference:  Doc/lib/libcollections.tex
 >>> from collections import deque
 >>> d = deque('ghi')                 # make a new deque with three items
 >>> for elem in d:                   # iterate over the deque's elements
-...     print elem.upper()
+...     print(elem.upper())
 G
 H
 I
@@ -574,8 +574,8 @@ deque(['a', 'b', 'd', 'e', 'f'])
 ...
 
 >>> for value in roundrobin('abc', 'd', 'efgh'):
-...     print value
-...
+...     print(value)
+... 
 a
 d
 e
@@ -593,7 +593,7 @@ h
 ...         d.append(pair)
 ...     return list(d)
 ...
->>> print maketree('abcdefgh')
+>>> print(maketree('abcdefgh'))
 [[[['a', 'b'], ['c', 'd']], [['e', 'f'], ['g', 'h']]]]
 
 """

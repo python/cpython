@@ -1072,7 +1072,7 @@ libreftest = """ Doctest for examples in the library reference: libweakref.tex
 ...
 >>> obj = Dict(red=1, green=2, blue=3)   # this object is weak referencable
 >>> r = weakref.ref(obj)
->>> print r() is obj
+>>> print(r() is obj)
 True
 
 >>> import weakref
@@ -1085,7 +1085,7 @@ True
 >>> o is o2
 True
 >>> del o, o2
->>> print r()
+>>> print(r())
 None
 
 >>> import weakref
@@ -1140,9 +1140,9 @@ True
 >>> try:
 ...     id2obj(a_id)
 ... except KeyError:
-...     print 'OK'
+...     print('OK')
 ... else:
-...     print 'WeakValueDictionary error'
+...     print('WeakValueDictionary error')
 OK
 
 """
