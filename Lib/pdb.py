@@ -740,7 +740,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     else: s = s + ' '
                     if lineno == self.curframe.f_lineno:
                         s = s + '->'
-                    print(s + '\t' + line, end=' ', file=self.stdout)
+                    print(s + '\t' + line, end='', file=self.stdout)
                     self.lineno = lineno
         except KeyboardInterrupt:
             pass
