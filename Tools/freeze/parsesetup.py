@@ -84,29 +84,29 @@ def test():
     import sys
     import os
     if not sys.argv[1:]:
-        print 'usage: python parsesetup.py Makefile*|Setup* ...'
+        print('usage: python parsesetup.py Makefile*|Setup* ...')
         sys.exit(2)
     for arg in sys.argv[1:]:
         base = os.path.basename(arg)
         if base[:8] == 'Makefile':
-            print 'Make style parsing:', arg
+            print('Make style parsing:', arg)
             v = getmakevars(arg)
             prdict(v)
         elif base[:5] == 'Setup':
-            print 'Setup style parsing:', arg
+            print('Setup style parsing:', arg)
             m, v = getsetupinfo(arg)
             prdict(m)
             prdict(v)
         else:
-            print arg, 'is neither a Makefile nor a Setup file'
-            print '(name must begin with "Makefile" or "Setup")'
+            print(arg, 'is neither a Makefile nor a Setup file')
+            print('(name must begin with "Makefile" or "Setup")')
 
 def prdict(d):
     keys = d.keys()
     keys.sort()
     for key in keys:
         value = d[key]
-        print "%-15s" % key, str(value)
+        print("%-15s" % key, str(value))
 
 if __name__ == '__main__':
     test()
