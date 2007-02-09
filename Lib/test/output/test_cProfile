@@ -29,12 +29,12 @@ Function                                          called...
 <string>:1(<module>)                              ->       1    0.270    1.000  test_cProfile.py:30(testfunc)
 test_cProfile.py:103(subhelper)                   ->      16    0.016    0.016  test_cProfile.py:115(__getattr__)
                                                            8    0.000    0.000  {range}
-test_cProfile.py:115(__getattr__)                 ->
+test_cProfile.py:115(__getattr__)                 -> 
 test_cProfile.py:30(testfunc)                     ->       1    0.014    0.130  test_cProfile.py:40(factorial)
                                                            2    0.040    0.600  test_cProfile.py:60(helper)
 test_cProfile.py:40(factorial)                    ->    20/3    0.130    0.147  test_cProfile.py:40(factorial)
                                                           20    0.020    0.020  test_cProfile.py:53(mul)
-test_cProfile.py:53(mul)                          ->
+test_cProfile.py:53(mul)                          -> 
 test_cProfile.py:60(helper)                       ->       4    0.116    0.120  test_cProfile.py:78(helper1)
                                                            2    0.000    0.140  test_cProfile.py:89(helper2_indirect)
                                                            6    0.234    0.300  test_cProfile.py:93(helper2)
@@ -47,10 +47,10 @@ test_cProfile.py:93(helper2)                      ->       8    0.064    0.080  
                                                            8    0.000    0.008  {hasattr}
 {exec}                                            ->       1    0.000    1.000  <string>:1(<module>)
 {hasattr}                                         ->      12    0.012    0.012  test_cProfile.py:115(__getattr__)
-{method 'append' of 'list' objects}               ->
-{method 'disable' of '_lsprof.Profiler' objects}  ->
-{range}                                           ->
-{sys.exc_info}                                    ->
+{method 'append' of 'list' objects}               -> 
+{method 'disable' of '_lsprof.Profiler' objects}  -> 
+{range}                                           -> 
+{sys.exc_info}                                    -> 
 
 
    Ordered by: standard name
@@ -71,11 +71,11 @@ test_cProfile.py:78(helper1)                      <-       4    0.116    0.120  
 test_cProfile.py:89(helper2_indirect)             <-       2    0.000    0.140  test_cProfile.py:60(helper)
 test_cProfile.py:93(helper2)                      <-       6    0.234    0.300  test_cProfile.py:60(helper)
                                                            2    0.078    0.100  test_cProfile.py:89(helper2_indirect)
-{exec}                                            <-
+{exec}                                            <- 
 {hasattr}                                         <-       4    0.000    0.004  test_cProfile.py:78(helper1)
                                                            8    0.000    0.008  test_cProfile.py:93(helper2)
 {method 'append' of 'list' objects}               <-       4    0.000    0.000  test_cProfile.py:78(helper1)
-{method 'disable' of '_lsprof.Profiler' objects}  <-
+{method 'disable' of '_lsprof.Profiler' objects}  <- 
 {range}                                           <-       8    0.000    0.000  test_cProfile.py:103(subhelper)
 {sys.exc_info}                                    <-       4    0.000    0.000  test_cProfile.py:78(helper1)
 
