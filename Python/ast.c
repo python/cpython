@@ -2218,37 +2218,6 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
     }
 }
 
-static stmt_ty
-ast_for_print_stmt(struct compiling *c, const node *n)
-{
-    /* print_stmt: 'print' ( [ test (',' test)* [','] ]
-                             | '>>' test [ (',' test)+ [','] ] )
-     */
-    expr_ty dest = NULL, expression;
-    asdl_seq *seq;
-    bool nl;
-    int i, j, start = 1;
-
-    REQ(n, print_stmt);
-    if (NCH(n) >= 2 && TYPE(CHILD(n, 1)) == RIGHTSHIFT) {
-        dest = ast_for_expr(c, CHILD(n, 2));
-        if (!dest)
-            return NULL;
-            start = 4;
-    }
-    seq = asdl_seq_new((NCH(n) + 1 - start) / 2, c->c_arena);
-    if (!seq)
-        return NULL;
-    for (i = start, j = 0; i < NCH(n); i += 2, ++j) {
-        expression = ast_for_expr(c, CHILD(n, i));
-        if (!expression)
-            return NULL;
-        asdl_seq_SET(seq, j, expression);
-    }
-    nl = (TYPE(CHILD(n, NCH(n) - 1)) == COMMA) ? false : true;
-    return Print(dest, seq, nl, LINENO(n), n->n_col_offset, c->c_arena);
-}
-
 static asdl_seq *
 ast_for_exprlist(struct compiling *c, const node *n, expr_context_ty context)
 {
@@ -3089,14 +3058,12 @@ ast_for_stmt(struct compiling *c, const node *n)
     if (TYPE(n) == small_stmt) {
         REQ(n, small_stmt);
         n = CHILD(n, 0);
-        /* small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt
+        /* small_stmt: expr_stmt | del_stmt | pass_stmt
                      | flow_stmt | import_stmt | global_stmt | assert_stmt
         */
         switch (TYPE(n)) {
             case expr_stmt:
                 return ast_for_expr_stmt(c, n);
-            case print_stmt:
-                return ast_for_print_stmt(c, n);
             case del_stmt:
                 return ast_for_del_stmt(c, n);
             case pass_stmt:

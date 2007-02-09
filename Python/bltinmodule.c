@@ -1446,7 +1446,7 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(print_doc,
-"Print(value, ..., file=None, sep=' ', end='\\n')\n\
+"print(value, ..., file=None, sep=' ', end='\\n')\n\
 \n\
 Prints the values to a stream, or to sys.stdout by default.\n\
 Optional keyword arguments:\n\
@@ -2056,7 +2056,7 @@ static PyMethodDef builtin_methods[] = {
  	{"open",	(PyCFunction)builtin_open,       METH_VARARGS | METH_KEYWORDS, open_doc},
  	{"ord",		builtin_ord,        METH_O, ord_doc},
  	{"pow",		builtin_pow,        METH_VARARGS, pow_doc},
- 	{"Print",	(PyCFunction)builtin_print,      METH_VARARGS | METH_KEYWORDS, print_doc},
+ 	{"print",	(PyCFunction)builtin_print,      METH_VARARGS | METH_KEYWORDS, print_doc},
  	{"range",	builtin_range,      METH_VARARGS, range_doc},
  	{"reload",	builtin_reload,     METH_O, reload_doc},
  	{"repr",	builtin_repr,       METH_O, repr_doc},
