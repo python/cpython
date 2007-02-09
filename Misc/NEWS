@@ -12,6 +12,8 @@ What's New in Python 2.5.1c1?
 Core and builtins
 -----------------
 
+- Bug #1653736: Properly discard third argument to slot_nb_inplace_power.
+
 - SF #151204:  enumerate() now raises an Overflow error at sys.maxint items.
 
 - Bug #1377858: Fix the segfaulting of the interpreter when an object created
