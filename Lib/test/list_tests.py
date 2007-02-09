@@ -54,7 +54,7 @@ class CommonTest(seq_tests.CommonTest):
         d.append(400)
         try:
             fo = open(test_support.TESTFN, "wb")
-            print(d, end=' ', file=fo)
+            fo.write(str(d))
             fo.close()
             fo = open(test_support.TESTFN, "rb")
             self.assertEqual(fo.read(), repr(d))
