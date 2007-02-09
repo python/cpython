@@ -738,19 +738,19 @@ def reportdiff(expected, output):
         elif op == 'delete':
             print("***", pair(a0, a1), "of expected output missing:")
             for line in a[a0:a1]:
-                print("-", line, end=' ')
+                print("-", line, end='')
 
         elif op == 'replace':
             print("*** mismatch between", pair(a0, a1), "of expected", \
                   "output and", pair(b0, b1), "of actual output:")
             for line in difflib.ndiff(a[a0:a1], b[b0:b1]):
-                print(line, end=' ')
+                print(line, end='')
 
         elif op == 'insert':
             print("***", pair(b0, b1), "of actual output doesn't appear", \
                   "in expected output after line", str(a1)+":")
             for line in b[b0:b1]:
-                print("+", line, end=' ')
+                print("+", line, end='')
 
         else:
             print("get_opcodes() returned bad tuple?!?!", (op, a0, a1, b0, b1))
