@@ -39,7 +39,6 @@ class DBRecIO:
         self.len = None
         self.pos = 0
         self.closed = 0
-        self.softspace = 0
 
     def close(self):
         if not self.closed:

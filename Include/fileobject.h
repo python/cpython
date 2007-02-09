@@ -13,7 +13,6 @@ typedef struct {
 	PyObject *f_name;
 	PyObject *f_mode;
 	int (*f_close)(FILE *);
-	int f_softspace;	/* Flag used by 'print' command */
 	int f_binary;		/* Flag which indicates whether the file is 
 				   open in binary (1) or text (0) mode */
 	char* f_buf;		/* Allocated readahead buffer */
@@ -41,7 +40,6 @@ PyAPI_FUNC(FILE *) PyFile_AsFile(PyObject *);
 PyAPI_FUNC(PyObject *) PyFile_Name(PyObject *);
 PyAPI_FUNC(PyObject *) PyFile_GetLine(PyObject *, int);
 PyAPI_FUNC(int) PyFile_WriteObject(PyObject *, PyObject *, int);
-PyAPI_FUNC(int) PyFile_SoftSpace(PyObject *, int);
 PyAPI_FUNC(int) PyFile_WriteString(const char *, PyObject *);
 PyAPI_FUNC(int) PyObject_AsFileDescriptor(PyObject *);
 

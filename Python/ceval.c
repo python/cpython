@@ -3349,17 +3349,6 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 	return result;
 }
 
-int
-Py_FlushLine(void)
-{
-	PyObject *f = PySys_GetObject("stdout");
-	if (f == NULL)
-		return 0;
-	if (!PyFile_SoftSpace(f, 0))
-		return 0;
-	return PyFile_WriteString("\n", f);
-}
-
 
 /* External interface to call any callable object.
    The arg must be a tuple or NULL. */

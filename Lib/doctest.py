@@ -240,16 +240,10 @@ class _SpoofOut(StringIO):
         # that a trailing newline is missing.
         if result and not result.endswith("\n"):
             result += "\n"
-        # Prevent softspace from screwing up the next test case, in
-        # case they used print with a trailing comma in an example.
-        if hasattr(self, "softspace"):
-            del self.softspace
         return result
 
-    def truncate(self,   size=None):
+    def truncate(self, size=None):
         StringIO.truncate(self, size)
-        if hasattr(self, "softspace"):
-            del self.softspace
 
 # Worst-case linear-time ellipsis matching.
 def _ellipsis_match(want, got):

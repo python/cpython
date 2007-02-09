@@ -40,8 +40,6 @@ PyAPI_FUNC(int) PyEval_GetRestricted(void);
    flag was set, else return 0. */
 PyAPI_FUNC(int) PyEval_MergeCompilerFlags(PyCompilerFlags *cf);
 
-PyAPI_FUNC(int) Py_FlushLine(void);
-
 PyAPI_FUNC(int) Py_AddPendingCall(int (*func)(void *), void *arg);
 PyAPI_FUNC(int) Py_MakePendingCalls(void);
 

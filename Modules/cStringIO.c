@@ -57,7 +57,6 @@ typedef struct { /* Subtype of IOobject */
   Py_ssize_t pos, string_size;
 
   Py_ssize_t buf_size;
-  int softspace;
 } Oobject;
 
 /* Declarations for objects of type StringI */
@@ -489,13 +488,6 @@ static struct PyMethodDef O_methods[] = {
   {NULL,	 NULL}		/* sentinel */
 };
 
-static PyMemberDef O_memberlist[] = {
-	{"softspace",	T_INT,	offsetof(Oobject, softspace),	0,
-	 "flag indicating that a space needs to be printed; used by print"},
-	 /* getattr(f, "closed") is implemented without this table */
-	{NULL} /* Sentinel */
-};
-
 static void
 O_dealloc(Oobject *self) {
         if (self->buf != NULL)
@@ -536,7 +528,7 @@ static PyTypeObject Otype = {
   PyObject_SelfIter,		/*tp_iter */
   (iternextfunc)IO_iternext,	/*tp_iternext */
   O_methods,			/*tp_methods */
-  O_memberlist,			/*tp_members */
+  0,				/*tp_members */
   file_getsetlist,		/*tp_getset */
 };
 
@@ -549,7 +541,6 @@ newOobject(int  size) {
                 return NULL;
         self->pos=0;
         self->string_size = 0;
-        self->softspace = 0;
 
         self->buf = (char *)malloc(size);
 	if (!self->buf) {

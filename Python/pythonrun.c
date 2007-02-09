@@ -795,8 +795,6 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
 		return -1;
 	}
 	Py_DECREF(v);
-	if (Py_FlushLine())
-		PyErr_Clear();
 	return 0;
 }
 
@@ -883,8 +881,6 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 		return -1;
 	}
 	Py_DECREF(v);
-	if (Py_FlushLine())
-		PyErr_Clear();
 	return 0;
 }
 
@@ -902,8 +898,6 @@ PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
 		return -1;
 	}
 	Py_DECREF(v);
-	if (Py_FlushLine())
-		PyErr_Clear();
 	return 0;
 }
 
@@ -1018,8 +1012,6 @@ handle_system_exit(void)
 	int exitcode = 0;
 
 	PyErr_Fetch(&exception, &value, &tb);
-	if (Py_FlushLine())
-		PyErr_Clear();
 	fflush(stdout);
 	if (value == NULL || value == Py_None)
 		goto done;
@@ -1097,8 +1089,6 @@ PyErr_PrintEx(int set_sys_last_vars)
 				v2 = Py_None;
 				Py_INCREF(v2);
 			}
-			if (Py_FlushLine())
-				PyErr_Clear();
 			fflush(stdout);
 			PySys_WriteStderr("Error in sys.excepthook:\n");
 			PyErr_Display(exception2, v2, tb2);
@@ -1128,8 +1118,6 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 	if (f == NULL)
 		fprintf(stderr, "lost sys.stderr\n");
 	else {
-		if (Py_FlushLine())
-			PyErr_Clear();
 		fflush(stdout);
 		if (tb && tb != Py_None)
 			err = PyTraceBack_Print(tb, f);
@@ -1597,8 +1585,6 @@ call_sys_exitfunc(void)
 		Py_DECREF(exitfunc);
 	}
 
-	if (Py_FlushLine())
-		PyErr_Clear();
 }
 
 static void
@@ -1855,4 +1841,3 @@ PyRun_InteractiveLoop(FILE *f, const char *p)
 #ifdef __cplusplus
 }
 #endif
-
