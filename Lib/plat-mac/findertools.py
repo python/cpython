@@ -695,76 +695,76 @@ def emptytrash():
 
 def _test():
     import EasyDialogs
-    print 'Original findertools functionality test...'
-    print 'Testing launch...'
+    print('Original findertools functionality test...')
+    print('Testing launch...')
     pathname = EasyDialogs.AskFileForOpen('File to launch:')
     if pathname:
         result = launch(pathname)
         if result:
-            print 'Result: ', result
-        print 'Press return-',
+            print('Result: ', result)
+        print('Press return-', end=' ')
         sys.stdin.readline()
-    print 'Testing print...'
+    print('Testing print...')
     pathname = EasyDialogs.AskFileForOpen('File to print:')
     if pathname:
         result = Print(pathname)
         if result:
-            print 'Result: ', result
-        print 'Press return-',
+            print('Result: ', result)
+        print('Press return-', end=' ')
         sys.stdin.readline()
-    print 'Testing copy...'
+    print('Testing copy...')
     pathname = EasyDialogs.AskFileForOpen('File to copy:')
     if pathname:
         destdir = EasyDialogs.AskFolder('Destination:')
         if destdir:
             result = copy(pathname, destdir)
             if result:
-                print 'Result:', result
-            print 'Press return-',
+                print('Result:', result)
+            print('Press return-', end=' ')
             sys.stdin.readline()
-    print 'Testing move...'
+    print('Testing move...')
     pathname = EasyDialogs.AskFileForOpen('File to move:')
     if pathname:
         destdir = EasyDialogs.AskFolder('Destination:')
         if destdir:
             result = move(pathname, destdir)
             if result:
-                print 'Result:', result
-            print 'Press return-',
+                print('Result:', result)
+            print('Press return-', end=' ')
             sys.stdin.readline()
-    print 'Testing sleep...'
+    print('Testing sleep...')
     if EasyDialogs.AskYesNoCancel('Sleep?') > 0:
         result = sleep()
         if result:
-            print 'Result:', result
-        print 'Press return-',
+            print('Result:', result)
+        print('Press return-', end=' ')
         sys.stdin.readline()
-    print 'Testing shutdown...'
+    print('Testing shutdown...')
     if EasyDialogs.AskYesNoCancel('Shut down?') > 0:
         result = shutdown()
         if result:
-            print 'Result:', result
-        print 'Press return-',
+            print('Result:', result)
+        print('Press return-', end=' ')
         sys.stdin.readline()
-    print 'Testing restart...'
+    print('Testing restart...')
     if EasyDialogs.AskYesNoCancel('Restart?') > 0:
         result = restart()
         if result:
-            print 'Result:', result
-        print 'Press return-',
+            print('Result:', result)
+        print('Press return-', end=' ')
         sys.stdin.readline()
 
 def _test2():
-    print '\nmorefindertools version %s\nTests coming up...' %__version__
+    print('\nmorefindertools version %s\nTests coming up...' %__version__)
     import os
     import random
 
     # miscellaneous
-    print '\tfilesharing on?',  filesharing()       # is file sharing on, off, starting up?
-    print '\tOS version',       OSversion()     # the version of the system software
+    print('\tfilesharing on?',  filesharing())       # is file sharing on, off, starting up?
+    print('\tOS version',       OSversion())     # the version of the system software
 
     # set the soundvolume in a simple way
-    print '\tSystem beep volume'
+    print('\tSystem beep volume')
     for i in range(0, 7):
         volumelevel(i)
         MacOS.SysBeep()
@@ -781,10 +781,10 @@ def _test2():
     windowview(base, 1) # set the view by list
 
     label(f, 2)             # set the label of this file to something orange
-    print '\tlabel', label(f)   # get the label of this file
+    print('\tlabel', label(f))   # get the label of this file
 
     # the file location only works in a window with icon view!
-    print 'Random locations for an icon'
+    print('Random locations for an icon')
     windowview(base, 0)     # set the view by icon
     windowsize(base, (600, 600))
     for i in range(50):
@@ -794,36 +794,36 @@ def _test2():
     windowview(base, 1)     # set the view by icon
 
     orgpos = windowposition(base)
-    print 'Animated window location'
+    print('Animated window location')
     for i in range(10):
         pos = (100+i*10, 100+i*10)
         windowposition(base, pos)
-        print '\twindow position', pos
+        print('\twindow position', pos)
     windowposition(base, orgpos)    # park it where it was before
 
-    print 'Put a comment in file', f, ':'
-    print '\t', comment(f)      # print the Finder comment this file has
+    print('Put a comment in file', f, ':')
+    print('\t', comment(f))      # print the Finder comment this file has
     s = 'This is a comment no one reads!'
     comment(f, s)           # set the Finder comment
 
 def _test3():
-    print 'MacOS9 or better specific functions'
+    print('MacOS9 or better specific functions')
     # processes
     pr = processes()        # return a list of tuples with (active_processname, creatorcode)
-    print 'Return a list of current active processes:'
+    print('Return a list of current active processes:')
     for p in pr:
-        print '\t', p
+        print('\t', p)
 
     # get attributes of the first process in the list
-    print 'Attributes of the first process in the list:'
+    print('Attributes of the first process in the list:')
     pinfo = processinfo(pr[0][0])
-    print '\t', pr[0][0]
-    print '\t\tmemory partition', pinfo.partition       # the memory allocated to this process
-    print '\t\tmemory used', pinfo.used         # the memory actuall used by this process
-    print '\t\tis visible', pinfo.visible           # is the process visible to the user
-    print '\t\tis frontmost', pinfo.frontmost       # is the process the front most one?
-    print '\t\thas scripting', pinfo.hasscripting       # is the process scriptable?
-    print '\t\taccepts high level events',  pinfo.accepthighlevel   # does the process accept high level appleevents?
+    print('\t', pr[0][0])
+    print('\t\tmemory partition', pinfo.partition)       # the memory allocated to this process
+    print('\t\tmemory used', pinfo.used)         # the memory actuall used by this process
+    print('\t\tis visible', pinfo.visible)           # is the process visible to the user
+    print('\t\tis frontmost', pinfo.frontmost)       # is the process the front most one?
+    print('\t\thas scripting', pinfo.hasscripting)       # is the process scriptable?
+    print('\t\taccepts high level events',  pinfo.accepthighlevel)   # does the process accept high level appleevents?
 
 if __name__ == '__main__':
     _test()

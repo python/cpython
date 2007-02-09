@@ -831,8 +831,8 @@ Options:
 
 def usage(msg=None):
     if msg:
-        print msg
-    print cmdline_doc
+        print(msg)
+    print(cmdline_doc)
     sys.exit(1)
 
 def main(builder=None):

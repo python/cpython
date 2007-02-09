@@ -94,8 +94,8 @@ def runctx(statement, globals, locals, filename=None):
 
 # Backwards compatibility.
 def help():
-    print "Documentation for the profile module can be found "
-    print "in the Python Library Reference, section 'The Python Profiler'."
+    print("Documentation for the profile module can be found ")
+    print("in the Python Library Reference, section 'The Python Profiler'.")
 
 if os.name == "mac":
     import MacOS
@@ -550,7 +550,7 @@ class Profile:
         t1 = get_time()
         elapsed_noprofile = t1 - t0
         if verbose:
-            print "elapsed time without profiling =", elapsed_noprofile
+            print("elapsed time without profiling =", elapsed_noprofile)
 
         # elapsed_profile <- time f(m) takes with profiling.  The difference
         # is profiling overhead, only some of which the profiler subtracts
@@ -561,7 +561,7 @@ class Profile:
         t1 = get_time()
         elapsed_profile = t1 - t0
         if verbose:
-            print "elapsed time with profiling =", elapsed_profile
+            print("elapsed time with profiling =", elapsed_profile)
 
         # reported_time <- "CPU seconds" the profiler charged to f and f1.
         total_calls = 0.0
@@ -573,8 +573,8 @@ class Profile:
                 reported_time += tt
 
         if verbose:
-            print "'CPU seconds' profiler reported =", reported_time
-            print "total # calls =", total_calls
+            print("'CPU seconds' profiler reported =", reported_time)
+            print("total # calls =", total_calls)
         if total_calls != m + 1:
             raise ValueError("internal error: total calls = %d" % total_calls)
 
@@ -584,12 +584,12 @@ class Profile:
         # overhead per event.
         mean = (reported_time - elapsed_noprofile) / 2.0 / total_calls
         if verbose:
-            print "mean stopwatch overhead per profile event =", mean
+            print("mean stopwatch overhead per profile event =", mean)
         return mean
 
 #****************************************************************************
 def Stats(*args):
-    print 'Report generating functions are in the "pstats" module\a'
+    print('Report generating functions are in the "pstats" module\a')
 
 def main():
     usage = "profile.py [-o output_file_path] [-s sort] scriptfile [arg] ..."

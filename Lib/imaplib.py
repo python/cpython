@@ -1485,15 +1485,15 @@ if __name__ == '__main__':
             run('uid', ('FETCH', '%s' % uid[-1],
                     '(FLAGS INTERNALDATE RFC822.SIZE RFC822.HEADER RFC822.TEXT)'))
 
-        print '\nAll tests OK.'
+        print('\nAll tests OK.')
 
     except:
-        print '\nTests failed.'
+        print('\nTests failed.')
 
         if not Debug:
-            print '''
+            print('''
 If you would like to see debugging output,
 try: %s -d5
-''' % sys.argv[0]
+''' % sys.argv[0])
 
         raise

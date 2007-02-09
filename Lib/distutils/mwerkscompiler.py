@@ -160,9 +160,9 @@ class MWerksCompiler (CCompiler) :
         settings['libraries'] = libraries
         settings['extrasearchdirs'] = sourcefiledirs + include_dirs + library_dirs
         if self.dry_run:
-            print 'CALLING LINKER IN', os.getcwd()
+            print('CALLING LINKER IN', os.getcwd())
             for key, value in settings.items():
-                print '%20.20s %s'%(key, value)
+                print('%20.20s %s'%(key, value))
             return
         # Build the export file
         exportfilename = os.path.join(build_temp, exportname)

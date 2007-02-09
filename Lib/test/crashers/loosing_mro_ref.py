@@ -32,5 +32,5 @@ class X(Base):
     # there from the beginning :-)
     locals()[MyKey()] = 5
 
-print X.mykey
+print(X.mykey)
 # I get a segfault, or a slightly wrong assertion error in a debug build.

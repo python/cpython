@@ -140,7 +140,7 @@ def _decode(pathname, verbose=0):
         import tempfile
         fd, newpathname = tempfile.mkstemp(".rsrc")
     if verbose:
-        print 'Decoding', pathname, 'to', newpathname
+        print('Decoding', pathname, 'to', newpathname)
     import applesingle
     applesingle.decode(pathname, newpathname, resonly=1)
     return newpathname

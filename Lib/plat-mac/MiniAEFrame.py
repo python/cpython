@@ -71,8 +71,8 @@ class MiniApplication:
             try:
                 AE.AEProcessAppleEvent(event)
             except AE.Error as err:
-                print 'AE error: ', err
-                print 'in', msg
+                print('AE error: ', err)
+                print('in', msg)
                 traceback.print_exc()
             return
         elif what == keyDown:
@@ -107,7 +107,7 @@ class MiniApplication:
         if hasattr(MacOS, 'HandleEvent'):
             MacOS.HandleEvent(event)
         else:
-            print "Unhandled event:", event
+            print("Unhandled event:", event)
 
     def getabouttext(self):
         return self.__class__.__name__
@@ -191,7 +191,7 @@ class _Test(AEServer, MiniApplication):
         pass
 
     def other(self, _object=None, _class=None, _type=None, **args):
-        print 'AppleEvent', (_class, _type), 'for', _object, 'Other args:', args
+        print('AppleEvent', (_class, _type), 'for', _object, 'Other args:', args)
 
 
 if __name__ == '__main__':

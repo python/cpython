@@ -79,20 +79,20 @@ class ExampleASTVisitor(ASTVisitor):
             meth = getattr(self.visitor, 'visit' + className, 0)
             self._cache[node.__class__] = meth
         if self.VERBOSE > 1:
-            print "dispatch", className, (meth and meth.__name__ or '')
+            print("dispatch", className, (meth and meth.__name__ or ''))
         if meth:
             meth(node, *args)
         elif self.VERBOSE > 0:
             klass = node.__class__
             if klass not in self.examples:
                 self.examples[klass] = klass
-                print
-                print self.visitor
-                print klass
+                print()
+                print(self.visitor)
+                print(klass)
                 for attr in dir(node):
                     if attr[0] != '_':
-                        print "\t", "%-12.12s" % attr, getattr(node, attr)
-                print
+                        print("\t", "%-12.12s" % attr, getattr(node, attr))
+                print()
             return self.default(node, *args)
 
 # XXX this is an API change
@@ -107,7 +107,7 @@ def walk(tree, visitor, walker=None, verbose=None):
     return walker.visitor
 
 def dumpNode(node):
-    print node.__class__
+    print(node.__class__)
     for attr in dir(node):
         if attr[0] != '_':
-            print "\t", "%-10.10s" % attr, getattr(node, attr)
+            print("\t", "%-10.10s" % attr, getattr(node, attr))

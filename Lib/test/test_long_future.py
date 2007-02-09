@@ -7,7 +7,7 @@ from test.test_support import TestFailed, verify, verbose
 
 def test_true_division():
     if verbose:
-        print "long true division"
+        print("long true division")
     huge = 1 << 40000
     mhuge = -huge
     verify(huge / huge == 1.0)

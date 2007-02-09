@@ -63,11 +63,11 @@ def _structure(msg, fp=None, level=0, include_default=False):
     if fp is None:
         fp = sys.stdout
     tab = ' ' * (level * 4)
-    print >> fp, tab + msg.get_content_type(),
+    print(tab + msg.get_content_type(), end=' ', file=fp)
     if include_default:
-        print >> fp, '[%s]' % msg.get_default_type()
+        print('[%s]' % msg.get_default_type(), file=fp)
     else:
-        print >> fp
+        print(file=fp)
     if msg.is_multipart():
         for subpart in msg.get_payload():
             _structure(subpart, fp, level+1, include_default)

@@ -17,7 +17,7 @@ def timefunc(n, func, *args, **kw):
     finally:
         t1 = time.clock()
         if n > 1:
-            print n, "times",
-        print func.__name__, "%.3f" % (t1-t0), "CPU seconds"
+            print(n, "times", end=' ')
+        print(func.__name__, "%.3f" % (t1-t0), "CPU seconds")
 
 main()

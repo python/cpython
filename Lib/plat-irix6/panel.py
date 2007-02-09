@@ -62,18 +62,18 @@ def is_endgroup(list):
 def show_actuator(prefix, a):
     for item in a:
         if not is_list(item):
-            print prefix, item
+            print(prefix, item)
         elif item and item[0] == 'al':
-            print prefix, 'Subactuator list:'
+            print(prefix, 'Subactuator list:')
             for a in item[1:]:
                 show_actuator(prefix + '    ', a)
         elif len(item) == 2:
-            print prefix, item[0], '=>', item[1]
+            print(prefix, item[0], '=>', item[1])
         elif len(item) == 3 and item[0] == 'prop':
-            print prefix, 'Prop', item[1], '=>',
-            print item[2]
+            print(prefix, 'Prop', item[1], '=>', end=' ')
+            print(item[2])
         else:
-            print prefix, '?', item
+            print(prefix, '?', item)
 
 
 # Neatly display a panel.
@@ -81,18 +81,18 @@ def show_actuator(prefix, a):
 def show_panel(prefix, p):
     for item in p:
         if not is_list(item):
-            print prefix, item
+            print(prefix, item)
         elif item and item[0] == 'al':
-            print prefix, 'Actuator list:'
+            print(prefix, 'Actuator list:')
             for a in item[1:]:
                 show_actuator(prefix + '    ', a)
         elif len(item) == 2:
-            print prefix, item[0], '=>', item[1]
+            print(prefix, item[0], '=>', item[1])
         elif len(item) == 3 and item[0] == 'prop':
-            print prefix, 'Prop', item[1], '=>',
-            print item[2]
+            print(prefix, 'Prop', item[1], '=>', end=' ')
+            print(item[2])
         else:
-            print prefix, '?', item
+            print(prefix, '?', item)
 
 
 # Exception raised by build_actuator or build_panel.
@@ -123,18 +123,18 @@ def assign_members(target, attrlist, exclist, prefix):
                 # Strange default set by Panel Editor...
                 ok = 0
             else:
-                print 'unknown value', value, 'for', name
+                print('unknown value', value, 'for', name)
                 ok = 0
             if ok:
                 lhs = 'target.' + prefix + name
                 stmt = lhs + '=' + repr(value)
-                if debug: print 'exec', stmt
+                if debug: print('exec', stmt)
                 try:
                     exec(stmt + '\n')
                 except KeyboardInterrupt: # Don't catch this!
                     raise KeyboardInterrupt
                 except:
-                    print 'assign failed:', stmt
+                    print('assign failed:', stmt)
 
 
 # Build a real actuator from an actuator description.
@@ -185,7 +185,7 @@ def build_subactuators(panel, super_act, al):
         act.addsubact(super_act)
         if name:
             stmt = 'panel.' + name + ' = act'
-            if debug: print 'exec', stmt
+            if debug: print('exec', stmt)
             exec(stmt + '\n')
         if is_endgroup(a):
             panel.endgroup()

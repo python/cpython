@@ -92,22 +92,22 @@ class RunModuleTest(unittest.TestCase):
         init_fname = "__init__"+os.extsep+"py"
         test_fname = "runpy_test"+os.extsep+"py"
         pkg_dir = sub_dir = tempfile.mkdtemp()
-        if verbose: print "  Package tree in:", sub_dir
+        if verbose: print("  Package tree in:", sub_dir)
         sys.path.insert(0, pkg_dir)
-        if verbose: print "  Updated sys.path:", sys.path[0]
+        if verbose: print("  Updated sys.path:", sys.path[0])
         for i in range(depth):
             sub_dir = os.path.join(sub_dir, pkg_name)
             os.mkdir(sub_dir)
-            if verbose: print "  Next level in:", sub_dir
+            if verbose: print("  Next level in:", sub_dir)
             pkg_fname = os.path.join(sub_dir, init_fname)
             pkg_file = open(pkg_fname, "w")
             pkg_file.close()
-            if verbose: print "  Created:", pkg_fname
+            if verbose: print("  Created:", pkg_fname)
         mod_fname = os.path.join(sub_dir, test_fname)
         mod_file = open(mod_fname, "w")
         mod_file.write(source)
         mod_file.close()
-        if verbose: print "  Created:", mod_fname
+        if verbose: print("  Created:", mod_fname)
         mod_name = (pkg_name+".")*depth + "runpy_test"
         return pkg_dir, mod_fname, mod_name
 
@@ -118,49 +118,49 @@ class RunModuleTest(unittest.TestCase):
             try:
                 del sys.modules[entry]
             except KeyError as ex:
-                if verbose: print ex # Persist with cleaning up
-        if verbose: print "  Removed sys.modules entries"
+                if verbose: print(ex) # Persist with cleaning up
+        if verbose: print("  Removed sys.modules entries")
         del sys.path[0]
-        if verbose: print "  Removed sys.path entry"
+        if verbose: print("  Removed sys.path entry")
         for root, dirs, files in os.walk(top, topdown=False):
             for name in files:
                 try:
                     os.remove(os.path.join(root, name))
                 except OSError as ex:
-                    if verbose: print ex # Persist with cleaning up
+                    if verbose: print(ex) # Persist with cleaning up
             for name in dirs:
                 fullname = os.path.join(root, name)
                 try:
                     os.rmdir(fullname)
                 except OSError as ex:
-                    if verbose: print ex # Persist with cleaning up
+                    if verbose: print(ex) # Persist with cleaning up
         try:
             os.rmdir(top)
-            if verbose: print "  Removed package tree"
+            if verbose: print("  Removed package tree")
         except OSError as ex:
-            if verbose: print ex # Persist with cleaning up
+            if verbose: print(ex) # Persist with cleaning up
 
     def _check_module(self, depth):
         pkg_dir, mod_fname, mod_name = (
                self._make_pkg("x=1\n", depth))
         try:
-            if verbose: print "Running from source:", mod_name
+            if verbose: print("Running from source:", mod_name)
             d1 = run_module(mod_name) # Read from source
             self.failUnless(d1["x"] == 1)
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
-            if verbose: print "Running from compiled:", mod_name
+            if verbose: print("Running from compiled:", mod_name)
             d2 = run_module(mod_name) # Read from bytecode
             self.failUnless(d2["x"] == 1)
             del d2 # Ensure __loader__ entry doesn't keep file open
         finally:
             self._del_pkg(pkg_dir, depth, mod_name)
-        if verbose: print "Module executed successfully"
+        if verbose: print("Module executed successfully")
 
     def test_run_module(self):
         for depth in range(4):
-            if verbose: print "Testing package depth:", depth
+            if verbose: print("Testing package depth:", depth)
             self._check_module(depth)
 
 

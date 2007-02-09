@@ -142,9 +142,9 @@ class OtherFileTests(unittest.TestCase):
         if sys.platform != 'osf1V5':
             self.assertRaises(IOError, sys.stdin.seek, -1)
         else:
-            print >>sys.__stdout__, (
+            print((
                 '  Skipping sys.stdin.seek(-1), it may crash the interpreter.'
-                ' Test manually.')
+                ' Test manually.'), file=sys.__stdout__)
         self.assertRaises(IOError, sys.stdin.truncate)
 
     def testUnicodeOpen(self):

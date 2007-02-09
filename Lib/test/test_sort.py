@@ -10,7 +10,7 @@ def check(tag, expected, raw, compare=None):
     global nerrors
 
     if verbose:
-        print "    checking", tag
+        print("    checking", tag)
 
     orig = raw[:]   # save input in case of error
     if compare:
@@ -19,22 +19,22 @@ def check(tag, expected, raw, compare=None):
         raw.sort()
 
     if len(expected) != len(raw):
-        print "error in", tag
-        print "length mismatch;", len(expected), len(raw)
-        print expected
-        print orig
-        print raw
+        print("error in", tag)
+        print("length mismatch;", len(expected), len(raw))
+        print(expected)
+        print(orig)
+        print(raw)
         nerrors += 1
         return
 
     for i, good in enumerate(expected):
         maybe = raw[i]
         if good is not maybe:
-            print "error in", tag
-            print "out of order at index", i, good, maybe
-            print expected
-            print orig
-            print raw
+            print("error in", tag)
+            print("out of order at index", i, good, maybe)
+            print(expected)
+            print(orig)
+            print(raw)
             nerrors += 1
             return
 
@@ -56,7 +56,7 @@ class TestBase(unittest.TestCase):
             def __lt__(self, other):
                 if Complains.maybe_complain and random.random() < 0.001:
                     if verbose:
-                        print "        complaining at", self, other
+                        print("        complaining at", self, other)
                     raise RuntimeError
                 return self.i < other.i
 
@@ -77,7 +77,7 @@ class TestBase(unittest.TestCase):
         for n in sizes:
             x = range(n)
             if verbose:
-                print "Testing size", n
+                print("Testing size", n)
 
             s = x[:]
             check("identity", x, s)
@@ -96,8 +96,8 @@ class TestBase(unittest.TestCase):
             check("reversed via function", y, s, lambda a, b: cmp(b, a))
 
             if verbose:
-                print "    Checking against an insane comparison function."
-                print "        If the implementation isn't careful, this may segfault."
+                print("    Checking against an insane comparison function.")
+                print("        If the implementation isn't careful, this may segfault.")
             s = x[:]
             s.sort(lambda a, b:  int(random.random() * 3) - 1)
             check("an insane function left some permutation", x, s)
@@ -285,7 +285,7 @@ def test_main(verbose=None):
             test_support.run_unittest(*test_classes)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
-        print counts
+        print(counts)
 
 if __name__ == "__main__":
     test_main(verbose=True)

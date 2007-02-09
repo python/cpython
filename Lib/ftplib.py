@@ -137,7 +137,7 @@ class FTP:
         '''Get the welcome message from the server.
         (this is read and squirreled away by connect())'''
         if self.debugging:
-            print '*welcome*', self.sanitize(self.welcome)
+            print('*welcome*', self.sanitize(self.welcome))
         return self.welcome
 
     def set_debuglevel(self, level):
@@ -167,12 +167,12 @@ class FTP:
     # Internal: send one line to the server, appending CRLF
     def putline(self, line):
         line = line + CRLF
-        if self.debugging > 1: print '*put*', self.sanitize(line)
+        if self.debugging > 1: print('*put*', self.sanitize(line))
         self.sock.sendall(line)
 
     # Internal: send one command to the server (through putline())
     def putcmd(self, line):
-        if self.debugging: print '*cmd*', self.sanitize(line)
+        if self.debugging: print('*cmd*', self.sanitize(line))
         self.putline(line)
 
     # Internal: return one line from the server, stripping CRLF.
@@ -180,7 +180,7 @@ class FTP:
     def getline(self):
         line = self.file.readline()
         if self.debugging > 1:
-            print '*get*', self.sanitize(line)
+            print('*get*', self.sanitize(line))
         if not line: raise EOFError
         if line[-2:] == CRLF: line = line[:-2]
         elif line[-1:] in CRLF: line = line[:-1]
@@ -206,7 +206,7 @@ class FTP:
     # Raise various errors if the response indicates an error
     def getresp(self):
         resp = self.getmultiline()
-        if self.debugging: print '*resp*', self.sanitize(resp)
+        if self.debugging: print('*resp*', self.sanitize(resp))
         self.lastresp = resp[:3]
         c = resp[:1]
         if c in ('1', '2', '3'):
@@ -230,7 +230,7 @@ class FTP:
         IP and Synch; that doesn't seem to work with the servers I've
         tried.  Instead, just send the ABOR command as OOB data.'''
         line = 'ABOR' + CRLF
-        if self.debugging > 1: print '*put urgent*', self.sanitize(line)
+        if self.debugging > 1: print('*put urgent*', self.sanitize(line))
         self.sock.sendall(line, MSG_OOB)
         resp = self.getmultiline()
         if resp[:3] not in ('426', '226'):
@@ -409,7 +409,7 @@ class FTP:
         fp = conn.makefile('rb')
         while 1:
             line = fp.readline()
-            if self.debugging > 2: print '*retr*', repr(line)
+            if self.debugging > 2: print('*retr*', repr(line))
             if not line:
                 break
             if line[-2:] == CRLF:
@@ -636,7 +636,7 @@ def parse257(resp):
 
 def print_line(line):
     '''Default retrlines callback to print a line.'''
-    print line
+    print(line)
 
 
 def ftpcp(source, sourcename, target, targetname = '', type = 'I'):
@@ -775,7 +775,7 @@ def test():
     '''
 
     if len(sys.argv) < 2:
-        print test.__doc__
+        print(test.__doc__)
         sys.exit(0)
 
     debugging = 0

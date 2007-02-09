@@ -143,8 +143,8 @@ class DecimalTest(unittest.TestCase):
             try:
                 t = self.eval_line(line)
             except InvalidOperation:
-                print 'Error in test cases:'
-                print line
+                print('Error in test cases:')
+                print(line)
                 continue
             except DecimalException as exception:
                 #Exception raised where there shoudn't have been one.
@@ -271,7 +271,7 @@ class DecimalTest(unittest.TestCase):
         except Signals as error:
             self.fail("Raised %s in %s" % (error, s))
         except: #Catch any error long enough to state the test case.
-            print "ERROR:", s
+            print("ERROR:", s)
             raise
 
         myexceptions = self.getexceptions()

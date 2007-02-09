@@ -83,7 +83,7 @@ class UnicodeFileTests(unittest.TestCase):
         f2 = os.listdir(unicode(test_support.TESTFN,
                                 sys.getfilesystemencoding()))
         f2.sort()
-        print f2
+        print(f2)
 
     def test_rename(self):
         for name in self.files:
@@ -99,7 +99,7 @@ class UnicodeFileTests(unittest.TestCase):
         f = open(filename, 'w')
         f.write((filename + '\n').encode("utf-8"))
         f.close()
-        print repr(filename)
+        print(repr(filename))
         os.access(filename,os.R_OK)
         os.remove(filename)
         os.chdir(oldwd)

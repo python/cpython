@@ -133,7 +133,7 @@ def TestAll(root_key):
 
 # Test on my local machine.
 TestAll(HKEY_CURRENT_USER)
-print "Local registry tests worked"
+print("Local registry tests worked")
 try:
     remote_name = sys.argv[sys.argv.index("--remote")+1]
 except (IndexError, ValueError):
@@ -143,14 +143,14 @@ if remote_name is not None:
     try:
         remote_key = ConnectRegistry(remote_name, HKEY_CURRENT_USER)
     except EnvironmentError as exc:
-        print "Could not connect to the remote machine -", exc.strerror
+        print("Could not connect to the remote machine -", exc.strerror)
         remote_key = None
     if remote_key is not None:
         TestAll(remote_key)
-        print "Remote registry tests worked"
+        print("Remote registry tests worked")
 else:
-    print "Remote registry calls can be tested using",
-    print "'test_winreg.py --remote \\\\machine_name'"
+    print("Remote registry calls can be tested using", end=' ')
+    print("'test_winreg.py --remote \\\\machine_name'")
     # perform minimal ConnectRegistry test which just invokes it
     h = ConnectRegistry(None, HKEY_LOCAL_MACHINE)
     h.Close()

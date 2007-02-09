@@ -228,7 +228,7 @@ def unit_tests():
                          ('\x8a', '!^J'), ('\xc1', '!A'),
                          ]:
         if ascii.unctrl(ch) != expected:
-            print 'curses.unctrl fails on character', repr(ch)
+            print('curses.unctrl fails on character', repr(ch))
 
 
 def test_userptr_without_set(stdscr):

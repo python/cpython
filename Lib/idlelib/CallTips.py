@@ -201,9 +201,9 @@ if __name__=='__main__':
             arg_text = ct.fetch_tip(name)
             if arg_text != expected:
                 failed.append(t)
-                print "%s - expected %s, but got %s" % (t, expected,
-                                                        get_arg_text(entity))
-        print "%d of %d tests failed" % (len(failed), len(tests))
+                print("%s - expected %s, but got %s" % (t, expected,
+                                                        get_arg_text(entity)))
+        print("%d of %d tests failed" % (len(failed), len(tests)))
 
     tc = TC()
     tests = (t1, t2, t3, t4, t5, t6,

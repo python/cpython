@@ -37,7 +37,7 @@ def sanity():
 
 def check_method(method):
     if not callable(method):
-        print method, "not callable"
+        print(method, "not callable")
 
 def serialize(ET, elem, encoding=None):
     import StringIO

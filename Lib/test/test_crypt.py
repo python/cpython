@@ -8,4 +8,4 @@ import crypt
 
 c = crypt.crypt('mypassword', 'ab')
 if verbose:
-    print 'Test encryption: ', c
+    print('Test encryption: ', c)

@@ -497,6 +497,6 @@ How *do* you spell that odd word, anyways?
 say, "How should I know?"].)"""
 
     for w in (10, 20, 30, 40):
-        print "width: %d" % w
-        print string.join(wrap_text(text, w), "\n")
-        print
+        print("width: %d" % w)
+        print(string.join(wrap_text(text, w), "\n"))
+        print()

@@ -147,42 +147,42 @@ class TestBSDDB(unittest.TestCase):
         # in pybsddb's _DBWithCursor this causes an internal DBCursor
         # object is created.  Other test_ methods in this class could
         # inadvertently cause the deadlock but an explicit test is needed.
-        if debug: print "A"
+        if debug: print("A")
         k,v = self.f.first()
-        if debug: print "B", k
+        if debug: print("B", k)
         self.f[k] = "deadlock.  do not pass go.  do not collect $200."
-        if debug: print "C"
+        if debug: print("C")
         # if the bsddb implementation leaves the DBCursor open during
         # the database write and locking+threading support is enabled
         # the cursor's read lock will deadlock the write lock request..
 
         # test the iterator interface (if present)
         if hasattr(self.f, 'iteritems'):
-            if debug: print "D"
+            if debug: print("D")
             i = self.f.iteritems()
             k,v = i.next()
-            if debug: print "E"
+            if debug: print("E")
             self.f[k] = "please don't deadlock"
-            if debug: print "F"
+            if debug: print("F")
             while 1:
                 try:
                     k,v = i.next()
                 except StopIteration:
                     break
-            if debug: print "F2"
+            if debug: print("F2")
 
             i = iter(self.f)
-            if debug: print "G"
+            if debug: print("G")
             while i:
                 try:
-                    if debug: print "H"
+                    if debug: print("H")
                     k = i.next()
-                    if debug: print "I"
+                    if debug: print("I")
                     self.f[k] = "deadlocks-r-us"
-                    if debug: print "J"
+                    if debug: print("J")
                 except StopIteration:
                     i = None
-            if debug: print "K"
+            if debug: print("K")
 
         # test the legacy cursor interface mixed with writes
         self.assert_(self.f.first()[0] in self.d)

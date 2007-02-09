@@ -79,8 +79,8 @@ class DBShelveTestCase(unittest.TestCase):
 
     def test01_basics(self):
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test01_basics..." % self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test01_basics..." % self.__class__.__name__)
 
         self.populateDB(self.d)
         self.d.sync()
@@ -94,9 +94,9 @@ class DBShelveTestCase(unittest.TestCase):
         f = d.fd()
 
         if verbose:
-            print "length:", l
-            print "keys:", k
-            print "stats:", s
+            print("length:", l)
+            print("keys:", k)
+            print("stats:", s)
 
         assert 0 == d.has_key('bad key')
         assert 1 == d.has_key('IA')
@@ -113,7 +113,7 @@ class DBShelveTestCase(unittest.TestCase):
             value = d[key]
             values.append(value)
             if verbose:
-                print "%s: %s" % (key, value)
+                print("%s: %s" % (key, value))
             self.checkrec(key, value)
 
         dbvalues = sorted(d.values(), key=lambda x: (str(type(x)), x))
@@ -144,8 +144,8 @@ class DBShelveTestCase(unittest.TestCase):
 
     def test02_cursors(self):
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test02_cursors..." % self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test02_cursors..." % self.__class__.__name__)
 
         self.populateDB(self.d)
         d = self.d
@@ -156,7 +156,7 @@ class DBShelveTestCase(unittest.TestCase):
         while rec is not None:
             count = count + 1
             if verbose:
-                print rec
+                print(rec)
             key, value = rec
             self.checkrec(key, value)
             rec = c.next()
@@ -170,7 +170,7 @@ class DBShelveTestCase(unittest.TestCase):
         while rec is not None:
             count = count + 1
             if verbose:
-                print rec
+                print(rec)
             key, value = rec
             self.checkrec(key, value)
             rec = c.prev()

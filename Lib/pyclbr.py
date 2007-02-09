@@ -328,13 +328,13 @@ def _main():
                                getattr(b, 'lineno', 0)))
     for obj in objs:
         if isinstance(obj, Class):
-            print "class", obj.name, obj.super, obj.lineno
+            print("class", obj.name, obj.super, obj.lineno)
             methods = sorted(obj.methods.iteritems(), key=itemgetter(1))
             for name, lineno in methods:
                 if name != "__path__":
-                    print "  def", name, lineno
+                    print("  def", name, lineno)
         elif isinstance(obj, Function):
-            print "def", obj.name, obj.lineno
+            print("def", obj.name, obj.lineno)
 
 if __name__ == "__main__":
     _main()

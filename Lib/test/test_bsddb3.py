@@ -65,12 +65,12 @@ def test_main():
 # For invocation as a script
 if __name__ == '__main__':
     from bsddb import db
-    print '-=' * 38
-    print db.DB_VERSION_STRING
-    print 'bsddb.db.version():   %s' % (db.version(),)
-    print 'bsddb.db.__version__: %s' % db.__version__
-    print 'bsddb.db.cvsid:       %s' % db.cvsid
-    print 'python version:        %s' % sys.version
-    print '-=' * 38
+    print('-=' * 38)
+    print(db.DB_VERSION_STRING)
+    print('bsddb.db.version():   %s' % (db.version(),))
+    print('bsddb.db.__version__: %s' % db.__version__)
+    print('bsddb.db.cvsid:       %s' % db.cvsid)
+    print('python version:        %s' % sys.version)
+    print('-=' * 38)
 
     unittest.main(defaultTest='suite')

@@ -54,7 +54,7 @@ class FileList:
         try:
             key = self.inversedict[edit]
         except KeyError:
-            print "Don't know this EditorWindow object.  (close)"
+            print("Don't know this EditorWindow object.  (close)")
             return
         if key:
             del self.dict[key]
@@ -67,7 +67,7 @@ class FileList:
         try:
             key = self.inversedict[edit]
         except KeyError:
-            print "Don't know this EditorWindow object.  (rename)"
+            print("Don't know this EditorWindow object.  (rename)")
             return
         filename = edit.io.filename
         if not filename:

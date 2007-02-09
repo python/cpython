@@ -38,7 +38,7 @@ ss = ["", "world", "x" * 500]
 
 while 1:
     code = [pick() for i in range(random.randrange(5, 25))]
-    print code
+    print(code)
     pat = _sre.compile(None, 0, code)
     for s in ss:
         try:

@@ -10,7 +10,7 @@ class A(object):
 
 class B(object):
     def __del__(self):
-        print "hi"
+        print("hi")
         del C.d
 
 class D(object):

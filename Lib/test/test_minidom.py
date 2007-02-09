@@ -24,7 +24,7 @@ del base
 
 def confirm(test, testname = "Test"):
     if not test:
-        print "Failed " + testname
+        print("Failed " + testname)
         raise Exception
 
 def testParseFromFile():
@@ -140,29 +140,29 @@ def testLegalChildren():
     try: dom.appendChild(text)
     except xml.dom.HierarchyRequestErr: pass
     else:
-        print "dom.appendChild didn't raise HierarchyRequestErr"
+        print("dom.appendChild didn't raise HierarchyRequestErr")
 
     dom.appendChild(elem)
     try: dom.insertBefore(text, elem)
     except xml.dom.HierarchyRequestErr: pass
     else:
-        print "dom.appendChild didn't raise HierarchyRequestErr"
+        print("dom.appendChild didn't raise HierarchyRequestErr")
 
     try: dom.replaceChild(text, elem)
     except xml.dom.HierarchyRequestErr: pass
     else:
-        print "dom.appendChild didn't raise HierarchyRequestErr"
+        print("dom.appendChild didn't raise HierarchyRequestErr")
 
     nodemap = elem.attributes
     try: nodemap.setNamedItem(text)
     except xml.dom.HierarchyRequestErr: pass
     else:
-        print "NamedNodeMap.setNamedItem didn't raise HierarchyRequestErr"
+        print("NamedNodeMap.setNamedItem didn't raise HierarchyRequestErr")
 
     try: nodemap.setNamedItemNS(text)
     except xml.dom.HierarchyRequestErr: pass
     else:
-        print "NamedNodeMap.setNamedItemNS didn't raise HierarchyRequestErr"
+        print("NamedNodeMap.setNamedItemNS didn't raise HierarchyRequestErr")
 
     elem.appendChild(text)
     dom.unlink()
@@ -457,8 +457,8 @@ def testTooManyDocumentElements():
     except xml.dom.HierarchyRequestErr:
         pass
     else:
-        print "Failed to catch expected exception when" \
-              " adding extra document element."
+        print("Failed to catch expected exception when" \
+              " adding extra document element.")
     elem.unlink()
     doc.unlink()
 
@@ -896,7 +896,7 @@ def testEncodings():
     except UnicodeDecodeError:
         pass
     else:
-        print 'parsing with bad encoding should raise a UnicodeDecodeError'
+        print('parsing with bad encoding should raise a UnicodeDecodeError')
 
     doc.unlink()
 
@@ -1008,7 +1008,7 @@ def testRenameAttribute():
     except xml.dom.NamespaceErr:
         pass
     else:
-        print "expected NamespaceErr"
+        print("expected NamespaceErr")
 
     checkRenameNodeSharedConstraints(doc, attr)
     doc.unlink()
@@ -1063,7 +1063,7 @@ def checkRenameNodeSharedConstraints(doc, node):
     except xml.dom.NamespaceErr:
         pass
     else:
-        print "expected NamespaceErr"
+        print("expected NamespaceErr")
 
     doc2 = parseString("<doc/>")
     try:
@@ -1071,7 +1071,7 @@ def checkRenameNodeSharedConstraints(doc, node):
     except xml.dom.WrongDocumentErr:
         pass
     else:
-        print "expected WrongDocumentErr"
+        print("expected WrongDocumentErr")
 
 def testRenameOther():
     # We have to create a comment node explicitly since not all DOM
@@ -1084,7 +1084,7 @@ def testRenameOther():
     except xml.dom.NotSupportedErr:
         pass
     else:
-        print "expected NotSupportedErr when renaming comment node"
+        print("expected NotSupportedErr when renaming comment node")
     doc.unlink()
 
 def checkWholeText(node, s):
@@ -1368,13 +1368,13 @@ else:
         confirm(len(Node.allnodes) == 0,
                 "assertion: len(Node.allnodes) == 0")
         if len(Node.allnodes):
-            print "Garbage left over:"
+            print("Garbage left over:")
             if verbose:
-                print Node.allnodes.items()[0:10]
+                print(Node.allnodes.items()[0:10])
             else:
                 # Don't print specific nodes if repeatable results
                 # are needed
-                print len(Node.allnodes)
+                print(len(Node.allnodes))
         Node.allnodes = {}
 
 for name in names:
@@ -1385,13 +1385,13 @@ for name in names:
             check_allnodes()
         except:
             failed.append(name)
-            print "Test Failed: ", name
+            print("Test Failed: ", name)
             sys.stdout.flush()
             traceback.print_exception(*sys.exc_info())
-            print repr(sys.exc_info()[1])
+            print(repr(sys.exc_info()[1]))
             Node.allnodes = {}
 
 if failed:
-    print "\n\n\n**** Check for failures in these tests:"
+    print("\n\n\n**** Check for failures in these tests:")
     for name in failed:
-        print "  " + name
+        print("  " + name)

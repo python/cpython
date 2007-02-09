@@ -3287,11 +3287,11 @@ def test_main():
                               gc.garbage)
         if hasattr(sys, 'gettotalrefcount'):
             thisrc = sys.gettotalrefcount()
-            print >> sys.stderr, '*' * 10, 'total refs:', thisrc,
+            print('*' * 10, 'total refs:', thisrc, end=' ', file=sys.stderr)
             if lastrc:
-                print >> sys.stderr, 'delta:', thisrc - lastrc
+                print('delta:', thisrc - lastrc, file=sys.stderr)
             else:
-                print >> sys.stderr
+                print(file=sys.stderr)
             lastrc = thisrc
 
 if __name__ == "__main__":

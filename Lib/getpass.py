@@ -67,7 +67,7 @@ def win_getpass(prompt='Password: ', stream=None):
 
 
 def default_getpass(prompt='Password: ', stream=None):
-    print >>sys.stderr, "Warning: Problem with getpass. Passwords may be echoed."
+    print("Warning: Problem with getpass. Passwords may be echoed.", file=sys.stderr)
     return _raw_input(prompt, stream)
 
 

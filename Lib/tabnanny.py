@@ -83,7 +83,7 @@ def check(file):
 
     if os.path.isdir(file) and not os.path.islink(file):
         if verbose:
-            print "%r: listing directory" % (file,)
+            print("%r: listing directory" % (file,))
         names = os.listdir(file)
         for name in names:
             fullname = os.path.join(file, name)
@@ -100,7 +100,7 @@ def check(file):
         return
 
     if verbose > 1:
-        print "checking %r ..." % file
+        print("checking %r ..." % file)
 
     try:
         process_tokens(tokenize.generate_tokens(f.readline))
@@ -117,17 +117,17 @@ def check(file):
         badline = nag.get_lineno()
         line = nag.get_line()
         if verbose:
-            print "%r: *** Line %d: trouble in tab city! ***" % (file, badline)
-            print "offending line: %r" % (line,)
-            print nag.get_msg()
+            print("%r: *** Line %d: trouble in tab city! ***" % (file, badline))
+            print("offending line: %r" % (line,))
+            print(nag.get_msg())
         else:
             if ' ' in file: file = '"' + file + '"'
-            if filename_only: print file
-            else: print file, badline, repr(line)
+            if filename_only: print(file)
+            else: print(file, badline, repr(line))
         return
 
     if verbose:
-        print "%r: Clean bill of health." % (file,)
+        print("%r: Clean bill of health." % (file,))
 
 class Whitespace:
     # the characters used for space and tab

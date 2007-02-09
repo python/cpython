@@ -77,16 +77,16 @@ class ServerThread(threading.Thread):
     def run(self):
         class svrcls(MyMixinServer, self.__svrcls):
             pass
-        if verbose: print "thread: creating server"
+        if verbose: print("thread: creating server")
         svr = svrcls(self.__addr, self.__hdlrcls)
         # pull the address out of the server in case it changed
         # this can happen if another process is using the port
         addr = getattr(svr, 'server_address')
         if addr:
             self.__addr = addr
-        if verbose: print "thread: serving three times"
+        if verbose: print("thread: serving three times")
         svr.serve_a_few()
-        if verbose: print "thread: done"
+        if verbose: print("thread: done")
 
 seed = 0
 def pickport():
@@ -129,19 +129,19 @@ def testloop(proto, servers, hdlrcls, testfunc):
     for svrcls in servers:
         addr = pickaddr(proto)
         if verbose:
-            print "ADDR =", addr
-            print "CLASS =", svrcls
+            print("ADDR =", addr)
+            print("CLASS =", svrcls)
         t = ServerThread(addr, svrcls, hdlrcls)
-        if verbose: print "server created"
+        if verbose: print("server created")
         t.start()
-        if verbose: print "server running"
+        if verbose: print("server running")
         for i in range(NREQ):
             time.sleep(DELAY)
-            if verbose: print "test client", i
+            if verbose: print("test client", i)
             testfunc(proto, addr)
-        if verbose: print "waiting for server"
+        if verbose: print("waiting for server")
         t.join()
-        if verbose: print "done"
+        if verbose: print("done")
 
 class ForgivingTCPServer(TCPServer):
     # prevent errors if another process is using the port we want
@@ -159,8 +159,7 @@ class ForgivingTCPServer(TCPServer):
                 (err, msg) = e
                 if err != errno.EADDRINUSE:
                     raise
-                print >>sys.__stderr__, \
-                    '  WARNING: failed to listen on port %d, trying another' % port
+                print('  WARNING: failed to listen on port %d, trying another' % port, file=sys.__stderr__)
 
 tcpservers = [ForgivingTCPServer, ThreadingTCPServer]
 if hasattr(os, 'fork') and os.name not in ('os2',):

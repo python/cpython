@@ -22,15 +22,15 @@ if 'silent' in sys.argv:  # take care of old flag, just in case
 
 
 def print_versions():
-    print
-    print '-=' * 38
-    print db.DB_VERSION_STRING
-    print 'bsddb.db.version():   %s' % (db.version(), )
-    print 'bsddb.db.__version__: %s' % db.__version__
-    print 'bsddb.db.cvsid:       %s' % db.cvsid
-    print 'python version:       %s' % sys.version
-    print 'My pid:               %s' % os.getpid()
-    print '-=' * 38
+    print()
+    print('-=' * 38)
+    print(db.DB_VERSION_STRING)
+    print('bsddb.db.version():   %s' % (db.version(), ))
+    print('bsddb.db.__version__: %s' % db.__version__)
+    print('bsddb.db.cvsid:       %s' % db.cvsid)
+    print('python version:       %s' % sys.version)
+    print('My pid:               %s' % os.getpid())
+    print('-=' * 38)
 
 
 class PrintInfoFakeTest(unittest.TestCase):

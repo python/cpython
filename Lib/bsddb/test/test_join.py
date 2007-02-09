@@ -65,9 +65,9 @@ class JoinTestCase(unittest.TestCase):
 
     def test01_join(self):
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test01_join..." % \
-                  self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test01_join..." % \
+                  self.__class__.__name__)
 
         # create and populate primary index
         priDB = db.DB(self.env)

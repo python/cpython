@@ -10,50 +10,50 @@ from test.test_support import sortdict, TestFailed
 
 class Outputter:
     def StartElementHandler(self, name, attrs):
-        print 'Start element:\n\t', repr(name), sortdict(attrs)
+        print('Start element:\n\t', repr(name), sortdict(attrs))
 
     def EndElementHandler(self, name):
-        print 'End element:\n\t', repr(name)
+        print('End element:\n\t', repr(name))
 
     def CharacterDataHandler(self, data):
         data = data.strip()
         if data:
-            print 'Character data:'
-            print '\t', repr(data)
+            print('Character data:')
+            print('\t', repr(data))
 
     def ProcessingInstructionHandler(self, target, data):
-        print 'PI:\n\t', repr(target), repr(data)
+        print('PI:\n\t', repr(target), repr(data))
 
     def StartNamespaceDeclHandler(self, prefix, uri):
-        print 'NS decl:\n\t', repr(prefix), repr(uri)
+        print('NS decl:\n\t', repr(prefix), repr(uri))
 
     def EndNamespaceDeclHandler(self, prefix):
-        print 'End of NS decl:\n\t', repr(prefix)
+        print('End of NS decl:\n\t', repr(prefix))
 
     def StartCdataSectionHandler(self):
-        print 'Start of CDATA section'
+        print('Start of CDATA section')
 
     def EndCdataSectionHandler(self):
-        print 'End of CDATA section'
+        print('End of CDATA section')
 
     def CommentHandler(self, text):
-        print 'Comment:\n\t', repr(text)
+        print('Comment:\n\t', repr(text))
 
     def NotationDeclHandler(self, *args):
         name, base, sysid, pubid = args
-        print 'Notation declared:', args
+        print('Notation declared:', args)
 
     def UnparsedEntityDeclHandler(self, *args):
         entityName, base, systemId, publicId, notationName = args
-        print 'Unparsed entity decl:\n\t', args
+        print('Unparsed entity decl:\n\t', args)
 
     def NotStandaloneHandler(self, userData):
-        print 'Not standalone'
+        print('Not standalone')
         return 1
 
     def ExternalEntityRefHandler(self, *args):
         context, base, sysId, pubId = args
-        print 'External entity ref:', args[1:]
+        print('External entity ref:', args[1:])
         return 1
 
     def DefaultHandler(self, userData):
@@ -65,9 +65,9 @@ class Outputter:
 
 def confirm(ok):
     if ok:
-        print "OK."
+        print("OK.")
     else:
-        print "Not OK."
+        print("Not OK.")
 
 out = Outputter()
 parser = expat.ParserCreate(namespace_separator='!')
@@ -131,10 +131,10 @@ parser.returns_unicode = 0
 try:
     parser.Parse(data, 1)
 except expat.error:
-    print '** Error', parser.ErrorCode, expat.ErrorString(parser.ErrorCode)
-    print '** Line', parser.ErrorLineNumber
-    print '** Column', parser.ErrorColumnNumber
-    print '** Byte', parser.ErrorByteIndex
+    print('** Error', parser.ErrorCode, expat.ErrorString(parser.ErrorCode))
+    print('** Line', parser.ErrorLineNumber)
+    print('** Column', parser.ErrorColumnNumber)
+    print('** Byte', parser.ErrorByteIndex)
 
 # Try the parse again, this time producing Unicode output
 parser = expat.ParserCreate(namespace_separator='!')
@@ -145,10 +145,10 @@ for name in HANDLER_NAMES:
 try:
     parser.Parse(data, 1)
 except expat.error:
-    print '** Error', parser.ErrorCode, expat.ErrorString(parser.ErrorCode)
-    print '** Line', parser.ErrorLineNumber
-    print '** Column', parser.ErrorColumnNumber
-    print '** Byte', parser.ErrorByteIndex
+    print('** Error', parser.ErrorCode, expat.ErrorString(parser.ErrorCode))
+    print('** Line', parser.ErrorLineNumber)
+    print('** Column', parser.ErrorColumnNumber)
+    print('** Byte', parser.ErrorByteIndex)
 
 # Try parsing a file
 parser = expat.ParserCreate(namespace_separator='!')
@@ -161,35 +161,35 @@ file = StringIO.StringIO(data)
 try:
     parser.ParseFile(file)
 except expat.error:
-    print '** Error', parser.ErrorCode, expat.ErrorString(parser.ErrorCode)
-    print '** Line', parser.ErrorLineNumber
-    print '** Column', parser.ErrorColumnNumber
-    print '** Byte', parser.ErrorByteIndex
+    print('** Error', parser.ErrorCode, expat.ErrorString(parser.ErrorCode))
+    print('** Line', parser.ErrorLineNumber)
+    print('** Column', parser.ErrorColumnNumber)
+    print('** Byte', parser.ErrorByteIndex)
 
 
 # Tests that make sure we get errors when the namespace_separator value
 # is illegal, and that we don't for good values:
-print
-print "Testing constructor for proper handling of namespace_separator values:"
+print()
+print("Testing constructor for proper handling of namespace_separator values:")
 expat.ParserCreate()
 expat.ParserCreate(namespace_separator=None)
 expat.ParserCreate(namespace_separator=' ')
-print "Legal values tested o.k."
+print("Legal values tested o.k.")
 try:
     expat.ParserCreate(namespace_separator=42)
 except TypeError as e:
-    print "Caught expected TypeError:"
-    print e
+    print("Caught expected TypeError:")
+    print(e)
 else:
-    print "Failed to catch expected TypeError."
+    print("Failed to catch expected TypeError.")
 
 try:
     expat.ParserCreate(namespace_separator='too long')
 except ValueError as e:
-    print "Caught expected ValueError:"
-    print e
+    print("Caught expected ValueError:")
+    print(e)
 else:
-    print "Failed to catch expected ValueError."
+    print("Failed to catch expected ValueError.")
 
 # ParserCreate() needs to accept a namespace_separator of zero length
 # to satisfy the requirements of RDF applications that are required
@@ -211,12 +211,12 @@ p.EndElementHandler = collector
 p.Parse("<e> <e/> <e></e> </e>", 1)
 tag = L[0]
 if len(L) != 6:
-    print "L should only contain 6 entries; found", len(L)
+    print("L should only contain 6 entries; found", len(L))
 for entry in L:
     if tag is not entry:
-        print "expected L to contain many references to the same string",
-        print "(it didn't)"
-        print "L =", repr(L)
+        print("expected L to contain many references to the same string", end=' ')
+        print("(it didn't)")
+        print("L =", repr(L))
         break
 
 # Tests of the buffer_text attribute.
@@ -323,9 +323,9 @@ try:
     parser.Parse("<a><b><c/></b></a>", 1)
 except RuntimeError as e:
     if e.args[0] != "a":
-        print "Expected RuntimeError for element 'a'; found %r" % e.args[0]
+        print("Expected RuntimeError for element 'a'; found %r" % e.args[0])
 else:
-    print "Expected RuntimeError for 'a'"
+    print("Expected RuntimeError for 'a'")
 
 # Test Current* members:
 class PositionTest:

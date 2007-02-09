@@ -92,6 +92,6 @@ if __name__ == '__main__':
         keySeq=''
         dlg=GetCfgSectionNameDialog(root,'Get Name',
                 'The information here should need to be word wrapped. Test.')
-        print dlg.result
+        print(dlg.result)
     Button(root,text='Dialog',command=run).pack()
     root.mainloop()

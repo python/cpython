@@ -37,7 +37,7 @@ class CompatibilityTestCase(unittest.TestCase):
     def test03_rnopen(self):
         data = string.split("The quick brown fox jumped over the lazy dog.")
         if verbose:
-            print "\nTesting: rnopen"
+            print("\nTesting: rnopen")
 
         f = rnopen(self.filename, 'c')
         for x in range(len(data)):
@@ -45,7 +45,7 @@ class CompatibilityTestCase(unittest.TestCase):
 
         getTest = (f[1], f[2], f[3])
         if verbose:
-            print '%s %s %s' % getTest
+            print('%s %s %s' % getTest)
 
         assert getTest[1] == 'quick', 'data mismatch!'
 
@@ -73,7 +73,7 @@ class CompatibilityTestCase(unittest.TestCase):
         rec = f.first()
         while rec:
             if verbose:
-                print rec
+                print(rec)
             try:
                 rec = f.next()
             except KeyError:
@@ -89,17 +89,17 @@ class CompatibilityTestCase(unittest.TestCase):
 
     def do_bthash_test(self, factory, what):
         if verbose:
-            print '\nTesting: ', what
+            print('\nTesting: ', what)
 
         f = factory(self.filename, 'c')
         if verbose:
-            print 'creation...'
+            print('creation...')
 
         # truth test
         if f:
-            if verbose: print "truth test: true"
+            if verbose: print("truth test: true")
         else:
-            if verbose: print "truth test: false"
+            if verbose: print("truth test: false")
 
         f['0'] = ''
         f['a'] = 'Guido'
@@ -109,10 +109,10 @@ class CompatibilityTestCase(unittest.TestCase):
         # 'e' intentionally left out
         f['f'] = 'Python'
         if verbose:
-            print '%s %s %s' % (f['a'], f['b'], f['c'])
+            print('%s %s %s' % (f['a'], f['b'], f['c']))
 
         if verbose:
-            print 'key ordering...'
+            print('key ordering...')
         start = f.set_location(f.first()[0])
         if start != ('0', ''):
             self.fail("incorrect first() result: "+repr(start))
@@ -124,7 +124,7 @@ class CompatibilityTestCase(unittest.TestCase):
                 f.previous()
                 break
             if verbose:
-                print rec
+                print(rec)
 
         assert f.has_key('f'), 'Error, missing key!'
 
@@ -147,9 +147,9 @@ class CompatibilityTestCase(unittest.TestCase):
         # truth test
         try:
             if f:
-                if verbose: print "truth test: true"
+                if verbose: print("truth test: true")
             else:
-                if verbose: print "truth test: false"
+                if verbose: print("truth test: false")
         except db.DBError:
             pass
         else:
@@ -158,16 +158,16 @@ class CompatibilityTestCase(unittest.TestCase):
         del f
 
         if verbose:
-            print 'modification...'
+            print('modification...')
         f = factory(self.filename, 'w')
         f['d'] = 'discovered'
 
         if verbose:
-            print 'access...'
+            print('access...')
         for key in f.keys():
             word = f[key]
             if verbose:
-                print word
+                print(word)
 
         def noRec(f):
             rec = f['no such key']

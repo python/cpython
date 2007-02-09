@@ -8,7 +8,7 @@ import StringIO
 import unittest
 
 def _f(a):
-    print a
+    print(a)
     return 1
 
 dis_f = """\

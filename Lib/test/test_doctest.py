@@ -143,7 +143,7 @@ class _FakeInput:
 
     def readline(self):
         line = self.lines.pop(0)
-        print line
+        print(line)
         return line+'\n'
 
 ######################################################################
@@ -2407,7 +2407,7 @@ def test_coverage(coverdir):
                          trace=0, count=1)
     tracer.run('reload(doctest); test_main()')
     r = tracer.results()
-    print 'Writing coverage results...'
+    print('Writing coverage results...')
     r.write_results(show_missing=True, summary=True,
                     coverdir=coverdir)
 

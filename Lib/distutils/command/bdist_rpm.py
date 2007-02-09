@@ -267,11 +267,11 @@ class bdist_rpm (Command):
     def run (self):
 
         if DEBUG:
-            print "before _get_package_data():"
-            print "vendor =", self.vendor
-            print "packager =", self.packager
-            print "doc_files =", self.doc_files
-            print "changelog =", self.changelog
+            print("before _get_package_data():")
+            print("vendor =", self.vendor)
+            print("packager =", self.packager)
+            print("doc_files =", self.doc_files)
+            print("changelog =", self.changelog)
 
         # make directories
         if self.spec_only:

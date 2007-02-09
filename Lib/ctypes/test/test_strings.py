@@ -189,7 +189,7 @@ def run_test(rep, msg, func, arg):
     for i in items:
         func(arg); func(arg); func(arg); func(arg); func(arg)
     stop = clock()
-    print "%20s: %.2f us" % (msg, ((stop-start)*1e6/5/rep))
+    print("%20s: %.2f us" % (msg, ((stop-start)*1e6/5/rep)))
 
 def check_perf():
     # Construct 5 objects

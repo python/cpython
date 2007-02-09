@@ -349,15 +349,15 @@ def test():
 
     target = AE.AECreateDesc('sign', 'quil')
     ae = AE.AECreateAppleEvent('aevt', 'oapp', target, -1, 0)
-    print unpackevent(ae)
+    print(unpackevent(ae))
     raw_input(":")
     ae = AE.AECreateAppleEvent('core', 'getd', target, -1, 0)
     obj = Character(2, Word(1, Document(1)))
-    print obj
-    print repr(obj)
+    print(obj)
+    print(repr(obj))
     packevent(ae, {'----': obj})
     params, attrs = unpackevent(ae)
-    print params['----']
+    print(params['----'])
     raw_input(":")
 
 if __name__ == '__main__':

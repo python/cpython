@@ -112,7 +112,7 @@ class Module(AbstractCompileMode):
         gen = ModuleCodeGenerator(tree)
         if display:
             import pprint
-            print pprint.pprint(tree)
+            print(pprint.pprint(tree))
         self.code = gen.getCode()
 
     def dump(self, f):
@@ -1018,7 +1018,7 @@ class CodeGenerator:
             self.set_lineno(node)
             self.delName(node.name)
         else:
-            print "oops", node.flags
+            print("oops", node.flags)
 
     def visitAssAttr(self, node):
         self.visit(node.expr)
@@ -1027,8 +1027,8 @@ class CodeGenerator:
         elif node.flags == 'OP_DELETE':
             self.emit('DELETE_ATTR', self.mangle(node.attrname))
         else:
-            print "warning: unexpected flags:", node.flags
-            print node
+            print("warning: unexpected flags:", node.flags)
+            print(node)
 
     def _visitAssSequence(self, node, op='UNPACK_SEQUENCE'):
         if findOp(node) != 'OP_DELETE':
@@ -1189,7 +1189,7 @@ class CodeGenerator:
         elif node.flags == 'OP_DELETE':
             self.emit('DELETE_SLICE+%d' % slice)
         else:
-            print "weird slice", node.flags
+            print("weird slice", node.flags)
             raise
 
     def visitSubscript(self, node, aug_flag=None):

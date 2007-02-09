@@ -19,8 +19,8 @@ from code import InteractiveInterpreter
 try:
     from Tkinter import *
 except ImportError:
-    print>>sys.__stderr__, "** IDLE can't import Tkinter.  " \
-                           "Your Python may not be configured for Tk. **"
+    print("** IDLE can't import Tkinter.  " \
+                           "Your Python may not be configured for Tk. **", file=sys.__stderr__)
     sys.exit(1)
 import tkMessageBox
 
@@ -504,14 +504,14 @@ class ModifiedInterpreter(InteractiveInterpreter):
             console = self.tkconsole.console
             if how == "OK":
                 if what is not None:
-                    print >>console, repr(what)
+                    print(repr(what), file=console)
             elif how == "EXCEPTION":
                 if self.tkconsole.getvar("<<toggle-jit-stack-viewer>>"):
                     self.remote_stack_viewer()
             elif how == "ERROR":
                 errmsg = "PyShell.ModifiedInterpreter: Subprocess ERROR:\n"
-                print >>sys.__stderr__, errmsg, what
-                print >>console, errmsg, what
+                print(errmsg, what, file=sys.__stderr__)
+                print(errmsg, what, file=console)
             # we received a response to the currently active seq number:
             try:
                 self.tkconsole.endexecuting()
@@ -576,8 +576,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
         except (OverflowError, SyntaxError):
             self.tkconsole.resetoutput()
             tkerr = self.tkconsole.stderr
-            print>>tkerr, '*** Error in script or command!\n'
-            print>>tkerr, 'Traceback (most recent call last):'
+            print('*** Error in script or command!\n', file=tkerr)
+            print('Traceback (most recent call last):', file=tkerr)
             InteractiveInterpreter.showsyntaxerror(self, filename)
             self.tkconsole.showprompt()
         else:
@@ -730,8 +730,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 if use_subprocess:
                     # When run w/o subprocess, both user and IDLE errors
                     # are printed here; skip message in that case.
-                    print >> self.tkconsole.stderr, \
-                             "IDLE internal error in runcode()"
+                    print("IDLE internal error in runcode()", file=self.tkconsole.stderr)
                 self.showtraceback()
                 if use_subprocess:
                     self.tkconsole.endexecuting()
@@ -1349,7 +1348,7 @@ def main():
             if os.path.isfile(script):
                 pass
             else:
-                print "No script file: ", script
+                print("No script file: ", script)
                 sys.exit()
             enable_shell = True
         if o == '-s':

@@ -23,19 +23,19 @@ else:
 def testformat(formatstr, value, grouping = 0, output=None, func=locale.format):
     if verbose:
         if output:
-            print "%s %% %s =? %s ..." %\
-                (repr(formatstr), repr(value), repr(output)),
+            print("%s %% %s =? %s ..." %\
+                (repr(formatstr), repr(value), repr(output)), end=' ')
         else:
-            print "%s %% %s works? ..." % (repr(formatstr), repr(value)),
+            print("%s %% %s works? ..." % (repr(formatstr), repr(value)), end=' ')
     result = func(formatstr, value, grouping = grouping)
     if output and result != output:
         if verbose:
-            print 'no'
-        print "%s %% %s == %s != %s" %\
-              (repr(formatstr), repr(value), repr(result), repr(output))
+            print('no')
+        print("%s %% %s == %s != %s" %\
+              (repr(formatstr), repr(value), repr(result), repr(output)))
     else:
         if verbose:
-            print "yes"
+            print("yes")
 
 try:
     # On Solaris 10, the thousands_sep is the empty string
@@ -80,15 +80,15 @@ finally:
 # Test BSD Rune locale's bug for isctype functions.
 def teststrop(s, method, output):
     if verbose:
-        print "%s.%s() =? %s ..." % (repr(s), method, repr(output)),
+        print("%s.%s() =? %s ..." % (repr(s), method, repr(output)), end=' ')
     result = getattr(s, method)()
     if result != output:
         if verbose:
-            print "no"
-        print "%s.%s() == %s != %s" % (repr(s), method, repr(result),
-                                       repr(output))
+            print("no")
+        print("%s.%s() == %s != %s" % (repr(s), method, repr(result),
+                                       repr(output)))
     elif verbose:
-        print "yes"
+        print("yes")
 
 try:
     if sys.platform == 'sunos5':

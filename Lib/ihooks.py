@@ -87,9 +87,9 @@ class _Verbose:
 
     def message(self, format, *args):
         if args:
-            print format%args
+            print(format%args)
         else:
-            print format
+            print(format)
 
 
 class BasicModuleLoader(_Verbose):

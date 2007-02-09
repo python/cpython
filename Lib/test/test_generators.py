@@ -1082,12 +1082,12 @@ class Queens:
         n = self.n
         assert n == len(row2col)
         sep = "+" + "-+" * n
-        print sep
+        print(sep)
         for i in range(n):
             squares = [" " for j in range(n)]
             squares[row2col[i]] = "Q"
-            print "|" + "|".join(squares) + "|"
-            print sep
+            print("|" + "|".join(squares) + "|")
+            print(sep)
 
 # A conjoin-based Knight's Tour solver.  This is pretty sophisticated
 # (e.g., when used with flat_conjoin above, and passing hard=1 to the
@@ -1279,11 +1279,11 @@ class Knights:
             k += 1
 
         sep = "+" + ("-" * w + "+") * n
-        print sep
+        print(sep)
         for i in range(m):
             row = squares[i]
-            print "|" + "|".join(row) + "|"
-            print sep
+            print("|" + "|".join(row) + "|")
+            print(sep)
 
 conjoin_tests = """
 

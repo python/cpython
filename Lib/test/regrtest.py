@@ -171,8 +171,8 @@ RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
 
 
 def usage(code, msg=''):
-    print __doc__
-    if msg: print msg
+    print(__doc__)
+    if msg: print(msg)
     sys.exit(code)
 
 
@@ -253,7 +253,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         elif o in ('-R', '--huntrleaks'):
             huntrleaks = a.split(':')
             if len(huntrleaks) != 3:
-                print a, huntrleaks
+                print(a, huntrleaks)
                 usage(2, '-R takes three colon-separated arguments')
             if len(huntrleaks[0]) == 0:
                 huntrleaks[0] = 5
@@ -298,7 +298,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         try:
             import gc
         except ImportError:
-            print 'No GC available, disabling findleaks.'
+            print('No GC available, disabling findleaks.')
             findleaks = False
         else:
             # Uncomment the line below to report garbage that is not
@@ -355,7 +355,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     save_modules = sys.modules.keys()
     for test in tests:
         if not quiet:
-            print test
+            print(test)
             sys.stdout.flush()
         if trace:
             # If we're tracing code coverage, then we don't exit with status
@@ -368,7 +368,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
                              huntrleaks)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
-                print
+                print()
                 break
             except:
                 raise
@@ -383,8 +383,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         if findleaks:
             gc.collect()
             if gc.garbage:
-                print "Warning: test created", len(gc.garbage),
-                print "uncollectable object(s)."
+                print("Warning: test created", len(gc.garbage), end=' ')
+                print("uncollectable object(s).")
                 # move the uncollectable objects somewhere so we don't see
                 # them again
                 found_garbage.extend(gc.garbage)
@@ -401,16 +401,16 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
 
     if good and not quiet:
         if not bad and not skipped and len(good) > 1:
-            print "All",
-        print count(len(good), "test"), "OK."
+            print("All", end=' ')
+        print(count(len(good), "test"), "OK.")
         if verbose:
-            print "CAUTION:  stdout isn't compared in verbose mode:"
-            print "a test that passes in verbose mode may fail without it."
+            print("CAUTION:  stdout isn't compared in verbose mode:")
+            print("a test that passes in verbose mode may fail without it.")
     if bad:
-        print count(len(bad), "test"), "failed:"
+        print(count(len(bad), "test"), "failed:")
         printlist(bad)
     if skipped and not quiet:
-        print count(len(skipped), "test"), "skipped:"
+        print(count(len(skipped), "test"), "skipped:")
         printlist(skipped)
 
         e = _ExpectedSkips()
@@ -418,19 +418,19 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
         if e.isvalid():
             surprise = set(skipped) - e.getexpected() - set(resource_denieds)
             if surprise:
-                print count(len(surprise), "skip"), \
-                      "unexpected on", plat + ":"
+                print(count(len(surprise), "skip"), \
+                      "unexpected on", plat + ":")
                 printlist(surprise)
             else:
-                print "Those skips are all expected on", plat + "."
+                print("Those skips are all expected on", plat + ".")
         else:
-            print "Ask someone to teach regrtest.py about which tests are"
-            print "expected to get skipped on", plat + "."
+            print("Ask someone to teach regrtest.py about which tests are")
+            print("expected to get skipped on", plat + ".")
 
     if verbose2 and bad:
-        print "Re-running failed tests in verbose mode"
+        print("Re-running failed tests in verbose mode")
         for test in bad:
-            print "Re-running test %r in verbose mode" % test
+            print("Re-running test %r in verbose mode" % test)
             sys.stdout.flush()
             try:
                 test_support.verbose = 1
@@ -438,7 +438,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
                              huntrleaks)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
-                print
+                print()
                 break
             except:
                 raise
@@ -537,7 +537,7 @@ def runtest_inner(test, generate, verbose, quiet,
         try:
             if cfp:
                 sys.stdout = cfp
-                print test              # Output file starts with test name
+                print(test)              # Output file starts with test name
             if test.startswith('test.'):
                 abstest = test
             else:
@@ -558,23 +558,23 @@ def runtest_inner(test, generate, verbose, quiet,
             sys.stdout = save_stdout
     except test_support.ResourceDenied as msg:
         if not quiet:
-            print test, "skipped --", msg
+            print(test, "skipped --", msg)
             sys.stdout.flush()
         return -2
     except (ImportError, test_support.TestSkipped) as msg:
         if not quiet:
-            print test, "skipped --", msg
+            print(test, "skipped --", msg)
             sys.stdout.flush()
         return -1
     except KeyboardInterrupt:
         raise
     except test_support.TestFailed as msg:
-        print "test", test, "failed --", msg
+        print("test", test, "failed --", msg)
         sys.stdout.flush()
         return 0
     except:
         type, value = sys.exc_info()[:2]
-        print "test", test, "crashed --", str(type) + ":", value
+        print("test", test, "crashed --", str(type) + ":", value)
         sys.stdout.flush()
         if verbose:
             traceback.print_exc(file=sys.stdout)
@@ -590,8 +590,8 @@ def runtest_inner(test, generate, verbose, quiet,
                     # Write it since it already exists (and the contents
                     # may have changed), but let the user know it isn't
                     # needed:
-                    print "output file", outputfile, \
-                          "is no longer needed; consider removing it"
+                    print("output file", outputfile, \
+                          "is no longer needed; consider removing it")
                 else:
                     # We don't need it, so don't create it.
                     return 1
@@ -607,7 +607,7 @@ def runtest_inner(test, generate, verbose, quiet,
             expected = test + "\n"
         if output == expected or huntrleaks:
             return 1
-        print "test", test, "produced unexpected output:"
+        print("test", test, "produced unexpected output:")
         sys.stdout.flush()
         reportdiff(expected, output)
         sys.stdout.flush()
@@ -637,12 +637,12 @@ def cleanup_test_droppings(testname, verbose):
                               "directory nor file" % name)
 
         if verbose:
-            print "%r left behind %s %r" % (testname, kind, name)
+            print("%r left behind %s %r" % (testname, kind, name))
         try:
             nuker(name)
         except Exception as msg:
-            print >> sys.stderr, ("%r left behind %s %r and it couldn't be "
-                "removed: %s" % (testname, kind, name, msg))
+            print(("%r left behind %s %r and it couldn't be "
+                "removed: %s" % (testname, kind, name, msg)), file=sys.stderr)
 
 def dash_R(the_module, test, indirect_test, huntrleaks):
     # This code is hackish and inelegant, but it seems to do the job.
@@ -667,8 +667,8 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     deltas = []
     nwarmup, ntracked, fname = huntrleaks
     repcount = nwarmup + ntracked
-    print >> sys.stderr, "beginning", repcount, "repetitions"
-    print >> sys.stderr, ("1234567890"*(repcount//10 + 1))[:repcount]
+    print("beginning", repcount, "repetitions", file=sys.stderr)
+    print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr)
     dash_R_cleanup(fs, ps, pic)
     for i in range(repcount):
         rc = sys.gettotalrefcount()
@@ -677,11 +677,11 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         dash_R_cleanup(fs, ps, pic)
         if i >= nwarmup:
             deltas.append(sys.gettotalrefcount() - rc - 2)
-    print >> sys.stderr
+    print(file=sys.stderr)
     if any(deltas):
-        print >> sys.stderr, test, 'leaked', deltas, 'references'
+        print(test, 'leaked', deltas, 'references', file=sys.stderr)
         refrep = open(fname, "a")
-        print >> refrep, test, 'leaked', deltas, 'references'
+        print(test, 'leaked', deltas, 'references', file=refrep)
         refrep.close()
 
 def dash_R_cleanup(fs, ps, pic):
@@ -717,7 +717,7 @@ def dash_R_cleanup(fs, ps, pic):
 
 def reportdiff(expected, output):
     import difflib
-    print "*" * 70
+    print("*" * 70)
     a = expected.splitlines(1)
     b = output.splitlines(1)
     sm = difflib.SequenceMatcher(a=a, b=b)
@@ -736,26 +736,26 @@ def reportdiff(expected, output):
             pass
 
         elif op == 'delete':
-            print "***", pair(a0, a1), "of expected output missing:"
+            print("***", pair(a0, a1), "of expected output missing:")
             for line in a[a0:a1]:
-                print "-", line,
+                print("-", line, end=' ')
 
         elif op == 'replace':
-            print "*** mismatch between", pair(a0, a1), "of expected", \
-                  "output and", pair(b0, b1), "of actual output:"
+            print("*** mismatch between", pair(a0, a1), "of expected", \
+                  "output and", pair(b0, b1), "of actual output:")
             for line in difflib.ndiff(a[a0:a1], b[b0:b1]):
-                print line,
+                print(line, end=' ')
 
         elif op == 'insert':
-            print "***", pair(b0, b1), "of actual output doesn't appear", \
-                  "in expected output after line", str(a1)+":"
+            print("***", pair(b0, b1), "of actual output doesn't appear", \
+                  "in expected output after line", str(a1)+":")
             for line in b[b0:b1]:
-                print "+", line,
+                print("+", line, end=' ')
 
         else:
-            print "get_opcodes() returned bad tuple?!?!", (op, a0, a1, b0, b1)
+            print("get_opcodes() returned bad tuple?!?!", (op, a0, a1, b0, b1))
 
-    print "*" * 70
+    print("*" * 70)
 
 def findtestdir():
     if __name__ == '__main__':
@@ -786,8 +786,8 @@ def printlist(x, width=70, indent=4):
 
     from textwrap import fill
     blanks = ' ' * indent
-    print fill(' '.join(map(str, x)), width,
-               initial_indent=blanks, subsequent_indent=blanks)
+    print(fill(' '.join(map(str, x)), width,
+               initial_indent=blanks, subsequent_indent=blanks))
 
 # Map sys.platform to a string containing the basenames of tests
 # expected to be skipped on that platform.
@@ -1369,5 +1369,5 @@ if __name__ == '__main__':
         if os.path.abspath(os.path.normpath(sys.path[i])) == mydir:
             del sys.path[i]
     if len(sys.path) == pathlen:
-        print 'Could not find %r in sys.path to remove it' % mydir
+        print('Could not find %r in sys.path to remove it' % mydir)
     main()

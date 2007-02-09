@@ -45,11 +45,11 @@ class ImportTest(unittest.TestCase):
                 pyc = TESTFN + os.extsep + "pyc"
 
             f = open(source, "w")
-            print >> f, "# This tests Python's ability to import a", ext, "file."
+            print("# This tests Python's ability to import a", ext, "file.", file=f)
             a = random.randrange(1000)
             b = random.randrange(1000)
-            print >> f, "a =", a
-            print >> f, "b =", b
+            print("a =", a, file=f)
+            print("b =", b, file=f)
             f.close()
 
             try:
@@ -130,7 +130,7 @@ class ImportTest(unittest.TestCase):
     def test_failing_import_sticks(self):
         source = TESTFN + os.extsep + "py"
         f = open(source, "w")
-        print >> f, "a = 1/0"
+        print("a = 1/0", file=f)
         f.close()
 
         # New in 2.4, we shouldn't be able to import that no matter how often
@@ -153,8 +153,8 @@ class ImportTest(unittest.TestCase):
         # A failing reload should leave the module object in sys.modules.
         source = TESTFN + os.extsep + "py"
         f = open(source, "w")
-        print >> f, "a = 1"
-        print >> f, "b = 2"
+        print("a = 1", file=f)
+        print("b = 2", file=f)
         f.close()
 
         sys.path.insert(0, os.curdir)
@@ -172,8 +172,8 @@ class ImportTest(unittest.TestCase):
 
             # Now damage the module.
             f = open(source, "w")
-            print >> f, "a = 10"
-            print >> f, "b = 20//0"
+            print("a = 10", file=f)
+            print("b = 20//0", file=f)
             f.close()
 
             self.assertRaises(ZeroDivisionError, reload, mod)

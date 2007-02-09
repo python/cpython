@@ -100,13 +100,13 @@ class DeletePointerTestCase(unittest.TestCase):
         x = X()
         i = c_char_p("abc def")
         from sys import getrefcount as grc
-        print "2?", grc(i)
+        print("2?", grc(i))
         x.p = pointer(i)
-        print "3?", grc(i)
+        print("3?", grc(i))
         for i in range(320):
             c_int(99)
             x.p[0]
-        print x.p[0]
+        print(x.p[0])
 ##        del x
 ##        print "2?", grc(i)
 ##        del i
@@ -115,14 +115,14 @@ class DeletePointerTestCase(unittest.TestCase):
         for i in range(320):
             c_int(99)
             x.p[0]
-        print x.p[0]
-        print x.p.contents
+        print(x.p[0])
+        print(x.p.contents)
 ##        print x._objects
 
         x.p[0] = "spam spam"
 ##        print x.p[0]
-        print "+" * 42
-        print x._objects
+        print("+" * 42)
+        print(x._objects)
 
 class PointerToStructure(unittest.TestCase):
     def test(self):

@@ -37,7 +37,7 @@ class ArgvCollector:
             self._dooneevent(mask, timeout)
 
         if not self.quitting:
-            print "argvemulator: timeout waiting for arguments"
+            print("argvemulator: timeout waiting for arguments")
 
         self.close()
 
@@ -54,12 +54,12 @@ class ArgvCollector:
                 AE.AEProcessAppleEvent(event)
             except AE.Error as err:
                 msg = "High Level Event: %r %r" % (hex(message), hex(h | (v<<16)))
-                print 'AE error: ', err
-                print 'in', msg
+                print('AE error: ', err)
+                print('in', msg)
                 traceback.print_exc()
             return
         else:
-            print "Unhandled event:", event
+            print("Unhandled event:", event)
 
 
     def _quit(self):
@@ -78,7 +78,7 @@ class ArgvCollector:
                 pathname = fsref.as_pathname()
                 sys.argv.append(pathname)
         except  Exception as e:
-            print "argvemulator.py warning: can't unpack an open document event"
+            print("argvemulator.py warning: can't unpack an open document event")
             import traceback
             traceback.print_exc()
 
@@ -86,4 +86,4 @@ class ArgvCollector:
 
 if __name__ == '__main__':
     ArgvCollector().mainloop()
-    print "sys.argv=", sys.argv
+    print("sys.argv=", sys.argv)

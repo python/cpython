@@ -115,8 +115,8 @@ def dump(co):
     """Print out a text representation of a code object."""
     for attr in ["name", "argcount", "kwonlyargcount", "names", "varnames",
                  "cellvars", "freevars", "nlocals", "flags"]:
-        print "%s: %s" % (attr, getattr(co, "co_" + attr))
-    print "consts:", tuple(consts(co.co_consts))
+        print("%s: %s" % (attr, getattr(co, "co_" + attr)))
+    print("consts:", tuple(consts(co.co_consts)))
 
 def test_main(verbose=None):
     from test.test_support import run_doctest

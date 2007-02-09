@@ -159,7 +159,7 @@ class LogReader:
         try:
             filename = self._filemap[fileno]
         except KeyError:
-            print "Could not identify fileId", fileno
+            print("Could not identify fileId", fileno)
             return 1
         if filename is None:
             return 1

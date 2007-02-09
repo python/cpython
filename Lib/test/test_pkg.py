@@ -18,7 +18,7 @@ def mkhier(root, descr):
         if contents is None:
             mkdir(fullname)
         else:
-            if verbose: print "write", fullname
+            if verbose: print("write", fullname)
             f = open(fullname, "w")
             f.write(contents)
             if contents and contents[-1] != '\n':
@@ -26,7 +26,7 @@ def mkhier(root, descr):
             f.close()
 
 def mkdir(x):
-    if verbose: print "mkdir", x
+    if verbose: print("mkdir", x)
     os.mkdir(x)
 
 def cleanout(root):
@@ -40,7 +40,7 @@ def cleanout(root):
     rmdir(root)
 
 def rmdir(x):
-    if verbose: print "rmdir", x
+    if verbose: print("rmdir", x)
     os.rmdir(x)
 
 def fixdir(lst):
@@ -61,7 +61,7 @@ def runtest(hier, code):
     os.close(fd)
     try:
         sys.path.insert(0, root)
-        if verbose: print "sys.path =", sys.path
+        if verbose: print("sys.path =", sys.path)
         try:
             execfile(fname, globals(), {})
         except:
@@ -242,9 +242,9 @@ if __name__ == '__main__':
 
 for name, hier, code in tests:
     if args and name not in args:
-        print "skipping test", name
+        print("skipping test", name)
         continue
-    print "running test", name
+    print("running test", name)
     runtest(hier, code)
 
 # Test

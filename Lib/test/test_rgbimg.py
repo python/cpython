@@ -14,7 +14,7 @@ from test.test_support import verbose, unlink, findfile
 class error(Exception):
     pass
 
-print 'RGBimg test suite:'
+print('RGBimg test suite:')
 
 def testimg(rgb_file, raw_file):
     rgb_file = findfile(rgb_file)
@@ -40,11 +40,11 @@ for source, target in table:
     source = findfile(source)
     target = findfile(target)
     if verbose:
-        print "uudecoding", source, "->", target, "..."
+        print("uudecoding", source, "->", target, "...")
     uu.decode(source, target)
 
 if verbose:
-    print "testing..."
+    print("testing...")
 
 ttob = rgbimg.ttob(0)
 if ttob != 0:

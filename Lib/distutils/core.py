@@ -125,7 +125,7 @@ def setup (**attrs):
     dist.parse_config_files()
 
     if DEBUG:
-        print "options (after parsing config files):"
+        print("options (after parsing config files):")
         dist.dump_option_dicts()
 
     if _setup_stop_after == "config":
@@ -139,7 +139,7 @@ def setup (**attrs):
         raise SystemExit, gen_usage(dist.script_name) + "\nerror: %s" % msg
 
     if DEBUG:
-        print "options (after parsing command line):"
+        print("options (after parsing command line):")
         dist.dump_option_dicts()
 
     if _setup_stop_after == "commandline":

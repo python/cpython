@@ -263,6 +263,6 @@ if __name__ == '__main__':
     def run():
         keySeq=''
         dlg=GetKeysDialog(root,'Get Keys','find-again',[])
-        print dlg.result
+        print(dlg.result)
     Button(root,text='Dialog',command=run).pack()
     root.mainloop()

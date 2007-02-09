@@ -43,10 +43,10 @@ for func in testdict.keys():
     f = getattr(cmath, func)
     r = f(testdict[func])
     if verbose:
-        print 'Calling %s(%f) = %f' % (func, testdict[func], abs(r))
+        print('Calling %s(%f) = %f' % (func, testdict[func], abs(r)))
 
 p = cmath.pi
 e = cmath.e
 if verbose:
-    print 'PI = ', abs(p)
-    print 'E = ', abs(e)
+    print('PI = ', abs(p))
+    print('E = ', abs(e))

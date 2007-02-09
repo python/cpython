@@ -77,13 +77,13 @@ class GrepDialog(SearchDialogBase):
         list.sort()
         self.close()
         pat = self.engine.getpat()
-        print "Searching %r in %s ..." % (pat, path)
+        print("Searching %r in %s ..." % (pat, path))
         hits = 0
         for fn in list:
             try:
                 f = open(fn)
             except IOError as msg:
-                print msg
+                print(msg)
                 continue
             lineno = 0
             while 1:
@@ -102,16 +102,16 @@ class GrepDialog(SearchDialogBase):
                 s = ""
             else:
                 s = "s"
-            print "Found", hits, "hit%s." % s
-            print "(Hint: right-click to open locations.)"
+            print("Found", hits, "hit%s." % s)
+            print("(Hint: right-click to open locations.)")
         else:
-            print "No hits."
+            print("No hits.")
 
     def findfiles(self, dir, base, rec):
         try:
             names = os.listdir(dir or os.curdir)
         except os.error as msg:
-            print msg
+            print(msg)
             return []
         list = []
         subdirs = []

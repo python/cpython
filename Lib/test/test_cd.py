@@ -17,10 +17,10 @@ cdattrs = ['BLOCKSIZE', 'CDROM', 'DATASIZE', 'ERROR', 'NODISC', 'PAUSED', 'PLAYI
 def main():
     # touch all the attributes of cd without doing anything
     if verbose:
-        print 'Touching cd module attributes...'
+        print('Touching cd module attributes...')
     for attr in cdattrs:
         if verbose:
-            print 'touching: ', attr
+            print('touching: ', attr)
         getattr(cd, attr)
 
 main()

@@ -114,9 +114,9 @@ class AssociateErrorTestCase(unittest.TestCase):
 
     def test00_associateDBError(self):
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test00_associateDBError..." % \
-                  self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test00_associateDBError..." % \
+                  self.__class__.__name__)
 
         dupDB = db.DB(self.env)
         dupDB.set_flags(db.DB_DUP)
@@ -207,9 +207,9 @@ class AssociateTestCase(unittest.TestCase):
 
     def test01_associateWithDB(self):
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test01_associateWithDB..." % \
-                  self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test01_associateWithDB..." % \
+                  self.__class__.__name__)
 
         self.createDB()
 
@@ -227,9 +227,9 @@ class AssociateTestCase(unittest.TestCase):
 
     def test02_associateAfterDB(self):
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test02_associateAfterDB..." % \
-                  self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test02_associateAfterDB..." % \
+                  self.__class__.__name__)
 
         self.createDB()
         self.addDataToDB(self.getDB())
@@ -257,7 +257,7 @@ class AssociateTestCase(unittest.TestCase):
         vals[1].index('unknown')
 
         if verbose:
-            print "Primary key traversal:"
+            print("Primary key traversal:")
         self.cur = self.getDB().cursor(txn)
         count = 0
         rec = self.cur.first()
@@ -268,13 +268,13 @@ class AssociateTestCase(unittest.TestCase):
                 assert rec[0] and type(rec[0]) == type(0)
             count = count + 1
             if verbose:
-                print rec
+                print(rec)
             rec = self.cur.next()
         assert count == len(musicdata) # all items accounted for
 
 
         if verbose:
-            print "Secondary key traversal:"
+            print("Secondary key traversal:")
         self.cur = secDB.cursor(txn)
         count = 0
 
@@ -294,7 +294,7 @@ class AssociateTestCase(unittest.TestCase):
         while rec is not None:
             count = count + 1
             if verbose:
-                print rec
+                print(rec)
             rec = self.cur.next()
         # all items accounted for EXCEPT for 1 with "Blues" genre
         assert count == len(musicdata)-1
@@ -304,7 +304,7 @@ class AssociateTestCase(unittest.TestCase):
     def getGenre(self, priKey, priData):
         assert type(priData) == type("")
         if verbose:
-            print 'getGenre key: %r data: %r' % (priKey, priData)
+            print('getGenre key: %r data: %r' % (priKey, priData))
         genre = string.split(priData, '|')[2]
         if genre == 'Blues':
             return db.DB_DONOTINDEX
@@ -343,9 +343,9 @@ class AssociateBTreeTxnTestCase(AssociateBTreeTestCase):
 
     def test13_associate_in_transaction(self):
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test13_associateAutoCommit..." % \
-                  self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test13_associateAutoCommit..." % \
+                  self.__class__.__name__)
 
         txn = self.env.txn_begin()
         try:
@@ -389,7 +389,7 @@ class ShelveAssociateTestCase(AssociateTestCase):
     def getGenre(self, priKey, priData):
         assert type(priData) == type(())
         if verbose:
-            print 'getGenre key: %r data: %r' % (priKey, priData)
+            print('getGenre key: %r data: %r' % (priKey, priData))
         genre = priData[2]
         if genre == 'Blues':
             return db.DB_DONOTINDEX

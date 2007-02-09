@@ -11,7 +11,7 @@ def test_main():
         if name.startswith('test_'):
             test = getattr(_testcapi, name)
             if test_support.verbose:
-                print "internal", name
+                print("internal", name)
             try:
                 test()
             except _testcapi.error:
@@ -23,7 +23,7 @@ def test_main():
         import time
 
         if test_support.verbose:
-            print "auto-thread-state"
+            print("auto-thread-state")
 
         idents = []
 

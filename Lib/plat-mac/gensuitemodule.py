@@ -115,8 +115,8 @@ def main_interactive(interact=0, basepkgname='StdSuites'):
         processfile(filename, edit_modnames=edit_modnames, basepkgname=basepkgname,
         verbose=sys.stderr)
     except MacOS.Error as arg:
-        print "Error getting terminology:", arg
-        print "Retry, manually parsing resources"
+        print("Error getting terminology:", arg)
+        print("Retry, manually parsing resources")
         processfile_fromresource(filename, edit_modnames=edit_modnames,
             basepkgname=basepkgname, verbose=sys.stderr)
 
@@ -145,10 +145,10 @@ def processfile_fromresource(fullname, output=None, basepkgname=None,
         edit_modnames=None, creatorsignature=None, dump=None, verbose=None):
     """Process all resources in a single file"""
     if not is_scriptable(fullname) and verbose:
-        print >>verbose, "Warning: app does not seem scriptable: %s" % fullname
+        print("Warning: app does not seem scriptable: %s" % fullname, file=verbose)
     cur = CurResFile()
     if verbose:
-        print >>verbose, "Processing", fullname
+        print("Processing", fullname, file=verbose)
     rf = macresource.open_pathname(fullname)
     try:
         UseResFile(rf)
@@ -160,11 +160,11 @@ def processfile_fromresource(fullname, output=None, basepkgname=None,
             res = Get1IndResource('aeut', 1+i)
             resources.append(res)
         if verbose:
-            print >>verbose, "\nLISTING aete+aeut RESOURCES IN", repr(fullname)
+            print("\nLISTING aete+aeut RESOURCES IN", repr(fullname), file=verbose)
         aetelist = []
         for res in resources:
             if verbose:
-                print >>verbose, "decoding", res.GetResInfo(), "..."
+                print("decoding", res.GetResInfo(), "...", file=verbose)
             data = res.data
             aete = decode(data, verbose)
             aetelist.append((aete, res.GetResInfo()))
@@ -185,15 +185,15 @@ def processfile(fullname, output=None, basepkgname=None,
         verbose=None):
     """Ask an application for its terminology and process that"""
     if not is_scriptable(fullname) and verbose:
-        print >>verbose, "Warning: app does not seem scriptable: %s" % fullname
+        print("Warning: app does not seem scriptable: %s" % fullname, file=verbose)
     if verbose:
-        print >>verbose, "\nASKING FOR aete DICTIONARY IN", repr(fullname)
+        print("\nASKING FOR aete DICTIONARY IN", repr(fullname), file=verbose)
     try:
         aedescobj, launched = OSATerminology.GetAppTerminology(fullname)
     except MacOS.Error as arg:
         if arg[0] in (-1701, -192): # errAEDescNotFound, resNotFound
             if verbose:
-                print >>verbose, "GetAppTerminology failed with errAEDescNotFound/resNotFound, trying manually"
+                print("GetAppTerminology failed with errAEDescNotFound/resNotFound, trying manually", file=verbose)
             aedata, sig = getappterminology(fullname, verbose=verbose)
             if not creatorsignature:
                 creatorsignature = sig
@@ -202,15 +202,15 @@ def processfile(fullname, output=None, basepkgname=None,
     else:
         if launched:
             if verbose:
-                print >>verbose, "Launched", fullname
+                print("Launched", fullname, file=verbose)
         raw = aetools.unpack(aedescobj)
         if not raw:
             if verbose:
-                print >>verbose, 'Unpack returned empty value:', raw
+                print('Unpack returned empty value:', raw, file=verbose)
             return
         if not raw[0].data:
             if verbose:
-                print >>verbose, 'Unpack returned value without data:', raw
+                print('Unpack returned value without data:', raw, file=verbose)
             return
         aedata = raw[0]
     aete = decode(aedata.data, verbose)
@@ -246,7 +246,7 @@ def getappterminology(fullname, verbose=None):
         talker._start()
     except (MacOS.Error, aetools.Error) as arg:
         if verbose:
-            print >>verbose, 'Warning: start() failed, continuing anyway:', arg
+            print('Warning: start() failed, continuing anyway:', arg, file=verbose)
     reply = talker.send("ascr", "gdte")
     #reply2 = talker.send("ascr", "gdut")
     # Now pick the bits out of the return that we need.
@@ -344,9 +344,9 @@ def getlist(f, description, getitem):
     return list
 
 def alt_generic(what, f, *args):
-    print "generic", repr(what), args
+    print("generic", repr(what), args)
     res = vageneric(what, f, args)
-    print '->', repr(res)
+    print('->', repr(res))
     return res
 
 def generic(what, f, *args):
@@ -940,14 +940,14 @@ class ObjectCompiler:
         for mapper in self.othernamemappers:
             if mapper.hasname(name) and mapper.modulename != self.modulename:
                 if self.verbose:
-                    print >>self.verbose, "Duplicate Python identifier:", name, self.modulename, mapper.modulename
+                    print("Duplicate Python identifier:", name, self.modulename, mapper.modulename, file=self.verbose)
                 return True
         return False
 
     def askdefinitionmodule(self, type, code):
         if not self.can_interact:
             if self.verbose:
-                print >>self.verbose, "** No definition for %s '%s' found" % (type, code)
+                print("** No definition for %s '%s' found" % (type, code), file=self.verbose)
             return None
         path = EasyDialogs.AskFileForSave(message='Where is %s %s declared?'%(type, code))
         if not path: return
@@ -1018,7 +1018,7 @@ class ObjectCompiler:
             if self.fp and (elements or len(properties) > 1 or (len(properties) == 1 and
                 properties[0][1] != 'c@#!')):
                 if self.verbose:
-                    print >>self.verbose, '** Skip multiple %s of %s (code %r)' % (cname, self.namemappers[0].findcodename('class', code)[0], code)
+                    print('** Skip multiple %s of %s (code %r)' % (cname, self.namemappers[0].findcodename('class', code)[0], code), file=self.verbose)
                 raise RuntimeError, "About to skip non-empty class"
             return
         plist = []

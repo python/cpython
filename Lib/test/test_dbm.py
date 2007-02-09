@@ -31,7 +31,7 @@ def test_keys():
     d.keys()
     if 'a' in d:
         if verbose:
-            print 'Test dbm keys: ', d.keys()
+            print('Test dbm keys: ', d.keys())
 
     d.close()
 

@@ -135,13 +135,13 @@ def test_one(n):
     # same size.
     mutate = 1
     if verbose:
-        print "trying w/ lengths", len(dict1), len(dict2),
+        print("trying w/ lengths", len(dict1), len(dict2), end=' ')
     while dict1 and len(dict1) == len(dict2):
         if verbose:
-            print ".",
+            print(".", end=' ')
         c = dict1 == dict2
     if verbose:
-        print
+        print()
 
 # Run test_one n times.  At the start (before the bugs were fixed), 20
 # consecutive runs of this test each blew up on or before the sixth time
@@ -186,7 +186,7 @@ class Parent:
 # the expected-output file doesn't need to change.
 
 f = open(TESTFN, "w")
-print >> f, Parent().__dict__
+print(Parent().__dict__, file=f)
 f.close()
 os.unlink(TESTFN)
 
@@ -207,7 +207,7 @@ class Machiavelli:
 
         # Michael sez:  "doesn't crash without this.  don't know why."
         # Tim sez:  "luck of the draw; crashes with or without for me."
-        print >> f
+        print(file=f)
 
         return repr("machiavelli")
 
@@ -216,7 +216,7 @@ class Machiavelli:
 
 dict[Machiavelli()] = Machiavelli()
 
-print >> f, str(dict)
+print(str(dict), file=f)
 f.close()
 os.unlink(TESTFN)
 del f, dict
@@ -280,7 +280,7 @@ dict[Machiavelli3(2)] = Machiavelli3(0)
 f = open(TESTFN, "w")
 try:
     try:
-        print >> f, dict[Machiavelli3(2)]
+        print(dict[Machiavelli3(2)], file=f)
     except KeyError:
         pass
 finally:

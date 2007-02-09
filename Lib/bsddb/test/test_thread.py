@@ -93,9 +93,9 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
 
     def test01_1WriterMultiReaders(self):
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test01_1WriterMultiReaders..." % \
-                  self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test01_1WriterMultiReaders..." % \
+                  self.__class__.__name__)
 
         threads = []
         for x in range(self.writers):
@@ -123,17 +123,17 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
         start = howMany * writerNum
         stop = howMany * (writerNum + 1) - 1
         if verbose:
-            print "%s: creating records %d - %d" % (name, start, stop)
+            print("%s: creating records %d - %d" % (name, start, stop))
 
         for x in range(start, stop):
             key = '%04d' % x
             dbutils.DeadlockWrap(d.put, key, self.makeData(key),
                                  max_retries=12)
             if verbose and x % 100 == 0:
-                print "%s: records %d - %d finished" % (name, start, x)
+                print("%s: records %d - %d finished" % (name, start, x))
 
         if verbose:
-            print "%s: finished creating records" % name
+            print("%s: finished creating records" % name)
 
 ##         # Each write-cursor will be exclusive, the only one that can update the DB...
 ##         if verbose: print "%s: deleting a few records" % name
@@ -147,7 +147,7 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
 
 ##         c.close()
         if verbose:
-            print "%s: thread finished" % name
+            print("%s: thread finished" % name)
 
     def readerThread(self, d, readerNum):
         time.sleep(0.01 * readerNum)
@@ -163,12 +163,12 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
                 self.assertEqual(self.makeData(key), data)
                 rec = c.next()
             if verbose:
-                print "%s: found %d records" % (name, count)
+                print("%s: found %d records" % (name, count))
             c.close()
             time.sleep(0.05)
 
         if verbose:
-            print "%s: thread finished" % name
+            print("%s: thread finished" % name)
 
 
 class BTreeConcurrentDataStore(ConcurrentDataStoreBase):
@@ -199,8 +199,8 @@ class SimpleThreadedBase(BaseThreadedTestCase):
 
     def test02_SimpleLocks(self):
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test02_SimpleLocks..." % self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test02_SimpleLocks..." % self.__class__.__name__)
 
         threads = []
         for x in range(self.writers):
@@ -226,7 +226,7 @@ class SimpleThreadedBase(BaseThreadedTestCase):
         start = howMany * writerNum
         stop = howMany * (writerNum + 1) - 1
         if verbose:
-            print "%s: creating records %d - %d" % (name, start, stop)
+            print("%s: creating records %d - %d" % (name, start, stop))
 
         # create a bunch of records
         for x in xrange(start, stop):
@@ -235,7 +235,7 @@ class SimpleThreadedBase(BaseThreadedTestCase):
                                  max_retries=12)
 
             if verbose and x % 100 == 0:
-                print "%s: records %d - %d finished" % (name, start, x)
+                print("%s: records %d - %d finished" % (name, start, x))
 
             # do a bit or reading too
             if random() <= 0.05:
@@ -249,22 +249,22 @@ class SimpleThreadedBase(BaseThreadedTestCase):
             dbutils.DeadlockWrap(d.sync, max_retries=12)
         except db.DBIncompleteError as val:
             if verbose:
-                print "could not complete sync()..."
+                print("could not complete sync()...")
 
         # read them back, deleting a few
         for x in xrange(start, stop):
             key = '%04d' % x
             data = dbutils.DeadlockWrap(d.get, key, max_retries=12)
             if verbose and x % 100 == 0:
-                print "%s: fetched record (%s, %s)" % (name, key, data)
+                print("%s: fetched record (%s, %s)" % (name, key, data))
             self.assertEqual(data, self.makeData(key))
             if random() <= 0.10:
                 dbutils.DeadlockWrap(d.delete, key, max_retries=12)
                 if verbose:
-                    print "%s: deleted record %s" % (name, key)
+                    print("%s: deleted record %s" % (name, key))
 
         if verbose:
-            print "%s: thread finished" % name
+            print("%s: thread finished" % name)
 
     def readerThread(self, d, readerNum):
         time.sleep(0.01 * readerNum)
@@ -280,12 +280,12 @@ class SimpleThreadedBase(BaseThreadedTestCase):
                 self.assertEqual(self.makeData(key), data)
                 rec = dbutils.DeadlockWrap(c.next, max_retries=10)
             if verbose:
-                print "%s: found %d records" % (name, count)
+                print("%s: found %d records" % (name, count))
             c.close()
             time.sleep(0.05)
 
         if verbose:
-            print "%s: thread finished" % name
+            print("%s: thread finished" % name)
 
 
 class BTreeSimpleThreaded(SimpleThreadedBase):
@@ -318,9 +318,9 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
 
     def test03_ThreadedTransactions(self):
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test03_ThreadedTransactions..." % \
-                  self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test03_ThreadedTransactions..." % \
+                  self.__class__.__name__)
 
         threads = []
         for x in range(self.writers):
@@ -357,12 +357,12 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
                     key = '%04d' % x
                     d.put(key, self.makeData(key), txn)
                     if verbose and x % 100 == 0:
-                        print "%s: records %d - %d finished" % (name, start, x)
+                        print("%s: records %d - %d finished" % (name, start, x))
                 txn.commit()
                 finished = True
             except (db.DBLockDeadlockError, db.DBLockNotGrantedError) as val:
                 if verbose:
-                    print "%s: Aborting transaction (%s)" % (name, val[1])
+                    print("%s: Aborting transaction (%s)" % (name, val[1]))
                 txn.abort()
                 time.sleep(0.05)
 
@@ -371,16 +371,16 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
         start = howMany * writerNum
         stop = howMany * (writerNum + 1) - 1
         if verbose:
-            print "%s: creating records %d - %d" % (name, start, stop)
+            print("%s: creating records %d - %d" % (name, start, stop))
 
         step = 100
         for x in range(start, stop, step):
             self.doWrite(d, name, x, min(stop, x+step))
 
         if verbose:
-            print "%s: finished creating records" % name
+            print("%s: finished creating records" % name)
         if verbose:
-            print "%s: deleting a few records" % name
+            print("%s: deleting a few records" % name)
 
         finished = False
         while not finished:
@@ -397,15 +397,15 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
                 txn.commit()
                 finished = True
                 if verbose:
-                    print "%s: deleted records %s" % (name, recs)
+                    print("%s: deleted records %s" % (name, recs))
             except (db.DBLockDeadlockError, db.DBLockNotGrantedError) as val:
                 if verbose:
-                    print "%s: Aborting transaction (%s)" % (name, val[1])
+                    print("%s: Aborting transaction (%s)" % (name, val[1]))
                 txn.abort()
                 time.sleep(0.05)
 
         if verbose:
-            print "%s: thread finished" % name
+            print("%s: thread finished" % name)
 
     def readerThread(self, d, readerNum):
         time.sleep(0.01 * readerNum + 0.05)
@@ -424,13 +424,13 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
                         key, data = rec
                         self.assertEqual(self.makeData(key), data)
                         rec = c.next()
-                    if verbose: print "%s: found %d records" % (name, count)
+                    if verbose: print("%s: found %d records" % (name, count))
                     c.close()
                     txn.commit()
                     finished = True
                 except (db.DBLockDeadlockError, db.DBLockNotGrantedError) as val:
                     if verbose:
-                        print "%s: Aborting transaction (%s)" % (name, val[1])
+                        print("%s: Aborting transaction (%s)" % (name, val[1]))
                     c.close()
                     txn.abort()
                     time.sleep(0.05)
@@ -438,7 +438,7 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
             time.sleep(0.05)
 
         if verbose:
-            print "%s: thread finished" % name
+            print("%s: thread finished" % name)
 
     def deadlockThread(self):
         self.doLockDetect = True
@@ -448,8 +448,8 @@ class ThreadedTransactionsBase(BaseThreadedTestCase):
                 aborted = self.env.lock_detect(
                     db.DB_LOCK_RANDOM, db.DB_LOCK_CONFLICT)
                 if verbose and aborted:
-                    print "deadlock: Aborted %d deadlocked transaction(s)" \
-                          % aborted
+                    print("deadlock: Aborted %d deadlocked transaction(s)" \
+                          % aborted)
             except db.DBError:
                 pass
 
@@ -497,7 +497,7 @@ def test_suite():
         suite.addTest(unittest.makeSuite(HashThreadedNoWaitTransactions))
 
     else:
-        print "Threads not available, skipping thread tests."
+        print("Threads not available, skipping thread tests.")
 
     return suite
 

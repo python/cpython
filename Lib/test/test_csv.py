@@ -894,7 +894,7 @@ Stonecutters Seafood and Chop House, Lemont, IL, 12/19/02, Week Back
         self.assertEqual(dialect.quotechar, "'")
 
 if not hasattr(sys, "gettotalrefcount"):
-    if test_support.verbose: print "*** skipping leakage tests ***"
+    if test_support.verbose: print("*** skipping leakage tests ***")
 else:
     class NUL:
         def write(s, *args):

@@ -56,7 +56,7 @@ class TestEmailBase(unittest.TestCase):
             ssecond = str(second)
             diff = difflib.ndiff(sfirst.splitlines(), ssecond.splitlines())
             fp = StringIO()
-            print >> fp, NL, NL.join(diff)
+            print(NL, NL.join(diff), file=fp)
             raise self.failureException, fp.getvalue()
 
     def _msgobj(self, filename):

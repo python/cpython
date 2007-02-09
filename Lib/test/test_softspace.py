@@ -5,10 +5,10 @@ import StringIO
 f = StringIO.StringIO()
 class C:
     def __str__(self):
-        print >> f, 'a'
+        print('a', file=f)
         return 'b'
 
-print >> f, C(), 'c ', 'd\t', 'e'
-print >> f, 'f', 'g'
+print(C(), 'c ', 'd\t', 'e', file=f)
+print('f', 'g', file=f)
 # In 2.2 & earlier, this printed ' a\nbc  d\te\nf g\n'
 test_support.vereq(f.getvalue(), 'a\nb c  d\te\nf g\n')

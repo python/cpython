@@ -1757,18 +1757,18 @@ def assure_pickle_consistency(verbose=False):
     for name in pickle.__all__:
         if not re.match("[A-Z][A-Z0-9_]+$", name):
             if verbose:
-                print "skipping %r: it doesn't look like an opcode name" % name
+                print("skipping %r: it doesn't look like an opcode name" % name)
             continue
         picklecode = getattr(pickle, name)
         if not isinstance(picklecode, str) or len(picklecode) != 1:
             if verbose:
-                print ("skipping %r: value %r doesn't look like a pickle "
-                       "code" % (name, picklecode))
+                print(("skipping %r: value %r doesn't look like a pickle "
+                       "code" % (name, picklecode)))
             continue
         if picklecode in copy:
             if verbose:
-                print "checking name %r w/ code %r for consistency" % (
-                      name, picklecode)
+                print("checking name %r w/ code %r for consistency" % (
+                      name, picklecode))
             d = copy[picklecode]
             if d.name != name:
                 raise ValueError("for pickle code %r, pickle.py uses name %r "
@@ -1899,7 +1899,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4):
     errormsg = None
     for opcode, arg, pos in genops(pickle):
         if pos is not None:
-            print >> out, "%5d:" % pos,
+            print("%5d:" % pos, end=' ', file=out)
 
         line = "%-4s %s%s" % (repr(opcode.code)[1:-1],
                               indentchunk * len(markstack),
@@ -1964,7 +1964,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4):
                 line += ' ' + repr(arg)
             if markmsg:
                 line += ' ' + markmsg
-        print >> out, line
+        print(line, file=out)
 
         if errormsg:
             # Note that we delayed complaining until the offending opcode
@@ -1983,7 +1983,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4):
 
         stack.extend(after)
 
-    print >> out, "highest protocol among opcodes =", maxproto
+    print("highest protocol among opcodes =", maxproto, file=out)
     if stack:
         raise ValueError("stack not empty after STOP: %r" % stack)
 

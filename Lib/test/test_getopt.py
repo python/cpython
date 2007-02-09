@@ -21,14 +21,14 @@ if old_posixly_correct is not None:
     del os.environ["POSIXLY_CORRECT"]
 
 if verbose:
-    print 'Running tests on getopt.short_has_arg'
+    print('Running tests on getopt.short_has_arg')
 verify(getopt.short_has_arg('a', 'a:'))
 verify(not getopt.short_has_arg('a', 'a'))
 expectException("tmp = getopt.short_has_arg('a', 'b')", GetoptError)
 expectException("tmp = getopt.short_has_arg('a', '')", GetoptError)
 
 if verbose:
-    print 'Running tests on getopt.long_has_args'
+    print('Running tests on getopt.long_has_args')
 has_arg, option = getopt.long_has_args('abc', ['abc='])
 verify(has_arg)
 verify(option == 'abc')
@@ -47,7 +47,7 @@ expectException("has_arg, option = " + \
                 GetoptError)
 
 if verbose:
-    print 'Running tests on getopt.do_shorts'
+    print('Running tests on getopt.do_shorts')
 opts, args = getopt.do_shorts([], 'a', 'a', [])
 verify(opts == [('-a', '')])
 verify(args == [])
@@ -69,7 +69,7 @@ expectException("opts, args = getopt.do_shorts([], 'a', 'a:', [])",
                 GetoptError)
 
 if verbose:
-    print 'Running tests on getopt.do_longs'
+    print('Running tests on getopt.do_longs')
 opts, args = getopt.do_longs([], 'abc', ['abc'], [])
 verify(opts == [('--abc', '')])
 verify(args == [])
@@ -99,7 +99,7 @@ cmdline = ['-a', '1', '-b', '--alpha=2', '--beta', '-a', '3', '-a', '',
            '--beta', 'arg1', 'arg2']
 
 if verbose:
-    print 'Running tests on getopt.getopt'
+    print('Running tests on getopt.getopt')
 opts, args = getopt.getopt(cmdline, 'a:b', ['alpha=', 'beta'])
 verify(opts == [('-a', '1'), ('-b', ''), ('--alpha', '2'), ('--beta', ''),
                 ('-a', '3'), ('-a', ''), ('--beta', '')] )
@@ -113,7 +113,7 @@ expectException(
 
 # Test handling of GNU style scanning mode.
 if verbose:
-    print 'Running tests on getopt.gnu_getopt'
+    print('Running tests on getopt.gnu_getopt')
 cmdline = ['-a', 'arg1', '-b', '1', '--alpha', '--beta=2']
 # GNU style
 opts, args = getopt.gnu_getopt(cmdline, 'ab:', ['alpha', 'beta='])
@@ -177,4 +177,4 @@ run_doctest(sys.modules[__name__], verbose)
 #------------------------------------------------------------------------------
 
 if verbose:
-    print "Module getopt: tests completed successfully."
+    print("Module getopt: tests completed successfully.")

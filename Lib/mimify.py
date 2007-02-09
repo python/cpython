@@ -434,11 +434,11 @@ if __name__ == '__main__' or (len(sys.argv) > 0 and sys.argv[0] == 'mimify'):
     decode_base64 = 0
     opts, args = getopt.getopt(sys.argv[1:], 'l:edb')
     if len(args) not in (0, 1, 2):
-        print usage
+        print(usage)
         sys.exit(1)
     if (('-e', '') in opts) == (('-d', '') in opts) or \
        ((('-b', '') in opts) and (('-d', '') not in opts)):
-        print usage
+        print(usage)
         sys.exit(1)
     for o, a in opts:
         if o == '-e':
@@ -449,7 +449,7 @@ if __name__ == '__main__' or (len(sys.argv) > 0 and sys.argv[0] == 'mimify'):
             try:
                 MAXLEN = int(a)
             except (ValueError, OverflowError):
-                print usage
+                print(usage)
                 sys.exit(1)
         elif o == '-b':
             decode_base64 = 1

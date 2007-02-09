@@ -14,10 +14,10 @@ def expect_nonzero(actual, name):
 
 def run_test(name, thunk):
     if verbose:
-        print "testing %s..." % name,
+        print("testing %s..." % name, end=' ')
     thunk()
     if verbose:
-        print "ok"
+        print("ok")
 
 def test_list():
     l = []
@@ -612,7 +612,7 @@ def test_all():
 
 def test():
     if verbose:
-        print "disabling automatic collection"
+        print("disabling automatic collection")
     enabled = gc.isenabled()
     gc.disable()
     verify(not gc.isenabled())
@@ -625,7 +625,7 @@ def test():
         gc.set_debug(debug)
         # test gc.enable() even if GC is disabled by default
         if verbose:
-            print "restoring automatic collection"
+            print("restoring automatic collection")
         # make sure to always test gc.enable()
         gc.enable()
         verify(gc.isenabled())

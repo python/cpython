@@ -31,10 +31,10 @@ class VersionTestCase(unittest.TestCase):
     def test00_version(self):
         info = db.version()
         if verbose:
-            print '\n', '-=' * 20
-            print 'bsddb.db.version(): %s' % (info, )
-            print db.DB_VERSION_STRING
-            print '-=' * 20
+            print('\n', '-=' * 20)
+            print('bsddb.db.version(): %s' % (info, ))
+            print(db.DB_VERSION_STRING)
+            print('-=' * 20)
         assert info == (db.DB_VERSION_MAJOR, db.DB_VERSION_MINOR,
                         db.DB_VERSION_PATCH)
 
@@ -131,7 +131,7 @@ class BasicTestCase(unittest.TestCase):
 
         num = len(d)
         if verbose:
-            print "created %d records" % num
+            print("created %d records" % num)
 
 
     def makeData(self, key):
@@ -145,13 +145,13 @@ class BasicTestCase(unittest.TestCase):
         d = self.d
 
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test01_GetsAndPuts..." % self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test01_GetsAndPuts..." % self.__class__.__name__)
 
         for key in ['0001', '0100', '0400', '0700', '0999']:
             data = d.get(key)
             if verbose:
-                print data
+                print(data)
 
         assert d.get('0321') == '0321-0321-0321-0321-0321'
 
@@ -164,7 +164,7 @@ class BasicTestCase(unittest.TestCase):
             d.delete('abcd')
         except db.DBNotFoundError as val:
             assert val[0] == db.DB_NOTFOUND
-            if verbose: print val
+            if verbose: print(val)
         else:
             self.fail("expected exception")
 
@@ -183,7 +183,7 @@ class BasicTestCase(unittest.TestCase):
             d.put('abcd', 'this should fail', flags=db.DB_NOOVERWRITE)
         except db.DBKeyExistError as val:
             assert val[0] == db.DB_KEYEXIST
-            if verbose: print val
+            if verbose: print(val)
         else:
             self.fail("expected exception")
 
@@ -212,7 +212,7 @@ class BasicTestCase(unittest.TestCase):
 
         rec = d.get_both('0555', '0555-0555-0555-0555-0555')
         if verbose:
-            print rec
+            print(rec)
 
         assert d.get_both('0555', 'bad data') == None
 
@@ -227,7 +227,7 @@ class BasicTestCase(unittest.TestCase):
         s = d.stat()
         assert type(s) == type({})
         if verbose:
-            print 'd.stat() returned this dictionary:'
+            print('d.stat() returned this dictionary:')
             pprint(s)
 
 
@@ -237,15 +237,15 @@ class BasicTestCase(unittest.TestCase):
         d = self.d
 
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test02_DictionaryMethods..." % \
-                  self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test02_DictionaryMethods..." % \
+                  self.__class__.__name__)
 
         for key in ['0002', '0101', '0401', '0701', '0998']:
             data = d[key]
             assert data == self.makeData(key)
             if verbose:
-                print data
+                print(data)
 
         assert len(d) == self._numKeys
         keys = d.keys()
@@ -263,7 +263,7 @@ class BasicTestCase(unittest.TestCase):
         assert len(keys) == self._numKeys+1
 
         if verbose:
-            print "the first 10 keys are:"
+            print("the first 10 keys are:")
             pprint(keys[:10])
 
         assert d['new record'] == 'a replacement record'
@@ -278,7 +278,7 @@ class BasicTestCase(unittest.TestCase):
         assert len(items[0]) == 2
 
         if verbose:
-            print "the first 10 items are:"
+            print("the first 10 items are:")
             pprint(items[:10])
 
         values = d.values()
@@ -286,7 +286,7 @@ class BasicTestCase(unittest.TestCase):
         assert type(values) == type([])
 
         if verbose:
-            print "the first 10 values are:"
+            print("the first 10 values are:")
             pprint(values[:10])
 
 
@@ -295,9 +295,9 @@ class BasicTestCase(unittest.TestCase):
 
     def test03_SimpleCursorStuff(self, get_raises_error=0, set_raises_error=0):
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test03_SimpleCursorStuff (get_error %s, set_error %s)..." % \
-                  (self.__class__.__name__, get_raises_error, set_raises_error)
+            print('\n', '-=' * 30)
+            print("Running %s.test03_SimpleCursorStuff (get_error %s, set_error %s)..." % \
+                  (self.__class__.__name__, get_raises_error, set_raises_error))
 
         if self.env and self.dbopenflags & db.DB_AUTO_COMMIT:
             txn = self.env.txn_begin()
@@ -310,13 +310,13 @@ class BasicTestCase(unittest.TestCase):
         while rec is not None:
             count = count + 1
             if verbose and count % 100 == 0:
-                print rec
+                print(rec)
             try:
                 rec = c.next()
             except db.DBNotFoundError as val:
                 if get_raises_error:
                     assert val[0] == db.DB_NOTFOUND
-                    if verbose: print val
+                    if verbose: print(val)
                     rec = None
                 else:
                     self.fail("unexpected DBNotFoundError")
@@ -330,13 +330,13 @@ class BasicTestCase(unittest.TestCase):
         while rec is not None:
             count = count + 1
             if verbose and count % 100 == 0:
-                print rec
+                print(rec)
             try:
                 rec = c.prev()
             except db.DBNotFoundError as val:
                 if get_raises_error:
                     assert val[0] == db.DB_NOTFOUND
-                    if verbose: print val
+                    if verbose: print(val)
                     rec = None
                 else:
                     self.fail("unexpected DBNotFoundError")
@@ -359,7 +359,7 @@ class BasicTestCase(unittest.TestCase):
             n = c.set('bad key')
         except db.DBNotFoundError as val:
             assert val[0] == db.DB_NOTFOUND
-            if verbose: print val
+            if verbose: print(val)
         else:
             if set_raises_error:
                 self.fail("expected exception")
@@ -373,7 +373,7 @@ class BasicTestCase(unittest.TestCase):
             n = c.get_both('0404', 'bad data')
         except db.DBNotFoundError as val:
             assert val[0] == db.DB_NOTFOUND
-            if verbose: print val
+            if verbose: print(val)
         else:
             if get_raises_error:
                 self.fail("expected exception")
@@ -383,16 +383,16 @@ class BasicTestCase(unittest.TestCase):
         if self.d.get_type() == db.DB_BTREE:
             rec = c.set_range('011')
             if verbose:
-                print "searched for '011', found: ", rec
+                print("searched for '011', found: ", rec)
 
             rec = c.set_range('011',dlen=0,doff=0)
             if verbose:
-                print "searched (partial) for '011', found: ", rec
+                print("searched (partial) for '011', found: ", rec)
             if rec[1] != '': self.fail('expected empty data portion')
 
             ev = c.set_range('empty value')
             if verbose:
-                print "search for 'empty value' returned", ev
+                print("search for 'empty value' returned", ev)
             if ev[1] != '': self.fail('empty value lookup failed')
 
         c.set('0499')
@@ -402,7 +402,7 @@ class BasicTestCase(unittest.TestCase):
         except db.DBKeyEmptyError as val:
             if get_raises_error:
                 assert val[0] == db.DB_KEYEMPTY
-                if verbose: print val
+                if verbose: print(val)
             else:
                 self.fail("unexpected DBKeyEmptyError")
         else:
@@ -441,13 +441,13 @@ class BasicTestCase(unittest.TestCase):
         for method, args in methods_to_test.items():
             try:
                 if verbose:
-                    print "attempting to use a closed cursor's %s method" % \
-                          method
+                    print("attempting to use a closed cursor's %s method" % \
+                          method)
                 # a bug may cause a NULL pointer dereference...
                 getattr(c, method)(*args)
             except db.DBError as val:
                 assert val[0] == 0
-                if verbose: print val
+                if verbose: print(val)
             else:
                 self.fail("no exception raised when using a buggy cursor's"
                           "%s method" % method)
@@ -466,9 +466,9 @@ class BasicTestCase(unittest.TestCase):
     def test03b_SimpleCursorWithoutGetReturnsNone0(self):
         # same test but raise exceptions instead of returning None
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test03b_SimpleCursorStuffWithoutGetReturnsNone..." % \
-                  self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test03b_SimpleCursorStuffWithoutGetReturnsNone..." % \
+                  self.__class__.__name__)
 
         old = self.d.set_get_returns_none(0)
         assert old == 2
@@ -477,9 +477,9 @@ class BasicTestCase(unittest.TestCase):
     def test03b_SimpleCursorWithGetReturnsNone1(self):
         # same test but raise exceptions instead of returning None
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test03b_SimpleCursorStuffWithoutGetReturnsNone..." % \
-                  self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test03b_SimpleCursorStuffWithoutGetReturnsNone..." % \
+                  self.__class__.__name__)
 
         old = self.d.set_get_returns_none(1)
         self.test03_SimpleCursorStuff(get_raises_error=0, set_raises_error=1)
@@ -488,9 +488,9 @@ class BasicTestCase(unittest.TestCase):
     def test03c_SimpleCursorGetReturnsNone2(self):
         # same test but raise exceptions instead of returning None
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test03c_SimpleCursorStuffWithoutSetReturnsNone..." % \
-                  self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test03c_SimpleCursorStuffWithoutSetReturnsNone..." % \
+                  self.__class__.__name__)
 
         old = self.d.set_get_returns_none(1)
         assert old == 2
@@ -503,9 +503,9 @@ class BasicTestCase(unittest.TestCase):
     def test04_PartialGetAndPut(self):
         d = self.d
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test04_PartialGetAndPut..." % \
-                  self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test04_PartialGetAndPut..." % \
+                  self.__class__.__name__)
 
         key = "partialTest"
         data = "1" * 1000 + "2" * 1000
@@ -533,8 +533,8 @@ class BasicTestCase(unittest.TestCase):
     def test05_GetSize(self):
         d = self.d
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test05_GetSize..." % self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test05_GetSize..." % self.__class__.__name__)
 
         for i in range(1, 50000, 500):
             key = "size%s" % i
@@ -553,8 +553,8 @@ class BasicTestCase(unittest.TestCase):
 
         d = self.d
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test99_Truncate..." % self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test99_Truncate..." % self.__class__.__name__)
 
         d.put("abcde", "ABCDE");
         num = d.truncate()
@@ -598,8 +598,8 @@ class BasicWithEnvTestCase(BasicTestCase):
             return
 
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test07_EnvRemoveAndRename..." % self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test07_EnvRemoveAndRename..." % self.__class__.__name__)
 
         # can't rename or remove an open DB
         self.d.close()
@@ -647,8 +647,8 @@ class BasicTransactionTestCase(BasicTestCase):
     def test06_Transactions(self):
         d = self.d
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test06_Transactions..." % self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test06_Transactions..." % self.__class__.__name__)
 
         assert d.get('new rec', txn=self.txn) == None
         d.put('new rec', 'this is a new record', self.txn)
@@ -671,7 +671,7 @@ class BasicTransactionTestCase(BasicTestCase):
         while rec is not None:
             count = count + 1
             if verbose and count % 100 == 0:
-                print rec
+                print(rec)
             rec = c.next()
         assert count == self._numKeys+1
 
@@ -696,7 +696,7 @@ class BasicTransactionTestCase(BasicTestCase):
         assert logs != None
         for log in logs:
             if verbose:
-                print 'log file: ' + log
+                print('log file: ' + log)
         if db.version() >= (4,2):
             logs = self.env.log_archive(db.DB_ARCH_REMOVE)
             assert not logs
@@ -712,8 +712,8 @@ class BasicTransactionTestCase(BasicTestCase):
 
         d = self.d
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test07_TxnTruncate..." % self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test07_TxnTruncate..." % self.__class__.__name__)
 
         d.put("abcde", "ABCDE");
         txn = self.env.txn_begin()
@@ -762,21 +762,21 @@ class BTreeRecnoTestCase(BasicTestCase):
     def test07_RecnoInBTree(self):
         d = self.d
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test07_RecnoInBTree..." % self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test07_RecnoInBTree..." % self.__class__.__name__)
 
         rec = d.get(200)
         assert type(rec) == type(())
         assert len(rec) == 2
         if verbose:
-            print "Record #200 is ", rec
+            print("Record #200 is ", rec)
 
         c = d.cursor()
         c.set('0200')
         num = c.get_recno()
         assert type(num) == type(1)
         if verbose:
-            print "recno of d['0200'] is ", num
+            print("recno of d['0200'] is ", num)
 
         rec = c.current()
         assert c.set_recno(num) == rec
@@ -796,9 +796,9 @@ class BasicDUPTestCase(BasicTestCase):
     def test08_DuplicateKeys(self):
         d = self.d
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test08_DuplicateKeys..." % \
-                  self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test08_DuplicateKeys..." % \
+                  self.__class__.__name__)
 
         d.put("dup0", "before")
         for x in "The quick brown fox jumped over the lazy dog.".split():
@@ -808,7 +808,7 @@ class BasicDUPTestCase(BasicTestCase):
         data = d.get("dup1")
         assert data == "The"
         if verbose:
-            print data
+            print(data)
 
         c = d.cursor()
         rec = c.set("dup1")
@@ -827,14 +827,14 @@ class BasicDUPTestCase(BasicTestCase):
         rec = c.set('dup1')
         while rec is not None:
             if verbose:
-                print rec
+                print(rec)
             rec = c.next_dup()
 
         c.set('dup1')
         rec = c.next_nodup()
         assert rec[0] != 'dup1'
         if verbose:
-            print rec
+            print(rec)
 
         c.close()
 
@@ -869,8 +869,8 @@ class BasicMultiDBTestCase(BasicTestCase):
     def test09_MultiDB(self):
         d1 = self.d
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test09_MultiDB..." % self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test09_MultiDB..." % self.__class__.__name__)
 
         d2 = db.DB(self.env)
         d2.open(self.filename, "second", self.dbtype,
@@ -910,7 +910,7 @@ class BasicMultiDBTestCase(BasicTestCase):
         while rec is not None:
             count = count + 1
             if verbose and (count % 50) == 0:
-                print rec
+                print(rec)
             rec = c1.next()
         assert count == self._numKeys
 
@@ -919,7 +919,7 @@ class BasicMultiDBTestCase(BasicTestCase):
         while rec is not None:
             count = count + 1
             if verbose:
-                print rec
+                print(rec)
             rec = c2.next()
         assert count == 9
 
@@ -928,7 +928,7 @@ class BasicMultiDBTestCase(BasicTestCase):
         while rec is not None:
             count = count + 1
             if verbose:
-                print rec
+                print(rec)
             rec = c3.next()
         assert count == 52
 

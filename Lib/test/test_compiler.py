@@ -30,8 +30,7 @@ class CompilerTest(unittest.TestCase):
                 # Print still working message since this test can be really slow
                 if next_time <= time.time():
                     next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
-                    print >>sys.__stdout__, \
-                       '  testCompileLibrary still working, be patient...'
+                    print('  testCompileLibrary still working, be patient...', file=sys.__stdout__)
                     sys.__stdout__.flush()
 
                 if not basename.endswith(".py"):
@@ -40,7 +39,7 @@ class CompilerTest(unittest.TestCase):
                     continue
                 path = os.path.join(dir, basename)
                 if test.test_support.verbose:
-                    print "compiling", path
+                    print("compiling", path)
                 f = open(path, "U")
                 buf = f.read()
                 f.close()
@@ -94,7 +93,7 @@ class CompilerTest(unittest.TestCase):
         try:
             self._check_lineno(node)
         except AssertionError:
-            print node.__class__, node.lineno
+            print(node.__class__, node.lineno)
             raise
 
     def _check_lineno(self, node):
@@ -217,7 +216,7 @@ else:
     a, b = b, a
 
 try:
-    print yo
+    print(yo)
 except:
     yo = 3
 else:

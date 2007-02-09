@@ -240,7 +240,7 @@ def test(fn = None):
         fn = 'f:just samples:just.aif'
     import aifc
     af = aifc.open(fn, 'r')
-    print fn, af.getparams()
+    print(fn, af.getparams())
     p = AudioDev()
     p.setoutrate(af.getframerate())
     p.setsampwidth(af.getsampwidth())
@@ -249,7 +249,7 @@ def test(fn = None):
     while 1:
         data = af.readframes(BUFSIZ)
         if not data: break
-        print len(data)
+        print(len(data))
         p.writeframes(data)
     p.wait()
 

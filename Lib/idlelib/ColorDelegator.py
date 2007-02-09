@@ -72,7 +72,7 @@ class ColorDelegator(Delegator):
             "hit": idleConf.GetHighlight(theme, "hit"),
             }
 
-        if DEBUG: print 'tagdefs',self.tagdefs
+        if DEBUG: print('tagdefs',self.tagdefs)
 
     def insert(self, index, chars, tags=None):
         index = self.index(index)
@@ -91,13 +91,13 @@ class ColorDelegator(Delegator):
     def notify_range(self, index1, index2=None):
         self.tag_add("TODO", index1, index2)
         if self.after_id:
-            if DEBUG: print "colorizing already scheduled"
+            if DEBUG: print("colorizing already scheduled")
             return
         if self.colorizing:
             self.stop_colorizing = True
-            if DEBUG: print "stop colorizing"
+            if DEBUG: print("stop colorizing")
         if self.allow_colorizing:
-            if DEBUG: print "schedule colorizing"
+            if DEBUG: print("schedule colorizing")
             self.after_id = self.after(1, self.recolorize)
 
     close_when_done = None # Window to be closed when done colorizing
@@ -106,7 +106,7 @@ class ColorDelegator(Delegator):
         if self.after_id:
             after_id = self.after_id
             self.after_id = None
-            if DEBUG: print "cancel scheduled recolorizer"
+            if DEBUG: print("cancel scheduled recolorizer")
             self.after_cancel(after_id)
         self.allow_colorizing = False
         self.stop_colorizing = True
@@ -120,42 +120,42 @@ class ColorDelegator(Delegator):
         if self.after_id:
             after_id = self.after_id
             self.after_id = None
-            if DEBUG: print "cancel scheduled recolorizer"
+            if DEBUG: print("cancel scheduled recolorizer")
             self.after_cancel(after_id)
         if self.allow_colorizing and self.colorizing:
-            if DEBUG: print "stop colorizing"
+            if DEBUG: print("stop colorizing")
             self.stop_colorizing = True
         self.allow_colorizing = not self.allow_colorizing
         if self.allow_colorizing and not self.colorizing:
             self.after_id = self.after(1, self.recolorize)
         if DEBUG:
-            print "auto colorizing turned",\
-                  self.allow_colorizing and "on" or "off"
+            print("auto colorizing turned",\
+                  self.allow_colorizing and "on" or "off")
         return "break"
 
     def recolorize(self):
         self.after_id = None
         if not self.delegate:
-            if DEBUG: print "no delegate"
+            if DEBUG: print("no delegate")
             return
         if not self.allow_colorizing:
-            if DEBUG: print "auto colorizing is off"
+            if DEBUG: print("auto colorizing is off")
             return
         if self.colorizing:
-            if DEBUG: print "already colorizing"
+            if DEBUG: print("already colorizing")
             return
         try:
             self.stop_colorizing = False
             self.colorizing = True
-            if DEBUG: print "colorizing..."
+            if DEBUG: print("colorizing...")
             t0 = time.clock()
             self.recolorize_main()
             t1 = time.clock()
-            if DEBUG: print "%.3f seconds" % (t1-t0)
+            if DEBUG: print("%.3f seconds" % (t1-t0))
         finally:
             self.colorizing = False
         if self.allow_colorizing and self.tag_nextrange("TODO", "1.0"):
-            if DEBUG: print "reschedule colorizing"
+            if DEBUG: print("reschedule colorizing")
             self.after_id = self.after(1, self.recolorize)
         if self.close_when_done:
             top = self.close_when_done
@@ -240,7 +240,7 @@ class ColorDelegator(Delegator):
                     self.tag_add("TODO", next)
                 self.update()
                 if self.stop_colorizing:
-                    if DEBUG: print "colorizing stopped"
+                    if DEBUG: print("colorizing stopped")
                     return
 
     def removecolors(self):

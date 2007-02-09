@@ -13,7 +13,7 @@ from test.test_support import TestSkipped, reap_children
 # subprocess.
 
 def main():
-    print "Test popen2 module:"
+    print("Test popen2 module:")
     if (sys.platform[:4] == 'beos' or sys.platform[:6] == 'atheos') \
            and __name__ != '__main__':
         #  Locks get messed up or something.  Generally we're supposed
@@ -33,7 +33,7 @@ def main():
 
 def _test():
     # same test as popen2._test(), but using the os.popen*() API
-    print "Testing os module:"
+    print("Testing os module:")
     import popen2
     # When the test runs, there shouldn't be any open pipes
     popen2._cleanup()
@@ -46,14 +46,14 @@ def _test():
     # sometimes adding an extra newline at the start or the
     # end.  So we strip whitespace off both ends for comparison.
     expected = teststr.strip()
-    print "testing popen2..."
+    print("testing popen2...")
     w, r = os.popen2(cmd)
     w.write(teststr)
     w.close()
     got = r.read()
     if got.strip() != expected:
         raise ValueError("wrote %r read %r" % (teststr, got))
-    print "testing popen3..."
+    print("testing popen3...")
     try:
         w, r, e = os.popen3([cmd])
     except:
@@ -71,7 +71,7 @@ def _test():
     popen2._cleanup()
     if popen2._active:
         raise ValueError("_active not empty")
-    print "All OK"
+    print("All OK")
 
 main()
 _test()

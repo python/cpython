@@ -351,7 +351,7 @@ class GrammarTests(unittest.TestCase):
             x = 1; pass; del x;
         foo()
 
-    ### small_stmt: expr_stmt | print_stmt  | pass_stmt | del_stmt | flow_stmt | import_stmt | global_stmt | access_stmt 
+    ### small_stmt: expr_stmt | pass_stmt | del_stmt | flow_stmt | import_stmt | global_stmt | access_stmt 
     # Tested below
 
     def testExprStmt(self):
@@ -366,76 +366,6 @@ class GrammarTests(unittest.TestCase):
 
         check_syntax_error(self, "x + 1 = 1")
         check_syntax_error(self, "a + 1 = b + 2")
-
-    def testPrintStmt(self):
-        # 'print' (test ',')* [test]
-        import StringIO
-
-        # Can't test printing to real stdout without comparing output
-        # which is not available in unittest.
-        save_stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
-
-        print 1, 2, 3
-        print 1, 2, 3,
-        print
-        print 0 or 1, 0 or 1,
-        print 0 or 1
-
-        # 'print' '>>' test ','
-        print >> sys.stdout, 1, 2, 3
-        print >> sys.stdout, 1, 2, 3,
-        print >> sys.stdout
-        print >> sys.stdout, 0 or 1, 0 or 1,
-        print >> sys.stdout, 0 or 1
-
-        # test printing to an instance
-        class Gulp:
-            def write(self, msg): pass
-
-        gulp = Gulp()
-        print >> gulp, 1, 2, 3
-        print >> gulp, 1, 2, 3,
-        print >> gulp
-        print >> gulp, 0 or 1, 0 or 1,
-        print >> gulp, 0 or 1
-
-        # test print >> None
-        def driver():
-            oldstdout = sys.stdout
-            sys.stdout = Gulp()
-            try:
-                tellme(Gulp())
-                tellme()
-            finally:
-                sys.stdout = oldstdout
-
-        # we should see this once
-        def tellme(file=sys.stdout):
-            print >> file, 'hello world'
-
-        driver()
-
-        # we should not see this at all
-        def tellme(file=None):
-            print >> file, 'goodbye universe'
-
-        driver()
-
-        self.assertEqual(sys.stdout.getvalue(), '''\
-1 2 3
-1 2 3
-1 1 1
-1 2 3
-1 2 3
-1 1 1
-hello world
-''')
-        sys.stdout = save_stdout
-
-        # syntax errors
-        check_syntax_error(self, 'print ,')
-        check_syntax_error(self, 'print >> x,')
 
     def testDelStmt(self):
         # 'del' exprlist
@@ -902,7 +832,7 @@ hello world
         # Test ifelse expressions in various cases
         def _checkeval(msg, ret):
             "helper to check that evaluation of expressions is done correctly"
-            print x
+            print(x)
             return ret
 
         self.assertEqual([ x() for x in lambda: True, lambda: False if x() ], [True])

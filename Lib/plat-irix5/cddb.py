@@ -89,7 +89,7 @@ class Cddb:
                 break
             match = reg.match(line)
             if not match:
-                print 'syntax error in ' + file
+                print('syntax error in ' + file)
                 continue
             name1, name2, value = match.group(1, 2, 3)
             if name1 == 'album':
@@ -101,17 +101,17 @@ class Cddb:
                     if not self.toc:
                         self.toc = value
                     if self.toc != value:
-                        print 'toc\'s don\'t match'
+                        print('toc\'s don\'t match')
                 elif name2 == 'notes':
                     self.notes.append(value)
             elif name1[:5] == 'track':
                 try:
                     trackno = int(name1[5:])
                 except strings.atoi_error:
-                    print 'syntax error in ' + file
+                    print('syntax error in ' + file)
                     continue
                 if trackno > ntracks:
-                    print 'track number %r in file %r out of range' % (trackno, file)
+                    print('track number %r in file %r out of range' % (trackno, file))
                     continue
                 if name2 == 'title':
                     self.track[trackno] = value

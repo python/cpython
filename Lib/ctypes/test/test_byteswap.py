@@ -15,7 +15,7 @@ def bin(s):
 
 class Test(unittest.TestCase):
     def X_test(self):
-        print >> sys.stderr,  sys.byteorder
+        print(sys.byteorder, file=sys.stderr)
         for i in range(32):
             bits = BITS()
             setattr(bits, "i%s" % i, 1)

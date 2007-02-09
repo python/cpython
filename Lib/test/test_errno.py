@@ -43,7 +43,7 @@ for error in errors:
         a = getattr(errno, error)
     except AttributeError:
         if verbose:
-            print '%s: not found' % error
+            print('%s: not found' % error)
     else:
         if verbose:
-            print '%s: %d' % (error, a)
+            print('%s: %d' % (error, a))

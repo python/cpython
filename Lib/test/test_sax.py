@@ -27,7 +27,7 @@ def confirm(outcome, name):
     tests = tests + 1
     if outcome:
         if verbose:
-            print "Passed", name
+            print("Passed", name)
     else:
         failures.append(name)
 
@@ -745,7 +745,7 @@ for (name, value) in items:
 del items
 
 if verbose:
-    print "%d tests, %d failures" % (tests, len(failures))
+    print("%d tests, %d failures" % (tests, len(failures)))
 if failures:
     raise TestFailed("%d of %d tests failed: %s"
                      % (len(failures), tests, ", ".join(failures)))

@@ -108,4 +108,4 @@ class netrc:
         return rep
 
 if __name__ == '__main__':
-    print netrc()
+    print(netrc())

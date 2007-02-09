@@ -41,18 +41,18 @@ else:
     lockdata = struct.pack('hh'+start_len+'hh', fcntl.F_WRLCK, 0, 0, 0, 0, 0)
 if lockdata:
     if verbose:
-        print 'struct.pack: ', repr(lockdata)
+        print('struct.pack: ', repr(lockdata))
 
 # the example from the library docs
 f = open(filename, 'w')
 rv = fcntl.fcntl(f.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
 if verbose:
-    print 'Status from fcntl with O_NONBLOCK: ', rv
+    print('Status from fcntl with O_NONBLOCK: ', rv)
 
 if sys.platform not in ['os2emx']:
     rv = fcntl.fcntl(f.fileno(), fcntl.F_SETLKW, lockdata)
     if verbose:
-        print 'String from fcntl with F_SETLKW: ', repr(rv)
+        print('String from fcntl with F_SETLKW: ', repr(rv))
 
 f.close()
 os.unlink(filename)

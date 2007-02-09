@@ -603,7 +603,7 @@ class ReTests(unittest.TestCase):
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR
     if verbose:
-        print 'Running re_tests test suite'
+        print('Running re_tests test suite')
     else:
         # To save time, only run the first and last 10 tests
         #tests = tests[:10] + tests[-10:]
@@ -624,23 +624,23 @@ def run_re_tests():
         except re.error:
             if outcome == SYNTAX_ERROR: pass  # Expected a syntax error
             else:
-                print '=== Syntax error:', t
+                print('=== Syntax error:', t)
         except KeyboardInterrupt: raise KeyboardInterrupt
         except:
-            print '*** Unexpected error ***', t
+            print('*** Unexpected error ***', t)
             if verbose:
                 traceback.print_exc(file=sys.stdout)
         else:
             try:
                 result = obj.search(s)
             except re.error as msg:
-                print '=== Unexpected exception', t, repr(msg)
+                print('=== Unexpected exception', t, repr(msg))
             if outcome == SYNTAX_ERROR:
                 # This should have been a syntax error; forget it.
                 pass
             elif outcome == FAIL:
                 if result is None: pass   # No match, as expected
-                else: print '=== Succeeded incorrectly', t
+                else: print('=== Succeeded incorrectly', t)
             elif outcome == SUCCEED:
                 if result is not None:
                     # Matched, as expected, so now we compute the
@@ -668,17 +668,17 @@ def run_re_tests():
                         vardict[i] = gi
                     repl = eval(repl, vardict)
                     if repl != expected:
-                        print '=== grouping error', t,
-                        print repr(repl) + ' should be ' + repr(expected)
+                        print('=== grouping error', t, end=' ')
+                        print(repr(repl) + ' should be ' + repr(expected))
                 else:
-                    print '=== Failed incorrectly', t
+                    print('=== Failed incorrectly', t)
 
                 # Try the match on a unicode string, and check that it
                 # still succeeds.
                 try:
                     result = obj.search(unicode(s, "latin-1"))
                     if result is None:
-                        print '=== Fails on unicode match', t
+                        print('=== Fails on unicode match', t)
                 except NameError:
                     continue # 1.5.2
                 except TypeError:
@@ -689,7 +689,7 @@ def run_re_tests():
                 obj=re.compile(unicode(pattern, "latin-1"))
                 result = obj.search(s)
                 if result is None:
-                    print '=== Fails on unicode pattern match', t
+                    print('=== Fails on unicode pattern match', t)
 
                 # Try the match with the search area limited to the extent
                 # of the match and see if it still succeeds.  \B will
@@ -701,28 +701,28 @@ def run_re_tests():
                     obj = re.compile(pattern)
                     result = obj.search(s, result.start(0), result.end(0) + 1)
                     if result is None:
-                        print '=== Failed on range-limited match', t
+                        print('=== Failed on range-limited match', t)
 
                 # Try the match with IGNORECASE enabled, and check that it
                 # still succeeds.
                 obj = re.compile(pattern, re.IGNORECASE)
                 result = obj.search(s)
                 if result is None:
-                    print '=== Fails on case-insensitive match', t
+                    print('=== Fails on case-insensitive match', t)
 
                 # Try the match with LOCALE enabled, and check that it
                 # still succeeds.
                 obj = re.compile(pattern, re.LOCALE)
                 result = obj.search(s)
                 if result is None:
-                    print '=== Fails on locale-sensitive match', t
+                    print('=== Fails on locale-sensitive match', t)
 
                 # Try the match with UNICODE locale enabled, and check
                 # that it still succeeds.
                 obj = re.compile(pattern, re.UNICODE)
                 result = obj.search(s)
                 if result is None:
-                    print '=== Fails on unicode-sensitive match', t
+                    print('=== Fails on unicode-sensitive match', t)
 
 def test_main():
     run_unittest(ReTests)

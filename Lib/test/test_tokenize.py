@@ -118,12 +118,12 @@ def dump_tokens(s):
         if type == ENDMARKER:
             break
         type = tok_name[type]
-        print "%(type)-10.10s  %(token)-13.13r %(start)s %(end)s" % locals()
+        print("%(type)-10.10s  %(token)-13.13r %(start)s %(end)s" % locals())
 
 def roundtrip(s):
     f = StringIO(s)
     source = untokenize(generate_tokens(f.readline))
-    print source,
+    print(source, end=' ')
 
 # This is an example from the docs, set up as a doctest.
 def decistmt(s):
@@ -165,7 +165,7 @@ def decistmt(s):
 
 def test_main():
     if verbose:
-        print 'starting...'
+        print('starting...')
 
     next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
 
@@ -191,7 +191,7 @@ def test_main():
         # Print still working message since this test can be really slow
         if next_time <= time.time():
             next_time = time.time() + _PRINT_WORKING_MSG_INTERVAL
-            print >>sys.__stdout__, '  test_main still working, be patient...'
+            print('  test_main still working, be patient...', file=sys.__stdout__)
             sys.__stdout__.flush()
 
         test_roundtrip(f)
@@ -217,7 +217,7 @@ def foo():
     run_doctest(test_tokenize, verbose)
 
     if verbose:
-        print 'finished'
+        print('finished')
 
 def test_rarrow():
     """
