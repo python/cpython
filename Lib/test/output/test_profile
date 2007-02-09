@@ -27,24 +27,24 @@ test_profile
    Ordered by: standard name
 
 Function                              called...
-:0(append)                            ->
-:0(exc_info)                          ->
+:0(append)                            -> 
+:0(exc_info)                          -> 
 :0(exec)                              -> <string>:1(<module>)(1)    1.000
 :0(hasattr)                           -> test_profile.py:115(__getattr__)(12)    0.028
-:0(range)                             ->
-:0(setprofile)                        ->
+:0(range)                             -> 
+:0(setprofile)                        -> 
 <string>:1(<module>)                  -> test_profile.py:30(testfunc)(1)    1.000
 profile:0(profiler)                   -> profile:0(testfunc())(1)    1.000
 profile:0(testfunc())                 -> :0(exec)(1)    1.000
                                          :0(setprofile)(1)    0.000
 test_profile.py:103(subhelper)        -> :0(range)(8)    0.000
                                          test_profile.py:115(__getattr__)(16)    0.028
-test_profile.py:115(__getattr__)      ->
+test_profile.py:115(__getattr__)      -> 
 test_profile.py:30(testfunc)          -> test_profile.py:40(factorial)(1)    0.170
                                          test_profile.py:60(helper)(2)    0.600
 test_profile.py:40(factorial)         -> test_profile.py:40(factorial)(20)    0.170
                                          test_profile.py:53(mul)(20)    0.020
-test_profile.py:53(mul)               ->
+test_profile.py:53(mul)               -> 
 test_profile.py:60(helper)            -> test_profile.py:78(helper1)(4)    0.120
                                          test_profile.py:89(helper2_indirect)(2)    0.140
                                          test_profile.py:93(helper2)(6)    0.400
@@ -68,7 +68,7 @@ Function                              was called by...
 :0(range)                             <- test_profile.py:103(subhelper)(8)    0.080
 :0(setprofile)                        <- profile:0(testfunc())(1)    1.000
 <string>:1(<module>)                  <- :0(exec)(1)    1.000
-profile:0(profiler)                   <-
+profile:0(profiler)                   <- 
 profile:0(testfunc())                 <- profile:0(profiler)(1)    0.000
 test_profile.py:103(subhelper)        <- test_profile.py:93(helper2)(8)    0.400
 test_profile.py:115(__getattr__)      <- :0(hasattr)(12)    0.012
