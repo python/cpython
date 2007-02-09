@@ -107,12 +107,12 @@ Generators always return to the most recent caller:
     ...     r = yrange(5)
     ...     print("creator", r.next())
     ...     return r
-    ... 
+    ...
     >>> def caller():
     ...     r = creator()
     ...     for i in r:
     ...             print("caller", i)
-    ... 
+    ...
     >>> caller()
     creator 0
     caller 1
@@ -270,8 +270,8 @@ Guido's binary tree example.
     >>> t = tree("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
     >>> # Print the nodes of the tree in in-order.
     >>> for x in t:
-    ...     print(x, end=' ')
-    A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+    ...     print(' '+x, end='')
+     A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
 
     >>> # A non-recursive generator.
     >>> def inorder(node):
@@ -291,8 +291,8 @@ Guido's binary tree example.
 
     >>> # Exercise the non-recursive generator.
     >>> for x in t:
-    ...     print(x, end=' ')
-    A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+    ...     print(' '+x, end='')
+     A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
 
 """
 
@@ -447,7 +447,7 @@ Subject: Re: PEP 255: Simple Generators
 >>> gen = random.WichmannHill(42)
 >>> while 1:
 ...     for s in sets:
-...         print("%s->%s" % (s, s.find()), end=' ')
+...         print(" %s->%s" % (s, s.find()), end='')
 ...     print()
 ...     if len(roots) > 1:
 ...         s1 = gen.choice(roots)
@@ -457,31 +457,31 @@ Subject: Re: PEP 255: Simple Generators
 ...         print("merged", s1, "into", s2)
 ...     else:
 ...         break
-A->A B->B C->C D->D E->E F->F G->G H->H I->I J->J K->K L->L M->M
+ A->A B->B C->C D->D E->E F->F G->G H->H I->I J->J K->K L->L M->M
 merged D into G
-A->A B->B C->C D->G E->E F->F G->G H->H I->I J->J K->K L->L M->M
+ A->A B->B C->C D->G E->E F->F G->G H->H I->I J->J K->K L->L M->M
 merged C into F
-A->A B->B C->F D->G E->E F->F G->G H->H I->I J->J K->K L->L M->M
+ A->A B->B C->F D->G E->E F->F G->G H->H I->I J->J K->K L->L M->M
 merged L into A
-A->A B->B C->F D->G E->E F->F G->G H->H I->I J->J K->K L->A M->M
+ A->A B->B C->F D->G E->E F->F G->G H->H I->I J->J K->K L->A M->M
 merged H into E
-A->A B->B C->F D->G E->E F->F G->G H->E I->I J->J K->K L->A M->M
+ A->A B->B C->F D->G E->E F->F G->G H->E I->I J->J K->K L->A M->M
 merged B into E
-A->A B->E C->F D->G E->E F->F G->G H->E I->I J->J K->K L->A M->M
+ A->A B->E C->F D->G E->E F->F G->G H->E I->I J->J K->K L->A M->M
 merged J into G
-A->A B->E C->F D->G E->E F->F G->G H->E I->I J->G K->K L->A M->M
+ A->A B->E C->F D->G E->E F->F G->G H->E I->I J->G K->K L->A M->M
 merged E into G
-A->A B->G C->F D->G E->G F->F G->G H->G I->I J->G K->K L->A M->M
+ A->A B->G C->F D->G E->G F->F G->G H->G I->I J->G K->K L->A M->M
 merged M into G
-A->A B->G C->F D->G E->G F->F G->G H->G I->I J->G K->K L->A M->G
+ A->A B->G C->F D->G E->G F->F G->G H->G I->I J->G K->K L->A M->G
 merged I into K
-A->A B->G C->F D->G E->G F->F G->G H->G I->K J->G K->K L->A M->G
+ A->A B->G C->F D->G E->G F->F G->G H->G I->K J->G K->K L->A M->G
 merged K into A
-A->A B->G C->F D->G E->G F->F G->G H->G I->A J->G K->A L->A M->G
+ A->A B->G C->F D->G E->G F->F G->G H->G I->A J->G K->A L->A M->G
 merged F into A
-A->A B->G C->A D->G E->G F->A G->G H->G I->A J->G K->A L->A M->G
+ A->A B->G C->A D->G E->G F->A G->G H->G I->A J->G K->A L->A M->G
 merged A into G
-A->G B->G C->G D->G E->G F->G G->G H->G I->G J->G K->G L->G M->G
+ A->G B->G C->G D->G E->G F->G G->G H->G I->G J->G K->G L->G M->G
 
 """
 # Emacs turd '
@@ -1555,7 +1555,7 @@ Now check some throw() conditions:
 ...         try:
 ...             print((yield))
 ...         except ValueError as v:
-...             print("caught ValueError (%s)" % (v), end=' ')
+...             print("caught ValueError (%s)" % (v))
 >>> import sys
 >>> g = f()
 >>> g.next()
