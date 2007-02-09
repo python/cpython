@@ -10,25 +10,25 @@ from test.test_support import sortdict, TestFailed
 
 class Outputter:
     def StartElementHandler(self, name, attrs):
-        print('Start element:\n\t', repr(name), sortdict(attrs))
+        print('Start element:\n\t' + repr(name), sortdict(attrs))
 
     def EndElementHandler(self, name):
-        print('End element:\n\t', repr(name))
+        print('End element:\n\t' + repr(name))
 
     def CharacterDataHandler(self, data):
         data = data.strip()
         if data:
             print('Character data:')
-            print('\t', repr(data))
+            print('\t' + repr(data))
 
     def ProcessingInstructionHandler(self, target, data):
-        print('PI:\n\t', repr(target), repr(data))
+        print('PI:\n\t' + repr(target), repr(data))
 
     def StartNamespaceDeclHandler(self, prefix, uri):
-        print('NS decl:\n\t', repr(prefix), repr(uri))
+        print('NS decl:\n\t' + repr(prefix), repr(uri))
 
     def EndNamespaceDeclHandler(self, prefix):
-        print('End of NS decl:\n\t', repr(prefix))
+        print('End of NS decl:\n\t' + repr(prefix))
 
     def StartCdataSectionHandler(self):
         print('Start of CDATA section')
@@ -37,7 +37,7 @@ class Outputter:
         print('End of CDATA section')
 
     def CommentHandler(self, text):
-        print('Comment:\n\t', repr(text))
+        print('Comment:\n\t' + repr(text))
 
     def NotationDeclHandler(self, *args):
         name, base, sysid, pubid = args
@@ -45,7 +45,7 @@ class Outputter:
 
     def UnparsedEntityDeclHandler(self, *args):
         entityName, base, systemId, publicId, notationName = args
-        print('Unparsed entity decl:\n\t', args)
+        print('Unparsed entity decl:\n\t' + str(args))
 
     def NotStandaloneHandler(self, userData):
         print('Not standalone')
