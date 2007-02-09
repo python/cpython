@@ -524,7 +524,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 	register PyObject *w;
 	register PyObject *u;
 	register PyObject *t;
-	register PyObject *stream = NULL;    /* for PRINT opcodes */
 	register PyObject **fastlocals, **freevars;
 	PyObject *retval = NULL;	/* Return value */
 	PyThreadState *tstate = PyThreadState_GET();
@@ -1507,81 +1506,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			Py_DECREF(v);
 			Py_XDECREF(x);
 			break;
-
-		case PRINT_ITEM_TO:
-			w = stream = POP();
-			/* fall through to PRINT_ITEM */
-
-		case PRINT_ITEM:
-			v = POP();
-			if (stream == NULL || stream == Py_None) {
-				w = PySys_GetObject("stdout");
-				if (w == NULL) {
-					PyErr_SetString(PyExc_RuntimeError,
-							"lost sys.stdout");
-					err = -1;
-				}
-			}
-			/* PyFile_SoftSpace() can exececute arbitrary code
-			   if sys.stdout is an instance with a __getattr__.
-			   If __getattr__ raises an exception, w will
-			   be freed, so we need to prevent that temporarily. */
-			Py_XINCREF(w);
-			if (w != NULL && PyFile_SoftSpace(w, 0))
-				err = PyFile_WriteString(" ", w);
-			if (err == 0)
-				err = PyFile_WriteObject(v, w, Py_PRINT_RAW);
-			if (err == 0) {
-			    /* XXX move into writeobject() ? */
-			    if (PyString_Check(v)) {
-				char *s = PyString_AS_STRING(v);
-				Py_ssize_t len = PyString_GET_SIZE(v);
-				if (len == 0 ||
-				    !isspace(Py_CHARMASK(s[len-1])) ||
-				    s[len-1] == ' ')
-					PyFile_SoftSpace(w, 1);
-			    }
-#ifdef Py_USING_UNICODE
-			    else if (PyUnicode_Check(v)) {
-				Py_UNICODE *s = PyUnicode_AS_UNICODE(v);
-				Py_ssize_t len = PyUnicode_GET_SIZE(v);
-				if (len == 0 ||
-				    !Py_UNICODE_ISSPACE(s[len-1]) ||
-				    s[len-1] == ' ')
-				    PyFile_SoftSpace(w, 1);
-			    }
-#endif
-			    else
-			    	PyFile_SoftSpace(w, 1);
-			}
-			Py_XDECREF(w);
-			Py_DECREF(v);
-			Py_XDECREF(stream);
-			stream = NULL;
-			if (err == 0)
-				continue;
-			break;
-
-		case PRINT_NEWLINE_TO:
-			w = stream = POP();
-			/* fall through to PRINT_NEWLINE */
-
-		case PRINT_NEWLINE:
-			if (stream == NULL || stream == Py_None) {
-				w = PySys_GetObject("stdout");
-				if (w == NULL)
-					PyErr_SetString(PyExc_RuntimeError,
-							"lost sys.stdout");
-			}
-			if (w != NULL) {
-				err = PyFile_WriteString("\n", w);
-				if (err == 0)
-					PyFile_SoftSpace(w, 0);
-			}
-			Py_XDECREF(stream);
-			stream = NULL;
-			break;
-
 
 #ifdef CASE_TOO_BIG
 		default: switch (opcode) {

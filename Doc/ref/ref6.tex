@@ -12,7 +12,6 @@ by semicolons.  The syntax for simple statements is:
   \productioncont{| \token{augmented_assignment_stmt}}
   \productioncont{| \token{pass_stmt}}
   \productioncont{| \token{del_stmt}}
-  \productioncont{| \token{print_stmt}}
   \productioncont{| \token{return_stmt}}
   \productioncont{| \token{yield_stmt}}
   \productioncont{| \token{raise_stmt}}
@@ -368,60 +367,6 @@ is passed to the primary object involved; deletion of a slicing
 is in general equivalent to assignment of an empty slice of the
 right type (but even this is determined by the sliced object).
 \indexii{attribute}{deletion}
-
-
-\section{The \keyword{print} statement \label{print}}
-\stindex{print}
-
-\begin{productionlist}
-  \production{print_stmt}
-             {"print" ( \optional{\token{expression} ("," \token{expression})* \optional{","}}}
-  \productioncont{| ">>" \token{expression}
-                  \optional{("," \token{expression})+ \optional{","}} )}
-\end{productionlist}
-
-\keyword{print} evaluates each expression in turn and writes the
-resulting object to standard output (see below).  If an object is not
-a string, it is first converted to a string using the rules for string
-conversions.  The (resulting or original) string is then written.  A
-space is written before each object is (converted and) written, unless
-the output system believes it is positioned at the beginning of a
-line.  This is the case (1) when no characters have yet been written
-to standard output, (2) when the last character written to standard
-output is \character{\e n}, or (3) when the last write operation on
-standard output was not a \keyword{print} statement.  (In some cases
-it may be functional to write an empty string to standard output for
-this reason.)  \note{Objects which act like file objects but which are
-not the built-in file objects often do not properly emulate this
-aspect of the file object's behavior, so it is best not to rely on
-this.}
-\index{output}
-\indexii{writing}{values}
-
-A \character{\e n} character is written at the end, unless the
-\keyword{print} statement ends with a comma.  This is the only action
-if the statement contains just the keyword \keyword{print}.
-\indexii{trailing}{comma}
-\indexii{newline}{suppression}
-
-Standard output is defined as the file object named \code{stdout}
-in the built-in module \module{sys}.  If no such object exists, or if
-it does not have a \method{write()} method, a \exception{RuntimeError}
-exception is raised.
-\indexii{standard}{output}
-\refbimodindex{sys}
-\withsubitem{(in module sys)}{\ttindex{stdout}}
-\exindex{RuntimeError}
-
-\keyword{print} also has an extended\index{extended print statement}
-form, defined by the second portion of the syntax described above.
-This form is sometimes referred to as ``\keyword{print} chevron.''
-In this form, the first expression after the \code{>>} must
-evaluate to a ``file-like'' object, specifically an object that has a
-\method{write()} method as described above.  With this extended form,
-the subsequent expressions are printed to this file object.  If the
-first expression evaluates to \code{None}, then \code{sys.stdout} is
-used as the file for output.
 
 
 \section{The \keyword{return} statement \label{return}}

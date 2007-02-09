@@ -61,12 +61,6 @@ static char *AugAssign_fields[]={
         "op",
         "value",
 };
-static PyTypeObject *Print_type;
-static char *Print_fields[]={
-        "dest",
-        "values",
-        "nl",
-};
 static PyTypeObject *For_type;
 static char *For_fields[]={
         "target",
@@ -480,8 +474,6 @@ static int init_types(void)
         if (!Assign_type) return 0;
         AugAssign_type = make_type("AugAssign", stmt_type, AugAssign_fields, 3);
         if (!AugAssign_type) return 0;
-        Print_type = make_type("Print", stmt_type, Print_fields, 3);
-        if (!Print_type) return 0;
         For_type = make_type("For", stmt_type, For_fields, 4);
         if (!For_type) return 0;
         While_type = make_type("While", stmt_type, While_fields, 3);
@@ -943,25 +935,6 @@ AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno, int
         p->v.AugAssign.target = target;
         p->v.AugAssign.op = op;
         p->v.AugAssign.value = value;
-        p->lineno = lineno;
-        p->col_offset = col_offset;
-        return p;
-}
-
-stmt_ty
-Print(expr_ty dest, asdl_seq * values, bool nl, int lineno, int col_offset,
-      PyArena *arena)
-{
-        stmt_ty p;
-        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
-                return NULL;
-        }
-        p->kind = Print_kind;
-        p->v.Print.dest = dest;
-        p->v.Print.values = values;
-        p->v.Print.nl = nl;
         p->lineno = lineno;
         p->col_offset = col_offset;
         return p;
@@ -2118,25 +2091,6 @@ ast2obj_stmt(void* _o)
                         goto failed;
                 Py_DECREF(value);
                 break;
-        case Print_kind:
-                result = PyType_GenericNew(Print_type, NULL, NULL);
-                if (!result) goto failed;
-                value = ast2obj_expr(o->v.Print.dest);
-                if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "dest", value) == -1)
-                        goto failed;
-                Py_DECREF(value);
-                value = ast2obj_list(o->v.Print.values, ast2obj_expr);
-                if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "values", value) == -1)
-                        goto failed;
-                Py_DECREF(value);
-                value = ast2obj_bool(o->v.Print.nl);
-                if (!value) goto failed;
-                if (PyObject_SetAttrString(result, "nl", value) == -1)
-                        goto failed;
-                Py_DECREF(value);
-                break;
         case For_kind:
                 result = PyType_GenericNew(For_type, NULL, NULL);
                 if (!result) goto failed;
@@ -3149,7 +3103,6 @@ init_ast(void)
             return;
         if (PyDict_SetItemString(d, "AugAssign", (PyObject*)AugAssign_type) <
             0) return;
-        if (PyDict_SetItemString(d, "Print", (PyObject*)Print_type) < 0) return;
         if (PyDict_SetItemString(d, "For", (PyObject*)For_type) < 0) return;
         if (PyDict_SetItemString(d, "While", (PyObject*)While_type) < 0) return;
         if (PyDict_SetItemString(d, "If", (PyObject*)If_type) < 0) return;

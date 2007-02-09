@@ -62,12 +62,11 @@ struct _mod {
 };
 
 enum _stmt_kind {FunctionDef_kind=1, ClassDef_kind=2, Return_kind=3,
-                  Delete_kind=4, Assign_kind=5, AugAssign_kind=6, Print_kind=7,
-                  For_kind=8, While_kind=9, If_kind=10, With_kind=11,
-                  Raise_kind=12, TryExcept_kind=13, TryFinally_kind=14,
-                  Assert_kind=15, Import_kind=16, ImportFrom_kind=17,
-                  Global_kind=18, Expr_kind=19, Pass_kind=20, Break_kind=21,
-                  Continue_kind=22};
+                  Delete_kind=4, Assign_kind=5, AugAssign_kind=6, For_kind=7,
+                  While_kind=8, If_kind=9, With_kind=10, Raise_kind=11,
+                  TryExcept_kind=12, TryFinally_kind=13, Assert_kind=14,
+                  Import_kind=15, ImportFrom_kind=16, Global_kind=17,
+                  Expr_kind=18, Pass_kind=19, Break_kind=20, Continue_kind=21};
 struct _stmt {
         enum _stmt_kind kind;
         union {
@@ -103,12 +102,6 @@ struct _stmt {
                         operator_ty op;
                         expr_ty value;
                 } AugAssign;
-                
-                struct {
-                        expr_ty dest;
-                        asdl_seq *values;
-                        bool nl;
-                } Print;
                 
                 struct {
                         expr_ty target;
@@ -392,9 +385,6 @@ stmt_ty _Py_Assign(asdl_seq * targets, expr_ty value, int lineno, int
 #define AugAssign(a0, a1, a2, a3, a4, a5) _Py_AugAssign(a0, a1, a2, a3, a4, a5)
 stmt_ty _Py_AugAssign(expr_ty target, operator_ty op, expr_ty value, int
                       lineno, int col_offset, PyArena *arena);
-#define Print(a0, a1, a2, a3, a4, a5) _Py_Print(a0, a1, a2, a3, a4, a5)
-stmt_ty _Py_Print(expr_ty dest, asdl_seq * values, bool nl, int lineno, int
-                  col_offset, PyArena *arena);
 #define For(a0, a1, a2, a3, a4, a5, a6) _Py_For(a0, a1, a2, a3, a4, a5, a6)
 stmt_ty _Py_For(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq *
                 orelse, int lineno, int col_offset, PyArena *arena);

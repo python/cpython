@@ -990,11 +990,6 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 		VISIT(st, expr, s->v.AugAssign.target);
 		VISIT(st, expr, s->v.AugAssign.value);
 		break;
-        case Print_kind:
-		if (s->v.Print.dest)
-			VISIT(st, expr, s->v.Print.dest);
-		VISIT_SEQ(st, expr, s->v.Print.values);
-		break;
         case For_kind:
 		VISIT(st, expr, s->v.For.target);
 		VISIT(st, expr, s->v.For.iter);

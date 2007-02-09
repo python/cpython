@@ -423,7 +423,7 @@ class SyntaxTestCase(unittest.TestCase):
         source = re.sub('(?m)^ *:', '', """\
             :def foo(x):
             :  def bar():
-            :    print x
+            :    print(x)
             :  del x
             :""")
         self._check_error(source, "nested scope")

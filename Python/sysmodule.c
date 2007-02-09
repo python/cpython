@@ -904,7 +904,7 @@ exitfunc -- if sys.exitfunc exists, this routine is called when Python exits\n\
   Assigning to sys.exitfunc is deprecated; use the atexit module instead.\n\
 \n\
 stdin -- standard input file object; used by raw_input() and input()\n\
-stdout -- standard output file object; used by the print statement\n\
+stdout -- standard output file object; used by print()\n\
 stderr -- standard error object; used for error messages\n\
   By assigning other file objects (or objects that behave like files)\n\
   to these, it is possible to redirect all of the interpreter's I/O.\n\

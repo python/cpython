@@ -43,9 +43,9 @@ regenerate the original program text from the tokens.
 There are some standard formatting practices that are easy to get right.
 
 >>> roundtrip("if x == 1:\\n"
-...           "    print x\\n")
+...           "    print(x)\\n")
 if x == 1:
-    print x
+    print(x)
 
 Some people use different formatting conventions, which makes
 untokenize a little trickier.  Note that this test involves trailing
@@ -53,29 +53,29 @@ whitespace after the colon.  Note that we use hex escapes to make the
 two trailing blanks apparent in the expected output.
 
 >>> roundtrip("if   x  ==  1  :  \\n"
-...           "  print x\\n")
+...           "  print(x)\\n")
 if   x  ==  1  :\x20\x20
-  print x
+  print(x)
 
 Comments need to go in the right place.
 
 >>> roundtrip("if x == 1:\\n"
 ...           "    # A comment by itself.\\n"
-...           "    print x  # Comment here, too.\\n"
+...           "    print(x)  # Comment here, too.\\n"
 ...           "    # Another comment.\\n"
 ...           "after_if = True\\n")
 if x == 1:
     # A comment by itself.
-    print x  # Comment here, too.
+    print(x)  # Comment here, too.
     # Another comment.
 after_if = True
 
 >>> roundtrip("if (x  # The comments need to go in the right place\\n"
 ...           "    == 1):\\n"
-...           "    print 'x == 1'\\n")
+...           "    print('x == 1')\\n")
 if (x  # The comments need to go in the right place
     == 1):
-    print 'x == 1'
+    print('x == 1')
 
 """
 
@@ -130,9 +130,9 @@ def decistmt(s):
     """Substitute Decimals for floats in a string of statements.
 
     >>> from decimal import Decimal
-    >>> s = 'print +21.3e-5*-.1234/81.7'
+    >>> s = 'print(+21.3e-5*-.1234/81.7)'
     >>> decistmt(s)
-    "print +Decimal ('21.3e-5')*-Decimal ('.1234')/Decimal ('81.7')"
+    "print (+Decimal ('21.3e-5')*-Decimal ('.1234')/Decimal ('81.7'))"
 
     The format of the exponent is inherited from the platform C library.
     Known cases are "e-007" (Windows) and "e-07" (not Windows).  Since

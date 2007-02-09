@@ -387,26 +387,6 @@ class Transformer:
             return AugAssign(lval, op[1], exprNode, lineno=op[2])
         raise WalkerError, "can't get here"
 
-    def print_stmt(self, nodelist):
-        # print ([ test (',' test)* [','] ] | '>>' test [ (',' test)+ [','] ])
-        items = []
-        if len(nodelist) == 1:
-            start = 1
-            dest = None
-        elif nodelist[1][0] == token.RIGHTSHIFT:
-            assert len(nodelist) == 3 \
-                   or nodelist[3][0] == token.COMMA
-            dest = self.com_node(nodelist[2])
-            start = 4
-        else:
-            dest = None
-            start = 1
-        for i in range(start, len(nodelist), 2):
-            items.append(self.com_node(nodelist[i]))
-        if nodelist[-1][0] == token.COMMA:
-            return Print(items, dest, lineno=nodelist[0][2])
-        return Printnl(items, dest, lineno=nodelist[0][2])
-
     def del_stmt(self, nodelist):
         return self.com_assign(nodelist[1], OP_DELETE)
 
@@ -1480,7 +1460,6 @@ _legal_node_types = [
     symbol.simple_stmt,
     symbol.compound_stmt,
     symbol.expr_stmt,
-    symbol.print_stmt,
     symbol.del_stmt,
     symbol.pass_stmt,
     symbol.break_stmt,

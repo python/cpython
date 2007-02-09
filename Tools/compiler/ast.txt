@@ -34,8 +34,6 @@ TryExcept: body, handlers!, else_&
 Return: value
 Yield: value
 Const: value*
-Print: nodes!, dest&
-Printnl: nodes!, dest&
 Discard: expr
 AugAssign: node, op*, expr
 Assign: nodes!, expr

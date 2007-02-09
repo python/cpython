@@ -1398,7 +1398,7 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 
 	if (dummy_args == NULL)
 		return NULL;
-	if (!PyArg_ParseTupleAndKeywords(dummy_args, kwds, "|OOO:Print",
+	if (!PyArg_ParseTupleAndKeywords(dummy_args, kwds, "|OOO:print",
 					 kwlist, &sep, &end, &file))
                 return NULL;
 	if (file == NULL || file == Py_None)

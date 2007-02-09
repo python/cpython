@@ -25,7 +25,7 @@ class TracebackCases(unittest.TestCase):
         import test.badsyntax_nocaret
 
     def syntax_error_bad_indentation(self):
-        compile("def spam():\n  print 1\n print 2", "?", "exec")
+        compile("def spam():\n  print(1)\n print(2)", "?", "exec")
 
     def test_caret(self):
         err = self.get_exception_format(self.syntax_error_with_caret,
@@ -48,9 +48,9 @@ class TracebackCases(unittest.TestCase):
         err = self.get_exception_format(self.syntax_error_bad_indentation,
                                         IndentationError)
         self.assert_(len(err) == 4)
-        self.assert_(err[1].strip() == "print 2")
+        self.assert_(err[1].strip() == "print(2)")
         self.assert_("^" in err[2])
-        self.assert_(err[1].find("2") == err[2].find("^"))
+        self.assert_(err[1].find(")") == err[2].find("^"))
 
     def test_bug737473(self):
         import sys, os, tempfile, time

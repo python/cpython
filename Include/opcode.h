@@ -61,10 +61,7 @@ extern "C" {
 #define GET_ITER	68
 
 #define PRINT_EXPR	70
-#define PRINT_ITEM	71
-#define PRINT_NEWLINE	72
-#define PRINT_ITEM_TO   73
-#define PRINT_NEWLINE_TO 74
+
 #define INPLACE_LSHIFT	75
 #define INPLACE_RSHIFT	76
 #define INPLACE_AND	77
