@@ -104,8 +104,6 @@ sys_displayhook(PyObject *self, PyObject *o)
 	}
 	if (PyObject_SetAttrString(builtins, "_", Py_None) != 0)
 		return NULL;
-	if (Py_FlushLine() != 0)
-		return NULL;
 	outf = PySys_GetObject("stdout");
 	if (outf == NULL) {
 		PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
@@ -113,8 +111,7 @@ sys_displayhook(PyObject *self, PyObject *o)
 	}
 	if (PyFile_WriteObject(o, outf, 0) != 0)
 		return NULL;
-	PyFile_SoftSpace(outf, 1);
-	if (Py_FlushLine() != 0)
+	if (PyFile_WriteString("\n", outf) != 0)
 		return NULL;
 	if (PyObject_SetAttrString(builtins, "_", o) != 0)
 		return NULL;

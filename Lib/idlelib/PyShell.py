@@ -1223,7 +1223,6 @@ class PyShell(OutputWindow):
             self.text.insert("end-1c", "\n")
         self.text.mark_set("iomark", "end-1c")
         self.set_line_and_column()
-        sys.stdout.softspace = 0
 
     def write(self, s, tags=()):
         try:
@@ -1242,7 +1241,6 @@ class PseudoFile(object):
     def __init__(self, shell, tags, encoding=None):
         self.shell = shell
         self.tags = tags
-        self.softspace = 0
         self.encoding = encoding
 
     def write(self, s):

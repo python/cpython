@@ -202,7 +202,7 @@ class _fileobject(object):
     default_bufsize = 8192
     name = "<socket>"
 
-    __slots__ = ["mode", "bufsize", "softspace",
+    __slots__ = ["mode", "bufsize",
                  # "closed" is a property, see below
                  "_sock", "_rbufsize", "_wbufsize", "_rbuf", "_wbuf",
                  "_close"]
@@ -213,7 +213,6 @@ class _fileobject(object):
         if bufsize < 0:
             bufsize = self.default_bufsize
         self.bufsize = bufsize
-        self.softspace = False
         if bufsize == 0:
             self._rbufsize = 1
         elif bufsize == 1:

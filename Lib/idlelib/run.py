@@ -190,12 +190,7 @@ def cleanup_traceback(tb, exclude):
         tb[i] = fn, ln, nm, line
 
 def flush_stdout():
-    try:
-        if sys.stdout.softspace:
-            sys.stdout.softspace = 0
-            sys.stdout.write("\n")
-    except (AttributeError, EOFError):
-        pass
+    """XXX How to do this now?"""
 
 def exit():
     """Exit subprocess, possibly after first deleting sys.exitfunc

@@ -102,8 +102,6 @@ typedef struct {
 	char* f_bufend;		/* Points after last occupied position */
 	char* f_bufptr;		/* Current buffer position */
 
-	int f_softspace;	/* Flag used by 'print' command */
-
 	int f_univ_newline;	/* Handle any newline convention */
 	int f_newlinetypes;	/* Types of newlines seen */
 	int f_skipnextlf;	/* Skip next \n */
@@ -813,8 +811,6 @@ BZ2File_write(BZ2FileObject *self, PyObject *args)
 			goto cleanup;
 	}
 
-	self->f_softspace = 0;
-
 	Py_BEGIN_ALLOW_THREADS
 	BZ2_bzWrite (&bzerror, self->fp, buf, len);
 	self->pos += len;
@@ -933,8 +929,6 @@ BZ2File_writelines(BZ2FileObject *self, PyObject *seq)
 				PyList_SET_ITEM(list, i, line);
 			}
 		}
-
-		self->f_softspace = 0;
 
 		/* Since we are releasing the global lock, the
 		   following code may *not* execute Python code. */
@@ -1265,18 +1259,6 @@ static PyGetSetDef BZ2File_getset[] = {
 
 
 /* ===================================================================== */
-/* Members of BZ2File_Type. */
-
-#undef OFF
-#define OFF(x) offsetof(BZ2FileObject, x)
-
-static PyMemberDef BZ2File_members[] = {
-	{"softspace",	T_INT,		OFF(f_softspace), 0,
-	 "flag indicating that a space needs to be printed; used by print"},
-	{NULL}	/* Sentinel */
-};
-
-/* ===================================================================== */
 /* Slot definitions for BZ2File_Type. */
 
 static int
@@ -1501,7 +1483,7 @@ static PyTypeObject BZ2File_Type = {
         (getiterfunc)BZ2File_getiter, /*tp_iter*/
         (iternextfunc)BZ2File_iternext, /*tp_iternext*/
         BZ2File_methods,        /*tp_methods*/
-        BZ2File_members,        /*tp_members*/
+        0,		        /*tp_members*/
         BZ2File_getset,         /*tp_getset*/
         0,                      /*tp_base*/
         0,                      /*tp_dict*/

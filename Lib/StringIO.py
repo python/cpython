@@ -60,7 +60,6 @@ class StringIO:
         self.buflist = []
         self.pos = 0
         self.closed = False
-        self.softspace = 0
 
     def __iter__(self):
         return self
