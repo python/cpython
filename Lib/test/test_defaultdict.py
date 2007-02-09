@@ -81,8 +81,8 @@ class TestDefaultDict(unittest.TestCase):
         try:
             f = open(tfn, "w+")
             try:
-                print >>f, d1
-                print >>f, d2
+                print(d1, file=f)
+                print(d2, file=f)
                 f.seek(0)
                 self.assertEqual(f.readline(), repr(d1) + "\n")
                 self.assertEqual(f.readline(), repr(d2) + "\n")

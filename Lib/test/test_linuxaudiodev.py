@@ -22,7 +22,7 @@ def play_sound_file(path):
     fp.close()
 
     if enc != SND_FORMAT_MULAW_8:
-        print "Expect .au file with 8-bit mu-law samples"
+        print("Expect .au file with 8-bit mu-law samples")
         return
 
     try:
@@ -63,27 +63,27 @@ def test_errors():
     try:
         a.setparameters(-1, size, nchannels, fmt)
     except ValueError as msg:
-        print msg
+        print(msg)
     try:
         a.setparameters(rate, -2, nchannels, fmt)
     except ValueError as msg:
-        print msg
+        print(msg)
     try:
         a.setparameters(rate, size, 3, fmt)
     except ValueError as msg:
-        print msg
+        print(msg)
     try:
         a.setparameters(rate, size, nchannels, 177)
     except ValueError as msg:
-        print msg
+        print(msg)
     try:
         a.setparameters(rate, size, nchannels, linuxaudiodev.AFMT_U16_LE)
     except ValueError as msg:
-        print msg
+        print(msg)
     try:
         a.setparameters(rate, 16, nchannels, fmt)
     except ValueError as msg:
-        print msg
+        print(msg)
 
 def test():
     play_sound_file(findfile('audiotest.au'))

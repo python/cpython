@@ -165,11 +165,11 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
 def demo_app(environ,start_response):
     from StringIO import StringIO
     stdout = StringIO()
-    print >>stdout, "Hello world!"
-    print >>stdout
+    print("Hello world!", file=stdout)
+    print(file=stdout)
     h = environ.items(); h.sort()
     for k,v in h:
-        print >>stdout, k,'=',repr(v)
+        print(k,'=',repr(v), file=stdout)
     start_response("200 OK", [('Content-Type','text/plain')])
     return [stdout.getvalue()]
 
@@ -186,7 +186,7 @@ def make_server(
 if __name__ == '__main__':
     httpd = make_server('', 8000, demo_app)
     sa = httpd.socket.getsockname()
-    print "Serving HTTP on", sa[0], "port", sa[1], "..."
+    print("Serving HTTP on", sa[0], "port", sa[1], "...")
     import webbrowser
     webbrowser.open('http://localhost:8000/xyz?abc')
     httpd.handle_request()  # serve one request, then exit

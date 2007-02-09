@@ -470,7 +470,7 @@ def _test():
                 g = sys.stdout
             else:
                 if arg[-3:] != ".gz":
-                    print "filename doesn't end in .gz:", repr(arg)
+                    print("filename doesn't end in .gz:", repr(arg))
                     continue
                 f = open(arg, "rb")
                 g = __builtin__.open(arg[:-3], "wb")

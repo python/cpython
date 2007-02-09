@@ -33,7 +33,7 @@ def read_sound_file(path):
     fp.close()
 
     if enc != SND_FORMAT_MULAW_8:
-        print "Expect .au file with 8-bit mu-law samples"
+        print("Expect .au file with 8-bit mu-law samples")
         return
 
     # Convert the data to 16-bit signed.
@@ -78,8 +78,8 @@ def play_sound_file(data, rate, ssize, nchannels):
 
     # set parameters based on .au file headers
     dsp.setparameters(AFMT_S16_NE, nchannels, rate)
-    print ("playing test sound file (expected running time: %.2f sec)"
-           % expected_time)
+    print(("playing test sound file (expected running time: %.2f sec)"
+           % expected_time))
     t1 = time.time()
     dsp.write(data)
     dsp.close()
@@ -143,7 +143,7 @@ def test_bad_setparameters(dsp):
             result = dsp.setparameters(fmt, channels, rate, True)
             raise AssertionError("setparameters: expected OSSAudioError")
         except ossaudiodev.OSSAudioError as err:
-            print "setparameters: got OSSAudioError as expected"
+            print("setparameters: got OSSAudioError as expected")
 
 def test():
     (data, rate, ssize, nchannels) = read_sound_file(findfile('audiotest.au'))

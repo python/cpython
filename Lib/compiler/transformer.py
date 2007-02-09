@@ -86,7 +86,7 @@ def Node(*args):
         try:
             return nodes[kind](*args[1:])
         except TypeError:
-            print nodes[kind], len(args), args
+            print(nodes[kind], len(args), args)
             raise
     else:
         raise WalkerError, "Can't find appropriate Node type: %s" % str(args)

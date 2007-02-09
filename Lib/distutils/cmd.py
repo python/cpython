@@ -163,14 +163,14 @@ class Command:
         from distutils.fancy_getopt import longopt_xlate
         if header is None:
             header = "command options for '%s':" % self.get_command_name()
-        print indent + header
+        print(indent + header)
         indent = indent + "  "
         for (option, _, _) in self.user_options:
             option = string.translate(option, longopt_xlate)
             if option[-1] == "=":
                 option = option[:-1]
             value = getattr(self, option)
-            print indent + "%s = %s" % (option, value)
+            print(indent + "%s = %s" % (option, value))
 
 
     def run (self):
@@ -199,7 +199,7 @@ class Command:
         """
         from distutils.debug import DEBUG
         if DEBUG:
-            print msg
+            print(msg)
             sys.stdout.flush()
 
 
@@ -475,4 +475,4 @@ class install_misc (Command):
 
 
 if __name__ == "__main__":
-    print "ok"
+    print("ok")

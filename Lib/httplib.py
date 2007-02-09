@@ -342,7 +342,7 @@ class HTTPResponse:
         # Initialize with Simple-Response defaults
         line = self.fp.readline()
         if self.debuglevel > 0:
-            print "reply:", repr(line)
+            print("reply:", repr(line))
         if not line:
             # Presumably, the server closed the connection before
             # sending a valid response.
@@ -391,7 +391,7 @@ class HTTPResponse:
                 if not skip:
                     break
                 if self.debuglevel > 0:
-                    print "header:", skip
+                    print("header:", skip)
 
         self.status = status
         self.reason = reason.strip()
@@ -414,7 +414,7 @@ class HTTPResponse:
         self.msg = HTTPMessage(self.fp, 0)
         if self.debuglevel > 0:
             for hdr in self.msg.headers:
-                print "header:", hdr,
+                print("header:", hdr, end=' ')
 
         # don't let the msg keep an fp
         self.msg.fp = None
@@ -665,11 +665,11 @@ class HTTPConnection:
             try:
                 self.sock = socket.socket(af, socktype, proto)
                 if self.debuglevel > 0:
-                    print "connect: (%s, %s)" % (self.host, self.port)
+                    print("connect: (%s, %s)" % (self.host, self.port))
                 self.sock.connect(sa)
             except socket.error as msg:
                 if self.debuglevel > 0:
-                    print 'connect fail:', (self.host, self.port)
+                    print('connect fail:', (self.host, self.port))
                 if self.sock:
                     self.sock.close()
                 self.sock = None
@@ -702,11 +702,11 @@ class HTTPConnection:
         # NOTE: we DO propagate the error, though, because we cannot simply
         #       ignore the error... the caller will know if they can retry.
         if self.debuglevel > 0:
-            print "send:", repr(str)
+            print("send:", repr(str))
         try:
             blocksize=8192
             if hasattr(str,'read') :
-                if self.debuglevel > 0: print "sendIng a read()able"
+                if self.debuglevel > 0: print("sendIng a read()able")
                 data=str.read(blocksize)
                 while data:
                     self.sock.sendall(data)
@@ -898,7 +898,7 @@ class HTTPConnection:
                     thelen = str(os.fstat(body.fileno()).st_size)
                 except (AttributeError, OSError):
                     # Don't send a length if this failed
-                    if self.debuglevel > 0: print "Cannot stat!!"
+                    if self.debuglevel > 0: print("Cannot stat!!")
 
             if thelen is not None:
                 self.putheader('Content-Length',thelen)
@@ -1408,13 +1408,13 @@ def test():
     h.putrequest('GET', selector)
     h.endheaders()
     status, reason, headers = h.getreply()
-    print 'status =', status
-    print 'reason =', reason
-    print "read", len(h.getfile().read())
-    print
+    print('status =', status)
+    print('reason =', reason)
+    print("read", len(h.getfile().read()))
+    print()
     if headers:
-        for header in headers.headers: print header.strip()
-    print
+        for header in headers.headers: print(header.strip())
+    print()
 
     # minimal test that code to extract host from url works
     class HTTP11(HTTP):
@@ -1431,20 +1431,20 @@ def test():
 
         for host, selector in (('sourceforge.net', '/projects/python'),
                                ):
-            print "https://%s%s" % (host, selector)
+            print("https://%s%s" % (host, selector))
             hs = HTTPS()
             hs.set_debuglevel(dl)
             hs.connect(host)
             hs.putrequest('GET', selector)
             hs.endheaders()
             status, reason, headers = hs.getreply()
-            print 'status =', status
-            print 'reason =', reason
-            print "read", len(hs.getfile().read())
-            print
+            print('status =', status)
+            print('reason =', reason)
+            print("read", len(hs.getfile().read()))
+            print()
             if headers:
-                for header in headers.headers: print header.strip()
-            print
+                for header in headers.headers: print(header.strip())
+            print()
 
 if __name__ == '__main__':
     test()

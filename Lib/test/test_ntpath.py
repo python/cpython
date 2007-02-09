@@ -9,11 +9,11 @@ def tester(fn, wantResult):
     fn = fn.replace("\\", "\\\\")
     gotResult = eval(fn)
     if wantResult != gotResult:
-        print "error!"
-        print "evaluated: " + str(fn)
-        print "should be: " + str(wantResult)
-        print " returned: " + str(gotResult)
-        print ""
+        print("error!")
+        print("evaluated: " + str(fn))
+        print("should be: " + str(wantResult))
+        print(" returned: " + str(gotResult))
+        print("")
         errors = errors + 1
 
 tester('ntpath.splitext("foo.ext")', ('foo', '.ext'))
@@ -152,4 +152,4 @@ else:
 if errors:
     raise TestFailed(str(errors) + " errors.")
 elif verbose:
-    print "No errors.  Thank your lucky stars."
+    print("No errors.  Thank your lucky stars.")

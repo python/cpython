@@ -164,6 +164,6 @@ if __name__ == '__main__':
     def run():
         keySeq = ''
         dlg = GetHelpSourceDialog(root, 'Get Help Source')
-        print dlg.result
+        print(dlg.result)
     Button(root,text='Dialog', command=run).pack()
     root.mainloop()

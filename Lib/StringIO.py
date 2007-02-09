@@ -291,14 +291,14 @@ def test():
     if f.getvalue() != text:
         raise RuntimeError, 'write failed'
     length = f.tell()
-    print 'File length =', length
+    print('File length =', length)
     f.seek(len(lines[0]))
     f.write(lines[1])
     f.seek(0)
-    print 'First line =', repr(f.readline())
-    print 'Position =', f.tell()
+    print('First line =', repr(f.readline()))
+    print('Position =', f.tell())
     line = f.readline()
-    print 'Second line =', repr(line)
+    print('Second line =', repr(line))
     f.seek(-len(line), 1)
     line2 = f.read(len(line))
     if line != line2:
@@ -310,13 +310,13 @@ def test():
     line2 = f.read()
     if line != line2:
         raise RuntimeError, 'bad result after seek back from EOF'
-    print 'Read', len(list), 'more lines'
-    print 'File length =', f.tell()
+    print('Read', len(list), 'more lines')
+    print('File length =', f.tell())
     if f.tell() != length:
         raise RuntimeError, 'bad length'
     f.truncate(length/2)
     f.seek(0, 2)
-    print 'Truncated length =', f.tell()
+    print('Truncated length =', f.tell())
     if f.tell() != length/2:
         raise RuntimeError, 'truncate did not adjust length'
     f.close()

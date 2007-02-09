@@ -110,7 +110,7 @@ class TableDBTestCase(unittest.TestCase):
             assert values[1]['Species'] == 'Penguin'
         else :
             if verbose:
-                print "values= %r" % (values,)
+                print("values= %r" % (values,))
             raise "Wrong values returned!"
 
     def test03(self):
@@ -120,15 +120,15 @@ class TableDBTestCase(unittest.TestCase):
         except dbtables.TableDBError:
             pass
         if verbose:
-            print '...before CreateTable...'
+            print('...before CreateTable...')
             self.tdb._db_print()
         self.tdb.CreateTable(tabname, ['a', 'b', 'c', 'd', 'e'])
         if verbose:
-            print '...after CreateTable...'
+            print('...after CreateTable...')
             self.tdb._db_print()
         self.tdb.Drop(tabname)
         if verbose:
-            print '...after Drop...'
+            print('...after Drop...')
             self.tdb._db_print()
         self.tdb.CreateTable(tabname, ['a', 'b', 'c', 'd', 'e'])
 

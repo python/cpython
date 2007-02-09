@@ -165,7 +165,7 @@ def _test():
         print "accessible"
     \n"""
     exec(testcode)
-    print '='*20, "Using rexec:", '='*20
+    print('='*20, "Using rexec:", '='*20)
     import rexec
     r = rexec.RExec()
     m = r.add_module('__main__')

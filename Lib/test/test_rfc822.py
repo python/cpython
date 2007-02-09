@@ -42,7 +42,7 @@ class MessageTestCase(unittest.TestCase):
             try:
                 mn, ma = results[i][0], results[i][1]
             except IndexError:
-                print 'extra parsed address:', repr(n), repr(a)
+                print('extra parsed address:', repr(n), repr(a))
                 continue
             i = i + 1
             self.assertEqual(mn, n,
@@ -52,7 +52,7 @@ class MessageTestCase(unittest.TestCase):
             if mn == n and ma == a:
                 pass
             else:
-                print 'not found:', repr(n), repr(a)
+                print('not found:', repr(n), repr(a))
 
         out = m.getdate('date')
         if out:

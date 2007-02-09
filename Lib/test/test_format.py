@@ -11,26 +11,26 @@ overflowok = 1
 def testformat(formatstr, args, output=None):
     if verbose:
         if output:
-            print "%s %% %s =? %s ..." %\
-                (repr(formatstr), repr(args), repr(output)),
+            print("%s %% %s =? %s ..." %\
+                (repr(formatstr), repr(args), repr(output)), end=' ')
         else:
-            print "%s %% %s works? ..." % (repr(formatstr), repr(args)),
+            print("%s %% %s works? ..." % (repr(formatstr), repr(args)), end=' ')
     try:
         result = formatstr % args
     except OverflowError:
         if not overflowok:
             raise
         if verbose:
-            print 'overflow (this is fine)'
+            print('overflow (this is fine)')
     else:
         if output and result != output:
             if verbose:
-                print 'no'
-            print "%s %% %s == %s != %s" %\
-                (repr(formatstr), repr(args), repr(result), repr(output))
+                print('no')
+            print("%s %% %s == %s != %s" %\
+                (repr(formatstr), repr(args), repr(result), repr(output)))
         else:
             if verbose:
-                print 'yes'
+                print('yes')
 
 def testboth(formatstr, *args):
     testformat(formatstr, *args)
@@ -194,7 +194,7 @@ testboth("%o", -042, "-42")
 
 # Test exception for unknown format characters
 if verbose:
-    print 'Testing exceptions'
+    print('Testing exceptions')
 
 def test_exc(formatstr, args, exception, excmsg):
     try:
@@ -202,13 +202,13 @@ def test_exc(formatstr, args, exception, excmsg):
     except exception as exc:
         if str(exc) == excmsg:
             if verbose:
-                print "yes"
+                print("yes")
         else:
-            if verbose: print 'no'
-            print 'Unexpected ', exception, ':', repr(str(exc))
+            if verbose: print('no')
+            print('Unexpected ', exception, ':', repr(str(exc)))
     except:
-        if verbose: print 'no'
-        print 'Unexpected exception'
+        if verbose: print('no')
+        print('Unexpected exception')
         raise
     else:
         raise TestFailed, 'did not get expected exception: %s' % excmsg

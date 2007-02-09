@@ -204,12 +204,12 @@ if __name__ == "__main__":
         fp=open(openfilename,"r")
         fp.close()
     except:
-        print "Could not open File: "
-        print sys.exc_info()[1]
+        print("Could not open File: ")
+        print(sys.exc_info()[1])
 
-    print "open", openfilename.encode(enc)
+    print("open", openfilename.encode(enc))
 
     # dialog for saving files
 
     saveasfilename=asksaveasfilename()
-    print "saveas", saveasfilename.encode(enc)
+    print("saveas", saveasfilename.encode(enc))

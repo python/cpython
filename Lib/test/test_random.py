@@ -547,7 +547,7 @@ def test_main(verbose=None):
         for i in xrange(len(counts)):
             test_support.run_unittest(*testclasses)
             counts[i] = sys.gettotalrefcount()
-        print counts
+        print(counts)
 
 if __name__ == "__main__":
     test_main(verbose=True)

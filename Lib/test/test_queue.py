@@ -271,11 +271,11 @@ def test():
     SimpleQueueTest(q)
     SimpleQueueTest(q)
     if verbose:
-        print "Simple Queue tests seemed to work"
+        print("Simple Queue tests seemed to work")
     q = FailingQueue(QUEUE_SIZE)
     FailingQueueTest(q)
     FailingQueueTest(q)
     if verbose:
-        print "Failing Queue tests seemed to work"
+        print("Failing Queue tests seemed to work")
 
 test()

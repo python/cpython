@@ -30,7 +30,7 @@ def test_main(verbose=None):
             test_support.run_unittest(ListTest)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
-        print counts
+        print(counts)
 
 
 if __name__ == "__main__":

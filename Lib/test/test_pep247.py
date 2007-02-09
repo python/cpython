@@ -41,7 +41,7 @@ def check_hash_module(module, key=None):
         hd2 += "%02x" % ord(byte)
     assert hd2 == hexdigest, "hexdigest doesn't appear correct"
 
-    print 'Module', module.__name__, 'seems to comply with PEP 247'
+    print('Module', module.__name__, 'seems to comply with PEP 247')
 
 
 if __name__ == '__main__':

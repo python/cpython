@@ -30,12 +30,12 @@ def dis(x=None):
                             types.FunctionType,
                             types.CodeType,
                             types.ClassType):
-                print "Disassembly of %s:" % name
+                print("Disassembly of %s:" % name)
                 try:
                     dis(x1)
                 except TypeError as msg:
-                    print "Sorry:", msg
-                print
+                    print("Sorry:", msg)
+                print()
     elif hasattr(x, 'co_code'):
         disassemble(x)
     elif isinstance(x, str):
@@ -69,17 +69,17 @@ def disassemble(co, lasti=-1):
         op = ord(c)
         if i in linestarts:
             if i > 0:
-                print
-            print "%3d" % linestarts[i],
+                print()
+            print("%3d" % linestarts[i], end=' ')
         else:
-            print '   ',
+            print('   ', end=' ')
 
-        if i == lasti: print '-->',
-        else: print '   ',
-        if i in labels: print '>>',
-        else: print '  ',
-        print repr(i).rjust(4),
-        print opname[op].ljust(20),
+        if i == lasti: print('-->', end=' ')
+        else: print('   ', end=' ')
+        if i in labels: print('>>', end=' ')
+        else: print('  ', end=' ')
+        print(repr(i).rjust(4), end=' ')
+        print(opname[op].ljust(20), end=' ')
         i = i+1
         if op >= HAVE_ARGUMENT:
             oparg = ord(code[i]) + ord(code[i+1])*256 + extended_arg
@@ -87,22 +87,22 @@ def disassemble(co, lasti=-1):
             i = i+2
             if op == EXTENDED_ARG:
                 extended_arg = oparg*65536
-            print repr(oparg).rjust(5),
+            print(repr(oparg).rjust(5), end=' ')
             if op in hasconst:
-                print '(' + repr(co.co_consts[oparg]) + ')',
+                print('(' + repr(co.co_consts[oparg]) + ')', end=' ')
             elif op in hasname:
-                print '(' + co.co_names[oparg] + ')',
+                print('(' + co.co_names[oparg] + ')', end=' ')
             elif op in hasjrel:
-                print '(to ' + repr(i + oparg) + ')',
+                print('(to ' + repr(i + oparg) + ')', end=' ')
             elif op in haslocal:
-                print '(' + co.co_varnames[oparg] + ')',
+                print('(' + co.co_varnames[oparg] + ')', end=' ')
             elif op in hascompare:
-                print '(' + cmp_op[oparg] + ')',
+                print('(' + cmp_op[oparg] + ')', end=' ')
             elif op in hasfree:
                 if free is None:
                     free = co.co_cellvars + co.co_freevars
-                print '(' + free[oparg] + ')',
-        print
+                print('(' + free[oparg] + ')', end=' ')
+        print()
 
 def disassemble_string(code, lasti=-1, varnames=None, names=None,
                        constants=None):
@@ -112,37 +112,37 @@ def disassemble_string(code, lasti=-1, varnames=None, names=None,
     while i < n:
         c = code[i]
         op = ord(c)
-        if i == lasti: print '-->',
-        else: print '   ',
-        if i in labels: print '>>',
-        else: print '  ',
-        print repr(i).rjust(4),
-        print opname[op].ljust(15),
+        if i == lasti: print('-->', end=' ')
+        else: print('   ', end=' ')
+        if i in labels: print('>>', end=' ')
+        else: print('  ', end=' ')
+        print(repr(i).rjust(4), end=' ')
+        print(opname[op].ljust(15), end=' ')
         i = i+1
         if op >= HAVE_ARGUMENT:
             oparg = ord(code[i]) + ord(code[i+1])*256
             i = i+2
-            print repr(oparg).rjust(5),
+            print(repr(oparg).rjust(5), end=' ')
             if op in hasconst:
                 if constants:
-                    print '(' + repr(constants[oparg]) + ')',
+                    print('(' + repr(constants[oparg]) + ')', end=' ')
                 else:
-                    print '(%d)'%oparg,
+                    print('(%d)'%oparg, end=' ')
             elif op in hasname:
                 if names is not None:
-                    print '(' + names[oparg] + ')',
+                    print('(' + names[oparg] + ')', end=' ')
                 else:
-                    print '(%d)'%oparg,
+                    print('(%d)'%oparg, end=' ')
             elif op in hasjrel:
-                print '(to ' + repr(i + oparg) + ')',
+                print('(to ' + repr(i + oparg) + ')', end=' ')
             elif op in haslocal:
                 if varnames:
-                    print '(' + varnames[oparg] + ')',
+                    print('(' + varnames[oparg] + ')', end=' ')
                 else:
-                    print '(%d)' % oparg,
+                    print('(%d)' % oparg, end=' ')
             elif op in hascompare:
-                print '(' + cmp_op[oparg] + ')',
-        print
+                print('(' + cmp_op[oparg] + ')', end=' ')
+        print()
 
 disco = disassemble                     # XXX For backwards compatibility
 

@@ -124,8 +124,8 @@ def test():
     root.protocol("WM_DELETE_WINDOW", root.destroy)
     class MyScrolledList(ScrolledList):
         def fill_menu(self): self.menu.add_command(label="pass")
-        def on_select(self, index): print "select", self.get(index)
-        def on_double(self, index): print "double", self.get(index)
+        def on_select(self, index): print("select", self.get(index))
+        def on_double(self, index): print("double", self.get(index))
     s = MyScrolledList(root)
     for i in range(30):
         s.append("item %02d" % i)

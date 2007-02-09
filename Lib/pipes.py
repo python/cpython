@@ -188,7 +188,7 @@ class Template:
     def makepipeline(self, infile, outfile):
         cmd = makepipeline(infile, self.steps, outfile)
         if self.debugging:
-            print cmd
+            print(cmd)
             cmd = 'set -x; ' + cmd
         return cmd
 
@@ -286,7 +286,7 @@ def quote(file):
 # Small test program and example
 
 def test():
-    print 'Testing...'
+    print('Testing...')
     t = Template()
     t.append('togif $IN $OUT', 'ff')
     t.append('giftoppm', '--')
@@ -295,4 +295,4 @@ def test():
     t.debug(1)
     FILE = '/usr/local/images/rgb/rogues/guido.rgb'
     t.copy(FILE, '@temp')
-    print 'Done.'
+    print('Done.')

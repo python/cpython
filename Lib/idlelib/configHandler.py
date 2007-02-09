@@ -679,18 +679,18 @@ idleConf=IdleConf()
 ### module test
 if __name__ == '__main__':
     def dumpCfg(cfg):
-        print '\n',cfg,'\n'
+        print('\n',cfg,'\n')
         for key in cfg.keys():
             sections=cfg[key].sections()
-            print key
-            print sections
+            print(key)
+            print(sections)
             for section in sections:
                 options=cfg[key].options(section)
-                print section
-                print options
+                print(section)
+                print(options)
                 for option in options:
-                    print option, '=', cfg[key].Get(section,option)
+                    print(option, '=', cfg[key].Get(section,option))
     dumpCfg(idleConf.defaultCfg)
     dumpCfg(idleConf.userCfg)
-    print idleConf.userCfg['main'].Get('Theme','name')
+    print(idleConf.userCfg['main'].Get('Theme','name'))
     #print idleConf.userCfg['highlight'].GetDefHighlight('Foo','normal')

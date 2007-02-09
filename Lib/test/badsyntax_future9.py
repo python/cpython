@@ -7,4 +7,4 @@ def f(x):
         return x + y
     return g
 
-print f(2)(4)
+print(f(2)(4))

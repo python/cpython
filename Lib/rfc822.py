@@ -972,32 +972,32 @@ if __name__ == '__main__':
     if sys.argv[1:]: file = sys.argv[1]
     f = open(file, 'r')
     m = Message(f)
-    print 'From:', m.getaddr('from')
-    print 'To:', m.getaddrlist('to')
-    print 'Subject:', m.getheader('subject')
-    print 'Date:', m.getheader('date')
+    print('From:', m.getaddr('from'))
+    print('To:', m.getaddrlist('to'))
+    print('Subject:', m.getheader('subject'))
+    print('Date:', m.getheader('date'))
     date = m.getdate_tz('date')
     tz = date[-1]
     date = time.localtime(mktime_tz(date))
     if date:
-        print 'ParsedDate:', time.asctime(date),
+        print('ParsedDate:', time.asctime(date), end=' ')
         hhmmss = tz
         hhmm, ss = divmod(hhmmss, 60)
         hh, mm = divmod(hhmm, 60)
-        print "%+03d%02d" % (hh, mm),
-        if ss: print ".%02d" % ss,
-        print
+        print("%+03d%02d" % (hh, mm), end=' ')
+        if ss: print(".%02d" % ss, end=' ')
+        print()
     else:
-        print 'ParsedDate:', None
+        print('ParsedDate:', None)
     m.rewindbody()
     n = 0
     while f.readline():
         n += 1
-    print 'Lines:', n
-    print '-'*70
-    print 'len =', len(m)
-    if 'Date' in m: print 'Date =', m['Date']
+    print('Lines:', n)
+    print('-'*70)
+    print('len =', len(m))
+    if 'Date' in m: print('Date =', m['Date'])
     if 'X-Nonsense' in m: pass
-    print 'keys =', m.keys()
-    print 'values =', m.values()
-    print 'items =', m.items()
+    print('keys =', m.keys())
+    print('values =', m.values())
+    print('items =', m.items())

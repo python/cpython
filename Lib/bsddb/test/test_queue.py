@@ -34,15 +34,15 @@ class SimpleQueueTestCase(unittest.TestCase):
         # Basic Queue tests using the deprecated DBCursor.consume method.
 
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test01_basic..." % self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test01_basic..." % self.__class__.__name__)
 
         d = db.DB()
         d.set_re_len(40)  # Queues must be fixed length
         d.open(self.filename, db.DB_QUEUE, db.DB_CREATE)
 
         if verbose:
-            print "before appends" + '-' * 30
+            print("before appends" + '-' * 30)
             pprint(d.stat())
 
         for x in string.letters:
@@ -58,7 +58,7 @@ class SimpleQueueTestCase(unittest.TestCase):
         assert len(d) == 55
 
         if verbose:
-            print "before close" + '-' * 30
+            print("before close" + '-' * 30)
             pprint(d.stat())
 
         d.close()
@@ -67,25 +67,25 @@ class SimpleQueueTestCase(unittest.TestCase):
         d.open(self.filename)
 
         if verbose:
-            print "after open" + '-' * 30
+            print("after open" + '-' * 30)
             pprint(d.stat())
 
         d.append("one more")
         c = d.cursor()
 
         if verbose:
-            print "after append" + '-' * 30
+            print("after append" + '-' * 30)
             pprint(d.stat())
 
         rec = c.consume()
         while rec:
             if verbose:
-                print rec
+                print(rec)
             rec = c.consume()
         c.close()
 
         if verbose:
-            print "after consume loop" + '-' * 30
+            print("after consume loop" + '-' * 30)
             pprint(d.stat())
 
         assert len(d) == 0, \
@@ -101,12 +101,12 @@ class SimpleQueueTestCase(unittest.TestCase):
         # (No cursor needed)
 
         if verbose:
-            print '\n', '-=' * 30
-            print "Running %s.test02_basicPost32..." % self.__class__.__name__
+            print('\n', '-=' * 30)
+            print("Running %s.test02_basicPost32..." % self.__class__.__name__)
 
         if db.version() < (3, 2, 0):
             if verbose:
-                print "Test not run, DB not new enough..."
+                print("Test not run, DB not new enough...")
             return
 
         d = db.DB()
@@ -114,7 +114,7 @@ class SimpleQueueTestCase(unittest.TestCase):
         d.open(self.filename, db.DB_QUEUE, db.DB_CREATE)
 
         if verbose:
-            print "before appends" + '-' * 30
+            print("before appends" + '-' * 30)
             pprint(d.stat())
 
         for x in string.letters:
@@ -130,7 +130,7 @@ class SimpleQueueTestCase(unittest.TestCase):
         assert len(d) == 55
 
         if verbose:
-            print "before close" + '-' * 30
+            print("before close" + '-' * 30)
             pprint(d.stat())
 
         d.close()
@@ -140,23 +140,23 @@ class SimpleQueueTestCase(unittest.TestCase):
         #d.set_get_returns_none(true)
 
         if verbose:
-            print "after open" + '-' * 30
+            print("after open" + '-' * 30)
             pprint(d.stat())
 
         d.append("one more")
 
         if verbose:
-            print "after append" + '-' * 30
+            print("after append" + '-' * 30)
             pprint(d.stat())
 
         rec = d.consume()
         while rec:
             if verbose:
-                print rec
+                print(rec)
             rec = d.consume()
 
         if verbose:
-            print "after consume loop" + '-' * 30
+            print("after consume loop" + '-' * 30)
             pprint(d.stat())
 
         d.close()

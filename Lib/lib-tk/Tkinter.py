@@ -86,7 +86,7 @@ def _cnfmerge(cnfs):
             try:
                 cnf.update(c)
             except (AttributeError, TypeError) as msg:
-                print "_cnfmerge: fallback due to:", msg
+                print("_cnfmerge: fallback due to:", msg)
                 for k, v in c.items():
                     cnf[k] = v
         return cnf

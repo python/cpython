@@ -83,7 +83,7 @@ def main():
     redir = WidgetRedirector(text)
     global orig_insert
     def my_insert(*args):
-        print "insert", args
+        print("insert", args)
         orig_insert(*args)
     orig_insert = redir.register("insert", my_insert)
     root.mainloop()

@@ -53,13 +53,13 @@ class shlex:
         self.filestack = deque()
         self.source = None
         if self.debug:
-            print 'shlex: reading from %s, line %d' \
-                  % (self.instream, self.lineno)
+            print('shlex: reading from %s, line %d' \
+                  % (self.instream, self.lineno))
 
     def push_token(self, tok):
         "Push a token onto the stack popped by the get_token method"
         if self.debug >= 1:
-            print "shlex: pushing token " + repr(tok)
+            print("shlex: pushing token " + repr(tok))
         self.pushback.appendleft(tok)
 
     def push_source(self, newstream, newfile=None):
@@ -72,17 +72,17 @@ class shlex:
         self.lineno = 1
         if self.debug:
             if newfile is not None:
-                print 'shlex: pushing to file %s' % (self.infile,)
+                print('shlex: pushing to file %s' % (self.infile,))
             else:
-                print 'shlex: pushing to stream %s' % (self.instream,)
+                print('shlex: pushing to stream %s' % (self.instream,))
 
     def pop_source(self):
         "Pop the input source stack."
         self.instream.close()
         (self.infile, self.instream, self.lineno) = self.filestack.popleft()
         if self.debug:
-            print 'shlex: popping to %s, line %d' \
-                  % (self.instream, self.lineno)
+            print('shlex: popping to %s, line %d' \
+                  % (self.instream, self.lineno))
         self.state = ' '
 
     def get_token(self):
@@ -90,7 +90,7 @@ class shlex:
         if self.pushback:
             tok = self.pushback.popleft()
             if self.debug >= 1:
-                print "shlex: popping token " + repr(tok)
+                print("shlex: popping token " + repr(tok))
             return tok
         # No pushback.  Get a token.
         raw = self.read_token()
@@ -112,9 +112,9 @@ class shlex:
         # Neither inclusion nor EOF
         if self.debug >= 1:
             if raw != self.eof:
-                print "shlex: token=" + repr(raw)
+                print("shlex: token=" + repr(raw))
             else:
-                print "shlex: token=EOF"
+                print("shlex: token=EOF")
         return raw
 
     def read_token(self):
@@ -125,8 +125,8 @@ class shlex:
             if nextchar == '\n':
                 self.lineno = self.lineno + 1
             if self.debug >= 3:
-                print "shlex: in state", repr(self.state), \
-                      "I see character:", repr(nextchar)
+                print("shlex: in state", repr(self.state), \
+                      "I see character:", repr(nextchar))
             if self.state is None:
                 self.token = ''        # past end of file
                 break
@@ -136,7 +136,7 @@ class shlex:
                     break
                 elif nextchar in self.whitespace:
                     if self.debug >= 2:
-                        print "shlex: I see whitespace in whitespace state"
+                        print("shlex: I see whitespace in whitespace state")
                     if self.token or (self.posix and quoted):
                         break   # emit current token
                     else:
@@ -167,7 +167,7 @@ class shlex:
                 quoted = True
                 if not nextchar:      # end of file
                     if self.debug >= 2:
-                        print "shlex: I see EOF in quotes state"
+                        print("shlex: I see EOF in quotes state")
                     # XXX what error should be raised here?
                     raise ValueError, "No closing quotation"
                 if nextchar == self.state:
@@ -186,7 +186,7 @@ class shlex:
             elif self.state in self.escape:
                 if not nextchar:      # end of file
                     if self.debug >= 2:
-                        print "shlex: I see EOF in escape state"
+                        print("shlex: I see EOF in escape state")
                     # XXX what error should be raised here?
                     raise ValueError, "No escaped character"
                 # In posix shells, only the quote itself or the escape
@@ -202,7 +202,7 @@ class shlex:
                     break
                 elif nextchar in self.whitespace:
                     if self.debug >= 2:
-                        print "shlex: I see whitespace in word state"
+                        print("shlex: I see whitespace in word state")
                     self.state = ' '
                     if self.token or (self.posix and quoted):
                         break   # emit current token
@@ -228,7 +228,7 @@ class shlex:
                 else:
                     self.pushback.appendleft(nextchar)
                     if self.debug >= 2:
-                        print "shlex: I see punctuation in word state"
+                        print("shlex: I see punctuation in word state")
                     self.state = ' '
                     if self.token:
                         break   # emit current token
@@ -240,9 +240,9 @@ class shlex:
             result = None
         if self.debug > 1:
             if result:
-                print "shlex: raw token=" + repr(result)
+                print("shlex: raw token=" + repr(result))
             else:
-                print "shlex: raw token=EOF"
+                print("shlex: raw token=EOF")
         return result
 
     def sourcehook(self, newfile):
@@ -287,6 +287,6 @@ if __name__ == '__main__':
     while 1:
         tt = lexer.get_token()
         if tt:
-            print "Token: " + repr(tt)
+            print("Token: " + repr(tt))
         else:
             break

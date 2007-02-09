@@ -51,9 +51,9 @@ class AppleSingle(object):
         except ValueError as arg:
             raise Error, "Unpack header error: %s" % (arg,)
         if verbose:
-            print 'Magic:   0x%8.8x' % (magic,)
-            print 'Version: 0x%8.8x' % (version,)
-            print 'Entries: %d' % (nentry,)
+            print('Magic:   0x%8.8x' % (magic,))
+            print('Version: 0x%8.8x' % (version,))
+            print('Entries: %d' % (nentry,))
         if magic != AS_MAGIC:
             raise Error, "Unknown AppleSingle magic number 0x%8.8x" % (magic,)
         if version != AS_VERSION:
@@ -68,7 +68,7 @@ class AppleSingle(object):
             except ValueError as arg:
                 raise Error, "Unpack entry error: %s" % (arg,)
             if verbose:
-                print "Fork %d, offset %d, length %d" % (restype, offset, length)
+                print("Fork %d, offset %d, length %d" % (restype, offset, length))
             fileobj.seek(offset)
             data = fileobj.read(length)
             if len(data) != length:
@@ -124,7 +124,7 @@ def decode(infile, outpath, resonly=False, verbose=False):
 
 def _test():
     if len(sys.argv) < 3 or sys.argv[1] == '-r' and len(sys.argv) != 4:
-        print 'Usage: applesingle.py [-r] applesinglefile decodedfile'
+        print('Usage: applesingle.py [-r] applesinglefile decodedfile')
         sys.exit(1)
     if sys.argv[1] == '-r':
         resonly = True

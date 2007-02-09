@@ -98,7 +98,7 @@ def run_module(mod_name, init_globals=None,
 if __name__ == "__main__":
     # Run the module specified as the next command line argument
     if len(sys.argv) < 2:
-        print >> sys.stderr, "No module specified for execution"
+        print("No module specified for execution", file=sys.stderr)
     else:
         del sys.argv[0] # Make the requested module sys.argv[0]
         run_module(sys.argv[0], run_name="__main__", alter_sys=True)

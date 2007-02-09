@@ -36,7 +36,7 @@ def _test():
                       'strings': ('Save File',
                                   'Discard Changes',
                                   'Return to Editor')})
-    print d.num
+    print(d.num)
 
 
 if __name__ == '__main__':

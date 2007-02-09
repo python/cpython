@@ -272,8 +272,8 @@ def _test():
         fname = 'frame%04.4d.jpg'%num
         num = num+1
         pname = os.path.join(dstdir, fname)
-        if not img: print 'Not',
-        print 'Writing %s, size %dx%d, %d bytes'%(fname, imgw, imgh, len(data))
+        if not img: print('Not', end=' ')
+        print('Writing %s, size %dx%d, %d bytes'%(fname, imgw, imgh, len(data)))
         if img:
             wrt = img.writer(imgfmt, pname)
             wrt.width = imgw
@@ -282,9 +282,9 @@ def _test():
             timestamp, data = rdr.ReadVideo()
             MacOS.SetCreatorAndType(pname, 'ogle', 'JPEG')
             if num > 20:
-                print 'stopping at 20 frames so your disk does not fill up:-)'
+                print('stopping at 20 frames so your disk does not fill up:-)')
                 break
-    print 'Total frames:', num
+    print('Total frames:', num)
 
 if __name__ == '__main__':
     _test()

@@ -119,11 +119,11 @@ class PthFile(object):
         """
         FILE = open(self.file_path, 'w')
         try:
-            print>>FILE, "#import @bad module name"
-            print>>FILE, "\n"
-            print>>FILE, "import %s" % self.imported
-            print>>FILE, self.good_dirname
-            print>>FILE, self.bad_dirname
+            print("#import @bad module name", file=FILE)
+            print("\n", file=FILE)
+            print("import %s" % self.imported, file=FILE)
+            print(self.good_dirname, file=FILE)
+            print(self.bad_dirname, file=FILE)
         finally:
             FILE.close()
         os.mkdir(self.good_dir_path)

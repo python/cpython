@@ -94,7 +94,7 @@ def _code_fontrecord(data, key):
         chr(0) + _code_default(name)
 
 def _code_boolean(data, key):
-    print 'XXXX boolean:', repr(data)
+    print('XXXX boolean:', repr(data))
     return chr(data)
 
 def _code_text(data, key):
@@ -258,7 +258,7 @@ def _test():
             v = ic[k]
         except error:
             v = '????'
-        print k, '\t', v
+        print(k, '\t', v)
     sys.exit(1)
 
 if __name__ == '__main__':

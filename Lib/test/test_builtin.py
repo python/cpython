@@ -204,15 +204,15 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, cmp)
 
     def test_compile(self):
-        compile('print 1\n', '', 'exec')
+        compile('print(1)\n', '', 'exec')
         bom = '\xef\xbb\xbf'
-        compile(bom + 'print 1\n', '', 'exec')
+        compile(bom + 'print(1)\n', '', 'exec')
         self.assertRaises(TypeError, compile)
-        self.assertRaises(ValueError, compile, 'print 42\n', '<string>', 'badmode')
-        self.assertRaises(ValueError, compile, 'print 42\n', '<string>', 'single', 0xff)
+        self.assertRaises(ValueError, compile, 'print(42)\n', '<string>', 'badmode')
+        self.assertRaises(ValueError, compile, 'print(42)\n', '<string>', 'single', 0xff)
         self.assertRaises(TypeError, compile, chr(0), 'f', 'exec')
         if have_unicode:
-            compile(unicode('print u"\xc3\xa5"\n', 'utf8'), '', 'exec')
+            compile(unicode('print(u"\xc3\xa5")\n', 'utf8'), '', 'exec')
             self.assertRaises(TypeError, compile, unichr(0), 'f', 'exec')
             self.assertRaises(ValueError, compile, unicode('a = 1'), 'f', 'bad')
 
@@ -1659,7 +1659,7 @@ def test_main(verbose=None):
             run_unittest(*test_classes)
             gc.collect()
             counts[i] = sys.gettotalrefcount()
-        print counts
+        print(counts)
 
 
 if __name__ == "__main__":

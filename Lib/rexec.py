@@ -552,7 +552,7 @@ def test():
         try:
             fp = open(args[0])
         except IOError as msg:
-            print "%s: can't open file %r" % (sys.argv[0], args[0])
+            print("%s: can't open file %r" % (sys.argv[0], args[0]))
             return 1
     if fp.isatty():
         try:

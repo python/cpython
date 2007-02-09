@@ -14,10 +14,10 @@ alattrs = ['__doc__', '__name__', 'getdefault', 'getminmax', 'getname', 'getpara
 def main():
     # touch all the attributes of al without doing anything
     if verbose:
-        print 'Touching al module attributes...'
+        print('Touching al module attributes...')
     for attr in alattrs:
         if verbose:
-            print 'touching: ', attr
+            print('touching: ', attr)
         getattr(al, attr)
 
 main()

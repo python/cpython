@@ -51,7 +51,7 @@ def testimage(name):
         name = os.sep.join(parts)
         sizes = imgfile.getsizes(name)
     if verbose:
-        print 'Opening test image: %s, sizes: %s' % (name, str(sizes))
+        print('Opening test image: %s, sizes: %s' % (name, str(sizes)))
     # This function reads and decodes the image on the specified file,
     # and returns it as a python string. The string has either 1 byte
     # greyscale pixels or 4 byte RGBA pixels. The bottom left pixel
@@ -65,12 +65,12 @@ def testimage(name):
     # are stored as 4 byte values of which only the lower three
     # bytes are used). These are the formats returned by gl.lrectread.
     if verbose:
-        print 'Writing output file'
+        print('Writing output file')
     imgfile.write (outputfile, image, sizes[0], sizes[1], sizes[2])
 
 
     if verbose:
-        print 'Opening scaled test image: %s, sizes: %s' % (name, str(sizes))
+        print('Opening scaled test image: %s, sizes: %s' % (name, str(sizes)))
     # This function is identical to read but it returns an image that
     # is scaled to the given x and y sizes. If the filter and blur
     # parameters are omitted scaling is done by simply dropping
@@ -84,7 +84,7 @@ def testimage(name):
     # makes no attempt to keep the aspect ratio correct, so that
     # is the users' responsibility.
     if verbose:
-        print 'Filtering with "impulse"'
+        print('Filtering with "impulse"')
     simage = imgfile.readscaled (name, sizes[0]/2, sizes[1]/2, 'impulse', 2.0)
 
     # This function sets a global flag which defines whether the
@@ -92,23 +92,23 @@ def testimage(name):
     # top (flag is zero, compatible with SGI GL) or from top to
     # bottom(flag is one, compatible with X). The default is zero.
     if verbose:
-        print 'Switching to X compatibility'
+        print('Switching to X compatibility')
     imgfile.ttob (1)
 
     if verbose:
-        print 'Filtering with "triangle"'
+        print('Filtering with "triangle"')
     simage = imgfile.readscaled (name, sizes[0]/2, sizes[1]/2, 'triangle', 3.0)
     if verbose:
-        print 'Switching back to SGI compatibility'
+        print('Switching back to SGI compatibility')
     imgfile.ttob (0)
 
-    if verbose: print 'Filtering with "quadratic"'
+    if verbose: print('Filtering with "quadratic"')
     simage = imgfile.readscaled (name, sizes[0]/2, sizes[1]/2, 'quadratic')
-    if verbose: print 'Filtering with "gaussian"'
+    if verbose: print('Filtering with "gaussian"')
     simage = imgfile.readscaled (name, sizes[0]/2, sizes[1]/2, 'gaussian', 1.0)
 
     if verbose:
-        print 'Writing output file'
+        print('Writing output file')
     imgfile.write (outputfile, simage, sizes[0]/2, sizes[1]/2, sizes[2])
 
     os.unlink(outputfile)

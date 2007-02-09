@@ -45,4 +45,4 @@ vereq(foo.__dict__, {"__name__": "foo", "__doc__": "foodoc", "bar": 42})
 verify(foo.__dict__ is d)
 
 if verbose:
-    print "All OK"
+    print("All OK")

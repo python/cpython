@@ -301,7 +301,7 @@ class _Printer(object):
         while 1:
             try:
                 for i in range(lineno, lineno + self.MAXLINES):
-                    print self.__lines[i]
+                    print(self.__lines[i])
             except IndexError:
                 break
             else:
@@ -424,10 +424,10 @@ def main():
 main()
 
 def _test():
-    print "sys.path = ["
+    print("sys.path = [")
     for dir in sys.path:
-        print "    %r," % (dir,)
-    print "]"
+        print("    %r," % (dir,))
+    print("]")
 
 if __name__ == '__main__':
     _test()

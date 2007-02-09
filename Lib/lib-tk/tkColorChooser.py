@@ -67,4 +67,4 @@ def askcolor(color = None, **options):
 
 if __name__ == "__main__":
 
-    print "color", askcolor()
+    print("color", askcolor())

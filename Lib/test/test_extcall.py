@@ -2,16 +2,16 @@ from test.test_support import verify, verbose, TestFailed, sortdict
 from UserList import UserList
 
 def e(a, b):
-    print a, b
+    print(a, b)
 
 def f(*a, **k):
-    print a, sortdict(k)
+    print(a, sortdict(k))
 
 def g(x, *y, **z):
-    print x, y, sortdict(z)
+    print(x, y, sortdict(z))
 
 def h(j=1, a=2, h=3):
-    print j, a, h
+    print(j, a, h)
 
 f()
 f(1)
@@ -31,28 +31,28 @@ try:
 except TypeError:
     pass
 else:
-    print "should raise TypeError: e() got an unexpected keyword argument 'c'"
+    print("should raise TypeError: e() got an unexpected keyword argument 'c'")
 
 try:
     g()
 except TypeError as err:
-    print "TypeError:", err
+    print("TypeError:", err)
 else:
-    print "should raise TypeError: not enough arguments; expected 1, got 0"
+    print("should raise TypeError: not enough arguments; expected 1, got 0")
 
 try:
     g(*())
 except TypeError as err:
-    print "TypeError:", err
+    print("TypeError:", err)
 else:
-    print "should raise TypeError: not enough arguments; expected 1, got 0"
+    print("should raise TypeError: not enough arguments; expected 1, got 0")
 
 try:
     g(*(), **{})
 except TypeError as err:
-    print "TypeError:", err
+    print("TypeError:", err)
 else:
-    print "should raise TypeError: not enough arguments; expected 1, got 0"
+    print("should raise TypeError: not enough arguments; expected 1, got 0")
 
 g(1)
 g(1, 2)
@@ -64,7 +64,7 @@ try:
 except TypeError as attr:
     pass
 else:
-    print "should raise TypeError"
+    print("should raise TypeError")
 
 class Nothing:
     def __len__(self):
@@ -74,7 +74,7 @@ try:
 except TypeError as attr:
     pass
 else:
-    print "should raise TypeError"
+    print("should raise TypeError")
 
 class Nothing:
     def __len__(self):
@@ -96,7 +96,7 @@ try:
 except TypeError as attr:
     pass
 else:
-    print "should raise TypeError"
+    print("should raise TypeError")
 
 class Nothing:
     def __init__(self):
@@ -116,8 +116,8 @@ d = {'a': 1, 'b': 2, 'c': 3}
 d2 = d.copy()
 verify(d == d2)
 g(1, d=4, **d)
-print sortdict(d)
-print sortdict(d2)
+print(sortdict(d))
+print(sortdict(d2))
 verify(d == d2, "function call modified dictionary")
 
 # what about willful misconduct?
@@ -133,79 +133,79 @@ del kw['x']
 try:
     g(1, 2, 3, **{'x':4, 'y':5})
 except TypeError as err:
-    print err
+    print(err)
 else:
-    print "should raise TypeError: keyword parameter redefined"
+    print("should raise TypeError: keyword parameter redefined")
 
 try:
     g(1, 2, 3, a=4, b=5, *(6, 7), **{'a':8, 'b':9})
 except TypeError as err:
-    print err
+    print(err)
 else:
-    print "should raise TypeError: keyword parameter redefined"
+    print("should raise TypeError: keyword parameter redefined")
 
 try:
     f(**{1:2})
 except TypeError as err:
-    print err
+    print(err)
 else:
-    print "should raise TypeError: keywords must be strings"
+    print("should raise TypeError: keywords must be strings")
 
 try:
     h(**{'e': 2})
 except TypeError as err:
-    print err
+    print(err)
 else:
-    print "should raise TypeError: unexpected keyword argument: e"
+    print("should raise TypeError: unexpected keyword argument: e")
 
 try:
     h(*h)
 except TypeError as err:
-    print err
+    print(err)
 else:
-    print "should raise TypeError: * argument must be a tuple"
+    print("should raise TypeError: * argument must be a tuple")
 
 try:
     dir(*h)
 except TypeError as err:
-    print err
+    print(err)
 else:
-    print "should raise TypeError: * argument must be a tuple"
+    print("should raise TypeError: * argument must be a tuple")
 
 try:
     None(*h)
 except TypeError as err:
-    print err
+    print(err)
 else:
-    print "should raise TypeError: * argument must be a tuple"
+    print("should raise TypeError: * argument must be a tuple")
 
 try:
     h(**h)
 except TypeError as err:
-    print err
+    print(err)
 else:
-    print "should raise TypeError: ** argument must be a dictionary"
+    print("should raise TypeError: ** argument must be a dictionary")
 
 try:
     dir(**h)
 except TypeError as err:
-    print err
+    print(err)
 else:
-    print "should raise TypeError: ** argument must be a dictionary"
+    print("should raise TypeError: ** argument must be a dictionary")
 
 try:
     None(**h)
 except TypeError as err:
-    print err
+    print(err)
 else:
-    print "should raise TypeError: ** argument must be a dictionary"
+    print("should raise TypeError: ** argument must be a dictionary")
 
 try:
     dir(b=1,**{'b':1})
 except TypeError as err:
-    print err
+    print(err)
 else:
-    print "should raise TypeError: dir() got multiple values for keyword argument 'b'"
+    print("should raise TypeError: dir() got multiple values for keyword argument 'b'")
 
 def f2(*a, **b):
     return a, b
@@ -215,27 +215,27 @@ for i in range(512):
     key = 'k%d' % i
     d[key] = i
 a, b = f2(1, *(2, 3), **d)
-print len(a), len(b), b == d
+print(len(a), len(b), b == d)
 
 class Foo:
     def method(self, arg1, arg2):
         return arg1 + arg2
 
 x = Foo()
-print Foo.method(*(x, 1, 2))
-print Foo.method(x, *(1, 2))
+print(Foo.method(*(x, 1, 2)))
+print(Foo.method(x, *(1, 2)))
 try:
-    print Foo.method(*(1, 2, 3))
+    print(Foo.method(*(1, 2, 3)))
 except TypeError as err:
     pass
 else:
-    print 'expected a TypeError for unbound method call'
+    print('expected a TypeError for unbound method call')
 try:
-    print Foo.method(1, *(2, 3))
+    print(Foo.method(1, *(2, 3)))
 except TypeError as err:
     pass
 else:
-    print 'expected a TypeError for unbound method call'
+    print('expected a TypeError for unbound method call')
 
 # A PyCFunction that takes only positional parameters should allow an
 # empty keyword dictionary to pass without a complaint, but raise a
@@ -274,6 +274,6 @@ for name in ['za', 'zade', 'zabk', 'zabdv', 'zabdevk']:
         for kwargs in ['', 'a', 'd', 'ad', 'abde']:
             kwdict = {}
             for k in kwargs: kwdict[k] = k + k
-            print func.func_name, args, sortdict(kwdict), '->',
+            print(func.func_name, args, sortdict(kwdict), '->', end=' ')
             try: func(*args, **kwdict)
-            except TypeError as err: print err
+            except TypeError as err: print(err)

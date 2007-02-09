@@ -219,37 +219,37 @@ def test():
     for i in range(1, len(sys.argv), 2):
         args = sys.argv[i:i+2]
         if len(args) < 2:
-            print "usage: mailcap [MIMEtype file] ..."
+            print("usage: mailcap [MIMEtype file] ...")
             return
         MIMEtype = args[0]
         file = args[1]
         command, e = findmatch(caps, MIMEtype, 'view', file)
         if not command:
-            print "No viewer found for", type
+            print("No viewer found for", type)
         else:
-            print "Executing:", command
+            print("Executing:", command)
             sts = os.system(command)
             if sts:
-                print "Exit status:", sts
+                print("Exit status:", sts)
 
 def show(caps):
-    print "Mailcap files:"
-    for fn in listmailcapfiles(): print "\t" + fn
-    print
+    print("Mailcap files:")
+    for fn in listmailcapfiles(): print("\t" + fn)
+    print()
     if not caps: caps = getcaps()
-    print "Mailcap entries:"
-    print
+    print("Mailcap entries:")
+    print()
     ckeys = caps.keys()
     ckeys.sort()
     for type in ckeys:
-        print type
+        print(type)
         entries = caps[type]
         for e in entries:
             keys = e.keys()
             keys.sort()
             for k in keys:
-                print "  %-15s" % k, e[k]
-            print
+                print("  %-15s" % k, e[k])
+            print()
 
 if __name__ == '__main__':
     test()

@@ -270,9 +270,9 @@ class DocCGIXMLRPCRequestHandler(   CGIXMLRPCRequestHandler,
 
         response = self.generate_html_documentation()
 
-        print 'Content-Type: text/html'
-        print 'Content-Length: %d' % len(response)
-        print
+        print('Content-Type: text/html')
+        print('Content-Length: %d' % len(response))
+        print()
         sys.stdout.write(response)
 
     def __init__(self):

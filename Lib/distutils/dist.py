@@ -290,22 +290,22 @@ Common commands: (see '--help-commands' for more)
             commands.sort()
 
         if header is not None:
-            print indent + header
+            print(indent + header)
             indent = indent + "  "
 
         if not commands:
-            print indent + "no commands known yet"
+            print(indent + "no commands known yet")
             return
 
         for cmd_name in commands:
             opt_dict = self.command_options.get(cmd_name)
             if opt_dict is None:
-                print indent + "no option dict for '%s' command" % cmd_name
+                print(indent + "no option dict for '%s' command" % cmd_name)
             else:
-                print indent + "option dict for '%s' command:" % cmd_name
+                print(indent + "option dict for '%s' command:" % cmd_name)
                 out = pformat(opt_dict)
                 for line in string.split(out, "\n"):
-                    print indent + "  " + line
+                    print(indent + "  " + line)
 
     # dump_option_dicts ()
 
@@ -365,11 +365,11 @@ Common commands: (see '--help-commands' for more)
         if filenames is None:
             filenames = self.find_config_files()
 
-        if DEBUG: print "Distribution.parse_config_files():"
+        if DEBUG: print("Distribution.parse_config_files():")
 
         parser = ConfigParser()
         for filename in filenames:
-            if DEBUG: print "  reading", filename
+            if DEBUG: print("  reading", filename)
             parser.read(filename)
             for section in parser.sections():
                 options = parser.options(section)
@@ -636,14 +636,14 @@ Common commands: (see '--help-commands' for more)
                 options = self.global_options
             parser.set_option_table(options)
             parser.print_help(self.common_usage + "\nGlobal options:")
-            print
+            print()
 
         if display_options:
             parser.set_option_table(self.display_options)
             parser.print_help(
                 "Information display options (just display " +
                 "information, ignore any commands)")
-            print
+            print()
 
         for command in self.commands:
             if type(command) is ClassType and issubclass(command, Command):
@@ -657,9 +657,9 @@ Common commands: (see '--help-commands' for more)
             else:
                 parser.set_option_table(klass.user_options)
             parser.print_help("Options for '%s' command:" % klass.__name__)
-            print
+            print()
 
-        print gen_usage(self.script_name)
+        print(gen_usage(self.script_name))
         return
 
     # _show_help ()
@@ -678,8 +678,8 @@ Common commands: (see '--help-commands' for more)
         # we ignore "foo bar").
         if self.help_commands:
             self.print_commands()
-            print
-            print gen_usage(self.script_name)
+            print()
+            print(gen_usage(self.script_name))
             return 1
 
         # If user supplied any of the "display metadata" options, then
@@ -695,12 +695,12 @@ Common commands: (see '--help-commands' for more)
                 opt = translate_longopt(opt)
                 value = getattr(self.metadata, "get_"+opt)()
                 if opt in ['keywords', 'platforms']:
-                    print string.join(value, ',')
+                    print(string.join(value, ','))
                 elif opt in ('classifiers', 'provides', 'requires',
                              'obsoletes'):
-                    print string.join(value, '\n')
+                    print(string.join(value, '\n'))
                 else:
-                    print value
+                    print(value)
                 any_display_options = 1
 
         return any_display_options
@@ -712,7 +712,7 @@ Common commands: (see '--help-commands' for more)
         'print_commands()'.
         """
 
-        print header + ":"
+        print(header + ":")
 
         for cmd in commands:
             klass = self.cmdclass.get(cmd)
@@ -723,7 +723,7 @@ Common commands: (see '--help-commands' for more)
             except AttributeError:
                 description = "(no description available)"
 
-            print "  %-*s  %s" % (max_length, cmd, description)
+            print("  %-*s  %s" % (max_length, cmd, description))
 
     # print_command_list ()
 
@@ -757,7 +757,7 @@ Common commands: (see '--help-commands' for more)
                                 "Standard commands",
                                 max_length)
         if extra_commands:
-            print
+            print()
             self.print_command_list(extra_commands,
                                     "Extra commands",
                                     max_length)
@@ -862,8 +862,8 @@ Common commands: (see '--help-commands' for more)
         cmd_obj = self.command_obj.get(command)
         if not cmd_obj and create:
             if DEBUG:
-                print "Distribution.get_command_obj(): " \
-                      "creating '%s' command object" % command
+                print("Distribution.get_command_obj(): " \
+                      "creating '%s' command object" % command)
 
             klass = self.get_command_class(command)
             cmd_obj = self.command_obj[command] = klass(self)
@@ -893,9 +893,9 @@ Common commands: (see '--help-commands' for more)
         if option_dict is None:
             option_dict = self.get_option_dict(command_name)
 
-        if DEBUG: print "  setting options for '%s' command:" % command_name
+        if DEBUG: print("  setting options for '%s' command:" % command_name)
         for (option, (source, value)) in option_dict.items():
-            if DEBUG: print "    %s = %s (from %s)" % (option, value, source)
+            if DEBUG: print("    %s = %s (from %s)" % (option, value, source))
             try:
                 bool_opts = map(translate_longopt, command_obj.boolean_options)
             except AttributeError:
@@ -1219,4 +1219,4 @@ def fix_help_options (options):
 
 if __name__ == "__main__":
     dist = Distribution()
-    print "ok"
+    print("ok")

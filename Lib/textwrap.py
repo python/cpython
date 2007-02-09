@@ -371,4 +371,4 @@ def dedent(text):
 if __name__ == "__main__":
     #print dedent("\tfoo\n\tbar")
     #print dedent("  \thello there\n  \t  how are you?")
-    print dedent("Hello there.\n  This is indented.")
+    print(dedent("Hello there.\n  This is indented."))

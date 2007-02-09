@@ -267,7 +267,7 @@ def test():
     loadfile = fd.go(key="test")
     fd = SaveFileDialog(root)
     savefile = fd.go(key="test")
-    print loadfile, savefile
+    print(loadfile, savefile)
 
 
 if __name__ == '__main__':

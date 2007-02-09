@@ -17,20 +17,20 @@ class TestThread(_threading.Thread):
         #delay = random.random() * 2
         delay = 0
         if verbose:
-            print 'task', self.getName(), 'will run for', delay, 'sec'
+            print('task', self.getName(), 'will run for', delay, 'sec')
         sema.acquire()
         mutex.acquire()
         running = running + 1
         if verbose:
-            print running, 'tasks are running'
+            print(running, 'tasks are running')
         mutex.release()
         time.sleep(delay)
         if verbose:
-            print 'task', self.getName(), 'done'
+            print('task', self.getName(), 'done')
         mutex.acquire()
         running = running - 1
         if verbose:
-            print self.getName(), 'is finished.', running, 'tasks are running'
+            print(self.getName(), 'is finished.', running, 'tasks are running')
         mutex.release()
         sema.release()
 
@@ -61,11 +61,11 @@ def test_main():
     starttasks()
 
     if verbose:
-        print 'waiting for all tasks to complete'
+        print('waiting for all tasks to complete')
     for t in threads:
         t.join()
     if verbose:
-        print 'all tasks done'
+        print('all tasks done')
 
 
 

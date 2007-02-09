@@ -103,7 +103,7 @@ def get_directory(f):
     while 1:
         line = f.readline()
         if not line:
-            print '(Unexpected EOF from server)'
+            print('(Unexpected EOF from server)')
             break
         if line[-2:] == CRLF:
             line = line[:-2]
@@ -112,17 +112,17 @@ def get_directory(f):
         if line == '.':
             break
         if not line:
-            print '(Empty line from server)'
+            print('(Empty line from server)')
             continue
         gtype = line[0]
         parts = line[1:].split(TAB)
         if len(parts) < 4:
-            print '(Bad line from server: %r)' % (line,)
+            print('(Bad line from server: %r)' % (line,))
             continue
         if len(parts) > 4:
             if parts[4:] != ['+']:
-                print '(Extra info from server:',
-                print parts[4:], ')'
+                print('(Extra info from server:', end=' ')
+                print(parts[4:], ')')
         else:
             parts.append('')
         parts.insert(0, gtype)
@@ -140,7 +140,7 @@ def get_alt_textfile(f, func):
     while 1:
         line = f.readline()
         if not line:
-            print '(Unexpected EOF from server)'
+            print('(Unexpected EOF from server)')
             break
         if line[-2:] == CRLF:
             line = line[:-2]
@@ -196,13 +196,13 @@ def test():
         f = send_selector(selector, host)
     if type == A_TEXT:
         lines = get_textfile(f)
-        for item in lines: print item
+        for item in lines: print(item)
     elif type in (A_MENU, A_INDEX):
         entries = get_directory(f)
-        for item in entries: print item
+        for item in entries: print(item)
     else:
         data = get_binary(f)
-        print 'binary data:', len(data), 'bytes:', repr(data[:100])[:40]
+        print('binary data:', len(data), 'bytes:', repr(data[:100])[:40])
 
 # Run the test when run as script
 if __name__ == '__main__':

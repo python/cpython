@@ -6,7 +6,7 @@ TEST_STRING_2 = "For my pet fish, Eric.\n"
 
 if verbose:
     def debug(msg):
-        print msg
+        print(msg)
 else:
     def debug(msg):
         pass

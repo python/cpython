@@ -36,9 +36,9 @@ def printhdr(file):
     data_size, encoding, sample_rate, channels, info = hdr
     while info[-1:] == '\0':
         info = info[:-1]
-    print 'File name:  ', file
-    print 'Data size:  ', data_size
-    print 'Encoding:   ', encoding
-    print 'Sample rate:', sample_rate
-    print 'Channels:   ', channels
-    print 'Info:       ', repr(info)
+    print('File name:  ', file)
+    print('Data size:  ', data_size)
+    print('Encoding:   ', encoding)
+    print('Sample rate:', sample_rate)
+    print('Channels:   ', channels)
+    print('Info:       ', repr(info))

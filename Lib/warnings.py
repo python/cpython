@@ -193,7 +193,7 @@ def _processoptions(args):
         try:
             _setoption(arg)
         except _OptionError as msg:
-            print >>sys.stderr, "Invalid -W option ignored:", msg
+            print("Invalid -W option ignored:", msg, file=sys.stderr)
 
 # Helper for _processoptions()
 def _setoption(arg):

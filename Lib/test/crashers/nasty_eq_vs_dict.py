@@ -44,4 +44,4 @@ dict = {y: "OK!"}
 
 z = Yuck()
 y.make_dangerous()
-print dict[z]
+print(dict[z])

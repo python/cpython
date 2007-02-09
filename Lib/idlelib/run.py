@@ -115,11 +115,11 @@ def manage_socket(address):
             server = MyRPCServer(address, MyHandler)
             break
         except socket.error as err:
-            print>>sys.__stderr__,"IDLE Subprocess: socket error: "\
-                                        + err[1] + ", retrying...."
+            print("IDLE Subprocess: socket error: "\
+                                        + err[1] + ", retrying....", file=sys.__stderr__)
     else:
-        print>>sys.__stderr__, "IDLE Subprocess: Connection to "\
-                               "IDLE GUI failed, exiting."
+        print("IDLE Subprocess: Connection to "\
+                               "IDLE GUI failed, exiting.", file=sys.__stderr__)
         show_socket_error(err, address)
         global exit_now
         exit_now = True
@@ -149,14 +149,14 @@ def print_exception():
     typ, val, tb = excinfo = sys.exc_info()
     sys.last_type, sys.last_value, sys.last_traceback = excinfo
     tbe = traceback.extract_tb(tb)
-    print>>efile, '\nTraceback (most recent call last):'
+    print('\nTraceback (most recent call last):', file=efile)
     exclude = ("run.py", "rpc.py", "threading.py", "Queue.py",
                "RemoteDebugger.py", "bdb.py")
     cleanup_traceback(tbe, exclude)
     traceback.print_list(tbe, file=efile)
     lines = traceback.format_exception_only(typ, val)
     for line in lines:
-        print>>efile, line,
+        print(line, end=' ', file=efile)
 
 def cleanup_traceback(tb, exclude):
     "Remove excluded traces from beginning/end of tb; get cached lines"
@@ -178,7 +178,7 @@ def cleanup_traceback(tb, exclude):
     if len(tb) == 0:
         # exception was in IDLE internals, don't prune!
         tb[:] = orig_tb[:]
-        print>>sys.stderr, "** IDLE Internal Exception: "
+        print("** IDLE Internal Exception: ", file=sys.stderr)
     rpchandler = rpc.objecttable['exec'].rpchandler
     for i in range(len(tb)):
         fn, ln, nm, line = tb[i]
@@ -227,14 +227,14 @@ class MyRPCServer(rpc.RPCServer):
             thread.interrupt_main()
         except:
             erf = sys.__stderr__
-            print>>erf, '\n' + '-'*40
-            print>>erf, 'Unhandled server exception!'
-            print>>erf, 'Thread: %s' % threading.currentThread().getName()
-            print>>erf, 'Client Address: ', client_address
-            print>>erf, 'Request: ', repr(request)
+            print('\n' + '-'*40, file=erf)
+            print('Unhandled server exception!', file=erf)
+            print('Thread: %s' % threading.currentThread().getName(), file=erf)
+            print('Client Address: ', client_address, file=erf)
+            print('Request: ', repr(request), file=erf)
             traceback.print_exc(file=erf)
-            print>>erf, '\n*** Unrecoverable, server exiting!'
-            print>>erf, '-'*40
+            print('\n*** Unrecoverable, server exiting!', file=erf)
+            print('-'*40, file=erf)
             quitting = True
             thread.interrupt_main()
 

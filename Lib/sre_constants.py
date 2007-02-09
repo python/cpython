@@ -258,4 +258,4 @@ if __name__ == "__main__":
     f.write("#define SRE_INFO_CHARSET %d\n" % SRE_INFO_CHARSET)
 
     f.close()
-    print "done"
+    print("done")

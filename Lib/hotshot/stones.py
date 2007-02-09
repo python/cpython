@@ -10,9 +10,9 @@ def main(logfile):
     benchtime, stones = p.runcall(test.pystone.pystones)
     p.close()
 
-    print "Pystone(%s) time for %d passes = %g" % \
-          (test.pystone.__version__, test.pystone.LOOPS, benchtime)
-    print "This machine benchmarks at %g pystones/second" % stones
+    print("Pystone(%s) time for %d passes = %g" % \
+          (test.pystone.__version__, test.pystone.LOOPS, benchtime))
+    print("This machine benchmarks at %g pystones/second" % stones)
 
     stats = hotshot.stats.load(logfile)
     stats.strip_dirs()

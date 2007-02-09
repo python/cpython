@@ -91,60 +91,60 @@ def main():
 
     # touch all the attributes of gl without doing anything
     if verbose:
-        print 'Touching gl module attributes...'
+        print('Touching gl module attributes...')
     for attr in glattrs:
         if verbose:
-            print 'touching: ', attr
+            print('touching: ', attr)
         getattr(gl, attr)
 
     # create a small 'Crisscross' window
     if verbose:
-        print 'Creating a small "CrissCross" window...'
-        print 'foreground'
+        print('Creating a small "CrissCross" window...')
+        print('foreground')
     gl.foreground()
     if verbose:
-        print 'prefposition'
+        print('prefposition')
     gl.prefposition(500, 900, 500, 900)
     if verbose:
-        print 'winopen "CrissCross"'
+        print('winopen "CrissCross"')
     w = gl.winopen('CrissCross')
     if verbose:
-        print 'clear'
+        print('clear')
     gl.clear()
     if verbose:
-        print 'ortho2'
+        print('ortho2')
     gl.ortho2(0.0, 400.0, 0.0, 400.0)
     if verbose:
-        print 'color WHITE'
+        print('color WHITE')
     gl.color(GL.WHITE)
     if verbose:
-        print 'color RED'
+        print('color RED')
     gl.color(GL.RED)
     if verbose:
-        print 'bgnline'
+        print('bgnline')
     gl.bgnline()
     if verbose:
-        print 'v2f'
+        print('v2f')
     gl.v2f(0.0, 0.0)
     gl.v2f(400.0, 400.0)
     if verbose:
-        print 'endline'
+        print('endline')
     gl.endline()
     if verbose:
-        print 'bgnline'
+        print('bgnline')
     gl.bgnline()
     if verbose:
-        print 'v2i'
+        print('v2i')
     gl.v2i(400, 0)
     gl.v2i(0, 400)
     if verbose:
-        print 'endline'
+        print('endline')
     gl.endline()
     if verbose:
-        print 'Displaying window for 2 seconds...'
+        print('Displaying window for 2 seconds...')
     time.sleep(2)
     if verbose:
-        print 'winclose'
+        print('winclose')
     gl.winclose(w)
 
 main()

@@ -307,9 +307,8 @@ class TestUUID(TestCase):
 
     def test_ifconfig_getnode(self):
         import sys
-        print >>sys.__stdout__, \
-"""    WARNING: uuid._ifconfig_getnode is unreliable on many platforms.
-        It is disabled until the code and/or test can be fixed properly."""
+        print("""    WARNING: uuid._ifconfig_getnode is unreliable on many platforms.
+        It is disabled until the code and/or test can be fixed properly.""", file=sys.__stdout__)
         return
 
         import os
@@ -336,9 +335,8 @@ class TestUUID(TestCase):
 
     def test_unixdll_getnode(self):
         import sys
-        print >>sys.__stdout__, \
-"""    WARNING: uuid._unixdll_getnode is unreliable on many platforms.
-        It is disabled until the code and/or test can be fixed properly."""
+        print("""    WARNING: uuid._unixdll_getnode is unreliable on many platforms.
+        It is disabled until the code and/or test can be fixed properly.""", file=sys.__stdout__)
         return
 
         import os
@@ -352,9 +350,8 @@ class TestUUID(TestCase):
 
     def test_getnode(self):
         import sys
-        print >>sys.__stdout__, \
-"""    WARNING: uuid.getnode is unreliable on many platforms.
-        It is disabled until the code and/or test can be fixed properly."""
+        print("""    WARNING: uuid.getnode is unreliable on many platforms.
+        It is disabled until the code and/or test can be fixed properly.""", file=sys.__stdout__)
         return
 
         node1 = uuid.getnode()

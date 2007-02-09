@@ -34,7 +34,7 @@ def remove_tempfiles(*names):
 def runTests(t1, t2, t3, t4, bs=0, round=0):
     start = 1 + round*6
     if verbose:
-        print '%s. Simple iteration (bs=%s)' % (start+0, bs)
+        print('%s. Simple iteration (bs=%s)' % (start+0, bs))
     fi = FileInput(files=(t1, t2, t3, t4), bufsize=bs)
     lines = list(fi)
     fi.close()
@@ -45,7 +45,7 @@ def runTests(t1, t2, t3, t4, bs=0, round=0):
     verify(fi.filename() == t4)
 
     if verbose:
-        print '%s. Status variables (bs=%s)' % (start+1, bs)
+        print('%s. Status variables (bs=%s)' % (start+1, bs))
     fi = FileInput(files=(t1, t2, t3, t4), bufsize=bs)
     s = "x"
     while s and s != 'Line 6 of file 2\n':
@@ -57,14 +57,14 @@ def runTests(t1, t2, t3, t4, bs=0, round=0):
     verify(not fi.isstdin())
 
     if verbose:
-        print '%s. Nextfile (bs=%s)' % (start+2, bs)
+        print('%s. Nextfile (bs=%s)' % (start+2, bs))
     fi.nextfile()
     verify(fi.readline() == 'Line 1 of file 3\n')
     verify(fi.lineno() == 22)
     fi.close()
 
     if verbose:
-        print '%s. Stdin (bs=%s)' % (start+3, bs)
+        print('%s. Stdin (bs=%s)' % (start+3, bs))
     fi = FileInput(files=(t1, t2, t3, t4, '-'), bufsize=bs)
     savestdin = sys.stdin
     try:
@@ -78,7 +78,7 @@ def runTests(t1, t2, t3, t4, bs=0, round=0):
         sys.stdin = savestdin
 
     if verbose:
-        print '%s. Boundary conditions (bs=%s)' % (start+4, bs)
+        print('%s. Boundary conditions (bs=%s)' % (start+4, bs))
     fi = FileInput(files=(t1, t2, t3, t4), bufsize=bs)
     verify(fi.lineno() == 0)
     verify(fi.filename() == None)
@@ -87,13 +87,13 @@ def runTests(t1, t2, t3, t4, bs=0, round=0):
     verify(fi.filename() == None)
 
     if verbose:
-        print '%s. Inplace (bs=%s)' % (start+5, bs)
+        print('%s. Inplace (bs=%s)' % (start+5, bs))
     savestdout = sys.stdout
     try:
         fi = FileInput(files=(t1, t2, t3, t4), inplace=1, bufsize=bs)
         for line in fi:
             line = line[:-1].upper()
-            print line
+            print(line)
         fi.close()
     finally:
         sys.stdout = savestdout
@@ -124,7 +124,7 @@ for round, bs in (0, 0), (1, 30):
 
 # Next, check for proper behavior with 0-byte files.
 if verbose:
-    print "13. 0-byte files"
+    print("13. 0-byte files")
 try:
     t1 = writeTmp(1, [""])
     t2 = writeTmp(2, [""])
@@ -146,7 +146,7 @@ finally:
     remove_tempfiles(t1, t2, t3, t4)
 
 if verbose:
-    print "14. Files that don't end with newline"
+    print("14. Files that don't end with newline")
 try:
     t1 = writeTmp(1, ["A\nB\nC"])
     t2 = writeTmp(2, ["D\nE\nF"])
@@ -159,7 +159,7 @@ finally:
     remove_tempfiles(t1, t2)
 
 if verbose:
-    print "15. Unicode filenames"
+    print("15. Unicode filenames")
 try:
     t1 = writeTmp(1, ["A\nB"])
     encoding = sys.getfilesystemencoding()
@@ -172,7 +172,7 @@ finally:
     remove_tempfiles(t1)
 
 if verbose:
-    print "16. fileno()"
+    print("16. fileno()")
 try:
     t1 = writeTmp(1, ["A\nB"])
     t2 = writeTmp(2, ["C\nD"])
@@ -188,7 +188,7 @@ finally:
     remove_tempfiles(t1, t2)
 
 if verbose:
-    print "17. Specify opening mode"
+    print("17. Specify opening mode")
 try:
     # invalid mode, should raise ValueError
     fi = FileInput(mode="w")
@@ -205,7 +205,7 @@ finally:
     remove_tempfiles(t1)
 
 if verbose:
-    print "18. Test file opening hook"
+    print("18. Test file opening hook")
 try:
     # cannot use openhook and inplace mode
     fi = FileInput(inplace=1, openhook=lambda f,m: None)

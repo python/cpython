@@ -104,14 +104,14 @@ class RPCServer(SocketServer.TCPServer):
             raise
         except:
             erf = sys.__stderr__
-            print>>erf, '\n' + '-'*40
-            print>>erf, 'Unhandled server exception!'
-            print>>erf, 'Thread: %s' % threading.currentThread().getName()
-            print>>erf, 'Client Address: ', client_address
-            print>>erf, 'Request: ', repr(request)
+            print('\n' + '-'*40, file=erf)
+            print('Unhandled server exception!', file=erf)
+            print('Thread: %s' % threading.currentThread().getName(), file=erf)
+            print('Client Address: ', client_address, file=erf)
+            print('Request: ', repr(request), file=erf)
             traceback.print_exc(file=erf)
-            print>>erf, '\n*** Unrecoverable, server exiting!'
-            print>>erf, '-'*40
+            print('\n*** Unrecoverable, server exiting!', file=erf)
+            print('-'*40, file=erf)
             os._exit(0)
 
 #----------------- end class RPCServer --------------------
@@ -152,7 +152,7 @@ class SocketIO(object):
         s = self.location + " " + str(threading.currentThread().getName())
         for a in args:
             s = s + " " + str(a)
-        print>>sys.__stderr__, s
+        print(s, file=sys.__stderr__)
 
     def register(self, oid, object):
         self.objtable[oid] = object
@@ -201,7 +201,7 @@ class SocketIO(object):
         except:
             msg = "*** Internal Error: rpc.py:SocketIO.localcall()\n\n"\
                   " Object: %s \n Method: %s \n Args: %s\n"
-            print>>sys.__stderr__, msg % (oid, method, args)
+            print(msg % (oid, method, args), file=sys.__stderr__)
             traceback.print_exc(file=sys.__stderr__)
             return ("EXCEPTION", None)
 
@@ -323,7 +323,7 @@ class SocketIO(object):
         try:
             s = pickle.dumps(message)
         except pickle.PicklingError:
-            print >>sys.__stderr__, "Cannot pickle:", repr(message)
+            print("Cannot pickle:", repr(message), file=sys.__stderr__)
             raise
         s = struct.pack("<i", len(s)) + s
         while len(s) > 0:
@@ -379,10 +379,10 @@ class SocketIO(object):
         try:
             message = pickle.loads(packet)
         except pickle.UnpicklingError:
-            print >>sys.__stderr__, "-----------------------"
-            print >>sys.__stderr__, "cannot unpickle packet:", repr(packet)
+            print("-----------------------", file=sys.__stderr__)
+            print("cannot unpickle packet:", repr(packet), file=sys.__stderr__)
             traceback.print_stack(file=sys.__stderr__)
-            print >>sys.__stderr__, "-----------------------"
+            print("-----------------------", file=sys.__stderr__)
             raise
         return message
 
@@ -526,11 +526,11 @@ class RPCClient(SocketIO):
     def accept(self):
         working_sock, address = self.listening_sock.accept()
         if self.debugging:
-            print>>sys.__stderr__, "****** Connection request from ", address
+            print("****** Connection request from ", address, file=sys.__stderr__)
         if address[0] == LOCALHOST:
             SocketIO.__init__(self, working_sock)
         else:
-            print>>sys.__stderr__, "** Invalid host: ", address
+            print("** Invalid host: ", address, file=sys.__stderr__)
             raise socket.error
 
     def get_remote_proxy(self, oid):

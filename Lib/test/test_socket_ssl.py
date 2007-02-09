@@ -16,7 +16,7 @@ def test_basic():
     import urllib
 
     if test_support.verbose:
-        print "test_basic ..."
+        print("test_basic ...")
 
     socket.RAND_status()
     try:
@@ -24,7 +24,7 @@ def test_basic():
     except TypeError:
         pass
     else:
-        print "didn't raise TypeError"
+        print("didn't raise TypeError")
     socket.RAND_add("this is a random string", 75.0)
 
     f = urllib.urlopen('https://sf.net')
@@ -35,14 +35,14 @@ def test_timeout():
     test_support.requires('network')
 
     def error_msg(extra_msg):
-        print >> sys.stderr, """\
+        print("""\
     WARNING:  an attempt to connect to %r %s, in
     test_timeout.  That may be legitimate, but is not the outcome we hoped
     for.  If this message is seen often, test_timeout should be changed to
-    use a more reliable address.""" % (ADDR, extra_msg)
+    use a more reliable address.""" % (ADDR, extra_msg), file=sys.stderr)
 
     if test_support.verbose:
-        print "test_timeout ..."
+        print("test_timeout ...")
 
     # A service which issues a welcome banner (without need to write
     # anything).
@@ -73,7 +73,7 @@ def test_timeout():
 
 def test_rude_shutdown():
     if test_support.verbose:
-        print "test_rude_shutdown ..."
+        print("test_rude_shutdown ...")
 
     try:
         import threading

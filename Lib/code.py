@@ -107,7 +107,7 @@ class InteractiveInterpreter:
             self.showtraceback()
         else:
             if softspace(sys.stdout, 0):
-                print
+                print()
 
     def showsyntaxerror(self, filename=None):
         """Display the syntax error that just occurred.

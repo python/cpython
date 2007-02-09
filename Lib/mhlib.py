@@ -959,7 +959,7 @@ def test():
     global mh, f
     os.system('rm -rf $HOME/Mail/@test')
     mh = MH()
-    def do(s): print s; print eval(s)
+    def do(s): print(s); print(eval(s))
     do('mh.listfolders()')
     do('mh.listallfolders()')
     testfolders = ['@test', '@test/test1', '@test/test2',
@@ -974,7 +974,7 @@ def test():
     do('f.getsequences()')
     seqs = f.getsequences()
     seqs['foo'] = IntSet('1-10 12-20', ' ').tolist()
-    print seqs
+    print(seqs)
     f.putsequences(seqs)
     do('f.getsequences()')
     for t in reversed(testfolders): do('mh.deletefolder(%r)' % (t,))
@@ -990,10 +990,10 @@ def test():
         try:
             do('f.parsesequence(%r)' % (seq,))
         except Error as msg:
-            print "Error:", msg
+            print("Error:", msg)
         stuff = os.popen("pick %r 2>/dev/null" % (seq,)).read()
         list = map(int, stuff.split())
-        print list, "<-- pick"
+        print(list, "<-- pick")
     do('f.listmessages()')
 
 

@@ -309,7 +309,7 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
     def test_trash_stack(self):
         def f():
             for i in range(5):
-                print i  # line tracing will raise an exception at this line
+                print(i)  # line tracing will raise an exception at this line
 
         def g(frame, why, extra):
             if (why == 'line' and

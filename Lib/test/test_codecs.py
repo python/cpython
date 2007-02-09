@@ -548,7 +548,7 @@ punycode_testcases = [
 
 for i in punycode_testcases:
     if len(i)!=2:
-        print repr(i)
+        print(repr(i))
 
 class PunycodeTest(unittest.TestCase):
     def test_encode(self):

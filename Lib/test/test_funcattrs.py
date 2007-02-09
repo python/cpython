@@ -204,7 +204,7 @@ def bar():
     pass
 
 def temp():
-    print 1
+    print(1)
 
 if foo==bar:
     raise TestFailed
@@ -235,7 +235,7 @@ def cantset(obj, name, value, exception=(AttributeError, TypeError)):
 
 def test_func_closure():
     a = 12
-    def f(): print a
+    def f(): print(a)
     c = f.func_closure
     verify(isinstance(c, tuple))
     verify(len(c) == 1)
@@ -284,10 +284,10 @@ def test_func_name():
 def test_func_code():
     a = b = 24
     def f(): pass
-    def g(): print 12
-    def f1(): print a
-    def g1(): print b
-    def f2(): print a, b
+    def g(): print(12)
+    def f1(): print(a)
+    def g1(): print(b)
+    def f2(): print(a, b)
     verify(type(f.func_code) is types.CodeType)
     f.func_code = g.func_code
     cantset(f, "func_code", None)

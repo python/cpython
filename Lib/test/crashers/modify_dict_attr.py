@@ -16,4 +16,4 @@ class MyClass(object):
 
 if __name__ == '__main__':
     del MyClass.__dict__  # if we set tp_dict to NULL,
-    print MyClass         # doing anything with MyClass segfaults
+    print(MyClass)         # doing anything with MyClass segfaults

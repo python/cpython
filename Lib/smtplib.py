@@ -277,7 +277,7 @@ class SMTP:
         # This makes it simpler for SMTP_SSL to use the SMTP connect code
         # and just alter the socket connection bit.
         self.sock = socket.socket(af, socktype, proto)
-        if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
+        if self.debuglevel > 0: print('connect:', (host, port), file=stderr)
         self.sock.connect(sa)
 
     def connect(self, host='localhost', port = 0):
@@ -299,7 +299,7 @@ class SMTP:
                 except ValueError:
                     raise socket.error, "nonnumeric port"
         if not port: port = self.default_port
-        if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
+        if self.debuglevel > 0: print('connect:', (host, port), file=stderr)
         msg = "getaddrinfo returns an empty list"
         self.sock = None
         for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
@@ -307,7 +307,7 @@ class SMTP:
             try:
                 self._get_socket(af,socktype,proto,sa)
             except socket.error as msg:
-                if self.debuglevel > 0: print>>stderr, 'connect fail:', msg
+                if self.debuglevel > 0: print('connect fail:', msg, file=stderr)
                 if self.sock:
                     self.sock.close()
                 self.sock = None
@@ -316,12 +316,12 @@ class SMTP:
         if not self.sock:
             raise socket.error, msg
         (code, msg) = self.getreply()
-        if self.debuglevel > 0: print>>stderr, "connect:", msg
+        if self.debuglevel > 0: print("connect:", msg, file=stderr)
         return (code, msg)
 
     def send(self, str):
         """Send `str' to the server."""
-        if self.debuglevel > 0: print>>stderr, 'send:', repr(str)
+        if self.debuglevel > 0: print('send:', repr(str), file=stderr)
         if self.sock:
             try:
                 self.sock.sendall(str)
@@ -360,7 +360,7 @@ class SMTP:
             if line == '':
                 self.close()
                 raise SMTPServerDisconnected("Connection unexpectedly closed")
-            if self.debuglevel > 0: print>>stderr, 'reply:', repr(line)
+            if self.debuglevel > 0: print('reply:', repr(line), file=stderr)
             resp.append(line[4:].strip())
             code=line[:3]
             # Check that the error code is syntactically correct.
@@ -376,7 +376,7 @@ class SMTP:
 
         errmsg = "\n".join(resp)
         if self.debuglevel > 0:
-            print>>stderr, 'reply: retcode (%s); Msg: %s' % (errcode,errmsg)
+            print('reply: retcode (%s); Msg: %s' % (errcode,errmsg), file=stderr)
         return errcode, errmsg
 
     def docmd(self, cmd, args=""):
@@ -489,7 +489,7 @@ class SMTP:
         """
         self.putcmd("data")
         (code,repl)=self.getreply()
-        if self.debuglevel >0 : print>>stderr, "data:", (code,repl)
+        if self.debuglevel >0 : print("data:", (code,repl), file=stderr)
         if code != 354:
             raise SMTPDataError(code,repl)
         else:
@@ -499,7 +499,7 @@ class SMTP:
             q = q + "." + CRLF
             self.send(q)
             (code,msg)=self.getreply()
-            if self.debuglevel >0 : print>>stderr, "data:", (code,msg)
+            if self.debuglevel >0 : print("data:", (code,msg), file=stderr)
             return (code,msg)
 
     def verify(self, address):
@@ -740,7 +740,7 @@ class SMTP_SSL(SMTP):
 
     def _get_socket(self,af, socktype, proto,sa):
         self.sock = socket.socket(af, socktype, proto)
-        if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
+        if self.debuglevel > 0: print('connect:', (host, port), file=stderr)
         self.sock.connect(sa)
         sslobj = socket.ssl(self.sock, self.keyfile, self.certfile)
         self.sock = SSLFakeSocket(self.sock, sslobj)
@@ -757,14 +757,14 @@ if __name__ == '__main__':
 
     fromaddr = prompt("From")
     toaddrs  = prompt("To").split(',')
-    print "Enter message, end with ^D:"
+    print("Enter message, end with ^D:")
     msg = ''
     while 1:
         line = sys.stdin.readline()
         if not line:
             break
         msg = msg + line
-    print "Message length is %d" % len(msg)
+    print("Message length is %d" % len(msg))
 
     server = SMTP('localhost')
     server.set_debuglevel(1)

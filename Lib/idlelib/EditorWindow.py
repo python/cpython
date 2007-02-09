@@ -859,7 +859,7 @@ class EditorWindow(object):
             try:
                 self.load_extension(name)
             except:
-                print "Failed to load extension", repr(name)
+                print("Failed to load extension", repr(name))
                 import traceback
                 traceback.print_exc()
 
@@ -870,7 +870,7 @@ class EditorWindow(object):
         try:
             mod = __import__(name, globals(), locals(), [])
         except ImportError:
-            print "\nFailed to import extension: ", name
+            print("\nFailed to import extension: ", name)
             return
         cls = getattr(mod, name)
         keydefs = idleConf.GetExtensionBindings(name)

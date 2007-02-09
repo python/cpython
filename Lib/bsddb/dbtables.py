@@ -208,12 +208,12 @@ class bsdTableDB :
 
     def _db_print(self) :
         """Print the database to stdout for debugging"""
-        print "******** Printing raw database for debugging ********"
+        print("******** Printing raw database for debugging ********")
         cur = self.db.cursor()
         try:
             key, data = cur.first()
             while 1:
-                print repr({key: data})
+                print(repr({key: data}))
                 next = cur.next()
                 if next:
                     key, data = next

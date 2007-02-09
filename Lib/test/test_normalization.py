@@ -58,7 +58,7 @@ def test_main():
             continue
 
         if verbose:
-            print line
+            print(line)
 
         # Perform tests
         verify(c2 ==  NFC(c1) ==  NFC(c2) ==  NFC(c3), line)

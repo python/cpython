@@ -618,9 +618,9 @@ def _print_importers():
     items.sort()
     for name, module in items:
         if module:
-            print name, module.__dict__.get('__importer__', '-- no importer')
+            print(name, module.__dict__.get('__importer__', '-- no importer'))
         else:
-            print name, '-- non-existent module'
+            print(name, '-- non-existent module')
 
 def _test_revamp():
     ImportManager().install()

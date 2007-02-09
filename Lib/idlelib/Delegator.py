@@ -23,7 +23,7 @@ class Delegator:
     def cachereport(self):
         keys = self.__cache.keys()
         keys.sort()
-        print keys
+        print(keys)
 
     def setdelegate(self, delegate):
         self.resetcache()

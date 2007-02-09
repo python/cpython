@@ -65,7 +65,7 @@ def checkcache(filename):
         return None
     try:
         if fp.read(4) != MAGIC:
-            print 'flp: bad magic word in cache file', cachename
+            print('flp: bad magic word in cache file', cachename)
             return None
         cache_mtime = rdlong(fp)
         file_mtime = getmtime(filename)
@@ -121,7 +121,7 @@ def writecache(filename, forms):
     try:
         fp = open(cachename, 'w')
     except IOError:
-        print 'flp: can\'t create cache file', cachename
+        print('flp: can\'t create cache file', cachename)
         return # Never mind
     fp.write('\0\0\0\0') # Seek back and write MAGIC when done
     wrlong(fp, getmtime(filename))
@@ -144,8 +144,8 @@ def writecache(filename, forms):
 def freeze(filename):
     forms = parse_forms(filename)
     altforms = _pack_cache(forms)
-    print 'import flp'
-    print 'flp._internal_cache[', repr(filename), '] =', altforms
+    print('import flp')
+    print('flp._internal_cache[', repr(filename), '] =', altforms)
 
 #
 # Internal: create the data structure to be placed in the cache
@@ -425,7 +425,7 @@ def test():
     if len(sys.argv) == 2:
         forms = parse_forms(sys.argv[1])
         t1 = time.time()
-        print 'parse time:', 0.001*(t1-t0), 'sec.'
+        print('parse time:', 0.001*(t1-t0), 'sec.')
         keys = forms.keys()
         keys.sort()
         for i in keys:
@@ -433,18 +433,18 @@ def test():
     elif len(sys.argv) == 3:
         form = parse_form(sys.argv[1], sys.argv[2])
         t1 = time.time()
-        print 'parse time:', round(t1-t0, 3), 'sec.'
+        print('parse time:', round(t1-t0, 3), 'sec.')
         _printform(form)
     else:
-        print 'Usage: test fdfile [form]'
+        print('Usage: test fdfile [form]')
 
 def _printform(form):
     f = form[0]
     objs = form[1]
-    print 'Form ', f.Name, ', size: ', f.Width, f.Height, ' Nobj ', f.Numberofobjects
+    print('Form ', f.Name, ', size: ', f.Width, f.Height, ' Nobj ', f.Numberofobjects)
     for i in objs:
-        print '  Obj ', i.Name, ' type ', i.Class, i.Type
-        print '    Box ', i.Box, ' btype ', i.Boxtype
-        print '    Label ', i.Label, ' size/style/col/align ', i.Size,i.Style, i.Lcol, i.Alignment
-        print '    cols ', i.Colors
-        print '    cback ', i.Callback, i.Argument
+        print('  Obj ', i.Name, ' type ', i.Class, i.Type)
+        print('    Box ', i.Box, ' btype ', i.Boxtype)
+        print('    Label ', i.Label, ' size/style/col/align ', i.Size,i.Style, i.Lcol, i.Alignment)
+        print('    cols ', i.Colors)
+        print('    cback ', i.Callback, i.Argument)

@@ -373,7 +373,7 @@ class dispatcher:
 
     def log_info(self, message, type='info'):
         if __debug__ or type != 'info':
-            print '%s: %s' % (type, message)
+            print('%s: %s' % (type, message))
 
     def handle_read_event(self):
         if self.accepting:

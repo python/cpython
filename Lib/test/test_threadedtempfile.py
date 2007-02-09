@@ -50,26 +50,26 @@ def test_main():
     threads = []
     thread_info = threading_setup()
 
-    print "Creating"
+    print("Creating")
     for i in range(NUM_THREADS):
         t = TempFileGreedy()
         threads.append(t)
         t.start()
 
-    print "Starting"
+    print("Starting")
     startEvent.set()
 
-    print "Reaping"
+    print("Reaping")
     ok = errors = 0
     for t in threads:
         t.join()
         ok += t.ok_count
         errors += t.error_count
         if t.error_count:
-            print '%s errors:\n%s' % (t.getName(), t.errors.getvalue())
+            print('%s errors:\n%s' % (t.getName(), t.errors.getvalue()))
 
     msg = "Done: errors %d ok %d" % (errors, ok)
-    print msg
+    print(msg)
     if errors:
         raise TestFailed(msg)
 

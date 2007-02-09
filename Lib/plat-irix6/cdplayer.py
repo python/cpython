@@ -51,7 +51,7 @@ class Cdplayer:
                 line = line[l:]
                 match = reg.match(line)
                 if not match:
-                    print 'syntax error in ~/' + cdplayerrc
+                    print('syntax error in ~/' + cdplayerrc)
                     continue
                 name, value = match.group(1, 2)
                 if name == 'title':

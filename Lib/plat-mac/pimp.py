@@ -229,7 +229,7 @@ class PimpTarUnpacker(PimpUnpacker):
                             #print 'SKIP', member.name
                         else:
                             member.name = newprefix + member.name[len(oldprefix):]
-                            print '    ', member.name
+                            print('    ', member.name)
                         break
                     elif oldprefix2 and member.name[:len(oldprefix2)] == oldprefix2:
                         if newprefix is None:
@@ -1020,8 +1020,8 @@ def _run(mode, verbose, force, args, prefargs, watcher):
     elif mode =='list':
         if not args:
             args = db.listnames()
-        print "%-20.20s\t%s" % ("Package", "Description")
-        print
+        print("%-20.20s\t%s" % ("Package", "Description"))
+        print()
         for pkgname in args:
             pkg = db.find(pkgname)
             if pkg:
@@ -1029,21 +1029,21 @@ def _run(mode, verbose, force, args, prefargs, watcher):
                 pkgname = pkg.fullname()
             else:
                 description = 'Error: no such package'
-            print "%-20.20s\t%s" % (pkgname, description)
+            print("%-20.20s\t%s" % (pkgname, description))
             if verbose:
-                print "\tHome page:\t", pkg.homepage()
+                print("\tHome page:\t", pkg.homepage())
                 try:
-                    print "\tDownload URL:\t", pkg.downloadURL()
+                    print("\tDownload URL:\t", pkg.downloadURL())
                 except KeyError:
                     pass
                 description = pkg.description()
                 description = '\n\t\t\t\t\t'.join(description.splitlines())
-                print "\tDescription:\t%s" % description
+                print("\tDescription:\t%s" % description)
     elif mode =='status':
         if not args:
             args = db.listnames()
-            print "%-20.20s\t%s\t%s" % ("Package", "Installed", "Message")
-            print
+            print("%-20.20s\t%s\t%s" % ("Package", "Installed", "Message"))
+            print()
         for pkgname in args:
             pkg = db.find(pkgname)
             if pkg:
@@ -1052,7 +1052,7 @@ def _run(mode, verbose, force, args, prefargs, watcher):
             else:
                 status = 'error'
                 msg = 'No such package'
-            print "%-20.20s\t%-9.9s\t%s" % (pkgname, status, msg)
+            print("%-20.20s\t%-9.9s\t%s" % (pkgname, status, msg))
             if verbose and status == "no":
                 prereq = pkg.prerequisites()
                 for pkg, msg in prereq:
@@ -1060,22 +1060,22 @@ def _run(mode, verbose, force, args, prefargs, watcher):
                         pkg = ''
                     else:
                         pkg = pkg.fullname()
-                    print "%-20.20s\tRequirement: %s %s" % ("", pkg, msg)
+                    print("%-20.20s\tRequirement: %s %s" % ("", pkg, msg))
     elif mode == 'install':
         if not args:
-            print 'Please specify packages to install'
+            print('Please specify packages to install')
             sys.exit(1)
         inst = PimpInstaller(db)
         for pkgname in args:
             pkg = db.find(pkgname)
             if not pkg:
-                print '%s: No such package' % pkgname
+                print('%s: No such package' % pkgname)
                 continue
             list, messages = inst.prepareInstall(pkg, force)
             if messages and not force:
-                print "%s: Not installed:" % pkgname
+                print("%s: Not installed:" % pkgname)
                 for m in messages:
-                    print "\t", m
+                    print("\t", m)
             else:
                 if verbose:
                     output = sys.stdout
@@ -1083,26 +1083,26 @@ def _run(mode, verbose, force, args, prefargs, watcher):
                     output = None
                 messages = inst.install(list, output)
                 if messages:
-                    print "%s: Not installed:" % pkgname
+                    print("%s: Not installed:" % pkgname)
                     for m in messages:
-                        print "\t", m
+                        print("\t", m)
 
 def main():
     """Minimal commandline tool to drive pimp."""
 
     import getopt
     def _help():
-        print "Usage: pimp [options] -s [package ...]  List installed status"
-        print "       pimp [options] -l [package ...]  Show package information"
-        print "       pimp [options] -i package ...    Install packages"
-        print "       pimp -d                          Dump database to stdout"
-        print "       pimp -V                          Print version number"
-        print "Options:"
-        print "       -v     Verbose"
-        print "       -f     Force installation"
-        print "       -D dir Set destination directory"
-        print "              (default: %s)" % DEFAULT_INSTALLDIR
-        print "       -u url URL for database"
+        print("Usage: pimp [options] -s [package ...]  List installed status")
+        print("       pimp [options] -l [package ...]  Show package information")
+        print("       pimp [options] -i package ...    Install packages")
+        print("       pimp -d                          Dump database to stdout")
+        print("       pimp -V                          Print version number")
+        print("Options:")
+        print("       -v     Verbose")
+        print("       -f     Force installation")
+        print("       -D dir Set destination directory")
+        print("              (default: %s)" % DEFAULT_INSTALLDIR)
+        print("       -u url URL for database")
         sys.exit(1)
 
     class _Watcher:
@@ -1152,7 +1152,7 @@ def main():
     if not mode:
         _help()
     if mode == 'version':
-        print 'Pimp version %s; module name is %s' % (PIMP_VERSION, __name__)
+        print('Pimp version %s; module name is %s' % (PIMP_VERSION, __name__))
     else:
         _run(mode, verbose, force, args, prefargs, watcher)
 

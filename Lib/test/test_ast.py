@@ -117,11 +117,11 @@ eval_tests = [
 if __name__=='__main__' and sys.argv[1:] == ['-g']:
     for statements, kind in ((exec_tests, "exec"), (single_tests, "single"),
                              (eval_tests, "eval")):
-        print kind+"_results = ["
+        print(kind+"_results = [")
         for s in statements:
-            print repr(to_tuple(compile(s, "?", kind, 0x400)))+","
-        print "]"
-    print "run_tests()"
+            print(repr(to_tuple(compile(s, "?", kind, 0x400)))+",")
+        print("]")
+    print("run_tests()")
     raise SystemExit
 
 def test_order(ast_node, parent_pos):

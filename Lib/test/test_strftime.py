@@ -40,7 +40,7 @@ def escapestr(text, ampm):
 
 def strftest(now):
     if verbose:
-        print "strftime test for", time.ctime(now)
+        print("strftime test for", time.ctime(now))
     nowsecs = str(int(now))[:-1]
     gmt = time.gmtime(now)
     now = time.localtime(now)
@@ -113,42 +113,42 @@ def strftest(now):
         )
 
     if verbose:
-        print "Strftime test, platform: %s, Python version: %s" % \
-              (sys.platform, sys.version.split()[0])
+        print("Strftime test, platform: %s, Python version: %s" % \
+              (sys.platform, sys.version.split()[0]))
 
     for e in expectations:
         try:
             result = time.strftime(e[0], now)
         except ValueError as error:
-            print "Standard '%s' format gave error:" % e[0], error
+            print("Standard '%s' format gave error:" % e[0], error)
             continue
         if re.match(escapestr(e[1], ampm), result): continue
         if not result or result[0] == '%':
-            print "Does not support standard '%s' format (%s)" % (e[0], e[2])
+            print("Does not support standard '%s' format (%s)" % (e[0], e[2]))
         else:
-            print "Conflict for %s (%s):" % (e[0], e[2])
-            print "  Expected %s, but got %s" % (e[1], result)
+            print("Conflict for %s (%s):" % (e[0], e[2]))
+            print("  Expected %s, but got %s" % (e[1], result))
 
     for e in nonstandard_expectations:
         try:
             result = time.strftime(e[0], now)
         except ValueError as result:
             if verbose:
-                print "Error for nonstandard '%s' format (%s): %s" % \
-                      (e[0], e[2], str(result))
+                print("Error for nonstandard '%s' format (%s): %s" % \
+                      (e[0], e[2], str(result)))
             continue
         if re.match(escapestr(e[1], ampm), result):
             if verbose:
-                print "Supports nonstandard '%s' format (%s)" % (e[0], e[2])
+                print("Supports nonstandard '%s' format (%s)" % (e[0], e[2]))
         elif not result or result[0] == '%':
             if verbose:
-                print "Does not appear to support '%s' format (%s)" % (e[0],
-                                                                       e[2])
+                print("Does not appear to support '%s' format (%s)" % (e[0],
+                                                                       e[2]))
         else:
             if verbose:
-                print "Conflict for nonstandard '%s' format (%s):" % (e[0],
-                                                                      e[2])
-                print "  Expected %s, but got %s" % (e[1], result)
+                print("Conflict for nonstandard '%s' format (%s):" % (e[0],
+                                                                      e[2]))
+                print("  Expected %s, but got %s" % (e[1], result))
 
 def fixasctime(s):
     if s[8] == ' ':

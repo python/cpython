@@ -342,13 +342,13 @@ line 3 \\
         result = file.readlines ()
         # result = string.join (result, '')
         if result == expected_result:
-            print "ok %d (%s)" % (count, description)
+            print("ok %d (%s)" % (count, description))
         else:
-            print "not ok %d (%s):" % (count, description)
-            print "** expected:"
-            print expected_result
-            print "** received:"
-            print result
+            print("not ok %d (%s):" % (count, description))
+            print("** expected:")
+            print(expected_result)
+            print("** received:")
+            print(result)
 
 
     filename = "test.txt"

@@ -777,7 +777,7 @@ class FancyURLopener(URLopener):
                 (user, realm, host))
             return user, passwd
         except KeyboardInterrupt:
-            print
+            print()
             return None, None
 
 
@@ -1453,17 +1453,17 @@ def test1():
     uqs = unquote(qs)
     t1 = time.time()
     if uqs != s:
-        print 'Wrong!'
-    print repr(s)
-    print repr(qs)
-    print repr(uqs)
-    print round(t1 - t0, 3), 'sec'
+        print('Wrong!')
+    print(repr(s))
+    print(repr(qs))
+    print(repr(uqs))
+    print(round(t1 - t0, 3), 'sec')
 
 
 def reporthook(blocknum, blocksize, totalsize):
     # Report during remote transfers
-    print "Block number: %d, Block size: %d, Total size: %d" % (
-        blocknum, blocksize, totalsize)
+    print("Block number: %d, Block size: %d, Total size: %d" % (
+        blocknum, blocksize, totalsize))
 
 # Test program
 def test(args=[]):
@@ -1480,22 +1480,22 @@ def test(args=[]):
             args.append('https://synergy.as.cmu.edu/~geek/')
     try:
         for url in args:
-            print '-'*10, url, '-'*10
+            print('-'*10, url, '-'*10)
             fn, h = urlretrieve(url, None, reporthook)
-            print fn
+            print(fn)
             if h:
-                print '======'
-                for k in h.keys(): print k + ':', h[k]
-                print '======'
+                print('======')
+                for k in h.keys(): print(k + ':', h[k])
+                print('======')
             fp = open(fn, 'rb')
             data = fp.read()
             del fp
             if '\r' in data:
                 table = string.maketrans("", "")
                 data = data.translate(table, "\r")
-            print data
+            print(data)
             fn, h = None, None
-        print '-'*40
+        print('-'*40)
     finally:
         urlcleanup()
 
@@ -1504,17 +1504,17 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "th")
     except getopt.error as msg:
-        print msg
-        print "Use -h for help"
+        print(msg)
+        print("Use -h for help")
         return
     t = 0
     for o, a in opts:
         if o == '-t':
             t = t + 1
         if o == '-h':
-            print "Usage: python urllib.py [-t] [url ...]"
-            print "-t runs self-test;",
-            print "otherwise, contents of urls are printed"
+            print("Usage: python urllib.py [-t] [url ...]")
+            print("-t runs self-test;", end=' ')
+            print("otherwise, contents of urls are printed")
             return
     if t:
         if t > 1:
@@ -1522,9 +1522,9 @@ def main():
         test(args)
     else:
         if not args:
-            print "Use -h for help"
+            print("Use -h for help")
         for url in args:
-            print urlopen(url).read(),
+            print(urlopen(url).read(), end=' ')
 
 # Run test program when run as a script
 if __name__ == '__main__':

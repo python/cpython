@@ -98,9 +98,9 @@ COMMASPACE = ', '
 
 
 def usage(code, msg=''):
-    print >> sys.stderr, __doc__ % globals()
+    print(__doc__ % globals(), file=sys.stderr)
     if msg:
-        print >> sys.stderr, msg
+        print(msg, file=sys.stderr)
     sys.exit(code)
 
 
@@ -122,7 +122,7 @@ class SMTPChannel(asynchat.async_chat):
         self.__data = ''
         self.__fqdn = socket.getfqdn()
         self.__peer = conn.getpeername()
-        print >> DEBUGSTREAM, 'Peer:', repr(self.__peer)
+        print('Peer:', repr(self.__peer), file=DEBUGSTREAM)
         self.push('220 %s %s' % (self.__fqdn, __version__))
         self.set_terminator('\r\n')
 
@@ -137,7 +137,7 @@ class SMTPChannel(asynchat.async_chat):
     # Implementation of base class abstract method
     def found_terminator(self):
         line = EMPTYSTRING.join(self.__line)
-        print >> DEBUGSTREAM, 'Data:', repr(line)
+        print('Data:', repr(line), file=DEBUGSTREAM)
         self.__line = []
         if self.__state == self.COMMAND:
             if not line:
@@ -220,7 +220,7 @@ class SMTPChannel(asynchat.async_chat):
         return address
 
     def smtp_MAIL(self, arg):
-        print >> DEBUGSTREAM, '===> MAIL', arg
+        print('===> MAIL', arg, file=DEBUGSTREAM)
         address = self.__getaddr('FROM:', arg)
         if not address:
             self.push('501 Syntax: MAIL FROM:<address>')
@@ -229,11 +229,11 @@ class SMTPChannel(asynchat.async_chat):
             self.push('503 Error: nested MAIL command')
             return
         self.__mailfrom = address
-        print >> DEBUGSTREAM, 'sender:', self.__mailfrom
+        print('sender:', self.__mailfrom, file=DEBUGSTREAM)
         self.push('250 Ok')
 
     def smtp_RCPT(self, arg):
-        print >> DEBUGSTREAM, '===> RCPT', arg
+        print('===> RCPT', arg, file=DEBUGSTREAM)
         if not self.__mailfrom:
             self.push('503 Error: need MAIL command')
             return
@@ -242,7 +242,7 @@ class SMTPChannel(asynchat.async_chat):
             self.push('501 Syntax: RCPT TO: <address>')
             return
         self.__rcpttos.append(address)
-        print >> DEBUGSTREAM, 'recips:', self.__rcpttos
+        print('recips:', self.__rcpttos, file=DEBUGSTREAM)
         self.push('250 Ok')
 
     def smtp_RSET(self, arg):
@@ -279,14 +279,13 @@ class SMTPServer(asyncore.dispatcher):
         self.set_reuse_addr()
         self.bind(localaddr)
         self.listen(5)
-        print >> DEBUGSTREAM, \
-              '%s started at %s\n\tLocal addr: %s\n\tRemote addr:%s' % (
+        print('%s started at %s\n\tLocal addr: %s\n\tRemote addr:%s' % (
             self.__class__.__name__, time.ctime(time.time()),
-            localaddr, remoteaddr)
+            localaddr, remoteaddr), file=DEBUGSTREAM)
 
     def handle_accept(self):
         conn, addr = self.accept()
-        print >> DEBUGSTREAM, 'Incoming connection from %s' % repr(addr)
+        print('Incoming connection from %s' % repr(addr), file=DEBUGSTREAM)
         channel = SMTPChannel(self, conn, addr)
 
     # API for "doing something useful with the message"
@@ -321,14 +320,14 @@ class DebuggingServer(SMTPServer):
     def process_message(self, peer, mailfrom, rcpttos, data):
         inheaders = 1
         lines = data.split('\n')
-        print '---------- MESSAGE FOLLOWS ----------'
+        print('---------- MESSAGE FOLLOWS ----------')
         for line in lines:
             # headers first
             if inheaders and not line:
-                print 'X-Peer:', peer[0]
+                print('X-Peer:', peer[0])
                 inheaders = 0
-            print line
-        print '------------ END MESSAGE ------------'
+            print(line)
+        print('------------ END MESSAGE ------------')
 
 
 
@@ -345,7 +344,7 @@ class PureProxy(SMTPServer):
         data = NEWLINE.join(lines)
         refused = self._deliver(mailfrom, rcpttos, data)
         # TBD: what to do with refused addresses?
-        print >> DEBUGSTREAM, 'we got some refusals:', refused
+        print('we got some refusals:', refused, file=DEBUGSTREAM)
 
     def _deliver(self, mailfrom, rcpttos, data):
         import smtplib
@@ -358,10 +357,10 @@ class PureProxy(SMTPServer):
             finally:
                 s.quit()
         except smtplib.SMTPRecipientsRefused as e:
-            print >> DEBUGSTREAM, 'got SMTPRecipientsRefused'
+            print('got SMTPRecipientsRefused', file=DEBUGSTREAM)
             refused = e.recipients
         except (socket.error, smtplib.SMTPException) as e:
-            print >> DEBUGSTREAM, 'got', e.__class__
+            print('got', e.__class__, file=DEBUGSTREAM)
             # All recipients were refused.  If the exception had an associated
             # error code, use it.  Otherwise,fake it with a non-triggering
             # exception code.
@@ -410,11 +409,11 @@ class MailmanProxy(PureProxy):
         for rcpt, listname, command in listnames:
             rcpttos.remove(rcpt)
         # If there's any non-list destined recipients left,
-        print >> DEBUGSTREAM, 'forwarding recips:', ' '.join(rcpttos)
+        print('forwarding recips:', ' '.join(rcpttos), file=DEBUGSTREAM)
         if rcpttos:
             refused = self._deliver(mailfrom, rcpttos, data)
             # TBD: what to do with refused addresses?
-            print >> DEBUGSTREAM, 'we got refusals:', refused
+            print('we got refusals:', refused, file=DEBUGSTREAM)
         # Now deliver directly to the list commands
         mlists = {}
         s = StringIO(data)
@@ -427,7 +426,7 @@ class MailmanProxy(PureProxy):
         if not msg.getheader('date'):
             msg['Date'] = time.ctime(time.time())
         for rcpt, listname, command in listnames:
-            print >> DEBUGSTREAM, 'sending message to', rcpt
+            print('sending message to', rcpt, file=DEBUGSTREAM)
             mlist = mlists.get(listname)
             if not mlist:
                 mlist = MailList.MailList(listname, lock=0)
@@ -472,7 +471,7 @@ def parseargs():
         if opt in ('-h', '--help'):
             usage(0)
         elif opt in ('-V', '--version'):
-            print >> sys.stderr, __version__
+            print(__version__, file=sys.stderr)
             sys.exit(0)
         elif opt in ('-n', '--nosetuid'):
             options.setuid = 0
@@ -522,16 +521,14 @@ if __name__ == '__main__':
         try:
             import pwd
         except ImportError:
-            print >> sys.stderr, \
-                  'Cannot import module "pwd"; try running with -n option.'
+            print('Cannot import module "pwd"; try running with -n option.', file=sys.stderr)
             sys.exit(1)
         nobody = pwd.getpwnam('nobody')[2]
         try:
             os.setuid(nobody)
         except OSError as e:
             if e.errno != errno.EPERM: raise
-            print >> sys.stderr, \
-                  'Cannot setuid "nobody"; try running with -n option.'
+            print('Cannot setuid "nobody"; try running with -n option.', file=sys.stderr)
             sys.exit(1)
     classname = options.classname
     if "." in classname:

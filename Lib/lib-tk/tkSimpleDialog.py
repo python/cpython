@@ -315,6 +315,6 @@ if __name__ == "__main__":
     root = Tk()
     root.update()
 
-    print askinteger("Spam", "Egg count", initialvalue=12*12)
-    print askfloat("Spam", "Egg weight\n(in tons)", minvalue=1, maxvalue=100)
-    print askstring("Spam", "Egg label")
+    print(askinteger("Spam", "Egg count", initialvalue=12*12))
+    print(askfloat("Spam", "Egg weight\n(in tons)", minvalue=1, maxvalue=100))
+    print(askstring("Spam", "Egg label"))

@@ -250,7 +250,7 @@ class Application:
             if window in self._windows:
                 self._windows[window].do_itemhit(item, event)
             else:
-                print 'Dialog event for unknown dialog'
+                print('Dialog event for unknown dialog')
             return 1
         return 0
 
@@ -323,14 +323,14 @@ class Application:
 
     def do_unknownpartcode(self, partcode, window, event):
         (what, message, when, where, modifiers) = event
-        if DEBUG: print "Mouse down at global:", where
-        if DEBUG: print "\tUnknown part code:", partcode
-        if DEBUG: print "\tEvent:", self.printevent(event)
+        if DEBUG: print("Mouse down at global:", where)
+        if DEBUG: print("\tUnknown part code:", partcode)
+        if DEBUG: print("\tEvent:", self.printevent(event))
         if hasattr(MacOS, 'HandleEvent'):
             MacOS.HandleEvent(event)
 
     def do_unknownwindow(self, partcode, window, event):
-        if DEBUG: print 'Unknown window:', window
+        if DEBUG: print('Unknown window:', window)
         if hasattr(MacOS, 'HandleEvent'):
             MacOS.HandleEvent(event)
 
@@ -373,7 +373,7 @@ class Application:
             # else it wasn't for us, sigh...
 
     def do_char(self, c, event):
-        if DEBUG: print "Character", repr(c)
+        if DEBUG: print("Character", repr(c))
 
     def do_updateEvt(self, event):
         (what, message, when, where, modifiers) = event
@@ -402,7 +402,7 @@ class Application:
             self.do_suspendresume(event)
         else:
             if DEBUG:
-                print 'unknown osEvt:',
+                print('unknown osEvt:', end=' ')
                 self.printevent(event)
 
     def do_suspendresume(self, event):
@@ -415,7 +415,7 @@ class Application:
     def do_kHighLevelEvent(self, event):
         (what, message, when, where, modifiers) = event
         if DEBUG:
-            print "High Level Event:",
+            print("High Level Event:", end=' ')
             self.printevent(event)
         try:
             AEProcessAppleEvent(event)
@@ -426,7 +426,7 @@ class Application:
 
     def do_unknownevent(self, event):
         if DEBUG:
-            print "Unhandled event:",
+            print("Unhandled event:", end=' ')
             self.printevent(event)
 
     def printevent(self, event):
@@ -434,13 +434,13 @@ class Application:
         nicewhat = repr(what)
         if what in eventname:
             nicewhat = eventname[what]
-        print nicewhat,
+        print(nicewhat, end=' ')
         if what == kHighLevelEvent:
             h, v = where
-            print repr(ostypecode(message)), hex(when), repr(ostypecode(h | (v<<16))),
+            print(repr(ostypecode(message)), hex(when), repr(ostypecode(h | (v<<16))), end=' ')
         else:
-            print hex(message), hex(when), where,
-        print hex(modifiers)
+            print(hex(message), hex(when), where, end=' ')
+        print(hex(modifiers))
 
 
 class MenuBar:
@@ -477,7 +477,7 @@ class MenuBar:
     def addmenu(self, title, after = 0, id=None):
         if id == None:
             id = self.getnextid()
-        if DEBUG: print 'Newmenu', title, id # XXXX
+        if DEBUG: print('Newmenu', title, id) # XXXX
         m = NewMenu(id, title)
         m.InsertMenu(after)
         if after >= 0:
@@ -488,7 +488,7 @@ class MenuBar:
         return id, m
 
     def delmenu(self, id):
-        if DEBUG: print 'Delmenu', id # XXXX
+        if DEBUG: print('Delmenu', id) # XXXX
         DeleteMenu(id)
 
     def addpopup(self, title = ''):
@@ -531,8 +531,8 @@ class MenuBar:
         if id in self.menus:
             self.menus[id].dispatch(id, item, window, event)
         else:
-            if DEBUG: print "MenuBar.dispatch(%d, %d, %s, %s)" % \
-                (id, item, window, event)
+            if DEBUG: print("MenuBar.dispatch(%d, %d, %s, %s)" % \
+                (id, item, window, event))
 
 
 # XXX Need a way to get menus as resources and bind them to callbacks
@@ -837,10 +837,10 @@ class Window:
 
     def do_contentclick(self, local, modifiers, event):
         if DEBUG:
-            print 'Click in contents at %s, modifiers %s'%(local, modifiers)
+            print('Click in contents at %s, modifiers %s'%(local, modifiers))
 
     def do_rawupdate(self, window, event):
-        if DEBUG: print "raw update for", window
+        if DEBUG: print("raw update for", window)
         SetPort(window)
         window.BeginUpdate()
         self.do_update(window, event)
@@ -857,12 +857,12 @@ class Window:
             EraseRgn(window.GetWindowPort().visRgn)
 
     def do_activate(self, activate, event):
-        if DEBUG: print 'Activate %d for %s'%(activate, self.wid)
+        if DEBUG: print('Activate %d for %s'%(activate, self.wid))
 
 class ControlsWindow(Window):
 
     def do_rawupdate(self, window, event):
-        if DEBUG: print "raw update for", window
+        if DEBUG: print("raw update for", window)
         SetPort(window)
         window.BeginUpdate()
         self.do_update(window, event)
@@ -872,7 +872,7 @@ class ControlsWindow(Window):
         window.EndUpdate()
 
     def do_controlhit(self, window, control, pcode, event):
-        if DEBUG: print "control hit in", window, "on", control, "; pcode =", pcode
+        if DEBUG: print("control hit in", window, "on", control, "; pcode =", pcode)
 
     def do_inContent(self, partcode, window, event):
         if MyFrontWindow() != window:
@@ -885,8 +885,8 @@ class ControlsWindow(Window):
         if pcode and control:
             self.do_rawcontrolhit(window, control, pcode, local, event)
         else:
-            if DEBUG: print "FindControl(%s, %s) -> (%s, %s)" % \
-                (local, window, pcode, control)
+            if DEBUG: print("FindControl(%s, %s) -> (%s, %s)" % \
+                (local, window, pcode, control))
             self.do_contentclick(local, modifiers, event)
 
     def do_rawcontrolhit(self, window, control, pcode, local, event):
@@ -975,11 +975,11 @@ class ScrolledWindow(ControlsWindow):
             pcode = control.TrackControl(local)
             if pcode == inThumb:
                 value = control.GetControlValue()
-                print 'setbars', which, value #DBG
+                print('setbars', which, value) #DBG
                 self.scrollbar_callback(which, 'set', value)
                 self.updatescrollbars()
             else:
-                print 'funny part', pcode #DBG
+                print('funny part', pcode) #DBG
         return 1
 
     def do_controltrack(self, control, pcode):
@@ -1045,7 +1045,7 @@ class ScrolledWindow(ControlsWindow):
         return 0, 0
 
     def scrollbar_callback(self, which, what, value):
-        print 'scroll', which, what, value
+        print('scroll', which, what, value)
 
 class DialogWindow(Window):
     """A modeless dialog window"""
@@ -1063,7 +1063,7 @@ class DialogWindow(Window):
         Window.do_postclose(self)
 
     def do_itemhit(self, item, event):
-        print 'Dialog %s, item %d hit'%(self.dlg, item)
+        print('Dialog %s, item %d hit'%(self.dlg, item))
 
     def do_rawupdate(self, window, event):
         pass
@@ -1096,7 +1096,7 @@ class TestApp(Application):
         self.quititem = MenuItem(m, "Quit", "Q", self.quit)
 
     def save(self, *args):
-        print "Save"
+        print("Save")
 
     def quit(self, *args):
         raise self
@@ -1106,7 +1106,7 @@ class TestApp(Application):
         self.nohelpitem = MenuItem(hm, "There isn't any", None, self.nohelp)
 
     def nohelp(self, *args):
-        print "I told you there isn't any!"
+        print("I told you there isn't any!")
 
     def debug(self, *args):
         import pdb

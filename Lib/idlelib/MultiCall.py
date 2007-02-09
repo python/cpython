@@ -388,7 +388,7 @@ if __name__ == "__main__":
     text.pack()
     def bindseq(seq, n=[0]):
         def handler(event):
-            print seq
+            print(seq)
         text.bind("<<handler%d>>"%n[0], handler)
         text.event_add("<<handler%d>>"%n[0], seq)
         n[0] += 1

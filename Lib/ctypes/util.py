@@ -125,15 +125,15 @@ elif os.name == "posix":
 def test():
     from ctypes import cdll
     if os.name == "nt":
-        print cdll.msvcrt
-        print cdll.load("msvcrt")
-        print find_library("msvcrt")
+        print(cdll.msvcrt)
+        print(cdll.load("msvcrt"))
+        print(find_library("msvcrt"))
 
     if os.name == "posix":
         # find and load_version
-        print find_library("m")
-        print find_library("c")
-        print find_library("bz2")
+        print(find_library("m"))
+        print(find_library("c"))
+        print(find_library("bz2"))
 
         # getattr
 ##        print cdll.m
@@ -141,14 +141,14 @@ def test():
 
         # load
         if sys.platform == "darwin":
-            print cdll.LoadLibrary("libm.dylib")
-            print cdll.LoadLibrary("libcrypto.dylib")
-            print cdll.LoadLibrary("libSystem.dylib")
-            print cdll.LoadLibrary("System.framework/System")
+            print(cdll.LoadLibrary("libm.dylib"))
+            print(cdll.LoadLibrary("libcrypto.dylib"))
+            print(cdll.LoadLibrary("libSystem.dylib"))
+            print(cdll.LoadLibrary("System.framework/System"))
         else:
-            print cdll.LoadLibrary("libm.so")
-            print cdll.LoadLibrary("libcrypt.so")
-            print find_library("crypt")
+            print(cdll.LoadLibrary("libm.so"))
+            print(cdll.LoadLibrary("libcrypt.so"))
+            print(find_library("crypt"))
 
 if __name__ == "__main__":
     test()

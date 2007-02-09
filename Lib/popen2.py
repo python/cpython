@@ -213,14 +213,14 @@ def _test():
     # sometimes adding an extra newline at the start or the
     # end.  So we strip whitespace off both ends for comparison.
     expected = teststr.strip()
-    print "testing popen2..."
+    print("testing popen2...")
     r, w = popen2(cmd)
     w.write(teststr)
     w.close()
     got = r.read()
     if got.strip() != expected:
         raise ValueError("wrote %r read %r" % (teststr, got))
-    print "testing popen3..."
+    print("testing popen3...")
     try:
         r, w, e = popen3([cmd])
     except:
@@ -238,7 +238,7 @@ def _test():
     _cleanup()
     if _active:
         raise ValueError("_active not empty")
-    print "All OK"
+    print("All OK")
 
 if __name__ == '__main__':
     _test()

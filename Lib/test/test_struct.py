@@ -114,7 +114,7 @@ for prefix in ('', '@', '<', '>', '=', '!'):
     for format in ('xcbhilfdt', 'xcBHILfdt'):
         format = prefix + format
         if verbose:
-            print "trying:", format
+            print("trying:", format)
         s = struct.pack(format, c, b, h, i, l, f, d, t)
         cp, bp, hp, ip, lp, fp, dp, tp = struct.unpack(format, s)
         if (cp != c or bp != b or hp != h or ip != i or lp != l or
@@ -169,7 +169,7 @@ tests = [
 
 for fmt, arg, big, lil, asy in tests:
     if verbose:
-        print "%r %r %r %r" % (fmt, arg, big, lil)
+        print("%r %r %r %r" % (fmt, arg, big, lil))
     for (xfmt, exp) in [('>'+fmt, big), ('!'+fmt, big), ('<'+fmt, lil),
                         ('='+fmt, ISBIGENDIAN and big or lil)]:
         res = struct.pack(xfmt, arg)
@@ -195,7 +195,7 @@ except struct.error:
     has_native_qQ = 0
 
 if verbose:
-    print "Platform has native q/Q?", has_native_qQ and "Yes." or "No."
+    print("Platform has native q/Q?", has_native_qQ and "Yes." or "No.")
 
 any_err(struct.pack, "Q", -1)   # can't pack -1 as unsigned regardless
 simple_err(struct.pack, "q", "a")  # can't pack string as 'q' regardless
@@ -258,7 +258,7 @@ class IntTester:
                           unpack=struct.unpack,
                           unhexlify=binascii.unhexlify):
         if verbose:
-            print "trying std", self.formatpair, "on", x, "==", hex(x)
+            print("trying std", self.formatpair, "on", x, "==", hex(x))
 
         # Try signed.
         code = self.signed_code
@@ -313,7 +313,7 @@ class IntTester:
             # x is out of range -- verify pack realizes that.
             if not PY_STRUCT_RANGE_CHECKING and code in self.BUGGY_RANGE_CHECK:
                 if verbose:
-                    print "Skipping buggy range check for code", code
+                    print("Skipping buggy range check for code", code)
             else:
                 deprecated_err(pack, ">" + code, x)
                 deprecated_err(pack, "<" + code, x)
@@ -368,7 +368,7 @@ class IntTester:
             # x is out of range -- verify pack realizes that.
             if not PY_STRUCT_RANGE_CHECKING and code in self.BUGGY_RANGE_CHECK:
                 if verbose:
-                    print "Skipping buggy range check for code", code
+                    print("Skipping buggy range check for code", code)
             else:
                 deprecated_err(pack, ">" + code, x)
                 deprecated_err(pack, "<" + code, x)
@@ -627,13 +627,13 @@ def test_bool():
         
         falseFormat = prefix + 't' * len(false)
         if verbose:
-            print 'trying bool pack/unpack on', false, 'using format', falseFormat
+            print('trying bool pack/unpack on', false, 'using format', falseFormat)
         packedFalse = struct.pack(falseFormat, *false)
         unpackedFalse = struct.unpack(falseFormat, packedFalse)
         
         trueFormat = prefix + 't' * len(true)
         if verbose:
-            print 'trying bool pack/unpack on', true, 'using format', trueFormat
+            print('trying bool pack/unpack on', true, 'using format', trueFormat)
         packedTrue = struct.pack(trueFormat, *true)
         unpackedTrue = struct.unpack(trueFormat, packedTrue)
         
@@ -650,7 +650,7 @@ def test_bool():
                 raise TestFailed('%r did not unpack as false' % t)
     
         if prefix and verbose:
-            print 'trying size of bool with format %r' % (prefix+'t')
+            print('trying size of bool with format %r' % (prefix+'t'))
         packed = struct.pack(prefix+'t', 1)
         
         if len(packed) != struct.calcsize(prefix+'t'):
@@ -659,7 +659,7 @@ def test_bool():
         if len(packed) != 1 and prefix:
             raise TestFailed('encoded bool is not one byte: %r' % packed)
         elif not prefix and verbose:
-            print 'size of bool in native format is %i' % (len(packed))
+            print('size of bool in native format is %i' % (len(packed)))
         
         for c in '\x01\x7f\xff\x0f\xf0':
             if struct.unpack('>t', c)[0] is not True:

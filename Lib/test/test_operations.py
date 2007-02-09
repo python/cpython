@@ -1,11 +1,11 @@
 # Python test set -- part 3, built-in operations.
 
 
-print '3. Operations'
-print 'XXX Mostly not yet implemented'
+print('3. Operations')
+print('XXX Mostly not yet implemented')
 
 
-print '3.1 Dictionary lookups fail if __cmp__() raises an exception'
+print('3.1 Dictionary lookups fail if __cmp__() raises an exception')
 
 class BadDictKey:
 
@@ -14,7 +14,7 @@ class BadDictKey:
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            print "raising error"
+            print("raising error")
             raise RuntimeError, "gotcha"
         return other
 
@@ -32,9 +32,9 @@ for stmt in ['d[x2] = 2',
     try:
         exec(stmt)
     except RuntimeError:
-        print "%s: caught the RuntimeError outside" % (stmt,)
+        print("%s: caught the RuntimeError outside" % (stmt,))
     else:
-        print "%s: No exception passed through!" % (stmt,) # old CPython behavior
+        print("%s: No exception passed through!" % (stmt,)) # old CPython behavior
 
 
 # Dict resizing bug, found by Jack Jansen in 2.2 CVS development.
@@ -74,4 +74,4 @@ d[X()] = 5
 resizing = True
 d[9] = 6
 
-print 'resize bugs not triggered.'
+print('resize bugs not triggered.')

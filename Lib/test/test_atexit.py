@@ -75,16 +75,16 @@ class TestCase(unittest.TestCase):
 
     ### helpers
     def h1(self):
-        print "h1"
+        print("h1")
 
     def h2(self):
-        print "h2"
+        print("h2")
 
     def h3(self):
-        print "h3"
+        print("h3")
 
     def h4(self, *args, **kwargs):
-        print "h4", args, kwargs
+        print("h4", args, kwargs)
 
     def raise1(self):
         raise TypeError

@@ -137,6 +137,6 @@ def test():
     try:
         while 1:
             x, digs = input('Enter (x, digs): ')
-            print x, fix(x, digs), sci(x, digs)
+            print(x, fix(x, digs), sci(x, digs))
     except (EOFError, KeyboardInterrupt):
         pass

@@ -60,9 +60,9 @@ class TracebackCases(unittest.TestCase):
         try:
             sys.path.insert(0, testdir)
             testfile = os.path.join(testdir, 'test_bug737473.py')
-            print >> open(testfile, 'w'), """
+            print("""
 def test():
-    raise ValueError"""
+    raise ValueError""", file=open(testfile, 'w'))
 
             if 'test_bug737473' in sys.modules:
                 del sys.modules['test_bug737473']
@@ -82,9 +82,9 @@ def test():
             # three seconds are needed for this test to pass reliably :-(
             time.sleep(4)
 
-            print >> open(testfile, 'w'), """
+            print("""
 def test():
-    raise NotImplementedError"""
+    raise NotImplementedError""", file=open(testfile, 'w'))
             reload(test_bug737473)
             try:
                 test_bug737473.test()

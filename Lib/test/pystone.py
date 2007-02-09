@@ -59,9 +59,9 @@ FALSE = 0
 
 def main(loops=LOOPS):
     benchtime, stones = pystones(loops)
-    print "Pystone(%s) time for %d passes = %g" % \
-          (__version__, loops, benchtime)
-    print "This machine benchmarks at %g pystones/second" % stones
+    print("Pystone(%s) time for %d passes = %g" % \
+          (__version__, loops, benchtime))
+    print("This machine benchmarks at %g pystones/second" % stones)
 
 
 def pystones(loops=LOOPS):
@@ -251,8 +251,8 @@ def Func3(EnumParIn):
 if __name__ == '__main__':
     import sys
     def error(msg):
-        print >>sys.stderr, msg,
-        print >>sys.stderr, "usage: %s [number_of_loops]" % sys.argv[0]
+        print(msg, end=' ', file=sys.stderr)
+        print("usage: %s [number_of_loops]" % sys.argv[0], file=sys.stderr)
         sys.exit(100)
     nargs = len(sys.argv) - 1
     if nargs > 1:
