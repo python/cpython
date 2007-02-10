@@ -688,8 +688,7 @@ class PyBuildExt(build_ext):
                         # ignore this header, it didn't contain a version number
                         if db_setup_debug: print("db.h: unsupported version", db_ver, "in", d)
 
-            db_found_vers = db_ver_inc_map.keys()
-            db_found_vers.sort()
+            db_found_vers = sorted(db_ver_inc_map.keys())
 
             while db_found_vers:
                 db_ver = db_found_vers.pop()
