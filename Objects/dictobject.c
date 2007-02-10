@@ -2354,13 +2354,13 @@ dictview_dealloc(dictviewobject *ds)
 	PyObject_Del(ds);
 }
 
-static PyObject *
-dictview_length_hint(dictviewobject *ds)
+static Py_ssize_t
+dictview_len(dictviewobject *ds)
 {
 	Py_ssize_t len = 0;
 	if (ds->ds_dict != NULL)
 		len = ds->ds_dict->ma_used;
-	return PyInt_FromSize_t(len);
+	return len;
 }
 
 static PyObject *
@@ -2397,9 +2397,18 @@ dictkeys_iter(dictviewobject *ds)
 	return dictiter_new(ds->ds_dict, &PyDictIterKey_Type);
 }
 
+static PySequenceMethods dictkeys_as_sequence = {
+	(lenfunc)dictview_len,		/* sq_length */
+	0,				/* sq_concat */
+	0,				/* sq_repeat */
+	0,				/* sq_item */
+	0,				/* sq_slice */
+	0,				/* sq_ass_item */
+	0,				/* sq_ass_slice */
+	(objobjproc)0,			/* sq_contains */
+};
+
 static PyMethodDef dictkeys_methods[] = {
-	{"__length_hint__", (PyCFunction)dictview_length_hint, METH_NOARGS,
-         length_hint_doc},
  	{NULL,		NULL}		/* sentinel */
 };
 
@@ -2417,7 +2426,7 @@ PyTypeObject PyDictKeys_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
+	&dictkeys_as_sequence,			/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
@@ -2454,9 +2463,18 @@ dictitems_iter(dictviewobject *ds)
 	return dictiter_new(ds->ds_dict, &PyDictIterItem_Type);
 }
 
+static PySequenceMethods dictitems_as_sequence = {
+	(lenfunc)dictview_len,		/* sq_length */
+	0,				/* sq_concat */
+	0,				/* sq_repeat */
+	0,				/* sq_item */
+	0,				/* sq_slice */
+	0,				/* sq_ass_item */
+	0,				/* sq_ass_slice */
+	(objobjproc)0,			/* sq_contains */
+};
+
 static PyMethodDef dictitems_methods[] = {
-	{"__length_hint__", (PyCFunction)dictview_length_hint, METH_NOARGS,
-         length_hint_doc},
  	{NULL,		NULL}		/* sentinel */
 };
 
@@ -2474,7 +2492,7 @@ PyTypeObject PyDictItems_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
+	&dictitems_as_sequence,			/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
@@ -2511,9 +2529,18 @@ dictvalues_iter(dictviewobject *ds)
 	return dictiter_new(ds->ds_dict, &PyDictIterValue_Type);
 }
 
+static PySequenceMethods dictvalues_as_sequence = {
+	(lenfunc)dictview_len,		/* sq_length */
+	0,				/* sq_concat */
+	0,				/* sq_repeat */
+	0,				/* sq_item */
+	0,				/* sq_slice */
+	0,				/* sq_ass_item */
+	0,				/* sq_ass_slice */
+	(objobjproc)0,			/* sq_contains */
+};
+
 static PyMethodDef dictvalues_methods[] = {
-	{"__length_hint__", (PyCFunction)dictview_length_hint, METH_NOARGS,
-         length_hint_doc},
  	{NULL,		NULL}		/* sentinel */
 };
 
@@ -2531,7 +2558,7 @@ PyTypeObject PyDictValues_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
+	&dictvalues_as_sequence,		/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
