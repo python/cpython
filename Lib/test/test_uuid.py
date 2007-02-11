@@ -295,7 +295,7 @@ class TestUUID(TestCase):
         if TestUUID.last_node:
             if TestUUID.last_node != node:
                 msg = "different sources disagree on node:\n"
-                for s, n in TestUUID.source2node.iteritems():
+                for s, n in TestUUID.source2node.items():
                     msg += "    from source %r, node was %012x\n" % (s, n)
                 # There's actually no reason to expect the MAC addresses
                 # to agree across various methods -- e.g., a box may have

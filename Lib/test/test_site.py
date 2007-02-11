@@ -204,7 +204,7 @@ class ImportSideEffectTests(unittest.TestCase):
         if sys.platform == "win32":
             import locale
             if locale.getdefaultlocale()[1].startswith('cp'):
-                for value in encodings.aliases.aliases.itervalues():
+                for value in encodings.aliases.aliases.values():
                     if value == "mbcs":
                         break
                 else:

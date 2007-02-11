@@ -278,7 +278,7 @@ class Sniffer:
                     charFrequency[char] = metaFrequency
 
             for char in charFrequency.keys():
-                items = charFrequency[char].items()
+                items = list(charFrequency[char].items())
                 if len(items) == 1 and items[0][0] == 0:
                     continue
                 # get the mode of the frequencies
@@ -308,7 +308,7 @@ class Sniffer:
                 consistency -= 0.01
 
             if len(delims) == 1:
-                delim = delims.keys()[0]
+                delim = list(delims.keys())[0]
                 skipinitialspace = (data[0].count(delim) ==
                                     data[0].count("%c " % delim))
                 return (delim, skipinitialspace)
@@ -367,7 +367,7 @@ class Sniffer:
             if len(row) != columns:
                 continue # skip rows that have irregular number of columns
 
-            for col in columnTypes.keys():
+            for col in list(columnTypes.keys()):
 
                 for thisType in [int, int, float, complex]:
                     try:

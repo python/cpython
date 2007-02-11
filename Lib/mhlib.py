@@ -314,7 +314,7 @@ class Folder:
         """Write the set of sequences back to the folder."""
         fullname = self.getsequencesfilename()
         f = None
-        for key, seq in sequences.iteritems():
+        for key, seq in sequences.items():
             s = IntSet('', ' ')
             s.fromlist(seq)
             if not f: f = open(fullname, 'w')

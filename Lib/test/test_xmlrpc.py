@@ -145,7 +145,7 @@ class XMLRPCTestCase(unittest.TestCase):
             if not setdefaultencoding_existed:
                 del sys.setdefaultencoding
 
-        items = d.items()
+        items = list(d.items())
         if have_unicode:
             self.assertEquals(s, u"abc \x95")
             self.assert_(isinstance(s, unicode))

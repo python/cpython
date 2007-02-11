@@ -40,7 +40,7 @@ class CommonTest(unittest.TestCase):
         elif isinstance(obj, dict):
             return dict([
                (self.fixtype(key), self.fixtype(value))
-               for (key, value) in obj.iteritems()
+               for (key, value) in obj.items()
             ])
         else:
             return obj

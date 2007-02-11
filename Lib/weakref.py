@@ -100,16 +100,16 @@ class WeakValueDictionary(UserDict.UserDict):
         return L
 
     def iteritems(self):
-        for wr in self.data.itervalues():
+        for wr in self.data.values():
             value = wr()
             if value is not None:
                 yield wr.key, value
 
     def iterkeys(self):
-        return self.data.iterkeys()
+        return self.data.keys()
 
     def __iter__(self):
-        return self.data.iterkeys()
+        return self.data.keys()
 
     def itervaluerefs(self):
         """Return an iterator that yields the weak references to the values.
@@ -121,10 +121,10 @@ class WeakValueDictionary(UserDict.UserDict):
         keep the values around longer than needed.
 
         """
-        return self.data.itervalues()
+        return self.data.values()
 
     def itervalues(self):
-        for wr in self.data.itervalues():
+        for wr in self.data.values():
             obj = wr()
             if obj is not None:
                 yield obj
@@ -268,7 +268,7 @@ class WeakKeyDictionary(UserDict.UserDict):
         return L
 
     def iteritems(self):
-        for wr, value in self.data.iteritems():
+        for wr, value in self.data.items():
             key = wr()
             if key is not None:
                 yield key, value
@@ -283,19 +283,19 @@ class WeakKeyDictionary(UserDict.UserDict):
         keep the keys around longer than needed.
 
         """
-        return self.data.iterkeys()
+        return self.data.keys()
 
     def iterkeys(self):
-        for wr in self.data.iterkeys():
+        for wr in self.data.keys():
             obj = wr()
             if obj is not None:
                 yield obj
 
     def __iter__(self):
-        return self.iterkeys()
+        return self.keys()
 
     def itervalues(self):
-        return self.data.itervalues()
+        return self.data.values()
 
     def keyrefs(self):
         """Return a list of weak references to the keys.

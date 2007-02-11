@@ -208,7 +208,7 @@ class SeqDict(UserDict.DictMixin):
         if other is not None:
             for (key, value) in other:
                 self[key] = value
-        for (key, value) in kwargs.iteritems():
+        for (key, value) in kwargs.items():
             self[key] = value
     def __getitem__(self, key):
         try:
@@ -234,7 +234,7 @@ class SeqDict(UserDict.DictMixin):
         return list(self.keylist)
     def copy(self):
         d = self.__class__()
-        for key, value in self.iteritems():
+        for key, value in self.items():
             d[key] = value
         return d
     @classmethod
@@ -278,13 +278,13 @@ class UserDictMixinTest(mapping_tests.TestMappingProtocol):
         self.assertEqual(len(s), 2)
 
         # iteritems
-        self.assertEqual(list(s.iteritems()), [(10,'ten'), (30, 'thirty')])
+        self.assertEqual(list(s.items()), [(10,'ten'), (30, 'thirty')])
 
         # iterkeys
-        self.assertEqual(list(s.iterkeys()), [10, 30])
+        self.assertEqual(list(s.keys()), [10, 30])
 
         # itervalues
-        self.assertEqual(list(s.itervalues()), ['ten', 'thirty'])
+        self.assertEqual(list(s.values()), ['ten', 'thirty'])
 
         # values
         self.assertEqual(s.values(), ['ten', 'thirty'])

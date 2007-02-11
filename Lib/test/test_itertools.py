@@ -790,7 +790,7 @@ Samuele
 
 >>> from operator import itemgetter
 >>> d = dict(a=1, b=2, c=1, d=2, e=1, f=2, g=3)
->>> di = sorted(sorted(d.iteritems()), key=itemgetter(1))
+>>> di = sorted(sorted(d.items()), key=itemgetter(1))
 >>> for k, g in groupby(di, itemgetter(1)):
 ...     print(k, map(itemgetter(0), g))
 ... 
@@ -823,7 +823,7 @@ Samuele
 ...     return imap(function, count())
 
 >>> def iteritems(mapping):
-...     return izip(mapping.iterkeys(), mapping.itervalues())
+...     return izip(mapping.keys(), mapping.values())
 
 >>> def nth(iterable, n):
 ...     "Returns the nth item"

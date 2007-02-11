@@ -1171,8 +1171,7 @@ class DefaultCookiePolicy(CookiePolicy):
 
 
 def vals_sorted_by_key(adict):
-    keys = adict.keys()
-    keys.sort()
+    keys = sorted(adict.keys())
     return map(adict.get, keys)
 
 def deepvalues(mapping):

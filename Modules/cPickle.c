@@ -1752,7 +1752,7 @@ save_dict(Picklerobject *self, PyObject *args)
 	int res = -1;
 	char s[3];
 	int len;
-	PyObject *iter;
+	PyObject *items, *iter;
 
 	if (self->fast && !fast_save_enter(self, args))
 		goto finally;
@@ -1784,7 +1784,11 @@ save_dict(Picklerobject *self, PyObject *args)
 		goto finally;
 
 	/* Materialize the dict items. */
-	iter = PyObject_CallMethod(args, "iteritems", "()");
+	items = PyObject_CallMethod(args, "items", "()");
+	if (items == NULL)
+		goto finally;
+	iter = PyObject_GetIter(items);
+	Py_DECREF(items);
 	if (iter == NULL)
 		goto finally;
 	res = batch_dict(self, iter);

@@ -437,18 +437,18 @@ class Message:
 
     def keys(self):
         """Get all of a message's header field names."""
-        return self.dict.keys()
+        return list(self.dict.keys())
 
     def values(self):
         """Get all of a message's header field values."""
-        return self.dict.values()
+        return list(self.dict.values())
 
     def items(self):
         """Get all of a message's headers.
 
         Returns a list of name, value tuples.
         """
-        return self.dict.items()
+        return list(self.dict.items())
 
     def __str__(self):
         return ''.join(self.headers)

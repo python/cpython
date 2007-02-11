@@ -1140,6 +1140,7 @@ defdict_reduce(defdictobject *dd)
 	*/
 	PyObject *args;
 	PyObject *items;
+	PyObject *iteritems;
 	PyObject *result;
 	if (dd->default_factory == NULL || dd->default_factory == Py_None)
 		args = PyTuple_New(0);
@@ -1147,14 +1148,20 @@ defdict_reduce(defdictobject *dd)
 		args = PyTuple_Pack(1, dd->default_factory);
 	if (args == NULL)
 		return NULL;
-	items = PyObject_CallMethod((PyObject *)dd, "iteritems", "()");
+	items = PyObject_CallMethod((PyObject *)dd, "items", "()");
 	if (items == NULL) {
 		Py_DECREF(args);
 		return NULL;
 	}
-	result = PyTuple_Pack(5, dd->dict.ob_type, args,
-			      Py_None, Py_None, items);
+	iteritems = PyObject_GetIter(items);
 	Py_DECREF(items);
+	if (iteritems == NULL) {
+		Py_DECREF(args);
+		return NULL;
+	}
+	result = PyTuple_Pack(5, dd->dict.ob_type, args,
+			      Py_None, Py_None, iteritems);
+	Py_DECREF(iteritems);
 	Py_DECREF(args);
 	return result;
 }

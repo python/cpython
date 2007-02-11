@@ -17,8 +17,7 @@ def segregate(str):
             base.append(c)
         else:
             extended[c] = 1
-    extended = extended.keys()
-    extended.sort()
+    extended = sorted(extended.keys())
     return "".join(base).encode("ascii"),extended
 
 def selective_len(str, max):

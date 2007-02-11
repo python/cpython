@@ -90,8 +90,7 @@ def test_request_headers_methods():
     >>> r.header_items()
     [('Spam-eggs', 'blah')]
     >>> r.add_header("Foo-Bar", "baz")
-    >>> items = r.header_items()
-    >>> items.sort()
+    >>> items = sorted(r.header_items())
     >>> items
     [('Foo-bar', 'baz'), ('Spam-eggs', 'blah')]
 
@@ -235,7 +234,7 @@ class MockFile:
 
 class MockHeaders(dict):
     def getheaders(self, name):
-        return self.values()
+        return list(self.values())
 
 class MockResponse(StringIO.StringIO):
     def __init__(self, code, msg, headers, data, url=None):

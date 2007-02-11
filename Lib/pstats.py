@@ -163,7 +163,7 @@ class Stats:
 
         self.fcn_list = None
 
-        for func, stat in other.stats.iteritems():
+        for func, stat in other.stats.items():
             if func in self.stats:
                 old_func_stat = self.stats[func]
             else:
@@ -199,7 +199,7 @@ class Stats:
         if not self.sort_arg_dict:
             self.sort_arg_dict = dict = {}
             bad_list = {}
-            for word, tup in self.sort_arg_dict_default.iteritems():
+            for word, tup in self.sort_arg_dict_default.items():
                 fragment = word
                 while fragment:
                     if not fragment:
@@ -234,7 +234,7 @@ class Stats:
             connector = ", "
 
         stats_list = []
-        for func, (cc, nc, tt, ct, callers) in self.stats.iteritems():
+        for func, (cc, nc, tt, ct, callers) in self.stats.items():
             stats_list.append((cc, nc, tt, ct) + func +
                               (func_std_string(func), func))
 
@@ -254,12 +254,12 @@ class Stats:
         oldstats = self.stats
         self.stats = newstats = {}
         max_name_len = 0
-        for func, (cc, nc, tt, ct, callers) in oldstats.iteritems():
+        for func, (cc, nc, tt, ct, callers) in oldstats.items():
             newfunc = func_strip_path(func)
             if len(func_std_string(newfunc)) > max_name_len:
                 max_name_len = len(func_std_string(newfunc))
             newcallers = {}
-            for func2, caller in callers.iteritems():
+            for func2, caller in callers.items():
                 newcallers[func_strip_path(func2)] = caller
 
             if newfunc in newstats:
@@ -282,10 +282,10 @@ class Stats:
     def calc_callees(self):
         if self.all_callees: return
         self.all_callees = all_callees = {}
-        for func, (cc, nc, tt, ct, callers) in self.stats.iteritems():
+        for func, (cc, nc, tt, ct, callers) in self.stats.items():
             if not func in all_callees:
                 all_callees[func] = {}
-            for func2, caller in callers.iteritems():
+            for func2, caller in callers.items():
                 if not func2 in all_callees:
                     all_callees[func2] = {}
                 all_callees[func2][func]  = caller
@@ -394,9 +394,9 @@ class Stats:
         print("Function ".ljust(name_size) + column_title, file=self.stream)
         # print sub-header only if we have new-style callers
         subheader = False
-        for cc, nc, tt, ct, callers in self.stats.itervalues():
+        for cc, nc, tt, ct, callers in self.stats.values():
             if callers:
-                value = callers.itervalues().next()
+                value = iter(callers.values()).next()
                 subheader = isinstance(value, tuple)
                 break
         if subheader:
@@ -407,8 +407,7 @@ class Stats:
         if not call_dict:
             print(file=self.stream)
             return
-        clist = call_dict.keys()
-        clist.sort()
+        clist = sorted(call_dict.keys())
         indent = ""
         for func in clist:
             name = func_std_string(func)
@@ -508,9 +507,9 @@ def add_func_stats(target, source):
 def add_callers(target, source):
     """Combine two caller lists in a single list."""
     new_callers = {}
-    for func, caller in target.iteritems():
+    for func, caller in target.items():
         new_callers[func] = caller
-    for func, caller in source.iteritems():
+    for func, caller in source.items():
         if func in new_callers:
             new_callers[func] = caller + new_callers[func]
         else:
@@ -520,7 +519,7 @@ def add_callers(target, source):
 def count_calls(callers):
     """Sum the caller statistics to get total number of calls received."""
     nc = 0
-    for calls in callers.itervalues():
+    for calls in callers.values():
         nc += calls
     return nc
 
@@ -642,7 +641,7 @@ if __name__ == '__main__':
                 self.stats.sort_stats(*line.split())
             else:
                 print("Valid sort keys (unique prefixes are accepted):", file=self.stream)
-                for (key, value) in Stats.sort_arg_dict_default.iteritems():
+                for (key, value) in Stats.sort_arg_dict_default.items():
                     print("%s -- %s" % (key, value[1]), file=self.stream)
             return 0
         def help_sort(self):

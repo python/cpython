@@ -1337,6 +1337,6 @@ class Yield(Node):
     def __repr__(self):
         return "Yield(%s)" % (repr(self.value),)
 
-for name, obj in globals().items():
+for name, obj in list(globals().items()):
     if isinstance(obj, type) and issubclass(obj, Node):
         nodes[name.lower()] = obj

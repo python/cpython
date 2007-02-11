@@ -1657,6 +1657,54 @@ PyMapping_HasKey(PyObject *o, PyObject *key)
 	return 0;
 }
 
+PyObject *
+PyMapping_Keys(PyObject *o)
+{
+	PyObject *keys;
+	PyObject *fast;
+
+	if (PyDict_CheckExact(o))
+		return PyDict_Keys(o);
+	keys = PyObject_CallMethod(o, "keys", NULL);
+	if (keys == NULL)
+		return NULL;
+	fast = PySequence_Fast(keys, "o.keys() are not iterable");
+	Py_DECREF(keys);
+	return fast;
+}
+
+PyObject *
+PyMapping_Items(PyObject *o)
+{
+	PyObject *items;
+	PyObject *fast;
+
+	if (PyDict_CheckExact(o))
+		return PyDict_Items(o);
+	items = PyObject_CallMethod(o, "items", NULL);
+	if (items == NULL)
+		return NULL;
+	fast = PySequence_Fast(items, "o.items() are not iterable");
+	Py_DECREF(items);
+	return fast;
+}
+
+PyObject *
+PyMapping_Values(PyObject *o)
+{
+	PyObject *values;
+	PyObject *fast;
+
+	if (PyDict_CheckExact(o))
+		return PyDict_Values(o);
+	values = PyObject_CallMethod(o, "values", NULL);
+	if (values == NULL)
+		return NULL;
+	fast = PySequence_Fast(values, "o.values() are not iterable");
+	Py_DECREF(values);
+	return fast;
+}
+
 /* Operations on callable objects */
 
 /* XXX PyCallable_Check() is in object.c */

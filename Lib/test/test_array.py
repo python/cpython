@@ -729,7 +729,7 @@ class CharacterTest(StringTest):
         self.assertEqual(s.color, "blue")
         s.color = "red"
         self.assertEqual(s.color, "red")
-        self.assertEqual(s.__dict__.keys(), ["color"])
+        self.assertEqual(list(s.__dict__.keys()), ["color"])
 
     def test_nounicode(self):
         a = array.array(self.typecode, self.example)

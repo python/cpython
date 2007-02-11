@@ -144,7 +144,7 @@ class Shelf(UserDict.DictMixin):
     def sync(self):
         if self.writeback and self.cache:
             self.writeback = False
-            for key, entry in self.cache.iteritems():
+            for key, entry in self.cache.items():
                 self[key] = entry
             self.writeback = True
             self.cache = {}

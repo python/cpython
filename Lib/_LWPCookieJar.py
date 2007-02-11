@@ -37,8 +37,7 @@ def lwp_cookie_str(cookie):
     if cookie.comment: h.append(("comment", cookie.comment))
     if cookie.comment_url: h.append(("commenturl", cookie.comment_url))
 
-    keys = cookie._rest.keys()
-    keys.sort()
+    keys = sorted(cookie._rest.keys())
     for k in keys:
         h.append((k, str(cookie._rest[k])))
 

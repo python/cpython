@@ -187,7 +187,7 @@ class dircmp:
 
     def phase4_closure(self): # Recursively call phase4() on subdirectories
         self.phase4()
-        for sd in self.subdirs.itervalues():
+        for sd in self.subdirs.values():
             sd.phase4_closure()
 
     def report(self): # Print a report on the differences between a and b
@@ -217,13 +217,13 @@ class dircmp:
 
     def report_partial_closure(self): # Print reports on self and on subdirs
         self.report()
-        for sd in self.subdirs.itervalues():
+        for sd in self.subdirs.values():
             print()
             sd.report()
 
     def report_full_closure(self): # Report on self and subdirs recursively
         self.report()
-        for sd in self.subdirs.itervalues():
+        for sd in self.subdirs.values():
             print()
             sd.report_full_closure()
 
