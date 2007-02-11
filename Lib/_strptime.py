@@ -338,7 +338,7 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     # values
     weekday = julian = -1
     found_dict = found.groupdict()
-    for group_key in found_dict.iterkeys():
+    for group_key in found_dict.keys():
         # Directives not explicitly handled below:
         #   c, x, X
         #      handled by making out of other directives

@@ -271,7 +271,7 @@ def parse_makefile(fn, g=None):
 
     # do variable interpolation here
     while notdone:
-        for name in notdone.keys():
+        for name in list(notdone):
             value = notdone[name]
             m = _findvar1_rx.search(value) or _findvar2_rx.search(value)
             if m:

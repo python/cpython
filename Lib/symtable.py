@@ -13,7 +13,7 @@ __all__ = ["symtable", "SymbolTable", "newSymbolTable", "Class",
 
 def symtable(code, filename, compile_type):
     raw = _symtable.symtable(code, filename, compile_type)
-    for top in raw.itervalues():
+    for top in raw.values():
         if top.name == 'top':
             break
     return newSymbolTable(top, filename)

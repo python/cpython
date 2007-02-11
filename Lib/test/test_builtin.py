@@ -290,8 +290,8 @@ class BuiltinTest(unittest.TestCase):
                 if key == 'a':
                     return 12
                 raise KeyError
-            def keys(self):
-                return list('xyz')
+            def __iter__(self):
+                return iter('xyz')
 
         m = M()
         g = globals()
@@ -313,8 +313,8 @@ class BuiltinTest(unittest.TestCase):
                 if key == 'a':
                     return 12
                 return dict.__getitem__(self, key)
-            def keys(self):
-                return list('xyz')
+            def __iter__(self):
+                return iter('xyz')
 
         d = D()
         self.assertEqual(eval('a', g, d), 12)
@@ -346,8 +346,8 @@ class BuiltinTest(unittest.TestCase):
         class C:
             def __getitem__(self, item):
                 raise KeyError(item)
-            def keys(self):
-                return 'a'
+            def __iter__(self):
+                return 'a'  # XXX Not quite faithful to the SF bug...
         self.assertRaises(TypeError, eval, 'dir()', globals(), C())
 
     # Done outside of the method test_z to get the correct scope
@@ -522,8 +522,8 @@ class BuiltinTest(unittest.TestCase):
                 unicode("123"): unicode("112233")
             }
 
-        for (cls, inps) in inputs.iteritems():
-            for (inp, exp) in inps.iteritems():
+        for (cls, inps) in inputs.items():
+            for (inp, exp) in inps.items():
                 # make sure the output goes through __getitem__
                 # even if func is None
                 self.assertEqual(

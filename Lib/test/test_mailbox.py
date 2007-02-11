@@ -24,7 +24,7 @@ class TestBase(unittest.TestCase):
         # Inspect a mailbox.Message representation of the sample message
         self.assert_(isinstance(msg, email.message.Message))
         self.assert_(isinstance(msg, mailbox.Message))
-        for key, value in _sample_headers.iteritems():
+        for key, value in _sample_headers.items():
             self.assert_(value in msg.get_all(key))
         self.assert_(msg.is_multipart())
         self.assert_(len(msg.get_payload()) == len(_sample_payloads))
@@ -174,7 +174,7 @@ class TestMailbox(TestBase):
 
     def test_iterkeys(self):
         # Get keys using iterkeys()
-        self._check_iteration(self._box.iterkeys, do_keys=True, do_values=False)
+        self._check_iteration(self._box.keys, do_keys=True, do_values=False)
 
     def test_keys(self):
         # Get keys using keys()
@@ -182,7 +182,7 @@ class TestMailbox(TestBase):
 
     def test_itervalues(self):
         # Get values using itervalues()
-        self._check_iteration(self._box.itervalues, do_keys=False,
+        self._check_iteration(self._box.values, do_keys=False,
                               do_values=True)
 
     def test_iter(self):
@@ -196,7 +196,7 @@ class TestMailbox(TestBase):
 
     def test_iteritems(self):
         # Get keys and values using iteritems()
-        self._check_iteration(self._box.iteritems, do_keys=True,
+        self._check_iteration(self._box.items, do_keys=True,
                               do_values=True)
 
     def test_items(self):
@@ -424,12 +424,12 @@ class TestMailboxSuperclass(TestBase):
         self.assertRaises(NotImplementedError, lambda: box.__delitem__(''))
         self.assertRaises(NotImplementedError, lambda: box.discard(''))
         self.assertRaises(NotImplementedError, lambda: box.__setitem__('', ''))
-        self.assertRaises(NotImplementedError, lambda: box.iterkeys())
         self.assertRaises(NotImplementedError, lambda: box.keys())
-        self.assertRaises(NotImplementedError, lambda: box.itervalues().next())
+        self.assertRaises(NotImplementedError, lambda: box.keys())
+        self.assertRaises(NotImplementedError, lambda: box.values().next())
         self.assertRaises(NotImplementedError, lambda: box.__iter__().next())
         self.assertRaises(NotImplementedError, lambda: box.values())
-        self.assertRaises(NotImplementedError, lambda: box.iteritems().next())
+        self.assertRaises(NotImplementedError, lambda: box.items().next())
         self.assertRaises(NotImplementedError, lambda: box.items())
         self.assertRaises(NotImplementedError, lambda: box.get(''))
         self.assertRaises(NotImplementedError, lambda: box.__getitem__(''))
@@ -709,7 +709,7 @@ class _TestMboxMMDF(TestMailbox):
         mtime = os.path.getmtime(self._path)
         self._box = self._factory(self._path)
         self.assert_(len(self._box) == 3)
-        for key in self._box.iterkeys():
+        for key in self._box.keys():
             self.assert_(self._box.get_string(key) in values)
         self._box.close()
         self.assert_(mtime == os.path.getmtime(self._path))

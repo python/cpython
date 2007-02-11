@@ -611,7 +611,7 @@ class HTTPResponse:
         """Return list of (header, value) tuples."""
         if self.msg is None:
             raise ResponseNotReady()
-        return self.msg.items()
+        return list(self.msg.items())
 
 
 class HTTPConnection:
@@ -902,7 +902,7 @@ class HTTPConnection:
 
             if thelen is not None:
                 self.putheader('Content-Length',thelen)
-        for hdr, value in headers.iteritems():
+        for hdr, value in headers.items():
             self.putheader(hdr, value)
         self.endheaders()
 

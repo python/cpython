@@ -707,7 +707,7 @@ def activeCount():
 
 def enumerate():
     _active_limbo_lock.acquire()
-    active = _active.values() + _limbo.values()
+    active = list(_active.values()) + list(_limbo.values())
     _active_limbo_lock.release()
     return active
 

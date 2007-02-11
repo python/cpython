@@ -2601,7 +2601,11 @@ reduce_2(PyObject *obj)
 		Py_INCREF(dictitems);
 	}
 	else {
-		dictitems = PyObject_CallMethod(obj, "iteritems", "");
+		PyObject *items = PyObject_CallMethod(obj, "items", "");
+		if (items == NULL)
+			goto end;
+		dictitems = PyObject_GetIter(items);
+		Py_DECREF(items);
 		if (dictitems == NULL)
 			goto end;
 	}

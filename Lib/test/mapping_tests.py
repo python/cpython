@@ -73,13 +73,13 @@ class BasicTestMappingProtocol(unittest.TestCase):
             self.assert_(hasattr(iter, '__iter__'))
             x = list(iter)
             self.assert_(set(x)==set(lst)==set(ref))
-        check_iterandlist(d.iterkeys(), d.keys(), self.reference.keys())
+        check_iterandlist(d.keys(), d.keys(), self.reference.keys())
         check_iterandlist(iter(d), d.keys(), self.reference.keys())
-        check_iterandlist(d.itervalues(), d.values(), self.reference.values())
-        check_iterandlist(d.iteritems(), d.items(), self.reference.items())
+        check_iterandlist(d.values(), d.values(), self.reference.values())
+        check_iterandlist(d.items(), d.items(), self.reference.items())
         #get
-        key, value = d.iteritems().next()
-        knownkey, knownvalue = self.other.iteritems().next()
+        key, value = d.items().next()
+        knownkey, knownvalue = self.other.items().next()
         self.assertEqual(d.get(key, knownvalue), value)
         self.assertEqual(d.get(knownkey, knownvalue), knownvalue)
         self.failIf(knownkey in d)
@@ -104,8 +104,8 @@ class BasicTestMappingProtocol(unittest.TestCase):
         self.assertEqual(dict(p), self.reference)
         d = self._full_mapping(self.reference)
         #setdefault
-        key, value = d.iteritems().next()
-        knownkey, knownvalue = self.other.iteritems().next()
+        key, value = d.items().next()
+        knownkey, knownvalue = self.other.items().next()
         self.assertEqual(d.setdefault(key, knownvalue), value)
         self.assertEqual(d[key], value)
         self.assertEqual(d.setdefault(knownkey, knownvalue), knownvalue)
@@ -183,7 +183,7 @@ class BasicTestMappingProtocol(unittest.TestCase):
 
         # Iterator
         d = self._empty_mapping()
-        d.update(self.other.iteritems())
+        d.update(self.other.items())
         self.assertEqual(d.items(), self.other.items())
 
         # FIXME: Doesn't work with UserDict
@@ -400,7 +400,7 @@ class TestMappingProtocol(BasicTestMappingProtocol):
 
         # iterator
         d = self._full_mapping({1:3, 2:4})
-        d.update(self._full_mapping({1:2, 3:4, 5:6}).iteritems())
+        d.update(self._full_mapping({1:2, 3:4, 5:6}).items())
         self.assertEqual(d, {1:2, 2:4, 3:4, 5:6})
 
         class SimpleUserDict:

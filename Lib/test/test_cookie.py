@@ -38,7 +38,7 @@ class CookieTests(unittest.TestCase):
             C.load(case['data'])
             self.assertEqual(repr(C), case['repr'])
             self.assertEqual(C.output(sep='\n'), case['output'])
-            for k, v in sorted(case['dict'].iteritems()):
+            for k, v in sorted(case['dict'].items()):
                 self.assertEqual(C[k].value, v)
 
     def test_load(self):

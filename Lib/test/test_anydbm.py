@@ -72,10 +72,8 @@ class AnyDBMTestCase(unittest.TestCase):
         f.close()
 
     def keys_helper(self, f):
-        keys = f.keys()
-        keys.sort()
-        dkeys = self._dict.keys()
-        dkeys.sort()
+        keys = sorted(f.keys())
+        dkeys = sorted(self._dict.keys())
         self.assertEqual(keys, dkeys)
         return keys
 

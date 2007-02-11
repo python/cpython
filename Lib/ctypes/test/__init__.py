@@ -41,7 +41,7 @@ def find_package_modules(package, mask):
             hasattr(package.__loader__, '_files')):
         path = package.__name__.replace(".", os.path.sep)
         mask = os.path.join(path, mask)
-        for fnm in package.__loader__._files.iterkeys():
+        for fnm in package.__loader__._files.keys():
             if fnmatch.fnmatchcase(fnm, mask):
                 yield os.path.splitext(fnm)[0].replace(os.path.sep, ".")
     else:

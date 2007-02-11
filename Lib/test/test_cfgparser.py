@@ -7,18 +7,13 @@ from test import test_support
 
 class SortedDict(UserDict.UserDict):
     def items(self):
-        result = self.data.items()
-        result.sort()
-        return result
+        return sorted(self.data.items())
 
     def keys(self):
-        result = self.data.keys()
-        result.sort()
-        return result
+        return sorted(self.data.keys())
 
     def values(self):
-        result = self.items()
-        return [i[1] for i in values]
+        return [i[1] for i in self.items()]
 
     def iteritems(self): return iter(self.items())
     def iterkeys(self): return iter(self.keys())

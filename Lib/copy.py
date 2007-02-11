@@ -230,7 +230,7 @@ d[tuple] = _deepcopy_tuple
 def _deepcopy_dict(x, memo):
     y = {}
     memo[id(x)] = y
-    for key, value in x.iteritems():
+    for key, value in x.items():
         y[deepcopy(key, memo)] = deepcopy(value, memo)
     return y
 d[dict] = _deepcopy_dict
@@ -302,7 +302,7 @@ def _reconstruct(x, info, deep, memo=None):
             if state is not None:
                 y.__dict__.update(state)
             if slotstate is not None:
-                for key, value in slotstate.iteritems():
+                for key, value in slotstate.items():
                     setattr(y, key, value)
     return y
 
@@ -337,7 +337,7 @@ def _test():
         def __getstate__(self):
             return {'a': self.a, 'arg': self.arg}
         def __setstate__(self, state):
-            for key, value in state.iteritems():
+            for key, value in state.items():
                 setattr(self, key, value)
         def __deepcopy__(self, memo=None):
             new = self.__class__(deepcopy(self.arg, memo))

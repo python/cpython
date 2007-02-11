@@ -282,7 +282,7 @@ class CoverageResults:
         # accumulate summary info, if needed
         sums = {}
 
-        for filename, count in per_file.iteritems():
+        for filename, count in per_file.items():
             # skip some "files" we don't care about...
             if filename == "<string>":
                 continue

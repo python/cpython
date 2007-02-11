@@ -331,7 +331,7 @@ class SequenceMatcher:
         junkdict = {}
         if isjunk:
             for d in populardict, b2j:
-                for elt in d.keys():
+                for elt in list(d.keys()):
                     if isjunk(elt):
                         junkdict[elt] = 1
                         del d[elt]

@@ -24,7 +24,7 @@ def getcaps():
             continue
         morecaps = readmailcapfile(fp)
         fp.close()
-        for key, value in morecaps.iteritems():
+        for key, value in morecaps.items():
             if not key in caps:
                 caps[key] = value
             else:

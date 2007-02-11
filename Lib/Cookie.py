@@ -488,8 +488,7 @@ class Morsel(dict):
         # Now add any defined attributes
         if attrs is None:
             attrs = self._reserved
-        items = self.items()
-        items.sort()
+        items = sorted(self.items())
         for K,V in items:
             if V == "": continue
             if K not in attrs: continue
@@ -582,8 +581,7 @@ class BaseCookie(dict):
     def output(self, attrs=None, header="Set-Cookie:", sep="\015\012"):
         """Return a string suitable for HTTP."""
         result = []
-        items = self.items()
-        items.sort()
+        items = sorted(self.items())
         for K,V in items:
             result.append( V.output(attrs, header) )
         return sep.join(result)
@@ -593,8 +591,7 @@ class BaseCookie(dict):
 
     def __repr__(self):
         L = []
-        items = self.items()
-        items.sort()
+        items = sorted(self.items())
         for K,V in items:
             L.append( '%s=%s' % (K,repr(V.value) ) )
         return '<%s: %s>' % (self.__class__.__name__, _spacejoin(L))
@@ -602,8 +599,7 @@ class BaseCookie(dict):
     def js_output(self, attrs=None):
         """Return a string suitable for JavaScript."""
         result = []
-        items = self.items()
-        items.sort()
+        items = sorted(self.items())
         for K,V in items:
             result.append( V.js_output(attrs) )
         return _nulljoin(result)

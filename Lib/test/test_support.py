@@ -239,8 +239,7 @@ def vereq(a, b):
 
 def sortdict(dict):
     "Like repr(dict), but in sorted order."
-    items = dict.items()
-    items.sort()
+    items = sorted(dict.items())
     reprpairs = ["%r: %r" % pair for pair in items]
     withcommas = ", ".join(reprpairs)
     return "{%s}" % withcommas
@@ -305,7 +304,7 @@ class EnvironmentVarGuard(object):
         return self
 
     def __exit__(self, *ignore_exc):
-        for envvar, value in self._reset.iteritems():
+        for envvar, value in self._reset.items():
             self._environ[envvar] = value
         for unset in self._unset:
             del self._environ[unset]

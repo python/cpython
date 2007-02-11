@@ -645,7 +645,7 @@ class ElementTree:
         elif tag is ProcessingInstruction:
             file.write("<?%s?>" % _escape_cdata(node.text, encoding))
         else:
-            items = node.items()
+            items = list(node.items())
             xmlns_items = [] # new namespaces in this scope
             try:
                 if isinstance(tag, QName) or tag[:1] == "{":

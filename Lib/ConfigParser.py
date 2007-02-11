@@ -214,7 +214,7 @@ class RawConfigParser:
     def sections(self):
         """Return a list of section names, excluding [DEFAULT]"""
         # self._sections will never have [DEFAULT] in it
-        return self._sections.keys()
+        return list(self._sections.keys())
 
     def add_section(self, section):
         """Create a new section in the configuration.
@@ -242,7 +242,7 @@ class RawConfigParser:
         opts.update(self._defaults)
         if '__name__' in opts:
             del opts['__name__']
-        return opts.keys()
+        return list(opts.keys())
 
     def read(self, filenames):
         """Read and parse a filename or a list of filenames.
@@ -547,7 +547,7 @@ class ConfigParser(RawConfigParser):
         if vars:
             for key, value in vars.items():
                 d[self.optionxform(key)] = value
-        options = d.keys()
+        options = list(d.keys())
         if "__name__" in options:
             options.remove("__name__")
         if raw:

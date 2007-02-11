@@ -15,7 +15,7 @@ class TestBSDDB(unittest.TestCase):
     def setUp(self):
         self.f = self.openmethod[0](self.fname, self.openflag, cachesize=32768)
         self.d = dict(q='Guido', w='van', e='Rossum', r='invented', t='Python', y='')
-        for k, v in self.d.iteritems():
+        for k, v in self.d.items():
             self.f[k] = v
 
     def tearDown(self):
@@ -29,7 +29,7 @@ class TestBSDDB(unittest.TestCase):
             pass
 
     def test_getitem(self):
-        for k, v in self.d.iteritems():
+        for k, v in self.d.items():
             self.assertEqual(self.f[k], v)
 
     def test_len(self):
@@ -48,7 +48,7 @@ class TestBSDDB(unittest.TestCase):
             return
         self.f.close()
         self.f = self.openmethod[0](self.fname, 'w')
-        for k, v in self.d.iteritems():
+        for k, v in self.d.items():
             self.assertEqual(self.f[k], v)
 
     def assertSetEquals(self, seqn1, seqn2):
@@ -61,9 +61,9 @@ class TestBSDDB(unittest.TestCase):
         self.assertSetEquals(d.keys(), f.keys())
         self.assertSetEquals(d.values(), f.values())
         self.assertSetEquals(d.items(), f.items())
-        self.assertSetEquals(d.iterkeys(), f.iterkeys())
-        self.assertSetEquals(d.itervalues(), f.itervalues())
-        self.assertSetEquals(d.iteritems(), f.iteritems())
+        self.assertSetEquals(d.keys(), f.keys())
+        self.assertSetEquals(d.values(), f.values())
+        self.assertSetEquals(d.items(), f.items())
 
     def test_iter_while_modifying_values(self):
         if not hasattr(self.f, '__iter__'):
@@ -94,7 +94,7 @@ class TestBSDDB(unittest.TestCase):
         if not hasattr(self.f, 'iteritems'):
             return
 
-        di = self.d.iteritems()
+        di = self.d.items()
         while 1:
             try:
                 k, v = di.next()
@@ -105,7 +105,7 @@ class TestBSDDB(unittest.TestCase):
         # it should behave the same as a dict.  modifying values
         # of existing keys should not break iteration.  (adding
         # or removing keys should)
-        fi = self.f.iteritems()
+        fi = self.f.items()
         while 1:
             try:
                 k, v = fi.next()
@@ -159,7 +159,7 @@ class TestBSDDB(unittest.TestCase):
         # test the iterator interface (if present)
         if hasattr(self.f, 'iteritems'):
             if debug: print("D")
-            i = self.f.iteritems()
+            i = self.f.items()
             k,v = i.next()
             if debug: print("E")
             self.f[k] = "please don't deadlock"
@@ -198,7 +198,7 @@ class TestBSDDB(unittest.TestCase):
         # do the bsddb._DBWithCursor _iter_mixin internals leak cursors?
         nc1 = len(self.f._cursor_refs)
         # create iterator
-        i = self.f.iteritems()
+        i = self.f.items()
         nc2 = len(self.f._cursor_refs)
         # use the iterator (should run to the first yeild, creating the cursor)
         k, v = i.next()
@@ -240,7 +240,7 @@ class TestBSDDB(unittest.TestCase):
         new = dict(y='life', u='of', i='brian')
         self.f.update(new)
         self.d.update(new)
-        for k, v in self.d.iteritems():
+        for k, v in self.d.items():
             self.assertEqual(self.f[k], v)
 
     def test_keyordering(self):

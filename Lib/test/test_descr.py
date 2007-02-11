@@ -183,7 +183,7 @@ def dict_constructor():
     d = dict({1: 2, 'a': 'b'})
     vereq(d, {1: 2, 'a': 'b'})
     vereq(d, dict(d.items()))
-    vereq(d, dict(d.iteritems()))
+    vereq(d, dict(d.items()))
     d = dict({'one':1, 'two':2})
     vereq(d, dict(one=1, two=2))
     vereq(d, dict(**d))
@@ -541,10 +541,10 @@ def spamdicts():
     class C(spam.spamdict):
         def foo(self): return 1
     a = C()
-    vereq(a.items(), [])
+    vereq(list(a.items()), [])
     vereq(a.foo(), 1)
     a['foo'] = 'bar'
-    vereq(a.items(), [('foo', 'bar')])
+    vereq(list(a.items()), [('foo', 'bar')])
     vereq(a.getstate(), 0)
     a.setstate(100)
     vereq(a.getstate(), 100)
@@ -714,7 +714,7 @@ def metaclass():
         # named _get_x and/or _set_x are found
         def __new__(metaclass, name, bases, dict):
             hits = {}
-            for key, val in dict.iteritems():
+            for key, val in dict.items():
                 if key.startswith("_get_"):
                     key = key[5:]
                     get, set = hits.get(key, (None, None))
@@ -725,7 +725,7 @@ def metaclass():
                     get, set = hits.get(key, (None, None))
                     set = val
                     hits[key] = get, set
-            for key, (get, set) in hits.iteritems():
+            for key, (get, set) in hits.items():
                 dict[key] = property(get, set)
             return super(autoproperty, metaclass).__new__(metaclass,
                                                         name, bases, dict)
@@ -820,9 +820,9 @@ def multi():
             type({}).__init__(self)
             C.__init__(self)
     d = D()
-    vereq(d.keys(), [])
+    vereq(list(d.keys()), [])
     d["hello"] = "world"
-    vereq(d.items(), [("hello", "world")])
+    vereq(list(d.items()), [("hello", "world")])
     vereq(d["hello"], "world")
     vereq(d.getstate(), 0)
     d.setstate(10)
@@ -2676,9 +2676,7 @@ def pickles():
         cPickle = None
 
     def sorteditems(d):
-        L = d.items()
-        L.sort()
-        return L
+        return sorted(d.items())
 
     global C
     class C(object):
@@ -3193,7 +3191,7 @@ def dictproxyiterkeys():
         def meth(self):
             pass
     if verbose: print("Testing dict-proxy iterkeys...")
-    keys = [ key for key in C.__dict__.iterkeys() ]
+    keys = [ key for key in C.__dict__.keys() ]
     keys.sort()
     vereq(keys, ['__dict__', '__doc__', '__module__', '__weakref__', 'meth'])
 
@@ -3202,7 +3200,7 @@ def dictproxyitervalues():
         def meth(self):
             pass
     if verbose: print("Testing dict-proxy itervalues...")
-    values = [ values for values in C.__dict__.itervalues() ]
+    values = [ values for values in C.__dict__.values() ]
     vereq(len(values), 5)
 
 def dictproxyiteritems():
@@ -3210,7 +3208,7 @@ def dictproxyiteritems():
         def meth(self):
             pass
     if verbose: print("Testing dict-proxy iteritems...")
-    keys = [ key for (key, value) in C.__dict__.iteritems() ]
+    keys = [ key for (key, value) in C.__dict__.items() ]
     keys.sort()
     vereq(keys, ['__dict__', '__doc__', '__module__', '__weakref__', 'meth'])
 

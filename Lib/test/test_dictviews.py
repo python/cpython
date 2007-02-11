@@ -4,19 +4,19 @@ from test import test_support
 class DictSetTest(unittest.TestCase):
 
     def test_constructors_not_callable(self):
-        kt = type({}.KEYS())
+        kt = type({}.keys())
         self.assertRaises(TypeError, kt, {})
         self.assertRaises(TypeError, kt)
-        it = type({}.ITEMS())
+        it = type({}.items())
         self.assertRaises(TypeError, it, {})
         self.assertRaises(TypeError, it)
-        vt = type({}.VALUES())
+        vt = type({}.values())
         self.assertRaises(TypeError, vt, {})
         self.assertRaises(TypeError, vt)
 
     def test_dict_keys(self):
         d = {1: 10, "a": "ABC"}
-        keys = d.KEYS()
+        keys = d.keys()
         self.assertEqual(set(keys), {1, "a"})
         self.assertEqual(len(keys), 2)
         self.assert_(1 in keys)
@@ -26,7 +26,7 @@ class DictSetTest(unittest.TestCase):
 
     def test_dict_items(self):
         d = {1: 10, "a": "ABC"}
-        items = d.ITEMS()
+        items = d.items()
         self.assertEqual(set(items), {(1, 10), ("a", "ABC")})
         self.assertEqual(len(items), 2)
         self.assert_((1, 10) in items)
@@ -39,7 +39,7 @@ class DictSetTest(unittest.TestCase):
 
     def test_dict_values(self):
         d = {1: 10, "a": "ABC"}
-        values = d.VALUES()
+        values = d.values()
         self.assertEqual(set(values), {10, "ABC"})
         self.assertEqual(len(values), 2)
 

@@ -504,7 +504,7 @@ class PyFlowGraph(FlowGraph):
                          if name in cells]
         for name in self.cellvars:
             del cells[name]
-        self.cellvars = self.cellvars + cells.keys()
+        self.cellvars = self.cellvars + list(cells.keys())
         self.closure = self.cellvars + self.freevars
 
     def _lookupName(self, name, list):
@@ -573,7 +573,7 @@ class PyFlowGraph(FlowGraph):
 
     # similarly for other opcodes...
 
-    for name, obj in locals().items():
+    for name, obj in list(locals().items()):
         if name[:9] == "_convert_":
             opname = name[9:]
             _converters[opname] = obj

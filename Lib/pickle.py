@@ -666,7 +666,7 @@ class Pickler:
             write(MARK + DICT)
 
         self.memoize(obj)
-        self._batch_setitems(obj.iteritems())
+        self._batch_setitems(iter(obj.items()))
 
     dispatch[DictionaryType] = save_dict
     if not PyStringMap is None:

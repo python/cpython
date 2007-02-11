@@ -438,7 +438,7 @@ class AbstractPickleTests(unittest.TestCase):
         for proto in protocols:
             s = self.dumps(d, proto)
             x = self.loads(s)
-            self.assertEqual(x.keys(), [1])
+            self.assertEqual(list(x.keys()), [1])
             self.assert_(x[1] is x)
 
     def test_recursive_inst(self):
@@ -461,7 +461,7 @@ class AbstractPickleTests(unittest.TestCase):
             x = self.loads(s)
             self.assertEqual(len(x), 1)
             self.assertEqual(dir(x[0]), dir(i))
-            self.assertEqual(x[0].attr.keys(), [1])
+            self.assertEqual(list(x[0].attr.keys()), [1])
             self.assert_(x[0].attr[1] is x)
 
     def test_garyp(self):

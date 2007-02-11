@@ -95,11 +95,11 @@ class Mailbox:
 
     def keys(self):
         """Return a list of keys."""
-        return list(self.iterkeys())
+        return list(self.keys())
 
     def itervalues(self):
         """Return an iterator over all messages."""
-        for key in self.iterkeys():
+        for key in self.keys():
             try:
                 value = self[key]
             except KeyError:
@@ -107,15 +107,15 @@ class Mailbox:
             yield value
 
     def __iter__(self):
-        return self.itervalues()
+        return self.values()
 
     def values(self):
         """Return a list of messages. Memory intensive."""
-        return list(self.itervalues())
+        return list(self.values())
 
     def iteritems(self):
         """Return an iterator over (key, message) tuples."""
-        for key in self.iterkeys():
+        for key in self.keys():
             try:
                 value = self[key]
             except KeyError:
@@ -124,7 +124,7 @@ class Mailbox:
 
     def items(self):
         """Return a list of (key, message) tuples. Memory intensive."""
-        return list(self.iteritems())
+        return list(self.items())
 
     def __contains__(self, key):
         """Return True if the keyed message exists, False otherwise."""
@@ -136,7 +136,7 @@ class Mailbox:
 
     def clear(self):
         """Delete all messages."""
-        for key in self.iterkeys():
+        for key in self.keys():
             self.discard(key)
 
     def pop(self, key, default=None):
@@ -150,7 +150,7 @@ class Mailbox:
 
     def popitem(self):
         """Delete an arbitrary (key, message) pair and return it."""
-        for key in self.iterkeys():
+        for key in self.keys():
             return (key, self.pop(key))     # This is only run once.
         else:
             raise KeyError('No messages in mailbox')
@@ -158,7 +158,7 @@ class Mailbox:
     def update(self, arg=None):
         """Change the messages that correspond to certain keys."""
         if hasattr(arg, 'iteritems'):
-            source = arg.iteritems()
+            source = arg.items()
         elif hasattr(arg, 'items'):
             source = arg.items()
         else:
@@ -477,7 +477,7 @@ class Maildir(Mailbox):
     def next(self):
         """Return the next message in a one-time iteration."""
         if not hasattr(self, '_onetime_keys'):
-            self._onetime_keys = self.iterkeys()
+            self._onetime_keys = self.keys()
         while True:
             try:
                 return self[self._onetime_keys.next()]
@@ -950,7 +950,7 @@ class MH(Mailbox):
 
     def __len__(self):
         """Return a count of messages in the mailbox."""
-        return len(list(self.iterkeys()))
+        return len(list(self.keys()))
 
     def lock(self):
         """Lock the mailbox."""
@@ -1038,7 +1038,7 @@ class MH(Mailbox):
         f = open(os.path.join(self._path, '.mh_sequences'), 'r+')
         try:
             os.close(os.open(f.name, os.O_WRONLY | os.O_TRUNC))
-            for name, keys in sequences.iteritems():
+            for name, keys in sequences.items():
                 if len(keys) == 0:
                     continue
                 f.write('%s:' % name)
@@ -1067,7 +1067,7 @@ class MH(Mailbox):
         sequences = self.get_sequences()
         prev = 0
         changes = []
-        for key in self.iterkeys():
+        for key in self.keys():
             if key - 1 != prev:
                 changes.append((key, prev + 1))
                 if hasattr(os, 'link'):
@@ -1091,7 +1091,7 @@ class MH(Mailbox):
         """Inspect a new MHMessage and update sequences appropriately."""
         pending_sequences = message.get_sequences()
         all_sequences = self.get_sequences()
-        for name, key_list in all_sequences.iteritems():
+        for name, key_list in all_sequences.items():
             if name in pending_sequences:
                 key_list.append(key)
             elif key in key_list:

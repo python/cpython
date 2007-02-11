@@ -131,7 +131,7 @@ class VectorTest(unittest.TestCase):
             self.checkequal("gt", a, b, [False, False, False, True,  True ])
             self.checkequal("ge", a, b, [False, False, True,  True,  True ])
 
-            for ops in opmap.itervalues():
+            for ops in opmap.values():
                 for op in ops:
                     # calls __bool__, which should fail
                     self.assertRaises(TypeError, bool, op(a, b))
@@ -150,7 +150,7 @@ class NumberTest(unittest.TestCase):
                             continue # the combination int, int is useless
                         ta = typea(a)
                         tb = typeb(b)
-                        for ops in opmap.itervalues():
+                        for ops in opmap.values():
                             for op in ops:
                                 realoutcome = op(a, b)
                                 testoutcome = op(ta, tb)

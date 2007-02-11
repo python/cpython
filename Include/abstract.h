@@ -1127,37 +1127,28 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     /* Implemented as macro:
+     PyAPI_FUNC(PyObject *) PyMapping_Keys(PyObject *o);
 
-     PyObject *PyMapping_Keys(PyObject *o);
-
-         On success, return a list of the keys in object o.  On
-	 failure, return NULL. This is equivalent to the Python
-	 expression: o.keys().
+       /*
+         On success, return a list or tuple of the keys in object o.
+	 On failure, return NULL.
        */
-#define PyMapping_Keys(O) PyObject_CallMethod(O,"keys",NULL)
 
-     /* Implemented as macro:
+     PyAPI_FUNC(PyObject *) PyMapping_Values(PyObject *o);
 
-     PyObject *PyMapping_Values(PyObject *o);
-
-         On success, return a list of the values in object o.  On
-	 failure, return NULL. This is equivalent to the Python
-	 expression: o.values().
+       /*
+         On success, return a list or tuple of the values in object o.
+	 On failure, return NULL.
        */
-#define PyMapping_Values(O) PyObject_CallMethod(O,"values",NULL)
 
-     /* Implemented as macro:
+     PyAPI_FUNC(PyObject *) PyMapping_Items(PyObject *o);
 
-     PyObject *PyMapping_Items(PyObject *o);
-
-         On success, return a list of the items in object o, where
-	 each item is a tuple containing a key-value pair.  On
-	 failure, return NULL. This is equivalent to the Python
-	 expression: o.items().
+       /*
+         On success, return a list or tuple of the items in object o,
+	 where each item is a tuple containing a key-value pair.  
+	 On failure, return NULL.
 
        */
-#define PyMapping_Items(O) PyObject_CallMethod(O,"items",NULL)
 
      PyAPI_FUNC(PyObject *) PyMapping_GetItemString(PyObject *o, char *key);
 

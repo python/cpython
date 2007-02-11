@@ -118,9 +118,7 @@ parse_strict_test_cases = [
     ]
 
 def norm(seq):
-    if isinstance(seq, list):
-        seq.sort(key=repr)
-    return seq
+    return sorted(seq, key=repr)
 
 def first_elts(list):
     return map(lambda x:x[0], list)

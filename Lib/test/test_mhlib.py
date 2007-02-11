@@ -46,7 +46,7 @@ def readFile(fname):
     return r
 
 def writeProfile(dict):
-    contents = [ "%s: %s\n" % (k, v) for k, v in dict.iteritems() ]
+    contents = [ "%s: %s\n" % (k, v) for k, v in dict.items() ]
     writeFile(_mhprofile, "".join(contents))
 
 def writeContext(folder):
@@ -61,7 +61,7 @@ def writeCurMessage(folder, cur):
 
 def writeMessage(folder, n, headers, body):
     folder = normF(folder)
-    headers = "".join([ "%s: %s\n" % (k, v) for k, v in headers.iteritems() ])
+    headers = "".join([ "%s: %s\n" % (k, v) for k, v in headers.items() ])
     contents = "%s\n%s\n" % (headers,body)
     mkdirs(os.path.join(_mhpath, folder))
     writeFile(os.path.join(_mhpath, folder, str(n)), contents)

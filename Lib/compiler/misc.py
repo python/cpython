@@ -18,7 +18,7 @@ class Set:
     def add(self, elt):
         self.elts[elt] = elt
     def elements(self):
-        return self.elts.keys()
+        return list(self.elts.keys())
     def has_elt(self, elt):
         return elt in self.elts
     def remove(self, elt):

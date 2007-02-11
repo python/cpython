@@ -36,6 +36,9 @@ TO DO
 Core and Builtins
 -----------------
 
+- PEP 3106: dict.iterkeys(), .iteritems(), .itervalues() are now gone;
+  and .keys(), .items(), .values() return dict views.
+
 - PEP 3105: print is now a function.  Also (not in the PEP) the
   'softspace' attribute of files is now gone (since print() doesn't use
   it).  A side effect of this change is that you can get incomplete

@@ -51,8 +51,7 @@ class ForkWait(unittest.TestCase):
 
         time.sleep(LONGSLEEP)
 
-        a = self.alive.keys()
-        a.sort()
+        a = sorted(self.alive.keys())
         self.assertEquals(a, range(NUM_THREADS))
 
         prefork_lives = self.alive.copy()

@@ -28,8 +28,7 @@ local to a thread. If we access the data in a different thread:
 
   >>> log = []
   >>> def f():
-  ...     items = mydata.__dict__.items()
-  ...     items.sort()
+  ...     items = sorted(mydata.__dict__.items())
   ...     log.append(items)
   ...     mydata.number = 11
   ...     log.append(mydata.number)

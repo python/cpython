@@ -365,8 +365,8 @@ class TestCase(unittest.TestCase):
         d = {"one": 1, "two": 2, "three": 3}
         self.assertEqual(max(d), "two")
         self.assertEqual(min(d), "one")
-        self.assertEqual(max(d.itervalues()), 3)
-        self.assertEqual(min(iter(d.itervalues())), 1)
+        self.assertEqual(max(d.values()), 3)
+        self.assertEqual(min(iter(d.values())), 1)
 
         f = open(TESTFN, "w")
         try:
@@ -402,7 +402,7 @@ class TestCase(unittest.TestCase):
                     for i in range(5)]
         self.assertEqual(map(None, d,
                                    SequenceClass(5),
-                                   iter(d.iterkeys())),
+                                   iter(d.keys())),
                          expected)
 
         f = open(TESTFN, "w")
@@ -437,7 +437,7 @@ class TestCase(unittest.TestCase):
                          [(0,), (1,), (2,)])
 
         d = {"one": 1, "two": 2, "three": 3}
-        self.assertEqual(d.items(), list(zip(d, d.itervalues())))
+        self.assertEqual(d.items(), list(zip(d, d.values())))
 
         # Generate all ints starting at constructor arg.
         class IntsFrom:
@@ -559,13 +559,13 @@ class TestCase(unittest.TestCase):
         d = {"one": 1, "two": 2, "three": 3, 1j: 2j}
         for k in d:
             self.assert_(k in d)
-            self.assert_(k not in d.itervalues())
+            self.assert_(k not in d.values())
         for v in d.values():
-            self.assert_(v in d.itervalues())
+            self.assert_(v in d.values())
             self.assert_(v not in d)
-        for k, v in d.iteritems():
-            self.assert_((k, v) in d.iteritems())
-            self.assert_((v, k) not in d.iteritems())
+        for k, v in d.items():
+            self.assert_((k, v) in d.items())
+            self.assert_((v, k) not in d.items())
 
         f = open(TESTFN, "w")
         try:
@@ -600,9 +600,9 @@ class TestCase(unittest.TestCase):
         d = {"one": 3, "two": 3, "three": 3, 1j: 2j}
         for k in d:
             self.assertEqual(countOf(d, k), 1)
-        self.assertEqual(countOf(d.itervalues(), 3), 3)
-        self.assertEqual(countOf(d.itervalues(), 2j), 1)
-        self.assertEqual(countOf(d.itervalues(), 1j), 0)
+        self.assertEqual(countOf(d.values(), 3), 3)
+        self.assertEqual(countOf(d.values(), 2j), 1)
+        self.assertEqual(countOf(d.values(), 1j), 0)
 
         f = open(TESTFN, "w")
         try:
@@ -744,7 +744,7 @@ class TestCase(unittest.TestCase):
         else:
             self.fail("should have raised TypeError")
 
-        a, b, c = {1: 42, 2: 42, 3: 42}.itervalues()
+        a, b, c = {1: 42, 2: 42, 3: 42}.values()
         self.assertEqual((a, b, c), (42, 42, 42))
 
         f = open(TESTFN, "w")
@@ -841,7 +841,7 @@ class TestCase(unittest.TestCase):
         # XXX For a more thorough test, see towards the end of:
         # http://mail.python.org/pipermail/python-dev/2002-July/026512.html
         a = {1:1, 2:2, 0:0, 4:4, 3:3}
-        for b in iter(a), a.iterkeys(), a.iteritems(), a.itervalues():
+        for b in iter(a), a.keys(), a.items(), a.values():
             b = iter(a)
             self.assertEqual(len(list(b)), 5)
             self.assertEqual(list(b), [])
