@@ -50,7 +50,7 @@ class GroupDatabaseTestCase(unittest.TestCase):
             bynames[n] = g
             bygids[g] = n
 
-        allnames = bynames.keys()
+        allnames = list(bynames.keys())
         namei = 0
         fakename = allnames[namei]
         while fakename in bynames:
