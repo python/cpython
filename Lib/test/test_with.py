@@ -550,13 +550,13 @@ class AssignmentTargetTestCase(unittest.TestCase):
     def testSingleComplexTarget(self):
         targets = {1: [0, 1, 2]}
         with mock_contextmanager_generator() as targets[1][0]:
-            self.assertEqual(targets.keys(), [1])
+            self.assertEqual(list(targets.keys()), [1])
             self.assertEqual(targets[1][0].__class__, MockResource)
-        with mock_contextmanager_generator() as targets.values()[0][1]:
-            self.assertEqual(targets.keys(), [1])
+        with mock_contextmanager_generator() as list(targets.values())[0][1]:
+            self.assertEqual(list(targets.keys()), [1])
             self.assertEqual(targets[1][1].__class__, MockResource)
         with mock_contextmanager_generator() as targets[2]:
-            keys = targets.keys()
+            keys = list(targets.keys())
             keys.sort()
             self.assertEqual(keys, [1, 2])
         class C: pass
@@ -571,7 +571,7 @@ class AssignmentTargetTestCase(unittest.TestCase):
         targets = {1: [0, 1, 2]}
         with C() as (targets[1][0], targets[1][1], targets[1][2]):
             self.assertEqual(targets, {1: [1, 2, 3]})
-        with C() as (targets.values()[0][2], targets.values()[0][1], targets.values()[0][0]):
+        with C() as (list(targets.values())[0][2], list(targets.values())[0][1], list(targets.values())[0][0]):
             self.assertEqual(targets, {1: [3, 2, 1]})
         with C() as (targets[1], targets[2], targets[3]):
             self.assertEqual(targets, {1: 1, 2: 2, 3: 3})
