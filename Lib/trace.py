@@ -583,7 +583,7 @@ class Trace:
         """
         if why == 'call':
             code = frame.f_code
-            filename = code.co_filename
+            filename = frame.f_globals.get('__file__', None)
             if filename:
                 # XXX modname() doesn't work right for packages, so
                 # the ignore support won't work right for packages

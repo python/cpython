@@ -192,6 +192,9 @@ Extension Modules
 Library
 -------
 
+- Patch 1571379: Make trace's --ignore-dir facility work in the face of
+  relative directory names.
+
 - Bug #1545341: The 'classifier' keyword argument to the Distutils setup()
   function now accepts tuples as well as lists.
 
