@@ -611,8 +611,7 @@ class Option:
                 else:
                     setattr(self, attr, None)
         if attrs:
-            attrs = attrs.keys()
-            attrs.sort()
+            attrs = sorted(attrs.keys())
             raise OptionError(
                 "invalid keyword arguments: %s" % ", ".join(attrs),
                 self)
