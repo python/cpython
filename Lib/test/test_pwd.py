@@ -55,7 +55,7 @@ class PwdTest(unittest.TestCase):
             bynames[n] = u
             byuids[u] = n
 
-        allnames = bynames.keys()
+        allnames = list(bynames.keys())
         namei = 0
         fakename = allnames[namei]
         while fakename in bynames:
