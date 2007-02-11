@@ -106,10 +106,10 @@ class WeakValueDictionary(UserDict.UserDict):
                 yield wr.key, value
 
     def iterkeys(self):
-        return self.data.keys()
+        return iter(self.data.keys())
 
     def __iter__(self):
-        return self.data.keys()
+        return iter(self.data.keys())
 
     def itervaluerefs(self):
         """Return an iterator that yields the weak references to the values.
@@ -292,10 +292,10 @@ class WeakKeyDictionary(UserDict.UserDict):
                 yield obj
 
     def __iter__(self):
-        return self.keys()
+        return iter(self.keys())
 
     def itervalues(self):
-        return self.data.values()
+        return iter(self.data.values())
 
     def keyrefs(self):
         """Return a list of weak references to the keys.

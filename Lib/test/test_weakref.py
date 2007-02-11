@@ -844,19 +844,19 @@ class MappingTestCase(TestBase):
         self.assert_(len(items) == 0, "iteritems() did not touch all items")
 
         # key iterator, via __iter__():
-        keys = dict.keys()
+        keys = list(dict.keys())
         for k in dict:
             keys.remove(k)
         self.assert_(len(keys) == 0, "__iter__() did not touch all keys")
 
         # key iterator, via iterkeys():
-        keys = dict.keys()
+        keys = list(dict.keys())
         for k in dict.keys():
             keys.remove(k)
         self.assert_(len(keys) == 0, "iterkeys() did not touch all keys")
 
         # value iterator:
-        values = dict.values()
+        values = list(dict.values())
         for v in dict.values():
             values.remove(v)
         self.assert_(len(values) == 0,

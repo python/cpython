@@ -49,7 +49,7 @@ class BasicTestMappingProtocol(unittest.TestCase):
         #Indexing
         for key, value in self.reference.items():
             self.assertEqual(d[key], value)
-        knownkey = self.other.keys()[0]
+        knownkey = list(self.other.keys())[0]
         self.failUnlessRaises(KeyError, lambda:d[knownkey])
         #len
         self.assertEqual(len(p), 0)
@@ -73,13 +73,16 @@ class BasicTestMappingProtocol(unittest.TestCase):
             self.assert_(hasattr(iter, '__iter__'))
             x = list(iter)
             self.assert_(set(x)==set(lst)==set(ref))
-        check_iterandlist(d.keys(), d.keys(), self.reference.keys())
-        check_iterandlist(iter(d), d.keys(), self.reference.keys())
-        check_iterandlist(d.values(), d.values(), self.reference.values())
-        check_iterandlist(d.items(), d.items(), self.reference.items())
+        check_iterandlist(iter(d.keys()), list(d.keys()),
+                          self.reference.keys())
+        check_iterandlist(iter(d), list(d.keys()), self.reference.keys())
+        check_iterandlist(iter(d.values()), list(d.values()),
+                          self.reference.values())
+        check_iterandlist(iter(d.items()), list(d.items()),
+                          self.reference.items())
         #get
-        key, value = d.items().next()
-        knownkey, knownvalue = self.other.items().next()
+        key, value = iter(d.items()).next()
+        knownkey, knownvalue = iter(self.other.items()).next()
         self.assertEqual(d.get(key, knownvalue), value)
         self.assertEqual(d.get(knownkey, knownvalue), knownvalue)
         self.failIf(knownkey in d)
@@ -104,8 +107,8 @@ class BasicTestMappingProtocol(unittest.TestCase):
         self.assertEqual(dict(p), self.reference)
         d = self._full_mapping(self.reference)
         #setdefault
-        key, value = d.items().next()
-        knownkey, knownvalue = self.other.items().next()
+        key, value = iter(d.items()).next()
+        knownkey, knownvalue = iter(self.other.items()).next()
         self.assertEqual(d.setdefault(key, knownvalue), value)
         self.assertEqual(d[key], value)
         self.assertEqual(d.setdefault(knownkey, knownvalue), knownvalue)
@@ -137,21 +140,21 @@ class BasicTestMappingProtocol(unittest.TestCase):
 
     def test_keys(self):
         d = self._empty_mapping()
-        self.assertEqual(d.keys(), [])
+        self.assertEqual(list(d.keys()), [])
         d = self.reference
-        self.assert_(self.inmapping.keys()[0] in d.keys())
-        self.assert_(self.other.keys()[0] not in d.keys())
+        self.assert_(list(self.inmapping.keys())[0] in d.keys())
+        self.assert_(list(self.other.keys())[0] not in d.keys())
         self.assertRaises(TypeError, d.keys, None)
 
     def test_values(self):
         d = self._empty_mapping()
-        self.assertEqual(d.values(), [])
+        self.assertEqual(list(d.values()), [])
 
         self.assertRaises(TypeError, d.values, None)
 
     def test_items(self):
         d = self._empty_mapping()
-        self.assertEqual(d.items(), [])
+        self.assertEqual(list(d.items()), [])
 
         self.assertRaises(TypeError, d.items, None)
 
@@ -161,7 +164,8 @@ class BasicTestMappingProtocol(unittest.TestCase):
 
     def test_getitem(self):
         d = self.reference
-        self.assertEqual(d[self.inmapping.keys()[0]], self.inmapping.values()[0])
+        self.assertEqual(d[list(self.inmapping.keys())[0]],
+                         list(self.inmapping.values())[0])
 
         self.assertRaises(TypeError, d.__getitem__)
 
@@ -169,7 +173,7 @@ class BasicTestMappingProtocol(unittest.TestCase):
         # mapping argument
         d = self._empty_mapping()
         d.update(self.other)
-        self.assertEqual(d.items(), self.other.items())
+        self.assertEqual(list(d.items()), list(self.other.items()))
 
         # No argument
         d = self._empty_mapping()
@@ -179,12 +183,12 @@ class BasicTestMappingProtocol(unittest.TestCase):
         # item sequence
         d = self._empty_mapping()
         d.update(self.other.items())
-        self.assertEqual(d.items(), self.other.items())
+        self.assertEqual(list(d.items()), list(self.other.items()))
 
         # Iterator
         d = self._empty_mapping()
         d.update(self.other.items())
-        self.assertEqual(d.items(), self.other.items())
+        self.assertEqual(list(d.items()), list(self.other.items()))
 
         # FIXME: Doesn't work with UserDict
         # self.assertRaises((TypeError, AttributeError), d.update, None)
@@ -200,10 +204,8 @@ class BasicTestMappingProtocol(unittest.TestCase):
                 return self.d[i]
         d.clear()
         d.update(SimpleUserDict())
-        i1 = d.items()
-        i2 = self.reference.items()
-        i1.sort()
-        i2.sort()
+        i1 = sorted(d.items())
+        i2 = sorted(self.reference.items())
         self.assertEqual(i1, i2)
 
         class Exc(Exception): pass
@@ -266,13 +268,15 @@ class BasicTestMappingProtocol(unittest.TestCase):
 
     def test_get(self):
         d = self._empty_mapping()
-        self.assert_(d.get(self.other.keys()[0]) is None)
-        self.assertEqual(d.get(self.other.keys()[0], 3), 3)
+        self.assert_(d.get(list(self.other.keys())[0]) is None)
+        self.assertEqual(d.get(list(self.other.keys())[0], 3), 3)
         d = self.reference
-        self.assert_(d.get(self.other.keys()[0]) is None)
-        self.assertEqual(d.get(self.other.keys()[0], 3), 3)
-        self.assertEqual(d.get(self.inmapping.keys()[0]), self.inmapping.values()[0])
-        self.assertEqual(d.get(self.inmapping.keys()[0], 3), self.inmapping.values()[0])
+        self.assert_(d.get(list(self.other.keys())[0]) is None)
+        self.assertEqual(d.get(list(self.other.keys())[0], 3), 3)
+        self.assertEqual(d.get(list(self.inmapping.keys())[0]),
+                         list(self.inmapping.values())[0])
+        self.assertEqual(d.get(list(self.inmapping.keys())[0], 3),
+                         list(self.inmapping.values())[0])
         self.assertRaises(TypeError, d.get)
         self.assertRaises(TypeError, d.get, None, None, None)
 
@@ -287,9 +291,9 @@ class BasicTestMappingProtocol(unittest.TestCase):
 
     def test_pop(self):
         d = self._empty_mapping()
-        k, v = self.inmapping.items()[0]
+        k, v = list(self.inmapping.items())[0]
         d[k] = v
-        self.assertRaises(KeyError, d.pop, self.other.keys()[0])
+        self.assertRaises(KeyError, d.pop, list(self.other.keys())[0])
 
         self.assertEqual(d.pop(k), v)
         self.assertEqual(len(d), 0)
