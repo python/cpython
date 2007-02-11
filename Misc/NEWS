@@ -169,6 +169,9 @@ Extension Modules
 Library
 -------
 
+- Patch 1571379: Make trace's --ignore-dir facility work in the face of
+  relative directory names.
+
 - Bug #1600860: Search for shared python library in LIBDIR, not lib/python/config,
   on "linux" and "gnu" systems.
 
