@@ -358,11 +358,11 @@ def test_expat_nsattrs_wattr():
            (attrs.getQNames() == [] or attrs.getQNames() == ["ns:attr"]) and \
            len(attrs) == 1 and \
            (ns_uri, "attr") in attrs and \
-           attrs.keys() == [(ns_uri, "attr")] and \
+           list(attrs.keys()) == [(ns_uri, "attr")] and \
            attrs.get((ns_uri, "attr")) == "val" and \
            attrs.get((ns_uri, "attr"), 25) == "val" and \
-           attrs.items() == [((ns_uri, "attr"), "val")] and \
-           attrs.values() == ["val"] and \
+           list(attrs.items()) == [((ns_uri, "attr"), "val")] and \
+           list(attrs.values()) == ["val"] and \
            attrs.getValue((ns_uri, "attr")) == "val" and \
            attrs[(ns_uri, "attr")] == "val"
 
@@ -698,7 +698,7 @@ def test_sf_1511497():
     # Bug report: http://www.python.org/sf/1511497
     import sys
     old_modules = sys.modules.copy()
-    for modname in sys.modules.keys():
+    for modname in list(sys.modules.keys()):
         if modname.startswith("xml."):
             del sys.modules[modname]
     try:
@@ -734,8 +734,7 @@ def make_test_output():
     outf.write(result.getvalue())
     outf.close()
 
-items = locals().items()
-items.sort()
+items = sorted(locals().items())
 for (name, value) in items:
     if name[ : 5] == "test_":
         confirm(value(), name)

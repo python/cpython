@@ -304,10 +304,10 @@ class AttributesImpl:
         return name
 
     def getNames(self):
-        return self._attrs.keys()
+        return list(self._attrs.keys())
 
     def getQNames(self):
-        return self._attrs.keys()
+        return list(self._attrs.keys())
 
     def __len__(self):
         return len(self._attrs)
@@ -316,7 +316,7 @@ class AttributesImpl:
         return self._attrs[name]
 
     def keys(self):
-        return self._attrs.keys()
+        return list(self._attrs.keys())
 
     def __contains__(self, name):
         return name in self._attrs
@@ -328,10 +328,10 @@ class AttributesImpl:
         return self.__class__(self._attrs)
 
     def items(self):
-        return self._attrs.items()
+        return list(self._attrs.items())
 
     def values(self):
-        return self._attrs.values()
+        return list(self._attrs.values())
 
 # ===== ATTRIBUTESNSIMPL =====
 
@@ -363,7 +363,7 @@ class AttributesNSImpl(AttributesImpl):
         return self._qnames[name]
 
     def getQNames(self):
-        return self._qnames.values()
+        return list(self._qnames.values())
 
     def copy(self):
         return self.__class__(self._attrs, self._qnames)
