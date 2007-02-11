@@ -290,8 +290,8 @@ class BuiltinTest(unittest.TestCase):
                 if key == 'a':
                     return 12
                 raise KeyError
-            def __iter__(self):
-                return iter('xyz')
+            def keys(self):
+                return list('xyz')
 
         m = M()
         g = globals()
@@ -313,8 +313,8 @@ class BuiltinTest(unittest.TestCase):
                 if key == 'a':
                     return 12
                 return dict.__getitem__(self, key)
-            def __iter__(self):
-                return iter('xyz')
+            def keys(self):
+                return list('xyz')
 
         d = D()
         self.assertEqual(eval('a', g, d), 12)
@@ -346,8 +346,8 @@ class BuiltinTest(unittest.TestCase):
         class C:
             def __getitem__(self, item):
                 raise KeyError(item)
-            def __iter__(self):
-                return 'a'  # XXX Not quite faithful to the SF bug...
+            def keys(self):
+                return 1 # used to be 'a' but that's no longer an error
         self.assertRaises(TypeError, eval, 'dir()', globals(), C())
 
     # Done outside of the method test_z to get the correct scope
