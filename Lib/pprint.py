@@ -141,8 +141,7 @@ class PrettyPrinter:
                 if length:
                     context[objid] = 1
                     indent = indent + self._indent_per_level
-                    items  = object.items()
-                    items.sort()
+                    items  = sorted(object.items())
                     key, ent = items[0]
                     rep = self._repr(key, context, level)
                     write(rep)
