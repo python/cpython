@@ -2399,6 +2399,83 @@ dictview_new(PyObject *dict, PyTypeObject *type)
 	return (PyObject *)dv;
 }
 
+/* Forward */
+PyTypeObject PyDictKeys_Type;
+PyTypeObject PyDictItems_Type;
+PyTypeObject PyDictValues_Type;
+
+#define PyDictKeys_Check(obj) ((obj)->ob_type == &PyDictKeys_Type)
+#define PyDictItems_Check(obj) ((obj)->ob_type == &PyDictItems_Type)
+#define PyDictValues_Check(obj) ((obj)->ob_type == &PyDictValues_Type)
+
+/* This excludes Values, since they are not sets. */
+# define PyDictViewSet_Check(obj) \
+	(PyDictKeys_Check(obj) || PyDictItems_Check(obj))
+
+static int
+all_contained_in(PyObject *self, PyObject *other)
+{
+	PyObject *iter = PyObject_GetIter(self);
+	int ok = 1;
+
+	if (iter == NULL)
+		return -1;
+	for (;;) {
+		PyObject *next = PyIter_Next(iter);
+		if (next == NULL) {
+			if (PyErr_Occurred())
+				ok = -1;
+			break;
+		}
+		ok = PySequence_Contains(other, next);
+		Py_DECREF(next);
+		if (ok <= 0)
+			break;
+	}
+	Py_DECREF(iter);
+	return ok;
+}
+
+static PyObject *
+dictview_richcompare(PyObject *self, PyObject *other, int op)
+{
+	assert(self != NULL);
+	assert(PyDictViewSet_Check(self));
+	assert(other != NULL);
+	if ((op == Py_EQ || op == Py_NE) &&
+	    (PyAnySet_Check(other) || PyDictViewSet_Check(other)))
+	{
+		Py_ssize_t len_self, len_other;
+		int ok;
+		PyObject *result;
+
+		len_self = PyObject_Size(self);
+		if (len_self < 0)
+			return NULL;
+		len_other = PyObject_Size(other);
+		if (len_other < 0)
+			return NULL;
+		if (len_self != len_other)
+			ok = 0;
+		else if (len_self == 0)
+			ok = 1;
+		else
+			ok = all_contained_in(self, other);
+		if (ok < 0)
+			return NULL;
+		if (ok == (op == Py_EQ))
+			result = Py_True;
+		else
+			result = Py_False;
+		Py_INCREF(result);
+		return result;
+	}
+	else {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+}
+
 /*** dict_keys ***/
 
 static PyObject *
@@ -2459,7 +2536,7 @@ PyTypeObject PyDictKeys_Type = {
  	0,					/* tp_doc */
  	0,					/* tp_traverse */
  	0,					/* tp_clear */
-	0,					/* tp_richcompare */
+	dictview_richcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)dictkeys_iter,		/* tp_iter */
 	0,					/* tp_iternext */
@@ -2544,7 +2621,7 @@ PyTypeObject PyDictItems_Type = {
  	0,					/* tp_doc */
  	0,					/* tp_traverse */
  	0,					/* tp_clear */
-	0,					/* tp_richcompare */
+	dictview_richcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)dictitems_iter,		/* tp_iter */
 	0,					/* tp_iternext */
