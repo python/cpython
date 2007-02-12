@@ -49,8 +49,8 @@ Some facts and figures:
     avoid this.  If a compression method is not supported,
     \exception{CompressionError} is raised.
 
-    If \var{fileobj} is specified, it is used as an alternative to
-    a file object opened for \var{name}.
+    If \var{fileobj} is specified, it is used as an alternative to a file
+    object opened for \var{name}. It is supposed to be at position 0.
 
     For special purposes, there is a second format for \var{mode}:
     \code{'filemode|[compression]'}.  \function{open()} will return a
@@ -161,6 +161,7 @@ tar archive several times. Each archive member is represented by a
 
     If \var{fileobj} is given, it is used for reading or writing data.
     If it can be determined, \var{mode} is overridden by \var{fileobj}'s mode.
+    \var{fileobj} will be used from position 0.
     \begin{notice}
         \var{fileobj} is not closed, when \class{TarFile} is closed.
     \end{notice}
