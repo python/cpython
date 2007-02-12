@@ -95,7 +95,7 @@ class Mailbox:
 
     def keys(self):
         """Return a list of keys."""
-        return list(self.keys())
+        return list(self.iterkeys())
 
     def itervalues(self):
         """Return an iterator over all messages."""
@@ -111,7 +111,7 @@ class Mailbox:
 
     def values(self):
         """Return a list of messages. Memory intensive."""
-        return list(self.values())
+        return list(self.itervalues())
 
     def iteritems(self):
         """Return an iterator over (key, message) tuples."""
@@ -124,7 +124,7 @@ class Mailbox:
 
     def items(self):
         """Return a list of (key, message) tuples. Memory intensive."""
-        return list(self.items())
+        return list(self.iteritems())
 
     def __contains__(self, key):
         """Return True if the keyed message exists, False otherwise."""
@@ -477,7 +477,7 @@ class Maildir(Mailbox):
     def next(self):
         """Return the next message in a one-time iteration."""
         if not hasattr(self, '_onetime_keys'):
-            self._onetime_keys = self.keys()
+            self._onetime_keys = iter(self.keys())
         while True:
             try:
                 return self[self._onetime_keys.next()]
