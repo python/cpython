@@ -2226,7 +2226,7 @@ def inherits():
         __slots__ = ['prec']
         def __init__(self, value=0.0, prec=12):
             self.prec = int(prec)
-            float.__init__(value)
+            float.__init__(self, value)
         def __repr__(self):
             return "%.*g" % (self.prec, self)
     vereq(repr(precfloat(1.1)), "1.1")
