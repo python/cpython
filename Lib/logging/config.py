@@ -202,7 +202,7 @@ def _install_loggers(cp, handlers):
     #what's left in existing is the set of loggers
     #which were in the previous configuration but
     #which are not in the new configuration.
-    existing = root.manager.loggerDict.keys()
+    existing = list(root.manager.loggerDict.keys())
     #now set up the new ones...
     for log in llist:
         sectname = "logger_%s" % log
