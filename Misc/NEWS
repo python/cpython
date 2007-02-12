@@ -128,6 +128,8 @@ Core and builtins
 Library
 -------
 
+- Patch 1463026: Support default namespace in XMLGenerator.
+
 - Patch 1571379: Make trace's --ignore-dir facility work in the face of
   relative directory names.
 
