@@ -167,7 +167,7 @@ class ContainerTestCase(unittest.TestCase):
         os.unlink(test_support.TESTFN)
 
     def test_list(self):
-        lst = self.d.items()
+        lst = list(self.d.items())
         new = marshal.loads(marshal.dumps(lst))
         self.assertEqual(lst, new)
         marshal.dump(lst, open(test_support.TESTFN, "wb"))
