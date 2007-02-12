@@ -216,7 +216,44 @@ def test_xmlgen_ns():
            ('<ns1:doc xmlns:ns1="%s"><udoc></udoc></ns1:doc>' %
                                          ns_uri)
 
-# ===== XMLFilterBase
+def test_1463026_1():
+    result = StringIO()
+    gen = XMLGenerator(result)
+
+    gen.startDocument()
+    gen.startElementNS((None, 'a'), 'a', {(None, 'b'):'c'})
+    gen.endElementNS((None, 'a'), 'a')
+    gen.endDocument()
+
+    return result.getvalue() == start+'<a b="c"></a>'
+
+def test_1463026_2():
+    result = StringIO()
+    gen = XMLGenerator(result)
+
+    gen.startDocument()
+    gen.startPrefixMapping(None, 'qux')
+    gen.startElementNS(('qux', 'a'), 'a', {})
+    gen.endElementNS(('qux', 'a'), 'a')
+    gen.endPrefixMapping(None)
+    gen.endDocument()
+
+    return result.getvalue() == start+'<a xmlns="qux"></a>'
+
+def test_1463026_3():
+    result = StringIO()
+    gen = XMLGenerator(result)
+
+    gen.startDocument()
+    gen.startPrefixMapping('my', 'qux')
+    gen.startElementNS(('qux', 'a'), 'a', {(None, 'b'):'c'})
+    gen.endElementNS(('qux', 'a'), 'a')
+    gen.endPrefixMapping('my')
+    gen.endDocument()
+
+    return result.getvalue() == start+'<my:a xmlns:my="qux" b="c"></my:a>'
+    
+# ===== Xmlfilterbase
 
 def test_filter_basic():
     result = StringIO()
