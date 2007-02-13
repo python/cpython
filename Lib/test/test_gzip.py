@@ -153,6 +153,13 @@ class TestGzip(unittest.TestCase):
         self.assertEqual(f.myfileobj.mode, 'rb')
         f.close()
 
+    def test_1647484(self):
+        for mode in ('wb', 'rb'):
+            f = gzip.GzipFile(self.filename, mode)
+            self.assert_(hasattr(f, "name"))
+            self.assertEqual(f.name, self.filename)
+            f.close()
+
 def test_main(verbose=None):
     test_support.run_unittest(TestGzip)
 
