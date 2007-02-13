@@ -307,6 +307,28 @@ class PyZipFileTests(unittest.TestCase):
 
 
 class OtherTests(unittest.TestCase):
+    def testCreateNonExistentFileForAppend(self):
+        if os.path.exists(TESTFN):
+            os.unlink(TESTFN)
+            
+        filename = 'testfile.txt'
+        content = 'hello, world. this is some content.'
+        
+        try:
+            zf = zipfile.ZipFile(TESTFN, 'a')
+            zf.writestr(filename, content)
+            zf.close()
+        except IOError, (errno, errmsg):
+            self.fail('Could not append data to a non-existent zip file.')
+
+        self.assert_(os.path.exists(TESTFN))
+
+        zf = zipfile.ZipFile(TESTFN, 'r')
+        self.assertEqual(zf.read(filename), content)
+        zf.close()
+        
+        os.unlink(TESTFN)
+        
     def testCloseErroneousFile(self):
         # This test checks that the ZipFile constructor closes the file object
         # it opens if there's an error in the file.  If it doesn't, the traceback
