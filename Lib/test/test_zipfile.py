@@ -349,8 +349,49 @@ class OtherTests(unittest.TestCase):
         # and report that the first file in the archive was corrupt.
         self.assertRaises(RuntimeError, zipf.testzip)
 
+
+class DecryptionTests(unittest.TestCase):
+    # This test checks that ZIP decryption works. Since the library does not
+    # support encryption at the moment, we use a pre-generated encrypted
+    # ZIP file
+
+    data = (
+    'PK\x03\x04\x14\x00\x01\x00\x00\x00n\x92i.#y\xef?&\x00\x00\x00\x1a\x00'
+    '\x00\x00\x08\x00\x00\x00test.txt\xfa\x10\xa0gly|\xfa-\xc5\xc0=\xf9y'
+    '\x18\xe0\xa8r\xb3Z}Lg\xbc\xae\xf9|\x9b\x19\xe4\x8b\xba\xbb)\x8c\xb0\xdbl'
+    'PK\x01\x02\x14\x00\x14\x00\x01\x00\x00\x00n\x92i.#y\xef?&\x00\x00\x00'
+    '\x1a\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00\x00\x01\x00 \x00\xb6\x81'
+    '\x00\x00\x00\x00test.txtPK\x05\x06\x00\x00\x00\x00\x01\x00\x01\x006\x00'
+    '\x00\x00L\x00\x00\x00\x00\x00' )
+
+    plain = 'zipfile.py encryption test'
+
+    def setUp(self):
+        fp = open(TESTFN, "wb")
+        fp.write(self.data)
+        fp.close()
+        self.zip = zipfile.ZipFile(TESTFN, "r")
+
+    def tearDown(self):
+        self.zip.close()
+        os.unlink(TESTFN)
+
+    def testNoPassword(self):
+        # Reading the encrypted file without password
+        # must generate a RunTime exception
+        self.assertRaises(RuntimeError, self.zip.read, "test.txt")
+
+    def testBadPassword(self):
+        self.zip.setpassword("perl")
+        self.assertRaises(RuntimeError, self.zip.read, "test.txt")
+            
+    def testGoodPassword(self):
+        self.zip.setpassword("python")
+        self.assertEquals(self.zip.read("test.txt"), self.plain)
+
 def test_main():
-    run_unittest(TestsWithSourceFile, TestZip64InSmallFiles, OtherTests, PyZipFileTests)
+    run_unittest(TestsWithSourceFile, TestZip64InSmallFiles, OtherTests, 
+                 PyZipFileTests, DecryptionTests)
     #run_unittest(TestZip64InSmallFiles)
 
 if __name__ == "__main__":
