@@ -4383,7 +4383,9 @@ init_socket(void)
 	PyModule_AddIntConstant(m, "NETLINK_ROUTE6", NETLINK_ROUTE6);
 #endif
 	PyModule_AddIntConstant(m, "NETLINK_IP6_FW", NETLINK_IP6_FW);
+#ifdef NETLINK_DNRTMSG
 	PyModule_AddIntConstant(m, "NETLINK_DNRTMSG", NETLINK_DNRTMSG);
+#endif 
 #ifdef NETLINK_TAPBASE
 	PyModule_AddIntConstant(m, "NETLINK_TAPBASE", NETLINK_TAPBASE);
 #endif
