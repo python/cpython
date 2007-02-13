@@ -101,6 +101,8 @@ cat myzip.zip >> python.exe
 \end{verbatim}
 
   also works, and at least \program{WinZip} can read such files.
+  If \var{mode} is \code{a} and the file does not exist at all,
+  it is created.
   \var{compression} is the ZIP compression method to use when writing
   the archive, and should be \constant{ZIP_STORED} or
   \constant{ZIP_DEFLATED}; unrecognized values will cause
@@ -114,6 +116,9 @@ cat myzip.zip >> python.exe
   ZIP file would require ZIP64 extensions. ZIP64 extensions are disabled by
   default because the default \program{zip} and \program{unzip} commands on
   \UNIX{} (the InfoZIP utilities) don't support these extensions.
+
+  \versionchanged[If the file does not exist, it is created if the
+  mode is 'a']{2.6}
 \end{classdesc}
 
 \begin{methoddesc}{close}{}

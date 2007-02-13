@@ -396,7 +396,14 @@ class ZipFile:
             self._filePassed = 0
             self.filename = file
             modeDict = {'r' : 'rb', 'w': 'wb', 'a' : 'r+b'}
-            self.fp = open(file, modeDict[mode])
+            try:
+                self.fp = open(file, modeDict[mode])
+            except IOError:
+                if mode == 'a':
+                    mode = key = 'w'
+                    self.fp = open(file, modeDict[mode])
+                else:
+                    raise
         else:
             self._filePassed = 1
             self.fp = file
