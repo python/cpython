@@ -1,0 +1,4 @@
+    test_bsddb test_bsddb3 test_compile test_dict test_dumbdbm
+    test_importhooks test_iter test_iterlen test_minidom test_mutants
+    test_os test_pickletools test_plistlib test_richcmp test_shelve
+    test_unittest test_userdict
