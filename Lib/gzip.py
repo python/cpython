@@ -149,15 +149,18 @@ class GzipFile:
     def _write_gzip_header(self):
         self.fileobj.write('\037\213')             # magic header
         self.fileobj.write('\010')                 # compression method
+        fname = self.name
+        if fname.endswith(".gz"):
+            fname = fname[:-3]
         flags = 0
-        if self.name:
+        if fname:
             flags = FNAME
         self.fileobj.write(chr(flags))
         write32u(self.fileobj, long(time.time()))
         self.fileobj.write('\002')
         self.fileobj.write('\377')
-        if self.name:
-            self.fileobj.write(self.name + '\000')
+        if fname:
+            self.fileobj.write(fname + '\000')
 
     def _init_read(self):
         self.crc = zlib.crc32("")
