@@ -14,21 +14,13 @@ TO DO
 
 - See PEP 3000, 3100.
 
-- Test merging certain changes from the 2.5 HEAD code.
-
 - Weed really old/weird stuff from the library.
 
 - Unify range() and xrange().
 
-- Revamp the dict API: keys(), values(), items() return iterators, etc.
-
-- Add the bytes type.
-
 - Rework the standard I/O library to use bytes for binary files.
 
 - Make strings all Unicode.
-
-- Get rid of classic class implementation.
 
 - Get rid of various compatibility-related flags (e.g. division flags).
 
@@ -51,7 +43,7 @@ Core and Builtins
 
 - PEP 3102: keyword-only arguments.
 
-- Int/Long unification is mostly complete.  The 'long' built-in type
+- Int/Long unification is complete.  The 'long' built-in type
   and literals with trailing 'L' or 'l' have been removed.
   Performance may be sub-optimal (haven't really benchmarked).
 
