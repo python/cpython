@@ -481,7 +481,7 @@ The case conversion functions in the
 locale settings.  When a call to the \function{setlocale()} function
 changes the \constant{LC_CTYPE} settings, the variables
 \code{string.lowercase}, \code{string.uppercase} and
-\code{string.letters} are recalculated.  Note that this code that uses
+\code{string.letters} are recalculated.  Note that code that uses
 these variable through `\keyword{from} ... \keyword{import} ...',
 e.g.\ \code{from string import letters}, is not affected by subsequent
 \function{setlocale()} calls.
