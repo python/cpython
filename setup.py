@@ -1319,7 +1319,8 @@ class PyBuildExt(build_ext):
             from distutils.dep_util import newer_group
 
             config_sources = [os.path.join(ffi_srcdir, fname)
-                              for fname in os.listdir(ffi_srcdir)]
+                              for fname in os.listdir(ffi_srcdir)
+                              if os.path.isfile(os.path.join(ffi_srcdir, fname))]
             if self.force or newer_group(config_sources,
                                          ffi_configfile):
                 from distutils.dir_util import mkpath
