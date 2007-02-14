@@ -46,6 +46,7 @@
 #include <bluetooth/rfcomm.h>
 #include <bluetooth/l2cap.h>
 #include <bluetooth/sco.h>
+#include <bluetooth/hci.h>
 #endif
 
 #ifdef HAVE_BLUETOOTH_H
@@ -98,6 +99,7 @@ typedef union sock_addr {
 	struct sockaddr_l2 bt_l2;
 	struct sockaddr_rc bt_rc;
 	struct sockaddr_sco bt_sco;
+	struct sockaddr_hci bt_hci;
 #endif
 #ifdef HAVE_NETPACKET_PACKET_H
 	struct sockaddr_ll ll;
