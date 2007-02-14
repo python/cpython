@@ -336,7 +336,7 @@ class AppendTest(unittest.TestCase):
         self._test()
 
     def test_empty(self):
-        open(self.tarname, "w").close()
+        open(self.tarname, "wb").close()
         self._add_testfile()
         self._test()
 
@@ -348,7 +348,7 @@ class AppendTest(unittest.TestCase):
 
     def test_fileobj(self):
         self._create_testtar()
-        data = open(self.tarname).read()
+        data = open(self.tarname, "rb").read()
         fobj = StringIO.StringIO(data)
         self._add_testfile(fobj)
         fobj.seek(0)
