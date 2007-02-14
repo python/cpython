@@ -1362,14 +1362,13 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		}
 		case BTPROTO_HCI:
 		{
-			struct sockaddr_hci *addr = (struct sockaddr_hci *) _BT_SOCKADDR_MEMB(s, hci);
+			struct sockaddr_hci *addr = (struct sockaddr_hci *)addr_ret;
 			_BT_HCI_MEMB(addr, family) = AF_BLUETOOTH;
 			if (!PyArg_ParseTuple(args, "i", &_BT_HCI_MEMB(addr, dev))) {
 				PyErr_SetString(socket_error, "getsockaddrarg: "
 						"wrong format");
 				return 0;
 			}
-			*addr_ret = (struct sockaddr *) addr;
 			*len_ret = sizeof *addr;
 			return 1;
 		}
