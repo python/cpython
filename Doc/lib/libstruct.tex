@@ -34,6 +34,8 @@ The module defines the following exception and functions:
   format, write the packed bytes into the writable \var{buffer} starting at
   \var{offset}.
   Note that the offset is not an optional argument.
+
+  \versionadded{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{unpack}{fmt, string}
@@ -50,6 +52,8 @@ The module defines the following exception and functions:
   \var{buffer} must contain at least the amount of data required by the
   format (\code{len(buffer[offset:])} must be at least
   \code{calcsize(\var{fmt})}).
+
+  \versionadded{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{calcsize}{fmt}
