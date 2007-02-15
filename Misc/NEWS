@@ -366,6 +366,8 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1494140: Add documentation for the new struct.Struct object.
+
 - Patch #1432399: Support the HCI protocol for bluetooth sockets
 
 - Patch #1657276: Make NETLINK_DNRTMSG conditional.
