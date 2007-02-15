@@ -98,6 +98,17 @@ Tunable Dictionary Parameters
     depending on the size of the dictionary.  Setting to *4
     eliminates every other resize step.
 
+* Maximum sparseness (minimum dictionary load).  What percentage
+    of entries can be unused before the dictionary shrinks to
+    free up memory and speed up iteration?  (The current CPython
+    code does not represent this parameter directly.)
+
+* Shrinkage rate upon exceeding maximum sparseness.  The current
+    CPython code never even checks sparseness when deleting a
+    key.  When a new key is added, it resizes based on the number
+    of active keys, so that the addition may trigger shrinkage
+    rather than growth.
+
 Tune-ups should be measured across a broad range of applications and
 use cases.  A change to any parameter will help in some situations and
 hurt in others.  The key is to find settings that help the most common
@@ -114,6 +125,15 @@ non-overlapping memory accesses for keys(), items(), values(),
 __iter__(), iterkeys(), iteritems(), itervalues(), and update().
 Also, every dictionary iterates at least twice, once for the memset()
 when it is created and once by dealloc().
+
+Dictionary operations involving only a single key can be O(1) unless 
+resizing is possible.  By checking for a resize only when the 
+dictionary can grow (and may *require* resizing), other operations
+remain O(1), and the odds of resize thrashing or memory fragmentation
+are reduced. In particular, an algorithm that empties a dictionary
+by repeatedly invoking .pop will see no resizing, which might
+not be necessary at all because the dictionary is eventually
+discarded entirely.
 
 
 Results of Cache Locality Experiments
