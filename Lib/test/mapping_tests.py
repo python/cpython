@@ -317,7 +317,7 @@ class TestMappingProtocol(BasicTestMappingProtocol):
     def test_keys(self):
         BasicTestMappingProtocol.test_keys(self)
         d = self._empty_mapping()
-        self.assertEqual(d.keys(), [])
+        self.assertEqual(list(d.keys()), [])
         d = self._full_mapping({'a': 1, 'b': 2})
         k = d.keys()
         self.assert_('a' in k)
@@ -327,13 +327,13 @@ class TestMappingProtocol(BasicTestMappingProtocol):
     def test_values(self):
         BasicTestMappingProtocol.test_values(self)
         d = self._full_mapping({1:2})
-        self.assertEqual(d.values(), [2])
+        self.assertEqual(list(d.values()), [2])
 
     def test_items(self):
         BasicTestMappingProtocol.test_items(self)
 
         d = self._full_mapping({1:2})
-        self.assertEqual(d.items(), [(1, 2)])
+        self.assertEqual(list(d.items()), [(1, 2)])
 
     def test_contains(self):
         d = self._empty_mapping()
