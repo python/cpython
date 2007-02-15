@@ -93,8 +93,10 @@ def search_function(encoding):
         if not modname or '.' in modname:
             continue
         try:
-            mod = __import__('encodings.' + modname,
-                             globals(), locals(), _import_tail)
+            # Import equivalent to `` from .modname import *``.
+            # '*' is used so that __import__ returns the desired module and not
+            # 'encodings' itself.
+            mod = __import__(modname, globals(), locals(), ['*'], 1)
         except ImportError:
             pass
         else:
