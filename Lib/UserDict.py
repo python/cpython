@@ -42,9 +42,6 @@ class UserDict:
         return c
     def keys(self): return self.data.keys()
     def items(self): return self.data.items()
-    def iteritems(self): return self.data.items()
-    def iterkeys(self): return self.data.keys()
-    def itervalues(self): return self.data.values()
     def values(self): return self.data.values()
     def update(self, dict=None, **kwargs):
         if dict is None:
@@ -91,6 +88,8 @@ class DictMixin:
     # methods, progressively more efficiency comes with defining
     # __contains__(), __iter__(), and iteritems().
 
+    # XXX It would make more sense to expect __iter__ to be primitive.
+
     # second level definitions support higher levels
     def __iter__(self):
         for k in self.keys():
@@ -103,20 +102,20 @@ class DictMixin:
         return True
 
     # third level takes advantage of second level definitions
+    def iterkeys(self):
+        return self.__iter__()
     def iteritems(self):
         for k in self:
             yield (k, self[k])
-    def iterkeys(self):
-        return self.__iter__()
 
     # fourth level uses definitions from lower levels
     def itervalues(self):
-        for _, v in self.items():
+        for _, v in self.iteritems():
             yield v
     def values(self):
-        return [v for _, v in self.items()]
+        return [v for _, v in self.iteritems()]
     def items(self):
-        return list(self.items())
+        return list(self.iteritems())
     def clear(self):
         for key in self.keys():
             del self[key]
@@ -140,7 +139,7 @@ class DictMixin:
         return value
     def popitem(self):
         try:
-            k, v = self.items().next()
+            k, v = self.iteritems().next()
         except StopIteration:
             raise KeyError, 'container is empty'
         del self[k]
@@ -169,14 +168,14 @@ class DictMixin:
         except KeyError:
             return default
     def __repr__(self):
-        return repr(dict(self.items()))
+        return repr(dict(self.iteritems()))
     def __eq__(self, other):
         if isinstance(other, DictMixin):
-            other = dict(other.items())
-        return dict(self.items()) == other
+            other = dict(other.iteritems())
+        return dict(self.iteritems()) == other
     def __ne__(self, other):
         if isinstance(other, DictMixin):
-            other = dict(other.items())
-        return dict(self.items()) != other
+            other = dict(other.iteritems())
+        return dict(self.iteritems()) != other
     def __len__(self):
         return len(self.keys())

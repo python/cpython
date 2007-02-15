@@ -92,7 +92,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         # Test keys, items, values
         self.assertEqual(u2.keys(), d2.keys())
         self.assertEqual(u2.items(), d2.items())
-        self.assertEqual(u2.values(), d2.values())
+        self.assertEqual(list(u2.values()), list(d2.values()))
 
         # Test "in".
         for i in u2.keys():
