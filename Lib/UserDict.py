@@ -117,7 +117,7 @@ class DictMixin:
     def items(self):
         return list(self.iteritems())
     def clear(self):
-        for key in self.keys():
+        for key in list(self.iterkeys()):
             del self[key]
     def setdefault(self, key, default=None):
         try:

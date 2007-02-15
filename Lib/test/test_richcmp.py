@@ -265,7 +265,7 @@ class DictTest(unittest.TestCase):
         imag1a = {}
         for i in range(50):
             imag1a[random.randrange(100)*1j] = random.randrange(100)*1j
-        items = imag1a.items()
+        items = list(imag1a.items())
         random.shuffle(items)
         imag1b = {}
         for k, v in items:
