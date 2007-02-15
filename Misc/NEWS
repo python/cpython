@@ -107,6 +107,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1494140: Add documentation for the new struct.Struct object.
+
 - Patch #1657276: Make NETLINK_DNRTMSG conditional.
 
 - Bug #1653736: Complain about keyword arguments to time.isoformat.
