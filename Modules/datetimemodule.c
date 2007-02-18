@@ -3166,8 +3166,11 @@ time_str(PyDateTime_Time *self)
 	return PyObject_CallMethod((PyObject *)self, "isoformat", "()");
 }
 
+/* Even though this silently ignores all arguments, it cannot
+   be fixed to reject them in release25-maint */
 static PyObject *
-time_isoformat(PyDateTime_Time *self, PyObject *unused)
+time_isoformat(PyDateTime_Time *self, PyObject *unused_args, 
+	       PyObject *unused_keywords)
 {
 	char buf[100];
 	PyObject *result;
@@ -3411,7 +3414,7 @@ time_reduce(PyDateTime_Time *self, PyObject *arg)
 
 static PyMethodDef time_methods[] = {
 
-	{"isoformat",   (PyCFunction)time_isoformat,	METH_NOARGS,
+	{"isoformat",   (PyCFunction)time_isoformat,	METH_KEYWORDS,
 	 PyDoc_STR("Return string in ISO 8601 format, HH:MM:SS[.mmmmmm]"
 	 	   "[+HH:MM].")},
 
