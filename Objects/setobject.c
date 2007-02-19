@@ -918,8 +918,14 @@ set_update_internal(PySetObject *so, PyObject *other)
 	if (PyDict_CheckExact(other)) {
 		PyObject *value;
 		Py_ssize_t pos = 0;
-		while (PyDict_Next(other, &pos, &key, &value)) {
-			if (set_add_key(so, key) == -1)
+		long hash;
+
+		while (_PyDict_Next(other, &pos, &key, &value, &hash)) {
+			setentry an_entry;
+
+			an_entry.hash = hash;
+			an_entry.key = key;
+			if (set_add_entry(so, &an_entry) == -1)
 				return -1;
 		}
 		return 0;
@@ -1382,7 +1388,7 @@ set_difference(PySetObject *so, PyObject *other)
 			setentry entrycopy;
 			entrycopy.hash = entry->hash;
 			entrycopy.key = entry->key;
-			if (!PyDict_Contains(other, entry->key)) {
+			if (!_PyDict_Contains(other, entry->key, entry->hash)) {
 				if (set_add_entry((PySetObject *)result, &entrycopy) == -1) {
 					Py_DECREF(result);
 					return NULL;
@@ -1453,12 +1459,10 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 	if (PyDict_CheckExact(other)) {
 		PyObject *value;
 		int rv;
-		while (PyDict_Next(other, &pos, &key, &value)) {
+		long hash;
+		while (_PyDict_Next(other, &pos, &key, &value, &hash)) {
 			setentry an_entry;
-			long hash = PyObject_Hash(key);
 
-			if (hash == -1)
-				return NULL;
 			an_entry.hash = hash;
 			an_entry.key = key;
 			rv = set_discard_entry(so, &an_entry);
