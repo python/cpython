@@ -371,6 +371,9 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1490190: posixmodule now includes os.chflags() and os.lchflags()
+  functions on platforms where the underlying system calls are available.
+
 - Patch #1494140: Add documentation for the new struct.Struct object.
 
 - Patch #1432399: Support the HCI protocol for bluetooth sockets

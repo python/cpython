@@ -192,6 +192,18 @@ class PosixTester(unittest.TestCase):
             posix.utime(test_support.TESTFN, (int(now), int(now)))
             posix.utime(test_support.TESTFN, (now, now))
 
+    def test_chflags(self):
+        if hasattr(posix, 'chflags'):
+            st = os.stat(test_support.TESTFN)
+            if hasattr(st, 'st_flags'):
+                posix.chflags(test_support.TESTFN, st.st_flags)
+
+    def test_lchflags(self):
+        if hasattr(posix, 'lchflags'):
+            st = os.stat(test_support.TESTFN)
+            if hasattr(st, 'st_flags'):
+                posix.lchflags(test_support.TESTFN, st.st_flags)
+
 def test_main():
     test_support.run_unittest(PosixTester)
 
