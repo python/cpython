@@ -323,10 +323,10 @@ def merge(*iterables):
 
     h = []
     h_append = h.append
-    for it in map(iter, iterables):
+    for itnum, it in enumerate(map(iter, iterables)):
         try:
             next = it.next
-            h_append([next(), next])
+            h_append([next(), itnum, next])
         except _StopIteration:
             pass
     heapify(h)
@@ -334,12 +334,12 @@ def merge(*iterables):
     while 1:
         try:
             while 1:
-                v, next = s = h[0]      # raises IndexError when h is empty
+                v, itnum, next = s = h[0]   # raises IndexError when h is empty
                 yield v
-                s[0] = next()           # raises StopIteration when exhausted
-                siftup(h, 0)            # restore heap condition
+                s[0] = next()               # raises StopIteration when exhausted
+                siftup(h, 0)                # restore heap condition
         except _StopIteration:
-            _heappop(h)                  # remove empty iterator
+            _heappop(h)                     # remove empty iterator
         except IndexError:
             return
 
