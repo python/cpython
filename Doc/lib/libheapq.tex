@@ -96,8 +96,8 @@ timestamped entries from multiple log files).  Returns an iterator over
 over the sorted values.
 
 Similar to \code{sorted(itertools.chain(*iterables))} but returns an iterable,
-does not pull the data into memory all at once, and reduces the number of
-comparisons by assuming that each of the input streams is already sorted.            
+does not pull the data into memory all at once, and assumes that each of the
+input streams is already sorted (smallest to largest).            
 \versionadded{2.6}
 \end{funcdesc}
 
