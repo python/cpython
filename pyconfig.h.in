@@ -67,6 +67,9 @@
 /* Define this if you have the type _Bool. */
 #undef HAVE_C99_BOOL
 
+/* Define to 1 if you have the `chflags' function. */
+#undef HAVE_CHFLAGS
+
 /* Define to 1 if you have the `chown' function. */
 #undef HAVE_CHOWN
 
@@ -289,6 +292,9 @@
    add some flags for configuration and compilation to enable this mode. (For
    Solaris and Linux, the necessary defines are already defined.) */
 #undef HAVE_LARGEFILE_SUPPORT
+
+/* Define to 1 if you have the `lchflags' function. */
+#undef HAVE_LCHFLAGS
 
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN

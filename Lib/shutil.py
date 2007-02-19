@@ -60,13 +60,15 @@ def copymode(src, dst):
         os.chmod(dst, mode)
 
 def copystat(src, dst):
-    """Copy all stat info (mode bits, atime and mtime) from src to dst"""
+    """Copy all stat info (mode bits, atime, mtime, flags) from src to dst"""
     st = os.stat(src)
     mode = stat.S_IMODE(st.st_mode)
     if hasattr(os, 'utime'):
         os.utime(dst, (st.st_atime, st.st_mtime))
     if hasattr(os, 'chmod'):
         os.chmod(dst, mode)
+    if hasattr(os, 'chflags') and hasattr(st, 'st_flags'):
+        os.chflags(dst, st.st_flags)
 
 
 def copy(src, dst):
