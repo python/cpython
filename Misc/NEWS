@@ -128,6 +128,8 @@ Core and builtins
 Library
 -------
 
+- Added heapq.merge() for merging sorted input streams.
+
 - Have the encoding package's search function dynamically import using absolute
   import semantics.
 
