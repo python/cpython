@@ -26,9 +26,6 @@ Core and builtins
 
 - patch #1630975: Fix crash when replacing sys.stdout in sitecustomize.py
 
-- Patch #1507247: tarfile.py: use current umask for intermediate
-  directories.
-
 - Bug #1637022: Prefix AST symbols with _Py_.
 
 - Prevent seg fault on shutdown which could occur if an object
@@ -166,6 +163,9 @@ Library
 - Bug #1643943: Fix time.strptime's support for the %U directive.
 
 - Patch #1643874: memory leak in ctypes fixed.
+
+- Patch #1507247: tarfile.py: use current umask for intermediate
+  directories.
 
 - Patch #1627441: close sockets properly in urllib2.
 
