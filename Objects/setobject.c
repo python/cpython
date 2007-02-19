@@ -919,7 +919,18 @@ set_update_internal(PySetObject *so, PyObject *other)
 		PyObject *value;
 		Py_ssize_t pos = 0;
 		long hash;
+		Py_ssize_t dictsize = PyDict_Size(other);
 
+		/* Do one big resize at the start, rather than
+		* incrementally resizing as we insert new keys.  Expect
+		* that there will be no (or few) overlapping keys.
+		*/
+		if (dictsize == -1)
+			return -1;
+		if ((so->fill + dictsize)*3 >= (so->mask+1)*2) {
+			if (set_table_resize(so, (so->used + dictsize)*2) != 0)
+				return -1;
+		}
 		while (_PyDict_Next(other, &pos, &key, &value, &hash)) {
 			setentry an_entry;
 
