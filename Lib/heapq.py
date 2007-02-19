@@ -319,7 +319,7 @@ def merge(*iterables):
     [0, 1, 2, 3, 4, 5, 5, 7, 8, 10, 15, 20, 25]
 
     '''
-    _heappop, siftup, _StopIteration = heappop, _siftup, StopIteration
+    _heappop, _heapreplace, _StopIteration = heappop, heapreplace, StopIteration
 
     h = []
     h_append = h.append
@@ -337,7 +337,7 @@ def merge(*iterables):
                 v, itnum, next = s = h[0]   # raises IndexError when h is empty
                 yield v
                 s[0] = next()               # raises StopIteration when exhausted
-                siftup(h, 0)                # restore heap condition
+                _heapreplace(h, s)          # restore heap condition
         except _StopIteration:
             _heappop(h)                     # remove empty iterator
         except IndexError:
