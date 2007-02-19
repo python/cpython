@@ -111,6 +111,21 @@ class TestHeap(unittest.TestCase):
         self.assertEqual(sorted(chain(*inputs)), list(merge(*inputs)))
         self.assertEqual(list(merge()), [])
 
+    def test_merge_stability(self):
+        class Int(int):
+            pass
+        inputs = [[], [], [], []]
+        for i in range(20000):
+            stream = random.randrange(4)
+            x = random.randrange(500)
+            obj = Int(x)
+            obj.pair = (x, stream)
+            inputs[stream].append(obj)
+        for stream in inputs:
+            stream.sort()
+        result = [i.pair for i in merge(*inputs)]
+        self.assertEqual(result, sorted(result))
+
     def test_nsmallest(self):
         data = [(random.randrange(2000), i) for i in range(1000)]
         for f in (None, lambda x:  x[0] * 547 % 2000):
