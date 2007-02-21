@@ -256,7 +256,7 @@ class Node(xml.dom.Node):
 
     def _call_user_data_handler(self, operation, src, dst):
         if hasattr(self, "_user_data"):
-            for key, (data, handler) in self._user_data.items():
+            for key, (data, handler) in list(self._user_data.items()):
                 if handler is not None:
                     handler.handle(operation, key, data, src, dst)
 
@@ -480,7 +480,7 @@ class NamedNodeMap(object):
 
     def item(self, index):
         try:
-            return self[self._attrs.keys()[index]]
+            return self[list(self._attrs.keys())[index]]
         except IndexError:
             return None
 
@@ -672,7 +672,7 @@ class Element(Node):
         return self.tagName
 
     def unlink(self):
-        for attr in self._attrs.values():
+        for attr in list(self._attrs.values()):
             attr.unlink()
         self._attrs = None
         self._attrsNS = None
@@ -805,8 +805,7 @@ class Element(Node):
         writer.write(indent+"<" + self.tagName)
 
         attrs = self._get_attributes()
-        a_names = attrs.keys()
-        a_names.sort()
+        a_names = sorted(attrs.keys())
 
         for a_name in a_names:
             writer.write(" %s=\"" % a_name)
