@@ -565,10 +565,8 @@ def _setupCloneElement(deep):
 def _testCloneElementCopiesAttributes(e1, e2, test):
     attrs1 = e1.attributes
     attrs2 = e2.attributes
-    keys1 = attrs1.keys()
-    keys2 = attrs2.keys()
-    keys1.sort()
-    keys2.sort()
+    keys1 = sorted(attrs1.keys())
+    keys2 = sorted(attrs2.keys())
     confirm(keys1 == keys2, "clone of element has same attribute keys")
     for i in range(len(keys1)):
         a1 = attrs1.item(i)
@@ -1351,8 +1349,7 @@ def testPickledDocument():
 
 # --- MAIN PROGRAM
 
-names = globals().keys()
-names.sort()
+names = sorted(globals().keys())
 
 failed = []
 
