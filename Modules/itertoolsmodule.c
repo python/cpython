@@ -2483,7 +2483,6 @@ typedef struct {
 	PyObject *ittuple;		/* tuple of iterators */
 	PyObject *result;
 	PyObject *fillvalue;
-	PyObject *filler;		/* repeat(fillvalue) */
 } iziplongestobject;
 
 static PyTypeObject iziplongest_type;
@@ -2496,7 +2495,6 @@ izip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *ittuple;  /* tuple of iterators */
 	PyObject *result;
 	PyObject *fillvalue = Py_None;
-	PyObject *filler;
 	Py_ssize_t tuplesize = PySequence_Length(args);
 
         if (kwds != NULL && PyDict_CheckExact(kwds) && PyDict_Size(kwds) > 0) {
@@ -2529,17 +2527,10 @@ izip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		PyTuple_SET_ITEM(ittuple, i, it);
 	}
 
-	filler = PyObject_CallFunctionObjArgs((PyObject *)(&repeat_type), fillvalue, NULL);
-	if (filler == NULL) {
-		Py_DECREF(ittuple);
-		return NULL;
-	}
-
 	/* create a result holder */
 	result = PyTuple_New(tuplesize);
 	if (result == NULL) {
 		Py_DECREF(ittuple);
-		Py_DECREF(filler);
 		return NULL;
 	}
 	for (i=0 ; i < tuplesize ; i++) {
@@ -2551,7 +2542,6 @@ izip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	lz = (iziplongestobject *)type->tp_alloc(type, 0);
 	if (lz == NULL) {
 		Py_DECREF(ittuple);
-		Py_DECREF(filler);
 		Py_DECREF(result);
 		return NULL;
 	}
@@ -2561,8 +2551,6 @@ izip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	lz->result = result;
 	Py_INCREF(fillvalue);
 	lz->fillvalue = fillvalue;
-	Py_INCREF(filler);
-	lz->filler = filler;			/* XXX */
 	return (PyObject *)lz;
 }
 
@@ -2573,7 +2561,6 @@ izip_longest_dealloc(iziplongestobject *lz)
 	Py_XDECREF(lz->ittuple);
 	Py_XDECREF(lz->result);
 	Py_XDECREF(lz->fillvalue);
-	Py_XDECREF(lz->filler);
 	lz->ob_type->tp_free(lz);
 }
 
@@ -2583,7 +2570,6 @@ izip_longest_traverse(iziplongestobject *lz, visitproc visit, void *arg)
 	Py_VISIT(lz->ittuple);
 	Py_VISIT(lz->result);
 	Py_VISIT(lz->fillvalue);
-	Py_VISIT(lz->filler);
 	return 0;
 }
 
@@ -2599,25 +2585,31 @@ izip_longest_next(iziplongestobject *lz)
 
 	if (tuplesize == 0)
 		return NULL;
+        if (lz->numactive == 0)
+                return NULL;
 	if (result->ob_refcnt == 1) {
 		Py_INCREF(result);
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
-			assert(PyIter_Check(it));
-			item = (*it->ob_type->tp_iternext)(it);
-			if (item == NULL) {
-				if (lz->numactive <= 1) {
-					Py_DECREF(result);
-					return NULL;
-				} else {
-					Py_INCREF(lz->filler);
-					PyTuple_SET_ITEM(lz->ittuple, i, lz->filler);
-					Py_INCREF(lz->fillvalue);
-					item = lz->fillvalue;
-					Py_DECREF(it);
-					lz->numactive -= 1;
-				}
-			}
+                        if (it == NULL) {
+                                Py_INCREF(lz->fillvalue);
+                                item = lz->fillvalue;
+                        } else {
+                                assert(PyIter_Check(it));
+                                item = (*it->ob_type->tp_iternext)(it);
+                                if (item == NULL) {
+                                        lz->numactive -= 1;      
+                                        if (lz->numactive == 0) {
+                                                Py_DECREF(result);
+                                                return NULL;
+                                        } else {
+                                                Py_INCREF(lz->fillvalue);
+                                                item = lz->fillvalue;                                        
+                                                PyTuple_SET_ITEM(lz->ittuple, i, NULL);
+                                                Py_DECREF(it);
+                                        }
+                                }
+                        }
 			olditem = PyTuple_GET_ITEM(result, i);
 			PyTuple_SET_ITEM(result, i, item);
 			Py_DECREF(olditem);
@@ -2628,21 +2620,25 @@ izip_longest_next(iziplongestobject *lz)
 			return NULL;
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
-			assert(PyIter_Check(it));
-			item = (*it->ob_type->tp_iternext)(it);
-			if (item == NULL) {
-				if (lz->numactive <= 1) {
-					Py_DECREF(result);
-					return NULL;
-				} else {
-					Py_INCREF(lz->filler);
-					PyTuple_SET_ITEM(lz->ittuple, i, lz->filler);
-					Py_INCREF(lz->fillvalue);
-					item = lz->fillvalue;
-					Py_DECREF(it);
-					lz->numactive -= 1;
-				}
-			}
+                        if (it == NULL) {
+                                Py_INCREF(lz->fillvalue);
+                                item = lz->fillvalue;
+                        } else {
+                                assert(PyIter_Check(it));
+                                item = (*it->ob_type->tp_iternext)(it);
+                                if (item == NULL) {
+                                        lz->numactive -= 1;      
+                                        if (lz->numactive == 0) {
+                                                Py_DECREF(result);
+                                                return NULL;
+                                        } else {
+                                                Py_INCREF(lz->fillvalue);
+                                                item = lz->fillvalue;                                        
+                                                PyTuple_SET_ITEM(lz->ittuple, i, NULL);
+                                                Py_DECREF(it);
+                                        }
+                                }
+                        }
 			PyTuple_SET_ITEM(result, i, item);
 		}
 	}
