@@ -302,6 +302,33 @@ by functions or loops that truncate the stream.
   don't care about trailing, unmatched values from the longer iterables.
 \end{funcdesc}
 
+\begin{funcdesc}{izip_longest}{*iterables\optional{, fillvalue}}
+  Make an iterator that aggregates elements from each of the iterables.
+  If the iterables are of uneven length, missing values are filled-in
+  with \var{fillvalue}.  Iteration continues until the longest iterable
+  is exhausted.  Equivalent to:
+
+  \begin{verbatim}
+    def izip_longest(*args, **kwds):
+        fillvalue = kwds.get('fillvalue')
+        def sentinel(counter = ([fillvalue]*(len(args)-1)).pop):
+            yield counter()         # yields the fillvalue, or raises IndexError
+        fillers = repeat(fillvalue)
+        iters = [chain(it, sentinel(), fillers) for it in args]
+        try:
+            for tup in izip(*iters):
+                yield tup
+        except IndexError:
+            pass
+  \end{verbatim}
+
+  If one of the iterables is potentially infinite, then the
+  \function{izip_longest()} function should be wrapped with something
+  that limits the number of calls (for example \function{islice()} or
+  \function{take()}).
+  \versionadded{2.6}
+\end{funcdesc}
+
 \begin{funcdesc}{repeat}{object\optional{, times}}
   Make an iterator that returns \var{object} over and over again.
   Runs indefinitely unless the \var{times} argument is specified.
