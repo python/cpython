@@ -101,7 +101,7 @@ class BasicTestMappingProtocol(unittest.TestCase):
         #update
         p.update(self.reference)
         self.assertEqual(dict(p), self.reference)
-        items = p.items()
+        items = list(p.items())
         p = self._empty_mapping()
         p.update(items)
         self.assertEqual(dict(p), self.reference)
