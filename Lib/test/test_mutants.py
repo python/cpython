@@ -116,7 +116,7 @@ def fill_dict(d, candidates, numentries):
     for i in xrange(numentries):
         d[Horrid(random.choice(candidates))] = \
             Horrid(random.choice(candidates))
-    return d.keys()
+    return list(d.keys())
 
 # Test one pair of randomly generated dicts, each with n entries.
 # Note that dict comparison is trivial if they don't have the same number
