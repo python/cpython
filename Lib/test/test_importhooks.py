@@ -254,7 +254,7 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
         mnames = ("colorsys", "urlparse", "distutils.core", "compiler.misc")
         for mname in mnames:
             parent = mname.split(".")[0]
-            for n in sys.modules.keys():
+            for n in list(sys.modules.keys()):
                 if n.startswith(parent):
                     del sys.modules[n]
         for mname in mnames:
