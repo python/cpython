@@ -139,14 +139,14 @@ class TestDictItems(TestTemporarilyImmutable):
 
     def setUp(self):
         d = dict.fromkeys(xrange(n))
-        self.it = d.items()
+        self.it = iter(d.items())
         self.mutate = d.popitem
 
 class TestDictValues(TestTemporarilyImmutable):
 
     def setUp(self):
         d = dict.fromkeys(xrange(n))
-        self.it = d.values()
+        self.it = iter(d.values())
         self.mutate = d.popitem
 
 class TestSet(TestTemporarilyImmutable):

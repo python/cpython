@@ -1,2 +1,2 @@
     test_bsddb test_bsddb3 test_compile test_dumbdbm
-    test_importhooks test_iter test_iterlen
+    test_importhooks test_iter
