@@ -202,7 +202,7 @@ class _Database(UserDict.DictMixin):
         return key in self._index
 
     def iterkeys(self):
-        return self._index.keys()
+        return iter(self._index.keys())
     __iter__ = iterkeys
 
     def __len__(self):
