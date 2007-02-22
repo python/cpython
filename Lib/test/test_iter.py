@@ -225,7 +225,7 @@ class TestCase(unittest.TestCase):
         dict = {}
         for i in range(10):
             dict[i] = None
-        self.check_for_loop(dict, dict.keys())
+        self.check_for_loop(dict, list(dict.keys()))
 
     # Test a file
     def test_iter_file(self):
@@ -254,7 +254,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(list(range(10, -1, -1)), range(10, -1, -1))
 
         d = {"one": 1, "two": 2, "three": 3}
-        self.assertEqual(list(d), d.keys())
+        self.assertEqual(list(d), list(d.keys()))
 
         self.assertRaises(TypeError, list, list)
         self.assertRaises(TypeError, list, 42)
@@ -319,7 +319,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(filter(None, "abc"), "abc")
 
         d = {"one": 1, "two": 2, "three": 3}
-        self.assertEqual(filter(None, d), d.keys())
+        self.assertEqual(filter(None, d), list(d.keys()))
 
         self.assertRaises(TypeError, filter, None, list)
         self.assertRaises(TypeError, filter, None, 42)
@@ -393,9 +393,9 @@ class TestCase(unittest.TestCase):
         self.assertEqual(map(lambda x: x+1, SequenceClass(5)), range(1, 6))
 
         d = {"one": 1, "two": 2, "three": 3}
-        self.assertEqual(map(None, d), d.keys())
-        self.assertEqual(map(lambda k, d=d: (k, d[k]), d), d.items())
-        dkeys = d.keys()
+        self.assertEqual(map(None, d), list(d.keys()))
+        self.assertEqual(map(lambda k, d=d: (k, d[k]), d), list(d.items()))
+        dkeys = list(d.keys())
         expected = [(i < len(d) and dkeys[i] or None,
                      i,
                      i < len(d) and dkeys[i] or None)
@@ -437,7 +437,7 @@ class TestCase(unittest.TestCase):
                          [(0,), (1,), (2,)])
 
         d = {"one": 1, "two": 2, "three": 3}
-        self.assertEqual(d.items(), list(zip(d, d.values())))
+        self.assertEqual(list(d.items()), list(zip(d, d.values())))
 
         # Generate all ints starting at constructor arg.
         class IntsFrom:
