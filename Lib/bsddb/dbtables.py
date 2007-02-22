@@ -546,7 +546,7 @@ class bsdTableDB :
             self.__load_column_info(table)
         if columns is None:
             columns = self.tablecolumns[table]
-        for column in (columns + conditions.keys()):
+        for column in (columns + list(conditions.keys())):
             if not self.__tablecolumns[table].count(column):
                 raise TableDBError, "unknown column: %r" % (column,)
 
@@ -580,7 +580,7 @@ class bsdTableDB :
             # leave all unknown condition callables alone as equals
             return 0
 
-        conditionlist = conditions.items()
+        conditionlist = list(conditions.items())
         conditionlist.sort(cmp_conditions)
 
         # Apply conditions to column data to find what we want
