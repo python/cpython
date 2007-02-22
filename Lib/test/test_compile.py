@@ -53,8 +53,8 @@ class TestSpecifics(unittest.TestCase):
                 raise KeyError
             def __setitem__(self, key, value):
                 self.results = (key, value)
-            def __iter__(self):
-                return iter('xyz')
+            def keys(self):
+                return list('xyz')
 
         m = M()
         g = globals()
