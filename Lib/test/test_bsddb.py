@@ -198,9 +198,9 @@ class TestBSDDB(unittest.TestCase):
         # do the bsddb._DBWithCursor _iter_mixin internals leak cursors?
         nc1 = len(self.f._cursor_refs)
         # create iterator
-        i = iter(self.f.items())
+        i = iter(self.f.iteritems())
         nc2 = len(self.f._cursor_refs)
-        # use the iterator (should run to the first yeild, creating the cursor)
+        # use the iterator (should run to the first yield, creating the cursor)
         k, v = i.next()
         nc3 = len(self.f._cursor_refs)
         # destroy the iterator; this should cause the weakref callback
@@ -210,7 +210,7 @@ class TestBSDDB(unittest.TestCase):
 
         self.assertEqual(nc1, nc2)
         self.assertEqual(nc1, nc4)
-        self.assert_(nc3 == nc1+1)
+        self.assertEqual(nc3, nc1+1)
 
     def test_popitem(self):
         k, v = self.f.popitem()
