@@ -205,7 +205,7 @@ class TestBSDDB(unittest.TestCase):
         # create iterator
         i = self.f.iteritems()
         nc2 = len(self.f._cursor_refs)
-        # use the iterator (should run to the first yeild, creating the cursor)
+        # use the iterator (should run to the first yield, creating the cursor)
         k, v = i.next()
         nc3 = len(self.f._cursor_refs)
         # destroy the iterator; this should cause the weakref callback
