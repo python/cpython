@@ -3,7 +3,9 @@
 Call Tips are floating windows which display function, class, and method
 parameter and docstring information when you type an opening parenthesis, and
 which disappear when you type a closing parenthesis.
+
 """
+import re
 import sys
 import types
 
@@ -89,6 +91,8 @@ class CallTips:
         two unrelated modules are being edited some calltips in the current
         module may be inoperative if the module was not the last to run.
 
+        To find methods, fetch_tip must be fed a fully qualified name.
+
         """
         try:
             rpcclt = self.editwin.flist.pyshell.interp.rpcclt
@@ -108,7 +112,7 @@ class CallTips:
             namespace.update(__main__.__dict__)
             try:
                 return eval(name, namespace)
-            except:
+            except (NameError, AttributeError):
                 return None
 
 def _find_constructor(class_ob):
@@ -124,39 +128,37 @@ def _find_constructor(class_ob):
 
 def get_arg_text(ob):
     """Get a string describing the arguments for the given object"""
-    argText = ""
+    arg_text = ""
     if ob is not None:
-        argOffset = 0
+        arg_offset = 0
         if type(ob) in (types.ClassType, types.TypeType):
             # Look for the highest __init__ in the class chain.
             fob = _find_constructor(ob)
             if fob is None:
                 fob = lambda: None
             else:
-                argOffset = 1
+                arg_offset = 1
         elif type(ob)==types.MethodType:
             # bit of a hack for methods - turn it into a function
             # but we drop the "self" param.
             fob = ob.im_func
-            argOffset = 1
+            arg_offset = 1
         else:
             fob = ob
-        # Try and build one for Python defined functions
+        # Try to build one for Python defined functions
         if type(fob) in [types.FunctionType, types.LambdaType]:
-            try:
-                realArgs = fob.func_code.co_varnames[argOffset:fob.func_code.co_argcount]
-                defaults = fob.func_defaults or []
-                defaults = list(map(lambda name: "=%s" % repr(name), defaults))
-                defaults = [""] * (len(realArgs)-len(defaults)) + defaults
-                items = map(lambda arg, dflt: arg+dflt, realArgs, defaults)
-                if fob.func_code.co_flags & 0x4:
-                    items.append("...")
-                if fob.func_code.co_flags & 0x8:
-                    items.append("***")
-                argText = ", ".join(items)
-                argText = "(%s)" % argText
-            except:
-                pass
+            argcount = fob.func_code.co_argcount
+            real_args = fob.func_code.co_varnames[arg_offset:argcount]
+            defaults = fob.func_defaults or []
+            defaults = list(map(lambda name: "=%s" % repr(name), defaults))
+            defaults = [""] * (len(real_args) - len(defaults)) + defaults
+            items = map(lambda arg, dflt: arg + dflt, real_args, defaults)
+            if fob.func_code.co_flags & 0x4:
+                items.append("...")
+            if fob.func_code.co_flags & 0x8:
+                items.append("***")
+            arg_text = ", ".join(items)
+            arg_text = "(%s)" % re.sub("\.\d+", "<tuple>", arg_text)
         # See if we can use the docstring
         doc = getattr(ob, "__doc__", "")
         if doc:
@@ -164,10 +166,10 @@ def get_arg_text(ob):
             pos = doc.find("\n")
             if pos < 0 or pos > 70:
                 pos = 70
-            if argText:
-                argText += "\n"
-            argText += doc[:pos]
-    return argText
+            if arg_text:
+                arg_text += "\n"
+            arg_text += doc[:pos]
+    return arg_text
 
 #################################################
 #
@@ -181,16 +183,18 @@ if __name__=='__main__':
     def t4(*args): "(...)"
     def t5(a, *args): "(a, ...)"
     def t6(a, b=None, *args, **kw): "(a, b=None, ..., ***)"
+    def t7((a, b), c, (d, e)): "(<tuple>, c, <tuple>)"
 
-    class TC:
-        "(a=None, ...)"
-        def __init__(self, a=None, *b): "(a=None, ...)"
+    class TC(object):
+        "(ai=None, ...)"
+        def __init__(self, ai=None, *b): "(ai=None, ...)"
         def t1(self): "()"
-        def t2(self, a, b=None): "(a, b=None)"
-        def t3(self, a, *args): "(a, ...)"
+        def t2(self, ai, b=None): "(ai, b=None)"
+        def t3(self, ai, *args): "(ai, ...)"
         def t4(self, *args): "(...)"
-        def t5(self, a, *args): "(a, ...)"
-        def t6(self, a, b=None, *args, **kw): "(a, b=None, ..., ***)"
+        def t5(self, ai, *args): "(ai, ...)"
+        def t6(self, ai, b=None, *args, **kw): "(ai, b=None, ..., ***)"
+        def t7(self, (ai, b), c, (d, e)): "(<tuple>, c, <tuple>)"
 
     def test(tests):
         ct = CallTips()
@@ -198,15 +202,20 @@ if __name__=='__main__':
         for t in tests:
             expected = t.__doc__ + "\n" + t.__doc__
             name = t.__name__
-            arg_text = ct.fetch_tip(name)
+            # exercise fetch_tip(), not just get_arg_text()
+            try:
+                qualified_name = "%s.%s" % (t.im_class.__name__, name)
+            except AttributeError:
+                qualified_name = name
+            arg_text = ct.fetch_tip(qualified_name)
             if arg_text != expected:
                 failed.append(t)
-                print("%s - expected %s, but got %s" % (t, expected,
-                                                        get_arg_text(entity)))
+                fmt = "%s - expected %s, but got %s"
+                print(fmt % (t.__name__, expected, get_arg_text(t)))
         print("%d of %d tests failed" % (len(failed), len(tests)))
 
     tc = TC()
-    tests = (t1, t2, t3, t4, t5, t6,
-             TC, tc.t1, tc.t2, tc.t3, tc.t4, tc.t5, tc.t6)
+    tests = (t1, t2, t3, t4, t5, t6, t7,
+             TC, tc.t1, tc.t2, tc.t3, tc.t4, tc.t5, tc.t6, tc.t7)
 
     test(tests)

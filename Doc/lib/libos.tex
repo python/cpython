@@ -758,6 +758,26 @@ Availability: Macintosh, \UNIX, Windows.
 \versionadded{2.3}
 \end{funcdesc}
 
+\begin{funcdesc}{chflags}{path, flags}
+Set the flags of \var{path} to the numeric \var{flags}.
+\var{flags} may take a combination (bitwise OR) of the following values
+(as defined in the \module{stat} module):
+\begin{itemize}
+  \item \code{UF_NODUMP}
+  \item \code{UF_IMMUTABLE}
+  \item \code{UF_APPEND}
+  \item \code{UF_OPAQUE}
+  \item \code{UF_NOUNLINK}
+  \item \code{SF_ARCHIVED}
+  \item \code{SF_IMMUTABLE}
+  \item \code{SF_APPEND}
+  \item \code{SF_NOUNLINK}
+  \item \code{SF_SNAPSHOT}
+\end{itemize}
+Availability: Macintosh, \UNIX.
+\versionadded{2.6}
+\end{funcdesc}
+
 \begin{funcdesc}{chroot}{path}
 Change the root directory of the current process to \var{path}.
 Availability: Macintosh, \UNIX.
@@ -802,6 +822,13 @@ All other bits are ignored.}
 Change the owner and group id of \var{path} to the numeric \var{uid}
 and \var{gid}. To leave one of the ids unchanged, set it to -1.
 Availability: Macintosh, \UNIX.
+\end{funcdesc}
+
+\begin{funcdesc}{lchflags}{path, flags}
+Set the flags of \var{path} to the numeric \var{flags}, like
+\function{chflags()}, but do not follow symbolic links.
+Availability: \UNIX.
+\versionadded{2.6}
 \end{funcdesc}
 
 \begin{funcdesc}{lchown}{path, uid, gid}

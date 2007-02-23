@@ -210,6 +210,8 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnless(operator.isSequenceType(xrange(10)))
         self.failUnless(operator.isSequenceType('yeahbuddy'))
         self.failIf(operator.isSequenceType(3))
+        class Dict(dict): pass
+        self.failIf(operator.isSequenceType(Dict()))
 
     def test_lshift(self):
         self.failUnlessRaises(TypeError, operator.lshift)

@@ -4279,7 +4279,13 @@ SLOT1(slot_nb_inplace_add, "__iadd__", PyObject *, "O")
 SLOT1(slot_nb_inplace_subtract, "__isub__", PyObject *, "O")
 SLOT1(slot_nb_inplace_multiply, "__imul__", PyObject *, "O")
 SLOT1(slot_nb_inplace_remainder, "__imod__", PyObject *, "O")
-SLOT1(slot_nb_inplace_power, "__ipow__", PyObject *, "O")
+/* Can't use SLOT1 here, because nb_inplace_power is ternary */
+static PyObject * 
+slot_nb_inplace_power(PyObject *self, PyObject * arg1, PyObject *arg2) 
+{ 
+  static PyObject *cache_str; 
+  return call_method(self, "__ipow__", &cache_str, "(" "O" ")", arg1); 
+}
 SLOT1(slot_nb_inplace_lshift, "__ilshift__", PyObject *, "O")
 SLOT1(slot_nb_inplace_rshift, "__irshift__", PyObject *, "O")
 SLOT1(slot_nb_inplace_and, "__iand__", PyObject *, "O")

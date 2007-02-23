@@ -55,8 +55,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(2, lzip('abc',count(3))), [('a', 3), ('b', 4)])
         self.assertRaises(TypeError, count, 2, 3)
         self.assertRaises(TypeError, count, 'a')
-        c = count(sys.maxint-2)   # verify that rollover doesn't crash
-        c.next(); c.next(); c.next(); c.next(); c.next()
+        self.assertRaises(OverflowError, list, islice(count(sys.maxint-5), 10))
         c = count(3)
         self.assertEqual(repr(c), 'count(3)')
         c.next()
@@ -201,6 +200,51 @@ class TestBasicOps(unittest.TestCase):
         ids = map(id, izip('abc', 'def'))
         self.assertEqual(min(ids), max(ids))
         ids = map(id, list(izip('abc', 'def')))
+        self.assertEqual(len(dict.fromkeys(ids)), len(ids))
+
+    def test_iziplongest(self):
+        for args in [
+                ['abc', range(6)],
+                [range(6), 'abc'],
+                [range(1000), range(2000,2100), range(3000,3050)],
+                [range(1000), range(0), range(3000,3050), range(1200), range(1500)],
+                [range(1000), range(0), range(3000,3050), range(1200), range(1500), range(0)],
+            ]:
+            target = map(None, *args)
+            self.assertEqual(list(izip_longest(*args)), target)
+            self.assertEqual(list(izip_longest(*args, **{})), target)
+            target = [tuple((e is None and 'X' or e) for e in t) for t in target]   # Replace None fills with 'X'
+            self.assertEqual(list(izip_longest(*args, **dict(fillvalue='X'))), target)
+        
+        self.assertEqual(take(3,izip_longest('abcdef', count())), list(zip('abcdef', range(3)))) # take 3 from infinite input
+
+        self.assertEqual(list(izip_longest()), list(zip()))
+        self.assertEqual(list(izip_longest([])), list(zip([])))
+        self.assertEqual(list(izip_longest('abcdef')), list(zip('abcdef')))
+    
+        self.assertEqual(list(izip_longest('abc', 'defg', **{})), map(None, 'abc', 'defg')) # empty keyword dict
+        self.assertRaises(TypeError, izip_longest, 3)
+        self.assertRaises(TypeError, izip_longest, range(3), 3)
+
+        for stmt in [
+            "izip_longest('abc', fv=1)",
+            "izip_longest('abc', fillvalue=1, bogus_keyword=None)",            
+        ]:
+            try:
+                eval(stmt, globals(), locals())
+            except TypeError:
+                pass
+            else:
+                self.fail('Did not raise Type in:  ' + stmt)
+        
+        # Check tuple re-use (implementation detail)
+        self.assertEqual([tuple(list(pair)) for pair in izip_longest('abc', 'def')],
+                         list(zip('abc', 'def')))
+        self.assertEqual([pair for pair in izip_longest('abc', 'def')],
+                         list(zip('abc', 'def')))
+        ids = map(id, izip_longest('abc', 'def'))
+        self.assertEqual(min(ids), max(ids))
+        ids = map(id, list(izip_longest('abc', 'def')))
         self.assertEqual(len(dict.fromkeys(ids)), len(ids))
 
     def test_repeat(self):
@@ -615,6 +659,15 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(TypeError, izip, X(s))
             self.assertRaises(TypeError, izip, N(s))
             self.assertRaises(ZeroDivisionError, list, izip(E(s)))
+
+    def test_iziplongest(self):
+        for s in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5)):
+            for g in (G, I, Ig, S, L, R):
+                self.assertEqual(list(izip_longest(g(s))), list(zip(g(s))))
+                self.assertEqual(list(izip_longest(g(s), g(s))), list(zip(g(s), g(s))))
+            self.assertRaises(TypeError, izip_longest, X(s))
+            self.assertRaises(TypeError, izip_longest, N(s))
+            self.assertRaises(ZeroDivisionError, list, izip_longest(E(s)))
 
     def test_imap(self):
         for s in (range(10), range(0), range(100), (7,11), xrange(20,50,5)):

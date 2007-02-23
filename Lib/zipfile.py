@@ -296,6 +296,65 @@ class ZipInfo (object):
             extra = extra[ln+4:]
 
 
+class _ZipDecrypter:
+    """Class to handle decryption of files stored within a ZIP archive.
+
+    ZIP supports a password-based form of encryption. Even though known
+    plaintext attacks have been found against it, it is still useful
+    for low-level securicy.
+
+    Usage:
+        zd = _ZipDecrypter(mypwd)
+        plain_char = zd(cypher_char)
+        plain_text = map(zd, cypher_text)
+    """
+
+    def _GenerateCRCTable():
+        """Generate a CRC-32 table.
+
+        ZIP encryption uses the CRC32 one-byte primitive for scrambling some
+        internal keys. We noticed that a direct implementation is faster than
+        relying on binascii.crc32().
+        """
+        poly = 0xedb88320
+        table = [0] * 256
+        for i in range(256):
+            crc = i
+            for j in range(8):
+                if crc & 1:
+                    crc = ((crc >> 1) & 0x7FFFFFFF) ^ poly
+                else:
+                    crc = ((crc >> 1) & 0x7FFFFFFF)
+            table[i] = crc
+        return table
+    crctable = _GenerateCRCTable()
+
+    def _crc32(self, ch, crc):
+        """Compute the CRC32 primitive on one byte."""
+        return ((crc >> 8) & 0xffffff) ^ self.crctable[(crc ^ ord(ch)) & 0xff]
+
+    def __init__(self, pwd):
+        self.key0 = 305419896
+        self.key1 = 591751049
+        self.key2 = 878082192
+        for p in pwd:
+            self._UpdateKeys(p)
+
+    def _UpdateKeys(self, c):
+        self.key0 = self._crc32(c, self.key0)
+        self.key1 = (self.key1 + (self.key0 & 255)) & 4294967295
+        self.key1 = (self.key1 * 134775813 + 1) & 4294967295
+        self.key2 = self._crc32(chr((self.key1 >> 24) & 255), self.key2)
+
+    def __call__(self, c):
+        """Decrypt a single character."""
+        c = ord(c)
+        k = self.key2 | 2
+        c = c ^ (((k * (k^1)) >> 8) & 255)
+        c = chr(c)
+        self._UpdateKeys(c)
+        return c
+
 class ZipFile:
     """ Class with methods to open, read, write, close, list zip files.
 
@@ -330,13 +389,21 @@ class ZipFile:
         self.filelist = []      # List of ZipInfo instances for archive
         self.compression = compression  # Method of compression
         self.mode = key = mode.replace('b', '')[0]
+        self.pwd = None
 
         # Check if we were passed a file-like object
         if isinstance(file, basestring):
             self._filePassed = 0
             self.filename = file
             modeDict = {'r' : 'rb', 'w': 'wb', 'a' : 'r+b'}
-            self.fp = open(file, modeDict[mode])
+            try:
+                self.fp = open(file, modeDict[mode])
+            except IOError:
+                if mode == 'a':
+                    mode = key = 'w'
+                    self.fp = open(file, modeDict[mode])
+                else:
+                    raise
         else:
             self._filePassed = 1
             self.fp = file
@@ -461,7 +528,11 @@ class ZipFile:
         """Return the instance of ZipInfo given 'name'."""
         return self.NameToInfo[name]
 
-    def read(self, name):
+    def setpassword(self, pwd):
+        """Set default password for encrypted files."""
+        self.pwd = pwd
+
+    def read(self, name, pwd=None):
         """Return file bytes (as a string) for name."""
         if self.mode not in ("r", "a"):
             raise RuntimeError, 'read() requires mode "r" or "a"'
@@ -469,6 +540,13 @@ class ZipFile:
             raise RuntimeError, \
                   "Attempt to read ZIP archive that was already closed"
         zinfo = self.getinfo(name)
+        is_encrypted = zinfo.flag_bits & 0x1
+        if is_encrypted:
+            if not pwd:
+                pwd = self.pwd
+            if not pwd:
+                raise RuntimeError, "File %s is encrypted, " \
+                      "password required for extraction" % name
         filepos = self.fp.tell()
 
         self.fp.seek(zinfo.header_offset, 0)
@@ -489,6 +567,18 @@ class ZipFile:
                           zinfo.orig_filename, fname)
 
         bytes = self.fp.read(zinfo.compress_size)
+        # Go with decryption
+        if is_encrypted:
+            zd = _ZipDecrypter(pwd)
+            # The first 12 bytes in the cypher stream is an encryption header
+            #  used to strengthen the algorithm. The first 11 bytes are
+            #  completely random, while the 12th contains the MSB of the CRC,
+            #  and is used to check the correctness of the password.
+            h = map(zd, bytes[0:12])
+            if ord(h[11]) != ((zinfo.CRC>>24)&255):
+                raise RuntimeError, "Bad password for file %s" % name
+            bytes = "".join(map(zd, bytes[12:]))
+        # Go with decompression
         self.fp.seek(filepos, 0)
         if zinfo.compress_type == ZIP_STORED:
             pass

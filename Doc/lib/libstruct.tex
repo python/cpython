@@ -29,12 +29,31 @@ The module defines the following exception and functions:
   exactly.
 \end{funcdesc}
 
+\begin{funcdesc}{pack_into}{fmt, buffer, offset, v1, v2, \moreargs}
+  Pack the values \code{\var{v1}, \var{v2}, \textrm{\ldots}} according to the given
+  format, write the packed bytes into the writable \var{buffer} starting at
+  \var{offset}.
+  Note that the offset is not an optional argument.
+
+  \versionadded{2.5}
+\end{funcdesc}
+
 \begin{funcdesc}{unpack}{fmt, string}
   Unpack the string (presumably packed by \code{pack(\var{fmt},
   \textrm{\ldots})}) according to the given format.  The result is a
   tuple even if it contains exactly one item.  The string must contain
   exactly the amount of data required by the format
   (\code{len(\var{string})} must equal \code{calcsize(\var{fmt})}).
+\end{funcdesc}
+
+\begin{funcdesc}{unpack_from}{fmt, buffer\optional{,offset \code{= 0}}}
+  Unpack the \var{buffer} according to tthe given format.
+  The result is a tuple even if it contains exactly one item. The
+  \var{buffer} must contain at least the amount of data required by the
+  format (\code{len(buffer[offset:])} must be at least
+  \code{calcsize(\var{fmt})}).
+
+  \versionadded{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{calcsize}{fmt}
@@ -208,3 +227,43 @@ in effect; standard size and alignment does not enforce any alignment.
   \seemodule{array}{Packed binary storage of homogeneous data.}
   \seemodule{xdrlib}{Packing and unpacking of XDR data.}
 \end{seealso}
+
+\subsection{Struct Objects \label{struct-objects}}
+
+The \module{struct} module also defines the following type:
+
+\begin{classdesc}{Struct}{format}
+  Return a new Struct object which writes and reads binary data according to
+  the format string \var{format}.  Creating a Struct object once and calling
+  its methods is more efficient than calling the \module{struct} functions
+  with the same format since the format string only needs to be compiled once.
+
+ \versionadded{2.5}
+\end{classdesc}
+
+Compiled Struct objects support the following methods and attributes:
+
+\begin{methoddesc}[Struct]{pack}{v1, v2, \moreargs}
+  Identical to the \function{pack()} function, using the compiled format.
+  (\code{len(result)} will equal \member{self.size}.)
+\end{methoddesc}
+
+\begin{methoddesc}[Struct]{pack_into}{buffer, offset, v1, v2, \moreargs}
+  Identical to the \function{pack_into()} function, using the compiled format.
+\end{methoddesc}
+
+\begin{methoddesc}[Struct]{unpack}{string}
+  Identical to the \function{unpack()} function, using the compiled format.
+  (\code{len(string)} must equal \member{self.size}).
+\end{methoddesc}
+
+\begin{methoddesc}[Struct]{unpack_from}{buffer\optional{,offset
+                                              \code{= 0}}}
+  Identical to the \function{unpack_from()} function, using the compiled format.
+  (\code{len(buffer[offset:])} must be at least \member{self.size}).
+\end{methoddesc}
+
+\begin{memberdesc}[Struct]{format}
+  The format string used to construct this Struct object.
+\end{memberdesc}
+

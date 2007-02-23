@@ -552,6 +552,10 @@ class _FilesystemImporter(Importer):
         # This method is only used when we look for a module within a package.
         assert parent
 
+        for submodule_path in parent.__path__:
+            code = self._import_pathname(_os_path_join(submodule_path, modname), fqname)
+            if code is not None:
+                return code
         return self._import_pathname(_os_path_join(parent.__pkgdir__, modname),
                                      fqname)
 

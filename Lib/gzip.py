@@ -106,7 +106,7 @@ class GzipFile:
             self._new_member = True
             self.extrabuf = ""
             self.extrasize = 0
-            self.filename = filename
+            self.name = filename
             # Starts small, scales exponentially
             self.min_readsize = 100
 
@@ -127,14 +127,20 @@ class GzipFile:
         if self.mode == WRITE:
             self._write_gzip_header()
 
+    @property
+    def filename(self):
+        import warnings
+        warnings.warn("use the name attribute", DeprecationWarning)
+        if self.mode == WRITE and self.name[-3:] != ".gz":
+            return self.name + ".gz"
+        return self.name
+
     def __repr__(self):
         s = repr(self.fileobj)
         return '<gzip ' + s[1:-1] + ' ' + hex(id(self)) + '>'
 
     def _init_write(self, filename):
-        if filename[-3:] != '.gz':
-            filename = filename + '.gz'
-        self.filename = filename
+        self.name = filename
         self.crc = zlib.crc32("")
         self.size = 0
         self.writebuf = []
@@ -143,7 +149,9 @@ class GzipFile:
     def _write_gzip_header(self):
         self.fileobj.write('\037\213')             # magic header
         self.fileobj.write('\010')                 # compression method
-        fname = self.filename[:-3]
+        fname = self.name
+        if fname.endswith(".gz"):
+            fname = fname[:-3]
         flags = 0
         if fname:
             flags = FNAME
