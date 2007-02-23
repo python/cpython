@@ -516,3 +516,4 @@ keyword_ty _Py_keyword(identifier arg, expr_ty value, PyArena *arena);
 alias_ty _Py_alias(identifier name, identifier asname, PyArena *arena);
 
 PyObject* PyAST_mod2obj(mod_ty t);
+
