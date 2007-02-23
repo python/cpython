@@ -113,6 +113,37 @@ class UsageTests(unittest.TestCase):
 
     """Test usage of exceptions"""
 
+    def raise_fails(self, object_):
+        """Make sure that raising 'object_' triggers a TypeError."""
+        try:
+            raise object_
+        except TypeError:
+            return  # What is expected.
+        self.fail("TypeError expected for raising %s" % type(object_))
+
+    def catch_fails(self, object_):
+        """Catching 'object_' should raise a TypeError."""
+        try:
+            try:
+                raise StandardError
+            except object_:
+                pass
+        except TypeError:
+            pass
+        except StandardError:
+            self.fail("TypeError expected when catching %s" % type(object_))
+
+        try:
+            try:
+                raise StandardError
+            except (object_,):
+                pass
+        except TypeError:
+            return
+        except StandardError:
+            self.fail("TypeError expected when catching %s as specified in a "
+                        "tuple" % type(object_))
+
     def test_raise_classic(self):
         # Raising a classic class is okay (for now).
         class ClassicClass:
@@ -137,27 +168,12 @@ class UsageTests(unittest.TestCase):
         # inherit from it.
         class NewStyleClass(object):
             pass
-        try:
-            raise NewStyleClass
-        except TypeError:
-            pass
-        except:
-            self.fail("able to raise new-style class")
-        try:
-            raise NewStyleClass()
-        except TypeError:
-            pass
-        except:
-            self.fail("able to raise new-style class instance")
+        self.raise_fails(NewStyleClass)
+        self.raise_fails(NewStyleClass())
 
     def test_raise_string(self):
         # Raising a string raises TypeError.
-        try:
-            raise "spam"
-        except TypeError:
-            pass
-        except:
-            self.fail("was able to raise a string exception")
+        self.raise_fails("spam")
 
     def test_catch_string(self):
         # Catching a string should trigger a DeprecationWarning.
