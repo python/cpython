@@ -267,6 +267,20 @@ class Break(Node):
     def __repr__(self):
         return "Break()"
 
+class Bytes(Node):
+    def __init__(self, value, lineno=None):
+        self.value = value
+        self.lineno = lineno
+
+    def getChildren(self):
+        return self.value,
+
+    def getChildNodes(self):
+        return ()
+
+    def __repr__(self):
+        return "Bytes(%s)" % (repr(self.value),)
+
 class CallFunc(Node):
     def __init__(self, node, args, star_args = None, dstar_args = None, lineno=None):
         self.node = node

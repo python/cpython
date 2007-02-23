@@ -1244,6 +1244,14 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 			if (c == '"' || c == '\'')
 				goto letter_quote;
 			break;
+		case 'b':
+		case 'B':
+			c = tok_nextc(tok);
+			if (c == 'r' || c == 'R')
+				c = tok_nextc(tok);
+			if (c == '"' || c == '\'')
+				goto letter_quote;
+			break;
 		}
 		while (isalnum(c) || c == '_') {
 			c = tok_nextc(tok);

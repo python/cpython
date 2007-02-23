@@ -403,7 +403,19 @@ class BytesTest(unittest.TestCase):
             self.assertEqual(bytes.join(tuple(lst)), bytes("abc"))
             self.assertEqual(bytes.join(iter(lst)), bytes("abc"))
         # XXX more...
-            
+
+    def test_literal(self):
+        tests =  [
+            (b"Wonderful spam", u"Wonderful spam"),
+            (br"Wonderful spam too", u"Wonderful spam too"),
+            (b"\xaa\x00\000\200", u"\xaa\x00\000\200"),
+            (br"\xaa\x00\000\200", ur"\xaa\x00\000\200"),
+        ]
+        for b, s in tests:
+            self.assertEqual(b, bytes(s, 'latin-1'))
+        for c in range(128, 256):
+            self.assertRaises(SyntaxError, eval,
+                              'b"%s"' % chr(c))
 
     # Optimizations:
     # __iter__? (optimization)

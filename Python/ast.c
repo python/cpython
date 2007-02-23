@@ -33,8 +33,9 @@ static expr_ty ast_for_testlist_gexp(struct compiling *, const node *);
 static expr_ty ast_for_call(struct compiling *, const node *, expr_ty);
 
 static PyObject *parsenumber(const char *);
-static PyObject *parsestr(const char *s, const char *encoding);
-static PyObject *parsestrplus(struct compiling *, const node *n);
+static PyObject *parsestr(const node *n, const char *encoding, int *bytesmode);
+static PyObject *parsestrplus(struct compiling *, const node *n,
+                              int *bytesmode);
 
 #ifndef LINENO
 #define LINENO(n)       ((n)->n_lineno)
@@ -1383,6 +1384,7 @@ ast_for_atom(struct compiling *c, const node *n)
        | '{' [dictsetmaker] '}' | NAME | NUMBER | STRING+
     */
     node *ch = CHILD(n, 0);
+    int bytesmode = 0;
     
     switch (TYPE(ch)) {
     case NAME:
@@ -1390,12 +1392,15 @@ ast_for_atom(struct compiling *c, const node *n)
            changed. */
         return Name(NEW_IDENTIFIER(ch), Load, LINENO(n), n->n_col_offset, c->c_arena);
     case STRING: {
-        PyObject *str = parsestrplus(c, n);
+        PyObject *str = parsestrplus(c, n, &bytesmode);
         if (!str)
             return NULL;
 
         PyArena_AddPyObject(c->c_arena, str);
-        return Str(str, LINENO(n), n->n_col_offset, c->c_arena);
+        if (bytesmode)
+            return Bytes(str, LINENO(n), n->n_col_offset, c->c_arena);
+        else
+            return Str(str, LINENO(n), n->n_col_offset, c->c_arena);
     }
     case NUMBER: {
         PyObject *pynum = parsenumber(STR(ch));
@@ -3254,9 +3259,10 @@ decode_unicode(const char *s, size_t len, int rawmode, const char *encoding)
  * parsestr parses it, and returns the decoded Python string object.
  */
 static PyObject *
-parsestr(const char *s, const char *encoding)
+parsestr(const node *n, const char *encoding, int *bytesmode)
 {
         size_t len;
+        const char *s = STR(n);
         int quote = Py_CHARMASK(*s);
         int rawmode = 0;
         int need_encoding;
@@ -3267,6 +3273,10 @@ parsestr(const char *s, const char *encoding)
                         quote = *++s;
                         unicode = 1;
                 }
+                if (quote == 'b' || quote == 'B') {
+                        quote = *++s;
+                        *bytesmode = 1;
+                }             
                 if (quote == 'r' || quote == 'R') {
                         quote = *++s;
                         rawmode = 1;
@@ -3274,6 +3284,10 @@ parsestr(const char *s, const char *encoding)
         }
         if (quote != '\'' && quote != '\"') {
                 PyErr_BadInternalCall();
+                return NULL;
+        }
+        if (unicode && *bytesmode) {
+                ast_error(n, "string cannot be both bytes and unicode");
                 return NULL;
         }
         s++;
@@ -3300,7 +3314,18 @@ parsestr(const char *s, const char *encoding)
                 return decode_unicode(s, len, rawmode, encoding);
         }
 #endif
-        need_encoding = (encoding != NULL &&
+        if (*bytesmode) {
+                /* Disallow non-ascii characters (but not escapes) */
+                const char *c;
+                for (c = s; *c; c++) {
+                        if (Py_CHARMASK(*c) >= 0x80) {
+                                ast_error(n, "bytes can only contain ASCII "
+                                          "literal characters.");
+                                return NULL;
+                        }
+                }
+        }
+        need_encoding = (!*bytesmode && encoding != NULL &&
                          strcmp(encoding, "utf-8") != 0 &&
                          strcmp(encoding, "iso-8859-1") != 0);
         if (rawmode || strchr(s, '\\') == NULL) {
@@ -3332,18 +3357,25 @@ parsestr(const char *s, const char *encoding)
  * pasting the intermediate results together.
  */
 static PyObject *
-parsestrplus(struct compiling *c, const node *n)
+parsestrplus(struct compiling *c, const node *n, int *bytesmode)
 {
         PyObject *v;
         int i;
         REQ(CHILD(n, 0), STRING);
-        if ((v = parsestr(STR(CHILD(n, 0)), c->c_encoding)) != NULL) {
+        v = parsestr(CHILD(n, 0), c->c_encoding, bytesmode);
+        if (v != NULL) {
                 /* String literal concatenation */
                 for (i = 1; i < NCH(n); i++) {
                         PyObject *s;
-                        s = parsestr(STR(CHILD(n, i)), c->c_encoding);
+                        int subbm = 0;
+                        s = parsestr(CHILD(n, i), c->c_encoding, &subbm);
                         if (s == NULL)
                                 goto onError;
+                        if (*bytesmode != subbm) {
+                                ast_error(n, "cannot mix bytes and nonbytes"
+                                          "literals");
+                                goto onError;
+                        }
                         if (PyString_Check(v) && PyString_Check(s)) {
                                 PyString_ConcatAndDel(&v, s);
                                 if (v == NULL)

@@ -930,6 +930,10 @@ class CodeGenerator:
 
     def visitConst(self, node):
         self.emit('LOAD_CONST', node.value)
+    
+    def visitBytes(self, node):
+        self.emit('LOAD_CONST', node.value)
+        self.emit('MAKE_BYTES')
 
     def visitKeyword(self, node):
         self.emit('LOAD_CONST', node.name)
