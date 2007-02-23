@@ -1062,6 +1062,10 @@ class TarFile(object):
         self.mode = {"r": "rb", "a": "r+b", "w": "wb"}[mode]
 
         if not fileobj:
+            if self._mode == "a" and not os.path.exists(self.name):
+                # Create nonexistent files in append mode.
+                self._mode = "w"
+                self.mode = "wb"
             fileobj = _open(self.name, self.mode)
             self._extfileobj = False
         else:
@@ -1095,7 +1099,8 @@ class TarFile(object):
                     self.fileobj.seek(0)
                     break
                 if tarinfo is None:
-                    self.fileobj.seek(- BLOCKSIZE, 1)
+                    if self.offset > 0:
+                        self.fileobj.seek(- BLOCKSIZE, 1)
                     break
 
         if self._mode in "aw":
@@ -1122,7 +1127,7 @@ class TarFile(object):
            'r:'         open for reading exclusively uncompressed
            'r:gz'       open for reading with gzip compression
            'r:bz2'      open for reading with bzip2 compression
-           'a' or 'a:'  open for appending
+           'a' or 'a:'  open for appending, creating the file if necessary
            'w' or 'w:'  open for writing without compression
            'w:gz'       open for writing with gzip compression
            'w:bz2'      open for writing with bzip2 compression

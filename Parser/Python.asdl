@@ -68,7 +68,7 @@ module Python version "$Revision$"
 	     | Subscript(expr value, slice slice, expr_context ctx)
 	     | Name(identifier id, expr_context ctx)
 	     | List(expr* elts, expr_context ctx) 
-	     | Tuple(expr *elts, expr_context ctx)
+	     | Tuple(expr* elts, expr_context ctx)
 
 	      -- col_offset is the byte offset in the utf8 string the parser uses
 	      attributes (int lineno, int col_offset)

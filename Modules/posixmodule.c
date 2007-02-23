@@ -1692,6 +1692,57 @@ posix_chmod(PyObject *self, PyObject *args)
 }
 
 
+#ifdef HAVE_CHFLAGS
+PyDoc_STRVAR(posix_chflags__doc__,
+"chflags(path, flags)\n\n\
+Set file flags.");
+
+static PyObject *
+posix_chflags(PyObject *self, PyObject *args)
+{
+	char *path;
+	unsigned long flags;
+	int res;
+	if (!PyArg_ParseTuple(args, "etk:chflags",
+			      Py_FileSystemDefaultEncoding, &path, &flags))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = chflags(path, flags);
+	Py_END_ALLOW_THREADS
+	if (res < 0)
+		return posix_error_with_allocated_filename(path);
+	PyMem_Free(path);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+#endif /* HAVE_CHFLAGS */
+
+#ifdef HAVE_LCHFLAGS
+PyDoc_STRVAR(posix_lchflags__doc__,
+"lchflags(path, flags)\n\n\
+Set file flags.\n\
+This function will not follow symbolic links.");
+
+static PyObject *
+posix_lchflags(PyObject *self, PyObject *args)
+{
+	char *path;
+	unsigned long flags;
+	int res;
+	if (!PyArg_ParseTuple(args, "etk:lchflags",
+			      Py_FileSystemDefaultEncoding, &path, &flags))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = lchflags(path, flags);
+	Py_END_ALLOW_THREADS
+	if (res < 0)
+		return posix_error_with_allocated_filename(path);
+	PyMem_Free(path);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+#endif /* HAVE_LCHFLAGS */
+
 #ifdef HAVE_CHROOT
 PyDoc_STRVAR(posix_chroot__doc__,
 "chroot(path)\n\n\
@@ -8070,10 +8121,16 @@ static PyMethodDef posix_methods[] = {
 	{"ttyname",	posix_ttyname, METH_VARARGS, posix_ttyname__doc__},
 #endif
 	{"chdir",	posix_chdir, METH_VARARGS, posix_chdir__doc__},
+#ifdef HAVE_CHFLAGS
+	{"chflags",	posix_chflags, METH_VARARGS, posix_chflags__doc__},
+#endif /* HAVE_CHFLAGS */
 	{"chmod",	posix_chmod, METH_VARARGS, posix_chmod__doc__},
 #ifdef HAVE_CHOWN
 	{"chown",	posix_chown, METH_VARARGS, posix_chown__doc__},
 #endif /* HAVE_CHOWN */
+#ifdef HAVE_LCHFLAGS
+	{"lchflags",	posix_lchflags, METH_VARARGS, posix_lchflags__doc__},
+#endif /* HAVE_LCHFLAGS */
 #ifdef HAVE_LCHOWN
 	{"lchown",	posix_lchown, METH_VARARGS, posix_lchown__doc__},
 #endif /* HAVE_LCHOWN */

@@ -66,15 +66,16 @@ two:
 
 \begin{funcdesc}{update_wrapper}
 {wrapper, wrapped\optional{, assigned}\optional{, updated}}
-Update a wrapper function to look like the wrapped function. The optional
-arguments are tuples to specify which attributes of the original
+Update a \var{wrapper} function to look like the \var{wrapped} function.
+The optional arguments are tuples to specify which attributes of the original
 function are assigned directly to the matching attributes on the wrapper
 function and which attributes of the wrapper function are updated with
 the corresponding attributes from the original function. The default
 values for these arguments are the module level constants
-\var{WRAPPER_ASSIGNMENTS} (which assigns to the wrapper function's name,
-module and documentation string) and \var{WRAPPER_UPDATES} (which
-updates the wrapper function's instance dictionary).
+\var{WRAPPER_ASSIGNMENTS} (which assigns to the wrapper function's
+\var{__name__}, \var{__module__} and \var{__doc__}, the documentation string)
+and \var{WRAPPER_UPDATES} (which updates the wrapper function's \var{__dict__},
+i.e. the instance dictionary).
 
 The main intended use for this function is in decorator functions
 which wrap the decorated function and return the wrapper. If the
@@ -98,6 +99,7 @@ as a function decorator when defining a wrapper function. For example:
         ...
         >>> @my_decorator
         ... def example():
+	...     """Docstring"""
         ...     print 'Called example function'
         ...
         >>> example()
@@ -105,9 +107,12 @@ as a function decorator when defining a wrapper function. For example:
         Called example function
         >>> example.__name__
         'example'
+	>>> example.__doc__
+	'Docstring'
   \end{verbatim}
 Without the use of this decorator factory, the name of the example
-function would have been \code{'wrapper'}.
+function would have been \code{'wrapper'}, and the docstring of the
+original \function{example()} would have been lost.
 \end{funcdesc}
 
 

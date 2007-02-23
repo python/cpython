@@ -17,8 +17,10 @@ understanding of the format, as defined in
 {PKZIP Application Note}.
 
 This module does not currently handle ZIP files which have appended
-comments, or multi-disk ZIP files. It can handle ZIP files that use the 
-ZIP64 extensions (that is ZIP files that are more than 4 GByte in size).
+comments, or multi-disk ZIP files. It can handle ZIP files that use
+the ZIP64 extensions (that is ZIP files that are more than 4 GByte in
+size).  It supports decryption of encrypted files in ZIP archives, but
+it cannot currently create an encrypted file.  
 
 The available attributes of this module are:
 
@@ -99,6 +101,8 @@ cat myzip.zip >> python.exe
 \end{verbatim}
 
   also works, and at least \program{WinZip} can read such files.
+  If \var{mode} is \code{a} and the file does not exist at all,
+  it is created.
   \var{compression} is the ZIP compression method to use when writing
   the archive, and should be \constant{ZIP_STORED} or
   \constant{ZIP_DEFLATED}; unrecognized values will cause
@@ -112,6 +116,9 @@ cat myzip.zip >> python.exe
   ZIP file would require ZIP64 extensions. ZIP64 extensions are disabled by
   default because the default \program{zip} and \program{unzip} commands on
   \UNIX{} (the InfoZIP utilities) don't support these extensions.
+
+  \versionchanged[If the file does not exist, it is created if the
+  mode is 'a']{2.6}
 \end{classdesc}
 
 \begin{methoddesc}{close}{}
@@ -138,9 +145,18 @@ cat myzip.zip >> python.exe
   Print a table of contents for the archive to \code{sys.stdout}.
 \end{methoddesc}
 
-\begin{methoddesc}{read}{name}
+\begin{methoddesc}{setpassword}{pwd}
+  Set \var{pwd} as default password to extract encrypted files.
+  \versionadded{2.6}
+\end{methoddesc}
+
+\begin{methoddesc}{read}{name\optional{, pwd}}
   Return the bytes of the file in the archive.  The archive must be
-  open for read or append.
+  open for read or append. \var{pwd} is the password used for encrypted 
+  files and, if specified, it will override the default password set with
+  \method{setpassword()}.
+
+  \versionchanged[\var{pwd} was added]{2.6}
 \end{methoddesc}
 
 \begin{methoddesc}{testzip}{}

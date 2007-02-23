@@ -833,6 +833,34 @@ PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue)
 	return 1;
 }
 
+/* Internal version of PyDict_Next that returns a hash value in addition to the key and value.*/
+int
+_PyDict_Next(PyObject *op, Py_ssize_t *ppos, PyObject **pkey, PyObject **pvalue, long *phash)
+{
+	register Py_ssize_t i;
+	register Py_ssize_t mask;
+	register dictentry *ep;
+
+	if (!PyDict_Check(op))
+		return 0;
+	i = *ppos;
+	if (i < 0)
+		return 0;
+	ep = ((dictobject *)op)->ma_table;
+	mask = ((dictobject *)op)->ma_mask;
+	while (i <= mask && ep[i].me_value == NULL)
+		i++;
+	*ppos = i+1;
+	if (i > mask)
+		return 0;
+        *phash = (long)(ep[i].me_hash);
+	if (pkey)
+		*pkey = ep[i].me_key;
+	if (pvalue)
+		*pvalue = ep[i].me_value;
+	return 1;
+}
+
 /* Methods */
 
 static void
@@ -1336,7 +1364,7 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
 		return -1;
 	}
 	mp = (dictobject*)a;
-	if (PyDict_Check(b)) {
+	if (PyDict_CheckExact(b)) {
 		other = (dictobject*)b;
 		if (other == mp || other->ma_used == 0)
 			/* a.update(a) or a.update({}); nothing to do */
@@ -1905,6 +1933,17 @@ PyDict_Contains(PyObject *op, PyObject *key)
 		if (hash == -1)
 			return -1;
 	}
+	ep = (mp->ma_lookup)(mp, key, hash);
+	return ep == NULL ? -1 : (ep->me_value != NULL);
+}
+
+/* Internal version of PyDict_Contains used when the hash value is already known */
+int
+_PyDict_Contains(PyObject *op, PyObject *key, long hash)
+{
+	dictobject *mp = (dictobject *)op;
+	dictentry *ep;
+
 	ep = (mp->ma_lookup)(mp, key, hash);
 	return ep == NULL ? -1 : (ep->me_value != NULL);
 }

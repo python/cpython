@@ -311,16 +311,20 @@ languages):
 When a letter is first encountered, it is missing from the mapping, so the
 \member{default_factory} function calls \function{int()} to supply a default
 count of zero.  The increment operation then builds up the count for each
-letter. This technique makes counting simpler and faster than an equivalent
-technique using \method{dict.get()}:
+letter.
+
+The function \function{int()} which always returns zero is just a special
+case of constant functions.  A faster and more flexible way to create
+constant functions is to use \function{itertools.repeat()} which can supply
+any constant value (not just zero):
 
 \begin{verbatim}
->>> d = {}
->>> for k in s:
-	d[k] = d.get(k, 0) + 1
-
->>> d.items()
-[('i', 4), ('p', 2), ('s', 4), ('m', 1)]
+>>> def constant_factory(value):
+...     return itertools.repeat(value).next
+>>> d = defaultdict(constant_factory('<missing>'))
+>>> d.update(name='John', action='ran')
+>>> '%(name)s %(action)s to %(object)s' % d
+'John ran to <missing>'
 \end{verbatim}
 
 Setting the \member{default_factory} to \class{set} makes the

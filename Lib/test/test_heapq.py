@@ -1,6 +1,6 @@
 """Unittests for heapq."""
 
-from heapq import heappush, heappop, heapify, heapreplace, nlargest, nsmallest
+from heapq import heappush, heappop, heapify, heapreplace, merge, nlargest, nsmallest
 import random
 import unittest
 from test import test_support
@@ -102,6 +102,29 @@ class TestHeap(unittest.TestCase):
                     heappush(heap, item)
             heap_sorted = [heappop(heap) for i in range(size)]
             self.assertEqual(heap_sorted, sorted(data))
+
+    def test_merge(self):
+        inputs = []
+        for i in xrange(random.randrange(5)):
+            row = sorted(random.randrange(1000) for j in range(random.randrange(10)))
+            inputs.append(row)
+        self.assertEqual(sorted(chain(*inputs)), list(merge(*inputs)))
+        self.assertEqual(list(merge()), [])
+
+    def test_merge_stability(self):
+        class Int(int):
+            pass
+        inputs = [[], [], [], []]
+        for i in range(20000):
+            stream = random.randrange(4)
+            x = random.randrange(500)
+            obj = Int(x)
+            obj.pair = (x, stream)
+            inputs[stream].append(obj)
+        for stream in inputs:
+            stream.sort()
+        result = [i.pair for i in merge(*inputs)]
+        self.assertEqual(result, sorted(result))
 
     def test_nsmallest(self):
         data = [(random.randrange(2000), i) for i in range(1000)]

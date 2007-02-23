@@ -88,7 +88,18 @@ True
 >>>
 \end{verbatim}
 
-The module also offers two general purpose functions based on heaps.
+The module also offers three general purpose functions based on heaps.
+
+\begin{funcdesc}{merge}{*iterables}
+Merge multiple sorted inputs into a single sorted output (for example, merge
+timestamped entries from multiple log files).  Returns an iterator over
+over the sorted values.
+
+Similar to \code{sorted(itertools.chain(*iterables))} but returns an iterable,
+does not pull the data into memory all at once, and assumes that each of the
+input streams is already sorted (smallest to largest).            
+\versionadded{2.6}
+\end{funcdesc}
 
 \begin{funcdesc}{nlargest}{n, iterable\optional{, key}}
 Return a list with the \var{n} largest elements from the dataset defined
@@ -110,7 +121,7 @@ Equivalent to:  \samp{sorted(iterable, key=key)[:n]}
 \versionchanged[Added the optional \var{key} argument]{2.5}
 \end{funcdesc}
 
-Both functions perform best for smaller values of \var{n}.  For larger
+The latter two functions perform best for smaller values of \var{n}.  For larger
 values, it is more efficient to use the \function{sorted()} function.  Also,
 when \code{n==1}, it is more efficient to use the builtin \function{min()}
 and \function{max()} functions.
