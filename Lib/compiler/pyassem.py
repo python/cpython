@@ -792,6 +792,7 @@ class StackDepthTracker:
         'DELETE_ATTR': -1,
         'STORE_GLOBAL': -1,
         'BUILD_MAP': 1,
+        'MAKE_BYTES': 0,
         'COMPARE_OP': -1,
         'STORE_FAST': -1,
         'IMPORT_STAR': -1,

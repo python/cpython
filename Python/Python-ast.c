@@ -2,7 +2,7 @@
 
 
 /*
-   __version__ 53731.
+   __version__ 53866.
 
    This module must be committed separately after each AST grammar change;
    The __version__ number is set to the revision number of the commit
@@ -214,6 +214,10 @@ static char *Num_fields[]={
 };
 static PyTypeObject *Str_type;
 static char *Str_fields[]={
+        "s",
+};
+static PyTypeObject *Bytes_type;
+static char *Bytes_fields[]={
         "s",
 };
 static PyTypeObject *Ellipsis_type;
@@ -547,6 +551,8 @@ static int init_types(void)
         if (!Num_type) return 0;
         Str_type = make_type("Str", expr_type, Str_fields, 1);
         if (!Str_type) return 0;
+        Bytes_type = make_type("Bytes", expr_type, Bytes_fields, 1);
+        if (!Bytes_type) return 0;
         Ellipsis_type = make_type("Ellipsis", expr_type, NULL, 0);
         if (!Ellipsis_type) return 0;
         Attribute_type = make_type("Attribute", expr_type, Attribute_fields, 3);
@@ -1587,6 +1593,27 @@ Str(string s, int lineno, int col_offset, PyArena *arena)
 }
 
 expr_ty
+Bytes(string s, int lineno, int col_offset, PyArena *arena)
+{
+        expr_ty p;
+        if (!s) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field s is required for Bytes");
+                return NULL;
+        }
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p) {
+                PyErr_NoMemory();
+                return NULL;
+        }
+        p->kind = Bytes_kind;
+        p->v.Bytes.s = s;
+        p->lineno = lineno;
+        p->col_offset = col_offset;
+        return p;
+}
+
+expr_ty
 Ellipsis(int lineno, int col_offset, PyArena *arena)
 {
         expr_ty p;
@@ -2550,6 +2577,15 @@ ast2obj_expr(void* _o)
                         goto failed;
                 Py_DECREF(value);
                 break;
+        case Bytes_kind:
+                result = PyType_GenericNew(Bytes_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_string(o->v.Bytes.s);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "s", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                break;
         case Ellipsis_kind:
                 result = PyType_GenericNew(Ellipsis_type, NULL, NULL);
                 if (!result) goto failed;
@@ -3089,7 +3125,7 @@ init_ast(void)
         if (PyDict_SetItemString(d, "AST", (PyObject*)AST_type) < 0) return;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return;
-        if (PyModule_AddStringConstant(m, "__version__", "53731") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "53866") < 0)
                 return;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return;
         if (PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0)
@@ -3155,6 +3191,7 @@ init_ast(void)
         if (PyDict_SetItemString(d, "Call", (PyObject*)Call_type) < 0) return;
         if (PyDict_SetItemString(d, "Num", (PyObject*)Num_type) < 0) return;
         if (PyDict_SetItemString(d, "Str", (PyObject*)Str_type) < 0) return;
+        if (PyDict_SetItemString(d, "Bytes", (PyObject*)Bytes_type) < 0) return;
         if (PyDict_SetItemString(d, "Ellipsis", (PyObject*)Ellipsis_type) < 0)
             return;
         if (PyDict_SetItemString(d, "Attribute", (PyObject*)Attribute_type) <

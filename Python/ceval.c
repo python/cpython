@@ -1885,6 +1885,19 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			PUSH(x);
 			if (x != NULL) continue;
 			break;
+		
+		case MAKE_BYTES:
+			w = POP();
+			if (PyString_Check(w))
+				x = PyBytes_FromStringAndSize(
+					PyString_AS_STRING(w),
+					PyString_GET_SIZE(w));
+			else
+				x = NULL;
+			Py_DECREF(w);
+			PUSH(x);
+			if (x != NULL) continue;
+			break;
 
 		case LOAD_ATTR:
 			w = GETITEM(names, oparg);

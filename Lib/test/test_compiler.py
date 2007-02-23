@@ -187,6 +187,30 @@ class CompilerTest(unittest.TestCase):
         exec(c, dct)
         self.assertEquals(dct.get('result'), 1)
 
+    def testBytesLiteral(self):
+        c = compiler.compile("b'foo'", '<string>', 'eval')
+        b = eval(c)
+        
+        c = compiler.compile('def f(b=b"foo"):\n'
+                             '    b[0] += 1\n'
+                             '    return b\n'
+                             'f(); f(); result = f()\n',
+                             '<string>',
+                             'exec')
+        dct = {}
+        exec(c, dct)
+        self.assertEquals(dct.get('result'), b"ioo")
+        
+        c = compiler.compile('def f():\n'
+                             '    b = b"foo"\n'
+                             '    b[0] += 1\n'
+                             '    return b\n'
+                             'f(); f(); result = f()\n',
+                             '<string>',
+                             'exec')
+        dct = {}
+        exec(c, dct)
+        self.assertEquals(dct.get('result'), b"goo")
 
 NOLINENO = (compiler.ast.Module, compiler.ast.Stmt, compiler.ast.Discard)
 

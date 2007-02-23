@@ -745,9 +745,11 @@ class Transformer:
             return eval(lit)
 
     def atom_string(self, nodelist):
-        k = ''
-        for node in nodelist:
+        k = self.decode_literal(nodelist[0][1])
+        for node in nodelist[1:]:
             k += self.decode_literal(node[1])
+        if isinstance(k, bytes):
+          return Bytes(str(k), lineno=nodelist[0][2])
         return Const(k, lineno=nodelist[0][2])
 
     def atom_ellipsis(self, nodelist):
