@@ -69,9 +69,11 @@ class BytesTest(unittest.TestCase):
         self.assertRaises(ValueError, bytes, [10**100])
 
     def test_repr(self):
-        self.assertEqual(repr(bytes()), "bytes()")
-        self.assertEqual(repr(bytes([0])), "bytes([0x00])")
-        self.assertEqual(repr(bytes([0, 1, 254, 255])), "bytes([0x00, 0x01, 0xfe, 0xff])")
+        self.assertEqual(repr(bytes()), "b''")
+        self.assertEqual(repr(bytes([0])), "b'\\0'")
+        self.assertEqual(repr(bytes([0, 1, 254, 255])), "b'\\0\\x01\\xfe\\xff'")
+        self.assertEqual(repr(bytes('abc')), "b'abc'")
+        self.assertEqual(repr(bytes("'")), "b'\\''")
 
     def test_compare(self):
         b1 = bytes([1, 2, 3])

@@ -733,65 +733,63 @@ bytes_init(PyBytesObject *self, PyObject *args, PyObject *kwds)
     return -1;
 }
 
+/* Mostly copied from string_repr, but without the
+   "smart quote" functionality. */
 static PyObject *
 bytes_repr(PyBytesObject *self)
 {
-    PyObject *list;
-    PyObject *str;
-    PyObject *result;
-    int err;
-    int i;
-
-    if (self->ob_size == 0)
-        return PyString_FromString("bytes()");
-
-    list = PyList_New(0);
-    if (list == NULL)
+    size_t newsize = 3 + 4 * self->ob_size;
+    PyObject *v;
+    if (newsize > PY_SSIZE_T_MAX || newsize / 4 != self->ob_size) {
+        PyErr_SetString(PyExc_OverflowError,
+            "bytes object is too large to make repr");
         return NULL;
-
-    str = PyString_FromString("bytes([");
-    if (str == NULL)
-        goto error;
-
-    err = PyList_Append(list, str);
-    Py_DECREF(str);
-    if (err < 0)
-        goto error;
-
-    for (i = 0; i < self->ob_size; i++) {
-        char buffer[20];
-        sprintf(buffer, ", 0x%02x", (unsigned char) (self->ob_bytes[i]));
-        str = PyString_FromString((i == 0) ? buffer+2 : buffer);
-        if (str == NULL)
-            goto error;
-        err = PyList_Append(list, str);
-        Py_DECREF(str);
-        if (err < 0)
-            goto error;
     }
+    v = PyString_FromStringAndSize((char *)NULL, newsize);
+    if (v == NULL) {
+        return NULL;
+    }
+    else {
+        register Py_ssize_t i;
+        register char c;
+        register char *p;
+        int quote = '\'';
 
-    str = PyString_FromString("])");
-    if (str == NULL)
-        goto error;
-
-    err = PyList_Append(list, str);
-    Py_DECREF(str);
-    if (err < 0)
-        goto error;
-    
-    str = PyString_FromString("");
-    if (str == NULL)
-        goto error;
-
-    result = _PyString_Join(str, list);
-    Py_DECREF(str);
-    Py_DECREF(list);
-    return result;
-
- error:
-    /* Error handling when list != NULL  */
-    Py_DECREF(list);
-    return NULL;
+        p = PyString_AS_STRING(v);
+        *p++ = 'b';
+        *p++ = quote;
+        for (i = 0; i < self->ob_size; i++) {
+            /* There's at least enough room for a hex escape
+               and a closing quote. */
+            assert(newsize - (p - PyString_AS_STRING(v)) >= 5);
+            c = self->ob_bytes[i];
+            if (c == quote || c == '\\')
+                *p++ = '\\', *p++ = c;
+            else if (c == '\t')
+                *p++ = '\\', *p++ = 't';
+            else if (c == '\n')
+                *p++ = '\\', *p++ = 'n';
+            else if (c == '\r')
+                *p++ = '\\', *p++ = 'r';
+            else if (c == 0)
+                *p++ = '\\', *p++ = '0';
+            else if (c < ' ' || c >= 0x7f) {
+                /* For performance, we don't want to call
+                   PyOS_snprintf here (extra layers of
+                   function call). */
+                sprintf(p, "\\x%02x", c & 0xff);
+                                p += 4;
+            }
+            else
+                *p++ = c;
+        }
+        assert(newsize - (p - PyString_AS_STRING(v)) >= 1);
+        *p++ = quote;
+        *p = '\0';
+        _PyString_Resize(
+            &v, (p - PyString_AS_STRING(v)));
+        return v;
+    }
 }
 
 static PyObject *
