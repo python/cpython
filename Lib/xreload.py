@@ -55,22 +55,22 @@ def xreload(mod):
     finally:
         if stream:
             stream.close()
-    # Execute the code in a temporary namespace; if this fails, no changes
-    tmpns = {}
-    exec(code, tmpns)
+    # Execute the code.  We copy the module dict to a temporary; then
+    # clear the module dict; then execute the new code in the module
+    # dict; then swap things back and around.  This trick (due to
+    # Glyph Lefkowitz) ensures that the (readonly) __globals__
+    # attribute of methods and functions is set to the correct dict
+    # object.
+    tmpns = modns.copy()
+    modns.clear()
+    modns["__name__"] = tmpns["__name__"]
+    exec(code, modns)
     # Now we get to the hard part
-    oldnames = set(modns)
-    newnames = set(tmpns)
-    # Add newly introduced names
-    for name in newnames - oldnames:
-        modns[name] = tmpns[name]
-    # Delete names that are no longer current
-    # XXX What to do about renamed objects?
-    for name in oldnames - newnames - {"__name__"}:
-        del modns[name]
-    # Now update the rest in place
+    oldnames = set(tmpns)
+    newnames = set(modns)
+    # Update attributes in place
     for name in oldnames & newnames:
-        modns[name] = _update(modns[name], tmpns[name])
+        modns[name] = _update(tmpns[name], modns[name])
     # Done!
     return mod
 
