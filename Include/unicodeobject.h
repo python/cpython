@@ -392,7 +392,8 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyUnicode_Type;
 
-#define PyUnicode_Check(op) PyObject_TypeCheck(op, &PyUnicode_Type)
+#define PyUnicode_Check(op) \
+                 PyType_FastSubclass((op)->ob_type, Py_TPFLAGS_UNICODE_SUBCLASS)
 #define PyUnicode_CheckExact(op) ((op)->ob_type == &PyUnicode_Type)
 
 /* Fast access macros */

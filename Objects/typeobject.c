@@ -2288,7 +2288,7 @@ PyTypeObject PyType_Type = {
 	(setattrofunc)type_setattro,		/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-		Py_TPFLAGS_BASETYPE,		/* tp_flags */
+		Py_TPFLAGS_BASETYPE | Py_TPFLAGS_TYPE_SUBCLASS,	/* tp_flags */
 	type_doc,				/* tp_doc */
 	(traverseproc)type_traverse,		/* tp_traverse */
 	(inquiry)type_clear,			/* tp_clear */
@@ -2967,6 +2967,26 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_CLASS) {
 		COPYVAL(tp_dictoffset);
 	}
+
+	/* Setup fast subclass flags */
+	if (PyType_IsSubtype(base, (PyTypeObject*)PyExc_BaseException))
+		type->tp_flags |= Py_TPFLAGS_BASE_EXC_SUBCLASS;
+	else if (PyType_IsSubtype(base, &PyType_Type))
+		type->tp_flags |= Py_TPFLAGS_TYPE_SUBCLASS;
+	else if (PyType_IsSubtype(base, &PyInt_Type))
+		type->tp_flags |= Py_TPFLAGS_INT_SUBCLASS;
+	else if (PyType_IsSubtype(base, &PyLong_Type))
+		type->tp_flags |= Py_TPFLAGS_LONG_SUBCLASS;
+	else if (PyType_IsSubtype(base, &PyString_Type))
+		type->tp_flags |= Py_TPFLAGS_STRING_SUBCLASS;
+	else if (PyType_IsSubtype(base, &PyUnicode_Type))
+		type->tp_flags |= Py_TPFLAGS_UNICODE_SUBCLASS;
+	else if (PyType_IsSubtype(base, &PyTuple_Type))
+		type->tp_flags |= Py_TPFLAGS_TUPLE_SUBCLASS;
+	else if (PyType_IsSubtype(base, &PyList_Type))
+		type->tp_flags |= Py_TPFLAGS_LIST_SUBCLASS;
+	else if (PyType_IsSubtype(base, &PyDict_Type))
+		type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
 }
 
 static void

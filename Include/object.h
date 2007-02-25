@@ -376,7 +376,8 @@ PyAPI_DATA(PyTypeObject) PyType_Type; /* built-in 'type' */
 PyAPI_DATA(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
 PyAPI_DATA(PyTypeObject) PySuper_Type; /* built-in 'super' */
 
-#define PyType_Check(op) PyObject_TypeCheck(op, &PyType_Type)
+#define PyType_Check(op) \
+	PyType_FastSubclass((op)->ob_type, Py_TPFLAGS_TYPE_SUBCLASS)
 #define PyType_CheckExact(op) ((op)->ob_type == &PyType_Type)
 
 PyAPI_FUNC(int) PyType_Ready(PyTypeObject *);
@@ -517,6 +518,17 @@ given type object has a specified feature.
 /* Objects support nb_index in PyNumberMethods */
 #define Py_TPFLAGS_HAVE_INDEX (1L<<17)
 
+/* These flags are used to determine if a type is a subclass. */
+#define Py_TPFLAGS_INT_SUBCLASS		(1L<<23)
+#define Py_TPFLAGS_LONG_SUBCLASS	(1L<<24)
+#define Py_TPFLAGS_LIST_SUBCLASS	(1L<<25)
+#define Py_TPFLAGS_TUPLE_SUBCLASS	(1L<<26)
+#define Py_TPFLAGS_STRING_SUBCLASS	(1L<<27)
+#define Py_TPFLAGS_UNICODE_SUBCLASS	(1L<<28)
+#define Py_TPFLAGS_DICT_SUBCLASS	(1L<<29)
+#define Py_TPFLAGS_BASE_EXC_SUBCLASS	(1L<<30)
+#define Py_TPFLAGS_TYPE_SUBCLASS	(1L<<31)
+
 #define Py_TPFLAGS_DEFAULT  ( \
                              Py_TPFLAGS_HAVE_GETCHARBUFFER | \
                              Py_TPFLAGS_HAVE_SEQUENCE_IN | \
@@ -530,6 +542,7 @@ given type object has a specified feature.
                             0)
 
 #define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)
+#define PyType_FastSubclass(t,f)  PyType_HasFeature(t,f)
 
 
 /*
