@@ -565,14 +565,12 @@ PyNumber_Multiply(PyObject *v, PyObject *w)
 PyObject *
 PyNumber_FloorDivide(PyObject *v, PyObject *w)
 {
-	/* XXX tp_flags test */
 	return binary_op(v, w, NB_SLOT(nb_floor_divide), "//");
 }
 
 PyObject *
 PyNumber_TrueDivide(PyObject *v, PyObject *w)
 {
-	/* XXX tp_flags test */
 	return binary_op(v, w, NB_SLOT(nb_true_divide), "/");
 }
 
@@ -649,7 +647,6 @@ INPLACE_BINOP(PyNumber_InPlaceSubtract, nb_inplace_subtract, nb_subtract, "-=")
 PyObject *
 PyNumber_InPlaceFloorDivide(PyObject *v, PyObject *w)
 {
-	/* XXX tp_flags test */
 	return binary_iop(v, w, NB_SLOT(nb_inplace_floor_divide),
 			  NB_SLOT(nb_floor_divide), "//=");
 }
@@ -657,7 +654,6 @@ PyNumber_InPlaceFloorDivide(PyObject *v, PyObject *w)
 PyObject *
 PyNumber_InPlaceTrueDivide(PyObject *v, PyObject *w)
 {
-	/* XXX tp_flags test */
 	return binary_iop(v, w, NB_SLOT(nb_inplace_true_divide),
 			  NB_SLOT(nb_true_divide), "/=");
 }
