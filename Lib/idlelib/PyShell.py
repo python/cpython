@@ -722,6 +722,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                     master=self.tkconsole.text):
                     raise
                 else:
+                    self.showtraceback()
             else:
                 raise
         except:
