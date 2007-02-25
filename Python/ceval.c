@@ -4202,6 +4202,8 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 	else if (PyFile_Check(prog)) {
 		FILE *fp = PyFile_AsFile(prog);
 		char *name = PyString_AsString(PyFile_Name(prog));
+                if (name == NULL)
+                        return -1;
 		PyCompilerFlags cf;
 		cf.cf_flags = 0;
 		if (PyEval_MergeCompilerFlags(&cf))

@@ -121,6 +121,7 @@ Core and builtins
 
 - with and as are now keywords.
 
+- Bug #1664966: Fix crash in exec if Unicode filename can't be decoded.
 
 Library
 -------
