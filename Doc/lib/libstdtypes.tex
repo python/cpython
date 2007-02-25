@@ -1964,10 +1964,10 @@ Code objects are used by the implementation to represent
 They differ from function objects because they don't contain a
 reference to their global execution environment.  Code objects are
 returned by the built-in \function{compile()} function and can be
-extracted from function objects through their \member{func_code}
+extracted from function objects through their \member{__code__}
 attribute.
 \bifuncindex{compile}
-\withsubitem{(function object attribute)}{\ttindex{func_code}}
+\withsubitem{(function object attribute)}{\ttindex{__code__}}
 
 A code object can be executed or evaluated by passing it (instead of a
 source string) to the \function{exec()} or \function{eval()} 

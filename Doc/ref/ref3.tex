@@ -473,42 +473,42 @@ parameter list.
 Special attributes: 
 
 \begin{tableiii}{lll}{member}{Attribute}{Meaning}{}
-  \lineiii{func_doc}{The function's documentation string, or
+  \lineiii{__doc__}{The function's documentation string, or
     \code{None} if unavailable}{Writable}
 
-  \lineiii{__doc__}{Another way of spelling
-    \member{func_doc}}{Writable}
-
-  \lineiii{func_name}{The function's name}{Writable}
-
-  \lineiii{__name__}{Another way of spelling
-    \member{func_name}}{Writable}
+  \lineiii{__name__}{The function's name}{Writable}
 
   \lineiii{__module__}{The name of the module the function was defined
     in, or \code{None} if unavailable.}{Writable}
 
-  \lineiii{func_defaults}{A tuple containing default argument values
+  \lineiii{__defaults__}{A tuple containing default argument values
     for those arguments that have defaults, or \code{None} if no
     arguments have a default value}{Writable}
 
-  \lineiii{func_code}{The code object representing the compiled
+  \lineiii{__code__}{The code object representing the compiled
     function body.}{Writable}
 
-  \lineiii{func_globals}{A reference to the dictionary that holds the
+  \lineiii{__globals__}{A reference to the dictionary that holds the
     function's global variables --- the global namespace of the module
     in which the function was defined.}{Read-only}
 
-  \lineiii{func_dict}{The namespace supporting arbitrary function
+  \lineiii{__dict__}{The namespace supporting arbitrary function
     attributes.}{Writable}
 
-  \lineiii{func_closure}{\code{None} or a tuple of cells that contain
+  \lineiii{__closure__}{\code{None} or a tuple of cells that contain
     bindings for the function's free variables.}{Read-only}
+
+  \lineiii{__annotations__}{A dict containing annotations of parameters.}
+    {Writable}
+
+  \lineiii{__kwdefaults__}{A dict containing defaults for keyword-only
+    parameters.}{Writable}
 \end{tableiii}
 
 Most of the attributes labelled ``Writable'' check the type of the
 assigned value.
 
-\versionchanged[\code{func_name} is now writable]{2.4}
+\versionchanged[\code{__name__} is now writable]{2.4}
 
 Function objects also support getting and setting arbitrary
 attributes, which can be used, for example, to attach metadata to
@@ -521,16 +521,16 @@ Additional information about a function's definition can be retrieved
 from its code object; see the description of internal types below.
 
 \withsubitem{(function attribute)}{
-  \ttindex{func_doc}
   \ttindex{__doc__}
   \ttindex{__name__}
   \ttindex{__module__}
   \ttindex{__dict__}
-  \ttindex{func_defaults}
-  \ttindex{func_closure}
-  \ttindex{func_code}
-  \ttindex{func_globals}
-  \ttindex{func_dict}}
+  \ttindex{__defaults__}
+  \ttindex{__closure__}
+  \ttindex{__code__}
+  \ttindex{__globals__}
+  \ttindex{__annotations__}
+  \ttindex{__kwdefaults__}
 \indexii{global}{namespace}
 
 \item[User-defined methods]
@@ -700,7 +700,7 @@ Modules are imported by the \keyword{import} statement (see
 section~\ref{import}, ``The \keyword{import} statement'').%
 \stindex{import}\obindex{module}
 A module object has a namespace implemented by a dictionary object
-(this is the dictionary referenced by the func_globals attribute of
+(this is the dictionary referenced by the __globals__ attribute of
 functions defined in the module).  Attribute references are translated
 to lookups in this dictionary, e.g., \code{m.x} is equivalent to
 \code{m.__dict__["x"]}.

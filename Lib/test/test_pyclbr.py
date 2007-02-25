@@ -140,7 +140,7 @@ class PyclbrTest(TestCase):
             if isinstance(item, ClassType):
                 return item.__module__ == module.__name__
             if isinstance(item, FunctionType):
-                return item.func_globals is module.__dict__
+                return item.__globals__ is module.__dict__
             return False
         for name in dir(module):
             item = getattr(module, name)

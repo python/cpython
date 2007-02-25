@@ -79,18 +79,18 @@ class NewTest(unittest.TestCase):
                 return x + y
             return g
         g = f(4)
-        new.function(f.func_code, {}, "blah")
-        g2 = new.function(g.func_code, {}, "blah", (2,), g.func_closure)
+        new.function(f.__code__, {}, "blah")
+        g2 = new.function(g.__code__, {}, "blah", (2,), g.__closure__)
         self.assertEqual(g2(), 6)
-        g3 = new.function(g.func_code, {}, "blah", None, g.func_closure)
+        g3 = new.function(g.__code__, {}, "blah", None, g.__closure__)
         self.assertEqual(g3(5), 9)
         def test_closure(func, closure, exc):
-            self.assertRaises(exc, new.function, func.func_code, {}, "", None, closure)
+            self.assertRaises(exc, new.function, func.__code__, {}, "", None, closure)
 
         test_closure(g, None, TypeError) # invalid closure
         test_closure(g, (1,), TypeError) # non-cell in closure
         test_closure(g, (1, 1), ValueError) # closure is wrong size
-        test_closure(f, g.func_closure, ValueError) # no closure needed
+        test_closure(f, g.__closure__, ValueError) # no closure needed
 
     # Note: Jython will never have new.code()
     if hasattr(new, 'code'):
@@ -98,7 +98,7 @@ class NewTest(unittest.TestCase):
             # bogus test of new.code()
             def f(a): pass
 
-            c = f.func_code
+            c = f.__code__
             argcount = c.co_argcount
             kwonlyargcount = c.co_kwonlyargcount
             nlocals = c.co_nlocals

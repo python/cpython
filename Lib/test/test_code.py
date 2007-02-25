@@ -6,7 +6,7 @@
 ...     return g
 ...
 
->>> dump(f.func_code)
+>>> dump(f.__code__)
 name: f
 argcount: 1
 kwonlyargcount: 0
@@ -18,7 +18,7 @@ nlocals: 2
 flags: 3
 consts: ('None', '<code object g>')
 
->>> dump(f(4).func_code)
+>>> dump(f(4).__code__)
 name: g
 argcount: 1
 kwonlyargcount: 0
@@ -37,7 +37,7 @@ consts: ('None',)
 ...     return c
 ...
 
->>> dump(h.func_code)
+>>> dump(h.__code__)
 name: h
 argcount: 2
 kwonlyargcount: 0
@@ -54,7 +54,7 @@ consts: ('None',)
 ...     print(obj.attr2)
 ...     print(obj.attr3)
 
->>> dump(attrs.func_code)
+>>> dump(attrs.__code__)
 name: attrs
 argcount: 1
 kwonlyargcount: 0
@@ -72,7 +72,7 @@ consts: ('None',)
 ...     53
 ...     0x53
 
->>> dump(optimize_away.func_code)
+>>> dump(optimize_away.__code__)
 name: optimize_away
 argcount: 0
 kwonlyargcount: 0
@@ -88,7 +88,7 @@ consts: ("'doc string'", 'None')
 ...     return a,b,k1
 ...
 
->>> dump(keywordonly_args.func_code)
+>>> dump(keywordonly_args.__code__)
 name: keywordonly_args
 argcount: 2
 kwonlyargcount: 1

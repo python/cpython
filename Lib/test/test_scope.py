@@ -518,10 +518,10 @@ self.assert_(X.passed)
             return lambda: x + 1
 
         g = f(3)
-        self.assertRaises(TypeError, eval, g.func_code)
+        self.assertRaises(TypeError, eval, g.__code__)
 
         try:
-            exec(g.func_code, {})
+            exec(g.__code__, {})
         except TypeError:
             pass
         else:

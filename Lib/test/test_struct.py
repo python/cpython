@@ -54,7 +54,7 @@ def with_warning_restore(func):
             # Grrr, we need this function to warn every time.  Without removing
             # the warningregistry, running test_tarfile then test_struct would fail
             # on 64-bit platforms.
-            globals = func.func_globals
+            globals = func.__globals__
             if '__warningregistry__' in globals:
                 del globals['__warningregistry__']
             warnings.filterwarnings("error", r"""^struct.*""", DeprecationWarning)

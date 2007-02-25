@@ -144,7 +144,7 @@ class ExceptionTestCase(unittest.TestCase):
 
 class CodeTestCase(unittest.TestCase):
     def test_code(self):
-        co = ExceptionTestCase.test_exceptions.func_code
+        co = ExceptionTestCase.test_exceptions.__code__
         new = marshal.loads(marshal.dumps(co))
         self.assertEqual(co, new)
 

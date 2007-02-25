@@ -47,7 +47,7 @@ else: raise TestFailed, 'func.__dict__ = None expected TypeError'
 
 d = {'hello': 'world'}
 b.__dict__ = d
-if b.func_dict is not d:
+if b.__dict__ is not d:
     raise TestFailed, 'func.__dict__ assignment to dictionary failed'
 if b.hello != 'world':
     raise TestFailed, 'attribute after func.__dict__ assignment failed'
@@ -179,12 +179,12 @@ except TypeError: pass
 else: raise TestFailed
 
 try:
-    del another.func_dict
+    del another.__dict__
 except TypeError: pass
 else: raise TestFailed
 
 try:
-    another.func_dict = None
+    another.__dict__ = None
 except TypeError: pass
 else: raise TestFailed
 
@@ -195,7 +195,7 @@ else: raise TestFailed
 
 # This isn't specifically related to function attributes, but it does test a
 # core dump regression in funcobject.c
-del another.func_defaults
+del another.__defaults__
 
 def foo():
     pass
@@ -212,7 +212,7 @@ if foo==bar:
 d={}
 d[foo] = 1
 
-foo.func_code = temp.func_code
+foo.__code__ = temp.__code__
 
 d[foo]
 
@@ -236,45 +236,31 @@ def cantset(obj, name, value, exception=(AttributeError, TypeError)):
 def test_func_closure():
     a = 12
     def f(): print(a)
-    c = f.func_closure
+    c = f.__closure__
     verify(isinstance(c, tuple))
     verify(len(c) == 1)
     verify(c[0].__class__.__name__ == "cell") # don't have a type object handy
-    cantset(f, "func_closure", c)
+    cantset(f, "__closure__", c)
 
 def test_func_doc():
     def f(): pass
     verify(f.__doc__ is None)
-    verify(f.func_doc is None)
     f.__doc__ = "hello"
     verify(f.__doc__ == "hello")
-    verify(f.func_doc == "hello")
     del f.__doc__
-    verify(f.__doc__ is None)
-    verify(f.func_doc is None)
-    f.func_doc = "world"
-    verify(f.__doc__ == "world")
-    verify(f.func_doc == "world")
-    del f.func_doc
-    verify(f.func_doc is None)
     verify(f.__doc__ is None)
 
 def test_func_globals():
     def f(): pass
-    verify(f.func_globals is globals())
-    cantset(f, "func_globals", globals())
+    verify(f.__globals__ is globals())
+    cantset(f, "__globals__", globals())
 
 def test_func_name():
     def f(): pass
     verify(f.__name__ == "f")
-    verify(f.func_name == "f")
     f.__name__ = "g"
     verify(f.__name__ == "g")
-    verify(f.func_name == "g")
-    f.func_name = "h"
-    verify(f.__name__ == "h")
-    verify(f.func_name == "h")
-    cantset(f, "func_globals", 1)
+    cantset(f, "__globals__", 1)
     cantset(f, "__name__", 1)
     # test that you can access func.__name__ in restricted mode
     s = """def f(): pass\nf.__name__"""
@@ -288,25 +274,25 @@ def test_func_code():
     def f1(): print(a)
     def g1(): print(b)
     def f2(): print(a, b)
-    verify(type(f.func_code) is types.CodeType)
-    f.func_code = g.func_code
-    cantset(f, "func_code", None)
+    verify(type(f.__code__) is types.CodeType)
+    f.__code__ = g.__code__
+    cantset(f, "__code__", None)
     # can't change the number of free vars
-    cantset(f,  "func_code", f1.func_code, exception=ValueError)
-    cantset(f1, "func_code",  f.func_code, exception=ValueError)
-    cantset(f1, "func_code", f2.func_code, exception=ValueError)
-    f1.func_code = g1.func_code
+    cantset(f,  "__code__", f1.__code__, exception=ValueError)
+    cantset(f1, "__code__",  f.__code__, exception=ValueError)
+    cantset(f1, "__code__", f2.__code__, exception=ValueError)
+    f1.__code__ = g1.__code__
 
 def test_func_defaults():
     def f(a, b): return (a, b)
-    verify(f.func_defaults is None)
-    f.func_defaults = (1, 2)
-    verify(f.func_defaults == (1, 2))
+    verify(f.__defaults__ is None)
+    f.__defaults__ = (1, 2)
+    verify(f.__defaults__ == (1, 2))
     verify(f(10) == (10, 2))
     def g(a=1, b=2): return (a, b)
-    verify(g.func_defaults == (1, 2))
-    del g.func_defaults
-    verify(g.func_defaults is None)
+    verify(g.__defaults__ == (1, 2))
+    del g.__defaults__
+    verify(g.__defaults__ is None)
     try:
         g()
     except TypeError:
@@ -317,18 +303,13 @@ def test_func_defaults():
 def test_func_dict():
     def f(): pass
     a = f.__dict__
-    b = f.func_dict
     verify(a == {})
-    verify(a is b)
     f.hello = 'world'
     verify(a == {'hello': 'world'})
-    verify(f.func_dict is a is f.__dict__)
-    f.func_dict = {}
-    verify(not hasattr(f, "hello"))
+    verify(a is f.__dict__)
     f.__dict__ = {'world': 'hello'}
     verify(f.world == "hello")
-    verify(f.__dict__ is f.func_dict == {'world': 'hello'})
-    cantset(f, "func_dict", None)
+    verify(f.__dict__ == {'world': 'hello'})
     cantset(f, "__dict__", None)
 
 def test_im_class():

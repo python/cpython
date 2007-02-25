@@ -158,7 +158,7 @@ def _test():
     else:
         print "accessible"
     try:
-        print "b._get_.func_defaults =", map(type, b._get_.func_defaults),
+        print "b._get_.__defaults__ =", map(type, b._get_.__defaults__),
     except:
         print "inaccessible"
     else:

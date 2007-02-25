@@ -274,6 +274,6 @@ for name in ['za', 'zade', 'zabk', 'zabdv', 'zabdevk']:
         for kwargs in ['', 'a', 'd', 'ad', 'abde']:
             kwdict = {}
             for k in kwargs: kwdict[k] = k + k
-            print(func.func_name, args, sortdict(kwdict), '->', end=' ')
+            print(func.__name__, args, sortdict(kwdict), '->', end=' ')
             try: func(*args, **kwdict)
             except TypeError as err: print(err)

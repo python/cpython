@@ -147,15 +147,15 @@ def get_arg_text(ob):
             fob = ob
         # Try to build one for Python defined functions
         if type(fob) in [types.FunctionType, types.LambdaType]:
-            argcount = fob.func_code.co_argcount
-            real_args = fob.func_code.co_varnames[arg_offset:argcount]
-            defaults = fob.func_defaults or []
+            argcount = fob.__code__.co_argcount
+            real_args = fob.__code__.co_varnames[arg_offset:argcount]
+            defaults = fob.__defaults__ or []
             defaults = list(map(lambda name: "=%s" % repr(name), defaults))
             defaults = [""] * (len(real_args) - len(defaults)) + defaults
             items = map(lambda arg, dflt: arg + dflt, real_args, defaults)
-            if fob.func_code.co_flags & 0x4:
+            if fob.__code__.co_flags & 0x4:
                 items.append("...")
-            if fob.func_code.co_flags & 0x8:
+            if fob.__code__.co_flags & 0x8:
                 items.append("***")
             arg_text = ", ".join(items)
             arg_text = "(%s)" % re.sub("\.\d+", "<tuple>", arg_text)

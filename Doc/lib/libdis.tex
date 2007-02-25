@@ -622,7 +622,7 @@ default parameters, which are found below TOS.
 \end{opcodedesc}
 
 \begin{opcodedesc}{MAKE_CLOSURE}{argc}
-Creates a new function object, sets its \var{func_closure} slot, and
+Creates a new function object, sets its \var{__closure__} slot, and
 pushes it on the stack.  TOS is the code associated with the function.
 If the code object has N free variables, the next N items on the stack
 are the cells for these variables.  The function also has \var{argc}

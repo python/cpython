@@ -262,7 +262,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             func = getattr(self, 'do_' + cmd)
         except AttributeError:
             func = self.default
-        if func.func_name in self.commands_resuming : # one of the resuming commands.
+        if func.__name__ in self.commands_resuming : # one of the resuming commands.
             self.commands_doprompt[self.commands_bnum] = False
             self.cmdqueue = []
             return 1
@@ -347,7 +347,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 try:
                     if hasattr(func, 'im_func'):
                         func = func.im_func
-                    code = func.func_code
+                    code = func.__code__
                     #use co_name to identify the bkpt (function names
                     #could be aliased, but co_name is invariant)
                     funcname = code.co_name
@@ -759,13 +759,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
         code = None
         # Is it a function?
-        try: code = value.func_code
+        try: code = value.__code__
         except: pass
         if code:
             print('Function', code.co_name, file=self.stdout)
             return
         # Is it an instance method?
-        try: code = value.im_func.func_code
+        try: code = value.im_func.__code__
         except: pass
         if code:
             print('Method', code.co_name, file=self.stdout)
