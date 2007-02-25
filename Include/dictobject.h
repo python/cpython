@@ -90,7 +90,8 @@ struct _dictobject {
 
 PyAPI_DATA(PyTypeObject) PyDict_Type;
 
-#define PyDict_Check(op) PyObject_TypeCheck(op, &PyDict_Type)
+#define PyDict_Check(op) \
+                 PyType_FastSubclass((op)->ob_type, Py_TPFLAGS_DICT_SUBCLASS)
 #define PyDict_CheckExact(op) ((op)->ob_type == &PyDict_Type)
 
 PyAPI_FUNC(PyObject *) PyDict_New(void);

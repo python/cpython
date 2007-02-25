@@ -1131,8 +1131,7 @@ string_richcompare(PyStringObject *a, PyStringObject *b, int op)
 		   much time, since Py_NE is rarely used.  */
 		if (a->ob_size == b->ob_size
 		    && (a->ob_sval[0] == b->ob_sval[0]
-			&& memcmp(a->ob_sval, b->ob_sval,
-				  a->ob_size) == 0)) {
+			&& memcmp(a->ob_sval, b->ob_sval, a->ob_size) == 0)) {
 			result = Py_True;
 		} else {
 			result = Py_False;
@@ -1145,7 +1144,7 @@ string_richcompare(PyStringObject *a, PyStringObject *b, int op)
 		c = Py_CHARMASK(*a->ob_sval) - Py_CHARMASK(*b->ob_sval);
 		if (c==0)
 			c = memcmp(a->ob_sval, b->ob_sval, min_len);
-	}else
+	} else
 		c = 0;
 	if (c == 0)
 		c = (len_a < len_b) ? -1 : (len_a > len_b) ? 1 : 0;
@@ -4018,7 +4017,8 @@ PyTypeObject PyString_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	&string_as_buffer,			/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+		Py_TPFLAGS_STRING_SUBCLASS,	/* tp_flags */
 	string_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
@@ -4981,6 +4981,7 @@ void _Py_ReleaseInternedStrings(void)
 	PyObject *keys;
 	PyStringObject *s;
 	Py_ssize_t i, n;
+	Py_ssize_t immortal_size = 0, mortal_size = 0;
 
 	if (interned == NULL || !PyDict_Check(interned))
 		return;
@@ -4995,8 +4996,9 @@ void _Py_ReleaseInternedStrings(void)
 	   give them their stolen references back, and then clear and DECREF
 	   the interned dict. */
 
-	fprintf(stderr, "releasing interned strings\n");
 	n = PyList_GET_SIZE(keys);
+	fprintf(stderr, "releasing %" PY_FORMAT_SIZE_T "d interned strings\n",
+		n);
 	for (i = 0; i < n; i++) {
 		s = (PyStringObject *) PyList_GET_ITEM(keys, i);
 		switch (s->ob_sstate) {
@@ -5005,15 +5007,20 @@ void _Py_ReleaseInternedStrings(void)
 			break;
 		case SSTATE_INTERNED_IMMORTAL:
 			s->ob_refcnt += 1;
+			immortal_size += s->ob_size;
 			break;
 		case SSTATE_INTERNED_MORTAL:
 			s->ob_refcnt += 2;
+			mortal_size += s->ob_size;
 			break;
 		default:
 			Py_FatalError("Inconsistent interned string state.");
 		}
 		s->ob_sstate = SSTATE_NOT_INTERNED;
 	}
+	fprintf(stderr, "total size of all interned strings: "
+			"%" PY_FORMAT_SIZE_T "d/%" PY_FORMAT_SIZE_T "d "
+			"mortal/immortal\n", mortal_size, immortal_size);
 	Py_DECREF(keys);
 	PyDict_Clear(interned);
 	Py_DECREF(interned);
