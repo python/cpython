@@ -20,8 +20,8 @@ def dis(x=None):
         return
     if hasattr(x, 'im_func'):
         x = x.im_func
-    if hasattr(x, 'func_code'):
-        x = x.func_code
+    if hasattr(x, '__code__'):
+        x = x.__code__
     if hasattr(x, '__dict__'):
         items = x.__dict__.items()
         items.sort()

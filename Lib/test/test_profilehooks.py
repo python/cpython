@@ -324,7 +324,7 @@ def ident(function):
     if hasattr(function, "f_code"):
         code = function.f_code
     else:
-        code = function.func_code
+        code = function.__code__
     return code.co_firstlineno, code.co_name
 
 

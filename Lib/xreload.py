@@ -118,8 +118,8 @@ def _update_function(oldfunc, newfunc):
     """Update a function object."""
     oldfunc.__doc__ = newfunc.__doc__
     oldfunc.__dict__.update(newfunc.__dict__)
-    oldfunc.func_code = newfunc.func_code
-    oldfunc.func_defaults = newfunc.func_defaults
+    oldfunc.__code__ = newfunc.__code__
+    oldfunc.__defaults__ = newfunc.__defaults__
     # XXX What else?
     return oldfunc
 

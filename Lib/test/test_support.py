@@ -341,7 +341,7 @@ def run_with_locale(catstr, *locales):
             finally:
                 if locale and orig_locale:
                     locale.setlocale(category, orig_locale)
-        inner.func_name = func.func_name
+        inner.__name__ = func.__name__
         inner.__doc__ = func.__doc__
         return inner
     return decorator

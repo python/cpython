@@ -226,14 +226,14 @@ class TraceTestCase(unittest.TestCase):
         sys.settrace(tracer.trace)
         func()
         sys.settrace(None)
-        self.compare_events(func.func_code.co_firstlineno,
+        self.compare_events(func.__code__.co_firstlineno,
                             tracer.events, func.events)
 
     def run_test2(self, func):
         tracer = Tracer()
         func(tracer.trace)
         sys.settrace(None)
-        self.compare_events(func.func_code.co_firstlineno,
+        self.compare_events(func.__code__.co_firstlineno,
                             tracer.events, func.events)
 
     def test_01_basic(self):
@@ -313,7 +313,7 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
 
         def g(frame, why, extra):
             if (why == 'line' and
-                frame.f_lineno == f.func_code.co_firstlineno + 2):
+                frame.f_lineno == f.__code__.co_firstlineno + 2):
                 raise RuntimeError, "i am crashing"
             return g
 
@@ -344,7 +344,7 @@ class JumpTracer:
         self.done = False
 
     def trace(self, frame, event, arg):
-        if not self.done and frame.f_code == self.function.func_code:
+        if not self.done and frame.f_code == self.function.__code__:
             firstLine = frame.f_code.co_firstlineno
             if frame.f_lineno == firstLine + self.jumpFrom:
                 # Cope with non-integer self.jumpTo (because of

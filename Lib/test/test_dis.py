@@ -19,8 +19,8 @@ dis_f = """\
 
  %-4d        10 LOAD_CONST               1 (1)
              13 RETURN_VALUE
-"""%(_f.func_code.co_firstlineno + 1,
-     _f.func_code.co_firstlineno + 2)
+"""%(_f.__code__.co_firstlineno + 1,
+     _f.__code__.co_firstlineno + 2)
 
 
 def bug708901():
@@ -43,9 +43,9 @@ dis_bug708901 = """\
         >>   25 POP_BLOCK
         >>   26 LOAD_CONST               0 (None)
              29 RETURN_VALUE
-"""%(bug708901.func_code.co_firstlineno + 1,
-     bug708901.func_code.co_firstlineno + 2,
-     bug708901.func_code.co_firstlineno + 3)
+"""%(bug708901.__code__.co_firstlineno + 1,
+     bug708901.__code__.co_firstlineno + 2,
+     bug708901.__code__.co_firstlineno + 3)
 
 
 def bug1333982(x=[]):
@@ -78,9 +78,9 @@ dis_bug1333982 = """\
 
  %-4d        48 LOAD_CONST               0 (None)
              51 RETURN_VALUE
-"""%(bug1333982.func_code.co_firstlineno + 1,
-     bug1333982.func_code.co_firstlineno + 2,
-     bug1333982.func_code.co_firstlineno + 3)
+"""%(bug1333982.__code__.co_firstlineno + 1,
+     bug1333982.__code__.co_firstlineno + 2,
+     bug1333982.__code__.co_firstlineno + 3)
 
 _BIG_LINENO_FORMAT = """\
 %3d           0 LOAD_GLOBAL              0 (spam)

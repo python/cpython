@@ -235,7 +235,7 @@ if 1:
             g = +9223372036854775807  # 1 << 63 - 1
             h = -9223372036854775807  # 1 << 63 - 1
 
-            for variable in self.test_32_63_bit_values.func_code.co_consts:
+            for variable in self.test_32_63_bit_values.__code__.co_consts:
                 if variable is not None:
                     self.assertTrue(isinstance(variable, int))
 
@@ -315,7 +315,7 @@ if 1:
             f2 = lambda x=2: x
             return f1, f2
         f1, f2 = f()
-        self.assertNotEqual(id(f1.func_code), id(f2.func_code))
+        self.assertNotEqual(id(f1.__code__), id(f2.__code__))
 
     def test_unicode_encoding(self):
         code = u"# -*- coding: utf-8 -*-\npass\n"

@@ -53,7 +53,7 @@ class TestPredicates(IsTestBase):
         self.istest(inspect.isbuiltin, 'sys.exit')
         self.istest(inspect.isbuiltin, '[].append')
         self.istest(inspect.isclass, 'mod.StupidGit')
-        self.istest(inspect.iscode, 'mod.spam.func_code')
+        self.istest(inspect.iscode, 'mod.spam.__code__')
         self.istest(inspect.isframe, 'tb.tb_frame')
         self.istest(inspect.isfunction, 'mod.spam')
         self.istest(inspect.ismethod, 'mod.StupidGit.abuse')
@@ -210,7 +210,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         m.__file__ = "<string>" # hopefully not a real filename...
         m.__loader__ = "dummy"  # pretend the filename is understood by a loader
         exec("def x(): pass", m.__dict__)
-        self.assertEqual(inspect.getsourcefile(m.x.func_code), '<string>')
+        self.assertEqual(inspect.getsourcefile(m.x.__code__), '<string>')
         del sys.modules[name]
         inspect.getmodule(compile('a=10','','single'))
 
