@@ -55,7 +55,7 @@ def xreload(mod):
     finally:
         if stream:
             stream.close()
-    # Execute the code im a temporary namespace; if this fails, no changes
+    # Execute the code in a temporary namespace; if this fails, no changes
     tmpns = {}
     exec(code, tmpns)
     # Now we get to the hard part
