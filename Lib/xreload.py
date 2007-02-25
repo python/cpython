@@ -65,6 +65,7 @@ def xreload(mod):
     for name in newnames - oldnames:
         modns[name] = tmpns[name]
     # Delete names that are no longer current
+    # XXX What to do about renamed objects?
     for name in oldnames - newnames - {"__name__"}:
         del modns[name]
     # Now update the rest in place
@@ -86,6 +87,9 @@ def _update(oldobj, newobj):
     Returns:
       either oldobj, updated in place, or newobj.
     """
+    if oldobj is newobj:
+        # Probably something imported
+        return newobj
     if type(oldobj) is not type(newobj):
         # Cop-out: if the type changed, give up
         return newobj
@@ -98,9 +102,16 @@ def _update(oldobj, newobj):
         return _update_function(oldobj, newobj)
     if isinstance(newobj, types.MethodType):
         return _update_method(oldobj, newobj)
-    # XXX Support class methods, static methods, other decorators
+    if isinstance(newobj, classmethod):
+        return _update_classmethod(oldobj, newobj)
+    if isinstance(newobj, staticmethod):
+        return _update_staticmethod(oldobj, newobj)
+    # XXX How to support decorators?
     # Not something we recognize, just give up
     return newobj
+
+
+# All of the following functions have the same signature as _update()
 
 
 def _update_function(oldfunc, newfunc):
@@ -116,7 +127,7 @@ def _update_function(oldfunc, newfunc):
 def _update_method(oldmeth, newmeth):
     """Update a method object."""
     # XXX What if im_func is not a function?
-    _update_function(oldmeth.im_func, newmeth.im_func)
+    _update(oldmeth.im_func, newmeth.im_func)
     return oldmeth
 
 
@@ -132,5 +143,27 @@ def _update_class(oldclass, newclass):
     for name in oldnames - newnames:
         delattr(oldclass, name)
     for name in oldnames & newnames - {"__dict__", "__doc__"}:
-        setattr(oldclass, name,  newdict[name])
+        setattr(oldclass, name,  _update(olddict[name], newdict[name]))
     return oldclass
+
+
+def _update_classmethod(oldcm, newcm):
+    """Update a classmethod update."""
+    # While we can't modify the classmethod object itself (it has no
+    # mutable attributes), we *can* extract the underlying function
+    # (by calling __get__(), which returns a method object) and update
+    # it in-place.  We don't have the class available to pass to
+    # __get__() but any object except None will do.
+    _update(oldcm.__get__(0), newcm.__get__(0))
+    return newcm
+
+
+def _update_staticmethod(oldsm, newsm):
+    """Update a staticmethod update."""
+    # While we can't modify the staticmethod object itself (it has no
+    # mutable attributes), we *can* extract the underlying function
+    # (by calling __get__(), which returns it) and update it in-place.
+    # We don't have the class available to pass to __get__() but any
+    # object except None will do.
+    _update(oldsm.__get__(0), newsm.__get__(0))
+    return newsm
