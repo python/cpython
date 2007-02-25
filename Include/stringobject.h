@@ -55,7 +55,8 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PyBaseString_Type;
 PyAPI_DATA(PyTypeObject) PyString_Type;
 
-#define PyString_Check(op) PyObject_TypeCheck(op, &PyString_Type)
+#define PyString_Check(op) \
+                 PyType_FastSubclass((op)->ob_type, Py_TPFLAGS_STRING_SUBCLASS)
 #define PyString_CheckExact(op) ((op)->ob_type == &PyString_Type)
 
 PyAPI_FUNC(PyObject *) PyString_FromStringAndSize(const char *, Py_ssize_t);

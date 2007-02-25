@@ -40,7 +40,8 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyList_Type;
 
-#define PyList_Check(op) PyObject_TypeCheck(op, &PyList_Type)
+#define PyList_Check(op) \
+		PyType_FastSubclass((op)->ob_type, Py_TPFLAGS_LIST_SUBCLASS)
 #define PyList_CheckExact(op) ((op)->ob_type == &PyList_Type)
 
 PyAPI_FUNC(PyObject *) PyList_New(Py_ssize_t size);

@@ -33,7 +33,8 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyTuple_Type;
 
-#define PyTuple_Check(op) PyObject_TypeCheck(op, &PyTuple_Type)
+#define PyTuple_Check(op) \
+                 PyType_FastSubclass((op)->ob_type, Py_TPFLAGS_TUPLE_SUBCLASS)
 #define PyTuple_CheckExact(op) ((op)->ob_type == &PyTuple_Type)
 
 PyAPI_FUNC(PyObject *) PyTuple_New(Py_ssize_t size);
