@@ -4173,6 +4173,8 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 		FILE *fp = PyFile_AsFile(prog);
 		char *name = PyString_AsString(PyFile_Name(prog));
 		PyCompilerFlags cf;
+		if (name == NULL)
+			return -1;
 		cf.cf_flags = 0;
 		if (PyEval_MergeCompilerFlags(&cf))
 			v = PyRun_FileFlags(fp, name, Py_file_input, globals,
