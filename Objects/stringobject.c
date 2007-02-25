@@ -1131,8 +1131,7 @@ string_richcompare(PyStringObject *a, PyStringObject *b, int op)
 		   much time, since Py_NE is rarely used.  */
 		if (a->ob_size == b->ob_size
 		    && (a->ob_sval[0] == b->ob_sval[0]
-			&& memcmp(a->ob_sval, b->ob_sval,
-				  a->ob_size) == 0)) {
+			&& memcmp(a->ob_sval, b->ob_sval, a->ob_size) == 0)) {
 			result = Py_True;
 		} else {
 			result = Py_False;
@@ -1145,7 +1144,7 @@ string_richcompare(PyStringObject *a, PyStringObject *b, int op)
 		c = Py_CHARMASK(*a->ob_sval) - Py_CHARMASK(*b->ob_sval);
 		if (c==0)
 			c = memcmp(a->ob_sval, b->ob_sval, min_len);
-	}else
+	} else
 		c = 0;
 	if (c == 0)
 		c = (len_a < len_b) ? -1 : (len_a > len_b) ? 1 : 0;
