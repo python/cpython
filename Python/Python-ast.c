@@ -2,7 +2,7 @@
 
 
 /*
-   __version__ 53873.
+   __version__ 53956.
 
    This module must be committed separately after each AST grammar change;
    The __version__ number is set to the revision number of the commit
@@ -443,10 +443,6 @@ static PyObject* ast2obj_object(void *o)
 }
 #define ast2obj_identifier ast2obj_object
 #define ast2obj_string ast2obj_object
-static PyObject* ast2obj_bool(bool b)
-{
-    return PyBool_FromLong(b);
-}
 
 static PyObject* ast2obj_int(long b)
 {
@@ -3013,7 +3009,7 @@ init_ast(void)
         if (PyDict_SetItemString(d, "AST", (PyObject*)AST_type) < 0) return;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return;
-        if (PyModule_AddStringConstant(m, "__version__", "53873") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "53956") < 0)
                 return;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return;
         if (PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0)

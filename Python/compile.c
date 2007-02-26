@@ -119,7 +119,7 @@ struct compiler_unit {
 
 	int u_firstlineno; /* the first lineno of the block */
 	int u_lineno;	   /* the lineno for the current stmt */
-	bool u_lineno_set; /* boolean to indicate whether instr
+	int u_lineno_set;  /* boolean to indicate whether instr
 			      has been generated with current lineno */
 };
 
@@ -464,7 +464,7 @@ compiler_enter_scope(struct compiler *c, identifier name, void *key,
 	u->u_nfblocks = 0;
 	u->u_firstlineno = lineno;
 	u->u_lineno = 0;
-	u->u_lineno_set = false;
+	u->u_lineno_set = 0;
 	u->u_consts = PyDict_New();
 	if (!u->u_consts) {
 		compiler_unit_free(u);
@@ -643,7 +643,7 @@ compiler_set_lineno(struct compiler *c, int off)
 	basicblock *b;
 	if (c->u->u_lineno_set)
 		return;
-	c->u->u_lineno_set = true;
+	c->u->u_lineno_set = 1;
 	b = c->u->u_curblock;
 	b->b_instr[off].i_lineno = c->u->u_lineno;
 }
@@ -1675,7 +1675,7 @@ compiler_for(struct compiler *c, stmt_ty s)
 	/* XXX(nnorwitz): is there a better way to handle this?
 	   for loops are special, we want to be able to trace them
 	   each time around, so we need to set an extra line number. */
-	c->u->u_lineno_set = false;
+	c->u->u_lineno_set = 0;
 	ADDOP_JREL(c, FOR_ITER, cleanup);
 	VISIT(c, expr, s->v.For.target);
 	VISIT_SEQ(c, stmt, s->v.For.body);
@@ -1898,7 +1898,7 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 						s->v.TryExcept.handlers, i);
 		if (!handler->type && i < n-1)
 		    return compiler_error(c, "default 'except:' must be last");
-        c->u->u_lineno_set = false;
+        c->u->u_lineno_set = 0;
         c->u->u_lineno = handler->lineno;
 		except = compiler_new_block(c);
 		if (except == NULL)
@@ -2161,7 +2161,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 
 	/* Always assign a lineno to the next instruction for a stmt. */
 	c->u->u_lineno = s->lineno;
-	c->u->u_lineno_set = false;
+	c->u->u_lineno_set = 0;
 
 	switch (s->kind) {
 	case FunctionDef_kind:
@@ -3015,7 +3015,7 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         */
 	if (e->lineno > c->u->u_lineno) {
 		c->u->u_lineno = e->lineno;
-		c->u->u_lineno_set = false;
+		c->u->u_lineno_set = 0;
 	}
 	switch (e->kind) {
 	case BoolOp_kind:

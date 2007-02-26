@@ -1660,7 +1660,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             int j;
             slice_ty slc;
             expr_ty e;
-            bool simple = true;
+            int simple = 1;
             asdl_seq *slices, *elts;
             slices = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
             if (!slices)
@@ -1670,7 +1670,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
                 if (!slc)
                     return NULL;
                 if (slc->kind != Index_kind)
-                    simple = false;
+                    simple = 0;
                 asdl_seq_SET(slices, j / 2, slc);
             }
             if (!simple) {
