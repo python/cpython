@@ -108,8 +108,7 @@ def main():
             name, val = match.group(1, 2)
             val = int(val)
             tokens[val] = name          # reverse so we can sort them...
-    keys = list(tokens.keys())
-    keys.sort()
+    keys = sorted(tokens.keys())
     # load the output skeleton from the target:
     try:
         fp = open(outFileName)
