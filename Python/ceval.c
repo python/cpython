@@ -2298,6 +2298,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					u = POP(); /* kw only arg name */
 					/* XXX(nnorwitz): check for errors */
 					PyDict_SetItem(v, u, w);
+					Py_DECREF(w);
+					Py_DECREF(u);
 				}
 				err = PyFunction_SetKwDefaults(x, v);
 				Py_DECREF(v);
