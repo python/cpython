@@ -108,7 +108,7 @@ def main():
             name, val = match.group(1, 2)
             val = int(val)
             tokens[val] = name          # reverse so we can sort them...
-    keys = tokens.keys()
+    keys = list(tokens.keys())
     keys.sort()
     # load the output skeleton from the target:
     try:
