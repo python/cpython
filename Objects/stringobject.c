@@ -4780,10 +4780,13 @@ PyString_Format(PyObject *format, PyObject *args)
 				reslen += rescnt;
 				if (reslen < 0) {
 					Py_DECREF(result);
+					Py_XDECREF(temp);
 					return PyErr_NoMemory();
 				}
-				if (_PyString_Resize(&result, reslen) < 0)
+				if (_PyString_Resize(&result, reslen) < 0) {
+					Py_XDECREF(temp);
 					return NULL;
+				}
 				res = PyString_AS_STRING(result)
 					+ reslen - rescnt;
 			}
@@ -4834,6 +4837,7 @@ PyString_Format(PyObject *format, PyObject *args)
                         if (dict && (argidx < arglen) && c != '%') {
                                 PyErr_SetString(PyExc_TypeError,
                                            "not all arguments converted during string formatting");
+                                Py_XDECREF(temp);
                                 goto error;
                         }
 			Py_XDECREF(temp);
