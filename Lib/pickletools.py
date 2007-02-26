@@ -2050,10 +2050,10 @@ highest protocol among opcodes = 1
 Exercise the INST/OBJ/BUILD family.
 
 >>> import random
->>> dis(pickle.dumps(random.random, 0))
-    0: c    GLOBAL     'random random'
-   15: p    PUT        0
-   18: .    STOP
+>>> dis(pickle.dumps(random.getrandbits, 0))
+    0: c    GLOBAL     'random getrandbits'
+   20: p    PUT        0
+   23: .    STOP
 highest protocol among opcodes = 0
 
 >>> from pickletools import _Example
