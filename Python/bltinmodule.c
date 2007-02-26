@@ -1392,12 +1392,14 @@ static PyObject *
 builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	static char *kwlist[] = {"sep", "end", "file", 0};
-	PyObject *dummy_args = PyTuple_New(0);
+	static PyObject *dummy_args;
 	PyObject *sep = NULL, *end = NULL, *file = NULL;
 	int i, err;
 
-	if (dummy_args == NULL)
-		return NULL;
+	if (dummy_args == NULL) {
+		if (!(dummy_args = PyTuple_New(0)))
+			return NULL;
+	}
 	if (!PyArg_ParseTupleAndKeywords(dummy_args, kwds, "|OOO:print",
 					 kwlist, &sep, &end, &file))
                 return NULL;
