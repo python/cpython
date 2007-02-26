@@ -15,7 +15,7 @@ def get_c_type(name):
     """Return a string for the C name of the type.
 
     This function special cases the default types provided by asdl:
-    identifier, string, int, bool.
+    identifier, string, int.
     """
     # XXX ack!  need to figure out where Id is useful and where string
     if isinstance(name, asdl.Id):
@@ -288,8 +288,7 @@ class FunctionVisitor(PrototypeVisitor):
         emit("{")
         emit("%s p;" % ctype, 1)
         for argtype, argname, opt in args:
-            # XXX hack alert: false is allowed for a bool
-            if not opt and not (argtype == "bool" or argtype == "int"):
+            if not opt and argtype != "int":
                 emit("if (!%s) {" % argname, 1)
                 emit("PyErr_SetString(PyExc_ValueError,", 2)
                 msg = "field %s is required for %s" % (argname, name)
@@ -467,10 +466,6 @@ static PyObject* ast2obj_object(void *o)
 }
 #define ast2obj_identifier ast2obj_object
 #define ast2obj_string ast2obj_object
-static PyObject* ast2obj_bool(bool b)
-{
-    return PyBool_FromLong(b);
-}
 
 static PyObject* ast2obj_int(long b)
 {
