@@ -3895,23 +3895,8 @@ assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x)
 	}
 }
 
-/*
-   Return a true value if the exception is allowed to be in an 'except' clause,
-   otherwise return a false value.
-*/
-static int
-can_catch_exc(PyObject *exc)
-{
-	if (!(PyExceptionClass_Check(exc) || PyExceptionInstance_Check(exc))) {
-		PyErr_SetString(PyExc_TypeError,
-				"catching an object must be a class or "
-				"instance of BaseException");
-		return 0;
-	}
-	else {
-		return 1;
-	}
-}
+#define CANNOT_CATCH_MSG "catching classes that do not inherit from"\
+			 "BaseException is not allowed"
 
 static PyObject *
 cmp_outcome(int op, register PyObject *v, register PyObject *w)
@@ -3941,13 +3926,17 @@ cmp_outcome(int op, register PyObject *v, register PyObject *w)
 			length = PyTuple_Size(w);
 			for (i = 0; i < length; i += 1) {
 				PyObject *exc = PyTuple_GET_ITEM(w, i);
-				if (!can_catch_exc(exc)) {
+				if (!PyExceptionClass_Check(exc)) {
+					PyErr_SetString(PyExc_TypeError,
+							CANNOT_CATCH_MSG);
 					return NULL;
 				}
 			}
 		}
 		else {
-			if (!can_catch_exc(w)) {
+			if (!PyExceptionClass_Check(w)) {
+				PyErr_SetString(PyExc_TypeError,
+						CANNOT_CATCH_MSG);
 				return NULL;
 			}
 		}
