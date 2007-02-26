@@ -603,7 +603,8 @@ PyErr_WriteUnraisable(PyObject *obj)
 				PyFile_WriteString("<unknown>", f);
 			else {
 				char* modstr = PyString_AsString(moduleName);
-				if (modstr)
+				if (modstr &&
+				    strcmp(modstr, "exceptions") != 0)
 				{
 					PyFile_WriteString(modstr, f);
 					PyFile_WriteString(".", f);
