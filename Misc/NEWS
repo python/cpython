@@ -28,6 +28,8 @@ TO DO
 Core and Builtins
 -----------------
 
+- Objects listed in an 'except' clause must inherit from BaseException.
+
 - PEP 3106: dict.iterkeys(), .iteritems(), .itervalues() are now gone;
   and .keys(), .items(), .values() return dict views.
 
