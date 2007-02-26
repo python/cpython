@@ -261,10 +261,12 @@ markblocks(unsigned char *code, int len)
    The consts object should still be in list form to allow new constants 
    to be appended.
 
-   To keep the optimizer simple, it bails out (does nothing) for code
-   containing extended arguments or that has a length over 32,700.  That 
-   allows us to avoid overflow and sign issues.	 Likewise, it bails when
-   the lineno table has complex encoding for gaps >= 255.
+   To keep the optimizer simple, it bails out (does nothing) for code that
+   has a length over 32,700, and does not calculate extended arguments. 
+   That allows us to avoid overflow and sign issues. Likewise, it bails when
+   the lineno table has complex encoding for gaps >= 255. EXTENDED_ARG can
+   appear before MAKE_FUNCTION; in this case both opcodes are skipped.
+   EXTENDED_ARG preceding any other opcode causes the optimizer to bail.
 
    Optimizations are restricted to simple transformations occuring within a
    single basic block.	All transformations keep the code size the same or 
@@ -535,7 +537,11 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 				break;
 
 			case EXTENDED_ARG:
-				goto exitUnchanged;
+				if (codestr[i+3] != MAKE_FUNCTION)
+					goto exitUnchanged;
+				/* don't visit MAKE_FUNCTION as GETARG will be wrong */
+				i += 3;
+				break;
 
 				/* Replace RETURN LOAD_CONST None RETURN with just RETURN */
 				/* Remove unreachable JUMPs after RETURN */

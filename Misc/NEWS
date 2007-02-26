@@ -28,6 +28,10 @@ TO DO
 Core and Builtins
 -----------------
 
+- input() becomes raw_input(): the name input() now implements the
+  functionality formerly known as raw_input(); the name raw_input()
+  is no longer defined.
+
 - Objects listed in an 'except' clause must inherit from BaseException.
 
 - PEP 3106: dict.iterkeys(), .iteritems(), .itervalues() are now gone;
@@ -82,7 +86,7 @@ Core and Builtins
   backticks (`x`), <>
 
 - Removed these Python builtins:
-  apply(), coerce(), input(), raw_input()
+  apply(), coerce()
 
 - Removed these Python methods:
   {}.has_key
