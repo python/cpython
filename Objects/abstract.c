@@ -805,7 +805,7 @@ PyNumber_Index(PyObject *item)
 		if (result &&
 		    !PyInt_Check(result) && !PyLong_Check(result)) {
 			PyErr_Format(PyExc_TypeError,
-				     "__index__ returned non-int " \
+				     "__index__ returned non-int "
 				     "(type %.200s)",
 				     result->ob_type->tp_name);
 			Py_DECREF(result);
@@ -815,7 +815,7 @@ PyNumber_Index(PyObject *item)
 	else {
 		PyErr_Format(PyExc_TypeError,
 			     "'%.200s' object cannot be interpreted "
-			     "as an index", item->ob_type->tp_name);
+			     "as an integer", item->ob_type->tp_name);
 	}
 	return result;
 }
