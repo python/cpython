@@ -791,7 +791,7 @@ def whichmodule(func, funcname):
     if func in classmap:
         return classmap[func]
 
-    for name, module in sys.modules.items():
+    for name, module in list(sys.modules.items()):
         if module is None:
             continue # skip dummy package entries
         if name != '__main__' and getattr(module, funcname, None) is func:
