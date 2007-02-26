@@ -10,6 +10,7 @@ Command line options:
 
 -v: verbose    -- run tests in verbose mode with output to stdout
 -w: verbose2   -- re-run failed tests in verbose mode
+-d: debug      -- print traceback for failed tests
 -q: quiet      -- don't print anything except if a test fails
 -g: generate   -- write the output file for a test instead of comparing it
 -x: exclude    -- arguments are tests to *exclude*
@@ -179,7 +180,7 @@ def usage(code, msg=''):
 def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
          exclude=False, single=False, randomize=False, fromfile=None,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
-         runleaks=False, huntrleaks=False, verbose2=False):
+         runleaks=False, huntrleaks=False, verbose2=False, debug=False):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -204,12 +205,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
 
     test_support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:t:TD:NLR:wM:',
+        opts, args = getopt.getopt(sys.argv[1:], 'dhvgqxsrf:lu:t:TD:NLR:wM:',
                                    ['help', 'verbose', 'quiet', 'generate',
                                     'exclude', 'single', 'random', 'fromfile',
                                     'findleaks', 'use=', 'threshold=', 'trace',
                                     'coverdir=', 'nocoverdir', 'runleaks',
                                     'huntrleaks=', 'verbose2', 'memlimit=',
+                                    'debug',
                                     ])
     except getopt.error as msg:
         usage(2, msg)
@@ -224,6 +226,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             verbose += 1
         elif o in ('-w', '--verbose2'):
             verbose2 = True
+        elif o in ('-d', '--debug'):
+            debug = True
         elif o in ('-q', '--quiet'):
             quiet = True;
             verbose = 0
@@ -435,7 +439,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             try:
                 test_support.verbose = 1
                 ok = runtest(test, generate, 1, quiet, testdir,
-                             huntrleaks)
+                             huntrleaks, debug)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
                 print()
@@ -496,7 +500,8 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     tests.sort()
     return stdtests + tests
 
-def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
+def runtest(test, generate, verbose, quiet, testdir=None,
+            huntrleaks=False, debug=False):
     """Run a single test.
 
     test -- the name of the test
@@ -507,6 +512,8 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
     testdir -- test directory
     huntrleaks -- run multiple times to test for leaks; requires a debug
                   build; a triple corresponding to -R's three arguments
+    debug -- if true, print tracebacks for failed tests regardless of
+             verbose setting
     Return:
         -2  test skipped because resource denied
         -1  test skipped for some other reason
@@ -516,12 +523,12 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
 
     try:
         return runtest_inner(test, generate, verbose, quiet, testdir,
-                             huntrleaks)
+                             huntrleaks, debug)
     finally:
         cleanup_test_droppings(test, verbose)
 
 def runtest_inner(test, generate, verbose, quiet,
-                     testdir=None, huntrleaks=False):
+                     testdir=None, huntrleaks=False, debug=False):
     test_support.unload(test)
     if not testdir:
         testdir = findtestdir()
@@ -576,7 +583,7 @@ def runtest_inner(test, generate, verbose, quiet,
         type, value = sys.exc_info()[:2]
         print("test", test, "crashed --", str(type) + ":", value)
         sys.stdout.flush()
-        if verbose:
+        if verbose or debug:
             traceback.print_exc(file=sys.stdout)
             sys.stdout.flush()
         return 0
