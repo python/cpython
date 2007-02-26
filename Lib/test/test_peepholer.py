@@ -195,6 +195,14 @@ class TestTranforms(unittest.TestCase):
         # There should be one jump for the while loop.
         self.assertEqual(asm.split().count('JUMP_ABSOLUTE'), 1)
         self.assertEqual(asm.split().count('RETURN_VALUE'), 2)
+        
+    def test_make_function_doesnt_bail(self):
+        def f():
+            def g()->1+1: 
+                pass
+            return g
+        asm = disassemble(f)
+        self.assert_('BINARY_ADD' not in asm)              
 
 
 def test_main(verbose=None):

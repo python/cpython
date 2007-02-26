@@ -2236,6 +2236,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 		    break;
 		}
 
+		case MAKE_CLOSURE:		
 		case MAKE_FUNCTION:
 		{
 		    int posdefaults = oparg & 0xff;
@@ -2245,6 +2246,12 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 			v = POP(); /* code object */
 			x = PyFunction_New(v, f->f_globals);
 			Py_DECREF(v);
+			
+			if (x != NULL && opcode == MAKE_CLOSURE) {
+				v = POP();
+				err = PyFunction_SetClosure(x, v);
+				Py_DECREF(v);
+			}
 
 			if (x != NULL && num_annotations > 0) {
 				Py_ssize_t name_ix;
@@ -2302,34 +2309,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					Py_DECREF(u);
 				}
 				err = PyFunction_SetKwDefaults(x, v);
-				Py_DECREF(v);
-			}
-			PUSH(x);
-			break;
-		}
-
-		case MAKE_CLOSURE:
-		{
-			v = POP(); /* code object */
-			x = PyFunction_New(v, f->f_globals);
-			Py_DECREF(v);
-			if (x != NULL) {
-				v = POP();
-				err = PyFunction_SetClosure(x, v);
-				Py_DECREF(v);
-			}
-			if (x != NULL && oparg > 0) {
-				v = PyTuple_New(oparg);
-				if (v == NULL) {
-					Py_DECREF(x);
-					x = NULL;
-					break;
-				}
-				while (--oparg >= 0) {
-					w = POP();
-					PyTuple_SET_ITEM(v, oparg, w);
-				}
-				err = PyFunction_SetDefaults(x, v);
 				Py_DECREF(v);
 			}
 			PUSH(x);

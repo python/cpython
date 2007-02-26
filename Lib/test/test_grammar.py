@@ -321,6 +321,13 @@ class GrammarTests(unittest.TestCase):
         self.assertEquals(f.__annotations__,
                           {'b': 1, 'c': 2, 'e': 3, 'g': 6, 'h': 7, 'j': 9,
                            'k': 11, 'return': 12})
+                           
+        # test MAKE_CLOSURE with a variety of oparg's
+        closure = 1
+        def f(): return closure
+        def f(x=1): return closure
+        def f(*, k=1): return closure
+        def f() -> int: return closure
 
     def testLambdef(self):
         ### lambdef: 'lambda' [varargslist] ':' test
