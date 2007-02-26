@@ -32,7 +32,7 @@ Core and Builtins
   functionality formerly known as raw_input(); the name raw_input()
   is no longer defined.
 
-- Objects listed in an 'except' clause must inherit from BaseException.
+- Classes listed in an 'except' clause must inherit from BaseException.
 
 - PEP 3106: dict.iterkeys(), .iteritems(), .itervalues() are now gone;
   and .keys(), .items(), .values() return dict views.
