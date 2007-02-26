@@ -2438,6 +2438,14 @@ dictview_new(PyObject *dict, PyTypeObject *type)
 	return (PyObject *)dv;
 }
 
+/* TODO(guido): The views objects are not complete:
+
+ * support more set operations
+ * support arbitrary mappings?
+   - either these should be static or exported in dictobject.h
+   - if public then they should probably be in builtins
+*/
+
 /* Forward */
 PyTypeObject PyDictKeys_Type;
 PyTypeObject PyDictItems_Type;
