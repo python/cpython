@@ -86,7 +86,7 @@ Core and Builtins
   backticks (`x`), <>
 
 - Removed these Python builtins:
-  apply(), coerce(), raw_input()
+  apply(), coerce()
 
 - Removed these Python methods:
   {}.has_key
