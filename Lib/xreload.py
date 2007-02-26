@@ -1,8 +1,33 @@
 """Alternative to reload().
 
 This works by executing the module in a scratch namespace, and then
-patching classes, methods and functions.  This avoids the need to
-patch instances.  New objects are copied into the target namespace.
+patching classes, methods and functions in place.  This avoids the
+need to patch instances.  New objects are copied into the target
+namespace.
+
+Some of the many limitiations include:
+
+- Global mutable objects other than classes are simply replaced, not patched
+
+- Code using metaclasses is not handled correctly
+
+- Code creating global singletons is not handled correctly
+
+- Functions and methods using decorators (other than classmethod and
+  staticmethod) is not handled correctly
+
+- Renamings are not handled correctly
+
+- Dependent modules are not reloaded
+
+- When a dependent module contains 'from foo import bar', and
+  reloading foo deletes foo.bar, the dependent module continues to use
+  the old foo.bar object rather than failing
+
+- Frozen modules and modules loaded from zip files aren't handled
+  correctly
+
+- Classes involving __slots__ are not handled correctly
 """
 
 import imp
@@ -43,7 +68,6 @@ def xreload(mod):
     # Turn it into a code object
     try:
         # Is it Python source code or byte code read from a file?
-        # XXX Could handle frozen modules, zip-import modules
         if kind not in (imp.PY_COMPILED, imp.PY_SOURCE):
             # Fall back to built-in reload()
             return reload(mod)
@@ -106,7 +130,6 @@ def _update(oldobj, newobj):
         return _update_classmethod(oldobj, newobj)
     if isinstance(newobj, staticmethod):
         return _update_staticmethod(oldobj, newobj)
-    # XXX How to support decorators?
     # Not something we recognize, just give up
     return newobj
 
@@ -120,7 +143,6 @@ def _update_function(oldfunc, newfunc):
     oldfunc.__dict__.update(newfunc.__dict__)
     oldfunc.__code__ = newfunc.__code__
     oldfunc.__defaults__ = newfunc.__defaults__
-    # XXX What else?
     return oldfunc
 
 
@@ -133,7 +155,6 @@ def _update_method(oldmeth, newmeth):
 
 def _update_class(oldclass, newclass):
     """Update a class object."""
-    # XXX What about __slots__?
     olddict = oldclass.__dict__
     newdict = newclass.__dict__
     oldnames = set(olddict)
