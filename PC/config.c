@@ -161,7 +161,6 @@ struct _inittab _PyImport_Inittab[] = {
         {"__main__", NULL},
         {"__builtin__", NULL},
         {"sys", NULL},
-	{"exceptions", NULL},
         
         {"_types", init_types},
 

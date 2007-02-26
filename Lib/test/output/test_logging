@@ -488,12 +488,12 @@ INFO:a.b.c.d:Info 5
 -- log_test4  begin  ---------------------------------------------------
 config0: ok.
 config1: ok.
-config2: <type 'exceptions.AttributeError'>
-config3: <type 'exceptions.KeyError'>
+config2: <type 'AttributeError'>
+config3: <type 'KeyError'>
 -- log_test4  end    ---------------------------------------------------
 -- log_test5  begin  ---------------------------------------------------
 ERROR:root:just testing
-<type 'exceptions.KeyError'>... Don't panic!
+<type 'KeyError'>... Don't panic!
 -- log_test5  end    ---------------------------------------------------
 -- logrecv output begin  ---------------------------------------------------
 ERR -> CRITICAL: Message 0 (via logrecv.tcp.ERR)

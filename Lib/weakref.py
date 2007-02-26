@@ -20,8 +20,6 @@ from _weakref import (
      ProxyType,
      ReferenceType)
 
-from exceptions import ReferenceError
-
 
 ProxyTypes = (ProxyType, CallableProxyType)
 

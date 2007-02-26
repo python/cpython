@@ -10,19 +10,10 @@
 #include "osdefs.h"
 
 #define MAKE_IT_NONE(x) (x) = Py_None; Py_INCREF(Py_None);
-#define EXC_MODULE_NAME "exceptions."
 
 /* NOTE: If the exception class hierarchy changes, don't forget to update
  * Lib/test/exception_hierarchy.txt
  */
-
-PyDoc_STRVAR(exceptions_doc, "Python's standard exception class hierarchy.\n\
-\n\
-Exceptions found here are defined both in the exceptions module and the\n\
-built-in namespace.  It is recommended that user-defined exceptions\n\
-inherit from Exception.  See the documentation for the exception\n\
-inheritance hierarchy.\n\
-");
 
 /*
  *    BaseException
@@ -282,7 +273,7 @@ static PyGetSetDef BaseException_getset[] = {
 static PyTypeObject _PyExc_BaseException = {
     PyObject_HEAD_INIT(NULL)
     0,                          /*ob_size*/
-    EXC_MODULE_NAME "BaseException", /*tp_name*/
+    "BaseException", /*tp_name*/
     sizeof(PyBaseExceptionObject), /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     (destructor)BaseException_dealloc, /*tp_dealloc*/
@@ -333,7 +324,7 @@ PyObject *PyExc_BaseException = (PyObject *)&_PyExc_BaseException;
 static PyTypeObject _PyExc_ ## EXCNAME = { \
     PyObject_HEAD_INIT(NULL) \
     0, \
-    EXC_MODULE_NAME # EXCNAME, \
+    # EXCNAME, \
     sizeof(PyBaseExceptionObject), \
     0, (destructor)BaseException_dealloc, 0, 0, 0, 0, 0, 0, 0, \
     0, 0, 0, 0, 0, 0, 0, \
@@ -349,7 +340,7 @@ PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 static PyTypeObject _PyExc_ ## EXCNAME = { \
     PyObject_HEAD_INIT(NULL) \
     0, \
-    EXC_MODULE_NAME # EXCNAME, \
+    # EXCNAME, \
     sizeof(Py ## EXCSTORE ## Object), \
     0, (destructor)EXCSTORE ## _dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
     0, 0, 0, 0, 0, \
@@ -365,7 +356,7 @@ PyObject *PyExc_ ## EXCNAME = (PyObject *)&_PyExc_ ## EXCNAME
 static PyTypeObject _PyExc_ ## EXCNAME = { \
     PyObject_HEAD_INIT(NULL) \
     0, \
-    EXC_MODULE_NAME # EXCNAME, \
+    # EXCNAME, \
     sizeof(Py ## EXCSTORE ## Object), 0, \
     (destructor)EXCSTORE ## _dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
     (reprfunc)EXCSTR, 0, 0, 0, \
@@ -1632,7 +1623,7 @@ UnicodeEncodeError_str(PyObject *self)
 static PyTypeObject _PyExc_UnicodeEncodeError = {
     PyObject_HEAD_INIT(NULL)
     0,
-    EXC_MODULE_NAME "UnicodeEncodeError",
+    "UnicodeEncodeError",
     sizeof(PyUnicodeErrorObject), 0,
     (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     (reprfunc)UnicodeEncodeError_str, 0, 0, 0,
@@ -1704,7 +1695,7 @@ UnicodeDecodeError_str(PyObject *self)
 static PyTypeObject _PyExc_UnicodeDecodeError = {
     PyObject_HEAD_INIT(NULL)
     0,
-    EXC_MODULE_NAME "UnicodeDecodeError",
+    "UnicodeDecodeError",
     sizeof(PyUnicodeErrorObject), 0,
     (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     (reprfunc)UnicodeDecodeError_str, 0, 0, 0,
@@ -1802,7 +1793,7 @@ UnicodeTranslateError_str(PyObject *self)
 static PyTypeObject _PyExc_UnicodeTranslateError = {
     PyObject_HEAD_INIT(NULL)
     0,
-    EXC_MODULE_NAME "UnicodeTranslateError",
+    "UnicodeTranslateError",
     sizeof(PyUnicodeErrorObject), 0,
     (destructor)UnicodeError_dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     (reprfunc)UnicodeTranslateError_str, 0, 0, 0,
@@ -1956,17 +1947,10 @@ SimpleExtendsException(PyExc_Warning, UnicodeWarning,
  */
 PyObject *PyExc_MemoryErrorInst=NULL;
 
-/* module global functions */
-static PyMethodDef functions[] = {
-    /* Sentinel */
-    {NULL, NULL}
-};
-
 #define PRE_INIT(TYPE) if (PyType_Ready(&_PyExc_ ## TYPE) < 0) \
     Py_FatalError("exceptions bootstrapping error.");
 
 #define POST_INIT(TYPE) Py_INCREF(PyExc_ ## TYPE); \
-    PyModule_AddObject(m, # TYPE, PyExc_ ## TYPE); \
     if (PyDict_SetItemString(bdict, # TYPE, PyExc_ ## TYPE)) \
         Py_FatalError("Module dictionary insertion problem.");
 
@@ -1996,7 +1980,7 @@ InvalidParameterHandler(
 PyMODINIT_FUNC
 _PyExc_Init(void)
 {
-    PyObject *m, *bltinmod, *bdict;
+    PyObject *bltinmod, *bdict;
 
     PRE_INIT(BaseException)
     PRE_INIT(Exception)
@@ -2052,10 +2036,6 @@ _PyExc_Init(void)
     PRE_INIT(FutureWarning)
     PRE_INIT(ImportWarning)
     PRE_INIT(UnicodeWarning)
-
-    m = Py_InitModule4("exceptions", functions, exceptions_doc,
-        (PyObject *)NULL, PYTHON_API_VERSION);
-    if (m == NULL) return;
 
     bltinmod = PyImport_ImportModule("__builtin__");
     if (bltinmod == NULL)

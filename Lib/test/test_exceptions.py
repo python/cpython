@@ -15,15 +15,6 @@ from test.test_support import TESTFN, unlink, run_unittest
 
 class ExceptionTests(unittest.TestCase):
 
-    def testReload(self):
-        # Reloading the built-in exceptions module failed prior to Py2.2, while it
-        # should act the same as reloading built-in sys.
-        try:
-            import exceptions
-            reload(exceptions)
-        except ImportError as e:
-            self.fail("reloading exceptions: %s" % e)
-
     def raise_catch(self, exc, excname):
         try:
             raise exc, "spam"
@@ -289,7 +280,7 @@ class ExceptionTests(unittest.TestCase):
                 if type(e) is not exc:
                     raise
                 # Verify module name
-                self.assertEquals(type(e).__module__, 'exceptions')
+                self.assertEquals(type(e).__module__, '__builtin__')
                 # Verify no ref leaks in Exc_str()
                 s = str(e)
                 for checkArgName in expected:
