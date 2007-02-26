@@ -413,7 +413,7 @@ func_set_kwdefaults(PyFunctionObject *op, PyObject *value)
 
 	if (value == Py_None)
 		value = NULL;
-	/* Legal to del f.func_defaults.
+	/* Legal to del f.func_kwdefaults.
 	 * Can only set func_kwdefaults to NULL or a dict. */
 	if (value != NULL && !PyDict_Check(value)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -587,6 +587,7 @@ func_dealloc(PyFunctionObject *op)
 	Py_XDECREF(op->func_module);
 	Py_DECREF(op->func_name);
 	Py_XDECREF(op->func_defaults);
+	Py_XDECREF(op->func_kwdefaults);
 	Py_XDECREF(op->func_doc);
 	Py_XDECREF(op->func_dict);
 	Py_XDECREF(op->func_closure);
@@ -609,6 +610,7 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 	Py_VISIT(f->func_globals);
 	Py_VISIT(f->func_module);
 	Py_VISIT(f->func_defaults);
+	Py_VISIT(f->func_kwdefaults);
 	Py_VISIT(f->func_doc);
 	Py_VISIT(f->func_name);
 	Py_VISIT(f->func_dict);
