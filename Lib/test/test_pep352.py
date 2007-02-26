@@ -158,34 +158,17 @@ class UsageTests(unittest.TestCase):
         # Raising a string raises TypeError.
         self.raise_fails("spam")
 
+    def test_catch_non_BaseException(self):
+        # Tryinng to catch an object that does not inherit from BaseException
+        # is not allowed.
+        class NonBaseException(object):
+            pass
+        self.catch_fails(NonBaseException)
+        self.catch_fails(NonBaseException())
+
     def test_catch_string(self):
-        # Catching a string should trigger a DeprecationWarning.
-        with guard_warnings_filter():
-            warnings.resetwarnings()
-            warnings.filterwarnings("error")
-            str_exc = "spam"
-            try:
-                try:
-                    raise StandardError
-                except str_exc:
-                    pass
-            except DeprecationWarning:
-                pass
-            except StandardError:
-                self.fail("catching a string exception did not raise "
-                            "DeprecationWarning")
-            # Make sure that even if the string exception is listed in a tuple
-            # that a warning is raised.
-            try:
-                try:
-                    raise StandardError
-                except (AssertionError, str_exc):
-                    pass
-            except DeprecationWarning:
-                pass
-            except StandardError:
-                self.fail("catching a string exception specified in a tuple did "
-                            "not raise DeprecationWarning")
+        # Catching a string is bad.
+        self.catch_fails("spam")
 
 def test_main():
     run_unittest(ExceptionClassTests, UsageTests)

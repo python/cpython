@@ -1571,7 +1571,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 				    why == WHY_CONTINUE)
 					retval = POP();
 			}
-			else if (PyExceptionClass_Check(v) || PyString_Check(v)) {
+			else if (PyExceptionClass_Check(v)) {
 				w = POP();
 				u = POP();
 				PyErr_Restore(v, w, u);
@@ -3916,6 +3916,24 @@ assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x)
 	}
 }
 
+/*
+   Return a true value if the exception is allowed to be in an 'except' clause,
+   otherwise return a false value.
+*/
+static int
+can_catch_exc(PyObject *exc)
+{
+	if (!(PyExceptionClass_Check(exc) || PyExceptionInstance_Check(exc))) {
+		PyErr_SetString(PyExc_TypeError,
+				"catching an object must be a class or "
+				"instance of BaseException");
+		return 0;
+	}
+	else {
+		return 1;
+	}
+}
+
 static PyObject *
 cmp_outcome(int op, register PyObject *v, register PyObject *w)
 {
@@ -3944,28 +3962,14 @@ cmp_outcome(int op, register PyObject *v, register PyObject *w)
 			length = PyTuple_Size(w);
 			for (i = 0; i < length; i += 1) {
 				PyObject *exc = PyTuple_GET_ITEM(w, i);
-				if (PyString_Check(exc)) {
-					int ret_val;
-					ret_val = PyErr_WarnEx(
-							PyExc_DeprecationWarning,
-							"catching of string "
-							"exceptions is "
-							"deprecated", 1);
-					if (ret_val == -1)
-						return NULL;
+				if (!can_catch_exc(exc)) {
+					return NULL;
 				}
 			}
 		}
 		else {
-			if (PyString_Check(w)) {
-				int ret_val;
-				ret_val = PyErr_WarnEx(
-						PyExc_DeprecationWarning,
-						"catching of string "
-						"exceptions is deprecated",
-						1);
-				if (ret_val == -1)
-					return NULL;
+			if (!can_catch_exc(w)) {
+				return NULL;
 			}
 		}
 		res = PyErr_GivenExceptionMatches(v, w);
