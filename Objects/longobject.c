@@ -298,6 +298,7 @@ PyLong_AsLong(PyObject *vv)
 	/* This version by Tim Peters */
 	register PyLongObject *v;
 	unsigned long x, prev;
+	long res;
 	Py_ssize_t i;
 	int sign;
 	int do_decref = 0; /* if nb_int was called */
@@ -326,46 +327,55 @@ PyLong_AsLong(PyObject *vv)
 		}
 	}
 
+	res = -1;
 	v = (PyLongObject *)vv;
 	i = v->ob_size;
-	switch (i) {
-	case -1: return -v->ob_digit[0];
-	case 0: return 0;
-	case 1: return v->ob_digit[0];
-	}
-	sign = 1;
-	x = 0;
-	if (i < 0) {
-		sign = -1;
-		i = -(i);
-	}
-	while (--i >= 0) {
-		prev = x;
-		x = (x << SHIFT) + v->ob_digit[i];
-		if ((x >> SHIFT) != prev)
-			goto overflow;
-	}
-	if (do_decref) {
-		Py_DECREF(vv);
-	}
-	/* Haven't lost any bits, but casting to long requires extra care
-	 * (see comment above).
-         */
-	if (x <= (unsigned long)LONG_MAX) {
-		return (long)x * sign;
-	}
-	else if (sign < 0 && x == PY_ABS_LONG_MIN) {
-		return LONG_MIN;
-	}
-	/* else overflow */
 
- overflow:
+	switch (i) {
+	case -1:
+		res = -v->ob_digit[0];
+		break;
+	case 0:
+		res = 0;
+		break;
+	case 1:
+		res = v->ob_digit[0];
+		break;
+	default:
+		sign = 1;
+		x = 0;
+		if (i < 0) {
+			sign = -1;
+			i = -(i);
+		}
+		while (--i >= 0) {
+			prev = x;
+			x = (x << SHIFT) + v->ob_digit[i];
+			if ((x >> SHIFT) != prev) {
+				PyErr_SetString(PyExc_OverflowError,
+					"Python int too large to convert to C long");
+				goto exit;
+			}
+		}
+		/* Haven't lost any bits, but casting to long requires extra care
+		 * (see comment above).
+	         */
+		if (x <= (unsigned long)LONG_MAX) {
+			res = (long)x * sign;
+		}
+		else if (sign < 0 && x == PY_ABS_LONG_MIN) {
+			res = LONG_MIN;
+		}
+		else {
+			PyErr_SetString(PyExc_OverflowError,
+				"Python int too large to convert to C long");
+		}	
+	}
+ exit:
 	if (do_decref) {
 		Py_DECREF(vv);
 	}
-	PyErr_SetString(PyExc_OverflowError,
-			"Python int too large to convert to C long");
-	return -1;
+	return res;
 }
 
 int
