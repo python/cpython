@@ -87,7 +87,7 @@ absolute_import_test = [
     "a.module",
     ["a", "a.module",
      "b", "b.x", "b.y", "b.z",
-     "__future__", "sys", "exceptions"],
+     "__future__", "sys", "gc"],
     ["blahblah", "z"], [],
     """\
 mymodule.py
@@ -96,11 +96,11 @@ a/module.py
                                 from __future__ import absolute_import
                                 import sys # sys
                                 import blahblah # fails
-                                import exceptions # exceptions
+                                import gc # gc
                                 import b.x # b.x
                                 from b import y # b.y
                                 from b.z import * # b.z.*
-a/exceptions.py
+a/gc.py
 a/sys.py
                                 import mymodule
 a/b/__init__.py
@@ -123,7 +123,7 @@ relative_import_test = [
      "a.b.c", "a.b.c.moduleC",
      "a.b.c.d", "a.b.c.e",
      "a.b.x",
-     "exceptions"],
+     "gc"],
     [], [],
     """\
 mymodule.py
@@ -131,8 +131,8 @@ a/__init__.py
                                 from .b import y, z # a.b.y, a.b.z
 a/module.py
                                 from __future__ import absolute_import # __future__
-                                import exceptions # exceptions
-a/exceptions.py
+                                import gc # gc
+a/gc.py
 a/sys.py
 a/b/__init__.py
                                 from ..b import x # a.b.x
@@ -170,7 +170,7 @@ a/__init__.py
 a/another.py
 a/module.py
                                 from .b import y, z # a.b.y, a.b.z
-a/exceptions.py
+a/gc.py
 a/sys.py
 a/b/__init__.py
                                 from .c import moduleC # a.b.c.moduleC

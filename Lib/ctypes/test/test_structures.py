@@ -294,20 +294,20 @@ class StructureTestCase(unittest.TestCase):
         # In Python 2.5, Exception is a new-style class, and the repr changed
         if issubclass(Exception, object):
             self.failUnlessEqual(msg,
-                                 "(Phone) <type 'exceptions.TypeError'>: "
+                                 "(Phone) <type 'TypeError'>: "
                                  "expected string or Unicode object, int found")
         else:
             self.failUnlessEqual(msg,
-                                 "(Phone) exceptions.TypeError: "
+                                 "(Phone) TypeError: "
                                  "expected string or Unicode object, int found")
 
         cls, msg = self.get_except(Person, "Someone", ("a", "b", "c"))
         self.failUnlessEqual(cls, RuntimeError)
         if issubclass(Exception, object):
             self.failUnlessEqual(msg,
-                                 "(Phone) <type 'exceptions.ValueError'>: too many initializers")
+                                 "(Phone) <type 'ValueError'>: too many initializers")
         else:
-            self.failUnlessEqual(msg, "(Phone) exceptions.ValueError: too many initializers")
+            self.failUnlessEqual(msg, "(Phone) ValueError: too many initializers")
 
 
     def get_except(self, func, *args):

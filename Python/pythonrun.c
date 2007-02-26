@@ -221,7 +221,6 @@ Py_InitializeEx(int install_sigs)
 
 	/* initialize builtin exceptions */
 	_PyExc_Init();
-	_PyImport_FixupExtension("exceptions", "exceptions");
 
 	/* phase 2 of builtins */
 	_PyImport_FixupExtension("__builtin__", "__builtin__");
@@ -1168,7 +1167,7 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 				err = PyFile_WriteString("<unknown>", f);
 			else {
 				char* modstr = PyString_AsString(moduleName);
-				if (modstr && strcmp(modstr, "exceptions"))
+				if (modstr && strcmp(modstr, "__builtin__"))
 				{
 					err = PyFile_WriteString(modstr, f);
 					err += PyFile_WriteString(".", f);

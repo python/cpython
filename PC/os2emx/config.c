@@ -172,7 +172,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"__main__", NULL},
 	{"__builtin__", NULL},
 	{"sys", NULL},
-	{"exceptions", NULL},
 
 	/* This lives in gcmodule.c */
 	{"gc", initgc},
