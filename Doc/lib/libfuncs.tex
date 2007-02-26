@@ -607,6 +607,11 @@ class C:
   \warning{The contents of this dictionary should not be modified;
   changes may not affect the values of local variables used by the
   interpreter.}
+
+  Free variables are returned by \var{locals} when it is called in
+  a function block.  Modifications of free variables may not affect
+  the values used by the interpreter.  Free variables are not
+  returned in class blocks.
 \end{funcdesc}
 
 \begin{funcdesc}{long}{\optional{x\optional{, radix}}}
