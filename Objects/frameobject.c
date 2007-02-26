@@ -701,18 +701,38 @@ PyFrame_BlockPop(PyFrameObject *f)
 	return b;
 }
 
-/* Convert between "fast" version of locals and dictionary version */
+/* Convert between "fast" version of locals and dictionary version.
+   
+   map and values are input arguments.  map is a tuple of strings.
+   values is an array of PyObject*.  At index i, map[i] is the name of
+   the variable with value values[i].  The function copies the first
+   nmap variable from map/values into dict.  If values[i] is NULL,
+   the variable is deleted from dict.
+
+   If deref is true, then the values being copied are cell variables
+   and the value is extracted from the cell variable before being put
+   in dict.
+
+   Exceptions raised while modifying the dict are silently ignored,
+   because there is no good way to report them.
+ */
 
 static void
 map_to_dict(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
-	    Py_ssize_t deref)
+	    int deref)
 {
 	Py_ssize_t j;
+        assert(PyTuple_Check(map));
+        assert(PyDict_Check(dict));
+        assert(PyTuple_Size(map) > nmap);
 	for (j = nmap; --j >= 0; ) {
 		PyObject *key = PyTuple_GET_ITEM(map, j);
 		PyObject *value = values[j];
-		if (deref)
+                assert(PyString_Check(key));
+		if (deref) {
+                        assert(PyCell_Check(value));
 			value = PyCell_GET(value);
+                }
 		if (value == NULL) {
 			if (PyObject_DelItem(dict, key) != 0)
 				PyErr_Clear();
@@ -724,29 +744,55 @@ map_to_dict(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
 	}
 }
 
+/* Copy values from the "locals" dict into the fast locals.
+
+   dict is an input argument containing string keys representing
+   variables names and arbitrary PyObject* as values.
+
+   map and values are input arguments.  map is a tuple of strings.
+   values is an array of PyObject*.  At index i, map[i] is the name of
+   the variable with value values[i].  The function copies the first
+   nmap variable from map/values into dict.  If values[i] is NULL,
+   the variable is deleted from dict.
+
+   If deref is true, then the values being copied are cell variables
+   and the value is extracted from the cell variable before being put
+   in dict.  If clear is true, then variables in map but not in dict
+   are set to NULL in map; if clear is false, variables missing in
+   dict are ignored.
+
+   Exceptions raised while modifying the dict are silently ignored,
+   because there is no good way to report them.
+*/
+
 static void
 dict_to_map(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
-	    Py_ssize_t deref, int clear)
+	    int deref, int clear)
 {
 	Py_ssize_t j;
+        assert(PyTuple_Check(map));
+        assert(PyDict_Check(dict));
+        assert(PyTuple_Size(map) > nmap);
 	for (j = nmap; --j >= 0; ) {
 		PyObject *key = PyTuple_GET_ITEM(map, j);
 		PyObject *value = PyObject_GetItem(dict, key);
-		if (value == NULL)
+                assert(PyString_Check(key));
+                /* We only care about NULLs if clear is true. */
+		if (value == NULL) {
 			PyErr_Clear();
+                        if (!clear)
+                                continue;
+                }
 		if (deref) {
-			if (value || clear) {
-				if (PyCell_GET(values[j]) != value) {
-					if (PyCell_Set(values[j], value) < 0)
-						PyErr_Clear();
-				}
-			}
-		} else if (value != NULL || clear) {
-			if (values[j] != value) {
-				Py_XINCREF(value);
-				Py_XDECREF(values[j]);
-				values[j] = value;
-			}
+                        assert(PyCell_Check(values[j]));
+                        if (PyCell_GET(values[j]) != value) {
+                                if (PyCell_Set(values[j], value) < 0)
+                                        PyErr_Clear();
+                        }
+		} else if (values[j] != value) {
+                        Py_XINCREF(value);
+                        Py_XDECREF(values[j]);
+                        values[j] = value;
 		}
 		Py_XDECREF(value);
 	}
@@ -788,8 +834,18 @@ PyFrame_FastToLocals(PyFrameObject *f)
 	if (ncells || nfreevars) {
 		map_to_dict(co->co_cellvars, ncells,
 			    locals, fast + co->co_nlocals, 1);
-		map_to_dict(co->co_freevars, nfreevars,
-			    locals, fast + co->co_nlocals + ncells, 1);
+                /* If the namespace is unoptimized, then one of the 
+                   following cases applies:
+                   1. It does not contain free variables, because it
+                      uses import * or is a top-level namespace.
+                   2. It is a class namespace.
+                   We don't want to accidentally copy free variables
+                   into the locals dict used by the class.
+                */
+                if (co->co_flags & CO_OPTIMIZED) {
+                        map_to_dict(co->co_freevars, nfreevars,
+                                    locals, fast + co->co_nlocals + ncells, 1);
+                }
 	}
 	PyErr_Restore(error_type, error_value, error_traceback);
 }
