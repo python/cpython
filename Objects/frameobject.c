@@ -724,7 +724,7 @@ map_to_dict(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
 	Py_ssize_t j;
         assert(PyTuple_Check(map));
         assert(PyDict_Check(dict));
-        assert(PyTuple_Size(map) > nmap);
+        assert(PyTuple_Size(map) >= nmap);
 	for (j = nmap; --j >= 0; ) {
 		PyObject *key = PyTuple_GET_ITEM(map, j);
 		PyObject *value = values[j];
@@ -772,7 +772,7 @@ dict_to_map(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
 	Py_ssize_t j;
         assert(PyTuple_Check(map));
         assert(PyDict_Check(dict));
-        assert(PyTuple_Size(map) > nmap);
+        assert(PyTuple_Size(map) >= nmap);
 	for (j = nmap; --j >= 0; ) {
 		PyObject *key = PyTuple_GET_ITEM(map, j);
 		PyObject *value = PyObject_GetItem(dict, key);
