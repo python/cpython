@@ -299,10 +299,8 @@ class FunctionVisitor(PrototypeVisitor):
                 emit('}', 1)
 
         emit("p = (%s)PyArena_Malloc(arena, sizeof(*p));" % ctype, 1);
-        emit("if (!p) {", 1)
-        emit("PyErr_NoMemory();", 2)
+        emit("if (!p)", 1)
         emit("return NULL;", 2)
-        emit("}", 1)
         if union:
             self.emit_body_union(name, args, attrs)
         else:
@@ -474,7 +472,7 @@ static PyObject* ast2obj_bool(bool b)
     return PyBool_FromLong(b);
 }
 
-static PyObject* ast2obj_int(bool b)
+static PyObject* ast2obj_int(long b)
 {
     return PyInt_FromLong(b);
 }

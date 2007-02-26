@@ -2,7 +2,7 @@
 
 
 /*
-   __version__ 53872.
+   __version__ 53873.
 
    This module must be committed separately after each AST grammar change;
    The __version__ number is set to the revision number of the commit
@@ -448,7 +448,7 @@ static PyObject* ast2obj_bool(bool b)
     return PyBool_FromLong(b);
 }
 
-static PyObject* ast2obj_int(bool b)
+static PyObject* ast2obj_int(long b)
 {
     return PyInt_FromLong(b);
 }
@@ -754,10 +754,8 @@ Module(asdl_seq * body, PyArena *arena)
 {
         mod_ty p;
         p = (mod_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Module_kind;
         p->v.Module.body = body;
         return p;
@@ -768,10 +766,8 @@ Interactive(asdl_seq * body, PyArena *arena)
 {
         mod_ty p;
         p = (mod_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Interactive_kind;
         p->v.Interactive.body = body;
         return p;
@@ -787,10 +783,8 @@ Expression(expr_ty body, PyArena *arena)
                 return NULL;
         }
         p = (mod_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Expression_kind;
         p->v.Expression.body = body;
         return p;
@@ -801,10 +795,8 @@ Suite(asdl_seq * body, PyArena *arena)
 {
         mod_ty p;
         p = (mod_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Suite_kind;
         p->v.Suite.body = body;
         return p;
@@ -827,10 +819,8 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
                 return NULL;
         }
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = FunctionDef_kind;
         p->v.FunctionDef.name = name;
         p->v.FunctionDef.args = args;
@@ -853,10 +843,8 @@ ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int lineno, int
                 return NULL;
         }
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = ClassDef_kind;
         p->v.ClassDef.name = name;
         p->v.ClassDef.bases = bases;
@@ -871,10 +859,8 @@ Return(expr_ty value, int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Return_kind;
         p->v.Return.value = value;
         p->lineno = lineno;
@@ -887,10 +873,8 @@ Delete(asdl_seq * targets, int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Delete_kind;
         p->v.Delete.targets = targets;
         p->lineno = lineno;
@@ -909,10 +893,8 @@ Assign(asdl_seq * targets, expr_ty value, int lineno, int col_offset, PyArena
                 return NULL;
         }
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Assign_kind;
         p->v.Assign.targets = targets;
         p->v.Assign.value = value;
@@ -942,10 +924,8 @@ AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno, int
                 return NULL;
         }
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = AugAssign_kind;
         p->v.AugAssign.target = target;
         p->v.AugAssign.op = op;
@@ -971,10 +951,8 @@ For(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse, int
                 return NULL;
         }
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = For_kind;
         p->v.For.target = target;
         p->v.For.iter = iter;
@@ -996,10 +974,8 @@ While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, int
                 return NULL;
         }
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = While_kind;
         p->v.While.test = test;
         p->v.While.body = body;
@@ -1020,10 +996,8 @@ If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, int
                 return NULL;
         }
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = If_kind;
         p->v.If.test = test;
         p->v.If.body = body;
@@ -1044,10 +1018,8 @@ With(expr_ty context_expr, expr_ty optional_vars, asdl_seq * body, int lineno,
                 return NULL;
         }
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = With_kind;
         p->v.With.context_expr = context_expr;
         p->v.With.optional_vars = optional_vars;
@@ -1063,10 +1035,8 @@ Raise(expr_ty type, expr_ty inst, expr_ty tback, int lineno, int col_offset,
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Raise_kind;
         p->v.Raise.type = type;
         p->v.Raise.inst = inst;
@@ -1082,10 +1052,8 @@ TryExcept(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse, int lineno,
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = TryExcept_kind;
         p->v.TryExcept.body = body;
         p->v.TryExcept.handlers = handlers;
@@ -1101,10 +1069,8 @@ TryFinally(asdl_seq * body, asdl_seq * finalbody, int lineno, int col_offset,
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = TryFinally_kind;
         p->v.TryFinally.body = body;
         p->v.TryFinally.finalbody = finalbody;
@@ -1123,10 +1089,8 @@ Assert(expr_ty test, expr_ty msg, int lineno, int col_offset, PyArena *arena)
                 return NULL;
         }
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Assert_kind;
         p->v.Assert.test = test;
         p->v.Assert.msg = msg;
@@ -1140,10 +1104,8 @@ Import(asdl_seq * names, int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Import_kind;
         p->v.Import.names = names;
         p->lineno = lineno;
@@ -1162,10 +1124,8 @@ ImportFrom(identifier module, asdl_seq * names, int level, int lineno, int
                 return NULL;
         }
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = ImportFrom_kind;
         p->v.ImportFrom.module = module;
         p->v.ImportFrom.names = names;
@@ -1180,10 +1140,8 @@ Global(asdl_seq * names, int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Global_kind;
         p->v.Global.names = names;
         p->lineno = lineno;
@@ -1201,10 +1159,8 @@ Expr(expr_ty value, int lineno, int col_offset, PyArena *arena)
                 return NULL;
         }
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Expr_kind;
         p->v.Expr.value = value;
         p->lineno = lineno;
@@ -1217,10 +1173,8 @@ Pass(int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Pass_kind;
         p->lineno = lineno;
         p->col_offset = col_offset;
@@ -1232,10 +1186,8 @@ Break(int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Break_kind;
         p->lineno = lineno;
         p->col_offset = col_offset;
@@ -1247,10 +1199,8 @@ Continue(int lineno, int col_offset, PyArena *arena)
 {
         stmt_ty p;
         p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Continue_kind;
         p->lineno = lineno;
         p->col_offset = col_offset;
@@ -1268,10 +1218,8 @@ BoolOp(boolop_ty op, asdl_seq * values, int lineno, int col_offset, PyArena
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = BoolOp_kind;
         p->v.BoolOp.op = op;
         p->v.BoolOp.values = values;
@@ -1301,10 +1249,8 @@ BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, int col_offset,
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = BinOp_kind;
         p->v.BinOp.left = left;
         p->v.BinOp.op = op;
@@ -1330,10 +1276,8 @@ UnaryOp(unaryop_ty op, expr_ty operand, int lineno, int col_offset, PyArena
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = UnaryOp_kind;
         p->v.UnaryOp.op = op;
         p->v.UnaryOp.operand = operand;
@@ -1358,10 +1302,8 @@ Lambda(arguments_ty args, expr_ty body, int lineno, int col_offset, PyArena
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Lambda_kind;
         p->v.Lambda.args = args;
         p->v.Lambda.body = body;
@@ -1391,10 +1333,8 @@ IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, int col_offset,
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = IfExp_kind;
         p->v.IfExp.test = test;
         p->v.IfExp.body = body;
@@ -1410,10 +1350,8 @@ Dict(asdl_seq * keys, asdl_seq * values, int lineno, int col_offset, PyArena
 {
         expr_ty p;
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Dict_kind;
         p->v.Dict.keys = keys;
         p->v.Dict.values = values;
@@ -1427,10 +1365,8 @@ Set(asdl_seq * elts, int lineno, int col_offset, PyArena *arena)
 {
         expr_ty p;
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Set_kind;
         p->v.Set.elts = elts;
         p->lineno = lineno;
@@ -1449,10 +1385,8 @@ ListComp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset,
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = ListComp_kind;
         p->v.ListComp.elt = elt;
         p->v.ListComp.generators = generators;
@@ -1472,10 +1406,8 @@ GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset,
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = GeneratorExp_kind;
         p->v.GeneratorExp.elt = elt;
         p->v.GeneratorExp.generators = generators;
@@ -1489,10 +1421,8 @@ Yield(expr_ty value, int lineno, int col_offset, PyArena *arena)
 {
         expr_ty p;
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Yield_kind;
         p->v.Yield.value = value;
         p->lineno = lineno;
@@ -1511,10 +1441,8 @@ Compare(expr_ty left, asdl_int_seq * ops, asdl_seq * comparators, int lineno,
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Compare_kind;
         p->v.Compare.left = left;
         p->v.Compare.ops = ops;
@@ -1535,10 +1463,8 @@ Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty starargs,
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Call_kind;
         p->v.Call.func = func;
         p->v.Call.args = args;
@@ -1560,10 +1486,8 @@ Num(object n, int lineno, int col_offset, PyArena *arena)
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Num_kind;
         p->v.Num.n = n;
         p->lineno = lineno;
@@ -1581,10 +1505,8 @@ Str(string s, int lineno, int col_offset, PyArena *arena)
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Str_kind;
         p->v.Str.s = s;
         p->lineno = lineno;
@@ -1602,10 +1524,8 @@ Bytes(string s, int lineno, int col_offset, PyArena *arena)
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Bytes_kind;
         p->v.Bytes.s = s;
         p->lineno = lineno;
@@ -1618,10 +1538,8 @@ Ellipsis(int lineno, int col_offset, PyArena *arena)
 {
         expr_ty p;
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Ellipsis_kind;
         p->lineno = lineno;
         p->col_offset = col_offset;
@@ -1649,10 +1567,8 @@ Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno, int
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Attribute_kind;
         p->v.Attribute.value = value;
         p->v.Attribute.attr = attr;
@@ -1683,10 +1599,8 @@ Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int lineno, int
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Subscript_kind;
         p->v.Subscript.value = value;
         p->v.Subscript.slice = slice;
@@ -1712,10 +1626,8 @@ Name(identifier id, expr_context_ty ctx, int lineno, int col_offset, PyArena
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Name_kind;
         p->v.Name.id = id;
         p->v.Name.ctx = ctx;
@@ -1735,10 +1647,8 @@ List(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset, PyArena
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = List_kind;
         p->v.List.elts = elts;
         p->v.List.ctx = ctx;
@@ -1758,10 +1668,8 @@ Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset, PyArena
                 return NULL;
         }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Tuple_kind;
         p->v.Tuple.elts = elts;
         p->v.Tuple.ctx = ctx;
@@ -1775,10 +1683,8 @@ Slice(expr_ty lower, expr_ty upper, expr_ty step, PyArena *arena)
 {
         slice_ty p;
         p = (slice_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Slice_kind;
         p->v.Slice.lower = lower;
         p->v.Slice.upper = upper;
@@ -1791,10 +1697,8 @@ ExtSlice(asdl_seq * dims, PyArena *arena)
 {
         slice_ty p;
         p = (slice_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = ExtSlice_kind;
         p->v.ExtSlice.dims = dims;
         return p;
@@ -1810,10 +1714,8 @@ Index(expr_ty value, PyArena *arena)
                 return NULL;
         }
         p = (slice_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = Index_kind;
         p->v.Index.value = value;
         return p;
@@ -1834,10 +1736,8 @@ comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs, PyArena *arena)
                 return NULL;
         }
         p = (comprehension_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->target = target;
         p->iter = iter;
         p->ifs = ifs;
@@ -1850,10 +1750,8 @@ excepthandler(expr_ty type, identifier name, asdl_seq * body, int lineno, int
 {
         excepthandler_ty p;
         p = (excepthandler_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->type = type;
         p->name = name;
         p->body = body;
@@ -1869,10 +1767,8 @@ arguments(asdl_seq * args, identifier vararg, expr_ty varargannotation,
 {
         arguments_ty p;
         p = (arguments_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->args = args;
         p->vararg = vararg;
         p->varargannotation = varargannotation;
@@ -1894,10 +1790,8 @@ SimpleArg(identifier arg, expr_ty annotation, PyArena *arena)
                 return NULL;
         }
         p = (arg_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = SimpleArg_kind;
         p->v.SimpleArg.arg = arg;
         p->v.SimpleArg.annotation = annotation;
@@ -1909,10 +1803,8 @@ NestedArgs(asdl_seq * args, PyArena *arena)
 {
         arg_ty p;
         p = (arg_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->kind = NestedArgs_kind;
         p->v.NestedArgs.args = args;
         return p;
@@ -1933,10 +1825,8 @@ keyword(identifier arg, expr_ty value, PyArena *arena)
                 return NULL;
         }
         p = (keyword_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->arg = arg;
         p->value = value;
         return p;
@@ -1952,10 +1842,8 @@ alias(identifier name, identifier asname, PyArena *arena)
                 return NULL;
         }
         p = (alias_ty)PyArena_Malloc(arena, sizeof(*p));
-        if (!p) {
-                PyErr_NoMemory();
+        if (!p)
                 return NULL;
-        }
         p->name = name;
         p->asname = asname;
         return p;
@@ -3125,7 +3013,7 @@ init_ast(void)
         if (PyDict_SetItemString(d, "AST", (PyObject*)AST_type) < 0) return;
         if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
                 return;
-        if (PyModule_AddStringConstant(m, "__version__", "53872") < 0)
+        if (PyModule_AddStringConstant(m, "__version__", "53873") < 0)
                 return;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return;
         if (PyDict_SetItemString(d, "Module", (PyObject*)Module_type) < 0)
