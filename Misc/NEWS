@@ -62,6 +62,21 @@ Core and Builtins
 
 - Added function annotations per PEP 3107.
 
+- Added nonlocal declaration from PEP 3104
+
+  >>> def f(x):
+  ...     def inc():
+  ...         nonlocal x
+  ...         x += 1
+  ...         return x
+  ...     return inc
+  ...
+  >>> inc = f(0)
+  >>> inc()
+  1
+  >>> inc()
+  2
+
 - Moved intern() to sys.intern().
 
 - exec is now a function.
