@@ -129,12 +129,12 @@ static struct gai_afd {
 #define IN_LOOPBACKNET	    127
 #endif
 
-static int get_name Py_PROTO((const char *, struct gai_afd *,
+static int get_name(const char *, struct gai_afd *,
 			  struct addrinfo **, char *, struct addrinfo *,
-			  int));
-static int get_addr Py_PROTO((const char *, int, struct addrinfo **,
-			struct addrinfo *, int));
-static int str_isnumber Py_PROTO((const char *));
+			  int);
+static int get_addr(const char *, int, struct addrinfo **,
+			struct addrinfo *, int);
+static int str_isnumber(const char *);
 	
 static char *ai_errlist[] = {
 	"success.",
