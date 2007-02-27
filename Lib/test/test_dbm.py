@@ -17,7 +17,7 @@ def cleanup():
         try:
             os.unlink(filename + suffix)
         except OSError as e:
-            (errno, strerror) = e
+            (errno, strerror) = e.errno, e.strerror
             # if we can't delete the file because of permissions,
             # nothing will work, so skip the test
             if errno == 1:

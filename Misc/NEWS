@@ -28,6 +28,8 @@ TO DO
 Core and Builtins
 -----------------
 
+- Removing indexing/slicing on BaseException.
+
 - Remove the exceptions module, all the exceptions are already builtin.
 
 - input() becomes raw_input(): the name input() now implements the

@@ -15,7 +15,7 @@ class ExceptionClassTests(unittest.TestCase):
         self.failUnless(issubclass(Exception, object))
 
     def verify_instance_interface(self, ins):
-        for attr in ("args", "message", "__str__", "__repr__", "__getitem__"):
+        for attr in ("args", "message", "__str__", "__repr__"):
             self.failUnless(hasattr(ins, attr), "%s missing %s attribute" %
                     (ins.__class__.__name__, attr))
 
@@ -72,8 +72,7 @@ class ExceptionClassTests(unittest.TestCase):
             inheritance_tree.close()
         self.failUnlessEqual(len(exc_set), 0, "%s not accounted for" % exc_set)
 
-    interface_tests = ("length", "args", "message", "str", "unicode", "repr",
-            "indexing")
+    interface_tests = ("length", "args", "message", "str", "unicode", "repr")
 
     def interface_test_driver(self, results):
         for test_name, (given, expected) in zip(self.interface_tests, results):
@@ -86,7 +85,7 @@ class ExceptionClassTests(unittest.TestCase):
         exc = Exception(arg)
         results = ([len(exc.args), 1], [exc.args[0], arg], [exc.message, arg],
                 [str(exc), str(arg)], [unicode(exc), unicode(arg)],
-            [repr(exc), exc.__class__.__name__ + repr(exc.args)], [exc[0], arg])
+            [repr(exc), exc.__class__.__name__ + repr(exc.args)])
         self.interface_test_driver(results)
 
     def test_interface_multi_arg(self):
@@ -97,8 +96,7 @@ class ExceptionClassTests(unittest.TestCase):
         results = ([len(exc.args), arg_count], [exc.args, args],
                 [exc.message, ''], [str(exc), str(args)],
                 [unicode(exc), unicode(args)],
-                [repr(exc), exc.__class__.__name__ + repr(exc.args)],
-                [exc[-1], args[-1]])
+                [repr(exc), exc.__class__.__name__ + repr(exc.args)])
         self.interface_test_driver(results)
 
     def test_interface_no_arg(self):
@@ -106,7 +104,7 @@ class ExceptionClassTests(unittest.TestCase):
         exc = Exception()
         results = ([len(exc.args), 0], [exc.args, tuple()], [exc.message, ''],
                 [str(exc), ''], [unicode(exc), u''],
-                [repr(exc), exc.__class__.__name__ + '()'], [True, True])
+                [repr(exc), exc.__class__.__name__ + '()'])
         self.interface_test_driver(results)
 
 class UsageTests(unittest.TestCase):
@@ -165,6 +163,10 @@ class UsageTests(unittest.TestCase):
             pass
         self.catch_fails(NonBaseException)
         self.catch_fails(NonBaseException())
+
+    def test_catch_BaseException_instance(self):
+        # Catching an instance of a BaseException subclass won't work.
+        self.catch_fails(BaseException())
 
     def test_catch_string(self):
         # Catching a string is bad.
