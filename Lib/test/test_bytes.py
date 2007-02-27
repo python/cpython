@@ -145,6 +145,17 @@ class BytesTest(unittest.TestCase):
         input.reverse()
         self.assertEqual(output, input)
 
+    def test_reverse(self):
+        b = b'hello'
+        self.assertEqual(b.reverse(), None)
+        self.assertEqual(b, b'olleh')
+        b = b'hello1' # test even number of items
+        b.reverse()
+        self.assertEqual(b, b'1olleh')
+        b = bytes()
+        b.reverse()
+        self.assertFalse(b)
+
     def test_getslice(self):
         def by(s):
             return bytes(map(ord, s))
@@ -434,36 +445,171 @@ class BytesTest(unittest.TestCase):
             self.assertRaises(SyntaxError, eval,
                               'b"%s"' % chr(c))
 
+    def test_extend(self):
+        orig = b'hello'
+        a = bytes(orig)
+        a.extend(a)
+        self.assertEqual(a, orig + orig)
+        self.assertEqual(a[5:], orig)
+    
+    def test_remove(self):
+        b = b'hello'
+        b.remove(ord('l'))
+        self.assertEqual(b, b'helo')
+        b.remove(ord('l'))
+        self.assertEqual(b, b'heo')
+        self.assertRaises(ValueError, lambda: b.remove(ord('l')))
+        self.assertRaises(ValueError, lambda: b.remove(400))
+        self.assertRaises(ValueError, lambda: b.remove('e'))
+        # remove first and last
+        b.remove(ord('o'))
+        b.remove(ord('h'))
+        self.assertEqual(b, b'e')
+
+    def test_pop(self):
+        b = b'world'
+        self.assertEqual(b.pop(), ord('d'))
+        self.assertEqual(b.pop(0), ord('w'))
+        self.assertEqual(b.pop(-2), ord('r'))
+        self.assertRaises(IndexError, lambda: b.pop(10))
+        self.assertRaises(OverflowError, lambda: bytes().pop())
+
+    def test_nosort(self):
+        self.assertRaises(AttributeError, lambda: bytes().sort())
+
+    def test_index(self):
+        b = b'parrot'
+        self.assertEqual(b.index('p'), 0)
+        self.assertEqual(b.index('rr'), 2)
+        self.assertEqual(b.index('t'), 5)
+        self.assertRaises(ValueError, lambda: b.index('w'))
+
+    def test_count(self):
+        b = b'mississippi'
+        self.assertEqual(b.count('i'), 4)
+        self.assertEqual(b.count('ss'), 2)
+        self.assertEqual(b.count('w'), 0)
+
+    def test_append(self):
+        b = b'hell'
+        b.append(ord('o'))
+        self.assertEqual(b, b'hello')
+        self.assertEqual(b.append(100), None)
+        b = bytes()
+        b.append(ord('A'))
+        self.assertEqual(len(b), 1)
+
+    def test_insert(self):
+        b = b'msssspp'
+        b.insert(1, ord('i'))
+        b.insert(4, ord('i'))
+        b.insert(-2, ord('i'))
+        b.insert(1000, ord('i'))
+        self.assertEqual(b, b'mississippi')
+
+    def test_startswith(self):
+        b = b'hello'
+        self.assertFalse(bytes().startswith("anything"))
+        self.assertTrue(b.startswith("hello"))
+        self.assertTrue(b.startswith("hel"))
+        self.assertTrue(b.startswith("h"))
+        self.assertFalse(b.startswith("hellow"))
+        self.assertFalse(b.startswith("ha"))
+
+    def test_endswith(self):
+        b = b'hello'
+        self.assertFalse(bytes().endswith("anything"))
+        self.assertTrue(b.endswith("hello"))
+        self.assertTrue(b.endswith("llo"))
+        self.assertTrue(b.endswith("o"))
+        self.assertFalse(b.endswith("whello"))
+        self.assertFalse(b.endswith("no"))
+
+    def test_find(self):
+        b = b'mississippi'
+        self.assertEqual(b.find('ss'), 2)
+        self.assertEqual(b.find('ss', 3), 5)
+        self.assertEqual(b.find('ss', 1, 7), 2)
+        self.assertEqual(b.find('ss', 1, 3), -1)
+        self.assertEqual(b.find('w'), -1)
+        self.assertEqual(b.find('mississippian'), -1)
+
+    def test_rfind(self):
+        b = b'mississippi'
+        self.assertEqual(b.rfind('ss'), 5)
+        self.assertEqual(b.rfind('ss', 3), 5)
+        self.assertEqual(b.rfind('ss', 0, 6), 2)
+        self.assertEqual(b.rfind('w'), -1)
+        self.assertEqual(b.rfind('mississippian'), -1)
+
+    def test_index(self):
+        b = b'world'
+        self.assertEqual(b.index('w'), 0)
+        self.assertEqual(b.index('orl'), 1)
+        self.assertRaises(ValueError, lambda: b.index('worm'))
+        self.assertRaises(ValueError, lambda: b.index('ldo'))
+
+    def test_rindex(self):
+        # XXX could be more rigorous
+        b = b'world'
+        self.assertEqual(b.rindex('w'), 0)
+        self.assertEqual(b.rindex('orl'), 1)
+        self.assertRaises(ValueError, lambda: b.rindex('worm'))
+        self.assertRaises(ValueError, lambda: b.rindex('ldo'))
+
+    def test_replace(self):
+        b = b'mississippi'
+        self.assertEqual(b.replace('i', 'a'), b'massassappa')
+        self.assertEqual(b.replace('ss', 'x'), b'mixixippi')
+
+    def test_translate(self):
+        b = b'hello'
+        rosetta = bytes(range(0, 256))
+        rosetta[ord('o')] = ord('e')
+        c = b.translate(rosetta, b'l')
+        self.assertEqual(b, b'hello')
+        self.assertEqual(c, b'hee')
+
+    def test_split(self):
+        b = b'mississippi'
+        self.assertEqual(b.split('i'), [b'm', b'ss', b'ss', b'pp', b''])
+        self.assertEqual(b.split('ss'), [b'mi', b'i', b'ippi'])
+        self.assertEqual(b.split('w'), [b])
+        # require an arg (no magic whitespace split)
+        self.assertRaises(TypeError, lambda: b.split())
+
+    def test_rsplit(self):
+        b = b'mississippi'
+        self.assertEqual(b.rsplit('i'), [b'm', b'ss', b'ss', b'pp', b''])
+        self.assertEqual(b.rsplit('ss'), [b'mi', b'i', b'ippi'])
+        self.assertEqual(b.rsplit('w'), [b])
+        # require an arg (no magic whitespace split)
+        self.assertRaises(TypeError, lambda: b.rsplit())
+
+    def test_partition(self):
+        b = b'mississippi'
+        self.assertEqual(b.partition(b'ss'), (b'mi', b'ss', b'issippi'))
+        self.assertEqual(b.rpartition(b'w'), (b'', b'', b'mississippi'))
+
+    def test_rpartition(self):
+        b = b'mississippi'
+        self.assertEqual(b.rpartition(b'ss'), (b'missi', b'ss', b'ippi'))
+        self.assertEqual(b.rpartition(b'i'), (b'mississipp', b'i', b''))
+
     # Optimizations:
     # __iter__? (optimization)
     # __reversed__? (optimization)
 
-    # XXX Some list methods?
-    # extended slicing
-    # extended slice assignment
-    # extend (same as b[len(b):] = src)
-    # reverse (in-place)
-    # remove
-    # pop
-    # NOT sort!
-    # With int arg:
-    # index
-    # count
-    # append
-    # insert
-
     # XXX Some string methods?  (Those that don't use character properties)
-    # startswith
-    # endswidth
-    # find, rfind
-    # index, rindex (bytes arg)
+    # lstrip, rstrip, strip?? (currently un-pepped)
     # join
-    # replace
-    # translate
-    # split, rsplit
-    # lstrip, rstrip, strip??
 
     # XXX pickle and marshal support?
+    
+    # There are tests in string_tests.py that are more
+    # comprehensive for things like split, partition, etc.
+    # Unfortunately they are all bundled with tests that
+    # are not appropriate for bytes
 
 
 def test_main():
