@@ -1,6 +1,6 @@
 # Test enhancements related to descriptors and new-style classes
 
-from test.test_support import verify, vereq, verbose, TestFailed, TESTFN, get_original_stdout
+from test.test_support import verify, vereq, verbose, TestFailed, TESTFN, get_original_stdout, run_doctest
 from copy import deepcopy
 import warnings
 
@@ -820,6 +820,22 @@ def metaclass():
     except TypeError: pass
     else: raise TestFailed, "calling object w/o call method should raise TypeError"
 
+    # Testing code to find most derived baseclass
+    class A(type):
+        def __new__(*args, **kwargs):
+            return type.__new__(*args, **kwargs)
+
+    class B(object):
+        pass
+
+    class C(object):
+        __metaclass__ = A
+
+    # The most derived metaclass of D is A rather than type.
+    class D(B, C):
+        pass
+
+
 def pymods():
     if verbose: print "Testing Python subclass of module..."
     log = []
@@ -1411,49 +1427,89 @@ def dynamics():
     verify(someclass != object)
 
 def errors():
-    if verbose: print "Testing errors..."
+    """Test that type can't be placed after an instance of type in bases.
 
-    try:
-        class C(list, dict):
-            pass
-    except TypeError:
-        pass
-    else:
-        verify(0, "inheritance from both list and dict should be illegal")
+    >>> class C(list, dict):
+    ...     pass
+    Traceback (most recent call last):
+    TypeError: Error when calling the metaclass bases
+        multiple bases have instance lay-out conflict
 
-    try:
-        class C(object, None):
-            pass
-    except TypeError:
-        pass
-    else:
-        verify(0, "inheritance from non-type should be illegal")
-    class Classic:
-        pass
+    >>> class C(object, None):
+    ...     pass
+    Traceback (most recent call last):
+    TypeError: Error when calling the metaclass bases
+        bases must be types
 
-    try:
-        class C(type(len)):
-            pass
-    except TypeError:
-        pass
-    else:
-        verify(0, "inheritance from CFunction should be illegal")
+    >>> class C(type(len)):
+    ...     pass
+    Traceback (most recent call last):
+    TypeError: Error when calling the metaclass bases
+        type 'builtin_function_or_method' is not an acceptable base type
 
-    try:
-        class C(object):
-            __slots__ = 1
-    except TypeError:
-        pass
-    else:
-        verify(0, "__slots__ = 1 should be illegal")
+    >>> class Classic:
+    ...     def __init__(*args): pass
+    >>> class C(object):
+    ...     __metaclass__ = Classic
 
-    try:
-        class C(object):
-            __slots__ = [1]
-    except TypeError:
-        pass
-    else:
-        verify(0, "__slots__ = [1] should be illegal")
+    >>> class C(object):
+    ...     __slots__ = 1
+    Traceback (most recent call last):
+    TypeError: Error when calling the metaclass bases
+        'int' object is not iterable
+
+    >>> class C(object):
+    ...     __slots__ = [1]
+    Traceback (most recent call last):
+    TypeError: Error when calling the metaclass bases
+        __slots__ items must be strings, not 'int'
+
+    >>> class A(object):
+    ...     pass
+    
+    >>> class B(A, type):
+    ...     pass
+    Traceback (most recent call last):
+    TypeError: Error when calling the metaclass bases
+        metaclass conflict: type must occur in bases before other non-classic base classes
+
+    Create two different metaclasses in order to setup an error where
+    there is no inheritance relationship between the metaclass of a class
+    and the metaclass of its bases.
+
+    >>> class M1(type):
+    ...     pass
+    >>> class M2(type):
+    ...     pass
+    >>> class A1(object):
+    ...     __metaclass__ = M1
+    >>> class A2(object):
+    ...     __metaclass__ = M2
+    >>> class B(A1, A2):
+    ...     pass
+    Traceback (most recent call last):
+    TypeError: Error when calling the metaclass bases
+        metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
+    >>> class B(A1):
+    ...     pass
+
+    Also check that assignment to bases is safe.
+    
+    >>> B.__bases__ = A1, A2
+    Traceback (most recent call last):
+    TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
+    >>> B.__bases__ = A2,
+    Traceback (most recent call last):
+    TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
+
+    >>> class M3(M1):
+    ...     pass
+    >>> class C(object):
+    ...     __metaclass__ = M3
+    >>> B.__bases__ = C,
+    Traceback (most recent call last):
+    TypeError: assignment to __bases__ may not change metatype
+    """
 
 def classmethods():
     if verbose: print "Testing class methods..."
@@ -4179,7 +4235,6 @@ def test_main():
     slots()
     slotspecials()
     dynamics()
-    errors()
     classmethods()
     classmethods_in_c()
     staticmethods()
@@ -4246,6 +4301,9 @@ def test_main():
     test_init()
     methodwrapper()
     notimplemented()
+
+    from test import test_descr
+    run_doctest(test_descr, verbosity=True)
 
     if verbose: print "All OK"
 

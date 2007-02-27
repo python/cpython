@@ -127,6 +127,7 @@ type_get_bases(PyTypeObject *type, void *context)
 	return type->tp_bases;
 }
 
+static PyTypeObject *most_derived_metaclass(PyTypeObject *, PyObject *);
 static PyTypeObject *best_base(PyObject *);
 static int mro_internal(PyTypeObject *);
 static int compatible_for_assignment(PyTypeObject *, PyTypeObject *, char *);
@@ -187,7 +188,7 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 	Py_ssize_t i;
 	int r = 0;
 	PyObject *ob, *temp;
-	PyTypeObject *new_base, *old_base;
+	PyTypeObject *new_base, *old_base, *metatype;
 	PyObject *old_bases, *old_mro;
 
 	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
@@ -228,6 +229,17 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 				return -1;
 			}
 		}
+	}
+
+
+        metatype = most_derived_metaclass(type->ob_type, value);
+        if (metatype == NULL)
+		return -1;
+	if (metatype != type->ob_type) {
+		PyErr_SetString(PyExc_TypeError,
+				"assignment to __bases__ may not change "
+				"metatype");
+		return -1;
 	}
 
 	new_base = best_base(value);
@@ -1355,7 +1367,14 @@ mro_internal(PyTypeObject *type)
 
 
 /* Calculate the best base amongst multiple base classes.
-   This is the first one that's on the path to the "solid base". */
+   This is the first one that's on the path to the "solid base".
+
+   Requires that all base classes be types or classic classes.
+
+   Will return NULL with TypeError set if
+   1) the base classes have conflicting layout instances, or
+   2) all the bases are classic classes.
+*/
 
 static PyTypeObject *
 best_base(PyObject *bases)
@@ -1373,12 +1392,7 @@ best_base(PyObject *bases)
 		base_proto = PyTuple_GET_ITEM(bases, i);
 		if (PyClass_Check(base_proto))
 			continue;
-		if (!PyType_Check(base_proto)) {
-			PyErr_SetString(
-				PyExc_TypeError,
-				"bases must be types");
-			return NULL;
-		}
+		assert(PyType_Check(base_proto));
 		base_i = (PyTypeObject *)base_proto;
 		if (base_i->tp_dict == NULL) {
 			if (PyType_Ready(base_i) < 0)
@@ -1431,6 +1445,8 @@ extra_ivars(PyTypeObject *type, PyTypeObject *base)
 	return t_size != b_size;
 }
 
+/* Return the type object that will determine the layout of the instance. */
+
 static PyTypeObject *
 solid_base(PyTypeObject *type)
 {
@@ -1444,6 +1460,71 @@ solid_base(PyTypeObject *type)
 		return type;
 	else
 		return base;
+}
+
+/* Determine the proper metatype to deal with this, and check some
+   error cases while we're at it. Note that if some other metatype
+   wins to contract, it's possible that its instances are not types.
+   
+   Error cases of interest: 1. The metaclass is not a subclass of a
+   base class. 2. A non-type, non-classic base class appears before
+   type.
+*/
+
+static PyTypeObject *
+most_derived_metaclass(PyTypeObject *metatype, PyObject *bases)
+{
+	Py_ssize_t nbases, i;
+	PyTypeObject *winner;
+	/* types_ordered: One of three states possible:
+	   0 type is in bases
+	   1 non-types also in bases
+	   2 type follows non-type in bases (error)
+	*/
+	int types_ordered = 0;
+
+	nbases = PyTuple_GET_SIZE(bases);
+	winner = metatype;
+	for (i = 0; i < nbases; i++) {
+		PyObject *tmp = PyTuple_GET_ITEM(bases, i);
+		PyTypeObject *tmptype = tmp->ob_type;
+		if (tmptype == &PyClass_Type)
+			continue; /* Special case classic classes */
+		if (!PyType_Check(tmp)) {
+			PyErr_SetString(PyExc_TypeError,
+					"bases must be types");
+			return NULL;
+		}
+		if (PyObject_IsSubclass(tmp, (PyObject*)&PyType_Type)) {
+			if (types_ordered == 1) {
+				types_ordered = 2;
+			}
+		}
+		else if (!types_ordered)
+			types_ordered = 1;
+		if (winner == tmptype)
+			continue;
+		if (PyType_IsSubtype(winner, tmptype))
+			continue;
+		if (PyType_IsSubtype(tmptype, winner)) {
+			winner = tmptype;
+			continue;
+		}
+		PyErr_SetString(PyExc_TypeError,
+				"metaclass conflict: "
+				"the metaclass of a derived class "
+				"must be a (non-strict) subclass "
+				"of the metaclasses of all its bases");
+		return NULL;
+	}
+	if (types_ordered == 2) {
+		PyErr_SetString(PyExc_TypeError,
+				"metaclass conflict: "
+				"type must occur in bases before other "
+				"non-classic base classes");
+		return NULL;
+	}
+	return winner;
 }
 
 static void object_dealloc(PyObject *);
@@ -1642,37 +1723,18 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 					 &PyDict_Type, &dict))
 		return NULL;
 
-	/* Determine the proper metatype to deal with this,
-	   and check for metatype conflicts while we're at it.
-	   Note that if some other metatype wins to contract,
-	   it's possible that its instances are not types. */
-	nbases = PyTuple_GET_SIZE(bases);
-	winner = metatype;
-	for (i = 0; i < nbases; i++) {
-		tmp = PyTuple_GET_ITEM(bases, i);
-		tmptype = tmp->ob_type;
-		if (tmptype == &PyClass_Type)
-			continue; /* Special case classic classes */
-		if (PyType_IsSubtype(winner, tmptype))
-			continue;
-		if (PyType_IsSubtype(tmptype, winner)) {
-			winner = tmptype;
-			continue;
-		}
-		PyErr_SetString(PyExc_TypeError,
-				"metaclass conflict: "
-				"the metaclass of a derived class "
-				"must be a (non-strict) subclass "
-				"of the metaclasses of all its bases");
+	winner = most_derived_metaclass(metatype, bases);
+	if (winner == NULL)
 		return NULL;
-	}
 	if (winner != metatype) {
-		if (winner->tp_new != type_new) /* Pass it to the winner */
+		if (winner->tp_new != type_new) /* Pass it to the winner */ {
 			return winner->tp_new(winner, args, kwds);
+		}
 		metatype = winner;
 	}
 
 	/* Adjust for empty tuple bases */
+	nbases = PyTuple_GET_SIZE(bases);
 	if (nbases == 0) {
 		bases = PyTuple_Pack(1, &PyBaseObject_Type);
 		if (bases == NULL)
