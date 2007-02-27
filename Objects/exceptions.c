@@ -174,33 +174,6 @@ static PyMethodDef BaseException_methods[] = {
 };
 
 
-
-static PyObject *
-BaseException_getitem(PyBaseExceptionObject *self, Py_ssize_t index)
-{
-    return PySequence_GetItem(self->args, index);
-}
-
-static PyObject *
-BaseException_getslice(PyBaseExceptionObject *self,
-			Py_ssize_t start, Py_ssize_t stop)
-{
-    return PySequence_GetSlice(self->args, start, stop);
-}
-
-static PySequenceMethods BaseException_as_sequence = {
-    0,                      /* sq_length; */
-    0,                      /* sq_concat; */
-    0,                      /* sq_repeat; */
-    (ssizeargfunc)BaseException_getitem,  /* sq_item; */
-    (ssizessizeargfunc)BaseException_getslice,  /* sq_slice; */
-    0,                      /* sq_ass_item; */
-    0,                      /* sq_ass_slice; */
-    0,                      /* sq_contains; */
-    0,                      /* sq_inplace_concat; */
-    0                       /* sq_inplace_repeat; */
-};
-
 static PyMemberDef BaseException_members[] = {
     {"message", T_OBJECT, offsetof(PyBaseExceptionObject, message), 0,
         PyDoc_STR("exception message")},
@@ -283,7 +256,7 @@ static PyTypeObject _PyExc_BaseException = {
     0,                          /* tp_compare; */
     (reprfunc)BaseException_repr, /*tp_repr*/
     0,                          /*tp_as_number*/
-    &BaseException_as_sequence, /*tp_as_sequence*/
+    0,                          /*tp_as_sequence*/
     0,                          /*tp_as_mapping*/
     0,                          /*tp_hash */
     0,                          /*tp_call*/
