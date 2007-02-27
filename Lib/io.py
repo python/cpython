@@ -1,6 +1,3 @@
-# Copyright 2006 Google, Inc. All Rights Reserved.
-# Licensed to PSF under a Contributor Agreement.
-
 """New I/O library.
 
 This is an early prototype; eventually some of this will be
@@ -9,11 +6,16 @@ reimplemented in C and the rest may be turned into a package.
 See PEP XXX; for now: http://docs.google.com/Doc?id=dfksfvqd_1cn5g5m
 """
 
-__author__ = "Guido van Rossum <guido@python.org>"
+__author__ = ("Guido van Rossum <guido@python.org>, "
+              "Mike Verdone <mike.verdone@gmail.com>")
 
-__all__ = ["open", "RawIOBase", "FileIO", "SocketIO", "BytesIO"]
+__all__ = ["open", "RawIOBase", "FileIO", "SocketIO", "BytesIO",
+           "BufferedReader", "BufferedWriter", "BufferedRWPair", "EOF"]
 
 import os
+
+DEFAULT_BUFFER_SIZE = 8 * 1024 # bytes
+EOF = b""
 
 def open(filename, mode="r", buffering=None, *, encoding=None):
     """Replacement for the built-in open function.
@@ -71,8 +73,8 @@ def open(filename, mode="r", buffering=None, *, encoding=None):
                  (appending and "a" or "") +
                  (updating and "+" or ""))
     if buffering is None:
-        buffering = 8*1024  # International standard buffer size
-        # Should default to line buffering if os.isatty(raw.fileno())
+        buffering = DEFAULT_BUFFER_SIZE
+        # XXX Should default to line buffering if os.isatty(raw.fileno())
         try:
             bs = os.fstat(raw.fileno()).st_blksize
         except (os.error, AttributeError):
@@ -219,7 +221,7 @@ class FileIO(RawIOBase):
     def fileno(self):
         return self._fd
 
-    
+
 class SocketIO(RawIOBase):
 
     """Raw I/O implementation for stream sockets."""
@@ -249,12 +251,18 @@ class SocketIO(RawIOBase):
     def writable(self):
         return "w" in self._mode
 
-    # XXX(nnorwitz)???  def fileno(self): return self._sock.fileno()
+    def fileno(self):
+        return self._sock.fileno()
 
 
-class BytesIO(RawIOBase):
+class BufferedIOBase(RawIOBase):
 
-    """Raw I/O implementation for bytes, like StringIO."""
+    """XXX Docstring."""
+
+
+class BytesIO(BufferedIOBase):
+
+    """Buffered I/O implementation using a bytes buffer, like StringIO."""
 
     # XXX More docs
 
@@ -267,7 +275,9 @@ class BytesIO(RawIOBase):
     def getvalue(self):
         return self._buffer
 
-    def read(self, n):
+    def read(self, n=None):
+        if n is None:
+            n = len(self._buffer)
         assert n >= 0
         newpos = min(len(self._buffer), self._pos + n)
         b = self._buffer[self._pos : newpos]
@@ -312,3 +322,113 @@ class BytesIO(RawIOBase):
 
     def seekable(self):
         return True
+
+
+class BufferedReader(BufferedIOBase):
+
+    """Buffered reader.
+
+    Buffer for a readable sequential RawIO object. Does not allow
+    random access (seek, tell).
+    """
+
+    def __init__(self, raw):
+        """
+        Create a new buffered reader using the given readable raw IO object.
+        """
+        assert raw.readable()
+        self.raw = raw
+        self._read_buf = b''
+        if hasattr(raw, 'fileno'):
+            self.fileno = raw.fileno
+
+    def read(self, n=None):
+        """
+        Read n bytes. Returns exactly n bytes of data unless the underlying
+        raw IO stream reaches EOF of if the call would block in non-blocking
+        mode. If n is None, read until EOF or until read() would block.
+        """
+        nodata_val = EOF
+        while (len(self._read_buf) < n) if (n is not None) else True:
+            current = self.raw.read(n)
+            if current in (EOF, None):
+                nodata_val = current
+                break
+            self._read_buf += current # XXX using += is bad
+        read = self._read_buf[:n]
+        if (not self._read_buf):
+            return nodata_val
+        self._read_buf = self._read_buf[n if n else 0:]
+        return read
+
+    def write(self, b):
+        raise IOError(".write() unsupported")
+
+    def readable(self):
+        return True
+
+    def flush(self):
+        # Flush is a no-op
+        pass
+
+
+class BufferedWriter(BufferedIOBase):
+
+    """Buffered writer.
+
+    XXX More docs.
+    """
+
+    def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE):
+        assert raw.writeable()
+        self.raw = raw
+        self.buffer_size = buffer_size
+        self._write_buf_stack = []
+        self._write_buf_size = 0
+        if hasattr(raw, 'fileno'):
+            self.fileno = raw.fileno
+
+    def read(self, n=None):
+        raise IOError(".read() not supported")
+
+    def write(self, b):
+        assert issubclass(type(b), bytes)
+        self._write_buf_stack.append(b)
+        self._write_buf_size += len(b)
+        if (self._write_buf_size > self.buffer_size):
+            self.flush()
+
+    def writeable(self):
+        return True
+
+    def flush(self):
+        buf = b''.join(self._write_buf_stack)
+        while len(buf):
+            buf = buf[self.raw.write(buf):]
+        self._write_buf_stack = []
+        self._write_buf_size = 0
+
+    # XXX support flushing buffer on close, del
+
+
+class BufferedRWPair(BufferedReader, BufferedWriter):
+
+    """Buffered Read/Write Pair.
+
+    A buffered reader object and buffered writer object put together to
+    form a sequential IO object that can read and write.
+    """
+
+    def __init__(self, bufferedReader, bufferedWriter):
+        assert bufferedReader.readable()
+        assert bufferedWriter.writeable()
+        self.bufferedReader = bufferedReader
+        self.bufferedWriter = bufferedWriter
+        self.read = bufferedReader.read
+        self.write = bufferedWriter.write
+        self.flush = bufferedWriter.flush
+        self.readable = bufferedReader.readable
+        self.writeable = bufferedWriter.writeable
+
+    def seekable(self):
+        return False
