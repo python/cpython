@@ -126,6 +126,13 @@ Core and builtins
 
 - Bug #1664966: Fix crash in exec if Unicode filename can't be decoded.
 
+- Add new requirements for metaclasses.  1) If type or a subclass of type
+  occurs in __bases__, it must occur before any non-type bases, e.g.
+  before regular classes.  2) If you assign to __bases__, you may not
+  change the metaclass.  Many more illegal assignments to __bases__
+  are now checked and raise TypeErrors.  This changed fixed at least
+  one known crash.
+
 Library
 -------
 
