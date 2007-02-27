@@ -970,17 +970,82 @@ bytes_join(PyObject *cls, PyObject *it)
     return NULL;
 }
 
+PyDoc_STRVAR(fromhex_doc,
+"bytes.fromhex(string) -> bytes\n\
+\n\
+Create a bytes object from a string of hexadecimal numbers.\n\
+Spaces between two numbers are accepted. Example:\n\
+bytes.fromhex('10 2030') -> bytes([0x10, 0x20, 0x30]).");
+
+static int
+hex_digit_to_int(int c)
+{
+	if (isdigit(c))
+		return c - '0';
+	else {
+		if (isupper(c))
+			c = tolower(c);
+		if (c >= 'a' && c <= 'f')
+			return c - 'a' + 10;
+	}
+	return -1;
+}
+
+static PyObject *
+bytes_fromhex(PyObject *cls, PyObject *args)
+{
+    PyObject *newbytes;
+    char *hex, *buf;
+    Py_ssize_t len, byteslen, i, j;
+    int top, bot;
+
+    if (!PyArg_ParseTuple(args, "s#:fromhex", &hex, &len))
+        return NULL;
+
+    byteslen = len / 2; /* max length if there are no spaces */
+
+    newbytes = PyBytes_FromStringAndSize(NULL, byteslen);
+    if (!newbytes)
+        return NULL;
+    buf = PyBytes_AS_STRING(newbytes);
+
+    for (i = j = 0; ; i += 2) {
+        /* skip over spaces in the input */
+        while (Py_CHARMASK(hex[i]) == ' ')
+            i++;
+        if (i >= len)
+            break;
+        top = hex_digit_to_int(Py_CHARMASK(hex[i]));
+        bot = hex_digit_to_int(Py_CHARMASK(hex[i+1]));
+        if (top == -1 || bot == -1) {
+            PyErr_Format(PyExc_ValueError,
+                         "non-hexadecimal number string '%c%c' found in "
+                         "fromhex() arg at position %zd",
+                         hex[i], hex[i+1], i);
+            goto error;
+        }
+        buf[j++] = (top << 4) + bot;
+    }
+    if (PyBytes_Resize(newbytes, j) < 0)
+        goto error;
+    return newbytes;
+
+  error:
+    Py_DECREF(newbytes);
+    return NULL;
+}
+
 static PySequenceMethods bytes_as_sequence = {
-    (lenfunc)bytes_length,              /*sq_length*/
-    (binaryfunc)bytes_concat,           /*sq_concat*/
-    (ssizeargfunc)bytes_repeat,         /*sq_repeat*/
-    (ssizeargfunc)bytes_getitem,        /*sq_item*/
-    0,                                  /*sq_slice*/
-    (ssizeobjargproc)bytes_setitem,     /*sq_ass_item*/
-    0, 					/* sq_ass_slice */
+    (lenfunc)bytes_length,              /* sq_length */
+    (binaryfunc)bytes_concat,           /* sq_concat */
+    (ssizeargfunc)bytes_repeat,         /* sq_repeat */
+    (ssizeargfunc)bytes_getitem,        /* sq_item */
+    0,                                  /* sq_slice */
+    (ssizeobjargproc)bytes_setitem,     /* sq_ass_item */
+    0,                                  /* sq_ass_slice */
     (objobjproc)bytes_contains,         /* sq_contains */
-    (binaryfunc)bytes_iconcat,   /* sq_inplace_concat */
-    (ssizeargfunc)bytes_irepeat, /* sq_inplace_repeat */
+    (binaryfunc)bytes_iconcat,          /* sq_inplace_concat */
+    (ssizeargfunc)bytes_irepeat,        /* sq_inplace_repeat */
 };
 
 static PyMappingMethods bytes_as_mapping = {
@@ -1002,6 +1067,7 @@ static PyMethodDef
 bytes_methods[] = {
     {"decode", (PyCFunction)bytes_decode, METH_VARARGS, decode_doc},
     {"__alloc__", (PyCFunction)bytes_alloc, METH_NOARGS, alloc_doc},
+    {"fromhex", (PyCFunction)bytes_fromhex, METH_VARARGS|METH_CLASS, fromhex_doc},
     {"join", (PyCFunction)bytes_join, METH_O|METH_CLASS, join_doc},
     {NULL}
 };
@@ -1032,7 +1098,7 @@ PyTypeObject PyBytes_Type = {
     PyObject_GenericGetAttr,            /* tp_getattro */
     0,                                  /* tp_setattro */
     &bytes_as_buffer,                   /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,			/* tp_flags */
+    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
                                         /* bytes is 'final' or 'sealed' */
     bytes_doc,                          /* tp_doc */
     0,                                  /* tp_traverse */

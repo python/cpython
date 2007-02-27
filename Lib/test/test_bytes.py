@@ -396,6 +396,21 @@ class BytesTest(unittest.TestCase):
                 seq.append(alloc)
         #print seq
 
+    def test_fromhex(self):
+        self.assertRaises(TypeError, bytes.fromhex)
+        self.assertRaises(TypeError, bytes.fromhex, 1)
+        self.assertEquals(bytes.fromhex(''), bytes())
+        b = bytes([0x1a, 0x2b, 0x30])
+        self.assertEquals(bytes.fromhex('1a2B30'), b)
+        self.assertEquals(bytes.fromhex('  1A 2B  30   '), b)
+        self.assertEquals(bytes.fromhex(buffer('')), bytes())
+        self.assertEquals(bytes.fromhex(buffer('0000')), bytes([0, 0]))
+        self.assertRaises(ValueError, bytes.fromhex, 'a')
+        self.assertRaises(ValueError, bytes.fromhex, 'rt')
+        self.assertRaises(ValueError, bytes.fromhex, '1a b cd')
+        self.assertRaises(ValueError, bytes.fromhex, '\x00')
+        self.assertRaises(ValueError, bytes.fromhex, '12   \x00   34')
+
     def test_join(self):
         self.assertEqual(bytes.join([]), bytes())
         self.assertEqual(bytes.join([bytes()]), bytes())
