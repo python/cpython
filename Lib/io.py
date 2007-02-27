@@ -166,6 +166,8 @@ class FileIO(RawIOBase):
                 self._seekable = True
         return self._seekable
 
+    # XXX(nnorwitz): is there any reason to redefine __enter__ & __exit__?
+    #  Both already have the same impl in the base class.
     def __enter__(self):
         return self
 
@@ -202,6 +204,8 @@ class SocketIO(RawIOBase):
 
     def writable(self):
         return "w" in self._mode
+
+    # XXX(nnorwitz)???  def fileno(self): return self._sock.fileno()
 
 
 class BytesIO(RawIOBase):
