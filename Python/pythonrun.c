@@ -186,6 +186,9 @@ Py_InitializeEx(int install_sigs)
 	if (!_PyLong_Init())
 		Py_FatalError("Py_Initialize: can't init longs");
 
+	if (!PyBytes_Init())
+		Py_FatalError("Py_Initialize: can't init bytes");
+
 	_PyFloat_Init();
 
 	interp->modules = PyDict_New();
@@ -457,6 +460,7 @@ Py_Finalize(void)
 	PyList_Fini();
 	PySet_Fini();
 	PyString_Fini();
+	PyBytes_Fini();
 	PyLong_Fini();
 	PyFloat_Fini();
 
