@@ -394,6 +394,19 @@ if 1:
         del d[..., ...]
         self.assertEqual((Ellipsis, Ellipsis) in d, False)
 
+    def test_mangling(self):
+        class A:
+            def f():
+                __mangled = 1
+                __not_mangled__ = 2
+                import __mangled_mod
+                import __package__.module
+
+        self.assert_("_A__mangled" in A.f.func_code.co_varnames)
+        self.assert_("__not_mangled__" in A.f.func_code.co_varnames)
+        self.assert_("_A__mangled_mod" in A.f.func_code.co_varnames)
+        self.assert_("__package__" in A.f.func_code.co_varnames)
+
 def test_main():
     test_support.run_unittest(TestSpecifics)
 

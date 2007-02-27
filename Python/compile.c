@@ -194,7 +194,17 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
 	}
 	p = PyString_AsString(privateobj);
 	nlen = strlen(name);
-	if (name[nlen-1] == '_' && name[nlen-2] == '_') {
+        /* Don't mangle __id__ or names with dots.
+
+           The only time a name with a dot can occur is when
+           we are compiling an import statement that has a 
+           package name.
+
+           TODO(jhylton): Decide whether we want to support
+           mangling of the module name, e.g. __M.X.
+        */
+	if ((name[nlen-1] == '_' && name[nlen-2] == '_') 
+            || strchr(name, '.')) {
 		Py_INCREF(ident);
 		return ident; /* Don't mangle __whatever__ */
 	}
@@ -2243,7 +2253,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
 		return compiler_error(c, "can not assign to __debug__");
 	}
 
-	mangled = _Py_Mangle(c->u->u_private, name);
+mangled = _Py_Mangle(c->u->u_private, name);
 	if (!mangled)
 		return 0;
 
