@@ -131,6 +131,10 @@ static PyTypeObject *Global_type;
 static char *Global_fields[]={
         "names",
 };
+static PyTypeObject *Nonlocal_type;
+static char *Nonlocal_fields[]={
+        "names",
+};
 static PyTypeObject *Expr_type;
 static char *Expr_fields[]={
         "value",
@@ -507,6 +511,8 @@ static int init_types(void)
         if (!ImportFrom_type) return 0;
         Global_type = make_type("Global", stmt_type, Global_fields, 1);
         if (!Global_type) return 0;
+        Nonlocal_type = make_type("Nonlocal", stmt_type, Nonlocal_fields, 1);
+        if (!Nonlocal_type) return 0;
         Expr_type = make_type("Expr", stmt_type, Expr_fields, 1);
         if (!Expr_type) return 0;
         Pass_type = make_type("Pass", stmt_type, NULL, 0);
@@ -1140,6 +1146,20 @@ Global(asdl_seq * names, int lineno, int col_offset, PyArena *arena)
                 return NULL;
         p->kind = Global_kind;
         p->v.Global.names = names;
+        p->lineno = lineno;
+        p->col_offset = col_offset;
+        return p;
+}
+
+stmt_ty
+Nonlocal(asdl_seq * names, int lineno, int col_offset, PyArena *arena)
+{
+        stmt_ty p;
+        p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p)
+                return NULL;
+        p->kind = Nonlocal_kind;
+        p->v.Nonlocal.names = names;
         p->lineno = lineno;
         p->col_offset = col_offset;
         return p;
@@ -2197,6 +2217,15 @@ ast2obj_stmt(void* _o)
                         goto failed;
                 Py_DECREF(value);
                 break;
+        case Nonlocal_kind:
+                result = PyType_GenericNew(Nonlocal_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_list(o->v.Nonlocal.names, ast2obj_identifier);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "names", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                break;
         case Expr_kind:
                 result = PyType_GenericNew(Expr_type, NULL, NULL);
                 if (!result) goto failed;
@@ -3048,6 +3077,8 @@ init_ast(void)
         if (PyDict_SetItemString(d, "ImportFrom", (PyObject*)ImportFrom_type) <
             0) return;
         if (PyDict_SetItemString(d, "Global", (PyObject*)Global_type) < 0)
+            return;
+        if (PyDict_SetItemString(d, "Nonlocal", (PyObject*)Nonlocal_type) < 0)
             return;
         if (PyDict_SetItemString(d, "Expr", (PyObject*)Expr_type) < 0) return;
         if (PyDict_SetItemString(d, "Pass", (PyObject*)Pass_type) < 0) return;

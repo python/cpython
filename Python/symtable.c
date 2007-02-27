@@ -8,8 +8,14 @@
 #define GLOBAL_AFTER_ASSIGN \
 "name '%.400s' is assigned to before global declaration"
 
+#define NONLOCAL_AFTER_ASSIGN \
+"name '%.400s' is assigned to before nonlocal declaration"
+
 #define GLOBAL_AFTER_USE \
 "name '%.400s' is used prior to global declaration"
+
+#define NONLOCAL_AFTER_USE \
+"name '%.400s' is used prior to nonlocal declaration"
 
 #define IMPORT_STAR_WARNING "import * only allowed at module level"
 
@@ -328,6 +334,8 @@ PyST_GetScope(PySTEntryObject *ste, PyObject *name)
    block, the name is treated as global until it is assigned to; then it
    is treated as a local.
 
+   TODO(jhylton): Discuss nonlocal
+
    The symbol table requires two passes to determine the scope of each name.
    The first pass collects raw facts from the AST: the name is a parameter 
    here, the name is used by not defined here, etc.  The second pass analyzes
@@ -378,6 +386,12 @@ analyze_name(PySTEntryObject *ste, PyObject *dict, PyObject *name, long flags,
 				     PyString_AS_STRING(name));
 			return 0;
 		}
+                if (flags & DEF_NONLOCAL) {
+			PyErr_Format(PyExc_SyntaxError,
+				     "name '%s' is nonlocal and global",
+				     PyString_AS_STRING(name));
+			return 0;
+                }
 		SET_SCOPE(dict, name, GLOBAL_EXPLICIT);
 		if (PyDict_SetItem(global, name, Py_None) < 0)
 			return 0;
@@ -387,6 +401,24 @@ analyze_name(PySTEntryObject *ste, PyObject *dict, PyObject *name, long flags,
 		}
 		return 1;
 	}
+        if (flags & DEF_NONLOCAL) {
+		if (flags & DEF_PARAM) {
+			PyErr_Format(PyExc_SyntaxError,
+				     "name '%s' is local and nonlocal",
+				     PyString_AS_STRING(name));
+			return 0;
+		}
+                if (!PyDict_GetItem(bound, name)) {
+                        PyErr_Format(PyExc_SyntaxError,
+                                     "no binding for nonlocal '%s' found",
+				     PyString_AS_STRING(name));
+                                     
+                        return 0;
+                }
+                SET_SCOPE(dict, name, FREE);
+                ste->ste_free = 1;
+                return PyDict_SetItem(free, name, Py_None) >= 0;
+        }
 	if (flags & DEF_BOUND) {
 		SET_SCOPE(dict, name, LOCAL);
 		if (PyDict_SetItem(local, name, Py_None) < 0)
@@ -405,24 +437,19 @@ analyze_name(PySTEntryObject *ste, PyObject *dict, PyObject *name, long flags,
 	if (bound && PyDict_GetItem(bound, name)) {
 		SET_SCOPE(dict, name, FREE);
 		ste->ste_free = 1;
-		if (PyDict_SetItem(free, name, Py_None) < 0)
-			return 0;
-		return 1;
+		return PyDict_SetItem(free, name, Py_None) >= 0;
 	}
 	/* If a parent has a global statement, then call it global
 	   explicit?  It could also be global implicit.
 	 */
-	else if (global && PyDict_GetItem(global, name)) {
+	if (global && PyDict_GetItem(global, name)) {
 		SET_SCOPE(dict, name, GLOBAL_EXPLICIT);
 		return 1;
 	}
-	else {
-		if (ste->ste_nested)
-			ste->ste_free = 1;
-		SET_SCOPE(dict, name, GLOBAL_IMPLICIT);
-		return 1;
-	}
-	return 0; /* Can't get here */
+	if (ste->ste_nested)
+		ste->ste_free = 1;
+	SET_SCOPE(dict, name, GLOBAL_IMPLICIT);
+	return 1;
 }
 
 #undef SET_SCOPE
@@ -782,6 +809,7 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag)
 	long val;
 	PyObject *mangled = _Py_Mangle(st->st_private, name);
 
+
 	if (!mangled)
 		return 0;
 	dict = st->st_cur->ste_symbols;
@@ -1071,6 +1099,33 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                     return 0;
 			}
 			if (!symtable_add_def(st, name, DEF_GLOBAL))
+				return 0;
+		}
+		break;
+	}
+        case Nonlocal_kind: {
+		int i;
+		asdl_seq *seq = s->v.Nonlocal.names;
+		for (i = 0; i < asdl_seq_LEN(seq); i++) {
+			identifier name = (identifier)asdl_seq_GET(seq, i);
+			char *c_name = PyString_AS_STRING(name);
+			long cur = symtable_lookup(st, name);
+			if (cur < 0)
+				return 0;
+			if (cur & (DEF_LOCAL | USE)) {
+				char buf[256];
+				if (cur & DEF_LOCAL) 
+					PyOS_snprintf(buf, sizeof(buf),
+						      NONLOCAL_AFTER_ASSIGN,
+						      c_name);
+				else
+					PyOS_snprintf(buf, sizeof(buf),
+						      NONLOCAL_AFTER_USE,
+						      c_name);
+				if (!symtable_warn(st, buf, s->lineno))
+                                    return 0;
+			}
+			if (!symtable_add_def(st, name, DEF_NONLOCAL))
 				return 0;
 		}
 		break;
