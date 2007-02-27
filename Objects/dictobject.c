@@ -1869,9 +1869,9 @@ static PyObject *dictkeys_new(PyObject *);
 static PyObject *dictitems_new(PyObject *);
 static PyObject *dictvalues_new(PyObject *);
 
-PyDoc_STRVAR(KEYS__doc__, "D.KEYS() -> a set-like object for D's keys");
-PyDoc_STRVAR(ITEMS__doc__, "D.ITEMS() -> a set-like object for D's items");
-PyDoc_STRVAR(VALUES__doc__, "D.VALUES() -> a set-like object for D's values");
+PyDoc_STRVAR(keys__doc__, "D.keys() -> a set-like object for D's keys");
+PyDoc_STRVAR(items__doc__, "D.items() -> a set-like object for D's items");
+PyDoc_STRVAR(values__doc__, "D.values() -> a set-like object for D's values");
 
 static PyMethodDef mapp_methods[] = {
 	{"__contains__",(PyCFunction)dict_contains,     METH_O | METH_COEXIST,
@@ -1895,11 +1895,11 @@ static PyMethodDef mapp_methods[] = {
 	 values__doc__},
 #endif
 	{"keys",	(PyCFunction)dictkeys_new,	METH_NOARGS,
-	KEYS__doc__},
+	keys__doc__},
 	{"items",	(PyCFunction)dictitems_new,	METH_NOARGS,
-	ITEMS__doc__},
+	items__doc__},
 	{"values",	(PyCFunction)dictvalues_new,	METH_NOARGS,
-	VALUES__doc__},
+	values__doc__},
 	{"update",	(PyCFunction)dict_update,	METH_VARARGS | METH_KEYWORDS,
 	 update__doc__},
 	{"fromkeys",	(PyCFunction)dict_fromkeys,	METH_VARARGS | METH_CLASS,
@@ -2388,8 +2388,6 @@ PyTypeObject PyDictIterItem_Type = {
 /***********************************************/
 /* View objects for keys(), items(), values(). */
 /***********************************************/
-
-/* While this is incomplete, we use KEYS(), ITEMS(), VALUES(). */
 
 /* The instance lay-out is the same for all three; but the type differs. */
 
