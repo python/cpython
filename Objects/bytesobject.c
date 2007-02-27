@@ -2313,7 +2313,7 @@ bytes_insert(PyBytesObject *self, PyObject *args)
     }
     if (where > n)
         where = n;
-    memmove(self->ob_bytes + where + 1, self->ob_bytes + where, n - where + 1);
+    memmove(self->ob_bytes + where + 1, self->ob_bytes + where, n - where);
     self->ob_bytes[where] = value;
 
     Py_RETURN_NONE;
