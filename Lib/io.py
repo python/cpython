@@ -3,6 +3,9 @@
 
 """New I/O library.
 
+This is an early prototype; eventually some of this will be
+reimplemented in C and the rest may be turned into a package.
+
 See PEP XXX; for now: http://docs.google.com/Doc?id=dfksfvqd_1cn5g5m
 """
 
@@ -13,7 +16,34 @@ __all__ = ["open", "RawIOBase", "FileIO", "SocketIO", "BytesIO"]
 import os
 
 def open(filename, mode="r", buffering=None, *, encoding=None):
-    """Replacement for the built-in open function, with encoding parameter."""
+    """Replacement for the built-in open function.
+
+    Args:
+      filename: string giving the name of the file to be opened
+      mode: optional mode string; see below
+      buffering: optional int >= 0 giving the buffer size; values
+                 can be: 0 = unbuffered, 1 = line buffered,
+                 larger = fully buffered
+      encoding: optional string giving the text encoding (*must* be given
+                as a keyword argument)
+
+    Mode strings characters:
+      'r': open for reading (default)
+      'w': open for writing, truncating the file first
+      'a': open for writing, appending to the end if the file exists
+      'b': binary mode
+      't': text mode (default)
+      '+': open a disk file for updating (implies reading and writing)
+
+    Constraints:
+      - encoding must not be given when a binary mode is given
+      - buffering must not be zero when a text mode is given
+
+    Returns:
+      Depending on the mode and buffering arguments, either a raw
+      binary stream, a buffered binary stream, or a buffered text
+      stream, open for reading and/or writing.
+    """
     assert isinstance(filename, str)
     assert isinstance(mode, str)
     assert buffering is None or isinstance(buffering, int)
@@ -22,11 +52,11 @@ def open(filename, mode="r", buffering=None, *, encoding=None):
     if modes - set("arwb+t") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)
     reading = "r" in modes
-    writing = "w" in modes or "a" in modes
-    binary = "b" in modes
+    writing = "w" in modes
     appending = "a" in modes
     updating = "+" in modes
-    text = "t" in modes or not binary
+    text = "t" in modes
+    binary = "b" in modes
     if text and binary:
         raise ValueError("can't have text and binary mode at once")
     if reading + writing + appending > 1:
@@ -42,6 +72,12 @@ def open(filename, mode="r", buffering=None, *, encoding=None):
                  (updating and "+" or ""))
     if buffering is None:
         buffering = 8*1024  # International standard buffer size
+        # Should default to line buffering if os.isatty(raw.fileno())
+        try:
+            bs = os.fstat(raw.fileno()).st_blksize
+        except (os.error, AttributeError):
+            if bs > 1:
+                buffering = bs
     if buffering < 0:
         raise ValueError("invalid buffering size")
     if buffering == 0:
@@ -50,21 +86,33 @@ def open(filename, mode="r", buffering=None, *, encoding=None):
         raise ValueError("can't have unbuffered text I/O")
     if updating:
         buffer = BufferedRandom(raw, buffering)
-    elif writing:
+    elif writing or appending:
         buffer = BufferedWriter(raw, buffering)
     else:
         assert reading
         buffer = BufferedReader(raw, buffering)
     if binary:
         return buffer
-    assert text
-    textio = TextIOWrapper(buffer)  # Universal newlines default to on
+    # XXX What about newline conventions?
+    textio = TextIOWrapper(buffer, encoding)
     return textio
 
 
 class RawIOBase:
 
-    """Base class for raw binary I/O."""
+    """Base class for raw binary I/O.
+
+    This class provides dummy implementations for all methods that
+    derived classes can override selectively; the default
+    implementations represent a file that cannot be read, written or
+    seeked.
+
+    The read() method is implemented by calling readinto(); derived
+    classes that want to support readon only need to implement
+    readinto() as a primitive operation.
+    """
+
+    # XXX Add individual method docstrings
 
     def read(self, n):
         b = bytes(n.__index__())
@@ -111,6 +159,8 @@ class RawIOBase:
 class FileIO(RawIOBase):
 
     """Raw I/O implementation for OS files."""
+
+    # XXX More docs
 
     def __init__(self, filename, mode):
         self._seekable = None
@@ -166,14 +216,6 @@ class FileIO(RawIOBase):
                 self._seekable = True
         return self._seekable
 
-    # XXX(nnorwitz): is there any reason to redefine __enter__ & __exit__?
-    #  Both already have the same impl in the base class.
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        self.close()
-
     def fileno(self):
         return self._fd
 
@@ -181,6 +223,8 @@ class FileIO(RawIOBase):
 class SocketIO(RawIOBase):
 
     """Raw I/O implementation for stream sockets."""
+
+    # XXX More docs
 
     def __init__(self, sock, mode):
         assert mode in ("r", "w", "rw")
@@ -211,6 +255,8 @@ class SocketIO(RawIOBase):
 class BytesIO(RawIOBase):
 
     """Raw I/O implementation for bytes, like StringIO."""
+
+    # XXX More docs
 
     def __init__(self, inital_bytes=None):
         self._buffer = b""
