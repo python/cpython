@@ -4,7 +4,7 @@ from _testcapi import test_structmembersType, \
     INT_MAX, INT_MIN, UINT_MAX, \
     LONG_MAX, LONG_MIN, ULONG_MAX
 
-import warnings, exceptions, unittest, test.test_warnings
+import warnings, unittest, test.test_warnings
 from test import test_support
 
 ts=test_structmembersType(1,2,3,4,5,6,7,8,9.99999,10.1010101010)
@@ -42,7 +42,7 @@ class ReadWriteTests(unittest.TestCase):
 class TestWarnings(test.test_warnings.TestModule):
     def has_warned(self):
         self.assertEqual(test.test_warnings.msg.category,
-                         exceptions.RuntimeWarning.__name__)
+                         RuntimeWarning.__name__)
 
     def test_byte_max(self):
         ts.T_BYTE=CHAR_MAX+1
