@@ -926,38 +926,38 @@ bytes_join(PyObject *cls, PyObject *it)
 
     seq = PySequence_Fast(it, "can only join an iterable");
     if (seq == NULL)
-	return NULL;
+        return NULL;
     n = PySequence_Fast_GET_SIZE(seq);
     items = PySequence_Fast_ITEMS(seq);
 
     /* Compute the total size, and check that they are all bytes */
     for (i = 0; i < n; i++) {
-	PyObject *obj = items[i];
-	if (!PyBytes_Check(obj)) {
-	    PyErr_Format(PyExc_TypeError,
-			 "can only join an iterable of bytes "
-			 "(item %ld has type '%.100s')",
+        PyObject *obj = items[i];
+        if (!PyBytes_Check(obj)) {
+            PyErr_Format(PyExc_TypeError,
+                         "can only join an iterable of bytes "
+                         "(item %ld has type '%.100s')",
                          /* XXX %ld isn't right on Win64 */
-			 (long)i, obj->ob_type->tp_name);
-	    goto error;
-	}
-	totalsize += PyBytes_GET_SIZE(obj);
-	if (totalsize < 0) {
-	    PyErr_NoMemory();
-	    goto error;
-	}
+                         (long)i, obj->ob_type->tp_name);
+            goto error;
+        }
+        totalsize += PyBytes_GET_SIZE(obj);
+        if (totalsize < 0) {
+            PyErr_NoMemory();
+            goto error;
+        }
     }
 
     /* Allocate the result, and copy the bytes */
     result = PyBytes_FromStringAndSize(NULL, totalsize);
     if (result == NULL)
-	goto error;
+        goto error;
     dest = PyBytes_AS_STRING(result);
     for (i = 0; i < n; i++) {
-	PyObject *obj = items[i];
-	Py_ssize_t size = PyBytes_GET_SIZE(obj);
-	memcpy(dest, PyBytes_AS_STRING(obj), size);
-	dest += size;
+        PyObject *obj = items[i];
+        Py_ssize_t size = PyBytes_GET_SIZE(obj);
+        memcpy(dest, PyBytes_AS_STRING(obj), size);
+        dest += size;
     }
 
     /* Done */
@@ -980,15 +980,15 @@ bytes.fromhex('10 2030') -> bytes([0x10, 0x20, 0x30]).");
 static int
 hex_digit_to_int(int c)
 {
-	if (isdigit(c))
-		return c - '0';
-	else {
-		if (isupper(c))
-			c = tolower(c);
-		if (c >= 'a' && c <= 'f')
-			return c - 'a' + 10;
-	}
-	return -1;
+    if (isdigit(c))
+        return c - '0';
+    else {
+        if (isupper(c))
+            c = tolower(c);
+        if (c >= 'a' && c <= 'f')
+            return c - 'a' + 10;
+    }
+    return -1;
 }
 
 static PyObject *
@@ -1092,14 +1092,14 @@ PyTypeObject PyBytes_Type = {
     0,                                  /* tp_as_number */
     &bytes_as_sequence,                 /* tp_as_sequence */
     &bytes_as_mapping,                  /* tp_as_mapping */
-    0,		                       /* tp_hash */
+    0,                                  /* tp_hash */
     0,                                  /* tp_call */
     (reprfunc)bytes_str,                /* tp_str */
     PyObject_GenericGetAttr,            /* tp_getattro */
     0,                                  /* tp_setattro */
     &bytes_as_buffer,                   /* tp_as_buffer */
+    /* bytes is 'final' or 'sealed' */
     Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-                                        /* bytes is 'final' or 'sealed' */
     bytes_doc,                          /* tp_doc */
     0,                                  /* tp_traverse */
     0,                                  /* tp_clear */
