@@ -367,6 +367,46 @@ build.  The number of blocks must be greater than CO_MAXBLOCKS.  SF #1565514
      ...
    SystemError: too many statically nested blocks
 
+Misuse of the nonlocal statement can lead to a few unique syntax errors.
+
+   >>> def f(x):
+   ...     nonlocal x
+   Traceback (most recent call last):
+     ...
+   SyntaxError: name 'x' is local and nonlocal
+   
+   >>> def f():
+   ...     global x
+   ...     nonlocal x
+   Traceback (most recent call last):
+     ...
+   SyntaxError: name 'x' is nonlocal and global
+
+   >>> def f():
+   ...     nonlocal x
+   Traceback (most recent call last):
+     ...
+   SyntaxError: no binding for nonlocal 'x' found
+
+TODO(jhylton): Figure out how to test SyntaxWarning with doctest.
+
+##   >>> def f(x):
+##   ...     def f():
+##   ...         print(x)
+##   ...         nonlocal x
+##   Traceback (most recent call last):
+##     ...
+##   SyntaxWarning: name 'x' is assigned to before nonlocal declaration
+   
+##   >>> def f():
+##   ...     x = 1
+##   ...     nonlocal x
+##   Traceback (most recent call last):
+##     ...
+##   SyntaxWarning: name 'x' is assigned to before nonlocal declaration
+
+  
+
 """
 
 import re

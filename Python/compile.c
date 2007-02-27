@@ -2239,6 +2239,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
 	case ImportFrom_kind:
 		return compiler_from_import(c, s);
 	case Global_kind:
+	case Nonlocal_kind:
 		break;
 	case Expr_kind:
 		if (c->c_interactive && c->c_nestlevel <= 1) {

@@ -555,6 +555,90 @@ self.assert_(X.passed)
 
         f(4)()
 
+    def testNonLocalFunction(self):
+
+        def f(x):
+            def inc():
+                nonlocal x
+                x += 1
+                return x
+            def dec():
+                nonlocal x
+                x -= 1
+                return x
+            return inc, dec
+
+        inc, dec = f(0)
+        self.assertEqual(inc(), 1)
+        self.assertEqual(inc(), 2)
+        self.assertEqual(dec(), 1)
+        self.assertEqual(dec(), 0)
+
+    def testNonLocalMethod(self):
+
+        def f(x):
+            class c:
+                def inc(self):
+                    nonlocal x
+                    x += 1
+                    return x
+                def dec(self):
+                    nonlocal x
+                    x -= 1
+                    return x
+            return c()
+
+        c = f(0)
+        self.assertEqual(c.inc(), 1)
+        self.assertEqual(c.inc(), 2)
+        self.assertEqual(c.dec(), 1)
+        self.assertEqual(c.dec(), 0)
+
+    def testNonLocalClass(self):
+
+        def f(x):
+            class c:
+                nonlocal x
+                x += 1
+                def get(self):
+                    return x
+            return c()
+
+        c = f(0)
+        self.assertEqual(c.get(), 1)
+        self.assert_("x" not in c.__class__.__dict__)
+        
+
+    def testNonLocalGenerator(self):
+
+        def f(x):
+            def g(y):
+                nonlocal x
+                for i in range(y):
+                    x += 1
+                    yield x
+            return g
+
+        g = f(0)
+        self.assertEqual(list(g(5)), [1, 2, 3, 4, 5])
+
+    def testNestedNonLocal(self):
+
+        def f(x):
+            def g():
+                nonlocal x
+                x -= 2
+                def h():
+                    nonlocal x
+                    x += 4
+                    return x
+                return h
+            return g
+
+        g = f(1)
+        h = g()
+        self.assertEqual(h(), 3)
+
 
 def test_main():
     run_unittest(ScopeTests)

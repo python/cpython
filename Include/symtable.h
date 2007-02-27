@@ -64,23 +64,24 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 #define DEF_GLOBAL 1           /* global stmt */
 #define DEF_LOCAL 2            /* assignment in code block */
 #define DEF_PARAM 2<<1         /* formal parameter */
-#define USE 2<<2               /* name is used */
-#define DEF_STAR 2<<3          /* parameter is star arg */
-#define DEF_DOUBLESTAR 2<<4    /* parameter is star-star arg */
-#define DEF_INTUPLE 2<<5       /* name defined in tuple in parameters */
-#define DEF_FREE 2<<6          /* name used but not defined in nested block */
-#define DEF_FREE_GLOBAL 2<<7   /* free variable is actually implicit global */
-#define DEF_FREE_CLASS 2<<8    /* free variable from class's method */
-#define DEF_IMPORT 2<<9        /* assignment occurred via import */
+#define DEF_NONLOCAL 2<<2      /* nonlocal stmt */
+#define USE 2<<3               /* name is used */
+#define DEF_STAR 2<<4          /* parameter is star arg */
+#define DEF_DOUBLESTAR 2<<5    /* parameter is star-star arg */
+#define DEF_INTUPLE 2<<6       /* name defined in tuple in parameters */
+#define DEF_FREE 2<<7          /* name used but not defined in nested block */
+#define DEF_FREE_GLOBAL 2<<8   /* free variable is actually implicit global */
+#define DEF_FREE_CLASS 2<<9    /* free variable from class's method */
+#define DEF_IMPORT 2<<10        /* assignment occurred via import */
 
 #define DEF_BOUND (DEF_LOCAL | DEF_PARAM | DEF_IMPORT)
 
 /* GLOBAL_EXPLICIT and GLOBAL_IMPLICIT are used internally by the symbol
    table.  GLOBAL is returned from PyST_GetScope() for either of them. 
-   It is stored in ste_symbols at bits 12-14.
+   It is stored in ste_symbols at bits 12-15.
 */
 #define SCOPE_OFF 11
-#define SCOPE_MASK 7
+#define SCOPE_MASK (DEF_GLOBAL | DEF_LOCAL | DEF_PARAM | DEF_NONLOCAL)
 
 #define LOCAL 1
 #define GLOBAL_EXPLICIT 2
