@@ -870,7 +870,7 @@ class HTTPConnection:
             self._send_request(method, url, body, headers)
         except socket.error as v:
             # trap 'Broken pipe' if we're allowed to automatically reconnect
-            if v[0] != 32 or not self.auto_open:
+            if v.message != 32 or not self.auto_open:
                 raise
             # try one more time
             self._send_request(method, url, body, headers)
@@ -1020,17 +1020,19 @@ class SSLFile(SharedSocketClient):
             try:
                 buf = self._ssl.read(self._bufsize)
             except socket.sslerror as err:
-                if (err[0] == socket.SSL_ERROR_WANT_READ
-                    or err[0] == socket.SSL_ERROR_WANT_WRITE):
+                err_type = err.message
+                if (err_type == socket.SSL_ERROR_WANT_READ
+                    or err_type == socket.SSL_ERROR_WANT_WRITE):
                     continue
-                if (err[0] == socket.SSL_ERROR_ZERO_RETURN
-                    or err[0] == socket.SSL_ERROR_EOF):
+                if (err_type == socket.SSL_ERROR_ZERO_RETURN
+                    or err_type == socket.SSL_ERROR_EOF):
                     break
                 raise
             except socket.error as err:
-                if err[0] == errno.EINTR:
+                err_type = err.message
+                if err_type == errno.EINTR:
                     continue
-                if err[0] == errno.EBADF:
+                if err_type == errno.EBADF:
                     # XXX socket was closed?
                     break
                 raise
