@@ -1,6 +1,5 @@
 import unittest
 import __builtin__
-import exceptions
 import warnings
 from test.test_support import run_unittest, guard_warnings_filter
 import os
@@ -21,7 +20,14 @@ class ExceptionClassTests(unittest.TestCase):
 
     def test_inheritance(self):
         # Make sure the inheritance hierarchy matches the documentation
-        exc_set = set(x for x in dir(exceptions) if not x.startswith('_'))
+        exc_set = set()
+        for object_ in __builtins__.__dict__.values():
+            try:
+                if issubclass(object_, BaseException):
+                    exc_set.add(object_.__name__)
+            except TypeError:
+                pass
+
         inheritance_tree = open(os.path.join(os.path.split(__file__)[0],
                                                 'exception_hierarchy.txt'))
         try:
