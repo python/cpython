@@ -370,7 +370,7 @@ class PyBuildExt(build_ext):
         # fast iterator tools implemented in C
         exts.append( Extension("itertools", ["itertoolsmodule.c"]) )
         # high-performance collections
-        exts.append( Extension("collections", ["collectionsmodule.c"]) )
+        exts.append( Extension("_collections", ["_collectionsmodule.c"]) )
         # bisect
         exts.append( Extension("_bisect", ["_bisectmodule.c"]) )
         # heapq
