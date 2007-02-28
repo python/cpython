@@ -1381,7 +1381,7 @@
 			>
 		</File>
 		<File
-			RelativePath="..\Modules\collectionsmodule.c"
+			RelativePath="..\Modules\_collectionsmodule.c"
 			>
 		</File>
 		<File
