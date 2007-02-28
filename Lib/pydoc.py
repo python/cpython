@@ -875,11 +875,17 @@ class HTMLDoc(Doc):
             title = '<a name="%s"><strong>%s</strong></a> = %s' % (
                 anchor, name, reallink)
         if inspect.isfunction(object):
-            args, varargs, varkw, defaults = inspect.getargspec(object)
+            args, varargs, kwonlyargs, kwdefaults, varkw, defaults, ann = \
+                inspect.getfullargspec(object)
             argspec = inspect.formatargspec(
-                args, varargs, varkw, defaults, formatvalue=self.formatvalue)
+                args, varargs, kwonlyargs, kwdefaults, varkw, defaults, ann,
+                formatvalue=self.formatvalue,
+                formatannotation=inspect.formatannotationrelativeto(object))
             if realname == '<lambda>':
                 title = '<strong>%s</strong> <em>lambda</em> ' % name
+                # XXX lambda's won't usually have func_annotations['return']
+                # since the syntax doesn't support but it is possible.
+                # So removing parentheses isn't truly safe.
                 argspec = argspec[1:-1] # remove parentheses
         else:
             argspec = '(...)'
@@ -1241,11 +1247,17 @@ class TextDoc(Doc):
                 skipdocs = 1
             title = self.bold(name) + ' = ' + realname
         if inspect.isfunction(object):
-            args, varargs, varkw, defaults = inspect.getargspec(object)
+            args, varargs, varkw, defaults, kwonlyargs, kwdefaults, ann = \
+              inspect.getfullargspec(object)
             argspec = inspect.formatargspec(
-                args, varargs, varkw, defaults, formatvalue=self.formatvalue)
+                args, varargs, varkw, defaults, kwonlyargs, kwdefaults, ann,
+                formatvalue=self.formatvalue,
+                formatannotation=inspect.formatannotationrelativeto(object))
             if realname == '<lambda>':
                 title = self.bold(name) + ' lambda '
+                # XXX lambda's won't usually have func_annotations['return']
+                # since the syntax doesn't support but it is possible.
+                # So removing parentheses isn't truly safe.
                 argspec = argspec[1:-1] # remove parentheses
         else:
             argspec = '(...)'

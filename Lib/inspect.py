@@ -17,6 +17,7 @@ Here are some of the useful functions provided by this module:
     getclasstree() - arrange classes so as to represent their hierarchy
 
     getargspec(), getargvalues() - get info about function arguments
+    getfullargspec() - same, with support for Python-3000 features
     formatargspec(), formatargvalues() - format an argument spec
     getouterframes(), getinnerframes() - get info about frames
     currentframe() - get the current stack frame
@@ -672,9 +673,20 @@ CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS = 1, 2, 4, 8
 def getargs(co):
     """Get information about the arguments accepted by a code object.
 
-    Three things are returned: (args, varargs, varkw), where 'args' is
-    a list of argument names (possibly containing nested lists), and
-    'varargs' and 'varkw' are the names of the * and ** arguments or None."""
+    Three things are returned: (args, varargs, varkw), where
+    'args' is the list of argument names, possibly containing nested 
+    lists. Keyword-only arguments are appended. 'varargs' and 'varkw'
+    are the names of the * and ** arguments or None."""
+    args, varargs, kwonlyargs, varkw = _getfullargs(co)
+    return args + kwonlyargs, varargs, varkw
+
+def _getfullargs(co):
+    """Get information about the arguments accepted by a code object.
+
+    Four things are returned: (args, varargs, kwonlyargs, varkw), where
+    'args' and 'kwonlyargs' are lists of argument names (with 'args'
+    possibly containing nested lists), and 'varargs' and 'varkw' are the
+    names of the * and ** arguments or None."""
 
     if not iscode(co):
         raise TypeError('arg is not a code object')
@@ -682,7 +694,9 @@ def getargs(co):
     code = co.co_code
     nargs = co.co_argcount
     names = co.co_varnames
+    nkwargs = co.co_kwonlyargcount
     args = list(names[:nargs])
+    kwonlyargs = list(names[nargs:nargs+nkwargs])
     step = 0
 
     # The following acrobatics are for anonymous (tuple) arguments.
@@ -719,6 +733,7 @@ def getargs(co):
                             if not remain: break
             args[i] = stack[0]
 
+    nargs += nkwargs
     varargs = None
     if co.co_flags & CO_VARARGS:
         varargs = co.co_varnames[nargs]
@@ -726,23 +741,51 @@ def getargs(co):
     varkw = None
     if co.co_flags & CO_VARKEYWORDS:
         varkw = co.co_varnames[nargs]
-    return args, varargs, varkw
+    return args, varargs, kwonlyargs, varkw
 
 def getargspec(func):
     """Get the names and default values of a function's arguments.
 
     A tuple of four things is returned: (args, varargs, varkw, defaults).
     'args' is a list of the argument names (it may contain nested lists).
+    'args' will include keyword-only argument names.
     'varargs' and 'varkw' are the names of the * and ** arguments or None.
     'defaults' is an n-tuple of the default values of the last n arguments.
+        
+    Use the getfullargspec() API for Python-3000 code, as annotations
+    and keyword arguments are supported. getargspec() will raise ValueError
+    if the func has either annotations or keyword arguments.
+    """
+
+    args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
+        getfullargspec(func)
+    if kwonlyargs or ann:
+        raise ValueError, ("Function has keyword-only arguments or annotations"
+                           ", use getfullargspec() API which can support them")
+    return (args, varargs, varkw, defaults)
+
+def getfullargspec(func):
+    """Get the names and default values of a function's arguments.
+
+    A tuple of seven things is returned: (args, varargs, kwonlyargs, 
+    kwonlydefaults, varkw, defaults, annotations).
+    'args' is a list of the argument names (it may contain nested lists).
+    'varargs' and 'varkw' are the names of the * and ** arguments or None.
+    'defaults' is an n-tuple of the default values of the last n arguments.
+    'kwonlyargs' is a list of keyword-only argument names.
+    'kwonlydefaults' is a dictionary mapping names from kwonlyargs to defaults.
+    'annotations' is a dictionary mapping argument names to annotations.
+    
+    The first four items in the tuple correspond to getargspec().
     """
 
     if ismethod(func):
         func = func.im_func
     if not isfunction(func):
         raise TypeError('arg is not a Python function')
-    args, varargs, varkw = getargs(func.__code__)
-    return args, varargs, varkw, func.__defaults__
+    args, varargs, kwonlyargs, varkw = _getfullargs(func.__code__)
+    return (args, varargs, varkw, func.__defaults__, 
+            kwonlyargs, func.__kwdefaults__, func.__annotations__)
 
 def getargvalues(frame):
     """Get information about arguments passed into a particular frame.
@@ -767,31 +810,66 @@ def strseq(object, convert, join=joinseq):
     else:
         return convert(object)
 
+def formatannotation(annotation, base_module=None):
+    if isinstance(annotation, type):
+        if annotation.__module__ in ('__builtin__', base_module):
+            return annotation.__name__
+        return annotation.__module__+'.'+annotation.__name__
+    return repr(annotation)
+    
+def formatannotationrelativeto(object):
+  module = getattr(object, '__module__', None)
+  def _formatannotation(annotation):
+      return formatannotation(annotation, module)
+  return _formatannotation
+
 def formatargspec(args, varargs=None, varkw=None, defaults=None,
+                  kwonlyargs=(), kwonlydefaults={}, annotations={},
                   formatarg=str,
                   formatvarargs=lambda name: '*' + name,
                   formatvarkw=lambda name: '**' + name,
                   formatvalue=lambda value: '=' + repr(value),
+                  formatreturns=lambda text: ' -> ' + text,
+                  formatannotation=formatannotation,
                   join=joinseq):
-    """Format an argument spec from the 4 values returned by getargspec.
+    """Format an argument spec from the values returned by getargspec 
+    or getfullargspec.
 
-    The first four arguments are (args, varargs, varkw, defaults).  The
-    other four arguments are the corresponding optional formatting functions
-    that are called to turn names and values into strings.  The ninth
-    argument is an optional function to format the sequence of arguments."""
+    The first seven arguments are (args, varargs, varkw, defaults,
+    kwonlyargs, kwonlydefaults, annotations).  The other five arguments
+    are the corresponding optional formatting functions that are called to
+    turn names and values into strings.  The last argument is an optional
+    function to format the sequence of arguments."""
+    def formatargandannotation(arg):
+        result = formatarg(arg)
+        if arg in annotations:
+            result += ': ' + formatannotation(annotations[arg])
+        return result
     specs = []
     if defaults:
         firstdefault = len(args) - len(defaults)
     for i in range(len(args)):
-        spec = strseq(args[i], formatarg, join)
+        spec = strseq(args[i], formatargandannotation, join)
         if defaults and i >= firstdefault:
             spec = spec + formatvalue(defaults[i - firstdefault])
         specs.append(spec)
     if varargs is not None:
-        specs.append(formatvarargs(varargs))
+        specs.append(formatvarargs(formatargandannotation(varargs)))
+    else:
+        if kwonlyargs:
+            specs.append('*')
+    if kwonlyargs:
+        for kwonlyarg in kwonlyargs:
+            spec = formatargandannotation(kwonlyarg)
+            if kwonlyarg in kwonlydefaults:
+                spec += formatvalue(kwonlydefaults[kwonlyarg])
+            specs.append(spec)
     if varkw is not None:
-        specs.append(formatvarkw(varkw))
-    return '(' + string.join(specs, ', ') + ')'
+        specs.append(formatvarkw(formatargandannotation(varkw)))
+    result = '(' + string.join(specs, ', ') + ')'
+    if 'return' in annotations:
+        result += formatreturns(formatannotation(annotations['return']))
+    return result
 
 def formatargvalues(args, varargs, varkw, locals,
                     formatarg=str,
