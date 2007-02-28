@@ -21,7 +21,7 @@ class ExceptionClassTests(unittest.TestCase):
     def test_inheritance(self):
         # Make sure the inheritance hierarchy matches the documentation
         exc_set = set()
-        for object_ in __builtins__.__dict__.values():
+        for object_ in __builtin__.__dict__.values():
             try:
                 if issubclass(object_, BaseException):
                     exc_set.add(object_.__name__)
