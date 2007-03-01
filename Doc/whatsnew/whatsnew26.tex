@@ -76,6 +76,22 @@ details.
 
 \begin{itemize}
 
+\item New data type in the \module{collections} module:
+\class{NamedTuple(\var{typename}, \var{fieldnames})} is a factory function that
+creates subclasses of the standard tuple whose fields are accessible
+by name as well as index.  For example:
+
+\begin{verbatim}
+var_type = collections.NamedTuple('variable', 
+             'id name type size')
+var = var_type(1, 'frequency', 'int', 4)
+
+print var[0], var.id		# Equivalent
+print var[2], var.type          # Equivalent
+\end{verbatim}
+
+(Contributed by Raymond Hettinger.)
+
 \item New function in the \module{heapq} module:
 \function{merge(iter1, iter2, ...)} 
 takes any number of iterables that return data 
