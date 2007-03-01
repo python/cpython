@@ -9,14 +9,16 @@
 
 
 This module implements high-performance container datatypes.  Currently,
-there are two datatypes, deque and defaultdict.
+there are two datatypes, deque and defaultdict, and one datatype factory
+function, \function{NamedTuple}.
 Future additions may include balanced trees and ordered dictionaries.
 \versionchanged[Added defaultdict]{2.5}
+\versionchanged[Added NamedTuple]{2.6}
 
 \subsection{\class{deque} objects \label{deque-objects}}
 
 \begin{funcdesc}{deque}{\optional{iterable}}
-  Returns a new deque objected initialized left-to-right (using
+  Returns a new deque object initialized left-to-right (using
   \method{append()}) with data from \var{iterable}.  If \var{iterable}
   is not specified, the new deque is empty.
 
@@ -339,3 +341,50 @@ Setting the \member{default_factory} to \class{set} makes the
 >>> d.items()
 [('blue', set([2, 4])), ('red', set([1, 3]))]
 \end{verbatim}
+
+
+
+\subsection{\function{NamedTuple} datatype factory function \label{named-tuple-factory}}
+
+\begin{funcdesc}{NamedTuple}{typename, fieldnames}
+  Returns a new tuple subclass named \var{typename}.  The new subclass is used
+  to create tuple-like objects that have fields accessable by attribute
+  lookup as well as being indexable and iterable.  Instances of the subclass
+  also have a helpful docstring (with typename and fieldnames) and a helpful
+  \method{__repr__()} method which lists the tuple contents in a \code{name=value}
+  format.
+  \versionadded{2.6}
+
+  The \var{fieldnames} are specified in a single string and are separated by spaces.
+  Any valid Python identifier may be used for a field name.
+
+  Example:
+  \begin{verbatim}
+    >>> Point = NamedTuple('Point', 'x y')
+    >>> Point.__doc__           # docstring for the new datatype
+    'Point(x, y)'
+    >>> p = Point(11, y=22)     # instantiate with positional or keyword arguments
+    >>> p[0] + p[1]             # works just like the tuple (11, 22)
+    33
+    >>> x, y = p                # unpacks just like a tuple
+    >>> x, y
+    (11, 22)
+    >>> p.x + p.y               # fields also accessable by name
+    33
+    >>> p                       # readable __repr__ with name=value style
+    Point(x=11, y=22)  
+  \end{verbatim}
+
+  The use cases are the same as those for tuples.  The named factories
+  assign meaning to each tuple position and allow for more readable,
+  self-documenting code.  Can also be used to assign field names to tuples
+  returned by the \module{csv} or \module{sqlite3} modules.  For example:
+
+  \begin{verbatim}
+    import csv
+    EmployeeRecord = NamedTuple('EmployeeRecord', 'name age title deparment paygrade')
+    for tup in csv.reader(open("employees.csv", "rb")):
+        print EmployeeRecord(*tup)
+  \end{verbatim}
+
+\end{funcdesc}
