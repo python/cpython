@@ -138,6 +138,8 @@ Library
 
 - Added heapq.merge() for merging sorted input streams.
 
+- Added collections.NamedTuple() for assigning field names to tuples.
+
 - Added itertools.izip_longest().
 
 - Have the encoding package's search function dynamically import using absolute
