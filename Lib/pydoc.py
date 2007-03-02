@@ -1627,16 +1627,21 @@ class Helper:
         self.docdir = None
         execdir = os.path.dirname(sys.executable)
         homedir = os.environ.get('PYTHONHOME')
+        join = os.path.join
         for dir in [os.environ.get('PYTHONDOCS'),
                     homedir and os.path.join(homedir, 'doc'),
-                    os.path.join(execdir, 'doc'),
-                    '/usr/doc/python-docs-' + split(sys.version)[0],
-                    '/usr/doc/python-' + split(sys.version)[0],
-                    '/usr/doc/python-docs-' + sys.version[:3],
-                    '/usr/doc/python-' + sys.version[:3],
-                    os.path.join(sys.prefix, 'Resources/English.lproj/Documentation')]:
-            if dir and os.path.isdir(os.path.join(dir, 'lib')):
+                    join(execdir, 'doc'), # for Windows
+                    join(sys.prefix, 'doc/python-docs-' + split(sys.version)[0]),
+                    join(sys.prefix, 'doc/python-' + split(sys.version)[0]),
+                    join(sys.prefix, 'doc/python-docs-' + sys.version[:3]),
+                    join(sys.prefix, 'doc/python-' + sys.version[:3]),
+                    join(sys.prefix, 'Resources/English.lproj/Documentation')]:
+            if dir and os.path.isdir(join(dir, 'lib')):
                 self.docdir = dir
+                break
+            if dir and os.path.isdir(join(dir, 'html', 'lib')):
+                self.docdir = join(dir, 'html')
+                break
 
     def __repr__(self):
         if inspect.stack()[1][3] == '?':
