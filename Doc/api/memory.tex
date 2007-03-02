@@ -100,7 +100,9 @@ are available for allocating and releasing memory from the Python heap:
   memory block is resized but is not freed, and the returned pointer
   is non-\NULL.  Unless \var{p} is \NULL, it must have been
   returned by a previous call to \cfunction{PyMem_Malloc()} or
-  \cfunction{PyMem_Realloc()}.
+  \cfunction{PyMem_Realloc()}. If the request fails,
+  \cfunction{PyMem_Realloc()} returns \NULL{} and \var{p} remains a
+  valid pointer to the previous memory area.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyMem_Free}{void *p}
@@ -124,7 +126,8 @@ that \var{TYPE} refers to any C type.
 \begin{cfuncdesc}{\var{TYPE}*}{PyMem_Resize}{void *p, TYPE, size_t n}
   Same as \cfunction{PyMem_Realloc()}, but the memory block is resized
   to \code{(\var{n} * sizeof(\var{TYPE}))} bytes.  Returns a pointer
-  cast to \ctype{\var{TYPE}*}.
+  cast to \ctype{\var{TYPE}*}. On return, \var{p} will be a pointer to
+  the new memory area, or \NULL{} in the event of failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyMem_Del}{void *p}
