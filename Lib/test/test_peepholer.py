@@ -49,6 +49,11 @@ class TestTranforms(unittest.TestCase):
             self.assert_(elem not in asm)
         for elem in ('LOAD_CONST', '(None)'):
             self.assert_(elem in asm)
+        def f():
+            'Adding a docstring made this test fail in Py2.5.0'
+            return None
+        self.assert_('LOAD_CONST' in disassemble(f))
+        self.assert_('LOAD_GLOBAL' not in disassemble(f))
 
     def test_while_one(self):
         # Skip over:  LOAD_CONST trueconst  JUMP_IF_FALSE xx  POP_TOP
