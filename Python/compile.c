@@ -773,13 +773,17 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names,
 				if (name == NULL  ||  strcmp(name, "None") != 0)
 					continue;
 				for (j=0 ; j < PyList_GET_SIZE(consts) ; j++) {
-					if (PyList_GET_ITEM(consts, j) == Py_None) {
-						codestr[i] = LOAD_CONST;
-						SETARG(codestr, i, j);
-						cumlc = lastlc + 1;
+					if (PyList_GET_ITEM(consts, j) == Py_None)
 						break;
-					}
 				}
+				if (j == PyList_GET_SIZE(consts)) {
+					if (PyList_Append(consts, Py_None) == -1)
+					        goto exitUnchanged;                                        
+				}
+				assert(PyList_GET_ITEM(consts, j) == Py_None);
+				codestr[i] = LOAD_CONST;
+				SETARG(codestr, i, j);
+				cumlc = lastlc + 1;
 				break;
 
 				/* Skip over LOAD_CONST trueconst
