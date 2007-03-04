@@ -136,6 +136,8 @@ Core and builtins
 Library
 -------
 
+- Taught setup.py how to locate Berkeley DB on Macs using MacPorts.
+
 - Added heapq.merge() for merging sorted input streams.
 
 - Added collections.NamedTuple() for assigning field names to tuples.
