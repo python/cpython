@@ -616,10 +616,11 @@ class PyBuildExt(build_ext):
             '/usr/include/db4',
             '/usr/local/include/db4',
             '/opt/sfw/include/db4',
-            '/sw/include/db4',
             '/usr/include/db3',
             '/usr/local/include/db3',
             '/opt/sfw/include/db3',
+            # Fink defaults (http://fink.sourceforge.net/)
+            '/sw/include/db4',
             '/sw/include/db3',
         ]
         # 4.x minor number specific paths
@@ -630,6 +631,8 @@ class PyBuildExt(build_ext):
             db_inc_paths.append('/usr/local/include/db4%d' % x)
             db_inc_paths.append('/pkg/db-4.%d/include' % x)
             db_inc_paths.append('/opt/db-4.%d/include' % x)
+            # MacPorts default (http://www.macports.org/)
+            db_inc_paths.append('/opt/local/include/db4%d' % x)
         # 3.x minor number specific paths
         for x in (3,):
             db_inc_paths.append('/usr/include/db3%d' % x)
@@ -654,7 +657,7 @@ class PyBuildExt(build_ext):
                 std_variants.append(os.path.join(dn, "db3.%d"%x))
 
         db_inc_paths = std_variants + db_inc_paths
-
+        db_inc_paths = [p for p in db_inc_paths if os.path.exists(p)]
 
         db_ver_inc_map = {}
 
@@ -677,7 +680,7 @@ class PyBuildExt(build_ext):
                         if ( (not db_ver_inc_map.has_key(db_ver)) and
                            (db_ver <= max_db_ver and db_ver >= min_db_ver) ):
                             # save the include directory with the db.h version
-                            # (first occurrance only)
+                            # (first occurrence only)
                             db_ver_inc_map[db_ver] = d
                             if db_setup_debug:
                                 print "db.h: found", db_ver, "in", d
@@ -686,7 +689,8 @@ class PyBuildExt(build_ext):
                             if db_setup_debug: print "db.h: ignoring", d
                     else:
                         # ignore this header, it didn't contain a version number
-                        if db_setup_debug: print "db.h: unsupported version", db_ver, "in", d
+                        if db_setup_debug:
+                            print "db.h: no version number version in", d
 
             db_found_vers = db_ver_inc_map.keys()
             db_found_vers.sort()
@@ -697,10 +701,8 @@ class PyBuildExt(build_ext):
 
                 # check lib directories parallel to the location of the header
                 db_dirs_to_check = [
-                    os.path.join(db_incdir, '..', 'lib64'),
-                    os.path.join(db_incdir, '..', 'lib'),
-                    os.path.join(db_incdir, '..', '..', 'lib64'),
-                    os.path.join(db_incdir, '..', '..', 'lib'),
+                    db_incdir.replace("include", 'lib64'),
+                    db_incdir.replace("include", 'lib'),
                 ]
                 db_dirs_to_check = filter(os.path.isdir, db_dirs_to_check)
 
