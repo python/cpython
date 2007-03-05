@@ -4143,6 +4143,19 @@ def notimplemented():
                 check(iexpr, c, N1)
                 check(iexpr, c, N2)
 
+def test_assign_slice():
+    # ceval.c's assign_slice used to check for
+    # tp->tp_as_sequence->sq_slice instead of
+    # tp->tp_as_sequence->sq_ass_slice
+
+    class C(object):
+        def __setslice__(self, start, stop, value):
+            self.value = value
+
+    c = C()
+    c[1:2] = 3
+    vereq(c.value, 3)
+
 def test_main():
     weakref_segfault() # Must be first, somehow
     wrapper_segfault()
@@ -4239,6 +4252,7 @@ def test_main():
     test_init()
     methodwrapper()
     notimplemented()
+    test_assign_slice()
 
     if verbose: print "All OK"
 
