@@ -3927,7 +3927,7 @@ assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x)
 	PyTypeObject *tp = u->ob_type;
 	PySequenceMethods *sq = tp->tp_as_sequence;
 
-	if (sq && sq->sq_slice && ISINDEX(v) && ISINDEX(w)) {
+	if (sq && sq->sq_ass_slice && ISINDEX(v) && ISINDEX(w)) {
 		Py_ssize_t ilow = 0, ihigh = PY_SSIZE_T_MAX;
 		if (!_PyEval_SliceIndex(v, &ilow))
 			return -1;
