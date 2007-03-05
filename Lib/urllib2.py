@@ -14,36 +14,36 @@ non-error returns.  The HTTPRedirectHandler automatically deals with
 HTTP 301, 302, 303 and 307 redirect errors, and the HTTPDigestAuthHandler
 deals with digest authentication.
 
-urlopen(url, data=None) -- basic usage is the same as original
+urlopen(url, data=None) -- Basic usage is the same as original
 urllib.  pass the url and optionally data to post to an HTTP URL, and
 get a file-like object back.  One difference is that you can also pass
 a Request instance instead of URL.  Raises a URLError (subclass of
 IOError); for HTTP errors, raises an HTTPError, which can also be
 treated as a valid response.
 
-build_opener -- function that creates a new OpenerDirector instance.
-will install the default handlers.  accepts one or more Handlers as
+build_opener -- Function that creates a new OpenerDirector instance.
+Will install the default handlers.  Accepts one or more Handlers as
 arguments, either instances or Handler classes that it will
-instantiate.  if one of the argument is a subclass of the default
+instantiate.  If one of the argument is a subclass of the default
 handler, the argument will be installed instead of the default.
 
-install_opener -- installs a new opener as the default opener.
+install_opener -- Installs a new opener as the default opener.
 
 objects of interest:
-OpenerDirector --
+OpenerDirector -- 
 
-Request -- an object that encapsulates the state of a request.  the
-state can be a simple as the URL.  it can also include extra HTTP
+Request -- An object that encapsulates the state of a request.  The
+state can be as simple as the URL.  It can also include extra HTTP
 headers, e.g. a User-Agent.
 
 BaseHandler --
 
 exceptions:
-URLError-- a subclass of IOError, individual protocols have their own
-specific subclass
+URLError -- A subclass of IOError, individual protocols have their own
+specific subclass.
 
-HTTPError-- also a valid HTTP response, so you can treat an HTTP error
-as an exceptional event or valid response
+HTTPError -- Also a valid HTTP response, so you can treat an HTTP error
+as an exceptional event or valid response.
 
 internals:
 BaseHandler and parent
@@ -334,7 +334,8 @@ class OpenerDirector:
             added = True
 
         if added:
-            # XXX why does self.handlers need to be sorted?
+            # the handlers must work in an specific order, the order
+            # is specified in a Handler attribute
             bisect.insort(self.handlers, handler)
             handler.add_parent(self)
 
