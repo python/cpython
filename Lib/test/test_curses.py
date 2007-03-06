@@ -241,12 +241,21 @@ def test_userptr_without_set(stdscr):
     except curses.panel.error:
         pass
 
+def test_resize_term(stdscr):
+    if hasattr(curses, 'resizeterm'):
+        lines, cols = curses.LINES, curses.COLS
+        curses.resizeterm(lines - 1, cols + 1)
+        
+        if curses.LINES != lines - 1 or curses.COLS != cols + 1:
+            raise RuntimeError, "Expected resizeterm to update LINES and COLS"
+
 def main(stdscr):
     curses.savetty()
     try:
         module_funcs(stdscr)
         window_funcs(stdscr)
         test_userptr_without_set(stdscr)
+        test_resize_term(stdscr)
     finally:
         curses.resetty()
 
