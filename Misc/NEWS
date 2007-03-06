@@ -141,6 +141,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1673619: setup.py identifies extension modules it doesn't know how
+  to build and those it knows how to build but that fail to build.
+
 - Patch #912410: Replace HTML entity references for attribute values 
   in HTMLParser.
 
