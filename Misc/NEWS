@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #1674503: close the file opened by execfile() in an error condition.
+
 - Patch #1674228: when assigning a slice (old-style), check for the
   sq_ass_slice instead of the sq_slice slot.
 
