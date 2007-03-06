@@ -404,6 +404,9 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1646728: datetime.fromtimestamp fails with negative
+  fractional times.  With unittest.
+
 - Patch #1490190: posixmodule now includes os.chflags() and os.lchflags()
   functions on platforms where the underlying system calls are available.
 

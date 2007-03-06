@@ -1425,6 +1425,15 @@ class TestDateTime(TestDate):
             self.assertRaises(ValueError, self.theclass.utcfromtimestamp,
                               insane)
 
+    def test_negative_float_fromtimestamp(self):
+        # The result is tz-dependent; at least test that this doesn't
+        # fail (like it did before bug 1646728 was fixed).
+        self.theclass.fromtimestamp(-1.05)
+
+    def test_negative_float_utcfromtimestamp(self):
+        d = self.theclass.utcfromtimestamp(-1.05)
+        self.assertEquals(d, self.theclass(1969, 12, 31, 23, 59, 58, 950000))
+
     def test_utcnow(self):
         import time
 
