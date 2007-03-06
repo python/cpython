@@ -141,6 +141,9 @@ Core and builtins
 Library
 -------
 
+- Patch #912410: Replace HTML entity references for attribute values 
+  in HTMLParser.
+
 - Patch #1663234: you can now run doctest on test files and modules
   using "python -m doctest [-v] filename ...".
 
