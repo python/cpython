@@ -118,6 +118,9 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Patch #1646728: datetime.fromtimestamp fails with negative
+  fractional times.  With unittest.
+
 - Patch #1494140: Add documentation for the new struct.Struct object.
 
 - Patch #1657276: Make NETLINK_DNRTMSG conditional.
