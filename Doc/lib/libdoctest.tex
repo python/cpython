@@ -201,6 +201,19 @@ prohibit it by passing \code{verbose=False}.  In either of those cases,
 \code{sys.argv} is not examined by \function{testmod()} (so passing
 \programopt{-v} or not has no effect).
 
+Since Python 2.6, there is also a command line shortcut for running
+\function{testmod()}.  You can instruct the Python interpreter to run
+the doctest module directly from the standard library and pass the module
+name(s) on the command line:
+
+\begin{verbatim}
+python -m doctest -v example.py
+\end{verbatim}
+
+This will import \file{example.py} as a standalone module and run
+\function{testmod()} on it.  Note that this may not work correctly if the
+file is part of a package and imports other submodules from that package.
+
 For more information on \function{testmod()}, see
 section~\ref{doctest-basic-api}.
 
@@ -266,6 +279,18 @@ look for files in other locations.
 Like \function{testmod()}, \function{testfile()}'s verbosity can be
 set with the \programopt{-v} command-line switch or with the optional
 keyword argument \var{verbose}.
+
+Since Python 2.6, there is also a command line shortcut for running
+\function{testfile()}.  You can instruct the Python interpreter to run
+the doctest module directly from the standard library and pass the file
+name(s) on the command line:
+
+\begin{verbatim}
+python -m doctest -v example.txt
+\end{verbatim}
+
+Because the file name does not end with \file{.py}, \module{doctest} infers
+that it must be run with \function{testfile()}, not \function{testmod()}.
 
 For more information on \function{testfile()}, see
 section~\ref{doctest-basic-api}.
