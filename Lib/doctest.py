@@ -2631,10 +2631,10 @@ __test__ = {"_TestClass": _TestClass,
 
 def _test():
     testfiles = [arg for arg in sys.argv[1:] if arg and arg[0] != '-']
-    if len(testfiles) > 0:
+    if testfiles:
         for filename in testfiles:
             if filename.endswith(".py"):
-                # This is a module -- insert its dir into sys.path and try to
+                # It is a module -- insert its dir into sys.path and try to
                 # import it. If it is part of a package, that possibly won't work
                 # because of package imports.
                 dirname, filename = os.path.split(filename)
