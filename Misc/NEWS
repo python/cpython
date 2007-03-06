@@ -457,6 +457,9 @@ Tests
 Documentation
 -------------
 
+- Patch #1671450: add a section about subclassing builtin types to the
+  "extending and embedding" tutorial.
+
 - Bug #1629125: fix wrong data type (int -> Py_ssize_t) in PyDict_Next
   docs.
 
