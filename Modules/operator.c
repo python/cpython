@@ -168,43 +168,41 @@ static PyObject*
 op_getslice(PyObject *s, PyObject *a)
 {
         PyObject *a1;
-        int a2,a3;
+        Py_ssize_t a2, a3;
 
-        if (!PyArg_ParseTuple(a,"Oii:getslice",&a1,&a2,&a3))
+        if (!PyArg_ParseTuple(a, "Onn:getslice", &a1, &a2, &a3))
                 return NULL;
-        return PySequence_GetSlice(a1,a2,a3);
+        return PySequence_GetSlice(a1, a2, a3);
 }
 
 static PyObject*
 op_setslice(PyObject *s, PyObject *a)
 {
         PyObject *a1, *a4;
-        int a2,a3;
+        Py_ssize_t a2, a3;
 
-        if (!PyArg_ParseTuple(a,"OiiO:setslice",&a1,&a2,&a3,&a4))
+        if (!PyArg_ParseTuple(a, "OnnO:setslice", &a1, &a2, &a3, &a4))
                 return NULL;
 
-        if (-1 == PySequence_SetSlice(a1,a2,a3,a4))
+        if (-1 == PySequence_SetSlice(a1, a2, a3, a4))
                 return NULL;
 
-        Py_INCREF(Py_None);
-        return Py_None;
+	Py_RETURN_NONE;
 }
 
 static PyObject*
 op_delslice(PyObject *s, PyObject *a)
 {
         PyObject *a1;
-        int a2,a3;
+        Py_ssize_t a2, a3;
 
-        if(! PyArg_ParseTuple(a,"Oii:delslice",&a1,&a2,&a3))
+        if (!PyArg_ParseTuple(a, "Onn:delslice", &a1, &a2, &a3))
                 return NULL;
 
-        if (-1 == PySequence_DelSlice(a1,a2,a3))
+        if (-1 == PySequence_DelSlice(a1, a2, a3))
                 return NULL;
 
-        Py_INCREF(Py_None);
-        return Py_None;
+	Py_RETURN_NONE;
 }
 
 #undef spam1
