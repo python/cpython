@@ -1017,6 +1017,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, long, '53', 40)
         self.assertRaises(TypeError, long, 1, 12)
 
+        # SF patch #1638879: embedded NULs were not detected with
+        # explicit base
+        self.assertRaises(ValueError, long, '123\0', 10)
+        self.assertRaises(ValueError, long, '123\x00 245', 20)
+
         self.assertEqual(long('100000000000000000000000000000000', 2),
                          4294967296)
         self.assertEqual(long('102002022201221111211', 3), 4294967296)
