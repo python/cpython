@@ -1251,12 +1251,12 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 	
 	mod = PyParser_ASTFromFile(fp, filename, start, 0, 0,
 				   flags, NULL, arena);
+	if (closeit)
+		fclose(fp);
 	if (mod == NULL) {
 		PyArena_Free(arena);
 		return NULL;
 	}
-	if (closeit)
-		fclose(fp);
 	ret = run_mod(mod, filename, globals, locals, flags, arena);
 	PyArena_Free(arena);
 	return ret;
