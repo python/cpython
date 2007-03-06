@@ -406,6 +406,9 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1654417: make operator.{get,set,del}slice use the full range
+  of Py_ssize_t.
+
 - Patch #1646728: datetime.fromtimestamp fails with negative
   fractional times.  With unittest.
 
