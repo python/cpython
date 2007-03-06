@@ -2630,8 +2630,23 @@ __test__ = {"_TestClass": _TestClass,
            }
 
 def _test():
-    r = unittest.TextTestRunner()
-    r.run(DocTestSuite())
+    testfiles = [arg for arg in sys.argv[1:] if arg and arg[0] != '-']
+    if len(testfiles) > 0:
+        for filename in testfiles:
+            if filename.endswith(".py"):
+                # This is a module -- insert its dir into sys.path and try to
+                # import it. If it is part of a package, that possibly won't work
+                # because of package imports.
+                dirname, filename = os.path.split(filename)
+                sys.path.insert(0, dirname)
+                m = __import__(filename[:-3])
+                del sys.path[0]
+                testmod(m)
+            else:
+                testfile(filename, module_relative=False)
+    else:
+        r = unittest.TextTestRunner()
+        r.run(DocTestSuite())
 
 if __name__ == "__main__":
     _test()
