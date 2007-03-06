@@ -132,6 +132,15 @@ class TestDefaultDict(unittest.TestCase):
         self.assertEqual(d2.default_factory, list)
         self.assertEqual(d2, d1)
 
+    def test_keyerror_without_factory(self):
+        d1 = defaultdict()
+        try:
+            d1[(1,)]
+        except KeyError, err:
+            self.assertEqual(err.message, (1,))
+        else:
+            self.fail("expected KeyError")
+
 
 def test_main():
     test_support.run_unittest(TestDefaultDict)
