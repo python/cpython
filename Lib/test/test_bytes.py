@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 import test.test_support
+import test.string_tests
 
 
 class BytesTest(unittest.TestCase):
@@ -612,8 +613,38 @@ class BytesTest(unittest.TestCase):
     # are not appropriate for bytes
 
 
+class BytesAsStringTest(test.string_tests.BaseTest):
+    type2test = bytes
+
+    def checkequal(self, result, object, methodname, *args):
+        object = bytes(object)
+        realresult = getattr(bytes, methodname)(object, *args)
+        self.assertEqual(
+            self.fixtype(result),
+            realresult
+        )
+
+    def checkraises(self, exc, object, methodname, *args):
+        object = bytes(object)
+        self.assertRaises(
+            exc,
+            getattr(bytes, methodname),
+            object,
+            *args
+        )    
+
+    # Currently the bytes containment testing uses a single integer
+    # value. This may not be the final design, but until then the
+    # bytes section with in a bytes containment not valid
+    def test_contains(self):
+        pass
+    def test_find(self):
+        pass
+
+
 def test_main():
     test.test_support.run_unittest(BytesTest)
+    test.test_support.run_unittest(BytesAsStringTest)
 
 
 if __name__ == "__main__":
