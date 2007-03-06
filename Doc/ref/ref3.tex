@@ -1282,10 +1282,14 @@ follows:
 \code{\var{x}.__ne__(\var{y})},
 \code{\var{x}>\var{y}} calls \code{\var{x}.__gt__(\var{y})}, and
 \code{\var{x}>=\var{y}} calls \code{\var{x}.__ge__(\var{y})}.
-These methods can return any value, but if the comparison operator is
-used in a Boolean context, the return value should be interpretable as
-a Boolean value, else a \exception{TypeError} will be raised.
-By convention, \code{False} is used for false and \code{True} for true.
+
+A rich comparison method may return the singleton \code{NotImplemented} if it
+does not implement the operation for a given pair of arguments.
+By convention, \code{False} and \code{True} are returned for a successful
+comparison. However, these methods can return any value, so if the
+comparison operator is used in a Boolean context (e.g., in the condition
+of an \code{if} statement), Python will call \function{bool()} on the
+value to determine if the result is true or false.
 
 There are no implied relationships among the comparison operators.
 The truth of \code{\var{x}==\var{y}} does not imply that \code{\var{x}!=\var{y}}
@@ -1299,9 +1303,7 @@ the right argument does); rather, \method{__lt__()} and
 \method{__ge__()} are each other's reflection, and \method{__eq__()}
 and \method{__ne__()} are their own reflection.
 
-Arguments to rich comparison methods are never coerced.  A rich
-comparison method may return \code{NotImplemented} if it does not
-implement the operation for a given pair of arguments.
+Arguments to rich comparison methods are never coerced.
 \end{methoddesc}
 
 \begin{methoddesc}[object]{__cmp__}{self, other}
