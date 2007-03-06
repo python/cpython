@@ -2196,19 +2196,72 @@ PyCurses_QiFlush(PyObject *self, PyObject *args)
   }
 }
 
+/* Internal helper used for updating curses.LINES, curses.COLS, _curses.LINES
+ * and _curses.COLS */
+static int
+update_lines_cols(void)
+{
+  PyObject *o;
+  PyObject *m = PyImport_ImportModule("curses");
+
+  if (!m)
+    return 0;
+
+  o = PyInt_FromLong(LINES);
+  if (!o) {
+    Py_DECREF(m);
+    return 0;
+  }
+  if (PyObject_SetAttrString(m, "LINES", o)) {
+    Py_DECREF(m);
+    Py_DECREF(o);
+    return 0;
+  }
+  if (PyDict_SetItemString(ModDict, "LINES", o)) {
+    Py_DECREF(m);
+    Py_DECREF(o);
+    return 0;
+  }
+  Py_DECREF(o);
+  o = PyInt_FromLong(COLS);
+  if (!o) {
+    Py_DECREF(m);
+    return 0;
+  }
+  if (PyObject_SetAttrString(m, "COLS", o)) {
+    Py_DECREF(m);
+    Py_DECREF(o);
+    return 0;
+  }
+  if (PyDict_SetItemString(ModDict, "COLS", o)) {
+    Py_DECREF(m);
+    Py_DECREF(o);
+    return 0;
+  }
+  Py_DECREF(o);
+  Py_DECREF(m);
+  return 1;
+}
+
 #ifdef HAVE_CURSES_RESIZETERM
 static PyObject *
 PyCurses_ResizeTerm(PyObject *self, PyObject *args)
 {
   int lines;
   int columns;
+  PyObject *result;
 
   PyCursesInitialised
 
   if (!PyArg_ParseTuple(args,"ii:resizeterm", &lines, &columns))
     return NULL;
 
-  return PyCursesCheckERR(resizeterm(lines, columns), "resizeterm");
+  result = PyCursesCheckERR(resizeterm(lines, columns), "resizeterm");
+  if (!result)
+    return NULL;
+  if (!update_lines_cols())
+    return NULL;
+  return result;
 }
 
 #endif
@@ -2220,12 +2273,19 @@ PyCurses_Resize_Term(PyObject *self, PyObject *args)
   int lines;
   int columns;
 
+  PyObject *result;
+
   PyCursesInitialised
 
   if (!PyArg_ParseTuple(args,"ii:resize_term", &lines, &columns))
     return NULL;
 
-  return PyCursesCheckERR(resize_term(lines, columns), "resize_term");
+  result = PyCursesCheckERR(resize_term(lines, columns), "resize_term");
+  if (!result)
+    return NULL;
+  if (!update_lines_cols())
+    return NULL;
+  return result;
 }
 #endif /* HAVE_CURSES_RESIZE_TERM */
 
