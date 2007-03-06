@@ -187,7 +187,7 @@ class PyBuildExt(build_ext):
             longest = max(longest, max([len(name) for name in self.failed]))
 
         def print_three_column(lst):
-            lst.sort(cmp=str.lower)
+            lst.sort(key=str.lower)
             # guarantee zip() doesn't drop anything
             while len(lst) % 3:
                 lst.append("")
