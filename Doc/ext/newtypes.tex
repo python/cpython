@@ -489,7 +489,6 @@ this?
   garbage collection, there are calls that can be made to ``untrack''
   the object from garbage collection, however, these calls are
   advanced and not covered here.}
-\item
 \end{itemize}
 
 
@@ -929,6 +928,102 @@ That's pretty much it.  If we had written custom \member{tp_alloc} or
 \member{tp_free} slots, we'd need to modify them for cyclic-garbage
 collection. Most extensions will use the versions automatically
 provided.
+
+\subsection{Subclassing other types}
+
+It is possible to create new extension types that are derived from existing
+types. It is easiest to inherit from the built in types, since an extension
+can easily use the \class{PyTypeObject} it needs. It can be difficult to
+share these \class{PyTypeObject} structures between extension modules.
+
+In this example we will create a \class{Shoddy} type that inherits from
+the builtin \class{list} type. The new type will be completely compatible
+with regular lists, but will have an additional \method{increment()} method
+that increases an internal counter.
+
+\begin{verbatim}
+>>> import shoddy
+>>> s = shoddy.Shoddy(range(3))
+>>> s.extend(s)
+>>> print len(s)
+6
+>>> print s.increment()
+1
+>>> print s.increment()
+2
+\end{verbatim}
+
+\verbatiminput{shoddy.c}
+
+As you can see, the source code closely resembles the \class{Noddy} examples in previous
+sections. We will break down the main differences between them.
+
+\begin{verbatim}
+typedef struct {
+	PyListObject list;
+	int state;
+} Shoddy;
+\end{verbatim}
+
+The primary difference for derived type objects is that the base type's
+object structure must be the first value. The base type will already
+include the \cfunction{PyObject_HEAD} at the beginning of its structure.
+
+When a Python object is a \class{Shoddy} instance, its \var{PyObject*} pointer
+can be safely cast to both \var{PyListObject*} and \var{Shoddy*}.
+
+\begin{verbatim}
+static int
+Shoddy_init(Shoddy *self, PyObject *args, PyObject *kwds)
+{
+	if (PyList_Type.tp_init((PyObject *)self, args, kwds) < 0)
+		return -1;
+	self->state = 0;
+	return 0;
+}
+\end{verbatim}
+
+In the \member{__init__} method for our type, we can see how to call through
+to the \member{__init__} method of the base type.
+
+This pattern is important when writing a type with custom \member{new} and
+\member{dealloc} methods. The \member{new} method should not actually create the
+memory for the object with \member{tp_alloc}, that will be handled by
+the base class when calling its \member{tp_new}.
+
+When filling out the \cfunction{PyTypeObject} for the \class{Shoddy} type,
+you see a slot for \cfunction{tp_base}. Due to cross platform compiler
+issues, you can't fill that field directly with the \cfunction{PyList_Type};
+it can be done later in the module's \cfunction{init} function.
+
+\begin{verbatim}
+PyMODINIT_FUNC
+initshoddy(void)
+{
+	PyObject *m;
+
+	ShoddyType.tp_base = &PyList_Type;
+	if (PyType_Ready(&ShoddyType) < 0)
+		return;
+
+	m = Py_InitModule3("shoddy", NULL, "Shoddy module");
+	if (m == NULL)
+		return;
+
+	Py_INCREF(&ShoddyType);
+	PyModule_AddObject(m, "Shoddy", (PyObject *) &ShoddyType);
+}
+\end{verbatim}
+
+Before calling \cfunction{PyType_Ready}, the type structure must have the
+\member{tp_base} slot filled in. When we are deriving a new type, it is
+not necessary to fill out the \member{tp_alloc} slot with
+\cfunction{PyType_GenericNew} -- the allocate function from the base type
+will be inherited.
+
+After that, calling \cfunction{PyType_Ready} and adding the type object
+to the module is the same as with the basic \class{Noddy} examples.
+
 
 \section{Type Methods
          \label{dnt-type-methods}}
