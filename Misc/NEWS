@@ -139,6 +139,8 @@ Core and builtins
 Library
 -------
 
+- Patch #1121142: Implement ZipFile.open.
+
 - Taught setup.py how to locate Berkeley DB on Macs using MacPorts.
 
 - Added heapq.merge() for merging sorted input streams.
