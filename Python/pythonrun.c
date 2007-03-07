@@ -69,6 +69,7 @@ extern void _PyGILState_Fini(void);
 int Py_DebugFlag; /* Needed by parser.c */
 int Py_VerboseFlag; /* Needed by import.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
+int Py_InspectFlag; /* Needed to determine whether to exit at SystemError */
 int Py_NoSiteFlag; /* Suppress 'import site' */
 int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c: deprecated */
 int Py_FrozenFlag; /* Needed by getpath.c */
@@ -1018,6 +1019,11 @@ handle_system_exit(void)
 {
 	PyObject *exception, *value, *tb;
 	int exitcode = 0;
+
+	if (Py_InspectFlag)
+		/* Don't exit if -i flag was given. This flag is set to 0
+		 * when entering interactive mode for inspecting. */
+		return;
 
 	PyErr_Fetch(&exception, &value, &tb);
 	if (Py_FlushLine())

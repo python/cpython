@@ -12,6 +12,11 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Variant of patch #697613: don't exit the interpreter on a SystemExit
+  exception if the -i command line option or PYTHONINSPECT environment
+  variable is given, but break into the interactive interpreter just like
+  on other exceptions or normal program exit.
+
 - Patch #1638879: don't accept strings with embedded NUL bytes in long().
 
 - Bug #1674503: close the file opened by execfile() in an error condition.
