@@ -10,12 +10,21 @@ __author__ = ("Guido van Rossum <guido@python.org>, "
               "Mike Verdone <mike.verdone@gmail.com>")
 
 __all__ = ["open", "RawIOBase", "FileIO", "SocketIO", "BytesIO",
-           "BufferedReader", "BufferedWriter", "BufferedRWPair", "EOF"]
+           "BufferedReader", "BufferedWriter", "BufferedRWPair",
+           "BufferedRandom", "EOF"]
 
 import os
 
 DEFAULT_BUFFER_SIZE = 8 * 1024 # bytes
-EOF = b""
+DEFAULT_MAX_BUFFER_SIZE = 16 * 1024 # bytes
+EOF = b''
+
+
+class BlockingIO(IOError):
+    def __init__(self, errno, strerror, characters_written):
+        IOError.__init__(self, errno, strerror)
+        self.characters_written = characters_written
+
 
 def open(filename, mode="r", buffering=None, *, encoding=None):
     """Replacement for the built-in open function.
@@ -117,6 +126,11 @@ class RawIOBase:
     # XXX Add individual method docstrings
 
     def read(self, n):
+        """Read and return up to n bytes.
+
+        Returns an empty bytes array on EOF, or None if the object is
+        set not to block and has no data to read.
+        """
         b = bytes(n.__index__())
         self.readinto(b)
         return b
@@ -125,6 +139,10 @@ class RawIOBase:
         raise IOError(".readinto() not supported")
 
     def write(self, b):
+        """Write the given buffer to the IO stream.
+
+        Returns the number of bytes written.
+        """
         raise IOError(".write() not supported")
 
     def seek(self, pos, whence=0):
@@ -324,111 +342,210 @@ class BytesIO(BufferedIOBase):
         return True
 
 
+class BufferedIOBase(RawIOBase):
+
+    """Base class for buffered IO objects."""
+
+    def flush(self):
+        """Flush the buffer to the underlying raw IO object."""
+        raise IOError(".flush() unsupported")
+
+
 class BufferedReader(BufferedIOBase):
 
-    """Buffered reader.
+    """Buffer for a readable sequential RawIO object.
 
-    Buffer for a readable sequential RawIO object. Does not allow
-    random access (seek, tell).
+    Does not allow random access (seek, tell).
     """
 
     def __init__(self, raw):
-        """
-        Create a new buffered reader using the given readable raw IO object.
+        """Create a new buffered reader using the given readable raw IO object.
         """
         assert raw.readable()
         self.raw = raw
-        self._read_buf = b''
+        self._read_buf = b""
         if hasattr(raw, 'fileno'):
             self.fileno = raw.fileno
 
     def read(self, n=None):
+        """Read n bytes.
+
+        Returns exactly n bytes of data unless the underlying raw IO
+        stream reaches EOF of if the call would block in non-blocking
+        mode. If n is None, read until EOF or until read() would
+        block.
         """
-        Read n bytes. Returns exactly n bytes of data unless the underlying
-        raw IO stream reaches EOF of if the call would block in non-blocking
-        mode. If n is None, read until EOF or until read() would block.
-        """
+        assert n is None or n > 0
         nodata_val = EOF
         while (len(self._read_buf) < n) if (n is not None) else True:
             current = self.raw.read(n)
             if current in (EOF, None):
                 nodata_val = current
                 break
-            self._read_buf += current # XXX using += is bad
-        read = self._read_buf[:n]
-        if (not self._read_buf):
-            return nodata_val
-        self._read_buf = self._read_buf[n if n else 0:]
-        return read
-
-    def write(self, b):
-        raise IOError(".write() unsupported")
+            self._read_buf += current
+        if self._read_buf:
+            if n is None:
+                n = len(self._read_buf)
+            out = self._read_buf[:n]
+            self._read_buf = self._read_buf[n:]
+        else:
+            out = nodata_val
+        return out
 
     def readable(self):
         return True
+
+    def fileno(self):
+        return self.raw.fileno()
 
     def flush(self):
         # Flush is a no-op
         pass
 
+    def close(self):
+        self.raw.close()
+
 
 class BufferedWriter(BufferedIOBase):
 
-    """Buffered writer.
-
-    XXX More docs.
-    """
-
-    def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE):
-        assert raw.writeable()
+    def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE,
+                 max_buffer_size=DEFAULT_MAX_BUFFER_SIZE):
+        assert raw.writable()
         self.raw = raw
         self.buffer_size = buffer_size
-        self._write_buf_stack = []
-        self._write_buf_size = 0
-        if hasattr(raw, 'fileno'):
-            self.fileno = raw.fileno
-
-    def read(self, n=None):
-        raise IOError(".read() not supported")
+        self.max_buffer_size = max_buffer_size
+        self._write_buf = b''
 
     def write(self, b):
+        # XXX we can implement some more tricks to try and avoid partial writes
         assert issubclass(type(b), bytes)
-        self._write_buf_stack.append(b)
-        self._write_buf_size += len(b)
-        if (self._write_buf_size > self.buffer_size):
-            self.flush()
+        if len(self._write_buf) > self.buffer_size:
+            # We're full, so let's pre-flush the buffer
+            try:
+                self.flush()
+            except BlockingIO as e:
+                # We can't accept anything else.
+                raise BlockingIO(e.errno, e.strerror, 0)
+        self._write_buf += b
+        if (len(self._write_buf) > self.buffer_size):
+            try:
+                self.flush()
+            except BlockingIO as e:
+                if (len(self._write_buf) > self.max_buffer_size):
+                    # We've hit max_buffer_size. We have to accept a partial
+                    # write and cut back our buffer.
+                    overage = len(self._write_buf) - self.max_buffer_size
+                    self._write_buf = self._write_buf[:self.max_buffer_size]
+                    raise BlockingIO(e.errno, e.strerror, overage)
 
-    def writeable(self):
+    def writable(self):
         return True
 
     def flush(self):
-        buf = b''.join(self._write_buf_stack)
-        while len(buf):
-            buf = buf[self.raw.write(buf):]
-        self._write_buf_stack = []
-        self._write_buf_size = 0
+        try:
+            while len(self._write_buf):
+                self._write_buf = self._write_buf[
+                                    self.raw.write(self._write_buf):]
+        except BlockingIO as e:
+            self._write_buf[e.characters_written:]
+            raise
 
-    # XXX support flushing buffer on close, del
+    def fileno(self):
+        return self.raw.fileno()
+
+    def close(self):
+        self.raw.close()
+
+    def __del__(self):
+        # XXX flush buffers before dying. Is there a nicer way to do this?
+        if self._write_buf:
+            self.flush()
 
 
 class BufferedRWPair(BufferedReader, BufferedWriter):
 
-    """Buffered Read/Write Pair.
+    """A buffered reader and writer object together.
 
     A buffered reader object and buffered writer object put together to
     form a sequential IO object that can read and write.
     """
 
-    def __init__(self, bufferedReader, bufferedWriter):
-        assert bufferedReader.readable()
-        assert bufferedWriter.writeable()
-        self.bufferedReader = bufferedReader
-        self.bufferedWriter = bufferedWriter
-        self.read = bufferedReader.read
-        self.write = bufferedWriter.write
-        self.flush = bufferedWriter.flush
-        self.readable = bufferedReader.readable
-        self.writeable = bufferedWriter.writeable
+    def __init__(self, reader, writer, buffer_size=DEFAULT_BUFFER_SIZE,
+                 max_buffer_size=DEFAULT_MAX_BUFFER_SIZE):
+        assert reader.readable()
+        assert writer.writable()
+        BufferedReader.__init__(self, reader)
+        BufferedWriter.__init__(self, writer, buffer_size, max_buffer_size)
+        self.reader = reader
+        self.writer = writer
+
+    def read(self, n=None):
+        return self.reader.read(n)
+
+    def write(self, b):
+        return self.writer.write(b)
+
+    def readable(self):
+        return self.reader.readable()
+
+    def writable(self):
+        return self.writer.writable()
+
+    def flush(self):
+        return self.writer.flush()
 
     def seekable(self):
         return False
+
+    def fileno(self):
+        # XXX whose fileno do we return? Reader's? Writer's? Unsupported?
+        raise IOError(".fileno() unsupported")
+
+    def close(self):
+        self.reader.close()
+        self.writer.close()
+
+
+class BufferedRandom(BufferedReader, BufferedWriter):
+
+    def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE,
+                 max_buffer_size=DEFAULT_MAX_BUFFER_SIZE):
+        assert raw.seekable()
+        BufferedReader.__init__(self, raw)
+        BufferedWriter.__init__(self, raw, buffer_size, max_buffer_size)
+
+    def seekable(self):
+        return self.raw.seekable()
+
+    def readable(self):
+        return self.raw.readable()
+
+    def writable(self):
+        return self.raw.writable()
+
+    def seek(self, pos, whence=0):
+        self.flush()
+        self._read_buf = b""
+        self.raw.seek(pos, whence)
+        # XXX I suppose we could implement some magic here to move through the
+        # existing read buffer in the case of seek(<some small +ve number>, 1)
+
+    def tell(self):
+        if (self._write_buf):
+            return self.raw.tell() + len(self._write_buf)
+        else:
+            return self.raw.tell() - len(self._read_buf)
+
+    def read(self, n=None):
+        self.flush()
+        return BufferedReader.read(self, n)
+
+    def write(self, b):
+        self._read_buf = b""
+        return BufferedWriter.write(self, b)
+
+    def flush(self):
+        BufferedWriter.flush(self)
+
+    def close(self):
+        self.raw.close()
