@@ -849,6 +849,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 {
 	PyObject *m, *d, *v;
 	const char *ext;
+	int set_file_name = 0, ret;
 
 	m = PyImport_AddModule("__main__");
 	if (m == NULL)
@@ -862,6 +863,7 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 			Py_DECREF(f);
 			return -1;
 		}
+		set_file_name = 1;
 		Py_DECREF(f);
 	}
 	ext = filename + strlen(filename) - 4;
@@ -871,7 +873,8 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 			fclose(fp);
 		if ((fp = fopen(filename, "rb")) == NULL) {
 			fprintf(stderr, "python: Can't reopen .pyc file\n");
-			return -1;
+			ret = -1;
+			goto done;
 		}
 		/* Turn on optimization if a .pyo file is given */
 		if (strcmp(ext, ".pyo") == 0)
@@ -883,12 +886,17 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 	}
 	if (v == NULL) {
 		PyErr_Print();
-		return -1;
+		ret = -1;
+		goto done;
 	}
 	Py_DECREF(v);
 	if (Py_FlushLine())
 		PyErr_Clear();
-	return 0;
+	ret = 0;
+  done:
+	if (set_file_name && PyDict_DelItemString(d, "__file__"))
+		PyErr_Clear();
+	return ret;
 }
 
 int
