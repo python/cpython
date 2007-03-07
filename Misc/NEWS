@@ -152,6 +152,9 @@ Core and builtins
 Library
 -------
 
+- Patch #787789: allow to pass custom TestRunner instances to unittest's
+  main() function.
+
 - Patches #1550273, #1550272: fix a few bugs in unittest and add a
   comprehensive test suite for the module.
 

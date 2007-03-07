@@ -290,6 +290,7 @@ Often, many small test cases will use the same fixture.  In this case,
 we would end up subclassing \class{SimpleWidgetTestCase} into many
 small one-method classes such as
 \class{DefaultWidgetSizeTestCase}.  This is time-consuming and
+
 discouraging, so in the same vein as JUnit, \module{unittest} provides
 a simpler mechanism:
 
@@ -540,7 +541,7 @@ easier.}
 
 \begin{funcdesc}{main}{\optional{module\optional{,
                  defaultTest\optional{, argv\optional{,
-                 testRunner\optional{, testRunner}}}}}}
+                 testRunner\optional{, testLoader}}}}}}
   A command-line program that runs a set of tests; this is primarily
   for making test modules conveniently executable.  The simplest use
   for this function is to include the following line at the end of a
@@ -550,6 +551,9 @@ easier.}
 if __name__ == '__main__':
     unittest.main()
 \end{verbatim}
+
+  The \var{testRunner} argument can either be a test runner class or
+  an already created instance of it.
 \end{funcdesc}
 
 In some cases, the existing tests may have been written using the
