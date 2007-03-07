@@ -776,7 +776,8 @@ Examples:
                                                in MyTestCase
 """
     def __init__(self, module='__main__', defaultTest=None,
-                 argv=None, testRunner=None, testLoader=defaultTestLoader):
+                 argv=None, testRunner=TextTestRunner,
+                 testLoader=defaultTestLoader):
         if type(module) == type(''):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
@@ -826,9 +827,16 @@ Examples:
                                                        self.module)
 
     def runTests(self):
-        if self.testRunner is None:
-            self.testRunner = TextTestRunner(verbosity=self.verbosity)
-        result = self.testRunner.run(self.test)
+        if isinstance(self.testRunner, (type, types.ClassType)):
+            try:
+                testRunner = self.testRunner(verbosity=self.verbosity)
+            except TypeError:
+                # didn't accept the verbosity argument
+                testRunner = self.testRunner()
+        else:
+            # it is assumed to be a TestRunner instance
+            testRunner = self.testRunner
+        result = testRunner.run(self.test)
         sys.exit(not result.wasSuccessful())
 
 main = TestProgram
