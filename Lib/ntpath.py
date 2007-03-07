@@ -8,6 +8,7 @@ module as os.path.
 import os
 import stat
 import sys
+import genericpath
 from genericpath import *
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
@@ -182,16 +183,8 @@ def split(p):
 # It is always true that root + ext == p.
 
 def splitext(p):
-    """Split the extension from a pathname.
-
-    Extension is everything from the last dot to the end.
-    Return (root, ext), either part may be empty."""
-
-    i = p.rfind('.')
-    if i<=max(p.rfind('/'), p.rfind('\\')):
-        return p, ''
-    else:
-        return p[:i], p[i:]
+    return genericpath._splitext(p, sep, altsep, extsep)
+splitext.__doc__ = genericpath._splitext.__doc__
 
 
 # Return the tail (basename) part of a path.

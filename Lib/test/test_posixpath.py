@@ -43,15 +43,27 @@ class PosixPathTest(unittest.TestCase):
 
         self.assertRaises(TypeError, posixpath.split)
 
-    def test_splitext(self):
-        self.assertEqual(posixpath.splitext("foo.ext"), ("foo", ".ext"))
-        self.assertEqual(posixpath.splitext("/foo/foo.ext"), ("/foo/foo", ".ext"))
-        self.assertEqual(posixpath.splitext(".ext"), ("", ".ext"))
-        self.assertEqual(posixpath.splitext("/foo.ext/foo"), ("/foo.ext/foo", ""))
-        self.assertEqual(posixpath.splitext("foo.ext/"), ("foo.ext/", ""))
-        self.assertEqual(posixpath.splitext(""), ("", ""))
-        self.assertEqual(posixpath.splitext("foo.bar.ext"), ("foo.bar", ".ext"))
+    def splitextTest(self, path, filename, ext):
+        self.assertEqual(posixpath.splitext(path), (filename, ext))
+        self.assertEqual(posixpath.splitext("/" + path), ("/" + filename, ext))
+        self.assertEqual(posixpath.splitext("abc/" + path), ("abc/" + filename, ext))
+        self.assertEqual(posixpath.splitext("abc.def/" + path), ("abc.def/" + filename, ext))
+        self.assertEqual(posixpath.splitext("/abc.def/" + path), ("/abc.def/" + filename, ext))
+        self.assertEqual(posixpath.splitext(path + "/"), (filename + ext + "/", ""))
 
+    def test_splitext(self):
+        self.splitextTest("foo.bar", "foo", ".bar")
+        self.splitextTest("foo.boo.bar", "foo.boo", ".bar")
+        self.splitextTest("foo.boo.biff.bar", "foo.boo.biff", ".bar")
+        self.splitextTest(".csh.rc", ".csh", ".rc")
+        self.splitextTest("nodots", "nodots", "")
+        self.splitextTest(".cshrc", ".cshrc", "")
+        self.splitextTest("...manydots", "...manydots", "")
+        self.splitextTest("...manydots.ext", "...manydots", ".ext")
+        self.splitextTest(".", ".", "")
+        self.splitextTest("..", "..", "")
+        self.splitextTest("........", "........", "")
+        self.splitextTest("", "", "")
         self.assertRaises(TypeError, posixpath.splitext)
 
     def test_isabs(self):
