@@ -767,11 +767,10 @@ class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):
 
 class AbstractBasicAuthHandler:
 
-    rx = re.compile('[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', re.I)
+    # XXX this allows for multiple auth-schemes, but will stupidly pick
+    # the last one with a realm specified.
 
-    # XXX there can actually be multiple auth-schemes in a
-    # www-authenticate header.  should probably be a lot more careful
-    # in parsing them to extract multiple alternatives
+    rx = re.compile('(?:.*,)*[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', re.I)
 
     # XXX could pre-emptively send auth info already accepted (RFC 2617,
     # end of section 2, and section 1.2 immediately after "credentials"
