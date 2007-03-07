@@ -54,6 +54,9 @@ class MockNonBlockWriterIO(io.RawIOBase):
 
 class IOTest(unittest.TestCase):
 
+    def tearDown(self):
+        test_support.unlink(test_support.TESTFN)
+
     def write_ops(self, f):
         f.write(b"blah.")
         f.seek(0)
