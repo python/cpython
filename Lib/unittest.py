@@ -428,9 +428,18 @@ class TestSuite:
         return cases
 
     def addTest(self, test):
+        # sanity checks
+        if not callable(test):
+            raise TypeError("the test to add must be callable")
+        if (isinstance(test, (type, types.ClassType)) and
+            issubclass(test, (TestCase, TestSuite))):
+            raise TypeError("TestCases and TestSuites must be instantiated "
+                            "before passing them to addTest()")
         self._tests.append(test)
 
     def addTests(self, tests):
+        if isinstance(tests, basestring):
+            raise TypeError("tests must be an iterable of tests, not a string")
         for test in tests:
             self.addTest(test)
 

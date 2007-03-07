@@ -1580,6 +1580,19 @@ class Test_TestSuite(TestCase, TestEquality):
             pass
         else:
             self.fail("Failed to raise TypeError")
+
+    def test_addTest__noncallable(self):
+        suite = unittest.TestSuite()
+        self.assertRaises(TypeError, suite.addTest, 5)
+
+    def test_addTest__casesuiteclass(self):
+        suite = unittest.TestSuite()
+        self.assertRaises(TypeError, suite.addTest, Test_TestSuite)
+        self.assertRaises(TypeError, suite.addTest, unittest.TestSuite)
+
+    def test_addTests__string(self):
+        suite = unittest.TestSuite()
+        self.assertRaises(TypeError, suite.addTests, "foo")
             
         
 class Test_FunctionTestCase(TestCase):
