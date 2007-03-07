@@ -132,7 +132,8 @@ class RawIOBase:
         set not to block and has no data to read.
         """
         b = bytes(n.__index__())
-        self.readinto(b)
+        n = self.readinto(b)
+        del b[n:]
         return b
 
     def readinto(self, b):
@@ -200,8 +201,10 @@ class FileIO(RawIOBase):
 
     def readinto(self, b):
         # XXX We really should have os.readinto()
-        b[:] = os.read(self._fd, len(b))
-        return len(b)
+        tmp = os.read(self._fd, len(b))
+        n = len(tmp)
+        b[:n] = tmp
+        return n
 
     def write(self, b):
         return os.write(self._fd, b)
@@ -303,7 +306,10 @@ class BytesIO(BufferedIOBase):
         return b
 
     def readinto(self, b):
-        b[:] = self.read(len(b))
+        tmp = self.read(len(b))
+        n = len(tmp)
+        b[:n] = tmp
+        return n
 
     def write(self, b):
         n = len(b)
