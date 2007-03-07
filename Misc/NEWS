@@ -152,6 +152,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1001604: glob.glob() now returns unicode filenames if it was
+  given a unicode argument and os.listdir() returns unicode filenames.
+
 - Patch #1673619: setup.py identifies extension modules it doesn't know how
   to build and those it knows how to build but that fail to build.
 
