@@ -34,7 +34,9 @@ file type and creator codes will not be correct.
   is the buffer size. In particular, a negative \var{length} value
   means to copy the data without looping over the source data in
   chunks; by default the data is read in chunks to avoid uncontrolled
-  memory consumption.
+  memory consumption. Note that if the current file position of the
+  \var{fsrc} object is not 0, only the contents from the current file
+  position to the end of the file will be copied.
 \end{funcdesc}
 
 \begin{funcdesc}{copymode}{src, dst}
