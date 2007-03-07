@@ -197,6 +197,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1001604: glob.glob() now returns unicode filenames if it was
+  given a unicode argument and os.listdir() returns unicode filenames.
+
 - Patch #685268: Consider a package's __path__ in imputil.
 
 - Patch 1463026: Support default namespace in XMLGenerator.
