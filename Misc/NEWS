@@ -152,6 +152,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1115886: os.path.splitext('.cshrc') gives now ('.cshrc', '').
+
 - Patch #787789: allow to pass custom TestRunner instances to unittest's
   main() function.
 

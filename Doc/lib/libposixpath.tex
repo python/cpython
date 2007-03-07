@@ -234,7 +234,12 @@ empty string.  On systems which do not use drive specifications,
 Split the pathname \var{path} into a pair \code{(\var{root}, \var{ext})} 
 such that \code{\var{root} + \var{ext} == \var{path}},
 and \var{ext} is empty or begins with a period and contains
-at most one period.
+at most one period. Leading periods on the basename are 
+ignored; \code{\var{splitext}.('.cshrc')} returns 
+\code{('.cshrc', '')}.
+
+\versionchanged[Earlier versions could produce an empty root when
+the only period was the first character]{2.6}
 \end{funcdesc}
 
 \begin{funcdesc}{splitunc}{path}

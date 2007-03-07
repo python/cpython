@@ -12,6 +12,7 @@ for manipulation of the pathname component of URLs.
 
 import os
 import stat
+import genericpath
 from genericpath import *
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
@@ -88,14 +89,8 @@ def split(p):
 # It is always true that root + ext == p.
 
 def splitext(p):
-    """Split the extension from a pathname.  Extension is everything from the
-    last dot to the end.  Returns "(root, ext)", either part may be empty."""
-    i = p.rfind('.')
-    if i<=p.rfind('/'):
-        return p, ''
-    else:
-        return p[:i], p[i:]
-
+    return genericpath._splitext(p, sep, altsep, extsep)
+splitext.__doc__ = genericpath._splitext.__doc__
 
 # Split a pathname into a drive specification and the rest of the
 # path.  Useful on DOS/Windows/NT; on Unix, the drive is always empty.
