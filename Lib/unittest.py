@@ -25,7 +25,7 @@ Simple usage:
 
 Further information is available in the bundled documentation, and from
 
-  http://pyunit.sourceforge.net/
+  http://docs.python.org/lib/module-unittest.html
 
 Copyright (c) 1999-2003 Steve Purcell
 This module is free software, and you may redistribute it and/or modify
@@ -107,7 +107,7 @@ class TestResult:
         self.failures = []
         self.errors = []
         self.testsRun = 0
-        self.shouldStop = 0
+        self.shouldStop = False
 
     def startTest(self, test):
         "Called when the given test is about to be run"
@@ -235,6 +235,18 @@ class TestCase:
     def id(self):
         return "%s.%s" % (_strclass(self.__class__), self._testMethodName)
 
+    def __eq__(self, other):
+        if type(self) is not type(other):
+            return False
+
+        return self._testMethodName == other._testMethodName
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash(str(hash(type(self))) + str(hash(self._testMethodName)))
+
     def __str__(self):
         return "%s (%s)" % (self._testMethodName, _strclass(self.__class__))
 
@@ -291,10 +303,7 @@ class TestCase:
            minimised; usually the top level of the traceback frame is not
            needed.
         """
-        exctype, excvalue, tb = sys.exc_info()
-        if sys.platform[:4] == 'java': ## tracebacks look different in Jython
-            return (exctype, excvalue, tb)
-        return (exctype, excvalue, tb)
+        return sys.exc_info()
 
     def fail(self, msg=None):
         """Fail immediately, with the given message."""
@@ -401,6 +410,14 @@ class TestSuite:
 
     __str__ = __repr__
 
+    def __eq__(self, other):
+        if type(self) is not type(other):
+            return False
+        return self._tests == other._tests
+
+    def __ne__(self, other):
+        return not self == other
+
     def __iter__(self):
         return iter(self._tests)
 
@@ -436,7 +453,7 @@ class FunctionTestCase(TestCase):
     """A test case that wraps a test function.
 
     This is useful for slipping pre-existing test functions into the
-    PyUnit framework. Optionally, set-up and tidy-up functions can be
+    unittest framework. Optionally, set-up and tidy-up functions can be
     supplied. As with TestCase, the tidy-up ('tearDown') function will
     always be called if the set-up ('setUp') function ran successfully.
     """
@@ -463,6 +480,23 @@ class FunctionTestCase(TestCase):
     def id(self):
         return self.__testFunc.__name__
 
+    def __eq__(self, other):
+        if type(self) is not type(other):
+            return False
+
+        return self.__setUpFunc == other.__setUpFunc and \
+               self.__tearDownFunc == other.__tearDownFunc and \
+               self.__testFunc == other.__testFunc and \
+               self.__description == other.__description
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash(''.join(str(hash(x)) for x in [
+            type(self), self.__setUpFunc, self.__tearDownFunc, self.__testFunc,
+            self.__description]))
+
     def __str__(self):
         return "%s (%s)" % (_strclass(self.__class__), self.__testFunc.__name__)
 
@@ -482,7 +516,7 @@ class FunctionTestCase(TestCase):
 
 class TestLoader:
     """This class is responsible for loading tests according to various
-    criteria and returning them wrapped in a Test
+    criteria and returning them wrapped in a TestSuite
     """
     testMethodPrefix = 'test'
     sortTestMethodsUsing = cmp
@@ -536,18 +570,23 @@ class TestLoader:
         elif (isinstance(obj, (type, types.ClassType)) and
               issubclass(obj, TestCase)):
             return self.loadTestsFromTestCase(obj)
-        elif type(obj) == types.UnboundMethodType:
-            return parent(obj.__name__)
+        elif (type(obj) == types.UnboundMethodType and
+              isinstance(parent, (type, types.ClassType)) and
+              issubclass(parent, TestCase)):
+            return TestSuite([parent(obj.__name__)])
         elif isinstance(obj, TestSuite):
             return obj
         elif callable(obj):
             test = obj()
-            if not isinstance(test, (TestCase, TestSuite)):
-                raise ValueError, \
-                      "calling %s returned %s, not a test" % (obj,test)
-            return test
+            if isinstance(test, TestSuite):
+                return test
+            elif isinstance(test, TestCase):
+                return TestSuite([test])
+            else:
+                raise TypeError("calling %s returned %s, not a test" %
+                                (obj, test))
         else:
-            raise ValueError, "don't know how to make test from: %s" % obj
+            raise TypeError("don't know how to make test from: %s" % obj)
 
     def loadTestsFromNames(self, names, module=None):
         """Return a suite of all tests cases found using the given sequence
@@ -562,10 +601,6 @@ class TestLoader:
         def isTestMethod(attrname, testCaseClass=testCaseClass, prefix=self.testMethodPrefix):
             return attrname.startswith(prefix) and callable(getattr(testCaseClass, attrname))
         testFnNames = filter(isTestMethod, dir(testCaseClass))
-        for baseclass in testCaseClass.__bases__:
-            for testFnName in self.getTestCaseNames(baseclass):
-                if testFnName not in testFnNames:  # handle overridden methods
-                    testFnNames.append(testFnName)
         if self.sortTestMethodsUsing:
             testFnNames.sort(self.sortTestMethodsUsing)
         return testFnNames

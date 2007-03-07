@@ -152,6 +152,9 @@ Core and builtins
 Library
 -------
 
+- Patches #1550273, #1550272: fix a few bugs in unittest and add a
+  comprehensive test suite for the module.
+
 - Patch #1001604: glob.glob() now returns unicode filenames if it was
   given a unicode argument and os.listdir() returns unicode filenames.
 
