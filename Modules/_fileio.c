@@ -44,6 +44,8 @@ typedef struct {
 	PyObject *weakreflist;
 } PyFileIOObject;
 
+PyTypeObject PyFileIO_Type;
+
 #define PyFileIO_Check(op) (PyObject_TypeCheck((op), &PyFileIO_Type))
 
 /* Note: if this function is changed so that it can return a true value,
