@@ -154,6 +154,12 @@ Library
 
 - Bug #1115886: os.path.splitext('.cshrc') gives now ('.cshrc', '').
 
+- unittest now verifies more of its assumptions. In particular, TestCase
+  and TestSuite subclasses (not instances) are no longer accepted in
+  TestSuite.addTest(). This should cause no incompatibility since it
+  never made sense with ordinary subclasses -- the failure just occurred
+  later, with a more cumbersome exception.
+
 - Patch #787789: allow to pass custom TestRunner instances to unittest's
   main() function.
 
