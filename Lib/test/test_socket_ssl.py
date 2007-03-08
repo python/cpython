@@ -27,7 +27,8 @@ def test_basic():
         print "didn't raise TypeError"
     socket.RAND_add("this is a random string", 75.0)
 
-    f = urllib.urlopen('https://sf.net')
+    with test_support.TransientResource(IOError, errno=errno.ETIMEDOUT):
+        f = urllib.urlopen('https://sf.net')
     buf = f.read()
     f.close()
 

@@ -516,6 +516,10 @@ Extension Modules
 Tests
 -----
 
+- Added test.test_support.TransientResource which is a context manager to
+  surround calls to resources that are not guaranteed to work even if
+  test.test_support.requires says that the resource should exist.
+
 - Added a test for slicing of an exception.
 
 - Added test.test_support.EnvironmentVarGuard.  It's a class that provides a
