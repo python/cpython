@@ -197,6 +197,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1637850:  make_table in difflib did not work with unicode
+
 - Bugs #1676321:  the empty() function in sched.py returned the wrong result
 
 - unittest now verifies more of its assumptions. In particular, TestCase
