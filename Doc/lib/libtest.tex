@@ -285,6 +285,14 @@ originated from.
 
 The \module{test.test_support} module defines the following classes:
 
+\begin{classdesc}{TransientResource}{exc\optional{, **kwargs}}
+Create a context manager that raises \class{ResourceDenied} if the specified
+exception type is raised.  Any keyword arguments are treated as name/value
+pairs to be compared against any exception raised with the \code{with}
+statement.  Only if all pairs match is \class{ResourceDenied} raised.
+\versionadded{2.6}
+\end{classdesc}
+
 \begin{classdesc}{EnvironmentVarGuard}{}
 Class used to temporarily set or unset environment variables.  Instances can be
 used as a context manager.
