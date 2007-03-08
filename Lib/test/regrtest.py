@@ -474,6 +474,9 @@ STDTESTS = [
     'test_builtin',
     'test_exceptions',
     'test_types',
+    'test_unittest',
+    'test_doctest',
+    'test_doctest2',
    ]
 
 NOTTESTS = [
