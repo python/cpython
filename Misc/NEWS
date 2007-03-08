@@ -197,6 +197,12 @@ Extension Modules
 Library
 -------
 
+- unittest now verifies more of its assumptions. In particular, TestCase
+  and TestSuite subclasses (not instances) are no longer accepted in
+  TestSuite.addTest(). This should cause no incompatibility since it
+  never made sense with ordinary subclasses -- the failure just occurred
+  later, with a more cumbersome exception.
+
 - Patch #1001604: glob.glob() now returns unicode filenames if it was
   given a unicode argument and os.listdir() returns unicode filenames.
 
