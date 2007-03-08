@@ -1,4 +1,4 @@
-/* Adapted from test_file.py by Daniel Stutzbach */
+# Adapted from test_file.py by Daniel Stutzbach
 
 import sys
 import os
