@@ -114,7 +114,7 @@ class _RandomNameSequence:
 
     characters = ("abcdefghijklmnopqrstuvwxyz" +
                   "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-                  "0123456789-_")
+                  "0123456789_")
 
     def __init__(self):
         self.mutex = _allocate_lock()
