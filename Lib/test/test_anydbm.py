@@ -35,7 +35,7 @@ class AnyDBMTestCase(unittest.TestCase):
 
     def test_anydbm_creation(self):
         f = anydbm.open(_fname, 'c')
-        self.assertEqual(f.keys(), [])
+        self.assertEqual(list(f.keys()), [])
         for key in self._dict:
             f[key] = self._dict[key]
         self.read_helper(f)
