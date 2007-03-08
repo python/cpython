@@ -1037,6 +1037,9 @@ class PyBuildExt(build_ext):
         # Thomas Heller's _ctypes module
         self.detect_ctypes(inc_dirs, lib_dirs)
 
+        # _fileio -- supposedly cross platform
+        exts.append(Extension('_fileio', ['_fileio.c']))
+
         # Platform-specific libraries
         if platform == 'linux2':
             # Linux-specific modules

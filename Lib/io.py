@@ -177,7 +177,7 @@ class RawIOBase:
         raise IOError(".fileno() not supported")
 
 
-class FileIO(RawIOBase):
+class _PyFileIO(RawIOBase):
 
     """Raw I/O implementation for OS files."""
 
@@ -241,6 +241,18 @@ class FileIO(RawIOBase):
 
     def fileno(self):
         return self._fd
+
+
+try:
+    import _fileio
+except ImportError:
+    # Let's use the Python version
+    FileIO = _PyFileIO
+else:
+    # Create a trivial subclass with the proper inheritance structure
+    class FileIO(_fileio._FileIO, RawIOBase):
+        """Raw I/O implementation for OS files."""
+        # XXX More docs
 
 
 class SocketIO(RawIOBase):

@@ -5,7 +5,9 @@ from test import test_support
 
 import io
 
+
 class MockIO(io.RawIOBase):
+
     def __init__(self, readStack=()):
         self._readStack = list(readStack)
         self._writeStack = []
@@ -38,10 +40,13 @@ class MockIO(io.RawIOBase):
     def tell(self):
         return 42
 
+
 class MockNonBlockWriterIO(io.RawIOBase):
+
     def __init__(self, blockingScript):
         self.bs = list(blockingScript)
         self._write_stack = []
+
     def write(self, b):
         self._write_stack.append(b)
         n = self.bs.pop(0)
@@ -49,8 +54,10 @@ class MockNonBlockWriterIO(io.RawIOBase):
             raise io.BlockingIO(0, "test blocking", -n)
         else:
             return n
+
     def writable(self):
         return True
+
 
 class IOTest(unittest.TestCase):
 
@@ -110,7 +117,38 @@ class IOTest(unittest.TestCase):
         f = io.BytesIO(data)
         self.read_ops(f)
 
+    def test_fileio_FileIO(self):
+        import _fileio
+        f = _fileio._FileIO(test_support.TESTFN, "w")
+        self.assertEqual(f.readable(), False)
+        self.assertEqual(f.writable(), True)
+        self.assertEqual(f.seekable(), True)
+        self.write_ops(f)
+        f.close()
+        f = _fileio._FileIO(test_support.TESTFN, "r")
+        self.assertEqual(f.readable(), True)
+        self.assertEqual(f.writable(), False)
+        self.assertEqual(f.seekable(), True)
+        self.read_ops(f)
+        f.close()
+
+    def test_PyFileIO(self):
+        f = io._PyFileIO(test_support.TESTFN, "w")
+        self.assertEqual(f.readable(), False)
+        self.assertEqual(f.writable(), True)
+        self.assertEqual(f.seekable(), True)
+        self.write_ops(f)
+        f.close()
+        f = io._PyFileIO(test_support.TESTFN, "r")
+        self.assertEqual(f.readable(), True)
+        self.assertEqual(f.writable(), False)
+        self.assertEqual(f.seekable(), True)
+        self.read_ops(f)
+        f.close()
+
+
 class BytesIOTest(unittest.TestCase):
+
     def testInit(self):
         buf = b"1234567890"
         bytesIo = io.BytesIO(buf)
@@ -152,7 +190,9 @@ class BytesIOTest(unittest.TestCase):
         bytesIo.seek(10000)
         self.assertEquals(10000, bytesIo.tell())
 
+
 class BufferedReaderTest(unittest.TestCase):
+
     def testRead(self):
         rawIo = MockIO((b"abc", b"d", b"efg"))
         bufIo = io.BufferedReader(rawIo)
@@ -193,7 +233,9 @@ class BufferedReaderTest(unittest.TestCase):
         # this test. Else, write it.
         pass
 
+
 class BufferedWriterTest(unittest.TestCase):
+
     def testWrite(self):
         # Write to the buffered IO but don't overflow the buffer.
         writer = MockIO()
@@ -246,7 +288,9 @@ class BufferedWriterTest(unittest.TestCase):
 
         self.assertEquals(b"abc", writer._writeStack[0])
 
+
 class BufferedRWPairTest(unittest.TestCase):
+
     def testRWPair(self):
         r = MockIO(())
         w = MockIO()
@@ -254,7 +298,9 @@ class BufferedRWPairTest(unittest.TestCase):
 
         # XXX need implementation
 
+
 class BufferedRandom(unittest.TestCase):
+
     def testReadAndWrite(self):
         raw = MockIO((b"asdf", b"ghjk"))
         rw = io.BufferedRandom(raw, 8, 12)
