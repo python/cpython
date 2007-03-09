@@ -226,6 +226,7 @@ class SMTP:
     debuglevel = 0
     file = None
     helo_resp = None
+    ehlo_msg = "ehlo"
     ehlo_resp = None
     does_esmtp = 0
 
@@ -401,7 +402,7 @@ class SMTP:
         host.
         """
         self.esmtp_features = {}
-        self.putcmd("ehlo", name or self.local_hostname)
+        self.putcmd(self.ehlo_msg, name or self.local_hostname)
         (code,msg)=self.getreply()
         # According to RFC1869 some (badly written)
         # MTA's will disconnect on an ehlo. Toss an exception if
@@ -745,6 +746,50 @@ class SMTP_SSL(SMTP):
         sslobj = socket.ssl(self.sock, self.keyfile, self.certfile)
         self.sock = SSLFakeSocket(self.sock, sslobj)
         self.file = SSLFakeFile(sslobj)
+
+#
+# LMTP extension
+#
+LMTP_PORT = 2003
+
+class LMTP(SMTP):
+    """LMTP - Local Mail Transfer Protocol
+
+    The LMTP protocol, which is very similar to ESMTP, is heavily based
+    on the standard SMTP client. It's common to use Unix sockets for LMTP,
+    so our connect() method must support that as well as a regular
+    host:port server. To specify a Unix socket, you must use an absolute
+    path as the host, starting with a '/'.
+
+    Authentication is supported, using the regular SMTP mechanism. When
+    using a Unix socket, LMTP generally don't support or require any
+    authentication, but your mileage might vary."""
+
+    ehlo_msg = "lhlo"
+    
+    def __init__(self, host = '', port = LMTP_PORT, local_hostname = None):
+        """Initialize a new instance."""
+        SMTP.__init__(self, host, port, local_hostname)
+
+    def connect(self, host='localhost', port = 0):
+        """Connect to the LMTP daemon, on either a Unix or a TCP socket."""
+        if host[0] == '/':
+            try:
+                self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                self.sock.connect(host)
+            except socket.error, msg:
+                if self.debuglevel > 0: print 'connect fail:', host
+                if self.sock:
+                    self.sock.close()
+                self.sock = None
+            if not self.sock:
+                raise socket.error, msg
+            (code, msg) = self.getreply()
+            if self.debuglevel > 0: print "connect:", msg
+            return (code, msg)
+        else:
+            return SMTP.connect(self, host, port)
+
 
 # Test the sendmail method, which tests most of the others.
 # Note: This always sends to localhost.
