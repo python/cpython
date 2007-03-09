@@ -215,6 +215,8 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(complex(),  0)
         self.assertAlmostEqual(complex("-1"), -1)
         self.assertAlmostEqual(complex("+1"), +1)
+        self.assertAlmostEqual(complex("(1+2j)"), 1+2j)
+        self.assertAlmostEqual(complex("(1.3+2.2j)"), 1.3+2.2j)
 
         class complex2(complex): pass
         self.assertAlmostEqual(complex(complex2(1+1j)), 1+1j)
@@ -244,12 +246,17 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(ValueError, complex, "")
         self.assertRaises(TypeError, complex, None)
         self.assertRaises(ValueError, complex, "\0")
+        self.assertRaises(ValueError, complex, "3\09")
         self.assertRaises(TypeError, complex, "1", "2")
         self.assertRaises(TypeError, complex, "1", 42)
         self.assertRaises(TypeError, complex, 1, "2")
         self.assertRaises(ValueError, complex, "1+")
         self.assertRaises(ValueError, complex, "1+1j+1j")
         self.assertRaises(ValueError, complex, "--")
+        self.assertRaises(ValueError, complex, "(1+2j")
+        self.assertRaises(ValueError, complex, "1+2j)")
+        self.assertRaises(ValueError, complex, "1+(2j)")
+        self.assertRaises(ValueError, complex, "(1+2j)123")
         if test_support.have_unicode:
             self.assertRaises(ValueError, complex, unicode("1"*500))
             self.assertRaises(ValueError, complex, unicode("x"))
@@ -311,6 +318,11 @@ class ComplexTest(unittest.TestCase):
         self.assertEqual(repr(1-6j), '(1-6j)')
 
         self.assertNotEqual(repr(-(1+0j)), '(-1+-0j)')
+
+        self.assertEqual(1-6j,complex(repr(1-6j)))
+        self.assertEqual(1+6j,complex(repr(1+6j)))
+        self.assertEqual(-6j,complex(repr(-6j)))
+        self.assertEqual(6j,complex(repr(6j)))
 
     def test_neg(self):
         self.assertEqual(-(1+6j), -1-6j)

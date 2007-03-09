@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1491866: change the complex() constructor to allow parthensized
+  forms. This means complex(repr(x)) now works instead of raising a
+  ValueError.
+
 - Patch #703779: unset __file__ in __main__ after running a file. This
   makes the filenames the warning module prints much more sensible when
   a PYTHONSTARTUP file is used.
