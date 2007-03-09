@@ -245,7 +245,7 @@ class TestCase:
         return not self == other
 
     def __hash__(self):
-        return hash(str(hash(type(self))) + str(hash(self._testMethodName)))
+        return hash((type(self), self._testMethodName))
 
     def __str__(self):
         return "%s (%s)" % (self._testMethodName, _strclass(self.__class__))
@@ -502,9 +502,8 @@ class FunctionTestCase(TestCase):
         return not self == other
 
     def __hash__(self):
-        return hash(''.join(str(hash(x)) for x in [
-            type(self), self.__setUpFunc, self.__tearDownFunc, self.__testFunc,
-            self.__description]))
+        return hash((type(self), self.__setUpFunc, self.__tearDownFunc,
+                                           self.__testFunc, self.__description))
 
     def __str__(self):
         return "%s (%s)" % (_strclass(self.__class__), self.__testFunc.__name__)
