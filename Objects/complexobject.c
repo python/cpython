@@ -481,7 +481,7 @@ complex_pow(PyComplexObject *v, PyObject *w, PyComplexObject *z)
 	}
 	else if (errno == ERANGE) {
 		PyErr_SetString(PyExc_OverflowError,
-				"complex exponentiaion");
+				"complex exponentiation");
 		return NULL;
 	}
 	return PyComplex_FromCComplex(p);
