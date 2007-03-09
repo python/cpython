@@ -339,24 +339,6 @@ CDataType_from_param(PyObject *type, PyObject *value)
 			     ((PyTypeObject *)type)->tp_name, ob_name);
 		return NULL;
 	}
-#if 1
-/* XXX Remove this section ??? */
-	/* tuple returned by byref: */
-	/* ('i', addr, obj) */
-	if (PyTuple_Check(value)) {
-		PyObject *ob;
-		StgDictObject *dict;
-
-		dict = PyType_stgdict(type);
-		ob = PyTuple_GetItem(value, 2);
-		if (dict && ob &&
-		    0 == PyObject_IsInstance(value, dict->proto)) {
-			Py_INCREF(value);
-			return value;
-		}
-	}
-/* ... and leave the rest */
-#endif
 
 	as_parameter = PyObject_GetAttrString(value, "_as_parameter_");
 	if (as_parameter) {

@@ -156,6 +156,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1651235: When a tuple was passed to a ctypes function call,
+  Python would crash instead of raising an error.
+
 - Bug #1646630: ctypes.string_at(buf, 0) and ctypes.wstring_at(buf, 0)
   returned string up to the first NUL character.
 
