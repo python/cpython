@@ -4537,9 +4537,9 @@ create_comerror(void)
 #endif
 
 static PyObject *
-string_at(const char *ptr, Py_ssize_t size)
+string_at(const char *ptr, int size)
 {
-	if (size == 0)
+	if (size == -1)
 		return PyString_FromString(ptr);
 	return PyString_FromStringAndSize(ptr, size);
 }
@@ -4624,7 +4624,7 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
 static PyObject *
 wstring_at(const wchar_t *ptr, int size)
 {
-	if (size == 0)
+	if (size == -1)
 		size = wcslen(ptr);
 	return PyUnicode_FromWideChar(ptr, size);
 }

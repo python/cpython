@@ -152,6 +152,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1646630: ctypes.string_at(buf, 0) and ctypes.wstring_at(buf, 0)
+  returned string up to the first NUL character.
+
 - Patch #957003: Implement smtplib.LMTP.
 
 - Patch #1481079: add support for HTTP_REFERER to CGIHTTPServer.
