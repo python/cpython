@@ -672,7 +672,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	const char *s, *start;
 	char *end;
 	double x=0.0, y=0.0, z;
-	int got_re=0, got_im=0, done=0;
+	int got_re=0, got_im=0, got_bracket=0, done=0;
 	int digit_or_dot;
 	int sw_error=0;
 	int sign;
@@ -712,10 +712,17 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	start = s;
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
-	if (s[0] == '\0') {
+    if (s[0] == '\0') {
 		PyErr_SetString(PyExc_ValueError,
 				"complex() arg is an empty string");
 		return NULL;
+    }
+	if (s[0] == '(') {
+		/* Skip over possible bracket from repr(). */
+		got_bracket = 1;
+		s++;
+		while (*s && isspace(Py_CHARMASK(*s)))
+			s++;
 	}
 
 	z = -1.0;
@@ -734,13 +741,26 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 			if(!done) sw_error=1;
 			break;
 
+		case ')':
+			if (!got_bracket || !(got_re || got_im)) {
+				sw_error=1;
+				break;
+			}
+			got_bracket=0;
+			done=1;
+			s++;
+			while (*s && isspace(Py_CHARMASK(*s)))
+				s++;
+			if (*s) sw_error=1;
+			break;
+
 		case '-':
 			sign = -1;
 				/* Fallthrough */
 		case '+':
 			if (done)  sw_error=1;
 			s++;
-			if  (  *s=='\0'||*s=='+'||*s=='-'  ||
+			if  (  *s=='\0'||*s=='+'||*s=='-'||*s==')'||
 			       isspace(Py_CHARMASK(*s))  )  sw_error=1;
 			break;
 
@@ -766,7 +786,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 			if (isspace(Py_CHARMASK(*s))) {
 				while (*s && isspace(Py_CHARMASK(*s)))
 					s++;
-				if (s[0] != '\0')
+				if (*s && *s != ')')
 					sw_error=1;
 				else
 					done = 1;
@@ -812,7 +832,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 
 	} while (s - start < len && !sw_error);
 
-	if (sw_error) {
+	if (sw_error || got_bracket) {
 		PyErr_SetString(PyExc_ValueError,
 				"complex() arg is a malformed string");
 		return NULL;
