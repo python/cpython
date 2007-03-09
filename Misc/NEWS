@@ -356,6 +356,9 @@ Tools/Demos
 Tests
 -----
 
+- Cause test.test_socket_ssl:test_basic to raise
+  test.test_support.ResourceDenied when an HTTPS connection times out.
+
 - Remove passwd.adjunct.byname from list of maps
   for test_nis.
 

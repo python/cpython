@@ -27,7 +27,13 @@ def test_basic():
         print "didn't raise TypeError"
     socket.RAND_add("this is a random string", 75.0)
 
-    f = urllib.urlopen('https://sf.net')
+    try:
+        f = urllib.urlopen('https://sf.net')
+    except IOError, exc:
+        if exc.errno == errno.ETIMEDOUT:
+            raise test_support.ResourceDenied('HTTPS connection is timing out')
+        else:
+            raise
     buf = f.read()
     f.close()
 
