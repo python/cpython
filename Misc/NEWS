@@ -559,6 +559,9 @@ Tools
 Documentation
 -------------
 
+- Bug #1629566: clarify the docs on the return values of parsedate()
+  and parsedate_tz() in email.utils and rfc822.
+
 - Patch #1671450: add a section about subclassing builtin types to the
   "extending and embedding" tutorial.
 
