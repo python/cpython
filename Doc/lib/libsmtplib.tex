@@ -41,6 +41,23 @@ are also optional, and can contain a PEM formatted private key and
 certificate chain file for the SSL connection.
 \end{classdesc}
 
+\begin{classdesc}{LMTP}{\optional{host\optional{, port\optional{,
+                        local_hostname}}}}
+
+The LMTP protocol, which is very similar to ESMTP, is heavily based
+on the standard SMTP client. It's common to use Unix sockets for LMTP,
+so our connect() method must support that as well as a regular
+host:port server. To specify a Unix socket, you must use an absolute
+path for \var{host}, starting with a '/'.
+
+Authentication is supported, using the regular SMTP mechanism. When
+using a Unix socket, LMTP generally don't support or require any
+authentication, but your mileage might vary.
+
+\versionadded{2.6}
+
+\end{classdesc}
+
 A nice selection of exceptions is defined as well:
 
 \begin{excdesc}{SMTPException}

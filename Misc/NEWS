@@ -152,6 +152,8 @@ Core and builtins
 Library
 -------
 
+- Patch #957003: Implement smtplib.LMTP.
+
 - Patch #1481079: add support for HTTP_REFERER to CGIHTTPServer.
 
 - Bug #1115886: os.path.splitext('.cshrc') gives now ('.cshrc', '').
