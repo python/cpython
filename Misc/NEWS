@@ -197,6 +197,9 @@ Extension Modules
 Library
 -------
 
+- Fix bug #1646630: ctypes.string_at(buf, 0) and ctypes.wstring_at(buf, 0)
+  returned string up to the first NUL character.
+
 - Bug #1637850:  make_table in difflib did not work with unicode
 
 - Bugs #1676321:  the empty() function in sched.py returned the wrong result
