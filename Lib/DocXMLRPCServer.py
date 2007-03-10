@@ -252,8 +252,10 @@ class DocXMLRPCServer(  SimpleXMLRPCServer,
     """
 
     def __init__(self, addr, requestHandler=DocXMLRPCRequestHandler,
-                 logRequests=1):
-        SimpleXMLRPCServer.__init__(self, addr, requestHandler, logRequests)
+                 logRequests=1, allow_none=False, encoding=None,
+                 bind_and_activate=True):
+        SimpleXMLRPCServer.__init__(self, addr, requestHandler, logRequests,
+                                    allow_none, encoding, bind_and_activate)
         XMLRPCDocGenerator.__init__(self)
 
 class DocCGIXMLRPCRequestHandler(   CGIXMLRPCRequestHandler,
