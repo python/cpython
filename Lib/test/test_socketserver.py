@@ -84,6 +84,7 @@ class ServerThread(threading.Thread):
         addr = getattr(svr, 'server_address')
         if addr:
             self.__addr = addr
+            assert self.__addr == svr.socket.getsockname()
         if verbose: print "thread: serving three times"
         svr.serve_a_few()
         if verbose: print "thread: done"

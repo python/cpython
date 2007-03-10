@@ -339,6 +339,7 @@ class TCPServer(BaseServer):
         if self.allow_reuse_address:
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind(self.server_address)
+        self.server_address = self.socket.getsockname()
 
     def server_activate(self):
         """Called by constructor to activate the server.
