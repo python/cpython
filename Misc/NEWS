@@ -156,6 +156,10 @@ Core and builtins
 Library
 -------
 
+- Patch #1599845: Add an option to disable the implicit calls to server_bind()
+  and server_activate() in the constructors for TCPServer, SimpleXMLRPCServer
+  and DocXMLRPCServer.
+
 - Bug #1531963: Make SocketServer.TCPServer's server_address always
   be equal to calling getsockname() on the server's socket. Fixed by
   patch #1545011.

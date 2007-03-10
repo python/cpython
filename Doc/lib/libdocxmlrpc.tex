@@ -14,8 +14,12 @@ HTTP GET requests. Servers can either be free standing, using
 \class{DocXMLRPCServer}, or embedded in a CGI environment, using
 \class{DocCGIXMLRPCRequestHandler}.
 
-\begin{classdesc}{DocXMLRPCServer}{addr\optional{, 
-                                   requestHandler\optional{, logRequests}}}
+\begin{classdesc}{DocXMLRPCServer}{addr\optional{,
+                                   requestHandler\optional{,
+			                       logRequests\optional{,
+                                   allow_none\optional{, 
+                                   encoding\optional{,
+                                   bind_and_activate}}}}}}
 
 Create a new server instance. All parameters have the same meaning as
 for \class{SimpleXMLRPCServer.SimpleXMLRPCServer};

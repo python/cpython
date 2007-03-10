@@ -15,7 +15,9 @@ CGI environment, using \class{CGIXMLRPCRequestHandler}.
 
 \begin{classdesc}{SimpleXMLRPCServer}{addr\optional{,
                                       requestHandler\optional{,
-					logRequests\optional{, allow_none\optional{, encoding}}}}}
+					                  logRequests\optional{,
+                                      allow_none\optional{,
+                                      encoding}}}}}
 
   Create a new server instance.  This class
   provides methods for registration of functions that can be called by
@@ -28,8 +30,13 @@ CGI environment, using \class{CGIXMLRPCRequestHandler}.
   setting this parameter to false will turn off logging.  
   The \var{allow_none} and \var{encoding} parameters are passed on to 
   \module{xmlrpclib} and control the XML-RPC responses that will be returned 
-  from the server.
+  from the server. The \var{bind_and_activate} parameter controls whether
+  \method{server_bind()} and \method{server_activate()} are called immediately
+  by the constructor; it defaults to true. Setting it to false allows code to
+  manipulate the \var{allow_reuse_address} class variable before the address
+  is bound.
   \versionchanged[The \var{allow_none} and \var{encoding} parameters were added]{2.5}
+  \versionchanged[The \var{bind_and_activate} parameter was added]{2.6}
 \end{classdesc}
 
 \begin{classdesc}{CGIXMLRPCRequestHandler}{\optional{allow_none\optional{, encoding}}}
