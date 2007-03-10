@@ -81,10 +81,12 @@ class ServerThread(threading.Thread):
         svr = svrcls(self.__addr, self.__hdlrcls)
         # pull the address out of the server in case it changed
         # this can happen if another process is using the port
-        addr = getattr(svr, 'server_address')
+        addr = svr.server_address
         if addr:
             self.__addr = addr
-            assert self.__addr == svr.socket.getsockname()
+            if self.__addr != svr.socket.getsockname():
+                raise RuntimeError('server_address was %s, expected %s' %
+                                       (self.__addr, svr.socket.getsockname()))
         if verbose: print "thread: serving three times"
         svr.serve_a_few()
         if verbose: print "thread: done"
