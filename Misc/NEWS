@@ -156,6 +156,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1531963: Make SocketServer.TCPServer's server_address always
+  be equal to calling getsockname() on the server's socket.
+
 - Bug #1651235: When a tuple was passed to a ctypes function call,
   Python would crash instead of raising an error.
 
