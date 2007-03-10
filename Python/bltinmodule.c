@@ -427,15 +427,16 @@ builtin_dir(PyObject *self, PyObject *args)
 PyDoc_STRVAR(dir_doc,
 "dir([object]) -> list of strings\n"
 "\n"
-"Return an alphabetized list of names comprising (some of) the attributes\n"
-"of the given object, and of attributes reachable from it:\n"
-"\n"
-"No argument:  the names in the current scope.\n"
-"Module object:  the module attributes.\n"
-"Type or class object:  its attributes, and recursively the attributes of\n"
-"    its bases.\n"
-"Otherwise:  its attributes, its class's attributes, and recursively the\n"
-"    attributes of its class's base classes.");
+"If called without an argument, return the names in the current scope.\n"
+"Else, return an alphabetized list of names comprising (some of) the attributes\n"
+"of the given object, and of attributes reachable from it.\n"
+"If the object supplies a method named __dir__, it will be used; otherwise\n"
+"the default dir() logic is used and returns:\n"
+"  for a module object: the module's attributes.\n"
+"  for a class object:  its attributes, and recursively the attributes\n"
+"    of its bases.\n"
+"  for an other object: its attributes, its class's attributes, and\n"
+"    recursively the attributes of its class's base classes.");
 
 static PyObject *
 builtin_divmod(PyObject *self, PyObject *args)
