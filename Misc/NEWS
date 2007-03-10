@@ -28,11 +28,15 @@ TO DO
 Core and Builtins
 -----------------
 
-- Removing indexing/slicing on BaseException.
+- The dir() function has been extended to call the __dir__() method on
+  its argument, if it exists. If not, it will work like before. This allows
+  customizing the output of dir() in the presence of a __getattr__().
 
-- Remove the exceptions module, all the exceptions are already builtin.
+- Removed indexing/slicing on BaseException.
 
-- input() becomes raw_input(): the name input() now implements the
+- Removed the exceptions module, all the exceptions are already builtin.
+
+- input() became raw_input(): the name input() now implements the
   functionality formerly known as raw_input(); the name raw_input()
   is no longer defined.
 
