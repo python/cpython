@@ -771,24 +771,24 @@ class LMTP(SMTP):
         """Initialize a new instance."""
         SMTP.__init__(self, host, port, local_hostname)
 
-    def connect(self, host='localhost', port = 0):
+    def connect(self, host = 'localhost', port = 0):
         """Connect to the LMTP daemon, on either a Unix or a TCP socket."""
-        if host[0] == '/':
-            try:
-                self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                self.sock.connect(host)
-            except socket.error, msg:
-                if self.debuglevel > 0: print 'connect fail:', host
-                if self.sock:
-                    self.sock.close()
-                self.sock = None
-            if not self.sock:
-                raise socket.error, msg
-            (code, msg) = self.getreply()
-            if self.debuglevel > 0: print "connect:", msg
-            return (code, msg)
-        else:
+        if host[0] != '/':
             return SMTP.connect(self, host, port)
+
+        # Handle Unix-domain sockets.
+        try:
+            self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self.sock.connect(host)
+        except socket.error, msg:
+            if self.debuglevel > 0: print>>stderr, 'connect fail:', host
+            if self.sock:
+                self.sock.close()
+            self.sock = None
+            raise socket.error, msg
+        (code, msg) = self.getreply()
+        if self.debuglevel > 0: print>>stderr, "connect:", msg
+        return (code, msg)
 
 
 # Test the sendmail method, which tests most of the others.
