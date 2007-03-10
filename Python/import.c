@@ -2536,7 +2536,7 @@ PyImport_Import(PyObject *module_name)
 	if (import == NULL)
 		goto err;
 
-	/* Call the _import__ function with the proper argument list */
+	/* Call the __import__ function with the proper argument list */
 	r = PyObject_CallFunctionObjArgs(import, module_name, globals,
 					 globals, silly_list, NULL);
 
