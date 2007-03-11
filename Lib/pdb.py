@@ -480,6 +480,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             # something went wrong
             print >>self.stdout, \
                 'Breakpoint index %r is not a number' % args[0]
+            return
         try:
             cond = args[1]
         except:
@@ -500,6 +501,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             # something went wrong
             print >>self.stdout, \
                 'Breakpoint index %r is not a number' % args[0]
+            return
         try:
             count = int(args[1].strip())
         except:
