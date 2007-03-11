@@ -485,7 +485,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             cond = args[1]
         except:
             cond = None
-        bp = bdb.Breakpoint.bpbynumber[bpnum]
+        try:
+            bp = bdb.Breakpoint.bpbynumber[bpnum]
+        except IndexError:
+            print >>self.stdout, 'Breakpoint index %r is not valid' % args[0]
+            return
         if bp:
             bp.cond = cond
             if not cond:
@@ -506,7 +510,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             count = int(args[1].strip())
         except:
             count = 0
-        bp = bdb.Breakpoint.bpbynumber[bpnum]
+        try:
+            bp = bdb.Breakpoint.bpbynumber[bpnum]
+        except IndexError:
+            print >>self.stdout, 'Breakpoint index %r is not valid' % args[0]
+            return
         if bp:
             bp.ignore = count
             if count > 0:
