@@ -12,6 +12,8 @@ What's New in Python 2.5.1c1?
 Core and builtins
 -----------------
 
+- Patch #1675981: remove unreachable code from ``type.__new__()`` method.
+
 - Patch #1638879: don't accept strings with embedded NUL bytes in long().
 
 - Bug #1674503: close the file opened by execfile() in an error condition.
