@@ -555,6 +555,8 @@ def test5():
         except KeyError:
             logging.exception("just testing")
         os.remove(fn)
+        hdlr = logging.getLogger().handlers[0]
+        logging.getLogger().handlers.remove(hdlr)
     finally:
         logging._acquireLock()
         try:
