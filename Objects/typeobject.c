@@ -1997,13 +1997,11 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 				PyTuple_GET_ITEM(slots, i));
 			mp->type = T_OBJECT_EX;
 			mp->offset = slotoffset;
-			if (base->tp_weaklistoffset == 0 &&
-			    strcmp(mp->name, "__weakref__") == 0) {
-				add_weak++;
-				mp->type = T_OBJECT;
-				mp->flags = READONLY;
-				type->tp_weaklistoffset = slotoffset;
-			}
+
+			/* __dict__ and __weakref__ are already filtered out */
+			assert(strcmp(mp->name, "__dict__") != 0);
+			assert(strcmp(mp->name, "__weakref__") != 0);
+
 			slotoffset += sizeof(PyObject *);
 		}
 	}
