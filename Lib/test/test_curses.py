@@ -245,7 +245,7 @@ def test_resize_term(stdscr):
     if hasattr(curses, 'resizeterm'):
         lines, cols = curses.LINES, curses.COLS
         curses.resizeterm(lines - 1, cols + 1)
-        
+
         if curses.LINES != lines - 1 or curses.COLS != cols + 1:
             raise RuntimeError, "Expected resizeterm to update LINES and COLS"
 

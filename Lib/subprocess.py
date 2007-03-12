@@ -596,7 +596,7 @@ class Popen(object):
         # either have to redirect all three or none. If the subprocess
         # user has only redirected one or two handles, we are
         # automatically creating PIPEs for the rest. We should close
-        # these after the process is started. See bug #1124861. 
+        # these after the process is started. See bug #1124861.
         if mswindows:
             if stdin is None and p2cwrite is not None:
                 os.close(p2cwrite)

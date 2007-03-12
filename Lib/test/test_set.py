@@ -285,10 +285,10 @@ class TestJointOps(unittest.TestCase):
         s = self.thetype(d)
         self.assertEqual(sum(elem.hash_count for elem in d), n)
         s.difference(d)
-        self.assertEqual(sum(elem.hash_count for elem in d), n)    
+        self.assertEqual(sum(elem.hash_count for elem in d), n)
         if hasattr(s, 'symmetric_difference_update'):
             s.symmetric_difference_update(d)
-        self.assertEqual(sum(elem.hash_count for elem in d), n)      
+        self.assertEqual(sum(elem.hash_count for elem in d), n)
 
 class TestSet(TestJointOps):
     thetype = set

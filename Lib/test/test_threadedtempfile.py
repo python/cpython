@@ -49,14 +49,14 @@ class ThreadedTempFileTest(unittest.TestCase):
     def test_main(self):
         threads = []
         thread_info = threading_setup()
-    
+
         for i in range(NUM_THREADS):
             t = TempFileGreedy()
             threads.append(t)
             t.start()
-        
+
         startEvent.set()
-    
+
         ok = 0
         errors = []
         for t in threads:
@@ -66,8 +66,8 @@ class ThreadedTempFileTest(unittest.TestCase):
                 errors.append(str(t.getName()) + str(t.errors.getvalue()))
 
         threading_cleanup(*thread_info)
-        
-        msg = "Errors: errors %d ok %d\n%s" % (len(errors), ok, 
+
+        msg = "Errors: errors %d ok %d\n%s" % (len(errors), ok,
             '\n'.join(errors))
         self.assertEquals(errors, [], msg)
         self.assertEquals(ok, NUM_THREADS * FILES_PER_THREAD)

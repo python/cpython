@@ -252,7 +252,7 @@ def test_1463026_3():
     gen.endDocument()
 
     return result.getvalue() == start+'<my:a xmlns:my="qux" b="c"></my:a>'
-    
+
 # ===== Xmlfilterbase
 
 def test_filter_basic():

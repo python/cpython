@@ -461,12 +461,12 @@ class DictTest(unittest.TestCase):
             self.assertEqual(e.args, ((1,),))
         else:
             self.fail("missing KeyError")
-        
+
     def test_bad_key(self):
         # Dictionary lookups should fail if __cmp__() raises an exception.
         class CustomException(Exception):
             pass
-        
+
         class BadDictKey:
             def __hash__(self):
                 return hash(self.__class__)
@@ -475,7 +475,7 @@ class DictTest(unittest.TestCase):
                 if isinstance(other, self.__class__):
                     raise CustomException
                 return other
-    
+
         d = {}
         x1 = BadDictKey()
         x2 = BadDictKey()
@@ -502,7 +502,7 @@ class DictTest(unittest.TestCase):
         # a mix of inserts and deletes hitting exactly the right hash codes in
         # exactly the right order, and I can't think of a randomized approach
         # that would be *likely* to hit a failing case in reasonable time.
-        
+
         d = {}
         for i in range(5):
             d[i] = i
@@ -514,7 +514,7 @@ class DictTest(unittest.TestCase):
     def test_resize2(self):
         # Another dict resizing bug (SF bug #1456209).
         # This caused Segmentation faults or Illegal instructions.
-        
+
         class X(object):
             def __hash__(self):
                 return 5

@@ -766,7 +766,7 @@ class LMTP(SMTP):
     authentication, but your mileage might vary."""
 
     ehlo_msg = "lhlo"
-    
+
     def __init__(self, host = '', port = LMTP_PORT, local_hostname = None):
         """Initialize a new instance."""
         SMTP.__init__(self, host, port, local_hostname)

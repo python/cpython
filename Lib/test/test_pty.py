@@ -41,19 +41,19 @@ def normalize_output(data):
 # because pty code is not too portable.
 class PtyTest(unittest.TestCase):
     def setUp(self):
-        # isatty() and close() can hang on some platforms.  Set an alarm 
+        # isatty() and close() can hang on some platforms.  Set an alarm
         # before running the test to make sure we don't hang forever.
         self.old_alarm = signal.signal(signal.SIGALRM, self.handle_sig)
         signal.alarm(10)
-    
+
     def tearDown(self):
         # remove alarm, restore old alarm handler
         signal.alarm(0)
         signal.signal(signal.SIGALRM, self.old_alarm)
-    
+
     def handle_sig(self, sig, frame):
         self.fail("isatty hung")
-    
+
     def test_basic(self):
         try:
             debug("Calling master_open()")
@@ -68,19 +68,19 @@ class PtyTest(unittest.TestCase):
             raise TestSkipped, "Pseudo-terminals (seemingly) not functional."
 
         self.assertTrue(os.isatty(slave_fd), 'slave_fd is not a tty')
-    
+
         debug("Writing to slave_fd")
         os.write(slave_fd, TEST_STRING_1)
         s1 = os.read(master_fd, 1024)
-        self.assertEquals('I wish to buy a fish license.\n', 
+        self.assertEquals('I wish to buy a fish license.\n',
                           normalize_output(s1))
-    
+
         debug("Writing chunked output")
         os.write(slave_fd, TEST_STRING_2[:5])
         os.write(slave_fd, TEST_STRING_2[5:])
         s2 = os.read(master_fd, 1024)
         self.assertEquals('For my pet fish, Eric.\n', normalize_output(s2))
-    
+
         os.close(slave_fd)
         os.close(master_fd)
 
@@ -93,7 +93,7 @@ class PtyTest(unittest.TestCase):
             if not os.isatty(1):
                 debug("Child's fd 1 is not a tty?!")
                 os._exit(3)
-        
+
             # After pty.fork(), the child should already be a session leader.
             # (on those systems that have that concept.)
             debug("In child, calling os.setsid()")
@@ -125,7 +125,7 @@ class PtyTest(unittest.TestCase):
             ##if False and lines != ['In child, calling os.setsid()',
             ##             'Good: OSError was raised.', '']:
             ##    raise TestFailed("Unexpected output from child: %r" % line)
-        
+
             (pid, status) = os.waitpid(pid, 0)
             res = status >> 8
             debug("Child (%d) exited with status %d (%d)." % (pid, res, status))
@@ -137,7 +137,7 @@ class PtyTest(unittest.TestCase):
                 self.fail("Child spawned by pty.fork() did not have a tty as stdout")
             elif res != 4:
                 self.fail("pty.fork() failed for unknown reasons.")
-        
+
             ##debug("Reading from master_fd now that the child has exited")
             ##try:
             ##    s1 = os.read(master_fd, 1024)
@@ -145,9 +145,9 @@ class PtyTest(unittest.TestCase):
             ##    pass
             ##else:
             ##    raise TestFailed("Read from master_fd did not raise exception")
-        
+
         os.close(master_fd)
-        
+
         # pty.fork() passed.
 
 def test_main(verbose=None):
