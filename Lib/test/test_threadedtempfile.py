@@ -10,22 +10,20 @@ failures.  A failure is a bug in tempfile, and may be due to:
 By default, NUM_THREADS == 20 and FILES_PER_THREAD == 50.  This is enough to
 create about 150 failures per run under Win98SE in 2.0, and runs pretty
 quickly. Guido reports needing to boost FILES_PER_THREAD to 500 before
-provoking a 2.0 failure under Linux.  Run the test alone to boost either
-via cmdline switches:
-
--f  FILES_PER_THREAD (int)
--t  NUM_THREADS (int)
+provoking a 2.0 failure under Linux.
 """
 
-NUM_THREADS = 20        # change w/ -t option
-FILES_PER_THREAD = 50   # change w/ -f option
+NUM_THREADS = 20
+FILES_PER_THREAD = 50
 
 import thread # If this fails, we can't test this module
 import threading
-from test.test_support import TestFailed, threading_setup, threading_cleanup
+import tempfile
+
+from test.test_support import threading_setup, threading_cleanup, run_unittest
+import unittest
 import StringIO
 from traceback import print_exc
-import tempfile
 
 startEvent = threading.Event()
 
@@ -46,41 +44,36 @@ class TempFileGreedy(threading.Thread):
             else:
                 self.ok_count += 1
 
+
+class ThreadedTempFileTest(unittest.TestCase):
+    def test_main(self):
+        threads = []
+        thread_info = threading_setup()
+    
+        for i in range(NUM_THREADS):
+            t = TempFileGreedy()
+            threads.append(t)
+            t.start()
+        
+        startEvent.set()
+    
+        ok = 0
+        errors = []
+        for t in threads:
+            t.join()
+            ok += t.ok_count
+            if t.error_count:
+                errors.append(str(t.getName()) + str(t.errors.getvalue()))
+
+        threading_cleanup(*thread_info)
+        
+        msg = "Errors: errors %d ok %d\n%s" % (len(errors), ok, 
+            '\n'.join(errors))
+        self.assertEquals(errors, [], msg)
+        self.assertEquals(ok, NUM_THREADS * FILES_PER_THREAD)
+
 def test_main():
-    threads = []
-    thread_info = threading_setup()
-
-    print "Creating"
-    for i in range(NUM_THREADS):
-        t = TempFileGreedy()
-        threads.append(t)
-        t.start()
-
-    print "Starting"
-    startEvent.set()
-
-    print "Reaping"
-    ok = errors = 0
-    for t in threads:
-        t.join()
-        ok += t.ok_count
-        errors += t.error_count
-        if t.error_count:
-            print '%s errors:\n%s' % (t.getName(), t.errors.getvalue())
-
-    msg = "Done: errors %d ok %d" % (errors, ok)
-    print msg
-    if errors:
-        raise TestFailed(msg)
-
-    threading_cleanup(*thread_info)
+    run_unittest(ThreadedTempFileTest)
 
 if __name__ == "__main__":
-    import sys, getopt
-    opts, args = getopt.getopt(sys.argv[1:], "t:f:")
-    for o, v in opts:
-        if o == "-f":
-            FILES_PER_THREAD = int(v)
-        elif o == "-t":
-            NUM_THREADS = int(v)
     test_main()
