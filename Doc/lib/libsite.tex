@@ -28,12 +28,17 @@ the newly added path for configuration files.
 
 A path configuration file is a file whose name has the form
 \file{\var{package}.pth} and exists in one of the four directories
-mentioned above; its contents are additional items (one
-per line) to be added to \code{sys.path}.  Non-existing items are
-never added to \code{sys.path}, but no check is made that the item
-refers to a directory (rather than a file).  No item is added to
-\code{sys.path} more than once.  Blank lines and lines beginning with
-\code{\#} are skipped.  Lines starting with \code{import} are executed.
+mentioned above; its contents are additional items (one per line) to
+be added to \code{sys.path}.  Non-existing items are never added to
+\code{sys.path}, but no check is made that the item refers to a
+directory (rather than a file).  No item is added to \code{sys.path}
+more than once.  Blank lines and lines beginning with \code{\#} are
+skipped.  Lines starting with \code{import} (followed by space or tab)
+are executed.
+
+\versionchanged[A space or tab is now required after the import
+keyword]{2.6}
+
 \index{package}
 \indexiii{path}{configuration}{file}
 
