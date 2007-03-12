@@ -1566,6 +1566,8 @@ PyCallable_Check(PyObject *x)
 	}
 }
 
+/* ------------------------- PyObject_Dir() helpers ------------------------- */
+
 /* Helper for PyObject_Dir.
    Merge the __dict__ of aclass into dict, and recursively also all
    the __dict__s of aclass's base classes.  The order of merging isn't
@@ -1662,121 +1664,192 @@ merge_list_attr(PyObject* dict, PyObject* obj, const char *attrname)
 	return result;
 }
 
-/* Like __builtin__.dir(arg).  See bltinmodule.c's builtin_dir for the
-   docstring, which should be kept in synch with this implementation. */
-
-PyObject *
-PyObject_Dir(PyObject *arg)
+/* Helper for PyObject_Dir without arguments: returns the local scope. */
+static PyObject *
+_dir_locals()
 {
-	/* Set exactly one of these non-NULL before the end. */
-	PyObject *result = NULL;	/* result list */
-	PyObject *masterdict = NULL;	/* result is masterdict.keys() */
+	PyObject *names;
+	PyObject *locals = PyEval_GetLocals();
 
-	/* If NULL arg, return the locals. */
-	if (arg == NULL) {
-		PyObject *locals = PyEval_GetLocals();
-		if (locals == NULL)
-			goto error;
-		result = PyMapping_Keys(locals);
-		if (result == NULL)
-			goto error;
+	if (locals == NULL) {
+		PyErr_SetString(PyExc_SystemError, "frame does not exist");
+		return NULL;
 	}
 
-	/* Elif this is some form of module, we only want its dict. */
-	else if (PyModule_Check(arg)) {
-		masterdict = PyObject_GetAttrString(arg, "__dict__");
-		if (masterdict == NULL)
-			goto error;
-		if (!PyDict_Check(masterdict)) {
-			PyErr_SetString(PyExc_TypeError,
-					"module.__dict__ is not a dictionary");
-			goto error;
-		}
-	}
-
-	/* Elif some form of type or class, grab its dict and its bases.
-	   We deliberately don't suck up its __class__, as methods belonging
-	   to the metaclass would probably be more confusing than helpful. */
-	else if (PyType_Check(arg) || PyClass_Check(arg)) {
-		masterdict = PyDict_New();
-		if (masterdict == NULL)
-			goto error;
-		if (merge_class_dict(masterdict, arg) < 0)
-			goto error;
-	}
-
-	/* Else look at its dict, and the attrs reachable from its class. */
-	else {
-		PyObject *itsclass;
-		/* Create a dict to start with.  CAUTION:  Not everything
-		   responding to __dict__ returns a dict! */
-		masterdict = PyObject_GetAttrString(arg, "__dict__");
-		if (masterdict == NULL) {
-			PyErr_Clear();
-			masterdict = PyDict_New();
-		}
-		else if (!PyDict_Check(masterdict)) {
-			Py_DECREF(masterdict);
-			masterdict = PyDict_New();
-		}
-		else {
-			/* The object may have returned a reference to its
-			   dict, so copy it to avoid mutating it. */
-			PyObject *temp = PyDict_Copy(masterdict);
-			Py_DECREF(masterdict);
-			masterdict = temp;
-		}
-		if (masterdict == NULL)
-			goto error;
-
-		/* Merge in __members__ and __methods__ (if any).
-		   XXX Would like this to go away someday; for now, it's
-		   XXX needed to get at im_self etc of method objects. */
-		if (merge_list_attr(masterdict, arg, "__members__") < 0)
-			goto error;
-		if (merge_list_attr(masterdict, arg, "__methods__") < 0)
-			goto error;
-
-		/* Merge in attrs reachable from its class.
-		   CAUTION:  Not all objects have a __class__ attr. */
-		itsclass = PyObject_GetAttrString(arg, "__class__");
-		if (itsclass == NULL)
-			PyErr_Clear();
-		else {
-			int status = merge_class_dict(masterdict, itsclass);
-			Py_DECREF(itsclass);
-			if (status < 0)
-				goto error;
-		}
-	}
-
-	assert((result == NULL) ^ (masterdict == NULL));
-	if (masterdict != NULL) {
-		/* The result comes from its keys. */
-		assert(result == NULL);
-		result = PyDict_Keys(masterdict);
-		if (result == NULL)
-			goto error;
-	}
-
-	assert(result);
-	if (!PyList_Check(result)) {
+	names = PyMapping_Keys(locals);
+	if (!names)
+		return NULL;
+	if (!PyList_Check(names)) {
 		PyErr_Format(PyExc_TypeError,
-			"Expected keys() to be a list, not '%.200s'",
-			result->ob_type->tp_name);
-		goto error;
+			"dir(): expected keys() of locals to be a list, "
+			"not '%.200s'", names->ob_type->tp_name);
+		Py_DECREF(names);
+		return NULL;
 	}
-	if (PyList_Sort(result) != 0)
-		goto error;
-	else
-		goto normal_return;
+	/* the locals don't need to be DECREF'd */
+	return names;
+}
 
-  error:
-	Py_XDECREF(result);
-	result = NULL;
+/* Helper for PyObject_Dir of type objects: returns __dict__ and __bases__.
+   We deliberately don't suck up its __class__, as methods belonging to the 
+   metaclass would probably be more confusing than helpful. 
+*/
+static PyObject * 
+_specialized_dir_type(PyObject *obj)
+{
+	PyObject *result = NULL;
+	PyObject *dict = PyDict_New();
+
+	if (dict != NULL && merge_class_dict(dict, obj) == 0)
+		result = PyDict_Keys(dict);
+
+	Py_XDECREF(dict);
+	return result;
+}
+
+/* Helper for PyObject_Dir of module objects: returns the module's __dict__. */
+static PyObject *
+_specialized_dir_module(PyObject *obj)
+{
+	PyObject *result = NULL;
+	PyObject *dict = PyObject_GetAttrString(obj, "__dict__");
+
+	if (dict != NULL) {
+		if (PyDict_Check(dict))
+			result = PyDict_Keys(dict);
+		else {
+			PyErr_Format(PyExc_TypeError,
+				     "%.200s.__dict__ is not a dictionary",
+				     PyModule_GetName(obj));
+		}
+	}
+
+	Py_XDECREF(dict);
+	return result;
+}
+
+/* Helper for PyObject_Dir of generic objects: returns __dict__, __class__,
+   and recursively up the __class__.__bases__ chain.
+*/
+static PyObject *
+_generic_dir(PyObject *obj)
+{
+	PyObject *result = NULL;
+	PyObject *dict = NULL;
+	PyObject *itsclass = NULL;
+	
+	/* Get __dict__ (which may or may not be a real dict...) */
+	dict = PyObject_GetAttrString(obj, "__dict__");
+	if (dict == NULL) {
+		PyErr_Clear();
+		dict = PyDict_New();
+	}
+	else if (!PyDict_Check(dict)) {
+		Py_DECREF(dict);
+		dict = PyDict_New();
+	}
+	else {
+		/* Copy __dict__ to avoid mutating it. */
+		PyObject *temp = PyDict_Copy(dict);
+		Py_DECREF(dict);
+		dict = temp;
+	}
+
+	if (dict == NULL)
+		goto error;
+
+	/* Merge in __members__ and __methods__ (if any).
+	 * This is removed in Python 3000. */
+	if (merge_list_attr(dict, obj, "__members__") < 0)
+		goto error;
+	if (merge_list_attr(dict, obj, "__methods__") < 0)
+		goto error;
+
+	/* Merge in attrs reachable from its class. */
+	itsclass = PyObject_GetAttrString(obj, "__class__");
+	if (itsclass == NULL)
+		/* XXX(tomer): Perhaps fall back to obj->ob_type if no
+		               __class__ exists? */
+		PyErr_Clear();
+	else {
+		if (merge_class_dict(dict, itsclass) != 0)
+			goto error;
+	}
+
+	result = PyDict_Keys(dict);
 	/* fall through */
-  normal_return:
-  	Py_XDECREF(masterdict);
+error:
+	Py_XDECREF(itsclass);
+	Py_XDECREF(dict);
+	return result;
+}
+
+/* Helper for PyObject_Dir: object introspection.
+   This calls one of the above specialized versions if no __dir__ method
+   exists. */
+static PyObject *
+_dir_object(PyObject *obj)
+{
+	PyObject * result = NULL;
+	PyObject * dirfunc = PyObject_GetAttrString((PyObject*)obj->ob_type,
+						    "__dir__");
+
+	assert(obj);
+	if (dirfunc == NULL) {
+		/* use default implementation */
+		PyErr_Clear();
+		if (PyModule_Check(obj))
+			result = _specialized_dir_module(obj);
+		else if (PyType_Check(obj) || PyClass_Check(obj))
+			result = _specialized_dir_type(obj);
+		else
+			result = _generic_dir(obj);
+	}
+	else {
+		/* use __dir__ */
+		result = PyObject_CallFunctionObjArgs(dirfunc, obj, NULL);
+		Py_DECREF(dirfunc);
+		if (result == NULL)
+			return NULL;
+
+		/* result must be a list */
+		/* XXX(gbrandl): could also check if all items are strings */
+		if (!PyList_Check(result)) {
+			PyErr_Format(PyExc_TypeError,
+				     "__dir__() must return a list, not %.200s",
+				     result->ob_type->tp_name);
+			Py_DECREF(result);
+			result = NULL;
+		}
+	}
+
+	return result;
+}
+
+/* Implementation of dir() -- if obj is NULL, returns the names in the current
+   (local) scope.  Otherwise, performs introspection of the object: returns a
+   sorted list of attribute names (supposedly) accessible from the object
+*/
+PyObject *
+PyObject_Dir(PyObject *obj)
+{
+	PyObject * result;
+
+	if (obj == NULL)
+		/* no object -- introspect the locals */
+		result = _dir_locals();
+	else
+		/* object -- introspect the object */
+		result = _dir_object(obj);
+
+	assert(result == NULL || PyList_Check(result));
+
+	if (result != NULL && PyList_Sort(result) != 0) {
+		/* sorting the list failed */
+		Py_DECREF(result);
+		result = NULL;
+	}
+	
 	return result;
 }
 

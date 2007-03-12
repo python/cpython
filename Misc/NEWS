@@ -12,6 +12,10 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- The dir() function has been extended to call the __dir__() method on
+  its argument, if it exists. If not, it will work like before. This allows
+  customizing the output of dir() in the presence of a __getattr__().
+
 - Patch #1675981: remove unreachable code from ``type.__new__()`` method.
 
 - Patch #1491866: change the complex() constructor to allow parthensized

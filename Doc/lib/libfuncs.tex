@@ -274,21 +274,34 @@ class C:
 \end{funcdesc}
 
 \begin{funcdesc}{dir}{\optional{object}}
-  Without arguments, return the list of names in the current local
-  symbol table.  With an argument, attempts to return a list of valid
-  attributes for that object.  This information is gleaned from the
-  object's \member{__dict__} attribute, if defined, and from the class
-  or type object.  The list is not necessarily complete.
-  If the object is a module object, the list contains the names of the
-  module's attributes.
-  If the object is a type or class object,
-  the list contains the names of its attributes,
-  and recursively of the attributes of its bases.
-  Otherwise, the list contains the object's attributes' names,
-  the names of its class's attributes,
-  and recursively of the attributes of its class's base classes.
-  The resulting list is sorted alphabetically.
-  For example:
+  Without arguments, return the list of names in the current local scope.  With
+  an argument, attempt to return a list of valid attributes for that object.
+
+  If the object has a method named \method{__dir__()}, this method will be
+  called and must return the list of attributes. This allows objects that
+  implement a custom \function{__getattr__()} or \function{__getattribute__()}
+  function to customize the way \function{dir()} reports their attributes.
+
+  If the object does not provide \method{__dir__()}, the function tries its best
+  to gather information from the object's \member{__dict__} attribute, if
+  defined, and from its type object.  The resulting list is not necessarily
+  complete, and may be inaccurate when the object has a custom
+  \function{__getattr__()}.
+  
+  The default \function{dir()} mechanism behaves differently with different
+  types of objects, as it attempts to produce the most relevant, rather than
+  complete, information:
+  \begin{itemize}
+  \item If the object is a module object, the list contains the names of the
+    module's attributes.
+  \item If the object is a type or class object, the list contains the names of
+    its attributes, and recursively of the attributes of its bases.
+  \item Otherwise, the list contains the object's attributes' names, the names
+    of its class's attributes, and recursively of the attributes of its class's
+    base classes.
+  \end{itemize}
+  
+  The resulting list is sorted alphabetically.  For example:
 
 \begin{verbatim}
 >>> import struct
@@ -296,13 +309,19 @@ class C:
 ['__builtins__', '__doc__', '__name__', 'struct']
 >>> dir(struct)
 ['__doc__', '__name__', 'calcsize', 'error', 'pack', 'unpack']
+>>> class Foo(object):
+...     def __dir__(self):
+...         return ["kan", "ga", "roo"]
+...
+>>> f = Foo()
+>>> dir(f)
+['ga', 'kan', 'roo']
 \end{verbatim}
 
-  \note{Because \function{dir()} is supplied primarily as a convenience
-  for use at an interactive prompt,
-  it tries to supply an interesting set of names more than it tries to
-  supply a rigorously or consistently defined set of names,
-  and its detailed behavior may change across releases.}
+  \note{Because \function{dir()} is supplied primarily as a convenience for use
+    at an interactive prompt, it tries to supply an interesting set of names
+    more than it tries to supply a rigorously or consistently defined set of
+    names, and its detailed behavior may change across releases.}
 \end{funcdesc}
 
 \begin{funcdesc}{divmod}{a, b}
