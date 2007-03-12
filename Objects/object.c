@@ -1349,6 +1349,7 @@ merge_class_dict(PyObject* dict, PyObject* aclass)
 static PyObject *
 _dir_locals()
 {
+	PyObject *names;
 	PyObject *locals = PyEval_GetLocals();
 
 	if (locals == NULL) {
@@ -1356,8 +1357,18 @@ _dir_locals()
 		return NULL;
 	}
 
+	names = PyMapping_Keys(locals);
+	if (!names)
+		return NULL;
+	if (!PyList_Check(names)) {
+		PyErr_Format(PyExc_TypeError,
+			"dir(): expected keys() of locals to be a list, "
+			"not '%.200s'", names->ob_type->tp_name);
+		Py_DECREF(names);
+		return NULL;
+	}
 	/* the locals don't need to be DECREF'd */
-	return PyMapping_Keys(locals);
+	return names;
 }
 
 /* Helper for PyObject_Dir of type objects: returns __dict__ and __bases__.
