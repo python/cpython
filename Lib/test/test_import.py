@@ -222,3 +222,15 @@ def test_import_initless_directory_warning():
         warnings.filters = oldfilters
 
 test_import_initless_directory_warning()
+
+def test_infinite_reload():
+     # Bug #742342 reports that Python segfaults (infinite recursion in C)
+     #  when faced with self-recursive reload()ing.
+
+     sys.path.insert(0, os.path.dirname(__file__))
+     try:
+         import infinite_reload
+     finally:
+         sys.path.pop(0)
+
+test_infinite_reload()
