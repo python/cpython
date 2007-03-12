@@ -192,6 +192,16 @@ class ImportTest(unittest.TestCase):
             remove_files(TESTFN)
             if TESTFN in sys.modules:
                 del sys.modules[TESTFN]
+                
+    def test_infinite_reload(self):
+        # Bug #742342 reports that Python segfaults (infinite recursion in C)
+        #  when faced with self-recursive reload()ing.
+        
+        sys.path.insert(0, os.path.dirname(__file__))
+        try:
+            import infinite_reload
+        finally:
+            sys.path.pop(0)
 
     def test_import_name_binding(self):
         # import x.y.z binds x in the current namespace
