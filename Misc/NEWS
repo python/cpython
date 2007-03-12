@@ -158,6 +158,8 @@ Core and builtins
 Library
 -------
 
+- Patch #1677862: Require a space or tab after import in .pth files.
+
 - Patch #1192590: Fix pdb's "ignore" and "condition" commands so they trap
   the IndexError caused by passing in an invalid breakpoint number.
 
