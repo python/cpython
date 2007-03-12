@@ -19,6 +19,9 @@ Core and builtins
   its argument, if it exists. If not, it will work like before. This allows
   customizing the output of dir() in the presence of a __getattr__().
 
+- Patch #922167: Python no longer segfaults when faced with infinitely
+  self-recursive reload() calls (as reported by bug #742342).
+
 - Patch #1675981: remove unreachable code from ``type.__new__()`` method.
 
 - Patch #1491866: change the complex() constructor to allow parthensized

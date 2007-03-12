@@ -194,6 +194,9 @@ Py_InitializeEx(int install_sigs)
 	interp->modules = PyDict_New();
 	if (interp->modules == NULL)
 		Py_FatalError("Py_Initialize: can't make modules dictionary");
+	interp->modules_reloading = PyDict_New();
+	if (interp->modules_reloading == NULL)
+		Py_FatalError("Py_Initialize: can't make modules_reloading dictionary");
 
 #ifdef Py_USING_UNICODE
 	/* Init Unicode implementation; relies on the codec registry */
@@ -531,6 +534,7 @@ Py_NewInterpreter(void)
 	/* XXX The following is lax in error checking */
 
 	interp->modules = PyDict_New();
+	interp->modules_reloading = PyDict_New();
 
 	bimod = _PyImport_FindExtension("__builtin__", "__builtin__");
 	if (bimod != NULL) {
