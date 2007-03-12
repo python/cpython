@@ -470,7 +470,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
 STDTESTS = [
     'test_grammar',
     'test_opcodes',
-    'test_operations',
+    'test_dict',
     'test_builtin',
     'test_exceptions',
     'test_types',
