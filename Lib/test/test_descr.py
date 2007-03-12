@@ -1466,7 +1466,7 @@ def errors():
 
     >>> class A(object):
     ...     pass
-    
+
     >>> class B(A, type):
     ...     pass
     Traceback (most recent call last):
@@ -1494,7 +1494,7 @@ def errors():
     ...     pass
 
     Also check that assignment to bases is safe.
-    
+
     >>> B.__bases__ = A1, A2
     Traceback (most recent call last):
     TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases

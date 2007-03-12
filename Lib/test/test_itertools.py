@@ -211,20 +211,20 @@ class TestBasicOps(unittest.TestCase):
             self.assertEqual(list(izip_longest(*args, **{})), target)
             target = [tuple((e is None and 'X' or e) for e in t) for t in target]   # Replace None fills with 'X'
             self.assertEqual(list(izip_longest(*args, **dict(fillvalue='X'))), target)
-        
+
         self.assertEqual(take(3,izip_longest('abcdef', count())), zip('abcdef', range(3))) # take 3 from infinite input
 
         self.assertEqual(list(izip_longest()), zip())
         self.assertEqual(list(izip_longest([])), zip([]))
         self.assertEqual(list(izip_longest('abcdef')), zip('abcdef'))
-    
+
         self.assertEqual(list(izip_longest('abc', 'defg', **{})), map(None, 'abc', 'defg')) # empty keyword dict
         self.assertRaises(TypeError, izip_longest, 3)
         self.assertRaises(TypeError, izip_longest, range(3), 3)
 
         for stmt in [
             "izip_longest('abc', fv=1)",
-            "izip_longest('abc', fillvalue=1, bogus_keyword=None)",            
+            "izip_longest('abc', fillvalue=1, bogus_keyword=None)",
         ]:
             try:
                 eval(stmt, globals(), locals())
@@ -232,7 +232,7 @@ class TestBasicOps(unittest.TestCase):
                 pass
             else:
                 self.fail('Did not raise Type in:  ' + stmt)
-        
+
         # Check tuple re-use (implementation detail)
         self.assertEqual([tuple(list(pair)) for pair in izip_longest('abc', 'def')],
                          zip('abc', 'def'))

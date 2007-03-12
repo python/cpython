@@ -357,9 +357,9 @@ class _ZipDecrypter:
 
 class ZipExtFile:
     """File-like object for reading an archive member.
-       Is returned by ZipFile.open(). 
+       Is returned by ZipFile.open().
     """
-    
+
     def __init__(self, fileobj, zipinfo, decrypt=None):
         self.fileobj = fileobj
         self.decrypter = decrypt
@@ -374,7 +374,7 @@ class ZipExtFile:
 
         self.compress_type = zipinfo.compress_type
         self.compress_size = zipinfo.compress_size
-        
+
         self.closed  = False
         self.mode    = "r"
         self.name = zipinfo.filename
@@ -386,7 +386,7 @@ class ZipExtFile:
 
     def set_univ_newlines(self, univ_newlines):
         self.univ_newlines = univ_newlines
-        
+
         # pick line separator char(s) based on universal newlines flag
         self.nlSeps = ("\n", )
         if self.univ_newlines:
@@ -394,7 +394,7 @@ class ZipExtFile:
 
     def __iter__(self):
         return self
-        
+
     def next(self):
         nextline = self.readline()
         if not nextline:
@@ -414,17 +414,17 @@ class ZipExtFile:
             if (self.lastdiscard, self.linebuffer[0]) == ('\r','\n'):
                 self.linebuffer = self.linebuffer[1:]
 
-            for sep in self.nlSeps:                
+            for sep in self.nlSeps:
                 nl = self.linebuffer.find(sep)
                 if nl >= 0:
                     nllen = len(sep)
                     return nl, nllen
 
         return nl, nllen
-        
+
     def readline(self, size = -1):
         """Read a line with approx. size. If size is negative,
-           read a whole line. 
+           read a whole line.
         """
         if size < 0:
             size = sys.maxint
@@ -433,7 +433,7 @@ class ZipExtFile:
 
         # check for a newline already in buffer
         nl, nllen = self._checkfornewline()
-        
+
         if nl >= 0:
             # the next line was already in the buffer
             nl = min(nl, size)
@@ -449,7 +449,7 @@ class ZipExtFile:
 
                 # check for a newline in buffer
                 nl, nllen = self._checkfornewline()
-                
+
             # we either ran out of bytes in the file, or
             # met the specified size limit without finding a newline,
             # so return current buffer
@@ -528,8 +528,8 @@ class ZipExtFile:
                     newdata = self.dc.decompress(newdata)
                     self.rawbuffer = self.dc.unconsumed_tail
                     if self.eof and len(self.rawbuffer) == 0:
-                        # we're out of raw bytes (both from the file and 
-                        # the local buffer); flush just to make sure the 
+                        # we're out of raw bytes (both from the file and
+                        # the local buffer); flush just to make sure the
                         # decompressor is done
                         newdata += self.dc.flush()
                         # prevent decompressor from being used again
@@ -547,7 +547,7 @@ class ZipExtFile:
             self.readbuffer = self.readbuffer[size:]
 
         return bytes
-  
+
 
 class ZipFile:
     """ Class with methods to open, read, write, close, list zip files.
@@ -738,7 +738,7 @@ class ZipFile:
             raise RuntimeError, \
                   "Attempt to read ZIP archive that was already closed"
 
-        # Only open a new file for instances where we were not 
+        # Only open a new file for instances where we were not
         # given a file object in the constructor
         if self._filePassed:
             zef_file = self.fp

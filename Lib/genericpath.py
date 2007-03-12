@@ -84,7 +84,7 @@ def commonprefix(m):
 # Generic implementation of splitext, to be parametrized with
 # the separators
 def _splitext(p, sep, altsep, extsep):
-    """Split the extension from a pathname.  
+    """Split the extension from a pathname.
 
     Extension is everything from the last dot to the end, ignoring
     leading dots.  Returns "(root, ext)"; ext may be empty."""

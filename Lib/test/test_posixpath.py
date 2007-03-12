@@ -24,7 +24,7 @@ class PosixPathTest(unittest.TestCase):
         for suffix in ["", "1", "2"]:
             test_support.unlink(test_support.TESTFN + suffix)
             safe_rmdir(test_support.TESTFN + suffix)
-            
+
     def assertIs(self, a, b):
         self.assert_(a is b)
 
@@ -161,7 +161,7 @@ class PosixPathTest(unittest.TestCase):
             if not f.closed:
                 f.close()
 
-    def test_islink(self):    
+    def test_islink(self):
         self.assertIs(posixpath.islink(test_support.TESTFN + "1"), False)
         f = open(test_support.TESTFN + "1", "wb")
         try:
