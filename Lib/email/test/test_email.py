@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2006 Python Software Foundation
+# Copyright (C) 2001-2007 Python Software Foundation
 # Contact: email-sig@python.org
 # email package unit tests
 
@@ -2164,6 +2164,12 @@ class TestMiscellaneous(TestEmailBase):
         self.assertEqual(Utils.parseaddr(y), (a, b))
         # formataddr() quotes the name if there's a dot in it
         self.assertEqual(Utils.formataddr((a, b)), y)
+
+    def test_multiline_from_comment(self):
+        x = """\
+Foo
+\tBar <foo@example.com>"""
+        self.assertEqual(Utils.parseaddr(x), ('Foo Bar', 'foo@example.com'))
 
     def test_quote_dump(self):
         self.assertEqual(
