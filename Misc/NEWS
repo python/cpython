@@ -168,6 +168,10 @@ Core and builtins
 Library
 -------
 
+- Patch #1635454: the csv.DictWriter class now includes the offending
+  field names in its exception message if you try to write a record with
+  a dictionary containing fields not in the CSV field names list.
+
 - Patch #1668100: urllib2 now correctly raises URLError instead of
   OSError if accessing a local file via the file:// protocol fails.
 
