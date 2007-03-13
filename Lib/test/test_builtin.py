@@ -107,9 +107,12 @@ class BuiltinTest(unittest.TestCase):
         __import__('sys')
         __import__('time')
         __import__('string')
+        __import__(name='sys')
+        __import__(name='time', level=0)
         self.assertRaises(ImportError, __import__, 'spamspam')
         self.assertRaises(TypeError, __import__, 1, 2, 3, 4)
         self.assertRaises(ValueError, __import__, '')
+        self.assertRaises(TypeError, __import__, 'sys', name='sys')
 
     def test_abs(self):
         # int
@@ -243,14 +246,20 @@ class BuiltinTest(unittest.TestCase):
         compile('print 1\n', '', 'exec')
         bom = '\xef\xbb\xbf'
         compile(bom + 'print 1\n', '', 'exec')
+        compile(source='pass', filename='?', mode='exec')
+        compile(dont_inherit=0, filename='tmp', source='0', mode='eval')
+        compile('pass', '?', dont_inherit=1, mode='exec')
         self.assertRaises(TypeError, compile)
         self.assertRaises(ValueError, compile, 'print 42\n', '<string>', 'badmode')
         self.assertRaises(ValueError, compile, 'print 42\n', '<string>', 'single', 0xff)
         self.assertRaises(TypeError, compile, chr(0), 'f', 'exec')
+        self.assertRaises(TypeError, compile, 'pass', '?', 'exec',
+                          mode='eval', source='0', filename='tmp')
         if have_unicode:
             compile(unicode('print u"\xc3\xa5"\n', 'utf8'), '', 'exec')
             self.assertRaises(TypeError, compile, unichr(0), 'f', 'exec')
             self.assertRaises(ValueError, compile, unicode('a = 1'), 'f', 'bad')
+
 
     def test_delattr(self):
         import sys
