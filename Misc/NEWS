@@ -168,6 +168,10 @@ Core and builtins
 Library
 -------
 
+- Patch #1533909: the timeit module now accepts callables in addition to
+  strings for the code to time and the setup code. Also added two
+  convenience functions for instantiating a Timer and calling its methods.
+
 - Patch #1537850: tempfile.NamedTemporaryFile now has a "delete" parameter
   which can be set to False to prevent the default delete-on-close
   behavior.

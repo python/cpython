@@ -90,6 +90,17 @@ def reindent(src, indent):
     """Helper to reindent a multi-line statement."""
     return src.replace("\n", "\n" + " "*indent)
 
+def _template_func(setup, func):
+    """Create a timer function. Used if the "statement" is a callable."""
+    def inner(_it, _timer):
+        setup()
+        _t0 = _timer()
+        for _i in _it:
+            func()
+        _t1 = _timer()
+        return _t1 - _t0
+    return inner
+
 class Timer:
     """Class for timing execution speed of small code snippets.
 
@@ -109,14 +120,32 @@ class Timer:
     def __init__(self, stmt="pass", setup="pass", timer=default_timer):
         """Constructor.  See class doc string."""
         self.timer = timer
-        stmt = reindent(stmt, 8)
-        setup = reindent(setup, 4)
-        src = template % {'stmt': stmt, 'setup': setup}
-        self.src = src # Save for traceback display
-        code = compile(src, dummy_src_name, "exec")
         ns = {}
-        exec code in globals(), ns
-        self.inner = ns["inner"]
+        if isinstance(stmt, basestring):
+            stmt = reindent(stmt, 8)
+            if isinstance(setup, basestring):
+                setup = reindent(setup, 4)
+                src = template % {'stmt': stmt, 'setup': setup}
+            elif callable(setup):
+                src = template % {'stmt': stmt, 'setup': '_setup()'}
+                ns['_setup'] = setup
+            else:
+                raise ValueError("setup is neither a string nor callable")
+            self.src = src # Save for traceback display
+            code = compile(src, dummy_src_name, "exec")
+            exec code in globals(), ns
+            self.inner = ns["inner"]
+        elif callable(stmt):
+            self.src = None
+            if isinstance(setup, basestring):
+                _setup = setup
+                def setup():
+                    exec _setup in globals(), ns
+            elif not callable(setup):
+                raise ValueError("setup is neither a string nor callable")
+            self.inner = _template_func(setup, stmt)
+        else:
+            raise ValueError("stmt is neither a string nor callable")
 
     def print_exc(self, file=None):
         """Helper to print a traceback from the timed code.
@@ -136,10 +165,13 @@ class Timer:
         sent; it defaults to sys.stderr.
         """
         import linecache, traceback
-        linecache.cache[dummy_src_name] = (len(self.src),
-                                           None,
-                                           self.src.split("\n"),
-                                           dummy_src_name)
+        if self.src is not None:
+            linecache.cache[dummy_src_name] = (len(self.src),
+                                               None,
+                                               self.src.split("\n"),
+                                               dummy_src_name)
+        # else the source is already stored somewhere else
+
         traceback.print_exc(file=file)
 
     def timeit(self, number=default_number):
@@ -188,6 +220,16 @@ class Timer:
             t = self.timeit(number)
             r.append(t)
         return r
+
+def timeit(stmt="pass", setup="pass", timer=default_timer,
+           number=default_number):
+  """Convenience function to create Timer object and call timeit method."""
+  return Timer(stmt, setup, timer).timeit(number)
+
+def repeat(stmt="pass", setup="pass", timer=default_timer,
+           repeat=default_repeat, number=default_number):
+  """Convenience function to create Timer object and call repeat method."""
+  return Timer(stmt, setup, timer).repeat(repeat, number)
 
 def main(args=None):
     """Main program, used when run as a script.
