@@ -3,7 +3,9 @@
 if __name__ != 'test.test_support':
     raise ImportError, 'test_support must be imported from the test package'
 
-from contextlib import contextmanager
+import contextlib
+import errno
+import socket
 import sys
 import warnings
 
@@ -271,7 +273,7 @@ def open_urlresource(url):
     fn, _ = urllib.urlretrieve(url, filename)
     return open(fn)
 
-@contextmanager
+@contextlib.contextmanager
 def guard_warnings_filter():
     """Guard the warnings filter from being permanently changed."""
     original_filters = warnings.filters[:]
@@ -336,6 +338,15 @@ class TransientResource(object):
                     break
             else:
                 raise ResourceDenied("an optional resource is not available")
+
+
+def transient_internet():
+    """Return a context manager that raises ResourceDenied when various issues
+    with the Internet connection manifest themselves as exceptions."""
+    time_out = TransientResource(IOError, errno=errno.ETIMEDOUT)
+    socket_peer_reset = TransientResource(socket.error, errno=errno.ECONNRESET)
+    ioerror_peer_reset = TransientResource(IOError, errno=errno.ECONNRESET)
+    return contextlib.nested(time_out, peer_reset, ioerror_peer_reset)
 
 
 #=======================================================================
