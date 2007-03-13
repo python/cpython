@@ -168,6 +168,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1581073: add a flag to textwrap that prevents the dropping of
+  whitespace while wrapping.
+
 - Patch #1603688: ConfigParser.SafeConfigParser now checks values that
   are set for invalid interpolation sequences that would lead to errors
   on reading back those values.
