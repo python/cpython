@@ -12,21 +12,24 @@ Some facts and figures:
 
 \begin{itemize}
 \item reads and writes \module{gzip} and \module{bzip2} compressed archives.
-\item creates \POSIX{} 1003.1-1990 compliant or GNU tar compatible archives.
-\item reads GNU tar extensions \emph{longname}, \emph{longlink} and
-      \emph{sparse}.
-\item stores pathnames of unlimited length using GNU tar extensions.
+\item read/write support for the \POSIX{}.1-1988 (ustar) format.
+\item read/write support for the GNU tar format including \emph{longname} and
+      \emph{longlink} extensions, read-only support for the \emph{sparse}
+      extension.
+\item read/write support for the \POSIX{}.1-2001 (pax) format.
+      \versionadded{2.6}
 \item handles directories, regular files, hardlinks, symbolic links, fifos,
       character devices and block devices and is able to acquire and
       restore file information like timestamp, access permissions and owner.
 \item can handle tape devices.
 \end{itemize}
 
-\begin{funcdesc}{open}{\optional{name\optional{, mode
-                       \optional{, fileobj\optional{, bufsize}}}}}
+\begin{funcdesc}{open}{name\optional{, mode\optional{,
+        fileobj\optional{, bufsize}}}, **kwargs}
     Return a \class{TarFile} object for the pathname \var{name}.
-    For detailed information on \class{TarFile} objects,
-    see \citetitle{TarFile Objects} (section \ref{tarfile-objects}).
+    For detailed information on \class{TarFile} objects and the keyword
+    arguments that are allowed, see \citetitle{TarFile Objects}
+    (section \ref{tarfile-objects}).
 
     \var{mode} has to be a string of the form \code{'filemode[:compression]'},
     it defaults to \code{'r'}. Here is a full list of mode combinations:
@@ -130,6 +133,31 @@ Some facts and figures:
     \versionadded{2.6}
 \end{excdesc}
 
+\begin{datadesc}{USTAR_FORMAT}
+    \POSIX{}.1-1988 (ustar) format. It supports filenames up to a length of
+    at best 256 characters and linknames up to 100 characters. The maximum
+    file size is 8 gigabytes. This is an old and limited but widely
+    supported format.
+\end{datadesc}
+
+\begin{datadesc}{GNU_FORMAT}
+    GNU tar format. It supports arbitrarily long filenames and linknames and
+    files bigger than 8 gigabytes. It is the defacto standard on GNU/Linux
+    systems.
+\end{datadesc}
+
+\begin{datadesc}{PAX_FORMAT}
+    \POSIX{}.1-2001 (pax) format. It is the most flexible format with
+    virtually no limits. It supports long filenames and linknames, large files
+    and stores pathnames in a portable way.  However, not all tar
+    implementations today are able to handle pax archives properly.
+\end{datadesc}
+
+\begin{datadesc}{DEFAULT_FORMAT}
+    The default format for creating archives. This is currently
+    \constant{GNU_FORMAT}.
+\end{datadesc}
+
 \begin{seealso}
     \seemodule{zipfile}{Documentation of the \refmodule{zipfile}
     standard module.}
@@ -152,12 +180,21 @@ tar archive several times. Each archive member is represented by a
 \class{TarInfo} object, see \citetitle{TarInfo Objects} (section
 \ref{tarinfo-objects}) for details.
 
-\begin{classdesc}{TarFile}{\optional{name
-                           \optional{, mode\optional{, fileobj}}}}
-    Open an \emph{(uncompressed)} tar archive \var{name}.
+\begin{classdesc}{TarFile}{name=None, mode='r', fileobj=None,
+        format=DEFAULT_FORMAT, tarinfo=TarInfo, dereference=False,
+        ignore_zeros=False, encoding=None, pax_headers=None, debug=0,
+        errorlevel=0}
+
+    All following arguments are optional and can be accessed as instance
+    attributes as well.
+
+    \var{name} is the pathname of the archive. It can be omitted if
+    \var{fileobj} is given. In this case, the file object's \member{name}
+    attribute is used if it exists.
+
     \var{mode} is either \code{'r'} to read from an existing archive,
     \code{'a'} to append data to an existing file or \code{'w'} to create a new
-    file overwriting an existing one. \var{mode} defaults to \code{'r'}.
+    file overwriting an existing one.
 
     If \var{fileobj} is given, it is used for reading or writing data.
     If it can be determined, \var{mode} is overridden by \var{fileobj}'s mode.
@@ -165,6 +202,48 @@ tar archive several times. Each archive member is represented by a
     \begin{notice}
         \var{fileobj} is not closed, when \class{TarFile} is closed.
     \end{notice}
+
+    \var{format} controls the archive format. It must be one of the constants
+    \constant{USTAR_FORMAT}, \constant{GNU_FORMAT} or \constant{PAX_FORMAT}
+    that are defined at module level.
+    \versionadded{2.6}
+
+    The \var{tarinfo} argument can be used to replace the default
+    \class{TarInfo} class with a different one.
+    \versionadded{2.6}
+
+    If \var{dereference} is \code{False}, add symbolic and hard links to the
+    archive. If it is \code{True}, add the content of the target files to the
+    archive. This has no effect on systems that do not support symbolic links.
+
+    If \var{ignore_zeros} is \code{False}, treat an empty block as the end of
+    the archive. If it is \var{True}, skip empty (and invalid) blocks and try
+    to get as many members as possible. This is only useful for reading
+    concatenated or damaged archives.
+
+    \var{debug} can be set from \code{0} (no debug messages) up to \code{3}
+    (all debug messages). The messages are written to \code{sys.stderr}.
+
+    If \var{errorlevel} is \code{0}, all errors are ignored when using
+    \method{extract()}.  Nevertheless, they appear as error messages in the
+    debug output, when debugging is enabled.  If \code{1}, all \emph{fatal}
+    errors are raised as \exception{OSError} or \exception{IOError} exceptions.
+    If \code{2}, all \emph{non-fatal} errors are raised as \exception{TarError}
+    exceptions as well.
+
+    The \var{encoding} argument defines the local character encoding. It
+    defaults to the value from \function{sys.getfilesystemencoding()} or if
+    that is \code{None} to \code{"ascii"}. \var{encoding} is used only in
+    connection with the pax format which stores text data in \emph{UTF-8}. If
+    it is not set correctly, character conversion will fail with a
+    \exception{UnicodeError}.
+    \versionadded{2.6}
+
+    The \var{pax_headers} argument must be a dictionary whose elements are
+    either unicode objects, numbers or strings that can be decoded to unicode
+    using \var{encoding}. This information will be added to the archive as a
+    pax global header.
+    \versionadded{2.6}
 \end{classdesc}
 
 \begin{methoddesc}{open}{...}
@@ -279,43 +358,11 @@ tar archive several times. Each archive member is represented by a
 \end{methoddesc}
 
 \begin{memberdesc}{posix}
-    If true, create a \POSIX{} 1003.1-1990 compliant archive. GNU
-    extensions are not used, because they are not part of the \POSIX{}
-    standard.  This limits the length of filenames to at most 256,
-    link names to 100 characters and the maximum file size to 8
-    gigabytes. A \exception{ValueError} is raised if a file exceeds
-    this limit.  If false, create a GNU tar compatible archive.  It
-    will not be \POSIX{} compliant, but can store files without any
-    of the above restrictions. 
+    Setting this to \constant{True} is equivalent to setting the
+    \member{format} attribute to \constant{USTAR_FORMAT},
+    \constant{False} is equivalent to \constant{GNU_FORMAT}.
     \versionchanged[\var{posix} defaults to \constant{False}]{2.4}
-\end{memberdesc}
-
-\begin{memberdesc}{dereference}
-    If false, add symbolic and hard links to archive. If true, add the
-    content of the target files to the archive.  This has no effect on
-    systems that do not support symbolic links.
-\end{memberdesc}
-
-\begin{memberdesc}{ignore_zeros}
-    If false, treat an empty block as the end of the archive. If true,
-    skip empty (and invalid) blocks and try to get as many members as
-    possible. This is only useful for concatenated or damaged
-    archives.
-\end{memberdesc}
-
-\begin{memberdesc}{debug=0}
-    To be set from \code{0} (no debug messages; the default) up to
-    \code{3} (all debug messages). The messages are written to
-    \code{sys.stderr}.
-\end{memberdesc}
-
-\begin{memberdesc}{errorlevel}
-    If \code{0} (the default), all errors are ignored when using
-    \method{extract()}.  Nevertheless, they appear as error messages
-    in the debug output, when debugging is enabled.  If \code{1}, all
-    \emph{fatal} errors are raised as \exception{OSError} or
-    \exception{IOError} exceptions.  If \code{2}, all \emph{non-fatal}
-    errors are raised as \exception{TarError} exceptions as well.
+    \deprecated{2.6}{Use the \member{format} attribute instead.}
 \end{memberdesc}
 
 %-----------------
@@ -343,12 +390,16 @@ the file's data itself.
     invalid.]{2.6}
 \end{methoddesc}
 
-\begin{methoddesc}{tobuf}{posix}
-    Create a string buffer from a \class{TarInfo} object.
-    See \class{TarFile}'s \member{posix} attribute for information
-    on the \var{posix} argument. It defaults to \constant{False}.
+\begin{methoddesc}{fromtarfile}{tarfile}
+    Read the next member from the \class{TarFile} object \var{tarfile} and
+    return it as a \class{TarInfo} object.
+    \versionadded{2.6}
+\end{methoddesc}
 
-    \versionadded[The \var{posix} parameter]{2.5}
+\begin{methoddesc}{tobuf}{\optional{format}}
+    Create a string buffer from a \class{TarInfo} object.  See
+    \class{TarFile}'s \member{format} argument for information.
+    \versionchanged[The \var{format} parameter]{2.6}
 \end{methoddesc}
 
 A \code{TarInfo} object has the following public data attributes:
