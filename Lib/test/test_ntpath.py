@@ -134,6 +134,13 @@ try:
     tester('ntpath.expandvars("${{foo}}")', "baz1}")
     tester('ntpath.expandvars("$foo$foo")', "barbar")
     tester('ntpath.expandvars("$bar$bar")', "$bar$bar")
+    tester('ntpath.expandvars("%foo% bar")', "bar bar")
+    tester('ntpath.expandvars("%foo%bar")', "barbar")
+    tester('ntpath.expandvars("%foo%%foo%")', "barbar")
+    tester('ntpath.expandvars("%%foo%%foo%foo%")', "%foo%foobar")
+    tester('ntpath.expandvars("%?bar%")', "%?bar%")
+    tester('ntpath.expandvars("%foo%%bar")', "bar%bar")
+    tester('ntpath.expandvars("\'%foo%\'%bar")', "\'%foo%\'%bar")
 finally:
     os.environ.clear()
     os.environ.update(oldenv)

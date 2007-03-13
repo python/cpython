@@ -170,6 +170,10 @@ Core and builtins
 Library
 -------
 
+- Patch #957650: "%var%" environment variable references are now properly
+  expanded in ntpath.expandvars(), also "~user" home directory references
+  are recognized and handled on Windows.
+
 - Patch #1429539: pdb now correctly initializes the __main__ module for
   the debugged script, which means that imports from __main__ work
   correctly now.
