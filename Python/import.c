@@ -345,18 +345,17 @@ PyImport_GetModulesReloading(void)
 {
 	PyInterpreterState *interp = PyThreadState_Get()->interp;
 	if (interp->modules_reloading == NULL)
-		Py_FatalError("PyImport_GetModuleDict: no modules_reloading dictionary!");
+		Py_FatalError("PyImport_GetModulesReloading: "
+			      "no modules_reloading dictionary!");
 	return interp->modules_reloading;
 }
 
 static void
-imp_modules_reloading_clear (void)
+imp_modules_reloading_clear(void)
 {
 	PyInterpreterState *interp = PyThreadState_Get()->interp;
-	if (interp->modules_reloading == NULL)
-		return;
-	PyDict_Clear(interp->modules_reloading);
-	return;
+	if (interp->modules_reloading != NULL)
+		PyDict_Clear(interp->modules_reloading);
 }
 
 /* Helper for sys */
@@ -2444,12 +2443,15 @@ PyImport_ReloadModule(PyObject *m)
 			     name);
 		return NULL;
 	}
-	if ((existing_m = PyDict_GetItemString(modules_reloading, name)) != NULL) {
-        /* Due to a recursive reload, this module is already being reloaded. */
-        Py_INCREF(existing_m);
-        return existing_m;
+	existing_m = PyDict_GetItemString(modules_reloading, name);
+	if (existing_m != NULL) {
+		/* Due to a recursive reload, this module is already
+		   being reloaded. */
+		Py_INCREF(existing_m);
+		return existing_m;
  	}
- 	PyDict_SetItemString(modules_reloading, name, m);
+ 	if (PyDict_SetItemString(modules_reloading, name, m) < 0)
+		return NULL;
 
 	subname = strrchr(name, '.');
 	if (subname == NULL)
@@ -2460,7 +2462,7 @@ PyImport_ReloadModule(PyObject *m)
 		if (parentname == NULL) {
 			imp_modules_reloading_clear();
 			return NULL;
-        }
+        	}
 		parent = PyDict_GetItem(modules, parentname);
 		if (parent == NULL) {
 			PyErr_Format(PyExc_ImportError,
@@ -2499,7 +2501,7 @@ PyImport_ReloadModule(PyObject *m)
 		 */
 		PyDict_SetItemString(modules, name, m);
 	}
-	imp_modules_reloading_clear ();
+	imp_modules_reloading_clear();
 	return newm;
 }
 
