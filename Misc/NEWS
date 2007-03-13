@@ -168,6 +168,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1542681: add entries for "with", "as" and "CONTEXTMANAGERS" to
+  pydoc's help keywords.
+
 - Patch #1555098: use str.join() instead of repeated string
   concatenation in robotparser.
 
