@@ -168,6 +168,10 @@ Core and builtins
 Library
 -------
 
+- Patch #1603688: ConfigParser.SafeConfigParser now checks values that
+  are set for invalid interpolation sequences that would lead to errors
+  on reading back those values.
+
 - Added support for the POSIX.1-2001 (pax) format to tarfile.py. Extended
   and cleaned up the test suite. Added a new testtar.tar.
 
