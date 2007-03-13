@@ -115,6 +115,13 @@ replaced by a single space, which is \emph{not} the same as tab
 expansion.}
 \end{memberdesc}
 
+\begin{memberdesc}{drop_whitespace}
+(default: \code{True}) If true, whitespace that, after wrapping, happens
+to end up at the beginning or end of a line is dropped (leading whitespace
+in the first line is always preserved, though).
+\versionadded[Whitespace was always dropped in earlier versions]{2.6}
+\end{memberdesc}
+
 \begin{memberdesc}{initial_indent}
 (default: \code{''}) String that will be prepended to the first line
 of wrapped output.  Counts towards the length of the first line.

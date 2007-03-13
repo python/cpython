@@ -328,6 +328,14 @@ What a mess!
         self.check_wrap(text, 30,
                         [" This is a sentence with", "leading whitespace."])
 
+    def test_no_drop_whitespace(self):
+        # SF patch #1581073
+        text = " This is a    sentence with     much whitespace."
+        self.check_wrap(text, 10,
+                        [" This is a", "    ", "sentence ",
+                         "with     ", "much white", "space."],
+                        drop_whitespace=False)
+
     if test_support.have_unicode:
         def test_unicode(self):
             # *Very* simple test of wrapping Unicode strings.  I'm sure
