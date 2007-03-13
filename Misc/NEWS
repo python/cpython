@@ -168,6 +168,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1668100: urllib2 now correctly raises URLError instead of
+  OSError if accessing a local file via the file:// protocol fails.
+
 - Patch #1677862: Require a space or tab after import in .pth files.
 
 - Patch #1192590: Fix pdb's "ignore" and "condition" commands so they trap
