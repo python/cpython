@@ -168,6 +168,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1449244: Support Unicode strings in
+  email.message.Message.{set_charset,get_content_charset}.
+
 - Patch #1542681: add entries for "with", "as" and "CONTEXTMANAGERS" to
   pydoc's help keywords.
 
