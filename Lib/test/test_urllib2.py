@@ -626,11 +626,11 @@ class HandlerTests(unittest.TestCase):
 
         for url in [
             "file://localhost:80%s" % urlpath,
-# XXXX bug: these fail with socket.gaierror, should be URLError
-##             "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
-##                                    os.getcwd(), TESTFN),
-##             "file://somerandomhost.ontheinternet.com%s/%s" %
-##             (os.getcwd(), TESTFN),
+            "file:///file_does_not_exist.txt",
+            "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
+                                   os.getcwd(), TESTFN),
+            "file://somerandomhost.ontheinternet.com%s/%s" %
+            (os.getcwd(), TESTFN),
             ]:
             try:
                 f = open(TESTFN, "wb")

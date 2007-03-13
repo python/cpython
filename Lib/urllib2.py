@@ -1214,19 +1214,23 @@ class FileHandler(BaseHandler):
         host = req.get_host()
         file = req.get_selector()
         localfile = url2pathname(file)
-        stats = os.stat(localfile)
-        size = stats.st_size
-        modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
-        mtype = mimetypes.guess_type(file)[0]
-        headers = mimetools.Message(StringIO(
-            'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
-            (mtype or 'text/plain', size, modified)))
-        if host:
-            host, port = splitport(host)
-        if not host or \
-           (not port and socket.gethostbyname(host) in self.get_names()):
-            return addinfourl(open(localfile, 'rb'),
-                              headers, 'file:'+file)
+        try:
+            stats = os.stat(localfile)
+            size = stats.st_size
+            modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
+            mtype = mimetypes.guess_type(file)[0]
+            headers = mimetools.Message(StringIO(
+                'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
+                (mtype or 'text/plain', size, modified)))
+            if host:
+                host, port = splitport(host)
+            if not host or \
+                (not port and socket.gethostbyname(host) in self.get_names()):
+                return addinfourl(open(localfile, 'rb'),
+                                  headers, 'file:'+file)
+        except OSError, msg:
+            # urllib2 users shouldn't expect OSErrors coming from urlopen()
+            raise URLError(msg)
         raise URLError('file not on local host')
 
 class FTPHandler(BaseHandler):
