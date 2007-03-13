@@ -855,7 +855,7 @@ class HTMLDoc(Doc):
                 if imclass is not cl:
                     note = ' from ' + self.classlink(imclass, mod)
             else:
-                if object.im_self:
+                if object.im_self is not None:
                     note = ' method of %s instance' % self.classlink(
                         object.im_self.__class__, mod)
                 else:
@@ -1226,7 +1226,7 @@ class TextDoc(Doc):
                 if imclass is not cl:
                     note = ' from ' + classname(imclass, mod)
             else:
-                if object.im_self:
+                if object.im_self is not None:
                     note = ' method of %s instance' % classname(
                         object.im_self.__class__, mod)
                 else:
