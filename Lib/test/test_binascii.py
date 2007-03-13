@@ -148,6 +148,15 @@ class BinASCIITest(unittest.TestCase):
             "0"*75+"=\r\n=FF\r\n=FF\r\n=FF"
         )
 
+        self.assertEqual(binascii.b2a_qp('\0\n'), '=00\n')
+        self.assertEqual(binascii.b2a_qp('\0\n', quotetabs=True), '=00\n')
+        self.assertEqual(binascii.b2a_qp('foo\tbar\t\n'), 'foo\tbar=09\n')
+        self.assertEqual(binascii.b2a_qp('foo\tbar\t\n', quotetabs=True), 'foo=09bar=09\n')
+
+        self.assertEqual(binascii.b2a_qp('.'), '=2E')
+        self.assertEqual(binascii.b2a_qp('.\n'), '=2E\n')
+        self.assertEqual(binascii.b2a_qp('a.\n'), 'a.\n')
+
     def test_empty_string(self):
         # A test for SF bug #1022953.  Make sure SystemError is not raised.
         for n in ['b2a_qp', 'a2b_hex', 'b2a_base64', 'a2b_uu', 'a2b_qp',

@@ -525,6 +525,11 @@ Library
 Extension Modules
 -----------------
 
+- Patch #1185447: binascii.b2a_qp() now correctly quotes binary characters
+  with ASCII value less than 32. Also, it correctly quotes dots only if
+  they occur on a single line, as opposed to the previous behavior of
+  quoting dots if they are the second character of any line.
+
 - Bug #1622896: fix a rare corner case where the bz2 module raised an
   error in spite of a succesful compression.
 
