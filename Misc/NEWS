@@ -168,6 +168,8 @@ Core and builtins
 Library
 -------
 
+- Patch #1649190: Adding support for _Bool to ctypes as c_bool.
+
 - Patch #1530482: add pydoc.render_doc() which returns the documentation
   for a thing instead of paging it to stdout, which pydoc.doc() does.
 
