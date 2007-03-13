@@ -566,7 +566,7 @@ class test_NamedTemporaryFile(TC):
             dir = tempfile.gettempdir()
         try:
             file = tempfile.NamedTemporaryFile(dir=dir, prefix=pre, suffix=suf,
-	                                       delete=delete)
+                                               delete=delete)
         except:
             self.failOnException("NamedTemporaryFile")
 
@@ -603,7 +603,7 @@ class test_NamedTemporaryFile(TC):
     def test_dis_del_on_close(self):
         # Tests that delete-on-close can be disabled
         dir = tempfile.mkdtemp()
-	tmp = None
+        tmp = None
         try:
             f = tempfile.NamedTemporaryFile(dir=dir, delete=False)
             tmp = f.name
