@@ -32,6 +32,8 @@ __all__ = ["getstatusoutput","getoutput","getstatus"]
 #
 def getstatus(file):
     """Return output of "ls -ld <file>" in a string."""
+    import warnings
+    warnings.warn("commands.getstatus() is deprecated", DeprecationWarning)
     return getoutput('ls -ld' + mkarg(file))
 
 
