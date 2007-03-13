@@ -340,16 +340,6 @@ imp_release_lock(PyObject *self, PyObject *noargs)
 	return Py_None;
 }
 
-PyObject *
-PyImport_GetModulesReloading(void)
-{
-	PyInterpreterState *interp = PyThreadState_Get()->interp;
-	if (interp->modules_reloading == NULL)
-		Py_FatalError("PyImport_GetModulesReloading: "
-			      "no modules_reloading dictionary!");
-	return interp->modules_reloading;
-}
-
 static void
 imp_modules_reloading_clear(void)
 {
@@ -2420,7 +2410,8 @@ import_submodule(PyObject *mod, char *subname, char *fullname)
 PyObject *
 PyImport_ReloadModule(PyObject *m)
 {
-	PyObject *modules_reloading = PyImport_GetModulesReloading();
+	PyInterpreterState *interp = PyThreadState_Get()->interp;
+	PyObject *modules_reloading = interp->modules_reloading;
 	PyObject *modules = PyImport_GetModuleDict();
 	PyObject *path = NULL, *loader = NULL, *existing_m = NULL;
 	char *name, *subname;
@@ -2428,6 +2419,12 @@ PyImport_ReloadModule(PyObject *m)
 	struct filedescr *fdp;
 	FILE *fp = NULL;
 	PyObject *newm;
+    
+	if (modules_reloading == NULL) {
+		Py_FatalError("PyImport_ReloadModule: "
+							"no modules_reloading dictionary!");
+		return NULL;
+	}
 
 	if (m == NULL || !PyModule_Check(m)) {
 		PyErr_SetString(PyExc_TypeError,
