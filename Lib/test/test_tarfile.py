@@ -1,4 +1,4 @@
-# encoding: iso8859-15
+# encoding: iso8859-1
 
 import sys
 import os
@@ -46,7 +46,7 @@ class ReadTest(unittest.TestCase):
     mode = "r:"
 
     def setUp(self):
-        self.tar = tarfile.open(self.tarname, mode=self.mode)
+        self.tar = tarfile.open(self.tarname, mode=self.mode, encoding="iso8859-1")
 
     def tearDown(self):
         self.tar.close()
@@ -177,7 +177,7 @@ class MiscReadTest(ReadTest):
 
     def test_extract_hardlink(self):
         # Test hardlink extraction (e.g. bug #857297).
-        tar = tarfile.open(tarname, errorlevel=1)
+        tar = tarfile.open(tarname, errorlevel=1, encoding="iso8859-1")
 
         tar.extract("ustar/regtype", TEMPDIR)
         try:
@@ -216,7 +216,7 @@ class StreamReadTest(ReadTest):
         self.assertRaises(tarfile.StreamError, f.read)
 
     def test_compare_members(self):
-        tar1 = tarfile.open(tarname)
+        tar1 = tarfile.open(tarname, encoding="iso8859-1")
         tar2 = self.tar
 
         while True:
@@ -363,6 +363,7 @@ class MemberReadTest(ReadTest):
         self._test_member(tarinfo, size=7011, chksum=md5_regtype)
 
     def test_find_pax_umlauts(self):
+        self.tar = tarfile.open(self.tarname, mode=self.mode, encoding="iso8859-1")
         tarinfo = self.tar.getmember("pax/umlauts-ƒ÷‹‰ˆ¸ﬂ")
         self._test_member(tarinfo, size=7011, chksum=md5_regtype)
 
@@ -414,7 +415,7 @@ class PaxReadTest(ReadTest):
     subdir = "pax"
 
     def test_pax_globheaders(self):
-        tar = tarfile.open(tarname)
+        tar = tarfile.open(tarname, encoding="iso8859-1")
         tarinfo = tar.getmember("pax/regtype1")
         self.assertEqual(tarinfo.uname, "foo")
         self.assertEqual(tarinfo.gname, "bar")
@@ -777,7 +778,7 @@ class AppendTest(unittest.TestCase):
         tar.close()
 
     def _create_testtar(self, mode="w:"):
-        src = tarfile.open(tarname)
+        src = tarfile.open(tarname, encoding="iso8859-1")
         t = src.getmember("ustar/regtype")
         t.name = "foo"
         f = src.extractfile(t)
