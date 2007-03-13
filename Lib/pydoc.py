@@ -1511,6 +1511,7 @@ def writedocs(dir, pkgpath='', done=None):
 class Helper:
     keywords = {
         'and': 'BOOLEAN',
+        'as': 'with',
         'assert': ('ref/assert', ''),
         'break': ('ref/break', 'while for'),
         'class': ('ref/class', 'CLASSES SPECIALMETHODS'),
@@ -1538,6 +1539,7 @@ class Helper:
         'return': ('ref/return', 'FUNCTIONS'),
         'try': ('ref/try', 'EXCEPTIONS'),
         'while': ('ref/while', 'break continue if TRUTHVALUE'),
+        'with': ('ref/with', 'CONTEXTMANAGERS EXCEPTIONS yield'),
         'yield': ('ref/yield', ''),
     }
 
@@ -1619,6 +1621,7 @@ class Helper:
         'LOOPING': ('ref/compound', 'for while break continue'),
         'TRUTHVALUE': ('lib/truth', 'if while and or not BASICMETHODS'),
         'DEBUGGING': ('lib/module-pdb', 'pdb'),
+        'CONTEXTMANAGERS': ('ref/context-managers', 'with'),
     }
 
     def __init__(self, input, output):
