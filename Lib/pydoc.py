@@ -1461,31 +1461,35 @@ def resolve(thing, forceload=0):
     else:
         return thing, getattr(thing, '__name__', None)
 
+def render_doc(thing, title='Python Library Documentation: %s', forceload=0):
+    """Render text documentation, given an object or a path to an object."""
+    object, name = resolve(thing, forceload)
+    desc = describe(object)
+    module = inspect.getmodule(object)
+    if name and '.' in name:
+        desc += ' in ' + name[:name.rfind('.')]
+    elif module and module is not object:
+        desc += ' in module ' + module.__name__
+    if type(object) is _OLD_INSTANCE_TYPE:
+        # If the passed object is an instance of an old-style class,
+        # document its available methods instead of its value.
+        object = object.__class__
+    elif not (inspect.ismodule(object) or
+              inspect.isclass(object) or
+              inspect.isroutine(object) or
+              inspect.isgetsetdescriptor(object) or
+              inspect.ismemberdescriptor(object) or
+              isinstance(object, property)):
+        # If the passed object is a piece of data or an instance,
+        # document its available methods instead of its value.
+        object = type(object)
+        desc += ' object'
+    return title % desc + '\n\n' + text.document(object, name)
+
 def doc(thing, title='Python Library Documentation: %s', forceload=0):
     """Display text documentation, given an object or a path to an object."""
     try:
-        object, name = resolve(thing, forceload)
-        desc = describe(object)
-        module = inspect.getmodule(object)
-        if name and '.' in name:
-            desc += ' in ' + name[:name.rfind('.')]
-        elif module and module is not object:
-            desc += ' in module ' + module.__name__
-        if type(object) is _OLD_INSTANCE_TYPE:
-            # If the passed object is an instance of an old-style class,
-            # document its available methods instead of its value.
-            object = object.__class__
-        elif not (inspect.ismodule(object) or
-                  inspect.isclass(object) or
-                  inspect.isroutine(object) or
-                  inspect.isgetsetdescriptor(object) or
-                  inspect.ismemberdescriptor(object) or
-                  isinstance(object, property)):
-            # If the passed object is a piece of data or an instance,
-            # document its available methods instead of its value.
-            object = type(object)
-            desc += ' object'
-        pager(title % desc + '\n\n' + text.document(object, name))
+        pager(render_doc(thing, title, forceload))
     except (ImportError, ErrorDuringImport), value:
         print value
 
