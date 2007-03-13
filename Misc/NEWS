@@ -168,6 +168,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1530482: add pydoc.render_doc() which returns the documentation
+  for a thing instead of paging it to stdout, which pydoc.doc() does.
+
 - Patch #1533909: the timeit module now accepts callables in addition to
   strings for the code to time and the setup code. Also added two
   convenience functions for instantiating a Timer and calling its methods.
