@@ -36,6 +36,19 @@ lower- or upper-case before the comparison is performed.  If you
 require a case-sensitive comparison regardless of whether that's
 standard for your operating system, use \function{fnmatchcase()}
 instead.
+
+This example will print all file names in the current directory with the
+extension \code{.txt}:
+
+\begin{verbatim}
+import fnmatch
+import os
+
+for file in os.listdir('.'):
+    if fnmatch.fnmatch(file, '*.txt'):
+        print file
+\end{verbatim}
+
 \end{funcdesc}
 
 \begin{funcdesc}{fnmatchcase}{filename, pattern}
@@ -48,6 +61,24 @@ Return the subset of the list of \var{names} that match \var{pattern}.
 It is the same as \code{[n for n in names if fnmatch(n, pattern)]}, but
 implemented more efficiently.
 \versionadded{2.2}
+\end{funcdesc}
+
+\begin{funcdesc}{translate}{pattern}
+Return the shell-style \var{pattern} converted to a regular
+expression.
+
+Example:
+
+\begin{verbatim}
+>>> import fnmatch, re
+>>>
+>>> regex = fnmatch.translate('*.txt')
+>>> regex
+'.*\\.txt$'
+>>> reobj = re.compile(regex)
+>>> print reobj.match('foobar.txt')
+<_sre.SRE_Match object at 0x...>
+\end{verbatim}
 \end{funcdesc}
 
 \begin{seealso}

@@ -503,6 +503,8 @@ Tests
 Documentation
 -------------
 
+- Patch #1679379: add documentation for fnmatch.translate().
+
 - Patch #1671450: add a section about subclassing builtin types to the
   "extending and embedding" tutorial.
 
