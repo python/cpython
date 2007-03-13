@@ -372,10 +372,11 @@ class _TemporaryFileWrapper:
     remove the file when it is no longer needed.
     """
 
-    def __init__(self, file, name):
+    def __init__(self, file, name, delete=True):
         self.file = file
         self.name = name
         self.close_called = False
+        self.delete = delete
 
     def __getattr__(self, name):
         file = self.__dict__['file']
@@ -400,23 +401,25 @@ class _TemporaryFileWrapper:
             if not self.close_called:
                 self.close_called = True
                 self.file.close()
-                self.unlink(self.name)
+                if self.delete:
+                    self.unlink(self.name)
 
         def __del__(self):
             self.close()
 
 def NamedTemporaryFile(mode='w+b', bufsize=-1, suffix="",
-                       prefix=template, dir=None):
+                       prefix=template, dir=None, delete=True):
     """Create and return a temporary file.
     Arguments:
     'prefix', 'suffix', 'dir' -- as for mkstemp.
     'mode' -- the mode argument to os.fdopen (default "w+b").
     'bufsize' -- the buffer size argument to os.fdopen (default -1).
+    'delete' -- whether the file is deleted on close (default True).
     The file is created as mkstemp() would do it.
 
     Returns an object with a file-like interface; the name of the file
     is accessible as file.name.  The file will be automatically deleted
-    when it is closed.
+    when it is closed unless the 'delete' argument is set to False.
     """
 
     if dir is None:
@@ -429,12 +432,12 @@ def NamedTemporaryFile(mode='w+b', bufsize=-1, suffix="",
 
     # Setting O_TEMPORARY in the flags causes the OS to delete
     # the file when it is closed.  This is only supported by Windows.
-    if _os.name == 'nt':
+    if _os.name == 'nt' and delete:
         flags |= _os.O_TEMPORARY
 
     (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags)
     file = _os.fdopen(fd, mode, bufsize)
-    return _TemporaryFileWrapper(file, name)
+    return _TemporaryFileWrapper(file, name, delete)
 
 if _os.name != 'posix' or _os.sys.platform == 'cygwin':
     # On non-POSIX and Cygwin systems, assume that we cannot unlink a file

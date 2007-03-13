@@ -168,6 +168,10 @@ Core and builtins
 Library
 -------
 
+- Patch #1537850: tempfile.NamedTemporaryFile now has a "delete" parameter
+  which can be set to False to prevent the default delete-on-close
+  behavior.
+
 - Patch #1581073: add a flag to textwrap that prevents the dropping of
   whitespace while wrapping.
 
