@@ -502,6 +502,13 @@ class TestMessageAPI(TestEmailBase):
         msg.set_payload(x)
         self.assertEqual(msg.get_payload(decode=True), x)
 
+    def test_get_content_charset(self):
+        msg = Message()
+        msg.set_charset('us-ascii')
+        self.assertEqual('us-ascii', msg.get_content_charset())
+        msg.set_charset(u'us-ascii')
+        self.assertEqual('us-ascii', msg.get_content_charset())
+
 
 
 # Test the email.Encoders module
