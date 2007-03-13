@@ -346,7 +346,7 @@ def transient_internet():
     time_out = TransientResource(IOError, errno=errno.ETIMEDOUT)
     socket_peer_reset = TransientResource(socket.error, errno=errno.ECONNRESET)
     ioerror_peer_reset = TransientResource(IOError, errno=errno.ECONNRESET)
-    return contextlib.nested(time_out, peer_reset, ioerror_peer_reset)
+    return contextlib.nested(time_out, socket_peer_reset, ioerror_peer_reset)
 
 
 #=======================================================================
