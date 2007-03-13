@@ -170,6 +170,10 @@ Core and builtins
 Library
 -------
 
+- Patch #1429539: pdb now correctly initializes the __main__ module for
+  the debugged script, which means that imports from __main__ work
+  correctly now.
+
 - The nonobvious commands.getstatus() function is now deprecated.
 
 - Patch #1393667: pdb now has a "run" command which restarts the debugged
