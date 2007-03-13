@@ -170,6 +170,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1393667: pdb now has a "run" command which restarts the debugged
+  Python program, optionally with different arguments.
+
 - Patch #1649190: Adding support for _Bool to ctypes as c_bool.
 
 - Patch #1530482: add pydoc.render_doc() which returns the documentation

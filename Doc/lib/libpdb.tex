@@ -378,6 +378,14 @@ command with a \samp{global} command on the same line, e.g.:
 (Pdb)
 \end{verbatim}
 
+\item[run \optional{\var{args} ...}]
+Restart the debugged python program. If an argument is supplied, it is
+splitted with "shlex" and the result is used as the new sys.argv.
+History, breakpoints, actions and debugger options are preserved.
+"restart" is an alias for "run".
+
+\versionadded{2.6}
+
 \item[q(uit)]
 
 Quit from the debugger.
