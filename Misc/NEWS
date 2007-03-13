@@ -594,6 +594,8 @@ Tools
 Documentation
 -------------
 
+- Patch #1679379: add documentation for fnmatch.translate().
+
 - Bug #1629566: clarify the docs on the return values of parsedate()
   and parsedate_tz() in email.utils and rfc822.
 
