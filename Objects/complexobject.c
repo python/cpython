@@ -857,12 +857,14 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 					 &r, &i))
 		return NULL;
 
-	/* Special-case for single argument that is already complex */
+	/* Special-case for a single argument when type(arg) is complex. */
 	if (PyComplex_CheckExact(r) && i == NULL &&
 	    type == &PyComplex_Type) {
 		/* Note that we can't know whether it's safe to return
 		   a complex *subclass* instance as-is, hence the restriction
-		   to exact complexes here.  */
+		   to exact complexes here.  If either the input or the
+		   output is a complex subclass, it will be handled below 
+		   as a non-orthogonal vector.  */
 		Py_INCREF(r);
 		return r;
 	}
@@ -913,6 +915,14 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		}
 		return NULL;
 	}
+
+	/* If we get this far, then the "real" and "imag" parts should
+	   both be treated as numbers, and the constructor should return a
+	   complex number equal to (real + imag*1j).
+
+ 	   Note that we do NOT assume the input to already be in canonical
+	   form; the "real" and "imag" parts might themselves be complex
+	   numbers, which slightly complicates the code below. */
 	if (PyComplex_Check(r)) {
 		/* Note that if r is of a complex subtype, we're only
 		   retaining its real & imag parts here, and the return
@@ -923,8 +933,14 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		}
 	}
 	else {
+		/* The "real" part really is entirely real, and contributes
+		   nothing in the imaginary direction.  
+		   Just treat it as a double. */
+		cr.imag = 0.0;  
 		tmp = PyNumber_Float(r);
 		if (own_r) {
+			/* r was a newly created complex number, rather
+			   than the original "real" argument. */
 			Py_DECREF(r);
 		}
 		if (tmp == NULL)
@@ -937,7 +953,6 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		}
 		cr.real = PyFloat_AsDouble(tmp);
 		Py_DECREF(tmp);
-		cr.imag = 0.0;
 	}
 	if (i == NULL) {
 		ci.real = 0.0;
@@ -946,13 +961,19 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	else if (PyComplex_Check(i))
 		ci = ((PyComplexObject*)i)->cval;
 	else {
+		/* The "imag" part really is entirely imaginary, and
+		   contributes nothing in the real direction.
+		   Just treat it as a double. */
+		ci.imag = 0.0;
 		tmp = (*nbi->nb_float)(i);
 		if (tmp == NULL)
 			return NULL;
 		ci.real = PyFloat_AsDouble(tmp);
 		Py_DECREF(tmp);
-		ci.imag = 0.;
 	}
+	/*  If the input was in canonical form, then the "real" and "imag"
+	    parts are real numbers, so that ci.real and cr.imag are zero.
+	    We need this correction in case they were not real numbers. */
 	cr.real -= ci.imag;
 	cr.imag += ci.real;
 	return complex_subtype_from_c_complex(type, cr);
