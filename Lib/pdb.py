@@ -13,6 +13,12 @@ import os
 import re
 import pprint
 import traceback
+
+
+class Restart(Exception):
+    """Causes a debugger to be restarted for the debugged python program."""
+    pass
+
 # Create a custom safe Repr instance and increase its maxstring.
 # The default of 30 truncates error messages too easily.
 _repr = Repr()
@@ -608,6 +614,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return 1
     do_n = do_next
 
+    def do_run(self, arg):
+        """Restart program by raising an exception to be caught in the main debugger
+        loop. If arguments were given, set them in sys.argv."""
+        if arg:
+            import shlex
+            argv0 = sys.argv[0:1]
+            sys.argv = shlex.split(arg)
+            sys.argv[:0] = argv0
+        raise Restart
+
+    do_restart = do_run
+
     def do_return(self, arg):
         self.set_return(self.curframe)
         return 1
@@ -1012,6 +1030,15 @@ command with a 'global' command, e.g.:
 (Pdb) global list_options; list_options = ['-l']
 (Pdb)"""
 
+    def help_run(self):
+        print """run [args...]
+Restart the debugged python program. If a string is supplied, it is
+splitted with "shlex" and the result is used as the new sys.argv.
+History, breakpoints, actions and debugger options are preserved.
+"restart" is an alias for "run"."""
+
+    help_restart = help_run
+
     def help_quit(self):
         self.help_q()
 
@@ -1204,9 +1231,8 @@ def main():
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
-    # changed by the user from the command line. The best approach would be to
-    # have a "restart" command which would allow explicit specification of
-    # command line arguments.
+    # changed by the user from the command line. There is a "restart" command which
+    # allows explicit specification of command line arguments.
     pdb = Pdb()
     while 1:
         try:
@@ -1214,6 +1240,9 @@ def main():
             if pdb._user_requested_quit:
                 break
             print "The program finished and will be restarted"
+        except Restart:
+            print "Restarting", mainpyfile, "with arguments:"
+            print "\t" + " ".join(sys.argv[1:])
         except SystemExit:
             # In most cases SystemExit does not warrant a post-mortem session.
             print "The program exited via sys.exit(). Exit status: ",
