@@ -646,6 +646,9 @@ Tools/Demos
 Build
 -----
 
+- Patch #1569798: fix a bug in distutils when building Python from a
+  directory within sys.exec_prefix.
+
 - Bug #1675511: Use -Kpic instead of -xcode=pic32 on Solaris/x86.
 
 - Disable _XOPEN_SOURCE on NetBSD 1.x.
