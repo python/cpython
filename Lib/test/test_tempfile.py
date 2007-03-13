@@ -561,11 +561,12 @@ test_classes.append(test_mktemp)
 class test_NamedTemporaryFile(TC):
     """Test NamedTemporaryFile()."""
 
-    def do_create(self, dir=None, pre="", suf=""):
+    def do_create(self, dir=None, pre="", suf="", delete=True):
         if dir is None:
             dir = tempfile.gettempdir()
         try:
-            file = tempfile.NamedTemporaryFile(dir=dir, prefix=pre, suffix=suf)
+            file = tempfile.NamedTemporaryFile(dir=dir, prefix=pre, suffix=suf,
+	                                       delete=delete)
         except:
             self.failOnException("NamedTemporaryFile")
 
@@ -597,6 +598,22 @@ class test_NamedTemporaryFile(TC):
             self.failIf(os.path.exists(f.name),
                         "NamedTemporaryFile %s exists after close" % f.name)
         finally:
+            os.rmdir(dir)
+
+    def test_dis_del_on_close(self):
+        # Tests that delete-on-close can be disabled
+        dir = tempfile.mkdtemp()
+	tmp = None
+        try:
+            f = tempfile.NamedTemporaryFile(dir=dir, delete=False)
+            tmp = f.name
+            f.write('blat')
+            f.close()
+            self.failUnless(os.path.exists(f.name),
+                        "NamedTemporaryFile %s missing after close" % f.name)
+        finally:
+            if tmp is not None:
+                os.unlink(tmp)
             os.rmdir(dir)
 
     def test_multiple_close(self):
