@@ -1790,9 +1790,9 @@ error:
 static PyObject *
 _dir_object(PyObject *obj)
 {
-	PyObject * result = NULL;
-	PyObject * dirfunc = PyObject_GetAttrString((PyObject*)obj->ob_type,
-						    "__dir__");
+	PyObject *result = NULL;
+	PyObject *dirfunc = PyObject_GetAttrString((PyObject *)obj->ob_type,
+						   "__dir__");
 
 	assert(obj);
 	if (dirfunc == NULL) {

@@ -503,7 +503,7 @@ PyDoc_STRVAR(dir_doc,
 "  for a module object: the module's attributes.\n"
 "  for a class object:  its attributes, and recursively the attributes\n"
 "    of its bases.\n"
-"  for an other object: its attributes, its class's attributes, and\n"
+"  for any other object: its attributes, its class's attributes, and\n"
 "    recursively the attributes of its class's base classes.");
 
 static PyObject *
