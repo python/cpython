@@ -28,6 +28,9 @@
    */
 #undef HAVE_AS_SPARC_UA_PCREL
 
+/* Define this if you have the type _Bool. */
+#undef HAVE_C99_BOOL
+
 /* Define if __attribute__((visibility("hidden"))) is supported. */
 #undef HAVE_HIDDEN_VISIBILITY_ATTRIBUTE
 
@@ -102,6 +105,9 @@
 
 /* The size of a `long double', as computed by sizeof. */
 #undef SIZEOF_LONG_DOUBLE
+
+/* The size of a `_Bool', as computed by sizeof. */
+#undef SIZEOF__BOOL
 
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be

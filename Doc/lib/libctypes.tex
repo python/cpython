@@ -2294,6 +2294,12 @@ a zero-terminated wide character string. The constructor accepts
 an integer address, or a string.
 \end{classdesc*}
 
+\begin{classdesc*}{c_bool}
+Represent the C \code{bool} datatype (more accurately, _Bool from C99).
+Its value can be True or False, and the constructor accepts any object that
+has a truth value.
+\end{classdesc*}
+
 \begin{classdesc*}{HRESULT}
 Windows only: Represents a \class{HRESULT} value, which contains success
 or error information for a function or method call.
