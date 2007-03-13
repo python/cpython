@@ -490,6 +490,9 @@ Library
 Extension Modules
 -----------------
 
+- Bug #1622896: fix a rare corner case where the bz2 module raised an
+  error in spite of a succesful compression.
+
 - Patch #1654417: make operator.{get,set,del}slice use the full range
   of Py_ssize_t.
 
