@@ -170,6 +170,10 @@ Core and builtins
 Library
 -------
 
+- Bug #767111: fix long-standing bug in urllib which caused an
+  AttributeError instead of an IOError when the server's response didn't
+  contain a valid HTTP status line.
+
 - Patch #957650: "%var%" environment variable references are now properly
   expanded in ntpath.expandvars(), also "~user" home directory references
   are recognized and handled on Windows.
