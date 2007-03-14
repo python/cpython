@@ -12,6 +12,9 @@ What's New in Python 2.5.1c1?
 Core and builtins
 -----------------
 
+- Patch #1680015: Don't modify __slots__ tuple if it contains an unicode
+  name.
+
 - Patch #922167: Python no longer segfaults when faced with infinitely
   self-recursive reload() calls (as reported by bug #742342).
 
