@@ -520,6 +520,8 @@ Extension Modules
 Tests
 -----
 
+- Patch #1559413: Fix test_cmd_line if sys.executable contains a space.
+
 - Fix bsddb test_basics.test06_Transactions to check the version
   number properly.
 
