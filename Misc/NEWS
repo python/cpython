@@ -212,6 +212,11 @@ Library
   AttributeError instead of an IOError when the server's response didn't
   contain a valid HTTP status line.
 
+- Bug #1629369: Correctly parse multiline comment in address field.
+
+- Bug #1582282: Fix email.header.decode_header() to properly treat encoded
+  words with no delimiting whitespace as a single word.
+
 - Patch #1449244: Support Unicode strings in
   email.message.Message.{set_charset,get_content_charset}.
 
