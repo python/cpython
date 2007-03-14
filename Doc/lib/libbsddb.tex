@@ -46,10 +46,10 @@ portability, only the first two arguments should be used in most
 instances.
 
 \begin{funcdesc}{hashopen}{filename\optional{, flag\optional{,
-                           mode\optional{, bsize\optional{,
+                           mode\optional{, pgsize\optional{,
                            ffactor\optional{, nelem\optional{,
-                           cachesize\optional{, hash\optional{,
-                           lorder}}}}}}}}}
+                           cachesize\optional{, lorder\optional{,
+                           hflags}}}}}}}}}
 Open the hash format file named \var{filename}.  Files never intended
 to be preserved on disk may be created by passing \code{None} as the 
 \var{filename}.  The optional
@@ -80,7 +80,7 @@ interpretation.
 
 \begin{funcdesc}{rnopen}{filename\optional{, flag\optional{, mode\optional{,
 rnflags\optional{, cachesize\optional{, pgsize\optional{, lorder\optional{,
-reclen\optional{, bval\optional{, bfname}}}}}}}}}}
+rlen\optional{, delim\optional{, source\optional{, pad}}}}}}}}}}}
 
 Open a DB record format file named \var{filename}.  Files never intended 
 to be preserved on disk may be created by passing \code{None} as the 
