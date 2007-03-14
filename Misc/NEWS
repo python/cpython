@@ -624,6 +624,8 @@ Extension Modules
 Tests
 -----
 
+- Patch #1559413: Fix test_cmd_line if sys.executable contains a space.
+
 - Added test.test_support.TransientResource which is a context manager to
   surround calls to resources that are not guaranteed to work even if
   test.test_support.requires says that the resource should exist.
