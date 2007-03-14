@@ -1527,6 +1527,18 @@ class TestRFC2047(unittest.TestCase):
         hu = make_header(dh).__unicode__()
         eq(hu, u'The quick brown fox jumped over the lazy dog')
 
+    def test_rfc2047_without_whitespace(self):
+        s = 'Sm=?ISO-8859-1?B?9g==?=rg=?ISO-8859-1?B?5Q==?=sbord'
+        dh = decode_header(s)
+        self.assertEqual(dh, [(s, None)])
+
+    def test_rfc2047_with_whitespace(self):
+        s = 'Sm =?ISO-8859-1?B?9g==?= rg =?ISO-8859-1?B?5Q==?= sbord'
+        dh = decode_header(s)
+        self.assertEqual(dh, [('Sm', None), ('\xf6', 'iso-8859-1'),
+                              ('rg', None), ('\xe5', 'iso-8859-1'),
+                              ('sbord', None)])
+
 
 
 # Test the MIMEMessage class
