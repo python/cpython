@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1680015: Don't modify __slots__ tuple if it contains an unicode
+  name.
+
 - Patch #1444529: the builtin compile() now accepts keyword arguments.
 
 - Bug #1678647: write a newline after printing an exception in any

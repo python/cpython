@@ -1654,29 +1654,33 @@ valid_identifier(PyObject *s)
 static PyObject *
 _unicode_to_string(PyObject *slots, Py_ssize_t nslots)
 {
-	PyObject *tmp = slots;
-	PyObject *o, *o1;
+	PyObject *tmp = NULL;
+	PyObject *slot_name, *new_name;
 	Py_ssize_t i;
-	ssizessizeargfunc copy = slots->ob_type->tp_as_sequence->sq_slice;
+
 	for (i = 0; i < nslots; i++) {
-		if (PyUnicode_Check(o = PyTuple_GET_ITEM(tmp, i))) {
-			if (tmp == slots) {
-				tmp = copy(slots, 0, PyTuple_GET_SIZE(slots));
+		if (PyUnicode_Check(slot_name = PyTuple_GET_ITEM(slots, i))) {
+			if (tmp == NULL) {
+				tmp = PySequence_List(slots);
 				if (tmp == NULL)
 					return NULL;
 			}
-			o1 = _PyUnicode_AsDefaultEncodedString
-					(o, NULL);
-			if (o1 == NULL) {
+			new_name = _PyUnicode_AsDefaultEncodedString(slot_name,
+								     NULL);
+			if (new_name == NULL) {
 				Py_DECREF(tmp);
-				return 0;
+				return NULL;
 			}
-			Py_INCREF(o1);
-			Py_DECREF(o);
-			PyTuple_SET_ITEM(tmp, i, o1);
+			Py_INCREF(new_name);
+			PyList_SET_ITEM(tmp, i, new_name);
+			Py_DECREF(slot_name);
 		}
 	}
-	return tmp;
+	if (tmp != NULL) {
+		slots = PyList_AsTuple(tmp);
+		Py_DECREF(tmp);
+	}
+	return slots;
 }
 #endif
 
@@ -1804,12 +1808,12 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
 #ifdef Py_USING_UNICODE
 		tmp = _unicode_to_string(slots, nslots);
+		if (tmp == NULL)
+			goto bad_slots;
 		if (tmp != slots) {
 			Py_DECREF(slots);
 			slots = tmp;
 		}
-		if (!tmp)
-			return NULL;
 #endif
 		/* Check for valid slot names and two special cases */
 		for (i = 0; i < nslots; i++) {

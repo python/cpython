@@ -1226,6 +1226,29 @@ def slots():
     class C(object):
         __slots__ = ["a", "a_b", "_a", "A0123456789Z"]
 
+    # Test unicode slot names
+    try:
+        unichr
+    except NameError:
+        pass
+    else:
+        # _unicode_to_string used to modify slots in certain circumstances 
+        slots = (unicode("foo"), unicode("bar"))
+        class C(object):
+            __slots__ = slots
+        x = C()
+        x.foo = 5
+        vereq(x.foo, 5)
+        veris(type(slots[0]), unicode)
+        # this used to leak references
+        try:
+            class C(object):
+                __slots__ = [unichr(128)]
+        except (TypeError, UnicodeEncodeError):
+            pass
+        else:
+            raise TestFailed, "[unichr(128)] slots not caught" 
+
     # Test leaks
     class Counted(object):
         counter = 0    # counts the number of instances alive
