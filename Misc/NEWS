@@ -205,6 +205,10 @@ Extension Modules
 Library
 -------
 
+- Bug #767111: fix long-standing bug in urllib which caused an
+  AttributeError instead of an IOError when the server's response didn't
+  contain a valid HTTP status line.
+
 - Patch #1449244: Support Unicode strings in
   email.message.Message.{set_charset,get_content_charset}.
 
