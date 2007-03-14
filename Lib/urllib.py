@@ -326,6 +326,10 @@ class URLopener:
         if data is not None:
             h.send(data)
         errcode, errmsg, headers = h.getreply()
+        if errcode == -1:
+            # something went wrong with the HTTP status line
+            raise IOError, ('http protocol error', 0,
+                            'got a bad status line', None)
         fp = h.getfile()
         if errcode == 200:
             return addinfourl(fp, headers, "http:" + url)
@@ -413,6 +417,10 @@ class URLopener:
             if data is not None:
                 h.send(data)
             errcode, errmsg, headers = h.getreply()
+            if errcode == -1:
+                # something went wrong with the HTTP status line
+                raise IOError, ('http protocol error', 0,
+                                'got a bad status line', None)
             fp = h.getfile()
             if errcode == 200:
                 return addinfourl(fp, headers, "https:" + url)
