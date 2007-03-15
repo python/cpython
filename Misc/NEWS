@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1462488: Python no longer segfaults when ``object.__reduce_ex__()``
+  is called with an object that is faking its type.
+
 - Patch #1680015: Don't modify __slots__ tuple if it contains an unicode
   name.
 
