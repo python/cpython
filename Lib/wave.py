@@ -159,7 +159,12 @@ class Wave_read:
             f = __builtin__.open(f, 'rb')
             self._i_opened_the_file = f
         # else, assume it is an open file object already
-        self.initfp(f)
+        try:
+            self.initfp(f)
+        except:
+            if self._i_opened_the_file:
+                f.close()
+            raise
 
     def __del__(self):
         self.close()
@@ -297,7 +302,12 @@ class Wave_write:
         if isinstance(f, basestring):
             f = __builtin__.open(f, 'wb')
             self._i_opened_the_file = f
-        self.initfp(f)
+        try:
+            self.initfp(f)
+        except:
+            if self._i_opened_the_file:
+                f.close()
+            raise
 
     def initfp(self, file):
         self._file = file
