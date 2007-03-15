@@ -305,8 +305,8 @@ Library
 - Patch 1571379: Make trace's --ignore-dir facility work in the face of
   relative directory names.
 
-- Bug #1600860: Search for shared python library in LIBDIR, not lib/python/config,
-  on "linux" and "gnu" systems.
+- Bug #1600860: Search for shared python library in LIBDIR,
+  not lib/python/config, on "linux" and "gnu" systems.
 
 - Patch #1652681: tarfile.py: create nonexistent files in append mode and
   allow appending to empty files.
@@ -383,7 +383,7 @@ Library
 - Patch #1604907: Fix problems in logging.handlers caused at logging shutdown
   when syslog handlers fail to initialize because of syslogd problems.
 
-- Patch #1608267: fix a race condition in os.makedirs() is the directory
+- Patch #1608267: fix a race condition in os.makedirs() if the directory
   to be created is already there.
 
 - Patch #1610437: fix a tarfile bug with long filename headers.
