@@ -4,6 +4,10 @@ This is an early prototype; eventually some of this will be
 reimplemented in C and the rest may be turned into a package.
 
 See PEP XXX; for now: http://docs.google.com/Doc?id=dfksfvqd_1cn5g5m
+
+XXX need to default buffer size to 1 if isatty()
+XXX need to support 1 meaning line-buffered
+XXX change behavior of blocking I/O
 """
 
 __author__ = ("Guido van Rossum <guido@python.org>, "
@@ -17,7 +21,7 @@ import os
 
 DEFAULT_BUFFER_SIZE = 8 * 1024 # bytes
 DEFAULT_MAX_BUFFER_SIZE = 16 * 1024 # bytes
-EOF = b''
+EOF = b''  # XXX This is wrong because it's mutable
 
 
 class BlockingIO(IOError):
@@ -376,7 +380,7 @@ class BufferedReader(BufferedIOBase):
     Does not allow random access (seek, tell).
     """
 
-    def __init__(self, raw):
+    def __init__(self, raw, unused_buffer_size=None):
         """Create a new buffered reader using the given readable raw IO object.
         """
         assert raw.readable()
