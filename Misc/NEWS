@@ -173,6 +173,9 @@ Core and builtins
 Library
 -------
 
+- Patch #1681153: the wave module now closes a file object it opened if
+  initialization failed.
+
 - Bug #767111: fix long-standing bug in urllib which caused an
   AttributeError instead of an IOError when the server's response didn't
   contain a valid HTTP status line.
