@@ -831,6 +831,24 @@ class AbstractPickleTests(unittest.TestCase):
             y = self.loads(s)
             self.assertEqual(y._proto, None)
 
+    def test_reduce_ex_calls_base(self):
+        for proto in 0, 1, 2:
+            x = REX_four()
+            self.assertEqual(x._proto, None)
+            s = self.dumps(x, proto)
+            self.assertEqual(x._proto, proto)
+            y = self.loads(s)
+            self.assertEqual(y._proto, proto)
+
+    def test_reduce_calls_base(self):
+        for proto in 0, 1, 2:
+            x = REX_five()
+            self.assertEqual(x._reduce_called, 0)
+            s = self.dumps(x, proto)
+            self.assertEqual(x._reduce_called, 1)
+            y = self.loads(s)
+            self.assertEqual(y._reduce_called, 1)
+
 # Test classes for reduce_ex
 
 class REX_one(object):
@@ -854,6 +872,20 @@ class REX_three(object):
         return REX_two, ()
     def __reduce__(self):
         raise TestFailed, "This __reduce__ shouldn't be called"
+
+class REX_four(object):
+    _proto = None
+    def __reduce_ex__(self, proto):
+        self._proto = proto
+        return object.__reduce_ex__(self, proto)
+    # Calling base class method should succeed
+
+class REX_five(object):
+    _reduce_called = 0
+    def __reduce__(self):
+        self._reduce_called = 1
+        return object.__reduce__(self)
+    # This one used to fail with infinite recursion
 
 # Test classes for newobj
 

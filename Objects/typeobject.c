@@ -2770,11 +2770,54 @@ reduce_2(PyObject *obj)
 	return res;
 }
 
+/*
+ * There were two problems when object.__reduce__ and object.__reduce_ex__
+ * were implemented in the same function:
+ *  - trying to pickle an object with a custom __reduce__ method that
+ *    fell back to object.__reduce__ in certain circumstances led to
+ *    infinite recursion at Python level and eventual RuntimeError.
+ *  - Pickling objects that lied about their type by overwriting the
+ *    __class__ descriptor could lead to infinite recursion at C level
+ *    and eventual segfault.
+ *
+ * Because of backwards compatibility, the two methods still have to
+ * behave in the same way, even if this is not required by the pickle
+ * protocol. This common functionality was moved to the _common_reduce
+ * function.
+ */
+static PyObject *
+_common_reduce(PyObject *self, int proto)
+{
+	PyObject *copy_reg, *res;
+
+	if (proto >= 2)
+		return reduce_2(self);
+
+	copy_reg = import_copy_reg();
+	if (!copy_reg)
+		return NULL;
+
+	res = PyEval_CallMethod(copy_reg, "_reduce_ex", "(Oi)", self, proto);
+	Py_DECREF(copy_reg);
+
+	return res;
+}
+
+static PyObject *
+object_reduce(PyObject *self, PyObject *args)
+{
+	int proto = 0;
+
+	if (!PyArg_ParseTuple(args, "|i:__reduce__", &proto))
+		return NULL;
+
+	return _common_reduce(self, proto);
+}
+
 static PyObject *
 object_reduce_ex(PyObject *self, PyObject *args)
 {
-	/* Call copy_reg._reduce_ex(self, proto) */
-	PyObject *reduce, *copy_reg, *res;
+	PyObject *reduce, *res;
 	int proto = 0;
 
 	if (!PyArg_ParseTuple(args, "|i:__reduce_ex__", &proto))
@@ -2810,23 +2853,13 @@ object_reduce_ex(PyObject *self, PyObject *args)
 			Py_DECREF(reduce);
 	}
 
-	if (proto >= 2)
-		return reduce_2(self);
-
-	copy_reg = import_copy_reg();
-	if (!copy_reg)
-		return NULL;
-
-	res = PyEval_CallMethod(copy_reg, "_reduce_ex", "(Oi)", self, proto);
-	Py_DECREF(copy_reg);
-
-	return res;
+	return _common_reduce(self, proto);
 }
 
 static PyMethodDef object_methods[] = {
 	{"__reduce_ex__", object_reduce_ex, METH_VARARGS,
 	 PyDoc_STR("helper for pickle")},
-	{"__reduce__", object_reduce_ex, METH_VARARGS,
+	{"__reduce__", object_reduce, METH_VARARGS,
 	 PyDoc_STR("helper for pickle")},
 	{0}
 };
