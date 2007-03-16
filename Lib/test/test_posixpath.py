@@ -2,7 +2,7 @@ import unittest
 from test import test_support
 
 import posixpath, os
-from posixpath import realpath, abspath, join, dirname, basename
+from posixpath import realpath, abspath, join, dirname, basename, relpath
 
 # An absolute path to a temporary filename for testing. We can't rely on TESTFN
 # being an absolute path, so we need this.
@@ -478,6 +478,17 @@ class PosixPathTest(unittest.TestCase):
                 test_support.unlink(ABSTFN + "link")
                 safe_rmdir(ABSTFN + "/k")
                 safe_rmdir(ABSTFN)
+
+    def test_relpath(self):
+        currentdir = os.path.split(os.getcwd())[-1]
+        self.assertRaises(ValueError, posixpath.relpath, "")
+        self.assertEqual(posixpath.relpath("a"), "a")
+        self.assertEqual(posixpath.relpath(os.path.abspath("a")), "a")
+        self.assertEqual(posixpath.relpath("a/b"), "a/b")
+        self.assertEqual(posixpath.relpath("../a/b"), "../a/b")
+        self.assertEqual(posixpath.relpath("a", "../b"), "../"+currentdir+"/a")
+        self.assertEqual(posixpath.relpath("a/b", "../c"), "../"+currentdir+"/a/b")
+        self.assertEqual(posixpath.relpath("a", "b/c"), "../../a")
 
 def test_main():
     test_support.run_unittest(PosixPathTest)

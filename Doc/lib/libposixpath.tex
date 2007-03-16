@@ -189,6 +189,15 @@ operating system).
 \versionadded{2.2}
 \end{funcdesc}
 
+\begin{funcdesc}{relpath}{path\optional{, start}}
+Return a relative filepath to \var{path} either from the current
+directory or from an optional \var{start} point.
+
+\var{start} defaults to \member{os.curdir}.
+Availability:  Windows, \UNIX.
+\versionadded{2.6}
+\end{funcdesc}
+
 \begin{funcdesc}{samefile}{path1, path2}
 Return \code{True} if both pathname arguments refer to the same file or
 directory (as indicated by device number and i-node number).

@@ -157,6 +157,16 @@ except ImportError:
 else:
     tester('ntpath.abspath("C:\\")', "C:\\")
 
+currentdir = os.path.split(os.getcwd())[-1]
+tester('ntpath.relpath("a")', 'a')
+tester('ntpath.relpath(os.path.abspath("a"))', 'a')
+tester('ntpath.relpath("a/b")', 'a\\b')
+tester('ntpath.relpath("../a/b")', '..\\a\\b')
+tester('ntpath.relpath("a", "../b")', '..\\'+currentdir+'\\a')
+tester('ntpath.relpath("a/b", "../c")', '..\\'+currentdir+'\\a\\b')
+tester('ntpath.relpath("a", "b/c")', '..\\..\\a')
+tester('ntpath.relpath("//conky/mountpoint/a", "//conky/mountpoint/b/c")', '..\\..\\a')
+
 if errors:
     raise TestFailed(str(errors) + " errors.")
 elif verbose:
