@@ -1666,7 +1666,7 @@ merge_list_attr(PyObject* dict, PyObject* obj, const char *attrname)
 
 /* Helper for PyObject_Dir without arguments: returns the local scope. */
 static PyObject *
-_dir_locals()
+_dir_locals(void)
 {
 	PyObject *names;
 	PyObject *locals = PyEval_GetLocals();
@@ -2209,4 +2209,3 @@ _PyTrash_destroy_chain(void)
 #ifdef __cplusplus
 }
 #endif
-
