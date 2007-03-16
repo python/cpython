@@ -1032,6 +1032,7 @@ ast_for_listcomp(struct compiling *c, const node *n)
 	if (NCH(ch) == 5) {
 	    int j, n_ifs;
 	    asdl_seq *ifs;
+	    expr_ty list_for_expr;
 
 	    ch = CHILD(ch, 4);
 	    n_ifs = count_list_ifs(ch);
@@ -1046,8 +1047,12 @@ ast_for_listcomp(struct compiling *c, const node *n)
 	    REQ(ch, list_iter);
 		    ch = CHILD(ch, 0);
 		    REQ(ch, list_if);
+            
+		list_for_expr = ast_for_expr(c, CHILD(ch, 1));
+		if (!list_for_expr)
+			return NULL;
 
-		asdl_seq_SET(ifs, j, ast_for_expr(c, CHILD(ch, 1)));
+		asdl_seq_SET(ifs, j, list_for_expr);
 		if (NCH(ch) == 3)
 		    ch = CHILD(ch, 2);
 		}
@@ -1991,7 +1996,8 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 			  "assignment");
 		return NULL;
 	}
-	set_context(expr1, Store, ch);
+	if(!set_context(expr1, Store, ch))
+		return NULL;
 
 	ch = CHILD(n, 2);
 	if (TYPE(ch) == testlist)
@@ -2584,6 +2590,8 @@ ast_for_if_stmt(struct compiling *c, const node *n)
     }
     else if (s[2] == 'i') {
 	int i, n_elif, has_else = 0;
+	expr_ty expression;
+	asdl_seq *suite_seq;
 	asdl_seq *orelse = NULL;
 	n_elif = NCH(n) - 4;
 	/* must reference the child n_elif+1 since 'else' token is third,
@@ -2596,8 +2604,7 @@ ast_for_if_stmt(struct compiling *c, const node *n)
 	n_elif /= 4;
 
 	if (has_else) {
-	    expr_ty expression;
-	    asdl_seq *seq1, *seq2;
+	    asdl_seq *suite_seq2;
 
 	    orelse = asdl_seq_new(1, c->c_arena);
 	    if (!orelse)
@@ -2605,14 +2612,14 @@ ast_for_if_stmt(struct compiling *c, const node *n)
 	    expression = ast_for_expr(c, CHILD(n, NCH(n) - 6));
 	    if (!expression)
 		return NULL;
-	    seq1 = ast_for_suite(c, CHILD(n, NCH(n) - 4));
-	    if (!seq1)
+	    suite_seq = ast_for_suite(c, CHILD(n, NCH(n) - 4));
+	    if (!suite_seq)
 		return NULL;
-	    seq2 = ast_for_suite(c, CHILD(n, NCH(n) - 1));
-	    if (!seq2)
+	    suite_seq2 = ast_for_suite(c, CHILD(n, NCH(n) - 1));
+	    if (!suite_seq2)
 		return NULL;
 
-	    asdl_seq_SET(orelse, 0, If(expression, seq1, seq2, 
+	    asdl_seq_SET(orelse, 0, If(expression, suite_seq, suite_seq2, 
 				       LINENO(CHILD(n, NCH(n) - 6)), CHILD(n, NCH(n) - 6)->n_col_offset,
 				       c->c_arena));
 	    /* the just-created orelse handled the last elif */
@@ -2621,8 +2628,6 @@ ast_for_if_stmt(struct compiling *c, const node *n)
 
 	for (i = 0; i < n_elif; i++) {
 	    int off = 5 + (n_elif - i - 1) * 4;
-	    expr_ty expression;
-	    asdl_seq *suite_seq;
 	    asdl_seq *newobj = asdl_seq_new(1, c->c_arena);
 	    if (!newobj)
 		return NULL;
@@ -2638,9 +2643,14 @@ ast_for_if_stmt(struct compiling *c, const node *n)
 			    LINENO(CHILD(n, off)), CHILD(n, off)->n_col_offset, c->c_arena));
 	    orelse = newobj;
 	}
-	return If(ast_for_expr(c, CHILD(n, 1)),
-		  ast_for_suite(c, CHILD(n, 3)),
-		  orelse, LINENO(n), n->n_col_offset, c->c_arena);
+	expression = ast_for_expr(c, CHILD(n, 1));
+	if (!expression)
+		return NULL;
+	suite_seq = ast_for_suite(c, CHILD(n, 3));
+	if (!suite_seq)
+		return NULL;
+	return If(expression, suite_seq, orelse,
+              LINENO(n), n->n_col_offset, c->c_arena);
     }
 
     PyErr_Format(PyExc_SystemError,
@@ -2876,6 +2886,8 @@ ast_for_with_stmt(struct compiling *c, const node *n)
 
     assert(TYPE(n) == with_stmt);
     context_expr = ast_for_expr(c, CHILD(n, 1));
+    if (!context_expr)
+        return NULL;
     if (TYPE(CHILD(n, 2)) == with_var) {
 	optional_vars = ast_for_with_var(c, CHILD(n, 2));
 
