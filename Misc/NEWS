@@ -179,6 +179,11 @@ Core and builtins
 Library
 -------
 
+- Bug #1681228: the webbrowser module now correctly uses the default
+  GNOME or KDE browser, depending on whether there is a session of one
+  of those present. Also, it tries the Windows default browser before
+  trying Mozilla variants.
+
 - Patch #1681153: the wave module now closes a file object it opened if
   initialization failed.
 
