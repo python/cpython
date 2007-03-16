@@ -191,6 +191,8 @@ Library
   of those present. Also, it tries the Windows default browser before
   trying Mozilla variants.
 
+- Patch #1339796: add a relpath() function to os.path.
+
 - Patch #1681153: the wave module now closes a file object it opened if
   initialization failed.
 

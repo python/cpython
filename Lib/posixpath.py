@@ -21,7 +21,7 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "ismount","walk","expanduser","expandvars","normpath","abspath",
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
-           "devnull","realpath","supports_unicode_filenames"]
+           "devnull","realpath","supports_unicode_filenames","relpath"]
 
 # strings representing various path-related bits and pieces
 curdir = '.'
@@ -382,3 +382,18 @@ def _resolve_link(path):
     return path
 
 supports_unicode_filenames = False
+
+def relpath(path, start=curdir):
+    """Return a relative version of a path"""
+
+    if not path:
+        raise ValueError("no path specified")
+    
+    start_list = abspath(start).split(sep)
+    path_list = abspath(path).split(sep)
+    
+    # Work out how much of the filepath is shared by start and path.
+    i = len(commonprefix([start_list, path_list]))
+
+    rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
+    return join(*rel_list)
