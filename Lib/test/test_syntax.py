@@ -367,6 +367,56 @@ build.  The number of blocks must be greater than CO_MAXBLOCKS.  SF #1565514
      ...
    SystemError: too many statically nested blocks
 
+This tests assignment-context; there was a bug in Python 2.5 where compiling
+a complex 'if' (one with 'elif') would fail to notice an invalid suite,
+leading to spurious errors.
+
+   >>> if 1:
+   ...   x() = 1
+   ... elif 1:
+   ...   pass
+   Traceback (most recent call last):
+     ... 
+   SyntaxError: can't assign to function call (<doctest test.test_syntax[44]>, line 2)
+
+   >>> if 1:
+   ...   pass
+   ... elif 1:
+   ...   x() = 1
+   Traceback (most recent call last):
+     ... 
+   SyntaxError: can't assign to function call (<doctest test.test_syntax[45]>, line 4)
+
+   >>> if 1:
+   ...   x() = 1
+   ... elif 1:
+   ...   pass
+   ... else:
+   ...   pass
+   Traceback (most recent call last):
+     ... 
+   SyntaxError: can't assign to function call (<doctest test.test_syntax[46]>, line 2)
+
+   >>> if 1:
+   ...   pass
+   ... elif 1:
+   ...   x() = 1
+   ... else:
+   ...   pass
+   Traceback (most recent call last):
+     ... 
+   SyntaxError: can't assign to function call (<doctest test.test_syntax[47]>, line 4)
+
+   >>> if 1:
+   ...   pass
+   ... elif 1:
+   ...   pass
+   ... else:
+   ...   x() = 1
+   Traceback (most recent call last):
+     ... 
+   SyntaxError: can't assign to function call (<doctest test.test_syntax[48]>, line 6)
+
 """
 
 import re

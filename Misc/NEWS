@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1642547: Fix an error/crash when encountering syntax errors in
+  complex if statements.
+
 - Patch #1462488: Python no longer segfaults when ``object.__reduce_ex__()``
   is called with an object that is faking its type.
 
