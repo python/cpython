@@ -1844,8 +1844,11 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			}
 		}
 
-		/* Copy slots into yet another tuple, demangling names */
-		newslots = PyTuple_New(nslots - add_dict - add_weak);
+		/* Copy slots into a list, mangle names and sort them.
+		   Sorted names are needed for __class__ assignment.
+		   Convert them back to tuple at the end.
+		*/
+		newslots = PyList_New(nslots - add_dict - add_weak);
 		if (newslots == NULL)
 			goto bad_slots;
 		for (i = j = 0; i < nslots; i++) {
@@ -1858,13 +1861,23 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			tmp =_Py_Mangle(name, tmp);
 			if (!tmp)
 			    goto bad_slots;
-			PyTuple_SET_ITEM(newslots, j, tmp);
+			PyList_SET_ITEM(newslots, j, tmp);
 			j++;
 		}
 		assert(j == nslots - add_dict - add_weak);
 		nslots = j;
 		Py_DECREF(slots);
-		slots = newslots;
+		if (PyList_Sort(newslots) == -1) {
+			Py_DECREF(bases);
+			Py_DECREF(newslots);
+			return NULL;
+		}
+		slots = PyList_AsTuple(newslots);
+		Py_DECREF(newslots);
+		if (slots == NULL) {
+			Py_DECREF(bases);
+			return NULL;
+		}
 
 		/* Secondary bases may provide weakrefs or dict */
 		if (nbases > 1 &&
@@ -2481,6 +2494,7 @@ same_slots_added(PyTypeObject *a, PyTypeObject *b)
 {
 	PyTypeObject *base = a->tp_base;
 	Py_ssize_t size;
+	PyObject *slots_a, *slots_b;
 
 	if (base != b->tp_base)
 		return 0;
@@ -2491,6 +2505,15 @@ same_slots_added(PyTypeObject *a, PyTypeObject *b)
 		size += sizeof(PyObject *);
 	if (a->tp_weaklistoffset == size && b->tp_weaklistoffset == size)
 		size += sizeof(PyObject *);
+
+	/* Check slots compliance */
+	slots_a = ((PyHeapTypeObject *)a)->ht_slots;
+	slots_b = ((PyHeapTypeObject *)b)->ht_slots;
+	if (slots_a && slots_b) {
+		if (PyObject_Compare(slots_a, slots_b) != 0)
+			return 0;
+		size += sizeof(PyObject *) * PyTuple_GET_SIZE(slots_a);
+	}
 	return size == a->tp_basicsize && size == b->tp_basicsize;
 }
 

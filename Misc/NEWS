@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1623563: allow __class__ assignment for classes with __slots__.
+  The old and the new class are still required to have the same slot names.
+
 - Patch #1642547: Fix an error/crash when encountering syntax errors in
   complex if statements.
 

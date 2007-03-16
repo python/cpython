@@ -1593,6 +1593,11 @@ built-in types such as \class{long}, \class{str} and \class{tuple}.
 Mappings may also be used; however, in the future, special meaning may
 be assigned to the values corresponding to each key.                      
 
+\item \var{__class__} assignment works only if both classes have the
+same \var{__slots__}.
+\versionchanged[Previously, \var{__class__} assignment raised an error
+if either new or old class had \var{__slots__}]{2.6}
+
 \end{itemize}
 
 
@@ -2222,4 +2227,7 @@ exception; this is the caller's responsibility.
          {The specification, background, and examples for the
           Python \keyword{with} statement.}
 \end{seealso}
+
+
+
 
