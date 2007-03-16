@@ -1278,6 +1278,8 @@ By default, \function{walk()} will not walk down into symbolic links that
 resolve to directories. Set \var{followlinks} to True to visit directories
 pointed to by symlinks, on systems that support them.
 
+\versionadded[The \var{followlinks} parameter]{2.6}
+
 \begin{notice}
 Be aware that setting \var{followlinks} to true can lead to infinite recursion
 if a link points to a parent directory of itself. \function{walk()} does not
