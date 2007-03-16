@@ -2853,6 +2853,51 @@ def setclass():
     cant(o, type(1))
     cant(o, type(None))
     del o
+    class G(object):
+        __slots__ = ["a", "b"]
+    class H(object):
+        __slots__ = ["b", "a"]
+    try:
+        unicode
+    except NameError:
+        class I(object):
+            __slots__ = ["a", "b"]
+    else:
+        class I(object):
+            __slots__ = [unicode("a"), unicode("b")]
+    class J(object):
+        __slots__ = ["c", "b"]
+    class K(object):
+        __slots__ = ["a", "b", "d"]
+    class L(H):
+        __slots__ = ["e"]
+    class M(I):
+        __slots__ = ["e"]
+    class N(J):
+        __slots__ = ["__weakref__"]
+    class P(J):
+        __slots__ = ["__dict__"]
+    class Q(J):
+        pass
+    class R(J):
+        __slots__ = ["__dict__", "__weakref__"]
+
+    for cls, cls2 in ((G, H), (G, I), (I, H), (Q, R), (R, Q)):
+        x = cls()
+        x.a = 1
+        x.__class__ = cls2
+        verify(x.__class__ is cls2,
+               "assigning %r as __class__ for %r silently failed" % (cls2, x))
+        vereq(x.a, 1)
+        x.__class__ = cls
+        verify(x.__class__ is cls,
+               "assigning %r as __class__ for %r silently failed" % (cls, x))
+        vereq(x.a, 1)
+    for cls in G, J, K, L, M, N, P, R, list, Int:
+        for cls2 in G, J, K, L, M, N, P, R, list, Int:
+            if cls is cls2:
+                continue
+            cant(cls(), cls2)
 
 def setdict():
     if verbose: print "Testing __dict__ assignment..."
