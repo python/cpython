@@ -437,19 +437,16 @@ class Grail(BaseBrowser):
 # a console terminal or an X display to run.
 
 def register_X_browsers():
-    # The default Gnome browser
-    if _iscommand("gconftool-2"):
-        # get the web browser string from gconftool
-        gc = 'gconftool-2 -g /desktop/gnome/url-handlers/http/command 2>/dev/null'
-        out = os.popen(gc)
-        commd = out.read().strip()
-        retncode = out.close()
 
-        # if successful, register it
-        if retncode is None and commd:
-            register("gnome", None, BackgroundBrowser(commd.split()))
+    # The default GNOME browser
+    if "GNOME_DESKTOP_SESSION_ID" in os.environ and _iscommand("gnome-open"):
+        register("gnome-open", None, BackgroundBrowser("gnome-open"))
 
-    # First, the Mozilla/Netscape browsers
+    # The default KDE browser
+    if "KDE_FULL_SESSION" in os.environ and _iscommand("kfmclient"):
+        register("kfmclient", Konqueror, Konqueror("kfmclient"))
+
+    # The Mozilla/Netscape browsers
     for browser in ("mozilla-firefox", "firefox",
                     "mozilla-firebird", "firebird",
                     "seamonkey", "mozilla", "netscape"):
@@ -508,17 +505,28 @@ if os.environ.get("TERM"):
 if sys.platform[:3] == "win":
     class WindowsDefault(BaseBrowser):
         def open(self, url, new=0, autoraise=1):
-            os.startfile(url)
-            return True # Oh, my...
+            try:
+                os.startfile(url)
+            except WindowsError:
+                # [Error 22] No application is associated with the specified
+                # file for this operation: '<URL>'
+                return False
+            else:
+                return True
 
     _tryorder = []
     _browsers = {}
-    # Prefer mozilla/netscape/opera if present
+
+    # First try to use the default Windows browser
+    register("windows-default", WindowsDefault)
+
+    # Detect some common Windows browsers, fallback to IE
+    iexplore = os.path.join(os.environ.get("PROGRAMFILES", "C:\\Program Files"),
+                            "Internet Explorer\\IEXPLORE.EXE")
     for browser in ("firefox", "firebird", "seamonkey", "mozilla",
-                    "netscape", "opera"):
+                    "netscape", "opera", iexplore):
         if _iscommand(browser):
             register(browser, None, BackgroundBrowser(browser))
-    register("windows-default", WindowsDefault)
 
 #
 # Platform support for MacOS
