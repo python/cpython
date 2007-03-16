@@ -567,8 +567,9 @@ class C:
 \begin{funcdesc}{isinstance}{object, classinfo}
   Return true if the \var{object} argument is an instance of the
   \var{classinfo} argument, or of a (direct or indirect) subclass
-  thereof.  Also return true if \var{classinfo} is a type object and
-  \var{object} is an object of that type.  If \var{object} is not a
+  thereof.  Also return true if \var{classinfo} is a type object
+  (new-style class) and \var{object} is an object of that type or of a
+  (direct or indirect) subclass thereof.  If \var{object} is not a
   class instance or an object of the given type, the function always
   returns false.  If \var{classinfo} is neither a class object nor a
   type object, it may be a tuple of class or type objects, or may
