@@ -5,7 +5,14 @@
 \modulesynopsis{Mathematical functions for complex numbers.}
 
 This module is always available.  It provides access to mathematical
-functions for complex numbers.  The functions are:
+functions for complex numbers.  The functions in this module accept
+integers, floating-point numbers or complex numbers as arguments.
+They will also accept any Python object that has either a
+\method{__complex__} or a \method{__float__} method: these methods are
+used to convert the object to a complex or floating-point number, respectively, and
+the function is then applied to the result of the conversion.
+
+The functions are:
 
 \begin{funcdesc}{acos}{x}
 Return the arc cosine of \var{x}.
