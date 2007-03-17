@@ -127,9 +127,6 @@ Core and builtins
 
 - Allow exception instances to be directly sliced again.
 
-- fixed a bug with bsddb.DB.stat: the flags and txn keyword arguments
-  were transposed.
-
 
 Extension Modules
 -----------------
@@ -199,6 +196,9 @@ Extension Modules
 - Fix itertools.count(n) to work with negative numbers again.
 
 - Make regex engine raise MemoryError if allocating memory fails.
+
+- fixed a bug with bsddb.DB.stat: the flags and txn keyword arguments
+  were transposed.
 
 - Added support for linking the bsddb module against BerkeleyDB 4.5.x.
 
