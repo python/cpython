@@ -443,7 +443,9 @@ booleans.  The following macros are available, however.
 
 \begin{cfuncdesc}{double}{PyFloat_AsDouble}{PyObject *pyfloat}
   Return a C \ctype{double} representation of the contents of
-  \var{pyfloat}.
+  \var{pyfloat}.  If \var{pyfloat} is not a Python floating point
+  object but has a \method{__float__} method, this method will first
+  be called to convert \var{pyfloat} into a float.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyFloat_AS_DOUBLE}{PyObject *pyfloat}
@@ -558,8 +560,11 @@ typedef struct {
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{Py_complex}{PyComplex_AsCComplex}{PyObject *op}
-  Return the \ctype{Py_complex} value of the complex number
-  \var{op}.
+  Return the \ctype{Py_complex} value of the complex number \var{op}.
+  \versionchanged[If \var{op} is not a Python complex number object
+                  but has a \method{__complex__} method, this method
+		  will first be called to convert \var{op} to a Python
+		  complex number object]{2.6}
 \end{cfuncdesc}
 
 
