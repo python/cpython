@@ -551,9 +551,6 @@ Library
 
 - Bug #1531862: Do not close standard file descriptors in subprocess.
 
-- fixed a bug with bsddb.DB.stat: the flags and txn keyword arguments
-  were transposed.
-
 - idle: Honor the "Cancel" action in the save dialog (Debian bug #299092).
 
 
@@ -643,6 +640,9 @@ Extension Modules
   mode by only placing a timeout on the select() if an input hook has
   been defined.  This prevents an interactive Python from waking up 10
   times per second.  Patch by Richard Boulton.
+
+- fixed a bug with bsddb.DB.stat: the flags and txn keyword arguments
+  were transposed.
 
 - Added support for linking the bsddb module against BerkeleyDB 4.5.x.
 
