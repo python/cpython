@@ -1704,8 +1704,8 @@ article about them is at \url{http://www.linuxjournal.com/article/7356}.
 In Python code, netlink addresses are represented as a tuple of 2 integers, 
 \code{(\var{pid}, \var{group_mask})}.
 
-Two new methods on socket objects, \method{recv_buf(\var{buffer})} and
-\method{recvfrom_buf(\var{buffer})}, store the received data in an object 
+Two new methods on socket objects, \method{recv_into(\var{buffer})} and
+\method{recvfrom_into(\var{buffer})}, store the received data in an object 
 that supports the buffer protocol instead of returning the data as a
 string.  This means you can put the data directly into an array or a
 memory-mapped file.
