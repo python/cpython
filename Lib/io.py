@@ -196,7 +196,6 @@ class _PyFileIO(RawIOBase):
             flags = os.O_RDONLY
         elif mode == "w":
             flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
-            self._writable = True
         elif mode == "r+":
             flags = os.O_RDWR
         else:
@@ -271,9 +270,6 @@ class SocketIO(RawIOBase):
         assert mode in ("r", "w", "rw")
         self._sock = sock
         self._mode = mode
-        self._readable = "r" in mode
-        self._writable = "w" in mode
-        self._seekable = False
 
     def readinto(self, b):
         return self._sock.recv_into(b)
