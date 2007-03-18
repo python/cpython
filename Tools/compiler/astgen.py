@@ -93,90 +93,90 @@ class NodeInfo:
 
     def gen_source(self):
         buf = StringIO()
-        print >> buf, "class %s(Node):" % self.name
+        print("class %s(Node):" % self.name, file=buf)
         self._gen_init(buf)
-        print >> buf
+        print(file=buf)
         self._gen_getChildren(buf)
-        print >> buf
+        print(file=buf)
         self._gen_getChildNodes(buf)
-        print >> buf
+        print(file=buf)
         self._gen_repr(buf)
         buf.seek(0, 0)
         return buf.read()
 
     def _gen_init(self, buf):
         if self.args:
-            print >> buf, "    def __init__(self, %s, lineno=None):" % self.args
+            print("    def __init__(self, %s, lineno=None):" % self.args, file=buf)
         else:
-            print >> buf, "    def __init__(self, lineno=None):"
+            print("    def __init__(self, lineno=None):", file=buf)
         if self.argnames:
             for name in self.argnames:
-                print >> buf, "        self.%s = %s" % (name, name)
-        print >> buf, "        self.lineno = lineno"
+                print("        self.%s = %s" % (name, name), file=buf)
+        print("        self.lineno = lineno", file=buf)
         # Copy the lines in self.init, indented four spaces.  The rstrip()
         # business is to get rid of the four spaces if line happens to be
         # empty, so that reindent.py is happy with the output.
         for line in self.init:
-            print >> buf, ("    " + line).rstrip()
+            print(("    " + line).rstrip(), file=buf)
 
     def _gen_getChildren(self, buf):
-        print >> buf, "    def getChildren(self):"
+        print("    def getChildren(self):", file=buf)
         if len(self.argnames) == 0:
-            print >> buf, "        return ()"
+            print("        return ()", file=buf)
         else:
             if self.hardest_arg < P_NESTED:
                 clist = COMMA.join(["self.%s" % c
                                     for c in self.argnames])
                 if self.nargs == 1:
-                    print >> buf, "        return %s," % clist
+                    print("        return %s," % clist, file=buf)
                 else:
-                    print >> buf, "        return %s" % clist
+                    print("        return %s" % clist, file=buf)
             else:
                 if len(self.argnames) == 1:
-                    print >> buf, "        return tuple(flatten(self.%s))" % self.argnames[0]
+                    print("        return tuple(flatten(self.%s))" % self.argnames[0], file=buf)
                 else:
-                    print >> buf, "        children = []"
+                    print("        children = []", file=buf)
                     template = "        children.%s(%sself.%s%s)"
                     for name in self.argnames:
                         if self.argprops[name] == P_NESTED:
-                            print >> buf, template % ("extend", "flatten(",
-                                                      name, ")")
+                            print(template % ("extend", "flatten(",
+                                                      name, ")"), file=buf)
                         else:
-                            print >> buf, template % ("append", "", name, "")
-                    print >> buf, "        return tuple(children)"
+                            print(template % ("append", "", name, ""), file=buf)
+                    print("        return tuple(children)", file=buf)
 
     def _gen_getChildNodes(self, buf):
-        print >> buf, "    def getChildNodes(self):"
+        print("    def getChildNodes(self):", file=buf)
         if len(self.argnames) == 0:
-            print >> buf, "        return ()"
+            print("        return ()", file=buf)
         else:
             if self.hardest_arg < P_NESTED:
                 clist = ["self.%s" % c
                          for c in self.argnames
                          if self.argprops[c] == P_NODE]
                 if len(clist) == 0:
-                    print >> buf, "        return ()"
+                    print("        return ()", file=buf)
                 elif len(clist) == 1:
-                    print >> buf, "        return %s," % clist[0]
+                    print("        return %s," % clist[0], file=buf)
                 else:
-                    print >> buf, "        return %s" % COMMA.join(clist)
+                    print("        return %s" % COMMA.join(clist), file=buf)
             else:
-                print >> buf, "        nodelist = []"
+                print("        nodelist = []", file=buf)
                 template = "        nodelist.%s(%sself.%s%s)"
                 for name in self.argnames:
                     if self.argprops[name] == P_NONE:
                         tmp = ("        if self.%s is not None:\n"
                                "            nodelist.append(self.%s)")
-                        print >> buf, tmp % (name, name)
+                        print(tmp % (name, name), file=buf)
                     elif self.argprops[name] == P_NESTED:
-                        print >> buf, template % ("extend", "flatten_nodes(",
-                                                  name, ")")
+                        print(template % ("extend", "flatten_nodes(",
+                                                  name, ")"), file=buf)
                     elif self.argprops[name] == P_NODE:
-                        print >> buf, template % ("append", "", name, "")
-                print >> buf, "        return tuple(nodelist)"
+                        print(template % ("append", "", name, ""), file=buf)
+                print("        return tuple(nodelist)", file=buf)
 
     def _gen_repr(self, buf):
-        print >> buf, "    def __repr__(self):"
+        print("    def __repr__(self):", file=buf)
         if self.argnames:
             fmt = COMMA.join(["%s"] * self.nargs)
             if '(' in self.args:
@@ -185,10 +185,10 @@ class NodeInfo:
             vals = COMMA.join(vals)
             if self.nargs == 1:
                 vals = vals + ","
-            print >> buf, '        return "%s(%s)" %% (%s)' % \
-                  (self.name, fmt, vals)
+            print('        return "%s(%s)" %% (%s)' % \
+                  (self.name, fmt, vals), file=buf)
         else:
-            print >> buf, '        return "%s()"' % self.name
+            print('        return "%s()"' % self.name, file=buf)
 
 rx_init = re.compile('init\((.*)\):')
 
@@ -219,12 +219,12 @@ def parse_spec(file):
 
 def main():
     prologue, epilogue = load_boilerplate(sys.argv[-1])
-    print prologue
-    print
+    print(prologue)
+    print()
     classes = parse_spec(SPEC)
     for info in classes:
-        print info.gen_source()
-    print epilogue
+        print(info.gen_source())
+    print(epilogue)
 
 if __name__ == "__main__":
     main()
