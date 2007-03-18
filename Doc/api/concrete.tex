@@ -430,10 +430,9 @@ booleans.  The following macros are available, however.
   \versionadded{2.2}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyFloat_FromString}{PyObject *str, char **pend}
+\begin{cfuncdesc}{PyObject*}{PyFloat_FromString}{PyObject *str}
   Create a \ctype{PyFloatObject} object based on the string value in
-  \var{str}, or \NULL{} on failure.  The \var{pend} argument is ignored.  It
-  remains only for backward compatibility.
+  \var{str}, or \NULL{} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFloat_FromDouble}{double v}

@@ -28,6 +28,9 @@ TO DO
 Core and Builtins
 -----------------
 
+- The long-deprecated argument "pend" of PyFloat_FromString() has been
+  removed.
+
 - The dir() function has been extended to call the __dir__() method on
   its argument, if it exists. If not, it will work like before. This allows
   customizing the output of dir() in the presence of a __getattr__().
