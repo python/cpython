@@ -28,6 +28,11 @@ TO DO
 Core and Builtins
 -----------------
 
+- PEP 3115: new metaclasses: the metaclass is now specified as a
+  keyword arg in the class statement, which can now use the full syntax of
+  a parameter list. Also, the metaclass can implement a __prepare__ function
+  which will be called to create the dictionary for the new class namespace.
+
 - The long-deprecated argument "pend" of PyFloat_FromString() has been
   removed.
 
