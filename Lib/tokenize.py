@@ -83,7 +83,7 @@ Operator = group(r"\*\*=?", r">>=?", r"<<=?", r"!=",
                  r"~")
 
 Bracket = '[][(){}]'
-Special = group(r'\r?\n', r'[:;.,@]')
+Special = group(r'\r?\n', r'\.\.\.', r'[:;.,@]')
 Funny = group(Operator, Bracket, Special)
 
 PlainToken = group(Number, Funny, String, Name)
@@ -334,8 +334,8 @@ def generate_tokens(readline):
                 spos, epos, pos = (lnum, start), (lnum, end), end
                 token, initial = line[start:end], line[start]
 
-                if initial in numchars or \
-                   (initial == '.' and token != '.'):      # ordinary number
+                if (initial in numchars or                  # ordinary number
+                    (initial == '.' and token != '.' and token != '...')):
                     yield (NUMBER, token, spos, epos, line)
                 elif initial in '\r\n':
                     yield (NL if parenlev > 0 else NEWLINE,

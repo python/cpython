@@ -121,6 +121,7 @@ the \'lazy\' dog.\n\
     def testEllipsis(self):
         x = ...
         self.assert_(x is Ellipsis)
+        self.assertRaises(SyntaxError, eval, ".. .")
 
 class GrammarTests(unittest.TestCase):
 

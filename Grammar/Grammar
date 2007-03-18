@@ -107,7 +107,7 @@ power: atom trailer* ['**' factor]
 atom: ('(' [yield_expr|testlist_gexp] ')' |
        '[' [listmaker] ']' |
        '{' [dictsetmaker] '}' |
-       NAME | NUMBER | STRING+ | '.' '.' '.')
+       NAME | NUMBER | STRING+ | '...')
 listmaker: test ( list_for | (',' test)* [','] )
 testlist_gexp: test ( gen_for | (',' test)* [','] )
 lambdef: 'lambda' [varargslist] ':' test
