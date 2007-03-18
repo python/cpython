@@ -144,13 +144,19 @@ def run_tests():
                                 (eval_tests, eval_results, "eval")):
         for i, o in itertools.izip(input, output):
             ast_tree = compile(i, "?", kind, 0x400)
+            if to_tuple(ast_tree) != o:
+                print("i=", i)
+                print("o=", o)
+                print("kind=", kind)
+                print("tree=", ast_tree)
+                print("tuple=", to_tuple(ast_tree))
             assert to_tuple(ast_tree) == o
             test_order(ast_tree, (0, 0))
 
 #### EVERYTHING BELOW IS GENERATED #####
 exec_results = [
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, None, [], None, None, [], []), [('Pass', (1, 9))], [], None)]),
-('Module', [('ClassDef', (1, 0), 'C', [], [('Pass', (1, 8))])]),
+('Module', [('ClassDef', (1, 0), 'C', [], [], None, None, [('Pass', (1, 8))])]),
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, None, [], None, None, [], []), [('Return', (1, 8), ('Num', (1, 15), 1))], [], None)]),
 ('Module', [('Delete', (1, 0), [('Name', (1, 4), 'v', ('Del',))])]),
 ('Module', [('Assign', (1, 0), [('Name', (1, 0), 'v', ('Store',))], ('Num', (1, 4), 1))]),

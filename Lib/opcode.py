@@ -98,8 +98,10 @@ def_op('BINARY_XOR', 65)
 def_op('BINARY_OR', 66)
 def_op('INPLACE_POWER', 67)
 def_op('GET_ITER', 68)
+def_op('STORE_LOCALS', 69)
 
 def_op('PRINT_EXPR', 70)
+def_op('LOAD_BUILD_CLASS', 71)
 
 def_op('INPLACE_LSHIFT', 75)
 def_op('INPLACE_RSHIFT', 76)
@@ -108,14 +110,13 @@ def_op('INPLACE_XOR', 78)
 def_op('INPLACE_OR', 79)
 def_op('BREAK_LOOP', 80)
 def_op('WITH_CLEANUP', 81)
-def_op('LOAD_LOCALS', 82)
+
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('MAKE_BYTES', 85)
 def_op('YIELD_VALUE', 86)
 def_op('POP_BLOCK', 87)
 def_op('END_FINALLY', 88)
-def_op('BUILD_CLASS', 89)
 
 HAVE_ARGUMENT = 90              # Opcodes from here have an argument:
 

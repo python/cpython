@@ -84,9 +84,6 @@ if sys.version_info[:2] < (2, 2):
 # Test framework core
 ##############################################################################
 
-# All classes defined herein are 'new-style' classes, allowing use of 'super()'
-__metaclass__ = type
-
 def _strclass(cls):
     return "%s.%s" % (cls.__module__, cls.__name__)
 

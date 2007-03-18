@@ -31,6 +31,113 @@ static PyObject *filterunicode(PyObject *, PyObject *);
 static PyObject *filtertuple (PyObject *, PyObject *);
 
 static PyObject *
+builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	PyObject *func, *name, *bases, *mkw, *meta, *prep, *ns, *res;
+	Py_ssize_t nargs, nbases;
+
+	assert(args != NULL);
+	if (!PyTuple_Check(args)) {
+		PyErr_SetString(PyExc_TypeError,
+				"__build_class__: args is not a tuple");
+		return NULL;
+	}
+	nargs = PyTuple_GET_SIZE(args);
+	if (nargs < 2) {
+		PyErr_SetString(PyExc_TypeError,
+				"__build_class__: not enough arguments");
+		return NULL;
+	}
+	func = PyTuple_GET_ITEM(args, 0); /* Better be callable */
+	name = PyTuple_GET_ITEM(args, 1);
+	if (!PyString_Check(name)) {
+		PyErr_SetString(PyExc_TypeError,
+				"__build_class__: name is not a string");
+		return NULL;
+	}
+	bases = PyTuple_GetSlice(args, 2, nargs);
+	if (bases == NULL)
+		return NULL;
+	nbases = nargs - 2;
+
+	if (kwds == NULL) {
+		meta = NULL;
+                mkw = NULL;
+        }
+	else {
+		mkw = PyDict_Copy(kwds); /* Don't modify kwds passed in! */
+		if (mkw == NULL) {
+			Py_DECREF(bases);
+			return NULL;
+		}
+		meta = PyDict_GetItemString(mkw, "metaclass");
+		if (meta != NULL) {
+			Py_INCREF(meta);
+			if (PyDict_DelItemString(mkw, "metaclass") < 0) {
+				Py_DECREF(meta);
+				Py_DECREF(mkw);
+				Py_DECREF(bases);
+				return NULL;
+			}
+		}
+	}
+	if (meta == NULL) {
+		if (PyTuple_GET_SIZE(bases) == 0)
+			meta = (PyObject *) (&PyType_Type);
+		else {
+			PyObject *base0 = PyTuple_GET_ITEM(bases, 0);
+			meta = (PyObject *) (base0->ob_type);
+		}
+		Py_INCREF(meta);
+	}
+	prep = PyObject_GetAttrString(meta, "__prepare__");
+	if (prep == NULL) {
+		PyErr_Clear();
+		ns = PyDict_New();
+	}
+	else {
+		PyObject *pargs = Py_BuildValue("OO", name, bases);
+		if (pargs == NULL) {
+			Py_DECREF(prep);
+			Py_DECREF(meta);
+			Py_XDECREF(mkw);
+			Py_DECREF(bases);
+			return NULL;
+		}
+		ns = PyEval_CallObjectWithKeywords(prep, pargs, mkw);
+		Py_DECREF(pargs);
+		Py_DECREF(prep);
+		if (ns == NULL) {
+			Py_DECREF(meta);
+			Py_XDECREF(mkw);
+			Py_DECREF(bases);
+			return NULL;
+		}
+	}
+	res = PyObject_CallFunctionObjArgs(func, ns, NULL);
+	if (res != NULL) {
+		PyObject *margs;
+		Py_DECREF(res);
+		res = NULL;
+		margs = Py_BuildValue("OOO", name, bases, ns);
+		if (margs != NULL) {
+			res = PyEval_CallObjectWithKeywords(meta, margs, mkw);
+			Py_DECREF(margs);
+		}
+	}
+	Py_DECREF(ns);
+	Py_DECREF(meta);
+	Py_XDECREF(mkw);
+	Py_DECREF(bases);
+	return res;
+}
+
+PyDoc_STRVAR(build_class_doc,
+"__build_class__(func, name, *bases, metaclass=None, **kwds) -> class\n\
+\n\
+Internal helper function used by the class statement.");
+
+static PyObject *
 builtin___import__(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	static char *kwlist[] = {"name", "globals", "locals", "fromlist",
@@ -2103,6 +2210,8 @@ NOTE: This is implemented using itertools.izip().");
 
 
 static PyMethodDef builtin_methods[] = {
+ 	{"__build_class__", (PyCFunction)builtin___build_class__,
+         METH_VARARGS | METH_KEYWORDS, build_class_doc},
  	{"__import__",	(PyCFunction)builtin___import__, METH_VARARGS | METH_KEYWORDS, import_doc},
  	{"abs",		builtin_abs,        METH_O, abs_doc},
  	{"all",		builtin_all,        METH_O, all_doc},

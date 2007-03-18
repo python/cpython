@@ -616,9 +616,8 @@ def pylists():
     vereq(a[100:200], (100,200))
 
 def metaclass():
-    if verbose: print("Testing __metaclass__...")
-    class C:
-        __metaclass__ = type
+    if verbose: print("Testing metaclass...")
+    class C(metaclass=type):
         def __init__(self):
             self.__state = 0
         def getstate(self):
@@ -629,9 +628,10 @@ def metaclass():
     vereq(a.getstate(), 0)
     a.setstate(10)
     vereq(a.getstate(), 10)
-    class D:
-        class __metaclass__(type):
-            def myself(cls): return cls
+    class _metaclass(type):
+        def myself(cls): return cls
+    class D(metaclass=_metaclass):
+        pass
     vereq(D.myself(), D)
     d = D()
     verify(d.__class__ is D)
@@ -639,8 +639,8 @@ def metaclass():
         def __new__(cls, name, bases, dict):
             dict['__spam__'] = 1
             return type.__new__(cls, name, bases, dict)
-    class C:
-        __metaclass__ = M1
+    class C(metaclass=M1):
+        pass
     vereq(C.__spam__, 1)
     c = C()
     vereq(c.__spam__, 1)
@@ -663,8 +663,7 @@ def metaclass():
                     continue
                 setattr(it, key, self.dict[key].__get__(it, self))
             return it
-    class C:
-        __metaclass__ = M2
+    class C(metaclass=M2):
         def spam(self):
             return 42
     vereq(C.name, 'C')
@@ -690,8 +689,7 @@ def metaclass():
                 name = "__super"
             setattr(cls, name, super(cls))
             return cls
-    class A:
-        __metaclass__ = autosuper
+    class A(metaclass=autosuper):
         def meth(self):
             return "A"
     class B(A):
@@ -729,8 +727,7 @@ def metaclass():
                 dict[key] = property(get, set)
             return super(autoproperty, metaclass).__new__(metaclass,
                                                         name, bases, dict)
-    class A:
-        __metaclass__ = autoproperty
+    class A(metaclass=autoproperty):
         def _get_x(self):
             return -self.__x
         def _set_x(self, x):
@@ -744,8 +741,7 @@ def metaclass():
     class multimetaclass(autoproperty, autosuper):
         # Merge of multiple cooperating metaclasses
         pass
-    class A:
-        __metaclass__ = multimetaclass
+    class A(metaclass=multimetaclass):
         def _get_x(self):
             return "A"
     class B(A):
@@ -764,8 +760,8 @@ def metaclass():
         counter = 0
         def __init__(self, *args):
             T.counter += 1
-    class C:
-        __metaclass__ = T
+    class C(metaclass=T):
+        pass
     vereq(T.counter, 1)
     a = C()
     vereq(type(a), C)
@@ -1273,8 +1269,8 @@ def dynamics():
     # Test comparison of classes with dynamic metaclasses
     class dynamicmetaclass(type):
         pass
-    class someclass:
-        __metaclass__ = dynamicmetaclass
+    class someclass(metaclass=dynamicmetaclass):
+        pass
     verify(someclass != object)
 
 def errors():
@@ -1505,36 +1501,39 @@ def altmro():
             L = type.mro(cls)
             L.reverse()
             return L
-    class X(D,B,C,A):
-        __metaclass__ = PerverseMetaType
+    class X(D,B,C,A, metaclass=PerverseMetaType):
+        pass
     vereq(X.__mro__, (object, A, C, B, D, X))
     vereq(X().f(), "A")
 
     try:
-        class X(object):
-            class __metaclass__(type):
-                def mro(self):
-                    return [self, dict, object]
+        class _metaclass(type):
+            def mro(self):
+                return [self, dict, object]
+        class X(object, metaclass=_metaclass):
+            pass
     except TypeError:
         pass
     else:
         raise TestFailed, "devious mro() return not caught"
 
     try:
-        class X(object):
-            class __metaclass__(type):
-                def mro(self):
-                    return [1]
+        class _metaclass(type):
+            def mro(self):
+                return [1]
+        class X(object, metaclass=_metaclass):
+            pass
     except TypeError:
         pass
     else:
         raise TestFailed, "non-class mro() return not caught"
 
     try:
-        class X(object):
-            class __metaclass__(type):
-                def mro(self):
-                    return 1
+        class _metaclass(type):
+            def mro(self):
+                return 1
+        class X(object, metaclass=_metaclass):
+            pass
     except TypeError:
         pass
     else:
@@ -3575,11 +3574,11 @@ def test_mutable_bases_with_failing_mro():
     class E(D):
         pass
 
-    class F(D):
-        __metaclass__ = WorkOnce
+    class F(D, metaclass=WorkOnce):
+        pass
 
-    class G(D):
-        __metaclass__ = WorkAlways
+    class G(D, metaclass=WorkAlways):
+        pass
 
     # Immediate subclasses have their mro's adjusted in alphabetical
     # order, so E's will get adjusted before adjusting F's fails.  We
@@ -3690,15 +3689,15 @@ def subclass_right_op():
 
 def dict_type_with_metaclass():
     if verbose:
-        print("Testing type of __dict__ when __metaclass__ set...")
+        print("Testing type of __dict__ when metaclass set...")
 
     class B(object):
         pass
     class M(type):
         pass
-    class C:
+    class C(metaclass=M):
         # In 2.3a1, C.__dict__ was a real dict rather than a dict proxy
-        __metaclass__ = M
+        pass
     veris(type(C.__dict__), type(B.__dict__))
 
 def meth_class_get():

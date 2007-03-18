@@ -88,8 +88,8 @@ class initarg(C):
 class metaclass(type):
     pass
 
-class use_metaclass(object):
-    __metaclass__ = metaclass
+class use_metaclass(object, metaclass=metaclass):
+    pass
 
 # DATA0 .. DATA2 are the pickles we expect under the various protocols, for
 # the object returned by create_data().

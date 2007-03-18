@@ -191,8 +191,8 @@ class TestCopy(unittest.TestCase):
         # type.
         class Meta(type):
             pass
-        class C:
-            __metaclass__ = Meta
+        class C(metaclass=Meta):
+            pass
         self.assertEqual(copy.deepcopy(C), C)
 
     def test_deepcopy_deepcopy(self):

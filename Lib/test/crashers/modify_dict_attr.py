@@ -7,11 +7,10 @@ class Y(object):
 class type_with_modifiable_dict(Y, type):
     pass
 
-class MyClass(object):
+class MyClass(object, metaclass=type_with_modifiable_dict):
     """This class has its __dict__ attribute completely exposed:
     user code can read, reassign and even delete it.
     """
-    __metaclass__ = type_with_modifiable_dict
 
 
 if __name__ == '__main__':

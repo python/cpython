@@ -11,7 +11,12 @@ module Python version "$Revision$"
 
 	stmt = FunctionDef(identifier name, arguments args, 
                            stmt* body, expr* decorators, expr? returns)
-	      | ClassDef(identifier name, expr* bases, stmt* body)
+	      | ClassDef(identifier name, 
+			 expr* bases,
+			 keyword* keywords,
+			 expr? starargs,
+			 expr? kwargs,
+			 stmt* body)
 	      | Return(expr? value)
 
 	      | Delete(expr* targets)

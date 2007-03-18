@@ -176,6 +176,11 @@ static int inplace_binop(struct compiler *, operator_ty);
 static int expr_constant(expr_ty e);
 
 static int compiler_with(struct compiler *, stmt_ty);
+static int compiler_call_helper(struct compiler *c, int n,
+				asdl_seq *args,
+				asdl_seq *keywords,
+				expr_ty starargs,
+				expr_ty kwargs);
 
 static PyCodeObject *assemble(struct compiler *, int addNone);
 static PyObject *__doc__;
@@ -734,6 +739,8 @@ opcode_stack_effect(int opcode, int oparg)
 
 		case PRINT_EXPR:
 			return -1;
+		case LOAD_BUILD_CLASS:
+			return 1;
 		case INPLACE_LSHIFT:
 		case INPLACE_RSHIFT:
 		case INPLACE_AND:
@@ -744,8 +751,8 @@ opcode_stack_effect(int opcode, int oparg)
 			return 0;
 		case WITH_CLEANUP:
 			return -1; /* XXX Sometimes more */
-		case LOAD_LOCALS:
-			return 1;
+		case STORE_LOCALS:
+			return -1;
 		case RETURN_VALUE:
 			return -1;
 		case IMPORT_STAR:
@@ -757,8 +764,6 @@ opcode_stack_effect(int opcode, int oparg)
 			return 0;
 		case END_FINALLY:
 			return -1; /* or -2 or -3 if exception occurred */
-		case BUILD_CLASS:
-			return -2;
 
 		case STORE_NAME:
 			return -1;
@@ -1509,54 +1514,107 @@ compiler_function(struct compiler *c, stmt_ty s)
 static int
 compiler_class(struct compiler *c, stmt_ty s)
 {
-	int n;
+	static PyObject *build_class = NULL;
+	static PyObject *locals = NULL;
 	PyCodeObject *co;
 	PyObject *str;
-	/* push class name on stack, needed by BUILD_CLASS */
-	ADDOP_O(c, LOAD_CONST, s->v.ClassDef.name, consts);
-	/* push the tuple of base classes on the stack */
-	n = asdl_seq_LEN(s->v.ClassDef.bases);
-	if (n > 0)
-		VISIT_SEQ(c, expr, s->v.ClassDef.bases);
-	ADDOP_I(c, BUILD_TUPLE, n);
-	if (!compiler_enter_scope(c, s->v.ClassDef.name, (void *)s,
-				  s->lineno))
-		return 0;
-	c->u->u_private = s->v.ClassDef.name;
-	Py_INCREF(c->u->u_private);
-	str = PyString_InternFromString("__name__");
-	if (!str || !compiler_nameop(c, str, Load)) {
-		Py_XDECREF(str);
-		compiler_exit_scope(c);
-		return 0;
-	}
-	
-	Py_DECREF(str);
-	str = PyString_InternFromString("__module__");
-	if (!str || !compiler_nameop(c, str, Store)) {
-		Py_XDECREF(str);
-		compiler_exit_scope(c);
-		return 0;
-	}
-	Py_DECREF(str);
+	PySTEntryObject *ste;
 
-	if (!compiler_body(c, s->v.ClassDef.body)) {
-		compiler_exit_scope(c);
-		return 0;
+	/* initialize statics */
+	if (build_class == NULL) {
+		build_class = PyString_FromString("__build_class__");
+		if (build_class == NULL)
+			return 0;
+	}
+	if (locals == NULL) {
+		locals = PyString_FromString("__locals__");
+		if (locals == NULL)
+			return 0;
 	}
 
-	ADDOP_IN_SCOPE(c, LOAD_LOCALS);
-	ADDOP_IN_SCOPE(c, RETURN_VALUE);
-	co = assemble(c, 1);
+	/* ultimately generate code for:
+	     <name> = __build_class__(<func>, <name>, *<bases>, **<keywords>)
+	   where:
+	     <func> is a function/closure created from the class body
+	     <name> is the class name
+             <bases> is the positional arguments and *varargs argument
+	     <keywords> is the keyword arguments and **kwds argument
+	   This borrows from compiler_call.
+	*/
+
+	/* 0. Create a fake variable named __locals__ */
+	ste = PySymtable_Lookup(c->c_st, s);
+	if (ste == NULL)
+		return 0;
+	assert(PyList_Check(ste->ste_varnames));
+	if (PyList_Append(ste->ste_varnames, locals) < 0)
+		return 0;
+
+	/* 1. compile the class body into a code object */
+	if (!compiler_enter_scope(c, s->v.ClassDef.name, (void *)s, s->lineno))
+		return 0;
+	/* this block represents what we do in the new scope */
+	{
+		/* use the class name for name mangling */
+		Py_INCREF(s->v.ClassDef.name);
+		c->u->u_private = s->v.ClassDef.name;
+		/* force it to have one mandatory argument */
+		c->u->u_argcount = 1;
+		/* load the first argument ... */
+		ADDOP_I(c, LOAD_FAST, 0);
+		/* ... and store it into f_locals */
+		ADDOP_IN_SCOPE(c, STORE_LOCALS);
+		/* load __name__ ... */
+		str = PyString_InternFromString("__name__");
+		if (!str || !compiler_nameop(c, str, Load)) {
+			Py_XDECREF(str);
+			compiler_exit_scope(c);
+			return 0;
+		}
+		Py_DECREF(str);
+		/* ... and store it as __module__ */
+		str = PyString_InternFromString("__module__");
+		if (!str || !compiler_nameop(c, str, Store)) {
+			Py_XDECREF(str);
+			compiler_exit_scope(c);
+			return 0;
+		}
+		Py_DECREF(str);
+		/* compile the body proper */
+		if (!compiler_body(c, s->v.ClassDef.body)) {
+			compiler_exit_scope(c);
+			return 0;
+		}
+		/* return None */
+		ADDOP_O(c, LOAD_CONST, Py_None, consts);
+		ADDOP_IN_SCOPE(c, RETURN_VALUE);
+		/* create the code object */
+		co = assemble(c, 1);
+	}
+	/* leave the new scope */
 	compiler_exit_scope(c);
 	if (co == NULL)
 		return 0;
 
+	/* 2. load the 'build_class' function */
+	ADDOP(c, LOAD_BUILD_CLASS);
+
+	/* 3. load a function (or closure) made from the code object */
 	compiler_make_closure(c, co, 0);
 	Py_DECREF(co);
 
-	ADDOP_I(c, CALL_FUNCTION, 0);
-	ADDOP(c, BUILD_CLASS);
+	/* 4. load class name */
+	ADDOP_O(c, LOAD_CONST, s->v.ClassDef.name, consts);
+
+	/* 5. generate the rest of the code for the call */
+	if (!compiler_call_helper(c, 2,
+				  s->v.ClassDef.bases,
+				  s->v.ClassDef.keywords,
+				  s->v.ClassDef.starargs,
+				  s->v.ClassDef.kwargs))
+		return 0;
+
+	/* 6. store into <name> */
 	if (!compiler_nameop(c, s->v.ClassDef.name, Store))
 		return 0;
 	return 1;
@@ -2613,21 +2671,37 @@ compiler_compare(struct compiler *c, expr_ty e)
 static int
 compiler_call(struct compiler *c, expr_ty e)
 {
-	int n, code = 0;
-
 	VISIT(c, expr, e->v.Call.func);
-	n = asdl_seq_LEN(e->v.Call.args);
-	VISIT_SEQ(c, expr, e->v.Call.args);
-	if (e->v.Call.keywords) {
-		VISIT_SEQ(c, keyword, e->v.Call.keywords);
-		n |= asdl_seq_LEN(e->v.Call.keywords) << 8;
+	return compiler_call_helper(c, 0,
+				    e->v.Call.args,
+				    e->v.Call.keywords,
+				    e->v.Call.starargs,
+				    e->v.Call.kwargs);
+}
+
+/* shared code between compiler_call and compiler_class */
+static int
+compiler_call_helper(struct compiler *c,
+		     int n, /* Args already pushed */
+		     asdl_seq *args,
+		     asdl_seq *keywords,
+		     expr_ty starargs,
+		     expr_ty kwargs)
+{
+	int code = 0;
+
+	n += asdl_seq_LEN(args);
+	VISIT_SEQ(c, expr, args);
+	if (keywords) {
+		VISIT_SEQ(c, keyword, keywords);
+		n |= asdl_seq_LEN(keywords) << 8;
 	}
-	if (e->v.Call.starargs) {
-		VISIT(c, expr, e->v.Call.starargs);
+	if (starargs) {
+		VISIT(c, expr, starargs);
 		code |= 1;
 	}
-	if (e->v.Call.kwargs) {
-		VISIT(c, expr, e->v.Call.kwargs);
+	if (kwargs) {
+		VISIT(c, expr, kwargs);
 		code |= 2;
 	}
 	switch (code) {
