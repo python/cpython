@@ -113,7 +113,7 @@ class Transformer:
                                token.LBRACE: self.atom_lbrace,
                                token.NUMBER: self.atom_number,
                                token.STRING: self.atom_string,
-                               token.DOT: self.atom_ellipsis,
+                               token.ELLIPSIS: self.atom_ellipsis,
                                token.NAME: self.atom_name,
                                }
         self.encoding = None

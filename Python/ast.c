@@ -1410,7 +1410,7 @@ ast_for_atom(struct compiling *c, const node *n)
         PyArena_AddPyObject(c->c_arena, pynum);
         return Num(pynum, LINENO(n), n->n_col_offset, c->c_arena);
     }
-    case DOT: /* Ellipsis */
+    case ELLIPSIS: /* Ellipsis */
         return Ellipsis(LINENO(n), n->n_col_offset, c->c_arena);
     case LPAR: /* some parenthesized expressions */
         ch = CHILD(n, 1);
