@@ -968,7 +968,7 @@ PyNumber_Float(PyObject *o)
 		PyFloatObject *po = (PyFloatObject *)o;
 		return PyFloat_FromDouble(po->ob_fval);
 	}
-	return PyFloat_FromString(o, NULL);
+	return PyFloat_FromString(o);
 }
 
 /* Operations on sequences */

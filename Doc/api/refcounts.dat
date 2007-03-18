@@ -385,7 +385,6 @@ PyFloat_FromDouble:double:v::
 
 PyFloat_FromString:PyObject*::+1:
 PyFloat_FromString:PyObject*:str:0:
-PyFloat_FromString:char**:pend:0:ignored
 
 PyFrozenSet_New:PyObject*::+1:
 PyFrozenSet_New:PyObject*:iterable:0:

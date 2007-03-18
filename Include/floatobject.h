@@ -21,10 +21,8 @@ PyAPI_DATA(PyTypeObject) PyFloat_Type;
 #define PyFloat_Check(op) PyObject_TypeCheck(op, &PyFloat_Type)
 #define PyFloat_CheckExact(op) ((op)->ob_type == &PyFloat_Type)
 
-/* Return Python float from string PyObject.  Second argument ignored on
-   input, and, if non-NULL, NULL is stored into *junk (this tried to serve a
-   purpose once but can't be made to work as intended). */
-PyAPI_FUNC(PyObject *) PyFloat_FromString(PyObject*, char** junk);
+/* Return Python float from string PyObject. */
+PyAPI_FUNC(PyObject *) PyFloat_FromString(PyObject*);
 
 /* Return Python float from C double. */
 PyAPI_FUNC(PyObject *) PyFloat_FromDouble(double);
