@@ -91,6 +91,8 @@ def open(filename, mode="r", buffering=None, *, encoding=None):
         try:
             bs = os.fstat(raw.fileno()).st_blksize
         except (os.error, AttributeError):
+            pass
+        else:
             if bs > 1:
                 buffering = bs
     if buffering < 0:
