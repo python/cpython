@@ -49,6 +49,9 @@ static PyTypeObject *ClassDef_type;
 static char *ClassDef_fields[]={
         "name",
         "bases",
+        "keywords",
+        "starargs",
+        "kwargs",
         "body",
 };
 static PyTypeObject *Return_type;
@@ -477,7 +480,7 @@ static int init_types(void)
         FunctionDef_type = make_type("FunctionDef", stmt_type,
                                      FunctionDef_fields, 5);
         if (!FunctionDef_type) return 0;
-        ClassDef_type = make_type("ClassDef", stmt_type, ClassDef_fields, 3);
+        ClassDef_type = make_type("ClassDef", stmt_type, ClassDef_fields, 6);
         if (!ClassDef_type) return 0;
         Return_type = make_type("Return", stmt_type, Return_fields, 1);
         if (!Return_type) return 0;
@@ -835,8 +838,9 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
 }
 
 stmt_ty
-ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int lineno, int
-         col_offset, PyArena *arena)
+ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords, expr_ty
+         starargs, expr_ty kwargs, asdl_seq * body, int lineno, int col_offset,
+         PyArena *arena)
 {
         stmt_ty p;
         if (!name) {
@@ -850,6 +854,9 @@ ClassDef(identifier name, asdl_seq * bases, asdl_seq * body, int lineno, int
         p->kind = ClassDef_kind;
         p->v.ClassDef.name = name;
         p->v.ClassDef.bases = bases;
+        p->v.ClassDef.keywords = keywords;
+        p->v.ClassDef.starargs = starargs;
+        p->v.ClassDef.kwargs = kwargs;
         p->v.ClassDef.body = body;
         p->lineno = lineno;
         p->col_offset = col_offset;
@@ -1972,6 +1979,21 @@ ast2obj_stmt(void* _o)
                 value = ast2obj_list(o->v.ClassDef.bases, ast2obj_expr);
                 if (!value) goto failed;
                 if (PyObject_SetAttrString(result, "bases", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_list(o->v.ClassDef.keywords, ast2obj_keyword);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "keywords", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.ClassDef.starargs);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "starargs", value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                value = ast2obj_expr(o->v.ClassDef.kwargs);
+                if (!value) goto failed;
+                if (PyObject_SetAttrString(result, "kwargs", value) == -1)
                         goto failed;
                 Py_DECREF(value);
                 value = ast2obj_list(o->v.ClassDef.body, ast2obj_stmt);

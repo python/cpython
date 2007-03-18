@@ -59,8 +59,9 @@ extern "C" {
 #define BINARY_OR	66
 #define INPLACE_POWER	67
 #define GET_ITER	68
-
+#define STORE_LOCALS	69
 #define PRINT_EXPR	70
+#define LOAD_BUILD_CLASS 71
 
 #define INPLACE_LSHIFT	75
 #define INPLACE_RSHIFT	76
@@ -69,14 +70,13 @@ extern "C" {
 #define INPLACE_OR	79
 #define BREAK_LOOP	80
 #define WITH_CLEANUP    81
-#define LOAD_LOCALS	82
+
 #define RETURN_VALUE	83
 #define IMPORT_STAR	84
 #define MAKE_BYTES	85
 #define YIELD_VALUE	86
 #define POP_BLOCK	87
 #define END_FINALLY	88
-#define BUILD_CLASS	89
 
 #define HAVE_ARGUMENT	90	/* Opcodes from here have an argument: */
 
@@ -120,10 +120,10 @@ extern "C" {
 #define RAISE_VARARGS	130	/* Number of raise arguments (1, 2 or 3) */
 /* CALL_FUNCTION_XXX opcodes defined below depend on this definition */
 #define CALL_FUNCTION	131	/* #args + (#kwargs<<8) */
-#define MAKE_FUNCTION	132	/* #defaults */
+#define MAKE_FUNCTION	132	/* #defaults + #kwdefaults<<8 + #annotations<<16 */
 #define BUILD_SLICE 	133	/* Number of items */
 
-#define MAKE_CLOSURE    134     /* #free vars */
+#define MAKE_CLOSURE    134     /* same as MAKE_FUNCTION */
 #define LOAD_CLOSURE    135     /* Load free variable from closure */
 #define LOAD_DEREF      136     /* Load and dereference from closure cell */ 
 #define STORE_DEREF     137     /* Store into cell */ 

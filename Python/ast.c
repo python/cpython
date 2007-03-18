@@ -2092,28 +2092,6 @@ ast_for_testlist_gexp(struct compiling *c, const node* n)
     return ast_for_testlist(c, n);
 }
 
-/* like ast_for_testlist() but returns a sequence */
-static asdl_seq*
-ast_for_class_bases(struct compiling *c, const node* n)
-{
-    /* testlist: test (',' test)* [','] */
-    assert(NCH(n) > 0);
-    REQ(n, testlist);
-    if (NCH(n) == 1) {
-        expr_ty base;
-        asdl_seq *bases = asdl_seq_new(1, c->c_arena);
-        if (!bases)
-            return NULL;
-        base = ast_for_expr(c, CHILD(n, 0));
-        if (!base)
-            return NULL;
-        asdl_seq_SET(bases, 0, base);
-        return bases;
-    }
-
-    return seq_for_testlist(c, n);
-}
-
 static stmt_ty
 ast_for_expr_stmt(struct compiling *c, const node *n)
 {
@@ -3032,9 +3010,10 @@ ast_for_with_stmt(struct compiling *c, const node *n)
 static stmt_ty
 ast_for_classdef(struct compiling *c, const node *n)
 {
-    /* classdef: 'class' NAME ['(' testlist ')'] ':' suite */
-    asdl_seq *bases, *s;
-    
+    /* classdef: 'class' NAME ['(' arglist ')'] ':' suite */
+    asdl_seq *s;
+    expr_ty call, dummy;
+
     REQ(n, classdef);
 
     if (!strcmp(STR(CHILD(n, 1)), "None")) {
@@ -3042,32 +3021,36 @@ ast_for_classdef(struct compiling *c, const node *n)
             return NULL;
     }
 
-    if (NCH(n) == 4) {
+    if (NCH(n) == 4) { /* class NAME ':' suite */
         s = ast_for_suite(c, CHILD(n, 3));
         if (!s)
             return NULL;
-        return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, s, LINENO(n),
-                        n->n_col_offset, c->c_arena);
+        return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, NULL, NULL, NULL, s,
+                        LINENO(n), n->n_col_offset, c->c_arena);
     }
-    /* check for empty base list */
-    if (TYPE(CHILD(n,3)) == RPAR) {
+
+    if (TYPE(CHILD(n, 3)) == RPAR) { /* class NAME '(' ')' ':' suite */
         s = ast_for_suite(c, CHILD(n,5));
         if (!s)
                 return NULL;
-        return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, s, LINENO(n),
-                        n->n_col_offset, c->c_arena);
+        return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), NULL, NULL, NULL, NULL, s,
+                        LINENO(n), n->n_col_offset, c->c_arena);
     }
 
-    /* else handle the base class list */
-    bases = ast_for_class_bases(c, CHILD(n, 3));
-    if (!bases)
+    /* class NAME '(' arglist ')' ':' suite */
+    /* build up a fake Call node so we can extract its pieces */
+    dummy = Name(NEW_IDENTIFIER(CHILD(n, 1)), Load, LINENO(n), n->n_col_offset, c->c_arena);
+    call = ast_for_call(c, CHILD(n, 3), dummy);
+    if (!call)
         return NULL;
-
     s = ast_for_suite(c, CHILD(n, 6));
     if (!s)
         return NULL;
-    return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)), bases, s, LINENO(n),
-                    n->n_col_offset, c->c_arena);
+
+    return ClassDef(NEW_IDENTIFIER(CHILD(n, 1)),
+                    call->v.Call.args, call->v.Call.keywords,
+                    call->v.Call.starargs, call->v.Call.kwargs, s,
+                    LINENO(n), n->n_col_offset, c->c_arena);
 }
 
 static stmt_ty

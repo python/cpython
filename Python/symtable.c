@@ -983,6 +983,11 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
 		if (!symtable_add_def(st, s->v.ClassDef.name, DEF_LOCAL))
 			return 0;
 		VISIT_SEQ(st, expr, s->v.ClassDef.bases);
+		VISIT_SEQ(st, keyword, s->v.ClassDef.keywords);
+		if (s->v.ClassDef.starargs)
+			VISIT(st, expr, s->v.ClassDef.starargs);
+		if (s->v.ClassDef.kwargs)
+			VISIT(st, expr, s->v.ClassDef.kwargs);
 		if (!symtable_enter_block(st, s->v.ClassDef.name, ClassBlock, 
 					  (void *)s, s->lineno))
 			return 0;

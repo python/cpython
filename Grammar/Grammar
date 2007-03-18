@@ -119,7 +119,7 @@ exprlist: expr (',' expr)* [',']
 testlist: test (',' test)* [',']
 dictsetmaker: (test ':' test (',' test ':' test)* [',']) | (test (',' test)* [','])
 
-classdef: 'class' NAME ['(' [testlist] ')'] ':' suite
+classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
 
 arglist: (argument ',')* (argument [',']| '*' test [',' '**' test] | '**' test)
 argument: test [gen_for] | test '=' test  # Really [keyword '='] test

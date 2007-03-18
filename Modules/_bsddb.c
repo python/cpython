@@ -5991,6 +5991,10 @@ PyMODINIT_FUNC init_bsddb(void)
      * from both DBError and KeyError, since the API only supports
      * using one base class. */
     PyDict_SetItemString(d, "KeyError", PyExc_KeyError);
+    { 
+	    PyObject *builtin_mod = PyImport_ImportModule("__builtin__");
+	    PyDict_SetItemString(d, "__builtins__", builtin_mod);
+    }
     PyRun_String("class DBNotFoundError(DBError, KeyError): pass\n"
 	         "class DBKeyEmptyError(DBError, KeyError): pass",
                  Py_file_input, d, d);
