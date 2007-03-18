@@ -584,6 +584,7 @@ sending the data.  See the \UNIX{} manual page
 \manpage{recv}{2} for the meaning of the optional argument
 \var{flags}; it defaults to zero.  (The format of \var{address}
 depends on the address family --- see above.)
+\versionadded{2.5}
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{recv_into}{buffer\optional{, nbytes\optional{, flags}}}
@@ -593,6 +594,7 @@ If \var{nbytes} is not specified (or 0),
 receive up to the size available in the given buffer.
 See the \UNIX{} manual page \manpage{recv}{2} for the meaning of the
 optional argument \var{flags}; it defaults to zero.
+\versionadded{2.5}
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{send}{string\optional{, flags}}
