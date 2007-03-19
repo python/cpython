@@ -144,13 +144,9 @@ def run_tests():
                                 (eval_tests, eval_results, "eval")):
         for i, o in itertools.izip(input, output):
             ast_tree = compile(i, "?", kind, 0x400)
-            if to_tuple(ast_tree) != o:
-                print("i=", i)
-                print("o=", o)
-                print("kind=", kind)
-                print("tree=", ast_tree)
-                print("tuple=", to_tuple(ast_tree))
-            assert to_tuple(ast_tree) == o
+            tup = to_tuple(ast_tree)
+            assert tup == o, ("kind=%r\ninput=%r\nexpected=%r\ngot=%r" %
+                              (kind, i, o, tup))
             test_order(ast_tree, (0, 0))
 
 #### EVERYTHING BELOW IS GENERATED #####

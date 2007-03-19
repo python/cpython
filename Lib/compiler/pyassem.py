@@ -786,7 +786,6 @@ class StackDepthTracker:
         'PRINT_EXPR': -1,
         'RETURN_VALUE': -1,
         'YIELD_VALUE': -1,
-        'BUILD_CLASS': -2,
         'STORE_NAME': -1,
         'STORE_ATTR': -2,
         'DELETE_ATTR': -1,
@@ -804,6 +803,8 @@ class StackDepthTracker:
         'SETUP_FINALLY': 3,
         'FOR_ITER': 1,
         'WITH_CLEANUP': -1,
+        'LOAD_BUILD_CLASS': 1,
+        'STORE_LOCALS': -1,
         }
     # use pattern match
     patterns = [

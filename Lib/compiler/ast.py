@@ -311,9 +311,12 @@ class CallFunc(Node):
         return "CallFunc(%s, %s, %s, %s)" % (repr(self.node), repr(self.args), repr(self.star_args), repr(self.dstar_args))
 
 class Class(Node):
-    def __init__(self, name, bases, doc, code, lineno=None):
+    def __init__(self, name, args, star_args, dstar_args,
+                 doc, code, lineno=None):
         self.name = name
-        self.bases = bases
+        self.args = args
+        self.star_args = star_args
+        self.dstar_args = dstar_args
         self.doc = doc
         self.code = code
         self.lineno = lineno
@@ -321,19 +324,30 @@ class Class(Node):
     def getChildren(self):
         children = []
         children.append(self.name)
-        children.extend(flatten(self.bases))
+        children.extend(flatten(self.args))
+        children.extend(self.star_args)
+        children.extend(self.dstar_args)
         children.append(self.doc)
         children.append(self.code)
         return tuple(children)
 
     def getChildNodes(self):
         nodelist = []
-        nodelist.extend(flatten_nodes(self.bases))
+        nodelist.extend(flatten_nodes(self.args))
+        if self.star_args is not None:
+            nodelist.append(self.star_args)
+        if self.dstar_args is not None:
+            nodelist.append(self.dstar_args)
         nodelist.append(self.code)
         return tuple(nodelist)
 
     def __repr__(self):
-        return "Class(%s, %s, %s, %s)" % (repr(self.name), repr(self.bases), repr(self.doc), repr(self.code))
+        return "Class(%r, %r, %r, %r, %r, %r)" % (self.name,
+                                                  self.args,
+                                                  self.star_args,
+                                                  self.dstar_args,
+                                                  self.doc,
+                                                  self.code)
 
 class Compare(Node):
     def __init__(self, expr, ops, lineno=None):

@@ -299,7 +299,7 @@ class SymbolVisitor:
 
     def visitClass(self, node, parent):
         parent.add_def(node.name)
-        for n in node.bases:
+        for n in node.args:
             self.visit(n, parent)
         scope = ClassScope(node.name, self.module)
         if parent.nested or isinstance(parent, FunctionScope):
