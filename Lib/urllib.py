@@ -768,11 +768,9 @@ class FancyURLopener(URLopener):
 
     def prompt_user_passwd(self, host, realm):
         """Override this in a GUI environment!"""
-        import getpass, sys
+        import getpass
         try:
-            sys.stdout.write("Enter username for %s at %s: " % (realm, host))
-            sys.stdout.flush()
-            user = sys.stdin.readline()
+            user = input("Enter username for %s at %s: " % (realm, host))
             passwd = getpass.getpass("Enter password for %s in %s at %s: " %
                 (user, realm, host))
             return user, passwd
