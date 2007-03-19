@@ -2406,8 +2406,8 @@ ast_for_import_stmt(struct compiling *c, const node *n)
     /*
       import_stmt: import_name | import_from
       import_name: 'import' dotted_as_names
-      import_from: 'from' ('.'* dotted_name | '.') 'import'
-                          ('*' | '(' import_as_names ')' | import_as_names)
+      import_from: 'from' (('.' | '...')* dotted_name | ('.' | '...')+)
+                   'import' ('*' | '(' import_as_names ')' | import_as_names)
     */
     int lineno;
     int col_offset;
@@ -2445,6 +2445,10 @@ ast_for_import_stmt(struct compiling *c, const node *n)
                 mod = alias_for_import_name(c, CHILD(n, idx));
                 idx++;
                 break;
+            } else if (TYPE(CHILD(n, idx)) == ELLIPSIS) {
+                /* three consecutive dots are tokenized as one ELLIPSIS */ 
+                ndots += 3;
+                continue;
             } else if (TYPE(CHILD(n, idx)) != DOT) {
                 break;
             }
