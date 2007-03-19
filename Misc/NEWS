@@ -187,6 +187,8 @@ Core and builtins
 Library
 -------
 
+- Patch #1630118: add a SpooledTemporaryFile class to tempfile.py.
+
 - Patch #1273829: os.walk() now has a "followlinks" parameter. If set to
   True (which is not the default), it visits symlinks pointing to
   directories.
