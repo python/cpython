@@ -288,6 +288,10 @@ class TestJointOps(unittest.TestCase):
         self.assertEqual(sum(elem.hash_count for elem in d), n)
         if hasattr(s, 'symmetric_difference_update'):
             s.symmetric_difference_update(d)
+        self.assertEqual(sum(elem.hash_count for elem in d), n)     
+        d2 = dict.fromkeys(set(d))
+        self.assertEqual(sum(elem.hash_count for elem in d), n)
+        d3 = dict.fromkeys(frozenset(d))
         self.assertEqual(sum(elem.hash_count for elem in d), n)
 
 class TestSet(TestJointOps):
