@@ -54,6 +54,7 @@ class TestMailbox(TestBase):
 
     def setUp(self):
         self._path = test_support.TESTFN
+        self._delete_recursively(self._path)
         self._box = self._factory(self._path)
 
     def tearDown(self):
