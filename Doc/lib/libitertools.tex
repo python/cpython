@@ -539,5 +539,8 @@ def grouper(n, iterable, padvalue=None):
     "grouper(3, 'abcdefg', 'x') --> ('a','b','c'), ('d','e','f'), ('g','x','x')"
     return izip(*[chain(iterable, repeat(padvalue, n-1))]*n)
 
+def reverse_map(d):
+    "Return a new dict with swapped keys and values"
+    return dict(izip(d.itervalues(), d))
 
 \end{verbatim}
