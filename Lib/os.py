@@ -221,7 +221,7 @@ def renames(old, new):
 
 __all__.extend(["makedirs", "removedirs", "renames"])
 
-def walk(top, topdown=True, onerror=None, followlinks=False):
+def walk(top, topdown=True, onerror=None):
     """Directory tree generator.
 
     For each directory in the directory tree rooted at top (including top
@@ -256,10 +256,6 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     report the error to continue with the walk, or raise the exception
     to abort the walk.  Note that the filename is available as the
     filename attribute of the exception object.
-
-    By default, os.walk does not follow symbolic links to subdirectories on
-    systems that support them.  In order to get this functionality, set the
-    optional argument 'followlinks' to true.
 
     Caution:  if you pass a relative pathname for top, don't change the
     current working directory between resumptions of walk.  walk never
@@ -304,8 +300,8 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         yield top, dirs, nondirs
     for name in dirs:
         path = join(top, name)
-        if followlinks or not islink(path):
-            for x in walk(path, topdown, onerror, followlinks):
+        if not islink(path):
+            for x in walk(path, topdown, onerror):
                 yield x
     if not topdown:
         yield top, dirs, nondirs

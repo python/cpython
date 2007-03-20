@@ -189,10 +189,6 @@ Library
 
 - Patch #1630118: add a SpooledTemporaryFile class to tempfile.py.
 
-- Patch #1273829: os.walk() now has a "followlinks" parameter. If set to
-  True (which is not the default), it visits symlinks pointing to
-  directories.
-
 - Bug #1681228: the webbrowser module now correctly uses the default
   GNOME or KDE browser, depending on whether there is a session of one
   of those present. Also, it tries the Windows default browser before
