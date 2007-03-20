@@ -50,7 +50,8 @@ def glob1(dirname, pattern):
     if not dirname:
         dirname = os.curdir
     if isinstance(pattern, unicode) and not isinstance(dirname, unicode):
-        dirname = unicode(dirname, sys.getfilesystemencoding())
+        dirname = unicode(dirname, sys.getfilesystemencoding() or
+                                   sys.getdefaultencoding())
     try:
         names = os.listdir(dirname)
     except os.error:
