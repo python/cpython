@@ -694,7 +694,7 @@ class _TestMboxMMDF(TestMailbox):
         self._box.close()
         self._delete_recursively(self._path)
         for lock_remnant in glob.glob(self._path + '.*'):
-            os.remove(lock_remnant)
+            test_support.unlink(lock_remnant)
 
     def test_add_from_string(self):
         # Add a string starting with 'From ' to the mailbox
@@ -915,7 +915,7 @@ class TestBabyl(TestMailbox):
         self._box.close()
         self._delete_recursively(self._path)
         for lock_remnant in glob.glob(self._path + '.*'):
-            os.remove(lock_remnant)
+            test_support.unlink(lock_remnant)
 
     def test_labels(self):
         # Get labels from the mailbox
