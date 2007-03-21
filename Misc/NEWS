@@ -192,6 +192,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1675967: re patterns pickled with Python 2.4 and earlier can
+  now be unpickled with Python 2.5 and newer.
+
 - Patch #1630118: add a SpooledTemporaryFile class to tempfile.py.
 
 - Patch #1273829: os.walk() now has a "followlinks" parameter. If set to
