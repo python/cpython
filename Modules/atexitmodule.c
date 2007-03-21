@@ -17,9 +17,9 @@ typedef struct {
     PyObject *kwargs;
 } atexit_callback;
 
-atexit_callback **atexit_callbacks;
-int ncallbacks = 0;
-int callback_len = 32;
+static atexit_callback **atexit_callbacks;
+static int ncallbacks = 0;
+static int callback_len = 32;
 
 /* Installed into pythonrun.c's atexit mechanism */
 
@@ -33,7 +33,7 @@ atexit_callfuncs(void)
     if (ncallbacks == 0)
         return;
         
-    for(i = ncallbacks - 1; i >= 0; i--)
+    for (i = ncallbacks - 1; i >= 0; i--)
     {
         cb = atexit_callbacks[i];
         if (cb == NULL)
@@ -42,10 +42,12 @@ atexit_callfuncs(void)
         r = PyObject_Call(cb->func, cb->args, cb->kwargs);
         Py_XDECREF(r);
         if (r == NULL) {
+            /* Maintain the last exception, but don't leak if there are
+               multiple exceptions. */
             if (exc_type) {
                 Py_DECREF(exc_type);
-                Py_DECREF(exc_value);
-                Py_DECREF(exc_tb);    
+                Py_XDECREF(exc_value);
+                Py_XDECREF(exc_tb);    
             }
             PyErr_Fetch(&exc_type, &exc_value, &exc_tb);
             if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
@@ -92,6 +94,8 @@ atexit_register(PyObject *self, PyObject *args, PyObject *kwargs)
     
     if (ncallbacks >= callback_len) {
         callback_len += 16;
+        /* XXX(nnorwitz): this leaks if realloc() fails.  It also
+           doesn't verify realloc() returns a valid (non-NULL) pointer. */
         atexit_callbacks = PyMem_Realloc(atexit_callbacks,
                           sizeof(atexit_callback*) * callback_len);
 
@@ -145,7 +149,7 @@ atexit_clear(PyObject *self)
     atexit_callback *cb;
     int i;
     
-    for(i = 0; i < ncallbacks; i++)
+    for (i = 0; i < ncallbacks; i++)
     {
         cb = atexit_callbacks[i];
         if (cb == NULL)
@@ -163,7 +167,7 @@ atexit_unregister(PyObject *self, PyObject *func)
     atexit_callback *cb;
     int i, eq;
     
-    for(i = 0; i < ncallbacks; i++)
+    for (i = 0; i < ncallbacks; i++)
     {
         cb = atexit_callbacks[i];
         if (cb == NULL)
@@ -213,5 +217,8 @@ initatexit(void)
     if (m == NULL)
         return;
     
+    /* XXX(nnorwitz): probably best to register a callback that will free
+       atexit_callbacks, otherwise valgrind will report memory leaks.
+        Need to call atexit_clear() first. */
     _Py_PyAtExit(atexit_callfuncs);
 }
