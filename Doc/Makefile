@@ -73,7 +73,7 @@ TOOLSDIR=	tools
 # commontex/patchlevel.tex in their dependencies.
 RELEASE=$(shell $(PYTHON) tools/getversioninfo)
 
-PYTHON=	   python
+PYTHON=	   $(PWD)/../python
 DVIPS=	   dvips -N0 -t $(PAPER)
 
 # This is ugly!  The issue here is that there are two different levels
