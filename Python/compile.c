@@ -1519,6 +1519,7 @@ compiler_class(struct compiler *c, stmt_ty s)
 	PyCodeObject *co;
 	PyObject *str;
 	PySTEntryObject *ste;
+	int err;
 
 	/* initialize statics */
 	if (build_class == NULL) {
@@ -1547,7 +1548,9 @@ compiler_class(struct compiler *c, stmt_ty s)
 	if (ste == NULL)
 		return 0;
 	assert(PyList_Check(ste->ste_varnames));
-	if (PyList_Append(ste->ste_varnames, locals) < 0)
+	err = PyList_Append(ste->ste_varnames, locals);
+	Py_DECREF(ste);
+	if (err < 0)
 		return 0;
 
 	/* 1. compile the class body into a code object */
