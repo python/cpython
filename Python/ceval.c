@@ -1774,12 +1774,10 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 					PUSH(w);
 				}
 			} else if (unpack_iterable(v, oparg,
-						 stack_pointer + oparg))
+						 stack_pointer + oparg)) {
 				stack_pointer += oparg;
-			else {
-				if (PyErr_ExceptionMatches(PyExc_TypeError))
-					PyErr_SetString(PyExc_TypeError,
-						"unpack non-sequence");
+			} else {
+				/* unpack_iterable() raised an exception */
 				why = WHY_EXCEPTION;
 			}
 			Py_DECREF(v);
