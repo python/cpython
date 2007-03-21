@@ -176,6 +176,7 @@ GLHACK=-Dclear=__GLclear
 #collections collectionsmodule.c # Container types
 #itertools itertoolsmodule.c	# Functions creating iterators for efficient looping 
 #strop stropmodule.c		# String manipulations
+#atexit atexitmodule.c      # Register functions to be run at interpreter-shutdown
 
 #unicodedata unicodedata.c    # static Unicode character database
 

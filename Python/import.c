@@ -361,7 +361,7 @@ PyImport_GetModuleDict(void)
 
 /* List of names to clear in sys */
 static char* sys_deletes[] = {
-	"path", "argv", "ps1", "ps2", "exitfunc",
+	"path", "argv", "ps1", "ps2",
 	"exc_type", "exc_value", "exc_traceback",
 	"last_type", "last_value", "last_traceback",
 	"path_hooks", "path_importer_cache", "meta_path",

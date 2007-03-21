@@ -56,7 +56,7 @@ static PyObject *run_pyc_file(FILE *, const char *, PyObject *, PyObject *,
 			      PyCompilerFlags *);
 static void err_input(perrdetail *);
 static void initsigs(void);
-static void call_sys_exitfunc(void);
+static void call_py_exitfuncs(void);
 static void call_ll_exitfuncs(void);
 extern void _PyUnicode_Init(void);
 extern void _PyUnicode_Fini(void);
@@ -355,7 +355,7 @@ Py_Finalize(void)
 	 * threads created thru it, so this also protects pending imports in
 	 * the threads created via Threading.
 	 */
-	call_sys_exitfunc();
+	call_py_exitfuncs();
 	initialized = 0;
 
 	/* Get current thread state and interpreter pointer */
@@ -1557,6 +1557,23 @@ Py_FatalError(const char *msg)
 #include "pythread.h"
 #endif
 
+static void (*pyexitfunc)(void) = NULL;
+/* For the atexit module. */
+void _Py_PyAtExit(void (*func)(void))
+{
+	pyexitfunc = func;
+}
+
+static void
+call_py_exitfuncs(void)
+{
+	if (pyexitfunc == NULL) 
+		return;
+
+	(*pyexitfunc)();
+	PyErr_Clear();
+}
+
 #define NEXITFUNCS 32
 static void (*exitfuncs[NEXITFUNCS])(void);
 static int nexitfuncs = 0;
@@ -1567,27 +1584,6 @@ int Py_AtExit(void (*func)(void))
 		return -1;
 	exitfuncs[nexitfuncs++] = func;
 	return 0;
-}
-
-static void
-call_sys_exitfunc(void)
-{
-	PyObject *exitfunc = PySys_GetObject("exitfunc");
-
-	if (exitfunc) {
-		PyObject *res;
-		Py_INCREF(exitfunc);
-		PySys_SetObject("exitfunc", (PyObject *)NULL);
-		res = PyEval_CallObject(exitfunc, (PyObject *)NULL);
-		if (res == NULL) {
-			if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
-				PySys_WriteStderr("Error in sys.exitfunc:\n");
-			}
-			PyErr_Print();
-		}
-		Py_DECREF(exitfunc);
-	}
-
 }
 
 static void
