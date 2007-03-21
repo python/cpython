@@ -156,6 +156,10 @@ Core and Builtins
 Extension Modules
 -----------------
 
+- isCallable() and sequenceIncludes() have been removed from the operator
+  module.
+
+
 Library
 -------
 

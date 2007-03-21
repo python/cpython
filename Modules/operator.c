@@ -65,7 +65,6 @@ used for special class methods; variants without leading and trailing\n\
   if(! PyArg_UnpackTuple(a,#OP,2,2,&a1,&a2)) return NULL; \
   return PyObject_RichCompare(a1,a2,A); }
 
-spami(isCallable       , PyCallable_Check)
 spami(isNumberType     , PyNumber_Check)
 spami(truth            , PyObject_IsTrue)
 spam2(op_add           , PyNumber_Add)
@@ -102,7 +101,6 @@ spamoi(op_repeat       , PySequence_Repeat)
 spam2(op_iconcat       , PySequence_InPlaceConcat)
 spamoi(op_irepeat      , PySequence_InPlaceRepeat)
 spami2b(op_contains     , PySequence_Contains)
-spami2b(sequenceIncludes, PySequence_Contains)
 spamn2(indexOf         , PySequence_Index)
 spamn2(countOf         , PySequence_Count)
 spami(isMappingType    , PyMapping_Check)
@@ -218,8 +216,6 @@ op_delslice(PyObject *s, PyObject *a)
 
 static struct PyMethodDef operator_methods[] = {
 
-spam1o(isCallable,
- "isCallable(a) -- Same as callable(a).")
 spam1o(isNumberType,
  "isNumberType(a) -- Return True if a has a numeric type, False otherwise.")
 spam1o(isSequenceType,
@@ -228,8 +224,6 @@ spam1o(truth,
  "truth(a) -- Return True if a is true, False otherwise.")
 spam2(contains,__contains__,
  "contains(a, b) -- Same as b in a (note reversed operands).")
-spam1(sequenceIncludes,
- "sequenceIncludes(a, b) -- Same as b in a (note reversed operands; deprecated).")
 spam1(indexOf,
  "indexOf(a, b) -- Return the first index of b in a.")
 spam1(countOf,
