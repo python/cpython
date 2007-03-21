@@ -1233,7 +1233,8 @@ Availability: Macintosh, \UNIX, Windows.
 \end{funcdesc}
 
 \begin{funcdesc}{walk}{top\optional{, topdown\code{=True}
-                       \optional{, onerror\code{=None}}}}
+                       \optional{, onerror\code{=None}\optional{,
+		       followlinks\code{=False}}}}}
 \index{directory!walking}
 \index{directory!traversal}
 \function{walk()} generates the file names in a directory tree, by
@@ -1273,22 +1274,23 @@ report the error to continue with the walk, or raise the exception
 to abort the walk.  Note that the filename is available as the
 \code{filename} attribute of the exception object.
 
+By default, \function{walk()} will not walk down into symbolic links that
+resolve to directories. Set \var{followlinks} to True to visit directories
+pointed to by symlinks, on systems that support them.
+
 \versionadded[The \var{followlinks} parameter]{2.6}
+
+\begin{notice}
+Be aware that setting \var{followlinks} to true can lead to infinite recursion
+if a link points to a parent directory of itself. \function{walk()} does not
+keep track of the directories it visited already.
+\end{notice}
 
 \begin{notice}
 If you pass a relative pathname, don't change the current working
 directory between resumptions of \function{walk()}.  \function{walk()}
 never changes the current directory, and assumes that its caller
 doesn't either.
-\end{notice}
-
-\begin{notice}
-On systems that support symbolic links, links to subdirectories appear
-in \var{dirnames} lists, but \function{walk()} will not visit them
-(infinite loops are hard to avoid when following symbolic links).
-To visit linked directories, you can identify them with
-\code{os.path.islink(\var{path})}, and invoke \code{walk(\var{path})}
-on each directly.
 \end{notice}
 
 This example displays the number of bytes taken by non-directory files
