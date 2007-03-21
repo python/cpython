@@ -293,6 +293,9 @@ class TestJointOps(unittest.TestCase):
         self.assertEqual(sum(elem.hash_count for elem in d), n)
         d3 = dict.fromkeys(frozenset(d))
         self.assertEqual(sum(elem.hash_count for elem in d), n)
+        d3 = dict.fromkeys(frozenset(d), 123)
+        self.assertEqual(sum(elem.hash_count for elem in d), n)
+        self.assertEqual(d3, dict.fromkeys(d, 123))
 
 class TestSet(TestJointOps):
     thetype = set
