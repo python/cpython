@@ -217,6 +217,9 @@ Extension Modules
 Library
 -------
 
+- Bug #1675967: re patterns pickled with Python 2.4 and earlier can
+  now be unpickled with Python 2.5.
+
 - Bug #1684254: webbrowser now uses shlex to split any command lines
   given to get(). It also detects when you use '&' as the last argument
   and creates a BackgroundBrowser then.
