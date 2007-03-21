@@ -379,6 +379,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('operator', ['operator.c']) )
         # _functools
         exts.append( Extension("_functools", ["_functoolsmodule.c"]) )
+        # atexit
+        exts.append( Extension("atexit", ["atexitmodule.c"]) )
         # Python C API test module
         exts.append( Extension('_testcapi', ['_testcapimodule.c']) )
         # profilers (_lsprof is for cProfile.py)

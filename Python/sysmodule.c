@@ -897,9 +897,6 @@ excepthook -- called to handle any uncaught exception other than SystemExit\n\
   To customize printing in an interactive session or to install a custom\n\
   top-level exception handler, assign other functions to replace these.\n\
 \n\
-exitfunc -- if sys.exitfunc exists, this routine is called when Python exits\n\
-  Assigning to sys.exitfunc is deprecated; use the atexit module instead.\n\
-\n\
 stdin -- standard input file object; used by raw_input() and input()\n\
 stdout -- standard output file object; used by print()\n\
 stderr -- standard error object; used for error messages\n\

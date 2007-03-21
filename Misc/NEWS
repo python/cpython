@@ -28,6 +28,9 @@ TO DO
 Core and Builtins
 -----------------
 
+- Patch #1680961: sys.exitfunc has been removed and replaced with a private
+  C-level API.
+
 - PEP 3115: new metaclasses: the metaclass is now specified as a
   keyword arg in the class statement, which can now use the full syntax of
   a parameter list. Also, the metaclass can implement a __prepare__ function
@@ -155,6 +158,8 @@ Extension Modules
 
 Library
 -------
+
+- Patch #1680961: atexit has been reimplemented in C.
 
 - Removed all traces of the sets module.
 

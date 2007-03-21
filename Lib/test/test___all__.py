@@ -48,7 +48,6 @@ class AllTest(unittest.TestCase):
         self.check_all("StringIO")
         self.check_all("UserString")
         self.check_all("aifc")
-        self.check_all("atexit")
         self.check_all("audiodev")
         self.check_all("base64")
         self.check_all("bdb")

@@ -218,19 +218,6 @@ It is always available.
   program when an error occurs.
 \end{funcdesc}
 
-\begin{datadesc}{exitfunc}
-  This value is not actually defined by the module, but can be set by
-  the user (or by a program) to specify a clean-up action at program
-  exit.  When set, it should be a parameterless function.  This
-  function will be called when the interpreter exits.  Only one
-  function may be installed in this way; to allow multiple functions
-  which will be called at termination, use the \refmodule{atexit}
-  module.  \note{The exit function is not called when the program is
-  killed by a signal, when a Python fatal internal error is detected,
-  or when \code{os._exit()} is called.}
-  \deprecated{2.4}{Use \refmodule{atexit} instead.}
-\end{datadesc}
-
 \begin{funcdesc}{getcheckinterval}{}
   Return the interpreter's ``check interval'';
   see \function{setcheckinterval()}.
