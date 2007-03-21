@@ -12,6 +12,8 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Remove unused file Python/fmod.c.
+
 - Patch #1675423: PyComplex_AsCComplex() now tries to convert an object
   to complex using its __complex__() method before falling back to the
   __float__() method. Therefore, the functions in the cmath module now
