@@ -1186,8 +1186,8 @@ dict_fromkeys(PyObject *cls, PyObject *args)
 
 		while (_PySet_NextEntry(seq, &pos, &key, &hash)) {
 			Py_INCREF(key);
-			Py_INCREF(Py_None);
-			if (insertdict(mp, key, hash, Py_None))
+			Py_INCREF(value);
+			if (insertdict(mp, key, hash, value))
 				return NULL;
 		}
 		return d;
