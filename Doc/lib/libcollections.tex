@@ -377,12 +377,13 @@ Setting the \member{default_factory} to \class{set} makes the
 
   The use cases are the same as those for tuples.  The named factories
   assign meaning to each tuple position and allow for more readable,
-  self-documenting code.  Can also be used to assign field names to tuples
+  self-documenting code.  Named tuples can also be used to assign field names 
+  to tuples
   returned by the \module{csv} or \module{sqlite3} modules.  For example:
 
   \begin{verbatim}
     import csv
-    EmployeeRecord = NamedTuple('EmployeeRecord', 'name age title deparment paygrade')
+    EmployeeRecord = NamedTuple('EmployeeRecord', 'name age title department paygrade')
     for tup in csv.reader(open("employees.csv", "rb")):
         print EmployeeRecord(*tup)
   \end{verbatim}
