@@ -177,17 +177,6 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnlessRaises(TypeError, operator.invert, None)
         self.failUnless(operator.inv(4) == -5)
 
-    def test_isCallable(self):
-        self.failUnlessRaises(TypeError, operator.isCallable)
-        class C:
-            pass
-        def check(self, o, v):
-            self.assert_(operator.isCallable(o) == callable(o) == v)
-        check(self, 4, 0)
-        check(self, operator.isCallable, 1)
-        check(self, C, 1)
-        check(self, C(), 0)
-
     def test_isMappingType(self):
         self.failUnlessRaises(TypeError, operator.isMappingType)
         self.failIf(operator.isMappingType(1))
@@ -296,8 +285,6 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnlessRaises(TypeError, operator.contains, None, None)
         self.failUnless(operator.contains(range(4), 2))
         self.failIf(operator.contains(range(4), 5))
-        self.failUnless(operator.sequenceIncludes(range(4), 2))
-        self.failIf(operator.sequenceIncludes(range(4), 5))
 
     def test_setitem(self):
         a = range(3)
