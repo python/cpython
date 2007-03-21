@@ -360,20 +360,20 @@ Setting the \member{default_factory} to \class{set} makes the
 
   Example:
   \begin{verbatim}
-    >>> Point = NamedTuple('Point', 'x y')
-    >>> Point.__doc__           # docstring for the new datatype
-    'Point(x, y)'
-    >>> p = Point(11, y=22)     # instantiate with positional or keyword arguments
-    >>> p[0] + p[1]             # works just like the tuple (11, 22)
-    33
-    >>> x, y = p                # unpacks just like a tuple
-    >>> x, y
-    (11, 22)
-    >>> p.x + p.y               # fields also accessable by name
-    33
-    >>> p                       # readable __repr__ with name=value style
-    Point(x=11, y=22)  
-  \end{verbatim}
+>>> Point = NamedTuple('Point', 'x y')
+>>> Point.__doc__           # docstring for the new datatype
+'Point(x, y)'
+>>> p = Point(11, y=22)     # instantiate with positional or keyword arguments
+>>> p[0] + p[1]             # works just like the tuple (11, 22)
+33
+>>> x, y = p                # unpacks just like a tuple
+>>> x, y
+(11, 22)
+>>> p.x + p.y               # fields also accessable by name
+33
+>>> p                       # readable __repr__ with name=value style
+Point(x=11, y=22)  
+\end{verbatim}
 
   The use cases are the same as those for tuples.  The named factories
   assign meaning to each tuple position and allow for more readable,
@@ -382,10 +382,10 @@ Setting the \member{default_factory} to \class{set} makes the
   returned by the \module{csv} or \module{sqlite3} modules.  For example:
 
   \begin{verbatim}
-    import csv
-    EmployeeRecord = NamedTuple('EmployeeRecord', 'name age title department paygrade')
-    for tup in csv.reader(open("employees.csv", "rb")):
-        print EmployeeRecord(*tup)
-  \end{verbatim}
+import csv
+EmployeeRecord = NamedTuple('EmployeeRecord', 'name age title department paygrade')
+for tup in csv.reader(open("employees.csv", "rb")):
+    print EmployeeRecord(*tup)
+\end{verbatim}
 
 \end{funcdesc}
