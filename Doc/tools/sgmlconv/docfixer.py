@@ -210,8 +210,7 @@ def rewrite_descriptor(doc, descriptor):
     # 2a.
     if descriptor.hasAttribute("var"):
         if descname != "opcodedesc":
-            raise RuntimeError, \
-                  "got 'var' attribute on descriptor other than opcodedesc"
+            raise RuntimeError("got 'var' attribute on descriptor other than opcodedesc")
         variable = descriptor.getAttribute("var")
         if variable:
             args = doc.createElement("args")
@@ -241,7 +240,7 @@ def rewrite_descriptor(doc, descriptor):
             try:
                 sig = methodline_to_signature(doc, children[pos])
             except KeyError:
-                print oldchild.toxml()
+                print(oldchild.toxml())
                 raise
             newchildren.append(sig)
         else:
@@ -347,7 +346,7 @@ def fixup_trailing_whitespace(doc, fragment, wsmap):
     while queue:
         node = queue[0]
         del queue[0]
-        if wsmap.has_key(node.nodeName):
+        if node.nodeName in wsmap:
             fixups.append(node)
         for child in node.childNodes:
             if child.nodeType == ELEMENT:
@@ -962,8 +961,7 @@ def write_esis(doc, ofp, knownempty):
             gi = node.tagName
             if knownempty(gi):
                 if node.hasChildNodes():
-                    raise ValueError, \
-                          "declared-empty node <%s> has children" % gi
+                    raise ValueError("declared-empty node <%s> has children" % gi)
                 ofp.write("e\n")
             for k, value in node.attributes.items():
                 if _token_rx.match(value):
@@ -979,7 +977,7 @@ def write_esis(doc, ofp, knownempty):
         elif nodeType == ENTITY_REFERENCE:
             ofp.write("&%s\n" % node.nodeName)
         else:
-            raise RuntimeError, "unsupported node type: %s" % nodeType
+            raise RuntimeError("unsupported node type: %s" % nodeType)
 
 
 def convert(ifp, ofp):
@@ -1033,7 +1031,7 @@ def convert(ifp, ofp):
     for gi in events.parser.get_empties():
         d[gi] = gi
     for key in ("author", "pep", "rfc"):
-        if d.has_key(key):
+        if key in d:
             del d[key]
     knownempty = d.has_key
     #

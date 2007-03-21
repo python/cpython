@@ -65,11 +65,11 @@ PYTHON_BINARY = "python"
 
 
 def usage(options, file):
-    print >>file, __doc__ % options
+    print(__doc__ % options, file=file)
 
 def error(options, message, err=2):
-    print >>sys.stderr, message
-    print >>sys.stderr
+    print(message, file=sys.stderr)
+    print(file=sys.stderr)
     usage(options, sys.stderr)
     sys.exit(2)
 
@@ -132,7 +132,7 @@ class Options:
         try:
             return getattr(self, key)
         except AttributeError:
-            raise KeyError, key
+            raise KeyError(key)
 
     def parse(self, args):
         opts, args = getopt.getopt(args, "Hi:a:s:lDkqr:",
@@ -289,7 +289,7 @@ class Job:
                 if not imgs:
                     self.warning(
                         "Could not locate support images of type %s."
-                        % `self.options.image_type`)
+                        % repr(self.options.image_type))
                 for fn in imgs:
                     new_fn = os.path.join(self.builddir, os.path.basename(fn))
                     shutil.copyfile(fn, new_fn)
@@ -534,7 +534,7 @@ class Job:
     def message(self, msg):
         msg = "+++ " + msg
         if not self.options.quiet:
-            print msg
+            print(msg)
         self.log(msg + "\n")
 
     def warning(self, msg):

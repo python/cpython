@@ -37,6 +37,15 @@ class Node:
         # build up the text
         self.text = split_entry_text(str)
         self.key = split_entry_key(str)
+        
+    def __eq__(self, other):
+        return cmp(self, other) == 0
+        
+    def __lt__(self, other):
+        return cmp(self, other) == -1
+        
+    def __gt__(self, other):
+        return cmp(self, other) == 1
 
     def __cmp__(self, other):
         """Comparison operator includes sequence number, for use with
@@ -380,8 +389,8 @@ def main():
         sys.stderr.write("\n%s: %d index nodes" % (program, num_nodes))
     else:
         open(ofn, "w").write(html)
-        print
-        print "%s: %d index nodes" % (program, num_nodes)
+        print()
+        print("%s: %d index nodes" % (program, num_nodes))
 
 
 if __name__ == "__main__":

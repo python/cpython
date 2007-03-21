@@ -472,7 +472,7 @@ class TableHandler(xml.sax.handler.ContentHandler):
         name = attrs["name"]
         self.__current = TableEntry(name, environment=1)
         self.__current.verbatim = attrs.get("verbatim") == "yes"
-        if attrs.has_key("outputname"):
+        if "outputname" in attrs:
             self.__current.outputname = attrs.get("outputname")
         self.__current.endcloses = attrs.get("endcloses", "").split()
     def end_environment(self):
@@ -482,11 +482,11 @@ class TableHandler(xml.sax.handler.ContentHandler):
         name = attrs["name"]
         self.__current = TableEntry(name)
         self.__current.closes = attrs.get("closes", "").split()
-        if attrs.has_key("outputname"):
+        if "outputname" in attrs:
             self.__current.outputname = attrs.get("outputname")
     def end_macro(self):
         name = self.__current.name
-        if self.__table.has_key(name):
+        if name in self.__table:
             raise ValueError("name %r already in use" % (name,))
         self.__table[name] = self.__current
         self.__current = None

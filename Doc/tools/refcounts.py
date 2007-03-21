@@ -69,24 +69,23 @@ class Entry:
 def dump(d):
     """Dump the data in the 'canonical' format, with functions in
     sorted order."""
-    items = d.items()
-    items.sort()
+    items = sorted(d.items())
     first = 1
     for k, entry in items:
         if first:
             first = 0
         else:
-            print
+            print()
         s = entry.name + ":%s:%s:%s:"
         if entry.result_refs is None:
             r = ""
         else:
             r = entry.result_refs
-        print s % (entry.result_type, "", r)
+        print(s % (entry.result_type, "", r))
         for t, n, r in entry.args:
             if r is None:
                 r = ""
-            print s % (t, n, r)
+            print(s % (t, n, r))
 
 
 def main():

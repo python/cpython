@@ -49,7 +49,7 @@ class IndexOptions(support.Options):
 
     def usage(self):
         program = os.path.basename(sys.argv[0])
-        print __doc__ % {"program": program}
+        print(__doc__ % {"program": program})
 
     links = [
         ('author', 'acks.html',  'Acknowledgements'),
@@ -143,8 +143,8 @@ def main():
     if options.outputfile == "-":
         sys.stderr.write("%s: %d index nodes\n" % (program, num_nodes))
     else:
-        print
-        print "%s: %d index nodes" % (program, num_nodes)
+        print()
+        print("%s: %d index nodes" % (program, num_nodes))
 
 
 PLAT_DISCUSS = """

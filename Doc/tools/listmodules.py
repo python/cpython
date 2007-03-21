@@ -40,8 +40,7 @@ def main():
     for p in path:
         modules.update(getmodules(p))
 
-    keys = modules.keys()
-    keys.sort()
+    keys = sorted(modules.keys())
 
     # filter out known test packages
     def cb(m):
@@ -79,7 +78,7 @@ def main():
 
     if out is not sys.stdout:
         out.close()
-        print out.name, "ok (%d modules)" % len(modules)
+        print(out.name, "ok (%d modules)" % len(modules))
 
 def getmodules(p):
     # get modules in a given directory

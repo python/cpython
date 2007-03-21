@@ -21,5 +21,5 @@ ncols = 5
 nrows = (len(l)+ncols-1)/ncols
 for i in range(nrows):
     for j in range(i, len(l), nrows):
-        print l[j].ljust(10),
-    print
+        print(l[j].ljust(10), end=' ')
+    print()

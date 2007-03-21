@@ -26,7 +26,7 @@ def main():
     options.variables["title"] = "Acknowledgements"
     options.parse(sys.argv[1:])
     names = collect(sys.stdin)
-    percol = (len(names) + options.columns - 1) / options.columns
+    percol = (len(names) + options.columns - 1) // options.columns
     colnums = []
     for i in range(options.columns):
         colnums.append(percol*i)

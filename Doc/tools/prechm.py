@@ -413,7 +413,7 @@ def content(path, contentpage, output):
 def do_index(library, output):
     output.write('<UL>\n')
     for book in library:
-        print '\t', book.title, '-', book.indexpage
+        print('\t', book.title, '-', book.indexpage)
         if book.indexpage:
             index(book.directory, book.indexpage, output)
     output.write('</UL>\n')
@@ -421,7 +421,7 @@ def do_index(library, output):
 def do_content(library, version, output):
     output.write(contents_header)
     for book in library:
-        print '\t', book.title, '-', book.firstpage
+        print('\t', book.title, '-', book.firstpage)
         path = book.directory + "/" + book.firstpage
         output.write('<LI>')
         output.write(object_sitemap % (book.title, path))
@@ -449,12 +449,12 @@ def openfile(file):
     try:
         p = open(file, "w")
     except IOError as msg:
-        print file, ":", msg
+        print(file, ":", msg)
         sys.exit(1)
     return p
 
 def usage():
-    print usage_mode
+    print(usage_mode)
     sys.exit(0)
 
 def do_it(args = None):
@@ -467,7 +467,7 @@ def do_it(args = None):
     try:
         optlist, args = getopt.getopt(args, 'ckpv:')
     except getopt.error as msg:
-        print msg
+        print(msg)
         usage()
 
     if not args or len(args) > 1:
@@ -487,15 +487,15 @@ def do_it(args = None):
     if not (('-p','') in optlist):
         fname = arch + '.stp'
         f = openfile(fname)
-        print "Building stoplist", fname, "..."
+        print("Building stoplist", fname, "...")
         words = stop_list.split()
         words.sort()
         for word in words:
-            print >> f, word
+            print(word, file=f)
         f.close()
 
         f = openfile(arch + '.hhp')
-        print "Building Project..."
+        print("Building Project...")
         do_project(library, f, arch, version)
         if version == '2.0.0':
             for image in os.listdir('icons'):
@@ -505,13 +505,13 @@ def do_it(args = None):
 
     if not (('-c','') in optlist):
         f = openfile(arch + '.hhc')
-        print "Building Table of Content..."
+        print("Building Table of Content...")
         do_content(library, version, f)
         f.close()
 
     if not (('-k','') in optlist):
         f = openfile(arch + '.hhk')
-        print "Building Index..."
+        print("Building Index...")
         do_index(library, f)
         f.close()
 
