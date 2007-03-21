@@ -2,6 +2,7 @@
 """Interfaces for launching and remotely controlling Web browsers."""
 
 import os
+import shlex
 import sys
 import stat
 import subprocess
@@ -32,7 +33,11 @@ def get(using=None):
     for browser in alternatives:
         if '%s' in browser:
             # User gave us a command line, split it into name and args
-            return GenericBrowser(browser.split())
+            browser = shlex.split(browser)
+            if browser[-1] == '&':
+                return BackgroundBrowser(browser[:-1])
+            else:
+                return GenericBrowser(browser)
         else:
             # User gave us a browser name or path.
             try:
