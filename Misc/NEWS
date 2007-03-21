@@ -12,6 +12,9 @@ What's New in Python 2.6 alpha 1?
 Core and builtins
 -----------------
 
+- Patch #1682205: a TypeError while unpacking an iterable is no longer
+  masked by a generic one with the message "unpack non-sequence".
+
 - Remove unused file Python/fmod.c.
 
 - Patch #1675423: PyComplex_AsCComplex() now tries to convert an object
