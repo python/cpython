@@ -29,7 +29,7 @@ def decode(s):
             n, s = s.split(";", 1)
             r = r + unichr(int(n))
         else:
-            raise ValueError, "can't handle %r" % s
+            raise ValueError("can't handle %r" % s)
     return r
 
 
@@ -80,7 +80,7 @@ class ESISReader(xml.sax.xmlreader.XMLReader):
             self.setErrorHandler(errorHandler)
 
     def get_empties(self):
-        return self._empties.keys()
+        return list(self._empties.keys())
 
     #
     #  XMLReader interface
@@ -270,7 +270,7 @@ class Attributes(xml.sax.xmlreader.AttributesImpl):
         return self._attrs[name][0]
 
     def get(self, name, default=None):
-        if self._attrs.has_key(name):
+        if name in self._attrs:
             return self._attrs[name][0]
         return default
 
@@ -282,7 +282,7 @@ class Attributes(xml.sax.xmlreader.AttributesImpl):
 
     def values(self):
         L = []
-        for value, type in self._attrs.values():
+        for value, type in list(self._attrs.values()):
             L.append(value)
         return L
 

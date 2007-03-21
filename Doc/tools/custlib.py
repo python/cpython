@@ -31,7 +31,7 @@ for dir in sys.path:
         modules[base.lower()] = base
 
 # Minor oddity: the types module is documented in libtypes2.tex
-if modules.has_key('types'):
+if 'types' in modules:
     del modules['types']
     modules['types2'] = None
 
@@ -44,8 +44,8 @@ for file in filelist:
     modname = file[3:-4]
     docs[modname] = modname
 
-mlist = modules.keys()
-mlist = filter(lambda x, docs=docs: docs.has_key(x), mlist)
+mlist = list(modules.keys())
+mlist = filter(lambda x, docs=docs: x in docs, mlist)
 mlist.sort()
 mlist = map(lambda x, docs=docs: docs[x], mlist)
 
@@ -55,7 +55,7 @@ modules = mlist
 
 # Write the boilerplate
 # XXX should be fancied up.
-print """\documentstyle[twoside,11pt,myformat]{report}
+print("""\documentstyle[twoside,11pt,myformat]{report}
 \\title{Python Library Reference}
 \\input{boilerplate}
 \\makeindex                     % tell \\index to actually write the .idx file
@@ -68,11 +68,11 @@ print """\documentstyle[twoside,11pt,myformat]{report}
 \\end{abstract}
 \\pagebreak
 {\\parskip = 0mm \\tableofcontents}
-\\pagebreak\\pagenumbering{arabic}"""
+\\pagebreak\\pagenumbering{arabic}""")
 
 for modname in mlist:
-    print "\\input{lib%s}" % (modname,)
+    print("\\input{lib%s}" % (modname,))
 
 # Write the end
-print """\\input{custlib.ind}                   % Index
-\\end{document}"""
+print("""\\input{custlib.ind}                   % Index
+\\end{document}""")
