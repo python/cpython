@@ -12,6 +12,9 @@ What's New in Python 2.5.1c1?
 Core and builtins
 -----------------
 
+- Patch #1682205: a TypeError while unpacking an iterable is no longer
+  masked by a generic one with the message "unpack non-sequence".
+
 - Patch #1642547: Fix an error/crash when encountering syntax errors in
   complex if statements.
 
