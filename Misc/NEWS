@@ -217,6 +217,10 @@ Extension Modules
 Library
 -------
 
+- Bug #1684254: webbrowser now uses shlex to split any command lines
+  given to get(). It also detects when you use '&' as the last argument
+  and creates a BackgroundBrowser then.
+
 - Patch #1681153: the wave module now closes a file object it opened if
   initialization failed.
 
