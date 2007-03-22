@@ -361,8 +361,6 @@ Library
 
 - Bug #1643943: Fix time.strptime's support for the %U directive.
 
-- Patch #1643874: memory leak in ctypes fixed.
-
 - Patch #1507247: tarfile.py: use current umask for intermediate
   directories.
 
