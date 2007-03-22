@@ -2181,6 +2181,12 @@ static void CData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
 	if ((size_t)dict->size <= sizeof(obj->b_value)) {
 		/* No need to call malloc, can use the default buffer */
 		obj->b_ptr = (char *)&obj->b_value;
+		/* The b_needsfree flag does not mean that we actually did
+		   call PyMem_Malloc to allocate the memory block; instead it
+		   means we are the *owner* of the memory and are responsible
+		   for freeing resources associated with the memory.  This is
+		   also the reason that b_needsfree is exposed to Python.
+		 */
 		obj->b_needsfree = 1;
 	} else {
 		/* In python 2.4, and ctypes 0.9.6, the malloc call took about
