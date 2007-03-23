@@ -844,22 +844,24 @@ class NetworkConnectionAttributesTest(unittest.TestCase):
         self.assertTrue(sock.gettimeout() is None)
     
         # a value, named
-        sock = socket.create_connection((HOST, PORT), timeout=10)
-        self.assertEqual(sock.gettimeout(), 10)
+        sock = socket.create_connection((HOST, PORT), timeout=30)
+        self.assertEqual(sock.gettimeout(), 30)
 
         # a value, just the value
-        sock = socket.create_connection((HOST, PORT), 10)
-        self.assertEqual(sock.gettimeout(), 10)
+        sock = socket.create_connection((HOST, PORT), 30)
+        self.assertEqual(sock.gettimeout(), 30)
 
         # None, having other default 
         previous = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(10)
-        sock = socket.create_connection((HOST, PORT), timeout=None)
-        socket.setdefaulttimeout(previous)
-        self.assertEqual(sock.gettimeout(), 10)
+        socket.setdefaulttimeout(30)
+        try:
+            sock = socket.create_connection((HOST, PORT), timeout=None)
+        finally:
+            socket.setdefaulttimeout(previous)
+        self.assertEqual(sock.gettimeout(), 30)
 
     def testFamily(self):
-        sock = socket.create_connection((HOST, PORT), timeout=10)
+        sock = socket.create_connection((HOST, PORT), timeout=30)
         self.assertEqual(sock.family, 2)
 
 

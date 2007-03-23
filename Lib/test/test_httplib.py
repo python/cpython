@@ -176,17 +176,19 @@ class TimeoutTest(TestCase):
         self.assertTrue(httpConn.sock.gettimeout() is None)
     
         # a value
-        httpConn = httplib.HTTPConnection(HOST, PORT, timeout=10)
+        httpConn = httplib.HTTPConnection(HOST, PORT, timeout=30)
         httpConn.connect()
-        self.assertEqual(httpConn.sock.gettimeout(), 10)
+        self.assertEqual(httpConn.sock.gettimeout(), 30)
 
         # None, having other default
         previous = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(10)
-        httpConn = httplib.HTTPConnection(HOST, PORT, timeout=None)
-        httpConn.connect()
-        socket.setdefaulttimeout(previous)
-        self.assertEqual(httpConn.sock.gettimeout(), 10)
+        socket.setdefaulttimeout(30)
+        try:
+            httpConn = httplib.HTTPConnection(HOST, PORT, timeout=None)
+            httpConn.connect()
+        finally:
+            socket.setdefaulttimeout(previous)
+        self.assertEqual(httpConn.sock.gettimeout(), 30)
 
 
 def test_main(verbose=None):
