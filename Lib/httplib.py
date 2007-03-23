@@ -926,8 +926,8 @@ class HTTPConnection:
         self.__state = _CS_IDLE
 
         if response.will_close:
-            # Pass the socket to the response
-            self.sock = None
+            # this effectively passes the connection to the response
+            self.close()
         else:
             # remember this, so we can tell when it is complete
             self.__response = response
