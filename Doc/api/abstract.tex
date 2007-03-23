@@ -810,7 +810,7 @@ determination.
   the Python statement \samp{del \var{o}[\var{i1}:\var{i2}]}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PySequence_Count}{PyObject *o, PyObject *value}
+\begin{cfuncdesc}{Py_ssize_t}{PySequence_Count}{PyObject *o, PyObject *value}
   Return the number of occurrences of \var{value} in \var{o}, that is,
   return the number of keys for which \code{\var{o}[\var{key}] ==
   \var{value}}.  On failure, return \code{-1}.  This is equivalent to
@@ -824,7 +824,7 @@ determination.
   expression \samp{\var{value} in \var{o}}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PySequence_Index}{PyObject *o, PyObject *value}
+\begin{cfuncdesc}{Py_ssize_t}{PySequence_Index}{PyObject *o, PyObject *value}
   Return the first index \var{i} for which \code{\var{o}[\var{i}] ==
   \var{value}}.  On error, return \code{-1}.    This is equivalent to
   the Python expression \samp{\var{o}.index(\var{value})}.
@@ -874,7 +874,7 @@ determination.
   \versionadded{2.3}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PySequence_Fast_GET_SIZE}{PyObject *o}
+\begin{cfuncdesc}{Py_ssize_t}{PySequence_Fast_GET_SIZE}{PyObject *o}
   Returns the length of \var{o}, assuming that \var{o} was
   returned by \cfunction{PySequence_Fast()} and that \var{o} is
   not \NULL.  The size can also be gotten by calling
