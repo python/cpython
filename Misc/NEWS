@@ -447,6 +447,13 @@ Windows
   and _CRT_NONSTDC_NO_DEPRECATE.
 
 
+Documentation
+-------------
+
+- Patch #1686451: Fix return type for
+  PySequence_{Count,Index,Fast_GET_SIZE}.
+
+
 What's New in Python 2.5 (final)
 ================================
 
