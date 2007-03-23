@@ -170,6 +170,15 @@ supported on this platform.
 \versionadded{2.3}
 \end{datadesc}
 
+\begin{funcdesc}{create_connection}{address\optional{, timeout}}
+Connects to the \var{address} received (as usual, a pair host/port), with
+an optional timeout for the connection.  Specially useful for higher-level
+protocols, it is not normally used directly from application-level code.  
+Passing the optional \var{timeout} parameter will set the timeout on the 
+socket instance (if not present, or passed as None, the global default
+timeout setting is used).
+\end{funcdesc}
+
 \begin{funcdesc}{getaddrinfo}{host, port\optional{, family\optional{,
                               socktype\optional{, proto\optional{,
                               flags}}}}}

@@ -75,7 +75,7 @@ class ThreadableTest:
 
     Note, the server setup function cannot call any blocking
     functions that rely on the client thread during setup,
-    unless serverExplicityReady() is called just before
+    unless serverExplicitReady() is called just before
     the blocking call (such as in setting up a client/server
     connection and performing the accept() in setUp().
     """
@@ -810,6 +810,85 @@ class SmallBufferedFileObjectClassTestCase(FileObjectClassTestCase):
     bufsize = 2 # Exercise the buffering code
 
 
+class NetworkConnectionTest(object):
+    """Prove network connection."""
+    def clientSetUp(self):
+        self.cli = socket.create_connection((HOST, PORT))
+        self.serv_conn = self.cli
+    
+class BasicTCPTest2(NetworkConnectionTest, BasicTCPTest):
+    """Tests that NetworkConnection does not break existing TCP functionality.
+    """
+
+class NetworkConnectionAttributesTest(unittest.TestCase):
+
+    def setUp(self):
+        self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        global PORT
+        PORT = test_support.bind_port(self.serv, HOST, PORT)
+        self.serv.listen(1)
+
+    def tearDown(self):
+        if self.serv:
+            self.serv.close()
+            self.serv = None
+
+    def testWithoutServer(self):
+        self.tearDown()
+        self.failUnlessRaises(socket.error, lambda: socket.create_connection((HOST, PORT)))
+
+    def testTimeoutAttribute(self):
+        # default
+        sock = socket.create_connection((HOST, PORT))
+        self.assertTrue(sock.gettimeout() is None)
+    
+        # a value, named
+        sock = socket.create_connection((HOST, PORT), timeout=10)
+        self.assertEqual(sock.gettimeout(), 10)
+
+        # a value, just the value
+        sock = socket.create_connection((HOST, PORT), 10)
+        self.assertEqual(sock.gettimeout(), 10)
+
+        # None, having other default 
+        previous = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(10)
+        sock = socket.create_connection((HOST, PORT), timeout=None)
+        socket.setdefaulttimeout(previous)
+        self.assertEqual(sock.gettimeout(), 10)
+
+    def testFamily(self):
+        sock = socket.create_connection((HOST, PORT), timeout=10)
+        self.assertEqual(sock.family, 2)
+
+
+def threadedServer(delay):
+    serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    global PORT
+    PORT = test_support.bind_port(serv, HOST, PORT)
+    serv.listen(1)
+    conn, addr = serv.accept()
+    time.sleep(delay)
+    conn.send("done!")
+    conn.close()
+        
+class NetworkConnectionBehaviourTest(unittest.TestCase):
+    def testInsideTimeout(self):
+        threading.Thread(target=threadedServer, args=(3,)).start()
+        time.sleep(.1)
+        sock = socket.create_connection((HOST, PORT))
+        data = sock.recv(5)
+        self.assertEqual(data, "done!")
+
+    def testOutsideTimeout(self):
+        threading.Thread(target=threadedServer, args=(3,)).start()
+        time.sleep(.1)
+        sock = socket.create_connection((HOST, PORT), timeout=1)
+        self.failUnlessRaises(socket.timeout, lambda: sock.recv(5))
+
+
 class Urllib2FileobjectTest(unittest.TestCase):
 
     # urllib2.HTTPHandler has "borrowed" socket._fileobject, and requires that
@@ -977,7 +1056,7 @@ class BufferIOTest(SocketConnectedTest):
 
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
-             TestExceptions, BufferIOTest]
+             TestExceptions, BufferIOTest, BasicTCPTest2]
     if sys.platform != 'mac':
         tests.extend([ BasicUDPTest, UDPTimeoutTest ])
 
@@ -988,6 +1067,8 @@ def test_main():
         LineBufferedFileObjectClassTestCase,
         SmallBufferedFileObjectClassTestCase,
         Urllib2FileobjectTest,
+        NetworkConnectionAttributesTest,
+        NetworkConnectionBehaviourTest,
     ])
     if hasattr(socket, "socketpair"):
         tests.append(BasicSocketPairTest)
