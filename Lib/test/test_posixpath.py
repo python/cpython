@@ -480,15 +480,19 @@ class PosixPathTest(unittest.TestCase):
                 safe_rmdir(ABSTFN)
 
     def test_relpath(self):
-        currentdir = os.path.split(os.getcwd())[-1]
-        self.assertRaises(ValueError, posixpath.relpath, "")
-        self.assertEqual(posixpath.relpath("a"), "a")
-        self.assertEqual(posixpath.relpath(os.path.abspath("a")), "a")
-        self.assertEqual(posixpath.relpath("a/b"), "a/b")
-        self.assertEqual(posixpath.relpath("../a/b"), "../a/b")
-        self.assertEqual(posixpath.relpath("a", "../b"), "../"+currentdir+"/a")
-        self.assertEqual(posixpath.relpath("a/b", "../c"), "../"+currentdir+"/a/b")
-        self.assertEqual(posixpath.relpath("a", "b/c"), "../../a")
+        (real_getcwd, os.getcwd) = (os.getcwd, lambda: r"/home/user/bar")
+        try:
+            curdir = os.path.split(os.getcwd())[-1]
+            self.assertRaises(ValueError, posixpath.relpath, "")
+            self.assertEqual(posixpath.relpath("a"), "a")
+            self.assertEqual(posixpath.relpath(posixpath.abspath("a")), "a")
+            self.assertEqual(posixpath.relpath("a/b"), "a/b")
+            self.assertEqual(posixpath.relpath("../a/b"), "../a/b")
+            self.assertEqual(posixpath.relpath("a", "../b"), "../"+curdir+"/a")
+            self.assertEqual(posixpath.relpath("a/b", "../c"), "../"+curdir+"/a/b")
+            self.assertEqual(posixpath.relpath("a", "b/c"), "../../a")
+        finally:
+            os.getcwd = real_getcwd
 
 def test_main():
     test_support.run_unittest(PosixPathTest)
