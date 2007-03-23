@@ -8,6 +8,9 @@
 
 #include "Python.h"
 
+/* Forward declaration (for atexit_cleanup) */
+static PyObject *atexit_clear(PyObject*);
+
 /* ===================================================================== */
 /* Callback machinery. */
 
@@ -72,6 +75,13 @@ atexit_delete_cb(int i)
     PyMem_Free(cb);    
 }
 
+void
+atexit_cleanup(void)
+{
+    PyObject *r = atexit_clear(NULL);
+    Py_DECREF(r);
+}
+
 /* ===================================================================== */
 /* Module methods. */
 
@@ -93,12 +103,13 @@ atexit_register(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *func = NULL;
     
     if (ncallbacks >= callback_len) {
+        atexit_callback **r;
         callback_len += 16;
-        /* XXX(nnorwitz): this leaks if realloc() fails.  It also
-           doesn't verify realloc() returns a valid (non-NULL) pointer. */
-        atexit_callbacks = PyMem_Realloc(atexit_callbacks,
-                          sizeof(atexit_callback*) * callback_len);
-
+        r = (atexit_callback**)PyMem_Realloc(atexit_callbacks,
+                                      sizeof(atexit_callback*) * callback_len);
+        if (r == NULL)
+            return PyErr_NoMemory();
+        atexit_callbacks = r;
     }
     
     if (PyTuple_GET_SIZE(args) == 0) {
@@ -217,8 +228,8 @@ initatexit(void)
     if (m == NULL)
         return;
     
-    /* XXX(nnorwitz): probably best to register a callback that will free
-       atexit_callbacks, otherwise valgrind will report memory leaks.
-        Need to call atexit_clear() first. */
     _Py_PyAtExit(atexit_callfuncs);
+    /* Register a callback that will free
+       atexit_callbacks, otherwise valgrind will report memory leaks. */
+    Py_AtExit(atexit_cleanup);
 }
