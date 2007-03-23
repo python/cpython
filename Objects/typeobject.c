@@ -1684,6 +1684,39 @@ _unicode_to_string(PyObject *slots, Py_ssize_t nslots)
 }
 #endif
 
+/* Forward */
+static int
+object_init(PyObject *self, PyObject *args, PyObject *kwds);
+
+static int
+type_init(PyObject *cls, PyObject *args, PyObject *kwds)
+{
+	int res;
+
+	assert(args != NULL && PyTuple_Check(args));
+	assert(kwds == NULL || PyDict_Check(kwds));
+
+	if (kwds != NULL && PyDict_Check(kwds) && PyDict_Size(kwds) != 0) {
+		PyErr_SetString(PyExc_TypeError,
+				"type.__init__() takes no keyword arguments");
+		return -1;
+	}
+
+	if (args != NULL && PyTuple_Check(args) &&
+	    (PyTuple_GET_SIZE(args) != 1 && PyTuple_GET_SIZE(args) != 3)) {
+		PyErr_SetString(PyExc_TypeError,
+				"type.__init__() takes 1 or 3 arguments");
+		return -1;
+	}
+
+	/* Call object.__init__(self) now. */
+	/* XXX Could call super(type, cls).__init__() but what's the point? */
+	args = PyTuple_GetSlice(args, 0, 0);
+	res = object_init(cls, args, NULL);
+	Py_DECREF(args);
+	return res;
+}
+
 static PyObject *
 type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 {
@@ -2381,7 +2414,7 @@ PyTypeObject PyType_Type = {
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */
 	offsetof(PyTypeObject, tp_dict),	/* tp_dictoffset */
-	0,					/* tp_init */
+	type_init,				/* tp_init */
 	0,					/* tp_alloc */
 	type_new,				/* tp_new */
 	PyObject_GC_Del,			/* tp_free */
