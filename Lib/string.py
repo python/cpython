@@ -108,7 +108,9 @@ class _TemplateMetaclass(type):
     """
 
     def __init__(cls, name, bases, dct):
-        super(_TemplateMetaclass, cls).__init__(name, bases, dct)
+        # A super call makes no sense since type() doesn't define __init__().
+        # (Or does it? And should type.__init__() accept three args?)
+        # super(_TemplateMetaclass, cls).__init__(name, bases, dct)
         if 'pattern' in dct:
             pattern = cls.pattern
         else:
