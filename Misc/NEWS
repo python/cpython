@@ -1,4 +1,4 @@
-+++++++++++
+__init+++++++++++
 Python News
 +++++++++++
 
@@ -16,6 +16,13 @@ Core and builtins
   masked by a generic one with the message "unpack non-sequence".
 
 - Remove unused file Python/fmod.c.
+
+- Bug #1683368: The object.__init__() and object.__new__() methods are
+  now stricter in rejecting excess arguments.  The only time when
+  either allows excess arguments is when it is not overridden and the
+  other one is.  For backwards compatibility, when both are
+  overridden, it is a deprecation warning (for now; maybe a Py3k
+  warning later).
 
 - Patch #1675423: PyComplex_AsCComplex() now tries to convert an object
   to complex using its __complex__() method before falling back to the

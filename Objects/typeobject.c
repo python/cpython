@@ -2391,27 +2391,103 @@ PyTypeObject PyType_Type = {
 
 /* The base type of all types (eventually)... except itself. */
 
+/* You may wonder why object.__new__() only complains about arguments
+   when object.__init__() is not overridden, and vice versa.
+
+   Consider the use cases:
+
+   1. When neither is overridden, we want to hear complaints about
+      excess (i.e., any) arguments, since their presence could
+      indicate there's a bug.
+
+   2. When defining an Immutable type, we are likely to override only
+      __new__(), since __init__() is called too late to initialize an
+      Immutable object.  Since __new__() defines the signature for the
+      type, it would be a pain to have to override __init__() just to
+      stop it from complaining about excess arguments.
+
+   3. When defining a Mutable type, we are likely to override only
+      __init__().  So here the converse reasoning applies: we don't
+      want to have to override __new__() just to stop it from
+      complaining.
+
+   4. When __init__() is overridden, and the subclass __init__() calls
+      object.__init__(), the latter should complain about excess
+      arguments; ditto for __new__().
+
+   Use cases 2 and 3 make it unattractive to unconditionally check for
+   excess arguments.  The best solution that addresses all four use
+   cases is as follows: __init__() complains about excess arguments
+   unless __new__() is overridden and __init__() is not overridden
+   (IOW, if __init__() is overridden or __new__() is not overridden);
+   symmetrically, __new__() complains about excess arguments unless
+   __init__() is overridden and __new__() is not overridden
+   (IOW, if __new__() is overridden or __init__() is not overridden).
+
+   However, for backwards compatibility, this breaks too much code.
+   Therefore, in 2.6, we'll *warn* about excess arguments when both
+   methods are overridden; for all other cases we'll use the above
+   rules.
+
+*/
+
+/* Forward */
+static PyObject *
+object_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+
+static int
+excess_args(PyObject *args, PyObject *kwds)
+{
+	return PyTuple_GET_SIZE(args) ||
+		(kwds && PyDict_Check(kwds) && PyDict_Size(kwds));
+}
+
 static int
 object_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	return 0;
+	int err = 0;
+	if (excess_args(args, kwds)) {
+		PyTypeObject *type = self->ob_type;
+		if (type->tp_init != object_init &&
+		    type->tp_new != object_new)
+		{
+			err = PyErr_WarnEx(PyExc_DeprecationWarning,
+				   "object.__init__() takes no parameters",
+				   1);
+		}
+		else if (type->tp_init != object_init ||
+			 type->tp_new == object_new)
+		{
+			PyErr_SetString(PyExc_TypeError,
+				"object.__init__() takes no parameters");
+			err = -1;
+		}
+	}
+	return err;
 }
 
-/* If we don't have a tp_new for a new-style class, new will use this one.
-   Therefore this should take no arguments/keywords.  However, this new may
-   also be inherited by objects that define a tp_init but no tp_new.  These
-   objects WILL pass argumets to tp_new, because it gets the same args as
-   tp_init.  So only allow arguments if we aren't using the default init, in
-   which case we expect init to handle argument parsing. */
 static PyObject *
 object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	if (type->tp_init == object_init && (PyTuple_GET_SIZE(args) ||
-	     (kwds && PyDict_Check(kwds) && PyDict_Size(kwds)))) {
-		PyErr_SetString(PyExc_TypeError,
-				"default __new__ takes no parameters");
-		return NULL;
+	int err = 0;
+	if (excess_args(args, kwds)) {
+		if (type->tp_new != object_new &&
+		    type->tp_init != object_init)
+		{
+			err = PyErr_WarnEx(PyExc_DeprecationWarning,
+				   "object.__new__() takes no parameters",
+				   1);
+		}
+		else if (type->tp_new != object_new ||
+			 type->tp_init == object_init)
+		{
+			PyErr_SetString(PyExc_TypeError,
+				"object.__new__() takes no parameters");
+			err = -1;
+		}
 	}
+	if (err < 0)
+		return NULL;
 	return type->tp_alloc(type, 0);
 }
 
