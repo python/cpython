@@ -1002,6 +1002,12 @@ ArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	}
 
 	itemsize = itemdict->size;
+	if (length * itemsize < 0) {
+		PyErr_SetString(PyExc_OverflowError,
+				"array too large");
+		return NULL;
+	}
+
 	itemalign = itemdict->align;
 
 	stgdict->size = itemsize * length;
@@ -2176,7 +2182,7 @@ PyTypeObject CData_Type = {
 	0,					/* tp_free */
 };
 
-static void CData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
+static int CData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
 {
 	if ((size_t)dict->size <= sizeof(obj->b_value)) {
 		/* No need to call malloc, can use the default buffer */
@@ -2193,10 +2199,15 @@ static void CData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
 		   33% of the creation time for c_int().
 		*/
 		obj->b_ptr = (char *)PyMem_Malloc(dict->size);
+		if (obj->b_ptr == NULL) {
+			PyErr_NoMemory();
+			return -1;
+		}
 		obj->b_needsfree = 1;
 		memset(obj->b_ptr, 0, dict->size);
 	}
 	obj->b_size = dict->size;
+	return 0;
 }
 
 PyObject *
@@ -2228,7 +2239,10 @@ CData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr)
 		cmem->b_base = (CDataObject *)base;
 		cmem->b_index = index;
 	} else { /* copy contents of adr */
-		CData_MallocBuffer(cmem, dict);
+		if (-1 == CData_MallocBuffer(cmem, dict)) {
+			return NULL;
+			Py_DECREF(cmem);
+		}
 		memcpy(cmem->b_ptr, adr, dict->size);
 		cmem->b_index = index;
 	}
@@ -2441,7 +2455,10 @@ GenericCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	obj->b_objects = NULL;
 	obj->b_length = dict->length;
 			
-	CData_MallocBuffer(obj, dict);
+	if (-1 == CData_MallocBuffer(obj, dict)) {
+		Py_DECREF(obj);
+		return NULL;
+	}
 	return (PyObject *)obj;
 }
 /*****************************************************************/
