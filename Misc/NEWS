@@ -711,6 +711,9 @@ Tools
 Documentation
 -------------
 
+- Patch #1686451: Fix return type for
+  PySequence_{Count,Index,Fast_GET_SIZE}.
+
 - Patch #1679379: add documentation for fnmatch.translate().
 
 - Bug #1629566: clarify the docs on the return values of parsedate()
