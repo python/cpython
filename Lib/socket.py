@@ -139,8 +139,6 @@ class _closedsocket(object):
     __slots__ = []
     def _dummy(*args):
         raise error(EBADF, 'Bad file descriptor')
-    def close(self):
-        pass
     # All _delegate_methods must also be initialized here.
     send = recv = recv_into = sendto = recvfrom = recvfrom_into = _dummy
     __getattr__ = _dummy
@@ -159,7 +157,6 @@ class _socketobject(object):
             setattr(self, method, getattr(_sock, method))
 
     def close(self):
-        self._sock.close()
         self._sock = _closedsocket()
         dummy = self._sock._dummy
         for method in _delegate_methods:
