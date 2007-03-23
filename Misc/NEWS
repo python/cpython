@@ -22,7 +22,8 @@ Core and builtins
   either allows excess arguments is when it is not overridden and the
   other one is.  For backwards compatibility, when both are
   overridden, it is a deprecation warning (for now; maybe a Py3k
-  warning later).
+  warning later).  Also, type.__init__() insists on the same signature
+  as supported by type.__new__().
 
 - Patch #1675423: PyComplex_AsCComplex() now tries to convert an object
   to complex using its __complex__() method before falling back to the
