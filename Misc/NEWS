@@ -199,6 +199,10 @@ Core and builtins
 Library
 -------
 
+- Patch #1676823: Added create_connection() to socket.py, which may be 
+  called with a timeout, and use it from httplib (whose HTTPConnection 
+  now accepts an optional timeout).
+
 - Bug #978833: Revert r50844, as it broke _socketobject.dup.
 
 - Bug #1675967: re patterns pickled with Python 2.4 and earlier can

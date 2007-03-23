@@ -26,18 +26,28 @@ that use HTTP and HTTPS.
 
 The module provides the following classes:
 
-\begin{classdesc}{HTTPConnection}{host\optional{, port}}
+\begin{classdesc}{HTTPConnection}{host\optional{, port\optional{,
+		  strict\optional{, timeout}}}}
 An \class{HTTPConnection} instance represents one transaction with an HTTP
 server.  It should be instantiated passing it a host and optional port number.
 If no port number is passed, the port is extracted from the host string if it
 has the form \code{\var{host}:\var{port}}, else the default HTTP port (80) is
-used.  For example, the following calls all create instances that connect to
+used.  
+When True the optional parameter \var{strict}
+causes \code{BadStatusLine} to be raised if the status line can't be parsed
+as a valid HTTP/1.0 or 1.1 status line.  If the optional \var{timeout}
+parameter is given, connection attempts will timeout after that many
+seconds (if no timeout is passed, or is passed as None, the global default 
+timeout setting is used).
+
+For example, the following calls all create instances that connect to
 the server at the same host and port:
 
 \begin{verbatim}
 >>> h1 = httplib.HTTPConnection('www.cwi.nl')
 >>> h2 = httplib.HTTPConnection('www.cwi.nl:80')
 >>> h3 = httplib.HTTPConnection('www.cwi.nl', 80)
+>>> h3 = httplib.HTTPConnection('www.cwi.nl', 80, timeout=10)
 \end{verbatim}
 \versionadded{2.0}
 \end{classdesc}
