@@ -1,5 +1,5 @@
 \ifx\locallinewidth\undefined\newlength{\locallinewidth}\fi
-\setlength{\locallinewidth}{\linewidth}
+%\setlength{\locallinewidth}{\linewidth}
 \section{\module{ctypes} --- A foreign function library for Python.}
 \declaremodule{standard}{ctypes}
 \moduleauthor{Thomas Heller}{theller@python.net}
@@ -1242,7 +1242,7 @@ variables. An example in the Python library itself is the
 \programopt{-O} or \programopt{-OO} flag given on startup.
 
 \code{ctypes} can access values like this with the \method{in{\_}dll} class
-methods of the type.  \var{pythonapi} ìs a predefined symbol giving
+methods of the type.  \var{pythonapi} is a predefined symbol giving
 access to the Python C api:
 \begin{verbatim}
 >>> opt_flag = c_int.in_dll(pythonapi, "Py_OptimizeFlag")
