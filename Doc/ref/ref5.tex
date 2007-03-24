@@ -56,7 +56,7 @@ categorized syntactically as atoms.  The syntax for atoms is:
   \production{enclosure}
              {\token{parenth_form} | \token{list_display}}
   \productioncont{| \token{generator_expression} | \token{dict_display}}
-  \productioncont{| \token{string_conversion}}
+  \productioncont{| \token{string_conversion} | \token{yield_atom}}
 \end{productionlist}
 
 
@@ -65,6 +65,7 @@ categorized syntactically as atoms.  The syntax for atoms is:
 \index{identifier}
 
 An identifier occurring as an atom is a name.  See
+section \ref{identifiers} for lexical definition and
 section~\ref{naming} for documentation of naming and binding.
 
 When the name is bound to an object, evaluation of the atom yields
@@ -154,22 +155,20 @@ A list display is a possibly empty series of expressions enclosed in
 square brackets:
 
 \begin{productionlist}
-  \production{test}
-             {\token{or_test} | \token{lambda_form}}
-  \production{testlist}
-             {\token{test} ( "," \token{test} )* [ "," ]}
   \production{list_display}
-             {"[" [\token{listmaker}] "]"}
-  \production{listmaker}
-             {\token{expression} ( \token{list_for}
-              | ( "," \token{expression} )* [","] )}
+             {"[" [\token{expression_list} | \token{list_comprehension}] "]"}
+  \production{list_comprehension}
+             {\token{expression} \token{list_for}}
+  \production{list_for}
+             {"for" \token{target_list} "in" \token{old_expression_list}
+              [\token{list_iter}]}
+  \production{old_expression_list}
+             {\token{old_expression}
+              [("," \token{old_expression})+ [","]]}
   \production{list_iter}
              {\token{list_for} | \token{list_if}}
-  \production{list_for}
-             {"for" \token{expression_list} "in" \token{testlist}
-              [\token{list_iter}]}
   \production{list_if}
-             {"if" \token{test} [\token{list_iter}]}
+             {"if" \token{old_expression} [\token{list_iter}]}
 \end{productionlist}
 
 A list display yields a new list object.  Its contents are specified
@@ -200,19 +199,18 @@ A generator expression is a compact generator notation in parentheses:
 
 \begin{productionlist}
   \production{generator_expression}
-             {"(" \token{test} \token{genexpr_for} ")"}
+             {"(" \token{expression} \token{genexpr_for} ")"}
   \production{genexpr_for}
-             {"for" \token{expression_list} "in" \token{test}
+             {"for" \token{target_list} "in" \token{or_test}
               [\token{genexpr_iter}]}
   \production{genexpr_iter}
              {\token{genexpr_for} | \token{genexpr_if}}
   \production{genexpr_if}
-             {"if" \token{test} [\token{genexpr_iter}]}
+             {"if" \token{old_expression} [\token{genexpr_iter}]}
 \end{productionlist}
 
 A generator expression yields a new generator object.
 \obindex{generator}
-\obindex{generator expression}
 It consists of a single expression followed by at least one
 \keyword{for} clause and zero or more \keyword{for} or \keyword{if}
 clauses.  The iterating values of the new generator are those that
@@ -309,6 +307,142 @@ quotes does.  The built-in function \function{str()} performs a
 similar but more user-friendly conversion.
 \bifuncindex{repr}
 \bifuncindex{str}
+
+
+\subsection{Yield expressions\label{yieldexpr}}
+\kwindex{yield}
+\indexii{yield}{expression}
+\indexii{generator}{function}
+
+\begin{productionlist}
+  \production{yield_atom}
+             {"(" \token{yield_expression} ")"}
+  \production{yield_expression}
+             {"yield" [\token{expression_list}]}
+\end{productionlist}
+
+\versionadded{2.5}
+
+The \keyword{yield} expression is only used when defining a generator
+function, and can only be used in the body of a function definition.
+Using a \keyword{yield} expression in a function definition is
+sufficient to cause that definition to create a generator function
+instead of a normal function.
+
+When a generator function is called, it returns an iterator known as a
+generator.  That generator then controls the execution of a generator
+function.  The execution starts when one of the generator's methods is
+called.  At that time, the execution proceeds to the first
+\keyword{yield} expression, where it is suspended again, returning the
+value of \grammartoken{expression_list} to generator's caller.  By
+suspended we mean that all local state is retained, including the
+current bindings of local variables, the instruction pointer, and the
+internal evaluation stack.  When the execution is resumed by calling
+one of the generator's methods, the function can proceed exactly as
+if the \keyword{yield} expression was just another external call.
+The value of the \keyword{yield} expression after resuming depends on
+the method which resumed the execution.
+
+\index{coroutine}
+
+All of this makes generator functions quite similar to coroutines; they
+yield multiple times, they have more than one entry point and their
+execution can be suspended.  The only difference is that a generator
+function cannot control where should the execution continue after it
+yields; the control is always transfered to the generator's caller.
+
+\obindex{generator}
+
+The following generator's methods can be used to control the execution
+of a generator function:
+
+\exindex{StopIteration}
+
+\begin{methoddesc}[generator]{next}{}
+  Starts the execution of a generator function or resumes it at the
+  last executed \keyword{yield} expression.  When a generator function
+  is resumed with a \method{next()} method, the current \keyword{yield}
+  expression always evaluates to \constant{None}.  The execution then
+  continues to the next \keyword{yield} expression, where the generator
+  is suspended again, and the value of the
+  \grammartoken{expression_list} is returned to \method{next()}'s
+  caller. If the generator exits without yielding another value, a
+  \exception{StopIteration} exception is raised.
+\end{methoddesc}
+
+\begin{methoddesc}[generator]{send}{value}
+  Resumes the execution and ``sends'' a value into the generator
+  function.  The \code{value} argument becomes the result of the
+  current \keyword{yield} expression.  The \method{send()} method
+  returns the next value yielded by the generator, or raises
+  \exception{StopIteration} if the generator exits without yielding
+  another value.
+  When \method{send()} is called to start the generator, it must be
+  called with \constant{None} as the argument, because there is no
+  \keyword{yield} expression that could receieve the value.
+\end{methoddesc}
+
+\begin{methoddesc}[generator]{throw}
+                  {type\optional{, value\optional{, traceback}}}
+  Raises an exception of type \code{type} at the point where generator
+  was paused, and returns the next value yielded by the generator
+  function.  If the generator exits without yielding another value, a
+  \exception{StopIteration} exception is raised.  If the generator
+  function does not catch the passed-in exception, or raises a
+  different exception, then that exception propagates to the caller.
+\end{methoddesc}
+
+\exindex{GeneratorExit}
+
+\begin{methoddesc}[generator]{close}{}
+  Raises a \exception{GeneratorExit} at the point where the generator
+  function was paused.  If the generator function then raises
+  \exception{StopIteration} (by exiting normally, or due to already
+  being closed) or \exception{GeneratorExit} (by not catching the
+  exception), close returns to its caller.  If the generator yields a
+  value, a \exception{RuntimeError} is raised.  If the generator raises
+  any other exception, it is propagated to the caller.  \method{close}
+  does nothing if the generator has already exited due to an exception
+  or normal exit.
+\end{methoddesc}
+
+Here is a simple example that demonstrates the behavior of generators
+and generator functions:
+
+\begin{verbatim}
+>>> def echo(value=None):
+...     print "Execution starts when 'next()' is called for the first time."
+...     try:
+...         while True:
+...             try:
+...                 value = (yield value)
+...             except GeneratorExit:
+...                 # never catch GeneratorExit
+...                 raise
+...             except Exception, e:
+...                 value = e
+...     finally:
+...         print "Don't forget to clean up when 'close()' is called."
+...
+>>> generator = echo(1)
+>>> print generator.next()
+Execution starts when 'next()' is called for the first time.
+1
+>>> print generator.next()
+None
+>>> print generator.send(2)
+2
+>>> generator.throw(TypeError, "spam")
+TypeError('spam',)
+>>> generator.close()
+Don't forget to clean up when 'close()' is called.
+\end{verbatim}
+
+\begin{seealso}
+  \seepep{0342}{Coroutines via Enhanced Generators}
+         {The proposal to enhance the API and syntax of generators,
+          making them usable as simple coroutines.}
+\end{seealso}
 
 
 \section{Primaries\label{primaries}}
@@ -474,9 +608,8 @@ series of arguments:
 
 \begin{productionlist}
   \production{call}
-             {\token{primary} "(" [\token{argument_list} [","]] ")"}
-             {\token{primary} "(" [\token{argument_list} [","] |
-	      \token{test} \token{genexpr_for} ] ")"}                                                   
+             {\token{primary} "(" [\token{argument_list} [","]}
+  \productioncont{            | \token{expression} \token{genexpr_for}] ")"}
   \production{argument_list}
              {\token{positional_arguments} ["," \token{keyword_arguments}]}
   \productioncont{                     ["," "*" \token{expression}]}
@@ -809,10 +942,9 @@ The shifting operations have lower priority than the arithmetic
 operations:
 
 \begin{productionlist}
-  % The empty groups below prevent conversion to guillemets.
   \production{shift_expr}
              {\token{a_expr}
-              | \token{shift_expr} ( "<{}<" | ">{}>" ) \token{a_expr}}
+              | \token{shift_expr} ( "<<" | ">>" ) \token{a_expr}}
 \end{productionlist}
 
 These operators accept plain or long integers as arguments.  The
@@ -1015,14 +1147,18 @@ truth value.
 
 
 \section{Boolean operations\label{Booleans}}
+\indexii{Conditional}{expression}
 \indexii{Boolean}{operation}
 
 Boolean operations have the lowest priority of all Python operations:
 
 \begin{productionlist}
   \production{expression}
-             {\token{or_test} [\token{if} \token{or_test} \token{else}
-              \token{test}] | \token{lambda_form}}
+             {\token{conditional_expression} | \token{lambda_form}}
+  \production{old_expression}
+             {\token{or_test} | \token{old_lambda_form}}
+  \production{conditional_expression}
+             {\token{or_test} ["if" \token{or_test} "else" \token{expression}]}
   \production{or_test}
              {\token{and_test} | \token{or_test} "or" \token{and_test}}
   \production{and_test}
@@ -1074,6 +1210,8 @@ not \code{''}.)
 \begin{productionlist}
   \production{lambda_form}
              {"lambda" [\token{parameter_list}]: \token{expression}}
+  \production{old_lambda_form}
+             {"lambda" [\token{parameter_list}]: \token{old_expression}}
 \end{productionlist}
 
 Lambda forms (lambda expressions) have the same syntactic position as
