@@ -718,6 +718,9 @@ Tools
 Documentation
 -------------
 
+- Patch #1489771: the syntax rules in Python Reference Manual were
+  updated to reflect the current Python syntax.
+
 - Patch #1686451: Fix return type for
   PySequence_{Count,Index,Fast_GET_SIZE}.
 
