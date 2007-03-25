@@ -14,11 +14,11 @@ your tests while \module{test.regrtest} drives the testing suite.
 
 Each module in the \module{test} package whose name starts with
 \samp{test_} is a testing suite for a specific module or feature.
-All new tests should be written using the \refmodule{unittest} module;
-using \refmodule{unittest} is not required but makes the tests more
-flexible and maintenance of the tests easier.  Some older tests are
-written to use \refmodule{doctest} and a ``traditional'' testing
-style; these styles of tests will not be covered.
+All new tests should be written using the \refmodule{unittest} or
+\refmodule{doctest} module.  Some older tests are
+written using a ``traditional'' testing style that compares output
+printed to \code{sys.stdout}; this style of test is considered
+deprecated.
 
 \begin{seealso}
 \seemodule{unittest}{Writing PyUnit regression tests.}
@@ -29,8 +29,8 @@ style; these styles of tests will not be covered.
 \subsection{Writing Unit Tests for the \module{test} package%
             \label{writing-tests}}
 
-It is preferred that tests for the \module{test} package use the
-\refmodule{unittest} module and follow a few guidelines.
+It is preferred that tests that use the \refmodule{unittest} module
+follow a few guidelines.
 One is to name the test module by starting it with \samp{test_} and end it with
 the name of the module being tested.
 The test methods in the test module should start with \samp{test_} and end with
