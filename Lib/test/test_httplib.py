@@ -160,7 +160,7 @@ class TimeoutTest(TestCase):
         self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         global PORT
         PORT = test_support.bind_port(self.serv, HOST, PORT)
-        self.serv.listen(1)
+        self.serv.listen(5)
 
     def tearDown(self):
         self.serv.close()
@@ -174,11 +174,13 @@ class TimeoutTest(TestCase):
         httpConn = httplib.HTTPConnection(HOST, PORT)
         httpConn.connect()
         self.assertTrue(httpConn.sock.gettimeout() is None)
+        httpConn.close()
     
         # a value
         httpConn = httplib.HTTPConnection(HOST, PORT, timeout=30)
         httpConn.connect()
         self.assertEqual(httpConn.sock.gettimeout(), 30)
+        httpConn.close()
 
         # None, having other default
         previous = socket.getdefaulttimeout()
@@ -189,6 +191,7 @@ class TimeoutTest(TestCase):
         finally:
             socket.setdefaulttimeout(previous)
         self.assertEqual(httpConn.sock.gettimeout(), 30)
+        httpConn.close()
 
 
 def test_main(verbose=None):
