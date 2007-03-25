@@ -1802,9 +1802,9 @@ example:
         setup.py
         foo.py
 \end{verbatim}
-(In all diagrams in this section, \verb|<root>| will refer to the
-distribution root directory.)  A minimal setup script to describe this
-situation would be:
+(In all diagrams in this section, \var{\textless root\textgreater}
+will refer to the distribution root directory.)  A minimal setup script
+to describe this situation would be:
 \begin{verbatim}
 from distutils.core import setup
 setup(name='foo',
@@ -3179,7 +3179,7 @@ for any variables not found in either \var{local_vars} or \code{os.environ}.
 
 Note that this is not a fully-fledged string interpolation function. A
 valid \code{\$variable} can consist only of upper and lower case letters,
-numbers and an underscore. No \{ \} or \( \) style quoting is available.
+numbers and an underscore. No \{ \} or ( ) style quoting is available.
 \end{funcdesc}
 
 \begin{funcdesc}{grok_environment_error}{exc\optional{, prefix=\samp{'error: '}}}
