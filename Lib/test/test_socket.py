@@ -820,74 +820,85 @@ class BasicTCPTest2(NetworkConnectionTest, BasicTCPTest):
     """Tests that NetworkConnection does not break existing TCP functionality.
     """
 
-class NetworkConnectionAttributesTest(unittest.TestCase):
-
-    def setUp(self):
-        self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        global PORT
-        PORT = test_support.bind_port(self.serv, HOST, PORT)
-        self.serv.listen(1)
-
-    def tearDown(self):
-        if self.serv:
-            self.serv.close()
-            self.serv = None
-
+class NetworkConnectionNoServer(unittest.TestCase):
     def testWithoutServer(self):
-        self.tearDown()
         self.failUnlessRaises(socket.error, lambda: socket.create_connection((HOST, PORT)))
 
-    def testTimeoutAttribute(self):
-        # default
-        sock = socket.create_connection((HOST, PORT))
-        self.assertTrue(sock.gettimeout() is None)
+class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
+
+    def __init__(self, methodName='runTest'):
+        SocketTCPTest.__init__(self, methodName=methodName)
+        ThreadableTest.__init__(self)
+
+    def clientSetUp(self):
+        pass
+
+    def clientTearDown(self):
+        self.cli.close()
+        self.cli = None
+        ThreadableTest.clientTearDown(self)
+
+    def _justAccept(self):
+        conn, addr = self.serv.accept()
+
+    testFamily = _justAccept
+    def _testFamily(self):
+        self.cli = socket.create_connection((HOST, PORT), timeout=30)
+        self.assertEqual(self.cli.family, 2)
+
+    testTimeoutDefault = _justAccept 
+    def _testTimeoutDefault(self):
+        self.cli = socket.create_connection((HOST, PORT))
+        self.assertTrue(self.cli.gettimeout() is None)
     
-        # a value, named
-        sock = socket.create_connection((HOST, PORT), timeout=30)
-        self.assertEqual(sock.gettimeout(), 30)
+    testTimeoutValueNamed = _justAccept 
+    def _testTimeoutValueNamed(self):
+        self.cli = socket.create_connection((HOST, PORT), timeout=30)
+        self.assertEqual(self.cli.gettimeout(), 30)
 
-        # a value, just the value
-        sock = socket.create_connection((HOST, PORT), 30)
-        self.assertEqual(sock.gettimeout(), 30)
+    testTimeoutValueNonamed = _justAccept 
+    def _testTimeoutValueNonamed(self):
+        self.cli = socket.create_connection((HOST, PORT), 30)
+        self.assertEqual(self.cli.gettimeout(), 30)
 
-        # None, having other default 
+    testTimeoutNone = _justAccept 
+    def _testTimeoutNone(self):
         previous = socket.getdefaulttimeout()
         socket.setdefaulttimeout(30)
         try:
-            sock = socket.create_connection((HOST, PORT), timeout=None)
+            self.cli = socket.create_connection((HOST, PORT), timeout=None)
         finally:
             socket.setdefaulttimeout(previous)
-        self.assertEqual(sock.gettimeout(), 30)
-
-    def testFamily(self):
-        sock = socket.create_connection((HOST, PORT), timeout=30)
-        self.assertEqual(sock.family, 2)
+        self.assertEqual(self.cli.gettimeout(), 30)
 
 
-def threadedServer(delay):
-    serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    global PORT
-    PORT = test_support.bind_port(serv, HOST, PORT)
-    serv.listen(1)
-    conn, addr = serv.accept()
-    time.sleep(delay)
-    conn.send("done!")
-    conn.close()
-        
-class NetworkConnectionBehaviourTest(unittest.TestCase):
+class NetworkConnectionBehaviourTest(SocketTCPTest, ThreadableTest):
+
+    def __init__(self, methodName='runTest'):
+        SocketTCPTest.__init__(self, methodName=methodName)
+        ThreadableTest.__init__(self)
+
+    def clientSetUp(self):
+        pass
+
+    def clientTearDown(self):
+        self.cli.close()
+        self.cli = None
+        ThreadableTest.clientTearDown(self)
+
     def testInsideTimeout(self):
-        threading.Thread(target=threadedServer, args=(3,)).start()
-        time.sleep(.1)
-        sock = socket.create_connection((HOST, PORT))
+        conn, addr = self.serv.accept()
+        time.sleep(3)
+        conn.send("done!")
+    testOutsideTimeout = testInsideTimeout
+
+    def _testInsideTimeout(self):
+        self.cli = sock = socket.create_connection((HOST, PORT))
         data = sock.recv(5)
         self.assertEqual(data, "done!")
 
-    def testOutsideTimeout(self):
-        threading.Thread(target=threadedServer, args=(3,)).start()
-        time.sleep(.1)
-        sock = socket.create_connection((HOST, PORT), timeout=1)
+    def _testOutsideTimeout(self):
+        self.cli = sock = socket.create_connection((HOST, PORT), timeout=1)
         self.failUnlessRaises(socket.timeout, lambda: sock.recv(5))
 
 
@@ -1069,6 +1080,7 @@ def test_main():
         LineBufferedFileObjectClassTestCase,
         SmallBufferedFileObjectClassTestCase,
         Urllib2FileobjectTest,
+        NetworkConnectionNoServer,
         NetworkConnectionAttributesTest,
         NetworkConnectionBehaviourTest,
     ])
