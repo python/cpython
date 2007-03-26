@@ -37,12 +37,15 @@ dr-xr-srwt 105 ftp-usr  pdmaint     1536 Mar 21 14:32 ..
 The module defines the following items:
 
 \begin{classdesc}{FTP}{\optional{host\optional{, user\optional{,
-                       passwd\optional{, acct}}}}}
+                       passwd\optional{, acct\optional{, timeout}}}}}}
 Return a new instance of the \class{FTP} class.  When
 \var{host} is given, the method call \code{connect(\var{host})} is
 made.  When \var{user} is given, additionally the method call
 \code{login(\var{user}, \var{passwd}, \var{acct})} is made (where
 \var{passwd} and \var{acct} default to the empty string when not given).
+The optional \var{timeout} parameter specifies a timeout in seconds for the
+connection attempt (if is not specified, or passed as None, the global
+default timeout setting will be used).
 \end{classdesc}
 
 \begin{datadesc}{all_errors}
