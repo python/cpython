@@ -28,10 +28,13 @@ servers tend to be better implemented.
 
 A single class is provided by the \module{poplib} module:
 
-\begin{classdesc}{POP3}{host\optional{, port}}
+\begin{classdesc}{POP3}{host\optional{, port\optional{, timeout}}}
 This class implements the actual POP3 protocol.  The connection is
 created when the instance is initialized.
 If \var{port} is omitted, the standard POP3 port (110) is used.
+The optional \var{timeout} parameter specifies a timeout in seconds for the
+connection attempt (if not specified, or passed as None, the global default
+timeout setting will be used).
 \end{classdesc}
 
 \begin{classdesc}{POP3_SSL}{host\optional{, port\optional{, keyfile\optional{, certfile}}}}
