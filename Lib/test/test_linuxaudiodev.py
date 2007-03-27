@@ -28,7 +28,7 @@ def play_sound_file(path):
     try:
         a = linuxaudiodev.open('w')
     except linuxaudiodev.error as msg:
-        if msg[0] in (errno.EACCES, errno.ENOENT, errno.ENODEV, errno.EBUSY):
+        if msg.args[0] in (errno.EACCES, errno.ENOENT, errno.ENODEV, errno.EBUSY):
             raise TestSkipped, msg
         raise TestFailed, msg
 
