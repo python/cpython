@@ -28,6 +28,9 @@ TO DO
 Core and Builtins
 -----------------
 
+- By default, != returns the opposite of ==, unless the latter returns
+  NotImplemented.
+
 - Patch #1680961: sys.exitfunc has been removed and replaced with a private
   C-level API.
 

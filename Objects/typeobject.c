@@ -2314,7 +2314,22 @@ object_richcompare(PyObject *self, PyObject *other, int op)
 		break;
 
 	case Py_NE:
-		res = (self != other) ? Py_True : Py_False;
+		/* By default, != returns the opposite of ==,
+		   unless the latter returns NotImplemented. */
+		res = PyObject_RichCompare(self, other, Py_EQ);
+		if (res != NULL && res != Py_NotImplemented) {
+			int ok = PyObject_IsTrue(res);
+			Py_DECREF(res);
+			if (ok < 0)
+				res = NULL;
+			else {
+				if (ok)
+					res = Py_False;
+				else
+					res = Py_True;
+				Py_INCREF(res);
+			}
+		}
 		break;
 
 	default:
