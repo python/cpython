@@ -39,6 +39,12 @@ class ComparisonTest(unittest.TestCase):
                 self.assertEqual(a == b, id(a) == id(b),
                                  'a=%r, b=%r' % (a, b))
 
+    def test_ne_defaults_to_not_eq(self):
+        a = Cmp(1)
+        b = Cmp(1)
+        self.assertTrue(a == b)
+        self.assertFalse(a != b)
+
 def test_main():
     test_support.run_unittest(ComparisonTest)
 
