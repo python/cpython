@@ -49,7 +49,7 @@ def play_sound_file(data, rate, ssize, nchannels):
     try:
         dsp = ossaudiodev.open('w')
     except IOError as msg:
-        if msg[0] in (errno.EACCES, errno.ENOENT, errno.ENODEV, errno.EBUSY):
+        if msg.args[0] in (errno.EACCES, errno.ENOENT, errno.ENODEV, errno.EBUSY):
             raise TestSkipped, msg
         raise TestFailed, msg
 
