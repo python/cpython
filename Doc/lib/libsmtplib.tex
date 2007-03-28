@@ -15,13 +15,16 @@ listener daemon.  For details of SMTP and ESMTP operation, consult
 (\citetitle{SMTP Service Extensions}).
 
 \begin{classdesc}{SMTP}{\optional{host\optional{, port\optional{,
-                        local_hostname}}}}
+                        local_hostname\optional{, timeout}}}}}
 A \class{SMTP} instance encapsulates an SMTP connection.  It has
 methods that support a full repertoire of SMTP and ESMTP
 operations. If the optional host and port parameters are given, the
 SMTP \method{connect()} method is called with those parameters during
 initialization.  An \exception{SMTPConnectError} is raised if the
 specified host doesn't respond correctly.
+The optional \var{timeout} parameter specifies a timeout in seconds for the
+connection attempt (if not specified, or passed as None, the global
+default timeout setting will be used).
 
 For normal use, you should only require the initialization/connect,
 \method{sendmail()}, and \method{quit()} methods.  An example is
@@ -31,7 +34,7 @@ included below.
 \begin{classdesc}{SMTP_SSL}{\optional{host\optional{, port\optional{,
                         local_hostname\optional{,
                         keyfile\optional{,
-                        certfile}}}}}}
+                        certfile\optional{, timeout}}}}}}}
 A \class{SMTP_SSL} instance behaves exactly the same as instances of \class{SMTP}.
 \class{SMTP_SSL} should be used for situations where SSL is required from 
 the beginning of the connection and using \method{starttls()} is not appropriate.
@@ -39,6 +42,9 @@ If \var{host} is not specified, the local host is used. If \var{port} is
 omitted, the standard SMTP-over-SSL port (465) is used. \var{keyfile} and \var{certfile}
 are also optional, and can contain a PEM formatted private key and
 certificate chain file for the SSL connection.
+The optional \var{timeout} parameter specifies a timeout in seconds for the
+connection attempt (if not specified, or passed as None, the global
+default timeout setting will be used).
 \end{classdesc}
 
 \begin{classdesc}{LMTP}{\optional{host\optional{, port\optional{,

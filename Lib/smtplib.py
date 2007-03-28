@@ -230,7 +230,7 @@ class SMTP:
     ehlo_resp = None
     does_esmtp = 0
 
-    def __init__(self, host = '', port = 0, local_hostname = None):
+    def __init__(self, host='', port=0, local_hostname=None, timeout=None):
         """Initialize a new instance.
 
         If specified, `host' is the name of the remote host to which to
@@ -241,6 +241,7 @@ class SMTP:
         the local hostname is found using socket.getfqdn().
 
         """
+        self.timeout = timeout
         self.esmtp_features = {}
         self.default_port = SMTP_PORT
         if host:
@@ -274,12 +275,11 @@ class SMTP:
         """
         self.debuglevel = debuglevel
 
-    def _get_socket(self,af, socktype, proto,sa):
+    def _get_socket(self, port, host, timeout):
         # This makes it simpler for SMTP_SSL to use the SMTP connect code
         # and just alter the socket connection bit.
-        self.sock = socket.socket(af, socktype, proto)
         if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
-        self.sock.connect(sa)
+        return socket.create_connection((port, host), timeout)
 
     def connect(self, host='localhost', port = 0):
         """Connect to a host on a given port.
@@ -301,21 +301,7 @@ class SMTP:
                     raise socket.error, "nonnumeric port"
         if not port: port = self.default_port
         if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
-        msg = "getaddrinfo returns an empty list"
-        self.sock = None
-        for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
-            af, socktype, proto, canonname, sa = res
-            try:
-                self._get_socket(af,socktype,proto,sa)
-            except socket.error, msg:
-                if self.debuglevel > 0: print>>stderr, 'connect fail:', msg
-                if self.sock:
-                    self.sock.close()
-                self.sock = None
-                continue
-            break
-        if not self.sock:
-            raise socket.error, msg
+        self.sock = self._get_socket(host, port, self.timeout)
         (code, msg) = self.getreply()
         if self.debuglevel > 0: print>>stderr, "connect:", msg
         return (code, msg)
@@ -732,17 +718,16 @@ class SMTP_SSL(SMTP):
     are also optional - they can contain a PEM formatted private key and
     certificate chain file for the SSL connection.
     """
-    def __init__(self, host = '', port = 0, local_hostname = None,
-                 keyfile = None, certfile = None):
+    def __init__(self, host='', port=0, local_hostname=None,
+                 keyfile=None, certfile=None, timeout=None):
         self.keyfile = keyfile
         self.certfile = certfile
-        SMTP.__init__(self,host,port,local_hostname)
+        SMTP.__init__(self, host, port, local_hostname, timeout)
         self.default_port = SMTP_SSL_PORT
 
-    def _get_socket(self,af, socktype, proto,sa):
-        self.sock = socket.socket(af, socktype, proto)
+    def _get_socket(self, host, port, timeout):
         if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
-        self.sock.connect(sa)
+        self.sock = socket.create_connection((host, port), timeout)
         sslobj = socket.ssl(self.sock, self.keyfile, self.certfile)
         self.sock = SSLFakeSocket(self.sock, sslobj)
         self.file = SSLFakeFile(sslobj)
