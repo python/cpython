@@ -163,7 +163,7 @@ class BasicTestCase(unittest.TestCase):
         try:
             d.delete('abcd')
         except db.DBNotFoundError as val:
-            assert val[0] == db.DB_NOTFOUND
+            assert val.args[0] == db.DB_NOTFOUND
             if verbose: print(val)
         else:
             self.fail("expected exception")
@@ -182,7 +182,7 @@ class BasicTestCase(unittest.TestCase):
         try:
             d.put('abcd', 'this should fail', flags=db.DB_NOOVERWRITE)
         except db.DBKeyExistError as val:
-            assert val[0] == db.DB_KEYEXIST
+            assert val.args[0] == db.DB_KEYEXIST
             if verbose: print(val)
         else:
             self.fail("expected exception")
@@ -315,7 +315,7 @@ class BasicTestCase(unittest.TestCase):
                 rec = c.next()
             except db.DBNotFoundError as val:
                 if get_raises_error:
-                    assert val[0] == db.DB_NOTFOUND
+                    assert val.args[0] == db.DB_NOTFOUND
                     if verbose: print(val)
                     rec = None
                 else:
@@ -335,7 +335,7 @@ class BasicTestCase(unittest.TestCase):
                 rec = c.prev()
             except db.DBNotFoundError as val:
                 if get_raises_error:
-                    assert val[0] == db.DB_NOTFOUND
+                    assert val.args[0] == db.DB_NOTFOUND
                     if verbose: print(val)
                     rec = None
                 else:
@@ -358,7 +358,7 @@ class BasicTestCase(unittest.TestCase):
         try:
             n = c.set('bad key')
         except db.DBNotFoundError as val:
-            assert val[0] == db.DB_NOTFOUND
+            assert val.args[0] == db.DB_NOTFOUND
             if verbose: print(val)
         else:
             if set_raises_error:
@@ -372,7 +372,7 @@ class BasicTestCase(unittest.TestCase):
         try:
             n = c.get_both('0404', 'bad data')
         except db.DBNotFoundError as val:
-            assert val[0] == db.DB_NOTFOUND
+            assert val.args[0] == db.DB_NOTFOUND
             if verbose: print(val)
         else:
             if get_raises_error:
@@ -401,7 +401,7 @@ class BasicTestCase(unittest.TestCase):
             rec = c.current()
         except db.DBKeyEmptyError as val:
             if get_raises_error:
-                assert val[0] == db.DB_KEYEMPTY
+                assert val.args[0] == db.DB_KEYEMPTY
                 if verbose: print(val)
             else:
                 self.fail("unexpected DBKeyEmptyError")
@@ -446,7 +446,7 @@ class BasicTestCase(unittest.TestCase):
                 # a bug may cause a NULL pointer dereference...
                 getattr(c, method)(*args)
             except db.DBError as val:
-                assert val[0] == 0
+                assert val.args[0] == 0
                 if verbose: print(val)
             else:
                 self.fail("no exception raised when using a buggy cursor's"
