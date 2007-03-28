@@ -263,7 +263,7 @@ class bsdTableDB :
         except DBError as dberror:
             if txn:
                 txn.abort()
-            raise TableDBError, dberror[1]
+            raise TableDBError, dberror.args[1]
 
 
     def ListTableColumns(self, table):
@@ -341,7 +341,7 @@ class bsdTableDB :
             except DBError as dberror:
                 if txn:
                     txn.abort()
-                raise TableDBError, dberror[1]
+                raise TableDBError, dberror.args[1]
 
 
     def __load_column_info(self, table) :
@@ -416,7 +416,7 @@ class bsdTableDB :
             if txn:
                 txn.abort()
                 self.db.delete(_rowid_key(table, rowid))
-            raise TableDBError, dberror[1], info[2]
+            raise TableDBError, dberror.args[1], info[2]
 
 
     def Modify(self, table, conditions={}, mappings={}):
@@ -467,7 +467,7 @@ class bsdTableDB :
                     raise
 
         except DBError as dberror:
-            raise TableDBError, dberror[1]
+            raise TableDBError, dberror.args[1]
 
     def Delete(self, table, conditions={}):
         """Delete(table, conditions) - Delete items matching the given
@@ -507,7 +507,7 @@ class bsdTableDB :
                         txn.abort()
                     raise
         except DBError as dberror:
-            raise TableDBError, dberror[1]
+            raise TableDBError, dberror.args[1]
 
 
     def Select(self, table, columns, conditions={}):
@@ -527,7 +527,7 @@ class bsdTableDB :
                 columns = self.__tablecolumns[table]
             matching_rowids = self.__Select(table, columns, conditions)
         except DBError as dberror:
-            raise TableDBError, dberror[1]
+            raise TableDBError, dberror.args[1]
         # return the matches as a list of dictionaries
         return matching_rowids.values()
 
@@ -617,7 +617,7 @@ class bsdTableDB :
                     key, data = cur.next()
 
             except DBError as dberror:
-                if dberror[0] != DB_NOTFOUND:
+                if dberror.args[0] != DB_NOTFOUND:
                     raise
                 continue
 
@@ -637,7 +637,7 @@ class bsdTableDB :
                         rowdata[column] = self.db.get(
                             _data_key(table, column, rowid))
                     except DBError as dberror:
-                        if dberror[0] != DB_NOTFOUND:
+                        if dberror.args[0] != DB_NOTFOUND:
                             raise
                         rowdata[column] = None
 
@@ -703,4 +703,4 @@ class bsdTableDB :
         except DBError as dberror:
             if txn:
                 txn.abort()
-            raise TableDBError, dberror[1]
+            raise TableDBError, dberror.args[1]
