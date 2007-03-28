@@ -164,7 +164,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 
 	if ((l->flags & READONLY) || l->type == T_STRING)
 	{
-		PyErr_SetString(PyExc_TypeError, "readonly attribute");
+		PyErr_SetString(PyExc_AttributeError, "readonly attribute");
 		return -1;
 	}
 	if ((l->flags & WRITE_RESTRICTED) && PyEval_GetRestricted()) {
