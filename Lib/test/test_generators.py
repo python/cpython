@@ -400,7 +400,7 @@ And more, added later.
 >>> i.gi_running = 42
 Traceback (most recent call last):
   ...
-TypeError: readonly attribute
+AttributeError: readonly attribute
 >>> def g():
 ...     yield me.gi_running
 >>> me = g()

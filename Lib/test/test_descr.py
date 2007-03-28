@@ -1857,13 +1857,13 @@ def properties():
     for attr in "__doc__", "fget", "fset", "fdel":
         try:
             setattr(raw, attr, 42)
-        except TypeError as msg:
+        except AttributeError as msg:
             if str(msg).find('readonly') < 0:
                 raise TestFailed("when setting readonly attr %r on a "
-                                 "property, got unexpected TypeError "
+                                 "property, got unexpected AttributeError "
                                  "msg %r" % (attr, str(msg)))
         else:
-            raise TestFailed("expected TypeError from trying to set "
+            raise TestFailed("expected AttributeError from trying to set "
                              "readonly %r attr on a property" % attr)
 
     class D(object):
