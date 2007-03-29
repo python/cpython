@@ -10,6 +10,7 @@ from StringIO import StringIO
 from tempfile import TemporaryFile
 from random import randint, random
 
+import test.test_support as support
 from test.test_support import TESTFN, run_unittest
 
 TESTFN2 = TESTFN + "2"
@@ -454,8 +455,6 @@ class OtherTests(unittest.TestCase):
         self.assertEqual(zf.read(filename), content)
         zf.close()
 
-        os.unlink(TESTFN)
-
     def testCloseErroneousFile(self):
         # This test checks that the ZipFile constructor closes the file object
         # it opens if there's an error in the file.  If it doesn't, the traceback
@@ -469,7 +468,7 @@ class OtherTests(unittest.TestCase):
         try:
             zf = zipfile.ZipFile(TESTFN)
         except zipfile.BadZipfile:
-            os.unlink(TESTFN)
+            pass
 
     def testIsZipErroneousFile(self):
         # This test checks that the is_zipfile function correctly identifies
@@ -478,7 +477,6 @@ class OtherTests(unittest.TestCase):
         fp.write("this is not a legal zip file\n")
         fp.close()
         chk = zipfile.is_zipfile(TESTFN)
-        os.unlink(TESTFN)
         self.assert_(chk is False)
 
     def testIsZipValidFile(self):
@@ -488,7 +486,6 @@ class OtherTests(unittest.TestCase):
         zipf.writestr("foo.txt", "O, for a Muse of Fire!")
         zipf.close()
         chk = zipfile.is_zipfile(TESTFN)
-        os.unlink(TESTFN)
         self.assert_(chk is True)
 
     def testNonExistentFileRaisesIOError(self):
@@ -517,6 +514,10 @@ class OtherTests(unittest.TestCase):
         # version of .testzip would swallow this exception (and any other)
         # and report that the first file in the archive was corrupt.
         self.assertRaises(RuntimeError, zipf.testzip)
+        
+    def tearDown(self):
+        support.unlink(TESTFN)
+        support.unlink(TESTFN2)
 
 class DecryptionTests(unittest.TestCase):
     # This test checks that ZIP decryption works. Since the library does not
@@ -567,6 +568,10 @@ class TestsWithRandomBinaryFiles(unittest.TestCase):
         fp = open(TESTFN, "wb")
         fp.write(self.data)
         fp.close()
+        
+    def tearDown(self):
+        support.unlink(TESTFN)
+        support.unlink(TESTFN2)
 
     def makeTestArchive(self, f, compression):
         # Create the ZIP archive
@@ -799,14 +804,14 @@ class UniversalNewlineTests(unittest.TestCase):
     def tearDown(self):
         for sep, fn in self.arcfiles.items():
             os.remove(fn)
+        support.unlink(TESTFN)
+        support.unlink(TESTFN2)
 
 
 def test_main():
     run_unittest(TestsWithSourceFile, TestZip64InSmallFiles, OtherTests,
                  PyZipFileTests, DecryptionTests, TestsWithMultipleOpens,
                  UniversalNewlineTests, TestsWithRandomBinaryFiles)
-
-    #run_unittest(TestZip64InSmallFiles)
 
 if __name__ == "__main__":
     test_main()
