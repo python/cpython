@@ -200,6 +200,11 @@ Core and builtins
 Library
 -------
 
+- Added a timeout parameter to the constructor of other protocols
+  (telnetlib, ftplib, smtplib and poplib). This is second part of the
+  work started with create_connection() and timeout in httplib, and
+  closes patch #723312.
+
 - Patch #1676823: Added create_connection() to socket.py, which may be 
   called with a timeout, and use it from httplib (whose HTTPConnection 
   now accepts an optional timeout).
