@@ -23,13 +23,16 @@ Mark), BRK (Break), IP (Interrupt process), AO (Abort output), AYT
 SB (Subnegotiation Begin).
 
 
-\begin{classdesc}{Telnet}{\optional{host\optional{, port}}}
+\begin{classdesc}{Telnet}{\optional{host\optional{, port\optional{, timeout}}}}
 \class{Telnet} represents a connection to a Telnet server. The
 instance is initially not connected by default; the \method{open()}
 method must be used to establish a connection.  Alternatively, the
 host name and optional port number can be passed to the constructor,
 to, in which case the connection to the server will be established
 before the constructor returns.
+The optional \var{timeout} parameter specifies a timeout in seconds for the
+connection attempt (if not specified, or passed as None, the global default
+timeout setting will be used).
 
 Do not reopen an already connected instance.
 
@@ -111,10 +114,13 @@ The callback should access these data when it was invoked with a
 \versionadded{2.3}
 \end{methoddesc}
 
-\begin{methoddesc}{open}{host\optional{, port}}
+\begin{methoddesc}{open}{host\optional{, port\optional{, timeout}}}
 Connect to a host.
 The optional second argument is the port number, which
 defaults to the standard Telnet port (23).
+The optional \var{timeout} parameter specifies a timeout in seconds for the
+connection attempt (if not specified, or passed as None, the global default
+timeout setting will be used).
 
 Do not try to reopen an already connected instance.
 \end{methoddesc}
