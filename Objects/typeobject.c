@@ -2311,6 +2311,7 @@ object_richcompare(PyObject *self, PyObject *other, int op)
 
 	case Py_EQ:
 		res = (self == other) ? Py_True : Py_False;
+		Py_INCREF(res);
 		break;
 
 	case Py_NE:
@@ -2334,10 +2335,10 @@ object_richcompare(PyObject *self, PyObject *other, int op)
 
 	default:
 		res = Py_NotImplemented;
+		Py_INCREF(res);
 		break;
 	}
 
-	Py_INCREF(res);
 	return res;
 }
 
