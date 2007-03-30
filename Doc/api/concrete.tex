@@ -2162,6 +2162,35 @@ def PyDict_MergeFromSeq2(a, seq2, override):
 
 \section{Other Objects \label{otherObjects}}
 
+\subsection{Class Objects \label{classObjects}}
+
+\obindex{class}
+Note that the class objects described here represent old-style classes,
+which will go away in Python 3. When creating new types for extension
+modules, you will want to work with type objects (section
+\ref{typeObjects}).
+
+\begin{ctypedesc}{PyClassObject}
+  The C structure of the objects used to describe built-in classes.
+\end{ctypedesc}
+
+\begin{cvardesc}{PyObject*}{PyClass_Type}
+  This is the type object for class objects; it is the same object as
+  \code{types.ClassType} in the Python layer.
+  \withsubitem{(in module types)}{\ttindex{ClassType}}
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PyClass_Check}{PyObject *o}
+  Return true if the object \var{o} is a class object, including
+  instances of types derived from the standard class object.  Return
+  false in all other cases.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyClass_IsSubclass}{PyObject *klass, PyObject *base}
+  Return true if \var{klass} is a subclass of \var{base}. Return false in
+  all other cases.
+\end{cfuncdesc}
+
 \subsection{File Objects \label{fileObjects}}
 
 \obindex{file}
