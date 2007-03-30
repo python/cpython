@@ -115,7 +115,7 @@ class FTP:
             if user: 
                 self.login(user, passwd, acct)
 
-    def connect(self, host='', port=0):
+    def connect(self, host='', port=0, timeout=None):
         '''Connect to host.  Arguments are:
          - host: hostname to connect to (string, default previous host)
          - port: port to connect to (integer, default previous port)
@@ -124,6 +124,8 @@ class FTP:
             self.host = host
         if port > 0:
             self.port = port
+        if timeout is not None:
+            self.timeout = timeout
         self.sock = socket.create_connection((self.host, self.port), self.timeout)
         self.af = self.sock.family
         self.file = self.sock.makefile('rb')
