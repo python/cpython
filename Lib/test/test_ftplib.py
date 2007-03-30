@@ -8,14 +8,20 @@ from test import test_support
 
 def server(evt):
     serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    serv.settimeout(3)
     serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     serv.bind(("", 9091))
     serv.listen(5)
-    conn, addr = serv.accept()
-    conn.send("1 Hola mundo\n")
-    conn.close()
-    serv.close()
-    evt.set()
+    try:
+        conn, addr = serv.accept()
+    except socket.timeout:
+        pass
+    else:
+        conn.send("1 Hola mundo\n")
+        conn.close()
+    finally:
+        serv.close()
+        evt.set()
 
 class GeneralTests(TestCase):
     
@@ -45,6 +51,25 @@ class GeneralTests(TestCase):
     def testTimeoutValue(self):
         # a value
         ftp = ftplib.FTP("localhost", timeout=30)
+        self.assertEqual(ftp.sock.gettimeout(), 30)
+        ftp.sock.close()
+
+    def testTimeoutConnect(self):
+        ftp = ftplib.FTP()
+        ftp.connect("localhost", timeout=30)
+        self.assertEqual(ftp.sock.gettimeout(), 30)
+        ftp.sock.close()
+
+    def testTimeoutDifferentOrder(self):
+        ftp = ftplib.FTP(timeout=30)
+        ftp.connect("localhost")
+        self.assertEqual(ftp.sock.gettimeout(), 30)
+        ftp.sock.close()
+
+    def testTimeoutDirectAccess(self):
+        ftp = ftplib.FTP()
+        ftp.timeout = 30
+        ftp.connect("localhost")
         self.assertEqual(ftp.sock.gettimeout(), 30)
         ftp.sock.close()
 

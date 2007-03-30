@@ -104,13 +104,19 @@ debugging output, generally a single line per request.  A value of
 logging each line sent and received on the control connection.
 \end{methoddesc}
 
-\begin{methoddesc}{connect}{host\optional{, port}}
+\begin{methoddesc}{connect}{host\optional{, port\optional{, timeout}}}
 Connect to the given host and port.  The default port number is \code{21}, as
 specified by the FTP protocol specification.  It is rarely needed to
 specify a different port number.  This function should be called only
 once for each instance; it should not be called at all if a host was
 given when the instance was created.  All other methods can only be
 used after a connection has been made.
+
+The optional \var{timeout} parameter specifies a timeout in seconds for
+the connection attempt. If is not specified, or passed as None, the 
+object timeout is used (the timeout that you passed when instantiating the
+class); if the object timeout is also None, the global default timeout 
+setting will be used.
 \end{methoddesc}
 
 \begin{methoddesc}{getwelcome}{}
