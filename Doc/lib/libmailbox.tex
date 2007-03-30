@@ -1285,13 +1285,13 @@ For maximum portability, messages in a \UNIX-style mailbox are
 separated by any line that begins exactly with the string \code{'From
 '} (note the trailing space) if preceded by exactly two newlines.
 Because of the wide-range of variations in practice, nothing else on
-the From_ line should be considered.  However, the current
+the \samp{From_} line should be considered.  However, the current
 implementation doesn't check for the leading two newlines.  This is
 usually fine for most applications.
 
 The \class{UnixMailbox} class implements a more strict version of
-From_ line checking, using a regular expression that usually correctly
-matched From_ delimiters.  It considers delimiter line to be separated
+\samp{From_} line checking, using a regular expression that usually correctly
+matched \samp{From_} delimiters.  It considers delimiter line to be separated
 by \samp{From \var{name} \var{time}} lines.  For maximum portability,
 use the \class{PortableUnixMailbox} class instead.  This class is
 identical to \class{UnixMailbox} except that individual messages are
