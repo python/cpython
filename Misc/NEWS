@@ -768,6 +768,10 @@ Tools/Demos
 Build
 -----
 
+- Bug #1655392: don't add -L/usr/lib/pythonX.Y/config to the LDFLAGS
+  returned by python-config if Python was built with --enable-shared
+  because that prevented the shared library from being used.
+
 - Patch #1569798: fix a bug in distutils when building Python from a
   directory within sys.exec_prefix.
 
