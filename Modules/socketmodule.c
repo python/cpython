@@ -2384,7 +2384,7 @@ sock_recv_into(PySocketSockObject *s, PyObject *args, PyObject *kwds)
 	int buflen;
 
 	/* Get the buffer's memory */
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recv", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recv_into", kwlist,
 					 &buf, &buflen, &recvlen, &flags))
 		return NULL;
 	assert(buf != 0 && buflen > 0);
@@ -2559,8 +2559,9 @@ sock_recvfrom_into(PySocketSockObject *s, PyObject *args, PyObject* kwds)
 
 	PyObject *addr = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recvfrom", kwlist,
-					 &buf, &buflen, &recvlen, &flags))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "w#|ii:recvfrom_into",
+					 kwlist, &buf, &buflen,
+					 &recvlen, &flags))
 		return NULL;
 	assert(buf != 0 && buflen > 0);
 
