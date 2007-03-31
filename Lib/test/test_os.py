@@ -373,6 +373,14 @@ class WalkTests(unittest.TestCase):
 
 class MakedirTests (unittest.TestCase):
     def setUp(self):
+        try:
+            os.rmdir(test_support.TESTFN)
+        except OSError:
+            pass
+        try:
+            os.unlink(test_support.TESTFN)
+        except OSError:
+            pass
         os.mkdir(test_support.TESTFN)
 
     def test_makedir(self):
