@@ -14,7 +14,7 @@ For an introduction to socket programming (in C), see the following
 papers: \citetitle{An Introductory 4.3BSD Interprocess Communication
 Tutorial}, by Stuart Sechrest and \citetitle{An Advanced 4.3BSD
 Interprocess Communication Tutorial}, by Samuel J.  Leffler et al,
-both in the \citetitle{\UNIX{} Programmer's Manual, Supplementary Documents 1}
+both in the \citetitle{UNIX Programmer's Manual, Supplementary Documents 1}
 (sections PS1:7 and PS1:8).  The platform-specific reference material
 for the various socket-related system calls are also a valuable source
 of information on the details of socket semantics.  For \UNIX, refer
@@ -733,23 +733,23 @@ The socket protocol.
 
 SSL objects have the following methods.
 
-\begin{methoddesc}{write}{s}
+\begin{methoddesc}[SSL]{write}{s}
 Writes the string \var{s} to the on the object's SSL connection.
 The return value is the number of bytes written.
 \end{methoddesc}
 
-\begin{methoddesc}{read}{\optional{n}}
+\begin{methoddesc}[SSL]{read}{\optional{n}}
 If \var{n} is provided, read \var{n} bytes from the SSL connection, otherwise
 read until EOF. The return value is a string of the bytes read.
 \end{methoddesc}
 
-\begin{methoddesc}{server}{}
+\begin{methoddesc}[SSL]{server}{}
 Returns a string describing the server's certificate.
 Useful for debugging purposes; do not parse the content of this string
 because its format can't be parsed unambiguously.
 \end{methoddesc}
 
-\begin{methoddesc}{issuer}{}
+\begin{methoddesc}[SSL]{issuer}{}
 Returns a string describing the issuer of the server's certificate.
 Useful for debugging purposes; do not parse the content of this string
 because its format can't be parsed unambiguously.

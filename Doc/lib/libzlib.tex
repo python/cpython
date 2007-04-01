@@ -131,7 +131,7 @@ compress a set of data that share a common initial prefix.
 
 Decompression objects support the following methods, and two attributes:
 
-\begin{memberdesc}{unused_data}
+\begin{memberdesc}[Decompress]{unused_data}
 A string which contains any bytes past the end of the compressed data.
 That is, this remains \code{""} until the last byte that contains
 compression data is available.  If the whole string turned out to
@@ -145,7 +145,7 @@ decompression object's \method{decompress} method until the
 \member{unused_data} attribute is no longer the empty string.
 \end{memberdesc}
 
-\begin{memberdesc}{unconsumed_tail}
+\begin{memberdesc}[Decompress]{unconsumed_tail}
 A string that contains any data that was not consumed by the last
 \method{decompress} call because it exceeded the limit for the
 uncompressed data buffer.  This data has not yet been seen by the zlib

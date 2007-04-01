@@ -393,14 +393,14 @@ This module offers the following functions:
  \method{Detach()} method to return the integer handle, and
  also disconnect the Windows handle from the handle object.
 
-\begin{methoddesc}{Close}{}
+\begin{methoddesc}[PyHKEY]{Close}{}
   Closes the underlying Windows handle.
 
   If the handle is already closed, no error is raised.
 \end{methoddesc}
 
 
-\begin{methoddesc}{Detach}{}
+\begin{methoddesc}[PyHKEY]{Detach}{}
   Detaches the Windows handle from the handle object.
 
  The result is an integer (or long on 64 bit Windows) that holds
