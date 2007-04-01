@@ -37,7 +37,7 @@ will default to \var{sys.stdin} and \var{sys.stdout}.
 
 A \class{Cmd} instance has the following methods:
 
-\begin{methoddesc}{cmdloop}{\optional{intro}}
+\begin{methoddesc}[Cmd]{cmdloop}{\optional{intro}}
 Repeatedly issue a prompt, accept input, parse an initial prefix off
 the received input, and dispatch to action methods, passing them the
 remainder of the line as argument.
@@ -82,7 +82,7 @@ commands with corresponding \method{help_*()} methods), and also lists
 any undocumented commands.
 \end{methoddesc}
 
-\begin{methoddesc}{onecmd}{str}
+\begin{methoddesc}[Cmd]{onecmd}{str}
 Interpret the argument as though it had been typed in response to the
 prompt.  This may be overridden, but should not normally need to be;
 see the \method{precmd()} and \method{postcmd()} methods for useful
@@ -93,25 +93,25 @@ value of that method is returned, otherwise the return value from the
 \method{default()} method is returned.
 \end{methoddesc}
 
-\begin{methoddesc}{emptyline}{}
+\begin{methoddesc}[Cmd]{emptyline}{}
 Method called when an empty line is entered in response to the prompt.
 If this method is not overridden, it repeats the last nonempty command
 entered.  
 \end{methoddesc}
 
-\begin{methoddesc}{default}{line}
+\begin{methoddesc}[Cmd]{default}{line}
 Method called on an input line when the command prefix is not
 recognized. If this method is not overridden, it prints an
 error message and returns.
 \end{methoddesc}
 
-\begin{methoddesc}{completedefault}{text, line, begidx, endidx}
+\begin{methoddesc}[Cmd]{completedefault}{text, line, begidx, endidx}
 Method called to complete an input line when no command-specific
 \method{complete_*()} method is available.  By default, it returns an
 empty list.
 \end{methoddesc}
 
-\begin{methoddesc}{precmd}{line}
+\begin{methoddesc}[Cmd]{precmd}{line}
 Hook method executed just before the command line \var{line} is
 interpreted, but after the input prompt is generated and issued.  This
 method is a stub in \class{Cmd}; it exists to be overridden by
@@ -121,7 +121,7 @@ implementation may re-write the command or simply return \var{line}
 unchanged.
 \end{methoddesc}
 
-\begin{methoddesc}{postcmd}{stop, line}
+\begin{methoddesc}[Cmd]{postcmd}{stop, line}
 Hook method executed just after a command dispatch is finished.  This
 method is a stub in \class{Cmd}; it exists to be overridden by
 subclasses.  \var{line} is the command line which was executed, and
@@ -133,13 +133,13 @@ corresponds to \var{stop}; returning false will cause interpretation
 to continue.
 \end{methoddesc}
 
-\begin{methoddesc}{preloop}{}
+\begin{methoddesc}[Cmd]{preloop}{}
 Hook method executed once when \method{cmdloop()} is called.  This
 method is a stub in \class{Cmd}; it exists to be overridden by
 subclasses.
 \end{methoddesc}
 
-\begin{methoddesc}{postloop}{}
+\begin{methoddesc}[Cmd]{postloop}{}
 Hook method executed once when \method{cmdloop()} is about to return.
 This method is a stub in \class{Cmd}; it exists to be overridden by
 subclasses.
@@ -147,47 +147,47 @@ subclasses.
 
 Instances of \class{Cmd} subclasses have some public instance variables:
 
-\begin{memberdesc}{prompt}
+\begin{memberdesc}[Cmd]{prompt}
 The prompt issued to solicit input.
 \end{memberdesc}
 
-\begin{memberdesc}{identchars}
+\begin{memberdesc}[Cmd]{identchars}
 The string of characters accepted for the command prefix.
 \end{memberdesc}
 
-\begin{memberdesc}{lastcmd}
+\begin{memberdesc}[Cmd]{lastcmd}
 The last nonempty command prefix seen. 
 \end{memberdesc}
 
-\begin{memberdesc}{intro}
+\begin{memberdesc}[Cmd]{intro}
 A string to issue as an intro or banner.  May be overridden by giving
 the \method{cmdloop()} method an argument.
 \end{memberdesc}
 
-\begin{memberdesc}{doc_header}
+\begin{memberdesc}[Cmd]{doc_header}
 The header to issue if the help output has a section for documented
 commands.
 \end{memberdesc}
 
-\begin{memberdesc}{misc_header}
+\begin{memberdesc}[Cmd]{misc_header}
 The header to issue if the help output has a section for miscellaneous 
 help topics (that is, there are \method{help_*()} methods without
 corresponding \method{do_*()} methods).
 \end{memberdesc}
 
-\begin{memberdesc}{undoc_header}
+\begin{memberdesc}[Cmd]{undoc_header}
 The header to issue if the help output has a section for undocumented 
 commands (that is, there are \method{do_*()} methods without
 corresponding \method{help_*()} methods).
 \end{memberdesc}
 
-\begin{memberdesc}{ruler}
+\begin{memberdesc}[Cmd]{ruler}
 The character used to draw separator lines under the help-message
 headers.  If empty, no ruler line is drawn.  It defaults to
 \character{=}.
 \end{memberdesc}
 
-\begin{memberdesc}{use_rawinput}
+\begin{memberdesc}[Cmd]{use_rawinput}
 A flag, defaulting to true.  If true, \method{cmdloop()} uses
 \function{raw_input()} to display a prompt and read the next command;
 if false, \method{sys.stdout.write()} and

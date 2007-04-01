@@ -96,11 +96,11 @@ error while parsing.
 In addition to tag methods, the \class{HTMLParser} class provides some
 additional methods and instance variables for use within tag methods.
 
-\begin{memberdesc}{formatter}
+\begin{memberdesc}[HTMLParser]{formatter}
 This is the formatter instance associated with the parser.
 \end{memberdesc}
 
-\begin{memberdesc}{nofill}
+\begin{memberdesc}[HTMLParser]{nofill}
 Boolean flag which should be true when whitespace should not be
 collapsed, or false when it should be.  In general, this should only
 be true when character data is to be treated as ``preformatted'' text,
@@ -109,7 +109,7 @@ affects the operation of \method{handle_data()} and \method{save_end()}.
 \end{memberdesc}
 
 
-\begin{methoddesc}{anchor_bgn}{href, name, type}
+\begin{methoddesc}[HTMLParser]{anchor_bgn}{href, name, type}
 This method is called at the start of an anchor region.  The arguments
 correspond to the attributes of the \code{<A>} tag with the same
 names.  The default implementation maintains a list of hyperlinks
@@ -118,27 +118,27 @@ document.  The list of hyperlinks is available as the data attribute
 \member{anchorlist}.
 \end{methoddesc}
 
-\begin{methoddesc}{anchor_end}{}
+\begin{methoddesc}[HTMLParser]{anchor_end}{}
 This method is called at the end of an anchor region.  The default
 implementation adds a textual footnote marker using an index into the
 list of hyperlinks created by \method{anchor_bgn()}.
 \end{methoddesc}
 
-\begin{methoddesc}{handle_image}{source, alt\optional{, ismap\optional{,
+\begin{methoddesc}[HTMLParser]{handle_image}{source, alt\optional{, ismap\optional{,
                                  align\optional{, width\optional{, height}}}}}
 This method is called to handle images.  The default implementation
 simply passes the \var{alt} value to the \method{handle_data()}
 method.
 \end{methoddesc}
 
-\begin{methoddesc}{save_bgn}{}
+\begin{methoddesc}[HTMLParser]{save_bgn}{}
 Begins saving character data in a buffer instead of sending it to the
 formatter object.  Retrieve the stored data via \method{save_end()}.
 Use of the \method{save_bgn()} / \method{save_end()} pair may not be
 nested.
 \end{methoddesc}
 
-\begin{methoddesc}{save_end}{}
+\begin{methoddesc}[HTMLParser]{save_end}{}
 Ends buffering character data and returns all data saved since the
 preceding call to \method{save_bgn()}.  If the \member{nofill} flag is
 false, whitespace is collapsed to single spaces.  A call to this

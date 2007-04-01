@@ -158,12 +158,12 @@ l/lib/python1.5/test', '/usr/local/lib/python1.5/sunos5', '/usr/local/lib/python
 \class{PrettyPrinter} instances have the following methods:
 
 
-\begin{methoddesc}{pformat}{object}
+\begin{methoddesc}[PrettyPrinter]{pformat}{object}
 Return the formatted representation of \var{object}.  This takes into
 account the options passed to the \class{PrettyPrinter} constructor.
 \end{methoddesc}
 
-\begin{methoddesc}{pprint}{object}
+\begin{methoddesc}[PrettyPrinter]{pprint}{object}
 Print the formatted representation of \var{object} on the configured
 stream, followed by a newline.
 \end{methoddesc}
@@ -173,7 +173,7 @@ corresponding functions of the same names.  Using these methods on an
 instance is slightly more efficient since new \class{PrettyPrinter}
 objects don't need to be created.
 
-\begin{methoddesc}{isreadable}{object}
+\begin{methoddesc}[PrettyPrinter]{isreadable}{object}
 Determine if the formatted representation of the object is
 ``readable,'' or can be used to reconstruct the value using
 \function{eval()}\bifuncindex{eval}.  Note that this returns false for
@@ -182,7 +182,7 @@ recursive objects.  If the \var{depth} parameter of the
 this returns false.
 \end{methoddesc}
 
-\begin{methoddesc}{isrecursive}{object}
+\begin{methoddesc}[PrettyPrinter]{isrecursive}{object}
 Determine if the object requires a recursive representation.
 \end{methoddesc}
 
@@ -190,7 +190,7 @@ This method is provided as a hook to allow subclasses to modify the
 way objects are converted to strings.  The default implementation uses
 the internals of the \function{saferepr()} implementation.
 
-\begin{methoddesc}{format}{object, context, maxlevels, level}
+\begin{methoddesc}[PrettyPrinter]{format}{object, context, maxlevels, level}
 Returns three values: the formatted version of \var{object} as a
 string, a flag indicating whether the result is readable, and a flag
 indicating whether recursion was detected.  The first argument is the

@@ -134,12 +134,12 @@ may be either returned data in a conformant type or a \class{Fault} or
 Servers that support the XML introspection API support some common
 methods grouped under the reserved \member{system} member:
 
-\begin{methoddesc}{system.listMethods}{}
+\begin{methoddesc}[ServerProxy]{system.listMethods}{}
 This method returns a list of strings, one for each (non-system)
 method supported by the XML-RPC server.
 \end{methoddesc}
 
-\begin{methoddesc}{system.methodSignature}{name}
+\begin{methoddesc}[ServerProxy]{system.methodSignature}{name}
 This method takes one parameter, the name of a method implemented by
 the XML-RPC server.It returns an array of possible signatures for this
 method. A signature is an array of types. The first of these types is
@@ -159,7 +159,7 @@ returned. In Python this means that the type of the returned
 value will be something other that list.
 \end{methoddesc}
 
-\begin{methoddesc}{system.methodHelp}{name}
+\begin{methoddesc}[ServerProxy]{system.methodHelp}{name}
 This method takes one parameter, the name of a method implemented by
 the XML-RPC server.  It returns a documentation string describing the
 use of that method. If no such string is available, an empty string is
@@ -184,7 +184,7 @@ implemented in the obvious ways.
 It also has the following method, supported mainly for internal use by
 the unmarshalling code:
 
-\begin{methoddesc}{encode}{out}
+\begin{methoddesc}[Boolean]{encode}{out}
 Write the XML-RPC encoding of this Boolean item to the out stream object.
 \end{methoddesc}
 
@@ -197,11 +197,11 @@ ISO 8601 time/date string, or a {}\class{\refmodule{datetime}.datetime},
 instance.  It has the following methods, supported mainly for internal use
 by the marshalling/unmarshalling code:
 
-\begin{methoddesc}{decode}{string}
+\begin{methoddesc}[DateTime]{decode}{string}
 Accept a string as the instance's new time value.
 \end{methoddesc}
 
-\begin{methoddesc}{encode}{out}
+\begin{methoddesc}[DateTime]{encode}{out}
 Write the XML-RPC encoding of this \class{DateTime} item to the
 \var{out} stream object.
 \end{methoddesc}
@@ -242,11 +242,11 @@ It also supports certain of Python's built-in operators through a
 A \class{Fault} object encapsulates the content of an XML-RPC fault tag.
 Fault objects have the following members:
 
-\begin{memberdesc}{faultCode}
+\begin{memberdesc}[Fault]{faultCode}
 A string indicating the fault type.
 \end{memberdesc}
 
-\begin{memberdesc}{faultString}
+\begin{memberdesc}[Fault]{faultString}
 A string containing a diagnostic message associated with the fault.
 \end{memberdesc}
 
@@ -258,19 +258,19 @@ underlying transport layer (such as a 404 `not found' error if the
 server named by the URI does not exist).  It has the following
 members:
 
-\begin{memberdesc}{url}
+\begin{memberdesc}[ProtocolError]{url}
 The URI or URL that triggered the error.
 \end{memberdesc}
 
-\begin{memberdesc}{errcode}
+\begin{memberdesc}[ProtocolError]{errcode}
 The error code.
 \end{memberdesc}
 
-\begin{memberdesc}{errmsg}
+\begin{memberdesc}[ProtocolError]{errmsg}
 The error message or diagnostic string.
 \end{memberdesc}
 
-\begin{memberdesc}{headers}
+\begin{memberdesc}[ProtocolError]{headers}
 A string containing the headers of the HTTP/HTTPS request that
 triggered the error.
 \end{memberdesc}

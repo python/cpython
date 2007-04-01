@@ -221,7 +221,7 @@ def maketree(iterable):
 
 \subsection{\class{defaultdict} objects \label{defaultdict-objects}}
 
-\begin{funcdesc}{defaultdict}{\optional{default_factory\optional{, ...}}}
+\begin{classdesc}{defaultdict}{\optional{default_factory\optional{, ...}}}
   Returns a new dictionary-like object.  \class{defaultdict} is a subclass
   of the builtin \class{dict} class.  It overrides one method and adds one
   writable instance variable.  The remaining functionality is the same as
@@ -233,7 +233,7 @@ def maketree(iterable):
   passed to the \class{dict} constructor, including keyword arguments.
 
  \versionadded{2.5}
-\end{funcdesc}
+\end{classdesc}
 
 \class{defaultdict} objects support the following method in addition to
 the standard \class{dict} operations:
@@ -256,11 +256,11 @@ the standard \class{dict} operations:
 
 \class{defaultdict} objects support the following instance variable:
 
-\begin{datadesc}{default_factory}
+\begin{memberdesc}{default_factory}
   This attribute is used by the \method{__missing__} method; it is initialized
   from the first argument to the constructor, if present, or to \code{None}, 
   if absent.
-\end{datadesc}
+\end{memberdesc}
 
 
 \subsubsection{\class{defaultdict} Examples \label{defaultdict-examples}}

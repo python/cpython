@@ -31,7 +31,7 @@ writing. Note that a \class{StringIO} object could also be used.
 
 \class{MimeWriter} instances have the following methods:
 
-\begin{methoddesc}{addheader}{key, value\optional{, prefix}}
+\begin{methoddesc}[MimeWriter]{addheader}{key, value\optional{, prefix}}
 Add a header line to the MIME message. The \var{key} is the name of
 the header, where the \var{value} obviously provides the value of the
 header. The optional argument \var{prefix} determines where the header 
@@ -39,14 +39,14 @@ is inserted; \samp{0} means append at the end, \samp{1} is insert at
 the start. The default is to append.
 \end{methoddesc}
 
-\begin{methoddesc}{flushheaders}{}
+\begin{methoddesc}[MimeWriter]{flushheaders}{}
 Causes all headers accumulated so far to be written out (and
 forgotten). This is useful if you don't need a body part at all,
 e.g.\ for a subpart of type \mimetype{message/rfc822} that's (mis)used
 to store some header-like information.
 \end{methoddesc}
 
-\begin{methoddesc}{startbody}{ctype\optional{, plist\optional{, prefix}}}
+\begin{methoddesc}[MimeWriter]{startbody}{ctype\optional{, plist\optional{, prefix}}}
 Returns a file-like object which can be used to write to the
 body of the message.  The content-type is set to the provided
 \var{ctype}, and the optional parameter \var{plist} provides
@@ -55,8 +55,8 @@ functions as in \method{addheader()} except that the default is to
 insert at the start.
 \end{methoddesc}
 
-\begin{methoddesc}{startmultipartbody}{subtype\optional{,
-                   boundary\optional{, plist\optional{, prefix}}}}
+\begin{methoddesc}[MimeWriter]{startmultipartbody}{subtype\optional{,
+                               boundary\optional{, plist\optional{, prefix}}}}
 Returns a file-like object which can be used to write to the
 body of the message.  Additionally, this method initializes the
 multi-part code, where \var{subtype} provides the multipart subtype,
@@ -66,7 +66,7 @@ multi-part code, where \var{subtype} provides the multipart subtype,
 created using \method{nextpart()}.
 \end{methoddesc}
 
-\begin{methoddesc}{nextpart}{}
+\begin{methoddesc}[MimeWriter]{nextpart}{}
 Returns a new instance of \class{MimeWriter} which represents an
 individual part in a multipart message.  This may be used to write the 
 part as well as used for creating recursively complex multipart
@@ -74,7 +74,7 @@ messages. The message must first be initialized with
 \method{startmultipartbody()} before using \method{nextpart()}.
 \end{methoddesc}
 
-\begin{methoddesc}{lastpart}{}
+\begin{methoddesc}[MimeWriter]{lastpart}{}
 This is used to designate the last part of a multipart message, and
 should \emph{always} be used when writing multipart messages.
 \end{methoddesc}
