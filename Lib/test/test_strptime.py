@@ -505,6 +505,23 @@ class CacheTests(unittest.TestCase):
         self.failIfEqual(locale_time_id,
                          id(_strptime._TimeRE_cache.locale_time))
 
+    def test_TimeRE_recreation(self):
+        # The TimeRE instance should be recreated upon changing the locale.
+        locale_info = locale.getlocale(locale.LC_TIME)
+        try:
+            locale.setlocale(locale.LC_TIME, ('en_US', 'UTF8'))
+        except locale.Error:
+            return
+        try:
+            _strptime.strptime('10', '%d')
+            first_time_re_id = id(_strptime._TimeRE_cache)
+            locale.setlocale(locale.LC_TIME, ('de_DE', 'UTF8'))
+            _strptime.strptime('10', '%d')
+            second_time_re_id = id(_strptime._TimeRE_cache)
+            self.failIfEqual(first_time_re_id, second_time_re_id)
+        finally:
+            locale.setlocale(locale.LC_TIME, locale_info)
+
 
 def test_main():
     test_support.run_unittest(

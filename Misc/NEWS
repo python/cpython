@@ -200,6 +200,9 @@ Core and builtins
 Library
 -------
 
+- Bug #1290505: time.strptime's internal cache of locale information is now
+  properly recreated when the locale is changed.
+
 - Patch #1685563: remove (don't add) duplicate paths in distutils.MSVCCompiler.
 
 - Added a timeout parameter to the constructor of other protocols
