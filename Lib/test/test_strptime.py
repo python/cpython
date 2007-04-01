@@ -514,11 +514,23 @@ class CacheTests(unittest.TestCase):
             return
         try:
             _strptime.strptime('10', '%d')
+            # Get id of current cache object.
             first_time_re_id = id(_strptime._TimeRE_cache)
-            locale.setlocale(locale.LC_TIME, ('de_DE', 'UTF8'))
-            _strptime.strptime('10', '%d')
-            second_time_re_id = id(_strptime._TimeRE_cache)
-            self.failIfEqual(first_time_re_id, second_time_re_id)
+            try:
+                # Change the locale and force a recreation of the cache.
+                locale.setlocale(locale.LC_TIME, ('de_DE', 'UTF8'))
+                _strptime.strptime('10', '%d')
+                # Get the new cache object's id.
+                second_time_re_id = id(_strptime._TimeRE_cache)
+                # They should not be equal.
+                self.failIfEqual(first_time_re_id, second_time_re_id)
+            # Possible test locale is not supported while initial locale is.
+            # If this is the case just suppress the exception and fall-through
+            # to the reseting to the original locale.
+            except locale.Error:
+                pass
+        # Make sure we don't trample on the locale setting once we leave the
+        # test.
         finally:
             locale.setlocale(locale.LC_TIME, locale_info)
 
