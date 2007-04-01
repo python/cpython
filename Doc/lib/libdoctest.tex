@@ -1741,7 +1741,7 @@ Doctest provides several mechanisms for debugging doctest examples:
 >>>
 \end{verbatim}
 
-    \versionchanged[The ability to use \code{\refmodule{pdb}.set_trace()}
+    \versionchanged[The ability to use \function{\refmodule{pdb}.set_trace()}
                     usefully inside doctests was added]{2.4}
 \end{itemize}
 
@@ -1825,10 +1825,10 @@ print doctest.testsource(a, "a.f")
   used.  If \var{pm} has a true value, the script file is run directly, and
   the debugger gets involved only if the script terminates via raising an
   unhandled exception.  If it does, then post-mortem debugging is invoked,
-  via \code{\refmodule{pdb}.post_mortem()}, passing the traceback object
+  via \function{\refmodule{pdb}.post_mortem()}, passing the traceback object
   from the unhandled exception.  If \var{pm} is not specified, or is false,
   the script is run under the debugger from the start, via passing an
-  appropriate \function{execfile()} call to \code{\refmodule{pdb}.run()}.
+  appropriate \function{execfile()} call to \function{\refmodule{pdb}.run()}.
 
   \versionadded{2.3}
 

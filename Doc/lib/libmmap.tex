@@ -89,18 +89,18 @@ the underlying file.  \versionchanged[To map anonymous memory,
 Memory-mapped file objects support the following methods:
 
 
-\begin{methoddesc}{close}{}
+\begin{methoddesc}[mmap]{close}{}
   Close the file.  Subsequent calls to other methods of the object
   will result in an exception being raised.
 \end{methoddesc}
 
-\begin{methoddesc}{find}{string\optional{, start}}
+\begin{methoddesc}[mmap]{find}{string\optional{, start}}
   Returns the lowest index in the object where the substring
   \var{string} is found.  Returns \code{-1} on failure.  \var{start}
   is the index at which the search begins, and defaults to zero.
 \end{methoddesc}
 
-\begin{methoddesc}{flush}{\optional{offset, size}}
+\begin{methoddesc}[mmap]{flush}{\optional{offset, size}}
   Flushes changes made to the in-memory copy of a file back to disk.
   Without use of this call there is no guarantee that changes are
   written back before the object is destroyed.  If \var{offset} and
@@ -109,36 +109,36 @@ Memory-mapped file objects support the following methods:
   is flushed.
 \end{methoddesc}
 
-\begin{methoddesc}{move}{\var{dest}, \var{src}, \var{count}}
+\begin{methoddesc}[mmap]{move}{\var{dest}, \var{src}, \var{count}}
   Copy the \var{count} bytes starting at offset \var{src} to the
   destination index \var{dest}.  If the mmap was created with
   \constant{ACCESS_READ}, then calls to move will throw a
   \exception{TypeError} exception.
 \end{methoddesc}
 
-\begin{methoddesc}{read}{\var{num}}
+\begin{methoddesc}[mmap]{read}{\var{num}}
   Return a string containing up to \var{num} bytes starting from the
   current file position; the file position is updated to point after the
   bytes that were returned.
 \end{methoddesc}
 
-\begin{methoddesc}{read_byte}{}
+\begin{methoddesc}[mmap]{read_byte}{}
   Returns a string of length 1 containing the character at the current
   file position, and advances the file position by 1.
 \end{methoddesc}
 
-\begin{methoddesc}{readline}{}
+\begin{methoddesc}[mmap]{readline}{}
   Returns a single line, starting at the current file position and up to
   the next newline.
 \end{methoddesc}
 
-\begin{methoddesc}{resize}{\var{newsize}}
+\begin{methoddesc}[mmap]{resize}{\var{newsize}}
   Resizes the map and the underlying file, if any.
   If the mmap was created with \constant{ACCESS_READ} or
   \constant{ACCESS_COPY}, resizing the map will throw a \exception{TypeError} exception.
 \end{methoddesc}
 
-\begin{methoddesc}{seek}{pos\optional{, whence}}
+\begin{methoddesc}[mmap]{seek}{pos\optional{, whence}}
   Set the file's current position.  \var{whence} argument is optional
   and defaults to \code{os.SEEK_SET} or \code{0} (absolute file
   positioning); other values are \code{os.SEEK_CUR} or \code{1} (seek
@@ -146,16 +146,16 @@ Memory-mapped file objects support the following methods:
   (seek relative to the file's end).
 \end{methoddesc}
 
-\begin{methoddesc}{size}{}
+\begin{methoddesc}[mmap]{size}{}
   Return the length of the file, which can be larger than the size of
   the memory-mapped area.
 \end{methoddesc}
 
-\begin{methoddesc}{tell}{}
+\begin{methoddesc}[mmap]{tell}{}
   Returns the current position of the file pointer.
 \end{methoddesc}
 
-\begin{methoddesc}{write}{\var{string}}
+\begin{methoddesc}[mmap]{write}{\var{string}}
   Write the bytes in \var{string} into memory at the current position
   of the file pointer; the file position is updated to point after the
   bytes that were written. If the mmap was created with
@@ -163,7 +163,7 @@ Memory-mapped file objects support the following methods:
   \exception{TypeError} exception.
 \end{methoddesc}
 
-\begin{methoddesc}{write_byte}{\var{byte}}
+\begin{methoddesc}[mmap]{write_byte}{\var{byte}}
   Write the single-character string \var{byte} into memory at the
   current position of the file pointer; the file position is advanced
   by \code{1}. If the mmap was created with \constant{ACCESS_READ},

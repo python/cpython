@@ -154,19 +154,19 @@ webbrowser.open_new(url)
 Browser controllers provide two methods which parallel two of the
 module-level convenience functions:
 
-\begin{methoddesc}{open}{url\optional{, new\optional{, autoraise=1}}}
+\begin{methoddesc}[controller]{open}{url\optional{, new\optional{, autoraise=1}}}
   Display \var{url} using the browser handled by this controller.
   If \var{new} is 1, a new browser window is opened if possible.
   If \var{new} is 2, a new browser page ("tab") is opened if possible.
 \end{methoddesc}
 
-\begin{methoddesc}{open_new}{url}
+\begin{methoddesc}[controller]{open_new}{url}
   Open \var{url} in a new window of the browser handled by this
   controller, if possible, otherwise, open \var{url} in the only
   browser window.  Alias \function{open_new}.
 \end{methoddesc}
 
-\begin{methoddesc}{open_new_tab}{url}
+\begin{methoddesc}[controller]{open_new_tab}{url}
   Open \var{url} in a new page ("tab") of the browser handled by this
   controller, if possible, otherwise equivalent to \function{open_new}.
 \versionadded{2.5}
