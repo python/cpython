@@ -619,14 +619,14 @@ The test code can use any of the following methods to check for and
 report failures.
 
 \begin{methoddesc}[TestCase]{assert_}{expr\optional{, msg}}
-\methodline{failUnless}{expr\optional{, msg}}
+\methodline[TestCase]{failUnless}{expr\optional{, msg}}
   Signal a test failure if \var{expr} is false; the explanation for
   the error will be \var{msg} if given, otherwise it will be
   \constant{None}.
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{assertEqual}{first, second\optional{, msg}}
-\methodline{failUnlessEqual}{first, second\optional{, msg}}
+\methodline[TestCase]{failUnlessEqual}{first, second\optional{, msg}}
   Test that \var{first} and \var{second} are equal.  If the values do
   not compare equal, the test will fail with the explanation given by
   \var{msg}, or \constant{None}.  Note that using \method{failUnlessEqual()}
@@ -637,7 +637,7 @@ report failures.
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{assertNotEqual}{first, second\optional{, msg}}
-\methodline{failIfEqual}{first, second\optional{, msg}}
+\methodline[TestCase]{failIfEqual}{first, second\optional{, msg}}
   Test that \var{first} and \var{second} are not equal.  If the values
   do compare equal, the test will fail with the explanation given by
   \var{msg}, or \constant{None}.  Note that using \method{failIfEqual()}
@@ -649,7 +649,7 @@ report failures.
 
 \begin{methoddesc}[TestCase]{assertAlmostEqual}{first, second\optional{,
 						places\optional{, msg}}}
-\methodline{failUnlessAlmostEqual}{first, second\optional{,
+\methodline[TestCase]{failUnlessAlmostEqual}{first, second\optional{,
 						places\optional{, msg}}}
   Test that \var{first} and \var{second} are approximately equal
   by computing the difference, rounding to the given number of \var{places},
@@ -661,7 +661,7 @@ report failures.
 
 \begin{methoddesc}[TestCase]{assertNotAlmostEqual}{first, second\optional{,
 						places\optional{, msg}}}
-\methodline{failIfAlmostEqual}{first, second\optional{,
+\methodline[TestCase]{failIfAlmostEqual}{first, second\optional{,
 						places\optional{, msg}}}
   Test that \var{first} and \var{second} are not approximately equal
   by computing the difference, rounding to the given number of \var{places},
@@ -672,7 +672,7 @@ report failures.
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{assertRaises}{exception, callable, \moreargs}
-\methodline{failUnlessRaises}{exception, callable, \moreargs}
+\methodline[TestCase]{failUnlessRaises}{exception, callable, \moreargs}
   Test that an exception is raised when \var{callable} is called with
   any positional or keyword arguments that are also passed to
   \method{assertRaises()}.  The test passes if \var{exception} is

@@ -142,12 +142,12 @@ switch dates.  Not enough to worry about for common use.
 
 A \class{Message} instance has the following methods:
 
-\begin{methoddesc}{rewindbody}{}
+\begin{methoddesc}[Message]{rewindbody}{}
 Seek to the start of the message body.  This only works if the file
 object is seekable.
 \end{methoddesc}
 
-\begin{methoddesc}{isheader}{line}
+\begin{methoddesc}[Message]{isheader}{line}
 Returns a line's canonicalized fieldname (the dictionary key that will
 be used to index it) if the line is a legal \rfc{2822} header; otherwise
 returns \code{None} (implying that parsing should stop here and the
@@ -155,33 +155,33 @@ line be pushed back on the input stream).  It is sometimes useful to
 override this method in a subclass.
 \end{methoddesc}
 
-\begin{methoddesc}{islast}{line}
+\begin{methoddesc}[Message]{islast}{line}
 Return true if the given line is a delimiter on which Message should
 stop.  The delimiter line is consumed, and the file object's read
 location positioned immediately after it.  By default this method just
 checks that the line is blank, but you can override it in a subclass.
 \end{methoddesc}
 
-\begin{methoddesc}{iscomment}{line}
+\begin{methoddesc}[Message]{iscomment}{line}
 Return \code{True} if the given line should be ignored entirely, just skipped.
 By default this is a stub that always returns \code{False}, but you can
 override it in a subclass.
 \end{methoddesc}
 
-\begin{methoddesc}{getallmatchingheaders}{name}
+\begin{methoddesc}[Message]{getallmatchingheaders}{name}
 Return a list of lines consisting of all headers matching
 \var{name}, if any.  Each physical line, whether it is a continuation
 line or not, is a separate list item.  Return the empty list if no
 header matches \var{name}.
 \end{methoddesc}
 
-\begin{methoddesc}{getfirstmatchingheader}{name}
+\begin{methoddesc}[Message]{getfirstmatchingheader}{name}
 Return a list of lines comprising the first header matching
 \var{name}, and its continuation line(s), if any.  Return
 \code{None} if there is no header matching \var{name}.
 \end{methoddesc}
 
-\begin{methoddesc}{getrawheader}{name}
+\begin{methoddesc}[Message]{getrawheader}{name}
 Return a single string consisting of the text after the colon in the
 first header matching \var{name}.  This includes leading whitespace,
 the trailing linefeed, and internal linefeeds and whitespace if there
@@ -189,19 +189,19 @@ any continuation line(s) were present.  Return \code{None} if there is
 no header matching \var{name}.
 \end{methoddesc}
 
-\begin{methoddesc}{getheader}{name\optional{, default}}
+\begin{methoddesc}[Message]{getheader}{name\optional{, default}}
 Like \code{getrawheader(\var{name})}, but strip leading and trailing
 whitespace.  Internal whitespace is not stripped.  The optional
 \var{default} argument can be used to specify a different default to
 be returned when there is no header matching \var{name}.
 \end{methoddesc}
 
-\begin{methoddesc}{get}{name\optional{, default}}
+\begin{methoddesc}[Message]{get}{name\optional{, default}}
 An alias for \method{getheader()}, to make the interface more compatible 
 with regular dictionaries.
 \end{methoddesc}
 
-\begin{methoddesc}{getaddr}{name}
+\begin{methoddesc}[Message]{getaddr}{name}
 Return a pair \code{(\var{full name}, \var{email address})} parsed
 from the string returned by \code{getheader(\var{name})}.  If no
 header matching \var{name} exists, return \code{(None, None)};
@@ -217,7 +217,7 @@ If the header contained
 exact same result.
 \end{methoddesc}
 
-\begin{methoddesc}{getaddrlist}{name}
+\begin{methoddesc}[Message]{getaddrlist}{name}
 This is similar to \code{getaddr(\var{list})}, but parses a header
 containing a list of email addresses (e.g.\ a \mailheader{To} header) and
 returns a list of \code{(\var{full name}, \var{email address})} pairs
@@ -229,7 +229,7 @@ are several \mailheader{Cc} headers), all are parsed for addresses.
 Any continuation lines the named headers contain are also parsed.
 \end{methoddesc}
 
-\begin{methoddesc}{getdate}{name}
+\begin{methoddesc}[Message]{getdate}{name}
 Retrieve a header using \method{getheader()} and parse it into a 9-tuple
 compatible with \function{time.mktime()}; note that fields 6, 7, and 8 
 are not usable.  If there is no header matching
@@ -241,7 +241,7 @@ collection of email from many sources, it is still possible that this
 function may occasionally yield an incorrect result.
 \end{methoddesc}
 
-\begin{methoddesc}{getdate_tz}{name}
+\begin{methoddesc}[Message]{getdate_tz}{name}
 Retrieve a header using \method{getheader()} and parse it into a
 10-tuple; the first 9 elements will make a tuple compatible with
 \function{time.mktime()}, and the 10th is a number giving the offset
@@ -270,19 +270,19 @@ support the \method{clear()}, \method{copy()}, \method{popitem()}, or
 
 Finally, \class{Message} instances have some public instance variables:
 
-\begin{memberdesc}{headers}
+\begin{memberdesc}[Message]{headers}
 A list containing the entire set of header lines, in the order in
 which they were read (except that setitem calls may disturb this
 order). Each line contains a trailing newline.  The
 blank line terminating the headers is not contained in the list.
 \end{memberdesc}
 
-\begin{memberdesc}{fp}
+\begin{memberdesc}[Message]{fp}
 The file or file-like object passed at instantiation time.  This can
 be used to read the message content.
 \end{memberdesc}
 
-\begin{memberdesc}{unixfrom}
+\begin{memberdesc}[Message]{unixfrom}
 The \UNIX{} \samp{From~} line, if the message had one, or an empty
 string.  This is needed to regenerate the message in some contexts,
 such as an \code{mbox}-style mailbox file.
@@ -293,34 +293,34 @@ such as an \code{mbox}-style mailbox file.
 
 An \class{AddressList} instance has the following methods:
 
-\begin{methoddesc}{__len__}{}
+\begin{methoddesc}[AddressList]{__len__}{}
 Return the number of addresses in the address list.
 \end{methoddesc}
 
-\begin{methoddesc}{__str__}{}
+\begin{methoddesc}[AddressList]{__str__}{}
 Return a canonicalized string representation of the address list.
 Addresses are rendered in "name" <host@domain> form, comma-separated.
 \end{methoddesc}
 
-\begin{methoddesc}{__add__}{alist}
+\begin{methoddesc}[AddressList]{__add__}{alist}
 Return a new \class{AddressList} instance that contains all addresses
 in both \class{AddressList} operands, with duplicates removed (set
 union).
 \end{methoddesc}
 
-\begin{methoddesc}{__iadd__}{alist}
+\begin{methoddesc}[AddressList]{__iadd__}{alist}
 In-place version of \method{__add__()}; turns this \class{AddressList}
 instance into the union of itself and the right-hand instance,
 \var{alist}.
 \end{methoddesc}
 
-\begin{methoddesc}{__sub__}{alist}
+\begin{methoddesc}[AddressList]{__sub__}{alist}
 Return a new \class{AddressList} instance that contains every address
 in the left-hand \class{AddressList} operand that is not present in
 the right-hand address operand (set difference).
 \end{methoddesc}
 
-\begin{methoddesc}{__isub__}{alist}
+\begin{methoddesc}[AddressList]{__isub__}{alist}
 In-place version of \method{__sub__()}, removing addresses in this
 list which are also in \var{alist}.
 \end{methoddesc}
@@ -328,7 +328,7 @@ list which are also in \var{alist}.
 
 Finally, \class{AddressList} instances have one public instance variable:
 
-\begin{memberdesc}{addresslist}
+\begin{memberdesc}[AddressList]{addresslist}
 A list of tuple string pairs, one per address.  In each member, the
 first is the canonicalized name part, the second is the
 actual route-address (\character{@}-separated username-host.domain

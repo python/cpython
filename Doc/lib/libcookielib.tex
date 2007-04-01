@@ -292,12 +292,12 @@ If there is a failure, the object's state will not be altered.
 
 \class{FileCookieJar} instances have the following public attributes:
 
-\begin{memberdesc}{filename}
+\begin{memberdesc}[FileCookieJar]{filename}
 Filename of default file in which to keep cookies.  This attribute may
 be assigned to.
 \end{memberdesc}
 
-\begin{memberdesc}{delayload}
+\begin{memberdesc}[FileCookieJar]{delayload}
 If true, load cookies lazily from disk.  This attribute should not be
 assigned to.  This is only a hint, since this only affects
 performance, not behaviour (unless the cookies on disk are changing).
@@ -400,13 +400,13 @@ In addition to implementing the methods above, implementations of the
 attributes, indicating which protocols should be used, and how.  All
 of these attributes may be assigned to.
 
-\begin{memberdesc}{netscape}
+\begin{memberdesc}[CookiePolicy]{netscape}
 Implement Netscape protocol.
 \end{memberdesc}
-\begin{memberdesc}{rfc2965}
+\begin{memberdesc}[CookiePolicy]{rfc2965}
 Implement RFC 2965 protocol.
 \end{memberdesc}
-\begin{memberdesc}{hide_cookie2}
+\begin{memberdesc}[CookiePolicy]{hide_cookie2}
 Don't add \mailheader{Cookie2} header to requests (the presence of
 this header indicates to the server that we understand RFC 2965
 cookies).
@@ -504,7 +504,7 @@ receiving cookies.
 which are all initialised from the constructor arguments of the same
 name, and which may all be assigned to.
 
-\begin{memberdesc}{rfc2109_as_netscape}
+\begin{memberdesc}[DefaultCookiePolicy]{rfc2109_as_netscape}
 If true, request that the \class{CookieJar} instance downgrade RFC
 2109 cookies (ie. cookies received in a \mailheader{Set-Cookie} header
 with a version cookie-attribute of 1) to Netscape cookies by setting
@@ -517,7 +517,7 @@ RFC 2109 cookies are downgraded by default.
 
 General strictness switches:
 
-\begin{memberdesc}{strict_domain}
+\begin{memberdesc}[DefaultCookiePolicy]{strict_domain}
 Don't allow sites to set two-component domains with country-code
 top-level domains like \code{.co.uk}, \code{.gov.uk},
 \code{.co.nz}.etc.  This is far from perfect and isn't guaranteed to
@@ -526,7 +526,7 @@ work!
 
 RFC 2965 protocol strictness switches:
 
-\begin{memberdesc}{strict_rfc2965_unverifiable}
+\begin{memberdesc}[DefaultCookiePolicy]{strict_rfc2965_unverifiable}
 Follow RFC 2965 rules on unverifiable transactions (usually, an
 unverifiable transaction is one resulting from a redirect or a request
 for an image hosted on another site).  If this is false, cookies are
@@ -535,19 +535,19 @@ for an image hosted on another site).  If this is false, cookies are
 
 Netscape protocol strictness switches:
 
-\begin{memberdesc}{strict_ns_unverifiable}
+\begin{memberdesc}[DefaultCookiePolicy]{strict_ns_unverifiable}
 apply RFC 2965 rules on unverifiable transactions even to Netscape
 cookies
 \end{memberdesc}
-\begin{memberdesc}{strict_ns_domain}
+\begin{memberdesc}[DefaultCookiePolicy]{strict_ns_domain}
 Flags indicating how strict to be with domain-matching rules for
 Netscape cookies.  See below for acceptable values.
 \end{memberdesc}
-\begin{memberdesc}{strict_ns_set_initial_dollar}
+\begin{memberdesc}[DefaultCookiePolicy]{strict_ns_set_initial_dollar}
 Ignore cookies in Set-Cookie: headers that have names starting with
 \code{'\$'}.
 \end{memberdesc}
-\begin{memberdesc}{strict_ns_set_path}
+\begin{memberdesc}[DefaultCookiePolicy]{strict_ns_set_path}
 Don't allow setting cookies whose path doesn't path-match request URI.
 \end{memberdesc}
 
@@ -556,30 +556,30 @@ constructed by or-ing together (for example,
 \code{DomainStrictNoDots|DomainStrictNonDomain} means both flags are
 set).
 
-\begin{memberdesc}{DomainStrictNoDots}
+\begin{memberdesc}[DefaultCookiePolicy]{DomainStrictNoDots}
 When setting cookies, the 'host prefix' must not contain a dot
 (eg. \code{www.foo.bar.com} can't set a cookie for \code{.bar.com},
 because \code{www.foo} contains a dot).
 \end{memberdesc}
-\begin{memberdesc}{DomainStrictNonDomain}
+\begin{memberdesc}[DefaultCookiePolicy]{DomainStrictNonDomain}
 Cookies that did not explicitly specify a \code{domain}
 cookie-attribute can only be returned to a domain equal to the domain
 that set the cookie (eg. \code{spam.example.com} won't be returned
 cookies from \code{example.com} that had no \code{domain}
 cookie-attribute).
 \end{memberdesc}
-\begin{memberdesc}{DomainRFC2965Match}
+\begin{memberdesc}[DefaultCookiePolicy]{DomainRFC2965Match}
 When setting cookies, require a full RFC 2965 domain-match.
 \end{memberdesc}
 
 The following attributes are provided for convenience, and are the
 most useful combinations of the above flags:
 
-\begin{memberdesc}{DomainLiberal}
+\begin{memberdesc}[DefaultCookiePolicy]{DomainLiberal}
 Equivalent to 0 (ie. all of the above Netscape domain strictness flags
 switched off).
 \end{memberdesc}
-\begin{memberdesc}{DomainStrict}
+\begin{memberdesc}[DefaultCookiePolicy]{DomainStrict}
 Equivalent to \code{DomainStrictNoDots|DomainStrictNonDomain}.
 \end{memberdesc}
 

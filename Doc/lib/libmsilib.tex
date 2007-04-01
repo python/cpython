@@ -121,17 +121,17 @@ MSI routines, and standard table structures.
 
 \subsection{Database Objects\label{database-objects}}
 
-\begin{methoddesc}{OpenView}{sql}
+\begin{methoddesc}[Database]{OpenView}{sql}
   Return a view object, by calling \cfunction{MSIDatabaseOpenView}.
   \var{sql} is the SQL statement to execute.
 \end{methoddesc}
 
-\begin{methoddesc}{Commit}{}
+\begin{methoddesc}[Database]{Commit}{}
   Commit the changes pending in the current transaction,
   by calling \cfunction{MSIDatabaseCommit}.
 \end{methoddesc}
 
-\begin{methoddesc}{GetSummaryInformation}{count}
+\begin{methoddesc}[Database]{GetSummaryInformation}{count}
   Return a new summary information object, by calling
   \cfunction{MsiGetSummaryInformation}.  \var{count} is the maximum number of
   updated values.
@@ -145,24 +145,24 @@ MSI routines, and standard table structures.
 
 \subsection{View Objects\label{view-objects}}
 
-\begin{methoddesc}{Execute}{\optional{params=None}}
+\begin{methoddesc}[View]{Execute}{\optional{params=None}}
   Execute the SQL query of the view, through \cfunction{MSIViewExecute}.
   \var{params} is an optional record describing actual values
   of the parameter tokens in the query.
 \end{methoddesc}
 
-\begin{methoddesc}{GetColumnInfo}{kind}
+\begin{methoddesc}[View]{GetColumnInfo}{kind}
   Return a record describing the columns of the view, through
   calling \cfunction{MsiViewGetColumnInfo}. \var{kind} can be either
   \code{MSICOLINFO_NAMES} or \code{MSICOLINFO_TYPES}.
 \end{methoddesc}
 
-\begin{methoddesc}{Fetch}{}
+\begin{methoddesc}[View]{Fetch}{}
   Return a result record of the query, through calling
   \cfunction{MsiViewFetch}.
 \end{methoddesc}
 
-\begin{methoddesc}{Modify}{kind, data}
+\begin{methoddesc}[View]{Modify}{kind, data}
   Modify the view, by calling \cfunction{MsiViewModify}. \var{kind}
   can be one of  \code{MSIMODIFY_SEEK}, \code{MSIMODIFY_REFRESH},
   \code{MSIMODIFY_INSERT}, \code{MSIMODIFY_UPDATE}, \code{MSIMODIFY_ASSIGN},
@@ -174,7 +174,7 @@ MSI routines, and standard table structures.
   \var{data} must be a record describing the new data.
 \end{methoddesc}
 
-\begin{methoddesc}{Close}{}
+\begin{methoddesc}[View]{Close}{}
   Close the view, through \cfunction{MsiViewClose}.
 \end{methoddesc}
 
@@ -188,7 +188,7 @@ MSI routines, and standard table structures.
 
 \subsection{Summary Information Objects\label{summary-objects}}
 
-\begin{methoddesc}{GetProperty}{field}
+\begin{methoddesc}[SummaryInformation]{GetProperty}{field}
   Return a property of the summary, through \cfunction{MsiSummaryInfoGetProperty}.
   \var{field} is the name of the property, and can be one of the
   constants
@@ -200,19 +200,19 @@ MSI routines, and standard table structures.
   \code{PID_APPNAME}, or \code{PID_SECURITY}.
 \end{methoddesc}
 
-\begin{methoddesc}{GetPropertyCount}{}
+\begin{methoddesc}[SummaryInformation]{GetPropertyCount}{}
   Return the number of summary properties, through
   \cfunction{MsiSummaryInfoGetPropertyCount}.
 \end{methoddesc}
 
-\begin{methoddesc}{SetProperty}{field, value}
+\begin{methoddesc}[SummaryInformation]{SetProperty}{field, value}
   Set a property through \cfunction{MsiSummaryInfoSetProperty}. \var{field}
   can have the same values as in \method{GetProperty}, \var{value}
   is the new value of the property. Possible value types are integer
   and string.
 \end{methoddesc}
 
-\begin{methoddesc}{Persist}{}
+\begin{methoddesc}[SummaryInformation]{Persist}{}
   Write the modified properties to the summary information stream,
   using \cfunction{MsiSummaryInfoPersist}.
 \end{methoddesc}
@@ -226,27 +226,27 @@ MSI routines, and standard table structures.
 
 \subsection{Record Objects\label{record-objects}}
 
-\begin{methoddesc}{GetFieldCount}{}
+\begin{methoddesc}[Record]{GetFieldCount}{}
   Return the number of fields of the record, through \cfunction{MsiRecordGetFieldCount}.
 \end{methoddesc}
 
-\begin{methoddesc}{SetString}{field, value}
+\begin{methoddesc}[Record]{SetString}{field, value}
   Set \var{field} to \var{value} through \cfunction{MsiRecordSetString}.
   \var{field} must be an integer; \var{value} a string.
 \end{methoddesc}
 
-\begin{methoddesc}{SetStream}{field, value}
+\begin{methoddesc}[Record]{SetStream}{field, value}
   Set \var{field} to the contents of the file named \var{value},
   through \cfunction{MsiRecordSetStream}.
   \var{field} must be an integer; \var{value} a string.
 \end{methoddesc}
 
-\begin{methoddesc}{SetInteger}{field, value}
+\begin{methoddesc}[Record]{SetInteger}{field, value}
   Set \var{field} to \var{value} through \cfunction{MsiRecordSetInteger}.
   Both \var{field} and \var{value} must be an integer.
 \end{methoddesc}
 
-\begin{methoddesc}{ClearData}{}
+\begin{methoddesc}[Record]{ClearData}{}
   Set all fields of the record to 0, through \cfunction{MsiRecordClearData}.
 \end{methoddesc}
 
@@ -274,7 +274,7 @@ the string inside the exception will contain more detail.
   \var{name} is the name of the CAB file in the MSI file.
 \end{classdesc}
 
-\begin{methoddesc}[CAB]{append}{full, logical}
+\begin{methoddesc}[CAB]{append}{full, file, logical}
   Add the file with the pathname \var{full} to the CAB file,
   under the name \var{logical}. If there is already a file
   named \var{logical}, a new file name is created.
@@ -283,7 +283,7 @@ the string inside the exception will contain more detail.
   new name of the file inside the CAB file.
 \end{methoddesc}
 
-\begin{methoddesc}[CAB]{append}{database}
+\begin{methoddesc}[CAB]{commit}{database}
   Generate a CAB file, add it as a stream to the MSI file,
   put it into the \code{Media} table, and remove the generated
   file from the disk.

@@ -68,14 +68,14 @@ Besides the dictionary interface, \class{IC} objects have the
 following methods:
 
 
-\begin{methoddesc}{launchurl}{url\optional{, hint}}
+\begin{methoddesc}[IC]{launchurl}{url\optional{, hint}}
 Parse the given URL, launch the correct application and pass it the
 URL. The optional \var{hint} can be a scheme name such as
 \code{'mailto:'}, in which case incomplete URLs are completed with this
 scheme.  If \var{hint} is not provided, incomplete URLs are invalid.
 \end{methoddesc}
 
-\begin{methoddesc}{parseurl}{data\optional{, start\optional{, end\optional{, hint}}}}
+\begin{methoddesc}[IC]{parseurl}{data\optional{, start\optional{, end\optional{, hint}}}}
 Find an URL somewhere in \var{data} and return start position, end
 position and the URL. The optional \var{start} and \var{end} can be
 used to limit the search, so for instance if a user clicks in a long
@@ -85,7 +85,7 @@ user clicked.  As above, \var{hint} is an optional scheme used to
 complete incomplete URLs.
 \end{methoddesc}
 
-\begin{methoddesc}{mapfile}{file}
+\begin{methoddesc}[IC]{mapfile}{file}
 Return the mapping entry for the given \var{file}, which can be passed
 as either a filename or an \function{FSSpec()} result, and which
 need not exist.
@@ -106,7 +106,7 @@ postprocessing application, \var{mimetype} is the MIME type of this
 file and \var{entryname} is the name of this entry.
 \end{methoddesc}
 
-\begin{methoddesc}{maptypecreator}{type, creator\optional{, filename}}
+\begin{methoddesc}[IC]{maptypecreator}{type, creator\optional{, filename}}
 Return the mapping entry for files with given 4-character \var{type} and
 \var{creator} codes. The optional \var{filename} may be specified to
 further help finding the correct entry (if the creator code is
@@ -115,7 +115,7 @@ further help finding the correct entry (if the creator code is
 The mapping entry is returned in the same format as for \var{mapfile}.
 \end{methoddesc}
 
-\begin{methoddesc}{settypecreator}{file}
+\begin{methoddesc}[IC]{settypecreator}{file}
 Given an existing \var{file}, specified either as a filename or as an
 \function{FSSpec()} result, set its creator and type correctly based
 on its extension.  The finder is told about the change, so the finder

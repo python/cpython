@@ -121,13 +121,13 @@ If the server's response indicates an error, the method raises one of
 the above exceptions.
 
 
-\begin{methoddesc}{getwelcome}{}
+\begin{methoddesc}[NNTP]{getwelcome}{}
 Return the welcome message sent by the server in reply to the initial
 connection.  (This message sometimes contains disclaimers or help
 information that may be relevant to the user.)
 \end{methoddesc}
 
-\begin{methoddesc}{set_debuglevel}{level}
+\begin{methoddesc}[NNTP]{set_debuglevel}{level}
 Set the instance's debugging level.  This controls the amount of
 debugging output printed.  The default, \code{0}, produces no debugging
 output.  A value of \code{1} produces a moderate amount of debugging
@@ -137,7 +137,7 @@ logging each line sent and received on the connection (including
 message text).
 \end{methoddesc}
 
-\begin{methoddesc}{newgroups}{date, time, \optional{file}}
+\begin{methoddesc}[NNTP]{newgroups}{date, time, \optional{file}}
 Send a \samp{NEWGROUPS} command.  The \var{date} argument should be a
 string of the form \code{'\var{yy}\var{mm}\var{dd}'} indicating the
 date, and \var{time} should be a string of the form
@@ -152,7 +152,7 @@ calling \method{write()} on it to store the lines of the command output.
 If \var{file} is supplied, then the returned \var{list} is an empty list.
 \end{methoddesc}
 
-\begin{methoddesc}{newnews}{group, date, time, \optional{file}}
+\begin{methoddesc}[NNTP]{newnews}{group, date, time, \optional{file}}
 Send a \samp{NEWNEWS} command.  Here, \var{group} is a group name or
 \code{'*'}, and \var{date} and \var{time} have the same meaning as for
 \method{newgroups()}.  Return a pair \code{(\var{response},
@@ -165,7 +165,7 @@ calling \method{write()} on it to store the lines of the command output.
 If \var{file} is supplied, then the returned \var{list} is an empty list.
 \end{methoddesc}
 
-\begin{methoddesc}{list}{\optional{file}}
+\begin{methoddesc}[NNTP]{list}{\optional{file}}
 Send a \samp{LIST} command.  Return a pair \code{(\var{response},
 \var{list})} where \var{list} is a list of tuples.  Each tuple has the
 form \code{(\var{group}, \var{last}, \var{first}, \var{flag})}, where
@@ -182,7 +182,7 @@ calling \method{write()} on it to store the lines of the command output.
 If \var{file} is supplied, then the returned \var{list} is an empty list.
 \end{methoddesc}
 
-\begin{methoddesc}{descriptions}{grouppattern}
+\begin{methoddesc}[NNTP]{descriptions}{grouppattern}
 Send a \samp{LIST NEWSGROUPS} command, where \var{grouppattern} is a wildmat
 string as specified in RFC2980 (it's essentially the same as DOS or UNIX
 shell wildcard strings).  Return a pair \code{(\var{response},
@@ -192,7 +192,7 @@ shell wildcard strings).  Return a pair \code{(\var{response},
 \versionadded{2.4}
 \end{methoddesc}
 
-\begin{methoddesc}{description}{group}
+\begin{methoddesc}[NNTP]{description}{group}
 Get a description for a single group \var{group}.  If more than one group
 matches (if 'group' is a real wildmat string), return the first match.  
 If no group matches, return an empty string.
@@ -203,7 +203,7 @@ needed, use \method{descriptions()}.
 \versionadded{2.4}
 \end{methoddesc}
 
-\begin{methoddesc}{group}{name}
+\begin{methoddesc}[NNTP]{group}{name}
 Send a \samp{GROUP} command, where \var{name} is the group name.
 Return a tuple \code{(\var{response}, \var{count}, \var{first},
 \var{last}, \var{name})} where \var{count} is the (estimated) number
@@ -212,7 +212,7 @@ the group, \var{last} is the last article number in the group, and
 \var{name} is the group name.  The numbers are returned as strings.
 \end{methoddesc}
 
-\begin{methoddesc}{help}{\optional{file}}
+\begin{methoddesc}[NNTP]{help}{\optional{file}}
 Send a \samp{HELP} command.  Return a pair \code{(\var{response},
 \var{list})} where \var{list} is a list of help strings.
 If the \var{file} parameter is supplied, then the output of the 
@@ -223,7 +223,7 @@ calling \method{write()} on it to store the lines of the command output.
 If \var{file} is supplied, then the returned \var{list} is an empty list.
 \end{methoddesc}
 
-\begin{methoddesc}{stat}{id}
+\begin{methoddesc}[NNTP]{stat}{id}
 Send a \samp{STAT} command, where \var{id} is the message id (enclosed
 in \character{<} and \character{>}) or an article number (as a string).
 Return a triple \code{(\var{response}, \var{number}, \var{id})} where
@@ -231,15 +231,15 @@ Return a triple \code{(\var{response}, \var{number}, \var{id})} where
 message id  (enclosed in \character{<} and \character{>}).
 \end{methoddesc}
 
-\begin{methoddesc}{next}{}
+\begin{methoddesc}[NNTP]{next}{}
 Send a \samp{NEXT} command.  Return as for \method{stat()}.
 \end{methoddesc}
 
-\begin{methoddesc}{last}{}
+\begin{methoddesc}[NNTP]{last}{}
 Send a \samp{LAST} command.  Return as for \method{stat()}.
 \end{methoddesc}
 
-\begin{methoddesc}{head}{id}
+\begin{methoddesc}[NNTP]{head}{id}
 Send a \samp{HEAD} command, where \var{id} has the same meaning as for
 \method{stat()}.  Return a tuple
 \code{(\var{response}, \var{number}, \var{id}, \var{list})}
@@ -248,7 +248,7 @@ and \var{list} is a list of the article's headers (an uninterpreted
 list of lines, without trailing newlines).
 \end{methoddesc}
 
-\begin{methoddesc}{body}{id,\optional{file}}
+\begin{methoddesc}[NNTP]{body}{id,\optional{file}}
 Send a \samp{BODY} command, where \var{id} has the same meaning as for
 \method{stat()}.  If the \var{file} parameter is supplied, then
 the body is stored in a file.  If \var{file} is a string, then
@@ -259,16 +259,16 @@ Return as for \method{head()}.  If \var{file} is supplied, then
 the returned \var{list} is an empty list.
 \end{methoddesc}
 
-\begin{methoddesc}{article}{id}
+\begin{methoddesc}[NNTP]{article}{id}
 Send an \samp{ARTICLE} command, where \var{id} has the same meaning as
 for \method{stat()}.  Return as for \method{head()}.
 \end{methoddesc}
 
-\begin{methoddesc}{slave}{}
+\begin{methoddesc}[NNTP]{slave}{}
 Send a \samp{SLAVE} command.  Return the server's \var{response}.
 \end{methoddesc}
 
-\begin{methoddesc}{xhdr}{header, string, \optional{file}}
+\begin{methoddesc}[NNTP]{xhdr}{header, string, \optional{file}}
 Send an \samp{XHDR} command.  This command is not defined in the RFC
 but is a common extension.  The \var{header} argument is a header
 keyword, e.g. \code{'subject'}.  The \var{string} argument should have
@@ -286,7 +286,7 @@ calling \method{write()} on it to store the lines of the command output.
 If \var{file} is supplied, then the returned \var{list} is an empty list.
 \end{methoddesc}
 
-\begin{methoddesc}{post}{file}
+\begin{methoddesc}[NNTP]{post}{file}
 Post an article using the \samp{POST} command.  The \var{file}
 argument is an open file object which is read until EOF using its
 \method{readline()} method.  It should be a well-formed news article,
@@ -294,14 +294,14 @@ including the required headers.  The \method{post()} method
 automatically escapes lines beginning with \samp{.}.
 \end{methoddesc}
 
-\begin{methoddesc}{ihave}{id, file}
+\begin{methoddesc}[NNTP]{ihave}{id, file}
 Send an \samp{IHAVE} command. \var{id} is a message id (enclosed in 
 \character{<} and \character{>}).
 If the response is not an error, treat
 \var{file} exactly as for the \method{post()} method.
 \end{methoddesc}
 
-\begin{methoddesc}{date}{}
+\begin{methoddesc}[NNTP]{date}{}
 Return a triple \code{(\var{response}, \var{date}, \var{time})},
 containing the current date and time in a form suitable for the
 \method{newnews()} and \method{newgroups()} methods.
@@ -309,7 +309,7 @@ This is an optional NNTP extension, and may not be supported by all
 servers.
 \end{methoddesc}
 
-\begin{methoddesc}{xgtitle}{name, \optional{file}}
+\begin{methoddesc}[NNTP]{xgtitle}{name, \optional{file}}
 Process an \samp{XGTITLE} command, returning a pair \code{(\var{response},
 \var{list})}, where \var{list} is a list of tuples containing
 \code{(\var{name}, \var{title})}.
@@ -327,7 +327,7 @@ RFC2980 says ``It is suggested that this extension be deprecated''.  Use
 \method{descriptions()} or \method{description()} instead.
 \end{methoddesc}
 
-\begin{methoddesc}{xover}{start, end, \optional{file}}
+\begin{methoddesc}[NNTP]{xover}{start, end, \optional{file}}
 Return a pair \code{(\var{resp}, \var{list})}.  \var{list} is a list
 of tuples, one for each article in the range delimited by the \var{start}
 and \var{end} article numbers.  Each tuple is of the form
@@ -343,13 +343,13 @@ This is an optional NNTP extension, and may not be supported by all
 servers.
 \end{methoddesc}
 
-\begin{methoddesc}{xpath}{id}
+\begin{methoddesc}[NNTP]{xpath}{id}
 Return a pair \code{(\var{resp}, \var{path})}, where \var{path} is the
 directory path to the article with message ID \var{id}.  This is an
 optional NNTP extension, and may not be supported by all servers.
 \end{methoddesc}
 
-\begin{methoddesc}{quit}{}
+\begin{methoddesc}[NNTP]{quit}{}
 Send a \samp{QUIT} command and close the connection.  Once this method
 has been called, no other methods of the NNTP object should be called.
 \end{methoddesc}

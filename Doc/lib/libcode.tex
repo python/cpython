@@ -68,7 +68,7 @@ syntax error, or raises \exception{OverflowError} or
 \subsection{Interactive Interpreter Objects
             \label{interpreter-objects}}
 
-\begin{methoddesc}{runsource}{source\optional{, filename\optional{, symbol}}}
+\begin{methoddesc}[InteractiveInterpreter]{runsource}{source\optional{, filename\optional{, symbol}}}
 Compile and run some source in the interpreter.
 Arguments are the same as for \function{compile_command()}; the
 default for \var{filename} is \code{'<input>'}, and for
@@ -98,7 +98,7 @@ The return value can be used to decide whether to use
 \code{sys.ps1} or \code{sys.ps2} to prompt the next line.
 \end{methoddesc}
 
-\begin{methoddesc}{runcode}{code}
+\begin{methoddesc}[InteractiveInterpreter]{runcode}{code}
 Execute a code object.
 When an exception occurs, \method{showtraceback()} is called to
 display a traceback.  All exceptions are caught except
@@ -109,7 +109,7 @@ elsewhere in this code, and may not always be caught.  The caller
 should be prepared to deal with it.
 \end{methoddesc}
 
-\begin{methoddesc}{showsyntaxerror}{\optional{filename}}
+\begin{methoddesc}[InteractiveInterpreter]{showsyntaxerror}{\optional{filename}}
 Display the syntax error that just occurred.  This does not display
 a stack trace because there isn't one for syntax errors.
 If \var{filename} is given, it is stuffed into the exception instead
@@ -118,13 +118,13 @@ always uses \code{'<string>'} when reading from a string.
 The output is written by the \method{write()} method.
 \end{methoddesc}
 
-\begin{methoddesc}{showtraceback}{}
+\begin{methoddesc}[InteractiveInterpreter]{showtraceback}{}
 Display the exception that just occurred.  We remove the first stack
 item because it is within the interpreter object implementation.
 The output is written by the \method{write()} method.
 \end{methoddesc}
 
-\begin{methoddesc}{write}{data}
+\begin{methoddesc}[InteractiveInterpreter]{write}{data}
 Write a string to the standard error stream (\code{sys.stderr}).
 Derived classes should override this to provide the appropriate output
 handling as needed.
@@ -138,7 +138,7 @@ The \class{InteractiveConsole} class is a subclass of
 \class{InteractiveInterpreter}, and so offers all the methods of the
 interpreter objects as well as the following additions.
 
-\begin{methoddesc}{interact}{\optional{banner}}
+\begin{methoddesc}[InteractiveConsole]{interact}{\optional{banner}}
 Closely emulate the interactive Python console.
 The optional banner argument specify the banner to print before the
 first interaction; by default it prints a banner similar to the one
@@ -147,7 +147,7 @@ name of the console object in parentheses (so as not to confuse this
 with the real interpreter -- since it's so close!).
 \end{methoddesc}
 
-\begin{methoddesc}{push}{line}
+\begin{methoddesc}[InteractiveConsole]{push}{line}
 Push a line of source text to the interpreter.
 The line should not have a trailing newline; it may have internal
 newlines.  The line is appended to a buffer and the interpreter's
@@ -160,11 +160,11 @@ appended.  The return value is \code{True} if more input is required,
 \method{runsource()}).
 \end{methoddesc}
 
-\begin{methoddesc}{resetbuffer}{}
+\begin{methoddesc}[InteractiveConsole]{resetbuffer}{}
 Remove any unhandled source text from the input buffer.
 \end{methoddesc}
 
-\begin{methoddesc}{raw_input}{\optional{prompt}}
+\begin{methoddesc}[InteractiveConsole]{raw_input}{\optional{prompt}}
 Write a prompt and read a line.  The returned line does not include
 the trailing newline.  When the user enters the \EOF{} key sequence,
 \exception{EOFError} is raised.  The base implementation uses the

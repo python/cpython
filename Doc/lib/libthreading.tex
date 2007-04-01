@@ -20,11 +20,11 @@ returned count is equal to the length of the list returned by
 \function{enumerate()}.
 \end{funcdesc}
 
-\begin{funcdesc}{Condition}{}
+\begin{funcdescni}{Condition}{}
 A factory function that returns a new condition variable object.
 A condition variable allows one or more threads to wait until they
 are notified by another thread.
-\end{funcdesc}
+\end{funcdescni}
 
 \begin{funcdesc}{currentThread}{}
 Return the current \class{Thread} object, corresponding to the
@@ -41,12 +41,12 @@ includes daemonic threads, dummy thread objects created by
 terminated threads and threads that have not yet been started.
 \end{funcdesc}
 
-\begin{funcdesc}{Event}{}
+\begin{funcdescni}{Event}{}
 A factory function that returns a new event object.  An event manages
 a flag that can be set to true with the \method{set()} method and
 reset to false with the \method{clear()} method.  The \method{wait()}
 method blocks until the flag is true.
-\end{funcdesc}
+\end{funcdescni}
 
 \begin{classdesc*}{local}{}
 A class that represents thread-local data.  Thread-local data are data
@@ -81,14 +81,14 @@ acquire it again without blocking; the thread must release it once
 for each time it has acquired it.
 \end{funcdesc}
 
-\begin{funcdesc}{Semaphore}{\optional{value}}
+\begin{funcdescni}{Semaphore}{\optional{value}}
 A factory function that returns a new semaphore object.  A
 semaphore manages a counter representing the number of \method{release()}
 calls minus the number of \method{acquire()} calls, plus an initial value.
 The \method{acquire()} method blocks if necessary until it can return
 without making the counter negative.  If not given, \var{value} defaults to
 1. 
-\end{funcdesc}
+\end{funcdescni}
 
 \begin{funcdesc}{BoundedSemaphore}{\optional{value}}
 A factory function that returns a new bounded semaphore object.  A bounded
@@ -99,12 +99,12 @@ semaphore is released too many times it's a sign of a bug.  If not given,
 \var{value} defaults to 1. 
 \end{funcdesc}
 
-\begin{classdesc*}{Thread}{}
+\begin{classdesc*}{Thread}
 A class that represents a thread of control.  This class can be safely
 subclassed in a limited fashion.
 \end{classdesc*}
 
-\begin{classdesc*}{Timer}{}
+\begin{classdesc*}{Timer}
 A thread that executes a function after a specified interval has passed.
 \end{classdesc*}
 
@@ -182,7 +182,7 @@ and may vary across implementations.
 
 All methods are executed atomically.
 
-\begin{methoddesc}{acquire}{\optional{blocking\code{ = 1}}}
+\begin{methoddesc}[Lock]{acquire}{\optional{blocking\code{ = 1}}}
 Acquire a lock, blocking or non-blocking.
 
 When invoked without arguments, block until the lock is
@@ -197,7 +197,7 @@ immediately; otherwise, do the same thing as when called
 without arguments, and return true.
 \end{methoddesc}
 
-\begin{methoddesc}{release}{}
+\begin{methoddesc}[Lock]{release}{}
 Release a lock.
 
 When the lock is locked, reset it to unlocked, and return.  If
@@ -227,7 +227,7 @@ the final \method{release()} (the \method{release()} of the outermost
 pair) resets the lock to unlocked and allows another thread blocked in
 \method{acquire()} to proceed.
 
-\begin{methoddesc}{acquire}{\optional{blocking\code{ = 1}}}
+\begin{methoddesc}[RLock]{acquire}{\optional{blocking\code{ = 1}}}
 Acquire a lock, blocking or non-blocking.
 
 When invoked without arguments: if this thread already owns
@@ -249,7 +249,7 @@ immediately; otherwise, do the same thing as when called
 without arguments, and return true.
 \end{methoddesc}
 
-\begin{methoddesc}{release}{}
+\begin{methoddesc}[RLock]{release}{}
 Release a lock, decrementing the recursion level.  If after the
 decrement it is zero, reset the lock to unlocked (not owned by any
 thread), and if any other threads are blocked waiting for the lock to

@@ -48,7 +48,7 @@ From print_time 930343700.273
 
 \class{scheduler} instances have the following methods:
 
-\begin{methoddesc}{enterabs}{time, priority, action, argument}
+\begin{methoddesc}[scheduler]{enterabs}{time, priority, action, argument}
 Schedule a new event. The \var{time} argument should be a numeric type
 compatible with the return value of the \var{timefunc} function passed 
 to the constructor. Events scheduled for
@@ -63,23 +63,23 @@ Return value is an event which may be used for later cancellation of
 the event (see \method{cancel()}).
 \end{methoddesc}
 
-\begin{methoddesc}{enter}{delay, priority, action, argument}
+\begin{methoddesc}[scheduler]{enter}{delay, priority, action, argument}
 Schedule an event for \var{delay} more time units. Other then the
 relative time, the other arguments, the effect and the return value
 are the same as those for \method{enterabs()}.
 \end{methoddesc}
 
-\begin{methoddesc}{cancel}{event}
+\begin{methoddesc}[scheduler]{cancel}{event}
 Remove the event from the queue. If \var{event} is not an event
 currently in the queue, this method will raise a
 \exception{RuntimeError}.
 \end{methoddesc}
 
-\begin{methoddesc}{empty}{}
+\begin{methoddesc}[scheduler]{empty}{}
 Return true if the event queue is empty.
 \end{methoddesc}
 
-\begin{methoddesc}{run}{}
+\begin{methoddesc}[scheduler]{run}{}
 Run all scheduled events. This function will wait 
 (using the \function{delayfunc} function passed to the constructor)
 for the next event, then execute it and so on until there are no more

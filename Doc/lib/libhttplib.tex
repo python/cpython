@@ -309,7 +309,7 @@ Example: \code{httplib.responses[httplib.NOT_FOUND]} is \code{'Not Found'}.
 
 \class{HTTPConnection} instances have the following methods:
 
-\begin{methoddesc}{request}{method, url\optional{, body\optional{, headers}}}
+\begin{methoddesc}[HTTPConnection]{request}{method, url\optional{, body\optional{, headers}}}
 This will send a request to the server using the HTTP request method
 \var{method} and the selector \var{url}.  If the \var{body} argument is
 present, it should be a string of data to send after the headers are finished.
@@ -323,24 +323,24 @@ with the request.
 \versionchanged[\var{body} can be a file object]{2.6}
 \end{methoddesc}
 
-\begin{methoddesc}{getresponse}{}
+\begin{methoddesc}[HTTPConnection]{getresponse}{}
 Should be called after a request is sent to get the response from the server.
 Returns an \class{HTTPResponse} instance.
 \note{Note that you must have read the whole response before you can send a new
 request to the server.}
 \end{methoddesc}
 
-\begin{methoddesc}{set_debuglevel}{level}
+\begin{methoddesc}[HTTPConnection]{set_debuglevel}{level}
 Set the debugging level (the amount of debugging output printed).
 The default debug level is \code{0}, meaning no debugging output is
 printed.
 \end{methoddesc}
 
-\begin{methoddesc}{connect}{}
+\begin{methoddesc}[HTTPConnection]{connect}{}
 Connect to the server specified when the object was created.
 \end{methoddesc}
 
-\begin{methoddesc}{close}{}
+\begin{methoddesc}[HTTPConnection]{close}{}
 Close the connection to the server.
 \end{methoddesc}
 
@@ -348,7 +348,7 @@ As an alternative to using the \method{request()} method described above,
 you can also send your request step by step, by using the four functions
 below.
 
-\begin{methoddesc}{putrequest}{request, selector\optional{,
+\begin{methoddesc}[HTTPConnection]{putrequest}{request, selector\optional{,
 skip\_host\optional{, skip_accept_encoding}}}
 This should be the first call after the connection to the server has
 been made.  It sends a line to the server consisting of the
@@ -360,18 +360,18 @@ with non-False values.
 \versionchanged[\var{skip_accept_encoding} argument added]{2.4}
 \end{methoddesc}
 
-\begin{methoddesc}{putheader}{header, argument\optional{, ...}}
+\begin{methoddesc}[HTTPConnection]{putheader}{header, argument\optional{, ...}}
 Send an \rfc{822}-style header to the server.  It sends a line to the
 server consisting of the header, a colon and a space, and the first
 argument.  If more arguments are given, continuation lines are sent,
 each consisting of a tab and an argument.
 \end{methoddesc}
 
-\begin{methoddesc}{endheaders}{}
+\begin{methoddesc}[HTTPConnection]{endheaders}{}
 Send a blank line to the server, signalling the end of the headers.
 \end{methoddesc}
 
-\begin{methoddesc}{send}{data}
+\begin{methoddesc}[HTTPConnection]{send}{data}
 Send data to the server.  This should be used directly only after the
 \method{endheaders()} method has been called and before
 \method{getresponse()} is called.
@@ -381,34 +381,34 @@ Send data to the server.  This should be used directly only after the
 
 \class{HTTPResponse} instances have the following methods and attributes:
 
-\begin{methoddesc}{read}{\optional{amt}}
+\begin{methoddesc}[HTTPResponse]{read}{\optional{amt}}
 Reads and returns the response body, or up to the next \var{amt} bytes.
 \end{methoddesc}
 
-\begin{methoddesc}{getheader}{name\optional{, default}}
+\begin{methoddesc}[HTTPResponse]{getheader}{name\optional{, default}}
 Get the contents of the header \var{name}, or \var{default} if there is no
 matching header.
 \end{methoddesc}
 
-\begin{methoddesc}{getheaders}{}
+\begin{methoddesc}[HTTPResponse]{getheaders}{}
 Return a list of (header, value) tuples. \versionadded{2.4}
 \end{methoddesc}
 
-\begin{datadesc}{msg}
+\begin{memberdesc}[HTTPResponse]{msg}
   A \class{mimetools.Message} instance containing the response headers.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{version}
+\begin{memberdesc}[HTTPResponse]{version}
   HTTP protocol version used by server.  10 for HTTP/1.0, 11 for HTTP/1.1.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{status}
+\begin{memberdesc}[HTTPResponse]{status}
   Status code returned by server.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{reason}
+\begin{memberdesc}[HTTPResponse]{reason}
   Reason phrase returned by server.
-\end{datadesc}
+\end{memberdesc}
 
 
 \subsection{Examples \label{httplib-examples}}

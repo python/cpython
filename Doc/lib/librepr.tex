@@ -44,18 +44,18 @@ provide size limits for the representations of different object types,
 and methods which format specific object types.
 
 
-\begin{memberdesc}{maxlevel}
+\begin{memberdesc}[Repr]{maxlevel}
   Depth limit on the creation of recursive representations.  The
   default is \code{6}.
 \end{memberdesc}
 
-\begin{memberdesc}{maxdict}
-\memberline{maxlist}
-\memberline{maxtuple}
-\memberline{maxset}
-\memberline{maxfrozenset}
-\memberline{maxdeque}
-\memberline{maxarray}
+\begin{memberdesc}[Repr]{maxdict}
+\memberline[Repr]{maxlist}
+\memberline[Repr]{maxtuple}
+\memberline[Repr]{maxset}
+\memberline[Repr]{maxfrozenset}
+\memberline[Repr]{maxdeque}
+\memberline[Repr]{maxarray}
   Limits on the number of entries represented for the named object
   type.  The default is \code{4} for \member{maxdict}, \code{5} for
   \member{maxarray}, and  \code{6} for the others.
@@ -63,13 +63,13 @@ and methods which format specific object types.
   and \member{set}]{2.4}.
 \end{memberdesc}
 
-\begin{memberdesc}{maxlong}
+\begin{memberdesc}[Repr]{maxlong}
   Maximum number of characters in the representation for a long
   integer.  Digits are dropped from the middle.  The default is
   \code{40}.
 \end{memberdesc}
 
-\begin{memberdesc}{maxstring}
+\begin{memberdesc}[Repr]{maxstring}
   Limit on the number of characters in the representation of the
   string.  Note that the ``normal'' representation of the string is
   used as the character source: if escape sequences are needed in the
@@ -77,19 +77,19 @@ and methods which format specific object types.
   shortened.  The default is \code{30}.
 \end{memberdesc}
 
-\begin{memberdesc}{maxother}
+\begin{memberdesc}[Repr]{maxother}
   This limit is used to control the size of object types for which no
   specific formatting method is available on the \class{Repr} object.
   It is applied in a similar manner as \member{maxstring}.  The
   default is \code{20}.
 \end{memberdesc}
 
-\begin{methoddesc}{repr}{obj}
+\begin{methoddesc}[Repr]{repr}{obj}
   The equivalent to the built-in \function{repr()} that uses the
   formatting imposed by the instance.
 \end{methoddesc}
 
-\begin{methoddesc}{repr1}{obj, level}
+\begin{methoddesc}[Repr]{repr1}{obj, level}
   Recursive implementation used by \method{repr()}.  This uses the
   type of \var{obj} to determine which formatting method to call,
   passing it \var{obj} and \var{level}.  The type-specific methods
@@ -98,7 +98,7 @@ and methods which format specific object types.
   call.
 \end{methoddesc}
 
-\begin{methoddescni}{repr_\var{type}}{obj, level}
+\begin{methoddescni}[Repr]{repr_\var{type}}{obj, level}
   Formatting methods for specific types are implemented as methods
   with a name based on the type name.  In the method name, \var{type}
   is replaced by
