@@ -219,6 +219,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1685563: remove (don't add) duplicate paths in distutils.MSVCCompiler.
+
 - Bug #978833: Revert r50844, as it broke _socketobject.dup.
 
 - Bug #1675967: re patterns pickled with Python 2.4 and earlier can
