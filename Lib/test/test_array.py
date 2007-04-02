@@ -728,7 +728,6 @@ class CharacterTest(StringTest):
                 return array.array.__new__(cls, 'c', s)
 
             def __init__(self, s, color='blue'):
-                array.array.__init__(self, 'c', s)
                 self.color = color
 
             def strip(self):
