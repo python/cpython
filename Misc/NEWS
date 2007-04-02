@@ -134,6 +134,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- Bug #1693079: The array module can now successfully pickle empty arrays.
+
 - Bug #1688393: Prevent crash in socket.recvfrom if length is negative.
 
 - Bug #1622896: fix a rare corner case where the bz2 module raised an

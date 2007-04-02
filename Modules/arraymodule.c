@@ -1147,12 +1147,19 @@ array_reduce(arrayobject *array)
 		dict = Py_None;
 		Py_INCREF(dict);
 	}
-	result = Py_BuildValue("O(cs#)O", 
-		array->ob_type, 
-		array->ob_descr->typecode,
-		array->ob_item,
-		array->ob_size * array->ob_descr->itemsize,
-		dict);
+	if (array->ob_size > 0) {
+		result = Py_BuildValue("O(cs#)O", 
+			array->ob_type, 
+			array->ob_descr->typecode,
+			array->ob_item,
+			array->ob_size * array->ob_descr->itemsize,
+			dict);
+	} else {
+		result = Py_BuildValue("O(c)O", 
+			array->ob_type, 
+			array->ob_descr->typecode,
+			dict);
+	}
 	Py_DECREF(dict);
 	return result;
 }
