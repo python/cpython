@@ -601,6 +601,13 @@ class ReTests(unittest.TestCase):
         self.assertEqual(iter.next().span(), (4, 4))
         self.assertRaises(StopIteration, iter.next)
 
+    def test_empty_array(self):
+        # SF buf 1647541
+        import array
+        for typecode in 'cbBuhHiIlLfd':
+            a = array.array(typecode)
+            self.assertEqual(re.compile("bla").match(a), None)
+            self.assertEqual(re.compile("").match(a).groups(), ())            
 
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR

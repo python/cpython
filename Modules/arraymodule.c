@@ -1745,6 +1745,8 @@ static PyMappingMethods array_as_mapping = {
 	(objobjargproc)array_ass_subscr
 };
 
+static const void *emptybuf = "";
+
 static Py_ssize_t
 array_buffer_getreadbuf(arrayobject *self, Py_ssize_t index, const void **ptr)
 {
@@ -1754,6 +1756,8 @@ array_buffer_getreadbuf(arrayobject *self, Py_ssize_t index, const void **ptr)
 		return -1;
 	}
 	*ptr = (void *)self->ob_item;
+	if (*ptr == NULL)
+		*ptr = emptybuf;
 	return self->ob_size*self->ob_descr->itemsize;
 }
 
@@ -1766,6 +1770,8 @@ array_buffer_getwritebuf(arrayobject *self, Py_ssize_t index, const void **ptr)
 		return -1;
 	}
 	*ptr = (void *)self->ob_item;
+	if (*ptr == NULL)
+		*ptr = emptybuf;
 	return self->ob_size*self->ob_descr->itemsize;
 }
 
